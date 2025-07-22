@@ -1,5 +1,6 @@
 package io.sentry.asyncprofiler.convert;
 
+import io.sentry.DateUtils;
 import io.sentry.Sentry;
 import io.sentry.SentryStackTraceFactory;
 import io.sentry.asyncprofiler.vendor.asyncprofiler.convert.Arguments;
@@ -13,7 +14,6 @@ import io.sentry.protocol.profiling.SentryProfile;
 import io.sentry.protocol.profiling.ThreadMetadata;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -121,16 +121,13 @@ public final class JfrAsyncProfilerToSentryProfileConverter extends JfrConverter
                 currentFrame++;
               }
 
-              long divisor = jfr.ticksPerSec / 1000_000_000L;
-              long myTimeStamp =
-                  jfr.chunkStartNanos + ((event.time - jfr.chunkStartTicks) / divisor);
+              long nsFromStart =
+                  (event.time - jfr.chunkStartTicks) * 1_000_000_000 / jfr.ticksPerSec;
+              long timeNs = jfr.chunkStartNanos + nsFromStart;
 
               JfrSample sample = new JfrSample();
-              Instant instant = Instant.ofEpochSecond(0, myTimeStamp);
-              double timestampDouble =
-                  instant.getEpochSecond() + instant.getNano() / 1_000_000_000.0;
 
-              sample.timestamp = timestampDouble;
+              sample.timestamp = DateUtils.nanosToSeconds(timeNs);
               sample.threadId =
                   String.valueOf(
                       jfr.threads.get(event.tid) != null
