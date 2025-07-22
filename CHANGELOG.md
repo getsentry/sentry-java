@@ -4,7 +4,7 @@
 
 ### Features
 
-- Add Compose user feedback button ([#4559](https://github.com/getsentry/sentry-java/pull/4559))
+- Add `SentryUserFeedbackButton` Composable ([#4559](https://github.com/getsentry/sentry-java/pull/4559))
 
 ### Fixes
 

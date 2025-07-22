@@ -19,6 +19,7 @@ import io.sentry.SentryFeedbackOptions
 public fun SentryUserFeedbackButton(
   modifier: Modifier = Modifier,
   configurator: SentryFeedbackOptions.OptionsConfigurator? = null,
+  text: "Report a Bug",
 ) {
   Button(modifier = modifier, onClick = { Sentry.showUserFeedbackDialog(configurator) }) {
     Row(
@@ -27,10 +28,10 @@ public fun SentryUserFeedbackButton(
     ) {
       Icon(
         painter = painterResource(id = R.drawable.sentry_user_feedback_compose_button_logo_24),
-        contentDescription = "Vector Icon",
+        contentDescription = null,
       )
       Spacer(Modifier.padding(horizontal = 4.dp))
-      Text(text = "Report a Bug")
+      Text(text =  text)
     }
   }
 }
