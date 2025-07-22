@@ -6208,27 +6208,6 @@ public final class io/sentry/protocol/ViewHierarchyNode$JsonKeys {
 	public fun <init> ()V
 }
 
-public final class io/sentry/protocol/profiling/JfrFrame : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
-	public field absPath Ljava/lang/String;
-	public field filename Ljava/lang/String;
-	public field function Ljava/lang/String;
-	public field lineno Ljava/lang/Integer;
-	public field module Ljava/lang/String;
-	public fun <init> ()V
-	public fun getUnknown ()Ljava/util/Map;
-	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
-	public fun setUnknown (Ljava/util/Map;)V
-}
-
-public final class io/sentry/protocol/profiling/JfrFrame$JsonKeys {
-	public static final field FILENAME Ljava/lang/String;
-	public static final field FUNCTION Ljava/lang/String;
-	public static final field LINE_NO Ljava/lang/String;
-	public static final field MODULE Ljava/lang/String;
-	public static final field RAW_FUNCTION Ljava/lang/String;
-	public fun <init> ()V
-}
-
 public final class io/sentry/protocol/profiling/JfrSample : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public field stackId I
 	public field threadId Ljava/lang/String;
