@@ -31,7 +31,7 @@ class ConsoleApplicationSystemTest {
           "OTEL_METRICS_EXPORTER" to "none",
           "OTEL_LOGS_EXPORTER" to "none",
           "OTEL_TRACES_EXPORTER" to "none",
-        ),
+        )
       )
 
     process.waitFor(30, TimeUnit.SECONDS)
