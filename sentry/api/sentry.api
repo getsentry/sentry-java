@@ -2589,6 +2589,7 @@ public final class io/sentry/Sentry {
 	public static fun setUser (Lio/sentry/protocol/User;)V
 	public static fun showUserFeedbackDialog ()V
 	public static fun showUserFeedbackDialog (Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)V
+	public static fun showUserFeedbackDialog (Lio/sentry/protocol/SentryId;Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)V
 	public static fun startProfiler ()V
 	public static fun startSession ()V
 	public static fun startTransaction (Lio/sentry/TransactionContext;)Lio/sentry/ITransaction;
@@ -3013,7 +3014,7 @@ public final class io/sentry/SentryFeedbackOptions {
 }
 
 public abstract interface class io/sentry/SentryFeedbackOptions$IDialogHandler {
-	public abstract fun showDialog (Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)V
+	public abstract fun showDialog (Lio/sentry/protocol/SentryId;Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)V
 }
 
 public abstract interface class io/sentry/SentryFeedbackOptions$OptionsConfigurator {

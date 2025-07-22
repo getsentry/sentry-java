@@ -3037,7 +3037,7 @@ public class SentryOptions {
     sessionReplay = new SentryReplayOptions(empty, sdkVersion);
     feedbackOptions =
         new SentryFeedbackOptions(
-            configurator ->
+            (associatedEventId, configurator) ->
                 logger.log(SentryLevel.WARNING, "showDialog() can only be called in Android."));
 
     if (!empty) {

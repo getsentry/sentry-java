@@ -1,11 +1,11 @@
 package io.sentry;
 
 import io.sentry.protocol.Feedback;
+import io.sentry.protocol.SentryId;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-@ApiStatus.Internal
 public final class SentryFeedbackOptions {
   // User and Form
   /** Requires the name field on the feedback form to be filled in. Defaults to false. */
@@ -584,7 +584,9 @@ public final class SentryFeedbackOptions {
 
   @ApiStatus.Internal
   public interface IDialogHandler {
-    void showDialog(final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator);
+    void showDialog(
+        final @Nullable SentryId associatedEventId,
+        final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator);
   }
 
   /** Configuration callback for feedback options. */

@@ -1296,7 +1296,13 @@ public final class Sentry {
 
   public static void showUserFeedbackDialog(
       final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator) {
+    showUserFeedbackDialog(null, configurator);
+  }
+
+  public static void showUserFeedbackDialog(
+      final @Nullable SentryId associatedEventId,
+      final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator) {
     final @NotNull SentryOptions options = getCurrentScopes().getOptions();
-    options.getFeedbackOptions().getDialogHandler().showDialog(configurator);
+    options.getFeedbackOptions().getDialogHandler().showDialog(associatedEventId, configurator);
   }
 }

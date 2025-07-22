@@ -1512,7 +1512,7 @@ class SentryTest {
       it.feedbackOptions.dialogHandler = mockDialogHandler
     }
     Sentry.showUserFeedbackDialog()
-    verify(mockDialogHandler).showDialog(eq(null))
+    verify(mockDialogHandler).showDialog(eq(null), eq(null))
   }
 
   @Test
@@ -1524,7 +1524,20 @@ class SentryTest {
       it.feedbackOptions.dialogHandler = mockDialogHandler
     }
     Sentry.showUserFeedbackDialog(configurator)
-    verify(mockDialogHandler).showDialog(eq(configurator))
+    verify(mockDialogHandler).showDialog(eq(null), eq(configurator))
+  }
+
+  @Test
+  fun `showUserFeedbackDialog forwards to feedbackOptions_dialogHandler with associatedEventId and configurator`() {
+    val mockDialogHandler = mock<IDialogHandler>()
+    val configurator = mock<SentryFeedbackOptions.OptionsConfigurator>()
+    val associatedEventId = SentryId()
+    initForTest {
+      it.dsn = dsn
+      it.feedbackOptions.dialogHandler = mockDialogHandler
+    }
+    Sentry.showUserFeedbackDialog(associatedEventId, configurator)
+    verify(mockDialogHandler).showDialog(eq(associatedEventId), eq(configurator))
   }
 
   private class InMemoryOptionsObserver : IOptionsObserver {

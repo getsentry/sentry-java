@@ -826,7 +826,7 @@ class SentryOptionsTest {
         setLogger(logger)
         isDebug = true
       }
-    options.feedbackOptions.dialogHandler.showDialog(mock())
+    options.feedbackOptions.dialogHandler.showDialog(mock(), mock())
     verify(logger).log(eq(SentryLevel.WARNING), eq("showDialog() can only be called in Android."))
   }
 }

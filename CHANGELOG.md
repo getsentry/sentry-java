@@ -5,6 +5,7 @@
 ### Features
 
 - Add `SentryUserFeedbackButton` Composable ([#4559](https://github.com/getsentry/sentry-java/pull/4559))
+  - Also added `Sentry.showUserFeedbackDialog` static method
 
 ### Fixes
 

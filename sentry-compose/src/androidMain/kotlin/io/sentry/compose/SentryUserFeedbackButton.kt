@@ -19,7 +19,7 @@ import io.sentry.SentryFeedbackOptions
 public fun SentryUserFeedbackButton(
   modifier: Modifier = Modifier,
   configurator: SentryFeedbackOptions.OptionsConfigurator? = null,
-  text: "Report a Bug",
+  text: String = "Report a Bug",
 ) {
   Button(modifier = modifier, onClick = { Sentry.showUserFeedbackDialog(configurator) }) {
     Row(
@@ -31,7 +31,7 @@ public fun SentryUserFeedbackButton(
         contentDescription = null,
       )
       Spacer(Modifier.padding(horizontal = 4.dp))
-      Text(text =  text)
+      Text(text = text)
     }
   }
 }

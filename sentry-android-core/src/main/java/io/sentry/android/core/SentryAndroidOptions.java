@@ -16,6 +16,7 @@ import io.sentry.android.core.internal.util.RootChecker;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.SdkVersion;
+import io.sentry.protocol.SentryId;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -615,7 +616,9 @@ public final class SentryAndroidOptions extends SentryOptions {
 
   static class AndroidUserFeedbackIDialogHandler implements SentryFeedbackOptions.IDialogHandler {
     @Override
-    public void showDialog(final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator) {
+    public void showDialog(
+        final @Nullable SentryId associatedEventId,
+        final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator) {
       final @Nullable Activity activity = CurrentActivityHolder.getInstance().getActivity();
       if (activity == null) {
         Sentry.getCurrentScopes()
@@ -628,7 +631,11 @@ public final class SentryAndroidOptions extends SentryOptions {
         return;
       }
 
-      new SentryUserFeedbackDialog.Builder(activity, configurator).create().show();
+      new SentryUserFeedbackDialog.Builder(activity)
+          .associatedEventId(associatedEventId)
+          .configurator(configurator)
+          .create()
+          .show();
     }
   }
 }
