@@ -11,6 +11,7 @@ import io.sentry.ReplayController
 import io.sentry.Sentry
 import io.sentry.SentryFeedbackOptions
 import io.sentry.SentryLevel
+import io.sentry.protocol.SentryId
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -53,10 +54,11 @@ class SentryUserFeedbackDialogTest {
     }
 
     fun getSut(
+      associatedEventId: SentryId? = null,
       configuration: SentryUserFeedbackDialog.OptionsConfiguration? = null,
       configurator: SentryFeedbackOptions.OptionsConfigurator? = null,
     ): SentryUserFeedbackDialog =
-      SentryUserFeedbackDialog(application, 0, configuration, configurator)
+      SentryUserFeedbackDialog(application, 0, associatedEventId, configuration, configurator)
   }
 
   private val fixture = Fixture()
