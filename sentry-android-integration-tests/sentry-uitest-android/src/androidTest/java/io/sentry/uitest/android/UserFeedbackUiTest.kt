@@ -633,7 +633,10 @@ class UserFeedbackUiTest : BaseUiTest() {
     onView(withId(R.id.sentry_dialog_user_feedback_btn_send)).perform(click())
   }
 
-  private fun showDialogAndCheck(associatedEventId: SentryId? = null, checker: (dialog: SentryUserFeedbackDialog) -> Unit = {}) {
+  private fun showDialogAndCheck(
+    associatedEventId: SentryId? = null,
+    checker: (dialog: SentryUserFeedbackDialog) -> Unit = {},
+  ) {
     lateinit var dialog: SentryUserFeedbackDialog
     val feedbackScenario = launchActivity<EmptyActivity>()
     feedbackScenario.onActivity {
