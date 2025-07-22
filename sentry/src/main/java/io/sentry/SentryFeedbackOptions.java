@@ -517,6 +517,7 @@ public final class SentryFeedbackOptions {
    *
    * @param iDialogHandler the dialog handler to be used to show the feedback form
    */
+  @ApiStatus.Internal
   public void setDialogHandler(final @NotNull IDialogHandler iDialogHandler) {
     this.iDialogHandler = iDialogHandler;
   }
@@ -526,6 +527,7 @@ public final class SentryFeedbackOptions {
    *
    * @return the dialog handler to be used to show the feedback form
    */
+  @ApiStatus.Internal
   public @NotNull IDialogHandler getDialogHandler() {
     return iDialogHandler;
   }

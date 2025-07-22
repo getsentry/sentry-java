@@ -27,7 +27,7 @@ public final class io/sentry/compose/SentryNavigationIntegrationKt {
 }
 
 public final class io/sentry/compose/SentryUserFeedbackButtonKt {
-	public static final fun SentryUserFeedbackButton (Landroidx/compose/ui/Modifier;Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;Ljava/lang/String;Landroidx/compose/runtime/Composer;II)V
+	public static final fun SentryUserFeedbackButton (Landroidx/compose/ui/Modifier;Ljava/lang/String;Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;Landroidx/compose/runtime/Composer;II)V
 }
 
 public final class io/sentry/compose/gestures/ComposeGestureTargetLocator : io/sentry/internal/gestures/GestureTargetLocator {
