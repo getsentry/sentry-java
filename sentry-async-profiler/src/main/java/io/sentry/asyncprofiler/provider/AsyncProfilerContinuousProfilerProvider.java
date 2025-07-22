@@ -25,7 +25,7 @@ public final class AsyncProfilerContinuousProfilerProvider
     return new JavaContinuousProfiler(
         logger,
         profilingTracesDirPath,
-        10, // default profilingTracesHz
+        profilingTracesHz,
         executorService);
   }
 }
