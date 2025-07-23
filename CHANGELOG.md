@@ -4,6 +4,8 @@
 
 ### Features
 
+- Add `SentryUserFeedbackButton` Composable ([#4559](https://github.com/getsentry/sentry-java/pull/4559))
+  - Also added `Sentry.showUserFeedbackDialog` static method
 - Add deadlineTimeout option ([#4555](https://github.com/getsentry/sentry-java/pull/4555))
 
 ### Fixes

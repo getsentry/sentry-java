@@ -1,5 +1,6 @@
 package io.sentry.android.core;
 
+import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.ApplicationExitInfo;
 import io.sentry.Hint;
@@ -7,12 +8,15 @@ import io.sentry.IScope;
 import io.sentry.ISpan;
 import io.sentry.Sentry;
 import io.sentry.SentryEvent;
+import io.sentry.SentryFeedbackOptions;
+import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.SpanStatus;
 import io.sentry.android.core.internal.util.RootChecker;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.SdkVersion;
+import io.sentry.protocol.SentryId;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -608,5 +612,30 @@ public final class SentryAndroidOptions extends SentryOptions {
 
   public void setEnableAutoTraceIdGeneration(final boolean enableAutoTraceIdGeneration) {
     this.enableAutoTraceIdGeneration = enableAutoTraceIdGeneration;
+  }
+
+  static class AndroidUserFeedbackIDialogHandler implements SentryFeedbackOptions.IDialogHandler {
+    @Override
+    public void showDialog(
+        final @Nullable SentryId associatedEventId,
+        final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator) {
+      final @Nullable Activity activity = CurrentActivityHolder.getInstance().getActivity();
+      if (activity == null) {
+        Sentry.getCurrentScopes()
+            .getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.ERROR,
+                "Cannot show user feedback dialog, no activity is available. "
+                    + "Make sure to call SentryAndroid.init() in your Application.onCreate() method.");
+        return;
+      }
+
+      new SentryUserFeedbackDialog.Builder(activity)
+          .associatedEventId(associatedEventId)
+          .configurator(configurator)
+          .create()
+          .show();
+    }
   }
 }

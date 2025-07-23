@@ -2587,6 +2587,9 @@ public final class io/sentry/Sentry {
 	public static fun setTag (Ljava/lang/String;Ljava/lang/String;)V
 	public static fun setTransaction (Ljava/lang/String;)V
 	public static fun setUser (Lio/sentry/protocol/User;)V
+	public static fun showUserFeedbackDialog ()V
+	public static fun showUserFeedbackDialog (Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)V
+	public static fun showUserFeedbackDialog (Lio/sentry/protocol/SentryId;Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)V
 	public static fun startProfiler ()V
 	public static fun startSession ()V
 	public static fun startTransaction (Lio/sentry/TransactionContext;)Lio/sentry/ITransaction;
@@ -2961,9 +2964,10 @@ public final class io/sentry/SentryExecutorService : io/sentry/ISentryExecutorSe
 }
 
 public final class io/sentry/SentryFeedbackOptions {
-	public fun <init> ()V
+	public fun <init> (Lio/sentry/SentryFeedbackOptions$IDialogHandler;)V
 	public fun <init> (Lio/sentry/SentryFeedbackOptions;)V
 	public fun getCancelButtonLabel ()Ljava/lang/CharSequence;
+	public fun getDialogHandler ()Lio/sentry/SentryFeedbackOptions$IDialogHandler;
 	public fun getEmailLabel ()Ljava/lang/CharSequence;
 	public fun getEmailPlaceholder ()Ljava/lang/CharSequence;
 	public fun getFormTitle ()Ljava/lang/CharSequence;
@@ -2985,6 +2989,7 @@ public final class io/sentry/SentryFeedbackOptions {
 	public fun isShowName ()Z
 	public fun isUseSentryUser ()Z
 	public fun setCancelButtonLabel (Ljava/lang/CharSequence;)V
+	public fun setDialogHandler (Lio/sentry/SentryFeedbackOptions$IDialogHandler;)V
 	public fun setEmailLabel (Ljava/lang/CharSequence;)V
 	public fun setEmailPlaceholder (Ljava/lang/CharSequence;)V
 	public fun setEmailRequired (Z)V
@@ -3006,6 +3011,14 @@ public final class io/sentry/SentryFeedbackOptions {
 	public fun setSuccessMessageText (Ljava/lang/CharSequence;)V
 	public fun setUseSentryUser (Z)V
 	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/sentry/SentryFeedbackOptions$IDialogHandler {
+	public abstract fun showDialog (Lio/sentry/protocol/SentryId;Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)V
+}
+
+public abstract interface class io/sentry/SentryFeedbackOptions$OptionsConfigurator {
+	public abstract fun configure (Lio/sentry/SentryFeedbackOptions;)V
 }
 
 public abstract interface class io/sentry/SentryFeedbackOptions$SentryFeedbackCallback {

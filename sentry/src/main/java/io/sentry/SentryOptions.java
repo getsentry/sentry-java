@@ -3063,7 +3063,11 @@ public class SentryOptions {
     final @NotNull SdkVersion sdkVersion = createSdkVersion();
     experimental = new ExperimentalOptions(empty, sdkVersion);
     sessionReplay = new SentryReplayOptions(empty, sdkVersion);
-    feedbackOptions = new SentryFeedbackOptions();
+    feedbackOptions =
+        new SentryFeedbackOptions(
+            (associatedEventId, configurator) ->
+                logger.log(SentryLevel.WARNING, "showDialog() can only be called in Android."));
+
     if (!empty) {
       setSpanFactory(SpanFactoryFactory.create(new LoadClass(), NoOpLogger.getInstance()));
       // SentryExecutorService should be initialized before any
