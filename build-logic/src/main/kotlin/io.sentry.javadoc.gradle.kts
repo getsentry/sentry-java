@@ -20,6 +20,7 @@ tasks.withType<Javadoc>().configureEach {
         "https://docs.spring.io/spring-framework/docs/current/javadoc-api/",
         "https://docs.spring.io/spring-boot/docs/current/api/"
     )
+    opts.overview = "index.html"
 }
 
 artifacts {
