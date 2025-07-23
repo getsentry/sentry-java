@@ -62,6 +62,7 @@ include(
     "sentry-quartz",
     "sentry-okhttp",
     "sentry-reactor",
+    "sentry-async-profiler",
     "sentry-samples:sentry-samples-android",
     "sentry-samples:sentry-samples-console",
     "sentry-samples:sentry-samples-console-opentelemetry-noagent",
