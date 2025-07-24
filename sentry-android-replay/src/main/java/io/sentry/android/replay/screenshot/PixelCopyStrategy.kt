@@ -3,7 +3,9 @@ package io.sentry.android.replay.screenshot
 import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.Matrix
+import android.graphics.Paint
 import android.graphics.Rect
 import android.graphics.RectF
 import android.view.PixelCopy
@@ -34,6 +36,7 @@ internal class PixelCopyStrategy(
   private val config: ScreenshotRecorderConfig,
 ) : ScreenshotStrategy {
 
+  private val maskingPaint by lazy(NONE) { Paint() }
   private val singlePixelBitmap: Bitmap by
     lazy(NONE) { Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888) }
   private val screenshot =
@@ -78,6 +81,8 @@ internal class PixelCopyStrategy(
         root.traverse(viewHierarchy, options)
 
         executor.submitSafely(options, "screenshot_recorder.mask") {
+          val debugMasks = mutableListOf<Rect>()
+
           val canvas = Canvas(screenshot)
           canvas.setMatrix(prescaledMatrix)
           viewHierarchy.traverse { node ->
@@ -85,9 +90,9 @@ internal class PixelCopyStrategy(
               node.visibleRect ?: return@traverse false
 
               // TODO: investigate why it returns true on RN when it shouldn't
-              // if (viewHierarchy.isObscured(node)) {
-              //   return@traverse true
-              // }
+              //                                    if (viewHierarchy.isObscured(node)) {
+              //                                        return@traverse true
+              //                                    }
 
               val (visibleRects, color) =
                 when (node) {
@@ -97,9 +102,7 @@ internal class PixelCopyStrategy(
 
                   is TextViewHierarchyNode -> {
                     val textColor =
-                      node.layout?.dominantTextColor
-                        ?: node.dominantColor
-                        ?: android.graphics.Color.BLACK
+                      node.layout?.dominantTextColor ?: node.dominantColor ?: Color.BLACK
                     node.layout.getVisibleRects(
                       node.visibleRect,
                       node.paddingLeft,
@@ -108,10 +111,14 @@ internal class PixelCopyStrategy(
                   }
 
                   else -> {
-                    listOf(node.visibleRect) to android.graphics.Color.BLACK
+                    listOf(node.visibleRect) to Color.BLACK
                   }
                 }
 
+              maskingPaint.setColor(color)
+              visibleRects.forEach { rect ->
+                canvas.drawRoundRect(RectF(rect), 10f, 10f, maskingPaint)
+              }
               if (options.replayController.isDebugMaskingOverlayEnabled()) {
                 debugMasks.addAll(visibleRects)
               }
