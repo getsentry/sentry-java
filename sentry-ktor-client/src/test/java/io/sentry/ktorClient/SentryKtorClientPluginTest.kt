@@ -430,27 +430,4 @@ class SentryKtorClientPluginTest {
     assertTrue(baggageHeaderValues[0].contains("sentry-transaction=name"))
     assertTrue(baggageHeaderValues[0].contains("sentry-trace_id"))
   }
-
-  @Test
-  fun `is disabled when using OkHttp engine with preconfigured client using Sentry interceptor`():
-    Unit = runBlocking {
-    val okHttpClient = OkHttpClient.Builder().addInterceptor(SentryOkHttpInterceptor()).build()
-    val engine = OkHttpEngine(OkHttpConfig().apply { preconfigured = okHttpClient })
-    val sut = fixture.getSut(httpClientEngine = engine)
-
-    sut.get(fixture.server.url("/hello").toString())
-
-    assertEquals(0, fixture.sentryTracer.children.size)
-  }
-
-  @Test
-  fun `is disabled when using OkHttp engine initialized with Sentry interceptor in config block`():
-    Unit = runBlocking {
-    val engine = OkHttpEngine(OkHttpConfig().apply { addInterceptor(SentryOkHttpInterceptor()) })
-    val sut = fixture.getSut(httpClientEngine = engine)
-
-    sut.get(fixture.server.url("/hello").toString())
-
-    assertEquals(0, fixture.sentryTracer.children.size)
-  }
 }
