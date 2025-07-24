@@ -13,11 +13,14 @@ import io.sentry.SentryLevel
 import io.sentry.test.DeferredExecutorService
 import io.sentry.test.ImmediateExecutorService
 import java.util.concurrent.CountDownLatch
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
@@ -30,8 +33,6 @@ import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
-import kotlin.test.BeforeTest
-import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [Build.VERSION_CODES.TIRAMISU])
@@ -62,6 +63,12 @@ class SystemEventsBreadcrumbsIntegrationTest {
   @BeforeTest
   fun `set up`() {
     AppState.getInstance().resetInstance()
+    AppState.getInstance().registerLifecycleObserver(fixture.options)
+  }
+
+  @AfterTest
+  fun `tear down`() {
+    AppState.getInstance().unregisterLifecycleObserver()
   }
 
   @Test
@@ -345,7 +352,11 @@ class SystemEventsBreadcrumbsIntegrationTest {
 
     sut.register(fixture.scopes, fixture.options)
 
-    assertTrue(AppState.getInstance().lifecycleObserver.listeners.any { it is SystemEventsBreadcrumbsIntegration })
+    assertTrue(
+      AppState.getInstance().lifecycleObserver.listeners.any {
+        it is SystemEventsBreadcrumbsIntegration
+      }
+    )
   }
 
   @Test
@@ -355,7 +366,11 @@ class SystemEventsBreadcrumbsIntegrationTest {
 
     sut.register(fixture.scopes, fixture.options)
 
-    assertFalse(AppState.getInstance().lifecycleObserver.listeners.any { it is SystemEventsBreadcrumbsIntegration })
+    assertFalse(
+      AppState.getInstance().lifecycleObserver.listeners.any {
+        it is SystemEventsBreadcrumbsIntegration
+      }
+    )
   }
 
   @Test
@@ -364,11 +379,19 @@ class SystemEventsBreadcrumbsIntegrationTest {
 
     sut.register(fixture.scopes, fixture.options)
 
-    assertTrue(AppState.getInstance().lifecycleObserver.listeners.any { it is SystemEventsBreadcrumbsIntegration })
+    assertTrue(
+      AppState.getInstance().lifecycleObserver.listeners.any {
+        it is SystemEventsBreadcrumbsIntegration
+      }
+    )
 
     sut.close()
 
-    assertFalse(AppState.getInstance().lifecycleObserver.listeners.any { it is SystemEventsBreadcrumbsIntegration })
+    assertFalse(
+      AppState.getInstance().lifecycleObserver.listeners.any {
+        it is SystemEventsBreadcrumbsIntegration
+      }
+    )
   }
 
   @Test
@@ -389,7 +412,11 @@ class SystemEventsBreadcrumbsIntegrationTest {
     // ensure all messages on main looper got processed
     shadowOf(Looper.getMainLooper()).idle()
 
-    assertFalse(AppState.getInstance().lifecycleObserver.listeners.any { it is SystemEventsBreadcrumbsIntegration })
+    assertFalse(
+      AppState.getInstance().lifecycleObserver.listeners.any {
+        it is SystemEventsBreadcrumbsIntegration
+      }
+    )
   }
 
   @Test
@@ -440,6 +467,7 @@ class SystemEventsBreadcrumbsIntegrationTest {
 
     sut.onBackground()
     sut.onForeground()
+    deferredExecutorService.runAll()
     assertNull(sut.receiver)
     sut.onBackground()
     deferredExecutorService.runAll()
@@ -463,6 +491,7 @@ class SystemEventsBreadcrumbsIntegrationTest {
       .start()
 
     latch.await()
+    deferredExecutorService.runAll()
 
     sut.onForeground()
     assertNull(sut.receiver)

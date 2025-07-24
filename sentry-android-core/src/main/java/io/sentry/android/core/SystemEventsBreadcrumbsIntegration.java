@@ -25,7 +25,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
-import androidx.lifecycle.ProcessLifecycleOwner;
 import io.sentry.Breadcrumb;
 import io.sentry.Hint;
 import io.sentry.IScopes;
@@ -34,7 +33,6 @@ import io.sentry.Integration;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.internal.util.AndroidCurrentDateProvider;
-import io.sentry.android.core.internal.util.AndroidThreadChecker;
 import io.sentry.android.core.internal.util.Debouncer;
 import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.Objects;
@@ -49,8 +47,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
-public final class SystemEventsBreadcrumbsIntegration implements Integration, Closeable,
-    AppState.AppStateListener {
+public final class SystemEventsBreadcrumbsIntegration
+    implements Integration, Closeable, AppState.AppStateListener {
 
   private final @NotNull Context context;
 
@@ -170,18 +168,21 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
       return;
     }
 
-    options.getExecutorService().submit(() -> {
-      final @Nullable SystemEventsBroadcastReceiver receiverRef;
-      try (final @NotNull ISentryLifecycleToken ignored = receiverLock.acquire()) {
-        isStopped = true;
-        receiverRef = receiver;
-        receiver = null;
-      }
+    options
+        .getExecutorService()
+        .submit(
+            () -> {
+              final @Nullable SystemEventsBroadcastReceiver receiverRef;
+              try (final @NotNull ISentryLifecycleToken ignored = receiverLock.acquire()) {
+                isStopped = true;
+                receiverRef = receiver;
+                receiver = null;
+              }
 
-      if (receiverRef != null) {
-        context.unregisterReceiver(receiverRef);
-      }
-    });
+              if (receiverRef != null) {
+                context.unregisterReceiver(receiverRef);
+              }
+            });
   }
 
   @Override

@@ -128,7 +128,7 @@ final class AndroidOptionsInitializer {
     options.setCacheDirPath(getCacheDir(context).getAbsolutePath());
 
     readDefaultOptionValues(options, context, buildInfoProvider);
-    AppState.getInstance().addLifecycleObserver(options);
+    AppState.getInstance().registerLifecycleObserver(options);
   }
 
   @TestOnly

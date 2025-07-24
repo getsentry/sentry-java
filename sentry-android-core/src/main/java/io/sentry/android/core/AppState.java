@@ -2,7 +2,6 @@ package io.sentry.android.core;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.DefaultLifecycleObserver;
-import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.ProcessLifecycleOwner;
 import io.sentry.ILogger;
@@ -65,7 +64,7 @@ public final class AppState implements Closeable {
     }
   }
 
-  void addLifecycleObserver(final @Nullable SentryAndroidOptions options) {
+  void registerLifecycleObserver(final @Nullable SentryAndroidOptions options) {
     if (lifecycleObserver != null) {
       return;
     }
@@ -81,7 +80,8 @@ public final class AppState implements Closeable {
     }
     try {
       Class.forName("androidx.lifecycle.ProcessLifecycleOwner");
-      // create it right away, so it's available in addAppStateListener in case it's posted to main thread
+      // create it right away, so it's available in addAppStateListener in case it's posted to main
+      // thread
       lifecycleObserver = new LifecycleObserver();
 
       if (AndroidThreadChecker.getInstance().isMainThread()) {
@@ -92,17 +92,12 @@ public final class AppState implements Closeable {
         handler.post(() -> addObserverInternal(logger));
       }
     } catch (ClassNotFoundException e) {
-      logger
-          .log(
-              SentryLevel.WARNING,
-              "androidx.lifecycle is not available, some features might not be properly working,"
-                  + "e.g. Session Tracking, Network and System Events breadcrumbs, etc.");
+      logger.log(
+          SentryLevel.WARNING,
+          "androidx.lifecycle is not available, some features might not be properly working,"
+              + "e.g. Session Tracking, Network and System Events breadcrumbs, etc.");
     } catch (Throwable e) {
-      logger
-          .log(
-              SentryLevel.ERROR,
-              "AppState could not register lifecycle observer",
-              e);
+      logger.log(SentryLevel.ERROR, "AppState could not register lifecycle observer", e);
     }
   }
 
@@ -118,15 +113,14 @@ public final class AppState implements Closeable {
       // connection with conflicting dependencies of the androidx.lifecycle.
       // //See the issue here: https://github.com/getsentry/sentry-java/pull/2228
       lifecycleObserver = null;
-      logger
-          .log(
-              SentryLevel.ERROR,
-              "AppState failed to get Lifecycle and could not install lifecycle observer.",
-              e);
+      logger.log(
+          SentryLevel.ERROR,
+          "AppState failed to get Lifecycle and could not install lifecycle observer.",
+          e);
     }
   }
 
-  void removeLifecycleObserver() {
+  void unregisterLifecycleObserver() {
     if (lifecycleObserver == null) {
       return;
     }
@@ -157,30 +151,31 @@ public final class AppState implements Closeable {
 
   @Override
   public void close() throws IOException {
-    removeLifecycleObserver();
+    unregisterLifecycleObserver();
   }
 
-  static final class LifecycleObserver implements DefaultLifecycleObserver {
-    final List<AppStateListener> listeners = new CopyOnWriteArrayList<AppStateListener>() {
-      @Override
-      public boolean add(AppStateListener appStateListener) {
-        // notify the listeners immediately to let them "catch up" with the current state (mimics the behavior of androidx.lifecycle)
-        Lifecycle.State currentState = ProcessLifecycleOwner.get().getLifecycle().getCurrentState();
-        if (currentState.isAtLeast(Lifecycle.State.STARTED)) {
-          appStateListener.onForeground();
-        } else {
-          appStateListener.onBackground();
-        }
-        return super.add(appStateListener);
-      }
-    };
+  final class LifecycleObserver implements DefaultLifecycleObserver {
+    final List<AppStateListener> listeners =
+        new CopyOnWriteArrayList<AppStateListener>() {
+          @Override
+          public boolean add(AppStateListener appStateListener) {
+            // notify the listeners immediately to let them "catch up" with the current state
+            // (mimics the behavior of androidx.lifecycle)
+            if (Boolean.FALSE.equals(inBackground)) {
+              appStateListener.onForeground();
+            } else if (Boolean.TRUE.equals(inBackground)) {
+              appStateListener.onBackground();
+            }
+            return super.add(appStateListener);
+          }
+        };
 
     @Override
     public void onStart(@NonNull LifecycleOwner owner) {
       for (AppStateListener listener : listeners) {
         listener.onForeground();
       }
-      AppState.getInstance().setInBackground(false);
+      setInBackground(false);
     }
 
     @Override
@@ -188,7 +183,7 @@ public final class AppState implements Closeable {
       for (AppStateListener listener : listeners) {
         listener.onBackground();
       }
-      AppState.getInstance().setInBackground(true);
+      setInBackground(true);
     }
   }
 

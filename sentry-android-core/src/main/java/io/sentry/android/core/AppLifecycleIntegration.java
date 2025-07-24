@@ -2,13 +2,11 @@ package io.sentry.android.core;
 
 import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
 
-import androidx.lifecycle.ProcessLifecycleOwner;
 import io.sentry.IScopes;
 import io.sentry.ISentryLifecycleToken;
 import io.sentry.Integration;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
-import io.sentry.android.core.internal.util.AndroidThreadChecker;
 import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.Objects;
 import java.io.Closeable;
@@ -89,6 +87,6 @@ public final class AppLifecycleIntegration implements Integration, Closeable {
     // TODO: probably should move it to Scopes.close(), but that'd require a new interface and
     //  different implementations for Java and Android. This is probably fine like this too, because
     //  integrations are closed in the same place
-    AppState.getInstance().removeLifecycleObserver();
+    AppState.getInstance().unregisterLifecycleObserver();
   }
 }
