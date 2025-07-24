@@ -1,7 +1,6 @@
 package io.sentry.ktorClient
 
 import io.ktor.client.HttpClient
-import io.ktor.client.engine.okhttp.OkHttpConfig
 import io.ktor.client.plugins.api.*
 import io.ktor.client.plugins.api.ClientPlugin
 import io.ktor.client.request.*
@@ -25,9 +24,7 @@ import io.sentry.util.Platform
 import io.sentry.util.PropagationTargetsUtils
 import io.sentry.util.SpanUtils
 import io.sentry.util.TracingUtils
-import java.lang.reflect.Field
 import kotlinx.coroutines.withContext
-import okhttp3.OkHttpClient
 
 /** Configuration for the Sentry Ktor client plugin. */
 public class SentryKtorClientPluginConfig {
@@ -196,9 +193,8 @@ public val SentryKtorClientPlugin: ClientPlugin<SentryKtorClientPluginConfig> =
  * Context hook to manage scopes during request handling. Forks the current scope and uses
  * [SentryContext] to ensure that the whole pipeline runs within the correct scopes.
  */
-public open class SentryKtorClientPluginContextHook(
-  protected val scopes: IScopes,
-) : ClientHook<suspend (suspend () -> Unit) -> Unit> {
+public open class SentryKtorClientPluginContextHook(protected val scopes: IScopes) :
+  ClientHook<suspend (suspend () -> Unit) -> Unit> {
   private val phase = PipelinePhase("SentryKtorClientPluginContext")
 
   override fun install(client: HttpClient, handler: suspend (suspend () -> Unit) -> Unit) {
