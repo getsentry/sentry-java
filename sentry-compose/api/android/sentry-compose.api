@@ -26,6 +26,10 @@ public final class io/sentry/compose/SentryNavigationIntegrationKt {
 	public static final fun withSentryObservableEffect (Landroidx/navigation/NavHostController;ZZLandroidx/compose/runtime/Composer;II)Landroidx/navigation/NavHostController;
 }
 
+public final class io/sentry/compose/SentryUserFeedbackButtonKt {
+	public static final fun SentryUserFeedbackButton (Landroidx/compose/ui/Modifier;Ljava/lang/String;Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;Landroidx/compose/runtime/Composer;II)V
+}
+
 public final class io/sentry/compose/gestures/ComposeGestureTargetLocator : io/sentry/internal/gestures/GestureTargetLocator {
 	public static final field $stable I
 	public static final field Companion Lio/sentry/compose/gestures/ComposeGestureTargetLocator$Companion;

@@ -131,7 +131,12 @@ constructor(
       TransactionOptions().also {
         it.isWaitForChildren = true
         it.idleTimeout = scopes.options.idleTimeout
-        it.deadlineTimeout = TransactionOptions.DEFAULT_DEADLINE_TIMEOUT_AUTO_TRANSACTION
+
+        // Set deadline timeout based on configured option
+        val deadlineTimeoutMillis = scopes.options.deadlineTimeout
+        // No deadline when zero or negative value is set
+        it.deadlineTimeout = if (deadlineTimeoutMillis <= 0) null else deadlineTimeoutMillis
+
         it.isTrimEnd = true
       }
 

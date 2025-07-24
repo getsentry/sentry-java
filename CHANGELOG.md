@@ -4,6 +4,9 @@
 
 ### Features
 
+- Add `SentryUserFeedbackButton` Composable ([#4559](https://github.com/getsentry/sentry-java/pull/4559))
+  - Also added `Sentry.showUserFeedbackDialog` static method
+- Add deadlineTimeout option ([#4555](https://github.com/getsentry/sentry-java/pull/4555))
 - Add Ktor client integration ([#4527](https://github.com/getsentry/sentry-java/pull/4527))
   - To use the integration, add a dependency on `io.sentry:sentry-ktor-client`, then install the `SentryKtorClientPlugin` on your `HttpClient`,
     e.g.:
@@ -21,6 +24,8 @@
 ### Fixes
 
 - Allow multiple UncaughtExceptionHandlerIntegrations to be active at the same time ([#4462](https://github.com/getsentry/sentry-java/pull/4462))
+- Prevent repeated scroll target determination during a single scroll gesture ([#4557](https://github.com/getsentry/sentry-java/pull/4557))
+  - This should reduce the number of ANRs seen in `SentryGestureListener`
 
 ## 8.17.0
 
