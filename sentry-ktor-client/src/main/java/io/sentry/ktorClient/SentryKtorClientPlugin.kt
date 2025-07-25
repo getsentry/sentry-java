@@ -81,7 +81,7 @@ public val SentryKtorClientPlugin: ClientPlugin<SentryKtorClientPluginConfig> =
     // Init
     SentryIntegrationPackageStorage.getInstance()
       .addPackage("maven:io.sentry:sentry-ktor-client", BuildConfig.VERSION_NAME)
-    addIntegrationToSdkVersion("Ktor")
+    addIntegrationToSdkVersion("KtorClient")
 
     // Options
     val scopes = pluginConfig.scopes
