@@ -30,6 +30,7 @@ public final class JfrAsyncProfilerToSentryProfileConverter extends JfrConverter
   protected void convertChunk() {
     final List<Event> events = new ArrayList<Event>();
     final List<List<Integer>> stacks = new ArrayList<>();
+    final SentryStackTraceFactory stackTraceFactory = new SentryStackTraceFactory(Sentry.getGlobalScope().getOptions());
 
     collector.forEach(
         new AggregatedEventVisitor() {
@@ -107,7 +108,7 @@ public final class JfrAsyncProfilerToSentryProfileConverter extends JfrConverter
                   frame.setInApp(false);
                 } else {
                   frame.setInApp(
-                      new SentryStackTraceFactory(Sentry.getGlobalScope().getOptions())
+                    stackTraceFactory
                           .isInApp(sanitizedClassName));
                 }
 
