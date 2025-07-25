@@ -6,6 +6,7 @@ import io.sentry.JsonSerializable;
 import io.sentry.JsonUnknown;
 import io.sentry.ObjectReader;
 import io.sentry.ObjectWriter;
+import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -14,7 +15,7 @@ import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class JfrSample implements JsonUnknown, JsonSerializable {
+public final class SentrySample implements JsonUnknown, JsonSerializable {
 
   public double timestamp; // Unix timestamp in seconds with microsecond precision
 
@@ -54,13 +55,37 @@ public final class JfrSample implements JsonUnknown, JsonSerializable {
   @Override
   public void setUnknown(@Nullable Map<String, Object> unknown) {}
 
-  public static final class Deserializer implements JsonDeserializer<JfrSample> {
+  public static final class Deserializer implements JsonDeserializer<SentrySample> {
 
     @Override
-    public @NotNull JfrSample deserialize(@NotNull ObjectReader reader, @NotNull ILogger logger)
+    public @NotNull SentrySample deserialize(@NotNull ObjectReader reader, @NotNull ILogger logger)
         throws Exception {
       reader.beginObject();
-      JfrSample data = new JfrSample();
+      SentrySample data = new SentrySample();
+      Map<String, Object> unknown = null;
+
+      while (reader.peek() == JsonToken.NAME) {
+        final String nextName = reader.nextName();
+        switch (nextName) {
+          case JsonKeys.TIMESTAMP:
+            data.timestamp = reader.nextDouble();
+            break;
+          case JsonKeys.STACK_ID:
+            data.stackId = reader.nextInt();
+            break;
+          case JsonKeys.THREAD_ID:
+            data.threadId = reader.nextStringOrNull();
+            break;
+          default:
+            if (unknown == null) {
+              unknown = new HashMap<>();
+            }
+            reader.nextUnknown(logger, unknown, nextName);
+            break;
+        }
+      }
+      data.setUnknown(unknown);
+      reader.endObject();
       return data;
     }
   }

@@ -9,9 +9,9 @@ import io.sentry.asyncprofiler.vendor.asyncprofiler.jfr.JfrReader;
 import io.sentry.asyncprofiler.vendor.asyncprofiler.jfr.StackTrace;
 import io.sentry.asyncprofiler.vendor.asyncprofiler.jfr.event.Event;
 import io.sentry.protocol.SentryStackFrame;
-import io.sentry.protocol.profiling.JfrSample;
 import io.sentry.protocol.profiling.SentryProfile;
-import io.sentry.protocol.profiling.ThreadMetadata;
+import io.sentry.protocol.profiling.SentrySample;
+import io.sentry.protocol.profiling.SentryThreadMetadata;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -30,7 +30,8 @@ public final class JfrAsyncProfilerToSentryProfileConverter extends JfrConverter
   protected void convertChunk() {
     final List<Event> events = new ArrayList<Event>();
     final List<List<Integer>> stacks = new ArrayList<>();
-    final SentryStackTraceFactory stackTraceFactory = new SentryStackTraceFactory(Sentry.getGlobalScope().getOptions());
+    final SentryStackTraceFactory stackTraceFactory =
+        new SentryStackTraceFactory(Sentry.getGlobalScope().getOptions());
 
     collector.forEach(
         new AggregatedEventVisitor() {
@@ -60,7 +61,7 @@ public final class JfrAsyncProfilerToSentryProfileConverter extends JfrConverter
                   sentryProfile.threadMetadata.computeIfAbsent(
                       String.valueOf(threadIdToUse),
                       k -> {
-                        ThreadMetadata metadata = new ThreadMetadata();
+                        SentryThreadMetadata metadata = new SentryThreadMetadata();
                         metadata.name = threadName;
                         metadata.priority = 0;
                         return metadata;
@@ -107,9 +108,7 @@ public final class JfrAsyncProfilerToSentryProfileConverter extends JfrConverter
                 if (element.isNativeMethod() || classNameWithLambdas.isEmpty()) {
                   frame.setInApp(false);
                 } else {
-                  frame.setInApp(
-                    stackTraceFactory
-                          .isInApp(sanitizedClassName));
+                  frame.setInApp(stackTraceFactory.isInApp(sanitizedClassName));
                 }
 
                 frame.setLineno((element.getLineNumber() != 0) ? element.getLineNumber() : null);
@@ -126,7 +125,7 @@ public final class JfrAsyncProfilerToSentryProfileConverter extends JfrConverter
                   (event.time - jfr.chunkStartTicks) * 1_000_000_000 / jfr.ticksPerSec;
               long timeNs = jfr.chunkStartNanos + nsFromStart;
 
-              JfrSample sample = new JfrSample();
+              SentrySample sample = new SentrySample();
 
               sample.timestamp = DateUtils.nanosToSeconds(timeNs);
               sample.threadId =

@@ -148,7 +148,6 @@ public final class JavaContinuousProfiler
   private void initScopes() {
     if ((scopes == null || scopes == NoOpScopes.getInstance())
         && Sentry.getCurrentScopes() != NoOpScopes.getInstance()) {
-      // TODO: should we fork the scopes here?
       this.scopes = Sentry.getCurrentScopes();
       final @Nullable RateLimiter rateLimiter = scopes.getRateLimiter();
       if (rateLimiter != null) {

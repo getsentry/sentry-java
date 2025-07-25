@@ -6,16 +6,17 @@ import io.sentry.JsonSerializable;
 import io.sentry.JsonUnknown;
 import io.sentry.ObjectReader;
 import io.sentry.ObjectWriter;
+import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class ThreadMetadata implements JsonUnknown, JsonSerializable {
-  public @Nullable String name; // e.g., "com.example.MyClass.myMethod"
+public final class SentryThreadMetadata implements JsonUnknown, JsonSerializable {
+  public @Nullable String name;
 
-  public int priority; // e.g., "com.example" (package name)
+  public int priority;
 
   public static final class JsonKeys {
     public static final String NAME = "name";
@@ -40,13 +41,34 @@ public final class ThreadMetadata implements JsonUnknown, JsonSerializable {
   @Override
   public void setUnknown(@Nullable Map<String, Object> unknown) {}
 
-  public static final class Deserializer implements JsonDeserializer<ThreadMetadata> {
+  public static final class Deserializer implements JsonDeserializer<SentryThreadMetadata> {
 
     @Override
-    public @NotNull ThreadMetadata deserialize(
+    public @NotNull SentryThreadMetadata deserialize(
         @NotNull ObjectReader reader, @NotNull ILogger logger) throws Exception {
       reader.beginObject();
-      ThreadMetadata data = new ThreadMetadata();
+      SentryThreadMetadata data = new SentryThreadMetadata();
+      Map<String, Object> unknown = null;
+
+      while (reader.peek() == JsonToken.NAME) {
+        final String nextName = reader.nextName();
+        switch (nextName) {
+          case JsonKeys.NAME:
+            data.name = reader.nextStringOrNull();
+            break;
+          case JsonKeys.PRIORITY:
+            data.priority = reader.nextInt();
+            break;
+          default:
+            if (unknown == null) {
+              unknown = new HashMap<>();
+            }
+            reader.nextUnknown(logger, unknown, nextName);
+            break;
+        }
+      }
+      data.setUnknown(unknown);
+      reader.endObject();
       return data;
     }
   }
