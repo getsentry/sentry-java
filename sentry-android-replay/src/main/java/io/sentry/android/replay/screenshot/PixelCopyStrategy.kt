@@ -8,6 +8,7 @@ import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.Rect
 import android.graphics.RectF
+import android.os.SystemClock
 import android.view.PixelCopy
 import android.view.View
 import io.sentry.SentryLevel.DEBUG
@@ -27,7 +28,6 @@ import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.LazyThreadSafetyMode.NONE
 
-@SuppressLint("UseKtx")
 internal class PixelCopyStrategy(
   private val executor: ScheduledExecutorService,
   private val mainLooperHandler: MainLooperHandler,
@@ -48,6 +48,8 @@ internal class PixelCopyStrategy(
   private val debugMasks = mutableListOf<Rect>()
   private val contentChanged = AtomicBoolean(false)
 
+  private var lastPixelCopyRequestDuration: Long = 0
+
   @SuppressLint("NewApi")
   override fun capture(root: View) {
     contentChanged.set(false)
@@ -58,10 +60,12 @@ internal class PixelCopyStrategy(
       return
     }
 
+    val pixelCopyRequestStartTime = SystemClock.uptimeMillis()
     PixelCopy.request(
       window,
       screenshot,
       { copyResult: Int ->
+        val pixelCopyProcessStartTime = SystemClock.uptimeMillis()
         if (copyResult != PixelCopy.SUCCESS) {
           options.logger.log(INFO, "Failed to capture replay recording: %d", copyResult)
           lastCaptureSuccessful.set(false)
@@ -130,9 +134,15 @@ internal class PixelCopyStrategy(
           lastCaptureSuccessful.set(true)
           contentChanged.set(false)
         }
+
+        val pixelCopyProcessDuration = SystemClock.uptimeMillis() - pixelCopyProcessStartTime
+        val totalUiDuration = lastPixelCopyRequestDuration + pixelCopyProcessDuration
+        options.logger.log(INFO, "pixelCopy.request took ${lastPixelCopyRequestDuration}ms")
+        options.logger.log(INFO, "pixelCopy.capture took ${totalUiDuration}ms (ui thread)")
       },
       mainLooperHandler.handler,
     )
+    lastPixelCopyRequestDuration = SystemClock.uptimeMillis() - pixelCopyRequestStartTime
   }
 
   override fun onContentChanged() {
