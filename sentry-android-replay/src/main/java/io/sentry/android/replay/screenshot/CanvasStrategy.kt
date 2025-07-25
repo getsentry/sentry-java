@@ -25,7 +25,7 @@ import android.graphics.text.MeasuredText
 import android.media.Image
 import android.media.ImageReader
 import android.os.Handler
-import android.os.Looper
+import android.os.HandlerThread
 import android.view.View
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
@@ -61,6 +61,14 @@ internal class CanvasStrategy(
     )
   private val unprocessedPictures: MutableList<PictureReaderHolder> = LinkedList()
 
+  private val processingThread = HandlerThread("screenshot_recorder.canvas")
+  private val processingHandler: Handler
+
+  init {
+    processingThread.start()
+    processingHandler = Handler(processingThread.looper)
+  }
+
   private val pictureRenderTask = Runnable {
     val holder: PictureReaderHolder? =
       synchronized(unprocessedPictures) {
@@ -87,7 +95,7 @@ internal class CanvasStrategy(
           }
           synchronized(freePictures) { freePictures.add(holder) }
         },
-        Handler(Looper.getMainLooper()),
+        processingHandler,
       )
 
       val surface = holder.reader.surface
@@ -112,7 +120,7 @@ internal class CanvasStrategy(
       return
     }
 
-    val pictureCanvas = holder.picture.beginRecording(root.width, root.height)
+    val pictureCanvas = holder.picture.beginRecording(config.recordingWidth, config.recordingHeight)
     textIgnoringCanvas.delegate = pictureCanvas
     textIgnoringCanvas.setMatrix(prescaledMatrix)
     root.draw(textIgnoringCanvas)
@@ -133,6 +141,7 @@ internal class CanvasStrategy(
         recycle()
       }
     }
+    processingThread.quitSafely()
   }
 
   override fun lastCaptureSuccessful(): Boolean {
