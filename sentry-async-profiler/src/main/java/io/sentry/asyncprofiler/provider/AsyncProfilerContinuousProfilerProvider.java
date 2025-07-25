@@ -23,9 +23,6 @@ public final class AsyncProfilerContinuousProfilerProvider
       int profilingTracesHz,
       ISentryExecutorService executorService) {
     return new JavaContinuousProfiler(
-        logger,
-        profilingTracesDirPath,
-        profilingTracesHz,
-        executorService);
+        logger, profilingTracesDirPath, profilingTracesHz, executorService);
   }
 }

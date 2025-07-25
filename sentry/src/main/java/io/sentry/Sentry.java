@@ -683,8 +683,9 @@ public final class Sentry {
         .getLogger()
         .log(
             SentryLevel.INFO,
-            "Continuous profiler is enabled %s",
-            options.isContinuousProfilingEnabled());
+            "Continuous profiler is enabled %s mode: %s",
+            options.isContinuousProfilingEnabled(),
+            options.getProfileLifecycle());
   }
 
   /** Close the SDK */

@@ -489,6 +489,7 @@ public final class io/sentry/ExternalOptions {
 	public fun getInAppIncludes ()Ljava/util/List;
 	public fun getMaxRequestBodySize ()Lio/sentry/SentryOptions$RequestSize;
 	public fun getPrintUncaughtStackTrace ()Ljava/lang/Boolean;
+	public fun getProfileLifecycle ()Lio/sentry/ProfileLifecycle;
 	public fun getProfileSessionSampleRate ()Ljava/lang/Double;
 	public fun getProfilesSampleRate ()Ljava/lang/Double;
 	public fun getProfilingTracesDirPath ()Ljava/lang/String;
@@ -532,6 +533,7 @@ public final class io/sentry/ExternalOptions {
 	public fun setIgnoredTransactions (Ljava/util/List;)V
 	public fun setMaxRequestBodySize (Lio/sentry/SentryOptions$RequestSize;)V
 	public fun setPrintUncaughtStackTrace (Ljava/lang/Boolean;)V
+	public fun setProfileLifecycle (Lio/sentry/ProfileLifecycle;)V
 	public fun setProfileSessionSampleRate (Ljava/lang/Double;)V
 	public fun setProfilesSampleRate (Ljava/lang/Double;)V
 	public fun setProfilingTracesDirPath (Ljava/lang/String;)V
