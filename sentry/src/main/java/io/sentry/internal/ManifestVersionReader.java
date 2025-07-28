@@ -87,10 +87,12 @@ public final class ManifestVersionReader {
                 versionInfo.integrations.add("OpenTelemetry-Agent");
               }
               if (name.equals("sentry.java.opentelemetry.agentless")) {
-                SentryIntegrationPackageStorage.getInstance().addIntegration("OpenTelemetry-Agentless");
+                SentryIntegrationPackageStorage.getInstance()
+                    .addIntegration("OpenTelemetry-Agentless");
               }
               if (name.equals("sentry.java.opentelemetry.agentless-spring")) {
-                SentryIntegrationPackageStorage.getInstance().addIntegration("OpenTelemetry-Agentless-Spring");
+                SentryIntegrationPackageStorage.getInstance()
+                    .addIntegration("OpenTelemetry-Agentless-Spring");
               }
             }
 
