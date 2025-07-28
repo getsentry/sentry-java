@@ -106,7 +106,8 @@ public val SentryKtorClientPlugin: ClientPlugin<SentryKtorClientPluginConfig> =
       val parentSpan: ISpan? =
         if (forceScopes) scopes.getSpan()
         else {
-          if (Platform.isAndroid()) scopes.transaction else scopes.span
+          val currentScopes = Sentry.getCurrentScopes()
+          if (Platform.isAndroid()) currentScopes.transaction else currentScopes.span
         }
 
       val spanOp = "http.client"
@@ -164,10 +165,20 @@ public val SentryKtorClientPlugin: ClientPlugin<SentryKtorClientPluginConfig> =
           failedRequestStatusCodes.any { it.isInRange(response.status.value) } &&
           PropagationTargetsUtils.contain(failedRequestTargets, request.url.toString())
       ) {
-        SentryKtorClientUtils.captureClientError(scopes, request, response)
+        SentryKtorClientUtils.captureClientError(
+          if (forceScopes) scopes else Sentry.getCurrentScopes(),
+          request,
+          response,
+        )
       }
 
-      SentryKtorClientUtils.addBreadcrumb(scopes, request, response, startTimestamp, endTimestamp)
+      SentryKtorClientUtils.addBreadcrumb(
+        if (forceScopes) scopes else Sentry.getCurrentScopes(),
+        request,
+        response,
+        startTimestamp,
+        endTimestamp,
+      )
 
       response.call.attributes.getOrNull(requestSpanKey)?.let { span ->
         var result: ISpan? = span
