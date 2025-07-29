@@ -82,7 +82,7 @@ public final class JfrAsyncProfilerToSentryProfileConverter extends JfrConverter
         if (args.threads) {
           processThreadMetadata(event, threadId);
         }
-        
+
         createSample(event, threadId);
 
         buildStackTraceAndFrames(stackTrace);
