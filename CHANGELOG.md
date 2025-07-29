@@ -4,13 +4,32 @@
 
 ### Features
 
+- Add `SentryUserFeedbackButton` Composable ([#4559](https://github.com/getsentry/sentry-java/pull/4559))
+  - Also added `Sentry.showUserFeedbackDialog` static method
 - Add deadlineTimeout option ([#4555](https://github.com/getsentry/sentry-java/pull/4555))
+- Add Ktor client integration ([#4527](https://github.com/getsentry/sentry-java/pull/4527))
+  - To use the integration, add a dependency on `io.sentry:sentry-ktor-client`, then install the `SentryKtorClientPlugin` on your `HttpClient`,
+    e.g.:
+    ```kotlin
+    val client =
+      HttpClient(Java) {
+        install(io.sentry.ktorClient.SentryKtorClientPlugin) {
+          captureFailedRequests = true
+          failedRequestTargets = listOf(".*")
+          failedRequestStatusCodes = listOf(HttpStatusCodeRange(500, 599))
+        }
+      }
+    ```
 
 ### Fixes
 
 - Allow multiple UncaughtExceptionHandlerIntegrations to be active at the same time ([#4462](https://github.com/getsentry/sentry-java/pull/4462))
 - Prevent repeated scroll target determination during a single scroll gesture ([#4557](https://github.com/getsentry/sentry-java/pull/4557))
   - This should reduce the number of ANRs seen in `SentryGestureListener`
+- Do not use Sentry logging API in JUL if logs are disabled ([#4574](https://github.com/getsentry/sentry-java/pull/4574))
+  - This was causing Sentry SDK to log warnings: "Sentry Log is disabled and this 'logger' call is a no-op."
+- Do not use Sentry logging API in Log4j2 if logs are disabled ([#4573](https://github.com/getsentry/sentry-java/pull/4573))
+  - This was causing Sentry SDK to log warnings: "Sentry Log is disabled and this 'logger' call is a no-op."
 
 ## 8.17.0
 

@@ -13,7 +13,9 @@ import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 
 class SentryOptionsTest {
   @Test
@@ -814,6 +816,18 @@ class SentryOptionsTest {
     options.setTag("k", null)
     options.setTag(null, null)
     assertTrue(options.tags.isEmpty())
+  }
+
+  @Test
+  fun `feedback dialog handler logs a warning`() {
+    val logger = mock<ILogger>()
+    val options =
+      SentryOptions.empty().apply {
+        setLogger(logger)
+        isDebug = true
+      }
+    options.feedbackOptions.dialogHandler.showDialog(mock(), mock())
+    verify(logger).log(eq(SentryLevel.WARNING), eq("showDialog() can only be called in Android."))
   }
 
   @Test
