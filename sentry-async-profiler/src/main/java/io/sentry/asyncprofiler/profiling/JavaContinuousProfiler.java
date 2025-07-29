@@ -194,8 +194,7 @@ public final class JavaContinuousProfiler
       final String profilingIntervalMicros =
           String.format("%dus", (int) SECONDS.toMicros(1) / profilingTracesHz);
       final String command =
-          String.format(
-              "start,jfr,event=wall,interval=%s,file=%s", profilingIntervalMicros, filename);
+          String.format("start,jfr,wall=%s,file=%s", profilingIntervalMicros, filename);
       System.out.println(command);
       startData = profiler.execute(command);
     } catch (Exception e) {
