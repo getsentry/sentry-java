@@ -16,7 +16,7 @@ public interface JavaContinuousProfilerProvider {
   /**
    * Creates and returns a continuous profiler instance.
    *
-   * @return a continuous profiler instance, or null if the provider cannot create one
+   * @return a continuous profiler instance
    */
   @NotNull
   IContinuousProfiler getContinuousProfiler(

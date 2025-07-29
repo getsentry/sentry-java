@@ -11,6 +11,7 @@ import io.sentry.asyncprofiler.provider.AsyncProfilerProfileConverterProvider
 import io.sentry.test.DeferredExecutorService
 import java.nio.file.Files
 import kotlin.io.path.absolutePathString
+import kotlin.io.path.deleteIfExists
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import one.profiler.AsyncProfiler
@@ -20,7 +21,6 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.whenever
-import kotlin.io.path.deleteIfExists
 
 class JfrAsyncProfilerToSentryProfileConverterTest {
 
