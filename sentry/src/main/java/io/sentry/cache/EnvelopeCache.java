@@ -93,6 +93,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
     previousSessionLatch = new CountDownLatch(1);
   }
 
+  @SuppressWarnings("deprecation")
   @Override
   public void store(final @NotNull SentryEnvelope envelope, final @NotNull Hint hint) {
     Objects.requireNonNull(envelope, "Envelope is required.");
