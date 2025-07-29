@@ -12,7 +12,10 @@
     <!-- Needed by leakcanary.NotificationEventListener -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
-    <!--  if your minSdkVersion < 16, this would make usable on minSdkVersion >= 14-->
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE_REMOTE_MESSAGING" />
+
+  <!--  if your minSdkVersion < 16, this would make usable on minSdkVersion >= 14-->
     <uses-sdk
         tools:overrideLibrary="io.sentry.android"/>
 
@@ -28,6 +31,12 @@
         android:theme="@style/AppTheme"
         android:networkSecurityConfig="@xml/network"
         tools:ignore="GoogleAppIndexingWarning, UnusedAttribute">
+
+        <service
+            android:name=".DummyService"
+            android:exported="true"
+            android:enabled="true"
+            android:foregroundServiceType="remoteMessaging"/>
 
         <activity
             android:name=".MainActivity"
@@ -116,7 +125,7 @@
 <!--        <meta-data android:name="io.sentry.traces.profiling.sample-rate" android:value="1.0" />-->
 
         <!-- Enable profiling, adjust in production env -->
-        <meta-data android:name="io.sentry.traces.profiling.session-sample-rate" android:value="1.0" />
+        <meta-data android:name="io.sentry.traces.profiling.session-sample-rate" android:value="0.0" />
         <!-- Set profiling lifecycle, can be `manual` or `trace` -->
         <meta-data android:name="io.sentry.traces.profiling.lifecycle" android:value="manual" />
         <!-- Enable profiling on app start -->
@@ -169,7 +178,7 @@
 
       <meta-data android:name="io.sentry.performance-v2.enable" android:value="true" />
 
-      <meta-data android:name="io.sentry.session-replay.session-sample-rate" android:value="1" />
+      <meta-data android:name="io.sentry.session-replay.session-sample-rate" android:value="0" />
       <meta-data android:name="io.sentry.session-replay.mask-all-text" android:value="true" />
     </application>
 </manifest>

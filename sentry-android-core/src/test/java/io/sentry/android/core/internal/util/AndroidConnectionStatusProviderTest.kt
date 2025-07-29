@@ -31,6 +31,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.mockingDetails
@@ -39,6 +40,7 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
+import java.util.concurrent.ExecutorService
 
 class AndroidConnectionStatusProviderTest {
   private lateinit var connectionStatusProvider: AndroidConnectionStatusProvider
@@ -93,9 +95,6 @@ class AndroidConnectionStatusProviderTest {
 
     connectionStatusProvider =
       AndroidConnectionStatusProvider(contextMock, options, buildInfo, timeProvider)
-
-    // Wait for async callback registration to complete
-    connectionStatusProvider.initThread.join()
   }
 
   @AfterTest
@@ -164,7 +163,6 @@ class AndroidConnectionStatusProviderTest {
     // Create a new provider with the null connectivity manager
     val providerWithNullConnectivity =
       AndroidConnectionStatusProvider(nullConnectivityContext, options, buildInfo, timeProvider)
-    providerWithNullConnectivity.initThread.join() // Wait for async init to complete
 
     assertEquals(
       IConnectionStatusProvider.ConnectionStatus.UNKNOWN,

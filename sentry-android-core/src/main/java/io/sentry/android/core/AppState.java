@@ -1,5 +1,6 @@
 package io.sentry.android.core;
 
+import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.lifecycle.DefaultLifecycleObserver;
 import androidx.lifecycle.LifecycleOwner;
@@ -48,7 +49,7 @@ public final class AppState implements Closeable {
     this.inBackground = inBackground;
   }
 
-  void addAppStateListener(final @NotNull AppStateListener listener) {
+  public void addAppStateListener(final @NotNull AppStateListener listener) {
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       ensureLifecycleObserver(NoOpLogger.getInstance());
 
@@ -56,7 +57,7 @@ public final class AppState implements Closeable {
     }
   }
 
-  void removeAppStateListener(final @NotNull AppStateListener listener) {
+  public void removeAppStateListener(final @NotNull AppStateListener listener) {
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       if (lifecycleObserver != null) {
         lifecycleObserver.listeners.remove(listener);
@@ -172,10 +173,10 @@ public final class AppState implements Closeable {
 
     @Override
     public void onStart(@NonNull LifecycleOwner owner) {
+      setInBackground(false);
       for (AppStateListener listener : listeners) {
         listener.onForeground();
       }
-      setInBackground(false);
     }
 
     @Override
