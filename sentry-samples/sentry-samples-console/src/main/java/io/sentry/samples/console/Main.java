@@ -66,8 +66,8 @@ public class Main {
           // Enable SDK logging with Debug level
           options.setDebug(true);
           // To change the verbosity, use:
-          // options.setDiagnosticLevel(SentryLevel.ERROR);
           // By default it's DEBUG.
+          // options.setDiagnosticLevel(SentryLevel.ERROR);
           // A good option to have SDK debug log in prod is to use only level ERROR here.
 
           // Exclude frames from some packages from being "inApp" so are hidden by default in Sentry
@@ -82,15 +82,16 @@ public class Main {
           options.setTracesSampleRate(1.0); // set 0.5 to send 50% of traces
 
           // Determine traces sample rate based on the sampling context
-          // options.setTracesSampler(
-          //     context -> {
-          //       // only 10% of transactions with "/product" prefix will be collected
-          //       if (!context.getTransactionContext().getName().startsWith("/products")) {
-          //         return 0.1;
-          //       } else {
-          //         return 0.5;
-          //       }
-          //     });
+          //          options.setTracesSampler(
+          //              context -> {
+          //                // only 10% of transactions with "/product" prefix will be collected
+          //                if (!context.getTransactionContext().getName().startsWith("/products"))
+          // {
+          //                  return 0.1;
+          //                } else {
+          //                  return 0.5;
+          //                }
+          //              });
         });
 
     Sentry.addBreadcrumb(
