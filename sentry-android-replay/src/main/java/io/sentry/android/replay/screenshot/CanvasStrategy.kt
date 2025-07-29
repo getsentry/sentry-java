@@ -200,6 +200,8 @@ private class TextIgnoringDelegateCanvas : Canvas() {
 
   val singlePixelBitmapBounds = Rect(0, 0, 1, 1)
 
+  private val bitmapColorCache = WeakHashMap<Bitmap, Pair<Int, Int>>()
+
   override fun isHardwareAccelerated(): Boolean {
     return false
   }
@@ -849,8 +851,19 @@ private class TextIgnoringDelegateCanvas : Canvas() {
   }
 
   private fun sampleBitmapColor(bitmap: Bitmap, paint: Paint?, region: Rect?): Int {
-    singlePixelCanvas.drawBitmap(bitmap.asShared(), region, singlePixelBitmapBounds, paint)
-    return singlePixelBitmap.getPixel(0, 0)
+    if (bitmap.isRecycled) {
+      return Color.BLACK
+    }
+
+    val cache = bitmapColorCache[bitmap]
+    if (cache != null && cache.first == bitmap.generationId) {
+      return cache.second
+    } else {
+      singlePixelCanvas.drawBitmap(bitmap.asShared(), region, singlePixelBitmapBounds, paint)
+      val color = singlePixelBitmap.getPixel(0, 0)
+      bitmapColorCache[bitmap] = Pair(bitmap.generationId, color)
+      return color
+    }
   }
 
   private fun drawMaskedText(paint: Paint, x: Float, y: Float) {
