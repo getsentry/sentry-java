@@ -4236,6 +4236,8 @@ public final class io/sentry/TypeCheckHint {
 	public static final field GRAPHQL_DATA_FETCHING_ENVIRONMENT Ljava/lang/String;
 	public static final field GRAPHQL_HANDLER_PARAMETERS Ljava/lang/String;
 	public static final field JUL_LOG_RECORD Ljava/lang/String;
+	public static final field KTOR_CLIENT_REQUEST Ljava/lang/String;
+	public static final field KTOR_CLIENT_RESPONSE Ljava/lang/String;
 	public static final field LOG4J_LOG_EVENT Ljava/lang/String;
 	public static final field LOGBACK_LOGGING_EVENT Ljava/lang/String;
 	public static final field OKHTTP_REQUEST Ljava/lang/String;
