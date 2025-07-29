@@ -10,6 +10,7 @@ import io.sentry.protocol.SentryStackFrame;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -17,32 +18,24 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class SentryProfile implements JsonUnknown, JsonSerializable {
-  public @Nullable List<SentrySample> samples;
+  private @NotNull List<SentrySample> samples = new ArrayList<>();
 
-  public @Nullable List<List<Integer>> stacks; // List of frame indices
+  private @NotNull List<List<Integer>> stacks = new ArrayList<>(); // List of frame indices
 
-  public @Nullable List<SentryStackFrame> frames;
+  private @NotNull List<SentryStackFrame> frames = new ArrayList<>(); // List of stack frames
 
-  public @Nullable Map<String, SentryThreadMetadata> threadMetadata; // Key is Thread ID (String)
+  private @NotNull Map<String, SentryThreadMetadata> threadMetadata =
+      new HashMap<>(); // Key is Thread ID (String)
 
   private @Nullable Map<String, Object> unknown;
 
   @Override
   public void serialize(@NotNull ObjectWriter writer, @NotNull ILogger logger) throws IOException {
     writer.beginObject();
-    if (samples != null) {
-      writer.name(JsonKeys.SAMPLES).value(logger, samples);
-    }
-    if (stacks != null) {
-      writer.name(JsonKeys.STACKS).value(logger, stacks);
-    }
-    if (frames != null) {
-      writer.name(JsonKeys.FRAMES).value(logger, frames);
-    }
-
-    if (threadMetadata != null) {
-      writer.name(JsonKeys.THREAD_METADATA).value(logger, threadMetadata);
-    }
+    writer.name(JsonKeys.SAMPLES).value(logger, samples);
+    writer.name(JsonKeys.STACKS).value(logger, stacks);
+    writer.name(JsonKeys.FRAMES).value(logger, frames);
+    writer.name(JsonKeys.THREAD_METADATA).value(logger, threadMetadata);
 
     if (unknown != null) {
       for (String key : unknown.keySet()) {
@@ -51,6 +44,38 @@ public final class SentryProfile implements JsonUnknown, JsonSerializable {
       }
     }
     writer.endObject();
+  }
+
+  public @NotNull List<SentrySample> getSamples() {
+    return samples;
+  }
+
+  public void setSamples(@NotNull List<SentrySample> samples) {
+    this.samples = samples;
+  }
+
+  public @NotNull List<List<Integer>> getStacks() {
+    return stacks;
+  }
+
+  public void setStacks(@NotNull List<List<Integer>> stacks) {
+    this.stacks = stacks;
+  }
+
+  public @NotNull List<SentryStackFrame> getFrames() {
+    return frames;
+  }
+
+  public void setFrames(@NotNull List<SentryStackFrame> frames) {
+    this.frames = frames;
+  }
+
+  public @NotNull Map<String, SentryThreadMetadata> getThreadMetadata() {
+    return threadMetadata;
+  }
+
+  public void setThreadMetadata(@NotNull Map<String, SentryThreadMetadata> threadMetadata) {
+    this.threadMetadata = threadMetadata;
   }
 
   @Override
@@ -96,7 +121,13 @@ public final class SentryProfile implements JsonUnknown, JsonSerializable {
               data.samples = sentrySamples;
             }
             break;
-
+          case JsonKeys.THREAD_METADATA:
+            Map<String, SentryThreadMetadata> threadMetadata =
+                reader.nextMapOrNull(logger, new SentryThreadMetadata.Deserializer());
+            if (threadMetadata != null) {
+              data.threadMetadata = threadMetadata;
+            }
+            break;
           case JsonKeys.STACKS:
             List<List<Integer>> jfrStacks =
                 reader.nextOrNull(logger, new NestedIntegerListDeserializer());

@@ -6211,13 +6211,17 @@ public final class io/sentry/protocol/ViewHierarchyNode$JsonKeys {
 }
 
 public final class io/sentry/protocol/profiling/SentryProfile : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
-	public field frames Ljava/util/List;
-	public field samples Ljava/util/List;
-	public field stacks Ljava/util/List;
-	public field threadMetadata Ljava/util/Map;
 	public fun <init> ()V
+	public fun getFrames ()Ljava/util/List;
+	public fun getSamples ()Ljava/util/List;
+	public fun getStacks ()Ljava/util/List;
+	public fun getThreadMetadata ()Ljava/util/Map;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+	public fun setFrames (Ljava/util/List;)V
+	public fun setSamples (Ljava/util/List;)V
+	public fun setStacks (Ljava/util/List;)V
+	public fun setThreadMetadata (Ljava/util/Map;)V
 	public fun setUnknown (Ljava/util/Map;)V
 }
 
