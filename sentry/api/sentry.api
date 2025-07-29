@@ -6255,12 +6255,15 @@ public final class io/sentry/protocol/profiling/SentryProfile$JsonKeys {
 }
 
 public final class io/sentry/protocol/profiling/SentrySample : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
-	public field stackId I
-	public field threadId Ljava/lang/String;
-	public field timestamp D
 	public fun <init> ()V
+	public fun getStackId ()I
+	public fun getThreadId ()Ljava/lang/String;
+	public fun getTimestamp ()D
 	public fun getUnknown ()Ljava/util/Map;
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+	public fun setStackId (I)V
+	public fun setThreadId (Ljava/lang/String;)V
+	public fun setTimestamp (D)V
 	public fun setUnknown (Ljava/util/Map;)V
 }
 
@@ -6278,11 +6281,13 @@ public final class io/sentry/protocol/profiling/SentrySample$JsonKeys {
 }
 
 public final class io/sentry/protocol/profiling/SentryThreadMetadata : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
-	public field name Ljava/lang/String;
-	public field priority I
 	public fun <init> ()V
+	public fun getName ()Ljava/lang/String;
+	public fun getPriority ()I
 	public fun getUnknown ()Ljava/util/Map;
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+	public fun setName (Ljava/lang/String;)V
+	public fun setPriority (I)V
 	public fun setUnknown (Ljava/util/Map;)V
 }
 

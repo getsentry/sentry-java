@@ -17,11 +17,35 @@ import org.jetbrains.annotations.Nullable;
 
 public final class SentrySample implements JsonUnknown, JsonSerializable {
 
-  public double timestamp; // Unix timestamp in seconds with microsecond precision
+  private double timestamp;
 
-  public int stackId;
+  private int stackId;
 
-  public @Nullable String threadId;
+  private @Nullable String threadId;
+
+  public double getTimestamp() {
+    return timestamp;
+  }
+
+  public void setTimestamp(double timestamp) {
+    this.timestamp = timestamp;
+  }
+
+  public int getStackId() {
+    return stackId;
+  }
+
+  public void setStackId(int stackId) {
+    this.stackId = stackId;
+  }
+
+  public @Nullable String getThreadId() {
+    return threadId;
+  }
+
+  public void setThreadId(@Nullable String threadId) {
+    this.threadId = threadId;
+  }
 
   public static final class JsonKeys {
     public static final String TIMESTAMP = "timestamp";

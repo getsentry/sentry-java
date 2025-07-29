@@ -14,9 +14,25 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class SentryThreadMetadata implements JsonUnknown, JsonSerializable {
-  public @Nullable String name;
+  private @Nullable String name;
 
-  public int priority;
+  private int priority;
+
+  public @Nullable String getName() {
+    return name;
+  }
+
+  public void setName(@Nullable String name) {
+    this.name = name;
+  }
+
+  public int getPriority() {
+    return priority;
+  }
+
+  public void setPriority(int priority) {
+    this.priority = priority;
+  }
 
   public static final class JsonKeys {
     public static final String NAME = "name";

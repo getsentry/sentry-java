@@ -82,7 +82,7 @@ public final class JfrAsyncProfilerToSentryProfileConverter extends JfrConverter
         if (args.threads) {
           processThreadMetadata(event, threadId);
         }
-        
+
         createSample(event, threadId);
 
         buildStackTraceAndFrames(stackTrace);
@@ -97,8 +97,8 @@ public final class JfrAsyncProfilerToSentryProfileConverter extends JfrConverter
               String.valueOf(threadId),
               k -> {
                 SentryThreadMetadata metadata = new SentryThreadMetadata();
-                metadata.name = threadName;
-                metadata.priority = 0;
+                metadata.setName(threadName);
+                metadata.setPriority(0); // Default priority
                 return metadata;
               });
     }
@@ -186,10 +186,10 @@ public final class JfrAsyncProfilerToSentryProfileConverter extends JfrConverter
               * JfrAsyncProfilerToSentryProfileConverter.NANOS_PER_SECOND
               / jfr.ticksPerSec;
       long timeNs = jfr.chunkStartNanos + nsFromStart;
-      sample.timestamp = DateUtils.nanosToSeconds(timeNs);
+      sample.setTimestamp(DateUtils.nanosToSeconds(timeNs));
 
-      sample.threadId = String.valueOf(threadId);
-      sample.stackId = stackId;
+      sample.setThreadId(String.valueOf(threadId));
+      sample.setStackId(stackId);
 
       sentryProfile.getSamples().add(sample);
     }
