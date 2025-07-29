@@ -691,17 +691,17 @@ public final class Sentry {
           options.setProfilingTracesDirPath(profilingTracesDirPath);
         }
 
-      final IContinuousProfiler continuousProfiler =
-          ProfilingServiceLoader.loadContinuousProfiler(
-              new SystemOutLogger(),
-              profilingTracesDirPath,
-              options.getProfilingTracesHz(),
-              options.getExecutorService());
+        final IContinuousProfiler continuousProfiler =
+            ProfilingServiceLoader.loadContinuousProfiler(
+                new SystemOutLogger(),
+                profilingTracesDirPath,
+                options.getProfilingTracesHz(),
+                options.getExecutorService());
 
-      options.setContinuousProfiler(continuousProfiler);
+        options.setContinuousProfiler(continuousProfiler);
       } catch (IOException e) {
-    options
-        .getLogger()
+        options
+            .getLogger()
             .log(SentryLevel.ERROR, "Failed to create default profiling traces directory", e);
       }
     }
