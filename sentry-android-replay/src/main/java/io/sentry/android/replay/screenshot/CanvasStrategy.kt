@@ -33,9 +33,11 @@ import io.sentry.android.replay.ScreenshotRecorderCallback
 import io.sentry.android.replay.ScreenshotRecorderConfig
 import io.sentry.android.replay.util.submitSafely
 import java.util.LinkedList
+import java.util.WeakHashMap
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.LazyThreadSafetyMode.NONE
+import kotlin.math.roundToInt
 
 @SuppressLint("UseKtx")
 internal class CanvasStrategy(
@@ -193,6 +195,7 @@ private class TextIgnoringDelegateCanvas : Canvas() {
 
   lateinit var delegate: Canvas
   private val solidPaint = Paint()
+  private val textPaint = Paint()
   private val tmpRect = Rect()
 
   val singlePixelBitmap = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
@@ -867,13 +870,11 @@ private class TextIgnoringDelegateCanvas : Canvas() {
   }
 
   private fun drawMaskedText(paint: Paint, x: Float, y: Float) {
-    solidPaint.colorFilter = paint.colorFilter
-    solidPaint.setColor(paint.color)
-    solidPaint.alpha = 100
-    save()
-    translate(x, y)
+    textPaint.colorFilter = paint.colorFilter
+    val color = paint.color
+    textPaint.color = Color.argb(100, Color.red(color), Color.green(color), Color.blue(color))
+    tmpRect.offset(x.roundToInt(), y.roundToInt())
     drawRect(tmpRect, solidPaint)
-    restore()
   }
 }
 
