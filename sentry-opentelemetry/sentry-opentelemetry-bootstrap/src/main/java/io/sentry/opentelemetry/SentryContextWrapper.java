@@ -32,7 +32,7 @@ public final class SentryContextWrapper implements Context {
     if (isOpentelemetrySpan(contextKey)) {
       return forkCurrentScope(modifiedContext);
     } else {
-      return modifiedContext;
+      return new SentryContextWrapper(modifiedContext);
     }
   }
 
