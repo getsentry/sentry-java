@@ -79,20 +79,16 @@ public final class JfrAsyncProfilerToSentryProfileConverter extends JfrConverter
       long threadId = resolveThreadId(event.tid);
 
       if (stackTrace != null) {
-        // Process thread metadata if enabled
         if (args.threads) {
           processThreadMetadata(event, threadId);
         }
-
-        // Create and add the sample
+        
         createSample(event, threadId);
 
-        // Build the stack trace from methods
         buildStackTraceAndFrames(stackTrace);
       }
     }
 
-    // Extract thread metadata and add to profile
     private void processThreadMetadata(Event event, long threadId) {
       final String threadName = getPlainThreadName(event.tid);
       sentryProfile
@@ -107,7 +103,6 @@ public final class JfrAsyncProfilerToSentryProfileConverter extends JfrConverter
               });
     }
 
-    // Build stack trace from method array
     private void buildStackTraceAndFrames(StackTrace stackTrace) {
       List<Integer> stack = new ArrayList<>();
       int currentFrame = sentryProfile.getFrames().size();
@@ -132,19 +127,14 @@ public final class JfrAsyncProfilerToSentryProfileConverter extends JfrConverter
       sentryProfile.getStacks().add(stack);
     }
 
-    // Create a single stack frame from a stack trace element
     private SentryStackFrame createStackFrame(StackTraceElement element) {
       SentryStackFrame frame = new SentryStackFrame();
       final String classNameWithLambdas = element.getClassName().replace("/", ".");
       frame.setFunction(element.getMethodName());
 
-      // Extract class name without lambda suffix
       String sanitizedClassName = extractSanitizedClassName(classNameWithLambdas);
-
-      // Set module based on package structure
       frame.setModule(extractModuleName(sanitizedClassName, classNameWithLambdas));
 
-      // Determine if frame should be marked as in_app
       if (shouldMarkAsSystemFrame(element, classNameWithLambdas)) {
         frame.setInApp(false);
       } else {
@@ -166,7 +156,7 @@ public final class JfrAsyncProfilerToSentryProfileConverter extends JfrConverter
       return classNameWithLambdas;
     }
 
-    // Set module name based on package structure
+    // TODO: test difference between null and empty string for module
     private @Nullable String extractModuleName(
         String sanitizedClassName, String classNameWithLambdas) {
       if (hasPackageStructure(sanitizedClassName)) {
@@ -178,17 +168,14 @@ public final class JfrAsyncProfilerToSentryProfileConverter extends JfrConverter
       }
     }
 
-    // Check if the class name has a package structure (contains dots)
     private boolean hasPackageStructure(String className) {
       return className.lastIndexOf('.') > 0;
     }
 
-    // Check if it's a regular class without package (not an array type)
     private boolean isRegularClassWithoutPackage(String className) {
       return !className.startsWith("[");
     }
 
-    // Create sample with timestamp and thread info
     private void createSample(Event event, long threadId) {
       int stackId = sentryProfile.getStacks().size();
       SentrySample sample = new SentrySample();
@@ -201,24 +188,20 @@ public final class JfrAsyncProfilerToSentryProfileConverter extends JfrConverter
       long timeNs = jfr.chunkStartNanos + nsFromStart;
       sample.timestamp = DateUtils.nanosToSeconds(timeNs);
 
-      // Set thread ID
       sample.threadId = String.valueOf(threadId);
       sample.stackId = stackId;
 
       sentryProfile.getSamples().add(sample);
     }
 
-    // Check if the stack frame should be marked as a system frame
     private boolean shouldMarkAsSystemFrame(StackTraceElement element, String className) {
       return element.isNativeMethod() || className.isEmpty();
     }
 
-    // Check if the stack trace element has a valid line number
     private @Nullable Integer extractLineNumber(StackTraceElement element) {
       return element.getLineNumber() != 0 ? element.getLineNumber() : null;
     }
 
-    // Resolve the actual thread ID from the JFR event
     private long resolveThreadId(int eventThreadId) {
       return jfr.threads.get(eventThreadId) != null
           ? jfr.javaThreads.get(eventThreadId)
