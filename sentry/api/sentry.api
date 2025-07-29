@@ -1936,14 +1936,14 @@ public final class io/sentry/PerformanceCollectionData {
 
 public final class io/sentry/ProfileChunk : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> ()V
-	public fun <init> (Lio/sentry/protocol/SentryId;Lio/sentry/protocol/SentryId;Ljava/io/File;Ljava/util/Map;Ljava/lang/Double;Ljava/lang/String;Lio/sentry/SentryOptions;)V
+	public fun <init> (Lio/sentry/protocol/SentryId;Lio/sentry/protocol/SentryId;Ljava/io/File;Ljava/util/Map;Ljava/lang/Double;Lio/sentry/ProfileChunk$Platform;Lio/sentry/SentryOptions;)V
 	public fun equals (Ljava/lang/Object;)Z
 	public fun getChunkId ()Lio/sentry/protocol/SentryId;
 	public fun getClientSdk ()Lio/sentry/protocol/SdkVersion;
 	public fun getDebugMeta ()Lio/sentry/protocol/DebugMeta;
 	public fun getEnvironment ()Ljava/lang/String;
 	public fun getMeasurements ()Ljava/util/Map;
-	public fun getPlatform ()Ljava/lang/String;
+	public fun getPlatform ()Lio/sentry/ProfileChunk$Platform;
 	public fun getProfilerId ()Lio/sentry/protocol/SentryId;
 	public fun getRelease ()Ljava/lang/String;
 	public fun getSampledProfile ()Ljava/lang/String;
@@ -1961,7 +1961,7 @@ public final class io/sentry/ProfileChunk : io/sentry/JsonSerializable, io/sentr
 }
 
 public final class io/sentry/ProfileChunk$Builder {
-	public fun <init> (Lio/sentry/protocol/SentryId;Lio/sentry/protocol/SentryId;Ljava/util/Map;Ljava/io/File;Lio/sentry/SentryDate;Ljava/lang/String;)V
+	public fun <init> (Lio/sentry/protocol/SentryId;Lio/sentry/protocol/SentryId;Ljava/util/Map;Ljava/io/File;Lio/sentry/SentryDate;Lio/sentry/ProfileChunk$Platform;)V
 	public fun build (Lio/sentry/SentryOptions;)Lio/sentry/ProfileChunk;
 }
 
@@ -1985,6 +1985,21 @@ public final class io/sentry/ProfileChunk$JsonKeys {
 	public static final field TIMESTAMP Ljava/lang/String;
 	public static final field VERSION Ljava/lang/String;
 	public fun <init> ()V
+}
+
+public final class io/sentry/ProfileChunk$Platform : java/lang/Enum, io/sentry/JsonSerializable {
+	public static final field ANDROID Lio/sentry/ProfileChunk$Platform;
+	public static final field JAVA Lio/sentry/ProfileChunk$Platform;
+	public fun apiName ()Ljava/lang/String;
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+	public static fun valueOf (Ljava/lang/String;)Lio/sentry/ProfileChunk$Platform;
+	public static fun values ()[Lio/sentry/ProfileChunk$Platform;
+}
+
+public final class io/sentry/ProfileChunk$Platform$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Lio/sentry/ProfileChunk$Platform;
+	public synthetic fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
 }
 
 public final class io/sentry/ProfileContext : io/sentry/JsonSerializable, io/sentry/JsonUnknown {

@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -25,7 +26,7 @@ public final class ProfileChunk implements JsonUnknown, JsonSerializable {
   private @NotNull SentryId chunkId;
   private @Nullable SdkVersion clientSdk;
   private final @NotNull Map<String, ProfileMeasurement> measurements;
-  private @NotNull String platform;
+  private @NotNull Platform platform;
   private @NotNull String release;
   private @Nullable String environment;
   private @NotNull String version;
@@ -47,7 +48,7 @@ public final class ProfileChunk implements JsonUnknown, JsonSerializable {
         new File("dummy"),
         new HashMap<>(),
         0.0,
-        "android",
+        Platform.ANDROID,
         SentryOptions.empty());
   }
 
@@ -57,7 +58,7 @@ public final class ProfileChunk implements JsonUnknown, JsonSerializable {
       final @NotNull File traceFile,
       final @NotNull Map<String, ProfileMeasurement> measurements,
       final @NotNull Double timestamp,
-      final @NotNull String platform,
+      final @NotNull Platform platform,
       final @NotNull SentryOptions options) {
     this.profilerId = profilerId;
     this.chunkId = chunkId;
@@ -96,7 +97,7 @@ public final class ProfileChunk implements JsonUnknown, JsonSerializable {
     return environment;
   }
 
-  public @NotNull String getPlatform() {
+  public @NotNull Platform getPlatform() {
     return platform;
   }
 
@@ -179,7 +180,7 @@ public final class ProfileChunk implements JsonUnknown, JsonSerializable {
     private final @NotNull File traceFile;
     private final double timestamp;
 
-    private final @NotNull String platform;
+    private final @NotNull Platform platform;
 
     public Builder(
         final @NotNull SentryId profilerId,
@@ -187,7 +188,7 @@ public final class ProfileChunk implements JsonUnknown, JsonSerializable {
         final @NotNull Map<String, ProfileMeasurement> measurements,
         final @NotNull File traceFile,
         final @NotNull SentryDate timestamp,
-        final @NotNull String platform) {
+        final @NotNull Platform platform) {
       this.profilerId = profilerId;
       this.chunkId = chunkId;
       this.measurements = new ConcurrentHashMap<>(measurements);
@@ -199,6 +200,33 @@ public final class ProfileChunk implements JsonUnknown, JsonSerializable {
     public ProfileChunk build(SentryOptions options) {
       return new ProfileChunk(
           profilerId, chunkId, traceFile, measurements, timestamp, platform, options);
+    }
+  }
+
+  public enum Platform implements JsonSerializable {
+    ANDROID,
+    JAVA;
+
+    public String apiName() {
+      return name().toLowerCase(Locale.ROOT);
+    }
+
+    // JsonElementSerializer
+
+    @Override
+    public void serialize(final @NotNull ObjectWriter writer, final @NotNull ILogger logger)
+        throws IOException {
+      writer.value(apiName());
+    }
+
+    // JsonElementDeserializer
+
+    public static final class Deserializer implements JsonDeserializer<Platform> {
+      @Override
+      public @NotNull Platform deserialize(@NotNull ObjectReader reader, @NotNull ILogger logger)
+          throws Exception {
+        return Platform.valueOf(reader.nextString().toUpperCase(Locale.ROOT));
+      }
     }
   }
 
@@ -320,7 +348,7 @@ public final class ProfileChunk implements JsonUnknown, JsonSerializable {
             }
             break;
           case JsonKeys.PLATFORM:
-            String platform = reader.nextStringOrNull();
+            Platform platform = reader.nextOrNull(logger, new Platform.Deserializer());
             if (platform != null) {
               data.platform = platform;
             }

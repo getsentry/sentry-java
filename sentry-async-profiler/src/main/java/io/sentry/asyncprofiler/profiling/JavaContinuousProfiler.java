@@ -277,9 +277,9 @@ public final class JavaContinuousProfiler
                   profilerId,
                   chunkId,
                   new HashMap<>(),
-                  new File(filename),
+                  jfrFile,
                   startProfileChunkTimestamp,
-                  "java"));
+                  ProfileChunk.Platform.JAVA));
         }
       }
 
