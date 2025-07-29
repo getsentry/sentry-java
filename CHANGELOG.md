@@ -30,6 +30,8 @@
   - This was causing Sentry SDK to log warnings: "Sentry Log is disabled and this 'logger' call is a no-op."
 - Do not use Sentry logging API in Log4j2 if logs are disabled ([#4573](https://github.com/getsentry/sentry-java/pull/4573))
   - This was causing Sentry SDK to log warnings: "Sentry Log is disabled and this 'logger' call is a no-op."
+- SDKs send queue is no longer shutdown immediately on re-init ([#4564](https://github.com/getsentry/sentry-java/pull/4564))
+  - This means we're no longer losing events that have been enqueued right before SDK re-init.
 
 ## 8.17.0
 
