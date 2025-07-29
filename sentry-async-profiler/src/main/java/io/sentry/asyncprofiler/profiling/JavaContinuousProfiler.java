@@ -1,7 +1,6 @@
 package io.sentry.asyncprofiler.profiling;
 
 import static io.sentry.DataCategory.All;
-import static io.sentry.IConnectionStatusProvider.ConnectionStatus.DISCONNECTED;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 import io.sentry.DataCategory;
@@ -176,14 +175,6 @@ public final class JavaContinuousProfiler
         return;
       }
 
-      // TODO: Taken from the android profiler, do we need this on the JVM as well?
-      // If device is offline, we don't start the profiler, to avoid flooding the cache
-      if (scopes.getOptions().getConnectionStatusProvider().getConnectionStatus() == DISCONNECTED) {
-        logger.log(SentryLevel.WARNING, "Device is offline. Stopping profiler.");
-        // Let's stop and reset profiler id, as the profile is now broken anyway
-        stop(false);
-        return;
-      }
       startProfileChunkTimestamp = scopes.getOptions().getDateProvider().now();
     } else {
       startProfileChunkTimestamp = new SentryNanotimeDate();
