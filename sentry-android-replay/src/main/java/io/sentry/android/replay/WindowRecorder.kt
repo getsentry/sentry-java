@@ -50,6 +50,8 @@ internal class WindowRecorder(
       }
       recorder?.resume()
       isRecording.getAndSet(true)
+      // Remove any existing callbacks to prevent concurrent capture loops
+      mainLooperHandler.removeCallbacks(this)
       val posted = mainLooperHandler.post(this)
       if (!posted) {
         options.logger.log(
@@ -183,6 +185,9 @@ internal class WindowRecorder(
     if (newRoot != null) {
       capturer?.recorder?.bind(newRoot)
     }
+
+    // Remove any existing callbacks to prevent concurrent capture loops
+    mainLooperHandler.removeCallbacks(capturer)
 
     val posted =
       mainLooperHandler.postDelayed(
