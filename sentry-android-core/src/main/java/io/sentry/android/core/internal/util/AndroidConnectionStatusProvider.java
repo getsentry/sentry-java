@@ -494,6 +494,9 @@ public final class AndroidConnectionStatusProvider
             }
           }
 
+          // this will ONLY do the necessary parts like registerNetworkCallback and onAvailable, but
+          // it won't updateCache and notify observes because we just did it above and the cached
+          // capabilities will be the same
           ensureNetworkCallbackRegistered();
         });
   }
