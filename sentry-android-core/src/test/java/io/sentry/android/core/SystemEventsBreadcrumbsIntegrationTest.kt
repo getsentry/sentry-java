@@ -515,7 +515,7 @@ class SystemEventsBreadcrumbsIntegrationTest {
   }
 
   @Test
-  fun `when integration is registered in background, receiver is registered`() {
+  fun `when integration is registered in background, receiver is not registered`() {
     val process =
       RunningAppProcessInfo().apply { this.importance = RunningAppProcessInfo.IMPORTANCE_CACHED }
     val processes = mutableListOf(process)
