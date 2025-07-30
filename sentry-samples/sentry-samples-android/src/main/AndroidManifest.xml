@@ -125,7 +125,7 @@
 <!--        <meta-data android:name="io.sentry.traces.profiling.sample-rate" android:value="1.0" />-->
 
         <!-- Enable profiling, adjust in production env -->
-        <meta-data android:name="io.sentry.traces.profiling.session-sample-rate" android:value="0.0" />
+        <meta-data android:name="io.sentry.traces.profiling.session-sample-rate" android:value="1.0" />
         <!-- Set profiling lifecycle, can be `manual` or `trace` -->
         <meta-data android:name="io.sentry.traces.profiling.lifecycle" android:value="manual" />
         <!-- Enable profiling on app start -->
