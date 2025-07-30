@@ -21,7 +21,6 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.util.AndroidLazyEvaluator;
 import io.sentry.protocol.App;
-import io.sentry.util.LazyEvaluator;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;

@@ -25,7 +25,6 @@ import io.sentry.android.core.ContextUtils
 import io.sentry.android.core.SystemEventsBreadcrumbsIntegration
 import io.sentry.test.ImmediateExecutorService
 import io.sentry.transport.ICurrentDateProvider
-import org.junit.runner.RunWith
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -34,15 +33,14 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import org.junit.runner.RunWith
 import org.mockito.MockedStatic
 import org.mockito.Mockito.mockStatic
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.clearInvocations
-import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.eq
-import org.mockito.kotlin.isNull
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.mockingDetails
 import org.mockito.kotlin.times
@@ -51,7 +49,6 @@ import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 import org.robolectric.annotation.Config
-import java.util.concurrent.ExecutorService
 
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [Build.VERSION_CODES.P])
@@ -109,9 +106,11 @@ class AndroidConnectionStatusProviderTest {
 
     // Mock ContextUtils to return foreground importance
     contextUtilsStaticMock = mockStatic(ContextUtils::class.java)
-    contextUtilsStaticMock.`when`<Boolean> { ContextUtils.isForegroundImportance() }
+    contextUtilsStaticMock
+      .`when`<Boolean> { ContextUtils.isForegroundImportance() }
       .thenReturn(true)
-    contextUtilsStaticMock.`when`<Context> { ContextUtils.getApplicationContext(any()) }
+    contextUtilsStaticMock
+      .`when`<Context> { ContextUtils.getApplicationContext(any()) }
       .thenReturn(contextMock)
 
     AppState.getInstance().resetInstance()
@@ -187,13 +186,8 @@ class AndroidConnectionStatusProviderTest {
       .thenReturn(PERMISSION_GRANTED)
 
     // Need to mock ContextUtils for the new provider as well
-    contextUtilsStaticMock.`when`<Context> {
-      ContextUtils.getApplicationContext(
-        eq(
-          nullConnectivityContext
-        )
-      )
-    }
+    contextUtilsStaticMock
+      .`when`<Context> { ContextUtils.getApplicationContext(eq(nullConnectivityContext)) }
       .thenReturn(nullConnectivityContext)
 
     // Create a new provider with the null connectivity manager
@@ -674,7 +668,7 @@ class AndroidConnectionStatusProviderTest {
       contextMock,
       logger,
       buildInfo,
-      childCallback
+      childCallback,
     )
     connectionStatusProvider.onBackground()
 
@@ -748,7 +742,8 @@ class AndroidConnectionStatusProviderTest {
     // Then change capabilities
     newCallback.onCapabilitiesChanged(network, newCaps)
 
-    // Verify observer was notified (once for onForeground status update, once for capabilities change)
+    // Verify observer was notified (once for onForeground status update, once for capabilities
+    // change)
     verify(observer, times(2)).onConnectionStatusChanged(any())
   }
 

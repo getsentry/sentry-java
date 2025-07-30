@@ -25,7 +25,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
-import android.util.Log;
 import io.sentry.Breadcrumb;
 import io.sentry.Hint;
 import io.sentry.IScopes;
@@ -110,8 +109,7 @@ public final class SystemEventsBreadcrumbsIntegration
   }
 
   private void registerReceiver(
-      final @NotNull IScopes scopes,
-      final @NotNull SentryAndroidOptions options) {
+      final @NotNull IScopes scopes, final @NotNull SentryAndroidOptions options) {
 
     if (!options.isEnableSystemEventBreadcrumbs()) {
       return;

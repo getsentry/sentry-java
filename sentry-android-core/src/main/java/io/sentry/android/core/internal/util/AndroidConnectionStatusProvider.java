@@ -35,8 +35,8 @@ import org.jetbrains.annotations.TestOnly;
  * details
  */
 @ApiStatus.Internal
-public final class AndroidConnectionStatusProvider implements IConnectionStatusProvider,
-    AppState.AppStateListener {
+public final class AndroidConnectionStatusProvider
+    implements IConnectionStatusProvider, AppState.AppStateListener {
 
   private final @NotNull Context context;
   private final @NotNull SentryOptions options;
@@ -67,7 +67,7 @@ public final class AndroidConnectionStatusProvider implements IConnectionStatusP
   private volatile long lastCacheUpdateTime = 0;
   private static final long CACHE_TTL_MS = 2 * 60 * 1000L; // 2 minutes
   private final @NotNull AtomicBoolean isConnected = new AtomicBoolean(false);
-  
+
   @SuppressLint("InlinedApi")
   public AndroidConnectionStatusProvider(
       @NotNull Context context,
@@ -172,7 +172,8 @@ public final class AndroidConnectionStatusProvider implements IConnectionStatusP
             public void onAvailable(final @NotNull Network network) {
               currentNetwork = network;
 
-              // have to only dispatch this on first registration + when the connection got re-established
+              // have to only dispatch this on first registration + when the connection got
+              // re-established
               // otherwise it would've been dispatched on every foreground
               if (!isConnected.getAndSet(true)) {
                 try (final @NotNull ISentryLifecycleToken ignored = childCallbacksLock.acquire()) {
@@ -452,12 +453,11 @@ public final class AndroidConnectionStatusProvider implements IConnectionStatusP
   public void close() {
     submitSafe(
         () -> {
-          unregisterNetworkCallback(/* clearObservers = */true);
+          unregisterNetworkCallback(/* clearObservers= */ true);
           try (final @NotNull ISentryLifecycleToken ignored = childCallbacksLock.acquire()) {
             childCallbacks.clear();
           }
-          try (final @NotNull ISentryLifecycleToken ignored =
-                   connectivityManagerLock.acquire()) {
+          try (final @NotNull ISentryLifecycleToken ignored = connectivityManagerLock.acquire()) {
             connectivityManager = null;
           }
           AppState.getInstance().removeAppStateListener(this);
@@ -470,30 +470,32 @@ public final class AndroidConnectionStatusProvider implements IConnectionStatusP
       return;
     }
 
-    submitSafe(() -> {
-      // proactively update cache and notify observers on foreground to ensure connectivity state is not stale
-      updateCache(null);
+    submitSafe(
+        () -> {
+          // proactively update cache and notify observers on foreground to ensure connectivity
+          // state is not stale
+          updateCache(null);
 
-      final @NotNull ConnectionStatus status = getConnectionStatusFromCache();
-      if (status == ConnectionStatus.DISCONNECTED) {
-        // onLost is not called retroactively when we registerNetworkCallback (as opposed to onAvailable), so we have to do it manually for the DISCONNECTED case
-        isConnected.set(false);
-        try (final @NotNull ISentryLifecycleToken ignored = childCallbacksLock.acquire()) {
-          for (final @NotNull NetworkCallback cb : childCallbacks) {
-            //noinspection DataFlowIssue
-            cb.onLost(null);
+          final @NotNull ConnectionStatus status = getConnectionStatusFromCache();
+          if (status == ConnectionStatus.DISCONNECTED) {
+            // onLost is not called retroactively when we registerNetworkCallback (as opposed to
+            // onAvailable), so we have to do it manually for the DISCONNECTED case
+            isConnected.set(false);
+            try (final @NotNull ISentryLifecycleToken ignored = childCallbacksLock.acquire()) {
+              for (final @NotNull NetworkCallback cb : childCallbacks) {
+                //noinspection DataFlowIssue
+                cb.onLost(null);
+              }
+            }
           }
-        }
-      }
-      try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
-        for (final @NotNull IConnectionStatusObserver observer :
-            connectionStatusObservers) {
-          observer.onConnectionStatusChanged(status);
-        }
-      }
+          try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+            for (final @NotNull IConnectionStatusObserver observer : connectionStatusObservers) {
+              observer.onConnectionStatusChanged(status);
+            }
+          }
 
-      ensureNetworkCallbackRegistered();
-    });
+          ensureNetworkCallbackRegistered();
+        });
   }
 
   @Override
@@ -502,10 +504,11 @@ public final class AndroidConnectionStatusProvider implements IConnectionStatusP
       return;
     }
 
-    submitSafe(() -> {
-      //noinspection Convert2MethodRef
-      unregisterNetworkCallback(/* clearObservers = */false);
-    });
+    submitSafe(
+        () -> {
+          //noinspection Convert2MethodRef
+          unregisterNetworkCallback(/* clearObservers= */ false);
+        });
   }
 
   /**
@@ -796,7 +799,8 @@ public final class AndroidConnectionStatusProvider implements IConnectionStatusP
     try {
       options.getExecutorService().submit(r);
     } catch (Throwable e) {
-      options.getLogger()
+      options
+          .getLogger()
           .log(SentryLevel.ERROR, "AndroidConnectionStatusProvider submit failed", e);
     }
   }

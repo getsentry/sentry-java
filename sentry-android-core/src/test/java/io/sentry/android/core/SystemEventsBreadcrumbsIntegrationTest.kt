@@ -72,7 +72,9 @@ class SystemEventsBreadcrumbsIntegrationTest {
     AppState.getInstance().resetInstance()
     AppState.getInstance().registerLifecycleObserver(fixture.options)
     ShadowBuild.reset()
-    val activityManager = ApplicationProvider.getApplicationContext<Context>().getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager?
+    val activityManager =
+      ApplicationProvider.getApplicationContext<Context>()
+        .getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager?
     fixture.shadowActivityManager = Shadow.extract(activityManager)
   }
 
@@ -514,7 +516,8 @@ class SystemEventsBreadcrumbsIntegrationTest {
 
   @Test
   fun `when integration is registered in background, receiver is registered`() {
-    val process = RunningAppProcessInfo().apply { this.importance = RunningAppProcessInfo.IMPORTANCE_CACHED }
+    val process =
+      RunningAppProcessInfo().apply { this.importance = RunningAppProcessInfo.IMPORTANCE_CACHED }
     val processes = mutableListOf(process)
     fixture.shadowActivityManager.setProcesses(processes)
 

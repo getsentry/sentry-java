@@ -1,6 +1,5 @@
 package io.sentry.android.core;
 
-import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.lifecycle.DefaultLifecycleObserver;
 import androidx.lifecycle.LifecycleOwner;

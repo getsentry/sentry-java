@@ -27,11 +27,12 @@ public class DummyService extends Service {
 
     Notification notification = null;
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-      notification = new Notification.Builder(this, CHANNEL_ID)
-          .setContentTitle("Dummy Service Running")
-          .setContentText("Used for background broadcast testing.")
-          .setSmallIcon(android.R.drawable.ic_menu_info_details)
-          .build();
+      notification =
+          new Notification.Builder(this, CHANNEL_ID)
+              .setContentTitle("Dummy Service Running")
+              .setContentText("Used for background broadcast testing.")
+              .setSmallIcon(android.R.drawable.ic_menu_info_details)
+              .build();
     }
 
     if (notification != null) {
@@ -57,11 +58,9 @@ public class DummyService extends Service {
 
   private void createNotificationChannel() {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-      NotificationChannel channel = new NotificationChannel(
-          CHANNEL_ID,
-          "Dummy Service Channel",
-          NotificationManager.IMPORTANCE_LOW
-      );
+      NotificationChannel channel =
+          new NotificationChannel(
+              CHANNEL_ID, "Dummy Service Channel", NotificationManager.IMPORTANCE_LOW);
       NotificationManager manager = getSystemService(NotificationManager.class);
       manager.createNotificationChannel(channel);
     }
