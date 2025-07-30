@@ -352,16 +352,22 @@ class AsyncHttpTransportTest {
   }
 
   @Test
-  fun `close with isRestarting true does not await termination`() {
-    fixture.sentryOptions.flushTimeoutMillis = 123
+  fun `close shuts down the executor and runs executing runnable through rejectedExecutionHandler`() {
+    val rejectedExecutionHandler = mock<RejectedExecutionHandler>()
     val sut = fixture.getSUT()
-    sut.close(true)
+    val runnable = mock<Runnable>()
 
-    verify(fixture.executor).awaitTermination(eq(0), eq(TimeUnit.MILLISECONDS))
+    // Emulate a runnable currently being executed
+    sut.injectForField("currentRunnable", runnable)
+    whenever(fixture.executor.rejectedExecutionHandler).thenReturn(rejectedExecutionHandler)
+    sut.close(false)
+
+    verify(fixture.executor).shutdownNow()
+    verify(rejectedExecutionHandler).rejectedExecution(eq(runnable), eq(fixture.executor))
   }
 
   @Test
-  fun `close shuts down the executor and runs executing runnable through rejectedExecutionHandler`() {
+  fun `does not shut down executor immediately on restart`() {
     val rejectedExecutionHandler = mock<RejectedExecutionHandler>()
     val sut = fixture.getSUT()
     val runnable = mock<Runnable>()
@@ -371,8 +377,9 @@ class AsyncHttpTransportTest {
     whenever(fixture.executor.rejectedExecutionHandler).thenReturn(rejectedExecutionHandler)
     sut.close(true)
 
-    verify(fixture.executor).shutdownNow()
-    verify(rejectedExecutionHandler).rejectedExecution(eq(runnable), eq(fixture.executor))
+    verify(fixture.executor).shutdown()
+    verify(fixture.executor, never()).shutdownNow()
+    verify(rejectedExecutionHandler, never()).rejectedExecution(eq(runnable), eq(fixture.executor))
   }
 
   @Test

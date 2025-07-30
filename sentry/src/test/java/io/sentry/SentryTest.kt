@@ -1,5 +1,6 @@
 package io.sentry
 
+import io.sentry.SentryFeedbackOptions.IDialogHandler
 import io.sentry.SentryOptions.ProfilesSamplerCallback
 import io.sentry.SentryOptions.TracesSamplerCallback
 import io.sentry.backpressure.BackpressureMonitor
@@ -131,7 +132,7 @@ class SentryTest {
       throw IllegalStateException("bad integration")
     }
 
-    Sentry.init {
+    initForTest {
       it.dsn = dsn
       it.integrations.clear()
       it.integrations.add(badIntegration)
@@ -391,7 +392,7 @@ class SentryTest {
   fun `profilingTracesDirPath should be created and cleared at initialization when continuous profiling is enabled`() {
     val tempPath = getTempPath()
     var sentryOptions: SentryOptions? = null
-    Sentry.init {
+    initForTest {
       it.dsn = dsn
       it.profileSessionSampleRate = 1.0
       it.cacheDirPath = tempPath
@@ -406,7 +407,7 @@ class SentryTest {
   fun `profilingTracesDirPath should not be created when no profiling is enabled`() {
     val tempPath = getTempPath()
     var sentryOptions: SentryOptions? = null
-    Sentry.init {
+    initForTest {
       it.dsn = dsn
       it.profileSessionSampleRate = 0.0
       it.cacheDirPath = tempPath
@@ -923,6 +924,7 @@ class SentryTest {
         // the scopes is already initialized
         scopes.startSession()
       }
+      it.sessionFlushTimeoutMillis = 100
     }
 
     assertFalse(previousSessionFile.exists())
@@ -1193,7 +1195,7 @@ class SentryTest {
   fun `init calls samplers if isStartProfilerOnAppStart is true`() {
     val mockSampleTracer = mock<TracesSamplerCallback>()
     val mockProfilesSampler = mock<ProfilesSamplerCallback>()
-    Sentry.init {
+    initForTest {
       it.dsn = dsn
       it.tracesSampleRate = 1.0
       it.isStartProfilerOnAppStart = true
@@ -1306,7 +1308,7 @@ class SentryTest {
     val appStartProfilingConfigFile = File(path, "app_start_profiling_config")
     appStartProfilingConfigFile.createNewFile()
     assertTrue(appStartProfilingConfigFile.exists())
-    Sentry.init {
+    initForTest {
       it.dsn = dsn
       it.cacheDirPath = path
       it.isEnableAppStartProfiling = false
@@ -1421,7 +1423,7 @@ class SentryTest {
   @Test
   fun `startProfiler starts the continuous profiler`() {
     val profiler = mock<IContinuousProfiler>()
-    Sentry.init {
+    initForTest {
       it.dsn = dsn
       it.setContinuousProfiler(profiler)
       it.profileSessionSampleRate = 1.0
@@ -1433,7 +1435,7 @@ class SentryTest {
   @Test
   fun `startProfiler is ignored when continuous profiling is disabled`() {
     val profiler = mock<IContinuousProfiler>()
-    Sentry.init {
+    initForTest {
       it.dsn = dsn
       it.setContinuousProfiler(profiler)
       it.profilesSampleRate = 1.0
@@ -1446,7 +1448,7 @@ class SentryTest {
   fun `startProfiler is ignored when profile lifecycle is TRACE`() {
     val profiler = mock<IContinuousProfiler>()
     val logger = mock<ILogger>()
-    Sentry.init {
+    initForTest {
       it.dsn = dsn
       it.setContinuousProfiler(profiler)
       it.profileSessionSampleRate = 1.0
@@ -1467,7 +1469,7 @@ class SentryTest {
   @Test
   fun `stopProfiler stops the continuous profiler`() {
     val profiler = mock<IContinuousProfiler>()
-    Sentry.init {
+    initForTest {
       it.dsn = dsn
       it.setContinuousProfiler(profiler)
       it.profileSessionSampleRate = 1.0
@@ -1479,7 +1481,7 @@ class SentryTest {
   @Test
   fun `stopProfiler is ignored when continuous profiling is disabled`() {
     val profiler = mock<IContinuousProfiler>()
-    Sentry.init {
+    initForTest {
       it.dsn = dsn
       it.setContinuousProfiler(profiler)
       it.profilesSampleRate = 1.0
@@ -1491,7 +1493,7 @@ class SentryTest {
   @Test
   fun `replay debug masking is forwarded to replay controller`() {
     val replayController = mock<ReplayController>()
-    Sentry.init {
+    initForTest {
       it.dsn = dsn
       it.setReplayController(replayController)
     }
@@ -1500,6 +1502,42 @@ class SentryTest {
 
     Sentry.replay().disableDebugMaskingOverlay()
     verify(replayController).disableDebugMaskingOverlay()
+  }
+
+  @Test
+  fun `showUserFeedbackDialog forwards to feedbackOptions_dialogHandler`() {
+    val mockDialogHandler = mock<IDialogHandler>()
+    initForTest {
+      it.dsn = dsn
+      it.feedbackOptions.dialogHandler = mockDialogHandler
+    }
+    Sentry.showUserFeedbackDialog()
+    verify(mockDialogHandler).showDialog(eq(null), eq(null))
+  }
+
+  @Test
+  fun `showUserFeedbackDialog forwards to feedbackOptions_dialogHandler with configurator`() {
+    val mockDialogHandler = mock<IDialogHandler>()
+    val configurator = mock<SentryFeedbackOptions.OptionsConfigurator>()
+    initForTest {
+      it.dsn = dsn
+      it.feedbackOptions.dialogHandler = mockDialogHandler
+    }
+    Sentry.showUserFeedbackDialog(configurator)
+    verify(mockDialogHandler).showDialog(eq(null), eq(configurator))
+  }
+
+  @Test
+  fun `showUserFeedbackDialog forwards to feedbackOptions_dialogHandler with associatedEventId and configurator`() {
+    val mockDialogHandler = mock<IDialogHandler>()
+    val configurator = mock<SentryFeedbackOptions.OptionsConfigurator>()
+    val associatedEventId = SentryId()
+    initForTest {
+      it.dsn = dsn
+      it.feedbackOptions.dialogHandler = mockDialogHandler
+    }
+    Sentry.showUserFeedbackDialog(associatedEventId, configurator)
+    verify(mockDialogHandler).showDialog(eq(associatedEventId), eq(configurator))
   }
 
   private class InMemoryOptionsObserver : IOptionsObserver {

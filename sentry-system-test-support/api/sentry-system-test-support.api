@@ -558,7 +558,8 @@ public final class io/sentry/systemtest/util/TestHelper {
 	public final fun doesTransactionHaveOp (Lio/sentry/protocol/SentryTransaction;Ljava/lang/String;)Z
 	public final fun doesTransactionHaveTraceId (Lio/sentry/protocol/SentryTransaction;Ljava/lang/String;)Z
 	public final fun ensureEnvelopeCountIncreased ()V
-	public final fun ensureEnvelopeReceived (Lkotlin/jvm/functions/Function1;)V
+	public final fun ensureEnvelopeReceived (ILkotlin/jvm/functions/Function1;)V
+	public static synthetic fun ensureEnvelopeReceived$default (Lio/sentry/systemtest/util/TestHelper;ILkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
 	public final fun ensureErrorCount (Lcom/apollographql/apollo3/api/ApolloResponse;I)V
 	public final fun ensureErrorReceived (Lkotlin/jvm/functions/Function1;)V
 	public final fun ensureLogsReceived (Lkotlin/jvm/functions/Function2;)V
@@ -567,11 +568,16 @@ public final class io/sentry/systemtest/util/TestHelper {
 	public final fun ensureNoTransactionReceived (Lkotlin/jvm/functions/Function2;)V
 	public final fun ensureTransactionReceived (Lkotlin/jvm/functions/Function2;)V
 	public final fun ensureTransactionWithSpanReceived (Lkotlin/jvm/functions/Function1;)V
+	public final fun findJar (Ljava/lang/String;Ljava/lang/String;)Ljava/io/File;
+	public static synthetic fun findJar$default (Lio/sentry/systemtest/util/TestHelper;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Ljava/io/File;
+	public final fun getDsn ()Ljava/lang/String;
 	public final fun getEnvelopeCounts ()Lio/sentry/systemtest/util/EnvelopeCounts;
 	public final fun getGraphqlClient ()Lio/sentry/systemtest/graphql/GraphqlTestClient;
 	public final fun getJsonSerializer ()Lio/sentry/JsonSerializer;
 	public final fun getRestClient ()Lio/sentry/systemtest/util/RestTestClient;
 	public final fun getSentryClient ()Lio/sentry/systemtest/util/SentryMockServerClient;
+	public final fun launch (Ljava/io/File;Ljava/util/Map;Z)Ljava/lang/Process;
+	public static synthetic fun launch$default (Lio/sentry/systemtest/util/TestHelper;Ljava/io/File;Ljava/util/Map;ZILjava/lang/Object;)Ljava/lang/Process;
 	public final fun logObject (Ljava/lang/Object;)V
 	public final fun reset ()V
 	public final fun setEnvelopeCounts (Lio/sentry/systemtest/util/EnvelopeCounts;)V
