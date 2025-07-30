@@ -2,13 +2,10 @@ package io.sentry.internal;
 
 import io.sentry.ISentryLifecycleToken;
 import io.sentry.SentryIntegrationPackageStorage;
-import io.sentry.protocol.SentryPackage;
 import io.sentry.util.AutoClosableReentrantLock;
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Enumeration;
-import java.util.List;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 import org.jetbrains.annotations.ApiStatus;
@@ -73,18 +70,18 @@ public final class ManifestVersionReader {
               final @Nullable String otelVersion =
                   mainAttributes.getValue("Sentry-Opentelemetry-Version-Name");
               if (otelVersion != null) {
-                versionInfo.packages.add(
-                    new SentryPackage("maven:io.opentelemetry:opentelemetry-sdk", otelVersion));
-                versionInfo.integrations.add("OpenTelemetry");
+                SentryIntegrationPackageStorage.getInstance()
+                    .addPackage("maven:io.opentelemetry:opentelemetry-sdk", otelVersion);
+                SentryIntegrationPackageStorage.getInstance().addIntegration("OpenTelemetry");
               }
               final @Nullable String otelJavaagentVersion =
                   mainAttributes.getValue("Sentry-Opentelemetry-Javaagent-Version-Name");
               if (otelJavaagentVersion != null) {
-                versionInfo.packages.add(
-                    new SentryPackage(
+                SentryIntegrationPackageStorage.getInstance()
+                    .addPackage(
                         "maven:io.opentelemetry.javaagent:opentelemetry-javaagent",
-                        otelJavaagentVersion));
-                versionInfo.integrations.add("OpenTelemetry-Agent");
+                        otelJavaagentVersion);
+                SentryIntegrationPackageStorage.getInstance().addIntegration("OpenTelemetry-Agent");
               }
               if (name.equals("sentry.java.opentelemetry.agentless")) {
                 SentryIntegrationPackageStorage.getInstance()
@@ -117,8 +114,6 @@ public final class ManifestVersionReader {
   public static final class VersionInfoHolder {
     private volatile @Nullable String sdkName;
     private volatile @Nullable String sdkVersion;
-    private List<SentryPackage> packages = new ArrayList<>();
-    private List<String> integrations = new ArrayList<>();
 
     public @Nullable String getSdkName() {
       return sdkName;
@@ -126,14 +121,6 @@ public final class ManifestVersionReader {
 
     public @Nullable String getSdkVersion() {
       return sdkVersion;
-    }
-
-    public List<SentryPackage> getPackages() {
-      return packages;
-    }
-
-    public List<String> getIntegrations() {
-      return integrations;
     }
   }
 }

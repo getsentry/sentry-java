@@ -4719,8 +4719,6 @@ public final class io/sentry/internal/ManifestVersionReader {
 
 public final class io/sentry/internal/ManifestVersionReader$VersionInfoHolder {
 	public fun <init> ()V
-	public fun getIntegrations ()Ljava/util/List;
-	public fun getPackages ()Ljava/util/List;
 	public fun getSdkName ()Ljava/lang/String;
 	public fun getSdkVersion ()Ljava/lang/String;
 }
