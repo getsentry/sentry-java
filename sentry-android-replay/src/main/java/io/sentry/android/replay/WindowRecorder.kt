@@ -221,7 +221,7 @@ internal class WindowRecorder(
 
   override fun close() {
     reset()
-    stop()
     mainLooperHandler.removeCallbacks(capturer)
+    stop()
   }
 }
