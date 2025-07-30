@@ -71,6 +71,8 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
   private volatile boolean isStopped = false;
   private volatile IntentFilter filter = null;
   private final @NotNull AutoClosableReentrantLock receiverLock = new AutoClosableReentrantLock();
+  // Track previous battery state to avoid duplicate breadcrumbs when values haven't changed
+  private @Nullable BatteryState previousBatteryState;
 
   public SystemEventsBreadcrumbsIntegration(final @NotNull Context context) {
     this(context, getDefaultActionsInternal());
@@ -331,50 +333,13 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
     }
   }
 
-  static final class SystemEventsBroadcastReceiver extends BroadcastReceiver {
+  final class SystemEventsBroadcastReceiver extends BroadcastReceiver {
 
     private static final long DEBOUNCE_WAIT_TIME_MS = 60 * 1000;
     private final @NotNull IScopes scopes;
     private final @NotNull SentryAndroidOptions options;
     private final @NotNull Debouncer batteryChangedDebouncer =
         new Debouncer(AndroidCurrentDateProvider.getInstance(), DEBOUNCE_WAIT_TIME_MS, 0);
-
-    // Track previous battery state to avoid duplicate breadcrumbs when values haven't changed
-    private @Nullable BatteryState previousBatteryState;
-
-    static final class BatteryState {
-      private final @Nullable Float level;
-      private final @Nullable Boolean charging;
-
-      BatteryState(final @Nullable Float level, final @Nullable Boolean charging) {
-        this.level = level;
-        this.charging = charging;
-      }
-
-      @Override
-      public boolean equals(final @Nullable Object other) {
-        if (!(other instanceof BatteryState)) return false;
-        BatteryState that = (BatteryState) other;
-        return isSimilarLevel(level, that.level) && Objects.equals(charging, that.charging);
-      }
-
-      @Override
-      public int hashCode() {
-        // Use rounded level for hash consistency
-        Float roundedLevel = level != null ? Math.round(level * 100f) / 100f : null;
-        return Objects.hash(roundedLevel, charging);
-      }
-
-      private boolean isSimilarLevel(final @Nullable Float level1, final @Nullable Float level2) {
-        if (level1 == null && level2 == null) return true;
-        if (level1 == null || level2 == null) return false;
-
-        // Round both levels to 2 decimal places and compare
-        float rounded1 = Math.round(level1 * 100f) / 100f;
-        float rounded2 = Math.round(level2 * 100f) / 100f;
-        return rounded1 == rounded2;
-      }
-    }
 
     SystemEventsBroadcastReceiver(
         final @NotNull IScopes scopes, final @NotNull SentryAndroidOptions options) {
@@ -395,7 +360,9 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
         }
 
         // For battery changes, check if the actual values have changed
-        final @Nullable Float currentBatteryLevel = DeviceInfoUtil.getBatteryLevel(intent, options);
+        final @Nullable Float batteryLevel = DeviceInfoUtil.getBatteryLevel(intent, options);
+        final @Nullable Integer currentBatteryLevel =
+            batteryLevel != null ? batteryLevel.intValue() : null;
         final @Nullable Boolean currentChargingState = DeviceInfoUtil.isCharging(intent, options);
         batteryState = new BatteryState(currentBatteryLevel, currentChargingState);
 
@@ -506,6 +473,28 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
       }
       breadcrumb.setLevel(SentryLevel.INFO);
       return breadcrumb;
+    }
+  }
+
+  static final class BatteryState {
+    private final @Nullable Integer level;
+    private final @Nullable Boolean charging;
+
+    BatteryState(final @Nullable Integer level, final @Nullable Boolean charging) {
+      this.level = level;
+      this.charging = charging;
+    }
+
+    @Override
+    public boolean equals(final @Nullable Object other) {
+      if (!(other instanceof BatteryState)) return false;
+      BatteryState that = (BatteryState) other;
+      return Objects.equals(level, that.level) && Objects.equals(charging, that.charging);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(level, charging);
     }
   }
 }
