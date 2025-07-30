@@ -75,4 +75,4 @@ Observe (Logcat or Perfetto) that the faulty behaviours are still reproducible.
 
 ### Solution
 
-We have addressed the issue in [link PR]() by not registering any of the offending integrations when the hosting app process is launched with non-foreground `importance`. We still keep observing the App Lifecycle to ensure we register the integrations when the App has been brought to foreground.
+We have addressed the issue in [#4579](https://github.com/getsentry/sentry-java/pull/4579) by not registering any of the offending integrations when the hosting app process is launched with non-foreground `importance`. We still keep observing the App Lifecycle to ensure we register the integrations when the App has been brought to foreground.
