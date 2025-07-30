@@ -157,7 +157,7 @@ class SystemEventsBreadcrumbsIntegrationTest {
           assertEquals("device.event", it.category)
           assertEquals("system", it.type)
           assertEquals(SentryLevel.INFO, it.level)
-          assertEquals(it.data["level"], 75f)
+          assertEquals(it.data["level"], 75)
           assertEquals(it.data["charging"], true)
         },
         anyOrNull(),
@@ -189,8 +189,85 @@ class SystemEventsBreadcrumbsIntegrationTest {
     verify(fixture.scopes)
       .addBreadcrumb(
         check<Breadcrumb> {
-          assertEquals(it.data["level"], 80f)
+          assertEquals(it.data["level"], 80)
           assertEquals(it.data["charging"], false)
+        },
+        anyOrNull(),
+      )
+    verifyNoMoreInteractions(fixture.scopes)
+  }
+
+  @Test
+  fun `battery changes with identical values do not generate breadcrumbs`() {
+    val sut = fixture.getSut()
+    sut.register(fixture.scopes, fixture.options)
+
+    val intent1 =
+      Intent().apply {
+        action = Intent.ACTION_BATTERY_CHANGED
+        putExtra(BatteryManager.EXTRA_LEVEL, 80)
+        putExtra(BatteryManager.EXTRA_SCALE, 100)
+        putExtra(BatteryManager.EXTRA_PLUGGED, BatteryManager.BATTERY_PLUGGED_USB)
+      }
+    val intent2 =
+      Intent().apply {
+        action = Intent.ACTION_BATTERY_CHANGED
+        putExtra(BatteryManager.EXTRA_LEVEL, 80)
+        putExtra(BatteryManager.EXTRA_SCALE, 100)
+        putExtra(BatteryManager.EXTRA_PLUGGED, BatteryManager.BATTERY_PLUGGED_USB)
+      }
+
+    // Receive first battery change
+    sut.receiver!!.onReceive(fixture.context, intent1)
+
+    // Receive second battery change with identical values
+    sut.receiver!!.onReceive(fixture.context, intent2)
+
+    // should only add the first crumb since values are identical
+    verify(fixture.scopes)
+      .addBreadcrumb(
+        check<Breadcrumb> {
+          assertEquals(it.data["level"], 80)
+          assertEquals(it.data["charging"], true)
+        },
+        anyOrNull(),
+      )
+    verifyNoMoreInteractions(fixture.scopes)
+  }
+
+  @Test
+  fun `battery changes with minor level differences do not generate breadcrumbs`() {
+    val sut = fixture.getSut()
+    sut.register(fixture.scopes, fixture.options)
+
+    val intent1 =
+      Intent().apply {
+        action = Intent.ACTION_BATTERY_CHANGED
+        putExtra(BatteryManager.EXTRA_LEVEL, 80001) // 80.001%
+        putExtra(BatteryManager.EXTRA_SCALE, 100000)
+        putExtra(BatteryManager.EXTRA_PLUGGED, BatteryManager.BATTERY_PLUGGED_USB)
+      }
+    val intent2 =
+      Intent().apply {
+        action = Intent.ACTION_BATTERY_CHANGED
+        putExtra(BatteryManager.EXTRA_LEVEL, 80002) // 80.002%
+        putExtra(BatteryManager.EXTRA_SCALE, 100000)
+        putExtra(BatteryManager.EXTRA_PLUGGED, BatteryManager.BATTERY_PLUGGED_USB)
+      }
+
+    // Receive first battery change
+    sut.receiver!!.onReceive(fixture.context, intent1)
+
+    // Receive second battery change with very minor level difference (rounds to same 3 decimal
+    // places)
+    sut.receiver!!.onReceive(fixture.context, intent2)
+
+    // should only add the first crumb since both round to 80.000%
+    verify(fixture.scopes)
+      .addBreadcrumb(
+        check<Breadcrumb> {
+          assertEquals(it.data["level"], 80)
+          assertEquals(it.data["charging"], true)
         },
         anyOrNull(),
       )
