@@ -592,6 +592,8 @@ class SentryOptionsTest {
     val options = SentryOptions()
     val customProvider =
       object : IConnectionStatusProvider {
+        override fun close() = Unit
+
         override fun getConnectionStatus(): IConnectionStatusProvider.ConnectionStatus {
           return IConnectionStatusProvider.ConnectionStatus.UNKNOWN
         }

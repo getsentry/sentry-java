@@ -8,12 +8,15 @@ import android.net.ConnectivityManager.NetworkCallback;
 import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.os.Build;
+import androidx.annotation.NonNull;
 import io.sentry.IConnectionStatusProvider;
 import io.sentry.ILogger;
 import io.sentry.ISentryLifecycleToken;
 import io.sentry.SentryLevel;
+import io.sentry.SentryOptions;
 import io.sentry.android.core.BuildInfoProvider;
 import io.sentry.android.core.ContextUtils;
+import io.sentry.transport.ICurrentDateProvider;
 import io.sentry.util.AutoClosableReentrantLock;
 import java.util.ArrayList;
 import java.util.List;
@@ -31,39 +34,338 @@ import org.jetbrains.annotations.TestOnly;
 public final class AndroidConnectionStatusProvider implements IConnectionStatusProvider {
 
   private final @NotNull Context context;
-  private final @NotNull ILogger logger;
+  private final @NotNull SentryOptions options;
   private final @NotNull BuildInfoProvider buildInfoProvider;
+  private final @NotNull ICurrentDateProvider timeProvider;
   private final @NotNull List<IConnectionStatusObserver> connectionStatusObservers;
   private final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
   private volatile @Nullable NetworkCallback networkCallback;
 
+  private static final @NotNull AutoClosableReentrantLock connectivityManagerLock =
+      new AutoClosableReentrantLock();
+  private static volatile @Nullable ConnectivityManager connectivityManager;
+
+  private static final int[] transports = {
+    NetworkCapabilities.TRANSPORT_WIFI,
+    NetworkCapabilities.TRANSPORT_CELLULAR,
+    NetworkCapabilities.TRANSPORT_ETHERNET,
+    NetworkCapabilities.TRANSPORT_BLUETOOTH
+  };
+
+  private static final int[] capabilities = new int[2];
+
+  private final @NotNull Thread initThread;
+  private volatile @Nullable NetworkCapabilities cachedNetworkCapabilities;
+  private volatile @Nullable Network currentNetwork;
+  private volatile long lastCacheUpdateTime = 0;
+  private static final long CACHE_TTL_MS = 2 * 60 * 1000L; // 2 minutes
+
+  @SuppressLint("InlinedApi")
   public AndroidConnectionStatusProvider(
       @NotNull Context context,
-      @NotNull ILogger logger,
-      @NotNull BuildInfoProvider buildInfoProvider) {
+      @NotNull SentryOptions options,
+      @NotNull BuildInfoProvider buildInfoProvider,
+      @NotNull ICurrentDateProvider timeProvider) {
     this.context = ContextUtils.getApplicationContext(context);
-    this.logger = logger;
+    this.options = options;
     this.buildInfoProvider = buildInfoProvider;
+    this.timeProvider = timeProvider;
     this.connectionStatusObservers = new ArrayList<>();
+
+    capabilities[0] = NetworkCapabilities.NET_CAPABILITY_INTERNET;
+    if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.M) {
+      capabilities[1] = NetworkCapabilities.NET_CAPABILITY_VALIDATED;
+    }
+
+    // Register network callback immediately for caching
+    //noinspection Convert2MethodRef
+    initThread = new Thread(() -> ensureNetworkCallbackRegistered());
+    initThread.start();
+  }
+
+  /**
+   * Enhanced network connectivity check for Android 15. Checks for NET_CAPABILITY_INTERNET,
+   * NET_CAPABILITY_VALIDATED, and proper transport types.
+   * https://medium.com/@doronkakuli/adapting-your-network-connectivity-checks-for-android-15-a-practical-guide-2b1850619294
+   */
+  @SuppressLint("InlinedApi")
+  private boolean isNetworkEffectivelyConnected(
+      final @Nullable NetworkCapabilities networkCapabilities) {
+    if (networkCapabilities == null) {
+      return false;
+    }
+
+    // Check for general internet capability AND validated status
+    boolean hasInternetAndValidated =
+        networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET);
+    if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.M) {
+      hasInternetAndValidated =
+          hasInternetAndValidated
+              && networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED);
+    }
+
+    if (!hasInternetAndValidated) {
+      return false;
+    }
+
+    // Additionally, ensure it's a recognized transport type for general internet access
+    for (final int transport : transports) {
+      if (networkCapabilities.hasTransport(transport)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /** Get connection status from cached NetworkCapabilities or fallback to legacy method. */
+  private @NotNull ConnectionStatus getConnectionStatusFromCache() {
+    if (cachedNetworkCapabilities != null) {
+      return isNetworkEffectivelyConnected(cachedNetworkCapabilities)
+          ? ConnectionStatus.CONNECTED
+          : ConnectionStatus.DISCONNECTED;
+    }
+
+    // Fallback to legacy method when NetworkCapabilities not available
+    final ConnectivityManager connectivityManager =
+        getConnectivityManager(context, options.getLogger());
+    if (connectivityManager != null) {
+      return getConnectionStatus(context, connectivityManager, options.getLogger());
+    }
+
+    return ConnectionStatus.UNKNOWN;
+  }
+
+  /** Get connection type from cached NetworkCapabilities or fallback to legacy method. */
+  private @Nullable String getConnectionTypeFromCache() {
+    final NetworkCapabilities capabilities = cachedNetworkCapabilities;
+    if (capabilities != null) {
+      return getConnectionType(capabilities);
+    }
+
+    // Fallback to legacy method when NetworkCapabilities not available
+    return getConnectionType(context, options.getLogger(), buildInfoProvider);
+  }
+
+  private void ensureNetworkCallbackRegistered() {
+    if (networkCallback != null) {
+      return; // Already registered
+    }
+
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      if (networkCallback != null) {
+        return;
+      }
+
+      final @NotNull NetworkCallback callback =
+          new NetworkCallback() {
+            @Override
+            public void onAvailable(final @NotNull Network network) {
+              currentNetwork = network;
+            }
+
+            @Override
+            public void onUnavailable() {
+              clearCacheAndNotifyObservers();
+            }
+
+            @Override
+            public void onLost(final @NotNull Network network) {
+              if (!network.equals(currentNetwork)) {
+                return;
+              }
+              clearCacheAndNotifyObservers();
+            }
+
+            private void clearCacheAndNotifyObservers() {
+              // Clear cached capabilities and network reference atomically
+              try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+                cachedNetworkCapabilities = null;
+                currentNetwork = null;
+                lastCacheUpdateTime = timeProvider.getCurrentTimeMillis();
+
+                options
+                    .getLogger()
+                    .log(SentryLevel.DEBUG, "Cache cleared - network lost/unavailable");
+
+                // Notify all observers with DISCONNECTED status directly
+                // No need to query ConnectivityManager - we know the network is gone
+                for (final @NotNull IConnectionStatusObserver observer :
+                    connectionStatusObservers) {
+                  observer.onConnectionStatusChanged(ConnectionStatus.DISCONNECTED);
+                }
+              }
+            }
+
+            @Override
+            public void onCapabilitiesChanged(
+                @NonNull Network network, @NonNull NetworkCapabilities networkCapabilities) {
+              if (!network.equals(currentNetwork)) {
+                return;
+              }
+              updateCacheAndNotifyObservers(network, networkCapabilities);
+            }
+
+            private void updateCacheAndNotifyObservers(
+                @Nullable Network network, @Nullable NetworkCapabilities networkCapabilities) {
+              // Check if this change is meaningful before notifying observers
+              final boolean shouldUpdate = isSignificantChange(networkCapabilities);
+
+              // Only notify observers if something meaningful changed
+              if (shouldUpdate) {
+                updateCache(networkCapabilities);
+
+                final @NotNull ConnectionStatus status = getConnectionStatusFromCache();
+                try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+                  for (final @NotNull IConnectionStatusObserver observer :
+                      connectionStatusObservers) {
+                    observer.onConnectionStatusChanged(status);
+                  }
+                }
+              }
+            }
+
+            /**
+             * Check if NetworkCapabilities change is significant for our observers. Only notify for
+             * changes that affect connectivity status or connection type.
+             */
+            private boolean isSignificantChange(@Nullable NetworkCapabilities newCapabilities) {
+              final NetworkCapabilities oldCapabilities = cachedNetworkCapabilities;
+
+              // Always significant if transitioning between null and non-null
+              if ((oldCapabilities == null) != (newCapabilities == null)) {
+                return true;
+              }
+
+              // If both null, no change
+              if (oldCapabilities == null && newCapabilities == null) {
+                return false;
+              }
+
+              // Check significant capability changes
+              if (hasSignificantCapabilityChanges(oldCapabilities, newCapabilities)) {
+                return true;
+              }
+
+              // Check significant transport changes
+              if (hasSignificantTransportChanges(oldCapabilities, newCapabilities)) {
+                return true;
+              }
+
+              return false;
+            }
+
+            /** Check if capabilities that affect connectivity status changed. */
+            private boolean hasSignificantCapabilityChanges(
+                @NotNull NetworkCapabilities old, @NotNull NetworkCapabilities new_) {
+              // Check capabilities we care about for connectivity determination
+              for (int capability : capabilities) {
+                if (capability != 0
+                    && old.hasCapability(capability) != new_.hasCapability(capability)) {
+                  return true;
+                }
+              }
+
+              return false;
+            }
+
+            /** Check if transport types that affect connection type changed. */
+            private boolean hasSignificantTransportChanges(
+                @NotNull NetworkCapabilities old, @NotNull NetworkCapabilities new_) {
+              // Check transports we care about for connection type determination
+              for (int transport : transports) {
+                if (old.hasTransport(transport) != new_.hasTransport(transport)) {
+                  return true;
+                }
+              }
+
+              return false;
+            }
+          };
+
+      if (registerNetworkCallback(context, options.getLogger(), buildInfoProvider, callback)) {
+        networkCallback = callback;
+        options.getLogger().log(SentryLevel.DEBUG, "Network callback registered successfully");
+      } else {
+        options.getLogger().log(SentryLevel.WARNING, "Failed to register network callback");
+      }
+    }
+  }
+
+  @SuppressLint({"NewApi", "MissingPermission"})
+  private void updateCache(@Nullable NetworkCapabilities networkCapabilities) {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      try {
+        if (networkCapabilities != null) {
+          cachedNetworkCapabilities = networkCapabilities;
+        } else {
+          if (!Permissions.hasPermission(context, Manifest.permission.ACCESS_NETWORK_STATE)) {
+            options
+                .getLogger()
+                .log(
+                    SentryLevel.INFO,
+                    "No permission (ACCESS_NETWORK_STATE) to check network status.");
+            cachedNetworkCapabilities = null;
+            lastCacheUpdateTime = timeProvider.getCurrentTimeMillis();
+            return;
+          }
+
+          if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.M) {
+            cachedNetworkCapabilities = null;
+            lastCacheUpdateTime = timeProvider.getCurrentTimeMillis();
+            return;
+          }
+
+          // Fallback: query current active network
+          final ConnectivityManager connectivityManager =
+              getConnectivityManager(context, options.getLogger());
+          if (connectivityManager != null) {
+            final Network activeNetwork = connectivityManager.getActiveNetwork();
+
+            cachedNetworkCapabilities =
+                activeNetwork != null
+                    ? connectivityManager.getNetworkCapabilities(activeNetwork)
+                    : null;
+          } else {
+            cachedNetworkCapabilities =
+                null; // Clear cached capabilities if connectivity manager is null
+          }
+        }
+        lastCacheUpdateTime = timeProvider.getCurrentTimeMillis();
+
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Cache updated - Status: "
+                    + getConnectionStatusFromCache()
+                    + ", Type: "
+                    + getConnectionTypeFromCache());
+      } catch (Throwable t) {
+        options.getLogger().log(SentryLevel.WARNING, "Failed to update connection status cache", t);
+        cachedNetworkCapabilities = null;
+        lastCacheUpdateTime = timeProvider.getCurrentTimeMillis();
+      }
+    }
+  }
+
+  private boolean isCacheValid() {
+    return (timeProvider.getCurrentTimeMillis() - lastCacheUpdateTime) < CACHE_TTL_MS;
   }
 
   @Override
   public @NotNull ConnectionStatus getConnectionStatus() {
-    final ConnectivityManager connectivityManager = getConnectivityManager(context, logger);
-    if (connectivityManager == null) {
-      return ConnectionStatus.UNKNOWN;
+    if (!isCacheValid()) {
+      updateCache(null);
     }
-    return getConnectionStatus(context, connectivityManager, logger);
-    // getActiveNetworkInfo might return null if VPN doesn't specify its
-    // underlying network
-
-    // when min. API 24, use:
-    // connectivityManager.registerDefaultNetworkCallback(...)
+    return getConnectionStatusFromCache();
   }
 
   @Override
   public @Nullable String getConnectionType() {
-    return getConnectionType(context, logger, buildInfoProvider);
+    if (!isCacheValid()) {
+      updateCache(null);
+    }
+    return getConnectionTypeFromCache();
   }
 
   @Override
@@ -71,62 +373,65 @@ public final class AndroidConnectionStatusProvider implements IConnectionStatusP
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       connectionStatusObservers.add(observer);
     }
+    ensureNetworkCallbackRegistered();
 
-    if (networkCallback == null) {
-      try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
-        if (networkCallback == null) {
-          final @NotNull NetworkCallback newNetworkCallback =
-              new NetworkCallback() {
-                @Override
-                public void onAvailable(final @NotNull Network network) {
-                  updateObservers();
-                }
-
-                @Override
-                public void onUnavailable() {
-                  updateObservers();
-                }
-
-                @Override
-                public void onLost(final @NotNull Network network) {
-                  updateObservers();
-                }
-
-                public void updateObservers() {
-                  final @NotNull ConnectionStatus status = getConnectionStatus();
-                  try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
-                    for (final @NotNull IConnectionStatusObserver observer :
-                        connectionStatusObservers) {
-                      observer.onConnectionStatusChanged(status);
-                    }
-                  }
-                }
-              };
-
-          if (registerNetworkCallback(context, logger, buildInfoProvider, newNetworkCallback)) {
-            networkCallback = newNetworkCallback;
-            return true;
-          } else {
-            return false;
-          }
-        }
-      }
-    }
-    // networkCallback is already registered, so we can safely return true
-    return true;
+    // Network callback is already registered during initialization
+    return networkCallback != null;
   }
 
   @Override
   public void removeConnectionStatusObserver(final @NotNull IConnectionStatusObserver observer) {
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       connectionStatusObservers.remove(observer);
-      if (connectionStatusObservers.isEmpty()) {
-        if (networkCallback != null) {
-          unregisterNetworkCallback(context, logger, networkCallback);
-          networkCallback = null;
-        }
-      }
+      // Keep the callback registered for caching even if no observers
     }
+  }
+
+  /** Clean up resources - should be called when the provider is no longer needed */
+  @Override
+  public void close() {
+    try {
+      options
+          .getExecutorService()
+          .submit(
+              () -> {
+                final NetworkCallback callbackRef;
+                try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+                  connectionStatusObservers.clear();
+
+                  callbackRef = networkCallback;
+                  networkCallback = null;
+
+                  if (callbackRef != null) {
+                    unregisterNetworkCallback(context, options.getLogger(), callbackRef);
+                  }
+                  // Clear cached state
+                  cachedNetworkCapabilities = null;
+                  currentNetwork = null;
+                  lastCacheUpdateTime = 0;
+                }
+                try (final @NotNull ISentryLifecycleToken ignored =
+                        connectivityManagerLock.acquire()) {
+                  connectivityManager = null;
+                }
+              });
+    } catch (Throwable t) {
+      options
+          .getLogger()
+          .log(SentryLevel.ERROR, "Error submitting AndroidConnectionStatusProvider task", t);
+    }
+  }
+
+  /**
+   * Get the cached NetworkCapabilities for advanced use cases. Returns null if cache is stale or no
+   * capabilities are available.
+   *
+   * @return cached NetworkCapabilities or null
+   */
+  @TestOnly
+  @Nullable
+  public NetworkCapabilities getCachedNetworkCapabilities() {
+    return cachedNetworkCapabilities;
   }
 
   /**
@@ -295,12 +600,22 @@ public final class AndroidConnectionStatusProvider implements IConnectionStatusP
 
   private static @Nullable ConnectivityManager getConnectivityManager(
       final @NotNull Context context, final @NotNull ILogger logger) {
-    final ConnectivityManager connectivityManager =
-        (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-    if (connectivityManager == null) {
-      logger.log(SentryLevel.INFO, "ConnectivityManager is null and cannot check network status");
+    if (connectivityManager != null) {
+      return connectivityManager;
     }
-    return connectivityManager;
+
+    try (final @NotNull ISentryLifecycleToken ignored = connectivityManagerLock.acquire()) {
+      if (connectivityManager != null) {
+        return connectivityManager; // Double-checked locking
+      }
+
+      connectivityManager =
+          (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+      if (connectivityManager == null) {
+        logger.log(SentryLevel.INFO, "ConnectivityManager is null and cannot check network status");
+      }
+      return connectivityManager;
+    }
   }
 
   @SuppressLint({"MissingPermission", "NewApi"})
@@ -357,5 +672,16 @@ public final class AndroidConnectionStatusProvider implements IConnectionStatusP
   @Nullable
   public NetworkCallback getNetworkCallback() {
     return networkCallback;
+  }
+
+  @TestOnly
+  @NotNull
+  public Thread getInitThread() {
+    return initThread;
+  }
+
+  @TestOnly
+  public static void setConnectivityManager(final @Nullable ConnectivityManager cm) {
+    connectivityManager = cm;
   }
 }
