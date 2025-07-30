@@ -91,20 +91,6 @@ public final class ContextUtils {
   // to avoid doing a bunch of Binder calls we use LazyEvaluator to cache the values that are static
   // during the app process running
 
-  private static final @NotNull LazyEvaluator<Boolean> isForegroundImportance =
-      new LazyEvaluator<>(
-          () -> {
-            try {
-              final ActivityManager.RunningAppProcessInfo appProcessInfo =
-                  new ActivityManager.RunningAppProcessInfo();
-              ActivityManager.getMyMemoryState(appProcessInfo);
-              return appProcessInfo.importance == IMPORTANCE_FOREGROUND;
-            } catch (Throwable ignored) {
-              // should never happen
-            }
-            return false;
-          });
-
   /**
    * Since this packageInfo uses flags 0 we can assume it's static and cache it as the package name
    * or version code cannot change during runtime, only after app update (which will spin up a new
@@ -284,7 +270,15 @@ public final class ContextUtils {
    */
   @ApiStatus.Internal
   public static boolean isForegroundImportance() {
-    return isForegroundImportance.getValue();
+    try {
+      final ActivityManager.RunningAppProcessInfo appProcessInfo =
+          new ActivityManager.RunningAppProcessInfo();
+      ActivityManager.getMyMemoryState(appProcessInfo);
+      return appProcessInfo.importance == IMPORTANCE_FOREGROUND;
+    } catch (Throwable ignored) {
+      // should never happen
+    }
+    return false;
   }
 
   /**
@@ -544,7 +538,6 @@ public final class ContextUtils {
 
   @TestOnly
   static void resetInstance() {
-    isForegroundImportance.resetValue();
     staticPackageInfo33.resetValue();
     staticPackageInfo.resetValue();
     applicationName.resetValue();
