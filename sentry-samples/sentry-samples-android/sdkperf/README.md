@@ -39,7 +39,7 @@ You can either watch Logcat or better start a Perfetto trace beforehand and then
 
 ### Solution
 
-We have addressed the issue in [link PR]() by unsubscribing from network connectivity updates when app goes to background and re-subscribing again on foreground.
+We have addressed the issue in [#4579](https://github.com/getsentry/sentry-java/pull/4579) by unsubscribing from network connectivity updates when app goes to background and re-subscribing again on foreground.
 
 ## System Events
 
