@@ -28,6 +28,7 @@ buildConfig {
 tasks.jar {
   manifest {
     attributes(
+      "Sentry-Opentelemetry-SDK-Name" to Config.Sentry.SENTRY_OPENTELEMETRY_AGENTLESS_SDK_NAME,
       "Sentry-Version-Name" to project.version,
       "Sentry-SDK-Name" to Config.Sentry.SENTRY_OPENTELEMETRY_AGENTLESS_SDK_NAME,
       "Sentry-SDK-Package-Name" to "maven:io.sentry:sentry-opentelemetry-agentless",

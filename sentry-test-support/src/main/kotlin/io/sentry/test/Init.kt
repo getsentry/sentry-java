@@ -39,4 +39,5 @@ fun initForTest() {
 
 fun applyTestOptions(options: SentryOptions) {
   options.shutdownTimeoutMillis = 0
+  options.sessionFlushTimeoutMillis = 0
 }
