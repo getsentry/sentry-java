@@ -15,12 +15,17 @@ import android.net.NetworkCapabilities.TRANSPORT_ETHERNET
 import android.net.NetworkCapabilities.TRANSPORT_WIFI
 import android.net.NetworkInfo
 import android.os.Build
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.IConnectionStatusProvider
 import io.sentry.ILogger
 import io.sentry.SentryOptions
+import io.sentry.android.core.AppState
 import io.sentry.android.core.BuildInfoProvider
+import io.sentry.android.core.ContextUtils
+import io.sentry.android.core.SystemEventsBreadcrumbsIntegration
 import io.sentry.test.ImmediateExecutorService
 import io.sentry.transport.ICurrentDateProvider
+import org.junit.runner.RunWith
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -29,10 +34,15 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import org.mockito.MockedStatic
+import org.mockito.Mockito.mockStatic
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.clearInvocations
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.eq
+import org.mockito.kotlin.isNull
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.mockingDetails
 import org.mockito.kotlin.times
@@ -40,8 +50,11 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
+import org.robolectric.annotation.Config
 import java.util.concurrent.ExecutorService
 
+@RunWith(AndroidJUnit4::class)
+@Config(sdk = [Build.VERSION_CODES.P])
 class AndroidConnectionStatusProviderTest {
   private lateinit var connectionStatusProvider: AndroidConnectionStatusProvider
   private lateinit var contextMock: Context
@@ -53,6 +66,7 @@ class AndroidConnectionStatusProviderTest {
   private lateinit var network: Network
   private lateinit var networkCapabilities: NetworkCapabilities
   private lateinit var logger: ILogger
+  private lateinit var contextUtilsStaticMock: MockedStatic<ContextUtils>
 
   private var currentTime = 1000L
 
@@ -93,6 +107,16 @@ class AndroidConnectionStatusProviderTest {
     // Reset current time for each test to ensure cache isolation
     currentTime = 1000L
 
+    // Mock ContextUtils to return foreground importance
+    contextUtilsStaticMock = mockStatic(ContextUtils::class.java)
+    contextUtilsStaticMock.`when`<Boolean> { ContextUtils.isForegroundImportance() }
+      .thenReturn(true)
+    contextUtilsStaticMock.`when`<Context> { ContextUtils.getApplicationContext(any()) }
+      .thenReturn(contextMock)
+
+    AppState.getInstance().resetInstance()
+    AppState.getInstance().registerLifecycleObserver(options)
+
     connectionStatusProvider =
       AndroidConnectionStatusProvider(contextMock, options, buildInfo, timeProvider)
   }
@@ -101,6 +125,8 @@ class AndroidConnectionStatusProviderTest {
   fun `tear down`() {
     // clear the cache and ensure proper cleanup
     connectionStatusProvider.close()
+    contextUtilsStaticMock.close()
+    AppState.getInstance().unregisterLifecycleObserver()
   }
 
   @Test
@@ -159,6 +185,16 @@ class AndroidConnectionStatusProviderTest {
         )
       )
       .thenReturn(PERMISSION_GRANTED)
+
+    // Need to mock ContextUtils for the new provider as well
+    contextUtilsStaticMock.`when`<Context> {
+      ContextUtils.getApplicationContext(
+        eq(
+          nullConnectivityContext
+        )
+      )
+    }
+      .thenReturn(nullConnectivityContext)
 
     // Create a new provider with the null connectivity manager
     val providerWithNullConnectivity =
@@ -441,7 +477,7 @@ class AndroidConnectionStatusProviderTest {
     verify(connectivityManager).registerDefaultNetworkCallback(callbackCaptor.capture())
     val callback = callbackCaptor.firstValue
 
-    // Set current network
+    // IMPORTANT: Set network as current first
     callback.onAvailable(network)
 
     // Lose the network
@@ -629,5 +665,185 @@ class AndroidConnectionStatusProviderTest {
     AndroidConnectionStatusProvider.getChildCallbacks().remove(childCallback)
     mainCallback.onAvailable(network)
     verifyNoMoreInteractions(childCallback)
+  }
+
+  @Test
+  fun `onForeground notifies child callbacks when disconnected`() {
+    val childCallback = mock<NetworkCallback>()
+    AndroidConnectionStatusProvider.addNetworkCallback(
+      contextMock,
+      logger,
+      buildInfo,
+      childCallback
+    )
+    connectionStatusProvider.onBackground()
+
+    // Setup disconnected state
+    whenever(connectivityManager.activeNetwork).thenReturn(null)
+
+    connectionStatusProvider.onForeground()
+
+    // Verify child callback was notified of lost connection with any network parameter
+    verify(childCallback).onLost(anyOrNull())
+  }
+
+  @Test
+  fun `close removes AppState listener`() {
+    // Clear any setup interactions
+    clearInvocations(connectivityManager)
+
+    // Close the provider
+    connectionStatusProvider.close()
+
+    // Now test that after closing, the provider no longer responds to lifecycle events
+    connectionStatusProvider.onForeground()
+    connectionStatusProvider.onBackground()
+
+    assertFalse(
+      AppState.getInstance().lifecycleObserver.listeners.any {
+        it is SystemEventsBreadcrumbsIntegration
+      }
+    )
+  }
+
+  @Test
+  fun `network callbacks work correctly across foreground background transitions`() {
+    val observer = mock<IConnectionStatusProvider.IConnectionStatusObserver>()
+    connectionStatusProvider.addConnectionStatusObserver(observer)
+
+    // Get the registered callback
+    val callbackCaptor = argumentCaptor<NetworkCallback>()
+    verify(connectivityManager).registerDefaultNetworkCallback(callbackCaptor.capture())
+    val callback = callbackCaptor.firstValue
+
+    // Simulate network available
+    callback.onAvailable(network)
+
+    // Go to background
+    connectionStatusProvider.onBackground()
+
+    // Clear the mock to reset interaction count
+    clearInvocations(connectivityManager)
+
+    // Go back to foreground
+    connectionStatusProvider.onForeground()
+
+    // Verify callback was re-registered
+    verify(connectivityManager).registerDefaultNetworkCallback(any())
+
+    // Verify we can still receive network events
+    val newCallbackCaptor = argumentCaptor<NetworkCallback>()
+    verify(connectivityManager).registerDefaultNetworkCallback(newCallbackCaptor.capture())
+    val newCallback = newCallbackCaptor.lastValue
+
+    // Simulate network capabilities change
+    val newCaps = mock<NetworkCapabilities>()
+    whenever(newCaps.hasCapability(NET_CAPABILITY_INTERNET)).thenReturn(true)
+    whenever(newCaps.hasCapability(NET_CAPABILITY_VALIDATED)).thenReturn(true)
+    whenever(newCaps.hasTransport(TRANSPORT_CELLULAR)).thenReturn(true)
+
+    // First make the network available to set it as current
+    newCallback.onAvailable(network)
+
+    // Then change capabilities
+    newCallback.onCapabilitiesChanged(network, newCaps)
+
+    // Verify observer was notified (once for onForeground status update, once for capabilities change)
+    verify(observer, times(2)).onConnectionStatusChanged(any())
+  }
+
+  @Test
+  fun `onForeground registers network callback if not already registered`() {
+    // First ensure the network callback is not registered (simulate background state)
+    connectionStatusProvider.onBackground()
+
+    // Verify callback was unregistered
+    assertNull(connectionStatusProvider.networkCallback)
+
+    // Call onForeground
+    connectionStatusProvider.onForeground()
+
+    // Verify network callback was registered
+    assertNotNull(connectionStatusProvider.networkCallback)
+    verify(connectivityManager, times(2)).registerDefaultNetworkCallback(any())
+  }
+
+  @Test
+  fun `onForeground updates cache and notifies observers`() {
+    val observer = mock<IConnectionStatusProvider.IConnectionStatusObserver>()
+    connectionStatusProvider.addConnectionStatusObserver(observer)
+
+    // Simulate going to background first
+    connectionStatusProvider.onBackground()
+
+    // Reset mock to clear previous interactions
+    whenever(connectivityManager.activeNetwork).thenReturn(network)
+    whenever(connectivityManager.getNetworkCapabilities(any())).thenReturn(networkCapabilities)
+    whenever(networkCapabilities.hasCapability(NET_CAPABILITY_INTERNET)).thenReturn(true)
+    whenever(networkCapabilities.hasCapability(NET_CAPABILITY_VALIDATED)).thenReturn(true)
+    whenever(networkCapabilities.hasTransport(TRANSPORT_WIFI)).thenReturn(true)
+
+    // Call onForeground
+    connectionStatusProvider.onForeground()
+
+    // Verify observer was notified with current status
+    verify(observer).onConnectionStatusChanged(IConnectionStatusProvider.ConnectionStatus.CONNECTED)
+  }
+
+  @Test
+  fun `onForeground does nothing if callback already registered`() {
+    // Ensure callback is already registered
+    assertNotNull(connectionStatusProvider.networkCallback)
+    val initialCallback = connectionStatusProvider.networkCallback
+
+    // Call onForeground
+    connectionStatusProvider.onForeground()
+
+    // Verify callback hasn't changed
+    assertEquals(initialCallback, connectionStatusProvider.networkCallback)
+    // Verify registerDefaultNetworkCallback was only called once (during construction)
+    verify(connectivityManager, times(1)).registerDefaultNetworkCallback(any())
+  }
+
+  @Test
+  fun `onBackground unregisters network callback`() {
+    // Ensure callback is registered
+    assertNotNull(connectionStatusProvider.networkCallback)
+
+    // Call onBackground
+    connectionStatusProvider.onBackground()
+
+    // Verify callback was unregistered
+    assertNull(connectionStatusProvider.networkCallback)
+    verify(connectivityManager).unregisterNetworkCallback(any<NetworkCallback>())
+  }
+
+  @Test
+  fun `onBackground does not clear observers`() {
+    val observer = mock<IConnectionStatusProvider.IConnectionStatusObserver>()
+    connectionStatusProvider.addConnectionStatusObserver(observer)
+
+    // Call onBackground
+    connectionStatusProvider.onBackground()
+
+    // Verify observer is still registered
+    assertEquals(1, connectionStatusProvider.statusObservers.size)
+    assertTrue(connectionStatusProvider.statusObservers.contains(observer))
+  }
+
+  @Test
+  fun `onBackground does nothing if callback not registered`() {
+    // First unregister by going to background
+    connectionStatusProvider.onBackground()
+    assertNull(connectionStatusProvider.networkCallback)
+
+    // Reset mock to clear previous interactions
+    clearInvocations(connectivityManager)
+
+    // Call onBackground again
+    connectionStatusProvider.onBackground()
+
+    // Verify no additional unregister calls
+    verifyNoInteractions(connectivityManager)
   }
 }

@@ -460,6 +460,7 @@ public final class AndroidConnectionStatusProvider implements IConnectionStatusP
                    connectivityManagerLock.acquire()) {
             connectivityManager = null;
           }
+          AppState.getInstance().removeAppStateListener(this);
         });
   }
 

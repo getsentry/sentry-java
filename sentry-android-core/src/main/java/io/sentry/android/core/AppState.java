@@ -9,6 +9,7 @@ import io.sentry.ILogger;
 import io.sentry.ISentryLifecycleToken;
 import io.sentry.NoOpLogger;
 import io.sentry.SentryLevel;
+import io.sentry.SentryOptions;
 import io.sentry.android.core.internal.util.AndroidThreadChecker;
 import io.sentry.util.AutoClosableReentrantLock;
 import java.io.Closeable;
@@ -36,9 +37,16 @@ public final class AppState implements Closeable {
 
   private volatile @Nullable Boolean inBackground = null;
 
+  @ApiStatus.Internal
   @TestOnly
-  void resetInstance() {
+  public void resetInstance() {
     instance = new AppState();
+  }
+
+  @ApiStatus.Internal
+  @TestOnly
+  public LifecycleObserver getLifecycleObserver() {
+    return lifecycleObserver;
   }
 
   public @Nullable Boolean isInBackground() {
@@ -65,7 +73,8 @@ public final class AppState implements Closeable {
     }
   }
 
-  void registerLifecycleObserver(final @Nullable SentryAndroidOptions options) {
+  @ApiStatus.Internal
+  public void registerLifecycleObserver(final @Nullable SentryOptions options) {
     if (lifecycleObserver != null) {
       return;
     }
@@ -121,7 +130,8 @@ public final class AppState implements Closeable {
     }
   }
 
-  void unregisterLifecycleObserver() {
+  @ApiStatus.Internal
+  public void unregisterLifecycleObserver() {
     if (lifecycleObserver == null) {
       return;
     }
@@ -155,7 +165,8 @@ public final class AppState implements Closeable {
     unregisterLifecycleObserver();
   }
 
-  final class LifecycleObserver implements DefaultLifecycleObserver {
+  @ApiStatus.Internal
+  public final class LifecycleObserver implements DefaultLifecycleObserver {
     final List<AppStateListener> listeners =
         new CopyOnWriteArrayList<AppStateListener>() {
           @Override
@@ -170,6 +181,12 @@ public final class AppState implements Closeable {
             return super.add(appStateListener);
           }
         };
+
+    @ApiStatus.Internal
+    @TestOnly
+    public List<AppStateListener> getListeners() {
+      return listeners;
+    }
 
     @Override
     public void onStart(@NonNull LifecycleOwner owner) {

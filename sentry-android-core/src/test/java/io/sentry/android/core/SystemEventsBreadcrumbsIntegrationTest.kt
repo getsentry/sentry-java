@@ -1,10 +1,13 @@
 package io.sentry.android.core
 
+import android.app.ActivityManager
+import android.app.ActivityManager.RunningAppProcessInfo
 import android.content.Context
 import android.content.Intent
 import android.os.BatteryManager
 import android.os.Build
 import android.os.Looper
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.Breadcrumb
 import io.sentry.IScopes
@@ -33,6 +36,9 @@ import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
+import org.robolectric.shadow.api.Shadow
+import org.robolectric.shadows.ShadowActivityManager
+import org.robolectric.shadows.ShadowBuild
 
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [Build.VERSION_CODES.TIRAMISU])
@@ -41,6 +47,7 @@ class SystemEventsBreadcrumbsIntegrationTest {
     val context = mock<Context>()
     var options = SentryAndroidOptions()
     val scopes = mock<IScopes>()
+    lateinit var shadowActivityManager: ShadowActivityManager
 
     fun getSut(
       enableSystemEventBreadcrumbs: Boolean = true,
@@ -64,6 +71,9 @@ class SystemEventsBreadcrumbsIntegrationTest {
   fun `set up`() {
     AppState.getInstance().resetInstance()
     AppState.getInstance().registerLifecycleObserver(fixture.options)
+    ShadowBuild.reset()
+    val activityManager = ApplicationProvider.getApplicationContext<Context>().getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager?
+    fixture.shadowActivityManager = Shadow.extract(activityManager)
   }
 
   @AfterTest
@@ -498,6 +508,18 @@ class SystemEventsBreadcrumbsIntegrationTest {
     deferredExecutorService.runAll()
 
     shadowOf(Looper.getMainLooper()).idle()
+
+    assertNull(sut.receiver)
+  }
+
+  @Test
+  fun `when integration is registered in background, receiver is registered`() {
+    val process = RunningAppProcessInfo().apply { this.importance = RunningAppProcessInfo.IMPORTANCE_CACHED }
+    val processes = mutableListOf(process)
+    fixture.shadowActivityManager.setProcesses(processes)
+
+    val sut = fixture.getSut()
+    sut.register(fixture.scopes, fixture.options)
 
     assertNull(sut.receiver)
   }
