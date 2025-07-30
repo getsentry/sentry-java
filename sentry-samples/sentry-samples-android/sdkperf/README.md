@@ -62,7 +62,7 @@ We have addressed the issue in [#4338](https://github.com/getsentry/sentry-java/
 
 ## App Launch with Background Importance 
 
-While the above two issues can be fixed by observing the App lifecycle, they still may become a problem if the app process has been launched with non-foreground importance (e.g. received a push notification). In this case our SDK would be initialized too
+While the above two issues can be fixed by observing the App lifecycle, they still may become a problem if the app process has been launched with non-foreground importance (e.g. received a push notification). In this case our SDK would be initialized too and would still subscribe for SystemEvents and NetworkCallbacks while in background.
 
 The following steps are necessary to reproduce the issue:
 
