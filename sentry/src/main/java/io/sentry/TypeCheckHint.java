@@ -131,4 +131,10 @@ public final class TypeCheckHint {
 
   /** Used for Spring exchange filter breadcrumbs. */
   public static final String SPRING_EXCHANGE_FILTER_REQUEST = "springExchangeFilter:request";
+
+  /** Used for Ktor response breadcrumbs. */
+  public static final String KTOR_CLIENT_RESPONSE = "ktorClient:response";
+
+  /** Used for Ktor Request breadcrumbs. */
+  public static final String KTOR_CLIENT_REQUEST = "ktorClient:request";
 }

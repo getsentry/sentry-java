@@ -576,7 +576,8 @@ public final class io/sentry/systemtest/util/TestHelper {
 	public final fun getJsonSerializer ()Lio/sentry/JsonSerializer;
 	public final fun getRestClient ()Lio/sentry/systemtest/util/RestTestClient;
 	public final fun getSentryClient ()Lio/sentry/systemtest/util/SentryMockServerClient;
-	public final fun launch (Ljava/io/File;Ljava/util/Map;)Ljava/lang/Process;
+	public final fun launch (Ljava/io/File;Ljava/util/Map;Z)Ljava/lang/Process;
+	public static synthetic fun launch$default (Lio/sentry/systemtest/util/TestHelper;Ljava/io/File;Ljava/util/Map;ZILjava/lang/Object;)Ljava/lang/Process;
 	public final fun logObject (Ljava/lang/Object;)V
 	public final fun reset ()V
 	public final fun setEnvelopeCounts (Lio/sentry/systemtest/util/EnvelopeCounts;)V

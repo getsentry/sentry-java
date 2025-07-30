@@ -1,0 +1,34 @@
+public final class io/sentry/ktorClient/BuildConfig {
+	public static final field SENTRY_KTOR_CLIENT_SDK_NAME Ljava/lang/String;
+	public static final field VERSION_NAME Ljava/lang/String;
+}
+
+public final class io/sentry/ktorClient/SentryKtorClientPluginConfig {
+	public fun <init> ()V
+	public final fun getBeforeSpan ()Lio/sentry/ktorClient/SentryKtorClientPluginConfig$BeforeSpanCallback;
+	public final fun getCaptureFailedRequests ()Z
+	public final fun getFailedRequestStatusCodes ()Ljava/util/List;
+	public final fun getFailedRequestTargets ()Ljava/util/List;
+	public final fun getScopes ()Lio/sentry/IScopes;
+	public final fun setBeforeSpan (Lio/sentry/ktorClient/SentryKtorClientPluginConfig$BeforeSpanCallback;)V
+	public final fun setCaptureFailedRequests (Z)V
+	public final fun setFailedRequestStatusCodes (Ljava/util/List;)V
+	public final fun setFailedRequestTargets (Ljava/util/List;)V
+	public final fun setScopes (Lio/sentry/IScopes;)V
+}
+
+public abstract interface class io/sentry/ktorClient/SentryKtorClientPluginConfig$BeforeSpanCallback {
+	public abstract fun execute (Lio/sentry/ISpan;Lio/ktor/client/request/HttpRequest;)Lio/sentry/ISpan;
+}
+
+public class io/sentry/ktorClient/SentryKtorClientPluginContextHook : io/ktor/client/plugins/api/ClientHook {
+	public fun <init> (Lio/sentry/IScopes;)V
+	protected final fun getScopes ()Lio/sentry/IScopes;
+	public synthetic fun install (Lio/ktor/client/HttpClient;Ljava/lang/Object;)V
+	public fun install (Lio/ktor/client/HttpClient;Lkotlin/jvm/functions/Function2;)V
+}
+
+public final class io/sentry/ktorClient/SentryKtorClientPluginKt {
+	public static final fun getSentryKtorClientPlugin ()Lio/ktor/client/plugins/api/ClientPlugin;
+}
+
