@@ -1,0 +1,1 @@
+memberSearchIndex = [{"p":"io.sentry.ktorClient","c":"BuildConfig","l":"SENTRY_KTOR_CLIENT_SDK_NAME"},{"p":"io.sentry.ktorClient","c":"BuildConfig","l":"VERSION_NAME"}];updateSearchResults();
