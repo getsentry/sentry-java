@@ -282,16 +282,22 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
 
   @SuppressLint("NewApi")
   private void stopTrackingWindow(final @NotNull Window window) {
-    if (trackedWindows.contains(window)) {
-      if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.N) {
-        try {
-          windowFrameMetricsManager.removeOnFrameMetricsAvailableListener(
-              window, frameMetricsAvailableListener);
-        } catch (Exception e) {
-          logger.log(SentryLevel.ERROR, "Failed to remove frameMetricsAvailableListener", e);
-        }
-      }
-      trackedWindows.remove(window);
+    final boolean wasTracked = trackedWindows.remove(window);
+    if (wasTracked) {
+      new Handler(Looper.getMainLooper())
+          .post(
+              () -> {
+                try {
+                  // Re-check if we should still stop tracking this window
+                  if (!trackedWindows.contains(window)) {
+                    windowFrameMetricsManager.removeOnFrameMetricsAvailableListener(
+                        window, frameMetricsAvailableListener);
+                  }
+                } catch (Throwable e) {
+                  logger.log(
+                      SentryLevel.ERROR, "Failed to remove frameMetricsAvailableListener", e);
+                }
+              });
     }
   }
 
@@ -305,18 +311,36 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
 
   @SuppressLint("NewApi")
   private void trackCurrentWindow() {
-    Window window = currentWindow != null ? currentWindow.get() : null;
+    @Nullable Window window = currentWindow != null ? currentWindow.get() : null;
     if (window == null || !isAvailable) {
       return;
     }
 
-    if (!trackedWindows.contains(window) && !listenerMap.isEmpty()) {
+    if (trackedWindows.contains(window)) {
+      return;
+    }
 
-      if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.N && handler != null) {
-        trackedWindows.add(window);
-        windowFrameMetricsManager.addOnFrameMetricsAvailableListener(
-            window, frameMetricsAvailableListener, handler);
-      }
+    if (listenerMap.isEmpty()) {
+      return;
+    }
+
+    if (handler != null) {
+      trackedWindows.add(window);
+      // Ensure the addOnFrameMetricsAvailableListener is called on the main thread
+      new Handler(Looper.getMainLooper())
+          .post(
+              () -> {
+                // Re-check if we should still track this window
+                // in case stopTrackingWindow was called in the meantime
+                if (trackedWindows.contains(window)) {
+                  try {
+                    windowFrameMetricsManager.addOnFrameMetricsAvailableListener(
+                        window, frameMetricsAvailableListener, handler);
+                  } catch (Throwable e) {
+                    logger.log(SentryLevel.ERROR, "Failed to add frameMetricsAvailableListener", e);
+                  }
+                }
+              });
     }
   }
 
@@ -373,6 +397,9 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
         final @NotNull Window window,
         final @Nullable Window.OnFrameMetricsAvailableListener frameMetricsAvailableListener,
         final @Nullable Handler handler) {
+      if (frameMetricsAvailableListener == null) {
+        return;
+      }
       window.addOnFrameMetricsAvailableListener(frameMetricsAvailableListener, handler);
     }
 
