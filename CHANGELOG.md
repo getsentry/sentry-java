@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+### Improvements
+
+- Session Replay: Use main thread looper to schedule replay capture ([#4542](https://github.com/getsentry/sentry-java/pull/4542))
+
+### Fixes
+
+- Cache network capabilities and status to reduce IPC calls ([#4560](https://github.com/getsentry/sentry-java/pull/4560))
+- Deduplicate battery breadcrumbs ([#4561](https://github.com/getsentry/sentry-java/pull/4561))
+
+
 ## 8.18.0
 
 ### Features

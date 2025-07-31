@@ -16,9 +16,12 @@ import io.sentry.SentryNanotimeDate
 import io.sentry.TypeCheckHint
 import io.sentry.android.core.NetworkBreadcrumbsIntegration.NetworkBreadcrumbConnectionDetail
 import io.sentry.android.core.NetworkBreadcrumbsIntegration.NetworkBreadcrumbsNetworkCallback
+import io.sentry.android.core.internal.util.AndroidConnectionStatusProvider
 import io.sentry.test.DeferredExecutorService
 import io.sentry.test.ImmediateExecutorService
 import java.util.concurrent.TimeUnit
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -47,12 +50,6 @@ class NetworkBreadcrumbsIntegrationTest {
     var nowMs: Long = 0
     val network = mock<Network>()
 
-    init {
-      whenever(mockBuildInfoProvider.sdkInfoVersion).thenReturn(Build.VERSION_CODES.N)
-      whenever(context.getSystemService(eq(Context.CONNECTIVITY_SERVICE)))
-        .thenReturn(connectivityManager)
-    }
-
     fun getSut(
       enableNetworkEventBreadcrumbs: Boolean = true,
       buildInfo: BuildInfoProvider = mockBuildInfoProvider,
@@ -72,6 +69,18 @@ class NetworkBreadcrumbsIntegrationTest {
   }
 
   private val fixture = Fixture()
+
+  @BeforeTest
+  fun `set up`() {
+    whenever(fixture.mockBuildInfoProvider.sdkInfoVersion).thenReturn(Build.VERSION_CODES.N)
+    whenever(fixture.context.getSystemService(eq(Context.CONNECTIVITY_SERVICE)))
+      .thenReturn(fixture.connectivityManager)
+  }
+
+  @AfterTest
+  fun `tear down`() {
+    AndroidConnectionStatusProvider.setConnectivityManager(null)
+  }
 
   @Test
   fun `When network events breadcrumb is enabled, it registers callback`() {
