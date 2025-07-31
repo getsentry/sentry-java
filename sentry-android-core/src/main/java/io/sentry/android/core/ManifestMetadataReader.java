@@ -532,23 +532,6 @@ final class ManifestMetadataReader {
     return value;
   }
 
-  @SuppressWarnings("deprecation")
-  private static @Nullable Boolean readBoolNullable(
-      final @NotNull Bundle metadata,
-      final @NotNull ILogger logger,
-      final @NotNull String key,
-      final @Nullable Boolean defaultValue) {
-    if (metadata.getSerializable(key) != null) {
-      final boolean nonNullDefault = defaultValue == null ? false : true;
-      final boolean bool = metadata.getBoolean(key, nonNullDefault);
-      logger.log(SentryLevel.DEBUG, key + " read: " + bool);
-      return bool;
-    } else {
-      logger.log(SentryLevel.DEBUG, key + " used default " + defaultValue);
-      return defaultValue;
-    }
-  }
-
   private static @Nullable String readString(
       final @NotNull Bundle metadata,
       final @NotNull ILogger logger,
