@@ -41,14 +41,19 @@ Envelope files are removed from the cache directory in the following scenarios:
 ### 1. Successful Send to Sentry Server
 When `AsyncHttpTransport` successfully sends an envelope to the Sentry server, it calls `envelopeCache.discard(envelope)` to remove the cached file. This happens in `AsyncHttpTransport.EnvelopeSender.flush()` when `result.isSuccess()` is true.
 
-### 2. Rate Limited Previously Cached Envelopes  
+### 2. Rate Limited Previously Cached Envelopes
 If an envelope is dropped due to rate limiting **and** has previously been cached (indicated by the `Cached` hint), it gets discarded immediately via `envelopeCache.discard(envelope)` in `AsyncHttpTransport.send()`.
+In this case the discarded envelope is recorded as lost in client reports.
 
 ### 3. Offline Cache Processing (EnvelopeSender)
 When the SDK processes cached envelope files from disk (via `EnvelopeSender`), files are deleted after processing **unless** they are marked for retry. In `EnvelopeSender.processFile()`, the file is deleted with `safeDelete(file)` if `!retryable.isRetry()`.
 
 ### 4. Session File Management
 Session-related files (session.json, previous_session.json) are removed during session lifecycle events like session start/end and abnormal exits.
+
+### 5. Cache rotation
+If the number of files in the cache directory has reached the configured limit (SentryOptions.maxCacheItems), the oldest file will be deleted to make room.
+This happens in `CacheStrategy.rotateCacheIfNeeded`. The deleted envelope will be recorded as lost in client reports.
 
 ## Retry Mechanism
 
@@ -65,6 +70,8 @@ Session-related files (session.json, previous_session.json) are removed during s
 2. **Network Errors (Non-Retryable)**: When an envelope isn't marked as retryable and fails due to network issues - recorded as `DiscardReason.NETWORK_ERROR`
 
 3. **Rate Limiting**: When envelope items are dropped due to active rate limits - recorded as `DiscardReason.RATELIMIT_BACKOFF`
+
+4. **Cache Overflow**: When the cache directory has reached maxCacheItems, old files are deleted - recorded as `DiscardReason.CACHE_OVERFLOW`
 
 ### Cache Processing Triggers
 Cached envelopes are processed when:
