@@ -272,6 +272,7 @@ public final class JavaContinuousProfiler
         // start profiling), meaning there's no scopes to send the chunks. In that case, we store
         // the data in a list and send it when the next chunk is finished.
         try (final @NotNull ISentryLifecycleToken ignored2 = payloadLock.acquire()) {
+          File jfrFile = new File(filename);
           payloadBuilders.add(
               new ProfileChunk.Builder(
                   profilerId,
