@@ -18,7 +18,6 @@ import io.sentry.SentryEnvelope
 import io.sentry.SentryEvent
 import io.sentry.SentryLogEvent
 import io.sentry.SentryLogEvents
-import io.sentry.SentryOptions
 import io.sentry.SentryReplayEvent
 import io.sentry.Session
 import io.sentry.TraceContext
@@ -41,6 +40,7 @@ class SessionTrackingIntegrationTest {
 
   @BeforeTest
   fun `set up`() {
+    AppState.getInstance().resetInstance()
     context = ApplicationProvider.getApplicationContext()
   }
 
@@ -56,7 +56,7 @@ class SessionTrackingIntegrationTest {
     }
     val client = CapturingSentryClient()
     Sentry.bindClient(client)
-    val lifecycle = setupLifecycle(options)
+    val lifecycle = setupLifecycle()
     val initSid = lastSessionId()
 
     lifecycle.handleLifecycleEvent(ON_START)
@@ -115,12 +115,9 @@ class SessionTrackingIntegrationTest {
     return sid
   }
 
-  private fun setupLifecycle(options: SentryOptions): LifecycleRegistry {
+  private fun setupLifecycle(): LifecycleRegistry {
     val lifecycle = LifecycleRegistry(ProcessLifecycleOwner.get())
-    val lifecycleWatcher =
-      (options.integrations.find { it is AppLifecycleIntegration } as AppLifecycleIntegration)
-        .watcher
-    lifecycle.addObserver(lifecycleWatcher!!)
+    lifecycle.addObserver(AppState.getInstance().lifecycleObserver)
     return lifecycle
   }
 

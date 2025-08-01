@@ -1,7 +1,5 @@
 package io.sentry.android.core;
 
-import androidx.lifecycle.DefaultLifecycleObserver;
-import androidx.lifecycle.LifecycleOwner;
 import io.sentry.Breadcrumb;
 import io.sentry.IScopes;
 import io.sentry.ISentryLifecycleToken;
@@ -17,7 +15,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
-final class LifecycleWatcher implements DefaultLifecycleObserver {
+final class LifecycleWatcher implements AppState.AppStateListener {
 
   private final AtomicLong lastUpdatedSession = new AtomicLong(0L);
 
@@ -58,15 +56,10 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
     this.currentDateProvider = currentDateProvider;
   }
 
-  // App goes to foreground
   @Override
-  public void onStart(final @NotNull LifecycleOwner owner) {
+  public void onForeground() {
     startSession();
     addAppBreadcrumb("foreground");
-
-    // Consider using owner.getLifecycle().getCurrentState().isAtLeast(Lifecycle.State.RESUMED);
-    // in the future.
-    AppState.getInstance().setInBackground(false);
   }
 
   private void startSession() {
@@ -99,14 +92,13 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
   // App went to background and triggered this callback after 700ms
   // as no new screen was shown
   @Override
-  public void onStop(final @NotNull LifecycleOwner owner) {
+  public void onBackground() {
     final long currentTimeMillis = currentDateProvider.getCurrentTimeMillis();
     this.lastUpdatedSession.set(currentTimeMillis);
 
     scopes.getOptions().getReplayController().pause();
     scheduleEndSession();
 
-    AppState.getInstance().setInBackground(true);
     addAppBreadcrumb("background");
   }
 
