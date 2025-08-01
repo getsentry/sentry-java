@@ -273,6 +273,12 @@ public final class JavaContinuousProfiler
         // the data in a list and send it when the next chunk is finished.
         try (final @NotNull ISentryLifecycleToken ignored2 = payloadLock.acquire()) {
           File jfrFile = new File(filename);
+          // TODO: should we add deleteOnExit() here to let the JVM clean up the file?
+          // as in `Sentry.java` `initJvmContinuousProfiling` each time we start the profiler we
+          // create a new
+          // temp directory/file that we can't cleanup on restart. Unless the user sets
+          // `profiling-traces-dir-path` manually
+          //          jfrFile.deleteOnExit();
           payloadBuilders.add(
               new ProfileChunk.Builder(
                   profilerId,
