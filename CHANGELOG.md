@@ -13,6 +13,12 @@
 - Remove unused method in ManifestMetadataReader ([#4585](https://github.com/getsentry/sentry-java/pull/4585))
 - Have single `NetworkCallback` registered at a time to reduce IPC calls ([#4562](https://github.com/getsentry/sentry-java/pull/4562))
 
+### Dependencies
+
+- Bump Gradle from v8.14.3 to v9.0.0 ([#4592](https://github.com/getsentry/sentry-java/pull/4592))
+  - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v900)
+  - [diff](https://github.com/gradle/gradle/compare/v8.14.3...v9.0.0)
+
 ## 8.18.0
 
 ### Features
