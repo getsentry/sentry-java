@@ -1,4 +1,7 @@
-
+---
+alwaysApply: true
+description: Java SDK Offline behaviour
+---
 # Java SDK Offline behaviour
 
 By default offline caching is enabled for Android but disabled for JVM.
