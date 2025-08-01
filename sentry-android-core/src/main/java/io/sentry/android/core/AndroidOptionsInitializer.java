@@ -391,6 +391,9 @@ final class AndroidOptionsInitializer {
       options.addIntegration(replay);
       options.setReplayController(replay);
     }
+    options
+        .getFeedbackOptions()
+        .setDialogHandler(new SentryAndroidOptions.AndroidUserFeedbackIDialogHandler());
   }
 
   /**

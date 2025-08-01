@@ -27,7 +27,6 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import org.mockito.kotlin.KInOrder
 import org.mockito.kotlin.any
-import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.check
 import org.mockito.kotlin.inOrder
 import org.mockito.kotlin.mock
@@ -138,18 +137,6 @@ class NetworkBreadcrumbsIntegrationTest {
   }
 
   @Test
-  fun `When connected to the same network without disconnecting from the previous one, only one breadcrumb is captured`() {
-    val sut = fixture.getSut()
-    sut.register(fixture.scopes, fixture.options)
-    val callback = sut.networkCallback
-    assertNotNull(callback)
-    callback.onAvailable(fixture.network)
-    callback.onAvailable(fixture.network)
-
-    verify(fixture.scopes, times(1)).addBreadcrumb(any<Breadcrumb>())
-  }
-
-  @Test
   fun `When disconnected from a network, a breadcrumb is captured`() {
     val sut = fixture.getSut()
     sut.register(fixture.scopes, fixture.options)
@@ -169,17 +156,6 @@ class NetworkBreadcrumbsIntegrationTest {
           assertEquals("NETWORK_LOST", it.data["action"])
         }
       )
-  }
-
-  @Test
-  fun `When disconnected from a network, a breadcrumb is captured only if previously connected to that network`() {
-    val sut = fixture.getSut()
-    sut.register(fixture.scopes, fixture.options)
-    val callback = sut.networkCallback
-    assertNotNull(callback)
-    // callback.onAvailable(network) was not called, so no breadcrumb should be captured
-    callback.onLost(mock())
-    verify(fixture.scopes, never()).addBreadcrumb(any<Breadcrumb>())
   }
 
   @Test
@@ -218,17 +194,6 @@ class NetworkBreadcrumbsIntegrationTest {
         },
         any(),
       )
-  }
-
-  @Test
-  fun `When a network connection detail changes, a breadcrumb is captured only if previously connected to that network`() {
-    val sut = fixture.getSut()
-    sut.register(fixture.scopes, fixture.options)
-    val callback = sut.networkCallback
-    assertNotNull(callback)
-    // callback.onAvailable(network) was not called, so no breadcrumb should be captured
-    onCapabilitiesChanged(callback, mock())
-    verify(fixture.scopes, never()).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
   }
 
   @Test

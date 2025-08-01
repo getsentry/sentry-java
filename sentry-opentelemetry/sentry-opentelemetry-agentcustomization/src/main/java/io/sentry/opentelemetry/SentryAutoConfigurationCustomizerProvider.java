@@ -7,11 +7,9 @@ import io.opentelemetry.sdk.trace.SdkTracerProviderBuilder;
 import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
 import io.sentry.InitPriority;
 import io.sentry.Sentry;
-import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryOptions;
 import io.sentry.internal.ManifestVersionReader;
 import io.sentry.protocol.SdkVersion;
-import io.sentry.protocol.SentryPackage;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
@@ -44,15 +42,6 @@ public final class SentryAutoConfigurationCustomizerProvider
               options.setSdkVersion(sdkVersion);
             }
           });
-    }
-
-    if (versionInfoHolder != null) {
-      for (SentryPackage pkg : versionInfoHolder.getPackages()) {
-        SentryIntegrationPackageStorage.getInstance().addPackage(pkg.getName(), pkg.getVersion());
-      }
-      for (String integration : versionInfoHolder.getIntegrations()) {
-        SentryIntegrationPackageStorage.getInstance().addIntegration(integration);
-      }
     }
 
     autoConfiguration
