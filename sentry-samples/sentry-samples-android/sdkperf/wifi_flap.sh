@@ -15,5 +15,6 @@ do
   adb shell svc wifi enable
   sleep 6
 done
-
+# Turn mobile data back on
+adb shell svc data enable
 echo "Done flapping Wi-Fi 8 times."
