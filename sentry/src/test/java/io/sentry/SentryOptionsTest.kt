@@ -409,6 +409,7 @@ class SentryOptionsTest {
     externalOptions.isEnableLogs = true
     externalOptions.profileSessionSampleRate = 0.8
     externalOptions.profilingTracesDirPath = "/profiling-traces"
+    externalOptions.profileLifecycle = ProfileLifecycle.TRACE
 
     val hash = StringUtils.calculateStringHash(externalOptions.dsn, mock())
     val options = SentryOptions()
@@ -466,6 +467,7 @@ class SentryOptionsTest {
     assertTrue(options.logs.isEnabled!!)
     assertEquals(0.8, options.profileSessionSampleRate)
     assertEquals("/profiling-traces${File.separator}${hash}", options.profilingTracesDirPath)
+    assertEquals(ProfileLifecycle.TRACE, options.profileLifecycle)
   }
 
   @Test

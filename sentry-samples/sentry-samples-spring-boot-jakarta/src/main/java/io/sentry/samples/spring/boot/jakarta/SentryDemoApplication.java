@@ -4,7 +4,6 @@ import static io.sentry.quartz.SentryJobListener.SENTRY_SLUG_KEY;
 
 import io.sentry.samples.spring.boot.jakarta.quartz.SampleJob;
 import java.util.Collections;
-import org.jetbrains.annotations.NotNull;
 import org.quartz.JobDetail;
 import org.quartz.SimpleTrigger;
 import org.springframework.boot.SpringApplication;
@@ -49,11 +48,6 @@ public class SentryDemoApplication {
     jobDetailFactory.setJobDataAsMap(
         Collections.singletonMap(SENTRY_SLUG_KEY, "monitor_slug_job_detail"));
     return jobDetailFactory;
-  }
-
-  @Bean
-  public @NotNull ProfilingInitializer profilingInitializer() {
-    return new ProfilingInitializer();
   }
 
   @Bean

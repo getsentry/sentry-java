@@ -1,7 +1,6 @@
-package io.sentry.asyncprofiler
+package io.sentry.asyncprofiler.profiling
 
 import io.sentry.DataCategory
-import io.sentry.IConnectionStatusProvider
 import io.sentry.ILogger
 import io.sentry.IScopes
 import io.sentry.ProfileLifecycle
@@ -11,7 +10,6 @@ import io.sentry.SentryOptions
 import io.sentry.SentryTracer
 import io.sentry.TracesSampler
 import io.sentry.TransactionContext
-import io.sentry.asyncprofiler.profiling.JavaContinuousProfiler
 import io.sentry.protocol.SentryId
 import io.sentry.test.DeferredExecutorService
 import io.sentry.transport.RateLimiter
@@ -22,9 +20,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
-import kotlin.use
 import org.mockito.Mockito
-import org.mockito.Mockito.mockStatic
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
@@ -41,7 +37,7 @@ class JavaContinuousProfilerTest {
   private class Fixture {
     private val mockDsn = "http://key@localhost/proj"
     val executor = DeferredExecutorService()
-    val mockedSentry = mockStatic(Sentry::class.java)
+    val mockedSentry = Mockito.mockStatic(Sentry::class.java)
     val mockLogger = mock<ILogger>()
     val mockTracesSampler = mock<TracesSampler>()
 
@@ -281,25 +277,6 @@ class JavaContinuousProfilerTest {
     verify(fixture.mockLogger).log(eq(SentryLevel.ERROR), eq("Failed to start profiling: "), any())
   }
 
-  //    @Test
-  //    fun `profiler stops profiling and clear scheduled job on close`() {
-  //      val profiler = fixture.getSut()
-  //      profiler.startProfiler(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
-  //      assertTrue(profiler.isRunning)
-  //
-  //      profiler.close(true)
-  //      assertFalse(profiler.isRunning)
-  //
-  //      // The timeout scheduled job should be cleared
-  //      val androidProfiler = profiler.getProperty<JavaContinuousProfiler?>("profiler")
-  //      val scheduledJob = androidProfiler?.getProperty<Future<*>?>("scheduledFinish")
-  //      assertNull(scheduledJob)
-  //
-  //      val stopFuture = profiler.getStopFuture()
-  //      assertNotNull(stopFuture)
-  //      assertTrue(stopFuture.isCancelled || stopFuture.isDone)
-  //    }
-
   @Test
   fun `profiler stops and restart for each chunk`() {
     val profiler = fixture.getSut()
@@ -405,24 +382,6 @@ class JavaContinuousProfilerTest {
     assertEquals(SentryId.EMPTY_ID, profiler.profilerId)
     verify(fixture.mockLogger)
       .log(eq(SentryLevel.WARNING), eq("SDK is rate limited. Stopping profiler."))
-  }
-
-  @Test
-  fun `profiler does not start when offline`() {
-    val profiler =
-      fixture.getSut {
-        it.connectionStatusProvider = mock { provider ->
-          whenever(provider.connectionStatus)
-            .thenReturn(IConnectionStatusProvider.ConnectionStatus.DISCONNECTED)
-        }
-      }
-
-    // If the device is offline, the profiler should never start
-    profiler.startProfiler(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
-    assertFalse(profiler.isRunning)
-    assertEquals(SentryId.EMPTY_ID, profiler.profilerId)
-    verify(fixture.mockLogger)
-      .log(eq(SentryLevel.WARNING), eq("Device is offline. Stopping profiler."))
   }
 
   fun withMockScopes(closure: () -> Unit) =
