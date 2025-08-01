@@ -1,0 +1,103 @@
+buffers {
+  size_kb: 265536
+  fill_policy: DISCARD
+}
+buffers {
+  size_kb: 4096
+  fill_policy: DISCARD
+}
+data_sources {
+  config {
+    name: "linux.ftrace"
+    ftrace_config {
+      ftrace_events: "sched/sched_process_exit"
+      ftrace_events: "sched/sched_process_free"
+      ftrace_events: "task/task_newtask"
+      ftrace_events: "task/task_rename"
+      ftrace_events: "sched/sched_switch"
+      ftrace_events: "power/suspend_resume"
+      ftrace_events: "sched/sched_blocked_reason"
+      ftrace_events: "sched/sched_wakeup"
+      ftrace_events: "sched/sched_wakeup_new"
+      ftrace_events: "sched/sched_waking"
+      ftrace_events: "sched/sched_process_exit"
+      ftrace_events: "sched/sched_process_free"
+      ftrace_events: "task/task_newtask"
+      ftrace_events: "task/task_rename"
+      ftrace_events: "power/cpu_frequency"
+      ftrace_events: "power/cpu_idle"
+      ftrace_events: "power/suspend_resume"
+      ftrace_events: "power/gpu_frequency"
+      ftrace_events: "power/gpu_work_period"
+      ftrace_events: "ftrace/print"
+      atrace_categories: "adb"
+      atrace_categories: "camera"
+      atrace_categories: "gfx"
+      atrace_categories: "network"
+      atrace_categories: "power"
+      atrace_categories: "wm"
+      atrace_categories: "am"
+      atrace_categories: "dalvik"
+      atrace_categories: "bionic"
+      atrace_categories: "binder_driver"
+      atrace_categories: "binder_lock"
+      atrace_categories: "ss"
+      atrace_apps: "*"
+
+      symbolize_ksyms: true
+    }
+  }
+}
+data_sources {
+  config {
+    name: "linux.process_stats"
+    process_stats_config {
+      scan_all_processes_on_start: true
+      proc_stats_poll_ms: 250
+    }
+  }
+}
+data_sources {
+  config {
+    name: "linux.sys_stats"
+  }
+}
+data_sources {
+  config {
+    name: "android.log"
+    android_log_config {
+    }
+  }
+}
+data_sources {
+  config {
+    name: "android.surfaceflinger.frametimeline"
+  }
+}
+data_sources {
+  config {
+    name: "linux.perf"
+    perf_event_config {
+      remote_descriptor_timeout_ms: 10000
+      ring_buffer_pages: 8192
+
+      timebase {
+        period: 1
+
+        tracepoint {
+          #name: "binder/binder_transaction"
+          name: "binder/binder_transaction_received"
+        }
+      }
+      callstack_sampling {
+        scope {
+          target_cmdline: "io.sentry.samples.android"
+        }
+        kernel_frames: true
+      }
+    }
+  }
+}
+
+
+duration_ms: 100000

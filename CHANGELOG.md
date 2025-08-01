@@ -13,6 +13,7 @@
 - Deduplicate battery breadcrumbs ([#4561](https://github.com/getsentry/sentry-java/pull/4561))
 - Remove unused method in ManifestMetadataReader ([#4585](https://github.com/getsentry/sentry-java/pull/4585))
 - Have single `NetworkCallback` registered at a time to reduce IPC calls ([#4562](https://github.com/getsentry/sentry-java/pull/4562))
+- Do not register for SystemEvents and NetworkCallbacks immediately when launched with non-foreground importance ([#4579](https://github.com/getsentry/sentry-java/pull/4579))
 
 ## 8.18.0
 

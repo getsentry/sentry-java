@@ -167,14 +167,27 @@ public final class io/sentry/android/core/AppLifecycleIntegration : io/sentry/In
 }
 
 public final class io/sentry/android/core/AppState : java/io/Closeable {
+	public fun addAppStateListener (Lio/sentry/android/core/AppState$AppStateListener;)V
 	public fun close ()V
 	public static fun getInstance ()Lio/sentry/android/core/AppState;
+	public fun getLifecycleObserver ()Lio/sentry/android/core/AppState$LifecycleObserver;
 	public fun isInBackground ()Ljava/lang/Boolean;
+	public fun registerLifecycleObserver (Lio/sentry/SentryOptions;)V
+	public fun removeAppStateListener (Lio/sentry/android/core/AppState$AppStateListener;)V
+	public fun resetInstance ()V
+	public fun unregisterLifecycleObserver ()V
 }
 
 public abstract interface class io/sentry/android/core/AppState$AppStateListener {
 	public abstract fun onBackground ()V
 	public abstract fun onForeground ()V
+}
+
+public final class io/sentry/android/core/AppState$LifecycleObserver : androidx/lifecycle/DefaultLifecycleObserver {
+	public fun <init> (Lio/sentry/android/core/AppState;)V
+	public fun getListeners ()Ljava/util/List;
+	public fun onStart (Landroidx/lifecycle/LifecycleOwner;)V
+	public fun onStop (Landroidx/lifecycle/LifecycleOwner;)V
 }
 
 public final class io/sentry/android/core/BuildConfig {

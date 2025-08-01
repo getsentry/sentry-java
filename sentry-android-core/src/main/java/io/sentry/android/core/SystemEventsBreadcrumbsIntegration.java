@@ -43,6 +43,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
@@ -62,6 +63,7 @@ public final class SystemEventsBreadcrumbsIntegration
   private volatile boolean isClosed = false;
   private volatile boolean isStopped = false;
   private volatile IntentFilter filter = null;
+  private final @NotNull AtomicBoolean isReceiverRegistered = new AtomicBoolean(false);
   private final @NotNull AutoClosableReentrantLock receiverLock = new AutoClosableReentrantLock();
   // Track previous battery state to avoid duplicate breadcrumbs when values haven't changed
   private @Nullable BatteryState previousBatteryState;
@@ -101,14 +103,15 @@ public final class SystemEventsBreadcrumbsIntegration
 
     if (this.options.isEnableSystemEventBreadcrumbs()) {
       AppState.getInstance().addAppStateListener(this);
-      registerReceiver(this.scopes, this.options, /* reportAsNewIntegration= */ true);
+
+      if (ContextUtils.isForegroundImportance()) {
+        registerReceiver(this.scopes, this.options);
+      }
     }
   }
 
   private void registerReceiver(
-      final @NotNull IScopes scopes,
-      final @NotNull SentryAndroidOptions options,
-      final boolean reportAsNewIntegration) {
+      final @NotNull IScopes scopes, final @NotNull SentryAndroidOptions options) {
 
     if (!options.isEnableSystemEventBreadcrumbs()) {
       return;
@@ -139,7 +142,7 @@ public final class SystemEventsBreadcrumbsIntegration
                     // registerReceiver can throw SecurityException but it's not documented in the
                     // official docs
                     ContextUtils.registerReceiver(context, options, receiver, filter);
-                    if (reportAsNewIntegration) {
+                    if (!isReceiverRegistered.getAndSet(true)) {
                       options
                           .getLogger()
                           .log(SentryLevel.DEBUG, "SystemEventsBreadcrumbsIntegration installed.");
@@ -239,7 +242,7 @@ public final class SystemEventsBreadcrumbsIntegration
 
     isStopped = false;
 
-    registerReceiver(scopes, options, /* reportAsNewIntegration= */ false);
+    registerReceiver(scopes, options);
   }
 
   @Override
