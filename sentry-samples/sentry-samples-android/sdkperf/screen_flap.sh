@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Loop 4 times to toggle Wi-Fi
+# Loop 4 times to toggle Screen
 for i in {1..4}
 do
   echo "[$i] Turning screen off..."
