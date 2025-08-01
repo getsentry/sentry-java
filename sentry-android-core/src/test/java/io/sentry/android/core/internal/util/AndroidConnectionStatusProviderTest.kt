@@ -648,9 +648,8 @@ class AndroidConnectionStatusProviderTest {
     // Configure the throwing callback to throw an exception
     whenever(throwingCallback.onAvailable(any())).thenThrow(RuntimeException("Test exception"))
 
-    AndroidConnectionStatusProvider.getChildCallbacks().addAll(
-      listOf(throwingCallback, goodCallback1, goodCallback2)
-    )
+    AndroidConnectionStatusProvider.getChildCallbacks()
+      .addAll(listOf(throwingCallback, goodCallback1, goodCallback2))
 
     // Simulate event - should not fail despite throwing callback
     mainCallback.onAvailable(network)
@@ -661,11 +660,12 @@ class AndroidConnectionStatusProviderTest {
     verify(goodCallback2).onAvailable(network)
 
     // Verify the exception was logged
-    verify(logger).log(
-      eq(io.sentry.SentryLevel.WARNING),
-      eq("Exception in child NetworkCallback.onAvailable"),
-      any<Throwable>()
-    )
+    verify(logger)
+      .log(
+        eq(io.sentry.SentryLevel.WARNING),
+        eq("Exception in child NetworkCallback.onAvailable"),
+        any<Throwable>(),
+      )
   }
 
   @Test
@@ -686,9 +686,8 @@ class AndroidConnectionStatusProviderTest {
     // Configure the throwing callback to throw an exception
     whenever(throwingCallback.onLost(any())).thenThrow(RuntimeException("Test exception"))
 
-    AndroidConnectionStatusProvider.getChildCallbacks().addAll(
-      listOf(throwingCallback, goodCallback1, goodCallback2)
-    )
+    AndroidConnectionStatusProvider.getChildCallbacks()
+      .addAll(listOf(throwingCallback, goodCallback1, goodCallback2))
 
     // Simulate event - should not fail despite throwing callback
     mainCallback.onLost(network)
@@ -699,11 +698,12 @@ class AndroidConnectionStatusProviderTest {
     verify(goodCallback2).onLost(network)
 
     // Verify the exception was logged
-    verify(logger).log(
-      eq(io.sentry.SentryLevel.WARNING),
-      eq("Exception in child NetworkCallback.onLost"),
-      any<Throwable>()
-    )
+    verify(logger)
+      .log(
+        eq(io.sentry.SentryLevel.WARNING),
+        eq("Exception in child NetworkCallback.onLost"),
+        any<Throwable>(),
+      )
   }
 
   @Test
@@ -722,11 +722,11 @@ class AndroidConnectionStatusProviderTest {
     val goodCallback2 = mock<NetworkCallback>()
 
     // Configure the throwing callback to throw an exception
-    whenever(throwingCallback.onCapabilitiesChanged(any(), any())).thenThrow(RuntimeException("Test exception"))
+    whenever(throwingCallback.onCapabilitiesChanged(any(), any()))
+      .thenThrow(RuntimeException("Test exception"))
 
-    AndroidConnectionStatusProvider.getChildCallbacks().addAll(
-      listOf(throwingCallback, goodCallback1, goodCallback2)
-    )
+    AndroidConnectionStatusProvider.getChildCallbacks()
+      .addAll(listOf(throwingCallback, goodCallback1, goodCallback2))
 
     // Simulate event - should not fail despite throwing callback
     mainCallback.onCapabilitiesChanged(network, networkCapabilities)
@@ -737,11 +737,12 @@ class AndroidConnectionStatusProviderTest {
     verify(goodCallback2).onCapabilitiesChanged(network, networkCapabilities)
 
     // Verify the exception was logged
-    verify(logger).log(
-      eq(io.sentry.SentryLevel.WARNING),
-      eq("Exception in child NetworkCallback.onCapabilitiesChanged"),
-      any<Throwable>()
-    )
+    verify(logger)
+      .log(
+        eq(io.sentry.SentryLevel.WARNING),
+        eq("Exception in child NetworkCallback.onCapabilitiesChanged"),
+        any<Throwable>(),
+      )
   }
 
   @Test
@@ -795,9 +796,8 @@ class AndroidConnectionStatusProviderTest {
     // Configure the throwing callback to throw an exception
     whenever(throwingCallback.onUnavailable()).thenThrow(RuntimeException("Test exception"))
 
-    AndroidConnectionStatusProvider.getChildCallbacks().addAll(
-      listOf(throwingCallback, goodCallback1, goodCallback2)
-    )
+    AndroidConnectionStatusProvider.getChildCallbacks()
+      .addAll(listOf(throwingCallback, goodCallback1, goodCallback2))
 
     // Simulate event - should not fail despite throwing callback
     mainCallback.onUnavailable()
@@ -808,10 +808,11 @@ class AndroidConnectionStatusProviderTest {
     verify(goodCallback2).onUnavailable()
 
     // Verify the exception was logged
-    verify(logger).log(
-      eq(io.sentry.SentryLevel.WARNING),
-      eq("Exception in child NetworkCallback.onUnavailable"),
-      any<Throwable>()
-    )
+    verify(logger)
+      .log(
+        eq(io.sentry.SentryLevel.WARNING),
+        eq("Exception in child NetworkCallback.onUnavailable"),
+        any<Throwable>(),
+      )
   }
 }

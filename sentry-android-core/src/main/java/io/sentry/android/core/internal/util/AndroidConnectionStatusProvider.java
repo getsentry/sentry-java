@@ -172,7 +172,12 @@ public final class AndroidConnectionStatusProvider implements IConnectionStatusP
                   try {
                     cb.onAvailable(network);
                   } catch (Throwable t) {
-                    options.getLogger().log(SentryLevel.WARNING, "Exception in child NetworkCallback.onAvailable", t);
+                    options
+                        .getLogger()
+                        .log(
+                            SentryLevel.WARNING,
+                            "Exception in child NetworkCallback.onAvailable",
+                            t);
                   }
                 }
               }
@@ -183,14 +188,20 @@ public final class AndroidConnectionStatusProvider implements IConnectionStatusP
             public void onUnavailable() {
               clearCacheAndNotifyObservers();
 
-              // Only call onUnavailable on child callbacks if we're on API 26+ to maintain compatibility
+              // Only call onUnavailable on child callbacks if we're on API 26+ to maintain
+              // compatibility
               if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.O) {
                 try (final @NotNull ISentryLifecycleToken ignored = childCallbacksLock.acquire()) {
                   for (final @NotNull NetworkCallback cb : childCallbacks) {
                     try {
                       cb.onUnavailable();
                     } catch (Throwable t) {
-                      options.getLogger().log(SentryLevel.WARNING, "Exception in child NetworkCallback.onUnavailable", t);
+                      options
+                          .getLogger()
+                          .log(
+                              SentryLevel.WARNING,
+                              "Exception in child NetworkCallback.onUnavailable",
+                              t);
                     }
                   }
                 }
@@ -209,7 +220,9 @@ public final class AndroidConnectionStatusProvider implements IConnectionStatusP
                   try {
                     cb.onLost(network);
                   } catch (Throwable t) {
-                    options.getLogger().log(SentryLevel.WARNING, "Exception in child NetworkCallback.onLost", t);
+                    options
+                        .getLogger()
+                        .log(SentryLevel.WARNING, "Exception in child NetworkCallback.onLost", t);
                   }
                 }
               }
@@ -248,7 +261,12 @@ public final class AndroidConnectionStatusProvider implements IConnectionStatusP
                   try {
                     cb.onCapabilitiesChanged(network, networkCapabilities);
                   } catch (Throwable t) {
-                    options.getLogger().log(SentryLevel.WARNING, "Exception in child NetworkCallback.onCapabilitiesChanged", t);
+                    options
+                        .getLogger()
+                        .log(
+                            SentryLevel.WARNING,
+                            "Exception in child NetworkCallback.onCapabilitiesChanged",
+                            t);
                   }
                 }
               }
