@@ -157,7 +157,7 @@ class SystemEventsBreadcrumbsIntegrationTest {
           assertEquals("device.event", it.category)
           assertEquals("system", it.type)
           assertEquals(SentryLevel.INFO, it.level)
-          assertEquals(it.data["level"], 75f)
+          assertEquals(it.data["level"], 75)
           assertEquals(it.data["charging"], true)
         },
         anyOrNull(),
@@ -189,7 +189,7 @@ class SystemEventsBreadcrumbsIntegrationTest {
     verify(fixture.scopes)
       .addBreadcrumb(
         check<Breadcrumb> {
-          assertEquals(it.data["level"], 80f)
+          assertEquals(it.data["level"], 80)
           assertEquals(it.data["charging"], false)
         },
         anyOrNull(),
@@ -227,7 +227,7 @@ class SystemEventsBreadcrumbsIntegrationTest {
     verify(fixture.scopes)
       .addBreadcrumb(
         check<Breadcrumb> {
-          assertEquals(it.data["level"], 80f)
+          assertEquals(it.data["level"], 80)
           assertEquals(it.data["charging"], true)
         },
         anyOrNull(),
@@ -266,7 +266,7 @@ class SystemEventsBreadcrumbsIntegrationTest {
     verify(fixture.scopes)
       .addBreadcrumb(
         check<Breadcrumb> {
-          assertEquals(it.data["level"], 80.001f)
+          assertEquals(it.data["level"], 80)
           assertEquals(it.data["charging"], true)
         },
         anyOrNull(),

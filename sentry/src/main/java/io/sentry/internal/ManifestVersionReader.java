@@ -2,13 +2,10 @@ package io.sentry.internal;
 
 import io.sentry.ISentryLifecycleToken;
 import io.sentry.SentryIntegrationPackageStorage;
-import io.sentry.protocol.SentryPackage;
 import io.sentry.util.AutoClosableReentrantLock;
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Enumeration;
-import java.util.List;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 import org.jetbrains.annotations.ApiStatus;
@@ -21,7 +18,7 @@ public final class ManifestVersionReader {
   private static final @NotNull AutoClosableReentrantLock staticLock =
       new AutoClosableReentrantLock();
   private volatile boolean hasManifestBeenRead = false;
-  private volatile @Nullable VersionInfoHolder versionInfo = null;
+  private final @NotNull VersionInfoHolder versionInfo = new VersionInfoHolder();
   private @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
 
   public static @NotNull ManifestVersionReader getInstance() {
@@ -40,6 +37,9 @@ public final class ManifestVersionReader {
 
   public @Nullable VersionInfoHolder readOpenTelemetryVersion() {
     readManifestFiles();
+    if (versionInfo.sdkVersion == null) {
+      return null;
+    }
     return versionInfo;
   }
 
@@ -48,7 +48,6 @@ public final class ManifestVersionReader {
       return;
     }
 
-    @Nullable VersionInfoHolder infoHolder = null;
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       if (hasManifestBeenRead) {
         return;
@@ -66,28 +65,32 @@ public final class ManifestVersionReader {
             final @Nullable String packageName = mainAttributes.getValue("Sentry-SDK-Package-Name");
 
             if (name != null && version != null) {
-              infoHolder = new VersionInfoHolder();
-              infoHolder.sdkName = name;
-              infoHolder.sdkVersion = version;
-              infoHolder.packages.add(
-                  new SentryPackage("maven:io.sentry:sentry-opentelemetry-agent", version));
+              versionInfo.sdkName = name;
+              versionInfo.sdkVersion = version;
               final @Nullable String otelVersion =
                   mainAttributes.getValue("Sentry-Opentelemetry-Version-Name");
               if (otelVersion != null) {
-                infoHolder.packages.add(
-                    new SentryPackage("maven:io.opentelemetry:opentelemetry-sdk", otelVersion));
-                infoHolder.integrations.add("OpenTelemetry");
+                SentryIntegrationPackageStorage.getInstance()
+                    .addPackage("maven:io.opentelemetry:opentelemetry-sdk", otelVersion);
+                SentryIntegrationPackageStorage.getInstance().addIntegration("OpenTelemetry");
               }
               final @Nullable String otelJavaagentVersion =
                   mainAttributes.getValue("Sentry-Opentelemetry-Javaagent-Version-Name");
               if (otelJavaagentVersion != null) {
-                infoHolder.packages.add(
-                    new SentryPackage(
+                SentryIntegrationPackageStorage.getInstance()
+                    .addPackage(
                         "maven:io.opentelemetry.javaagent:opentelemetry-javaagent",
-                        otelJavaagentVersion));
-                infoHolder.integrations.add("OpenTelemetry-Agent");
+                        otelJavaagentVersion);
+                SentryIntegrationPackageStorage.getInstance().addIntegration("OpenTelemetry-Agent");
               }
-              break;
+              if (name.equals("sentry.java.opentelemetry.agentless")) {
+                SentryIntegrationPackageStorage.getInstance()
+                    .addIntegration("OpenTelemetry-Agentless");
+              }
+              if (name.equals("sentry.java.opentelemetry.agentless-spring")) {
+                SentryIntegrationPackageStorage.getInstance()
+                    .addIntegration("OpenTelemetry-Agentless-Spring");
+              }
             }
 
             if (sdkName != null
@@ -105,15 +108,12 @@ public final class ManifestVersionReader {
       // ignore
     } finally {
       hasManifestBeenRead = true;
-      versionInfo = infoHolder;
     }
   }
 
   public static final class VersionInfoHolder {
-    private @Nullable String sdkName;
-    private @Nullable String sdkVersion;
-    private List<SentryPackage> packages = new ArrayList<>();
-    private List<String> integrations = new ArrayList<>();
+    private volatile @Nullable String sdkName;
+    private volatile @Nullable String sdkVersion;
 
     public @Nullable String getSdkName() {
       return sdkName;
@@ -121,14 +121,6 @@ public final class ManifestVersionReader {
 
     public @Nullable String getSdkVersion() {
       return sdkVersion;
-    }
-
-    public List<SentryPackage> getPackages() {
-      return packages;
-    }
-
-    public List<String> getIntegrations() {
-      return integrations;
     }
   }
 }

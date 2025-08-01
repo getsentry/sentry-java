@@ -60,11 +60,23 @@ internal class ScreenshotRecorder(
   private val debugOverlayDrawable = DebugOverlayDrawable()
 
   fun capture() {
+    if (options.sessionReplay.isDebug) {
+      options.logger.log(DEBUG, "Capturing screenshot, isCapturing: %s", isCapturing.get())
+    }
     if (!isCapturing.get()) {
       if (options.sessionReplay.isDebug) {
         options.logger.log(DEBUG, "ScreenshotRecorder is paused, not capturing screenshot")
       }
       return
+    }
+
+    if (options.sessionReplay.isDebug) {
+      options.logger.log(
+        DEBUG,
+        "Capturing screenshot, contentChanged: %s, lastCaptureSuccessful: %s",
+        contentChanged.get(),
+        lastCaptureSuccessful.get(),
+      )
     }
 
     if (!contentChanged.get() && lastCaptureSuccessful.get()) {
@@ -84,99 +96,95 @@ internal class ScreenshotRecorder(
       return
     }
 
-    // postAtFrontOfQueue to ensure the view hierarchy and bitmap are ase close in-sync as possible
-    mainLooperHandler.post {
-      try {
-        contentChanged.set(false)
-        PixelCopy.request(
-          window,
-          screenshot,
-          { copyResult: Int ->
-            if (copyResult != PixelCopy.SUCCESS) {
-              options.logger.log(INFO, "Failed to capture replay recording: %d", copyResult)
-              lastCaptureSuccessful.set(false)
-              return@request
-            }
+    try {
+      contentChanged.set(false)
+      PixelCopy.request(
+        window,
+        screenshot,
+        { copyResult: Int ->
+          if (copyResult != PixelCopy.SUCCESS) {
+            options.logger.log(INFO, "Failed to capture replay recording: %d", copyResult)
+            lastCaptureSuccessful.set(false)
+            return@request
+          }
 
-            // TODO: handle animations with heuristics (e.g. if we fall under this condition 2 times
-            // in a row, we should capture)
-            if (contentChanged.get()) {
-              options.logger.log(INFO, "Failed to determine view hierarchy, not capturing")
-              lastCaptureSuccessful.set(false)
-              return@request
-            }
+          // TODO: handle animations with heuristics (e.g. if we fall under this condition 2 times
+          // in a row, we should capture)
+          if (contentChanged.get()) {
+            options.logger.log(INFO, "Failed to determine view hierarchy, not capturing")
+            lastCaptureSuccessful.set(false)
+            return@request
+          }
 
-            // TODO: disableAllMasking here and dont traverse?
-            val viewHierarchy = ViewHierarchyNode.fromView(root, null, 0, options)
-            root.traverse(viewHierarchy, options)
+          // TODO: disableAllMasking here and dont traverse?
+          val viewHierarchy = ViewHierarchyNode.fromView(root, null, 0, options)
+          root.traverse(viewHierarchy, options)
 
-            recorder.submitSafely(options, "screenshot_recorder.mask") {
-              val debugMasks = mutableListOf<Rect>()
+          recorder.submitSafely(options, "screenshot_recorder.mask") {
+            val debugMasks = mutableListOf<Rect>()
 
-              val canvas = Canvas(screenshot)
-              canvas.setMatrix(prescaledMatrix)
-              viewHierarchy.traverse { node ->
-                if (node.shouldMask && (node.width > 0 && node.height > 0)) {
-                  node.visibleRect ?: return@traverse false
+            val canvas = Canvas(screenshot)
+            canvas.setMatrix(prescaledMatrix)
+            viewHierarchy.traverse { node ->
+              if (node.shouldMask && (node.width > 0 && node.height > 0)) {
+                node.visibleRect ?: return@traverse false
 
-                  // TODO: investigate why it returns true on RN when it shouldn't
-                  //                                    if (viewHierarchy.isObscured(node)) {
-                  //                                        return@traverse true
-                  //                                    }
+                // TODO: investigate why it returns true on RN when it shouldn't
+                //                                    if (viewHierarchy.isObscured(node)) {
+                //                                        return@traverse true
+                //                                    }
 
-                  val (visibleRects, color) =
-                    when (node) {
-                      is ImageViewHierarchyNode -> {
-                        listOf(node.visibleRect) to
-                          screenshot.dominantColorForRect(node.visibleRect)
-                      }
-
-                      is TextViewHierarchyNode -> {
-                        val textColor =
-                          node.layout?.dominantTextColor ?: node.dominantColor ?: Color.BLACK
-                        node.layout.getVisibleRects(
-                          node.visibleRect,
-                          node.paddingLeft,
-                          node.paddingTop,
-                        ) to textColor
-                      }
-
-                      else -> {
-                        listOf(node.visibleRect) to Color.BLACK
-                      }
+                val (visibleRects, color) =
+                  when (node) {
+                    is ImageViewHierarchyNode -> {
+                      listOf(node.visibleRect) to screenshot.dominantColorForRect(node.visibleRect)
                     }
 
-                  maskingPaint.setColor(color)
-                  visibleRects.forEach { rect ->
-                    canvas.drawRoundRect(RectF(rect), 10f, 10f, maskingPaint)
-                  }
-                  if (options.replayController.isDebugMaskingOverlayEnabled()) {
-                    debugMasks.addAll(visibleRects)
-                  }
-                }
-                return@traverse true
-              }
+                    is TextViewHierarchyNode -> {
+                      val textColor =
+                        node.layout?.dominantTextColor ?: node.dominantColor ?: Color.BLACK
+                      node.layout.getVisibleRects(
+                        node.visibleRect,
+                        node.paddingLeft,
+                        node.paddingTop,
+                      ) to textColor
+                    }
 
-              if (options.replayController.isDebugMaskingOverlayEnabled()) {
-                mainLooperHandler.post {
-                  if (debugOverlayDrawable.callback == null) {
-                    root.overlay.add(debugOverlayDrawable)
+                    else -> {
+                      listOf(node.visibleRect) to Color.BLACK
+                    }
                   }
-                  debugOverlayDrawable.updateMasks(debugMasks)
-                  root.postInvalidate()
+
+                maskingPaint.setColor(color)
+                visibleRects.forEach { rect ->
+                  canvas.drawRoundRect(RectF(rect), 10f, 10f, maskingPaint)
+                }
+                if (options.replayController.isDebugMaskingOverlayEnabled()) {
+                  debugMasks.addAll(visibleRects)
                 }
               }
-              screenshotRecorderCallback?.onScreenshotRecorded(screenshot)
-              lastCaptureSuccessful.set(true)
-              contentChanged.set(false)
+              return@traverse true
             }
-          },
-          mainLooperHandler.handler,
-        )
-      } catch (e: Throwable) {
-        options.logger.log(WARNING, "Failed to capture replay recording", e)
-        lastCaptureSuccessful.set(false)
-      }
+
+            if (options.replayController.isDebugMaskingOverlayEnabled()) {
+              mainLooperHandler.post {
+                if (debugOverlayDrawable.callback == null) {
+                  root.overlay.add(debugOverlayDrawable)
+                }
+                debugOverlayDrawable.updateMasks(debugMasks)
+                root.postInvalidate()
+              }
+            }
+            screenshotRecorderCallback?.onScreenshotRecorded(screenshot)
+            lastCaptureSuccessful.set(true)
+            contentChanged.set(false)
+          }
+        },
+        mainLooperHandler.handler,
+      )
+    } catch (e: Throwable) {
+      options.logger.log(WARNING, "Failed to capture replay recording", e)
+      lastCaptureSuccessful.set(false)
     }
   }
 
