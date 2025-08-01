@@ -807,16 +807,4 @@ public final class AndroidConnectionStatusProvider
           .log(SentryLevel.ERROR, "AndroidConnectionStatusProvider submit failed", e);
     }
   }
-
-  private static class ConnectionStatusProviderThreadyFactory implements ThreadFactory {
-
-    private int cnt = 0;
-
-    @Override
-    public Thread newThread(Runnable r) {
-      final Thread ret = new Thread(r, "SentryConnectionStatusProvider-" + cnt++);
-      ret.setDaemon(true);
-      return ret;
-    }
-  }
 }
