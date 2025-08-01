@@ -22,7 +22,6 @@ import io.sentry.transport.ICurrentDateProvider;
 import io.sentry.util.AutoClosableReentrantLock;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
