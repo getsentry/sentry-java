@@ -6,6 +6,7 @@ import io.sentry.android.core.internal.util.AndroidThreadChecker
 import java.util.concurrent.CountDownLatch
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -35,7 +36,7 @@ class AppStateTest {
     fun getSut(isMainThread: Boolean = true): AppState {
       val appState = AppState.getInstance()
       whenever(mockThreadChecker.isMainThread).thenReturn(isMainThread)
-      appState.handler = mockHandler
+      appState.setHandler(mockHandler)
       return appState
     }
 
@@ -259,6 +260,66 @@ class AppStateTest {
     verify(listener1).onBackground()
     verify(listener2).onBackground()
     assertTrue(sut.isInBackground()!!)
+  }
+
+  @Test
+  fun `a listener can be unregistered within a callback`() {
+    val sut = fixture.getSut()
+
+    var onForegroundCalled = false
+    val listener =
+      object : AppStateListener {
+        override fun onForeground() {
+          sut.removeAppStateListener(this)
+          onForegroundCalled = true
+        }
+
+        override fun onBackground() {
+          // ignored
+        }
+      }
+
+    sut.registerLifecycleObserver(fixture.options)
+    val observer = sut.lifecycleObserver!!
+    observer.onStart(mock())
+
+    // if an observer is added
+    sut.addAppStateListener(listener)
+
+    // it should be notified
+    assertTrue(onForegroundCalled)
+
+    // and removed from the list of listeners if it unregisters itself within the callback
+    assertEquals(sut.lifecycleObserver?.listeners?.size, 0)
+  }
+
+  @Test
+  fun `state is correct within onStart and onStop callbacks`() {
+    val sut = fixture.getSut()
+
+    var onForegroundCalled = false
+    var onBackgroundCalled = false
+    val listener =
+      object : AppStateListener {
+        override fun onForeground() {
+          assertFalse(sut.isInBackground!!)
+          onForegroundCalled = true
+        }
+
+        override fun onBackground() {
+          assertTrue(sut.isInBackground!!)
+          onBackgroundCalled = true
+        }
+      }
+
+    sut.addAppStateListener(listener)
+
+    val observer = sut.lifecycleObserver!!
+    observer.onStart(mock())
+    observer.onStop(mock())
+
+    assertTrue(onForegroundCalled)
+    assertTrue(onBackgroundCalled)
   }
 
   @Test
