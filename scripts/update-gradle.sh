@@ -32,10 +32,6 @@ set-version)
         version="${version:1}"
     fi
 
-    # Remove trailing ".0" - gradlew expects '7.1' instead of '7.1.0'
-    if [[ "$version" == *".0" ]]; then
-        version="${version:0:${#version}-2}"
-    fi
     echo "Setting gradle version to '$version'"
 
     # This sets version to gradle-wrapper.properties.
