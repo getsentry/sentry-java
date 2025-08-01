@@ -632,4 +632,186 @@ class AndroidConnectionStatusProviderTest {
     mainCallback.onAvailable(network)
     verifyNoMoreInteractions(childCallback)
   }
+
+  @Test
+  fun `exception in child callback onAvailable does not halt dispatch loop`() {
+    whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.N)
+
+    val mainCallback = connectionStatusProvider.networkCallback
+    assertNotNull(mainCallback)
+
+    // Register multiple child callbacks - one throws, others should still receive events
+    val throwingCallback = mock<NetworkCallback>()
+    val goodCallback1 = mock<NetworkCallback>()
+    val goodCallback2 = mock<NetworkCallback>()
+
+    // Configure the throwing callback to throw an exception
+    whenever(throwingCallback.onAvailable(any())).thenThrow(RuntimeException("Test exception"))
+
+    AndroidConnectionStatusProvider.getChildCallbacks().addAll(
+      listOf(throwingCallback, goodCallback1, goodCallback2)
+    )
+
+    // Simulate event - should not fail despite throwing callback
+    mainCallback.onAvailable(network)
+
+    // Verify all callbacks were called despite exception
+    verify(throwingCallback).onAvailable(network)
+    verify(goodCallback1).onAvailable(network)
+    verify(goodCallback2).onAvailable(network)
+
+    // Verify the exception was logged
+    verify(logger).log(
+      eq(io.sentry.SentryLevel.WARNING),
+      eq("Exception in child NetworkCallback.onAvailable"),
+      any<Throwable>()
+    )
+  }
+
+  @Test
+  fun `exception in child callback onLost does not halt dispatch loop`() {
+    whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.N)
+
+    val mainCallback = connectionStatusProvider.networkCallback
+    assertNotNull(mainCallback)
+
+    // Set current network first
+    mainCallback.onAvailable(network)
+
+    // Register multiple child callbacks - one throws, others should still receive events
+    val throwingCallback = mock<NetworkCallback>()
+    val goodCallback1 = mock<NetworkCallback>()
+    val goodCallback2 = mock<NetworkCallback>()
+
+    // Configure the throwing callback to throw an exception
+    whenever(throwingCallback.onLost(any())).thenThrow(RuntimeException("Test exception"))
+
+    AndroidConnectionStatusProvider.getChildCallbacks().addAll(
+      listOf(throwingCallback, goodCallback1, goodCallback2)
+    )
+
+    // Simulate event - should not fail despite throwing callback
+    mainCallback.onLost(network)
+
+    // Verify all callbacks were called despite exception
+    verify(throwingCallback).onLost(network)
+    verify(goodCallback1).onLost(network)
+    verify(goodCallback2).onLost(network)
+
+    // Verify the exception was logged
+    verify(logger).log(
+      eq(io.sentry.SentryLevel.WARNING),
+      eq("Exception in child NetworkCallback.onLost"),
+      any<Throwable>()
+    )
+  }
+
+  @Test
+  fun `exception in child callback onCapabilitiesChanged does not halt dispatch loop`() {
+    whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.N)
+
+    val mainCallback = connectionStatusProvider.networkCallback
+    assertNotNull(mainCallback)
+
+    // Set current network first
+    mainCallback.onAvailable(network)
+
+    // Register multiple child callbacks - one throws, others should still receive events
+    val throwingCallback = mock<NetworkCallback>()
+    val goodCallback1 = mock<NetworkCallback>()
+    val goodCallback2 = mock<NetworkCallback>()
+
+    // Configure the throwing callback to throw an exception
+    whenever(throwingCallback.onCapabilitiesChanged(any(), any())).thenThrow(RuntimeException("Test exception"))
+
+    AndroidConnectionStatusProvider.getChildCallbacks().addAll(
+      listOf(throwingCallback, goodCallback1, goodCallback2)
+    )
+
+    // Simulate event - should not fail despite throwing callback
+    mainCallback.onCapabilitiesChanged(network, networkCapabilities)
+
+    // Verify all callbacks were called despite exception
+    verify(throwingCallback).onCapabilitiesChanged(network, networkCapabilities)
+    verify(goodCallback1).onCapabilitiesChanged(network, networkCapabilities)
+    verify(goodCallback2).onCapabilitiesChanged(network, networkCapabilities)
+
+    // Verify the exception was logged
+    verify(logger).log(
+      eq(io.sentry.SentryLevel.WARNING),
+      eq("Exception in child NetworkCallback.onCapabilitiesChanged"),
+      any<Throwable>()
+    )
+  }
+
+  @Test
+  fun `onUnavailable calls child callbacks only on API 26 and above`() {
+    whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.O) // API 26
+
+    val mainCallback = connectionStatusProvider.networkCallback
+    assertNotNull(mainCallback)
+
+    // Register a child callback
+    val childCallback = mock<NetworkCallback>()
+    AndroidConnectionStatusProvider.getChildCallbacks().add(childCallback)
+
+    // Simulate onUnavailable event
+    mainCallback.onUnavailable()
+
+    // Verify child callback received the event on API 26+
+    verify(childCallback).onUnavailable()
+  }
+
+  @Test
+  fun `onUnavailable does not call child callbacks on API 24-25`() {
+    whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.N) // API 24
+
+    val mainCallback = connectionStatusProvider.networkCallback
+    assertNotNull(mainCallback)
+
+    // Register a child callback
+    val childCallback = mock<NetworkCallback>()
+    AndroidConnectionStatusProvider.getChildCallbacks().add(childCallback)
+
+    // Simulate onUnavailable event
+    mainCallback.onUnavailable()
+
+    // Verify child callback did NOT receive the event on API 24-25
+    verify(childCallback, times(0)).onUnavailable()
+  }
+
+  @Test
+  fun `exception in child callback onUnavailable does not halt dispatch loop on API 26+`() {
+    whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.O) // API 26
+
+    val mainCallback = connectionStatusProvider.networkCallback
+    assertNotNull(mainCallback)
+
+    // Register multiple child callbacks - one throws, others should still receive events
+    val throwingCallback = mock<NetworkCallback>()
+    val goodCallback1 = mock<NetworkCallback>()
+    val goodCallback2 = mock<NetworkCallback>()
+
+    // Configure the throwing callback to throw an exception
+    whenever(throwingCallback.onUnavailable()).thenThrow(RuntimeException("Test exception"))
+
+    AndroidConnectionStatusProvider.getChildCallbacks().addAll(
+      listOf(throwingCallback, goodCallback1, goodCallback2)
+    )
+
+    // Simulate event - should not fail despite throwing callback
+    mainCallback.onUnavailable()
+
+    // Verify all callbacks were called despite exception
+    verify(throwingCallback).onUnavailable()
+    verify(goodCallback1).onUnavailable()
+    verify(goodCallback2).onUnavailable()
+
+    // Verify the exception was logged
+    verify(logger).log(
+      eq(io.sentry.SentryLevel.WARNING),
+      eq("Exception in child NetworkCallback.onUnavailable"),
+      any<Throwable>()
+    )
+  }
 }
