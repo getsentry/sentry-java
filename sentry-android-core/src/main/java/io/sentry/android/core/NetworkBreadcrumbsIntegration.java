@@ -12,7 +12,6 @@ import androidx.annotation.NonNull;
 import io.sentry.Breadcrumb;
 import io.sentry.DateUtils;
 import io.sentry.Hint;
-import io.sentry.ILogger;
 import io.sentry.IScopes;
 import io.sentry.ISentryLifecycleToken;
 import io.sentry.Integration;
@@ -33,22 +32,17 @@ public final class NetworkBreadcrumbsIntegration implements Integration, Closeab
 
   private final @NotNull Context context;
   private final @NotNull BuildInfoProvider buildInfoProvider;
-  private final @NotNull ILogger logger;
   private final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
-  private volatile boolean isClosed;
   private @Nullable SentryOptions options;
 
   @TestOnly @Nullable volatile NetworkBreadcrumbsNetworkCallback networkCallback;
 
   public NetworkBreadcrumbsIntegration(
-      final @NotNull Context context,
-      final @NotNull BuildInfoProvider buildInfoProvider,
-      final @NotNull ILogger logger) {
+      final @NotNull Context context, final @NotNull BuildInfoProvider buildInfoProvider) {
     this.context =
         Objects.requireNonNull(ContextUtils.getApplicationContext(context), "Context is required");
     this.buildInfoProvider =
         Objects.requireNonNull(buildInfoProvider, "BuildInfoProvider is required");
-    this.logger = Objects.requireNonNull(logger, "ILogger is required");
   }
 
   @Override
@@ -59,86 +53,60 @@ public final class NetworkBreadcrumbsIntegration implements Integration, Closeab
             (options instanceof SentryAndroidOptions) ? (SentryAndroidOptions) options : null,
             "SentryAndroidOptions is required");
 
-    logger.log(
-        SentryLevel.DEBUG,
-        "NetworkBreadcrumbsIntegration enabled: %s",
-        androidOptions.isEnableNetworkEventBreadcrumbs());
-
     this.options = options;
+
+    options
+        .getLogger()
+        .log(
+            SentryLevel.DEBUG,
+            "NetworkBreadcrumbsIntegration enabled: %s",
+            androidOptions.isEnableNetworkEventBreadcrumbs());
 
     if (androidOptions.isEnableNetworkEventBreadcrumbs()) {
 
       // The specific error is logged in the ConnectivityChecker method
       if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.N) {
-        logger.log(SentryLevel.DEBUG, "NetworkCallbacks need Android N+.");
+        options.getLogger().log(SentryLevel.DEBUG, "NetworkCallbacks need Android N+.");
         return;
       }
 
-      try {
-        options
-            .getExecutorService()
-            .submit(
-                new Runnable() {
-                  @Override
-                  public void run() {
-                    // in case integration is closed before the task is executed, simply return
-                    if (isClosed) {
-                      return;
-                    }
+      try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+        networkCallback =
+            new NetworkBreadcrumbsNetworkCallback(
+                scopes, buildInfoProvider, options.getDateProvider());
 
-                    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
-                      networkCallback =
-                          new NetworkBreadcrumbsNetworkCallback(
-                              scopes, buildInfoProvider, options.getDateProvider());
-
-                      final boolean registered =
-                          AndroidConnectionStatusProvider.registerNetworkCallback(
-                              context, logger, buildInfoProvider, networkCallback);
-                      if (registered) {
-                        logger.log(SentryLevel.DEBUG, "NetworkBreadcrumbsIntegration installed.");
-                        addIntegrationToSdkVersion("NetworkBreadcrumbs");
-                      } else {
-                        logger.log(
-                            SentryLevel.DEBUG, "NetworkBreadcrumbsIntegration not installed.");
-                        // The specific error is logged by AndroidConnectionStatusProvider
-                      }
-                    }
-                  }
-                });
-      } catch (Throwable t) {
-        logger.log(SentryLevel.ERROR, "Error submitting NetworkBreadcrumbsIntegration task.", t);
+        final boolean registered =
+            AndroidConnectionStatusProvider.addNetworkCallback(
+                context, options.getLogger(), buildInfoProvider, networkCallback);
+        if (registered) {
+          options.getLogger().log(SentryLevel.DEBUG, "NetworkBreadcrumbsIntegration installed.");
+          addIntegrationToSdkVersion("NetworkBreadcrumbs");
+        } else {
+          options
+              .getLogger()
+              .log(SentryLevel.DEBUG, "NetworkBreadcrumbsIntegration not installed.");
+          // The specific error is logged by AndroidConnectionStatusProvider
+        }
       }
     }
   }
 
   @Override
   public void close() throws IOException {
-    isClosed = true;
+    final @Nullable ConnectivityManager.NetworkCallback callbackRef;
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      callbackRef = networkCallback;
+      networkCallback = null;
+    }
 
-    try {
-      Objects.requireNonNull(options, "Options is required")
-          .getExecutorService()
-          .submit(
-              () -> {
-                try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
-                  if (networkCallback != null) {
-                    AndroidConnectionStatusProvider.unregisterNetworkCallback(
-                        context, logger, networkCallback);
-                    logger.log(SentryLevel.DEBUG, "NetworkBreadcrumbsIntegration removed.");
-                  }
-                  networkCallback = null;
-                }
-              });
-    } catch (Throwable t) {
-      logger.log(SentryLevel.ERROR, "Error submitting NetworkBreadcrumbsIntegration task.", t);
+    if (callbackRef != null) {
+      AndroidConnectionStatusProvider.removeNetworkCallback(callbackRef);
     }
   }
 
   static final class NetworkBreadcrumbsNetworkCallback extends ConnectivityManager.NetworkCallback {
     final @NotNull IScopes scopes;
     final @NotNull BuildInfoProvider buildInfoProvider;
-
-    @Nullable Network currentNetwork = null;
 
     @Nullable NetworkCapabilities lastCapabilities = null;
     long lastCapabilityNanos = 0;
@@ -156,21 +124,14 @@ public final class NetworkBreadcrumbsIntegration implements Integration, Closeab
 
     @Override
     public void onAvailable(final @NonNull Network network) {
-      if (network.equals(currentNetwork)) {
-        return;
-      }
       final Breadcrumb breadcrumb = createBreadcrumb("NETWORK_AVAILABLE");
       scopes.addBreadcrumb(breadcrumb);
-      currentNetwork = network;
       lastCapabilities = null;
     }
 
     @Override
     public void onCapabilitiesChanged(
         final @NonNull Network network, final @NonNull NetworkCapabilities networkCapabilities) {
-      if (!network.equals(currentNetwork)) {
-        return;
-      }
       final long nowNanos = dateProvider.now().nanoTimestamp();
       final @Nullable NetworkBreadcrumbConnectionDetail connectionDetail =
           getNewConnectionDetails(
@@ -195,12 +156,8 @@ public final class NetworkBreadcrumbsIntegration implements Integration, Closeab
 
     @Override
     public void onLost(final @NonNull Network network) {
-      if (!network.equals(currentNetwork)) {
-        return;
-      }
       final Breadcrumb breadcrumb = createBreadcrumb("NETWORK_LOST");
       scopes.addBreadcrumb(breadcrumb);
-      currentNetwork = null;
       lastCapabilities = null;
     }
 

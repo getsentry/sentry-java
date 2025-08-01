@@ -9,6 +9,7 @@ import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.os.Build;
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import io.sentry.IConnectionStatusProvider;
 import io.sentry.ILogger;
 import io.sentry.ISentryLifecycleToken;
@@ -44,6 +45,10 @@ public final class AndroidConnectionStatusProvider implements IConnectionStatusP
   private static final @NotNull AutoClosableReentrantLock connectivityManagerLock =
       new AutoClosableReentrantLock();
   private static volatile @Nullable ConnectivityManager connectivityManager;
+
+  private static final @NotNull AutoClosableReentrantLock childCallbacksLock =
+      new AutoClosableReentrantLock();
+  private static final @NotNull List<NetworkCallback> childCallbacks = new ArrayList<>();
 
   private static final int[] transports = {
     NetworkCapabilities.TRANSPORT_WIFI,
@@ -161,11 +166,24 @@ public final class AndroidConnectionStatusProvider implements IConnectionStatusP
             @Override
             public void onAvailable(final @NotNull Network network) {
               currentNetwork = network;
+
+              try (final @NotNull ISentryLifecycleToken ignored = childCallbacksLock.acquire()) {
+                for (final @NotNull NetworkCallback cb : childCallbacks) {
+                  cb.onAvailable(network);
+                }
+              }
             }
 
+            @RequiresApi(Build.VERSION_CODES.O)
             @Override
             public void onUnavailable() {
               clearCacheAndNotifyObservers();
+
+              try (final @NotNull ISentryLifecycleToken ignored = childCallbacksLock.acquire()) {
+                for (final @NotNull NetworkCallback cb : childCallbacks) {
+                  cb.onUnavailable();
+                }
+              }
             }
 
             @Override
@@ -174,6 +192,12 @@ public final class AndroidConnectionStatusProvider implements IConnectionStatusP
                 return;
               }
               clearCacheAndNotifyObservers();
+
+              try (final @NotNull ISentryLifecycleToken ignored = childCallbacksLock.acquire()) {
+                for (final @NotNull NetworkCallback cb : childCallbacks) {
+                  cb.onLost(network);
+                }
+              }
             }
 
             private void clearCacheAndNotifyObservers() {
@@ -203,6 +227,12 @@ public final class AndroidConnectionStatusProvider implements IConnectionStatusP
                 return;
               }
               updateCacheAndNotifyObservers(network, networkCapabilities);
+
+              try (final @NotNull ISentryLifecycleToken ignored = childCallbacksLock.acquire()) {
+                for (final @NotNull NetworkCallback cb : childCallbacks) {
+                  cb.onCapabilitiesChanged(network, networkCapabilities);
+                }
+              }
             }
 
             private void updateCacheAndNotifyObservers(
@@ -409,6 +439,9 @@ public final class AndroidConnectionStatusProvider implements IConnectionStatusP
                   cachedNetworkCapabilities = null;
                   currentNetwork = null;
                   lastCacheUpdateTime = 0;
+                }
+                try (final @NotNull ISentryLifecycleToken ignored = childCallbacksLock.acquire()) {
+                  childCallbacks.clear();
                 }
                 try (final @NotNull ISentryLifecycleToken ignored =
                         connectivityManagerLock.acquire()) {
@@ -618,8 +651,35 @@ public final class AndroidConnectionStatusProvider implements IConnectionStatusP
     }
   }
 
+  public static boolean addNetworkCallback(
+      final @NotNull Context context,
+      final @NotNull ILogger logger,
+      final @NotNull BuildInfoProvider buildInfoProvider,
+      final @NotNull NetworkCallback networkCallback) {
+    if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.N) {
+      logger.log(SentryLevel.DEBUG, "NetworkCallbacks need Android N+.");
+      return false;
+    }
+
+    if (!Permissions.hasPermission(context, Manifest.permission.ACCESS_NETWORK_STATE)) {
+      logger.log(SentryLevel.INFO, "No permission (ACCESS_NETWORK_STATE) to check network status.");
+      return false;
+    }
+
+    try (final @NotNull ISentryLifecycleToken ignored = childCallbacksLock.acquire()) {
+      childCallbacks.add(networkCallback);
+    }
+    return true;
+  }
+
+  public static void removeNetworkCallback(final @NotNull NetworkCallback networkCallback) {
+    try (final @NotNull ISentryLifecycleToken ignored = childCallbacksLock.acquire()) {
+      childCallbacks.remove(networkCallback);
+    }
+  }
+
   @SuppressLint({"MissingPermission", "NewApi"})
-  public static boolean registerNetworkCallback(
+  static boolean registerNetworkCallback(
       final @NotNull Context context,
       final @NotNull ILogger logger,
       final @NotNull BuildInfoProvider buildInfoProvider,
@@ -646,7 +706,7 @@ public final class AndroidConnectionStatusProvider implements IConnectionStatusP
   }
 
   @SuppressLint("NewApi")
-  public static void unregisterNetworkCallback(
+  static void unregisterNetworkCallback(
       final @NotNull Context context,
       final @NotNull ILogger logger,
       final @NotNull NetworkCallback networkCallback) {
@@ -681,7 +741,8 @@ public final class AndroidConnectionStatusProvider implements IConnectionStatusP
   }
 
   @TestOnly
-  public static void setConnectivityManager(final @Nullable ConnectivityManager cm) {
-    connectivityManager = cm;
+  @NotNull
+  public static List<NetworkCallback> getChildCallbacks() {
+    return childCallbacks;
   }
 }
