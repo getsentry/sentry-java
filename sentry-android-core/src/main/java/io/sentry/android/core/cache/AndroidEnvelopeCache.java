@@ -47,6 +47,7 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
     this.currentDateProvider = currentDateProvider;
   }
 
+  @SuppressWarnings("deprecation")
   @Override
   public void store(@NotNull SentryEnvelope envelope, @NotNull Hint hint) {
     super.store(envelope, hint);

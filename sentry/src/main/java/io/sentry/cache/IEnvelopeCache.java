@@ -6,10 +6,17 @@ import org.jetbrains.annotations.NotNull;
 
 public interface IEnvelopeCache extends Iterable<SentryEnvelope> {
 
+  @Deprecated
   void store(@NotNull SentryEnvelope envelope, @NotNull Hint hint);
 
+  default boolean storeEnvelope(@NotNull SentryEnvelope envelope, @NotNull Hint hint) {
+    store(envelope, hint);
+    return true;
+  }
+
+  @Deprecated
   default void store(@NotNull SentryEnvelope envelope) {
-    store(envelope, new Hint());
+    storeEnvelope(envelope, new Hint());
   }
 
   void discard(@NotNull SentryEnvelope envelope);
