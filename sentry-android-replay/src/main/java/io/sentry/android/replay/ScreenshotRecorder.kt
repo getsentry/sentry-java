@@ -38,295 +38,290 @@ import kotlin.math.roundToInt
 @SuppressLint("UseKtx")
 @TargetApi(26)
 internal class ScreenshotRecorder(
-    val config: ScreenshotRecorderConfig,
-    val options: SentryOptions,
-    private val mainLooperHandler: MainLooperHandler,
-    private val recorder: ScheduledExecutorService,
-    private val screenshotRecorderCallback: ScreenshotRecorderCallback?
+  val config: ScreenshotRecorderConfig,
+  val options: SentryOptions,
+  private val mainLooperHandler: MainLooperHandler,
+  private val recorder: ScheduledExecutorService,
+  private val screenshotRecorderCallback: ScreenshotRecorderCallback?,
 ) : ViewTreeObserver.OnDrawListener {
+  private var rootView: WeakReference<View>? = null
+  private val maskingPaint by lazy(NONE) { Paint() }
+  private val singlePixelBitmap: Bitmap by
+    lazy(NONE) { Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888) }
+  private val screenshot =
+    Bitmap.createBitmap(config.recordingWidth, config.recordingHeight, Bitmap.Config.ARGB_8888)
+  private val singlePixelBitmapCanvas: Canvas by lazy(NONE) { Canvas(singlePixelBitmap) }
+  private val prescaledMatrix by
+    lazy(NONE) { Matrix().apply { preScale(config.scaleFactorX, config.scaleFactorY) } }
+  private val contentChanged = AtomicBoolean(false)
+  private val isCapturing = AtomicBoolean(true)
+  private val lastCaptureSuccessful = AtomicBoolean(false)
 
-    private var rootView: WeakReference<View>? = null
-    private val maskingPaint by lazy(NONE) { Paint() }
-    private val singlePixelBitmap: Bitmap by lazy(NONE) {
-        Bitmap.createBitmap(
-            1,
-            1,
-            Bitmap.Config.ARGB_8888
-        )
+  private val debugOverlayDrawable = DebugOverlayDrawable()
+
+  fun capture() {
+    if (options.sessionReplay.isDebug) {
+      options.logger.log(DEBUG, "Capturing screenshot, isCapturing: %s", isCapturing.get())
     }
-    private val screenshot = Bitmap.createBitmap(
-        config.recordingWidth,
-        config.recordingHeight,
-        Bitmap.Config.ARGB_8888
-    )
-    private val singlePixelBitmapCanvas: Canvas by lazy(NONE) { Canvas(singlePixelBitmap) }
-    private val prescaledMatrix by lazy(NONE) {
-        Matrix().apply {
-            preScale(config.scaleFactorX, config.scaleFactorY)
-        }
+    if (!isCapturing.get()) {
+      if (options.sessionReplay.isDebug) {
+        options.logger.log(DEBUG, "ScreenshotRecorder is paused, not capturing screenshot")
+      }
+      return
     }
-    private val contentChanged = AtomicBoolean(false)
-    private val isCapturing = AtomicBoolean(true)
-    private val lastCaptureSuccessful = AtomicBoolean(false)
 
-    private val debugOverlayDrawable = DebugOverlayDrawable()
+    if (options.sessionReplay.isDebug) {
+      options.logger.log(
+        DEBUG,
+        "Capturing screenshot, contentChanged: %s, lastCaptureSuccessful: %s",
+        contentChanged.get(),
+        lastCaptureSuccessful.get(),
+      )
+    }
 
-    fun capture() {
-        if (!isCapturing.get()) {
-            if (options.sessionReplay.isDebug) {
-                options.logger.log(DEBUG, "ScreenshotRecorder is paused, not capturing screenshot")
+    if (!contentChanged.get() && lastCaptureSuccessful.get()) {
+      screenshotRecorderCallback?.onScreenshotRecorded(screenshot)
+      return
+    }
+
+    val root = rootView?.get()
+    if (root == null || root.width <= 0 || root.height <= 0 || !root.isShown) {
+      options.logger.log(DEBUG, "Root view is invalid, not capturing screenshot")
+      return
+    }
+
+    val window = root.phoneWindow
+    if (window == null) {
+      options.logger.log(DEBUG, "Window is invalid, not capturing screenshot")
+      return
+    }
+
+    try {
+      contentChanged.set(false)
+      PixelCopy.request(
+        window,
+        screenshot,
+        { copyResult: Int ->
+          if (copyResult != PixelCopy.SUCCESS) {
+            options.logger.log(INFO, "Failed to capture replay recording: %d", copyResult)
+            lastCaptureSuccessful.set(false)
+            return@request
+          }
+
+          // TODO: handle animations with heuristics (e.g. if we fall under this condition 2 times
+          // in a row, we should capture)
+          if (contentChanged.get()) {
+            options.logger.log(INFO, "Failed to determine view hierarchy, not capturing")
+            lastCaptureSuccessful.set(false)
+            return@request
+          }
+
+          // TODO: disableAllMasking here and dont traverse?
+          val viewHierarchy = ViewHierarchyNode.fromView(root, null, 0, options)
+          root.traverse(viewHierarchy, options)
+
+          recorder.submitSafely(options, "screenshot_recorder.mask") {
+            val debugMasks = mutableListOf<Rect>()
+
+            val canvas = Canvas(screenshot)
+            canvas.setMatrix(prescaledMatrix)
+            viewHierarchy.traverse { node ->
+              if (node.shouldMask && (node.width > 0 && node.height > 0)) {
+                node.visibleRect ?: return@traverse false
+
+                // TODO: investigate why it returns true on RN when it shouldn't
+                //                                    if (viewHierarchy.isObscured(node)) {
+                //                                        return@traverse true
+                //                                    }
+
+                val (visibleRects, color) =
+                  when (node) {
+                    is ImageViewHierarchyNode -> {
+                      listOf(node.visibleRect) to screenshot.dominantColorForRect(node.visibleRect)
+                    }
+
+                    is TextViewHierarchyNode -> {
+                      val textColor =
+                        node.layout?.dominantTextColor ?: node.dominantColor ?: Color.BLACK
+                      node.layout.getVisibleRects(
+                        node.visibleRect,
+                        node.paddingLeft,
+                        node.paddingTop,
+                      ) to textColor
+                    }
+
+                    else -> {
+                      listOf(node.visibleRect) to Color.BLACK
+                    }
+                  }
+
+                maskingPaint.setColor(color)
+                visibleRects.forEach { rect ->
+                  canvas.drawRoundRect(RectF(rect), 10f, 10f, maskingPaint)
+                }
+                if (options.replayController.isDebugMaskingOverlayEnabled()) {
+                  debugMasks.addAll(visibleRects)
+                }
+              }
+              return@traverse true
             }
-            return
-        }
 
-        if (!contentChanged.get() && lastCaptureSuccessful.get()) {
+            if (options.replayController.isDebugMaskingOverlayEnabled()) {
+              mainLooperHandler.post {
+                if (debugOverlayDrawable.callback == null) {
+                  root.overlay.add(debugOverlayDrawable)
+                }
+                debugOverlayDrawable.updateMasks(debugMasks)
+                root.postInvalidate()
+              }
+            }
             screenshotRecorderCallback?.onScreenshotRecorded(screenshot)
-            return
-        }
+            lastCaptureSuccessful.set(true)
+            contentChanged.set(false)
+          }
+        },
+        mainLooperHandler.handler,
+      )
+    } catch (e: Throwable) {
+      options.logger.log(WARNING, "Failed to capture replay recording", e)
+      lastCaptureSuccessful.set(false)
+    }
+  }
 
-        val root = rootView?.get()
-        if (root == null || root.width <= 0 || root.height <= 0 || !root.isShown) {
-            options.logger.log(DEBUG, "Root view is invalid, not capturing screenshot")
-            return
-        }
-
-        val window = root.phoneWindow
-        if (window == null) {
-            options.logger.log(DEBUG, "Window is invalid, not capturing screenshot")
-            return
-        }
-
-        // postAtFrontOfQueue to ensure the view hierarchy and bitmap are ase close in-sync as possible
-        mainLooperHandler.post {
-            try {
-                contentChanged.set(false)
-                PixelCopy.request(
-                    window,
-                    screenshot,
-                    { copyResult: Int ->
-                        if (copyResult != PixelCopy.SUCCESS) {
-                            options.logger.log(INFO, "Failed to capture replay recording: %d", copyResult)
-                            lastCaptureSuccessful.set(false)
-                            return@request
-                        }
-
-                        // TODO: handle animations with heuristics (e.g. if we fall under this condition 2 times in a row, we should capture)
-                        if (contentChanged.get()) {
-                            options.logger.log(INFO, "Failed to determine view hierarchy, not capturing")
-                            lastCaptureSuccessful.set(false)
-                            return@request
-                        }
-
-                        // TODO: disableAllMasking here and dont traverse?
-                        val viewHierarchy = ViewHierarchyNode.fromView(root, null, 0, options)
-                        root.traverse(viewHierarchy, options)
-
-                        recorder.submitSafely(options, "screenshot_recorder.mask") {
-                            val debugMasks = mutableListOf<Rect>()
-
-                            val canvas = Canvas(screenshot)
-                            canvas.setMatrix(prescaledMatrix)
-                            viewHierarchy.traverse { node ->
-                                if (node.shouldMask && (node.width > 0 && node.height > 0)) {
-                                    node.visibleRect ?: return@traverse false
-
-                                    // TODO: investigate why it returns true on RN when it shouldn't
-//                                    if (viewHierarchy.isObscured(node)) {
-//                                        return@traverse true
-//                                    }
-
-                                    val (visibleRects, color) = when (node) {
-                                        is ImageViewHierarchyNode -> {
-                                            listOf(node.visibleRect) to
-                                                screenshot.dominantColorForRect(node.visibleRect)
-                                        }
-
-                                        is TextViewHierarchyNode -> {
-                                            val textColor = node.layout?.dominantTextColor
-                                                ?: node.dominantColor
-                                                ?: Color.BLACK
-                                            node.layout.getVisibleRects(
-                                                node.visibleRect,
-                                                node.paddingLeft,
-                                                node.paddingTop
-                                            ) to textColor
-                                        }
-
-                                        else -> {
-                                            listOf(node.visibleRect) to Color.BLACK
-                                        }
-                                    }
-
-                                    maskingPaint.setColor(color)
-                                    visibleRects.forEach { rect ->
-                                        canvas.drawRoundRect(RectF(rect), 10f, 10f, maskingPaint)
-                                    }
-                                    if (options.replayController.isDebugMaskingOverlayEnabled()) {
-                                        debugMasks.addAll(visibleRects)
-                                    }
-                                }
-                                return@traverse true
-                            }
-
-                            if (options.replayController.isDebugMaskingOverlayEnabled()) {
-                                mainLooperHandler.post {
-                                    if (debugOverlayDrawable.callback == null) {
-                                        root.overlay.add(debugOverlayDrawable)
-                                    }
-                                    debugOverlayDrawable.updateMasks(debugMasks)
-                                    root.postInvalidate()
-                                }
-                            }
-                            screenshotRecorderCallback?.onScreenshotRecorded(screenshot)
-                            lastCaptureSuccessful.set(true)
-                            contentChanged.set(false)
-                        }
-                    },
-                    mainLooperHandler.handler
-                )
-            } catch (e: Throwable) {
-                options.logger.log(WARNING, "Failed to capture replay recording", e)
-                lastCaptureSuccessful.set(false)
-            }
-        }
+  override fun onDraw() {
+    if (!isCapturing.get()) {
+      return
+    }
+    val root = rootView?.get()
+    if (root == null || root.width <= 0 || root.height <= 0 || !root.isShown) {
+      options.logger.log(DEBUG, "Root view is invalid, not capturing screenshot")
+      return
     }
 
-    override fun onDraw() {
-        if (!isCapturing.get()) {
-            return
-        }
-        val root = rootView?.get()
-        if (root == null || root.width <= 0 || root.height <= 0 || !root.isShown) {
-            options.logger.log(DEBUG, "Root view is invalid, not capturing screenshot")
-            return
-        }
+    contentChanged.set(true)
+  }
 
-        contentChanged.set(true)
+  fun bind(root: View) {
+    // first unbind the current root
+    unbind(rootView?.get())
+    rootView?.clear()
+
+    // next bind the new root
+    rootView = WeakReference(root)
+    root.addOnDrawListenerSafe(this)
+
+    // invalidate the flag to capture the first frame after new window is attached
+    contentChanged.set(true)
+  }
+
+  fun unbind(root: View?) {
+    if (options.replayController.isDebugMaskingOverlayEnabled()) {
+      root?.overlay?.remove(debugOverlayDrawable)
     }
+    root?.removeOnDrawListenerSafe(this)
+  }
 
-    fun bind(root: View) {
-        // first unbind the current root
-        unbind(rootView?.get())
-        rootView?.clear()
+  fun pause() {
+    isCapturing.set(false)
+    unbind(rootView?.get())
+  }
 
-        // next bind the new root
-        rootView = WeakReference(root)
-        root.addOnDrawListenerSafe(this)
+  fun resume() {
+    // can't use bind() as it will invalidate the weakref
+    rootView?.get()?.addOnDrawListenerSafe(this)
+    isCapturing.set(true)
+  }
 
-        // invalidate the flag to capture the first frame after new window is attached
-        contentChanged.set(true)
+  fun close() {
+    unbind(rootView?.get())
+    rootView?.clear()
+    if (!screenshot.isRecycled) {
+      screenshot.recycle()
     }
+    isCapturing.set(false)
+  }
 
-    fun unbind(root: View?) {
-        if (options.replayController.isDebugMaskingOverlayEnabled()) {
-            root?.overlay?.remove(debugOverlayDrawable)
-        }
-        root?.removeOnDrawListenerSafe(this)
-    }
+  private fun Bitmap.dominantColorForRect(rect: Rect): Int {
+    // TODO: maybe this ceremony can be just simplified to
+    // TODO: multiplying the visibleRect by the prescaledMatrix
+    val visibleRect = Rect(rect)
+    val visibleRectF = RectF(visibleRect)
 
-    fun pause() {
-        isCapturing.set(false)
-        unbind(rootView?.get())
-    }
-
-    fun resume() {
-        // can't use bind() as it will invalidate the weakref
-        rootView?.get()?.addOnDrawListenerSafe(this)
-        isCapturing.set(true)
-    }
-
-    fun close() {
-        unbind(rootView?.get())
-        rootView?.clear()
-        if (!screenshot.isRecycled) {
-            screenshot.recycle()
-        }
-        isCapturing.set(false)
-    }
-
-    private fun Bitmap.dominantColorForRect(rect: Rect): Int {
-        // TODO: maybe this ceremony can be just simplified to
-        // TODO: multiplying the visibleRect by the prescaledMatrix
-        val visibleRect = Rect(rect)
-        val visibleRectF = RectF(visibleRect)
-
-        // since we take screenshot with lower scale, we also
-        // have to apply the same scale to the visibleRect to get the
-        // correct screenshot part to determine the dominant color
-        prescaledMatrix.mapRect(visibleRectF)
-        // round it back to integer values, because drawBitmap below accepts Rect only
-        visibleRectF.round(visibleRect)
-        // draw part of the screenshot (visibleRect) to a single pixel bitmap
-        singlePixelBitmapCanvas.drawBitmap(
-            this,
-            visibleRect,
-            Rect(0, 0, 1, 1),
-            null
-        )
-        // get the pixel color (= dominant color)
-        return singlePixelBitmap.getPixel(0, 0)
-    }
+    // since we take screenshot with lower scale, we also
+    // have to apply the same scale to the visibleRect to get the
+    // correct screenshot part to determine the dominant color
+    prescaledMatrix.mapRect(visibleRectF)
+    // round it back to integer values, because drawBitmap below accepts Rect only
+    visibleRectF.round(visibleRect)
+    // draw part of the screenshot (visibleRect) to a single pixel bitmap
+    singlePixelBitmapCanvas.drawBitmap(this, visibleRect, Rect(0, 0, 1, 1), null)
+    // get the pixel color (= dominant color)
+    return singlePixelBitmap.getPixel(0, 0)
+  }
 }
 
 public data class ScreenshotRecorderConfig(
-    val recordingWidth: Int,
-    val recordingHeight: Int,
-    val scaleFactorX: Float,
-    val scaleFactorY: Float,
-    val frameRate: Int,
-    val bitRate: Int
+  val recordingWidth: Int,
+  val recordingHeight: Int,
+  val scaleFactorX: Float,
+  val scaleFactorY: Float,
+  val frameRate: Int,
+  val bitRate: Int,
 ) {
-    internal constructor(
-        scaleFactorX: Float,
-        scaleFactorY: Float
-    ) : this(
-        recordingWidth = 0,
-        recordingHeight = 0,
-        scaleFactorX = scaleFactorX,
-        scaleFactorY = scaleFactorY,
-        frameRate = 0,
-        bitRate = 0
-    )
+  internal constructor(
+    scaleFactorX: Float,
+    scaleFactorY: Float,
+  ) : this(
+    recordingWidth = 0,
+    recordingHeight = 0,
+    scaleFactorX = scaleFactorX,
+    scaleFactorY = scaleFactorY,
+    frameRate = 0,
+    bitRate = 0,
+  )
 
-    internal companion object {
-        /**
-         * Since codec block size is 16, so we have to adjust the width and height to it, otherwise
-         * the codec might fail to configure on some devices, see https://cs.android.com/android/platform/superproject/+/master:frameworks/base/media/java/android/media/MediaCodecInfo.java;l=1999-2001
-         */
-        private fun Int.adjustToBlockSize(): Int {
-            val remainder = this % 16
-            return if (remainder <= 8) {
-                this - remainder
-            } else {
-                this + (16 - remainder)
-            }
-        }
-
-        fun fromSize(
-            context: Context,
-            sessionReplay: SentryReplayOptions,
-            windowWidth: Int,
-            windowHeight: Int
-        ): ScreenshotRecorderConfig {
-            // use the baseline density of 1x (mdpi)
-            val (height, width) =
-                ((windowHeight / context.resources.displayMetrics.density) * sessionReplay.quality.sizeScale)
-                    .roundToInt()
-                    .adjustToBlockSize() to
-                    ((windowWidth / context.resources.displayMetrics.density) * sessionReplay.quality.sizeScale)
-                        .roundToInt()
-                        .adjustToBlockSize()
-
-            return ScreenshotRecorderConfig(
-                recordingWidth = width,
-                recordingHeight = height,
-                scaleFactorX = width.toFloat() / windowWidth,
-                scaleFactorY = height.toFloat() / windowHeight,
-                frameRate = sessionReplay.frameRate,
-                bitRate = sessionReplay.quality.bitRate
-            )
-        }
+  internal companion object {
+    /**
+     * Since codec block size is 16, so we have to adjust the width and height to it, otherwise the
+     * codec might fail to configure on some devices, see
+     * https://cs.android.com/android/platform/superproject/+/master:frameworks/base/media/java/android/media/MediaCodecInfo.java;l=1999-2001
+     */
+    private fun Int.adjustToBlockSize(): Int {
+      val remainder = this % 16
+      return if (remainder <= 8) {
+        this - remainder
+      } else {
+        this + (16 - remainder)
+      }
     }
+
+    fun fromSize(
+      context: Context,
+      sessionReplay: SentryReplayOptions,
+      windowWidth: Int,
+      windowHeight: Int,
+    ): ScreenshotRecorderConfig {
+      // use the baseline density of 1x (mdpi)
+      val (height, width) =
+        ((windowHeight / context.resources.displayMetrics.density) *
+            sessionReplay.quality.sizeScale)
+          .roundToInt()
+          .adjustToBlockSize() to
+          ((windowWidth / context.resources.displayMetrics.density) *
+              sessionReplay.quality.sizeScale)
+            .roundToInt()
+            .adjustToBlockSize()
+
+      return ScreenshotRecorderConfig(
+        recordingWidth = width,
+        recordingHeight = height,
+        scaleFactorX = width.toFloat() / windowWidth,
+        scaleFactorY = height.toFloat() / windowHeight,
+        frameRate = sessionReplay.frameRate,
+        bitRate = sessionReplay.quality.bitRate,
+      )
+    }
+  }
 }
 
 /**
@@ -335,25 +330,23 @@ public data class ScreenshotRecorderConfig(
  * still work of both are used at the same time.
  */
 public interface ScreenshotRecorderCallback {
-    /**
-     * Called whenever a new frame screenshot is available.
-     *
-     * @param bitmap a screenshot taken in the form of [android.graphics.Bitmap]
-     */
-    public fun onScreenshotRecorded(bitmap: Bitmap)
+  /**
+   * Called whenever a new frame screenshot is available.
+   *
+   * @param bitmap a screenshot taken in the form of [android.graphics.Bitmap]
+   */
+  public fun onScreenshotRecorded(bitmap: Bitmap)
 
-    /**
-     * Called whenever a new frame screenshot is available.
-     *
-     * @param screenshot file containing the frame screenshot
-     * @param frameTimestamp the timestamp when the frame screenshot was taken
-     */
-    public fun onScreenshotRecorded(screenshot: File, frameTimestamp: Long)
+  /**
+   * Called whenever a new frame screenshot is available.
+   *
+   * @param screenshot file containing the frame screenshot
+   * @param frameTimestamp the timestamp when the frame screenshot was taken
+   */
+  public fun onScreenshotRecorded(screenshot: File, frameTimestamp: Long)
 }
 
-/**
- * A callback to be invoked when once current window size is determined or changes
- */
+/** A callback to be invoked when once current window size is determined or changes */
 public interface WindowCallback {
-    public fun onWindowSizeChanged(width: Int, height: Int)
+  public fun onWindowSizeChanged(width: Int, height: Int)
 }

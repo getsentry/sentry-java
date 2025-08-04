@@ -71,6 +71,8 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
   private volatile boolean isStopped = false;
   private volatile IntentFilter filter = null;
   private final @NotNull AutoClosableReentrantLock receiverLock = new AutoClosableReentrantLock();
+  // Track previous battery state to avoid duplicate breadcrumbs when values haven't changed
+  private @Nullable BatteryState previousBatteryState;
 
   public SystemEventsBreadcrumbsIntegration(final @NotNull Context context) {
     this(context, getDefaultActionsInternal());
@@ -116,7 +118,7 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
 
     if (this.options.isEnableSystemEventBreadcrumbs()) {
       addLifecycleObserver(this.options);
-      registerReceiver(this.scopes, this.options, /* reportAsNewIntegration = */ true);
+      registerReceiver(this.scopes, this.options, /* reportAsNewIntegration= */ true);
     }
   }
 
@@ -322,7 +324,7 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
         isStopped = false;
       }
 
-      registerReceiver(scopes, options, /* reportAsNewIntegration = */ false);
+      registerReceiver(scopes, options, /* reportAsNewIntegration= */ false);
     }
 
     @Override
@@ -331,7 +333,7 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
     }
   }
 
-  static final class SystemEventsBroadcastReceiver extends BroadcastReceiver {
+  final class SystemEventsBroadcastReceiver extends BroadcastReceiver {
 
     private static final long DEBOUNCE_WAIT_TIME_MS = 60 * 1000;
     private final @NotNull IScopes scopes;
@@ -350,19 +352,36 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
       final @Nullable String action = intent.getAction();
       final boolean isBatteryChanged = ACTION_BATTERY_CHANGED.equals(action);
 
-      // aligning with iOS which only captures battery status changes every minute at maximum
-      if (isBatteryChanged && batteryChangedDebouncer.checkForDebounce()) {
-        return;
+      @Nullable BatteryState batteryState = null;
+      if (isBatteryChanged) {
+        if (batteryChangedDebouncer.checkForDebounce()) {
+          // aligning with iOS which only captures battery status changes every minute at maximum
+          return;
+        }
+
+        // For battery changes, check if the actual values have changed
+        final @Nullable Float batteryLevel = DeviceInfoUtil.getBatteryLevel(intent, options);
+        final @Nullable Integer currentBatteryLevel =
+            batteryLevel != null ? batteryLevel.intValue() : null;
+        final @Nullable Boolean currentChargingState = DeviceInfoUtil.isCharging(intent, options);
+        batteryState = new BatteryState(currentBatteryLevel, currentChargingState);
+
+        // Only create breadcrumb if battery state has actually changed
+        if (batteryState.equals(previousBatteryState)) {
+          return;
+        }
+
+        previousBatteryState = batteryState;
       }
 
+      final BatteryState state = batteryState;
       final long now = System.currentTimeMillis();
       try {
         options
             .getExecutorService()
             .submit(
                 () -> {
-                  final Breadcrumb breadcrumb =
-                      createBreadcrumb(now, intent, action, isBatteryChanged);
+                  final Breadcrumb breadcrumb = createBreadcrumb(now, intent, action, state);
                   final Hint hint = new Hint();
                   hint.set(ANDROID_INTENT, intent);
                   scopes.addBreadcrumb(breadcrumb, hint);
@@ -411,7 +430,7 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
         final long timeMs,
         final @NotNull Intent intent,
         final @Nullable String action,
-        boolean isBatteryChanged) {
+        final @Nullable BatteryState batteryState) {
       final Breadcrumb breadcrumb = new Breadcrumb(timeMs);
       breadcrumb.setType("system");
       breadcrumb.setCategory("device.event");
@@ -420,14 +439,12 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
         breadcrumb.setData("action", shortAction);
       }
 
-      if (isBatteryChanged) {
-        final Float batteryLevel = DeviceInfoUtil.getBatteryLevel(intent, options);
-        if (batteryLevel != null) {
-          breadcrumb.setData("level", batteryLevel);
+      if (batteryState != null) {
+        if (batteryState.level != null) {
+          breadcrumb.setData("level", batteryState.level);
         }
-        final Boolean isCharging = DeviceInfoUtil.isCharging(intent, options);
-        if (isCharging != null) {
-          breadcrumb.setData("charging", isCharging);
+        if (batteryState.charging != null) {
+          breadcrumb.setData("charging", batteryState.charging);
         }
       } else {
         final Bundle extras = intent.getExtras();
@@ -456,6 +473,28 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
       }
       breadcrumb.setLevel(SentryLevel.INFO);
       return breadcrumb;
+    }
+  }
+
+  static final class BatteryState {
+    private final @Nullable Integer level;
+    private final @Nullable Boolean charging;
+
+    BatteryState(final @Nullable Integer level, final @Nullable Boolean charging) {
+      this.level = level;
+      this.charging = charging;
+    }
+
+    @Override
+    public boolean equals(final @Nullable Object other) {
+      if (!(other instanceof BatteryState)) return false;
+      BatteryState that = (BatteryState) other;
+      return Objects.equals(level, that.level) && Objects.equals(charging, that.charging);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(level, charging);
     }
   }
 }

@@ -13,17 +13,19 @@ jackson = "2.18.3"
 jetbrainsCompose = "1.6.11"
 kotlin = "1.9.24"
 kotlin-compatible-version = "1.6"
+ktorClient = "3.0.0"
 logback = "1.2.9"
 log4j2 = "2.20.0"
 nopen = "1.0.1"
 # see https://www.jetbrains.com/help/kotlin-multiplatform-dev/compose-compatibility-and-versioning.html#kotlin-compatibility
 # see https://developer.android.com/jetpack/androidx/releases/compose-kotlin
 okhttp = "4.9.2"
-otel = "1.44.1"
-otelInstrumentation = "2.10.0"
-otelInstrumentationAlpha = "2.10.0-alpha"
+otel = "1.51.0"
+otelInstrumentation = "2.17.0"
+otelInstrumentationAlpha = "2.17.0-alpha"
 # check https://github.com/open-telemetry/opentelemetry-java-instrumentation/blob/main/dependencyManagement/build.gradle.kts#L49 for release version above to find a compatible version
-otelSemanticConventions = "1.28.0-alpha"
+otelSemanticConventions = "1.34.0"
+otelSemanticConventionsAlpha = "1.34.0-alpha"
 retrofit = "2.9.0"
 slf4j = "1.7.30"
 springboot2 = "2.7.18"
@@ -32,6 +34,7 @@ springboot3 = "3.5.0"
 targetSdk = "34"
 compileSdk = "34"
 minSdk = "21"
+spotless = "7.0.4"
 
 [plugins]
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
@@ -43,7 +46,7 @@ binary-compatibility-validator = { id = "org.jetbrains.kotlinx.binary-compatibil
 compose-compiler = { id = "org.jetbrains.compose", version.ref = "jetbrainsCompose" }
 errorprone = { id = "net.ltgt.errorprone", version = "3.0.1" }
 gradle-versions = { id = "com.github.ben-manes.versions", version = "0.42.0" }
-spotless = { id = "com.diffplug.spotless", version = "6.11.0" }
+spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version = "1.23.8" }
 jacoco-android = { id = "com.mxalbert.gradle.jacoco-android", version = "0.2.0" }
 kover = { id = "org.jetbrains.kotlinx.kover", version = "0.7.3" }
@@ -93,6 +96,8 @@ jetbrains-annotations = { module = "org.jetbrains:annotations", version = "23.0.
 kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
 kotlinx-coroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
+ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktorClient" }
+ktor-client-java = { module = "io.ktor:ktor-client-java", version.ref = "ktorClient" }
 log4j-api = { module = "org.apache.logging.log4j:log4j-api", version.ref = "log4j2" }
 log4j-core = { module = "org.apache.logging.log4j:log4j-core", version.ref = "log4j2" }
 leakcanary = { module = "com.squareup.leakcanary:leakcanary-android", version = "2.14" }
@@ -109,7 +114,7 @@ otel-javaagent = { module = "io.opentelemetry.javaagent:opentelemetry-javaagent"
 otel-javaagent-tooling = { module = "io.opentelemetry.javaagent:opentelemetry-javaagent-tooling", version.ref = "otelInstrumentationAlpha" }
 otel-javaagent-extension-api = { module = "io.opentelemetry.javaagent:opentelemetry-javaagent-extension-api", version.ref = "otelInstrumentationAlpha" }
 otel-semconv = { module = "io.opentelemetry.semconv:opentelemetry-semconv", version.ref = "otelSemanticConventions" }
-otel-semconv-incubating = { module = "io.opentelemetry.semconv:opentelemetry-semconv-incubating", version.ref = "otelSemanticConventions" }
+otel-semconv-incubating = { module = "io.opentelemetry.semconv:opentelemetry-semconv-incubating", version.ref = "otelSemanticConventionsAlpha" }
 p6spy = { module = "p6spy:p6spy", version = "3.9.1" }
 quartz = { module = "org.quartz-scheduler:quartz", version = "2.3.0" }
 reactor-core = { module = "io.projectreactor:reactor-core", version = "3.5.3" }
@@ -121,6 +126,7 @@ servlet-jakarta-api = { module = "jakarta.servlet:jakarta.servlet-api", version 
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 slf4j-jdk14 = { module = "org.slf4j:slf4j-jdk14", version.ref = "slf4j" }
 slf4j2-api = { module = "org.slf4j:slf4j-api", version = "2.0.5" }
+spotlessLib = { module = "com.diffplug.spotless:com.diffplug.spotless.gradle.plugin", version.ref = "spotless"}
 springboot-starter = { module = "org.springframework.boot:spring-boot-starter", version.ref = "springboot2" }
 springboot-starter-graphql = { module = "org.springframework.boot:spring-boot-starter-graphql", version.ref = "springboot2" }
 springboot-starter-quartz = { module = "org.springframework.boot:spring-boot-starter-quartz", version.ref = "springboot2" }

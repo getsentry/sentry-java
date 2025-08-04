@@ -59,8 +59,10 @@ public final class Request implements JsonUnknown, JsonSerializable {
    * `query_string`.
    */
   private @Nullable String url;
+
   /** HTTP request method. */
   private @Nullable String method;
+
   /**
    * The query string component of the URL.
    *
@@ -71,6 +73,7 @@ public final class Request implements JsonUnknown, JsonSerializable {
    * string.
    */
   private @Nullable String queryString;
+
   /**
    * Request data in any format that makes sense.
    *
@@ -78,12 +81,14 @@ public final class Request implements JsonUnknown, JsonSerializable {
    * data of any serializable format.
    */
   private @Nullable Object data;
+
   /**
    * The cookie values.
    *
    * <p>Can be given unparsed as string, as dictionary, or as a list of tuples.
    */
   private @Nullable String cookies;
+
   /**
    * A dictionary of submitted headers.
    *
@@ -91,6 +96,7 @@ public final class Request implements JsonUnknown, JsonSerializable {
    * header merging. Header names are treated case-insensitively by Sentry.
    */
   private @Nullable Map<String, String> headers;
+
   /**
    * Server environment data, such as CGI/WSGI.
    *

@@ -545,6 +545,8 @@ public class SentryOptions {
 
   private @NotNull SentryReplayOptions sessionReplay;
 
+  private @NotNull SentryFeedbackOptions feedbackOptions;
+
   @ApiStatus.Experimental private boolean captureOpenTelemetryEvents = false;
 
   private @NotNull IVersionDetector versionDetector = NoopVersionDetector.getInstance();
@@ -571,6 +573,16 @@ public class SentryOptions {
    * automatically be stopped when the root span that is associated with app startup ends
    */
   private boolean startProfilerOnAppStart = false;
+
+  /**
+   * Controls the deadline timeout in milliseconds for automatic transactions. When set to a
+   * positive value, that value is used as the deadline timeout. When set to a value less than or
+   * equal to 0, no deadline is applied and transactions will only finish when explicitly finished
+   * or when the activity lifecycle ends.
+   *
+   * <p>Default is 30000 (30 seconds).
+   */
+  private long deadlineTimeout = TransactionOptions.DEFAULT_DEADLINE_TIMEOUT_AUTO_TRANSACTION;
 
   private @NotNull SentryOptions.Logs logs = new SentryOptions.Logs();
 
@@ -2018,6 +2030,24 @@ public class SentryOptions {
     this.startProfilerOnAppStart = startProfilerOnAppStart;
   }
 
+  public long getDeadlineTimeout() {
+    return deadlineTimeout;
+  }
+
+  /**
+   * Controls the deadline timeout in milliseconds for automatic transactions. When set to a
+   * positive value, that value is used as the deadline timeout. When set to a value less than or
+   * equal to 0, no deadline is applied and transactions will only finish when explicitly finished
+   * or when the activity lifecycle ends.
+   *
+   * <p>Default is 30000 (30 seconds).
+   *
+   * @param deadlineTimeout the timeout in milliseconds
+   */
+  public void setDeadlineTimeout(long deadlineTimeout) {
+    this.deadlineTimeout = deadlineTimeout;
+  }
+
   /**
    * Returns the profiling traces dir. path if set
    *
@@ -2845,6 +2875,14 @@ public class SentryOptions {
     this.sessionReplay = sessionReplayOptions;
   }
 
+  public @NotNull SentryFeedbackOptions getFeedbackOptions() {
+    return feedbackOptions;
+  }
+
+  public void setFeedbackOptions(final @NotNull SentryFeedbackOptions feedbackOptions) {
+    this.feedbackOptions = feedbackOptions;
+  }
+
   @ApiStatus.Experimental
   public void setCaptureOpenTelemetryEvents(final boolean captureOpenTelemetryEvents) {
     this.captureOpenTelemetryEvents = captureOpenTelemetryEvents;
@@ -3025,6 +3063,11 @@ public class SentryOptions {
     final @NotNull SdkVersion sdkVersion = createSdkVersion();
     experimental = new ExperimentalOptions(empty, sdkVersion);
     sessionReplay = new SentryReplayOptions(empty, sdkVersion);
+    feedbackOptions =
+        new SentryFeedbackOptions(
+            (associatedEventId, configurator) ->
+                logger.log(SentryLevel.WARNING, "showDialog() can only be called in Android."));
+
     if (!empty) {
       setSpanFactory(SpanFactoryFactory.create(new LoadClass(), NoOpLogger.getInstance()));
       // SentryExecutorService should be initialized before any

@@ -6,6 +6,7 @@ import android.os.Bundle;
 import io.sentry.ILogger;
 import io.sentry.InitPriority;
 import io.sentry.ProfileLifecycle;
+import io.sentry.SentryFeedbackOptions;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryLevel;
 import io.sentry.protocol.SdkVersion;
@@ -125,6 +126,20 @@ final class ManifestMetadataReader {
 
   static final String ENABLE_AUTO_TRACE_ID_GENERATION =
       "io.sentry.traces.enable-auto-id-generation";
+
+  static final String DEADLINE_TIMEOUT = "io.sentry.traces.deadline-timeout";
+
+  static final String FEEDBACK_NAME_REQUIRED = "io.sentry.feedback.is-name-required";
+
+  static final String FEEDBACK_SHOW_NAME = "io.sentry.feedback.show-name";
+
+  static final String FEEDBACK_EMAIL_REQUIRED = "io.sentry.feedback.is-email-required";
+
+  static final String FEEDBACK_SHOW_EMAIL = "io.sentry.feedback.show-email";
+
+  static final String FEEDBACK_USE_SENTRY_USER = "io.sentry.feedback.use-sentry-user";
+
+  static final String FEEDBACK_SHOW_BRANDING = "io.sentry.feedback.show-branding";
 
   /** ManifestMetadataReader ctor */
   private ManifestMetadataReader() {}
@@ -433,6 +448,9 @@ final class ManifestMetadataReader {
                 ENABLE_AUTO_TRACE_ID_GENERATION,
                 options.isEnableAutoTraceIdGeneration()));
 
+        options.setDeadlineTimeout(
+            readLong(metadata, logger, DEADLINE_TIMEOUT, options.getDeadlineTimeout()));
+
         if (options.getSessionReplay().getSessionSampleRate() == null) {
           final double sessionSampleRate =
               readDouble(metadata, logger, REPLAYS_SESSION_SAMPLE_RATE);
@@ -477,6 +495,21 @@ final class ManifestMetadataReader {
         options
             .getLogs()
             .setEnabled(readBool(metadata, logger, ENABLE_LOGS, options.getLogs().isEnabled()));
+
+        final @NotNull SentryFeedbackOptions feedbackOptions = options.getFeedbackOptions();
+        feedbackOptions.setNameRequired(
+            readBool(metadata, logger, FEEDBACK_NAME_REQUIRED, feedbackOptions.isNameRequired()));
+        feedbackOptions.setShowName(
+            readBool(metadata, logger, FEEDBACK_SHOW_NAME, feedbackOptions.isShowName()));
+        feedbackOptions.setEmailRequired(
+            readBool(metadata, logger, FEEDBACK_EMAIL_REQUIRED, feedbackOptions.isEmailRequired()));
+        feedbackOptions.setShowEmail(
+            readBool(metadata, logger, FEEDBACK_SHOW_EMAIL, feedbackOptions.isShowEmail()));
+        feedbackOptions.setUseSentryUser(
+            readBool(
+                metadata, logger, FEEDBACK_USE_SENTRY_USER, feedbackOptions.isUseSentryUser()));
+        feedbackOptions.setShowBranding(
+            readBool(metadata, logger, FEEDBACK_SHOW_BRANDING, feedbackOptions.isShowBranding()));
       }
       options
           .getLogger()
@@ -497,23 +530,6 @@ final class ManifestMetadataReader {
     final boolean value = metadata.getBoolean(key, defaultValue);
     logger.log(SentryLevel.DEBUG, key + " read: " + value);
     return value;
-  }
-
-  @SuppressWarnings("deprecation")
-  private static @Nullable Boolean readBoolNullable(
-      final @NotNull Bundle metadata,
-      final @NotNull ILogger logger,
-      final @NotNull String key,
-      final @Nullable Boolean defaultValue) {
-    if (metadata.getSerializable(key) != null) {
-      final boolean nonNullDefault = defaultValue == null ? false : true;
-      final boolean bool = metadata.getBoolean(key, nonNullDefault);
-      logger.log(SentryLevel.DEBUG, key + " read: " + bool);
-      return bool;
-    } else {
-      logger.log(SentryLevel.DEBUG, key + " used default " + defaultValue);
-      return defaultValue;
-    }
   }
 
   private static @Nullable String readString(

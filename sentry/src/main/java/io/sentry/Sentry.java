@@ -56,6 +56,7 @@ public final class Sentry {
 
   /** The root Scopes or NoOp if Sentry is disabled. */
   private static volatile @NotNull IScopes rootScopes = NoOpScopes.getInstance();
+
   /**
    * This initializes global scope with default options. Options will later be replaced on
    * Sentry.init
@@ -191,7 +192,9 @@ public final class Sentry {
   public static <T extends SentryOptions> void init(
       final @NotNull OptionsContainer<T> clazz,
       final @NotNull OptionsConfiguration<T> optionsConfiguration)
-      throws IllegalAccessException, InstantiationException, NoSuchMethodException,
+      throws IllegalAccessException,
+          InstantiationException,
+          NoSuchMethodException,
           InvocationTargetException {
     init(clazz, optionsConfiguration, GLOBAL_HUB_DEFAULT_MODE);
   }
@@ -212,7 +215,9 @@ public final class Sentry {
       final @NotNull OptionsContainer<T> clazz,
       final @NotNull OptionsConfiguration<T> optionsConfiguration,
       final boolean globalHubMode)
-      throws IllegalAccessException, InstantiationException, NoSuchMethodException,
+      throws IllegalAccessException,
+          InstantiationException,
+          NoSuchMethodException,
           InvocationTargetException {
     final T options = clazz.createInstance();
     applyOptionsConfiguration(optionsConfiguration, options);
@@ -640,7 +645,7 @@ public final class Sentry {
       options.setDebugMetaLoader(new ResourcesDebugMetaLoader(options.getLogger()));
     }
     final @Nullable List<Properties> propertiesList = options.getDebugMetaLoader().loadDebugMeta();
-    DebugMetaPropertiesApplier.applyToOptions(options, propertiesList);
+    DebugMetaPropertiesApplier.apply(options, propertiesList);
 
     final IThreadChecker threadChecker = options.getThreadChecker();
     // only override the ThreadChecker if it's not already set by Android
@@ -1283,5 +1288,21 @@ public final class Sentry {
   @NotNull
   public static IReplayApi replay() {
     return getCurrentScopes().getScope().getOptions().getReplayController();
+  }
+
+  public static void showUserFeedbackDialog() {
+    showUserFeedbackDialog(null);
+  }
+
+  public static void showUserFeedbackDialog(
+      final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator) {
+    showUserFeedbackDialog(null, configurator);
+  }
+
+  public static void showUserFeedbackDialog(
+      final @Nullable SentryId associatedEventId,
+      final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator) {
+    final @NotNull SentryOptions options = getCurrentScopes().getOptions();
+    options.getFeedbackOptions().getDialogHandler().showDialog(associatedEventId, configurator);
   }
 }

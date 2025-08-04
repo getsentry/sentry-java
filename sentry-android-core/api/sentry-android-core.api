@@ -263,7 +263,7 @@ public final class io/sentry/android/core/NdkIntegration : io/sentry/Integration
 }
 
 public final class io/sentry/android/core/NetworkBreadcrumbsIntegration : io/sentry/Integration, java/io/Closeable {
-	public fun <init> (Landroid/content/Context;Lio/sentry/android/core/BuildInfoProvider;Lio/sentry/ILogger;)V
+	public fun <init> (Landroid/content/Context;Lio/sentry/android/core/BuildInfoProvider;)V
 	public fun close ()V
 	public fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
 }
@@ -383,6 +383,34 @@ public final class io/sentry/android/core/SentryPerformanceProvider {
 	public fun getType (Landroid/net/Uri;)Ljava/lang/String;
 	public fun onCreate ()Z
 	public fun shutdown ()V
+}
+
+public class io/sentry/android/core/SentryUserFeedbackButton : android/widget/Button {
+	public fun <init> (Landroid/content/Context;)V
+	public fun <init> (Landroid/content/Context;Landroid/util/AttributeSet;)V
+	public fun <init> (Landroid/content/Context;Landroid/util/AttributeSet;I)V
+	public fun <init> (Landroid/content/Context;Landroid/util/AttributeSet;II)V
+	public fun setOnClickListener (Landroid/view/View$OnClickListener;)V
+}
+
+public final class io/sentry/android/core/SentryUserFeedbackDialog : android/app/AlertDialog {
+	public fun setCancelable (Z)V
+	public fun setOnDismissListener (Landroid/content/DialogInterface$OnDismissListener;)V
+	public fun show ()V
+}
+
+public class io/sentry/android/core/SentryUserFeedbackDialog$Builder {
+	public fun <init> (Landroid/content/Context;)V
+	public fun <init> (Landroid/content/Context;I)V
+	public fun <init> (Landroid/content/Context;ILio/sentry/android/core/SentryUserFeedbackDialog$OptionsConfiguration;)V
+	public fun <init> (Landroid/content/Context;Lio/sentry/android/core/SentryUserFeedbackDialog$OptionsConfiguration;)V
+	public fun associatedEventId (Lio/sentry/protocol/SentryId;)Lio/sentry/android/core/SentryUserFeedbackDialog$Builder;
+	public fun configurator (Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)Lio/sentry/android/core/SentryUserFeedbackDialog$Builder;
+	public fun create ()Lio/sentry/android/core/SentryUserFeedbackDialog;
+}
+
+public abstract interface class io/sentry/android/core/SentryUserFeedbackDialog$OptionsConfiguration {
+	public abstract fun configure (Landroid/content/Context;Lio/sentry/SentryFeedbackOptions;)V
 }
 
 public class io/sentry/android/core/SpanFrameMetricsCollector : io/sentry/IPerformanceContinuousCollector, io/sentry/android/core/internal/util/SentryFrameMetricsCollector$FrameMetricsCollectorListener {

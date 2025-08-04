@@ -130,7 +130,8 @@ public final class DefaultCompositePerformanceCollector implements CompositePerf
                   return;
                 }
                 lastCollectionTimestamp = now;
-                final @NotNull PerformanceCollectionData tempData = new PerformanceCollectionData();
+                final @NotNull PerformanceCollectionData tempData =
+                    new PerformanceCollectionData(new SentryNanotimeDate().nanoTimestamp());
 
                 for (IPerformanceSnapshotCollector collector : snapshotCollectors) {
                   collector.collect(tempData);

@@ -1,6 +1,7 @@
 .DS_Store
 .idea/
 .gradle/
+.run/
 build/
 artifacts/
 out/
@@ -19,5 +20,7 @@ distributions/
 *.vscode/
 sentry-spring-boot-starter-jakarta/src/main/resources/META-INF/spring.factories
 sentry-samples/sentry-samples-spring-boot-jakarta/spy.log
+sentry-mock-server.txt
+spring-server.txt
 spy.log
 .kotlin

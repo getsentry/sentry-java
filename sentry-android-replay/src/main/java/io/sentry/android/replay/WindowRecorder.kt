@@ -4,164 +4,234 @@ import android.annotation.TargetApi
 import android.graphics.Point
 import android.view.View
 import android.view.ViewTreeObserver
+import io.sentry.SentryLevel.DEBUG
+import io.sentry.SentryLevel.ERROR
+import io.sentry.SentryLevel.WARNING
 import io.sentry.SentryOptions
 import io.sentry.android.replay.util.MainLooperHandler
 import io.sentry.android.replay.util.addOnPreDrawListenerSafe
-import io.sentry.android.replay.util.gracefullyShutdown
 import io.sentry.android.replay.util.hasSize
 import io.sentry.android.replay.util.removeOnPreDrawListenerSafe
-import io.sentry.android.replay.util.scheduleAtFixedRateSafely
 import io.sentry.util.AutoClosableReentrantLock
 import java.lang.ref.WeakReference
-import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
-import java.util.concurrent.ScheduledFuture
-import java.util.concurrent.ThreadFactory
-import java.util.concurrent.TimeUnit.MILLISECONDS
 import java.util.concurrent.atomic.AtomicBoolean
 
 @TargetApi(26)
 internal class WindowRecorder(
-    private val options: SentryOptions,
-    private val screenshotRecorderCallback: ScreenshotRecorderCallback? = null,
-    private val windowCallback: WindowCallback,
-    private val mainLooperHandler: MainLooperHandler,
-    private val replayExecutor: ScheduledExecutorService
+  private val options: SentryOptions,
+  private val screenshotRecorderCallback: ScreenshotRecorderCallback? = null,
+  private val windowCallback: WindowCallback,
+  private val mainLooperHandler: MainLooperHandler,
+  private val replayExecutor: ScheduledExecutorService,
 ) : Recorder, OnRootViewsChangedListener {
+  internal companion object {
+    private const val TAG = "WindowRecorder"
+  }
 
-    internal companion object {
-        private const val TAG = "WindowRecorder"
-    }
+  private val isRecording = AtomicBoolean(false)
+  private val rootViews = ArrayList<WeakReference<View>>()
+  private var lastKnownWindowSize: Point = Point()
+  private val rootViewsLock = AutoClosableReentrantLock()
+  private val capturerLock = AutoClosableReentrantLock()
+  @Volatile private var capturer: Capturer? = null
 
-    private val isRecording = AtomicBoolean(false)
-    private val rootViews = ArrayList<WeakReference<View>>()
-    private var lastKnownWindowSize: Point = Point()
-    private val rootViewsLock = AutoClosableReentrantLock()
-    private var recorder: ScreenshotRecorder? = null
-    private var capturingTask: ScheduledFuture<*>? = null
-    private val capturer by lazy {
-        Executors.newSingleThreadScheduledExecutor(RecorderExecutorServiceThreadFactory())
-    }
+  private class Capturer(
+    private val options: SentryOptions,
+    private val mainLooperHandler: MainLooperHandler,
+  ) : Runnable {
 
-    override fun onRootViewsChanged(root: View, added: Boolean) {
-        rootViewsLock.acquire().use {
-            if (added) {
-                rootViews.add(WeakReference(root))
-                recorder?.bind(root)
-                determineWindowSize(root)
-            } else {
-                recorder?.unbind(root)
-                rootViews.removeAll { it.get() == root }
+    var recorder: ScreenshotRecorder? = null
+    var config: ScreenshotRecorderConfig? = null
+    private val isRecording = AtomicBoolean(true)
 
-                val newRoot = rootViews.lastOrNull()?.get()
-                if (newRoot != null && root != newRoot) {
-                    recorder?.bind(newRoot)
-                    determineWindowSize(newRoot)
-                } else {
-                    Unit // synchronized block wants us to return something lol
-                }
-            }
-        }
-    }
-
-    fun determineWindowSize(root: View) {
-        if (root.hasSize()) {
-            if (root.width != lastKnownWindowSize.x && root.height != lastKnownWindowSize.y) {
-                lastKnownWindowSize.set(root.width, root.height)
-                windowCallback.onWindowSizeChanged(root.width, root.height)
-            }
-        } else {
-            root.addOnPreDrawListenerSafe(object : ViewTreeObserver.OnPreDrawListener {
-                override fun onPreDraw(): Boolean {
-                    val currentRoot = rootViews.lastOrNull()?.get()
-                    // in case the root changed in the meantime, ignore the preDraw of the outdate root
-                    if (root != currentRoot) {
-                        root.removeOnPreDrawListenerSafe(this)
-                        return true
-                    }
-                    if (root.hasSize()) {
-                        root.removeOnPreDrawListenerSafe(this)
-                        if (root.width != lastKnownWindowSize.x && root.height != lastKnownWindowSize.y) {
-                            lastKnownWindowSize.set(root.width, root.height)
-                            windowCallback.onWindowSizeChanged(root.width, root.height)
-                        }
-                    }
-                    return true
-                }
-            })
-        }
-    }
-
-    override fun start() {
-        isRecording.getAndSet(true)
-    }
-
-    override fun onConfigurationChanged(config: ScreenshotRecorderConfig) {
-        if (!isRecording.get()) {
-            return
-        }
-
-        recorder = ScreenshotRecorder(
-            config,
-            options,
-            mainLooperHandler,
-            replayExecutor,
-            screenshotRecorderCallback
+    fun resume() {
+      if (options.sessionReplay.isDebug) {
+        options.logger.log(DEBUG, "Resuming the capture runnable.")
+      }
+      recorder?.resume()
+      isRecording.getAndSet(true)
+      // Remove any existing callbacks to prevent concurrent capture loops
+      mainLooperHandler.removeCallbacks(this)
+      val posted = mainLooperHandler.post(this)
+      if (!posted) {
+        options.logger.log(
+          WARNING,
+          "Failed to post the capture runnable, main looper is not ready.",
         )
+      }
+    }
+
+    fun pause() {
+      recorder?.pause()
+      isRecording.getAndSet(false)
+    }
+
+    fun stop() {
+      recorder?.close()
+      recorder = null
+      isRecording.getAndSet(false)
+    }
+
+    override fun run() {
+      // protection against the case where the capture is executed after the recording has stopped
+      if (!isRecording.get()) {
+        if (options.sessionReplay.isDebug) {
+          options.logger.log(DEBUG, "Not capturing frames, recording is not running.")
+        }
+        return
+      }
+
+      try {
+        if (options.sessionReplay.isDebug) {
+          options.logger.log(DEBUG, "Capturing a frame.")
+        }
+        recorder?.capture()
+      } catch (e: Throwable) {
+        options.logger.log(ERROR, "Failed to capture a frame", e)
+      }
+
+      if (options.sessionReplay.isDebug) {
+        options.logger.log(
+          DEBUG,
+          "Posting the capture runnable again, frame rate is ${config?.frameRate ?: 1} fps.",
+        )
+      }
+      val posted = mainLooperHandler.postDelayed(this, 1000L / (config?.frameRate ?: 1))
+      if (!posted) {
+        options.logger.log(
+          WARNING,
+          "Failed to post the capture runnable, main looper is shutting down.",
+        )
+      }
+    }
+  }
+
+  override fun onRootViewsChanged(root: View, added: Boolean) {
+    rootViewsLock.acquire().use {
+      if (added) {
+        rootViews.add(WeakReference(root))
+        capturer?.recorder?.bind(root)
+        determineWindowSize(root)
+      } else {
+        capturer?.recorder?.unbind(root)
+        rootViews.removeAll { it.get() == root }
 
         val newRoot = rootViews.lastOrNull()?.get()
-        if (newRoot != null) {
-            recorder?.bind(newRoot)
+        if (newRoot != null && root != newRoot) {
+          capturer?.recorder?.bind(newRoot)
+          determineWindowSize(newRoot)
+        } else {
+          Unit // synchronized block wants us to return something lol
         }
-        // TODO: change this to use MainThreadHandler and just post on the main thread with delay
-        // to avoid thread context switch every time
-        capturingTask = capturer.scheduleAtFixedRateSafely(
-            options,
-            "$TAG.capture",
-            100L, // delay the first run by a bit, to allow root view listener to register
-            1000L / config.frameRate,
-            MILLISECONDS
-        ) {
-            recorder?.capture()
+      }
+    }
+  }
+
+  fun determineWindowSize(root: View) {
+    if (root.hasSize()) {
+      if (root.width != lastKnownWindowSize.x && root.height != lastKnownWindowSize.y) {
+        lastKnownWindowSize.set(root.width, root.height)
+        windowCallback.onWindowSizeChanged(root.width, root.height)
+      }
+    } else {
+      root.addOnPreDrawListenerSafe(
+        object : ViewTreeObserver.OnPreDrawListener {
+          override fun onPreDraw(): Boolean {
+            val currentRoot = rootViews.lastOrNull()?.get()
+            // in case the root changed in the meantime, ignore the preDraw of the outdate root
+            if (root != currentRoot) {
+              root.removeOnPreDrawListenerSafe(this)
+              return true
+            }
+            if (root.hasSize()) {
+              root.removeOnPreDrawListenerSafe(this)
+              if (root.width != lastKnownWindowSize.x && root.height != lastKnownWindowSize.y) {
+                lastKnownWindowSize.set(root.width, root.height)
+                windowCallback.onWindowSizeChanged(root.width, root.height)
+              }
+            }
+            return true
+          }
         }
+      )
+    }
+  }
+
+  override fun start() {
+    isRecording.getAndSet(true)
+  }
+
+  override fun onConfigurationChanged(config: ScreenshotRecorderConfig) {
+    if (!isRecording.get()) {
+      return
     }
 
-    override fun resume() {
-        recorder?.resume()
-    }
-
-    override fun pause() {
-        recorder?.pause()
-    }
-
-    override fun reset() {
-        lastKnownWindowSize.set(0, 0)
-        rootViewsLock.acquire().use {
-            rootViews.forEach { recorder?.unbind(it.get()) }
-            rootViews.clear()
+    if (capturer == null) {
+      capturerLock.acquire().use {
+        if (capturer == null) {
+          // don't recreate runnable for every config change, just update the config
+          capturer = Capturer(options, mainLooperHandler)
         }
+      }
     }
 
-    override fun stop() {
-        recorder?.close()
-        recorder = null
-        capturingTask?.cancel(false)
-        capturingTask = null
-        isRecording.set(false)
+    capturer?.config = config
+    capturer?.recorder =
+      ScreenshotRecorder(
+        config,
+        options,
+        mainLooperHandler,
+        replayExecutor,
+        screenshotRecorderCallback,
+      )
+
+    val newRoot = rootViews.lastOrNull()?.get()
+    if (newRoot != null) {
+      capturer?.recorder?.bind(newRoot)
     }
 
-    override fun close() {
-        reset()
-        stop()
-        capturer.gracefullyShutdown(options)
-    }
+    // Remove any existing callbacks to prevent concurrent capture loops
+    mainLooperHandler.removeCallbacks(capturer)
 
-    private class RecorderExecutorServiceThreadFactory : ThreadFactory {
-        private var cnt = 0
-        override fun newThread(r: Runnable): Thread {
-            val ret = Thread(r, "SentryWindowRecorder-" + cnt++)
-            ret.setDaemon(true)
-            return ret
-        }
+    val posted =
+      mainLooperHandler.postDelayed(
+        capturer,
+        100L, // delay the first run by a bit, to allow root view listener to register
+      )
+    if (!posted) {
+      options.logger.log(
+        WARNING,
+        "Failed to post the capture runnable, main looper is shutting down.",
+      )
     }
+  }
+
+  override fun resume() {
+    capturer?.resume()
+  }
+
+  override fun pause() {
+    capturer?.pause()
+  }
+
+  override fun reset() {
+    lastKnownWindowSize.set(0, 0)
+    rootViewsLock.acquire().use {
+      rootViews.forEach { capturer?.recorder?.unbind(it.get()) }
+      rootViews.clear()
+    }
+  }
+
+  override fun stop() {
+    capturer?.stop()
+    capturerLock.acquire().use { capturer = null }
+    isRecording.set(false)
+  }
+
+  override fun close() {
+    reset()
+    mainLooperHandler.removeCallbacks(capturer)
+    stop()
+  }
 }

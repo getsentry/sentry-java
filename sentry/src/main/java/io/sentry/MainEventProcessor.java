@@ -142,6 +142,11 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
     return event;
   }
 
+  @Override
+  public @Nullable SentryLogEvent process(@NotNull SentryLogEvent event) {
+    return event;
+  }
+
   private void setCommons(final @NotNull SentryBaseEvent event) {
     setPlatform(event);
   }

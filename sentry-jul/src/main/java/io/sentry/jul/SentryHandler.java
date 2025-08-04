@@ -9,11 +9,15 @@ import io.sentry.Hint;
 import io.sentry.InitPriority;
 import io.sentry.ScopesAdapter;
 import io.sentry.Sentry;
+import io.sentry.SentryAttribute;
+import io.sentry.SentryAttributes;
 import io.sentry.SentryEvent;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryLevel;
+import io.sentry.SentryLogLevel;
 import io.sentry.SentryOptions;
 import io.sentry.exception.ExceptionMechanismException;
+import io.sentry.logger.SentryLogParameters;
 import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.Message;
 import io.sentry.protocol.SdkVersion;
@@ -38,8 +42,10 @@ import org.slf4j.MDC;
 @Open
 public class SentryHandler extends Handler {
   public static final String MECHANISM_TYPE = "JulSentryHandler";
+
   /** Name of the {@link SentryEvent} extra property containing the Thread id. */
   public static final String THREAD_ID = "thread_id";
+
   /**
    * If true, <code>String.format()</code> is used to render parameterized log messages instead of
    * <code>MessageFormat.format()</code>; Defaults to false.
@@ -48,6 +54,7 @@ public class SentryHandler extends Handler {
 
   private @NotNull Level minimumBreadcrumbLevel = Level.INFO;
   private @NotNull Level minimumEventLevel = Level.SEVERE;
+  private @NotNull Level minimumLevel = Level.INFO;
 
   static {
     SentryIntegrationPackageStorage.getInstance()
@@ -104,6 +111,10 @@ public class SentryHandler extends Handler {
       return;
     }
     try {
+      if (ScopesAdapter.getInstance().getOptions().getLogs().isEnabled()
+          && record.getLevel().intValue() >= minimumLevel.intValue()) {
+        captureLog(record);
+      }
       if (record.getLevel().intValue() >= minimumEventLevel.intValue()) {
         final Hint hint = new Hint();
         hint.set(SENTRY_SYNTHETIC_EXCEPTION, record);
@@ -124,6 +135,46 @@ public class SentryHandler extends Handler {
     }
   }
 
+  /**
+   * Captures a Sentry log from JULs {@link LogRecord}.
+   *
+   * @param loggingEvent the JUL log record
+   */
+  // for the Android compatibility we must use old Java Date class
+  @SuppressWarnings("JdkObsolete")
+  protected void captureLog(@NotNull LogRecord loggingEvent) {
+    final @NotNull SentryLogLevel sentryLevel = toSentryLogLevel(loggingEvent.getLevel());
+
+    final @Nullable Object[] arguments = loggingEvent.getParameters();
+    final @NotNull SentryAttributes attributes = SentryAttributes.of();
+
+    @NotNull String message = loggingEvent.getMessage();
+    if (loggingEvent.getResourceBundle() != null
+        && loggingEvent.getResourceBundle().containsKey(loggingEvent.getMessage())) {
+      message = loggingEvent.getResourceBundle().getString(loggingEvent.getMessage());
+    }
+
+    attributes.add(SentryAttribute.stringAttribute("sentry.message.template", message));
+
+    final @NotNull String formattedMessage = maybeFormatted(arguments, message);
+    final @NotNull SentryLogParameters params = SentryLogParameters.create(attributes);
+
+    Sentry.logger().log(sentryLevel, params, formattedMessage, arguments);
+  }
+
+  private @NotNull String maybeFormatted(
+      final @NotNull Object[] arguments, final @NotNull String message) {
+    if (arguments != null) {
+      try {
+        return formatMessage(message, arguments);
+      } catch (RuntimeException e) {
+        // local formatting failed, sending raw message instead of formatted message
+      }
+    }
+
+    return message;
+  }
+
   /** Retrieves the properties of the logger. */
   private void retrieveProperties() {
     final LogManager manager = LogManager.getLogManager();
@@ -138,6 +189,10 @@ public class SentryHandler extends Handler {
     final String minimumEventLevel = manager.getProperty(className + ".minimumEventLevel");
     if (minimumEventLevel != null) {
       setMinimumEventLevel(parseLevelOrDefault(minimumEventLevel));
+    }
+    final String minimumLevel = manager.getProperty(className + ".minimumLevel");
+    if (minimumLevel != null) {
+      setMinimumLevel(parseLevelOrDefault(minimumLevel));
     }
   }
 
@@ -158,6 +213,26 @@ public class SentryHandler extends Handler {
       return SentryLevel.DEBUG;
     } else {
       return null;
+    }
+  }
+
+  /**
+   * Transforms a {@link Level} into an {@link SentryLogLevel}.
+   *
+   * @param level original level as defined in JUL.
+   * @return log level used within sentry logs.
+   */
+  private static @NotNull SentryLogLevel toSentryLogLevel(final @NotNull Level level) {
+    if (level.intValue() >= Level.SEVERE.intValue()) {
+      return SentryLogLevel.ERROR;
+    } else if (level.intValue() >= Level.WARNING.intValue()) {
+      return SentryLogLevel.WARN;
+    } else if (level.intValue() >= Level.INFO.intValue()) {
+      return SentryLogLevel.INFO;
+    } else if (level.intValue() >= Level.FINE.intValue()) {
+      return SentryLogLevel.DEBUG;
+    } else {
+      return SentryLogLevel.TRACE;
     }
   }
 
@@ -335,6 +410,16 @@ public class SentryHandler extends Handler {
 
   public @NotNull Level getMinimumEventLevel() {
     return minimumEventLevel;
+  }
+
+  public void setMinimumLevel(final @Nullable Level minimumLevel) {
+    if (minimumLevel != null) {
+      this.minimumLevel = minimumLevel;
+    }
+  }
+
+  public @NotNull Level getMinimumLevel() {
+    return minimumLevel;
   }
 
   public boolean isPrintfStyle() {

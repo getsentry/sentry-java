@@ -21,26 +21,39 @@ jobs:
       fail-fast: false
       matrix:
         sample: [ "sentry-samples-spring-boot-jakarta" ]
-        agent: [ "0" ]
+        agent: [ "false" ]
         agent-auto-init: [ "true" ]
         include:
           - sample: "sentry-samples-spring-boot"
+            agent: "false"
+            agent-auto-init: "true"
           - sample: "sentry-samples-spring-boot-opentelemetry-noagent"
-          - sample: "sentry-samples-spring-boot-opentelemetry"
-            agent: "1"
+            agent: "false"
             agent-auto-init: "true"
           - sample: "sentry-samples-spring-boot-opentelemetry"
-            agent: "1"
+            agent: "true"
+            agent-auto-init: "true"
+          - sample: "sentry-samples-spring-boot-opentelemetry"
+            agent: "true"
             agent-auto-init: "false"
           - sample: "sentry-samples-spring-boot-webflux-jakarta"
+            agent: "false"
+            agent-auto-init: "true"
           - sample: "sentry-samples-spring-boot-webflux"
+            agent: "false"
+            agent-auto-init: "true"
           - sample: "sentry-samples-spring-boot-jakarta-opentelemetry-noagent"
-          - sample: "sentry-samples-spring-boot-jakarta-opentelemetry"
-            agent: "1"
+            agent: "false"
             agent-auto-init: "true"
           - sample: "sentry-samples-spring-boot-jakarta-opentelemetry"
-            agent: "1"
+            agent: "true"
+            agent-auto-init: "true"
+          - sample: "sentry-samples-spring-boot-jakarta-opentelemetry"
+            agent: "true"
             agent-auto-init: "false"
+          - sample: "sentry-samples-console"
+            agent: "false"
+            agent-auto-init: "true"
     steps:
       - uses: actions/checkout@v4
         with:
@@ -50,6 +63,11 @@ jobs:
         with:
           python-version: '3.10.5'
 
+      - name: Install Python dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install -r requirements.txt
+
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
@@ -57,7 +75,7 @@ jobs:
           java-version: '17'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@8379f6a1328ee0e06e2bb424dadb7b159856a326
+        uses: gradle/actions/setup-gradle@ac638b010cf58a27ee6c972d7336334ccaf61c96
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
@@ -90,17 +108,9 @@ jobs:
             -e '/.*"sentry-samples-android",/d' \
             build.gradle.kts
 
-      - name: Build server jar
+      - name: Build and run system tests
         run: |
-          ./gradlew :sentry-samples:${{ matrix.sample }}:bootJar
-
-      - name: Build agent jar
-        run: |
-          ./gradlew :sentry-opentelemetry:sentry-opentelemetry-agent:assemble
-
-      - name: Start server and run integration test for sentry-cli commands
-        run: |
-          test/system-test-run.sh "${{ matrix.sample }}" "${{ matrix.agent }}" "${{ matrix.agent-auto-init }}" "0"
+          python3 test/system-test-runner.py test --module "${{ matrix.sample }}" --agent "${{ matrix.agent }}" --auto-init "${{ matrix.agent-auto-init }}" --build "true"
 
       - name: Upload test results
         if: always()

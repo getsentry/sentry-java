@@ -12,11 +12,15 @@ import io.sentry.ITransportFactory;
 import io.sentry.InitPriority;
 import io.sentry.ScopesAdapter;
 import io.sentry.Sentry;
+import io.sentry.SentryAttribute;
+import io.sentry.SentryAttributes;
 import io.sentry.SentryEvent;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryLevel;
+import io.sentry.SentryLogLevel;
 import io.sentry.SentryOptions;
 import io.sentry.exception.ExceptionMechanismException;
+import io.sentry.logger.SentryLogParameters;
 import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.Message;
 import io.sentry.protocol.SdkVersion;
@@ -50,6 +54,7 @@ public class SentryAppender extends AbstractAppender {
   private final @Nullable ITransportFactory transportFactory;
   private @NotNull Level minimumBreadcrumbLevel = Level.INFO;
   private @NotNull Level minimumEventLevel = Level.ERROR;
+  private @NotNull Level minimumLevel = Level.INFO;
   private final @Nullable Boolean debug;
   private final @NotNull IScopes scopes;
   private final @Nullable List<String> contextTags;
@@ -59,12 +64,42 @@ public class SentryAppender extends AbstractAppender {
         .addPackage("maven:io.sentry:sentry-log4j2", BuildConfig.VERSION_NAME);
   }
 
+  /**
+   * @deprecated This constructor is deprecated. Please use {@link #SentryAppender(String, Filter,
+   *     String, Level, Level, Level, Boolean, ITransportFactory, IScopes, String[])} instead.
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public SentryAppender(
       final @NotNull String name,
       final @Nullable Filter filter,
       final @Nullable String dsn,
       final @Nullable Level minimumBreadcrumbLevel,
       final @Nullable Level minimumEventLevel,
+      final @Nullable Boolean debug,
+      final @Nullable ITransportFactory transportFactory,
+      final @NotNull IScopes scopes,
+      final @Nullable String[] contextTags) {
+    this(
+        name,
+        filter,
+        dsn,
+        minimumBreadcrumbLevel,
+        minimumEventLevel,
+        null,
+        debug,
+        transportFactory,
+        scopes,
+        contextTags);
+  }
+
+  public SentryAppender(
+      final @NotNull String name,
+      final @Nullable Filter filter,
+      final @Nullable String dsn,
+      final @Nullable Level minimumBreadcrumbLevel,
+      final @Nullable Level minimumEventLevel,
+      final @Nullable Level minimumLevel,
       final @Nullable Boolean debug,
       final @Nullable ITransportFactory transportFactory,
       final @NotNull IScopes scopes,
@@ -76,6 +111,9 @@ public class SentryAppender extends AbstractAppender {
     }
     if (minimumEventLevel != null) {
       this.minimumEventLevel = minimumEventLevel;
+    }
+    if (minimumLevel != null) {
+      this.minimumLevel = minimumLevel;
     }
     this.debug = debug;
     this.transportFactory = transportFactory;
@@ -89,6 +127,7 @@ public class SentryAppender extends AbstractAppender {
    * @param name The name of the Appender.
    * @param minimumBreadcrumbLevel The min. level of the breadcrumb.
    * @param minimumEventLevel The min. level of the event.
+   * @param minimumLevel The min. level of the log event.
    * @param dsn the Sentry DSN.
    * @param debug if Sentry debug mode should be on
    * @param filter The filter, if any, to use.
@@ -99,6 +138,7 @@ public class SentryAppender extends AbstractAppender {
       @Nullable @PluginAttribute("name") final String name,
       @Nullable @PluginAttribute("minimumBreadcrumbLevel") final Level minimumBreadcrumbLevel,
       @Nullable @PluginAttribute("minimumEventLevel") final Level minimumEventLevel,
+      @Nullable @PluginAttribute("minimumLevel") final Level minimumLevel,
       @Nullable @PluginAttribute("dsn") final String dsn,
       @Nullable @PluginAttribute("debug") final Boolean debug,
       @Nullable @PluginElement("filter") final Filter filter,
@@ -114,6 +154,7 @@ public class SentryAppender extends AbstractAppender {
         dsn,
         minimumBreadcrumbLevel,
         minimumEventLevel,
+        minimumLevel,
         debug,
         null,
         ScopesAdapter.getInstance(),
@@ -150,6 +191,10 @@ public class SentryAppender extends AbstractAppender {
 
   @Override
   public void append(final @NotNull LogEvent eventObject) {
+    if (scopes.getOptions().getLogs().isEnabled()
+        && eventObject.getLevel().isMoreSpecificThan(minimumLevel)) {
+      captureLog(eventObject);
+    }
     if (eventObject.getLevel().isMoreSpecificThan(minimumEventLevel)) {
       final Hint hint = new Hint();
       hint.set(SENTRY_SYNTHETIC_EXCEPTION, eventObject);
@@ -162,6 +207,29 @@ public class SentryAppender extends AbstractAppender {
 
       scopes.addBreadcrumb(createBreadcrumb(eventObject), hint);
     }
+  }
+
+  /**
+   * Captures a Sentry log from Log4j2's {@link LogEvent}.
+   *
+   * @param loggingEvent the log4j2 event
+   */
+  // for the Android compatibility we must use old Java Date class
+  @SuppressWarnings("JdkObsolete")
+  protected void captureLog(@NotNull LogEvent loggingEvent) {
+    final @NotNull SentryLogLevel sentryLevel = toSentryLogLevel(loggingEvent.getLevel());
+
+    final @Nullable Object[] arguments = loggingEvent.getMessage().getParameters();
+    final @NotNull SentryAttributes attributes = SentryAttributes.of();
+
+    attributes.add(
+        SentryAttribute.stringAttribute(
+            "sentry.message.template", loggingEvent.getMessage().getFormat()));
+
+    final @NotNull String formattedMessage = loggingEvent.getMessage().getFormattedMessage();
+    final @NotNull SentryLogParameters params = SentryLogParameters.create(attributes);
+
+    Sentry.logger().log(sentryLevel, params, formattedMessage, arguments);
   }
 
   /**
@@ -268,6 +336,28 @@ public class SentryAppender extends AbstractAppender {
       return SentryLevel.INFO;
     } else {
       return SentryLevel.DEBUG;
+    }
+  }
+
+  /**
+   * Transforms a {@link Level} into an {@link SentryLogLevel}.
+   *
+   * @param level original level as defined in log4j.
+   * @return log level used within sentry.
+   */
+  private static @NotNull SentryLogLevel toSentryLogLevel(final @NotNull Level level) {
+    if (level.isMoreSpecificThan(Level.FATAL)) {
+      return SentryLogLevel.FATAL;
+    } else if (level.isMoreSpecificThan(Level.ERROR)) {
+      return SentryLogLevel.ERROR;
+    } else if (level.isMoreSpecificThan(Level.WARN)) {
+      return SentryLogLevel.WARN;
+    } else if (level.isMoreSpecificThan(Level.INFO)) {
+      return SentryLogLevel.INFO;
+    } else if (level.isMoreSpecificThan(Level.DEBUG)) {
+      return SentryLogLevel.DEBUG;
+    } else {
+      return SentryLogLevel.TRACE;
     }
   }
 
