@@ -19,10 +19,10 @@ configure<JavaPluginExtension> {
 }
 
 tasks.withType<KotlinCompile>().configureEach {
-  kotlinOptions {
-    jvmTarget = JavaVersion.VERSION_17.toString()
-    languageVersion = libs.versions.kotlin.compatible.version.get()
-    freeCompilerArgs = listOf("-Xjsr305=strict")
+  compilerOptions {
+    jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+    languageVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_1)
+    freeCompilerArgs.add("-Xjsr305=strict")
   }
 }
 
@@ -57,11 +57,11 @@ dependencies {
   // tests
   testImplementation(projects.sentryTestSupport)
   testImplementation(projects.sentryGraphql)
-  testImplementation(kotlin(Config.kotlinStdLib))
+  testImplementation(kotlin(Config.kotlinStdLib, "2.2.0"))
   testImplementation(libs.awaitility.kotlin.spring7)
   testImplementation(libs.context.propagation)
   testImplementation(libs.graphql.java24)
-  testImplementation(libs.kotlin.test.junit.spring7)
+  testImplementation(kotlin(Config.kotlinTestJunit, "2.2.0"))
   testImplementation(libs.mockito.kotlin.spring7)
   testImplementation(libs.mockito.inline)
   testImplementation(libs.springboot4.starter.aop)
