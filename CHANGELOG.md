@@ -12,7 +12,7 @@
 - Deduplicate battery breadcrumbs ([#4561](https://github.com/getsentry/sentry-java/pull/4561))
 - Remove unused method in ManifestMetadataReader ([#4585](https://github.com/getsentry/sentry-java/pull/4585))
 - Have single `NetworkCallback` registered at a time to reduce IPC calls ([#4562](https://github.com/getsentry/sentry-java/pull/4562))
-- Fix abstract method error in `SentrySupportSQLiteDatabase` ([#4596](https://github.com/getsentry/sentry-java/pull/4596))
+- Fix abstract method error in `SentrySupportSQLiteDatabase` ([#4597](https://github.com/getsentry/sentry-java/pull/4597))
 
 ## 8.18.0
 
