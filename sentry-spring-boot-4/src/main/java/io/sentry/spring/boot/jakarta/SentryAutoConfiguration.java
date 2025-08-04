@@ -16,6 +16,7 @@ import io.sentry.protocol.SdkVersion;
 import io.sentry.quartz.SentryJobListener;
 import io.sentry.spring.boot.jakarta.graphql.SentryGraphql22AutoConfiguration;
 import io.sentry.spring.boot.jakarta.graphql.SentryGraphqlAutoConfiguration;
+import io.sentry.spring.boot4.BuildConfig;
 import io.sentry.spring.jakarta.ContextTagsEventProcessor;
 import io.sentry.spring.jakarta.SentryExceptionResolver;
 import io.sentry.spring.jakarta.SentryRequestResolver;
@@ -59,12 +60,12 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
-import org.springframework.boot.autoconfigure.web.client.RestClientAutoConfiguration;
-import org.springframework.boot.autoconfigure.web.client.RestTemplateAutoConfiguration;
-import org.springframework.boot.autoconfigure.web.reactive.function.client.WebClientAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.info.GitProperties;
+import org.springframework.boot.restclient.autoconfigure.RestClientAutoConfiguration;
+import org.springframework.boot.restclient.autoconfigure.RestTemplateAutoConfiguration;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.boot.webclient.autoconfigure.WebClientAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
@@ -167,7 +168,7 @@ public class SentryAutoConfiguration {
       spanFactory.ifAvailable(options::setSpanFactory);
 
       options.setSentryClientName(
-          BuildConfig.SENTRY_SPRING_BOOT_JAKARTA_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
+          BuildConfig.SENTRY_SPRING_BOOT_4_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
       options.setSdkVersion(createSdkVersion(options));
       options.setInitPriority(InitPriority.LOW);
       addPackageAndIntegrationInfo();
@@ -461,7 +462,7 @@ public class SentryAutoConfiguration {
         final @NotNull SentryOptions sentryOptions) {
       SdkVersion sdkVersion = sentryOptions.getSdkVersion();
 
-      final String name = BuildConfig.SENTRY_SPRING_BOOT_JAKARTA_SDK_NAME;
+      final String name = BuildConfig.SENTRY_SPRING_BOOT_4_SDK_NAME;
       final String version = BuildConfig.VERSION_NAME;
       sdkVersion = SdkVersion.updateSdkVersion(sdkVersion, name, version);
 

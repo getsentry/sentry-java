@@ -4,7 +4,7 @@ import com.jakewharton.nopen.annotation.Open;
 import io.sentry.IScopes;
 import io.sentry.spring.jakarta.tracing.SentrySpanClientHttpRequestInterceptor;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.boot.web.client.RestClientCustomizer;
+import org.springframework.boot.restclient.RestClientCustomizer;
 import org.springframework.web.client.RestClient;
 
 @Open
