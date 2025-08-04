@@ -51,7 +51,9 @@ tasks.shadowJar {
   archiveClassifier.set("") // Remove the classifier so it replaces the regular JAR
   mergeServiceFiles()
   // Use Log4j2 cache transformer to properly handle plugin files
-  transform(com.github.jengelman.gradle.plugins.shadow.transformers.Log4j2PluginsCacheFileTransformer())
+  transform(
+    com.github.jengelman.gradle.plugins.shadow.transformers.Log4j2PluginsCacheFileTransformer()
+  )
 }
 
 // Make the regular jar task depend on shadowJar

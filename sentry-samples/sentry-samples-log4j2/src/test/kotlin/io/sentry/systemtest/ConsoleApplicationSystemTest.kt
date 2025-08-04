@@ -2,10 +2,10 @@ package io.sentry.systemtest.io.sentry.systemtest
 
 import io.sentry.SentryLevel
 import io.sentry.systemtest.util.TestHelper
+import java.util.concurrent.TimeUnit
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
-import java.util.concurrent.TimeUnit
 
 class ConsoleApplicationSystemTest {
   lateinit var testHelper: TestHelper
@@ -40,18 +40,23 @@ class ConsoleApplicationSystemTest {
   private fun verifyExpectedEvents() {
     // Verify we received the RuntimeException
     testHelper.ensureErrorReceived { event ->
-      event.exceptions?.any { ex -> ex.type == "RuntimeException" && ex.value == "Invalid productId=445" } ==
-        true &&
+      event.exceptions?.any { ex ->
+        ex.type == "RuntimeException" && ex.value == "Invalid productId=445"
+      } == true &&
         event.message?.formatted == "Something went wrong" &&
         event.level?.name == "ERROR"
     }
 
     testHelper.ensureErrorReceived { event ->
-      event.breadcrumbs?.firstOrNull { it.message == "Hello Sentry!" && it.level == SentryLevel.DEBUG } != null
+      event.breadcrumbs?.firstOrNull {
+        it.message == "Hello Sentry!" && it.level == SentryLevel.DEBUG
+      } != null
     }
 
     testHelper.ensureErrorReceived { event ->
-      event.breadcrumbs?.firstOrNull { it.message == "User has made a purchase of product: 445" && it.level == SentryLevel.INFO } != null
+      event.breadcrumbs?.firstOrNull {
+        it.message == "User has made a purchase of product: 445" && it.level == SentryLevel.INFO
+      } != null
     }
 
     testHelper.ensureLogsReceived { logs, _ ->
