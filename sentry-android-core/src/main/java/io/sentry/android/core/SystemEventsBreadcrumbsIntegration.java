@@ -398,8 +398,8 @@ public final class SystemEventsBreadcrumbsIntegration
         }
       } else {
         final Bundle extras = intent.getExtras();
-        final Map<String, String> newExtras = new HashMap<>();
         if (extras != null && !extras.isEmpty()) {
+          final Map<String, String> newExtras = new HashMap<>(extras.size());
           for (String item : extras.keySet()) {
             try {
               @SuppressWarnings("deprecation")
