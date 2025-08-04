@@ -571,8 +571,8 @@ class SentryFrameMetricsCollectorTest {
     // Now execute all pending operations
     Shadows.shadowOf(Looper.getMainLooper()).idle()
 
-    assertEquals(0, fixture.addOnFrameMetricsAvailableListenerCounter)
-    // remove will still execute as it has no clue that add bailed on the main thread
+    // as the listeners are posted to the main thread, we expect an add followed by a remove
+    assertEquals(1, fixture.addOnFrameMetricsAvailableListenerCounter)
     assertEquals(1, fixture.removeOnFrameMetricsAvailableListenerCounter)
     assertEquals(0, collector.getProperty<Set<Window>>("trackedWindows").size)
   }

@@ -14,11 +14,13 @@ import android.view.FrameMetrics;
 import android.view.Window;
 import androidx.annotation.RequiresApi;
 import io.sentry.ILogger;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.SentryUUID;
 import io.sentry.android.core.BuildInfoProvider;
 import io.sentry.android.core.ContextUtils;
+import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.Objects;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
@@ -38,6 +40,8 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
 
   private final @NotNull BuildInfoProvider buildInfoProvider;
   private final @NotNull Set<Window> trackedWindows = new CopyOnWriteArraySet<>();
+  private final @NotNull AutoClosableReentrantLock trackedWindowsLock =
+      new AutoClosableReentrantLock();
   private final @NotNull ILogger logger;
   private @Nullable Handler handler;
   private @Nullable WeakReference<Window> currentWindow;
@@ -282,23 +286,24 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
 
   @SuppressLint("NewApi")
   private void stopTrackingWindow(final @NotNull Window window) {
-    final boolean wasTracked = trackedWindows.remove(window);
-    if (wasTracked) {
-      new Handler(Looper.getMainLooper())
-          .post(
-              () -> {
-                try {
-                  // Re-check if we should still stop tracking this window
-                  if (!trackedWindows.contains(window)) {
-                    windowFrameMetricsManager.removeOnFrameMetricsAvailableListener(
-                        window, frameMetricsAvailableListener);
-                  }
-                } catch (Throwable e) {
-                  logger.log(
-                      SentryLevel.ERROR, "Failed to remove frameMetricsAvailableListener", e);
+    new Handler(Looper.getMainLooper())
+        .post(
+            () -> {
+              try {
+                // Re-check if we should still remove the listener for this window
+                // in case trackCurrentWindow was called in the meantime
+                final boolean shouldRemove;
+                try (final @NotNull ISentryLifecycleToken ignored = trackedWindowsLock.acquire()) {
+                  shouldRemove = trackedWindows.contains(window) && trackedWindows.remove(window);
                 }
-              });
-    }
+                if (shouldRemove) {
+                  windowFrameMetricsManager.removeOnFrameMetricsAvailableListener(
+                      window, frameMetricsAvailableListener);
+                }
+              } catch (Throwable e) {
+                logger.log(SentryLevel.ERROR, "Failed to remove frameMetricsAvailableListener", e);
+              }
+            });
   }
 
   private void setCurrentWindow(final @NotNull Window window) {
@@ -316,23 +321,22 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
       return;
     }
 
-    if (trackedWindows.contains(window)) {
-      return;
-    }
-
     if (listenerMap.isEmpty()) {
       return;
     }
 
     if (handler != null) {
-      trackedWindows.add(window);
       // Ensure the addOnFrameMetricsAvailableListener is called on the main thread
       new Handler(Looper.getMainLooper())
           .post(
               () -> {
                 // Re-check if we should still track this window
-                // in case stopTrackingWindow was called in the meantime
-                if (trackedWindows.contains(window)) {
+                // in case stopTrackingWindow was called for the same Window in the meantime
+                final boolean shouldAdd;
+                try (final @NotNull ISentryLifecycleToken ignored = trackedWindowsLock.acquire()) {
+                  shouldAdd = !trackedWindows.contains(window) && trackedWindows.add(window);
+                }
+                if (shouldAdd) {
                   try {
                     windowFrameMetricsManager.addOnFrameMetricsAvailableListener(
                         window, frameMetricsAvailableListener, handler);
