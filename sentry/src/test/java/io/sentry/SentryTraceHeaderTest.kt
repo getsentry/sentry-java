@@ -6,6 +6,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
+import kotlin.text.substring
 
 class SentryTraceHeaderTest {
   @Test
@@ -13,6 +14,80 @@ class SentryTraceHeaderTest {
     val sentryId = SentryId()
     val ex = assertFailsWith<InvalidSentryTraceHeaderException> { SentryTraceHeader("$sentryId") }
     assertEquals("sentry-trace header does not conform to expected format: $sentryId", ex.message)
+  }
+
+  @Test
+  fun `when trace-id has less than 32 characters throws exception`() {
+    val sentryId = SentryId().toString().substring(0, 8)
+    val spanId = SpanId()
+    val ex =
+      assertFailsWith<InvalidSentryTraceHeaderException> { SentryTraceHeader("$sentryId-$spanId") }
+    assertEquals(
+      "sentry-trace header does not conform to expected format: $sentryId-$spanId",
+      ex.message,
+    )
+  }
+
+  @Test
+  fun `when trace-id has more than 32 characters throws exception`() {
+    val sentryId = SentryId().toString() + "abc"
+    val spanId = SpanId()
+    val ex =
+      assertFailsWith<InvalidSentryTraceHeaderException> { SentryTraceHeader("$sentryId-$spanId") }
+    assertEquals(
+      "sentry-trace header does not conform to expected format: $sentryId-$spanId",
+      ex.message,
+    )
+  }
+
+  @Test
+  fun `when trace-id contains invalid characters throws exception`() {
+    var sentryId = SentryId().toString()
+    sentryId = sentryId.substring(0, 8) + "g" + sentryId.substring(8)
+    val spanId = SpanId()
+    val ex =
+      assertFailsWith<InvalidSentryTraceHeaderException> { SentryTraceHeader("$sentryId-$spanId") }
+    assertEquals(
+      "sentry-trace header does not conform to expected format: $sentryId-$spanId",
+      ex.message,
+    )
+  }
+
+  @Test
+  fun `when span-id has less than 16 characters throws exception`() {
+    val sentryId = SentryId()
+    val spanId = SpanId().toString().substring(0, 8)
+    val ex =
+      assertFailsWith<InvalidSentryTraceHeaderException> { SentryTraceHeader("$sentryId-$spanId") }
+    assertEquals(
+      "sentry-trace header does not conform to expected format: $sentryId-$spanId",
+      ex.message,
+    )
+  }
+
+  @Test
+  fun `when span-id has more than 32 characters throws exception`() {
+    val sentryId = SentryId()
+    val spanId = SpanId().toString() + "abc"
+    val ex =
+      assertFailsWith<InvalidSentryTraceHeaderException> { SentryTraceHeader("$sentryId-$spanId") }
+    assertEquals(
+      "sentry-trace header does not conform to expected format: $sentryId-$spanId",
+      ex.message,
+    )
+  }
+
+  @Test
+  fun `when span-id contains invalid characters throws exception`() {
+    val sentryId = SentryId()
+    var spanId = SpanId().toString()
+    spanId = spanId.substring(0, 8) + "g" + spanId.substring(8)
+    val ex =
+      assertFailsWith<InvalidSentryTraceHeaderException> { SentryTraceHeader("$sentryId-$spanId") }
+    assertEquals(
+      "sentry-trace header does not conform to expected format: $sentryId-$spanId",
+      ex.message,
+    )
   }
 
   @Test
