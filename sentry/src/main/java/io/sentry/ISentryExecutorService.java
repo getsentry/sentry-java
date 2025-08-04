@@ -45,4 +45,7 @@ public interface ISentryExecutorService {
    * @return If the executorService was previously closed
    */
   boolean isClosed();
+
+  /** Pre-warms the executor service by increasing the initial queue capacity */
+  void prewarm();
 }

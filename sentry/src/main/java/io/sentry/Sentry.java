@@ -343,7 +343,8 @@ public final class Sentry {
         // to
         // set a new one
         if (options.getExecutorService().isClosed()) {
-          options.setExecutorService(new SentryExecutorService());
+          options.setExecutorService(new SentryExecutorService(options));
+          options.getExecutorService().prewarm();
         }
         // when integrations are registered on Scopes ctor and async integrations are fired,
         // it might and actually happened that integrations called captureSomething
