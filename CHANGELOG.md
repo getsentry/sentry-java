@@ -35,6 +35,7 @@
 - Reduce scope forking when using OpenTelemetry ([#4565](https://github.com/getsentry/sentry-java/pull/4565))
   - `Sentry.withScope` now has the correct current scope passed to the callback. Previously our OpenTelemetry integration forked scopes an additional.
   - Overall the SDK is now forking scopes a bit less often.
+- Ensure frame metrics listeners are registered/unregistered on the main thread ([#4582](https://github.com/getsentry/sentry-java/pull/4582))
 
 ## 8.17.0
 
