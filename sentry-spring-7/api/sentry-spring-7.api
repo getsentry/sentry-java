@@ -1,8 +1,3 @@
-public final class io/sentry/spring/jakarta/BuildConfig {
-	public static final field SENTRY_SPRING_JAKARTA_SDK_NAME Ljava/lang/String;
-	public static final field VERSION_NAME Ljava/lang/String;
-}
-
 public final class io/sentry/spring/jakarta/ContextTagsEventProcessor : io/sentry/EventProcessor {
 	public fun <init> (Lio/sentry/SentryOptions;)V
 	public fun getOrder ()Ljava/lang/Long;
@@ -124,10 +119,10 @@ public class io/sentry/spring/jakarta/checkin/SentryCheckInPointcutConfiguration
 
 public class io/sentry/spring/jakarta/checkin/SentryQuartzConfiguration {
 	public fun <init> ()V
-	public fun schedulerFactoryBeanCustomizer ()Lorg/springframework/boot/autoconfigure/quartz/SchedulerFactoryBeanCustomizer;
+	public fun schedulerFactoryBeanCustomizer ()Lorg/springframework/boot/quartz/autoconfigure/SchedulerFactoryBeanCustomizer;
 }
 
-public final class io/sentry/spring/jakarta/checkin/SentrySchedulerFactoryBeanCustomizer : org/springframework/boot/autoconfigure/quartz/SchedulerFactoryBeanCustomizer {
+public final class io/sentry/spring/jakarta/checkin/SentrySchedulerFactoryBeanCustomizer : org/springframework/boot/quartz/autoconfigure/SchedulerFactoryBeanCustomizer {
 	public fun <init> ()V
 	public fun customize (Lorg/springframework/scheduling/quartz/SchedulerFactoryBean;)V
 }
@@ -359,5 +354,10 @@ public final class io/sentry/spring/jakarta/webflux/SentryWebFilterWithThreadLoc
 
 public final class io/sentry/spring/jakarta/webflux/reactor/ReactorUtils : io/sentry/reactor/SentryReactorUtils {
 	public fun <init> ()V
+}
+
+public final class io/sentry/spring7/BuildConfig {
+	public static final field SENTRY_SPRING_7_SDK_NAME Ljava/lang/String;
+	public static final field VERSION_NAME Ljava/lang/String;
 }
 

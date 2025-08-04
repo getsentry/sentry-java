@@ -7,6 +7,7 @@ import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryOptions;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.spring.jakarta.tracing.SpringMvcTransactionNameProvider;
+import io.sentry.spring7.BuildConfig;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
@@ -50,7 +51,7 @@ public class SentryHubRegistrar implements ImportBeanDefinitionRegistrar {
     }
     builder.addPropertyValue("dsn", annotationAttributes.getString("dsn"));
     builder.addPropertyValue("enableExternalConfiguration", true);
-    builder.addPropertyValue("sentryClientName", BuildConfig.SENTRY_SPRING_JAKARTA_SDK_NAME);
+    builder.addPropertyValue("sentryClientName", BuildConfig.SENTRY_SPRING_7_SDK_NAME);
     builder.addPropertyValue("sdkVersion", createSdkVersion());
     builder.addPropertyValue("initPriority", InitPriority.LOW);
     addPackageAndIntegrationInfo();
@@ -90,7 +91,7 @@ public class SentryHubRegistrar implements ImportBeanDefinitionRegistrar {
     final SentryOptions defaultOptions = new SentryOptions();
     SdkVersion sdkVersion = defaultOptions.getSdkVersion();
 
-    final String name = BuildConfig.SENTRY_SPRING_JAKARTA_SDK_NAME;
+    final String name = BuildConfig.SENTRY_SPRING_7_SDK_NAME;
     final String version = BuildConfig.VERSION_NAME;
     sdkVersion = SdkVersion.updateSdkVersion(sdkVersion, name, version);
 

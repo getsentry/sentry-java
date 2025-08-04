@@ -43,8 +43,8 @@ import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.boot.test.web.client.TestRestTemplate
-import org.springframework.boot.test.web.server.LocalServerPort
+import org.springframework.boot.web.server.test.LocalServerPort
+import org.springframework.boot.web.server.test.client.TestRestTemplate
 import org.springframework.boot.web.servlet.FilterRegistrationBean
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -110,7 +110,7 @@ class SentrySpringIntegrationTest {
   fun `attaches request and user information to SentryEvents`() {
     val restTemplate = TestRestTemplate().withBasicAuth("user", "password")
     val headers = HttpHeaders()
-    headers["X-FORWARDED-FOR"] = listOf("169.128.0.1")
+    headers.put("X-FORWARDED-FOR", listOf("169.128.0.1"))
     val entity = HttpEntity<Void>(headers)
 
     restTemplate.exchange("http://localhost:$port/hello", HttpMethod.GET, entity, Void::class.java)
@@ -176,7 +176,7 @@ class SentrySpringIntegrationTest {
   fun `attaches first ip address if multiple addresses exist in a header`() {
     val restTemplate = TestRestTemplate().withBasicAuth("user", "password")
     val headers = HttpHeaders()
-    headers["X-FORWARDED-FOR"] = listOf("169.128.0.1, 192.168.0.1")
+    headers.put("X-FORWARDED-FOR", listOf("169.128.0.1, 192.168.0.1"))
     val entity = HttpEntity<Void>(headers)
 
     restTemplate.exchange("http://localhost:$port/hello", HttpMethod.GET, entity, Void::class.java)
@@ -530,7 +530,10 @@ open class SecurityConfiguration {
   @Bean
   @Throws(Exception::class)
   open fun filterChain(http: HttpSecurity): SecurityFilterChain {
-    http.csrf().disable().authorizeRequests().anyRequest().authenticated().and().httpBasic()
+    http
+      .csrf { it.disable() }
+      .authorizeHttpRequests { it.anyRequest().authenticated() }
+      .httpBasic {}
 
     return http.build()
   }

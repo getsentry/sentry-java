@@ -111,7 +111,7 @@ public class SentrySpringFilter extends OncePerRequestFilter {
       final @NotNull IScopes scopes, final @NotNull HttpServletRequest request) {
     if (scopes.getOptions().isSendDefaultPii()
         && qualifiesForCaching(request, scopes.getOptions().getMaxRequestBodySize())) {
-      return new ContentCachingRequestWrapper(request);
+      return new ContentCachingRequestWrapper(request, 0);
     }
     return request;
   }
