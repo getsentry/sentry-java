@@ -19,10 +19,13 @@ targets:
       maven:io.sentry:sentry:
       maven:io.sentry:sentry-spring:
       maven:io.sentry:sentry-spring-jakarta:
+#      maven:io.sentry:sentry-spring-7:
       maven:io.sentry:sentry-spring-boot:
       maven:io.sentry:sentry-spring-boot-jakarta:
       maven:io.sentry:sentry-spring-boot-starter:
       maven:io.sentry:sentry-spring-boot-starter-jakarta:
+#      maven:io.sentry:sentry-spring-boot-4:
+#      maven:io.sentry:sentry-spring-boot-4-starter:
       maven:io.sentry:sentry-servlet:
       maven:io.sentry:sentry-servlet-jakarta:
       maven:io.sentry:sentry-logback:
