@@ -54,7 +54,14 @@ android {
   }
 }
 
-kotlin { explicitApi() }
+kotlin {
+  explicitApi()
+  compilerOptions {
+    // skip metadata version check, as androidx.sqlite:sqlite is compiled against a newer version of
+    // Kotlin
+    freeCompilerArgs.add("-Xskip-metadata-version-check")
+  }
+}
 
 dependencies {
   api(projects.sentry)
