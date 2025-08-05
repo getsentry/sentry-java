@@ -527,18 +527,6 @@ public final class AndroidConnectionStatusProvider
   }
 
   /**
-   * Get the cached NetworkCapabilities for advanced use cases. Returns null if cache is stale or no
-   * capabilities are available.
-   *
-   * @return cached NetworkCapabilities or null
-   */
-  @TestOnly
-  @Nullable
-  public NetworkCapabilities getCachedNetworkCapabilities() {
-    return cachedNetworkCapabilities;
-  }
-
-  /**
    * Return the Connection status
    *
    * @param context the Context
