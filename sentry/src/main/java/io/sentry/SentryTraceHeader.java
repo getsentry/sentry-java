@@ -15,7 +15,7 @@ public final class SentryTraceHeader {
   private final @NotNull SpanId spanId;
   private final @Nullable Boolean sampled;
 
-  final Pattern SENTRY_TRACEPARENT_HEADER_REGEX =
+  private static final Pattern SENTRY_TRACEPARENT_HEADER_REGEX =
       Pattern.compile(
           "^[ \\t]*(?<traceId>[0-9a-f]{32})-(?<spanId>[0-9a-f]{16})(?<sampled>-[01])?[ \\t]*$",
           Pattern.CASE_INSENSITIVE);
