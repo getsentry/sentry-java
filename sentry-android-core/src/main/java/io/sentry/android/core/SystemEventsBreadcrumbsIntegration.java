@@ -25,6 +25,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.os.Process;
 import io.sentry.Breadcrumb;
 import io.sentry.Hint;
 import io.sentry.IScopes;
@@ -139,7 +142,13 @@ public final class SystemEventsBreadcrumbsIntegration
                   try {
                     // registerReceiver can throw SecurityException but it's not documented in the
                     // official docs
-                    ContextUtils.registerReceiver(context, options, receiver, filter);
+                    final @NotNull HandlerThread handlerThread =
+                        new HandlerThread(
+                            "SystemEventsReceiver", Process.THREAD_PRIORITY_BACKGROUND);
+                    handlerThread.start();
+                    // onReceive will be called on this handler thread
+                    final @NotNull Handler handler = new Handler(handlerThread.getLooper());
+                    ContextUtils.registerReceiver(context, options, receiver, filter, handler);
                     if (!isReceiverRegistered.getAndSet(true)) {
                       options
                           .getLogger()
@@ -326,25 +335,15 @@ public final class SystemEventsBreadcrumbsIntegration
 
       final BatteryState state = batteryState;
       final long now = System.currentTimeMillis();
-      try {
-        options
-            .getExecutorService()
-            .submit(
-                () -> {
-                  final Breadcrumb breadcrumb = createBreadcrumb(now, intent, action, state);
-                  final Hint hint = new Hint();
-                  hint.set(ANDROID_INTENT, intent);
-                  scopes.addBreadcrumb(breadcrumb, hint);
-                });
-      } catch (Throwable t) {
-        // ignored
-      }
+      final Breadcrumb breadcrumb = createBreadcrumb(now, intent, action, state);
+      final Hint hint = new Hint();
+      hint.set(ANDROID_INTENT, intent);
+      scopes.addBreadcrumb(breadcrumb, hint);
     }
 
     // in theory this should be ThreadLocal, but we won't have more than 1 thread accessing it,
     // so we save some memory here and CPU cycles. 64 is because all intent actions we subscribe for
     // are less than 64 chars. We also don't care about encoding as those are always UTF.
-    // TODO: _MULTI_THREADED_EXECUTOR_
     private final char[] buf = new char[64];
 
     @TestOnly

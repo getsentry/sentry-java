@@ -89,7 +89,7 @@ class SystemEventsBreadcrumbsIntegrationTest {
 
     sut.register(fixture.scopes, fixture.options)
 
-    verify(fixture.context).registerReceiver(any(), any(), any())
+    verify(fixture.context).registerReceiver(any(), any(), anyOrNull(), anyOrNull(), any())
     assertNotNull(sut.receiver)
   }
 
@@ -299,7 +299,8 @@ class SystemEventsBreadcrumbsIntegrationTest {
   @Test
   fun `Do not crash if registerReceiver throws exception`() {
     val sut = fixture.getSut()
-    whenever(fixture.context.registerReceiver(any(), any(), any())).thenThrow(SecurityException())
+    whenever(fixture.context.registerReceiver(any(), any(), anyOrNull(), anyOrNull(), any()))
+      .thenThrow(SecurityException())
 
     sut.register(fixture.scopes, fixture.options)
 
@@ -448,12 +449,13 @@ class SystemEventsBreadcrumbsIntegrationTest {
     val sut = fixture.getSut()
 
     sut.register(fixture.scopes, fixture.options)
-    verify(fixture.context).registerReceiver(any(), any(), any())
+    verify(fixture.context).registerReceiver(any(), any(), anyOrNull(), anyOrNull(), any())
 
     sut.onBackground()
     sut.onForeground()
 
-    verify(fixture.context, times(2)).registerReceiver(any(), any(), any())
+    verify(fixture.context, times(2))
+      .registerReceiver(any(), any(), anyOrNull(), anyOrNull(), any())
     assertNotNull(sut.receiver)
   }
 
@@ -462,7 +464,7 @@ class SystemEventsBreadcrumbsIntegrationTest {
     val sut = fixture.getSut()
 
     sut.register(fixture.scopes, fixture.options)
-    verify(fixture.context).registerReceiver(any(), any(), any())
+    verify(fixture.context).registerReceiver(any(), any(), anyOrNull(), anyOrNull(), any())
     val receiver = sut.receiver
 
     sut.onForeground()
