@@ -1,0 +1,6 @@
+public final class io/sentry/samples/ktor/MainKt {
+	public static final fun main ()V
+	public static synthetic fun main ([Ljava/lang/String;)V
+	public static final fun makeRequests (Lio/ktor/client/HttpClient;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+

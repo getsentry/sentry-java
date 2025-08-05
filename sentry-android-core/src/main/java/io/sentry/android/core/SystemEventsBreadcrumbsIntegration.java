@@ -25,10 +25,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
-import androidx.annotation.NonNull;
-import androidx.lifecycle.DefaultLifecycleObserver;
-import androidx.lifecycle.LifecycleOwner;
-import androidx.lifecycle.ProcessLifecycleOwner;
 import io.sentry.Breadcrumb;
 import io.sentry.Hint;
 import io.sentry.IScopes;
@@ -37,7 +33,6 @@ import io.sentry.Integration;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.internal.util.AndroidCurrentDateProvider;
-import io.sentry.android.core.internal.util.AndroidThreadChecker;
 import io.sentry.android.core.internal.util.Debouncer;
 import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.Objects;
@@ -52,15 +47,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
-public final class SystemEventsBreadcrumbsIntegration implements Integration, Closeable {
+public final class SystemEventsBreadcrumbsIntegration
+    implements Integration, Closeable, AppState.AppStateListener {
 
   private final @NotNull Context context;
 
   @TestOnly @Nullable volatile SystemEventsBroadcastReceiver receiver;
-
-  @TestOnly @Nullable volatile ReceiverLifecycleHandler lifecycleHandler;
-
-  private final @NotNull MainLooperHandler handler;
 
   private @Nullable SentryAndroidOptions options;
 
@@ -71,23 +63,17 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
   private volatile boolean isStopped = false;
   private volatile IntentFilter filter = null;
   private final @NotNull AutoClosableReentrantLock receiverLock = new AutoClosableReentrantLock();
+  // Track previous battery state to avoid duplicate breadcrumbs when values haven't changed
+  private @Nullable BatteryState previousBatteryState;
 
   public SystemEventsBreadcrumbsIntegration(final @NotNull Context context) {
     this(context, getDefaultActionsInternal());
   }
 
-  private SystemEventsBreadcrumbsIntegration(
-      final @NotNull Context context, final @NotNull String[] actions) {
-    this(context, actions, new MainLooperHandler());
-  }
-
   SystemEventsBreadcrumbsIntegration(
-      final @NotNull Context context,
-      final @NotNull String[] actions,
-      final @NotNull MainLooperHandler handler) {
+      final @NotNull Context context, final @NotNull String[] actions) {
     this.context = ContextUtils.getApplicationContext(context);
     this.actions = actions;
-    this.handler = handler;
   }
 
   public SystemEventsBreadcrumbsIntegration(
@@ -95,7 +81,6 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
     this.context = ContextUtils.getApplicationContext(context);
     this.actions = new String[actions.size()];
     actions.toArray(this.actions);
-    this.handler = new MainLooperHandler();
   }
 
   @Override
@@ -115,7 +100,7 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
             this.options.isEnableSystemEventBreadcrumbs());
 
     if (this.options.isEnableSystemEventBreadcrumbs()) {
-      addLifecycleObserver(this.options);
+      AppState.getInstance().addAppStateListener(this);
       registerReceiver(this.scopes, this.options, /* reportAsNewIntegration= */ true);
     }
   }
@@ -129,10 +114,8 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
       return;
     }
 
-    try (final @NotNull ISentryLifecycleToken ignored = receiverLock.acquire()) {
-      if (isClosed || isStopped || receiver != null) {
-        return;
-      }
+    if (isClosed || isStopped || receiver != null) {
+      return;
     }
 
     try {
@@ -183,88 +166,25 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
   }
 
   private void unregisterReceiver() {
-    final @Nullable SystemEventsBroadcastReceiver receiverRef;
-    try (final @NotNull ISentryLifecycleToken ignored = receiverLock.acquire()) {
-      isStopped = true;
-      receiverRef = receiver;
-      receiver = null;
+    if (options == null) {
+      return;
     }
 
-    if (receiverRef != null) {
-      context.unregisterReceiver(receiverRef);
-    }
-  }
+    options
+        .getExecutorService()
+        .submit(
+            () -> {
+              final @Nullable SystemEventsBroadcastReceiver receiverRef;
+              try (final @NotNull ISentryLifecycleToken ignored = receiverLock.acquire()) {
+                isStopped = true;
+                receiverRef = receiver;
+                receiver = null;
+              }
 
-  // TODO: this duplicates a lot of AppLifecycleIntegration. We should register once on init
-  //  and multiplex to different listeners rather.
-  private void addLifecycleObserver(final @NotNull SentryAndroidOptions options) {
-    try {
-      Class.forName("androidx.lifecycle.DefaultLifecycleObserver");
-      Class.forName("androidx.lifecycle.ProcessLifecycleOwner");
-      if (AndroidThreadChecker.getInstance().isMainThread()) {
-        addObserverInternal(options);
-      } else {
-        // some versions of the androidx lifecycle-process require this to be executed on the main
-        // thread.
-        handler.post(() -> addObserverInternal(options));
-      }
-    } catch (ClassNotFoundException e) {
-      options
-          .getLogger()
-          .log(
-              SentryLevel.WARNING,
-              "androidx.lifecycle is not available, SystemEventsBreadcrumbsIntegration won't be able"
-                  + " to register/unregister an internal BroadcastReceiver. This may result in an"
-                  + " increased ANR rate on Android 14 and above.");
-    } catch (Throwable e) {
-      options
-          .getLogger()
-          .log(
-              SentryLevel.ERROR,
-              "SystemEventsBreadcrumbsIntegration could not register lifecycle observer",
-              e);
-    }
-  }
-
-  private void addObserverInternal(final @NotNull SentryAndroidOptions options) {
-    lifecycleHandler = new ReceiverLifecycleHandler();
-
-    try {
-      ProcessLifecycleOwner.get().getLifecycle().addObserver(lifecycleHandler);
-    } catch (Throwable e) {
-      // This is to handle a potential 'AbstractMethodError' gracefully. The error is triggered in
-      // connection with conflicting dependencies of the androidx.lifecycle.
-      // //See the issue here: https://github.com/getsentry/sentry-java/pull/2228
-      lifecycleHandler = null;
-      options
-          .getLogger()
-          .log(
-              SentryLevel.ERROR,
-              "SystemEventsBreadcrumbsIntegration failed to get Lifecycle and could not install lifecycle observer.",
-              e);
-    }
-  }
-
-  private void removeLifecycleObserver() {
-    if (lifecycleHandler != null) {
-      if (AndroidThreadChecker.getInstance().isMainThread()) {
-        removeObserverInternal();
-      } else {
-        // some versions of the androidx lifecycle-process require this to be executed on the main
-        // thread.
-        // avoid method refs on Android due to some issues with older AGP setups
-        // noinspection Convert2MethodRef
-        handler.post(() -> removeObserverInternal());
-      }
-    }
-  }
-
-  private void removeObserverInternal() {
-    final @Nullable ReceiverLifecycleHandler watcherRef = lifecycleHandler;
-    if (watcherRef != null) {
-      ProcessLifecycleOwner.get().getLifecycle().removeObserver(watcherRef);
-    }
-    lifecycleHandler = null;
+              if (receiverRef != null) {
+                context.unregisterReceiver(receiverRef);
+              }
+            });
   }
 
   @Override
@@ -274,11 +194,11 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
       filter = null;
     }
 
-    removeLifecycleObserver();
+    AppState.getInstance().removeAppStateListener(this);
     unregisterReceiver();
 
     if (options != null) {
-      options.getLogger().log(SentryLevel.DEBUG, "SystemEventsBreadcrumbsIntegration remove.");
+      options.getLogger().log(SentryLevel.DEBUG, "SystemEventsBreadcrumbsIntegration removed.");
     }
   }
 
@@ -311,27 +231,23 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
     return actions;
   }
 
-  final class ReceiverLifecycleHandler implements DefaultLifecycleObserver {
-    @Override
-    public void onStart(@NonNull LifecycleOwner owner) {
-      if (scopes == null || options == null) {
-        return;
-      }
-
-      try (final @NotNull ISentryLifecycleToken ignored = receiverLock.acquire()) {
-        isStopped = false;
-      }
-
-      registerReceiver(scopes, options, /* reportAsNewIntegration= */ false);
+  @Override
+  public void onForeground() {
+    if (scopes == null || options == null) {
+      return;
     }
 
-    @Override
-    public void onStop(@NonNull LifecycleOwner owner) {
-      unregisterReceiver();
-    }
+    isStopped = false;
+
+    registerReceiver(scopes, options, /* reportAsNewIntegration= */ false);
   }
 
-  static final class SystemEventsBroadcastReceiver extends BroadcastReceiver {
+  @Override
+  public void onBackground() {
+    unregisterReceiver();
+  }
+
+  final class SystemEventsBroadcastReceiver extends BroadcastReceiver {
 
     private static final long DEBOUNCE_WAIT_TIME_MS = 60 * 1000;
     private final @NotNull IScopes scopes;
@@ -350,19 +266,36 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
       final @Nullable String action = intent.getAction();
       final boolean isBatteryChanged = ACTION_BATTERY_CHANGED.equals(action);
 
-      // aligning with iOS which only captures battery status changes every minute at maximum
-      if (isBatteryChanged && batteryChangedDebouncer.checkForDebounce()) {
-        return;
+      @Nullable BatteryState batteryState = null;
+      if (isBatteryChanged) {
+        if (batteryChangedDebouncer.checkForDebounce()) {
+          // aligning with iOS which only captures battery status changes every minute at maximum
+          return;
+        }
+
+        // For battery changes, check if the actual values have changed
+        final @Nullable Float batteryLevel = DeviceInfoUtil.getBatteryLevel(intent, options);
+        final @Nullable Integer currentBatteryLevel =
+            batteryLevel != null ? batteryLevel.intValue() : null;
+        final @Nullable Boolean currentChargingState = DeviceInfoUtil.isCharging(intent, options);
+        batteryState = new BatteryState(currentBatteryLevel, currentChargingState);
+
+        // Only create breadcrumb if battery state has actually changed
+        if (batteryState.equals(previousBatteryState)) {
+          return;
+        }
+
+        previousBatteryState = batteryState;
       }
 
+      final BatteryState state = batteryState;
       final long now = System.currentTimeMillis();
       try {
         options
             .getExecutorService()
             .submit(
                 () -> {
-                  final Breadcrumb breadcrumb =
-                      createBreadcrumb(now, intent, action, isBatteryChanged);
+                  final Breadcrumb breadcrumb = createBreadcrumb(now, intent, action, state);
                   final Hint hint = new Hint();
                   hint.set(ANDROID_INTENT, intent);
                   scopes.addBreadcrumb(breadcrumb, hint);
@@ -411,7 +344,7 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
         final long timeMs,
         final @NotNull Intent intent,
         final @Nullable String action,
-        boolean isBatteryChanged) {
+        final @Nullable BatteryState batteryState) {
       final Breadcrumb breadcrumb = new Breadcrumb(timeMs);
       breadcrumb.setType("system");
       breadcrumb.setCategory("device.event");
@@ -420,14 +353,12 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
         breadcrumb.setData("action", shortAction);
       }
 
-      if (isBatteryChanged) {
-        final Float batteryLevel = DeviceInfoUtil.getBatteryLevel(intent, options);
-        if (batteryLevel != null) {
-          breadcrumb.setData("level", batteryLevel);
+      if (batteryState != null) {
+        if (batteryState.level != null) {
+          breadcrumb.setData("level", batteryState.level);
         }
-        final Boolean isCharging = DeviceInfoUtil.isCharging(intent, options);
-        if (isCharging != null) {
-          breadcrumb.setData("charging", isCharging);
+        if (batteryState.charging != null) {
+          breadcrumb.setData("charging", batteryState.charging);
         }
       } else {
         final Bundle extras = intent.getExtras();
@@ -456,6 +387,28 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
       }
       breadcrumb.setLevel(SentryLevel.INFO);
       return breadcrumb;
+    }
+  }
+
+  static final class BatteryState {
+    private final @Nullable Integer level;
+    private final @Nullable Boolean charging;
+
+    BatteryState(final @Nullable Integer level, final @Nullable Boolean charging) {
+      this.level = level;
+      this.charging = charging;
+    }
+
+    @Override
+    public boolean equals(final @Nullable Object other) {
+      if (!(other instanceof BatteryState)) return false;
+      BatteryState that = (BatteryState) other;
+      return Objects.equals(level, that.level) && Objects.equals(charging, that.charging);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(level, charging);
     }
   }
 }

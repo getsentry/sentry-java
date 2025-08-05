@@ -79,6 +79,7 @@ object Config {
         val SENTRY_REACTOR_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.reactor"
         val SENTRY_KOTLIN_EXTENSIONS_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.kotlin-extensions"
         val SENTRY_ASYNC_PROFILER_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.async-profiler"
+        val SENTRY_KTOR_CLIENT_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.ktor-client"
         val group = "io.sentry"
         val description = "SDK for sentry.io"
         val versionNameProp = "versionName"

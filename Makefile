@@ -1,4 +1,4 @@
-.PHONY: all clean compile javadocs dryRelease update checkFormat api assembleBenchmarkTestRelease assembleUiTestRelease assembleUiTestCriticalRelease createCoverageReports runUiTestCritical check preMerge publish
+.PHONY: all clean compile javadocs dryRelease update checkFormat api assembleBenchmarkTestRelease assembleUiTestRelease assembleUiTestCriticalRelease createCoverageReports runUiTestCritical setupPython systemTest systemTestInteractive check preMerge publish
 
 all: stop clean javadocs compile createCoverageReports
 assembleBenchmarks: assembleBenchmarkTestRelease
@@ -10,6 +10,7 @@ publish: clean dryRelease
 clean:
 	./gradlew clean --no-configuration-cache
 	rm -rf distributions
+	rm -rf .venv
 
 # build and run tests
 compile:
@@ -58,6 +59,20 @@ runUiTestCritical:
 createCoverageReports:
 	./gradlew jacocoTestReport
 	./gradlew koverXmlReportRelease
+
+# Create the Python virtual environment for system tests, and install the necessary dependencies
+setupPython:
+	@test -d .venv || python3 -m venv .venv
+	.venv/bin/pip install --upgrade pip
+	.venv/bin/pip install -r requirements.txt
+
+# Run system tests for sample applications
+systemTest: setupPython
+	.venv/bin/python test/system-test-runner.py test --all
+
+# Run system tests with interactive module selection
+systemTestInteractive: setupPython
+	.venv/bin/python test/system-test-runner.py test --interactive
 
 # Run tests and lint
 check:
