@@ -1,8 +1,6 @@
 package io.sentry.android.core
 
 import android.content.Context
-import android.net.ConnectivityManager
-import android.net.ConnectivityManager.NetworkCallback
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.os.Build
@@ -16,9 +14,11 @@ import io.sentry.SentryNanotimeDate
 import io.sentry.TypeCheckHint
 import io.sentry.android.core.NetworkBreadcrumbsIntegration.NetworkBreadcrumbConnectionDetail
 import io.sentry.android.core.NetworkBreadcrumbsIntegration.NetworkBreadcrumbsNetworkCallback
-import io.sentry.test.DeferredExecutorService
+import io.sentry.android.core.internal.util.AndroidConnectionStatusProvider
 import io.sentry.test.ImmediateExecutorService
 import java.util.concurrent.TimeUnit
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -27,9 +27,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import org.mockito.kotlin.KInOrder
 import org.mockito.kotlin.any
-import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.check
-import org.mockito.kotlin.eq
 import org.mockito.kotlin.inOrder
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
@@ -43,15 +41,8 @@ class NetworkBreadcrumbsIntegrationTest {
     var options = SentryAndroidOptions()
     val scopes = mock<IScopes>()
     val mockBuildInfoProvider = mock<BuildInfoProvider>()
-    val connectivityManager = mock<ConnectivityManager>()
     var nowMs: Long = 0
     val network = mock<Network>()
-
-    init {
-      whenever(mockBuildInfoProvider.sdkInfoVersion).thenReturn(Build.VERSION_CODES.N)
-      whenever(context.getSystemService(eq(Context.CONNECTIVITY_SERVICE)))
-        .thenReturn(connectivityManager)
-    }
 
     fun getSut(
       enableNetworkEventBreadcrumbs: Boolean = true,
@@ -67,11 +58,21 @@ class NetworkBreadcrumbsIntegrationTest {
             SentryNanotimeDate(DateUtils.nanosToDate(nowNanos), nowNanos)
           }
         }
-      return NetworkBreadcrumbsIntegration(context, buildInfo, options.logger)
+      return NetworkBreadcrumbsIntegration(context, buildInfo)
     }
   }
 
   private val fixture = Fixture()
+
+  @BeforeTest
+  fun `set up`() {
+    whenever(fixture.mockBuildInfoProvider.sdkInfoVersion).thenReturn(Build.VERSION_CODES.N)
+  }
+
+  @AfterTest
+  fun `tear down`() {
+    AndroidConnectionStatusProvider.getChildCallbacks().clear()
+  }
 
   @Test
   fun `When network events breadcrumb is enabled, it registers callback`() {
@@ -79,7 +80,7 @@ class NetworkBreadcrumbsIntegrationTest {
 
     sut.register(fixture.scopes, fixture.options)
 
-    verify(fixture.connectivityManager).registerDefaultNetworkCallback(any())
+    assertFalse(AndroidConnectionStatusProvider.getChildCallbacks().isEmpty())
     assertNotNull(sut.networkCallback)
   }
 
@@ -89,7 +90,7 @@ class NetworkBreadcrumbsIntegrationTest {
 
     sut.register(fixture.scopes, fixture.options)
 
-    verify(fixture.connectivityManager, never()).registerDefaultNetworkCallback(any())
+    assertTrue(AndroidConnectionStatusProvider.getChildCallbacks().isEmpty())
     assertNull(sut.networkCallback)
   }
 
@@ -101,7 +102,7 @@ class NetworkBreadcrumbsIntegrationTest {
 
     sut.register(fixture.scopes, fixture.options)
 
-    verify(fixture.connectivityManager, never()).registerDefaultNetworkCallback(any())
+    assertTrue(AndroidConnectionStatusProvider.getChildCallbacks().isEmpty())
     assertNull(sut.networkCallback)
   }
 
@@ -112,21 +113,7 @@ class NetworkBreadcrumbsIntegrationTest {
     sut.register(fixture.scopes, fixture.options)
     sut.close()
 
-    verify(fixture.connectivityManager).unregisterNetworkCallback(any<NetworkCallback>())
-    assertNull(sut.networkCallback)
-  }
-
-  @Test
-  fun `When NetworkBreadcrumbsIntegration is closed, it's ignored if not on Android N+`() {
-    val buildInfo = mock<BuildInfoProvider>()
-    whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.M)
-    val sut = fixture.getSut(buildInfo = buildInfo)
-    assertNull(sut.networkCallback)
-
-    sut.register(fixture.scopes, fixture.options)
-    sut.close()
-
-    verify(fixture.connectivityManager, never()).unregisterNetworkCallback(any<NetworkCallback>())
+    assertTrue(AndroidConnectionStatusProvider.getChildCallbacks().isEmpty())
     assertNull(sut.networkCallback)
   }
 
@@ -150,18 +137,6 @@ class NetworkBreadcrumbsIntegrationTest {
   }
 
   @Test
-  fun `When connected to the same network without disconnecting from the previous one, only one breadcrumb is captured`() {
-    val sut = fixture.getSut()
-    sut.register(fixture.scopes, fixture.options)
-    val callback = sut.networkCallback
-    assertNotNull(callback)
-    callback.onAvailable(fixture.network)
-    callback.onAvailable(fixture.network)
-
-    verify(fixture.scopes, times(1)).addBreadcrumb(any<Breadcrumb>())
-  }
-
-  @Test
   fun `When disconnected from a network, a breadcrumb is captured`() {
     val sut = fixture.getSut()
     sut.register(fixture.scopes, fixture.options)
@@ -181,17 +156,6 @@ class NetworkBreadcrumbsIntegrationTest {
           assertEquals("NETWORK_LOST", it.data["action"])
         }
       )
-  }
-
-  @Test
-  fun `When disconnected from a network, a breadcrumb is captured only if previously connected to that network`() {
-    val sut = fixture.getSut()
-    sut.register(fixture.scopes, fixture.options)
-    val callback = sut.networkCallback
-    assertNotNull(callback)
-    // callback.onAvailable(network) was not called, so no breadcrumb should be captured
-    callback.onLost(mock())
-    verify(fixture.scopes, never()).addBreadcrumb(any<Breadcrumb>())
   }
 
   @Test
@@ -230,17 +194,6 @@ class NetworkBreadcrumbsIntegrationTest {
         },
         any(),
       )
-  }
-
-  @Test
-  fun `When a network connection detail changes, a breadcrumb is captured only if previously connected to that network`() {
-    val sut = fixture.getSut()
-    sut.register(fixture.scopes, fixture.options)
-    val callback = sut.networkCallback
-    assertNotNull(callback)
-    // callback.onAvailable(network) was not called, so no breadcrumb should be captured
-    onCapabilitiesChanged(callback, mock())
-    verify(fixture.scopes, never()).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
   }
 
   @Test
@@ -492,22 +445,6 @@ class NetworkBreadcrumbsIntegrationTest {
       verifyBreadcrumbInOrder { assertEquals(2001, it.upBandwidth) }
       verify(fixture.scopes, never()).addBreadcrumb(any<Breadcrumb>(), any())
     }
-  }
-
-  @Test
-  fun `If integration is opened and closed immediately it still properly unregisters`() {
-    val executor = DeferredExecutorService()
-    val sut = fixture.getSut(executor = executor)
-
-    sut.register(fixture.scopes, fixture.options)
-    sut.close()
-
-    executor.runAll()
-
-    assertNull(sut.networkCallback)
-    verify(fixture.connectivityManager, never())
-      .registerDefaultNetworkCallback(any<NetworkCallback>())
-    verify(fixture.connectivityManager, never()).unregisterNetworkCallback(any<NetworkCallback>())
   }
 
   private fun KInOrder.verifyBreadcrumbInOrder(

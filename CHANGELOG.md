@@ -2,6 +2,27 @@
 
 ## Unreleased
 
+### Improvements
+
+- Session Replay: Use main thread looper to schedule replay capture ([#4542](https://github.com/getsentry/sentry-java/pull/4542))
+- Use single `LifecycleObserver` and multi-cast it to the integrations interested in lifecycle states ([#4567](https://github.com/getsentry/sentry-java/pull/4567))
+
+### Fixes
+
+- Cache network capabilities and status to reduce IPC calls ([#4560](https://github.com/getsentry/sentry-java/pull/4560))
+- Deduplicate battery breadcrumbs ([#4561](https://github.com/getsentry/sentry-java/pull/4561))
+- Remove unused method in ManifestMetadataReader ([#4585](https://github.com/getsentry/sentry-java/pull/4585))
+- Have single `NetworkCallback` registered at a time to reduce IPC calls ([#4562](https://github.com/getsentry/sentry-java/pull/4562))
+- Limit ProGuard keep rules for native methods within `sentry-android-ndk` to the `io.sentry.**` namespace. ([#4427](https://github.com/getsentry/sentry-java/pull/4427))
+  - If you relied on the Sentry SDK to keep native method names for JNI compatibility within your namespace, please review your ProGuard rules and ensure the configuration still works. Especially when you're not consuming any of the default Android proguard rules (`proguard-android.txt` or `proguard-android-optimize.txt`) the following config should be present:
+  ```
+  -keepclasseswithmembernames class * {
+    native <methods>;
+  }
+  ```
+
+## 8.18.0
+
 ### Features
 
 - Add `SentryUserFeedbackButton` Composable ([#4559](https://github.com/getsentry/sentry-java/pull/4559))

@@ -28,6 +28,7 @@ import io.sentry.android.core.internal.debugmeta.AssetsDebugMetaLoader;
 import io.sentry.android.core.internal.gestures.AndroidViewGestureTargetLocator;
 import io.sentry.android.core.internal.modules.AssetsModulesLoader;
 import io.sentry.android.core.internal.util.AndroidConnectionStatusProvider;
+import io.sentry.android.core.internal.util.AndroidCurrentDateProvider;
 import io.sentry.android.core.internal.util.AndroidThreadChecker;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.android.core.performance.AppStartMetrics;
@@ -127,6 +128,7 @@ final class AndroidOptionsInitializer {
     options.setCacheDirPath(getCacheDir(context).getAbsolutePath());
 
     readDefaultOptionValues(options, context, buildInfoProvider);
+    AppState.getInstance().registerLifecycleObserver(options);
   }
 
   @TestOnly
@@ -157,7 +159,8 @@ final class AndroidOptionsInitializer {
 
     if (options.getConnectionStatusProvider() instanceof NoOpConnectionStatusProvider) {
       options.setConnectionStatusProvider(
-          new AndroidConnectionStatusProvider(context, options.getLogger(), buildInfoProvider));
+          new AndroidConnectionStatusProvider(
+              context, options, buildInfoProvider, AndroidCurrentDateProvider.getInstance()));
     }
 
     if (options.getCacheDirPath() != null) {
@@ -380,8 +383,7 @@ final class AndroidOptionsInitializer {
     }
     options.addIntegration(new AppComponentsBreadcrumbsIntegration(context));
     options.addIntegration(new SystemEventsBreadcrumbsIntegration(context));
-    options.addIntegration(
-        new NetworkBreadcrumbsIntegration(context, buildInfoProvider, options.getLogger()));
+    options.addIntegration(new NetworkBreadcrumbsIntegration(context, buildInfoProvider));
     if (isReplayAvailable) {
       final ReplayIntegration replay =
           new ReplayIntegration(context, CurrentDateProvider.getInstance());
