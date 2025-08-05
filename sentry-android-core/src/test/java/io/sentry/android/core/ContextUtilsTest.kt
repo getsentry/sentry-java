@@ -222,7 +222,7 @@ class ContextUtilsTest {
     val context = mock<Context>()
     whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.S)
     ContextUtils.registerReceiver(context, buildInfo, receiver, filter, null)
-    verify(context).registerReceiver(eq(receiver), eq(filter), isNull(), isNull())
+    verify(context).registerReceiver(eq(receiver), eq(filter), isNull(), isNull(), eq(0))
   }
 
   @Test
