@@ -63,7 +63,9 @@ public final class AppState implements Closeable {
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       ensureLifecycleObserver(NoOpLogger.getInstance());
 
-      lifecycleObserver.listeners.add(listener);
+      if (lifecycleObserver != null) {
+        lifecycleObserver.listeners.add(listener);
+      }
     }
   }
 
