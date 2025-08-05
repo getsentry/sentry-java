@@ -17,6 +17,18 @@ class SentryTraceHeaderTest {
   }
 
   @Test
+  fun `when there is a trailing dash without sampling decision throws exception`() {
+    val sentryId = SentryId()
+    val spanId = SpanId()
+    val ex =
+      assertFailsWith<InvalidSentryTraceHeaderException> { SentryTraceHeader("$sentryId-$spanId-") }
+    assertEquals(
+      "sentry-trace header does not conform to expected format: $sentryId-$spanId-",
+      ex.message,
+    )
+  }
+
+  @Test
   fun `when trace-id has less than 32 characters throws exception`() {
     val sentryId = SentryId().toString().substring(0, 8)
     val spanId = SpanId()

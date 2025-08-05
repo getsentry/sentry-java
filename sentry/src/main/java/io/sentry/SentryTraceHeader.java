@@ -17,7 +17,7 @@ public final class SentryTraceHeader {
 
   final Pattern SENTRY_TRACEPARENT_HEADER_REGEX =
       Pattern.compile(
-          "^[ \\t]*(?<traceId>[0-9a-f]{32})-(?<spanId>[0-9a-f]{16})-?(?<sampled>[01])?[ \\t]*$",
+          "^[ \\t]*(?<traceId>[0-9a-f]{32})-(?<spanId>[0-9a-f]{16})(?<sampled>-[01])?[ \\t]*$",
           Pattern.CASE_INSENSITIVE);
 
   public SentryTraceHeader(
@@ -39,7 +39,8 @@ public final class SentryTraceHeader {
 
     this.traceId = new SentryId(matcher.group("traceId"));
     this.spanId = new SpanId(matcher.group("spanId"));
-    this.sampled = matcher.group("sampled") == null ? null : "1".equals(matcher.group("sampled"));
+    this.sampled =
+        matcher.group("sampled") == null ? null : "1".equals(matcher.group("sampled").substring(1));
   }
 
   public @NotNull String getName() {
