@@ -11,11 +11,13 @@ import android.widget.AbsListView
 import android.widget.ListAdapter
 import androidx.core.view.ScrollingView
 import io.sentry.Breadcrumb
+import io.sentry.ILogger
 import io.sentry.IScope
 import io.sentry.IScopes
 import io.sentry.PropagationContext
 import io.sentry.Scope
 import io.sentry.ScopeCallback
+import io.sentry.SentryLevel
 import io.sentry.SentryLevel.INFO
 import io.sentry.android.core.SentryAndroidOptions
 import kotlin.test.Test
@@ -28,6 +30,7 @@ import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.inOrder
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
@@ -56,7 +59,7 @@ class SentryGestureListenerScrollTest {
     val directions = setOf("up", "down", "left", "right")
 
     internal inline fun <reified T : View> getSut(
-      resourceName: String = "test_scroll_view",
+      resourceName: String? = "test_scroll_view",
       touchWithinBounds: Boolean = true,
       direction: String = "",
     ): SentryGestureListener {
@@ -227,6 +230,22 @@ class SentryGestureListenerScrollTest {
     sut.onUp(fixture.endEvent)
 
     verify(fixture.scope).propagationContext = any()
+  }
+
+  @Test
+  fun `logs error message only once per gesture when no scroll target is found`() {
+    val logger = mock<ILogger>()
+    fixture.options.setLogger(logger)
+    fixture.options.isDebug = true
+    val sut = fixture.getSut<ScrollableListView>(resourceName = null)
+
+    sut.onDown(fixture.firstEvent)
+    fixture.eventsInBetween.forEach { sut.onScroll(fixture.firstEvent, it, 10.0f, 0f) }
+    sut.onUp(fixture.endEvent)
+
+    // Verify that the error message is logged only once during the entire gesture
+    verify(logger, times(1))
+      .log(SentryLevel.DEBUG, "Unable to find scroll target. No breadcrumb captured.")
   }
 
   internal class ScrollableView : View(mock()), ScrollingView {

@@ -56,7 +56,8 @@ public final class AndroidConnectionStatusProvider
   private static final int[] transports = {
     NetworkCapabilities.TRANSPORT_WIFI,
     NetworkCapabilities.TRANSPORT_CELLULAR,
-    NetworkCapabilities.TRANSPORT_ETHERNET
+    NetworkCapabilities.TRANSPORT_ETHERNET,
+    NetworkCapabilities.TRANSPORT_BLUETOOTH
   };
 
   private static final int[] capabilities = new int[2];
@@ -511,6 +512,18 @@ public final class AndroidConnectionStatusProvider
           //noinspection Convert2MethodRef
           unregisterNetworkCallback(/* clearObservers= */ false);
         });
+  }
+
+  /**
+   * Get the cached NetworkCapabilities for advanced use cases. Returns null if cache is stale or no
+   * capabilities are available.
+   *
+   * @return cached NetworkCapabilities or null
+   */
+  @TestOnly
+  @Nullable
+  public NetworkCapabilities getCachedNetworkCapabilities() {
+    return cachedNetworkCapabilities;
   }
 
   /**

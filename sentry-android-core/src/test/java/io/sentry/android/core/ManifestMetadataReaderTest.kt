@@ -9,6 +9,7 @@ import io.sentry.ILogger
 import io.sentry.ProfileLifecycle
 import io.sentry.SentryLevel
 import io.sentry.SentryReplayOptions
+import io.sentry.TransactionOptions
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -1089,6 +1090,35 @@ class ManifestMetadataReaderTest {
 
     // Assert
     assertEquals(expectedIdleTimeout.toLong(), fixture.options.idleTimeout)
+  }
+
+  @Test
+  fun `applyMetadata reads autoTransactionDeadlineTimeoutMillis from metadata`() {
+    // Arrange
+    val expectedTimeout = 60000
+    val bundle = bundleOf(ManifestMetadataReader.DEADLINE_TIMEOUT to expectedTimeout)
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertEquals(expectedTimeout.toLong(), fixture.options.deadlineTimeout)
+  }
+
+  @Test
+  fun `applyMetadata reads autoTransactionDeadlineTimeoutMillis from metadata and keep default value if not found`() {
+    // Arrange
+    val context = fixture.getContext()
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertEquals(
+      TransactionOptions.DEFAULT_DEADLINE_TIMEOUT_AUTO_TRANSACTION,
+      fixture.options.deadlineTimeout,
+    )
   }
 
   @Test

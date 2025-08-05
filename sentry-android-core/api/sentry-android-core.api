@@ -423,6 +423,8 @@ public class io/sentry/android/core/SentryUserFeedbackDialog$Builder {
 	public fun <init> (Landroid/content/Context;I)V
 	public fun <init> (Landroid/content/Context;ILio/sentry/android/core/SentryUserFeedbackDialog$OptionsConfiguration;)V
 	public fun <init> (Landroid/content/Context;Lio/sentry/android/core/SentryUserFeedbackDialog$OptionsConfiguration;)V
+	public fun associatedEventId (Lio/sentry/protocol/SentryId;)Lio/sentry/android/core/SentryUserFeedbackDialog$Builder;
+	public fun configurator (Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)Lio/sentry/android/core/SentryUserFeedbackDialog$Builder;
 	public fun create ()Lio/sentry/android/core/SentryUserFeedbackDialog;
 }
 
