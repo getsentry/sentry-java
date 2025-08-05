@@ -3272,6 +3272,10 @@ public class SentryOptions {
     if (options.getProfilingTracesDirPath() != null) {
       setProfilingTracesDirPath(options.getProfilingTracesDirPath());
     }
+
+    if (options.getProfileLifecycle() != null) {
+      setProfileLifecycle(options.getProfileLifecycle());
+    }
   }
 
   private @NotNull SdkVersion createSdkVersion() {

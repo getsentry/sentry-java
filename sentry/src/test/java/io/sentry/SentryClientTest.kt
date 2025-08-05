@@ -113,7 +113,7 @@ class SentryClientTest {
           profilingTraceFile,
           emptyMap(),
           1.0,
-          "android",
+          ProfileChunk.Platform.ANDROID,
           sentryOptions,
         )
     }

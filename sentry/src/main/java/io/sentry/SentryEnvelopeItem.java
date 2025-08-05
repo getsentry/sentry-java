@@ -295,7 +295,7 @@ public final class SentryEnvelopeItem {
                         traceFile.getName()));
               }
 
-              if (profileChunk.getPlatform().equals("java")) {
+              if (ProfileChunk.Platform.JAVA == profileChunk.getPlatform()) {
                 final IProfileConverter profileConverter =
                     ProfilingServiceLoader.loadProfileConverter();
                 if (profileConverter != null) {
@@ -340,7 +340,7 @@ public final class SentryEnvelopeItem {
             "application-json",
             traceFile.getName(),
             null,
-            profileChunk.getPlatform(),
+            profileChunk.getPlatform().apiName(),
             null);
 
     // avoid method refs on Android due to some issues with older AGP setups

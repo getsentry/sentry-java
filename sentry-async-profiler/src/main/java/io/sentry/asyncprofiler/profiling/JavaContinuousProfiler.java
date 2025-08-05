@@ -1,7 +1,6 @@
 package io.sentry.asyncprofiler.profiling;
 
 import static io.sentry.DataCategory.All;
-import static io.sentry.IConnectionStatusProvider.ConnectionStatus.DISCONNECTED;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 import io.sentry.DataCategory;
@@ -148,7 +147,6 @@ public final class JavaContinuousProfiler
   private void initScopes() {
     if ((scopes == null || scopes == NoOpScopes.getInstance())
         && Sentry.getCurrentScopes() != NoOpScopes.getInstance()) {
-      // TODO: should we fork the scopes here?
       this.scopes = Sentry.getCurrentScopes();
       final @Nullable RateLimiter rateLimiter = scopes.getRateLimiter();
       if (rateLimiter != null) {
@@ -177,14 +175,6 @@ public final class JavaContinuousProfiler
         return;
       }
 
-      // TODO: Taken from the android profiler, do we need this on the JVM as well?
-      // If device is offline, we don't start the profiler, to avoid flooding the cache
-      if (scopes.getOptions().getConnectionStatusProvider().getConnectionStatus() == DISCONNECTED) {
-        logger.log(SentryLevel.WARNING, "Device is offline. Stopping profiler.");
-        // Let's stop and reset profiler id, as the profile is now broken anyway
-        stop(false);
-        return;
-      }
       startProfileChunkTimestamp = scopes.getOptions().getDateProvider().now();
     } else {
       startProfileChunkTimestamp = new SentryNanotimeDate();
@@ -195,8 +185,7 @@ public final class JavaContinuousProfiler
       final String profilingIntervalMicros =
           String.format("%dus", (int) SECONDS.toMicros(1) / profilingTracesHz);
       final String command =
-          String.format(
-              "start,jfr,event=wall,interval=%s,file=%s", profilingIntervalMicros, filename);
+          String.format("start,jfr,wall=%s,file=%s", profilingIntervalMicros, filename);
       System.out.println(command);
       startData = profiler.execute(command);
     } catch (Exception e) {
@@ -283,14 +272,21 @@ public final class JavaContinuousProfiler
         // start profiling), meaning there's no scopes to send the chunks. In that case, we store
         // the data in a list and send it when the next chunk is finished.
         try (final @NotNull ISentryLifecycleToken ignored2 = payloadLock.acquire()) {
+          File jfrFile = new File(filename);
+          // TODO: should we add deleteOnExit() here to let the JVM clean up the file?
+          // as in `Sentry.java` `initJvmContinuousProfiling` each time we start the profiler we
+          // create a new
+          // temp directory/file that we can't cleanup on restart. Unless the user sets
+          // `profiling-traces-dir-path` manually
+          //          jfrFile.deleteOnExit();
           payloadBuilders.add(
               new ProfileChunk.Builder(
                   profilerId,
                   chunkId,
                   new HashMap<>(),
-                  new File(filename),
+                  jfrFile,
                   startProfileChunkTimestamp,
-                  "java"));
+                  ProfileChunk.Platform.JAVA));
         }
       }
 

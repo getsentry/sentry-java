@@ -390,6 +390,13 @@ class ExternalOptionsTest {
     }
   }
 
+  @Test
+  fun `creates options with profilingLifecycle set to TRACE`() {
+    withPropertiesFile("profile-lifecycle=TRACE") { options ->
+      assertTrue(options.profileLifecycle == ProfileLifecycle.TRACE)
+    }
+  }
+
   private fun withPropertiesFile(
     textLines: List<String> = emptyList(),
     logger: ILogger = mock(),
