@@ -4,7 +4,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
   `java-library`
-  kotlin("jvm")
+  alias(libs.plugins.kotlin.jvm)
   jacoco
   id("io.sentry.javadoc")
   alias(libs.plugins.errorprone)
@@ -13,7 +13,7 @@ plugins {
 }
 
 tasks.withType<KotlinCompile>().configureEach {
-  kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
+  compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8
 }
 
 kotlin { explicitApi() }
