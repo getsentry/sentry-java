@@ -8,6 +8,7 @@ import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.Rect
 import android.graphics.RectF
+import android.os.SystemClock
 import android.view.PixelCopy
 import android.view.View
 import io.sentry.SentryLevel.DEBUG
@@ -29,7 +30,6 @@ import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.LazyThreadSafetyMode.NONE
 
-@SuppressLint("UseKtx")
 internal class PixelCopyStrategy(
   private val executor: ScheduledExecutorService,
   private val mainLooperHandler: MainLooperHandler,

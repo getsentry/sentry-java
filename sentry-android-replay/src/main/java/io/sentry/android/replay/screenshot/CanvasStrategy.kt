@@ -25,7 +25,7 @@ import android.graphics.text.MeasuredText
 import android.media.Image
 import android.media.ImageReader
 import android.os.Handler
-import android.os.Looper
+import android.os.HandlerThread
 import android.view.View
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
@@ -33,9 +33,11 @@ import io.sentry.android.replay.ScreenshotRecorderCallback
 import io.sentry.android.replay.ScreenshotRecorderConfig
 import io.sentry.android.replay.util.submitSafely
 import java.util.LinkedList
+import java.util.WeakHashMap
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.LazyThreadSafetyMode.NONE
+import kotlin.math.roundToInt
 
 @SuppressLint("UseKtx")
 internal class CanvasStrategy(
@@ -60,6 +62,14 @@ internal class CanvasStrategy(
       )
     )
   private val unprocessedPictures: MutableList<PictureReaderHolder> = LinkedList()
+
+  private val processingThread = HandlerThread("screenshot_recorder.canvas")
+  private val processingHandler: Handler
+
+  init {
+    processingThread.start()
+    processingHandler = Handler(processingThread.looper)
+  }
 
   private val pictureRenderTask = Runnable {
     val holder: PictureReaderHolder? =
@@ -87,7 +97,7 @@ internal class CanvasStrategy(
           }
           synchronized(freePictures) { freePictures.add(holder) }
         },
-        Handler(Looper.getMainLooper()),
+        processingHandler,
       )
 
       val surface = holder.reader.surface
@@ -112,7 +122,7 @@ internal class CanvasStrategy(
       return
     }
 
-    val pictureCanvas = holder.picture.beginRecording(root.width, root.height)
+    val pictureCanvas = holder.picture.beginRecording(config.recordingWidth, config.recordingHeight)
     textIgnoringCanvas.delegate = pictureCanvas
     textIgnoringCanvas.setMatrix(prescaledMatrix)
     root.draw(textIgnoringCanvas)
@@ -133,6 +143,7 @@ internal class CanvasStrategy(
         recycle()
       }
     }
+    processingThread.quitSafely()
   }
 
   override fun lastCaptureSuccessful(): Boolean {
@@ -184,7 +195,15 @@ private class TextIgnoringDelegateCanvas : Canvas() {
 
   lateinit var delegate: Canvas
   private val solidPaint = Paint()
-  private var colorSamplingReader: ImageReader? = null
+  private val textPaint = Paint()
+  private val tmpRect = Rect()
+
+  val singlePixelBitmap = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
+  val singlePixelCanvas = Canvas(singlePixelBitmap)
+
+  val singlePixelBitmapBounds = Rect(0, 0, 1, 1)
+
+  private val bitmapColorCache = WeakHashMap<Bitmap, Pair<Int, Int>>()
 
   override fun isHardwareAccelerated(): Boolean {
     return false
@@ -733,23 +752,26 @@ private class TextIgnoringDelegateCanvas : Canvas() {
   }
 
   override fun drawPosText(text: CharArray, index: Int, count: Int, pos: FloatArray, paint: Paint) {
-    // ignored
+    // TODO implement
   }
 
   override fun drawPosText(text: String, pos: FloatArray, paint: Paint) {
-    // ignored
+    // TODO implement
   }
 
   override fun drawText(text: CharArray, index: Int, count: Int, x: Float, y: Float, paint: Paint) {
-    // ignored
+    paint.getTextBounds(text, index, count, tmpRect)
+    drawMaskedText(paint, x, y)
   }
 
   override fun drawText(text: String, x: Float, y: Float, paint: Paint) {
-    // ignored
+    paint.getTextBounds(text, 0, text.length, tmpRect)
+    drawMaskedText(paint, x, y)
   }
 
   override fun drawText(text: String, start: Int, end: Int, x: Float, y: Float, paint: Paint) {
-    // ignored
+    paint.getTextBounds(text, start, end, tmpRect)
+    drawMaskedText(paint, x, y)
   }
 
   override fun drawText(
@@ -760,7 +782,8 @@ private class TextIgnoringDelegateCanvas : Canvas() {
     y: Float,
     paint: Paint,
   ) {
-    // ignored
+    paint.getTextBounds(text, 0, text.length, tmpRect)
+    drawMaskedText(paint, x, y)
   }
 
   override fun drawTextOnPath(
@@ -772,7 +795,7 @@ private class TextIgnoringDelegateCanvas : Canvas() {
     vOffset: Float,
     paint: Paint,
   ) {
-    // ignored
+    // TODO implement
   }
 
   override fun drawTextOnPath(
@@ -782,7 +805,7 @@ private class TextIgnoringDelegateCanvas : Canvas() {
     vOffset: Float,
     paint: Paint,
   ) {
-    // ignored
+    // TODO implement
   }
 
   override fun drawTextRun(
@@ -796,7 +819,8 @@ private class TextIgnoringDelegateCanvas : Canvas() {
     isRtl: Boolean,
     paint: Paint,
   ) {
-    // ignored
+    paint.getTextBounds(text, 0, index + count, tmpRect)
+    drawMaskedText(paint, x, y)
   }
 
   override fun drawTextRun(
@@ -810,7 +834,8 @@ private class TextIgnoringDelegateCanvas : Canvas() {
     isRtl: Boolean,
     paint: Paint,
   ) {
-    // ignored
+    paint.getTextBounds(text, start, end, tmpRect)
+    drawMaskedText(paint, x, y)
   }
 
   override fun drawTextRun(
@@ -824,83 +849,32 @@ private class TextIgnoringDelegateCanvas : Canvas() {
     isRtl: Boolean,
     paint: Paint,
   ) {
-    // ignored
-  }
-
-  private fun getOrCreateColorSamplingReader(): ImageReader {
-    var reader = colorSamplingReader
-    if (reader == null) {
-      reader = ImageReader.newInstance(1, 1, PixelFormat.RGBA_8888, 1)
-      colorSamplingReader = reader
-    }
-    return reader
+    text.getBounds(start, end, tmpRect)
+    drawMaskedText(paint, x, y)
   }
 
   private fun sampleBitmapColor(bitmap: Bitmap, paint: Paint?, region: Rect?): Int {
-    val reader = getOrCreateColorSamplingReader()
-    val surface = reader.surface
-    val canvas = surface.lockHardwareCanvas()
-
-    val left = region?.left ?: 0
-    val top = region?.top ?: 0
-    val right = region?.right ?: (left + bitmap.width)
-    val bottom = region?.bottom ?: (top + bitmap.height)
-    try {
-      // Clear and draw the bitmap scaled to 1x1
-      canvas.drawColor(Color.BLACK, PorterDuff.Mode.CLEAR)
-      canvas.drawBitmap(bitmap, Rect(left, top, right, bottom), Rect(0, 0, 1, 1), paint)
-    } finally {
-      surface.unlockCanvasAndPost(canvas)
+    if (bitmap.isRecycled) {
+      return Color.BLACK
     }
 
-    // Blocking read - this is the synchronous part
-    val image = reader.acquireLatestImage()
-    return if (image != null) {
-      try {
-        image.planes!!.let {
-          val plane = it[0]
-          val pixel = plane.buffer.asIntBuffer().get(0)
-          val red = pixel and 0xff
-          val green = pixel shr 8 and 0xff
-          val blue = pixel shr 16 and 0xff
-          val alpha = pixel shr 24 and 0xff
-          Color.argb(alpha, red, green, blue)
-        }
-      } finally {
-        image.close()
-      }
+    val cache = bitmapColorCache[bitmap]
+    if (cache != null && cache.first == bitmap.generationId) {
+      return cache.second
     } else {
-      // Fallback to direct sampling if hardware fails
-      fallbackSampleBitmapColor(bitmap)
+      singlePixelCanvas.drawBitmap(bitmap.asShared(), region, singlePixelBitmapBounds, paint)
+      val color = singlePixelBitmap.getPixel(0, 0)
+      bitmapColorCache[bitmap] = Pair(bitmap.generationId, color)
+      return color
     }
   }
 
-  private fun fallbackSampleBitmapColor(bitmap: Bitmap): Int {
-    val w = bitmap.width - 1
-    val h = bitmap.height - 1
-
-    val colors =
-      intArrayOf(
-        bitmap.getPixel(0, 0), // left-top
-        bitmap.getPixel(w, 0), // right-top
-        bitmap.getPixel(0, h), // left-bottom
-        bitmap.getPixel(w, h), // right-bottom
-        bitmap.getPixel(w / 2, h / 2), // center
-      )
-
-    var r = 0
-    var g = 0
-    var b = 0
-    var a = 0
-    colors.forEach { color ->
-      r += Color.red(color)
-      g += Color.green(color)
-      b += Color.blue(color)
-      a += Color.alpha(color)
-    }
-    val l = colors.size
-
-    return Color.argb(a / l, r / l, g / l, b / l)
+  private fun drawMaskedText(paint: Paint, x: Float, y: Float) {
+    textPaint.colorFilter = paint.colorFilter
+    val color = paint.color
+    textPaint.color = Color.argb(100, Color.red(color), Color.green(color), Color.blue(color))
+    tmpRect.offset(x.roundToInt(), y.roundToInt())
+    drawRect(tmpRect, solidPaint)
   }
 }
 
