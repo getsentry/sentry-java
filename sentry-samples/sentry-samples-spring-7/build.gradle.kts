@@ -5,7 +5,7 @@ import org.springframework.boot.gradle.plugin.SpringBootPlugin
 plugins {
   alias(libs.plugins.springboot4) apply false
   alias(libs.plugins.spring.dependency.management)
-  kotlin("jvm")
+  alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.kotlin.spring)
   id("war")
   alias(libs.plugins.gretty)
@@ -45,8 +45,8 @@ dependencies {
 tasks.withType<Test>().configureEach { useJUnitPlatform() }
 
 tasks.withType<KotlinCompile>().configureEach {
-  kotlinOptions {
-    freeCompilerArgs = listOf("-Xjsr305=strict")
-    jvmTarget = JavaVersion.VERSION_17.toString()
+  kotlin {
+    compilerOptions.freeCompilerArgs = listOf("-Xjsr305=strict")
+    compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
   }
 }

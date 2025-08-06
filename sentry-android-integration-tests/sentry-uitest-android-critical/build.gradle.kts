@@ -2,7 +2,8 @@ import io.gitlab.arturbosch.detekt.Detekt
 
 plugins {
   id("com.android.application")
-  kotlin("android")
+  alias(libs.plugins.kotlin.android)
+  alias(libs.plugins.kotlin.compose)
 }
 
 android {
@@ -30,7 +31,7 @@ android {
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
     }
   }
-  kotlinOptions { jvmTarget = JavaVersion.VERSION_1_8.toString() }
+  kotlin { compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8 }
   buildFeatures { compose = true }
   composeOptions { kotlinCompilerExtensionVersion = libs.versions.composeCompiler.get() }
   androidComponents.beforeVariants {

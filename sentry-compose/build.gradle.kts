@@ -2,7 +2,8 @@ import io.gitlab.arturbosch.detekt.Detekt
 import org.jetbrains.dokka.gradle.DokkaTask
 
 plugins {
-  kotlin("multiplatform")
+  alias(libs.plugins.kotlin.multiplatform)
+  alias(libs.plugins.kotlin.compose)
   id("com.android.library")
   id("org.jetbrains.compose")
   alias(libs.plugins.kover)
@@ -18,10 +19,14 @@ kotlin {
 
   androidTarget {
     publishLibraryVariants("release")
-    compilations.all { kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString() }
+    compilerOptions {
+      jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.fromTarget("1.8"))
+    }
   }
   jvm("desktop") {
-    compilations.all { kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString() }
+    compilerOptions {
+      jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.fromTarget("1.8"))
+    }
   }
 
   sourceSets.all {

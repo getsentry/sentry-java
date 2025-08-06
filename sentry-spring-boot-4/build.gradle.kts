@@ -5,8 +5,10 @@ import org.springframework.boot.gradle.plugin.SpringBootPlugin
 plugins {
   `java-library`
   id("io.sentry.javadoc")
-  kotlin("jvm")
+//  alias(libs.plugins.kotlin.jvm)
   jacoco
+  alias(libs.plugins.kotlin.jvm.spring7)
+  alias(libs.plugins.kotlin.spring7)
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.buildconfig)
@@ -19,8 +21,11 @@ configure<JavaPluginExtension> {
 }
 
 tasks.withType<KotlinCompile>().configureEach {
-  kotlinOptions.jvmTarget = JavaVersion.VERSION_17.toString()
-  kotlinOptions.languageVersion = libs.versions.kotlin.compatible.version.get()
+  compilerOptions {
+    jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+    languageVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_1)
+    freeCompilerArgs.add("-Xjsr305=strict")
+  }
 }
 
 dependencies {
@@ -141,5 +146,14 @@ tasks.jar {
       "Implementation-Title" to project.name,
       "Implementation-Version" to project.version,
     )
+  }
+}
+
+kotlin {
+  explicitApi()
+  compilerOptions {
+    // skip metadata version check, as androidx.sqlite:sqlite is compiled against a newer version of
+    // Kotlin
+    freeCompilerArgs.add("-Xskip-metadata-version-check")
   }
 }
