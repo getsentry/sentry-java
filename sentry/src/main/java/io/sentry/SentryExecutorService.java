@@ -130,9 +130,10 @@ public final class SentryExecutorService implements ISentryExecutorService {
             executorService.schedule(dummyRunnable, Long.MAX_VALUE, TimeUnit.DAYS);
           }
         });
-    executorService.submit(() -> {
-      executorService.getQueue().clear();
-    });
+    executorService.submit(
+        () -> {
+          executorService.getQueue().clear();
+        });
   }
 
   private static final class SentryExecutorServiceThreadFactory implements ThreadFactory {
