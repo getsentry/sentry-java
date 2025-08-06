@@ -39,4 +39,3 @@ jobs:
           path: |
             ./*/build/distributions/*.zip
             ./sentry-opentelemetry/*/build/distributions/*.zip
-            ./sentry-android-ndk/build/intermediates/merged_native_libs/release/out/lib/*

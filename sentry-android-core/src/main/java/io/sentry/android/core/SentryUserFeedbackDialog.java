@@ -25,16 +25,22 @@ public final class SentryUserFeedbackDialog extends AlertDialog {
 
   private boolean isCancelable = false;
   private @Nullable SentryId currentReplayId;
+  private final @Nullable SentryId associatedEventId;
   private @Nullable OnDismissListener delegate;
 
   private final @Nullable OptionsConfiguration configuration;
+  private final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator;
 
   SentryUserFeedbackDialog(
       final @NotNull Context context,
       final int themeResId,
-      final @Nullable OptionsConfiguration configuration) {
+      final @Nullable SentryId associatedEventId,
+      final @Nullable OptionsConfiguration configuration,
+      final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator) {
     super(context, themeResId);
+    this.associatedEventId = associatedEventId;
     this.configuration = configuration;
+    this.configurator = configurator;
     SentryIntegrationPackageStorage.getInstance().addIntegration("UserFeedbackWidget");
   }
 
@@ -55,6 +61,9 @@ public final class SentryUserFeedbackDialog extends AlertDialog {
         new SentryFeedbackOptions(Sentry.getCurrentScopes().getOptions().getFeedbackOptions());
     if (configuration != null) {
       configuration.configure(getContext(), feedbackOptions);
+    }
+    if (configurator != null) {
+      configurator.configure(feedbackOptions);
     }
     final @NotNull TextView lblTitle = findViewById(R.id.sentry_dialog_user_feedback_title);
     final @NotNull ImageView imgLogo = findViewById(R.id.sentry_dialog_user_feedback_logo);
@@ -145,6 +154,9 @@ public final class SentryUserFeedbackDialog extends AlertDialog {
           final @NotNull Feedback feedback = new Feedback(message);
           feedback.setName(name);
           feedback.setContactEmail(email);
+          if (associatedEventId != null) {
+            feedback.setAssociatedEventId(associatedEventId);
+          }
           if (currentReplayId != null) {
             feedback.setReplayId(currentReplayId);
           }
@@ -226,6 +238,8 @@ public final class SentryUserFeedbackDialog extends AlertDialog {
   public static class Builder {
 
     @Nullable OptionsConfiguration configuration;
+    @Nullable SentryFeedbackOptions.OptionsConfigurator configurator;
+    @Nullable SentryId associatedEventId;
     final @NotNull Context context;
     final int themeResId;
 
@@ -318,13 +332,37 @@ public final class SentryUserFeedbackDialog extends AlertDialog {
     }
 
     /**
+     * Sets the configuration for the feedback options.
+     *
+     * @param configurator the configuration for the feedback options, can be {@code null} to use
+     *     the global feedback options.
+     */
+    public Builder configurator(
+        final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator) {
+      this.configurator = configurator;
+      return this;
+    }
+
+    /**
+     * Sets the associated event ID for the feedback.
+     *
+     * @param associatedEventId the associated event ID for the feedback, can be {@code null} to
+     *     avoid associating the feedback to an event.
+     */
+    public Builder associatedEventId(final @Nullable SentryId associatedEventId) {
+      this.associatedEventId = associatedEventId;
+      return this;
+    }
+
+    /**
      * Builds a new {@link SentryUserFeedbackDialog} with the specified context, theme, and
      * configuration.
      *
      * @return a new instance of {@link SentryUserFeedbackDialog}
      */
     public SentryUserFeedbackDialog create() {
-      return new SentryUserFeedbackDialog(context, themeResId, configuration);
+      return new SentryUserFeedbackDialog(
+          context, themeResId, associatedEventId, configuration, configurator);
     }
   }
 

@@ -56,7 +56,8 @@ public final class AndroidConnectionStatusProvider
   private static final int[] transports = {
     NetworkCapabilities.TRANSPORT_WIFI,
     NetworkCapabilities.TRANSPORT_CELLULAR,
-    NetworkCapabilities.TRANSPORT_ETHERNET
+    NetworkCapabilities.TRANSPORT_ETHERNET,
+    NetworkCapabilities.TRANSPORT_BLUETOOTH
   };
 
   private static final int[] capabilities = new int[2];
@@ -117,9 +118,12 @@ public final class AndroidConnectionStatusProvider
     }
 
     // Additionally, ensure it's a recognized transport type for general internet access
-    return networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
-        || networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)
-        || networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET);
+    for (final int transport : transports) {
+      if (networkCapabilities.hasTransport(transport)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   /** Get connection status from cached NetworkCapabilities or fallback to legacy method. */

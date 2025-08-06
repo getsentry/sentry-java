@@ -25,8 +25,8 @@ import org.jetbrains.annotations.TestOnly;
 public final class AppState implements Closeable {
   private static @NotNull AppState instance = new AppState();
   private final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
-  volatile LifecycleObserver lifecycleObserver;
-  MainLooperHandler handler = new MainLooperHandler();
+  private volatile LifecycleObserver lifecycleObserver;
+  private MainLooperHandler handler = new MainLooperHandler();
 
   private AppState() {}
 
@@ -35,6 +35,11 @@ public final class AppState implements Closeable {
   }
 
   private volatile @Nullable Boolean inBackground = null;
+
+  @TestOnly
+  void setHandler(final @NotNull MainLooperHandler handler) {
+    this.handler = handler;
+  }
 
   @ApiStatus.Internal
   @TestOnly
@@ -60,7 +65,9 @@ public final class AppState implements Closeable {
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       ensureLifecycleObserver(NoOpLogger.getInstance());
 
-      lifecycleObserver.listeners.add(listener);
+      if (lifecycleObserver != null) {
+        lifecycleObserver.listeners.add(listener);
+      }
     }
   }
 
@@ -170,6 +177,7 @@ public final class AppState implements Closeable {
         new CopyOnWriteArrayList<AppStateListener>() {
           @Override
           public boolean add(AppStateListener appStateListener) {
+            final boolean addResult = super.add(appStateListener);
             // notify the listeners immediately to let them "catch up" with the current state
             // (mimics the behavior of androidx.lifecycle)
             if (Boolean.FALSE.equals(inBackground)) {
@@ -177,7 +185,7 @@ public final class AppState implements Closeable {
             } else if (Boolean.TRUE.equals(inBackground)) {
               appStateListener.onBackground();
             }
-            return super.add(appStateListener);
+            return addResult;
           }
         };
 
@@ -197,10 +205,10 @@ public final class AppState implements Closeable {
 
     @Override
     public void onStop(@NonNull LifecycleOwner owner) {
+      setInBackground(true);
       for (AppStateListener listener : listeners) {
         listener.onBackground();
       }
-      setInBackground(true);
     }
   }
 
