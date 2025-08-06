@@ -118,9 +118,12 @@ public final class AndroidConnectionStatusProvider
     }
 
     // Additionally, ensure it's a recognized transport type for general internet access
-    return networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
-        || networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)
-        || networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET);
+    for (final int transport : transports) {
+      if (networkCapabilities.hasTransport(transport)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   /** Get connection status from cached NetworkCapabilities or fallback to legacy method. */
