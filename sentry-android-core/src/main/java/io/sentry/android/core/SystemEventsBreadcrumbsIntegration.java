@@ -208,7 +208,9 @@ public final class SystemEventsBreadcrumbsIntegration
     try (final @NotNull ISentryLifecycleToken ignored = receiverLock.acquire()) {
       isClosed = true;
       filter = null;
-      handlerThread.quit();
+      if (handlerThread != null) {
+        handlerThread.quit();
+      }
       handlerThread = null;
     }
 
