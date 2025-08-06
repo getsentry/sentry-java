@@ -5,6 +5,88 @@
 ### Improvements
 
 - Session Replay: Use main thread looper to schedule replay capture ([#4542](https://github.com/getsentry/sentry-java/pull/4542))
+- Use single `LifecycleObserver` and multi-cast it to the integrations interested in lifecycle states ([#4567](https://github.com/getsentry/sentry-java/pull/4567))
+
+### Fixes
+
+- Cache network capabilities and status to reduce IPC calls ([#4560](https://github.com/getsentry/sentry-java/pull/4560))
+- Deduplicate battery breadcrumbs ([#4561](https://github.com/getsentry/sentry-java/pull/4561))
+- Remove unused method in ManifestMetadataReader ([#4585](https://github.com/getsentry/sentry-java/pull/4585))
+- Have single `NetworkCallback` registered at a time to reduce IPC calls ([#4562](https://github.com/getsentry/sentry-java/pull/4562))
+- Limit ProGuard keep rules for native methods within `sentry-android-ndk` to the `io.sentry.**` namespace. ([#4427](https://github.com/getsentry/sentry-java/pull/4427))
+  - If you relied on the Sentry SDK to keep native method names for JNI compatibility within your namespace, please review your ProGuard rules and ensure the configuration still works. Especially when you're not consuming any of the default Android proguard rules (`proguard-android.txt` or `proguard-android-optimize.txt`) the following config should be present:
+  ```
+  -keepclasseswithmembernames class * {
+    native <methods>;
+  }
+  ```
+- Fix abstract method error in `SentrySupportSQLiteDatabase` ([#4597](https://github.com/getsentry/sentry-java/pull/4597))
+
+## 8.18.0
+
+### Features
+
+- Add `SentryUserFeedbackButton` Composable ([#4559](https://github.com/getsentry/sentry-java/pull/4559))
+  - Also added `Sentry.showUserFeedbackDialog` static method
+- Add deadlineTimeout option ([#4555](https://github.com/getsentry/sentry-java/pull/4555))
+- Add Ktor client integration ([#4527](https://github.com/getsentry/sentry-java/pull/4527))
+  - To use the integration, add a dependency on `io.sentry:sentry-ktor-client`, then install the `SentryKtorClientPlugin` on your `HttpClient`,
+    e.g.:
+    ```kotlin
+    val client =
+      HttpClient(Java) {
+        install(io.sentry.ktorClient.SentryKtorClientPlugin) {
+          captureFailedRequests = true
+          failedRequestTargets = listOf(".*")
+          failedRequestStatusCodes = listOf(HttpStatusCodeRange(500, 599))
+        }
+      }
+    ```
+
+### Fixes
+
+- Allow multiple UncaughtExceptionHandlerIntegrations to be active at the same time ([#4462](https://github.com/getsentry/sentry-java/pull/4462))
+- Prevent repeated scroll target determination during a single scroll gesture ([#4557](https://github.com/getsentry/sentry-java/pull/4557))
+  - This should reduce the number of ANRs seen in `SentryGestureListener`
+- Do not use Sentry logging API in JUL if logs are disabled ([#4574](https://github.com/getsentry/sentry-java/pull/4574))
+  - This was causing Sentry SDK to log warnings: "Sentry Log is disabled and this 'logger' call is a no-op."
+- Do not use Sentry logging API in Log4j2 if logs are disabled ([#4573](https://github.com/getsentry/sentry-java/pull/4573))
+  - This was causing Sentry SDK to log warnings: "Sentry Log is disabled and this 'logger' call is a no-op."
+- SDKs send queue is no longer shutdown immediately on re-init ([#4564](https://github.com/getsentry/sentry-java/pull/4564))
+  - This means we're no longer losing events that have been enqueued right before SDK re-init.
+- Reduce scope forking when using OpenTelemetry ([#4565](https://github.com/getsentry/sentry-java/pull/4565))
+  - `Sentry.withScope` now has the correct current scope passed to the callback. Previously our OpenTelemetry integration forked scopes an additional.
+  - Overall the SDK is now forking scopes a bit less often.
+
+## 8.17.0
+
+### Features
+
+- Send Timber logs through Sentry Logs ([#4490](https://github.com/getsentry/sentry-java/pull/4490))
+  - Enable the Logs feature in your `SentryOptions` or with the `io.sentry.logs.enabled` manifest option and the SDK will automatically send Timber logs to Sentry, if the TimberIntegration is enabled.
+  - The SDK will automatically detect Timber and use it to send logs to Sentry.
+- Send logcat through Sentry Logs ([#4487](https://github.com/getsentry/sentry-java/pull/4487))
+  - Enable the Logs feature in your `SentryOptions` or with the `io.sentry.logs.enabled` manifest option and the SDK will automatically send logcat logs to Sentry, if the Sentry Android Gradle plugin is applied.
+  - To set the logcat level check the [Logcat integration documentation](https://docs.sentry.io/platforms/android/integrations/logcat/#configure).
+- Read build tool info from `sentry-debug-meta.properties` and attach it to events ([#4314](https://github.com/getsentry/sentry-java/pull/4314))
+
+### Dependencies
+
+- Bump OpenTelemetry ([#4532](https://github.com/getsentry/sentry-java/pull/4532))
+  - `opentelemetry-sdk` to `1.51.0`
+  - `opentelemetry-instrumentation` to `2.17.0`
+  - `opentelemetry-javaagent` to `2.17.0`
+  - `opentelemetry-semconv` to `1.34.0`
+  - We are now configuring OpenTelemetry to still behave the same way it did before for span names it generates in GraphQL auto instrumentation ([#4537](https://github.com/getsentry/sentry-java/pull/4537))
+- Bump Gradle from v8.14.2 to v8.14.3 ([#4540](https://github.com/getsentry/sentry-java/pull/4540))
+  - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v8143)
+  - [diff](https://github.com/gradle/gradle/compare/v8.14.2...v8.14.3)
+
+### Fixes
+
+- Use Spring Boot Starter 3 in `sentry-spring-boot-starter-jakarta` ([#4545](https://github.com/getsentry/sentry-java/pull/4545))
+  - While refactoring our dependency management, we accidentally added Spring Boot 2 and Spring Boot Starter 2 as dependencies of `sentry-spring-boot-starter-jakarta`, which is intended for Spring Boot 3.
+  - Now, the correct dependencies (Spring Boot 3 and Spring Boot Starter 3) are being added.
 
 ## 8.16.1-alpha.2
 
@@ -981,6 +1063,24 @@ If you have been using `8.0.0-rc.4` of the Java SDK, here's the new changes that
     - As a consequence the list of exceptions in the group on top of an issue is no longer shown in Sentry UI.
     - We are planning to improve this in the future but opted for this fix first.
 - Fix swallow NDK loadLibrary errors ([#4082](https://github.com/getsentry/sentry-java/pull/4082))
+
+## 7.22.6
+
+### Fixes
+
+- Compress Screenshots on a background thread ([#4295](https://github.com/getsentry/sentry-java/pull/4295))
+- Improve low memory breadcrumb capturing ([#4325](https://github.com/getsentry/sentry-java/pull/4325))
+- Make `SystemEventsBreadcrumbsIntegration` faster ([#4330](https://github.com/getsentry/sentry-java/pull/4330))
+- Fix unregister `SystemEventsBroadcastReceiver` when entering background ([#4338](https://github.com/getsentry/sentry-java/pull/4338))
+    - This should reduce ANRs seen with this class in the stack trace for Android 14 and above
+- Pre-load modules on a background thread upon SDK init ([#4348](https://github.com/getsentry/sentry-java/pull/4348))
+- Session Replay: Fix inconsistent `segment_id` ([#4471](https://github.com/getsentry/sentry-java/pull/4471))
+- Session Replay: Do not capture current replay for cached events from the past ([#4474](https://github.com/getsentry/sentry-java/pull/4474))
+- Session Replay: Fix crash on devices with the Unisoc/Spreadtrum T606 chipset ([#4477](https://github.com/getsentry/sentry-java/pull/4477))
+- Session Replay: Fix masking of non-styled `Text` Composables ([#4361](https://github.com/getsentry/sentry-java/pull/4361))
+- Session Replay: Fix masking read-only `TextField` Composables ([#4362](https://github.com/getsentry/sentry-java/pull/4362))
+- Fix Session Replay masking for newer versions of Jetpack Compose (1.8+) ([#4485](https://github.com/getsentry/sentry-java/pull/4485))
+- Session Replay: Expand fix for crash on devices to all Unisoc/Spreadtrum chipsets ([#4510](https://github.com/getsentry/sentry-java/pull/4510))
 
 ## 7.22.5
 

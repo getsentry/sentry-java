@@ -30,7 +30,8 @@ import kotlin.math.roundToInt
 internal class ScreenshotRecorder(
   val config: ScreenshotRecorderConfig,
   val options: SentryOptions,
-  recorder: ScheduledExecutorService,
+  val handler: MainLooperHandler,
+  executorService: ScheduledExecutorService,
   screenshotRecorderCallback: ScreenshotRecorderCallback?,
 ) : ViewTreeObserver.OnDrawListener {
   private var rootView: WeakReference<View>? = null
@@ -42,14 +43,15 @@ internal class ScreenshotRecorder(
   private val screenshotStrategy: ScreenshotStrategy =
     when (options.sessionReplay.screenshotStrategy) {
       ScreenshotStrategyType.CANVAS ->
-        CanvasStrategy(recorder, screenshotRecorderCallback, options, config)
+        CanvasStrategy(executorService, screenshotRecorderCallback, options, config)
       ScreenshotStrategyType.PIXEL_COPY ->
         PixelCopyStrategy(
-          recorder,
-          MainLooperHandler(),
+          executorService,
+          handler,
           screenshotRecorderCallback,
           options,
           config,
+          debugOverlayDrawable
         )
     }
 

@@ -29,6 +29,7 @@ import io.sentry.android.core.R
 import io.sentry.android.core.SentryUserFeedbackButton
 import io.sentry.android.core.SentryUserFeedbackDialog
 import io.sentry.assertEnvelopeFeedback
+import io.sentry.protocol.SentryId
 import io.sentry.protocol.User
 import io.sentry.test.getProperty
 import kotlin.test.Test
@@ -49,7 +50,23 @@ class UserFeedbackUiTest : BaseUiTest() {
     launchActivity<EmptyActivity>().onActivity {
       SentryUserFeedbackDialog.Builder(it).create().show()
     }
-    onView(withId(R.id.sentry_dialog_user_feedback_title)).check(doesNotExist())
+    onView(withId(R.id.sentry_dialog_user_feedback_layout)).check(doesNotExist())
+  }
+
+  @Test
+  fun userFeedbackNotShownWhenSdkDisabledViaApi() {
+    launchActivity<EmptyActivity>().onActivity { Sentry.showUserFeedbackDialog() }
+    onView(withId(R.id.sentry_dialog_user_feedback_layout)).check(doesNotExist())
+  }
+
+  @Test
+  fun userFeedbackShownViaApi() {
+    initSentry()
+    launchActivity<EmptyActivity>().onActivity { Sentry.showUserFeedbackDialog() }
+
+    onView(withId(R.id.sentry_dialog_user_feedback_layout))
+      .inRoot(isDialog())
+      .check(matches(isDisplayed()))
   }
 
   @Test
@@ -461,7 +478,9 @@ class UserFeedbackUiTest : BaseUiTest() {
       }
     }
 
-    showDialogAndCheck {
+    val sentryId = SentryId()
+
+    showDialogAndCheck(sentryId) {
       // Send the feedback
       fillFormAndSend()
     }
@@ -481,6 +500,7 @@ class UserFeedbackUiTest : BaseUiTest() {
           assertEquals("Description filled", feedback.message)
           // The screen name should be set in the url
           assertEquals("io.sentry.uitest.android.EmptyActivity", feedback.url)
+          assertEquals(sentryId, feedback.associatedEventId)
 
           if (enableReplay) {
             // The current replay should be set in the replayId
@@ -613,11 +633,14 @@ class UserFeedbackUiTest : BaseUiTest() {
     onView(withId(R.id.sentry_dialog_user_feedback_btn_send)).perform(click())
   }
 
-  private fun showDialogAndCheck(checker: (dialog: SentryUserFeedbackDialog) -> Unit = {}) {
+  private fun showDialogAndCheck(
+    associatedEventId: SentryId? = null,
+    checker: (dialog: SentryUserFeedbackDialog) -> Unit = {},
+  ) {
     lateinit var dialog: SentryUserFeedbackDialog
     val feedbackScenario = launchActivity<EmptyActivity>()
     feedbackScenario.onActivity {
-      dialog = SentryUserFeedbackDialog.Builder(it).create()
+      dialog = SentryUserFeedbackDialog.Builder(it).associatedEventId(associatedEventId).create()
       dialog.show()
     }
 

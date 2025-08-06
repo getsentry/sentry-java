@@ -11,6 +11,7 @@ import io.sentry.SentryOptions
 import io.sentry.protocol.SentrySpan
 import io.sentry.protocol.SentryTransaction
 import io.sentry.systemtest.graphql.GraphqlTestClient
+import java.io.File
 import java.io.PrintWriter
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -22,6 +23,7 @@ class TestHelper(backendUrl: String) {
   val graphqlClient: GraphqlTestClient
   val sentryClient: SentryMockServerClient
   val jsonSerializer: JsonSerializer
+  val dsn = "http://502f25099c204a2fbf4cb16edc5975d1@localhost:8000/0"
 
   var envelopeCounts: EnvelopeCounts? = null
 
@@ -42,8 +44,7 @@ class TestHelper(backendUrl: String) {
     assertTrue(envelopeCountsAfter!!.envelopes!! > envelopeCounts!!.envelopes!!)
   }
 
-  fun ensureEnvelopeReceived(callback: ((String) -> Boolean)) {
-    Thread.sleep(10000)
+  fun ensureEnvelopeReceived(retryCount: Int = 1, callback: ((String) -> Boolean)) {
     val envelopes = sentryClient.getEnvelopes()
     assertNotNull(envelopes.envelopes)
     envelopes.envelopes.forEach { envelopeString ->
@@ -52,7 +53,12 @@ class TestHelper(backendUrl: String) {
         return
       }
     }
-    throw RuntimeException("Unable to find matching envelope received by relay")
+    if (retryCount <= 0) {
+      throw RuntimeException("Unable to find matching envelope received by relay")
+    } else {
+      Thread.sleep(10000)
+      ensureEnvelopeReceived(retryCount - 1, callback)
+    }
   }
 
   fun ensureNoEnvelopeReceived(callback: ((String) -> Boolean)) {
@@ -217,6 +223,22 @@ class TestHelper(backendUrl: String) {
     return true
   }
 
+  fun doesTransactionContainSpanWithOpAndDescription(
+    transaction: SentryTransaction,
+    op: String,
+    description: String,
+  ): Boolean {
+    val span =
+      transaction.spans.firstOrNull { span -> span.op == op && span.description == description }
+    if (span == null) {
+      println("Unable to find span with op $op and description $description in transaction:")
+      logObject(transaction)
+      return false
+    }
+
+    return true
+  }
+
   fun doesTransactionContainSpanWithDescription(
     transaction: SentryTransaction,
     description: String,
@@ -251,5 +273,36 @@ class TestHelper(backendUrl: String) {
     }
 
     return true
+  }
+
+  fun findJar(prefix: String, inDir: String = "build/libs"): File {
+    val buildDir = File(inDir)
+    val jarFiles =
+      buildDir.listFiles { _, name -> name.startsWith(prefix) && name.endsWith(".jar") }?.toList()
+        ?: emptyList()
+
+    if (jarFiles.isEmpty()) {
+      throw AssertionError("No JAR found in ${buildDir.absolutePath}")
+    }
+
+    return jarFiles.maxOf { it }
+  }
+
+  fun launch(jar: File, env: Map<String, String>, enableOtelAutoConfig: Boolean = false): Process {
+    val processBuilderList = mutableListOf("java", "--add-opens", "java.base/java.lang=ALL-UNNAMED")
+
+    if (enableOtelAutoConfig) {
+      processBuilderList.add("-Dotel.java.global-autoconfigure.enabled=true")
+    }
+
+    processBuilderList.add("-jar")
+    processBuilderList.add(jar.absolutePath)
+
+    val processBuilder =
+      ProcessBuilder(processBuilderList).inheritIO() // forward i/o to current process
+
+    processBuilder.environment().putAll(env)
+
+    return processBuilder.start()
   }
 }

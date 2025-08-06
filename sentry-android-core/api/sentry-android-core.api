@@ -166,9 +166,15 @@ public final class io/sentry/android/core/AppLifecycleIntegration : io/sentry/In
 	public fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
 }
 
-public final class io/sentry/android/core/AppState {
+public final class io/sentry/android/core/AppState : java/io/Closeable {
+	public fun close ()V
 	public static fun getInstance ()Lio/sentry/android/core/AppState;
 	public fun isInBackground ()Ljava/lang/Boolean;
+}
+
+public abstract interface class io/sentry/android/core/AppState$AppStateListener {
+	public abstract fun onBackground ()V
+	public abstract fun onForeground ()V
 }
 
 public final class io/sentry/android/core/BuildConfig {
@@ -263,7 +269,7 @@ public final class io/sentry/android/core/NdkIntegration : io/sentry/Integration
 }
 
 public final class io/sentry/android/core/NetworkBreadcrumbsIntegration : io/sentry/Integration, java/io/Closeable {
-	public fun <init> (Landroid/content/Context;Lio/sentry/android/core/BuildInfoProvider;Lio/sentry/ILogger;)V
+	public fun <init> (Landroid/content/Context;Lio/sentry/android/core/BuildInfoProvider;)V
 	public fun close ()V
 	public fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
 }
@@ -404,6 +410,8 @@ public class io/sentry/android/core/SentryUserFeedbackDialog$Builder {
 	public fun <init> (Landroid/content/Context;I)V
 	public fun <init> (Landroid/content/Context;ILio/sentry/android/core/SentryUserFeedbackDialog$OptionsConfiguration;)V
 	public fun <init> (Landroid/content/Context;Lio/sentry/android/core/SentryUserFeedbackDialog$OptionsConfiguration;)V
+	public fun associatedEventId (Lio/sentry/protocol/SentryId;)Lio/sentry/android/core/SentryUserFeedbackDialog$Builder;
+	public fun configurator (Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)Lio/sentry/android/core/SentryUserFeedbackDialog$Builder;
 	public fun create ()Lio/sentry/android/core/SentryUserFeedbackDialog;
 }
 
@@ -420,11 +428,13 @@ public class io/sentry/android/core/SpanFrameMetricsCollector : io/sentry/IPerfo
 	public fun onSpanStarted (Lio/sentry/ISpan;)V
 }
 
-public final class io/sentry/android/core/SystemEventsBreadcrumbsIntegration : io/sentry/Integration, java/io/Closeable {
+public final class io/sentry/android/core/SystemEventsBreadcrumbsIntegration : io/sentry/Integration, io/sentry/android/core/AppState$AppStateListener, java/io/Closeable {
 	public fun <init> (Landroid/content/Context;)V
 	public fun <init> (Landroid/content/Context;Ljava/util/List;)V
 	public fun close ()V
 	public static fun getDefaultActions ()Ljava/util/List;
+	public fun onBackground ()V
+	public fun onForeground ()V
 	public fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
 }
 

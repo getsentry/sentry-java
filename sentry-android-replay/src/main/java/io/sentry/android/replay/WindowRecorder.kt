@@ -25,14 +25,12 @@ internal class WindowRecorder(
   private val mainLooperHandler: MainLooperHandler,
   private val replayExecutor: ScheduledExecutorService,
 ) : Recorder, OnRootViewsChangedListener {
-  internal companion object {
-    private const val TAG = "WindowRecorder"
-  }
 
   private val isRecording = AtomicBoolean(false)
   private val rootViews = ArrayList<WeakReference<View>>()
   private var lastKnownWindowSize: Point = Point()
   private val rootViewsLock = AutoClosableReentrantLock()
+  private val capturerLock = AutoClosableReentrantLock()
   @Volatile private var capturer: Capturer? = null
 
   private class Capturer(
@@ -50,6 +48,8 @@ internal class WindowRecorder(
       }
       recorder?.resume()
       isRecording.getAndSet(true)
+      // Remove any existing callbacks to prevent concurrent capture loops
+      mainLooperHandler.removeCallbacks(this)
       val posted = mainLooperHandler.post(this)
       if (!posted) {
         options.logger.log(
@@ -165,18 +165,31 @@ internal class WindowRecorder(
     }
 
     if (capturer == null) {
-      // don't recreate runnable for every config change, just update the config
-      capturer = Capturer(options, mainLooperHandler)
+      capturerLock.acquire().use {
+        if (capturer == null) {
+          // don't recreate runnable for every config change, just update the config
+          capturer = Capturer(options, mainLooperHandler)
+        }
+      }
     }
 
     capturer?.config = config
     capturer?.recorder =
-      ScreenshotRecorder(config, options, replayExecutor, screenshotRecorderCallback)
+      ScreenshotRecorder(
+        config,
+        options,
+        mainLooperHandler,
+        replayExecutor,
+        screenshotRecorderCallback,
+      )
 
     val newRoot = rootViews.lastOrNull()?.get()
     if (newRoot != null) {
       capturer?.recorder?.bind(newRoot)
     }
+
+    // Remove any existing callbacks to prevent concurrent capture loops
+    mainLooperHandler.removeCallbacks(capturer)
 
     val posted =
       mainLooperHandler.postDelayed(
@@ -209,13 +222,13 @@ internal class WindowRecorder(
 
   override fun stop() {
     capturer?.stop()
-    capturer = null
+    capturerLock.acquire().use { capturer = null }
     isRecording.set(false)
   }
 
   override fun close() {
     reset()
-    stop()
     mainLooperHandler.removeCallbacks(capturer)
+    stop()
   }
 }

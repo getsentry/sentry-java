@@ -3,17 +3,21 @@ package io.sentry.android.replay.screenshot
 import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.Matrix
+import android.graphics.Paint
 import android.graphics.Rect
 import android.graphics.RectF
 import android.view.PixelCopy
 import android.view.View
 import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryLevel.INFO
+import io.sentry.SentryLevel.WARNING
 import io.sentry.SentryOptions
 import io.sentry.android.replay.ScreenshotRecorderCallback
 import io.sentry.android.replay.ScreenshotRecorderConfig
 import io.sentry.android.replay.phoneWindow
+import io.sentry.android.replay.util.DebugOverlayDrawable
 import io.sentry.android.replay.util.MainLooperHandler
 import io.sentry.android.replay.util.getVisibleRects
 import io.sentry.android.replay.util.submitSafely
@@ -32,6 +36,7 @@ internal class PixelCopyStrategy(
   private val screenshotRecorderCallback: ScreenshotRecorderCallback?,
   private val options: SentryOptions,
   private val config: ScreenshotRecorderConfig,
+  private val debugOverlayDrawable: DebugOverlayDrawable,
 ) : ScreenshotStrategy {
 
   private val singlePixelBitmap: Bitmap by
@@ -42,7 +47,7 @@ internal class PixelCopyStrategy(
   private val prescaledMatrix by
     lazy(NONE) { Matrix().apply { preScale(config.scaleFactorX, config.scaleFactorY) } }
   private val lastCaptureSuccessful = AtomicBoolean(false)
-  private val debugMasks = mutableListOf<Rect>()
+  private val maskingPaint by lazy(NONE) { Paint() }
   private val contentChanged = AtomicBoolean(false)
 
   @SuppressLint("NewApi")
@@ -55,77 +60,100 @@ internal class PixelCopyStrategy(
       return
     }
 
-    PixelCopy.request(
-      window,
-      screenshot,
-      { copyResult: Int ->
-        if (copyResult != PixelCopy.SUCCESS) {
-          options.logger.log(INFO, "Failed to capture replay recording: %d", copyResult)
-          lastCaptureSuccessful.set(false)
-          return@request
-        }
+    // postAtFrontOfQueue to ensure the view hierarchy and bitmap are ase close in-sync as possible
+    mainLooperHandler.post {
+      try {
+        contentChanged.set(false)
+        PixelCopy.request(
+          window,
+          screenshot,
+          { copyResult: Int ->
+            if (copyResult != PixelCopy.SUCCESS) {
+              options.logger.log(INFO, "Failed to capture replay recording: %d", copyResult)
+              lastCaptureSuccessful.set(false)
+              return@request
+            }
 
-        // TODO: handle animations with heuristics (e.g. if we fall under this condition 2 times
-        // in a row, we should capture)
-        if (contentChanged.get()) {
-          options.logger.log(INFO, "Failed to determine view hierarchy, not capturing")
-          lastCaptureSuccessful.set(false)
-          return@request
-        }
+            // TODO: handle animations with heuristics (e.g. if we fall under this condition 2 times
+            // in a row, we should capture)
+            if (contentChanged.get()) {
+              options.logger.log(INFO, "Failed to determine view hierarchy, not capturing")
+              lastCaptureSuccessful.set(false)
+              return@request
+            }
 
-        // TODO: disableAllMasking here and dont traverse?
-        val viewHierarchy = ViewHierarchyNode.fromView(root, null, 0, options)
-        root.traverse(viewHierarchy, options)
+            // TODO: disableAllMasking here and dont traverse?
+            val viewHierarchy = ViewHierarchyNode.fromView(root, null, 0, options)
+            root.traverse(viewHierarchy, options)
 
-        executor.submitSafely(options, "screenshot_recorder.mask") {
-          val canvas = Canvas(screenshot)
-          canvas.setMatrix(prescaledMatrix)
-          viewHierarchy.traverse { node ->
-            if (node.shouldMask && (node.width > 0 && node.height > 0)) {
-              node.visibleRect ?: return@traverse false
+            executor.submitSafely(options, "screenshot_recorder.mask") {
+              val debugMasks = mutableListOf<Rect>()
 
-              // TODO: investigate why it returns true on RN when it shouldn't
-              // if (viewHierarchy.isObscured(node)) {
-              //   return@traverse true
-              // }
+              val canvas = Canvas(screenshot)
+              canvas.setMatrix(prescaledMatrix)
+              viewHierarchy.traverse { node ->
+                if (node.shouldMask && (node.width > 0 && node.height > 0)) {
+                  node.visibleRect ?: return@traverse false
 
-              val (visibleRects, color) =
-                when (node) {
-                  is ImageViewHierarchyNode -> {
-                    listOf(node.visibleRect) to screenshot.dominantColorForRect(node.visibleRect)
+                  // TODO: investigate why it returns true on RN when it shouldn't
+                  //                                    if (viewHierarchy.isObscured(node)) {
+                  //                                        return@traverse true
+                  //                                    }
+
+                  val (visibleRects, color) =
+                    when (node) {
+                      is ImageViewHierarchyNode -> {
+                        listOf(node.visibleRect) to
+                          screenshot.dominantColorForRect(node.visibleRect)
+                      }
+
+                      is TextViewHierarchyNode -> {
+                        val textColor =
+                          node.layout?.dominantTextColor ?: node.dominantColor ?: Color.BLACK
+                        node.layout.getVisibleRects(
+                          node.visibleRect,
+                          node.paddingLeft,
+                          node.paddingTop,
+                        ) to textColor
+                      }
+
+                      else -> {
+                        listOf(node.visibleRect) to Color.BLACK
+                      }
+                    }
+
+                  maskingPaint.setColor(color)
+                  visibleRects.forEach { rect ->
+                    canvas.drawRoundRect(RectF(rect), 10f, 10f, maskingPaint)
                   }
-
-                  is TextViewHierarchyNode -> {
-                    val textColor =
-                      node.layout?.dominantTextColor
-                        ?: node.dominantColor
-                        ?: android.graphics.Color.BLACK
-                    node.layout.getVisibleRects(
-                      node.visibleRect,
-                      node.paddingLeft,
-                      node.paddingTop,
-                    ) to textColor
-                  }
-
-                  else -> {
-                    listOf(node.visibleRect) to android.graphics.Color.BLACK
+                  if (options.replayController.isDebugMaskingOverlayEnabled()) {
+                    debugMasks.addAll(visibleRects)
                   }
                 }
+                return@traverse true
+              }
 
               if (options.replayController.isDebugMaskingOverlayEnabled()) {
-                debugMasks.addAll(visibleRects)
+                mainLooperHandler.post {
+                  if (debugOverlayDrawable.callback == null) {
+                    root.overlay.add(debugOverlayDrawable)
+                  }
+                  debugOverlayDrawable.updateMasks(debugMasks)
+                  root.postInvalidate()
+                }
               }
+              screenshotRecorderCallback?.onScreenshotRecorded(screenshot)
+              lastCaptureSuccessful.set(true)
+              contentChanged.set(false)
             }
-            return@traverse true
-          }
-
-          screenshotRecorderCallback?.onScreenshotRecorded(screenshot)
-          lastCaptureSuccessful.set(true)
-          contentChanged.set(false)
-        }
-      },
-      mainLooperHandler.handler,
-    )
+          },
+          mainLooperHandler.handler,
+        )
+      } catch (e: Throwable) {
+        options.logger.log(WARNING, "Failed to capture replay recording", e)
+        lastCaptureSuccessful.set(false)
+      }
+    }
   }
 
   override fun onContentChanged() {

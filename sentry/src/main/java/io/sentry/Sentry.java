@@ -645,7 +645,7 @@ public final class Sentry {
       options.setDebugMetaLoader(new ResourcesDebugMetaLoader(options.getLogger()));
     }
     final @Nullable List<Properties> propertiesList = options.getDebugMetaLoader().loadDebugMeta();
-    DebugMetaPropertiesApplier.applyToOptions(options, propertiesList);
+    DebugMetaPropertiesApplier.apply(options, propertiesList);
 
     final IThreadChecker threadChecker = options.getThreadChecker();
     // only override the ThreadChecker if it's not already set by Android
@@ -1288,5 +1288,21 @@ public final class Sentry {
   @NotNull
   public static IReplayApi replay() {
     return getCurrentScopes().getScope().getOptions().getReplayController();
+  }
+
+  public static void showUserFeedbackDialog() {
+    showUserFeedbackDialog(null);
+  }
+
+  public static void showUserFeedbackDialog(
+      final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator) {
+    showUserFeedbackDialog(null, configurator);
+  }
+
+  public static void showUserFeedbackDialog(
+      final @Nullable SentryId associatedEventId,
+      final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator) {
+    final @NotNull SentryOptions options = getCurrentScopes().getOptions();
+    options.getFeedbackOptions().getDialogHandler().showDialog(associatedEventId, configurator);
   }
 }

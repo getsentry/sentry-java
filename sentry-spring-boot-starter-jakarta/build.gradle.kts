@@ -9,7 +9,7 @@ plugins {
   jacoco
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
-  alias(libs.plugins.springboot2) apply false
+  alias(libs.plugins.springboot3) apply false
 }
 
 configure<JavaPluginExtension> {
@@ -24,7 +24,7 @@ tasks.withType<KotlinCompile>().configureEach {
 
 dependencies {
   api(projects.sentrySpringBootJakarta)
-  api(libs.springboot.starter)
+  api(libs.springboot3.starter)
 
   annotationProcessor(platform(SpringBootPlugin.BOM_COORDINATES))
   annotationProcessor(Config.AnnotationProcessors.springBootAutoConfigure)

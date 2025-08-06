@@ -151,6 +151,7 @@ public final class io/sentry/opentelemetry/SentryContextStorage : io/opentelemet
 	public fun <init> (Lio/opentelemetry/context/ContextStorage;)V
 	public fun attach (Lio/opentelemetry/context/Context;)Lio/opentelemetry/context/Scope;
 	public fun current ()Lio/opentelemetry/context/Context;
+	public fun root ()Lio/opentelemetry/context/Context;
 }
 
 public final class io/sentry/opentelemetry/SentryContextStorageProvider : io/opentelemetry/context/ContextStorageProvider {

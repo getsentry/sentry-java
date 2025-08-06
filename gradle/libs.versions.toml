@@ -13,17 +13,19 @@ jackson = "2.18.3"
 jetbrainsCompose = "1.6.11"
 kotlin = "1.9.24"
 kotlin-compatible-version = "1.6"
+ktorClient = "3.0.0"
 logback = "1.2.9"
 log4j2 = "2.20.0"
 nopen = "1.0.1"
 # see https://www.jetbrains.com/help/kotlin-multiplatform-dev/compose-compatibility-and-versioning.html#kotlin-compatibility
 # see https://developer.android.com/jetpack/androidx/releases/compose-kotlin
 okhttp = "4.9.2"
-otel = "1.44.1"
-otelInstrumentation = "2.10.0"
-otelInstrumentationAlpha = "2.10.0-alpha"
+otel = "1.51.0"
+otelInstrumentation = "2.17.0"
+otelInstrumentationAlpha = "2.17.0-alpha"
 # check https://github.com/open-telemetry/opentelemetry-java-instrumentation/blob/main/dependencyManagement/build.gradle.kts#L49 for release version above to find a compatible version
-otelSemanticConventions = "1.28.0-alpha"
+otelSemanticConventions = "1.34.0"
+otelSemanticConventionsAlpha = "1.34.0-alpha"
 retrofit = "2.9.0"
 slf4j = "1.7.30"
 springboot2 = "2.7.18"
@@ -77,7 +79,7 @@ androidx-lifecycle-common-java8 = { module = "androidx.lifecycle:lifecycle-commo
 androidx-lifecycle-process = { module = "androidx.lifecycle:lifecycle-process", version.ref = "androidxLifecycle" }
 androidx-navigation-runtime = { module = "androidx.navigation:navigation-runtime", version.ref = "androidxNavigation" }
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "androidxNavigation" }
-androidx-sqlite = { module = "androidx.sqlite:sqlite", version = "2.3.1" }
+androidx-sqlite = { module = "androidx.sqlite:sqlite", version = "2.5.2" }
 androidx-recyclerview = { module = "androidx.recyclerview:recyclerview", version = "1.2.1" }
 coil-compose = { module = "io.coil-kt:coil-compose", version = "2.6.0" }
 commons-compress = {module = "org.apache.commons:commons-compress", version = "1.25.0"}
@@ -94,6 +96,8 @@ jetbrains-annotations = { module = "org.jetbrains:annotations", version = "23.0.
 kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
 kotlinx-coroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
+ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktorClient" }
+ktor-client-java = { module = "io.ktor:ktor-client-java", version.ref = "ktorClient" }
 log4j-api = { module = "org.apache.logging.log4j:log4j-api", version.ref = "log4j2" }
 log4j-core = { module = "org.apache.logging.log4j:log4j-core", version.ref = "log4j2" }
 leakcanary = { module = "com.squareup.leakcanary:leakcanary-android", version = "2.14" }
@@ -110,7 +114,7 @@ otel-javaagent = { module = "io.opentelemetry.javaagent:opentelemetry-javaagent"
 otel-javaagent-tooling = { module = "io.opentelemetry.javaagent:opentelemetry-javaagent-tooling", version.ref = "otelInstrumentationAlpha" }
 otel-javaagent-extension-api = { module = "io.opentelemetry.javaagent:opentelemetry-javaagent-extension-api", version.ref = "otelInstrumentationAlpha" }
 otel-semconv = { module = "io.opentelemetry.semconv:opentelemetry-semconv", version.ref = "otelSemanticConventions" }
-otel-semconv-incubating = { module = "io.opentelemetry.semconv:opentelemetry-semconv-incubating", version.ref = "otelSemanticConventions" }
+otel-semconv-incubating = { module = "io.opentelemetry.semconv:opentelemetry-semconv-incubating", version.ref = "otelSemanticConventionsAlpha" }
 p6spy = { module = "p6spy:p6spy", version = "3.9.1" }
 quartz = { module = "org.quartz-scheduler:quartz", version = "2.3.0" }
 reactor-core = { module = "io.projectreactor:reactor-core", version = "3.5.3" }
