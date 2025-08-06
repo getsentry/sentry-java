@@ -2,13 +2,13 @@ package io.sentry.android.core;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.DefaultLifecycleObserver;
-import androidx.lifecycle.LifecycleObserver;
 import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.ProcessLifecycleOwner;
 import io.sentry.ILogger;
 import io.sentry.ISentryLifecycleToken;
 import io.sentry.NoOpLogger;
 import io.sentry.SentryLevel;
+import io.sentry.SentryOptions;
 import io.sentry.android.core.internal.util.AndroidThreadChecker;
 import io.sentry.util.AutoClosableReentrantLock;
 import java.io.Closeable;
@@ -37,18 +37,20 @@ public final class AppState implements Closeable {
   private volatile @Nullable Boolean inBackground = null;
 
   @TestOnly
-  LifecycleObserver getLifecycleObserver() {
-    return lifecycleObserver;
-  }
-
-  @TestOnly
   void setHandler(final @NotNull MainLooperHandler handler) {
     this.handler = handler;
   }
 
+  @ApiStatus.Internal
   @TestOnly
-  void resetInstance() {
+  public void resetInstance() {
     instance = new AppState();
+  }
+
+  @ApiStatus.Internal
+  @TestOnly
+  public LifecycleObserver getLifecycleObserver() {
+    return lifecycleObserver;
   }
 
   public @Nullable Boolean isInBackground() {
@@ -59,7 +61,7 @@ public final class AppState implements Closeable {
     this.inBackground = inBackground;
   }
 
-  void addAppStateListener(final @NotNull AppStateListener listener) {
+  public void addAppStateListener(final @NotNull AppStateListener listener) {
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       ensureLifecycleObserver(NoOpLogger.getInstance());
 
@@ -69,7 +71,7 @@ public final class AppState implements Closeable {
     }
   }
 
-  void removeAppStateListener(final @NotNull AppStateListener listener) {
+  public void removeAppStateListener(final @NotNull AppStateListener listener) {
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       if (lifecycleObserver != null) {
         lifecycleObserver.listeners.remove(listener);
@@ -77,7 +79,8 @@ public final class AppState implements Closeable {
     }
   }
 
-  void registerLifecycleObserver(final @Nullable SentryAndroidOptions options) {
+  @ApiStatus.Internal
+  public void registerLifecycleObserver(final @Nullable SentryOptions options) {
     if (lifecycleObserver != null) {
       return;
     }
@@ -133,7 +136,8 @@ public final class AppState implements Closeable {
     }
   }
 
-  void unregisterLifecycleObserver() {
+  @ApiStatus.Internal
+  public void unregisterLifecycleObserver() {
     if (lifecycleObserver == null) {
       return;
     }
@@ -167,7 +171,8 @@ public final class AppState implements Closeable {
     unregisterLifecycleObserver();
   }
 
-  final class LifecycleObserver implements DefaultLifecycleObserver {
+  @ApiStatus.Internal
+  public final class LifecycleObserver implements DefaultLifecycleObserver {
     final List<AppStateListener> listeners =
         new CopyOnWriteArrayList<AppStateListener>() {
           @Override
@@ -183,6 +188,12 @@ public final class AppState implements Closeable {
             return addResult;
           }
         };
+
+    @ApiStatus.Internal
+    @TestOnly
+    public List<AppStateListener> getListeners() {
+      return listeners;
+    }
 
     @Override
     public void onStart(@NonNull LifecycleOwner owner) {
