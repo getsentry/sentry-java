@@ -129,8 +129,10 @@ public final class SentryExecutorService implements ISentryExecutorService {
           for (int i = 0; i < INITIAL_QUEUE_SIZE; i++) {
             executorService.schedule(dummyRunnable, Long.MAX_VALUE, TimeUnit.DAYS);
           }
-          executorService.getQueue().clear();
         });
+    executorService.submit(() -> {
+      executorService.getQueue().clear();
+    });
   }
 
   private static final class SentryExecutorServiceThreadFactory implements ThreadFactory {
