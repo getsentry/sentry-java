@@ -46,6 +46,8 @@ public interface ISentryExecutorService {
    */
   boolean isClosed();
 
-  /** Pre-warms the executor service by increasing the initial queue capacity */
+  /** Pre-warms the executor service by increasing the initial queue capacity. SHOULD be called
+   * directly after instantiating this executor service.
+   */
   void prewarm();
 }
