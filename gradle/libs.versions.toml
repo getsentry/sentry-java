@@ -79,7 +79,7 @@ androidx-lifecycle-common-java8 = { module = "androidx.lifecycle:lifecycle-commo
 androidx-lifecycle-process = { module = "androidx.lifecycle:lifecycle-process", version.ref = "androidxLifecycle" }
 androidx-navigation-runtime = { module = "androidx.navigation:navigation-runtime", version.ref = "androidxNavigation" }
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "androidxNavigation" }
-androidx-sqlite = { module = "androidx.sqlite:sqlite", version = "2.3.1" }
+androidx-sqlite = { module = "androidx.sqlite:sqlite", version = "2.5.2" }
 androidx-recyclerview = { module = "androidx.recyclerview:recyclerview", version = "1.2.1" }
 coil-compose = { module = "io.coil-kt:coil-compose", version = "2.6.0" }
 commons-compress = {module = "org.apache.commons:commons-compress", version = "1.25.0"}

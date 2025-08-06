@@ -21,6 +21,7 @@
     native <methods>;
   }
   ```
+- Fix abstract method error in `SentrySupportSQLiteDatabase` ([#4597](https://github.com/getsentry/sentry-java/pull/4597))
 
 ## 8.18.0
 
