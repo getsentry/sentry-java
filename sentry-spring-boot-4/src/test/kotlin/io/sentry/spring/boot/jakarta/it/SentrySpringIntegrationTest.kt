@@ -25,9 +25,8 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.boot.test.mock.mockito.SpyBean
-import org.springframework.boot.test.web.client.TestRestTemplate
-import org.springframework.boot.test.web.server.LocalServerPort
+import org.springframework.boot.web.server.test.LocalServerPort
+import org.springframework.boot.web.server.test.client.TestRestTemplate
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.http.HttpEntity
@@ -44,6 +43,7 @@ import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.provisioning.InMemoryUserDetailsManager
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.stereotype.Service
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean
 import org.springframework.test.context.junit4.SpringRunner
 import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
@@ -69,7 +69,7 @@ class SentrySpringIntegrationTest {
 
   @Autowired lateinit var transport: ITransport
 
-  @SpyBean lateinit var scopes: IScopes
+  @MockitoSpyBean lateinit var scopes: IScopes
 
   @LocalServerPort var port: Int? = null
 
@@ -82,7 +82,7 @@ class SentrySpringIntegrationTest {
   fun `attaches request and user information to SentryEvents`() {
     val restTemplate = TestRestTemplate().withBasicAuth("user", "password")
     val headers = HttpHeaders()
-    headers["X-FORWARDED-FOR"] = listOf("169.128.0.1")
+    headers.put("X-FORWARDED-FOR", listOf("169.128.0.1"))
     val entity = HttpEntity<Void>(headers)
 
     restTemplate.exchange("http://localhost:$port/hello", HttpMethod.GET, entity, Void::class.java)
@@ -148,7 +148,7 @@ class SentrySpringIntegrationTest {
   fun `attaches first ip address if multiple addresses exist in a header`() {
     val restTemplate = TestRestTemplate().withBasicAuth("user", "password")
     val headers = HttpHeaders()
-    headers["X-FORWARDED-FOR"] = listOf("169.128.0.1, 192.168.0.1")
+    headers.put("X-FORWARDED-FOR", listOf("169.128.0.1, 192.168.0.1"))
     val entity = HttpEntity<Void>(headers)
 
     restTemplate.exchange("http://localhost:$port/hello", HttpMethod.GET, entity, Void::class.java)
@@ -334,7 +334,10 @@ open class SecurityConfiguration {
   @Bean
   @Throws(Exception::class)
   open fun filterChain(http: HttpSecurity): SecurityFilterChain {
-    http.csrf().disable().authorizeRequests().anyRequest().authenticated().and().httpBasic()
+    http
+      .csrf { it.disable() }
+      .authorizeHttpRequests { it.anyRequest().authenticated() }
+      .httpBasic {}
 
     return http.build()
   }
