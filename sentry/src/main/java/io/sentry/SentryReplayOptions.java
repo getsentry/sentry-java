@@ -144,7 +144,7 @@ public final class SentryReplayOptions {
    * PIXEL_COPY for better performance and quality.
    */
   @ApiStatus.Internal
-  private ScreenshotStrategyType screenshotStrategy = ScreenshotStrategyType.PIXEL_COPY;
+  private ScreenshotStrategyType screenshotStrategy = ScreenshotStrategyType.CANVAS;
 
   public SentryReplayOptions(final boolean empty, final @Nullable SdkVersion sdkVersion) {
     if (!empty) {
