@@ -130,15 +130,15 @@ public final class SentryExecutorService implements ISentryExecutorService {
           // Use a delay that won't cause integer overflow when converted to nanoseconds
           // 365 days is safe (Long.MAX_VALUE / TimeUnit.DAYS.toNanos(1) > 365)
           final long safeDelayDays = 365L;
-          
+
           // Store references to the scheduled futures so we can cancel them properly
           // since scheduled tasks are stored in DelayQueue, not the main work queue
           final List<ScheduledFuture<?>> scheduledTasks = new ArrayList<>(INITIAL_QUEUE_SIZE);
-          
+
           try {
             // Schedule dummy tasks to trigger queue growth
             for (int i = 0; i < INITIAL_QUEUE_SIZE; i++) {
-              ScheduledFuture<?> future = 
+              ScheduledFuture<?> future =
                   executorService.schedule(dummyRunnable, safeDelayDays, TimeUnit.DAYS);
               scheduledTasks.add(future);
             }
@@ -148,7 +148,7 @@ public final class SentryExecutorService implements ISentryExecutorService {
             for (ScheduledFuture<?> future : scheduledTasks) {
               future.cancel(false);
             }
-            
+
             // Clear any remaining tasks from the main work queue
             // This is safe now since we're in a single task execution
             executorService.getQueue().clear();
