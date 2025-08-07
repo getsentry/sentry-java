@@ -11,7 +11,7 @@ import javax.servlet.annotation.WebListener;
 @WebListener
 public final class SentryInitializer implements ServletContextListener {
 
-  private static int numberOfDiscardedSpansDueToOverflow = 0;
+  private static long numberOfDiscardedSpansDueToOverflow = 0;
 
   @Override
   public void contextInitialized(ServletContextEvent sce) {

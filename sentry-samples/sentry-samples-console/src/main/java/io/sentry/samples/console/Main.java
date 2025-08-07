@@ -8,7 +8,7 @@ import java.util.Collections;
 
 public class Main {
 
-  private static int numberOfDiscardedSpansDueToOverflow = 0;
+  private static long numberOfDiscardedSpansDueToOverflow = 0;
 
   public static void main(String[] args) throws InterruptedException {
     Sentry.init(
