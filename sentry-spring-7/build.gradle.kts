@@ -57,11 +57,11 @@ dependencies {
   // tests
   testImplementation(projects.sentryTestSupport)
   testImplementation(projects.sentryGraphql)
-  testImplementation(kotlin(Config.kotlinStdLib, "2.2.0"))
+  testImplementation(kotlin(Config.kotlinStdLib))
   testImplementation(libs.awaitility.kotlin.spring7)
   testImplementation(libs.context.propagation)
   testImplementation(libs.graphql.java24)
-  testImplementation(kotlin(Config.kotlinTestJunit, "2.2.0"))
+  testImplementation(libs.kotlin.test.junit)
   testImplementation(libs.mockito.kotlin.spring7)
   testImplementation(libs.mockito.inline)
   testImplementation(libs.springboot4.starter.aop)
@@ -70,6 +70,8 @@ dependencies {
   testImplementation(libs.springboot4.starter.test)
   testImplementation(libs.springboot4.starter.web)
   testImplementation(libs.springboot4.starter.webflux)
+  testImplementation(libs.springboot4.starter.restclient)
+  testImplementation(libs.springboot4.starter.webclient)
   testImplementation(projects.sentryReactor)
 }
 
@@ -129,8 +131,8 @@ tasks.jar {
 kotlin {
   explicitApi()
   compilerOptions {
-    // skip metadata version check, as androidx.sqlite:sqlite is compiled against a newer version of
-    // Kotlin
+    // skip metadata version check, as Spring 7 / Spring Boot 4 is
+    // compiled against a newer version of Kotlin
     freeCompilerArgs.add("-Xskip-metadata-version-check")
   }
 }

@@ -30,7 +30,7 @@ import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import org.springframework.boot.web.client.RestTemplateBuilder
+import org.springframework.boot.restclient.RestTemplateBuilder
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
@@ -43,8 +43,8 @@ class SentrySpanRestTemplateCustomizerTest {
     val scopes = mock<IScopes>()
     val restTemplate =
       RestTemplateBuilder()
-        .setConnectTimeout(Duration.ofSeconds(2))
-        .setReadTimeout(Duration.ofSeconds(2))
+        .connectTimeout(Duration.ofSeconds(2))
+        .readTimeout(Duration.ofSeconds(2))
         .build()
     var mockServer = MockWebServer()
     val transaction: SentryTracer
