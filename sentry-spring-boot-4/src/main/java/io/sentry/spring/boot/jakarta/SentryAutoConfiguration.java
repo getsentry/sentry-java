@@ -88,7 +88,7 @@ public class SentryAutoConfiguration {
 
   static {
     SentryIntegrationPackageStorage.getInstance()
-        .addPackage("maven:io.sentry:sentry-spring-boot-starter-jakarta", BuildConfig.VERSION_NAME);
+        .addPackage("maven:io.sentry:sentry-spring-boot-4-starter", BuildConfig.VERSION_NAME);
   }
 
   /** Registers general purpose Sentry related beans. */
@@ -470,7 +470,7 @@ public class SentryAutoConfiguration {
     }
 
     private static void addPackageAndIntegrationInfo() {
-      SentryIntegrationPackageStorage.getInstance().addIntegration("SpringBoot3");
+      SentryIntegrationPackageStorage.getInstance().addIntegration("SpringBoot4");
     }
   }
 
