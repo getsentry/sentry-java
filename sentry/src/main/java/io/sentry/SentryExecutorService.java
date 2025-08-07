@@ -1,9 +1,12 @@
 package io.sentry;
 
 import io.sentry.util.AutoClosableReentrantLock;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
@@ -123,16 +126,33 @@ public final class SentryExecutorService implements ISentryExecutorService {
   public void prewarm() {
     executorService.submit(
         () -> {
-          // schedule a bunch of dummy runnables in the future that will never execute to trigger
-          // queue
-          // growth and then clear the queue up
-          for (int i = 0; i < INITIAL_QUEUE_SIZE; i++) {
-            executorService.schedule(dummyRunnable, Long.MAX_VALUE, TimeUnit.DAYS);
+          // Schedule dummy tasks with a reasonable delay to trigger queue growth
+          // Use a delay that won't cause integer overflow when converted to nanoseconds
+          // 365 days is safe (Long.MAX_VALUE / TimeUnit.DAYS.toNanos(1) > 365)
+          final long safeDelayDays = 365L;
+          
+          // Store references to the scheduled futures so we can cancel them properly
+          // since scheduled tasks are stored in DelayQueue, not the main work queue
+          final List<ScheduledFuture<?>> scheduledTasks = new ArrayList<>(INITIAL_QUEUE_SIZE);
+          
+          try {
+            // Schedule dummy tasks to trigger queue growth
+            for (int i = 0; i < INITIAL_QUEUE_SIZE; i++) {
+              ScheduledFuture<?> future = 
+                  executorService.schedule(dummyRunnable, safeDelayDays, TimeUnit.DAYS);
+              scheduledTasks.add(future);
+            }
+          } finally {
+            // Cancel all scheduled dummy tasks to prevent memory leak
+            // This must be done in the same task to avoid race conditions
+            for (ScheduledFuture<?> future : scheduledTasks) {
+              future.cancel(false);
+            }
+            
+            // Clear any remaining tasks from the main work queue
+            // This is safe now since we're in a single task execution
+            executorService.getQueue().clear();
           }
-        });
-    executorService.submit(
-        () -> {
-          executorService.getQueue().clear();
         });
   }
 
