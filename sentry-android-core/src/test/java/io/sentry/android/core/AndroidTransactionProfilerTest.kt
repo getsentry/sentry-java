@@ -89,6 +89,8 @@ class AndroidTransactionProfilerTest {
         override fun close(timeoutMillis: Long) {}
 
         override fun isClosed() = false
+
+        override fun prewarm() = Unit
       }
 
     val options =

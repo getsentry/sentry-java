@@ -6,6 +6,7 @@
 
 - Session Replay: Use main thread looper to schedule replay capture ([#4542](https://github.com/getsentry/sentry-java/pull/4542))
 - Use single `LifecycleObserver` and multi-cast it to the integrations interested in lifecycle states ([#4567](https://github.com/getsentry/sentry-java/pull/4567))
+- Prewarm `SentryExecutorService` for better performance at runtime ([#4606](https://github.com/getsentry/sentry-java/pull/4606))
 
 ### Fixes
 

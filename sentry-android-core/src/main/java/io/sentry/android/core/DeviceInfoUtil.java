@@ -275,7 +275,7 @@ public final class DeviceInfoUtil {
   @Nullable
   private Intent getBatteryIntent() {
     return ContextUtils.registerReceiver(
-        context, buildInfoProvider, null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
+        context, buildInfoProvider, null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED), null);
   }
 
   /**
