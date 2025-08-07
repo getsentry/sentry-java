@@ -26,6 +26,7 @@ import android.media.Image
 import android.media.ImageReader
 import android.os.Handler
 import android.os.HandlerThread
+import android.os.Trace
 import android.view.View
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
@@ -72,6 +73,7 @@ internal class CanvasStrategy(
   }
 
   private val pictureRenderTask = Runnable {
+    Trace.beginSection("CanvasStrategy.pictureRenderTask")
     val holder: PictureReaderHolder? =
       synchronized(unprocessedPictures) {
         when {
@@ -106,9 +108,13 @@ internal class CanvasStrategy(
       holder.picture.draw(canvas)
       surface.unlockCanvasAndPost(canvas)
     } finally {}
+    Trace.endSection()
   }
 
+  @SuppressLint("UnclosedTrace")
   override fun capture(root: View) {
+    Trace.beginSection("Canvas.capture")
+    Trace.beginSection("Canvas.capture.prepare_picture")
     val holder: PictureReaderHolder? =
       synchronized(freePictures) {
         when {
@@ -121,16 +127,22 @@ internal class CanvasStrategy(
       executor.submitSafely(options, "screenshot_recorder.canvas", pictureRenderTask)
       return
     }
+    Trace.endSection()
 
+    Trace.beginSection("Canvas.capture.record_picture")
     val pictureCanvas = holder.picture.beginRecording(config.recordingWidth, config.recordingHeight)
     textIgnoringCanvas.delegate = pictureCanvas
     textIgnoringCanvas.setMatrix(prescaledMatrix)
     root.draw(textIgnoringCanvas)
+    Trace.endSection()
+    Trace.beginSection("Canvas.capture.end_recording")
     holder.picture.endRecording()
+    Trace.endSection()
 
     synchronized(unprocessedPictures) { unprocessedPictures.add(holder) }
 
     executor.submitSafely(options, "screenshot_recorder.canvas", pictureRenderTask)
+    Trace.endSection()
   }
 
   override fun onContentChanged() {
@@ -743,12 +755,12 @@ private class TextIgnoringDelegateCanvas : Canvas() {
 
   override fun drawRenderNode(renderNode: RenderNode) {
     // TODO should we support this?
-    delegate.drawRenderNode(renderNode)
+    // delegate.drawRenderNode(renderNode)
   }
 
   override fun drawMesh(mesh: Mesh, blendMode: BlendMode?, paint: Paint) {
     // TODO should we support this?
-    delegate.drawMesh(mesh, blendMode, paint)
+    // delegate.drawMesh(mesh, blendMode, paint)
   }
 
   override fun drawPosText(text: CharArray, index: Int, count: Int, pos: FloatArray, paint: Paint) {
