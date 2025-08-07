@@ -4,7 +4,8 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 
 plugins {
   id("com.android.library")
-  kotlin("android")
+  alias(libs.plugins.kotlin.android)
+  //  alias(libs.plugins.kotlin.compose)
   jacoco
   alias(libs.plugins.jacoco.android)
   alias(libs.plugins.gradle.versions)
@@ -37,9 +38,10 @@ android {
     getByName("release") { consumerProguardFiles("proguard-rules.pro") }
   }
 
-  kotlinOptions {
-    jvmTarget = JavaVersion.VERSION_1_8.toString()
-    kotlinOptions.languageVersion = libs.versions.kotlin.compatible.version.get()
+  kotlin {
+    compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8
+    compilerOptions.languageVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
+    compilerOptions.apiVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
   }
 
   testOptions {
