@@ -7,8 +7,8 @@ plugins {
   id("io.sentry.javadoc")
   //  alias(libs.plugins.kotlin.jvm)
   jacoco
-  alias(libs.plugins.kotlin.jvm.spring7)
-  alias(libs.plugins.kotlin.spring7)
+  alias(libs.plugins.kotlin.jvm)
+  alias(libs.plugins.kotlin.spring)
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.buildconfig)
@@ -23,7 +23,7 @@ configure<JavaPluginExtension> {
 tasks.withType<KotlinCompile>().configureEach {
   compilerOptions {
     jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
-    languageVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_1)
+    languageVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9)
     freeCompilerArgs.add("-Xjsr305=strict")
   }
 }
@@ -94,6 +94,8 @@ dependencies {
   testImplementation(libs.springboot4.starter.test)
   testImplementation(libs.springboot4.starter.web)
   testImplementation(libs.springboot4.starter.webflux)
+  testImplementation(libs.springboot4.starter.restclient)
+  testImplementation(libs.springboot4.starter.webclient)
 }
 
 configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
@@ -152,8 +154,8 @@ tasks.jar {
 kotlin {
   explicitApi()
   compilerOptions {
-    // skip metadata version check, as androidx.sqlite:sqlite is compiled against a newer version of
-    // Kotlin
+    // skip metadata version check, as Spring 7 / Spring Boot 4 is
+    // compiled against a newer version of Kotlin
     freeCompilerArgs.add("-Xskip-metadata-version-check")
   }
 }

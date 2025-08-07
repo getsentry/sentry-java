@@ -7,9 +7,9 @@ import io.sentry.spring.jakarta.webflux.SentryWebFilterWithThreadLocalAccessor
 import kotlin.test.Test
 import org.assertj.core.api.Assertions.assertThat
 import org.springframework.boot.autoconfigure.AutoConfigurations
-import org.springframework.boot.autoconfigure.web.reactive.WebFluxAutoConfiguration
 import org.springframework.boot.test.context.FilteredClassLoader
 import org.springframework.boot.test.context.runner.ReactiveWebApplicationContextRunner
+import org.springframework.boot.webflux.autoconfigure.WebFluxAutoConfiguration
 import reactor.core.scheduler.Schedulers
 
 class SentryWebfluxAutoConfigurationTest {

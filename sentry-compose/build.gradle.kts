@@ -19,10 +19,10 @@ kotlin {
 
   androidTarget {
     publishLibraryVariants("release")
-    compilerOptions { jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.fromTarget("1.8")) }
+    compilations.all { kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString() }
   }
   jvm("desktop") {
-    compilerOptions { jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.fromTarget("1.8")) }
+    compilations.all { kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString() }
   }
 
   sourceSets.all {
