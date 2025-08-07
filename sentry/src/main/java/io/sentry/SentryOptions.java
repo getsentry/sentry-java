@@ -179,7 +179,7 @@ public class SentryOptions {
    */
   private @Nullable BeforeBreadcrumbCallback beforeBreadcrumb;
 
-  /** Invoked when some payload sent from the SDK is dropped before consumed by Sentry, */
+  /** Invoked when some data from the SDK is dropped before being consumed by Sentry */
   private @Nullable OnDiscardCallback onDiscard;
 
   /** The cache dir. path for caching offline events */

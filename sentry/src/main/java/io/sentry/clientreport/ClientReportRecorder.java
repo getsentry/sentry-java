@@ -125,7 +125,16 @@ public final class ClientReportRecorder implements IClientReportRecorder {
     final ClientReportKey key = new ClientReportKey(reason, category);
     storage.addCount(key, countToAdd);
     if (options.getOnDiscard() != null) {
-      options.getOnDiscard().execute(reason, category, countToAdd);
+      try {
+        options.getOnDiscard().execute(reason, category, countToAdd);
+      } catch (Throwable e) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.ERROR,
+                "The onDiscard callback threw an exception. It will be added as breadcrumb and continue.",
+                e);
+      }
     }
   }
 
