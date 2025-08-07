@@ -23,7 +23,7 @@ public class SentryHubRegistrar implements ImportBeanDefinitionRegistrar {
 
   static {
     SentryIntegrationPackageStorage.getInstance()
-        .addPackage("maven:io.sentry:sentry-spring-jakarta", BuildConfig.VERSION_NAME);
+        .addPackage("maven:io.sentry:sentry-spring-7", BuildConfig.VERSION_NAME);
   }
 
   @Override
@@ -99,6 +99,6 @@ public class SentryHubRegistrar implements ImportBeanDefinitionRegistrar {
   }
 
   private static void addPackageAndIntegrationInfo() {
-    SentryIntegrationPackageStorage.getInstance().addIntegration("Spring6");
+    SentryIntegrationPackageStorage.getInstance().addIntegration("Spring7");
   }
 }

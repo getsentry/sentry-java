@@ -300,7 +300,7 @@ class SentryAutoConfigurationTest {
   fun `sets sentryClientName property on SentryOptions`() {
     contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj").run {
       assertThat(it.getBean(SentryOptions::class.java).sentryClientName)
-        .isEqualTo("sentry.java.spring-boot.jakarta/${BuildConfig.VERSION_NAME}")
+        .isEqualTo("sentry.java.spring-boot-4/${BuildConfig.VERSION_NAME}")
     }
   }
 
@@ -320,10 +320,10 @@ class SentryAutoConfigurationTest {
               assertThat(sdk.version).isEqualTo(BuildConfig.VERSION_NAME)
               assertThat(sdk.name).isEqualTo(BuildConfig.SENTRY_SPRING_BOOT_4_SDK_NAME)
               assertThat(sdk.packageSet).anyMatch { pkg ->
-                pkg.name == "maven:io.sentry:sentry-spring-boot-starter-jakarta" &&
+                pkg.name == "maven:io.sentry:sentry-spring-boot-4-starter" &&
                   pkg.version == BuildConfig.VERSION_NAME
               }
-              assertTrue(sdk.integrationSet.contains("SpringBoot3"))
+              assertTrue(sdk.integrationSet.contains("SpringBoot4"))
             },
             anyOrNull(),
           )
