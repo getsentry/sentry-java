@@ -8,6 +8,7 @@
 - Use single `LifecycleObserver` and multi-cast it to the integrations interested in lifecycle states ([#4567](https://github.com/getsentry/sentry-java/pull/4567))
 - Add `sentry.origin` attribute to logs ([#4618](https://github.com/getsentry/sentry-java/pull/4618))
   - This helps identify which integration captured a log event
+- Prewarm `SentryExecutorService` for better performance at runtime ([#4606](https://github.com/getsentry/sentry-java/pull/4606))
 
 ### Fixes
 

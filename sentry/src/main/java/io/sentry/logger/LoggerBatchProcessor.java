@@ -40,7 +40,7 @@ public final class LoggerBatchProcessor implements ILoggerBatchProcessor {
     this.options = options;
     this.client = client;
     this.queue = new ConcurrentLinkedQueue<>();
-    this.executorService = new SentryExecutorService();
+    this.executorService = new SentryExecutorService(options);
   }
 
   @Override

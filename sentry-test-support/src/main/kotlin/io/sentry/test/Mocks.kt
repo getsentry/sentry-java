@@ -35,6 +35,8 @@ class ImmediateExecutorService : ISentryExecutorService {
   override fun close(timeoutMillis: Long) {}
 
   override fun isClosed(): Boolean = false
+
+  override fun prewarm() = Unit
 }
 
 class DeferredExecutorService : ISentryExecutorService {
@@ -71,6 +73,8 @@ class DeferredExecutorService : ISentryExecutorService {
   override fun close(timeoutMillis: Long) {}
 
   override fun isClosed(): Boolean = false
+
+  override fun prewarm() = Unit
 
   fun hasScheduledRunnables(): Boolean = scheduledRunnables.isNotEmpty()
 }
