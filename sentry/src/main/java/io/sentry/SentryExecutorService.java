@@ -4,6 +4,7 @@ import io.sentry.util.AutoClosableReentrantLock;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
@@ -123,16 +124,17 @@ public final class SentryExecutorService implements ISentryExecutorService {
   public void prewarm() {
     executorService.submit(
         () -> {
-          // schedule a bunch of dummy runnables in the future that will never execute to trigger
-          // queue
-          // growth and then clear the queue up
-          for (int i = 0; i < INITIAL_QUEUE_SIZE; i++) {
-            executorService.schedule(dummyRunnable, Long.MAX_VALUE, TimeUnit.DAYS);
+          try {
+            // schedule a bunch of dummy runnables in the future that will never execute to trigger
+            // queue growth and then purge the queue
+            for (int i = 0; i < INITIAL_QUEUE_SIZE; i++) {
+              final Future<?> future = executorService.schedule(dummyRunnable, 365L, TimeUnit.DAYS);
+              future.cancel(true);
+            }
+            executorService.purge();
+          } catch (RejectedExecutionException ignored) {
+            // ignore
           }
-        });
-    executorService.submit(
-        () -> {
-          executorService.getQueue().clear();
         });
   }
 
