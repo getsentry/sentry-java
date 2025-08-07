@@ -25,7 +25,7 @@
 
 ### Features
 
-- Add onDiscard to enable users to track the type and amount of data discarded before reaching Sentry ([#3652](https://github.com/getsentry/sentry-java/issues/3652))
+- Add onDiscard to enable users to track the type and amount of data discarded before reaching Sentry ([#4612](https://github.com/getsentry/sentry-java/pull/4612))
 
 ## 8.18.0
 
