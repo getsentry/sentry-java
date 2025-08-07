@@ -997,6 +997,9 @@ class SentryClientTest {
   fun `transaction dropped by beforeSendTransaction is recorded`() {
     fixture.sentryOptions.setBeforeSendTransaction { transaction, hint -> null }
 
+    val onDiscardMock = mock<SentryOptions.OnDiscardCallback>()
+    fixture.sentryOptions.onDiscard = onDiscardMock
+
     val transaction = SentryTransaction(fixture.sentryTracer)
 
     fixture.getSut().captureTransaction(transaction, fixture.sentryTracer.traceContext())
@@ -1008,10 +1011,17 @@ class SentryClientTest {
         DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.Span.category, 2),
       ),
     )
+
+    verify(onDiscardMock)
+      .execute(DiscardReason.BEFORE_SEND.reason, DataCategory.Transaction.category, 1)
+    verify(onDiscardMock).execute(DiscardReason.BEFORE_SEND.reason, DataCategory.Span.category, 2)
   }
 
   @Test
   fun `transaction dropped by scope event processor is recorded`() {
+    val onDiscardMock = mock<SentryOptions.OnDiscardCallback>()
+    fixture.sentryOptions.onDiscard = onDiscardMock
+
     val transaction = SentryTransaction(fixture.sentryTracer)
     val scope = createScope()
     scope.addEventProcessor(DropEverythingEventProcessor())
@@ -1027,10 +1037,18 @@ class SentryClientTest {
         DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Span.category, 2),
       ),
     )
+
+    verify(onDiscardMock)
+      .execute(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Transaction.category, 1)
+    verify(onDiscardMock)
+      .execute(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Span.category, 2)
   }
 
   @Test
   fun `span dropped by event processor is recorded`() {
+    val onDiscardMock = mock<SentryOptions.OnDiscardCallback>()
+    fixture.sentryOptions.onDiscard = onDiscardMock
+
     fixture.sentryTracer.startChild("dropped span", "span1").finish()
     fixture.sentryTracer.startChild("dropped span", "span2").finish()
     val transaction = SentryTransaction(fixture.sentryTracer)
@@ -1053,11 +1071,16 @@ class SentryClientTest {
       fixture.sentryOptions.clientReportRecorder,
       listOf(DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Span.category, 2)),
     )
+
+    verify(onDiscardMock)
+      .execute(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Span.category, 2)
   }
 
   @Test
   fun `event dropped by global event processor is recorded`() {
     fixture.sentryOptions.addEventProcessor(DropEverythingEventProcessor())
+    val onDiscardMock = mock<SentryOptions.OnDiscardCallback>()
+    fixture.sentryOptions.onDiscard = onDiscardMock
 
     val event = SentryEvent()
 
@@ -1067,10 +1090,16 @@ class SentryClientTest {
       fixture.sentryOptions.clientReportRecorder,
       listOf(DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Error.category, 1)),
     )
+
+    verify(onDiscardMock)
+      .execute(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Error.category, 1)
   }
 
   @Test
   fun `event dropped by scope event processor is recorded`() {
+    val onDiscardMock = mock<SentryOptions.OnDiscardCallback>()
+    fixture.sentryOptions.onDiscard = onDiscardMock
+
     assertClientReport(
       fixture.sentryOptions.clientReportRecorder,
       listOf(DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Error.category, 0)),
@@ -1087,6 +1116,9 @@ class SentryClientTest {
       fixture.sentryOptions.clientReportRecorder,
       listOf(DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Error.category, 1)),
     )
+
+    verify(onDiscardMock)
+      .execute(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Error.category, 1)
   }
 
   @Test
@@ -1106,6 +1138,8 @@ class SentryClientTest {
   @Test
   fun `when beforeSendTransaction is returns null, event is dropped`() {
     fixture.sentryOptions.setBeforeSendTransaction { _: SentryTransaction, _: Any? -> null }
+    val onDiscardMock = mock<SentryOptions.OnDiscardCallback>()
+    fixture.sentryOptions.onDiscard = onDiscardMock
 
     val transaction = SentryTransaction(fixture.sentryTracer)
     fixture.getSut().captureTransaction(transaction, fixture.sentryTracer.traceContext())
@@ -1119,6 +1153,10 @@ class SentryClientTest {
         DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.Span.category, 2),
       ),
     )
+
+    verify(onDiscardMock)
+      .execute(DiscardReason.BEFORE_SEND.reason, DataCategory.Transaction.category, 1)
+    verify(onDiscardMock).execute(DiscardReason.BEFORE_SEND.reason, DataCategory.Span.category, 2)
   }
 
   @Test
@@ -1147,6 +1185,9 @@ class SentryClientTest {
     exception.stackTrace.toString()
     fixture.sentryOptions.setBeforeSendTransaction { _, _ -> throw exception }
 
+    val onDiscardMock = mock<SentryOptions.OnDiscardCallback>()
+    fixture.sentryOptions.onDiscard = onDiscardMock
+
     val transaction = SentryTransaction(fixture.sentryTracer)
     val id = fixture.getSut().captureTransaction(transaction, fixture.sentryTracer.traceContext())
 
@@ -1159,6 +1200,10 @@ class SentryClientTest {
         DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.Span.category, 2),
       ),
     )
+
+    verify(onDiscardMock)
+      .execute(DiscardReason.BEFORE_SEND.reason, DataCategory.Transaction.category, 1)
+    verify(onDiscardMock).execute(DiscardReason.BEFORE_SEND.reason, DataCategory.Span.category, 2)
   }
 
   @Test
@@ -1172,6 +1217,9 @@ class SentryClientTest {
       }
     }
 
+    val onDiscardMock = mock<SentryOptions.OnDiscardCallback>()
+    fixture.sentryOptions.onDiscard = onDiscardMock
+
     val transaction = SentryTransaction(fixture.sentryTracer)
     fixture.getSut().captureTransaction(transaction, fixture.sentryTracer.traceContext())
 
@@ -1181,6 +1229,8 @@ class SentryClientTest {
       fixture.sentryOptions.clientReportRecorder,
       listOf(DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.Span.category, 2)),
     )
+
+    verify(onDiscardMock).execute(DiscardReason.BEFORE_SEND.reason, DataCategory.Span.category, 2)
   }
 
   @Test
@@ -2083,12 +2133,15 @@ class SentryClientTest {
   @Test
   fun `ignored exceptions are checked before other filter mechanisms`() {
     val beforeSendMock = mock<SentryOptions.BeforeSendCallback>()
+    val onDiscardMock = mock<SentryOptions.OnDiscardCallback>()
     val scopedEventProcessorMock = mock<EventProcessor>()
     val globalEventProcessorMock = mock<EventProcessor>()
 
     whenever(scopedEventProcessorMock.process(any<SentryEvent>(), anyOrNull())).thenReturn(null)
     whenever(globalEventProcessorMock.process(any<SentryEvent>(), anyOrNull())).thenReturn(null)
     whenever(beforeSendMock.execute(any(), anyOrNull())).thenReturn(null)
+
+    fixture.sentryOptions.onDiscard = onDiscardMock
 
     val sut =
       fixture.getSut { options ->
@@ -2110,13 +2163,19 @@ class SentryClientTest {
       fixture.sentryOptions.clientReportRecorder,
       listOf(DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Error.category, 1)),
     )
+
+    verify(onDiscardMock)
+      .execute(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Error.category, 1)
   }
 
   @Test
   fun `sampling is last filter mechanism`() {
     val beforeSendMock = mock<SentryOptions.BeforeSendCallback>()
+    val onDiscardMock = mock<SentryOptions.OnDiscardCallback>()
     val scopedEventProcessorMock = mock<EventProcessor>()
     val globalEventProcessorMock = mock<EventProcessor>()
+
+    fixture.sentryOptions.onDiscard = onDiscardMock
 
     whenever(scopedEventProcessorMock.process(any<SentryEvent>(), anyOrNull())).doAnswer {
       it.arguments.first() as SentryEvent
@@ -2150,13 +2209,18 @@ class SentryClientTest {
       fixture.sentryOptions.clientReportRecorder,
       listOf(DiscardedEvent(DiscardReason.SAMPLE_RATE.reason, DataCategory.Error.category, 1)),
     )
+
+    verify(onDiscardMock).execute(DiscardReason.SAMPLE_RATE.reason, DataCategory.Error.category, 1)
   }
 
   @Test
   fun `filter mechanism order check for beforeSend`() {
     val beforeSendMock = mock<SentryOptions.BeforeSendCallback>()
+    val onDiscardMock = mock<SentryOptions.OnDiscardCallback>()
     val scopedEventProcessorMock = mock<EventProcessor>()
     val globalEventProcessorMock = mock<EventProcessor>()
+
+    fixture.sentryOptions.onDiscard = onDiscardMock
 
     whenever(scopedEventProcessorMock.process(any<SentryEvent>(), anyOrNull())).doAnswer {
       it.arguments.first() as SentryEvent
@@ -2188,13 +2252,18 @@ class SentryClientTest {
       fixture.sentryOptions.clientReportRecorder,
       listOf(DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.Error.category, 1)),
     )
+
+    verify(onDiscardMock).execute(DiscardReason.BEFORE_SEND.reason, DataCategory.Error.category, 1)
   }
 
   @Test
   fun `filter mechanism order check for scoped eventProcessor`() {
     val beforeSendMock = mock<SentryOptions.BeforeSendCallback>()
+    val onDiscardMock = mock<SentryOptions.OnDiscardCallback>()
     val scopedEventProcessorMock = mock<EventProcessor>()
     val globalEventProcessorMock = mock<EventProcessor>()
+
+    fixture.sentryOptions.onDiscard = onDiscardMock
 
     whenever(scopedEventProcessorMock.process(any<SentryEvent>(), anyOrNull())).thenReturn(null)
     whenever(globalEventProcessorMock.process(any<SentryEvent>(), anyOrNull())).thenReturn(null)
@@ -2222,13 +2291,19 @@ class SentryClientTest {
       fixture.sentryOptions.clientReportRecorder,
       listOf(DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Error.category, 1)),
     )
+
+    verify(onDiscardMock)
+      .execute(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Error.category, 1)
   }
 
   @Test
   fun `filter mechanism order check for global eventProcessor`() {
     val beforeSendMock = mock<SentryOptions.BeforeSendCallback>()
+    val onDiscardMock = mock<SentryOptions.OnDiscardCallback>()
     val scopedEventProcessorMock = mock<EventProcessor>()
     val globalEventProcessorMock = mock<EventProcessor>()
+
+    fixture.sentryOptions.onDiscard = onDiscardMock
 
     whenever(scopedEventProcessorMock.process(any<SentryEvent>(), anyOrNull())).doAnswer {
       it.arguments.first() as SentryEvent
@@ -2258,6 +2333,9 @@ class SentryClientTest {
       fixture.sentryOptions.clientReportRecorder,
       listOf(DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Error.category, 1)),
     )
+
+    verify(onDiscardMock)
+      .execute(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Error.category, 1)
   }
 
   @Test
@@ -2900,6 +2978,10 @@ class SentryClientTest {
 
   @Test
   fun `when replay event is dropped, captures client report with datacategory replay`() {
+    val onDiscardMock = mock<SentryOptions.OnDiscardCallback>()
+
+    fixture.sentryOptions.onDiscard = onDiscardMock
+
     fixture.sentryOptions.addEventProcessor(DropEverythingEventProcessor())
     val sut = fixture.getSut()
     val replayEvent = createReplayEvent()
@@ -2910,6 +2992,9 @@ class SentryClientTest {
       fixture.sentryOptions.clientReportRecorder,
       listOf(DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Replay.category, 1)),
     )
+
+    verify(onDiscardMock)
+      .execute(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Replay.category, 1)
   }
 
   @Test
@@ -3056,6 +3141,9 @@ class SentryClientTest {
   fun `when beforeSendReplay returns null, event is dropped`() {
     fixture.sentryOptions.setBeforeSendReplay { replay: SentryReplayEvent, _: Hint -> null }
 
+    val onDiscardMock = mock<SentryOptions.OnDiscardCallback>()
+    fixture.sentryOptions.onDiscard = onDiscardMock
+
     fixture.getSut().captureReplayEvent(SentryReplayEvent(), Scope(fixture.sentryOptions), Hint())
 
     verify(fixture.transport, never()).send(any(), anyOrNull())
@@ -3064,6 +3152,8 @@ class SentryClientTest {
       fixture.sentryOptions.clientReportRecorder,
       listOf(DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.Replay.category, 1)),
     )
+
+    verify(onDiscardMock).execute(DiscardReason.BEFORE_SEND.reason, DataCategory.Replay.category, 1)
   }
 
   @Test
@@ -3091,6 +3181,9 @@ class SentryClientTest {
     exception.stackTrace.toString()
     fixture.sentryOptions.setBeforeSendReplay { _, _ -> throw exception }
 
+    val onDiscardMock = mock<SentryOptions.OnDiscardCallback>()
+    fixture.sentryOptions.onDiscard = onDiscardMock
+
     val id =
       fixture.getSut().captureReplayEvent(SentryReplayEvent(), Scope(fixture.sentryOptions), Hint())
 
@@ -3100,6 +3193,8 @@ class SentryClientTest {
       fixture.sentryOptions.clientReportRecorder,
       listOf(DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.Replay.category, 1)),
     )
+
+    verify(onDiscardMock).execute(DiscardReason.BEFORE_SEND.reason, DataCategory.Replay.category, 1)
   }
 
   // endregion
@@ -3230,6 +3325,9 @@ class SentryClientTest {
   @Test
   fun `when beforeSendFeedback returns null, feedback is dropped`() {
     fixture.sentryOptions.setBeforeSendFeedback { event: SentryEvent, _: Hint -> null }
+    val onDiscardMock = mock<SentryOptions.OnDiscardCallback>()
+    fixture.sentryOptions.onDiscard = onDiscardMock
+
     fixture.getSut().captureFeedback(Feedback("message"), null, createScope())
     verify(fixture.transport, never()).send(any(), anyOrNull())
 
@@ -3237,6 +3335,9 @@ class SentryClientTest {
       fixture.sentryOptions.clientReportRecorder,
       listOf(DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.Feedback.category, 1)),
     )
+
+    verify(onDiscardMock)
+      .execute(DiscardReason.BEFORE_SEND.reason, DataCategory.Feedback.category, 1)
   }
 
   @Test
@@ -3261,6 +3362,10 @@ class SentryClientTest {
   fun `when beforeSendFeedback throws an exception, feedback is dropped`() {
     val exception = Exception("test")
     fixture.sentryOptions.setBeforeSendFeedback { _, _ -> throw exception }
+
+    val onDiscardMock = mock<SentryOptions.OnDiscardCallback>()
+    fixture.sentryOptions.onDiscard = onDiscardMock
+
     val id =
       fixture.getSut().captureFeedback(Feedback("message"), null, Scope(fixture.sentryOptions))
     assertEquals(SentryId.EMPTY_ID, id)
@@ -3269,11 +3374,17 @@ class SentryClientTest {
       fixture.sentryOptions.clientReportRecorder,
       listOf(DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.Feedback.category, 1)),
     )
+
+    verify(onDiscardMock)
+      .execute(DiscardReason.BEFORE_SEND.reason, DataCategory.Feedback.category, 1)
   }
 
   @Test
   fun `when feedback is dropped, captures client report with datacategory feedback`() {
     fixture.sentryOptions.addEventProcessor(DropEverythingEventProcessor())
+    val onDiscardMock = mock<SentryOptions.OnDiscardCallback>()
+    fixture.sentryOptions.onDiscard = onDiscardMock
+
     val sut = fixture.getSut()
     sut.captureFeedback(Feedback("message"), null, createScope())
 
@@ -3283,6 +3394,9 @@ class SentryClientTest {
         DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Feedback.category, 1)
       ),
     )
+
+    verify(onDiscardMock)
+      .execute(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Feedback.category, 1)
   }
 
   // endregion

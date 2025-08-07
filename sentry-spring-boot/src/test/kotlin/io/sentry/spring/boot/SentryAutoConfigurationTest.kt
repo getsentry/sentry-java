@@ -373,6 +373,17 @@ class SentryAutoConfigurationTest {
   }
 
   @Test
+  fun `registers onDiscardCallback on SentryOptions`() {
+    contextRunner
+      .withPropertyValues("sentry.dsn=http://key@localhost/proj")
+      .withUserConfiguration(CustomOnDiscardCallbackConfiguration::class.java)
+      .run {
+        assertThat(it.getBean(SentryOptions::class.java).onDiscard)
+          .isInstanceOf(CustomOnDiscardCallback::class.java)
+      }
+  }
+
+  @Test
   fun `registers event processor on SentryOptions`() {
     contextRunner
       .withPropertyValues("sentry.dsn=http://key@localhost/proj")
@@ -1061,6 +1072,16 @@ class SentryAutoConfigurationTest {
 
   class CustomBeforeBreadcrumbCallback : SentryOptions.BeforeBreadcrumbCallback {
     override fun execute(breadcrumb: Breadcrumb, hint: Hint): Breadcrumb? = null
+  }
+
+  @Configuration(proxyBeanMethods = false)
+  open class CustomOnDiscardCallbackConfiguration {
+
+    @Bean open fun onDiscardCallback() = CustomOnDiscardCallback()
+  }
+
+  class CustomOnDiscardCallback : SentryOptions.OnDiscardCallback {
+    override fun execute(reason: String, category: String, countToAdd: Long) {}
   }
 
   @Configuration(proxyBeanMethods = false)

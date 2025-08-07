@@ -1,6 +1,8 @@
 package io.sentry.samples.servlet;
 
+import io.sentry.DataCategory;
 import io.sentry.Sentry;
+import io.sentry.clientreport.DiscardReason;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 import javax.servlet.annotation.WebListener;
@@ -8,6 +10,8 @@ import javax.servlet.annotation.WebListener;
 /** Initializes Sentry. */
 @WebListener
 public final class SentryInitializer implements ServletContextListener {
+
+  private static int numberOfDiscardedSpansDueToOverflow = 0;
 
   @Override
   public void contextInitialized(ServletContextEvent sce) {
@@ -55,6 +59,18 @@ public final class SentryInitializer implements ServletContextListener {
                   return null;
                 }
                 return breadcrumb;
+              });
+
+          // Record data being discarded, including the reason, type of data, and the number of
+          // items dropped
+          options.setOnDiscard(
+              (reason, category, number) -> {
+                // Only record the number of lost spans due to overflow conditions
+                if ((reason.equals(DiscardReason.CACHE_OVERFLOW.getReason())
+                        || reason.equals(DiscardReason.QUEUE_OVERFLOW.getReason()))
+                    && category.equals(DataCategory.Span.getCategory())) {
+                  numberOfDiscardedSpansDueToOverflow += number;
+                }
               });
 
           // Configure the background worker which sends events to sentry:

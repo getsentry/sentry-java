@@ -179,6 +179,9 @@ public class SentryOptions {
    */
   private @Nullable BeforeBreadcrumbCallback beforeBreadcrumb;
 
+  /** Invoked when some payload sent from the SDK is dropped before consumed by Sentry, */
+  private @Nullable OnDiscardCallback onDiscard;
+
   /** The cache dir. path for caching offline events */
   private @Nullable String cacheDirPath;
 
@@ -902,6 +905,24 @@ public class SentryOptions {
    */
   public void setBeforeBreadcrumb(@Nullable BeforeBreadcrumbCallback beforeBreadcrumb) {
     this.beforeBreadcrumb = beforeBreadcrumb;
+  }
+
+  /**
+   * Returns the onDiscard callback
+   *
+   * @return the onDiscard callback or null if not set
+   */
+  public @Nullable OnDiscardCallback getOnDiscard() {
+    return onDiscard;
+  }
+
+  /**
+   * Sets the onDiscard callback
+   *
+   * @param onDiscard the onDiscard callback
+   */
+  public void setOnDiscard(@Nullable OnDiscardCallback onDiscard) {
+    this.onDiscard = onDiscard;
   }
 
   /**
@@ -2980,6 +3001,19 @@ public class SentryOptions {
      */
     @Nullable
     Breadcrumb execute(@NotNull Breadcrumb breadcrumb, @NotNull Hint hint);
+  }
+
+  /** The OnDiscard callback */
+  public interface OnDiscardCallback {
+
+    /**
+     * Best-effort record of data discarded before reaching Sentry
+     *
+     * @param reason the reason data was dropped, corresponding to a DiscardReason
+     * @param category the type of data discarded, corresponding to a DataCategory
+     * @param number the number of discarded data items
+     */
+    void execute(@NotNull String reason, @NotNull String category, @NotNull Long number);
   }
 
   /** The traces sampler callback. */

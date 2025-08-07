@@ -13,6 +13,10 @@
 - Remove unused method in ManifestMetadataReader ([#4585](https://github.com/getsentry/sentry-java/pull/4585))
 - Have single `NetworkCallback` registered at a time to reduce IPC calls ([#4562](https://github.com/getsentry/sentry-java/pull/4562))
 
+### Features
+
+- Add onDiscard to enable users to track the type and amount of data discarded before reaching Sentry ([#3652](https://github.com/getsentry/sentry-java/issues/3652))
+
 ## 8.18.0
 
 ### Features

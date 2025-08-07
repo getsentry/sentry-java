@@ -124,6 +124,9 @@ public final class ClientReportRecorder implements IClientReportRecorder {
       @NotNull String reason, @NotNull String category, @NotNull Long countToAdd) {
     final ClientReportKey key = new ClientReportKey(reason, category);
     storage.addCount(key, countToAdd);
+    if (options.getOnDiscard() != null) {
+      options.getOnDiscard().execute(reason, category, countToAdd);
+    }
   }
 
   @Nullable
