@@ -30,6 +30,7 @@ import kotlin.test.assertTrue
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
+import org.mockito.kotlin.isNull
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.verify
@@ -221,8 +222,8 @@ class ContextUtilsTest {
     val filter = mock<IntentFilter>()
     val context = mock<Context>()
     whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.S)
-    ContextUtils.registerReceiver(context, buildInfo, receiver, filter)
-    verify(context).registerReceiver(eq(receiver), eq(filter))
+    ContextUtils.registerReceiver(context, buildInfo, receiver, filter, null)
+    verify(context).registerReceiver(eq(receiver), eq(filter), isNull(), isNull())
   }
 
   @Test
@@ -232,8 +233,15 @@ class ContextUtilsTest {
     val filter = mock<IntentFilter>()
     val context = mock<Context>()
     whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.TIRAMISU)
-    ContextUtils.registerReceiver(context, buildInfo, receiver, filter)
-    verify(context).registerReceiver(eq(receiver), eq(filter), eq(Context.RECEIVER_NOT_EXPORTED))
+    ContextUtils.registerReceiver(context, buildInfo, receiver, filter, null)
+    verify(context)
+      .registerReceiver(
+        eq(receiver),
+        eq(filter),
+        isNull(),
+        isNull(),
+        eq(Context.RECEIVER_NOT_EXPORTED),
+      )
   }
 
   @Test

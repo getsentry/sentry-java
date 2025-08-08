@@ -7,6 +7,7 @@ import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
 import io.sentry.transport.RateLimiter;
+import io.sentry.util.LazyEvaluator;
 import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -16,7 +17,8 @@ public final class NoOpScopes implements IScopes {
 
   private static final NoOpScopes instance = new NoOpScopes();
 
-  private final @NotNull SentryOptions emptyOptions = SentryOptions.empty();
+  private final @NotNull LazyEvaluator<SentryOptions> emptyOptions =
+      new LazyEvaluator<>(() -> SentryOptions.empty());
 
   private NoOpScopes() {}
 
@@ -274,7 +276,7 @@ public final class NoOpScopes implements IScopes {
 
   @Override
   public @NotNull SentryOptions getOptions() {
-    return emptyOptions;
+    return emptyOptions.getValue();
   }
 
   @Override

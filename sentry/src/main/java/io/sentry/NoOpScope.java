@@ -5,6 +5,7 @@ import io.sentry.protocol.Contexts;
 import io.sentry.protocol.Request;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
+import io.sentry.util.LazyEvaluator;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -20,7 +21,8 @@ public final class NoOpScope implements IScope {
 
   private static final NoOpScope instance = new NoOpScope();
 
-  private final @NotNull SentryOptions emptyOptions = SentryOptions.empty();
+  private final @NotNull LazyEvaluator<SentryOptions> emptyOptions =
+      new LazyEvaluator<>(() -> SentryOptions.empty());
 
   private NoOpScope() {}
 
@@ -229,7 +231,7 @@ public final class NoOpScope implements IScope {
   @ApiStatus.Internal
   @Override
   public @NotNull SentryOptions getOptions() {
-    return emptyOptions;
+    return emptyOptions.getValue();
   }
 
   @ApiStatus.Internal

@@ -38,6 +38,7 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
 
   private final @NotNull BuildInfoProvider buildInfoProvider;
   private final @NotNull Set<Window> trackedWindows = new CopyOnWriteArraySet<>();
+
   private final @NotNull ILogger logger;
   private @Nullable Handler handler;
   private @Nullable WeakReference<Window> currentWindow;
@@ -282,17 +283,20 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
 
   @SuppressLint("NewApi")
   private void stopTrackingWindow(final @NotNull Window window) {
-    if (trackedWindows.contains(window)) {
-      if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.N) {
-        try {
-          windowFrameMetricsManager.removeOnFrameMetricsAvailableListener(
-              window, frameMetricsAvailableListener);
-        } catch (Exception e) {
-          logger.log(SentryLevel.ERROR, "Failed to remove frameMetricsAvailableListener", e);
-        }
-      }
-      trackedWindows.remove(window);
-    }
+    new Handler(Looper.getMainLooper())
+        .post(
+            () -> {
+              try {
+                // Re-check if we should still remove the listener for this window
+                // in case trackCurrentWindow was called in the meantime
+                if (trackedWindows.remove(window)) {
+                  windowFrameMetricsManager.removeOnFrameMetricsAvailableListener(
+                      window, frameMetricsAvailableListener);
+                }
+              } catch (Throwable e) {
+                logger.log(SentryLevel.ERROR, "Failed to remove frameMetricsAvailableListener", e);
+              }
+            });
   }
 
   private void setCurrentWindow(final @NotNull Window window) {
@@ -305,18 +309,29 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
 
   @SuppressLint("NewApi")
   private void trackCurrentWindow() {
-    Window window = currentWindow != null ? currentWindow.get() : null;
+    @Nullable Window window = currentWindow != null ? currentWindow.get() : null;
     if (window == null || !isAvailable) {
       return;
     }
 
-    if (!trackedWindows.contains(window) && !listenerMap.isEmpty()) {
+    if (listenerMap.isEmpty()) {
+      return;
+    }
 
-      if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.N && handler != null) {
-        trackedWindows.add(window);
-        windowFrameMetricsManager.addOnFrameMetricsAvailableListener(
-            window, frameMetricsAvailableListener, handler);
-      }
+    if (handler != null) {
+      // Ensure the addOnFrameMetricsAvailableListener is called on the main thread
+      new Handler(Looper.getMainLooper())
+          .post(
+              () -> {
+                if (trackedWindows.add(window)) {
+                  try {
+                    windowFrameMetricsManager.addOnFrameMetricsAvailableListener(
+                        window, frameMetricsAvailableListener, handler);
+                  } catch (Throwable e) {
+                    logger.log(SentryLevel.ERROR, "Failed to add frameMetricsAvailableListener", e);
+                  }
+                }
+              });
     }
   }
 
@@ -373,6 +388,9 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
         final @NotNull Window window,
         final @Nullable Window.OnFrameMetricsAvailableListener frameMetricsAvailableListener,
         final @Nullable Handler handler) {
+      if (frameMetricsAvailableListener == null) {
+        return;
+      }
       window.addOnFrameMetricsAvailableListener(frameMetricsAvailableListener, handler);
     }
 
@@ -380,6 +398,9 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
     default void removeOnFrameMetricsAvailableListener(
         final @NotNull Window window,
         final @Nullable Window.OnFrameMetricsAvailableListener frameMetricsAvailableListener) {
+      if (frameMetricsAvailableListener == null) {
+        return;
+      }
       window.removeOnFrameMetricsAvailableListener(frameMetricsAvailableListener);
     }
   }
