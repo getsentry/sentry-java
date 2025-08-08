@@ -621,7 +621,8 @@ public final class SentryAndroidOptions extends SentryOptions {
     return enableSystemEventBreadcrumbsExtras;
   }
 
-  public void setEnableSystemEventBreadcrumbsExtras(final boolean enableSystemEventBreadcrumbsExtras) {
+  public void setEnableSystemEventBreadcrumbsExtras(
+      final boolean enableSystemEventBreadcrumbsExtras) {
     this.enableSystemEventBreadcrumbsExtras = enableSystemEventBreadcrumbsExtras;
   }
 
