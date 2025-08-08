@@ -27,7 +27,7 @@ plugins {
     // dokka is required by gradle-maven-publish-plugin.
     alias(libs.plugins.dokka) apply false
     alias(libs.plugins.dokka.javadoc) apply false
-    alias(libs.plugins.compose.compiler) apply false
+    alias(libs.plugins.kotlin.compose) apply false
     alias(libs.plugins.errorprone) apply false
     alias(libs.plugins.gradle.versions) apply false
     alias(libs.plugins.spring.dependency.management) apply false
