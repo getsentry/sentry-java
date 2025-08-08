@@ -50,6 +50,15 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
   @SuppressWarnings("deprecation")
   @Override
   public void store(@NotNull SentryEnvelope envelope, @NotNull Hint hint) {
+    storeInternalAndroid(envelope, hint);
+  }
+
+  @Override
+  public boolean storeEnvelope(@NotNull SentryEnvelope envelope, @NotNull Hint hint) {
+    return storeInternalAndroid(envelope, hint);
+  }
+
+  private boolean storeInternalAndroid(@NotNull SentryEnvelope envelope, @NotNull Hint hint) {
     super.store(envelope, hint);
 
     final SentryAndroidOptions options = (SentryAndroidOptions) this.options;
@@ -84,6 +93,7 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
 
           writeLastReportedAnrMarker(timestamp);
         });
+    return true;
   }
 
   @TestOnly
