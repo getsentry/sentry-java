@@ -251,7 +251,15 @@ class SentryAppenderTest {
     Sentry.flush(1000)
 
     verify(fixture.transport)
-      .send(checkLogs { event -> assertEquals(SentryLogLevel.TRACE, event.items.first().level) })
+      .send(
+        checkLogs { event ->
+          assertEquals(SentryLogLevel.TRACE, event.items.first().level)
+          assertEquals(
+            "auto.log.log4j2",
+            event.items.first().attributes?.get("sentry.origin")?.value,
+          )
+        }
+      )
   }
 
   @Test
