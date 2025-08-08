@@ -20,6 +20,7 @@ public final class io/sentry/test/DeferredExecutorService : io/sentry/ISentryExe
 	public fun close (J)V
 	public final fun hasScheduledRunnables ()Z
 	public fun isClosed ()Z
+	public fun prewarm ()V
 	public final fun runAll ()V
 	public fun schedule (Ljava/lang/Runnable;J)Ljava/util/concurrent/Future;
 	public fun submit (Ljava/lang/Runnable;)Ljava/util/concurrent/Future;
@@ -30,6 +31,7 @@ public final class io/sentry/test/ImmediateExecutorService : io/sentry/ISentryEx
 	public fun <init> ()V
 	public fun close (J)V
 	public fun isClosed ()Z
+	public fun prewarm ()V
 	public fun schedule (Ljava/lang/Runnable;J)Ljava/util/concurrent/Future;
 	public fun submit (Ljava/lang/Runnable;)Ljava/util/concurrent/Future;
 	public fun submit (Ljava/util/concurrent/Callable;)Ljava/util/concurrent/Future;

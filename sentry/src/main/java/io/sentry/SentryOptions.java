@@ -3072,7 +3072,8 @@ public class SentryOptions {
       setSpanFactory(SpanFactoryFactory.create(new LoadClass(), NoOpLogger.getInstance()));
       // SentryExecutorService should be initialized before any
       // SendCachedEventFireAndForgetIntegration
-      executorService = new SentryExecutorService();
+      executorService = new SentryExecutorService(this);
+      executorService.prewarm();
 
       // UncaughtExceptionHandlerIntegration should be inited before any other Integration.
       // if there's an error on the setup, we are able to capture it
