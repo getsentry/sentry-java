@@ -228,6 +228,7 @@ public class SentryAppender extends AbstractAppender {
 
     final @NotNull String formattedMessage = loggingEvent.getMessage().getFormattedMessage();
     final @NotNull SentryLogParameters params = SentryLogParameters.create(attributes);
+    params.setOrigin("auto.log.log4j2");
 
     Sentry.logger().log(sentryLevel, params, formattedMessage, arguments);
   }

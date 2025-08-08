@@ -133,7 +133,7 @@ public final class LoggerApi implements ILoggerApi {
           span == null ? propagationContext.getSpanId() : span.getSpanContext().getSpanId();
       final SentryLogEvent logEvent =
           new SentryLogEvent(traceId, timestampToUse, messageToUse, level);
-      logEvent.setAttributes(createAttributes(params.getAttributes(), message, spanId, args));
+      logEvent.setAttributes(createAttributes(params, message, spanId, args));
       logEvent.setSeverityNumber(level.getSeverityNumber());
 
       scopes.getClient().captureLog(logEvent, combinedScope);
@@ -160,11 +160,16 @@ public final class LoggerApi implements ILoggerApi {
   }
 
   private @NotNull HashMap<String, SentryLogEventAttributeValue> createAttributes(
-      final @Nullable SentryAttributes incomingAttributes,
+      final @NotNull SentryLogParameters params,
       final @NotNull String message,
       final @NotNull SpanId spanId,
       final @Nullable Object... args) {
     final @NotNull HashMap<String, SentryLogEventAttributeValue> attributes = new HashMap<>();
+    attributes.put(
+        "sentry.origin",
+        new SentryLogEventAttributeValue(SentryAttributeType.STRING, params.getOrigin()));
+
+    final @Nullable SentryAttributes incomingAttributes = params.getAttributes();
 
     if (incomingAttributes != null) {
       for (SentryAttribute attribute : incomingAttributes.getAttributes().values()) {
