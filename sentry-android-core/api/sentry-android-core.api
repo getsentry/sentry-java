@@ -483,6 +483,7 @@ public final class io/sentry/android/core/cache/AndroidEnvelopeCache : io/sentry
 	public static fun hasStartupCrashMarker (Lio/sentry/SentryOptions;)Z
 	public static fun lastReportedAnr (Lio/sentry/SentryOptions;)Ljava/lang/Long;
 	public fun store (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)V
+	public fun storeEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Z
 }
 
 public class io/sentry/android/core/performance/ActivityLifecycleCallbacksAdapter : android/app/Application$ActivityLifecycleCallbacks {
