@@ -66,9 +66,9 @@ public final class SentryInitializer implements ServletContextListener {
           options.setOnDiscard(
               (reason, category, number) -> {
                 // Only record the number of lost spans due to overflow conditions
-                if ((reason.equals(DiscardReason.CACHE_OVERFLOW.getReason())
-                        || reason.equals(DiscardReason.QUEUE_OVERFLOW.getReason()))
-                    && category.equals(DataCategory.Span.getCategory())) {
+                if ((reason.equals(DiscardReason.CACHE_OVERFLOW)
+                        || reason.equals(DiscardReason.QUEUE_OVERFLOW))
+                    && category.equals(DataCategory.Span)) {
                   numberOfDiscardedSpansDueToOverflow += number;
                 }
               });
