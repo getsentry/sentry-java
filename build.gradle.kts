@@ -20,9 +20,7 @@ plugins {
     alias(libs.plugins.kotlin.android) apply false
     alias(libs.plugins.kotlin.multiplatform) apply false
     alias(libs.plugins.kotlin.jvm) apply false
-//    alias(libs.plugins.kotlin.jvm.spring7) apply false
     alias(libs.plugins.kotlin.spring) apply false
-//    alias(libs.plugins.kotlin.spring7) apply false
     alias(libs.plugins.buildconfig) apply false
     // dokka is required by gradle-maven-publish-plugin.
     alias(libs.plugins.dokka) apply false
