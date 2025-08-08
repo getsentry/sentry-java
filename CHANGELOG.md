@@ -29,6 +29,12 @@
 - Do not report cached events as lost ([#4575](https://github.com/getsentry/sentry-java/pull/4575))
   - Previously events were recorded as lost early despite being retried later through the cache
 
+### Dependencies
+
+- Bump Gradle from v8.14.3 to v9.0.0 ([#4592](https://github.com/getsentry/sentry-java/pull/4592))
+  - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v900)
+  - [diff](https://github.com/gradle/gradle/compare/v8.14.3...v9.0.0)
+
 ## 8.18.0
 
 ### Features
