@@ -36,7 +36,7 @@ public class SentryTracingFilter extends OncePerRequestFilter {
   /** Operation used by {@link SentryTransaction} created in {@link SentryTracingFilter}. */
   private static final String TRANSACTION_OP = "http.server";
 
-  private static final String TRACE_ORIGIN = "auto.http.spring_jakarta.webmvc";
+  private static final String TRACE_ORIGIN = "auto.http.spring7.webmvc";
   private static final String TRANSACTION_ATTR = "sentry.transaction";
 
   private final @NotNull TransactionNameProvider transactionNameProvider;

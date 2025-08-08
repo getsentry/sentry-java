@@ -53,7 +53,7 @@ class SentryTransactionAdviceTest {
           any(),
           check<TransactionOptions> {
             assertTrue(it.isBindToScope)
-            assertThat(it.origin).isEqualTo("auto.function.spring_jakarta.advice")
+            assertThat(it.origin).isEqualTo("auto.function.spring7.advice")
           },
         )
       )

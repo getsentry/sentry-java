@@ -131,7 +131,7 @@ class SentryWebFluxTracingFilterTest {
             assertNotNull(it.customSamplingContext?.get("request"))
             assertTrue(it.customSamplingContext?.get("request") is ServerHttpRequest)
             assertTrue(it.isBindToScope)
-            assertThat(it.origin).isEqualTo("auto.spring_jakarta.webflux")
+            assertThat(it.origin).isEqualTo("auto.spring7.webflux")
           },
         )
       verify(fixture.chain).filter(fixture.exchange)
@@ -360,7 +360,7 @@ class SentryWebFluxTracingFilterTest {
         "sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=2722d9f6ec019ade60c776169d9a8904,sentry-transaction=HTTP%20GET"
       )
     fixture.options.tracesSampleRate = null
-    fixture.options.setIgnoredSpanOrigins(listOf("auto.spring_jakarta.webflux"))
+    fixture.options.setIgnoredSpanOrigins(listOf("auto.spring7.webflux"))
     val filter =
       fixture.getSut(
         sentryTraceHeader = sentryTraceHeaderString,
