@@ -177,6 +177,9 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   private boolean enableAutoTraceIdGeneration = true;
 
+  /** Enable or disable intent extras reporting for system event breadcrumbs. Default is false. */
+  private boolean enableSystemEventBreadcrumbsExtras = false;
+
   public interface BeforeCaptureCallback {
 
     /**
@@ -612,6 +615,14 @@ public final class SentryAndroidOptions extends SentryOptions {
 
   public void setEnableAutoTraceIdGeneration(final boolean enableAutoTraceIdGeneration) {
     this.enableAutoTraceIdGeneration = enableAutoTraceIdGeneration;
+  }
+
+  public boolean isEnableSystemEventBreadcrumbsExtras() {
+    return enableSystemEventBreadcrumbsExtras;
+  }
+
+  public void setEnableSystemEventBreadcrumbsExtras(boolean enableSystemEventBreadcrumbsExtras) {
+    this.enableSystemEventBreadcrumbsExtras = enableSystemEventBreadcrumbsExtras;
   }
 
   static class AndroidUserFeedbackIDialogHandler implements SentryFeedbackOptions.IDialogHandler {
