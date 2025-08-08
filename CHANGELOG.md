@@ -27,6 +27,12 @@
 - Fix abstract method error in `SentrySupportSQLiteDatabase` ([#4597](https://github.com/getsentry/sentry-java/pull/4597))
 - Ensure frame metrics listeners are registered/unregistered on the main thread ([#4582](https://github.com/getsentry/sentry-java/pull/4582))
 
+### Dependencies
+
+- Bump Native SDK from v0.8.4 to v0.9.1 ([#4520](https://github.com/getsentry/sentry-java/pull/4520))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#091)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.8.4...0.9.1)
+
 ## 8.18.0
 
 ### Features
