@@ -24,6 +24,8 @@
   ```
 - Fix abstract method error in `SentrySupportSQLiteDatabase` ([#4597](https://github.com/getsentry/sentry-java/pull/4597))
 - Ensure frame metrics listeners are registered/unregistered on the main thread ([#4582](https://github.com/getsentry/sentry-java/pull/4582))
+- Do not report cached events as lost ([#4575](https://github.com/getsentry/sentry-java/pull/4575))
+  - Previously events were recorded as lost early despite being retried later through the cache
 
 ## 8.18.0
 
