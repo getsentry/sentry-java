@@ -370,7 +370,7 @@ public final class SystemEventsBreadcrumbsIntegration
         if (batteryState.charging != null) {
           breadcrumb.setData("charging", batteryState.charging);
         }
-      } else {
+      } else if (options.isEnableSystemEventBreadcrumbsExtras()) {
         final Bundle extras = intent.getExtras();
         if (extras != null && !extras.isEmpty()) {
           final Map<String, String> newExtras = new HashMap<>(extras.size());
