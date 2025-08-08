@@ -5,8 +5,10 @@ import org.springframework.boot.gradle.plugin.SpringBootPlugin
 plugins {
   `java-library`
   id("io.sentry.javadoc")
-  kotlin("jvm")
+  //  alias(libs.plugins.kotlin.jvm)
   jacoco
+  alias(libs.plugins.kotlin.jvm)
+  alias(libs.plugins.kotlin.spring)
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.buildconfig)
@@ -19,8 +21,11 @@ configure<JavaPluginExtension> {
 }
 
 tasks.withType<KotlinCompile>().configureEach {
-  kotlinOptions.jvmTarget = JavaVersion.VERSION_17.toString()
-  kotlinOptions.languageVersion = libs.versions.kotlin.compatible.version.get()
+  compilerOptions {
+    jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+    languageVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9)
+    freeCompilerArgs.add("-Xjsr305=strict")
+  }
 }
 
 dependencies {
@@ -89,6 +94,8 @@ dependencies {
   testImplementation(libs.springboot4.starter.test)
   testImplementation(libs.springboot4.starter.web)
   testImplementation(libs.springboot4.starter.webflux)
+  testImplementation(libs.springboot4.starter.restclient)
+  testImplementation(libs.springboot4.starter.webclient)
 }
 
 configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
@@ -141,5 +148,14 @@ tasks.jar {
       "Implementation-Title" to project.name,
       "Implementation-Version" to project.version,
     )
+  }
+}
+
+kotlin {
+  explicitApi()
+  compilerOptions {
+    // skip metadata version check, as Spring 7 / Spring Boot 4 is
+    // compiled against a newer version of Kotlin
+    freeCompilerArgs.add("-Xskip-metadata-version-check")
   }
 }

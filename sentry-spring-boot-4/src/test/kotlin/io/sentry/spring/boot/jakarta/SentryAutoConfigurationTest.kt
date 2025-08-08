@@ -24,6 +24,7 @@ import io.sentry.opentelemetry.agent.AgentMarker
 import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
 import io.sentry.quartz.SentryJobListener
+import io.sentry.spring.boot4.BuildConfig
 import io.sentry.spring.jakarta.ContextTagsEventProcessor
 import io.sentry.spring.jakarta.HttpServletRequestSentryUserProvider
 import io.sentry.spring.jakarta.SentryExceptionResolver
@@ -58,15 +59,15 @@ import org.quartz.core.QuartzScheduler
 import org.slf4j.MDC
 import org.springframework.aop.support.NameMatchMethodPointcut
 import org.springframework.boot.autoconfigure.AutoConfigurations
-import org.springframework.boot.autoconfigure.quartz.QuartzAutoConfiguration
-import org.springframework.boot.autoconfigure.quartz.SchedulerFactoryBeanCustomizer
-import org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration
 import org.springframework.boot.context.annotation.UserConfigurations
 import org.springframework.boot.info.GitProperties
+import org.springframework.boot.quartz.autoconfigure.QuartzAutoConfiguration
+import org.springframework.boot.quartz.autoconfigure.SchedulerFactoryBeanCustomizer
 import org.springframework.boot.test.context.FilteredClassLoader
 import org.springframework.boot.test.context.assertj.ApplicationContextAssert
 import org.springframework.boot.test.context.runner.WebApplicationContextRunner
 import org.springframework.boot.web.servlet.FilterRegistrationBean
+import org.springframework.boot.webmvc.autoconfigure.WebMvcAutoConfiguration
 import org.springframework.context.ApplicationContext
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -317,7 +318,7 @@ class SentryAutoConfigurationTest {
               assertThat(event.sdk).isNotNull
               val sdk = event.sdk!!
               assertThat(sdk.version).isEqualTo(BuildConfig.VERSION_NAME)
-              assertThat(sdk.name).isEqualTo(BuildConfig.SENTRY_SPRING_BOOT_JAKARTA_SDK_NAME)
+              assertThat(sdk.name).isEqualTo(BuildConfig.SENTRY_SPRING_BOOT_4_SDK_NAME)
               assertThat(sdk.packageSet).anyMatch { pkg ->
                 pkg.name == "maven:io.sentry:sentry-spring-boot-starter-jakarta" &&
                   pkg.version == BuildConfig.VERSION_NAME

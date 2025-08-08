@@ -4,6 +4,7 @@ import java.math.BigDecimal
 object Config {
     val AGP = System.getenv("VERSION_AGP") ?: "8.6.0"
     val kotlinStdLib = "stdlib-jdk8"
+    val kotlinTestJunit = "test-junit"
 
     object BuildPlugins {
         val androidGradle = "com.android.tools.build:gradle:$AGP"
