@@ -4,6 +4,7 @@ import com.acme.MainBootClass
 import io.opentelemetry.api.OpenTelemetry
 import io.sentry.AsyncHttpTransportFactory
 import io.sentry.Breadcrumb
+import io.sentry.DataCategory
 import io.sentry.EventProcessor
 import io.sentry.FilterString
 import io.sentry.Hint
@@ -19,6 +20,7 @@ import io.sentry.SentryLevel
 import io.sentry.SentryLogEvent
 import io.sentry.SentryOptions
 import io.sentry.checkEvent
+import io.sentry.clientreport.DiscardReason
 import io.sentry.opentelemetry.SentryAutoConfigurationCustomizerProvider
 import io.sentry.opentelemetry.agent.AgentMarker
 import io.sentry.protocol.SentryTransaction
@@ -1081,7 +1083,7 @@ class SentryAutoConfigurationTest {
   }
 
   class CustomOnDiscardCallback : SentryOptions.OnDiscardCallback {
-    override fun execute(reason: String, category: String, countToAdd: Long) {}
+    override fun execute(reason: DiscardReason, category: DataCategory, countToAdd: Long) {}
   }
 
   @Configuration(proxyBeanMethods = false)

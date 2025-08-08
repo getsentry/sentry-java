@@ -96,9 +96,11 @@ public final class ClientReportRecorder implements IClientReportRecorder {
             // since Relay extracts an additional span from the transaction.
             recordLostEventInternal(
                 reason.getReason(), DataCategory.Span.getCategory(), spans.size() + 1L);
+            executeOnDiscard(reason, DataCategory.Span, spans.size() + 1L);
           }
         }
         recordLostEventInternal(reason.getReason(), itemCategory.getCategory(), 1L);
+        executeOnDiscard(reason, itemCategory, 1L);
       }
     } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, e, "Unable to record lost envelope item.");
@@ -115,15 +117,14 @@ public final class ClientReportRecorder implements IClientReportRecorder {
       @NotNull DiscardReason reason, @NotNull DataCategory category, long count) {
     try {
       recordLostEventInternal(reason.getReason(), category.getCategory(), count);
+      executeOnDiscard(reason, category, count);
     } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, e, "Unable to record lost event.");
     }
   }
 
-  private void recordLostEventInternal(
-      @NotNull String reason, @NotNull String category, @NotNull Long countToAdd) {
-    final ClientReportKey key = new ClientReportKey(reason, category);
-    storage.addCount(key, countToAdd);
+  private void executeOnDiscard(
+      @NotNull DiscardReason reason, @NotNull DataCategory category, @NotNull Long countToAdd) {
     if (options.getOnDiscard() != null) {
       try {
         options.getOnDiscard().execute(reason, category, countToAdd);
@@ -132,10 +133,16 @@ public final class ClientReportRecorder implements IClientReportRecorder {
             .getLogger()
             .log(
                 SentryLevel.ERROR,
-                "The onDiscard callback threw an exception. It will be added as breadcrumb and continue.",
+                "The onDiscard callback threw an exception.",
                 e);
       }
     }
+  }
+
+  private void recordLostEventInternal(
+      @NotNull String reason, @NotNull String category, @NotNull Long countToAdd) {
+    final ClientReportKey key = new ClientReportKey(reason, category);
+    storage.addCount(key, countToAdd);
   }
 
   @Nullable

@@ -6,6 +6,7 @@ import io.sentry.backpressure.NoOpBackpressureMonitor;
 import io.sentry.cache.IEnvelopeCache;
 import io.sentry.cache.PersistingScopeObserver;
 import io.sentry.clientreport.ClientReportRecorder;
+import io.sentry.clientreport.DiscardReason;
 import io.sentry.clientreport.IClientReportRecorder;
 import io.sentry.clientreport.NoOpClientReportRecorder;
 import io.sentry.internal.debugmeta.IDebugMetaLoader;
@@ -3009,11 +3010,12 @@ public class SentryOptions {
     /**
      * Best-effort record of data discarded before reaching Sentry
      *
-     * @param reason the reason data was dropped, corresponding to a DiscardReason
-     * @param category the type of data discarded, corresponding to a DataCategory
+     * @param reason the reason data was dropped
+     * @param category the type of data discarded
      * @param number the number of discarded data items
      */
-    void execute(@NotNull String reason, @NotNull String category, @NotNull Long number);
+    void execute(
+        @NotNull DiscardReason reason, @NotNull DataCategory category, @NotNull Long number);
   }
 
   /** The traces sampler callback. */

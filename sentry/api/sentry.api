@@ -3575,7 +3575,7 @@ public abstract interface class io/sentry/SentryOptions$Logs$BeforeSendLogCallba
 }
 
 public abstract interface class io/sentry/SentryOptions$OnDiscardCallback {
-	public abstract fun execute (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Long;)V
+	public abstract fun execute (Lio/sentry/clientreport/DiscardReason;Lio/sentry/DataCategory;Ljava/lang/Long;)V
 }
 
 public abstract interface class io/sentry/SentryOptions$ProfilesSamplerCallback {

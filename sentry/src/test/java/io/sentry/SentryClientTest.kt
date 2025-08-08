@@ -1012,9 +1012,9 @@ class SentryClientTest {
       ),
     )
 
-    verify(onDiscardMock)
-      .execute(DiscardReason.BEFORE_SEND.reason, DataCategory.Transaction.category, 1)
-    verify(onDiscardMock).execute(DiscardReason.BEFORE_SEND.reason, DataCategory.Span.category, 2)
+    verify(onDiscardMock, times(1))
+      .execute(DiscardReason.BEFORE_SEND, DataCategory.Transaction, 1)
+    verify(onDiscardMock).execute(DiscardReason.BEFORE_SEND, DataCategory.Span, 2)
   }
 
   @Test
@@ -1038,10 +1038,10 @@ class SentryClientTest {
       ),
     )
 
+    verify(onDiscardMock, times(1))
+      .execute(DiscardReason.EVENT_PROCESSOR, DataCategory.Transaction, 1)
     verify(onDiscardMock)
-      .execute(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Transaction.category, 1)
-    verify(onDiscardMock)
-      .execute(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Span.category, 2)
+      .execute(DiscardReason.EVENT_PROCESSOR, DataCategory.Span, 2)
   }
 
   @Test
@@ -1072,8 +1072,8 @@ class SentryClientTest {
       listOf(DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Span.category, 2)),
     )
 
-    verify(onDiscardMock)
-      .execute(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Span.category, 2)
+    verify(onDiscardMock, times(1))
+      .execute(DiscardReason.EVENT_PROCESSOR, DataCategory.Span, 2)
   }
 
   @Test
@@ -1091,8 +1091,8 @@ class SentryClientTest {
       listOf(DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Error.category, 1)),
     )
 
-    verify(onDiscardMock)
-      .execute(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Error.category, 1)
+    verify(onDiscardMock, times(1))
+      .execute(DiscardReason.EVENT_PROCESSOR, DataCategory.Error, 1)
   }
 
   @Test
@@ -1117,8 +1117,8 @@ class SentryClientTest {
       listOf(DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Error.category, 1)),
     )
 
-    verify(onDiscardMock)
-      .execute(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Error.category, 1)
+    verify(onDiscardMock, times(1))
+      .execute(DiscardReason.EVENT_PROCESSOR, DataCategory.Error, 1)
   }
 
   @Test
@@ -1154,9 +1154,9 @@ class SentryClientTest {
       ),
     )
 
-    verify(onDiscardMock)
-      .execute(DiscardReason.BEFORE_SEND.reason, DataCategory.Transaction.category, 1)
-    verify(onDiscardMock).execute(DiscardReason.BEFORE_SEND.reason, DataCategory.Span.category, 2)
+    verify(onDiscardMock, times(1))
+      .execute(DiscardReason.BEFORE_SEND, DataCategory.Transaction, 1)
+    verify(onDiscardMock).execute(DiscardReason.BEFORE_SEND, DataCategory.Span, 2)
   }
 
   @Test
@@ -1201,9 +1201,9 @@ class SentryClientTest {
       ),
     )
 
-    verify(onDiscardMock)
-      .execute(DiscardReason.BEFORE_SEND.reason, DataCategory.Transaction.category, 1)
-    verify(onDiscardMock).execute(DiscardReason.BEFORE_SEND.reason, DataCategory.Span.category, 2)
+    verify(onDiscardMock, times(1))
+      .execute(DiscardReason.BEFORE_SEND, DataCategory.Transaction, 1)
+    verify(onDiscardMock).execute(DiscardReason.BEFORE_SEND, DataCategory.Span, 2)
   }
 
   @Test
@@ -1230,7 +1230,7 @@ class SentryClientTest {
       listOf(DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.Span.category, 2)),
     )
 
-    verify(onDiscardMock).execute(DiscardReason.BEFORE_SEND.reason, DataCategory.Span.category, 2)
+    verify(onDiscardMock, times(1)).execute(DiscardReason.BEFORE_SEND, DataCategory.Span, 2)
   }
 
   @Test
@@ -2164,8 +2164,8 @@ class SentryClientTest {
       listOf(DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Error.category, 1)),
     )
 
-    verify(onDiscardMock)
-      .execute(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Error.category, 1)
+    verify(onDiscardMock, times(1))
+      .execute(DiscardReason.EVENT_PROCESSOR, DataCategory.Error, 1)
   }
 
   @Test
@@ -2210,7 +2210,7 @@ class SentryClientTest {
       listOf(DiscardedEvent(DiscardReason.SAMPLE_RATE.reason, DataCategory.Error.category, 1)),
     )
 
-    verify(onDiscardMock).execute(DiscardReason.SAMPLE_RATE.reason, DataCategory.Error.category, 1)
+    verify(onDiscardMock, times(1)).execute(DiscardReason.SAMPLE_RATE, DataCategory.Error, 1)
   }
 
   @Test
@@ -2253,7 +2253,7 @@ class SentryClientTest {
       listOf(DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.Error.category, 1)),
     )
 
-    verify(onDiscardMock).execute(DiscardReason.BEFORE_SEND.reason, DataCategory.Error.category, 1)
+    verify(onDiscardMock, times(1)).execute(DiscardReason.BEFORE_SEND, DataCategory.Error, 1)
   }
 
   @Test
@@ -2292,8 +2292,8 @@ class SentryClientTest {
       listOf(DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Error.category, 1)),
     )
 
-    verify(onDiscardMock)
-      .execute(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Error.category, 1)
+    verify(onDiscardMock, times(1))
+      .execute(DiscardReason.EVENT_PROCESSOR, DataCategory.Error, 1)
   }
 
   @Test
@@ -2334,8 +2334,8 @@ class SentryClientTest {
       listOf(DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Error.category, 1)),
     )
 
-    verify(onDiscardMock)
-      .execute(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Error.category, 1)
+    verify(onDiscardMock, times(1))
+      .execute(DiscardReason.EVENT_PROCESSOR, DataCategory.Error, 1)
   }
 
   @Test
@@ -2993,8 +2993,8 @@ class SentryClientTest {
       listOf(DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Replay.category, 1)),
     )
 
-    verify(onDiscardMock)
-      .execute(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Replay.category, 1)
+    verify(onDiscardMock, times(1))
+      .execute(DiscardReason.EVENT_PROCESSOR, DataCategory.Replay, 1)
   }
 
   @Test
@@ -3153,7 +3153,7 @@ class SentryClientTest {
       listOf(DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.Replay.category, 1)),
     )
 
-    verify(onDiscardMock).execute(DiscardReason.BEFORE_SEND.reason, DataCategory.Replay.category, 1)
+    verify(onDiscardMock, times(1)).execute(DiscardReason.BEFORE_SEND, DataCategory.Replay, 1)
   }
 
   @Test
@@ -3194,7 +3194,7 @@ class SentryClientTest {
       listOf(DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.Replay.category, 1)),
     )
 
-    verify(onDiscardMock).execute(DiscardReason.BEFORE_SEND.reason, DataCategory.Replay.category, 1)
+    verify(onDiscardMock, times(1)).execute(DiscardReason.BEFORE_SEND, DataCategory.Replay, 1)
   }
 
   // endregion
@@ -3336,8 +3336,8 @@ class SentryClientTest {
       listOf(DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.Feedback.category, 1)),
     )
 
-    verify(onDiscardMock)
-      .execute(DiscardReason.BEFORE_SEND.reason, DataCategory.Feedback.category, 1)
+    verify(onDiscardMock, times(1))
+      .execute(DiscardReason.BEFORE_SEND, DataCategory.Feedback, 1)
   }
 
   @Test
@@ -3375,8 +3375,8 @@ class SentryClientTest {
       listOf(DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.Feedback.category, 1)),
     )
 
-    verify(onDiscardMock)
-      .execute(DiscardReason.BEFORE_SEND.reason, DataCategory.Feedback.category, 1)
+    verify(onDiscardMock, times(1))
+      .execute(DiscardReason.BEFORE_SEND, DataCategory.Feedback, 1)
   }
 
   @Test
@@ -3395,8 +3395,8 @@ class SentryClientTest {
       ),
     )
 
-    verify(onDiscardMock)
-      .execute(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Feedback.category, 1)
+    verify(onDiscardMock, times(1))
+      .execute(DiscardReason.EVENT_PROCESSOR, DataCategory.Feedback, 1)
   }
 
   // endregion
