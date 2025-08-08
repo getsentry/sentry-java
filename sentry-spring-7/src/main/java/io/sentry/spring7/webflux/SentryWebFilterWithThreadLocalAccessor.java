@@ -16,7 +16,7 @@ import reactor.core.publisher.Mono;
 @ApiStatus.Experimental
 public final class SentryWebFilterWithThreadLocalAccessor extends AbstractSentryWebFilter {
 
-  public static final String TRACE_ORIGIN = "auto.spring_jakarta.webflux";
+  public static final String TRACE_ORIGIN = "auto.spring7.webflux";
 
   public SentryWebFilterWithThreadLocalAccessor(final @NotNull IScopes scopes) {
     super(scopes);

@@ -122,7 +122,7 @@ class SentryTracingFilterTest {
           assertNotNull(it.customSamplingContext?.get("request"))
           assertTrue(it.customSamplingContext?.get("request") is HttpServletRequest)
           assertTrue(it.isBindToScope)
-          assertThat(it.origin).isEqualTo("auto.http.spring_jakarta.webmvc")
+          assertThat(it.origin).isEqualTo("auto.http.spring7.webmvc")
         },
       )
     verify(fixture.chain).doFilter(fixture.request, fixture.response)
@@ -325,7 +325,7 @@ class SentryTracingFilterTest {
         "sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=2722d9f6ec019ade60c776169d9a8904,sentry-transaction=HTTP%20GET"
       )
     fixture.options.tracesSampleRate = null
-    fixture.options.setIgnoredSpanOrigins(listOf("auto.http.spring_jakarta.webmvc"))
+    fixture.options.setIgnoredSpanOrigins(listOf("auto.http.spring7.webmvc"))
     val filter =
       fixture.getSut(
         sentryTraceHeader = sentryTraceHeaderString,
@@ -384,7 +384,7 @@ class SentryTracingFilterTest {
           assertNotNull(it.customSamplingContext?.get("request"))
           assertTrue(it.customSamplingContext?.get("request") is HttpServletRequest)
           assertTrue(it.isBindToScope)
-          assertThat(it.origin).isEqualTo("auto.http.spring_jakarta.webmvc")
+          assertThat(it.origin).isEqualTo("auto.http.spring7.webmvc")
         },
       )
     verify(asyncChain).doFilter(fixture.request, fixture.response)
@@ -443,7 +443,7 @@ class SentryTracingFilterTest {
           assertNotNull(it.customSamplingContext?.get("request"))
           assertTrue(it.customSamplingContext?.get("request") is HttpServletRequest)
           assertTrue(it.isBindToScope)
-          assertThat(it.origin).isEqualTo("auto.http.spring_jakarta.webmvc")
+          assertThat(it.origin).isEqualTo("auto.http.spring7.webmvc")
         },
       )
     verify(fixture.scopes).continueTrace(eq(sentryTrace), eq(baggage))

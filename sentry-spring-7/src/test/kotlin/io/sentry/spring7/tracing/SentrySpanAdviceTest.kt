@@ -52,7 +52,7 @@ class SentrySpanAdviceTest {
     assertEquals(1, result)
     assertEquals(1, tx.spans.size)
     assertNull(tx.spans.first().description)
-    assertEquals("auto.function.spring_jakarta.advice", tx.spans.first().spanContext.origin)
+    assertEquals("auto.function.spring7.advice", tx.spans.first().spanContext.origin)
     assertEquals("ClassAnnotatedSampleService.hello", tx.spans.first().operation)
   }
 

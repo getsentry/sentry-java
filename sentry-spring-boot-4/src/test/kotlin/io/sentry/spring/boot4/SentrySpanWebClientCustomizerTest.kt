@@ -194,7 +194,7 @@ class SentrySpanWebClientCustomizerTest {
     val sut =
       fixture.getSut(isTransactionActive = false, includeMockServerInTracingOrigins = true) {
         options ->
-        options.setIgnoredSpanOrigins(listOf("auto.http.spring_jakarta.webclient"))
+        options.setIgnoredSpanOrigins(listOf("auto.http.spring7.webclient"))
       }
     sut
       .get()
