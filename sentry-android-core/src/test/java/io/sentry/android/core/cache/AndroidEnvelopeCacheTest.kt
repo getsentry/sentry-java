@@ -39,7 +39,7 @@ class AndroidEnvelopeCacheTest {
       dir: TemporaryFolder,
       appStartMillis: Long? = null,
       currentTimeMillis: Long? = null,
-      optionsCallback: ((SentryOptions) -> Unit)? = null
+      optionsCallback: ((SentryOptions) -> Unit)? = null,
     ): AndroidEnvelopeCache {
       options.cacheDirPath = dir.newFolder("sentry-cache").absolutePath
       optionsCallback?.invoke(options)
@@ -198,10 +198,9 @@ class AndroidEnvelopeCacheTest {
   @Test
   fun `returns false if storing fails`() {
     val serializer = mock<ISerializer>()
-    val cache = fixture.getSut(tmpDir) { options ->
-      options.setSerializer(serializer)
-    }
-    whenever(serializer.serialize(same(fixture.envelope), any())).thenThrow(RuntimeException("forced ex"))
+    val cache = fixture.getSut(tmpDir) { options -> options.setSerializer(serializer) }
+    whenever(serializer.serialize(same(fixture.envelope), any()))
+      .thenThrow(RuntimeException("forced ex"))
     val hints = HintUtils.createWithTypeCheckHint(UncaughtHint())
 
     val didStore = cache.storeEnvelope(fixture.envelope, hints)
