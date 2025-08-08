@@ -45,6 +45,8 @@ dependencies {
   compileOnly(libs.springboot4.starter.graphql)
   compileOnly(libs.springboot4.starter.quartz)
   compileOnly(libs.springboot4.starter.security)
+  compileOnly(libs.springboot4.starter.restclient)
+  compileOnly(libs.springboot4.starter.webclient)
   compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryCore)
   compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryAgentcustomization)
   api(projects.sentryReactor)

@@ -6,6 +6,7 @@ import io.sentry.ITransportFactory
 import io.sentry.Integration
 import io.sentry.Sentry
 import io.sentry.SentryOptions
+import io.sentry.spring7.BuildConfig
 import io.sentry.transport.ITransport
 import kotlin.test.Test
 import org.assertj.core.api.Assertions.assertThat

@@ -49,7 +49,7 @@ public class SentryRequestResolver {
   @NotNull
   Map<String, String> resolveHeadersMap(final HttpHeaders request) {
     final Map<String, String> headersMap = new HashMap<>();
-    for (Map.Entry<String, List<String>> entry : request.entrySet()) {
+    for (Map.Entry<String, List<String>> entry : request.headerSet()) {
       // do not copy personal information identifiable headers
       String headerName = entry.getKey();
       if (scopes.getOptions().isSendDefaultPii()
