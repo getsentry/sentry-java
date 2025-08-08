@@ -1,19 +1,14 @@
 package io.sentry.samples.console;
 
-import io.sentry.Breadcrumb;
-import io.sentry.EventProcessor;
-import io.sentry.Hint;
-import io.sentry.ISpan;
-import io.sentry.ITransaction;
-import io.sentry.Sentry;
-import io.sentry.SentryEvent;
-import io.sentry.SentryLevel;
-import io.sentry.SpanStatus;
+import io.sentry.*;
+import io.sentry.clientreport.DiscardReason;
 import io.sentry.protocol.Message;
 import io.sentry.protocol.User;
 import java.util.Collections;
 
 public class Main {
+
+  private static long numberOfDiscardedSpansDueToOverflow = 0;
 
   public static void main(String[] args) throws InterruptedException {
     Sentry.init(
@@ -57,6 +52,18 @@ public class Main {
                   return null;
                 }
                 return breadcrumb;
+              });
+
+          // Record data being discarded, including the reason, type of data, and the number of
+          // items dropped
+          options.setOnDiscard(
+              (reason, category, number) -> {
+                // Only record the number of lost spans due to overflow conditions
+                if ((reason.equals(DiscardReason.CACHE_OVERFLOW)
+                        || reason.equals(DiscardReason.QUEUE_OVERFLOW))
+                    && category.equals(DataCategory.Span)) {
+                  numberOfDiscardedSpansDueToOverflow += number;
+                }
               });
 
           // Configure the background worker which sends events to sentry:

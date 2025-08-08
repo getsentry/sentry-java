@@ -29,6 +29,20 @@
 - Do not report cached events as lost ([#4575](https://github.com/getsentry/sentry-java/pull/4575))
   - Previously events were recorded as lost early despite being retried later through the cache
 
+### Features
+
+- Add onDiscard to enable users to track the type and amount of data discarded before reaching Sentry ([#4612](https://github.com/getsentry/sentry-java/pull/4612))
+  - Stub for setting the callback on `Sentry.init`:
+     ```java
+     Sentry.init(options -> {
+       ...
+       options.setOnDiscard(
+        (reason, category, number) -> {
+          // Your logic to process discarded data
+        });
+     });
+     ```
+
 ## 8.18.0
 
 ### Features

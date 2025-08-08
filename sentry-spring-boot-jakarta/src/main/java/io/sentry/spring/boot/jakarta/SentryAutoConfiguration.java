@@ -107,6 +107,7 @@ public class SentryAutoConfiguration {
                 beforeSendLogsCallback,
         final @NotNull ObjectProvider<SentryOptions.BeforeBreadcrumbCallback>
                 beforeBreadcrumbCallback,
+        final @NotNull ObjectProvider<SentryOptions.OnDiscardCallback> onDiscardCallback,
         final @NotNull ObjectProvider<SentryOptions.TracesSamplerCallback> tracesSamplerCallback,
         final @NotNull List<EventProcessor> eventProcessors,
         final @NotNull List<Integration> integrations,
@@ -118,6 +119,7 @@ public class SentryAutoConfiguration {
         beforeSendTransactionCallback.ifAvailable(options::setBeforeSendTransaction);
         beforeSendLogsCallback.ifAvailable(callback -> options.getLogs().setBeforeSend(callback));
         beforeBreadcrumbCallback.ifAvailable(options::setBeforeBreadcrumb);
+        onDiscardCallback.ifAvailable(options::setOnDiscard);
         tracesSamplerCallback.ifAvailable(options::setTracesSampler);
         eventProcessors.forEach(options::addEventProcessor);
         integrations.forEach(options::addIntegration);
