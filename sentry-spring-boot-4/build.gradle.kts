@@ -86,7 +86,12 @@ dependencies {
   testImplementation(libs.okhttp.mockwebserver)
   testImplementation(libs.otel)
   testImplementation(libs.otel.extension.autoconfigure.spi)
-  testImplementation(libs.springboot4.otel)
+  /**
+   * Adding a version of opentelemetry-spring-boot-starter that doesn't support Spring Boot 4 causes
+   * java.lang.IllegalArgumentException: Could not find class [org.springframework.boot.autoconfigure.web.client.RestClientAutoConfiguration]
+   * https://github.com/open-telemetry/opentelemetry-java-instrumentation/issues/14363
+   */
+  //  testImplementation(libs.springboot4.otel)
   testImplementation(libs.springboot4.starter)
   testImplementation(libs.springboot4.starter.aop)
   testImplementation(libs.springboot4.starter.graphql)
