@@ -6,6 +6,7 @@ import io.sentry.IScopes
 import io.sentry.SentryEvent
 import io.sentry.SentryLevel
 import io.sentry.SentryLogLevel
+import io.sentry.logger.SentryLogParameters
 import io.sentry.protocol.Message
 import timber.log.Timber
 
@@ -244,12 +245,15 @@ public class SentryTimberTree(
   ) {
     // checks the log level
     if (isLoggable(sentryLogLevel, minLogLevel)) {
+      val params = SentryLogParameters()
+      params.origin = "auto.log.timber"
+
       val throwableMsg = throwable?.message
       when {
         msg != null && throwableMsg != null ->
-          scopes.logger().log(sentryLogLevel, "$msg\n$throwableMsg", *args)
-        msg != null -> scopes.logger().log(sentryLogLevel, msg, *args)
-        throwableMsg != null -> scopes.logger().log(sentryLogLevel, throwableMsg, *args)
+          scopes.logger().log(sentryLogLevel, params, "$msg\n$throwableMsg", *args)
+        msg != null -> scopes.logger().log(sentryLogLevel, params, msg, *args)
+        throwableMsg != null -> scopes.logger().log(sentryLogLevel, params, throwableMsg, *args)
       }
     }
   }
