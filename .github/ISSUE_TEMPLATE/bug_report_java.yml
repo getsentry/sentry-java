@@ -24,8 +24,11 @@ body:
         - sentry-spring-boot-jakarta
         - sentry-spring-boot-starter
         - sentry-spring-boot-starter-jakarta
+        - sentry-spring-boot-4
+        - sentry-spring-boot-4-starter
         - sentry-spring
         - sentry-spring-jakarta
+        - sentry-spring-7
         - sentry-logback
         - sentry-log4j2
         - sentry-graphql
