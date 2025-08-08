@@ -5,7 +5,6 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 plugins {
   id("com.android.library")
   alias(libs.plugins.kotlin.android)
-  //  alias(libs.plugins.kotlin.compose)
   jacoco
   alias(libs.plugins.jacoco.android)
   alias(libs.plugins.gradle.versions)
