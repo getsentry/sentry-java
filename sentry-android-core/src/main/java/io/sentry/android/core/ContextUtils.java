@@ -15,6 +15,7 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
+import android.os.Handler;
 import android.util.DisplayMetrics;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
@@ -455,8 +456,10 @@ public final class ContextUtils {
       final @NotNull Context context,
       final @NotNull SentryOptions options,
       final @Nullable BroadcastReceiver receiver,
-      final @NotNull IntentFilter filter) {
-    return registerReceiver(context, new BuildInfoProvider(options.getLogger()), receiver, filter);
+      final @NotNull IntentFilter filter,
+      final @Nullable Handler handler) {
+    return registerReceiver(
+        context, new BuildInfoProvider(options.getLogger()), receiver, filter, handler);
   }
 
   /** Register an exported BroadcastReceiver, independently from platform version. */
@@ -465,15 +468,17 @@ public final class ContextUtils {
       final @NotNull Context context,
       final @NotNull BuildInfoProvider buildInfoProvider,
       final @Nullable BroadcastReceiver receiver,
-      final @NotNull IntentFilter filter) {
+      final @NotNull IntentFilter filter,
+      final @Nullable Handler handler) {
     if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.TIRAMISU) {
       // From https://developer.android.com/guide/components/broadcasts#context-registered-receivers
       // If this receiver is listening for broadcasts sent from the system or from other apps, even
       // other apps that you own—use the RECEIVER_EXPORTED flag. If instead this receiver is
       // listening only for broadcasts sent by your app, use the RECEIVER_NOT_EXPORTED flag.
-      return context.registerReceiver(receiver, filter, Context.RECEIVER_NOT_EXPORTED);
+      return context.registerReceiver(
+          receiver, filter, null, handler, Context.RECEIVER_NOT_EXPORTED);
     } else {
-      return context.registerReceiver(receiver, filter);
+      return context.registerReceiver(receiver, filter, null, handler);
     }
   }
 
