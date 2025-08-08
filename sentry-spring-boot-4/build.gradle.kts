@@ -5,7 +5,6 @@ import org.springframework.boot.gradle.plugin.SpringBootPlugin
 plugins {
   `java-library`
   id("io.sentry.javadoc")
-  //  alias(libs.plugins.kotlin.jvm)
   jacoco
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.kotlin.spring)

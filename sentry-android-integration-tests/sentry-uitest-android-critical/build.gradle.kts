@@ -3,7 +3,6 @@ import io.gitlab.arturbosch.detekt.Detekt
 plugins {
   id("com.android.application")
   alias(libs.plugins.kotlin.android)
-  //  alias(libs.plugins.kotlin.compose)
 }
 
 android {
