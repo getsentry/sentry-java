@@ -321,12 +321,9 @@ class ClientReportTest {
 
     verify(onDiscardMock, times(2))
       .execute(DiscardReason.CACHE_OVERFLOW, DataCategory.Attachment, 1)
-    verify(onDiscardMock, times(1))
-      .execute(DiscardReason.RATELIMIT_BACKOFF, DataCategory.Error, 1)
-    verify(onDiscardMock, times(1))
-      .execute(DiscardReason.QUEUE_OVERFLOW, DataCategory.Error, 1)
-    verify(onDiscardMock, times(1))
-      .execute(DiscardReason.BEFORE_SEND, DataCategory.Profile, 1)
+    verify(onDiscardMock, times(1)).execute(DiscardReason.RATELIMIT_BACKOFF, DataCategory.Error, 1)
+    verify(onDiscardMock, times(1)).execute(DiscardReason.QUEUE_OVERFLOW, DataCategory.Error, 1)
+    verify(onDiscardMock, times(1)).execute(DiscardReason.BEFORE_SEND, DataCategory.Profile, 1)
   }
 
   @Test
@@ -345,12 +342,9 @@ class ClientReportTest {
 
     verify(onDiscardMock, times(2))
       .execute(DiscardReason.CACHE_OVERFLOW, DataCategory.Attachment, 1)
-    verify(onDiscardMock, times(1))
-      .execute(DiscardReason.RATELIMIT_BACKOFF, DataCategory.Error, 1)
-    verify(onDiscardMock, times(1))
-      .execute(DiscardReason.QUEUE_OVERFLOW, DataCategory.Error, 1)
-    verify(onDiscardMock, times(1))
-      .execute(DiscardReason.BEFORE_SEND, DataCategory.Profile, 1)
+    verify(onDiscardMock, times(1)).execute(DiscardReason.RATELIMIT_BACKOFF, DataCategory.Error, 1)
+    verify(onDiscardMock, times(1)).execute(DiscardReason.QUEUE_OVERFLOW, DataCategory.Error, 1)
+    verify(onDiscardMock, times(1)).execute(DiscardReason.BEFORE_SEND, DataCategory.Profile, 1)
   }
 
   private fun givenClientReportRecorder(

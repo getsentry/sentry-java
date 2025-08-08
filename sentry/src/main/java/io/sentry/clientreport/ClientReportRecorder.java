@@ -129,12 +129,7 @@ public final class ClientReportRecorder implements IClientReportRecorder {
       try {
         options.getOnDiscard().execute(reason, category, countToAdd);
       } catch (Throwable e) {
-        options
-            .getLogger()
-            .log(
-                SentryLevel.ERROR,
-                "The onDiscard callback threw an exception.",
-                e);
+        options.getLogger().log(SentryLevel.ERROR, "The onDiscard callback threw an exception.", e);
       }
     }
   }
