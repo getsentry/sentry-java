@@ -59,7 +59,7 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
   }
 
   private boolean storeInternalAndroid(@NotNull SentryEnvelope envelope, @NotNull Hint hint) {
-    super.store(envelope, hint);
+    final boolean didStore = super.storeEnvelope(envelope, hint);
 
     final SentryAndroidOptions options = (SentryAndroidOptions) this.options;
     final TimeSpan sdkInitTimeSpan = AppStartMetrics.getInstance().getSdkInitTimeSpan();
@@ -93,7 +93,7 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
 
           writeLastReportedAnrMarker(timestamp);
         });
-    return true;
+    return didStore;
   }
 
   @TestOnly
