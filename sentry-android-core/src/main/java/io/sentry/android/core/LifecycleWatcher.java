@@ -8,6 +8,7 @@ import io.sentry.Session;
 import io.sentry.transport.CurrentDateProvider;
 import io.sentry.transport.ICurrentDateProvider;
 import io.sentry.util.AutoClosableReentrantLock;
+import io.sentry.util.LazyEvaluator;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicLong;
@@ -22,7 +23,7 @@ final class LifecycleWatcher implements AppState.AppStateListener {
   private final long sessionIntervalMillis;
 
   private @Nullable TimerTask timerTask;
-  private final @NotNull Timer timer = new Timer(true);
+  private final @NotNull LazyEvaluator<Timer> timer = new LazyEvaluator<>(() -> new Timer(true));
   private final @NotNull AutoClosableReentrantLock timerLock = new AutoClosableReentrantLock();
   private final @NotNull IScopes scopes;
   private final boolean enableSessionTracking;
@@ -105,21 +106,19 @@ final class LifecycleWatcher implements AppState.AppStateListener {
   private void scheduleEndSession() {
     try (final @NotNull ISentryLifecycleToken ignored = timerLock.acquire()) {
       cancelTask();
-      if (timer != null) {
-        timerTask =
-            new TimerTask() {
-              @Override
-              public void run() {
-                if (enableSessionTracking) {
-                  scopes.endSession();
-                }
-                scopes.getOptions().getReplayController().stop();
-                scopes.getOptions().getContinuousProfiler().close(false);
+      timerTask =
+          new TimerTask() {
+            @Override
+            public void run() {
+              if (enableSessionTracking) {
+                scopes.endSession();
               }
-            };
+              scopes.getOptions().getReplayController().stop();
+              scopes.getOptions().getContinuousProfiler().close(false);
+            }
+          };
 
-        timer.schedule(timerTask, sessionIntervalMillis);
-      }
+      timer.getValue().schedule(timerTask, sessionIntervalMillis);
     }
   }
 
@@ -152,6 +151,6 @@ final class LifecycleWatcher implements AppState.AppStateListener {
   @TestOnly
   @NotNull
   Timer getTimer() {
-    return timer;
+    return timer.getValue();
   }
 }

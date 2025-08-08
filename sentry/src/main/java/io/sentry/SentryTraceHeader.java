@@ -2,6 +2,8 @@ package io.sentry;
 
 import io.sentry.exception.InvalidSentryTraceHeaderException;
 import io.sentry.protocol.SentryId;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -13,6 +15,11 @@ public final class SentryTraceHeader {
   private final @NotNull SpanId spanId;
   private final @Nullable Boolean sampled;
 
+  private static final Pattern SENTRY_TRACEPARENT_HEADER_REGEX =
+      Pattern.compile(
+          "^[ \\t]*(?<traceId>[0-9a-f]{32})-(?<spanId>[0-9a-f]{16})(?<sampled>-[01])?[ \\t]*$",
+          Pattern.CASE_INSENSITIVE);
+
   public SentryTraceHeader(
       final @NotNull SentryId traceId,
       final @NotNull SpanId spanId,
@@ -23,20 +30,17 @@ public final class SentryTraceHeader {
   }
 
   public SentryTraceHeader(final @NotNull String value) throws InvalidSentryTraceHeaderException {
-    final String[] parts = value.split("-", -1);
-    if (parts.length < 2) {
+    Matcher matcher = SENTRY_TRACEPARENT_HEADER_REGEX.matcher(value);
+    boolean matchesExist = matcher.matches();
+
+    if (!matchesExist || matcher.group("traceId") == null || matcher.group("spanId") == null) {
       throw new InvalidSentryTraceHeaderException(value);
-    } else if (parts.length == 3) {
-      this.sampled = "1".equals(parts[2]);
-    } else {
-      this.sampled = null;
     }
-    try {
-      this.traceId = new SentryId(parts[0]);
-      this.spanId = new SpanId(parts[1]);
-    } catch (Throwable e) {
-      throw new InvalidSentryTraceHeaderException(value, e);
-    }
+
+    this.traceId = new SentryId(matcher.group("traceId"));
+    this.spanId = new SpanId(matcher.group("spanId"));
+    this.sampled =
+        matcher.group("sampled") == null ? null : "1".equals(matcher.group("sampled").substring(1));
   }
 
   public @NotNull String getName() {
