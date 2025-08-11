@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Features
+
+- Add a `isEnableSystemEventBreadcrumbsExtras` option to disable reporting system events extras for breadcrumbs ([#4625](https://github.com/getsentry/sentry-java/pull/4625))
+
 ### Improvements
 
 - Session Replay: Use main thread looper to schedule replay capture ([#4542](https://github.com/getsentry/sentry-java/pull/4542))
