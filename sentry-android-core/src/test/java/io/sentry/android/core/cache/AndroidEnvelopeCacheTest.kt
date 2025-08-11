@@ -1,7 +1,9 @@
 package io.sentry.android.core.cache
 
+import io.sentry.ISerializer
 import io.sentry.NoOpLogger
 import io.sentry.SentryEnvelope
+import io.sentry.SentryOptions
 import io.sentry.UncaughtExceptionHandlerIntegration.UncaughtExceptionHint
 import io.sentry.android.core.AnrV2Integration.AnrV2Hint
 import io.sentry.android.core.SentryAndroidOptions
@@ -18,7 +20,9 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
+import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.same
 import org.mockito.kotlin.whenever
 
 class AndroidEnvelopeCacheTest {
@@ -35,8 +39,10 @@ class AndroidEnvelopeCacheTest {
       dir: TemporaryFolder,
       appStartMillis: Long? = null,
       currentTimeMillis: Long? = null,
+      optionsCallback: ((SentryOptions) -> Unit)? = null,
     ): AndroidEnvelopeCache {
       options.cacheDirPath = dir.newFolder("sentry-cache").absolutePath
+      optionsCallback?.invoke(options)
       val outboxDir = File(options.outboxPath!!)
       outboxDir.mkdirs()
 
@@ -82,7 +88,7 @@ class AndroidEnvelopeCacheTest {
     val cache = fixture.getSut(tmpDir)
 
     val hints = HintUtils.createWithTypeCheckHint(UncaughtHint())
-    cache.store(fixture.envelope, hints)
+    cache.storeEnvelope(fixture.envelope, hints)
 
     assertFalse(fixture.startupCrashMarkerFile.exists())
   }
@@ -92,7 +98,7 @@ class AndroidEnvelopeCacheTest {
     val cache = fixture.getSut(dir = tmpDir, appStartMillis = 1000L, currentTimeMillis = 5000L)
 
     val hints = HintUtils.createWithTypeCheckHint(UncaughtHint())
-    cache.store(fixture.envelope, hints)
+    cache.storeEnvelope(fixture.envelope, hints)
 
     assertFalse(fixture.startupCrashMarkerFile.exists())
   }
@@ -104,7 +110,7 @@ class AndroidEnvelopeCacheTest {
     fixture.options.cacheDirPath = null
 
     val hints = HintUtils.createWithTypeCheckHint(UncaughtHint())
-    cache.store(fixture.envelope, hints)
+    cache.storeEnvelope(fixture.envelope, hints)
 
     assertFalse(fixture.startupCrashMarkerFile.exists())
   }
@@ -114,7 +120,7 @@ class AndroidEnvelopeCacheTest {
     val cache = fixture.getSut(dir = tmpDir, appStartMillis = 1000L, currentTimeMillis = 2000L)
 
     val hints = HintUtils.createWithTypeCheckHint(UncaughtHint())
-    cache.store(fixture.envelope, hints)
+    cache.storeEnvelope(fixture.envelope, hints)
 
     assertTrue(fixture.startupCrashMarkerFile.exists())
   }
@@ -138,7 +144,7 @@ class AndroidEnvelopeCacheTest {
       HintUtils.createWithTypeCheckHint(
         AnrV2Hint(0, NoOpLogger.getInstance(), 12345678L, false, false)
       )
-    cache.store(fixture.envelope, hints)
+    cache.storeEnvelope(fixture.envelope, hints)
 
     assertFalse(fixture.lastReportedAnrFile.exists())
   }
@@ -151,7 +157,7 @@ class AndroidEnvelopeCacheTest {
       HintUtils.createWithTypeCheckHint(
         AnrV2Hint(0, NoOpLogger.getInstance(), 12345678L, false, false)
       )
-    cache.store(fixture.envelope, hints)
+    cache.storeEnvelope(fixture.envelope, hints)
 
     assertTrue(fixture.lastReportedAnrFile.exists())
     assertEquals("12345678", fixture.lastReportedAnrFile.readText())
@@ -187,6 +193,18 @@ class AndroidEnvelopeCacheTest {
     val lastReportedAnr = AndroidEnvelopeCache.lastReportedAnr(fixture.options)
 
     assertEquals(87654321L, lastReportedAnr)
+  }
+
+  @Test
+  fun `returns false if storing fails`() {
+    val serializer = mock<ISerializer>()
+    val cache = fixture.getSut(tmpDir) { options -> options.setSerializer(serializer) }
+    whenever(serializer.serialize(same(fixture.envelope), any()))
+      .thenThrow(RuntimeException("forced ex"))
+    val hints = HintUtils.createWithTypeCheckHint(UncaughtHint())
+
+    val didStore = cache.storeEnvelope(fixture.envelope, hints)
+    assertFalse(didStore)
   }
 
   internal class UncaughtHint : UncaughtExceptionHint(0, NoOpLogger.getInstance())
