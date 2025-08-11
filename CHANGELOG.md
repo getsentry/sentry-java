@@ -28,6 +28,8 @@
 - Ensure frame metrics listeners are registered/unregistered on the main thread ([#4582](https://github.com/getsentry/sentry-java/pull/4582))
 - Do not report cached events as lost ([#4575](https://github.com/getsentry/sentry-java/pull/4575))
   - Previously events were recorded as lost early despite being retried later through the cache
+- Switch to compileOnly dependency for compose-ui-material ([#4630](https://github.com/getsentry/sentry-java/pull/4630))
+  - This fixes `StackOverflowError` when using OSS Licenses plugin 
 
 ### Dependencies
 
