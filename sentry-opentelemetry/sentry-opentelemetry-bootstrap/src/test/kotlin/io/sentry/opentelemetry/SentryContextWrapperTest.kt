@@ -10,7 +10,7 @@ import kotlin.test.Test
 class SentryContextWrapperTest {
 
   @Test
-  fun `x`() {
+  fun `ensure noop scopes are not stored on Context`() {
     val context = Context.root()
     assertNull(context.get(SENTRY_SCOPES_KEY))
     assertTrue(Sentry.getCurrentScopes().isNoOp)
