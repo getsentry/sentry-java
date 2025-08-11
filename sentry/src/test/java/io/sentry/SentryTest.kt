@@ -957,9 +957,6 @@ class SentryTest {
       }
     }
 
-    // to trigger previous session flush
-    Sentry.startSession()
-
     await.untilTrue(triggered)
     assertFalse(previousSessionFile.exists())
   }
