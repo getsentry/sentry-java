@@ -27,7 +27,7 @@ import reactor.core.publisher.Mono;
 // at -1
 @ApiStatus.Experimental
 public final class SentryWebExceptionHandler implements WebExceptionHandler {
-  public static final String MECHANISM_TYPE = "Spring6WebFluxExceptionResolver";
+  public static final String MECHANISM_TYPE = "Spring7WebFluxExceptionResolver";
   private final @NotNull IScopes scopes;
 
   public SentryWebExceptionHandler(final @NotNull IScopes scopes) {

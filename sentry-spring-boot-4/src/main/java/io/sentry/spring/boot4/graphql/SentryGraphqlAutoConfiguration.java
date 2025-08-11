@@ -28,7 +28,7 @@ public class SentryGraphqlAutoConfiguration {
       final @NotNull SentryProperties sentryProperties,
       final @NotNull ObjectProvider<SentryGraphqlInstrumentation.BeforeSpanCallback>
               beforeSpanCallback) {
-    SentryIntegrationPackageStorage.getInstance().addIntegration("Spring6GrahQLWebMVC");
+    SentryIntegrationPackageStorage.getInstance().addIntegration("Spring7GrahQLWebMVC");
     return createInstrumentation(sentryProperties, beforeSpanCallback, false);
   }
 
@@ -39,7 +39,7 @@ public class SentryGraphqlAutoConfiguration {
       final @NotNull SentryProperties sentryProperties,
       final @NotNull ObjectProvider<SentryGraphqlInstrumentation.BeforeSpanCallback>
               beforeSpanCallback) {
-    SentryIntegrationPackageStorage.getInstance().addIntegration("Spring6GrahQLWebFlux");
+    SentryIntegrationPackageStorage.getInstance().addIntegration("Spring7GrahQLWebFlux");
     return createInstrumentation(sentryProperties, beforeSpanCallback, true);
   }
 

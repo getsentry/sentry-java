@@ -43,7 +43,7 @@ class SentryCaptureExceptionParameterAdviceTest {
         check {
           assertTrue(it is ExceptionMechanismException)
           assertEquals(exception, it.throwable)
-          assertEquals("SentrySpring6CaptureExceptionParameterAdvice", it.exceptionMechanism.type)
+          assertEquals("SentrySpring7CaptureExceptionParameterAdvice", it.exceptionMechanism.type)
         },
         any<Hint>(),
       )

@@ -11,7 +11,7 @@ import reactor.core.publisher.Flux;
 public final class SentryDgsSubscriptionHandler implements SentrySubscriptionHandler {
 
   public SentryDgsSubscriptionHandler() {
-    SentryIntegrationPackageStorage.getInstance().addIntegration("Spring6NetflixDGSGrahQL");
+    SentryIntegrationPackageStorage.getInstance().addIntegration("Spring7NetflixDGSGrahQL");
   }
 
   @Override

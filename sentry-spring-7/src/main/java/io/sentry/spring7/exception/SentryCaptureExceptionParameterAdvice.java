@@ -21,7 +21,7 @@ import org.springframework.core.annotation.AnnotationUtils;
 @ApiStatus.Internal
 @Open
 public class SentryCaptureExceptionParameterAdvice implements MethodInterceptor {
-  private static final String MECHANISM_TYPE = "SentrySpring6CaptureExceptionParameterAdvice";
+  private static final String MECHANISM_TYPE = "SentrySpring7CaptureExceptionParameterAdvice";
   private final @NotNull IScopes scopes;
 
   public SentryCaptureExceptionParameterAdvice() {
