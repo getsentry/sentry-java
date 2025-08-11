@@ -47,6 +47,7 @@ dependencies {
   implementation(libs.springboot4.starter.webflux)
   implementation(libs.springboot4.starter.websocket)
   implementation(libs.springboot4.starter.restclient)
+  implementation(libs.springboot4.starter.webclient)
   implementation(Config.Libs.aspectj)
   implementation(Config.Libs.kotlinReflect)
   implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))

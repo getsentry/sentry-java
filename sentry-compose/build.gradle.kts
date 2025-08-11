@@ -21,16 +21,16 @@ kotlin {
   androidTarget {
     compilerOptions {
       jvmTarget.set(JvmTarget.JVM_1_8)
-      apiVersion.set(KotlinVersion.KOTLIN_1_8)
-      languageVersion.set(KotlinVersion.KOTLIN_1_8)
+      apiVersion.set(KotlinVersion.KOTLIN_1_9)
+      languageVersion.set(KotlinVersion.KOTLIN_1_9)
     }
     publishLibraryVariants("release")
   }
   jvm("desktop") {
     compilerOptions {
       jvmTarget.set(JvmTarget.JVM_1_8)
-      apiVersion.set(KotlinVersion.KOTLIN_1_8)
-      languageVersion.set(KotlinVersion.KOTLIN_1_8)
+      apiVersion.set(KotlinVersion.KOTLIN_1_9)
+      languageVersion.set(KotlinVersion.KOTLIN_1_9)
     }
   }
 
@@ -47,8 +47,8 @@ kotlin {
   sourceSets {
     val commonMain by getting {
       compilerOptions {
-        apiVersion.set(KotlinVersion.KOTLIN_1_8)
-        languageVersion.set(KotlinVersion.KOTLIN_1_8)
+        apiVersion.set(KotlinVersion.KOTLIN_1_9)
+        languageVersion.set(KotlinVersion.KOTLIN_1_9)
       }
     }
     val androidMain by getting {
