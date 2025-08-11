@@ -447,7 +447,7 @@ class EnvelopeCacheTest {
   }
 
   @Test
-  fun `movePreviousSession does nothing when previous session file already exists`() {
+  fun `movePreviousSession deletes file and moves session when previous session file already exists`() {
     val cache = fixture.getSUT()
 
     val currentSessionFile = EnvelopeCache.getCurrentSessionFile(fixture.options.cacheDirPath!!)
@@ -465,10 +465,9 @@ class EnvelopeCacheTest {
     // Call movePreviousSession when previous already exists
     cache.movePreviousSession(currentSessionFile, previousSessionFile)
 
-    // Both files should remain unchanged
-    assertTrue(currentSessionFile.exists())
+    // Current session should be moved to previous
+    assertFalse(currentSessionFile.exists())
     assertTrue(previousSessionFile.exists())
-    assertEquals("current session content", currentSessionFile.readText())
-    assertEquals("existing previous content", previousSessionFile.readText())
+    assertEquals("current session content", previousSessionFile.readText())
   }
 }

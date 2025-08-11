@@ -442,8 +442,12 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
       final @NotNull File currentSessionFile, final @NotNull File previousSessionFile) {
     try (final @NotNull ISentryLifecycleToken ignored = sessionLock.acquire()) {
       if (previousSessionFile.exists()) {
-        options.getLogger().log(DEBUG, "Previous session file already exists.");
-        return;
+        options.getLogger().log(DEBUG, "Previous session file already exists, deleting it.");
+        if (!previousSessionFile.delete()) {
+          options
+              .getLogger()
+              .log(WARNING, "Unable to delete previous session file: %s", previousSessionFile);
+        }
       }
 
       if (currentSessionFile.exists()) {
