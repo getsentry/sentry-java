@@ -29,6 +29,12 @@
 - Do not report cached events as lost ([#4575](https://github.com/getsentry/sentry-java/pull/4575))
   - Previously events were recorded as lost early despite being retried later through the cache
 
+### Dependencies
+
+- Bump Native SDK from v0.8.4 to v0.10.0 ([#4623](https://github.com/getsentry/sentry-java/pull/4623))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0100)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.8.4...0.10.0)
+
 ## 8.18.0
 
 ### Features
