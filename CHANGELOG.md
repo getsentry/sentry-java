@@ -31,6 +31,12 @@
 - Switch to compileOnly dependency for compose-ui-material ([#4630](https://github.com/getsentry/sentry-java/pull/4630))
   - This fixes `StackOverflowError` when using OSS Licenses plugin 
 
+### Dependencies
+
+- Bump Native SDK from v0.8.4 to v0.10.0 ([#4623](https://github.com/getsentry/sentry-java/pull/4623))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0100)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.8.4...0.10.0)
+
 ## 8.18.0
 
 ### Features
