@@ -5,7 +5,7 @@ import org.springframework.boot.gradle.plugin.SpringBootPlugin
 plugins {
   alias(libs.plugins.springboot4) apply false
   alias(libs.plugins.spring.dependency.management)
-  kotlin("jvm")
+  alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.kotlin.spring)
   id("war")
   alias(libs.plugins.gretty)
@@ -45,8 +45,13 @@ dependencies {
 tasks.withType<Test>().configureEach { useJUnitPlatform() }
 
 tasks.withType<KotlinCompile>().configureEach {
-  kotlinOptions {
-    freeCompilerArgs = listOf("-Xjsr305=strict")
-    jvmTarget = JavaVersion.VERSION_17.toString()
+  kotlin {
+    explicitApi()
+    // skip metadata version check, as Spring 7 / Spring Boot 4 is
+    // compiled against a newer version of Kotlin
+    compilerOptions.freeCompilerArgs = listOf("-Xjsr305=strict", "-Xskip-metadata-version-check")
+    compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
+    compilerOptions.languageVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
+    compilerOptions.apiVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
   }
 }

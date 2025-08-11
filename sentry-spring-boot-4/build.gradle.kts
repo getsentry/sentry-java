@@ -5,8 +5,9 @@ import org.springframework.boot.gradle.plugin.SpringBootPlugin
 plugins {
   `java-library`
   id("io.sentry.javadoc")
-  kotlin("jvm")
   jacoco
+  alias(libs.plugins.kotlin.jvm)
+  alias(libs.plugins.kotlin.spring)
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.buildconfig)
@@ -19,8 +20,11 @@ configure<JavaPluginExtension> {
 }
 
 tasks.withType<KotlinCompile>().configureEach {
-  kotlinOptions.jvmTarget = JavaVersion.VERSION_17.toString()
-  kotlinOptions.languageVersion = libs.versions.kotlin.compatible.version.get()
+  compilerOptions {
+    jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+    languageVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9)
+    freeCompilerArgs.add("-Xjsr305=strict")
+  }
 }
 
 dependencies {
@@ -72,6 +76,7 @@ dependencies {
   testImplementation(projects.sentryReactor)
   testImplementation(projects.sentryTestSupport)
   testImplementation(kotlin(Config.kotlinStdLib))
+  testImplementation(Config.Libs.kotlinReflect)
   testImplementation(platform(SpringBootPlugin.BOM_COORDINATES))
   testImplementation(libs.context.propagation)
   testImplementation(libs.kotlin.test.junit)
@@ -80,7 +85,13 @@ dependencies {
   testImplementation(libs.okhttp.mockwebserver)
   testImplementation(libs.otel)
   testImplementation(libs.otel.extension.autoconfigure.spi)
-  testImplementation(libs.springboot4.otel)
+  /**
+   * Adding a version of opentelemetry-spring-boot-starter that doesn't support Spring Boot 4 causes
+   * java.lang.IllegalArgumentException: Could not find class
+   * [org.springframework.boot.autoconfigure.web.client.RestClientAutoConfiguration]
+   * https://github.com/open-telemetry/opentelemetry-java-instrumentation/issues/14363
+   */
+  //  testImplementation(libs.springboot4.otel)
   testImplementation(libs.springboot4.starter)
   testImplementation(libs.springboot4.starter.aop)
   testImplementation(libs.springboot4.starter.graphql)
@@ -89,6 +100,8 @@ dependencies {
   testImplementation(libs.springboot4.starter.test)
   testImplementation(libs.springboot4.starter.web)
   testImplementation(libs.springboot4.starter.webflux)
+  testImplementation(libs.springboot4.starter.restclient)
+  testImplementation(libs.springboot4.starter.webclient)
 }
 
 configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
@@ -141,5 +154,14 @@ tasks.jar {
       "Implementation-Title" to project.name,
       "Implementation-Version" to project.version,
     )
+  }
+}
+
+kotlin {
+  explicitApi()
+  compilerOptions {
+    // skip metadata version check, as Spring 7 / Spring Boot 4 is
+    // compiled against a newer version of Kotlin
+    freeCompilerArgs.add("-Xskip-metadata-version-check")
   }
 }

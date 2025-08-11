@@ -5,7 +5,7 @@ import org.springframework.boot.gradle.plugin.SpringBootPlugin
 plugins {
   `java-library`
   id("io.sentry.javadoc")
-  kotlin("jvm")
+  alias(libs.plugins.kotlin.jvm)
   jacoco
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
@@ -19,10 +19,10 @@ configure<JavaPluginExtension> {
 }
 
 tasks.withType<KotlinCompile>().configureEach {
-  kotlinOptions {
-    jvmTarget = JavaVersion.VERSION_17.toString()
-    languageVersion = libs.versions.kotlin.compatible.version.get()
-    freeCompilerArgs = listOf("-Xjsr305=strict")
+  compilerOptions {
+    jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+    languageVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_1)
+    freeCompilerArgs.add("-Xjsr305=strict")
   }
 }
 
@@ -61,7 +61,7 @@ dependencies {
   testImplementation(libs.awaitility.kotlin.spring7)
   testImplementation(libs.context.propagation)
   testImplementation(libs.graphql.java24)
-  testImplementation(libs.kotlin.test.junit.spring7)
+  testImplementation(libs.kotlin.test.junit)
   testImplementation(libs.mockito.kotlin.spring7)
   testImplementation(libs.mockito.inline)
   testImplementation(libs.springboot4.starter.aop)
@@ -70,6 +70,8 @@ dependencies {
   testImplementation(libs.springboot4.starter.test)
   testImplementation(libs.springboot4.starter.web)
   testImplementation(libs.springboot4.starter.webflux)
+  testImplementation(libs.springboot4.starter.restclient)
+  testImplementation(libs.springboot4.starter.webclient)
   testImplementation(projects.sentryReactor)
 }
 
@@ -123,5 +125,14 @@ tasks.jar {
       "Implementation-Title" to project.name,
       "Implementation-Version" to project.version,
     )
+  }
+}
+
+kotlin {
+  explicitApi()
+  compilerOptions {
+    // skip metadata version check, as Spring 7 / Spring Boot 4 is
+    // compiled against a newer version of Kotlin
+    freeCompilerArgs.add("-Xskip-metadata-version-check")
   }
 }
