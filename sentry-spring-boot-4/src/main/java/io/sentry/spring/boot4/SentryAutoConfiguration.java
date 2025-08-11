@@ -413,18 +413,22 @@ public class SentryAutoConfiguration {
     }
 
     @Configuration(proxyBeanMethods = false)
-    @AutoConfigureBefore(RestTemplateAutoConfiguration.class)
-    @ConditionalOnClass(RestTemplate.class)
+    @ConditionalOnClass({RestTemplate.class, RestTemplateAutoConfiguration.class})
     @Open
-    static class SentryPerformanceRestTemplateConfiguration {
-      @Bean
-      public SentrySpanRestTemplateCustomizer sentrySpanRestTemplateCustomizer(IScopes scopes) {
-        return new SentrySpanRestTemplateCustomizer(scopes);
+    static class SentryPerformanceRestTemplateConfigurationWrapper {
+      @Configuration(proxyBeanMethods = false)
+      @AutoConfigureBefore(RestTemplateAutoConfiguration.class)
+      @Open
+      static class SentryPerformanceRestTemplateConfiguration {
+        @Bean
+        public SentrySpanRestTemplateCustomizer sentrySpanRestTemplateCustomizer(IScopes scopes) {
+          return new SentrySpanRestTemplateCustomizer(scopes);
+        }
       }
     }
 
     @Configuration(proxyBeanMethods = false)
-    @ConditionalOnClass({RestClient.class})
+    @ConditionalOnClass({RestClient.class, RestClientAutoConfiguration.class})
     @Open
     static class SentrySpanRestClientConfigurationWrapper {
       @Configuration(proxyBeanMethods = false)
@@ -439,13 +443,17 @@ public class SentryAutoConfiguration {
     }
 
     @Configuration(proxyBeanMethods = false)
-    @AutoConfigureBefore(WebClientAutoConfiguration.class)
-    @ConditionalOnClass(WebClient.class)
+    @ConditionalOnClass({WebClient.class, WebClientAutoConfiguration.class})
     @Open
-    static class SentryPerformanceWebClientConfiguration {
-      @Bean
-      public SentrySpanWebClientCustomizer sentrySpanWebClientCustomizer(IScopes scopes) {
-        return new SentrySpanWebClientCustomizer(scopes);
+    static class SentryPerformanceWebClientConfigurationWrapper {
+      @Configuration(proxyBeanMethods = false)
+      @AutoConfigureBefore(WebClientAutoConfiguration.class)
+      @Open
+      static class SentryPerformanceWebClientConfiguration {
+        @Bean
+        public SentrySpanWebClientCustomizer sentrySpanWebClientCustomizer(IScopes scopes) {
+          return new SentrySpanWebClientCustomizer(scopes);
+        }
       }
     }
 

@@ -29,6 +29,7 @@ dependencies {
   implementation(libs.springboot4.starter.actuator)
   implementation(libs.springboot4.starter.graphql)
   implementation(libs.springboot4.starter.webflux)
+  implementation(libs.springboot4.starter.webclient)
 
   testImplementation(kotlin(Config.kotlinStdLib))
   testImplementation(projects.sentrySystemTestSupport)
