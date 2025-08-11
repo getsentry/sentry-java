@@ -28,8 +28,8 @@ import org.springframework.http.client.ClientHttpResponse;
 
 @Open
 public class SentrySpanClientHttpRequestInterceptor implements ClientHttpRequestInterceptor {
-  private static final String TRACE_ORIGIN_REST_TEMPLATE = "auto.http.spring_jakarta.resttemplate";
-  private static final String TRACE_ORIGIN_REST_CLIENT = "auto.http.spring_jakarta.restclient";
+  private static final String TRACE_ORIGIN_REST_TEMPLATE = "auto.http.spring7.resttemplate";
+  private static final String TRACE_ORIGIN_REST_CLIENT = "auto.http.spring7.restclient";
   private final @NotNull IScopes scopes;
   private final @NotNull String traceOrigin;
 
