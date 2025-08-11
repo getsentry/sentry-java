@@ -150,11 +150,10 @@ class MovePreviousSessionTest {
 
     (fixture.options.envelopeDiskCache as EnvelopeCache).waitPreviousSessionFlush()
 
-    // Files should remain unchanged when previous already exists
-    assertTrue(currentSessionFile.exists())
+    // Current session file should have been moved to previous
+    assertFalse(currentSessionFile.exists())
     assertTrue(previousSessionFile.exists())
-    assert(currentSessionFile.readText() == "current session")
-    assert(previousSessionFile.readText() == "previous session")
+    assert(previousSessionFile.readText() == "current session")
 
     fixture.cleanup()
   }
