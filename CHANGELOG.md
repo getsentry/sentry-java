@@ -30,6 +30,14 @@
   - Previously events were recorded as lost early despite being retried later through the cache
 - Move and flush unfinished previous session on init ([#4624](https://github.com/getsentry/sentry-java/pull/4624))
   - This removes the need for unnecessary blocking our background queue for 15 seconds in the case of a background app start
+- Switch to compileOnly dependency for compose-ui-material ([#4630](https://github.com/getsentry/sentry-java/pull/4630))
+  - This fixes `StackOverflowError` when using OSS Licenses plugin 
+
+### Dependencies
+
+- Bump Native SDK from v0.8.4 to v0.10.0 ([#4623](https://github.com/getsentry/sentry-java/pull/4623))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0100)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.8.4...0.10.0)
 
 ## 8.18.0
 
