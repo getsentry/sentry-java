@@ -209,19 +209,45 @@ class SystemTestRunner:
                 os.remove(self.mock_server_pid_file)
             self.mock_server_pid = None
 
+    def read_version_from_gradle_properties(self) -> Optional[str]:
+        """Read the versionName from gradle.properties."""
+        try:
+            with open("gradle.properties", "r") as f:
+                for line in f:
+                    line = line.strip()
+                    if line.startswith("versionName="):
+                        return line.split("=", 1)[1]
+        except (IOError, IndexError) as e:
+            print(f"Error reading version from gradle.properties: {e}")
+        return None
+
     def find_agent_jar(self) -> Optional[str]:
-        """Find the OpenTelemetry agent JAR file."""
+        """Find the OpenTelemetry agent JAR file with the specific version from gradle.properties."""
         agent_dir = Path("sentry-opentelemetry/sentry-opentelemetry-agent/build/libs/")
         if not agent_dir.exists():
             return None
 
-        for jar_file in agent_dir.glob("*.jar"):
+        # Get the version from gradle.properties
+        version = self.read_version_from_gradle_properties()
+        if not version:
+            print("Error: Could not read version from gradle.properties")
+            return None
+
+        # Look for the specific versioned JAR
+        versioned_jar_pattern = f"*agent*{version}*.jar"
+        for jar_file in agent_dir.glob(versioned_jar_pattern):
             name = jar_file.name
-            if ("agent" in name and
-                "javadoc" not in name and
+            if ("javadoc" not in name and
                 "sources" not in name and
                 "dontuse" not in name):
+                print(f"Found versioned agent JAR: {jar_file}")
                 return str(jar_file)
+
+        # If versioned JAR not found, print helpful message
+        print(f"Error: Could not find agent JAR with version {version} in {agent_dir}")
+        print("Available JAR files:")
+        for jar_file in agent_dir.glob("*.jar"):
+            print(f"  {jar_file.name}")
         return None
 
     def build_agent_jar(self) -> int:
