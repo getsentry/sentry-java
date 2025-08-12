@@ -41,6 +41,8 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
 class ClientReportTest {
@@ -301,6 +303,48 @@ class ClientReportTest {
         envelopeReport.timestamp.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime(),
       ) < 10000
     )
+  }
+
+  @Test
+  fun `recording envelope with lost client report does not duplicate onDiscard executions`() {
+    val onDiscardMock = mock<SentryOptions.OnDiscardCallback>()
+    givenClientReportRecorder { options -> options.onDiscard = onDiscardMock }
+
+    clientReportRecorder.recordLostEvent(DiscardReason.CACHE_OVERFLOW, DataCategory.Attachment)
+    clientReportRecorder.recordLostEvent(DiscardReason.CACHE_OVERFLOW, DataCategory.Attachment)
+    clientReportRecorder.recordLostEvent(DiscardReason.RATELIMIT_BACKOFF, DataCategory.Error)
+    clientReportRecorder.recordLostEvent(DiscardReason.QUEUE_OVERFLOW, DataCategory.Error)
+    clientReportRecorder.recordLostEvent(DiscardReason.BEFORE_SEND, DataCategory.Profile)
+
+    val envelope = clientReportRecorder.attachReportToEnvelope(testHelper.newEnvelope())
+    clientReportRecorder.recordLostEnvelope(DiscardReason.EVENT_PROCESSOR, envelope)
+
+    verify(onDiscardMock, times(2))
+      .execute(DiscardReason.CACHE_OVERFLOW, DataCategory.Attachment, 1)
+    verify(onDiscardMock, times(1)).execute(DiscardReason.RATELIMIT_BACKOFF, DataCategory.Error, 1)
+    verify(onDiscardMock, times(1)).execute(DiscardReason.QUEUE_OVERFLOW, DataCategory.Error, 1)
+    verify(onDiscardMock, times(1)).execute(DiscardReason.BEFORE_SEND, DataCategory.Profile, 1)
+  }
+
+  @Test
+  fun `recording lost client report does not duplicate onDiscard executions`() {
+    val onDiscardMock = mock<SentryOptions.OnDiscardCallback>()
+    givenClientReportRecorder { options -> options.onDiscard = onDiscardMock }
+
+    clientReportRecorder.recordLostEvent(DiscardReason.CACHE_OVERFLOW, DataCategory.Attachment)
+    clientReportRecorder.recordLostEvent(DiscardReason.CACHE_OVERFLOW, DataCategory.Attachment)
+    clientReportRecorder.recordLostEvent(DiscardReason.RATELIMIT_BACKOFF, DataCategory.Error)
+    clientReportRecorder.recordLostEvent(DiscardReason.QUEUE_OVERFLOW, DataCategory.Error)
+    clientReportRecorder.recordLostEvent(DiscardReason.BEFORE_SEND, DataCategory.Profile)
+
+    val envelope = clientReportRecorder.attachReportToEnvelope(testHelper.newEnvelope())
+    clientReportRecorder.recordLostEnvelopeItem(DiscardReason.NETWORK_ERROR, envelope.items.first())
+
+    verify(onDiscardMock, times(2))
+      .execute(DiscardReason.CACHE_OVERFLOW, DataCategory.Attachment, 1)
+    verify(onDiscardMock, times(1)).execute(DiscardReason.RATELIMIT_BACKOFF, DataCategory.Error, 1)
+    verify(onDiscardMock, times(1)).execute(DiscardReason.QUEUE_OVERFLOW, DataCategory.Error, 1)
+    verify(onDiscardMock, times(1)).execute(DiscardReason.BEFORE_SEND, DataCategory.Profile, 1)
   }
 
   private fun givenClientReportRecorder(

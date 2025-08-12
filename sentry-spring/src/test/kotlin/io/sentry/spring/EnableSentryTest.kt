@@ -224,6 +224,11 @@ class EnableSentryTest {
   }
 
   @EnableSentry(dsn = "http://key@localhost/proj")
+  class AppConfigWithCustomOnDiscardCallback {
+    @Bean fun onDiscardCallback() = mock<SentryOptions.OnDiscardCallback>()
+  }
+
+  @EnableSentry(dsn = "http://key@localhost/proj")
   class AppConfigWithCustomEventProcessors {
     @Bean fun firstProcessor() = mock<EventProcessor>()
 
