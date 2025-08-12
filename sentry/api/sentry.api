@@ -1030,6 +1030,7 @@ public abstract interface class io/sentry/ISentryClient {
 public abstract interface class io/sentry/ISentryExecutorService {
 	public abstract fun close (J)V
 	public abstract fun isClosed ()Z
+	public abstract fun prewarm ()V
 	public abstract fun schedule (Ljava/lang/Runnable;J)Ljava/util/concurrent/Future;
 	public abstract fun submit (Ljava/lang/Runnable;)Ljava/util/concurrent/Future;
 	public abstract fun submit (Ljava/util/concurrent/Callable;)Ljava/util/concurrent/Future;
@@ -2957,8 +2958,10 @@ public final class io/sentry/SentryExceptionFactory {
 
 public final class io/sentry/SentryExecutorService : io/sentry/ISentryExecutorService {
 	public fun <init> ()V
+	public fun <init> (Lio/sentry/SentryOptions;)V
 	public fun close (J)V
 	public fun isClosed ()Z
+	public fun prewarm ()V
 	public fun schedule (Ljava/lang/Runnable;J)Ljava/util/concurrent/Future;
 	public fun submit (Ljava/lang/Runnable;)Ljava/util/concurrent/Future;
 	public fun submit (Ljava/util/concurrent/Callable;)Ljava/util/concurrent/Future;
@@ -4343,6 +4346,7 @@ public class io/sentry/cache/EnvelopeCache : io/sentry/cache/IEnvelopeCache {
 	public static final field SUFFIX_ENVELOPE_FILE Ljava/lang/String;
 	protected static final field UTF_8 Ljava/nio/charset/Charset;
 	protected final field cacheLock Lio/sentry/util/AutoClosableReentrantLock;
+	protected final field sessionLock Lio/sentry/util/AutoClosableReentrantLock;
 	public fun <init> (Lio/sentry/SentryOptions;Ljava/lang/String;I)V
 	public static fun create (Lio/sentry/SentryOptions;)Lio/sentry/cache/IEnvelopeCache;
 	public fun discard (Lio/sentry/SentryEnvelope;)V
@@ -4350,7 +4354,9 @@ public class io/sentry/cache/EnvelopeCache : io/sentry/cache/IEnvelopeCache {
 	public static fun getCurrentSessionFile (Ljava/lang/String;)Ljava/io/File;
 	public static fun getPreviousSessionFile (Ljava/lang/String;)Ljava/io/File;
 	public fun iterator ()Ljava/util/Iterator;
+	public fun movePreviousSession (Ljava/io/File;Ljava/io/File;)V
 	public fun store (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)V
+	public fun storeEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Z
 	public fun waitPreviousSessionFlush ()Z
 }
 
@@ -4358,6 +4364,7 @@ public abstract interface class io/sentry/cache/IEnvelopeCache : java/lang/Itera
 	public abstract fun discard (Lio/sentry/SentryEnvelope;)V
 	public fun store (Lio/sentry/SentryEnvelope;)V
 	public abstract fun store (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)V
+	public fun storeEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Z
 }
 
 public final class io/sentry/cache/PersistingOptionsObserver : io/sentry/IOptionsObserver {
@@ -4868,8 +4875,10 @@ public final class io/sentry/logger/SentryLogParameters {
 	public static fun create (Lio/sentry/SentryAttributes;)Lio/sentry/logger/SentryLogParameters;
 	public static fun create (Lio/sentry/SentryDate;Lio/sentry/SentryAttributes;)Lio/sentry/logger/SentryLogParameters;
 	public fun getAttributes ()Lio/sentry/SentryAttributes;
+	public fun getOrigin ()Ljava/lang/String;
 	public fun getTimestamp ()Lio/sentry/SentryDate;
 	public fun setAttributes (Lio/sentry/SentryAttributes;)V
+	public fun setOrigin (Ljava/lang/String;)V
 	public fun setTimestamp (Lio/sentry/SentryDate;)V
 }
 
@@ -6658,6 +6667,7 @@ public final class io/sentry/transport/NoOpEnvelopeCache : io/sentry/cache/IEnve
 	public static fun getInstance ()Lio/sentry/transport/NoOpEnvelopeCache;
 	public fun iterator ()Ljava/util/Iterator;
 	public fun store (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)V
+	public fun storeEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Z
 }
 
 public final class io/sentry/transport/NoOpTransport : io/sentry/transport/ITransport {

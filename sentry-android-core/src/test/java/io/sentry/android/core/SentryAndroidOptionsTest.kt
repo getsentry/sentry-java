@@ -181,6 +181,20 @@ class SentryAndroidOptionsTest {
     )
   }
 
+  @Test
+  fun `system event breadcrumbs extras disabled by default`() {
+    val sentryOptions = SentryAndroidOptions()
+
+    assertFalse(sentryOptions.isEnableSystemEventBreadcrumbsExtras)
+  }
+
+  @Test
+  fun `system event breadcrumbs extras can be enabled`() {
+    val sentryOptions = SentryAndroidOptions()
+    sentryOptions.isEnableSystemEventBreadcrumbsExtras = true
+    assertTrue(sentryOptions.isEnableSystemEventBreadcrumbsExtras)
+  }
+
   private class CustomDebugImagesLoader : IDebugImagesLoader {
     override fun loadDebugImages(): List<DebugImage>? = null
 
