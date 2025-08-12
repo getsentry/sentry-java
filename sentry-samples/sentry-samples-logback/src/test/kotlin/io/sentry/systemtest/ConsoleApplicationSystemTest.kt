@@ -1,4 +1,4 @@
-package io.sentry.systemtest.io.sentry.systemtest
+package io.sentry.systemtest
 
 import io.sentry.SentryLevel
 import io.sentry.systemtest.util.TestHelper
