@@ -16,6 +16,8 @@
      });
      ```
 
+## 8.19.1
+
 ### Fixes
 
 - Do not store No-Op scopes onto OpenTelemetry Context when wrapping ([#4631](https://github.com/getsentry/sentry-java/pull/4631))
