@@ -404,4 +404,70 @@ class EnvelopeCacheTest {
 
     assertEquals(2, cache.directory.list()?.size)
   }
+
+  @Test
+  fun `movePreviousSession moves current session file to previous session file`() {
+    val cache = fixture.getSUT()
+
+    val currentSessionFile = EnvelopeCache.getCurrentSessionFile(fixture.options.cacheDirPath!!)
+    val previousSessionFile = EnvelopeCache.getPreviousSessionFile(fixture.options.cacheDirPath!!)
+
+    // Create a current session file
+    currentSessionFile.createNewFile()
+    currentSessionFile.writeText("current session content")
+
+    assertTrue(currentSessionFile.exists())
+    assertFalse(previousSessionFile.exists())
+
+    // Call movePreviousSession directly
+    cache.movePreviousSession(currentSessionFile, previousSessionFile)
+
+    // Current file should be moved to previous
+    assertFalse(currentSessionFile.exists())
+    assertTrue(previousSessionFile.exists())
+    assertEquals("current session content", previousSessionFile.readText())
+  }
+
+  @Test
+  fun `movePreviousSession does nothing when current session file does not exist`() {
+    val cache = fixture.getSUT()
+
+    val currentSessionFile = EnvelopeCache.getCurrentSessionFile(fixture.options.cacheDirPath!!)
+    val previousSessionFile = EnvelopeCache.getPreviousSessionFile(fixture.options.cacheDirPath!!)
+
+    assertFalse(currentSessionFile.exists())
+    assertFalse(previousSessionFile.exists())
+
+    // Call movePreviousSession when no files exist
+    cache.movePreviousSession(currentSessionFile, previousSessionFile)
+
+    // Nothing should happen
+    assertFalse(currentSessionFile.exists())
+    assertFalse(previousSessionFile.exists())
+  }
+
+  @Test
+  fun `movePreviousSession deletes file and moves session when previous session file already exists`() {
+    val cache = fixture.getSUT()
+
+    val currentSessionFile = EnvelopeCache.getCurrentSessionFile(fixture.options.cacheDirPath!!)
+    val previousSessionFile = EnvelopeCache.getPreviousSessionFile(fixture.options.cacheDirPath!!)
+
+    // Create both files
+    currentSessionFile.createNewFile()
+    currentSessionFile.writeText("current session content")
+    previousSessionFile.createNewFile()
+    previousSessionFile.writeText("existing previous content")
+
+    assertTrue(currentSessionFile.exists())
+    assertTrue(previousSessionFile.exists())
+
+    // Call movePreviousSession when previous already exists
+    cache.movePreviousSession(currentSessionFile, previousSessionFile)
+
+    // Current session should be moved to previous
+    assertFalse(currentSessionFile.exists())
+    assertTrue(previousSessionFile.exists())
+    assertEquals("current session content", previousSessionFile.readText())
+  }
 }

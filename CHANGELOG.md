@@ -1,6 +1,17 @@
 # Changelog
 
-## Unreleased
+### Unreleased
+
+### Fixes
+
+- Do not store No-Op scopes onto OpenTelemetry Context when wrapping ([#4631](https://github.com/getsentry/sentry-java/pull/4631))
+  - In 8.18.0 and 8.19.0 the SDK could break when initialized too late.
+
+## 8.19.0
+
+### Features
+
+- Add a `isEnableSystemEventBreadcrumbsExtras` option to disable reporting system events extras for breadcrumbs ([#4625](https://github.com/getsentry/sentry-java/pull/4625))
 
 ### Features
 
@@ -33,6 +44,8 @@
 - Ensure frame metrics listeners are registered/unregistered on the main thread ([#4582](https://github.com/getsentry/sentry-java/pull/4582))
 - Do not report cached events as lost ([#4575](https://github.com/getsentry/sentry-java/pull/4575))
   - Previously events were recorded as lost early despite being retried later through the cache
+- Move and flush unfinished previous session on init ([#4624](https://github.com/getsentry/sentry-java/pull/4624))
+  - This removes the need for unnecessary blocking our background queue for 15 seconds in the case of a background app start
 - Switch to compileOnly dependency for compose-ui-material ([#4630](https://github.com/getsentry/sentry-java/pull/4630))
   - This fixes `StackOverflowError` when using OSS Licenses plugin 
 
