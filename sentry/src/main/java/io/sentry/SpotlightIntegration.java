@@ -32,7 +32,7 @@ public final class SpotlightIntegration
     this.logger = options.getLogger();
 
     if (options.getBeforeEnvelopeCallback() == null && options.isEnableSpotlight()) {
-      executorService = new SentryExecutorService();
+      executorService = new SentryExecutorService(options);
       options.setBeforeEnvelopeCallback(this);
       logger.log(DEBUG, "SpotlightIntegration enabled.");
       addIntegrationToSdkVersion("Spotlight");

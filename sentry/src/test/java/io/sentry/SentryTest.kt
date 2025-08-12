@@ -52,6 +52,7 @@ import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argThat
 import org.mockito.kotlin.check
 import org.mockito.kotlin.eq
+import org.mockito.kotlin.inOrder
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
@@ -917,13 +918,6 @@ class SentryTest {
           .deserialize(previousSessionFile.bufferedReader(), Session::class.java)!!
           .environment,
       )
-
-      it.addIntegration { scopes, _ ->
-        // this is just a hack to trigger the previousSessionFlush latch, so the finalizer
-        // does not time out waiting. We have to do it as integration, because this is where
-        // the scopes is already initialized
-        scopes.startSession()
-      }
       it.sessionFlushTimeoutMillis = 100
     }
 
@@ -962,9 +956,6 @@ class SentryTest {
         triggered.set(true)
       }
     }
-
-    // to trigger previous session flush
-    Sentry.startSession()
 
     await.untilTrue(triggered)
     assertFalse(previousSessionFile.exists())
@@ -1538,6 +1529,73 @@ class SentryTest {
     }
     Sentry.showUserFeedbackDialog(associatedEventId, configurator)
     verify(mockDialogHandler).showDialog(eq(associatedEventId), eq(configurator))
+  }
+
+  @Test
+  fun `init calls movePreviousSession before registering integrations`() {
+    val mockExecutorService = mock<ISentryExecutorService>()
+    val mockIntegration = mock<Integration>()
+
+    initForTest {
+      it.dsn = dsn
+      it.cacheDirPath = getTempPath()
+      it.isEnableAutoSessionTracking = true
+      it.executorService = mockExecutorService
+      it.addIntegration(mockIntegration)
+    }
+
+    // Verify that movePreviousSession is called before integration registration
+    // This ensures the session move happens early in the init process
+    val inOrder = inOrder(mockExecutorService, mockIntegration)
+    inOrder.verify(mockExecutorService).submit(any<MovePreviousSession>())
+    inOrder.verify(mockIntegration).register(any(), any())
+  }
+
+  @Test
+  fun `init moves previous session to its own file`() {
+    val cacheDir = tmpDir.newFolder().absolutePath
+    lateinit var currentSessionFile: File
+
+    val previousSessionFile = EnvelopeCache.getPreviousSessionFile(cacheDir)
+    assertFalse(previousSessionFile.exists())
+
+    initForTest {
+      it.dsn = dsn
+      it.isDebug = true
+      it.setLogger(SystemOutLogger())
+
+      it.release = "io.sentry.sample@2.0"
+
+      it.cacheDirPath = tmpDir.newFolder().absolutePath
+      it.executorService = ImmediateExecutorService()
+
+      currentSessionFile = EnvelopeCache.getCurrentSessionFile(it.cacheDirPath!!)
+      currentSessionFile.parentFile.mkdirs()
+      it.serializer.serialize(
+        Session(null, null, "release", "io.sentry.samples@2.0"),
+        currentSessionFile.bufferedWriter(),
+      )
+      assertEquals(
+        "release",
+        it.serializer
+          .deserialize(currentSessionFile.bufferedReader(), Session::class.java)!!
+          .environment,
+      )
+
+      it.addIntegration { scopes, _ ->
+        // this is just a hack to assert previous session has been moved to its own file.
+        // Integrations are being registered after moving but before finalizing previous session
+        // (== deleting the file) so we can check it's been moved here
+        assertFalse(currentSessionFile.exists())
+        assertTrue(previousSessionFile.exists())
+        assertEquals(
+          "release",
+          it.serializer
+            .deserialize(previousSessionFile.bufferedReader(), Session::class.java)!!
+            .environment,
+        )
+      }
+    }
   }
 
   private class InMemoryOptionsObserver : IOptionsObserver {

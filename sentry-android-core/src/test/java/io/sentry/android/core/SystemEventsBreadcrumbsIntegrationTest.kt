@@ -51,11 +51,13 @@ class SystemEventsBreadcrumbsIntegrationTest {
 
     fun getSut(
       enableSystemEventBreadcrumbs: Boolean = true,
+      enableSystemEventBreadcrumbsExtras: Boolean = false,
       executorService: ISentryExecutorService = ImmediateExecutorService(),
     ): SystemEventsBreadcrumbsIntegration {
       options =
         SentryAndroidOptions().apply {
           isEnableSystemEventBreadcrumbs = enableSystemEventBreadcrumbs
+          isEnableSystemEventBreadcrumbsExtras = enableSystemEventBreadcrumbsExtras
           this.executorService = executorService
         }
       return SystemEventsBreadcrumbsIntegration(
@@ -89,7 +91,7 @@ class SystemEventsBreadcrumbsIntegrationTest {
 
     sut.register(fixture.scopes, fixture.options)
 
-    verify(fixture.context).registerReceiver(any(), any(), any())
+    verify(fixture.context).registerReceiver(any(), any(), anyOrNull(), anyOrNull(), any())
     assertNotNull(sut.receiver)
   }
 
@@ -299,7 +301,8 @@ class SystemEventsBreadcrumbsIntegrationTest {
   @Test
   fun `Do not crash if registerReceiver throws exception`() {
     val sut = fixture.getSut()
-    whenever(fixture.context.registerReceiver(any(), any(), any())).thenThrow(SecurityException())
+    whenever(fixture.context.registerReceiver(any(), any(), anyOrNull(), anyOrNull(), any()))
+      .thenThrow(SecurityException())
 
     sut.register(fixture.scopes, fixture.options)
 
@@ -448,12 +451,13 @@ class SystemEventsBreadcrumbsIntegrationTest {
     val sut = fixture.getSut()
 
     sut.register(fixture.scopes, fixture.options)
-    verify(fixture.context).registerReceiver(any(), any(), any())
+    verify(fixture.context).registerReceiver(any(), any(), anyOrNull(), anyOrNull(), any())
 
     sut.onBackground()
     sut.onForeground()
 
-    verify(fixture.context, times(2)).registerReceiver(any(), any(), any())
+    verify(fixture.context, times(2))
+      .registerReceiver(any(), any(), anyOrNull(), anyOrNull(), any())
     assertNotNull(sut.receiver)
   }
 
@@ -462,7 +466,7 @@ class SystemEventsBreadcrumbsIntegrationTest {
     val sut = fixture.getSut()
 
     sut.register(fixture.scopes, fixture.options)
-    verify(fixture.context).registerReceiver(any(), any(), any())
+    verify(fixture.context).registerReceiver(any(), any(), anyOrNull(), anyOrNull(), any())
     val receiver = sut.receiver
 
     sut.onForeground()
@@ -525,5 +529,60 @@ class SystemEventsBreadcrumbsIntegrationTest {
     sut.register(fixture.scopes, fixture.options)
 
     assertNull(sut.receiver)
+  }
+
+  @Test
+  fun `system event breadcrumbs include extras when enableSystemEventBreadcrumbsExtras is true`() {
+    val sut = fixture.getSut(enableSystemEventBreadcrumbsExtras = true)
+
+    sut.register(fixture.scopes, fixture.options)
+    val intent =
+      Intent().apply {
+        action = Intent.ACTION_TIME_CHANGED
+        putExtra("test", 10)
+        putExtra("test2", 20)
+      }
+    sut.receiver!!.onReceive(fixture.context, intent)
+
+    verify(fixture.scopes)
+      .addBreadcrumb(
+        check<Breadcrumb> {
+          assertEquals("device.event", it.category)
+          assertEquals("system", it.type)
+          assertEquals(SentryLevel.INFO, it.level)
+          assertEquals("TIME_SET", it.data["action"])
+          assertNotNull(it.data["extras"])
+          val extras = it.data["extras"] as Map<String, String>
+          assertEquals("10", extras["test"])
+          assertEquals("20", extras["test2"])
+        },
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `system event breadcrumbs do not include extras when enableSystemEventBreadcrumbsExtras is false`() {
+    val sut = fixture.getSut(enableSystemEventBreadcrumbsExtras = false)
+
+    sut.register(fixture.scopes, fixture.options)
+    val intent =
+      Intent().apply {
+        action = Intent.ACTION_TIME_CHANGED
+        putExtra("test", 10)
+        putExtra("test2", 20)
+      }
+    sut.receiver!!.onReceive(fixture.context, intent)
+
+    verify(fixture.scopes)
+      .addBreadcrumb(
+        check<Breadcrumb> {
+          assertEquals("device.event", it.category)
+          assertEquals("system", it.type)
+          assertEquals(SentryLevel.INFO, it.level)
+          assertEquals("TIME_SET", it.data["action"])
+          assertNull(it.data["extras"])
+        },
+        anyOrNull(),
+      )
   }
 }

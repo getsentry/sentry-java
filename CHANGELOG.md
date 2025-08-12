@@ -1,11 +1,18 @@
 # Changelog
 
-## Unreleased
+## 8.19.0
+
+### Features
+
+- Add a `isEnableSystemEventBreadcrumbsExtras` option to disable reporting system events extras for breadcrumbs ([#4625](https://github.com/getsentry/sentry-java/pull/4625))
 
 ### Improvements
 
 - Session Replay: Use main thread looper to schedule replay capture ([#4542](https://github.com/getsentry/sentry-java/pull/4542))
 - Use single `LifecycleObserver` and multi-cast it to the integrations interested in lifecycle states ([#4567](https://github.com/getsentry/sentry-java/pull/4567))
+- Add `sentry.origin` attribute to logs ([#4618](https://github.com/getsentry/sentry-java/pull/4618))
+  - This helps identify which integration captured a log event
+- Prewarm `SentryExecutorService` for better performance at runtime ([#4606](https://github.com/getsentry/sentry-java/pull/4606))
 
 ### Fixes
 
@@ -22,6 +29,19 @@
   }
   ```
 - Fix abstract method error in `SentrySupportSQLiteDatabase` ([#4597](https://github.com/getsentry/sentry-java/pull/4597))
+- Ensure frame metrics listeners are registered/unregistered on the main thread ([#4582](https://github.com/getsentry/sentry-java/pull/4582))
+- Do not report cached events as lost ([#4575](https://github.com/getsentry/sentry-java/pull/4575))
+  - Previously events were recorded as lost early despite being retried later through the cache
+- Move and flush unfinished previous session on init ([#4624](https://github.com/getsentry/sentry-java/pull/4624))
+  - This removes the need for unnecessary blocking our background queue for 15 seconds in the case of a background app start
+- Switch to compileOnly dependency for compose-ui-material ([#4630](https://github.com/getsentry/sentry-java/pull/4630))
+  - This fixes `StackOverflowError` when using OSS Licenses plugin 
+
+### Dependencies
+
+- Bump Native SDK from v0.8.4 to v0.10.0 ([#4623](https://github.com/getsentry/sentry-java/pull/4623))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0100)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.8.4...0.10.0)
 
 ### Features
 
