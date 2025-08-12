@@ -7,6 +7,12 @@
 - Do not store No-Op scopes onto OpenTelemetry Context when wrapping ([#4631](https://github.com/getsentry/sentry-java/pull/4631))
   - In 8.18.0 and 8.19.0 the SDK could break when initialized too late.
 
+## 8.19.1
+
+### Various fixes & improvements
+
+- Do not store No-Op scopes onto OpenTelemetry Context when wrapping (#4631) by @adinauer
+
 ## 8.19.0
 
 ### Features
