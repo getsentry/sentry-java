@@ -911,6 +911,7 @@ class SystemTestRunner:
         print(f"\nReceived signal {signum}, cleaning up...")
         self.stop_spring_server()
         self.stop_sentry_mock_server()
+        self.stop_tomcat_server()
         sys.exit(1)
 
 def main():
