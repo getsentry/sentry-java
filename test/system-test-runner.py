@@ -616,6 +616,7 @@ class SystemTestRunner:
             ModuleConfig("sentry-samples-console-opentelemetry-noagent", "false", "true", "false"),
             ModuleConfig("sentry-samples-logback", "false", "true", "false"),
             ModuleConfig("sentry-samples-log4j2", "false", "true", "false"),
+            ModuleConfig("sentry-samples-jul", "false", "true", "false"),
         ]
 
     def _find_module_number(self, module_name: str, agent: str, auto_init: str) -> int:
