@@ -614,6 +614,7 @@ class SystemTestRunner:
             ModuleConfig("sentry-samples-spring-boot-jakarta-opentelemetry", "true", "false", "false"),
             ModuleConfig("sentry-samples-console", "false", "true", "false"),
             ModuleConfig("sentry-samples-console-opentelemetry-noagent", "false", "true", "false"),
+            ModuleConfig("sentry-samples-logback", "false", "true", "false"),
         ]
 
     def _find_module_number(self, module_name: str, agent: str, auto_init: str) -> int:
