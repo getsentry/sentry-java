@@ -16,6 +16,9 @@ Usage examples:
   # Start Sentry mock server
   python3 test/system-test-runner.py sentry start
 
+  # Start Spring app served by Tomcat
+  python3 test/system-test-runner.py tomcat start sentry-samples-spring
+
   # Start Spring Boot app
   python3 test/system-test-runner.py spring start sentry-samples-spring-boot
 
@@ -35,6 +38,7 @@ import sys
 import time
 import signal
 import os
+from enum import Enum
 import argparse
 import requests
 import threading
@@ -48,6 +52,19 @@ try:
 except:
     pass
 
+SENTRY_ENVIRONMENT_VARIABLES = {
+    "SENTRY_DSN": "http://502f25099c204a2fbf4cb16edc5975d1@localhost:8000/0",
+    "SENTRY_TRACES_SAMPLE_RATE": "1.0",
+    "OTEL_TRACES_EXPORTER": "none",
+    "OTEL_METRICS_EXPORTER": "none",
+    "OTEL_LOGS_EXPORTER": "none",
+    "SENTRY_LOGS_ENABLED": "true"
+}
+
+class ServerType(Enum):
+    TOMCAT = 0
+    SPRING = 1
+
 def str_to_bool(value: str) -> str:
     """Convert true/false string to 1/0 string for internal compatibility."""
     if value.lower() in ('true', '1'):
@@ -56,6 +73,25 @@ def str_to_bool(value: str) -> str:
         return "0"
     else:
         raise ValueError(f"Invalid boolean value: {value}. Use 'true' or 'false'")
+
+@dataclass
+class Server:
+    name: str
+    pid_filepath: str
+    process: Optional[subprocess.Popen] = None
+    pid: Optional[int] = None
+
+def store_pid(server: Server):
+    # Store PID in instance variable and write to file
+    server.pid = server.process.pid
+    with open(server.pid_filepath, "w") as pid_file:
+        pid_file.write(str(server.pid))
+
+def cleanup_pid(server: Server):
+    # Clean up PID file and instance variable
+    if os.path.exists(server.pid_filepath):
+        os.remove(server.pid_filepath)
+    server.pid = None
 
 @dataclass
 class ModuleConfig:
@@ -104,21 +140,15 @@ class InteractiveSelection:
 
 class SystemTestRunner:
     def __init__(self):
-        self.mock_server_process: Optional[subprocess.Popen] = None
-        self.spring_server_process: Optional[subprocess.Popen] = None
-        self.mock_server_pid: Optional[int] = None
-        self.spring_server_pid: Optional[int] = None
-        self.mock_server_pid_file = "sentry-mock-server.pid"
-        self.spring_server_pid_file = "spring-server.pid"
+        self.mock_server = Server(name="Mock", pid_filepath="sentry-mock-server.pid")
+        self.tomcat_server = Server(name="Tomcat", pid_filepath="tomcat-server.pid")
+        self.spring_server = Server(name="Spring", pid_filepath="spring-server.pid")
 
         # Load existing PIDs if available
-        self.mock_server_pid = self.read_pid_file(self.mock_server_pid_file)
-        self.spring_server_pid = self.read_pid_file(self.spring_server_pid_file)
-
-        if self.mock_server_pid:
-            print(f"Found existing mock server PID: {self.mock_server_pid}")
-        if self.spring_server_pid:
-            print(f"Found existing Spring server PID: {self.spring_server_pid}")
+        for server in (self.mock_server, self.tomcat_server, self.spring_server):
+            server.pid = self.read_pid_file(server.pid_filepath)
+            if server.pid:
+                print(f"Found existing {server.name} server PID: {server.pid}")
 
     def read_pid_file(self, pid_file: str) -> Optional[int]:
         """Read PID from file if it exists."""
@@ -162,18 +192,15 @@ class SystemTestRunner:
         try:
             # Start the mock server in the background
             with open("sentry-mock-server.txt", "w") as log_file:
-                self.mock_server_process = subprocess.Popen(
+                self.mock_server.process = subprocess.Popen(
                     ["python3", "test/system-test-sentry-server.py"],
                     stdout=log_file,
                     stderr=subprocess.STDOUT
                 )
 
             # Store PID in instance variable and write to file
-            self.mock_server_pid = self.mock_server_process.pid
-            with open(self.mock_server_pid_file, "w") as pid_file:
-                pid_file.write(str(self.mock_server_pid))
-
-            print(f"Started mock server with PID {self.mock_server_pid}")
+            store_pid(self.mock_server)
+            print(f"Started mock server with PID {self.mock_server.pid}")
 
             # Wait a moment for the server to start
             time.sleep(2)
@@ -193,21 +220,19 @@ class SystemTestRunner:
                 print("Could not send graceful stop signal")
 
             # Kill the process - try process object first, then PID from file
-            if self.mock_server_process and self.mock_server_process.poll() is None:
-                print(f"Killing mock server process object with PID {self.mock_server_process.pid}")
-                self.mock_server_process.kill()
-                self.mock_server_process.wait(timeout=5)
-            elif self.mock_server_pid and self.is_process_running(self.mock_server_pid):
-                print(f"Killing mock server from PID file with PID {self.mock_server_pid}")
-                self.kill_process(self.mock_server_pid, "mock server")
+            if self.mock_server.process and self.mock_server.process.poll() is None:
+                print(f"Killing mock server process object with PID {self.mock_server.process.pid}")
+                self.mock_server.process.kill()
+                self.mock_server.process.wait(timeout=5)
+            elif self.mock_server.pid and self.is_process_running(self.mock_server.pid):
+                print(f"Killing mock server from PID file with PID {self.mock_server.pid}")
+                self.kill_process(self.mock_server.pid, "mock server")
 
         except Exception as e:
             print(f"Error stopping mock server: {e}")
         finally:
             # Clean up PID file and instance variable
-            if os.path.exists(self.mock_server_pid_file):
-                os.remove(self.mock_server_pid_file)
-            self.mock_server_pid = None
+            cleanup_pid(self.mock_server)
 
     def find_agent_jar(self) -> Optional[str]:
         """Find the OpenTelemetry agent JAR file."""
@@ -254,21 +279,35 @@ class SystemTestRunner:
 
         return agent_jar
 
+    def start_tomcat_server(self, sample_module: str) -> None:
+        # Build environment variables
+        env = os.environ.copy()
+        env.update(SENTRY_ENVIRONMENT_VARIABLES)
+
+        try:
+            # Start the Tomcat server
+            with open("tomcat-server.txt", "w") as log_file:
+                self.tomcat_server.process = subprocess.Popen(
+                    ["./gradlew", f"sentry-samples:{sample_module}:run"],
+                    env=env,
+                    stdout=log_file,
+                    stderr=subprocess.STDOUT
+                )
+
+                store_pid(self.tomcat_server)
+                print(f"Started Tomcat server with PID {self.tomcat_server.pid}")
+        except Exception as e:
+            print(f"Failed to start Tomcat server: {e}")
+            raise
+
     def start_spring_server(self, sample_module: str, java_agent: str, java_agent_auto_init: str) -> None:
         """Start a Spring Boot server for testing."""
         print(f"Starting Spring server for {sample_module}...")
 
         # Build environment variables
         env = os.environ.copy()
-        env.update({
-            "SENTRY_DSN": "http://502f25099c204a2fbf4cb16edc5975d1@localhost:8000/0",
-            "SENTRY_AUTO_INIT": java_agent_auto_init,
-            "SENTRY_TRACES_SAMPLE_RATE": "1.0",
-            "OTEL_TRACES_EXPORTER": "none",
-            "OTEL_METRICS_EXPORTER": "none",
-            "OTEL_LOGS_EXPORTER": "none",
-            "SENTRY_LOGS_ENABLED": "true"
-        })
+        env.update(SENTRY_ENVIRONMENT_VARIABLES)
+        env["SENTRY_AUTO_INIT"] = java_agent_auto_init
 
         # Build command
         jar_path = f"sentry-samples/{sample_module}/build/libs/{sample_module}-0.0.1-SNAPSHOT.jar"
@@ -287,7 +326,7 @@ class SystemTestRunner:
         try:
             # Start the Spring server
             with open("spring-server.txt", "w") as log_file:
-                self.spring_server_process = subprocess.Popen(
+                self.spring_server.process = subprocess.Popen(
                     cmd,
                     env=env,
                     stdout=log_file,
@@ -295,15 +334,34 @@ class SystemTestRunner:
                 )
 
             # Store PID in instance variable and write to file
-            self.spring_server_pid = self.spring_server_process.pid
-            with open(self.spring_server_pid_file, "w") as pid_file:
-                pid_file.write(str(self.spring_server_pid))
-
-            print(f"Started Spring server with PID {self.spring_server_pid}")
+            store_pid(self.spring_server)
+            print(f"Started Spring server with PID {self.spring_server.pid}")
 
         except Exception as e:
             print(f"Failed to start Spring server: {e}")
             raise
+
+    def wait_for_tomcat(self, module_name: str, max_attempts: int = 20) -> bool:
+        """Wait for Tomcat to be ready."""
+        print("Waiting for Tomcat to be ready...")
+
+        for attempt in range(1, max_attempts + 1):
+            try:
+                response = requests.head(
+                    f"http://localhost:8080/{module_name}-0.0.1-SNAPSHOT/person/1",
+                    timeout=5
+                )
+                if response.status_code != 404:
+                    print("Tomcat is ready!")
+                    return True
+            except:
+                pass
+
+            print(f"Waiting... (attempt {attempt}/{max_attempts})")
+            time.sleep(1)
+
+        print("Tomcat failed to become ready")
+        return False
 
     def wait_for_spring(self, max_attempts: int = 20) -> bool:
         """Wait for Spring Boot application to be ready."""
@@ -332,11 +390,11 @@ class SystemTestRunner:
         """Get status of Spring Boot application."""
         status = {
             "process_running": False,
-            "pid": self.spring_server_pid,
+            "pid": self.spring_server.pid,
             "http_ready": False
         }
 
-        if self.spring_server_pid and self.is_process_running(self.spring_server_pid):
+        if self.spring_server.pid and self.is_process_running(self.spring_server.pid):
             status["process_running"] = True
 
         # Check HTTP endpoint
@@ -357,11 +415,11 @@ class SystemTestRunner:
         """Get status of Sentry mock server."""
         status = {
             "process_running": False,
-            "pid": self.mock_server_pid,
+            "pid": self.mock_server.pid,
             "http_ready": False
         }
 
-        if self.mock_server_pid and self.is_process_running(self.mock_server_pid):
+        if self.mock_server.pid and self.is_process_running(self.mock_server.pid): 
             status["process_running"] = True
 
         # Check HTTP endpoint
@@ -390,36 +448,60 @@ class SystemTestRunner:
         print(f"  Process Running: {'✅' if spring_status['process_running'] else '❌'}")
         print(f"  HTTP Ready: {'✅' if spring_status['http_ready'] else '❌'}")
 
+    def stop_tomcat_server(self) -> None:
+        """Stop the Tomcat server."""
+        try:
+            # Kill the process - try process object first, then PID from file
+            if self.tomcat_server.process and self.tomcat_server.process.poll() is None:
+                print(f"Killing Tomcat server process object with PID {self.tomcat_server.process.pid}")
+                self.tomcat_server.process.kill()
+                try:
+                    self.tomcat_server.process.wait(timeout=10)
+                except subprocess.TimeoutExpired:
+                    print("Tomcat server did not terminate gracefully")
+            elif self.tomcat_server.pid and self.is_process_running(self.tomcat_server.pid):
+                print(f"Killing Tomcat server from PID file with PID {self.tomcat_server.pid}")
+                self.kill_process(self.tomcat_server.pid, "Tomcat server")
+
+        except Exception as e:
+            print(f"Error stopping Tomcat server: {e}")
+        finally:
+            # Clean up PID file and instance variable
+            cleanup_pid(self.tomcat_server)
+
     def stop_spring_server(self) -> None:
         """Stop the Spring Boot server."""
         try:
             # Kill the process - try process object first, then PID from file
-            if self.spring_server_process and self.spring_server_process.poll() is None:
-                print(f"Killing Spring server process object with PID {self.spring_server_process.pid}")
-                self.spring_server_process.kill()
+            if self.spring_server.process and self.spring_server.process.poll() is None:
+                print(f"Killing Spring server process object with PID {self.spring_server.process.pid}")
+                self.spring_server.process.kill()
                 try:
-                    self.spring_server_process.wait(timeout=10)
+                    self.spring_server.process.wait(timeout=10)
                 except subprocess.TimeoutExpired:
                     print("Spring server did not terminate gracefully")
-            elif self.spring_server_pid and self.is_process_running(self.spring_server_pid):
-                print(f"Killing Spring server from PID file with PID {self.spring_server_pid}")
-                self.kill_process(self.spring_server_pid, "Spring server")
+            elif self.spring_server.pid and self.is_process_running(self.spring_server.pid):
+                print(f"Killing Spring server from PID file with PID {self.spring_server.pid}")
+                self.kill_process(self.spring_server.pid, "Spring server")
 
         except Exception as e:
             print(f"Error stopping Spring server: {e}")
         finally:
             # Clean up PID file and instance variable
-            if os.path.exists(self.spring_server_pid_file):
-                os.remove(self.spring_server_pid_file)
-            self.spring_server_pid = None
+            cleanup_pid(self.spring_server)
 
-    def get_build_task(self, sample_module: str) -> str:
+    def get_build_task(self, server_type: Optional[ServerType]) -> str:
         """Get the appropriate build task for a module."""
-        return "bootJar" if "spring" in sample_module else "assemble"
+        if server_type == ServerType.TOMCAT:
+            return "war"
+        elif server_type == ServerType.SPRING:
+            return "bootJar"
 
-    def build_module(self, sample_module: str) -> int:
+        return "assemble"
+
+    def build_module(self, sample_module: str, server_type: Optional[ServerType]) -> int:
         """Build a sample module using the appropriate task."""
-        build_task = self.get_build_task(sample_module)
+        build_task = self.get_build_task(server_type)
         print(f"Building {sample_module} using {build_task} task")
         return self.run_gradle_task(f":sentry-samples:{sample_module}:{build_task}")
 
@@ -434,12 +516,13 @@ class SystemTestRunner:
             return 1
 
     def setup_test_infrastructure(self, sample_module: str, java_agent: str,
-                                 java_agent_auto_init: str, build_before_run: str) -> int:
+                                 java_agent_auto_init: str, build_before_run: str,
+                                 server_type: Optional[ServerType]) -> int:
         """Set up test infrastructure. Returns 0 on success, error code on failure."""
         # Build if requested
         if build_before_run == "1":
             print("Building before test run")
-            build_result = self.build_module(sample_module)
+            build_result = self.build_module(sample_module, server_type)
             if build_result != 0:
                 print("Build failed")
                 return build_result
@@ -455,8 +538,16 @@ class SystemTestRunner:
         print("Starting Sentry mock server...")
         self.start_sentry_mock_server()
 
-        # Start Spring server if it's a Spring module
-        if "spring" in sample_module:
+        # Start Tomcat server given a Spring module
+        if server_type == ServerType.TOMCAT:
+            print(f"Starting Tomcat server for {sample_module}...")
+            self.start_tomcat_server(sample_module)
+            if not self.wait_for_tomcat(sample_module):
+                print("Tomcat application failed to start!")
+                return 1
+            print("Tomcat application is ready!")
+        # Start Spring server if it's a Spring boot module
+        elif server_type == ServerType.SPRING:
             print(f"Starting Spring server for {sample_module}...")
             self.start_spring_server(sample_module, java_agent, java_agent_auto_init)
             if not self.wait_for_spring():
@@ -471,9 +562,19 @@ class SystemTestRunner:
         """Run a single system test."""
         print(f"Running system test for {sample_module}")
 
+        server_type = None
+        if "spring" in sample_module and "spring-boot" not in sample_module:
+            server_type = ServerType.TOMCAT
+        elif "spring" in sample_module:
+            server_type = ServerType.SPRING
+
         try:
             # Set up infrastructure
-            setup_result = self.setup_test_infrastructure(sample_module, java_agent, java_agent_auto_init, build_before_run)
+            setup_result = self.setup_test_infrastructure(sample_module,
+                                                          java_agent,
+                                                          java_agent_auto_init,
+                                                          build_before_run,
+                                                          server_type)
             if setup_result != 0:
                 return setup_result
 
@@ -484,7 +585,9 @@ class SystemTestRunner:
 
         finally:
             # Cleanup
-            if "spring" in sample_module:
+            if server_type == ServerType.TOMCAT:
+                self.stop_tomcat_server()
+            elif server_type == ServerType.SPRING:
                 self.stop_spring_server()
             self.stop_sentry_mock_server()
 
@@ -576,6 +679,7 @@ class SystemTestRunner:
     def get_available_modules(self) -> List[ModuleConfig]:
         """Get list of all available test modules."""
         return [
+            ModuleConfig("sentry-samples-spring-jakarta", "false", "true", "false"),
             ModuleConfig("sentry-samples-spring-boot", "false", "true", "false"),
             ModuleConfig("sentry-samples-spring-boot-opentelemetry-noagent", "false", "true", "false"),
             ModuleConfig("sentry-samples-spring-boot-opentelemetry", "true", "true", "false"),
@@ -817,6 +921,16 @@ def main():
     test_parser.add_argument("--build", default="false", help="Build before running (true or false)")
     test_parser.add_argument("--manual-test", action="store_true", help="Set up infrastructure but pause for manual testing from IDE")
 
+    # Tomcat subcommand
+    tomcat_parser = subparsers.add_parser("tomcat", help="Manage Servlet applications deployed on Tomcat")
+    tomcat_subparsers = tomcat_parser.add_subparsers(dest="tomcat_action", help="Tomcat actions")
+
+    tomcat_start_parser = tomcat_subparsers.add_parser("start", help="Start tomcat application")
+    tomcat_start_parser.add_argument("module", help="Sample module to start")
+    tomcat_start_parser.add_argument("--build", default="false", help="Build before starting (true or false)")
+
+    tomcat_subparsers.add_parser("stop", help="Stop Spring Boot application")
+
     # Spring subcommand
     spring_parser = subparsers.add_parser("spring", help="Manage Spring Boot applications")
     spring_subparsers = spring_parser.add_subparsers(dest="spring_action", help="Spring actions")
@@ -879,6 +993,32 @@ def main():
             elif args.interactive:
                 return runner.run_interactive_tests(agent, auto_init, build)
 
+        elif args.command == "tomcat":
+            if args.tomcat_action == "start":
+                # Convert true/false arguments to internal format
+                build = str_to_bool(args.build)
+
+                runner.start_tomcat_server(args.module)
+
+                # Build if requested
+                if build == "1":
+                    print("Building before starting Tomcat application")
+                    build_result = runner.build_module(args.module, ServerType.TOMCAT)
+                    if build_result != 0:
+                        print("Build failed")
+                        return build_result
+
+                if runner.wait_for_tomcat(args.module):
+                    print("Tomcat application started successfully!")
+                    return 0
+                else:
+                    print("Tomcat application failed to start!")
+                    return 1
+            elif args.tomcat_action == "stop":
+                runner.stop_tomcat_server()
+                print("Tomcat application stopped.")
+                return 0
+
         elif args.command == "spring":
             if args.spring_action == "start":
                 # Convert true/false arguments to internal format
@@ -889,7 +1029,7 @@ def main():
                 # Build if requested
                 if build == "1":
                     print("Building before starting Spring application")
-                    build_result = runner.build_module(args.module)
+                    build_result = runner.build_module(args.module, ServerType.SPRING)
                     if build_result != 0:
                         print("Build failed")
                         return build_result
