@@ -54,6 +54,15 @@ jobs:
           - sample: "sentry-samples-console"
             agent: "false"
             agent-auto-init: "true"
+          - sample: "sentry-samples-logback"
+            agent: "false"
+            agent-auto-init: "true"
+          - sample: "sentry-samples-log4j2"
+            agent: "false"
+            agent-auto-init: "true"
+          - sample: "sentry-samples-jul"
+            agent: "false"
+            agent-auto-init: "true"
     steps:
       - uses: actions/checkout@v4
         with:
@@ -75,7 +84,7 @@ jobs:
           java-version: '17'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@ac638b010cf58a27ee6c972d7336334ccaf61c96
+        uses: gradle/actions/setup-gradle@017a9effdb900e5b5b2fddfb590a105619dca3c3
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
