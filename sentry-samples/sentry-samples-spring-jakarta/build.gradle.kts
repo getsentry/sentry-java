@@ -42,6 +42,7 @@ dependencies {
   implementation(libs.slf4j2.api)
 
   implementation(libs.tomcat.catalina.jakarta)
+  implementation(libs.tomcat.embed.jasper.jakarta)
 
   testImplementation(projects.sentrySystemTestSupport)
   testImplementation(libs.kotlin.test.junit)

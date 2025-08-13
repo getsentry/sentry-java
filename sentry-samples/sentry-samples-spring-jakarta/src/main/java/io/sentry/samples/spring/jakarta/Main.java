@@ -9,9 +9,17 @@ import org.apache.catalina.startup.Tomcat;
 public class Main {
 
   public static void main(String[] args) throws LifecycleException, IOException {
-    String webappPath = "./build/libs";
+    File webappsDirectory = new File("./tomcat.8080/webapps");
+    if (!webappsDirectory.exists()) {
+      boolean didCreateDirectories = webappsDirectory.mkdirs();
+      if (!didCreateDirectories) {
+        throw new RuntimeException("Failed to create directory required by Tomcat: " + webappsDirectory.getAbsolutePath());
+      }
+    }
+
+    String pathToWar = "./build/libs";
     String warName = "sentry-samples-spring-jakarta-0.0.1-SNAPSHOT";
-    File war = new File(webappPath + "/" + warName + ".war");
+    File war = new File(pathToWar + "/" + warName + ".war");
 
     Tomcat tomcat = new Tomcat();
     tomcat.setPort(8080);
