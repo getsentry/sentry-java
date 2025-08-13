@@ -65,6 +65,14 @@ class ServerType(Enum):
     TOMCAT = 0
     SPRING = 1
 
+def get_server_type_for_module(sample_module: str) -> Optional[ServerType]:
+    if "spring" in sample_module and "spring-boot" not in sample_module:
+        return ServerType.TOMCAT
+    elif "spring" in sample_module:
+        return ServerType.SPRING
+
+    return None
+
 def str_to_bool(value: str) -> str:
     """Convert true/false string to 1/0 string for internal compatibility."""
     if value.lower() in ('true', '1'):
@@ -562,11 +570,7 @@ class SystemTestRunner:
         """Run a single system test."""
         print(f"Running system test for {sample_module}")
 
-        server_type = None
-        if "spring" in sample_module and "spring-boot" not in sample_module:
-            server_type = ServerType.TOMCAT
-        elif "spring" in sample_module:
-            server_type = ServerType.SPRING
+        server_type = get_server_type_for_module(sample_module)
 
         try:
             # Set up infrastructure
@@ -639,9 +643,10 @@ class SystemTestRunner:
         """Set up infrastructure for manual testing from IDE."""
         print(f"Setting up manual test environment for {sample_module}")
 
+        server_type = get_server_type_for_module(sample_module)
         try:
             # Set up infrastructure
-            setup_result = self.setup_test_infrastructure(sample_module, java_agent, java_agent_auto_init, build_before_run)
+            setup_result = self.setup_test_infrastructure(sample_module, java_agent, java_agent_auto_init, build_before_run, server_type)
             if setup_result != 0:
                 return setup_result
 
@@ -658,7 +663,9 @@ class SystemTestRunner:
             print(f"  - Agent Auto-init: {java_agent_auto_init}")
             print(f"  - Mock DSN: http://502f25099c204a2fbf4cb16edc5975d1@localhost:8000/0")
 
-            if "spring" in sample_module:
+            if server_type == ServerType.TOMCAT:
+                print(f"\nTomcat app is running on: http://localhost:8080/{sample_module}-0.0.1-SNAPSHOT")
+            elif server_type == ServerType.SPRING:
                 print("\nSpring Boot app is running on: http://localhost:8080")
 
             print("\nPress Enter to stop the infrastructure and exit...")
@@ -998,8 +1005,6 @@ def main():
                 # Convert true/false arguments to internal format
                 build = str_to_bool(args.build)
 
-                runner.start_tomcat_server(args.module)
-
                 # Build if requested
                 if build == "1":
                     print("Building before starting Tomcat application")
@@ -1007,6 +1012,8 @@ def main():
                     if build_result != 0:
                         print("Build failed")
                         return build_result
+
+                runner.start_tomcat_server(args.module)
 
                 if runner.wait_for_tomcat(args.module):
                     print("Tomcat application started successfully!")
