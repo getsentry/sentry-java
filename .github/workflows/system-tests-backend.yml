@@ -57,6 +57,9 @@ jobs:
           - sample: "sentry-samples-logback"
             agent: "false"
             agent-auto-init: "true"
+          - sample: "sentry-samples-jul"
+            agent: "false"
+            agent-auto-init: "true"
     steps:
       - uses: actions/checkout@v4
         with:
