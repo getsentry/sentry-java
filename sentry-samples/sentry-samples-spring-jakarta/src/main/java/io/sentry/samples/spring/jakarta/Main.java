@@ -2,7 +2,6 @@ package io.sentry.samples.spring.jakarta;
 
 import java.io.File;
 import java.io.IOException;
-
 import org.apache.catalina.LifecycleException;
 import org.apache.catalina.startup.Tomcat;
 
@@ -13,7 +12,8 @@ public class Main {
     if (!webappsDirectory.exists()) {
       boolean didCreateDirectories = webappsDirectory.mkdirs();
       if (!didCreateDirectories) {
-        throw new RuntimeException("Failed to create directory required by Tomcat: " + webappsDirectory.getAbsolutePath());
+        throw new RuntimeException(
+            "Failed to create directory required by Tomcat: " + webappsDirectory.getAbsolutePath());
       }
     }
 
