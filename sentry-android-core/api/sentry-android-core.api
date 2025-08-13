@@ -336,6 +336,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun isEnableRootCheck ()Z
 	public fun isEnableScopeSync ()Z
 	public fun isEnableSystemEventBreadcrumbs ()Z
+	public fun isEnableSystemEventBreadcrumbsExtras ()Z
 	public fun isReportHistoricalAnrs ()Z
 	public fun setAnrEnabled (Z)V
 	public fun setAnrReportInDebug (Z)V
@@ -360,6 +361,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun setEnableRootCheck (Z)V
 	public fun setEnableScopeSync (Z)V
 	public fun setEnableSystemEventBreadcrumbs (Z)V
+	public fun setEnableSystemEventBreadcrumbsExtras (Z)V
 	public fun setFrameMetricsCollector (Lio/sentry/android/core/internal/util/SentryFrameMetricsCollector;)V
 	public fun setNativeHandlerStrategy (Lio/sentry/android/core/NdkHandlerStrategy;)V
 	public fun setNativeSdkName (Ljava/lang/String;)V
