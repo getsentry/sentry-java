@@ -62,6 +62,9 @@ public class SentryInitBeanPostProcessor
             .getBeanProvider(SentryOptions.BeforeBreadcrumbCallback.class)
             .ifAvailable(options::setBeforeBreadcrumb);
         applicationContext
+            .getBeanProvider(SentryOptions.OnDiscardCallback.class)
+            .ifAvailable(options::setOnDiscard);
+        applicationContext
             .getBeansOfType(EventProcessor.class)
             .values()
             .forEach(options::addEventProcessor);

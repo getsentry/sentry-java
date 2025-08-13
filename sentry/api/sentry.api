@@ -3340,6 +3340,7 @@ public class io/sentry/SentryOptions {
 	public fun getMaxSpans ()I
 	public fun getMaxTraceFileSize ()J
 	public fun getModulesLoader ()Lio/sentry/internal/modules/IModulesLoader;
+	public fun getOnDiscard ()Lio/sentry/SentryOptions$OnDiscardCallback;
 	public fun getOpenTelemetryMode ()Lio/sentry/SentryOpenTelemetryMode;
 	public fun getOptionsObservers ()Ljava/util/List;
 	public fun getOutboxPath ()Ljava/lang/String;
@@ -3482,6 +3483,7 @@ public class io/sentry/SentryOptions {
 	public fun setMaxSpans (I)V
 	public fun setMaxTraceFileSize (J)V
 	public fun setModulesLoader (Lio/sentry/internal/modules/IModulesLoader;)V
+	public fun setOnDiscard (Lio/sentry/SentryOptions$OnDiscardCallback;)V
 	public fun setOpenTelemetryMode (Lio/sentry/SentryOpenTelemetryMode;)V
 	public fun setPrintUncaughtStackTrace (Z)V
 	public fun setProfileLifecycle (Lio/sentry/ProfileLifecycle;)V
@@ -3573,6 +3575,10 @@ public final class io/sentry/SentryOptions$Logs {
 
 public abstract interface class io/sentry/SentryOptions$Logs$BeforeSendLogCallback {
 	public abstract fun execute (Lio/sentry/SentryLogEvent;)Lio/sentry/SentryLogEvent;
+}
+
+public abstract interface class io/sentry/SentryOptions$OnDiscardCallback {
+	public abstract fun execute (Lio/sentry/clientreport/DiscardReason;Lio/sentry/DataCategory;Ljava/lang/Long;)V
 }
 
 public abstract interface class io/sentry/SentryOptions$ProfilesSamplerCallback {
@@ -4346,6 +4352,7 @@ public class io/sentry/cache/EnvelopeCache : io/sentry/cache/IEnvelopeCache {
 	public static final field SUFFIX_ENVELOPE_FILE Ljava/lang/String;
 	protected static final field UTF_8 Ljava/nio/charset/Charset;
 	protected final field cacheLock Lio/sentry/util/AutoClosableReentrantLock;
+	protected final field sessionLock Lio/sentry/util/AutoClosableReentrantLock;
 	public fun <init> (Lio/sentry/SentryOptions;Ljava/lang/String;I)V
 	public static fun create (Lio/sentry/SentryOptions;)Lio/sentry/cache/IEnvelopeCache;
 	public fun discard (Lio/sentry/SentryEnvelope;)V
@@ -4353,7 +4360,9 @@ public class io/sentry/cache/EnvelopeCache : io/sentry/cache/IEnvelopeCache {
 	public static fun getCurrentSessionFile (Ljava/lang/String;)Ljava/io/File;
 	public static fun getPreviousSessionFile (Ljava/lang/String;)Ljava/io/File;
 	public fun iterator ()Ljava/util/Iterator;
+	public fun movePreviousSession (Ljava/io/File;Ljava/io/File;)V
 	public fun store (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)V
+	public fun storeEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Z
 	public fun waitPreviousSessionFlush ()Z
 }
 
@@ -4361,6 +4370,7 @@ public abstract interface class io/sentry/cache/IEnvelopeCache : java/lang/Itera
 	public abstract fun discard (Lio/sentry/SentryEnvelope;)V
 	public fun store (Lio/sentry/SentryEnvelope;)V
 	public abstract fun store (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)V
+	public fun storeEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Z
 }
 
 public final class io/sentry/cache/PersistingOptionsObserver : io/sentry/IOptionsObserver {
@@ -6663,6 +6673,7 @@ public final class io/sentry/transport/NoOpEnvelopeCache : io/sentry/cache/IEnve
 	public static fun getInstance ()Lio/sentry/transport/NoOpEnvelopeCache;
 	public fun iterator ()Ljava/util/Iterator;
 	public fun store (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)V
+	public fun storeEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Z
 }
 
 public final class io/sentry/transport/NoOpTransport : io/sentry/transport/ITransport {
