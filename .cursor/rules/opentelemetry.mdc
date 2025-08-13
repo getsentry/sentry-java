@@ -1,3 +1,7 @@
+---
+alwaysApply: false
+description: Java SDK OpenTelemetry Integration
+---
 # Java SDK OpenTelemetry Integration
 
 ## Overview
@@ -5,7 +9,7 @@
 The Sentry Java SDK provides comprehensive OpenTelemetry integration through multiple modules:
 
 - `sentry-opentelemetry-core`: Core OpenTelemetry integration functionality
-- `sentry-opentelemetry-agent`: Agent-based integration for automatic instrumentation
+- `sentry-opentelemetry-agent`: Java Agent-based integration for automatic instrumentation
 - `sentry-opentelemetry-agentless`: Manual instrumentation without Java agent
 - `sentry-opentelemetry-agentless-spring`: Spring-specific agentless integration
 - `sentry-opentelemetry-bootstrap`: Classes that go into the bootstrap classloader when the agent is used. For agentless they are simply used in the applications classloader.
@@ -26,9 +30,9 @@ The Sentry Java SDK provides comprehensive OpenTelemetry integration through mul
 
 ### Agent vs Agentless
 
-**Agent-based integration**:
+**Java Agent-based integration**:
 - Automatic instrumentation via Java agent
-- Can be added to any JAR when starting, no extra dependencies or code changes required. Just add the agent to the `java` command.
+- Can be added to any JAR when starting, no extra dependencies or code changes required. Just add the agent when running the application, e.g. `SENTRY_PROPERTIES_FILE=sentry.properties JAVA_TOOL_OPTIONS="-javaagent:sentry-opentelemetry-agent.jar" java -jar your-application.jar`.
 - Uses OpenTelemetry Java agent with Sentry extensions
 - Uses bytecode manipulation
 
@@ -42,7 +46,7 @@ The Sentry Java SDK provides comprehensive OpenTelemetry integration through mul
 
 **Manual Integration**:
 While it's possible to manually wire up all the required classes to make Sentry and OpenTelemetry work together, we do not recommend this.
-It is instead preferrable to go through `SentryAutoConfigurationCustomizerProvider` so the Sentry SDK has a place to manage required classes and update it when changes are needed.
+It is instead preferrable to use `SentryAutoConfigurationCustomizerProvider` so the Sentry SDK has a place to manage required classes and update it when changes are needed.
 This way customers receive the updated config automatically as oppposed to having to update manually, wire in new classes, remove old ones etc.
 
 ### Integration Architecture
