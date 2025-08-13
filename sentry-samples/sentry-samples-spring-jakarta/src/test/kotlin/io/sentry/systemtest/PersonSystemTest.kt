@@ -17,7 +17,7 @@ class PersonSystemTest {
   @Test
   fun `get person fails`() {
     val restClient = testHelper.restClient
-    restClient.getPerson(1L)
+    restClient.getPerson(11L)
     assertEquals(500, restClient.lastKnownStatusCode)
 
     testHelper.ensureTransactionReceived { transaction, envelopeHeader ->

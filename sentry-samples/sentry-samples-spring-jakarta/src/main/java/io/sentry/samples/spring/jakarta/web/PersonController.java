@@ -27,7 +27,11 @@ public class PersonController {
     Sentry.logger().error("error Sentry logging");
     Sentry.logger().info("hello %s %s", "there", "world!");
     LOGGER.info("Loading person with id={}", id);
-    throw new IllegalArgumentException("Something went wrong [id=" + id + "]");
+    if (id > 10L) {
+      throw new IllegalArgumentException("Something went wrong [id=" + id + "]");
+    } else {
+      return personService.find(id);
+    }
   }
 
   @PostMapping
