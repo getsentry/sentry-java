@@ -73,6 +73,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
 
   private final @NotNull Map<SentryEnvelope, String> fileNameMap = new WeakHashMap<>();
   protected final @NotNull AutoClosableReentrantLock cacheLock = new AutoClosableReentrantLock();
+  protected final @NotNull AutoClosableReentrantLock sessionLock = new AutoClosableReentrantLock();
 
   public static @NotNull IEnvelopeCache create(final @NotNull SentryOptions options) {
     final String cacheDirPath = options.getCacheDirPath();
@@ -93,8 +94,18 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
     previousSessionLatch = new CountDownLatch(1);
   }
 
+  @SuppressWarnings("deprecation")
   @Override
   public void store(final @NotNull SentryEnvelope envelope, final @NotNull Hint hint) {
+    storeInternal(envelope, hint);
+  }
+
+  @Override
+  public boolean storeEnvelope(final @NotNull SentryEnvelope envelope, final @NotNull Hint hint) {
+    return storeInternal(envelope, hint);
+  }
+
+  private boolean storeInternal(final @NotNull SentryEnvelope envelope, final @NotNull Hint hint) {
     Objects.requireNonNull(envelope, "Envelope is required.");
 
     rotateCacheIfNeeded(allEnvelopeFiles());
@@ -113,20 +124,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
     }
 
     if (HintUtils.hasType(hint, SessionStart.class)) {
-      if (currentSessionFile.exists()) {
-        options.getLogger().log(WARNING, "Current session is not ended, we'd need to end it.");
-
-        try (final Reader reader =
-            new BufferedReader(
-                new InputStreamReader(new FileInputStream(currentSessionFile), UTF_8))) {
-          final Session session = serializer.getValue().deserialize(reader, Session.class);
-          if (session != null) {
-            writeSessionToDisk(previousSessionFile, session);
-          }
-        } catch (Throwable e) {
-          options.getLogger().log(SentryLevel.ERROR, "Error processing session.", e);
-        }
-      }
+      movePreviousSession(currentSessionFile, previousSessionFile);
       updateCurrentSession(currentSessionFile, envelope);
 
       boolean crashedLastRun = false;
@@ -171,19 +169,20 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
               WARNING,
               "Not adding Envelope to offline storage because it already exists: %s",
               envelopeFile.getAbsolutePath());
-      return;
+      return true;
     } else {
       options
           .getLogger()
           .log(DEBUG, "Adding Envelope to offline storage: %s", envelopeFile.getAbsolutePath());
     }
 
-    writeEnvelopeToDisk(envelopeFile, envelope);
+    final boolean didWriteToDisk = writeEnvelopeToDisk(envelopeFile, envelope);
 
     // write file to the disk when its about to crash so crashedLastRun can be marked on restart
     if (HintUtils.hasType(hint, UncaughtExceptionHandlerIntegration.UncaughtExceptionHint.class)) {
       writeCrashMarkerFile();
     }
+    return didWriteToDisk;
   }
 
   /**
@@ -295,7 +294,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
     }
   }
 
-  private void writeEnvelopeToDisk(
+  private boolean writeEnvelopeToDisk(
       final @NotNull File file, final @NotNull SentryEnvelope envelope) {
     if (file.exists()) {
       options
@@ -312,21 +311,18 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
       options
           .getLogger()
           .log(ERROR, e, "Error writing Envelope %s to offline storage", file.getAbsolutePath());
+      return false;
     }
+    return true;
   }
 
   private void writeSessionToDisk(final @NotNull File file, final @NotNull Session session) {
-    if (file.exists()) {
+    try (final OutputStream outputStream = new FileOutputStream(file);
+        final Writer writer = new BufferedWriter(new OutputStreamWriter(outputStream, UTF_8))) {
       options
           .getLogger()
           .log(DEBUG, "Overwriting session to offline storage: %s", session.getSessionId());
-      if (!file.delete()) {
-        options.getLogger().log(SentryLevel.ERROR, "Failed to delete: %s", file.getAbsolutePath());
-      }
-    }
 
-    try (final OutputStream outputStream = new FileOutputStream(file);
-        final Writer writer = new BufferedWriter(new OutputStreamWriter(outputStream, UTF_8))) {
       serializer.getValue().serialize(session, writer);
     } catch (Throwable e) {
       options
@@ -440,5 +436,34 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
 
   public void flushPreviousSession() {
     previousSessionLatch.countDown();
+  }
+
+  public void movePreviousSession(
+      final @NotNull File currentSessionFile, final @NotNull File previousSessionFile) {
+    try (final @NotNull ISentryLifecycleToken ignored = sessionLock.acquire()) {
+      if (previousSessionFile.exists()) {
+        options.getLogger().log(DEBUG, "Previous session file already exists, deleting it.");
+        if (!previousSessionFile.delete()) {
+          options
+              .getLogger()
+              .log(WARNING, "Unable to delete previous session file: %s", previousSessionFile);
+        }
+      }
+
+      if (currentSessionFile.exists()) {
+        options.getLogger().log(INFO, "Moving current session to previous session.");
+
+        try {
+          final boolean renamed = currentSessionFile.renameTo(previousSessionFile);
+          if (!renamed) {
+            options.getLogger().log(WARNING, "Unable to move current session to previous session.");
+          }
+        } catch (Throwable e) {
+          options
+              .getLogger()
+              .log(SentryLevel.ERROR, "Error moving current session to previous session.", e);
+        }
+      }
+    }
   }
 }

@@ -64,6 +64,7 @@ class SentryLogcatAdapterTest {
     SentryLogcatAdapter.v(tag, "$commonMsg verbose")
     fixture.breadcrumbs.first().assert(tag, "$commonMsg verbose", SentryLevel.DEBUG)
     fixture.logs.first().assert("$commonMsg verbose", SentryLogLevel.TRACE)
+    assertEquals("auto.log.logcat", fixture.logs.first().attributes?.get("sentry.origin")?.value)
   }
 
   @Test

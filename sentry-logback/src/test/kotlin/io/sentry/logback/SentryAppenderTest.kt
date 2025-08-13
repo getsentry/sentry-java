@@ -382,6 +382,7 @@ class SentryAppenderTest {
           val attributes = log.attributes!!
           assertEquals("Testing {} level", attributes["sentry.message.template"]?.value)
           assertEquals("TRACE", attributes["sentry.message.parameter.0"]?.value)
+          assertEquals("auto.log.logback", attributes["sentry.origin"]?.value)
         }
       )
   }

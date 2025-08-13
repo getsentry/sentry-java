@@ -193,6 +193,7 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
 
     final @NotNull String formattedMessage = formatted(loggingEvent);
     final @NotNull SentryLogParameters params = SentryLogParameters.create(attributes);
+    params.setOrigin("auto.log.logback");
 
     Sentry.logger().log(sentryLevel, params, formattedMessage, arguments);
   }
