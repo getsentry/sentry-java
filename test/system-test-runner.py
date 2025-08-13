@@ -1138,6 +1138,7 @@ def main():
         if args.command == "test":
             runner.stop_spring_server()
             runner.stop_sentry_mock_server()
+            runner.stop_tomcat_server()
 
 if __name__ == "__main__":
     sys.exit(main())
