@@ -47,7 +47,11 @@ public final class SentryContextWrapper implements Context {
     if (sentrySpan != null) {
       forkedScopes.setActiveSpan(sentrySpan);
     }
-    return context.with(SENTRY_SCOPES_KEY, forkedScopes);
+    if (forkedScopes.isNoOp()) {
+      return context;
+    } else {
+      return context.with(SENTRY_SCOPES_KEY, forkedScopes);
+    }
   }
 
   private static @NotNull IScopes forkCurrentScopeInternal(

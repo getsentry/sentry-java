@@ -3,6 +3,7 @@ package io.sentry.cache
 import io.sentry.DateUtils
 import io.sentry.Hint
 import io.sentry.ILogger
+import io.sentry.ISerializer
 import io.sentry.NoOpLogger
 import io.sentry.SentryCrashLastRunState
 import io.sentry.SentryEnvelope
@@ -31,7 +32,10 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.same
+import org.mockito.kotlin.whenever
 
 class EnvelopeCacheTest {
   private class Fixture {
@@ -39,11 +43,13 @@ class EnvelopeCacheTest {
     val options = SentryOptions()
     val logger = mock<ILogger>()
 
-    fun getSUT(): EnvelopeCache {
+    fun getSUT(optionsCallback: ((SentryOptions) -> Unit)? = null): EnvelopeCache {
       options.cacheDirPath = dir.toAbsolutePath().toFile().absolutePath
 
       options.setLogger(logger)
       options.setDebug(true)
+
+      optionsCallback?.invoke(options)
 
       return EnvelopeCache.create(options) as EnvelopeCache
     }
@@ -90,13 +96,15 @@ class EnvelopeCacheTest {
     val envelope = SentryEnvelope.from(fixture.options.serializer, createSession(), null)
 
     val hints = HintUtils.createWithTypeCheckHint(SessionStartHint())
-    cache.store(envelope, hints)
+    val didStore = cache.storeEnvelope(envelope, hints)
 
     val currentFile =
       File(fixture.options.cacheDirPath!!, "$PREFIX_CURRENT_SESSION_FILE$SUFFIX_SESSION_FILE")
     assertTrue(currentFile.exists())
 
     file.deleteRecursively()
+
+    assertTrue(didStore)
   }
 
   @Test
@@ -108,7 +116,7 @@ class EnvelopeCacheTest {
     val envelope = SentryEnvelope.from(fixture.options.serializer, createSession(), null)
 
     val hints = HintUtils.createWithTypeCheckHint(SessionStartHint())
-    cache.store(envelope, hints)
+    val didStore = cache.storeEnvelope(envelope, hints)
 
     val currentFile =
       File(fixture.options.cacheDirPath!!, "$PREFIX_CURRENT_SESSION_FILE$SUFFIX_SESSION_FILE")
@@ -119,6 +127,7 @@ class EnvelopeCacheTest {
     assertFalse(currentFile.exists())
 
     file.deleteRecursively()
+    assertTrue(didStore)
   }
 
   @Test
@@ -130,7 +139,7 @@ class EnvelopeCacheTest {
     val envelope = SentryEnvelope.from(fixture.options.serializer, createSession(), null)
 
     val hints = HintUtils.createWithTypeCheckHint(SessionStartHint())
-    cache.store(envelope, hints)
+    val didStore = cache.storeEnvelope(envelope, hints)
 
     val currentFile =
       File(fixture.options.cacheDirPath!!, "$PREFIX_CURRENT_SESSION_FILE$SUFFIX_SESSION_FILE")
@@ -146,6 +155,7 @@ class EnvelopeCacheTest {
     currentFile.delete()
 
     file.deleteRecursively()
+    assertTrue(didStore)
   }
 
   @Test
@@ -160,7 +170,7 @@ class EnvelopeCacheTest {
     val envelope = SentryEnvelope.from(fixture.options.serializer, createSession(), null)
 
     val hints = HintUtils.createWithTypeCheckHint(SessionStartHint())
-    cache.store(envelope, hints)
+    val didStore = cache.storeEnvelope(envelope, hints)
 
     val newEnvelope = SentryEnvelope.from(fixture.options.serializer, createSession(), null)
 
@@ -172,6 +182,7 @@ class EnvelopeCacheTest {
 
     // passing empty string since readCrashedLastRun is already set
     assertTrue(SentryCrashLastRunState.getInstance().isCrashedLastRun("", false)!!)
+    assertTrue(didStore)
   }
 
   @Test
@@ -185,11 +196,12 @@ class EnvelopeCacheTest {
     val envelope = SentryEnvelope.from(fixture.options.serializer, createSession(), null)
 
     val hints = HintUtils.createWithTypeCheckHint(SessionStartHint())
-    cache.store(envelope, hints)
+    val didStore = cache.storeEnvelope(envelope, hints)
 
     // passing empty string since readCrashedLastRun is already set
     assertTrue(SentryCrashLastRunState.getInstance().isCrashedLastRun("", false)!!)
     assertFalse(markerFile.exists())
+    assertTrue(didStore)
   }
 
   @Test
@@ -203,9 +215,10 @@ class EnvelopeCacheTest {
 
     val hints =
       HintUtils.createWithTypeCheckHint(UncaughtExceptionHint(0, NoOpLogger.getInstance()))
-    cache.store(envelope, hints)
+    val didStore = cache.storeEnvelope(envelope, hints)
 
     assertTrue(markerFile.exists())
+    assertTrue(didStore)
   }
 
   @Test
@@ -214,7 +227,7 @@ class EnvelopeCacheTest {
 
     val envelope = SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null)
     val hints = HintUtils.createWithTypeCheckHint(SessionStartHint())
-    cache.store(envelope, hints)
+    cache.storeEnvelope(envelope, hints)
 
     assertTrue(cache.waitPreviousSessionFlush())
   }
@@ -232,7 +245,7 @@ class EnvelopeCacheTest {
 
     val envelope = SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null)
     val hints = HintUtils.createWithTypeCheckHint(SessionStartHint())
-    cache.store(envelope, hints)
+    cache.storeEnvelope(envelope, hints)
 
     assertTrue(previousSessionFile.exists())
     val persistedSession =
@@ -261,7 +274,7 @@ class EnvelopeCacheTest {
         override fun timestamp(): Long? = null
       }
     val hints = HintUtils.createWithTypeCheckHint(abnormalHint)
-    cache.store(envelope, hints)
+    cache.storeEnvelope(envelope, hints)
 
     val updatedSession =
       fixture.options.serializer.deserialize(
@@ -293,7 +306,7 @@ class EnvelopeCacheTest {
         override fun timestamp(): Long = sessionExitedWithAbnormal
       }
     val hints = HintUtils.createWithTypeCheckHint(abnormalHint)
-    cache.store(envelope, hints)
+    cache.storeEnvelope(envelope, hints)
 
     val updatedSession =
       fixture.options.serializer.deserialize(
@@ -323,7 +336,7 @@ class EnvelopeCacheTest {
         override fun timestamp(): Long = sessionExitedWithAbnormal
       }
     val hints = HintUtils.createWithTypeCheckHint(abnormalHint)
-    cache.store(envelope, hints)
+    cache.storeEnvelope(envelope, hints)
 
     val updatedSession =
       fixture.options.serializer.deserialize(
@@ -332,6 +345,20 @@ class EnvelopeCacheTest {
       )
     assertEquals(Ok, updatedSession!!.status)
     assertEquals(null, updatedSession.abnormalMechanism)
+  }
+
+  @Test
+  fun `failing to store returns false`() {
+    val serializer = mock<ISerializer>()
+    val envelope = SentryEnvelope.from(SentryOptions.empty().serializer, createSession(), null)
+
+    whenever(serializer.serialize(same(envelope), any())).thenThrow(RuntimeException("forced ex"))
+
+    val cache = fixture.getSUT { options -> options.setSerializer(serializer) }
+
+    val didStore = cache.storeEnvelope(envelope, Hint())
+
+    assertFalse(didStore)
   }
 
   private fun createSession(started: Date? = null): Session =
@@ -376,5 +403,71 @@ class EnvelopeCacheTest {
     cache.store(envelopeB, Hint())
 
     assertEquals(2, cache.directory.list()?.size)
+  }
+
+  @Test
+  fun `movePreviousSession moves current session file to previous session file`() {
+    val cache = fixture.getSUT()
+
+    val currentSessionFile = EnvelopeCache.getCurrentSessionFile(fixture.options.cacheDirPath!!)
+    val previousSessionFile = EnvelopeCache.getPreviousSessionFile(fixture.options.cacheDirPath!!)
+
+    // Create a current session file
+    currentSessionFile.createNewFile()
+    currentSessionFile.writeText("current session content")
+
+    assertTrue(currentSessionFile.exists())
+    assertFalse(previousSessionFile.exists())
+
+    // Call movePreviousSession directly
+    cache.movePreviousSession(currentSessionFile, previousSessionFile)
+
+    // Current file should be moved to previous
+    assertFalse(currentSessionFile.exists())
+    assertTrue(previousSessionFile.exists())
+    assertEquals("current session content", previousSessionFile.readText())
+  }
+
+  @Test
+  fun `movePreviousSession does nothing when current session file does not exist`() {
+    val cache = fixture.getSUT()
+
+    val currentSessionFile = EnvelopeCache.getCurrentSessionFile(fixture.options.cacheDirPath!!)
+    val previousSessionFile = EnvelopeCache.getPreviousSessionFile(fixture.options.cacheDirPath!!)
+
+    assertFalse(currentSessionFile.exists())
+    assertFalse(previousSessionFile.exists())
+
+    // Call movePreviousSession when no files exist
+    cache.movePreviousSession(currentSessionFile, previousSessionFile)
+
+    // Nothing should happen
+    assertFalse(currentSessionFile.exists())
+    assertFalse(previousSessionFile.exists())
+  }
+
+  @Test
+  fun `movePreviousSession deletes file and moves session when previous session file already exists`() {
+    val cache = fixture.getSUT()
+
+    val currentSessionFile = EnvelopeCache.getCurrentSessionFile(fixture.options.cacheDirPath!!)
+    val previousSessionFile = EnvelopeCache.getPreviousSessionFile(fixture.options.cacheDirPath!!)
+
+    // Create both files
+    currentSessionFile.createNewFile()
+    currentSessionFile.writeText("current session content")
+    previousSessionFile.createNewFile()
+    previousSessionFile.writeText("existing previous content")
+
+    assertTrue(currentSessionFile.exists())
+    assertTrue(previousSessionFile.exists())
+
+    // Call movePreviousSession when previous already exists
+    cache.movePreviousSession(currentSessionFile, previousSessionFile)
+
+    // Current session should be moved to previous
+    assertFalse(currentSessionFile.exists())
+    assertTrue(previousSessionFile.exists())
+    assertEquals("current session content", previousSessionFile.readText())
   }
 }

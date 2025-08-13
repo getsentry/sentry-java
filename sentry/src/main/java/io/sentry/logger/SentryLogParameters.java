@@ -9,6 +9,7 @@ public final class SentryLogParameters {
 
   private @Nullable SentryDate timestamp;
   private @Nullable SentryAttributes attributes;
+  private @NotNull String origin = "manual";
 
   public @Nullable SentryDate getTimestamp() {
     return timestamp;
@@ -24,6 +25,14 @@ public final class SentryLogParameters {
 
   public void setAttributes(final @Nullable SentryAttributes attributes) {
     this.attributes = attributes;
+  }
+
+  public @NotNull String getOrigin() {
+    return origin;
+  }
+
+  public void setOrigin(final @NotNull String origin) {
+    this.origin = origin;
   }
 
   public static @NotNull SentryLogParameters create(

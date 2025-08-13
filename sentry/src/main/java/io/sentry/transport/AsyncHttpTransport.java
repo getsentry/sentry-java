@@ -139,7 +139,7 @@ public final class AsyncHttpTransport implements ITransport {
             final EnvelopeSender envelopeSender = (EnvelopeSender) r;
 
             if (!HintUtils.hasType(envelopeSender.hint, Cached.class)) {
-              envelopeCache.store(envelopeSender.envelope, envelopeSender.hint);
+              envelopeCache.storeEnvelope(envelopeSender.envelope, envelopeSender.hint);
             }
 
             markHintWhenSendingFailed(envelopeSender.hint, true);
@@ -271,7 +271,7 @@ public final class AsyncHttpTransport implements ITransport {
       TransportResult result = this.failedResult;
 
       envelope.getHeader().setSentAt(null);
-      envelopeCache.store(envelope, hint);
+      boolean cached = envelopeCache.storeEnvelope(envelope, hint);
 
       HintUtils.runIfHasType(
           hint,
@@ -311,14 +311,17 @@ public final class AsyncHttpTransport implements ITransport {
 
             // ignore e.g. 429 as we're not the ones actively dropping
             if (result.getResponseCode() >= 400 && result.getResponseCode() != 429) {
-              HintUtils.runIfDoesNotHaveType(
-                  hint,
-                  Retryable.class,
-                  (hint) -> {
-                    options
-                        .getClientReportRecorder()
-                        .recordLostEnvelope(DiscardReason.NETWORK_ERROR, envelopeWithClientReport);
-                  });
+              if (!cached) {
+                HintUtils.runIfDoesNotHaveType(
+                    hint,
+                    Retryable.class,
+                    (hint) -> {
+                      options
+                          .getClientReportRecorder()
+                          .recordLostEnvelope(
+                              DiscardReason.NETWORK_ERROR, envelopeWithClientReport);
+                    });
+              }
             }
 
             throw new IllegalStateException(message);
@@ -332,10 +335,12 @@ public final class AsyncHttpTransport implements ITransport {
                 retryable.setRetry(true);
               },
               (hint, clazz) -> {
-                LogUtils.logNotInstanceOf(clazz, hint, options.getLogger());
-                options
-                    .getClientReportRecorder()
-                    .recordLostEnvelope(DiscardReason.NETWORK_ERROR, envelopeWithClientReport);
+                if (!cached) {
+                  LogUtils.logNotInstanceOf(clazz, hint, options.getLogger());
+                  options
+                      .getClientReportRecorder()
+                      .recordLostEnvelope(DiscardReason.NETWORK_ERROR, envelopeWithClientReport);
+                }
               });
           throw new IllegalStateException("Sending the event failed.", e);
         }
@@ -348,10 +353,12 @@ public final class AsyncHttpTransport implements ITransport {
               retryable.setRetry(true);
             },
             (hint, clazz) -> {
-              LogUtils.logNotInstanceOf(clazz, hint, options.getLogger());
-              options
-                  .getClientReportRecorder()
-                  .recordLostEnvelope(DiscardReason.NETWORK_ERROR, envelope);
+              if (!cached) {
+                LogUtils.logNotInstanceOf(clazz, hint, options.getLogger());
+                options
+                    .getClientReportRecorder()
+                    .recordLostEnvelope(DiscardReason.NETWORK_ERROR, envelope);
+              }
             });
       }
       return result;

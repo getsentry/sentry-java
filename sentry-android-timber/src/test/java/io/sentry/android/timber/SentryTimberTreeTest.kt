@@ -5,6 +5,7 @@ import io.sentry.Scopes
 import io.sentry.SentryLevel
 import io.sentry.SentryLogLevel
 import io.sentry.logger.ILoggerApi
+import io.sentry.logger.SentryLogParameters
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -248,21 +249,28 @@ class SentryTimberTreeTest {
     val sut = fixture.getSut()
     sut.e("test count: %d %d", 32, 5)
 
-    verify(fixture.logs).log(eq(SentryLogLevel.ERROR), eq("test count: %d %d"), eq(32), eq(5))
+    verify(fixture.logs)
+      .log(
+        eq(SentryLogLevel.ERROR),
+        check<SentryLogParameters> { assertEquals("auto.log.timber", it.origin) },
+        eq("test count: %d %d"),
+        eq(32),
+        eq(5),
+      )
   }
 
   @Test
   fun `Tree adds a log if min level is equal`() {
     val sut = fixture.getSut()
     sut.i(Throwable("test"))
-    verify(fixture.logs).log(any(), any())
+    verify(fixture.logs).log(any(), any<SentryLogParameters>(), any<String>())
   }
 
   @Test
   fun `Tree adds a log if min level is higher`() {
     val sut = fixture.getSut()
     sut.e(Throwable("test"))
-    verify(fixture.logs).log(any(), any<String>(), any())
+    verify(fixture.logs).log(any(), any<SentryLogParameters>(), any<String>(), any())
   }
 
   @Test
@@ -277,7 +285,12 @@ class SentryTimberTreeTest {
     val sut = fixture.getSut()
     sut.i("message")
 
-    verify(fixture.logs).log(eq(SentryLogLevel.INFO), eq("message"))
+    verify(fixture.logs)
+      .log(
+        eq(SentryLogLevel.INFO),
+        check<SentryLogParameters> { assertEquals("auto.log.timber", it.origin) },
+        eq("message"),
+      )
   }
 
   @Test
@@ -285,7 +298,12 @@ class SentryTimberTreeTest {
     val sut = fixture.getSut()
     sut.e(Throwable("test"))
 
-    verify(fixture.logs).log(eq(SentryLogLevel.ERROR), eq("test"))
+    verify(fixture.logs)
+      .log(
+        eq(SentryLogLevel.ERROR),
+        check<SentryLogParameters> { assertEquals("auto.log.timber", it.origin) },
+        eq("test"),
+      )
   }
 
   @Test
@@ -300,7 +318,12 @@ class SentryTimberTreeTest {
     val sut = fixture.getSut()
     sut.e(Throwable("throwable message"))
 
-    verify(fixture.logs).log(eq(SentryLogLevel.ERROR), eq("throwable message"))
+    verify(fixture.logs)
+      .log(
+        eq(SentryLogLevel.ERROR),
+        check<SentryLogParameters> { assertEquals("auto.log.timber", it.origin) },
+        eq("throwable message"),
+      )
   }
 
   @Test
@@ -308,6 +331,11 @@ class SentryTimberTreeTest {
     val sut = fixture.getSut()
     sut.e(Throwable("throwable message"), "My message")
 
-    verify(fixture.logs).log(eq(SentryLogLevel.ERROR), eq("My message\nthrowable message"))
+    verify(fixture.logs)
+      .log(
+        eq(SentryLogLevel.ERROR),
+        check<SentryLogParameters> { assertEquals("auto.log.timber", it.origin) },
+        eq("My message\nthrowable message"),
+      )
   }
 }

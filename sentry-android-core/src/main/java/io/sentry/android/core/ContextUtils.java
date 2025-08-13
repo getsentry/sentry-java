@@ -15,13 +15,13 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
+import android.os.Handler;
 import android.util.DisplayMetrics;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.util.AndroidLazyEvaluator;
 import io.sentry.protocol.App;
-import io.sentry.util.LazyEvaluator;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -90,20 +90,6 @@ public final class ContextUtils {
 
   // to avoid doing a bunch of Binder calls we use LazyEvaluator to cache the values that are static
   // during the app process running
-
-  private static final @NotNull LazyEvaluator<Boolean> isForegroundImportance =
-      new LazyEvaluator<>(
-          () -> {
-            try {
-              final ActivityManager.RunningAppProcessInfo appProcessInfo =
-                  new ActivityManager.RunningAppProcessInfo();
-              ActivityManager.getMyMemoryState(appProcessInfo);
-              return appProcessInfo.importance == IMPORTANCE_FOREGROUND;
-            } catch (Throwable ignored) {
-              // should never happen
-            }
-            return false;
-          });
 
   /**
    * Since this packageInfo uses flags 0 we can assume it's static and cache it as the package name
@@ -284,7 +270,15 @@ public final class ContextUtils {
    */
   @ApiStatus.Internal
   public static boolean isForegroundImportance() {
-    return isForegroundImportance.getValue();
+    try {
+      final ActivityManager.RunningAppProcessInfo appProcessInfo =
+          new ActivityManager.RunningAppProcessInfo();
+      ActivityManager.getMyMemoryState(appProcessInfo);
+      return appProcessInfo.importance == IMPORTANCE_FOREGROUND;
+    } catch (Throwable ignored) {
+      // should never happen
+    }
+    return false;
   }
 
   /**
@@ -462,8 +456,10 @@ public final class ContextUtils {
       final @NotNull Context context,
       final @NotNull SentryOptions options,
       final @Nullable BroadcastReceiver receiver,
-      final @NotNull IntentFilter filter) {
-    return registerReceiver(context, new BuildInfoProvider(options.getLogger()), receiver, filter);
+      final @NotNull IntentFilter filter,
+      final @Nullable Handler handler) {
+    return registerReceiver(
+        context, new BuildInfoProvider(options.getLogger()), receiver, filter, handler);
   }
 
   /** Register an exported BroadcastReceiver, independently from platform version. */
@@ -472,15 +468,17 @@ public final class ContextUtils {
       final @NotNull Context context,
       final @NotNull BuildInfoProvider buildInfoProvider,
       final @Nullable BroadcastReceiver receiver,
-      final @NotNull IntentFilter filter) {
+      final @NotNull IntentFilter filter,
+      final @Nullable Handler handler) {
     if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.TIRAMISU) {
       // From https://developer.android.com/guide/components/broadcasts#context-registered-receivers
       // If this receiver is listening for broadcasts sent from the system or from other apps, even
       // other apps that you own—use the RECEIVER_EXPORTED flag. If instead this receiver is
       // listening only for broadcasts sent by your app, use the RECEIVER_NOT_EXPORTED flag.
-      return context.registerReceiver(receiver, filter, Context.RECEIVER_NOT_EXPORTED);
+      return context.registerReceiver(
+          receiver, filter, null, handler, Context.RECEIVER_NOT_EXPORTED);
     } else {
-      return context.registerReceiver(receiver, filter);
+      return context.registerReceiver(receiver, filter, null, handler);
     }
   }
 
@@ -544,7 +542,6 @@ public final class ContextUtils {
 
   @TestOnly
   static void resetInstance() {
-    isForegroundImportance.resetValue();
     staticPackageInfo33.resetValue();
     staticPackageInfo.resetValue();
     applicationName.resetValue();
