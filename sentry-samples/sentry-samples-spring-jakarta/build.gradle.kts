@@ -15,9 +15,7 @@ plugins {
 application { mainClass.set("io.sentry.samples.spring.jakarta.Main") }
 
 // Ensure WAR is up to date before run task
-tasks.named("run") {
-  dependsOn(tasks.named("war"))
-}
+tasks.named("run") { dependsOn(tasks.named("war")) }
 
 group = "io.sentry.sample.spring-jakarta"
 
