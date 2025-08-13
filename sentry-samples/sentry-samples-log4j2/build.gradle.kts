@@ -22,10 +22,6 @@ configure<JavaPluginExtension> {
 }
 
 tasks.withType<KotlinCompile>().configureEach {
-  kotlinOptions.jvmTarget = JavaVersion.VERSION_17.toString()
-}
-
-tasks.withType<KotlinCompile>().configureEach {
   kotlinOptions {
     freeCompilerArgs = listOf("-Xjsr305=strict")
     jvmTarget = JavaVersion.VERSION_17.toString()
