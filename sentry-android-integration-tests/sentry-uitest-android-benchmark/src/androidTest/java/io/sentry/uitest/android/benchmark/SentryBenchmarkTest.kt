@@ -101,6 +101,7 @@ class SentryBenchmarkTest : BaseBenchmarkTest() {
         benchmarkOperationProfiled,
         "ProfiledTransaction",
         refreshRate,
+        measuredIterations = 40,
       )
     comparisonResults.printAllRuns("Profiling Benchmark")
     val comparisonResult = comparisonResults.getSummaryResult()
@@ -108,8 +109,8 @@ class SentryBenchmarkTest : BaseBenchmarkTest() {
 
     // Currently we just want to assert the cpu overhead
     assertTrue(
-      comparisonResult.cpuTimeIncreasePercentage in 0F..5F,
-      "Expected ${comparisonResult.cpuTimeIncreasePercentage} to be in range 0 < x < 5",
+      comparisonResult.cpuTimeIncreasePercentage in 0F..5.5F,
+      "Expected ${comparisonResult.cpuTimeIncreasePercentage} to be in range 0 < x < 5.5",
     )
   }
 

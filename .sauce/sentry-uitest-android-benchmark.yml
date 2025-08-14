@@ -19,49 +19,34 @@ espresso:
 suites:
 
   # Devices are chosen so that there is a high-end and a low-end device for each api level
-  - name: "Android 12 (api 31)"
+  - name: "Android 15 (api 35)"
     testOptions:
       clearPackageData: true
       useTestOrchestrator: true
     devices:
-      - id: Google_Pixel_6_Pro_real_us # Google Pixel 6 Pro - api 31 (12) - high end
-      - id: Google_Pixel_5_12_real_us # Google Pixel 5 - api 31 (12) - low end
+      - id: Google_Pixel_9_Pro_XL_15_real_sjc1 # Google Pixel 9 Pro XL - api 35 (15) - high end
+      - id: Samsung_Galaxy_S23_15_real_sjc1 # Samsung Galaxy S23 - api 35 (15) - mid end
+      - id: Google_Pixel_6a_15_real_sjc1 # Google Pixel 6a - api 35 (15) - low end
 
-  - name: "Android 11 (api 30)"
+  - name: "Android 14 (api 34)"
     testOptions:
       clearPackageData: true
       useTestOrchestrator: true
     devices:
-      - id: Samsung_Galaxy_S10_Plus_11_real_us # Samsung Galaxy S10+ - api 30 (11) - high end
-      - id: Google_Pixel_4a_real_us # Google Pixel 4a - api 30 (11) - mid end
-      - id: Google_Pixel_3a_real # Google Pixel 3a - api 30 (11) - low end
+      - id: Google_Pixel_9_Pro_XL_real_sjc1 # Google Pixel 9 Pro XL - api 34 (14) - high end
+      - id: Samsung_Galaxy_A54_real_sjc1 # Samsung Galaxy A54 - api 34 (14) - low end
 
-  - name: "Android 10 (api 29)"
+  - name: "Android 13 (api 33)"
     testOptions:
       clearPackageData: true
       useTestOrchestrator: true
     devices:
-      - id: Google_Pixel_3a_XL_real # Google Pixel 3a XL - api 29 (10)
-      - id: OnePlus_6T_real # OnePlus 6T - api 29 (10)
+      - id: Google_Pixel_7_Pro_real_us # Google Pixel 7 Pro - api 33 (13) - high end
+      - id: Samsung_Galaxy_A32_5G_real_sjc1 # Samsung Galaxy A32 5G - api 33 (13) - low end
 
-# At the time of writing (July, 4, 2022), the market share per android version is:
-# 12.0 = 17.54%, 11.0 = 31.65%, 10.0 = 21.92%
-# Using these 3 versions we cover 71,11% of all devices out there. Currently, this is enough for benchmarking scope
-# Leaving these devices here in case we change mind on them
-#    devices:
-#      - id: Samsung_Galaxy_S8_plus_real_us # Samsung Galaxy S8+ - api 28 (9)
-#      - id: LG_G8_ThinQ_real_us # LG G8 ThinQ - api 28 (9)
-#      - id: OnePlus_5_real_us # OnePlus 5 - api 27 (8.1.0)
-#      - id: LG_K30_real_us1 # LG K30 - api 27 (8.1.0)
-#      - id: HTC_10_real_us # HTC 10 - api 26 (8.0.0)
-#      - id: Samsung_A3_real # Samsung Galaxy A3 2017 - api 26 (8.0.0)
-#      - id: ZTE_Axon_7_real2_us # ZTE Axon 7 - api 25 (7.1.1)
-#      - id: Motorola_Moto_X_Play_real # Motorola Moto X Play - api 25 (7.1.1)
-#      - id: Samsung_note_5_real_us # Samsung Galaxy Note 5 - api 24 (7.0)
-#      - id: LG_K10_real # LG K10 - api 24 (7.0)
-#      - id: Samsung_Galaxy_S6_Edge_Plus_real # Samsung Galaxy S6 Edge+ - api 23 (6.0.1)
-#      - id: Samsung_Tab_E_real_us # Samsung Tab E - api 23 (6.0.1)
-#      - id: Amazon_Kindle_Fire_HD_8_real_us # Amazon Kindle Fire HD 8 - api 22 (5.1.1)
+# At the time of writing (August, 13, 2025), the market share per android version is:
+# 15.0 = 26.75%, 14.0 = 19.5%, 13 = 15.95%
+# Using these 3 versions we cover 62.2% of all devices out there. Currently, this is enough for benchmarking scope
 
 artifacts:
   download:
