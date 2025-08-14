@@ -18,12 +18,13 @@ espresso:
 
 suites:
 
-  - name: "Android 11 (api 30)"
+  - name: "Android 15 Benchmark lite (api 35)"
     testOptions:
       clearPackageData: true
       useTestOrchestrator: true
     devices:
-      - id: Google_Pixel_3a_real # Google Pixel 3a - api 30 (11)
+      - name: ".*"
+        platformVersion: "15"
 
 artifacts:
   download:
