@@ -28,11 +28,13 @@ java {
 
 repositories { mavenCentral() }
 
-dependencyManagement { imports {
-  mavenBom(BOM_COORDINATES)
-  mavenBom(libs.kotlin.bom.get().toString())
-  mavenBom(libs.jackson.bom.get().toString())
-} }
+dependencyManagement {
+  imports {
+    mavenBom(BOM_COORDINATES)
+    mavenBom(libs.kotlin.bom.get().toString())
+    mavenBom(libs.jackson.bom.get().toString())
+  }
+}
 
 dependencies {
   implementation(Config.Libs.springWeb)
