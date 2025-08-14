@@ -3,6 +3,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.springframework.boot.gradle.plugin.SpringBootPlugin
 
 plugins {
+  application
   alias(libs.plugins.springboot3) apply false
   alias(libs.plugins.spring.dependency.management)
   kotlin("jvm")
@@ -10,6 +11,11 @@ plugins {
   id("war")
   alias(libs.plugins.gretty)
 }
+
+application { mainClass.set("io.sentry.samples.spring.jakarta.Main") }
+
+// Ensure WAR is up to date before run task
+tasks.named("run") { dependsOn(tasks.named("war")) }
 
 group = "io.sentry.sample.spring-jakarta"
 
@@ -37,16 +43,43 @@ dependencies {
   implementation(libs.logback.classic)
   implementation(libs.servlet.jakarta.api)
   implementation(libs.slf4j2.api)
+
+  implementation(libs.tomcat.catalina.jakarta)
+  implementation(libs.tomcat.embed.jasper.jakarta)
+
+  testImplementation(projects.sentrySystemTestSupport)
+  testImplementation(libs.kotlin.test.junit)
   testImplementation(libs.springboot.starter.test) {
     exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
   }
 }
-
-tasks.withType<Test>().configureEach { useJUnitPlatform() }
 
 tasks.withType<KotlinCompile>().configureEach {
   kotlinOptions {
     freeCompilerArgs = listOf("-Xjsr305=strict")
     jvmTarget = JavaVersion.VERSION_17.toString()
   }
+}
+
+configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
+
+tasks.register<Test>("systemTest").configure {
+  group = "verification"
+  description = "Runs the System tests"
+
+  outputs.upToDateWhen { false }
+
+  maxParallelForks = 1
+
+  // Cap JVM args per test
+  minHeapSize = "128m"
+  maxHeapSize = "1g"
+
+  filter { includeTestsMatching("io.sentry.systemtest*") }
+}
+
+tasks.named("test").configure {
+  require(this is Test)
+
+  filter { excludeTestsMatching("io.sentry.systemtest.*") }
 }

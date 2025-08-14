@@ -21,6 +21,9 @@ distributions/
 sentry-spring-boot-starter-jakarta/src/main/resources/META-INF/spring.factories
 sentry-samples/sentry-samples-spring-boot-jakarta/spy.log
 sentry-mock-server.txt
+tomcat-server.txt
 spring-server.txt
+*.pid
 spy.log
 .kotlin
+**/tomcat.8080/webapps/
