@@ -1,10 +1,12 @@
 import io.gitlab.arturbosch.detekt.Detekt
 import org.jetbrains.dokka.gradle.DokkaTask
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
 plugins {
-  kotlin("multiplatform")
+  alias(libs.plugins.kotlin.multiplatform)
+  alias(libs.plugins.kotlin.compose)
   id("com.android.library")
-  id("org.jetbrains.compose")
   alias(libs.plugins.kover)
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.detekt)
@@ -17,12 +19,22 @@ kotlin {
   explicitApi()
 
   androidTarget {
+    compilerOptions {
+      jvmTarget.set(JvmTarget.JVM_1_8)
+      apiVersion.set(KotlinVersion.KOTLIN_1_9)
+      languageVersion.set(KotlinVersion.KOTLIN_1_9)
+    }
     publishLibraryVariants("release")
-    compilations.all { kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString() }
   }
   jvm("desktop") {
-    compilations.all { kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString() }
+    compilerOptions {
+      jvmTarget.set(JvmTarget.JVM_1_8)
+      apiVersion.set(KotlinVersion.KOTLIN_1_9)
+      languageVersion.set(KotlinVersion.KOTLIN_1_9)
+    }
   }
+
+  coreLibrariesVersion = "1.8"
 
   sourceSets.all {
     // Allow all experimental APIs, since MPP projects are themselves experimental
@@ -34,9 +46,9 @@ kotlin {
 
   sourceSets {
     val commonMain by getting {
-      dependencies {
-        compileOnly(compose.runtime)
-        compileOnly(compose.ui)
+      compilerOptions {
+        apiVersion.set(KotlinVersion.KOTLIN_1_9)
+        languageVersion.set(KotlinVersion.KOTLIN_1_9)
       }
     }
     val androidMain by getting {

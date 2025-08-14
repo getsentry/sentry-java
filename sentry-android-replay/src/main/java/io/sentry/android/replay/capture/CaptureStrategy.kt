@@ -125,6 +125,7 @@ internal interface CaptureStrategy {
       )
     }
 
+    @Suppress("NewApi")
     private fun buildReplay(
       options: SentryOptions,
       video: File,
@@ -256,6 +257,7 @@ internal interface CaptureStrategy {
         scopes?.captureReplay(replay, hint.apply { replayRecording = recording })
       }
 
+      @Suppress("NewApi")
       fun setSegmentId(segmentId: Int) {
         replay.segmentId = segmentId
         recording.payload?.forEach {
