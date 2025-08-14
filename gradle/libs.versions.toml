@@ -122,7 +122,7 @@ retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit
 retrofit-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "retrofit" }
 sentry-native-ndk = { module = "io.sentry:sentry-native-ndk", version = "0.10.0" }
 servlet-api = { module = "javax.servlet:javax.servlet-api", version = "3.1.0" }
-servlet-jakarta-api = { module = "jakarta.servlet:jakarta.servlet-api", version = "5.0.0" }
+servlet-jakarta-api = { module = "jakarta.servlet:jakarta.servlet-api", version = "6.1.0" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 slf4j-jdk14 = { module = "org.slf4j:slf4j-jdk14", version.ref = "slf4j" }
 slf4j2-api = { module = "org.slf4j:slf4j-api", version = "2.0.5" }
@@ -151,6 +151,10 @@ springboot3-starter-security = { module = "org.springframework.boot:spring-boot-
 springboot3-starter-jdbc = { module = "org.springframework.boot:spring-boot-starter-jdbc", version.ref = "springboot3" }
 springboot3-starter-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator", version.ref = "springboot3" }
 timber = { module = "com.jakewharton.timber:timber", version = "4.7.1" }
+
+# tomcat libraries
+tomcat-catalina-jakarta = { module = "org.apache.tomcat:tomcat-catalina", version = "11.0.10" }
+tomcat-embed-jasper-jakarta = { module = "org.apache.tomcat.embed:tomcat-embed-jasper", version = "11.0.10" }
 
 # test libraries
 androidx-compose-ui-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4", version = "1.6.8" }
