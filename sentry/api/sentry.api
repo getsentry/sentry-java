@@ -494,6 +494,8 @@ public final class io/sentry/ExternalOptions {
 	public fun getRelease ()Ljava/lang/String;
 	public fun getSendClientReports ()Ljava/lang/Boolean;
 	public fun getServerName ()Ljava/lang/String;
+	public fun getSessionFlushTimeout ()Ljava/lang/Long;
+	public fun getShutdownTimeout ()Ljava/lang/Long;
 	public fun getSpotlightConnectionUrl ()Ljava/lang/String;
 	public fun getTags ()Ljava/util/Map;
 	public fun getTracePropagationTargets ()Ljava/util/List;
@@ -537,6 +539,8 @@ public final class io/sentry/ExternalOptions {
 	public fun setSendDefaultPii (Ljava/lang/Boolean;)V
 	public fun setSendModules (Ljava/lang/Boolean;)V
 	public fun setServerName (Ljava/lang/String;)V
+	public fun setSessionFlushTimeout (Ljava/lang/Long;)V
+	public fun setShutdownTimeout (Ljava/lang/Long;)V
 	public fun setSpotlightConnectionUrl (Ljava/lang/String;)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setTracesSampleRate (Ljava/lang/Double;)V
