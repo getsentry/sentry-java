@@ -100,6 +100,7 @@ graphql-java24 = { module = "com.graphql-java:graphql-java", version = "24.0" }
 jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
 jackson-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin", version.ref = "jackson" }
 jetbrains-annotations = { module = "org.jetbrains:annotations", version = "23.0.0" }
+kotlin-bom = { module = "org.jetbrains.kotlin:kotlin-bom", version.ref = "kotlin" }
 kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
 kotlin-test-junit-spring7 = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlinSpring7" }
 kotlinx-coroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }

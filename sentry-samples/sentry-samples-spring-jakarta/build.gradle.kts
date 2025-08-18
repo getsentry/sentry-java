@@ -1,4 +1,3 @@
-import org.jetbrains.kotlin.config.KotlinCompilerVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.springframework.boot.gradle.plugin.SpringBootPlugin
 
@@ -27,7 +26,12 @@ java.targetCompatibility = JavaVersion.VERSION_17
 
 repositories { mavenCentral() }
 
-dependencyManagement { imports { mavenBom(SpringBootPlugin.BOM_COORDINATES) } }
+dependencyManagement {
+  imports {
+    mavenBom(SpringBootPlugin.BOM_COORDINATES)
+    mavenBom(libs.kotlin.bom.get().toString())
+  }
+}
 
 dependencies {
   implementation(Config.Libs.springWeb)
@@ -36,7 +40,7 @@ dependencies {
   implementation(Config.Libs.springSecurityWeb)
   implementation(Config.Libs.springSecurityConfig)
   implementation(Config.Libs.kotlinReflect)
-  implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
+  implementation(kotlin(Config.kotlinStdLib))
   implementation(projects.sentrySpringJakarta)
   implementation(projects.sentryLogback)
   implementation(libs.jackson.databind)
