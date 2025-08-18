@@ -79,7 +79,7 @@ Android has `globalHubMode` enabled by default.
 For JVM Desktop applications, `globalHubMode` can be used.
 For JVM Backend applications (servers) we discourage enabling `globalHubMode` since it will cause scopes to bleed into each other. This can e.g. mean that state from request A leaks into request B and events sent to Sentry contain a mix of both request A and B potentially rendering the data useless.
 
-### Disabled
+### Enabled
 
 If `globalHubMode` is enabled, the SDK avoids forking scopes.
 
@@ -93,7 +93,7 @@ This means the forked scopes have to be managed manually, e.g. by keeping a refe
 
 `ScopesAdapter` makes use of the static `Sentry` API internally. It allows us to access the correct scopes for the current context without passing it along explicitly. It also makes testing easier.
 
-### Enabled
+### Disabled
 
 If `globalHubMode` is disabled, the SDK forks scopes freely, e.g. when:
 - `Sentry.getCurrentScopes()` is executed on a Thread where no specific scopes for that thread have been stored yet. In this case the SDK will fork `rootScopes` (stored in a `Sentry` static property).
