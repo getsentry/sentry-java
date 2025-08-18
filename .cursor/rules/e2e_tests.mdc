@@ -7,7 +7,7 @@ description: Java SDK End to End Tests
 
 The samples in the `sentry-samples` directory are used to run end to end tests against them.
 
-There is a python script (`system-test-runner.py`) that can be used to run one (using `--module SAMPLE_NAME`) or all (using `--all` system tests.
+There is a python script (`system-test-runner.py`) that can be used to run one (using `--module SAMPLE_NAME`) or all (using `--all`) system tests.
 
 The script has an interactive mode (`-i`) which allows selection of test setups to execute, whether to run the tests or just prepare infrastructure for testing from IDE.
 
@@ -19,7 +19,7 @@ Tests can then assert events, transactions, logs etc. similar to how they would 
 
 `TestHelper` has a lot of helper methods for asserting, e.g. by span name, log body etc.
 
-The end to end tests either expect the system under test to either be running (for server applications) or call `java -jar` to execute a CLI system under test.
+The end to end tests either expect the system under test to either be running on a server or call `java -jar` to execute a CLI system under test.
 
 For Spring Boot, we spin up the Spring Boot server. The tests then send requests to that server and assert what is sent to Sentry.
 

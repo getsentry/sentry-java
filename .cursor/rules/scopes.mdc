@@ -83,7 +83,7 @@ For JVM Backend applications (servers) we discourage enabling `globalHubMode` si
 
 If `globalHubMode` is enabled, the SDK avoids forking scopes.
 
-This means, retrieving current scopes on a thread where specific scopes for that thread exist yet, the root scopes are not forked but returned directly.
+This means, retrieving current scopes on a thread where specific scopes do not exist yet for the thread, the root scopes are not forked but returned directly.
 The SDK also doesn't fork scopes when `Sentry.pushScope`, `Sentry.pushIsolation`, `Sentry.withScope` or `Sentry.withIsolationScope` are executed.
 
 The suppression of forking via `globalHubMode` only applies when using `Sentry` static API or `ScopesAdapter`.
