@@ -31,7 +31,7 @@ public final class SpanUtils {
       origins.add("auto.db.jdbc");
       origins.add("auto.http.spring_jakarta.webclient");
       origins.add("auto.http.spring.webclient");
-      origins.add("auto.http.spring4.webclient");
+      origins.add("auto.http.spring7.webclient");
       origins.add("auto.http.spring_jakarta.restclient");
       origins.add("auto.http.spring.restclient");
       origins.add("auto.http.spring7.restclient");
