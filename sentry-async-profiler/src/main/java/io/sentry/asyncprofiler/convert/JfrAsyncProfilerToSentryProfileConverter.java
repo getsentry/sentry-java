@@ -15,7 +15,9 @@ import io.sentry.protocol.profiling.SentryThreadMetadata;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -24,6 +26,7 @@ public final class JfrAsyncProfilerToSentryProfileConverter extends JfrConverter
 
   private final @NotNull SentryProfile sentryProfile = new SentryProfile();
   private final @NotNull SentryStackTraceFactory stackTraceFactory;
+  private final @NotNull Map<SentryStackFrame, Integer> frameDeduplicationMap = new HashMap<>();
 
   public JfrAsyncProfilerToSentryProfileConverter(
       JfrReader jfr, Arguments args, @NotNull SentryStackTraceFactory stackTraceFactory) {
@@ -133,7 +136,6 @@ public final class JfrAsyncProfilerToSentryProfileConverter extends JfrConverter
 
     private List<Integer> createFramesAndCallStack(StackTrace stackTrace) {
       List<Integer> callStack = new ArrayList<>();
-      int currentFrameIndex = sentryProfile.getFrames().size();
 
       long[] methods = stackTrace.methods;
       byte[] types = stackTrace.types;
@@ -141,18 +143,31 @@ public final class JfrAsyncProfilerToSentryProfileConverter extends JfrConverter
 
       for (int i = 0; i < methods.length; i++) {
         StackTraceElement element = getStackTraceElement(methods[i], types[i], locations[i]);
-        if (element.isNativeMethod()) {
+        if (element.isNativeMethod() || isNativeFrame(types[i])) {
           continue;
         }
 
         SentryStackFrame frame = createStackFrame(element);
-        sentryProfile.getFrames().add(frame);
-
-        callStack.add(currentFrameIndex);
-        currentFrameIndex++;
+        frame.setNative(isNativeFrame(types[i]));
+        int frameIndex = getOrAddFrame(frame);
+        callStack.add(frameIndex);
       }
 
       return callStack;
+    }
+
+    // Get existing frame index or add new frame and return its index
+    private int getOrAddFrame(SentryStackFrame frame) {
+      Integer existingIndex = frameDeduplicationMap.get(frame);
+
+      if (existingIndex != null) {
+        return existingIndex;
+      }
+
+      int newIndex = sentryProfile.getFrames().size();
+      sentryProfile.getFrames().add(frame);
+      frameDeduplicationMap.put(frame, newIndex);
+      return newIndex;
     }
 
     private SentryStackFrame createStackFrame(StackTraceElement element) {
