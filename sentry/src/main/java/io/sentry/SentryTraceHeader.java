@@ -18,7 +18,7 @@ public final class SentryTraceHeader {
   // Use numbered capture groups for Android API level < 26 compatibility
   private static final Pattern SENTRY_TRACEPARENT_HEADER_REGEX =
       Pattern.compile(
-          "^[ \t]*([0-9a-f]{32})-([0-9a-f]{16})(-[01])?[ \t]*$", Pattern.CASE_INSENSITIVE);
+          "^[ \\t]*([0-9a-f]{32})-([0-9a-f]{16})(-[01])?[ \\t]*$", Pattern.CASE_INSENSITIVE);
 
   public SentryTraceHeader(
       final @NotNull SentryId traceId,
