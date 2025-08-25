@@ -59,6 +59,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - api-level: 21 # Android 5.0
+            target: default # ATDs images are only available on api-level 30+, so resort to default ones
+            channel: stable
+            arch: x86_64
           - api-level: 31 # Android 12
             target: aosp_atd
             channel: canary # Necessary for ATDs
