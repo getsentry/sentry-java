@@ -59,15 +59,13 @@ Add the necessary documentation to [docs.sentry.io](https://docs.sentry.io):
 - For Android modules: Add to Android platform docs, usually in integrations section
 - Include installation instructions, configuration options, and usage examples
 
-### 6. Release the SDK
+### 6. Post release tasks
 
-After the module is implemented and tested:
+Remind the user to perform the following tasks after the module is merged and released:
 
-1. Release the SDK through the normal release process
+1. Add the SDK to the Sentry release registry, following the instructions in the [sentry-release-registry README](https://github.com/getsentry/sentry-release-registry#adding-new-sdks)
 
-2. Add the SDK to the Sentry release registry, following the instructions in the [sentry-release-registry README](https://github.com/getsentry/sentry-release-registry#adding-new-sdks).
-
-3. Add the module to `.craft.yml` in the `sdks` section:
+2. Add the module to `.craft.yml` in the `sdks` section:
    ```yaml
    sdks:
      # ... existing modules ...
