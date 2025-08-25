@@ -52,40 +52,22 @@ Add the new module to the packages table in the main `README.md` with a placehol
 
 Note that the badge will only work after the module is released to Maven Central.
 
-### 5. (After releasee) Add to Sentry Release Registry
-
-Follow the instructions in the [sentry-release-registry README](https://github.com/getsentry/sentry-release-registry#adding-new-sdks):
-
-1. Create `packages/maven/io.sentry/sentry-{module-name}/{version}.json` for the latest version
-2. Add the following JSON structure:
-   ```json
-   {
-     "name": "io.sentry:sentry-{module-name}",
-     "canonical": "maven:io.sentry:sentry-{module-name}",
-     "version": "{version}",
-     "package_url": "https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-{module-name}",
-     "repo_url": "https://github.com/getsentry/sentry-java",
-     "main_docs_url": "https://docs.sentry.io/platforms/java/tracing/instrumentation/{module-name}/"
-   }
-   ```
-   (adjust the docs URL accordingly)
-3. Create symlink: `cd sdks && ln -s ../packages/maven/io.sentry/sentry-{module-name} sentry.java.sentry-{module-name}`
-4. Run `make sync-all-links` to fix up symlinks
-5. Raise a PR to the sentry-release-registry repository and get it merged
-
-### 6. Add Documentation to docs.sentry.io
+### 5. Add Documentation to docs.sentry.io
 
 Add the necessary documentation to [docs.sentry.io](https://docs.sentry.io):
 - For Java modules: Add to Java platform docs, usually in integrations section
 - For Android modules: Add to Android platform docs, usually in integrations section
 - Include installation instructions, configuration options, and usage examples
 
-### 7. Release the SDK
+### 6. Release the SDK
 
 After the module is implemented and tested:
 
 1. Release the SDK through the normal release process
-2. Add the module to `.craft.yml` in the `sdks` section:
+
+2. Add the SDK to the Sentry release registry, following the instructions in the [sentry-release-registry README](https://github.com/getsentry/sentry-release-registry#adding-new-sdks).
+
+3. Add the module to `.craft.yml` in the `sdks` section:
    ```yaml
    sdks:
      # ... existing modules ...
