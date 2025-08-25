@@ -281,7 +281,7 @@ public final class JavaContinuousProfiler
                   new HashMap<>(),
                   jfrFile,
                   startProfileChunkTimestamp,
-                  ProfileChunk.Platform.JAVA));
+                  ProfileChunk.PLATFORM_ANDROID));
         }
       }
 
