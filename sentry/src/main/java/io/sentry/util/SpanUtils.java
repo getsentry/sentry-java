@@ -24,15 +24,20 @@ public final class SpanUtils {
     if (SentryOpenTelemetryMode.AGENT == mode || SentryOpenTelemetryMode.AGENTLESS_SPRING == mode) {
       origins.add("auto.http.spring_jakarta.webmvc");
       origins.add("auto.http.spring.webmvc");
+      origins.add("auto.http.spring7.webmvc");
       origins.add("auto.spring_jakarta.webflux");
       origins.add("auto.spring.webflux");
+      origins.add("auto.spring7.webflux");
       origins.add("auto.db.jdbc");
       origins.add("auto.http.spring_jakarta.webclient");
       origins.add("auto.http.spring.webclient");
+      origins.add("auto.http.spring7.webclient");
       origins.add("auto.http.spring_jakarta.restclient");
       origins.add("auto.http.spring.restclient");
+      origins.add("auto.http.spring7.restclient");
       origins.add("auto.http.spring_jakarta.resttemplate");
       origins.add("auto.http.spring.resttemplate");
+      origins.add("auto.http.spring7.resttemplate");
       origins.add("auto.http.openfeign");
       origins.add("auto.http.ktor-client");
     }

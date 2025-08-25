@@ -145,7 +145,7 @@ fun toRequestUrl(uri: URI): StringBuffer? {
     url.append(':').append(port)
   }
 
-  if (uri?.isNotBlank()) {
+  if (uri.isNotBlank()) {
     url.append(uri)
   }
   return url

@@ -4,14 +4,14 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
   `java-library`
   id("io.sentry.javadoc")
-  kotlin("jvm")
+  alias(libs.plugins.kotlin.jvm)
   jacoco
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
 }
 
 tasks.withType<KotlinCompile>().configureEach {
-  kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
+  compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8
 }
 
 dependencies {
