@@ -189,23 +189,28 @@ public final class SystemEventsBreadcrumbsIntegration
 
     try {
       options
-        .getExecutorService()
-        .submit(
-          () -> {
-            final @Nullable SystemEventsBroadcastReceiver receiverRef;
-            try (final @NotNull ISentryLifecycleToken ignored = receiverLock.acquire()) {
-              isStopped = true;
-              receiverRef = receiver;
-              receiver = null;
-            }
+          .getExecutorService()
+          .submit(
+              () -> {
+                final @Nullable SystemEventsBroadcastReceiver receiverRef;
+                try (final @NotNull ISentryLifecycleToken ignored = receiverLock.acquire()) {
+                  isStopped = true;
+                  receiverRef = receiver;
+                  receiver = null;
+                }
 
-            if (receiverRef != null) {
-              context.unregisterReceiver(receiverRef);
-            }
-          });
+                if (receiverRef != null) {
+                  context.unregisterReceiver(receiverRef);
+                }
+              });
     } catch (RejectedExecutionException e) {
       if (options != null) {
-        options.getLogger().log(SentryLevel.DEBUG, "SystemEventsBreadcrumbsIntegration was unable to unregister receiver.", e);
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "SystemEventsBreadcrumbsIntegration was unable to unregister receiver.",
+                e);
       }
     }
   }
