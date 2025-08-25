@@ -3,6 +3,7 @@ package io.sentry.uitest.android
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.launchActivity
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import io.sentry.IConnectionStatusProvider
 import io.sentry.ProfilingTraceData
 import io.sentry.Sentry
 import io.sentry.SentryIntegrationPackageStorage
@@ -23,6 +24,34 @@ import shark.AndroidReferenceMatchers
 import shark.IgnoredReferenceMatcher
 import shark.ReferencePattern
 
+/** Test connection status provider that always reports connected. */
+private class AlwaysOnlineStatusProvider : IConnectionStatusProvider {
+
+  override fun close() {
+    // No-op for test implementation
+  }
+
+  override fun getConnectionStatus(): IConnectionStatusProvider.ConnectionStatus {
+    return IConnectionStatusProvider.ConnectionStatus.CONNECTED
+  }
+
+  override fun getConnectionType(): String? {
+    return null
+  }
+
+  override fun addConnectionStatusObserver(
+    observer: IConnectionStatusProvider.IConnectionStatusObserver
+  ): Boolean {
+    return false
+  }
+
+  override fun removeConnectionStatusObserver(
+    observer: IConnectionStatusProvider.IConnectionStatusObserver
+  ) {
+    // no-op
+  }
+}
+
 @RunWith(AndroidJUnit4::class)
 class SdkInitTests : BaseUiTest() {
   @Test
@@ -30,12 +59,16 @@ class SdkInitTests : BaseUiTest() {
     initSentry(false) { options: SentryAndroidOptions ->
       options.tracesSampleRate = 1.0
       options.profilesSampleRate = 1.0
+      options.readTimeoutMillis = 500
+      options.connectionTimeoutMillis = 500
     }
     val transaction = Sentry.startTransaction("e2etests", "testInit")
     val sampleScenario = launchActivity<EmptyActivity>()
     initSentry(false) { options: SentryAndroidOptions ->
       options.tracesSampleRate = 1.0
       options.profilesSampleRate = 1.0
+      options.readTimeoutMillis = 500
+      options.connectionTimeoutMillis = 500
     }
     transaction.finish()
     sampleScenario.moveToState(Lifecycle.State.DESTROYED)
@@ -53,6 +86,9 @@ class SdkInitTests : BaseUiTest() {
       // We use the same executorService before and after closing the SDK
       it.executorService = options.executorService
       it.isDebug = true
+      it.readTimeoutMillis = 500
+      it.connectionTimeoutMillis = 500
+      it.connectionStatusProvider = AlwaysOnlineStatusProvider()
     }
     val transaction = Sentry.startTransaction("e2etests", "testInit")
     val sampleScenario = launchActivity<EmptyActivity>()
@@ -62,6 +98,9 @@ class SdkInitTests : BaseUiTest() {
       // We use the same executorService before and after closing the SDK
       it.executorService = options.executorService
       it.isDebug = true
+      it.readTimeoutMillis = 500
+      it.connectionTimeoutMillis = 500
+      it.connectionStatusProvider = AlwaysOnlineStatusProvider()
     }
     relayIdlingResource.increment()
     relayIdlingResource.increment()
@@ -103,7 +142,12 @@ class SdkInitTests : BaseUiTest() {
     // Let's make the first request timeout
     relay.addTimeoutResponse()
 
-    initSentry(true) { options: SentryAndroidOptions -> options.tracesSampleRate = 1.0 }
+    initSentry(true) { options: SentryAndroidOptions ->
+      options.tracesSampleRate = 1.0
+      options.readTimeoutMillis = 500
+      options.connectionTimeoutMillis = 500
+      options.connectionStatusProvider = AlwaysOnlineStatusProvider()
+    }
 
     Sentry.startTransaction("beforeRestart", "emptyTransaction").finish()
 
@@ -120,6 +164,9 @@ class SdkInitTests : BaseUiTest() {
     initSentry(true) { options: SentryAndroidOptions ->
       options.tracesSampleRate = 1.0
       options.profilesSampleRate = 1.0
+      options.readTimeoutMillis = 500
+      options.connectionTimeoutMillis = 500
+      options.connectionStatusProvider = AlwaysOnlineStatusProvider()
     }
     val afterRestart = System.currentTimeMillis()
     val restartMs = afterRestart - beforeRestart
@@ -156,6 +203,7 @@ class SdkInitTests : BaseUiTest() {
     initSentry(true) { options: SentryAndroidOptions ->
       options.tracesSampleRate = 1.0
       options.flushTimeoutMillis = 3000
+      options.connectionStatusProvider = AlwaysOnlineStatusProvider()
     }
 
     Sentry.startTransaction("beforeRestart", "emptyTransaction").finish()
@@ -170,6 +218,7 @@ class SdkInitTests : BaseUiTest() {
     initSentry(true) { options: SentryAndroidOptions ->
       options.tracesSampleRate = 1.0
       options.profilesSampleRate = 1.0
+      options.connectionStatusProvider = AlwaysOnlineStatusProvider()
     }
     val afterRestart = System.currentTimeMillis()
     val restartMs = afterRestart - beforeRestart
@@ -224,6 +273,9 @@ class SdkInitTests : BaseUiTest() {
       initSentry(false) { options: SentryAndroidOptions ->
         options.tracesSampleRate = 1.0
         options.profilesSampleRate = 1.0
+        options.readTimeoutMillis = 500
+        options.connectionTimeoutMillis = 500
+        options.connectionStatusProvider = AlwaysOnlineStatusProvider()
       }
     }
     activityScenario.moveToState(Lifecycle.State.DESTROYED)
@@ -244,6 +296,9 @@ class SdkInitTests : BaseUiTest() {
           initSentry(false) { options: SentryAndroidOptions ->
             options.tracesSampleRate = 1.0
             options.profilesSampleRate = 1.0
+            options.readTimeoutMillis = 500
+            options.connectionTimeoutMillis = 500
+            options.connectionStatusProvider = AlwaysOnlineStatusProvider()
           }
           initLatch.countDown()
         }

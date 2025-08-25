@@ -46,6 +46,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -186,21 +187,27 @@ public final class SystemEventsBreadcrumbsIntegration
       return;
     }
 
-    options
+    try {
+      options
         .getExecutorService()
         .submit(
-            () -> {
-              final @Nullable SystemEventsBroadcastReceiver receiverRef;
-              try (final @NotNull ISentryLifecycleToken ignored = receiverLock.acquire()) {
-                isStopped = true;
-                receiverRef = receiver;
-                receiver = null;
-              }
+          () -> {
+            final @Nullable SystemEventsBroadcastReceiver receiverRef;
+            try (final @NotNull ISentryLifecycleToken ignored = receiverLock.acquire()) {
+              isStopped = true;
+              receiverRef = receiver;
+              receiver = null;
+            }
 
-              if (receiverRef != null) {
-                context.unregisterReceiver(receiverRef);
-              }
-            });
+            if (receiverRef != null) {
+              context.unregisterReceiver(receiverRef);
+            }
+          });
+    } catch (RejectedExecutionException e) {
+      if (options != null) {
+        options.getLogger().log(SentryLevel.DEBUG, "SystemEventsBreadcrumbsIntegration was unable to unregister receiver.", e);
+      }
+    }
   }
 
   @Override
