@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Fixes
+
+- Do not use named capturing groups for regular expressions ([#4652](https://github.com/getsentry/sentry-java/pull/4652))
+  - This fixes a crash on Android verisons below 8.0 (API level 26)
+
 ### Features
 
 - Add onDiscard to enable users to track the type and amount of data discarded before reaching Sentry ([#4612](https://github.com/getsentry/sentry-java/pull/4612))
