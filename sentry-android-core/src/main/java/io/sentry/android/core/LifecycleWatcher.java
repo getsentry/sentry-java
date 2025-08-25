@@ -1,7 +1,5 @@
 package io.sentry.android.core;
 
-import androidx.lifecycle.DefaultLifecycleObserver;
-import androidx.lifecycle.LifecycleOwner;
 import io.sentry.Breadcrumb;
 import io.sentry.IScopes;
 import io.sentry.ISentryLifecycleToken;
@@ -10,6 +8,7 @@ import io.sentry.Session;
 import io.sentry.transport.CurrentDateProvider;
 import io.sentry.transport.ICurrentDateProvider;
 import io.sentry.util.AutoClosableReentrantLock;
+import io.sentry.util.LazyEvaluator;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicLong;
@@ -17,14 +16,14 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
-final class LifecycleWatcher implements DefaultLifecycleObserver {
+final class LifecycleWatcher implements AppState.AppStateListener {
 
   private final AtomicLong lastUpdatedSession = new AtomicLong(0L);
 
   private final long sessionIntervalMillis;
 
   private @Nullable TimerTask timerTask;
-  private final @NotNull Timer timer = new Timer(true);
+  private final @NotNull LazyEvaluator<Timer> timer = new LazyEvaluator<>(() -> new Timer(true));
   private final @NotNull AutoClosableReentrantLock timerLock = new AutoClosableReentrantLock();
   private final @NotNull IScopes scopes;
   private final boolean enableSessionTracking;
@@ -58,15 +57,10 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
     this.currentDateProvider = currentDateProvider;
   }
 
-  // App goes to foreground
   @Override
-  public void onStart(final @NotNull LifecycleOwner owner) {
+  public void onForeground() {
     startSession();
     addAppBreadcrumb("foreground");
-
-    // Consider using owner.getLifecycle().getCurrentState().isAtLeast(Lifecycle.State.RESUMED);
-    // in the future.
-    AppState.getInstance().setInBackground(false);
   }
 
   private void startSession() {
@@ -99,35 +93,32 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
   // App went to background and triggered this callback after 700ms
   // as no new screen was shown
   @Override
-  public void onStop(final @NotNull LifecycleOwner owner) {
+  public void onBackground() {
     final long currentTimeMillis = currentDateProvider.getCurrentTimeMillis();
     this.lastUpdatedSession.set(currentTimeMillis);
 
     scopes.getOptions().getReplayController().pause();
     scheduleEndSession();
 
-    AppState.getInstance().setInBackground(true);
     addAppBreadcrumb("background");
   }
 
   private void scheduleEndSession() {
     try (final @NotNull ISentryLifecycleToken ignored = timerLock.acquire()) {
       cancelTask();
-      if (timer != null) {
-        timerTask =
-            new TimerTask() {
-              @Override
-              public void run() {
-                if (enableSessionTracking) {
-                  scopes.endSession();
-                }
-                scopes.getOptions().getReplayController().stop();
-                scopes.getOptions().getContinuousProfiler().close(false);
+      timerTask =
+          new TimerTask() {
+            @Override
+            public void run() {
+              if (enableSessionTracking) {
+                scopes.endSession();
               }
-            };
+              scopes.getOptions().getReplayController().stop();
+              scopes.getOptions().getContinuousProfiler().close(false);
+            }
+          };
 
-        timer.schedule(timerTask, sessionIntervalMillis);
-      }
+      timer.getValue().schedule(timerTask, sessionIntervalMillis);
     }
   }
 
@@ -160,6 +151,6 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
   @TestOnly
   @NotNull
   Timer getTimer() {
-    return timer;
+    return timer.getValue();
   }
 }

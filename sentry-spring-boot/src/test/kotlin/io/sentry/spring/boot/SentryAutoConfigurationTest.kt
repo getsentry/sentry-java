@@ -4,6 +4,7 @@ import com.acme.MainBootClass
 import io.opentelemetry.api.OpenTelemetry
 import io.sentry.AsyncHttpTransportFactory
 import io.sentry.Breadcrumb
+import io.sentry.DataCategory
 import io.sentry.EventProcessor
 import io.sentry.FilterString
 import io.sentry.Hint
@@ -19,6 +20,7 @@ import io.sentry.SentryLevel
 import io.sentry.SentryLogEvent
 import io.sentry.SentryOptions
 import io.sentry.checkEvent
+import io.sentry.clientreport.DiscardReason
 import io.sentry.opentelemetry.SentryAutoConfigurationCustomizerProvider
 import io.sentry.opentelemetry.agent.AgentMarker
 import io.sentry.protocol.SentryTransaction
@@ -369,6 +371,17 @@ class SentryAutoConfigurationTest {
       .run {
         assertThat(it.getBean(SentryOptions::class.java).beforeBreadcrumb)
           .isInstanceOf(CustomBeforeBreadcrumbCallback::class.java)
+      }
+  }
+
+  @Test
+  fun `registers onDiscardCallback on SentryOptions`() {
+    contextRunner
+      .withPropertyValues("sentry.dsn=http://key@localhost/proj")
+      .withUserConfiguration(CustomOnDiscardCallbackConfiguration::class.java)
+      .run {
+        assertThat(it.getBean(SentryOptions::class.java).onDiscard)
+          .isInstanceOf(CustomOnDiscardCallback::class.java)
       }
   }
 
@@ -1061,6 +1074,16 @@ class SentryAutoConfigurationTest {
 
   class CustomBeforeBreadcrumbCallback : SentryOptions.BeforeBreadcrumbCallback {
     override fun execute(breadcrumb: Breadcrumb, hint: Hint): Breadcrumb? = null
+  }
+
+  @Configuration(proxyBeanMethods = false)
+  open class CustomOnDiscardCallbackConfiguration {
+
+    @Bean open fun onDiscardCallback() = CustomOnDiscardCallback()
+  }
+
+  class CustomOnDiscardCallback : SentryOptions.OnDiscardCallback {
+    override fun execute(reason: DiscardReason, category: DataCategory, countToAdd: Long) {}
   }
 
   @Configuration(proxyBeanMethods = false)

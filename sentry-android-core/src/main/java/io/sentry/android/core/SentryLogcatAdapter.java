@@ -6,6 +6,7 @@ import io.sentry.ScopesAdapter;
 import io.sentry.Sentry;
 import io.sentry.SentryLevel;
 import io.sentry.SentryLogLevel;
+import io.sentry.logger.SentryLogParameters;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -56,10 +57,13 @@ public final class SentryLogcatAdapter {
       return;
     }
     final @Nullable String trMessage = tr != null ? tr.getMessage() : null;
+    final @NotNull SentryLogParameters params = new SentryLogParameters();
+    params.setOrigin("auto.log.logcat");
+
     if (tr == null || trMessage == null) {
-      scopes.logger().log(level, msg);
+      scopes.logger().log(level, params, msg);
     } else {
-      scopes.logger().log(level, msg != null ? (msg + "\n" + trMessage) : trMessage);
+      scopes.logger().log(level, params, msg != null ? (msg + "\n" + trMessage) : trMessage);
     }
   }
 

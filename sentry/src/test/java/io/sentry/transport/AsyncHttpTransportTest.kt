@@ -85,7 +85,7 @@ class AsyncHttpTransportTest {
     val order = inOrder(fixture.connection, fixture.sentryOptions.envelopeDiskCache)
 
     // because storeBeforeSend is enabled by default
-    order.verify(fixture.sentryOptions.envelopeDiskCache).store(eq(envelope), anyOrNull())
+    order.verify(fixture.sentryOptions.envelopeDiskCache).storeEnvelope(eq(envelope), anyOrNull())
 
     order.verify(fixture.connection).send(eq(envelope))
     order.verify(fixture.sentryOptions.envelopeDiskCache).discard(eq(envelope))
@@ -102,7 +102,7 @@ class AsyncHttpTransportTest {
     fixture.getSUT().send(envelope)
 
     // then
-    verify(fixture.sentryOptions.envelopeDiskCache).store(eq(envelope), anyOrNull())
+    verify(fixture.sentryOptions.envelopeDiskCache).storeEnvelope(eq(envelope), anyOrNull())
     verify(fixture.rateLimiter).filter(eq(envelope), anyOrNull())
   }
 
@@ -125,7 +125,7 @@ class AsyncHttpTransportTest {
     val order = inOrder(fixture.connection, fixture.sentryOptions.envelopeDiskCache)
 
     // because storeBeforeSend is enabled by default
-    order.verify(fixture.sentryOptions.envelopeDiskCache).store(eq(envelope), anyOrNull())
+    order.verify(fixture.sentryOptions.envelopeDiskCache).storeEnvelope(eq(envelope), anyOrNull())
 
     order.verify(fixture.connection).send(eq(envelope))
     verify(fixture.sentryOptions.envelopeDiskCache, never()).discard(any())
