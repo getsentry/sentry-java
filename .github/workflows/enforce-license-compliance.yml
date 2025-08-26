@@ -77,8 +77,8 @@ jobs:
         shell: bash
         run: |
           exec &> >(tee -a "test_logs.txt")
-          # Set timeout to 5 minutes (default of 60 minutes is waaaay too long to block CI)
-          fossa test --timeout 300 --revision "$GITHUB_PR_SHA"
+          # Set timeout to 30 minutes
+          fossa test --timeout 1800 --revision "$GITHUB_PR_SHA"
   
       - if: steps.analyze.outcome == 'failure' || steps.test.outcome == 'failure'
         name: 'Send error to Sentry on `fossa-cli` errors'
