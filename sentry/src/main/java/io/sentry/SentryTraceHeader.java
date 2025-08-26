@@ -15,10 +15,10 @@ public final class SentryTraceHeader {
   private final @NotNull SpanId spanId;
   private final @Nullable Boolean sampled;
 
+  // Use numbered capture groups for Android API level < 26 compatibility
   private static final Pattern SENTRY_TRACEPARENT_HEADER_REGEX =
       Pattern.compile(
-          "^[ \\t]*(?<traceId>[0-9a-f]{32})-(?<spanId>[0-9a-f]{16})(?<sampled>-[01])?[ \\t]*$",
-          Pattern.CASE_INSENSITIVE);
+          "^[ \\t]*([0-9a-f]{32})-([0-9a-f]{16})(-[01])?[ \\t]*$", Pattern.CASE_INSENSITIVE);
 
   public SentryTraceHeader(
       final @NotNull SentryId traceId,
@@ -33,14 +33,15 @@ public final class SentryTraceHeader {
     Matcher matcher = SENTRY_TRACEPARENT_HEADER_REGEX.matcher(value);
     boolean matchesExist = matcher.matches();
 
-    if (!matchesExist || matcher.group("traceId") == null || matcher.group("spanId") == null) {
+    if (!matchesExist) {
       throw new InvalidSentryTraceHeaderException(value);
     }
 
-    this.traceId = new SentryId(matcher.group("traceId"));
-    this.spanId = new SpanId(matcher.group("spanId"));
-    this.sampled =
-        matcher.group("sampled") == null ? null : "1".equals(matcher.group("sampled").substring(1));
+    this.traceId = new SentryId(matcher.group(1));
+    this.spanId = new SpanId(matcher.group(2));
+
+    String sampled = matcher.group(3);
+    this.sampled = sampled == null ? null : "1".equals(sampled.substring(1));
   }
 
   public @NotNull String getName() {
