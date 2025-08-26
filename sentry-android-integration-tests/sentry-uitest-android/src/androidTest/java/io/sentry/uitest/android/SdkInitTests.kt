@@ -98,6 +98,14 @@ class SdkInitTests : BaseUiTest() {
   }
 
   @Test
+  fun doubleInitDoesNotWait2() {
+    repeat(150) {
+      println("Run number $it")
+      doubleInitDoesNotWait()
+    }
+  }
+
+  @Test
   fun doubleInitDoesNotWait() {
     relayIdlingResource.increment()
     // Let's make the first request timeout
@@ -145,6 +153,8 @@ class SdkInitTests : BaseUiTest() {
         }
       assertNoOtherEnvelopes()
     }
+    context.cacheDir.deleteRecursively()
+    context.cacheDir.mkdirs()
   }
 
   @Test

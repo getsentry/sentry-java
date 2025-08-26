@@ -1,6 +1,7 @@
 package io.sentry.uitest.android.mockservers
 
 import androidx.test.espresso.idling.CountingIdlingResource
+import io.sentry.uitest.android.describeForTest
 import io.sentry.uitest.android.waitUntilIdle
 import kotlin.test.assertNotNull
 import okhttp3.mockwebserver.Dispatcher
@@ -119,6 +120,17 @@ class MockRelay(
   fun assert(assertion: RelayAsserter.() -> Unit) {
     if (waitForRequests) {
       waitUntilIdle()
+      try {
+        waitUntilIdle()
+      } catch (e: Exception) {
+        if (unassertedEnvelopes.isNotEmpty()) {
+          throw AssertionError(
+            "There was a total of ${unassertedEnvelopes.size} envelopes: " +
+              unassertedEnvelopes.joinToString { it.envelope!!.describeForTest() },
+            e
+          )
+        }
+      }
     }
     assertion(RelayAsserter(unassertedEnvelopes))
   }
