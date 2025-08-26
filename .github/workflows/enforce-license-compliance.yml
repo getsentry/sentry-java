@@ -19,6 +19,9 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Disable Gradle configuration cache (see https://github.com/fossas/fossa-cli/issues/872)
         run: sed -i 's/^org.gradle.configuration-cache=.*/org.gradle.configuration-cache=false/' gradle.properties
 
