@@ -22,7 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class JfrAsyncProfilerToSentryProfileConverter extends JfrConverter {
-  private static final long NANOS_PER_SECOND = 1_000_000_000L;
+  private static final double NANOS_PER_SECOND = 1_000_000_000.0;
 
   private final @NotNull SentryProfile sentryProfile = new SentryProfile();
   private final @NotNull SentryStackTraceFactory stackTraceFactory;
@@ -64,6 +64,7 @@ public final class JfrAsyncProfilerToSentryProfileConverter extends JfrConverter
     private final @NotNull SentryStackTraceFactory stackTraceFactory;
     private final @NotNull JfrReader jfr;
     private final @NotNull Arguments args;
+    private final double ticksPerNanosecond;
 
     public ProfileEventVisitor(
         @NotNull SentryProfile sentryProfile,
@@ -74,6 +75,7 @@ public final class JfrAsyncProfilerToSentryProfileConverter extends JfrConverter
       this.stackTraceFactory = stackTraceFactory;
       this.jfr = jfr;
       this.args = args;
+      ticksPerNanosecond = jfr.ticksPerSec / NANOS_PER_SECOND;
     }
 
     @Override
@@ -122,8 +124,10 @@ public final class JfrAsyncProfilerToSentryProfileConverter extends JfrConverter
     }
 
     private double calculateTimestamp(Event event) {
-      long nsFromStart = (event.time - jfr.chunkStartTicks) * NANOS_PER_SECOND / jfr.ticksPerSec;
-      long timeNs = jfr.chunkStartNanos + nsFromStart;
+      long nanosFromStart = (long) ((event.time - jfr.chunkStartTicks) / ticksPerNanosecond);
+
+      long timeNs = jfr.chunkStartNanos + nanosFromStart;
+
       return DateUtils.nanosToSeconds(timeNs);
     }
 
