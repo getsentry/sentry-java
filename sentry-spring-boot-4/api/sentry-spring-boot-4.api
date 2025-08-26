@@ -1,0 +1,93 @@
+public final class io/sentry/spring/boot4/BuildConfig {
+	public static final field SENTRY_SPRING_BOOT_4_SDK_NAME Ljava/lang/String;
+	public static final field VERSION_NAME Ljava/lang/String;
+}
+
+public class io/sentry/spring/boot4/InAppIncludesResolver : org/springframework/context/ApplicationContextAware {
+	public fun <init> ()V
+	public fun resolveInAppIncludes ()Ljava/util/List;
+	public fun setApplicationContext (Lorg/springframework/context/ApplicationContext;)V
+}
+
+public class io/sentry/spring/boot4/SentryAutoConfiguration {
+	public fun <init> ()V
+}
+
+public class io/sentry/spring/boot4/SentryLogbackAppenderAutoConfiguration {
+	public fun <init> ()V
+	public fun sentryLogbackInitializer (Lio/sentry/spring/boot4/SentryProperties;)Lio/sentry/spring/boot4/SentryLogbackInitializer;
+}
+
+public class io/sentry/spring/boot4/SentryLogbackInitializer : org/springframework/context/event/GenericApplicationListener {
+	public fun <init> (Lio/sentry/spring/boot4/SentryProperties;)V
+	public fun onApplicationEvent (Lorg/springframework/context/ApplicationEvent;)V
+	public fun supportsEventType (Lorg/springframework/core/ResolvableType;)Z
+}
+
+public class io/sentry/spring/boot4/SentryProperties : io/sentry/SentryOptions {
+	public fun <init> ()V
+	public fun getExceptionResolverOrder ()I
+	public fun getGraphql ()Lio/sentry/spring/boot4/SentryProperties$Graphql;
+	public fun getLogging ()Lio/sentry/spring/boot4/SentryProperties$Logging;
+	public fun getReactive ()Lio/sentry/spring/boot4/SentryProperties$Reactive;
+	public fun getUserFilterOrder ()Ljava/lang/Integer;
+	public fun isEnableAotCompatibility ()Z
+	public fun isKeepTransactionsOpenForAsyncResponses ()Z
+	public fun isUseGitCommitIdAsRelease ()Z
+	public fun setEnableAotCompatibility (Z)V
+	public fun setExceptionResolverOrder (I)V
+	public fun setGraphql (Lio/sentry/spring/boot4/SentryProperties$Graphql;)V
+	public fun setKeepTransactionsOpenForAsyncResponses (Z)V
+	public fun setLogging (Lio/sentry/spring/boot4/SentryProperties$Logging;)V
+	public fun setReactive (Lio/sentry/spring/boot4/SentryProperties$Reactive;)V
+	public fun setUseGitCommitIdAsRelease (Z)V
+	public fun setUserFilterOrder (Ljava/lang/Integer;)V
+}
+
+public class io/sentry/spring/boot4/SentryProperties$Graphql {
+	public fun <init> ()V
+	public fun getIgnoredErrorTypes ()Ljava/util/List;
+	public fun setIgnoredErrorTypes (Ljava/util/List;)V
+}
+
+public class io/sentry/spring/boot4/SentryProperties$Logging {
+	public fun <init> ()V
+	public fun getLoggers ()Ljava/util/List;
+	public fun getMinimumBreadcrumbLevel ()Lorg/slf4j/event/Level;
+	public fun getMinimumEventLevel ()Lorg/slf4j/event/Level;
+	public fun getMinimumLevel ()Lorg/slf4j/event/Level;
+	public fun isEnabled ()Z
+	public fun setEnabled (Z)V
+	public fun setLoggers (Ljava/util/List;)V
+	public fun setMinimumBreadcrumbLevel (Lorg/slf4j/event/Level;)V
+	public fun setMinimumEventLevel (Lorg/slf4j/event/Level;)V
+	public fun setMinimumLevel (Lorg/slf4j/event/Level;)V
+}
+
+public class io/sentry/spring/boot4/SentryProperties$Reactive {
+	public fun <init> ()V
+	public fun isThreadLocalAccessorEnabled ()Z
+	public fun setThreadLocalAccessorEnabled (Z)V
+}
+
+public class io/sentry/spring/boot4/SentryWebfluxAutoConfiguration {
+	public fun <init> ()V
+	public fun sentryWebExceptionHandler (Lio/sentry/IScopes;)Lio/sentry/spring7/webflux/SentryWebExceptionHandler;
+}
+
+public class io/sentry/spring/boot4/graphql/SentryGraphql22AutoConfiguration {
+	public fun <init> ()V
+	public fun exceptionResolverAdapter ()Lio/sentry/spring7/graphql/SentryDataFetcherExceptionResolverAdapter;
+	public static fun graphqlBeanPostProcessor ()Lio/sentry/spring7/graphql/SentryGraphqlBeanPostProcessor;
+	public fun sentryInstrumentationWebMvc (Lio/sentry/spring/boot4/SentryProperties;Lorg/springframework/beans/factory/ObjectProvider;)Lio/sentry/graphql22/SentryInstrumentation;
+	public fun sentryInstrumentationWebflux (Lio/sentry/spring/boot4/SentryProperties;Lorg/springframework/beans/factory/ObjectProvider;)Lio/sentry/graphql22/SentryInstrumentation;
+}
+
+public class io/sentry/spring/boot4/graphql/SentryGraphqlAutoConfiguration {
+	public fun <init> ()V
+	public fun exceptionResolverAdapter ()Lio/sentry/spring7/graphql/SentryDataFetcherExceptionResolverAdapter;
+	public static fun graphqlBeanPostProcessor ()Lio/sentry/spring7/graphql/SentryGraphqlBeanPostProcessor;
+	public fun sentryInstrumentationWebMvc (Lio/sentry/spring/boot4/SentryProperties;Lorg/springframework/beans/factory/ObjectProvider;)Lio/sentry/graphql/SentryInstrumentation;
+	public fun sentryInstrumentationWebflux (Lio/sentry/spring/boot4/SentryProperties;Lorg/springframework/beans/factory/ObjectProvider;)Lio/sentry/graphql/SentryInstrumentation;
+}
+

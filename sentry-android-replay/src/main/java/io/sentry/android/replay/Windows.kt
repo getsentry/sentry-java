@@ -124,6 +124,7 @@ internal class RootViewsSpy private constructor() : Closeable {
 
   private val delegatingViewList: ArrayList<View> =
     object : ArrayList<View>() {
+      @Suppress("NewApi")
       override fun addAll(elements: Collection<View>): Boolean {
         listeners.forEach { listener ->
           elements.forEach { element -> listener.onRootViewsChanged(element, true) }
@@ -131,11 +132,13 @@ internal class RootViewsSpy private constructor() : Closeable {
         return super.addAll(elements)
       }
 
+      @Suppress("NewApi")
       override fun add(element: View): Boolean {
         listeners.forEach { it.onRootViewsChanged(element, true) }
         return super.add(element)
       }
 
+      @Suppress("NewApi")
       override fun removeAt(index: Int): View {
         val removedView = super.removeAt(index)
         listeners.forEach { it.onRootViewsChanged(removedView, false) }

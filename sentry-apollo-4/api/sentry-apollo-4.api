@@ -20,6 +20,7 @@ public final class io/sentry/apollo4/SentryApollo4HttpInterceptor : com/apollogr
 	public fun <init> (Lio/sentry/IScopes;Lio/sentry/apollo4/SentryApollo4HttpInterceptor$BeforeSpanCallback;Z)V
 	public fun <init> (Lio/sentry/IScopes;Lio/sentry/apollo4/SentryApollo4HttpInterceptor$BeforeSpanCallback;ZLjava/util/List;)V
 	public synthetic fun <init> (Lio/sentry/IScopes;Lio/sentry/apollo4/SentryApollo4HttpInterceptor$BeforeSpanCallback;ZLjava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun dispose ()V
 	public fun intercept (Lcom/apollographql/apollo/api/http/HttpRequest;Lcom/apollographql/apollo/network/http/HttpInterceptorChain;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
