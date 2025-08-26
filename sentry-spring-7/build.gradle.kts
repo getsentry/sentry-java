@@ -29,6 +29,9 @@ tasks.withType<KotlinCompile>().configureEach {
 dependencies {
   api(projects.sentry)
   compileOnly(platform(SpringBootPlugin.BOM_COORDINATES))
+
+  // Force all Netty modules to use the same version to avoid version conflicts
+  testImplementation(platform("io.netty:netty-bom:4.2.4.Final"))
   compileOnly(Config.Libs.springWeb)
   compileOnly(Config.Libs.springAop)
   compileOnly(Config.Libs.springSecurityWeb)
