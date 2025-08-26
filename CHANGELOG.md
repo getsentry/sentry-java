@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Add support for Spring Boot 4 and Spring 7 ([#4601](https://github.com/getsentry/sentry-java/pull/4601))
+  - NOTE: Our `sentry-opentelemetry-agentless-spring` is not working yet for Spring Boot 4. Please use `sentry-opentelemetry-agent` until OpenTelemetry has support for Spring Boot 4.
+
 ## 8.20.0
 
 ### Fixes
@@ -9,8 +16,6 @@
 
 ### Features
 
-- Add support for Spring Boot 4 and Spring 7 ([#4601](https://github.com/getsentry/sentry-java/pull/4601))
-  - NOTE: Our `sentry-opentelemetry-agentless-spring` is not working yet for Spring Boot 4. Please use `sentry-opentelemetry-agent` until OpenTelemetry has support for Spring Boot 4.
 - Add onDiscard to enable users to track the type and amount of data discarded before reaching Sentry ([#4612](https://github.com/getsentry/sentry-java/pull/4612))
   - Stub for setting the callback on `Sentry.init`:
      ```java
