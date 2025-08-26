@@ -24,7 +24,6 @@ import io.sentry.transport.RateLimiter;
 import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.SentryRandom;
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -52,13 +51,12 @@ public final class JavaContinuousProfiler
   private @Nullable Future<?> stopFuture;
   private final @NotNull List<ProfileChunk.Builder> payloadBuilders = new ArrayList<>();
   private @NotNull SentryId profilerId = SentryId.EMPTY_ID;
-  private @NotNull SentryId chunkId = SentryId.EMPTY_ID;
   private final @NotNull AtomicBoolean isClosed = new AtomicBoolean(false);
   private @NotNull SentryDate startProfileChunkTimestamp = new SentryNanotimeDate();
 
   private @NotNull String filename = "";
 
-  private final @NotNull AsyncProfiler profiler;
+  private @Nullable AsyncProfiler profiler;
   private volatile boolean shouldSample = true;
   private boolean shouldStop = false;
   private boolean isSampled = false;
@@ -76,21 +74,52 @@ public final class JavaContinuousProfiler
     this.profilingTracesDirPath = profilingTracesDirPath;
     this.profilingTracesHz = profilingTracesHz;
     this.executorService = executorService;
-    this.profiler = AsyncProfiler.getInstance();
+    initializeProfiler();
+  }
+
+  private void initializeProfiler() {
+    try {
+      this.profiler = AsyncProfiler.getInstance();
+      // Check version to verify profiler is working
+      String version = profiler.execute("version");
+      logger.log(SentryLevel.DEBUG, "AsyncProfiler initialized successfully. Version: " + version);
+    } catch (Exception e) {
+      logger.log(
+          SentryLevel.WARNING,
+          "Failed to initialize AsyncProfiler. Profiling will be disabled.",
+          e);
+      this.profiler = null;
+    }
   }
 
   private boolean init() {
-    // We initialize it only once
     if (isInitialized) {
       return true;
     }
     isInitialized = true;
+
+    if (profiler == null) {
+      logger.log(SentryLevel.ERROR, "Disabling profiling because AsyncProfiler is not available.");
+      return false;
+    }
+
     if (profilingTracesDirPath == null) {
       logger.log(
           SentryLevel.WARNING,
           "Disabling profiling because no profiling traces dir path is defined in options.");
       return false;
     }
+
+    File profileDir = new File(profilingTracesDirPath);
+
+    if (!profileDir.canWrite() || !profileDir.exists()) {
+      logger.log(
+          SentryLevel.WARNING,
+          "Disabling profiling because traces directory is not writable or does not exist: %s",
+          profilingTracesDirPath);
+      return false;
+    }
+
     if (profilingTracesHz <= 0) {
       logger.log(
           SentryLevel.WARNING,
@@ -101,7 +130,6 @@ public final class JavaContinuousProfiler
     return true;
   }
 
-  @SuppressWarnings("ReferenceEquality")
   @Override
   public void startProfiler(
       final @NotNull ProfileLifecycle profileLifecycle,
@@ -138,6 +166,7 @@ public final class JavaContinuousProfiler
       }
 
       if (!isRunning()) {
+        shouldStop = false;
         logger.log(SentryLevel.DEBUG, "Started Profiler.");
         start();
       }
@@ -159,7 +188,6 @@ public final class JavaContinuousProfiler
   private void start() {
     initScopes();
 
-    // Let's initialize trace folder and profiling interval
     if (!init()) {
       return;
     }
@@ -179,20 +207,31 @@ public final class JavaContinuousProfiler
     } else {
       startProfileChunkTimestamp = new SentryNanotimeDate();
     }
+
+    if (profiler == null) {
+      logger.log(SentryLevel.ERROR, "Cannot start profiling: AsyncProfiler is not available");
+      return;
+    }
+
     filename = profilingTracesDirPath + File.separator + SentryUUID.generateSentryId() + ".jfr";
-    String startData = null;
+
+    File jfrFile = new File(filename);
+
     try {
       final String profilingIntervalMicros =
           String.format("%dus", (int) SECONDS.toMicros(1) / profilingTracesHz);
       final String command =
           String.format("start,jfr,wall=%s,file=%s", profilingIntervalMicros, filename);
-      System.out.println(command);
-      startData = profiler.execute(command);
+
+      profiler.execute(command);
+
     } catch (Exception e) {
       logger.log(SentryLevel.ERROR, "Failed to start profiling: ", e);
-    }
-    // check if profiling started
-    if (startData == null) {
+      filename = "";
+      // Try to clean up the file if it was created
+      if (jfrFile.exists()) {
+        jfrFile.delete();
+      }
       return;
     }
 
@@ -200,10 +239,6 @@ public final class JavaContinuousProfiler
 
     if (profilerId == SentryId.EMPTY_ID) {
       profilerId = new SentryId();
-    }
-
-    if (chunkId == SentryId.EMPTY_ID) {
-      chunkId = new SentryId();
     }
 
     try {
@@ -249,45 +284,57 @@ public final class JavaContinuousProfiler
       // check if profiler was created and it's running
       if (!isRunning) {
         // When the profiler is stopped due to an error (e.g. offline or rate limited), reset the
-        // ids
+        // id
         profilerId = SentryId.EMPTY_ID;
-        chunkId = SentryId.EMPTY_ID;
         return;
       }
 
-      String endData = null;
-      try {
-        endData = profiler.execute("stop,jfr");
-      } catch (IOException e) {
-        throw new RuntimeException(e);
+      File jfrFile = new File(filename);
+
+      if (profiler == null) {
+        logger.log(SentryLevel.WARNING, "Profiler is null when trying to stop");
+        return;
       }
 
-      // check if profiler end successfully
-      if (endData == null) {
-        logger.log(
-            SentryLevel.ERROR,
-            "An error occurred while collecting a profile chunk, and it won't be sent.");
-      } else {
-        // The scopes can be null if the profiler is started before the SDK is initialized (app
-        // start profiling), meaning there's no scopes to send the chunks. In that case, we store
-        // the data in a list and send it when the next chunk is finished.
+      try {
+        profiler.execute("stop,jfr");
+      } catch (Exception e) {
+        logger.log(SentryLevel.ERROR, "Error stopping profiler, attempting cleanup: ", e);
+        // Clean up file if it exists
+        if (jfrFile.exists()) {
+          jfrFile.delete();
+        }
+      }
+
+      // The scopes can be null if the profiler is started before the SDK is initialized (app
+      // start profiling), meaning there's no scopes to send the chunks. In that case, we store
+      // the data in a list and send it when the next chunk is finished.
+      if (jfrFile.exists() && jfrFile.canRead() && jfrFile.length() > 0) {
         try (final @NotNull ISentryLifecycleToken ignored2 = payloadLock.acquire()) {
-          File jfrFile = new File(filename);
           jfrFile.deleteOnExit();
           payloadBuilders.add(
               new ProfileChunk.Builder(
                   profilerId,
-                  chunkId,
+                  new SentryId(),
                   new HashMap<>(),
                   jfrFile,
                   startProfileChunkTimestamp,
-                  ProfileChunk.PLATFORM_ANDROID));
+                  ProfileChunk.PLATFORM_JAVA));
+        }
+      } else {
+        logger.log(
+            SentryLevel.WARNING,
+            "JFR file is invalid or empty: exists=%b, readable=%b, size=%d",
+            jfrFile.exists(),
+            jfrFile.canRead(),
+            jfrFile.length());
+        if (jfrFile.exists()) {
+          jfrFile.delete();
         }
       }
 
+      // Always clean up state, even if stop failed
       isRunning = false;
-      // A chunk is finished. Next chunk will have a different id.
-      chunkId = SentryId.EMPTY_ID;
       filename = "";
 
       if (scopes != null) {
@@ -356,7 +403,9 @@ public final class JavaContinuousProfiler
 
   @Override
   public boolean isRunning() {
-    return isRunning;
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      return isRunning && profiler != null && !filename.isEmpty();
+    }
   }
 
   @VisibleForTesting
