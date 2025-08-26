@@ -1,3 +1,5 @@
 vendored-dependencies:
 - name: gson
   path: sentry/src/main/java/io/sentry/vendor/gson
+- name: Random
+  path: sentry/src/main/java/io/sentry/util/Random.java
