@@ -1,6 +1,11 @@
 # Changelog
 
-## Unreleased
+## 8.20.0
+
+### Fixes
+
+- Do not use named capturing groups for regular expressions ([#4652](https://github.com/getsentry/sentry-java/pull/4652))
+  - This fixes a crash on Android versions below 8.0 (API level 26)
 
 ### Features
 
