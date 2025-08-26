@@ -63,7 +63,7 @@ jobs:
         shell: bash
         run: |
           exec &> >(tee -a "analyze_logs.txt")
-          fossa analyze --branch "$GITHUB_PR_REF" --revision "$GITHUB_PR_SHA"
+          fossa analyze --branch "$GITHUB_PR_REF" --revision "$GITHUB_PR_SHA" --debug
   
         # We only want to run license compliance test if `fossa test` succeeds. This is to unblock CI
         # on FOSSA outages.
