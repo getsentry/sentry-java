@@ -28,7 +28,9 @@ tasks.withType<KotlinCompile>().configureEach {
 
 dependencies {
   api(projects.sentry)
+
   compileOnly(platform(SpringBootPlugin.BOM_COORDINATES))
+
   compileOnly(Config.Libs.springWeb)
   compileOnly(Config.Libs.springAop)
   compileOnly(Config.Libs.springSecurityWeb)
@@ -54,6 +56,7 @@ dependencies {
   errorprone(libs.nopen.checker)
   errorprone(libs.nullaway)
 
+  testImplementation(platform(SpringBootPlugin.BOM_COORDINATES))
   // tests
   testImplementation(projects.sentryTestSupport)
   testImplementation(projects.sentryGraphql)
