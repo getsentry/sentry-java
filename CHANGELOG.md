@@ -31,12 +31,18 @@
 
 ## 8.19.1
 
+> [!Warning]
+> Android: This release is incompatible with API levels below 26. We recommend using SDK version 8.20.0 or higher instead.
+
 ### Fixes
 
 - Do not store No-Op scopes onto OpenTelemetry Context when wrapping ([#4631](https://github.com/getsentry/sentry-java/pull/4631))
   - In 8.18.0 and 8.19.0 the SDK could break when initialized too late.
 
 ## 8.19.0
+
+> [!Warning]
+> Android: This release is incompatible with API levels below 26. We recommend using SDK version 8.20.0 or higher instead.
 
 ### Features
 
