@@ -22,86 +22,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # TODO: remove this when upstream is fixed
       - name: Disable Gradle configuration cache (see https://github.com/fossas/fossa-cli/issues/872)
         run: sed -i 's/^org.gradle.configuration-cache=.*/org.gradle.configuration-cache=false/' gradle.properties
 
-      - if: github.repository_owner != 'getsentry' && github.repository_owner != 'codecov'
-        shell: bash
-        run: echo "This action should only run on getsentry and codecov repos" && exit 1
-  
-      - name: 'Pick a FOSSA API key and install FOSSA cli'
-        id: set_key
-        shell: bash
-        env:
-          PREFERRED: ${{ secrets.FOSSA_API_KEY }}
-        run: |
-  
-          # FOSSA has two kinds of API keys (aka tokens), a full-privilege key
-          # and a low-privilege "push-only" key. The practical difference is that
-          # the full key provides more feedback on `fossa test` failure. We have
-          # a full key stored in org-wide GitHub Secrets, but a) we can't access
-          # it in an action, only in a workflow (hence the input here) and b) it
-          # isn't available even in a workflow when run in a PR from a fork. If
-          # for any reason it's missing we fall back to a push-only key attached
-          # to a low-privilege account, which is safe (enough) to expose publicly
-          # here in this file and gives us at least basic pass/fail.
-          #
-          # See also: https://docs.fossa.com/docs/api-reference#api-tokens
-          FALLBACK="9fc50c40b136c68873ad05aec573cf3e"
-          echo "key=${PREFERRED:-$FALLBACK}" >> "$GITHUB_OUTPUT"
-          # Install specific version of fossa-cli to guarantee stability of parsing fossa job outputs
-          VERSION="v3.8.20"
-          curl -H 'Cache-Control: no-cache' "https://raw.githubusercontent.com/fossas/fossa-cli/$VERSION/install-latest.sh" | bash -s -- "$VERSION"
-  
-      - name: 'Run `fossa analyze`'
-        id: analyze
-        continue-on-error: true
-        env:
-          FOSSA_API_KEY: ${{ steps.set_key.outputs.key }}
-          GITHUB_PR_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-          GITHUB_PR_REF: ${{ github.event.pull_request.head.ref || github.ref }}
-        shell: bash
-        run: |
-          exec &> >(tee -a "analyze_logs.txt")
-          fossa analyze --branch "$GITHUB_PR_REF" --revision "$GITHUB_PR_SHA" --debug
-  
-        # We only want to run license compliance test if `fossa test` succeeds. This is to unblock CI
-        # on FOSSA outages.
-      - if: steps.analyze.outcome == 'success'
-        name: 'Run `fossa test`'
-        id: test
-        continue-on-error: true
-        env:
-          FOSSA_API_KEY: ${{ steps.set_key.outputs.key }}
-          GITHUB_PR_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-        shell: bash
-        run: |
-          exec &> >(tee -a "test_logs.txt")
-          # Set timeout to 30 minutes
-          fossa test --timeout 1800 --revision "$GITHUB_PR_SHA"
-  
-      - if: steps.analyze.outcome == 'failure' || steps.test.outcome == 'failure'
-        name: 'Send error to Sentry on `fossa-cli` errors'
-        shell: bash
-        env:
-          SENTRY_DSN: https://decbca863c554db095624ede8a83310c@o1.ingest.sentry.io/4505031352713216
-        run: |
-          if [[ ${{ steps.analyze.outcome }} == 'failure' ]]; then
-            curl -sL https://sentry.io/get-cli/ | sh
-            # Environment variables will automatically be sent, so we just want some minimal information
-            error_msg=$(cat analyze_logs.txt | grep -zoP '(?<=>>> Relevant errors\n\n    Error\n\n      ).*?(?=\n)' || echo 'unknown error message')
-            sentry-cli send-event -m "analyze: $error_msg" -t repo:$GITHUB_REPOSITORY -e url:$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID --logfile analyze_logs.txt
-            exit 0
-          fi
-          if grep -q "The scan has revealed issues. Number of issues found:" test_logs.txt; then
-            echo
-            echo "🛑 🛑 🛑 🛑 🛑 🛑 🛑 🛑 🛑 🛑 🛑 🛑 🛑 🛑 🛑 🛑 🛑 🛑 🛑 🛑 🛑 🛑 🛑 🛑 "
-            echo
-            echo "Eep! It seems that this PR introduces a license violation. Did you add any libraries? Do they use the GPL or some weird license? Am I a confused bot? If you need a hand, cc: @getsentry/dev-infra in a comment. 🙏"
-            echo
-            echo "🛑 🛑 🛑 🛑 🛑 🛑 🛑 🛑 🛑 🛑 🛑 🛑 🛑 🛑 🛑 🛑 🛑 🛑 🛑 🛑 🛑 🛑 🛑 🛑 "
-            exit 1
-          fi
-          curl -sL https://sentry.io/get-cli/ | sh
-          error_msg=$(cat test_logs.txt | grep -zoP '(?<=>>> Relevant errors\n\n    Error\n\n      ).*?(?=\n)' || echo 'unknown error message')
-          sentry-cli send-event -m "test: $error_msg" -t repo:$GITHUB_REPOSITORY -e url:$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID --logfile test_logs.txt
+      - name: 'Enforce License Compliance'
+        uses: getsentry/action-enforce-license-compliance@main
+        with:
+          skip_checkout: 'true'
+          fossa_test_timeout_seconds: 900
+          fossa_api_key: ${{ secrets.FOSSA_API_KEY }}
