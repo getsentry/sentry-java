@@ -6,6 +6,7 @@
 
 - Add support for Spring Boot 4 and Spring 7 ([#4601](https://github.com/getsentry/sentry-java/pull/4601))
   - NOTE: Our `sentry-opentelemetry-agentless-spring` is not working yet for Spring Boot 4. Please use `sentry-opentelemetry-agent` until OpenTelemetry has support for Spring Boot 4.
+- Replace `UUIDGenerator` implementation with Apache licensed code ([#4662](https://github.com/getsentry/sentry-java/pull/4662))
 
 ## 8.20.0
 
@@ -30,12 +31,18 @@
 
 ## 8.19.1
 
+> [!Warning]
+> Android: This release is incompatible with API levels below 26. We recommend using SDK version 8.20.0 or higher instead.
+
 ### Fixes
 
 - Do not store No-Op scopes onto OpenTelemetry Context when wrapping ([#4631](https://github.com/getsentry/sentry-java/pull/4631))
   - In 8.18.0 and 8.19.0 the SDK could break when initialized too late.
 
 ## 8.19.0
+
+> [!Warning]
+> Android: This release is incompatible with API levels below 26. We recommend using SDK version 8.20.0 or higher instead.
 
 ### Features
 
