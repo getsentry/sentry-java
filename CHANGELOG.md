@@ -7,6 +7,7 @@
 - Add support for Spring Boot 4 and Spring 7 ([#4601](https://github.com/getsentry/sentry-java/pull/4601))
   - NOTE: Our `sentry-opentelemetry-agentless-spring` is not working yet for Spring Boot 4. Please use `sentry-opentelemetry-agent` until OpenTelemetry has support for Spring Boot 4.
 - Replace `UUIDGenerator` implementation with Apache licensed code ([#4662](https://github.com/getsentry/sentry-java/pull/4662))
+- Replace `Random` with MIT licensed PCG random implementation ([#4664](https://github.com/getsentry/sentry-java/pull/4664))
 
 ## 8.20.0
 
