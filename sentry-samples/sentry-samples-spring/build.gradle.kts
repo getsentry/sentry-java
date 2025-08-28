@@ -1,4 +1,3 @@
-import org.jetbrains.kotlin.config.KotlinCompilerVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES
 
@@ -6,7 +5,7 @@ plugins {
   application
   alias(libs.plugins.springboot2) apply false
   alias(libs.plugins.spring.dependency.management)
-  kotlin("jvm")
+  alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.kotlin.spring)
   id("war")
   alias(libs.plugins.gretty)
@@ -43,7 +42,7 @@ dependencies {
   implementation(Config.Libs.springSecurityWeb)
   implementation(Config.Libs.springSecurityConfig)
   implementation(Config.Libs.kotlinReflect)
-  implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
+  implementation(kotlin(Config.kotlinStdLib))
   implementation(projects.sentrySpring)
   implementation(projects.sentryLogback)
   implementation(libs.jackson.databind)
@@ -61,9 +60,9 @@ dependencies {
 }
 
 tasks.withType<KotlinCompile>().configureEach {
-  kotlinOptions {
-    freeCompilerArgs = listOf("-Xjsr305=strict")
-    jvmTarget = JavaVersion.VERSION_17.toString()
+  kotlin {
+    compilerOptions.freeCompilerArgs = listOf("-Xjsr305=strict")
+    compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
   }
 }
 

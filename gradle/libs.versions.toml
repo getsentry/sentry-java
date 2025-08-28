@@ -11,8 +11,9 @@ feign = "11.6"
 jacoco = "0.8.7"
 jackson = "2.18.3"
 jetbrainsCompose = "1.6.11"
-kotlin = "1.9.24"
-kotlin-compatible-version = "1.6"
+kotlin = "2.2.0"
+kotlinSpring7 = "2.2.0"
+kotlin-compatible-version = "1.9"
 ktorClient = "3.0.0"
 logback = "1.2.9"
 log4j2 = "2.20.0"
@@ -30,6 +31,7 @@ retrofit = "2.9.0"
 slf4j = "1.7.30"
 springboot2 = "2.7.18"
 springboot3 = "3.5.0"
+springboot4 = "4.0.0-M2"
 # Android
 targetSdk = "34"
 compileSdk = "34"
@@ -39,11 +41,15 @@ spotless = "7.0.4"
 [plugins]
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-spring = { id = "org.jetbrains.kotlin.plugin.spring", version.ref = "kotlin" }
+kotlin-spring7 = { id = "org.jetbrains.kotlin.plugin.spring", version.ref = "kotlinSpring7" }
+kotlin-jvm-spring7 = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlinSpring7" }
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 buildconfig = { id = "com.github.gmazzo.buildconfig", version = "5.6.5" }
 dokka = { id = "org.jetbrains.dokka", version = "2.0.0" }
 dokka-javadoc = { id = "org.jetbrains.dokka-javadoc", version = "2.0.0" }
 binary-compatibility-validator = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version = "0.13.0" }
-compose-compiler = { id = "org.jetbrains.compose", version.ref = "jetbrainsCompose" }
 errorprone = { id = "net.ltgt.errorprone", version = "3.0.1" }
 gradle-versions = { id = "com.github.ben-manes.versions", version = "0.42.0" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
@@ -53,6 +59,7 @@ kover = { id = "org.jetbrains.kotlinx.kover", version = "0.7.3" }
 vanniktech-maven-publish = { id = "com.vanniktech.maven.publish", version = "0.30.0" }
 springboot2 = { id = "org.springframework.boot", version.ref = "springboot2" }
 springboot3 = { id = "org.springframework.boot", version.ref = "springboot3" }
+springboot4 = { id = "org.springframework.boot", version.ref = "springboot4" }
 spring-dependency-management = { id = "io.spring.dependency-management", version = "1.0.11.RELEASE" }
 gretty = { id = "org.gretty", version = "4.0.0" }
 
@@ -96,6 +103,7 @@ jackson-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin"
 jetbrains-annotations = { module = "org.jetbrains:annotations", version = "23.0.0" }
 kotlin-bom = { module = "org.jetbrains.kotlin:kotlin-bom", version.ref = "kotlin" }
 kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
+kotlin-test-junit-spring7 = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlinSpring7" }
 kotlinx-coroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktorClient" }
@@ -152,6 +160,20 @@ springboot3-starter-aop = { module = "org.springframework.boot:spring-boot-start
 springboot3-starter-security = { module = "org.springframework.boot:spring-boot-starter-security", version.ref = "springboot3" }
 springboot3-starter-jdbc = { module = "org.springframework.boot:spring-boot-starter-jdbc", version.ref = "springboot3" }
 springboot3-starter-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator", version.ref = "springboot3" }
+springboot4-otel = { module = "io.opentelemetry.instrumentation:opentelemetry-spring-boot-starter", version.ref = "otelInstrumentation" }
+springboot4-starter = { module = "org.springframework.boot:spring-boot-starter", version.ref = "springboot4" }
+springboot4-starter-graphql = { module = "org.springframework.boot:spring-boot-starter-graphql", version.ref = "springboot4" }
+springboot4-starter-quartz = { module = "org.springframework.boot:spring-boot-starter-quartz", version.ref = "springboot4" }
+springboot4-starter-test = { module = "org.springframework.boot:spring-boot-starter-test", version.ref = "springboot4" }
+springboot4-starter-web = { module = "org.springframework.boot:spring-boot-starter-web", version.ref = "springboot4" }
+springboot4-starter-websocket = { module = "org.springframework.boot:spring-boot-starter-websocket", version.ref = "springboot4" }
+springboot4-starter-webflux = { module = "org.springframework.boot:spring-boot-starter-webflux", version.ref = "springboot4" }
+springboot4-starter-aop = { module = "org.springframework.boot:spring-boot-starter-aop", version.ref = "springboot4" }
+springboot4-starter-security = { module = "org.springframework.boot:spring-boot-starter-security", version.ref = "springboot4" }
+springboot4-starter-restclient = { module = "org.springframework.boot:spring-boot-starter-restclient", version.ref = "springboot4" }
+springboot4-starter-webclient = { module = "org.springframework.boot:spring-boot-starter-webclient", version.ref = "springboot4" }
+springboot4-starter-jdbc = { module = "org.springframework.boot:spring-boot-starter-jdbc", version.ref = "springboot4" }
+springboot4-starter-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator", version.ref = "springboot4" }
 timber = { module = "com.jakewharton.timber:timber", version = "4.7.1" }
 
 # tomcat libraries
@@ -171,12 +193,14 @@ androidx-test-orchestrator = { module = "androidx.test:orchestrator", version = 
 androidx-test-rules = { module = "androidx.test:rules", version.ref = "androidxTestCore" }
 androidx-test-runner = { module = "androidx.test:runner", version = "1.6.2" }
 awaitility-kotlin = { module = "org.awaitility:awaitility-kotlin", version = "4.1.1" }
+awaitility-kotlin-spring7 = { module = "org.awaitility:awaitility-kotlin", version = "4.3.0" }
 awaitility3-kotlin = { module = "org.awaitility:awaitility-kotlin", version = "3.1.6" }
 hsqldb = { module = "org.hsqldb:hsqldb", version = "2.6.1" }
 javafaker = { module = "com.github.javafaker:javafaker", version = "1.0.2" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
 leakcanary-instrumentation = { module = "com.squareup.leakcanary:leakcanary-android-instrumentation", version = "2.14" }
 mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version = "4.1.0" }
+mockito-kotlin-spring7 = { module = "org.mockito.kotlin:mockito-kotlin", version = "6.0.0" }
 mockito-inline = { module = "org.mockito:mockito-inline", version = "4.8.0" }
 msgpack = { module = "org.msgpack:msgpack-core", version = "0.9.8" }
 okhttp-mockwebserver = { module = "com.squareup.okhttp3:mockwebserver", version.ref = "okhttp" }
