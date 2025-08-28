@@ -27,18 +27,7 @@ public final class W3CTraceparentHeader {
 
   public @NotNull String getValue() {
     String sampledFlag = sampled != null && sampled ? "01" : "00";
-    return String.format("00-%s-%s-%s", traceId, spanId, sampledFlag);
+    return String.format("%s-%s-%s", traceId, spanId, sampledFlag);
   }
 
-  public @NotNull SentryId getTraceId() {
-    return traceId;
-  }
-
-  public @NotNull SpanId getSpanId() {
-    return spanId;
-  }
-
-  public @Nullable Boolean isSampled() {
-    return sampled;
-  }
 }

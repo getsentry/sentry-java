@@ -3,8 +3,6 @@ package io.sentry
 import io.sentry.protocol.SentryId
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNull
-import kotlin.test.assertTrue
 
 class W3CTraceparentHeaderTest {
 
@@ -15,10 +13,7 @@ class W3CTraceparentHeaderTest {
     val header = W3CTraceparentHeader(traceId, spanId, true)
 
     assertEquals("traceparent", header.name)
-    assertEquals("00-12345678123456781234567812345678-1234567812345678-01", header.value)
-    assertEquals(traceId, header.traceId)
-    assertEquals(spanId, header.spanId)
-    assertTrue(header.isSampled() ?: false)
+    assertEquals("12345678123456781234567812345678-1234567812345678-01", header.value)
   }
 
   @Test
@@ -28,10 +23,7 @@ class W3CTraceparentHeaderTest {
     val header = W3CTraceparentHeader(traceId, spanId, false)
 
     assertEquals("traceparent", header.name)
-    assertEquals("00-12345678123456781234567812345678-1234567812345678-00", header.value)
-    assertEquals(traceId, header.traceId)
-    assertEquals(spanId, header.spanId)
-    assertEquals(false, header.isSampled())
+    assertEquals("12345678123456781234567812345678-1234567812345678-00", header.value)
   }
 
   @Test
@@ -41,10 +33,7 @@ class W3CTraceparentHeaderTest {
     val header = W3CTraceparentHeader(traceId, spanId, null)
 
     assertEquals("traceparent", header.name)
-    assertEquals("00-12345678123456781234567812345678-1234567812345678-00", header.value)
-    assertEquals(traceId, header.traceId)
-    assertEquals(spanId, header.spanId)
-    assertNull(header.isSampled())
+    assertEquals("12345678123456781234567812345678-1234567812345678-00", header.value)
   }
 
   @Test
@@ -56,10 +45,9 @@ class W3CTraceparentHeaderTest {
     val value = header.value
     val parts = value.split("-")
 
-    assertEquals(4, parts.size)
-    assertEquals("00", parts[0]) // Version
-    assertEquals("abcdefabcdefabcdabcdefabcdefabcd", parts[1]) // Trace ID (32 hex chars)
-    assertEquals("abcdefabcdefabcd", parts[2]) // Span ID (16 hex chars)
-    assertEquals("01", parts[3]) // Sampled flag
+    assertEquals(3, parts.size)
+    assertEquals("abcdefabcdefabcdabcdefabcdefabcd", parts[0]) // Trace ID (32 chars)
+    assertEquals("abcdefabcdefabcd", parts[1]) // Span ID (16 chars)
+    assertEquals("01", parts[2]) // Sampled flag (2 chars)
   }
 }

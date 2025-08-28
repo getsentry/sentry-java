@@ -4328,10 +4328,7 @@ public final class io/sentry/W3CTraceparentHeader {
 	public static final field TRACEPARENT_HEADER Ljava/lang/String;
 	public fun <init> (Lio/sentry/protocol/SentryId;Lio/sentry/SpanId;Ljava/lang/Boolean;)V
 	public fun getName ()Ljava/lang/String;
-	public fun getSpanId ()Lio/sentry/SpanId;
-	public fun getTraceId ()Lio/sentry/protocol/SentryId;
 	public fun getValue ()Ljava/lang/String;
-	public fun isSampled ()Ljava/lang/Boolean;
 }
 
 public final class io/sentry/backpressure/BackpressureMonitor : io/sentry/backpressure/IBackpressureMonitor, java/lang/Runnable {

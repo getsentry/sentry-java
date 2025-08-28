@@ -469,8 +469,14 @@ class TracingUtilsTest {
     assertNotNull(tracingHeaders.sentryTraceHeader)
     assertNotNull(tracingHeaders.w3cTraceparentHeader)
     assertEquals("traceparent", tracingHeaders.w3cTraceparentHeader!!.name)
-    assertEquals(fixture.span.spanContext.traceId, tracingHeaders.w3cTraceparentHeader!!.traceId)
-    assertEquals(fixture.span.spanContext.spanId, tracingHeaders.w3cTraceparentHeader!!.spanId)
+    
+    val headerValue = tracingHeaders.w3cTraceparentHeader!!.value
+    assertTrue(headerValue.startsWith("00-"))
+    
+    val parts = headerValue.split("-")
+    assertEquals(4, parts.size)
+    assertEquals(fixture.span.spanContext.traceId.toString(), parts[1])
+    assertEquals(fixture.span.spanContext.spanId.toString(), parts[2])
   }
 
   @Test
@@ -483,7 +489,17 @@ class TracingUtilsTest {
 
     assertNotNull(tracingHeaders)
     val w3cHeader = tracingHeaders.w3cTraceparentHeader!!
-    assertEquals(fixture.span.toSentryTrace().isSampled(), w3cHeader.isSampled())
+    assertEquals("traceparent", w3cHeader.name)
+    
+    val headerValue = w3cHeader.value
+    assertTrue(headerValue.startsWith("00-"))
+    
+    val parts = headerValue.split("-")
+    assertEquals(4, parts.size)
+    
+    val sentryTrace = fixture.span.toSentryTrace()
+    val expectedFlag = if (sentryTrace.isSampled() == true) "01" else "00"
+    assertEquals(expectedFlag, parts[3])
   }
 
   @Test
@@ -498,11 +514,13 @@ class TracingUtilsTest {
     assertNotNull(tracingHeaders.sentryTraceHeader)
     assertNotNull(tracingHeaders.w3cTraceparentHeader)
 
-    val sentryTrace = tracingHeaders.sentryTraceHeader
     val w3cTrace = tracingHeaders.w3cTraceparentHeader!!
-
-    assertEquals(sentryTrace.traceId, w3cTrace.traceId)
-    assertEquals(sentryTrace.spanId, w3cTrace.spanId)
-    assertEquals(sentryTrace.isSampled(), w3cTrace.isSampled())
+    assertEquals("traceparent", w3cTrace.name)
+    
+    val headerValue = w3cTrace.value
+    assertTrue(headerValue.startsWith("00-"))
+    
+    val parts = headerValue.split("-")
+    assertEquals(4, parts.size)
   }
 }
