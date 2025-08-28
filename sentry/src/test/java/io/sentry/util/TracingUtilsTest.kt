@@ -443,4 +443,66 @@ class TracingUtilsTest {
     assertTrue(sampleRand < 1.0)
     assertTrue(sampleRand >= 0.9999)
   }
+
+  @Test
+  fun `trace does not return w3c traceparent header when propagateTraceparent is disabled`() {
+    val fixture = Fixture()
+    fixture.setup()
+    fixture.options.isPropagateTraceparent = false
+
+    val tracingHeaders = TracingUtils.trace(fixture.scopes, null, fixture.span)
+
+    assertNotNull(tracingHeaders)
+    assertNotNull(tracingHeaders.sentryTraceHeader)
+    assertNull(tracingHeaders.w3cTraceparentHeader)
+  }
+
+  @Test
+  fun `trace returns w3c traceparent header when propagateTraceparent is enabled`() {
+    val fixture = Fixture()
+    fixture.setup()
+    fixture.options.isPropagateTraceparent = true
+
+    val tracingHeaders = TracingUtils.trace(fixture.scopes, null, fixture.span)
+
+    assertNotNull(tracingHeaders)
+    assertNotNull(tracingHeaders.sentryTraceHeader)
+    assertNotNull(tracingHeaders.w3cTraceparentHeader)
+    assertEquals("traceparent", tracingHeaders.w3cTraceparentHeader!!.name)
+    assertEquals(fixture.span.spanContext.traceId, tracingHeaders.w3cTraceparentHeader!!.traceId)
+    assertEquals(fixture.span.spanContext.spanId, tracingHeaders.w3cTraceparentHeader!!.spanId)
+  }
+
+  @Test
+  fun `trace returns w3c traceparent header with correct sampling info`() {
+    val fixture = Fixture()
+    fixture.setup()
+    fixture.options.isPropagateTraceparent = true
+
+    val tracingHeaders = TracingUtils.trace(fixture.scopes, null, fixture.span)
+
+    assertNotNull(tracingHeaders)
+    val w3cHeader = tracingHeaders.w3cTraceparentHeader!!
+    assertEquals(fixture.span.toSentryTrace().isSampled(), w3cHeader.isSampled())
+  }
+
+  @Test
+  fun `trace returns w3c traceparent header when no span provided and propagateTraceparent is enabled`() {
+    val fixture = Fixture()
+    fixture.setup()
+    fixture.options.isPropagateTraceparent = true
+
+    val tracingHeaders = TracingUtils.trace(fixture.scopes, null, null)
+
+    assertNotNull(tracingHeaders)
+    assertNotNull(tracingHeaders.sentryTraceHeader)
+    assertNotNull(tracingHeaders.w3cTraceparentHeader)
+
+    val sentryTrace = tracingHeaders.sentryTraceHeader
+    val w3cTrace = tracingHeaders.w3cTraceparentHeader!!
+
+    assertEquals(sentryTrace.traceId, w3cTrace.traceId)
+    assertEquals(sentryTrace.spanId, w3cTrace.spanId)
+    assertEquals(sentryTrace.isSampled(), w3cTrace.isSampled())
+  }
 }
