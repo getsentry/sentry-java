@@ -8,6 +8,14 @@
   - NOTE: Our `sentry-opentelemetry-agentless-spring` is not working yet for Spring Boot 4. Please use `sentry-opentelemetry-agent` until OpenTelemetry has support for Spring Boot 4.
 - Replace `UUIDGenerator` implementation with Apache licensed code ([#4662](https://github.com/getsentry/sentry-java/pull/4662))
 - Add support for w3c traceparent header ([#4671](https://github.com/getsentry/sentry-java/pull/4671))
+  - This feature is disabled by default. If enabled, outgoing requests will include the w3c `traceparent` header.
+  - See https://develop.sentry.dev/sdk/telemetry/traces/distributed-tracing/#w3c-trace-context-header for more details.
+  ```kotlin
+  Sentry(Android).init(context) { options ->
+    // ...
+    options.isPropagateTraceparent = true
+  }
+  ```
 
 ## 8.20.0
 
