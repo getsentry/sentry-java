@@ -469,10 +469,10 @@ class TracingUtilsTest {
     assertNotNull(tracingHeaders.sentryTraceHeader)
     assertNotNull(tracingHeaders.w3cTraceparentHeader)
     assertEquals("traceparent", tracingHeaders.w3cTraceparentHeader!!.name)
-    
+
     val headerValue = tracingHeaders.w3cTraceparentHeader!!.value
     assertTrue(headerValue.startsWith("00-"))
-    
+
     val parts = headerValue.split("-")
     assertEquals(4, parts.size)
     assertEquals(fixture.span.spanContext.traceId.toString(), parts[1])
@@ -490,13 +490,13 @@ class TracingUtilsTest {
     assertNotNull(tracingHeaders)
     val w3cHeader = tracingHeaders.w3cTraceparentHeader!!
     assertEquals("traceparent", w3cHeader.name)
-    
+
     val headerValue = w3cHeader.value
     assertTrue(headerValue.startsWith("00-"))
-    
+
     val parts = headerValue.split("-")
     assertEquals(4, parts.size)
-    
+
     val sentryTrace = fixture.span.toSentryTrace()
     val expectedFlag = if (sentryTrace.isSampled() == true) "01" else "00"
     assertEquals(expectedFlag, parts[3])
@@ -516,10 +516,10 @@ class TracingUtilsTest {
 
     val w3cTrace = tracingHeaders.w3cTraceparentHeader!!
     assertEquals("traceparent", w3cTrace.name)
-    
+
     val headerValue = w3cTrace.value
     assertTrue(headerValue.startsWith("00-"))
-    
+
     val parts = headerValue.split("-")
     assertEquals(4, parts.size)
   }

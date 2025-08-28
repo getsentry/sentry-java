@@ -107,7 +107,8 @@ public class SentrySpanClientHttpRequestInterceptor implements ClientHttpRequest
         request.getHeaders().set(baggageHeader.getName(), baggageHeader.getValue());
       }
 
-      final @Nullable W3CTraceparentHeader w3cTraceparentHeader = tracingHeaders.getW3cTraceparentHeader();
+      final @Nullable W3CTraceparentHeader w3cTraceparentHeader =
+          tracingHeaders.getW3cTraceparentHeader();
       if (w3cTraceparentHeader != null) {
         request.getHeaders().add(w3cTraceparentHeader.getName(), w3cTraceparentHeader.getValue());
       }

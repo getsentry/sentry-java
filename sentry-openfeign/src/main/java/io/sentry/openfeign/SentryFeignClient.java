@@ -139,7 +139,8 @@ public final class SentryFeignClient implements Client {
         requestWrapper.header(baggageHeader.getName(), baggageHeader.getValue());
       }
 
-      final @Nullable W3CTraceparentHeader w3cTraceparentHeader = tracingHeaders.getW3cTraceparentHeader();
+      final @Nullable W3CTraceparentHeader w3cTraceparentHeader =
+          tracingHeaders.getW3cTraceparentHeader();
       if (w3cTraceparentHeader != null) {
         requestWrapper.header(w3cTraceparentHeader.getName(), w3cTraceparentHeader.getValue());
       }

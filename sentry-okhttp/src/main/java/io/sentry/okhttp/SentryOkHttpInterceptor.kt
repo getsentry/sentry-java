@@ -116,9 +116,7 @@ public open class SentryOkHttpInterceptor(
               requestBuilder.removeHeader(BaggageHeader.BAGGAGE_HEADER)
               requestBuilder.addHeader(it.name, it.value)
             }
-            tracingHeaders.w3cTraceparentHeader?.let {
-              requestBuilder.addHeader(it.name, it.value)
-            }
+            tracingHeaders.w3cTraceparentHeader?.let { requestBuilder.addHeader(it.name, it.value) }
           }
       }
 

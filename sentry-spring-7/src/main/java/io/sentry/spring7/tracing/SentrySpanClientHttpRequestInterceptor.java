@@ -6,7 +6,6 @@ import static io.sentry.TypeCheckHint.SPRING_REQUEST_INTERCEPTOR_RESPONSE;
 
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.BaggageHeader;
-import io.sentry.W3CTraceparentHeader;
 import io.sentry.Breadcrumb;
 import io.sentry.Hint;
 import io.sentry.IScopes;
@@ -14,6 +13,7 @@ import io.sentry.ISpan;
 import io.sentry.SpanDataConvention;
 import io.sentry.SpanOptions;
 import io.sentry.SpanStatus;
+import io.sentry.W3CTraceparentHeader;
 import io.sentry.util.Objects;
 import io.sentry.util.SpanUtils;
 import io.sentry.util.TracingUtils;
@@ -115,7 +115,8 @@ public class SentrySpanClientHttpRequestInterceptor implements ClientHttpRequest
         request.getHeaders().set(baggageHeader.getName(), baggageHeader.getValue());
       }
 
-      final @Nullable W3CTraceparentHeader w3cTraceparentHeader = tracingHeaders.getW3cTraceparentHeader();
+      final @Nullable W3CTraceparentHeader w3cTraceparentHeader =
+          tracingHeaders.getW3cTraceparentHeader();
       if (w3cTraceparentHeader != null) {
         request.getHeaders().add(w3cTraceparentHeader.getName(), w3cTraceparentHeader.getValue());
       }
