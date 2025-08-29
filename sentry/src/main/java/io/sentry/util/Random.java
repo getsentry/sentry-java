@@ -23,6 +23,8 @@
  * questions.
  */
 
+// need a change, so that copyleft license checker will pick it up
+
 package io.sentry.util;
 
 import java.util.concurrent.atomic.AtomicLong;

@@ -7,6 +7,20 @@ on:
     branches: [master, main]
 
 jobs:
+  check-copyleft-license-compliance:
+    runs-on: ubuntu-latest
+    steps:
+     - name: Checkout
+       uses: actions/checkout@v4
+       with:
+        fetch-depth: 0
+
+     - name: Check for copyleft licenses
+       uses: getsentry/copyleft-license-checker@main
+       with:
+        fail-on-found: 'true'
+        allow-gpl-classpath: 'false'
+
   enforce-license-compliance:
     runs-on: ubuntu-latest
     steps:
