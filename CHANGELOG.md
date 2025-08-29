@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixes
+
+- Only set log template for logging integrations if formatted message differs from template ([#4682](https://github.com/getsentry/sentry-java/pull/4682))
+
 ### Features
 
 - Add support for Spring Boot 4 and Spring 7 ([#4601](https://github.com/getsentry/sentry-java/pull/4601))
