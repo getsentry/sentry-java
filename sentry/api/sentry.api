@@ -6986,15 +6986,22 @@ public final class io/sentry/util/PropagationTargetsUtils {
 
 public final class io/sentry/util/Random : java/io/Serializable {
 	public fun <init> ()V
-	public fun <init> (J)V
+	public fun <init> (JJ)V
 	public fun nextBoolean ()Z
+	public fun nextBoolean (D)Z
+	public fun nextByte ()B
 	public fun nextBytes ([B)V
+	public fun nextChar ()C
 	public fun nextDouble ()D
+	public fun nextDouble (ZZ)D
 	public fun nextFloat ()F
+	public fun nextFloat (ZZ)F
 	public fun nextInt ()I
 	public fun nextInt (I)I
 	public fun nextLong ()J
-	public fun setSeed (J)V
+	public fun nextLong (J)J
+	public fun nextShort ()S
+	public fun setSeed (JJ)V
 }
 
 public final class io/sentry/util/SampleRateUtils {
