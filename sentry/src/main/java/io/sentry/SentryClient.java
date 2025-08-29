@@ -245,6 +245,12 @@ public final class SentryClient implements ISentryClient {
       finalizeTransaction(scope, hint);
     }
 
+    // if event is backfillable or cached we don't need to flush the logs, because it's an event
+    // from the past. Otherwise we need to flush the logs to ensure they are sent on crash
+    if (event != null && !isBackfillable && !isCached && event.isCrashed()) {
+      loggerBatchProcessor.flush(options.getFlushTimeoutMillis());
+    }
+
     return sentryId;
   }
 
