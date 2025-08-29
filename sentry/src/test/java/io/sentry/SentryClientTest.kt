@@ -3024,6 +3024,25 @@ class SentryClientTest {
   }
 
   @Test
+  fun `flush logs for crash events`() {
+    val sut = fixture.getSut()
+    val batchProcessor = mock<ILoggerBatchProcessor>()
+    sut.injectForField("loggerBatchProcessor", batchProcessor)
+    sut.captureLog(
+      SentryLogEvent(SentryId(), SentryNanotimeDate(), "message", SentryLogLevel.WARN),
+      fixture.scopes.scope,
+    )
+
+    sut.captureEvent(
+      SentryEvent().apply {
+        exceptions =
+          listOf(SentryException().apply { mechanism = Mechanism().apply { isHandled = false } })
+      }
+    )
+    verify(batchProcessor).flush(any())
+  }
+
+  @Test
   fun `cleans up replay folder for Backfillable replay events`() {
     val dir = File(tmpDir.newFolder().absolutePath)
     val sut = fixture.getSut()

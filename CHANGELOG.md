@@ -9,6 +9,10 @@
 - Replace `UUIDGenerator` implementation with Apache licensed code ([#4662](https://github.com/getsentry/sentry-java/pull/4662))
 - Replace `Random` implementation with MIT licensed code ([#4664](https://github.com/getsentry/sentry-java/pull/4664))
 
+### Fixes
+
+- Flush logs on crash ([#4684](https://github.com/getsentry/sentry-java/pull/4684))
+
 ## 8.20.0
 
 ### Fixes
