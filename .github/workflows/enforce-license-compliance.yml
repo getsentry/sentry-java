@@ -9,7 +9,6 @@ on:
 jobs:
   enforce-license-compliance:
     runs-on: ubuntu-latest
-    continue-on-error: 'true'
     
     steps:
       - name: Setup Gradle
