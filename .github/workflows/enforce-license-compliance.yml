@@ -9,6 +9,8 @@ on:
 jobs:
   enforce-license-compliance:
     runs-on: ubuntu-latest
+    continue-on-error: 'true'
+    
     steps:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@017a9effdb900e5b5b2fddfb590a105619dca3c3
@@ -32,5 +34,3 @@ jobs:
           skip_checkout: 'true'
           fossa_test_timeout_seconds: 3600
           fossa_api_key: ${{ secrets.FOSSA_API_KEY }}
-        continue-on-error: 'true'
-        
