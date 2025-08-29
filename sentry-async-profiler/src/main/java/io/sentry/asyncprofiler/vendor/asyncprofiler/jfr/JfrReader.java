@@ -60,6 +60,8 @@ public final class JfrReader implements Closeable {
   public final Dictionary<JfrClass> types = new Dictionary<>();
   public final Map<String, JfrClass> typesByName = new HashMap<>();
   public final Dictionary<String> threads = new Dictionary<>();
+  // Maps thread IDs to Java thread IDs
+  // Change compared to original async-profiler JFR reader
   public final Dictionary<Long> javaThreads = new Dictionary<>();
   public final Dictionary<ClassRef> classes = new Dictionary<>();
   public final Dictionary<String> strings = new Dictionary<>();

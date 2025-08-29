@@ -15,15 +15,18 @@ import io.sentry.protocol.profiling.SentryThreadMetadata;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class JfrAsyncProfilerToSentryProfileConverter extends JfrConverter {
-  private static final long NANOS_PER_SECOND = 1_000_000_000L;
+  private static final double NANOS_PER_SECOND = 1_000_000_000.0;
 
   private final @NotNull SentryProfile sentryProfile = new SentryProfile();
   private final @NotNull SentryStackTraceFactory stackTraceFactory;
+  private final @NotNull Map<SentryStackFrame, Integer> frameDeduplicationMap = new HashMap<>();
 
   public JfrAsyncProfilerToSentryProfileConverter(
       JfrReader jfr, Arguments args, @NotNull SentryStackTraceFactory stackTraceFactory) {
@@ -61,6 +64,7 @@ public final class JfrAsyncProfilerToSentryProfileConverter extends JfrConverter
     private final @NotNull SentryStackTraceFactory stackTraceFactory;
     private final @NotNull JfrReader jfr;
     private final @NotNull Arguments args;
+    private final double ticksPerNanosecond;
 
     public ProfileEventVisitor(
         @NotNull SentryProfile sentryProfile,
@@ -71,6 +75,7 @@ public final class JfrAsyncProfilerToSentryProfileConverter extends JfrConverter
       this.stackTraceFactory = stackTraceFactory;
       this.jfr = jfr;
       this.args = args;
+      ticksPerNanosecond = jfr.ticksPerSec / NANOS_PER_SECOND;
     }
 
     @Override
@@ -83,10 +88,14 @@ public final class JfrAsyncProfilerToSentryProfileConverter extends JfrConverter
           processThreadMetadata(event, threadId);
         }
 
-        createSample(event, threadId);
-
-        buildStackTraceAndFrames(stackTrace);
+        processSampleWithStack(event, threadId, stackTrace);
       }
+    }
+
+    private long resolveThreadId(int eventThreadId) {
+      return jfr.threads.get(eventThreadId) != null
+          ? jfr.javaThreads.get(eventThreadId)
+          : eventThreadId;
     }
 
     private void processThreadMetadata(Event event, long threadId) {
@@ -103,9 +112,34 @@ public final class JfrAsyncProfilerToSentryProfileConverter extends JfrConverter
               });
     }
 
-    private void buildStackTraceAndFrames(StackTrace stackTrace) {
-      List<Integer> stack = new ArrayList<>();
-      int currentFrame = sentryProfile.getFrames().size();
+    private void processSampleWithStack(Event event, long threadId, StackTrace stackTrace) {
+      int stackIndex = addStackTrace(stackTrace);
+
+      SentrySample sample = new SentrySample();
+      sample.setTimestamp(calculateTimestamp(event));
+      sample.setThreadId(String.valueOf(threadId));
+      sample.setStackId(stackIndex);
+
+      sentryProfile.getSamples().add(sample);
+    }
+
+    private double calculateTimestamp(Event event) {
+      long nanosFromStart = (long) ((event.time - jfr.chunkStartTicks) / ticksPerNanosecond);
+
+      long timeNs = jfr.chunkStartNanos + nanosFromStart;
+
+      return DateUtils.nanosToSeconds(timeNs);
+    }
+
+    private int addStackTrace(StackTrace stackTrace) {
+      int stackIndex = sentryProfile.getStacks().size();
+      List<Integer> callStack = createFramesAndCallStack(stackTrace);
+      sentryProfile.getStacks().add(callStack);
+      return stackIndex;
+    }
+
+    private List<Integer> createFramesAndCallStack(StackTrace stackTrace) {
+      List<Integer> callStack = new ArrayList<>();
 
       long[] methods = stackTrace.methods;
       byte[] types = stackTrace.types;
@@ -113,18 +147,31 @@ public final class JfrAsyncProfilerToSentryProfileConverter extends JfrConverter
 
       for (int i = 0; i < methods.length; i++) {
         StackTraceElement element = getStackTraceElement(methods[i], types[i], locations[i]);
-        if (element.isNativeMethod()) {
+        if (element.isNativeMethod() || isNativeFrame(types[i])) {
           continue;
         }
 
         SentryStackFrame frame = createStackFrame(element);
-        sentryProfile.getFrames().add(frame);
-
-        stack.add(currentFrame);
-        currentFrame++;
+        frame.setNative(isNativeFrame(types[i]));
+        int frameIndex = getOrAddFrame(frame);
+        callStack.add(frameIndex);
       }
 
-      sentryProfile.getStacks().add(stack);
+      return callStack;
+    }
+
+    // Get existing frame index or add new frame and return its index
+    private int getOrAddFrame(SentryStackFrame frame) {
+      Integer existingIndex = frameDeduplicationMap.get(frame);
+
+      if (existingIndex != null) {
+        return existingIndex;
+      }
+
+      int newIndex = sentryProfile.getFrames().size();
+      sentryProfile.getFrames().add(frame);
+      frameDeduplicationMap.put(frame, newIndex);
+      return newIndex;
     }
 
     private SentryStackFrame createStackFrame(StackTraceElement element) {
@@ -176,36 +223,12 @@ public final class JfrAsyncProfilerToSentryProfileConverter extends JfrConverter
       return !className.startsWith("[");
     }
 
-    private void createSample(Event event, long threadId) {
-      int stackId = sentryProfile.getStacks().size();
-      SentrySample sample = new SentrySample();
-
-      // Calculate timestamp from JFR event time
-      long nsFromStart =
-          (event.time - jfr.chunkStartTicks)
-              * JfrAsyncProfilerToSentryProfileConverter.NANOS_PER_SECOND
-              / jfr.ticksPerSec;
-      long timeNs = jfr.chunkStartNanos + nsFromStart;
-      sample.setTimestamp(DateUtils.nanosToSeconds(timeNs));
-
-      sample.setThreadId(String.valueOf(threadId));
-      sample.setStackId(stackId);
-
-      sentryProfile.getSamples().add(sample);
-    }
-
     private boolean shouldMarkAsSystemFrame(StackTraceElement element, String className) {
       return element.isNativeMethod() || className.isEmpty();
     }
 
     private @Nullable Integer extractLineNumber(StackTraceElement element) {
       return element.getLineNumber() != 0 ? element.getLineNumber() : null;
-    }
-
-    private long resolveThreadId(int eventThreadId) {
-      return jfr.threads.get(eventThreadId) != null
-          ? jfr.javaThreads.get(eventThreadId)
-          : eventThreadId;
     }
   }
 }
