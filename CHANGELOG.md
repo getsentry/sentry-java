@@ -9,6 +9,12 @@
 - Replace `UUIDGenerator` implementation with Apache licensed code ([#4662](https://github.com/getsentry/sentry-java/pull/4662))
 - Replace `Random` implementation with MIT licensed code ([#4664](https://github.com/getsentry/sentry-java/pull/4664))
 
+### Dependencies
+
+- Bump Gradle from v8.14.3 to v9.0.0 ([#4592](https://github.com/getsentry/sentry-java/pull/4592))
+  - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v900)
+  - [diff](https://github.com/gradle/gradle/compare/v8.14.3...v9.0.0)
+
 ## 8.20.0
 
 ### Fixes
