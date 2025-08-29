@@ -645,4 +645,38 @@ class SentryOkHttpInterceptorTest {
     val okHttpEvent = SentryOkHttpEventListener.eventMap[call]!!
     assertTrue(okHttpEvent.isEventFinished.get())
   }
+
+  @Test
+  fun `adds W3C traceparent header when propagateTraceparent is enabled`() {
+    val client =
+      fixture.getSut(
+        optionsConfiguration = Sentry.OptionsConfiguration { it.isPropagateTraceparent = true }
+      )
+
+    fixture.server.enqueue(MockResponse().setResponseCode(200))
+
+    val request = getRequest("/test")
+    client.newCall(request).execute()
+
+    val recordedRequest = fixture.server.takeRequest()
+    assertNotNull(recordedRequest.getHeader("sentry-trace"))
+    assertNotNull(recordedRequest.getHeader("traceparent"))
+  }
+
+  @Test
+  fun `does not add W3C traceparent header when propagateTraceparent is disabled`() {
+    val client =
+      fixture.getSut(
+        optionsConfiguration = Sentry.OptionsConfiguration { it.isPropagateTraceparent = false }
+      )
+
+    fixture.server.enqueue(MockResponse().setResponseCode(200))
+
+    val request = getRequest("/test")
+    client.newCall(request).execute()
+
+    val recordedRequest = fixture.server.takeRequest()
+    assertNotNull(recordedRequest.getHeader("sentry-trace"))
+    assertNull(recordedRequest.getHeader("traceparent"))
+  }
 }
