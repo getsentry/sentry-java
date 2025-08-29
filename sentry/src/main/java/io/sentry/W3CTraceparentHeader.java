@@ -26,7 +26,7 @@ public final class W3CTraceparentHeader {
   }
 
   public @NotNull String getValue() {
-    String sampledFlag = sampled != null && sampled ? "01" : "00";
+    final String sampledFlag = sampled != null && sampled ? "01" : "00";
     return String.format("%s-%s-%s", traceId, spanId, sampledFlag);
   }
 }

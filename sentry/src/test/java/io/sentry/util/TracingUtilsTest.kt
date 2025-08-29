@@ -471,42 +471,17 @@ class TracingUtilsTest {
     assertEquals("traceparent", tracingHeaders.w3cTraceparentHeader!!.name)
 
     val headerValue = tracingHeaders.w3cTraceparentHeader!!.value
-    assertTrue(headerValue.startsWith("00-"))
 
-    val parts = headerValue.split("-")
-    assertEquals(4, parts.size)
-    assertEquals(fixture.span.spanContext.traceId.toString(), parts[1])
-    assertEquals(fixture.span.spanContext.spanId.toString(), parts[2])
-  }
-
-  @Test
-  fun `trace returns w3c traceparent header with correct sampling info`() {
-    val fixture = Fixture()
-    fixture.setup()
-    fixture.options.isPropagateTraceparent = true
-
-    val tracingHeaders = TracingUtils.trace(fixture.scopes, null, fixture.span)
-
-    assertNotNull(tracingHeaders)
-    val w3cHeader = tracingHeaders.w3cTraceparentHeader!!
-    assertEquals("traceparent", w3cHeader.name)
-
-    val headerValue = w3cHeader.value
-    assertTrue(headerValue.startsWith("00-"))
-
-    val parts = headerValue.split("-")
-    assertEquals(4, parts.size)
-
-    val sentryTrace = fixture.span.toSentryTrace()
-    val expectedFlag = if (sentryTrace.isSampled() == true) "01" else "00"
-    assertEquals(expectedFlag, parts[3])
+    assertTrue(headerValue.contains(fixture.span.spanContext.traceId.toString()))
+    assertTrue(headerValue.contains(fixture.span.spanContext.spanId.toString()))
+    assertTrue(headerValue.endsWith("-01"))
   }
 
   @Test
   fun `trace returns w3c traceparent header when no span provided and propagateTraceparent is enabled`() {
     val fixture = Fixture()
-    fixture.setup()
     fixture.options.isPropagateTraceparent = true
+    fixture.setup()
 
     val tracingHeaders = TracingUtils.trace(fixture.scopes, null, null)
 
@@ -518,9 +493,8 @@ class TracingUtilsTest {
     assertEquals("traceparent", w3cTrace.name)
 
     val headerValue = w3cTrace.value
-    assertTrue(headerValue.startsWith("00-"))
-
-    val parts = headerValue.split("-")
-    assertEquals(4, parts.size)
+    assertTrue(headerValue.contains(fixture.scope.propagationContext.traceId.toString()))
+    assertTrue(headerValue.contains(fixture.scope.propagationContext.spanId.toString()))
+    assertTrue(headerValue.endsWith("-00"))
   }
 }

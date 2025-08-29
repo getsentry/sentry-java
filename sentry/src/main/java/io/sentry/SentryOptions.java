@@ -2127,7 +2127,7 @@ public class SentryOptions {
    *
    * @param propagateTraceparent true if enabled false otherwise
    */
-  public void setPropagateTraceparent(boolean propagateTraceparent) {
+  public void setPropagateTraceparent(final boolean propagateTraceparent) {
     this.propagateTraceparent = propagateTraceparent;
   }
 

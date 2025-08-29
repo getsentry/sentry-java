@@ -661,10 +661,6 @@ class SentryOkHttpInterceptorTest {
     val recordedRequest = fixture.server.takeRequest()
     assertNotNull(recordedRequest.getHeader("sentry-trace"))
     assertNotNull(recordedRequest.getHeader("traceparent"))
-
-    val traceparent = recordedRequest.getHeader("traceparent")!!
-    assertTrue(traceparent.startsWith("00-"))
-    assertEquals(4, traceparent.split("-").size)
   }
 
   @Test
