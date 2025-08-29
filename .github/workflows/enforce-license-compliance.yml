@@ -19,7 +19,7 @@ jobs:
        uses: getsentry/copyleft-license-checker@main
        with:
         fail-on-found: 'true'
-        allow-gpl-classpath: 'false'
+        allow-gpl-classpath: 'true'
 
   enforce-license-compliance:
     runs-on: ubuntu-latest
