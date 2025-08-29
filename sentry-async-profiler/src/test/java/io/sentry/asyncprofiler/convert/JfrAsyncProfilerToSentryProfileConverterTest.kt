@@ -4,21 +4,14 @@ import io.sentry.ILogger
 import io.sentry.IProfileConverter
 import io.sentry.IScope
 import io.sentry.IScopes
-import io.sentry.JsonObjectReader
-import io.sentry.JsonObjectWriter
-import io.sentry.JsonSerializable
 import io.sentry.Sentry
 import io.sentry.SentryOptions
 import io.sentry.SentryStackTraceFactory
 import io.sentry.TracesSampler
 import io.sentry.asyncprofiler.provider.AsyncProfilerProfileConverterProvider
-import io.sentry.protocol.SentryStackFrame
 import io.sentry.protocol.profiling.SentryProfile
 import io.sentry.test.DeferredExecutorService
-import java.io.File
 import java.io.IOException
-import java.io.StringReader
-import java.io.StringWriter
 import kotlin.io.path.Path
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -202,7 +195,10 @@ class JfrAsyncProfilerToSentryProfileConverterTest {
     // Find frames with complete information
     val completeFrames =
       frames.filter { frame ->
-        frame.function != null && frame.module != null && frame.lineno != null && frame.filename != null
+        frame.function != null &&
+          frame.module != null &&
+          frame.lineno != null &&
+          frame.filename != null
       }
 
     assertTrue(completeFrames.isNotEmpty(), "Should have frames with complete information")
