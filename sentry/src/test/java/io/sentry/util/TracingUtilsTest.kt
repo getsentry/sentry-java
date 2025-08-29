@@ -471,10 +471,14 @@ class TracingUtilsTest {
     assertEquals("traceparent", tracingHeaders.w3cTraceparentHeader!!.name)
 
     val headerValue = tracingHeaders.w3cTraceparentHeader!!.value
+    assertTrue(headerValue.startsWith("00-"))
 
-    assertTrue(headerValue.contains(fixture.span.spanContext.traceId.toString()))
-    assertTrue(headerValue.contains(fixture.span.spanContext.spanId.toString()))
-    assertTrue(headerValue.endsWith("-01"))
+    val parts = headerValue.split("-")
+    assertEquals(4, parts.size)
+    assertEquals("00", parts[0])
+    assertEquals(fixture.span.spanContext.traceId.toString(), parts[1])
+    assertEquals(fixture.span.spanContext.spanId.toString(), parts[2])
+    assertEquals("01", parts[3])
   }
 
   @Test
@@ -493,8 +497,13 @@ class TracingUtilsTest {
     assertEquals("traceparent", w3cTrace.name)
 
     val headerValue = w3cTrace.value
-    assertTrue(headerValue.contains(fixture.scope.propagationContext.traceId.toString()))
-    assertTrue(headerValue.contains(fixture.scope.propagationContext.spanId.toString()))
-    assertTrue(headerValue.endsWith("-00"))
+    assertTrue(headerValue.startsWith("00-"))
+
+    val parts = headerValue.split("-")
+    assertEquals(4, parts.size)
+    assertEquals("00", parts[0])
+    assertEquals(fixture.scope.propagationContext.traceId.toString(), parts[1])
+    assertEquals(fixture.scope.propagationContext.spanId.toString(), parts[2])
+    assertEquals("00", parts[3])
   }
 }
