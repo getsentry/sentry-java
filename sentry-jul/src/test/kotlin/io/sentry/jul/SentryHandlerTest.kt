@@ -544,7 +544,10 @@ class SentryHandlerTest {
         checkLogs { logs ->
           val log = logs.items.first()
           assertEquals("testing message {0} {1}", log.body)
-          assertEquals("testing message {0} {1}", log.attributes?.get("sentry.message.template")?.value)
+          assertEquals(
+            "testing message {0} {1}",
+            log.attributes?.get("sentry.message.template")?.value,
+          )
           assertEquals(1, log.attributes?.get("sentry.message.parameter.0")?.value)
           assertNull(log.attributes?.get("sentry.message.parameter.1"))
         }
