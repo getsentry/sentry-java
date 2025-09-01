@@ -3039,7 +3039,7 @@ class SentryClientTest {
           listOf(SentryException().apply { mechanism = Mechanism().apply { isHandled = false } })
       }
     )
-    verify(batchProcessor).flush(any())
+    verify(batchProcessor).flush(eq(500))
   }
 
   @Test

@@ -36,6 +36,8 @@ import org.jetbrains.annotations.TestOnly;
 public final class SentryClient implements ISentryClient {
   static final String SENTRY_PROTOCOL_VERSION = "7";
 
+  private static final int LOG_FLUSH_ON_CRASH_TIMEOUT_MILLIS = 500;
+
   private boolean enabled;
 
   private final @NotNull SentryOptions options;
@@ -211,16 +213,6 @@ public final class SentryClient implements ISentryClient {
       sentryId = event.getEventId();
     }
 
-    final boolean isBackfillable = HintUtils.hasType(hint, Backfillable.class);
-    final boolean isCached =
-        HintUtils.hasType(hint, Cached.class) && !HintUtils.hasType(hint, ApplyScopeData.class);
-    // if event is backfillable or cached we don't wanna trigger capture replay, because it's
-    // an event from the past. If it's cached, but with ApplyScopeData, it comes from the outbox
-    // folder and we still want to capture replay (e.g. a native captureException error)
-    if (event != null && !isBackfillable && !isCached && (event.isErrored() || event.isCrashed())) {
-      options.getReplayController().captureReplay(event.isCrashed());
-    }
-
     try {
       final @Nullable TraceContext traceContext = getTraceContext(scope, hint, event);
       final boolean shouldSendAttachments = event != null;
@@ -245,10 +237,18 @@ public final class SentryClient implements ISentryClient {
       finalizeTransaction(scope, hint);
     }
 
-    // if event is backfillable or cached we don't need to flush the logs, because it's an event
-    // from the past. Otherwise we need to flush the logs to ensure they are sent on crash
-    if (event != null && !isBackfillable && !isCached && event.isCrashed()) {
-      loggerBatchProcessor.flush(options.getFlushTimeoutMillis());
+    final boolean isBackfillable = HintUtils.hasType(hint, Backfillable.class);
+    final boolean isCached =
+        HintUtils.hasType(hint, Cached.class) && !HintUtils.hasType(hint, ApplyScopeData.class);
+    // if event is backfillable or cached we don't wanna trigger capture replay, because it's
+    // an event from the past. If it's cached, but with ApplyScopeData, it comes from the outbox
+    // folder and we still want to capture replay (e.g. a native captureException error)
+    if (event != null && !isBackfillable && !isCached && (event.isErrored() || event.isCrashed())) {
+      options.getReplayController().captureReplay(event.isCrashed());
+      // We need to flush the logs to ensure they are sent on crash
+      if (event.isCrashed()) {
+        loggerBatchProcessor.flush(LOG_FLUSH_ON_CRASH_TIMEOUT_MILLIS);
+      }
     }
 
     return sentryId;
