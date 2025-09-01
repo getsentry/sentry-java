@@ -215,7 +215,7 @@ public final class SentryClient implements ISentryClient {
 
     final boolean isBackfillable = HintUtils.hasType(hint, Backfillable.class);
     final boolean isCached =
-      HintUtils.hasType(hint, Cached.class) && !HintUtils.hasType(hint, ApplyScopeData.class);
+        HintUtils.hasType(hint, Cached.class) && !HintUtils.hasType(hint, ApplyScopeData.class);
 
     try {
       final @Nullable TraceContext traceContext = getTraceContext(scope, hint, event);
