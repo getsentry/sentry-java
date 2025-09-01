@@ -14,6 +14,7 @@ import io.sentry.SpanId
 import io.sentry.SpanOptions
 import io.sentry.TracesSamplingDecision
 import io.sentry.TransactionContext
+import io.sentry.W3CTraceparentHeader
 import io.sentry.protocol.SentryId
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -468,7 +469,10 @@ class TracingUtilsTest {
     assertNotNull(tracingHeaders)
     assertNotNull(tracingHeaders.sentryTraceHeader)
     assertNotNull(tracingHeaders.w3cTraceparentHeader)
-    assertEquals("traceparent", tracingHeaders.w3cTraceparentHeader!!.name)
+    assertEquals(
+      W3CTraceparentHeader.TRACEPARENT_HEADER,
+      tracingHeaders.w3cTraceparentHeader!!.name,
+    )
 
     val headerValue = tracingHeaders.w3cTraceparentHeader!!.value
     assertTrue(headerValue.startsWith("00-"))
@@ -494,7 +498,7 @@ class TracingUtilsTest {
     assertNotNull(tracingHeaders.w3cTraceparentHeader)
 
     val w3cTrace = tracingHeaders.w3cTraceparentHeader!!
-    assertEquals("traceparent", w3cTrace.name)
+    assertEquals(W3CTraceparentHeader.TRACEPARENT_HEADER, w3cTrace.name)
 
     val headerValue = w3cTrace.value
     assertTrue(headerValue.startsWith("00-"))

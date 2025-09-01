@@ -19,6 +19,7 @@ import io.sentry.SpanDataConvention
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
 import io.sentry.TypeCheckHint
+import io.sentry.W3CTraceparentHeader
 import io.sentry.exception.SentryHttpClientException
 import io.sentry.mockServerRequestTimeoutMillis
 import java.io.IOException
@@ -659,8 +660,8 @@ class SentryOkHttpInterceptorTest {
     client.newCall(request).execute()
 
     val recordedRequest = fixture.server.takeRequest()
-    assertNotNull(recordedRequest.getHeader("sentry-trace"))
-    assertNotNull(recordedRequest.getHeader("traceparent"))
+    assertNotNull(recordedRequest.getHeader(SentryTraceHeader.SENTRY_TRACE_HEADER))
+    assertNotNull(recordedRequest.getHeader(W3CTraceparentHeader.TRACEPARENT_HEADER))
   }
 
   @Test
@@ -676,7 +677,7 @@ class SentryOkHttpInterceptorTest {
     client.newCall(request).execute()
 
     val recordedRequest = fixture.server.takeRequest()
-    assertNotNull(recordedRequest.getHeader("sentry-trace"))
-    assertNull(recordedRequest.getHeader("traceparent"))
+    assertNotNull(recordedRequest.getHeader(SentryTraceHeader.SENTRY_TRACE_HEADER))
+    assertNull(recordedRequest.getHeader(W3CTraceparentHeader.TRACEPARENT_HEADER))
   }
 }
