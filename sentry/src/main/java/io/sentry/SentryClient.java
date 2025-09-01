@@ -213,6 +213,10 @@ public final class SentryClient implements ISentryClient {
       sentryId = event.getEventId();
     }
 
+    final boolean isBackfillable = HintUtils.hasType(hint, Backfillable.class);
+    final boolean isCached =
+      HintUtils.hasType(hint, Cached.class) && !HintUtils.hasType(hint, ApplyScopeData.class);
+
     try {
       final @Nullable TraceContext traceContext = getTraceContext(scope, hint, event);
       final boolean shouldSendAttachments = event != null;
@@ -236,10 +240,6 @@ public final class SentryClient implements ISentryClient {
     if (scope != null) {
       finalizeTransaction(scope, hint);
     }
-
-    final boolean isBackfillable = HintUtils.hasType(hint, Backfillable.class);
-    final boolean isCached =
-        HintUtils.hasType(hint, Cached.class) && !HintUtils.hasType(hint, ApplyScopeData.class);
     // if event is backfillable or cached we don't wanna trigger capture replay, because it's
     // an event from the past. If it's cached, but with ApplyScopeData, it comes from the outbox
     // folder and we still want to capture replay (e.g. a native captureException error)
