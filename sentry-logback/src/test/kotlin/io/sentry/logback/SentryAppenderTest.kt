@@ -711,4 +711,99 @@ class SentryAppenderTest {
         anyOrNull(),
       )
   }
+
+  @Test
+  fun `does not set template on log when logging message without parameters`() {
+    fixture = Fixture(minimumLevel = Level.ERROR, enableLogs = true)
+    fixture.logger.error("testing message without parameters")
+
+    Sentry.flush(1000)
+
+    verify(fixture.transport)
+      .send(
+        checkLogs { logs ->
+          val log = logs.items.first()
+          assertEquals("testing message without parameters", log.body)
+          assertNull(log.attributes?.get("sentry.message.template"))
+        }
+      )
+  }
+
+  @Test
+  fun `sets template on log when logging message with parameters`() {
+    fixture = Fixture(minimumLevel = Level.ERROR, enableLogs = true)
+    fixture.logger.error("testing message {}", "param")
+
+    Sentry.flush(1000)
+
+    verify(fixture.transport)
+      .send(
+        checkLogs { logs ->
+          val log = logs.items.first()
+          assertEquals("testing message param", log.body)
+          assertEquals("testing message {}", log.attributes?.get("sentry.message.template")?.value)
+          assertEquals("param", log.attributes?.get("sentry.message.parameter.0")?.value)
+        }
+      )
+  }
+
+  @Test
+  fun `sets template on log when logging message with parameters and number of parameters is wrong`() {
+    fixture = Fixture(minimumLevel = Level.ERROR, enableLogs = true)
+    fixture.logger.error("testing message {} {} {}", "param1", "param2")
+
+    Sentry.flush(1000)
+
+    verify(fixture.transport)
+      .send(
+        checkLogs { logs ->
+          val log = logs.items.first()
+          assertEquals("testing message param1 param2 {}", log.body)
+          assertEquals("testing message {} {} {}", log.attributes?.get("sentry.message.template")?.value)
+          assertEquals("param1", log.attributes?.get("sentry.message.parameter.0")?.value)
+          assertEquals("param2", log.attributes?.get("sentry.message.parameter.1")?.value)
+          assertNull(log.attributes?.get("sentry.message.parameter.2"))
+        }
+      )
+  }
+
+  @Test
+  fun `does not set template or attributes on log with encoder when sendDefaultPii is false`() {
+    var encoder = PatternLayoutEncoder()
+    encoder.pattern = "encoded %msg"
+    fixture = Fixture(minimumLevel = Level.ERROR, enableLogs = true, encoder = encoder, sendDefaultPii = false)
+    fixture.logger.error("testing message {}", "param")
+
+    Sentry.flush(1000)
+
+    verify(fixture.transport)
+      .send(
+        checkLogs { logs ->
+          val log = logs.items.first()
+          assertEquals("encoded testing message param", log.body)
+          assertNull(log.attributes?.get("sentry.message.template"))
+          assertNull(log.attributes?.get("sentry.message.parameter.0"))
+        }
+      )
+  }
+
+  @Test
+  fun `sets template and attributes on log with encoder when sendDefaultPii is true`() {
+    var encoder = PatternLayoutEncoder()
+    encoder.pattern = "encoded %msg"
+    fixture = Fixture(minimumLevel = Level.ERROR, enableLogs = true, encoder = encoder, sendDefaultPii = true)
+    fixture.logger.error("testing message {}", "param")
+
+    Sentry.flush(1000)
+
+    verify(fixture.transport)
+      .send(
+        checkLogs { logs ->
+          val log = logs.items.first()
+          assertEquals("encoded testing message param", log.body)
+          assertEquals("testing message {}", log.attributes?.get("sentry.message.template")?.value)
+          assertEquals("param", log.attributes?.get("sentry.message.parameter.0")?.value)
+        }
+      )
+  }
 }
