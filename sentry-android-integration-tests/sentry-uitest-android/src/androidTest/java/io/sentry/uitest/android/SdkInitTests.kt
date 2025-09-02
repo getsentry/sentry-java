@@ -158,8 +158,6 @@ class SdkInitTests : BaseUiTest() {
         }
       assertNoOtherEnvelopes()
     }
-    context.cacheDir.deleteRecursively()
-    context.cacheDir.mkdirs()
   }
 
   @Test

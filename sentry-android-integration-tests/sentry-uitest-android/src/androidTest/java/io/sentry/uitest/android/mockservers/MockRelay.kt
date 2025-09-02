@@ -119,7 +119,6 @@ class MockRelay(
   /** Wait to receive all requests (if [waitForRequests] is true) and run the [assertion]. */
   fun assert(assertion: RelayAsserter.() -> Unit) {
     if (waitForRequests) {
-      waitUntilIdle()
       try {
         waitUntilIdle()
       } catch (e: Exception) {
@@ -129,6 +128,8 @@ class MockRelay(
               unassertedEnvelopes.joinToString { it.envelope!!.describeForTest() },
             e
           )
+        } else {
+          throw e
         }
       }
     }
