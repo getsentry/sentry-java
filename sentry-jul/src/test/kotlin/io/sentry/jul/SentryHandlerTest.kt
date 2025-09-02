@@ -555,22 +555,4 @@ class SentryHandlerTest {
         }
       )
   }
-
-  @Test
-  fun `sets template on log when logging message with parameters and formatting fails due to 0 args`() {
-    fixture = Fixture(minimumLevel = Level.SEVERE, printfStyle = true)
-    fixture.logger.log(Level.SEVERE, "testing message %d", emptyArray())
-
-    Sentry.flush(1000)
-
-    verify(fixture.transport)
-      .send(
-        checkLogs { logs ->
-          val log = logs.items.first()
-          assertEquals("testing message %d", log.body)
-          assertEquals("testing message %d", log.attributes?.get("sentry.message.template")?.value)
-          assertNull(log.attributes?.get("sentry.message.parameter.0"))
-        }
-      )
-  }
 }

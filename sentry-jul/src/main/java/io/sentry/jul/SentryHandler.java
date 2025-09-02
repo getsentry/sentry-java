@@ -154,16 +154,9 @@ public class SentryHandler extends Handler {
       message = loggingEvent.getResourceBundle().getString(loggingEvent.getMessage());
     }
 
-    String formattedMessage = null;
-    boolean formattingFailed = false;
-    try {
-      formattedMessage = maybeFormatted(arguments, message);
-    } catch (RuntimeException e) {
-      formattedMessage = message;
-      formattingFailed = true;
-    }
+    final @NotNull String formattedMessage = maybeFormatted(arguments, message);
 
-    if (formattingFailed || !formattedMessage.equals(message)) {
+    if (!formattedMessage.equals(message)) {
       attributes.add(SentryAttribute.stringAttribute("sentry.message.template", message));
     }
 
@@ -180,7 +173,6 @@ public class SentryHandler extends Handler {
         return formatMessage(message, arguments);
       } catch (RuntimeException e) {
         // local formatting failed, sending raw message instead of formatted message
-        throw e;
       }
     }
 
