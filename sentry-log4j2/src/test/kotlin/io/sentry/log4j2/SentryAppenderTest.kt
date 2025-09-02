@@ -60,7 +60,6 @@ class SentryAppenderTest {
       }
       loggerContext.start()
       val config: Configuration = loggerContext.configuration
-
       val appender =
         SentryAppender(
           "sentry",
