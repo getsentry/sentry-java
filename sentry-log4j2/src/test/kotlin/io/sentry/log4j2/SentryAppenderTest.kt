@@ -29,7 +29,6 @@ import org.apache.logging.log4j.core.LoggerContext
 import org.apache.logging.log4j.core.config.AppenderRef
 import org.apache.logging.log4j.core.config.Configuration
 import org.apache.logging.log4j.core.config.LoggerConfig
-import org.apache.logging.log4j.core.layout.PatternLayout
 import org.apache.logging.log4j.spi.ExtendedLogger
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
@@ -583,7 +582,10 @@ class SentryAppenderTest {
         checkLogs { logs ->
           val log = logs.items.first()
           assertEquals("testing message param1 param2 {}", log.body)
-          assertEquals("testing message {} {} {}", log.attributes?.get("sentry.message.template")?.value)
+          assertEquals(
+            "testing message {} {} {}",
+            log.attributes?.get("sentry.message.template")?.value,
+          )
           assertEquals("param1", log.attributes?.get("sentry.message.parameter.0")?.value)
           assertEquals("param2", log.attributes?.get("sentry.message.parameter.1")?.value)
           assertNull(log.attributes?.get("sentry.message.parameter.2"))
