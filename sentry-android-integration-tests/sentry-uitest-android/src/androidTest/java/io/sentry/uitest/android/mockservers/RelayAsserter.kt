@@ -1,14 +1,8 @@
 package io.sentry.uitest.android.mockservers
 
 import io.sentry.EnvelopeReader
-import io.sentry.JsonSerializer
-import io.sentry.ProfilingTraceData
 import io.sentry.Sentry
 import io.sentry.SentryEnvelope
-import io.sentry.SentryEvent
-import io.sentry.SentryItemType
-import io.sentry.SentryOptions
-import io.sentry.protocol.SentryTransaction
 import io.sentry.uitest.android.describeForTest
 import java.io.IOException
 import java.util.zip.GZIPInputStream

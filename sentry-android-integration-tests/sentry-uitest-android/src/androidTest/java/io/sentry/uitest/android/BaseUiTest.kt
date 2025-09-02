@@ -50,15 +50,25 @@ abstract class BaseUiTest {
   /** Mock relay server that receives all envelopes sent during the test. */
   protected val relay = MockRelay(false, relayIdlingResource)
 
-  private fun disableDontKeepActivities() {
+  private fun runCommand(cmd: String) {
     val automation = InstrumentationRegistry.getInstrumentation().uiAutomation
-    val pfd = automation.executeShellCommand("settings put global always_finish_activities 0")
+    val pfd = automation.executeShellCommand(cmd)
     try {
       FileInputStream(pfd.fileDescriptor).readBytes()
     } catch (e: Throwable) {
       // ignored
     }
     pfd.close()
+  }
+
+  private fun disableDontKeepActivities() {
+    runCommand("settings put global always_finish_activities 0")
+  }
+
+  fun disableSystemAnimations() {
+    runCommand("settings put global window_animation_scale 0")
+    runCommand("settings put global transition_animation_scale 0")
+    runCommand("settings put global animator_duration_scale 0")
   }
 
   @BeforeTest
@@ -70,6 +80,7 @@ abstract class BaseUiTest {
     relay.start()
     mockDsn = relay.createMockDsn()
     disableDontKeepActivities()
+    disableSystemAnimations()
   }
 
   @AfterTest

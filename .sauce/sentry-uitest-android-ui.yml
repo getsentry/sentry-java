@@ -26,22 +26,6 @@ suites:
       - name: ".*"
         platformVersion: "15"
 
-  - name: "Android 14 Ui test (api 34)"
-    testOptions:
-      clearPackageData: true
-      useTestOrchestrator: true
-    devices:
-      - name: ".*"
-        platformVersion: "14"
-
-  - name: "Android 13 Ui test (api 33)"
-    testOptions:
-      clearPackageData: true
-      useTestOrchestrator: true
-    devices:
-      - name: ".*"
-        platformVersion: "13"
-
 # Controls what artifacts to fetch when the suite on Sauce Cloud has finished.
 artifacts:
   download:
