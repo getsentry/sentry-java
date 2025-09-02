@@ -35,7 +35,7 @@ class SentryHandlerTest {
     val configureWithLogManager: Boolean = false,
     val transport: ITransport = mock(),
     contextTags: List<String>? = null,
-    printfStyle: Boolean = true,
+    printfStyle: Boolean? = null,
   ) {
     var logger: Logger
     var handler: SentryHandler
@@ -50,7 +50,9 @@ class SentryHandlerTest {
       handler.setMinimumBreadcrumbLevel(minimumBreadcrumbLevel)
       handler.setMinimumEventLevel(minimumEventLevel)
       handler.setMinimumLevel(minimumLevel)
-      handler.setPrintfStyle(printfStyle)
+      if (printfStyle == true) {
+        handler.setPrintfStyle(printfStyle)
+      }
       handler.level = Level.ALL
       logger.handlers.forEach { logger.removeHandler(it) }
       logger.addHandler(handler)
@@ -534,8 +536,8 @@ class SentryHandlerTest {
 
   @Test
   fun `sets template on log when logging message with parameters and formatting fails`() {
-    fixture = Fixture(minimumLevel = Level.SEVERE)
-    fixture.logger.log(Level.SEVERE, "testing message {0} {1}", arrayOf(1))
+    fixture = Fixture(minimumLevel = Level.SEVERE, printfStyle = true)
+    fixture.logger.log(Level.SEVERE, "testing message %d %d", arrayOf(1))
 
     Sentry.flush(1000)
 
@@ -543,9 +545,9 @@ class SentryHandlerTest {
       .send(
         checkLogs { logs ->
           val log = logs.items.first()
-          assertEquals("testing message {0} {1}", log.body)
+          assertEquals("testing message %d %d", log.body)
           assertEquals(
-            "testing message {0} {1}",
+            "testing message %d %d",
             log.attributes?.get("sentry.message.template")?.value,
           )
           assertEquals(1, log.attributes?.get("sentry.message.parameter.0")?.value)
