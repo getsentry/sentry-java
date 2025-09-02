@@ -5,7 +5,8 @@ import org.gradle.internal.extensions.stdlib.capitalized
 
 plugins {
   id("com.android.application")
-  kotlin("android")
+  alias(libs.plugins.kotlin.android)
+  alias(libs.plugins.kotlin.compose)
 }
 
 android {
@@ -89,7 +90,7 @@ android {
     }
   }
 
-  kotlinOptions { jvmTarget = JavaVersion.VERSION_1_8.toString() }
+  kotlin { compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8 }
 
   androidComponents.beforeVariants {
     it.enable = !Config.Android.shouldSkipDebugVariant(it.buildType)

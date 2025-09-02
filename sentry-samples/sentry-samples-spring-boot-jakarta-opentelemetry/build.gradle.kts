@@ -5,7 +5,7 @@ import org.springframework.boot.gradle.tasks.run.BootRun
 plugins {
   alias(libs.plugins.springboot3)
   alias(libs.plugins.spring.dependency.management)
-  kotlin("jvm")
+  alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.kotlin.spring)
 }
 
@@ -25,13 +25,13 @@ configure<JavaPluginExtension> {
 }
 
 tasks.withType<KotlinCompile>().configureEach {
-  kotlinOptions.jvmTarget = JavaVersion.VERSION_17.toString()
+  compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
 }
 
 tasks.withType<KotlinCompile>().configureEach {
-  kotlinOptions {
-    freeCompilerArgs = listOf("-Xjsr305=strict")
-    jvmTarget = JavaVersion.VERSION_17.toString()
+  kotlin {
+    compilerOptions.freeCompilerArgs = listOf("-Xjsr305=strict")
+    compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
   }
 }
 

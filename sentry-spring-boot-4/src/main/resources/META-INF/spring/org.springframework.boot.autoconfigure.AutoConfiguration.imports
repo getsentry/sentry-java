@@ -1,0 +1,3 @@
+io.sentry.spring.boot4.SentryAutoConfiguration
+io.sentry.spring.boot4.SentryLogbackAppenderAutoConfiguration
+io.sentry.spring.boot4.SentryWebfluxAutoConfiguration
