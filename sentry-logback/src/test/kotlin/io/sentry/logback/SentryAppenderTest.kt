@@ -759,7 +759,10 @@ class SentryAppenderTest {
         checkLogs { logs ->
           val log = logs.items.first()
           assertEquals("testing message param1 param2 {}", log.body)
-          assertEquals("testing message {} {} {}", log.attributes?.get("sentry.message.template")?.value)
+          assertEquals(
+            "testing message {} {} {}",
+            log.attributes?.get("sentry.message.template")?.value,
+          )
           assertEquals("param1", log.attributes?.get("sentry.message.parameter.0")?.value)
           assertEquals("param2", log.attributes?.get("sentry.message.parameter.1")?.value)
           assertNull(log.attributes?.get("sentry.message.parameter.2"))
@@ -771,7 +774,13 @@ class SentryAppenderTest {
   fun `does not set template or attributes on log with encoder when sendDefaultPii is false`() {
     var encoder = PatternLayoutEncoder()
     encoder.pattern = "encoded %msg"
-    fixture = Fixture(minimumLevel = Level.ERROR, enableLogs = true, encoder = encoder, sendDefaultPii = false)
+    fixture =
+      Fixture(
+        minimumLevel = Level.ERROR,
+        enableLogs = true,
+        encoder = encoder,
+        sendDefaultPii = false,
+      )
     fixture.logger.error("testing message {}", "param")
 
     Sentry.flush(1000)
@@ -791,7 +800,13 @@ class SentryAppenderTest {
   fun `sets template and attributes on log with encoder when sendDefaultPii is true`() {
     var encoder = PatternLayoutEncoder()
     encoder.pattern = "encoded %msg"
-    fixture = Fixture(minimumLevel = Level.ERROR, enableLogs = true, encoder = encoder, sendDefaultPii = true)
+    fixture =
+      Fixture(
+        minimumLevel = Level.ERROR,
+        enableLogs = true,
+        encoder = encoder,
+        sendDefaultPii = true,
+      )
     fixture.logger.error("testing message {}", "param")
 
     Sentry.flush(1000)
