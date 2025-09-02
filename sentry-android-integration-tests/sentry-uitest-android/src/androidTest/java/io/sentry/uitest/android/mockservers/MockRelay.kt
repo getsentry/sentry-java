@@ -127,7 +127,7 @@ class MockRelay(
           throw AssertionError(
             "There was a total of ${unassertedEnvelopes.size} envelopes: " +
               unassertedEnvelopes.joinToString { it.envelope!!.describeForTest() },
-            e
+            e,
           )
         }
       }
