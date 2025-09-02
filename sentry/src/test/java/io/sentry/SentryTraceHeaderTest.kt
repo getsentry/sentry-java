@@ -133,6 +133,26 @@ class SentryTraceHeaderTest {
   }
 
   @Test
+  fun `handles header without sampling decision and leading whitespace`() {
+    val sentryId = SentryId()
+    val spanId = SpanId()
+    val header = SentryTraceHeader(" \t $sentryId-$spanId")
+    assertEquals(sentryId, header.traceId)
+    assertEquals(spanId, header.spanId)
+    assertNull(header.isSampled)
+  }
+
+  @Test
+  fun `handles header without sampling decision and trailing whitespace`() {
+    val sentryId = SentryId()
+    val spanId = SpanId()
+    val header = SentryTraceHeader("$sentryId-$spanId \t ")
+    assertEquals(sentryId, header.traceId)
+    assertEquals(spanId, header.spanId)
+    assertNull(header.isSampled)
+  }
+
+  @Test
   fun `when sampling decision is not made, getValue returns header with traceId and spanId`() {
     val sentryId = SentryId()
     val spanId = SpanId()
