@@ -68,7 +68,7 @@ class SentrySpanClientHttpRequestInterceptorTest {
   }
 
   @Test
-  fun `does not attach w3c trace parent header when enabled`() {
+  fun `does not attach w3c trace parent header when disabled`() {
     val sut = fixture.create { options -> options.isPropagateTraceparent = false }
     sut.intercept(fixture.request, fixture.body, fixture.requestExecution)
 
