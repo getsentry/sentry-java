@@ -472,7 +472,9 @@ class UserFeedbackUiTest : BaseUiTest() {
       //  because it would block the espresso interactions (button click)
       it.feedbackOptions.onSubmitSuccess = SentryFeedbackCallback {
         relayIdlingResource.increment()
-        relayIdlingResource.increment()
+        if (enableReplay) {
+          relayIdlingResource.increment()
+        }
       }
       // Let's capture a replay, so we can check the replayId in the feedback
       if (enableReplay) {
