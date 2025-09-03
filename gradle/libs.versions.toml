@@ -2,7 +2,7 @@
 apollo = "2.5.9"
 androidxLifecycle = "2.2.0"
 androidxNavigation = "2.4.2"
-androidxTestCore = "1.7.0"
+androidxTestCore = "1.6.1" # 1.7.0 cause CI AGP workflow to fail with internal kotlin errors
 androidxCompose = "1.6.3"
 composeCompiler = "1.5.14"
 coroutines = "1.6.1"
