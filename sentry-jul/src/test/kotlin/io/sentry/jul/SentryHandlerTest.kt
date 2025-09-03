@@ -35,6 +35,7 @@ class SentryHandlerTest {
     val configureWithLogManager: Boolean = false,
     val transport: ITransport = mock(),
     contextTags: List<String>? = null,
+    printfStyle: Boolean? = null,
   ) {
     var logger: Logger
     var handler: SentryHandler
@@ -49,6 +50,9 @@ class SentryHandlerTest {
       handler.setMinimumBreadcrumbLevel(minimumBreadcrumbLevel)
       handler.setMinimumEventLevel(minimumEventLevel)
       handler.setMinimumLevel(minimumLevel)
+      if (printfStyle == true) {
+        handler.setPrintfStyle(printfStyle)
+      }
       handler.level = Level.ALL
       logger.handlers.forEach { logger.removeHandler(it) }
       logger.addHandler(handler)
@@ -475,5 +479,80 @@ class SentryHandlerTest {
 
     verify(fixture.transport)
       .send(checkLogs { event -> assertEquals(SentryLogLevel.ERROR, event.items.first().level) })
+  }
+
+  @Test
+  fun `does not set template on log when logging message without parameters`() {
+    fixture = Fixture(minimumLevel = Level.SEVERE)
+    fixture.logger.severe("testing message without parameters")
+
+    Sentry.flush(1000)
+
+    verify(fixture.transport)
+      .send(
+        checkLogs { logs ->
+          val log = logs.items.first()
+          assertEquals("testing message without parameters", log.body)
+          assertNull(log.attributes?.get("sentry.message.template"))
+        }
+      )
+  }
+
+  @Test
+  fun `sets template on log when logging message with parameters`() {
+    fixture = Fixture(minimumLevel = Level.SEVERE)
+    fixture.logger.log(Level.SEVERE, "testing message {0}", arrayOf("param"))
+
+    Sentry.flush(1000)
+
+    verify(fixture.transport)
+      .send(
+        checkLogs { logs ->
+          val log = logs.items.first()
+          assertEquals("testing message param", log.body)
+          assertEquals("testing message {0}", log.attributes?.get("sentry.message.template")?.value)
+          assertEquals("param", log.attributes?.get("sentry.message.parameter.0")?.value)
+        }
+      )
+  }
+
+  @Test
+  fun `sets template on log when logging message with parameters and using printfStyle`() {
+    fixture = Fixture(minimumLevel = Level.SEVERE, printfStyle = true)
+    fixture.logger.log(Level.SEVERE, "testing message %s", arrayOf("param"))
+
+    Sentry.flush(1000)
+
+    verify(fixture.transport)
+      .send(
+        checkLogs { logs ->
+          val log = logs.items.first()
+          assertEquals("testing message param", log.body)
+          assertEquals("testing message %s", log.attributes?.get("sentry.message.template")?.value)
+          assertEquals("param", log.attributes?.get("sentry.message.parameter.0")?.value)
+        }
+      )
+  }
+
+  @Test
+  fun `sets template on log when logging message with parameters and formatting fails`() {
+    fixture = Fixture(minimumLevel = Level.SEVERE, printfStyle = true)
+    fixture.logger.log(Level.SEVERE, "testing message %d %d", arrayOf(1))
+
+    Sentry.flush(1000)
+
+    verify(fixture.transport)
+      .send(
+        checkLogs { logs ->
+          val log = logs.items.first()
+          assertEquals("testing message %d %d", log.body)
+          assertEquals(
+            "testing message %d %d",
+            log.attributes?.get("sentry.message.template")?.value,
+          )
+          assertEquals(1, log.attributes?.get("sentry.message.parameter.0")?.value)
+          assertNull(log.attributes?.get("sentry.message.parameter.1"))
+        }
+      )
   }
 }
