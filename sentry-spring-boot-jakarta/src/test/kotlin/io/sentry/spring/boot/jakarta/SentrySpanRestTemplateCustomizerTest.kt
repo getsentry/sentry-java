@@ -11,6 +11,7 @@ import io.sentry.SentryTracer
 import io.sentry.SpanStatus
 import io.sentry.TracesSamplingDecision
 import io.sentry.TransactionContext
+import io.sentry.W3CTraceparentHeader
 import io.sentry.mockServerRequestTimeoutMillis
 import java.time.Duration
 import java.util.concurrent.TimeUnit
@@ -327,5 +328,29 @@ class SentrySpanRestTemplateCustomizerTest {
         },
         anyOrNull(),
       )
+  }
+
+  @Test
+  fun `adds W3C traceparent header when propagateTraceparent is enabled`() {
+    fixture.sentryOptions.isPropagateTraceparent = true
+    fixture
+      .getSut(isTransactionActive = true, includeMockServerInTracingOrigins = true)
+      .getForObject(fixture.url, String::class.java)
+    val recordedRequest =
+      fixture.mockServer.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
+    assertNotNull(recordedRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
+    assertNotNull(recordedRequest.headers[W3CTraceparentHeader.TRACEPARENT_HEADER])
+  }
+
+  @Test
+  fun `does not add W3C traceparent header when propagateTraceparent is disabled`() {
+    fixture.sentryOptions.isPropagateTraceparent = false
+    fixture
+      .getSut(isTransactionActive = true, includeMockServerInTracingOrigins = true)
+      .getForObject(fixture.url, String::class.java)
+    val recordedRequest =
+      fixture.mockServer.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
+    assertNotNull(recordedRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
+    assertNull(recordedRequest.headers[W3CTraceparentHeader.TRACEPARENT_HEADER])
   }
 }

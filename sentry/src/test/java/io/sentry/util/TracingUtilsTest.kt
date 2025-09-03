@@ -14,6 +14,7 @@ import io.sentry.SpanId
 import io.sentry.SpanOptions
 import io.sentry.TracesSamplingDecision
 import io.sentry.TransactionContext
+import io.sentry.W3CTraceparentHeader
 import io.sentry.protocol.SentryId
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -442,5 +443,71 @@ class TracingUtilsTest {
     assertNotNull(sampleRand)
     assertTrue(sampleRand < 1.0)
     assertTrue(sampleRand >= 0.9999)
+  }
+
+  @Test
+  fun `trace does not return w3c traceparent header when propagateTraceparent is disabled`() {
+    val fixture = Fixture()
+    fixture.setup()
+    fixture.options.isPropagateTraceparent = false
+
+    val tracingHeaders = TracingUtils.trace(fixture.scopes, null, fixture.span)
+
+    assertNotNull(tracingHeaders)
+    assertNotNull(tracingHeaders.sentryTraceHeader)
+    assertNull(tracingHeaders.w3cTraceparentHeader)
+  }
+
+  @Test
+  fun `trace returns w3c traceparent header when propagateTraceparent is enabled`() {
+    val fixture = Fixture()
+    fixture.setup()
+    fixture.options.isPropagateTraceparent = true
+
+    val tracingHeaders = TracingUtils.trace(fixture.scopes, null, fixture.span)
+
+    assertNotNull(tracingHeaders)
+    assertNotNull(tracingHeaders.sentryTraceHeader)
+    assertNotNull(tracingHeaders.w3cTraceparentHeader)
+    assertEquals(
+      W3CTraceparentHeader.TRACEPARENT_HEADER,
+      tracingHeaders.w3cTraceparentHeader!!.name,
+    )
+
+    val headerValue = tracingHeaders.w3cTraceparentHeader!!.value
+    assertTrue(headerValue.startsWith("00-"))
+
+    val parts = headerValue.split("-")
+    assertEquals(4, parts.size)
+    assertEquals("00", parts[0])
+    assertEquals(fixture.span.spanContext.traceId.toString(), parts[1])
+    assertEquals(fixture.span.spanContext.spanId.toString(), parts[2])
+    assertEquals("01", parts[3])
+  }
+
+  @Test
+  fun `trace returns w3c traceparent header when no span provided and propagateTraceparent is enabled`() {
+    val fixture = Fixture()
+    fixture.options.isPropagateTraceparent = true
+    fixture.setup()
+
+    val tracingHeaders = TracingUtils.trace(fixture.scopes, null, null)
+
+    assertNotNull(tracingHeaders)
+    assertNotNull(tracingHeaders.sentryTraceHeader)
+    assertNotNull(tracingHeaders.w3cTraceparentHeader)
+
+    val w3cTrace = tracingHeaders.w3cTraceparentHeader!!
+    assertEquals(W3CTraceparentHeader.TRACEPARENT_HEADER, w3cTrace.name)
+
+    val headerValue = w3cTrace.value
+    assertTrue(headerValue.startsWith("00-"))
+
+    val parts = headerValue.split("-")
+    assertEquals(4, parts.size)
+    assertEquals("00", parts[0])
+    assertEquals(fixture.scope.propagationContext.traceId.toString(), parts[1])
+    assertEquals(fixture.scope.propagationContext.spanId.toString(), parts[2])
+    assertEquals("00", parts[3])
   }
 }

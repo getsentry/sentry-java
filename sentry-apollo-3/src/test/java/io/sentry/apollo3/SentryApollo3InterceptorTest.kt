@@ -23,6 +23,7 @@ import io.sentry.SpanStatus
 import io.sentry.TraceContext
 import io.sentry.TracesSamplingDecision
 import io.sentry.TransactionContext
+import io.sentry.W3CTraceparentHeader
 import io.sentry.apollo3.SentryApollo3HttpInterceptor.BeforeSpanCallback
 import io.sentry.mockServerRequestTimeoutMillis
 import io.sentry.protocol.SdkVersion
@@ -349,6 +350,26 @@ class SentryApollo3InterceptorTest {
     Apollo3PlatformTestManipulator.pretendIsAndroid(false)
     executeQuery(fixture.getSut())
     verify(fixture.scopes).span
+  }
+
+  @Test
+  fun `adds W3C traceparent header when propagateTraceparent is enabled`() {
+    fixture.options.isPropagateTraceparent = true
+    executeQuery()
+    val recorderRequest =
+      fixture.server.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
+    assertNotNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
+    assertNotNull(recorderRequest.headers[W3CTraceparentHeader.TRACEPARENT_HEADER])
+  }
+
+  @Test
+  fun `does not add W3C traceparent header when propagateTraceparent is disabled`() {
+    fixture.options.isPropagateTraceparent = false
+    executeQuery()
+    val recorderRequest =
+      fixture.server.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
+    assertNotNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
+    assertNull(recorderRequest.headers[W3CTraceparentHeader.TRACEPARENT_HEADER])
   }
 
   private fun assertTransactionDetails(

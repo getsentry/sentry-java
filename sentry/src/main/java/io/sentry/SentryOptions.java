@@ -393,6 +393,9 @@ public class SentryOptions {
   private final @NotNull List<String> defaultTracePropagationTargets =
       Collections.singletonList(DEFAULT_PROPAGATION_TARGETS);
 
+  /** Whether to propagate W3C traceparent HTTP header. */
+  private boolean propagateTraceparent = false;
+
   /** Proguard UUID. */
   private @Nullable String proguardUuid;
 
@@ -2108,6 +2111,24 @@ public class SentryOptions {
 
       this.tracePropagationTargets = filteredTracePropagationTargets;
     }
+  }
+
+  /**
+   * Returns whether W3C traceparent HTTP header propagation is enabled.
+   *
+   * @return true if enabled false otherwise
+   */
+  public boolean isPropagateTraceparent() {
+    return propagateTraceparent;
+  }
+
+  /**
+   * Enables or disables W3C traceparent HTTP header propagation.
+   *
+   * @param propagateTraceparent true if enabled false otherwise
+   */
+  public void setPropagateTraceparent(final boolean propagateTraceparent) {
+    this.propagateTraceparent = propagateTraceparent;
   }
 
   /**
