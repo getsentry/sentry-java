@@ -515,7 +515,9 @@ class UserFeedbackUiTest : BaseUiTest() {
             )
           }
         }
-      findEnvelope { it.items.first().header.type == SentryItemType.ReplayVideo }
+      if (enableReplay) {
+        findEnvelope { it.items.first().header.type == SentryItemType.ReplayVideo }
+      }
       assertNoOtherEnvelopes()
     }
   }
