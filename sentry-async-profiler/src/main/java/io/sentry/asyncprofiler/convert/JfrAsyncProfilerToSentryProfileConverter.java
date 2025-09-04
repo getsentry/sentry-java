@@ -8,6 +8,8 @@ import io.sentry.asyncprofiler.vendor.asyncprofiler.convert.JfrConverter;
 import io.sentry.asyncprofiler.vendor.asyncprofiler.jfr.JfrReader;
 import io.sentry.asyncprofiler.vendor.asyncprofiler.jfr.StackTrace;
 import io.sentry.asyncprofiler.vendor.asyncprofiler.jfr.event.Event;
+import io.sentry.asyncprofiler.vendor.asyncprofiler.jfr.event.EventAggregator;
+import io.sentry.asyncprofiler.vendor.asyncprofiler.jfr.event.EventCollector;
 import io.sentry.protocol.SentryStackFrame;
 import io.sentry.protocol.profiling.SentryProfile;
 import io.sentry.protocol.profiling.SentrySample;
@@ -27,6 +29,7 @@ public final class JfrAsyncProfilerToSentryProfileConverter extends JfrConverter
   private final @NotNull SentryProfile sentryProfile = new SentryProfile();
   private final @NotNull SentryStackTraceFactory stackTraceFactory;
   private final @NotNull Map<SentryStackFrame, Integer> frameDeduplicationMap = new HashMap<>();
+  private final @NotNull Map<List<Integer>, Integer> stackDeduplicationMap = new HashMap<>();
 
   public JfrAsyncProfilerToSentryProfileConverter(
       JfrReader jfr, Arguments args, @NotNull SentryStackTraceFactory stackTraceFactory) {
@@ -39,12 +42,18 @@ public final class JfrAsyncProfilerToSentryProfileConverter extends JfrConverter
     collector.forEach(new ProfileEventVisitor(sentryProfile, stackTraceFactory, jfr, args));
   }
 
+  @Override
+  protected EventCollector createCollector(Arguments args) {
+    return new NonAggregatingEventCollector();
+  }
+
   public static @NotNull SentryProfile convertFromFileStatic(@NotNull Path jfrFilePath)
       throws IOException {
     JfrAsyncProfilerToSentryProfileConverter converter;
     try (JfrReader jfrReader = new JfrReader(jfrFilePath.toString())) {
       Arguments args = new Arguments();
       args.cpu = false;
+      args.wall = true;
       args.alloc = false;
       args.threads = true;
       args.lines = true;
@@ -59,7 +68,7 @@ public final class JfrAsyncProfilerToSentryProfileConverter extends JfrConverter
     return converter.sentryProfile;
   }
 
-  private class ProfileEventVisitor extends AggregatedEventVisitor {
+  private class ProfileEventVisitor implements EventCollector.Visitor {
     private final @NotNull SentryProfile sentryProfile;
     private final @NotNull SentryStackTraceFactory stackTraceFactory;
     private final @NotNull JfrReader jfr;
@@ -79,7 +88,7 @@ public final class JfrAsyncProfilerToSentryProfileConverter extends JfrConverter
     }
 
     @Override
-    public void visit(Event event, long value) {
+    public void visit(Event event, long samples, long value) {
       StackTrace stackTrace = jfr.stackTraces.get(event.stackTraceId);
       long threadId = resolveThreadId(event.tid);
 
@@ -132,9 +141,16 @@ public final class JfrAsyncProfilerToSentryProfileConverter extends JfrConverter
     }
 
     private int addStackTrace(StackTrace stackTrace) {
-      int stackIndex = sentryProfile.getStacks().size();
       List<Integer> callStack = createFramesAndCallStack(stackTrace);
+
+      Integer existingIndex = stackDeduplicationMap.get(callStack);
+      if (existingIndex != null) {
+        return existingIndex;
+      }
+
+      int stackIndex = sentryProfile.getStacks().size();
       sentryProfile.getStacks().add(callStack);
+      stackDeduplicationMap.put(callStack, stackIndex);
       return stackIndex;
     }
 
