@@ -1061,7 +1061,7 @@ public class SentryOptions {
    *
    * @param sampleRate the sample rate
    */
-  public void setSampleRate(Double sampleRate) {
+  public void setSampleRate(@Nullable Double sampleRate) {
     if (!SampleRateUtils.isValidSampleRate(sampleRate)) {
       throw new IllegalArgumentException(
           "The value "
