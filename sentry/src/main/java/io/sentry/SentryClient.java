@@ -216,6 +216,12 @@ public final class SentryClient implements ISentryClient {
     final boolean isBackfillable = HintUtils.hasType(hint, Backfillable.class);
     final boolean isCached =
         HintUtils.hasType(hint, Cached.class) && !HintUtils.hasType(hint, ApplyScopeData.class);
+    // if event is backfillable or cached we don't wanna trigger capture replay, because it's
+    // an event from the past. If it's cached, but with ApplyScopeData, it comes from the outbox
+    // folder and we still want to capture replay (e.g. a native captureException error)
+    if (event != null && !isBackfillable && !isCached && (event.isErrored() || event.isCrashed())) {
+      options.getReplayController().captureReplay(event.isCrashed());
+    }
 
     try {
       final @Nullable TraceContext traceContext = getTraceContext(scope, hint, event);
@@ -240,15 +246,10 @@ public final class SentryClient implements ISentryClient {
     if (scope != null) {
       finalizeTransaction(scope, hint);
     }
-    // if event is backfillable or cached we don't wanna trigger capture replay, because it's
-    // an event from the past. If it's cached, but with ApplyScopeData, it comes from the outbox
-    // folder and we still want to capture replay (e.g. a native captureException error)
-    if (event != null && !isBackfillable && !isCached && (event.isErrored() || event.isCrashed())) {
-      options.getReplayController().captureReplay(event.isCrashed());
-      // We need to flush the logs to ensure they are sent on crash
-      if (event.isCrashed()) {
-        loggerBatchProcessor.flush(LOG_FLUSH_ON_CRASH_TIMEOUT_MILLIS);
-      }
+    // if event is backfillable or cached, it's an event from the past.
+    // Otherwise, we want to flush logs, as we encountered a crash.
+    if (event != null && !isBackfillable && !isCached && event.isCrashed()) {
+      loggerBatchProcessor.flush(LOG_FLUSH_ON_CRASH_TIMEOUT_MILLIS);
     }
 
     return sentryId;
