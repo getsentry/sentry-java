@@ -15,6 +15,12 @@
 - Add support for `vars` attribute in `SentryStackFrame` ([#4686](https://github.com/getsentry/sentry-java/pull/4686))
   - **Breaking change**: The type of the `vars` attribute has been changed from `Map<String, String>` to `Map<String, Object>`.
 
+### Dependencies
+
+- Bump Native SDK from v0.10.0 to v0.10.1 ([#4695](https://github.com/getsentry/sentry-java/pull/4695))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0101)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.10.0...0.10.1)
+
 ## 8.20.0
 
 ### Fixes
