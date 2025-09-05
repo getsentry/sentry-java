@@ -389,21 +389,21 @@ open class App {
   @Bean
   open fun sentryUserFilter(scopes: IScopes, @Lazy sentryUserProviders: List<SentryUserProvider>) =
     FilterRegistrationBean<SentryUserFilter>().apply {
-      this.filter = SentryUserFilter(scopes, sentryUserProviders)
+      this.setFilter(SentryUserFilter(scopes, sentryUserProviders))
       this.order = Ordered.LOWEST_PRECEDENCE
     }
 
   @Bean
   open fun sentrySpringFilter(scopes: IScopes) =
     FilterRegistrationBean<SentrySpringFilter>().apply {
-      this.filter = SentrySpringFilter(scopes)
+      this.setFilter(SentrySpringFilter(scopes))
       this.order = Ordered.HIGHEST_PRECEDENCE
     }
 
   @Bean
   open fun sentryTracingFilter(scopes: IScopes) =
     FilterRegistrationBean<SentryTracingFilter>().apply {
-      this.filter = SentryTracingFilter(scopes)
+      this.setFilter(SentryTracingFilter(scopes))
       this.order = Ordered.HIGHEST_PRECEDENCE + 1 // must run after SentrySpringFilter
     }
 

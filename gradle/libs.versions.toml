@@ -31,7 +31,7 @@ retrofit = "2.9.0"
 slf4j = "1.7.30"
 springboot2 = "2.7.18"
 springboot3 = "3.5.0"
-springboot4 = "4.0.0-M1"
+springboot4 = "4.0.0-M2"
 # Android
 targetSdk = "34"
 compileSdk = "34"
