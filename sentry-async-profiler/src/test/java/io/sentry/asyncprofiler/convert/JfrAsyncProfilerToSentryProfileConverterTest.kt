@@ -4,21 +4,14 @@ import io.sentry.ILogger
 import io.sentry.IProfileConverter
 import io.sentry.IScope
 import io.sentry.IScopes
-import io.sentry.JsonObjectReader
-import io.sentry.JsonObjectWriter
-import io.sentry.JsonSerializable
 import io.sentry.Sentry
 import io.sentry.SentryOptions
 import io.sentry.SentryStackTraceFactory
 import io.sentry.TracesSampler
 import io.sentry.asyncprofiler.provider.AsyncProfilerProfileConverterProvider
-import io.sentry.protocol.SentryStackFrame
 import io.sentry.protocol.profiling.SentryProfile
 import io.sentry.test.DeferredExecutorService
-import java.io.File
 import java.io.IOException
-import java.io.StringReader
-import java.io.StringWriter
 import kotlin.io.path.Path
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -101,8 +94,8 @@ class JfrAsyncProfilerToSentryProfileConverterTest {
     val sentryProfile = fixture.getSut()!!.convertFromFile(file)
     val tracingFilterFrame =
       sentryProfile.frames.filter {
-        it.function == "doFilterInternal" &&
-          it.module == "io.sentry.spring.jakarta.tracing.SentryTracingFilter"
+        it.function == "slowFunction" &&
+          it.module == "io.sentry.samples.console.Main"
       }
 
     val tracingFilterFrameIndexes = tracingFilterFrame.map { sentryProfile.frames.indexOf(it) }
@@ -112,8 +105,23 @@ class JfrAsyncProfilerToSentryProfileConverterTest {
     val tracingFilterSamples =
       sentryProfile.samples.filter { tracingFilterStackIds.contains(it.stackId) }
 
-    // Sample Size 22 taken from intellij profiler with the JFR file
-    assertEquals(22, tracingFilterSamples.size)
+    // Sample size base on 101 samples/sec and 10 sec of profiling
+    // So expected around 1010 samples (with some margin)
+    assertTrue(tracingFilterSamples.count() >= 1000 && tracingFilterSamples.count() <= 1120, "Expected sample count between 1000 and 1120, but was ${tracingFilterSamples.count()}")
+  }
+
+  @Test
+  fun `check number of samples for specific thread`() {
+    val file = Path(loadFile("async_profiler_test_sample.jfr"))
+
+    val sentryProfile = fixture.getSut()!!.convertFromFile(file)
+    val mainThread = sentryProfile.threadMetadata.entries.firstOrNull { it.value.name == "main" }?.key
+
+    val samples = sentryProfile.samples.filter { it.threadId == mainThread }
+
+    // Sample size base on 101 samples/sec and 10 sec of profiling
+    // So expected around 1010 samples (with some margin)
+    assertTrue(samples.count() >= 1000 && samples.count() <= 1120, "Expected sample count between 1000 and 1120, but was ${samples.count()}")
   }
 
   @Test
@@ -202,7 +210,10 @@ class JfrAsyncProfilerToSentryProfileConverterTest {
     // Find frames with complete information
     val completeFrames =
       frames.filter { frame ->
-        frame.function != null && frame.module != null && frame.lineno != null && frame.filename != null
+        frame.function != null &&
+          frame.module != null &&
+          frame.lineno != null &&
+          frame.filename != null
       }
 
     assertTrue(completeFrames.isNotEmpty(), "Should have frames with complete information")

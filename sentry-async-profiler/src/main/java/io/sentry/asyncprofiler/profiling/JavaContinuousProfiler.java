@@ -220,8 +220,9 @@ public final class JavaContinuousProfiler
     try {
       final String profilingIntervalMicros =
           String.format("%dus", (int) SECONDS.toMicros(1) / profilingTracesHz);
+      // Example command: start,jfr,event=wall,interval=9900us,file=/path/to/trace.jfr
       final String command =
-          String.format("start,jfr,wall=%s,file=%s", profilingIntervalMicros, filename);
+        String.format("start,jfr,event=wall,interval=%s,file=%s", profilingIntervalMicros, filename);
 
       profiler.execute(command);
 
