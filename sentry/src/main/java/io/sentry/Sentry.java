@@ -311,18 +311,6 @@ public final class Sentry {
                   "Sentry has been already initialized. Previous configuration will be overwritten.");
         }
 
-        // load lazy fields of the options in a separate thread
-        try {
-          options.getExecutorService().submit(() -> options.loadLazyFields());
-        } catch (RejectedExecutionException e) {
-          options
-              .getLogger()
-              .log(
-                  SentryLevel.DEBUG,
-                  "Failed to call the executor. Lazy fields will not be loaded. Did you call Sentry.close()?",
-                  e);
-        }
-
         final IScopes scopes = getCurrentScopes();
         scopes.close(true);
 
@@ -340,11 +328,22 @@ public final class Sentry {
         globalScope.bindClient(new SentryClient(options));
 
         // If the executorService passed in the init is the same that was previously closed, we have
-        // to
-        // set a new one
+        // to set a new one
         if (options.getExecutorService().isClosed()) {
           options.setExecutorService(new SentryExecutorService(options));
           options.getExecutorService().prewarm();
+        }
+
+        // load lazy fields of the options in a separate thread
+        try {
+          options.getExecutorService().submit(() -> options.loadLazyFields());
+        } catch (RejectedExecutionException e) {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.DEBUG,
+                  "Failed to call the executor. Lazy fields will not be loaded. Did you call Sentry.close()?",
+                  e);
         }
 
         movePreviousSession(options);

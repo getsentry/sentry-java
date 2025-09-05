@@ -23,6 +23,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.Sentry
 import io.sentry.SentryEvent
 import io.sentry.SentryFeedbackOptions.SentryFeedbackCallback
+import io.sentry.SentryItemType
 import io.sentry.SentryOptions
 import io.sentry.android.core.AndroidLogger
 import io.sentry.android.core.R
@@ -471,6 +472,9 @@ class UserFeedbackUiTest : BaseUiTest() {
       //  because it would block the espresso interactions (button click)
       it.feedbackOptions.onSubmitSuccess = SentryFeedbackCallback {
         relayIdlingResource.increment()
+        if (enableReplay) {
+          relayIdlingResource.increment()
+        }
       }
       // Let's capture a replay, so we can check the replayId in the feedback
       if (enableReplay) {
@@ -511,6 +515,10 @@ class UserFeedbackUiTest : BaseUiTest() {
             )
           }
         }
+      if (enableReplay) {
+        findEnvelope { it.items.first().header.type == SentryItemType.ReplayVideo }
+      }
+      assertNoOtherEnvelopes()
     }
   }
 
