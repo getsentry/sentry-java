@@ -54,6 +54,19 @@ class SentryStackFrameSerializationTest {
             "0a959b53-6bdf-45d1-93ca-936281d7897a",
             "4e6085a3-1e44-4aa2-b3d9-9b79dca970ed",
           )
+        vars =
+          mapOf<String, Any?>(
+            "int_var" to 42,
+            "array_var" to listOf<Any?>(true, 17, "7a3750d1-9177-4ee2-8016-3ba02fa90291"),
+            "string_var" to "325ad70e-1a8b-4d2d-ba92-182ee49448b7",
+            "object_var" to
+              mapOf<String, Any?>(
+                "int_prop" to 53,
+                "string_prop" to "93db3ec5-b1ec-4e95-b6d0-b9633c9e03cd",
+                "bool_prop" to false,
+              ),
+            "bool_var" to false,
+          )
       }
   }
 
