@@ -5,7 +5,7 @@ plugins {
 
 android {
   compileSdk = libs.versions.compileSdk.get().toInt()
-  namespace = "io.sentry.build.distribution"
+  namespace = "io.sentry.android.distribution"
 
   defaultConfig { minSdk = libs.versions.minSdk.get().toInt() }
   buildFeatures {
