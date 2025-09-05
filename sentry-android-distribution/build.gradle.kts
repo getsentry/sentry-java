@@ -1,5 +1,5 @@
 import org.jetbrains.kotlin.config.KotlinCompilerVersion
-import org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
 plugins {
   id("com.android.library")
@@ -16,7 +16,7 @@ android {
 
 kotlin {
   jvmToolchain(17)
-  compilerOptions.languageVersion = KOTLIN_1_9
+  compilerOptions.languageVersion = KotlinVersion.KOTLIN_1_9
   explicitApi()
 }
 
