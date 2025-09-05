@@ -131,7 +131,7 @@ jobs:
           disable-spellchecker: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot-save
           script: |
-            adb uninstall io.sentry.uitest.android.critical
+            adb uninstall io.sentry.uitest.android.critical || echo "Already uninstalled (or not found)"
             adb install -r -d "${{env.APK_NAME}}"
             maestro test "${{env.BASE_PATH}}/maestro" --debug-output "${{env.BASE_PATH}}/maestro-logs"
 
