@@ -350,6 +350,7 @@ public final class io/sentry/DataCategory : java/lang/Enum {
 	public static final field LogItem Lio/sentry/DataCategory;
 	public static final field Monitor Lio/sentry/DataCategory;
 	public static final field Profile Lio/sentry/DataCategory;
+	public static final field ProfileChunk Lio/sentry/DataCategory;
 	public static final field ProfileChunkUi Lio/sentry/DataCategory;
 	public static final field Replay Lio/sentry/DataCategory;
 	public static final field Security Lio/sentry/DataCategory;
@@ -488,7 +489,9 @@ public final class io/sentry/ExternalOptions {
 	public fun getInAppIncludes ()Ljava/util/List;
 	public fun getMaxRequestBodySize ()Lio/sentry/SentryOptions$RequestSize;
 	public fun getPrintUncaughtStackTrace ()Ljava/lang/Boolean;
+	public fun getProfileSessionSampleRate ()Ljava/lang/Double;
 	public fun getProfilesSampleRate ()Ljava/lang/Double;
+	public fun getProfilingTracesDirPath ()Ljava/lang/String;
 	public fun getProguardUuid ()Ljava/lang/String;
 	public fun getProxy ()Lio/sentry/SentryOptions$Proxy;
 	public fun getRelease ()Ljava/lang/String;
@@ -529,7 +532,9 @@ public final class io/sentry/ExternalOptions {
 	public fun setIgnoredTransactions (Ljava/util/List;)V
 	public fun setMaxRequestBodySize (Lio/sentry/SentryOptions$RequestSize;)V
 	public fun setPrintUncaughtStackTrace (Ljava/lang/Boolean;)V
+	public fun setProfileSessionSampleRate (Ljava/lang/Double;)V
 	public fun setProfilesSampleRate (Ljava/lang/Double;)V
+	public fun setProfilingTracesDirPath (Ljava/lang/String;)V
 	public fun setProguardUuid (Ljava/lang/String;)V
 	public fun setProxy (Lio/sentry/SentryOptions$Proxy;)V
 	public fun setRelease (Ljava/lang/String;)V
@@ -807,6 +812,10 @@ public abstract interface class io/sentry/IPerformanceContinuousCollector : io/s
 public abstract interface class io/sentry/IPerformanceSnapshotCollector : io/sentry/IPerformanceCollector {
 	public abstract fun collect (Lio/sentry/PerformanceCollectionData;)V
 	public abstract fun setup ()V
+}
+
+public abstract interface class io/sentry/IProfileConverter {
+	public abstract fun convertFromFile (Ljava/nio/file/Path;)Lio/sentry/protocol/profiling/SentryProfile;
 }
 
 public abstract interface class io/sentry/IReplayApi {
@@ -1927,7 +1936,7 @@ public final class io/sentry/PerformanceCollectionData {
 
 public final class io/sentry/ProfileChunk : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> ()V
-	public fun <init> (Lio/sentry/protocol/SentryId;Lio/sentry/protocol/SentryId;Ljava/io/File;Ljava/util/Map;Ljava/lang/Double;Lio/sentry/SentryOptions;)V
+	public fun <init> (Lio/sentry/protocol/SentryId;Lio/sentry/protocol/SentryId;Ljava/io/File;Ljava/util/Map;Ljava/lang/Double;Ljava/lang/String;Lio/sentry/SentryOptions;)V
 	public fun equals (Ljava/lang/Object;)Z
 	public fun getChunkId ()Lio/sentry/protocol/SentryId;
 	public fun getClientSdk ()Lio/sentry/protocol/SdkVersion;
@@ -1938,6 +1947,7 @@ public final class io/sentry/ProfileChunk : io/sentry/JsonSerializable, io/sentr
 	public fun getProfilerId ()Lio/sentry/protocol/SentryId;
 	public fun getRelease ()Ljava/lang/String;
 	public fun getSampledProfile ()Ljava/lang/String;
+	public fun getSentryProfile ()Lio/sentry/protocol/profiling/SentryProfile;
 	public fun getTimestamp ()D
 	public fun getTraceFile ()Ljava/io/File;
 	public fun getUnknown ()Ljava/util/Map;
@@ -1946,11 +1956,12 @@ public final class io/sentry/ProfileChunk : io/sentry/JsonSerializable, io/sentr
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setDebugMeta (Lio/sentry/protocol/DebugMeta;)V
 	public fun setSampledProfile (Ljava/lang/String;)V
+	public fun setSentryProfile (Lio/sentry/protocol/profiling/SentryProfile;)V
 	public fun setUnknown (Ljava/util/Map;)V
 }
 
 public final class io/sentry/ProfileChunk$Builder {
-	public fun <init> (Lio/sentry/protocol/SentryId;Lio/sentry/protocol/SentryId;Ljava/util/Map;Ljava/io/File;Lio/sentry/SentryDate;)V
+	public fun <init> (Lio/sentry/protocol/SentryId;Lio/sentry/protocol/SentryId;Ljava/util/Map;Ljava/io/File;Lio/sentry/SentryDate;Ljava/lang/String;)V
 	public fun build (Lio/sentry/SentryOptions;)Lio/sentry/ProfileChunk;
 }
 
@@ -1970,6 +1981,7 @@ public final class io/sentry/ProfileChunk$JsonKeys {
 	public static final field PROFILER_ID Ljava/lang/String;
 	public static final field RELEASE Ljava/lang/String;
 	public static final field SAMPLED_PROFILE Ljava/lang/String;
+	public static final field SENTRY_PROFILE Ljava/lang/String;
 	public static final field TIMESTAMP Ljava/lang/String;
 	public static final field VERSION Ljava/lang/String;
 	public fun <init> ()V
@@ -3490,6 +3502,7 @@ public class io/sentry/SentryOptions {
 	public fun setProfileSessionSampleRate (Ljava/lang/Double;)V
 	public fun setProfilesSampleRate (Ljava/lang/Double;)V
 	public fun setProfilesSampler (Lio/sentry/SentryOptions$ProfilesSamplerCallback;)V
+	public fun setProfilingTracesDirPath (Ljava/lang/String;)V
 	public fun setProfilingTracesHz (I)V
 	public fun setProguardUuid (Ljava/lang/String;)V
 	public fun setProxy (Lio/sentry/SentryOptions$Proxy;)V
@@ -4958,6 +4971,20 @@ public final class io/sentry/profilemeasurements/ProfileMeasurementValue$JsonKey
 	public fun <init> ()V
 }
 
+public abstract interface class io/sentry/profiling/JavaContinuousProfilerProvider {
+	public abstract fun getContinuousProfiler (Lio/sentry/ILogger;Ljava/lang/String;ILio/sentry/ISentryExecutorService;)Lio/sentry/IContinuousProfiler;
+}
+
+public abstract interface class io/sentry/profiling/JavaProfileConverterProvider {
+	public abstract fun getProfileConverter ()Lio/sentry/IProfileConverter;
+}
+
+public final class io/sentry/profiling/ProfilingServiceLoader {
+	public fun <init> ()V
+	public static fun loadContinuousProfiler (Lio/sentry/ILogger;Ljava/lang/String;ILio/sentry/ISentryExecutorService;)Lio/sentry/IContinuousProfiler;
+	public static fun loadProfileConverter ()Lio/sentry/IProfileConverter;
+}
+
 public final class io/sentry/protocol/App : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public static final field TYPE Ljava/lang/String;
 	public fun <init> ()V
@@ -6210,6 +6237,96 @@ public final class io/sentry/protocol/ViewHierarchyNode$JsonKeys {
 	public static final field WIDTH Ljava/lang/String;
 	public static final field X Ljava/lang/String;
 	public static final field Y Ljava/lang/String;
+	public fun <init> ()V
+}
+
+public final class io/sentry/protocol/profiling/JfrFrame : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+	public field absPath Ljava/lang/String;
+	public field filename Ljava/lang/String;
+	public field function Ljava/lang/String;
+	public field lineno Ljava/lang/Integer;
+	public field module Ljava/lang/String;
+	public fun <init> ()V
+	public fun getUnknown ()Ljava/util/Map;
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+	public fun setUnknown (Ljava/util/Map;)V
+}
+
+public final class io/sentry/protocol/profiling/JfrFrame$JsonKeys {
+	public static final field FILENAME Ljava/lang/String;
+	public static final field FUNCTION Ljava/lang/String;
+	public static final field LINE_NO Ljava/lang/String;
+	public static final field MODULE Ljava/lang/String;
+	public static final field RAW_FUNCTION Ljava/lang/String;
+	public fun <init> ()V
+}
+
+public final class io/sentry/protocol/profiling/JfrSample : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+	public field stackId I
+	public field threadId Ljava/lang/String;
+	public field timestamp D
+	public fun <init> ()V
+	public fun getUnknown ()Ljava/util/Map;
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+	public fun setUnknown (Ljava/util/Map;)V
+}
+
+public final class io/sentry/protocol/profiling/JfrSample$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Lio/sentry/protocol/profiling/JfrSample;
+	public synthetic fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/protocol/profiling/JfrSample$JsonKeys {
+	public static final field STACK_ID Ljava/lang/String;
+	public static final field THREAD_ID Ljava/lang/String;
+	public static final field TIMESTAMP Ljava/lang/String;
+	public fun <init> ()V
+}
+
+public final class io/sentry/protocol/profiling/SentryProfile : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+	public field frames Ljava/util/List;
+	public field samples Ljava/util/List;
+	public field stacks Ljava/util/List;
+	public field threadMetadata Ljava/util/Map;
+	public fun <init> ()V
+	public fun getUnknown ()Ljava/util/Map;
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+	public fun setUnknown (Ljava/util/Map;)V
+}
+
+public final class io/sentry/protocol/profiling/SentryProfile$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Lio/sentry/protocol/profiling/SentryProfile;
+	public synthetic fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/protocol/profiling/SentryProfile$JsonKeys {
+	public static final field FRAMES Ljava/lang/String;
+	public static final field SAMPLES Ljava/lang/String;
+	public static final field STACKS Ljava/lang/String;
+	public static final field THREAD_METADATA Ljava/lang/String;
+	public fun <init> ()V
+}
+
+public final class io/sentry/protocol/profiling/ThreadMetadata : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+	public field name Ljava/lang/String;
+	public field priority I
+	public fun <init> ()V
+	public fun getUnknown ()Ljava/util/Map;
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+	public fun setUnknown (Ljava/util/Map;)V
+}
+
+public final class io/sentry/protocol/profiling/ThreadMetadata$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Lio/sentry/protocol/profiling/ThreadMetadata;
+	public synthetic fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/protocol/profiling/ThreadMetadata$JsonKeys {
+	public static final field NAME Ljava/lang/String;
+	public static final field PRIORITY Ljava/lang/String;
 	public fun <init> ()V
 }
 
