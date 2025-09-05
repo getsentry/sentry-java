@@ -19,7 +19,16 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # TODO: remove this when upstream is fixed
+      - name: Disable Gradle configuration cache (see https://github.com/fossas/fossa-cli/issues/872)
+        run: sed -i 's/^org.gradle.configuration-cache=.*/org.gradle.configuration-cache=false/' gradle.properties
+
       - name: 'Enforce License Compliance'
         uses: getsentry/action-enforce-license-compliance@main
         with:
+          skip_checkout: 'true'
+          fossa_test_timeout_seconds: 3600
           fossa_api_key: ${{ secrets.FOSSA_API_KEY }}
