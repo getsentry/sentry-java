@@ -8,7 +8,6 @@ import io.sentry.asyncprofiler.vendor.asyncprofiler.convert.JfrConverter;
 import io.sentry.asyncprofiler.vendor.asyncprofiler.jfr.JfrReader;
 import io.sentry.asyncprofiler.vendor.asyncprofiler.jfr.StackTrace;
 import io.sentry.asyncprofiler.vendor.asyncprofiler.jfr.event.Event;
-import io.sentry.asyncprofiler.vendor.asyncprofiler.jfr.event.EventAggregator;
 import io.sentry.asyncprofiler.vendor.asyncprofiler.jfr.event.EventCollector;
 import io.sentry.protocol.SentryStackFrame;
 import io.sentry.protocol.profiling.SentryProfile;

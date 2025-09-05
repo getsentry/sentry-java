@@ -94,8 +94,7 @@ class JfrAsyncProfilerToSentryProfileConverterTest {
     val sentryProfile = fixture.getSut()!!.convertFromFile(file)
     val tracingFilterFrame =
       sentryProfile.frames.filter {
-        it.function == "slowFunction" &&
-          it.module == "io.sentry.samples.console.Main"
+        it.function == "slowFunction" && it.module == "io.sentry.samples.console.Main"
       }
 
     val tracingFilterFrameIndexes = tracingFilterFrame.map { sentryProfile.frames.indexOf(it) }
@@ -107,7 +106,10 @@ class JfrAsyncProfilerToSentryProfileConverterTest {
 
     // Sample size base on 101 samples/sec and 10 sec of profiling
     // So expected around 1010 samples (with some margin)
-    assertTrue(tracingFilterSamples.count() >= 1000 && tracingFilterSamples.count() <= 1120, "Expected sample count between 1000 and 1120, but was ${tracingFilterSamples.count()}")
+    assertTrue(
+      tracingFilterSamples.count() >= 1000 && tracingFilterSamples.count() <= 1120,
+      "Expected sample count between 1000 and 1120, but was ${tracingFilterSamples.count()}",
+    )
   }
 
   @Test
@@ -115,13 +117,17 @@ class JfrAsyncProfilerToSentryProfileConverterTest {
     val file = Path(loadFile("async_profiler_test_sample.jfr"))
 
     val sentryProfile = fixture.getSut()!!.convertFromFile(file)
-    val mainThread = sentryProfile.threadMetadata.entries.firstOrNull { it.value.name == "main" }?.key
+    val mainThread =
+      sentryProfile.threadMetadata.entries.firstOrNull { it.value.name == "main" }?.key
 
     val samples = sentryProfile.samples.filter { it.threadId == mainThread }
 
     // Sample size base on 101 samples/sec and 10 sec of profiling
     // So expected around 1010 samples (with some margin)
-    assertTrue(samples.count() >= 1000 && samples.count() <= 1120, "Expected sample count between 1000 and 1120, but was ${samples.count()}")
+    assertTrue(
+      samples.count() >= 1000 && samples.count() <= 1120,
+      "Expected sample count between 1000 and 1120, but was ${samples.count()}",
+    )
   }
 
   @Test

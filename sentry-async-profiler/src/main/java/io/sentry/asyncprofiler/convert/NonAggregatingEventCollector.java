@@ -2,7 +2,6 @@ package io.sentry.asyncprofiler.convert;
 
 import io.sentry.asyncprofiler.vendor.asyncprofiler.jfr.event.Event;
 import io.sentry.asyncprofiler.vendor.asyncprofiler.jfr.event.EventCollector;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,8 +30,8 @@ public final class NonAggregatingEventCollector implements EventCollector {
 
   @Override
   public void forEach(Visitor visitor) {
-      for (Event event : events) {
-        visitor.visit(event, event.samples(), event.value());
-      }
+    for (Event event : events) {
+      visitor.visit(event, event.samples(), event.value());
+    }
   }
 }
