@@ -1,14 +1,9 @@
 package io.sentry.uitest.android.mockservers
 
 import io.sentry.EnvelopeReader
-import io.sentry.JsonSerializer
-import io.sentry.ProfilingTraceData
 import io.sentry.Sentry
 import io.sentry.SentryEnvelope
-import io.sentry.SentryEvent
-import io.sentry.SentryItemType
-import io.sentry.SentryOptions
-import io.sentry.protocol.SentryTransaction
+import io.sentry.uitest.android.describeForTest
 import java.io.IOException
 import java.util.zip.GZIPInputStream
 import okhttp3.mockwebserver.MockResponse
@@ -42,7 +37,7 @@ class RelayAsserter(private val unassertedEnvelopes: MutableList<RelayResponse>)
       throw AssertionError(
         "No envelope request found with specified filter.\n" +
           "There was a total of ${originalUnassertedEnvelopes.size} envelopes: " +
-          originalUnassertedEnvelopes.joinToString { describeEnvelope(it.envelope!!) }
+          originalUnassertedEnvelopes.joinToString { it.envelope!!.describeForTest() }
       )
     }
     return unassertedEnvelopes.removeAt(relayResponseIndex)
@@ -53,46 +48,9 @@ class RelayAsserter(private val unassertedEnvelopes: MutableList<RelayResponse>)
     if (unassertedEnvelopes.isNotEmpty()) {
       throw AssertionError(
         "There was a total of ${originalUnassertedEnvelopes.size} envelopes: " +
-          originalUnassertedEnvelopes.joinToString { describeEnvelope(it.envelope!!) }
+          originalUnassertedEnvelopes.joinToString { it.envelope!!.describeForTest() }
       )
     }
-  }
-
-  /**
-   * Function used to describe the content of the envelope to print in the logs. For debugging
-   * purposes only.
-   */
-  private fun describeEnvelope(envelope: SentryEnvelope): String {
-    var descr = ""
-    envelope.items.forEach { item ->
-      when (item.header.type) {
-        SentryItemType.Event -> {
-          val deserialized =
-            JsonSerializer(SentryOptions())
-              .deserialize(item.data.inputStream().reader(), SentryEvent::class.java)!!
-          descr +=
-            "Event (${deserialized.eventId}) - message: ${deserialized.message!!.formatted} -- "
-        }
-        SentryItemType.Transaction -> {
-          val deserialized =
-            JsonSerializer(SentryOptions())
-              .deserialize(item.data.inputStream().reader(), SentryTransaction::class.java)!!
-          descr +=
-            "Transaction (${deserialized.eventId}) - transaction: ${deserialized.transaction} - spans: ${deserialized.spans.joinToString { "${it.op} ${it.description}" }} -- "
-        }
-        SentryItemType.Profile -> {
-          val deserialized =
-            JsonSerializer(SentryOptions())
-              .deserialize(item.data.inputStream().reader(), ProfilingTraceData::class.java)!!
-          descr +=
-            "Profile (${deserialized.profileId}) - transactionName: ${deserialized.transactionName} -- "
-        }
-        else -> {
-          descr += "${item.header.type} -- "
-        }
-      }
-    }
-    return "*** Envelope: $descr ***"
   }
 
   data class RelayResponse(val request: RecordedRequest, val response: MockResponse) {

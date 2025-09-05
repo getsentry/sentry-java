@@ -46,6 +46,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -181,26 +182,30 @@ public final class SystemEventsBreadcrumbsIntegration
     }
   }
 
-  private void unregisterReceiver() {
+  @SuppressWarnings("Convert2MethodRef") // older AGP versions do not support method references
+  private void scheduleUnregisterReceiver() {
     if (options == null) {
       return;
     }
 
-    options
-        .getExecutorService()
-        .submit(
-            () -> {
-              final @Nullable SystemEventsBroadcastReceiver receiverRef;
-              try (final @NotNull ISentryLifecycleToken ignored = receiverLock.acquire()) {
-                isStopped = true;
-                receiverRef = receiver;
-                receiver = null;
-              }
+    try {
+      options.getExecutorService().submit(() -> unregisterReceiver());
+    } catch (RejectedExecutionException e) {
+      unregisterReceiver();
+    }
+  }
 
-              if (receiverRef != null) {
-                context.unregisterReceiver(receiverRef);
-              }
-            });
+  private void unregisterReceiver() {
+    final @Nullable SystemEventsBroadcastReceiver receiverRef;
+    try (final @NotNull ISentryLifecycleToken ignored = receiverLock.acquire()) {
+      isStopped = true;
+      receiverRef = receiver;
+      receiver = null;
+    }
+
+    if (receiverRef != null) {
+      context.unregisterReceiver(receiverRef);
+    }
   }
 
   @Override
@@ -215,7 +220,7 @@ public final class SystemEventsBreadcrumbsIntegration
     }
 
     AppState.getInstance().removeAppStateListener(this);
-    unregisterReceiver();
+    scheduleUnregisterReceiver();
 
     if (options != null) {
       options.getLogger().log(SentryLevel.DEBUG, "SystemEventsBreadcrumbsIntegration removed.");
@@ -264,7 +269,7 @@ public final class SystemEventsBreadcrumbsIntegration
 
   @Override
   public void onBackground() {
-    unregisterReceiver();
+    scheduleUnregisterReceiver();
   }
 
   final class SystemEventsBroadcastReceiver extends BroadcastReceiver {

@@ -12,6 +12,8 @@
   - NOTE: Our `sentry-opentelemetry-agentless-spring` is not working yet for Spring Boot 4. Please use `sentry-opentelemetry-agent` until OpenTelemetry has support for Spring Boot 4.
 - Replace `UUIDGenerator` implementation with Apache licensed code ([#4662](https://github.com/getsentry/sentry-java/pull/4662))
 - Replace `Random` implementation with MIT licensed code ([#4664](https://github.com/getsentry/sentry-java/pull/4664))
+- Add support for `vars` attribute in `SentryStackFrame` ([#4686](https://github.com/getsentry/sentry-java/pull/4686))
+  - **Breaking change**: The type of the `vars` attribute has been changed from `Map<String, String>` to `Map<String, Object>`.
 
 ## 8.20.0
 
