@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.config.KotlinCompilerVersion
+
 plugins {
   id("com.android.library")
   alias(libs.plugins.kotlin.android)
@@ -8,14 +10,19 @@ android {
   namespace = "io.sentry.android.distribution"
 
   defaultConfig { minSdk = libs.versions.minSdk.get().toInt() }
-  buildFeatures {
-    // Determines whether to generate a BuildConfig class.
-    buildConfig = false
-  }
+  buildFeatures { buildConfig = false }
+}
+
+kotlin {
+  jvmToolchain(17)
+  explicitApi()
 }
 
 androidComponents.beforeVariants {
   it.enable = !Config.Android.shouldSkipDebugVariant(it.buildType)
 }
 
-dependencies { api(projects.sentry) }
+dependencies {
+  implementation(projects.sentry)
+  implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
+}
