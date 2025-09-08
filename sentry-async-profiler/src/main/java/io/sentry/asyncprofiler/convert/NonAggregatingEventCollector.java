@@ -25,7 +25,7 @@ public final class NonAggregatingEventCollector implements EventCollector {
 
   @Override
   public boolean finish() {
-    return true;
+    return false;
   }
 
   @Override

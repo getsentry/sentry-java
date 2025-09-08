@@ -104,11 +104,11 @@ class JfrAsyncProfilerToSentryProfileConverterTest {
     val tracingFilterSamples =
       sentryProfile.samples.filter { tracingFilterStackIds.contains(it.stackId) }
 
-    // Sample size base on 101 samples/sec and 10 sec of profiling
-    // So expected around 1010 samples (with some margin)
+    // Sample size base on 101 samples/sec and 5 sec of profiling
+    // So expected around 500 samples (with some margin)
     assertTrue(
-      tracingFilterSamples.count() >= 1000 && tracingFilterSamples.count() <= 1120,
-      "Expected sample count between 1000 and 1120, but was ${tracingFilterSamples.count()}",
+      tracingFilterSamples.count() >= 500 && tracingFilterSamples.count() <= 600,
+      "Expected sample count between 500 and 600, but was ${tracingFilterSamples.count()}",
     )
   }
 
@@ -122,11 +122,11 @@ class JfrAsyncProfilerToSentryProfileConverterTest {
 
     val samples = sentryProfile.samples.filter { it.threadId == mainThread }
 
-    // Sample size base on 101 samples/sec and 10 sec of profiling
-    // So expected around 1010 samples (with some margin)
+    // Sample size base on 101 samples/sec and 5 sec of profiling
+    // So expected around 500 samples (with some margin)
     assertTrue(
-      samples.count() >= 1000 && samples.count() <= 1120,
-      "Expected sample count between 1000 and 1120, but was ${samples.count()}",
+      samples.count() >= 500 && samples.count() <= 600,
+      "Expected sample count between 500 and 600, but was ${samples.count()}",
     )
   }
 
