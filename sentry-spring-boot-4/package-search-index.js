@@ -1,0 +1,1 @@
+packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html"},{"l":"io.sentry.spring.boot4"},{"l":"io.sentry.spring.boot4.graphql"}];updateSearchResults();
