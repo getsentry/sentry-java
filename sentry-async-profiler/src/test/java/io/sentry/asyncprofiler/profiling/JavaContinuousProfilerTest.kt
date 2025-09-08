@@ -20,6 +20,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import org.mockito.ArgumentMatchers.startsWith
 import org.mockito.Mockito
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
@@ -274,7 +275,13 @@ class JavaContinuousProfilerTest {
     fixture.executor.runAll()
     // We assert that no trace files are written
     assertTrue(File(fixture.options.profilingTracesDirPath!!).list()!!.isEmpty())
-    verify(fixture.mockLogger).log(eq(SentryLevel.ERROR), eq("Failed to start profiling: "), any())
+    val expectedPath = fixture.options.profilingTracesDirPath
+    verify(fixture.mockLogger)
+      .log(
+        eq(SentryLevel.WARNING),
+        eq("Disabling profiling because traces directory is not writable or does not exist: %s"),
+        eq(expectedPath),
+      )
   }
 
   @Test
@@ -324,7 +331,6 @@ class JavaContinuousProfilerTest {
   @Test
   fun `close without terminating stops all profiles after chunk is finished`() {
     val profiler = fixture.getSut()
-    profiler.startProfiler(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
     profiler.startProfiler(ProfileLifecycle.TRACE, fixture.mockTracesSampler)
     assertTrue(profiler.isRunning)
     // We are scheduling the profiler to stop at the end of the chunk, so it should still be running
@@ -336,6 +342,24 @@ class JavaContinuousProfilerTest {
     // We run the executor service to trigger the chunk finish, and the profiler shouldn't restart
     fixture.executor.runAll()
     assertFalse(profiler.isRunning)
+  }
+
+  @Test
+  fun `profiler can be stopped and restarted`() {
+    val profiler = fixture.getSut()
+    profiler.startProfiler(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
+    assertTrue(profiler.isRunning)
+
+    profiler.stopProfiler(ProfileLifecycle.MANUAL)
+    fixture.executor.runAll()
+    assertFalse(profiler.isRunning)
+
+    profiler.startProfiler(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
+    fixture.executor.runAll()
+
+    assertTrue(profiler.isRunning)
+    verify(fixture.mockLogger, never())
+      .log(eq(SentryLevel.WARNING), startsWith("JFR file is invalid or empty"), any(), any(), any())
   }
 
   @Test

@@ -8,6 +8,15 @@ public final class io/sentry/asyncprofiler/convert/JfrAsyncProfilerToSentryProfi
 	public static fun convertFromFileStatic (Ljava/nio/file/Path;)Lio/sentry/protocol/profiling/SentryProfile;
 }
 
+public final class io/sentry/asyncprofiler/convert/NonAggregatingEventCollector : io/sentry/asyncprofiler/vendor/asyncprofiler/jfr/event/EventCollector {
+	public fun <init> ()V
+	public fun afterChunk ()V
+	public fun beforeChunk ()V
+	public fun collect (Lio/sentry/asyncprofiler/vendor/asyncprofiler/jfr/event/Event;)V
+	public fun finish ()Z
+	public fun forEach (Lio/sentry/asyncprofiler/vendor/asyncprofiler/jfr/event/EventCollector$Visitor;)V
+}
+
 public final class io/sentry/asyncprofiler/profiling/JavaContinuousProfiler : io/sentry/IContinuousProfiler, io/sentry/transport/RateLimiter$IRateLimitObserver {
 	public fun <init> (Lio/sentry/ILogger;Ljava/lang/String;ILio/sentry/ISentryExecutorService;)V
 	public fun close (Z)V
