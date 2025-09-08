@@ -5942,6 +5942,7 @@ public final class io/sentry/protocol/SentryStackFrame$JsonKeys {
 	public static final field RAW_FUNCTION Ljava/lang/String;
 	public static final field SYMBOL Ljava/lang/String;
 	public static final field SYMBOL_ADDR Ljava/lang/String;
+	public static final field VARS Ljava/lang/String;
 	public fun <init> ()V
 }
 
