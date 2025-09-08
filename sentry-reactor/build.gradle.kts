@@ -9,6 +9,7 @@ plugins {
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.buildconfig)
+  alias(libs.plugins.animalsniffer)
 }
 
 configure<JavaPluginExtension> {
@@ -42,6 +43,9 @@ dependencies {
   testImplementation(libs.reactor.core)
   testImplementation(platform("org.junit:junit-bom:5.10.0"))
   testImplementation("org.junit.jupiter:junit-jupiter")
+
+  val gummyBearsModule = libs.gummy.bears.api21.get().module
+  signature("${gummyBearsModule}:${libs.versions.gummyBears.get()}:coreLib2@signature")
 }
 
 configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
@@ -62,6 +66,7 @@ tasks {
   check {
     dependsOn(jacocoTestCoverageVerification)
     dependsOn(jacocoTestReport)
+    dependsOn(animalsnifferMain)
   }
 }
 
