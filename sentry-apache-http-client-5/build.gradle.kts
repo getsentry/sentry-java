@@ -34,8 +34,8 @@ dependencies {
   testImplementation(libs.kotlin.test.junit)
   testImplementation(libs.mockito.kotlin)
 
-  val base = libs.gummy.bears.api21.get().module
-  signature("${base}:${libs.versions.gummyBears.get()}:coreLib2@signature")
+  val gummyBearsModule = libs.gummy.bears.api21.get().module
+  signature("${gummyBearsModule}:${libs.versions.gummyBears.get()}:coreLib2@signature")
 }
 
 configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
