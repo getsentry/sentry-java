@@ -1329,7 +1329,6 @@ public class SentryOptions {
    *
    * @return the distinct Id
    */
-  @ApiStatus.Internal
   public @Nullable String getDistinctId() {
     return distinctId;
   }
@@ -1339,7 +1338,6 @@ public class SentryOptions {
    *
    * @param distinctId the distinct Id
    */
-  @ApiStatus.Internal
   public void setDistinctId(final @Nullable String distinctId) {
     this.distinctId = distinctId;
   }
