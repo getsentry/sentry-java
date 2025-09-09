@@ -1,5 +1,4 @@
 import net.ltgt.gradle.errorprone.errorprone
-import org.jetbrains.kotlin.config.KotlinCompilerVersion
 
 plugins {
   id("com.android.library")
@@ -88,7 +87,7 @@ dependencies {
   errorprone(libs.nullaway)
 
   // tests
-  testImplementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
+  testImplementation(kotlin(Config.kotlinStdLib, Config.kotlinStdLibVersionAndroid))
   testImplementation(libs.roboelectric)
   testImplementation(libs.kotlin.test.junit)
   testImplementation(libs.androidx.core.ktx)

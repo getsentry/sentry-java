@@ -87,9 +87,7 @@ android {
 val applySentryIntegrations = System.getenv("APPLY_SENTRY_INTEGRATIONS")?.toBoolean() ?: true
 
 dependencies {
-  implementation(
-    kotlin(Config.kotlinStdLib, org.jetbrains.kotlin.config.KotlinCompilerVersion.VERSION)
-  )
+  implementation(kotlin(Config.kotlinStdLib, Config.kotlinStdLibVersionAndroid))
 
   if (applySentryIntegrations) {
     implementation(projects.sentryAndroid)

@@ -1,5 +1,3 @@
-import org.jetbrains.kotlin.config.KotlinCompilerVersion
-
 plugins {
   id("com.android.library")
   alias(libs.plugins.kotlin.android)
@@ -70,7 +68,7 @@ dependencies {
 
   implementation(libs.sentry.native.ndk)
 
-  testImplementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
+  testImplementation(kotlin(Config.kotlinStdLib, Config.kotlinStdLibVersionAndroid))
   testImplementation(libs.kotlin.test.junit)
   testImplementation(libs.mockito.kotlin)
   testImplementation(projects.sentryTestSupport)

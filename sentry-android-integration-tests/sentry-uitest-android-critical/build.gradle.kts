@@ -40,9 +40,7 @@ android {
 }
 
 dependencies {
-  implementation(
-    kotlin(Config.kotlinStdLib, org.jetbrains.kotlin.config.KotlinCompilerVersion.VERSION)
-  )
+  implementation(kotlin(Config.kotlinStdLib, Config.kotlinStdLibVersionAndroid))
   implementation(libs.androidx.activity.compose)
   implementation(libs.androidx.compose.foundation)
   implementation(libs.androidx.compose.material3)

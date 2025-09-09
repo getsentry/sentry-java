@@ -92,9 +92,7 @@ android {
 }
 
 dependencies {
-  implementation(
-    kotlin(Config.kotlinStdLib, org.jetbrains.kotlin.config.KotlinCompilerVersion.VERSION)
-  )
+  implementation(kotlin(Config.kotlinStdLib, Config.kotlinStdLibVersionAndroid))
   implementation(projects.sentryAndroid)
   implementation(libs.androidx.appcompat)
   implementation(libs.androidx.constraintlayout)
