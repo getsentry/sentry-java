@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Improvements
+
+- Remove internal API status from get/setDistinctId ([#4708](https://github.com/getsentry/sentry-java/pull/4708))
+
+## Unreleased
+
 ### Fixes
 
 - Only set log template for logging integrations if formatted message differs from template ([#4682](https://github.com/getsentry/sentry-java/pull/4682))
