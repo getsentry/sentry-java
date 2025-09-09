@@ -7,6 +7,7 @@ import io.sentry.android.replay.ReplaySmokeTest.Fixture
 import io.sentry.android.replay.screenshot.CanvasStrategy
 import io.sentry.android.replay.screenshot.PixelCopyStrategy
 import io.sentry.android.replay.screenshot.ScreenshotStrategy
+import io.sentry.android.replay.util.MainLooperHandler
 import java.util.concurrent.ScheduledExecutorService
 import kotlin.test.Test
 import kotlin.test.assertTrue
@@ -24,6 +25,7 @@ class ScreenshotRecorderTest {
       return ScreenshotRecorder(
         ScreenshotRecorderConfig(100, 100, 1f, 1f, 1, 1000),
         options,
+        mock<MainLooperHandler>(),
         mock<ScheduledExecutorService>(),
         null,
       )

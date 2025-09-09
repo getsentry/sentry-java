@@ -2,12 +2,15 @@ package io.sentry.android.replay
 
 import android.annotation.TargetApi
 import android.graphics.Point
+import android.os.Build
+import android.util.Log
 import android.view.View
 import android.view.ViewTreeObserver
 import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryLevel.ERROR
 import io.sentry.SentryLevel.WARNING
 import io.sentry.SentryOptions
+import io.sentry.android.replay.screenshot.FrameTimingsTracker
 import io.sentry.android.replay.util.MainLooperHandler
 import io.sentry.android.replay.util.addOnPreDrawListenerSafe
 import io.sentry.android.replay.util.hasSize
@@ -24,6 +27,7 @@ internal class WindowRecorder(
   private val windowCallback: WindowCallback,
   private val mainLooperHandler: MainLooperHandler,
   private val replayExecutor: ScheduledExecutorService,
+  private val frameTimingsTracker: FrameTimingsTracker
 ) : Recorder, OnRootViewsChangedListener {
 
   private val isRecording = AtomicBoolean(false)
@@ -31,16 +35,24 @@ internal class WindowRecorder(
   private var lastKnownWindowSize: Point = Point()
   private val rootViewsLock = AutoClosableReentrantLock()
   private val capturerLock = AutoClosableReentrantLock()
-  @Volatile private var capturer: Capturer? = null
+  @Volatile
+  private var capturer: Capturer? = null
 
   private class Capturer(
     private val options: SentryOptions,
     private val mainLooperHandler: MainLooperHandler,
+    private val frameTimingsTracker: FrameTimingsTracker,
   ) : Runnable {
 
     var recorder: ScreenshotRecorder? = null
     var config: ScreenshotRecorderConfig? = null
     private val isRecording = AtomicBoolean(true)
+
+    private val maxCaptureDelayMs = 166L // ~10 frames @ 60fps
+
+    private var currentCaptureDelay = 0L
+
+    private var rootView = WeakReference<View>(null)
 
     fun resume() {
       if (options.sessionReplay.isDebug) {
@@ -79,14 +91,40 @@ internal class WindowRecorder(
         return
       }
 
-      try {
-        if (options.sessionReplay.isDebug) {
-          options.logger.log(DEBUG, "Capturing a frame.")
+      var delay = 1000L / (config?.frameRate ?: 1)
+
+      val rootView = rootView.get()
+      val isViewIdle =
+        if (rootView != null) {
+          !rootView.isDirty && !rootView.isLayoutRequested && !rootView.isInLayout
+        } else {
+          false
         }
-        recorder?.capture()
+
+      Log.d("TAG", "View is idle: $isViewIdle")
+      val frameTrackerIdle = frameTimingsTracker.isIdle()
+
+      try {
+        if ((isViewIdle) || currentCaptureDelay > maxCaptureDelayMs) {
+          if (options.sessionReplay.isDebug) {
+            Log.d("TAG", "Capturing a frame.")
+          }
+          currentCaptureDelay = 0L
+          recorder?.capture()
+        } else {
+          delay = 16
+          currentCaptureDelay += delay
+          if (options.sessionReplay.isDebug) {
+            Log.d("TAG", "Skipping capture of this frame, app is not idle.")
+          }
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+          android.os.Trace.setCounter("sentry.capture_delay", currentCaptureDelay)
+        }
       } catch (e: Throwable) {
         options.logger.log(ERROR, "Failed to capture a frame", e)
       }
+
 
       if (options.sessionReplay.isDebug) {
         options.logger.log(
@@ -94,7 +132,7 @@ internal class WindowRecorder(
           "Posting the capture runnable again, frame rate is ${config?.frameRate ?: 1} fps.",
         )
       }
-      val posted = mainLooperHandler.postDelayed(this, 1000L / (config?.frameRate ?: 1))
+      val posted = mainLooperHandler.postDelayed(this, delay)
       if (!posted) {
         options.logger.log(
           WARNING,
@@ -102,12 +140,17 @@ internal class WindowRecorder(
         )
       }
     }
+
+    fun bind(newRoot: View) {
+      rootView = WeakReference(newRoot)
+    }
   }
 
   override fun onRootViewsChanged(root: View, added: Boolean) {
     rootViewsLock.acquire().use {
       if (added) {
         rootViews.add(WeakReference(root))
+        capturer?.bind(root)
         capturer?.recorder?.bind(root)
         determineWindowSize(root)
       } else {
@@ -168,7 +211,7 @@ internal class WindowRecorder(
       capturerLock.acquire().use {
         if (capturer == null) {
           // don't recreate runnable for every config change, just update the config
-          capturer = Capturer(options, mainLooperHandler)
+          capturer = Capturer(options, mainLooperHandler, frameTimingsTracker)
         }
       }
     }
@@ -180,11 +223,12 @@ internal class WindowRecorder(
         options,
         mainLooperHandler,
         replayExecutor,
-        screenshotRecorderCallback,
+        screenshotRecorderCallback
       )
 
     val newRoot = rootViews.lastOrNull()?.get()
     if (newRoot != null) {
+      capturer?.bind(newRoot)
       capturer?.recorder?.bind(newRoot)
     }
 

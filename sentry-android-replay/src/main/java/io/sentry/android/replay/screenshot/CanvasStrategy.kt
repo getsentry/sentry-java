@@ -73,7 +73,6 @@ internal class CanvasStrategy(
   }
 
   private val pictureRenderTask = Runnable {
-    Trace.beginSection("CanvasStrategy.pictureRenderTask")
     val holder: PictureReaderHolder? =
       synchronized(unprocessedPictures) {
         when {
@@ -108,13 +107,11 @@ internal class CanvasStrategy(
       holder.picture.draw(canvas)
       surface.unlockCanvasAndPost(canvas)
     } finally {}
-    Trace.endSection()
   }
 
   @SuppressLint("UnclosedTrace")
   override fun capture(root: View) {
     Trace.beginSection("Canvas.capture")
-    Trace.beginSection("Canvas.capture.prepare_picture")
     val holder: PictureReaderHolder? =
       synchronized(freePictures) {
         when {
@@ -127,17 +124,12 @@ internal class CanvasStrategy(
       executor.submitSafely(options, "screenshot_recorder.canvas", pictureRenderTask)
       return
     }
-    Trace.endSection()
 
-    Trace.beginSection("Canvas.capture.record_picture")
     val pictureCanvas = holder.picture.beginRecording(config.recordingWidth, config.recordingHeight)
     textIgnoringCanvas.delegate = pictureCanvas
     textIgnoringCanvas.setMatrix(prescaledMatrix)
     root.draw(textIgnoringCanvas)
-    Trace.endSection()
-    Trace.beginSection("Canvas.capture.end_recording")
     holder.picture.endRecording()
-    Trace.endSection()
 
     synchronized(unprocessedPictures) { unprocessedPictures.add(holder) }
 
