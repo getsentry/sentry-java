@@ -1,6 +1,5 @@
 import io.gitlab.arturbosch.detekt.Detekt
 import net.ltgt.gradle.errorprone.errorprone
-import org.jetbrains.kotlin.config.KotlinCompilerVersion
 
 plugins {
   id("com.android.application")
@@ -93,7 +92,9 @@ android {
 }
 
 dependencies {
-  implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
+  implementation(
+    kotlin(Config.kotlinStdLib, org.jetbrains.kotlin.config.KotlinCompilerVersion.VERSION)
+  )
   implementation(projects.sentryAndroid)
   implementation(libs.androidx.appcompat)
   implementation(libs.androidx.constraintlayout)

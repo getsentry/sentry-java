@@ -1,5 +1,4 @@
 import io.gitlab.arturbosch.detekt.Detekt
-import org.jetbrains.kotlin.config.KotlinCompilerVersion
 
 plugins {
   id("com.android.application")
@@ -41,7 +40,9 @@ android {
 }
 
 dependencies {
-  implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
+  implementation(
+    kotlin(Config.kotlinStdLib, org.jetbrains.kotlin.config.KotlinCompilerVersion.VERSION)
+  )
   implementation(libs.androidx.activity.compose)
   implementation(libs.androidx.compose.foundation)
   implementation(libs.androidx.compose.material3)
