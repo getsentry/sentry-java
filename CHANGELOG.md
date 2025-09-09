@@ -1,6 +1,13 @@
 # Changelog
 
-## Unreleased
+## 8.21.1
+
+### Fixes
+
+- Use Kotlin stdlib 1.9.24 dependency instead of 2.2.0 for all Android modules ([#4707](https://github.com/getsentry/sentry-java/pull/4707))
+  - This fixes compile time issues if your app is using Kotlin < 2.x
+
+## 8.21.0
 
 ### Improvements
 
@@ -18,6 +25,8 @@
   - NOTE: Our `sentry-opentelemetry-agentless-spring` is not working yet for Spring Boot 4. Please use `sentry-opentelemetry-agent` until OpenTelemetry has support for Spring Boot 4.
 - Replace `UUIDGenerator` implementation with Apache licensed code ([#4662](https://github.com/getsentry/sentry-java/pull/4662))
 - Replace `Random` implementation with MIT licensed code ([#4664](https://github.com/getsentry/sentry-java/pull/4664))
+- Add support for `vars` attribute in `SentryStackFrame` ([#4686](https://github.com/getsentry/sentry-java/pull/4686))
+  - **Breaking change**: The type of the `vars` attribute has been changed from `Map<String, String>` to `Map<String, Object>`.
 
 ## 8.20.0
 
