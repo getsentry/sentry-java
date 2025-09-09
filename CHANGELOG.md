@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Improvements
+
+- Remove internal API status from get/setDistinctId ([#4708](https://github.com/getsentry/sentry-java/pull/4708))
+
 ## 8.21.1
 
 ### Fixes
@@ -8,12 +14,6 @@
   - This fixes compile time issues if your app is using Kotlin < 2.x
 
 ## 8.21.0
-
-### Improvements
-
-- Remove internal API status from get/setDistinctId ([#4708](https://github.com/getsentry/sentry-java/pull/4708))
-
-## Unreleased
 
 ### Fixes
 
