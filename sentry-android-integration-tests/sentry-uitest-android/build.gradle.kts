@@ -1,5 +1,6 @@
 import io.gitlab.arturbosch.detekt.Detekt
 import net.ltgt.gradle.errorprone.errorprone
+import org.jetbrains.kotlin.config.KotlinCompilerVersion
 
 plugins {
   id("com.android.application")
@@ -87,7 +88,7 @@ android {
 val applySentryIntegrations = System.getenv("APPLY_SENTRY_INTEGRATIONS")?.toBoolean() ?: true
 
 dependencies {
-  implementation(kotlin(Config.kotlinStdLib, Config.kotlinStdLibVersionAndroid))
+  implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
 
   if (applySentryIntegrations) {
     implementation(projects.sentryAndroid)
