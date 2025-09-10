@@ -370,7 +370,6 @@ public final class HubScopesWrapper implements IHub {
     return scopes.captureReplay(replay, hint);
   }
 
-  @ApiStatus.Experimental
   @Override
   public @NotNull ILoggerApi logger() {
     return scopes.logger();
