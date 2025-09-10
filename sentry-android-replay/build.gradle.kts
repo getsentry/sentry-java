@@ -1,5 +1,4 @@
 import io.gitlab.arturbosch.detekt.Detekt
-import org.jetbrains.kotlin.config.KotlinCompilerVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 
 plugins {
@@ -73,8 +72,7 @@ dependencies {
   api(projects.sentry)
 
   compileOnly(libs.androidx.compose.ui.replay)
-  implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
-
+  implementation(kotlin(Config.kotlinStdLib, Config.kotlinStdLibVersionAndroid))
   // tests
   testImplementation(projects.sentryTestSupport)
   testImplementation(projects.sentryAndroidCore)

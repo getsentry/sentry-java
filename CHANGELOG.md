@@ -1,5 +1,12 @@
 # Changelog
 
+## 8.21.1
+
+### Fixes
+
+- Use Kotlin stdlib 1.9.24 dependency instead of 2.2.0 for all Android modules ([#4707](https://github.com/getsentry/sentry-java/pull/4707))
+  - This fixes compile time issues if your app is using Kotlin < 2.x
+
 ## 8.21.0
 
 ### Fixes
