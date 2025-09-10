@@ -65,7 +65,7 @@ public object Distribution {
   public fun downloadUpdate(context: Context, info: UpdateInfo) {
     val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(info.downloadUrl))
     browserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-    
+
     try {
       context.startActivity(browserIntent)
     } catch (e: android.content.ActivityNotFoundException) {
