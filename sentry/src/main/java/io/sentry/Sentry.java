@@ -1291,7 +1291,6 @@ public final class Sentry {
     return getCurrentScopes().captureCheckIn(checkIn);
   }
 
-  @ApiStatus.Experimental
   @NotNull
   public static ILoggerApi logger() {
     return getCurrentScopes().logger();

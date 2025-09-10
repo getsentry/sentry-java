@@ -327,7 +327,6 @@ public final class NoOpHub implements IHub {
     return true;
   }
 
-  @ApiStatus.Experimental
   @Override
   public @NotNull ILoggerApi logger() {
     return NoOpLoggerApi.getInstance();
