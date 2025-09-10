@@ -4,6 +4,7 @@
 
 ### Features
 
+- Move SentryLogs out of experimental ([#4710](https://github.com/getsentry/sentry-java/pull/4710))
 - Add support for w3c traceparent header ([#4671](https://github.com/getsentry/sentry-java/pull/4671))
   - This feature is disabled by default. If enabled, outgoing requests will include the w3c `traceparent` header.
   - See https://develop.sentry.dev/sdk/telemetry/traces/distributed-tracing/#w3c-trace-context-header for more details.
