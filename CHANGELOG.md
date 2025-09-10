@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Add support for w3c traceparent header ([#4671](https://github.com/getsentry/sentry-java/pull/4671))
+  - This feature is disabled by default. If enabled, outgoing requests will include the w3c `traceparent` header.
+  - See https://develop.sentry.dev/sdk/telemetry/traces/distributed-tracing/#w3c-trace-context-header for more details.
+  ```kotlin
+  Sentry(Android).init(context) { options ->
+    // ...
+    options.isPropagateTraceparent = true
+  }
+  ```
+
 ## 8.21.1
 
 ### Fixes
@@ -21,15 +35,7 @@
 - Replace `Random` implementation with MIT licensed code ([#4664](https://github.com/getsentry/sentry-java/pull/4664))
 - Add support for `vars` attribute in `SentryStackFrame` ([#4686](https://github.com/getsentry/sentry-java/pull/4686))
   - **Breaking change**: The type of the `vars` attribute has been changed from `Map<String, String>` to `Map<String, Object>`.
-- Add support for w3c traceparent header ([#4671](https://github.com/getsentry/sentry-java/pull/4671))
-  - This feature is disabled by default. If enabled, outgoing requests will include the w3c `traceparent` header.
-  - See https://develop.sentry.dev/sdk/telemetry/traces/distributed-tracing/#w3c-trace-context-header for more details.
-  ```kotlin
-  Sentry(Android).init(context) { options ->
-    // ...
-    options.isPropagateTraceparent = true
-  }
-  ```
+
 ## 8.20.0
 
 ### Fixes
