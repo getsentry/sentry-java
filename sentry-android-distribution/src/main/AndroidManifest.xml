@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <uses-permission android:name="android.permission.INTERNET" />
+
+  <application>
+    <provider
+      android:name="io.sentry.android.distribution.DistributionContentProvider"
+      android:authorities="${applicationId}.sentry-distribution-provider"
+      android:exported="false"
+      android:initOrder="100" />
+  </application>
+</manifest>
