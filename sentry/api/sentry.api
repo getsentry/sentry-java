@@ -3405,6 +3405,7 @@ public class io/sentry/SentryOptions {
 	public fun isGlobalHubMode ()Ljava/lang/Boolean;
 	public fun isPrintUncaughtStackTrace ()Z
 	public fun isProfilingEnabled ()Z
+	public fun isPropagateTraceparent ()Z
 	public fun isSendClientReports ()Z
 	public fun isSendDefaultPii ()Z
 	public fun isSendModules ()Z
@@ -3492,6 +3493,7 @@ public class io/sentry/SentryOptions {
 	public fun setProfilesSampler (Lio/sentry/SentryOptions$ProfilesSamplerCallback;)V
 	public fun setProfilingTracesHz (I)V
 	public fun setProguardUuid (Ljava/lang/String;)V
+	public fun setPropagateTraceparent (Z)V
 	public fun setProxy (Lio/sentry/SentryOptions$Proxy;)V
 	public fun setReadTimeoutMillis (I)V
 	public fun setRelease (Ljava/lang/String;)V
@@ -4320,6 +4322,13 @@ public final class io/sentry/UserFeedback$JsonKeys {
 	public static final field EVENT_ID Ljava/lang/String;
 	public static final field NAME Ljava/lang/String;
 	public fun <init> ()V
+}
+
+public final class io/sentry/W3CTraceparentHeader {
+	public static final field TRACEPARENT_HEADER Ljava/lang/String;
+	public fun <init> (Lio/sentry/protocol/SentryId;Lio/sentry/SpanId;Ljava/lang/Boolean;)V
+	public fun getName ()Ljava/lang/String;
+	public fun getValue ()Ljava/lang/String;
 }
 
 public final class io/sentry/backpressure/BackpressureMonitor : io/sentry/backpressure/IBackpressureMonitor, java/lang/Runnable {
@@ -7062,8 +7071,10 @@ public final class io/sentry/util/TracingUtils {
 
 public final class io/sentry/util/TracingUtils$TracingHeaders {
 	public fun <init> (Lio/sentry/SentryTraceHeader;Lio/sentry/BaggageHeader;)V
+	public fun <init> (Lio/sentry/SentryTraceHeader;Lio/sentry/BaggageHeader;Lio/sentry/W3CTraceparentHeader;)V
 	public fun getBaggageHeader ()Lio/sentry/BaggageHeader;
 	public fun getSentryTraceHeader ()Lio/sentry/SentryTraceHeader;
+	public fun getW3cTraceparentHeader ()Lio/sentry/W3CTraceparentHeader;
 }
 
 public final class io/sentry/util/UUIDGenerator {
