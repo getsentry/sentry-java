@@ -1,4 +1,77 @@
 public final class io/sentry/android/distribution/Distribution {
+	public static final field INSTANCE Lio/sentry/android/distribution/Distribution;
+	public final fun checkForUpdate (Landroid/content/Context;)Lio/sentry/android/distribution/UpdateStatus;
+	public final fun checkForUpdateCompletableFuture (Landroid/content/Context;)Ljava/util/concurrent/CompletableFuture;
+	public final fun downloadUpdate (Landroid/content/Context;Lio/sentry/android/distribution/UpdateInfo;)V
+	public final fun init (Landroid/content/Context;Lio/sentry/android/distribution/DistributionOptions;)V
+	public final fun isEnabled ()Z
+}
+
+public final class io/sentry/android/distribution/DistributionContentProvider : android/content/ContentProvider {
 	public fun <init> ()V
+	public fun delete (Landroid/net/Uri;Ljava/lang/String;[Ljava/lang/String;)I
+	public fun getType (Landroid/net/Uri;)Ljava/lang/String;
+	public fun insert (Landroid/net/Uri;Landroid/content/ContentValues;)Landroid/net/Uri;
+	public fun onCreate ()Z
+	public fun query (Landroid/net/Uri;[Ljava/lang/String;Ljava/lang/String;[Ljava/lang/String;Ljava/lang/String;)Landroid/database/Cursor;
+	public fun update (Landroid/net/Uri;Landroid/content/ContentValues;Ljava/lang/String;[Ljava/lang/String;)I
+}
+
+public final class io/sentry/android/distribution/DistributionOptions {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lio/sentry/android/distribution/DistributionOptions;
+	public static synthetic fun copy$default (Lio/sentry/android/distribution/DistributionOptions;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/sentry/android/distribution/DistributionOptions;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBuildConfiguration ()Ljava/lang/String;
+	public final fun getOrgAuthToken ()Ljava/lang/String;
+	public final fun getOrganizationSlug ()Ljava/lang/String;
+	public final fun getProjectSlug ()Ljava/lang/String;
+	public final fun getSentryBaseUrl ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/sentry/android/distribution/UpdateInfo {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()I
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun component6 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lio/sentry/android/distribution/UpdateInfo;
+	public static synthetic fun copy$default (Lio/sentry/android/distribution/UpdateInfo;Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/sentry/android/distribution/UpdateInfo;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAppName ()Ljava/lang/String;
+	public final fun getBuildNumber ()I
+	public final fun getBuildVersion ()Ljava/lang/String;
+	public final fun getCreatedDate ()Ljava/lang/String;
+	public final fun getDownloadUrl ()Ljava/lang/String;
+	public final fun getId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract class io/sentry/android/distribution/UpdateStatus {
+}
+
+public final class io/sentry/android/distribution/UpdateStatus$Error : io/sentry/android/distribution/UpdateStatus {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun getMessage ()Ljava/lang/String;
+}
+
+public final class io/sentry/android/distribution/UpdateStatus$NewRelease : io/sentry/android/distribution/UpdateStatus {
+	public fun <init> (Lio/sentry/android/distribution/UpdateInfo;)V
+	public final fun getInfo ()Lio/sentry/android/distribution/UpdateInfo;
+}
+
+public final class io/sentry/android/distribution/UpdateStatus$UpToDate : io/sentry/android/distribution/UpdateStatus {
+	public static final field INSTANCE Lio/sentry/android/distribution/UpdateStatus$UpToDate;
 }
 

@@ -27,4 +27,5 @@ androidComponents.beforeVariants {
 dependencies {
   implementation(projects.sentry)
   implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
+  implementation(libs.kotlinx.coroutines)
 }
