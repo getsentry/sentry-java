@@ -14,6 +14,10 @@
   }
   ```
 
+### Improvements
+
+- Remove internal API status from get/setDistinctId ([#4708](https://github.com/getsentry/sentry-java/pull/4708))
+
 ## 8.21.1
 
 ### Fixes
