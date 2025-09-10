@@ -1,15 +1,19 @@
 package io.sentry.android.distribution
 
 /** Configuration options for Sentry Build Distribution. */
-public class DistributionOptions(
+public class DistributionOptions {
   /** Organization authentication token for API access */
-  public val orgAuthToken: String,
+  public var orgAuthToken: String = ""
+
   /** Sentry organization slug */
-  public val organizationSlug: String,
+  public var organizationSlug: String = ""
+
   /** Sentry project slug */
-  public val projectSlug: String,
+  public var projectSlug: String = ""
+
   /** Base URL for Sentry API (defaults to https://sentry.io) */
-  public val sentryBaseUrl: String = "https://sentry.io",
-  /** Optional build configuration name for filtering */
-  public val buildConfiguration: String? = null,
-)
+  public var sentryBaseUrl: String = "https://sentry.io"
+
+  /** Optional build configuration name for filtering (e.g., "debug", "release", "staging") */
+  public var buildConfiguration: String? = null
+}

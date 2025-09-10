@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import io.sentry.android.distribution.internal.DistributionInternal
-import java.util.concurrent.CompletableFuture
 
 /**
  * The public Android SDK for Sentry Build Distribution.
@@ -14,13 +13,25 @@ import java.util.concurrent.CompletableFuture
  */
 public object Distribution {
   /**
-   * Initialize build distribution with the provided options. This should be called once per
+   * Initialize build distribution with default options. This should be called once per process,
+   * typically in Application.onCreate().
+   *
+   * @param context Android context
+   */
+  public fun init(context: Context) {
+    init(context) {}
+  }
+
+  /**
+   * Initialize build distribution with the provided configuration. This should be called once per
    * process, typically in Application.onCreate().
    *
    * @param context Android context
-   * @param options Configuration options for build distribution
+   * @param configuration Configuration handler for build distribution options
    */
-  public fun init(context: Context, options: DistributionOptions) {
+  public fun init(context: Context, configuration: (DistributionOptions) -> Unit) {
+    val options = DistributionOptions()
+    configuration(options)
     DistributionInternal.init(context, options)
   }
 
@@ -35,24 +46,24 @@ public object Distribution {
 
   /**
    * Check for available updates synchronously (blocking call). This method will block the calling
-   * thread while making the network request. Consider using checkForUpdateCompletableFuture for
+   * thread while making the network request. Consider using checkForUpdate with callback for
    * non-blocking behavior.
    *
    * @param context Android context
    * @return UpdateStatus indicating if an update is available, up to date, or error
    */
-  public fun checkForUpdate(context: Context): UpdateStatus {
+  public fun checkForUpdateBlocking(context: Context): UpdateStatus {
     return DistributionInternal.checkForUpdate(context)
   }
 
   /**
-   * Check for available updates using CompletableFuture for Java compatibility.
+   * Check for available updates asynchronously using a callback.
    *
    * @param context Android context
-   * @return CompletableFuture with UpdateStatus result
+   * @param onResult Callback that will be called with the UpdateStatus result
    */
-  public fun checkForUpdateCompletableFuture(context: Context): CompletableFuture<UpdateStatus> {
-    return DistributionInternal.checkForUpdateCompletableFuture(context)
+  public fun checkForUpdate(context: Context, onResult: (UpdateStatus) -> Unit) {
+    DistributionInternal.checkForUpdateAsync(context, onResult)
   }
 
   /**
