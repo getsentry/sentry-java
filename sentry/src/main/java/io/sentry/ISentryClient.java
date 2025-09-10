@@ -304,7 +304,6 @@ public interface ISentryClient {
   @ApiStatus.Experimental
   SentryId captureCheckIn(@NotNull CheckIn checkIn, @Nullable IScope scope, @Nullable Hint hint);
 
-  @ApiStatus.Experimental
   void captureLog(@NotNull SentryLogEvent logEvent, @Nullable IScope scope);
 
   @ApiStatus.Internal

@@ -3474,20 +3474,19 @@ public class SentryOptions {
   public static final class Logs {
 
     /** Whether Sentry Logs feature is enabled and Sentry.logger() usages are sent to Sentry. */
-    @ApiStatus.Experimental private boolean enable = false;
+    private boolean enable = false;
 
     /**
      * This function is called with an SDK specific log event object and can return a modified event
      * object or nothing to skip reporting the log item
      */
-    @ApiStatus.Experimental private @Nullable BeforeSendLogCallback beforeSend;
+    private @Nullable BeforeSendLogCallback beforeSend;
 
     /**
      * Whether Sentry Logs feature is enabled and Sentry.logger() usages are sent to Sentry.
      *
      * @return true if Sentry Logs should be enabled
      */
-    @ApiStatus.Experimental
     public boolean isEnabled() {
       return enable;
     }
@@ -3497,7 +3496,6 @@ public class SentryOptions {
      *
      * @param enableLogs true if Sentry Logs should be enabled
      */
-    @ApiStatus.Experimental
     public void setEnabled(boolean enableLogs) {
       this.enable = enableLogs;
     }
@@ -3507,7 +3505,6 @@ public class SentryOptions {
      *
      * @return the beforeSendLog callback or null if not set
      */
-    @ApiStatus.Experimental
     public @Nullable BeforeSendLogCallback getBeforeSend() {
       return beforeSend;
     }
@@ -3517,7 +3514,6 @@ public class SentryOptions {
      *
      * @param beforeSendLog the beforeSendLog callback
      */
-    @ApiStatus.Experimental
     public void setBeforeSend(@Nullable BeforeSendLogCallback beforeSendLog) {
       this.beforeSend = beforeSendLog;
     }
