@@ -3,9 +3,10 @@
   <uses-permission android:name="android.permission.INTERNET" />
 
   <application>
+    <!-- Lower initOrder than SentryPerformanceProvider (200) to ensure initialization happens before performance monitoring -->
     <provider
-      android:name="io.sentry.android.distribution.DistributionContentProvider"
-      android:authorities="${applicationId}.sentry-distribution-provider"
+      android:name=".SentryDistributionProvider"
+      android:authorities="${applicationId}.SentryDistributionProvider"
       android:exported="false"
       android:initOrder="100" />
   </application>
