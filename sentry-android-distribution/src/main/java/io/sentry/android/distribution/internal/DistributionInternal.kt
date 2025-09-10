@@ -20,12 +20,22 @@ internal object DistributionInternal {
   }
 
   fun checkForUpdate(context: Context): UpdateStatus {
-    return UpdateStatus.Error("Implementation coming in future PR")
+    // Test binary identifier extraction works
+    val binaryIdentifier = getBinaryIdentifier(context)
+    return if (binaryIdentifier != null) {
+      UpdateStatus.Error(
+        "Binary identifier extracted: $binaryIdentifier. HTTP client and API models coming in future PRs."
+      )
+    } else {
+      UpdateStatus.Error(
+        "Could not extract binary identifier. HTTP client and API models coming in future PRs."
+      )
+    }
   }
 
   fun checkForUpdateCompletableFuture(context: Context): CompletableFuture<UpdateStatus> {
     val future = CompletableFuture<UpdateStatus>()
-    future.complete(UpdateStatus.Error("Implementation coming in future PR"))
+    future.complete(checkForUpdate(context))
     return future
   }
 }
