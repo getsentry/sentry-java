@@ -34,7 +34,7 @@ dependencies {
   testImplementation(projects.sentryTestSupport)
 
   val gummyBearsModule = libs.gummy.bears.api21.get().module
-  signature("${gummyBearsModule}:${libs.versions.gummyBears.get()}:coreLib2@signature")
+  signature("${gummyBearsModule}:${libs.versions.gummyBears.get()}@signature")
 }
 
 configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }

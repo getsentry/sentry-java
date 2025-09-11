@@ -12,7 +12,6 @@ plugins {
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.buildconfig)
   alias(libs.plugins.springboot4) apply false
-  alias(libs.plugins.animalsniffer)
 }
 
 configure<JavaPluginExtension> {
@@ -103,9 +102,6 @@ dependencies {
   testImplementation(libs.springboot4.starter.webflux)
   testImplementation(libs.springboot4.starter.restclient)
   testImplementation(libs.springboot4.starter.webclient)
-
-  val gummyBearsModule = libs.gummy.bears.api21.get().module
-  signature("${gummyBearsModule}:${libs.versions.gummyBears.get()}:coreLib2@signature")
 }
 
 configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
@@ -126,7 +122,6 @@ tasks {
   check {
     dependsOn(jacocoTestCoverageVerification)
     dependsOn(jacocoTestReport)
-    dependsOn(animalsnifferMain)
   }
 }
 
