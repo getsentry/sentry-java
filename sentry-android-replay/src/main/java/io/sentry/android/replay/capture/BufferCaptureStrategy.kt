@@ -146,6 +146,7 @@ internal class BufferCaptureStrategy(
     }
     // we hand over replayExecutor to the new strategy to preserve order of execution
     val captureStrategy = SessionCaptureStrategy(options, scopes, dateProvider, replayExecutor)
+    captureStrategy.recorderConfig = recorderConfig
     captureStrategy.start(
       segmentId = currentSegment,
       replayId = currentReplayId,
