@@ -742,7 +742,6 @@ public interface IScopes {
   @NotNull
   SentryId captureReplay(@NotNull SentryReplayEvent replay, @Nullable Hint hint);
 
-  @ApiStatus.Experimental
   @NotNull
   ILoggerApi logger();
 }

@@ -4,6 +4,52 @@
 
 ### Features
 
+- Move SentryLogs out of experimental ([#4710](https://github.com/getsentry/sentry-java/pull/4710))
+- Add support for w3c traceparent header ([#4671](https://github.com/getsentry/sentry-java/pull/4671))
+  - This feature is disabled by default. If enabled, outgoing requests will include the w3c `traceparent` header.
+  - See https://develop.sentry.dev/sdk/telemetry/traces/distributed-tracing/#w3c-trace-context-header for more details.
+  ```kotlin
+  Sentry(Android).init(context) { options ->
+    // ...
+    options.isPropagateTraceparent = true
+  }
+  ```
+
+### Improvements
+
+- Remove internal API status from get/setDistinctId ([#4708](https://github.com/getsentry/sentry-java/pull/4708))
+
+## 8.21.1
+
+### Fixes
+
+- Use Kotlin stdlib 1.9.24 dependency instead of 2.2.0 for all Android modules ([#4707](https://github.com/getsentry/sentry-java/pull/4707))
+  - This fixes compile time issues if your app is using Kotlin < 2.x
+
+## 8.21.0
+
+### Fixes
+
+- Only set log template for logging integrations if formatted message differs from template ([#4682](https://github.com/getsentry/sentry-java/pull/4682))
+
+### Features
+
+- Add support for Spring Boot 4 and Spring 7 ([#4601](https://github.com/getsentry/sentry-java/pull/4601))
+  - NOTE: Our `sentry-opentelemetry-agentless-spring` is not working yet for Spring Boot 4. Please use `sentry-opentelemetry-agent` until OpenTelemetry has support for Spring Boot 4.
+- Replace `UUIDGenerator` implementation with Apache licensed code ([#4662](https://github.com/getsentry/sentry-java/pull/4662))
+- Replace `Random` implementation with MIT licensed code ([#4664](https://github.com/getsentry/sentry-java/pull/4664))
+- Add support for `vars` attribute in `SentryStackFrame` ([#4686](https://github.com/getsentry/sentry-java/pull/4686))
+  - **Breaking change**: The type of the `vars` attribute has been changed from `Map<String, String>` to `Map<String, Object>`.
+
+## 8.20.0
+
+### Fixes
+
+- Do not use named capturing groups for regular expressions ([#4652](https://github.com/getsentry/sentry-java/pull/4652))
+  - This fixes a crash on Android versions below 8.0 (API level 26)
+
+### Features
+
 - Add onDiscard to enable users to track the type and amount of data discarded before reaching Sentry ([#4612](https://github.com/getsentry/sentry-java/pull/4612))
   - Stub for setting the callback on `Sentry.init`:
      ```java
@@ -18,12 +64,18 @@
 
 ## 8.19.1
 
+> [!Warning]
+> Android: This release is incompatible with API levels below 26. We recommend using SDK version 8.20.0 or higher instead.
+
 ### Fixes
 
 - Do not store No-Op scopes onto OpenTelemetry Context when wrapping ([#4631](https://github.com/getsentry/sentry-java/pull/4631))
   - In 8.18.0 and 8.19.0 the SDK could break when initialized too late.
 
 ## 8.19.0
+
+> [!Warning]
+> Android: This release is incompatible with API levels below 26. We recommend using SDK version 8.20.0 or higher instead.
 
 ### Features
 

@@ -222,11 +222,14 @@ public class SentryAppender extends AbstractAppender {
     final @Nullable Object[] arguments = loggingEvent.getMessage().getParameters();
     final @NotNull SentryAttributes attributes = SentryAttributes.of();
 
-    attributes.add(
-        SentryAttribute.stringAttribute(
-            "sentry.message.template", loggingEvent.getMessage().getFormat()));
-
+    final @Nullable String nonFormattedMessage = loggingEvent.getMessage().getFormat();
     final @NotNull String formattedMessage = loggingEvent.getMessage().getFormattedMessage();
+
+    if (nonFormattedMessage != null && !formattedMessage.equals(nonFormattedMessage)) {
+      attributes.add(
+          SentryAttribute.stringAttribute("sentry.message.template", nonFormattedMessage));
+    }
+
     final @NotNull SentryLogParameters params = SentryLogParameters.create(attributes);
     params.setOrigin("auto.log.log4j2");
 

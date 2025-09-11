@@ -3405,6 +3405,7 @@ public class io/sentry/SentryOptions {
 	public fun isGlobalHubMode ()Ljava/lang/Boolean;
 	public fun isPrintUncaughtStackTrace ()Z
 	public fun isProfilingEnabled ()Z
+	public fun isPropagateTraceparent ()Z
 	public fun isSendClientReports ()Z
 	public fun isSendDefaultPii ()Z
 	public fun isSendModules ()Z
@@ -3492,6 +3493,7 @@ public class io/sentry/SentryOptions {
 	public fun setProfilesSampler (Lio/sentry/SentryOptions$ProfilesSamplerCallback;)V
 	public fun setProfilingTracesHz (I)V
 	public fun setProguardUuid (Ljava/lang/String;)V
+	public fun setPropagateTraceparent (Z)V
 	public fun setProxy (Lio/sentry/SentryOptions$Proxy;)V
 	public fun setReadTimeoutMillis (I)V
 	public fun setRelease (Ljava/lang/String;)V
@@ -4320,6 +4322,13 @@ public final class io/sentry/UserFeedback$JsonKeys {
 	public static final field EVENT_ID Ljava/lang/String;
 	public static final field NAME Ljava/lang/String;
 	public fun <init> ()V
+}
+
+public final class io/sentry/W3CTraceparentHeader {
+	public static final field TRACEPARENT_HEADER Ljava/lang/String;
+	public fun <init> (Lio/sentry/protocol/SentryId;Lio/sentry/SpanId;Ljava/lang/Boolean;)V
+	public fun getName ()Ljava/lang/String;
+	public fun getValue ()Ljava/lang/String;
 }
 
 public final class io/sentry/backpressure/BackpressureMonitor : io/sentry/backpressure/IBackpressureMonitor, java/lang/Runnable {
@@ -5933,6 +5942,7 @@ public final class io/sentry/protocol/SentryStackFrame$JsonKeys {
 	public static final field RAW_FUNCTION Ljava/lang/String;
 	public static final field SYMBOL Ljava/lang/String;
 	public static final field SYMBOL_ADDR Ljava/lang/String;
+	public static final field VARS Ljava/lang/String;
 	public fun <init> ()V
 }
 
@@ -6986,15 +6996,22 @@ public final class io/sentry/util/PropagationTargetsUtils {
 
 public final class io/sentry/util/Random : java/io/Serializable {
 	public fun <init> ()V
-	public fun <init> (J)V
+	public fun <init> (JJ)V
 	public fun nextBoolean ()Z
+	public fun nextBoolean (D)Z
+	public fun nextByte ()B
 	public fun nextBytes ([B)V
+	public fun nextChar ()C
 	public fun nextDouble ()D
+	public fun nextDouble (ZZ)D
 	public fun nextFloat ()F
+	public fun nextFloat (ZZ)F
 	public fun nextInt ()I
 	public fun nextInt (I)I
 	public fun nextLong ()J
-	public fun setSeed (J)V
+	public fun nextLong (J)J
+	public fun nextShort ()S
+	public fun setSeed (JJ)V
 }
 
 public final class io/sentry/util/SampleRateUtils {
@@ -7054,8 +7071,10 @@ public final class io/sentry/util/TracingUtils {
 
 public final class io/sentry/util/TracingUtils$TracingHeaders {
 	public fun <init> (Lio/sentry/SentryTraceHeader;Lio/sentry/BaggageHeader;)V
+	public fun <init> (Lio/sentry/SentryTraceHeader;Lio/sentry/BaggageHeader;Lio/sentry/W3CTraceparentHeader;)V
 	public fun getBaggageHeader ()Lio/sentry/BaggageHeader;
 	public fun getSentryTraceHeader ()Lio/sentry/SentryTraceHeader;
+	public fun getW3cTraceparentHeader ()Lio/sentry/W3CTraceparentHeader;
 }
 
 public final class io/sentry/util/UUIDGenerator {

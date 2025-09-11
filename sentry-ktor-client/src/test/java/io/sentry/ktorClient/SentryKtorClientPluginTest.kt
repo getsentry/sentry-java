@@ -24,6 +24,7 @@ import io.sentry.SentryTracer
 import io.sentry.SpanDataConvention
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
+import io.sentry.W3CTraceparentHeader
 import io.sentry.exception.SentryHttpClientException
 import io.sentry.mockServerRequestTimeoutMillis
 import java.util.concurrent.TimeUnit
@@ -426,4 +427,29 @@ class SentryKtorClientPluginTest {
     assertTrue(baggageHeaderValues[0].contains("sentry-transaction=name"))
     assertTrue(baggageHeaderValues[0].contains("sentry-trace_id"))
   }
+
+  @Test
+  fun `adds W3C traceparent header when propagateTraceparent is enabled`(): Unit = runBlocking {
+    val sut =
+      fixture.getSut(optionsConfiguration = { options -> options.isPropagateTraceparent = true })
+    sut.get(fixture.server.url("/hello").toString())
+
+    val recordedRequest =
+      fixture.server.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
+    assertNotNull(recordedRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
+    assertNotNull(recordedRequest.headers[W3CTraceparentHeader.TRACEPARENT_HEADER])
+  }
+
+  @Test
+  fun `does not add W3C traceparent header when propagateTraceparent is disabled`(): Unit =
+    runBlocking {
+      val sut =
+        fixture.getSut(optionsConfiguration = { options -> options.isPropagateTraceparent = false })
+      sut.get(fixture.server.url("/hello").toString())
+
+      val recordedRequest =
+        fixture.server.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
+      assertNotNull(recordedRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
+      assertNull(recordedRequest.headers[W3CTraceparentHeader.TRACEPARENT_HEADER])
+    }
 }
