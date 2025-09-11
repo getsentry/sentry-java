@@ -522,12 +522,10 @@ public final class ExternalOptions {
     return captureOpenTelemetryEvents;
   }
 
-  @ApiStatus.Experimental
   public void setEnableLogs(final @Nullable Boolean enableLogs) {
     this.enableLogs = enableLogs;
   }
 
-  @ApiStatus.Experimental
   public @Nullable Boolean isEnableLogs() {
     return enableLogs;
   }

@@ -1,5 +1,4 @@
 import io.gitlab.arturbosch.detekt.Detekt
-import org.jetbrains.kotlin.config.KotlinCompilerVersion
 
 plugins {
   id("com.android.library")
@@ -69,7 +68,7 @@ dependencies {
 
   compileOnly(libs.androidx.sqlite)
 
-  implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
+  implementation(kotlin(Config.kotlinStdLib, Config.kotlinStdLibVersionAndroid))
 
   // tests
   testImplementation(libs.androidx.sqlite)

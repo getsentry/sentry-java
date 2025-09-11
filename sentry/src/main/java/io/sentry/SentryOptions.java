@@ -393,6 +393,9 @@ public class SentryOptions {
   private final @NotNull List<String> defaultTracePropagationTargets =
       Collections.singletonList(DEFAULT_PROPAGATION_TARGETS);
 
+  /** Whether to propagate W3C traceparent HTTP header. */
+  private boolean propagateTraceparent = false;
+
   /** Proguard UUID. */
   private @Nullable String proguardUuid;
 
@@ -1061,7 +1064,7 @@ public class SentryOptions {
    *
    * @param sampleRate the sample rate
    */
-  public void setSampleRate(Double sampleRate) {
+  public void setSampleRate(@Nullable Double sampleRate) {
     if (!SampleRateUtils.isValidSampleRate(sampleRate)) {
       throw new IllegalArgumentException(
           "The value "
@@ -1329,7 +1332,6 @@ public class SentryOptions {
    *
    * @return the distinct Id
    */
-  @ApiStatus.Internal
   public @Nullable String getDistinctId() {
     return distinctId;
   }
@@ -1339,7 +1341,6 @@ public class SentryOptions {
    *
    * @param distinctId the distinct Id
    */
-  @ApiStatus.Internal
   public void setDistinctId(final @Nullable String distinctId) {
     this.distinctId = distinctId;
   }
@@ -2108,6 +2109,24 @@ public class SentryOptions {
 
       this.tracePropagationTargets = filteredTracePropagationTargets;
     }
+  }
+
+  /**
+   * Returns whether W3C traceparent HTTP header propagation is enabled.
+   *
+   * @return true if enabled false otherwise
+   */
+  public boolean isPropagateTraceparent() {
+    return propagateTraceparent;
+  }
+
+  /**
+   * Enables or disables W3C traceparent HTTP header propagation.
+   *
+   * @param propagateTraceparent true if enabled false otherwise
+   */
+  public void setPropagateTraceparent(final boolean propagateTraceparent) {
+    this.propagateTraceparent = propagateTraceparent;
   }
 
   /**
@@ -3455,20 +3474,19 @@ public class SentryOptions {
   public static final class Logs {
 
     /** Whether Sentry Logs feature is enabled and Sentry.logger() usages are sent to Sentry. */
-    @ApiStatus.Experimental private boolean enable = false;
+    private boolean enable = false;
 
     /**
      * This function is called with an SDK specific log event object and can return a modified event
      * object or nothing to skip reporting the log item
      */
-    @ApiStatus.Experimental private @Nullable BeforeSendLogCallback beforeSend;
+    private @Nullable BeforeSendLogCallback beforeSend;
 
     /**
      * Whether Sentry Logs feature is enabled and Sentry.logger() usages are sent to Sentry.
      *
      * @return true if Sentry Logs should be enabled
      */
-    @ApiStatus.Experimental
     public boolean isEnabled() {
       return enable;
     }
@@ -3478,7 +3496,6 @@ public class SentryOptions {
      *
      * @param enableLogs true if Sentry Logs should be enabled
      */
-    @ApiStatus.Experimental
     public void setEnabled(boolean enableLogs) {
       this.enable = enableLogs;
     }
@@ -3488,7 +3505,6 @@ public class SentryOptions {
      *
      * @return the beforeSendLog callback or null if not set
      */
-    @ApiStatus.Experimental
     public @Nullable BeforeSendLogCallback getBeforeSend() {
       return beforeSend;
     }
@@ -3498,7 +3514,6 @@ public class SentryOptions {
      *
      * @param beforeSendLog the beforeSendLog callback
      */
-    @ApiStatus.Experimental
     public void setBeforeSend(@Nullable BeforeSendLogCallback beforeSendLog) {
       this.beforeSend = beforeSendLog;
     }

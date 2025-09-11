@@ -161,7 +161,7 @@ subprojects {
         }
     }
 
-    if (!this.name.contains("sample") && !this.name.contains("integration-tests") && this.name != "sentry-system-test-support" && this.name != "sentry-test-support") {
+    if (!this.name.contains("sample") && !this.name.contains("integration-tests") && this.name != "sentry-system-test-support" && this.name != "sentry-test-support" && this.name != "sentry-android-distribution") {
         apply<DistributionPlugin>()
         apply<com.vanniktech.maven.publish.MavenPublishPlugin>()
 

@@ -56,7 +56,6 @@ class EnvelopeTests : BaseUiTest() {
 
     relayIdlingResource.increment()
     IdlingRegistry.getInstance().register(ProfilingSampleActivity.scrollingIdlingResource)
-    Thread.sleep(1000)
     val transaction = Sentry.startTransaction("profiledTransaction", "test1")
     val sampleScenario = launchActivity<ProfilingSampleActivity>()
     swipeList(1)
@@ -171,15 +170,17 @@ class EnvelopeTests : BaseUiTest() {
                   values.last().relativeStartNs.toLong() <= maxTimestampAllowed,
                   "Last measurement value for '$name' is outside bounds (was: ${values.last().relativeStartNs.toLong()}ns, max: ${maxTimestampAllowed}ns",
                 )
-              }
 
-              // Timestamps of measurements should differ at least 10 milliseconds from each other
-              (1 until values.size).forEach { i ->
-                assertTrue(
-                  values[i].relativeStartNs.toLong() >=
-                    values[i - 1].relativeStartNs.toLong() + TimeUnit.MILLISECONDS.toNanos(10),
-                  "Measurement value timestamp for '$name' does not differ at least 10ms",
-                )
+                // Timestamps of measurements should differ at least 10 milliseconds from each other
+                (1 until values.size).forEach { i ->
+                  val measurementTimestampDiff =
+                    values[i].relativeStartNs.toLong() - values[i - 1].relativeStartNs.toLong()
+
+                  assertTrue(
+                    measurementTimestampDiff >= TimeUnit.MILLISECONDS.toNanos(10),
+                    "Measurement value timestamp for '$name' should differ at least 10ms, but was $measurementTimestampDiff",
+                  )
+                }
               }
             }
 

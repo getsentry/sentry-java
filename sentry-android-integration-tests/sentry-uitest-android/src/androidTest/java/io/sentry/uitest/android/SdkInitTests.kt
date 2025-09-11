@@ -56,6 +56,7 @@ class SdkInitTests : BaseUiTest() {
     }
     val transaction = Sentry.startTransaction("e2etests", "testInit")
     val sampleScenario = launchActivity<EmptyActivity>()
+
     initSentry(true) {
       it.tracesSampleRate = 1.0
       it.profilesSampleRate = 1.0
@@ -63,6 +64,8 @@ class SdkInitTests : BaseUiTest() {
       it.executorService = options.executorService
       it.isDebug = true
     }
+
+    relayIdlingResource.increment()
     relayIdlingResource.increment()
     relayIdlingResource.increment()
     transaction.finish()
@@ -79,9 +82,19 @@ class SdkInitTests : BaseUiTest() {
           it.assertNoOtherItems()
           assertEquals("e2etests", transactionItem.transaction)
         }
-    }
 
-    relay.assert {
+      findEnvelope {
+          assertEnvelopeTransaction(it.items.toList(), AndroidLogger()).transaction ==
+            "EmptyActivity"
+        }
+        .assert {
+          val transactionItem: SentryTransaction = it.assertTransaction()
+          // Transaction-based Profiling is already in e2etests transaction, so it won't run again
+          // here
+          it.assertNoOtherItems()
+          assertEquals("EmptyActivity", transactionItem.transaction)
+        }
+
       findEnvelope {
           assertEnvelopeTransaction(it.items.toList(), AndroidLogger()).transaction == "e2etests2"
         }

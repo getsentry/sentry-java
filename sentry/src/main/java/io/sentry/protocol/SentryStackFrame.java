@@ -29,7 +29,7 @@ public final class SentryStackFrame implements JsonUnknown, JsonSerializable {
   private @Nullable List<String> postContext;
 
   /** Mapping of local variables and expression names that were available in this frame. */
-  private @Nullable Map<String, String> vars;
+  private @Nullable Map<String, Object> vars;
 
   private @Nullable List<Integer> framesOmitted;
 
@@ -170,11 +170,11 @@ public final class SentryStackFrame implements JsonUnknown, JsonSerializable {
     this.postContext = postContext;
   }
 
-  public @Nullable Map<String, String> getVars() {
+  public @Nullable Map<String, Object> getVars() {
     return vars;
   }
 
-  public void setVars(final @Nullable Map<String, String> vars) {
+  public void setVars(final @Nullable Map<String, Object> vars) {
     this.vars = vars;
   }
 
@@ -366,6 +366,7 @@ public final class SentryStackFrame implements JsonUnknown, JsonSerializable {
     public static final String LOCK = "lock";
     public static final String PRE_CONTEXT = "pre_context";
     public static final String POST_CONTEXT = "post_context";
+    public static final String VARS = "vars";
   }
 
   @Override
@@ -431,6 +432,9 @@ public final class SentryStackFrame implements JsonUnknown, JsonSerializable {
     }
     if (postContext != null && !postContext.isEmpty()) {
       writer.name(JsonKeys.POST_CONTEXT).value(logger, postContext);
+    }
+    if (vars != null && !vars.isEmpty()) {
+      writer.name(JsonKeys.VARS).value(logger, vars);
     }
     if (unknown != null) {
       for (String key : unknown.keySet()) {
@@ -512,6 +516,9 @@ public final class SentryStackFrame implements JsonUnknown, JsonSerializable {
             break;
           case JsonKeys.POST_CONTEXT:
             sentryStackFrame.postContext = (List<String>) reader.nextObjectOrNull();
+            break;
+          case JsonKeys.VARS:
+            sentryStackFrame.vars = (Map<String, Object>) reader.nextObjectOrNull();
             break;
           default:
             if (unknown == null) {
