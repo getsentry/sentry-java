@@ -105,6 +105,7 @@ class AndroidOptionsInitializerTest {
         false,
         false,
         false,
+        false,
       )
 
       sentryOptions.configureOptions()
@@ -149,6 +150,7 @@ class AndroidOptionsInitializerTest {
         isFragmentAvailable,
         isTimberAvailable,
         isReplayAvailable,
+        false,
       )
 
       AndroidOptionsInitializer.initializeIntegrationsAndProcessors(
@@ -817,6 +819,7 @@ class AndroidOptionsInitializerTest {
       mock(),
       mock(),
       mock(),
+      false,
       false,
       false,
       false,

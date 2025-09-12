@@ -143,6 +143,7 @@ class AndroidTransactionProfilerTest {
       false,
       false,
       false,
+      false,
     )
 
     AndroidOptionsInitializer.initializeIntegrationsAndProcessors(

@@ -2551,6 +2551,7 @@ public final class io/sentry/Sentry {
 	public static fun configureScope (Lio/sentry/ScopeCallback;)V
 	public static fun configureScope (Lio/sentry/ScopeType;Lio/sentry/ScopeCallback;)V
 	public static fun continueTrace (Ljava/lang/String;Ljava/util/List;)Lio/sentry/TransactionContext;
+	public static fun distribution ()Ljava/lang/Object;
 	public static fun endSession ()V
 	public static fun flush (J)V
 	public static fun forkedCurrentScope (Ljava/lang/String;)Lio/sentry/IScopes;
