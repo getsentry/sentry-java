@@ -33,6 +33,7 @@ import io.sentry.android.core.internal.util.AndroidThreadChecker;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.android.core.performance.AppStartMetrics;
 import io.sentry.android.fragment.FragmentLifecycleIntegration;
+import io.sentry.android.distribution.internal.DistributionIntegration;
 import io.sentry.android.replay.DefaultReplayBreadcrumbConverter;
 import io.sentry.android.replay.ReplayIntegration;
 import io.sentry.android.timber.SentryTimberIntegration;
@@ -393,21 +394,7 @@ final class AndroidOptionsInitializer {
       options.setReplayController(replay);
     }
     if (isDistributionAvailable) {
-      final Class<?> distributionIntegrationClass =
-          loadClass.loadClass(
-              "io.sentry.android.distribution.internal.DistributionIntegration",
-              options.getLogger());
-      if (distributionIntegrationClass != null) {
-        try {
-          options.addIntegration(
-              (io.sentry.Integration)
-                  distributionIntegrationClass.getDeclaredConstructor().newInstance());
-        } catch (Exception e) {
-          options
-              .getLogger()
-              .log(SentryLevel.ERROR, "Failed to instantiate DistributionIntegration", e);
-        }
-      }
+      options.addIntegration(new DistributionIntegration());
     }
     options
         .getFeedbackOptions()
