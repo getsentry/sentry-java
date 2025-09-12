@@ -42,7 +42,9 @@ This module provides an integration for [Technology/Framework Name].
 Please consult the documentation on how to install and use this integration in the Sentry Docs for [Android](https://docs.sentry.io/platforms/android/integrations/{module-name}/) or [Java](https://docs.sentry.io/platforms/java/tracing/instrumentation/{module-name}/).
 ```
 
-### 4. Update Main README.md
+The following tasks are required only when adding a module that isn't a sample.
+
+### 3. Update Main README.md
 
 Add the new module to the packages table in the main `README.md` with a placeholder link to the badge:
 
@@ -52,14 +54,14 @@ Add the new module to the packages table in the main `README.md` with a placehol
 
 Note that the badge will only work after the module is released to Maven Central.
 
-### 5. Add Documentation to docs.sentry.io
+### 4. Add Documentation to docs.sentry.io
 
 Add the necessary documentation to [docs.sentry.io](https://docs.sentry.io):
 - For Java modules: Add to Java platform docs, usually in integrations section
 - For Android modules: Add to Android platform docs, usually in integrations section
 - Include installation instructions, configuration options, and usage examples
 
-### 6. Post release tasks
+### 5. Post release tasks
 
 Remind the user to perform the following tasks after the module is merged and released:
 
