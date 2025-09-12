@@ -19,6 +19,12 @@
 
 - Remove internal API status from get/setDistinctId ([#4708](https://github.com/getsentry/sentry-java/pull/4708))
 
+### Dependencies
+
+- Bump Gradle from v8.14.3 to v9.0.0 ([#4592](https://github.com/getsentry/sentry-java/pull/4592))
+  - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v900)
+  - [diff](https://github.com/gradle/gradle/compare/v8.14.3...v9.0.0)
+
 ## 8.21.1
 
 ### Fixes
