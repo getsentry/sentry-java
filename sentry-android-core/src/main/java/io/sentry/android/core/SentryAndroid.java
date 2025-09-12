@@ -214,10 +214,10 @@ public final class SentryAndroid {
       logger.log(SentryLevel.FATAL, "Fatal error during SentryAndroid.init(...)", e);
 
       throw new RuntimeException("Failed to initialize Sentry's SDK", e);
+    } finally {
+      StrictMode.setThreadPolicy(oldPolicy);
+      StrictMode.setVmPolicy(oldVmPolicy);
     }
-
-    StrictMode.setThreadPolicy(oldPolicy);
-    StrictMode.setVmPolicy(oldVmPolicy);
   }
 
   /**
