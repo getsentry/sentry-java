@@ -19,6 +19,10 @@
 
 - Remove internal API status from get/setDistinctId ([#4708](https://github.com/getsentry/sentry-java/pull/4708))
 
+### Fixes
+
+- Fix `NoSuchElementException` in `BufferCaptureStrategy` ([#4717](https://github.com/getsentry/sentry-java/pull/4717))
+
 ## 8.21.1
 
 ### Fixes

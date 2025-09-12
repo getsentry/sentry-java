@@ -22,6 +22,8 @@ import io.sentry.rrweb.RRWebInteractionEvent
 import io.sentry.rrweb.RRWebInteractionEvent.InteractionType.TouchEnd
 import io.sentry.rrweb.RRWebInteractionEvent.InteractionType.TouchStart
 import java.io.File
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -492,5 +494,107 @@ class ReplayCacheTest {
 
     assertTrue(replayCache.frames.isEmpty())
     assertTrue(replayCache.replayCacheDir!!.listFiles()!!.none { it.extension == "jpg" })
+  }
+
+  @Test
+  fun `firstFrameTimestamp returns first timestamp when available`() {
+    val replayCache = fixture.getSut(tmpDir)
+
+    assertNull(replayCache.firstFrameTimestamp())
+
+    val bitmap = Bitmap.createBitmap(1, 1, ARGB_8888)
+    replayCache.addFrame(bitmap, 42)
+    replayCache.addFrame(bitmap, 1001)
+
+    assertEquals(42L, replayCache.firstFrameTimestamp())
+  }
+
+  @Test
+  fun `firstFrameTimestamp is safe under concurrent rotate and add`() {
+    val replayCache = fixture.getSut(tmpDir)
+
+    val bitmap = Bitmap.createBitmap(1, 1, ARGB_8888)
+    repeat(10) { i -> replayCache.addFrame(bitmap, (i + 1).toLong()) }
+
+    val start = CountDownLatch(1)
+    val done = CountDownLatch(2)
+    val error = AtomicReference<Throwable?>()
+
+    val tReader = Thread {
+      try {
+        start.await()
+        repeat(500) {
+          replayCache.firstFrameTimestamp()
+          Thread.yield()
+        }
+      } catch (t: Throwable) {
+        error.set(t)
+      } finally {
+        done.countDown()
+      }
+    }
+
+    val tWriter = Thread {
+      try {
+        start.await()
+        repeat(500) { i ->
+          if (i % 2 == 0) {
+            // delete all frames occasionally
+            replayCache.rotate(Long.MAX_VALUE)
+          } else {
+            // add a fresh frame
+            replayCache.addFrame(bitmap, System.currentTimeMillis())
+          }
+        }
+      } catch (t: Throwable) {
+        error.set(t)
+      } finally {
+        done.countDown()
+      }
+    }
+
+    tReader.start()
+    tWriter.start()
+    start.countDown()
+    done.await()
+
+    // No crash is success
+    assertNull(error.get())
+  }
+
+  @Test
+  fun `createVideoOf tolerates concurrent rotate without crashing`() {
+    ReplayShadowMediaCodec.framesToEncode = 3
+    val replayCache = fixture.getSut(tmpDir)
+
+    val bitmap = Bitmap.createBitmap(1, 1, ARGB_8888)
+    // prepare a few frames that might be deleted during encoding
+    replayCache.addFrame(bitmap, 1)
+    replayCache.addFrame(bitmap, 1001)
+    replayCache.addFrame(bitmap, 2001)
+
+    val start = CountDownLatch(1)
+    val done = CountDownLatch(1)
+    val error = AtomicReference<Throwable?>()
+
+    val tEncoder = Thread {
+      try {
+        start.await()
+        replayCache.createVideoOf(3000L, 0L, 0, 100, 200, 1, 20_000)
+      } catch (t: Throwable) {
+        error.set(t)
+      } finally {
+        done.countDown()
+      }
+    }
+
+    tEncoder.start()
+    start.countDown()
+    // rotate while encoding to simulate concurrent mutation
+    replayCache.rotate(Long.MAX_VALUE)
+    done.await()
+
+    // No crash is success
+    assertNull(error.get())
   }
 }

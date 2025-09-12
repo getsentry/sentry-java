@@ -42,11 +42,11 @@ public class ReplayCache(private val options: SentryOptions, private val replayI
   private val isClosed = AtomicBoolean(false)
   private val encoderLock = AutoClosableReentrantLock()
   private val lock = AutoClosableReentrantLock()
+  private val framesLock = AutoClosableReentrantLock()
   private var encoder: SimpleVideoEncoder? = null
 
   internal val replayCacheDir: File? by lazy { makeReplayCacheDir(options, replayId) }
 
-  // TODO: maybe account for multi-threaded access
   internal val frames = mutableListOf<ReplayFrame>()
 
   private val ongoingSegment = LinkedHashMap<String, String>()
@@ -98,8 +98,12 @@ public class ReplayCache(private val options: SentryOptions, private val replayI
    */
   public fun addFrame(screenshot: File, frameTimestamp: Long, screen: String? = null) {
     val frame = ReplayFrame(screenshot, frameTimestamp, screen)
-    frames += frame
+    framesLock.acquire().use { frames += frame }
   }
+
+  /** Returns the timestamp of the first frame if available in a thread-safe manner. */
+  internal fun firstFrameTimestamp(): Long? =
+    framesLock.acquire().use { frames.firstOrNull()?.timestamp }
 
   /**
    * Creates a video out of currently stored [frames] given the start time and duration using the
@@ -134,7 +138,10 @@ public class ReplayCache(private val options: SentryOptions, private val replayI
     if (videoFile.exists() && videoFile.length() > 0) {
       videoFile.delete()
     }
-    if (frames.isEmpty()) {
+    // Work on a snapshot of frames to avoid races with writers
+    val framesSnapshot =
+      framesLock.acquire().use { if (frames.isEmpty()) emptyList() else frames.toList() }
+    if (framesSnapshot.isEmpty()) {
       options.logger.log(DEBUG, "No captured frames, skipping generating a video segment")
       return null
     }
@@ -156,9 +163,9 @@ public class ReplayCache(private val options: SentryOptions, private val replayI
 
     val step = 1000 / frameRate.toLong()
     var frameCount = 0
-    var lastFrame: ReplayFrame? = frames.first()
+    var lastFrame: ReplayFrame? = framesSnapshot.firstOrNull()
     for (timestamp in from until (from + (duration)) step step) {
-      val iter = frames.iterator()
+      val iter = framesSnapshot.iterator()
       while (iter.hasNext()) {
         val frame = iter.next()
         if (frame.timestamp in (timestamp..timestamp + step)) {
@@ -180,7 +187,7 @@ public class ReplayCache(private val options: SentryOptions, private val replayI
         // if we failed to encode the frame, we delete the screenshot right away as the
         // likelihood of it being able to be encoded later is low
         deleteFile(lastFrame.screenshot)
-        frames.remove(lastFrame)
+        framesLock.acquire().use { frames.remove(lastFrame) }
         lastFrame = null
       }
     }
@@ -240,14 +247,16 @@ public class ReplayCache(private val options: SentryOptions, private val replayI
    */
   internal fun rotate(until: Long): String? {
     var screen: String? = null
-    frames.removeAll {
-      if (it.timestamp < until) {
-        deleteFile(it.screenshot)
-        return@removeAll true
-      } else if (screen == null) {
-        screen = it.screen
+    framesLock.acquire().use {
+      frames.removeAll {
+        if (it.timestamp < until) {
+          deleteFile(it.screenshot)
+          return@removeAll true
+        } else if (screen == null) {
+          screen = it.screen
+        }
+        return@removeAll false
       }
-      return@removeAll false
     }
     return screen
   }
