@@ -1,0 +1,88 @@
+---
+alwaysApply: false
+description: Java SDK OpenTelemetry Integration
+---
+# Java SDK OpenTelemetry Integration
+
+## Overview
+
+The Sentry Java SDK provides comprehensive OpenTelemetry integration through multiple modules:
+
+- `sentry-opentelemetry-core`: Core OpenTelemetry integration functionality
+- `sentry-opentelemetry-agent`: Java Agent-based integration for automatic instrumentation
+- `sentry-opentelemetry-agentless`: Manual instrumentation without Java agent
+- `sentry-opentelemetry-agentless-spring`: Spring-specific agentless integration
+- `sentry-opentelemetry-bootstrap`: Classes that go into the bootstrap classloader when the agent is used. For agentless they are simply used in the applications classloader.
+- `sentry-opentelemetry-agentcustomization`: Classes that help wire up Sentry in OpenTelemetry. These land in the agent classloader when the agent is used. For agentless they are simply used in the application classloader.
+
+## Advantages over using Sentry without OpenTelemetry
+
+- Support for more libraries and frameworks
+    - See https://github.com/open-telemetry/opentelemetry-java-instrumentation/tree/main/instrumentation for a list of supported libraries and frameworks
+- More automated Performance instrumentation (spans) created
+    - Using `sentry-opentelemetry-agent` offers most support
+    - Using `sentry-opentelemetry-agentless-spring` for Spring Boot also has a lot of supported libraries, altough fewer than the agent does
+    - Note that `sentry-opentelemetry-agentless` will not have any OpenTelemetry auto instrumentation
+- Sentry also relies on OpenTelemetry `Context` propagation to propagate Sentry `Scopes`, ensuring e.g. that execution flow for a request shares data and does not leak data into other requests.
+- OpenTelemetry also offers better support for distributed tracing since more libraries are supported for attaching tracing information to outgoing requests and picking up incoming tracing information.
+
+## Key Components
+
+### Agent vs Agentless
+
+**Java Agent-based integration**:
+- Automatic instrumentation via Java agent
+- Can be added to any JAR when starting, no extra dependencies or code changes required. Just add the agent when running the application, e.g. `SENTRY_PROPERTIES_FILE=sentry.properties JAVA_TOOL_OPTIONS="-javaagent:sentry-opentelemetry-agent.jar" java -jar your-application.jar`.
+- Uses OpenTelemetry Java agent with Sentry extensions
+- Uses bytecode manipulation
+
+**Agentless-Spring integration**:
+- Automatic instrumentation setup via Spring Boot
+- Dependency needs to be added to the project.
+
+**Agentless integration**:
+- Manual instrumentation setup
+- Dependency needs to be added to the project.
+
+**Manual Integration**:
+While it's possible to manually wire up all the required classes to make Sentry and OpenTelemetry work together, we do not recommend this.
+It is instead preferrable to use `SentryAutoConfigurationCustomizerProvider` so the Sentry SDK has a place to manage required classes and update it when changes are needed.
+This way customers receive the updated config automatically as oppposed to having to update manually, wire in new classes, remove old ones etc.
+
+### Integration Architecture
+
+Sentry will try to locate certain classes that come with the Sentry OpenTelemetry integration to:
+- Determine whether any Sentry OpenTelemetry integration is present
+- Determine which mode to use and in turn which Sentry auto instrumentation to suppress
+
+Reflection is used to search for `io.sentry.opentelemetry.OtelContextScopesStorage` and use it instead of `DefaultScopesStorage` when a Sentry OpenTelemetry integration is present at runtime. `IScopesStorage` is used to store Sentry `Scopes` instances. `DefaultScopesStorage` will use a thread local variable to store the current threads' `Scopes` whereas `OtelContextScopesStorage` makes use of OpenTelemetry SDKs `Context`. Sentry OpenTelemetry integrations configure OpenTelemetry to use `SentryOtelThreadLocalStorage` to customize restoring of the previous `Context`.
+
+OpenTelemetry SDK makes use of `io.opentelemetry.context.Scope` in `try-with-resources` statements that call `close` when a code block is finished. Without customization, it would refuse to restore the previous `Context` onto the `ThreadLocal` if the current state of the `ThreadLocal` isn't the same as the one this scope was created for. Sentry changes this behaviour in `SentryScopeImpl` to restore the previous `Context` onto the `ThreadLocal` even if an inner `io.opentelemetry.context.Scope` wasn't properly cleaned up. Our thinking here is to prefer returning to a clean state as opposed to propagating the problem. The unclean state could happen, if `io.opentelemetry.context.Scope` isn't closed, e.g. when forgetting to put it in a `try-with-resources` statement and not calling `close` (e.g. not putting it in a `finally` block in that case).
+
+`SentryContextStorageProvider` looks for any other `ContextStorageProvider` and forwards to that to not override any customized `ContextStorage`. If no other provider is found, `SentryOtelThreadLocalStorage` is used.
+
+`SpanFactoryFactory` is used to configure Sentry to use `io.sentry.opentelemetry.OtelSpanFactory` if the class is present at runtime. Reflection is used to search for it. If the class is not available, we fall back to `DefaultSpanFactory`.
+
+`DefaultSpanFactory` creates a `SentryTracer` instance when creating a transaction and spans are then created directly on the transaction via `startChild`.
+`OtelSpanFactory` instead creates an OpenTelemetry span and wraps it using `OtelTransactionSpanForwarder` to simulate a transaction. The `startChild` invocations on `OtelTransactionSpanForwarder` go through `OtelSpanFactory` again to create the child span.
+
+## Configuration
+
+We use `SentryAutoConfigurationCustomizerProvider` to configure OpenTelemetry for use with Sentry and register required classes, hooks etc.
+
+## Span Processing
+
+Both Sentry and OpenTelemetry API can be used to create spans. When using Sentry API, `OtelSpanFactory` is used to indirectly create a OpenTelemetry span.
+Regardless of API used, when an OpenTelemetry span is created, it goes through `SentrySampler` for sampling and `OtelSentrySpanProcessor` for `Scopes` forking and ensuring the trace is continued.
+When Sentry API is used, sampling is performed in `Scopes.createTransaction` before forwarding the call to `OtelSpanFactory`. The sampling decision and other sampling details are forwarded to `SentrySampler` and `OtelSentrySpanProcessor`.
+
+When a span is finished, regardless of whether Sentry or OpenTelemetry API is used, it goes through `OtelSentrySpanProcessor` to set the end date and then through `BatchSpanProcessor` which will batch spans and then forward them to `SentrySpanExporter`.
+
+`SentrySpanExporter` collects spans, then structures them to create a transaction for the local root span and attaches child spans to form a span tree.
+Some OpenTelemetry attributes are transformed into their corresponding Sentry data structure or format.
+
+After creating the transaction with child spans `SentrySpanExporter` uses Sentry API to send the transaction to Sentry. This API call however forces the use of `DefaultSpanFactory` in order to create the required Sentry classes for sending and also to not create an infinite loop where any span created will cause a new span to be created recursively.
+
+## Troubleshooting
+
+To debug forking of `Scopes`, we added a reference to `parent` `Scopes` and a `creator` String to store the reason why `Scopes` were created or forked.

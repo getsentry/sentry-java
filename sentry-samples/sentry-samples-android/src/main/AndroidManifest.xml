@@ -12,7 +12,10 @@
     <!-- Needed by leakcanary.NotificationEventListener -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
-    <!--  if your minSdkVersion < 16, this would make usable on minSdkVersion >= 14-->
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE_REMOTE_MESSAGING" />
+
+  <!--  if your minSdkVersion < 16, this would make usable on minSdkVersion >= 14-->
     <uses-sdk
         tools:overrideLibrary="io.sentry.android"/>
 
@@ -28,6 +31,12 @@
         android:theme="@style/AppTheme"
         android:networkSecurityConfig="@xml/network"
         tools:ignore="GoogleAppIndexingWarning, UnusedAttribute">
+
+        <service
+            android:name=".DummyService"
+            android:exported="true"
+            android:enabled="true"
+            android:foregroundServiceType="remoteMessaging"/>
 
         <activity
             android:name=".MainActivity"

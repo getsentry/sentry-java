@@ -880,4 +880,17 @@ class SentryOptionsTest {
     options.deadlineTimeout = -1L
     assertEquals(-1L, options.deadlineTimeout)
   }
+
+  @Test
+  fun `propagateTraceparent option defaults to false`() {
+    val options = SentryOptions()
+    assertFalse(options.isPropagateTraceparent)
+  }
+
+  @Test
+  fun `propagateTraceparent option can be changed`() {
+    val options = SentryOptions()
+    options.isPropagateTraceparent = true
+    assertTrue(options.isPropagateTraceparent)
+  }
 }

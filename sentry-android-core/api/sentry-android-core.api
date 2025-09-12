@@ -167,14 +167,27 @@ public final class io/sentry/android/core/AppLifecycleIntegration : io/sentry/In
 }
 
 public final class io/sentry/android/core/AppState : java/io/Closeable {
+	public fun addAppStateListener (Lio/sentry/android/core/AppState$AppStateListener;)V
 	public fun close ()V
 	public static fun getInstance ()Lio/sentry/android/core/AppState;
+	public fun getLifecycleObserver ()Lio/sentry/android/core/AppState$LifecycleObserver;
 	public fun isInBackground ()Ljava/lang/Boolean;
+	public fun registerLifecycleObserver (Lio/sentry/SentryOptions;)V
+	public fun removeAppStateListener (Lio/sentry/android/core/AppState$AppStateListener;)V
+	public fun resetInstance ()V
+	public fun unregisterLifecycleObserver ()V
 }
 
 public abstract interface class io/sentry/android/core/AppState$AppStateListener {
 	public abstract fun onBackground ()V
 	public abstract fun onForeground ()V
+}
+
+public final class io/sentry/android/core/AppState$LifecycleObserver : androidx/lifecycle/DefaultLifecycleObserver {
+	public fun <init> (Lio/sentry/android/core/AppState;)V
+	public fun getListeners ()Ljava/util/List;
+	public fun onStart (Landroidx/lifecycle/LifecycleOwner;)V
+	public fun onStop (Landroidx/lifecycle/LifecycleOwner;)V
 }
 
 public final class io/sentry/android/core/BuildConfig {
@@ -323,6 +336,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun isEnableRootCheck ()Z
 	public fun isEnableScopeSync ()Z
 	public fun isEnableSystemEventBreadcrumbs ()Z
+	public fun isEnableSystemEventBreadcrumbsExtras ()Z
 	public fun isReportHistoricalAnrs ()Z
 	public fun setAnrEnabled (Z)V
 	public fun setAnrReportInDebug (Z)V
@@ -347,6 +361,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun setEnableRootCheck (Z)V
 	public fun setEnableScopeSync (Z)V
 	public fun setEnableSystemEventBreadcrumbs (Z)V
+	public fun setEnableSystemEventBreadcrumbsExtras (Z)V
 	public fun setFrameMetricsCollector (Lio/sentry/android/core/internal/util/SentryFrameMetricsCollector;)V
 	public fun setNativeHandlerStrategy (Lio/sentry/android/core/NdkHandlerStrategy;)V
 	public fun setNativeSdkName (Ljava/lang/String;)V
@@ -470,6 +485,7 @@ public final class io/sentry/android/core/cache/AndroidEnvelopeCache : io/sentry
 	public static fun hasStartupCrashMarker (Lio/sentry/SentryOptions;)Z
 	public static fun lastReportedAnr (Lio/sentry/SentryOptions;)Ljava/lang/Long;
 	public fun store (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)V
+	public fun storeEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Z
 }
 
 public class io/sentry/android/core/performance/ActivityLifecycleCallbacksAdapter : android/app/Application$ActivityLifecycleCallbacks {

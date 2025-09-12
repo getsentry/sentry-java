@@ -17,6 +17,7 @@ import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SpanDataConvention;
 import io.sentry.SpanOptions;
 import io.sentry.SpanStatus;
+import io.sentry.W3CTraceparentHeader;
 import io.sentry.util.Objects;
 import io.sentry.util.SpanUtils;
 import io.sentry.util.TracingUtils;
@@ -136,6 +137,12 @@ public final class SentryFeignClient implements Client {
       if (baggageHeader != null) {
         requestWrapper.removeHeader(BaggageHeader.BAGGAGE_HEADER);
         requestWrapper.header(baggageHeader.getName(), baggageHeader.getValue());
+      }
+
+      final @Nullable W3CTraceparentHeader w3cTraceparentHeader =
+          tracingHeaders.getW3cTraceparentHeader();
+      if (w3cTraceparentHeader != null) {
+        requestWrapper.header(w3cTraceparentHeader.getName(), w3cTraceparentHeader.getValue());
       }
     }
 

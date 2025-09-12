@@ -4,6 +4,8 @@ import java.math.BigDecimal
 object Config {
     val AGP = System.getenv("VERSION_AGP") ?: "8.6.0"
     val kotlinStdLib = "stdlib-jdk8"
+    val kotlinStdLibVersionAndroid = "1.9.24"
+    val kotlinTestJunit = "test-junit"
 
     object BuildPlugins {
         val androidGradle = "com.android.tools.build:gradle:$AGP"
@@ -53,10 +55,13 @@ object Config {
         val SENTRY_LOG4J2_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.log4j2"
         val SENTRY_SPRING_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.spring"
         val SENTRY_SPRING_JAKARTA_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.spring.jakarta"
+        val SENTRY_SPRING_7_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.spring-7"
         val SENTRY_SPRING_BOOT_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.spring-boot"
         val SENTRY_SPRING_BOOT_STARTER_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.spring-boot-starter"
         val SENTRY_SPRING_BOOT_JAKARTA_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.spring-boot.jakarta"
         val SENTRY_SPRING_BOOT_STARTER_JAKARTA_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.spring-boot-starter.jakarta"
+        val SENTRY_SPRING_BOOT_4_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.spring-boot-4"
+        val SENTRY_SPRING_BOOT_4_STARTER_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.spring-boot-4-starter"
         val SENTRY_OPENTELEMETRY_BOOTSTRAP_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.opentelemetry.bootstrap"
         val SENTRY_OPENTELEMETRY_CORE_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.opentelemetry.core"
         val SENTRY_OPENTELEMETRY_AGENT_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.opentelemetry.agent"

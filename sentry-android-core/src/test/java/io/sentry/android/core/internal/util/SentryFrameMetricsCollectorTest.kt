@@ -148,6 +148,9 @@ class SentryFrameMetricsCollectorTest {
     collector.startCollection(mock())
     assertEquals(0, fixture.addOnFrameMetricsAvailableListenerCounter)
     collector.onActivityStarted(fixture.activity)
+    // Execute pending main looper tasks since addOnFrameMetricsAvailableListener is posted to main
+    // thread
+    Shadows.shadowOf(Looper.getMainLooper()).idle()
     assertEquals(1, fixture.addOnFrameMetricsAvailableListenerCounter)
   }
 
@@ -157,8 +160,12 @@ class SentryFrameMetricsCollectorTest {
 
     collector.startCollection(mock())
     collector.onActivityStarted(fixture.activity)
+    // Execute pending add operations
+    Shadows.shadowOf(Looper.getMainLooper()).idle()
     assertEquals(0, fixture.removeOnFrameMetricsAvailableListenerCounter)
     collector.onActivityStopped(fixture.activity)
+    // Execute pending remove operations
+    Shadows.shadowOf(Looper.getMainLooper()).idle()
     assertEquals(1, fixture.removeOnFrameMetricsAvailableListenerCounter)
   }
 
@@ -181,6 +188,8 @@ class SentryFrameMetricsCollectorTest {
     collector.onActivityStarted(fixture.activity)
     assertEquals(0, fixture.addOnFrameMetricsAvailableListenerCounter)
     collector.startCollection(mock())
+    // Execute pending main looper tasks
+    Shadows.shadowOf(Looper.getMainLooper()).idle()
     assertEquals(1, fixture.addOnFrameMetricsAvailableListenerCounter)
   }
 
@@ -189,9 +198,13 @@ class SentryFrameMetricsCollectorTest {
     val collector = fixture.getSut(context)
     val id = collector.startCollection(mock())
     collector.onActivityStarted(fixture.activity)
+    // Execute pending add operations
+    Shadows.shadowOf(Looper.getMainLooper()).idle()
 
     assertEquals(0, fixture.removeOnFrameMetricsAvailableListenerCounter)
     collector.stopCollection(id)
+    // Execute pending remove operations
+    Shadows.shadowOf(Looper.getMainLooper()).idle()
     assertEquals(1, fixture.removeOnFrameMetricsAvailableListenerCounter)
   }
 
@@ -205,9 +218,13 @@ class SentryFrameMetricsCollectorTest {
 
     collector.onActivityStarted(fixture.activity)
     collector.onActivityStarted(fixture.activity)
+    // Execute pending add operations
+    Shadows.shadowOf(Looper.getMainLooper()).idle()
 
     collector.onActivityStopped(fixture.activity)
     collector.onActivityStopped(fixture.activity)
+    // Execute pending remove operations
+    Shadows.shadowOf(Looper.getMainLooper()).idle()
 
     assertEquals(1, fixture.addOnFrameMetricsAvailableListenerCounter)
     assertEquals(1, fixture.removeOnFrameMetricsAvailableListenerCounter)
@@ -228,9 +245,13 @@ class SentryFrameMetricsCollectorTest {
     collector.startCollection(mock())
     collector.onActivityStarted(fixture.activity)
     collector.onActivityStarted(fixture.activity2)
+    // Execute pending add operations
+    Shadows.shadowOf(Looper.getMainLooper()).idle()
     assertEquals(2, fixture.addOnFrameMetricsAvailableListenerCounter)
     collector.onActivityStopped(fixture.activity)
     collector.onActivityStopped(fixture.activity2)
+    // Execute pending remove operations
+    Shadows.shadowOf(Looper.getMainLooper()).idle()
     assertEquals(2, fixture.removeOnFrameMetricsAvailableListenerCounter)
   }
 
@@ -240,10 +261,13 @@ class SentryFrameMetricsCollectorTest {
     val id1 = collector.startCollection(mock())
     val id2 = collector.startCollection(mock())
     collector.onActivityStarted(fixture.activity)
+    Shadows.shadowOf(Looper.getMainLooper()).idle()
     assertEquals(1, fixture.addOnFrameMetricsAvailableListenerCounter)
     collector.stopCollection(id1)
+    Shadows.shadowOf(Looper.getMainLooper()).idle()
     assertEquals(0, fixture.removeOnFrameMetricsAvailableListenerCounter)
     collector.stopCollection(id2)
+    Shadows.shadowOf(Looper.getMainLooper()).idle()
     assertEquals(1, fixture.removeOnFrameMetricsAvailableListenerCounter)
   }
 
@@ -509,6 +533,48 @@ class SentryFrameMetricsCollectorTest {
       TimeUnit.MILLISECONDS.toNanos(20) - (TimeUnit.SECONDS.toNanos(1) / 120.0f).toLong(),
       lastDelay,
     )
+  }
+
+  @Test
+  fun `collector calls addOnFrameMetricsAvailableListener on main thread`() {
+    val collector = fixture.getSut(context)
+
+    collector.startCollection(mock())
+    collector.onActivityStarted(fixture.activity)
+
+    assertEquals(0, fixture.addOnFrameMetricsAvailableListenerCounter)
+    Shadows.shadowOf(Looper.getMainLooper()).idle()
+    assertEquals(1, fixture.addOnFrameMetricsAvailableListenerCounter)
+  }
+
+  @Test
+  fun `collector calls removeOnFrameMetricsAvailableListener on main thread`() {
+    val collector = fixture.getSut(context)
+    collector.startCollection(mock())
+    collector.onActivityStarted(fixture.activity)
+    Shadows.shadowOf(Looper.getMainLooper()).idle()
+
+    collector.onActivityStopped(fixture.activity)
+    assertEquals(0, fixture.removeOnFrameMetricsAvailableListenerCounter)
+    Shadows.shadowOf(Looper.getMainLooper()).idle()
+    assertEquals(1, fixture.removeOnFrameMetricsAvailableListenerCounter)
+  }
+
+  @Test
+  fun `collector prevents race condition when stop is called immediately after start`() {
+    val collector = fixture.getSut(context)
+
+    collector.startCollection(mock())
+    collector.onActivityStarted(fixture.activity)
+    collector.onActivityStopped(fixture.activity)
+
+    // Now execute all pending operations
+    Shadows.shadowOf(Looper.getMainLooper()).idle()
+
+    // as the listeners are posted to the main thread, we expect an add followed by a remove
+    assertEquals(1, fixture.addOnFrameMetricsAvailableListenerCounter)
+    assertEquals(1, fixture.removeOnFrameMetricsAvailableListenerCounter)
+    assertEquals(0, collector.getProperty<Set<Window>>("trackedWindows").size)
   }
 
   private fun createMockWindow(refreshRate: Float = 60F): Window {

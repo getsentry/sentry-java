@@ -312,18 +312,6 @@ public final class Sentry {
                   "Sentry has been already initialized. Previous configuration will be overwritten.");
         }
 
-        // load lazy fields of the options in a separate thread
-        try {
-          options.getExecutorService().submit(() -> options.loadLazyFields());
-        } catch (RejectedExecutionException e) {
-          options
-              .getLogger()
-              .log(
-                  SentryLevel.DEBUG,
-                  "Failed to call the executor. Lazy fields will not be loaded. Did you call Sentry.close()?",
-                  e);
-        }
-
         final IScopes scopes = getCurrentScopes();
         scopes.close(true);
 
@@ -341,11 +329,25 @@ public final class Sentry {
         globalScope.bindClient(new SentryClient(options));
 
         // If the executorService passed in the init is the same that was previously closed, we have
-        // to
-        // set a new one
+        // to set a new one
         if (options.getExecutorService().isClosed()) {
-          options.setExecutorService(new SentryExecutorService());
+          options.setExecutorService(new SentryExecutorService(options));
+          options.getExecutorService().prewarm();
         }
+
+        // load lazy fields of the options in a separate thread
+        try {
+          options.getExecutorService().submit(() -> options.loadLazyFields());
+        } catch (RejectedExecutionException e) {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.DEBUG,
+                  "Failed to call the executor. Lazy fields will not be loaded. Did you call Sentry.close()?",
+                  e);
+        }
+
+        movePreviousSession(options);
         // when integrations are registered on Scopes ctor and async integrations are fired,
         // it might and actually happened that integrations called captureSomething
         // and Scopes was still NoOp.
@@ -495,6 +497,16 @@ public final class Sentry {
         new SamplingContext(
             appStartTransactionContext, null, SentryRandom.current().nextDouble(), null);
     return options.getInternalTracesSampler().sample(appStartSamplingContext);
+  }
+
+  @SuppressWarnings("FutureReturnValueIgnored")
+  private static void movePreviousSession(final @NotNull SentryOptions options) {
+    // enqueue a task to move previous unfinished session to its own file
+    try {
+      options.getExecutorService().submit(new MovePreviousSession(options));
+    } catch (Throwable e) {
+      options.getLogger().log(SentryLevel.DEBUG, "Failed to move previous session.", e);
+    }
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")
@@ -1300,7 +1312,6 @@ public final class Sentry {
     return getCurrentScopes().captureCheckIn(checkIn);
   }
 
-  @ApiStatus.Experimental
   @NotNull
   public static ILoggerApi logger() {
     return getCurrentScopes().logger();

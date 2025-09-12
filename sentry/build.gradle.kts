@@ -4,7 +4,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
   `java-library`
   id("io.sentry.javadoc")
-  kotlin("jvm")
+  alias(libs.plugins.kotlin.jvm)
   jacoco
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
@@ -12,7 +12,7 @@ plugins {
 }
 
 tasks.withType<KotlinCompile>().configureEach {
-  kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
+  compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8
 }
 
 dependencies {
@@ -53,6 +53,7 @@ tasks {
     dependsOn(jacocoTestReport)
   }
   test {
+    jvmArgs("--add-opens", "java.base/java.util.concurrent=ALL-UNNAMED")
     environment["SENTRY_TEST_PROPERTY"] = "\"some-value\""
     environment["SENTRY_TEST_MAP_KEY1"] = "\"value1\""
     environment["SENTRY_TEST_MAP_KEY2"] = "value2"

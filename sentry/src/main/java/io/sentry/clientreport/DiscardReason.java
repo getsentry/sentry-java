@@ -1,8 +1,5 @@
 package io.sentry.clientreport;
 
-import org.jetbrains.annotations.ApiStatus;
-
-@ApiStatus.Internal
 public enum DiscardReason {
   QUEUE_OVERFLOW("queue_overflow"),
   CACHE_OVERFLOW("cache_overflow"),

@@ -1,0 +1,4 @@
+public final class io/sentry/android/distribution/Distribution {
+	public fun <init> ()V
+}
+

@@ -1,10 +1,9 @@
 import net.ltgt.gradle.errorprone.errorprone
-import org.jetbrains.kotlin.config.KotlinCompilerVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
   `java-library`
-  kotlin("jvm")
+  alias(libs.plugins.kotlin.jvm)
   jacoco
   id("io.sentry.javadoc")
   alias(libs.plugins.errorprone)
@@ -13,7 +12,9 @@ plugins {
 }
 
 tasks.withType<KotlinCompile>().configureEach {
-  kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
+  compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8
+  compilerOptions.languageVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
+  compilerOptions.apiVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
 }
 
 kotlin { explicitApi() }
@@ -21,7 +22,7 @@ kotlin { explicitApi() }
 dependencies {
   api(projects.sentry)
 
-  implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
+  implementation(kotlin(Config.kotlinStdLib, Config.kotlinStdLibVersionAndroid))
 
   compileOnly(libs.jetbrains.annotations)
   compileOnly(libs.nopen.annotations)

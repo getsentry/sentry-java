@@ -16,6 +16,7 @@ import io.sentry.SentryTracer
 import io.sentry.SpanDataConvention
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
+import io.sentry.W3CTraceparentHeader
 import io.sentry.mockServerRequestTimeoutMillis
 import java.util.concurrent.TimeUnit
 import kotlin.test.BeforeTest
@@ -314,6 +315,32 @@ class SentryFeignClientTest {
     sut.getOk()
     val httpClientSpan = fixture.sentryTracer.children.first()
     assertNotNull(httpClientSpan.spanContext.sampled) { assertFalse(it) }
+  }
+
+  @Test
+  fun `adds W3C traceparent header when propagateTraceparent is enabled`() {
+    fixture.sentryOptions.isTraceSampling = true
+    fixture.sentryOptions.isPropagateTraceparent = true
+    fixture.sentryOptions.dsn = "https://key@sentry.io/proj"
+    val sut = fixture.getSut()
+    sut.getOk()
+    val recorderRequest =
+      fixture.server.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
+    assertNotNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
+    assertNotNull(recorderRequest.headers[W3CTraceparentHeader.TRACEPARENT_HEADER])
+  }
+
+  @Test
+  fun `does not add W3C traceparent header when propagateTraceparent is disabled`() {
+    fixture.sentryOptions.isTraceSampling = true
+    fixture.sentryOptions.isPropagateTraceparent = false
+    fixture.sentryOptions.dsn = "https://key@sentry.io/proj"
+    val sut = fixture.getSut()
+    sut.getOk()
+    val recorderRequest =
+      fixture.server.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
+    assertNotNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
+    assertNull(recorderRequest.headers[W3CTraceparentHeader.TRACEPARENT_HEADER])
   }
 
   interface MockApi {
