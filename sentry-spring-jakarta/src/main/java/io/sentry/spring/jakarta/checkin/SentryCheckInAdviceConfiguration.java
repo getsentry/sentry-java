@@ -15,7 +15,6 @@ import org.springframework.context.annotation.Role;
 
 @Configuration(proxyBeanMethods = false)
 @Open
-@ApiStatus.Experimental
 @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 public class SentryCheckInAdviceConfiguration {
 

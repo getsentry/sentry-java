@@ -10,7 +10,6 @@ import org.springframework.core.annotation.AliasFor;
 /** Sends a {@link io.sentry.CheckIn} for the annotated method. */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD})
-@ApiStatus.Experimental
 public @interface SentryCheckIn {
 
   /**

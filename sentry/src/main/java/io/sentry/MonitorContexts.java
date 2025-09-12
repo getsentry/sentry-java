@@ -10,7 +10,6 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-@ApiStatus.Experimental
 public final class MonitorContexts extends ConcurrentHashMap<String, Object>
     implements JsonSerializable {
   private static final long serialVersionUID = 3987329379811822556L;

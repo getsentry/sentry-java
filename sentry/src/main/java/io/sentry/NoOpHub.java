@@ -307,7 +307,6 @@ public final class NoOpHub implements IHub {
   }
 
   @Override
-  @ApiStatus.Experimental
   public @NotNull SentryId captureCheckIn(final @NotNull CheckIn checkIn) {
     return SentryId.EMPTY_ID;
   }
