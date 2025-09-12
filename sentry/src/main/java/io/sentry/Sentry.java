@@ -15,6 +15,7 @@ import io.sentry.internal.modules.NoOpModulesLoader;
 import io.sentry.internal.modules.ResourcesModulesLoader;
 import io.sentry.logger.ILoggerApi;
 import io.sentry.opentelemetry.OpenTelemetryUtil;
+import io.sentry.profiling.ProfilingServiceLoader;
 import io.sentry.protocol.Feedback;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
@@ -676,6 +677,26 @@ public final class Sentry {
       }
       options.getBackpressureMonitor().start();
     }
+
+    if (options.isContinuousProfilingEnabled()
+        && profilingTracesDirPath != null
+        && options.getContinuousProfiler() == NoOpContinuousProfiler.getInstance()) {
+      final IContinuousProfiler continuousProfiler =
+          ProfilingServiceLoader.loadContinuousProfiler(
+              new SystemOutLogger(),
+              profilingTracesDirPath,
+              options.getProfilingTracesHz(),
+              options.getExecutorService());
+
+      options.setContinuousProfiler(continuousProfiler);
+    }
+
+    options
+        .getLogger()
+        .log(
+            SentryLevel.INFO,
+            "Continuous profiler is enabled %s",
+            options.isContinuousProfilingEnabled());
   }
 
   /** Close the SDK */

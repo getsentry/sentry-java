@@ -595,6 +595,8 @@ public class SentryOptions {
 
   private @NotNull ISocketTagger socketTagger = NoOpSocketTagger.getInstance();
 
+  private @Nullable String profilingTracesDirPath;
+
   /**
    * Adds an event processor
    *
@@ -2077,11 +2079,23 @@ public class SentryOptions {
    * @return the profiling traces dir. path or null if not set
    */
   public @Nullable String getProfilingTracesDirPath() {
+    if (profilingTracesDirPath != null && !profilingTracesDirPath.isEmpty()) {
+      return dsnHash != null
+          ? new File(profilingTracesDirPath, dsnHash).getAbsolutePath()
+          : profilingTracesDirPath;
+    }
+
     final String cacheDirPath = getCacheDirPath();
+
     if (cacheDirPath == null) {
       return null;
     }
+
     return new File(cacheDirPath, "profiling_traces").getAbsolutePath();
+  }
+
+  public void setProfilingTracesDirPath(final @Nullable String profilingTracesDirPath) {
+    this.profilingTracesDirPath = profilingTracesDirPath;
   }
 
   /**
@@ -3305,6 +3319,14 @@ public class SentryOptions {
 
     if (options.isEnableLogs() != null) {
       getLogs().setEnabled(options.isEnableLogs());
+    }
+
+    if (options.getProfileSessionSampleRate() != null) {
+      setProfileSessionSampleRate(options.getProfileSessionSampleRate());
+    }
+
+    if (options.getProfilingTracesDirPath() != null) {
+      setProfilingTracesDirPath(options.getProfilingTracesDirPath());
     }
   }
 
