@@ -1,5 +1,6 @@
 package io.sentry.asyncprofiler.convert;
 
+import io.sentry.DateUtils;
 import io.sentry.Sentry;
 import io.sentry.SentryStackTraceFactory;
 import io.sentry.asyncprofiler.vendor.asyncprofiler.convert.Arguments;
@@ -8,145 +9,31 @@ import io.sentry.asyncprofiler.vendor.asyncprofiler.jfr.JfrReader;
 import io.sentry.asyncprofiler.vendor.asyncprofiler.jfr.StackTrace;
 import io.sentry.asyncprofiler.vendor.asyncprofiler.jfr.event.Event;
 import io.sentry.protocol.SentryStackFrame;
-import io.sentry.protocol.profiling.JfrSample;
 import io.sentry.protocol.profiling.SentryProfile;
-import io.sentry.protocol.profiling.ThreadMetadata;
+import io.sentry.protocol.profiling.SentrySample;
+import io.sentry.protocol.profiling.SentryThreadMetadata;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.time.Instant;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public final class JfrAsyncProfilerToSentryProfileConverter extends JfrConverter {
-  private final @NotNull SentryProfile sentryProfile = new SentryProfile();
+  private static final long NANOS_PER_SECOND = 1_000_000_000L;
 
-  public JfrAsyncProfilerToSentryProfileConverter(JfrReader jfr, Arguments args) {
+  private final @NotNull SentryProfile sentryProfile = new SentryProfile();
+  private final @NotNull SentryStackTraceFactory stackTraceFactory;
+
+  public JfrAsyncProfilerToSentryProfileConverter(
+      JfrReader jfr, Arguments args, @NotNull SentryStackTraceFactory stackTraceFactory) {
     super(jfr, args);
+    this.stackTraceFactory = stackTraceFactory;
   }
 
   @Override
   protected void convertChunk() {
-    final List<Event> events = new ArrayList<Event>();
-    final List<List<Integer>> stacks = new ArrayList<>();
-
-    collector.forEach(
-        new AggregatedEventVisitor() {
-
-          @Override
-          public void visit(Event event, long value) {
-            events.add(event);
-            System.out.println(event);
-            StackTrace stackTrace = jfr.stackTraces.get(event.stackTraceId);
-
-            if (stackTrace != null) {
-              Arguments args = JfrAsyncProfilerToSentryProfileConverter.this.args;
-              long[] methods = stackTrace.methods;
-              byte[] types = stackTrace.types;
-              int[] locations = stackTrace.locations;
-
-              if (args.threads) {
-                if (sentryProfile.threadMetadata == null) {
-                  sentryProfile.threadMetadata = new HashMap<>();
-                }
-
-                long threadIdToUse =
-                    jfr.threads.get(event.tid) != null ? jfr.javaThreads.get(event.tid) : event.tid;
-
-                if (sentryProfile.threadMetadata != null) {
-                  final String threadName = getPlainThreadName(event.tid);
-                  sentryProfile.threadMetadata.computeIfAbsent(
-                      String.valueOf(threadIdToUse),
-                      k -> {
-                        ThreadMetadata metadata = new ThreadMetadata();
-                        metadata.name = threadName;
-                        metadata.priority = 0;
-                        return metadata;
-                      });
-                }
-              }
-
-              if (sentryProfile.samples == null) {
-                sentryProfile.samples = new ArrayList<>();
-              }
-
-              if (sentryProfile.frames == null) {
-                sentryProfile.frames = new ArrayList<>();
-              }
-
-              List<Integer> stack = new ArrayList<>();
-              int currentStack = stacks.size();
-              int currentFrame = sentryProfile.frames != null ? sentryProfile.frames.size() : 0;
-              for (int i = 0; i < methods.length; i++) {
-                //          for (int i = methods.length; --i >= 0; ) {
-                SentryStackFrame frame = new SentryStackFrame();
-                StackTraceElement element =
-                    getStackTraceElement(methods[i], types[i], locations[i]);
-                if (element.isNativeMethod()) {
-                  continue;
-                }
-
-                final String classNameWithLambdas = element.getClassName().replace("/", ".");
-                frame.setFunction(element.getMethodName());
-
-                int firstDollar = classNameWithLambdas.indexOf('$');
-                String sanitizedClassName = classNameWithLambdas;
-                if (firstDollar != -1) {
-                  sanitizedClassName = classNameWithLambdas.substring(0, firstDollar);
-                }
-
-                int lastDot = sanitizedClassName.lastIndexOf('.');
-                if (lastDot > 0) {
-                  frame.setModule(sanitizedClassName);
-                } else if (!classNameWithLambdas.startsWith("[")) {
-                  frame.setModule("");
-                }
-
-                if (element.isNativeMethod() || classNameWithLambdas.isEmpty()) {
-                  frame.setInApp(false);
-                } else {
-                  frame.setInApp(
-                      new SentryStackTraceFactory(Sentry.getGlobalScope().getOptions())
-                          .isInApp(sanitizedClassName));
-                }
-
-                frame.setLineno((element.getLineNumber() != 0) ? element.getLineNumber() : null);
-                frame.setFilename(classNameWithLambdas);
-
-                if (sentryProfile.frames != null) {
-                  sentryProfile.frames.add(frame);
-                }
-                stack.add(currentFrame);
-                currentFrame++;
-              }
-
-              long divisor = jfr.ticksPerSec / 1000_000_000L;
-              long myTimeStamp =
-                  jfr.chunkStartNanos + ((event.time - jfr.chunkStartTicks) / divisor);
-
-              JfrSample sample = new JfrSample();
-              Instant instant = Instant.ofEpochSecond(0, myTimeStamp);
-              double timestampDouble =
-                  instant.getEpochSecond() + instant.getNano() / 1_000_000_000.0;
-
-              sample.timestamp = timestampDouble;
-              sample.threadId =
-                  String.valueOf(
-                      jfr.threads.get(event.tid) != null
-                          ? jfr.javaThreads.get(event.tid)
-                          : event.tid);
-              sample.stackId = currentStack;
-              if (sentryProfile.samples != null) {
-                sentryProfile.samples.add(sample);
-              }
-
-              stacks.add(stack);
-            }
-          }
-        });
-    sentryProfile.stacks = stacks;
-    System.out.println("Samples: " + events.size());
+    collector.forEach(new ProfileEventVisitor(sentryProfile, stackTraceFactory, jfr, args));
   }
 
   public static @NotNull SentryProfile convertFromFileStatic(@NotNull Path jfrFilePath)
@@ -160,10 +47,165 @@ public final class JfrAsyncProfilerToSentryProfileConverter extends JfrConverter
       args.lines = true;
       args.dot = true;
 
-      converter = new JfrAsyncProfilerToSentryProfileConverter(jfrReader, args);
+      SentryStackTraceFactory stackTraceFactory =
+          new SentryStackTraceFactory(Sentry.getGlobalScope().getOptions());
+      converter = new JfrAsyncProfilerToSentryProfileConverter(jfrReader, args, stackTraceFactory);
       converter.convert();
     }
 
     return converter.sentryProfile;
+  }
+
+  private class ProfileEventVisitor extends AggregatedEventVisitor {
+    private final @NotNull SentryProfile sentryProfile;
+    private final @NotNull SentryStackTraceFactory stackTraceFactory;
+    private final @NotNull JfrReader jfr;
+    private final @NotNull Arguments args;
+
+    public ProfileEventVisitor(
+        @NotNull SentryProfile sentryProfile,
+        @NotNull SentryStackTraceFactory stackTraceFactory,
+        @NotNull JfrReader jfr,
+        @NotNull Arguments args) {
+      this.sentryProfile = sentryProfile;
+      this.stackTraceFactory = stackTraceFactory;
+      this.jfr = jfr;
+      this.args = args;
+    }
+
+    @Override
+    public void visit(Event event, long value) {
+      StackTrace stackTrace = jfr.stackTraces.get(event.stackTraceId);
+      long threadId = resolveThreadId(event.tid);
+
+      if (stackTrace != null) {
+        if (args.threads) {
+          processThreadMetadata(event, threadId);
+        }
+
+        createSample(event, threadId);
+
+        buildStackTraceAndFrames(stackTrace);
+      }
+    }
+
+    private void processThreadMetadata(Event event, long threadId) {
+      final String threadName = getPlainThreadName(event.tid);
+      sentryProfile
+          .getThreadMetadata()
+          .computeIfAbsent(
+              String.valueOf(threadId),
+              k -> {
+                SentryThreadMetadata metadata = new SentryThreadMetadata();
+                metadata.setName(threadName);
+                metadata.setPriority(0); // Default priority
+                return metadata;
+              });
+    }
+
+    private void buildStackTraceAndFrames(StackTrace stackTrace) {
+      List<Integer> stack = new ArrayList<>();
+      int currentFrame = sentryProfile.getFrames().size();
+
+      long[] methods = stackTrace.methods;
+      byte[] types = stackTrace.types;
+      int[] locations = stackTrace.locations;
+
+      for (int i = 0; i < methods.length; i++) {
+        StackTraceElement element = getStackTraceElement(methods[i], types[i], locations[i]);
+        if (element.isNativeMethod()) {
+          continue;
+        }
+
+        SentryStackFrame frame = createStackFrame(element);
+        sentryProfile.getFrames().add(frame);
+
+        stack.add(currentFrame);
+        currentFrame++;
+      }
+
+      sentryProfile.getStacks().add(stack);
+    }
+
+    private SentryStackFrame createStackFrame(StackTraceElement element) {
+      SentryStackFrame frame = new SentryStackFrame();
+      final String classNameWithLambdas = element.getClassName().replace("/", ".");
+      frame.setFunction(element.getMethodName());
+
+      String sanitizedClassName = extractSanitizedClassName(classNameWithLambdas);
+      frame.setModule(extractModuleName(sanitizedClassName, classNameWithLambdas));
+
+      if (shouldMarkAsSystemFrame(element, classNameWithLambdas)) {
+        frame.setInApp(false);
+      } else {
+        frame.setInApp(stackTraceFactory.isInApp(sanitizedClassName));
+      }
+
+      frame.setLineno(extractLineNumber(element));
+      frame.setFilename(classNameWithLambdas);
+
+      return frame;
+    }
+
+    // Remove lambda suffix from class name
+    private String extractSanitizedClassName(String classNameWithLambdas) {
+      int firstDollar = classNameWithLambdas.indexOf('$');
+      if (firstDollar != -1) {
+        return classNameWithLambdas.substring(0, firstDollar);
+      }
+      return classNameWithLambdas;
+    }
+
+    // TODO: test difference between null and empty string for module
+    private @Nullable String extractModuleName(
+        String sanitizedClassName, String classNameWithLambdas) {
+      if (hasPackageStructure(sanitizedClassName)) {
+        return sanitizedClassName;
+      } else if (isRegularClassWithoutPackage(classNameWithLambdas)) {
+        return "";
+      } else {
+        return null;
+      }
+    }
+
+    private boolean hasPackageStructure(String className) {
+      return className.lastIndexOf('.') > 0;
+    }
+
+    private boolean isRegularClassWithoutPackage(String className) {
+      return !className.startsWith("[");
+    }
+
+    private void createSample(Event event, long threadId) {
+      int stackId = sentryProfile.getStacks().size();
+      SentrySample sample = new SentrySample();
+
+      // Calculate timestamp from JFR event time
+      long nsFromStart =
+          (event.time - jfr.chunkStartTicks)
+              * JfrAsyncProfilerToSentryProfileConverter.NANOS_PER_SECOND
+              / jfr.ticksPerSec;
+      long timeNs = jfr.chunkStartNanos + nsFromStart;
+      sample.setTimestamp(DateUtils.nanosToSeconds(timeNs));
+
+      sample.setThreadId(String.valueOf(threadId));
+      sample.setStackId(stackId);
+
+      sentryProfile.getSamples().add(sample);
+    }
+
+    private boolean shouldMarkAsSystemFrame(StackTraceElement element, String className) {
+      return element.isNativeMethod() || className.isEmpty();
+    }
+
+    private @Nullable Integer extractLineNumber(StackTraceElement element) {
+      return element.getLineNumber() != 0 ? element.getLineNumber() : null;
+    }
+
+    private long resolveThreadId(int eventThreadId) {
+      return jfr.threads.get(eventThreadId) != null
+          ? jfr.javaThreads.get(eventThreadId)
+          : eventThreadId;
+    }
   }
 }
