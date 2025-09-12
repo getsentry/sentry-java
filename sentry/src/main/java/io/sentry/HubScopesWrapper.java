@@ -353,7 +353,6 @@ public final class HubScopesWrapper implements IHub {
     return scopes.getBaggage();
   }
 
-  @ApiStatus.Experimental
   @Override
   public @NotNull SentryId captureCheckIn(@NotNull CheckIn checkIn) {
     return scopes.captureCheckIn(checkIn);

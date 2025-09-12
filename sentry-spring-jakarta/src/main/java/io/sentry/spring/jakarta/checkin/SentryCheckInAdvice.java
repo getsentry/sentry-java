@@ -28,7 +28,6 @@ import org.springframework.util.StringValueResolver;
  * check-in.
  */
 @ApiStatus.Internal
-@ApiStatus.Experimental
 @Open
 public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueResolverAware {
   private final @NotNull IScopes scopes;

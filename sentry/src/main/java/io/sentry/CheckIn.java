@@ -9,7 +9,6 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-@ApiStatus.Experimental
 /** A check-in for a monitor (CRON). */
 public final class CheckIn implements JsonUnknown, JsonSerializable {
 

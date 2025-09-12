@@ -727,7 +727,6 @@ public interface IScopes {
   @Nullable
   BaggageHeader getBaggage();
 
-  @ApiStatus.Experimental
   @NotNull
   SentryId captureCheckIn(final @NotNull CheckIn checkIn);
 

@@ -1,11 +1,9 @@
 package io.sentry;
 
 import java.util.Locale;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /** Type of a monitor schedule */
-@ApiStatus.Experimental
 public enum MonitorScheduleType {
   CRONTAB,
   INTERVAL;
