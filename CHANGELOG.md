@@ -41,6 +41,10 @@
 - Add support for `vars` attribute in `SentryStackFrame` ([#4686](https://github.com/getsentry/sentry-java/pull/4686))
   - **Breaking change**: The type of the `vars` attribute has been changed from `Map<String, String>` to `Map<String, Object>`.
 
+### Fixes
+
+- Flush logs on crash ([#4684](https://github.com/getsentry/sentry-java/pull/4684))
+
 ## 8.20.0
 
 ### Fixes
