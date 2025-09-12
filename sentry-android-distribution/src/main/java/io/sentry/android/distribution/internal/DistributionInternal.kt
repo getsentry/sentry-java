@@ -3,7 +3,6 @@ package io.sentry.android.distribution.internal
 import android.content.Context
 import io.sentry.android.distribution.DistributionOptions
 import io.sentry.android.distribution.UpdateStatus
-import java.util.concurrent.CompletableFuture
 
 /** Internal implementation for build distribution functionality. */
 internal object DistributionInternal {
@@ -19,13 +18,11 @@ internal object DistributionInternal {
     return isInitialized
   }
 
-  fun checkForUpdate(context: Context): UpdateStatus {
+  fun checkForUpdateBlocking(context: Context): UpdateStatus {
     return UpdateStatus.Error("Implementation coming in future PR")
   }
 
-  fun checkForUpdateCompletableFuture(context: Context): CompletableFuture<UpdateStatus> {
-    val future = CompletableFuture<UpdateStatus>()
-    future.complete(UpdateStatus.Error("Implementation coming in future PR"))
-    return future
+  fun checkForUpdateAsync(context: Context, onResult: (UpdateStatus) -> Unit) {
+    throw NotImplementedError()
   }
 }

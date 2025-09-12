@@ -321,7 +321,8 @@ final class AndroidOptionsInitializer {
       final @NotNull ActivityFramesTracker activityFramesTracker,
       final boolean isFragmentAvailable,
       final boolean isTimberAvailable,
-      final boolean isReplayAvailable) {
+      final boolean isReplayAvailable,
+      final boolean isDistributionAvailable) {
 
     // Integration MUST NOT cache option values in ctor, as they will be configured later by the
     // user
@@ -390,6 +391,17 @@ final class AndroidOptionsInitializer {
       replay.setBreadcrumbConverter(new DefaultReplayBreadcrumbConverter());
       options.addIntegration(replay);
       options.setReplayController(replay);
+    }
+    if (isDistributionAvailable) {
+      final Class<?> distributionIntegrationClass = loadClass.loadClass(
+          "io.sentry.android.distribution.internal.DistributionIntegration", options.getLogger());
+      if (distributionIntegrationClass != null) {
+        try {
+          options.addIntegration((io.sentry.Integration) distributionIntegrationClass.getDeclaredConstructor().newInstance());
+        } catch (Exception e) {
+          options.getLogger().log(SentryLevel.ERROR, "Failed to instantiate DistributionIntegration", e);
+        }
+      }
     }
     options
         .getFeedbackOptions()

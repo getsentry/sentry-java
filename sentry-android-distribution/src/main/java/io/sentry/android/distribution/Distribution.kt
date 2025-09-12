@@ -53,7 +53,7 @@ public object Distribution {
    * @return UpdateStatus indicating if an update is available, up to date, or error
    */
   public fun checkForUpdateBlocking(context: Context): UpdateStatus {
-    return DistributionInternal.checkForUpdate(context)
+    return DistributionInternal.checkForUpdateBlocking(context)
   }
 
   /**

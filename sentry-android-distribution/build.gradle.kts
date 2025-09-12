@@ -25,5 +25,6 @@ androidComponents.beforeVariants {
 
 dependencies {
   implementation(projects.sentry)
+  implementation(projects.sentryAndroidCore)
   implementation(kotlin(Config.kotlinStdLib, Config.kotlinStdLibVersionAndroid))
 }
