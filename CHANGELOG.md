@@ -18,6 +18,7 @@
 ### Improvements
 
 - Remove internal API status from get/setDistinctId ([#4708](https://github.com/getsentry/sentry-java/pull/4708))
+- Remove ApiStatus.Experimental annotation from check-in API ([#4721](https://github.com/getsentry/sentry-java/pull/4721))
 
 ## 8.21.1
 
