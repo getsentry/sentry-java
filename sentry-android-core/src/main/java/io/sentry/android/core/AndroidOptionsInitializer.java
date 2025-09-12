@@ -393,13 +393,19 @@ final class AndroidOptionsInitializer {
       options.setReplayController(replay);
     }
     if (isDistributionAvailable) {
-      final Class<?> distributionIntegrationClass = loadClass.loadClass(
-          "io.sentry.android.distribution.internal.DistributionIntegration", options.getLogger());
+      final Class<?> distributionIntegrationClass =
+          loadClass.loadClass(
+              "io.sentry.android.distribution.internal.DistributionIntegration",
+              options.getLogger());
       if (distributionIntegrationClass != null) {
         try {
-          options.addIntegration((io.sentry.Integration) distributionIntegrationClass.getDeclaredConstructor().newInstance());
+          options.addIntegration(
+              (io.sentry.Integration)
+                  distributionIntegrationClass.getDeclaredConstructor().newInstance());
         } catch (Exception e) {
-          options.getLogger().log(SentryLevel.ERROR, "Failed to instantiate DistributionIntegration", e);
+          options
+              .getLogger()
+              .log(SentryLevel.ERROR, "Failed to instantiate DistributionIntegration", e);
         }
       }
     }

@@ -1302,14 +1302,14 @@ public final class Sentry {
   }
 
   /**
-   * Returns the distribution API. This feature is only available when the sentry-android-distribution
-   * module is included in the build.
+   * Returns the distribution API. This feature is only available when the
+   * sentry-android-distribution module is included in the build.
    *
    * @return The distribution API object that provides update checking functionality
    */
   public static @Nullable Object distribution() {
     try {
-      // Try to get the Distribution object via reflection 
+      // Try to get the Distribution object via reflection
       Class<?> distributionClass = Class.forName("io.sentry.android.distribution.Distribution");
       return distributionClass.getField("INSTANCE").get(null);
     } catch (Exception e) {
