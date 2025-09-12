@@ -97,6 +97,7 @@ feign-gson = { module = "io.github.openfeign:feign-gson", version.ref = "feign" 
 graphql-java17 = { module = "com.graphql-java:graphql-java", version = "17.3" }
 graphql-java22 = { module = "com.graphql-java:graphql-java", version = "22.1" }
 graphql-java24 = { module = "com.graphql-java:graphql-java", version = "24.0" }
+jackson-bom = { module = "com.fasterxml.jackson:jackson-bom", version.ref = "jackson" }
 jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
 jackson-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin", version.ref = "jackson" }
 jetbrains-annotations = { module = "org.jetbrains:annotations", version = "23.0.0" }
@@ -176,6 +177,8 @@ springboot4-starter-actuator = { module = "org.springframework.boot:spring-boot-
 timber = { module = "com.jakewharton.timber:timber", version = "4.7.1" }
 
 # tomcat libraries
+tomcat-catalina = { module = "org.apache.tomcat:tomcat-catalina", version = "9.0.108" }
+tomcat-embed-jasper = { module = "org.apache.tomcat.embed:tomcat-embed-jasper", version = "9.0.108" }
 tomcat-catalina-jakarta = { module = "org.apache.tomcat:tomcat-catalina", version = "11.0.10" }
 tomcat-embed-jasper-jakarta = { module = "org.apache.tomcat.embed:tomcat-embed-jasper", version = "11.0.10" }
 
