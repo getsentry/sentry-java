@@ -15,6 +15,10 @@
   }
   ```
 
+### Fixes
+
+- Avoid StrictMode warnings ([#4724](https://github.com/getsentry/sentry-java/pull/4724))
+
 ### Improvements
 
 - Remove internal API status from get/setDistinctId ([#4708](https://github.com/getsentry/sentry-java/pull/4708))
