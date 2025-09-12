@@ -1,7 +1,6 @@
 package io.sentry;
 
 import java.util.Locale;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /** Status of a CheckIn */

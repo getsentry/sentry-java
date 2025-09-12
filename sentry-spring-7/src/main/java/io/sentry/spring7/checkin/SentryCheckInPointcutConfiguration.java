@@ -1,7 +1,6 @@
 package io.sentry.spring7.checkin;
 
 import com.jakewharton.nopen.annotation.Open;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.aop.Pointcut;
 import org.springframework.aop.support.ComposablePointcut;

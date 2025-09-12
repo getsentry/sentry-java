@@ -2,7 +2,6 @@ package io.sentry.spring.jakarta.checkin;
 
 import com.jakewharton.nopen.annotation.Open;
 import org.aopalliance.aop.Advice;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.aop.Advisor;
 import org.springframework.aop.Pointcut;
