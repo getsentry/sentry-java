@@ -255,6 +255,74 @@ class BufferCaptureStrategyTest {
   }
 
   @Test
+  fun `createCurrentSegment uses first frame timestamp when available`() {
+    val now = System.currentTimeMillis()
+    val strategy = fixture.getSut(dateProvider = { now })
+    strategy.start()
+    strategy.onConfigurationChanged(fixture.recorderConfig)
+
+    // Stub first frame timestamp and capture the 'from' argument to createVideoOf
+    whenever(fixture.replayCache.firstFrameTimestamp()).thenReturn(1234L)
+
+    var capturedFrom: Long = -1
+    whenever(
+        fixture.replayCache.createVideoOf(
+          anyLong(),
+          anyLong(),
+          anyInt(),
+          anyInt(),
+          anyInt(),
+          anyInt(),
+          anyInt(),
+          any(),
+        )
+      )
+      .thenAnswer { invocation ->
+        capturedFrom = invocation.arguments[1] as Long
+        GeneratedVideo(File("0.mp4"), 5, VIDEO_DURATION)
+      }
+
+    strategy.pause()
+
+    assertEquals(1234L, capturedFrom)
+    assertEquals(1, strategy.currentSegment)
+  }
+
+  @Test
+  fun `createCurrentSegment falls back to buffer start when no frames`() {
+    val now = System.currentTimeMillis()
+    val strategy = fixture.getSut(dateProvider = { now })
+    strategy.start()
+    strategy.onConfigurationChanged(fixture.recorderConfig)
+
+    // No frames available
+    whenever(fixture.replayCache.firstFrameTimestamp()).thenReturn(null)
+
+    var capturedFrom: Long = -1
+    whenever(
+        fixture.replayCache.createVideoOf(
+          anyLong(),
+          anyLong(),
+          anyInt(),
+          anyInt(),
+          anyInt(),
+          anyInt(),
+          anyInt(),
+          any(),
+        )
+      )
+      .thenAnswer { invocation ->
+        capturedFrom = invocation.arguments[1] as Long
+        GeneratedVideo(File("0.mp4"), 5, VIDEO_DURATION)
+      }
+
+    strategy.pause()
+
+    assertEquals(now - fixture.options.sessionReplay.errorReplayDuration, capturedFrom)
+    assertEquals(1, strategy.currentSegment)
+  }
+
+  @Test
   fun `captureReplay does not replayId to scope when not sampled`() {
     val strategy = fixture.getSut(onErrorSampleRate = 0.0)
     strategy.start()
