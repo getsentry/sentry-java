@@ -229,7 +229,7 @@ public final class SentryTracer implements ITransaction {
             }
           });
 
-      // any un-finished childs will remain unfinished
+      // any un-finished children will remain unfinished
       // as relay takes care of setting the end-timestamp + deadline_exceeded
       // see
       // https://github.com/getsentry/relay/blob/40697d0a1c54e5e7ad8d183fc7f9543b94fe3839/relay-general/src/store/transactions/processor.rs#L374-L378
@@ -244,7 +244,8 @@ public final class SentryTracer implements ITransaction {
                 .onTransactionFinish(this, performanceCollectionData.get(), scopes.getOptions());
       }
       if (scopes.getOptions().isContinuousProfilingEnabled()
-          && scopes.getOptions().getProfileLifecycle() == ProfileLifecycle.TRACE) {
+          && scopes.getOptions().getProfileLifecycle() == ProfileLifecycle.TRACE
+          && !transactionOptions.isSkipProfiling()) {
         scopes.getOptions().getContinuousProfiler().stopProfiler(ProfileLifecycle.TRACE);
       }
       if (performanceCollectionData.get() != null) {

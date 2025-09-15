@@ -55,6 +55,12 @@ public final class TransactionOptions extends SpanOptions {
   @ApiStatus.Internal private @Nullable ISpanFactory spanFactory = null;
 
   /**
+   * When set to `true` the transaction will not be profiled even if continuous profiling is enabled
+   * and ProfileLifecycle is set to TRACE in {@link SentryOptions}.
+   */
+  private boolean skipProfiling = false;
+
+  /**
    * Gets the customSamplingContext
    *
    * @return customSamplingContext - the customSamplingContext
@@ -185,5 +191,13 @@ public final class TransactionOptions extends SpanOptions {
   @ApiStatus.Internal
   public void setSpanFactory(final @NotNull ISpanFactory spanFactory) {
     this.spanFactory = spanFactory;
+  }
+
+  public boolean isSkipProfiling() {
+    return skipProfiling;
+  }
+
+  public void setSkipProfiling(boolean skipProfiling) {
+    this.skipProfiling = skipProfiling;
   }
 }

@@ -4212,12 +4212,14 @@ public final class io/sentry/TransactionOptions : io/sentry/SpanOptions {
 	public fun getTransactionFinishedCallback ()Lio/sentry/TransactionFinishedCallback;
 	public fun isAppStartTransaction ()Z
 	public fun isBindToScope ()Z
+	public fun isSkipProfiling ()Z
 	public fun isWaitForChildren ()Z
 	public fun setAppStartTransaction (Z)V
 	public fun setBindToScope (Z)V
 	public fun setCustomSamplingContext (Lio/sentry/CustomSamplingContext;)V
 	public fun setDeadlineTimeout (Ljava/lang/Long;)V
 	public fun setIdleTimeout (Ljava/lang/Long;)V
+	public fun setSkipProfiling (Z)V
 	public fun setSpanFactory (Lio/sentry/ISpanFactory;)V
 	public fun setTransactionFinishedCallback (Lio/sentry/TransactionFinishedCallback;)V
 	public fun setWaitForChildren (Z)V
