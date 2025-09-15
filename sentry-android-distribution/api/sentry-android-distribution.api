@@ -1,12 +1,10 @@
-public final class io/sentry/android/distribution/Distribution : io/sentry/Integration {
-	public static final field INSTANCE Lio/sentry/android/distribution/Distribution;
-	public final fun checkForUpdate (Landroid/content/Context;Lkotlin/jvm/functions/Function1;)V
-	public final fun checkForUpdateBlocking (Landroid/content/Context;)Lio/sentry/android/distribution/UpdateStatus;
-	public final fun downloadUpdate (Landroid/content/Context;Lio/sentry/android/distribution/UpdateInfo;)V
-	public final fun downloadUpdate (Landroid/content/Context;Ljava/lang/Object;)V
-	public final fun init (Landroid/content/Context;)V
-	public final fun init (Landroid/content/Context;Lkotlin/jvm/functions/Function1;)V
-	public final fun isEnabled ()Z
+public final class io/sentry/android/distribution/DistributionIntegration : io/sentry/IDistributionApi, io/sentry/Integration {
+	public fun <init> (Landroid/content/Context;)V
+	public fun checkForUpdate (Lio/sentry/IDistributionApi$UpdateCallback;)V
+	public fun checkForUpdateBlocking ()Lio/sentry/UpdateStatus;
+	public fun downloadUpdate (Lio/sentry/UpdateInfo;)V
+	public final fun init ()V
+	public final fun init (Lkotlin/jvm/functions/Function1;)V
 	public fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
 }
 
@@ -22,32 +20,5 @@ public final class io/sentry/android/distribution/DistributionOptions {
 	public final fun setOrgSlug (Ljava/lang/String;)V
 	public final fun setProjectSlug (Ljava/lang/String;)V
 	public final fun setSentryBaseUrl (Ljava/lang/String;)V
-}
-
-public final class io/sentry/android/distribution/UpdateInfo {
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
-	public final fun getAppName ()Ljava/lang/String;
-	public final fun getBuildNumber ()I
-	public final fun getBuildVersion ()Ljava/lang/String;
-	public final fun getCreatedDate ()Ljava/lang/String;
-	public final fun getDownloadUrl ()Ljava/lang/String;
-	public final fun getId ()Ljava/lang/String;
-}
-
-public abstract class io/sentry/android/distribution/UpdateStatus {
-}
-
-public final class io/sentry/android/distribution/UpdateStatus$Error : io/sentry/android/distribution/UpdateStatus {
-	public fun <init> (Ljava/lang/String;)V
-	public final fun getMessage ()Ljava/lang/String;
-}
-
-public final class io/sentry/android/distribution/UpdateStatus$NewRelease : io/sentry/android/distribution/UpdateStatus {
-	public fun <init> (Lio/sentry/android/distribution/UpdateInfo;)V
-	public final fun getInfo ()Lio/sentry/android/distribution/UpdateInfo;
-}
-
-public final class io/sentry/android/distribution/UpdateStatus$UpToDate : io/sentry/android/distribution/UpdateStatus {
-	public static final field INSTANCE Lio/sentry/android/distribution/UpdateStatus$UpToDate;
 }
 
