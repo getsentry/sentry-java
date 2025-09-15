@@ -21,6 +21,7 @@ includeBuild("build-logic")
 include(
     "sentry",
     "sentry-kotlin-extensions",
+    "sentry-android-distribution",
     "sentry-android-core",
     "sentry-android-ndk",
     "sentry-android",

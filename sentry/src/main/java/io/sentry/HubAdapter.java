@@ -384,7 +384,6 @@ public final class HubAdapter implements IHub {
     return Sentry.getCurrentScopes().getRateLimiter();
   }
 
-  @ApiStatus.Experimental
   @Override
   public @NotNull ILoggerApi logger() {
     return Sentry.getCurrentScopes().logger();

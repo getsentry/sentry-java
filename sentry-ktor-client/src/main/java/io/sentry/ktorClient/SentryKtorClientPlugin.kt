@@ -137,6 +137,7 @@ public val SentryKtorClientPlugin: ClientPlugin<SentryKtorClientPluginConfig> =
               request.headers.remove(BaggageHeader.BAGGAGE_HEADER)
               request.headers[it.name] = it.value
             }
+            tracingHeaders.w3cTraceparentHeader?.let { request.headers[it.name] = it.value }
           }
       }
     }
