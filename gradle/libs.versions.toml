@@ -97,6 +97,7 @@ feign-gson = { module = "io.github.openfeign:feign-gson", version.ref = "feign" 
 graphql-java17 = { module = "com.graphql-java:graphql-java", version = "17.3" }
 graphql-java22 = { module = "com.graphql-java:graphql-java", version = "22.1" }
 graphql-java24 = { module = "com.graphql-java:graphql-java", version = "24.0" }
+jackson-bom = { module = "com.fasterxml.jackson:jackson-bom", version.ref = "jackson" }
 jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
 jackson-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin", version.ref = "jackson" }
 jetbrains-annotations = { module = "org.jetbrains:annotations", version = "23.0.0" }
@@ -129,7 +130,7 @@ quartz = { module = "org.quartz-scheduler:quartz", version = "2.3.0" }
 reactor-core = { module = "io.projectreactor:reactor-core", version = "3.5.3" }
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 retrofit-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "retrofit" }
-sentry-native-ndk = { module = "io.sentry:sentry-native-ndk", version = "0.10.0" }
+sentry-native-ndk = { module = "io.sentry:sentry-native-ndk", version = "0.10.1" }
 servlet-api = { module = "javax.servlet:javax.servlet-api", version = "3.1.0" }
 servlet-jakarta-api = { module = "jakarta.servlet:jakarta.servlet-api", version = "6.1.0" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
@@ -176,6 +177,8 @@ springboot4-starter-actuator = { module = "org.springframework.boot:spring-boot-
 timber = { module = "com.jakewharton.timber:timber", version = "4.7.1" }
 
 # tomcat libraries
+tomcat-catalina = { module = "org.apache.tomcat:tomcat-catalina", version = "9.0.108" }
+tomcat-embed-jasper = { module = "org.apache.tomcat.embed:tomcat-embed-jasper", version = "9.0.108" }
 tomcat-catalina-jakarta = { module = "org.apache.tomcat:tomcat-catalina", version = "11.0.10" }
 tomcat-embed-jasper-jakarta = { module = "org.apache.tomcat.embed:tomcat-embed-jasper", version = "11.0.10" }
 

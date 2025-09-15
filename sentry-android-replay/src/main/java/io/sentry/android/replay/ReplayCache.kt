@@ -140,7 +140,7 @@ public class ReplayCache(private val options: SentryOptions, private val replayI
     }
     // Work on a snapshot of frames to avoid races with writers
     val framesSnapshot =
-      framesLock.acquire().use { if (frames.isEmpty()) emptyList() else frames.toList() }
+      framesLock.acquire().use { if (frames.isEmpty()) mutableListOf() else frames.toMutableList() }
     if (framesSnapshot.isEmpty()) {
       options.logger.log(DEBUG, "No captured frames, skipping generating a video segment")
       return null
@@ -188,6 +188,7 @@ public class ReplayCache(private val options: SentryOptions, private val replayI
         // likelihood of it being able to be encoded later is low
         deleteFile(lastFrame.screenshot)
         framesLock.acquire().use { frames.remove(lastFrame) }
+        framesSnapshot.remove(lastFrame)
         lastFrame = null
       }
     }
