@@ -3,7 +3,6 @@ package io.sentry.android.distribution.internal
 import android.content.Context
 import io.sentry.android.distribution.DistributionOptions
 import io.sentry.android.distribution.UpdateStatus
-import java.util.concurrent.CompletableFuture
 
 /** Internal implementation for build distribution functionality. */
 internal object DistributionInternal {
