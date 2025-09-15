@@ -21,7 +21,8 @@
 
 ### Fixes
 
-- Fix `NoSuchElementException` in `BufferCaptureStrategy` ([#4717](https://github.com/getsentry/sentry-java/pull/4717))
+- Session Replay: Fix `NoSuchElementException` in `BufferCaptureStrategy` ([#4717](https://github.com/getsentry/sentry-java/pull/4717))
+- Session Replay: Fix continue recording in Session mode after Buffer is triggered ([#4719](https://github.com/getsentry/sentry-java/pull/4719))
 
 ### Dependencies
 
