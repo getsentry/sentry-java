@@ -19,6 +19,12 @@
 
 - Remove internal API status from get/setDistinctId ([#4708](https://github.com/getsentry/sentry-java/pull/4708))
 
+### Dependencies
+
+- Bump Native SDK from v0.10.0 to v0.10.1 ([#4695](https://github.com/getsentry/sentry-java/pull/4695))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0101)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.10.0...0.10.1)
+
 ## 8.21.1
 
 ### Fixes
