@@ -10,11 +10,11 @@ package io.sentry.android.distribution
  * @param appName Application name
  * @param createdDate ISO timestamp when this build was created
  */
-public data class UpdateInfo(
-  val id: String,
-  val buildVersion: String,
-  val buildNumber: Int,
-  val downloadUrl: String,
-  val appName: String,
-  val createdDate: String,
+public class UpdateInfo(
+  public val id: String,
+  public val buildVersion: String,
+  public val buildNumber: Int,
+  public val downloadUrl: String,
+  public val appName: String,
+  public val createdDate: String,
 )

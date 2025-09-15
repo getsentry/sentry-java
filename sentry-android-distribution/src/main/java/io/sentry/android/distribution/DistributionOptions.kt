@@ -6,7 +6,7 @@ public class DistributionOptions {
   public var orgAuthToken: String = ""
 
   /** Sentry organization slug */
-  public var organizationSlug: String = ""
+  public var orgSlug: String = ""
 
   /** Sentry project slug */
   public var projectSlug: String = ""

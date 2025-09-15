@@ -6,8 +6,8 @@ public sealed class UpdateStatus {
   public object UpToDate : UpdateStatus()
 
   /** A new release is available for download. */
-  public data class NewRelease(val info: UpdateInfo) : UpdateStatus()
+  public class NewRelease(public val info: UpdateInfo) : UpdateStatus()
 
   /** An error occurred during the update check. */
-  public data class Error(val message: String) : UpdateStatus()
+  public class Error(public val message: String) : UpdateStatus()
 }

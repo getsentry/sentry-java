@@ -1,10 +1,11 @@
 package io.sentry.android.distribution
 
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import io.sentry.IScopes
 import io.sentry.Integration
 import io.sentry.SentryOptions
-import io.sentry.android.distribution.internal.DistributionInternal
 
 /**
  * The public Android SDK for Sentry Build Distribution.
@@ -12,9 +13,11 @@ import io.sentry.android.distribution.internal.DistributionInternal
  * Provides functionality to check for app updates and download new versions from Sentry's preprod
  * artifacts system.
  */
-public class Distribution(context: Context) : Integration {
-  private var scopes: IScopes? = null
-  private var sentryOptions: SentryOptions? = null
+public class DistributionIntegration(context: Context) : Integration {
+
+  private lateinit var scopes: IScopes
+  private lateinit var sentryOptions: SentryOptions
+  private val context: Context = context.applicationContext
 
   /**
    * Registers the Distribution integration with Sentry.
@@ -38,8 +41,8 @@ public class Distribution(context: Context) : Integration {
    *
    * @param context Android context
    */
-  public fun init(context: Context) {
-    init(context) {}
+  public fun init() {
+    init {}
   }
 
   /**
@@ -49,19 +52,9 @@ public class Distribution(context: Context) : Integration {
    * @param context Android context
    * @param configuration Configuration handler for build distribution options
    */
-  public fun init(context: Context, configuration: (DistributionOptions) -> Unit) {
+  public fun init(configuration: (DistributionOptions) -> Unit) {
     val options = DistributionOptions()
     configuration(options)
-    DistributionInternal(context, options)
-  }
-
-  /**
-   * Check if build distribution is enabled and properly configured.
-   *
-   * @return true if build distribution is enabled
-   */
-  public fun isEnabled(): Boolean {
-    return DistributionInternal.isEnabled()
   }
 
   /**
@@ -72,8 +65,8 @@ public class Distribution(context: Context) : Integration {
    * @param context Android context
    * @return UpdateStatus indicating if an update is available, up to date, or error
    */
-  public fun checkForUpdateBlocking(context: Context): UpdateStatus {
-    return DistributionInternal.checkForUpdateBlocking(context)
+  public fun checkForUpdateBlocking(): UpdateStatus {
+    throw NotImplementedError()
   }
 
   /**
@@ -82,21 +75,10 @@ public class Distribution(context: Context) : Integration {
    * @param context Android context
    * @param onResult Lambda that will be called with the UpdateStatus result
    */
-  public fun checkForUpdate(context: Context, onResult: (UpdateStatus) -> Unit) {
-    DistributionInternal.checkForUpdateAsync(context, onResult)
-  }
-
-  /**
-   * Download and install the provided update by opening the download URL in the default browser or
-   * appropriate application.
-   *
-   * @param context Android context
-   * @param updateInfo Information about the update to download
-   */
-  public fun downloadUpdate(context: Context, updateInfo: Any) {
-    if (updateInfo is UpdateInfo) {
-      DistributionInternal.downloadUpdate(context, updateInfo)
-    }
+  public fun checkForUpdate(onResult: (UpdateStatus) -> Unit) {
+    // TODO implement this in a async way
+    val result = checkForUpdateBlocking()
+    onResult(result)
   }
 
   /**
@@ -106,7 +88,15 @@ public class Distribution(context: Context) : Integration {
    * @param context Android context
    * @param info Information about the update to download
    */
-  public fun downloadUpdate(context: Context, info: UpdateInfo) {
-    DistributionInternal.downloadUpdate(context, info)
+  public fun downloadUpdate(info: UpdateInfo) {
+    val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(info.downloadUrl))
+    browserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+
+    try {
+      context.startActivity(browserIntent)
+    } catch (e: android.content.ActivityNotFoundException) {
+      // No application can handle the HTTP/HTTPS URL, typically no browser installed
+      // Silently fail as this is expected behavior in some environments
+    }
   }
 }
