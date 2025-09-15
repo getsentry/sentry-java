@@ -394,7 +394,9 @@ final class AndroidOptionsInitializer {
       options.setReplayController(replay);
     }
     if (isDistributionAvailable) {
-      options.addIntegration(new DistributionIntegration(context));
+      final DistributionIntegration distribution = new DistributionIntegration((context));
+      options.setDistributionController(distribution);
+      options.addIntegration(distribution);
     }
     options
         .getFeedbackOptions()

@@ -768,9 +768,13 @@ public abstract interface class io/sentry/IContinuousProfiler {
 }
 
 public abstract interface class io/sentry/IDistributionApi {
-	public abstract fun checkForUpdate (Ljava/lang/Object;)V
-	public abstract fun checkForUpdateBlocking ()Ljava/lang/Object;
-	public abstract fun downloadUpdate (Ljava/lang/Object;)V
+	public abstract fun checkForUpdate (Lio/sentry/IDistributionApi$UpdateCallback;)V
+	public abstract fun checkForUpdateBlocking ()Lio/sentry/UpdateStatus;
+	public abstract fun downloadUpdate (Lio/sentry/UpdateInfo;)V
+}
+
+public abstract interface class io/sentry/IDistributionApi$UpdateCallback {
+	public abstract fun onResult (Lio/sentry/UpdateStatus;)V
 }
 
 public abstract interface class io/sentry/IEnvelopeReader {
@@ -1476,9 +1480,9 @@ public final class io/sentry/NoOpContinuousProfiler : io/sentry/IContinuousProfi
 }
 
 public final class io/sentry/NoOpDistributionApi : io/sentry/IDistributionApi {
-	public fun checkForUpdate (Ljava/lang/Object;)V
-	public fun checkForUpdateBlocking ()Ljava/lang/Object;
-	public fun downloadUpdate (Ljava/lang/Object;)V
+	public fun checkForUpdate (Lio/sentry/IDistributionApi$UpdateCallback;)V
+	public fun checkForUpdateBlocking ()Lio/sentry/UpdateStatus;
+	public fun downloadUpdate (Lio/sentry/UpdateInfo;)V
 	public static fun getInstance ()Lio/sentry/NoOpDistributionApi;
 }
 
@@ -4308,6 +4312,34 @@ public class io/sentry/UncaughtExceptionHandlerIntegration$UncaughtExceptionHint
 	public fun <init> (JLio/sentry/ILogger;)V
 	public fun isFlushable (Lio/sentry/protocol/SentryId;)Z
 	public fun setFlushable (Lio/sentry/protocol/SentryId;)V
+}
+
+public final class io/sentry/UpdateInfo {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public fun getAppName ()Ljava/lang/String;
+	public fun getBuildNumber ()I
+	public fun getBuildVersion ()Ljava/lang/String;
+	public fun getCreatedDate ()Ljava/lang/String;
+	public fun getDownloadUrl ()Ljava/lang/String;
+	public fun getId ()Ljava/lang/String;
+}
+
+public abstract class io/sentry/UpdateStatus {
+	public fun <init> ()V
+}
+
+public final class io/sentry/UpdateStatus$NewRelease : io/sentry/UpdateStatus {
+	public fun <init> (Lio/sentry/UpdateInfo;)V
+	public fun getInfo ()Lio/sentry/UpdateInfo;
+}
+
+public final class io/sentry/UpdateStatus$UpToDate : io/sentry/UpdateStatus {
+	public static fun getInstance ()Lio/sentry/UpdateStatus$UpToDate;
+}
+
+public final class io/sentry/UpdateStatus$UpdateError : io/sentry/UpdateStatus {
+	public fun <init> (Ljava/lang/String;)V
+	public fun getMessage ()Ljava/lang/String;
 }
 
 public final class io/sentry/UserFeedback : io/sentry/JsonSerializable, io/sentry/JsonUnknown {

@@ -14,18 +14,17 @@ public final class NoOpDistributionApi implements IDistributionApi {
   }
 
   @Override
-  public @NotNull Object checkForUpdateBlocking() {
-    // Return a no-op result - could be null or an error status
-    return new Object(); // This will need to be properly typed when the actual types are available
+  public @NotNull UpdateStatus checkForUpdateBlocking() {
+    return UpdateStatus.UpToDate.getInstance();
   }
 
   @Override
-  public void checkForUpdate(@NotNull Object onResult) {
+  public void checkForUpdate(@NotNull UpdateCallback onResult) {
     // No-op implementation - do nothing
   }
 
   @Override
-  public void downloadUpdate(@NotNull Object info) {
+  public void downloadUpdate(@NotNull UpdateInfo info) {
     // No-op implementation - do nothing
   }
 }

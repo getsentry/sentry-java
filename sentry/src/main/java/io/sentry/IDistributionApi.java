@@ -18,14 +18,14 @@ public interface IDistributionApi {
    * @return UpdateStatus indicating if an update is available, up to date, or error
    */
   @NotNull
-  Object checkForUpdateBlocking();
+  UpdateStatus checkForUpdateBlocking();
 
   /**
    * Check for available updates asynchronously using a callback.
    *
    * @param onResult Callback that will be called with the UpdateStatus result
    */
-  void checkForUpdate(@NotNull Object onResult);
+  void checkForUpdate(@NotNull UpdateCallback onResult);
 
   /**
    * Download and install the provided update by opening the download URL in the default browser or
@@ -33,5 +33,10 @@ public interface IDistributionApi {
    *
    * @param info Information about the update to download
    */
-  void downloadUpdate(@NotNull Object info);
+  void downloadUpdate(@NotNull UpdateInfo info);
+
+  /** Callback interface for receiving async update check results. */
+  interface UpdateCallback {
+    void onResult(@NotNull UpdateStatus status);
+  }
 }
