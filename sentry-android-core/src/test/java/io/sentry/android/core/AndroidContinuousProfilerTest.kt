@@ -124,6 +124,7 @@ class AndroidContinuousProfilerTest {
       false,
       false,
       false,
+      false,
     )
 
     AndroidOptionsInitializer.initializeIntegrationsAndProcessors(
