@@ -531,6 +531,8 @@ public class SentryOptions {
 
   private @NotNull ReplayController replayController = NoOpReplayController.getInstance();
 
+  private @NotNull IDistributionApi distributionController = NoOpDistributionApi.getInstance();
+
   /**
    * Controls whether to enable screen tracking. When enabled, the SDK will automatically capture
    * screen transitions as context for events.
@@ -2820,6 +2822,15 @@ public class SentryOptions {
   public void setReplayController(final @Nullable ReplayController replayController) {
     this.replayController =
         replayController != null ? replayController : NoOpReplayController.getInstance();
+  }
+
+  public @NotNull IDistributionApi getDistributionController() {
+    return distributionController;
+  }
+
+  public void setDistributionController(final @Nullable IDistributionApi distributionController) {
+    this.distributionController =
+        distributionController != null ? distributionController : NoOpDistributionApi.getInstance();
   }
 
   @ApiStatus.Experimental

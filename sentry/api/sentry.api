@@ -767,6 +767,12 @@ public abstract interface class io/sentry/IContinuousProfiler {
 	public abstract fun stopProfiler (Lio/sentry/ProfileLifecycle;)V
 }
 
+public abstract interface class io/sentry/IDistributionApi {
+	public abstract fun checkForUpdate (Ljava/lang/Object;)V
+	public abstract fun checkForUpdateBlocking ()Ljava/lang/Object;
+	public abstract fun downloadUpdate (Ljava/lang/Object;)V
+}
+
 public abstract interface class io/sentry/IEnvelopeReader {
 	public abstract fun read (Ljava/io/InputStream;)Lio/sentry/SentryEnvelope;
 }
@@ -1467,6 +1473,13 @@ public final class io/sentry/NoOpContinuousProfiler : io/sentry/IContinuousProfi
 	public fun reevaluateSampling ()V
 	public fun startProfiler (Lio/sentry/ProfileLifecycle;Lio/sentry/TracesSampler;)V
 	public fun stopProfiler (Lio/sentry/ProfileLifecycle;)V
+}
+
+public final class io/sentry/NoOpDistributionApi : io/sentry/IDistributionApi {
+	public fun checkForUpdate (Ljava/lang/Object;)V
+	public fun checkForUpdateBlocking ()Ljava/lang/Object;
+	public fun downloadUpdate (Ljava/lang/Object;)V
+	public static fun getInstance ()Lio/sentry/NoOpDistributionApi;
 }
 
 public final class io/sentry/NoOpEnvelopeReader : io/sentry/IEnvelopeReader {
@@ -2551,7 +2564,7 @@ public final class io/sentry/Sentry {
 	public static fun configureScope (Lio/sentry/ScopeCallback;)V
 	public static fun configureScope (Lio/sentry/ScopeType;Lio/sentry/ScopeCallback;)V
 	public static fun continueTrace (Ljava/lang/String;Ljava/util/List;)Lio/sentry/TransactionContext;
-	public static fun distribution ()Ljava/lang/Object;
+	public static fun distribution ()Lio/sentry/IDistributionApi;
 	public static fun endSession ()V
 	public static fun flush (J)V
 	public static fun forkedCurrentScope (Ljava/lang/String;)Lio/sentry/IScopes;
@@ -3306,6 +3319,7 @@ public class io/sentry/SentryOptions {
 	public fun getDiagnosticLevel ()Lio/sentry/SentryLevel;
 	public fun getDist ()Ljava/lang/String;
 	public fun getDistinctId ()Ljava/lang/String;
+	public fun getDistributionController ()Lio/sentry/IDistributionApi;
 	public fun getDsn ()Ljava/lang/String;
 	public fun getEnvelopeDiskCache ()Lio/sentry/cache/IEnvelopeCache;
 	public fun getEnvelopeReader ()Lio/sentry/IEnvelopeReader;
@@ -3440,6 +3454,7 @@ public class io/sentry/SentryOptions {
 	public fun setDiagnosticLevel (Lio/sentry/SentryLevel;)V
 	public fun setDist (Ljava/lang/String;)V
 	public fun setDistinctId (Ljava/lang/String;)V
+	public fun setDistributionController (Lio/sentry/IDistributionApi;)V
 	public fun setDsn (Ljava/lang/String;)V
 	public fun setEnableAppStartProfiling (Z)V
 	public fun setEnableAutoSessionTracking (Z)V
