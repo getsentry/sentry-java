@@ -42,7 +42,7 @@ public final class SentryAndroid {
       "io.sentry.android.replay.ReplayIntegration";
 
   static final String SENTRY_DISTRIBUTION_INTEGRATION_CLASS_NAME =
-      "io.sentry.android.distribution.internal.DistributionIntegration";
+      "io.sentry.android.distribution.DistributionIntegration";
 
   private static final String TIMBER_CLASS_NAME = "timber.log.Timber";
   private static final String FRAGMENT_CLASS_NAME =

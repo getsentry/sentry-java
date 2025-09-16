@@ -1307,15 +1307,9 @@ public final class Sentry {
    *
    * @return The distribution API object that provides update checking functionality
    */
-  public static @Nullable Object distribution() {
-    try {
-      // Try to get the Distribution object via reflection
-      Class<?> distributionClass = Class.forName("io.sentry.android.distribution.Distribution");
-      return distributionClass.getField("INSTANCE").get(null);
-    } catch (Exception e) {
-      // Distribution module not available, return null
-      return null;
-    }
+  @NotNull
+  public static IDistributionApi distribution() {
+    return getCurrentScopes().getScope().getOptions().getDistributionController();
   }
 
   public static void showUserFeedbackDialog() {
