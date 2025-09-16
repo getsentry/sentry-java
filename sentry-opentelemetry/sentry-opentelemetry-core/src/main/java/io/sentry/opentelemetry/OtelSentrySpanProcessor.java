@@ -117,6 +117,9 @@ public final class OtelSentrySpanProcessor implements SpanProcessor {
             sentryParentSpanId,
             baggage);
     sentrySpan.getSpanContext().setOrigin(SentrySpanExporter.TRACE_ORIGIN);
+    sentrySpan
+        .getSpanContext()
+        .setProfilerId(scopes.getOptions().getContinuousProfiler().getProfilerId());
     spanStorage.storeSentrySpan(spanContext, sentrySpan);
   }
 

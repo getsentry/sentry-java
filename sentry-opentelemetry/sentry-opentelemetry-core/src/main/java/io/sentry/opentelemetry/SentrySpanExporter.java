@@ -331,7 +331,6 @@ public final class SentrySpanExporter implements SpanExporter {
 
     transactionOptions.setStartTimestamp(new SentryLongDate(span.getStartEpochNanos()));
     transactionOptions.setSpanFactory(new DefaultSpanFactory());
-    transactionOptions.setSkipProfiling(true);
 
     ITransaction sentryTransaction =
         scopesToUse.startTransaction(transactionContext, transactionOptions);

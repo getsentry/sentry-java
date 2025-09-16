@@ -83,8 +83,8 @@ public final class SentryTracer implements ITransaction {
 
     setDefaultSpanData(root);
 
-    final @NotNull SentryId continuousProfilerId =
-        scopes.getOptions().getContinuousProfiler().getProfilerId();
+    final @NotNull SentryId continuousProfilerId = getProfilerId();
+
     if (!continuousProfilerId.equals(SentryId.EMPTY_ID) && Boolean.TRUE.equals(isSampled())) {
       this.contexts.setProfile(new ProfileContext(continuousProfilerId));
     }
@@ -245,7 +245,7 @@ public final class SentryTracer implements ITransaction {
       }
       if (scopes.getOptions().isContinuousProfilingEnabled()
           && scopes.getOptions().getProfileLifecycle() == ProfileLifecycle.TRACE
-          && !transactionOptions.isSkipProfiling()) {
+          && root.getSpanContext().getProfilerId().equals(SentryId.EMPTY_ID)) {
         scopes.getOptions().getContinuousProfiler().stopProfiler(ProfileLifecycle.TRACE);
       }
       if (performanceCollectionData.get() != null) {
@@ -544,14 +544,19 @@ public final class SentryTracer implements ITransaction {
   /** Sets the default data in the span, including profiler _id, thread id and thread name */
   private void setDefaultSpanData(final @NotNull ISpan span) {
     final @NotNull IThreadChecker threadChecker = scopes.getOptions().getThreadChecker();
-    final @NotNull SentryId profilerId =
-        scopes.getOptions().getContinuousProfiler().getProfilerId();
+    final @NotNull SentryId profilerId = getProfilerId();
     if (!profilerId.equals(SentryId.EMPTY_ID) && Boolean.TRUE.equals(span.isSampled())) {
       span.setData(SpanDataConvention.PROFILER_ID, profilerId.toString());
     }
     span.setData(
         SpanDataConvention.THREAD_ID, String.valueOf(threadChecker.currentThreadSystemId()));
     span.setData(SpanDataConvention.THREAD_NAME, threadChecker.getCurrentThreadName());
+  }
+
+  private @NotNull SentryId getProfilerId() {
+    return !root.getSpanContext().getProfilerId().equals(SentryId.EMPTY_ID)
+        ? root.getSpanContext().getProfilerId()
+        : scopes.getOptions().getContinuousProfiler().getProfilerId();
   }
 
   @Override

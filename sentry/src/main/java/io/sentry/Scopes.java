@@ -943,14 +943,13 @@ public final class Scopes implements IScopes {
       // Profiler will sample on its own.
       // Profiler is started before the transaction is created, so that the profiler id is available
       // when the transaction starts
-      if (samplingDecision.getSampled()) {
-        if (getOptions().isContinuousProfilingEnabled()
-            && getOptions().getProfileLifecycle() == ProfileLifecycle.TRACE
-            && !transactionOptions.isSkipProfiling()) {
-          getOptions()
-              .getContinuousProfiler()
-              .startProfiler(ProfileLifecycle.TRACE, getOptions().getInternalTracesSampler());
-        }
+      if (samplingDecision.getSampled()
+          && getOptions().isContinuousProfilingEnabled()
+          && getOptions().getProfileLifecycle() == ProfileLifecycle.TRACE
+          && transactionContext.getProfilerId().equals(SentryId.EMPTY_ID)) {
+        getOptions()
+            .getContinuousProfiler()
+            .startProfiler(ProfileLifecycle.TRACE, getOptions().getInternalTracesSampler());
       }
 
       transaction =
