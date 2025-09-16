@@ -1,17 +1,15 @@
 ## :scroll: Description
 <!--- Describe your changes in detail -->
 
-<!-- Issues
-* resolves: #1234
-* resolves: LIN-1234
--->
-
-
 
 ## :bulb: Motivation and Context
 <!--- Why is this change required? What problem does it solve? -->
 <!--- If it fixes an open issue, please link to the issue here. -->
 
+<!--
+* resolves: #1234
+* resolves: LIN-1234
+-->
 
 ## :green_heart: How did you test it?
 
