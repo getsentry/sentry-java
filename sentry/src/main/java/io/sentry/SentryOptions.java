@@ -598,6 +598,30 @@ public class SentryOptions {
   private @NotNull ISocketTagger socketTagger = NoOpSocketTagger.getInstance();
 
   /**
+   * Configuration options for Sentry Build Distribution. NOTE: Ideally this would be in
+   * SentryAndroidOptions, but there's a circular dependency issue between sentry-android-core and
+   * sentry-android-distribution modules.
+   */
+  public static final class DistributionOptions {
+    /** Organization authentication token for API access */
+    public String orgAuthToken = "";
+
+    /** Sentry organization slug */
+    public String orgSlug = "";
+
+    /** Sentry project slug */
+    public String projectSlug = "";
+
+    /** Base URL for Sentry API (defaults to https://sentry.io) */
+    public String sentryBaseUrl = "https://sentry.io";
+
+    /** Optional build configuration name for filtering (e.g., "debug", "release", "staging") */
+    public @Nullable String buildConfiguration = null;
+  }
+
+  private @NotNull DistributionOptions distribution = new DistributionOptions();
+
+  /**
    * Adds an event processor
    *
    * @param eventProcessor the event processor
@@ -3541,6 +3565,14 @@ public class SentryOptions {
       @Nullable
       SentryLogEvent execute(@NotNull SentryLogEvent event);
     }
+  }
+
+  public @NotNull DistributionOptions getDistribution() {
+    return distribution;
+  }
+
+  public void setDistribution(final @NotNull DistributionOptions distribution) {
+    this.distribution = distribution != null ? distribution : new DistributionOptions();
   }
 
   public enum RequestSize {

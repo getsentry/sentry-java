@@ -3323,6 +3323,7 @@ public class io/sentry/SentryOptions {
 	public fun getDiagnosticLevel ()Lio/sentry/SentryLevel;
 	public fun getDist ()Ljava/lang/String;
 	public fun getDistinctId ()Ljava/lang/String;
+	public fun getDistribution ()Lio/sentry/SentryOptions$DistributionOptions;
 	public fun getDistributionController ()Lio/sentry/IDistributionApi;
 	public fun getDsn ()Ljava/lang/String;
 	public fun getEnvelopeDiskCache ()Lio/sentry/cache/IEnvelopeCache;
@@ -3458,6 +3459,7 @@ public class io/sentry/SentryOptions {
 	public fun setDiagnosticLevel (Lio/sentry/SentryLevel;)V
 	public fun setDist (Ljava/lang/String;)V
 	public fun setDistinctId (Ljava/lang/String;)V
+	public fun setDistribution (Lio/sentry/SentryOptions$DistributionOptions;)V
 	public fun setDistributionController (Lio/sentry/IDistributionApi;)V
 	public fun setDsn (Ljava/lang/String;)V
 	public fun setEnableAppStartProfiling (Z)V
@@ -3585,6 +3587,15 @@ public final class io/sentry/SentryOptions$Cron {
 	public fun setDefaultMaxRuntime (Ljava/lang/Long;)V
 	public fun setDefaultRecoveryThreshold (Ljava/lang/Long;)V
 	public fun setDefaultTimezone (Ljava/lang/String;)V
+}
+
+public final class io/sentry/SentryOptions$DistributionOptions {
+	public field buildConfiguration Ljava/lang/String;
+	public field orgAuthToken Ljava/lang/String;
+	public field orgSlug Ljava/lang/String;
+	public field projectSlug Ljava/lang/String;
+	public field sentryBaseUrl Ljava/lang/String;
+	public fun <init> ()V
 }
 
 public final class io/sentry/SentryOptions$Logs {

@@ -32,32 +32,6 @@ public class DistributionIntegration(context: Context) : Integration, IDistribut
     // Store scopes and options for use by distribution functionality
     this.scopes = scopes
     this.sentryOptions = options
-    // Distribution integration is registered but initialization still requires manual call to
-    // init()
-    // This allows the integration to be discovered by Sentry's auto-discovery mechanism
-    // while maintaining explicit control over when distribution functionality is enabled
-  }
-
-  /**
-   * Initialize build distribution with default options. This should be called once per process,
-   * typically in Application.onCreate().
-   *
-   * @param context Android context
-   */
-  public fun init() {
-    init {}
-  }
-
-  /**
-   * Initialize build distribution with the provided configuration. This should be called once per
-   * process, typically in Application.onCreate().
-   *
-   * @param context Android context
-   * @param configuration Configuration handler for build distribution options
-   */
-  public fun init(configuration: (DistributionOptions) -> Unit) {
-    val options = DistributionOptions()
-    configuration(options)
   }
 
   /**

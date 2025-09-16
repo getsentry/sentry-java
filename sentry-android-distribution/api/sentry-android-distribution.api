@@ -3,22 +3,6 @@ public final class io/sentry/android/distribution/DistributionIntegration : io/s
 	public fun checkForUpdate (Lio/sentry/IDistributionApi$UpdateCallback;)V
 	public fun checkForUpdateBlocking ()Lio/sentry/UpdateStatus;
 	public fun downloadUpdate (Lio/sentry/UpdateInfo;)V
-	public final fun init ()V
-	public final fun init (Lkotlin/jvm/functions/Function1;)V
 	public fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
-}
-
-public final class io/sentry/android/distribution/DistributionOptions {
-	public fun <init> ()V
-	public final fun getBuildConfiguration ()Ljava/lang/String;
-	public final fun getOrgAuthToken ()Ljava/lang/String;
-	public final fun getOrgSlug ()Ljava/lang/String;
-	public final fun getProjectSlug ()Ljava/lang/String;
-	public final fun getSentryBaseUrl ()Ljava/lang/String;
-	public final fun setBuildConfiguration (Ljava/lang/String;)V
-	public final fun setOrgAuthToken (Ljava/lang/String;)V
-	public final fun setOrgSlug (Ljava/lang/String;)V
-	public final fun setProjectSlug (Ljava/lang/String;)V
-	public final fun setSentryBaseUrl (Ljava/lang/String;)V
 }
 
