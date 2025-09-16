@@ -17,7 +17,7 @@
 ## :pencil: Checklist
 <!--- Put an `x` in the boxes that apply -->
 
-- [ ] Add GH Issue ID _&_ Linear ID
+- [ ] I added GH Issue ID _&_ Linear ID
 - [ ] I added tests to verify the changes.
 - [ ] No new PII added or SDK only sends newly added PII if `sendDefaultPII` is enabled.
 - [ ] I updated the docs if needed.
