@@ -117,9 +117,6 @@ class JavaContinuousProfilerTest {
     assertTrue(profiler.isRunning)
     // We are scheduling the profiler to stop at the end of the chunk, so it should still be running
     profiler.stopProfiler(ProfileLifecycle.MANUAL)
-    assertTrue(profiler.isRunning)
-    // We run the executor service to trigger the chunk finish, and the profiler shouldn't restart
-    fixture.executor.runAll()
     assertFalse(profiler.isRunning)
   }
 
@@ -321,11 +318,12 @@ class JavaContinuousProfilerTest {
     assertTrue(profiler.isRunning)
     // We run the executor service to trigger the profiler restart (chunk finish)
     fixture.executor.runAll()
+    // At this point the chunk has been submitted to the executor, but yet to be sent
     verify(fixture.scopes, never()).captureProfileChunk(any())
     profiler.stopProfiler(ProfileLifecycle.MANUAL)
-    // We stop the profiler, which should send a chunk
+    // We stop the profiler, which should send both the first and last chunk
     fixture.executor.runAll()
-    verify(fixture.scopes).captureProfileChunk(any())
+    verify(fixture.scopes, times(2)).captureProfileChunk(any())
   }
 
   @Test
@@ -333,15 +331,11 @@ class JavaContinuousProfilerTest {
     val profiler = fixture.getSut()
     profiler.startProfiler(ProfileLifecycle.TRACE, fixture.mockTracesSampler)
     assertTrue(profiler.isRunning)
-    // We are scheduling the profiler to stop at the end of the chunk, so it should still be running
+    // We are closing the profiler, which should stop all profiles after the chunk is finished
     profiler.close(false)
-    assertTrue(profiler.isRunning)
+    assertFalse(profiler.isRunning)
     // However, close() already resets the rootSpanCounter
     assertEquals(0, profiler.rootSpanCounter)
-
-    // We run the executor service to trigger the chunk finish, and the profiler shouldn't restart
-    fixture.executor.runAll()
-    assertFalse(profiler.isRunning)
   }
 
   @Test

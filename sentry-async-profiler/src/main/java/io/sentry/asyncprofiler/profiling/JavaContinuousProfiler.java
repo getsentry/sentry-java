@@ -58,7 +58,6 @@ public final class JavaContinuousProfiler
 
   private @Nullable AsyncProfiler profiler;
   private volatile boolean shouldSample = true;
-  private boolean shouldStop = false;
   private boolean isSampled = false;
   private int rootSpanCounter = 0;
 
@@ -166,7 +165,6 @@ public final class JavaContinuousProfiler
       }
 
       if (!isRunning()) {
-        shouldStop = false;
         logger.log(SentryLevel.DEBUG, "Started Profiler.");
         start();
       }
@@ -250,7 +248,8 @@ public final class JavaContinuousProfiler
           SentryLevel.ERROR,
           "Failed to schedule profiling chunk finish. Did you call Sentry.close()?",
           e);
-      shouldStop = true;
+      // If we can't schedule the auto-stop, stop immediately without restart
+      stop(false);
     }
   }
 
@@ -269,10 +268,12 @@ public final class JavaContinuousProfiler
           if (rootSpanCounter < 0) {
             rootSpanCounter = 0;
           }
-          shouldStop = true;
+          // Stop immediately without restart
+          stop(false);
           break;
         case MANUAL:
-          shouldStop = true;
+          // Stop immediately without restart
+          stop(false);
           break;
       }
     }
@@ -343,7 +344,7 @@ public final class JavaContinuousProfiler
         sendChunks(scopes, scopes.getOptions());
       }
 
-      if (restartProfiler && !shouldStop) {
+      if (restartProfiler) {
         logger.log(SentryLevel.DEBUG, "Profile chunk finished. Starting a new one.");
         start();
       } else {
@@ -363,9 +364,8 @@ public final class JavaContinuousProfiler
   public void close(final boolean isTerminating) {
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       rootSpanCounter = 0;
-      shouldStop = true;
+      stop(false);
       if (isTerminating) {
-        stop(false);
         isClosed.set(true);
       }
     }
