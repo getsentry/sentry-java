@@ -1,8 +1,10 @@
 package io.sentry;
 
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /** Represents the result of checking for app updates. */
+@ApiStatus.Experimental
 public abstract class UpdateStatus {
 
   /** Current app version is up to date, no update available. */

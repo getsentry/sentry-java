@@ -602,6 +602,7 @@ public class SentryOptions {
    * SentryAndroidOptions, but there's a circular dependency issue between sentry-android-core and
    * sentry-android-distribution modules.
    */
+  @ApiStatus.Experimental
   public static final class DistributionOptions {
     /** Organization authentication token for API access */
     public String orgAuthToken = "";
@@ -2848,10 +2849,12 @@ public class SentryOptions {
         replayController != null ? replayController : NoOpReplayController.getInstance();
   }
 
+  @ApiStatus.Experimental
   public @NotNull IDistributionApi getDistributionController() {
     return distributionController;
   }
 
+  @ApiStatus.Experimental
   public void setDistributionController(final @Nullable IDistributionApi distributionController) {
     this.distributionController =
         distributionController != null ? distributionController : NoOpDistributionApi.getInstance();
@@ -3567,10 +3570,12 @@ public class SentryOptions {
     }
   }
 
+  @ApiStatus.Experimental
   public @NotNull DistributionOptions getDistribution() {
     return distribution;
   }
 
+  @ApiStatus.Experimental
   public void setDistribution(final @NotNull DistributionOptions distribution) {
     this.distribution = distribution != null ? distribution : new DistributionOptions();
   }
