@@ -80,6 +80,6 @@
 ##---------------End: proguard configuration for sentry-android-replay  ----------
 
 ##---------------Begin: proguard configuration for sentry-android-distribution  ----------
--dontwarn io.sentry.android.distribution.internal.DistributionIntegration
--keepnames class io.sentry.android.distribution.internal.DistributionIntegration
+-dontwarn io.sentry.android.distribution.DistributionIntegration
+-keepnames class io.sentry.android.distribution.DistributionIntegration
 ##---------------End: proguard configuration for sentry-android-distribution  ----------
