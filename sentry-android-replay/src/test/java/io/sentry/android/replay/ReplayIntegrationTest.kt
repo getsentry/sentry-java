@@ -27,10 +27,12 @@ import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_REPLAY_RECORDI
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_REPLAY_TYPE
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_TIMESTAMP
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_WIDTH
+import io.sentry.android.replay.capture.BufferCaptureStrategy
 import io.sentry.android.replay.capture.CaptureStrategy
 import io.sentry.android.replay.capture.SessionCaptureStrategy
 import io.sentry.android.replay.capture.SessionCaptureStrategyTest.Fixture.Companion.VIDEO_DURATION
 import io.sentry.android.replay.gestures.GestureRecorder
+import io.sentry.android.replay.util.ReplayShadowMediaCodec
 import io.sentry.cache.PersistingScopeObserver
 import io.sentry.cache.tape.QueueFile
 import io.sentry.protocol.SentryException
@@ -43,6 +45,7 @@ import io.sentry.rrweb.RRWebVideoEvent
 import io.sentry.transport.CurrentDateProvider
 import io.sentry.transport.ICurrentDateProvider
 import io.sentry.transport.RateLimiter
+import io.sentry.util.Random
 import java.io.ByteArrayOutputStream
 import java.io.File
 import kotlin.test.BeforeTest
@@ -63,13 +66,14 @@ import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
+import org.mockito.kotlin.reset
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.robolectric.annotation.Config
 
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [26])
+@Config(sdk = [26], shadows = [ReplayShadowMediaCodec::class])
 class ReplayIntegrationTest {
   @get:Rule val tmpDir = TemporaryFolder()
 
@@ -724,6 +728,58 @@ class ReplayIntegrationTest {
     replay.onRateLimitChanged(fixture.rateLimiter)
 
     verify(recorder).resume()
+  }
+
+  @Test
+  fun `continues recording after converting to session strategy without extra config change`() {
+    // Force buffer mode at start, but enable onError sample so captureReplay triggers
+    val recorder = mock<Recorder>()
+    val replay =
+      fixture.getSut(
+        context,
+        recorderProvider = { recorder },
+        replayCaptureStrategyProvider = { isFullSession ->
+          // Always start with buffer strategy regardless of sampling
+          BufferCaptureStrategy(
+            fixture.options,
+            fixture.scopes,
+            // make time jump so session strategy will immediately cut a segment on next frame
+            ICurrentDateProvider {
+              System.currentTimeMillis() + fixture.options.sessionReplay.sessionSegmentDuration
+            },
+            Random(),
+            // run tasks synchronously in tests
+            mock {
+              doAnswer { (it.arguments[0] as Runnable).run() }
+                .whenever(mock)
+                .submit(any<Runnable>())
+            },
+          ) { _ ->
+            fixture.replayCache
+          }
+        },
+      )
+
+    fixture.options.sessionReplay.sessionSampleRate = 0.0 // ensure buffer mode initially
+    fixture.options.sessionReplay.onErrorSampleRate = 1.0
+    fixture.options.cacheDirPath = tmpDir.newFolder().absolutePath
+
+    replay.register(fixture.scopes, fixture.options)
+    replay.start()
+
+    val config = ScreenshotRecorderConfig(100, 200, 1f, 1f, 1, 20_000)
+    replay.onConfigurationChanged(config)
+
+    // Trigger convert() via captureReplay
+    replay.captureReplay(false)
+
+    // Now, without invoking another config change, record a frame
+    // Reset interactions to assert only post-convert capture
+    reset(fixture.scopes)
+    replay.onScreenshotRecorded(mock())
+
+    // Should capture a session segment after conversion without additional config changes
+    verify(fixture.scopes).captureReplay(any(), any())
   }
 
   @Test

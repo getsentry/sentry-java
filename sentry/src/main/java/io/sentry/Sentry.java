@@ -1300,6 +1300,17 @@ public final class Sentry {
     return getCurrentScopes().getScope().getOptions().getReplayController();
   }
 
+  /**
+   * Returns the distribution API. This feature is only available when the
+   * sentry-android-distribution module is included in the build.
+   *
+   * @return The distribution API object that provides update checking functionality
+   */
+  @NotNull
+  public static IDistributionApi distribution() {
+    return getCurrentScopes().getScope().getOptions().getDistributionController();
+  }
+
   public static void showUserFeedbackDialog() {
     showUserFeedbackDialog(null);
   }

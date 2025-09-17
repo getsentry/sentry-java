@@ -146,6 +146,7 @@ internal class BufferCaptureStrategy(
     }
     // we hand over replayExecutor to the new strategy to preserve order of execution
     val captureStrategy = SessionCaptureStrategy(options, scopes, dateProvider, replayExecutor)
+    captureStrategy.recorderConfig = recorderConfig
     captureStrategy.start(
       segmentId = currentSegment,
       replayId = currentReplayId,
@@ -217,12 +218,10 @@ internal class BufferCaptureStrategy(
     val errorReplayDuration = options.sessionReplay.errorReplayDuration
     val now = dateProvider.currentTimeMillis
     val currentSegmentTimestamp =
-      if (cache?.frames?.isNotEmpty() == true) {
+      cache?.firstFrameTimestamp()?.let {
         // in buffer mode we have to set the timestamp of the first frame as the actual start
-        DateUtils.getDateTime(cache!!.frames.first().timestamp)
-      } else {
-        DateUtils.getDateTime(now - errorReplayDuration)
-      }
+        DateUtils.getDateTime(it)
+      } ?: DateUtils.getDateTime(now - errorReplayDuration)
     val duration = now - currentSegmentTimestamp.time
     val replayId = currentReplayId
 

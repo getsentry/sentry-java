@@ -20,6 +20,17 @@
 - Remove internal API status from get/setDistinctId ([#4708](https://github.com/getsentry/sentry-java/pull/4708))
 - Remove ApiStatus.Experimental annotation from check-in API ([#4721](https://github.com/getsentry/sentry-java/pull/4721))
 
+### Fixes
+
+- Session Replay: Fix `NoSuchElementException` in `BufferCaptureStrategy` ([#4717](https://github.com/getsentry/sentry-java/pull/4717))
+- Session Replay: Fix continue recording in Session mode after Buffer is triggered ([#4719](https://github.com/getsentry/sentry-java/pull/4719))
+
+### Dependencies
+
+- Bump Native SDK from v0.10.0 to v0.10.1 ([#4695](https://github.com/getsentry/sentry-java/pull/4695))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0101)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.10.0...0.10.1)
+
 ## 8.21.1
 
 ### Fixes

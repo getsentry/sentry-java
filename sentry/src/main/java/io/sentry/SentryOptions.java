@@ -531,6 +531,8 @@ public class SentryOptions {
 
   private @NotNull ReplayController replayController = NoOpReplayController.getInstance();
 
+  private @NotNull IDistributionApi distributionController = NoOpDistributionApi.getInstance();
+
   /**
    * Controls whether to enable screen tracking. When enabled, the SDK will automatically capture
    * screen transitions as context for events.
@@ -594,6 +596,30 @@ public class SentryOptions {
   private @NotNull SentryOptions.Logs logs = new SentryOptions.Logs();
 
   private @NotNull ISocketTagger socketTagger = NoOpSocketTagger.getInstance();
+
+  /**
+   * Configuration options for Sentry Build Distribution. NOTE: Ideally this would be in
+   * SentryAndroidOptions, but there's a circular dependency issue between sentry-android-core and
+   * sentry-android-distribution modules.
+   */
+  public static final class DistributionOptions {
+    /** Organization authentication token for API access */
+    public String orgAuthToken = "";
+
+    /** Sentry organization slug */
+    public String orgSlug = "";
+
+    /** Sentry project slug */
+    public String projectSlug = "";
+
+    /** Base URL for Sentry API (defaults to https://sentry.io) */
+    public String sentryBaseUrl = "https://sentry.io";
+
+    /** Optional build configuration name for filtering (e.g., "debug", "release", "staging") */
+    public @Nullable String buildConfiguration = null;
+  }
+
+  private @NotNull DistributionOptions distribution = new DistributionOptions();
 
   /**
    * Adds an event processor
@@ -2822,6 +2848,15 @@ public class SentryOptions {
         replayController != null ? replayController : NoOpReplayController.getInstance();
   }
 
+  public @NotNull IDistributionApi getDistributionController() {
+    return distributionController;
+  }
+
+  public void setDistributionController(final @Nullable IDistributionApi distributionController) {
+    this.distributionController =
+        distributionController != null ? distributionController : NoOpDistributionApi.getInstance();
+  }
+
   @ApiStatus.Experimental
   public boolean isEnableScreenTracking() {
     return enableScreenTracking;
@@ -3530,6 +3565,14 @@ public class SentryOptions {
       @Nullable
       SentryLogEvent execute(@NotNull SentryLogEvent event);
     }
+  }
+
+  public @NotNull DistributionOptions getDistribution() {
+    return distribution;
+  }
+
+  public void setDistribution(final @NotNull DistributionOptions distribution) {
+    this.distribution = distribution != null ? distribution : new DistributionOptions();
   }
 
   public enum RequestSize {
