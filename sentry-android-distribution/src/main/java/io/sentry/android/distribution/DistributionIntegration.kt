@@ -9,6 +9,7 @@ import io.sentry.Integration
 import io.sentry.SentryOptions
 import io.sentry.UpdateInfo
 import io.sentry.UpdateStatus
+import org.jetbrains.annotations.ApiStatus
 
 /**
  * The public Android SDK for Sentry Build Distribution.
@@ -16,6 +17,7 @@ import io.sentry.UpdateStatus
  * Provides functionality to check for app updates and download new versions from Sentry's preprod
  * artifacts system.
  */
+@ApiStatus.Experimental
 public class DistributionIntegration(context: Context) : Integration, IDistributionApi {
 
   private lateinit var scopes: IScopes

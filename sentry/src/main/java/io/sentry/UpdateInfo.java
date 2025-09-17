@@ -1,8 +1,10 @@
 package io.sentry;
 
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /** Information about an available app update. */
+@ApiStatus.Experimental
 public final class UpdateInfo {
   private final @NotNull String id;
   private final @NotNull String buildVersion;
