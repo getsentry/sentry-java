@@ -301,7 +301,6 @@ public interface ISentryClient {
       final @NotNull ProfileChunk profilingContinuousData, final @Nullable IScope scope);
 
   @NotNull
-  @ApiStatus.Experimental
   SentryId captureCheckIn(@NotNull CheckIn checkIn, @Nullable IScope scope, @Nullable Hint hint);
 
   void captureLog(@NotNull SentryLogEvent logEvent, @Nullable IScope scope);

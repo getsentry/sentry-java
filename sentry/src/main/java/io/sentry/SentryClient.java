@@ -998,7 +998,6 @@ public final class SentryClient implements ISentryClient {
   }
 
   @Override
-  @ApiStatus.Experimental
   public @NotNull SentryId captureCheckIn(
       @NotNull CheckIn checkIn, final @Nullable IScope scope, @Nullable Hint hint) {
     if (hint == null) {

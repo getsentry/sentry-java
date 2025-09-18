@@ -1155,7 +1155,6 @@ public final class Scopes implements IScopes {
   }
 
   @Override
-  @ApiStatus.Experimental
   public @NotNull SentryId captureCheckIn(final @NotNull CheckIn checkIn) {
     SentryId sentryId = SentryId.EMPTY_ID;
     if (!isEnabled()) {
