@@ -42,6 +42,8 @@ Use the `fetch_rules` tool to include these rules when working on specific areas
   - `OtelSpanFactory`, `SentrySpanExporter`
   - Tracing, distributed tracing
 
+- **`new_module`**: Use when adding a new integration or sample module
+
 ### Testing
 - **`e2e_tests`**: Use when working with:
   - System tests, sample applications
@@ -58,5 +60,6 @@ Use the `fetch_rules` tool to include these rules when working on specific areas
    - Scope/Hub/forking → `scopes`
    - Duplicate/dedup → `deduplication` 
    - OpenTelemetry/tracing/spans → `opentelemetry`
+   - new module/integration/sample → `new_module`
    - Cache/offline/network → `offline`
    - System test/e2e/sample → `e2e_tests`
