@@ -48,6 +48,18 @@ tasks.jacocoTestReport {
   }
 }
 
+animalsniffer {
+  ignore = listOf(
+    // We manually check on Android if it's available (API 26+).
+    "java.time.Instant",
+  )
+}
+
+tasks.animalsnifferMain {
+  // Uses java.util.function.Supplier, but must be manually invoked.
+  exclude("**/io/sentry/SentryWrapper.class")
+}
+
 tasks {
   jacocoTestCoverageVerification {
     violationRules { rule { limit { minimum = Config.QualityPlugins.Jacoco.minimumCoverage } } }
