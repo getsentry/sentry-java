@@ -10,7 +10,9 @@ import io.sentry.NoOpLogger;
 import io.sentry.PropagationContext;
 import io.sentry.SentryOptions;
 import io.sentry.SentryTraceHeader;
+import io.sentry.SpanContext;
 import io.sentry.TracesSamplingDecision;
+import io.sentry.W3CTraceparentHeader;
 import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -59,8 +61,18 @@ public final class TracingUtils {
     final @NotNull SentryOptions sentryOptions = scopes.getOptions();
 
     if (span != null && !span.isNoOp()) {
-      return new TracingHeaders(
-          span.toSentryTrace(), span.toBaggageHeader(thirdPartyBaggageHeaders));
+      final @NotNull SentryTraceHeader sentryTraceHeader = span.toSentryTrace();
+      final @Nullable BaggageHeader baggageHeader = span.toBaggageHeader(thirdPartyBaggageHeaders);
+      @Nullable W3CTraceparentHeader w3cTraceparentHeader = null;
+
+      if (sentryOptions.isPropagateTraceparent()) {
+        final @NotNull SpanContext spanContext = span.getSpanContext();
+        w3cTraceparentHeader =
+            new W3CTraceparentHeader(
+                spanContext.getTraceId(), spanContext.getSpanId(), sentryTraceHeader.isSampled());
+      }
+
+      return new TracingHeaders(sentryTraceHeader, baggageHeader, w3cTraceparentHeader);
     } else {
       final @NotNull PropagationContextHolder returnValue = new PropagationContextHolder();
       scopes.configureScope(
@@ -74,12 +86,22 @@ public final class TracingUtils {
         final @NotNull BaggageHeader baggageHeader =
             BaggageHeader.fromBaggageAndOutgoingHeader(baggage, thirdPartyBaggageHeaders);
 
-        return new TracingHeaders(
+        final @NotNull SentryTraceHeader sentryTraceHeader =
             new SentryTraceHeader(
                 propagationContext.getTraceId(),
                 propagationContext.getSpanId(),
-                propagationContext.isSampled()),
-            baggageHeader);
+                propagationContext.isSampled());
+
+        @Nullable W3CTraceparentHeader w3cTraceparentHeader = null;
+        if (sentryOptions.isPropagateTraceparent()) {
+          w3cTraceparentHeader =
+              new W3CTraceparentHeader(
+                  propagationContext.getTraceId(),
+                  propagationContext.getSpanId(),
+                  propagationContext.isSampled());
+        }
+
+        return new TracingHeaders(sentryTraceHeader, baggageHeader, w3cTraceparentHeader);
       }
 
       return null;
@@ -110,12 +132,23 @@ public final class TracingUtils {
   public static final class TracingHeaders {
     private final @NotNull SentryTraceHeader sentryTraceHeader;
     private final @Nullable BaggageHeader baggageHeader;
+    private final @Nullable W3CTraceparentHeader w3cTraceparentHeader;
 
     public TracingHeaders(
         final @NotNull SentryTraceHeader sentryTraceHeader,
         final @Nullable BaggageHeader baggageHeader) {
       this.sentryTraceHeader = sentryTraceHeader;
       this.baggageHeader = baggageHeader;
+      this.w3cTraceparentHeader = null;
+    }
+
+    public TracingHeaders(
+        final @NotNull SentryTraceHeader sentryTraceHeader,
+        final @Nullable BaggageHeader baggageHeader,
+        final @Nullable W3CTraceparentHeader w3cTraceparentHeader) {
+      this.sentryTraceHeader = sentryTraceHeader;
+      this.baggageHeader = baggageHeader;
+      this.w3cTraceparentHeader = w3cTraceparentHeader;
     }
 
     public @NotNull SentryTraceHeader getSentryTraceHeader() {
@@ -124,6 +157,10 @@ public final class TracingUtils {
 
     public @Nullable BaggageHeader getBaggageHeader() {
       return baggageHeader;
+    }
+
+    public @Nullable W3CTraceparentHeader getW3cTraceparentHeader() {
+      return w3cTraceparentHeader;
     }
   }
 

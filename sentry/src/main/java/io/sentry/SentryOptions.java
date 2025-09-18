@@ -393,6 +393,9 @@ public class SentryOptions {
   private final @NotNull List<String> defaultTracePropagationTargets =
       Collections.singletonList(DEFAULT_PROPAGATION_TARGETS);
 
+  /** Whether to propagate W3C traceparent HTTP header. */
+  private boolean propagateTraceparent = false;
+
   /** Proguard UUID. */
   private @Nullable String proguardUuid;
 
@@ -528,6 +531,8 @@ public class SentryOptions {
 
   private @NotNull ReplayController replayController = NoOpReplayController.getInstance();
 
+  private @NotNull IDistributionApi distributionController = NoOpDistributionApi.getInstance();
+
   /**
    * Controls whether to enable screen tracking. When enabled, the SDK will automatically capture
    * screen transitions as context for events.
@@ -591,6 +596,31 @@ public class SentryOptions {
   private @NotNull SentryOptions.Logs logs = new SentryOptions.Logs();
 
   private @NotNull ISocketTagger socketTagger = NoOpSocketTagger.getInstance();
+
+  /**
+   * Configuration options for Sentry Build Distribution. NOTE: Ideally this would be in
+   * SentryAndroidOptions, but there's a circular dependency issue between sentry-android-core and
+   * sentry-android-distribution modules.
+   */
+  @ApiStatus.Experimental
+  public static final class DistributionOptions {
+    /** Organization authentication token for API access */
+    public String orgAuthToken = "";
+
+    /** Sentry organization slug */
+    public String orgSlug = "";
+
+    /** Sentry project slug */
+    public String projectSlug = "";
+
+    /** Base URL for Sentry API (defaults to https://sentry.io) */
+    public String sentryBaseUrl = "https://sentry.io";
+
+    /** Optional build configuration name for filtering (e.g., "debug", "release", "staging") */
+    public @Nullable String buildConfiguration = null;
+  }
+
+  private @NotNull DistributionOptions distribution = new DistributionOptions();
 
   /**
    * Adds an event processor
@@ -1329,7 +1359,6 @@ public class SentryOptions {
    *
    * @return the distinct Id
    */
-  @ApiStatus.Internal
   public @Nullable String getDistinctId() {
     return distinctId;
   }
@@ -1339,7 +1368,6 @@ public class SentryOptions {
    *
    * @param distinctId the distinct Id
    */
-  @ApiStatus.Internal
   public void setDistinctId(final @Nullable String distinctId) {
     this.distinctId = distinctId;
   }
@@ -2111,6 +2139,24 @@ public class SentryOptions {
   }
 
   /**
+   * Returns whether W3C traceparent HTTP header propagation is enabled.
+   *
+   * @return true if enabled false otherwise
+   */
+  public boolean isPropagateTraceparent() {
+    return propagateTraceparent;
+  }
+
+  /**
+   * Enables or disables W3C traceparent HTTP header propagation.
+   *
+   * @param propagateTraceparent true if enabled false otherwise
+   */
+  public void setPropagateTraceparent(final boolean propagateTraceparent) {
+    this.propagateTraceparent = propagateTraceparent;
+  }
+
+  /**
    * Returns a Proguard UUID.
    *
    * @return the Proguard UUIDs.
@@ -2804,6 +2850,17 @@ public class SentryOptions {
   }
 
   @ApiStatus.Experimental
+  public @NotNull IDistributionApi getDistributionController() {
+    return distributionController;
+  }
+
+  @ApiStatus.Experimental
+  public void setDistributionController(final @Nullable IDistributionApi distributionController) {
+    this.distributionController =
+        distributionController != null ? distributionController : NoOpDistributionApi.getInstance();
+  }
+
+  @ApiStatus.Experimental
   public boolean isEnableScreenTracking() {
     return enableScreenTracking;
   }
@@ -3455,20 +3512,19 @@ public class SentryOptions {
   public static final class Logs {
 
     /** Whether Sentry Logs feature is enabled and Sentry.logger() usages are sent to Sentry. */
-    @ApiStatus.Experimental private boolean enable = false;
+    private boolean enable = false;
 
     /**
      * This function is called with an SDK specific log event object and can return a modified event
      * object or nothing to skip reporting the log item
      */
-    @ApiStatus.Experimental private @Nullable BeforeSendLogCallback beforeSend;
+    private @Nullable BeforeSendLogCallback beforeSend;
 
     /**
      * Whether Sentry Logs feature is enabled and Sentry.logger() usages are sent to Sentry.
      *
      * @return true if Sentry Logs should be enabled
      */
-    @ApiStatus.Experimental
     public boolean isEnabled() {
       return enable;
     }
@@ -3478,7 +3534,6 @@ public class SentryOptions {
      *
      * @param enableLogs true if Sentry Logs should be enabled
      */
-    @ApiStatus.Experimental
     public void setEnabled(boolean enableLogs) {
       this.enable = enableLogs;
     }
@@ -3488,7 +3543,6 @@ public class SentryOptions {
      *
      * @return the beforeSendLog callback or null if not set
      */
-    @ApiStatus.Experimental
     public @Nullable BeforeSendLogCallback getBeforeSend() {
       return beforeSend;
     }
@@ -3498,7 +3552,6 @@ public class SentryOptions {
      *
      * @param beforeSendLog the beforeSendLog callback
      */
-    @ApiStatus.Experimental
     public void setBeforeSend(@Nullable BeforeSendLogCallback beforeSendLog) {
       this.beforeSend = beforeSendLog;
     }
@@ -3515,6 +3568,16 @@ public class SentryOptions {
       @Nullable
       SentryLogEvent execute(@NotNull SentryLogEvent event);
     }
+  }
+
+  @ApiStatus.Experimental
+  public @NotNull DistributionOptions getDistribution() {
+    return distribution;
+  }
+
+  @ApiStatus.Experimental
+  public void setDistribution(final @NotNull DistributionOptions distribution) {
+    this.distribution = distribution != null ? distribution : new DistributionOptions();
   }
 
   public enum RequestSize {

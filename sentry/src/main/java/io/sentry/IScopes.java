@@ -727,7 +727,6 @@ public interface IScopes {
   @Nullable
   BaggageHeader getBaggage();
 
-  @ApiStatus.Experimental
   @NotNull
   SentryId captureCheckIn(final @NotNull CheckIn checkIn);
 
@@ -742,7 +741,6 @@ public interface IScopes {
   @NotNull
   SentryId captureReplay(@NotNull SentryReplayEvent replay, @Nullable Hint hint);
 
-  @ApiStatus.Experimental
   @NotNull
   ILoggerApi logger();
 }

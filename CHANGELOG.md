@@ -2,6 +2,44 @@
 
 ## Unreleased
 
+### Features
+
+- Move SentryLogs out of experimental ([#4710](https://github.com/getsentry/sentry-java/pull/4710))
+- Add support for w3c traceparent header ([#4671](https://github.com/getsentry/sentry-java/pull/4671))
+  - This feature is disabled by default. If enabled, outgoing requests will include the w3c `traceparent` header.
+  - See https://develop.sentry.dev/sdk/telemetry/traces/distributed-tracing/#w3c-trace-context-header for more details.
+  ```kotlin
+  Sentry(Android).init(context) { options ->
+    // ...
+    options.isPropagateTraceparent = true
+  }
+  ```
+
+### Improvements
+
+- Remove internal API status from get/setDistinctId ([#4708](https://github.com/getsentry/sentry-java/pull/4708))
+- Remove ApiStatus.Experimental annotation from check-in API ([#4721](https://github.com/getsentry/sentry-java/pull/4721))
+
+### Fixes
+
+- Session Replay: Fix `NoSuchElementException` in `BufferCaptureStrategy` ([#4717](https://github.com/getsentry/sentry-java/pull/4717))
+- Session Replay: Fix continue recording in Session mode after Buffer is triggered ([#4719](https://github.com/getsentry/sentry-java/pull/4719))
+
+### Dependencies
+
+- Bump Native SDK from v0.10.0 to v0.10.1 ([#4695](https://github.com/getsentry/sentry-java/pull/4695))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0101)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.10.0...0.10.1)
+
+## 8.21.1
+
+### Fixes
+
+- Use Kotlin stdlib 1.9.24 dependency instead of 2.2.0 for all Android modules ([#4707](https://github.com/getsentry/sentry-java/pull/4707))
+  - This fixes compile time issues if your app is using Kotlin < 2.x
+
+## 8.21.0
+
 ### Fixes
 
 - Only set log template for logging integrations if formatted message differs from template ([#4682](https://github.com/getsentry/sentry-java/pull/4682))

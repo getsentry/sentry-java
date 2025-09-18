@@ -1,5 +1,4 @@
 import net.ltgt.gradle.errorprone.errorprone
-import org.jetbrains.kotlin.config.KotlinCompilerVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -24,7 +23,7 @@ kotlin { explicitApi() }
 dependencies {
   api(projects.sentry)
 
-  implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
+  implementation(kotlin(Config.kotlinStdLib, Config.kotlinStdLibVersionAndroid))
 
   compileOnly(libs.jetbrains.annotations)
   compileOnly(libs.nopen.annotations)

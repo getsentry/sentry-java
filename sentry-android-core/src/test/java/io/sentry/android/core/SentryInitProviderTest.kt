@@ -160,6 +160,7 @@ class SentryInitProviderTest {
       false,
       false,
       false,
+      false,
     )
 
     AndroidOptionsInitializer.initializeIntegrationsAndProcessors(

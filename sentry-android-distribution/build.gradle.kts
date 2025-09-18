@@ -1,4 +1,3 @@
-import org.jetbrains.kotlin.config.KotlinCompilerVersion
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
 plugins {
@@ -26,5 +25,8 @@ androidComponents.beforeVariants {
 
 dependencies {
   implementation(projects.sentry)
-  implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
+  implementation(
+    libs.jetbrains.annotations
+  ) // Use implementation instead of compileOnly to override kotlin stdlib's version
+  implementation(kotlin(Config.kotlinStdLib, Config.kotlinStdLibVersionAndroid))
 }
