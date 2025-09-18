@@ -49,10 +49,11 @@ tasks.jacocoTestReport {
 }
 
 animalsniffer {
-  ignore = listOf(
-    // We manually check on Android if it's available (API 26+).
-    "java.time.Instant",
-  )
+  ignore =
+    listOf(
+      // We manually check on Android if it's available (API 26+).
+      "java.time.Instant"
+    )
 }
 
 tasks.animalsnifferMain {
