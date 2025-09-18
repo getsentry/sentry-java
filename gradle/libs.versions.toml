@@ -37,6 +37,7 @@ targetSdk = "34"
 compileSdk = "34"
 minSdk = "21"
 spotless = "7.0.4"
+gummyBears = "0.12.0"
 
 [plugins]
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
@@ -62,6 +63,7 @@ springboot3 = { id = "org.springframework.boot", version.ref = "springboot3" }
 springboot4 = { id = "org.springframework.boot", version.ref = "springboot4" }
 spring-dependency-management = { id = "io.spring.dependency-management", version = "1.0.11.RELEASE" }
 gretty = { id = "org.gretty", version = "4.0.0" }
+animalsniffer = { id = "ru.vyarus.animalsniffer", version = "2.0.1" }
 
 [libraries]
 apache-httpclient = { module = "org.apache.httpcomponents.client5:httpclient5", version = "5.0.4" }
@@ -175,6 +177,9 @@ springboot4-starter-webclient = { module = "org.springframework.boot:spring-boot
 springboot4-starter-jdbc = { module = "org.springframework.boot:spring-boot-starter-jdbc", version.ref = "springboot4" }
 springboot4-starter-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator", version.ref = "springboot4" }
 timber = { module = "com.jakewharton.timber:timber", version = "4.7.1" }
+
+# Animalsniffer signature
+gummy-bears-api21 = { module = "com.toasttab.android:gummy-bears-api-21", version.ref = "gummyBears" }
 
 # tomcat libraries
 tomcat-catalina = { module = "org.apache.tomcat:tomcat-catalina", version = "9.0.108" }
