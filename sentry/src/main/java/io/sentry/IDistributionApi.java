@@ -1,5 +1,6 @@
 package io.sentry;
 
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -8,6 +9,7 @@ import org.jetbrains.annotations.NotNull;
  * <p>Provides methods to check for app updates and download new versions from Sentry's preprod
  * artifacts system.
  */
+@ApiStatus.Experimental
 public interface IDistributionApi {
 
   /**
