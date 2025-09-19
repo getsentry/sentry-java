@@ -56,7 +56,7 @@ public final class JavaContinuousProfiler
 
   private @NotNull String filename = "";
 
-  private @Nullable AsyncProfiler profiler;
+  private @NotNull AsyncProfiler profiler;
   private volatile boolean shouldSample = true;
   private boolean isSampled = false;
   private int rootSpanCounter = 0;
@@ -68,7 +68,8 @@ public final class JavaContinuousProfiler
       final @NotNull ILogger logger,
       final @Nullable String profilingTracesDirPath,
       final int profilingTracesHz,
-      final @NotNull ISentryExecutorService executorService) {
+      final @NotNull ISentryExecutorService executorService)
+      throws Exception {
     this.logger = logger;
     this.profilingTracesDirPath = profilingTracesDirPath;
     this.profilingTracesHz = profilingTracesHz;
@@ -76,19 +77,11 @@ public final class JavaContinuousProfiler
     initializeProfiler();
   }
 
-  private void initializeProfiler() {
-    try {
+  private void initializeProfiler() throws Exception {
       this.profiler = AsyncProfiler.getInstance();
       // Check version to verify profiler is working
       String version = profiler.execute("version");
       logger.log(SentryLevel.DEBUG, "AsyncProfiler initialized successfully. Version: " + version);
-    } catch (Exception e) {
-      logger.log(
-          SentryLevel.WARNING,
-          "Failed to initialize AsyncProfiler. Profiling will be disabled.",
-          e);
-      this.profiler = null;
-    }
   }
 
   private boolean init() {
@@ -96,11 +89,6 @@ public final class JavaContinuousProfiler
       return true;
     }
     isInitialized = true;
-
-    if (profiler == null) {
-      logger.log(SentryLevel.ERROR, "Disabling profiling because AsyncProfiler is not available.");
-      return false;
-    }
 
     if (profilingTracesDirPath == null) {
       logger.log(
@@ -206,11 +194,6 @@ public final class JavaContinuousProfiler
       startProfileChunkTimestamp = new SentryNanotimeDate();
     }
 
-    if (profiler == null) {
-      logger.log(SentryLevel.ERROR, "Cannot start profiling: AsyncProfiler is not available");
-      return;
-    }
-
     filename = profilingTracesDirPath + File.separator + SentryUUID.generateSentryId() + ".jfr";
 
     File jfrFile = new File(filename);
@@ -293,11 +276,6 @@ public final class JavaContinuousProfiler
       }
 
       File jfrFile = new File(filename);
-
-      if (profiler == null) {
-        logger.log(SentryLevel.WARNING, "Profiler is null when trying to stop");
-        return;
-      }
 
       try {
         profiler.execute("stop,jfr");
@@ -406,7 +384,7 @@ public final class JavaContinuousProfiler
   @Override
   public boolean isRunning() {
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
-      return isRunning && profiler != null && !filename.isEmpty();
+      return isRunning && !filename.isEmpty();
     }
   }
 
