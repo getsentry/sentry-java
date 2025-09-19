@@ -167,7 +167,6 @@ public final class JfrAsyncProfilerToSentryProfileConverter extends JfrConverter
         }
 
         SentryStackFrame frame = createStackFrame(element);
-        frame.setNative(isNativeFrame(types[i]));
         int frameIndex = getOrAddFrame(frame);
         callStack.add(frameIndex);
       }
