@@ -67,7 +67,7 @@ dependencies {
   testImplementation(libs.kotlin.test.junit)
   testImplementation(libs.mockito.kotlin.spring7)
   testImplementation(libs.mockito.inline)
-  testImplementation(libs.springboot4.starter.aop)
+  testImplementation(libs.springboot4.starter.aspectj)
   testImplementation(libs.springboot4.starter.graphql)
   testImplementation(libs.springboot4.starter.security)
   testImplementation(libs.springboot4.starter.test)

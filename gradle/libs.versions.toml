@@ -31,7 +31,7 @@ retrofit = "2.9.0"
 slf4j = "1.7.30"
 springboot2 = "2.7.18"
 springboot3 = "3.5.0"
-springboot4 = "4.0.0-M2"
+springboot4 = "4.0.0-M3"
 # Android
 targetSdk = "34"
 compileSdk = "34"
@@ -170,7 +170,7 @@ springboot4-starter-test = { module = "org.springframework.boot:spring-boot-star
 springboot4-starter-web = { module = "org.springframework.boot:spring-boot-starter-web", version.ref = "springboot4" }
 springboot4-starter-websocket = { module = "org.springframework.boot:spring-boot-starter-websocket", version.ref = "springboot4" }
 springboot4-starter-webflux = { module = "org.springframework.boot:spring-boot-starter-webflux", version.ref = "springboot4" }
-springboot4-starter-aop = { module = "org.springframework.boot:spring-boot-starter-aop", version.ref = "springboot4" }
+springboot4-starter-aspectj = { module = "org.springframework.boot:spring-boot-starter-aspectj", version.ref = "springboot4" }
 springboot4-starter-security = { module = "org.springframework.boot:spring-boot-starter-security", version.ref = "springboot4" }
 springboot4-starter-restclient = { module = "org.springframework.boot:spring-boot-starter-restclient", version.ref = "springboot4" }
 springboot4-starter-webclient = { module = "org.springframework.boot:spring-boot-starter-webclient", version.ref = "springboot4" }
