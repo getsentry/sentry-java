@@ -234,9 +234,7 @@ public final class JavaContinuousProfiler
       logger.log(SentryLevel.ERROR, "Failed to start profiling: ", e);
       filename = "";
       // Try to clean up the file if it was created
-      if (jfrFile.exists()) {
-        jfrFile.delete();
-      }
+      safelyRemoveFile(jfrFile);
       return;
     }
 
@@ -306,9 +304,7 @@ public final class JavaContinuousProfiler
       } catch (Exception e) {
         logger.log(SentryLevel.ERROR, "Error stopping profiler, attempting cleanup: ", e);
         // Clean up file if it exists
-        if (jfrFile.exists()) {
-          jfrFile.delete();
-        }
+        safelyRemoveFile(jfrFile);
       }
 
       // The scopes can be null if the profiler is started before the SDK is initialized (app
@@ -333,9 +329,7 @@ public final class JavaContinuousProfiler
             jfrFile.exists(),
             jfrFile.canRead(),
             jfrFile.length());
-        if (jfrFile.exists()) {
-          jfrFile.delete();
-        }
+        safelyRemoveFile(jfrFile);
       }
 
       // Always clean up state, even if stop failed
@@ -403,6 +397,16 @@ public final class JavaContinuousProfiler
               });
     } catch (Throwable e) {
       options.getLogger().log(SentryLevel.DEBUG, "Failed to send profile chunks.", e);
+    }
+  }
+
+  private void safelyRemoveFile(File file) {
+    try {
+      if (file.exists()) {
+        file.delete();
+      }
+    } catch (Exception e) {
+      logger.log(SentryLevel.INFO, "Failed to remove jfr file %s.", file.getAbsolutePath() , e);
     }
   }
 
