@@ -11,6 +11,7 @@ import io.sentry.Attachment;
 import io.sentry.ISpan;
 import io.sentry.MeasurementUnit;
 import io.sentry.Sentry;
+import io.sentry.SentryLogLevel;
 import io.sentry.instrumentation.file.SentryFileOutputStream;
 import io.sentry.protocol.Feedback;
 import io.sentry.protocol.User;
@@ -304,7 +305,10 @@ public class MainActivity extends AppCompatActivity {
           Sentry.replay().enableDebugMaskingOverlay();
         });
 
+    Sentry.logger().log(SentryLogLevel.INFO, "Creating content view");
     setContentView(binding.getRoot());
+
+    Sentry.logger().log(SentryLogLevel.INFO, "MainActivity created");
   }
 
   private void stackOverflow() {

@@ -2927,6 +2927,40 @@ class ScopesTest {
       )
   }
 
+  @Test
+  fun `adds session replay id to log attributes`() {
+    val (sut, mockClient) = getEnabledScopes { it.logs.isEnabled = true }
+    val replayId = SentryId()
+    sut.scope.replayId = replayId
+    sut.logger().log(SentryLogLevel.WARN, "log message")
+
+    verify(mockClient)
+      .captureLog(
+        check {
+          assertEquals("log message", it.body)
+          val logReplayId = it.attributes?.get("sentry.replay_id")!!
+          assertEquals(replayId.toString(), logReplayId.value)
+        },
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `missing session replay id do not break attributes`() {
+    val (sut, mockClient) = getEnabledScopes { it.logs.isEnabled = true }
+    sut.logger().log(SentryLogLevel.WARN, "log message")
+
+    verify(mockClient)
+      .captureLog(
+        check {
+          assertEquals("log message", it.body)
+          val logReplayId = it.attributes?.get("sentry.replay_id")
+          assertNull(logReplayId)
+        },
+        anyOrNull(),
+      )
+  }
+
   // endregion
 
   @Test

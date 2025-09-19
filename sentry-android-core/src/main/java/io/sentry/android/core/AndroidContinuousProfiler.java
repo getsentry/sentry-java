@@ -208,11 +208,11 @@ public class AndroidContinuousProfiler
 
     isRunning = true;
 
-    if (profilerId == SentryId.EMPTY_ID) {
+    if (profilerId.equals(SentryId.EMPTY_ID)) {
       profilerId = new SentryId();
     }
 
-    if (chunkId == SentryId.EMPTY_ID) {
+    if (chunkId.equals(SentryId.EMPTY_ID)) {
       chunkId = new SentryId();
     }
 
