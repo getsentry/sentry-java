@@ -102,8 +102,11 @@ public final class JavaContinuousProfiler
     if (!profileDir.canWrite() || !profileDir.exists()) {
       logger.log(
           SentryLevel.WARNING,
-          "Disabling profiling because traces directory is not writable or does not exist: %s",
-          profilingTracesDirPath);
+          "Disabling profiling because traces directory is not writable or does not exist: %s (writable=%b, exists=%b)",
+          profilingTracesDirPath,
+          profileDir.canWrite(),
+          profileDir.exists()
+        );
       return false;
     }
 
