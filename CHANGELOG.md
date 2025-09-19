@@ -16,6 +16,10 @@
   ```
 - Sentry now supports Spring Boot 4 M3 pre-release ([#4739](https://github.com/getsentry/sentry-java/pull/4739))
 
+### Fixes
+
+- Flush logs on crash ([#4684](https://github.com/getsentry/sentry-java/pull/4684))
+
 ### Improvements
 
 - Remove internal API status from get/setDistinctId ([#4708](https://github.com/getsentry/sentry-java/pull/4708))
