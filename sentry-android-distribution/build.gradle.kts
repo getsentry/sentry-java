@@ -29,4 +29,5 @@ dependencies {
     libs.jetbrains.annotations
   ) // Use implementation instead of compileOnly to override kotlin stdlib's version
   implementation(kotlin(Config.kotlinStdLib, Config.kotlinStdLibVersionAndroid))
+  testImplementation(libs.androidx.test.ext.junit)
 }
