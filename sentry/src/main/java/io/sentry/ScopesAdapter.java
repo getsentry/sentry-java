@@ -381,7 +381,6 @@ public final class ScopesAdapter implements IScopes {
     return Sentry.getCurrentScopes().captureReplay(replay, hint);
   }
 
-  @ApiStatus.Experimental
   @Override
   public @NotNull ILoggerApi logger() {
     return Sentry.getCurrentScopes().logger();

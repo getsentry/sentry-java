@@ -154,10 +154,14 @@ public class SentryHandler extends Handler {
       message = loggingEvent.getResourceBundle().getString(loggingEvent.getMessage());
     }
 
-    attributes.add(SentryAttribute.stringAttribute("sentry.message.template", message));
-
     final @NotNull String formattedMessage = maybeFormatted(arguments, message);
+
+    if (!formattedMessage.equals(message)) {
+      attributes.add(SentryAttribute.stringAttribute("sentry.message.template", message));
+    }
+
     final @NotNull SentryLogParameters params = SentryLogParameters.create(attributes);
+    params.setOrigin("auto.log.jul");
 
     Sentry.logger().log(sentryLevel, params, formattedMessage, arguments);
   }

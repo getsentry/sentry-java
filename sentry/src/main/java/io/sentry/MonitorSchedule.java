@@ -8,7 +8,6 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-@ApiStatus.Experimental
 public final class MonitorSchedule implements JsonUnknown, JsonSerializable {
 
   public static @NotNull MonitorSchedule crontab(final @NotNull String value) {

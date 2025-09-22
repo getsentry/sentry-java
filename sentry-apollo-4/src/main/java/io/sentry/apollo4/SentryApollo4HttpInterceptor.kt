@@ -132,6 +132,9 @@ constructor(
                 .toMutableList()
                 .apply { add(HttpHeader(baggageHeader.name, baggageHeader.value)) }
           }
+          it.w3cTraceparentHeader?.let { w3cHeader ->
+            cleanedHeaders.add(HttpHeader(w3cHeader.name, w3cHeader.value))
+          }
         }
     }
 

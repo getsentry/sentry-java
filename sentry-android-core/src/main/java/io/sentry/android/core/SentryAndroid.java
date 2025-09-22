@@ -41,6 +41,9 @@ public final class SentryAndroid {
   static final String SENTRY_REPLAY_INTEGRATION_CLASS_NAME =
       "io.sentry.android.replay.ReplayIntegration";
 
+  static final String SENTRY_DISTRIBUTION_INTEGRATION_CLASS_NAME =
+      "io.sentry.android.distribution.DistributionIntegration";
+
   private static final String TIMBER_CLASS_NAME = "timber.log.Timber";
   private static final String FRAGMENT_CLASS_NAME =
       "androidx.fragment.app.FragmentManager$FragmentLifecycleCallbacks";
@@ -111,6 +114,8 @@ public final class SentryAndroid {
                     && classLoader.isClassAvailable(SENTRY_TIMBER_INTEGRATION_CLASS_NAME, options));
             final boolean isReplayAvailable =
                 classLoader.isClassAvailable(SENTRY_REPLAY_INTEGRATION_CLASS_NAME, options);
+            final boolean isDistributionAvailable =
+                classLoader.isClassAvailable(SENTRY_DISTRIBUTION_INTEGRATION_CLASS_NAME, options);
 
             final BuildInfoProvider buildInfoProvider = new BuildInfoProvider(logger);
             final io.sentry.util.LoadClass loadClass = new io.sentry.util.LoadClass();
@@ -131,7 +136,8 @@ public final class SentryAndroid {
                 activityFramesTracker,
                 isFragmentAvailable,
                 isTimberAvailable,
-                isReplayAvailable);
+                isReplayAvailable,
+                isDistributionAvailable);
 
             try {
               configuration.configure(options);

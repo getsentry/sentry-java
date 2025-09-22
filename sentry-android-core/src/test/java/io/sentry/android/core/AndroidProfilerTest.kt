@@ -80,6 +80,8 @@ class AndroidProfilerTest {
         override fun close(timeoutMillis: Long) {}
 
         override fun isClosed() = false
+
+        override fun prewarm() = Unit
       }
 
     val options =
@@ -122,6 +124,7 @@ class AndroidProfilerTest {
       buildInfoProvider,
       loadClass,
       activityFramesTracker,
+      false,
       false,
       false,
       false,

@@ -18,11 +18,14 @@ plugins {
     alias(libs.plugins.kover) apply false
     alias(libs.plugins.vanniktech.maven.publish) apply false
     alias(libs.plugins.kotlin.android) apply false
+    alias(libs.plugins.kotlin.multiplatform) apply false
+    alias(libs.plugins.kotlin.jvm) apply false
+    alias(libs.plugins.kotlin.spring) apply false
     alias(libs.plugins.buildconfig) apply false
     // dokka is required by gradle-maven-publish-plugin.
     alias(libs.plugins.dokka) apply false
     alias(libs.plugins.dokka.javadoc) apply false
-    alias(libs.plugins.compose.compiler) apply false
+    alias(libs.plugins.kotlin.compose) apply false
     alias(libs.plugins.errorprone) apply false
     alias(libs.plugins.gradle.versions) apply false
     alias(libs.plugins.spring.dependency.management) apply false
@@ -61,6 +64,7 @@ apiValidation {
             "sentry-samples-servlet",
             "sentry-samples-spring",
             "sentry-samples-spring-jakarta",
+            "sentry-samples-spring-7",
             "sentry-samples-spring-boot",
             "sentry-samples-spring-boot-opentelemetry",
             "sentry-samples-spring-boot-opentelemetry-noagent",
@@ -69,6 +73,10 @@ apiValidation {
             "sentry-samples-spring-boot-jakarta-opentelemetry-noagent",
             "sentry-samples-spring-boot-webflux",
             "sentry-samples-spring-boot-webflux-jakarta",
+            "sentry-samples-spring-boot-4",
+            "sentry-samples-spring-boot-4-opentelemetry",
+            "sentry-samples-spring-boot-4-opentelemetry-noagent",
+            "sentry-samples-spring-boot-4-webflux",
             "sentry-samples-ktor-client",
             "sentry-uitest-android",
             "sentry-uitest-android-benchmark",
@@ -153,7 +161,7 @@ subprojects {
         }
     }
 
-    if (!this.name.contains("sample") && !this.name.contains("integration-tests") && this.name != "sentry-system-test-support" && this.name != "sentry-test-support") {
+    if (!this.name.contains("sample") && !this.name.contains("integration-tests") && this.name != "sentry-system-test-support" && this.name != "sentry-test-support" && this.name != "sentry-android-distribution") {
         apply<DistributionPlugin>()
         apply<com.vanniktech.maven.publish.MavenPublishPlugin>()
 

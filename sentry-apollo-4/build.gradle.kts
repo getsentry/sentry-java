@@ -4,11 +4,12 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
   `java-library`
   id("io.sentry.javadoc")
-  kotlin("jvm")
+  alias(libs.plugins.kotlin.jvm)
   jacoco
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.buildconfig)
+  alias(libs.plugins.animalsniffer)
 }
 
 configure<JavaPluginExtension> {
@@ -17,8 +18,9 @@ configure<JavaPluginExtension> {
 }
 
 tasks.withType<KotlinCompile>().configureEach {
-  kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
-  kotlinOptions.languageVersion = libs.versions.kotlin.compatible.version.get()
+  compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8
+  compilerOptions.languageVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
+  compilerOptions.apiVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
 }
 
 dependencies {
@@ -43,6 +45,9 @@ dependencies {
   testImplementation(libs.mockito.inline)
   testImplementation(libs.okhttp.mockwebserver)
   testImplementation("org.jetbrains.kotlin:kotlin-reflect:2.0.0")
+
+  val gummyBearsModule = libs.gummy.bears.api21.get().module
+  signature("${gummyBearsModule}:${libs.versions.gummyBears.get()}@signature")
 }
 
 configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
@@ -63,6 +68,7 @@ tasks {
   check {
     dependsOn(jacocoTestCoverageVerification)
     dependsOn(jacocoTestReport)
+    dependsOn(animalsnifferMain)
   }
 }
 

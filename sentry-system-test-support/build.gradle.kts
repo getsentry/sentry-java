@@ -1,7 +1,7 @@
 plugins {
   `java-library`
   id("io.sentry.javadoc")
-  kotlin("jvm")
+  alias(libs.plugins.kotlin.jvm)
   jacoco
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
@@ -9,12 +9,14 @@ plugins {
 }
 
 configure<JavaPluginExtension> {
-  sourceCompatibility = JavaVersion.VERSION_17
-  targetCompatibility = JavaVersion.VERSION_17
+  sourceCompatibility = JavaVersion.VERSION_1_8
+  targetCompatibility = JavaVersion.VERSION_1_8
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
-  kotlinOptions.jvmTarget = JavaVersion.VERSION_17.toString()
+  compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8
+  compilerOptions.languageVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
+  compilerOptions.apiVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
 }
 
 dependencies {
@@ -24,10 +26,8 @@ dependencies {
 
   compileOnly(libs.jetbrains.annotations)
   compileOnly(libs.nopen.annotations)
-  compileOnly(libs.springboot3.starter.test) {
-    exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
-  }
-  compileOnly(libs.springboot3.starter.web)
+
+  compileOnly(libs.springboot.starter.web)
 
   implementation(libs.jackson.databind)
   implementation(libs.jackson.kotlin)

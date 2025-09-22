@@ -2,10 +2,105 @@
 
 ## Unreleased
 
+### Features
+
+- Move SentryLogs out of experimental ([#4710](https://github.com/getsentry/sentry-java/pull/4710))
+- Add support for w3c traceparent header ([#4671](https://github.com/getsentry/sentry-java/pull/4671))
+  - This feature is disabled by default. If enabled, outgoing requests will include the w3c `traceparent` header.
+  - See https://develop.sentry.dev/sdk/telemetry/traces/distributed-tracing/#w3c-trace-context-header for more details.
+  ```kotlin
+  Sentry(Android).init(context) { options ->
+    // ...
+    options.isPropagateTraceparent = true
+  }
+  ```
+- Sentry now supports Spring Boot 4 M3 pre-release ([#4739](https://github.com/getsentry/sentry-java/pull/4739))
+
+### Improvements
+
+- Remove internal API status from get/setDistinctId ([#4708](https://github.com/getsentry/sentry-java/pull/4708))
+- Remove ApiStatus.Experimental annotation from check-in API ([#4721](https://github.com/getsentry/sentry-java/pull/4721))
+
+### Fixes
+
+- Session Replay: Fix `NoSuchElementException` in `BufferCaptureStrategy` ([#4717](https://github.com/getsentry/sentry-java/pull/4717))
+- Session Replay: Fix continue recording in Session mode after Buffer is triggered ([#4719](https://github.com/getsentry/sentry-java/pull/4719))
+
+### Dependencies
+
+- Bump Native SDK from v0.10.0 to v0.10.1 ([#4695](https://github.com/getsentry/sentry-java/pull/4695))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0101)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.10.0...0.10.1)
+
+## 8.21.1
+
+### Fixes
+
+- Use Kotlin stdlib 1.9.24 dependency instead of 2.2.0 for all Android modules ([#4707](https://github.com/getsentry/sentry-java/pull/4707))
+  - This fixes compile time issues if your app is using Kotlin < 2.x
+
+## 8.21.0
+
+### Fixes
+
+- Only set log template for logging integrations if formatted message differs from template ([#4682](https://github.com/getsentry/sentry-java/pull/4682))
+
+### Features
+
+- Add support for Spring Boot 4 and Spring 7 ([#4601](https://github.com/getsentry/sentry-java/pull/4601))
+  - NOTE: Our `sentry-opentelemetry-agentless-spring` is not working yet for Spring Boot 4. Please use `sentry-opentelemetry-agent` until OpenTelemetry has support for Spring Boot 4.
+- Replace `UUIDGenerator` implementation with Apache licensed code ([#4662](https://github.com/getsentry/sentry-java/pull/4662))
+- Replace `Random` implementation with MIT licensed code ([#4664](https://github.com/getsentry/sentry-java/pull/4664))
+- Add support for `vars` attribute in `SentryStackFrame` ([#4686](https://github.com/getsentry/sentry-java/pull/4686))
+  - **Breaking change**: The type of the `vars` attribute has been changed from `Map<String, String>` to `Map<String, Object>`.
+
+## 8.20.0
+
+### Fixes
+
+- Do not use named capturing groups for regular expressions ([#4652](https://github.com/getsentry/sentry-java/pull/4652))
+  - This fixes a crash on Android versions below 8.0 (API level 26)
+
+### Features
+
+- Add onDiscard to enable users to track the type and amount of data discarded before reaching Sentry ([#4612](https://github.com/getsentry/sentry-java/pull/4612))
+  - Stub for setting the callback on `Sentry.init`:
+     ```java
+     Sentry.init(options -> {
+       ...
+       options.setOnDiscard(
+        (reason, category, number) -> {
+          // Your logic to process discarded data
+        });
+     });
+     ```
+
+## 8.19.1
+
+> [!Warning]
+> Android: This release is incompatible with API levels below 26. We recommend using SDK version 8.20.0 or higher instead.
+
+### Fixes
+
+- Do not store No-Op scopes onto OpenTelemetry Context when wrapping ([#4631](https://github.com/getsentry/sentry-java/pull/4631))
+  - In 8.18.0 and 8.19.0 the SDK could break when initialized too late.
+
+## 8.19.0
+
+> [!Warning]
+> Android: This release is incompatible with API levels below 26. We recommend using SDK version 8.20.0 or higher instead.
+
+### Features
+
+- Add a `isEnableSystemEventBreadcrumbsExtras` option to disable reporting system events extras for breadcrumbs ([#4625](https://github.com/getsentry/sentry-java/pull/4625))
+
 ### Improvements
 
 - Session Replay: Use main thread looper to schedule replay capture ([#4542](https://github.com/getsentry/sentry-java/pull/4542))
 - Use single `LifecycleObserver` and multi-cast it to the integrations interested in lifecycle states ([#4567](https://github.com/getsentry/sentry-java/pull/4567))
+- Add `sentry.origin` attribute to logs ([#4618](https://github.com/getsentry/sentry-java/pull/4618))
+  - This helps identify which integration captured a log event
+- Prewarm `SentryExecutorService` for better performance at runtime ([#4606](https://github.com/getsentry/sentry-java/pull/4606))
 
 ### Fixes
 
@@ -13,6 +108,7 @@
 - Deduplicate battery breadcrumbs ([#4561](https://github.com/getsentry/sentry-java/pull/4561))
 - Remove unused method in ManifestMetadataReader ([#4585](https://github.com/getsentry/sentry-java/pull/4585))
 - Have single `NetworkCallback` registered at a time to reduce IPC calls ([#4562](https://github.com/getsentry/sentry-java/pull/4562))
+- Do not register for SystemEvents and NetworkCallbacks immediately when launched with non-foreground importance ([#4579](https://github.com/getsentry/sentry-java/pull/4579))
 - Limit ProGuard keep rules for native methods within `sentry-android-ndk` to the `io.sentry.**` namespace. ([#4427](https://github.com/getsentry/sentry-java/pull/4427))
   - If you relied on the Sentry SDK to keep native method names for JNI compatibility within your namespace, please review your ProGuard rules and ensure the configuration still works. Especially when you're not consuming any of the default Android proguard rules (`proguard-android.txt` or `proguard-android-optimize.txt`) the following config should be present:
   ```
@@ -21,6 +117,19 @@
   }
   ```
 - Fix abstract method error in `SentrySupportSQLiteDatabase` ([#4597](https://github.com/getsentry/sentry-java/pull/4597))
+- Ensure frame metrics listeners are registered/unregistered on the main thread ([#4582](https://github.com/getsentry/sentry-java/pull/4582))
+- Do not report cached events as lost ([#4575](https://github.com/getsentry/sentry-java/pull/4575))
+  - Previously events were recorded as lost early despite being retried later through the cache
+- Move and flush unfinished previous session on init ([#4624](https://github.com/getsentry/sentry-java/pull/4624))
+  - This removes the need for unnecessary blocking our background queue for 15 seconds in the case of a background app start
+- Switch to compileOnly dependency for compose-ui-material ([#4630](https://github.com/getsentry/sentry-java/pull/4630))
+  - This fixes `StackOverflowError` when using OSS Licenses plugin 
+
+### Dependencies
+
+- Bump Native SDK from v0.8.4 to v0.10.0 ([#4623](https://github.com/getsentry/sentry-java/pull/4623))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0100)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.8.4...0.10.0)
 
 ## 8.18.0
 

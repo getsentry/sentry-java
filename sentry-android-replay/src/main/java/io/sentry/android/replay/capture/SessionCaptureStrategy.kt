@@ -98,7 +98,7 @@ internal class SessionCaptureStrategy(
       }
 
       if (currentConfig == null) {
-        options.logger.log(DEBUG, "Recorder config is not set, not recording frame")
+        options.logger.log(DEBUG, "Recorder config is not set, not capturing a segment")
         return@submitSafely
       }
 

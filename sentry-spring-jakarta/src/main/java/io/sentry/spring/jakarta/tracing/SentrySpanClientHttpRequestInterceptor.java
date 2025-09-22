@@ -13,6 +13,7 @@ import io.sentry.ISpan;
 import io.sentry.SpanDataConvention;
 import io.sentry.SpanOptions;
 import io.sentry.SpanStatus;
+import io.sentry.W3CTraceparentHeader;
 import io.sentry.util.Objects;
 import io.sentry.util.SpanUtils;
 import io.sentry.util.TracingUtils;
@@ -112,6 +113,12 @@ public class SentrySpanClientHttpRequestInterceptor implements ClientHttpRequest
       final @Nullable BaggageHeader baggageHeader = tracingHeaders.getBaggageHeader();
       if (baggageHeader != null) {
         request.getHeaders().set(baggageHeader.getName(), baggageHeader.getValue());
+      }
+
+      final @Nullable W3CTraceparentHeader w3cTraceparentHeader =
+          tracingHeaders.getW3cTraceparentHeader();
+      if (w3cTraceparentHeader != null) {
+        request.getHeaders().add(w3cTraceparentHeader.getName(), w3cTraceparentHeader.getValue());
       }
     }
   }

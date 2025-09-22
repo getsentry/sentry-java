@@ -3,7 +3,7 @@ import net.ltgt.gradle.errorprone.errorprone
 
 plugins {
   id("com.android.application")
-  kotlin("android")
+  alias(libs.plugins.kotlin.android)
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.detekt)
@@ -76,7 +76,7 @@ android {
     }
   }
 
-  kotlinOptions { jvmTarget = JavaVersion.VERSION_1_8.toString() }
+  kotlin { compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8 }
 
   lint {
     warningsAsErrors = true

@@ -1,0 +1,65 @@
+---
+alwaysApply: true
+description: Sentry Java SDK - Development Rules Overview
+---
+
+# Sentry Java SDK Development Rules
+
+## Always Applied Rules
+
+These rules are automatically included in every conversation:
+- **coding.mdc**: General contributing guidelines, build commands, and workflow rules
+
+## Domain-Specific Rules (Fetch Only When Needed)
+
+Use the `fetch_rules` tool to include these rules when working on specific areas:
+
+### Core SDK Functionality
+- **`scopes`**: Use when working with:
+  - Hub/Scope management, forking, or lifecycle
+  - `Sentry.getCurrentScopes()`, `pushScope()`, `withScope()` 
+  - `ScopeType` (GLOBAL, ISOLATION, CURRENT)
+  - Thread-local storage, scope bleeding issues
+  - Migration from Hub API (v7 → v8)
+
+- **`deduplication`**: Use when working with:
+  - Duplicate event detection/prevention
+  - `DuplicateEventDetectionEventProcessor`
+  - `enableDeduplication` option
+
+- **`offline`**: Use when working with:
+  - Caching, envelope storage/retrieval
+  - Network failure handling, retry logic
+  - `AsyncHttpTransport`, `EnvelopeCache`
+  - Rate limiting, cache rotation
+  - Android vs JVM caching differences
+
+### Integration & Infrastructure
+- **`opentelemetry`**: Use when working with:
+  - OpenTelemetry modules (`sentry-opentelemetry-*`)
+  - Agent vs agentless configurations
+  - Span processing, sampling, context propagation
+  - `OtelSpanFactory`, `SentrySpanExporter`
+  - Tracing, distributed tracing
+
+- **`new_module`**: Use when adding a new integration or sample module
+
+### Testing
+- **`e2e_tests`**: Use when working with:
+  - System tests, sample applications
+  - `system-test-runner.py`, mock Sentry server
+  - End-to-end test infrastructure
+  - CI system test workflows
+
+## Usage Guidelines
+
+1. **Start minimal**: Only include `coding.mdc` (auto-applied) for general tasks
+2. **Fetch on-demand**: Use `fetch_rules ["rule_name"]` when you identify specific domain work
+3. **Multiple rules**: Fetch multiple rules if task spans domains (e.g., `["scopes", "opentelemetry"]` for tracing scope issues)
+4. **Context clues**: Look for these keywords in requests to determine relevant rules:
+   - Scope/Hub/forking → `scopes`
+   - Duplicate/dedup → `deduplication` 
+   - OpenTelemetry/tracing/spans → `opentelemetry`
+   - new module/integration/sample → `new_module`
+   - Cache/offline/network → `offline`
+   - System test/e2e/sample → `e2e_tests`

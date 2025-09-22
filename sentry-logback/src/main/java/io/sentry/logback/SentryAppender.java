@@ -183,16 +183,20 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
 
     @Nullable Object[] arguments = null;
     final @NotNull SentryAttributes attributes = SentryAttributes.of();
+    final @NotNull String formattedMessage = formatted(loggingEvent);
 
     // if encoder is set we treat message+params as PII as encoders may be used to mask/strip PII
     if (encoder == null || ScopesAdapter.getInstance().getOptions().isSendDefaultPii()) {
-      attributes.add(
-          SentryAttribute.stringAttribute("sentry.message.template", loggingEvent.getMessage()));
+      final @Nullable String nonFormattedMessage = loggingEvent.getMessage();
+      if (nonFormattedMessage != null && !formattedMessage.equals(nonFormattedMessage)) {
+        attributes.add(
+            SentryAttribute.stringAttribute("sentry.message.template", nonFormattedMessage));
+      }
       arguments = loggingEvent.getArgumentArray();
     }
 
-    final @NotNull String formattedMessage = formatted(loggingEvent);
     final @NotNull SentryLogParameters params = SentryLogParameters.create(attributes);
+    params.setOrigin("auto.log.logback");
 
     Sentry.logger().log(sentryLevel, params, formattedMessage, arguments);
   }
