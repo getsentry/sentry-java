@@ -30,9 +30,11 @@ jobs:
           pip install requests packaging
 
       - name: Update Spring Boot versions
+        id: update_versions
         run: |
           cat << 'EOF' > update_versions.py
           import json
+          import os
           import re
           import requests
           from packaging import version
@@ -248,13 +250,19 @@ jobs:
                       print("No changes needed")
 
               if changes_made:
-                  print(f"\nChanges made to workflows:")
+                  print(f"\nChanges made to Spring Boot version files:")
                   for change in change_summary:
                       print(f"  - {change}")
 
-                  # Write summary for later use
+                  # Write summary for GitHub output
                   with open('version_changes.txt', 'w') as f:
                       f.write('\n'.join(change_summary))
+                  
+                  # Set GitHub output for use in PR description
+                  with open(os.environ.get('GITHUB_OUTPUT', '/dev/null'), 'a') as f:
+                      f.write(f"changes_summary<<EOF\n")
+                      f.write('\n'.join(change_summary))
+                      f.write(f"\nEOF\n")
               else:
                   print("\nNo version updates needed")
 
@@ -265,6 +273,10 @@ jobs:
           EOF
 
           python update_versions.py
+
+      - name: Clean up temporary files
+        run: |
+          rm -f update_versions.py version_changes.txt
 
       - name: Check for changes
         id: changes
@@ -289,7 +301,7 @@ jobs:
             This PR updates the Spring Boot version matrices in our test workflows based on the latest available versions.
 
             ### Changes Made:
-            $(cat version_changes.txt 2>/dev/null || echo "See diff for changes")
+            ${{ steps.update_versions.outputs.changes_summary || 'See diff for changes' }}
 
             ### Update Strategy:
             - **Patch updates**: Updated to latest patch version of existing minor versions
@@ -305,7 +317,7 @@ jobs:
         run: |
           if [ "${{ steps.changes.outputs.has_changes }}" = "true" ]; then
             echo "✅ Spring Boot version updates found and PR created"
-            cat version_changes.txt 2>/dev/null || true
+            echo "${{ steps.update_versions.outputs.changes_summary }}"
           else
             echo "ℹ️ No Spring Boot version updates needed"
           fi
