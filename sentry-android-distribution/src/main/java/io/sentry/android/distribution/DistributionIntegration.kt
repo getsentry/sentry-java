@@ -12,8 +12,6 @@ import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.UpdateInfo
 import io.sentry.UpdateStatus
-import java.io.IOException
-import java.net.ConnectException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
 import org.jetbrains.annotations.ApiStatus
@@ -75,16 +73,10 @@ public class DistributionIntegration(context: Context) : Integration, IDistribut
         "DNS lookup failed - check internet connection",
       )
       UpdateStatus.UpdateError("No internet connection or invalid server URL")
-    } catch (e: ConnectException) {
-      sentryOptions.logger.log(SentryLevel.ERROR, e, "Connection refused - server may be down")
-      UpdateStatus.UpdateError("Unable to connect to server")
     } catch (e: SocketTimeoutException) {
       // SocketTimeoutException could indicate either slow network or server issues
       sentryOptions.logger.log(SentryLevel.ERROR, e, "Network request timed out")
-      UpdateStatus.UpdateError("Request timed out - check connection speed")
-    } catch (e: IOException) {
-      sentryOptions.logger.log(SentryLevel.ERROR, e, "Network I/O error occurred")
-      UpdateStatus.UpdateError("Network error occurred")
+      UpdateStatus.UpdateError("Request timed out - check network connection")
     } catch (e: Exception) {
       sentryOptions.logger.log(SentryLevel.ERROR, e, "Unexpected error checking for updates")
       UpdateStatus.UpdateError("Unexpected error: ${e.message}")
