@@ -444,12 +444,10 @@ public final class ExternalOptions {
     this.sendDefaultPii = sendDefaultPii;
   }
 
-  @ApiStatus.Experimental
   public void setIgnoredCheckIns(final @Nullable List<String> ignoredCheckIns) {
     this.ignoredCheckIns = ignoredCheckIns;
   }
 
-  @ApiStatus.Experimental
   public @Nullable List<String> getIgnoredCheckIns() {
     return ignoredCheckIns;
   }
@@ -489,12 +487,10 @@ public final class ExternalOptions {
     return forceInit;
   }
 
-  @ApiStatus.Experimental
   public @Nullable SentryOptions.Cron getCron() {
     return cron;
   }
 
-  @ApiStatus.Experimental
   public void setCron(final @Nullable SentryOptions.Cron cron) {
     this.cron = cron;
   }

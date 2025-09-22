@@ -32,6 +32,7 @@ import io.sentry.android.core.internal.util.AndroidCurrentDateProvider;
 import io.sentry.android.core.internal.util.AndroidThreadChecker;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.android.core.performance.AppStartMetrics;
+import io.sentry.android.distribution.DistributionIntegration;
 import io.sentry.android.fragment.FragmentLifecycleIntegration;
 import io.sentry.android.replay.DefaultReplayBreadcrumbConverter;
 import io.sentry.android.replay.ReplayIntegration;
@@ -321,7 +322,8 @@ final class AndroidOptionsInitializer {
       final @NotNull ActivityFramesTracker activityFramesTracker,
       final boolean isFragmentAvailable,
       final boolean isTimberAvailable,
-      final boolean isReplayAvailable) {
+      final boolean isReplayAvailable,
+      final boolean isDistributionAvailable) {
 
     // Integration MUST NOT cache option values in ctor, as they will be configured later by the
     // user
@@ -390,6 +392,11 @@ final class AndroidOptionsInitializer {
       replay.setBreadcrumbConverter(new DefaultReplayBreadcrumbConverter());
       options.addIntegration(replay);
       options.setReplayController(replay);
+    }
+    if (isDistributionAvailable) {
+      final DistributionIntegration distribution = new DistributionIntegration((context));
+      options.setDistributionController(distribution);
+      options.addIntegration(distribution);
     }
     options
         .getFeedbackOptions()

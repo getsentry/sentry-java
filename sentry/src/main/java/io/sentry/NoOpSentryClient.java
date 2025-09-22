@@ -72,7 +72,6 @@ final class NoOpSentryClient implements ISentryClient {
   }
 
   @Override
-  @ApiStatus.Experimental
   public @NotNull SentryId captureCheckIn(
       @NotNull CheckIn checkIn, @Nullable IScope scope, @Nullable Hint hint) {
     return SentryId.EMPTY_ID;
