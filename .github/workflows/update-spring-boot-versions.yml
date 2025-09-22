@@ -67,13 +67,24 @@ jobs:
                               if versions_element is not None:
                                   for version_elem in versions_element.findall('version'):
                                       v = version_elem.text
-                                      if v and not any(suffix in v for suffix in ['SNAPSHOT', 'RC', 'BUILD']):
-                                          versions.append(v)
+                                      if v and not any(suffix in v for suffix in ['SNAPSHOT', 'RC', 'BUILD', 'RELEASE']):
+                                          # Only include versions that start with a digit and use standard format
+                                          if v and v[0].isdigit() and v.count('.') >= 2:
+                                              versions.append(v)
                           
                           if versions:
                               print(f"Found {len(versions)} versions via XML")
                               print(f"Sample versions: {versions[-10:] if len(versions) > 10 else versions}")
-                              return sorted(versions, key=version.parse)
+                              # Filter out any versions that still can't be parsed
+                              valid_versions = []
+                              for v in versions:
+                                  try:
+                                      version.parse(v)
+                                      valid_versions.append(v)
+                                  except Exception as e:
+                                      print(f"Skipping invalid version format: {v}")
+                              print(f"Filtered to {len(valid_versions)} valid versions")
+                              return sorted(valid_versions, key=version.parse)
                       
                       # Fallback to search API
                       print("Trying search API fallback...")
@@ -101,12 +112,22 @@ jobs:
                       versions = []
                       for doc in docs:
                           version_field = doc.get('v') or doc.get('version')
-                          if version_field and not any(suffix in version_field for suffix in ['SNAPSHOT', 'RC', 'BUILD']):
+                          if (version_field and 
+                              not any(suffix in version_field for suffix in ['SNAPSHOT', 'RC', 'BUILD', 'RELEASE']) and
+                              version_field[0].isdigit() and version_field.count('.') >= 2):
                               versions.append(version_field)
 
                       if versions:
-                          print(f"Successfully fetched {len(versions)} versions via search API")
-                          return sorted(versions, key=version.parse)
+                          # Filter out any versions that still can't be parsed
+                          valid_versions = []
+                          for v in versions:
+                              try:
+                                  version.parse(v)
+                                  valid_versions.append(v)
+                              except Exception as e:
+                                  print(f"Skipping invalid version format: {v}")
+                          print(f"Successfully fetched {len(valid_versions)} valid versions via search API")
+                          return sorted(valid_versions, key=version.parse)
                       
                   except Exception as e:
                       print(f"Attempt {attempt + 1} failed: {e}")
