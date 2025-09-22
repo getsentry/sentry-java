@@ -43,61 +43,71 @@ jobs:
 
           def get_spring_boot_versions():
               """Fetch all Spring Boot versions from Maven Central with retry logic"""
-              # Use the versions API instead of the general search
-              url = "https://search.maven.org/solrsearch/select"
-              params = {
-                  "q": "g:org.springframework.boot AND a:spring-boot",
-                  "core": "gav",
-                  "rows": 500,
-                  "wt": "json"
-              }
-
+              
               max_retries = 3
-              timeout = 60  # Increased timeout
+              timeout = 60
               
               for attempt in range(max_retries):
                   try:
                       print(f"Fetching versions (attempt {attempt + 1}/{max_retries})...")
-                      response = requests.get(url, params=params, timeout=timeout)
+                      
+                      # Try the Maven Central REST API first
+                      rest_url = "https://repo1.maven.org/maven2/org/springframework/boot/spring-boot/maven-metadata.xml"
+                      response = requests.get(rest_url, timeout=timeout)
+                      
+                      if response.status_code == 200:
+                          print("Using Maven metadata XML approach...")
+                          # Parse XML to extract versions
+                          import xml.etree.ElementTree as ET
+                          root = ET.fromstring(response.text)
+                          versions = []
+                          versioning = root.find('versioning')
+                          if versioning is not None:
+                              versions_element = versioning.find('versions')
+                              if versions_element is not None:
+                                  for version_elem in versions_element.findall('version'):
+                                      v = version_elem.text
+                                      if v and not any(suffix in v for suffix in ['SNAPSHOT', 'RC', 'BUILD']):
+                                          versions.append(v)
+                          
+                          if versions:
+                              print(f"Found {len(versions)} versions via XML")
+                              print(f"Sample versions: {versions[-10:] if len(versions) > 10 else versions}")
+                              return sorted(versions, key=version.parse)
+                      
+                      # Fallback to search API
+                      print("Trying search API fallback...")
+                      search_url = "https://search.maven.org/solrsearch/select"
+                      params = {
+                          "q": "g:\"org.springframework.boot\" AND a:\"spring-boot\"",
+                          "core": "gav", 
+                          "rows": 1000,
+                          "wt": "json"
+                      }
+                      
+                      response = requests.get(search_url, params=params, timeout=timeout)
                       response.raise_for_status()
                       data = response.json()
 
                       if 'response' not in data or 'docs' not in data['response']:
-                          raise Exception(f"Unexpected API response structure: {data}")
+                          raise Exception(f"Unexpected API response structure")
 
                       docs = data['response']['docs']
-                      print(f"Found {len(docs)} documents in response")
+                      print(f"Found {len(docs)} documents in search response")
                       
                       if docs and len(docs) > 0:
                           print(f"Sample doc structure: {list(docs[0].keys())}")
 
                       versions = []
                       for doc in docs:
-                          # Try different possible version field names
-                          version_field = None
-                          if 'v' in doc:
-                              version_field = doc['v']
-                          elif 'version' in doc:
-                              version_field = doc['version']
-                          elif 'latestVersion' in doc:
-                              # This might be a summary doc, skip it
-                              print(f"Skipping summary doc with latestVersion: {doc.get('latestVersion')}")
-                              continue
-                          else:
-                              print(f"Warning: No version field found in doc: {doc}")
-                              continue
-                          
-                          # Only include release versions (no SNAPSHOT, RC, M versions for 2.x and 3.x)
-                          if not any(suffix in version_field for suffix in ['SNAPSHOT', 'RC', 'BUILD']):
+                          version_field = doc.get('v') or doc.get('version')
+                          if version_field and not any(suffix in version_field for suffix in ['SNAPSHOT', 'RC', 'BUILD']):
                               versions.append(version_field)
 
-                      print(f"Successfully fetched {len(versions)} versions")
-                      return sorted(versions, key=version.parse)
-                  except requests.exceptions.Timeout as e:
-                      print(f"Attempt {attempt + 1} timed out: {e}")
-                      if attempt < max_retries - 1:
-                          print("Retrying...")
-                          continue
+                      if versions:
+                          print(f"Successfully fetched {len(versions)} versions via search API")
+                          return sorted(versions, key=version.parse)
+                      
                   except Exception as e:
                       print(f"Attempt {attempt + 1} failed: {e}")
                       if attempt < max_retries - 1:
