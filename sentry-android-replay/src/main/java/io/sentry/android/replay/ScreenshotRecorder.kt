@@ -5,6 +5,7 @@ import android.annotation.TargetApi
 import android.content.Context
 import android.graphics.Bitmap
 import android.os.SystemClock
+import android.util.Log
 import android.view.View
 import android.view.ViewTreeObserver
 import io.sentry.ScreenshotStrategyType
@@ -51,7 +52,7 @@ internal class ScreenshotRecorder(
           screenshotRecorderCallback,
           options,
           config,
-          debugOverlayDrawable
+          debugOverlayDrawable,
         )
     }
 
@@ -96,10 +97,8 @@ internal class ScreenshotRecorder(
       contentChanged.set(false)
       val start = SystemClock.uptimeMillis()
       screenshotStrategy.capture(root)
-      if (options.sessionReplay.isDebug) {
-        val duration = SystemClock.uptimeMillis() - start
-        options.logger.log(DEBUG, "screenshotStrategy.capture took %d ms", duration)
-      }
+      val duration = SystemClock.uptimeMillis() - start
+      Log.d("TAG", "Canvas.capture took ${duration}ms")
     } catch (e: Throwable) {
       options.logger.log(WARNING, "Failed to capture replay recording", e)
     }

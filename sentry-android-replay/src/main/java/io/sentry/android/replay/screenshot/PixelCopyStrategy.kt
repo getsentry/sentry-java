@@ -8,7 +8,6 @@ import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.Rect
 import android.graphics.RectF
-import android.os.SystemClock
 import android.view.PixelCopy
 import android.view.View
 import io.sentry.SentryLevel.DEBUG

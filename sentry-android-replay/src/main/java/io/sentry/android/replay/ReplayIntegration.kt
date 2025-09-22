@@ -30,6 +30,7 @@ import io.sentry.android.replay.capture.CaptureStrategy.ReplaySegment
 import io.sentry.android.replay.capture.SessionCaptureStrategy
 import io.sentry.android.replay.gestures.GestureRecorder
 import io.sentry.android.replay.gestures.TouchRecorderCallback
+import io.sentry.android.replay.screenshot.FrameTimingsTracker
 import io.sentry.android.replay.util.MainLooperHandler
 import io.sentry.android.replay.util.appContext
 import io.sentry.android.replay.util.gracefullyShutdown
@@ -102,6 +103,8 @@ public class ReplayIntegration(
   private var gestureRecorder: GestureRecorder? = null
   private val random by lazy { Random() }
   internal val rootViewsSpy by lazy { RootViewsSpy.install() }
+
+  private val framesTracker = FrameTimingsTracker(context)
   private val replayExecutor by lazy {
     Executors.newSingleThreadScheduledExecutor(ReplayExecutorServiceThreadFactory())
   }
@@ -139,7 +142,7 @@ public class ReplayIntegration(
     this.scopes = scopes
     recorder =
       recorderProvider?.invoke()
-        ?: WindowRecorder(options, this, this, mainLooperHandler, replayExecutor)
+        ?: WindowRecorder(options, this, this, mainLooperHandler, replayExecutor, framesTracker)
     gestureRecorder = gestureRecorderProvider?.invoke() ?: GestureRecorder(options, this)
     isEnabled.set(true)
 
