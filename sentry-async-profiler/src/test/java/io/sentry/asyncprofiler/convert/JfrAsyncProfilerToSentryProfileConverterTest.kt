@@ -1,5 +1,6 @@
 package io.sentry.asyncprofiler.convert
 
+import io.sentry.DateUtils
 import io.sentry.ILogger
 import io.sentry.IProfileConverter
 import io.sentry.IScope
@@ -12,7 +13,12 @@ import io.sentry.asyncprofiler.provider.AsyncProfilerProfileConverterProvider
 import io.sentry.protocol.profiling.SentryProfile
 import io.sentry.test.DeferredExecutorService
 import java.io.IOException
+import java.time.LocalDateTime
+import java.time.ZoneOffset
+import java.time.temporal.ChronoUnit
+import java.util.*
 import kotlin.io.path.Path
+import kotlin.math.absoluteValue
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.assertEquals
@@ -159,22 +165,21 @@ class JfrAsyncProfilerToSentryProfileConverterTest {
     val samples = sentryProfile.samples
     assertTrue(samples.isNotEmpty())
 
-    // Verify timestamps are in seconds with proper decimal places
-    samples.forEach { sample ->
-      val timestamp = sample.timestamp
-      assertTrue(timestamp > 0, "Timestamp should be positive")
-      // No need to check exact decimal places as this depends on JFR precision
-      assertTrue(
-        timestamp < System.currentTimeMillis() / 1000.0 + 360,
-        "Timestamp should be recent",
-      )
-    }
+    val minTimestamp = samples.minOf { it.timestamp }
+    val maxTimestamp = samples.maxOf { it.timestamp }
+    val sampleTimeStamp =
+      DateUtils.nanosToDate((maxTimestamp * 1000 * 1000 * 1000).toLong()).toInstant()
 
-    if (samples.isNotEmpty()) {
-      val minTimestamp = samples.minOf { it.timestamp }
-      val maxTimestamp = samples.maxOf { it.timestamp }
-      assertTrue(maxTimestamp >= minTimestamp, "Max timestamp should be >= min timestamp")
-    }
+    // The sample was recorded around "2025-09-05T08:14:50" in UTC timezone
+    val referenceTimestamp = LocalDateTime.parse("2025-09-05T08:14:50").toInstant(ZoneOffset.UTC)
+    val between = ChronoUnit.MILLIS.between(sampleTimeStamp, referenceTimestamp).absoluteValue
+
+    assertTrue(between < 5000, "Sample timestamp should be within 5s of reference timestamp")
+    assertTrue(maxTimestamp >= minTimestamp, "Max timestamp should be >= min timestamp")
+    assertTrue(
+      maxTimestamp - minTimestamp <= 10,
+      "There should be a max difference of <10s between min and max timestamp",
+    )
   }
 
   @Test
