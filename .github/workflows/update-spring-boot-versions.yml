@@ -40,7 +40,7 @@ jobs:
           from pathlib import Path
 
           def get_spring_boot_versions():
-              """Fetch all Spring Boot versions from Maven Central"""
+              """Fetch all Spring Boot versions from Maven Central with retry logic"""
               url = "https://search.maven.org/solrsearch/select"
               params = {
                   "q": "g:org.springframework.boot AND a:spring-boot",
@@ -48,22 +48,38 @@ jobs:
                   "wt": "json"
               }
 
-              try:
-                  response = requests.get(url, params=params, timeout=30)
-                  response.raise_for_status()
-                  data = response.json()
+              max_retries = 3
+              timeout = 60  # Increased timeout
+              
+              for attempt in range(max_retries):
+                  try:
+                      print(f"Fetching versions (attempt {attempt + 1}/{max_retries})...")
+                      response = requests.get(url, params=params, timeout=timeout)
+                      response.raise_for_status()
+                      data = response.json()
 
-                  versions = []
-                  for doc in data['response']['docs']:
-                      v = doc['v']
-                      # Only include release versions (no SNAPSHOT, RC, M versions for 2.x and 3.x)
-                      if not any(suffix in v for suffix in ['SNAPSHOT', 'RC', 'BUILD']):
-                          versions.append(v)
+                      versions = []
+                      for doc in data['response']['docs']:
+                          v = doc['v']
+                          # Only include release versions (no SNAPSHOT, RC, M versions for 2.x and 3.x)
+                          if not any(suffix in v for suffix in ['SNAPSHOT', 'RC', 'BUILD']):
+                              versions.append(v)
 
-                  return sorted(versions, key=version.parse)
-              except Exception as e:
-                  print(f"Error fetching versions: {e}")
-                  return []
+                      print(f"Successfully fetched {len(versions)} versions")
+                      return sorted(versions, key=version.parse)
+                  except requests.exceptions.Timeout as e:
+                      print(f"Attempt {attempt + 1} timed out: {e}")
+                      if attempt < max_retries - 1:
+                          print("Retrying...")
+                          continue
+                  except Exception as e:
+                      print(f"Attempt {attempt + 1} failed: {e}")
+                      if attempt < max_retries - 1:
+                          print("Retrying...")
+                          continue
+              
+              print("All attempts failed")
+              return []
 
           def parse_current_versions(workflow_file):
               """Parse current Spring Boot versions from workflow file"""
