@@ -4,7 +4,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
   alias(libs.plugins.springboot3)
   alias(libs.plugins.spring.dependency.management)
-  kotlin("jvm")
+  alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.kotlin.spring)
 }
 
@@ -45,9 +45,9 @@ dependencies {
 configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
 
 tasks.withType<KotlinCompile>().configureEach {
-  kotlinOptions {
-    freeCompilerArgs = listOf("-Xjsr305=strict")
-    jvmTarget = JavaVersion.VERSION_17.toString()
+  kotlin {
+    compilerOptions.freeCompilerArgs = listOf("-Xjsr305=strict")
+    compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
   }
 }
 

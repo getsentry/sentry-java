@@ -1,0 +1,13 @@
+---
+alwaysApply: false
+description: Java SDK Event deduplication
+---
+
+# Java SDK Event deduplication
+
+To avoid sending the same error multiple times, there is deduplication logic in place in the SDK.
+Duplicate captures can happen due to multiple integrations capturing the exception as well as additional manual calls to `Sentry.captureException`.
+
+Deduplication is performed in `DuplicateEventDetectionEventProcessor` which returns `null` when it detects a duplicate event causing it to be dropped.
+
+The `enableDeduplication` option can be used to opt out of deduplication. It is enabled by default.

@@ -47,9 +47,19 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
     this.currentDateProvider = currentDateProvider;
   }
 
+  @SuppressWarnings("deprecation")
   @Override
   public void store(@NotNull SentryEnvelope envelope, @NotNull Hint hint) {
-    super.store(envelope, hint);
+    storeInternalAndroid(envelope, hint);
+  }
+
+  @Override
+  public boolean storeEnvelope(@NotNull SentryEnvelope envelope, @NotNull Hint hint) {
+    return storeInternalAndroid(envelope, hint);
+  }
+
+  private boolean storeInternalAndroid(@NotNull SentryEnvelope envelope, @NotNull Hint hint) {
+    final boolean didStore = super.storeEnvelope(envelope, hint);
 
     final SentryAndroidOptions options = (SentryAndroidOptions) this.options;
     final TimeSpan sdkInitTimeSpan = AppStartMetrics.getInstance().getSdkInitTimeSpan();
@@ -83,6 +93,7 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
 
           writeLastReportedAnrMarker(timestamp);
         });
+    return didStore;
   }
 
   @TestOnly

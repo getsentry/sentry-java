@@ -1,3 +1,31 @@
+/*
+ * Root detection implementation adapted from Ravencoin Android:
+ * https://github.com/Menwitz/ravencoin-android/blob/7b68378c046e2fd0d6f30cea59cbd87fcb6db12d/app/src/main/java/com/ravencoin/tools/security/RootHelper.java
+ *
+ * RavenWallet
+ * <p/>
+ * Created by Mihail Gutan <mihail@breadwallet.com> on 5/19/16.
+ * Copyright (c) 2016 breadwallet LLC
+ * <p/>
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * <p/>
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ * <p/>
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+
 package io.sentry.android.core.internal.util;
 
 import android.annotation.SuppressLint;
@@ -42,12 +70,12 @@ public final class RootChecker {
         buildInfoProvider,
         logger,
         new String[] {
-          "/system/app/Superuser.apk",
           "/sbin/su",
+          "/data/local/xbin/su",
           "/system/bin/su",
           "/system/xbin/su",
-          "/data/local/xbin/su",
           "/data/local/bin/su",
+          "/system/app/Superuser.apk",
           "/system/sd/xbin/su",
           "/system/bin/failsafe/su",
           "/data/local/su",
@@ -84,12 +112,11 @@ public final class RootChecker {
 
   /**
    * Check if the device is rooted or not
-   * https://medium.com/@thehimanshugoel/10-best-security-practices-in-android-applications-that-every-developer-must-know-99c8cd07c0bb
    *
    * @return whether the device is rooted or not
    */
   public boolean isDeviceRooted() {
-    return checkTestKeys() || checkRootFiles() || checkSUExist() || checkRootPackages(logger);
+    return checkRootA() || checkRootB() || checkRootC() || checkRootPackages(logger);
   }
 
   /**
@@ -99,7 +126,7 @@ public final class RootChecker {
    *
    * @return whether if it contains test keys or not
    */
-  private boolean checkTestKeys() {
+  private boolean checkRootA() {
     final String buildTags = buildInfoProvider.getBuildTags();
     return buildTags != null && buildTags.contains("test-keys");
   }
@@ -110,7 +137,7 @@ public final class RootChecker {
    *
    * @return whether if the root files exist or not
    */
-  private boolean checkRootFiles() {
+  private boolean checkRootB() {
     for (final String path : rootFiles) {
       try {
         if (new File(path).exists()) {
@@ -129,15 +156,15 @@ public final class RootChecker {
    *
    * @return whether su exists or not
    */
-  private boolean checkSUExist() {
-    Process process = null;
+  private boolean checkRootC() {
+    Process p = null;
     final String[] su = {"/system/xbin/which", "su"};
 
     try {
-      process = runtime.exec(su);
+      p = runtime.exec(su);
 
       try (final BufferedReader reader =
-          new BufferedReader(new InputStreamReader(process.getInputStream(), UTF_8))) {
+          new BufferedReader(new InputStreamReader(p.getInputStream(), UTF_8))) {
         return reader.readLine() != null;
       }
     } catch (IOException e) {
@@ -145,8 +172,8 @@ public final class RootChecker {
     } catch (Throwable e) {
       logger.log(SentryLevel.DEBUG, "Error when trying to check if SU exists.", e);
     } finally {
-      if (process != null) {
-        process.destroy();
+      if (p != null) {
+        p.destroy();
       }
     }
     return false;

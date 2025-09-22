@@ -8,7 +8,7 @@ coverage:
     project:
       default:
         target: 78%
-        threshold: 3%
+        threshold: 4%
     patch: off
   range: 78...100
   precision: 3

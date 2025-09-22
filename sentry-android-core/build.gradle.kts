@@ -3,7 +3,7 @@ import org.jetbrains.kotlin.config.KotlinCompilerVersion
 
 plugins {
   id("com.android.library")
-  kotlin("android")
+  alias(libs.plugins.kotlin.android)
   jacoco
   alias(libs.plugins.jacoco.android)
   alias(libs.plugins.errorprone)
@@ -34,7 +34,7 @@ android {
     getByName("release") { consumerProguardFiles("proguard-rules.pro") }
   }
 
-  kotlinOptions { jvmTarget = JavaVersion.VERSION_1_8.toString() }
+  kotlin { compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8 }
 
   testOptions {
     animationsDisabled = true
@@ -77,6 +77,7 @@ dependencies {
   compileOnly(projects.sentryAndroidTimber)
   compileOnly(projects.sentryAndroidReplay)
   compileOnly(projects.sentryCompose)
+  compileOnly(projects.sentryAndroidDistribution)
 
   // lifecycle processor, session tracking
   implementation(libs.androidx.lifecycle.common.java8)
