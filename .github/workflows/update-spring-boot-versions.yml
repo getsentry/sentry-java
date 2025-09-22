@@ -220,12 +220,23 @@ jobs:
                           print(f"Removed second oldest version: {other_versions[0]}")
                           changes_made = True
 
-              # Sort final versions
+              # Sort final versions and remove duplicates
               min_version = updated_versions[0]
               other_versions = sorted([v for v in updated_versions if v != min_version], key=version.parse)
               final_versions = [min_version] + other_versions
+              
+              # Remove duplicates while preserving order
+              seen = set()
+              deduplicated_versions = []
+              for v in final_versions:
+                  if v not in seen:
+                      seen.add(v)
+                      deduplicated_versions.append(v)
+              
+              if len(deduplicated_versions) != len(final_versions):
+                  print(f"Removed {len(final_versions) - len(deduplicated_versions)} duplicate versions")
 
-              return final_versions, changes_made
+              return deduplicated_versions, changes_made
 
           def update_json_file(json_file, new_versions):
               """Update the JSON data file with new versions"""
