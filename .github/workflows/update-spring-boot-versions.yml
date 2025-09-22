@@ -41,10 +41,12 @@ jobs:
 
           def get_spring_boot_versions():
               """Fetch all Spring Boot versions from Maven Central with retry logic"""
+              # Use the versions API instead of the general search
               url = "https://search.maven.org/solrsearch/select"
               params = {
                   "q": "g:org.springframework.boot AND a:spring-boot",
-                  "rows": 200,
+                  "core": "gav",
+                  "rows": 500,
                   "wt": "json"
               }
 
@@ -69,13 +71,23 @@ jobs:
 
                       versions = []
                       for doc in docs:
-                          if 'v' not in doc:
-                              print(f"Warning: 'v' field missing from doc: {doc}")
+                          # Try different possible version field names
+                          version_field = None
+                          if 'v' in doc:
+                              version_field = doc['v']
+                          elif 'version' in doc:
+                              version_field = doc['version']
+                          elif 'latestVersion' in doc:
+                              # This might be a summary doc, skip it
+                              print(f"Skipping summary doc with latestVersion: {doc.get('latestVersion')}")
                               continue
-                          v = doc['v']
+                          else:
+                              print(f"Warning: No version field found in doc: {doc}")
+                              continue
+                          
                           # Only include release versions (no SNAPSHOT, RC, M versions for 2.x and 3.x)
-                          if not any(suffix in v for suffix in ['SNAPSHOT', 'RC', 'BUILD']):
-                              versions.append(v)
+                          if not any(suffix in version_field for suffix in ['SNAPSHOT', 'RC', 'BUILD']):
+                              versions.append(version_field)
 
                       print(f"Successfully fetched {len(versions)} versions")
                       return sorted(versions, key=version.parse)
