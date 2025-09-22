@@ -241,10 +241,11 @@ jobs:
           def update_json_file(json_file, new_versions):
               """Update the JSON data file with new versions"""
               try:
-                  # Write new versions to JSON file
+                  # Write new versions to JSON file with consistent formatting
                   data = {"versions": new_versions}
                   with open(json_file, 'w') as f:
-                      json.dump(data, f, indent=2)
+                      json.dump(data, f, indent=2, separators=(',', ': '))
+                      f.write('\n')  # Add trailing newline
                   return True
               except Exception as e:
                   print(f"Error writing to {json_file}: {e}")
