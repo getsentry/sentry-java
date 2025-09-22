@@ -58,8 +58,20 @@ jobs:
                       response.raise_for_status()
                       data = response.json()
 
+                      if 'response' not in data or 'docs' not in data['response']:
+                          raise Exception(f"Unexpected API response structure: {data}")
+
+                      docs = data['response']['docs']
+                      print(f"Found {len(docs)} documents in response")
+                      
+                      if docs and len(docs) > 0:
+                          print(f"Sample doc structure: {list(docs[0].keys())}")
+
                       versions = []
-                      for doc in data['response']['docs']:
+                      for doc in docs:
+                          if 'v' not in doc:
+                              print(f"Warning: 'v' field missing from doc: {doc}")
+                              continue
                           v = doc['v']
                           # Only include release versions (no SNAPSHOT, RC, M versions for 2.x and 3.x)
                           if not any(suffix in v for suffix in ['SNAPSHOT', 'RC', 'BUILD']):
