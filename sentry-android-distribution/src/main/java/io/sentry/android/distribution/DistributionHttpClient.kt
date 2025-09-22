@@ -81,7 +81,7 @@ internal class DistributionHttpClient(private val options: SentryOptions) {
       connection.setRequestProperty("Accept", "application/json")
       connection.setRequestProperty(
         "User-Agent",
-        options.sentryClientName ?: "sentry-android-distribution",
+        options.sentryClientName ?: throw IllegalStateException("sentryClientName must be set"),
       )
       connection.connectTimeout = options.connectionTimeoutMillis
       connection.readTimeout = options.readTimeoutMillis
