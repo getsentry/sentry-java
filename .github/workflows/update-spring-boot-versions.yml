@@ -295,6 +295,7 @@ jobs:
         uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          base: main
           commit-message: "chore: Update Spring Boot version matrices"
           title: "Automated Spring Boot Version Update"
           body: |
