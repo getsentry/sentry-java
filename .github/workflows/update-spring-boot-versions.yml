@@ -36,7 +36,6 @@ jobs:
           import re
           import requests
           from packaging import version
-          import yaml
           import sys
           from pathlib import Path
 
@@ -48,19 +47,19 @@ jobs:
                   "rows": 200,
                   "wt": "json"
               }
-              
+
               try:
                   response = requests.get(url, params=params, timeout=30)
                   response.raise_for_status()
                   data = response.json()
-                  
+
                   versions = []
                   for doc in data['response']['docs']:
                       v = doc['v']
                       # Only include release versions (no SNAPSHOT, RC, M versions for 2.x and 3.x)
                       if not any(suffix in v for suffix in ['SNAPSHOT', 'RC', 'BUILD']):
                           versions.append(v)
-                  
+
                   return sorted(versions, key=version.parse)
               except Exception as e:
                   print(f"Error fetching versions: {e}")
@@ -69,14 +68,14 @@ jobs:
           def parse_current_versions(workflow_file):
               """Parse current Spring Boot versions from workflow file"""
               content = Path(workflow_file).read_text()
-              
+
               # Find the springboot-version matrix line
               pattern = r'springboot-version:\s*\[\s*([^\]]+)\s*\]'
               match = re.search(pattern, content)
-              
+
               if not match:
                   return []
-              
+
               # Extract versions from the match
               versions_str = match.group(1)
               versions = []
@@ -84,7 +83,7 @@ jobs:
                   v = v.strip().strip("'\"")
                   if v:
                       versions.append(v)
-              
+
               return versions
 
           def get_latest_patch(all_versions, minor_version):
@@ -97,43 +96,43 @@ jobs:
               """Update version matrix based on available versions"""
               if not current_versions or not all_versions:
                   return current_versions, False
-              
+
               # Filter versions for this major version
               major_versions = [v for v in all_versions if v.startswith(f"{major_version}.")]
               if not major_versions:
                   return current_versions, False
-              
+
               updated_versions = []
               changes_made = False
-              
+
               # Always keep the minimum supported version (first version)
               min_version = current_versions[0]
               updated_versions.append(min_version)
-              
+
               # Update patch versions for existing minor versions
               for curr_version in current_versions[1:]:  # Skip min version
                   if any(suffix in curr_version for suffix in ['M', 'RC', 'SNAPSHOT']):
                       # Keep milestone/RC versions as-is for pre-release majors
                       updated_versions.append(curr_version)
                       continue
-                  
+
                   latest_patch = get_latest_patch(major_versions, curr_version)
                   if latest_patch != curr_version:
                       print(f"Updating {curr_version} -> {latest_patch}")
                       changes_made = True
                   updated_versions.append(latest_patch)
-              
+
               # Check for new minor versions
               current_minors = set()
               for v in current_versions:
                   if not any(suffix in v for suffix in ['M', 'RC', 'SNAPSHOT']):
                       current_minors.add('.'.join(v.split('.')[:2]))
-              
+
               available_minors = set()
               for v in major_versions:
                   if not any(suffix in v for suffix in ['M', 'RC', 'SNAPSHOT']):
                       available_minors.add('.'.join(v.split('.')[:2]))
-              
+
               new_minors = available_minors - current_minors
               if new_minors:
                   # Add latest patch of new minor versions
@@ -142,41 +141,41 @@ jobs:
                       updated_versions.append(latest_patch)
                       print(f"Adding new minor version: {latest_patch}")
                       changes_made = True
-                  
+
                   # Remove second oldest minor (but keep absolute minimum)
                   if len(updated_versions) > 7:  # If we have more than 7 versions
                       # Sort by version, keep min version and remove second oldest
                       sorted_versions = sorted(updated_versions, key=version.parse)
                       min_version = sorted_versions[0]
                       other_versions = sorted_versions[1:]
-                      
+
                       # Keep all but the oldest of the "other" versions
                       if len(other_versions) > 6:
                           updated_versions = [min_version] + other_versions[1:]
                           print(f"Removed second oldest version: {other_versions[0]}")
                           changes_made = True
-              
+
               # Sort final versions
               min_version = updated_versions[0]
               other_versions = sorted([v for v in updated_versions if v != min_version], key=version.parse)
               final_versions = [min_version] + other_versions
-              
+
               return final_versions, changes_made
 
           def update_workflow_file(workflow_file, new_versions):
               """Update the workflow file with new versions"""
               content = Path(workflow_file).read_text()
-              
+
               # Format new versions for YAML
               versions_str = ", ".join([f"'{v}'" for v in new_versions])
               new_matrix_line = f"        springboot-version: [ {versions_str} ]"
-              
+
               # Replace the matrix line
               pattern = r'(\s*)springboot-version:\s*\[\s*[^\]]+\s*\]'
               replacement = new_matrix_line
-              
+
               updated_content = re.sub(pattern, replacement, content)
-              
+
               if updated_content != content:
                   Path(workflow_file).write_text(updated_content)
                   return True
@@ -185,36 +184,36 @@ jobs:
           def main():
               print("Fetching Spring Boot versions...")
               all_versions = get_spring_boot_versions()
-              
+
               if not all_versions:
                   print("No versions found, exiting")
                   sys.exit(1)
-              
+
               print(f"Found {len(all_versions)} versions")
-              
+
               workflows = [
                   (".github/workflows/spring-boot-2-matrix.yml", "2"),
                   (".github/workflows/spring-boot-3-matrix.yml", "3"),
                   (".github/workflows/spring-boot-4-matrix.yml", "4")
               ]
-              
+
               changes_made = False
               change_summary = []
-              
+
               for workflow_file, major_version in workflows:
                   if not Path(workflow_file).exists():
                       continue
-                  
+
                   print(f"\nProcessing {workflow_file} (Spring Boot {major_version}.x)")
-                  
+
                   current_versions = parse_current_versions(workflow_file)
                   if not current_versions:
                       continue
-                  
+
                   print(f"Current versions: {current_versions}")
-                  
+
                   new_versions, file_changed = update_version_matrix(current_versions, all_versions, major_version)
-                  
+
                   if file_changed:
                       print(f"New versions: {new_versions}")
                       if update_workflow_file(workflow_file, new_versions):
@@ -222,18 +221,18 @@ jobs:
                           change_summary.append(f"Spring Boot {major_version}.x: {' -> '.join([str(current_versions), str(new_versions)])}")
                   else:
                       print("No changes needed")
-              
+
               if changes_made:
                   print(f"\nChanges made to workflows:")
                   for change in change_summary:
                       print(f"  - {change}")
-                  
+
                   # Write summary for later use
                   with open('version_changes.txt', 'w') as f:
                       f.write('\n'.join(change_summary))
               else:
                   print("\nNo version updates needed")
-              
+
               sys.exit(0 if changes_made else 1)
 
           if __name__ == "__main__":
@@ -260,17 +259,17 @@ jobs:
           title: "Automated Spring Boot Version Update"
           body: |
             ## Automated Spring Boot Version Update
-            
+
             This PR updates the Spring Boot version matrices in our test workflows based on the latest available versions.
-            
+
             ### Changes Made:
             $(cat version_changes.txt 2>/dev/null || echo "See diff for changes")
-            
+
             ### Update Strategy:
             - **Patch updates**: Updated to latest patch version of existing minor versions
             - **New minor versions**: Added new minor versions and removed second oldest (keeping minimum supported)
             - **Minimum version preserved**: Always keeps the minimum supported version for compatibility testing
-            
+
             This ensures our CI tests stay current with Spring Boot releases while maintaining coverage of older versions that users may still be using.
           branch: automated-spring-boot-version-update
           delete-branch: true
