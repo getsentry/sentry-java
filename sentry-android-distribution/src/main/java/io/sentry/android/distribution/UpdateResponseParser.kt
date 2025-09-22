@@ -58,8 +58,15 @@ internal class UpdateResponseParser(private val options: SentryOptions) {
     val appName = json.optString("appName", "")
     val createdDate = json.optString("createdDate", "")
 
-    // Validate required fields
-    if (id.isEmpty() || buildVersion.isEmpty() || downloadUrl.isEmpty()) {
+    // Validate required fields (optString returns "null" for null values)
+    if (
+      id.isEmpty() ||
+        id == "null" ||
+        buildVersion.isEmpty() ||
+        buildVersion == "null" ||
+        downloadUrl.isEmpty() ||
+        downloadUrl == "null"
+    ) {
       throw IllegalArgumentException("Missing required update information in API response")
     }
 

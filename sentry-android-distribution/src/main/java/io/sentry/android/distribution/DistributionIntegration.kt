@@ -12,6 +12,10 @@ import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.UpdateInfo
 import io.sentry.UpdateStatus
+import java.io.IOException
+import java.net.ConnectException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 import org.jetbrains.annotations.ApiStatus
 
 /**
@@ -63,9 +67,27 @@ public class DistributionIntegration(context: Context) : Integration, IDistribut
     } catch (e: IllegalStateException) {
       sentryOptions.logger.log(SentryLevel.WARNING, e.message ?: "Configuration error")
       UpdateStatus.UpdateError(e.message ?: "Configuration error")
+    } catch (e: UnknownHostException) {
+      // UnknownHostException typically indicates no internet connection available
+      sentryOptions.logger.log(
+        SentryLevel.ERROR,
+        e,
+        "DNS lookup failed - check internet connection",
+      )
+      UpdateStatus.UpdateError("No internet connection or invalid server URL")
+    } catch (e: ConnectException) {
+      sentryOptions.logger.log(SentryLevel.ERROR, e, "Connection refused - server may be down")
+      UpdateStatus.UpdateError("Unable to connect to server")
+    } catch (e: SocketTimeoutException) {
+      // SocketTimeoutException could indicate either slow network or server issues
+      sentryOptions.logger.log(SentryLevel.ERROR, e, "Network request timed out")
+      UpdateStatus.UpdateError("Request timed out - check connection speed")
+    } catch (e: IOException) {
+      sentryOptions.logger.log(SentryLevel.ERROR, e, "Network I/O error occurred")
+      UpdateStatus.UpdateError("Network error occurred")
     } catch (e: Exception) {
-      sentryOptions.logger.log(SentryLevel.ERROR, e, "Failed to check for updates")
-      UpdateStatus.UpdateError("Network error: ${e.message}")
+      sentryOptions.logger.log(SentryLevel.ERROR, e, "Unexpected error checking for updates")
+      UpdateStatus.UpdateError("Unexpected error: ${e.message}")
     }
   }
 
@@ -113,7 +135,7 @@ public class DistributionIntegration(context: Context) : Integration, IDistribut
       val appId = context.applicationInfo.packageName
 
       DistributionHttpClient.UpdateCheckParams(
-        mainBinaryIdentifier = appId, // Using package name as binary identifier
+        mainBinaryIdentifier = appId,
         appId = appId,
         platform = "android",
         version = versionName,
