@@ -105,26 +105,18 @@ jobs:
               print("All attempts failed")
               return []
 
-          def parse_current_versions(workflow_file):
-              """Parse current Spring Boot versions from workflow file"""
-              content = Path(workflow_file).read_text()
-
-              # Find the springboot-version matrix line
-              pattern = r'springboot-version:\s*\[\s*([^\]]+)\s*\]'
-              match = re.search(pattern, content)
-
-              if not match:
+          def parse_current_versions(json_file):
+              """Parse current Spring Boot versions from JSON data file"""
+              if not Path(json_file).exists():
                   return []
 
-              # Extract versions from the match
-              versions_str = match.group(1)
-              versions = []
-              for v in versions_str.split(','):
-                  v = v.strip().strip("'\"")
-                  if v:
-                      versions.append(v)
-
-              return versions
+              try:
+                  with open(json_file, 'r') as f:
+                      data = json.load(f)
+                  return data.get('versions', [])
+              except Exception as e:
+                  print(f"Error reading {json_file}: {e}")
+                  return []
 
           def get_latest_patch(all_versions, minor_version):
               """Get the latest patch version for a given minor version"""
@@ -202,24 +194,17 @@ jobs:
 
               return final_versions, changes_made
 
-          def update_workflow_file(workflow_file, new_versions):
-              """Update the workflow file with new versions"""
-              content = Path(workflow_file).read_text()
-
-              # Format new versions for YAML
-              versions_str = ", ".join([f"'{v}'" for v in new_versions])
-              new_matrix_line = f"        springboot-version: [ {versions_str} ]"
-
-              # Replace the matrix line
-              pattern = r'(\s*)springboot-version:\s*\[\s*[^\]]+\s*\]'
-              replacement = new_matrix_line
-
-              updated_content = re.sub(pattern, replacement, content)
-
-              if updated_content != content:
-                  Path(workflow_file).write_text(updated_content)
+          def update_json_file(json_file, new_versions):
+              """Update the JSON data file with new versions"""
+              try:
+                  # Write new versions to JSON file
+                  data = {"versions": new_versions}
+                  with open(json_file, 'w') as f:
+                      json.dump(data, f, indent=2)
                   return True
-              return False
+              except Exception as e:
+                  print(f"Error writing to {json_file}: {e}")
+                  return False
 
           def main():
               print("Fetching Spring Boot versions...")
@@ -231,22 +216,22 @@ jobs:
 
               print(f"Found {len(all_versions)} versions")
 
-              workflows = [
-                  (".github/workflows/spring-boot-2-matrix.yml", "2"),
-                  (".github/workflows/spring-boot-3-matrix.yml", "3"),
-                  (".github/workflows/spring-boot-4-matrix.yml", "4")
+              data_files = [
+                  (".github/data/spring-boot-2-versions.json", "2"),
+                  (".github/data/spring-boot-3-versions.json", "3"),
+                  (".github/data/spring-boot-4-versions.json", "4")
               ]
 
               changes_made = False
               change_summary = []
 
-              for workflow_file, major_version in workflows:
-                  if not Path(workflow_file).exists():
+              for json_file, major_version in data_files:
+                  if not Path(json_file).exists():
                       continue
 
-                  print(f"\nProcessing {workflow_file} (Spring Boot {major_version}.x)")
+                  print(f"\nProcessing {json_file} (Spring Boot {major_version}.x)")
 
-                  current_versions = parse_current_versions(workflow_file)
+                  current_versions = parse_current_versions(json_file)
                   if not current_versions:
                       continue
 
@@ -256,7 +241,7 @@ jobs:
 
                   if file_changed:
                       print(f"New versions: {new_versions}")
-                      if update_workflow_file(workflow_file, new_versions):
+                      if update_json_file(json_file, new_versions):
                           changes_made = True
                           change_summary.append(f"Spring Boot {major_version}.x: {' -> '.join([str(current_versions), str(new_versions)])}")
                   else:

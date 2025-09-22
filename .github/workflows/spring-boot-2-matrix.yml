@@ -11,13 +11,25 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  load-versions:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v5
+      - name: Set matrix data
+        id: set-matrix
+        run: echo "matrix=$(cat .github/data/spring-boot-2-versions.json | jq -c .versions)" >> $GITHUB_OUTPUT
+
   spring-boot-2-matrix:
+    needs: load-versions
     timeout-minutes: 45
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        springboot-version: [ '2.1.0', '2.2.5', '2.4.13', '2.5.15', '2.6.15', '2.7.0', '2.7.18' ]
+        springboot-version: ${{ fromJSON(needs.load-versions.outputs.matrix) }}
 
     name: Spring Boot ${{ matrix.springboot-version }}
     env:
