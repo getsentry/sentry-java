@@ -11,6 +11,13 @@ android {
 
   defaultConfig { minSdk = libs.versions.minSdk.get().toInt() }
   buildFeatures { buildConfig = false }
+
+  testOptions {
+    unitTests.apply {
+      isReturnDefaultValues = true
+      isIncludeAndroidResources = true
+    }
+  }
 }
 
 kotlin {
@@ -30,4 +37,7 @@ dependencies {
   ) // Use implementation instead of compileOnly to override kotlin stdlib's version
   implementation(kotlin(Config.kotlinStdLib, Config.kotlinStdLibVersionAndroid))
   testImplementation(libs.androidx.test.ext.junit)
+  testImplementation(libs.roboelectric)
+  testImplementation(libs.kotlin.test.junit)
+  testImplementation(libs.androidx.test.core)
 }

@@ -1,5 +1,6 @@
 package io.sentry.android.distribution
 
+import android.net.Uri
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import java.io.BufferedReader
@@ -7,7 +8,6 @@ import java.io.IOException
 import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.net.URL
-import java.net.URLEncoder
 import javax.net.ssl.HttpsURLConnection
 
 /** HTTP client for making requests to Sentry's distribution API. */
@@ -47,11 +47,22 @@ internal class DistributionHttpClient(private val options: SentryOptions) {
       )
     }
 
-    val queryParams = buildQueryParams(params)
-    val url =
-      URL(
-        "$baseUrl/api/0/projects/$orgSlug/$projectSlug/preprodartifacts/check-for-updates/?$queryParams"
-      )
+    val uri =
+      Uri.parse(baseUrl)
+        .buildUpon()
+        .appendPath("api")
+        .appendPath("0")
+        .appendPath("projects")
+        .appendPath(orgSlug)
+        .appendPath(projectSlug)
+        .appendPath("preprodartifacts")
+        .appendPath("check-for-updates")
+        .appendQueryParameter("main_binary_identifier", params.mainBinaryIdentifier)
+        .appendQueryParameter("app_id", params.appId)
+        .appendQueryParameter("platform", params.platform)
+        .appendQueryParameter("version", params.version)
+        .build()
+    val url = URL(uri.toString())
 
     return try {
       makeRequest(url, authToken)
@@ -65,7 +76,6 @@ internal class DistributionHttpClient(private val options: SentryOptions) {
     val connection = url.openConnection() as HttpURLConnection
 
     try {
-      // Configure connection
       connection.requestMethod = "GET"
       connection.setRequestProperty("Authorization", "Bearer $authToken")
       connection.setRequestProperty("Accept", "application/json")
@@ -76,12 +86,10 @@ internal class DistributionHttpClient(private val options: SentryOptions) {
       connection.connectTimeout = options.connectionTimeoutMillis
       connection.readTimeout = options.readTimeoutMillis
 
-      // Set SSL socket factory if available
       if (connection is HttpsURLConnection && options.sslSocketFactory != null) {
         connection.sslSocketFactory = options.sslSocketFactory
       }
 
-      // Get response
       val responseCode = connection.responseCode
       val responseBody = readResponse(connection)
 
@@ -107,18 +115,5 @@ internal class DistributionHttpClient(private val options: SentryOptions) {
     return inputStream?.use { stream ->
       BufferedReader(InputStreamReader(stream, "UTF-8")).use { reader -> reader.readText() }
     } ?: ""
-  }
-
-  private fun buildQueryParams(params: UpdateCheckParams): String {
-    val queryParams = mutableListOf<String>()
-
-    queryParams.add(
-      "main_binary_identifier=${URLEncoder.encode(params.mainBinaryIdentifier, "UTF-8")}"
-    )
-    queryParams.add("app_id=${URLEncoder.encode(params.appId, "UTF-8")}")
-    queryParams.add("platform=${URLEncoder.encode(params.platform, "UTF-8")}")
-    queryParams.add("version=${URLEncoder.encode(params.version, "UTF-8")}")
-
-    return queryParams.joinToString("&")
   }
 }
