@@ -8,6 +8,7 @@ import io.sentry.SentryLevel;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -65,7 +66,13 @@ final class QueuedThreadPoolExecutor extends ThreadPoolExecutor {
   public Future<?> submit(final @NotNull Runnable task) {
     if (isSchedulingAllowed()) {
       unfinishedTasksCount.increment();
-      return super.submit(task);
+      try {
+        return super.submit(task);
+      } catch (RejectedExecutionException e) {
+        unfinishedTasksCount.decrement();
+        logger.log(SentryLevel.WARNING, "Submit rejected by thread pool executor", e);
+        return new CancelledFuture<>();
+      }
     } else {
       lastRejectTimestamp = dateProvider.now();
       // if the thread pool is full, we don't cache it

@@ -37,6 +37,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
@@ -66,8 +67,16 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     // noinspection Convert2MethodRef
     // some device info performs disk I/O, but it's result is cached, let's pre-cache it
     final @NotNull ExecutorService executorService = Executors.newSingleThreadExecutor();
-    this.deviceInfoUtil =
-        executorService.submit(() -> DeviceInfoUtil.getInstance(this.context, options));
+    try {
+      this.deviceInfoUtil =
+          executorService.submit(() -> DeviceInfoUtil.getInstance(this.context, options));
+    } catch (RejectedExecutionException e) {
+      // Fall back to synchronous initialization if executor rejects the task
+      options
+          .getLogger()
+          .log(SentryLevel.DEBUG, "Device info pre-caching task rejected. Using synchronous initialization.", e);
+      this.deviceInfoUtil = null;
+    }
     executorService.shutdown();
   }
 

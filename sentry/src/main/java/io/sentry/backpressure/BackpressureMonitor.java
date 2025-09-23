@@ -7,6 +7,7 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.util.AutoClosableReentrantLock;
 import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -79,7 +80,13 @@ public final class BackpressureMonitor implements IBackpressureMonitor, Runnable
     final @NotNull ISentryExecutorService executorService = sentryOptions.getExecutorService();
     if (!executorService.isClosed()) {
       try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
-        latestScheduledRun = executorService.schedule(this, delay);
+        try {
+          latestScheduledRun = executorService.schedule(this, delay);
+        } catch (RejectedExecutionException e) {
+          sentryOptions
+              .getLogger()
+              .log(SentryLevel.DEBUG, "Backpressure monitor reschedule task rejected", e);
+        }
       }
     }
   }
