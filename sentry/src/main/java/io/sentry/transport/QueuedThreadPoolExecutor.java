@@ -69,6 +69,7 @@ final class QueuedThreadPoolExecutor extends ThreadPoolExecutor {
       try {
         return super.submit(task);
       } catch (RejectedExecutionException e) {
+        unfinishedTasksCount.decrement();
         lastRejectTimestamp = dateProvider.now();
         logger.log(SentryLevel.WARNING, "Submit rejected by thread pool executor", e);
         return new CancelledFuture<>();
