@@ -99,7 +99,7 @@ public final class JfrAsyncProfilerToSentryProfileConverter extends JfrConverter
     public void visit(Event event, long samples, long value) {
       try {
         StackTrace stackTrace = jfr.stackTraces.get(event.stackTraceId);
-      long threadId = resolveThreadId(event.tid);
+        long threadId = resolveThreadId(event.tid);
 
         if (stackTrace != null) {
           if (args.threads) {

@@ -118,8 +118,7 @@ public final class JavaContinuousProfiler
           "Disabling profiling because traces directory is not writable or does not exist: %s (writable=%b, exists=%b)",
           profilingTracesDirPath,
           profileDir.canWrite(),
-          profileDir.exists()
-        );
+          profileDir.exists());
       return false;
     }
 
@@ -406,7 +405,7 @@ public final class JavaContinuousProfiler
         file.delete();
       }
     } catch (Exception e) {
-      logger.log(SentryLevel.INFO, "Failed to remove jfr file %s.", file.getAbsolutePath() , e);
+      logger.log(SentryLevel.INFO, "Failed to remove jfr file %s.", file.getAbsolutePath(), e);
     }
   }
 
