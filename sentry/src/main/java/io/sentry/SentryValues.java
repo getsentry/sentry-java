@@ -1,7 +1,6 @@
 package io.sentry;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -17,10 +16,7 @@ final class SentryValues<T> {
   }
 
   public @NotNull List<T> getValues() {
-    ArrayList<T> result = new ArrayList<>(values.size());
-    result.addAll(values);
-    //Collections.reverse(result);
-    return result;
+    return values;
   }
 
   public static final class JsonKeys {
