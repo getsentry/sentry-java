@@ -87,7 +87,6 @@ public final class SentryExecutorService implements ISentryExecutorService {
     if (executorService.getQueue().size() < MAX_QUEUE_SIZE) {
       return executorService.schedule(runnable, delayMillis, TimeUnit.MILLISECONDS);
     }
-    // TODO: maybe RejectedExecutionException?
     if (options != null) {
       options
           .getLogger()
