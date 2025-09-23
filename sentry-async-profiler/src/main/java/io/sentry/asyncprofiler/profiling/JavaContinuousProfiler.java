@@ -78,10 +78,10 @@ public final class JavaContinuousProfiler
   }
 
   private void initializeProfiler() throws Exception {
-      this.profiler = AsyncProfiler.getInstance();
-      // Check version to verify profiler is working
-      String version = profiler.execute("version");
-      logger.log(SentryLevel.DEBUG, "AsyncProfiler initialized successfully. Version: " + version);
+    this.profiler = AsyncProfiler.getInstance();
+    // Check version to verify profiler is working
+    String version = profiler.execute("version");
+    logger.log(SentryLevel.DEBUG, "AsyncProfiler initialized successfully. Version: " + version);
   }
 
   private boolean init() {
@@ -105,8 +105,7 @@ public final class JavaContinuousProfiler
           "Disabling profiling because traces directory is not writable or does not exist: %s (writable=%b, exists=%b)",
           profilingTracesDirPath,
           profileDir.canWrite(),
-          profileDir.exists()
-        );
+          profileDir.exists());
       return false;
     }
 
@@ -384,7 +383,7 @@ public final class JavaContinuousProfiler
         file.delete();
       }
     } catch (Exception e) {
-      logger.log(SentryLevel.INFO, "Failed to remove jfr file %s.", file.getAbsolutePath() , e);
+      logger.log(SentryLevel.INFO, "Failed to remove jfr file %s.", file.getAbsolutePath(), e);
     }
   }
 

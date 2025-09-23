@@ -25,8 +25,8 @@ public final class AsyncProfilerContinuousProfilerProvider
       int profilingTracesHz,
       ISentryExecutorService executorService) {
     try {
-    return new JavaContinuousProfiler(
-        logger, profilingTracesDirPath, profilingTracesHz, executorService);
+      return new JavaContinuousProfiler(
+          logger, profilingTracesDirPath, profilingTracesHz, executorService);
     } catch (Exception e) {
       logger.log(
           SentryLevel.WARNING,
