@@ -54,18 +54,9 @@ public final class SentryExecutorService implements ISentryExecutorService {
   }
 
   @Override
-  public @NotNull Future<?> submit(final @NotNull Runnable runnable) {
+  public @NotNull Future<?> submit(final @NotNull Runnable runnable) throws RejectedExecutionException {
     if (executorService.getQueue().size() < MAX_QUEUE_SIZE) {
-      try {
-        return executorService.submit(runnable);
-      } catch (RejectedExecutionException e) {
-        if (options != null) {
-          options
-              .getLogger()
-              .log(SentryLevel.WARNING, "Task " + runnable + " rejected from " + executorService, e);
-        }
-        return new CancelledFuture<>();
-      }
+      return executorService.submit(runnable);
     }
     if (options != null) {
       options
@@ -76,18 +67,9 @@ public final class SentryExecutorService implements ISentryExecutorService {
   }
 
   @Override
-  public @NotNull <T> Future<T> submit(final @NotNull Callable<T> callable) {
+  public @NotNull <T> Future<T> submit(final @NotNull Callable<T> callable) throws RejectedExecutionException {
     if (executorService.getQueue().size() < MAX_QUEUE_SIZE) {
-      try {
-        return executorService.submit(callable);
-      } catch (RejectedExecutionException e) {
-        if (options != null) {
-          options
-              .getLogger()
-              .log(SentryLevel.WARNING, "Task " + callable + " rejected from " + executorService, e);
-        }
-        return new CancelledFuture<>();
-      }
+      return executorService.submit(callable);
     }
     if (options != null) {
       options
@@ -98,7 +80,7 @@ public final class SentryExecutorService implements ISentryExecutorService {
   }
 
   @Override
-  public @NotNull Future<?> schedule(final @NotNull Runnable runnable, final long delayMillis) {
+  public @NotNull Future<?> schedule(final @NotNull Runnable runnable, final long delayMillis) throws RejectedExecutionException {
     if (executorService.getQueue().size() < MAX_QUEUE_SIZE) {
       return executorService.schedule(runnable, delayMillis, TimeUnit.MILLISECONDS);
     }

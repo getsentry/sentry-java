@@ -73,7 +73,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     } catch (RejectedExecutionException e) {
       options
           .getLogger()
-          .log(SentryLevel.WARNING, "Device info pre-caching task rejected.", e);
+          .log(SentryLevel.WARNING, "Device info caching task rejected.", e);
     }
     executorService.shutdown();
   }
