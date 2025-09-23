@@ -4,18 +4,7 @@ import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
-import io.sentry.DateUtils;
-import io.sentry.EventProcessor;
-import io.sentry.Hint;
-import io.sentry.IpAddressUtils;
-import io.sentry.NoOpLogger;
-import io.sentry.SentryAttributeType;
-import io.sentry.SentryBaseEvent;
-import io.sentry.SentryEvent;
-import io.sentry.SentryLevel;
-import io.sentry.SentryLogEvent;
-import io.sentry.SentryLogEventAttributeValue;
-import io.sentry.SentryReplayEvent;
+import io.sentry.*;
 import io.sentry.android.core.internal.util.AndroidThreadChecker;
 import io.sentry.android.core.performance.AppStartMetrics;
 import io.sentry.android.core.performance.TimeSpan;
@@ -66,15 +55,16 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     // don't ref. to method reference, theres a bug on it
     // noinspection Convert2MethodRef
     // some device info performs disk I/O, but it's result is cached, let's pre-cache it
+    @Nullable Future<DeviceInfoUtil> deviceInfoUtil;
     final @NotNull ExecutorService executorService = Executors.newSingleThreadExecutor();
     try {
-      this.deviceInfoUtil =
+      deviceInfoUtil =
           executorService.submit(() -> DeviceInfoUtil.getInstance(this.context, options));
     } catch (RejectedExecutionException e) {
-      options
-          .getLogger()
-          .log(SentryLevel.WARNING, "Device info caching task rejected.", e);
+      deviceInfoUtil = null;
+      options.getLogger().log(SentryLevel.WARNING, "Device info caching task rejected.", e);
     }
+    this.deviceInfoUtil = deviceInfoUtil;
     executorService.shutdown();
   }
 

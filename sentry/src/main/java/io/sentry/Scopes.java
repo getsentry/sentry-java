@@ -12,8 +12,6 @@ import io.sentry.util.Objects;
 import io.sentry.util.SpanUtils;
 import io.sentry.util.TracingUtils;
 import java.io.Closeable;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.RejectedExecutionException;
 import org.jetbrains.annotations.ApiStatus;

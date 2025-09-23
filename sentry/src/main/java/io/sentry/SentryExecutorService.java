@@ -54,7 +54,8 @@ public final class SentryExecutorService implements ISentryExecutorService {
   }
 
   @Override
-  public @NotNull Future<?> submit(final @NotNull Runnable runnable) throws RejectedExecutionException {
+  public @NotNull Future<?> submit(final @NotNull Runnable runnable)
+      throws RejectedExecutionException {
     if (executorService.getQueue().size() < MAX_QUEUE_SIZE) {
       return executorService.submit(runnable);
     }
@@ -67,7 +68,8 @@ public final class SentryExecutorService implements ISentryExecutorService {
   }
 
   @Override
-  public @NotNull <T> Future<T> submit(final @NotNull Callable<T> callable) throws RejectedExecutionException {
+  public @NotNull <T> Future<T> submit(final @NotNull Callable<T> callable)
+      throws RejectedExecutionException {
     if (executorService.getQueue().size() < MAX_QUEUE_SIZE) {
       return executorService.submit(callable);
     }
@@ -80,7 +82,8 @@ public final class SentryExecutorService implements ISentryExecutorService {
   }
 
   @Override
-  public @NotNull Future<?> schedule(final @NotNull Runnable runnable, final long delayMillis) throws RejectedExecutionException {
+  public @NotNull Future<?> schedule(final @NotNull Runnable runnable, final long delayMillis)
+      throws RejectedExecutionException {
     if (executorService.getQueue().size() < MAX_QUEUE_SIZE) {
       return executorService.schedule(runnable, delayMillis, TimeUnit.MILLISECONDS);
     }
@@ -124,10 +127,12 @@ public final class SentryExecutorService implements ISentryExecutorService {
       executorService.submit(
           () -> {
             try {
-              // schedule a bunch of dummy runnables in the future that will never execute to trigger
+              // schedule a bunch of dummy runnables in the future that will never execute to
+              // trigger
               // queue growth and then purge the queue
               for (int i = 0; i < INITIAL_QUEUE_SIZE; i++) {
-                final Future<?> future = executorService.schedule(dummyRunnable, 365L, TimeUnit.DAYS);
+                final Future<?> future =
+                    executorService.schedule(dummyRunnable, 365L, TimeUnit.DAYS);
                 future.cancel(true);
               }
               executorService.purge();
