@@ -143,7 +143,7 @@ public final class SentryExecutorService implements ISentryExecutorService {
       if (options != null) {
         options
             .getLogger()
-            .log(SentryLevel.DEBUG, "Prewarm task rejected from " + executorService, e);
+            .log(SentryLevel.WARNING, "Prewarm task rejected from " + executorService, e);
       }
     }
   }
