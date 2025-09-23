@@ -158,6 +158,8 @@ public final class JavaContinuousProfiler
         logger.log(SentryLevel.DEBUG, "Started Profiler.");
         start();
       }
+    } catch (Exception e) {
+      logger.log(SentryLevel.ERROR, "Error starting profiler: ", e);
     }
   }
 
@@ -326,6 +328,8 @@ public final class JavaContinuousProfiler
         profilerId = SentryId.EMPTY_ID;
         logger.log(SentryLevel.DEBUG, "Profile chunk finished.");
       }
+    } catch (Exception e) {
+      logger.log(SentryLevel.ERROR, "Error stopping profiler: ", e);
     }
   }
 
