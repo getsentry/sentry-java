@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+    paths-ignore:
+      - '**/sentry-android/**'
   pull_request:
 
 concurrency:
