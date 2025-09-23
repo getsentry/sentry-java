@@ -279,7 +279,9 @@ class JavaContinuousProfilerTest {
     verify(fixture.mockLogger)
       .log(
         eq(SentryLevel.WARNING),
-        eq("Disabling profiling because traces directory is not writable or does not exist: %s (writable=%b, exists=%b)"),
+        eq(
+          "Disabling profiling because traces directory is not writable or does not exist: %s (writable=%b, exists=%b)"
+        ),
         eq(expectedPath),
         eq(false),
         eq(true),
