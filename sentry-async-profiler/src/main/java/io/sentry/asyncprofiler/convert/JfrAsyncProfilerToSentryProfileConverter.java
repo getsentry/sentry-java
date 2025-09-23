@@ -1,7 +1,9 @@
 package io.sentry.asyncprofiler.convert;
 
 import io.sentry.DateUtils;
+import io.sentry.ILogger;
 import io.sentry.Sentry;
+import io.sentry.SentryLevel;
 import io.sentry.SentryStackTraceFactory;
 import io.sentry.asyncprofiler.vendor.asyncprofiler.convert.Arguments;
 import io.sentry.asyncprofiler.vendor.asyncprofiler.convert.JfrConverter;
@@ -27,13 +29,18 @@ public final class JfrAsyncProfilerToSentryProfileConverter extends JfrConverter
 
   private final @NotNull SentryProfile sentryProfile = new SentryProfile();
   private final @NotNull SentryStackTraceFactory stackTraceFactory;
+  private final @NotNull ILogger logger;
   private final @NotNull Map<SentryStackFrame, Integer> frameDeduplicationMap = new HashMap<>();
   private final @NotNull Map<List<Integer>, Integer> stackDeduplicationMap = new HashMap<>();
 
   public JfrAsyncProfilerToSentryProfileConverter(
-      JfrReader jfr, Arguments args, @NotNull SentryStackTraceFactory stackTraceFactory) {
+      JfrReader jfr,
+      Arguments args,
+      @NotNull SentryStackTraceFactory stackTraceFactory,
+      @NotNull ILogger logger) {
     super(jfr, args);
     this.stackTraceFactory = stackTraceFactory;
+    this.logger = logger;
   }
 
   @Override
@@ -60,7 +67,9 @@ public final class JfrAsyncProfilerToSentryProfileConverter extends JfrConverter
 
       SentryStackTraceFactory stackTraceFactory =
           new SentryStackTraceFactory(Sentry.getGlobalScope().getOptions());
-      converter = new JfrAsyncProfilerToSentryProfileConverter(jfrReader, args, stackTraceFactory);
+      ILogger logger = Sentry.getGlobalScope().getOptions().getLogger();
+      converter =
+          new JfrAsyncProfilerToSentryProfileConverter(jfrReader, args, stackTraceFactory, logger);
       converter.convert();
     }
 
@@ -88,15 +97,19 @@ public final class JfrAsyncProfilerToSentryProfileConverter extends JfrConverter
 
     @Override
     public void visit(Event event, long samples, long value) {
-      StackTrace stackTrace = jfr.stackTraces.get(event.stackTraceId);
+      try {
+        StackTrace stackTrace = jfr.stackTraces.get(event.stackTraceId);
       long threadId = resolveThreadId(event.tid);
 
-      if (stackTrace != null) {
-        if (args.threads) {
-          processThreadMetadata(event, threadId);
-        }
+        if (stackTrace != null) {
+          if (args.threads) {
+            processThreadMetadata(event, threadId);
+          }
 
-        processSampleWithStack(event, threadId, stackTrace);
+          processSampleWithStack(event, threadId, stackTrace);
+        }
+      } catch (Exception e) {
+        logger.log(SentryLevel.WARNING, "Failed to process JFR event " + event, e);
       }
     }
 
