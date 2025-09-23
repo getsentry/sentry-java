@@ -82,7 +82,7 @@ public final class LoggerBatchProcessor implements ILoggerBatchProcessor {
         } catch (RejectedExecutionException e) {
           options
               .getLogger()
-              .log(SentryLevel.DEBUG, "Logger batch flush task rejected", e);
+              .log(SentryLevel.WARNING, "Logs batch processor flush task rejected", e);
         }
       }
     }

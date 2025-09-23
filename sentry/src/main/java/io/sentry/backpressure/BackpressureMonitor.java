@@ -85,7 +85,7 @@ public final class BackpressureMonitor implements IBackpressureMonitor, Runnable
         } catch (RejectedExecutionException e) {
           sentryOptions
               .getLogger()
-              .log(SentryLevel.DEBUG, "Backpressure monitor reschedule task rejected", e);
+              .log(SentryLevel.WARNING, "Backpressure monitor reschedule task rejected", e);
         }
       }
     }

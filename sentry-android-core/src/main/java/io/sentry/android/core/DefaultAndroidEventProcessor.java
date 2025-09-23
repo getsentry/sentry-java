@@ -71,11 +71,9 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
       this.deviceInfoUtil =
           executorService.submit(() -> DeviceInfoUtil.getInstance(this.context, options));
     } catch (RejectedExecutionException e) {
-      // Fall back to synchronous initialization if executor rejects the task
       options
           .getLogger()
-          .log(SentryLevel.DEBUG, "Device info pre-caching task rejected. Using synchronous initialization.", e);
-      this.deviceInfoUtil = null;
+          .log(SentryLevel.WARNING, "Device info pre-caching task rejected.", e);
     }
     executorService.shutdown();
   }

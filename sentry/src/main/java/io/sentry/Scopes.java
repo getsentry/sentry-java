@@ -456,7 +456,7 @@ public final class Scopes implements IScopes {
             getOptions()
                 .getLogger()
                 .log(
-                    SentryLevel.DEBUG,
+                    SentryLevel.WARNING,
                     "Failed to submit executor service shutdown task during restart. Shutting down synchronously.",
                     e);
             executorService.close(getOptions().getShutdownTimeoutMillis());
