@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Start performance collection on AppStart continuous profiling ([#4752](https://github.com/getsentry/sentry-java/pull/4752))
+
 ## 8.22.0
 
 ### Features
