@@ -36,4 +36,9 @@ public final class NoOpContinuousProfiler implements IContinuousProfiler {
   public @NotNull SentryId getProfilerId() {
     return SentryId.EMPTY_ID;
   }
+
+  @Override
+  public @NotNull SentryId getChunkId() {
+    return SentryId.EMPTY_ID;
+  }
 }
