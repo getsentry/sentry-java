@@ -27,9 +27,11 @@ import java.nio.charset.Charset;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@ApiStatus.Internal
 public final class SentryEnvelopeItem {
 
   // Profiles bigger than 50 MB will be dropped by the backend, so we drop bigger ones

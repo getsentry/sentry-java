@@ -4,8 +4,10 @@ import io.sentry.clientreport.ClientReport;
 import io.sentry.protocol.SentryTransaction;
 import java.io.IOException;
 import java.util.Locale;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
+@ApiStatus.Internal
 public enum SentryItemType implements JsonSerializable {
   Session("session"),
   Event("event"), // DataCategory.Error
