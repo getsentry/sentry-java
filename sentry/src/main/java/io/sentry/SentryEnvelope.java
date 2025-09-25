@@ -7,6 +7,7 @@ import io.sentry.util.Objects;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -17,14 +18,17 @@ public final class SentryEnvelope {
   private final @NotNull SentryEnvelopeHeader header;
   private final @NotNull Iterable<SentryEnvelopeItem> items;
 
+  @ApiStatus.Internal
   public @NotNull Iterable<SentryEnvelopeItem> getItems() {
     return items;
   }
 
+  @ApiStatus.Internal
   public @NotNull SentryEnvelopeHeader getHeader() {
     return header;
   }
 
+  @ApiStatus.Internal
   public SentryEnvelope(
       final @NotNull SentryEnvelopeHeader header,
       final @NotNull Iterable<SentryEnvelopeItem> items) {
@@ -32,6 +36,7 @@ public final class SentryEnvelope {
     this.items = Objects.requireNonNull(items, "SentryEnvelope items are required.");
   }
 
+  @ApiStatus.Internal
   public SentryEnvelope(
       final @Nullable SentryId eventId,
       final @Nullable SdkVersion sdkVersion,
@@ -40,6 +45,7 @@ public final class SentryEnvelope {
     this.items = Objects.requireNonNull(items, "SentryEnvelope items are required.");
   }
 
+  @ApiStatus.Internal
   public SentryEnvelope(
       final @Nullable SentryId eventId,
       final @Nullable SdkVersion sdkVersion,
@@ -52,6 +58,7 @@ public final class SentryEnvelope {
     this.items = items;
   }
 
+  @ApiStatus.Internal
   public static @NotNull SentryEnvelope from(
       final @NotNull ISerializer serializer,
       final @NotNull Session session,
@@ -64,6 +71,7 @@ public final class SentryEnvelope {
         null, sdkVersion, SentryEnvelopeItem.fromSession(serializer, session));
   }
 
+  @ApiStatus.Internal
   public static @NotNull SentryEnvelope from(
       final @NotNull ISerializer serializer,
       final @NotNull SentryBaseEvent event,
@@ -76,6 +84,7 @@ public final class SentryEnvelope {
         event.getEventId(), sdkVersion, SentryEnvelopeItem.fromEvent(serializer, event));
   }
 
+  @ApiStatus.Internal
   public static @NotNull SentryEnvelope from(
       final @NotNull ISerializer serializer,
       final @NotNull ProfilingTraceData profilingTraceData,
