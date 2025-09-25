@@ -285,6 +285,7 @@ public final class io/sentry/CombinedScopeView : io/sentry/IScope {
 	public fun getOptions ()Lio/sentry/SentryOptions;
 	public fun getPropagationContext ()Lio/sentry/PropagationContext;
 	public fun getReplayId ()Lio/sentry/protocol/SentryId;
+	public fun getReplayType ()Lio/sentry/SentryReplayEvent$ReplayType;
 	public fun getRequest ()Lio/sentry/protocol/Request;
 	public fun getScreen ()Ljava/lang/String;
 	public fun getSession ()Lio/sentry/Session;
@@ -311,6 +312,7 @@ public final class io/sentry/CombinedScopeView : io/sentry/IScope {
 	public fun setLevel (Lio/sentry/SentryLevel;)V
 	public fun setPropagationContext (Lio/sentry/PropagationContext;)V
 	public fun setReplayId (Lio/sentry/protocol/SentryId;)V
+	public fun setReplayType (Lio/sentry/SentryReplayEvent$ReplayType;)V
 	public fun setRequest (Lio/sentry/protocol/Request;)V
 	public fun setScreen (Ljava/lang/String;)V
 	public fun setSpanContext (Ljava/lang/Throwable;Lio/sentry/ISpan;Ljava/lang/String;)V
@@ -851,6 +853,7 @@ public abstract interface class io/sentry/IScope {
 	public abstract fun getOptions ()Lio/sentry/SentryOptions;
 	public abstract fun getPropagationContext ()Lio/sentry/PropagationContext;
 	public abstract fun getReplayId ()Lio/sentry/protocol/SentryId;
+	public abstract fun getReplayType ()Lio/sentry/SentryReplayEvent$ReplayType;
 	public abstract fun getRequest ()Lio/sentry/protocol/Request;
 	public abstract fun getScreen ()Ljava/lang/String;
 	public abstract fun getSession ()Lio/sentry/Session;
@@ -877,6 +880,7 @@ public abstract interface class io/sentry/IScope {
 	public abstract fun setLevel (Lio/sentry/SentryLevel;)V
 	public abstract fun setPropagationContext (Lio/sentry/PropagationContext;)V
 	public abstract fun setReplayId (Lio/sentry/protocol/SentryId;)V
+	public abstract fun setReplayType (Lio/sentry/SentryReplayEvent$ReplayType;)V
 	public abstract fun setRequest (Lio/sentry/protocol/Request;)V
 	public abstract fun setScreen (Ljava/lang/String;)V
 	public abstract fun setSpanContext (Ljava/lang/Throwable;Lio/sentry/ISpan;Ljava/lang/String;)V
@@ -1619,6 +1623,7 @@ public final class io/sentry/NoOpScope : io/sentry/IScope {
 	public fun getOptions ()Lio/sentry/SentryOptions;
 	public fun getPropagationContext ()Lio/sentry/PropagationContext;
 	public fun getReplayId ()Lio/sentry/protocol/SentryId;
+	public fun getReplayType ()Lio/sentry/SentryReplayEvent$ReplayType;
 	public fun getRequest ()Lio/sentry/protocol/Request;
 	public fun getScreen ()Ljava/lang/String;
 	public fun getSession ()Lio/sentry/Session;
@@ -1645,6 +1650,7 @@ public final class io/sentry/NoOpScope : io/sentry/IScope {
 	public fun setLevel (Lio/sentry/SentryLevel;)V
 	public fun setPropagationContext (Lio/sentry/PropagationContext;)V
 	public fun setReplayId (Lio/sentry/protocol/SentryId;)V
+	public fun setReplayType (Lio/sentry/SentryReplayEvent$ReplayType;)V
 	public fun setRequest (Lio/sentry/protocol/Request;)V
 	public fun setScreen (Ljava/lang/String;)V
 	public fun setSpanContext (Ljava/lang/Throwable;Lio/sentry/ISpan;Ljava/lang/String;)V
@@ -2272,6 +2278,7 @@ public final class io/sentry/Scope : io/sentry/IScope {
 	public fun getOptions ()Lio/sentry/SentryOptions;
 	public fun getPropagationContext ()Lio/sentry/PropagationContext;
 	public fun getReplayId ()Lio/sentry/protocol/SentryId;
+	public fun getReplayType ()Lio/sentry/SentryReplayEvent$ReplayType;
 	public fun getRequest ()Lio/sentry/protocol/Request;
 	public fun getScreen ()Ljava/lang/String;
 	public fun getSession ()Lio/sentry/Session;
@@ -2298,6 +2305,7 @@ public final class io/sentry/Scope : io/sentry/IScope {
 	public fun setLevel (Lio/sentry/SentryLevel;)V
 	public fun setPropagationContext (Lio/sentry/PropagationContext;)V
 	public fun setReplayId (Lio/sentry/protocol/SentryId;)V
+	public fun setReplayType (Lio/sentry/SentryReplayEvent$ReplayType;)V
 	public fun setRequest (Lio/sentry/protocol/Request;)V
 	public fun setScreen (Ljava/lang/String;)V
 	public fun setSpanContext (Ljava/lang/Throwable;Lio/sentry/ISpan;Ljava/lang/String;)V

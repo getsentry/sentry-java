@@ -25,6 +25,7 @@ import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import org.awaitility.kotlin.await
 import org.junit.Rule
@@ -139,6 +140,8 @@ class BufferCaptureStrategyTest {
     assertEquals(SentryId.EMPTY_ID, fixture.scope.replayId)
     assertEquals(replayId, strategy.currentReplayId)
     assertEquals(0, strategy.currentSegment)
+    assertNull(fixture.scope.replayType)
+    assertEquals(ReplayType.BUFFER, strategy.replayType)
   }
 
   @Test
@@ -239,10 +242,15 @@ class BufferCaptureStrategyTest {
   fun `convert converts to session strategy and sets replayId to scope`() {
     val strategy = fixture.getSut()
     strategy.start()
+    assertNull(fixture.scope.replayType)
+    assertEquals(ReplayType.BUFFER, strategy.replayType)
 
     val converted = strategy.convert()
     assertTrue(converted is SessionCaptureStrategy)
     assertEquals(strategy.currentReplayId, fixture.scope.replayId)
+    // Type of strategy is kept buffer, but type on the scope is updated to session
+    assertEquals(ReplayType.BUFFER, strategy.replayType)
+    assertEquals(ReplayType.SESSION, fixture.scope.replayType)
   }
 
   @Test
@@ -330,6 +338,7 @@ class BufferCaptureStrategyTest {
     strategy.captureReplay(false) {}
 
     assertEquals(SentryId.EMPTY_ID, fixture.scope.replayId)
+    assertNull(fixture.scope.replayType)
   }
 
   @Test
@@ -346,6 +355,7 @@ class BufferCaptureStrategyTest {
     // buffered + current = 2
     verify(fixture.scopes, times(2)).captureReplay(any(), any())
     assertEquals(strategy.currentReplayId, fixture.scope.replayId)
+    assertEquals(ReplayType.BUFFER, fixture.scope.replayType)
     assertTrue(called)
   }
 

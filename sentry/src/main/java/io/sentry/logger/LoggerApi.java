@@ -14,6 +14,7 @@ import io.sentry.SentryLogEvent;
 import io.sentry.SentryLogEventAttributeValue;
 import io.sentry.SentryLogLevel;
 import io.sentry.SentryOptions;
+import io.sentry.SentryReplayEvent;
 import io.sentry.SpanId;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryId;
@@ -217,6 +218,11 @@ public final class LoggerApi implements ILoggerApi {
       attributes.put(
           "sentry.replay_id",
           new SentryLogEventAttributeValue(SentryAttributeType.STRING, replayId.toString()));
+      if (scopes.getScope().getReplayType() == SentryReplayEvent.ReplayType.BUFFER) {
+        attributes.put(
+            "sentry._internal.replay_is_buffering",
+            new SentryLogEventAttributeValue(SentryAttributeType.BOOLEAN, true));
+      }
     }
 
     final @Nullable String release = scopes.getOptions().getRelease();
