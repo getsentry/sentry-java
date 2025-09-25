@@ -19,6 +19,7 @@ import io.sentry.protocol.User;
 import io.sentry.util.HintUtils;
 import io.sentry.util.LazyEvaluator;
 import io.sentry.util.Objects;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
@@ -27,29 +28,31 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
 final class DefaultAndroidEventProcessor implements EventProcessor {
 
-  @TestOnly final Context context;
+  @TestOnly
+  final Context context;
 
   private final @NotNull BuildInfoProvider buildInfoProvider;
   private final @NotNull SentryAndroidOptions options;
   private final @Nullable Future<DeviceInfoUtil> deviceInfoUtil;
   private final @NotNull LazyEvaluator<String> deviceFamily =
-      new LazyEvaluator<>(() -> ContextUtils.getFamily(NoOpLogger.getInstance()));
+    new LazyEvaluator<>(() -> ContextUtils.getFamily(NoOpLogger.getInstance()));
 
   public DefaultAndroidEventProcessor(
-      final @NotNull Context context,
-      final @NotNull BuildInfoProvider buildInfoProvider,
-      final @NotNull SentryAndroidOptions options) {
+    final @NotNull Context context,
+    final @NotNull BuildInfoProvider buildInfoProvider,
+    final @NotNull SentryAndroidOptions options) {
     this.context =
-        Objects.requireNonNull(
-            ContextUtils.getApplicationContext(context), "The application context is required.");
+      Objects.requireNonNull(
+        ContextUtils.getApplicationContext(context), "The application context is required.");
     this.buildInfoProvider =
-        Objects.requireNonNull(buildInfoProvider, "The BuildInfoProvider is required.");
+      Objects.requireNonNull(buildInfoProvider, "The BuildInfoProvider is required.");
     this.options = Objects.requireNonNull(options, "The options object is required.");
 
     // don't ref. to method reference, theres a bug on it
@@ -59,7 +62,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     final @NotNull ExecutorService executorService = Executors.newSingleThreadExecutor();
     try {
       deviceInfoUtil =
-          executorService.submit(() -> DeviceInfoUtil.getInstance(this.context, options));
+        executorService.submit(() -> DeviceInfoUtil.getInstance(this.context, options));
     } catch (RejectedExecutionException e) {
       deviceInfoUtil = null;
       options.getLogger().log(SentryLevel.WARNING, "Device info caching task rejected.", e);
@@ -118,7 +121,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
           if (frames != null) {
             for (final @NotNull SentryStackFrame frame : frames) {
               if ("com.android.internal.os.RuntimeInit$MethodAndArgsCaller"
-                  .equals(frame.getModule())) {
+                .equals(frame.getModule())) {
                 reverseExceptions = true;
                 break;
               }
@@ -134,25 +137,25 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   }
 
   private void setCommons(
-      final @NotNull SentryBaseEvent event,
-      final boolean errorEvent,
-      final boolean applyScopeData) {
+    final @NotNull SentryBaseEvent event,
+    final boolean errorEvent,
+    final boolean applyScopeData) {
     mergeUser(event);
     setDevice(event, errorEvent, applyScopeData);
     setSideLoadedInfo(event);
   }
 
   private boolean shouldApplyScopeData(
-      final @NotNull SentryBaseEvent event, final @NotNull Hint hint) {
+    final @NotNull SentryBaseEvent event, final @NotNull Hint hint) {
     if (HintUtils.shouldApplyScopeData(hint)) {
       return true;
     } else {
       options
-          .getLogger()
-          .log(
-              SentryLevel.DEBUG,
-              "Event was cached so not applying data relevant to the current app execution/version: %s",
-              event.getEventId());
+        .getLogger()
+        .log(
+          SentryLevel.DEBUG,
+          "Event was cached so not applying data relevant to the current app execution/version: %s",
+          event.getEventId());
       return false;
     }
   }
@@ -174,16 +177,20 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   }
 
   private void setDevice(
-      final @NotNull SentryBaseEvent event,
-      final boolean errorEvent,
-      final boolean applyScopeData) {
+    final @NotNull SentryBaseEvent event,
+    final boolean errorEvent,
+    final boolean applyScopeData) {
     if (event.getContexts().getDevice() == null) {
-      try {
-        event
+      if (deviceInfoUtil != null) {
+        try {
+          event
             .getContexts()
             .setDevice(deviceInfoUtil.get().collectDeviceInformation(errorEvent, applyScopeData));
-      } catch (Throwable e) {
-        options.getLogger().log(SentryLevel.ERROR, "Failed to retrieve device info", e);
+        } catch (Throwable e) {
+          options.getLogger().log(SentryLevel.ERROR, "Failed to retrieve device info", e);
+        }
+      } else {
+        options.getLogger().log(SentryLevel.ERROR, "Failed to retrieve device info");
       }
       mergeOS(event);
     }
@@ -191,12 +198,17 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
   private void mergeOS(final @NotNull SentryBaseEvent event) {
     final OperatingSystem currentOS = event.getContexts().getOperatingSystem();
-    try {
-      final OperatingSystem androidOS = deviceInfoUtil.get().getOperatingSystem();
-      // make Android OS the main OS using the 'os' key
-      event.getContexts().setOperatingSystem(androidOS);
-    } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.ERROR, "Failed to retrieve os system", e);
+
+    if (deviceInfoUtil != null) {
+      try {
+        final OperatingSystem androidOS = deviceInfoUtil.get().getOperatingSystem();
+        // make Android OS the main OS using the 'os' key
+        event.getContexts().setOperatingSystem(androidOS);
+      } catch (Throwable e) {
+        options.getLogger().log(SentryLevel.ERROR, "Failed to retrieve os system", e);
+      }
+    } else {
+      options.getLogger().log(SentryLevel.ERROR, "Failed to retrieve device info");
     }
 
     if (currentOS != null) {
@@ -214,14 +226,14 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   private void setDevice(final @NotNull SentryLogEvent event) {
     try {
       event.setAttribute(
-          "device.brand",
-          new SentryLogEventAttributeValue(SentryAttributeType.STRING, Build.BRAND));
+        "device.brand",
+        new SentryLogEventAttributeValue(SentryAttributeType.STRING, Build.BRAND));
       event.setAttribute(
-          "device.model",
-          new SentryLogEventAttributeValue(SentryAttributeType.STRING, Build.MODEL));
+        "device.model",
+        new SentryLogEventAttributeValue(SentryAttributeType.STRING, Build.MODEL));
       event.setAttribute(
-          "device.family",
-          new SentryLogEventAttributeValue(SentryAttributeType.STRING, deviceFamily.getValue()));
+        "device.family",
+        new SentryLogEventAttributeValue(SentryAttributeType.STRING, deviceFamily.getValue()));
     } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, "Failed to retrieve device info", e);
     }
@@ -230,10 +242,10 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   private void setOs(final @NotNull SentryLogEvent event) {
     try {
       event.setAttribute(
-          "os.name", new SentryLogEventAttributeValue(SentryAttributeType.STRING, "Android"));
+        "os.name", new SentryLogEventAttributeValue(SentryAttributeType.STRING, "Android"));
       event.setAttribute(
-          "os.version",
-          new SentryLogEventAttributeValue(SentryAttributeType.STRING, Build.VERSION.RELEASE));
+        "os.version",
+        new SentryLogEventAttributeValue(SentryAttributeType.STRING, Build.VERSION.RELEASE));
     } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, "Failed to retrieve os system", e);
     }
@@ -241,7 +253,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
   // Data to be applied to events that was created in the running process
   private void processNonCachedEvent(
-      final @NotNull SentryBaseEvent event, final @NotNull Hint hint) {
+    final @NotNull SentryBaseEvent event, final @NotNull Hint hint) {
     App app = event.getContexts().getApp();
     if (app == null) {
       app = new App();
@@ -273,18 +285,22 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
   private void setPackageInfo(final @NotNull SentryBaseEvent event, final @NotNull App app) {
     final PackageInfo packageInfo =
-        ContextUtils.getPackageInfo(
-            context, PackageManager.GET_PERMISSIONS, options.getLogger(), buildInfoProvider);
+      ContextUtils.getPackageInfo(
+        context, PackageManager.GET_PERMISSIONS, options.getLogger(), buildInfoProvider);
     if (packageInfo != null) {
       String versionCode = ContextUtils.getVersionCode(packageInfo, buildInfoProvider);
 
       setDist(event, versionCode);
 
       @Nullable DeviceInfoUtil deviceInfoUtil = null;
-      try {
-        deviceInfoUtil = this.deviceInfoUtil.get();
-      } catch (Throwable e) {
-        options.getLogger().log(SentryLevel.ERROR, "Failed to retrieve device info", e);
+      if (this.deviceInfoUtil != null) {
+        try {
+          deviceInfoUtil = this.deviceInfoUtil.get();
+        } catch (Throwable e) {
+          options.getLogger().log(SentryLevel.ERROR, "Failed to retrieve device info", e);
+        }
+      } else {
+        options.getLogger().log(SentryLevel.ERROR, "Failed to retrieve device info");
       }
 
       ContextUtils.setAppPackageInfo(packageInfo, buildInfoProvider, deviceInfoUtil, app);
@@ -300,7 +316,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   private void setAppExtras(final @NotNull App app, final @NotNull Hint hint) {
     app.setAppName(ContextUtils.getApplicationName(context));
     final @NotNull TimeSpan appStartTimeSpan =
-        AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback(options);
+      AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback(options);
     if (appStartTimeSpan.hasStarted()) {
       app.setAppStartTime(DateUtils.toUtilDate(appStartTimeSpan.getStartTimestamp()));
     }
@@ -328,22 +344,26 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   }
 
   private void setSideLoadedInfo(final @NotNull SentryBaseEvent event) {
-    try {
-      final ContextUtils.SideLoadedInfo sideLoadedInfo = deviceInfoUtil.get().getSideLoadedInfo();
-      if (sideLoadedInfo != null) {
-        final @NotNull Map<String, String> tags = sideLoadedInfo.asTags();
-        for (Map.Entry<String, String> entry : tags.entrySet()) {
-          event.setTag(entry.getKey(), entry.getValue());
+    if (deviceInfoUtil != null) {
+      try {
+        final ContextUtils.SideLoadedInfo sideLoadedInfo = deviceInfoUtil.get().getSideLoadedInfo();
+        if (sideLoadedInfo != null) {
+          final @NotNull Map<String, String> tags = sideLoadedInfo.asTags();
+          for (Map.Entry<String, String> entry : tags.entrySet()) {
+            event.setTag(entry.getKey(), entry.getValue());
+          }
         }
+      } catch (Throwable e) {
+        options.getLogger().log(SentryLevel.ERROR, "Error getting side loaded info.", e);
       }
-    } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.ERROR, "Error getting side loaded info.", e);
+    } else {
+      options.getLogger().log(SentryLevel.ERROR, "Failed to retrieve device info");
     }
   }
 
   @Override
   public @NotNull SentryTransaction process(
-      final @NotNull SentryTransaction transaction, final @NotNull Hint hint) {
+    final @NotNull SentryTransaction transaction, final @NotNull Hint hint) {
     final boolean applyScopeData = shouldApplyScopeData(transaction, hint);
 
     if (applyScopeData) {
@@ -357,7 +377,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
   @Override
   public @NotNull SentryReplayEvent process(
-      final @NotNull SentryReplayEvent event, final @NotNull Hint hint) {
+    final @NotNull SentryReplayEvent event, final @NotNull Hint hint) {
     final boolean applyScopeData = shouldApplyScopeData(event, hint);
     if (applyScopeData) {
       processNonCachedEvent(event, hint);
