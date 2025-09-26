@@ -107,6 +107,24 @@ public interface IScope {
   void setReplayId(final @NotNull SentryId replayId);
 
   /**
+   * Returns the Scope's current replayType, previously set by {@link
+   * IScope#setReplayType(SentryReplayEvent.ReplayType)}
+   *
+   * @return the type of the current session replay
+   */
+  @ApiStatus.Internal
+  @Nullable
+  SentryReplayEvent.ReplayType getReplayType();
+
+  /**
+   * Sets the Scope's current replayType
+   *
+   * @param replayType the type of the current session replay
+   */
+  @ApiStatus.Internal
+  void setReplayType(final @Nullable SentryReplayEvent.ReplayType replayType);
+
+  /**
    * Returns the Scope's request
    *
    * @return the request

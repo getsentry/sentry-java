@@ -10,6 +10,7 @@ import io.sentry.SentryLevel.ERROR
 import io.sentry.SentryLevel.INFO
 import io.sentry.SentryOptions
 import io.sentry.SentryReplayEvent.ReplayType.BUFFER
+import io.sentry.SentryReplayEvent.ReplayType.SESSION
 import io.sentry.android.replay.ReplayCache
 import io.sentry.android.replay.ScreenshotRecorderConfig
 import io.sentry.android.replay.capture.CaptureStrategy.Companion.rotateEvents
@@ -82,7 +83,10 @@ internal class BufferCaptureStrategy(
 
     // write replayId to scope right away, so it gets picked up by the event that caused buffer
     // to flush
-    scopes?.configureScope { it.replayId = currentReplayId }
+    scopes?.configureScope {
+      it.replayId = currentReplayId
+      it.replayType = replayType
+    }
 
     if (isTerminating) {
       this.isTerminating.set(true)
@@ -152,6 +156,8 @@ internal class BufferCaptureStrategy(
       replayId = currentReplayId,
       replayType = BUFFER,
     )
+    // The type on the scope should change, as logs read it
+    scopes?.configureScope { it.replayType = SESSION }
     return captureStrategy
   }
 
