@@ -36,8 +36,8 @@ class DistributionHttpClientTest {
       DistributionHttpClient.UpdateCheckParams(
         mainBinaryIdentifier = "com.emergetools.hackernews",
         appId = "com.emergetools.hackernews",
-        platform = "android",
-        version = "1.0.0",
+        versionName = "1.0.0",
+        versionCode = 5,
       )
 
     val response = httpClient.checkForUpdates(params)
