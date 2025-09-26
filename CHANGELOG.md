@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Improvements
+
+- Mark `SentryEnvelope` as not internal ([#4748](https://github.com/getsentry/sentry-java/pull/4748))
+
 ## 8.22.0
 
 ### Features
