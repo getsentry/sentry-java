@@ -43,4 +43,17 @@ public abstract class UpdateStatus {
       return message;
     }
   }
+
+  /** No network connection is available to check for updates. */
+  public static final class NoNetwork extends UpdateStatus {
+    private final @NotNull String message;
+
+    public NoNetwork(final @NotNull String message) {
+      this.message = message;
+    }
+
+    public @NotNull String getMessage() {
+      return message;
+    }
+  }
 }

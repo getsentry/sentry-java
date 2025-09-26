@@ -72,11 +72,11 @@ public class DistributionIntegration(context: Context) : Integration, IDistribut
         e,
         "DNS lookup failed - check internet connection",
       )
-      UpdateStatus.UpdateError("No internet connection or invalid server URL")
+      UpdateStatus.NoNetwork("No internet connection or invalid server URL")
     } catch (e: SocketTimeoutException) {
       // SocketTimeoutException could indicate either slow network or server issues
       sentryOptions.logger.log(SentryLevel.ERROR, e, "Network request timed out")
-      UpdateStatus.UpdateError("Request timed out - check network connection")
+      UpdateStatus.NoNetwork("Request timed out - check network connection")
     } catch (e: Exception) {
       sentryOptions.logger.log(SentryLevel.ERROR, e, "Unexpected error checking for updates")
       UpdateStatus.UpdateError("Unexpected error: ${e.message}")
@@ -130,7 +130,8 @@ public class DistributionIntegration(context: Context) : Integration, IDistribut
         mainBinaryIdentifier = appId,
         appId = appId,
         platform = "android",
-        version = versionName,
+        versionName = versionName,
+        versionCode = 5,
       )
     } catch (e: PackageManager.NameNotFoundException) {
       sentryOptions.logger.log(SentryLevel.ERROR, e, "Failed to get package info")
