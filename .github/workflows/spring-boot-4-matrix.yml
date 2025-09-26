@@ -130,13 +130,14 @@ jobs:
             --auto-init "false" \
             --build "true"
 
-      - name: Run sentry-samples-spring-boot-4-opentelemetry-noagent
-        run: |
-          python3 test/system-test-runner.py test \
-            --module "sentry-samples-spring-boot-4-opentelemetry-noagent" \
-            --agent false \
-            --auto-init "true" \
-            --build "true"
+# needs a fix in opentelemetry-spring-boot-starter
+#      - name: Run sentry-samples-spring-boot-4-opentelemetry-noagent
+#        run: |
+#          python3 test/system-test-runner.py test \
+#            --module "sentry-samples-spring-boot-4-opentelemetry-noagent" \
+#            --agent false \
+#            --auto-init "true" \
+#            --build "true"
 
       - name: Run sentry-samples-spring-7
         run: |
