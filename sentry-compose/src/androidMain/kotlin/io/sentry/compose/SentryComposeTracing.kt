@@ -78,7 +78,7 @@ public fun SentryTraced(
     }
   val firstRendered = remember { ImmutableHolder(false) }
 
-  val baseModifier = if (enableUserInteractionTracing) Modifier.sentryTag(tag) else modifier
+  val baseModifier = if (enableUserInteractionTracing) modifier.sentryTag(tag) else modifier
 
   Box(
     modifier =
