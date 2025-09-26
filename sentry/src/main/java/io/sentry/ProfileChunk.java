@@ -20,6 +20,9 @@ import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
 public final class ProfileChunk implements JsonUnknown, JsonSerializable {
+  public static final String PLATFORM_ANDROID = "android";
+  public static final String PLATFORM_JAVA = "java";
+
   private @Nullable DebugMeta debugMeta;
   private @NotNull SentryId profilerId;
   private @NotNull SentryId chunkId;
@@ -47,7 +50,7 @@ public final class ProfileChunk implements JsonUnknown, JsonSerializable {
         new File("dummy"),
         new HashMap<>(),
         0.0,
-        "android",
+        PLATFORM_ANDROID,
         SentryOptions.empty());
   }
 

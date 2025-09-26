@@ -58,6 +58,7 @@ public final class ExternalOptions {
 
   private @Nullable Double profileSessionSampleRate;
   private @Nullable String profilingTracesDirPath;
+  private @Nullable ProfileLifecycle profileLifecycle;
 
   private @Nullable SentryOptions.Cron cron;
 
@@ -209,6 +210,11 @@ public final class ExternalOptions {
         propertiesProvider.getDoubleProperty("profile-session-sample-rate"));
 
     options.setProfilingTracesDirPath(propertiesProvider.getProperty("profiling-traces-dir-path"));
+
+    String profileLifecycleString = propertiesProvider.getProperty("profile-lifecycle");
+    if (profileLifecycleString != null && !profileLifecycleString.isEmpty()) {
+      options.setProfileLifecycle(ProfileLifecycle.valueOf(profileLifecycleString.toUpperCase()));
+    }
 
     return options;
   }
@@ -547,5 +553,13 @@ public final class ExternalOptions {
 
   public void setProfilingTracesDirPath(@Nullable String profilingTracesDirPath) {
     this.profilingTracesDirPath = profilingTracesDirPath;
+  }
+
+  public @Nullable ProfileLifecycle getProfileLifecycle() {
+    return profileLifecycle;
+  }
+
+  public void setProfileLifecycle(@Nullable ProfileLifecycle profileLifecycle) {
+    this.profileLifecycle = profileLifecycle;
   }
 }

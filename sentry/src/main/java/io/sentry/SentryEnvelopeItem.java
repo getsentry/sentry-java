@@ -295,7 +295,7 @@ public final class SentryEnvelopeItem {
                         traceFile.getName()));
               }
 
-              if (profileChunk.getPlatform().equals("java")) {
+              if (ProfileChunk.PLATFORM_JAVA.equals(profileChunk.getPlatform())) {
                 final IProfileConverter profileConverter =
                     ProfilingServiceLoader.loadProfileConverter();
                 if (profileConverter != null) {
@@ -303,7 +303,7 @@ public final class SentryEnvelopeItem {
                     final SentryProfile profile =
                         profileConverter.convertFromFile(traceFile.toPath());
                     profileChunk.setSentryProfile(profile);
-                  } catch (IOException e) {
+                  } catch (Exception e) {
                     throw new SentryEnvelopeException("Profile conversion failed");
                   }
                 }

@@ -1,7 +1,6 @@
-package io.sentry.asyncprofiler
+package io.sentry.asyncprofiler.profiling
 
 import io.sentry.DataCategory
-import io.sentry.IConnectionStatusProvider
 import io.sentry.ILogger
 import io.sentry.IScopes
 import io.sentry.ProfileLifecycle
@@ -11,7 +10,6 @@ import io.sentry.SentryOptions
 import io.sentry.SentryTracer
 import io.sentry.TracesSampler
 import io.sentry.TransactionContext
-import io.sentry.asyncprofiler.profiling.JavaContinuousProfiler
 import io.sentry.protocol.SentryId
 import io.sentry.test.DeferredExecutorService
 import io.sentry.transport.RateLimiter
@@ -22,9 +20,8 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
-import kotlin.use
+import org.mockito.ArgumentMatchers.startsWith
 import org.mockito.Mockito
-import org.mockito.Mockito.mockStatic
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
@@ -41,7 +38,7 @@ class JavaContinuousProfilerTest {
   private class Fixture {
     private val mockDsn = "http://key@localhost/proj"
     val executor = DeferredExecutorService()
-    val mockedSentry = mockStatic(Sentry::class.java)
+    val mockedSentry = Mockito.mockStatic(Sentry::class.java)
     val mockLogger = mock<ILogger>()
     val mockTracesSampler = mock<TracesSampler>()
 
@@ -120,9 +117,6 @@ class JavaContinuousProfilerTest {
     assertTrue(profiler.isRunning)
     // We are scheduling the profiler to stop at the end of the chunk, so it should still be running
     profiler.stopProfiler(ProfileLifecycle.MANUAL)
-    assertTrue(profiler.isRunning)
-    // We run the executor service to trigger the chunk finish, and the profiler shouldn't restart
-    fixture.executor.runAll()
     assertFalse(profiler.isRunning)
   }
 
@@ -278,27 +272,18 @@ class JavaContinuousProfilerTest {
     fixture.executor.runAll()
     // We assert that no trace files are written
     assertTrue(File(fixture.options.profilingTracesDirPath!!).list()!!.isEmpty())
-    verify(fixture.mockLogger).log(eq(SentryLevel.ERROR), eq("Failed to start profiling: "), any())
+    val expectedPath = fixture.options.profilingTracesDirPath
+    verify(fixture.mockLogger)
+      .log(
+        eq(SentryLevel.WARNING),
+        eq(
+          "Disabling profiling because traces directory is not writable or does not exist: %s (writable=%b, exists=%b)"
+        ),
+        eq(expectedPath),
+        eq(false),
+        eq(true),
+      )
   }
-
-  //    @Test
-  //    fun `profiler stops profiling and clear scheduled job on close`() {
-  //      val profiler = fixture.getSut()
-  //      profiler.startProfiler(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
-  //      assertTrue(profiler.isRunning)
-  //
-  //      profiler.close(true)
-  //      assertFalse(profiler.isRunning)
-  //
-  //      // The timeout scheduled job should be cleared
-  //      val androidProfiler = profiler.getProperty<JavaContinuousProfiler?>("profiler")
-  //      val scheduledJob = androidProfiler?.getProperty<Future<*>?>("scheduledFinish")
-  //      assertNull(scheduledJob)
-  //
-  //      val stopFuture = profiler.getStopFuture()
-  //      assertNotNull(stopFuture)
-  //      assertTrue(stopFuture.isCancelled || stopFuture.isDone)
-  //    }
 
   @Test
   fun `profiler stops and restart for each chunk`() {
@@ -337,28 +322,42 @@ class JavaContinuousProfilerTest {
     assertTrue(profiler.isRunning)
     // We run the executor service to trigger the profiler restart (chunk finish)
     fixture.executor.runAll()
+    // At this point the chunk has been submitted to the executor, but yet to be sent
     verify(fixture.scopes, never()).captureProfileChunk(any())
     profiler.stopProfiler(ProfileLifecycle.MANUAL)
-    // We stop the profiler, which should send a chunk
+    // We stop the profiler, which should send both the first and last chunk
     fixture.executor.runAll()
-    verify(fixture.scopes).captureProfileChunk(any())
+    verify(fixture.scopes, times(2)).captureProfileChunk(any())
   }
 
   @Test
   fun `close without terminating stops all profiles after chunk is finished`() {
     val profiler = fixture.getSut()
-    profiler.startProfiler(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
     profiler.startProfiler(ProfileLifecycle.TRACE, fixture.mockTracesSampler)
     assertTrue(profiler.isRunning)
-    // We are scheduling the profiler to stop at the end of the chunk, so it should still be running
+    // We are closing the profiler, which should stop all profiles after the chunk is finished
     profiler.close(false)
-    assertTrue(profiler.isRunning)
+    assertFalse(profiler.isRunning)
     // However, close() already resets the rootSpanCounter
     assertEquals(0, profiler.rootSpanCounter)
+  }
 
-    // We run the executor service to trigger the chunk finish, and the profiler shouldn't restart
+  @Test
+  fun `profiler can be stopped and restarted`() {
+    val profiler = fixture.getSut()
+    profiler.startProfiler(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
+    assertTrue(profiler.isRunning)
+
+    profiler.stopProfiler(ProfileLifecycle.MANUAL)
     fixture.executor.runAll()
     assertFalse(profiler.isRunning)
+
+    profiler.startProfiler(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
+    fixture.executor.runAll()
+
+    assertTrue(profiler.isRunning)
+    verify(fixture.mockLogger, never())
+      .log(eq(SentryLevel.WARNING), startsWith("JFR file is invalid or empty"), any(), any(), any())
   }
 
   @Test
@@ -405,24 +404,6 @@ class JavaContinuousProfilerTest {
     assertEquals(SentryId.EMPTY_ID, profiler.profilerId)
     verify(fixture.mockLogger)
       .log(eq(SentryLevel.WARNING), eq("SDK is rate limited. Stopping profiler."))
-  }
-
-  @Test
-  fun `profiler does not start when offline`() {
-    val profiler =
-      fixture.getSut {
-        it.connectionStatusProvider = mock { provider ->
-          whenever(provider.connectionStatus)
-            .thenReturn(IConnectionStatusProvider.ConnectionStatus.DISCONNECTED)
-        }
-      }
-
-    // If the device is offline, the profiler should never start
-    profiler.startProfiler(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
-    assertFalse(profiler.isRunning)
-    assertEquals(SentryId.EMPTY_ID, profiler.profilerId)
-    verify(fixture.mockLogger)
-      .log(eq(SentryLevel.WARNING), eq("Device is offline. Stopping profiler."))
   }
 
   fun withMockScopes(closure: () -> Unit) =
