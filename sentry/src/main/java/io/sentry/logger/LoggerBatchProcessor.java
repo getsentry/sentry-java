@@ -80,6 +80,7 @@ public final class LoggerBatchProcessor implements ILoggerBatchProcessor {
         try {
           scheduledFlush = executorService.schedule(new BatchRunnable(), flushAfterMs);
         } catch (RejectedExecutionException e) {
+          hasScheduled = false;
           options
               .getLogger()
               .log(SentryLevel.WARNING, "Logs batch processor flush task rejected", e);
