@@ -24,7 +24,6 @@ import io.sentry.transport.RateLimiter;
 import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.SentryRandom;
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -52,15 +51,13 @@ public final class JavaContinuousProfiler
   private @Nullable Future<?> stopFuture;
   private final @NotNull List<ProfileChunk.Builder> payloadBuilders = new ArrayList<>();
   private @NotNull SentryId profilerId = SentryId.EMPTY_ID;
-  private @NotNull SentryId chunkId = SentryId.EMPTY_ID;
   private final @NotNull AtomicBoolean isClosed = new AtomicBoolean(false);
   private @NotNull SentryDate startProfileChunkTimestamp = new SentryNanotimeDate();
 
   private @NotNull String filename = "";
 
-  private final @NotNull AsyncProfiler profiler;
+  private @NotNull AsyncProfiler profiler;
   private volatile boolean shouldSample = true;
-  private boolean shouldStop = false;
   private boolean isSampled = false;
   private int rootSpanCounter = 0;
 
@@ -71,26 +68,47 @@ public final class JavaContinuousProfiler
       final @NotNull ILogger logger,
       final @Nullable String profilingTracesDirPath,
       final int profilingTracesHz,
-      final @NotNull ISentryExecutorService executorService) {
+      final @NotNull ISentryExecutorService executorService)
+      throws Exception {
     this.logger = logger;
     this.profilingTracesDirPath = profilingTracesDirPath;
     this.profilingTracesHz = profilingTracesHz;
     this.executorService = executorService;
+    initializeProfiler();
+  }
+
+  private void initializeProfiler() throws Exception {
     this.profiler = AsyncProfiler.getInstance();
+    // Check version to verify profiler is working
+    String version = profiler.execute("version");
+    logger.log(SentryLevel.DEBUG, "AsyncProfiler initialized successfully. Version: " + version);
   }
 
   private boolean init() {
-    // We initialize it only once
     if (isInitialized) {
       return true;
     }
     isInitialized = true;
+
     if (profilingTracesDirPath == null) {
       logger.log(
           SentryLevel.WARNING,
           "Disabling profiling because no profiling traces dir path is defined in options.");
       return false;
     }
+
+    File profileDir = new File(profilingTracesDirPath);
+
+    if (!profileDir.canWrite() || !profileDir.exists()) {
+      logger.log(
+          SentryLevel.WARNING,
+          "Disabling profiling because traces directory is not writable or does not exist: %s (writable=%b, exists=%b)",
+          profilingTracesDirPath,
+          profileDir.canWrite(),
+          profileDir.exists());
+      return false;
+    }
+
     if (profilingTracesHz <= 0) {
       logger.log(
           SentryLevel.WARNING,
@@ -101,7 +119,6 @@ public final class JavaContinuousProfiler
     return true;
   }
 
-  @SuppressWarnings("ReferenceEquality")
   @Override
   public void startProfiler(
       final @NotNull ProfileLifecycle profileLifecycle,
@@ -141,6 +158,8 @@ public final class JavaContinuousProfiler
         logger.log(SentryLevel.DEBUG, "Started Profiler.");
         start();
       }
+    } catch (Exception e) {
+      logger.log(SentryLevel.ERROR, "Error starting profiler: ", e);
     }
   }
 
@@ -159,7 +178,6 @@ public final class JavaContinuousProfiler
   private void start() {
     initScopes();
 
-    // Let's initialize trace folder and profiling interval
     if (!init()) {
       return;
     }
@@ -179,20 +197,26 @@ public final class JavaContinuousProfiler
     } else {
       startProfileChunkTimestamp = new SentryNanotimeDate();
     }
+
     filename = profilingTracesDirPath + File.separator + SentryUUID.generateSentryId() + ".jfr";
-    String startData = null;
+
+    File jfrFile = new File(filename);
+
     try {
       final String profilingIntervalMicros =
           String.format("%dus", (int) SECONDS.toMicros(1) / profilingTracesHz);
+      // Example command: start,jfr,event=wall,interval=9900us,file=/path/to/trace.jfr
       final String command =
-          String.format("start,jfr,wall=%s,file=%s", profilingIntervalMicros, filename);
-      System.out.println(command);
-      startData = profiler.execute(command);
+          String.format(
+              "start,jfr,event=wall,interval=%s,file=%s", profilingIntervalMicros, filename);
+
+      profiler.execute(command);
+
     } catch (Exception e) {
       logger.log(SentryLevel.ERROR, "Failed to start profiling: ", e);
-    }
-    // check if profiling started
-    if (startData == null) {
+      filename = "";
+      // Try to clean up the file if it was created
+      safelyRemoveFile(jfrFile);
       return;
     }
 
@@ -202,10 +226,6 @@ public final class JavaContinuousProfiler
       profilerId = new SentryId();
     }
 
-    if (chunkId == SentryId.EMPTY_ID) {
-      chunkId = new SentryId();
-    }
-
     try {
       stopFuture = executorService.schedule(() -> stop(true), MAX_CHUNK_DURATION_MILLIS);
     } catch (RejectedExecutionException e) {
@@ -213,7 +233,8 @@ public final class JavaContinuousProfiler
           SentryLevel.ERROR,
           "Failed to schedule profiling chunk finish. Did you call Sentry.close()?",
           e);
-      shouldStop = true;
+      // If we can't schedule the auto-stop, stop immediately without restart
+      stop(false);
     }
   }
 
@@ -232,10 +253,12 @@ public final class JavaContinuousProfiler
           if (rootSpanCounter < 0) {
             rootSpanCounter = 0;
           }
-          shouldStop = true;
+          // Stop immediately without restart
+          stop(false);
           break;
         case MANUAL:
-          shouldStop = true;
+          // Stop immediately without restart
+          stop(false);
           break;
       }
     }
@@ -249,57 +272,55 @@ public final class JavaContinuousProfiler
       // check if profiler was created and it's running
       if (!isRunning) {
         // When the profiler is stopped due to an error (e.g. offline or rate limited), reset the
-        // ids
+        // id
         profilerId = SentryId.EMPTY_ID;
-        chunkId = SentryId.EMPTY_ID;
         return;
       }
 
-      String endData = null;
+      File jfrFile = new File(filename);
+
       try {
-        endData = profiler.execute("stop,jfr");
-      } catch (IOException e) {
-        throw new RuntimeException(e);
+        profiler.execute("stop,jfr");
+      } catch (Exception e) {
+        logger.log(SentryLevel.ERROR, "Error stopping profiler, attempting cleanup: ", e);
+        // Clean up file if it exists
+        safelyRemoveFile(jfrFile);
       }
 
-      // check if profiler end successfully
-      if (endData == null) {
-        logger.log(
-            SentryLevel.ERROR,
-            "An error occurred while collecting a profile chunk, and it won't be sent.");
-      } else {
-        // The scopes can be null if the profiler is started before the SDK is initialized (app
-        // start profiling), meaning there's no scopes to send the chunks. In that case, we store
-        // the data in a list and send it when the next chunk is finished.
+      // The scopes can be null if the profiler is started before the SDK is initialized (app
+      // start profiling), meaning there's no scopes to send the chunks. In that case, we store
+      // the data in a list and send it when the next chunk is finished.
+      if (jfrFile.exists() && jfrFile.canRead() && jfrFile.length() > 0) {
         try (final @NotNull ISentryLifecycleToken ignored2 = payloadLock.acquire()) {
-          File jfrFile = new File(filename);
-          // TODO: should we add deleteOnExit() here to let the JVM clean up the file?
-          // as in `Sentry.java` `initJvmContinuousProfiling` each time we start the profiler we
-          // create a new
-          // temp directory/file that we can't cleanup on restart. Unless the user sets
-          // `profiling-traces-dir-path` manually
-          //          jfrFile.deleteOnExit();
+          jfrFile.deleteOnExit();
           payloadBuilders.add(
               new ProfileChunk.Builder(
                   profilerId,
-                  chunkId,
+                  new SentryId(),
                   new HashMap<>(),
                   jfrFile,
                   startProfileChunkTimestamp,
-                  ProfileChunk.Platform.JAVA));
+                  ProfileChunk.PLATFORM_JAVA));
         }
+      } else {
+        logger.log(
+            SentryLevel.WARNING,
+            "JFR file is invalid or empty: exists=%b, readable=%b, size=%d",
+            jfrFile.exists(),
+            jfrFile.canRead(),
+            jfrFile.length());
+        safelyRemoveFile(jfrFile);
       }
 
+      // Always clean up state, even if stop failed
       isRunning = false;
-      // A chunk is finished. Next chunk will have a different id.
-      chunkId = SentryId.EMPTY_ID;
       filename = "";
 
       if (scopes != null) {
         sendChunks(scopes, scopes.getOptions());
       }
 
-      if (restartProfiler && !shouldStop) {
+      if (restartProfiler) {
         logger.log(SentryLevel.DEBUG, "Profile chunk finished. Starting a new one.");
         start();
       } else {
@@ -307,6 +328,8 @@ public final class JavaContinuousProfiler
         profilerId = SentryId.EMPTY_ID;
         logger.log(SentryLevel.DEBUG, "Profile chunk finished.");
       }
+    } catch (Exception e) {
+      logger.log(SentryLevel.ERROR, "Error stopping profiler: ", e);
     }
   }
 
@@ -319,9 +342,8 @@ public final class JavaContinuousProfiler
   public void close(final boolean isTerminating) {
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       rootSpanCounter = 0;
-      shouldStop = true;
+      stop(false);
       if (isTerminating) {
-        stop(false);
         isClosed.set(true);
       }
     }
@@ -359,9 +381,21 @@ public final class JavaContinuousProfiler
     }
   }
 
+  private void safelyRemoveFile(File file) {
+    try {
+      if (file.exists()) {
+        file.delete();
+      }
+    } catch (Exception e) {
+      logger.log(SentryLevel.INFO, "Failed to remove jfr file %s.", file.getAbsolutePath(), e);
+    }
+  }
+
   @Override
   public boolean isRunning() {
-    return isRunning;
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      return isRunning && !filename.isEmpty();
+    }
   }
 
   @VisibleForTesting

@@ -4,8 +4,17 @@ public final class io/sentry/asyncprofiler/BuildConfig {
 }
 
 public final class io/sentry/asyncprofiler/convert/JfrAsyncProfilerToSentryProfileConverter : io/sentry/asyncprofiler/vendor/asyncprofiler/convert/JfrConverter {
-	public fun <init> (Lio/sentry/asyncprofiler/vendor/asyncprofiler/jfr/JfrReader;Lio/sentry/asyncprofiler/vendor/asyncprofiler/convert/Arguments;Lio/sentry/SentryStackTraceFactory;)V
+	public fun <init> (Lio/sentry/asyncprofiler/vendor/asyncprofiler/jfr/JfrReader;Lio/sentry/asyncprofiler/vendor/asyncprofiler/convert/Arguments;Lio/sentry/SentryStackTraceFactory;Lio/sentry/ILogger;)V
 	public static fun convertFromFileStatic (Ljava/nio/file/Path;)Lio/sentry/protocol/profiling/SentryProfile;
+}
+
+public final class io/sentry/asyncprofiler/convert/NonAggregatingEventCollector : io/sentry/asyncprofiler/vendor/asyncprofiler/jfr/event/EventCollector {
+	public fun <init> ()V
+	public fun afterChunk ()V
+	public fun beforeChunk ()V
+	public fun collect (Lio/sentry/asyncprofiler/vendor/asyncprofiler/jfr/event/Event;)V
+	public fun finish ()Z
+	public fun forEach (Lio/sentry/asyncprofiler/vendor/asyncprofiler/jfr/event/EventCollector$Visitor;)V
 }
 
 public final class io/sentry/asyncprofiler/profiling/JavaContinuousProfiler : io/sentry/IContinuousProfiler, io/sentry/transport/RateLimiter$IRateLimitObserver {

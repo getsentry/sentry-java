@@ -486,11 +486,11 @@ class SentryEnvelopeItemTest {
     val profileChunk =
       mock<ProfileChunk> {
         whenever(it.traceFile).thenReturn(file)
-        whenever(it.platform).thenReturn(ProfileChunk.Platform.ANDROID)
+        whenever(it.platform).thenReturn("chunk platform")
       }
 
     val chunk = SentryEnvelopeItem.fromProfileChunk(profileChunk, mock())
-    assertEquals("android", chunk.header.platform)
+    assertEquals("chunk platform", chunk.header.platform)
   }
 
   @Test
@@ -499,7 +499,7 @@ class SentryEnvelopeItemTest {
     val profileChunk =
       mock<ProfileChunk> {
         whenever(it.traceFile).thenReturn(file)
-        whenever(it.platform).thenReturn(ProfileChunk.Platform.ANDROID)
+        whenever(it.platform).thenReturn(ProfileChunk.PLATFORM_ANDROID)
       }
 
     file.writeBytes(fixture.bytes)
@@ -514,7 +514,7 @@ class SentryEnvelopeItemTest {
     val profileChunk =
       mock<ProfileChunk> {
         whenever(it.traceFile).thenReturn(file)
-        whenever(it.platform).thenReturn(ProfileChunk.Platform.ANDROID)
+        whenever(it.platform).thenReturn(ProfileChunk.PLATFORM_ANDROID)
       }
 
     file.writeBytes(fixture.bytes)
@@ -531,7 +531,7 @@ class SentryEnvelopeItemTest {
     val profileChunk =
       mock<ProfileChunk> {
         whenever(it.traceFile).thenReturn(file)
-        whenever(it.platform).thenReturn(ProfileChunk.Platform.ANDROID)
+        whenever(it.platform).thenReturn(ProfileChunk.PLATFORM_ANDROID)
       }
 
     assertFailsWith<SentryEnvelopeException>(
@@ -547,7 +547,7 @@ class SentryEnvelopeItemTest {
     val profileChunk =
       mock<ProfileChunk> {
         whenever(it.traceFile).thenReturn(file)
-        whenever(it.platform).thenReturn(ProfileChunk.Platform.ANDROID)
+        whenever(it.platform).thenReturn(ProfileChunk.PLATFORM_ANDROID)
       }
     file.writeBytes(fixture.bytes)
     file.setReadable(false)
@@ -565,7 +565,7 @@ class SentryEnvelopeItemTest {
     val profileChunk =
       mock<ProfileChunk> {
         whenever(it.traceFile).thenReturn(file)
-        whenever(it.platform).thenReturn(ProfileChunk.Platform.ANDROID)
+        whenever(it.platform).thenReturn(ProfileChunk.PLATFORM_ANDROID)
       }
 
     val chunk = SentryEnvelopeItem.fromProfileChunk(profileChunk, mock())
@@ -580,7 +580,7 @@ class SentryEnvelopeItemTest {
     val profileChunk =
       mock<ProfileChunk> {
         whenever(it.traceFile).thenReturn(file)
-        whenever(it.platform).thenReturn(ProfileChunk.Platform.ANDROID)
+        whenever(it.platform).thenReturn(ProfileChunk.PLATFORM_ANDROID)
       }
 
     val exception =

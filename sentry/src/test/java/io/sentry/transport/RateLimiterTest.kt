@@ -456,7 +456,7 @@ class RateLimiterTest {
   }
 
   @Test
-  fun `drop profileChunk items as lost`() {
+  fun `drop profileChunkUi items as lost`() {
     val rateLimiter = fixture.getSUT()
 
     val profileChunkItem = SentryEnvelopeItem.fromProfileChunk(ProfileChunk(), fixture.serializer)
@@ -471,6 +471,32 @@ class RateLimiterTest {
       SentryEnvelope(SentryEnvelopeHeader(), arrayListOf(profileChunkItem, attachmentItem))
 
     rateLimiter.updateRetryAfterLimits("60:profile_chunk_ui:key", null, 1)
+    val result = rateLimiter.filter(envelope, Hint())
+
+    assertNotNull(result)
+    assertEquals(1, result.items.toList().size)
+
+    verify(fixture.clientReportRecorder, times(1))
+      .recordLostEnvelopeItem(eq(DiscardReason.RATELIMIT_BACKOFF), same(profileChunkItem))
+    verifyNoMoreInteractions(fixture.clientReportRecorder)
+  }
+
+  @Test
+  fun `drop profileChunk items as lost`() {
+    val rateLimiter = fixture.getSUT()
+
+    val profileChunkItem = SentryEnvelopeItem.fromProfileChunk(ProfileChunk(), fixture.serializer)
+    val attachmentItem =
+      SentryEnvelopeItem.fromAttachment(
+        fixture.serializer,
+        NoOpLogger.getInstance(),
+        Attachment("{ \"number\": 10 }".toByteArray(), "log.json"),
+        1000,
+      )
+    val envelope =
+      SentryEnvelope(SentryEnvelopeHeader(), arrayListOf(profileChunkItem, attachmentItem))
+
+    rateLimiter.updateRetryAfterLimits("60:profile_chunk:key", null, 1)
     val result = rateLimiter.filter(envelope, Hint())
 
     assertNotNull(result)

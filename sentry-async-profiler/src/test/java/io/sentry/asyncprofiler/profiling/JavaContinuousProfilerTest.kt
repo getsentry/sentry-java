@@ -20,6 +20,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import org.mockito.ArgumentMatchers.startsWith
 import org.mockito.Mockito
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
@@ -116,9 +117,6 @@ class JavaContinuousProfilerTest {
     assertTrue(profiler.isRunning)
     // We are scheduling the profiler to stop at the end of the chunk, so it should still be running
     profiler.stopProfiler(ProfileLifecycle.MANUAL)
-    assertTrue(profiler.isRunning)
-    // We run the executor service to trigger the chunk finish, and the profiler shouldn't restart
-    fixture.executor.runAll()
     assertFalse(profiler.isRunning)
   }
 
@@ -274,7 +272,17 @@ class JavaContinuousProfilerTest {
     fixture.executor.runAll()
     // We assert that no trace files are written
     assertTrue(File(fixture.options.profilingTracesDirPath!!).list()!!.isEmpty())
-    verify(fixture.mockLogger).log(eq(SentryLevel.ERROR), eq("Failed to start profiling: "), any())
+    val expectedPath = fixture.options.profilingTracesDirPath
+    verify(fixture.mockLogger)
+      .log(
+        eq(SentryLevel.WARNING),
+        eq(
+          "Disabling profiling because traces directory is not writable or does not exist: %s (writable=%b, exists=%b)"
+        ),
+        eq(expectedPath),
+        eq(false),
+        eq(true),
+      )
   }
 
   @Test
@@ -314,28 +322,42 @@ class JavaContinuousProfilerTest {
     assertTrue(profiler.isRunning)
     // We run the executor service to trigger the profiler restart (chunk finish)
     fixture.executor.runAll()
+    // At this point the chunk has been submitted to the executor, but yet to be sent
     verify(fixture.scopes, never()).captureProfileChunk(any())
     profiler.stopProfiler(ProfileLifecycle.MANUAL)
-    // We stop the profiler, which should send a chunk
+    // We stop the profiler, which should send both the first and last chunk
     fixture.executor.runAll()
-    verify(fixture.scopes).captureProfileChunk(any())
+    verify(fixture.scopes, times(2)).captureProfileChunk(any())
   }
 
   @Test
   fun `close without terminating stops all profiles after chunk is finished`() {
     val profiler = fixture.getSut()
-    profiler.startProfiler(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
     profiler.startProfiler(ProfileLifecycle.TRACE, fixture.mockTracesSampler)
     assertTrue(profiler.isRunning)
-    // We are scheduling the profiler to stop at the end of the chunk, so it should still be running
+    // We are closing the profiler, which should stop all profiles after the chunk is finished
     profiler.close(false)
-    assertTrue(profiler.isRunning)
+    assertFalse(profiler.isRunning)
     // However, close() already resets the rootSpanCounter
     assertEquals(0, profiler.rootSpanCounter)
+  }
 
-    // We run the executor service to trigger the chunk finish, and the profiler shouldn't restart
+  @Test
+  fun `profiler can be stopped and restarted`() {
+    val profiler = fixture.getSut()
+    profiler.startProfiler(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
+    assertTrue(profiler.isRunning)
+
+    profiler.stopProfiler(ProfileLifecycle.MANUAL)
     fixture.executor.runAll()
     assertFalse(profiler.isRunning)
+
+    profiler.startProfiler(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
+    fixture.executor.runAll()
+
+    assertTrue(profiler.isRunning)
+    verify(fixture.mockLogger, never())
+      .log(eq(SentryLevel.WARNING), startsWith("JFR file is invalid or empty"), any(), any(), any())
   }
 
   @Test
