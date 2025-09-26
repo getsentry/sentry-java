@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Improvements
+
+- Handle `RejectedExecutionException` everywhere ([#4747](https://github.com/getsentry/sentry-java/pull/4747))
+- Mark `SentryEnvelope` as not internal ([#4748](https://github.com/getsentry/sentry-java/pull/4748))
+
 ## 8.22.0
 
 ### Features

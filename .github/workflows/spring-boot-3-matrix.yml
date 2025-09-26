@@ -1,0 +1,176 @@
+name: Spring Boot 3.x Matrix
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '**/sentry-android/**'
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  spring-boot-3-matrix:
+    timeout-minutes: 45
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        springboot-version: [ '3.0.0', '3.2.10', '3.3.5', '3.4.5', '3.5.6' ]
+
+    name: Spring Boot ${{ matrix.springboot-version }}
+    env:
+      SENTRY_URL: http://127.0.0.1:8000
+      GRADLE_ENCRYPTION_KEY: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v5
+        with:
+          submodules: 'recursive'
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.10.5'
+
+      - name: Install Python dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install -r requirements.txt
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      # Workaround for https://github.com/gradle/actions/issues/21 to use config cache
+      - name: Cache buildSrc
+        uses: actions/cache@v4
+        with:
+          path: buildSrc/build
+          key: build-logic-${{ hashFiles('buildSrc/src/**', 'buildSrc/build.gradle.kts','buildSrc/settings.gradle.kts') }}
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a
+        with:
+          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
+
+      - name: Update Spring Boot 3.x version
+        run: |
+          sed -i 's/^springboot3=.*/springboot3=${{ matrix.springboot-version }}/' gradle/libs.versions.toml
+          echo "Updated Spring Boot 3.x version to ${{ matrix.springboot-version }}"
+
+      - name: Exclude android modules from build
+        run: |
+          sed -i \
+            -e '/.*"sentry-android-ndk",/d' \
+            -e '/.*"sentry-android",/d' \
+            -e '/.*"sentry-compose",/d' \
+            -e '/.*"sentry-android-core",/d' \
+            -e '/.*"sentry-android-fragment",/d' \
+            -e '/.*"sentry-android-navigation",/d' \
+            -e '/.*"sentry-android-sqlite",/d' \
+            -e '/.*"sentry-android-timber",/d' \
+            -e '/.*"sentry-android-integration-tests:sentry-uitest-android-benchmark",/d' \
+            -e '/.*"sentry-android-integration-tests:sentry-uitest-android",/d' \
+            -e '/.*"sentry-android-integration-tests:sentry-uitest-android-critical",/d' \
+            -e '/.*"sentry-android-integration-tests:test-app-sentry",/d' \
+            -e '/.*"sentry-samples:sentry-samples-android",/d' \
+            -e '/.*"sentry-android-replay",/d' \
+            settings.gradle.kts
+
+      - name: Exclude android modules from ignore list
+        run: |
+          sed -i \
+            -e '/.*"sentry-uitest-android",/d' \
+            -e '/.*"sentry-uitest-android-benchmark",/d' \
+            -e '/.*"sentry-uitest-android-critical",/d' \
+            -e '/.*"test-app-sentry",/d' \
+            -e '/.*"sentry-samples-android",/d' \
+            build.gradle.kts
+
+      - name: Build SDK
+        run: |
+          ./gradlew assemble --parallel
+
+      - name: Test sentry-samples-spring-boot-jakarta
+        run: |
+          python3 test/system-test-runner.py test \
+            --module "sentry-samples-spring-boot-jakarta" \
+            --agent false \
+            --auto-init "true" \
+            --build "true"
+
+      - name: Test sentry-samples-spring-boot-webflux-jakarta
+        run: |
+          python3 test/system-test-runner.py test \
+            --module "sentry-samples-spring-boot-webflux-jakarta" \
+            --agent false \
+            --auto-init "true" \
+            --build "true"
+
+      - name: Test sentry-samples-spring-boot-jakarta-opentelemetry agent init true
+        run: |
+          python3 test/system-test-runner.py test \
+            --module "sentry-samples-spring-boot-jakarta-opentelemetry" \
+            --agent true \
+            --auto-init "true" \
+            --build "true"
+
+      - name: Test sentry-samples-spring-boot-jakarta-opentelemetry agent init false
+        run: |
+          python3 test/system-test-runner.py test \
+            --module "sentry-samples-spring-boot-jakarta-opentelemetry" \
+            --agent true \
+            --auto-init "false" \
+            --build "true"
+
+      - name: Test sentry-samples-spring-boot-jakarta-opentelemetry-noagent
+        run: |
+          python3 test/system-test-runner.py test \
+            --module "sentry-samples-spring-boot-jakarta-opentelemetry-noagent" \
+            --agent false \
+            --auto-init "true" \
+            --build "true"
+
+      - name: Test sentry-samples-spring-jakarta
+        run: |
+          python3 test/system-test-runner.py test \
+            --module "sentry-samples-spring-jakarta" \
+            --agent false \
+            --auto-init "true" \
+            --build "true"
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-springboot-3-${{ matrix.springboot-version }}
+          path: |
+            **/build/reports/*
+            **/build/test-results/**/*.xml
+            sentry-mock-server.txt
+            spring-server.txt
+
+      - name: Test Report
+        uses: phoenix-actions/test-reporting@f957cd93fc2d848d556fa0d03c57bc79127b6b5e # pin@v15
+        if: always()
+        with:
+          name: JUnit Spring Boot 3.x ${{ matrix.springboot-version }}
+          path: |
+            **/build/test-results/**/*.xml
+          reporter: java-junit
+          output-to: step-summary
+          fail-on-error: false
+
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@47f89e9acb64b76debcd5ea40642d25a4adced9f
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: '**/build/test-results/**/*.xml'
