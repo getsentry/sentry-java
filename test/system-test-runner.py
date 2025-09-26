@@ -713,6 +713,7 @@ class SystemTestRunner:
         """Get list of all available test modules."""
         return [
             ModuleConfig("sentry-samples-spring", "false", "true", "false"),
+            ModuleConfig("sentry-samples-spring-7", "false", "true", "false"),
             ModuleConfig("sentry-samples-spring-jakarta", "false", "true", "false"),
             ModuleConfig("sentry-samples-spring-boot", "false", "true", "false"),
             ModuleConfig("sentry-samples-spring-boot-opentelemetry-noagent", "false", "true", "false"),

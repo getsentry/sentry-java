@@ -1,10 +1,15 @@
 package io.sentry.samples.spring7.web;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class Person {
   private final String firstName;
   private final String lastName;
 
-  public Person(String firstName, String lastName) {
+  @JsonCreator
+  public Person(
+      @JsonProperty("firstName") String firstName, @JsonProperty("lastName") String lastName) {
     this.firstName = firstName;
     this.lastName = lastName;
   }
