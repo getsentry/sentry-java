@@ -4344,6 +4344,11 @@ public final class io/sentry/UpdateStatus$NewRelease : io/sentry/UpdateStatus {
 	public fun getInfo ()Lio/sentry/UpdateInfo;
 }
 
+public final class io/sentry/UpdateStatus$NoNetwork : io/sentry/UpdateStatus {
+	public fun <init> (Ljava/lang/String;)V
+	public fun getMessage ()Ljava/lang/String;
+}
+
 public final class io/sentry/UpdateStatus$UpToDate : io/sentry/UpdateStatus {
 	public static fun getInstance ()Lio/sentry/UpdateStatus$UpToDate;
 }

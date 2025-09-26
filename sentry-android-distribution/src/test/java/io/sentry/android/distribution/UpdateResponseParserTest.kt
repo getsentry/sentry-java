@@ -198,4 +198,116 @@ class UpdateResponseParserTest {
       error.message.startsWith("Failed to parse response:"),
     )
   }
+
+  @Test
+  fun `parseResponse returns specific error message when id is missing`() {
+    val responseBody =
+      """
+      {
+        "updateAvailable": true,
+        "buildVersion": "2.0.0",
+        "downloadUrl": "https://example.com/download"
+      }
+    """
+        .trimIndent()
+
+    val result = parser.parseResponse(200, responseBody)
+
+    assertTrue("Should return UpdateError", result is UpdateStatus.UpdateError)
+    val error = result as UpdateStatus.UpdateError
+    assertTrue(
+      "Error message should mention missing id field",
+      error.message.contains("Missing required fields in API response: id"),
+    )
+  }
+
+  @Test
+  fun `parseResponse returns specific error message when buildVersion is missing`() {
+    val responseBody =
+      """
+      {
+        "updateAvailable": true,
+        "id": "update-123",
+        "downloadUrl": "https://example.com/download"
+      }
+    """
+        .trimIndent()
+
+    val result = parser.parseResponse(200, responseBody)
+
+    assertTrue("Should return UpdateError", result is UpdateStatus.UpdateError)
+    val error = result as UpdateStatus.UpdateError
+    assertTrue(
+      "Error message should mention missing buildVersion field",
+      error.message.contains("Missing required fields in API response: buildVersion"),
+    )
+  }
+
+  @Test
+  fun `parseResponse returns specific error message when downloadUrl is missing`() {
+    val responseBody =
+      """
+      {
+        "updateAvailable": true,
+        "id": "update-123",
+        "buildVersion": "2.0.0"
+      }
+    """
+        .trimIndent()
+
+    val result = parser.parseResponse(200, responseBody)
+
+    assertTrue("Should return UpdateError", result is UpdateStatus.UpdateError)
+    val error = result as UpdateStatus.UpdateError
+    assertTrue(
+      "Error message should mention missing downloadUrl field",
+      error.message.contains("Missing required fields in API response: downloadUrl"),
+    )
+  }
+
+  @Test
+  fun `parseResponse returns specific error message when multiple fields are missing`() {
+    val responseBody =
+      """
+      {
+        "updateAvailable": true,
+        "buildNumber": 42
+      }
+    """
+        .trimIndent()
+
+    val result = parser.parseResponse(200, responseBody)
+
+    assertTrue("Should return UpdateError", result is UpdateStatus.UpdateError)
+    val error = result as UpdateStatus.UpdateError
+    assertTrue(
+      "Error message should mention all missing required fields",
+      error.message.contains(
+        "Missing required fields in API response: id, buildVersion, downloadUrl"
+      ),
+    )
+  }
+
+  @Test
+  fun `parseResponse returns specific error message when field is null string`() {
+    val responseBody =
+      """
+      {
+        "updateAvailable": true,
+        "id": "null",
+        "buildVersion": "2.0.0",
+        "downloadUrl": "https://example.com/download"
+      }
+    """
+        .trimIndent()
+
+    val result = parser.parseResponse(200, responseBody)
+
+    assertTrue("Should return UpdateError", result is UpdateStatus.UpdateError)
+    val error = result as UpdateStatus.UpdateError
+    assertTrue(
+      "Error message should mention missing id field when value is 'null' string",
+      error.message.contains("Missing required fields in API response: id"),
+    )
+  }
 }
