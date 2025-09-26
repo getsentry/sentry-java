@@ -1,0 +1,366 @@
+name: Update Spring Boot Versions
+
+on:
+  schedule:
+    # Run every Monday at 9:00 AM UTC
+    - cron: '0 9 * * 1'
+  workflow_dispatch: # Allow manual triggering
+  pull_request: # remove this before merging
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update-spring-boot-versions:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install requests packaging
+
+      - name: Update Spring Boot versions
+        id: update_versions
+        run: |
+          cat << 'EOF' > update_versions.py
+          import json
+          import os
+          import re
+          import requests
+          from packaging import version
+          import sys
+          from pathlib import Path
+
+          def get_spring_boot_versions():
+              """Fetch all Spring Boot versions from Maven Central with retry logic"""
+              
+              max_retries = 3
+              timeout = 60
+              
+              for attempt in range(max_retries):
+                  try:
+                      print(f"Fetching versions (attempt {attempt + 1}/{max_retries})...")
+                      
+                      # Try the Maven Central REST API first
+                      rest_url = "https://repo1.maven.org/maven2/org/springframework/boot/spring-boot/maven-metadata.xml"
+                      response = requests.get(rest_url, timeout=timeout)
+                      
+                      if response.status_code == 200:
+                          print("Using Maven metadata XML approach...")
+                          # Parse XML to extract versions
+                          import xml.etree.ElementTree as ET
+                          root = ET.fromstring(response.text)
+                          versions = []
+                          versioning = root.find('versioning')
+                          if versioning is not None:
+                              versions_element = versioning.find('versions')
+                              if versions_element is not None:
+                                  for version_elem in versions_element.findall('version'):
+                                      v = version_elem.text
+                                      if v and not any(suffix in v for suffix in ['SNAPSHOT', 'RC', 'BUILD', 'RELEASE']):
+                                          # Only include versions that start with a digit and use standard format
+                                          if v and v[0].isdigit() and v.count('.') >= 2:
+                                              versions.append(v)
+                          
+                          if versions:
+                              print(f"Found {len(versions)} versions via XML")
+                              print(f"Sample versions: {versions[-10:] if len(versions) > 10 else versions}")
+                              # Filter out any versions that still can't be parsed
+                              valid_versions = []
+                              for v in versions:
+                                  try:
+                                      version.parse(v)
+                                      valid_versions.append(v)
+                                  except Exception as e:
+                                      print(f"Skipping invalid version format: {v}")
+                              print(f"Filtered to {len(valid_versions)} valid versions")
+                              return sorted(valid_versions, key=version.parse)
+                      
+                      # Fallback to search API
+                      print("Trying search API fallback...")
+                      search_url = "https://search.maven.org/solrsearch/select"
+                      params = {
+                          "q": "g:\"org.springframework.boot\" AND a:\"spring-boot\"",
+                          "core": "gav", 
+                          "rows": 1000,
+                          "wt": "json"
+                      }
+                      
+                      response = requests.get(search_url, params=params, timeout=timeout)
+                      response.raise_for_status()
+                      data = response.json()
+
+                      if 'response' not in data or 'docs' not in data['response']:
+                          raise Exception(f"Unexpected API response structure")
+
+                      docs = data['response']['docs']
+                      print(f"Found {len(docs)} documents in search response")
+                      
+                      if docs and len(docs) > 0:
+                          print(f"Sample doc structure: {list(docs[0].keys())}")
+
+                      versions = []
+                      for doc in docs:
+                          version_field = doc.get('v') or doc.get('version')
+                          if (version_field and 
+                              not any(suffix in version_field for suffix in ['SNAPSHOT', 'RC', 'BUILD', 'RELEASE']) and
+                              version_field[0].isdigit() and version_field.count('.') >= 2):
+                              versions.append(version_field)
+
+                      if versions:
+                          # Filter out any versions that still can't be parsed
+                          valid_versions = []
+                          for v in versions:
+                              try:
+                                  version.parse(v)
+                                  valid_versions.append(v)
+                              except Exception as e:
+                                  print(f"Skipping invalid version format: {v}")
+                          print(f"Successfully fetched {len(valid_versions)} valid versions via search API")
+                          return sorted(valid_versions, key=version.parse)
+                      
+                  except Exception as e:
+                      print(f"Attempt {attempt + 1} failed: {e}")
+                      if attempt < max_retries - 1:
+                          print("Retrying...")
+                          continue
+              
+              print("All attempts failed")
+              return []
+
+          def parse_current_versions(json_file):
+              """Parse current Spring Boot versions from JSON data file"""
+              if not Path(json_file).exists():
+                  return []
+
+              try:
+                  with open(json_file, 'r') as f:
+                      data = json.load(f)
+                  return data.get('versions', [])
+              except Exception as e:
+                  print(f"Error reading {json_file}: {e}")
+                  return []
+
+          def get_latest_patch(all_versions, minor_version):
+              """Get the latest patch version for a given minor version"""
+              target_minor = '.'.join(minor_version.split('.')[:2])
+              patches = [v for v in all_versions if v.startswith(target_minor + '.')]
+              return max(patches, key=version.parse) if patches else minor_version
+
+          def update_version_matrix(current_versions, all_versions, major_version):
+              """Update version matrix based on available versions"""
+              if not current_versions or not all_versions:
+                  return current_versions, False
+
+              # Filter versions for this major version
+              major_versions = [v for v in all_versions if v.startswith(f"{major_version}.")]
+              if not major_versions:
+                  return current_versions, False
+
+              updated_versions = []
+              changes_made = False
+
+              # Always keep the minimum supported version (first version)
+              min_version = current_versions[0]
+              updated_versions.append(min_version)
+
+              # Update patch versions for existing minor versions
+              for curr_version in current_versions[1:]:  # Skip min version
+                  if any(suffix in curr_version for suffix in ['M', 'RC', 'SNAPSHOT']):
+                      # Keep milestone/RC versions as-is for pre-release majors
+                      updated_versions.append(curr_version)
+                      continue
+
+                  latest_patch = get_latest_patch(major_versions, curr_version)
+                  if latest_patch != curr_version:
+                      print(f"Updating {curr_version} -> {latest_patch}")
+                      changes_made = True
+                  updated_versions.append(latest_patch)
+
+              # Check for new minor versions
+              current_minors = set()
+              for v in current_versions:
+                  if not any(suffix in v for suffix in ['M', 'RC', 'SNAPSHOT']):
+                      current_minors.add('.'.join(v.split('.')[:2]))
+
+              available_minors = set()
+              for v in major_versions:
+                  if not any(suffix in v for suffix in ['M', 'RC', 'SNAPSHOT']):
+                      available_minors.add('.'.join(v.split('.')[:2]))
+
+              new_minors = available_minors - current_minors
+              if new_minors:
+                  # Add latest patch of new minor versions
+                  for new_minor in sorted(new_minors, key=version.parse):
+                      latest_patch = get_latest_patch(major_versions, new_minor + '.0')
+                      updated_versions.append(latest_patch)
+                      print(f"Adding new minor version: {latest_patch}")
+                      changes_made = True
+
+                  # Remove second oldest minor (but keep absolute minimum)
+                  if len(updated_versions) > 7:  # If we have more than 7 versions
+                      # Sort by version, keep min version and remove second oldest
+                      sorted_versions = sorted(updated_versions, key=version.parse)
+                      min_version = sorted_versions[0]
+                      other_versions = sorted_versions[1:]
+
+                      # Keep all but the oldest of the "other" versions
+                      if len(other_versions) > 6:
+                          updated_versions = [min_version] + other_versions[1:]
+                          print(f"Removed second oldest version: {other_versions[0]}")
+                          changes_made = True
+
+              # Sort final versions and remove duplicates
+              min_version = updated_versions[0]
+              other_versions = sorted([v for v in updated_versions if v != min_version], key=version.parse)
+              final_versions = [min_version] + other_versions
+              
+              # Remove duplicates while preserving order
+              seen = set()
+              deduplicated_versions = []
+              for v in final_versions:
+                  if v not in seen:
+                      seen.add(v)
+                      deduplicated_versions.append(v)
+              
+              if len(deduplicated_versions) != len(final_versions):
+                  print(f"Removed {len(final_versions) - len(deduplicated_versions)} duplicate versions")
+
+              return deduplicated_versions, changes_made
+
+          def update_json_file(json_file, new_versions):
+              """Update the JSON data file with new versions"""
+              try:
+                  # Write new versions to JSON file with consistent formatting
+                  data = {"versions": new_versions}
+                  with open(json_file, 'w') as f:
+                      json.dump(data, f, indent=2, separators=(',', ': '))
+                      f.write('\n')  # Add trailing newline
+                  return True
+              except Exception as e:
+                  print(f"Error writing to {json_file}: {e}")
+                  return False
+
+          def main():
+              print("Fetching Spring Boot versions...")
+              all_versions = get_spring_boot_versions()
+
+              if not all_versions:
+                  print("No versions found, exiting")
+                  sys.exit(1)
+
+              print(f"Found {len(all_versions)} versions")
+
+              data_files = [
+                  (".github/data/spring-boot-2-versions.json", "2"),
+                  (".github/data/spring-boot-3-versions.json", "3"),
+                  (".github/data/spring-boot-4-versions.json", "4")
+              ]
+
+              changes_made = False
+              change_summary = []
+
+              for json_file, major_version in data_files:
+                  if not Path(json_file).exists():
+                      continue
+
+                  print(f"\nProcessing {json_file} (Spring Boot {major_version}.x)")
+
+                  current_versions = parse_current_versions(json_file)
+                  if not current_versions:
+                      continue
+
+                  print(f"Current versions: {current_versions}")
+
+                  new_versions, file_changed = update_version_matrix(current_versions, all_versions, major_version)
+
+                  if file_changed:
+                      print(f"New versions: {new_versions}")
+                      if update_json_file(json_file, new_versions):
+                          changes_made = True
+                          change_summary.append(f"Spring Boot {major_version}.x: {' -> '.join([str(current_versions), str(new_versions)])}")
+                  else:
+                      print("No changes needed")
+
+              if changes_made:
+                  print(f"\nChanges made to Spring Boot version files:")
+                  for change in change_summary:
+                      print(f"  - {change}")
+
+                  # Write summary for GitHub output
+                  with open('version_changes.txt', 'w') as f:
+                      f.write('\n'.join(change_summary))
+                  
+                  # Set GitHub output for use in PR description
+                  with open(os.environ.get('GITHUB_OUTPUT', '/dev/null'), 'a') as f:
+                      f.write(f"changes_summary<<EOF\n")
+                      f.write('\n'.join(change_summary))
+                      f.write(f"\nEOF\n")
+              else:
+                  print("\nNo version updates needed")
+
+              sys.exit(0 if changes_made else 1)
+
+          if __name__ == "__main__":
+              main()
+          EOF
+
+          python update_versions.py
+
+      - name: Clean up temporary files
+        run: |
+          rm -f update_versions.py version_changes.txt
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if git diff --quiet; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create Pull Request
+        if: steps.changes.outputs.has_changes == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          base: feat/spring-boot-matrix-auto-update
+          commit-message: "chore: Update Spring Boot version matrices"
+          title: "Automated Spring Boot Version Update"
+          body: |
+            ## Automated Spring Boot Version Update
+
+            This PR updates the Spring Boot version matrices in our test workflows based on the latest available versions.
+
+            ### Changes Made:
+            ${{ steps.update_versions.outputs.changes_summary || 'See diff for changes' }}
+
+            ### Update Strategy:
+            - **Patch updates**: Updated to latest patch version of existing minor versions
+            - **New minor versions**: Added new minor versions and removed second oldest (keeping minimum supported)
+            - **Minimum version preserved**: Always keeps the minimum supported version for compatibility testing
+
+            This ensures our CI tests stay current with Spring Boot releases while maintaining coverage of older versions that users may still be using.
+          branch: automated-spring-boot-version-update
+          delete-branch: true
+          draft: false
+
+      - name: Summary
+        run: |
+          if [ "${{ steps.changes.outputs.has_changes }}" = "true" ]; then
+            echo "✅ Spring Boot version updates found and PR created"
+            echo "${{ steps.update_versions.outputs.changes_summary }}"
+          else
+            echo "ℹ️ No Spring Boot version updates needed"
+          fi
