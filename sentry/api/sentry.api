@@ -3967,6 +3967,7 @@ public class io/sentry/SpanContext : io/sentry/JsonSerializable, io/sentry/JsonU
 	public fun getOrigin ()Ljava/lang/String;
 	public fun getParentSpanId ()Lio/sentry/SpanId;
 	public fun getProfileSampled ()Ljava/lang/Boolean;
+	public fun getProfilerId ()Lio/sentry/protocol/SentryId;
 	public fun getSampled ()Ljava/lang/Boolean;
 	public fun getSamplingDecision ()Lio/sentry/TracesSamplingDecision;
 	public fun getSpanId ()Lio/sentry/SpanId;
@@ -3981,6 +3982,7 @@ public class io/sentry/SpanContext : io/sentry/JsonSerializable, io/sentry/JsonU
 	public fun setInstrumenter (Lio/sentry/Instrumenter;)V
 	public fun setOperation (Ljava/lang/String;)V
 	public fun setOrigin (Ljava/lang/String;)V
+	public fun setProfilerId (Lio/sentry/protocol/SentryId;)V
 	public fun setSampled (Ljava/lang/Boolean;)V
 	public fun setSampled (Ljava/lang/Boolean;Ljava/lang/Boolean;)V
 	public fun setSamplingDecision (Lio/sentry/TracesSamplingDecision;)V

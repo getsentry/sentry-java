@@ -174,7 +174,12 @@ public final class RateLimiter implements Closeable {
   @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
   private boolean isRetryAfter(final @NotNull String itemType) {
     final List<DataCategory> dataCategory = getCategoryFromItemType(itemType);
-    return dataCategory.stream().anyMatch(this::isActiveForCategory);
+    for (DataCategory category : dataCategory) {
+      if (isActiveForCategory(category)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   /**

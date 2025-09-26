@@ -26,6 +26,7 @@ import org.jetbrains.annotations.Nullable;
 
 public final class JfrAsyncProfilerToSentryProfileConverter extends JfrConverter {
   private static final double NANOS_PER_SECOND = 1_000_000_000.0;
+  private static final long UNKNOWN_THREAD_ID = -1;
 
   private final @NotNull SentryProfile sentryProfile = new SentryProfile();
   private final @NotNull SentryStackTraceFactory stackTraceFactory;
@@ -113,13 +114,16 @@ public final class JfrAsyncProfilerToSentryProfileConverter extends JfrConverter
       }
     }
 
-    private long resolveThreadId(int eventThreadId) {
-      return jfr.threads.get(eventThreadId) != null
-          ? jfr.javaThreads.get(eventThreadId)
-          : eventThreadId;
+    private long resolveThreadId(int eventId) {
+      Long javaThreadId = jfr.javaThreads.get(eventId);
+      return javaThreadId != null ? javaThreadId : UNKNOWN_THREAD_ID;
     }
 
     private void processThreadMetadata(Event event, long threadId) {
+      if (threadId == UNKNOWN_THREAD_ID) {
+        return;
+      }
+
       final String threadName = getPlainThreadName(event.tid);
       sentryProfile
           .getThreadMetadata()

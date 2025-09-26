@@ -56,9 +56,8 @@ public final class JavaContinuousProfiler
 
   private @NotNull String filename = "";
 
-  private @Nullable AsyncProfiler profiler;
+  private @NotNull AsyncProfiler profiler;
   private volatile boolean shouldSample = true;
-  private boolean shouldStop = false;
   private boolean isSampled = false;
   private int rootSpanCounter = 0;
 
@@ -69,7 +68,8 @@ public final class JavaContinuousProfiler
       final @NotNull ILogger logger,
       final @Nullable String profilingTracesDirPath,
       final int profilingTracesHz,
-      final @NotNull ISentryExecutorService executorService) {
+      final @NotNull ISentryExecutorService executorService)
+      throws Exception {
     this.logger = logger;
     this.profilingTracesDirPath = profilingTracesDirPath;
     this.profilingTracesHz = profilingTracesHz;
@@ -77,19 +77,11 @@ public final class JavaContinuousProfiler
     initializeProfiler();
   }
 
-  private void initializeProfiler() {
-    try {
-      this.profiler = AsyncProfiler.getInstance();
-      // Check version to verify profiler is working
-      String version = profiler.execute("version");
-      logger.log(SentryLevel.DEBUG, "AsyncProfiler initialized successfully. Version: " + version);
-    } catch (Exception e) {
-      logger.log(
-          SentryLevel.WARNING,
-          "Failed to initialize AsyncProfiler. Profiling will be disabled.",
-          e);
-      this.profiler = null;
-    }
+  private void initializeProfiler() throws Exception {
+    this.profiler = AsyncProfiler.getInstance();
+    // Check version to verify profiler is working
+    String version = profiler.execute("version");
+    logger.log(SentryLevel.DEBUG, "AsyncProfiler initialized successfully. Version: " + version);
   }
 
   private boolean init() {
@@ -97,11 +89,6 @@ public final class JavaContinuousProfiler
       return true;
     }
     isInitialized = true;
-
-    if (profiler == null) {
-      logger.log(SentryLevel.ERROR, "Disabling profiling because AsyncProfiler is not available.");
-      return false;
-    }
 
     if (profilingTracesDirPath == null) {
       logger.log(
@@ -168,10 +155,11 @@ public final class JavaContinuousProfiler
       }
 
       if (!isRunning()) {
-        shouldStop = false;
         logger.log(SentryLevel.DEBUG, "Started Profiler.");
         start();
       }
+    } catch (Exception e) {
+      logger.log(SentryLevel.ERROR, "Error starting profiler: ", e);
     }
   }
 
@@ -210,11 +198,6 @@ public final class JavaContinuousProfiler
       startProfileChunkTimestamp = new SentryNanotimeDate();
     }
 
-    if (profiler == null) {
-      logger.log(SentryLevel.ERROR, "Cannot start profiling: AsyncProfiler is not available");
-      return;
-    }
-
     filename = profilingTracesDirPath + File.separator + SentryUUID.generateSentryId() + ".jfr";
 
     File jfrFile = new File(filename);
@@ -250,7 +233,8 @@ public final class JavaContinuousProfiler
           SentryLevel.ERROR,
           "Failed to schedule profiling chunk finish. Did you call Sentry.close()?",
           e);
-      shouldStop = true;
+      // If we can't schedule the auto-stop, stop immediately without restart
+      stop(false);
     }
   }
 
@@ -269,10 +253,12 @@ public final class JavaContinuousProfiler
           if (rootSpanCounter < 0) {
             rootSpanCounter = 0;
           }
-          shouldStop = true;
+          // Stop immediately without restart
+          stop(false);
           break;
         case MANUAL:
-          shouldStop = true;
+          // Stop immediately without restart
+          stop(false);
           break;
       }
     }
@@ -292,11 +278,6 @@ public final class JavaContinuousProfiler
       }
 
       File jfrFile = new File(filename);
-
-      if (profiler == null) {
-        logger.log(SentryLevel.WARNING, "Profiler is null when trying to stop");
-        return;
-      }
 
       try {
         profiler.execute("stop,jfr");
@@ -339,7 +320,7 @@ public final class JavaContinuousProfiler
         sendChunks(scopes, scopes.getOptions());
       }
 
-      if (restartProfiler && !shouldStop) {
+      if (restartProfiler) {
         logger.log(SentryLevel.DEBUG, "Profile chunk finished. Starting a new one.");
         start();
       } else {
@@ -347,6 +328,8 @@ public final class JavaContinuousProfiler
         profilerId = SentryId.EMPTY_ID;
         logger.log(SentryLevel.DEBUG, "Profile chunk finished.");
       }
+    } catch (Exception e) {
+      logger.log(SentryLevel.ERROR, "Error stopping profiler: ", e);
     }
   }
 
@@ -359,9 +342,8 @@ public final class JavaContinuousProfiler
   public void close(final boolean isTerminating) {
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       rootSpanCounter = 0;
-      shouldStop = true;
+      stop(false);
       if (isTerminating) {
-        stop(false);
         isClosed.set(true);
       }
     }
@@ -412,7 +394,7 @@ public final class JavaContinuousProfiler
   @Override
   public boolean isRunning() {
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
-      return isRunning && profiler != null && !filename.isEmpty();
+      return isRunning && !filename.isEmpty();
     }
   }
 

@@ -938,17 +938,18 @@ public final class Scopes implements IScopes {
       final @NotNull ISpanFactory spanFactory =
           maybeSpanFactory == null ? getOptions().getSpanFactory() : maybeSpanFactory;
 
-      // If continuous profiling is enabled in trace mode, let's start it. Profiler will sample on
-      // its own.
+      // If continuous profiling is enabled in trace mode, let's start it unless skipProfiling is
+      // true in TransactionOptions.
+      // Profiler will sample on its own.
       // Profiler is started before the transaction is created, so that the profiler id is available
       // when the transaction starts
-      if (samplingDecision.getSampled()) {
-        if (getOptions().isContinuousProfilingEnabled()
-            && getOptions().getProfileLifecycle() == ProfileLifecycle.TRACE) {
-          getOptions()
-              .getContinuousProfiler()
-              .startProfiler(ProfileLifecycle.TRACE, getOptions().getInternalTracesSampler());
-        }
+      if (samplingDecision.getSampled()
+          && getOptions().isContinuousProfilingEnabled()
+          && getOptions().getProfileLifecycle() == ProfileLifecycle.TRACE
+          && transactionContext.getProfilerId().equals(SentryId.EMPTY_ID)) {
+        getOptions()
+            .getContinuousProfiler()
+            .startProfiler(ProfileLifecycle.TRACE, getOptions().getInternalTracesSampler());
       }
 
       transaction =

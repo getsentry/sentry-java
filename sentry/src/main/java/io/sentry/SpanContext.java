@@ -55,6 +55,12 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
 
   protected @Nullable Baggage baggage;
 
+  /**
+   * Set the profiler id associated with this transaction. If set to a non-empty id, this value will
+   * be sent to sentry instead of {@link SentryOptions#getContinuousProfiler}
+   */
+  private @NotNull SentryId profilerId = SentryId.EMPTY_ID;
+
   public SpanContext(
       final @NotNull String operation, final @Nullable TracesSamplingDecision samplingDecision) {
     this(new SentryId(), new SpanId(), operation, null, samplingDecision);
@@ -302,6 +308,14 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
   @Override
   public int hashCode() {
     return Objects.hash(traceId, spanId, parentSpanId, op, description, getStatus());
+  }
+
+  public @NotNull SentryId getProfilerId() {
+    return profilerId;
+  }
+
+  public void setProfilerId(@NotNull SentryId profilerId) {
+    this.profilerId = profilerId;
   }
 
   // region JsonSerializable
