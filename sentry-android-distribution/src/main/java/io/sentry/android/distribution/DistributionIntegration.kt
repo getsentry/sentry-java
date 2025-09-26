@@ -124,14 +124,20 @@ public class DistributionIntegration(context: Context) : Integration, IDistribut
         }
 
       val versionName = packageInfo.versionName ?: "unknown"
+      val versionCode =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+          packageInfo.longVersionCode.toInt()
+        } else {
+          @Suppress("DEPRECATION") packageInfo.versionCode
+        }
       val appId = context.applicationInfo.packageName
 
       DistributionHttpClient.UpdateCheckParams(
         mainBinaryIdentifier = appId,
         appId = appId,
         platform = "android",
+        versionCode = versionCode,
         versionName = versionName,
-        versionCode = 5,
       )
     } catch (e: PackageManager.NameNotFoundException) {
       sentryOptions.logger.log(SentryLevel.ERROR, e, "Failed to get package info")
