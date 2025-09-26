@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.app.Application;
 import android.content.Context;
 import android.os.Process;
+import android.os.StrictMode;
 import android.os.SystemClock;
 import io.sentry.ILogger;
 import io.sentry.IScopes;
@@ -96,6 +97,10 @@ public final class SentryAndroid {
       @NotNull final Context context,
       @NotNull ILogger logger,
       @NotNull Sentry.OptionsConfiguration<SentryAndroidOptions> configuration) {
+    final @NotNull StrictMode.ThreadPolicy oldPolicy = StrictMode.getThreadPolicy();
+    final @NotNull StrictMode.VmPolicy oldVmPolicy = StrictMode.getVmPolicy();
+    StrictMode.setThreadPolicy(StrictMode.ThreadPolicy.LAX);
+    StrictMode.setVmPolicy(StrictMode.VmPolicy.LAX);
     try (final @NotNull ISentryLifecycleToken ignored = staticLock.acquire()) {
       Sentry.init(
           OptionsContainer.create(SentryAndroidOptions.class),
@@ -215,6 +220,9 @@ public final class SentryAndroid {
       logger.log(SentryLevel.FATAL, "Fatal error during SentryAndroid.init(...)", e);
 
       throw new RuntimeException("Failed to initialize Sentry's SDK", e);
+    } finally {
+      StrictMode.setThreadPolicy(oldPolicy);
+      StrictMode.setVmPolicy(oldVmPolicy);
     }
   }
 
