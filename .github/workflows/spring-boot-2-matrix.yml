@@ -138,6 +138,14 @@ jobs:
             --auto-init "true" \
             --build "true"
 
+      - name: Test sentry-samples-spring
+        run: |
+          python3 test/system-test-runner.py test \
+            --module "sentry-samples-spring" \
+            --agent false \
+            --auto-init "true" \
+            --build "true"
+
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
