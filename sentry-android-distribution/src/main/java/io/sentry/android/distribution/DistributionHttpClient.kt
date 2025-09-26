@@ -1,6 +1,5 @@
 package io.sentry.android.distribution
 
-import android.net.Uri
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import java.io.BufferedReader
@@ -25,7 +24,8 @@ internal class DistributionHttpClient(private val options: SentryOptions) {
     val mainBinaryIdentifier: String,
     val appId: String,
     val platform: String = "android",
-    val version: String,
+    val versionCode: Int,
+    val versionName: String,
   )
 
   /**
@@ -47,22 +47,16 @@ internal class DistributionHttpClient(private val options: SentryOptions) {
       )
     }
 
-    val uri =
-      Uri.parse(baseUrl)
-        .buildUpon()
-        .appendPath("api")
-        .appendPath("0")
-        .appendPath("projects")
-        .appendPath(orgSlug)
-        .appendPath(projectSlug)
-        .appendPath("preprodartifacts")
-        .appendPath("check-for-updates")
-        .appendQueryParameter("main_binary_identifier", params.mainBinaryIdentifier)
-        .appendQueryParameter("app_id", params.appId)
-        .appendQueryParameter("platform", params.platform)
-        .appendQueryParameter("version", params.version)
-        .build()
-    val url = URL(uri.toString())
+    val urlString = buildString {
+      append(baseUrl.trimEnd('/'))
+      append("/api/0/projects/$orgSlug/$projectSlug/preprodartifacts/check-for-updates/")
+      append("?main_binary_identifier=${params.mainBinaryIdentifier}")
+      append("&app_id=${params.appId}")
+      append("&platform=${params.platform}")
+      append("&build_number=${params.versionCode}")
+      append("&build_version=${params.versionName}")
+    }
+    val url = URL(urlString)
 
     return try {
       makeRequest(url, authToken)
