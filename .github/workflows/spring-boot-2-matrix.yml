@@ -114,11 +114,27 @@ jobs:
             --auto-init "true" \
             --build "true"
 
-      - name: Test sentry-samples-spring-boot-opentelemetry
+      - name: Test sentry-samples-spring-boot-opentelemetry agent init true
         run: |
           python3 test/system-test-runner.py test \
             --module "sentry-samples-spring-boot-opentelemetry" \
             --agent true \
+            --auto-init "true" \
+            --build "true"
+
+      - name: Test sentry-samples-spring-boot-opentelemetry agent init false
+        run: |
+          python3 test/system-test-runner.py test \
+            --module "sentry-samples-spring-boot-opentelemetry" \
+            --agent true \
+            --auto-init "false" \
+            --build "true"
+
+      - name: Test sentry-samples-spring-boot-opentelemetry-noagent
+        run: |
+          python3 test/system-test-runner.py test \
+            --module "sentry-samples-spring-boot-opentelemetry" \
+            --agent false \
             --auto-init "true" \
             --build "true"
 

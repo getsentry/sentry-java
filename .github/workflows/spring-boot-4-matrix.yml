@@ -98,28 +98,43 @@ jobs:
         run: |
           ./gradlew assemble --parallel
 
-      - name: Run Spring Boot 4.x system tests
+      - name: Run sentry-samples-spring-boot-4
         run: |
-          # Test standard Spring Boot 4 modules
-          echo "Testing sentry-samples-spring-boot-4 (standard)"
           python3 test/system-test-runner.py test \
             --module "sentry-samples-spring-boot-4" \
             --agent false \
             --auto-init "true" \
             --build "true"
-          
-          echo "Testing sentry-samples-spring-boot-4-webflux (standard)"
+
+      - name: Run sentry-samples-spring-boot-4-webflux
+        run: |
           python3 test/system-test-runner.py test \
             --module "sentry-samples-spring-boot-4-webflux" \
             --agent false \
             --auto-init "true" \
             --build "true"
-          
-          # Test OpenTelemetry modules
-          echo "Testing sentry-samples-spring-boot-4-opentelemetry (with agent)"
+
+      - name: Run sentry-samples-spring-boot-4-opentelemetry agent init true
+        run: |
           python3 test/system-test-runner.py test \
             --module "sentry-samples-spring-boot-4-opentelemetry" \
             --agent true \
+            --auto-init "true" \
+            --build "true"
+
+      - name: Run sentry-samples-spring-boot-4-opentelemetry agent init false
+        run: |
+          python3 test/system-test-runner.py test \
+            --module "sentry-samples-spring-boot-4-opentelemetry" \
+            --agent true \
+            --auto-init "false" \
+            --build "true"
+
+      - name: Run sentry-samples-spring-boot-4-opentelemetry-noagent
+        run: |
+          python3 test/system-test-runner.py test \
+            --module "sentry-samples-spring-boot-4-opentelemetry-noagent" \
+            --agent false \
             --auto-init "true" \
             --build "true"
 
