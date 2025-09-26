@@ -133,7 +133,7 @@ jobs:
       - name: Test sentry-samples-spring-boot-opentelemetry-noagent
         run: |
           python3 test/system-test-runner.py test \
-            --module "sentry-samples-spring-boot-opentelemetry" \
+            --module "sentry-samples-spring-boot-opentelemetry-noagent" \
             --agent false \
             --auto-init "true" \
             --build "true"
