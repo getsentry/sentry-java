@@ -2299,6 +2299,34 @@ class ScopesTest {
     assertEquals("other.span.origin", transaction.spanContext.origin)
   }
 
+  @Test
+  fun `startTransaction start the continuous profiler before creating SentryTracer in ProfileLifecycle TRACE`() {
+    val profiler = mock<IContinuousProfiler>()
+    val scopes = generateScopes {
+      it.setContinuousProfiler(profiler)
+      it.profileSessionSampleRate = 1.0
+      it.profileLifecycle = ProfileLifecycle.TRACE
+    }
+
+    whenever(profiler.profilerId).thenReturn(SentryId.EMPTY_ID)
+
+    val expectedSentryId = SentryId()
+
+    doAnswer { whenever(profiler.profilerId).thenReturn(expectedSentryId) }
+      .whenever(profiler)
+      .startProfiler(eq(ProfileLifecycle.TRACE), any())
+
+    val transaction = scopes.startTransaction("test", "test")
+
+    val profilerId = transaction.getData("profiler_id") as? String
+    val profilingContext = transaction.contexts.get("profile") as? ProfileContext
+    assertNotNull(profilerId)
+    assertTrue(SentryId(transaction.getData("profiler_id")!! as String) != SentryId.EMPTY_ID)
+    assertEquals(expectedSentryId, SentryId(profilerId))
+    assertEquals(ProfileContext(SentryId(profilerId)), profilingContext)
+    verify(profiler).startProfiler(eq(ProfileLifecycle.TRACE), any())
+  }
+
   // region profileSession
 
   @Test

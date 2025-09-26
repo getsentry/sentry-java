@@ -66,6 +66,7 @@ include(
     "sentry-quartz",
     "sentry-okhttp",
     "sentry-reactor",
+    "sentry-async-profiler",
     "sentry-ktor-client",
     "sentry-samples:sentry-samples-android",
     "sentry-samples:sentry-samples-console",

@@ -409,7 +409,11 @@ class SentryOptionsTest {
     externalOptions.spotlightConnectionUrl = "http://local.sentry.io:1234"
     externalOptions.isGlobalHubMode = true
     externalOptions.isEnableLogs = true
+    externalOptions.profileSessionSampleRate = 0.8
+    externalOptions.profilingTracesDirPath = "/profiling-traces"
+    externalOptions.profileLifecycle = ProfileLifecycle.TRACE
 
+    val hash = StringUtils.calculateStringHash(externalOptions.dsn, mock())
     val options = SentryOptions()
 
     options.merge(externalOptions)
@@ -463,6 +467,9 @@ class SentryOptionsTest {
     assertEquals("http://local.sentry.io:1234", options.spotlightConnectionUrl)
     assertTrue(options.isGlobalHubMode!!)
     assertTrue(options.logs.isEnabled!!)
+    assertEquals(0.8, options.profileSessionSampleRate)
+    assertEquals("/profiling-traces${File.separator}${hash}", options.profilingTracesDirPath)
+    assertEquals(ProfileLifecycle.TRACE, options.profileLifecycle)
   }
 
   @Test
@@ -530,6 +537,23 @@ class SentryOptionsTest {
     )
     assertEquals(
       "${File.separator}test${File.separator}${hash}${File.separator}profiling_traces",
+      options.profilingTracesDirPath,
+    )
+  }
+
+  @Test
+  fun `when cacheDirPath and profilingTracesDirPath are set, profilingTracesDirPath takes precedence`() {
+    val dsn = "http://key@localhost/proj"
+    val hash = StringUtils.calculateStringHash(dsn, mock())
+    val options =
+      SentryOptions().apply {
+        setDsn(dsn)
+        cacheDirPath = "${File.separator}test"
+        profilingTracesDirPath = "${File.separator}test-profiles"
+      }
+
+    assertEquals(
+      "${File.separator}test-profiles${File.separator}${hash}",
       options.profilingTracesDirPath,
     )
   }

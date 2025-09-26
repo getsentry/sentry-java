@@ -1,0 +1,63 @@
+{
+  "samples": [
+    {
+      "timestamp": 1753439655.387274,
+      "stack_id": 0,
+      "thread_id": "57"
+    },
+    {
+      "timestamp": 1753439655.415672,
+      "stack_id": 1,
+      "thread_id": "57"
+    }
+  ],
+  "stacks": [
+    [
+      0,
+      1,
+      2
+    ],
+    [
+      3,
+      4
+    ]
+  ],
+  "frames": [
+    {
+      "filename": "sun.nio.ch.Net",
+      "function": "accept",
+      "module": "sun.nio.ch.Net"
+    },
+    {
+      "filename": "org.apache.tomcat.util.net.NioEndpoint",
+      "function": "serverSocketAccept",
+      "module": "org.apache.tomcat.util.net.NioEndpoint",
+      "lineno": 519
+    },
+    {
+      "filename": "java.lang.Thread",
+      "function": "run",
+      "module": "java.lang.Thread",
+      "lineno": 840
+    },
+    {
+      "filename": "io.sentry.samples.spring.boot.jakarta.quartz.SampleJob",
+      "function": "execute",
+      "module": "io.sentry.samples.spring.boot.jakarta.quartz.SampleJob",
+      "lineno": 14,
+      "in_app": true
+    },
+    {
+      "filename": "",
+      "function": "Unsafe_Park",
+      "module": "",
+      "in_app": false
+    }
+  ],
+  "thread_metadata": {
+    "57": {
+      "name": "http-nio-8080-Acceptor",
+      "priority": 0
+    }
+  }
+}

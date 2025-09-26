@@ -15,6 +15,7 @@ import io.sentry.internal.modules.NoOpModulesLoader;
 import io.sentry.internal.modules.ResourcesModulesLoader;
 import io.sentry.logger.ILoggerApi;
 import io.sentry.opentelemetry.OpenTelemetryUtil;
+import io.sentry.profiling.ProfilingServiceLoader;
 import io.sentry.protocol.Feedback;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
@@ -32,11 +33,13 @@ import io.sentry.util.thread.ThreadChecker;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
@@ -675,6 +678,44 @@ public final class Sentry {
             new BackpressureMonitor(options, ScopesAdapter.getInstance()));
       }
       options.getBackpressureMonitor().start();
+    }
+
+    initJvmContinuousProfiling(options);
+
+    options
+        .getLogger()
+        .log(
+            SentryLevel.INFO,
+            "Continuous profiler is enabled %s mode: %s",
+            options.isContinuousProfilingEnabled(),
+            options.getProfileLifecycle());
+  }
+
+  private static void initJvmContinuousProfiling(@NotNull SentryOptions options) {
+
+    if (options.isContinuousProfilingEnabled()
+        && options.getContinuousProfiler() == NoOpContinuousProfiler.getInstance()) {
+      try {
+        String profilingTracesDirPath = options.getProfilingTracesDirPath();
+        if (profilingTracesDirPath == null) {
+          profilingTracesDirPath =
+              Files.createTempDirectory("profiling_traces").toAbsolutePath().toString();
+          options.setProfilingTracesDirPath(profilingTracesDirPath);
+        }
+
+        final IContinuousProfiler continuousProfiler =
+            ProfilingServiceLoader.loadContinuousProfiler(
+                new SystemOutLogger(),
+                profilingTracesDirPath,
+                options.getProfilingTracesHz(),
+                options.getExecutorService());
+
+        options.setContinuousProfiler(continuousProfiler);
+      } catch (IOException e) {
+        options
+            .getLogger()
+            .log(SentryLevel.ERROR, "Failed to create default profiling traces directory", e);
+      }
     }
   }
 

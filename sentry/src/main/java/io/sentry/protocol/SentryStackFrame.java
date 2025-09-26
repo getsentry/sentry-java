@@ -11,6 +11,7 @@ import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -367,6 +368,63 @@ public final class SentryStackFrame implements JsonUnknown, JsonSerializable {
     public static final String PRE_CONTEXT = "pre_context";
     public static final String POST_CONTEXT = "post_context";
     public static final String VARS = "vars";
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (o == null || getClass() != o.getClass()) return false;
+    SentryStackFrame that = (SentryStackFrame) o;
+    return Objects.equals(preContext, that.preContext)
+        && Objects.equals(postContext, that.postContext)
+        && Objects.equals(vars, that.vars)
+        && Objects.equals(framesOmitted, that.framesOmitted)
+        && Objects.equals(filename, that.filename)
+        && Objects.equals(function, that.function)
+        && Objects.equals(module, that.module)
+        && Objects.equals(lineno, that.lineno)
+        && Objects.equals(colno, that.colno)
+        && Objects.equals(absPath, that.absPath)
+        && Objects.equals(contextLine, that.contextLine)
+        && Objects.equals(inApp, that.inApp)
+        && Objects.equals(_package, that._package)
+        && Objects.equals(_native, that._native)
+        && Objects.equals(platform, that.platform)
+        && Objects.equals(imageAddr, that.imageAddr)
+        && Objects.equals(symbolAddr, that.symbolAddr)
+        && Objects.equals(instructionAddr, that.instructionAddr)
+        && Objects.equals(addrMode, that.addrMode)
+        && Objects.equals(symbol, that.symbol)
+        && Objects.equals(unknown, that.unknown)
+        && Objects.equals(rawFunction, that.rawFunction)
+        && Objects.equals(lock, that.lock);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(
+        preContext,
+        postContext,
+        vars,
+        framesOmitted,
+        filename,
+        function,
+        module,
+        lineno,
+        colno,
+        absPath,
+        contextLine,
+        inApp,
+        _package,
+        _native,
+        platform,
+        imageAddr,
+        symbolAddr,
+        instructionAddr,
+        addrMode,
+        symbol,
+        unknown,
+        rawFunction,
+        lock);
   }
 
   @Override
