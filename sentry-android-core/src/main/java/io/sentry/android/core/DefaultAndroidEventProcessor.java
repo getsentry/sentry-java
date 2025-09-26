@@ -4,18 +4,7 @@ import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
-import io.sentry.DateUtils;
-import io.sentry.EventProcessor;
-import io.sentry.Hint;
-import io.sentry.IpAddressUtils;
-import io.sentry.NoOpLogger;
-import io.sentry.SentryAttributeType;
-import io.sentry.SentryBaseEvent;
-import io.sentry.SentryEvent;
-import io.sentry.SentryLevel;
-import io.sentry.SentryLogEvent;
-import io.sentry.SentryLogEventAttributeValue;
-import io.sentry.SentryReplayEvent;
+import io.sentry.*;
 import io.sentry.android.core.internal.util.AndroidThreadChecker;
 import io.sentry.android.core.performance.AppStartMetrics;
 import io.sentry.android.core.performance.TimeSpan;
@@ -37,6 +26,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
@@ -47,7 +37,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
   private final @NotNull BuildInfoProvider buildInfoProvider;
   private final @NotNull SentryAndroidOptions options;
-  private final @NotNull Future<DeviceInfoUtil> deviceInfoUtil;
+  private final @Nullable Future<DeviceInfoUtil> deviceInfoUtil;
   private final @NotNull LazyEvaluator<String> deviceFamily =
       new LazyEvaluator<>(() -> ContextUtils.getFamily(NoOpLogger.getInstance()));
 
@@ -65,9 +55,16 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     // don't ref. to method reference, theres a bug on it
     // noinspection Convert2MethodRef
     // some device info performs disk I/O, but it's result is cached, let's pre-cache it
+    @Nullable Future<DeviceInfoUtil> deviceInfoUtil;
     final @NotNull ExecutorService executorService = Executors.newSingleThreadExecutor();
-    this.deviceInfoUtil =
-        executorService.submit(() -> DeviceInfoUtil.getInstance(this.context, options));
+    try {
+      deviceInfoUtil =
+          executorService.submit(() -> DeviceInfoUtil.getInstance(this.context, options));
+    } catch (RejectedExecutionException e) {
+      deviceInfoUtil = null;
+      options.getLogger().log(SentryLevel.WARNING, "Device info caching task rejected.", e);
+    }
+    this.deviceInfoUtil = deviceInfoUtil;
     executorService.shutdown();
   }
 
@@ -181,12 +178,16 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
       final boolean errorEvent,
       final boolean applyScopeData) {
     if (event.getContexts().getDevice() == null) {
-      try {
-        event
-            .getContexts()
-            .setDevice(deviceInfoUtil.get().collectDeviceInformation(errorEvent, applyScopeData));
-      } catch (Throwable e) {
-        options.getLogger().log(SentryLevel.ERROR, "Failed to retrieve device info", e);
+      if (deviceInfoUtil != null) {
+        try {
+          event
+              .getContexts()
+              .setDevice(deviceInfoUtil.get().collectDeviceInformation(errorEvent, applyScopeData));
+        } catch (Throwable e) {
+          options.getLogger().log(SentryLevel.ERROR, "Failed to retrieve device info", e);
+        }
+      } else {
+        options.getLogger().log(SentryLevel.ERROR, "Failed to retrieve device info");
       }
       mergeOS(event);
     }
@@ -194,12 +195,17 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
   private void mergeOS(final @NotNull SentryBaseEvent event) {
     final OperatingSystem currentOS = event.getContexts().getOperatingSystem();
-    try {
-      final OperatingSystem androidOS = deviceInfoUtil.get().getOperatingSystem();
-      // make Android OS the main OS using the 'os' key
-      event.getContexts().setOperatingSystem(androidOS);
-    } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.ERROR, "Failed to retrieve os system", e);
+
+    if (deviceInfoUtil != null) {
+      try {
+        final OperatingSystem androidOS = deviceInfoUtil.get().getOperatingSystem();
+        // make Android OS the main OS using the 'os' key
+        event.getContexts().setOperatingSystem(androidOS);
+      } catch (Throwable e) {
+        options.getLogger().log(SentryLevel.ERROR, "Failed to retrieve os system", e);
+      }
+    } else {
+      options.getLogger().log(SentryLevel.ERROR, "Failed to retrieve device info");
     }
 
     if (currentOS != null) {
@@ -284,10 +290,14 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
       setDist(event, versionCode);
 
       @Nullable DeviceInfoUtil deviceInfoUtil = null;
-      try {
-        deviceInfoUtil = this.deviceInfoUtil.get();
-      } catch (Throwable e) {
-        options.getLogger().log(SentryLevel.ERROR, "Failed to retrieve device info", e);
+      if (this.deviceInfoUtil != null) {
+        try {
+          deviceInfoUtil = this.deviceInfoUtil.get();
+        } catch (Throwable e) {
+          options.getLogger().log(SentryLevel.ERROR, "Failed to retrieve device info", e);
+        }
+      } else {
+        options.getLogger().log(SentryLevel.ERROR, "Failed to retrieve device info");
       }
 
       ContextUtils.setAppPackageInfo(packageInfo, buildInfoProvider, deviceInfoUtil, app);
@@ -331,16 +341,20 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   }
 
   private void setSideLoadedInfo(final @NotNull SentryBaseEvent event) {
-    try {
-      final ContextUtils.SideLoadedInfo sideLoadedInfo = deviceInfoUtil.get().getSideLoadedInfo();
-      if (sideLoadedInfo != null) {
-        final @NotNull Map<String, String> tags = sideLoadedInfo.asTags();
-        for (Map.Entry<String, String> entry : tags.entrySet()) {
-          event.setTag(entry.getKey(), entry.getValue());
+    if (deviceInfoUtil != null) {
+      try {
+        final ContextUtils.SideLoadedInfo sideLoadedInfo = deviceInfoUtil.get().getSideLoadedInfo();
+        if (sideLoadedInfo != null) {
+          final @NotNull Map<String, String> tags = sideLoadedInfo.asTags();
+          for (Map.Entry<String, String> entry : tags.entrySet()) {
+            event.setTag(entry.getKey(), entry.getValue());
+          }
         }
+      } catch (Throwable e) {
+        options.getLogger().log(SentryLevel.ERROR, "Error getting side loaded info.", e);
       }
-    } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.ERROR, "Error getting side loaded info.", e);
+    } else {
+      options.getLogger().log(SentryLevel.ERROR, "Failed to retrieve device info");
     }
   }
 
