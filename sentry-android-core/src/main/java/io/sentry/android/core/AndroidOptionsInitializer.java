@@ -182,6 +182,8 @@ final class AndroidOptionsInitializer {
       options.setTransportGate(new AndroidTransportGate(options));
     }
 
+    final @NotNull AppStartMetrics appStartMetrics = AppStartMetrics.getInstance();
+
     if (options.getModulesLoader() instanceof NoOpModulesLoader) {
       options.setModulesLoader(new AssetsModulesLoader(context, options.getLogger()));
     }
@@ -248,7 +250,6 @@ final class AndroidOptionsInitializer {
     // Check if the profiler was already instantiated in the app start.
     // We use the Android profiler, that uses a global start/stop api, so we need to preserve the
     // state of the profiler, and it's only possible retaining the instance.
-    final @NotNull AppStartMetrics appStartMetrics = AppStartMetrics.getInstance();
     final @Nullable ITransactionProfiler appStartTransactionProfiler;
     final @Nullable IContinuousProfiler appStartContinuousProfiler;
     try (final @NotNull ISentryLifecycleToken ignored = AppStartMetrics.staticLock.acquire()) {
