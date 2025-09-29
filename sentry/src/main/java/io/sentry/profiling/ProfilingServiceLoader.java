@@ -9,7 +9,6 @@ import io.sentry.ScopesAdapter;
 import io.sentry.SentryLevel;
 import java.util.Iterator;
 import java.util.ServiceLoader;
-
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
