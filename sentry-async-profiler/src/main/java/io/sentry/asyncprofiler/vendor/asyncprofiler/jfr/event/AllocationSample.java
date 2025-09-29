@@ -5,6 +5,9 @@
 
 package io.sentry.asyncprofiler.vendor.asyncprofiler.jfr.event;
 
+import org.jetbrains.annotations.ApiStatus;
+
+@ApiStatus.Internal
 public final class AllocationSample extends Event {
   public final int classId;
   public final long allocationSize;

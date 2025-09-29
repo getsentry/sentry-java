@@ -5,6 +5,9 @@
 
 package io.sentry.asyncprofiler.vendor.asyncprofiler.jfr.event;
 
+import org.jetbrains.annotations.ApiStatus;
+
+@ApiStatus.Internal
 public final class MallocEvent extends Event {
   public final long address;
   public final long size;

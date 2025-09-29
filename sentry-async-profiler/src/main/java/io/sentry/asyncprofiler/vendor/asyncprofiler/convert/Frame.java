@@ -6,7 +6,9 @@
 package io.sentry.asyncprofiler.vendor.asyncprofiler.convert;
 
 import java.util.HashMap;
+import org.jetbrains.annotations.ApiStatus;
 
+@ApiStatus.Internal
 public final class Frame extends HashMap<Integer, Frame> {
   private static final long serialVersionUID = 1L;
   public static final byte TYPE_INTERPRETED = 0;

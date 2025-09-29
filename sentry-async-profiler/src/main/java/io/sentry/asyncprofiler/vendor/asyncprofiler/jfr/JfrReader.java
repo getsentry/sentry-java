@@ -28,6 +28,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -86,6 +87,7 @@ public final class JfrReader implements Closeable {
   private int malloc;
   private int free;
 
+  @ApiStatus.Internal
   public JfrReader(String fileName) throws IOException {
     this.ch = FileChannel.open(Paths.get(fileName), StandardOpenOption.READ);
     this.buf = ByteBuffer.allocateDirect(BUFFER_SIZE);

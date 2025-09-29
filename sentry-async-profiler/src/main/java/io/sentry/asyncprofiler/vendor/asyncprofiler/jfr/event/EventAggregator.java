@@ -5,8 +5,10 @@
 
 package io.sentry.asyncprofiler.vendor.asyncprofiler.jfr.event;
 
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
+@ApiStatus.Internal
 public final class EventAggregator implements EventCollector {
   private static final int INITIAL_CAPACITY = 1024;
 

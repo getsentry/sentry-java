@@ -6,7 +6,9 @@
 package io.sentry.asyncprofiler.vendor.asyncprofiler.jfr;
 
 import java.util.Arrays;
+import org.jetbrains.annotations.ApiStatus;
 
+@ApiStatus.Internal
 /** Fast and compact long->Object map. */
 public final class Dictionary<T> {
   private static final int INITIAL_CAPACITY = 16;

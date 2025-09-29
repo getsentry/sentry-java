@@ -1,6 +1,7 @@
 package io.sentry.profiling;
 
 import io.sentry.IProfileConverter;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -9,6 +10,7 @@ import org.jetbrains.annotations.Nullable;
  * <p>This interface allows for pluggable profile converter implementations that can be discovered
  * at runtime using the ServiceLoader mechanism.
  */
+@ApiStatus.Internal
 public interface JavaProfileConverterProvider {
 
   /**

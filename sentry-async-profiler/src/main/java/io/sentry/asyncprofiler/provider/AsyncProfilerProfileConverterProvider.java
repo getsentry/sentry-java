@@ -3,6 +3,7 @@ package io.sentry.asyncprofiler.provider;
 import io.sentry.IProfileConverter;
 import io.sentry.asyncprofiler.convert.JfrAsyncProfilerToSentryProfileConverter;
 import io.sentry.profiling.JavaProfileConverterProvider;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -10,6 +11,7 @@ import org.jetbrains.annotations.Nullable;
  * AsyncProfiler implementation of {@link JavaProfileConverterProvider}. This provider integrates
  * AsyncProfiler's JFR converter with Sentry's profiling system.
  */
+@ApiStatus.Internal
 public final class AsyncProfilerProfileConverterProvider implements JavaProfileConverterProvider {
 
   @Override

@@ -8,9 +8,11 @@ package io.sentry.asyncprofiler.vendor.asyncprofiler.convert;
 import static io.sentry.asyncprofiler.vendor.asyncprofiler.convert.Frame.*;
 
 import io.sentry.asyncprofiler.vendor.asyncprofiler.jfr.StackTrace;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@ApiStatus.Internal
 abstract class Classifier {
 
   enum Category {

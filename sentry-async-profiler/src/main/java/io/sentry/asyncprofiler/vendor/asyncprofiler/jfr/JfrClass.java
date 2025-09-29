@@ -8,9 +8,11 @@ package io.sentry.asyncprofiler.vendor.asyncprofiler.jfr;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@ApiStatus.Internal
 public final class JfrClass extends Element {
   final int id;
   final boolean simpleType;

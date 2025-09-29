@@ -20,9 +20,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@ApiStatus.Internal
 public final class JfrAsyncProfilerToSentryProfileConverter extends JfrConverter {
   private static final double NANOS_PER_SECOND = 1_000_000_000.0;
   private static final long UNKNOWN_THREAD_ID = -1;

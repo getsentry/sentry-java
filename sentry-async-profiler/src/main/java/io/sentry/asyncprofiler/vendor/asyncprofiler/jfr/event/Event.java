@@ -6,7 +6,9 @@
 package io.sentry.asyncprofiler.vendor.asyncprofiler.jfr.event;
 
 import java.lang.reflect.Field;
+import org.jetbrains.annotations.ApiStatus;
 
+@ApiStatus.Internal
 public abstract class Event implements Comparable<Event> {
   public final long time;
   public final int tid;

@@ -5,6 +5,9 @@
 
 package io.sentry.asyncprofiler.vendor.asyncprofiler.jfr;
 
+import org.jetbrains.annotations.ApiStatus;
+
+@ApiStatus.Internal
 public final class ClassRef {
   public final long name;
 

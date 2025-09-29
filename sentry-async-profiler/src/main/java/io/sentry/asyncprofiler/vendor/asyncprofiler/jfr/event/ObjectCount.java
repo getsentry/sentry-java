@@ -6,7 +6,9 @@
 package io.sentry.asyncprofiler.vendor.asyncprofiler.jfr.event;
 
 import io.sentry.asyncprofiler.vendor.asyncprofiler.jfr.JfrReader;
+import org.jetbrains.annotations.ApiStatus;
 
+@ApiStatus.Internal
 public final class ObjectCount extends Event {
   public final int gcId;
   public final int classId;

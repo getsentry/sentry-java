@@ -3,6 +3,7 @@ package io.sentry.profiling;
 import io.sentry.IContinuousProfiler;
 import io.sentry.ILogger;
 import io.sentry.ISentryExecutorService;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -11,6 +12,7 @@ import org.jetbrains.annotations.NotNull;
  * <p>This interface allows for pluggable continuous profiler implementations that can be discovered
  * at runtime using the ServiceLoader mechanism.
  */
+@ApiStatus.Internal
 public interface JavaContinuousProfilerProvider {
 
   /**

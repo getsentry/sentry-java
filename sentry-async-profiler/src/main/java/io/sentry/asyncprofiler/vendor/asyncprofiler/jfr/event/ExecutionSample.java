@@ -5,6 +5,9 @@
 
 package io.sentry.asyncprofiler.vendor.asyncprofiler.jfr.event;
 
+import org.jetbrains.annotations.ApiStatus;
+
+@ApiStatus.Internal
 public final class ExecutionSample extends Event {
   public final int threadState;
   public final int samples;

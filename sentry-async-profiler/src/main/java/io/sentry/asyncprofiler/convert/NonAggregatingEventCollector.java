@@ -4,7 +4,9 @@ import io.sentry.asyncprofiler.vendor.asyncprofiler.jfr.event.Event;
 import io.sentry.asyncprofiler.vendor.asyncprofiler.jfr.event.EventCollector;
 import java.util.ArrayList;
 import java.util.List;
+import org.jetbrains.annotations.ApiStatus;
 
+@ApiStatus.Internal
 public final class NonAggregatingEventCollector implements EventCollector {
   final List<Event> events = new ArrayList<>();
 

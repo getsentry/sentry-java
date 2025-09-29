@@ -8,6 +8,7 @@ import io.sentry.SentryLevel;
 import io.sentry.asyncprofiler.profiling.JavaContinuousProfiler;
 import io.sentry.profiling.JavaContinuousProfilerProvider;
 import io.sentry.profiling.JavaProfileConverterProvider;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -15,6 +16,7 @@ import org.jetbrains.annotations.NotNull;
  * JavaProfileConverterProvider}. This provider integrates AsyncProfiler with Sentry's continuous
  * profiling system and provides profile conversion functionality.
  */
+@ApiStatus.Internal
 public final class AsyncProfilerContinuousProfilerProvider
     implements JavaContinuousProfilerProvider {
 

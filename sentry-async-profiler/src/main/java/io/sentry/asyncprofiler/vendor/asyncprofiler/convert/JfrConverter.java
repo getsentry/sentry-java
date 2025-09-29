@@ -24,8 +24,10 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.BitSet;
 import java.util.Map;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
+@ApiStatus.Internal
 public abstract class JfrConverter extends Classifier {
   protected final @NotNull JfrReader jfr;
   protected final @NotNull Arguments args;
