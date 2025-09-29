@@ -5,6 +5,12 @@
 ### Fixes
 
 - Start performance collection on AppStart continuous profiling ([#4752](https://github.com/getsentry/sentry-java/pull/4752))
+- Preserve modifiers in `SentryTraced` ([#4757](https://github.com/getsentry/sentry-java/pull/4757))
+
+### Improvements
+
+- Handle `RejectedExecutionException` everywhere ([#4747](https://github.com/getsentry/sentry-java/pull/4747))
+- Mark `SentryEnvelope` as not internal ([#4748](https://github.com/getsentry/sentry-java/pull/4748))
 
 ## 8.22.0
 

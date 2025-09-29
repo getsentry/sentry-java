@@ -54,11 +54,11 @@ public final class SentryExecutorService implements ISentryExecutorService {
   }
 
   @Override
-  public @NotNull Future<?> submit(final @NotNull Runnable runnable) {
+  public @NotNull Future<?> submit(final @NotNull Runnable runnable)
+      throws RejectedExecutionException {
     if (executorService.getQueue().size() < MAX_QUEUE_SIZE) {
       return executorService.submit(runnable);
     }
-    // TODO: maybe RejectedExecutionException?
     if (options != null) {
       options
           .getLogger()
@@ -68,11 +68,11 @@ public final class SentryExecutorService implements ISentryExecutorService {
   }
 
   @Override
-  public @NotNull <T> Future<T> submit(final @NotNull Callable<T> callable) {
+  public @NotNull <T> Future<T> submit(final @NotNull Callable<T> callable)
+      throws RejectedExecutionException {
     if (executorService.getQueue().size() < MAX_QUEUE_SIZE) {
       return executorService.submit(callable);
     }
-    // TODO: maybe RejectedExecutionException?
     if (options != null) {
       options
           .getLogger()
@@ -82,11 +82,11 @@ public final class SentryExecutorService implements ISentryExecutorService {
   }
 
   @Override
-  public @NotNull Future<?> schedule(final @NotNull Runnable runnable, final long delayMillis) {
+  public @NotNull Future<?> schedule(final @NotNull Runnable runnable, final long delayMillis)
+      throws RejectedExecutionException {
     if (executorService.getQueue().size() < MAX_QUEUE_SIZE) {
       return executorService.schedule(runnable, delayMillis, TimeUnit.MILLISECONDS);
     }
-    // TODO: maybe RejectedExecutionException?
     if (options != null) {
       options
           .getLogger()
@@ -122,20 +122,30 @@ public final class SentryExecutorService implements ISentryExecutorService {
   @SuppressWarnings({"FutureReturnValueIgnored"})
   @Override
   public void prewarm() {
-    executorService.submit(
-        () -> {
-          try {
-            // schedule a bunch of dummy runnables in the future that will never execute to trigger
-            // queue growth and then purge the queue
-            for (int i = 0; i < INITIAL_QUEUE_SIZE; i++) {
-              final Future<?> future = executorService.schedule(dummyRunnable, 365L, TimeUnit.DAYS);
-              future.cancel(true);
+    try {
+      executorService.submit(
+          () -> {
+            try {
+              // schedule a bunch of dummy runnables in the future that will never execute to
+              // trigger
+              // queue growth and then purge the queue
+              for (int i = 0; i < INITIAL_QUEUE_SIZE; i++) {
+                final Future<?> future =
+                    executorService.schedule(dummyRunnable, 365L, TimeUnit.DAYS);
+                future.cancel(true);
+              }
+              executorService.purge();
+            } catch (RejectedExecutionException ignored) {
+              // ignore
             }
-            executorService.purge();
-          } catch (RejectedExecutionException ignored) {
-            // ignore
-          }
-        });
+          });
+    } catch (RejectedExecutionException e) {
+      if (options != null) {
+        options
+            .getLogger()
+            .log(SentryLevel.WARNING, "Prewarm task rejected from " + executorService, e);
+      }
+    }
   }
 
   private static final class SentryExecutorServiceThreadFactory implements ThreadFactory {
