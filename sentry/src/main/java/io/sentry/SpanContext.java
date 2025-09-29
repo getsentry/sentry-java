@@ -310,10 +310,12 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
     return Objects.hash(traceId, spanId, parentSpanId, op, description, getStatus());
   }
 
+  @ApiStatus.Internal
   public @NotNull SentryId getProfilerId() {
     return profilerId;
   }
 
+  @ApiStatus.Internal
   public void setProfilerId(@NotNull SentryId profilerId) {
     this.profilerId = profilerId;
   }
