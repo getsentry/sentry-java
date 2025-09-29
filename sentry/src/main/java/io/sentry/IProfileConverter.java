@@ -2,7 +2,6 @@ package io.sentry;
 
 import io.sentry.protocol.profiling.SentryProfile;
 import java.io.IOException;
-import java.nio.file.Path;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
@@ -22,5 +21,5 @@ public interface IProfileConverter {
    * @throws IOException If an error occurs while reading or converting the file
    */
   @NotNull
-  SentryProfile convertFromFile(@NotNull Path jfrFilePath) throws IOException;
+  SentryProfile convertFromFile(@NotNull String jfrFilePath) throws IOException;
 }

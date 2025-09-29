@@ -25,7 +25,7 @@ public final class AsyncProfilerProfileConverterProvider implements JavaProfileC
 
     @Override
     public @NotNull io.sentry.protocol.profiling.SentryProfile convertFromFile(
-        @NotNull java.nio.file.Path jfrFilePath) throws java.io.IOException {
+        @NotNull String jfrFilePath) throws java.io.IOException {
       return JfrAsyncProfilerToSentryProfileConverter.convertFromFileStatic(jfrFilePath);
     }
   }

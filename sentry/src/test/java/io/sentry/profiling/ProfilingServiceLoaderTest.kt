@@ -8,7 +8,6 @@ import io.sentry.ProfileLifecycle
 import io.sentry.TracesSampler
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.profiling.SentryProfile
-import java.nio.file.Path
 import kotlin.test.Test
 import org.mockito.kotlin.mock
 
@@ -35,7 +34,7 @@ class JavaProfileConverterProviderStub : JavaProfileConverterProvider {
 }
 
 class ProfileConverterStub() : IProfileConverter {
-  override fun convertFromFile(jfrFilePath: Path): SentryProfile {
+  override fun convertFromFile(jfrFilePath: String): SentryProfile {
     TODO("Not yet implemented")
   }
 }

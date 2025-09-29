@@ -12,8 +12,7 @@ plugins {
 }
 
 tasks.withType<KotlinCompile>().configureEach {
-  kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
-  kotlinOptions.languageVersion = libs.versions.kotlin.compatible.version.get()
+  compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8
 }
 
 kotlin { explicitApi() }

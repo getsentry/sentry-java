@@ -16,7 +16,6 @@ import io.sentry.protocol.profiling.SentryProfile;
 import io.sentry.protocol.profiling.SentrySample;
 import io.sentry.protocol.profiling.SentryThreadMetadata;
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -54,10 +53,10 @@ public final class JfrAsyncProfilerToSentryProfileConverter extends JfrConverter
     return new NonAggregatingEventCollector();
   }
 
-  public static @NotNull SentryProfile convertFromFileStatic(@NotNull Path jfrFilePath)
+  public static @NotNull SentryProfile convertFromFileStatic(@NotNull String jfrFilePath)
       throws IOException {
     JfrAsyncProfilerToSentryProfileConverter converter;
-    try (JfrReader jfrReader = new JfrReader(jfrFilePath.toString())) {
+    try (JfrReader jfrReader = new JfrReader(jfrFilePath)) {
       Arguments args = new Arguments();
       args.cpu = false;
       args.wall = true;

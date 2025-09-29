@@ -17,7 +17,6 @@ import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.time.temporal.ChronoUnit
 import java.util.*
-import kotlin.io.path.Path
 import kotlin.math.absoluteValue
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -95,7 +94,7 @@ class JfrAsyncProfilerToSentryProfileConverterTest {
 
   @Test
   fun `check number of samples for specific frame`() {
-    val file = Path(loadFile("async_profiler_test_sample.jfr"))
+    val file = loadFile("async_profiler_test_sample.jfr")
 
     val sentryProfile = fixture.getSut()!!.convertFromFile(file)
     val tracingFilterFrame =
@@ -120,7 +119,7 @@ class JfrAsyncProfilerToSentryProfileConverterTest {
 
   @Test
   fun `check number of samples for specific thread`() {
-    val file = Path(loadFile("async_profiler_test_sample.jfr"))
+    val file = loadFile("async_profiler_test_sample.jfr")
 
     val sentryProfile = fixture.getSut()!!.convertFromFile(file)
     val mainThread =
@@ -138,7 +137,7 @@ class JfrAsyncProfilerToSentryProfileConverterTest {
 
   @Test
   fun `check no duplicate frames`() {
-    val file = Path(loadFile("async_profiler_test_sample.jfr"))
+    val file = loadFile("async_profiler_test_sample.jfr")
     val sentryProfile = fixture.getSut()!!.convertFromFile(file)
 
     val frameSet = sentryProfile.frames.toSet()
@@ -148,7 +147,7 @@ class JfrAsyncProfilerToSentryProfileConverterTest {
 
   @Test
   fun `convertFromFile with valid JFR returns populated SentryProfile`() {
-    val file = Path(loadFile("async_profiler_test_sample.jfr"))
+    val file = loadFile("async_profiler_test_sample.jfr")
 
     val sentryProfile = fixture.getSut()!!.convertFromFile(file)
 
@@ -158,7 +157,7 @@ class JfrAsyncProfilerToSentryProfileConverterTest {
 
   @Test
   fun `convertFromFile parses timestamps correctly`() {
-    val file = Path(loadFile("async_profiler_test_sample.jfr"))
+    val file = loadFile("async_profiler_test_sample.jfr")
 
     val sentryProfile = fixture.getSut()!!.convertFromFile(file)
 
@@ -184,7 +183,7 @@ class JfrAsyncProfilerToSentryProfileConverterTest {
 
   @Test
   fun `convertFromFile extracts thread metadata correctly`() {
-    val file = Path(loadFile("async_profiler_test_sample.jfr"))
+    val file = loadFile("async_profiler_test_sample.jfr")
 
     val sentryProfile = fixture.getSut()!!.convertFromFile(file)
 
@@ -211,7 +210,7 @@ class JfrAsyncProfilerToSentryProfileConverterTest {
 
   @Test
   fun `converter processes frames with complete information`() {
-    val file = Path(loadFile("async_profiler_test_sample.jfr"))
+    val file = loadFile("async_profiler_test_sample.jfr")
 
     val sentryProfile = fixture.getSut()!!.convertFromFile(file)
 
@@ -232,7 +231,7 @@ class JfrAsyncProfilerToSentryProfileConverterTest {
 
   @Test
   fun `converter marks in-app frames correctly`() {
-    val file = Path(loadFile("async_profiler_test_sample.jfr"))
+    val file = loadFile("async_profiler_test_sample.jfr")
 
     val sentryProfile = fixture.getSut()!!.convertFromFile(file)
 
@@ -269,7 +268,7 @@ class JfrAsyncProfilerToSentryProfileConverterTest {
 
   @Test
   fun `converter filters native methods`() {
-    val file = Path(loadFile("async_profiler_test_sample.jfr"))
+    val file = loadFile("async_profiler_test_sample.jfr")
 
     val sentryProfile = fixture.getSut()!!.convertFromFile(file)
 
@@ -286,7 +285,7 @@ class JfrAsyncProfilerToSentryProfileConverterTest {
 
   @Test(expected = IOException::class)
   fun `convertFromFile with non-existent file throws IOException`() {
-    val nonExistentFile = Path("/non/existent/file.jfr")
+    val nonExistentFile = "/non/existent/file.jfr"
 
     JfrAsyncProfilerToSentryProfileConverter.convertFromFileStatic(nonExistentFile)
   }

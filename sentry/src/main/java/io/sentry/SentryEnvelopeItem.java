@@ -301,7 +301,7 @@ public final class SentryEnvelopeItem {
                 if (profileConverter != null) {
                   try {
                     final SentryProfile profile =
-                        profileConverter.convertFromFile(traceFile.toPath());
+                        profileConverter.convertFromFile(traceFile.getAbsolutePath());
                     profileChunk.setSentryProfile(profile);
                   } catch (Exception e) {
                     throw new SentryEnvelopeException("Profile conversion failed");

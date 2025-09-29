@@ -5,7 +5,7 @@ public final class io/sentry/asyncprofiler/BuildConfig {
 
 public final class io/sentry/asyncprofiler/convert/JfrAsyncProfilerToSentryProfileConverter : io/sentry/asyncprofiler/vendor/asyncprofiler/convert/JfrConverter {
 	public fun <init> (Lio/sentry/asyncprofiler/vendor/asyncprofiler/jfr/JfrReader;Lio/sentry/asyncprofiler/vendor/asyncprofiler/convert/Arguments;Lio/sentry/SentryStackTraceFactory;Lio/sentry/ILogger;)V
-	public static fun convertFromFileStatic (Ljava/nio/file/Path;)Lio/sentry/protocol/profiling/SentryProfile;
+	public static fun convertFromFileStatic (Ljava/lang/String;)Lio/sentry/protocol/profiling/SentryProfile;
 }
 
 public final class io/sentry/asyncprofiler/convert/NonAggregatingEventCollector : io/sentry/asyncprofiler/vendor/asyncprofiler/jfr/event/EventCollector {
@@ -41,7 +41,7 @@ public final class io/sentry/asyncprofiler/provider/AsyncProfilerProfileConverte
 
 public final class io/sentry/asyncprofiler/provider/AsyncProfilerProfileConverterProvider$AsyncProfilerProfileConverter : io/sentry/IProfileConverter {
 	public fun <init> ()V
-	public fun convertFromFile (Ljava/nio/file/Path;)Lio/sentry/protocol/profiling/SentryProfile;
+	public fun convertFromFile (Ljava/lang/String;)Lio/sentry/protocol/profiling/SentryProfile;
 }
 
 public final class io/sentry/asyncprofiler/vendor/asyncprofiler/convert/Arguments {

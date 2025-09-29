@@ -33,13 +33,11 @@ import io.sentry.util.thread.ThreadChecker;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.Charset;
-import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
@@ -698,8 +696,15 @@ public final class Sentry {
       try {
         String profilingTracesDirPath = options.getProfilingTracesDirPath();
         if (profilingTracesDirPath == null) {
-          profilingTracesDirPath =
-              Files.createTempDirectory("profiling_traces").toAbsolutePath().toString();
+          File tempDir = new File(System.getProperty("java.io.tmpdir"), "sentry_profiling_traces");
+          boolean createDirectorySuccess = tempDir.mkdirs();
+
+          if (!createDirectorySuccess) {
+            throw new IllegalArgumentException(
+                "Creating a fallback directory for profiling failed in "
+                    + tempDir.getAbsolutePath());
+          }
+          profilingTracesDirPath = tempDir.getAbsolutePath();
           options.setProfilingTracesDirPath(profilingTracesDirPath);
         }
 
@@ -711,7 +716,7 @@ public final class Sentry {
                 options.getExecutorService());
 
         options.setContinuousProfiler(continuousProfiler);
-      } catch (IOException e) {
+      } catch (Exception e) {
         options
             .getLogger()
             .log(SentryLevel.ERROR, "Failed to create default profiling traces directory", e);

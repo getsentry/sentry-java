@@ -827,7 +827,7 @@ public abstract interface class io/sentry/IPerformanceSnapshotCollector : io/sen
 }
 
 public abstract interface class io/sentry/IProfileConverter {
-	public abstract fun convertFromFile (Ljava/nio/file/Path;)Lio/sentry/protocol/profiling/SentryProfile;
+	public abstract fun convertFromFile (Ljava/lang/String;)Lio/sentry/protocol/profiling/SentryProfile;
 }
 
 public abstract interface class io/sentry/IReplayApi {
