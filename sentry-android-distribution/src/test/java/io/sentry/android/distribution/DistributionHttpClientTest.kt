@@ -37,7 +37,7 @@ class DistributionHttpClientTest {
         mainBinaryIdentifier = "com.emergetools.hackernews",
         appId = "com.emergetools.hackernews",
         versionName = "1.0.0",
-        versionCode = 5,
+        versionCode = 5L,
       )
 
     val response = httpClient.checkForUpdates(params)

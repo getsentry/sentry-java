@@ -24,7 +24,7 @@ internal class DistributionHttpClient(private val options: SentryOptions) {
     val mainBinaryIdentifier: String,
     val appId: String,
     val platform: String = "android",
-    val versionCode: Int,
+    val versionCode: Long,
     val versionName: String,
   )
 

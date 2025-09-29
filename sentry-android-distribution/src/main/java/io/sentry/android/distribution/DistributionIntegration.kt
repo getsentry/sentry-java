@@ -126,9 +126,9 @@ public class DistributionIntegration(context: Context) : Integration, IDistribut
       val versionName = packageInfo.versionName ?: "unknown"
       val versionCode =
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-          packageInfo.longVersionCode.toInt()
+          packageInfo.longVersionCode
         } else {
-          @Suppress("DEPRECATION") packageInfo.versionCode
+          @Suppress("DEPRECATION") packageInfo.versionCode.toLong()
         }
       val appId = context.applicationInfo.packageName
 
