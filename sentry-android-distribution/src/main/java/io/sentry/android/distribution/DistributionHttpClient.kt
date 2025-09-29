@@ -7,6 +7,7 @@ import java.io.IOException
 import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.net.URL
+import java.net.URLEncoder
 import javax.net.ssl.HttpsURLConnection
 
 /** HTTP client for making requests to Sentry's distribution API. */
@@ -41,7 +42,7 @@ internal class DistributionHttpClient(private val options: SentryOptions) {
     val authToken = distributionOptions.orgAuthToken
     val baseUrl = distributionOptions.sentryBaseUrl
 
-    if (orgSlug.isEmpty() || projectSlug.isEmpty() || authToken.isEmpty()) {
+    if (orgSlug.isNullOrEmpty() || projectSlug.isNullOrEmpty() || authToken.isNullOrEmpty()) {
       throw IllegalStateException(
         "Missing required distribution configuration: orgSlug, projectSlug, or orgAuthToken"
       )
@@ -49,12 +50,14 @@ internal class DistributionHttpClient(private val options: SentryOptions) {
 
     val urlString = buildString {
       append(baseUrl.trimEnd('/'))
-      append("/api/0/projects/$orgSlug/$projectSlug/preprodartifacts/check-for-updates/")
-      append("?main_binary_identifier=${params.mainBinaryIdentifier}")
-      append("&app_id=${params.appId}")
-      append("&platform=${params.platform}")
-      append("&build_number=${params.versionCode}")
-      append("&build_version=${params.versionName}")
+      append(
+        "/api/0/projects/${URLEncoder.encode(orgSlug, "UTF-8")}/${URLEncoder.encode(projectSlug, "UTF-8")}/preprodartifacts/check-for-updates/"
+      )
+      append("?main_binary_identifier=${URLEncoder.encode(params.mainBinaryIdentifier, "UTF-8")}")
+      append("&app_id=${URLEncoder.encode(params.appId, "UTF-8")}")
+      append("&platform=${URLEncoder.encode(params.platform, "UTF-8")}")
+      append("&build_number=${URLEncoder.encode(params.versionCode.toString(), "UTF-8")}")
+      append("&build_version=${URLEncoder.encode(params.versionName, "UTF-8")}")
     }
     val url = URL(urlString)
 
