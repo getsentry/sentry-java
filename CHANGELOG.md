@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixes
+
+- Preserve modifiers in `SentryTraced` ([#4757](https://github.com/getsentry/sentry-java/pull/4757))
+
 ### Improvements
 
 - Handle `RejectedExecutionException` everywhere ([#4747](https://github.com/getsentry/sentry-java/pull/4747))
