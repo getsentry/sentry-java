@@ -126,9 +126,4 @@ class NoOpScopeTest {
   fun `getReplayId returns empty id`() {
     assertEquals(SentryId.EMPTY_ID, sut.replayId)
   }
-
-  @Test
-  fun `getReplayType returns null`() {
-    assertNull(sut.replayType)
-  }
 }

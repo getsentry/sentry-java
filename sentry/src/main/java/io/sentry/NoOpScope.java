@@ -84,14 +84,6 @@ public final class NoOpScope implements IScope {
   public void setReplayId(@Nullable SentryId replayId) {}
 
   @Override
-  public @Nullable SentryReplayEvent.ReplayType getReplayType() {
-    return null;
-  }
-
-  @Override
-  public void setReplayType(final @Nullable SentryReplayEvent.ReplayType replayType) {}
-
-  @Override
   public @Nullable Request getRequest() {
     return null;
   }

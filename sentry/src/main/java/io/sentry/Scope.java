@@ -98,9 +98,6 @@ public final class Scope implements IScope {
   /** Scope's session replay id */
   private @NotNull SentryId replayId = SentryId.EMPTY_ID;
 
-  /** Scope's session replay type */
-  private @Nullable SentryReplayEvent.ReplayType replayType = null;
-
   private @NotNull ISentryClient client = NoOpSentryClient.getInstance();
 
   private final @NotNull Map<Throwable, Pair<WeakReference<ISpan>, String>> throwableToSpan =
@@ -131,7 +128,6 @@ public final class Scope implements IScope {
     this.user = userRef != null ? new User(userRef) : null;
     this.screen = scope.screen;
     this.replayId = scope.replayId;
-    this.replayType = scope.replayType;
 
     final Request requestRef = scope.request;
     this.request = requestRef != null ? new Request(requestRef) : null;
@@ -365,16 +361,6 @@ public final class Scope implements IScope {
     for (final IScopeObserver observer : options.getScopeObservers()) {
       observer.setReplayId(replayId);
     }
-  }
-
-  @Override
-  public @Nullable SentryReplayEvent.ReplayType getReplayType() {
-    return replayType;
-  }
-
-  @Override
-  public void setReplayType(final @Nullable SentryReplayEvent.ReplayType replayType) {
-    this.replayType = replayType;
   }
 
   /**

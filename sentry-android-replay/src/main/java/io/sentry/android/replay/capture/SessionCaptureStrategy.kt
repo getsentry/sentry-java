@@ -33,7 +33,6 @@ internal class SessionCaptureStrategy(
     // tagged with the replay that might never be sent when we're recording in buffer mode
     scopes?.configureScope {
       it.replayId = currentReplayId
-      it.replayType = this.replayType
       screenAtStart = it.screen?.substringAfterLast('.')
     }
   }
@@ -58,10 +57,7 @@ internal class SessionCaptureStrategy(
       currentSegment = -1
       FileUtils.deleteRecursively(replayCacheDir)
     }
-    scopes?.configureScope {
-      it.replayId = SentryId.EMPTY_ID
-      it.replayType = null
-    }
+    scopes?.configureScope { it.replayId = SentryId.EMPTY_ID }
     super.stop()
   }
 

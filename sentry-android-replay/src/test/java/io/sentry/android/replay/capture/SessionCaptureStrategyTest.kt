@@ -139,8 +139,6 @@ class SessionCaptureStrategyTest {
 
     assertEquals(replayId, fixture.scope.replayId)
     assertEquals(replayId, strategy.currentReplayId)
-    assertEquals(ReplayType.SESSION, fixture.scope.replayType)
-    assertEquals(ReplayType.SESSION, strategy.replayType)
     assertEquals(0, strategy.currentSegment)
   }
 
@@ -202,8 +200,6 @@ class SessionCaptureStrategyTest {
       .captureReplay(argThat { event -> event is SentryReplayEvent && event.segmentId == 0 }, any())
     assertEquals(SentryId.EMPTY_ID, fixture.scope.replayId)
     assertEquals(SentryId.EMPTY_ID, strategy.currentReplayId)
-    assertNull(fixture.scope.replayType)
-    assertEquals(ReplayType.SESSION, strategy.replayType)
     assertEquals(-1, strategy.currentSegment)
     assertFalse(currentReplay.exists())
     verify(fixture.replayCache).close()

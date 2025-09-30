@@ -1186,51 +1186,6 @@ class CombinedScopeViewTest {
   }
 
   @Test
-  fun `prefers replay type from current scope`() {
-    val combined = fixture.getSut()
-    fixture.scope.replayType = SentryReplayEvent.ReplayType.BUFFER
-    fixture.isolationScope.replayType = SentryReplayEvent.ReplayType.SESSION
-    fixture.globalScope.replayType = SentryReplayEvent.ReplayType.SESSION
-
-    assertEquals(SentryReplayEvent.ReplayType.BUFFER, combined.replayType)
-  }
-
-  @Test
-  fun `uses isolation scope replay type if none in current scope`() {
-    val combined = fixture.getSut()
-    fixture.isolationScope.replayType = SentryReplayEvent.ReplayType.SESSION
-    fixture.globalScope.replayType = SentryReplayEvent.ReplayType.BUFFER
-
-    assertEquals(SentryReplayEvent.ReplayType.SESSION, combined.replayType)
-  }
-
-  @Test
-  fun `uses global scope replay type if none in current or isolation scope`() {
-    val combined = fixture.getSut()
-    fixture.globalScope.replayType = SentryReplayEvent.ReplayType.BUFFER
-
-    assertEquals(SentryReplayEvent.ReplayType.BUFFER, combined.replayType)
-  }
-
-  @Test
-  fun `returns null replay type if none in any scope`() {
-    val combined = fixture.getSut()
-
-    assertNull(combined.replayType)
-  }
-
-  @Test
-  fun `set replay type modifies default scope`() {
-    val combined = fixture.getSut()
-    combined.replayType = SentryReplayEvent.ReplayType.BUFFER
-
-    assertEquals(ScopeType.ISOLATION, fixture.options.defaultScopeType)
-    assertNull(fixture.scope.replayType)
-    assertEquals(SentryReplayEvent.ReplayType.BUFFER, fixture.isolationScope.replayType)
-    assertNull(fixture.globalScope.replayType)
-  }
-
-  @Test
   fun `null tags do not cause NPE`() {
     val scope = fixture.getSut()
     scope.setTag("k", "oldvalue")

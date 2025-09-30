@@ -2962,9 +2962,28 @@ class ScopesTest {
   }
 
   @Test
-  fun `does not add session replay type to log attributes if no replay id`() {
+  fun `does not add session replay buffering to log attributes if no replay id in scope and in controller`() {
     val (sut, mockClient) = getEnabledScopes { it.logs.isEnabled = true }
-    sut.scope.replayType = SentryReplayEvent.ReplayType.BUFFER
+
+    sut.logger().log(SentryLogLevel.WARN, "log message")
+    assertEquals(SentryId.EMPTY_ID, sut.options.replayController.replayId)
+
+    verify(mockClient)
+      .captureLog(
+        check {
+          assertEquals("log message", it.body)
+          val logReplayType = it.attributes?.get("sentry._internal.replay_is_buffering")
+          assertNull(logReplayType)
+        },
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `does not add session replay buffering to log attributes if replay id in scope`() {
+    val (sut, mockClient) = getEnabledScopes { it.logs.isEnabled = true }
+    val replayId = SentryId()
+    sut.scope.replayId = replayId
 
     sut.logger().log(SentryLogLevel.WARN, "log message")
 
@@ -2980,31 +2999,16 @@ class ScopesTest {
   }
 
   @Test
-  fun `does not add session replay type to log attributes if replay type is session`() {
-    val (sut, mockClient) = getEnabledScopes { it.logs.isEnabled = true }
+  fun `adds session replay buffering to log attributes if replay id in controller and not in scope`() {
+    val mockReplayController = mock<ReplayController>()
+    val (sut, mockClient) =
+      getEnabledScopes {
+        it.logs.isEnabled = true
+        it.setReplayController(mockReplayController)
+      }
     val replayId = SentryId()
-    sut.scope.replayId = replayId
-    sut.scope.replayType = SentryReplayEvent.ReplayType.SESSION
-
-    sut.logger().log(SentryLogLevel.WARN, "log message")
-
-    verify(mockClient)
-      .captureLog(
-        check {
-          assertEquals("log message", it.body)
-          val logReplayType = it.attributes?.get("sentry._internal.replay_is_buffering")
-          assertNull(logReplayType)
-        },
-        anyOrNull(),
-      )
-  }
-
-  @Test
-  fun `adds session replay type to log attributes if replay type is buffer`() {
-    val (sut, mockClient) = getEnabledScopes { it.logs.isEnabled = true }
-    val replayId = SentryId()
-    sut.scope.replayId = replayId
-    sut.scope.replayType = SentryReplayEvent.ReplayType.BUFFER
+    sut.scope.replayId = SentryId.EMPTY_ID
+    whenever(mockReplayController.replayId).thenReturn(replayId)
 
     sut.logger().log(SentryLogLevel.WARN, "log message")
 
