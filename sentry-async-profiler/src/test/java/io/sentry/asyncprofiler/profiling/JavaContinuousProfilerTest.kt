@@ -81,7 +81,7 @@ class JavaContinuousProfilerTest {
     // Profiler doesn't start if the folder doesn't exists.
     // Usually it's generated when calling Sentry.init, but for tests we can create it manually.
 
-    fixture.options.cacheDirPath = "."
+    fixture.options.cacheDirPath = "tmp"
     File(fixture.options.profilingTracesDirPath!!).mkdirs()
 
     Sentry.setCurrentScopes(fixture.scopes)
@@ -404,6 +404,21 @@ class JavaContinuousProfilerTest {
     assertEquals(SentryId.EMPTY_ID, profiler.profilerId)
     verify(fixture.mockLogger)
       .log(eq(SentryLevel.WARNING), eq("SDK is rate limited. Stopping profiler."))
+  }
+
+  @Test
+  fun `profiler does not start when filename contains invalid characters`() {
+    val profiler = fixture.getSut { it.profilingTracesDirPath = "," }
+
+    profiler.startProfiler(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
+    assertFalse(profiler.isRunning)
+    assertEquals(SentryId.EMPTY_ID, profiler.profilerId)
+    verify(fixture.mockLogger)
+      .log(
+        eq(SentryLevel.WARNING),
+        eq("Disabling profiling because traces directory path contains invalid character: %s"),
+        eq(","),
+      )
   }
 
   fun withMockScopes(closure: () -> Unit) =

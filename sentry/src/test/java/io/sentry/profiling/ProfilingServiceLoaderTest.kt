@@ -74,4 +74,8 @@ class ContinuousProfilerStub() : IContinuousProfiler {
   override fun getProfilerId(): SentryId {
     TODO("Not yet implemented")
   }
+
+  override fun getChunkId(): SentryId {
+    TODO("Not yet implemented")
+  }
 }

@@ -122,7 +122,7 @@ public final class JavaContinuousProfiler
         logger.log(
             SentryLevel.WARNING,
             "Disabling profiling because traces directory path contains invalid character: %s",
-            filename);
+            invalidChar);
         return true;
       }
     }
