@@ -72,6 +72,7 @@ public final class ProfilingServiceLoader {
     }
   }
 
+  // TODO: Verify caching behaviour of ServiceLoader
   private static @Nullable <T> T loadSingleProvider(Class<T> clazz) {
     final ServiceLoader<T> serviceLoader = ServiceLoader.load(clazz);
     final Iterator<T> iterator = serviceLoader.iterator();

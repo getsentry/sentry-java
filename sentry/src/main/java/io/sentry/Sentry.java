@@ -697,7 +697,7 @@ public final class Sentry {
         String profilingTracesDirPath = options.getProfilingTracesDirPath();
         if (profilingTracesDirPath == null) {
           File tempDir = new File(System.getProperty("java.io.tmpdir"), "sentry_profiling_traces");
-          boolean createDirectorySuccess = tempDir.mkdirs();
+          boolean createDirectorySuccess = tempDir.mkdirs() || tempDir.exists();
 
           if (!createDirectorySuccess) {
             throw new IllegalArgumentException(

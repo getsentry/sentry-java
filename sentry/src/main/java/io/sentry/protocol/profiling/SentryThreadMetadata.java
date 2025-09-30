@@ -10,7 +10,6 @@ import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -20,6 +19,8 @@ public final class SentryThreadMetadata implements JsonUnknown, JsonSerializable
   private @Nullable String name;
 
   private int priority;
+
+  private @Nullable Map<String, Object> unknown;
 
   public @Nullable String getName() {
     return name;
@@ -49,16 +50,26 @@ public final class SentryThreadMetadata implements JsonUnknown, JsonSerializable
       writer.name(JsonKeys.NAME).value(logger, name);
     }
     writer.name(JsonKeys.PRIORITY).value(logger, priority);
+
+    if (unknown != null) {
+      for (String key : unknown.keySet()) {
+        Object value = unknown.get(key);
+        writer.name(key).value(logger, value);
+      }
+    }
+
     writer.endObject();
   }
 
   @Override
   public @Nullable Map<String, Object> getUnknown() {
-    return new HashMap<>();
+    return unknown;
   }
 
   @Override
-  public void setUnknown(@Nullable Map<String, Object> unknown) {}
+  public void setUnknown(@Nullable Map<String, Object> unknown) {
+    this.unknown = unknown;
+  }
 
   public static final class Deserializer implements JsonDeserializer<SentryThreadMetadata> {
 

@@ -25,6 +25,8 @@ public final class SentrySample implements JsonUnknown, JsonSerializable {
 
   private @Nullable String threadId;
 
+  private @Nullable Map<String, Object> unknown;
+
   public double getTimestamp() {
     return timestamp;
   }
@@ -66,6 +68,13 @@ public final class SentrySample implements JsonUnknown, JsonSerializable {
       writer.name(JsonKeys.THREAD_ID).value(logger, threadId);
     }
 
+    if (unknown != null) {
+      for (String key : unknown.keySet()) {
+        Object value = unknown.get(key);
+        writer.name(key).value(logger, value);
+      }
+    }
+
     writer.endObject();
   }
 
@@ -73,13 +82,16 @@ public final class SentrySample implements JsonUnknown, JsonSerializable {
     return BigDecimal.valueOf(value).setScale(6, RoundingMode.DOWN);
   }
 
+  @Nullable
   @Override
-  public @Nullable Map<String, Object> getUnknown() {
-    return new HashMap<>();
+  public Map<String, Object> getUnknown() {
+    return unknown;
   }
 
   @Override
-  public void setUnknown(@Nullable Map<String, Object> unknown) {}
+  public void setUnknown(@Nullable Map<String, Object> unknown) {
+    this.unknown = unknown;
+  }
 
   public static final class Deserializer implements JsonDeserializer<SentrySample> {
 

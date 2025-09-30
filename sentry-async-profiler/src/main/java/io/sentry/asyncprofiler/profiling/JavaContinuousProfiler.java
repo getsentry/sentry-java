@@ -25,6 +25,7 @@ import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.SentryRandom;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.Future;
@@ -40,6 +41,10 @@ import org.jetbrains.annotations.VisibleForTesting;
 public final class JavaContinuousProfiler
     implements IContinuousProfiler, RateLimiter.IRateLimitObserver {
   private static final long MAX_CHUNK_DURATION_MILLIS = 10000;
+  private final List<String> invalidFilenameChars =
+      Arrays.asList(
+          ".", ",", ":", ";", "|", "\\", "=", "%", "&", "[", "]", "(", ")", "<", ">", "{", "}", "!",
+          "*", "?", "~", "\"", "'", "$", "`", "^");
 
   private final @NotNull ILogger logger;
   private final @Nullable String profilingTracesDirPath;
@@ -54,7 +59,7 @@ public final class JavaContinuousProfiler
   private final @NotNull AtomicBoolean isClosed = new AtomicBoolean(false);
   private @NotNull SentryDate startProfileChunkTimestamp = new SentryNanotimeDate();
 
-  private @NotNull String filename = "";
+  private volatile @NotNull String filename = "";
 
   private @NotNull AsyncProfiler profiler;
   private volatile boolean shouldSample = true;
@@ -90,22 +95,7 @@ public final class JavaContinuousProfiler
     }
     isInitialized = true;
 
-    if (profilingTracesDirPath == null) {
-      logger.log(
-          SentryLevel.WARNING,
-          "Disabling profiling because no profiling traces dir path is defined in options.");
-      return false;
-    }
-
-    File profileDir = new File(profilingTracesDirPath);
-
-    if (!profileDir.canWrite() || !profileDir.exists()) {
-      logger.log(
-          SentryLevel.WARNING,
-          "Disabling profiling because traces directory is not writable or does not exist: %s (writable=%b, exists=%b)",
-          profilingTracesDirPath,
-          profileDir.canWrite(),
-          profileDir.exists());
+    if (isInvalidDirectory()) {
       return false;
     }
 
@@ -117,6 +107,38 @@ public final class JavaContinuousProfiler
       return false;
     }
     return true;
+  }
+
+  private boolean isInvalidDirectory() {
+    if (profilingTracesDirPath == null) {
+      logger.log(
+          SentryLevel.WARNING,
+          "Disabling profiling because no profiling traces dir path is defined in options.");
+      return true;
+    }
+
+    for (String invalidChar : invalidFilenameChars) {
+      if (profilingTracesDirPath.contains(invalidChar)) {
+        logger.log(
+            SentryLevel.WARNING,
+            "Disabling profiling because traces directory path contains invalid character: %s",
+            filename);
+        return true;
+      }
+    }
+
+    File profileDir = new File(profilingTracesDirPath);
+
+    if (!profileDir.canWrite() || !profileDir.exists()) {
+      logger.log(
+          SentryLevel.WARNING,
+          "Disabling profiling because traces directory is not writable or does not exist: %s (writable=%b, exists=%b)",
+          profilingTracesDirPath,
+          profileDir.canWrite(),
+          profileDir.exists());
+      return true;
+    }
+    return false;
   }
 
   @Override
@@ -352,6 +374,12 @@ public final class JavaContinuousProfiler
   @Override
   public @NotNull SentryId getProfilerId() {
     return profilerId;
+  }
+
+  // This is currently not used in the JVM profiler, thus we return an empty id for now
+  @Override
+  public @NotNull SentryId getChunkId() {
+    return SentryId.EMPTY_ID;
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")

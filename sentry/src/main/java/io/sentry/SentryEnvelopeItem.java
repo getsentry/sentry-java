@@ -304,8 +304,11 @@ public final class SentryEnvelopeItem {
                         profileConverter.convertFromFile(traceFile.getAbsolutePath());
                     profileChunk.setSentryProfile(profile);
                   } catch (Exception e) {
-                    throw new SentryEnvelopeException("Profile conversion failed");
+                    throw new SentryEnvelopeException("Profile conversion failed", e);
                   }
+                } else {
+                  throw new SentryEnvelopeException(
+                      "Could not load a ProfileConverter, dropping chunk.");
                 }
               } else {
                 // The payload of the profile item is a json including the trace file encoded with
