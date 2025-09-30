@@ -4,6 +4,7 @@
 
 ### Fixes
 
+- Start performance collection on AppStart continuous profiling ([#4752](https://github.com/getsentry/sentry-java/pull/4752))
 - Preserve modifiers in `SentryTraced` ([#4757](https://github.com/getsentry/sentry-java/pull/4757))
 
 ### Improvements

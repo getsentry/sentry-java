@@ -208,11 +208,11 @@ public class AndroidContinuousProfiler
 
     isRunning = true;
 
-    if (profilerId == SentryId.EMPTY_ID) {
+    if (profilerId.equals(SentryId.EMPTY_ID)) {
       profilerId = new SentryId();
     }
 
-    if (chunkId == SentryId.EMPTY_ID) {
+    if (chunkId.equals(SentryId.EMPTY_ID)) {
       chunkId = new SentryId();
     }
 
@@ -343,6 +343,11 @@ public class AndroidContinuousProfiler
   @Override
   public @NotNull SentryId getProfilerId() {
     return profilerId;
+  }
+
+  @Override
+  public @NotNull SentryId getChunkId() {
+    return chunkId;
   }
 
   private void sendChunks(final @NotNull IScopes scopes, final @NotNull SentryOptions options) {
