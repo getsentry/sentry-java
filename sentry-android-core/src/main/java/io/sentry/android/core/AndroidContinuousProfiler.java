@@ -344,6 +344,11 @@ public class AndroidContinuousProfiler
     return profilerId;
   }
 
+  @Override
+  public @NotNull SentryId getChunkId() {
+    return chunkId;
+  }
+
   private void sendChunks(final @NotNull IScopes scopes, final @NotNull SentryOptions options) {
     try {
       options

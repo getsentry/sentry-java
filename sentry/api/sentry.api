@@ -760,6 +760,7 @@ public abstract interface class io/sentry/IConnectionStatusProvider$IConnectionS
 
 public abstract interface class io/sentry/IContinuousProfiler {
 	public abstract fun close (Z)V
+	public abstract fun getChunkId ()Lio/sentry/protocol/SentryId;
 	public abstract fun getProfilerId ()Lio/sentry/protocol/SentryId;
 	public abstract fun isRunning ()Z
 	public abstract fun reevaluateSampling ()V
@@ -1471,6 +1472,7 @@ public final class io/sentry/NoOpConnectionStatusProvider : io/sentry/IConnectio
 
 public final class io/sentry/NoOpContinuousProfiler : io/sentry/IContinuousProfiler {
 	public fun close (Z)V
+	public fun getChunkId ()Lio/sentry/protocol/SentryId;
 	public static fun getInstance ()Lio/sentry/NoOpContinuousProfiler;
 	public fun getProfilerId ()Lio/sentry/protocol/SentryId;
 	public fun isRunning ()Z
@@ -4342,6 +4344,11 @@ public abstract class io/sentry/UpdateStatus {
 public final class io/sentry/UpdateStatus$NewRelease : io/sentry/UpdateStatus {
 	public fun <init> (Lio/sentry/UpdateInfo;)V
 	public fun getInfo ()Lio/sentry/UpdateInfo;
+}
+
+public final class io/sentry/UpdateStatus$NoNetwork : io/sentry/UpdateStatus {
+	public fun <init> (Ljava/lang/String;)V
+	public fun getMessage ()Ljava/lang/String;
 }
 
 public final class io/sentry/UpdateStatus$UpToDate : io/sentry/UpdateStatus {
