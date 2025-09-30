@@ -2972,7 +2972,9 @@ class ScopesTest {
       .captureLog(
         check {
           assertEquals("log message", it.body)
+          val logReplayId = it.attributes?.get("sentry.replay_id")
           val logReplayType = it.attributes?.get("sentry._internal.replay_is_buffering")
+          assertNull(logReplayId)
           assertNull(logReplayType)
         },
         anyOrNull(),
@@ -2991,7 +2993,9 @@ class ScopesTest {
       .captureLog(
         check {
           assertEquals("log message", it.body)
+          val logReplayId = it.attributes?.get("sentry.replay_id")
           val logReplayType = it.attributes?.get("sentry._internal.replay_is_buffering")
+          assertEquals(replayId.toString(), logReplayId!!.value)
           assertNull(logReplayType)
         },
         anyOrNull(),
@@ -3016,7 +3020,9 @@ class ScopesTest {
       .captureLog(
         check {
           assertEquals("log message", it.body)
+          val logReplayId = it.attributes?.get("sentry.replay_id")
           val logReplayType = it.attributes?.get("sentry._internal.replay_is_buffering")!!
+          assertEquals(replayId.toString(), logReplayId!!.value)
           assertTrue(logReplayType.value as Boolean)
         },
         anyOrNull(),

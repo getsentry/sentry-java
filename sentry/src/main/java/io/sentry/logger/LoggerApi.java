@@ -222,6 +222,10 @@ public final class LoggerApi implements ILoggerApi {
           scopes.getOptions().getReplayController().getReplayId();
       if (!controllerReplayId.equals(SentryId.EMPTY_ID)) {
         attributes.put(
+            "sentry.replay_id",
+            new SentryLogEventAttributeValue(
+                SentryAttributeType.STRING, controllerReplayId.toString()));
+        attributes.put(
             "sentry._internal.replay_is_buffering",
             new SentryLogEventAttributeValue(SentryAttributeType.BOOLEAN, true));
       }
