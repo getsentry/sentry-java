@@ -20,6 +20,7 @@ public final class io/sentry/asyncprofiler/convert/NonAggregatingEventCollector 
 public final class io/sentry/asyncprofiler/profiling/JavaContinuousProfiler : io/sentry/IContinuousProfiler, io/sentry/transport/RateLimiter$IRateLimitObserver {
 	public fun <init> (Lio/sentry/ILogger;Ljava/lang/String;ILio/sentry/ISentryExecutorService;)V
 	public fun close (Z)V
+	public fun getChunkId ()Lio/sentry/protocol/SentryId;
 	public fun getProfilerId ()Lio/sentry/protocol/SentryId;
 	public fun getRootSpanCounter ()I
 	public fun isRunning ()Z
