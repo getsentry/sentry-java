@@ -2,17 +2,7 @@
 
 ## 8.23.0
 
-### Various fixes & improvements
-
-- Add session replay id to Sentry Logs (#4740) by @stefanosiano
-- Feat/poc continuous profiling (#4556) by @lbloder
-- Start performance collection on AppStart continuous profiling (#4752) by @stefanosiano
-- Fix(compose): Preserve modifiers in SentryNavigable (#4757) by @VleemingM
-- build(deps): bump github/codeql-action from 3.30.3 to 3.30.5 (#4761) by @dependabot
-- Handle `RejectedExecutionException` everywhere (#4747) by @lcian
-- Mark `SentryEnvelope` as not internal (#4748) by @lcian
-
-## Features
+### Features
 
 - Add session replay id to Sentry Logs ([#4740](https://github.com/getsentry/sentry-java/pull/4740))
 - Add support for continuous profiling of JVM applications on macOS and Linux ([#4556](https://github.com/getsentry/sentry-java/pull/4556))
