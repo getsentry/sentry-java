@@ -9,7 +9,7 @@
   - [Sentry continuous profiling](https://docs.sentry.io/product/explore/profiling/) on the JVM is using async-profiler under the hood.
   - By default this feature is disabled. Set a profile sample rate and chose a lifecycle (see below) to enable it.
   - Add the `sentry-async-profiler` dependency to your project
-  - Set a sample rate for profiles, e.g. `1.0` to send all of them. You may use `options.setProfilesSampleRate(1.0)` in code or `profiles-sample-rate=1.0` in `sentry.properties`
+  - Set a sample rate for profiles, e.g. `1.0` to send all of them. You may use `options.setProfileSessionSampleRate(1.0)` in code or `profile-session-sample-rate=1.0` in `sentry.properties`
   - Set a profile lifecycle via `options.setProfileLifecycle(ProfileLifecycle.TRACE)` in code or `profile-lifecycle=TRACE` in `sentry.properties`
     - By default the lifecycle is set to `MANUAL`, meaning you have to explicitly call `Sentry.startProfiler()` and `Sentry.stopProfiler()`
     - You may change it to `TRACE` which will create a profile for each transaction
