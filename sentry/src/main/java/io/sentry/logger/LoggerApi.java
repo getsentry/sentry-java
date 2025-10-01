@@ -212,15 +212,15 @@ public final class LoggerApi implements ILoggerApi {
           new SentryLogEventAttributeValue(SentryAttributeType.STRING, environment));
     }
 
-    final @Nullable SentryId scopeReplayId = scopes.getCombinedScopeView().getReplayId();
-    if (!scopeReplayId.equals(SentryId.EMPTY_ID)) {
+    final @NotNull SentryId scopeReplayId = scopes.getCombinedScopeView().getReplayId();
+    if (!SentryId.EMPTY_ID.equals(scopeReplayId)) {
       attributes.put(
           "sentry.replay_id",
           new SentryLogEventAttributeValue(SentryAttributeType.STRING, scopeReplayId.toString()));
     } else {
-      final @Nullable SentryId controllerReplayId =
+      final @NotNull SentryId controllerReplayId =
           scopes.getOptions().getReplayController().getReplayId();
-      if (!controllerReplayId.equals(SentryId.EMPTY_ID)) {
+      if (!SentryId.EMPTY_ID.equals(controllerReplayId)) {
         attributes.put(
             "sentry.replay_id",
             new SentryLogEventAttributeValue(
