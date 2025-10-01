@@ -2955,6 +2955,108 @@ class ScopesTest {
       )
   }
 
+  @Test
+  fun `adds session replay id to log attributes`() {
+    val (sut, mockClient) = getEnabledScopes { it.logs.isEnabled = true }
+    val replayId = SentryId()
+    sut.scope.replayId = replayId
+    sut.logger().log(SentryLogLevel.WARN, "log message")
+
+    verify(mockClient)
+      .captureLog(
+        check {
+          assertEquals("log message", it.body)
+          val logReplayId = it.attributes?.get("sentry.replay_id")!!
+          assertEquals(replayId.toString(), logReplayId.value)
+        },
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `missing session replay id do not break attributes`() {
+    val (sut, mockClient) = getEnabledScopes { it.logs.isEnabled = true }
+    sut.logger().log(SentryLogLevel.WARN, "log message")
+
+    verify(mockClient)
+      .captureLog(
+        check {
+          assertEquals("log message", it.body)
+          val logReplayId = it.attributes?.get("sentry.replay_id")
+          assertNull(logReplayId)
+        },
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `does not add session replay buffering to log attributes if no replay id in scope and in controller`() {
+    val (sut, mockClient) = getEnabledScopes { it.logs.isEnabled = true }
+
+    sut.logger().log(SentryLogLevel.WARN, "log message")
+    assertEquals(SentryId.EMPTY_ID, sut.options.replayController.replayId)
+
+    verify(mockClient)
+      .captureLog(
+        check {
+          assertEquals("log message", it.body)
+          val logReplayId = it.attributes?.get("sentry.replay_id")
+          val logReplayType = it.attributes?.get("sentry._internal.replay_is_buffering")
+          assertNull(logReplayId)
+          assertNull(logReplayType)
+        },
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `does not add session replay buffering to log attributes if replay id in scope`() {
+    val (sut, mockClient) = getEnabledScopes { it.logs.isEnabled = true }
+    val replayId = SentryId()
+    sut.scope.replayId = replayId
+
+    sut.logger().log(SentryLogLevel.WARN, "log message")
+
+    verify(mockClient)
+      .captureLog(
+        check {
+          assertEquals("log message", it.body)
+          val logReplayId = it.attributes?.get("sentry.replay_id")
+          val logReplayType = it.attributes?.get("sentry._internal.replay_is_buffering")
+          assertEquals(replayId.toString(), logReplayId!!.value)
+          assertNull(logReplayType)
+        },
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `adds session replay buffering to log attributes if replay id in controller and not in scope`() {
+    val mockReplayController = mock<ReplayController>()
+    val (sut, mockClient) =
+      getEnabledScopes {
+        it.logs.isEnabled = true
+        it.setReplayController(mockReplayController)
+      }
+    val replayId = SentryId()
+    sut.scope.replayId = SentryId.EMPTY_ID
+    whenever(mockReplayController.replayId).thenReturn(replayId)
+
+    sut.logger().log(SentryLogLevel.WARN, "log message")
+
+    verify(mockClient)
+      .captureLog(
+        check {
+          assertEquals("log message", it.body)
+          val logReplayId = it.attributes?.get("sentry.replay_id")
+          val logReplayType = it.attributes?.get("sentry._internal.replay_is_buffering")!!
+          assertEquals(replayId.toString(), logReplayId!!.value)
+          assertTrue(logReplayType.value as Boolean)
+        },
+        anyOrNull(),
+      )
+  }
+
   // endregion
 
   @Test

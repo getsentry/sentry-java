@@ -12,6 +12,7 @@ import io.sentry.Attachment;
 import io.sentry.ISpan;
 import io.sentry.MeasurementUnit;
 import io.sentry.Sentry;
+import io.sentry.SentryLogLevel;
 import io.sentry.UpdateStatus;
 import io.sentry.instrumentation.file.SentryFileOutputStream;
 import io.sentry.protocol.Feedback;
@@ -340,7 +341,10 @@ public class MainActivity extends AppCompatActivity {
                   });
         });
 
+    Sentry.logger().log(SentryLogLevel.INFO, "Creating content view");
     setContentView(binding.getRoot());
+
+    Sentry.logger().log(SentryLogLevel.INFO, "MainActivity created");
   }
 
   private void stackOverflow() {
