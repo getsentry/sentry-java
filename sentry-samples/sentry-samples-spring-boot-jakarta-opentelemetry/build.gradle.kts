@@ -54,6 +54,7 @@ dependencies {
   implementation(projects.sentryGraphql22)
   implementation(projects.sentryQuartz)
   implementation(libs.otel)
+  implementation(projects.sentryAsyncProfiler)
 
   // database query tracing
   implementation(projects.sentryJdbc)
@@ -90,10 +91,17 @@ tasks.register<BootRun>("bootRunWithAgent").configure {
   val tracesSampleRate = System.getenv("SENTRY_TRACES_SAMPLE_RATE") ?: "1"
 
   environment("SENTRY_DSN", dsn)
+  environment("SENTRY_DEBUG", "true")
+  environment("SENTRY_PROFILE_SESSION_SAMPLE_RATE", "1.0")
+  environment("SENTRY_PROFILING_TRACES_DIR_PATH", "tmp/sentry/profiling-traces")
+  environment("SENTRY_PROFILE_LIFECYCLE", "TRACE")
+
   environment("SENTRY_TRACES_SAMPLE_RATE", tracesSampleRate)
   environment("OTEL_TRACES_EXPORTER", "none")
   environment("OTEL_METRICS_EXPORTER", "none")
   environment("OTEL_LOGS_EXPORTER", "none")
+  environment("SENTRY_IN_APP_INCLUDES", "io.sentry.samples")
+  environment("SENTRY_ENABLE_PRETTY_SERIALIZATION_OUTPUT", "false")
 
   jvmArgs = listOf("-Dotel.javaagent.debug=true", "-javaagent:$agentJarPath")
 }

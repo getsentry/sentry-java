@@ -2,9 +2,11 @@
 
 ## Unreleased
 
-### Features
+## Features
 
 - Add session replay id to Sentry Logs ([#4740](https://github.com/getsentry/sentry-java/pull/4740))
+- Add support for continuous profiling of JVM applications on macOS and Linux ([#4556](https://github.com/getsentry/sentry-java/pull/4556))
+  - Sentry continuous profiling on the JVM is using async-profiler under the hood.
 
 ### Fixes
 

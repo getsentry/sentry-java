@@ -376,6 +376,27 @@ class ExternalOptionsTest {
     withPropertiesFile("logs.enabled=true") { options -> assertTrue(options.isEnableLogs == true) }
   }
 
+  @Test
+  fun `creates options with profileSessionSampleRate set to 0_8`() {
+    withPropertiesFile("profile-session-sample-rate=0.8") { options ->
+      assertTrue(options.profileSessionSampleRate == 0.8)
+    }
+  }
+
+  @Test
+  fun `creates options with profilingTracesDirPath set to profile_traces`() {
+    withPropertiesFile("profiling-traces-dir-path=profile_traces") { options ->
+      assertTrue(options.profilingTracesDirPath == "profile_traces")
+    }
+  }
+
+  @Test
+  fun `creates options with profilingLifecycle set to TRACE`() {
+    withPropertiesFile("profile-lifecycle=TRACE") { options ->
+      assertTrue(options.profileLifecycle == ProfileLifecycle.TRACE)
+    }
+  }
+
   private fun withPropertiesFile(
     textLines: List<String> = emptyList(),
     logger: ILogger = mock(),
