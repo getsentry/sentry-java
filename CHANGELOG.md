@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## Features
+- Add support for continuous profiling of JVM applications on macOS and Linux ([#4556](https://github.com/getsentry/sentry-java/pull/4556))
+  - Sentry continuous profiling on the JVM is using async-profiler under the hood.
+
 ### Fixes
 
 - Start performance collection on AppStart continuous profiling ([#4752](https://github.com/getsentry/sentry-java/pull/4752))
