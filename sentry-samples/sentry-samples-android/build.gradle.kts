@@ -150,6 +150,7 @@ dependencies {
   implementation(libs.sentry.native.ndk)
   implementation(libs.timber)
 
+  debugImplementation(projects.sentryAndroidDistribution)
   debugImplementation(libs.leakcanary)
 }
 

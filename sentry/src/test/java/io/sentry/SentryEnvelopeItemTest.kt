@@ -434,7 +434,11 @@ class SentryEnvelopeItemTest {
   @Test
   fun `fromProfilingTrace with unreadable file throws`() {
     val file = File(fixture.pathname)
-    val profilingTraceData = mock<ProfilingTraceData> { whenever(it.traceFile).thenReturn(file) }
+    val profilingTraceData =
+      mock<ProfilingTraceData> {
+        whenever(it.traceFile).thenReturn(file)
+        whenever(it.platform).thenReturn("android")
+      }
     file.writeBytes(fixture.bytes)
     file.setReadable(false)
     assertFailsWith<IOException>(
@@ -492,7 +496,11 @@ class SentryEnvelopeItemTest {
   @Test
   fun `fromProfileChunk saves file as Base64`() {
     val file = File(fixture.pathname)
-    val profileChunk = mock<ProfileChunk> { whenever(it.traceFile).thenReturn(file) }
+    val profileChunk =
+      mock<ProfileChunk> {
+        whenever(it.traceFile).thenReturn(file)
+        whenever(it.platform).thenReturn(ProfileChunk.PLATFORM_ANDROID)
+      }
 
     file.writeBytes(fixture.bytes)
     val chunk = SentryEnvelopeItem.fromProfileChunk(profileChunk, mock()).data
@@ -503,7 +511,11 @@ class SentryEnvelopeItemTest {
   @Test
   fun `fromProfileChunk deletes file only after reading data`() {
     val file = File(fixture.pathname)
-    val profileChunk = mock<ProfileChunk> { whenever(it.traceFile).thenReturn(file) }
+    val profileChunk =
+      mock<ProfileChunk> {
+        whenever(it.traceFile).thenReturn(file)
+        whenever(it.platform).thenReturn(ProfileChunk.PLATFORM_ANDROID)
+      }
 
     file.writeBytes(fixture.bytes)
     assert(file.exists())
@@ -516,7 +528,11 @@ class SentryEnvelopeItemTest {
   @Test
   fun `fromProfileChunk with invalid file throws`() {
     val file = File(fixture.pathname)
-    val profileChunk = mock<ProfileChunk> { whenever(it.traceFile).thenReturn(file) }
+    val profileChunk =
+      mock<ProfileChunk> {
+        whenever(it.traceFile).thenReturn(file)
+        whenever(it.platform).thenReturn(ProfileChunk.PLATFORM_ANDROID)
+      }
 
     assertFailsWith<SentryEnvelopeException>(
       "Dropping profiling trace data, because the file ${file.path} doesn't exists"
@@ -528,7 +544,11 @@ class SentryEnvelopeItemTest {
   @Test
   fun `fromProfileChunk with unreadable file throws`() {
     val file = File(fixture.pathname)
-    val profileChunk = mock<ProfileChunk> { whenever(it.traceFile).thenReturn(file) }
+    val profileChunk =
+      mock<ProfileChunk> {
+        whenever(it.traceFile).thenReturn(file)
+        whenever(it.platform).thenReturn(ProfileChunk.PLATFORM_ANDROID)
+      }
     file.writeBytes(fixture.bytes)
     file.setReadable(false)
     assertFailsWith<IOException>(
@@ -542,7 +562,11 @@ class SentryEnvelopeItemTest {
   fun `fromProfileChunk with empty file throws`() {
     val file = File(fixture.pathname)
     file.writeBytes(ByteArray(0))
-    val profileChunk = mock<ProfileChunk> { whenever(it.traceFile).thenReturn(file) }
+    val profileChunk =
+      mock<ProfileChunk> {
+        whenever(it.traceFile).thenReturn(file)
+        whenever(it.platform).thenReturn(ProfileChunk.PLATFORM_ANDROID)
+      }
 
     val chunk = SentryEnvelopeItem.fromProfileChunk(profileChunk, mock())
     assertFailsWith<SentryEnvelopeException>("Profiling trace file is empty") { chunk.data }
@@ -553,7 +577,11 @@ class SentryEnvelopeItemTest {
     val file = File(fixture.pathname)
     val maxSize = 50 * 1024 * 1024 // 50MB
     file.writeBytes(ByteArray((maxSize + 1)) { 0 })
-    val profileChunk = mock<ProfileChunk> { whenever(it.traceFile).thenReturn(file) }
+    val profileChunk =
+      mock<ProfileChunk> {
+        whenever(it.traceFile).thenReturn(file)
+        whenever(it.platform).thenReturn(ProfileChunk.PLATFORM_ANDROID)
+      }
 
     val exception =
       assertFailsWith<IOException> {

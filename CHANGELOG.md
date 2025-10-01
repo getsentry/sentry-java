@@ -1,6 +1,22 @@
 # Changelog
 
-## Unreleased
+## 8.23.0
+
+### Features
+
+- Add session replay id to Sentry Logs ([#4740](https://github.com/getsentry/sentry-java/pull/4740))
+- Add support for continuous profiling of JVM applications on macOS and Linux ([#4556](https://github.com/getsentry/sentry-java/pull/4556))
+  - [Sentry continuous profiling](https://docs.sentry.io/product/explore/profiling/) on the JVM is using async-profiler under the hood.
+  - By default this feature is disabled. Set a profile sample rate and chose a lifecycle (see below) to enable it.
+  - Add the `sentry-async-profiler` dependency to your project
+  - Set a sample rate for profiles, e.g. `1.0` to send all of them. You may use `options.setProfileSessionSampleRate(1.0)` in code or `profile-session-sample-rate=1.0` in `sentry.properties`
+  - Set a profile lifecycle via `options.setProfileLifecycle(ProfileLifecycle.TRACE)` in code or `profile-lifecycle=TRACE` in `sentry.properties`
+    - By default the lifecycle is set to `MANUAL`, meaning you have to explicitly call `Sentry.startProfiler()` and `Sentry.stopProfiler()`
+    - You may change it to `TRACE` which will create a profile for each transaction
+  - To automatically upload Profiles for each transaction in a Spring Boot application
+    - set `sentry.profile-session-sample-rate=1.0` and `sentry.profile-lifecycle=TRACE` in `application.properties`
+    - or set `sentry.profile-session-sample-rate: 1.0` and `sentry.profile-lifecycle: TRACE` in `application.yml`
+  - Profiling can also be combined with our OpenTelemetry integration
 
 ### Fixes
 

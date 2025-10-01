@@ -15,4 +15,8 @@ public final class SentryEnvelopeException extends Exception {
   public SentryEnvelopeException(final @Nullable String message) {
     super(message);
   }
+
+  public SentryEnvelopeException(final @Nullable String message, final @Nullable Throwable cause) {
+    super(message, cause);
+  }
 }

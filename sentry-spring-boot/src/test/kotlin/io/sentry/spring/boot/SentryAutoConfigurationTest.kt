@@ -12,6 +12,7 @@ import io.sentry.IScopes
 import io.sentry.ITransportFactory
 import io.sentry.Integration
 import io.sentry.NoOpTransportFactory
+import io.sentry.ProfileLifecycle
 import io.sentry.SamplingContext
 import io.sentry.Sentry
 import io.sentry.SentryEvent
@@ -39,6 +40,7 @@ import io.sentry.spring.tracing.TransactionNameProvider
 import io.sentry.transport.ITransport
 import io.sentry.transport.ITransportGate
 import io.sentry.transport.apache.ApacheHttpClientTransportFactory
+import java.io.File
 import java.lang.RuntimeException
 import javax.servlet.Filter
 import kotlin.test.Test
@@ -201,6 +203,9 @@ class SentryAutoConfigurationTest {
         "sentry.cron.default-failure-issue-threshold=40",
         "sentry.cron.default-recovery-threshold=50",
         "sentry.logs.enabled=true",
+        "sentry.profile-session-sample-rate=1.0",
+        "sentry.profiling-traces-dir-path=tmp/sentry/profiling-traces",
+        "sentry.profile-lifecycle=TRACE",
       )
       .run {
         val options = it.getBean(SentryProperties::class.java)
@@ -254,6 +259,10 @@ class SentryAutoConfigurationTest {
         assertThat(options.cron!!.defaultFailureIssueThreshold).isEqualTo(40L)
         assertThat(options.cron!!.defaultRecoveryThreshold).isEqualTo(50L)
         assertThat(options.logs.isEnabled).isEqualTo(true)
+        assertThat(options.profileSessionSampleRate).isEqualTo(1.0)
+        assertThat(options.profilingTracesDirPath)
+          .startsWith(File("tmp/sentry/profiling-traces").absolutePath)
+        assertThat(options.profileLifecycle).isEqualTo(ProfileLifecycle.TRACE)
       }
   }
 

@@ -300,7 +300,8 @@ public class AndroidContinuousProfiler
                   chunkId,
                   endData.measurementsMap,
                   endData.traceFile,
-                  startProfileChunkTimestamp));
+                  startProfileChunkTimestamp,
+                  ProfileChunk.PLATFORM_ANDROID));
         }
       }
 

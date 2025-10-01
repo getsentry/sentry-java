@@ -107,7 +107,15 @@ class SentryClientTest {
         )
       sentryTracer.startChild("a-span", "span 1").finish()
       profileChunk =
-        ProfileChunk(SentryId(), SentryId(), profilingTraceFile, emptyMap(), 1.0, sentryOptions)
+        ProfileChunk(
+          SentryId(),
+          SentryId(),
+          profilingTraceFile,
+          emptyMap(),
+          1.0,
+          ProfileChunk.PLATFORM_ANDROID,
+          sentryOptions,
+        )
     }
 
     var attachment = Attachment("hello".toByteArray(), "hello.txt", "text/plain", true)
