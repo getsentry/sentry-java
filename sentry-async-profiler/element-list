@@ -1,0 +1,7 @@
+io.sentry.asyncprofiler
+io.sentry.asyncprofiler.convert
+io.sentry.asyncprofiler.profiling
+io.sentry.asyncprofiler.provider
+io.sentry.asyncprofiler.vendor.asyncprofiler.convert
+io.sentry.asyncprofiler.vendor.asyncprofiler.jfr
+io.sentry.asyncprofiler.vendor.asyncprofiler.jfr.event

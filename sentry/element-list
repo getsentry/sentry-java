@@ -16,7 +16,9 @@ io.sentry.internal.viewhierarchy
 io.sentry.logger
 io.sentry.opentelemetry
 io.sentry.profilemeasurements
+io.sentry.profiling
 io.sentry.protocol
+io.sentry.protocol.profiling
 io.sentry.rrweb
 io.sentry.transport
 io.sentry.util
