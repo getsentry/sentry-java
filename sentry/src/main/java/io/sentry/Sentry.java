@@ -710,7 +710,7 @@ public final class Sentry {
 
         final IContinuousProfiler continuousProfiler =
             ProfilingServiceLoader.loadContinuousProfiler(
-                new SystemOutLogger(),
+                options.getLogger(),
                 profilingTracesDirPath,
                 options.getProfilingTracesHz(),
                 options.getExecutorService());
