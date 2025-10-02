@@ -30,6 +30,8 @@
   <string name="enable_replay_debug_mode">Enable Replay Debug Mode</string>
   <string name="show_dialog">Show Dialog</string>
   <string name="back_main">Back to Main Activity</string>
+  <string name="back">Back</string>
+  <string name="switch_preview">Switch Preview</string>
   <string name="tap_me">text</string>
   <string name="lipsum">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin nibh lorem, venenatis sed nulla vel, venenatis sodales augue. Mauris varius elit eu ligula volutpat, sed tincidunt orci porttitor. Donec et dignissim lacus, sed luctus ipsum. Praesent ornare luctus tortor sit amet ultricies. Cras iaculis et diam et vulputate. Cras ut iaculis mauris, non pellentesque diam. Nunc in laoreet diam, vitae accumsan eros. Morbi non nunc ac eros molestie placerat vitae id dolor. Quisque ornare aliquam ipsum, a dapibus tortor. In eu sodales tellus.
 
@@ -49,4 +51,5 @@ Nulla interdum gravida augue, vel fringilla lorem bibendum vel. In hac habitasse
   <string name="profiling_no_dir_set">No profiling dir path set</string>
   <string name="profiling_start">Start Profiling</string>
   <string name="profiling_result">Profile trace file size = %d bytes \nItem payload size = %d bytes \nData sent to Sentry size = %d bytes</string>
+  <string name="open_camera_activity">Open Camera Activity</string>
 </resources>

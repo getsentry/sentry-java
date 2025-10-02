@@ -1,10 +1,12 @@
 package io.sentry.samples.android;
 
+import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.os.Handler;
+import android.provider.MediaStore;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import io.sentry.Attachment;
@@ -67,7 +69,13 @@ public class MainActivity extends AppCompatActivity {
 
     binding.crashFromJava.setOnClickListener(
         view -> {
-          throw new RuntimeException("Uncaught Exception from Java.");
+          // throw new RuntimeException("Uncaught Exception from Java.");
+          Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+          try {
+            startActivityForResult(takePictureIntent, 1);
+          } catch (ActivityNotFoundException e) {
+            // display error state to the user
+          }
         });
 
     binding.sendMessage.setOnClickListener(view -> Sentry.captureMessage("Some message."));
@@ -302,6 +310,11 @@ public class MainActivity extends AppCompatActivity {
     binding.enableReplayDebugMode.setOnClickListener(
         view -> {
           Sentry.replay().enableDebugMaskingOverlay();
+        });
+
+    binding.openCameraActivity.setOnClickListener(
+        view -> {
+          startActivity(new Intent(this, CameraXActivity.class));
         });
 
     setContentView(binding.getRoot());

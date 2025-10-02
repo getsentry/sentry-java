@@ -170,6 +170,13 @@
       android:layout_height="wrap_content"
       android:text="@string/enable_replay_debug_mode"/>
 
+    <Button
+        android:id="@+id/open_camera_activity"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/open_camera_activity"
+        />
+
   </LinearLayout>
 
 </ScrollView>
