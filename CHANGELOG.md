@@ -6,6 +6,12 @@
 
 - Use logger from options for JVM profiler ([#4771](https://github.com/getsentry/sentry-java/pull/4771))
 
+### Dependencies
+
+- Bump Gradle from v8.14.3 to v9.1.0 ([#4738](https://github.com/getsentry/sentry-java/pull/4738))
+  - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v910)
+  - [diff](https://github.com/gradle/gradle/compare/v8.14.3...v9.1.0)
+
 ## 8.23.0
 
 ### Features
