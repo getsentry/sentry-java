@@ -4,8 +4,6 @@ import android.annotation.SuppressLint
 import android.annotation.TargetApi
 import android.content.Context
 import android.graphics.Bitmap
-import android.os.SystemClock
-import android.util.Log
 import android.view.View
 import android.view.ViewTreeObserver
 import io.sentry.ScreenshotStrategyType
@@ -95,10 +93,7 @@ internal class ScreenshotRecorder(
 
     try {
       contentChanged.set(false)
-      val start = SystemClock.uptimeMillis()
       screenshotStrategy.capture(root)
-      val duration = SystemClock.uptimeMillis() - start
-      Log.d("TAG", "Canvas.capture took ${duration}ms")
     } catch (e: Throwable) {
       options.logger.log(WARNING, "Failed to capture replay recording", e)
     }

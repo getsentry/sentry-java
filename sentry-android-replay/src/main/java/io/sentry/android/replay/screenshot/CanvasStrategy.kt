@@ -26,7 +26,6 @@ import android.media.Image
 import android.media.ImageReader
 import android.os.Handler
 import android.os.HandlerThread
-import android.os.Trace
 import android.view.View
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
@@ -111,7 +110,6 @@ internal class CanvasStrategy(
 
   @SuppressLint("UnclosedTrace")
   override fun capture(root: View) {
-    Trace.beginSection("Canvas.capture")
     val holder: PictureReaderHolder? =
       synchronized(freePictures) {
         when {
@@ -134,7 +132,6 @@ internal class CanvasStrategy(
     synchronized(unprocessedPictures) { unprocessedPictures.add(holder) }
 
     executor.submitSafely(options, "screenshot_recorder.canvas", pictureRenderTask)
-    Trace.endSection()
   }
 
   override fun onContentChanged() {
