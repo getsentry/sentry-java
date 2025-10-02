@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Use logger from options for JVM profiler ([#4771](https://github.com/getsentry/sentry-java/pull/4771))
+
 ## 8.23.0
 
 ### Features
