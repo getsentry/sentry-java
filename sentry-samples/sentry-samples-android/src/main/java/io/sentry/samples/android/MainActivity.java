@@ -67,7 +67,7 @@ public class MainActivity extends AppCompatActivity {
 
     binding.crashFromJava.setOnClickListener(
         view -> {
-           throw new RuntimeException("Uncaught Exception from Java.");
+          throw new RuntimeException("Uncaught Exception from Java.");
         });
 
     binding.sendMessage.setOnClickListener(view -> Sentry.captureMessage("Some message."));
