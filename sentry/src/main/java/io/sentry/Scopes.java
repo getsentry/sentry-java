@@ -947,6 +947,20 @@ public final class Scopes implements IScopes {
       final @NotNull ISpanFactory spanFactory =
           maybeSpanFactory == null ? getOptions().getSpanFactory() : maybeSpanFactory;
 
+      // If continuous profiling is enabled in trace mode, let's start it unless skipProfiling is
+      // true in TransactionOptions.
+      // Profiler will sample on its own.
+      // Profiler is started before the transaction is created, so that the profiler id is available
+      // when the transaction starts
+      if (samplingDecision.getSampled()
+          && getOptions().isContinuousProfilingEnabled()
+          && getOptions().getProfileLifecycle() == ProfileLifecycle.TRACE
+          && transactionContext.getProfilerId().equals(SentryId.EMPTY_ID)) {
+        getOptions()
+            .getContinuousProfiler()
+            .startProfiler(ProfileLifecycle.TRACE, getOptions().getInternalTracesSampler());
+      }
+
       transaction =
           spanFactory.createTransaction(
               transactionContext, this, transactionOptions, compositePerformanceCollector);
@@ -968,15 +982,6 @@ public final class Scopes implements IScopes {
             // If the profiler is running and the current transaction is the app start, we bind it.
             transactionProfiler.bindTransaction(transaction);
           }
-        }
-
-        // If continuous profiling is enabled in trace mode, let's start it. Profiler will sample on
-        // its own.
-        if (getOptions().isContinuousProfilingEnabled()
-            && getOptions().getProfileLifecycle() == ProfileLifecycle.TRACE) {
-          getOptions()
-              .getContinuousProfiler()
-              .startProfiler(ProfileLifecycle.TRACE, getOptions().getInternalTracesSampler());
         }
       }
     }

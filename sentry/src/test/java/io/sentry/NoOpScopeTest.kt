@@ -1,6 +1,7 @@
 package io.sentry
 
 import io.sentry.Scope.IWithSession
+import io.sentry.protocol.SentryId
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertSame
@@ -120,4 +121,9 @@ class NoOpScopeTest {
   }
 
   @Test fun `clone returns the same instance`() = assertSame(NoOpScope.getInstance(), sut.clone())
+
+  @Test
+  fun `getReplayId returns empty id`() {
+    assertEquals(SentryId.EMPTY_ID, sut.replayId)
+  }
 }

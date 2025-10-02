@@ -150,12 +150,12 @@ dependencies {
   implementation(libs.retrofit.gson)
   implementation(libs.sentry.native.ndk)
   implementation(libs.timber)
-
   implementation(libs.camerax.core)
   implementation(libs.camerax.camera2)
   implementation(libs.camerax.lifecycle)
   implementation(libs.camerax.view)
 
+  debugImplementation(projects.sentryAndroidDistribution)
   debugImplementation(libs.leakcanary)
 }
 

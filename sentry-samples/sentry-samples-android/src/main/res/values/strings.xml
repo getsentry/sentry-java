@@ -29,6 +29,7 @@
   <string name="throw_in_coroutine">Throw exception in coroutine</string>
   <string name="enable_replay_debug_mode">Enable Replay Debug Mode</string>
   <string name="show_dialog">Show Dialog</string>
+  <string name="check_for_update">Check for Update</string>
   <string name="back_main">Back to Main Activity</string>
   <string name="back">Back</string>
   <string name="switch_preview">Switch Preview</string>
