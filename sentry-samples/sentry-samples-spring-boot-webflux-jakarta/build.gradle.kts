@@ -25,10 +25,13 @@ dependencies {
   implementation(projects.sentryLogback)
   implementation(projects.sentryJdbc)
   implementation(projects.sentryGraphql22)
+  implementation(projects.sentryAsyncProfiler)
   implementation(libs.context.propagation)
   implementation(libs.springboot3.starter.actuator)
   implementation(libs.springboot3.starter.graphql)
   implementation(libs.springboot3.starter.webflux)
+  implementation(libs.springboot3.starter.mongodb)
+  implementation(libs.springboot3.starter.mongodb.reactive)
 
   testImplementation(kotlin(Config.kotlinStdLib))
   testImplementation(projects.sentrySystemTestSupport)

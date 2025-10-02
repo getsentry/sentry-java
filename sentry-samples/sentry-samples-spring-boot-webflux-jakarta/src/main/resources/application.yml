@@ -1,0 +1,21 @@
+# NOTE: Replace the test DSN below with YOUR OWN DSN to see the events from this app in your Sentry project/dashboard
+sentry:
+  dsn: https://502f25099c204a2fbf4cb16edc5975d1@o447951.ingest.sentry.io/5428563
+  send-default-pii: true
+  debug: false
+  # Sentry Spring Boot integration allows more fine-grained SentryOptions configuration
+  max-breadcrumbs: 150
+  # Logback integration configuration options
+  logging:
+    minimum-event-level: info
+    minimum-breadcrumb-level: debug
+  reactive:
+    thread-local-accessor-enabled: true
+  traces-sample-rate: 1.0
+  enable-backpressure-handling: true
+  logs:
+    enabled: false
+  enable-spotlight: true
+  profile-session-sample-rate: 1.0
+  profile-lifecycle: TRACE
+
