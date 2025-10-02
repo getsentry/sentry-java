@@ -6,6 +6,12 @@
 
 - Use logger from options for JVM profiler ([#4771](https://github.com/getsentry/sentry-java/pull/4771))
 
+### Dependencies
+
+- Bump Native SDK from v0.10.1 to v0.11.2 ([#4775](https://github.com/getsentry/sentry-java/pull/4775))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0112)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.10.1...0.11.2)
+
 ## 8.23.0
 
 ### Features
