@@ -129,8 +129,10 @@ public class CameraXActivity extends AppCompatActivity {
             : CameraSelector.DEFAULT_BACK_CAMERA;
 
     try {
-      ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
-      bindPreview(cameraProvider);
+      if (cameraProviderFuture != null) {
+        ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
+        bindPreview(cameraProvider);
+      }
     } catch (ExecutionException | InterruptedException e) {
       Log.e(TAG, "Error switching camera", e);
       Sentry.captureException(e);
