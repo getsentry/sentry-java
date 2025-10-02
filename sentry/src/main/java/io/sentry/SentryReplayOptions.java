@@ -355,7 +355,7 @@ public final class SentryReplayOptions {
    *
    * @return the screenshot strategy
    */
-  @ApiStatus.Internal
+  @ApiStatus.Experimental
   public @NotNull ScreenshotStrategyType getScreenshotStrategy() {
     return screenshotStrategy;
   }
@@ -365,7 +365,7 @@ public final class SentryReplayOptions {
    *
    * @param screenshotStrategy the screenshot strategy to use
    */
-  @ApiStatus.Internal
+  @ApiStatus.Experimental
   public void setScreenshotStrategy(final @NotNull ScreenshotStrategyType screenshotStrategy) {
     this.screenshotStrategy = screenshotStrategy;
   }

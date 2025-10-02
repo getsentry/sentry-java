@@ -32,6 +32,7 @@ import io.sentry.SentryOptions
 import io.sentry.android.replay.ScreenshotRecorderCallback
 import io.sentry.android.replay.ScreenshotRecorderConfig
 import io.sentry.android.replay.util.submitSafely
+import io.sentry.util.IntegrationUtils
 import java.util.LinkedList
 import java.util.WeakHashMap
 import java.util.concurrent.ScheduledExecutorService
@@ -69,6 +70,8 @@ internal class CanvasStrategy(
   init {
     processingThread.start()
     processingHandler = Handler(processingThread.looper)
+
+    IntegrationUtils.addIntegrationToSdkVersion("ReplayCanvasStrategy")
   }
 
   private val pictureRenderTask = Runnable {
@@ -105,7 +108,9 @@ internal class CanvasStrategy(
       canvas.drawColor(Color.BLACK, PorterDuff.Mode.CLEAR)
       holder.picture.draw(canvas)
       surface.unlockCanvasAndPost(canvas)
-    } finally {}
+    } catch (t: Throwable) {
+      options.logger.log(SentryLevel.ERROR, "Canvas Strategy: picture render failed", t)
+    }
   }
 
   @SuppressLint("UnclosedTrace")

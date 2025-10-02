@@ -3,7 +3,7 @@ package io.sentry;
 import org.jetbrains.annotations.ApiStatus;
 
 /** Enum representing the available screenshot strategies for replay recording. */
-@ApiStatus.Internal
+@ApiStatus.Experimental
 public enum ScreenshotStrategyType {
   /** Uses Canvas-based rendering for capturing screenshots */
   CANVAS,
