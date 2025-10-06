@@ -17,6 +17,7 @@ public final class DebugMetaPropertiesApplier {
     if (debugMetaProperties != null) {
       applyToOptions(options, debugMetaProperties);
       applyBuildTool(options, debugMetaProperties);
+      applyDistributionOptions(options, debugMetaProperties);
     }
   }
 
@@ -88,5 +89,69 @@ public final class DebugMetaPropertiesApplier {
   public static @Nullable String getBuildToolVersion(
       final @NotNull Properties debugMetaProperties) {
     return debugMetaProperties.getProperty("io.sentry.build-tool-version");
+  }
+
+  private static void applyDistributionOptions(
+      final @NotNull SentryOptions options, final @NotNull List<Properties> debugMetaProperties) {
+    for (Properties properties : debugMetaProperties) {
+      final @Nullable String orgSlug = getDistributionOrgSlug(properties);
+      final @Nullable String projectSlug = getDistributionProjectSlug(properties);
+      final @Nullable String orgAuthToken = getDistributionOrgAuthToken(properties);
+      final @Nullable String buildConfiguration = getDistributionBuildConfiguration(properties);
+
+      if (orgSlug != null || projectSlug != null || orgAuthToken != null) {
+        final @NotNull SentryOptions.DistributionOptions distributionOptions =
+            options.getDistribution();
+
+        if (orgSlug != null && distributionOptions.orgSlug.isEmpty()) {
+          options.getLogger().log(SentryLevel.DEBUG, "Distribution org slug found: %s", orgSlug);
+          distributionOptions.orgSlug = orgSlug;
+        }
+
+        if (projectSlug != null && distributionOptions.projectSlug.isEmpty()) {
+          options
+              .getLogger()
+              .log(SentryLevel.DEBUG, "Distribution project slug found: %s", projectSlug);
+          distributionOptions.projectSlug = projectSlug;
+        }
+
+        if (orgAuthToken != null && distributionOptions.orgAuthToken.isEmpty()) {
+          options.getLogger().log(SentryLevel.DEBUG, "Distribution org auth token found");
+          distributionOptions.orgAuthToken = orgAuthToken;
+        }
+
+        if (buildConfiguration != null && distributionOptions.buildConfiguration == null) {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.DEBUG,
+                  "Distribution build configuration found: %s",
+                  buildConfiguration);
+          distributionOptions.buildConfiguration = buildConfiguration;
+        }
+
+        break;
+      }
+    }
+  }
+
+  private static @Nullable String getDistributionOrgSlug(
+      final @NotNull Properties debugMetaProperties) {
+    return debugMetaProperties.getProperty("io.sentry.distribution.org-slug");
+  }
+
+  private static @Nullable String getDistributionProjectSlug(
+      final @NotNull Properties debugMetaProperties) {
+    return debugMetaProperties.getProperty("io.sentry.distribution.project-slug");
+  }
+
+  private static @Nullable String getDistributionOrgAuthToken(
+      final @NotNull Properties debugMetaProperties) {
+    return debugMetaProperties.getProperty("io.sentry.distribution.org-auth-token");
+  }
+
+  private static @Nullable String getDistributionBuildConfiguration(
+      final @NotNull Properties debugMetaProperties) {
+    return debugMetaProperties.getProperty("io.sentry.distribution.build-configuration");
   }
 }
