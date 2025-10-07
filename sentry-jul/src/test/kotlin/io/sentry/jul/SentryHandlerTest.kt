@@ -555,4 +555,29 @@ class SentryHandlerTest {
         }
       )
   }
+
+  @Test
+  fun `sets contextTags from MDC as attributes on logs`() {
+    fixture = Fixture(minimumLevel = Level.INFO, contextTags = listOf("sessionId", "operationId"))
+
+    MDC.put("sessionId", "session-123")
+    MDC.put("operationId", "op-456")
+    MDC.put("otherTag", "otherValue") // Should not be included in attributes
+    fixture.logger.info("testing context tags in logs")
+
+    Sentry.flush(1000)
+
+    verify(fixture.transport)
+      .send(
+        checkLogs { logs ->
+          val log = logs.items.first()
+          assertEquals("testing context tags in logs", log.body)
+          val attributes = log.attributes!!
+          assertEquals("session-123", attributes["sessionId"]?.value)
+          assertEquals("op-456", attributes["operationId"]?.value)
+          assertNull(attributes["otherTag"]) // Should not be included as it's not in contextTags
+          assertEquals("auto.log.jul", attributes["sentry.origin"]?.value)
+        }
+      )
+  }
 }

@@ -4,6 +4,10 @@
 
 ### Features
 
+- Add contextTags support for logging integrations ([#4783](https://github.com/getsentry/sentry-java/pull/4783))
+  - MDC/ThreadContext contextTags are now extracted and attached as attributes to Sentry logs for Logback, Log4j2, and JUL integrations
+  - Works with the existing `contextTags` option (e.g., `options.addContextTag("userId")`)
+  - Centralizes contextTags processing logic in new `ContextTagsUtil` class
 - Add session replay id to Sentry Logs ([#4740](https://github.com/getsentry/sentry-java/pull/4740))
 - Add support for continuous profiling of JVM applications on macOS and Linux ([#4556](https://github.com/getsentry/sentry-java/pull/4556))
   - [Sentry continuous profiling](https://docs.sentry.io/product/explore/profiling/) on the JVM is using async-profiler under the hood.

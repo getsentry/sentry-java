@@ -6962,6 +6962,11 @@ public abstract interface class io/sentry/util/CollectionUtils$Predicate {
 	public abstract fun test (Ljava/lang/Object;)Z
 }
 
+public final class io/sentry/util/ContextTagsUtil {
+	public static fun applyContextTagsToAttributes (Lio/sentry/SentryAttributes;Ljava/util/List;Ljava/util/Map;)V
+	public static fun applyContextTagsToEvent (Lio/sentry/SentryEvent;Ljava/util/List;Ljava/util/Map;)V
+}
+
 public final class io/sentry/util/DebugMetaPropertiesApplier {
 	public static field DEBUG_META_PROPERTIES_FILENAME Ljava/lang/String;
 	public fun <init> ()V

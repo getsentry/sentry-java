@@ -591,4 +591,31 @@ class SentryAppenderTest {
         }
       )
   }
+
+  @Test
+  fun `sets contextTags from ThreadContext as attributes on logs`() {
+    val logger =
+      fixture.getSut(minimumLevel = Level.INFO, contextTags = listOf("traceId", "spanId"))
+    ScopesAdapter.getInstance().options.logs.isEnabled = true
+
+    ThreadContext.put("traceId", "trace-123")
+    ThreadContext.put("spanId", "span-456")
+    ThreadContext.put("otherTag", "otherValue") // Should not be included in attributes
+    logger.info("testing context tags in logs")
+
+    Sentry.flush(1000)
+
+    verify(fixture.transport)
+      .send(
+        checkLogs { logs ->
+          val log = logs.items.first()
+          assertEquals("testing context tags in logs", log.body)
+          val attributes = log.attributes!!
+          assertEquals("trace-123", attributes["traceId"]?.value)
+          assertEquals("span-456", attributes["spanId"]?.value)
+          assertNull(attributes["otherTag"]) // Should not be included as it's not in contextTags
+          assertEquals("auto.log.log4j2", attributes["sentry.origin"]?.value)
+        }
+      )
+  }
 }

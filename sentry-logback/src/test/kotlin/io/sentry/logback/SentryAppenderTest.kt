@@ -821,4 +821,33 @@ class SentryAppenderTest {
         }
       )
   }
+
+  @Test
+  fun `sets contextTags from MDC as attributes on logs`() {
+    fixture =
+      Fixture(
+        minimumLevel = Level.INFO,
+        enableLogs = true,
+        contextTags = listOf("requestId", "userId"),
+      )
+    MDC.put("requestId", "req-123")
+    MDC.put("userId", "user-456")
+    MDC.put("otherTag", "otherValue") // Should not be included in attributes
+    fixture.logger.info("testing context tags in logs")
+
+    Sentry.flush(1000)
+
+    verify(fixture.transport)
+      .send(
+        checkLogs { logs ->
+          val log = logs.items.first()
+          assertEquals("testing context tags in logs", log.body)
+          val attributes = log.attributes!!
+          assertEquals("req-123", attributes["requestId"]?.value)
+          assertEquals("user-456", attributes["userId"]?.value)
+          assertNull(attributes["otherTag"]) // Should not be included as it's not in contextTags
+          assertEquals("auto.log.logback", attributes["sentry.origin"]?.value)
+        }
+      )
+  }
 }
