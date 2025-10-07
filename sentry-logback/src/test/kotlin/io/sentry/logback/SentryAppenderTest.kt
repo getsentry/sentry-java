@@ -827,7 +827,7 @@ class SentryAppenderTest {
     fixture = Fixture(minimumLevel = Level.INFO, enableLogs = true, contextTags = listOf("someTag"))
     MDC.put("someTag", "someValue")
     MDC.put("otherTag", "otherValue")
-    fixture.logger.info("testing context tags in logs")
+    fixture.logger.info("testing MDC properties in logs")
 
     Sentry.flush(1000)
 
@@ -835,7 +835,7 @@ class SentryAppenderTest {
       .send(
         checkLogs { logs ->
           val log = logs.items.first()
-          assertEquals("testing context tags in logs", log.body)
+          assertEquals("testing MDC properties in logs", log.body)
           val attributes = log.attributes!!
           assertEquals("someValue", attributes["someTag"]?.value)
           assertEquals("otherValue", attributes["otherTag"]?.value)
