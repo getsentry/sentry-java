@@ -42,10 +42,6 @@ internal class WindowRecorder(
     var config: ScreenshotRecorderConfig? = null
     private val isRecording = AtomicBoolean(true)
 
-    private var currentCaptureDelay = 0L
-
-    private var rootView = WeakReference<View>(null)
-
     fun resume() {
       if (options.sessionReplay.isDebug) {
         options.logger.log(DEBUG, "Resuming the capture runnable.")
@@ -106,17 +102,12 @@ internal class WindowRecorder(
         )
       }
     }
-
-    fun bind(newRoot: View) {
-      rootView = WeakReference(newRoot)
-    }
   }
 
   override fun onRootViewsChanged(root: View, added: Boolean) {
     rootViewsLock.acquire().use {
       if (added) {
         rootViews.add(WeakReference(root))
-        capturer?.bind(root)
         capturer?.recorder?.bind(root)
         determineWindowSize(root)
       } else {
@@ -194,7 +185,6 @@ internal class WindowRecorder(
 
     val newRoot = rootViews.lastOrNull()?.get()
     if (newRoot != null) {
-      capturer?.bind(newRoot)
       capturer?.recorder?.bind(newRoot)
     }
 
