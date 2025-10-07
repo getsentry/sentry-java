@@ -341,6 +341,9 @@ public class MainActivity extends AppCompatActivity {
                   });
         });
 
+    binding.openHttpRequestActivity.setOnClickListener(
+        view -> startActivity(new Intent(this, TriggerHttpRequestActivity.class)));
+
     Sentry.logger().log(SentryLogLevel.INFO, "Creating content view");
     setContentView(binding.getRoot());
 
