@@ -594,8 +594,7 @@ class SentryAppenderTest {
 
   @Test
   fun `sets properties from ThreadContext as attributes on logs`() {
-    val logger =
-      fixture.getSut(minimumLevel = Level.INFO, contextTags = listOf("someTag"))
+    val logger = fixture.getSut(minimumLevel = Level.INFO, contextTags = listOf("someTag"))
     ScopesAdapter.getInstance().options.logs.isEnabled = true
 
     ThreadContext.put("someTag", "someValue")

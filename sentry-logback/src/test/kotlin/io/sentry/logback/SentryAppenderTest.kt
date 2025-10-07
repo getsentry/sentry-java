@@ -824,12 +824,7 @@ class SentryAppenderTest {
 
   @Test
   fun `sets properties from MDC as attributes on logs`() {
-    fixture =
-      Fixture(
-        minimumLevel = Level.INFO,
-        enableLogs = true,
-        contextTags = listOf("someTag"),
-      )
+    fixture = Fixture(minimumLevel = Level.INFO, enableLogs = true, contextTags = listOf("someTag"))
     MDC.put("someTag", "someValue")
     MDC.put("otherTag", "otherValue")
     fixture.logger.info("testing context tags in logs")
