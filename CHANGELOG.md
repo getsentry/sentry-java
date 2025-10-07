@@ -5,11 +5,14 @@
 ### Features
 
 - Attach MDC properties to logs as attributes ([#4786](https://github.com/getsentry/sentry-java/pull/4786))
-  - MDC properties set using supported logging frameworks (Logback, Log4j2, java.util.Logging) are now attached to structured logs as attributes
+  - MDC properties set using supported logging frameworks (Logback, Log4j2, java.util.Logging) are now attached to structured logs as attributes.
   - This means that you will be able to filter/aggregate logs in the product based on these properties.
-  - All properties are sent. To avoid sending certain properties, use the `beforeSendLog` hook. You can also set up [Advanced Data
-    Scrubbing rules](https://docs.sentry.io/security-legal-pii/scrubbing/advanced-datascrubbing/) to redact sensitive information.
+  - All properties are sent. To avoid sending certain properties, use the `beforeSendLog` hook. You can also set up [Advanced Data Scrubbing rules](https://docs.sentry.io/security-legal-pii/scrubbing/advanced-datascrubbing/) to redact sensitive information.
   - Note that keys containing spaces are not supported.
+
+### Fixes
+
+- Use logger from options for JVM profiler ([#4771](https://github.com/getsentry/sentry-java/pull/4771))
 
 ## 8.23.0
 
