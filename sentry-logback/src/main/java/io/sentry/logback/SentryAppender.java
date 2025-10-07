@@ -29,7 +29,7 @@ import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.Message;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.util.CollectionUtils;
-import io.sentry.util.ContextTagsUtil;
+import io.sentry.util.LoggerPropertiesUtil;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
@@ -153,7 +153,7 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
       // get tags from ScopesAdapter options to allow getting the correct tags if Sentry has been
       // initialized somewhere else
       final List<String> contextTags = ScopesAdapter.getInstance().getOptions().getContextTags();
-      ContextTagsUtil.applyContextTagsToEvent(event, contextTags, mdcProperties);
+      LoggerPropertiesUtil.applyPropertiesToEvent(event, contextTags, mdcProperties);
       // put the rest of mdc tags in contexts
       if (!mdcProperties.isEmpty()) {
         event.getContexts().put("MDC", mdcProperties);
@@ -189,7 +189,7 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
 
     final Map<String, String> mdcProperties = loggingEvent.getMDCPropertyMap();
     if (mdcProperties != null) {
-      ContextTagsUtil.applyContextTagsToLogAttributes(attributes, mdcProperties);
+      LoggerPropertiesUtil.applyPropertiesToAttributes(attributes, mdcProperties);
     }
 
     final @NotNull SentryLogParameters params = SentryLogParameters.create(attributes);

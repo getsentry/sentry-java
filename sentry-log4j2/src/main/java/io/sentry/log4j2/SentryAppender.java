@@ -25,7 +25,7 @@ import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.Message;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.util.CollectionUtils;
-import io.sentry.util.ContextTagsUtil;
+import io.sentry.util.LoggerPropertiesUtil;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -233,7 +233,7 @@ public class SentryAppender extends AbstractAppender {
 
     final Map<String, String> contextData = loggingEvent.getContextData().toMap();
     if (contextData != null) {
-      ContextTagsUtil.applyContextTagsToLogAttributes(attributes, contextData);
+      LoggerPropertiesUtil.applyPropertiesToAttributes(attributes, contextData);
     }
 
     final @NotNull SentryLogParameters params = SentryLogParameters.create(attributes);
@@ -286,7 +286,7 @@ public class SentryAppender extends AbstractAppender {
       // initialized somewhere else
       final List<String> contextTags = scopes.getOptions().getContextTags();
       if (contextTags != null) {
-        ContextTagsUtil.applyContextTagsToEvent(event, contextTags, contextData);
+        LoggerPropertiesUtil.applyPropertiesToEvent(event, contextTags, contextData);
       }
       // put the rest of mdc tags in contexts
       if (!contextData.isEmpty()) {
