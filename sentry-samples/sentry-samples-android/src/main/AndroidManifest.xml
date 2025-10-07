@@ -93,7 +93,7 @@
         <meta-data android:name="io.sentry.debug" android:value="${sentryDebug}" />
 
         <!--    how to disable verbose logging of the session replay feature-->
-        <meta-data android:name="io.sentry.session-replay.debug" android:value="false" />
+        <meta-data android:name="io.sentry.session-replay.debug" android:value="true" />
 
         <!--    how to set a custom debug level-->
         <!--    <meta-data android:name="io.sentry.debug.level" android:value="info" />-->
