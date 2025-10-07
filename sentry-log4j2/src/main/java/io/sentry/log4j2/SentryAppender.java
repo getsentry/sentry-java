@@ -26,7 +26,6 @@ import io.sentry.protocol.Message;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.util.CollectionUtils;
 import io.sentry.util.ContextTagsUtil;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -34,7 +33,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.Filter;
 import org.apache.logging.log4j.core.LogEvent;
@@ -47,9 +45,7 @@ import org.apache.logging.log4j.core.impl.ThrowableProxy;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Appender for Log4j2 in charge of sending the logged events to a Sentry server.
- */
+/** Appender for Log4j2 in charge of sending the logged events to a Sentry server. */
 @Plugin(name = "Sentry", category = "Core", elementType = "appender", printObject = true)
 @Open
 public class SentryAppender extends AbstractAppender {
@@ -66,49 +62,49 @@ public class SentryAppender extends AbstractAppender {
 
   static {
     SentryIntegrationPackageStorage.getInstance()
-      .addPackage("maven:io.sentry:sentry-log4j2", BuildConfig.VERSION_NAME);
+        .addPackage("maven:io.sentry:sentry-log4j2", BuildConfig.VERSION_NAME);
   }
 
   /**
    * @deprecated This constructor is deprecated. Please use {@link #SentryAppender(String, Filter,
-   * String, Level, Level, Level, Boolean, ITransportFactory, IScopes, String[])} instead.
+   *     String, Level, Level, Level, Boolean, ITransportFactory, IScopes, String[])} instead.
    */
   @Deprecated
   @SuppressWarnings("InlineMeSuggester")
   public SentryAppender(
-    final @NotNull String name,
-    final @Nullable Filter filter,
-    final @Nullable String dsn,
-    final @Nullable Level minimumBreadcrumbLevel,
-    final @Nullable Level minimumEventLevel,
-    final @Nullable Boolean debug,
-    final @Nullable ITransportFactory transportFactory,
-    final @NotNull IScopes scopes,
-    final @Nullable String[] contextTags) {
+      final @NotNull String name,
+      final @Nullable Filter filter,
+      final @Nullable String dsn,
+      final @Nullable Level minimumBreadcrumbLevel,
+      final @Nullable Level minimumEventLevel,
+      final @Nullable Boolean debug,
+      final @Nullable ITransportFactory transportFactory,
+      final @NotNull IScopes scopes,
+      final @Nullable String[] contextTags) {
     this(
-      name,
-      filter,
-      dsn,
-      minimumBreadcrumbLevel,
-      minimumEventLevel,
-      null,
-      debug,
-      transportFactory,
-      scopes,
-      contextTags);
+        name,
+        filter,
+        dsn,
+        minimumBreadcrumbLevel,
+        minimumEventLevel,
+        null,
+        debug,
+        transportFactory,
+        scopes,
+        contextTags);
   }
 
   public SentryAppender(
-    final @NotNull String name,
-    final @Nullable Filter filter,
-    final @Nullable String dsn,
-    final @Nullable Level minimumBreadcrumbLevel,
-    final @Nullable Level minimumEventLevel,
-    final @Nullable Level minimumLevel,
-    final @Nullable Boolean debug,
-    final @Nullable ITransportFactory transportFactory,
-    final @NotNull IScopes scopes,
-    final @Nullable String[] contextTags) {
+      final @NotNull String name,
+      final @Nullable Filter filter,
+      final @Nullable String dsn,
+      final @Nullable Level minimumBreadcrumbLevel,
+      final @Nullable Level minimumEventLevel,
+      final @Nullable Level minimumLevel,
+      final @Nullable Boolean debug,
+      final @Nullable ITransportFactory transportFactory,
+      final @NotNull IScopes scopes,
+      final @Nullable String[] contextTags) {
     super(name, filter, null, true, null);
     this.dsn = dsn;
     if (minimumBreadcrumbLevel != null) {
@@ -129,64 +125,64 @@ public class SentryAppender extends AbstractAppender {
   /**
    * Create a Sentry Appender.
    *
-   * @param name                   The name of the Appender.
+   * @param name The name of the Appender.
    * @param minimumBreadcrumbLevel The min. level of the breadcrumb.
-   * @param minimumEventLevel      The min. level of the event.
-   * @param minimumLevel           The min. level of the log event.
-   * @param dsn                    the Sentry DSN.
-   * @param debug                  if Sentry debug mode should be on
-   * @param filter                 The filter, if any, to use.
+   * @param minimumEventLevel The min. level of the event.
+   * @param minimumLevel The min. level of the log event.
+   * @param dsn the Sentry DSN.
+   * @param debug if Sentry debug mode should be on
+   * @param filter The filter, if any, to use.
    * @return The SentryAppender.
    */
   @PluginFactory
   public static @Nullable SentryAppender createAppender(
-    @Nullable @PluginAttribute("name") final String name,
-    @Nullable @PluginAttribute("minimumBreadcrumbLevel") final Level minimumBreadcrumbLevel,
-    @Nullable @PluginAttribute("minimumEventLevel") final Level minimumEventLevel,
-    @Nullable @PluginAttribute("minimumLevel") final Level minimumLevel,
-    @Nullable @PluginAttribute("dsn") final String dsn,
-    @Nullable @PluginAttribute("debug") final Boolean debug,
-    @Nullable @PluginElement("filter") final Filter filter,
-    @Nullable @PluginAttribute("contextTags") final String contextTags) {
+      @Nullable @PluginAttribute("name") final String name,
+      @Nullable @PluginAttribute("minimumBreadcrumbLevel") final Level minimumBreadcrumbLevel,
+      @Nullable @PluginAttribute("minimumEventLevel") final Level minimumEventLevel,
+      @Nullable @PluginAttribute("minimumLevel") final Level minimumLevel,
+      @Nullable @PluginAttribute("dsn") final String dsn,
+      @Nullable @PluginAttribute("debug") final Boolean debug,
+      @Nullable @PluginElement("filter") final Filter filter,
+      @Nullable @PluginAttribute("contextTags") final String contextTags) {
 
     if (name == null) {
       LOGGER.error("No name provided for SentryAppender");
       return null;
     }
     return new SentryAppender(
-      name,
-      filter,
-      dsn,
-      minimumBreadcrumbLevel,
-      minimumEventLevel,
-      minimumLevel,
-      debug,
-      null,
-      ScopesAdapter.getInstance(),
-      contextTags != null ? contextTags.split(",") : null);
+        name,
+        filter,
+        dsn,
+        minimumBreadcrumbLevel,
+        minimumEventLevel,
+        minimumLevel,
+        debug,
+        null,
+        ScopesAdapter.getInstance(),
+        contextTags != null ? contextTags.split(",") : null);
   }
 
   @Override
   public void start() {
     try {
       Sentry.init(
-        options -> {
-          options.setEnableExternalConfiguration(true);
-          options.setInitPriority(InitPriority.LOWEST);
-          options.setDsn(dsn);
-          if (debug != null) {
-            options.setDebug(debug);
-          }
-          options.setSentryClientName(
-            BuildConfig.SENTRY_LOG4J2_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
-          options.setSdkVersion(createSdkVersion(options));
-          if (contextTags != null) {
-            for (final String contextTag : contextTags) {
-              options.addContextTag(contextTag);
+          options -> {
+            options.setEnableExternalConfiguration(true);
+            options.setInitPriority(InitPriority.LOWEST);
+            options.setDsn(dsn);
+            if (debug != null) {
+              options.setDebug(debug);
             }
-          }
-          Optional.ofNullable(transportFactory).ifPresent(options::setTransportFactory);
-        });
+            options.setSentryClientName(
+                BuildConfig.SENTRY_LOG4J2_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
+            options.setSdkVersion(createSdkVersion(options));
+            if (contextTags != null) {
+              for (final String contextTag : contextTags) {
+                options.addContextTag(contextTag);
+              }
+            }
+            Optional.ofNullable(transportFactory).ifPresent(options::setTransportFactory);
+          });
     } catch (IllegalArgumentException e) {
       LOGGER.warn("Failed to init Sentry during appender initialization: " + e.getMessage());
     }
@@ -197,7 +193,7 @@ public class SentryAppender extends AbstractAppender {
   @Override
   public void append(final @NotNull LogEvent eventObject) {
     if (scopes.getOptions().getLogs().isEnabled()
-      && eventObject.getLevel().isMoreSpecificThan(minimumLevel)) {
+        && eventObject.getLevel().isMoreSpecificThan(minimumLevel)) {
       captureLog(eventObject);
     }
     if (eventObject.getLevel().isMoreSpecificThan(minimumEventLevel)) {
@@ -232,7 +228,7 @@ public class SentryAppender extends AbstractAppender {
 
     if (nonFormattedMessage != null && !formattedMessage.equals(nonFormattedMessage)) {
       attributes.add(
-        SentryAttribute.stringAttribute("sentry.message.template", nonFormattedMessage));
+          SentryAttribute.stringAttribute("sentry.message.template", nonFormattedMessage));
     }
 
     final Map<String, String> contextData = loggingEvent.getContextData().toMap();
@@ -269,8 +265,8 @@ public class SentryAppender extends AbstractAppender {
       final Mechanism mechanism = new Mechanism();
       mechanism.setType(MECHANISM_TYPE);
       final Throwable mechanismException =
-        new ExceptionMechanismException(
-          mechanism, throwableInformation.getThrowable(), Thread.currentThread());
+          new ExceptionMechanismException(
+              mechanism, throwableInformation.getThrowable(), Thread.currentThread());
       event.setThrowable(mechanismException);
     }
 
@@ -283,8 +279,8 @@ public class SentryAppender extends AbstractAppender {
     }
 
     final Map<String, String> contextData =
-      CollectionUtils.filterMapEntries(
-        loggingEvent.getContextData().toMap(), entry -> entry.getValue() != null);
+        CollectionUtils.filterMapEntries(
+            loggingEvent.getContextData().toMap(), entry -> entry.getValue() != null);
     if (!contextData.isEmpty()) {
       // get tags from ScopesAdapter options to allow getting the correct tags if Sentry has been
       // initialized somewhere else
@@ -304,9 +300,9 @@ public class SentryAppender extends AbstractAppender {
   private @NotNull List<String> toParams(final @Nullable Object[] arguments) {
     if (arguments != null) {
       return Arrays.stream(arguments)
-        .filter(Objects::nonNull)
-        .map(Object::toString)
-        .collect(Collectors.toList());
+          .filter(Objects::nonNull)
+          .map(Object::toString)
+          .collect(Collectors.toList());
     } else {
       return Collections.emptyList();
     }
