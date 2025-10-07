@@ -593,14 +593,13 @@ class SentryAppenderTest {
   }
 
   @Test
-  fun `sets contextTags from ThreadContext as attributes on logs`() {
+  fun `sets properties from ThreadContext as attributes on logs`() {
     val logger =
-      fixture.getSut(minimumLevel = Level.INFO, contextTags = listOf("traceId", "spanId"))
+      fixture.getSut(minimumLevel = Level.INFO, contextTags = listOf("someTag"))
     ScopesAdapter.getInstance().options.logs.isEnabled = true
 
-    ThreadContext.put("traceId", "trace-123")
-    ThreadContext.put("spanId", "span-456")
-    ThreadContext.put("otherTag", "otherValue") // Should not be included in attributes
+    ThreadContext.put("someTag", "someValue")
+    ThreadContext.put("otherTag", "otherValue")
     logger.info("testing context tags in logs")
 
     Sentry.flush(1000)
@@ -611,10 +610,8 @@ class SentryAppenderTest {
           val log = logs.items.first()
           assertEquals("testing context tags in logs", log.body)
           val attributes = log.attributes!!
-          assertEquals("trace-123", attributes["traceId"]?.value)
-          assertEquals("span-456", attributes["spanId"]?.value)
-          assertNull(attributes["otherTag"]) // Should not be included as it's not in contextTags
-          assertEquals("auto.log.log4j2", attributes["sentry.origin"]?.value)
+          assertEquals("someValue", attributes["someTag"]?.value)
+          assertEquals("otherValue", attributes["otherTag"]?.value)
         }
       )
   }
