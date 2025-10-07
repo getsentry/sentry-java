@@ -53,5 +53,7 @@ Nulla interdum gravida augue, vel fringilla lorem bibendum vel. In hac habitasse
   <string name="profiling_no_dir_set">No profiling dir path set</string>
   <string name="profiling_start">Start Profiling</string>
   <string name="profiling_result">Profile trace file size = %d bytes \nItem payload size = %d bytes \nData sent to Sentry size = %d bytes</string>
+  <string name="open_http_request_activity">Open Trigger HTTP Request Activity</string>
+  <string name="trigger_okhttp_request">Trigger OkHttp Request</string>
   <string name="open_camera_activity">Open Camera Activity</string>
 </resources>
