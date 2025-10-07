@@ -99,28 +99,37 @@ public final class DebugMetaPropertiesApplier {
       final @Nullable String orgAuthToken = getDistributionOrgAuthToken(properties);
       final @Nullable String buildConfiguration = getDistributionBuildConfiguration(properties);
 
-      if (orgSlug != null || projectSlug != null || orgAuthToken != null) {
+      if (orgSlug != null
+          || projectSlug != null
+          || orgAuthToken != null
+          || buildConfiguration != null) {
         final @NotNull SentryOptions.DistributionOptions distributionOptions =
             options.getDistribution();
 
-        if (orgSlug != null && distributionOptions.orgSlug.isEmpty()) {
+        if (orgSlug != null && !orgSlug.isEmpty() && distributionOptions.orgSlug.isEmpty()) {
           options.getLogger().log(SentryLevel.DEBUG, "Distribution org slug found: %s", orgSlug);
           distributionOptions.orgSlug = orgSlug;
         }
 
-        if (projectSlug != null && distributionOptions.projectSlug.isEmpty()) {
+        if (projectSlug != null
+            && !projectSlug.isEmpty()
+            && distributionOptions.projectSlug.isEmpty()) {
           options
               .getLogger()
               .log(SentryLevel.DEBUG, "Distribution project slug found: %s", projectSlug);
           distributionOptions.projectSlug = projectSlug;
         }
 
-        if (orgAuthToken != null && distributionOptions.orgAuthToken.isEmpty()) {
+        if (orgAuthToken != null
+            && !orgAuthToken.isEmpty()
+            && distributionOptions.orgAuthToken.isEmpty()) {
           options.getLogger().log(SentryLevel.DEBUG, "Distribution org auth token found");
           distributionOptions.orgAuthToken = orgAuthToken;
         }
 
-        if (buildConfiguration != null && distributionOptions.buildConfiguration == null) {
+        if (buildConfiguration != null
+            && !buildConfiguration.isEmpty()
+            && distributionOptions.buildConfiguration == null) {
           options
               .getLogger()
               .log(
@@ -130,6 +139,8 @@ public final class DebugMetaPropertiesApplier {
           distributionOptions.buildConfiguration = buildConfiguration;
         }
 
+        // We only process the first properties file that contains distribution options
+        // to maintain consistency with other properties like proguardUuid
         break;
       }
     }

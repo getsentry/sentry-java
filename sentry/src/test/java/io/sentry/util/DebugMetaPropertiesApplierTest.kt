@@ -99,4 +99,35 @@ class DebugMetaPropertiesApplierTest {
     assertEquals(originalOrgSlug, options.distribution.orgSlug)
     assertEquals(originalProjectSlug, options.distribution.projectSlug)
   }
+
+  @Test
+  fun `applies buildConfiguration only when it is the only property set`() {
+    val properties = Properties()
+    properties.setProperty("io.sentry.distribution.build-configuration", "debug")
+
+    val options = SentryOptions()
+    DebugMetaPropertiesApplier.apply(options, listOf(properties))
+
+    assertEquals("debug", options.distribution.buildConfiguration)
+    assertEquals("", options.distribution.orgSlug)
+    assertEquals("", options.distribution.projectSlug)
+    assertEquals("", options.distribution.orgAuthToken)
+  }
+
+  @Test
+  fun `does not apply empty string values`() {
+    val properties = Properties()
+    properties.setProperty("io.sentry.distribution.org-slug", "")
+    properties.setProperty("io.sentry.distribution.project-slug", "")
+    properties.setProperty("io.sentry.distribution.org-auth-token", "")
+    properties.setProperty("io.sentry.distribution.build-configuration", "")
+
+    val options = SentryOptions()
+    DebugMetaPropertiesApplier.apply(options, listOf(properties))
+
+    assertEquals("", options.distribution.orgSlug)
+    assertEquals("", options.distribution.projectSlug)
+    assertEquals("", options.distribution.orgAuthToken)
+    assertNull(options.distribution.buildConfiguration)
+  }
 }
