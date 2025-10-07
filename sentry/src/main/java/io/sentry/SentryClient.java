@@ -48,7 +48,6 @@ public final class SentryClient implements ISentryClient {
     return enabled;
   }
 
-  @ApiStatus.Internal
   public SentryClient(final @NotNull SentryOptions options) {
     this.options = Objects.requireNonNull(options, "SentryOptions is required.");
     this.enabled = true;

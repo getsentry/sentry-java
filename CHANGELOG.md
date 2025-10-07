@@ -6,6 +6,10 @@
 
 - Use logger from options for JVM profiler ([#4771](https://github.com/getsentry/sentry-java/pull/4771))
 
+### Miscellaneous
+
+- Mark SentryClient(SentryOptions) constructor as not internal ([#4787](https://github.com/getsentry/sentry-java/pull/4787))
+
 ### Dependencies
 
 - Bump Native SDK from v0.10.1 to v0.11.2 ([#4775](https://github.com/getsentry/sentry-java/pull/4775))
