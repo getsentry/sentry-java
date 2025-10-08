@@ -31,7 +31,7 @@ import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.android.replay.ScreenshotRecorderCallback
 import io.sentry.android.replay.ScreenshotRecorderConfig
-import io.sentry.android.replay.util.submitSafely
+import io.sentry.android.replay.util.ReplayRunnable
 import io.sentry.util.IntegrationUtils
 import java.util.LinkedList
 import java.util.WeakHashMap
@@ -124,7 +124,7 @@ internal class CanvasStrategy(
       }
     if (holder == null) {
       options.logger.log(SentryLevel.DEBUG, "No free Picture available, skipping capture")
-      executor.submitSafely(options, "screenshot_recorder.canvas", pictureRenderTask)
+      executor.submit(ReplayRunnable("screenshot_recorder.canvas", pictureRenderTask))
       return
     }
 
@@ -136,7 +136,7 @@ internal class CanvasStrategy(
 
     synchronized(unprocessedPictures) { unprocessedPictures.add(holder) }
 
-    executor.submitSafely(options, "screenshot_recorder.canvas", pictureRenderTask)
+    executor.submit(ReplayRunnable("screenshot_recorder.canvas", pictureRenderTask))
   }
 
   override fun onContentChanged() {
