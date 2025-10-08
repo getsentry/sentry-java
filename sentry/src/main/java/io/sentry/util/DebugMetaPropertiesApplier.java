@@ -96,7 +96,7 @@ public final class DebugMetaPropertiesApplier {
     for (Properties properties : debugMetaProperties) {
       final @Nullable String orgSlug = getDistributionOrgSlug(properties);
       final @Nullable String projectSlug = getDistributionProjectSlug(properties);
-      final @Nullable String orgAuthToken = getDistributionOrgAuthToken(properties);
+      final @Nullable String orgAuthToken = getDistributionAuthToken(properties);
       final @Nullable String buildConfiguration = getDistributionBuildConfiguration(properties);
 
       if (orgSlug != null
@@ -156,9 +156,9 @@ public final class DebugMetaPropertiesApplier {
     return debugMetaProperties.getProperty("io.sentry.distribution.project-slug");
   }
 
-  private static @Nullable String getDistributionOrgAuthToken(
+  private static @Nullable String getDistributionAuthToken(
       final @NotNull Properties debugMetaProperties) {
-    return debugMetaProperties.getProperty("io.sentry.distribution.org-auth-token");
+    return debugMetaProperties.getProperty("io.sentry.distribution.auth-token");
   }
 
   private static @Nullable String getDistributionBuildConfiguration(

@@ -13,7 +13,7 @@ class DebugMetaPropertiesApplierTest {
     val properties = Properties()
     properties.setProperty("io.sentry.distribution.org-slug", "test-org")
     properties.setProperty("io.sentry.distribution.project-slug", "test-project")
-    properties.setProperty("io.sentry.distribution.org-auth-token", "test-token")
+    properties.setProperty("io.sentry.distribution.auth-token", "test-token")
     properties.setProperty("io.sentry.distribution.build-configuration", "debug")
 
     val options = SentryOptions()
@@ -45,7 +45,7 @@ class DebugMetaPropertiesApplierTest {
     val properties = Properties()
     properties.setProperty("io.sentry.distribution.org-slug", "properties-org")
     properties.setProperty("io.sentry.distribution.project-slug", "properties-project")
-    properties.setProperty("io.sentry.distribution.org-auth-token", "properties-token")
+    properties.setProperty("io.sentry.distribution.auth-token", "properties-token")
     properties.setProperty("io.sentry.distribution.build-configuration", "properties-config")
 
     val options = SentryOptions()
@@ -66,13 +66,20 @@ class DebugMetaPropertiesApplierTest {
   fun `applies distribution options from first properties file with values`() {
     val properties1 = Properties()
     val properties2 = Properties()
-    properties2.setProperty("io.sentry.distribution.org-slug", "org-from-second")
+    val properties3 = Properties()
+
+    // properties1 has non-distribution properties so is ignored:
+    properties1.setProperty("io.sentry.unrelated", "unrelated")
+
+    // properties2 should end up being the ones set
     properties2.setProperty("io.sentry.distribution.project-slug", "project-from-second")
 
-    val options = SentryOptions()
-    DebugMetaPropertiesApplier.apply(options, listOf(properties1, properties2))
+    // properties3 also has distribution properties but since properties2 was first they are ignored.
+    properties3.setProperty("io.sentry.distribution.project-slug", "project-from-third")
 
-    assertEquals("org-from-second", options.distribution.orgSlug)
+    val options = SentryOptions()
+    DebugMetaPropertiesApplier.apply(options, listOf(properties1, properties2, properties3))
+
     assertEquals("project-from-second", options.distribution.projectSlug)
   }
 
@@ -119,7 +126,7 @@ class DebugMetaPropertiesApplierTest {
     val properties = Properties()
     properties.setProperty("io.sentry.distribution.org-slug", "")
     properties.setProperty("io.sentry.distribution.project-slug", "")
-    properties.setProperty("io.sentry.distribution.org-auth-token", "")
+    properties.setProperty("io.sentry.distribution.auth-token", "")
     properties.setProperty("io.sentry.distribution.build-configuration", "")
 
     val options = SentryOptions()
