@@ -231,10 +231,9 @@ public class SentryAppender extends AbstractAppender {
           SentryAttribute.stringAttribute("sentry.message.template", nonFormattedMessage));
     }
 
-    final Map<String, String> contextData = loggingEvent.getContextData().toMap();
-    if (contextData != null) {
-      LoggerPropertiesUtil.applyPropertiesToAttributes(attributes, contextData);
-    }
+    final @NotNull Map<String, String> contextData = loggingEvent.getContextData().toMap();
+    final @NotNull List<String> contextTags = ScopesAdapter.getInstance().getOptions().getContextTags();
+    LoggerPropertiesUtil.applyPropertiesToAttributes(attributes, contextTags, contextData);
 
     final @NotNull SentryLogParameters params = SentryLogParameters.create(attributes);
     params.setOrigin("auto.log.log4j2");
@@ -278,16 +277,12 @@ public class SentryAppender extends AbstractAppender {
       event.setExtra("marker", loggingEvent.getMarker().toString());
     }
 
-    final Map<String, String> contextData =
-        CollectionUtils.filterMapEntries(
-            loggingEvent.getContextData().toMap(), entry -> entry.getValue() != null);
-    if (!contextData.isEmpty()) {
+    final Map<String, String> contextData = loggingEvent.getContextData().toMap();
+    if (contextData != null) {
       // get tags from ScopesAdapter options to allow getting the correct tags if Sentry has been
       // initialized somewhere else
-      final List<String> contextTags = scopes.getOptions().getContextTags();
-      if (contextTags != null) {
-        LoggerPropertiesUtil.applyPropertiesToEvent(event, contextTags, contextData);
-      }
+      final @NotNull List<String> contextTags = scopes.getOptions().getContextTags();
+      LoggerPropertiesUtil.applyPropertiesToEvent(event, contextTags, contextData);
       // put the rest of mdc tags in contexts
       if (!contextData.isEmpty()) {
         event.getContexts().put("Context Data", contextData);

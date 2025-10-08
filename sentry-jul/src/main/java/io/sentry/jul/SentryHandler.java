@@ -161,9 +161,10 @@ public class SentryHandler extends Handler {
       attributes.add(SentryAttribute.stringAttribute("sentry.message.template", message));
     }
 
-    final Map<String, String> mdcProperties = MDC.getMDCAdapter().getCopyOfContextMap();
+    final @Nullable Map<String, String> mdcProperties = MDC.getMDCAdapter().getCopyOfContextMap();
     if (mdcProperties != null) {
-      LoggerPropertiesUtil.applyPropertiesToAttributes(attributes, mdcProperties);
+      final List<String> contextTags = ScopesAdapter.getInstance().getOptions().getContextTags();
+      LoggerPropertiesUtil.applyPropertiesToAttributes(attributes, contextTags, mdcProperties);
     }
 
     final @NotNull SentryLogParameters params = SentryLogParameters.create(attributes);

@@ -187,10 +187,9 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
       arguments = loggingEvent.getArgumentArray();
     }
 
-    final Map<String, String> mdcProperties = loggingEvent.getMDCPropertyMap();
-    if (mdcProperties != null) {
-      LoggerPropertiesUtil.applyPropertiesToAttributes(attributes, mdcProperties);
-    }
+    final @NotNull Map<String, String> mdcProperties = loggingEvent.getMDCPropertyMap();
+    final @NotNull List<String> contextTags = ScopesAdapter.getInstance().getOptions().getContextTags();
+    LoggerPropertiesUtil.applyPropertiesToAttributes(attributes, contextTags, mdcProperties);
 
     final @NotNull SentryLogParameters params = SentryLogParameters.create(attributes);
     params.setOrigin("auto.log.logback");

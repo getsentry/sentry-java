@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /** Utility class for applying logger properties (e.g. MDC) to Sentry events and log attributes. */
 @ApiStatus.Internal
@@ -37,18 +38,25 @@ public final class LoggerPropertiesUtil {
   }
 
   /**
-   * Applies logger properties from a properties map to SentryAttributes for logs. Properties with
-   * null values are filtered out.
+   * Applies logger properties from a properties map to SentryAttributes for logs. Only the
+   * properties with keys that are found in `targetKeys` will be applied as attributes. Properties
+   * with null values are filtered out.
    *
    * @param attributes the SentryAttributes to add the properties to
+   * @param targetKeys the list of property keys to apply as attributes
    * @param properties the properties map (e.g. MDC)
    */
   @ApiStatus.Internal
   public static void applyPropertiesToAttributes(
-      final @NotNull SentryAttributes attributes, final @NotNull Map<String, String> properties) {
-    for (final Map.Entry<String, String> entry : properties.entrySet()) {
-      if (entry.getValue() != null) {
-        attributes.add(SentryAttribute.stringAttribute(entry.getKey(), entry.getValue()));
+      final @NotNull SentryAttributes attributes,
+      final @NotNull List<String> targetKeys,
+      final @NotNull Map<String, String> properties) {
+    if (!targetKeys.isEmpty() && !properties.isEmpty()) {
+      for (final String key : targetKeys) {
+        final @Nullable String value = properties.get(key);
+        if (value != null) {
+          attributes.add(SentryAttribute.stringAttribute(key, value));
+        }
       }
     }
   }
