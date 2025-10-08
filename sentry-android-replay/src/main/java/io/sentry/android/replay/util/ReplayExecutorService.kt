@@ -11,7 +11,7 @@ import java.util.concurrent.TimeUnit.MILLISECONDS
  * and log them.
  */
 internal class ReplayExecutorService(
-  delegate: ScheduledExecutorService,
+  private val delegate: ScheduledExecutorService,
   private val options: SentryOptions,
 ) : ScheduledExecutorService by delegate {
   override fun submit(task: Runnable): Future<*>? {
@@ -21,7 +21,7 @@ internal class ReplayExecutorService(
       return null
     }
     return try {
-      submit {
+      delegate.submit {
         try {
           task.run()
         } catch (e: Throwable) {
@@ -44,8 +44,8 @@ internal class ReplayExecutorService(
 
   override fun shutdown() {
     synchronized(this) {
-      if (isShutdown) {
-        return
+      if (!isShutdown) {
+        delegate.shutdown()
       }
       try {
         if (!awaitTermination(options.shutdownTimeoutMillis, MILLISECONDS)) {
