@@ -7083,7 +7083,6 @@ public final class io/sentry/util/LogUtils {
 public final class io/sentry/util/LoggerPropertiesUtil {
 	public fun <init> ()V
 	public static fun applyPropertiesToAttributes (Lio/sentry/SentryAttributes;Ljava/util/List;Ljava/util/Map;)V
-	public static fun applyPropertiesToAttributes (Lio/sentry/SentryAttributes;Ljava/util/Map;)V
 	public static fun applyPropertiesToEvent (Lio/sentry/SentryEvent;Ljava/util/List;Ljava/util/Map;)V
 }
 

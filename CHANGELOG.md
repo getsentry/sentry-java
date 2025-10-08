@@ -7,9 +7,9 @@
 - Attach MDC properties to logs as attributes ([#4786](https://github.com/getsentry/sentry-java/pull/4786))
   - MDC properties set using supported logging frameworks (Logback, Log4j2, java.util.Logging) are now attached to structured logs as attributes.
   - This means that you will be able to filter/aggregate logs in the product based on these properties.
-  - Only properties with keys matching the configured `contextTags` are sent as attributes. This is consistent with how MDC properties are applied as tags to events.
-  - To avoid sending certain properties, use the `beforeSendLog` hook. You can also set up [Advanced Data Scrubbing rules](https://docs.sentry.io/security-legal-pii/scrubbing/advanced-datascrubbing/) to redact sensitive information.
-  - Note that keys containing spaces are not supported.
+  - Only properties with keys matching the configured `contextTags` are sent as log attributes.
+    - You can configure which properties are sent using `options.setContextTags` if initalizing manually, or by specifying a comma-separated list of keys with a `context-tags` entry in `sentry.properties` or `sentry.contex-tags` in `application.properties`.
+    - Note that keys containing spaces are not supported.
 
 ### Fixes
 

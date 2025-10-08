@@ -232,7 +232,8 @@ public class SentryAppender extends AbstractAppender {
     }
 
     final @NotNull Map<String, String> contextData = loggingEvent.getContextData().toMap();
-    final @NotNull List<String> contextTags = ScopesAdapter.getInstance().getOptions().getContextTags();
+    final @NotNull List<String> contextTags =
+        ScopesAdapter.getInstance().getOptions().getContextTags();
     LoggerPropertiesUtil.applyPropertiesToAttributes(attributes, contextTags, contextData);
 
     final @NotNull SentryLogParameters params = SentryLogParameters.create(attributes);
@@ -278,8 +279,8 @@ public class SentryAppender extends AbstractAppender {
     }
 
     final Map<String, String> contextData =
-      CollectionUtils.filterMapEntries(
-        loggingEvent.getContextData().toMap(), entry -> entry.getValue() != null);
+        CollectionUtils.filterMapEntries(
+            loggingEvent.getContextData().toMap(), entry -> entry.getValue() != null);
     if (!contextData.isEmpty()) {
       // get tags from ScopesAdapter options to allow getting the correct tags if Sentry has been
       // initialized somewhere else

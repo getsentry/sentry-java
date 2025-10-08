@@ -188,7 +188,8 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
     }
 
     final @NotNull Map<String, String> mdcProperties = loggingEvent.getMDCPropertyMap();
-    final @NotNull List<String> contextTags = ScopesAdapter.getInstance().getOptions().getContextTags();
+    final @NotNull List<String> contextTags =
+        ScopesAdapter.getInstance().getOptions().getContextTags();
     LoggerPropertiesUtil.applyPropertiesToAttributes(attributes, contextTags, mdcProperties);
 
     final @NotNull SentryLogParameters params = SentryLogParameters.create(attributes);
