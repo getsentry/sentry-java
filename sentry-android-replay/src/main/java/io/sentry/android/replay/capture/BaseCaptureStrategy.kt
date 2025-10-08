@@ -24,7 +24,8 @@ import io.sentry.android.replay.ScreenshotRecorderConfig
 import io.sentry.android.replay.capture.CaptureStrategy.Companion.createSegment
 import io.sentry.android.replay.capture.CaptureStrategy.ReplaySegment
 import io.sentry.android.replay.gestures.ReplayGestureConverter
-import io.sentry.android.replay.util.submitSafely
+import io.sentry.android.replay.util.ReplayExecutorService
+import io.sentry.android.replay.util.ReplayRunnable
 import io.sentry.protocol.SentryId
 import io.sentry.rrweb.RRWebEvent
 import io.sentry.transport.ICurrentDateProvider
@@ -54,7 +55,9 @@ internal abstract class BaseCaptureStrategy(
   }
 
   private val persistingExecutor: ScheduledExecutorService by lazy {
-    Executors.newSingleThreadScheduledExecutor(ReplayPersistingExecutorServiceThreadFactory())
+    val delegate =
+      Executors.newSingleThreadScheduledExecutor(ReplayPersistingExecutorServiceThreadFactory())
+    ReplayExecutorService(delegate, options)
   }
   private val gestureConverter = ReplayGestureConverter(dateProvider)
 
@@ -185,7 +188,7 @@ internal abstract class BaseCaptureStrategy(
 
       private fun runInBackground(task: () -> Unit) {
         if (options.threadChecker.isMainThread) {
-          persistingExecutor.submitSafely(options, "$TAG.runInBackground") { task() }
+          persistingExecutor.submit(ReplayRunnable("$TAG.runInBackground") { task() })
         } else {
           try {
             task()

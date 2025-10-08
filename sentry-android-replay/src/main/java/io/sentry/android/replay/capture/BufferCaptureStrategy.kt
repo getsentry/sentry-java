@@ -14,8 +14,8 @@ import io.sentry.android.replay.ReplayCache
 import io.sentry.android.replay.ScreenshotRecorderConfig
 import io.sentry.android.replay.capture.CaptureStrategy.Companion.rotateEvents
 import io.sentry.android.replay.capture.CaptureStrategy.ReplaySegment
+import io.sentry.android.replay.util.ReplayRunnable
 import io.sentry.android.replay.util.sample
-import io.sentry.android.replay.util.submitSafely
 import io.sentry.protocol.SentryId
 import io.sentry.transport.ICurrentDateProvider
 import io.sentry.util.FileUtils
@@ -62,10 +62,12 @@ internal class BufferCaptureStrategy(
 
   override fun stop() {
     val replayCacheDir = cache?.replayCacheDir
-    replayExecutor.submitSafely(options, "$TAG.stop") {
-      FileUtils.deleteRecursively(replayCacheDir)
-      currentSegment = -1
-    }
+    replayExecutor.submit(
+      ReplayRunnable("$TAG.stop") {
+        FileUtils.deleteRecursively(replayCacheDir)
+        currentSegment = -1
+      }
+    )
     super.stop()
   }
 
@@ -115,14 +117,16 @@ internal class BufferCaptureStrategy(
     // have to do it before submitting, otherwise if the queue is busy, the timestamp won't be
     // reflecting the exact time of when it was captured
     val frameTimestamp = dateProvider.currentTimeMillis
-    replayExecutor.submitSafely(options, "$TAG.add_frame") {
-      cache?.store(frameTimestamp)
+    replayExecutor.submit(
+      ReplayRunnable("$TAG.add_frame") {
+        cache?.store(frameTimestamp)
 
-      val now = dateProvider.currentTimeMillis
-      val bufferLimit = now - options.sessionReplay.errorReplayDuration
-      screenAtStart = cache?.rotate(bufferLimit)
-      bufferedSegments.rotate(bufferLimit)
-    }
+        val now = dateProvider.currentTimeMillis
+        val bufferLimit = now - options.sessionReplay.errorReplayDuration
+        screenAtStart = cache?.rotate(bufferLimit)
+        bufferedSegments.rotate(bufferLimit)
+      }
+    )
   }
 
   override fun onConfigurationChanged(recorderConfig: ScreenshotRecorderConfig) {
@@ -225,19 +229,21 @@ internal class BufferCaptureStrategy(
     val duration = now - currentSegmentTimestamp.time
     val replayId = currentReplayId
 
-    replayExecutor.submitSafely(options, "$TAG.$taskName") {
-      val segment =
-        createSegmentInternal(
-          duration,
-          currentSegmentTimestamp,
-          replayId,
-          currentSegment,
-          currentConfig.recordingHeight,
-          currentConfig.recordingWidth,
-          currentConfig.frameRate,
-          currentConfig.bitRate,
-        )
-      onSegmentCreated(segment)
-    }
+    replayExecutor.submit(
+      ReplayRunnable("$TAG.$taskName") {
+        val segment =
+          createSegmentInternal(
+            duration,
+            currentSegmentTimestamp,
+            replayId,
+            currentSegment,
+            currentConfig.recordingHeight,
+            currentConfig.recordingWidth,
+            currentConfig.frameRate,
+            currentConfig.bitRate,
+          )
+        onSegmentCreated(segment)
+      }
+    )
   }
 }
