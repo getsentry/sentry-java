@@ -30,7 +30,10 @@ public final class LoggerPropertiesUtil {
       final @NotNull Map<String, String> properties) {
     if (!targetKeys.isEmpty() && !properties.isEmpty()) {
       for (final String key : targetKeys) {
-        if (properties.containsKey(key)) {
+        @Nullable String value = properties.remove(key)
+        if (value != null) {
+          event.setTag(key, value);
+        }
           event.setTag(key, properties.get(key));
           properties.remove(key);
         }
