@@ -74,7 +74,8 @@ class DebugMetaPropertiesApplierTest {
     // properties2 should end up being the ones set
     properties2.setProperty("io.sentry.distribution.project-slug", "project-from-second")
 
-    // properties3 also has distribution properties but since properties2 was first they are ignored.
+    // properties3 also has distribution properties but since properties2 was first they are
+    // ignored.
     properties3.setProperty("io.sentry.distribution.project-slug", "project-from-third")
 
     val options = SentryOptions()
