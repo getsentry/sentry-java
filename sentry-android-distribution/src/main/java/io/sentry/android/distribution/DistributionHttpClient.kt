@@ -22,7 +22,6 @@ internal class DistributionHttpClient(private val options: SentryOptions) {
 
   /** Parameters for checking updates. */
   data class UpdateCheckParams(
-    val mainBinaryIdentifier: String,
     val appId: String,
     val platform: String = "android",
     val versionCode: Long,
@@ -53,8 +52,7 @@ internal class DistributionHttpClient(private val options: SentryOptions) {
       append(
         "/api/0/projects/${URLEncoder.encode(orgSlug, "UTF-8")}/${URLEncoder.encode(projectSlug, "UTF-8")}/preprodartifacts/check-for-updates/"
       )
-      append("?main_binary_identifier=${URLEncoder.encode(params.mainBinaryIdentifier, "UTF-8")}")
-      append("&app_id=${URLEncoder.encode(params.appId, "UTF-8")}")
+      append("?app_id=${URLEncoder.encode(params.appId, "UTF-8")}")
       append("&platform=${URLEncoder.encode(params.platform, "UTF-8")}")
       append("&build_number=${URLEncoder.encode(params.versionCode.toString(), "UTF-8")}")
       append("&build_version=${URLEncoder.encode(params.versionName, "UTF-8")}")

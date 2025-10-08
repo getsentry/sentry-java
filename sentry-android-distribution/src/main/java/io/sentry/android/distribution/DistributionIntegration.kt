@@ -133,7 +133,6 @@ public class DistributionIntegration(context: Context) : Integration, IDistribut
       val appId = context.applicationInfo.packageName
 
       DistributionHttpClient.UpdateCheckParams(
-        mainBinaryIdentifier = appId,
         appId = appId,
         platform = "android",
         versionCode = versionCode,
