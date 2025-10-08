@@ -341,6 +341,11 @@ public class MainActivity extends AppCompatActivity {
                   });
         });
 
+    binding.openCameraActivity.setOnClickListener(
+        view -> {
+          startActivity(new Intent(this, CameraXActivity.class));
+        });
+
     Sentry.logger().log(SentryLogLevel.INFO, "Creating content view");
     setContentView(binding.getRoot());
 
