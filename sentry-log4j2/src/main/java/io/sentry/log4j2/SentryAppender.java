@@ -277,11 +277,13 @@ public class SentryAppender extends AbstractAppender {
       event.setExtra("marker", loggingEvent.getMarker().toString());
     }
 
-    final Map<String, String> contextData = loggingEvent.getContextData().toMap();
-    if (contextData != null) {
+    final Map<String, String> contextData =
+      CollectionUtils.filterMapEntries(
+        loggingEvent.getContextData().toMap(), entry -> entry.getValue() != null);
+    if (!contextData.isEmpty()) {
       // get tags from ScopesAdapter options to allow getting the correct tags if Sentry has been
       // initialized somewhere else
-      final @NotNull List<String> contextTags = scopes.getOptions().getContextTags();
+      final List<String> contextTags = scopes.getOptions().getContextTags();
       LoggerPropertiesUtil.applyPropertiesToEvent(event, contextTags, contextData);
       // put the rest of mdc tags in contexts
       if (!contextData.isEmpty()) {
