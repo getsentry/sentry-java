@@ -14,8 +14,9 @@ import org.jetbrains.annotations.Nullable;
 public final class LoggerPropertiesUtil {
 
   /**
-   * Applies logger properties from a map to a Sentry event as tags. Only the properties with keys
-   * that are found in `targetKeys` will be applied as tags.
+   * Applies logger properties from a map to a Sentry event as tags and context. The properties that
+   * have keys matching any of the `targetKeys` will be applied as tags, while the others will be
+   * reported in the `MDC` context.
    *
    * @param event the Sentry event to add tags to
    * @param targetKeys the list of property keys to apply as tags
@@ -33,6 +34,9 @@ public final class LoggerPropertiesUtil {
           event.setTag(key, properties.get(key));
           properties.remove(key);
         }
+      }
+      if (!properties.isEmpty()) {
+        event.getContexts().put("MDC", properties);
       }
     }
   }

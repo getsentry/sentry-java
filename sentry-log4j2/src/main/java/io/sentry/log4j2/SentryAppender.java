@@ -286,10 +286,6 @@ public class SentryAppender extends AbstractAppender {
       // initialized somewhere else
       final List<String> contextTags = scopes.getOptions().getContextTags();
       LoggerPropertiesUtil.applyPropertiesToEvent(event, contextTags, contextData);
-      // put the rest of mdc tags in contexts
-      if (!contextData.isEmpty()) {
-        event.getContexts().put("Context Data", contextData);
-      }
     }
 
     return event;

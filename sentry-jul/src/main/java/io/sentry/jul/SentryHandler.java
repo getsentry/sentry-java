@@ -320,10 +320,6 @@ public class SentryHandler extends Handler {
         // initialized somewhere else
         final List<String> contextTags = ScopesAdapter.getInstance().getOptions().getContextTags();
         LoggerPropertiesUtil.applyPropertiesToEvent(event, contextTags, mdcProperties);
-        // put the rest of mdc tags in contexts
-        if (!mdcProperties.isEmpty()) {
-          event.getContexts().put("MDC", mdcProperties);
-        }
       }
     }
     event.setExtra(THREAD_ID, record.getThreadID());
