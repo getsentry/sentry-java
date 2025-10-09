@@ -21,6 +21,8 @@ import io.sentry.util.PropagationTargetsUtils
 import io.sentry.util.SpanUtils
 import io.sentry.util.TracingUtils
 import io.sentry.util.UrlUtils
+import io.sentry.util.network.NetworkRequestData
+import io.sentry.util.network.ReplayNetworkRequestOrResponse
 import java.io.IOException
 import okhttp3.Interceptor
 import okhttp3.Request
@@ -172,18 +174,30 @@ public open class SentryOkHttpInterceptor(
     startTimestamp: Long,
   ) {
     val breadcrumb = Breadcrumb.http(request.url.toString(), request.method, code)
+
+    // Track request and response body sizes for the breadcrumb
+    var requestBodySize: Long? = null
+    var responseBodySize: Long? = null
+
     request.body?.contentLength().ifHasValidLength {
       breadcrumb.setData("http.request_content_length", it)
+      requestBodySize = it
     }
 
-    val hint = Hint().also { it.set(OKHTTP_REQUEST, request) }
-    response?.let {
-      it.body?.contentLength().ifHasValidLength { responseBodySize ->
-        breadcrumb.setData(SpanDataConvention.HTTP_RESPONSE_CONTENT_LENGTH_KEY, responseBodySize)
-      }
-
-      hint[OKHTTP_RESPONSE] = it
+    response?.body?.contentLength().ifHasValidLength {
+      breadcrumb.setData(SpanDataConvention.HTTP_RESPONSE_CONTENT_LENGTH_KEY, it)
+      responseBodySize = it
     }
+
+    val hint = Hint().also {
+      // Set the structured network data for replay
+      val networkData = createNetworkRequestData(request, response, requestBodySize, responseBodySize)
+      it.set("replay:networkDetails", networkData)
+
+//      it.set(OKHTTP_REQUEST, request)
+//      response?.let { resp -> it[OKHTTP_RESPONSE] = resp }
+    }
+
     // needs this as unix timestamp for rrweb
     breadcrumb.setData(SpanDataConvention.HTTP_START_TIMESTAMP, startTimestamp)
     breadcrumb.setData(
@@ -192,6 +206,116 @@ public open class SentryOkHttpInterceptor(
     )
 
     scopes.addBreadcrumb(breadcrumb, hint)
+  }
+
+  /**
+   * Extracts headers from OkHttp Headers object into a map
+   */
+  private fun okhttp3.Headers.toMap(): Map<String, String> {
+    val headers = mutableMapOf<String, String>()
+    for (name in names()) {
+      headers[name] = get(name) ?: ""
+    }
+    return headers
+  }
+
+  /**
+   * Extracts body metadata from OkHttp RequestBody or ResponseBody
+   * Note: We don't consume the actual body stream to avoid interfering with the request/response
+   */
+  private fun extractBodyMetadata(
+    contentLength: Long?,
+    contentType: okhttp3.MediaType?
+  ): Pair<Long?, Any?> {
+    val bodySize = contentLength?.takeIf { it >= 0 }
+    val bodyInfo = if (contentLength != null && contentLength != 0L) {
+      mapOf(
+        "contentType" to contentType?.toString(),
+        "hasBody" to true
+      )
+    } else null
+
+    return bodySize to bodyInfo
+  }
+
+  /**
+   * Creates a NetworkRequestData object from the request and response
+   */
+  private fun createNetworkRequestData(
+    request: Request,
+    response: Response?,
+    requestBodySize: Long?,
+    responseBodySize: Long?
+  ): NetworkRequestData {
+    // Log the incoming request details
+    println("SentryNetwork: Creating NetworkRequestData for: ${request.method} ${request.url}")
+    scopes.options.logger.log(
+      io.sentry.SentryLevel.INFO,
+      "SentryNetwork: Creating NetworkRequestData for: ${request.method} ${request.url}"
+    )
+
+    // Extract request data
+    val requestHeaders = request.headers.toMap()
+    val (reqBodySize, reqBodyInfo) = extractBodyMetadata(
+      request.body?.contentLength(),
+      request.body?.contentType()
+    )
+
+    scopes.options.logger.log(
+      io.sentry.SentryLevel.INFO,
+      "SentryNetwork: Request - Headers count: ${requestHeaders.size}, Body size: $reqBodySize, Body info: $reqBodyInfo"
+    )
+
+    val requestData = ReplayNetworkRequestOrResponse(
+      reqBodySize,
+      reqBodyInfo,
+      requestHeaders
+    )
+
+    // Extract response data if available
+    val responseData = response?.let {
+      val responseHeaders = it.headers.toMap()
+      val (respBodySize, respBodyInfo) = extractBodyMetadata(
+        it.body?.contentLength(),
+        it.body?.contentType()
+      )
+
+      scopes.options.logger.log(
+        io.sentry.SentryLevel.INFO,
+        "SentryNetwork: Response - Status: ${it.code}, Headers count: ${responseHeaders.size}, Body size: $respBodySize, Body info: $respBodyInfo"
+      )
+
+      ReplayNetworkRequestOrResponse(
+        respBodySize,
+        respBodyInfo,
+        responseHeaders
+      )
+    }
+
+    // Determine final body sizes (prefer the explicit sizes passed in)
+    val finalResponseBodySize = response?.let {
+      val (respBodySize, _) = extractBodyMetadata(
+        it.body?.contentLength(),
+        it.body?.contentType()
+      )
+      responseBodySize ?: respBodySize
+    }
+
+    val networkData = NetworkRequestData(
+      request.method,
+      response?.code,
+      requestBodySize ?: reqBodySize,
+      finalResponseBodySize,
+      requestData,
+      responseData
+    )
+
+    scopes.options.logger.log(
+      io.sentry.SentryLevel.INFO,
+      "SentryNetwork: Created NetworkRequestData: $networkData"
+    )
+
+    return networkData
   }
 
   private fun finishSpan(

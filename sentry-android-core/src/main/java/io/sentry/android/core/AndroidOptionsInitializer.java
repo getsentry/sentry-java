@@ -400,7 +400,11 @@ final class AndroidOptionsInitializer {
     if (isReplayAvailable) {
       final ReplayIntegration replay =
           new ReplayIntegration(context, CurrentDateProvider.getInstance());
-      replay.setBreadcrumbConverter(new DefaultReplayBreadcrumbConverter());
+      DefaultReplayBreadcrumbConverter replayBreadcrumbConverter = new DefaultReplayBreadcrumbConverter(options.getBeforeBreadcrumb());
+      options.setBeforeBreadcrumb(
+        replayBreadcrumbConverter
+      );
+      replay.setBreadcrumbConverter(replayBreadcrumbConverter);
       options.addIntegration(replay);
       options.setReplayController(replay);
     }
