@@ -2599,6 +2599,7 @@ public final class io/sentry/Sentry {
 	public static fun getLastEventId ()Lio/sentry/protocol/SentryId;
 	public static fun getSpan ()Lio/sentry/ISpan;
 	public static fun getTraceparent ()Lio/sentry/SentryTraceHeader;
+	public static fun hasScopes ()Z
 	public static fun init ()V
 	public static fun init (Lio/sentry/OptionsContainer;Lio/sentry/Sentry$OptionsConfiguration;)V
 	public static fun init (Lio/sentry/OptionsContainer;Lio/sentry/Sentry$OptionsConfiguration;Z)V
