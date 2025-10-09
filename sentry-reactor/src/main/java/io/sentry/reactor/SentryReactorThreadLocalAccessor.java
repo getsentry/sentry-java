@@ -16,7 +16,11 @@ public final class SentryReactorThreadLocalAccessor implements ThreadLocalAccess
 
   @Override
   public IScopes getValue() {
-    return Sentry.getCurrentScopes();
+    if (Sentry.hasScopes()) {
+      return Sentry.getCurrentScopes();
+    } else {
+      return NoOpScopes.getInstance();
+    }
   }
 
   @Override

@@ -112,6 +112,12 @@ public final class Sentry {
     return scopes;
   }
 
+  @ApiStatus.Internal
+  public static boolean hasScopes() {
+    final @Nullable IScopes scopes = getScopesStorage().get();
+    return scopes != null && !scopes.isNoOp();
+  }
+
   private static @NotNull IScopesStorage getScopesStorage() {
     return scopesStorage;
   }
