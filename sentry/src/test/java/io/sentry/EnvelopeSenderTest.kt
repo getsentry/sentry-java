@@ -61,8 +61,8 @@ class EnvelopeSenderTest {
     val sut = fixture.getSut()
     sut.processDirectory(File("i don't exist"))
     verify(fixture.logger)!!.log(
-      eq(SentryLevel.WARNING),
-      eq("Directory '%s' doesn't exist. No cached events to send."),
+      eq(SentryLevel.ERROR),
+      eq("Cache dir %s is null or is not a directory."),
       any<Any>(),
     )
     verifyNoMoreInteractions(fixture.scopes)
@@ -79,14 +79,14 @@ class EnvelopeSenderTest {
     sut.processDirectory(testFile)
     verify(fixture.logger)!!.log(
       eq(SentryLevel.ERROR),
-      eq("Cache dir %s is not a directory."),
+      eq("Cache dir %s is null or is not a directory."),
       any<Any>(),
     )
     verifyNoMoreInteractions(fixture.scopes)
   }
 
   @Test
-  fun `when directory has non event files, processDirectory logs that`() {
+  fun `when directory has non event files, processDirectory skips them`() {
     val sut = fixture.getSut()
     val testFile =
       File(
@@ -96,7 +96,8 @@ class EnvelopeSenderTest {
     testFile.deleteOnExit()
     verify(fixture.logger)!!.log(
       eq(SentryLevel.DEBUG),
-      eq("File '%s' doesn't match extension expected."),
+      eq("Processing %d items from cache dir %s"),
+      eq(0),
       any<Any>(),
     )
     verify(fixture.scopes, never())!!.captureEnvelope(any(), anyOrNull())
