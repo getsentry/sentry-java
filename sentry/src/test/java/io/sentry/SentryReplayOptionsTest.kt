@@ -34,4 +34,24 @@ class SentryReplayOptionsTest {
     assertEquals(100_000, replayOptions.quality.bitRate)
     assertEquals(1.0f, replayOptions.quality.sizeScale)
   }
+
+  @Test
+  fun testDefaultScreenshotStrategy() {
+    val options = SentryReplayOptions(false, null)
+    assertEquals(ScreenshotStrategyType.PIXEL_COPY, options.getScreenshotStrategy())
+  }
+
+  @Test
+  fun testSetScreenshotStrategyToCanvas() {
+    val options = SentryReplayOptions(false, null)
+    options.screenshotStrategy = ScreenshotStrategyType.CANVAS
+    assertEquals(ScreenshotStrategyType.CANVAS, options.getScreenshotStrategy())
+  }
+
+  @Test
+  fun testSetScreenshotStrategyToPixelCopy() {
+    val options = SentryReplayOptions(false, null)
+    options.screenshotStrategy = ScreenshotStrategyType.PIXEL_COPY
+    assertEquals(ScreenshotStrategyType.PIXEL_COPY, options.getScreenshotStrategy())
+  }
 }
