@@ -22,27 +22,23 @@ import android.graphics.Region
 import android.graphics.RenderNode
 import android.graphics.fonts.Font
 import android.graphics.text.MeasuredText
-import android.media.Image
 import android.media.ImageReader
-import android.os.Handler
-import android.os.HandlerThread
 import android.view.View
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
+import io.sentry.android.replay.ExecutorProvider
 import io.sentry.android.replay.ScreenshotRecorderCallback
 import io.sentry.android.replay.ScreenshotRecorderConfig
 import io.sentry.android.replay.util.submitSafely
 import io.sentry.util.IntegrationUtils
-import java.util.LinkedList
 import java.util.WeakHashMap
-import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.LazyThreadSafetyMode.NONE
-import kotlin.math.roundToInt
 
 @SuppressLint("UseKtx")
 internal class CanvasStrategy(
-  private val executor: ScheduledExecutorService,
+  private val executor: ExecutorProvider,
   private val screenshotRecorderCallback: ScreenshotRecorderCallback?,
   private val options: SentryOptions,
   private val config: ScreenshotRecorderConfig,
@@ -53,55 +49,77 @@ internal class CanvasStrategy(
     lazy(NONE) { Matrix().apply { preScale(config.scaleFactorX, config.scaleFactorY) } }
   private val lastCaptureSuccessful = AtomicBoolean(false)
   private val textIgnoringCanvas = TextIgnoringDelegateCanvas()
-  private var cachedPixels: IntArray? = null
 
-  private val freePictures: MutableList<PictureReaderHolder> =
-    LinkedList(
-      listOf(
-        PictureReaderHolder(config.recordingWidth, config.recordingHeight),
-        PictureReaderHolder(config.recordingWidth, config.recordingHeight),
-      )
+  private val isClosed = AtomicBoolean(false)
+
+  private val onImageAvailableListener: (holder: PictureReaderHolder) -> Unit = { holder ->
+    if (isClosed.get()) {
+      options.logger.log(SentryLevel.ERROR, "CanvasStrategy already closed, skipping image")
+    } else {
+      try {
+        val image = holder.reader.acquireLatestImage()
+        try {
+          if (image.planes.size > 0) {
+            val plane = image.planes[0]
+
+            val buffer = plane.buffer.rewind()
+            val pixelStride = plane.pixelStride
+            val rowStride = plane.rowStride
+            val rowPadding = rowStride - pixelStride * holder.width
+
+            val bitmap =
+              Bitmap.createBitmap(
+                holder.width + rowPadding / pixelStride,
+                holder.height,
+                Bitmap.Config.ARGB_8888,
+              )
+
+            bitmap.copyPixelsFromBuffer(buffer)
+
+            screenshot = bitmap
+            lastCaptureSuccessful.set(true)
+            screenshotRecorderCallback?.onScreenshotRecorded(bitmap)
+          }
+        } finally {
+          image.close()
+        }
+      } catch (e: Throwable) {
+        options.logger.log(SentryLevel.ERROR, "CanvasStrategy: image processing failed", e)
+      } finally {
+        freePictureRef.set(holder)
+      }
+    }
+  }
+
+  private var freePictureRef =
+    AtomicReference(
+      PictureReaderHolder(config.recordingWidth, config.recordingHeight, onImageAvailableListener)
     )
-  private val unprocessedPictures: MutableList<PictureReaderHolder> = LinkedList()
 
-  private val processingThread = HandlerThread("screenshot_recorder.canvas")
-  private val processingHandler: Handler
+  private var unprocessedPictureRef = AtomicReference<PictureReaderHolder>(null)
 
   init {
-    processingThread.start()
-    processingHandler = Handler(processingThread.looper)
-
     IntegrationUtils.addIntegrationToSdkVersion("ReplayCanvasStrategy")
   }
 
+  @SuppressLint("NewApi")
   private val pictureRenderTask = Runnable {
-    val holder: PictureReaderHolder? =
-      synchronized(unprocessedPictures) {
-        when {
-          unprocessedPictures.isNotEmpty() -> unprocessedPictures.removeAt(0)
-          else -> null
-        }
-      }
+    if (isClosed.get()) {
+      options.logger.log(
+        SentryLevel.DEBUG,
+        "Canvas Strategy already closed, skipping picture render",
+      )
+      return@Runnable
+    }
+    val holder = unprocessedPictureRef.getAndSet(null)
     if (holder == null) {
       return@Runnable
     }
+
     try {
-      holder.reader.setOnImageAvailableListener(
-        {
-          val hwImage = it?.acquireLatestImage()
-          if (hwImage != null) {
-            val hwScreenshot = toBitmap(hwImage)
-            screenshot = hwScreenshot
-            lastCaptureSuccessful.set(true)
-            screenshotRecorderCallback?.onScreenshotRecorded(hwScreenshot)
-            hwImage.close()
-          } else {
-            options.logger.log(SentryLevel.DEBUG, "Canvas Strategy: hardware image is null")
-          }
-          synchronized(freePictures) { freePictures.add(holder) }
-        },
-        processingHandler,
-      )
+      if (!holder.setup.getAndSet(true)) {
+        holder.reader.setOnImageAvailableListener(holder, executor.getBackgroundHandler())
+      }
 
       val surface = holder.reader.surface
       val canvas = surface.lockHardwareCanvas()
@@ -109,22 +127,18 @@ internal class CanvasStrategy(
       holder.picture.draw(canvas)
       surface.unlockCanvasAndPost(canvas)
     } catch (t: Throwable) {
+      freePictureRef.set(holder)
       options.logger.log(SentryLevel.ERROR, "Canvas Strategy: picture render failed", t)
     }
   }
 
   @SuppressLint("UnclosedTrace")
   override fun capture(root: View) {
-    val holder: PictureReaderHolder? =
-      synchronized(freePictures) {
-        when {
-          freePictures.isNotEmpty() -> freePictures.removeAt(0)
-          else -> null
-        }
-      }
+
+    val holder = freePictureRef.getAndSet(null)
     if (holder == null) {
       options.logger.log(SentryLevel.DEBUG, "No free Picture available, skipping capture")
-      executor.submitSafely(options, "screenshot_recorder.canvas", pictureRenderTask)
+      lastCaptureSuccessful.set(false)
       return
     }
 
@@ -134,9 +148,9 @@ internal class CanvasStrategy(
     root.draw(textIgnoringCanvas)
     holder.picture.endRecording()
 
-    synchronized(unprocessedPictures) { unprocessedPictures.add(holder) }
+    unprocessedPictureRef.set(holder)
 
-    executor.submitSafely(options, "screenshot_recorder.canvas", pictureRenderTask)
+    executor.getExecutor().submitSafely(options, "screenshot_recorder.canvas", pictureRenderTask)
   }
 
   override fun onContentChanged() {
@@ -144,12 +158,12 @@ internal class CanvasStrategy(
   }
 
   override fun close() {
+    isClosed.set(true)
     screenshot?.apply {
       if (!isRecycled) {
         recycle()
       }
     }
-    processingThread.quitSafely()
   }
 
   override fun lastCaptureSuccessful(): Boolean {
@@ -158,40 +172,11 @@ internal class CanvasStrategy(
 
   override fun emitLastScreenshot() {
     if (lastCaptureSuccessful()) {
-      screenshot?.let { screenshotRecorderCallback?.onScreenshotRecorded(it) }
-    }
-  }
-
-  private fun toBitmap(image: Image): Bitmap {
-    image.planes!!.let {
-      val plane = it[0]
-      val pixelCount = image.width * image.height
-
-      val pixels =
-        synchronized(this) {
-          if (cachedPixels == null || cachedPixels!!.size != pixelCount) {
-            cachedPixels = IntArray(pixelCount)
-          }
-          cachedPixels!!
+      screenshot?.let {
+        if (!it.isRecycled) {
+          screenshotRecorderCallback?.onScreenshotRecorded(it)
         }
-
-      // Do a bulk copy as it is more efficient than buffer.get then rearrange the pixels
-      // in memory from RGBA to ARGB for bitmap consumption
-      plane.buffer.asIntBuffer().get(pixels)
-      for (i in 0 until pixelCount) {
-        val color = pixels[i]
-        val red = color and 0xff
-        val green = color shr 8 and 0xff
-        val blue = color shr 16 and 0xff
-        val alpha = color shr 24 and 0xff
-        pixels[i] = Color.argb(alpha, red, green, blue)
       }
-      return Bitmap.createBitmap(
-        pixels,
-        image.width,
-        image.height,
-        android.graphics.Bitmap.Config.ARGB_8888,
-      )
     }
   }
 }
@@ -879,12 +864,33 @@ private class TextIgnoringDelegateCanvas : Canvas() {
     textPaint.colorFilter = paint.colorFilter
     val color = paint.color
     textPaint.color = Color.argb(100, Color.red(color), Color.green(color), Color.blue(color))
-    tmpRect.offset(x.roundToInt(), y.roundToInt())
-    drawRect(tmpRect, solidPaint)
+    drawRoundRect(
+      tmpRect.left.toFloat() + x,
+      tmpRect.top.toFloat() + y,
+      tmpRect.right.toFloat() + x,
+      tmpRect.bottom.toFloat() + y,
+      10f,
+      10f,
+      textPaint,
+    )
   }
 }
 
-private data class PictureReaderHolder(val width: Int, val height: Int) {
+private class PictureReaderHolder(
+  val width: Int,
+  val height: Int,
+  val listener: (holder: PictureReaderHolder) -> Unit,
+) : ImageReader.OnImageAvailableListener {
   val picture = Picture()
+
+  @SuppressLint("InlinedApi")
   val reader: ImageReader = ImageReader.newInstance(width, height, PixelFormat.RGBA_8888, 1)
+
+  var setup = AtomicBoolean(false)
+
+  override fun onImageAvailable(reader: ImageReader?) {
+    if (reader != null) {
+      listener(this)
+    }
+  }
 }
