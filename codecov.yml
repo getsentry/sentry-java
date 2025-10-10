@@ -20,3 +20,4 @@ ignore:
   - "sentry-system-test-support/*"
   - "sentry-test-support/*"
   - "sentry-samples/*"
+  - "sentry-async-profiler/src/main/java/io/sentry/asyncprofiler/vendor/asyncprofiler/**"

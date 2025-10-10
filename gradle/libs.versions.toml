@@ -38,6 +38,7 @@ compileSdk = "34"
 minSdk = "21"
 spotless = "7.0.4"
 gummyBears = "0.12.0"
+camerax = "1.3.0"
 
 [plugins]
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
@@ -132,7 +133,7 @@ quartz = { module = "org.quartz-scheduler:quartz", version = "2.3.0" }
 reactor-core = { module = "io.projectreactor:reactor-core", version = "3.5.3" }
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 retrofit-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "retrofit" }
-sentry-native-ndk = { module = "io.sentry:sentry-native-ndk", version = "0.10.1" }
+sentry-native-ndk = { module = "io.sentry:sentry-native-ndk", version = "0.11.2" }
 servlet-api = { module = "javax.servlet:javax.servlet-api", version = "3.1.0" }
 servlet-jakarta-api = { module = "jakarta.servlet:jakarta.servlet-api", version = "6.1.0" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
@@ -200,6 +201,13 @@ androidx-test-runner = { module = "androidx.test:runner", version = "1.6.2" }
 awaitility-kotlin = { module = "org.awaitility:awaitility-kotlin", version = "4.1.1" }
 awaitility-kotlin-spring7 = { module = "org.awaitility:awaitility-kotlin", version = "4.3.0" }
 awaitility3-kotlin = { module = "org.awaitility:awaitility-kotlin", version = "3.1.6" }
+
+# CameraX dependencies
+camerax-core = { module = "androidx.camera:camera-core", version.ref = "camerax" }
+camerax-camera2 = { module = "androidx.camera:camera-camera2", version.ref = "camerax" }
+camerax-lifecycle = { module = "androidx.camera:camera-lifecycle", version.ref = "camerax" }
+camerax-view = { module = "androidx.camera:camera-view", version.ref = "camerax" }
+
 hsqldb = { module = "org.hsqldb:hsqldb", version = "2.6.1" }
 javafaker = { module = "com.github.javafaker:javafaker", version = "1.0.2" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }

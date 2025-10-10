@@ -5,10 +5,7 @@ import io.sentry.hints.SessionEndHint;
 import io.sentry.hints.SessionStartHint;
 import io.sentry.logger.ILoggerApi;
 import io.sentry.logger.LoggerApi;
-import io.sentry.protocol.Feedback;
-import io.sentry.protocol.SentryId;
-import io.sentry.protocol.SentryTransaction;
-import io.sentry.protocol.User;
+import io.sentry.protocol.*;
 import io.sentry.transport.RateLimiter;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
@@ -16,6 +13,7 @@ import io.sentry.util.SpanUtils;
 import io.sentry.util.TracingUtils;
 import java.io.Closeable;
 import java.util.List;
+import java.util.concurrent.RejectedExecutionException;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -449,8 +447,18 @@ public final class Scopes implements IScopes {
         getOptions().getConnectionStatusProvider().close();
         final @NotNull ISentryExecutorService executorService = getOptions().getExecutorService();
         if (isRestarting) {
-          executorService.submit(
-              () -> executorService.close(getOptions().getShutdownTimeoutMillis()));
+          try {
+            executorService.submit(
+                () -> executorService.close(getOptions().getShutdownTimeoutMillis()));
+          } catch (RejectedExecutionException e) {
+            getOptions()
+                .getLogger()
+                .log(
+                    SentryLevel.WARNING,
+                    "Failed to submit executor service shutdown task during restart. Shutting down synchronously.",
+                    e);
+            executorService.close(getOptions().getShutdownTimeoutMillis());
+          }
         } else {
           executorService.close(getOptions().getShutdownTimeoutMillis());
         }
@@ -939,6 +947,20 @@ public final class Scopes implements IScopes {
       final @NotNull ISpanFactory spanFactory =
           maybeSpanFactory == null ? getOptions().getSpanFactory() : maybeSpanFactory;
 
+      // If continuous profiling is enabled in trace mode, let's start it unless skipProfiling is
+      // true in TransactionOptions.
+      // Profiler will sample on its own.
+      // Profiler is started before the transaction is created, so that the profiler id is available
+      // when the transaction starts
+      if (samplingDecision.getSampled()
+          && getOptions().isContinuousProfilingEnabled()
+          && getOptions().getProfileLifecycle() == ProfileLifecycle.TRACE
+          && transactionContext.getProfilerId().equals(SentryId.EMPTY_ID)) {
+        getOptions()
+            .getContinuousProfiler()
+            .startProfiler(ProfileLifecycle.TRACE, getOptions().getInternalTracesSampler());
+      }
+
       transaction =
           spanFactory.createTransaction(
               transactionContext, this, transactionOptions, compositePerformanceCollector);
@@ -960,15 +982,6 @@ public final class Scopes implements IScopes {
             // If the profiler is running and the current transaction is the app start, we bind it.
             transactionProfiler.bindTransaction(transaction);
           }
-        }
-
-        // If continuous profiling is enabled in trace mode, let's start it. Profiler will sample on
-        // its own.
-        if (getOptions().isContinuousProfilingEnabled()
-            && getOptions().getProfileLifecycle() == ProfileLifecycle.TRACE) {
-          getOptions()
-              .getContinuousProfiler()
-              .startProfiler(ProfileLifecycle.TRACE, getOptions().getInternalTracesSampler());
         }
       }
     }

@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -76,7 +77,14 @@ public final class LoggerBatchProcessor implements ILoggerBatchProcessor {
           || latestScheduledFlush.isCancelled()) {
         hasScheduled = true;
         final int flushAfterMs = immediately ? 0 : FLUSH_AFTER_MS;
-        scheduledFlush = executorService.schedule(new BatchRunnable(), flushAfterMs);
+        try {
+          scheduledFlush = executorService.schedule(new BatchRunnable(), flushAfterMs);
+        } catch (RejectedExecutionException e) {
+          hasScheduled = false;
+          options
+              .getLogger()
+              .log(SentryLevel.WARNING, "Logs batch processor flush task rejected", e);
+        }
       }
     }
   }

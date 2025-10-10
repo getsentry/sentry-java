@@ -56,6 +56,10 @@ public final class ExternalOptions {
   private @Nullable Boolean forceInit;
   private @Nullable Boolean captureOpenTelemetryEvents;
 
+  private @Nullable Double profileSessionSampleRate;
+  private @Nullable String profilingTracesDirPath;
+  private @Nullable ProfileLifecycle profileLifecycle;
+
   private @Nullable SentryOptions.Cron cron;
 
   @SuppressWarnings("unchecked")
@@ -202,6 +206,15 @@ public final class ExternalOptions {
 
     options.setEnableSpotlight(propertiesProvider.getBooleanProperty("enable-spotlight"));
     options.setSpotlightConnectionUrl(propertiesProvider.getProperty("spotlight-connection-url"));
+    options.setProfileSessionSampleRate(
+        propertiesProvider.getDoubleProperty("profile-session-sample-rate"));
+
+    options.setProfilingTracesDirPath(propertiesProvider.getProperty("profiling-traces-dir-path"));
+
+    String profileLifecycleString = propertiesProvider.getProperty("profile-lifecycle");
+    if (profileLifecycleString != null && !profileLifecycleString.isEmpty()) {
+      options.setProfileLifecycle(ProfileLifecycle.valueOf(profileLifecycleString.toUpperCase()));
+    }
 
     return options;
   }
@@ -524,5 +537,29 @@ public final class ExternalOptions {
 
   public @Nullable Boolean isEnableLogs() {
     return enableLogs;
+  }
+
+  public @Nullable Double getProfileSessionSampleRate() {
+    return profileSessionSampleRate;
+  }
+
+  public void setProfileSessionSampleRate(@Nullable Double profileSessionSampleRate) {
+    this.profileSessionSampleRate = profileSessionSampleRate;
+  }
+
+  public @Nullable String getProfilingTracesDirPath() {
+    return profilingTracesDirPath;
+  }
+
+  public void setProfilingTracesDirPath(@Nullable String profilingTracesDirPath) {
+    this.profilingTracesDirPath = profilingTracesDirPath;
+  }
+
+  public @Nullable ProfileLifecycle getProfileLifecycle() {
+    return profileLifecycle;
+  }
+
+  public void setProfileLifecycle(@Nullable ProfileLifecycle profileLifecycle) {
+    this.profileLifecycle = profileLifecycle;
   }
 }

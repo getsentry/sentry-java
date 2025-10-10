@@ -6,7 +6,9 @@ import static io.sentry.vendor.Base64.NO_WRAP;
 
 import io.sentry.clientreport.ClientReport;
 import io.sentry.exception.SentryEnvelopeException;
+import io.sentry.profiling.ProfilingServiceLoader;
 import io.sentry.protocol.SentryTransaction;
+import io.sentry.protocol.profiling.SentryProfile;
 import io.sentry.util.FileUtils;
 import io.sentry.util.JsonSerializationUtils;
 import io.sentry.util.Objects;
@@ -292,16 +294,34 @@ public final class SentryEnvelopeItem {
                         "Dropping profile chunk, because the file '%s' doesn't exists",
                         traceFile.getName()));
               }
-              // The payload of the profile item is a json including the trace file encoded with
-              // base64
-              final byte[] traceFileBytes =
-                  readBytesFromFile(traceFile.getPath(), MAX_PROFILE_CHUNK_SIZE);
-              final @NotNull String base64Trace =
-                  Base64.encodeToString(traceFileBytes, NO_WRAP | NO_PADDING);
-              if (base64Trace.isEmpty()) {
-                throw new SentryEnvelopeException("Profiling trace file is empty");
+
+              if (ProfileChunk.PLATFORM_JAVA.equals(profileChunk.getPlatform())) {
+                final IProfileConverter profileConverter =
+                    ProfilingServiceLoader.loadProfileConverter();
+                if (profileConverter != null) {
+                  try {
+                    final SentryProfile profile =
+                        profileConverter.convertFromFile(traceFile.getAbsolutePath());
+                    profileChunk.setSentryProfile(profile);
+                  } catch (Exception e) {
+                    throw new SentryEnvelopeException("Profile conversion failed", e);
+                  }
+                } else {
+                  throw new SentryEnvelopeException(
+                      "Could not load a ProfileConverter, dropping chunk.");
+                }
+              } else {
+                // The payload of the profile item is a json including the trace file encoded with
+                // base64
+                final byte[] traceFileBytes =
+                    readBytesFromFile(traceFile.getPath(), MAX_PROFILE_CHUNK_SIZE);
+                final @NotNull String base64Trace =
+                    Base64.encodeToString(traceFileBytes, NO_WRAP | NO_PADDING);
+                if (base64Trace.isEmpty()) {
+                  throw new SentryEnvelopeException("Profiling trace file is empty");
+                }
+                profileChunk.setSampledProfile(base64Trace);
               }
-              profileChunk.setSampledProfile(base64Trace);
 
               try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
                   final Writer writer = new BufferedWriter(new OutputStreamWriter(stream, UTF_8))) {
