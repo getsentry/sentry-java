@@ -26,6 +26,7 @@ internal class DistributionHttpClient(private val options: SentryOptions) {
     val platform: String = "android",
     val versionCode: Long,
     val versionName: String,
+    val buildConfiguration: String,
   )
 
   /**
@@ -56,8 +57,11 @@ internal class DistributionHttpClient(private val options: SentryOptions) {
       append("&platform=${URLEncoder.encode(params.platform, "UTF-8")}")
       append("&build_number=${URLEncoder.encode(params.versionCode.toString(), "UTF-8")}")
       append("&build_version=${URLEncoder.encode(params.versionName, "UTF-8")}")
+      append("&build_configuration=${URLEncoder.encode(params.buildConfiguration, "UTF-8")}")
     }
     val url = URL(urlString)
+
+    options.logger.log(SentryLevel.DEBUG, "Distribution API URL: $urlString")
 
     return try {
       makeRequest(url, authToken)

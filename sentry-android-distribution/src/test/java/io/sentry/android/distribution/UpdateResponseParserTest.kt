@@ -26,13 +26,15 @@ class UpdateResponseParserTest {
     val responseBody =
       """
       {
-        "updateAvailable": true,
-        "id": "update-123",
-        "buildVersion": "2.0.0",
-        "buildNumber": 42,
-        "downloadUrl": "https://example.com/download",
-        "appName": "Test App",
-        "createdDate": "2023-10-01T00:00:00Z"
+        "update": {
+          "id": "update-123",
+          "build_version": "2.0.0",
+          "build_number": 42,
+          "download_url": "https://example.com/download",
+          "app_name": "Test App",
+          "created_date": "2023-10-01T00:00:00Z"
+        },
+        "current": null
       }
     """
         .trimIndent()
@@ -54,7 +56,15 @@ class UpdateResponseParserTest {
     val responseBody =
       """
       {
-        "updateAvailable": false
+        "update": null,
+        "current": {
+          "id": "current-123",
+          "build_version": "1.0.0",
+          "build_number": 10,
+          "download_url": "https://example.com/download",
+          "app_name": "Test App",
+          "created_date": "2023-09-01T00:00:00Z"
+        }
       }
     """
         .trimIndent()
@@ -65,11 +75,18 @@ class UpdateResponseParserTest {
   }
 
   @Test
-  fun `parseResponse returns UpToDate when updateAvailable is missing`() {
+  fun `parseResponse returns UpToDate when update is missing`() {
     val responseBody =
       """
       {
-        "someOtherField": "value"
+        "current": {
+          "id": "current-123",
+          "build_version": "1.0.0",
+          "build_number": 10,
+          "download_url": "https://example.com/download",
+          "app_name": "Test App",
+          "created_date": "2023-09-01T00:00:00Z"
+        }
       }
     """
         .trimIndent()
@@ -123,8 +140,9 @@ class UpdateResponseParserTest {
     val responseBody =
       """
       {
-        "updateAvailable": true,
-        "buildVersion": "2.0.0"
+        "update": {
+          "build_version": "2.0.0"
+        }
       }
     """
         .trimIndent()
@@ -144,10 +162,14 @@ class UpdateResponseParserTest {
     val responseBody =
       """
       {
-        "updateAvailable": true,
-        "id": "update-123",
-        "buildVersion": "2.0.0",
-        "downloadUrl": "https://example.com/download"
+        "update": {
+          "id": "update-123",
+          "build_version": "2.0.0",
+          "build_number": 0,
+          "download_url": "https://example.com/download",
+          "app_name": "",
+          "created_date": ""
+        }
       }
     """
         .trimIndent()
@@ -181,10 +203,14 @@ class UpdateResponseParserTest {
     val responseBody =
       """
       {
-        "updateAvailable": true,
-        "id": null,
-        "buildVersion": "2.0.0",
-        "downloadUrl": "https://example.com/download"
+        "update": {
+          "id": null,
+          "build_version": "2.0.0",
+          "build_number": 10,
+          "download_url": "https://example.com/download",
+          "app_name": "Test App",
+          "created_date": "2023-10-01T00:00:00Z"
+        }
       }
     """
         .trimIndent()
@@ -204,9 +230,13 @@ class UpdateResponseParserTest {
     val responseBody =
       """
       {
-        "updateAvailable": true,
-        "buildVersion": "2.0.0",
-        "downloadUrl": "https://example.com/download"
+        "update": {
+          "build_version": "2.0.0",
+          "build_number": 10,
+          "download_url": "https://example.com/download",
+          "app_name": "Test App",
+          "created_date": "2023-10-01T00:00:00Z"
+        }
       }
     """
         .trimIndent()
@@ -226,9 +256,13 @@ class UpdateResponseParserTest {
     val responseBody =
       """
       {
-        "updateAvailable": true,
-        "id": "update-123",
-        "downloadUrl": "https://example.com/download"
+        "update": {
+          "id": "update-123",
+          "build_number": 10,
+          "download_url": "https://example.com/download",
+          "app_name": "Test App",
+          "created_date": "2023-10-01T00:00:00Z"
+        }
       }
     """
         .trimIndent()
@@ -248,9 +282,13 @@ class UpdateResponseParserTest {
     val responseBody =
       """
       {
-        "updateAvailable": true,
-        "id": "update-123",
-        "buildVersion": "2.0.0"
+        "update": {
+          "id": "update-123",
+          "build_version": "2.0.0",
+          "build_number": 10,
+          "app_name": "Test App",
+          "created_date": "2023-10-01T00:00:00Z"
+        }
       }
     """
         .trimIndent()
@@ -270,8 +308,11 @@ class UpdateResponseParserTest {
     val responseBody =
       """
       {
-        "updateAvailable": true,
-        "buildNumber": 42
+        "update": {
+          "build_number": 42,
+          "app_name": "Test App",
+          "created_date": "2023-10-01T00:00:00Z"
+        }
       }
     """
         .trimIndent()
@@ -293,10 +334,14 @@ class UpdateResponseParserTest {
     val responseBody =
       """
       {
-        "updateAvailable": true,
-        "id": "null",
-        "buildVersion": "2.0.0",
-        "downloadUrl": "https://example.com/download"
+        "update": {
+          "id": "null",
+          "build_version": "2.0.0",
+          "build_number": 10,
+          "download_url": "https://example.com/download",
+          "app_name": "Test App",
+          "created_date": "2023-10-01T00:00:00Z"
+        }
       }
     """
         .trimIndent()
