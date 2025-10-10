@@ -272,6 +272,11 @@ public class MainActivity extends AppCompatActivity {
           startActivity(new Intent(this, ProfilingActivity.class));
         });
 
+    binding.openCustomTabsActivity.setOnClickListener(
+        view -> {
+          startActivity(new Intent(this, CustomTabsActivity.class));
+        });
+
     binding.openFrameDataForSpans.setOnClickListener(
         view -> startActivity(new Intent(this, FrameDataForSpansActivity.class)));
 
