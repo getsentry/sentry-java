@@ -7,6 +7,7 @@ import io.sentry.SentryOptions
 import io.sentry.SpanDataConvention
 import io.sentry.rrweb.RRWebBreadcrumbEvent
 import io.sentry.rrweb.RRWebSpanEvent
+import io.sentry.util.network.NetworkBody
 import io.sentry.util.network.NetworkRequestData
 import io.sentry.util.network.ReplayNetworkRequestOrResponse
 import java.util.Date
@@ -424,8 +425,8 @@ class DefaultReplayBreadcrumbConverterTest {
       201,
       200L,
       400L,
-      ReplayNetworkRequestOrResponse(200L, mapOf("body" to "request"), mapOf()),
-      ReplayNetworkRequestOrResponse(400L, mapOf("body" to "response"), mapOf())
+      ReplayNetworkRequestOrResponse(200L, NetworkBody.JsonObject(mapOf("body" to "request")), mapOf()),
+      ReplayNetworkRequestOrResponse(400L, NetworkBody.JsonObject(mapOf("body" to "response")), mapOf())
     )
     val hint = Hint()
     hint.set("replay:networkDetails", networkData)

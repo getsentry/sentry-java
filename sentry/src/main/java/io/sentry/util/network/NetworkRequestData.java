@@ -1,22 +1,24 @@
 package io.sentry.util.network;
 
+import io.sentry.SentryOptions;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Data class for tracking network request and response information in replays.
- * Used by various HTTP integrations (OkHttp, Apache HttpClient, etc.) to capture
- * network data for replay functionality.
- * see https://github.com/getsentry/sentry-javascript/blob/632f0b953d99050c11b0edafb9f80b5f3ba88045/packages/replay-internal/src/types/performance.ts#L133-L140
+ * Data class for tracking network request and response information in replays. Used by various HTTP
+ * integrations (OkHttp, Apache HttpClient, etc.) to capture network data for replay functionality.
+ * see
+ * https://github.com/getsentry/sentry-javascript/blob/632f0b953d99050c11b0edafb9f80b5f3ba88045/packages/replay-internal/src/types/performance.ts#L133-L140
  */
 public final class NetworkRequestData {
-  private final @Nullable String method;
-  private final @Nullable Integer statusCode;
-  private final @Nullable Long requestBodySize;
-  private final @Nullable Long responseBodySize;
-  private final @Nullable ReplayNetworkRequestOrResponse request;
-  private final @Nullable ReplayNetworkRequestOrResponse response;
+  private @Nullable String method;
+  private @Nullable Integer statusCode;
+  private @Nullable Long requestBodySize;
+  private @Nullable Long responseBodySize;
+  private @Nullable ReplayNetworkRequestOrResponse request;
+  private @Nullable ReplayNetworkRequestOrResponse response;
 
-  public NetworkRequestData(
+  NetworkRequestData(
       @Nullable String method,
       @Nullable Integer statusCode,
       @Nullable Long requestBodySize,
@@ -55,15 +57,43 @@ public final class NetworkRequestData {
     return response;
   }
 
+  /**
+   * Populates this instance with request details obtained via {@link NetworkDetailCaptureUtils#createRequest}
+   *
+   */
+  public void setRequestDetails(
+      @NotNull ReplayNetworkRequestOrResponse requestData) {
+    this.request = requestData;
+    this.requestBodySize = requestData.getSize();
+  }
+
+  /**
+   * Populates this instance with request details obtained via {@link NetworkDetailCaptureUtils#createResponse}
+   */
+  public void setResponseDetails(
+      int statusCode,
+      @NotNull ReplayNetworkRequestOrResponse responseData) {
+    this.statusCode = statusCode;
+    this.response = responseData;
+    this.responseBodySize = responseData.getSize();
+  }
+
   @Override
   public String toString() {
-    return "NetworkRequestData{" +
-        "method='" + method + '\'' +
-        ", statusCode=" + statusCode +
-        ", requestBodySize=" + requestBodySize +
-        ", responseBodySize=" + responseBodySize +
-        ", request=" + request +
-        ", response=" + response +
-        '}';
+    return "NetworkRequestData{"
+        + "method='"
+        + method
+        + '\''
+        + ", statusCode="
+        + statusCode
+        + ", requestBodySize="
+        + requestBodySize
+        + ", responseBodySize="
+        + responseBodySize
+        + ", request="
+        + request
+        + ", response="
+        + response
+        + '}';
   }
 }

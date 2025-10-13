@@ -1,38 +1,33 @@
 package io.sentry.util.network;
 
+import io.sentry.SentryOptions;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
  * Data class for tracking HTTP request or response information in replays.
- * Captures essential information about the request/response without consuming
- * the actual body stream.
+ * See https://github.com/getsentry/sentry-javascript/blob/develop/packages/replay-internal/src/types/request.ts
  */
 public final class ReplayNetworkRequestOrResponse {
   private final @Nullable Long size;
-  private final @Nullable Object body; // Can be Map<*, *>, List<*>, or String
+  private final @Nullable NetworkBody body;
   private final @NotNull Map<String, String> headers;
 
   public ReplayNetworkRequestOrResponse(
-      @Nullable Long size,
-      @Nullable Object body,
-      @NotNull Map<String, String> headers) {
+      @Nullable Long size, @Nullable NetworkBody body, @NotNull Map<String, String> headers) {
     this.size = size;
     this.body = body;
     this.headers = headers != null ? headers : Collections.emptyMap();
-  }
-
-  public ReplayNetworkRequestOrResponse() {
-    this(null, null, Collections.emptyMap());
   }
 
   public @Nullable Long getSize() {
     return size;
   }
 
-  public @Nullable Object getBody() {
+  public @Nullable NetworkBody getBody() {
     return body;
   }
 
@@ -42,10 +37,13 @@ public final class ReplayNetworkRequestOrResponse {
 
   @Override
   public String toString() {
-    return "ReplayNetworkRequestOrResponse{" +
-        "size=" + size +
-        ", body=" + body +
-        ", headers=" + headers +
-        '}';
+    return "ReplayNetworkRequestOrResponse{"
+        + "size="
+        + size
+        + ", body="
+        + body
+        + ", headers="
+        + headers
+        + '}';
   }
 }
