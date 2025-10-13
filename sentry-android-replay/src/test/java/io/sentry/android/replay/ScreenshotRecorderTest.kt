@@ -1,5 +1,6 @@
 package io.sentry.android.replay
 
+import android.os.Handler
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.ScreenshotStrategyType
 import io.sentry.SentryOptions
@@ -25,8 +26,13 @@ class ScreenshotRecorderTest {
       return ScreenshotRecorder(
         ScreenshotRecorderConfig(100, 100, 1f, 1f, 1, 1000),
         options,
-        mock<MainLooperHandler>(),
-        mock<ScheduledExecutorService>(),
+        object : ExecutorProvider {
+          override fun getExecutor(): ScheduledExecutorService = mock<ScheduledExecutorService>()
+
+          override fun getMainLooperHandler(): MainLooperHandler = mock<MainLooperHandler>()
+
+          override fun getBackgroundHandler(): Handler = mock<Handler>()
+        },
         null,
       )
     }
