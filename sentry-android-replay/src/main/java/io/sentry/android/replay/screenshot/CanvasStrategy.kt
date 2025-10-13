@@ -30,11 +30,13 @@ import io.sentry.android.replay.ExecutorProvider
 import io.sentry.android.replay.ScreenshotRecorderCallback
 import io.sentry.android.replay.ScreenshotRecorderConfig
 import io.sentry.android.replay.util.submitSafely
+import io.sentry.util.AutoClosableReentrantLock
 import io.sentry.util.IntegrationUtils
 import java.util.WeakHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.LazyThreadSafetyMode.NONE
+import kotlin.use
 
 @SuppressLint("UseKtx")
 internal class CanvasStrategy(
@@ -44,7 +46,9 @@ internal class CanvasStrategy(
   private val config: ScreenshotRecorderConfig,
 ) : ScreenshotStrategy {
 
-  private var screenshot: Bitmap? = null
+  @Volatile private var screenshot: Bitmap? = null
+
+  private val screenshotLock = AutoClosableReentrantLock()
   private val prescaledMatrix by
     lazy(NONE) { Matrix().apply { preScale(config.scaleFactorX, config.scaleFactorY) } }
   private val lastCaptureSuccessful = AtomicBoolean(false)
@@ -62,23 +66,21 @@ internal class CanvasStrategy(
           if (image.planes.size > 0) {
             val plane = image.planes[0]
 
-            val buffer = plane.buffer.rewind()
-            val pixelStride = plane.pixelStride
-            val rowStride = plane.rowStride
-            val rowPadding = rowStride - pixelStride * holder.width
+            screenshotLock.acquire().use {
+              if (screenshot == null) {
+                screenshot =
+                  Bitmap.createBitmap(holder.width, holder.height, Bitmap.Config.ARGB_8888)
+              }
+              val bitmap = screenshot
+              if (bitmap == null || bitmap.isRecycled) {
+                return@use
+              }
 
-            val bitmap =
-              Bitmap.createBitmap(
-                holder.width + rowPadding / pixelStride,
-                holder.height,
-                Bitmap.Config.ARGB_8888,
-              )
-
-            bitmap.copyPixelsFromBuffer(buffer)
-
-            screenshot = bitmap
-            lastCaptureSuccessful.set(true)
-            screenshotRecorderCallback?.onScreenshotRecorded(bitmap)
+              val buffer = plane.buffer.rewind()
+              bitmap.copyPixelsFromBuffer(buffer)
+              lastCaptureSuccessful.set(true)
+              screenshotRecorderCallback?.onScreenshotRecorded(bitmap)
+            }
           }
         } finally {
           image.close()
@@ -159,9 +161,11 @@ internal class CanvasStrategy(
 
   override fun close() {
     isClosed.set(true)
-    screenshot?.apply {
-      if (!isRecycled) {
-        recycle()
+    screenshotLock.acquire().use {
+      screenshot?.apply {
+        if (!isRecycled) {
+          recycle()
+        }
       }
     }
   }
@@ -172,10 +176,9 @@ internal class CanvasStrategy(
 
   override fun emitLastScreenshot() {
     if (lastCaptureSuccessful()) {
-      screenshot?.let {
-        if (!it.isRecycled) {
-          screenshotRecorderCallback?.onScreenshotRecorded(it)
-        }
+      val bitmap = screenshot
+      if (bitmap != null && !bitmap.isRecycled) {
+        screenshotRecorderCallback?.onScreenshotRecorded(bitmap)
       }
     }
   }
