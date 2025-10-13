@@ -3,6 +3,7 @@ package io.sentry.samples.android;
 import android.app.Application;
 import android.os.StrictMode;
 import io.sentry.Sentry;
+import io.sentry.android.core.SentryAndroid;
 
 /** Apps. main Application. */
 public class MyApplication extends Application {
@@ -13,8 +14,12 @@ public class MyApplication extends Application {
     strictMode();
     super.onCreate();
 
+    // Smartlook.getInstance().getPreferences().setProjectKey("528377853758d75ddf24c84b801366e4dc6bf2d1");
+    // Smartlook.getInstance().getPreferences().setRenderingMode(RenderingMode.WIREFRAME);
+    // Smartlook.getInstance().start();
     // Example how to initialize the SDK manually which allows access to SentryOptions callbacks.
     // Make sure you disable the auto init via manifest meta-data: io.sentry.auto-init=false
+    SentryAndroid.init(this);
     // SentryAndroid.init(
     //    this,
     //    options -> {

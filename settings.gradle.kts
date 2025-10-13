@@ -12,6 +12,9 @@ dependencyResolutionManagement {
         google()
         mavenCentral()
         mavenLocal()
+        maven {
+            url = uri("https://sdk.smartlook.com/android/release")
+        }
     }
 }
 

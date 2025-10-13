@@ -121,6 +121,8 @@ dependencies {
     kotlin(Config.kotlinStdLib, org.jetbrains.kotlin.config.KotlinCompilerVersion.VERSION)
   )
 
+  //noinspection UseTomlInstead
+  implementation("com.smartlook.android:smartlook-analytics:2.3.2")
   implementation(projects.sentryAndroid)
   implementation(projects.sentryAndroidFragment)
   implementation(projects.sentryAndroidTimber)

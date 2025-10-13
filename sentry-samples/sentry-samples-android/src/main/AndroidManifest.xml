@@ -101,7 +101,7 @@
         <!--    <meta-data android:name="io.sentry.anr.enable" android:value="false" />-->
 
         <!--    how to disable the auto-init-->
-        <!--    <meta-data android:name="io.sentry.auto-init" android:value="false" />-->
+            <meta-data android:name="io.sentry.auto-init" android:value="false" />
 
         <!--    how to disable the NDK-->
         <!--    <meta-data android:name="io.sentry.ndk.enable" android:value="false" />-->
@@ -129,11 +129,11 @@
 <!--        <meta-data android:name="io.sentry.traces.profiling.sample-rate" android:value="1.0" />-->
 
         <!-- Enable profiling, adjust in production env -->
-        <meta-data android:name="io.sentry.traces.profiling.session-sample-rate" android:value="1.0" />
+        <meta-data android:name="io.sentry.traces.profiling.session-sample-rate" android:value="0.0" />
         <!-- Set profiling lifecycle, can be `manual` or `trace` -->
         <meta-data android:name="io.sentry.traces.profiling.lifecycle" android:value="manual" />
         <!-- Enable profiling on app start -->
-        <meta-data android:name="io.sentry.traces.profiling.start-on-app-start" android:value="true" />
+        <meta-data android:name="io.sentry.traces.profiling.start-on-app-start" android:value="false" />
 
         <!--    how to disable the Activity auto instrumentation for tracing-->
         <!--    <meta-data android:name="io.sentry.traces.activity.enable" android:value="false" />-->
