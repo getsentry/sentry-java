@@ -19,6 +19,7 @@ import io.sentry.NoOpContinuousProfiler;
 import io.sentry.NoOpSocketTagger;
 import io.sentry.NoOpTransactionProfiler;
 import io.sentry.NoopVersionDetector;
+import io.sentry.ReplayBreadcrumbConverter;
 import io.sentry.ScopeType;
 import io.sentry.SendFireAndForgetEnvelopeSender;
 import io.sentry.SendFireAndForgetOutboxSender;
@@ -247,6 +248,14 @@ final class AndroidOptionsInitializer {
       options.setCompositePerformanceCollector(new DefaultCompositePerformanceCollector(options));
     }
 
+    if (options.getReplayController() != null) { // TODO: Triple-check this should be a null check
+      ReplayBreadcrumbConverter replayBreadcrumbConverter = options.getReplayController().getBreadcrumbConverter();
+      replayBreadcrumbConverter.setUserBeforeBreadcrumbCallback(options.getBeforeBreadcrumb());
+      options.setBeforeBreadcrumb(
+        replayBreadcrumbConverter
+      );
+    }
+
     // Check if the profiler was already instantiated in the app start.
     // We use the Android profiler, that uses a global start/stop api, so we need to preserve the
     // state of the profiler, and it's only possible retaining the instance.
@@ -400,11 +409,7 @@ final class AndroidOptionsInitializer {
     if (isReplayAvailable) {
       final ReplayIntegration replay =
           new ReplayIntegration(context, CurrentDateProvider.getInstance());
-      DefaultReplayBreadcrumbConverter replayBreadcrumbConverter = new DefaultReplayBreadcrumbConverter(options.getBeforeBreadcrumb());
-      options.setBeforeBreadcrumb(
-        replayBreadcrumbConverter
-      );
-      replay.setBreadcrumbConverter(replayBreadcrumbConverter);
+      replay.setBreadcrumbConverter(new DefaultReplayBreadcrumbConverter());
       options.addIntegration(replay);
       options.setReplayController(replay);
     }

@@ -18,4 +18,14 @@ public final class NoOpReplayBreadcrumbConverter implements ReplayBreadcrumbConv
   public @Nullable RRWebEvent convert(final @NotNull Breadcrumb breadcrumb) {
     return null;
   }
+
+  @Override
+  public void setUserBeforeBreadcrumbCallback(
+      SentryOptions.@Nullable BeforeBreadcrumbCallback beforeBreadcrumbCallback) {}
+
+  @Override
+  public @Nullable Breadcrumb execute(
+      final @NotNull Breadcrumb breadcrumb, final @NotNull Hint hint) {
+    return breadcrumb;
+  }
 }

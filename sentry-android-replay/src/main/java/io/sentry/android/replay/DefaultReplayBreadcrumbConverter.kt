@@ -5,7 +5,6 @@ import io.sentry.Breadcrumb
 import io.sentry.Hint
 import io.sentry.ReplayBreadcrumbConverter
 import io.sentry.SentryLevel
-import io.sentry.SentryOptions
 import io.sentry.SentryOptions.BeforeBreadcrumbCallback
 import io.sentry.SpanDataConvention
 import io.sentry.rrweb.RRWebBreadcrumbEvent
@@ -14,9 +13,7 @@ import io.sentry.rrweb.RRWebSpanEvent
 import io.sentry.util.network.NetworkRequestData
 import kotlin.LazyThreadSafetyMode.NONE
 
-public open class DefaultReplayBreadcrumbConverter(
-  private val userBeforeBreadcrumbCallback: BeforeBreadcrumbCallback? = null
-) : ReplayBreadcrumbConverter, SentryOptions.BeforeBreadcrumbCallback {
+public open class DefaultReplayBreadcrumbConverter : ReplayBreadcrumbConverter {
   internal companion object {
     private val snakecasePattern by lazy(NONE) { "_[a-z]".toRegex() }
     private val supportedNetworkData =
@@ -32,7 +29,9 @@ public open class DefaultReplayBreadcrumbConverter(
 
   private var lastConnectivityState: String? = null
   private val httpBreadcrumbData = mutableMapOf<Breadcrumb, NetworkRequestData>()
+  private var userBeforeBreadcrumbCallback: BeforeBreadcrumbCallback? = null
 
+  // TODO: If user provided a new Breadcrumb object via their BeforeBreadcrumbCallback, is that reflected in the `Breadcrumb`s passed in here?
   override fun convert(breadcrumb: Breadcrumb): RRWebEvent? {
     var breadcrumbMessage: String? = null
     var breadcrumbCategory: String?
@@ -128,25 +127,29 @@ public open class DefaultReplayBreadcrumbConverter(
     }
   }
 
+  override fun setUserBeforeBreadcrumbCallback(beforeBreadcrumbCallback: BeforeBreadcrumbCallback?) {
+    this.userBeforeBreadcrumbCallback = beforeBreadcrumbCallback
+  }
+
   /**
-   * By default, ReplayIntegration provides its own BeforeBreadcrumbCallback,
-   * delegating to user-provided callback (if exists).
+   * Delegate to user-provided callback (if exists) to provide the final breadcrumb to process.
    */
   override fun execute(breadcrumb: Breadcrumb, hint: Hint): Breadcrumb? {
-    Log.d("SentryNetwork", "SentryNetwork: BeforeBreadcrumbCallback - Hint: $hint, Breadcrumb: $breadcrumb")
-    return userBeforeBreadcrumbCallback?.let {
-      it.execute(breadcrumb, hint)?.also { processedBreadcrumb ->
-        extractNetworkRequestDataFromHint(processedBreadcrumb, hint)?.let { networkData ->
-          httpBreadcrumbData[processedBreadcrumb] = networkData
-        }
-      }
-    } ?: run {
-      // No user callback - store hint and return original breadcrumb
-      extractNetworkRequestDataFromHint(breadcrumb, hint)?.let { networkData ->
-        httpBreadcrumbData[breadcrumb] = networkData
-      }
+    val callback = userBeforeBreadcrumbCallback
+    val result = if (callback != null) {
+      callback.execute(breadcrumb, hint)
+    } else {
       breadcrumb
     }
+
+    result?.let { finalBreadcrumb ->
+      extractNetworkRequestDataFromHint(finalBreadcrumb, hint)?.let { networkData ->
+        httpBreadcrumbData[finalBreadcrumb] = networkData
+      }
+    }
+
+    Log.d("SentryNetwork", "SentryNetwork: BeforeBreadcrumbCallback - Hint: $hint, Breadcrumb: $result")
+    return result
   }
 
   private fun extractNetworkRequestDataFromHint(breadcrumb: Breadcrumb, breadcrumbHint: Hint): NetworkRequestData? {
@@ -154,7 +157,6 @@ public open class DefaultReplayBreadcrumbConverter(
       return null
     }
 
-    // First try to get the structured network data from the hint
     val networkDetails = breadcrumbHint.get("replay:networkDetails") as? NetworkRequestData
     if (networkDetails != null) {
       Log.d("SentryNetwork", "SentryNetwork: Found structured NetworkRequestData in hint: $networkDetails")
@@ -252,7 +254,7 @@ public open class DefaultReplayBreadcrumbConverter(
           }
         }
       }
-      // Original breadcrumb data processing
+      // Original breadcrumb http data
       // TODO: Remove if superceded by more detailed data (above).
       for ((key, value) in breadcrumb.data) {
         if (key in supportedNetworkData) {
