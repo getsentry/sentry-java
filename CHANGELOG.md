@@ -10,10 +10,12 @@
   - Only properties with keys matching the configured `contextTags` are sent as log attributes.
     - You can configure which properties are sent using `options.setContextTags` if initalizing manually, or by specifying a comma-separated list of keys with a `context-tags` entry in `sentry.properties` or `sentry.contex-tags` in `application.properties`.
     - Note that keys containing spaces are not supported.
+- Add experimental Sentry Android Distribution module for integrating with Sentry Build Distribution to check for and install updates ([#4804](https://github.com/getsentry/sentry-java/pull/4804))
 
 ### Fixes
 
 - Use logger from options for JVM profiler ([#4771](https://github.com/getsentry/sentry-java/pull/4771))
+- Session Replay: Avoid deadlock when pausing replay if no connection ([#4788](https://github.com/getsentry/sentry-java/pull/4788))
 
 ### Miscellaneous
 

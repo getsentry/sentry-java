@@ -52,4 +52,27 @@ public final class UpdateInfo {
   public @Nullable String getCreatedDate() {
     return createdDate;
   }
+
+  @Override
+  public String toString() {
+    return "UpdateInfo{"
+        + "id='"
+        + id
+        + '\''
+        + ", buildVersion='"
+        + buildVersion
+        + '\''
+        + ", buildNumber="
+        + buildNumber
+        + ", downloadUrl='"
+        + downloadUrl
+        + '\''
+        + ", appName='"
+        + appName
+        + '\''
+        + ", createdDate='"
+        + createdDate
+        + '\''
+        + '}';
+  }
 }
