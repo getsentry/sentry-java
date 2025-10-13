@@ -23,6 +23,7 @@ import io.sentry.android.core.internal.debugmeta.AssetsDebugMetaLoader
 import io.sentry.android.core.internal.gestures.AndroidViewGestureTargetLocator
 import io.sentry.android.core.internal.modules.AssetsModulesLoader
 import io.sentry.android.core.internal.util.AndroidConnectionStatusProvider
+import io.sentry.android.core.internal.util.AndroidRuntimeManager
 import io.sentry.android.core.internal.util.AndroidThreadChecker
 import io.sentry.android.core.performance.AppStartMetrics
 import io.sentry.android.fragment.FragmentLifecycleIntegration
@@ -884,5 +885,11 @@ class AndroidOptionsInitializerTest {
     assertFalse {
       fixture.sentryOptions.compositePerformanceCollector is DefaultCompositePerformanceCollector
     }
+  }
+
+  @Test
+  fun `AndroidRuntimeManager is set in the options`() {
+    fixture.initSut()
+    assertIs<AndroidRuntimeManager>(fixture.sentryOptions.runtimeManager)
   }
 }

@@ -579,7 +579,8 @@ public final class Sentry {
     return true;
   }
 
-  @SuppressWarnings("FutureReturnValueIgnored")
+  // older AGP versions do not support method references
+  @SuppressWarnings({"FutureReturnValueIgnored", "Convert2MethodRef"})
   private static void initConfigurations(final @NotNull SentryOptions options) {
     final @NotNull ILogger logger = options.getLogger();
     logger.log(SentryLevel.INFO, "Initializing SDK with DSN: '%s'", options.getDsn());
@@ -591,7 +592,7 @@ public final class Sentry {
     final String outboxPath = options.getOutboxPath();
     if (outboxPath != null) {
       final File outboxDir = new File(outboxPath);
-      outboxDir.mkdirs();
+      options.getRuntimeManager().runWithRelaxedPolicy(() -> outboxDir.mkdirs());
     } else {
       logger.log(SentryLevel.INFO, "No outbox dir path is defined in options.");
     }
@@ -599,7 +600,7 @@ public final class Sentry {
     final String cacheDirPath = options.getCacheDirPath();
     if (cacheDirPath != null) {
       final File cacheDir = new File(cacheDirPath);
-      cacheDir.mkdirs();
+      options.getRuntimeManager().runWithRelaxedPolicy(() -> cacheDir.mkdirs());
       final IEnvelopeCache envelopeCache = options.getEnvelopeDiskCache();
       // only overwrite the cache impl if it's not already set
       if (envelopeCache instanceof NoOpEnvelopeCache) {
@@ -612,7 +613,7 @@ public final class Sentry {
         && profilingTracesDirPath != null) {
 
       final File profilingTracesDir = new File(profilingTracesDirPath);
-      profilingTracesDir.mkdirs();
+      options.getRuntimeManager().runWithRelaxedPolicy(() -> profilingTracesDir.mkdirs());
 
       try {
         options

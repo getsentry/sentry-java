@@ -3356,6 +3356,7 @@ public class io/sentry/SentryOptions {
 	public fun getReadTimeoutMillis ()I
 	public fun getRelease ()Ljava/lang/String;
 	public fun getReplayController ()Lio/sentry/ReplayController;
+	public fun getRuntimeManager ()Lio/sentry/util/runtime/IRuntimeManager;
 	public fun getSampleRate ()Ljava/lang/Double;
 	public fun getScopeObservers ()Ljava/util/List;
 	public fun getSdkVersion ()Lio/sentry/protocol/SdkVersion;
@@ -3498,6 +3499,7 @@ public class io/sentry/SentryOptions {
 	public fun setReadTimeoutMillis (I)V
 	public fun setRelease (Ljava/lang/String;)V
 	public fun setReplayController (Lio/sentry/ReplayController;)V
+	public fun setRuntimeManager (Lio/sentry/util/runtime/IRuntimeManager;)V
 	public fun setSampleRate (Ljava/lang/Double;)V
 	public fun setSdkVersion (Lio/sentry/protocol/SdkVersion;)V
 	public fun setSendClientReports (Z)V
@@ -7106,6 +7108,19 @@ public final class io/sentry/util/UrlUtils$UrlDetails {
 	public fun getQuery ()Ljava/lang/String;
 	public fun getUrl ()Ljava/lang/String;
 	public fun getUrlOrFallback ()Ljava/lang/String;
+}
+
+public abstract interface class io/sentry/util/runtime/IRuntimeManager {
+	public abstract fun runWithRelaxedPolicy (Lio/sentry/util/runtime/IRuntimeManager$IRuntimeManagerCallback;)Ljava/lang/Object;
+}
+
+public abstract interface class io/sentry/util/runtime/IRuntimeManager$IRuntimeManagerCallback {
+	public abstract fun run ()Ljava/lang/Object;
+}
+
+public final class io/sentry/util/runtime/NeutralRuntimeManager : io/sentry/util/runtime/IRuntimeManager {
+	public fun <init> ()V
+	public fun runWithRelaxedPolicy (Lio/sentry/util/runtime/IRuntimeManager$IRuntimeManagerCallback;)Ljava/lang/Object;
 }
 
 public abstract interface class io/sentry/util/thread/IThreadChecker {
