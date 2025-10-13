@@ -37,6 +37,7 @@ class DistributionHttpClientTest {
         appId = "com.emergetools.hackernews",
         versionName = "1.0.0",
         versionCode = 5L,
+        buildConfiguration = "release",
       )
 
     val response = httpClient.checkForUpdates(params)
