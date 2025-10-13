@@ -108,6 +108,10 @@ internal class WindowRecorder(
   }
 
   override fun onRootViewsChanged(root: View, added: Boolean) {
+    if (root.phoneWindow == null) {
+      options.logger.log(WARNING, "Root view does not have a phone window, skipping.")
+      return
+    }
     rootViewsLock.acquire().use {
       if (added) {
         rootViews.add(WeakReference(root))
