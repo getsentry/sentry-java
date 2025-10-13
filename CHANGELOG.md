@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Features
+
+- Add experimental Sentry Android Distribution module for integrating with Sentry Build Distribution to check for and install updates
+
 ### Fixes
 
 - Use logger from options for JVM profiler ([#4771](https://github.com/getsentry/sentry-java/pull/4771))
