@@ -59,7 +59,7 @@ public final class LoggerPropertiesUtil {
       for (final String key : targetKeys) {
         final @Nullable String value = properties.get(key);
         if (value != null) {
-          attributes.add(SentryAttribute.stringAttribute(key, value));
+          attributes.add(SentryAttribute.stringAttribute("mdc." + key, value));
         }
       }
     }
