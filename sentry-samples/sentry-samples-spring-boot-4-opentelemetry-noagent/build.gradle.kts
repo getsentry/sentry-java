@@ -38,7 +38,7 @@ tasks.withType<KotlinCompile>().configureEach {
 dependencies {
   implementation(libs.springboot4.starter)
   implementation(libs.springboot4.starter.actuator)
-  implementation(libs.springboot4.starter.aop)
+  implementation(libs.springboot4.starter.aspectj)
   implementation(libs.springboot4.starter.graphql)
   implementation(libs.springboot4.starter.jdbc)
   implementation(libs.springboot4.starter.quartz)

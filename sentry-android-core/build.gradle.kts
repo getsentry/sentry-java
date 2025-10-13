@@ -77,6 +77,7 @@ dependencies {
   compileOnly(projects.sentryAndroidTimber)
   compileOnly(projects.sentryAndroidReplay)
   compileOnly(projects.sentryCompose)
+  compileOnly(projects.sentryAndroidDistribution)
 
   // lifecycle processor, session tracking
   implementation(libs.androidx.lifecycle.common.java8)

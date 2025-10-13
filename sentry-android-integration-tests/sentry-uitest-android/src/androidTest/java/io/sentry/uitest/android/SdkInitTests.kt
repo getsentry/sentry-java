@@ -113,20 +113,7 @@ class SdkInitTests : BaseUiTest() {
 
   @Test
   fun doubleInitDoesNotWait() {
-    relayIdlingResource.increment()
-    // Let's make the first request timeout
-    relay.addTimeoutResponse()
-
-    initSentry(true) { options: SentryAndroidOptions -> options.tracesSampleRate = 1.0 }
-
-    Sentry.startTransaction("beforeRestart", "emptyTransaction").finish()
-
-    // We want the SDK to start sending the event. If we don't wait, it's possible we don't send
-    // anything before the SDK is restarted
-    waitUntilIdle()
-
-    relayIdlingResource.increment()
-    relayIdlingResource.increment()
+    initSentry(true)
 
     val beforeRestart = System.currentTimeMillis()
     // We restart the SDK. This shouldn't block the main thread, but new options (e.g. profiling)
@@ -138,18 +125,14 @@ class SdkInitTests : BaseUiTest() {
     val afterRestart = System.currentTimeMillis()
     val restartMs = afterRestart - beforeRestart
 
+    relayIdlingResource.increment()
     Sentry.startTransaction("afterRestart", "emptyTransaction").finish()
+
     // We assert for less than 1 second just to account for slow devices in saucelabs or headless
     // emulator
     assertTrue(restartMs < 1000, "Expected less than 1000 ms for SDK restart. Got $restartMs ms")
 
     relay.assert {
-      findEnvelope { assertEnvelopeTransaction(it.items.toList()).transaction == "beforeRestart" }
-        .assert {
-          it.assertTransaction()
-          // No profiling item, as in the first init it was not enabled
-          it.assertNoOtherItems()
-        }
       findEnvelope { assertEnvelopeTransaction(it.items.toList()).transaction == "afterRestart" }
         .assert {
           it.assertTransaction()

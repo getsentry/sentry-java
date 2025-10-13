@@ -45,7 +45,7 @@ dependencies {
   compileOnly(libs.reactor.core)
   compileOnly(libs.servlet.jakarta.api)
   compileOnly(libs.springboot4.starter)
-  compileOnly(libs.springboot4.starter.aop)
+  compileOnly(libs.springboot4.starter.aspectj)
   compileOnly(libs.springboot4.starter.graphql)
   compileOnly(libs.springboot4.starter.quartz)
   compileOnly(libs.springboot4.starter.security)
@@ -93,7 +93,7 @@ dependencies {
    */
   //  testImplementation(libs.springboot4.otel)
   testImplementation(libs.springboot4.starter)
-  testImplementation(libs.springboot4.starter.aop)
+  testImplementation(libs.springboot4.starter.aspectj)
   testImplementation(libs.springboot4.starter.graphql)
   testImplementation(libs.springboot4.starter.quartz)
   testImplementation(libs.springboot4.starter.security)

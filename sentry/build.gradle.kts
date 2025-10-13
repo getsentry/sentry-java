@@ -9,6 +9,7 @@ plugins {
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.buildconfig)
+  alias(libs.plugins.animalsniffer)
 }
 
 tasks.withType<KotlinCompile>().configureEach {
@@ -31,6 +32,9 @@ dependencies {
   testImplementation(libs.msgpack)
   testImplementation(libs.okio)
   testImplementation(projects.sentryTestSupport)
+
+  val gummyBearsModule = libs.gummy.bears.api21.get().module
+  signature("${gummyBearsModule}:${libs.versions.gummyBears.get()}@signature")
 }
 
 configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
@@ -44,6 +48,19 @@ tasks.jacocoTestReport {
   }
 }
 
+animalsniffer {
+  ignore =
+    listOf(
+      // We manually check on Android if it's available (API 26+).
+      "java.time.Instant"
+    )
+}
+
+tasks.animalsnifferMain {
+  // Uses java.util.function.Supplier, but must be manually invoked.
+  exclude("**/io/sentry/SentryWrapper.class")
+}
+
 tasks {
   jacocoTestCoverageVerification {
     violationRules { rule { limit { minimum = Config.QualityPlugins.Jacoco.minimumCoverage } } }
@@ -51,6 +68,7 @@ tasks {
   check {
     dependsOn(jacocoTestCoverageVerification)
     dependsOn(jacocoTestReport)
+    dependsOn(animalsnifferMain)
   }
   test {
     jvmArgs("--add-opens", "java.base/java.util.concurrent=ALL-UNNAMED")

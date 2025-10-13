@@ -15,6 +15,7 @@ import io.sentry.internal.modules.NoOpModulesLoader;
 import io.sentry.internal.modules.ResourcesModulesLoader;
 import io.sentry.logger.ILoggerApi;
 import io.sentry.opentelemetry.OpenTelemetryUtil;
+import io.sentry.profiling.ProfilingServiceLoader;
 import io.sentry.protocol.Feedback;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
@@ -677,6 +678,51 @@ public final class Sentry {
       }
       options.getBackpressureMonitor().start();
     }
+
+    initJvmContinuousProfiling(options);
+
+    options
+        .getLogger()
+        .log(
+            SentryLevel.INFO,
+            "Continuous profiler is enabled %s mode: %s",
+            options.isContinuousProfilingEnabled(),
+            options.getProfileLifecycle());
+  }
+
+  private static void initJvmContinuousProfiling(@NotNull SentryOptions options) {
+
+    if (options.isContinuousProfilingEnabled()
+        && options.getContinuousProfiler() == NoOpContinuousProfiler.getInstance()) {
+      try {
+        String profilingTracesDirPath = options.getProfilingTracesDirPath();
+        if (profilingTracesDirPath == null) {
+          File tempDir = new File(System.getProperty("java.io.tmpdir"), "sentry_profiling_traces");
+          boolean createDirectorySuccess = tempDir.mkdirs() || tempDir.exists();
+
+          if (!createDirectorySuccess) {
+            throw new IllegalArgumentException(
+                "Creating a fallback directory for profiling failed in "
+                    + tempDir.getAbsolutePath());
+          }
+          profilingTracesDirPath = tempDir.getAbsolutePath();
+          options.setProfilingTracesDirPath(profilingTracesDirPath);
+        }
+
+        final IContinuousProfiler continuousProfiler =
+            ProfilingServiceLoader.loadContinuousProfiler(
+                options.getLogger(),
+                profilingTracesDirPath,
+                options.getProfilingTracesHz(),
+                options.getExecutorService());
+
+        options.setContinuousProfiler(continuousProfiler);
+      } catch (Exception e) {
+        options
+            .getLogger()
+            .log(SentryLevel.ERROR, "Failed to create default profiling traces directory", e);
+      }
+    }
   }
 
   /** Close the SDK */
@@ -1287,7 +1333,6 @@ public final class Sentry {
     return getCurrentScopes().getBaggage();
   }
 
-  @ApiStatus.Experimental
   public static @NotNull SentryId captureCheckIn(final @NotNull CheckIn checkIn) {
     return getCurrentScopes().captureCheckIn(checkIn);
   }
@@ -1300,6 +1345,17 @@ public final class Sentry {
   @NotNull
   public static IReplayApi replay() {
     return getCurrentScopes().getScope().getOptions().getReplayController();
+  }
+
+  /**
+   * Returns the distribution API. This feature is only available when the
+   * sentry-android-distribution module is included in the build.
+   *
+   * @return The distribution API object that provides update checking functionality
+   */
+  @NotNull
+  public static IDistributionApi distribution() {
+    return getCurrentScopes().getScope().getOptions().getDistributionController();
   }
 
   public static void showUserFeedbackDialog() {

@@ -533,6 +533,8 @@ public class SentryOptions {
 
   private @NotNull ReplayController replayController = NoOpReplayController.getInstance();
 
+  private @NotNull IDistributionApi distributionController = NoOpDistributionApi.getInstance();
+
   /**
    * Controls whether to enable screen tracking. When enabled, the SDK will automatically capture
    * screen transitions as context for events.
@@ -599,6 +601,33 @@ public class SentryOptions {
 
   /** Runtime manager to manage runtime policies, like StrictMode on Android. */
   private @NotNull IRuntimeManager runtimeManager = new NeutralRuntimeManager();
+
+  private @Nullable String profilingTracesDirPath;
+
+  /**
+   * Configuration options for Sentry Build Distribution. NOTE: Ideally this would be in
+   * SentryAndroidOptions, but there's a circular dependency issue between sentry-android-core and
+   * sentry-android-distribution modules.
+   */
+  @ApiStatus.Experimental
+  public static final class DistributionOptions {
+    /** Organization authentication token for API access */
+    public String orgAuthToken = "";
+
+    /** Sentry organization slug */
+    public String orgSlug = "";
+
+    /** Sentry project slug */
+    public String projectSlug = "";
+
+    /** Base URL for Sentry API (defaults to https://sentry.io) */
+    public String sentryBaseUrl = "https://sentry.io";
+
+    /** Optional build configuration name for filtering (e.g., "debug", "release", "staging") */
+    public @Nullable String buildConfiguration = null;
+  }
+
+  private @NotNull DistributionOptions distribution = new DistributionOptions();
 
   /**
    * Adds an event processor
@@ -2082,11 +2111,23 @@ public class SentryOptions {
    * @return the profiling traces dir. path or null if not set
    */
   public @Nullable String getProfilingTracesDirPath() {
+    if (profilingTracesDirPath != null && !profilingTracesDirPath.isEmpty()) {
+      return dsnHash != null
+          ? new File(profilingTracesDirPath, dsnHash).getAbsolutePath()
+          : profilingTracesDirPath;
+    }
+
     final String cacheDirPath = getCacheDirPath();
+
     if (cacheDirPath == null) {
       return null;
     }
+
     return new File(cacheDirPath, "profiling_traces").getAbsolutePath();
+  }
+
+  public void setProfilingTracesDirPath(final @Nullable String profilingTracesDirPath) {
+    this.profilingTracesDirPath = profilingTracesDirPath;
   }
 
   /**
@@ -2828,6 +2869,17 @@ public class SentryOptions {
   }
 
   @ApiStatus.Experimental
+  public @NotNull IDistributionApi getDistributionController() {
+    return distributionController;
+  }
+
+  @ApiStatus.Experimental
+  public void setDistributionController(final @Nullable IDistributionApi distributionController) {
+    this.distributionController =
+        distributionController != null ? distributionController : NoOpDistributionApi.getInstance();
+  }
+
+  @ApiStatus.Experimental
   public boolean isEnableScreenTracking() {
     return enableScreenTracking;
   }
@@ -3331,6 +3383,18 @@ public class SentryOptions {
     if (options.isEnableLogs() != null) {
       getLogs().setEnabled(options.isEnableLogs());
     }
+
+    if (options.getProfileSessionSampleRate() != null) {
+      setProfileSessionSampleRate(options.getProfileSessionSampleRate());
+    }
+
+    if (options.getProfilingTracesDirPath() != null) {
+      setProfilingTracesDirPath(options.getProfilingTracesDirPath());
+    }
+
+    if (options.getProfileLifecycle() != null) {
+      setProfileLifecycle(options.getProfileLifecycle());
+    }
   }
 
   private @NotNull SdkVersion createSdkVersion() {
@@ -3555,6 +3619,16 @@ public class SentryOptions {
       @Nullable
       SentryLogEvent execute(@NotNull SentryLogEvent event);
     }
+  }
+
+  @ApiStatus.Experimental
+  public @NotNull DistributionOptions getDistribution() {
+    return distribution;
+  }
+
+  @ApiStatus.Experimental
+  public void setDistribution(final @NotNull DistributionOptions distribution) {
+    this.distribution = distribution != null ? distribution : new DistributionOptions();
   }
 
   public enum RequestSize {

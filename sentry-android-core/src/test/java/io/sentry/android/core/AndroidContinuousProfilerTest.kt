@@ -30,6 +30,7 @@ import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -124,6 +125,7 @@ class AndroidContinuousProfilerTest {
       false,
       false,
       false,
+      false,
     )
 
     AndroidOptionsInitializer.initializeIntegrationsAndProcessors(
@@ -166,9 +168,13 @@ class AndroidContinuousProfilerTest {
     // We are scheduling the profiler to stop at the end of the chunk, so it should still be running
     profiler.stopProfiler(ProfileLifecycle.MANUAL)
     assertTrue(profiler.isRunning)
+    assertNotEquals(SentryId.EMPTY_ID, profiler.profilerId)
+    assertNotEquals(SentryId.EMPTY_ID, profiler.chunkId)
     // We run the executor service to trigger the chunk finish, and the profiler shouldn't restart
     fixture.executor.runAll()
     assertFalse(profiler.isRunning)
+    assertEquals(SentryId.EMPTY_ID, profiler.profilerId)
+    assertEquals(SentryId.EMPTY_ID, profiler.chunkId)
   }
 
   @Test
@@ -396,6 +402,7 @@ class AndroidContinuousProfilerTest {
     val profiler = fixture.getSut()
     profiler.startProfiler(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
     assertTrue(profiler.isRunning)
+    val oldChunkId = profiler.chunkId
 
     fixture.executor.runAll()
     verify(fixture.mockLogger)
@@ -406,6 +413,7 @@ class AndroidContinuousProfilerTest {
     verify(fixture.mockLogger, times(2))
       .log(eq(SentryLevel.DEBUG), eq("Profile chunk finished. Starting a new one."))
     assertTrue(profiler.isRunning)
+    assertNotEquals(oldChunkId, profiler.chunkId)
   }
 
   @Test
@@ -507,6 +515,7 @@ class AndroidContinuousProfilerTest {
     profiler.onRateLimitChanged(rateLimiter)
     assertFalse(profiler.isRunning)
     assertEquals(SentryId.EMPTY_ID, profiler.profilerId)
+    assertEquals(SentryId.EMPTY_ID, profiler.chunkId)
     verify(fixture.mockLogger)
       .log(eq(SentryLevel.WARNING), eq("SDK is rate limited. Stopping profiler."))
   }
@@ -522,6 +531,7 @@ class AndroidContinuousProfilerTest {
     profiler.startProfiler(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
     assertFalse(profiler.isRunning)
     assertEquals(SentryId.EMPTY_ID, profiler.profilerId)
+    assertEquals(SentryId.EMPTY_ID, profiler.chunkId)
     verify(fixture.mockLogger)
       .log(eq(SentryLevel.WARNING), eq("SDK is rate limited. Stopping profiler."))
   }
@@ -540,6 +550,7 @@ class AndroidContinuousProfilerTest {
     profiler.startProfiler(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
     assertFalse(profiler.isRunning)
     assertEquals(SentryId.EMPTY_ID, profiler.profilerId)
+    assertEquals(SentryId.EMPTY_ID, profiler.chunkId)
     verify(fixture.mockLogger)
       .log(eq(SentryLevel.WARNING), eq("Device is offline. Stopping profiler."))
   }

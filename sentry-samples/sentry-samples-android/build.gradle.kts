@@ -137,6 +137,7 @@ dependencies {
 
   implementation(libs.androidx.activity.compose)
   implementation(libs.androidx.appcompat)
+  implementation(libs.androidx.constraintlayout)
   implementation(libs.androidx.fragment.ktx)
   implementation(libs.androidx.compose.foundation)
   implementation(libs.androidx.compose.foundation.layout)
@@ -149,7 +150,12 @@ dependencies {
   implementation(libs.retrofit.gson)
   implementation(libs.sentry.native.ndk)
   implementation(libs.timber)
+  implementation(libs.camerax.core)
+  implementation(libs.camerax.camera2)
+  implementation(libs.camerax.lifecycle)
+  implementation(libs.camerax.view)
 
+  debugImplementation(projects.sentryAndroidDistribution)
   debugImplementation(libs.leakcanary)
 }
 
