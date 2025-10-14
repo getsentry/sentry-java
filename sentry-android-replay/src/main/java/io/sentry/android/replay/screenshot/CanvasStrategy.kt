@@ -4,6 +4,7 @@ package io.sentry.android.replay.screenshot
 
 import android.annotation.SuppressLint
 import android.graphics.Bitmap
+import android.graphics.BitmapShader
 import android.graphics.BlendMode
 import android.graphics.Canvas
 import android.graphics.Color
@@ -23,7 +24,9 @@ import android.graphics.RenderNode
 import android.graphics.fonts.Font
 import android.graphics.text.MeasuredText
 import android.media.ImageReader
+import android.os.Build
 import android.view.View
+import androidx.annotation.RequiresApi
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.android.replay.ExecutorProvider
@@ -184,7 +187,7 @@ internal class CanvasStrategy(
   }
 }
 
-@SuppressLint("NewApi", "UseKtx")
+@SuppressLint("UseKtx")
 private class TextIgnoringDelegateCanvas : Canvas() {
 
   lateinit var delegate: Canvas
@@ -207,10 +210,12 @@ private class TextIgnoringDelegateCanvas : Canvas() {
     delegate.setBitmap(bitmap)
   }
 
+  @RequiresApi(Build.VERSION_CODES.Q)
   override fun enableZ() {
     delegate.enableZ()
   }
 
+  @RequiresApi(Build.VERSION_CODES.Q)
   override fun disableZ() {
     delegate.disableZ()
   }
@@ -220,15 +225,15 @@ private class TextIgnoringDelegateCanvas : Canvas() {
   }
 
   override fun getWidth(): Int {
-    return delegate.getWidth()
+    return delegate.width
   }
 
   override fun getHeight(): Int {
-    return delegate.getHeight()
+    return delegate.height
   }
 
   override fun getDensity(): Int {
-    return delegate.getDensity()
+    return delegate.density
   }
 
   override fun setDensity(density: Int) {
@@ -248,18 +253,24 @@ private class TextIgnoringDelegateCanvas : Canvas() {
     return result
   }
 
+  @Suppress("unused")
   fun save(saveFlags: Int): Int {
     return save()
   }
 
+  @Deprecated("Deprecated in Java")
   override fun saveLayer(bounds: RectF?, paint: Paint?, saveFlags: Int): Int {
     return delegate.saveLayer(bounds, paint, saveFlags)
   }
 
   override fun saveLayer(bounds: RectF?, paint: Paint?): Int {
-    return delegate.saveLayer(bounds, paint)
+    val shader = removeBitmapShader(paint)
+    val result = delegate.saveLayer(bounds, paint)
+    shader.let { paint?.shader = it }
+    return result
   }
 
+  @Deprecated("Deprecated in Java")
   override fun saveLayer(
     left: Float,
     top: Float,
@@ -272,9 +283,13 @@ private class TextIgnoringDelegateCanvas : Canvas() {
   }
 
   override fun saveLayer(left: Float, top: Float, right: Float, bottom: Float, paint: Paint?): Int {
-    return delegate.saveLayer(left, top, right, bottom, paint)
+    val shader = removeBitmapShader(paint)
+    val result = delegate.saveLayer(left, top, right, bottom, paint)
+    shader.let { paint?.shader = it }
+    return result
   }
 
+  @Deprecated("Deprecated in Java")
   override fun saveLayerAlpha(bounds: RectF?, alpha: Int, saveFlags: Int): Int {
     return delegate.saveLayerAlpha(bounds, alpha, saveFlags)
   }
@@ -283,6 +298,7 @@ private class TextIgnoringDelegateCanvas : Canvas() {
     return delegate.saveLayerAlpha(bounds, alpha)
   }
 
+  @Deprecated("Deprecated in Java")
   override fun saveLayerAlpha(
     left: Float,
     top: Float,
@@ -340,14 +356,17 @@ private class TextIgnoringDelegateCanvas : Canvas() {
     delegate.setMatrix(matrix)
   }
 
+  @Deprecated("Deprecated in Java")
   override fun getMatrix(ctm: Matrix) {
     delegate.getMatrix(ctm)
   }
 
+  @Deprecated("Deprecated in Java")
   override fun clipRect(rect: RectF, op: Region.Op): Boolean {
     return delegate.clipRect(rect, op)
   }
 
+  @Deprecated("Deprecated in Java")
   override fun clipRect(rect: Rect, op: Region.Op): Boolean {
     return delegate.clipRect(rect, op)
   }
@@ -360,6 +379,7 @@ private class TextIgnoringDelegateCanvas : Canvas() {
     return delegate.clipRect(rect)
   }
 
+  @Deprecated("Deprecated in Java")
   override fun clipRect(
     left: Float,
     top: Float,
@@ -378,22 +398,27 @@ private class TextIgnoringDelegateCanvas : Canvas() {
     return delegate.clipRect(left, top, right, bottom)
   }
 
+  @RequiresApi(Build.VERSION_CODES.O)
   override fun clipOutRect(rect: RectF): Boolean {
     return delegate.clipOutRect(rect)
   }
 
+  @RequiresApi(Build.VERSION_CODES.O)
   override fun clipOutRect(rect: Rect): Boolean {
     return delegate.clipOutRect(rect)
   }
 
+  @RequiresApi(Build.VERSION_CODES.O)
   override fun clipOutRect(left: Float, top: Float, right: Float, bottom: Float): Boolean {
     return delegate.clipOutRect(left, top, right, bottom)
   }
 
+  @RequiresApi(Build.VERSION_CODES.O)
   override fun clipOutRect(left: Int, top: Int, right: Int, bottom: Int): Boolean {
     return delegate.clipOutRect(left, top, right, bottom)
   }
 
+  @Deprecated("Deprecated in Java")
   override fun clipPath(path: Path, op: Region.Op): Boolean {
     return delegate.clipPath(path, op)
   }
@@ -402,34 +427,40 @@ private class TextIgnoringDelegateCanvas : Canvas() {
     return delegate.clipPath(path)
   }
 
+  @RequiresApi(Build.VERSION_CODES.O)
   override fun clipOutPath(path: Path): Boolean {
     return delegate.clipOutPath(path)
   }
 
   override fun getDrawFilter(): DrawFilter? {
-    return delegate.getDrawFilter()
+    return delegate.drawFilter
   }
 
   override fun setDrawFilter(filter: DrawFilter?) {
     delegate.setDrawFilter(filter)
   }
 
+  @Deprecated("Deprecated in Java")
   override fun quickReject(rect: RectF, type: EdgeType): Boolean {
     return delegate.quickReject(rect, type)
   }
 
+  @RequiresApi(Build.VERSION_CODES.R)
   override fun quickReject(rect: RectF): Boolean {
     return delegate.quickReject(rect)
   }
 
+  @Deprecated("Deprecated in Java")
   override fun quickReject(path: Path, type: EdgeType): Boolean {
     return delegate.quickReject(path, type)
   }
 
+  @RequiresApi(Build.VERSION_CODES.R)
   override fun quickReject(path: Path): Boolean {
     return delegate.quickReject(path)
   }
 
+  @Deprecated("Deprecated in Java")
   override fun quickReject(
     left: Float,
     top: Float,
@@ -440,6 +471,7 @@ private class TextIgnoringDelegateCanvas : Canvas() {
     return delegate.quickReject(left, top, right, bottom, type)
   }
 
+  @RequiresApi(Build.VERSION_CODES.R)
   override fun quickReject(left: Float, top: Float, right: Float, bottom: Float): Boolean {
     return delegate.quickReject(left, top, right, bottom)
   }
@@ -449,15 +481,21 @@ private class TextIgnoringDelegateCanvas : Canvas() {
   }
 
   override fun drawPicture(picture: Picture) {
-    delegate.drawPicture(picture)
+    solidPaint.colorFilter = null
+    solidPaint.color = Color.BLACK
+    delegate.drawRect(0f, 0f, picture.width.toFloat(), picture.height.toFloat(), solidPaint)
   }
 
   override fun drawPicture(picture: Picture, dst: RectF) {
-    delegate.drawPicture(picture, dst)
+    solidPaint.colorFilter = null
+    solidPaint.color = Color.BLACK
+    delegate.drawRect(dst, solidPaint)
   }
 
   override fun drawPicture(picture: Picture, dst: Rect) {
-    delegate.drawPicture(picture, dst)
+    solidPaint.colorFilter = null
+    solidPaint.color = Color.BLACK
+    delegate.drawRect(dst, solidPaint)
   }
 
   override fun drawArc(
@@ -467,7 +505,9 @@ private class TextIgnoringDelegateCanvas : Canvas() {
     useCenter: Boolean,
     paint: Paint,
   ) {
+    val shader = removeBitmapShader(paint)
     delegate.drawArc(oval, startAngle, sweepAngle, useCenter, paint)
+    shader.let { paint.shader = it }
   }
 
   override fun drawArc(
@@ -480,31 +520,40 @@ private class TextIgnoringDelegateCanvas : Canvas() {
     useCenter: Boolean,
     paint: Paint,
   ) {
+    val shader = removeBitmapShader(paint)
     delegate.drawArc(left, top, right, bottom, startAngle, sweepAngle, useCenter, paint)
+    shader.let { paint.shader = it }
   }
 
   override fun drawARGB(a: Int, r: Int, g: Int, b: Int) {
     delegate.drawARGB(a, r, g, b)
   }
 
+  @RequiresApi(Build.VERSION_CODES.O)
   override fun drawBitmap(bitmap: Bitmap, left: Float, top: Float, paint: Paint?) {
     val sampledColor = sampleBitmapColor(bitmap, paint, null)
     solidPaint.setColor(sampledColor)
+    solidPaint.colorFilter = null
     delegate.drawRect(left, top, left + bitmap.width, top + bitmap.height, solidPaint)
   }
 
+  @RequiresApi(Build.VERSION_CODES.O)
   override fun drawBitmap(bitmap: Bitmap, src: Rect?, dst: RectF, paint: Paint?) {
     val sampledColor = sampleBitmapColor(bitmap, paint, src)
     solidPaint.setColor(sampledColor)
+    solidPaint.colorFilter = null
     delegate.drawRect(dst, solidPaint)
   }
 
+  @RequiresApi(Build.VERSION_CODES.O)
   override fun drawBitmap(bitmap: Bitmap, src: Rect?, dst: Rect, paint: Paint?) {
     val sampledColor = sampleBitmapColor(bitmap, paint, src)
     solidPaint.setColor(sampledColor)
+    solidPaint.colorFilter = null
     delegate.drawRect(dst, solidPaint)
   }
 
+  @Deprecated("Deprecated in Java")
   override fun drawBitmap(
     colors: IntArray,
     offset: Int,
@@ -516,9 +565,10 @@ private class TextIgnoringDelegateCanvas : Canvas() {
     hasAlpha: Boolean,
     paint: Paint?,
   ) {
-    // TODO
+    // not supported
   }
 
+  @Deprecated("Deprecated in Java")
   override fun drawBitmap(
     colors: IntArray,
     offset: Int,
@@ -530,12 +580,15 @@ private class TextIgnoringDelegateCanvas : Canvas() {
     hasAlpha: Boolean,
     paint: Paint?,
   ) {
-    // TODO
+    // not supported
   }
 
+  @RequiresApi(Build.VERSION_CODES.O)
   override fun drawBitmap(bitmap: Bitmap, matrix: Matrix, paint: Paint?) {
     val sampledColor = sampleBitmapColor(bitmap, paint, null)
     solidPaint.setColor(sampledColor)
+    solidPaint.colorFilter = null
+
     val count = delegate.save()
     delegate.setMatrix(matrix)
     delegate.drawRect(0f, 0f, bitmap.width.toFloat(), bitmap.height.toFloat(), solidPaint)
@@ -552,27 +605,20 @@ private class TextIgnoringDelegateCanvas : Canvas() {
     colorOffset: Int,
     paint: Paint?,
   ) {
-    // TODO should we support this?
-    delegate.drawBitmapMesh(
-      bitmap,
-      meshWidth,
-      meshHeight,
-      verts,
-      vertOffset,
-      colors,
-      colorOffset,
-      paint,
-    )
+    // not supported
   }
 
   override fun drawCircle(cx: Float, cy: Float, radius: Float, paint: Paint) {
+    val shader = removeBitmapShader(paint)
     delegate.drawCircle(cx, cy, radius, paint)
+    shader.let { paint.shader = it }
   }
 
   override fun drawColor(color: Int) {
     delegate.drawColor(color)
   }
 
+  @RequiresApi(Build.VERSION_CODES.Q)
   override fun drawColor(color: Long) {
     delegate.drawColor(color)
   }
@@ -581,72 +627,104 @@ private class TextIgnoringDelegateCanvas : Canvas() {
     delegate.drawColor(color, mode)
   }
 
+  @RequiresApi(Build.VERSION_CODES.Q)
   override fun drawColor(color: Int, mode: BlendMode) {
     delegate.drawColor(color, mode)
   }
 
+  @RequiresApi(Build.VERSION_CODES.Q)
   override fun drawColor(color: Long, mode: BlendMode) {
     delegate.drawColor(color, mode)
   }
 
   override fun drawLine(startX: Float, startY: Float, stopX: Float, stopY: Float, paint: Paint) {
+    val shader = removeBitmapShader(paint)
     delegate.drawLine(startX, startY, stopX, stopY, paint)
+    shader.let { paint.shader = it }
   }
 
   override fun drawLines(pts: FloatArray, offset: Int, count: Int, paint: Paint) {
+    val shader = removeBitmapShader(paint)
     delegate.drawLines(pts, offset, count, paint)
+    shader.let { paint.shader = it }
   }
 
   override fun drawLines(pts: FloatArray, paint: Paint) {
+    val shader = removeBitmapShader(paint)
     delegate.drawLines(pts, paint)
+    shader.let { paint.shader = it }
   }
 
   override fun drawOval(oval: RectF, paint: Paint) {
+    val shader = removeBitmapShader(paint)
     delegate.drawOval(oval, paint)
+    shader.let { paint.shader = it }
   }
 
   override fun drawOval(left: Float, top: Float, right: Float, bottom: Float, paint: Paint) {
+    val shader = removeBitmapShader(paint)
     delegate.drawOval(left, top, right, bottom, paint)
+    shader.let { paint.shader = it }
   }
 
   override fun drawPaint(paint: Paint) {
     delegate.drawPaint(paint)
   }
 
+  @RequiresApi(Build.VERSION_CODES.S)
   override fun drawPatch(patch: NinePatch, dst: Rect, paint: Paint?) {
+    val shader = removeBitmapShader(paint)
     delegate.drawPatch(patch, dst, paint)
+    shader.let { paint?.shader = it }
   }
 
+  @RequiresApi(Build.VERSION_CODES.S)
   override fun drawPatch(patch: NinePatch, dst: RectF, paint: Paint?) {
+    val shader = removeBitmapShader(paint)
     delegate.drawPatch(patch, dst, paint)
+    shader.let { paint?.shader = it }
   }
 
   override fun drawPath(path: Path, paint: Paint) {
+    val shader = removeBitmapShader(paint)
     delegate.drawPath(path, paint)
+    shader.let { paint.shader = it }
   }
 
   override fun drawPoint(x: Float, y: Float, paint: Paint) {
+    val shader = removeBitmapShader(paint)
     delegate.drawPoint(x, y, paint)
+    shader.let { paint.shader = it }
   }
 
   override fun drawPoints(pts: FloatArray?, offset: Int, count: Int, paint: Paint) {
+    val shader = removeBitmapShader(paint)
     delegate.drawPoints(pts, offset, count, paint)
+    shader.let { paint.shader = it }
   }
 
   override fun drawPoints(pts: FloatArray, paint: Paint) {
+    val shader = removeBitmapShader(paint)
     delegate.drawPoints(pts, paint)
+    shader.let { paint.shader = it }
   }
 
   override fun drawRect(rect: RectF, paint: Paint) {
+    val shader = removeBitmapShader(paint)
     delegate.drawRect(rect, paint)
+    shader.let { paint.shader = it }
   }
 
   override fun drawRect(r: Rect, paint: Paint) {
+    val shader = removeBitmapShader(paint)
     delegate.drawRect(r, paint)
+    shader.let { paint.shader = it }
   }
 
   override fun drawRect(left: Float, top: Float, right: Float, bottom: Float, paint: Paint) {
+    val shader = removeBitmapShader(paint)
     delegate.drawRect(left, top, right, bottom, paint)
+    shader.let { paint.shader = it }
   }
 
   override fun drawRGB(r: Int, g: Int, b: Int) {
@@ -654,7 +732,9 @@ private class TextIgnoringDelegateCanvas : Canvas() {
   }
 
   override fun drawRoundRect(rect: RectF, rx: Float, ry: Float, paint: Paint) {
+    val shader = removeBitmapShader(paint)
     delegate.drawRoundRect(rect, rx, ry, paint)
+    shader.let { paint.shader = it }
   }
 
   override fun drawRoundRect(
@@ -666,9 +746,12 @@ private class TextIgnoringDelegateCanvas : Canvas() {
     ry: Float,
     paint: Paint,
   ) {
+    val shader = removeBitmapShader(paint)
     delegate.drawRoundRect(left, top, right, bottom, rx, ry, paint)
+    shader.let { paint.shader = it }
   }
 
+  @RequiresApi(Build.VERSION_CODES.Q)
   override fun drawDoubleRoundRect(
     outer: RectF,
     outerRx: Float,
@@ -678,9 +761,12 @@ private class TextIgnoringDelegateCanvas : Canvas() {
     innerRy: Float,
     paint: Paint,
   ) {
+    val shader = removeBitmapShader(paint)
     delegate.drawDoubleRoundRect(outer, outerRx, outerRy, inner, innerRx, innerRy, paint)
+    shader.let { paint.shader = it }
   }
 
+  @RequiresApi(Build.VERSION_CODES.Q)
   override fun drawDoubleRoundRect(
     outer: RectF,
     outerRadii: FloatArray,
@@ -688,7 +774,9 @@ private class TextIgnoringDelegateCanvas : Canvas() {
     innerRadii: FloatArray,
     paint: Paint,
   ) {
+    val shader = removeBitmapShader(paint)
     delegate.drawDoubleRoundRect(outer, outerRadii, inner, innerRadii, paint)
+    shader.let { paint.shader = it }
   }
 
   override fun drawGlyphs(
@@ -700,7 +788,7 @@ private class TextIgnoringDelegateCanvas : Canvas() {
     font: Font,
     paint: Paint,
   ) {
-    // TODO should we support this?
+    // not supported
   }
 
   override fun drawVertices(
@@ -717,40 +805,25 @@ private class TextIgnoringDelegateCanvas : Canvas() {
     indexCount: Int,
     paint: Paint,
   ) {
-    // TODO should we support this?
-    delegate.drawVertices(
-      mode,
-      vertexCount,
-      verts,
-      vertOffset,
-      texs,
-      texOffset,
-      colors,
-      colorOffset,
-      indices,
-      indexOffset,
-      indexCount,
-      paint,
-    )
-    // TODO should we support this?
+    // not supported
   }
 
   override fun drawRenderNode(renderNode: RenderNode) {
-    // TODO should we support this?
-    // delegate.drawRenderNode(renderNode)
+    // not supported
   }
 
   override fun drawMesh(mesh: Mesh, blendMode: BlendMode?, paint: Paint) {
-    // TODO should we support this?
-    // delegate.drawMesh(mesh, blendMode, paint)
+    // not supported
   }
 
+  @Deprecated("Deprecated in Java")
   override fun drawPosText(text: CharArray, index: Int, count: Int, pos: FloatArray, paint: Paint) {
-    // TODO implement
+    // not supported
   }
 
+  @Deprecated("Deprecated in Java")
   override fun drawPosText(text: String, pos: FloatArray, paint: Paint) {
-    // TODO implement
+    // not supported
   }
 
   override fun drawText(text: CharArray, index: Int, count: Int, x: Float, y: Float, paint: Paint) {
@@ -776,7 +849,7 @@ private class TextIgnoringDelegateCanvas : Canvas() {
     y: Float,
     paint: Paint,
   ) {
-    paint.getTextBounds(text, 0, text.length, tmpRect)
+    paint.getTextBounds(text.toString(), 0, text.length, tmpRect)
     drawMaskedText(paint, x, y)
   }
 
@@ -789,7 +862,7 @@ private class TextIgnoringDelegateCanvas : Canvas() {
     vOffset: Float,
     paint: Paint,
   ) {
-    // TODO implement
+    // not supported
   }
 
   override fun drawTextOnPath(
@@ -799,7 +872,7 @@ private class TextIgnoringDelegateCanvas : Canvas() {
     vOffset: Float,
     paint: Paint,
   ) {
-    // TODO implement
+    // not supported
   }
 
   override fun drawTextRun(
@@ -828,7 +901,7 @@ private class TextIgnoringDelegateCanvas : Canvas() {
     isRtl: Boolean,
     paint: Paint,
   ) {
-    paint.getTextBounds(text, start, end, tmpRect)
+    paint.getTextBounds(text.toString(), start, end, tmpRect)
     drawMaskedText(paint, x, y)
   }
 
@@ -843,11 +916,12 @@ private class TextIgnoringDelegateCanvas : Canvas() {
     isRtl: Boolean,
     paint: Paint,
   ) {
-    text.getBounds(start, end, tmpRect)
+    paint.getTextBounds(text.toString(), start, end, tmpRect)
     drawMaskedText(paint, x, y)
   }
 
-  private fun sampleBitmapColor(bitmap: Bitmap, paint: Paint?, region: Rect?): Int {
+  @RequiresApi(Build.VERSION_CODES.O)
+  private fun sampleBitmapColor(bitmap: Bitmap, paint: Paint?, src: Rect?): Int {
     if (bitmap.isRecycled) {
       return Color.BLACK
     }
@@ -856,8 +930,26 @@ private class TextIgnoringDelegateCanvas : Canvas() {
     if (cache != null && cache.first == bitmap.generationId) {
       return cache.second
     } else {
-      singlePixelCanvas.drawBitmap(bitmap.asShared(), region, singlePixelBitmapBounds, paint)
-      val color = singlePixelBitmap.getPixel(0, 0)
+      val color =
+        if (
+          bitmap.config == Bitmap.Config.HARDWARE && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+        ) {
+          // bitmap.asShared() ensures that the bitmap, even if it is hardware bitmap,
+          // can be drawn onto the single pixel software canvas
+          val shader = removeBitmapShader(paint)
+          singlePixelCanvas.drawBitmap(bitmap.asShared(), src, singlePixelBitmapBounds, paint)
+          shader?.let { paint?.shader = it }
+          singlePixelBitmap.getPixel(0, 0)
+        } else if (bitmap.config != Bitmap.Config.HARDWARE) {
+          // fallback for older android versions
+          val shader = removeBitmapShader(paint)
+          singlePixelCanvas.drawBitmap(bitmap, src, singlePixelBitmapBounds, paint)
+          shader?.let { paint?.shader = it }
+          singlePixelBitmap.getPixel(0, 0)
+        } else {
+          // fallback for older android versions
+          Color.BLACK
+        }
       bitmapColorCache[bitmap] = Pair(bitmap.generationId, color)
       return color
     }
@@ -876,6 +968,20 @@ private class TextIgnoringDelegateCanvas : Canvas() {
       10f,
       textPaint,
     )
+  }
+
+  private fun removeBitmapShader(paint: Paint?): BitmapShader? {
+    return if (paint == null) {
+      null
+    } else {
+      val shader = paint.shader
+      if (shader is BitmapShader) {
+        paint.shader = null
+        shader
+      } else {
+        null
+      }
+    }
   }
 }
 
