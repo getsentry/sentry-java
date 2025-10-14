@@ -11,7 +11,17 @@ class NeutralRuntimeManagerTest {
   fun `runWithRelaxedPolicy runs the code`() {
     var called = false
 
-    called = sut.runWithRelaxedPolicy { true }
+    called = sut.runWithRelaxedPolicy<Boolean> { true }
+
+    // Ensure the code ran
+    assertTrue(called)
+  }
+
+  @Test
+  fun `runWithRelaxedPolicy with runnable runs the code`() {
+    var called = false
+
+    sut.runWithRelaxedPolicy { called = true }
 
     // Ensure the code ran
     assertTrue(called)

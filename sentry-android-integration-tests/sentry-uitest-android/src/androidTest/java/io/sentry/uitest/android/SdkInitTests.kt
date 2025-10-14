@@ -11,6 +11,7 @@ import io.sentry.android.core.AndroidLogger
 import io.sentry.android.core.CurrentActivityHolder
 import io.sentry.android.core.NdkIntegration
 import io.sentry.android.core.SentryAndroidOptions
+import io.sentry.assertEnvelopeEvent
 import io.sentry.assertEnvelopeTransaction
 import io.sentry.protocol.SentryTransaction
 import java.util.concurrent.CountDownLatch
@@ -256,10 +257,49 @@ class SdkInitTests : BaseUiTest() {
   @Test
   fun initNotThrowStrictMode() {
     StrictMode.setThreadPolicy(StrictMode.ThreadPolicy.Builder().detectAll().penaltyDeath().build())
-    StrictMode.setVmPolicy(StrictMode.VmPolicy.Builder().detectAll().penaltyDeath().build())
+    StrictMode.setVmPolicy(
+      StrictMode.VmPolicy.Builder()
+        .detectActivityLeaks()
+        //        .detectCleartextNetwork() <- mockWebServer is on http, not https
+        .detectContentUriWithoutPermission()
+        .detectCredentialProtectedWhileLocked()
+        .detectFileUriExposure()
+        .detectImplicitDirectBoot()
+        .detectIncorrectContextUse()
+        .detectLeakedRegistrationObjects()
+        .detectLeakedSqlLiteObjects()
+        //        .detectNonSdkApiUsage() <- thrown by leakCanary
+        .detectUnsafeIntentLaunch()
+        //        .detectUntaggedSockets() <- thrown by mockWebServer
+        .penaltyDeath()
+        .build()
+    )
+    initSentry(true) { it.tracesSampleRate = 1.0 }
     val sampleScenario = launchActivity<EmptyActivity>()
-    initSentry()
+    relayIdlingResource.increment()
+    relayIdlingResource.increment()
+    Sentry.captureException(Exception("test"))
     sampleScenario.moveToState(Lifecycle.State.DESTROYED)
+
+    // Avoid interferences with other tests and assertion logic
+    StrictMode.setThreadPolicy(StrictMode.ThreadPolicy.LAX)
+    StrictMode.setVmPolicy(StrictMode.VmPolicy.LAX)
+
+    relay.assert {
+      findEnvelope {
+          assertEnvelopeEvent(it.items.toList()).exceptions!!.any { it.value == "test" }
+        }
+        .assert {
+          it.assertEvent()
+          it.assertNoOtherItems()
+        }
+      findEnvelope { assertEnvelopeTransaction(it.items.toList()).transaction == "EmptyActivity" }
+        .assert {
+          it.assertTransaction()
+          it.assertNoOtherItems()
+        }
+      assertNoOtherEnvelopes()
+    }
   }
 
   private fun assertDefaultIntegrations() {

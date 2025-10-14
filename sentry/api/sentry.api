@@ -7297,6 +7297,7 @@ public final class io/sentry/util/UrlUtils$UrlDetails {
 
 public abstract interface class io/sentry/util/runtime/IRuntimeManager {
 	public abstract fun runWithRelaxedPolicy (Lio/sentry/util/runtime/IRuntimeManager$IRuntimeManagerCallback;)Ljava/lang/Object;
+	public abstract fun runWithRelaxedPolicy (Ljava/lang/Runnable;)V
 }
 
 public abstract interface class io/sentry/util/runtime/IRuntimeManager$IRuntimeManagerCallback {
@@ -7306,6 +7307,7 @@ public abstract interface class io/sentry/util/runtime/IRuntimeManager$IRuntimeM
 public final class io/sentry/util/runtime/NeutralRuntimeManager : io/sentry/util/runtime/IRuntimeManager {
 	public fun <init> ()V
 	public fun runWithRelaxedPolicy (Lio/sentry/util/runtime/IRuntimeManager$IRuntimeManagerCallback;)Ljava/lang/Object;
+	public fun runWithRelaxedPolicy (Ljava/lang/Runnable;)V
 }
 
 public abstract interface class io/sentry/util/thread/IThreadChecker {
