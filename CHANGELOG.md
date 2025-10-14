@@ -5,6 +5,7 @@
 ### Features
 
 - Add experimental Sentry Android Distribution module for integrating with Sentry Build Distribution to check for and install updates ([#4804](https://github.com/getsentry/sentry-java/pull/4804))
+- Allow passing a different `Handler` to `SystemEventsBreadcrumbsIntegration` and `AndroidConnectionStatusProvider` so their callbacks are deliver to that handler ([#4808](https://github.com/getsentry/sentry-java/pull/4808))
 
 ### Fixes
 
