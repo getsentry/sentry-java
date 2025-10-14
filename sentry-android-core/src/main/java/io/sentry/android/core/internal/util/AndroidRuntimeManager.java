@@ -13,9 +13,11 @@ public final class AndroidRuntimeManager implements IRuntimeManager {
     final @NotNull StrictMode.VmPolicy oldVmPolicy = StrictMode.getVmPolicy();
     StrictMode.setThreadPolicy(StrictMode.ThreadPolicy.LAX);
     StrictMode.setVmPolicy(StrictMode.VmPolicy.LAX);
-    final @NotNull T t = toRun.run();
-    StrictMode.setThreadPolicy(oldPolicy);
-    StrictMode.setVmPolicy(oldVmPolicy);
-    return t;
+    try {
+      return toRun.run();
+    } finally {
+      StrictMode.setThreadPolicy(oldPolicy);
+      StrictMode.setVmPolicy(oldVmPolicy);
+    }
   }
 }

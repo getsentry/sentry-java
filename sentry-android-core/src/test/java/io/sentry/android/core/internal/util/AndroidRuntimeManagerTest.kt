@@ -53,4 +53,35 @@ class AndroidRuntimeManagerTest {
     // Ensure the code ran
     assertTrue(called)
   }
+
+  @Test
+  fun `runWithRelaxedPolicy changes policy and restores it afterwards even if the code throws`() {
+    var called = false
+    val threadPolicy = StrictMode.ThreadPolicy.Builder().detectAll().penaltyDeath().build()
+    val vmPolicy = StrictMode.VmPolicy.Builder().detectAll().penaltyDeath().build()
+
+    // Set and assert the StrictMode policies
+    StrictMode.setThreadPolicy(threadPolicy)
+    StrictMode.setVmPolicy(vmPolicy)
+
+    // Run the function and assert LAX policies
+    try {
+      sut.runWithRelaxedPolicy {
+        assertEquals(
+          StrictMode.ThreadPolicy.LAX.toString(),
+          StrictMode.getThreadPolicy().toString(),
+        )
+        assertEquals(StrictMode.VmPolicy.LAX.toString(), StrictMode.getVmPolicy().toString())
+        called = true
+        throw Exception("Test exception")
+      }
+    } catch (_: Exception) {}
+
+    // Policies should be reverted back
+    assertEquals(threadPolicy.toString(), StrictMode.getThreadPolicy().toString())
+    assertEquals(vmPolicy.toString(), StrictMode.getVmPolicy().toString())
+
+    // Ensure the code ran
+    assertTrue(called)
+  }
 }
