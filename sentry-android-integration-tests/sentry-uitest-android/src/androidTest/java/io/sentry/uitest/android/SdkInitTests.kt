@@ -1,5 +1,6 @@
 package io.sentry.uitest.android
 
+import android.os.StrictMode
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.launchActivity
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -250,6 +251,15 @@ class SdkInitTests : BaseUiTest() {
     activityScenario.moveToState(Lifecycle.State.DESTROYED)
 
     assertDefaultIntegrations()
+  }
+
+  @Test
+  fun initNotThrowStrictMode() {
+    StrictMode.setThreadPolicy(StrictMode.ThreadPolicy.Builder().detectAll().penaltyDeath().build())
+    StrictMode.setVmPolicy(StrictMode.VmPolicy.Builder().detectAll().penaltyDeath().build())
+    val sampleScenario = launchActivity<EmptyActivity>()
+    initSentry()
+    sampleScenario.moveToState(Lifecycle.State.DESTROYED)
   }
 
   private fun assertDefaultIntegrations() {
