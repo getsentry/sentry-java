@@ -269,7 +269,7 @@ class SdkInitTests : BaseUiTest() {
         .detectLeakedRegistrationObjects()
         .detectLeakedSqlLiteObjects()
         //        .detectNonSdkApiUsage() <- thrown by leakCanary
-        .detectUnsafeIntentLaunch()
+        //        .detectUnsafeIntentLaunch() <- fails CI with java.lang.NoSuchMethodError
         //        .detectUntaggedSockets() <- thrown by mockWebServer
         .penaltyDeath()
         .build()
