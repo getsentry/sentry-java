@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Features
+
+- Add experimental Sentry Android Distribution module for integrating with Sentry Build Distribution to check for and install updates ([#4804](https://github.com/getsentry/sentry-java/pull/4804))
+
 ### Fixes
 
 - Avoid StrictMode warnings ([#4724](https://github.com/getsentry/sentry-java/pull/4724))
