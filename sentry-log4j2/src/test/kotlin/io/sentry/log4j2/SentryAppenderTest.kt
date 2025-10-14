@@ -609,7 +609,7 @@ class SentryAppenderTest {
           val log = logs.items.first()
           assertEquals("testing MDC properties in logs", log.body)
           val attributes = log.attributes!!
-          assertEquals("someValue", attributes["someTag"]?.value)
+          assertEquals("someValue", attributes["mdc.someTag"]?.value)
           assertNull(attributes["otherTag"])
         }
       )
