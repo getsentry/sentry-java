@@ -4,6 +4,7 @@
 
 ### Features
 
+- Add experimental Sentry Android Distribution module for integrating with Sentry Build Distribution to check for and install updates ([#4804](https://github.com/getsentry/sentry-java/pull/4804))
 - Session Replay: Add new experimental Canvas Capture Strategy ([#4777](https://github.com/getsentry/sentry-java/pull/4777))
   - A new screenshot capture strategy that uses Android's Canvas API for more accurate text masking
   - Any `.drawText()` calls are replaced with rectangles to ensure no text is not captured
@@ -15,6 +16,7 @@
 
 ### Fixes
 
+- Avoid StrictMode warnings ([#4724](https://github.com/getsentry/sentry-java/pull/4724))
 - Use logger from options for JVM profiler ([#4771](https://github.com/getsentry/sentry-java/pull/4771))
 - Session Replay: Avoid deadlock when pausing replay if no connection ([#4788](https://github.com/getsentry/sentry-java/pull/4788))
 
