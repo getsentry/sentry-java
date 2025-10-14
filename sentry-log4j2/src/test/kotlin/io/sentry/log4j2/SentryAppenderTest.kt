@@ -334,9 +334,7 @@ class SentryAppenderTest {
 
     verify(fixture.transport)
       .send(
-        checkEvent { event ->
-          assertEquals(mapOf("key" to "value"), event.contexts["Context Data"])
-        },
+        checkEvent { event -> assertEquals(mapOf("key" to "value"), event.contexts["MDC"]) },
         anyOrNull(),
       )
   }
@@ -351,7 +349,7 @@ class SentryAppenderTest {
     verify(fixture.transport)
       .send(
         checkEvent { event ->
-          assertEquals(mapOf("key" to "value"), event.contexts["Context Data"])
+          assertEquals(mapOf("key" to "value"), event.contexts["MDC"])
           assertEquals(mapOf("contextTag1" to "contextTag1Value"), event.tags)
         },
         anyOrNull(),
@@ -368,7 +366,7 @@ class SentryAppenderTest {
     verify(fixture.transport)
       .send(
         checkEvent { event ->
-          assertNotNull(event.contexts["Context Data"]) {
+          assertNotNull(event.contexts["MDC"]) {
             val contextData = it as Map<*, *>
             assertNull(contextData["key1"])
             assertEquals("value", contextData["key2"])
@@ -386,7 +384,7 @@ class SentryAppenderTest {
     logger.warn("testing MDC tags")
 
     verify(fixture.transport)
-      .send(checkEvent { event -> assertNull(event.contexts["Context Data"]) }, anyOrNull())
+      .send(checkEvent { event -> assertNull(event.contexts["MDC"]) }, anyOrNull())
   }
 
   @Test

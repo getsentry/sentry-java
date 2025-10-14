@@ -35,9 +35,9 @@ public final class LoggerPropertiesUtil {
           event.setTag(key, value);
         }
       }
-      if (!properties.isEmpty()) {
-        event.getContexts().put("MDC", properties);
-      }
+    }
+    if (!properties.isEmpty()) {
+      event.getContexts().put("MDC", properties);
     }
   }
 
