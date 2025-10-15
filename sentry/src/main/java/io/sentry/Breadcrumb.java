@@ -721,8 +721,9 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable, Comparab
   }
 
   @Override
+  @SuppressWarnings("JavaUtilDate")
   public int hashCode() {
-    return Objects.hash(timestamp, message, type, category, origin, level);
+    return Objects.hash(getTimestamp().getTime(), message, type, category, origin, level);
   }
 
   // region json
