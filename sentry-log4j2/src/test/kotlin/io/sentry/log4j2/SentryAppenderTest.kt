@@ -396,7 +396,7 @@ class SentryAppenderTest {
 
     verify(fixture.transport)
       .send(
-        checkEvent { event -> assertFalse(event.contexts.containsKey("Context Data")) },
+        checkEvent { event -> assertFalse(event.contexts.containsKey("MDC")) },
         anyOrNull(),
       )
   }
