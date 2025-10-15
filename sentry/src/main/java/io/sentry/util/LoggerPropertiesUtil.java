@@ -16,18 +16,20 @@ public final class LoggerPropertiesUtil {
   /**
    * Applies logger properties from a map to a Sentry event as tags and context. The properties that
    * have keys matching any of the `targetKeys` will be applied as tags, while the others will be
-   * reported in the `MDC` context.
+   * reported in an ad-hoc context.
    *
    * @param event the Sentry event to add tags to
    * @param targetKeys the list of property keys to apply as tags
    * @param properties the properties map (e.g. MDC) - this map will be modified by removing
    *     properties which were applied as tags
+   * @param contextName the name of the context to use for leftover properties
    */
   @ApiStatus.Internal
   public static void applyPropertiesToEvent(
       final @NotNull SentryEvent event,
       final @NotNull List<String> targetKeys,
-      final @NotNull Map<String, String> properties) {
+      final @NotNull Map<String, String> properties,
+      final @NotNull String contextName) {
     if (!targetKeys.isEmpty() && !properties.isEmpty()) {
       for (final String key : targetKeys) {
         final @Nullable String value = properties.remove(key);
@@ -37,8 +39,15 @@ public final class LoggerPropertiesUtil {
       }
     }
     if (!properties.isEmpty()) {
-      event.getContexts().put("MDC", properties);
+      event.getContexts().put(contextName, properties);
     }
+  }
+
+  public static void applyPropertiesToEvent(
+      final @NotNull SentryEvent event,
+      final @NotNull List<String> targetKeys,
+      final @NotNull Map<String, String> properties) {
+    applyPropertiesToEvent(event, targetKeys, properties, "MDC");
   }
 
   /**

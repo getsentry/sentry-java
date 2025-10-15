@@ -334,7 +334,9 @@ class SentryAppenderTest {
 
     verify(fixture.transport)
       .send(
-        checkEvent { event -> assertEquals(mapOf("key" to "value"), event.contexts["MDC"]) },
+        checkEvent { event ->
+          assertEquals(mapOf("key" to "value"), event.contexts["Context Data"])
+        },
         anyOrNull(),
       )
   }
@@ -349,7 +351,7 @@ class SentryAppenderTest {
     verify(fixture.transport)
       .send(
         checkEvent { event ->
-          assertEquals(mapOf("key" to "value"), event.contexts["MDC"])
+          assertEquals(mapOf("key" to "value"), event.contexts["Context Data"])
           assertEquals(mapOf("contextTag1" to "contextTag1Value"), event.tags)
         },
         anyOrNull(),
@@ -366,7 +368,7 @@ class SentryAppenderTest {
     verify(fixture.transport)
       .send(
         checkEvent { event ->
-          assertNotNull(event.contexts["MDC"]) {
+          assertNotNull(event.contexts["Context Data"]) {
             val contextData = it as Map<*, *>
             assertNull(contextData["key1"])
             assertEquals("value", contextData["key2"])
@@ -384,7 +386,7 @@ class SentryAppenderTest {
     logger.warn("testing MDC tags")
 
     verify(fixture.transport)
-      .send(checkEvent { event -> assertNull(event.contexts["MDC"]) }, anyOrNull())
+      .send(checkEvent { event -> assertNull(event.contexts["Context Data"]) }, anyOrNull())
   }
 
   @Test
@@ -393,7 +395,10 @@ class SentryAppenderTest {
     logger.warn("testing without MDC tags")
 
     verify(fixture.transport)
-      .send(checkEvent { event -> assertFalse(event.contexts.containsKey("MDC")) }, anyOrNull())
+      .send(
+        checkEvent { event -> assertFalse(event.contexts.containsKey("Context Data")) },
+        anyOrNull(),
+      )
   }
 
   @Test
@@ -593,7 +598,6 @@ class SentryAppenderTest {
   @Test
   fun `sets properties from ThreadContext as attributes on logs`() {
     val logger = fixture.getSut(minimumLevel = Level.INFO, contextTags = listOf("someTag"))
-    ScopesAdapter.getInstance().options.logs.isEnabled = true
 
     ThreadContext.put("someTag", "someValue")
     ThreadContext.put("otherTag", "otherValue")

@@ -285,7 +285,7 @@ public class SentryAppender extends AbstractAppender {
       // get tags from ScopesAdapter options to allow getting the correct tags if Sentry has been
       // initialized somewhere else
       final List<String> contextTags = scopes.getOptions().getContextTags();
-      LoggerPropertiesUtil.applyPropertiesToEvent(event, contextTags, contextData);
+      LoggerPropertiesUtil.applyPropertiesToEvent(event, contextTags, contextData, "Context Data");
     }
 
     return event;
