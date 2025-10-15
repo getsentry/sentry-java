@@ -21,6 +21,7 @@ includeBuild("build-logic")
 include(
     "sentry",
     "sentry-kotlin-extensions",
+    "sentry-android-distribution",
     "sentry-android-core",
     "sentry-android-ndk",
     "sentry-android",
@@ -65,6 +66,7 @@ include(
     "sentry-quartz",
     "sentry-okhttp",
     "sentry-reactor",
+    "sentry-async-profiler",
     "sentry-ktor-client",
     "sentry-samples:sentry-samples-android",
     "sentry-samples:sentry-samples-console",

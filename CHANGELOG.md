@@ -4,9 +4,105 @@
 
 ### Features
 
+- Add experimental Sentry Android Distribution module for integrating with Sentry Build Distribution to check for and install updates ([#4804](https://github.com/getsentry/sentry-java/pull/4804))
+
+### Fixes
+
+- Avoid StrictMode warnings ([#4724](https://github.com/getsentry/sentry-java/pull/4724))
+- Use logger from options for JVM profiler ([#4771](https://github.com/getsentry/sentry-java/pull/4771))
+- Session Replay: Avoid deadlock when pausing replay if no connection ([#4788](https://github.com/getsentry/sentry-java/pull/4788))
+
+### Miscellaneous
+
+- Mark SentryClient(SentryOptions) constructor as not internal ([#4787](https://github.com/getsentry/sentry-java/pull/4787))
+
+### Dependencies
+
+- Bump Native SDK from v0.10.1 to v0.11.2 ([#4775](https://github.com/getsentry/sentry-java/pull/4775))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0112)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.10.1...0.11.2)
+
+## 8.23.0
+
+### Features
+
+- Add session replay id to Sentry Logs ([#4740](https://github.com/getsentry/sentry-java/pull/4740))
+- Add support for continuous profiling of JVM applications on macOS and Linux ([#4556](https://github.com/getsentry/sentry-java/pull/4556))
+  - [Sentry continuous profiling](https://docs.sentry.io/product/explore/profiling/) on the JVM is using async-profiler under the hood.
+  - By default this feature is disabled. Set a profile sample rate and chose a lifecycle (see below) to enable it.
+  - Add the `sentry-async-profiler` dependency to your project
+  - Set a sample rate for profiles, e.g. `1.0` to send all of them. You may use `options.setProfileSessionSampleRate(1.0)` in code or `profile-session-sample-rate=1.0` in `sentry.properties`
+  - Set a profile lifecycle via `options.setProfileLifecycle(ProfileLifecycle.TRACE)` in code or `profile-lifecycle=TRACE` in `sentry.properties`
+    - By default the lifecycle is set to `MANUAL`, meaning you have to explicitly call `Sentry.startProfiler()` and `Sentry.stopProfiler()`
+    - You may change it to `TRACE` which will create a profile for each transaction
+  - To automatically upload Profiles for each transaction in a Spring Boot application
+    - set `sentry.profile-session-sample-rate=1.0` and `sentry.profile-lifecycle=TRACE` in `application.properties`
+    - or set `sentry.profile-session-sample-rate: 1.0` and `sentry.profile-lifecycle: TRACE` in `application.yml`
+  - Profiling can also be combined with our OpenTelemetry integration
+
+### Fixes
+
+- Start performance collection on AppStart continuous profiling ([#4752](https://github.com/getsentry/sentry-java/pull/4752))
+- Preserve modifiers in `SentryTraced` ([#4757](https://github.com/getsentry/sentry-java/pull/4757))
+
+### Improvements
+
+- Handle `RejectedExecutionException` everywhere ([#4747](https://github.com/getsentry/sentry-java/pull/4747))
+- Mark `SentryEnvelope` as not internal ([#4748](https://github.com/getsentry/sentry-java/pull/4748))
+
+## 8.22.0
+
+### Features
+
+- Move SentryLogs out of experimental ([#4710](https://github.com/getsentry/sentry-java/pull/4710))
+- Add support for w3c traceparent header ([#4671](https://github.com/getsentry/sentry-java/pull/4671))
+  - This feature is disabled by default. If enabled, outgoing requests will include the w3c `traceparent` header.
+  - See https://develop.sentry.dev/sdk/telemetry/traces/distributed-tracing/#w3c-trace-context-header for more details.
+  ```kotlin
+  Sentry(Android).init(context) { options ->
+    // ...
+    options.isPropagateTraceparent = true
+  }
+  ```
+- Sentry now supports Spring Boot 4 M3 pre-release ([#4739](https://github.com/getsentry/sentry-java/pull/4739))
+
+### Improvements
+
+- Remove internal API status from get/setDistinctId ([#4708](https://github.com/getsentry/sentry-java/pull/4708))
+- Remove ApiStatus.Experimental annotation from check-in API ([#4721](https://github.com/getsentry/sentry-java/pull/4721))
+
+### Fixes
+
+- Session Replay: Fix `NoSuchElementException` in `BufferCaptureStrategy` ([#4717](https://github.com/getsentry/sentry-java/pull/4717))
+- Session Replay: Fix continue recording in Session mode after Buffer is triggered ([#4719](https://github.com/getsentry/sentry-java/pull/4719))
+
+### Dependencies
+
+- Bump Native SDK from v0.10.0 to v0.10.1 ([#4695](https://github.com/getsentry/sentry-java/pull/4695))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0101)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.10.0...0.10.1)
+
+## 8.21.1
+
+### Fixes
+
+- Use Kotlin stdlib 1.9.24 dependency instead of 2.2.0 for all Android modules ([#4707](https://github.com/getsentry/sentry-java/pull/4707))
+  - This fixes compile time issues if your app is using Kotlin < 2.x
+
+## 8.21.0
+
+### Fixes
+
+- Only set log template for logging integrations if formatted message differs from template ([#4682](https://github.com/getsentry/sentry-java/pull/4682))
+
+### Features
+
 - Add support for Spring Boot 4 and Spring 7 ([#4601](https://github.com/getsentry/sentry-java/pull/4601))
   - NOTE: Our `sentry-opentelemetry-agentless-spring` is not working yet for Spring Boot 4. Please use `sentry-opentelemetry-agent` until OpenTelemetry has support for Spring Boot 4.
 - Replace `UUIDGenerator` implementation with Apache licensed code ([#4662](https://github.com/getsentry/sentry-java/pull/4662))
+- Replace `Random` implementation with MIT licensed code ([#4664](https://github.com/getsentry/sentry-java/pull/4664))
+- Add support for `vars` attribute in `SentryStackFrame` ([#4686](https://github.com/getsentry/sentry-java/pull/4686))
+  - **Breaking change**: The type of the `vars` attribute has been changed from `Map<String, String>` to `Map<String, Object>`.
 
 ## 8.20.0
 

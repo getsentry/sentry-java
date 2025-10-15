@@ -48,7 +48,6 @@ public final class SentryClient implements ISentryClient {
     return enabled;
   }
 
-  @ApiStatus.Internal
   public SentryClient(final @NotNull SentryOptions options) {
     this.options = Objects.requireNonNull(options, "SentryOptions is required.");
     this.enabled = true;
@@ -998,7 +997,6 @@ public final class SentryClient implements ISentryClient {
   }
 
   @Override
-  @ApiStatus.Experimental
   public @NotNull SentryId captureCheckIn(
       @NotNull CheckIn checkIn, final @Nullable IScope scope, @Nullable Hint hint) {
     if (hint == null) {

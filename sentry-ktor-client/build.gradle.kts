@@ -1,5 +1,4 @@
 import net.ltgt.gradle.errorprone.errorprone
-import org.jetbrains.kotlin.config.KotlinCompilerVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -10,6 +9,7 @@ plugins {
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.buildconfig)
+  alias(libs.plugins.animalsniffer)
 }
 
 tasks.withType<KotlinCompile>().configureEach {
@@ -23,7 +23,7 @@ kotlin { explicitApi() }
 dependencies {
   api(projects.sentry)
 
-  implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
+  implementation(kotlin(Config.kotlinStdLib, Config.kotlinStdLibVersionAndroid))
   api(projects.sentryKotlinExtensions)
 
   compileOnly(libs.jetbrains.annotations)
@@ -40,6 +40,9 @@ dependencies {
   testImplementation(libs.ktor.client.core)
   testImplementation(libs.ktor.client.java)
   testImplementation(libs.okhttp.mockwebserver)
+
+  val gummyBearsModule = libs.gummy.bears.api21.get().module
+  signature("${gummyBearsModule}:${libs.versions.gummyBears.get()}@signature")
 }
 
 configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
@@ -60,6 +63,7 @@ tasks {
   check {
     dependsOn(jacocoTestCoverageVerification)
     dependsOn(jacocoTestReport)
+    dependsOn(animalsnifferMain)
   }
 }
 

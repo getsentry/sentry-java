@@ -324,7 +324,6 @@ public final class NoOpScopes implements IScopes {
     return SentryId.EMPTY_ID;
   }
 
-  @ApiStatus.Experimental
   @Override
   public @NotNull ILoggerApi logger() {
     return NoOpLoggerApi.getInstance();

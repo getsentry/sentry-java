@@ -27,6 +27,8 @@ import io.sentry.util.LoadClass;
 import io.sentry.util.Platform;
 import io.sentry.util.SampleRateUtils;
 import io.sentry.util.StringUtils;
+import io.sentry.util.runtime.IRuntimeManager;
+import io.sentry.util.runtime.NeutralRuntimeManager;
 import io.sentry.util.thread.IThreadChecker;
 import io.sentry.util.thread.NoOpThreadChecker;
 import java.io.File;
@@ -393,6 +395,9 @@ public class SentryOptions {
   private final @NotNull List<String> defaultTracePropagationTargets =
       Collections.singletonList(DEFAULT_PROPAGATION_TARGETS);
 
+  /** Whether to propagate W3C traceparent HTTP header. */
+  private boolean propagateTraceparent = false;
+
   /** Proguard UUID. */
   private @Nullable String proguardUuid;
 
@@ -528,6 +533,8 @@ public class SentryOptions {
 
   private @NotNull ReplayController replayController = NoOpReplayController.getInstance();
 
+  private @NotNull IDistributionApi distributionController = NoOpDistributionApi.getInstance();
+
   /**
    * Controls whether to enable screen tracking. When enabled, the SDK will automatically capture
    * screen transitions as context for events.
@@ -591,6 +598,36 @@ public class SentryOptions {
   private @NotNull SentryOptions.Logs logs = new SentryOptions.Logs();
 
   private @NotNull ISocketTagger socketTagger = NoOpSocketTagger.getInstance();
+
+  /** Runtime manager to manage runtime policies, like StrictMode on Android. */
+  private @NotNull IRuntimeManager runtimeManager = new NeutralRuntimeManager();
+
+  private @Nullable String profilingTracesDirPath;
+
+  /**
+   * Configuration options for Sentry Build Distribution. NOTE: Ideally this would be in
+   * SentryAndroidOptions, but there's a circular dependency issue between sentry-android-core and
+   * sentry-android-distribution modules.
+   */
+  @ApiStatus.Experimental
+  public static final class DistributionOptions {
+    /** Organization authentication token for API access */
+    public String orgAuthToken = "";
+
+    /** Sentry organization slug */
+    public String orgSlug = "";
+
+    /** Sentry project slug */
+    public String projectSlug = "";
+
+    /** Base URL for Sentry API (defaults to https://sentry.io) */
+    public String sentryBaseUrl = "https://sentry.io";
+
+    /** Optional build configuration name for filtering (e.g., "debug", "release", "staging") */
+    public @Nullable String buildConfiguration = null;
+  }
+
+  private @NotNull DistributionOptions distribution = new DistributionOptions();
 
   /**
    * Adds an event processor
@@ -1061,7 +1098,7 @@ public class SentryOptions {
    *
    * @param sampleRate the sample rate
    */
-  public void setSampleRate(Double sampleRate) {
+  public void setSampleRate(@Nullable Double sampleRate) {
     if (!SampleRateUtils.isValidSampleRate(sampleRate)) {
       throw new IllegalArgumentException(
           "The value "
@@ -1329,7 +1366,6 @@ public class SentryOptions {
    *
    * @return the distinct Id
    */
-  @ApiStatus.Internal
   public @Nullable String getDistinctId() {
     return distinctId;
   }
@@ -1339,7 +1375,6 @@ public class SentryOptions {
    *
    * @param distinctId the distinct Id
    */
-  @ApiStatus.Internal
   public void setDistinctId(final @Nullable String distinctId) {
     this.distinctId = distinctId;
   }
@@ -2076,11 +2111,23 @@ public class SentryOptions {
    * @return the profiling traces dir. path or null if not set
    */
   public @Nullable String getProfilingTracesDirPath() {
+    if (profilingTracesDirPath != null && !profilingTracesDirPath.isEmpty()) {
+      return dsnHash != null
+          ? new File(profilingTracesDirPath, dsnHash).getAbsolutePath()
+          : profilingTracesDirPath;
+    }
+
     final String cacheDirPath = getCacheDirPath();
+
     if (cacheDirPath == null) {
       return null;
     }
+
     return new File(cacheDirPath, "profiling_traces").getAbsolutePath();
+  }
+
+  public void setProfilingTracesDirPath(final @Nullable String profilingTracesDirPath) {
+    this.profilingTracesDirPath = profilingTracesDirPath;
   }
 
   /**
@@ -2108,6 +2155,24 @@ public class SentryOptions {
 
       this.tracePropagationTargets = filteredTracePropagationTargets;
     }
+  }
+
+  /**
+   * Returns whether W3C traceparent HTTP header propagation is enabled.
+   *
+   * @return true if enabled false otherwise
+   */
+  public boolean isPropagateTraceparent() {
+    return propagateTraceparent;
+  }
+
+  /**
+   * Enables or disables W3C traceparent HTTP header propagation.
+   *
+   * @param propagateTraceparent true if enabled false otherwise
+   */
+  public void setPropagateTraceparent(final boolean propagateTraceparent) {
+    this.propagateTraceparent = propagateTraceparent;
   }
 
   /**
@@ -2804,6 +2869,17 @@ public class SentryOptions {
   }
 
   @ApiStatus.Experimental
+  public @NotNull IDistributionApi getDistributionController() {
+    return distributionController;
+  }
+
+  @ApiStatus.Experimental
+  public void setDistributionController(final @Nullable IDistributionApi distributionController) {
+    this.distributionController =
+        distributionController != null ? distributionController : NoOpDistributionApi.getInstance();
+  }
+
+  @ApiStatus.Experimental
   public boolean isEnableScreenTracking() {
     return enableScreenTracking;
   }
@@ -2931,6 +3007,26 @@ public class SentryOptions {
    */
   public void setSocketTagger(final @Nullable ISocketTagger socketTagger) {
     this.socketTagger = socketTagger != null ? socketTagger : NoOpSocketTagger.getInstance();
+  }
+
+  /**
+   * Returns the IRuntimeManager
+   *
+   * @return the runtime manager
+   */
+  @ApiStatus.Internal
+  public @NotNull IRuntimeManager getRuntimeManager() {
+    return runtimeManager;
+  }
+
+  /**
+   * Sets the IRuntimeManager
+   *
+   * @param runtimeManager the runtime manager
+   */
+  @ApiStatus.Internal
+  public void setRuntimeManager(final @NotNull IRuntimeManager runtimeManager) {
+    this.runtimeManager = runtimeManager;
   }
 
   /**
@@ -3293,6 +3389,18 @@ public class SentryOptions {
     if (options.isEnableLogs() != null) {
       getLogs().setEnabled(options.isEnableLogs());
     }
+
+    if (options.getProfileSessionSampleRate() != null) {
+      setProfileSessionSampleRate(options.getProfileSessionSampleRate());
+    }
+
+    if (options.getProfilingTracesDirPath() != null) {
+      setProfilingTracesDirPath(options.getProfilingTracesDirPath());
+    }
+
+    if (options.getProfileLifecycle() != null) {
+      setProfileLifecycle(options.getProfileLifecycle());
+    }
   }
 
   private @NotNull SdkVersion createSdkVersion() {
@@ -3461,20 +3569,19 @@ public class SentryOptions {
   public static final class Logs {
 
     /** Whether Sentry Logs feature is enabled and Sentry.logger() usages are sent to Sentry. */
-    @ApiStatus.Experimental private boolean enable = false;
+    private boolean enable = false;
 
     /**
      * This function is called with an SDK specific log event object and can return a modified event
      * object or nothing to skip reporting the log item
      */
-    @ApiStatus.Experimental private @Nullable BeforeSendLogCallback beforeSend;
+    private @Nullable BeforeSendLogCallback beforeSend;
 
     /**
      * Whether Sentry Logs feature is enabled and Sentry.logger() usages are sent to Sentry.
      *
      * @return true if Sentry Logs should be enabled
      */
-    @ApiStatus.Experimental
     public boolean isEnabled() {
       return enable;
     }
@@ -3484,7 +3591,6 @@ public class SentryOptions {
      *
      * @param enableLogs true if Sentry Logs should be enabled
      */
-    @ApiStatus.Experimental
     public void setEnabled(boolean enableLogs) {
       this.enable = enableLogs;
     }
@@ -3494,7 +3600,6 @@ public class SentryOptions {
      *
      * @return the beforeSendLog callback or null if not set
      */
-    @ApiStatus.Experimental
     public @Nullable BeforeSendLogCallback getBeforeSend() {
       return beforeSend;
     }
@@ -3504,7 +3609,6 @@ public class SentryOptions {
      *
      * @param beforeSendLog the beforeSendLog callback
      */
-    @ApiStatus.Experimental
     public void setBeforeSend(@Nullable BeforeSendLogCallback beforeSendLog) {
       this.beforeSend = beforeSendLog;
     }
@@ -3521,6 +3625,16 @@ public class SentryOptions {
       @Nullable
       SentryLogEvent execute(@NotNull SentryLogEvent event);
     }
+  }
+
+  @ApiStatus.Experimental
+  public @NotNull DistributionOptions getDistribution() {
+    return distribution;
+  }
+
+  @ApiStatus.Experimental
+  public void setDistribution(final @NotNull DistributionOptions distribution) {
+    this.distribution = distribution != null ? distribution : new DistributionOptions();
   }
 
   public enum RequestSize {

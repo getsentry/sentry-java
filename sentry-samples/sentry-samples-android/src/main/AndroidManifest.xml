@@ -75,8 +75,12 @@
       <activity android:name=".FrameDataForSpansActivity"
         android:exported="false"/>
 
+      <activity
+          android:name=".CameraXActivity"
+          android:exported="false" />
+
         <!--    NOTE: Replace the test DSN below with YOUR OWN DSN to see the events from this app in your Sentry project/dashboard-->
-        <meta-data android:name="io.sentry.dsn" android:value="https://1053864c67cc410aa1ffc9701bd6f93d@o447951.ingest.sentry.io/5428559" />
+        <meta-data android:name="io.sentry.dsn" android:value="https://1053864c67cc410aa1ffc9701bd6f93d@o447951.ingest.us.sentry.io/5428559" />
 
         <!--    how to enable Sentry's debug mode-->
         <meta-data android:name="io.sentry.debug" android:value="${sentryDebug}" />

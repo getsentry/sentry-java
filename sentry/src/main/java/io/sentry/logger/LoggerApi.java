@@ -21,11 +21,9 @@ import io.sentry.protocol.User;
 import io.sentry.util.Platform;
 import io.sentry.util.TracingUtils;
 import java.util.HashMap;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-@ApiStatus.Experimental
 public final class LoggerApi implements ILoggerApi {
 
   private final @NotNull Scopes scopes;
@@ -213,6 +211,26 @@ public final class LoggerApi implements ILoggerApi {
           "sentry.environment",
           new SentryLogEventAttributeValue(SentryAttributeType.STRING, environment));
     }
+
+    final @NotNull SentryId scopeReplayId = scopes.getCombinedScopeView().getReplayId();
+    if (!SentryId.EMPTY_ID.equals(scopeReplayId)) {
+      attributes.put(
+          "sentry.replay_id",
+          new SentryLogEventAttributeValue(SentryAttributeType.STRING, scopeReplayId.toString()));
+    } else {
+      final @NotNull SentryId controllerReplayId =
+          scopes.getOptions().getReplayController().getReplayId();
+      if (!SentryId.EMPTY_ID.equals(controllerReplayId)) {
+        attributes.put(
+            "sentry.replay_id",
+            new SentryLogEventAttributeValue(
+                SentryAttributeType.STRING, controllerReplayId.toString()));
+        attributes.put(
+            "sentry._internal.replay_is_buffering",
+            new SentryLogEventAttributeValue(SentryAttributeType.BOOLEAN, true));
+      }
+    }
+
     final @Nullable String release = scopes.getOptions().getRelease();
     if (release != null) {
       attributes.put(

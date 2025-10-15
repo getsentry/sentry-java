@@ -5,6 +5,7 @@ import static io.sentry.android.core.NdkIntegration.SENTRY_NDK_CLASS_NAME;
 import android.app.Application;
 import android.content.Context;
 import android.content.pm.PackageInfo;
+import io.sentry.CompositePerformanceCollector;
 import io.sentry.DeduplicateMultithreadedEventProcessor;
 import io.sentry.DefaultCompositePerformanceCollector;
 import io.sentry.DefaultVersionDetector;
@@ -29,9 +30,11 @@ import io.sentry.android.core.internal.gestures.AndroidViewGestureTargetLocator;
 import io.sentry.android.core.internal.modules.AssetsModulesLoader;
 import io.sentry.android.core.internal.util.AndroidConnectionStatusProvider;
 import io.sentry.android.core.internal.util.AndroidCurrentDateProvider;
+import io.sentry.android.core.internal.util.AndroidRuntimeManager;
 import io.sentry.android.core.internal.util.AndroidThreadChecker;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.android.core.performance.AppStartMetrics;
+import io.sentry.android.distribution.DistributionIntegration;
 import io.sentry.android.fragment.FragmentLifecycleIntegration;
 import io.sentry.android.replay.DefaultReplayBreadcrumbConverter;
 import io.sentry.android.replay.ReplayIntegration;
@@ -44,6 +47,7 @@ import io.sentry.internal.debugmeta.NoOpDebugMetaLoader;
 import io.sentry.internal.gestures.GestureTargetLocator;
 import io.sentry.internal.modules.NoOpModulesLoader;
 import io.sentry.internal.viewhierarchy.ViewHierarchyExporter;
+import io.sentry.protocol.SentryId;
 import io.sentry.transport.CurrentDateProvider;
 import io.sentry.transport.NoOpEnvelopeCache;
 import io.sentry.transport.NoOpTransportGate;
@@ -105,7 +109,7 @@ final class AndroidOptionsInitializer {
       final @NotNull BuildInfoProvider buildInfoProvider) {
     Objects.requireNonNull(context, "The context is required.");
 
-    context = ContextUtils.getApplicationContext(context);
+    @NotNull final Context finalContext = ContextUtils.getApplicationContext(context);
 
     Objects.requireNonNull(options, "The options object is required.");
     Objects.requireNonNull(logger, "The ILogger object is required.");
@@ -117,17 +121,22 @@ final class AndroidOptionsInitializer {
     options.setDefaultScopeType(ScopeType.CURRENT);
     options.setOpenTelemetryMode(SentryOpenTelemetryMode.OFF);
     options.setDateProvider(new SentryAndroidDateProvider());
+    options.setRuntimeManager(new AndroidRuntimeManager());
 
     // set a lower flush timeout on Android to avoid ANRs
     options.setFlushTimeoutMillis(DEFAULT_FLUSH_TIMEOUT_MS);
 
     options.setFrameMetricsCollector(
-        new SentryFrameMetricsCollector(context, logger, buildInfoProvider));
+        new SentryFrameMetricsCollector(finalContext, logger, buildInfoProvider));
 
-    ManifestMetadataReader.applyMetadata(context, options, buildInfoProvider);
-    options.setCacheDirPath(getCacheDir(context).getAbsolutePath());
+    ManifestMetadataReader.applyMetadata(finalContext, options, buildInfoProvider);
 
-    readDefaultOptionValues(options, context, buildInfoProvider);
+    options.setCacheDirPath(
+        options
+            .getRuntimeManager()
+            .runWithRelaxedPolicy(() -> getCacheDir(finalContext).getAbsolutePath()));
+
+    readDefaultOptionValues(options, finalContext, buildInfoProvider);
     AppState.getInstance().registerLifecycleObserver(options);
   }
 
@@ -179,25 +188,7 @@ final class AndroidOptionsInitializer {
       options.setTransportGate(new AndroidTransportGate(options));
     }
 
-    // Check if the profiler was already instantiated in the app start.
-    // We use the Android profiler, that uses a global start/stop api, so we need to preserve the
-    // state of the profiler, and it's only possible retaining the instance.
     final @NotNull AppStartMetrics appStartMetrics = AppStartMetrics.getInstance();
-    final @Nullable ITransactionProfiler appStartTransactionProfiler;
-    final @Nullable IContinuousProfiler appStartContinuousProfiler;
-    try (final @NotNull ISentryLifecycleToken ignored = AppStartMetrics.staticLock.acquire()) {
-      appStartTransactionProfiler = appStartMetrics.getAppStartProfiler();
-      appStartContinuousProfiler = appStartMetrics.getAppStartContinuousProfiler();
-      appStartMetrics.setAppStartProfiler(null);
-      appStartMetrics.setAppStartContinuousProfiler(null);
-    }
-
-    setupProfiler(
-        options,
-        context,
-        buildInfoProvider,
-        appStartTransactionProfiler,
-        appStartContinuousProfiler);
 
     if (options.getModulesLoader() instanceof NoOpModulesLoader) {
       options.setModulesLoader(new AssetsModulesLoader(context, options.getLogger()));
@@ -261,6 +252,26 @@ final class AndroidOptionsInitializer {
     if (options.getCompositePerformanceCollector() instanceof NoOpCompositePerformanceCollector) {
       options.setCompositePerformanceCollector(new DefaultCompositePerformanceCollector(options));
     }
+
+    // Check if the profiler was already instantiated in the app start.
+    // We use the Android profiler, that uses a global start/stop api, so we need to preserve the
+    // state of the profiler, and it's only possible retaining the instance.
+    final @Nullable ITransactionProfiler appStartTransactionProfiler;
+    final @Nullable IContinuousProfiler appStartContinuousProfiler;
+    try (final @NotNull ISentryLifecycleToken ignored = AppStartMetrics.staticLock.acquire()) {
+      appStartTransactionProfiler = appStartMetrics.getAppStartProfiler();
+      appStartContinuousProfiler = appStartMetrics.getAppStartContinuousProfiler();
+      appStartMetrics.setAppStartProfiler(null);
+      appStartMetrics.setAppStartContinuousProfiler(null);
+    }
+
+    setupProfiler(
+        options,
+        context,
+        buildInfoProvider,
+        appStartTransactionProfiler,
+        appStartContinuousProfiler,
+        options.getCompositePerformanceCollector());
   }
 
   /** Setup the correct profiler (transaction or continuous) based on the options. */
@@ -269,7 +280,8 @@ final class AndroidOptionsInitializer {
       final @NotNull Context context,
       final @NotNull BuildInfoProvider buildInfoProvider,
       final @Nullable ITransactionProfiler appStartTransactionProfiler,
-      final @Nullable IContinuousProfiler appStartContinuousProfiler) {
+      final @Nullable IContinuousProfiler appStartContinuousProfiler,
+      final @NotNull CompositePerformanceCollector performanceCollector) {
     if (options.isProfilingEnabled() || options.getProfilesSampleRate() != null) {
       options.setContinuousProfiler(NoOpContinuousProfiler.getInstance());
       // This is a safeguard, but it should never happen, as the app start profiler should be the
@@ -298,6 +310,12 @@ final class AndroidOptionsInitializer {
       }
       if (appStartContinuousProfiler != null) {
         options.setContinuousProfiler(appStartContinuousProfiler);
+        // If the profiler is running, we start the performance collector too, otherwise we'd miss
+        // measurements in app launch profiles
+        final @NotNull SentryId chunkId = appStartContinuousProfiler.getChunkId();
+        if (appStartContinuousProfiler.isRunning() && !chunkId.equals(SentryId.EMPTY_ID)) {
+          performanceCollector.start(chunkId.toString());
+        }
       } else {
         options.setContinuousProfiler(
             new AndroidContinuousProfiler(
@@ -321,7 +339,8 @@ final class AndroidOptionsInitializer {
       final @NotNull ActivityFramesTracker activityFramesTracker,
       final boolean isFragmentAvailable,
       final boolean isTimberAvailable,
-      final boolean isReplayAvailable) {
+      final boolean isReplayAvailable,
+      final boolean isDistributionAvailable) {
 
     // Integration MUST NOT cache option values in ctor, as they will be configured later by the
     // user
@@ -390,6 +409,11 @@ final class AndroidOptionsInitializer {
       replay.setBreadcrumbConverter(new DefaultReplayBreadcrumbConverter());
       options.addIntegration(replay);
       options.setReplayController(replay);
+    }
+    if (isDistributionAvailable) {
+      final DistributionIntegration distribution = new DistributionIntegration((context));
+      options.setDistributionController(distribution);
+      options.addIntegration(distribution);
     }
     options
         .getFeedbackOptions()

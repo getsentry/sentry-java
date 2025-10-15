@@ -19,13 +19,13 @@ targets:
       maven:io.sentry:sentry:
       maven:io.sentry:sentry-spring:
       maven:io.sentry:sentry-spring-jakarta:
-#      maven:io.sentry:sentry-spring-7:
+      maven:io.sentry:sentry-spring-7:
       maven:io.sentry:sentry-spring-boot:
       maven:io.sentry:sentry-spring-boot-jakarta:
       maven:io.sentry:sentry-spring-boot-starter:
       maven:io.sentry:sentry-spring-boot-starter-jakarta:
-#      maven:io.sentry:sentry-spring-boot-4:
-#      maven:io.sentry:sentry-spring-boot-4-starter:
+      maven:io.sentry:sentry-spring-boot-4:
+      maven:io.sentry:sentry-spring-boot-4-starter:
       maven:io.sentry:sentry-servlet:
       maven:io.sentry:sentry-servlet-jakarta:
       maven:io.sentry:sentry-logback:
@@ -34,6 +34,7 @@ targets:
       maven:io.sentry:sentry-apache-http-client-5:
       maven:io.sentry:sentry-android:
       maven:io.sentry:sentry-android-core:
+      maven:io.sentry:sentry-android-distribution:
       maven:io.sentry:sentry-android-ndk:
       maven:io.sentry:sentry-android-timber:
       maven:io.sentry:sentry-kotlin-extensions:

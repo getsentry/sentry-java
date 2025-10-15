@@ -4,6 +4,7 @@ import java.math.BigDecimal
 object Config {
     val AGP = System.getenv("VERSION_AGP") ?: "8.6.0"
     val kotlinStdLib = "stdlib-jdk8"
+    val kotlinStdLibVersionAndroid = "1.9.24"
     val kotlinTestJunit = "test-junit"
 
     object BuildPlugins {
@@ -82,6 +83,7 @@ object Config {
         val SENTRY_OKHTTP_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.okhttp"
         val SENTRY_REACTOR_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.reactor"
         val SENTRY_KOTLIN_EXTENSIONS_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.kotlin-extensions"
+        val SENTRY_ASYNC_PROFILER_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.async-profiler"
         val SENTRY_KTOR_CLIENT_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.ktor-client"
         val group = "io.sentry"
         val description = "SDK for sentry.io"
