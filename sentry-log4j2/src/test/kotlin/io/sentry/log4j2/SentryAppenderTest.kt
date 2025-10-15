@@ -395,10 +395,7 @@ class SentryAppenderTest {
     logger.warn("testing without MDC tags")
 
     verify(fixture.transport)
-      .send(
-        checkEvent { event -> assertFalse(event.contexts.containsKey("MDC")) },
-        anyOrNull(),
-      )
+      .send(checkEvent { event -> assertFalse(event.contexts.containsKey("MDC")) }, anyOrNull())
   }
 
   @Test
