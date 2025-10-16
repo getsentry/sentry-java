@@ -84,19 +84,12 @@ public class DistributionIntegration(context: Context) : Integration, IDistribut
   }
 
   /**
-   * Check for available updates asynchronously using a callback.
+   * Check for available updates asynchronously.
    *
-   * Note: The callback will be invoked on a background thread. If you need to update UI or perform
-   * main-thread operations, dispatch the result to the main thread yourself.
-   *
-   * @param onResult Callback that will be called with the UpdateStatus result
+   * @return Future that will resolve to an UpdateStatus result
    */
-  public override fun checkForUpdate(onResult: IDistributionApi.UpdateCallback) {
-    Thread {
-        val result = checkForUpdateBlocking()
-        onResult.onResult(result)
-      }
-      .start()
+  public override fun checkForUpdate(): java.util.concurrent.Future<UpdateStatus> {
+    return sentryOptions.executorService.submit<UpdateStatus> { checkForUpdateBlocking() }
   }
 
   /**

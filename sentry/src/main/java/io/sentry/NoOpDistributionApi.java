@@ -1,5 +1,7 @@
 package io.sentry;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
@@ -21,8 +23,8 @@ public final class NoOpDistributionApi implements IDistributionApi {
   }
 
   @Override
-  public void checkForUpdate(@NotNull UpdateCallback onResult) {
-    // No-op implementation - do nothing
+  public @NotNull Future<UpdateStatus> checkForUpdate() {
+    return CompletableFuture.completedFuture(UpdateStatus.UpToDate.getInstance());
   }
 
   @Override
