@@ -1107,6 +1107,22 @@ class ScopeTest {
     assertTrue(scope.contexts.isEmpty)
   }
 
+  @Test
+  fun `feature flags can be added and are deduplicated`() {
+    val scope = Scope(SentryOptions.empty())
+
+    scope.addFeatureFlag("flag1", true)
+    scope.addFeatureFlag("flag1", false)
+
+    val flags = scope.featureFlags
+    assertNotNull(flags)
+    assertEquals(1, flags.values.size)
+
+    val flag0 = flags.values.first()
+    assertEquals("flag1", flag0.flag)
+    assertFalse(flag0.result)
+  }
+
   private fun eventProcessor(): EventProcessor =
     object : EventProcessor {
       override fun process(event: SentryEvent, hint: Hint): SentryEvent? = event

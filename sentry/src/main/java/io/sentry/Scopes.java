@@ -1220,6 +1220,11 @@ public final class Scopes implements IScopes {
     return logger;
   }
 
+  @Override
+  public void addFeatureFlag(final @NotNull String flag, final boolean result) {
+    combinedScope.addFeatureFlag(flag, result);
+  }
+
   private static void validateOptions(final @NotNull SentryOptions options) {
     Objects.requireNonNull(options, "SentryOptions is required.");
     if (options.getDsn() == null || options.getDsn().isEmpty()) {

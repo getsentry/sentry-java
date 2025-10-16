@@ -743,4 +743,6 @@ public interface IScopes {
 
   @NotNull
   ILoggerApi logger();
+
+  void addFeatureFlag(final @NotNull String flag, final boolean result);
 }

@@ -388,4 +388,9 @@ public final class HubAdapter implements IHub {
   public @NotNull ILoggerApi logger() {
     return Sentry.getCurrentScopes().logger();
   }
+
+  @Override
+  public void addFeatureFlag(final @NotNull String flag, final boolean result) {
+    Sentry.addFeatureFlag(flag, result);
+  }
 }

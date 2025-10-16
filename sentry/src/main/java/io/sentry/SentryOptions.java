@@ -196,6 +196,11 @@ public class SentryOptions {
    */
   private int maxBreadcrumbs = 100;
 
+  /**
+   * This variable controls the total amount of feature flags that should be captured Default is 100
+   */
+  private int maxFeatureFlags = 100;
+
   /** Sets the release. SDK will try to automatically configure a release out of the box */
   private @Nullable String release;
 
@@ -1023,6 +1028,24 @@ public class SentryOptions {
    */
   public void setMaxBreadcrumbs(int maxBreadcrumbs) {
     this.maxBreadcrumbs = maxBreadcrumbs;
+  }
+
+  /**
+   * Returns the max feature flags Default is 100
+   *
+   * @return the max feature flags
+   */
+  public int getMaxFeatureFlags() {
+    return maxFeatureFlags;
+  }
+
+  /**
+   * Sets the max feature flags Default is 100
+   *
+   * @param maxFeatureFlags the max feature flags
+   */
+  public void setMaxFeatureFlags(int maxFeatureFlags) {
+    this.maxFeatureFlags = maxFeatureFlags;
   }
 
   /**

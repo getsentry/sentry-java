@@ -330,4 +330,7 @@ public final class NoOpHub implements IHub {
   public @NotNull ILoggerApi logger() {
     return NoOpLoggerApi.getInstance();
   }
+
+  @Override
+  public void addFeatureFlag(final @NotNull String flag, final boolean result) {}
 }

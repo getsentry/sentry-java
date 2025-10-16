@@ -275,6 +275,31 @@ class TestHelper(backendUrl: String) {
     return true
   }
 
+  fun doesEventHaveExceptionMessage(event: SentryEvent, expectedMessage: String): Boolean {
+    val exceptions = event.exceptions
+    if (exceptions == null) {
+      println("Unable to find exceptions in event")
+      return false
+    }
+
+    val foundException = exceptions.firstOrNull { expectedMessage == it.value }
+    return foundException != null
+  }
+
+  fun doesEventHaveFlag(event: SentryEvent, flag: String, result: Boolean): Boolean {
+    val featureFlags = event.contexts.featureFlags
+    if (featureFlags == null) {
+      println("Unable to find feature flags in event:")
+      return false
+    }
+    val foundFlag =
+      featureFlags.values.firstOrNull { featureFlag ->
+        println("checking flag ${featureFlag.flag}:${featureFlag.result}")
+        featureFlag.flag == flag && featureFlag.result == result
+      }
+    return foundFlag != null
+  }
+
   fun findJar(prefix: String, inDir: String = "build/libs"): File {
     val buildDir = File(inDir)
     val jarFiles =

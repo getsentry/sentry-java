@@ -3083,6 +3083,44 @@ class ScopesTest {
     assertTrue(scopes.globalScope.extras.isEmpty())
   }
 
+  @Test
+  fun `feature flags can be added to scopes`() {
+    val (sut, mockClient) = getEnabledScopes()
+
+    sut.addFeatureFlag("test-feature-flag", true)
+    sut.scope.addFeatureFlag("current-feature-flag", true)
+    sut.isolationScope.addFeatureFlag("isolation-feature-flag", false)
+    sut.globalScope.addFeatureFlag("global-feature-flag", true)
+
+    sut.captureException(RuntimeException("test exception"))
+
+    verify(mockClient)
+      .captureEvent(
+        any(),
+        check {
+          val featureFlags = it.featureFlags
+          assertNotNull(featureFlags)
+
+          val flag0 = featureFlags.values[0]
+          assertEquals("test-feature-flag", flag0.flag)
+          assertTrue(flag0.result)
+
+          val flag1 = featureFlags.values[1]
+          assertEquals("current-feature-flag", flag1.flag)
+          assertTrue(flag1.result)
+
+          val flag2 = featureFlags.values[2]
+          assertEquals("isolation-feature-flag", flag2.flag)
+          assertFalse(flag2.result)
+
+          val flag3 = featureFlags.values[3]
+          assertEquals("global-feature-flag", flag3.flag)
+          assertTrue(flag3.result)
+        },
+        anyOrNull(),
+      )
+  }
+
   private val dsnTest = "https://key@sentry.io/proj"
 
   private fun generateScopes(
