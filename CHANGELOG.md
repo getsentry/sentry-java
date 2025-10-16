@@ -5,9 +5,9 @@
 ### Features
 
 - Add experimental Sentry Android Distribution module for integrating with Sentry Build Distribution to check for and install updates ([#4804](https://github.com/getsentry/sentry-java/pull/4804))
-- Session Replay: Add new experimental Canvas Capture Strategy ([#4777](https://github.com/getsentry/sentry-java/pull/4777))
+- Session Replay: Add new _experimental_ Canvas Capture Strategy ([#4777](https://github.com/getsentry/sentry-java/pull/4777))
   - A new screenshot capture strategy that uses Android's Canvas API for more accurate text masking
-  - Any `.drawText()` calls are replaced with rectangles to ensure no text is not captured
+  - Any `.drawText()` or `.drawBitmap()` calls are replaced by rectangles, ensuring no text or images are present in the resulting output
   ```kotlin
   SentryAndroid.init(context) { options ->
     options.sessionReplay.screenshotStrategy = ScreenshotStrategyType.CANVAS

@@ -29,12 +29,16 @@ import android.view.View
 import androidx.annotation.RequiresApi
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
+import io.sentry.SentryReplayOptions
+import io.sentry.SentryReplayOptions.IMAGE_VIEW_CLASS_NAME
+import io.sentry.SentryReplayOptions.TEXT_VIEW_CLASS_NAME
 import io.sentry.android.replay.ExecutorProvider
 import io.sentry.android.replay.ScreenshotRecorderCallback
 import io.sentry.android.replay.ScreenshotRecorderConfig
 import io.sentry.android.replay.util.submitSafely
 import io.sentry.util.AutoClosableReentrantLock
 import io.sentry.util.IntegrationUtils
+import java.io.Closeable
 import java.util.WeakHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
@@ -55,13 +59,14 @@ internal class CanvasStrategy(
   private val prescaledMatrix by
     lazy(NONE) { Matrix().apply { preScale(config.scaleFactorX, config.scaleFactorY) } }
   private val lastCaptureSuccessful = AtomicBoolean(false)
-  private val textIgnoringCanvas = TextIgnoringDelegateCanvas()
+  private val textIgnoringCanvas = TextIgnoringDelegateCanvas(options.sessionReplay)
 
   private val isClosed = AtomicBoolean(false)
 
   private val onImageAvailableListener: (holder: PictureReaderHolder) -> Unit = { holder ->
     if (isClosed.get()) {
       options.logger.log(SentryLevel.ERROR, "CanvasStrategy already closed, skipping image")
+      holder.close()
     } else {
       try {
         val image = holder.reader.acquireLatestImage()
@@ -86,12 +91,20 @@ internal class CanvasStrategy(
             }
           }
         } finally {
-          image.close()
+          try {
+            image.close()
+          } catch (_: Throwable) {
+            // ignored
+          }
         }
       } catch (e: Throwable) {
         options.logger.log(SentryLevel.ERROR, "CanvasStrategy: image processing failed", e)
       } finally {
-        freePictureRef.set(holder)
+        if (isClosed.get()) {
+          holder.close()
+        } else {
+          freePictureRef.set(holder)
+        }
       }
     }
   }
@@ -116,10 +129,7 @@ internal class CanvasStrategy(
       )
       return@Runnable
     }
-    val holder = unprocessedPictureRef.getAndSet(null)
-    if (holder == null) {
-      return@Runnable
-    }
+    val holder = unprocessedPictureRef.getAndSet(null) ?: return@Runnable
 
     try {
       if (!holder.setup.getAndSet(true)) {
@@ -135,14 +145,20 @@ internal class CanvasStrategy(
         surface.unlockCanvasAndPost(canvas)
       }
     } catch (t: Throwable) {
-      freePictureRef.set(holder)
+      if (isClosed.get()) {
+        holder.close()
+      } else {
+        freePictureRef.set(holder)
+      }
       options.logger.log(SentryLevel.ERROR, "Canvas Strategy: picture render failed", t)
     }
   }
 
   @SuppressLint("UnclosedTrace")
   override fun capture(root: View) {
-
+    if (isClosed.get()) {
+      return
+    }
     val holder = freePictureRef.getAndSet(null)
     if (holder == null) {
       options.logger.log(SentryLevel.DEBUG, "No free Picture available, skipping capture")
@@ -156,9 +172,12 @@ internal class CanvasStrategy(
     root.draw(textIgnoringCanvas)
     holder.picture.endRecording()
 
-    unprocessedPictureRef.set(holder)
-
-    executor.getExecutor().submitSafely(options, "screenshot_recorder.canvas", pictureRenderTask)
+    if (isClosed.get()) {
+      holder.close()
+    } else {
+      unprocessedPictureRef.set(holder)
+      executor.getExecutor().submitSafely(options, "screenshot_recorder.canvas", pictureRenderTask)
+    }
   }
 
   override fun onContentChanged() {
@@ -173,7 +192,11 @@ internal class CanvasStrategy(
           recycle()
         }
       }
+      screenshot = null
     }
+    // the image can be free, unprocessed or in transit
+    freePictureRef.getAndSet(null)?.reader?.close()
+    unprocessedPictureRef.getAndSet(null)?.reader?.close()
   }
 
   override fun lastCaptureSuccessful(): Boolean {
@@ -191,7 +214,7 @@ internal class CanvasStrategy(
 }
 
 @SuppressLint("UseKtx")
-private class TextIgnoringDelegateCanvas : Canvas() {
+private class TextIgnoringDelegateCanvas(sessionReplay: SentryReplayOptions) : Canvas() {
 
   lateinit var delegate: Canvas
   private val solidPaint = Paint()
@@ -204,6 +227,13 @@ private class TextIgnoringDelegateCanvas : Canvas() {
   val singlePixelBitmapBounds = Rect(0, 0, 1, 1)
 
   private val bitmapColorCache = WeakHashMap<Bitmap, Pair<Int, Int>>()
+
+  private val maskAllText =
+    sessionReplay.maskViewClasses.contains(TEXT_VIEW_CLASS_NAME) ||
+      sessionReplay.maskViewClasses.size > 1
+  private val maskAllImages =
+    sessionReplay.maskViewClasses.contains(IMAGE_VIEW_CLASS_NAME) ||
+      sessionReplay.maskViewClasses.size > 1
 
   override fun isHardwareAccelerated(): Boolean {
     return false
@@ -992,7 +1022,7 @@ private class PictureReaderHolder(
   val width: Int,
   val height: Int,
   val listener: (holder: PictureReaderHolder) -> Unit,
-) : ImageReader.OnImageAvailableListener {
+) : ImageReader.OnImageAvailableListener, Closeable {
   val picture = Picture()
 
   @SuppressLint("InlinedApi")
@@ -1003,6 +1033,14 @@ private class PictureReaderHolder(
   override fun onImageAvailable(reader: ImageReader?) {
     if (reader != null) {
       listener(this)
+    }
+  }
+
+  override fun close() {
+    try {
+      reader.close()
+    } catch (_: Throwable) {
+      // ignored
     }
   }
 }

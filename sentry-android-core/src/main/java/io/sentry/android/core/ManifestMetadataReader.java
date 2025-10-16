@@ -6,6 +6,7 @@ import android.os.Bundle;
 import io.sentry.ILogger;
 import io.sentry.InitPriority;
 import io.sentry.ProfileLifecycle;
+import io.sentry.ScreenshotStrategyType;
 import io.sentry.SentryFeedbackOptions;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryLevel;
@@ -111,6 +112,7 @@ final class ManifestMetadataReader {
   static final String REPLAYS_MASK_ALL_IMAGES = "io.sentry.session-replay.mask-all-images";
 
   static final String REPLAYS_DEBUG = "io.sentry.session-replay.debug";
+  static final String REPLAYS_SCREENSHOT_STRATEGY = "io.sentry.session-replay.screenshot-strategy";
 
   static final String FORCE_INIT = "io.sentry.force-init";
 
@@ -476,6 +478,16 @@ final class ManifestMetadataReader {
 
         options.getSessionReplay().setDebug(readBool(metadata, logger, REPLAYS_DEBUG, false));
 
+        final @Nullable String screenshotStrategyRaw =
+            readString(metadata, logger, REPLAYS_SCREENSHOT_STRATEGY, null);
+        if (screenshotStrategyRaw != null) {
+          if ("canvas".equals(screenshotStrategyRaw)) {
+            options.getSessionReplay().setScreenshotStrategy(ScreenshotStrategyType.CANVAS);
+          } else {
+            // always default to PIXEL_COPYq
+            options.getSessionReplay().setScreenshotStrategy(ScreenshotStrategyType.PIXEL_COPY);
+          }
+        }
         options.setIgnoredErrors(readList(metadata, logger, IGNORED_ERRORS));
 
         final @Nullable List<String> includes = readList(metadata, logger, IN_APP_INCLUDES);
