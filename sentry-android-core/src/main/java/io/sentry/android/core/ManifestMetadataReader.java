@@ -484,7 +484,7 @@ final class ManifestMetadataReader {
           if ("canvas".equals(screenshotStrategyRaw)) {
             options.getSessionReplay().setScreenshotStrategy(ScreenshotStrategyType.CANVAS);
           } else {
-            // always default to PIXEL_COPYq
+            // always default to PIXEL_COPY
             options.getSessionReplay().setScreenshotStrategy(ScreenshotStrategyType.PIXEL_COPY);
           }
         }

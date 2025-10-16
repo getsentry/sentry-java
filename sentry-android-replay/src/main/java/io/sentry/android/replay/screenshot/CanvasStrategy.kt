@@ -29,9 +29,6 @@ import android.view.View
 import androidx.annotation.RequiresApi
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
-import io.sentry.SentryReplayOptions
-import io.sentry.SentryReplayOptions.IMAGE_VIEW_CLASS_NAME
-import io.sentry.SentryReplayOptions.TEXT_VIEW_CLASS_NAME
 import io.sentry.android.replay.ExecutorProvider
 import io.sentry.android.replay.ScreenshotRecorderCallback
 import io.sentry.android.replay.ScreenshotRecorderConfig
@@ -59,7 +56,7 @@ internal class CanvasStrategy(
   private val prescaledMatrix by
     lazy(NONE) { Matrix().apply { preScale(config.scaleFactorX, config.scaleFactorY) } }
   private val lastCaptureSuccessful = AtomicBoolean(false)
-  private val textIgnoringCanvas = TextIgnoringDelegateCanvas(options.sessionReplay)
+  private val textIgnoringCanvas = TextIgnoringDelegateCanvas()
 
   private val isClosed = AtomicBoolean(false)
 
@@ -214,7 +211,7 @@ internal class CanvasStrategy(
 }
 
 @SuppressLint("UseKtx")
-private class TextIgnoringDelegateCanvas(sessionReplay: SentryReplayOptions) : Canvas() {
+private class TextIgnoringDelegateCanvas : Canvas() {
 
   lateinit var delegate: Canvas
   private val solidPaint = Paint()
@@ -227,13 +224,6 @@ private class TextIgnoringDelegateCanvas(sessionReplay: SentryReplayOptions) : C
   val singlePixelBitmapBounds = Rect(0, 0, 1, 1)
 
   private val bitmapColorCache = WeakHashMap<Bitmap, Pair<Int, Int>>()
-
-  private val maskAllText =
-    sessionReplay.maskViewClasses.contains(TEXT_VIEW_CLASS_NAME) ||
-      sessionReplay.maskViewClasses.size > 1
-  private val maskAllImages =
-    sessionReplay.maskViewClasses.contains(IMAGE_VIEW_CLASS_NAME) ||
-      sessionReplay.maskViewClasses.size > 1
 
   override fun isHardwareAccelerated(): Boolean {
     return false
