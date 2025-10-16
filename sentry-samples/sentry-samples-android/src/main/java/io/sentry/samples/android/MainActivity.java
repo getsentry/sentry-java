@@ -315,35 +315,48 @@ public class MainActivity extends AppCompatActivity {
     binding.checkForUpdate.setOnClickListener(
         view -> {
           Toast.makeText(this, "Checking for updates...", Toast.LENGTH_SHORT).show();
-          Sentry.distribution()
-              .checkForUpdate(
-                  result -> {
-                    runOnUiThread(
-                        () -> {
-                          String message;
-                          if (result instanceof UpdateStatus.NewRelease) {
-                            UpdateStatus.NewRelease newRelease = (UpdateStatus.NewRelease) result;
-                            message =
-                                "Update available: "
-                                    + newRelease.getInfo().getBuildVersion()
-                                    + " (Build "
-                                    + newRelease.getInfo().getBuildNumber()
-                                    + ")\nDownload URL: "
-                                    + newRelease.getInfo().getDownloadUrl();
-                          } else if (result instanceof UpdateStatus.UpToDate) {
-                            message = "App is up to date!";
-                          } else if (result instanceof UpdateStatus.NoNetwork) {
-                            UpdateStatus.NoNetwork noNetwork = (UpdateStatus.NoNetwork) result;
-                            message = "No network connection: " + noNetwork.getMessage();
-                          } else if (result instanceof UpdateStatus.UpdateError) {
-                            UpdateStatus.UpdateError error = (UpdateStatus.UpdateError) result;
-                            message = "Error checking for updates: " + error.getMessage();
-                          } else {
-                            message = "Unknown status";
-                          }
-                          Toast.makeText(this, message, Toast.LENGTH_LONG).show();
-                        });
-                  });
+          java.util.concurrent.Future<UpdateStatus> future = Sentry.distribution().checkForUpdate();
+          // Process result on background thread, then update UI
+          new Thread(
+                  () -> {
+                    try {
+                      UpdateStatus result = future.get();
+                      runOnUiThread(
+                          () -> {
+                            String message;
+                            if (result instanceof UpdateStatus.NewRelease) {
+                              UpdateStatus.NewRelease newRelease = (UpdateStatus.NewRelease) result;
+                              message =
+                                  "Update available: "
+                                      + newRelease.getInfo().getBuildVersion()
+                                      + " (Build "
+                                      + newRelease.getInfo().getBuildNumber()
+                                      + ")\nDownload URL: "
+                                      + newRelease.getInfo().getDownloadUrl();
+                            } else if (result instanceof UpdateStatus.UpToDate) {
+                              message = "App is up to date!";
+                            } else if (result instanceof UpdateStatus.NoNetwork) {
+                              UpdateStatus.NoNetwork noNetwork = (UpdateStatus.NoNetwork) result;
+                              message = "No network connection: " + noNetwork.getMessage();
+                            } else if (result instanceof UpdateStatus.UpdateError) {
+                              UpdateStatus.UpdateError error = (UpdateStatus.UpdateError) result;
+                              message = "Error checking for updates: " + error.getMessage();
+                            } else {
+                              message = "Unknown status";
+                            }
+                            Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+                          });
+                    } catch (Exception e) {
+                      runOnUiThread(
+                          () ->
+                              Toast.makeText(
+                                      this,
+                                      "Error checking for updates: " + e.getMessage(),
+                                      Toast.LENGTH_LONG)
+                                  .show());
+                    }
+                  })
+              .start();
         });
 
     binding.openCameraActivity.setOnClickListener(
