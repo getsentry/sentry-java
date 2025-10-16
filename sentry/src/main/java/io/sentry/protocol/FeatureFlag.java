@@ -52,8 +52,8 @@ public final class FeatureFlag implements JsonUnknown, JsonSerializable {
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    FeatureFlag flag = (FeatureFlag) o;
-    return Objects.equals(flag, flag.flag) && Objects.equals(result, flag.result);
+    final @NotNull FeatureFlag otherFlag = (FeatureFlag) o;
+    return Objects.equals(flag, otherFlag.flag) && Objects.equals(result, otherFlag.result);
   }
 
   @Override
