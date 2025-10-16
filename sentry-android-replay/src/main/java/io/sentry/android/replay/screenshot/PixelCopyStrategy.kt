@@ -52,8 +52,6 @@ internal class PixelCopyStrategy(
 
   @SuppressLint("NewApi")
   override fun capture(root: View) {
-    contentChanged.set(false)
-
     val window = root.phoneWindow
     if (window == null) {
       options.logger.log(DEBUG, "Window is invalid, not capturing screenshot")

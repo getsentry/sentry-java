@@ -128,9 +128,12 @@ internal class CanvasStrategy(
 
       val surface = holder.reader.surface
       val canvas = surface.lockHardwareCanvas()
-      canvas.drawColor(Color.BLACK, PorterDuff.Mode.CLEAR)
-      holder.picture.draw(canvas)
-      surface.unlockCanvasAndPost(canvas)
+      try {
+        canvas.drawColor(Color.BLACK, PorterDuff.Mode.CLEAR)
+        holder.picture.draw(canvas)
+      } finally {
+        surface.unlockCanvasAndPost(canvas)
+      }
     } catch (t: Throwable) {
       freePictureRef.set(holder)
       options.logger.log(SentryLevel.ERROR, "Canvas Strategy: picture render failed", t)
