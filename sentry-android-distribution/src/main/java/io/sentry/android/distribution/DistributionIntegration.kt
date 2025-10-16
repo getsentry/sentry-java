@@ -14,6 +14,7 @@ import io.sentry.UpdateInfo
 import io.sentry.UpdateStatus
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
+import java.util.concurrent.Future
 import org.jetbrains.annotations.ApiStatus
 
 /**
@@ -88,7 +89,7 @@ public class DistributionIntegration(context: Context) : Integration, IDistribut
    *
    * @return Future that will resolve to an UpdateStatus result
    */
-  public override fun checkForUpdate(): java.util.concurrent.Future<UpdateStatus> {
+  public override fun checkForUpdate(): Future<UpdateStatus> {
     return sentryOptions.executorService.submit<UpdateStatus> { checkForUpdateBlocking() }
   }
 
