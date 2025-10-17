@@ -29,6 +29,7 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Future;
 import timber.log.Timber;
 
 public class MainActivity extends AppCompatActivity {
@@ -315,7 +316,9 @@ public class MainActivity extends AppCompatActivity {
     binding.checkForUpdate.setOnClickListener(
         view -> {
           Toast.makeText(this, "Checking for updates...", Toast.LENGTH_SHORT).show();
-          java.util.concurrent.Future<UpdateStatus> future = Sentry.distribution().checkForUpdate();
+          Future<UpdateStatus> future = Sentry.distribution().checkForUpdate();
+          // In production, convert this to use your preferred async library (RxJava, Coroutines, etc.)
+          // This sample uses raw threads and Future.get() for simplicity
           // Process result on background thread, then update UI
           new Thread(
                   () -> {
