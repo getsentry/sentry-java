@@ -717,6 +717,11 @@ public final class Sentry {
                 options.getExecutorService());
 
         options.setContinuousProfiler(continuousProfiler);
+
+        final IProfileConverter profileConverter = ProfilingServiceLoader.loadProfileConverter();
+        if (profileConverter != null) {
+          options.setProfilerConverter(profileConverter);
+        }
       } catch (Exception e) {
         options
             .getLogger()
