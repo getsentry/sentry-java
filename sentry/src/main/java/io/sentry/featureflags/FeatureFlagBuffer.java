@@ -137,20 +137,20 @@ public final class FeatureFlagBuffer implements IFeatureFlagBuffer {
     int isolationIndex = isolationSize - 1;
     int currentIndex = currentSize - 1;
 
+    @Nullable
+    FeatureFlagEntry globalEntry = globalFlags == null ? null : globalFlags.get(globalIndex);
+    @Nullable
+    FeatureFlagEntry isolationEntry =
+        isolationFlags == null ? null : isolationFlags.get(isolationIndex);
+    @Nullable
+    FeatureFlagEntry currentEntry = currentFlags == null ? null : currentFlags.get(currentIndex);
+
     final @NotNull java.util.Map<String, FeatureFlagEntry> uniqueFlags =
         new java.util.LinkedHashMap<>(maxSize);
 
     // check if there is still room and remaining items to check
     while (uniqueFlags.size() < maxSize
-        && (globalIndex >= 0 || isolationIndex >= 0 || currentIndex >= 0)) {
-      final FeatureFlagEntry globalEntry =
-          (globalFlags != null && globalIndex >= 0) ? globalFlags.get(globalIndex) : null;
-      final FeatureFlagEntry isolationEntry =
-          (isolationFlags != null && isolationIndex >= 0)
-              ? isolationFlags.get(isolationIndex)
-              : null;
-      final FeatureFlagEntry currentEntry =
-          (currentFlags != null && currentIndex >= 0) ? currentFlags.get(currentIndex) : null;
+        && (globalEntry != null || isolationEntry != null || currentEntry != null)) {
 
       @Nullable FeatureFlagEntry entryToAdd = null;
       @Nullable ScopeType selectedBuffer = null;
@@ -179,10 +179,18 @@ public final class FeatureFlagBuffer implements IFeatureFlagBuffer {
         // decrement only index of buffer that was selected
         if (ScopeType.CURRENT.equals(selectedBuffer)) {
           currentIndex--;
+          currentEntry =
+              currentFlags != null && currentIndex >= 0 ? currentFlags.get(currentIndex) : null;
         } else if (ScopeType.ISOLATION.equals(selectedBuffer)) {
           isolationIndex--;
+          isolationEntry =
+              isolationFlags != null && isolationIndex >= 0
+                  ? isolationFlags.get(isolationIndex)
+                  : null;
         } else if (ScopeType.GLOBAL.equals(selectedBuffer)) {
           globalIndex--;
+          globalEntry =
+              globalFlags != null && globalIndex >= 0 ? globalFlags.get(globalIndex) : null;
         }
       } else {
         // no need to look any further since lists are sorted and we could not find any newer
