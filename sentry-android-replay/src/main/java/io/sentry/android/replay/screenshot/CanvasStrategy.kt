@@ -283,7 +283,10 @@ private class TextIgnoringDelegateCanvas : Canvas() {
 
   @Deprecated("Deprecated in Java")
   override fun saveLayer(bounds: RectF?, paint: Paint?, saveFlags: Int): Int {
-    return delegate.saveLayer(bounds, paint, saveFlags)
+    val shader = removeBitmapShader(paint)
+    val result = delegate.saveLayer(bounds, paint, saveFlags)
+    shader.let { paint?.shader = it }
+    return result
   }
 
   override fun saveLayer(bounds: RectF?, paint: Paint?): Int {
@@ -302,7 +305,10 @@ private class TextIgnoringDelegateCanvas : Canvas() {
     paint: Paint?,
     saveFlags: Int,
   ): Int {
-    return delegate.saveLayer(left, top, right, bottom, paint, saveFlags)
+    val shader = removeBitmapShader(paint)
+    val result = delegate.saveLayer(left, top, right, bottom, paint, saveFlags)
+    shader.let { paint?.shader = it }
+    return result
   }
 
   override fun saveLayer(left: Float, top: Float, right: Float, bottom: Float, paint: Paint?): Int {
@@ -691,7 +697,9 @@ private class TextIgnoringDelegateCanvas : Canvas() {
   }
 
   override fun drawPaint(paint: Paint) {
+    val shader = removeBitmapShader(paint)
     delegate.drawPaint(paint)
+    shader.let { paint.shader = it }
   }
 
   @RequiresApi(Build.VERSION_CODES.S)
@@ -993,6 +1001,7 @@ private class TextIgnoringDelegateCanvas : Canvas() {
     )
   }
 
+  /** Removes the bitmap shader from a paint, returning it so it can be restored later. */
   private fun removeBitmapShader(paint: Paint?): BitmapShader? {
     return if (paint == null) {
       null
