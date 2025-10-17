@@ -29,6 +29,9 @@ import android.view.View
 import androidx.annotation.RequiresApi
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
+import io.sentry.SentryReplayOptions
+import io.sentry.SentryReplayOptions.IMAGE_VIEW_CLASS_NAME
+import io.sentry.SentryReplayOptions.TEXT_VIEW_CLASS_NAME
 import io.sentry.android.replay.ExecutorProvider
 import io.sentry.android.replay.ScreenshotRecorderCallback
 import io.sentry.android.replay.ScreenshotRecorderConfig
@@ -56,7 +59,7 @@ internal class CanvasStrategy(
   private val prescaledMatrix by
     lazy(NONE) { Matrix().apply { preScale(config.scaleFactorX, config.scaleFactorY) } }
   private val lastCaptureSuccessful = AtomicBoolean(false)
-  private val textIgnoringCanvas = TextIgnoringDelegateCanvas()
+  private val textIgnoringCanvas = TextIgnoringDelegateCanvas(options.sessionReplay)
 
   private val isClosed = AtomicBoolean(false)
 
@@ -211,12 +214,15 @@ internal class CanvasStrategy(
 }
 
 @SuppressLint("UseKtx")
-private class TextIgnoringDelegateCanvas : Canvas() {
+private class TextIgnoringDelegateCanvas(sessionReplay: SentryReplayOptions) : Canvas() {
 
   lateinit var delegate: Canvas
   private val solidPaint = Paint()
   private val textPaint = Paint()
   private val tmpRect = Rect()
+
+  private val maskText = sessionReplay.maskViewClasses.contains(TEXT_VIEW_CLASS_NAME)
+  private val maskImages = sessionReplay.maskViewClasses.contains(IMAGE_VIEW_CLASS_NAME)
 
   val singlePixelBitmap = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
   val singlePixelCanvas = Canvas(singlePixelBitmap)
@@ -504,21 +510,33 @@ private class TextIgnoringDelegateCanvas : Canvas() {
   }
 
   override fun drawPicture(picture: Picture) {
-    solidPaint.colorFilter = null
-    solidPaint.color = Color.BLACK
-    delegate.drawRect(0f, 0f, picture.width.toFloat(), picture.height.toFloat(), solidPaint)
+    if (maskText || maskImages || picture.requiresHardwareAcceleration()) {
+      solidPaint.colorFilter = null
+      solidPaint.color = Color.BLACK
+      delegate.drawRect(0f, 0f, picture.width.toFloat(), picture.height.toFloat(), solidPaint)
+    } else {
+      delegate.drawPicture(picture)
+    }
   }
 
   override fun drawPicture(picture: Picture, dst: RectF) {
-    solidPaint.colorFilter = null
-    solidPaint.color = Color.BLACK
-    delegate.drawRect(dst, solidPaint)
+    if (maskText || maskImages || picture.requiresHardwareAcceleration()) {
+      solidPaint.colorFilter = null
+      solidPaint.color = Color.BLACK
+      delegate.drawRect(dst, solidPaint)
+    } else {
+      delegate.drawPicture(picture)
+    }
   }
 
   override fun drawPicture(picture: Picture, dst: Rect) {
+    if (maskText || maskImages || picture.requiresHardwareAcceleration()) {
     solidPaint.colorFilter = null
     solidPaint.color = Color.BLACK
     delegate.drawRect(dst, solidPaint)
+    } else {
+      delegate.drawPicture(picture)
+    }
   }
 
   override fun drawArc(
@@ -554,26 +572,44 @@ private class TextIgnoringDelegateCanvas : Canvas() {
 
   @RequiresApi(Build.VERSION_CODES.O)
   override fun drawBitmap(bitmap: Bitmap, left: Float, top: Float, paint: Paint?) {
-    val sampledColor = sampleBitmapColor(bitmap, paint, null)
-    solidPaint.setColor(sampledColor)
-    solidPaint.colorFilter = null
-    delegate.drawRect(left, top, left + bitmap.width, top + bitmap.height, solidPaint)
+    if (maskImages || bitmap.config == Bitmap.Config.HARDWARE) {
+      val sampledColor = sampleBitmapColor(bitmap, paint, null)
+      solidPaint.setColor(sampledColor)
+      solidPaint.colorFilter = null
+      delegate.drawRect(left, top, left + bitmap.width, top + bitmap.height, solidPaint)
+    } else {
+      val shader = removeBitmapShader(paint)
+      delegate.drawBitmap(bitmap, left, top, paint)
+      shader?.let { paint?.shader = it }
+    }
   }
 
   @RequiresApi(Build.VERSION_CODES.O)
   override fun drawBitmap(bitmap: Bitmap, src: Rect?, dst: RectF, paint: Paint?) {
-    val sampledColor = sampleBitmapColor(bitmap, paint, src)
-    solidPaint.setColor(sampledColor)
-    solidPaint.colorFilter = null
-    delegate.drawRect(dst, solidPaint)
+    if (maskImages || bitmap.config == Bitmap.Config.HARDWARE) {
+      val sampledColor = sampleBitmapColor(bitmap, paint, src)
+      solidPaint.setColor(sampledColor)
+      solidPaint.colorFilter = null
+      delegate.drawRect(dst, solidPaint)
+    } else {
+      val shader = removeBitmapShader(paint)
+      delegate.drawBitmap(bitmap, src, dst, paint)
+      shader?.let { paint?.shader = it }
+    }
   }
 
   @RequiresApi(Build.VERSION_CODES.O)
   override fun drawBitmap(bitmap: Bitmap, src: Rect?, dst: Rect, paint: Paint?) {
-    val sampledColor = sampleBitmapColor(bitmap, paint, src)
-    solidPaint.setColor(sampledColor)
-    solidPaint.colorFilter = null
-    delegate.drawRect(dst, solidPaint)
+    if (maskImages || bitmap.config == Bitmap.Config.HARDWARE) {
+      val sampledColor = sampleBitmapColor(bitmap, paint, src)
+      solidPaint.setColor(sampledColor)
+      solidPaint.colorFilter = null
+      delegate.drawRect(dst, solidPaint)
+    } else {
+      val shader = removeBitmapShader(paint)
+      delegate.drawBitmap(bitmap, src, dst, paint)
+      shader?.let { paint?.shader = it }
+    }
   }
 
   @Deprecated("Deprecated in Java")
@@ -608,14 +644,20 @@ private class TextIgnoringDelegateCanvas : Canvas() {
 
   @RequiresApi(Build.VERSION_CODES.O)
   override fun drawBitmap(bitmap: Bitmap, matrix: Matrix, paint: Paint?) {
-    val sampledColor = sampleBitmapColor(bitmap, paint, null)
-    solidPaint.setColor(sampledColor)
-    solidPaint.colorFilter = null
+    if (maskImages || bitmap.config == Bitmap.Config.HARDWARE) {
+      val sampledColor = sampleBitmapColor(bitmap, paint, null)
+      solidPaint.setColor(sampledColor)
+      solidPaint.colorFilter = null
 
-    val count = delegate.save()
-    delegate.setMatrix(matrix)
-    delegate.drawRect(0f, 0f, bitmap.width.toFloat(), bitmap.height.toFloat(), solidPaint)
-    delegate.restoreToCount(count)
+      val count = delegate.save()
+      delegate.setMatrix(matrix)
+      delegate.drawRect(0f, 0f, bitmap.width.toFloat(), bitmap.height.toFloat(), solidPaint)
+      delegate.restoreToCount(count)
+    } else {
+      val shader = removeBitmapShader(paint)
+      delegate.drawBitmap(bitmap, matrix, paint)
+      shader?.let { paint?.shader = it }
+    }
   }
 
   override fun drawBitmapMesh(
@@ -691,7 +733,9 @@ private class TextIgnoringDelegateCanvas : Canvas() {
   }
 
   override fun drawPaint(paint: Paint) {
+    val shader = removeBitmapShader(paint)
     delegate.drawPaint(paint)
+    shader.let { paint.shader = it }
   }
 
   @RequiresApi(Build.VERSION_CODES.S)
@@ -850,18 +894,36 @@ private class TextIgnoringDelegateCanvas : Canvas() {
   }
 
   override fun drawText(text: CharArray, index: Int, count: Int, x: Float, y: Float, paint: Paint) {
-    paint.getTextBounds(text, index, count, tmpRect)
-    drawMaskedText(paint, x, y)
+    if (maskText) {
+      paint.getTextBounds(text, index, count, tmpRect)
+      drawMaskedText(paint, x, y)
+    } else {
+      val shader = removeBitmapShader(paint)
+      delegate.drawText(text, index, count, x, y, paint)
+      shader.let { paint.shader = it }
+    }
   }
 
   override fun drawText(text: String, x: Float, y: Float, paint: Paint) {
-    paint.getTextBounds(text, 0, text.length, tmpRect)
-    drawMaskedText(paint, x, y)
+    if (maskText) {
+      paint.getTextBounds(text, 0, text.length, tmpRect)
+      drawMaskedText(paint, x, y)
+    } else {
+      val shader = removeBitmapShader(paint)
+      delegate.drawText(text, x, y, paint)
+      shader.let { paint.shader = it }
+    }
   }
 
   override fun drawText(text: String, start: Int, end: Int, x: Float, y: Float, paint: Paint) {
-    paint.getTextBounds(text, start, end, tmpRect)
-    drawMaskedText(paint, x, y)
+    if (maskText) {
+      paint.getTextBounds(text, start, end, tmpRect)
+      drawMaskedText(paint, x, y)
+    } else {
+      val shader = removeBitmapShader(paint)
+      delegate.drawText(text, start, end, x, y, paint)
+      shader.let { paint.shader = it }
+    }
   }
 
   override fun drawText(
@@ -872,8 +934,14 @@ private class TextIgnoringDelegateCanvas : Canvas() {
     y: Float,
     paint: Paint,
   ) {
-    paint.getTextBounds(text.toString(), 0, text.length, tmpRect)
-    drawMaskedText(paint, x, y)
+    if (maskText) {
+      paint.getTextBounds(text.toString(), 0, text.length, tmpRect)
+      drawMaskedText(paint, x, y)
+    } else {
+      val shader = removeBitmapShader(paint)
+      delegate.drawText(text, start, end, x, y, paint)
+      shader.let { paint.shader = it }
+    }
   }
 
   override fun drawTextOnPath(
@@ -909,8 +977,14 @@ private class TextIgnoringDelegateCanvas : Canvas() {
     isRtl: Boolean,
     paint: Paint,
   ) {
-    paint.getTextBounds(text, 0, index + count, tmpRect)
-    drawMaskedText(paint, x, y)
+    if (maskText) {
+      paint.getTextBounds(text, 0, index + count, tmpRect)
+      drawMaskedText(paint, x, y)
+    } else {
+      val shader = removeBitmapShader(paint)
+      delegate.drawTextRun(text, index, count, contextIndex, contextCount, x, y, isRtl, paint)
+      shader.let { paint.shader = it }
+    }
   }
 
   override fun drawTextRun(
@@ -924,8 +998,14 @@ private class TextIgnoringDelegateCanvas : Canvas() {
     isRtl: Boolean,
     paint: Paint,
   ) {
-    paint.getTextBounds(text.toString(), start, end, tmpRect)
-    drawMaskedText(paint, x, y)
+    if (maskText) {
+      paint.getTextBounds(text.toString(), start, end, tmpRect)
+      drawMaskedText(paint, x, y)
+    } else {
+      val shader = removeBitmapShader(paint)
+      delegate.drawTextRun(text, start, end, contextStart, contextEnd, x, y, isRtl, paint)
+      shader.let { paint.shader = it }
+    }
   }
 
   override fun drawTextRun(
@@ -939,8 +1019,14 @@ private class TextIgnoringDelegateCanvas : Canvas() {
     isRtl: Boolean,
     paint: Paint,
   ) {
-    paint.getTextBounds(text.toString(), start, end, tmpRect)
-    drawMaskedText(paint, x, y)
+    if (maskText) {
+      paint.getTextBounds(text.toString(), start, end, tmpRect)
+      drawMaskedText(paint, x, y)
+    } else {
+      val shader = removeBitmapShader(paint)
+      delegate.drawTextRun(text, start, end, contextStart, contextEnd, x, y, isRtl, paint)
+      shader.let { paint.shader = it }
+    }
   }
 
   @RequiresApi(Build.VERSION_CODES.O)
