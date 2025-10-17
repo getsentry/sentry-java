@@ -9,7 +9,7 @@
   - The attribute reflected on the log is `mdc.<key>`, where `<key>` is the original key in the MDC.
   - This means that you will be able to filter/aggregate logs in the product based on these properties.
   - Only properties with keys matching the configured `contextTags` are sent as log attributes.
-    - You can configure which properties are sent using `options.setContextTags` if initalizing manually, or by specifying a comma-separated list of keys with a `context-tags` entry in `sentry.properties` or `sentry.contex-tags` in `application.properties`.
+    - You can configure which properties are sent using `options.setContextTags` if initalizing manually, or by specifying a comma-separated list of keys with a `context-tags` entry in `sentry.properties` or `sentry.context-tags` in `application.properties`.
     - Note that keys containing spaces are not supported.
 - Add experimental Sentry Android Distribution module for integrating with Sentry Build Distribution to check for and install updates ([#4804](https://github.com/getsentry/sentry-java/pull/4804))
 - Allow passing a different `Handler` to `SystemEventsBreadcrumbsIntegration` and `AndroidConnectionStatusProvider` so their callbacks are deliver to that handler ([#4808](https://github.com/getsentry/sentry-java/pull/4808))
