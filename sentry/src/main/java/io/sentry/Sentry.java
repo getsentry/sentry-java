@@ -1373,7 +1373,7 @@ public final class Sentry {
     options.getFeedbackOptions().getDialogHandler().showDialog(associatedEventId, configurator);
   }
 
-  public static void addFeatureFlag(final @NotNull String flag, final boolean result) {
+  public static void addFeatureFlag(final @Nullable String flag, final @Nullable Boolean result) {
     getCurrentScopes().addFeatureFlag(flag, result);
   }
 }

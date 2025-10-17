@@ -7,7 +7,7 @@ import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
 public interface IFeatureFlagBuffer {
-  void add(@NotNull String flag, boolean result);
+  void add(final @Nullable String flag, final @Nullable Boolean result);
 
   @Nullable
   FeatureFlags getFeatureFlags();

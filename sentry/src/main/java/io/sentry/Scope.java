@@ -1128,7 +1128,7 @@ public final class Scope implements IScope {
   }
 
   @Override
-  public void addFeatureFlag(final @NotNull String flag, final boolean result) {
+  public void addFeatureFlag(final @Nullable String flag, final @Nullable Boolean result) {
     featureFlags.add(flag, result);
   }
 

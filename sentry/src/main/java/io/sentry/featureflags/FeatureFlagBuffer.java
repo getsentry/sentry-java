@@ -38,7 +38,10 @@ public final class FeatureFlagBuffer implements IFeatureFlagBuffer {
   }
 
   @Override
-  public void add(@NotNull String flag, boolean result) {
+  public void add(final @Nullable String flag, final @Nullable Boolean result) {
+    if (flag == null || result == null) {
+      return;
+    }
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       final int size = flags.size();
       final @NotNull ArrayList<FeatureFlagEntry> tmpList = new ArrayList<>(size + 1);

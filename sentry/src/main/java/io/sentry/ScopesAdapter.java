@@ -387,7 +387,7 @@ public final class ScopesAdapter implements IScopes {
   }
 
   @Override
-  public void addFeatureFlag(final @NotNull String flag, final boolean result) {
+  public void addFeatureFlag(final @Nullable String flag, final @Nullable Boolean result) {
     Sentry.addFeatureFlag(flag, result);
   }
 }

@@ -264,7 +264,7 @@ public final class io/sentry/CombinedScopeView : io/sentry/IScope {
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;)V
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;Lio/sentry/Hint;)V
 	public fun addEventProcessor (Lio/sentry/EventProcessor;)V
-	public fun addFeatureFlag (Ljava/lang/String;Z)V
+	public fun addFeatureFlag (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public fun assignTraceContext (Lio/sentry/SentryEvent;)V
 	public fun bindClient (Lio/sentry/ISentryClient;)V
 	public fun clear ()V
@@ -612,7 +612,7 @@ public final class io/sentry/HttpStatusCodeRange {
 public final class io/sentry/HubAdapter : io/sentry/IHub {
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;)V
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;Lio/sentry/Hint;)V
-	public fun addFeatureFlag (Ljava/lang/String;Z)V
+	public fun addFeatureFlag (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public fun bindClient (Lio/sentry/ISentryClient;)V
 	public fun captureCheckIn (Lio/sentry/CheckIn;)Lio/sentry/protocol/SentryId;
 	public fun captureEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
@@ -685,7 +685,7 @@ public final class io/sentry/HubScopesWrapper : io/sentry/IHub {
 	public fun <init> (Lio/sentry/IScopes;)V
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;)V
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;Lio/sentry/Hint;)V
-	public fun addFeatureFlag (Ljava/lang/String;Z)V
+	public fun addFeatureFlag (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public fun bindClient (Lio/sentry/ISentryClient;)V
 	public fun captureCheckIn (Lio/sentry/CheckIn;)Lio/sentry/protocol/SentryId;
 	public fun captureEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
@@ -848,7 +848,7 @@ public abstract interface class io/sentry/IScope {
 	public abstract fun addBreadcrumb (Lio/sentry/Breadcrumb;)V
 	public abstract fun addBreadcrumb (Lio/sentry/Breadcrumb;Lio/sentry/Hint;)V
 	public abstract fun addEventProcessor (Lio/sentry/EventProcessor;)V
-	public abstract fun addFeatureFlag (Ljava/lang/String;Z)V
+	public abstract fun addFeatureFlag (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public abstract fun assignTraceContext (Lio/sentry/SentryEvent;)V
 	public abstract fun bindClient (Lio/sentry/ISentryClient;)V
 	public abstract fun clear ()V
@@ -936,7 +936,7 @@ public abstract interface class io/sentry/IScopes {
 	public abstract fun addBreadcrumb (Lio/sentry/Breadcrumb;Lio/sentry/Hint;)V
 	public fun addBreadcrumb (Ljava/lang/String;)V
 	public fun addBreadcrumb (Ljava/lang/String;Ljava/lang/String;)V
-	public abstract fun addFeatureFlag (Ljava/lang/String;Z)V
+	public abstract fun addFeatureFlag (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public abstract fun bindClient (Lio/sentry/ISentryClient;)V
 	public abstract fun captureCheckIn (Lio/sentry/CheckIn;)Lio/sentry/protocol/SentryId;
 	public fun captureEnvelope (Lio/sentry/SentryEnvelope;)Lio/sentry/protocol/SentryId;
@@ -1518,7 +1518,7 @@ public final class io/sentry/NoOpEnvelopeReader : io/sentry/IEnvelopeReader {
 public final class io/sentry/NoOpHub : io/sentry/IHub {
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;)V
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;Lio/sentry/Hint;)V
-	public fun addFeatureFlag (Ljava/lang/String;Z)V
+	public fun addFeatureFlag (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public fun bindClient (Lio/sentry/ISentryClient;)V
 	public fun captureCheckIn (Lio/sentry/CheckIn;)Lio/sentry/protocol/SentryId;
 	public fun captureEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
@@ -1620,7 +1620,7 @@ public final class io/sentry/NoOpScope : io/sentry/IScope {
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;)V
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;Lio/sentry/Hint;)V
 	public fun addEventProcessor (Lio/sentry/EventProcessor;)V
-	public fun addFeatureFlag (Ljava/lang/String;Z)V
+	public fun addFeatureFlag (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public fun assignTraceContext (Lio/sentry/SentryEvent;)V
 	public fun bindClient (Lio/sentry/ISentryClient;)V
 	public fun clear ()V
@@ -1689,7 +1689,7 @@ public final class io/sentry/NoOpScope : io/sentry/IScope {
 public final class io/sentry/NoOpScopes : io/sentry/IScopes {
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;)V
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;Lio/sentry/Hint;)V
-	public fun addFeatureFlag (Ljava/lang/String;Z)V
+	public fun addFeatureFlag (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public fun bindClient (Lio/sentry/ISentryClient;)V
 	public fun captureCheckIn (Lio/sentry/CheckIn;)Lio/sentry/protocol/SentryId;
 	public fun captureEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
@@ -2283,7 +2283,7 @@ public final class io/sentry/Scope : io/sentry/IScope {
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;)V
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;Lio/sentry/Hint;)V
 	public fun addEventProcessor (Lio/sentry/EventProcessor;)V
-	public fun addFeatureFlag (Ljava/lang/String;Z)V
+	public fun addFeatureFlag (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public fun assignTraceContext (Lio/sentry/SentryEvent;)V
 	public fun bindClient (Lio/sentry/ISentryClient;)V
 	public fun clear ()V
@@ -2401,7 +2401,7 @@ public final class io/sentry/Scopes : io/sentry/IScopes {
 	public fun <init> (Lio/sentry/IScope;Lio/sentry/IScope;Lio/sentry/IScope;Ljava/lang/String;)V
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;)V
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;Lio/sentry/Hint;)V
-	public fun addFeatureFlag (Ljava/lang/String;Z)V
+	public fun addFeatureFlag (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public fun bindClient (Lio/sentry/ISentryClient;)V
 	public fun captureCheckIn (Lio/sentry/CheckIn;)Lio/sentry/protocol/SentryId;
 	public fun captureEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
@@ -2473,7 +2473,7 @@ public final class io/sentry/Scopes : io/sentry/IScopes {
 public final class io/sentry/ScopesAdapter : io/sentry/IScopes {
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;)V
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;Lio/sentry/Hint;)V
-	public fun addFeatureFlag (Ljava/lang/String;Z)V
+	public fun addFeatureFlag (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public fun bindClient (Lio/sentry/ISentryClient;)V
 	public fun captureCheckIn (Lio/sentry/CheckIn;)Lio/sentry/protocol/SentryId;
 	public fun captureEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
@@ -2584,7 +2584,7 @@ public final class io/sentry/Sentry {
 	public static fun addBreadcrumb (Lio/sentry/Breadcrumb;Lio/sentry/Hint;)V
 	public static fun addBreadcrumb (Ljava/lang/String;)V
 	public static fun addBreadcrumb (Ljava/lang/String;Ljava/lang/String;)V
-	public static fun addFeatureFlag (Ljava/lang/String;Z)V
+	public static fun addFeatureFlag (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public static fun bindClient (Lio/sentry/ISentryClient;)V
 	public static fun captureCheckIn (Lio/sentry/CheckIn;)Lio/sentry/protocol/SentryId;
 	public static fun captureEvent (Lio/sentry/SentryEvent;)Lio/sentry/protocol/SentryId;
@@ -4718,7 +4718,7 @@ public final class io/sentry/exception/SentryHttpClientException : java/lang/Exc
 }
 
 public final class io/sentry/featureflags/FeatureFlagBuffer : io/sentry/featureflags/IFeatureFlagBuffer {
-	public fun add (Ljava/lang/String;Z)V
+	public fun add (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public fun clone ()Lio/sentry/featureflags/IFeatureFlagBuffer;
 	public synthetic fun clone ()Ljava/lang/Object;
 	public static fun create (Lio/sentry/SentryOptions;)Lio/sentry/featureflags/IFeatureFlagBuffer;
@@ -4727,14 +4727,14 @@ public final class io/sentry/featureflags/FeatureFlagBuffer : io/sentry/featuref
 }
 
 public abstract interface class io/sentry/featureflags/IFeatureFlagBuffer {
-	public abstract fun add (Ljava/lang/String;Z)V
+	public abstract fun add (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public abstract fun clone ()Lio/sentry/featureflags/IFeatureFlagBuffer;
 	public abstract fun getFeatureFlags ()Lio/sentry/protocol/FeatureFlags;
 }
 
 public final class io/sentry/featureflags/NoOpFeatureFlagBuffer : io/sentry/featureflags/IFeatureFlagBuffer {
 	public fun <init> ()V
-	public fun add (Ljava/lang/String;Z)V
+	public fun add (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public fun clone ()Lio/sentry/featureflags/IFeatureFlagBuffer;
 	public synthetic fun clone ()Ljava/lang/Object;
 	public fun getFeatureFlags ()Lio/sentry/protocol/FeatureFlags;

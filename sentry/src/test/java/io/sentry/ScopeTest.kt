@@ -1123,6 +1123,20 @@ class ScopeTest {
     assertFalse(flag0.result)
   }
 
+  @Test
+  fun `null feature flags are ignored`() {
+    val scope = Scope(SentryOptions.empty())
+
+    scope.addFeatureFlag(null, true)
+    scope.addFeatureFlag("flag1", null)
+    scope.addFeatureFlag(null, null)
+
+    val flags = scope.featureFlags
+    assertNotNull(flags)
+
+    assertEquals(0, flags.values.size)
+  }
+
   private fun eventProcessor(): EventProcessor =
     object : EventProcessor {
       override fun process(event: SentryEvent, hint: Hint): SentryEvent? = event

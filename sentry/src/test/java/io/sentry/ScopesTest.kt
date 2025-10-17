@@ -3121,6 +3121,41 @@ class ScopesTest {
       )
   }
 
+  @Test
+  fun `null feature flags are ignored`() {
+    val (sut, mockClient) = getEnabledScopes()
+
+    sut.addFeatureFlag(null, true)
+    sut.addFeatureFlag("flag-1", true)
+    sut.addFeatureFlag(null, null)
+
+    sut.scope.addFeatureFlag(null, true)
+    sut.scope.addFeatureFlag("current-feature-flag", null)
+    sut.scope.addFeatureFlag(null, null)
+
+    sut.isolationScope.addFeatureFlag(null, false)
+    sut.isolationScope.addFeatureFlag("isolation-feature-flag", null)
+    sut.isolationScope.addFeatureFlag(null, null)
+
+    sut.globalScope.addFeatureFlag(null, true)
+    sut.globalScope.addFeatureFlag("global-feature-flag", null)
+    sut.globalScope.addFeatureFlag(null, null)
+
+    sut.captureException(RuntimeException("test exception"))
+
+    verify(mockClient)
+      .captureEvent(
+        any(),
+        check {
+          val featureFlags = it.featureFlags
+          assertNotNull(featureFlags)
+
+          assertEquals(0, featureFlags.values.size)
+        },
+        anyOrNull(),
+      )
+  }
+
   private val dsnTest = "https://key@sentry.io/proj"
 
   private fun generateScopes(

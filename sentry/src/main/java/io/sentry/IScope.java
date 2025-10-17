@@ -425,7 +425,7 @@ public interface IScope {
   @ApiStatus.Internal
   void replaceOptions(final @NotNull SentryOptions options);
 
-  void addFeatureFlag(final @NotNull String flag, final boolean result);
+  void addFeatureFlag(final @Nullable String flag, final @Nullable Boolean result);
 
   @ApiStatus.Internal
   @Nullable
