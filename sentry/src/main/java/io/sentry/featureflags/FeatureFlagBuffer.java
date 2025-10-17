@@ -34,7 +34,7 @@ public final class FeatureFlagBuffer implements IFeatureFlagBuffer {
 
   private FeatureFlagBuffer(@NotNull FeatureFlagBuffer other) {
     this.maxSize = other.maxSize;
-    this.flags = other.flags;
+    this.flags = new CopyOnWriteArrayList<>(other.flags);
   }
 
   @Override
