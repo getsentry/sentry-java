@@ -102,6 +102,150 @@ class FeatureFlagBufferTest {
   }
 
   @Test
+  fun `when merging global buffer can be empty`() {
+    val options = SentryOptions().also { it.maxFeatureFlags = 2 }
+    val globalBuffer = FeatureFlagBuffer.create(options)
+    val isolationBuffer = FeatureFlagBuffer.create(options)
+    val currentBuffer = FeatureFlagBuffer.create(options)
+    isolationBuffer.add("isolationA", true)
+    currentBuffer.add("currentA", true)
+    isolationBuffer.add("isolationB", true)
+    currentBuffer.add("currentB", true)
+    isolationBuffer.add("isolationC", true)
+    currentBuffer.add("currentC", true)
+
+    val buffer = FeatureFlagBuffer.merged(options, globalBuffer, isolationBuffer, currentBuffer)
+
+    val featureFlags = buffer.featureFlags
+    assertNotNull(featureFlags)
+    val featureFlagValues = featureFlags.values
+    assertEquals(2, featureFlagValues.size)
+
+    assertEquals("isolationC", featureFlagValues[0]!!.flag)
+    assertEquals("currentC", featureFlagValues[1]!!.flag)
+  }
+
+  @Test
+  fun `when merging isolation buffer can be empty`() {
+    val options = SentryOptions().also { it.maxFeatureFlags = 2 }
+    val globalBuffer = FeatureFlagBuffer.create(options)
+    val isolationBuffer = FeatureFlagBuffer.create(options)
+    val currentBuffer = FeatureFlagBuffer.create(options)
+    globalBuffer.add("globalA", true)
+    currentBuffer.add("currentA", true)
+    globalBuffer.add("globalB", true)
+    currentBuffer.add("currentB", true)
+    globalBuffer.add("globalC", true)
+    currentBuffer.add("currentC", true)
+
+    val buffer = FeatureFlagBuffer.merged(options, globalBuffer, isolationBuffer, currentBuffer)
+
+    val featureFlags = buffer.featureFlags
+    assertNotNull(featureFlags)
+    val featureFlagValues = featureFlags.values
+    assertEquals(2, featureFlagValues.size)
+
+    assertEquals("globalC", featureFlagValues[0]!!.flag)
+    assertEquals("currentC", featureFlagValues[1]!!.flag)
+  }
+
+  @Test
+  fun `when merging current buffer can be empty`() {
+    val options = SentryOptions().also { it.maxFeatureFlags = 2 }
+    val globalBuffer = FeatureFlagBuffer.create(options)
+    val isolationBuffer = FeatureFlagBuffer.create(options)
+    val currentBuffer = FeatureFlagBuffer.create(options)
+    globalBuffer.add("globalA", true)
+    isolationBuffer.add("isolationA", true)
+    globalBuffer.add("globalB", true)
+    isolationBuffer.add("isolationB", true)
+    globalBuffer.add("globalC", true)
+    isolationBuffer.add("isolationC", true)
+
+    val buffer = FeatureFlagBuffer.merged(options, globalBuffer, isolationBuffer, currentBuffer)
+
+    val featureFlags = buffer.featureFlags
+    assertNotNull(featureFlags)
+    val featureFlagValues = featureFlags.values
+    assertEquals(2, featureFlagValues.size)
+
+    assertEquals("globalC", featureFlagValues[0]!!.flag)
+    assertEquals("isolationC", featureFlagValues[1]!!.flag)
+  }
+
+  @Test
+  fun `when merging global buffer can be noop`() {
+    val options = SentryOptions().also { it.maxFeatureFlags = 2 }
+    val globalBuffer = NoOpFeatureFlagBuffer.getInstance()
+    val isolationBuffer = FeatureFlagBuffer.create(options)
+    val currentBuffer = FeatureFlagBuffer.create(options)
+    isolationBuffer.add("isolationA", true)
+    currentBuffer.add("currentA", true)
+    isolationBuffer.add("isolationB", true)
+    currentBuffer.add("currentB", true)
+    isolationBuffer.add("isolationC", true)
+    currentBuffer.add("currentC", true)
+
+    val buffer = FeatureFlagBuffer.merged(options, globalBuffer, isolationBuffer, currentBuffer)
+
+    val featureFlags = buffer.featureFlags
+    assertNotNull(featureFlags)
+    val featureFlagValues = featureFlags.values
+    assertEquals(2, featureFlagValues.size)
+
+    assertEquals("isolationC", featureFlagValues[0]!!.flag)
+    assertEquals("currentC", featureFlagValues[1]!!.flag)
+  }
+
+  @Test
+  fun `when merging isolation buffer can be noop`() {
+    val options = SentryOptions().also { it.maxFeatureFlags = 2 }
+    val globalBuffer = FeatureFlagBuffer.create(options)
+    val isolationBuffer = NoOpFeatureFlagBuffer.getInstance()
+    val currentBuffer = FeatureFlagBuffer.create(options)
+    globalBuffer.add("globalA", true)
+    currentBuffer.add("currentA", true)
+    globalBuffer.add("globalB", true)
+    currentBuffer.add("currentB", true)
+    globalBuffer.add("globalC", true)
+    currentBuffer.add("currentC", true)
+
+    val buffer = FeatureFlagBuffer.merged(options, globalBuffer, isolationBuffer, currentBuffer)
+
+    val featureFlags = buffer.featureFlags
+    assertNotNull(featureFlags)
+    val featureFlagValues = featureFlags.values
+    assertEquals(2, featureFlagValues.size)
+
+    assertEquals("globalC", featureFlagValues[0]!!.flag)
+    assertEquals("currentC", featureFlagValues[1]!!.flag)
+  }
+
+  @Test
+  fun `when merging current buffer can be noop`() {
+    val options = SentryOptions().also { it.maxFeatureFlags = 2 }
+    val globalBuffer = FeatureFlagBuffer.create(options)
+    val isolationBuffer = FeatureFlagBuffer.create(options)
+    val currentBuffer = NoOpFeatureFlagBuffer.getInstance()
+    globalBuffer.add("globalA", true)
+    isolationBuffer.add("isolationA", true)
+    globalBuffer.add("globalB", true)
+    isolationBuffer.add("isolationB", true)
+    globalBuffer.add("globalC", true)
+    isolationBuffer.add("isolationC", true)
+
+    val buffer = FeatureFlagBuffer.merged(options, globalBuffer, isolationBuffer, currentBuffer)
+
+    val featureFlags = buffer.featureFlags
+    assertNotNull(featureFlags)
+    val featureFlagValues = featureFlags.values
+    assertEquals(2, featureFlagValues.size)
+
+    assertEquals("globalC", featureFlagValues[0]!!.flag)
+    assertEquals("isolationC", featureFlagValues[1]!!.flag)
+  }
+
+  @Test
   fun `drops oldest entries when merging multiple buffers all from same source`() {
     val options = SentryOptions().also { it.maxFeatureFlags = 2 }
     val globalBuffer = FeatureFlagBuffer.create(options)
@@ -178,5 +322,16 @@ class FeatureFlagBufferTest {
     val buffer = FeatureFlagBuffer.merged(options, globalBuffer, isolationBuffer, currentBuffer)
 
     assertTrue(buffer is NoOpFeatureFlagBuffer)
+  }
+
+  @Test
+  fun `null values are ignored`() {
+    val buffer = FeatureFlagBuffer.create(SentryOptions().also { it.maxFeatureFlags = 2 })
+    buffer.add(null, true)
+    buffer.add("b", null)
+    buffer.add(null, null)
+
+    val featureFlags = buffer.featureFlags
+    assertNotNull(featureFlags)
   }
 }
