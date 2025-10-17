@@ -317,7 +317,8 @@ public class MainActivity extends AppCompatActivity {
         view -> {
           Toast.makeText(this, "Checking for updates...", Toast.LENGTH_SHORT).show();
           Future<UpdateStatus> future = Sentry.distribution().checkForUpdate();
-          // In production, convert this to use your preferred async library (RxJava, Coroutines, etc.)
+          // In production, convert this to use your preferred async library (RxJava, Coroutines,
+          // etc.)
           // This sample uses raw threads and Future.get() for simplicity
           // Process result on background thread, then update UI
           new Thread(
