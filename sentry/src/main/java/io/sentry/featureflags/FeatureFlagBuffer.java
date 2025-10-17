@@ -97,6 +97,19 @@ public final class FeatureFlagBuffer implements IFeatureFlagBuffer {
         currentBuffer instanceof FeatureFlagBuffer ? (FeatureFlagBuffer) currentBuffer : null);
   }
 
+  /**
+   * Iterates all incoming buffers from the end, always taking the latest item across all buffers,
+   * until maxSize has been reached or no more items are available.
+   *
+   * <p>If a duplicate is found we skip it since we're iterating in reverse order and we already
+   * have the latest entry.
+   *
+   * @param maxSize max number of feature flags
+   * @param globalBuffer buffer from global scope
+   * @param isolationBuffer buffer from isolation scope
+   * @param currentBuffer buffer from current scope
+   * @return merged buffer containing at most maxSize latest items from incoming buffers
+   */
   private static @NotNull IFeatureFlagBuffer merged(
       final int maxSize,
       final @Nullable FeatureFlagBuffer globalBuffer,
