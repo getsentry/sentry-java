@@ -481,7 +481,7 @@ final class ManifestMetadataReader {
         final @Nullable String screenshotStrategyRaw =
             readString(metadata, logger, REPLAYS_SCREENSHOT_STRATEGY, null);
         if (screenshotStrategyRaw != null) {
-          if ("canvas".equals(screenshotStrategyRaw)) {
+          if ("canvas".equals(screenshotStrategyRaw.toLowerCase(Locale.ROOT))) {
             options.getSessionReplay().setScreenshotStrategy(ScreenshotStrategyType.CANVAS);
           } else {
             // always default to PIXEL_COPY
