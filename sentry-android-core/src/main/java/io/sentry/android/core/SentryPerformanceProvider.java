@@ -20,10 +20,12 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.TracesSampler;
 import io.sentry.TracesSamplingDecision;
+import io.sentry.android.core.internal.util.AndroidRuntimeManager;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.android.core.performance.AppStartMetrics;
 import io.sentry.android.core.performance.TimeSpan;
 import io.sentry.util.AutoClosableReentrantLock;
+import io.sentry.util.runtime.IRuntimeManager;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -108,7 +110,9 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
       return;
     }
 
-    final @NotNull File cacheDir = AndroidOptionsInitializer.getCacheDir(context);
+    final @NotNull IRuntimeManager runtimeManager = new AndroidRuntimeManager();
+    final @NotNull File cacheDir =
+        runtimeManager.runWithRelaxedPolicy(() -> AndroidOptionsInitializer.getCacheDir(context));
     final @NotNull File configFile = new File(cacheDir, APP_START_PROFILING_CONFIG_FILE_NAME);
 
     // No config exists: app start profiling is not enabled

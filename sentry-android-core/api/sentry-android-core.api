@@ -446,6 +446,7 @@ public class io/sentry/android/core/SpanFrameMetricsCollector : io/sentry/IPerfo
 
 public final class io/sentry/android/core/SystemEventsBreadcrumbsIntegration : io/sentry/Integration, io/sentry/android/core/AppState$AppStateListener, java/io/Closeable {
 	public fun <init> (Landroid/content/Context;)V
+	public fun <init> (Landroid/content/Context;Landroid/os/Handler;)V
 	public fun <init> (Landroid/content/Context;Ljava/util/List;)V
 	public fun close ()V
 	public static fun getDefaultActions ()Ljava/util/List;
