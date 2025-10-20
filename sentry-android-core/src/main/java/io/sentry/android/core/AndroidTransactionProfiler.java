@@ -36,7 +36,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
   private final int profilingTracesHz;
   private final @NotNull ISentryExecutorService executorService;
   private final @NotNull BuildInfoProvider buildInfoProvider;
-  private final @NotNull AtomicBoolean isInitialized = new AtomicBoolean(false);
+  private boolean isInitialized = false;
   private final @NotNull AtomicBoolean isRunning = new AtomicBoolean(false);
   private final @NotNull SentryFrameMetricsCollector frameMetricsCollector;
   private @Nullable ProfilingTransactionData currentProfilingTransactionData;
@@ -89,9 +89,11 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
 
   private void init() {
     // We initialize it only once
-    if (isInitialized.getAndSet(true)) {
+    if (isInitialized) {
       return;
     }
+    isInitialized = true;
+
     if (!isProfilingEnabled) {
       logger.log(SentryLevel.INFO, "Profiling is disabled in options.");
       return;
@@ -125,11 +127,11 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
     // causes crashes on api 21 -> https://github.com/getsentry/sentry-java/issues/3392
     if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.LOLLIPOP_MR1) return;
 
-    // Let's initialize trace folder and profiling interval
-    init();
-
     // When the first transaction is starting, we can start profiling
     if (!isRunning.getAndSet(true)) {
+      // Let's initialize trace folder and profiling interval
+      init();
+
       if (onFirstStart()) {
         logger.log(SentryLevel.DEBUG, "Profiler started.");
       } else {
@@ -138,6 +140,10 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
           logger.log(
               SentryLevel.WARNING, "A profile is already running. This profile will be ignored.");
         } else {
+          try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+            // Ensure we unbind any transaction data, just in case of concurrent starts
+            currentProfilingTransactionData = null;
+          }
           // Otherwise we update the flag, because it means the profiler is not running
           isRunning.set(false);
         }
