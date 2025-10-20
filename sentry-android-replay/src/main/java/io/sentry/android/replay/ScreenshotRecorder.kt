@@ -178,7 +178,7 @@ public data class ScreenshotRecorderConfig(
     private fun Int.adjustToBlockSize(): Int {
       val remainder = this % 16
       return if (remainder <= 8) {
-        this - remainder
+        maxOf(16, this - remainder)
       } else {
         this + (16 - remainder)
       }
