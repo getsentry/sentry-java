@@ -354,4 +354,8 @@ public class AndroidProfiler {
       }
     }
   }
+
+  boolean isRunning() {
+    return isRunning;
+  }
 }
