@@ -14,13 +14,21 @@
 - Add experimental Sentry Android Distribution module for integrating with Sentry Build Distribution to check for and install updates ([#4804](https://github.com/getsentry/sentry-java/pull/4804))
 - Allow passing a different `Handler` to `SystemEventsBreadcrumbsIntegration` and `AndroidConnectionStatusProvider` so their callbacks are deliver to that handler ([#4808](https://github.com/getsentry/sentry-java/pull/4808))
 - Session Replay: Add new _experimental_ Canvas Capture Strategy ([#4777](https://github.com/getsentry/sentry-java/pull/4777))
-  - A new screenshot capture strategy that uses Android's Canvas API for more accurate text masking
+  - A new screenshot capture strategy that uses Android's Canvas API for more accurate and reliable text and image masking
   - Any `.drawText()` or `.drawBitmap()` calls are replaced by rectangles, ensuring no text or images are present in the resulting output
-  ```kotlin
-  SentryAndroid.init(context) { options ->
-    options.sessionReplay.screenshotStrategy = ScreenshotStrategyType.CANVAS
-  }
-  ```
+  - Note: If this strategy is used, all text and images will be masked, regardless of any masking configuration
+  - To enable this feature, set the `screenshotStrategy`, either via code:
+    ```kotlin
+    SentryAndroid.init(context) { options ->
+      options.sessionReplay.screenshotStrategy = ScreenshotStrategyType.CANVAS
+    }
+    ```
+    or AndroidManifest.xml:
+    ```xml
+    <application>
+      <meta-data android:name="io.sentry.session-replay.screenshot-strategy" android:value="canvas" />
+    </application>
+    ```
 
 ### Fixes
 
