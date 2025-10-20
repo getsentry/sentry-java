@@ -2526,6 +2526,13 @@ public final class io/sentry/ScopesStorageFactory {
 	public static fun create (Lio/sentry/util/LoadClass;Lio/sentry/ILogger;)Lio/sentry/IScopesStorage;
 }
 
+public final class io/sentry/ScreenshotStrategyType : java/lang/Enum {
+	public static final field CANVAS Lio/sentry/ScreenshotStrategyType;
+	public static final field PIXEL_COPY Lio/sentry/ScreenshotStrategyType;
+	public static fun valueOf (Ljava/lang/String;)Lio/sentry/ScreenshotStrategyType;
+	public static fun values ()[Lio/sentry/ScreenshotStrategyType;
+}
+
 public final class io/sentry/SendCachedEnvelopeFireAndForgetIntegration : io/sentry/IConnectionStatusProvider$IConnectionStatusObserver, io/sentry/Integration, java/io/Closeable {
 	public fun <init> (Lio/sentry/SendCachedEnvelopeFireAndForgetIntegration$SendFireAndForgetFactory;)V
 	public fun close ()V
@@ -3752,6 +3759,7 @@ public final class io/sentry/SentryReplayOptions {
 	public fun getMaskViewContainerClass ()Ljava/lang/String;
 	public fun getOnErrorSampleRate ()Ljava/lang/Double;
 	public fun getQuality ()Lio/sentry/SentryReplayOptions$SentryReplayQuality;
+	public fun getScreenshotStrategy ()Lio/sentry/ScreenshotStrategyType;
 	public fun getSdkVersion ()Lio/sentry/protocol/SdkVersion;
 	public fun getSessionDuration ()J
 	public fun getSessionSampleRate ()Ljava/lang/Double;
@@ -3768,6 +3776,7 @@ public final class io/sentry/SentryReplayOptions {
 	public fun setMaskViewContainerClass (Ljava/lang/String;)V
 	public fun setOnErrorSampleRate (Ljava/lang/Double;)V
 	public fun setQuality (Lio/sentry/SentryReplayOptions$SentryReplayQuality;)V
+	public fun setScreenshotStrategy (Lio/sentry/ScreenshotStrategyType;)V
 	public fun setSdkVersion (Lio/sentry/protocol/SdkVersion;)V
 	public fun setSessionSampleRate (Ljava/lang/Double;)V
 	public fun setTrackConfiguration (Z)V
