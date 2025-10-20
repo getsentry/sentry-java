@@ -37,6 +37,13 @@ public interface IDistributionApi {
    */
   void downloadUpdate(@NotNull UpdateInfo info);
 
+  /**
+   * Check if the distribution integration is enabled.
+   *
+   * @return true if the distribution integration is enabled, false otherwise
+   */
+  boolean isEnabled();
+
   /** Callback interface for receiving async update check results. */
   interface UpdateCallback {
     void onResult(@NotNull UpdateStatus status);

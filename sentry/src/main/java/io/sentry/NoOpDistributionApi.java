@@ -29,4 +29,9 @@ public final class NoOpDistributionApi implements IDistributionApi {
   public void downloadUpdate(@NotNull UpdateInfo info) {
     // No-op implementation - do nothing
   }
+
+  @Override
+  public boolean isEnabled() {
+    return false;
+  }
 }
