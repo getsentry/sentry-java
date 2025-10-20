@@ -4,7 +4,31 @@
 
 ### Features
 
+- Attach MDC properties to logs as attributes ([#4786](https://github.com/getsentry/sentry-java/pull/4786))
+  - MDC properties set using supported logging frameworks (Logback, Log4j2, java.util.Logging) are now attached to structured logs as attributes.
+  - The attribute reflected on the log is `mdc.<key>`, where `<key>` is the original key in the MDC.
+  - This means that you will be able to filter/aggregate logs in the product based on these properties.
+  - Only properties with keys matching the configured `contextTags` are sent as log attributes.
+    - You can configure which properties are sent using `options.setContextTags` if initalizing manually, or by specifying a comma-separated list of keys with a `context-tags` entry in `sentry.properties` or `sentry.context-tags` in `application.properties`.
+    - Note that keys containing spaces are not supported.
 - Add experimental Sentry Android Distribution module for integrating with Sentry Build Distribution to check for and install updates ([#4804](https://github.com/getsentry/sentry-java/pull/4804))
+- Allow passing a different `Handler` to `SystemEventsBreadcrumbsIntegration` and `AndroidConnectionStatusProvider` so their callbacks are deliver to that handler ([#4808](https://github.com/getsentry/sentry-java/pull/4808))
+- Session Replay: Add new _experimental_ Canvas Capture Strategy ([#4777](https://github.com/getsentry/sentry-java/pull/4777))
+  - A new screenshot capture strategy that uses Android's Canvas API for more accurate and reliable text and image masking
+  - Any `.drawText()` or `.drawBitmap()` calls are replaced by rectangles, ensuring no text or images are present in the resulting output
+  - Note: If this strategy is used, all text and images will be masked, regardless of any masking configuration
+  - To enable this feature, set the `screenshotStrategy`, either via code:
+    ```kotlin
+    SentryAndroid.init(context) { options ->
+      options.sessionReplay.screenshotStrategy = ScreenshotStrategyType.CANVAS
+    }
+    ```
+    or AndroidManifest.xml:
+    ```xml
+    <application>
+      <meta-data android:name="io.sentry.session-replay.screenshot-strategy" android:value="canvas" />
+    </application>
+    ```
 
 ### Fixes
 
@@ -12,6 +36,8 @@
 - Avoid StrictMode warnings ([#4724](https://github.com/getsentry/sentry-java/pull/4724))
 - Use logger from options for JVM profiler ([#4771](https://github.com/getsentry/sentry-java/pull/4771))
 - Session Replay: Avoid deadlock when pausing replay if no connection ([#4788](https://github.com/getsentry/sentry-java/pull/4788))
+- Session Replay: Fix capturing roots with no windows ([#4805](https://github.com/getsentry/sentry-java/pull/4805))
+- Session Replay: Fix `java.lang.IllegalArgumentException: width and height must be > 0` ([#4805](https://github.com/getsentry/sentry-java/pull/4805))
 
 ### Miscellaneous
 

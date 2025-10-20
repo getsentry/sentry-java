@@ -112,6 +112,15 @@ public class DistributionIntegration(context: Context) : Integration, IDistribut
     }
   }
 
+  /**
+   * Check if the distribution integration is enabled.
+   *
+   * @return true if the distribution integration is enabled
+   */
+  public override fun isEnabled(): Boolean {
+    return true
+  }
+
   private fun createUpdateCheckParams(): DistributionHttpClient.UpdateCheckParams {
     return try {
       val packageManager = context.packageManager
