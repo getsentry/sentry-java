@@ -7052,6 +7052,8 @@ public final class io/sentry/util/HttpUtils {
 
 public final class io/sentry/util/InitUtil {
 	public fun <init> ()V
+	public static fun initializeProfileConverter (Lio/sentry/SentryOptions;)Lio/sentry/IProfileConverter;
+	public static fun initializeProfiler (Lio/sentry/SentryOptions;)Lio/sentry/IContinuousProfiler;
 	public static fun shouldInit (Lio/sentry/SentryOptions;Lio/sentry/SentryOptions;Z)Z
 }
 

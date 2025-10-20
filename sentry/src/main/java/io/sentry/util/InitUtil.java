@@ -1,9 +1,15 @@
 package io.sentry.util;
 
+import io.sentry.IContinuousProfiler;
+import io.sentry.IProfileConverter;
 import io.sentry.ManifestVersionDetector;
+import io.sentry.NoOpContinuousProfiler;
+import io.sentry.NoOpProfileConverter;
 import io.sentry.NoopVersionDetector;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import io.sentry.profiling.ProfilingServiceLoader;
+import java.io.File;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -46,4 +52,74 @@ public final class InitUtil {
 
     return previousOptions.getInitPriority().ordinal() <= newOptions.getInitPriority().ordinal();
   }
+
+  public static IContinuousProfiler initializeProfiler(@NotNull SentryOptions options) {
+    IContinuousProfiler continuousProfiler = NoOpContinuousProfiler.getInstance();
+
+    if (options.isContinuousProfilingEnabled()
+        && options.getContinuousProfiler() == NoOpContinuousProfiler.getInstance()) {
+      try {
+        String profilingTracesDirPath = options.getProfilingTracesDirPath();
+        if (profilingTracesDirPath == null) {
+          File tempDir = new File(System.getProperty("java.io.tmpdir"), "sentry_profiling_traces");
+          boolean createDirectorySuccess = tempDir.mkdirs() || tempDir.exists();
+
+          if (!createDirectorySuccess) {
+            throw new IllegalArgumentException(
+                "Creating a fallback directory for profiling failed in "
+                    + tempDir.getAbsolutePath());
+          }
+          profilingTracesDirPath = tempDir.getAbsolutePath();
+          options.setProfilingTracesDirPath(profilingTracesDirPath);
+        }
+
+        continuousProfiler =
+            ProfilingServiceLoader.loadContinuousProfiler(
+                options.getLogger(),
+                profilingTracesDirPath,
+                options.getProfilingTracesHz(),
+                options.getExecutorService());
+
+        if (!(continuousProfiler instanceof NoOpContinuousProfiler)) {
+          options.setContinuousProfiler(continuousProfiler);
+        }
+
+        return continuousProfiler;
+
+      } catch (Exception e) {
+        options
+            .getLogger()
+            .log(SentryLevel.ERROR, "Failed to create default profiling traces directory", e);
+      }
+    }
+    return continuousProfiler;
+  }
+
+  public static IProfileConverter initializeProfileConverter(@NotNull SentryOptions options) {
+    IProfileConverter converter = NoOpProfileConverter.getInstance();
+
+    if (options.isContinuousProfilingEnabled()
+        && options.getProfilerConverter() instanceof NoOpProfileConverter) {
+
+      options
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Profile converter is NoOp, attempting to reload with Spring Boot classloader");
+
+      converter = ProfilingServiceLoader.loadProfileConverter();
+
+      options.setProfilerConverter(converter);
+
+      if (!(converter instanceof NoOpProfileConverter)) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.INFO,
+                "Successfully loaded profile converter via Spring Boot classloader");
+      }
+    }
+    return converter;
+  }
+  // TODO: Add initialization of profiler here
 }
