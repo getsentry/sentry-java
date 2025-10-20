@@ -57,6 +57,7 @@ class AndroidRuntimeManagerTest {
   @Test
   fun `runWithRelaxedPolicy changes policy and restores it afterwards even if the code throws`() {
     var called = false
+    var exceptionPropagated = false
     val threadPolicy = StrictMode.ThreadPolicy.Builder().detectAll().penaltyDeath().build()
     val vmPolicy = StrictMode.VmPolicy.Builder().detectAll().penaltyDeath().build()
 
@@ -75,7 +76,10 @@ class AndroidRuntimeManagerTest {
         called = true
         throw Exception("Test exception")
       }
-    } catch (_: Exception) {}
+    } catch (e: Exception) {
+      assertEquals(e.message, "Test exception")
+      exceptionPropagated = true
+    }
 
     // Policies should be reverted back
     assertEquals(threadPolicy.toString(), StrictMode.getThreadPolicy().toString())
@@ -83,11 +87,14 @@ class AndroidRuntimeManagerTest {
 
     // Ensure the code ran
     assertTrue(called)
+    // Ensure the exception was propagated
+    assertTrue(exceptionPropagated)
   }
 
   @Test
   fun `runWithRelaxedPolicy with Runnable changes policy when running and restores it afterwards even if the code throws`() {
     var called = false
+    var exceptionPropagated = false
     val threadPolicy = StrictMode.ThreadPolicy.Builder().detectAll().penaltyDeath().build()
     val vmPolicy = StrictMode.VmPolicy.Builder().detectAll().penaltyDeath().build()
 
@@ -106,7 +113,10 @@ class AndroidRuntimeManagerTest {
         called = true
         throw Exception("Test exception")
       }
-    } catch (_: Exception) {}
+    } catch (e: Exception) {
+      assertEquals(e.message, "Test exception")
+      exceptionPropagated = true
+    }
 
     // Policies should be reverted back
     assertEquals(threadPolicy.toString(), StrictMode.getThreadPolicy().toString())
@@ -114,5 +124,7 @@ class AndroidRuntimeManagerTest {
 
     // Ensure the code ran
     assertTrue(called)
+    // Ensure the exception was propagated
+    assertTrue(exceptionPropagated)
   }
 }
