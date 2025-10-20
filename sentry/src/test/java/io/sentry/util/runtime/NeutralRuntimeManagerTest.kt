@@ -34,9 +34,7 @@ class NeutralRuntimeManagerTest {
     var exceptionPropagated = false
 
     try {
-      sut.runWithRelaxedPolicy<Unit> {
-        throw IOException("test")
-      }
+      sut.runWithRelaxedPolicy<Unit> { throw IOException("test") }
     } catch (e: IOException) {
       assertEquals("test", e.message)
       exceptionPropagated = true
@@ -51,9 +49,7 @@ class NeutralRuntimeManagerTest {
     var exceptionPropagated = false
 
     try {
-      sut.runWithRelaxedPolicy {
-        throw IOException("test")
-      }
+      sut.runWithRelaxedPolicy { throw IOException("test") }
     } catch (e: IOException) {
       assertEquals("test", e.message)
       exceptionPropagated = true
