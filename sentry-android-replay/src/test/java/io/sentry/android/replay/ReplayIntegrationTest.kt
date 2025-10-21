@@ -750,9 +750,10 @@ class ReplayIntegrationTest {
             Random(),
             // run tasks synchronously in tests
             mock {
-              doAnswer { (it.arguments[0] as Runnable).run() }
-                .whenever(mock)
-                .submit(any<Runnable>())
+              whenever(mock.submit(any<Runnable>())).doAnswer {
+                (it.arguments[0] as Runnable).run()
+                null
+              }
             },
           ) { _ ->
             fixture.replayCache
@@ -979,7 +980,10 @@ class ReplayIntegrationTest {
       CurrentDateProvider.getInstance(),
       executor =
         mock {
-          doAnswer { (it.arguments[0] as Runnable).run() }.whenever(mock).submit(any<Runnable>())
+          whenever(mock.submit(any<Runnable>())).doAnswer {
+            (it.arguments[0] as Runnable).run()
+            null
+          }
         },
     )
 }
