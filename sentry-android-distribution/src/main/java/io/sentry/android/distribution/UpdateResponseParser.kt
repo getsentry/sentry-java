@@ -32,11 +32,11 @@ internal class UpdateResponseParser(private val options: SentryOptions) {
 
       options.logger.log(SentryLevel.DEBUG, "Parsing distribution API response")
 
-      // Check if there's a new release available
-      val updateAvailable = json.optBoolean("updateAvailable", false)
+      // Check if there's an update object in the response
+      val updateJson = json.optJSONObject("update")
 
-      if (updateAvailable) {
-        val updateInfo = parseUpdateInfo(json)
+      if (updateJson != null) {
+        val updateInfo = parseUpdateInfo(updateJson)
         UpdateStatus.NewRelease(updateInfo)
       } else {
         UpdateStatus.UpToDate.getInstance()
@@ -52,11 +52,11 @@ internal class UpdateResponseParser(private val options: SentryOptions) {
 
   private fun parseUpdateInfo(json: JSONObject): UpdateInfo {
     val id = json.optString("id", "")
-    val buildVersion = json.optString("buildVersion", "")
-    val buildNumber = json.optInt("buildNumber", 0)
-    val downloadUrl = json.optString("downloadUrl", "")
-    val appName = json.optString("appName", "")
-    val createdDate = json.optString("createdDate", "")
+    val buildVersion = json.optString("build_version", "")
+    val buildNumber = json.optInt("build_number", 0)
+    val downloadUrl = json.optString("download_url", "")
+    val appName = json.optString("app_name", "")
+    val createdDate = json.optString("created_date", "")
 
     // Validate required fields (optString returns "null" for null values)
     val missingFields = mutableListOf<String>()

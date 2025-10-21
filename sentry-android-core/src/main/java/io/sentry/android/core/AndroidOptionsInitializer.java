@@ -30,6 +30,7 @@ import io.sentry.android.core.internal.gestures.AndroidViewGestureTargetLocator;
 import io.sentry.android.core.internal.modules.AssetsModulesLoader;
 import io.sentry.android.core.internal.util.AndroidConnectionStatusProvider;
 import io.sentry.android.core.internal.util.AndroidCurrentDateProvider;
+import io.sentry.android.core.internal.util.AndroidRuntimeManager;
 import io.sentry.android.core.internal.util.AndroidThreadChecker;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.android.core.performance.AppStartMetrics;
@@ -108,7 +109,7 @@ final class AndroidOptionsInitializer {
       final @NotNull BuildInfoProvider buildInfoProvider) {
     Objects.requireNonNull(context, "The context is required.");
 
-    context = ContextUtils.getApplicationContext(context);
+    @NotNull final Context finalContext = ContextUtils.getApplicationContext(context);
 
     Objects.requireNonNull(options, "The options object is required.");
     Objects.requireNonNull(logger, "The ILogger object is required.");
@@ -120,17 +121,22 @@ final class AndroidOptionsInitializer {
     options.setDefaultScopeType(ScopeType.CURRENT);
     options.setOpenTelemetryMode(SentryOpenTelemetryMode.OFF);
     options.setDateProvider(new SentryAndroidDateProvider());
+    options.setRuntimeManager(new AndroidRuntimeManager());
 
     // set a lower flush timeout on Android to avoid ANRs
     options.setFlushTimeoutMillis(DEFAULT_FLUSH_TIMEOUT_MS);
 
     options.setFrameMetricsCollector(
-        new SentryFrameMetricsCollector(context, logger, buildInfoProvider));
+        new SentryFrameMetricsCollector(finalContext, logger, buildInfoProvider));
 
-    ManifestMetadataReader.applyMetadata(context, options, buildInfoProvider);
-    options.setCacheDirPath(getCacheDir(context).getAbsolutePath());
+    ManifestMetadataReader.applyMetadata(finalContext, options, buildInfoProvider);
 
-    readDefaultOptionValues(options, context, buildInfoProvider);
+    options.setCacheDirPath(
+        options
+            .getRuntimeManager()
+            .runWithRelaxedPolicy(() -> getCacheDir(finalContext).getAbsolutePath()));
+
+    readDefaultOptionValues(options, finalContext, buildInfoProvider);
     AppState.getInstance().registerLifecycleObserver(options);
   }
 

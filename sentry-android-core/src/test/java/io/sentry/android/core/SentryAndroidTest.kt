@@ -6,6 +6,7 @@ import android.app.ApplicationExitInfo
 import android.content.Context
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import androidx.test.core.app.ApplicationProvider
@@ -237,13 +238,19 @@ class SentryAndroidTest {
   }
 
   @Test
-  fun `deduplicates fragment and timber integrations`() {
+  fun `deduplicates fragment, timber and system events integrations`() {
     var refOptions: SentryAndroidOptions? = null
-
     fixture.initSut(autoInit = true) {
       it.addIntegration(FragmentLifecycleIntegration(ApplicationProvider.getApplicationContext()))
 
       it.addIntegration(SentryTimberIntegration(minEventLevel = FATAL, minBreadcrumbLevel = DEBUG))
+
+      it.addIntegration(
+        SystemEventsBreadcrumbsIntegration(
+          ApplicationProvider.getApplicationContext(),
+          CustomHandler(Looper.getMainLooper()),
+        )
+      )
       refOptions = it
     }
 
@@ -256,6 +263,11 @@ class SentryAndroidTest {
     // fragment integration is not auto-installed in the test, since the context is not Application
     // but we just verify here that the single integration is preserved
     assertEquals(refOptions!!.integrations.filterIsInstance<FragmentLifecycleIntegration>().size, 1)
+
+    val systemEventsIntegrations =
+      refOptions!!.integrations.filterIsInstance<SystemEventsBreadcrumbsIntegration>()
+    assertEquals(systemEventsIntegrations.size, 1)
+    assertTrue(systemEventsIntegrations.first().customHandler is CustomHandler)
   }
 
   @Test
@@ -580,3 +592,5 @@ fun initForTest(context: Context, logger: ILogger) {
 fun initForTest(context: Context) {
   SentryAndroid.init(context)
 }
+
+class CustomHandler(looper: Looper) : Handler(looper)

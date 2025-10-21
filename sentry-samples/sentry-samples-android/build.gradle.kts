@@ -144,6 +144,7 @@ dependencies {
   implementation(libs.androidx.compose.material3)
   implementation(libs.androidx.navigation.compose)
   implementation(libs.androidx.recyclerview)
+  implementation(libs.androidx.browser)
   implementation(libs.coil.compose)
   implementation(libs.kotlinx.coroutines.android)
   implementation(libs.retrofit)

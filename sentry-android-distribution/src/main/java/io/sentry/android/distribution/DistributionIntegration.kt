@@ -112,6 +112,15 @@ public class DistributionIntegration(context: Context) : Integration, IDistribut
     }
   }
 
+  /**
+   * Check if the distribution integration is enabled.
+   *
+   * @return true if the distribution integration is enabled
+   */
+  public override fun isEnabled(): Boolean {
+    return true
+  }
+
   private fun createUpdateCheckParams(): DistributionHttpClient.UpdateCheckParams {
     return try {
       val packageManager = context.packageManager
@@ -132,11 +141,16 @@ public class DistributionIntegration(context: Context) : Integration, IDistribut
         }
       val appId = context.applicationInfo.packageName
 
+      val buildConfiguration =
+        sentryOptions.distribution.buildConfiguration
+          ?: throw IllegalStateException("buildConfiguration must be set in distribution options")
+
       DistributionHttpClient.UpdateCheckParams(
         appId = appId,
         platform = "android",
         versionCode = versionCode,
         versionName = versionName,
+        buildConfiguration = buildConfiguration,
       )
     } catch (e: PackageManager.NameNotFoundException) {
       sentryOptions.logger.log(SentryLevel.ERROR, e, "Failed to get package info")
