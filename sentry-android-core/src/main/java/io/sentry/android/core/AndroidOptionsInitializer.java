@@ -449,7 +449,8 @@ final class AndroidOptionsInitializer {
 
     if (options.getDistinctId() == null) {
       try {
-        options.setDistinctId(Installation.id(context));
+        options.setDistinctId(
+            options.getRuntimeManager().runWithRelaxedPolicy(() -> Installation.id(context)));
       } catch (RuntimeException e) {
         options.getLogger().log(SentryLevel.ERROR, "Could not generate distinct Id.", e);
       }

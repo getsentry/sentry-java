@@ -607,7 +607,7 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
 
   private @Nullable String getDeviceId() {
     try {
-      return Installation.id(context);
+      return options.getRuntimeManager().runWithRelaxedPolicy(() -> Installation.id(context));
     } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, "Error getting installationId.", e);
     }

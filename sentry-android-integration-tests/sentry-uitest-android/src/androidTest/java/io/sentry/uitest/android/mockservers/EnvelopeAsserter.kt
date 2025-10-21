@@ -2,7 +2,9 @@ package io.sentry.uitest.android.mockservers
 
 import io.sentry.ProfilingTraceData
 import io.sentry.SentryEnvelope
+import io.sentry.SentryEvent
 import io.sentry.android.core.AndroidLogger
+import io.sentry.assertEnvelopeEvent
 import io.sentry.assertEnvelopeItem
 import io.sentry.assertEnvelopeProfile
 import io.sentry.assertEnvelopeTransaction
@@ -23,6 +25,16 @@ class EnvelopeAsserter(val envelope: SentryEnvelope, val response: MockResponse)
    */
   inline fun <reified T> assertItem(): T =
     assertEnvelopeItem(unassertedItems) { index, item ->
+      unassertedItems.removeAt(index)
+      return item
+    }
+
+  /**
+   * Asserts a transaction exists and returns the first one. It is then removed from internal list
+   * of unasserted items.
+   */
+  fun assertEvent(): SentryEvent =
+    assertEnvelopeEvent(unassertedItems, AndroidLogger()) { index, item ->
       unassertedItems.removeAt(index)
       return item
     }
