@@ -185,13 +185,21 @@ internal class PixelCopyStrategy(
 
   override fun close() {
     isClosed.set(true)
-    if (!screenshot.isRecycled) {
-      synchronized(screenshot) {
-        if (!screenshot.isRecycled) {
-          screenshot.recycle()
-        }
-      }
-    }
+    executor.submit(
+      ReplayRunnable(
+        "PixelCopyStrategy.close",
+        {
+          if (!screenshot.isRecycled) {
+            synchronized(screenshot) {
+              if (!screenshot.isRecycled) {
+                screenshot.recycle()
+              }
+            }
+          }
+        },
+      )
+    )
+
     if (!singlePixelBitmap.isRecycled) {
       singlePixelBitmap.recycle()
     }

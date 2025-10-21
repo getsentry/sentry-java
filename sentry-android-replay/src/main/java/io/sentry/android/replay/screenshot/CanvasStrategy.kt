@@ -189,14 +189,22 @@ internal class CanvasStrategy(
 
   override fun close() {
     isClosed.set(true)
-    screenshot?.let {
-      synchronized(it) {
-        if (!it.isRecycled) {
-          it.recycle()
-        }
-      }
-    }
-    screenshot = null
+    executor
+      .getExecutor()
+      .submit(
+        ReplayRunnable(
+          "CanvasStrategy.close",
+          {
+            screenshot?.let {
+              synchronized(it) {
+                if (!it.isRecycled) {
+                  it.recycle()
+                }
+              }
+            }
+          },
+        )
+      )
 
     // the image can be free, unprocessed or in transit
     freePictureRef.getAndSet(null)?.reader?.close()
