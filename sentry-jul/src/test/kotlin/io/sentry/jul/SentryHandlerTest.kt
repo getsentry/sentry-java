@@ -555,4 +555,26 @@ class SentryHandlerTest {
         }
       )
   }
+
+  @Test
+  fun `sets properties from MDC as attributes on logs`() {
+    fixture = Fixture(minimumLevel = Level.INFO, contextTags = listOf("someTag"))
+
+    MDC.put("someTag", "someValue")
+    MDC.put("otherTag", "otherValue")
+    fixture.logger.info("testing MDC properties in logs")
+
+    Sentry.flush(1000)
+
+    verify(fixture.transport)
+      .send(
+        checkLogs { logs ->
+          val log = logs.items.first()
+          assertEquals("testing MDC properties in logs", log.body)
+          val attributes = log.attributes!!
+          assertEquals("someValue", attributes["mdc.someTag"]?.value)
+          assertNull(attributes["otherTag"])
+        }
+      )
+  }
 }

@@ -4,6 +4,82 @@
 
 ### Features
 
+- Attach MDC properties to logs as attributes ([#4786](https://github.com/getsentry/sentry-java/pull/4786))
+  - MDC properties set using supported logging frameworks (Logback, Log4j2, java.util.Logging) are now attached to structured logs as attributes.
+  - The attribute reflected on the log is `mdc.<key>`, where `<key>` is the original key in the MDC.
+  - This means that you will be able to filter/aggregate logs in the product based on these properties.
+  - Only properties with keys matching the configured `contextTags` are sent as log attributes.
+    - You can configure which properties are sent using `options.setContextTags` if initalizing manually, or by specifying a comma-separated list of keys with a `context-tags` entry in `sentry.properties` or `sentry.context-tags` in `application.properties`.
+    - Note that keys containing spaces are not supported.
+- Add experimental Sentry Android Distribution module for integrating with Sentry Build Distribution to check for and install updates ([#4804](https://github.com/getsentry/sentry-java/pull/4804))
+- Allow passing a different `Handler` to `SystemEventsBreadcrumbsIntegration` and `AndroidConnectionStatusProvider` so their callbacks are deliver to that handler ([#4808](https://github.com/getsentry/sentry-java/pull/4808))
+- Session Replay: Add new _experimental_ Canvas Capture Strategy ([#4777](https://github.com/getsentry/sentry-java/pull/4777))
+  - A new screenshot capture strategy that uses Android's Canvas API for more accurate and reliable text and image masking
+  - Any `.drawText()` or `.drawBitmap()` calls are replaced by rectangles, ensuring no text or images are present in the resulting output
+  - Note: If this strategy is used, all text and images will be masked, regardless of any masking configuration
+  - To enable this feature, set the `screenshotStrategy`, either via code:
+    ```kotlin
+    SentryAndroid.init(context) { options ->
+      options.sessionReplay.screenshotStrategy = ScreenshotStrategyType.CANVAS
+    }
+    ```
+    or AndroidManifest.xml:
+    ```xml
+    <application>
+      <meta-data android:name="io.sentry.session-replay.screenshot-strategy" android:value="canvas" />
+    </application>
+    ```
+
+### Fixes
+
+- Avoid StrictMode warnings ([#4724](https://github.com/getsentry/sentry-java/pull/4724))
+- Use logger from options for JVM profiler ([#4771](https://github.com/getsentry/sentry-java/pull/4771))
+- Session Replay: Avoid deadlock when pausing replay if no connection ([#4788](https://github.com/getsentry/sentry-java/pull/4788))
+- Session Replay: Fix capturing roots with no windows ([#4805](https://github.com/getsentry/sentry-java/pull/4805))
+- Session Replay: Fix `java.lang.IllegalArgumentException: width and height must be > 0` ([#4805](https://github.com/getsentry/sentry-java/pull/4805))
+
+### Miscellaneous
+
+- Mark SentryClient(SentryOptions) constructor as not internal ([#4787](https://github.com/getsentry/sentry-java/pull/4787))
+
+### Dependencies
+
+- Bump Native SDK from v0.10.1 to v0.11.2 ([#4775](https://github.com/getsentry/sentry-java/pull/4775))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0112)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.10.1...0.11.2)
+
+## 8.23.0
+
+### Features
+
+- Add session replay id to Sentry Logs ([#4740](https://github.com/getsentry/sentry-java/pull/4740))
+- Add support for continuous profiling of JVM applications on macOS and Linux ([#4556](https://github.com/getsentry/sentry-java/pull/4556))
+  - [Sentry continuous profiling](https://docs.sentry.io/product/explore/profiling/) on the JVM is using async-profiler under the hood.
+  - By default this feature is disabled. Set a profile sample rate and chose a lifecycle (see below) to enable it.
+  - Add the `sentry-async-profiler` dependency to your project
+  - Set a sample rate for profiles, e.g. `1.0` to send all of them. You may use `options.setProfileSessionSampleRate(1.0)` in code or `profile-session-sample-rate=1.0` in `sentry.properties`
+  - Set a profile lifecycle via `options.setProfileLifecycle(ProfileLifecycle.TRACE)` in code or `profile-lifecycle=TRACE` in `sentry.properties`
+    - By default the lifecycle is set to `MANUAL`, meaning you have to explicitly call `Sentry.startProfiler()` and `Sentry.stopProfiler()`
+    - You may change it to `TRACE` which will create a profile for each transaction
+  - To automatically upload Profiles for each transaction in a Spring Boot application
+    - set `sentry.profile-session-sample-rate=1.0` and `sentry.profile-lifecycle=TRACE` in `application.properties`
+    - or set `sentry.profile-session-sample-rate: 1.0` and `sentry.profile-lifecycle: TRACE` in `application.yml`
+  - Profiling can also be combined with our OpenTelemetry integration
+
+### Fixes
+
+- Start performance collection on AppStart continuous profiling ([#4752](https://github.com/getsentry/sentry-java/pull/4752))
+- Preserve modifiers in `SentryTraced` ([#4757](https://github.com/getsentry/sentry-java/pull/4757))
+
+### Improvements
+
+- Handle `RejectedExecutionException` everywhere ([#4747](https://github.com/getsentry/sentry-java/pull/4747))
+- Mark `SentryEnvelope` as not internal ([#4748](https://github.com/getsentry/sentry-java/pull/4748))
+
+## 8.22.0
+
+### Features
+
 - Move SentryLogs out of experimental ([#4710](https://github.com/getsentry/sentry-java/pull/4710))
 - Add support for w3c traceparent header ([#4671](https://github.com/getsentry/sentry-java/pull/4671))
   - This feature is disabled by default. If enabled, outgoing requests will include the w3c `traceparent` header.

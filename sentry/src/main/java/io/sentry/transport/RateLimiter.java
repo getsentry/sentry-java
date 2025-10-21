@@ -20,6 +20,8 @@ import io.sentry.util.StringUtils;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -171,8 +173,13 @@ public final class RateLimiter implements Closeable {
    */
   @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
   private boolean isRetryAfter(final @NotNull String itemType) {
-    final DataCategory dataCategory = getCategoryFromItemType(itemType);
-    return isActiveForCategory(dataCategory);
+    final List<DataCategory> dataCategory = getCategoryFromItemType(itemType);
+    for (DataCategory category : dataCategory) {
+      if (isActiveForCategory(category)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   /**
@@ -181,33 +188,33 @@ public final class RateLimiter implements Closeable {
    * @param itemType the item itemType (eg event, session, attachment, ...)
    * @return the DataCategory eg (DataCategory.Error, DataCategory.Session, DataCategory.Attachment)
    */
-  private @NotNull DataCategory getCategoryFromItemType(final @NotNull String itemType) {
+  private @NotNull List<DataCategory> getCategoryFromItemType(final @NotNull String itemType) {
     switch (itemType) {
       case "event":
-        return DataCategory.Error;
+        return Collections.singletonList(DataCategory.Error);
       case "session":
-        return DataCategory.Session;
+        return Collections.singletonList(DataCategory.Session);
       case "attachment":
-        return DataCategory.Attachment;
+        return Collections.singletonList(DataCategory.Attachment);
       case "profile":
-        return DataCategory.Profile;
+        return Collections.singletonList(DataCategory.Profile);
       // When we send a profile chunk, we have to check for profile_chunk_ui rate limiting,
-      // because that's what relay returns to rate limit Android. When (if) we will implement JVM
-      // profiling we will have to check both rate limits.
+      // because that's what relay returns to rate limit Android.
+      // And ProfileChunk rate limiting for JVM.
       case "profile_chunk":
-        return DataCategory.ProfileChunkUi;
+        return Arrays.asList(DataCategory.ProfileChunkUi, DataCategory.ProfileChunk);
       case "transaction":
-        return DataCategory.Transaction;
+        return Collections.singletonList(DataCategory.Transaction);
       case "check_in":
-        return DataCategory.Monitor;
+        return Collections.singletonList(DataCategory.Monitor);
       case "replay_video":
-        return DataCategory.Replay;
+        return Collections.singletonList(DataCategory.Replay);
       case "feedback":
-        return DataCategory.Feedback;
+        return Collections.singletonList(DataCategory.Feedback);
       case "log":
-        return DataCategory.LogItem;
+        return Collections.singletonList(DataCategory.LogItem);
       default:
-        return DataCategory.Unknown;
+        return Collections.singletonList(DataCategory.Unknown);
     }
   }
 

@@ -27,6 +27,8 @@ import io.sentry.util.LoadClass;
 import io.sentry.util.Platform;
 import io.sentry.util.SampleRateUtils;
 import io.sentry.util.StringUtils;
+import io.sentry.util.runtime.IRuntimeManager;
+import io.sentry.util.runtime.NeutralRuntimeManager;
 import io.sentry.util.thread.IThreadChecker;
 import io.sentry.util.thread.NoOpThreadChecker;
 import java.io.File;
@@ -596,6 +598,11 @@ public class SentryOptions {
   private @NotNull SentryOptions.Logs logs = new SentryOptions.Logs();
 
   private @NotNull ISocketTagger socketTagger = NoOpSocketTagger.getInstance();
+
+  /** Runtime manager to manage runtime policies, like StrictMode on Android. */
+  private @NotNull IRuntimeManager runtimeManager = new NeutralRuntimeManager();
+
+  private @Nullable String profilingTracesDirPath;
 
   /**
    * Configuration options for Sentry Build Distribution. NOTE: Ideally this would be in
@@ -2104,11 +2111,23 @@ public class SentryOptions {
    * @return the profiling traces dir. path or null if not set
    */
   public @Nullable String getProfilingTracesDirPath() {
+    if (profilingTracesDirPath != null && !profilingTracesDirPath.isEmpty()) {
+      return dsnHash != null
+          ? new File(profilingTracesDirPath, dsnHash).getAbsolutePath()
+          : profilingTracesDirPath;
+    }
+
     final String cacheDirPath = getCacheDirPath();
+
     if (cacheDirPath == null) {
       return null;
     }
+
     return new File(cacheDirPath, "profiling_traces").getAbsolutePath();
+  }
+
+  public void setProfilingTracesDirPath(final @Nullable String profilingTracesDirPath) {
+    this.profilingTracesDirPath = profilingTracesDirPath;
   }
 
   /**
@@ -2991,6 +3010,26 @@ public class SentryOptions {
   }
 
   /**
+   * Returns the IRuntimeManager
+   *
+   * @return the runtime manager
+   */
+  @ApiStatus.Internal
+  public @NotNull IRuntimeManager getRuntimeManager() {
+    return runtimeManager;
+  }
+
+  /**
+   * Sets the IRuntimeManager
+   *
+   * @param runtimeManager the runtime manager
+   */
+  @ApiStatus.Internal
+  public void setRuntimeManager(final @NotNull IRuntimeManager runtimeManager) {
+    this.runtimeManager = runtimeManager;
+  }
+
+  /**
    * Load the lazy fields. Useful to load in the background, so that results are already cached. DO
    * NOT CALL THIS METHOD ON THE MAIN THREAD.
    */
@@ -3343,6 +3382,18 @@ public class SentryOptions {
 
     if (options.isEnableLogs() != null) {
       getLogs().setEnabled(options.isEnableLogs());
+    }
+
+    if (options.getProfileSessionSampleRate() != null) {
+      setProfileSessionSampleRate(options.getProfileSessionSampleRate());
+    }
+
+    if (options.getProfilingTracesDirPath() != null) {
+      setProfilingTracesDirPath(options.getProfilingTracesDirPath());
+    }
+
+    if (options.getProfileLifecycle() != null) {
+      setProfileLifecycle(options.getProfileLifecycle());
     }
   }
 

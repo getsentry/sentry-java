@@ -69,14 +69,22 @@
             android:exported="false" />
 
       <activity
-            android:name=".compose.ComposeActivity"
-            android:exported="false" />
+          android:name=".CustomTabsActivity"
+          android:exported="false" />
+
+    <activity
+        android:name=".compose.ComposeActivity"
+        android:exported="false" />
 
       <activity android:name=".FrameDataForSpansActivity"
         android:exported="false"/>
 
+      <activity
+          android:name=".CameraXActivity"
+          android:exported="false" />
+
         <!--    NOTE: Replace the test DSN below with YOUR OWN DSN to see the events from this app in your Sentry project/dashboard-->
-        <meta-data android:name="io.sentry.dsn" android:value="https://1053864c67cc410aa1ffc9701bd6f93d@o447951.ingest.sentry.io/5428559" />
+        <meta-data android:name="io.sentry.dsn" android:value="https://1053864c67cc410aa1ffc9701bd6f93d@o447951.ingest.us.sentry.io/5428559" />
 
         <!--    how to enable Sentry's debug mode-->
         <meta-data android:name="io.sentry.debug" android:value="${sentryDebug}" />
@@ -178,6 +186,7 @@
 
       <meta-data android:name="io.sentry.performance-v2.enable" android:value="true" />
 
+      <meta-data android:name="io.sentry.session-replay.screenshot-strategy" android:value="canvas" />
       <meta-data android:name="io.sentry.session-replay.session-sample-rate" android:value="1" />
       <meta-data android:name="io.sentry.session-replay.mask-all-text" android:value="true" />
     </application>

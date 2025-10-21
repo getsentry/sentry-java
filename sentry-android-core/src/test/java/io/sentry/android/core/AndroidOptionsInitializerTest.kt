@@ -12,6 +12,7 @@ import io.sentry.IConnectionStatusProvider
 import io.sentry.IContinuousProfiler
 import io.sentry.ILogger
 import io.sentry.ISocketTagger
+import io.sentry.ITransaction
 import io.sentry.ITransactionProfiler
 import io.sentry.MainEventProcessor
 import io.sentry.NoOpContinuousProfiler
@@ -23,6 +24,7 @@ import io.sentry.android.core.internal.debugmeta.AssetsDebugMetaLoader
 import io.sentry.android.core.internal.gestures.AndroidViewGestureTargetLocator
 import io.sentry.android.core.internal.modules.AssetsModulesLoader
 import io.sentry.android.core.internal.util.AndroidConnectionStatusProvider
+import io.sentry.android.core.internal.util.AndroidRuntimeManager
 import io.sentry.android.core.internal.util.AndroidThreadChecker
 import io.sentry.android.core.performance.AppStartMetrics
 import io.sentry.android.fragment.FragmentLifecycleIntegration
@@ -34,6 +36,7 @@ import io.sentry.cache.PersistingScopeObserver
 import io.sentry.compose.gestures.ComposeGestureTargetLocator
 import io.sentry.internal.debugmeta.IDebugMetaLoader
 import io.sentry.internal.modules.IModulesLoader
+import io.sentry.protocol.SentryId
 import io.sentry.test.ImmediateExecutorService
 import io.sentry.transport.ITransportGate
 import io.sentry.util.thread.IThreadChecker
@@ -424,6 +427,33 @@ class AndroidOptionsInitializerTest {
     // AppStartMetrics should be cleared
     assertNull(AppStartMetrics.getInstance().appStartProfiler)
     assertNull(AppStartMetrics.getInstance().appStartContinuousProfiler)
+  }
+
+  @Test
+  fun `init starts performance collector if continuous profiler of appStartMetrics is running`() {
+    val appStartContinuousProfiler = mock<IContinuousProfiler>()
+    val mockPerformanceCollector = mock<CompositePerformanceCollector>()
+    val chunkId = SentryId()
+    whenever(appStartContinuousProfiler.isRunning()).thenReturn(true)
+    whenever(appStartContinuousProfiler.chunkId).thenReturn(chunkId)
+
+    AppStartMetrics.getInstance().appStartContinuousProfiler = appStartContinuousProfiler
+    fixture.initSut(configureOptions = { compositePerformanceCollector = mockPerformanceCollector })
+
+    verify(mockPerformanceCollector).start(eq(chunkId.toString()))
+  }
+
+  @Test
+  fun `init does not start performance collector if transaction profiler of appStartMetrics is running`() {
+    val appStartTransactionProfiler = mock<ITransactionProfiler>()
+    val mockPerformanceCollector = mock<CompositePerformanceCollector>()
+    whenever(appStartTransactionProfiler.isRunning()).thenReturn(true)
+
+    AppStartMetrics.getInstance().appStartProfiler = appStartTransactionProfiler
+    fixture.initSut(configureOptions = { compositePerformanceCollector = mockPerformanceCollector })
+
+    verify(mockPerformanceCollector, never()).start(any<String>())
+    verify(mockPerformanceCollector, never()).start(any<ITransaction>())
   }
 
   @Test
@@ -887,5 +917,11 @@ class AndroidOptionsInitializerTest {
     assertFalse {
       fixture.sentryOptions.compositePerformanceCollector is DefaultCompositePerformanceCollector
     }
+  }
+
+  @Test
+  fun `AndroidRuntimeManager is set in the options`() {
+    fixture.initSut()
+    assertIs<AndroidRuntimeManager>(fixture.sentryOptions.runtimeManager)
   }
 }

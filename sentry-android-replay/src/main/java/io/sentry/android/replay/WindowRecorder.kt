@@ -2,6 +2,8 @@ package io.sentry.android.replay
 
 import android.annotation.TargetApi
 import android.graphics.Point
+import android.os.Handler
+import android.os.HandlerThread
 import android.view.View
 import android.view.ViewTreeObserver
 import io.sentry.SentryLevel.DEBUG
@@ -24,14 +26,19 @@ internal class WindowRecorder(
   private val windowCallback: WindowCallback,
   private val mainLooperHandler: MainLooperHandler,
   private val replayExecutor: ScheduledExecutorService,
-) : Recorder, OnRootViewsChangedListener {
+) : Recorder, OnRootViewsChangedListener, ExecutorProvider {
 
   private val isRecording = AtomicBoolean(false)
   private val rootViews = ArrayList<WeakReference<View>>()
   private var lastKnownWindowSize: Point = Point()
   private val rootViewsLock = AutoClosableReentrantLock()
   private val capturerLock = AutoClosableReentrantLock()
+  private val backgroundProcessingHandlerLock = AutoClosableReentrantLock()
+
   @Volatile private var capturer: Capturer? = null
+
+  @Volatile private var backgroundProcessingHandlerThread: HandlerThread? = null
+  @Volatile private var backgroundProcessingHandler: Handler? = null
 
   private class Capturer(
     private val options: SentryOptions,
@@ -41,10 +48,6 @@ internal class WindowRecorder(
     var recorder: ScreenshotRecorder? = null
     var config: ScreenshotRecorderConfig? = null
     private val isRecording = AtomicBoolean(true)
-
-    private var currentCaptureDelay = 0L
-
-    private var rootView = WeakReference<View>(null)
 
     fun resume() {
       if (options.sessionReplay.isDebug) {
@@ -106,17 +109,17 @@ internal class WindowRecorder(
         )
       }
     }
-
-    fun bind(newRoot: View) {
-      rootView = WeakReference(newRoot)
-    }
   }
 
   override fun onRootViewsChanged(root: View, added: Boolean) {
     rootViewsLock.acquire().use {
       if (added) {
+        if (root.phoneWindow == null) {
+          options.logger.log(WARNING, "Root view does not have a phone window, skipping.")
+          return
+        }
+
         rootViews.add(WeakReference(root))
-        capturer?.bind(root)
         capturer?.recorder?.bind(root)
         determineWindowSize(root)
       } else {
@@ -183,18 +186,10 @@ internal class WindowRecorder(
     }
 
     capturer?.config = config
-    capturer?.recorder =
-      ScreenshotRecorder(
-        config,
-        options,
-        mainLooperHandler,
-        replayExecutor,
-        screenshotRecorderCallback,
-      )
+    capturer?.recorder = ScreenshotRecorder(config, options, this, screenshotRecorderCallback)
 
     val newRoot = rootViews.lastOrNull()?.get()
     if (newRoot != null) {
-      capturer?.bind(newRoot)
       capturer?.recorder?.bind(newRoot)
     }
 
@@ -239,6 +234,40 @@ internal class WindowRecorder(
   override fun close() {
     reset()
     mainLooperHandler.removeCallbacks(capturer)
+    backgroundProcessingHandlerLock.acquire().use {
+      backgroundProcessingHandler?.removeCallbacksAndMessages(null)
+      backgroundProcessingHandlerThread?.quitSafely()
+    }
     stop()
   }
+
+  override fun getExecutor(): ScheduledExecutorService = replayExecutor
+
+  override fun getMainLooperHandler(): MainLooperHandler = mainLooperHandler
+
+  override fun getBackgroundHandler(): Handler {
+    // only start the background thread if it's actually needed, as it's only used by Canvas Capture
+    // Strategy
+    if (backgroundProcessingHandler == null) {
+      backgroundProcessingHandlerLock.acquire().use {
+        if (backgroundProcessingHandler == null) {
+          backgroundProcessingHandlerThread = HandlerThread("SentryReplayBackgroundProcessing")
+          backgroundProcessingHandlerThread?.start()
+          backgroundProcessingHandler = Handler(backgroundProcessingHandlerThread!!.looper)
+        }
+      }
+    }
+    return backgroundProcessingHandler!!
+  }
+}
+
+internal interface ExecutorProvider {
+  /** Returns an executor suitable for background tasks. */
+  fun getExecutor(): ScheduledExecutorService
+
+  /** Returns a handler associated with the main thread looper. */
+  fun getMainLooperHandler(): MainLooperHandler
+
+  /** Returns a handler associated with a background thread looper. */
+  fun getBackgroundHandler(): Handler
 }

@@ -5,12 +5,15 @@ import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.os.Handler;
+import android.widget.Toast;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import io.sentry.Attachment;
 import io.sentry.ISpan;
 import io.sentry.MeasurementUnit;
 import io.sentry.Sentry;
+import io.sentry.SentryLogLevel;
+import io.sentry.UpdateStatus;
 import io.sentry.instrumentation.file.SentryFileOutputStream;
 import io.sentry.protocol.Feedback;
 import io.sentry.protocol.User;
@@ -269,6 +272,11 @@ public class MainActivity extends AppCompatActivity {
           startActivity(new Intent(this, ProfilingActivity.class));
         });
 
+    binding.openCustomTabsActivity.setOnClickListener(
+        view -> {
+          startActivity(new Intent(this, CustomTabsActivity.class));
+        });
+
     binding.openFrameDataForSpans.setOnClickListener(
         view -> startActivity(new Intent(this, FrameDataForSpansActivity.class)));
 
@@ -304,7 +312,49 @@ public class MainActivity extends AppCompatActivity {
           Sentry.replay().enableDebugMaskingOverlay();
         });
 
+    binding.checkForUpdate.setOnClickListener(
+        view -> {
+          Toast.makeText(this, "Checking for updates...", Toast.LENGTH_SHORT).show();
+          Sentry.distribution()
+              .checkForUpdate(
+                  result -> {
+                    runOnUiThread(
+                        () -> {
+                          String message;
+                          if (result instanceof UpdateStatus.NewRelease) {
+                            UpdateStatus.NewRelease newRelease = (UpdateStatus.NewRelease) result;
+                            message =
+                                "Update available: "
+                                    + newRelease.getInfo().getBuildVersion()
+                                    + " (Build "
+                                    + newRelease.getInfo().getBuildNumber()
+                                    + ")\nDownload URL: "
+                                    + newRelease.getInfo().getDownloadUrl();
+                          } else if (result instanceof UpdateStatus.UpToDate) {
+                            message = "App is up to date!";
+                          } else if (result instanceof UpdateStatus.NoNetwork) {
+                            UpdateStatus.NoNetwork noNetwork = (UpdateStatus.NoNetwork) result;
+                            message = "No network connection: " + noNetwork.getMessage();
+                          } else if (result instanceof UpdateStatus.UpdateError) {
+                            UpdateStatus.UpdateError error = (UpdateStatus.UpdateError) result;
+                            message = "Error checking for updates: " + error.getMessage();
+                          } else {
+                            message = "Unknown status";
+                          }
+                          Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+                        });
+                  });
+        });
+
+    binding.openCameraActivity.setOnClickListener(
+        view -> {
+          startActivity(new Intent(this, CameraXActivity.class));
+        });
+
+    Sentry.logger().log(SentryLogLevel.INFO, "Creating content view");
     setContentView(binding.getRoot());
+
+    Sentry.logger().log(SentryLogLevel.INFO, "MainActivity created");
   }
 
   private void stackOverflow() {

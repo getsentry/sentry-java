@@ -962,7 +962,15 @@ class JsonSerializerTest {
     fixture.options.release = "release"
     fixture.options.environment = "environment"
     val profileChunk =
-      ProfileChunk(profilerId, chunkId, fixture.traceFile, HashMap(), 5.3, fixture.options)
+      ProfileChunk(
+        profilerId,
+        chunkId,
+        fixture.traceFile,
+        HashMap(),
+        5.3,
+        ProfileChunk.PLATFORM_ANDROID,
+        fixture.options,
+      )
     val measurementNow = SentryNanotimeDate().nanoTimestamp()
     val measurementNowSeconds =
       BigDecimal.valueOf(DateUtils.nanosToSeconds(measurementNow))
@@ -1119,7 +1127,7 @@ class JsonSerializerTest {
     assertEquals(SdkVersion("test", "1.2.3"), profileChunk.clientSdk)
     assertEquals(chunkId, profileChunk.chunkId)
     assertEquals("environment", profileChunk.environment)
-    assertEquals("android", profileChunk.platform)
+    assertEquals(ProfileChunk.PLATFORM_ANDROID, profileChunk.platform)
     assertEquals(profilerId, profileChunk.profilerId)
     assertEquals("release", profileChunk.release)
     assertEquals("sampled profile in base 64", profileChunk.sampledProfile)

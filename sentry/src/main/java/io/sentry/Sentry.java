@@ -15,6 +15,7 @@ import io.sentry.internal.modules.NoOpModulesLoader;
 import io.sentry.internal.modules.ResourcesModulesLoader;
 import io.sentry.logger.ILoggerApi;
 import io.sentry.opentelemetry.OpenTelemetryUtil;
+import io.sentry.profiling.ProfilingServiceLoader;
 import io.sentry.protocol.Feedback;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
@@ -579,7 +580,8 @@ public final class Sentry {
     return true;
   }
 
-  @SuppressWarnings("FutureReturnValueIgnored")
+  // older AGP versions do not support method references
+  @SuppressWarnings({"FutureReturnValueIgnored", "Convert2MethodRef"})
   private static void initConfigurations(final @NotNull SentryOptions options) {
     final @NotNull ILogger logger = options.getLogger();
     logger.log(SentryLevel.INFO, "Initializing SDK with DSN: '%s'", options.getDsn());
@@ -591,7 +593,7 @@ public final class Sentry {
     final String outboxPath = options.getOutboxPath();
     if (outboxPath != null) {
       final File outboxDir = new File(outboxPath);
-      outboxDir.mkdirs();
+      options.getRuntimeManager().runWithRelaxedPolicy(() -> outboxDir.mkdirs());
     } else {
       logger.log(SentryLevel.INFO, "No outbox dir path is defined in options.");
     }
@@ -599,7 +601,7 @@ public final class Sentry {
     final String cacheDirPath = options.getCacheDirPath();
     if (cacheDirPath != null) {
       final File cacheDir = new File(cacheDirPath);
-      cacheDir.mkdirs();
+      options.getRuntimeManager().runWithRelaxedPolicy(() -> cacheDir.mkdirs());
       final IEnvelopeCache envelopeCache = options.getEnvelopeDiskCache();
       // only overwrite the cache impl if it's not already set
       if (envelopeCache instanceof NoOpEnvelopeCache) {
@@ -612,7 +614,7 @@ public final class Sentry {
         && profilingTracesDirPath != null) {
 
       final File profilingTracesDir = new File(profilingTracesDirPath);
-      profilingTracesDir.mkdirs();
+      options.getRuntimeManager().runWithRelaxedPolicy(() -> profilingTracesDir.mkdirs());
 
       try {
         options
@@ -675,6 +677,51 @@ public final class Sentry {
             new BackpressureMonitor(options, ScopesAdapter.getInstance()));
       }
       options.getBackpressureMonitor().start();
+    }
+
+    initJvmContinuousProfiling(options);
+
+    options
+        .getLogger()
+        .log(
+            SentryLevel.INFO,
+            "Continuous profiler is enabled %s mode: %s",
+            options.isContinuousProfilingEnabled(),
+            options.getProfileLifecycle());
+  }
+
+  private static void initJvmContinuousProfiling(@NotNull SentryOptions options) {
+
+    if (options.isContinuousProfilingEnabled()
+        && options.getContinuousProfiler() == NoOpContinuousProfiler.getInstance()) {
+      try {
+        String profilingTracesDirPath = options.getProfilingTracesDirPath();
+        if (profilingTracesDirPath == null) {
+          File tempDir = new File(System.getProperty("java.io.tmpdir"), "sentry_profiling_traces");
+          boolean createDirectorySuccess = tempDir.mkdirs() || tempDir.exists();
+
+          if (!createDirectorySuccess) {
+            throw new IllegalArgumentException(
+                "Creating a fallback directory for profiling failed in "
+                    + tempDir.getAbsolutePath());
+          }
+          profilingTracesDirPath = tempDir.getAbsolutePath();
+          options.setProfilingTracesDirPath(profilingTracesDirPath);
+        }
+
+        final IContinuousProfiler continuousProfiler =
+            ProfilingServiceLoader.loadContinuousProfiler(
+                options.getLogger(),
+                profilingTracesDirPath,
+                options.getProfilingTracesHz(),
+                options.getExecutorService());
+
+        options.setContinuousProfiler(continuousProfiler);
+      } catch (Exception e) {
+        options
+            .getLogger()
+            .log(SentryLevel.ERROR, "Failed to create default profiling traces directory", e);
+      }
     }
   }
 

@@ -147,6 +147,13 @@
       android:text="@string/open_profiling_activity"/>
 
     <Button
+        android:id="@+id/open_custom_tabs_activity"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/open_custom_tabs_activity"
+        />
+
+    <Button
       android:id="@+id/open_frame_data_for_spans"
       android:layout_width="wrap_content"
       android:layout_height="wrap_content"
@@ -169,6 +176,19 @@
       android:layout_width="wrap_content"
       android:layout_height="wrap_content"
       android:text="@string/enable_replay_debug_mode"/>
+
+    <Button
+      android:id="@+id/check_for_update"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="@string/check_for_update"/>
+
+    <Button
+        android:id="@+id/open_camera_activity"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/open_camera_activity"
+        />
 
   </LinearLayout>
 

@@ -36,22 +36,22 @@ class SentryReplayOptionsTest {
   }
 
   @Test
-  fun `default screenshot strategy is pixel copy`() {
+  fun testDefaultScreenshotStrategy() {
     val options = SentryReplayOptions(false, null)
-    assertEquals(ScreenshotStrategyType.PIXEL_COPY, options.screenshotStrategy)
+    assertEquals(ScreenshotStrategyType.PIXEL_COPY, options.getScreenshotStrategy())
   }
 
   @Test
-  fun `can set screenshot strategy to canvas`() {
+  fun testSetScreenshotStrategyToCanvas() {
     val options = SentryReplayOptions(false, null)
     options.screenshotStrategy = ScreenshotStrategyType.CANVAS
-    assertEquals(ScreenshotStrategyType.CANVAS, options.screenshotStrategy)
+    assertEquals(ScreenshotStrategyType.CANVAS, options.getScreenshotStrategy())
   }
 
   @Test
-  fun `can set screenshot strategy to pixel copy`() {
+  fun testSetScreenshotStrategyToPixelCopy() {
     val options = SentryReplayOptions(false, null)
     options.screenshotStrategy = ScreenshotStrategyType.PIXEL_COPY
-    assertEquals(ScreenshotStrategyType.PIXEL_COPY, options.screenshotStrategy)
+    assertEquals(ScreenshotStrategyType.PIXEL_COPY, options.getScreenshotStrategy())
   }
 }

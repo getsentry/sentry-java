@@ -15,12 +15,10 @@ import io.sentry.android.replay.screenshot.CanvasStrategy
 import io.sentry.android.replay.screenshot.PixelCopyStrategy
 import io.sentry.android.replay.screenshot.ScreenshotStrategy
 import io.sentry.android.replay.util.DebugOverlayDrawable
-import io.sentry.android.replay.util.MainLooperHandler
 import io.sentry.android.replay.util.addOnDrawListenerSafe
 import io.sentry.android.replay.util.removeOnDrawListenerSafe
 import java.io.File
 import java.lang.ref.WeakReference
-import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.roundToInt
 
@@ -29,8 +27,7 @@ import kotlin.math.roundToInt
 internal class ScreenshotRecorder(
   val config: ScreenshotRecorderConfig,
   val options: SentryOptions,
-  val handler: MainLooperHandler,
-  executorService: ScheduledExecutorService,
+  val executorProvider: ExecutorProvider,
   screenshotRecorderCallback: ScreenshotRecorderCallback?,
 ) : ViewTreeObserver.OnDrawListener {
   private var rootView: WeakReference<View>? = null
@@ -42,11 +39,10 @@ internal class ScreenshotRecorder(
   private val screenshotStrategy: ScreenshotStrategy =
     when (options.sessionReplay.screenshotStrategy) {
       ScreenshotStrategyType.CANVAS ->
-        CanvasStrategy(executorService, screenshotRecorderCallback, options, config)
+        CanvasStrategy(executorProvider, screenshotRecorderCallback, options, config)
       ScreenshotStrategyType.PIXEL_COPY ->
         PixelCopyStrategy(
-          executorService,
-          handler,
+          executorProvider,
           screenshotRecorderCallback,
           options,
           config,
@@ -182,7 +178,7 @@ public data class ScreenshotRecorderConfig(
     private fun Int.adjustToBlockSize(): Int {
       val remainder = this % 16
       return if (remainder <= 8) {
-        this - remainder
+        maxOf(16, this - remainder)
       } else {
         this + (16 - remainder)
       }
