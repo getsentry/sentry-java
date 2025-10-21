@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Miscellaneous
+
+- [ANR] Defer some class availability checks ([#4825](https://github.com/getsentry/sentry-java/pull/4825))
+
 ## 8.24.0-alpha.2
 
 ### Features

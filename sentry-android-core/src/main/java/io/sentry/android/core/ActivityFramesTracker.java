@@ -10,6 +10,7 @@ import io.sentry.android.core.internal.util.AndroidThreadChecker;
 import io.sentry.protocol.MeasurementValue;
 import io.sentry.protocol.SentryId;
 import io.sentry.util.AutoClosableReentrantLock;
+import io.sentry.util.LazyEvaluator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -30,7 +31,7 @@ import org.jetbrains.annotations.VisibleForTesting;
  */
 public final class ActivityFramesTracker {
 
-  private @Nullable FrameMetricsAggregator frameMetricsAggregator = null;
+  private @NotNull LazyEvaluator<FrameMetricsAggregator> frameMetricsAggregator;
   private @NotNull final SentryAndroidOptions options;
 
   private final @NotNull Map<SentryId, Map<String, @NotNull MeasurementValue>>
@@ -41,17 +42,18 @@ public final class ActivityFramesTracker {
   private final @NotNull MainLooperHandler handler;
   protected @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
 
+  private final @NotNull LazyEvaluator<Boolean> androidXAvailable;
+
   public ActivityFramesTracker(
       final @NotNull io.sentry.util.LoadClass loadClass,
       final @NotNull SentryAndroidOptions options,
       final @NotNull MainLooperHandler handler) {
 
-    final boolean androidXAvailable =
-        loadClass.isClassAvailable("androidx.core.app.FrameMetricsAggregator", options.getLogger());
+    androidXAvailable =
+        loadClass.isClassAvailableLazy(
+            "androidx.core.app.FrameMetricsAggregator", options.getLogger());
+    frameMetricsAggregator = new LazyEvaluator<>(() -> new FrameMetricsAggregator());
 
-    if (androidXAvailable) {
-      frameMetricsAggregator = new FrameMetricsAggregator();
-    }
     this.options = options;
     this.handler = handler;
   }
@@ -67,15 +69,15 @@ public final class ActivityFramesTracker {
       final @NotNull io.sentry.util.LoadClass loadClass,
       final @NotNull SentryAndroidOptions options,
       final @NotNull MainLooperHandler handler,
-      final @Nullable FrameMetricsAggregator frameMetricsAggregator) {
+      final @NotNull FrameMetricsAggregator frameMetricsAggregator) {
 
     this(loadClass, options, handler);
-    this.frameMetricsAggregator = frameMetricsAggregator;
+    this.frameMetricsAggregator = new LazyEvaluator<>(() -> frameMetricsAggregator);
   }
 
   @VisibleForTesting
   public boolean isFrameMetricsAggregatorAvailable() {
-    return frameMetricsAggregator != null
+    return androidXAvailable.getValue()
         && options.isEnableFramesTracking()
         && !options.isEnablePerformanceV2();
   }
@@ -87,7 +89,8 @@ public final class ActivityFramesTracker {
         return;
       }
 
-      runSafelyOnUiThread(() -> frameMetricsAggregator.add(activity), "FrameMetricsAggregator.add");
+      runSafelyOnUiThread(
+          () -> frameMetricsAggregator.getValue().add(activity), "FrameMetricsAggregator.add");
       snapshotFrameCountsAtStart(activity);
     }
   }
@@ -104,11 +107,11 @@ public final class ActivityFramesTracker {
       return null;
     }
 
-    if (frameMetricsAggregator == null) {
+    if (!androidXAvailable.getValue()) {
       return null;
     }
 
-    final @Nullable SparseIntArray[] framesRates = frameMetricsAggregator.getMetrics();
+    final @Nullable SparseIntArray[] framesRates = frameMetricsAggregator.getValue().getMetrics();
 
     int totalFrames = 0;
     int slowFrames = 0;
@@ -153,7 +156,7 @@ public final class ActivityFramesTracker {
       // there was no
       // Observers, See
       // https://android.googlesource.com/platform/frameworks/base/+/140ff5ea8e2d99edc3fbe63a43239e459334c76b
-      runSafelyOnUiThread(() -> frameMetricsAggregator.remove(activity), null);
+      runSafelyOnUiThread(() -> frameMetricsAggregator.getValue().remove(activity), null);
 
       final @Nullable FrameCounts frameCounts = diffFrameCountsAtEnd(activity);
 
@@ -215,8 +218,9 @@ public final class ActivityFramesTracker {
   public void stop() {
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       if (isFrameMetricsAggregatorAvailable()) {
-        runSafelyOnUiThread(() -> frameMetricsAggregator.stop(), "FrameMetricsAggregator.stop");
-        frameMetricsAggregator.reset();
+        runSafelyOnUiThread(
+            () -> frameMetricsAggregator.getValue().stop(), "FrameMetricsAggregator.stop");
+        frameMetricsAggregator.getValue().reset();
       }
       activityMeasurements.clear();
     }

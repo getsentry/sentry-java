@@ -15,6 +15,7 @@ import io.sentry.SentryOptions;
 import io.sentry.android.core.internal.gestures.NoOpWindowCallback;
 import io.sentry.android.core.internal.gestures.SentryGestureListener;
 import io.sentry.android.core.internal.gestures.SentryWindowCallback;
+import io.sentry.util.LazyEvaluator;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
@@ -28,16 +29,16 @@ public final class UserInteractionIntegration
   private @Nullable IScopes scopes;
   private @Nullable SentryAndroidOptions options;
 
-  private final boolean isAndroidXAvailable;
-  private final boolean isAndroidxLifecycleAvailable;
+  private final @NotNull LazyEvaluator<Boolean> isAndroidXAvailable;
+  private final @NotNull LazyEvaluator<Boolean> isAndroidxLifecycleAvailable;
 
   public UserInteractionIntegration(
       final @NotNull Application application, final @NotNull io.sentry.util.LoadClass classLoader) {
     this.application = Objects.requireNonNull(application, "Application is required");
     isAndroidXAvailable =
-        classLoader.isClassAvailable("androidx.core.view.GestureDetectorCompat", options);
+        classLoader.isClassAvailableLazy("androidx.core.view.GestureDetectorCompat", options);
     isAndroidxLifecycleAvailable =
-        classLoader.isClassAvailable("androidx.lifecycle.Lifecycle", options);
+        classLoader.isClassAvailableLazy("androidx.lifecycle.Lifecycle", options);
   }
 
   private void startTracking(final @NotNull Activity activity) {
@@ -128,13 +129,13 @@ public final class UserInteractionIntegration
         .log(SentryLevel.DEBUG, "UserInteractionIntegration enabled: %s", integrationEnabled);
 
     if (integrationEnabled) {
-      if (isAndroidXAvailable) {
+      if (isAndroidXAvailable.getValue()) {
         application.registerActivityLifecycleCallbacks(this);
         this.options.getLogger().log(SentryLevel.DEBUG, "UserInteractionIntegration installed.");
         addIntegrationToSdkVersion("UserInteraction");
 
         // In case of a deferred init, we hook into any resumed activity
-        if (isAndroidxLifecycleAvailable) {
+        if (isAndroidxLifecycleAvailable.getValue()) {
           final @Nullable Activity activity = CurrentActivityHolder.getInstance().getActivity();
           if (activity instanceof LifecycleOwner) {
             if (((LifecycleOwner) activity).getLifecycle().getCurrentState()

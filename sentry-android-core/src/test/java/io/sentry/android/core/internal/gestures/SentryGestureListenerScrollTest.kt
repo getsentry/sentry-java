@@ -20,6 +20,7 @@ import io.sentry.ScopeCallback
 import io.sentry.SentryLevel
 import io.sentry.SentryLevel.INFO
 import io.sentry.android.core.SentryAndroidOptions
+import io.sentry.util.LazyEvaluator
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import org.mockito.kotlin.any
@@ -46,7 +47,7 @@ class SentryGestureListenerScrollTest {
         dsn = "https://key@sentry.io/proj"
         isEnableUserInteractionBreadcrumbs = true
         isEnableUserInteractionTracing = true
-        gestureTargetLocators = listOf(AndroidViewGestureTargetLocator(true))
+        gestureTargetLocators = listOf(AndroidViewGestureTargetLocator(LazyEvaluator { true }))
       }
     val scopes = mock<IScopes>()
     val scope = mock<IScope>()

@@ -7086,6 +7086,8 @@ public class io/sentry/util/LoadClass {
 	public fun <init> ()V
 	public fun isClassAvailable (Ljava/lang/String;Lio/sentry/ILogger;)Z
 	public fun isClassAvailable (Ljava/lang/String;Lio/sentry/SentryOptions;)Z
+	public fun isClassAvailableLazy (Ljava/lang/String;Lio/sentry/ILogger;)Lio/sentry/util/LazyEvaluator;
+	public fun isClassAvailableLazy (Ljava/lang/String;Lio/sentry/SentryOptions;)Lio/sentry/util/LazyEvaluator;
 	public fun loadClass (Ljava/lang/String;Lio/sentry/ILogger;)Ljava/lang/Class;
 }
 

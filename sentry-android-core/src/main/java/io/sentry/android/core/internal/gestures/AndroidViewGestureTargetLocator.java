@@ -8,6 +8,7 @@ import androidx.core.view.ScrollingView;
 import io.sentry.android.core.internal.util.ClassUtil;
 import io.sentry.internal.gestures.GestureTargetLocator;
 import io.sentry.internal.gestures.UiElement;
+import io.sentry.util.LazyEvaluator;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -17,9 +18,10 @@ public final class AndroidViewGestureTargetLocator implements GestureTargetLocat
 
   private static final String ORIGIN = "old_view_system";
 
-  private final boolean isAndroidXAvailable;
+  private final @NotNull LazyEvaluator<Boolean> isAndroidXAvailable;
 
-  public AndroidViewGestureTargetLocator(final boolean isAndroidXAvailable) {
+  public AndroidViewGestureTargetLocator(
+      final @NotNull LazyEvaluator<Boolean> isAndroidXAvailable) {
     this.isAndroidXAvailable = isAndroidXAvailable;
   }
 
@@ -33,7 +35,7 @@ public final class AndroidViewGestureTargetLocator implements GestureTargetLocat
     if (targetType == UiElement.Type.CLICKABLE && isViewTappable(view)) {
       return createUiElement(view);
     } else if (targetType == UiElement.Type.SCROLLABLE
-        && isViewScrollable(view, isAndroidXAvailable)) {
+        && isViewScrollable(view, isAndroidXAvailable.getValue())) {
       return createUiElement(view);
     }
     return null;

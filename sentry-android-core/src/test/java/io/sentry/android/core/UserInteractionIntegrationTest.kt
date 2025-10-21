@@ -9,6 +9,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.Scopes
 import io.sentry.android.core.internal.gestures.NoOpWindowCallback
 import io.sentry.android.core.internal.gestures.SentryWindowCallback
+import io.sentry.util.LazyEvaluator
 import junit.framework.TestCase.assertNull
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -43,19 +44,19 @@ class UserInteractionIntegrationTest {
       isLifecycleAvailable: Boolean = true,
     ): UserInteractionIntegration {
       whenever(
-          loadClass.isClassAvailable(
+          loadClass.isClassAvailableLazy(
             eq("androidx.core.view.GestureDetectorCompat"),
             anyOrNull<SentryAndroidOptions>(),
           )
         )
-        .thenReturn(isAndroidXAvailable)
+        .thenReturn(LazyEvaluator { isAndroidXAvailable })
       whenever(
-          loadClass.isClassAvailable(
+          loadClass.isClassAvailableLazy(
             eq("androidx.lifecycle.Lifecycle"),
             anyOrNull<SentryAndroidOptions>(),
           )
         )
-        .thenReturn(isLifecycleAvailable)
+        .thenReturn(LazyEvaluator { isLifecycleAvailable })
       whenever(scopes.options).thenReturn(options)
       if (callback != null) {
         window.callback = callback
