@@ -199,9 +199,9 @@ public class SentryOptions {
   private int maxBreadcrumbs = 100;
 
   /**
-   * This variable controls the total amount of feature flag evaluations that should be stored on the scope.
-   * The most recent `maxFeatureFlags` evaluations are stored on each scope.
-   * Default is 100
+   * This variable controls the total amount of feature flag evaluations that should be stored on
+   * the scope. The most recent `maxFeatureFlags` evaluations are stored on each scope. Default is
+   * 100
    */
   private int maxFeatureFlags = 100;
 
