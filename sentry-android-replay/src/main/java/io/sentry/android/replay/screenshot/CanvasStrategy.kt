@@ -23,7 +23,6 @@ import android.graphics.Region
 import android.graphics.RenderNode
 import android.graphics.fonts.Font
 import android.graphics.text.MeasuredText
-import android.media.Image
 import android.media.ImageReader
 import android.os.Build
 import android.view.View
@@ -33,13 +32,11 @@ import io.sentry.SentryOptions
 import io.sentry.android.replay.ExecutorProvider
 import io.sentry.android.replay.ScreenshotRecorderCallback
 import io.sentry.android.replay.ScreenshotRecorderConfig
-import io.sentry.android.replay.util.submitSafely
-import io.sentry.util.AutoClosableReentrantLock
 import io.sentry.android.replay.util.ReplayRunnable
+import io.sentry.util.AutoClosableReentrantLock
 import io.sentry.util.IntegrationUtils
 import java.io.Closeable
 import java.util.WeakHashMap
-import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.LazyThreadSafetyMode.NONE
