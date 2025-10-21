@@ -44,19 +44,17 @@ public final class FeatureFlagBuffer implements IFeatureFlagBuffer {
     }
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       final int size = flags.size();
-      final @NotNull ArrayList<FeatureFlagEntry> tmpList = new ArrayList<>(size + 1);
-      for (FeatureFlagEntry entry : flags) {
-        if (!entry.flag.equals(flag)) {
-          tmpList.add(entry);
+      for (int i = 0; i < size; i++) {
+        if (flags.get(i).equals(flag)) {
+          flags.remove(i);
+          break;
         }
       }
-      tmpList.add(new FeatureFlagEntry(flag, result, System.nanoTime()));
+      flags.add(new FeatureFlagEntry(flag, result, System.nanoTime()));
 
-      if (tmpList.size() > maxSize) {
-        tmpList.remove(0);
+      if (flags.size() > maxSize) {
+        flags.remove(0);
       }
-
-      flags = new CopyOnWriteArrayList<>(tmpList);
     }
   }
 
