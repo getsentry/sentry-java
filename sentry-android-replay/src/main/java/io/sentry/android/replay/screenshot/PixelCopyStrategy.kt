@@ -166,7 +166,11 @@ internal class PixelCopyStrategy(
 
   override fun close() {
     if (!screenshot.isRecycled) {
-      synchronized(screenshot) { screenshot.recycle() }
+      synchronized(screenshot) {
+        if (!screenshot.isRecycled) {
+          screenshot.recycle()
+        }
+      }
     }
   }
 
