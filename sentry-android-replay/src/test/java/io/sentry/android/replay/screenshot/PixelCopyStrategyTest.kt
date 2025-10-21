@@ -2,12 +2,14 @@ package io.sentry.android.replay.screenshot
 
 import android.app.Activity
 import android.os.Bundle
+import android.os.Handler
 import android.os.Looper
 import android.widget.LinearLayout
 import android.widget.LinearLayout.LayoutParams
 import android.widget.TextView
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.SentryOptions
+import io.sentry.android.replay.ExecutorProvider
 import io.sentry.android.replay.ScreenshotRecorderCallback
 import io.sentry.android.replay.ScreenshotRecorderConfig
 import io.sentry.android.replay.util.DebugOverlayDrawable
@@ -39,8 +41,13 @@ class PixelCopyStrategyTest {
 
     fun getSut(executor: ScheduledExecutorService = mock()): PixelCopyStrategy {
       return PixelCopyStrategy(
-        executor,
-        MainLooperHandler(),
+        object : ExecutorProvider {
+          override fun getExecutor(): ScheduledExecutorService = executor
+
+          override fun getMainLooperHandler(): MainLooperHandler = MainLooperHandler()
+
+          override fun getBackgroundHandler(): Handler = mock()
+        },
         callback,
         options,
         config,
