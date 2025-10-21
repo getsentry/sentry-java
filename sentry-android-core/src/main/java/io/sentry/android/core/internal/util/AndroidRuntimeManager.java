@@ -20,4 +20,13 @@ public final class AndroidRuntimeManager implements IRuntimeManager {
       StrictMode.setVmPolicy(oldVmPolicy);
     }
   }
+
+  @Override
+  public void runWithRelaxedPolicy(final @NotNull Runnable toRun) {
+    runWithRelaxedPolicy(
+        () -> {
+          toRun.run();
+          return null;
+        });
+  }
 }
