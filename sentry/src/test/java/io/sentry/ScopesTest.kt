@@ -3126,7 +3126,7 @@ class ScopesTest {
     val (sut, mockClient) = getEnabledScopes()
 
     sut.addFeatureFlag(null, true)
-    sut.addFeatureFlag("flag-1", true)
+    sut.addFeatureFlag("flag-1", null)
     sut.addFeatureFlag(null, null)
 
     sut.scope.addFeatureFlag(null, true)
@@ -3143,17 +3143,7 @@ class ScopesTest {
 
     sut.captureException(RuntimeException("test exception"))
 
-    verify(mockClient)
-      .captureEvent(
-        any(),
-        check {
-          val featureFlags = it.featureFlags
-          assertNotNull(featureFlags)
-
-          assertEquals(0, featureFlags.values.size)
-        },
-        anyOrNull(),
-      )
+    verify(mockClient).captureEvent(any(), check { assertNull(it.featureFlags) }, anyOrNull())
   }
 
   private val dsnTest = "https://key@sentry.io/proj"

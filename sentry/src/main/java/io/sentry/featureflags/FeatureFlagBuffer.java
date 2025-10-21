@@ -139,12 +139,14 @@ public final class FeatureFlagBuffer implements IFeatureFlagBuffer {
     int currentIndex = currentSize - 1;
 
     @Nullable
-    FeatureFlagEntry globalEntry = globalFlags == null || globalIndex < 0 ? null : globalFlags.get(globalIndex);
+    FeatureFlagEntry globalEntry =
+        globalFlags == null || globalIndex < 0 ? null : globalFlags.get(globalIndex);
     @Nullable
     FeatureFlagEntry isolationEntry =
         isolationFlags == null || isolationIndex < 0 ? null : isolationFlags.get(isolationIndex);
     @Nullable
-    FeatureFlagEntry currentEntry = currentFlags == null || currentIndex < 0 ? null : currentFlags.get(currentIndex);
+    FeatureFlagEntry currentEntry =
+        currentFlags == null || currentIndex < 0 ? null : currentFlags.get(currentIndex);
 
     final @NotNull java.util.Map<String, FeatureFlagEntry> uniqueFlags =
         new java.util.LinkedHashMap<>(maxSize);
