@@ -227,18 +227,24 @@ public final class DeviceInfoUtil {
     // this way of getting the size of storage might be problematic for storages bigger than 2GB
     // check the use of
     // https://developer.android.com/reference/java/io/File.html#getFreeSpace%28%29
-    final @Nullable File internalStorageFile = context.getExternalFilesDir(null);
-    if (internalStorageFile != null) {
-      StatFs internalStorageStat = new StatFs(internalStorageFile.getPath());
-      device.setStorageSize(getTotalInternalStorage(internalStorageStat));
-      device.setFreeStorage(getUnusedInternalStorage(internalStorageStat));
-    }
+    options
+        .getRuntimeManager()
+        .runWithRelaxedPolicy(
+            () -> {
+              final @Nullable File internalStorageFile = context.getExternalFilesDir(null);
+              if (internalStorageFile != null) {
+                StatFs internalStorageStat = new StatFs(internalStorageFile.getPath());
+                device.setStorageSize(getTotalInternalStorage(internalStorageStat));
+                device.setFreeStorage(getUnusedInternalStorage(internalStorageStat));
+              }
 
-    final @Nullable StatFs externalStorageStat = getExternalStorageStat(internalStorageFile);
-    if (externalStorageStat != null) {
-      device.setExternalStorageSize(getTotalExternalStorage(externalStorageStat));
-      device.setExternalFreeStorage(getUnusedExternalStorage(externalStorageStat));
-    }
+              final @Nullable StatFs externalStorageStat =
+                  getExternalStorageStat(internalStorageFile);
+              if (externalStorageStat != null) {
+                device.setExternalStorageSize(getTotalExternalStorage(externalStorageStat));
+                device.setExternalFreeStorage(getUnusedExternalStorage(externalStorageStat));
+              }
+            });
 
     if (device.getConnectionType() == null) {
       // wifi, ethernet or cellular, null if none
@@ -479,7 +485,7 @@ public final class DeviceInfoUtil {
   @Nullable
   private String getDeviceId() {
     try {
-      return Installation.id(context);
+      return options.getRuntimeManager().runWithRelaxedPolicy(() -> Installation.id(context));
     } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, "Error getting installationId.", e);
     }

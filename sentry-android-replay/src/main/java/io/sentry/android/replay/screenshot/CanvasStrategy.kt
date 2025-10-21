@@ -32,7 +32,7 @@ import io.sentry.SentryOptions
 import io.sentry.android.replay.ExecutorProvider
 import io.sentry.android.replay.ScreenshotRecorderCallback
 import io.sentry.android.replay.ScreenshotRecorderConfig
-import io.sentry.android.replay.util.submitSafely
+import io.sentry.android.replay.util.ReplayRunnable
 import io.sentry.util.AutoClosableReentrantLock
 import io.sentry.util.IntegrationUtils
 import java.io.Closeable
@@ -179,7 +179,7 @@ internal class CanvasStrategy(
       holder.close()
     } else {
       unprocessedPictureRef.set(holder)
-      executor.getExecutor().submitSafely(options, "screenshot_recorder.canvas", pictureRenderTask)
+      executor.getExecutor().submit(ReplayRunnable("screenshot_recorder.canvas", pictureRenderTask))
     }
   }
 
