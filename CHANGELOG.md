@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 8.24.0-alpha.2
 
 ### Features
 
@@ -39,6 +39,8 @@
 - Session Replay: Fix `java.lang.IllegalArgumentException: width and height must be > 0` ([#4805](https://github.com/getsentry/sentry-java/pull/4805))
 - Handle `NoOpScopes` in `Context` when starting a span through OpenTelemetry ([#4823](https://github.com/getsentry/sentry-java/pull/4823))
   - This fixes "java.lang.IllegalArgumentException: The DSN is required" when combining WebFlux and OpenTelemetry
+- Session Replay: Do not use recycled screenshots for masking ([#4790](https://github.com/getsentry/sentry-java/pull/4790))
+  - This fixes native crashes seen in `Canvas.<init>`/`ScreenshotRecorder.capture`
 
 ### Miscellaneous
 

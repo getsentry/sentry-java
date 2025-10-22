@@ -7,6 +7,8 @@ import org.jetbrains.annotations.NotNull;
 public interface IRuntimeManager {
   <T> T runWithRelaxedPolicy(final @NotNull IRuntimeManagerCallback<T> toRun);
 
+  void runWithRelaxedPolicy(final @NotNull Runnable toRun);
+
   interface IRuntimeManagerCallback<T> {
     T run();
   }
