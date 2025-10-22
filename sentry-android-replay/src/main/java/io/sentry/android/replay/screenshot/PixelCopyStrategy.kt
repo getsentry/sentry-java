@@ -196,13 +196,14 @@ internal class PixelCopyStrategy(
               }
             }
           }
+          // since singlePixelBitmap is only used in tasks within the single threaded executor
+          // there won't be any concurrent access
+          if (!singlePixelBitmap.isRecycled) {
+            singlePixelBitmap.recycle()
+          }
         },
       )
     )
-
-    if (!singlePixelBitmap.isRecycled) {
-      singlePixelBitmap.recycle()
-    }
   }
 
   private fun Bitmap.dominantColorForRect(rect: Rect): Int {
