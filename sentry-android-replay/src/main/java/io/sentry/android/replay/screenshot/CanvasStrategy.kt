@@ -87,9 +87,9 @@ internal class CanvasStrategy(
               synchronized(bitmap) {
                 if (!bitmap.isRecycled) {
                   bitmap.copyPixelsFromBuffer(buffer)
+                  lastCaptureSuccessful.set(true)
                 }
               }
-              lastCaptureSuccessful.set(true)
               screenshotRecorderCallback?.onScreenshotRecorded(bitmap)
             }
           }
