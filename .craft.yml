@@ -34,7 +34,6 @@ targets:
       maven:io.sentry:sentry-apache-http-client-5:
       maven:io.sentry:sentry-android:
       maven:io.sentry:sentry-android-core:
-      maven:io.sentry:sentry-android-distribution:
       maven:io.sentry:sentry-android-ndk:
       maven:io.sentry:sentry-android-timber:
       maven:io.sentry:sentry-kotlin-extensions:
