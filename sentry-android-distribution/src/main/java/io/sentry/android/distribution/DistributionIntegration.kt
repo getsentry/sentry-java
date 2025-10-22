@@ -14,6 +14,7 @@ import io.sentry.UpdateInfo
 import io.sentry.UpdateStatus
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
+import java.util.concurrent.Future
 import org.jetbrains.annotations.ApiStatus
 
 /**
@@ -84,14 +85,12 @@ public class DistributionIntegration(context: Context) : Integration, IDistribut
   }
 
   /**
-   * Check for available updates asynchronously using a callback.
+   * Check for available updates asynchronously.
    *
-   * @param onResult Callback that will be called with the UpdateStatus result
+   * @return Future that will resolve to an UpdateStatus result
    */
-  public override fun checkForUpdate(onResult: IDistributionApi.UpdateCallback) {
-    // TODO implement this in a async way
-    val result = checkForUpdateBlocking()
-    onResult.onResult(result)
+  public override fun checkForUpdate(): Future<UpdateStatus> {
+    return sentryOptions.executorService.submit<UpdateStatus> { checkForUpdateBlocking() }
   }
 
   /**
