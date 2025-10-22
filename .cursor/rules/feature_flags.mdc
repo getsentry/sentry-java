@@ -1,0 +1,24 @@
+---
+alwaysApply: false
+description: Feature Flags
+---
+# Java SDK Feature Flags
+
+There is a scope based and a span based API for tracking feature flag evaluations.
+
+## Scope Based API
+
+The `addFeatureFlag` method can be used to track feature flag evaluations. It exists on `Sentry` static API as well as `IScopes` and `IScope`.
+
+The `maxFeatureFlags` option controls how many flags are tracked per scope and also how many are sent to Sentry as part of events.
+Scope based feature flags can also be disabled by setting the value to 0. Defaults to 100 feature flag evaluations.
+
+Order of feature flag evaluations is important as we only keep track of the last {maxFeatureFlag} items.
+
+When a feature flag evluation with the same name is added, the previous one is removed and the new one is stored so that it'll be dropped last.
+
+When sending out an error event, feature flag buffers from all three scope types (global, isolation and current scope) are merged, chosing the newest {maxFeatureFlag} entries across all scope types. Feature flags are sent as part of the `flags` context.
+
+## Span Based API
+
+tbd
