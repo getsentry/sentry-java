@@ -41,6 +41,7 @@
   - This fixes "java.lang.IllegalArgumentException: The DSN is required" when combining WebFlux and OpenTelemetry
 - Session Replay: Do not use recycled screenshots for masking ([#4790](https://github.com/getsentry/sentry-java/pull/4790))
   - This fixes native crashes seen in `Canvas.<init>`/`ScreenshotRecorder.capture`
+- Session Replay: Ensure bitmaps are recycled properly ([#4820](https://github.com/getsentry/sentry-java/pull/4820))
 
 ### Miscellaneous
 
