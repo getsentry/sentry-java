@@ -307,15 +307,13 @@ public class ReplayIntegration(
     scopes?.configureScope { screen = it.screen?.substringAfterLast('.') }
     captureStrategy?.onScreenshotRecorded(bitmap) { frameTimeStamp ->
       addFrame(bitmap, frameTimeStamp, screen)
-      checkCanRecord()
     }
+    checkCanRecord()
   }
 
   override fun onScreenshotRecorded(screenshot: File, frameTimestamp: Long) {
-    captureStrategy?.onScreenshotRecorded { _ ->
-      addFrame(screenshot, frameTimestamp)
-      checkCanRecord()
-    }
+    captureStrategy?.onScreenshotRecorded { _ -> addFrame(screenshot, frameTimestamp) }
+    checkCanRecord()
   }
 
   override fun close() {

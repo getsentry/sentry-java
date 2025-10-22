@@ -25,6 +25,7 @@ import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.Message;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.util.CollectionUtils;
+import io.sentry.util.LoggerPropertiesUtil;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -230,6 +231,11 @@ public class SentryAppender extends AbstractAppender {
           SentryAttribute.stringAttribute("sentry.message.template", nonFormattedMessage));
     }
 
+    final @NotNull Map<String, String> contextData = loggingEvent.getContextData().toMap();
+    final @NotNull List<String> contextTags =
+        ScopesAdapter.getInstance().getOptions().getContextTags();
+    LoggerPropertiesUtil.applyPropertiesToAttributes(attributes, contextTags, contextData);
+
     final @NotNull SentryLogParameters params = SentryLogParameters.create(attributes);
     params.setOrigin("auto.log.log4j2");
 
@@ -279,20 +285,7 @@ public class SentryAppender extends AbstractAppender {
       // get tags from ScopesAdapter options to allow getting the correct tags if Sentry has been
       // initialized somewhere else
       final List<String> contextTags = scopes.getOptions().getContextTags();
-      if (contextTags != null && !contextTags.isEmpty()) {
-        for (final String contextTag : contextTags) {
-          // if mdc tag is listed in SentryOptions, apply as event tag
-          if (contextData.containsKey(contextTag)) {
-            event.setTag(contextTag, contextData.get(contextTag));
-            // remove from all tags applied to logging event
-            contextData.remove(contextTag);
-          }
-        }
-      }
-      // put the rest of mdc tags in contexts
-      if (!contextData.isEmpty()) {
-        event.getContexts().put("Context Data", contextData);
-      }
+      LoggerPropertiesUtil.applyPropertiesToEvent(event, contextTags, contextData, "Context Data");
     }
 
     return event;

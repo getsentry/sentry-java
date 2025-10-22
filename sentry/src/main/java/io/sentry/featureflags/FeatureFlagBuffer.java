@@ -45,7 +45,8 @@ public final class FeatureFlagBuffer implements IFeatureFlagBuffer {
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       final int size = flags.size();
       for (int i = 0; i < size; i++) {
-        if (flags.get(i).equals(flag)) {
+        final @NotNull FeatureFlagEntry entry = flags.get(i);
+        if (entry.flag.equals(flag)) {
           flags.remove(i);
           break;
         }

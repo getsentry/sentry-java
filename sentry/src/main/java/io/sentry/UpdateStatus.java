@@ -16,6 +16,11 @@ public abstract class UpdateStatus {
     public static UpToDate getInstance() {
       return INSTANCE;
     }
+
+    @Override
+    public String toString() {
+      return "UpdateStatus.UpToDate{}";
+    }
   }
 
   /** A new release is available for download. */
@@ -28,6 +33,11 @@ public abstract class UpdateStatus {
 
     public @NotNull UpdateInfo getInfo() {
       return info;
+    }
+
+    @Override
+    public String toString() {
+      return "UpdateStatus.NewRelease{" + "info=" + info + '}';
     }
   }
 
@@ -42,6 +52,11 @@ public abstract class UpdateStatus {
     public @NotNull String getMessage() {
       return message;
     }
+
+    @Override
+    public String toString() {
+      return "UpdateStatus.UpdateError{" + "message='" + message + '\'' + '}';
+    }
   }
 
   /** No network connection is available to check for updates. */
@@ -54,6 +69,11 @@ public abstract class UpdateStatus {
 
     public @NotNull String getMessage() {
       return message;
+    }
+
+    @Override
+    public String toString() {
+      return "UpdateStatus.NoNetwork{" + "message='" + message + '\'' + '}';
     }
   }
 }
