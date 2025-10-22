@@ -22,6 +22,7 @@ io.sentry.protocol.profiling
 io.sentry.rrweb
 io.sentry.transport
 io.sentry.util
+io.sentry.util.runtime
 io.sentry.util.thread
 io.sentry.vendor
 io.sentry.vendor.gson.internal.bind.util
