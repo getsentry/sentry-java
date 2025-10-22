@@ -142,10 +142,10 @@ internal class ScreenshotRecorder(
   }
 
   fun close() {
+    isCapturing.set(false)
     unbind(rootView?.get())
     rootView?.clear()
     screenshotStrategy.close()
-    isCapturing.set(false)
   }
 }
 
