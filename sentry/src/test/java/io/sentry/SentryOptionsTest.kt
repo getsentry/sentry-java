@@ -895,4 +895,17 @@ class SentryOptionsTest {
     options.isPropagateTraceparent = true
     assertTrue(options.isPropagateTraceparent)
   }
+
+  @Test
+  fun `maxFeatureFlags defaults to 100`() {
+    val options = SentryOptions()
+    assertEquals(100, options.maxFeatureFlags)
+  }
+
+  @Test
+  fun `maxFeatureFlags can be changed`() {
+    val options = SentryOptions()
+    options.maxFeatureFlags = 50
+    assertEquals(50, options.maxFeatureFlags)
+  }
 }
