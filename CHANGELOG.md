@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 8.24.0
 
 ### Features
 
