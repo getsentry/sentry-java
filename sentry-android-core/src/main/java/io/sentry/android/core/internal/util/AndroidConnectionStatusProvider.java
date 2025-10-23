@@ -54,6 +54,7 @@ public final class AndroidConnectionStatusProvider
   private static final @NotNull AutoClosableReentrantLock childCallbacksLock =
       new AutoClosableReentrantLock();
   private static final @NotNull List<NetworkCallback> childCallbacks = new ArrayList<>();
+  private static final AtomicBoolean isUpdatingCache = new AtomicBoolean(false);
 
   private static final int[] transports = {
     NetworkCapabilities.TRANSPORT_WIFI,
@@ -268,19 +269,16 @@ public final class AndroidConnectionStatusProvider
 
               // Only notify observers if something meaningful changed
               if (shouldUpdate) {
+                try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
                 cachedNetworkCapabilities = networkCapabilities;
                 lastCacheUpdateTime = timeProvider.getCurrentTimeMillis();
+                  final @NotNull ConnectionStatus status = getConnectionStatusFromCache();
                 options
                     .getLogger()
                     .log(
                         SentryLevel.DEBUG,
-                        "Cache updated - Status: "
-                            + getConnectionStatusFromCache()
-                            + ", Type: "
-                            + getConnectionTypeFromCache());
+                        "Cache updated - Status: " + status + ", Type: " + getConnectionTypeFromCache());
 
-                final @NotNull ConnectionStatus status = getConnectionStatusFromCache();
-                try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
                   for (final @NotNull IConnectionStatusObserver observer :
                       connectionStatusObservers) {
                     observer.onConnectionStatusChanged(status);
@@ -378,27 +376,31 @@ public final class AndroidConnectionStatusProvider
       // Fallback: query current active network in the background
       submitSafe(
           () -> {
-            final ConnectivityManager connectivityManager =
+            // Avoid concurrent updates
+            if (!isUpdatingCache.getAndSet(true)) {
+              final ConnectivityManager connectivityManager =
                 getConnectivityManager(context, options.getLogger());
-            if (connectivityManager != null) {
-              final @Nullable NetworkCapabilities capabilities =
+              if (connectivityManager != null) {
+                final @Nullable NetworkCapabilities capabilities =
                   getNetworkCapabilities(connectivityManager);
 
-              try (final @NotNull ISentryLifecycleToken ignored2 = lock.acquire()) {
-                cachedNetworkCapabilities = capabilities;
-                lastCacheUpdateTime = timeProvider.getCurrentTimeMillis();
+                try (final @NotNull ISentryLifecycleToken ignored2 = lock.acquire()) {
+                  cachedNetworkCapabilities = capabilities;
+                  lastCacheUpdateTime = timeProvider.getCurrentTimeMillis();
 
-                if (capabilities != null) {
-                  options
+                  if (capabilities != null) {
+                    options
                       .getLogger()
                       .log(
-                          SentryLevel.DEBUG,
-                          "Cache updated - Status: "
-                              + getConnectionStatusFromCache()
-                              + ", Type: "
-                              + getConnectionTypeFromCache());
+                        SentryLevel.DEBUG,
+                        "Cache updated - Status: "
+                          + getConnectionStatusFromCache()
+                          + ", Type: "
+                          + getConnectionTypeFromCache());
+                  }
                 }
               }
+              isUpdatingCache.set(false);
             }
           });
 
