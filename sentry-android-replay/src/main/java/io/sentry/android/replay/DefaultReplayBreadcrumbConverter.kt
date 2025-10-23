@@ -11,10 +11,12 @@ import io.sentry.rrweb.RRWebBreadcrumbEvent
 import io.sentry.rrweb.RRWebEvent
 import io.sentry.rrweb.RRWebSpanEvent
 import io.sentry.util.network.NetworkRequestData
+import java.util.Collections
 import kotlin.LazyThreadSafetyMode.NONE
 
 public open class DefaultReplayBreadcrumbConverter : ReplayBreadcrumbConverter {
   internal companion object {
+    private const val MAX_HTTP_NETWORK_DETAILS = 32
     private val snakecasePattern by lazy(NONE) { "_[a-z]".toRegex() }
     private val supportedNetworkData =
       HashSet<String>().apply {
@@ -28,7 +30,16 @@ public open class DefaultReplayBreadcrumbConverter : ReplayBreadcrumbConverter {
   }
 
   private var lastConnectivityState: String? = null
-  private val httpBreadcrumbData = mutableMapOf<Breadcrumb, NetworkRequestData>()
+  private val httpNetworkDetails =
+    Collections.synchronizedMap(
+      object : LinkedHashMap<Breadcrumb, NetworkRequestData>() {
+        override fun removeEldestEntry(
+          eldest: MutableMap.MutableEntry<Breadcrumb, NetworkRequestData>?
+        ): Boolean {
+          return size > MAX_HTTP_NETWORK_DETAILS
+        }
+      }
+    )
   private var userBeforeBreadcrumbCallback: BeforeBreadcrumbCallback? = null
 
   // TODO: If user provided a new Breadcrumb object via their BeforeBreadcrumbCallback, is that reflected in the `Breadcrumb`s passed in here?
@@ -144,7 +155,7 @@ public open class DefaultReplayBreadcrumbConverter : ReplayBreadcrumbConverter {
 
     result?.let { finalBreadcrumb ->
       extractNetworkRequestDataFromHint(finalBreadcrumb, hint)?.let { networkData ->
-        httpBreadcrumbData[finalBreadcrumb] = networkData
+        httpNetworkDetails[finalBreadcrumb] = networkData
       }
     }
 
@@ -195,12 +206,14 @@ public open class DefaultReplayBreadcrumbConverter : ReplayBreadcrumbConverter {
     val httpStartTimestamp = breadcrumb.data[SpanDataConvention.HTTP_START_TIMESTAMP]
     val httpEndTimestamp = breadcrumb.data[SpanDataConvention.HTTP_END_TIMESTAMP]
 
-    // Get the NetworkRequestData if available
-    val networkRequestData = httpBreadcrumbData[breadcrumb]
+    // Get the NetworkRequestData if available and remove it from the map
+    val networkDetailData = httpNetworkDetails.remove(breadcrumb)
 
-    Log.d("SentryNetwork", "SentryNetwork: convert(breadcrumb=${breadcrumb.type}) httpBreadcrumbData map size: ${httpBreadcrumbData.size}, " +
-      "contains current breadcrumb: ${httpBreadcrumbData.containsKey(breadcrumb)}, " +
-      "network data for current: ${httpBreadcrumbData[breadcrumb]}")
+    Log.d(
+      "SentryNetwork",
+      "SentryNetwork: convert(breadcrumb=${breadcrumb.type}) httpNetworkDetails map size: ${httpNetworkDetails.size}, " +
+        "found network data for current breadcrumb: ${networkDetailData != null}",
+    )
 
     return RRWebSpanEvent().apply {
       timestamp = breadcrumb.timestamp.time
@@ -223,14 +236,13 @@ public open class DefaultReplayBreadcrumbConverter : ReplayBreadcrumbConverter {
       val breadcrumbData = mutableMapOf<String, Any?>()
 
       // Add data from NetworkRequestData if available
-      if (networkRequestData != null) {
-        networkRequestData.method?.let { breadcrumbData["method"] = it }
-        networkRequestData.statusCode?.let { breadcrumbData["statusCode"] = it }
-        networkRequestData.requestBodySize?.let { breadcrumbData["requestBodySize"] = it }
-        networkRequestData.responseBodySize?.let { breadcrumbData["responseBodySize"] = it }
+      networkDetailData?.let { networkData ->
+        networkData.method?.let { breadcrumbData["method"] = it }
+        networkData.statusCode?.let { breadcrumbData["statusCode"] = it }
+        networkData.requestBodySize?.let { breadcrumbData["requestBodySize"] = it }
+        networkData.responseBodySize?.let { breadcrumbData["responseBodySize"] = it }
 
-        // Add request and response data if available
-        networkRequestData.request?.let { request ->
+        networkData.request?.let { request ->
           val requestData = mutableMapOf<String, Any?>()
           request.size?.let { requestData["size"] = it }
           request.body?.let { requestData["body"] = it }
@@ -242,7 +254,7 @@ public open class DefaultReplayBreadcrumbConverter : ReplayBreadcrumbConverter {
           }
         }
 
-        networkRequestData.response?.let { response ->
+        networkData.response?.let { response ->
           val responseData = mutableMapOf<String, Any?>()
           response.size?.let { responseData["size"] = it }
           response.body?.let { responseData["body"] = it }
@@ -263,7 +275,6 @@ public open class DefaultReplayBreadcrumbConverter : ReplayBreadcrumbConverter {
           ] = value
         }
       }
-
 
       data = breadcrumbData
     }
