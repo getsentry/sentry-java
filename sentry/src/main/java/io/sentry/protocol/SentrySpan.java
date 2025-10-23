@@ -74,7 +74,7 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
     // we lose precision here, from potential nanosecond precision down to 10 microsecond precision
     this.startTimestamp = DateUtils.nanosToSeconds(span.getStartDate().nanoTimestamp());
     this.data = data;
-    final @NotNull IFeatureFlagBuffer featureFlagBuffer = span.getFeatureFlagBuffer();
+    final @NotNull IFeatureFlagBuffer featureFlagBuffer = span.getSpanContext().getFeatureFlagBuffer();
     final @Nullable FeatureFlags featureFlags = featureFlagBuffer.getFeatureFlags();
     if (featureFlags != null && data != null) {
       for (FeatureFlag featureFlag : featureFlags.getValues()) {

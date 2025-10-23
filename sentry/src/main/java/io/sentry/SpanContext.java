@@ -1,6 +1,9 @@
 package io.sentry;
 
 import com.jakewharton.nopen.annotation.Open;
+
+import io.sentry.featureflags.IFeatureFlagBuffer;
+import io.sentry.featureflags.SpanFeatureFlagBuffer;
 import io.sentry.protocol.SentryId;
 import io.sentry.util.CollectionUtils;
 import io.sentry.util.Objects;
@@ -54,6 +57,8 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
   private @NotNull Instrumenter instrumenter = Instrumenter.SENTRY;
 
   protected @Nullable Baggage baggage;
+
+  protected @NotNull IFeatureFlagBuffer featureFlags = SpanFeatureFlagBuffer.create();
 
   /**
    * Set the profiler id associated with this transaction. If set to a non-empty id, this value will
@@ -318,6 +323,16 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
   @ApiStatus.Internal
   public void setProfilerId(@NotNull SentryId profilerId) {
     this.profilerId = profilerId;
+  }
+
+  @ApiStatus.Internal
+  public void addFeatureFlag(final @Nullable String flag, final @Nullable Boolean result) {
+    featureFlags.add(flag, result);
+  }
+
+  @ApiStatus.Internal
+  public @NotNull IFeatureFlagBuffer getFeatureFlagBuffer() {
+    return featureFlags;
   }
 
   // region JsonSerializable

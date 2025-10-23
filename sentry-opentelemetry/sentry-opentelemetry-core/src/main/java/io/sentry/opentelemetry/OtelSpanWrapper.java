@@ -77,8 +77,6 @@ public final class OtelSpanWrapper implements IOtelSpanWrapper {
 
   private @NotNull Deque<ISentryLifecycleToken> tokensToCleanup = new ArrayDeque<>(1);
 
-  private final @NotNull IFeatureFlagBuffer featureFlags = SpanFeatureFlagBuffer.create();
-
   public OtelSpanWrapper(
       final @NotNull ReadWriteSpan span,
       final @NotNull IScopes scopes,
@@ -511,7 +509,7 @@ public final class OtelSpanWrapper implements IOtelSpanWrapper {
 
   @Override
   public void addFeatureFlag(final @Nullable String flag, final @Nullable Boolean result) {
-    featureFlags.add(flag, result);
+    context.addFeatureFlag(flag, result);
   }
 
   @Override

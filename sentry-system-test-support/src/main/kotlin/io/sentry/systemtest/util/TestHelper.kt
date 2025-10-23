@@ -8,6 +8,7 @@ import io.sentry.SentryEvent
 import io.sentry.SentryItemType
 import io.sentry.SentryLogEvents
 import io.sentry.SentryOptions
+import io.sentry.protocol.FeatureFlag
 import io.sentry.protocol.SentrySpan
 import io.sentry.protocol.SentryTransaction
 import io.sentry.systemtest.graphql.GraphqlTestClient
@@ -154,7 +155,7 @@ class TestHelper(backendUrl: String) {
   }
 
   fun ensureErrorReceived(callback: ((SentryEvent) -> Boolean)) {
-    ensureEnvelopeReceived { envelopeString ->
+    ensureEnvelopeReceived(retryCount = 3) { envelopeString ->
       val deserializeEnvelope = jsonSerializer.deserializeEnvelope(envelopeString.byteInputStream())
       if (deserializeEnvelope == null) {
         return@ensureEnvelopeReceived false
@@ -268,6 +269,52 @@ class TestHelper(backendUrl: String) {
     val matches = transaction.contexts.trace?.operation == op
     if (!matches) {
       println("Unable to find transaction with op $op:")
+      logObject(transaction)
+      return false
+    }
+
+    return true
+  }
+
+  fun doesTransactionHave(transaction: SentryTransaction, op: String, featureFlag: FeatureFlag? = null): Boolean {
+    val matches = transaction.contexts.trace?.operation == op
+    if (!matches) {
+      println("Unable to find transaction with op $op:")
+      logObject(transaction)
+      return false
+    }
+
+    val foundFlag = transaction.contexts.trace?.data?.get(featureFlag?.flag)
+    if (featureFlag != null && foundFlag == null) {
+      println("Unable to find span with feature flag ${featureFlag?.flag}:")
+      logObject(transaction)
+      return false
+    }
+    if (featureFlag != null && foundFlag != featureFlag.result) {
+      println("Feature flag ${featureFlag?.flag} has unexpected result ${foundFlag}:")
+      logObject(transaction)
+      return false
+    }
+
+    return true
+  }
+
+  fun doesTransactionHaveSpanWith(transaction: SentryTransaction, op: String, featureFlag: FeatureFlag? = null): Boolean {
+    val foundSpan = transaction.spans.firstOrNull { span -> span.op == op }
+    if (foundSpan == null) {
+      println("Unable to find span with op $op:")
+      logObject(transaction)
+      return false
+    }
+
+    val foundFlag = foundSpan.data?.get(featureFlag?.flag)
+    if (featureFlag != null && foundFlag == null) {
+      println("Unable to find span with feature flag ${featureFlag?.flag}:")
+      logObject(transaction)
+      return false
+    }
+    if (featureFlag != null && foundFlag != featureFlag.result) {
+      println("Feature flag ${featureFlag?.flag} has unexpected result ${foundFlag}:")
       logObject(transaction)
       return false
     }

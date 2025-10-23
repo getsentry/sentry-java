@@ -15,6 +15,7 @@ import io.sentry.Span;
 import io.sentry.SpanContext;
 import io.sentry.SpanStatus;
 import io.sentry.TracesSamplingDecision;
+import io.sentry.featureflags.IFeatureFlagBuffer;
 import io.sentry.util.Objects;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
@@ -96,6 +97,14 @@ public final class SentryTransaction extends SentryBaseEvent
     if (data != null) {
       for (final Map.Entry<String, Object> tag : data.entrySet()) {
         tracerContextToSend.setData(tag.getKey(), tag.getValue());
+      }
+    }
+
+    final @NotNull IFeatureFlagBuffer featureFlagBuffer = tracerContext.getFeatureFlagBuffer();
+    final @Nullable FeatureFlags featureFlags = featureFlagBuffer.getFeatureFlags();
+    if (featureFlags != null) {
+      for (FeatureFlag featureFlag : featureFlags.getValues()) {
+        tracerContextToSend.setData("flag.evaluation." + featureFlag.getFlag(), featureFlag.getResult());
       }
     }
 

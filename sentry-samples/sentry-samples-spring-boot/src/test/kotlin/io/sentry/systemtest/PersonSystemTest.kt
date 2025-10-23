@@ -1,5 +1,6 @@
 package io.sentry.systemtest
 
+import io.sentry.protocol.FeatureFlag
 import io.sentry.systemtest.util.TestHelper
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -26,7 +27,7 @@ class PersonSystemTest {
     }
 
     testHelper.ensureTransactionReceived { transaction, envelopeHeader ->
-      testHelper.doesTransactionHaveOp(transaction, "http.server")
+        testHelper.doesTransactionHave(transaction, op = "http.server", featureFlag = FeatureFlag("flag.evaluation.my-feature-flag", true))
     }
 
     Thread.sleep(10000)
