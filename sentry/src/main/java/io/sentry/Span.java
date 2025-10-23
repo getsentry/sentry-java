@@ -1,5 +1,7 @@
 package io.sentry;
 
+import io.sentry.featureflags.IFeatureFlagBuffer;
+import io.sentry.featureflags.SpanFeatureFlagBuffer;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.MeasurementValue;
 import io.sentry.protocol.SentryId;
@@ -48,6 +50,8 @@ public final class Span implements ISpan {
   private final @NotNull Map<String, MeasurementValue> measurements = new ConcurrentHashMap<>();
 
   private final @NotNull Contexts contexts = new Contexts();
+
+  private final @NotNull IFeatureFlagBuffer featureFlags = SpanFeatureFlagBuffer.create();
 
   Span(
       final @NotNull SentryTracer transaction,
@@ -457,5 +461,15 @@ public final class Span implements ISpan {
   @Override
   public @NotNull ISentryLifecycleToken makeCurrent() {
     return NoOpScopesLifecycleToken.getInstance();
+  }
+
+  @Override
+  public void addFeatureFlag(final @Nullable String flag, final @Nullable Boolean result) {
+    featureFlags.add(flag, result);
+  }
+
+  @ApiStatus.Internal
+  public @NotNull IFeatureFlagBuffer getFeatureFlagBuffer() {
+    return featureFlags;
   }
 }

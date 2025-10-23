@@ -1021,6 +1021,11 @@ public final class SentryTracer implements ITransaction {
     return false;
   }
 
+  @Override
+  public void addFeatureFlag(final @Nullable String flag, final @Nullable Boolean result) {
+    this.root.addFeatureFlag(flag, result);
+  }
+
   private static final class FinishStatus {
     static final FinishStatus NOT_FINISHED = FinishStatus.notFinished();
 

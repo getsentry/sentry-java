@@ -24,6 +24,8 @@ import io.sentry.SpanOptions;
 import io.sentry.SpanStatus;
 import io.sentry.TraceContext;
 import io.sentry.TracesSamplingDecision;
+import io.sentry.featureflags.IFeatureFlagBuffer;
+import io.sentry.featureflags.SpanFeatureFlagBuffer;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.MeasurementValue;
 import io.sentry.protocol.SentryId;
@@ -74,6 +76,8 @@ public final class OtelSpanWrapper implements IOtelSpanWrapper {
   private @Nullable Throwable throwable;
 
   private @NotNull Deque<ISentryLifecycleToken> tokensToCleanup = new ArrayDeque<>(1);
+
+  private final @NotNull IFeatureFlagBuffer featureFlags = SpanFeatureFlagBuffer.create();
 
   public OtelSpanWrapper(
       final @NotNull ReadWriteSpan span,
@@ -503,6 +507,11 @@ public final class OtelSpanWrapper implements IOtelSpanWrapper {
   @ApiStatus.Internal
   public @NotNull IScopes getScopes() {
     return scopes;
+  }
+
+  @Override
+  public void addFeatureFlag(final @Nullable String flag, final @Nullable Boolean result) {
+    featureFlags.add(flag, result);
   }
 
   @Override

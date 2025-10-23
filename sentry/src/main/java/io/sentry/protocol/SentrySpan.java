@@ -11,6 +11,7 @@ import io.sentry.SentryLevel;
 import io.sentry.Span;
 import io.sentry.SpanId;
 import io.sentry.SpanStatus;
+import io.sentry.featureflags.IFeatureFlagBuffer;
 import io.sentry.util.CollectionUtils;
 import io.sentry.util.Objects;
 import io.sentry.vendor.gson.stream.JsonToken;
@@ -73,6 +74,13 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
     // we lose precision here, from potential nanosecond precision down to 10 microsecond precision
     this.startTimestamp = DateUtils.nanosToSeconds(span.getStartDate().nanoTimestamp());
     this.data = data;
+    final @NotNull IFeatureFlagBuffer featureFlagBuffer = span.getFeatureFlagBuffer();
+    final @Nullable FeatureFlags featureFlags = featureFlagBuffer.getFeatureFlags();
+    if (featureFlags != null && data != null) {
+      for (FeatureFlag featureFlag : featureFlags.getValues()) {
+        data.put("flag.evaluation." + featureFlag.getFlag(), featureFlag.getResult());
+      }
+    }
   }
 
   @ApiStatus.Internal

@@ -1089,6 +1089,7 @@ public abstract interface class io/sentry/ISocketTagger {
 }
 
 public abstract interface class io/sentry/ISpan {
+	public abstract fun addFeatureFlag (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public abstract fun finish ()V
 	public abstract fun finish (Lio/sentry/SpanStatus;)V
 	public abstract fun finish (Lio/sentry/SpanStatus;Lio/sentry/SentryDate;)V
@@ -1779,6 +1780,7 @@ public final class io/sentry/NoOpSocketTagger : io/sentry/ISocketTagger {
 }
 
 public final class io/sentry/NoOpSpan : io/sentry/ISpan {
+	public fun addFeatureFlag (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public fun finish ()V
 	public fun finish (Lio/sentry/SpanStatus;)V
 	public fun finish (Lio/sentry/SpanStatus;Lio/sentry/SentryDate;)V
@@ -1826,6 +1828,7 @@ public final class io/sentry/NoOpSpanFactory : io/sentry/ISpanFactory {
 }
 
 public final class io/sentry/NoOpTransaction : io/sentry/ITransaction {
+	public fun addFeatureFlag (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public fun finish ()V
 	public fun finish (Lio/sentry/SpanStatus;)V
 	public fun finish (Lio/sentry/SpanStatus;Lio/sentry/SentryDate;)V
@@ -3853,6 +3856,7 @@ public final class io/sentry/SentryTraceHeader {
 public final class io/sentry/SentryTracer : io/sentry/ITransaction {
 	public fun <init> (Lio/sentry/TransactionContext;Lio/sentry/IScopes;)V
 	public fun <init> (Lio/sentry/TransactionContext;Lio/sentry/IScopes;Lio/sentry/TransactionOptions;)V
+	public fun addFeatureFlag (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public fun finish ()V
 	public fun finish (Lio/sentry/SpanStatus;)V
 	public fun finish (Lio/sentry/SpanStatus;Lio/sentry/SentryDate;)V
@@ -3993,6 +3997,7 @@ public final class io/sentry/ShutdownHookIntegration : io/sentry/Integration, ja
 
 public final class io/sentry/Span : io/sentry/ISpan {
 	public fun <init> (Lio/sentry/TransactionContext;Lio/sentry/SentryTracer;Lio/sentry/IScopes;Lio/sentry/SpanOptions;)V
+	public fun addFeatureFlag (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public fun finish ()V
 	public fun finish (Lio/sentry/SpanStatus;)V
 	public fun finish (Lio/sentry/SpanStatus;Lio/sentry/SentryDate;)V
@@ -4000,6 +4005,7 @@ public final class io/sentry/Span : io/sentry/ISpan {
 	public fun getData ()Ljava/util/Map;
 	public fun getData (Ljava/lang/String;)Ljava/lang/Object;
 	public fun getDescription ()Ljava/lang/String;
+	public fun getFeatureFlagBuffer ()Lio/sentry/featureflags/IFeatureFlagBuffer;
 	public fun getFinishDate ()Lio/sentry/SentryDate;
 	public fun getMeasurements ()Ljava/util/Map;
 	public fun getOperation ()Ljava/lang/String;
@@ -4757,6 +4763,14 @@ public final class io/sentry/featureflags/NoOpFeatureFlagBuffer : io/sentry/feat
 	public synthetic fun clone ()Ljava/lang/Object;
 	public fun getFeatureFlags ()Lio/sentry/protocol/FeatureFlags;
 	public static fun getInstance ()Lio/sentry/featureflags/NoOpFeatureFlagBuffer;
+}
+
+public final class io/sentry/featureflags/SpanFeatureFlagBuffer : io/sentry/featureflags/IFeatureFlagBuffer {
+	public fun add (Ljava/lang/String;Ljava/lang/Boolean;)V
+	public fun clone ()Lio/sentry/featureflags/IFeatureFlagBuffer;
+	public synthetic fun clone ()Ljava/lang/Object;
+	public static fun create ()Lio/sentry/featureflags/IFeatureFlagBuffer;
+	public fun getFeatureFlags ()Lio/sentry/protocol/FeatureFlags;
 }
 
 public abstract interface class io/sentry/hints/AbnormalExit {
