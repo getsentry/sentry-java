@@ -1,8 +1,8 @@
 package io.sentry.util.network;
 
-import io.sentry.SentryOptions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.VisibleForTesting;
 
 /**
  * Data class for tracking network request and response information in replays. Used by various HTTP
@@ -18,7 +18,8 @@ public final class NetworkRequestData {
   private @Nullable ReplayNetworkRequestOrResponse request;
   private @Nullable ReplayNetworkRequestOrResponse response;
 
-  NetworkRequestData(
+  @VisibleForTesting
+  public NetworkRequestData(
       @Nullable String method,
       @Nullable Integer statusCode,
       @Nullable Long requestBodySize,
@@ -58,21 +59,20 @@ public final class NetworkRequestData {
   }
 
   /**
-   * Populates this instance with request details obtained via {@link NetworkDetailCaptureUtils#createRequest}
-   *
+   * Populates this instance with request details obtained via {@link
+   * NetworkDetailCaptureUtils#createRequest}
    */
-  public void setRequestDetails(
-      @NotNull ReplayNetworkRequestOrResponse requestData) {
+  public void setRequestDetails(@NotNull ReplayNetworkRequestOrResponse requestData) {
     this.request = requestData;
     this.requestBodySize = requestData.getSize();
   }
 
   /**
-   * Populates this instance with request details obtained via {@link NetworkDetailCaptureUtils#createResponse}
+   * Populates this instance with request details obtained via {@link
+   * NetworkDetailCaptureUtils#createResponse}
    */
   public void setResponseDetails(
-      int statusCode,
-      @NotNull ReplayNetworkRequestOrResponse responseData) {
+      int statusCode, @NotNull ReplayNetworkRequestOrResponse responseData) {
     this.statusCode = statusCode;
     this.response = responseData;
     this.responseBodySize = responseData.getSize();

@@ -52,7 +52,6 @@ public final class RRWebOptionsEvent extends RRWebEvent implements JsonSerializa
     optionsPayload.put("quality", replayOptions.getQuality().serializedName());
     optionsPayload.put("maskedViewClasses", replayOptions.getMaskViewClasses());
     optionsPayload.put("unmaskedViewClasses", replayOptions.getUnmaskViewClasses());
-    optionsPayload.put("networkDetailHasUrls", true);
   }
 
   @NotNull

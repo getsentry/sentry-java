@@ -331,10 +331,11 @@ class DefaultReplayBreadcrumbConverterTest {
   @Test
   fun `returned breadcrumb is not modified when no user BeforeBreadcrumbCallback is provided`() {
     val converter = fixture.getSut()
-    val breadcrumb = Breadcrumb(Date()).apply {
-      message = "test message"
-      category = "test.category"
-    }
+    val breadcrumb =
+      Breadcrumb(Date()).apply {
+        message = "test message"
+        category = "test.category"
+      }
     val hint = Hint()
 
     converter.setUserBeforeBreadcrumbCallback(null)
@@ -347,17 +348,20 @@ class DefaultReplayBreadcrumbConverterTest {
   @Test
   fun `returned breadcrumb is modified according to user provided BeforeBreadcrumbCallback`() {
     val converter = fixture.getSut()
-    val originalBreadcrumb = Breadcrumb(Date()).apply {
-      message = "original message"
-      category = "original.category"
-    }
-    val userModifiedBreadcrumb = Breadcrumb(Date()).apply {
-      message = "modified message"
-      category = "modified.category"
-    }
+    val originalBreadcrumb =
+      Breadcrumb(Date()).apply {
+        message = "original message"
+        category = "original.category"
+      }
+    val userModifiedBreadcrumb =
+      Breadcrumb(Date()).apply {
+        message = "modified message"
+        category = "modified.category"
+      }
     val hint = Hint()
 
-    val userBeforeBreadcrumbCallback = SentryOptions.BeforeBreadcrumbCallback { _, _ -> userModifiedBreadcrumb }
+    val userBeforeBreadcrumbCallback =
+      SentryOptions.BeforeBreadcrumbCallback { _, _ -> userModifiedBreadcrumb }
     converter.setUserBeforeBreadcrumbCallback(userBeforeBreadcrumbCallback)
 
     val result = converter.execute(originalBreadcrumb, hint)
@@ -368,10 +372,11 @@ class DefaultReplayBreadcrumbConverterTest {
   @Test
   fun `returns null when user BeforeBreadcrumbCallback returns null`() {
     val converter = fixture.getSut()
-    val breadcrumb = Breadcrumb(Date()).apply {
-      message = "test message"
-      category = "test.category"
-    }
+    val breadcrumb =
+      Breadcrumb(Date()).apply {
+        message = "test message"
+        category = "test.category"
+      }
     val hint = Hint()
 
     val userCallback = SentryOptions.BeforeBreadcrumbCallback { _, _ -> null }
@@ -385,20 +390,22 @@ class DefaultReplayBreadcrumbConverterTest {
   @Test
   fun `network data is extracted from hint for http breadcrumbs with user callback`() {
     val converter = fixture.getSut()
-    val httpBreadcrumb = Breadcrumb(Date()).apply {
-      type = "http"
-      category = "http"
-      data["url"] = "https://example.com"
-    }
+    val httpBreadcrumb =
+      Breadcrumb(Date()).apply {
+        type = "http"
+        category = "http"
+        data["url"] = "https://example.com"
+      }
 
-    val networkData = NetworkRequestData(
-      "GET",
-      200,
-      100L,
-      500L,
-      ReplayNetworkRequestOrResponse(100L, null, mapOf("Content-Type" to "application/json")),
-      ReplayNetworkRequestOrResponse(500L, null, mapOf("Content-Type" to "application/json"))
-    )
+    val networkData =
+      NetworkRequestData(
+        "GET",
+        200,
+        100L,
+        500L,
+        ReplayNetworkRequestOrResponse(100L, null, mapOf("Content-Type" to "application/json")),
+        ReplayNetworkRequestOrResponse(500L, null, mapOf("Content-Type" to "application/json")),
+      )
     val hint = Hint()
     hint.set("replay:networkDetails", networkData)
 
@@ -408,26 +415,35 @@ class DefaultReplayBreadcrumbConverterTest {
     val result = converter.execute(httpBreadcrumb, hint)
 
     assertSame(httpBreadcrumb, result)
-    // Network data should be stored internally for later conversion
   }
 
   @Test
   fun `network data is extracted from hint for http breadcrumbs without user callback`() {
     val converter = fixture.getSut()
-    val httpBreadcrumb = Breadcrumb(Date()).apply {
-      type = "http"
-      category = "http"
-      data["url"] = "https://example.com"
-    }
+    val httpBreadcrumb =
+      Breadcrumb(Date()).apply {
+        type = "http"
+        category = "http"
+        data["url"] = "https://example.com"
+      }
 
-    val networkData = NetworkRequestData(
-      "POST",
-      201,
-      200L,
-      400L,
-      ReplayNetworkRequestOrResponse(200L, NetworkBody.JsonObject(mapOf("body" to "request")), mapOf()),
-      ReplayNetworkRequestOrResponse(400L, NetworkBody.JsonObject(mapOf("body" to "response")), mapOf())
-    )
+    val networkData =
+      NetworkRequestData(
+        "POST",
+        201,
+        200L,
+        400L,
+        ReplayNetworkRequestOrResponse(
+          200L,
+          NetworkBody.fromJsonObject(mapOf("body" to "request")),
+          mapOf(),
+        ),
+        ReplayNetworkRequestOrResponse(
+          400L,
+          NetworkBody.fromJsonObject(mapOf("body" to "response")),
+          mapOf(),
+        ),
+      )
     val hint = Hint()
     hint.set("replay:networkDetails", networkData)
 
@@ -445,19 +461,21 @@ class DefaultReplayBreadcrumbConverterTest {
     val hint = Hint()
 
     // First callback modifies the message
-    val firstCallback = SentryOptions.BeforeBreadcrumbCallback { b, _ ->
-      b.message = "modified by first"
-      b
-    }
+    val firstCallback =
+      SentryOptions.BeforeBreadcrumbCallback { b, _ ->
+        b.message = "modified by first"
+        b
+      }
     converter.setUserBeforeBreadcrumbCallback(firstCallback)
     var result = converter.execute(breadcrumb, hint)
     assertEquals("modified by first", result?.message)
 
     // Second callback modifies differently
-    val secondCallback = SentryOptions.BeforeBreadcrumbCallback { b, _ ->
-      b.message = "modified by second"
-      b
-    }
+    val secondCallback =
+      SentryOptions.BeforeBreadcrumbCallback { b, _ ->
+        b.message = "modified by second"
+        b
+      }
     converter.setUserBeforeBreadcrumbCallback(secondCallback)
 
     breadcrumb.message = "test" // Reset
@@ -474,11 +492,12 @@ class DefaultReplayBreadcrumbConverterTest {
     var capturedBreadcrumb: Breadcrumb? = null
     var capturedHint: Hint? = null
 
-    val capturingCallback = SentryOptions.BeforeBreadcrumbCallback { b, h ->
-      capturedBreadcrumb = b
-      capturedHint = h
-      b
-    }
+    val capturingCallback =
+      SentryOptions.BeforeBreadcrumbCallback { b, h ->
+        capturedBreadcrumb = b
+        capturedHint = h
+        b
+      }
     converter.setUserBeforeBreadcrumbCallback(capturingCallback)
 
     converter.execute(breadcrumb, hint)
@@ -490,10 +509,11 @@ class DefaultReplayBreadcrumbConverterTest {
   @Test
   fun `non-http breadcrumbs do not extract network data`() {
     val converter = fixture.getSut()
-    val navigationBreadcrumb = Breadcrumb(Date()).apply {
-      type = "navigation"
-      category = "navigation"
-    }
+    val navigationBreadcrumb =
+      Breadcrumb(Date()).apply {
+        type = "navigation"
+        category = "navigation"
+      }
     val hint = Hint()
     hint.set("replay:networkDetails", NetworkRequestData("GET", 200, null, null, null, null))
 
@@ -511,20 +531,22 @@ class DefaultReplayBreadcrumbConverterTest {
     val breadcrumb = Breadcrumb(Date()).apply { message = "original" }
     val hint = Hint()
 
-    val firstCallback = SentryOptions.BeforeBreadcrumbCallback { b, h ->
-      b.message = "modified by first"
-      b
-    }
-
-    val secondCallback = SentryOptions.BeforeBreadcrumbCallback { b, h ->
-      // This simulates what happens when ReplayBreadcrumbConverter
-      // wraps a user's callback
-      val result = firstCallback.execute(b, h)
-      result?.let {
-        it.message = "${it.message} and second"
-        it
+    val firstCallback =
+      SentryOptions.BeforeBreadcrumbCallback { b, h ->
+        b.message = "modified by first"
+        b
       }
-    }
+
+    val secondCallback =
+      SentryOptions.BeforeBreadcrumbCallback { b, h ->
+        // This simulates what happens when ReplayBreadcrumbConverter
+        // wraps a user's callback
+        val result = firstCallback.execute(b, h)
+        result?.let {
+          it.message = "${it.message} and second"
+          it
+        }
+      }
 
     converter.setUserBeforeBreadcrumbCallback(secondCallback)
 

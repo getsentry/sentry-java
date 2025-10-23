@@ -1,10 +1,7 @@
 package io.sentry.util.network;
 
-import io.sentry.SentryOptions;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -22,7 +19,6 @@ public final class NetworkDetailCaptureUtils {
     NetworkBody extract(@NotNull T httpObject);
   }
 
-
   /** Functional interface for extracting headers from HTTP objects. */
   public interface NetworkHeaderExtractor<T> {
     @NotNull
@@ -39,9 +35,7 @@ public final class NetworkDetailCaptureUtils {
       return null;
     }
 
-    // Create instance with basic info, details will be added later
-    NetworkRequestData result = new NetworkRequestData(method, null, null, null, null, null);
-    return result;
+    return new NetworkRequestData(method, null, null, null, null, null);
   }
 
   /**
@@ -57,7 +51,12 @@ public final class NetworkDetailCaptureUtils {
       @NotNull NetworkHeaderExtractor<T> headerExtractor) {
 
     return createRequestOrResponseInternal(
-        httpObject, bodySize, networkCaptureBodies, bodyExtractor, networkRequestHeaders, headerExtractor);
+        httpObject,
+        bodySize,
+        networkCaptureBodies,
+        bodyExtractor,
+        networkRequestHeaders,
+        headerExtractor);
   }
 
   public static <T> @NotNull ReplayNetworkRequestOrResponse createResponse(
@@ -69,12 +68,17 @@ public final class NetworkDetailCaptureUtils {
       @NotNull NetworkHeaderExtractor<T> headerExtractor) {
 
     return createRequestOrResponseInternal(
-        httpObject, bodySize, networkCaptureBodies, bodyExtractor, networkResponseHeaders, headerExtractor);
+        httpObject,
+        bodySize,
+        networkCaptureBodies,
+        bodyExtractor,
+        networkResponseHeaders,
+        headerExtractor);
   }
 
   /**
-   * Determines if detailed network data should be captured for the given URL.
-   * See https://docs.sentry.io/platforms/javascript/session-replay/configuration/
+   * Determines if detailed network data should be captured for the given URL. See
+   * <a href="https://docs.sentry.io/platforms/javascript/session-replay/configuration/">docs.sentry.io</a>
    *
    * @param url The URL to check
    * @param networkDetailAllowUrls Array of regex patterns that allow capture (null means allow all)
@@ -96,7 +100,7 @@ public final class NetworkDetailCaptureUtils {
     }
 
     // Only capture developer-provided urls.
-    if (networkDetailAllowUrls == null || networkDetailAllowUrls.length == 0) {
+    if (networkDetailAllowUrls == null) {
       return false;
     }
 
@@ -130,9 +134,12 @@ public final class NetworkDetailCaptureUtils {
   }
 
   private static <T> @NotNull ReplayNetworkRequestOrResponse createRequestOrResponseInternal(
-      @NotNull T httpObject, @Nullable Long bodySize,
-      boolean networkCaptureBodies, @NotNull NetworkBodyExtractor<T> bodyExtractor,
-      @NotNull String[] allowedHeaders, @NotNull NetworkHeaderExtractor<T> headerExtractor) {
+      @NotNull T httpObject,
+      @Nullable Long bodySize,
+      boolean networkCaptureBodies,
+      @NotNull NetworkBodyExtractor<T> bodyExtractor,
+      @NotNull String[] allowedHeaders,
+      @NotNull NetworkHeaderExtractor<T> headerExtractor) {
 
     NetworkBody body = null;
 
@@ -140,10 +147,9 @@ public final class NetworkDetailCaptureUtils {
       body = bodyExtractor.extract(httpObject);
     }
 
-    Map<String, String> headers = getCaptureHeaders(headerExtractor.extract(httpObject), allowedHeaders);
+    Map<String, String> headers =
+        getCaptureHeaders(headerExtractor.extract(httpObject), allowedHeaders);
 
     return new ReplayNetworkRequestOrResponse(bodySize, body, headers);
   }
 }
-
-
