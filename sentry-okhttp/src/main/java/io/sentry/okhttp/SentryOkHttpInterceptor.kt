@@ -56,6 +56,18 @@ public open class SentryOkHttpInterceptor(
       SentryIntegrationPackageStorage.getInstance()
         .addPackage("maven:io.sentry:sentry-okhttp", BuildConfig.VERSION_NAME)
     }
+
+    /**
+     * Fake options for testing network detail capture
+     * TODO: Remove before landing.
+     */
+    private val FAKE_OPTIONS = object {
+      val networkDetailAllowUrls: Array<String> = arrayOf(".*")
+      val networkDetailDenyUrls: Array<String>? = null
+      val networkCaptureBodies: Boolean = true
+      val networkRequestHeaders: Array<String> = arrayOf("User-Agent", "Accept", "sentry-trace", "Content-Type")
+      val networkResponseHeaders: Array<String> = arrayOf("User-Agent", "access-control-allow-origin", "x-ratelimit-resource")
+    }
   }
 
   public constructor() : this(ScopesAdapter.getInstance())
@@ -199,17 +211,17 @@ public open class SentryOkHttpInterceptor(
           NetworkDetailCaptureUtils.initializeForUrl(
             request.url.toString(),
             request.method,
-            null,
-            null
+            FAKE_OPTIONS.networkDetailAllowUrls,
+            FAKE_OPTIONS.networkDetailDenyUrls,
           )
 
         networkDetailData?.setRequestDetails(
           NetworkDetailCaptureUtils.createRequest(
             request,
             requestBodySize,
-            false,
+            FAKE_OPTIONS.networkCaptureBodies,
             { req: Request -> req.extractRequestBody() },
-            emptyArray<String>(),
+            FAKE_OPTIONS.networkRequestHeaders,
             { req: Request -> req.headers.toMap() }
           )
         )
@@ -220,9 +232,9 @@ public open class SentryOkHttpInterceptor(
             NetworkDetailCaptureUtils.createResponse(
               response,
               responseBodySize,
-              false,
-              { resp: Response -> resp.extractOkHttpResponseBody() },
-              emptyArray<String>(),
+              FAKE_OPTIONS.networkCaptureBodies,
+              { resp: Response -> resp.extractResponseBody() },
+              FAKE_OPTIONS.networkResponseHeaders,
               { resp: Response -> resp.headers.toMap() }
             )
           )
@@ -295,14 +307,14 @@ public open class SentryOkHttpInterceptor(
       this,
       body?.contentLength()?.takeIf { it >= 0 },
       true,
-      { resp: Response -> resp.extractOkHttpResponseBody() },
+      { resp: Response -> resp.extractResponseBody() },
       emptyArray<String>(),
       { resp: Response -> resp.headers.toMap() }
     )
   }
 
   /** Extracts the body content from an OkHttp Response safely */
-  private fun Response.extractOkHttpResponseBody(): NetworkBody? {
+  private fun Response.extractResponseBody(): NetworkBody? {
     return body?.let {
       try {
         val peekBody = peekBody(Long.MAX_VALUE)
