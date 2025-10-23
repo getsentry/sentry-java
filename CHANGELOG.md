@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Miscellaneous
+
+- [ANR] Update Connection Status cache in the background ([#4832](https://github.com/getsentry/sentry-java/pull/4832))
+
 ## 8.24.0
 
 ### Features
