@@ -268,7 +268,16 @@ public final class AndroidConnectionStatusProvider
 
               // Only notify observers if something meaningful changed
               if (shouldUpdate) {
-                updateCache(networkCapabilities);
+                cachedNetworkCapabilities = networkCapabilities;
+                lastCacheUpdateTime = timeProvider.getCurrentTimeMillis();
+                options
+                    .getLogger()
+                    .log(
+                        SentryLevel.DEBUG,
+                        "Cache updated - Status: "
+                            + getConnectionStatusFromCache()
+                            + ", Type: "
+                            + getConnectionTypeFromCache());
 
                 final @NotNull ConnectionStatus status = getConnectionStatusFromCache();
                 try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
@@ -349,59 +358,54 @@ public final class AndroidConnectionStatusProvider
   }
 
   @SuppressLint({"NewApi", "MissingPermission"})
-  private void updateCache(@Nullable NetworkCapabilities networkCapabilities) {
+  private void updateCache() {
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
-      try {
-        if (networkCapabilities != null) {
-          cachedNetworkCapabilities = networkCapabilities;
-        } else {
-          if (!Permissions.hasPermission(context, Manifest.permission.ACCESS_NETWORK_STATE)) {
-            options
-                .getLogger()
-                .log(
-                    SentryLevel.INFO,
-                    "No permission (ACCESS_NETWORK_STATE) to check network status.");
-            cachedNetworkCapabilities = null;
-            lastCacheUpdateTime = timeProvider.getCurrentTimeMillis();
-            return;
-          }
-
-          if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.M) {
-            cachedNetworkCapabilities = null;
-            lastCacheUpdateTime = timeProvider.getCurrentTimeMillis();
-            return;
-          }
-
-          // Fallback: query current active network
-          final ConnectivityManager connectivityManager =
-              getConnectivityManager(context, options.getLogger());
-          if (connectivityManager != null) {
-            final Network activeNetwork = connectivityManager.getActiveNetwork();
-
-            cachedNetworkCapabilities =
-                activeNetwork != null
-                    ? connectivityManager.getNetworkCapabilities(activeNetwork)
-                    : null;
-          } else {
-            cachedNetworkCapabilities =
-                null; // Clear cached capabilities if connectivity manager is null
-          }
-        }
-        lastCacheUpdateTime = timeProvider.getCurrentTimeMillis();
-
+      cachedNetworkCapabilities = null;
+      lastCacheUpdateTime = timeProvider.getCurrentTimeMillis();
+    }
+    try {
+      if (!Permissions.hasPermission(context, Manifest.permission.ACCESS_NETWORK_STATE)) {
         options
             .getLogger()
-            .log(
-                SentryLevel.DEBUG,
-                "Cache updated - Status: "
-                    + getConnectionStatusFromCache()
-                    + ", Type: "
-                    + getConnectionTypeFromCache());
-      } catch (Throwable t) {
-        options.getLogger().log(SentryLevel.WARNING, "Failed to update connection status cache", t);
-        cachedNetworkCapabilities = null;
-        lastCacheUpdateTime = timeProvider.getCurrentTimeMillis();
+            .log(SentryLevel.INFO, "No permission (ACCESS_NETWORK_STATE) to check network status.");
+        return;
       }
+
+      if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.M) {
+        return;
+      }
+
+      // Fallback: query current active network in the background
+      submitSafe(
+          () -> {
+            final ConnectivityManager connectivityManager =
+                getConnectivityManager(context, options.getLogger());
+            if (connectivityManager != null) {
+              final @Nullable NetworkCapabilities capabilities =
+                  getNetworkCapabilities(connectivityManager);
+
+              try (final @NotNull ISentryLifecycleToken ignored2 = lock.acquire()) {
+                cachedNetworkCapabilities = capabilities;
+                lastCacheUpdateTime = timeProvider.getCurrentTimeMillis();
+
+                if (capabilities != null) {
+                  options
+                      .getLogger()
+                      .log(
+                          SentryLevel.DEBUG,
+                          "Cache updated - Status: "
+                              + getConnectionStatusFromCache()
+                              + ", Type: "
+                              + getConnectionTypeFromCache());
+                }
+              }
+            }
+          });
+
+    } catch (Throwable t) {
+      options.getLogger().log(SentryLevel.WARNING, "Failed to update connection status cache", t);
+      cachedNetworkCapabilities = null;
+      lastCacheUpdateTime = timeProvider.getCurrentTimeMillis();
     }
   }
 
@@ -412,7 +416,7 @@ public final class AndroidConnectionStatusProvider
   @Override
   public @NotNull ConnectionStatus getConnectionStatus() {
     if (!isCacheValid()) {
-      updateCache(null);
+      updateCache();
     }
     return getConnectionStatusFromCache();
   }
@@ -420,7 +424,7 @@ public final class AndroidConnectionStatusProvider
   @Override
   public @Nullable String getConnectionType() {
     if (!isCacheValid()) {
-      updateCache(null);
+      updateCache();
     }
     return getConnectionTypeFromCache();
   }
@@ -490,7 +494,7 @@ public final class AndroidConnectionStatusProvider
         () -> {
           // proactively update cache and notify observers on foreground to ensure connectivity
           // state is not stale
-          updateCache(null);
+          updateCache();
 
           final @NotNull ConnectionStatus status = getConnectionStatusFromCache();
           if (status == ConnectionStatus.DISCONNECTED) {
@@ -575,6 +579,14 @@ public final class AndroidConnectionStatusProvider
     }
   }
 
+  @RequiresApi(Build.VERSION_CODES.M)
+  @SuppressLint("MissingPermission")
+  private static @Nullable NetworkCapabilities getNetworkCapabilities(
+      final @NotNull ConnectivityManager connectivityManager) {
+    final Network activeNetwork = connectivityManager.getActiveNetwork();
+    return activeNetwork != null ? connectivityManager.getNetworkCapabilities(activeNetwork) : null;
+  }
+
   /**
    * Check the connection type of the active network
    *
@@ -603,14 +615,7 @@ public final class AndroidConnectionStatusProvider
       boolean cellular = false;
 
       if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.M) {
-
-        final Network activeNetwork = connectivityManager.getActiveNetwork();
-        if (activeNetwork == null) {
-          logger.log(SentryLevel.INFO, "Network is null and cannot check network status");
-          return null;
-        }
-        final NetworkCapabilities networkCapabilities =
-            connectivityManager.getNetworkCapabilities(activeNetwork);
+        final NetworkCapabilities networkCapabilities = getNetworkCapabilities(connectivityManager);
         if (networkCapabilities == null) {
           logger.log(SentryLevel.INFO, "NetworkCapabilities is null and cannot check network type");
           return null;
