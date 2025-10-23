@@ -270,14 +270,17 @@ public final class AndroidConnectionStatusProvider
               // Only notify observers if something meaningful changed
               if (shouldUpdate) {
                 try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
-                cachedNetworkCapabilities = networkCapabilities;
-                lastCacheUpdateTime = timeProvider.getCurrentTimeMillis();
+                  cachedNetworkCapabilities = networkCapabilities;
+                  lastCacheUpdateTime = timeProvider.getCurrentTimeMillis();
                   final @NotNull ConnectionStatus status = getConnectionStatusFromCache();
-                options
-                    .getLogger()
-                    .log(
-                        SentryLevel.DEBUG,
-                        "Cache updated - Status: " + status + ", Type: " + getConnectionTypeFromCache());
+                  options
+                      .getLogger()
+                      .log(
+                          SentryLevel.DEBUG,
+                          "Cache updated - Status: "
+                              + status
+                              + ", Type: "
+                              + getConnectionTypeFromCache());
 
                   for (final @NotNull IConnectionStatusObserver observer :
                       connectionStatusObservers) {
@@ -379,10 +382,10 @@ public final class AndroidConnectionStatusProvider
             // Avoid concurrent updates
             if (!isUpdatingCache.getAndSet(true)) {
               final ConnectivityManager connectivityManager =
-                getConnectivityManager(context, options.getLogger());
+                  getConnectivityManager(context, options.getLogger());
               if (connectivityManager != null) {
                 final @Nullable NetworkCapabilities capabilities =
-                  getNetworkCapabilities(connectivityManager);
+                    getNetworkCapabilities(connectivityManager);
 
                 try (final @NotNull ISentryLifecycleToken ignored2 = lock.acquire()) {
                   cachedNetworkCapabilities = capabilities;
@@ -390,13 +393,13 @@ public final class AndroidConnectionStatusProvider
 
                   if (capabilities != null) {
                     options
-                      .getLogger()
-                      .log(
-                        SentryLevel.DEBUG,
-                        "Cache updated - Status: "
-                          + getConnectionStatusFromCache()
-                          + ", Type: "
-                          + getConnectionTypeFromCache());
+                        .getLogger()
+                        .log(
+                            SentryLevel.DEBUG,
+                            "Cache updated - Status: "
+                                + getConnectionStatusFromCache()
+                                + ", Type: "
+                                + getConnectionTypeFromCache());
                   }
                 }
               }
