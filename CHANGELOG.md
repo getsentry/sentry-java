@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Miscellaneous
+
+- Collect PerformanceCollectionData only in sampled transactions ([#4834](https://github.com/getsentry/sentry-java/pull/4834))
+
 ## 8.24.0
 
 ### Features
