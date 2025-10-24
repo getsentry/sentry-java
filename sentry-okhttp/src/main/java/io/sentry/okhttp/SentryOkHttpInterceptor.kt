@@ -9,6 +9,7 @@ import io.sentry.ISpan
 import io.sentry.ScopesAdapter
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryOptions.DEFAULT_PROPAGATION_TARGETS
+import io.sentry.SentryReplayOptions
 import io.sentry.SpanDataConvention
 import io.sentry.SpanStatus
 import io.sentry.TypeCheckHint.OKHTTP_REQUEST
@@ -22,11 +23,13 @@ import io.sentry.util.SpanUtils
 import io.sentry.util.TracingUtils
 import io.sentry.util.UrlUtils
 import io.sentry.util.network.NetworkBody
+import io.sentry.util.network.NetworkBodyParser
 import io.sentry.util.network.NetworkDetailCaptureUtils
-import io.sentry.util.network.ReplayNetworkRequestOrResponse
+import io.sentry.util.network.NetworkRequestData
 import java.io.IOException
 import okhttp3.Interceptor
 import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 
 /**
@@ -112,6 +115,13 @@ public open class SentryOkHttpInterceptor(
     var response: Response? = null
     var code: Int? = null
 
+    var networkDetailData = NetworkDetailCaptureUtils.initializeForUrl(
+      request.url.toString(),
+      request.method,
+      FAKE_OPTIONS.networkDetailAllowUrls,
+      FAKE_OPTIONS.networkDetailDenyUrls,
+    )
+
     try {
       val requestBuilder = request.newBuilder()
 
@@ -134,6 +144,40 @@ public open class SentryOkHttpInterceptor(
             tracingHeaders.w3cTraceparentHeader?.let { requestBuilder.addHeader(it.name, it.value) }
           }
       }
+
+      val requestContentLength = request.body?.contentLength()
+
+      networkDetailData?.setRequestDetails(
+        NetworkDetailCaptureUtils.createRequest(
+          request,
+          requestContentLength,
+          FAKE_OPTIONS.networkCaptureBodies,
+          { req ->
+            req.body?.let { originalBody ->
+              try {
+                val buffer = okio.Buffer()
+                originalBody.writeTo(buffer)
+                val bodyBytes = buffer.readByteArray()
+
+                // Create fresh RequestBody and update the request being built
+                val newRequestBody = bodyBytes.toRequestBody(originalBody.contentType())
+                requestBuilder.method(request.method, newRequestBody)
+
+                // Parse the buffered bytes into NetworkBody for capture
+                safeExtractRequestBody(bodyBytes, originalBody.contentType())
+              } catch (e: Exception) {
+                scopes.options.logger.log(
+                  io.sentry.SentryLevel.DEBUG,
+                  "Failed to buffer request body for network detail capture: ${e.message}",
+                )
+                null
+              }
+            }
+          },
+          FAKE_OPTIONS.networkRequestHeaders,
+          { req: Request -> req.headers.toMap() },
+        )
+      )
 
       request = requestBuilder.build()
       response = chain.proceed(request)
@@ -168,11 +212,31 @@ public open class SentryOkHttpInterceptor(
       // this only works correctly if SentryOkHttpInterceptor is the last one in the chain
       okHttpEvent?.setRequest(request)
 
+      response?.let { response ->
+        networkDetailData?.setResponseDetails(
+          response.code,
+          NetworkDetailCaptureUtils.createResponse(
+            response,
+            response.body?.contentLength(),
+            FAKE_OPTIONS.networkCaptureBodies,
+            { resp: Response -> resp.extractResponseBody() },
+            FAKE_OPTIONS.networkResponseHeaders,
+            { resp: Response -> resp.headers.toMap() },
+          ),
+        )
+      }
+
       finishSpan(span, request, response, isFromEventListener, okHttpEvent)
 
       // The SentryOkHttpEventListener will send the breadcrumb itself if used for this call
       if (!isFromEventListener) {
-        sendBreadcrumb(request, code, response, startTimestamp)
+        sendBreadcrumb(
+          request,
+          code,
+          response,
+          startTimestamp,
+          networkDetailData,
+        )
       }
     }
   }
@@ -185,21 +249,17 @@ public open class SentryOkHttpInterceptor(
     code: Int?,
     response: Response?,
     startTimestamp: Long,
+    networkDetailData: NetworkRequestData?
   ) {
     val breadcrumb = Breadcrumb.http(request.url.toString(), request.method, code)
 
     // Track request and response body sizes for the breadcrumb
-    var requestBodySize: Long? = null
-    var responseBodySize: Long? = null
-
     request.body?.contentLength().ifHasValidLength {
       breadcrumb.setData("http.request_content_length", it)
-      requestBodySize = it
     }
 
     response?.body?.contentLength().ifHasValidLength {
       breadcrumb.setData(SpanDataConvention.HTTP_RESPONSE_CONTENT_LENGTH_KEY, it)
-      responseBodySize = it
     }
 
     val hint =
@@ -207,40 +267,9 @@ public open class SentryOkHttpInterceptor(
         it.set(OKHTTP_REQUEST, request)
         response?.let { resp -> it[OKHTTP_RESPONSE] = resp }
 
-        val networkDetailData =
-          NetworkDetailCaptureUtils.initializeForUrl(
-            request.url.toString(),
-            request.method,
-            FAKE_OPTIONS.networkDetailAllowUrls,
-            FAKE_OPTIONS.networkDetailDenyUrls,
-          )
-
-        networkDetailData?.setRequestDetails(
-          NetworkDetailCaptureUtils.createRequest(
-            request,
-            requestBodySize,
-            FAKE_OPTIONS.networkCaptureBodies,
-            { req: Request -> req.extractRequestBody() },
-            FAKE_OPTIONS.networkRequestHeaders,
-            { req: Request -> req.headers.toMap() }
-          )
-        )
-
-        response?.let { response ->
-          networkDetailData?.setResponseDetails(
-            response.code,
-            NetworkDetailCaptureUtils.createResponse(
-              response,
-              responseBodySize,
-              FAKE_OPTIONS.networkCaptureBodies,
-              { resp: Response -> resp.extractResponseBody() },
-              FAKE_OPTIONS.networkResponseHeaders,
-              { resp: Response -> resp.headers.toMap() }
-            )
-          )
+        if (networkDetailData != null) {
+          it.set("replay:networkDetails", networkDetailData)
         }
-
-        it.set("replay:networkDetails", networkDetailData)
       }
 
     // needs this as unix timestamp for rrweb
@@ -262,82 +291,72 @@ public open class SentryOkHttpInterceptor(
     return headers
   }
 
-  /** Extracts the body content from an OkHttp Request safely */
-  private fun Request.extractRequestBody(): NetworkBody? {
-    return body?.let {
-      try {
-        // Create a copy of the request to safely read the body without consuming the original
-        val requestCopy = newBuilder().build()
-        val buffer = okio.Buffer()
-        requestCopy.body?.writeTo(buffer)
-        val bodyString = buffer.readUtf8()
-
-        // Try to parse as JSON first, fall back to string
-        when {
-          bodyString.isEmpty() -> null
-          bodyString.trimStart().startsWith("{") -> {
-            // Attempt JSON object parsing (simplified)
-            NetworkBody.JsonObject(mapOf("raw" to bodyString)) // Placeholder for now
-          }
-          bodyString.trimStart().startsWith("[") -> {
-            // Attempt JSON array parsing (simplified)
-            NetworkBody.JsonArray(listOf(bodyString)) // Placeholder for now
-          }
-          else -> NetworkBody.StringBody(bodyString)
-        }
-      } catch (e: Exception) {
-        // If body reading fails (e.g., one-shot body), log and return null
-        scopes.options.logger.log(
-          io.sentry.SentryLevel.DEBUG,
-          "Failed to read request body safely: ${e.message}"
-        )
-        null
-      }
+  /**
+   * Extracts NetworkBody from already buffered request body data.
+   */
+  private fun safeExtractRequestBody(
+    bufferedBody: ByteArray?,
+    contentType: okhttp3.MediaType?,
+  ): NetworkBody? {
+    if (bufferedBody == null) {
+      return null
     }
-  }
 
-  /** Extension function to create ReplayNetworkRequestOrResponse from OkHttp Response */
-  private fun Response.toReplayNetworkResponse(): ReplayNetworkRequestOrResponse {
-    scopes.options.logger.log(
-      io.sentry.SentryLevel.INFO,
-      "SentryNetwork: Creating ReplayNetworkResponse for status: $code",
-    )
+    try {
+      val contentTypeString = contentType?.toString()
+      val maxBodySize = SentryReplayOptions.MAX_NETWORK_BODY_SIZE
+      val charset = contentType?.charset(Charsets.UTF_8)?.name() ?: "UTF-8"
 
-    return NetworkDetailCaptureUtils.createResponse(
-      this,
-      body?.contentLength()?.takeIf { it >= 0 },
-      true,
-      { resp: Response -> resp.extractResponseBody() },
-      emptyArray<String>(),
-      { resp: Response -> resp.headers.toMap() }
-    )
+      return NetworkBodyParser.fromBytes(
+        bufferedBody,
+        contentTypeString,
+        charset,
+        maxBodySize,
+        scopes.options,
+      )
+    } catch (e: Exception) {
+      scopes.options.logger.log(
+        io.sentry.SentryLevel.DEBUG,
+        "Failed to parse buffered request body: ${e.message}",
+      )
+      return null
+    }
   }
 
   /** Extracts the body content from an OkHttp Response safely */
   private fun Response.extractResponseBody(): NetworkBody? {
-    return body?.let {
+    return body?.let { responseBody ->
       try {
-        val peekBody = peekBody(Long.MAX_VALUE)
-        val bodyString = peekBody.string()
+        val contentType = responseBody.contentType()
+        val contentTypeString = contentType?.toString()
+        val maxBodySize = SentryReplayOptions.MAX_NETWORK_BODY_SIZE
 
-        // Try to parse as JSON first, fall back to string
-        when {
-          bodyString.isEmpty() -> null
-          bodyString.trimStart().startsWith("{") -> {
-            // Attempt JSON object parsing (simplified)
-            NetworkBody.JsonObject(mapOf("raw" to bodyString)) // Placeholder for now
-          }
-          bodyString.trimStart().startsWith("[") -> {
-            // Attempt JSON array parsing (simplified)
-            NetworkBody.JsonArray(listOf(bodyString)) // Placeholder for now
-          }
-          else -> NetworkBody.StringBody(bodyString)
+        val contentLength = responseBody.contentLength()
+        if (contentLength > maxBodySize * 2) {
+          scopes.options.logger.log(
+            io.sentry.SentryLevel.DEBUG,
+            "Response body too large: $contentLength bytes (max: $maxBodySize)",
+          )
+          return NetworkBody.fromString("[Response body too large: $contentLength bytes]")
         }
+
+        // Peek at the body (doesn't consume it)
+        val peekBody = peekBody(maxBodySize.toLong())
+        val bodyBytes = peekBody.bytes()
+
+        val charset = contentType?.charset(Charsets.UTF_8)?.name() ?: "UTF-8"
+        return NetworkBodyParser.fromBytes(
+          bodyBytes,
+          contentTypeString,
+          charset,
+          maxBodySize,
+          scopes.options,
+        )
       } catch (e: Exception) {
         // If body reading fails, log and return null
         scopes.options.logger.log(
           io.sentry.SentryLevel.DEBUG,
-          "Failed to read response body safely: ${e.message}"
+          "Failed to read response body safely: ${e.message}",
         )
         null
       }
@@ -400,7 +419,6 @@ public open class SentryOkHttpInterceptor(
     }
     return false
   }
-
 
   /** The BeforeSpan callback */
   public fun interface BeforeSpanCallback {
