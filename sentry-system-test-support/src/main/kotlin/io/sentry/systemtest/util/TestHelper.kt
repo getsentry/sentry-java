@@ -276,7 +276,11 @@ class TestHelper(backendUrl: String) {
     return true
   }
 
-  fun doesTransactionHave(transaction: SentryTransaction, op: String, featureFlag: FeatureFlag? = null): Boolean {
+  fun doesTransactionHave(
+    transaction: SentryTransaction,
+    op: String,
+    featureFlag: FeatureFlag? = null,
+  ): Boolean {
     val matches = transaction.contexts.trace?.operation == op
     if (!matches) {
       println("Unable to find transaction with op $op:")
@@ -299,10 +303,23 @@ class TestHelper(backendUrl: String) {
     return true
   }
 
-  fun doesTransactionHaveSpanWith(transaction: SentryTransaction, op: String, featureFlag: FeatureFlag? = null): Boolean {
+  fun doesTransactionHaveSpanWith(
+    transaction: SentryTransaction,
+    op: String,
+    featureFlag: FeatureFlag? = null,
+    noFeatureFlags: Boolean = false,
+  ): Boolean {
     val foundSpan = transaction.spans.firstOrNull { span -> span.op == op }
     if (foundSpan == null) {
       println("Unable to find span with op $op:")
+      logObject(transaction)
+      return false
+    }
+
+    val featureFlagNames =
+      foundSpan.data?.keys?.filter { it.startsWith("flag.evaluation.") } ?: emptyList()
+    if (noFeatureFlags && featureFlagNames.isNotEmpty()) {
+      println("Expected 0 feature flags but found ${featureFlagNames}:")
       logObject(transaction)
       return false
     }

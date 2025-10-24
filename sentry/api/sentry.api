@@ -4005,7 +4005,6 @@ public final class io/sentry/Span : io/sentry/ISpan {
 	public fun getData ()Ljava/util/Map;
 	public fun getData (Ljava/lang/String;)Ljava/lang/Object;
 	public fun getDescription ()Ljava/lang/String;
-	public fun getFeatureFlagBuffer ()Lio/sentry/featureflags/IFeatureFlagBuffer;
 	public fun getFinishDate ()Lio/sentry/SentryDate;
 	public fun getMeasurements ()Ljava/util/Map;
 	public fun getOperation ()Ljava/lang/String;
@@ -4051,6 +4050,7 @@ public class io/sentry/SpanContext : io/sentry/JsonSerializable, io/sentry/JsonU
 	protected field baggage Lio/sentry/Baggage;
 	protected field data Ljava/util/Map;
 	protected field description Ljava/lang/String;
+	protected field featureFlags Lio/sentry/featureflags/IFeatureFlagBuffer;
 	protected field op Ljava/lang/String;
 	protected field origin Ljava/lang/String;
 	protected field status Lio/sentry/SpanStatus;
@@ -4060,11 +4060,13 @@ public class io/sentry/SpanContext : io/sentry/JsonSerializable, io/sentry/JsonU
 	public fun <init> (Lio/sentry/protocol/SentryId;Lio/sentry/SpanId;Ljava/lang/String;Lio/sentry/SpanId;Lio/sentry/TracesSamplingDecision;)V
 	public fun <init> (Ljava/lang/String;)V
 	public fun <init> (Ljava/lang/String;Lio/sentry/TracesSamplingDecision;)V
+	public fun addFeatureFlag (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public fun copyForChild (Ljava/lang/String;Lio/sentry/SpanId;Lio/sentry/SpanId;)Lio/sentry/SpanContext;
 	public fun equals (Ljava/lang/Object;)Z
 	public fun getBaggage ()Lio/sentry/Baggage;
 	public fun getData ()Ljava/util/Map;
 	public fun getDescription ()Ljava/lang/String;
+	public fun getFeatureFlagBuffer ()Lio/sentry/featureflags/IFeatureFlagBuffer;
 	public fun getInstrumenter ()Lio/sentry/Instrumenter;
 	public fun getOperation ()Ljava/lang/String;
 	public fun getOrigin ()Ljava/lang/String;
@@ -5493,6 +5495,7 @@ public final class io/sentry/protocol/Device$JsonKeys {
 }
 
 public final class io/sentry/protocol/FeatureFlag : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+	public static final field DATA_PREFIX Ljava/lang/String;
 	public fun <init> (Ljava/lang/String;Z)V
 	public fun equals (Ljava/lang/Object;)Z
 	public fun getFlag ()Ljava/lang/String;

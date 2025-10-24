@@ -24,8 +24,6 @@ import io.sentry.SpanOptions;
 import io.sentry.SpanStatus;
 import io.sentry.TraceContext;
 import io.sentry.TracesSamplingDecision;
-import io.sentry.featureflags.IFeatureFlagBuffer;
-import io.sentry.featureflags.SpanFeatureFlagBuffer;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.MeasurementValue;
 import io.sentry.protocol.SentryId;

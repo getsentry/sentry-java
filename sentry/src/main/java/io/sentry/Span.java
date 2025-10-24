@@ -1,7 +1,5 @@
 package io.sentry;
 
-import io.sentry.featureflags.IFeatureFlagBuffer;
-import io.sentry.featureflags.SpanFeatureFlagBuffer;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.MeasurementValue;
 import io.sentry.protocol.SentryId;

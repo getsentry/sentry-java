@@ -557,7 +557,11 @@ public final class io/sentry/systemtest/util/TestHelper {
 	public final fun doesTransactionContainSpanWithDescription (Lio/sentry/protocol/SentryTransaction;Ljava/lang/String;)Z
 	public final fun doesTransactionContainSpanWithOp (Lio/sentry/protocol/SentryTransaction;Ljava/lang/String;)Z
 	public final fun doesTransactionContainSpanWithOpAndDescription (Lio/sentry/protocol/SentryTransaction;Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun doesTransactionHave (Lio/sentry/protocol/SentryTransaction;Ljava/lang/String;Lio/sentry/protocol/FeatureFlag;)Z
+	public static synthetic fun doesTransactionHave$default (Lio/sentry/systemtest/util/TestHelper;Lio/sentry/protocol/SentryTransaction;Ljava/lang/String;Lio/sentry/protocol/FeatureFlag;ILjava/lang/Object;)Z
 	public final fun doesTransactionHaveOp (Lio/sentry/protocol/SentryTransaction;Ljava/lang/String;)Z
+	public final fun doesTransactionHaveSpanWith (Lio/sentry/protocol/SentryTransaction;Ljava/lang/String;Lio/sentry/protocol/FeatureFlag;Z)Z
+	public static synthetic fun doesTransactionHaveSpanWith$default (Lio/sentry/systemtest/util/TestHelper;Lio/sentry/protocol/SentryTransaction;Ljava/lang/String;Lio/sentry/protocol/FeatureFlag;ZILjava/lang/Object;)Z
 	public final fun doesTransactionHaveTraceId (Lio/sentry/protocol/SentryTransaction;Ljava/lang/String;)Z
 	public final fun ensureEnvelopeCountIncreased ()V
 	public final fun ensureEnvelopeReceived (ILkotlin/jvm/functions/Function1;)V

@@ -1,5 +1,6 @@
 package io.sentry.systemtest
 
+import io.sentry.protocol.FeatureFlag
 import io.sentry.systemtest.util.TestHelper
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -31,8 +32,17 @@ class PersonSystemTest {
     }
 
     testHelper.ensureTransactionReceived { transaction, envelopeHeader ->
-      testHelper.doesTransactionContainSpanWithOp(transaction, "spanCreatedThroughOtelApi") &&
-        testHelper.doesTransactionContainSpanWithOp(transaction, "spanCreatedThroughSentryApi")
+      testHelper.doesTransactionHave(
+        transaction,
+        op = "http.server",
+        featureFlag = FeatureFlag("flag.evaluation.transaction-feature-flag", true),
+      ) &&
+        testHelper.doesTransactionHaveSpanWith(
+          transaction,
+          op = "spanCreatedThroughOtelApi",
+          featureFlag = FeatureFlag("flag.evaluation.my-feature-flag", true),
+        )
+      testHelper.doesTransactionHaveSpanWith(transaction, op = "spanCreatedThroughSentryApi")
     }
 
     Thread.sleep(10000)

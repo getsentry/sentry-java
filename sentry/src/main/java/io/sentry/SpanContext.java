@@ -1,7 +1,6 @@
 package io.sentry;
 
 import com.jakewharton.nopen.annotation.Open;
-
 import io.sentry.featureflags.IFeatureFlagBuffer;
 import io.sentry.featureflags.SpanFeatureFlagBuffer;
 import io.sentry.protocol.SentryId;

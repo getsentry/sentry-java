@@ -17,6 +17,8 @@ import org.jetbrains.annotations.Nullable;
 
 public final class FeatureFlag implements JsonUnknown, JsonSerializable {
 
+  public static final @NotNull String DATA_PREFIX = "flag.evaluation.";
+
   /** Name of the feature flag. */
   private @NotNull String flag;
 

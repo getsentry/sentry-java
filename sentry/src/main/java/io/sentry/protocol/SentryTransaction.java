@@ -104,7 +104,8 @@ public final class SentryTransaction extends SentryBaseEvent
     final @Nullable FeatureFlags featureFlags = featureFlagBuffer.getFeatureFlags();
     if (featureFlags != null) {
       for (FeatureFlag featureFlag : featureFlags.getValues()) {
-        tracerContextToSend.setData("flag.evaluation." + featureFlag.getFlag(), featureFlag.getResult());
+        tracerContextToSend.setData(
+            FeatureFlag.DATA_PREFIX + featureFlag.getFlag(), featureFlag.getResult());
       }
     }
 
