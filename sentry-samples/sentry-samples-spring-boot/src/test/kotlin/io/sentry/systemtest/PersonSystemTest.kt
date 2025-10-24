@@ -27,7 +27,11 @@ class PersonSystemTest {
     }
 
     testHelper.ensureTransactionReceived { transaction, envelopeHeader ->
-        testHelper.doesTransactionHave(transaction, op = "http.server", featureFlag = FeatureFlag("flag.evaluation.my-feature-flag", true))
+      testHelper.doesTransactionHave(
+        transaction,
+        op = "http.server",
+        featureFlag = FeatureFlag("flag.evaluation.my-feature-flag", true),
+      )
     }
 
     Thread.sleep(10000)
