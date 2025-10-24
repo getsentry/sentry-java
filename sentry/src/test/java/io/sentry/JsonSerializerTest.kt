@@ -1206,7 +1206,9 @@ class JsonSerializerTest {
 
     val jsonTrace = (element["contexts"] as Map<*, *>)["trace"] as Map<*, *>
     assertEquals("dataValue", (jsonTrace["data"] as Map<*, *>)["dataKey"] as String)
-    assertTrue((jsonTrace["data"] as Map<*, *>)["flag.evaluation.transaction-feature-flag"] as Boolean)
+    assertTrue(
+      (jsonTrace["data"] as Map<*, *>)["flag.evaluation.transaction-feature-flag"] as Boolean
+    )
     assertNotNull(jsonTrace["trace_id"] as String)
     assertNotNull(jsonTrace["span_id"] as String)
     assertNotNull(jsonTrace["data"] as Map<*, *>) { assertEquals("dataValue", it["dataKey"]) }
