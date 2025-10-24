@@ -33,7 +33,10 @@ import io.sentry.SpanOptions;
 import io.sentry.SpanStatus;
 import io.sentry.TransactionContext;
 import io.sentry.TransactionOptions;
+import io.sentry.featureflags.IFeatureFlagBuffer;
 import io.sentry.protocol.Contexts;
+import io.sentry.protocol.FeatureFlag;
+import io.sentry.protocol.FeatureFlags;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.TransactionNameSource;
 import java.util.Arrays;
@@ -258,6 +261,16 @@ public final class SentrySpanExporter implements SpanExporter {
       final @NotNull Map<String, Object> data = sourceSpan.getData();
       for (Map.Entry<String, Object> entry : data.entrySet()) {
         targetSpan.setData(entry.getKey(), entry.getValue());
+      }
+
+      final @NotNull SpanContext spanContext = sourceSpan.getSpanContext();
+      final @NotNull IFeatureFlagBuffer featureFlagBuffer = spanContext.getFeatureFlagBuffer();
+      final @Nullable FeatureFlags featureFlags = featureFlagBuffer.getFeatureFlags();
+      if (featureFlags != null) {
+        for (FeatureFlag featureFlag : featureFlags.getValues()) {
+          targetSpan.setData(
+              FeatureFlag.DATA_PREFIX + featureFlag.getFlag(), featureFlag.getResult());
+        }
       }
 
       final @NotNull Map<String, String> tags = sourceSpan.getTags();

@@ -514,6 +514,10 @@ public final class CombinedScopeView implements IScope {
   @Override
   public void addFeatureFlag(final @Nullable String flag, final @Nullable Boolean result) {
     getDefaultWriteScope().addFeatureFlag(flag, result);
+    final @Nullable ISpan span = getSpan();
+    if (span != null) {
+      span.addFeatureFlag(flag, result);
+    }
   }
 
   @Override

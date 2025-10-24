@@ -43,6 +43,7 @@ public final class io/sentry/opentelemetry/OtelSpanFactory : io/sentry/ISpanFact
 
 public final class io/sentry/opentelemetry/OtelStrongRefSpanWrapper : io/sentry/opentelemetry/IOtelSpanWrapper {
 	public fun <init> (Lio/opentelemetry/api/trace/Span;Lio/sentry/opentelemetry/IOtelSpanWrapper;)V
+	public fun addFeatureFlag (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public fun finish ()V
 	public fun finish (Lio/sentry/SpanStatus;)V
 	public fun finish (Lio/sentry/SpanStatus;Lio/sentry/SentryDate;)V
@@ -96,6 +97,7 @@ public final class io/sentry/opentelemetry/OtelStrongRefSpanWrapper : io/sentry/
 
 public final class io/sentry/opentelemetry/OtelTransactionSpanForwarder : io/sentry/ITransaction {
 	public fun <init> (Lio/sentry/opentelemetry/IOtelSpanWrapper;)V
+	public fun addFeatureFlag (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public fun finish ()V
 	public fun finish (Lio/sentry/SpanStatus;)V
 	public fun finish (Lio/sentry/SpanStatus;Lio/sentry/SentryDate;)V

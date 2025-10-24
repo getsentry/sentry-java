@@ -309,4 +309,9 @@ public final class OtelTransactionSpanForwarder implements ITransaction {
     }
     return name;
   }
+
+  @Override
+  public void addFeatureFlag(final @Nullable String flag, final @Nullable Boolean result) {
+    rootSpan.addFeatureFlag(flag, result);
+  }
 }

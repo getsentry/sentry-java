@@ -23,6 +23,7 @@ public class PersonController {
 
   @GetMapping("{id}")
   Person person(@PathVariable Long id) {
+    Sentry.addFeatureFlag("transaction-feature-flag", true);
     ISpan currentSpan = Sentry.getSpan();
     ISpan sentrySpan = currentSpan.startChild("spanCreatedThroughSentryApi");
     try {

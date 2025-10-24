@@ -1174,7 +1174,9 @@ class JsonSerializerTest {
     trace.data["dataKey"] = "dataValue"
     val tracer = SentryTracer(trace, fixture.scopes)
     tracer.setData("dataKey", "dataValue")
+    tracer.addFeatureFlag("transaction-feature-flag", true)
     val span = tracer.startChild("child")
+    span.addFeatureFlag("span-feature-flag", false)
     span.finish(SpanStatus.OK)
     tracer.finish()
 
@@ -1200,9 +1202,13 @@ class JsonSerializerTest {
     assertNotNull("ok", jsonSpan["status"] as String)
     assertNotNull(jsonSpan["timestamp"])
     assertNotNull(jsonSpan["start_timestamp"])
+    assertFalse((jsonSpan["data"] as Map<*, *>)["flag.evaluation.span-feature-flag"] as Boolean)
 
     val jsonTrace = (element["contexts"] as Map<*, *>)["trace"] as Map<*, *>
     assertEquals("dataValue", (jsonTrace["data"] as Map<*, *>)["dataKey"] as String)
+    assertTrue(
+      (jsonTrace["data"] as Map<*, *>)["flag.evaluation.transaction-feature-flag"] as Boolean
+    )
     assertNotNull(jsonTrace["trace_id"] as String)
     assertNotNull(jsonTrace["span_id"] as String)
     assertNotNull(jsonTrace["data"] as Map<*, *>) { assertEquals("dataValue", it["dataKey"]) }

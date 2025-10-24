@@ -14,6 +14,16 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * Feature flag buffer implementation optimized for usage in scopes.
+ *
+ * <ul>
+ *   <li>When full, the oldest entry is evicted
+ *   <li>Updates to existing entries refresh the entry, meaning it'll be dropped last
+ *   <li>Performance of scope cloning is optimized here
+ *   <li>Supports merging across scope types (GLOBAL, ISOLATION, CURRENT)
+ * </ul>
+ */
 @ApiStatus.Internal
 public final class FeatureFlagBuffer implements IFeatureFlagBuffer {
 
