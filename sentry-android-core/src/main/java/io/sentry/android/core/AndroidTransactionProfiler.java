@@ -306,11 +306,10 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
           true,
           null,
           ScopesAdapter.getInstance().getOptions());
-    } else if (isRunning.get()) {
-      // in case the app start profiling is running, and it's not bound to a transaction, we still
-      // stop profiling, but we also have to manually update the flag.
-      isRunning.set(false);
     }
+    // in case the app start profiling is running, and it's not bound to a transaction, we still
+    // stop profiling, but we also have to manually update the flag.
+    isRunning.set(false);
 
     // we have to first stop profiling otherwise we would lost the last profile
     if (profiler != null) {
