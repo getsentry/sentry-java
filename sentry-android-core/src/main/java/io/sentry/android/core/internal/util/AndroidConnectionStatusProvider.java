@@ -401,16 +401,18 @@ public final class AndroidConnectionStatusProvider
                                 + ", Type: "
                                 + getConnectionTypeFromCache());
                   }
+                  isUpdatingCache.set(false);
                 }
               }
-              isUpdatingCache.set(false);
             }
           });
 
     } catch (Throwable t) {
       options.getLogger().log(SentryLevel.WARNING, "Failed to update connection status cache", t);
-      cachedNetworkCapabilities = null;
-      lastCacheUpdateTime = timeProvider.getCurrentTimeMillis();
+      try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+        cachedNetworkCapabilities = null;
+        lastCacheUpdateTime = timeProvider.getCurrentTimeMillis();
+      }
     }
   }
 
