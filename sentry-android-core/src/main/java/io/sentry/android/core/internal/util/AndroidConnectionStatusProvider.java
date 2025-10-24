@@ -401,9 +401,9 @@ public final class AndroidConnectionStatusProvider
                                 + ", Type: "
                                 + getConnectionTypeFromCache());
                   }
-                  isUpdatingCache.set(false);
                 }
               }
+              isUpdatingCache.set(false);
             }
           });
 
