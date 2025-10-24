@@ -42,7 +42,7 @@ class PersonSystemTest {
           op = "spanCreatedThroughOtelApi",
           featureFlag = FeatureFlag("flag.evaluation.my-feature-flag", true),
         ) &&
-      testHelper.doesTransactionHaveSpanWith(transaction, op = "spanCreatedThroughSentryApi")
+        testHelper.doesTransactionHaveSpanWith(transaction, op = "spanCreatedThroughSentryApi")
     }
 
     Thread.sleep(10000)
