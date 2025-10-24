@@ -8,6 +8,8 @@ import io.sentry.DataCategory
 import io.sentry.EventProcessor
 import io.sentry.FilterString
 import io.sentry.Hint
+import io.sentry.IContinuousProfiler
+import io.sentry.IProfileConverter
 import io.sentry.IScopes
 import io.sentry.ITransportFactory
 import io.sentry.Integration
@@ -90,6 +92,7 @@ class SentryAutoConfigurationTest {
         AutoConfigurations.of(
           SentryAutoConfiguration::class.java,
           WebMvcAutoConfiguration::class.java,
+          SentryProfilerAutoConfiguration::class.java,
         )
       )
 
@@ -907,6 +910,39 @@ class SentryAutoConfigurationTest {
             .integrations
             .contains("SpringBootOpenTelemetryAgentWithoutAutoInit")
         )
+      }
+  }
+
+  @Test
+  fun `when AgentMarker is on the classpath and ContinuousProfiling is enabled IContinuousProfiler and IProfileConverter beans are created and set on options`() {
+    SentryIntegrationPackageStorage.getInstance().clearStorage()
+    contextRunner
+      .withPropertyValues(
+        "sentry.dsn=http://key@localhost/proj",
+        "sentry.traces-sample-rate=1.0",
+        "sentry.auto-init=false",
+        "debug=true",
+      )
+      .run {
+        assertThat(it).hasSingleBean(IContinuousProfiler::class.java)
+        assertThat(it).hasSingleBean(IProfileConverter::class.java)
+      }
+  }
+
+  @Test
+  fun `when AgentMarker is not on the classpath and ContinuousProfiling is enabled IContinuousProfiler and IProfileConverter beans are not created`() {
+    SentryIntegrationPackageStorage.getInstance().clearStorage()
+    contextRunner
+      .withPropertyValues(
+        "sentry.dsn=http://key@localhost/proj",
+        "sentry.traces-sample-rate=1.0",
+        "sentry.profile-session-sample-rate=1.0",
+        "debug=true",
+      )
+      .withClassLoader(FilteredClassLoader(AgentMarker::class.java, OpenTelemetry::class.java))
+      .run {
+        assertThat(it).doesNotHaveBean(IContinuousProfiler::class.java)
+        assertThat(it).doesNotHaveBean(IProfileConverter::class.java)
       }
   }
 
