@@ -41,7 +41,7 @@ class PersonSystemTest {
           transaction,
           op = "spanCreatedThroughOtelApi",
           featureFlag = FeatureFlag("flag.evaluation.my-feature-flag", true),
-        )
+        ) &&
       testHelper.doesTransactionHaveSpanWith(transaction, op = "spanCreatedThroughSentryApi")
     }
 

@@ -77,9 +77,12 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
     final @NotNull IFeatureFlagBuffer featureFlagBuffer =
         span.getSpanContext().getFeatureFlagBuffer();
     final @Nullable FeatureFlags featureFlags = featureFlagBuffer.getFeatureFlags();
-    if (featureFlags != null && data != null) {
+    if (featureFlags != null) {
+      if (this.data == null) {
+        this.data = new HashMap<>();
+      }
       for (FeatureFlag featureFlag : featureFlags.getValues()) {
-        data.put(FeatureFlag.DATA_PREFIX + featureFlag.getFlag(), featureFlag.getResult());
+        this.data.put(FeatureFlag.DATA_PREFIX + featureFlag.getFlag(), featureFlag.getResult());
       }
     }
   }
