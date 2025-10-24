@@ -5,12 +5,6 @@ import io.sentry.ILogger;
 import io.sentry.Sentry;
 import io.sentry.SentryLevel;
 import io.sentry.SentryStackTraceFactory;
-import io.sentry.asyncprofiler.vendor.asyncprofiler.convert.Arguments;
-import io.sentry.asyncprofiler.vendor.asyncprofiler.convert.JfrConverter;
-import io.sentry.asyncprofiler.vendor.asyncprofiler.jfr.JfrReader;
-import io.sentry.asyncprofiler.vendor.asyncprofiler.jfr.StackTrace;
-import io.sentry.asyncprofiler.vendor.asyncprofiler.jfr.event.Event;
-import io.sentry.asyncprofiler.vendor.asyncprofiler.jfr.event.EventCollector;
 import io.sentry.protocol.SentryStackFrame;
 import io.sentry.protocol.profiling.SentryProfile;
 import io.sentry.protocol.profiling.SentrySample;
@@ -20,6 +14,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import one.convert.Arguments;
+import one.convert.JfrConverter;
+import one.jfr.JfrReader;
+import one.jfr.StackTrace;
+import one.jfr.event.Event;
+import one.jfr.event.EventCollector;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -245,6 +245,11 @@ public final class JfrAsyncProfilerToSentryProfileConverter extends JfrConverter
       } else {
         return null;
       }
+    }
+
+    private String getPlainThreadName(int tid) {
+      String threadName = jfr.threads.get(tid);
+      return threadName == null ? "[tid=" + tid + ']' : threadName;
     }
 
     private boolean hasPackageStructure(String className) {

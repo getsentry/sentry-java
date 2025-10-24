@@ -230,7 +230,10 @@ public final class JavaContinuousProfiler
       // Example command: start,jfr,event=wall,interval=9900us,file=/path/to/trace.jfr
       final String command =
           String.format(
-              "start,jfr,event=wall,interval=%s,file=%s", profilingIntervalMicros, filename);
+              "start,jfr,event=wall,nobatch,interval=%s,file=%s",
+              profilingIntervalMicros, filename);
+
+      logger.log(SentryLevel.INFO, command);
 
       profiler.execute(command);
 
