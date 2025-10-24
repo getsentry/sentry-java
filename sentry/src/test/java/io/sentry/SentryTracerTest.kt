@@ -1176,6 +1176,12 @@ class SentryTracerTest {
   }
 
   @Test
+  fun `when transaction is created, but not sampled, compositePerformanceCollector is not started`() {
+    val transaction = fixture.getSut(samplingDecision = TracesSamplingDecision(false))
+    verify(fixture.compositePerformanceCollector, never()).start(anyOrNull<ITransaction>())
+  }
+
+  @Test
   fun `when transaction is created and profiled compositePerformanceCollector is started`() {
     val transaction =
       fixture.getSut(

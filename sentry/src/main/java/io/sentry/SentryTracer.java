@@ -90,8 +90,8 @@ public final class SentryTracer implements ITransaction {
     }
 
     // We are currently sending the performance data only in profiles, but we are always sending
-    // performance measurements.
-    if (compositePerformanceCollector != null) {
+    // performance measurements (frames data in spans).
+    if (compositePerformanceCollector != null && Boolean.TRUE.equals(isSampled())) {
       compositePerformanceCollector.start(this);
     }
 
