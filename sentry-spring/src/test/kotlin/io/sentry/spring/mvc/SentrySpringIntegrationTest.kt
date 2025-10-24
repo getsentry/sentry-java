@@ -22,7 +22,6 @@ import io.sentry.spring.tracing.SentryTracingConfiguration
 import io.sentry.spring.tracing.SentryTracingFilter
 import io.sentry.spring.tracing.SentryTransaction
 import io.sentry.transport.ITransport
-import java.time.Duration
 import java.util.concurrent.Callable
 import java.util.concurrent.TimeUnit
 import kotlin.test.BeforeTest
@@ -231,10 +230,8 @@ class SentrySpringIntegrationTest {
 
     restTemplate.getForEntity("http://localhost:$port/throws-handled", String::class.java)
 
-    await.during(Duration.ofSeconds(2)).untilAsserted {
-      verify(transport, never())
-        .send(checkEvent { event -> assertThat(event).isNotNull() }, anyOrNull())
-    }
+    verify(transport, never())
+      .send(checkEvent { event -> assertThat(event).isNotNull() }, anyOrNull())
   }
 
   @Test

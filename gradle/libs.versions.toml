@@ -31,7 +31,7 @@ retrofit = "2.9.0"
 slf4j = "1.7.30"
 springboot2 = "2.7.18"
 springboot3 = "3.5.0"
-springboot4 = "4.0.0-M3"
+springboot4 = "4.0.0-RC1"
 # Android
 targetSdk = "34"
 compileSdk = "34"
@@ -165,6 +165,7 @@ springboot3-starter-security = { module = "org.springframework.boot:spring-boot-
 springboot3-starter-jdbc = { module = "org.springframework.boot:spring-boot-starter-jdbc", version.ref = "springboot3" }
 springboot3-starter-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator", version.ref = "springboot3" }
 springboot4-otel = { module = "io.opentelemetry.instrumentation:opentelemetry-spring-boot-starter", version.ref = "otelInstrumentation" }
+springboot4-resttestclient = { module = "org.springframework.boot:spring-boot-resttestclient", version.ref = "springboot4" }
 springboot4-starter = { module = "org.springframework.boot:spring-boot-starter", version.ref = "springboot4" }
 springboot4-starter-graphql = { module = "org.springframework.boot:spring-boot-starter-graphql", version.ref = "springboot4" }
 springboot4-starter-quartz = { module = "org.springframework.boot:spring-boot-starter-quartz", version.ref = "springboot4" }
