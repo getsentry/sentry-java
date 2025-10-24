@@ -29,6 +29,9 @@
       <meta-data android:name="io.sentry.session-replay.screenshot-strategy" android:value="canvas" />
     </application>
     ```
+- Add Feature Flags ([#4812](https://github.com/getsentry/sentry-java/pull/4812)) and ([#4831](https://github.com/getsentry/sentry-java/pull/4831))
+  - You may use top level API (`Sentry.addFeatureFlag`) to add feature flag evaluations to both scope and the current active span
+  - Or you may directly add feature flag evaluations to any scope, transaction or span
 
 ### Fixes
 
