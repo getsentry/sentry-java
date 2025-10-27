@@ -43,6 +43,8 @@ public class TriggerHttpRequestActivity extends AppCompatActivity {
     private Button binaryButton;
     private Button stringButton;
     private Button oneShotButton;
+    private Button largeTextButton;
+    private Button largeBinaryButton;
     private Button clearButton;
 
     private OkHttpClient okHttpClient;
@@ -71,6 +73,8 @@ public class TriggerHttpRequestActivity extends AppCompatActivity {
         binaryButton = findViewById(R.id.trigger_binary_request);
         stringButton = findViewById(R.id.trigger_string_request);
         oneShotButton = findViewById(R.id.trigger_oneshot_request);
+        largeTextButton = findViewById(R.id.trigger_large_text_request);
+        largeBinaryButton = findViewById(R.id.trigger_large_binary_request);
         clearButton = findViewById(R.id.clear_display);
 
         requestDisplay.setMovementMethod(new ScrollingMovementMethod());
@@ -97,6 +101,8 @@ public class TriggerHttpRequestActivity extends AppCompatActivity {
         binaryButton.setOnClickListener(v -> performOctetStreamRequest());
         stringButton.setOnClickListener(v -> performTextPlainRequest());
         oneShotButton.setOnClickListener(v -> performOneShotJsonRequest());
+        largeTextButton.setOnClickListener(v -> performLargeTextPlainRequest());
+        largeBinaryButton.setOnClickListener(v -> performLargeOctetStreamRequest());
         clearButton.setOnClickListener(v -> clearDisplays());
     }
 
@@ -283,6 +289,8 @@ public class TriggerHttpRequestActivity extends AppCompatActivity {
         binaryButton.setEnabled(!show);
         stringButton.setEnabled(!show);
         oneShotButton.setEnabled(!show);
+        largeTextButton.setEnabled(!show);
+        largeBinaryButton.setEnabled(!show);
     }
 
     private void performFormUrlencodedRequest() {
@@ -486,6 +494,125 @@ public class TriggerHttpRequestActivity extends AppCompatActivity {
         } catch (Exception e) {
             Sentry.captureException(e);
             Toast.makeText(this, "Error creating one-shot request: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void performLargeTextPlainRequest() {
+        String url = getUrl();
+        if (url.isEmpty()) {
+            Toast.makeText(this, "Please enter a URL", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        try {
+            // Add request type to URL for identification
+            String separator = url.contains("?") ? "&" : "?";
+            String urlWithType = url + separator + "request_type=POST_LARGE_TEXT&button=POST_LargeText";
+
+            // Create large text data that exceeds MAX_NETWORK_BODY_SIZE (150KB)
+            // Target size: 200KB (204,800 bytes)
+            int targetSize = 200 * 1024; // 200KB
+            StringBuilder largeText = new StringBuilder();
+            
+            largeText.append("REQUEST_TYPE: POST_LARGE_TEXT\n");
+            largeText.append("BUTTON_CLICKED: POST Large Text\n");
+            largeText.append("SIZE_TARGET: ").append(targetSize).append(" bytes (exceeds 150KB limit)\n");
+            largeText.append("TIMESTAMP: ").append(new Date()).append("\n");
+            largeText.append("DEVICE: ").append(android.os.Build.MODEL).append("\n");
+            largeText.append("WARNING: This body size exceeds MAX_NETWORK_BODY_SIZE!\n\n");
+
+            // Fill with repeated content to reach target size
+            String filler = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. ";
+            
+            int currentSize = largeText.length();
+            while (currentSize < targetSize) {
+                largeText.append("FILLER_LINE_").append(currentSize / filler.length()).append(": ").append(filler);
+                currentSize = largeText.length();
+            }
+
+            String textData = largeText.toString();
+            
+            RequestBody body = RequestBody.create(
+                textData,
+                MediaType.get("text/plain; charset=utf-8")
+            );
+
+            Request request = new Request.Builder()
+                .url(urlWithType)
+                .post(body)
+                .addHeader("User-Agent", "Sentry-Sample-Android")
+                .addHeader("Content-Type", "text/plain; charset=utf-8")
+                .addHeader("X-Request-Type", "POST_LARGE_TEXT")
+                .addHeader("X-Body-Size", String.valueOf(textData.length()))
+                .build();
+
+            String displayBody = "[LARGE TEXT REQUEST BODY]\n" +
+                               "Type: text/plain\n" +
+                               "Size: " + textData.length() + " bytes (" + (textData.length() / 1024) + "KB)\n" +
+                               "Limit: 153,600 bytes (150KB)\n" +
+                               "Status: " + (textData.length() > 153600 ? "EXCEEDS LIMIT" : "Within limit") + "\n" +
+                               "Preview: " + textData.substring(0, Math.min(200, textData.length())) + "...";
+
+            displayRequest("POST", request, displayBody);
+            executeRequest(request);
+        } catch (Exception e) {
+            Sentry.captureException(e);
+            Toast.makeText(this, "Error creating large text request: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void performLargeOctetStreamRequest() {
+        String url = getUrl();
+        if (url.isEmpty()) {
+            Toast.makeText(this, "Please enter a URL", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        try {
+            // Add request type to URL for identification (binary bodies are ignored)
+            String separator = url.contains("?") ? "&" : "?";
+            String urlWithType = url + separator + "request_type=POST_LARGE_BINARY&button=POST_LargeBinary";
+
+            // Create large binary data that exceeds MAX_NETWORK_BODY_SIZE (150KB)
+            // Target size: 256KB (262,144 bytes)
+            int targetSize = 256 * 1024; // 256KB
+            byte[] binaryData = new byte[targetSize];
+            
+            // Fill with a pattern for easier identification
+            for (int i = 0; i < binaryData.length; i++) {
+                // Create a pattern: alternating bytes with position info
+                binaryData[i] = (byte) ((i % 256) ^ ((i / 256) % 256));
+            }
+
+            RequestBody body = RequestBody.create(
+                binaryData,
+                MediaType.get("application/octet-stream")
+            );
+
+            Request request = new Request.Builder()
+                .url(urlWithType)
+                .post(body)
+                .addHeader("User-Agent", "Sentry-Sample-Android")
+                .addHeader("Content-Type", "application/octet-stream")
+                .addHeader("Content-Length", String.valueOf(binaryData.length))
+                .addHeader("X-Request-Type", "POST_LARGE_BINARY")
+                .addHeader("X-Body-Size", String.valueOf(binaryData.length))
+                .build();
+
+            String displayBody = "[LARGE BINARY REQUEST BODY]\n" +
+                               "Type: application/octet-stream\n" +
+                               "Size: " + binaryData.length + " bytes (" + (binaryData.length / 1024) + "KB)\n" +
+                               "Limit: 153,600 bytes (150KB)\n" +
+                               "Status: " + (binaryData.length > 153600 ? "EXCEEDS LIMIT" : "Within limit") + "\n" +
+                               "Pattern: Alternating bytes with position info\n" +
+                               "Sample bytes: " + Arrays.toString(Arrays.copyOf(binaryData, Math.min(16, binaryData.length))) + "\n" +
+                               "Request type in URL: POST_LARGE_BINARY";
+
+            displayRequest("POST", request, displayBody);
+            executeRequest(request);
+        } catch (Exception e) {
+            Sentry.captureException(e);
+            Toast.makeText(this, "Error creating large binary request: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }
 

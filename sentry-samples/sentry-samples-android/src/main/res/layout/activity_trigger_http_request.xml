@@ -111,6 +111,30 @@
 
     </LinearLayout>
 
+    <LinearLayout
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:orientation="horizontal"
+      android:layout_marginBottom="16dp">
+
+      <Button
+        android:id="@+id/trigger_large_text_request"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="POST Large Text"
+        android:layout_marginEnd="4dp"/>
+
+      <Button
+        android:id="@+id/trigger_large_binary_request"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="POST Large Binary"
+        android:layout_marginStart="4dp"/>
+
+    </LinearLayout>
+
     <Button
       android:id="@+id/clear_display"
       android:layout_width="wrap_content"
