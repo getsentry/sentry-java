@@ -6,7 +6,6 @@ import io.sentry.SentryOptions;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -48,11 +47,21 @@ public final class NetworkBodyParser {
           "[Binary data, " + bytes.length + " bytes, type: " + contentType + "]");
     }
 
+    // Check size limit and truncate if necessary
+    if (bytes.length > maxSizeBytes) {
+      if (logger != null) {
+        logger
+            .getLogger()
+            .log(SentryLevel.DEBUG, "Content exceeds max size limit of " + maxSizeBytes + " bytes");
+      }
+      return createTruncatedNetworkBody(bytes, maxSizeBytes, charset);
+    }
+
     // Convert to string and parse
     try {
       String effectiveCharset = charset != null ? charset : "UTF-8";
       String content = new String(bytes, effectiveCharset);
-      return parse(content, contentType, maxSizeBytes, logger);
+      return parse(content, contentType, logger);
     } catch (UnsupportedEncodingException e) {
       if (logger != null) {
         logger.getLogger().log(SentryLevel.DEBUG, "Failed to decode bytes: " + e.getMessage());
@@ -64,23 +73,10 @@ public final class NetworkBodyParser {
   private static @Nullable NetworkBody parse(
       @Nullable String content,
       @Nullable String contentType,
-      int maxSizeBytes,
       @Nullable SentryOptions logger) {
 
     if (content == null || content.isEmpty()) {
       return null;
-    }
-
-    // Check size limit
-    if (content.getBytes(StandardCharsets.UTF_8).length > maxSizeBytes) {
-      if (logger != null) {
-        logger
-            .getLogger()
-            .log(SentryLevel.DEBUG, "Content exceeds max size limit of " + maxSizeBytes + " bytes");
-      }
-      // Return truncated string
-      int truncateAt = Math.min(content.length(), maxSizeBytes);
-      return NetworkBody.fromString(content.substring(0, truncateAt) + "...[truncated]");
     }
 
     // Handle based on content type hint if provided
@@ -161,6 +157,31 @@ public final class NetworkBodyParser {
         logger.getLogger().log(SentryLevel.DEBUG, "Failed to parse form data: " + e.getMessage());
       }
       return null;
+    }
+  }
+
+  /** Creates a truncated NetworkBody from oversized bytes with proper UTF-8 character handling. */
+  private static @NotNull NetworkBody createTruncatedNetworkBody(
+      @NotNull byte[] bytes, int maxSizeBytes, @Nullable String charset) {
+    byte[] truncatedBytes = new byte[maxSizeBytes];
+    System.arraycopy(bytes, 0, truncatedBytes, 0, maxSizeBytes);
+
+    try {
+      String effectiveCharset = charset != null ? charset : "UTF-8";
+      String content = new String(truncatedBytes, effectiveCharset);
+
+      // Find the last complete character by checking for replacement character
+      int lastValidIndex = content.length();
+      while (lastValidIndex > 0 && content.charAt(lastValidIndex - 1) == '\uFFFD') {
+        lastValidIndex--;
+      }
+      if (lastValidIndex < content.length()) {
+        content = content.substring(0, lastValidIndex);
+      }
+      content += "...[truncated]";
+      return NetworkBody.fromString(content);
+    } catch (UnsupportedEncodingException e) {
+      return NetworkBody.fromString("[Failed to decode truncated bytes, " + bytes.length + " bytes]");
     }
   }
 
