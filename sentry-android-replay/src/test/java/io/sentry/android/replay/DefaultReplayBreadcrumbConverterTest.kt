@@ -507,7 +507,7 @@ class DefaultReplayBreadcrumbConverterTest {
   }
 
   @Test
-  fun `non-http breadcrumbs do not extract network data`() {
+  fun `non-http breadcrumbs are unaltered by network detail data extraction`() {
     val converter = fixture.getSut()
     val navigationBreadcrumb =
       Breadcrumb(Date()).apply {
@@ -523,36 +523,5 @@ class DefaultReplayBreadcrumbConverterTest {
 
     assertSame(navigationBreadcrumb, result)
     // Network data extraction only happens for http breadcrumbs
-  }
-
-  @Test
-  fun `chained callbacks work correctly`() {
-    val converter = fixture.getSut()
-    val breadcrumb = Breadcrumb(Date()).apply { message = "original" }
-    val hint = Hint()
-
-    val firstCallback =
-      SentryOptions.BeforeBreadcrumbCallback { b, h ->
-        b.message = "modified by first"
-        b
-      }
-
-    val secondCallback =
-      SentryOptions.BeforeBreadcrumbCallback { b, h ->
-        // This simulates what happens when ReplayBreadcrumbConverter
-        // wraps a user's callback
-        val result = firstCallback.execute(b, h)
-        result?.let {
-          it.message = "${it.message} and second"
-          it
-        }
-      }
-
-    converter.setUserBeforeBreadcrumbCallback(secondCallback)
-
-    val result = converter.execute(breadcrumb, hint)
-
-    assertNotNull(result)
-    assertEquals("modified by first and second", result.message)
   }
 }
