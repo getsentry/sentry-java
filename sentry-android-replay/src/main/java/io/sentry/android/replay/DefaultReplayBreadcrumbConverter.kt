@@ -1,6 +1,5 @@
 package io.sentry.android.replay
 
-import android.util.Log
 import io.sentry.Breadcrumb
 import io.sentry.Hint
 import io.sentry.ReplayBreadcrumbConverter
@@ -157,10 +156,6 @@ public open class DefaultReplayBreadcrumbConverter : ReplayBreadcrumbConverter {
       }
     }
 
-    Log.d(
-      "SentryNetwork",
-      "SentryNetwork: BeforeBreadcrumbCallback - Hint: $hint, Breadcrumb: $result",
-    )
     return result
   }
 
@@ -174,39 +169,12 @@ public open class DefaultReplayBreadcrumbConverter : ReplayBreadcrumbConverter {
 
     val networkDetails = breadcrumbHint.get("replay:networkDetails") as? NetworkRequestData
     if (networkDetails != null) {
-      Log.d(
-        "SentryNetwork",
-        "SentryNetwork: Found structured NetworkRequestData in hint: $networkDetails",
-      )
       return networkDetails
     }
-
-    Log.d("SentryNetwork", "SentryNetwork: No structured NetworkRequestData found on hint")
     return null
   }
 
-  private fun Breadcrumb.isValidForRRWebSpan(): Boolean {
-    val url = data["url"] as? String
-    val hasStartTimestamp = SpanDataConvention.HTTP_START_TIMESTAMP in data
-    val hasEndTimestamp = SpanDataConvention.HTTP_END_TIMESTAMP in data
-
-    val urlValid = !url.isNullOrEmpty()
-    val isValid = urlValid && hasStartTimestamp && hasEndTimestamp
-
-    val reasons = mutableListOf<String>()
-    if (!urlValid) reasons.add("missing or empty URL")
-    if (!hasStartTimestamp) reasons.add("missing start timestamp")
-    if (!hasEndTimestamp) reasons.add("missing end timestamp")
-
-    Log.d(
-      "SentryReplay",
-      "Breadcrumb RRWeb span validation: ${if (isValid) "VALID" else "INVALID"}" +
-        if (!isValid) " (${reasons.joinToString(", ")})"
-        else "" + " - URL: ${url ?: "null"}, Category: ${category}",
-    )
-
-    return isValid
-  }
+  private fun Breadcrumb.isValidForRRWebSpan(): Boolean = !(data["url"] as? String).isNullOrEmpty() && SpanDataConvention.HTTP_START_TIMESTAMP in data && SpanDataConvention.HTTP_END_TIMESTAMP in data
 
   private fun String.snakeToCamelCase(): String =
     replace(snakecasePattern) { it.value.last().toString().uppercase() }
@@ -215,15 +183,6 @@ public open class DefaultReplayBreadcrumbConverter : ReplayBreadcrumbConverter {
     val breadcrumb = this
     val httpStartTimestamp = breadcrumb.data[SpanDataConvention.HTTP_START_TIMESTAMP]
     val httpEndTimestamp = breadcrumb.data[SpanDataConvention.HTTP_END_TIMESTAMP]
-
-    // Get the NetworkRequestData if available and remove it from the map
-    val networkDetailData = httpNetworkDetails.remove(breadcrumb)
-
-    Log.d(
-      "SentryNetwork",
-      "SentryNetwork: convert(breadcrumb=${breadcrumb.type}) httpNetworkDetails map size: ${httpNetworkDetails.size}, " +
-        "found network data for current breadcrumb: ${networkDetailData != null}",
-    )
 
     return RRWebSpanEvent().apply {
       timestamp = breadcrumb.timestamp.time
@@ -245,7 +204,8 @@ public open class DefaultReplayBreadcrumbConverter : ReplayBreadcrumbConverter {
 
       val breadcrumbData = mutableMapOf<String, Any?>()
 
-      // Add data from NetworkRequestData if available
+      val networkDetailData = httpNetworkDetails.remove(breadcrumb)
+      // Add Network Details data when available
       networkDetailData?.let { networkData ->
         networkData.method?.let { breadcrumbData["method"] = it }
         networkData.statusCode?.let { breadcrumbData["statusCode"] = it }

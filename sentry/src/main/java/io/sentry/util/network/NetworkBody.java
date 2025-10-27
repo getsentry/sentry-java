@@ -3,7 +3,6 @@ package io.sentry.util.network;
 import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents the body content of a network request or response. Can be one of: JSON object, JSON

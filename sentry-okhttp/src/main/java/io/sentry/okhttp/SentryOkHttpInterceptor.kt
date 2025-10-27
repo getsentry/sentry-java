@@ -333,10 +333,6 @@ public open class SentryOkHttpInterceptor(
 
         val contentLength = responseBody.contentLength()
         if (contentLength > maxBodySize * 2) {
-          scopes.options.logger.log(
-            io.sentry.SentryLevel.DEBUG,
-            "Response body too large: $contentLength bytes (max: $maxBodySize)",
-          )
           return NetworkBody.fromString("[Response body too large: $contentLength bytes]")
         }
 
@@ -353,10 +349,9 @@ public open class SentryOkHttpInterceptor(
           scopes.options,
         )
       } catch (e: Exception) {
-        // If body reading fails, log and return null
         scopes.options.logger.log(
           io.sentry.SentryLevel.DEBUG,
-          "Failed to read response body safely: ${e.message}",
+          "Failed to read http response body for Network Details: ${e.message}",
         )
         null
       }
