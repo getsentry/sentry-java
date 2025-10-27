@@ -248,13 +248,12 @@ final class AndroidOptionsInitializer {
       options.setCompositePerformanceCollector(new DefaultCompositePerformanceCollector(options));
     }
 
-    if (options.getReplayController() != null) { // TODO: Triple-check this should be a null check
-      ReplayBreadcrumbConverter replayBreadcrumbConverter = options.getReplayController().getBreadcrumbConverter();
-      replayBreadcrumbConverter.setUserBeforeBreadcrumbCallback(options.getBeforeBreadcrumb());
-      options.setBeforeBreadcrumb(
-        replayBreadcrumbConverter
-      );
-    }
+    ReplayBreadcrumbConverter replayBreadcrumbConverter = options.getReplayController().getBreadcrumbConverter();
+    replayBreadcrumbConverter.setUserBeforeBreadcrumbCallback(options.getBeforeBreadcrumb());
+    options.setBeforeBreadcrumb(
+      replayBreadcrumbConverter
+    );
+
 
     // Check if the profiler was already instantiated in the app start.
     // We use the Android profiler, that uses a global start/stop api, so we need to preserve the
