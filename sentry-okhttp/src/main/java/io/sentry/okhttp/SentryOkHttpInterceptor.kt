@@ -115,7 +115,7 @@ public open class SentryOkHttpInterceptor(
     var response: Response? = null
     var code: Int? = null
 
-    var networkDetailData = NetworkDetailCaptureUtils.initializeForUrl(
+    val networkDetailData = NetworkDetailCaptureUtils.initializeForUrl(
       request.url.toString(),
       request.method,
       FAKE_OPTIONS.networkDetailAllowUrls,
@@ -212,12 +212,12 @@ public open class SentryOkHttpInterceptor(
       // this only works correctly if SentryOkHttpInterceptor is the last one in the chain
       okHttpEvent?.setRequest(request)
 
-      response?.let { response ->
+      response?.let {
         networkDetailData?.setResponseDetails(
-          response.code,
+          it.code,
           NetworkDetailCaptureUtils.createResponse(
-            response,
-            response.body?.contentLength(),
+            it,
+            it.body?.contentLength(),
             FAKE_OPTIONS.networkCaptureBodies,
             { resp: Response -> resp.extractResponseBody() },
             FAKE_OPTIONS.networkResponseHeaders,
