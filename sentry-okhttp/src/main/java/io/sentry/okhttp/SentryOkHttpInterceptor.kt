@@ -62,14 +62,13 @@ public open class SentryOkHttpInterceptor(
 
     /**
      * Fake options for testing network detail capture
-     * TODO: Remove before landing.
      */
     private val FAKE_OPTIONS = object {
-      val networkDetailAllowUrls: Array<String> = arrayOf(".*")
-      val networkDetailDenyUrls: Array<String>? = null
-      val networkCaptureBodies: Boolean = true
-      val networkRequestHeaders: Array<String> = arrayOf("User-Agent", "Accept", "sentry-trace", "Content-Type")
-      val networkResponseHeaders: Array<String> = arrayOf("User-Agent", "access-control-allow-origin", "x-ratelimit-resource")
+      val networkDetailAllowUrls: Array<String> = emptyArray()
+      val networkDetailDenyUrls: Array<String> = emptyArray()
+      val networkCaptureBodies: Boolean = false
+      val networkRequestHeaders: Array<String> = emptyArray()
+      val networkResponseHeaders: Array<String> = emptyArray()
     }
   }
 
