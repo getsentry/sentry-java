@@ -49,15 +49,65 @@
         android:layout_height="wrap_content"
         android:layout_weight="1"
         android:text="GET Request"
-        android:layout_marginEnd="8dp"/>
+        android:layout_marginEnd="4dp"/>
 
       <Button
         android:id="@+id/trigger_post_request"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:text="POST Request"
-        android:layout_marginStart="8dp"/>
+        android:text="POST JSON"
+        android:layout_marginStart="4dp"
+        android:layout_marginEnd="4dp"/>
+
+    </LinearLayout>
+
+    <LinearLayout
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:orientation="horizontal"
+      android:layout_marginBottom="16dp">
+
+      <Button
+        android:id="@+id/trigger_form_request"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="POST Form"
+        android:layout_marginEnd="4dp"/>
+
+      <Button
+        android:id="@+id/trigger_binary_request"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="POST Binary"
+        android:layout_marginStart="4dp"
+        android:layout_marginEnd="4dp"/>
+
+      <Button
+        android:id="@+id/trigger_string_request"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="POST String"
+        android:layout_marginStart="4dp"/>
+
+    </LinearLayout>
+
+    <LinearLayout
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:orientation="horizontal"
+      android:layout_marginBottom="16dp">
+
+      <Button
+        android:id="@+id/trigger_oneshot_request"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="POST One-Shot"
+        android:layout_marginEnd="4dp"/>
 
     </LinearLayout>
 
