@@ -10,7 +10,7 @@ import org.jetbrains.annotations.Nullable;
  * array, or string.
  *
  * <p>See
- * https://github.com/getsentry/sentry-javascript/blob/develop/packages/replay-internal/src/types/request.ts
+ * <a href="https://github.com/getsentry/sentry-javascript/blob/develop/packages/replay-internal/src/types/request.ts">Javascript types</a>
  */
 public interface NetworkBody {
 
@@ -52,73 +52,6 @@ public interface NetworkBody {
   @NotNull
   Object getValue();
 
-  /**
-   * Checks if this NetworkBody represents a JSON object.
-   *
-   * @return true if this is a JSON object
-   */
-  default boolean isJsonObject() {
-    return getValue() instanceof Map;
-  }
-
-  /**
-   * Checks if this NetworkBody represents a JSON array.
-   *
-   * @return true if this is a JSON array
-   */
-  default boolean isJsonArray() {
-    return getValue() instanceof List;
-  }
-
-  /**
-   * Checks if this NetworkBody represents string content.
-   *
-   * @return true if this is a string
-   */
-  default boolean isString() {
-    return getValue() instanceof String;
-  }
-
-  /**
-   * Gets the value as a JSON object (Map).
-   *
-   * @return The Map if this is a JSON object, null otherwise
-   */
-  default @Nullable Map<String, Object> asJsonObject() {
-    Object value = getValue();
-    if (value instanceof Map) {
-      @SuppressWarnings("unchecked")
-      Map<String, Object> map = (Map<String, Object>) value;
-      return map;
-    }
-    return null;
-  }
-
-  /**
-   * Gets the value as a JSON array (List).
-   *
-   * @return The List if this is a JSON array, null otherwise
-   */
-  default @Nullable List<Object> asJsonArray() {
-    Object value = getValue();
-    if (value instanceof List) {
-      @SuppressWarnings("unchecked")
-      List<Object> list = (List<Object>) value;
-      return list;
-    }
-    return null;
-  }
-
-  /**
-   * Gets the value as a string.
-   *
-   * @return The String if this is string content, null otherwise
-   */
-  default @Nullable String asString() {
-    Object value = getValue();
-    return value instanceof String ? (String) value : null;
-  }
-
   // Private implementation classes
 
   /** Implementation for JSON object bodies */
@@ -137,19 +70,6 @@ public interface NetworkBody {
     @Override
     public String toString() {
       return "NetworkBody.JsonObject{" + value + '}';
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-      if (this == obj) return true;
-      if (!(obj instanceof JsonObjectImpl)) return false;
-      JsonObjectImpl that = (JsonObjectImpl) obj;
-      return value.equals(that.value);
-    }
-
-    @Override
-    public int hashCode() {
-      return value.hashCode();
     }
   }
 
@@ -170,19 +90,6 @@ public interface NetworkBody {
     public String toString() {
       return "NetworkBody.JsonArray{" + value + '}';
     }
-
-    @Override
-    public boolean equals(Object obj) {
-      if (this == obj) return true;
-      if (!(obj instanceof JsonArrayImpl)) return false;
-      JsonArrayImpl that = (JsonArrayImpl) obj;
-      return value.equals(that.value);
-    }
-
-    @Override
-    public int hashCode() {
-      return value.hashCode();
-    }
   }
 
   /** Implementation for string bodies */
@@ -201,19 +108,6 @@ public interface NetworkBody {
     @Override
     public String toString() {
       return "NetworkBody.StringBody{" + value + '}';
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-      if (this == obj) return true;
-      if (!(obj instanceof StringBodyImpl)) return false;
-      StringBodyImpl that = (StringBodyImpl) obj;
-      return value.equals(that.value);
-    }
-
-    @Override
-    public int hashCode() {
-      return value.hashCode();
     }
   }
 }
