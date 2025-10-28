@@ -31,8 +31,8 @@ import io.sentry.android.replay.capture.SessionCaptureStrategy
 import io.sentry.android.replay.gestures.GestureRecorder
 import io.sentry.android.replay.gestures.TouchRecorderCallback
 import io.sentry.android.replay.util.MainLooperHandler
+import io.sentry.android.replay.util.ReplayExecutorService
 import io.sentry.android.replay.util.appContext
-import io.sentry.android.replay.util.gracefullyShutdown
 import io.sentry.android.replay.util.sample
 import io.sentry.android.replay.util.submitSafely
 import io.sentry.cache.PersistingScopeObserver.BREADCRUMBS_FILENAME
@@ -103,7 +103,8 @@ public class ReplayIntegration(
   private val random by lazy { Random() }
   internal val rootViewsSpy by lazy { RootViewsSpy.install() }
   private val replayExecutor by lazy {
-    Executors.newSingleThreadScheduledExecutor(ReplayExecutorServiceThreadFactory())
+    val delegate = Executors.newSingleThreadScheduledExecutor(ReplayExecutorServiceThreadFactory())
+    ReplayExecutorService(delegate, options)
   }
 
   internal val isEnabled = AtomicBoolean(false)
@@ -328,7 +329,7 @@ public class ReplayIntegration(
       recorder?.close()
       recorder = null
       rootViewsSpy.close()
-      replayExecutor.gracefullyShutdown(options)
+      replayExecutor.shutdown()
       lifecycle.currentState = CLOSED
     }
   }
