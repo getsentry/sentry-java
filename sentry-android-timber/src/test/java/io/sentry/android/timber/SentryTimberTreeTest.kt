@@ -140,6 +140,15 @@ class SentryTimberTreeTest {
   }
 
   @Test
+  fun `Tree captures an event with TimberTag tag for debug events`() {
+    val sut = fixture.getSut(minEventLevel = SentryLevel.INFO)
+    Timber.plant(sut)
+    // only available thru static class
+    Timber.tag("infoTag").i("message")
+    verify(fixture.scopes).captureEvent(check { assertEquals("infoTag", it.getTag("TimberTag")) })
+  }
+
+  @Test
   fun `Tree captures an event without TimberTag tag`() {
     val sut = fixture.getSut()
     Timber.plant(sut)
