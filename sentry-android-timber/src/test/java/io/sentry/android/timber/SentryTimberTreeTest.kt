@@ -334,8 +334,28 @@ class SentryTimberTreeTest {
     verify(fixture.logs)
       .log(
         eq(SentryLogLevel.ERROR),
-        check<SentryLogParameters> { assertEquals("auto.log.timber", it.origin) },
+        check<SentryLogParameters> {
+          assertEquals("auto.log.timber", it.origin)
+          assertEquals(null, it.attributes?.attributes?.get("timber.tag"))
+        },
         eq("My message\nthrowable message"),
+      )
+  }
+
+  @Test
+  fun `Tree logs timber tag`() {
+    val sut = fixture.getSut()
+    Timber.plant(sut)
+    Timber.tag("timberTag").i("message")
+
+    verify(fixture.logs)
+      .log(
+        eq(SentryLogLevel.INFO),
+        check<SentryLogParameters> {
+          assertEquals("auto.log.timber", it.origin)
+          assertEquals("timberTag", it.attributes?.attributes?.get("timber.tag")?.value)
+        },
+        eq("message"),
       )
   }
 }
