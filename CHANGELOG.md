@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixes
+
+- Fix wrong .super() call in SentryTimberTree ([#4844](https://github.com/getsentry/sentry-java/pull/4844))
+
 ### Dependencies
 
 - Bump Native SDK from v0.11.2 to v0.11.3 ([#4810](https://github.com/getsentry/sentry-java/pull/4810))
