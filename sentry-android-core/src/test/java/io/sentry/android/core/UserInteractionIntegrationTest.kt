@@ -9,7 +9,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.Scopes
 import io.sentry.android.core.internal.gestures.NoOpWindowCallback
 import io.sentry.android.core.internal.gestures.SentryWindowCallback
-import io.sentry.util.LazyEvaluator
 import junit.framework.TestCase.assertNull
 import kotlin.test.BeforeTest
 import kotlin.test.Test
