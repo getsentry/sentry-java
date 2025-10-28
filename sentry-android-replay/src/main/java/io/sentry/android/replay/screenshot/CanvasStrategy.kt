@@ -52,6 +52,7 @@ internal class CanvasStrategy(
 
   @Volatile private var screenshot: Bitmap? = null
 
+  // Lock to synchronize screenshot creation
   private val screenshotLock = AutoClosableReentrantLock()
   private val prescaledMatrix by
     lazy(NONE) { Matrix().apply { preScale(config.scaleFactorX, config.scaleFactorY) } }
@@ -71,19 +72,24 @@ internal class CanvasStrategy(
           if (image.planes.size > 0) {
             val plane = image.planes[0]
 
-            screenshotLock.acquire().use {
-              if (screenshot == null) {
-                screenshot =
-                  Bitmap.createBitmap(holder.width, holder.height, Bitmap.Config.ARGB_8888)
+            if (screenshot == null) {
+              screenshotLock.acquire().use {
+                if (screenshot == null) {
+                  screenshot =
+                    Bitmap.createBitmap(holder.width, holder.height, Bitmap.Config.ARGB_8888)
+                }
               }
-              val bitmap = screenshot
-              if (bitmap == null || bitmap.isRecycled) {
-                return@use
-              }
+            }
 
+            val bitmap = screenshot
+            if (bitmap != null) {
               val buffer = plane.buffer.rewind()
-              bitmap.copyPixelsFromBuffer(buffer)
-              lastCaptureSuccessful.set(true)
+              synchronized(bitmap) {
+                if (!bitmap.isRecycled) {
+                  bitmap.copyPixelsFromBuffer(buffer)
+                  lastCaptureSuccessful.set(true)
+                }
+              }
               screenshotRecorderCallback?.onScreenshotRecorded(bitmap)
             }
           }
@@ -183,14 +189,23 @@ internal class CanvasStrategy(
 
   override fun close() {
     isClosed.set(true)
-    screenshotLock.acquire().use {
-      screenshot?.apply {
-        if (!isRecycled) {
-          recycle()
-        }
-      }
-      screenshot = null
-    }
+    executor
+      .getExecutor()
+      .submit(
+        ReplayRunnable(
+          "CanvasStrategy.close",
+          {
+            screenshot?.let {
+              synchronized(it) {
+                if (!it.isRecycled) {
+                  it.recycle()
+                }
+              }
+            }
+          },
+        )
+      )
+
     // the image can be free, unprocessed or in transit
     freePictureRef.getAndSet(null)?.reader?.close()
     unprocessedPictureRef.getAndSet(null)?.reader?.close()

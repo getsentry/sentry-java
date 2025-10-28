@@ -185,12 +185,25 @@ internal class PixelCopyStrategy(
 
   override fun close() {
     isClosed.set(true)
-    if (!screenshot.isRecycled) {
-      screenshot.recycle()
-    }
-    if (!singlePixelBitmap.isRecycled) {
-      singlePixelBitmap.recycle()
-    }
+    executor.submit(
+      ReplayRunnable(
+        "PixelCopyStrategy.close",
+        {
+          if (!screenshot.isRecycled) {
+            synchronized(screenshot) {
+              if (!screenshot.isRecycled) {
+                screenshot.recycle()
+              }
+            }
+          }
+          // since singlePixelBitmap is only used in tasks within the single threaded executor
+          // there won't be any concurrent access
+          if (!singlePixelBitmap.isRecycled) {
+            singlePixelBitmap.recycle()
+          }
+        },
+      )
+    )
   }
 
   private fun Bitmap.dominantColorForRect(rect: Rect): Int {
