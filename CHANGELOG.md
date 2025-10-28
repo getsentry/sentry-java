@@ -9,6 +9,7 @@
 ### Improvements
 
 - [ANR] Defer some class availability checks ([#4825](https://github.com/getsentry/sentry-java/pull/4825))
+- Report Timber.tag() as `timber.tag` log attribute ([#4845](https://github.com/getsentry/sentry-java/pull/4845))
 
 ### Dependencies
 
