@@ -127,6 +127,7 @@ class NdkIntegrationTest {
     assertFalse(options.isEnableScopeSync)
   }
 
+
   @Test
   fun `NdkIntegration won't init if cache dir is null`() {
     val integration = fixture.getSut()
@@ -179,4 +180,5 @@ class NdkIntegrationTest {
       @JvmStatic fun init(options: SentryAndroidOptions) {}
     }
   }
+
 }

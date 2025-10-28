@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixes
+
+- Handle native NDK init failure by checking return code and throwing an IllegalStateException to disable NDK integration early. This prevents the SDK from assuming a successful NDK initialization when the underlying native init failed.
+
 ### Dependencies
 
 - Bump Native SDK from v0.11.2 to v0.11.3 ([#4810](https://github.com/getsentry/sentry-java/pull/4810))
