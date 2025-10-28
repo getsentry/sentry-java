@@ -44,19 +44,19 @@ class UserInteractionIntegrationTest {
       isLifecycleAvailable: Boolean = true,
     ): UserInteractionIntegration {
       whenever(
-          loadClass.isClassAvailableLazy(
+          loadClass.isClassAvailable(
             eq("androidx.core.view.GestureDetectorCompat"),
             anyOrNull<SentryAndroidOptions>(),
           )
         )
-        .thenReturn(LazyEvaluator { isAndroidXAvailable })
+        .thenReturn(isAndroidXAvailable)
       whenever(
-          loadClass.isClassAvailableLazy(
+          loadClass.isClassAvailable(
             eq("androidx.lifecycle.Lifecycle"),
             anyOrNull<SentryAndroidOptions>(),
           )
         )
-        .thenReturn(LazyEvaluator { isLifecycleAvailable })
+        .thenReturn(isLifecycleAvailable)
       whenever(scopes.options).thenReturn(options)
       if (callback != null) {
         window.callback = callback
