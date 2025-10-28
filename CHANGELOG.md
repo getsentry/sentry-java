@@ -4,7 +4,12 @@
 
 ### Fixes
 
+- [ANR] Removed AndroidTransactionProfiler lock ([#4817](https://github.com/getsentry/sentry-java/pull/4817))
 - Fix wrong .super() call in SentryTimberTree ([#4844](https://github.com/getsentry/sentry-java/pull/4844))
+
+### Improvements
+
+- [ANR] Defer some class availability checks ([#4825](https://github.com/getsentry/sentry-java/pull/4825))
 
 ### Dependencies
 
