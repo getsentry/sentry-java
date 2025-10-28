@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -20,8 +20,7 @@ public final class DefaultCompositePerformanceCollector implements CompositePerf
   private static final long TRANSACTION_COLLECTION_TIMEOUT_MILLIS = 30000;
   private final @NotNull AutoClosableReentrantLock timerLock = new AutoClosableReentrantLock();
   private volatile @Nullable Timer timer = null;
-  private final @NotNull Map<String, List<PerformanceCollectionData>> performanceDataMap =
-      new ConcurrentHashMap<>();
+  private final @NotNull Map<String, CompositeData> compositeDataMap = new ConcurrentHashMap<>();
   private final @NotNull List<IPerformanceSnapshotCollector> snapshotCollectors;
   private final @NotNull List<IPerformanceContinuousCollector> continuousCollectors;
   private final boolean hasNoCollectors;
@@ -65,23 +64,11 @@ public final class DefaultCompositePerformanceCollector implements CompositePerf
       collector.onSpanStarted(transaction);
     }
 
-    if (!performanceDataMap.containsKey(transaction.getEventId().toString())) {
-      performanceDataMap.put(transaction.getEventId().toString(), new ArrayList<>());
-      // We schedule deletion of collected performance data after a timeout
-      try {
-        options
-            .getExecutorService()
-            .schedule(() -> stop(transaction), TRANSACTION_COLLECTION_TIMEOUT_MILLIS);
-      } catch (RejectedExecutionException e) {
-        options
-            .getLogger()
-            .log(
-                SentryLevel.ERROR,
-                "Failed to call the executor. Performance collector will not be automatically finished. Did you call Sentry.close()?",
-                e);
-      }
+    final @NotNull String id = transaction.getEventId().toString();
+    if (!compositeDataMap.containsKey(id)) {
+      compositeDataMap.put(id, new CompositeData(id, true));
     }
-    start(transaction.getEventId().toString());
+    start(id);
   }
 
   @Override
@@ -95,8 +82,10 @@ public final class DefaultCompositePerformanceCollector implements CompositePerf
       return;
     }
 
-    if (!performanceDataMap.containsKey(id)) {
-      performanceDataMap.put(id, new ArrayList<>());
+    if (!compositeDataMap.containsKey(id)) {
+      // Transactions are added in start(ITransaction). If we are here, it means we don't come from
+      // a transaction
+      compositeDataMap.put(id, new CompositeData(id, false));
     }
     if (!isStarted.getAndSet(true)) {
       try (final @NotNull ISentryLifecycleToken ignored = timerLock.acquire()) {
@@ -131,14 +120,17 @@ public final class DefaultCompositePerformanceCollector implements CompositePerf
                 }
                 lastCollectionTimestamp = now;
                 final @NotNull PerformanceCollectionData tempData =
-                    new PerformanceCollectionData(new SentryNanotimeDate().nanoTimestamp());
+                    new PerformanceCollectionData(options.getDateProvider().now().nanoTimestamp());
 
                 for (IPerformanceSnapshotCollector collector : snapshotCollectors) {
                   collector.collect(tempData);
                 }
 
-                for (List<PerformanceCollectionData> data : performanceDataMap.values()) {
-                  data.add(tempData);
+                for (CompositeData data : compositeDataMap.values()) {
+                  if (data.addDataAndCheckTimeout(tempData)) {
+                    // timed out
+                    stop(data.id);
+                  }
                 }
               }
             };
@@ -183,13 +175,14 @@ public final class DefaultCompositePerformanceCollector implements CompositePerf
 
   @Override
   public @Nullable List<PerformanceCollectionData> stop(final @NotNull String id) {
-    final @Nullable List<PerformanceCollectionData> data = performanceDataMap.remove(id);
+    final @Nullable CompositeData data = compositeDataMap.remove(id);
+    options.getLogger().log(SentryLevel.DEBUG, "stop collecting performance info for " + id);
 
-    // close if they are no more running requests
-    if (performanceDataMap.isEmpty()) {
+    // close if there are no more running requests
+    if (compositeDataMap.isEmpty()) {
       close();
     }
-    return data;
+    return data != null ? data.dataList : null;
   }
 
   @Override
@@ -198,7 +191,7 @@ public final class DefaultCompositePerformanceCollector implements CompositePerf
         .getLogger()
         .log(SentryLevel.DEBUG, "stop collecting all performance info for transactions");
 
-    performanceDataMap.clear();
+    compositeDataMap.clear();
     for (final @NotNull IPerformanceContinuousCollector collector : continuousCollectors) {
       collector.clear();
     }
@@ -209,6 +202,34 @@ public final class DefaultCompositePerformanceCollector implements CompositePerf
           timer = null;
         }
       }
+    }
+  }
+
+  private class CompositeData {
+    private final @NotNull List<PerformanceCollectionData> dataList;
+    private final @NotNull String id;
+    private final boolean isTransaction;
+    private final long startTimestamp;
+
+    private CompositeData(final @NotNull String id, final boolean isTransaction) {
+      this.dataList = new ArrayList<>();
+      this.id = id;
+      this.isTransaction = isTransaction;
+      this.startTimestamp = options.getDateProvider().now().nanoTimestamp();
+    }
+
+    /**
+     * Adds the data to the internal list of PerformanceCollectionData. Then it checks if data
+     * collection timed out (for transactions only).
+     *
+     * @return true if data collection timed out (for transactions only).
+     */
+    boolean addDataAndCheckTimeout(final @NotNull PerformanceCollectionData data) {
+      dataList.add(data);
+      return isTransaction
+          && options.getDateProvider().now().nanoTimestamp()
+              > startTimestamp
+                  + TimeUnit.MILLISECONDS.toNanos(TRANSACTION_COLLECTION_TIMEOUT_MILLIS);
     }
   }
 }

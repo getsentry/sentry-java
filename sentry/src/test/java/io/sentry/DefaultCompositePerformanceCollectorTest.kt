@@ -1,12 +1,12 @@
 package io.sentry
 
-import io.sentry.test.DeferredExecutorService
 import io.sentry.test.getCtor
 import io.sentry.test.getProperty
 import io.sentry.test.injectForField
 import io.sentry.util.thread.ThreadChecker
+import java.util.Date
 import java.util.Timer
-import java.util.concurrent.RejectedExecutionException
+import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -36,7 +36,6 @@ class DefaultCompositePerformanceCollectorTest {
     val scopes: IScopes = mock()
     val options = SentryOptions()
     var mockTimer: Timer? = null
-    val deferredExecutorService = DeferredExecutorService()
 
     val mockCpuCollector: IPerformanceSnapshotCollector =
       object : IPerformanceSnapshotCollector {
@@ -54,16 +53,17 @@ class DefaultCompositePerformanceCollectorTest {
     fun getSut(
       memoryCollector: IPerformanceSnapshotCollector? = JavaMemoryCollector(),
       cpuCollector: IPerformanceSnapshotCollector? = mockCpuCollector,
-      executorService: ISentryExecutorService = deferredExecutorService,
+      optionsConfiguration: Sentry.OptionsConfiguration<SentryOptions> =
+        Sentry.OptionsConfiguration {},
     ): CompositePerformanceCollector {
       options.dsn = "https://key@sentry.io/proj"
-      options.executorService = executorService
       if (cpuCollector != null) {
         options.addPerformanceCollector(cpuCollector)
       }
       if (memoryCollector != null) {
         options.addPerformanceCollector(memoryCollector)
       }
+      optionsConfiguration.configure(options)
       transaction1 = SentryTracer(TransactionContext("", ""), scopes)
       transaction2 = SentryTracer(TransactionContext("", ""), scopes)
       val collector = DefaultCompositePerformanceCollector(options)
@@ -184,19 +184,64 @@ class DefaultCompositePerformanceCollectorTest {
 
   @Test
   fun `collector times out after 30 seconds`() {
-    val collector = fixture.getSut()
+    val mockDateProvider = mock<SentryDateProvider>()
+    val dates =
+      listOf(
+        SentryNanotimeDate(
+          Date().apply { time = TimeUnit.SECONDS.toMillis(100) },
+          TimeUnit.SECONDS.toNanos(100),
+        ),
+        SentryNanotimeDate(
+          Date().apply { time = TimeUnit.SECONDS.toMillis(131) },
+          TimeUnit.SECONDS.toNanos(131),
+        ),
+      )
+    whenever(mockDateProvider.now()).thenReturn(dates[0], dates[0], dates[0], dates[1])
+    val collector = fixture.getSut { it.dateProvider = mockDateProvider }
     collector.start(fixture.transaction1)
-    // Let's sleep to make the collector get values
-    Thread.sleep(300)
     verify(fixture.mockTimer, never())!!.cancel()
 
-    // Let the timeout job stop the collector
-    fixture.deferredExecutorService.runAll()
+    // Let's sleep to make the collector get values
+    Thread.sleep(300)
+
+    // When the collector gets the values, it checks the current date, set 31 seconds after the
+    // begin. This means it should stop itself
     verify(fixture.mockTimer)!!.cancel()
 
     // Data is deleted after the collector times out
     val data1 = collector.stop(fixture.transaction1)
     assertNull(data1)
+  }
+
+  @Test
+  fun `collector collects for 30 seconds`() {
+    val mockDateProvider = mock<SentryDateProvider>()
+    val dates =
+      listOf(
+        SentryNanotimeDate(
+          Date().apply { time = TimeUnit.SECONDS.toMillis(100) },
+          TimeUnit.SECONDS.toNanos(100),
+        ),
+        SentryNanotimeDate(
+          Date().apply { time = TimeUnit.SECONDS.toMillis(130) },
+          TimeUnit.SECONDS.toNanos(130),
+        ),
+      )
+    whenever(mockDateProvider.now()).thenReturn(dates[0], dates[0], dates[0], dates[1])
+    val collector = fixture.getSut { it.dateProvider = mockDateProvider }
+    collector.start(fixture.transaction1)
+    verify(fixture.mockTimer, never())!!.cancel()
+
+    // Let's sleep to make the collector get values
+    Thread.sleep(300)
+
+    // When the collector gets the values, it checks the current date, set 30 seconds after the
+    // begin. This means it should continue without being cancelled
+    verify(fixture.mockTimer, never())!!.cancel()
+
+    // Data is deleted after the collector times out
+    val data1 = collector.stop(fixture.transaction1)
+    assertNotNull(data1)
   }
 
   @Test
@@ -268,25 +313,6 @@ class DefaultCompositePerformanceCollectorTest {
 
     // Data was cleared
     assertNull(collector.stop(fixture.transaction1))
-  }
-
-  @Test
-  fun `start does not throw on executor shut down`() {
-    val executorService = mock<ISentryExecutorService>()
-    whenever(executorService.schedule(any(), any())).thenThrow(RejectedExecutionException())
-    val logger = mock<ILogger>()
-    fixture.options.setLogger(logger)
-    fixture.options.isDebug = true
-    val sut = fixture.getSut(executorService = executorService)
-    sut.start(fixture.transaction1)
-    verify(logger)
-      .log(
-        eq(SentryLevel.ERROR),
-        eq(
-          "Failed to call the executor. Performance collector will not be automatically finished. Did you call Sentry.close()?"
-        ),
-        any(),
-      )
   }
 
   @Test
