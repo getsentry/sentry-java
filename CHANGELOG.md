@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixes
+
+- Avoid ExecutorService for DefaultCompositePerformanceCollector timeout ([#4841](https://github.com/getsentry/sentry-java/pull/4841))
+
 ### Dependencies
 
 - Bump Native SDK from v0.11.2 to v0.11.3 ([#4810](https://github.com/getsentry/sentry-java/pull/4810))
