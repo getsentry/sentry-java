@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixes
+
+- [ANR] Removed AndroidTransactionProfiler lock ([#4817](https://github.com/getsentry/sentry-java/pull/4817))
+
 ### Dependencies
 
 - Bump Native SDK from v0.11.2 to v0.11.3 ([#4810](https://github.com/getsentry/sentry-java/pull/4810))
@@ -40,7 +44,6 @@
 
 ### Fixes
 
-- [ANR] Removed AndroidTransactionProfiler lock ([#4817](https://github.com/getsentry/sentry-java/pull/4817))
 - Avoid StrictMode warnings ([#4724](https://github.com/getsentry/sentry-java/pull/4724))
 - Use logger from options for JVM profiler ([#4771](https://github.com/getsentry/sentry-java/pull/4771))
 - Session Replay: Avoid deadlock when pausing replay if no connection ([#4788](https://github.com/getsentry/sentry-java/pull/4788))

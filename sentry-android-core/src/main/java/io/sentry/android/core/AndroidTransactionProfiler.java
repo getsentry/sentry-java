@@ -39,7 +39,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
   private boolean isInitialized = false;
   private final @NotNull AtomicBoolean isRunning = new AtomicBoolean(false);
   private final @NotNull SentryFrameMetricsCollector frameMetricsCollector;
-  private @Nullable ProfilingTransactionData currentProfilingTransactionData;
+  private volatile @Nullable ProfilingTransactionData currentProfilingTransactionData;
 
   /**
    * The underlying profiler instance. It is thread safe to call it after checking if it's not null,
