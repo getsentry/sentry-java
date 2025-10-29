@@ -198,10 +198,11 @@ class DefaultCompositePerformanceCollectorTest {
         ),
       )
     whenever(mockDateProvider.now()).thenReturn(dates[0], dates[0], dates[0], dates[1])
-    val collector = fixture.getSut {
-      it.dateProvider = mockDateProvider
-      it.addPerformanceCollector(mockCollector)
-    }
+    val collector =
+      fixture.getSut {
+        it.dateProvider = mockDateProvider
+        it.addPerformanceCollector(mockCollector)
+      }
     collector.start(fixture.transaction1)
     verify(fixture.mockTimer, never())!!.cancel()
 
