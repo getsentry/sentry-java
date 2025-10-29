@@ -225,6 +225,7 @@ class SentryExecutorServiceTest {
       future.cancel(true)
     }
     assertEquals(1000, executor.queue.size)
+    // Submit should purge cancelled scheduled jobs
     sentryExecutor.submit {}
     assertEquals(1, executor.queue.size)
   }
