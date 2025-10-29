@@ -13,6 +13,7 @@
 
 - [ANR] Defer some class availability checks ([#4825](https://github.com/getsentry/sentry-java/pull/4825))
 - Collect PerformanceCollectionData only in sampled transactions ([#4834](https://github.com/getsentry/sentry-java/pull/4834))
+  - **Breaking change**: The sampling decision of a transaction is now checked only when it starts, to decide whether to start Performance data collection (CPU, RAM, slow/frozen frames). If the sampling decision is changed at a later point, collection data will not be started or stopped accordingly.
 
 ### Dependencies
 
