@@ -70,8 +70,8 @@ public final class SentryExecutorService implements ISentryExecutorService {
     }
     if (options != null) {
       options
-        .getLogger()
-        .log(SentryLevel.WARNING, "Task " + runnable + " rejected from " + executorService);
+          .getLogger()
+          .log(SentryLevel.WARNING, "Task " + runnable + " rejected from " + executorService);
     }
     return new CancelledFuture<>();
   }
@@ -84,8 +84,8 @@ public final class SentryExecutorService implements ISentryExecutorService {
     }
     if (options != null) {
       options
-        .getLogger()
-        .log(SentryLevel.WARNING, "Task " + callable + " rejected from " + executorService);
+          .getLogger()
+          .log(SentryLevel.WARNING, "Task " + callable + " rejected from " + executorService);
     }
     return new CancelledFuture<>();
   }
@@ -159,6 +159,7 @@ public final class SentryExecutorService implements ISentryExecutorService {
       return ret;
     }
   }
+
   private static final class CancelledFuture<T> implements Future<T> {
     @Override
     public boolean cancel(final boolean mayInterruptIfRunning) {
