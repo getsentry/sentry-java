@@ -94,7 +94,7 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: test-results-AGP${{ matrix.agp }}-Integrations${{ matrix.integrations }}
           path: |

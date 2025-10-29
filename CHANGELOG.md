@@ -2,9 +2,23 @@
 
 ## Unreleased
 
-### Miscellaneous
+### Fixes
 
+- [ANR] Removed AndroidTransactionProfiler lock ([#4817](https://github.com/getsentry/sentry-java/pull/4817))
+- Avoid ExecutorService for DefaultCompositePerformanceCollector timeout ([#4841](https://github.com/getsentry/sentry-java/pull/4841))
+  - This avoids infinite data collection for never stopped transactions, leading to OOMs
+- Fix wrong .super() call in SentryTimberTree ([#4844](https://github.com/getsentry/sentry-java/pull/4844))
+
+### Improvements
+
+- [ANR] Defer some class availability checks ([#4825](https://github.com/getsentry/sentry-java/pull/4825))
 - Collect PerformanceCollectionData only in sampled transactions ([#4834](https://github.com/getsentry/sentry-java/pull/4834))
+
+### Dependencies
+
+- Bump Native SDK from v0.11.2 to v0.11.3 ([#4810](https://github.com/getsentry/sentry-java/pull/4810))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0113)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.11.2...0.11.3)
 
 ## 8.24.0
 
