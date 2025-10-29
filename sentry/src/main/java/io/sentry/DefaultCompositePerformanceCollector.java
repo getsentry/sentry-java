@@ -107,6 +107,7 @@ public final class DefaultCompositePerformanceCollector implements CompositePerf
         // and collect() calls.
         // This way ICollectors that collect average stats based on time intervals, like
         // AndroidCpuCollector, can have an actual time interval to evaluate.
+        final @NotNull List<ITransaction> timedOutTransactions = new ArrayList<>();
         TimerTask timerTask =
             new TimerTask() {
               @Override
@@ -118,21 +119,31 @@ public final class DefaultCompositePerformanceCollector implements CompositePerf
                 if (now - lastCollectionTimestamp <= 10) {
                   return;
                 }
+                timedOutTransactions.clear();
+
                 lastCollectionTimestamp = now;
                 final @NotNull PerformanceCollectionData tempData =
                     new PerformanceCollectionData(options.getDateProvider().now().nanoTimestamp());
 
+                // Enrich tempData using collectors
                 for (IPerformanceSnapshotCollector collector : snapshotCollectors) {
                   collector.collect(tempData);
                 }
 
+                // Add the enriched tempData to all transactions/profiles/objects that collect data.
+                // Then Check if that object timed out.
                 for (CompositeData data : compositeDataMap.values()) {
                   if (data.addDataAndCheckTimeout(tempData)) {
                     // timed out
                     if (data.transaction != null) {
-                      stop(data.transaction);
+                      timedOutTransactions.add(data.transaction);
                     }
                   }
+                }
+                // Stop timed out transactions outside compositeDataMap loop, as stop() modifies the
+                // map
+                for (final @NotNull ITransaction t : timedOutTransactions) {
+                  stop(t);
                 }
               }
             };
