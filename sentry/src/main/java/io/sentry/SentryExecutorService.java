@@ -2,7 +2,6 @@ package io.sentry;
 
 import io.sentry.util.AutoClosableReentrantLock;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -22,12 +21,6 @@ public final class SentryExecutorService implements ISentryExecutorService {
    * This will prevent from growing in unexpected areas of the SDK.
    */
   private static final int INITIAL_QUEUE_SIZE = 40;
-
-  /**
-   * By default, the work queue is unbounded so it can grow as much as the memory allows. We want to
-   * limit it by 271 which would be x8 times growth from the default initial capacity.
-   */
-  private static final int MAX_QUEUE_SIZE = 271;
 
   private final @NotNull ScheduledThreadPoolExecutor executorService;
   private final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
@@ -56,43 +49,19 @@ public final class SentryExecutorService implements ISentryExecutorService {
   @Override
   public @NotNull Future<?> submit(final @NotNull Runnable runnable)
       throws RejectedExecutionException {
-    if (executorService.getQueue().size() < MAX_QUEUE_SIZE) {
-      return executorService.submit(runnable);
-    }
-    if (options != null) {
-      options
-          .getLogger()
-          .log(SentryLevel.WARNING, "Task " + runnable + " rejected from " + executorService);
-    }
-    return new CancelledFuture<>();
+    return executorService.submit(runnable);
   }
 
   @Override
   public @NotNull <T> Future<T> submit(final @NotNull Callable<T> callable)
       throws RejectedExecutionException {
-    if (executorService.getQueue().size() < MAX_QUEUE_SIZE) {
-      return executorService.submit(callable);
-    }
-    if (options != null) {
-      options
-          .getLogger()
-          .log(SentryLevel.WARNING, "Task " + callable + " rejected from " + executorService);
-    }
-    return new CancelledFuture<>();
+    return executorService.submit(callable);
   }
 
   @Override
   public @NotNull Future<?> schedule(final @NotNull Runnable runnable, final long delayMillis)
       throws RejectedExecutionException {
-    if (executorService.getQueue().size() < MAX_QUEUE_SIZE) {
-      return executorService.schedule(runnable, delayMillis, TimeUnit.MILLISECONDS);
-    }
-    if (options != null) {
-      options
-          .getLogger()
-          .log(SentryLevel.WARNING, "Task " + runnable + " rejected from " + executorService);
-    }
-    return new CancelledFuture<>();
+    return executorService.schedule(runnable, delayMillis, TimeUnit.MILLISECONDS);
   }
 
   @Override
@@ -156,33 +125,6 @@ public final class SentryExecutorService implements ISentryExecutorService {
       final Thread ret = new Thread(r, "SentryExecutorServiceThreadFactory-" + cnt++);
       ret.setDaemon(true);
       return ret;
-    }
-  }
-
-  private static final class CancelledFuture<T> implements Future<T> {
-    @Override
-    public boolean cancel(final boolean mayInterruptIfRunning) {
-      return true;
-    }
-
-    @Override
-    public boolean isCancelled() {
-      return true;
-    }
-
-    @Override
-    public boolean isDone() {
-      return true;
-    }
-
-    @Override
-    public T get() {
-      throw new CancellationException();
-    }
-
-    @Override
-    public T get(final long timeout, final @NotNull TimeUnit unit) {
-      throw new CancellationException();
     }
   }
 }
