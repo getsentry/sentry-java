@@ -225,7 +225,7 @@ class SentryExecutorServiceTest {
       future.cancel(true)
     }
     assertEquals(1000, executor.queue.size)
-    sentryExecutor.submit {  }
+    sentryExecutor.submit {}
     assertEquals(1, executor.queue.size)
   }
 }
