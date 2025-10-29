@@ -77,7 +77,9 @@ public final class SentryTracer implements ITransaction {
     this.name = context.getName();
     this.instrumenter = context.getInstrumenter();
     this.scopes = scopes;
-    this.compositePerformanceCollector = compositePerformanceCollector;
+    // Let's collect performance data (cpu, ram, frames) only when the transaction is sampled
+    this.compositePerformanceCollector =
+        Boolean.TRUE.equals(isSampled()) ? compositePerformanceCollector : null;
     this.transactionNameSource = context.getTransactionNameSource();
     this.transactionOptions = transactionOptions;
 
@@ -91,8 +93,8 @@ public final class SentryTracer implements ITransaction {
 
     // We are currently sending the performance data only in profiles, but we are always sending
     // performance measurements (frames data in spans).
-    if (compositePerformanceCollector != null && Boolean.TRUE.equals(isSampled())) {
-      compositePerformanceCollector.start(this);
+    if (this.compositePerformanceCollector != null) {
+      this.compositePerformanceCollector.start(this);
     }
 
     if (transactionOptions.getIdleTimeout() != null
