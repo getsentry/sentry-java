@@ -12,8 +12,8 @@
 ### Improvements
 
 - [ANR] Defer some class availability checks ([#4825](https://github.com/getsentry/sentry-java/pull/4825))
-- Collect PerformanceCollectionData only in sampled transactions ([#4834](https://github.com/getsentry/sentry-java/pull/4834))
-  - **Breaking change**: The sampling decision of a transaction is now checked only when it starts, to decide whether to start Performance data collection (CPU, RAM, slow/frozen frames). If the sampling decision is changed at a later point, collection data will not be started or stopped accordingly.
+- Collect PerformanceCollectionData only for sampled transactions ([#4834](https://github.com/getsentry/sentry-java/pull/4834))
+  - **Breaking change**: Transactions with a deferred sampling decision (`sampled == null`) won't be collecting any performance data anymore (CPU, RAM, slow/frozen frames).
 
 ### Dependencies
 
