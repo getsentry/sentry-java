@@ -10,6 +10,7 @@
 ### Improvements
 
 - [ANR] Defer some class availability checks ([#4825](https://github.com/getsentry/sentry-java/pull/4825))
+- Fallback to distinct-id as user.id logging attribute when user is not set ([#4847](https://github.com/getsentry/sentry-java/pull/4847))
 
 ### Dependencies
 
