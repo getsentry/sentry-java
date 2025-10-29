@@ -1,12 +1,16 @@
 package io.sentry
 
 import io.sentry.test.getProperty
+import java.util.concurrent.BlockingQueue
+import java.util.concurrent.Callable
+import java.util.concurrent.CancellationException
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.ScheduledThreadPoolExecutor
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import org.awaitility.kotlin.await
@@ -14,13 +18,8 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
-import org.mockito.kotlin.spy
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import java.util.concurrent.BlockingQueue
-import java.util.concurrent.Callable
-import java.util.concurrent.CancellationException
-import kotlin.test.assertFailsWith
 
 class SentryExecutorServiceTest {
   @Test
@@ -110,6 +109,7 @@ class SentryExecutorServiceTest {
     whenever(executor.isShutdown).thenReturn(false)
     assertFalse(sentryExecutor.isClosed)
   }
+
   @Test
   fun `SentryExecutorService submit runnable returns cancelled future when queue size exceeds limit`() {
     val queue = mock<BlockingQueue<Runnable>>()
