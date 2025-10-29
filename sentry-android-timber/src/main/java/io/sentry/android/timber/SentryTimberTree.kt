@@ -66,7 +66,7 @@ public class SentryTimberTree(
 
   /** Log an info message with optional format args. */
   override fun i(message: String?, vararg args: Any?) {
-    super.d(message, *args)
+    super.i(message, *args)
     logWithSentry(Log.INFO, null, message, *args)
   }
 
