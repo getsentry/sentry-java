@@ -185,6 +185,7 @@ class DefaultCompositePerformanceCollectorTest {
   @Test
   fun `collector times out after 30 seconds`() {
     val mockDateProvider = mock<SentryDateProvider>()
+    val mockCollector = mock<IPerformanceContinuousCollector>()
     val dates =
       listOf(
         SentryNanotimeDate(
@@ -197,7 +198,10 @@ class DefaultCompositePerformanceCollectorTest {
         ),
       )
     whenever(mockDateProvider.now()).thenReturn(dates[0], dates[0], dates[0], dates[1])
-    val collector = fixture.getSut { it.dateProvider = mockDateProvider }
+    val collector = fixture.getSut {
+      it.dateProvider = mockDateProvider
+      it.addPerformanceCollector(mockCollector)
+    }
     collector.start(fixture.transaction1)
     verify(fixture.mockTimer, never())!!.cancel()
 
@@ -207,6 +211,9 @@ class DefaultCompositePerformanceCollectorTest {
     // When the collector gets the values, it checks the current date, set 31 seconds after the
     // begin. This means it should stop itself
     verify(fixture.mockTimer)!!.cancel()
+
+    // When the collector times out, the data collection for spans is stopped, too
+    verify(mockCollector).onSpanFinished(eq(fixture.transaction1))
 
     // Data is deleted after the collector times out
     val data1 = collector.stop(fixture.transaction1)

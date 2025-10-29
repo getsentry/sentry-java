@@ -66,7 +66,7 @@ public final class DefaultCompositePerformanceCollector implements CompositePerf
 
     final @NotNull String id = transaction.getEventId().toString();
     if (!compositeDataMap.containsKey(id)) {
-      compositeDataMap.put(id, new CompositeData(id, true));
+      compositeDataMap.put(id, new CompositeData(transaction));
     }
     start(id);
   }
@@ -85,7 +85,7 @@ public final class DefaultCompositePerformanceCollector implements CompositePerf
     if (!compositeDataMap.containsKey(id)) {
       // Transactions are added in start(ITransaction). If we are here, it means we don't come from
       // a transaction
-      compositeDataMap.put(id, new CompositeData(id, false));
+      compositeDataMap.put(id, new CompositeData(null));
     }
     if (!isStarted.getAndSet(true)) {
       try (final @NotNull ISentryLifecycleToken ignored = timerLock.acquire()) {
@@ -129,7 +129,9 @@ public final class DefaultCompositePerformanceCollector implements CompositePerf
                 for (CompositeData data : compositeDataMap.values()) {
                   if (data.addDataAndCheckTimeout(tempData)) {
                     // timed out
-                    stop(data.id);
+                    if (data.transaction != null) {
+                      stop(data.transaction);
+                    }
                   }
                 }
               }
@@ -207,14 +209,12 @@ public final class DefaultCompositePerformanceCollector implements CompositePerf
 
   private class CompositeData {
     private final @NotNull List<PerformanceCollectionData> dataList;
-    private final @NotNull String id;
-    private final boolean isTransaction;
+    private final @Nullable ITransaction transaction;
     private final long startTimestamp;
 
-    private CompositeData(final @NotNull String id, final boolean isTransaction) {
+    private CompositeData(final @Nullable ITransaction transaction) {
       this.dataList = new ArrayList<>();
-      this.id = id;
-      this.isTransaction = isTransaction;
+      this.transaction = transaction;
       this.startTimestamp = options.getDateProvider().now().nanoTimestamp();
     }
 
@@ -226,7 +226,7 @@ public final class DefaultCompositePerformanceCollector implements CompositePerf
      */
     boolean addDataAndCheckTimeout(final @NotNull PerformanceCollectionData data) {
       dataList.add(data);
-      return isTransaction
+      return transaction != null
           && options.getDateProvider().now().nanoTimestamp()
               > startTimestamp
                   + TimeUnit.MILLISECONDS.toNanos(TRANSACTION_COLLECTION_TIMEOUT_MILLIS);
