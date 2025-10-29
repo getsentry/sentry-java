@@ -3,6 +3,7 @@ package io.sentry
 import io.sentry.test.getProperty
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.ScheduledThreadPoolExecutor
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -15,7 +16,6 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import java.util.concurrent.TimeUnit
 
 class SentryExecutorServiceTest {
   @Test
@@ -126,9 +126,7 @@ class SentryExecutorServiceTest {
     val sentryExecutor = SentryExecutorService()
     var called = false
     // Post 1k jobs after 1 day, to test new jobs are accepted
-    repeat(1000) {
-      sentryExecutor.schedule({}, TimeUnit.DAYS.toMillis(1))
-    }
+    repeat(1000) { sentryExecutor.schedule({}, TimeUnit.DAYS.toMillis(1)) }
     sentryExecutor.submit { called = true }
     await.until { called }
     assertTrue(called)
