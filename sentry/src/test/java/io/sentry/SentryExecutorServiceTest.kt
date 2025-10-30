@@ -6,6 +6,7 @@ import java.util.concurrent.Callable
 import java.util.concurrent.CancellationException
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.ScheduledThreadPoolExecutor
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -178,27 +179,6 @@ class SentryExecutorServiceTest {
   }
 
   @Test
-  fun `SentryExecutorService schedule returns cancelled future when queue size exceeds limit`() {
-    val queue = mock<BlockingQueue<Runnable>>()
-    whenever(queue.size).thenReturn(272) // Above MAX_QUEUE_SIZE (271)
-
-    val executor = mock<ScheduledThreadPoolExecutor> { on { getQueue() } doReturn queue }
-
-    val options = mock<SentryOptions>()
-    val logger = mock<ILogger>()
-    whenever(options.logger).thenReturn(logger)
-
-    val sentryExecutor = SentryExecutorService(executor, options)
-    val future = sentryExecutor.schedule({}, 1000L)
-
-    assertTrue(future.isCancelled)
-    assertTrue(future.isDone)
-    assertFailsWith<CancellationException> { future.get() }
-    verify(executor, never()).schedule(any<Runnable>(), any(), any())
-    verify(logger).log(any<SentryLevel>(), any<String>())
-  }
-
-  @Test
   fun `SentryExecutorService schedule accepts when queue size is within limit`() {
     val queue = mock<BlockingQueue<Runnable>>()
     whenever(queue.size).thenReturn(270) // Below MAX_QUEUE_SIZE (271)
@@ -224,5 +204,29 @@ class SentryExecutorServiceTest {
     assertEquals(54, (executor.queue.getProperty("queue") as Array<*>).size)
     // the queue should be empty
     assertEquals(0, executor.queue.size)
+  }
+
+  @Test
+  fun `SentryExecutorService schedules any number of job`() {
+    val executor = ScheduledThreadPoolExecutor(1)
+    val sentryExecutor = SentryExecutorService(executor, null)
+    // Post 1k jobs after 1 day, to test they are all accepted
+    repeat(1000) { sentryExecutor.schedule({}, TimeUnit.DAYS.toMillis(1)) }
+    assertEquals(1000, executor.queue.size)
+  }
+
+  @Test
+  fun `SentryExecutorService purges cancelled jobs when limit is reached`() {
+    val executor = ScheduledThreadPoolExecutor(1)
+    val sentryExecutor = SentryExecutorService(executor, null)
+    // Post 1k jobs after 1 day, to test they are all accepted
+    repeat(1000) {
+      val future = sentryExecutor.schedule({}, TimeUnit.DAYS.toMillis(1))
+      future.cancel(true)
+    }
+    assertEquals(1000, executor.queue.size)
+    // Submit should purge cancelled scheduled jobs
+    sentryExecutor.submit {}
+    assertEquals(1, executor.queue.size)
   }
 }
