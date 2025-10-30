@@ -1,5 +1,6 @@
 package io.sentry.android.timber
 
+import android.util.Log
 import io.sentry.Breadcrumb
 import io.sentry.Scopes
 import io.sentry.SentryLevel
@@ -23,18 +24,19 @@ import timber.log.Timber
 
 class SentryTimberTreeTest {
   private class Fixture {
-    val scopes = mock<Scopes>()
-    val logs = mock<ILoggerApi>()
-
-    init {
-      whenever(scopes.logger()).thenReturn(logs)
-    }
+    lateinit var scopes: Scopes
+    lateinit var logs: ILoggerApi
 
     fun getSut(
       minEventLevel: SentryLevel = SentryLevel.ERROR,
       minBreadcrumbLevel: SentryLevel = SentryLevel.INFO,
       minLogsLevel: SentryLogLevel = SentryLogLevel.INFO,
-    ): SentryTimberTree = SentryTimberTree(scopes, minEventLevel, minBreadcrumbLevel, minLogsLevel)
+    ): SentryTimberTree {
+      logs = mock<ILoggerApi>()
+      scopes = mock<Scopes>()
+      whenever(scopes.logger()).thenReturn(logs)
+      return SentryTimberTree(scopes, minEventLevel, minBreadcrumbLevel, minLogsLevel)
+    }
   }
 
   private val fixture = Fixture()
@@ -137,6 +139,56 @@ class SentryTimberTreeTest {
     Timber.tag("tag")
     Timber.e("message")
     verify(fixture.scopes).captureEvent(check { assertEquals("tag", it.getTag("TimberTag")) })
+  }
+
+  @Test
+  fun `Tree captures an event with TimberTag tag for debug events`() {
+    val sut = fixture.getSut(minEventLevel = SentryLevel.INFO)
+    Timber.plant(sut)
+    // only available thru static class
+    Timber.tag("infoTag").i("message")
+    verify(fixture.scopes).captureEvent(check { assertEquals("infoTag", it.getTag("TimberTag")) })
+  }
+
+  @Test
+  fun `Tree captures an event with chained tag usage`() {
+    val sut = fixture.getSut(minEventLevel = SentryLevel.INFO)
+    Timber.plant(sut)
+    // only available thru static class
+    Timber.tag("infoTag").log(Log.INFO, "message")
+    verify(fixture.scopes).captureEvent(check { assertEquals("infoTag", it.getTag("TimberTag")) })
+  }
+
+  @Test
+  fun `Tree properly propagates all levels`() {
+    val levels =
+      listOf(
+        Pair(Log.DEBUG, SentryLevel.DEBUG),
+        Pair(Log.VERBOSE, SentryLevel.DEBUG),
+        Pair(Log.INFO, SentryLevel.INFO),
+        Pair(Log.WARN, SentryLevel.WARNING),
+        Pair(Log.ERROR, SentryLevel.ERROR),
+        Pair(Log.ASSERT, SentryLevel.FATAL),
+      )
+
+    for (level in levels) {
+      Timber.uprootAll()
+
+      val logLevel = level.first
+      val sentryLevel = level.second
+
+      val sut = fixture.getSut(minEventLevel = sentryLevel)
+      Timber.plant(sut)
+      // only available thru static class
+      Timber.tag("tag").log(logLevel, "message")
+      verify(fixture.scopes)
+        .captureEvent(
+          check {
+            assertEquals("tag", it.getTag("TimberTag"))
+            assertEquals(sentryLevel, it.level)
+          }
+        )
+    }
   }
 
   @Test
