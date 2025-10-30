@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Improvements
+
+- Fallback to distinct-id as user.id logging attribute when user is not set ([#4847](https://github.com/getsentry/sentry-java/pull/4847))
+
 ## 8.25.0
 
 ### Fixes
@@ -14,7 +20,6 @@
 - [ANR] Defer some class availability checks ([#4825](https://github.com/getsentry/sentry-java/pull/4825))
 - Collect PerformanceCollectionData only for sampled transactions ([#4834](https://github.com/getsentry/sentry-java/pull/4834))
   - **Breaking change**: Transactions with a deferred sampling decision (`sampled == null`) won't be collecting any performance data anymore (CPU, RAM, slow/frozen frames).
-- Fallback to distinct-id as user.id logging attribute when user is not set ([#4847](https://github.com/getsentry/sentry-java/pull/4847))
 
 ### Dependencies
 
