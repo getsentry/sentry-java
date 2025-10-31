@@ -6,6 +6,12 @@
 
 - Fallback to distinct-id as user.id logging attribute when user is not set ([#4847](https://github.com/getsentry/sentry-java/pull/4847))
 
+### Dependencies
+
+- Bump Gradle from v8.14.3 to v9.2.0 ([#4848](https://github.com/getsentry/sentry-java/pull/4848))
+  - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v920)
+  - [diff](https://github.com/gradle/gradle/compare/v8.14.3...v9.2.0)
+
 ## 8.25.0
 
 ### Fixes
