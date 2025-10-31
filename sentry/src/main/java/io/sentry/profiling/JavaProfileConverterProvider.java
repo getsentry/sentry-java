@@ -2,7 +2,7 @@ package io.sentry.profiling;
 
 import io.sentry.IProfileConverter;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Service provider interface for creating profile converters.
@@ -18,6 +18,6 @@ public interface JavaProfileConverterProvider {
    *
    * @return a profile converter instance, or null if the provider cannot create one
    */
-  @Nullable
+  @NotNull
   IProfileConverter getProfileConverter();
 }

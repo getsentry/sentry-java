@@ -42,6 +42,12 @@ public class io/sentry/spring7/SentryInitBeanPostProcessor : org/springframework
 	public fun setApplicationContext (Lorg/springframework/context/ApplicationContext;)V
 }
 
+public class io/sentry/spring7/SentryProfilerConfiguration {
+	public fun <init> ()V
+	public fun sentryOpenTelemetryProfilerConfiguration ()Lio/sentry/IContinuousProfiler;
+	public fun sentryOpenTelemetryProfilerConverterConfiguration ()Lio/sentry/IProfileConverter;
+}
+
 public class io/sentry/spring7/SentryRequestHttpServletRequestProcessor : io/sentry/EventProcessor {
 	public fun <init> (Lio/sentry/spring7/tracing/TransactionNameProvider;Ljakarta/servlet/http/HttpServletRequest;)V
 	public fun getOrder ()Ljava/lang/Long;
