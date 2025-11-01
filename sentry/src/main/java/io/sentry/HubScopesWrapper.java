@@ -373,4 +373,9 @@ public final class HubScopesWrapper implements IHub {
   public @NotNull ILoggerApi logger() {
     return scopes.logger();
   }
+
+  @Override
+  public void addFeatureFlag(final @Nullable String flag, final @Nullable Boolean result) {
+    scopes.addFeatureFlag(flag, result);
+  }
 }

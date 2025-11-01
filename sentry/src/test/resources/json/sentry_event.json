@@ -204,6 +204,18 @@
             "cpu_description": "cpu0",
             "chipset": "unisoc"
         },
+        "flags": {
+          "values": [
+            {
+              "flag": "flag-1",
+              "result": true
+            },
+            {
+              "flag": "flag-2",
+              "result": false
+            }
+          ]
+        },
         "gpu":
         {
             "name": "d623a6b5-e1ab-4402-931b-c06f5a43a5ae",

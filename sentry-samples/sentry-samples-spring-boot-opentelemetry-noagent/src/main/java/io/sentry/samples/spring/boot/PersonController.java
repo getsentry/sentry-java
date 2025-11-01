@@ -36,6 +36,7 @@ public class PersonController {
       Sentry.logger().warn("warn Sentry logging");
       Sentry.logger().error("error Sentry logging");
       Sentry.logger().info("hello %s %s", "there", "world!");
+      Sentry.addFeatureFlag("my-feature-flag", true);
       ISpan currentSpan = Sentry.getSpan();
       ISpan sentrySpan = currentSpan.startChild("spanCreatedThroughSentryApi");
       try {

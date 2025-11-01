@@ -48,6 +48,11 @@ class ConsoleApplicationSystemTest {
     }
 
     testHelper.ensureErrorReceived { event ->
+      event.message?.message == "Important warning" &&
+        testHelper.doesEventHaveFlag(event, "my-feature-flag", true)
+    }
+
+    testHelper.ensureErrorReceived { event ->
       event.breadcrumbs?.firstOrNull {
         it.message == "Hello Sentry!" && it.level == SentryLevel.DEBUG
       } != null
