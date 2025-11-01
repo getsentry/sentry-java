@@ -40,8 +40,8 @@ class SentrySpringSubscriptionHandlerTest {
     whenever(parameters.environment).thenReturn(dataFetchingEnvironment)
     val resultObject =
       SentrySpringSubscriptionHandler()
-        .onSubscriptionResult(Flux.error<Any?>(exception), scopes, exceptionReporter, parameters)
-    assertThrows<IllegalStateException> { (resultObject as Flux<Any?>).blockFirst() }
+        .onSubscriptionResult(Flux.error<Any>(exception), scopes, exceptionReporter, parameters)
+    assertThrows<IllegalStateException> { (resultObject as Flux<Any>).blockFirst() }
 
     verify(exceptionReporter)
       .captureThrowable(
@@ -77,12 +77,12 @@ class SentrySpringSubscriptionHandlerTest {
     val resultObject =
       SentrySpringSubscriptionHandler()
         .onSubscriptionResult(
-          Flux.error<Any?>(wrappedException),
+          Flux.error<Any>(wrappedException),
           scopes,
           exceptionReporter,
           parameters,
         )
-    assertThrows<SubscriptionPublisherException> { (resultObject as Flux<Any?>).blockFirst() }
+    assertThrows<SubscriptionPublisherException> { (resultObject as Flux<Any>).blockFirst() }
 
     verify(exceptionReporter)
       .captureThrowable(

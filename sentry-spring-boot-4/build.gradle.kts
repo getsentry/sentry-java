@@ -102,6 +102,7 @@ dependencies {
   testImplementation(libs.springboot4.starter.webflux)
   testImplementation(libs.springboot4.starter.restclient)
   testImplementation(libs.springboot4.starter.webclient)
+  testImplementation(libs.springboot4.resttestclient)
 }
 
 configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
