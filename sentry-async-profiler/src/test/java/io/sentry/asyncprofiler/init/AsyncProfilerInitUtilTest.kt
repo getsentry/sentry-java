@@ -1,3 +1,5 @@
+package io.sentry.asyncprofiler.init
+
 import io.sentry.ILogger
 import io.sentry.ISentryExecutorService
 import io.sentry.NoOpContinuousProfiler

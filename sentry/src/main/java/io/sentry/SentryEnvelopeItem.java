@@ -314,7 +314,7 @@ public final class SentryEnvelopeItem {
                   }
                 } else {
                   throw new SentryEnvelopeException(
-                      "Could not load a ProfileConverter, dropping chunk.");
+                      "No ProfileConverter available, dropping chunk.");
                 }
               } else {
                 // The payload of the profile item is a json including the trace file encoded with
