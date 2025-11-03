@@ -80,6 +80,7 @@ jobs:
             -e '/.*"sentry-android-integration-tests:sentry-uitest-android",/d' \
             -e '/.*"sentry-android-integration-tests:sentry-uitest-android-critical",/d' \
             -e '/.*"sentry-android-integration-tests:test-app-sentry",/d' \
+            -e '/.*"sentry-android-integration-tests:test-app-size",/d' \
             -e '/.*"sentry-samples:sentry-samples-android",/d' \
             -e '/.*"sentry-android-replay",/d' \
             settings.gradle.kts
@@ -91,6 +92,7 @@ jobs:
             -e '/.*"sentry-uitest-android-benchmark",/d' \
             -e '/.*"sentry-uitest-android-critical",/d' \
             -e '/.*"test-app-sentry",/d' \
+            -e '/.*"test-app-size",/d' \
             -e '/.*"sentry-samples-android",/d' \
             build.gradle.kts
 
