@@ -19,12 +19,25 @@ android {
     release {
       isMinifyEnabled = true
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+      ndk {
+        abiFilters.clear()
+        abiFilters.add("arm64-v8a")
+      }
     }
   }
   compileOptions {
     sourceCompatibility = JavaVersion.VERSION_17
     targetCompatibility = JavaVersion.VERSION_17
   }
+  androidComponents.beforeVariants {
+    it.enable = !Config.Android.shouldSkipDebugVariant(it.buildType)
+  }
+}
+
+configurations.configureEach {
+  exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib-jdk8")
+  exclude(group = "androidx.core")
+  exclude(group = "androidx.lifecycle")
 }
 
 sentry {
@@ -36,10 +49,4 @@ sentry {
   includeDependenciesReport.set(false)
   telemetry.set(false)
   sizeAnalysis.enabled.set(true)
-}
-
-configurations.configureEach {
-  exclude(group = "org.jetbrains.kotlin")
-  exclude(group = "androidx.core")
-  exclude(group = "androidx.lifecycle")
 }
