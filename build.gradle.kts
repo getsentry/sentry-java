@@ -30,6 +30,7 @@ plugins {
     alias(libs.plugins.gradle.versions) apply false
     alias(libs.plugins.spring.dependency.management) apply false
     id("io.sentry.javadoc.aggregate")
+    alias(libs.plugins.sentry) apply false
 }
 
 buildscript {
