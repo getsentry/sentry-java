@@ -40,6 +40,14 @@ configurations.configureEach {
   exclude(group = "androidx.lifecycle")
 }
 
+dependencies {
+  implementation(projects.sentryAndroidTimber)
+  implementation(projects.sentryAndroidSqlite)
+  implementation(projects.sentryOkhttp)
+  implementation(projects.sentryCompose)
+  implementation(projects.sentryAndroidFragment)
+}
+
 sentry {
   org.set("sentry-sdks")
   projectName.set("sentry-android")

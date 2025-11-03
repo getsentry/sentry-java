@@ -1,4 +1,4 @@
-# Rules to not warn about missing classes for Kotlin stdlib. We use it, but we only want to measure the SDK size overhead, so we keep the test app lean
+# Rules to not warn about missing classes. We use them, but we only want to measure the SDK size overhead and not run the app, so we keep it lean
 # This is generated automatically by the Android Gradle plugin.
 -dontwarn kotlin.Lazy
 -dontwarn kotlin.LazyKt
@@ -37,3 +37,15 @@
 -dontwarn kotlin.text.Charsets
 -dontwarn kotlin.text.Regex
 -dontwarn kotlin.text.StringsKt
+-dontwarn timber.log.Timber$Tree
+-dontwarn kotlin.Deprecated
+-dontwarn kotlin.Function
+-dontwarn kotlin.jvm.JvmStatic
+-dontwarn kotlin.jvm.functions.Function2
+-dontwarn kotlin.jvm.functions.Function3
+-dontwarn kotlin.jvm.internal.Ref$BooleanRef
+-dontwarn kotlin.math.MathKt
+-dontwarn okhttp3.EventListener
+-dontwarn okhttp3.Interceptor
+# Assume all classes are used to not strip them out, e.g. integrations like Compose or Sqlite
+-keep class io.sentry.**
