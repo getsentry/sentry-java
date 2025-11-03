@@ -84,6 +84,7 @@ apiValidation {
             "sentry-uitest-android-critical",
             "test-app-plain",
             "test-app-sentry",
+            "test-app-size",
             "sentry-samples-netflix-dgs"
         )
     )
