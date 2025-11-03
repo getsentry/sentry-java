@@ -12,7 +12,8 @@
       "maskedViewClasses": [],
       "nativeSdkName": "sentry.java",
       "sessionSampleRate": 0.5,
-      "quality": "low"
+      "quality": "low",
+      "screenshotStrategy": "pixelCopy"
     }
   }
 }
