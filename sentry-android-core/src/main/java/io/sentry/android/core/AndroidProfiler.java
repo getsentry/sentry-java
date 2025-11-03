@@ -94,7 +94,7 @@ public class AndroidProfiler {
   private final @NotNull Map<String, ProfileMeasurement> measurementsMap = new HashMap<>();
   private final @Nullable ISentryExecutorService timeoutExecutorService;
   private final @NotNull ILogger logger;
-  private boolean isRunning = false;
+  private volatile boolean isRunning = false;
   protected final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
 
   public AndroidProfiler(
@@ -353,5 +353,9 @@ public class AndroidProfiler {
             new ProfileMeasurement(ProfileMeasurement.UNIT_BYTES, nativeMemoryUsageMeasurements));
       }
     }
+  }
+
+  boolean isRunning() {
+    return isRunning;
   }
 }
