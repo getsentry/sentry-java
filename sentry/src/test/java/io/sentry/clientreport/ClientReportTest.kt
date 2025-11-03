@@ -372,6 +372,10 @@ class ClientReportTest {
     clientReportRecorder.recordLostEnvelopeItem(DiscardReason.NETWORK_ERROR, envelope.items.first())
 
     verify(onDiscardMock, times(1)).execute(DiscardReason.NETWORK_ERROR, DataCategory.LogItem, 2)
+
+    val clientReport = clientReportRecorder.resetCountsAndGenerateClientReport()
+    val logItem = clientReport!!.discardedEvents!!.first { it.category == DataCategory.LogItem.category }
+    assertEquals(2, logItem.quantity)
   }
 
   private fun givenClientReportRecorder(
