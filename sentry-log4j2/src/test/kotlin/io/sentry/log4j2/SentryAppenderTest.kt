@@ -591,4 +591,26 @@ class SentryAppenderTest {
         }
       )
   }
+
+  @Test
+  fun `sets properties from ThreadContext as attributes on logs`() {
+    val logger = fixture.getSut(minimumLevel = Level.INFO, contextTags = listOf("someTag"))
+
+    ThreadContext.put("someTag", "someValue")
+    ThreadContext.put("otherTag", "otherValue")
+    logger.info("testing MDC properties in logs")
+
+    Sentry.flush(1000)
+
+    verify(fixture.transport)
+      .send(
+        checkLogs { logs ->
+          val log = logs.items.first()
+          assertEquals("testing MDC properties in logs", log.body)
+          val attributes = log.attributes!!
+          assertEquals("someValue", attributes["mdc.someTag"]?.value)
+          assertNull(attributes["otherTag"])
+        }
+      )
+  }
 }

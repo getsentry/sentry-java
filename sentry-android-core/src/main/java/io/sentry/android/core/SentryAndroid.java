@@ -232,6 +232,7 @@ public final class SentryAndroid {
 
     final List<Integration> timberIntegrations = new ArrayList<>();
     final List<Integration> fragmentIntegrations = new ArrayList<>();
+    final List<Integration> systemEventsIntegrations = new ArrayList<>();
 
     for (final Integration integration : options.getIntegrations()) {
       if (isFragmentAvailable) {
@@ -243,6 +244,9 @@ public final class SentryAndroid {
         if (integration instanceof SentryTimberIntegration) {
           timberIntegrations.add(integration);
         }
+      }
+      if (integration instanceof SystemEventsBreadcrumbsIntegration) {
+        systemEventsIntegrations.add(integration);
       }
     }
 
@@ -256,6 +260,13 @@ public final class SentryAndroid {
     if (timberIntegrations.size() > 1) {
       for (int i = 0; i < timberIntegrations.size() - 1; i++) {
         final Integration integration = timberIntegrations.get(i);
+        options.getIntegrations().remove(integration);
+      }
+    }
+
+    if (systemEventsIntegrations.size() > 1) {
+      for (int i = 0; i < systemEventsIntegrations.size() - 1; i++) {
+        final Integration integration = systemEventsIntegrations.get(i);
         options.getIntegrations().remove(integration);
       }
     }

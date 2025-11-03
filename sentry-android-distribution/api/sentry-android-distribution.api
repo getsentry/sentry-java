@@ -1,8 +1,9 @@
 public final class io/sentry/android/distribution/DistributionIntegration : io/sentry/IDistributionApi, io/sentry/Integration {
 	public fun <init> (Landroid/content/Context;)V
-	public fun checkForUpdate (Lio/sentry/IDistributionApi$UpdateCallback;)V
+	public fun checkForUpdate ()Ljava/util/concurrent/Future;
 	public fun checkForUpdateBlocking ()Lio/sentry/UpdateStatus;
 	public fun downloadUpdate (Lio/sentry/UpdateInfo;)V
+	public fun isEnabled ()Z
 	public fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
 }
 
