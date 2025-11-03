@@ -82,6 +82,13 @@ public final class InitUtil {
 
         if (!(continuousProfiler instanceof NoOpContinuousProfiler)) {
           options.setContinuousProfiler(continuousProfiler);
+          options.getLogger().log(SentryLevel.INFO, "Successfully loaded profiler");
+        } else {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.WARNING,
+                  "Could not load profiler, profiling will be disabled. If you are using Spring or Spring Boot with the OTEL Agent profiler init will be retried.");
         }
 
         return continuousProfiler;
@@ -101,25 +108,20 @@ public final class InitUtil {
     if (options.isContinuousProfilingEnabled()
         && options.getProfilerConverter() instanceof NoOpProfileConverter) {
 
-      options
-          .getLogger()
-          .log(
-              SentryLevel.DEBUG,
-              "Profile converter is NoOp, attempting to reload with Spring Boot classloader");
-
       converter = ProfilingServiceLoader.loadProfileConverter();
 
       options.setProfilerConverter(converter);
 
       if (!(converter instanceof NoOpProfileConverter)) {
+        options.getLogger().log(SentryLevel.INFO, "Successfully loaded profile converter");
+      } else {
         options
             .getLogger()
             .log(
-                SentryLevel.INFO,
-                "Successfully loaded profile converter via Spring Boot classloader");
+                SentryLevel.WARNING,
+                "Could not load profile converter. If you are using Spring or Spring Boot with the OTEL Agent, profile converter init will be retried.");
       }
     }
     return converter;
   }
-  // TODO: Add initialization of profiler here
 }
