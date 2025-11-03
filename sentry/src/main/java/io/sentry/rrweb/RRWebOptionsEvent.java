@@ -6,6 +6,7 @@ import io.sentry.JsonSerializable;
 import io.sentry.JsonUnknown;
 import io.sentry.ObjectReader;
 import io.sentry.ObjectWriter;
+import io.sentry.ScreenshotStrategyType;
 import io.sentry.SentryOptions;
 import io.sentry.SentryReplayOptions;
 import io.sentry.protocol.SdkVersion;
@@ -52,6 +53,12 @@ public final class RRWebOptionsEvent extends RRWebEvent implements JsonSerializa
     optionsPayload.put("quality", replayOptions.getQuality().serializedName());
     optionsPayload.put("maskedViewClasses", replayOptions.getMaskViewClasses());
     optionsPayload.put("unmaskedViewClasses", replayOptions.getUnmaskViewClasses());
+
+    final String screenshotStrategy =
+        (replayOptions.getScreenshotStrategy() == ScreenshotStrategyType.PIXEL_COPY)
+            ? "pixelCopy"
+            : "canvas";
+    optionsPayload.put("screenshotStrategy", screenshotStrategy);
   }
 
   @NotNull
