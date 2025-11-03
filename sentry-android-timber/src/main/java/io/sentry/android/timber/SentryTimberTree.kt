@@ -3,6 +3,8 @@ package io.sentry.android.timber
 import android.util.Log
 import io.sentry.Breadcrumb
 import io.sentry.IScopes
+import io.sentry.SentryAttribute
+import io.sentry.SentryAttributes
 import io.sentry.SentryEvent
 import io.sentry.SentryLevel
 import io.sentry.SentryLogLevel
@@ -66,7 +68,7 @@ public class SentryTimberTree(
 
   /** Log an info message with optional format args. */
   override fun i(message: String?, vararg args: Any?) {
-    super.d(message, *args)
+    super.i(message, *args)
     logWithSentry(Log.INFO, null, message, *args)
   }
 
@@ -183,7 +185,7 @@ public class SentryTimberTree(
 
     captureEvent(level, tag, sentryMessage, throwable)
     addBreadcrumb(level, sentryMessage, throwable)
-    addLog(logLevel, message, throwable, *args)
+    addLog(logLevel, message, tag, throwable, *args)
   }
 
   /** do not log if it's lower than min. required level. */
@@ -240,12 +242,15 @@ public class SentryTimberTree(
   private fun addLog(
     sentryLogLevel: SentryLogLevel,
     msg: String?,
+    tag: String?,
     throwable: Throwable?,
     vararg args: Any?,
   ) {
     // checks the log level
     if (isLoggable(sentryLogLevel, minLogLevel)) {
-      val params = SentryLogParameters()
+      val attributes =
+        tag?.let { SentryAttributes.of(SentryAttribute.stringAttribute("timber.tag", tag)) }
+      val params = SentryLogParameters.create(attributes)
       params.origin = "auto.log.timber"
 
       val throwableMsg = throwable?.message

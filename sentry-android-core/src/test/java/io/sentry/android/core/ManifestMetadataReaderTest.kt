@@ -1835,4 +1835,51 @@ class ManifestMetadataReaderTest {
     // Assert
     assertFalse(fixture.options.feedbackOptions.isShowBranding)
   }
+
+  @Test
+  fun `applyMetadata reads screenshot strategy canvas to options`() {
+    // Arrange
+    val bundle = bundleOf(ManifestMetadataReader.REPLAYS_SCREENSHOT_STRATEGY to "canvas")
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertEquals(
+      io.sentry.ScreenshotStrategyType.CANVAS,
+      fixture.options.sessionReplay.screenshotStrategy,
+    )
+  }
+
+  @Test
+  fun `applyMetadata reads screenshot strategy and defaults to PIXEL_COPY for unknown value`() {
+    // Arrange
+    val bundle = bundleOf(ManifestMetadataReader.REPLAYS_SCREENSHOT_STRATEGY to "unknown")
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertEquals(
+      io.sentry.ScreenshotStrategyType.PIXEL_COPY,
+      fixture.options.sessionReplay.screenshotStrategy,
+    )
+  }
+
+  @Test
+  fun `applyMetadata reads screenshot strategy and keeps default if not found`() {
+    // Arrange
+    val context = fixture.getContext()
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertEquals(
+      io.sentry.ScreenshotStrategyType.PIXEL_COPY,
+      fixture.options.sessionReplay.screenshotStrategy,
+    )
+  }
 }
