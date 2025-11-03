@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Features
+
+- Remove vendored code and upgrade to async profiler 4.2 ([#4856](https://github.com/getsentry/sentry-java/pull/4856))
+
 ### Improvements
 
 - Fallback to distinct-id as user.id logging attribute when user is not set ([#4847](https://github.com/getsentry/sentry-java/pull/4847))
