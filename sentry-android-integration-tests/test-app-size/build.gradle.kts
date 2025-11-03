@@ -44,7 +44,7 @@ sentry {
   org.set("sentry-sdks")
   projectName.set("sentry-android")
   authToken.set(System.getenv("SENTRY_AUTH_TOKEN"))
-  autoUploadProguardMapping.set(true)
+  includeProguardMapping.set(false)
   tracingInstrumentation.enabled.set(false)
   includeDependenciesReport.set(false)
   telemetry.set(false)
