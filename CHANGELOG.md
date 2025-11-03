@@ -8,6 +8,12 @@
 - Report Timber.tag() as `timber.tag` log attribute ([#4845](https://github.com/getsentry/sentry-java/pull/4845))
 - Session Replay: Add screenshot strategy serialization to RRWeb events ([#4851](https://github.com/getsentry/sentry-java/pull/4851))
 
+### Dependencies
+
+- Bump Native SDK from v0.11.3 to v0.12.0 ([#4849](https://github.com/getsentry/sentry-java/pull/4849))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0120)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.11.3...0.12.0)
+
 ## 8.25.0
 
 ### Fixes
