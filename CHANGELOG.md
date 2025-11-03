@@ -7,6 +7,10 @@
 - Fallback to distinct-id as user.id logging attribute when user is not set ([#4847](https://github.com/getsentry/sentry-java/pull/4847))
 - Report Timber.tag() as `timber.tag` log attribute ([#4845](https://github.com/getsentry/sentry-java/pull/4845))
 
+### Fixes
+
+- Fix profilerId propagation ([#4833](https://github.com/getsentry/sentry-java/pull/4833))
+
 ## 8.25.0
 
 ### Fixes
