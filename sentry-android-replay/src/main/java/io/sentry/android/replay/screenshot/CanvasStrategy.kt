@@ -79,41 +79,49 @@ internal class CanvasStrategy(
     }
     val picture = unprocessedPictureRef.getAndSet(null) ?: return@Runnable
 
-    // Draw picture to the Surface for PixelCopy
-    val surfaceCanvas = surface.lockHardwareCanvas()
     try {
-      surfaceCanvas.drawColor(Color.BLACK, PorterDuff.Mode.CLEAR)
-      picture.draw(surfaceCanvas)
-    } finally {
-      surface.unlockCanvasAndPost(surfaceCanvas)
-    }
+      // Draw picture to the Surface for PixelCopy
+      val surfaceCanvas = surface.lockHardwareCanvas()
+      try {
+        surfaceCanvas.drawColor(Color.BLACK, PorterDuff.Mode.CLEAR)
+        picture.draw(surfaceCanvas)
+      } finally {
+        surface.unlockCanvasAndPost(surfaceCanvas)
+      }
 
-    if (screenshot == null) {
-      screenshotLock.acquire().use {
-        if (screenshot == null) {
-          screenshot = Bitmap.createBitmap(picture.width, picture.height, Bitmap.Config.ARGB_8888)
+      if (screenshot == null) {
+        screenshotLock.acquire().use {
+          if (screenshot == null) {
+            screenshot = Bitmap.createBitmap(picture.width, picture.height, Bitmap.Config.ARGB_8888)
+          }
         }
       }
-    }
 
-    // Trigger PixelCopy capture
-    PixelCopy.request(
-      surface,
-      screenshot!!,
-      { result ->
-        if (result == PixelCopy.SUCCESS) {
-          lastCaptureSuccessful.set(true)
-          val bitmap = screenshot
-          if (bitmap != null && !bitmap.isRecycled) {
-            screenshotRecorderCallback?.onScreenshotRecorded(bitmap)
+      // Trigger PixelCopy capture
+      PixelCopy.request(
+        surface,
+        screenshot!!,
+        { result ->
+          if (result == PixelCopy.SUCCESS) {
+            lastCaptureSuccessful.set(true)
+            val bitmap = screenshot
+            if (bitmap != null && !bitmap.isRecycled) {
+              screenshotRecorderCallback?.onScreenshotRecorded(bitmap)
+            }
+          } else {
+            options.logger.log(
+              SentryLevel.ERROR,
+              "Canvas Strategy: PixelCopy failed with code $result",
+            )
+            lastCaptureSuccessful.set(false)
           }
-        } else {
-          options.logger.log(SentryLevel.ERROR, "PixelCopy failed with code $result")
-          lastCaptureSuccessful.set(false)
-        }
-      },
-      executor.getBackgroundHandler(),
-    )
+        },
+        executor.getBackgroundHandler(),
+      )
+    } catch (t: Throwable) {
+      options.logger.log(SentryLevel.ERROR, "Canvas Strategy: picture render failed")
+      lastCaptureSuccessful.set(false)
+    }
   }
 
   @SuppressLint("NewApi")
