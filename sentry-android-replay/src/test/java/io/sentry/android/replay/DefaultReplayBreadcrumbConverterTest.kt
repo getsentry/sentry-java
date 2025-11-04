@@ -335,7 +335,7 @@ class DefaultReplayBreadcrumbConverterTest {
   // BeforeBreadcrumbCallback delegation tests
 
   @Test
-  fun `returned breadcrumb is not modified when no user BeforeBreadcrumbCallback is provided`() {
+  fun `ReplayBeforeBreadcrumb does not modify breadcrumb__no user-provided BeforeBreadcrumbCallback`() {
     // Create options with no beforeBreadcrumb callback
     val options = SentryOptions.empty()
     options.beforeBreadcrumb = null
@@ -354,7 +354,7 @@ class DefaultReplayBreadcrumbConverterTest {
   }
 
   @Test
-  fun `returned breadcrumb is modified according to user provided BeforeBreadcrumbCallback`() {
+  fun `ReplayBeforeBreadcrumb delegates to user-provided BeforeBreadcrumbCallback`() {
     val originalBreadcrumb =
       Breadcrumb(Date()).apply {
         message = "original message"
@@ -383,7 +383,7 @@ class DefaultReplayBreadcrumbConverterTest {
   }
 
   @Test
-  fun `returns null when user BeforeBreadcrumbCallback returns null`() {
+  fun `ReplayBeforeBreadcrumb handles user-provided BeforeBreadcrumbCallback returning null`() {
     val breadcrumb =
       Breadcrumb(Date()).apply {
         message = "test message"
@@ -403,7 +403,7 @@ class DefaultReplayBreadcrumbConverterTest {
   }
 
   @Test
-  fun `network data is extracted from hint for http breadcrumbs with user callback`() {
+  fun `converts network details data__with user-provided BeforeBreadcrumbCallback`() {
     val options = SentryOptions.empty()
     val userCallback = SentryOptions.BeforeBreadcrumbCallback { b, _ -> b }
     options.beforeBreadcrumb = userCallback
@@ -458,7 +458,7 @@ class DefaultReplayBreadcrumbConverterTest {
   }
 
   @Test
-  fun `network data is extracted from hint for http breadcrumbs without user callback`() {
+  fun `converts network details data__no user-provided BeforeBreadcrumbCallback`() {
     val options = SentryOptions.empty()
     val userCallback = null
     options.beforeBreadcrumb = userCallback
@@ -513,7 +513,7 @@ class DefaultReplayBreadcrumbConverterTest {
   }
 
   @Test
-  fun `non-http breadcrumbs are unaltered by network detail data extraction`() {
+  fun `does not convert network details data for non-http breadcrumbs`() {
     val navigationBreadcrumb =
       Breadcrumb(Date()).apply {
         type = "navigation"
