@@ -4,6 +4,7 @@ import io.sentry.Breadcrumb
 import io.sentry.Hint
 import io.sentry.ReplayBreadcrumbConverter
 import io.sentry.SentryLevel
+import io.sentry.SentryOptions
 import io.sentry.SentryOptions.BeforeBreadcrumbCallback
 import io.sentry.SpanDataConvention
 import io.sentry.rrweb.RRWebBreadcrumbEvent
@@ -13,7 +14,14 @@ import io.sentry.util.network.NetworkRequestData
 import java.util.Collections
 import kotlin.LazyThreadSafetyMode.NONE
 
-public open class DefaultReplayBreadcrumbConverter : ReplayBreadcrumbConverter {
+public open class DefaultReplayBreadcrumbConverter() : ReplayBreadcrumbConverter {
+  private var options: SentryOptions? = null
+
+  public constructor(options: SentryOptions) : this() {
+    // We modify options, so keep it around to make that explicit.
+    this.options = options
+    this.options?.beforeBreadcrumb = ReplayBeforeBreadcrumbCallback(options.beforeBreadcrumb)
+  }
 
   internal companion object {
     private const val MAX_HTTP_NETWORK_DETAILS = 32
@@ -28,6 +36,42 @@ public open class DefaultReplayBreadcrumbConverter : ReplayBreadcrumbConverter {
         add("http.response_content_length")
         add("http.request_content_length")
       }
+  }
+
+  /**
+   * Intercept the breadcrumb to process any Network Details data on the hint.
+   * Delegate to any user-provided callback to provide the actual breadcrumb to process.
+   */
+  private inner class ReplayBeforeBreadcrumbCallback(
+    private val delegate: BeforeBreadcrumbCallback?
+  ) : BeforeBreadcrumbCallback {
+    override fun execute(breadcrumb: Breadcrumb, hint: Hint): Breadcrumb? {
+      val resultBreadcrumb =
+        if (delegate != null) {
+          delegate.execute(breadcrumb, hint)
+        } else {
+          breadcrumb
+        }
+
+      resultBreadcrumb?.let { finalBreadcrumb ->
+        extractNetworkRequestDataFromHint(finalBreadcrumb, hint)?.let { networkData ->
+          httpNetworkDetails[finalBreadcrumb] = networkData
+        }
+      }
+
+      return resultBreadcrumb
+    }
+
+    private fun extractNetworkRequestDataFromHint(
+      breadcrumb: Breadcrumb,
+      breadcrumbHint: Hint,
+    ): NetworkRequestData? {
+      if (breadcrumb.type != "http" && breadcrumb.category != "http") {
+        return null
+      }
+
+      return breadcrumbHint.get("replay:networkDetails") as? NetworkRequestData
+    }
   }
 
   private var lastConnectivityState: String? = null
@@ -145,39 +189,6 @@ public open class DefaultReplayBreadcrumbConverter : ReplayBreadcrumbConverter {
     } else {
       null
     }
-  }
-
-  override fun setUserBeforeBreadcrumbCallback(beforeBreadcrumbCallback: BeforeBreadcrumbCallback?) {
-    this.userBeforeBreadcrumbCallback = beforeBreadcrumbCallback
-  }
-
-  /** Delegate to user-provided callback (if exists) to provide the final breadcrumb to process. */
-  override fun execute(breadcrumb: Breadcrumb, hint: Hint): Breadcrumb? {
-    val callback = userBeforeBreadcrumbCallback
-    val result = if (callback != null) {
-      callback.execute(breadcrumb, hint)
-    } else {
-      breadcrumb
-    }
-
-    result?.let { finalBreadcrumb ->
-      extractNetworkRequestDataFromHint(finalBreadcrumb, hint)?.let { networkData ->
-        httpNetworkDetails[finalBreadcrumb] = networkData
-      }
-    }
-
-    return result
-  }
-
-  private fun extractNetworkRequestDataFromHint(
-    breadcrumb: Breadcrumb,
-    breadcrumbHint: Hint,
-  ): NetworkRequestData? {
-    if (breadcrumb.type != "http" && breadcrumb.category != "http") {
-      return null
-    }
-
-    return breadcrumbHint.get("replay:networkDetails") as? NetworkRequestData
   }
 
   private fun Breadcrumb.isValidForRRWebSpan(): Boolean {

@@ -9,9 +9,8 @@ public final class io/sentry/android/replay/BuildConfig {
 public class io/sentry/android/replay/DefaultReplayBreadcrumbConverter : io/sentry/ReplayBreadcrumbConverter {
 	public static final field $stable I
 	public fun <init> ()V
+	public fun <init> (Lio/sentry/SentryOptions;)V
 	public fun convert (Lio/sentry/Breadcrumb;)Lio/sentry/rrweb/RRWebEvent;
-	public fun execute (Lio/sentry/Breadcrumb;Lio/sentry/Hint;)Lio/sentry/Breadcrumb;
-	public fun setUserBeforeBreadcrumbCallback (Lio/sentry/SentryOptions$BeforeBreadcrumbCallback;)V
 }
 
 public final class io/sentry/android/replay/GeneratedVideo {
