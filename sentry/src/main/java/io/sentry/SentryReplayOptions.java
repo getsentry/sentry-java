@@ -22,8 +22,8 @@ public final class SentryReplayOptions {
 
   /**
    * Maximum size in bytes for network request/response bodies to be captured in replays. Bodies
-   * larger than this will be truncated or replaced with a placeholder message. Default is 150KB
-   * (153600 bytes).
+   * larger than this will be truncated or replaced with a placeholder message.
+   * Aligned with JS: https://github.com/getsentry/sentry-javascript/blob/98de756506705b60d1ca86cbbcfad3fd76062f8f/packages/replay-internal/src/constants.ts#L33
    */
   @ApiStatus.Internal public static final int MAX_NETWORK_BODY_SIZE = 150 * 1024;
 
