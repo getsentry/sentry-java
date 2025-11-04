@@ -16,10 +16,10 @@ import io.sentry.ITransactionProfiler;
 import io.sentry.NoOpCompositePerformanceCollector;
 import io.sentry.NoOpConnectionStatusProvider;
 import io.sentry.NoOpContinuousProfiler;
+import io.sentry.NoOpReplayBreadcrumbConverter;
 import io.sentry.NoOpSocketTagger;
 import io.sentry.NoOpTransactionProfiler;
 import io.sentry.NoopVersionDetector;
-import io.sentry.ReplayBreadcrumbConverter;
 import io.sentry.ScopeType;
 import io.sentry.SendFireAndForgetEnvelopeSender;
 import io.sentry.SendFireAndForgetOutboxSender;
@@ -248,12 +248,10 @@ final class AndroidOptionsInitializer {
       options.setCompositePerformanceCollector(new DefaultCompositePerformanceCollector(options));
     }
 
-    ReplayBreadcrumbConverter replayBreadcrumbConverter = options.getReplayController().getBreadcrumbConverter();
-    replayBreadcrumbConverter.setUserBeforeBreadcrumbCallback(options.getBeforeBreadcrumb());
-    options.setBeforeBreadcrumb(
-      replayBreadcrumbConverter
-    );
+    if (options.getReplayController().getBreadcrumbConverter() instanceof NoOpReplayBreadcrumbConverter) {
+      options.getReplayController().setBreadcrumbConverter(new DefaultReplayBreadcrumbConverter(options));
 
+    }
 
     // Check if the profiler was already instantiated in the app start.
     // We use the Android profiler, that uses a global start/stop api, so we need to preserve the
@@ -408,7 +406,6 @@ final class AndroidOptionsInitializer {
     if (isReplayAvailable) {
       final ReplayIntegration replay =
           new ReplayIntegration(context, CurrentDateProvider.getInstance());
-      replay.setBreadcrumbConverter(new DefaultReplayBreadcrumbConverter());
       options.addIntegration(replay);
       options.setReplayController(replay);
     }
