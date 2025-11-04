@@ -14,12 +14,18 @@ import java.util.Date
 import junit.framework.TestCase.assertEquals
 import kotlin.test.Test
 import kotlin.test.assertNotNull
+import kotlin.test.assertNotSame
 import kotlin.test.assertNull
 import kotlin.test.assertSame
 
 class DefaultReplayBreadcrumbConverterTest {
   class Fixture {
-    fun getSut(): DefaultReplayBreadcrumbConverter = DefaultReplayBreadcrumbConverter()
+    fun getSut(options: SentryOptions? = null): DefaultReplayBreadcrumbConverter =
+      if (options != null) {
+        DefaultReplayBreadcrumbConverter(options)
+      } else {
+        DefaultReplayBreadcrumbConverter()
+      }
   }
 
   private val fixture = Fixture()
@@ -330,7 +336,11 @@ class DefaultReplayBreadcrumbConverterTest {
 
   @Test
   fun `returned breadcrumb is not modified when no user BeforeBreadcrumbCallback is provided`() {
-    val converter = fixture.getSut()
+    // Create options with no beforeBreadcrumb callback
+    val options = SentryOptions.empty()
+    options.beforeBreadcrumb = null
+    DefaultReplayBreadcrumbConverter(options)
+
     val breadcrumb =
       Breadcrumb(Date()).apply {
         message = "test message"
@@ -338,16 +348,13 @@ class DefaultReplayBreadcrumbConverterTest {
       }
     val hint = Hint()
 
-    converter.setUserBeforeBreadcrumbCallback(null)
-
-    val result = converter.execute(breadcrumb, hint)
+    val result = options.beforeBreadcrumb?.execute(breadcrumb, hint)
 
     assertSame(breadcrumb, result)
   }
 
   @Test
   fun `returned breadcrumb is modified according to user provided BeforeBreadcrumbCallback`() {
-    val converter = fixture.getSut()
     val originalBreadcrumb =
       Breadcrumb(Date()).apply {
         message = "original message"
@@ -358,170 +365,182 @@ class DefaultReplayBreadcrumbConverterTest {
         message = "modified message"
         category = "modified.category"
       }
-    val hint = Hint()
 
+    // Set up options with a user callback that returns modified breadcrumb
     val userBeforeBreadcrumbCallback =
       SentryOptions.BeforeBreadcrumbCallback { _, _ -> userModifiedBreadcrumb }
-    converter.setUserBeforeBreadcrumbCallback(userBeforeBreadcrumbCallback)
+    val options = SentryOptions.empty()
+    options.beforeBreadcrumb = userBeforeBreadcrumbCallback
 
-    val result = converter.execute(originalBreadcrumb, hint)
+    DefaultReplayBreadcrumbConverter(options)
 
+    // user-provided SentryOptions beforeBreadcrumb is replaced.
+    assertNotSame(userBeforeBreadcrumbCallback, options.beforeBreadcrumb)
+
+    // SentryOptions#beforeBreadcrumb still respects user-provided beforeBreadcrumb
+    val result = options.beforeBreadcrumb?.execute(originalBreadcrumb, Hint())
     assertSame(userModifiedBreadcrumb, result)
   }
 
   @Test
   fun `returns null when user BeforeBreadcrumbCallback returns null`() {
-    val converter = fixture.getSut()
     val breadcrumb =
       Breadcrumb(Date()).apply {
         message = "test message"
         category = "test.category"
       }
-    val hint = Hint()
 
+    val options = SentryOptions.empty()
     val userCallback = SentryOptions.BeforeBreadcrumbCallback { _, _ -> null }
-    converter.setUserBeforeBreadcrumbCallback(userCallback)
+    options.beforeBreadcrumb = userCallback
+    fixture.getSut(options)
 
-    val result = converter.execute(breadcrumb, hint)
+    // user-provided SentryOptions beforeBreadcrumb is replaced.
+    assertNotSame(userCallback, options.beforeBreadcrumb)
 
+    val result = options.beforeBreadcrumb?.execute(breadcrumb, Hint())
     assertNull(result)
   }
 
   @Test
   fun `network data is extracted from hint for http breadcrumbs with user callback`() {
-    val converter = fixture.getSut()
+    val options = SentryOptions.empty()
+    val userCallback = SentryOptions.BeforeBreadcrumbCallback { b, _ -> b }
+    options.beforeBreadcrumb = userCallback
+    val converter = fixture.getSut(options)
+
     val httpBreadcrumb =
-      Breadcrumb(Date()).apply {
+      Breadcrumb(Date(123L)).apply {
         type = "http"
         category = "http"
         data["url"] = "https://example.com"
+        data[SpanDataConvention.HTTP_START_TIMESTAMP] = 1000L
+        data[SpanDataConvention.HTTP_END_TIMESTAMP] = 2000L
       }
 
-    val networkData =
+    val fakeOkHttpNetworkDetails =
       NetworkRequestData(
-        "GET",
+        "POST",
         200,
         100L,
         500L,
-        ReplayNetworkRequestOrResponse(100L, null, mapOf("Content-Type" to "application/json")),
-        ReplayNetworkRequestOrResponse(500L, null, mapOf("Content-Type" to "application/json")),
+        ReplayNetworkRequestOrResponse(100L, NetworkBody.fromString("request body content"), mapOf("Content-Type" to "application/json")),
+        ReplayNetworkRequestOrResponse(500L, NetworkBody.fromJsonObject(mapOf("status" to "success", "message" to "OK")), mapOf("Content-Type" to "text/plain")),
       )
-    val hint = Hint()
-    hint.set("replay:networkDetails", networkData)
+    val hintWithFakeOKHttpNetworkDetails = Hint()
+    hintWithFakeOKHttpNetworkDetails.set("replay:networkDetails", fakeOkHttpNetworkDetails)
 
-    val userCallback = SentryOptions.BeforeBreadcrumbCallback { b, _ -> b }
-    converter.setUserBeforeBreadcrumbCallback(userCallback)
+    options.beforeBreadcrumb?.execute(httpBreadcrumb, hintWithFakeOKHttpNetworkDetails)
 
-    val result = converter.execute(httpBreadcrumb, hint)
+    // Verify NetworkDetails is properly extracted
+    val rrwebEvent = converter.convert(httpBreadcrumb)
+    check(rrwebEvent is RRWebSpanEvent)
 
-    assertSame(httpBreadcrumb, result)
+    // Meta data
+    assertEquals("POST", rrwebEvent.data!!["method"])
+    assertEquals(200, rrwebEvent.data!!["statusCode"])
+    assertEquals(100L, rrwebEvent.data!!["requestBodySize"])
+    assertEquals(500L, rrwebEvent.data!!["responseBodySize"])
+
+    // Request data
+    val requestData = rrwebEvent.data!!["request"] as? Map<*, *>
+    assertNotNull(requestData)
+    assertEquals(100L, requestData["size"])
+    assertEquals("request body content", requestData["body"])
+    assertEquals(mapOf("Content-Type" to "application/json"), requestData["headers"])
+
+    // Response data
+    val responseData = rrwebEvent.data!!["response"] as? Map<*, *>
+    assertNotNull(responseData)
+    assertEquals(500L, responseData["size"])
+    assertEquals(mapOf("status" to "success", "message" to "OK"), responseData["body"])
+    assertEquals(mapOf("Content-Type" to "text/plain"), responseData["headers"])
   }
 
   @Test
   fun `network data is extracted from hint for http breadcrumbs without user callback`() {
-    val converter = fixture.getSut()
+    val options = SentryOptions.empty()
+    val userCallback = null
+    options.beforeBreadcrumb = userCallback
+    val converter = fixture.getSut(options)
+
     val httpBreadcrumb =
-      Breadcrumb(Date()).apply {
+      Breadcrumb(Date(123L)).apply {
         type = "http"
         category = "http"
         data["url"] = "https://example.com"
+        data[SpanDataConvention.HTTP_START_TIMESTAMP] = 1000L
+        data[SpanDataConvention.HTTP_END_TIMESTAMP] = 2000L
       }
 
-    val networkData =
+    val fakeOkHttpNetworkDetails =
       NetworkRequestData(
         "POST",
-        201,
-        200L,
-        400L,
-        ReplayNetworkRequestOrResponse(
-          200L,
-          NetworkBody.fromJsonObject(mapOf("body" to "request")),
-          mapOf(),
-        ),
-        ReplayNetworkRequestOrResponse(
-          400L,
-          NetworkBody.fromJsonObject(mapOf("body" to "response")),
-          mapOf(),
-        ),
+        404,
+        250L,
+        340L,
+        ReplayNetworkRequestOrResponse(100L, NetworkBody.fromJsonArray(listOf("item1", "item2", "item3")), mapOf("Content-Type" to "application/json")),
+        ReplayNetworkRequestOrResponse(500L, NetworkBody.fromJsonObject(mapOf("status" to "success", "message" to "OK")), mapOf("Content-Type" to "text/plain")),
       )
-    val hint = Hint()
-    hint.set("replay:networkDetails", networkData)
+    val hintWithFakeOKHttpNetworkDetails = Hint()
+    hintWithFakeOKHttpNetworkDetails.set("replay:networkDetails", fakeOkHttpNetworkDetails)
 
-    converter.setUserBeforeBreadcrumbCallback(null)
+    options.beforeBreadcrumb?.execute(httpBreadcrumb, hintWithFakeOKHttpNetworkDetails)
 
-    val result = converter.execute(httpBreadcrumb, hint)
+    // Verify NetworkDetails is properly extracted
+    val rrwebEvent = converter.convert(httpBreadcrumb)
+    check(rrwebEvent is RRWebSpanEvent)
 
-    assertSame(httpBreadcrumb, result)
-  }
+    // Meta data
+    assertEquals("POST", rrwebEvent.data!!["method"])
+    assertEquals(404, rrwebEvent.data!!["statusCode"])
+    assertEquals(250L, rrwebEvent.data!!["requestBodySize"])
+    assertEquals(340L, rrwebEvent.data!!["responseBodySize"])
 
-  @Test
-  fun `setUserBeforeBreadcrumbCallback updates the callback`() {
-    val converter = fixture.getSut()
-    val breadcrumb = Breadcrumb(Date()).apply { message = "test" }
-    val hint = Hint()
+    // Request data
+    val requestData = rrwebEvent.data!!["request"] as? Map<*, *>
+    assertNotNull(requestData)
+    assertEquals(100L, requestData["size"])
+    assertEquals(listOf("item1", "item2", "item3"), requestData["body"])
+    assertEquals(mapOf("Content-Type" to "application/json"), requestData["headers"])
 
-    // First callback modifies the message
-    val firstCallback =
-      SentryOptions.BeforeBreadcrumbCallback { b, _ ->
-        b.message = "modified by first"
-        b
-      }
-    converter.setUserBeforeBreadcrumbCallback(firstCallback)
-    var result = converter.execute(breadcrumb, hint)
-    assertEquals("modified by first", result?.message)
-
-    // Second callback modifies differently
-    val secondCallback =
-      SentryOptions.BeforeBreadcrumbCallback { b, _ ->
-        b.message = "modified by second"
-        b
-      }
-    converter.setUserBeforeBreadcrumbCallback(secondCallback)
-
-    breadcrumb.message = "test" // Reset
-    result = converter.execute(breadcrumb, hint)
-    assertEquals("modified by second", result?.message)
-  }
-
-  @Test
-  fun `user callback receives same breadcrumb and hint objects`() {
-    val converter = fixture.getSut()
-    val breadcrumb = Breadcrumb(Date()).apply { message = "test" }
-    val hint = Hint()
-
-    var capturedBreadcrumb: Breadcrumb? = null
-    var capturedHint: Hint? = null
-
-    val capturingCallback =
-      SentryOptions.BeforeBreadcrumbCallback { b, h ->
-        capturedBreadcrumb = b
-        capturedHint = h
-        b
-      }
-    converter.setUserBeforeBreadcrumbCallback(capturingCallback)
-
-    converter.execute(breadcrumb, hint)
-
-    assertSame(breadcrumb, capturedBreadcrumb)
-    assertSame(hint, capturedHint)
+    // Response data
+    val responseData = rrwebEvent.data!!["response"] as? Map<*, *>
+    assertNotNull(responseData)
+    assertEquals(500L, responseData["size"])
+    assertEquals(mapOf("status" to "success", "message" to "OK"), responseData["body"])
+    assertEquals(mapOf("Content-Type" to "text/plain"), responseData["headers"])
   }
 
   @Test
   fun `non-http breadcrumbs are unaltered by network detail data extraction`() {
-    val converter = fixture.getSut()
     val navigationBreadcrumb =
       Breadcrumb(Date()).apply {
         type = "navigation"
         category = "navigation"
+        data["to"] = "/home"
       }
     val hint = Hint()
-    hint.set("replay:networkDetails", NetworkRequestData("GET", 200, null, null, null, null))
+    hint.set("replay:networkDetails", NetworkRequestData("GET", 200, 540L, 220L, ReplayNetworkRequestOrResponse(100L, NetworkBody.fromString("request body content"), mapOf("Content-Type" to "application/json")), ReplayNetworkRequestOrResponse(100L, NetworkBody.fromString("respnse body content"), mapOf("Content-Type" to "application/json")),))
 
-    converter.setUserBeforeBreadcrumbCallback(null)
+    val options = SentryOptions.empty()
+    options.beforeBreadcrumb = null
+    val converter = fixture.getSut(options)
 
-    val result = converter.execute(navigationBreadcrumb, hint)
+    assertSame(navigationBreadcrumb, options.beforeBreadcrumb?.execute(navigationBreadcrumb, hint))
 
-    assertSame(navigationBreadcrumb, result)
-    // Network data extraction only happens for http breadcrumbs
+    // Verify converter also doesn't include network details for non-http breadcrumbs
+    val rrwebEvent = converter.convert(navigationBreadcrumb)
+    check(rrwebEvent is RRWebBreadcrumbEvent)
+    assertEquals("navigation", rrwebEvent.category)
+    assertEquals("/home", rrwebEvent.data!!["to"])
+
+    // Verify no network-related data is present
+    assertNull(rrwebEvent.data!!["method"])
+    assertNull(rrwebEvent.data!!["statusCode"])
+    assertNull(rrwebEvent.data!!["requestBodySize"])
+    assertNull(rrwebEvent.data!!["responseBodySize"])
+    assertNull(rrwebEvent.data!!["request"])
+    assertNull(rrwebEvent.data!!["response"])
   }
 }

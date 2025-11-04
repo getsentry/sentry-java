@@ -240,7 +240,7 @@ public open class DefaultReplayBreadcrumbConverter() : ReplayBreadcrumbConverter
         networkData.request?.let { request ->
           val requestData = mutableMapOf<String, Any?>()
           request.size?.let { requestData["size"] = it }
-          request.body?.let { requestData["body"] = it }
+          request.body?.let { requestData["body"] = it.value }
 
           if (request.headers.isNotEmpty()) {
             requestData["headers"] = request.headers
@@ -254,7 +254,7 @@ public open class DefaultReplayBreadcrumbConverter() : ReplayBreadcrumbConverter
         networkData.response?.let { response ->
           val responseData = mutableMapOf<String, Any?>()
           response.size?.let { responseData["size"] = it }
-          response.body?.let { responseData["body"] = it }
+          response.body?.let { responseData["body"] = it.value }
 
           if (response.headers.isNotEmpty()) {
             responseData["headers"] = response.headers
