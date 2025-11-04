@@ -13,7 +13,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * Handles late initialization of the profiler if the application is run with the OTEL Agent in
+ * Handles late initialization of the profiler if the application is run with the Opentelemetry Agent in
  * auto-init mode. In that case the agent cannot initialize the profiler yet and falls back to No-Op
  * implementations. This Configuration sets the profiler and converter on the options if that was
  * the case.
