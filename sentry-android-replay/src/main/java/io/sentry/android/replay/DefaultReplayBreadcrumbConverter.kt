@@ -39,8 +39,8 @@ public open class DefaultReplayBreadcrumbConverter() : ReplayBreadcrumbConverter
   }
 
   /**
-   * Intercept the breadcrumb to process any Network Details data on the hint.
-   * Delegate to any user-provided callback to provide the actual breadcrumb to process.
+   * Intercept the breadcrumb to process any Network Details data on the hint. Delegate to any
+   * user-provided callback to provide the actual breadcrumb to process.
    */
   private inner class ReplayBeforeBreadcrumbCallback(
     private val delegate: BeforeBreadcrumbCallback?

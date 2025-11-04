@@ -424,8 +424,16 @@ class DefaultReplayBreadcrumbConverterTest {
         200,
         100L,
         500L,
-        ReplayNetworkRequestOrResponse(100L, NetworkBody.fromString("request body content"), mapOf("Content-Type" to "application/json")),
-        ReplayNetworkRequestOrResponse(500L, NetworkBody.fromJsonObject(mapOf("status" to "success", "message" to "OK")), mapOf("Content-Type" to "text/plain")),
+        ReplayNetworkRequestOrResponse(
+          100L,
+          NetworkBody.fromString("request body content"),
+          mapOf("Content-Type" to "application/json"),
+        ),
+        ReplayNetworkRequestOrResponse(
+          500L,
+          NetworkBody.fromJsonObject(mapOf("status" to "success", "message" to "OK")),
+          mapOf("Content-Type" to "text/plain"),
+        ),
       )
     val hintWithFakeOKHttpNetworkDetails = Hint()
     hintWithFakeOKHttpNetworkDetails.set("replay:networkDetails", fakeOkHttpNetworkDetails)
@@ -479,8 +487,16 @@ class DefaultReplayBreadcrumbConverterTest {
         404,
         250L,
         340L,
-        ReplayNetworkRequestOrResponse(100L, NetworkBody.fromJsonArray(listOf("item1", "item2", "item3")), mapOf("Content-Type" to "application/json")),
-        ReplayNetworkRequestOrResponse(500L, NetworkBody.fromJsonObject(mapOf("status" to "success", "message" to "OK")), mapOf("Content-Type" to "text/plain")),
+        ReplayNetworkRequestOrResponse(
+          100L,
+          NetworkBody.fromJsonArray(listOf("item1", "item2", "item3")),
+          mapOf("Content-Type" to "application/json"),
+        ),
+        ReplayNetworkRequestOrResponse(
+          500L,
+          NetworkBody.fromJsonObject(mapOf("status" to "success", "message" to "OK")),
+          mapOf("Content-Type" to "text/plain"),
+        ),
       )
     val hintWithFakeOKHttpNetworkDetails = Hint()
     hintWithFakeOKHttpNetworkDetails.set("replay:networkDetails", fakeOkHttpNetworkDetails)
@@ -521,7 +537,25 @@ class DefaultReplayBreadcrumbConverterTest {
         data["to"] = "/home"
       }
     val hint = Hint()
-    hint.set("replay:networkDetails", NetworkRequestData("GET", 200, 540L, 220L, ReplayNetworkRequestOrResponse(100L, NetworkBody.fromString("request body content"), mapOf("Content-Type" to "application/json")), ReplayNetworkRequestOrResponse(100L, NetworkBody.fromString("respnse body content"), mapOf("Content-Type" to "application/json")),))
+    hint.set(
+      "replay:networkDetails",
+      NetworkRequestData(
+        "GET",
+        200,
+        540L,
+        220L,
+        ReplayNetworkRequestOrResponse(
+          100L,
+          NetworkBody.fromString("request body content"),
+          mapOf("Content-Type" to "application/json"),
+        ),
+        ReplayNetworkRequestOrResponse(
+          100L,
+          NetworkBody.fromString("respnse body content"),
+          mapOf("Content-Type" to "application/json"),
+        ),
+      ),
+    )
 
     val options = SentryOptions.empty()
     options.beforeBreadcrumb = null
