@@ -4,6 +4,7 @@ import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
 import io.sentry.Hint
 import io.sentry.HttpStatusCodeRange
+import io.sentry.ILogger
 import io.sentry.IScopes
 import io.sentry.ISpan
 import io.sentry.ScopesAdapter
@@ -155,24 +156,16 @@ public open class SentryOkHttpInterceptor(
           FAKE_OPTIONS.networkCaptureBodies,
           { req ->
             req.body?.let { originalBody ->
-              try {
-                val buffer = okio.Buffer()
-                originalBody.writeTo(buffer)
-                val bodyBytes = buffer.readByteArray()
+              val buffer = okio.Buffer()
+              originalBody.writeTo(buffer)
+              val bodyBytes = buffer.readByteArray()
 
-                // Create fresh RequestBody and update the request being built
-                val newRequestBody = bodyBytes.toRequestBody(originalBody.contentType())
-                requestBuilder.method(request.method, newRequestBody)
+              // Create fresh RequestBody and update the request being built
+              val newRequestBody = bodyBytes.toRequestBody(originalBody.contentType())
+              requestBuilder.method(request.method, newRequestBody)
 
-                // Parse the buffered bytes into NetworkBody for capture
-                safeExtractRequestBody(bodyBytes, originalBody.contentType())
-              } catch (e: Exception) {
-                scopes.options.logger.log(
-                  io.sentry.SentryLevel.DEBUG,
-                  "Failed to buffer request body for network detail capture: ${e.message}",
-                )
-                null
-              }
+              // Parse the buffered bytes into NetworkBody for capture
+              safeExtractRequestBody(bodyBytes, originalBody.contentType(), scopes.options.logger)
             }
           },
           FAKE_OPTIONS.networkRequestHeaders,
@@ -220,7 +213,7 @@ public open class SentryOkHttpInterceptor(
             it,
             it.body?.contentLength(),
             FAKE_OPTIONS.networkCaptureBodies,
-            { resp: Response -> resp.extractResponseBody() },
+            { resp: Response -> resp.extractResponseBody(scopes.options.logger) },
             FAKE_OPTIONS.networkResponseHeaders,
             { resp: Response -> resp.headers.toMap() },
           ),
@@ -290,6 +283,7 @@ public open class SentryOkHttpInterceptor(
   private fun safeExtractRequestBody(
     bufferedBody: ByteArray?,
     contentType: okhttp3.MediaType?,
+    logger: ILogger,
   ): NetworkBody? {
     if (bufferedBody == null) {
       return null
@@ -305,11 +299,11 @@ public open class SentryOkHttpInterceptor(
         contentTypeString,
         charset,
         maxBodySize,
-        scopes.options,
+        logger,
       )
     } catch (e: Exception) {
-      scopes.options.logger.log(
-        io.sentry.SentryLevel.DEBUG,
+      logger.log(
+        io.sentry.SentryLevel.ERROR,
         "Failed to parse buffered request body: ${e.message}",
       )
       return null
@@ -317,7 +311,7 @@ public open class SentryOkHttpInterceptor(
   }
 
   /** Extracts the body content from an OkHttp Response safely */
-  private fun Response.extractResponseBody(): NetworkBody? {
+  private fun Response.extractResponseBody(logger: ILogger): NetworkBody? {
     return body?.let { responseBody ->
       try {
         val contentType = responseBody.contentType()
@@ -339,11 +333,11 @@ public open class SentryOkHttpInterceptor(
           contentTypeString,
           charset,
           maxBodySize,
-          scopes.options,
+          logger,
         )
       } catch (e: Exception) {
-        scopes.options.logger.log(
-          io.sentry.SentryLevel.DEBUG,
+        logger.log(
+          io.sentry.SentryLevel.ERROR,
           "Failed to read http response body for Network Details: ${e.message}",
         )
         null

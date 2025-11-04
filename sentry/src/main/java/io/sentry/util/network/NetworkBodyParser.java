@@ -1,8 +1,8 @@
 package io.sentry.util.network;
 
+import io.sentry.ILogger;
 import io.sentry.JsonObjectReader;
 import io.sentry.SentryLevel;
-import io.sentry.SentryOptions;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -34,13 +34,12 @@ public final class NetworkBodyParser {
       @Nullable final String contentType,
       @Nullable final String charset,
       final int maxSizeBytes,
-      @Nullable final SentryOptions logger) {
+      @NotNull final ILogger logger) {
 
     if (bytes == null || bytes.length == 0) {
       return null;
     }
 
-    // Check binary content type
     if (contentType != null && isBinaryContentType(contentType)) {
       // For binary content, return a description instead of the actual content
       return NetworkBody.fromString(
@@ -49,11 +48,7 @@ public final class NetworkBodyParser {
 
     // Check size limit and truncate if necessary
     if (bytes.length > maxSizeBytes) {
-      if (logger != null) {
-        logger
-            .getLogger()
-            .log(SentryLevel.DEBUG, "Content exceeds max size limit of " + maxSizeBytes + " bytes");
-      }
+      logger.log(SentryLevel.WARNING, "Content exceeds max size limit of " + maxSizeBytes + " bytes");
       return createTruncatedNetworkBody(bytes, maxSizeBytes, charset);
     }
 
@@ -64,14 +59,14 @@ public final class NetworkBodyParser {
       return parse(content, contentType, logger);
     } catch (UnsupportedEncodingException e) {
       if (logger != null) {
-        logger.getLogger().log(SentryLevel.DEBUG, "Failed to decode bytes: " + e.getMessage());
+        logger.log(SentryLevel.WARNING, "Failed to decode bytes: " + e.getMessage());
       }
       return NetworkBody.fromString("[Failed to decode bytes, " + bytes.length + " bytes]");
     }
   }
 
   private static @Nullable NetworkBody parse(
-      @Nullable final String content, @Nullable final String contentType, @Nullable final SentryOptions logger) {
+      @Nullable final String content, @Nullable final String contentType, @Nullable final ILogger logger) {
 
     if (content == null || content.isEmpty()) {
       return null;
@@ -107,7 +102,7 @@ public final class NetworkBodyParser {
         }
       } catch (Exception e) {
         if (logger != null) {
-          logger.getLogger().log(SentryLevel.DEBUG, "Failed to parse JSON: " + e.getMessage());
+          logger.log(SentryLevel.WARNING, "Failed to parse JSON: " + e.getMessage());
         }
       }
     }
@@ -118,7 +113,7 @@ public final class NetworkBodyParser {
 
   /** Parses URL-encoded form data into a JsonObject NetworkBody. */
   private static @Nullable NetworkBody parseFormUrlEncoded(
-      @NotNull final String content, @Nullable final SentryOptions logger) {
+      @NotNull final String content, @Nullable final ILogger logger) {
     try {
       Map<String, Object> params = new HashMap<>();
       String[] pairs = content.split("&", -1);
@@ -152,7 +147,7 @@ public final class NetworkBodyParser {
       return NetworkBody.fromJsonObject(params);
     } catch (UnsupportedEncodingException e) {
       if (logger != null) {
-        logger.getLogger().log(SentryLevel.DEBUG, "Failed to parse form data: " + e.getMessage());
+        logger.log(SentryLevel.WARNING, "Failed to parse form data: " + e.getMessage());
       }
       return null;
     }
