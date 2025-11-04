@@ -2,7 +2,6 @@ package io.sentry.android.replay.screenshot
 
 import android.app.Activity
 import android.os.Bundle
-import android.os.Handler
 import android.os.Looper
 import android.widget.LinearLayout
 import android.widget.LinearLayout.LayoutParams
@@ -45,8 +44,6 @@ class PixelCopyStrategyTest {
           override fun getExecutor(): ScheduledExecutorService = executor
 
           override fun getMainLooperHandler(): MainLooperHandler = MainLooperHandler()
-
-          override fun getBackgroundHandler(): Handler = mock()
         },
         callback,
         options,

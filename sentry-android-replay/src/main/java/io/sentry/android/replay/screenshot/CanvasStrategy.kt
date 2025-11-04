@@ -29,6 +29,7 @@ import android.view.Surface
 import android.view.View
 import androidx.annotation.RequiresApi
 import io.sentry.SentryLevel
+import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryOptions
 import io.sentry.android.replay.ExecutorProvider
 import io.sentry.android.replay.ScreenshotRecorderCallback
@@ -71,15 +72,14 @@ internal class CanvasStrategy(
   @SuppressLint("NewApi")
   private val pictureRenderTask = Runnable {
     if (isClosed.get()) {
-      options.logger.log(
-        SentryLevel.DEBUG,
-        "Canvas Strategy already closed, skipping picture render",
-      )
+      options.logger.log(DEBUG, "Canvas Strategy already closed, skipping picture render")
       return@Runnable
     }
     val picture = unprocessedPictureRef.getAndSet(null) ?: return@Runnable
 
     try {
+      // It's safe to access the surface because the render task,
+      // as well as surface release are executed on the same single threaded executor
       // Draw picture to the Surface for PixelCopy
       val surfaceCanvas = surface.lockHardwareCanvas()
       try {
@@ -96,30 +96,45 @@ internal class CanvasStrategy(
           }
         }
       }
-
-      // Trigger PixelCopy capture
       PixelCopy.request(
         surface,
         screenshot!!,
         { result ->
-          if (result == PixelCopy.SUCCESS) {
-            lastCaptureSuccessful.set(true)
-            val bitmap = screenshot
-            if (bitmap != null && !bitmap.isRecycled) {
-              screenshotRecorderCallback?.onScreenshotRecorded(bitmap)
-            }
-          } else {
-            options.logger.log(
-              SentryLevel.ERROR,
-              "Canvas Strategy: PixelCopy failed with code $result",
-            )
-            lastCaptureSuccessful.set(false)
+          if (isClosed.get()) {
+            options.logger.log(DEBUG, "CanvasStrategy is closed, ignoring capture result")
+            return@request
           }
+          executor
+            .getExecutor()
+            .submit(
+              ReplayRunnable("screenshot_recorder.mask") {
+                if (isClosed.get()) {
+                  options.logger.log(DEBUG, "CanvasStrategy is closed, ignoring capture result")
+                  return@ReplayRunnable
+                }
+                if (result == PixelCopy.SUCCESS) {
+                  lastCaptureSuccessful.set(true)
+                  val bitmap = screenshot
+                  if (bitmap != null) {
+                    synchronized(bitmap) {
+                      if (!bitmap.isRecycled)
+                        screenshotRecorderCallback?.onScreenshotRecorded(bitmap)
+                    }
+                  }
+                } else {
+                  options.logger.log(
+                    SentryLevel.ERROR,
+                    "Canvas Strategy: PixelCopy failed with code $result",
+                  )
+                  lastCaptureSuccessful.set(false)
+                }
+              }
+            )
         },
-        executor.getBackgroundHandler(),
+        executor.getMainLooperHandler().handler,
       )
     } catch (t: Throwable) {
-      options.logger.log(SentryLevel.ERROR, "Canvas Strategy: picture render failed")
+      options.logger.log(SentryLevel.ERROR, "Canvas Strategy: picture render failed", t)
       lastCaptureSuccessful.set(false)
     }
   }
@@ -139,10 +154,7 @@ internal class CanvasStrategy(
 
     if (!isClosed.get()) {
       unprocessedPictureRef.set(picture)
-      // use the same handler for PixelCopy and pictureRenderTask
-      executor
-        .getBackgroundHandler()
-        .post(ReplayRunnable("screenshot_recorder.canvas", pictureRenderTask))
+      executor.getExecutor().submit(ReplayRunnable("screenshot_recorder.canvas", pictureRenderTask))
     }
   }
 
