@@ -56,5 +56,5 @@ sentry {
   tracingInstrumentation.enabled.set(false)
   includeDependenciesReport.set(false)
   telemetry.set(false)
-  sizeAnalysis.enabled.set(true)
+  sizeAnalysis.enabled.set(providers.environmentVariable("SENTRY_AUTH_TOKEN").isPresent)
 }
