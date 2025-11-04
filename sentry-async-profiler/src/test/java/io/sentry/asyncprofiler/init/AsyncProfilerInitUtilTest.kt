@@ -9,6 +9,7 @@ import io.sentry.asyncprofiler.profiling.JavaContinuousProfiler
 import io.sentry.asyncprofiler.provider.AsyncProfilerProfileConverterProvider
 import io.sentry.util.InitUtil
 import kotlin.test.Test
+import kotlin.test.assertSame
 import org.mockito.kotlin.mock
 
 class AsyncProfilerInitUtilTest {
@@ -21,59 +22,52 @@ class AsyncProfilerInitUtilTest {
   }
 
   @Test
-  fun `initialize Converter returns no-op profiler if profiling disabled`() {
+  fun `initialize Converter returns no-op converter if profiling disabled`() {
     val options = SentryOptions()
     val converter = InitUtil.initializeProfileConverter(options)
     assert(converter is NoOpProfileConverter)
   }
 
   @Test
-  fun `initialize Profiler returns no-op profiler if profiler already initialized`() {
+  fun `initialize profiler returns the existing profiler from options if already initialized`() {
+    val initialProfiler =
+      JavaContinuousProfiler(mock<ILogger>(), "", 10, mock<ISentryExecutorService>())
     val options =
       SentryOptions().also {
         it.setProfileSessionSampleRate(1.0)
-        it.tracesSampleRate = 1.0
-        it.setContinuousProfiler(
-          JavaContinuousProfiler(mock<ILogger>(), "", 10, mock<ISentryExecutorService>())
-        )
+        it.setContinuousProfiler(initialProfiler)
       }
 
     val profiler = InitUtil.initializeProfiler(options)
-    assert(profiler is NoOpContinuousProfiler)
+    assertSame(initialProfiler, profiler)
   }
 
   @Test
-  fun `initialize converter returns no-op converter if converter already initialized`() {
+  fun `initialize converter returns the existing converter from options if already initialized`() {
+    val initialConverter = AsyncProfilerProfileConverterProvider.AsyncProfilerProfileConverter()
     val options =
       SentryOptions().also {
         it.setProfileSessionSampleRate(1.0)
-        it.tracesSampleRate = 1.0
-        it.profilerConverter = AsyncProfilerProfileConverterProvider.AsyncProfilerProfileConverter()
+        it.profilerConverter = initialConverter
       }
 
     val converter = InitUtil.initializeProfileConverter(options)
-    assert(converter is NoOpProfileConverter)
+    assertSame(initialConverter, converter)
   }
 
   @Test
   fun `initialize Profiler returns JavaContinuousProfiler if profiling enabled but profiler not yet initialized`() {
-    val options =
-      SentryOptions().also {
-        it.setProfileSessionSampleRate(1.0)
-        it.tracesSampleRate = 1.0
-      }
+    val options = SentryOptions().also { it.setProfileSessionSampleRate(1.0) }
     val profiler = InitUtil.initializeProfiler(options)
+    assertSame(profiler, options.continuousProfiler)
     assert(profiler is JavaContinuousProfiler)
   }
 
   @Test
-  fun `initialize Profiler returns AsyncProfilerProfileConverterProvider if profiling enabled but profiler not yet initialized`() {
-    val options =
-      SentryOptions().also {
-        it.setProfileSessionSampleRate(1.0)
-        it.tracesSampleRate = 1.0
-      }
+  fun `initialize Converter returns AsyncProfilerProfileConverterProvider if profiling enabled but profiler not yet initialized`() {
+    val options = SentryOptions().also { it.setProfileSessionSampleRate(1.0) }
     val converter = InitUtil.initializeProfileConverter(options)
+    assertSame(converter, options.profilerConverter)
     assert(converter is AsyncProfilerProfileConverterProvider.AsyncProfilerProfileConverter)
   }
 }
