@@ -360,19 +360,23 @@ public final class AndroidConnectionStatusProvider
 
   @SuppressLint({"NewApi", "MissingPermission"})
   private void updateCache() {
-    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
-      cachedNetworkCapabilities = null;
-      lastCacheUpdateTime = timeProvider.getCurrentTimeMillis();
-    }
     try {
       if (!Permissions.hasPermission(context, Manifest.permission.ACCESS_NETWORK_STATE)) {
         options
             .getLogger()
             .log(SentryLevel.INFO, "No permission (ACCESS_NETWORK_STATE) to check network status.");
+        try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+          cachedNetworkCapabilities = null;
+          lastCacheUpdateTime = timeProvider.getCurrentTimeMillis();
+        }
         return;
       }
 
       if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.M) {
+        try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+          cachedNetworkCapabilities = null;
+          lastCacheUpdateTime = timeProvider.getCurrentTimeMillis();
+        }
         return;
       }
 
@@ -387,7 +391,7 @@ public final class AndroidConnectionStatusProvider
                 final @Nullable NetworkCapabilities capabilities =
                     getNetworkCapabilities(connectivityManager);
 
-                try (final @NotNull ISentryLifecycleToken ignored2 = lock.acquire()) {
+                try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
                   cachedNetworkCapabilities = capabilities;
                   lastCacheUpdateTime = timeProvider.getCurrentTimeMillis();
 
