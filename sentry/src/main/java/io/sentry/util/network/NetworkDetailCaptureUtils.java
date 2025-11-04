@@ -77,8 +77,8 @@ public final class NetworkDetailCaptureUtils {
   }
 
   /**
-   * Determines if detailed network data should be captured for the given URL. See
-   * <a href="https://docs.sentry.io/platforms/javascript/session-replay/configuration/">docs.sentry.io</a>
+   * Determines if detailed network data should be captured for the given URL. See <a
+   * href="https://docs.sentry.io/platforms/javascript/session-replay/configuration/">docs.sentry.io</a>
    *
    * @param url The URL to check
    * @param networkDetailAllowUrls Array of regex patterns that allow capture (null means allow all)

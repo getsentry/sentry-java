@@ -8,8 +8,9 @@ import org.jetbrains.annotations.NotNull;
  * Represents the body content of a network request or response. Can be one of: JSON object, JSON
  * array, or string.
  *
- * <p>See
- * <a href="https://github.com/getsentry/sentry-javascript/blob/develop/packages/replay-internal/src/types/request.ts">Javascript types</a>
+ * <p>See <a
+ * href="https://github.com/getsentry/sentry-javascript/blob/develop/packages/replay-internal/src/types/request.ts">Javascript
+ * types</a>
  */
 public interface NetworkBody {
 

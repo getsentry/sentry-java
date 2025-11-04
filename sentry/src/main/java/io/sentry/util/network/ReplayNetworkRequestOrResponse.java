@@ -1,13 +1,13 @@
 package io.sentry.util.network;
 
-import java.util.Collections;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Data class for tracking HTTP request or response information in replays. See
- * <a href="https://github.com/getsentry/sentry-javascript/blob/develop/packages/replay-internal/src/types/request.ts">JS SDK types</a>
+ * Data class for tracking HTTP request or response information in replays. See <a
+ * href="https://github.com/getsentry/sentry-javascript/blob/develop/packages/replay-internal/src/types/request.ts">JS
+ * SDK types</a>
  */
 public final class ReplayNetworkRequestOrResponse {
   private final @Nullable Long size;

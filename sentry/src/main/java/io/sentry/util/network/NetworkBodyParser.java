@@ -71,9 +71,7 @@ public final class NetworkBodyParser {
   }
 
   private static @Nullable NetworkBody parse(
-      @Nullable String content,
-      @Nullable String contentType,
-      @Nullable SentryOptions logger) {
+      @Nullable String content, @Nullable String contentType, @Nullable SentryOptions logger) {
 
     if (content == null || content.isEmpty()) {
       return null;
@@ -181,7 +179,8 @@ public final class NetworkBodyParser {
       content += "...[truncated]";
       return NetworkBody.fromString(content);
     } catch (UnsupportedEncodingException e) {
-      return NetworkBody.fromString("[Failed to decode truncated bytes, " + bytes.length + " bytes]");
+      return NetworkBody.fromString(
+          "[Failed to decode truncated bytes, " + bytes.length + " bytes]");
     }
   }
 

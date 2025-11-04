@@ -60,16 +60,15 @@ public open class SentryOkHttpInterceptor(
         .addPackage("maven:io.sentry:sentry-okhttp", BuildConfig.VERSION_NAME)
     }
 
-    /**
-     * Fake options for testing network detail capture
-     */
-    private val FAKE_OPTIONS = object {
-      val networkDetailAllowUrls: Array<String> = emptyArray()
-      val networkDetailDenyUrls: Array<String> = emptyArray()
-      val networkCaptureBodies: Boolean = false
-      val networkRequestHeaders: Array<String> = emptyArray()
-      val networkResponseHeaders: Array<String> = emptyArray()
-    }
+    /** Fake options for testing network detail capture */
+    private val FAKE_OPTIONS =
+      object {
+        val networkDetailAllowUrls: Array<String> = emptyArray()
+        val networkDetailDenyUrls: Array<String> = emptyArray()
+        val networkCaptureBodies: Boolean = false
+        val networkRequestHeaders: Array<String> = emptyArray()
+        val networkResponseHeaders: Array<String> = emptyArray()
+      }
   }
 
   public constructor() : this(ScopesAdapter.getInstance())
@@ -114,12 +113,13 @@ public open class SentryOkHttpInterceptor(
     var response: Response? = null
     var code: Int? = null
 
-    val networkDetailData = NetworkDetailCaptureUtils.initializeForUrl(
-      request.url.toString(),
-      request.method,
-      FAKE_OPTIONS.networkDetailAllowUrls,
-      FAKE_OPTIONS.networkDetailDenyUrls,
-    )
+    val networkDetailData =
+      NetworkDetailCaptureUtils.initializeForUrl(
+        request.url.toString(),
+        request.method,
+        FAKE_OPTIONS.networkDetailAllowUrls,
+        FAKE_OPTIONS.networkDetailDenyUrls,
+      )
 
     try {
       val requestBuilder = request.newBuilder()
@@ -229,13 +229,7 @@ public open class SentryOkHttpInterceptor(
 
       // The SentryOkHttpEventListener will send the breadcrumb itself if used for this call
       if (!isFromEventListener) {
-        sendBreadcrumb(
-          request,
-          code,
-          response,
-          startTimestamp,
-          networkDetailData,
-        )
+        sendBreadcrumb(request, code, response, startTimestamp, networkDetailData)
       }
     }
   }
@@ -248,7 +242,7 @@ public open class SentryOkHttpInterceptor(
     code: Int?,
     response: Response?,
     startTimestamp: Long,
-    networkDetailData: NetworkRequestData?
+    networkDetailData: NetworkRequestData?,
   ) {
     val breadcrumb = Breadcrumb.http(request.url.toString(), request.method, code)
 
@@ -290,9 +284,7 @@ public open class SentryOkHttpInterceptor(
     return headers
   }
 
-  /**
-   * Extracts NetworkBody from already buffered request body data.
-   */
+  /** Extracts NetworkBody from already buffered request body data. */
   private fun safeExtractRequestBody(
     bufferedBody: ByteArray?,
     contentType: okhttp3.MediaType?,
