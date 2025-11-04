@@ -7,6 +7,7 @@ import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.SentryOptions.BeforeBreadcrumbCallback
 import io.sentry.SpanDataConvention
+import io.sentry.TypeCheckHint.SENTRY_REPLAY_NETWORK_DETAILS
 import io.sentry.rrweb.RRWebBreadcrumbEvent
 import io.sentry.rrweb.RRWebEvent
 import io.sentry.rrweb.RRWebSpanEvent
@@ -70,7 +71,7 @@ public open class DefaultReplayBreadcrumbConverter() : ReplayBreadcrumbConverter
         return null
       }
 
-      return breadcrumbHint.get("replay:networkDetails") as? NetworkRequestData
+      return breadcrumbHint.get(SENTRY_REPLAY_NETWORK_DETAILS) as? NetworkRequestData
     }
   }
 

@@ -15,6 +15,7 @@ import io.sentry.SpanDataConvention
 import io.sentry.SpanStatus
 import io.sentry.TypeCheckHint.OKHTTP_REQUEST
 import io.sentry.TypeCheckHint.OKHTTP_RESPONSE
+import io.sentry.TypeCheckHint.SENTRY_REPLAY_NETWORK_DETAILS
 import io.sentry.okhttp.SentryOkHttpInterceptor.BeforeSpanCallback
 import io.sentry.transport.CurrentDateProvider
 import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
@@ -256,7 +257,7 @@ public open class SentryOkHttpInterceptor(
         response?.let { resp -> it[OKHTTP_RESPONSE] = resp }
 
         if (networkDetailData != null) {
-          it.set("replay:networkDetails", networkDetailData)
+          it.set(SENTRY_REPLAY_NETWORK_DETAILS, networkDetailData)
         }
       }
 

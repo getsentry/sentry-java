@@ -5,6 +5,7 @@ import io.sentry.Hint
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.SpanDataConvention
+import io.sentry.TypeCheckHint.SENTRY_REPLAY_NETWORK_DETAILS
 import io.sentry.rrweb.RRWebBreadcrumbEvent
 import io.sentry.rrweb.RRWebSpanEvent
 import io.sentry.util.network.NetworkBody
@@ -435,7 +436,7 @@ class DefaultReplayBreadcrumbConverterTest {
       ),
     )
     val hintWithFakeOKHttpNetworkDetails = Hint()
-    hintWithFakeOKHttpNetworkDetails.set("replay:networkDetails", fakeOkHttpNetworkDetails)
+    hintWithFakeOKHttpNetworkDetails.set(SENTRY_REPLAY_NETWORK_DETAILS, fakeOkHttpNetworkDetails)
 
     options.beforeBreadcrumb?.execute(httpBreadcrumb, hintWithFakeOKHttpNetworkDetails)
 
@@ -497,7 +498,7 @@ class DefaultReplayBreadcrumbConverterTest {
       ),
     )
     val hintWithFakeOKHttpNetworkDetails = Hint()
-    hintWithFakeOKHttpNetworkDetails.set("replay:networkDetails", fakeOkHttpNetworkDetails)
+    hintWithFakeOKHttpNetworkDetails.set(SENTRY_REPLAY_NETWORK_DETAILS, fakeOkHttpNetworkDetails)
 
     options.beforeBreadcrumb?.execute(httpBreadcrumb, hintWithFakeOKHttpNetworkDetails)
 
@@ -551,7 +552,7 @@ class DefaultReplayBreadcrumbConverterTest {
         mapOf("Content-Type" to "application/json"),
       ),
     )
-    hint.set("replay:networkDetails", networkRequestData)
+    hint.set(SENTRY_REPLAY_NETWORK_DETAILS, networkRequestData)
 
     val options = SentryOptions.empty()
     options.beforeBreadcrumb = null
