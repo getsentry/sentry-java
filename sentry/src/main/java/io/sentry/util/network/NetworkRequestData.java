@@ -2,7 +2,6 @@ package io.sentry.util.network;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.VisibleForTesting;
 
 /**
  * Data class for tracking network request and response information in replays. Used by various HTTP
@@ -11,27 +10,15 @@ import org.jetbrains.annotations.VisibleForTesting;
  * https://github.com/getsentry/sentry-javascript/blob/632f0b953d99050c11b0edafb9f80b5f3ba88045/packages/replay-internal/src/types/performance.ts#L133-L140
  */
 public final class NetworkRequestData {
-  private @Nullable String method;
+  private @Nullable final String method;
   private @Nullable Integer statusCode;
   private @Nullable Long requestBodySize;
   private @Nullable Long responseBodySize;
   private @Nullable ReplayNetworkRequestOrResponse request;
   private @Nullable ReplayNetworkRequestOrResponse response;
 
-  @VisibleForTesting
-  public NetworkRequestData(
-      @Nullable String method,
-      @Nullable Integer statusCode,
-      @Nullable Long requestBodySize,
-      @Nullable Long responseBodySize,
-      @Nullable ReplayNetworkRequestOrResponse request,
-      @Nullable ReplayNetworkRequestOrResponse response) {
+  public NetworkRequestData(@Nullable final String method) {
     this.method = method;
-    this.statusCode = statusCode;
-    this.requestBodySize = requestBodySize;
-    this.responseBodySize = responseBodySize;
-    this.request = request;
-    this.response = response;
   }
 
   public @Nullable String getMethod() {
@@ -62,7 +49,7 @@ public final class NetworkRequestData {
    * Populates this instance with request details obtained via {@link
    * NetworkDetailCaptureUtils#createRequest}
    */
-  public void setRequestDetails(@NotNull ReplayNetworkRequestOrResponse requestData) {
+  public void setRequestDetails(@NotNull final ReplayNetworkRequestOrResponse requestData) {
     this.request = requestData;
     this.requestBodySize = requestData.getSize();
   }
@@ -72,7 +59,7 @@ public final class NetworkRequestData {
    * NetworkDetailCaptureUtils#createResponse}
    */
   public void setResponseDetails(
-      int statusCode, @NotNull ReplayNetworkRequestOrResponse responseData) {
+      final int statusCode, @NotNull final ReplayNetworkRequestOrResponse responseData) {
     this.statusCode = statusCode;
     this.response = responseData;
     this.responseBodySize = responseData.getSize();

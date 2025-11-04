@@ -418,23 +418,22 @@ class DefaultReplayBreadcrumbConverterTest {
         data[SpanDataConvention.HTTP_END_TIMESTAMP] = 2000L
       }
 
-    val fakeOkHttpNetworkDetails =
-      NetworkRequestData(
-        "POST",
-        200,
+    val fakeOkHttpNetworkDetails = NetworkRequestData("POST")
+    fakeOkHttpNetworkDetails.setRequestDetails(
+      ReplayNetworkRequestOrResponse(
         100L,
+        NetworkBody.fromString("request body content"),
+        mapOf("Content-Type" to "application/json"),
+      ),
+    )
+    fakeOkHttpNetworkDetails.setResponseDetails(
+      200,
+      ReplayNetworkRequestOrResponse(
         500L,
-        ReplayNetworkRequestOrResponse(
-          100L,
-          NetworkBody.fromString("request body content"),
-          mapOf("Content-Type" to "application/json"),
-        ),
-        ReplayNetworkRequestOrResponse(
-          500L,
-          NetworkBody.fromJsonObject(mapOf("status" to "success", "message" to "OK")),
-          mapOf("Content-Type" to "text/plain"),
-        ),
-      )
+        NetworkBody.fromJsonObject(mapOf("status" to "success", "message" to "OK")),
+        mapOf("Content-Type" to "text/plain"),
+      ),
+    )
     val hintWithFakeOKHttpNetworkDetails = Hint()
     hintWithFakeOKHttpNetworkDetails.set("replay:networkDetails", fakeOkHttpNetworkDetails)
 
@@ -481,23 +480,22 @@ class DefaultReplayBreadcrumbConverterTest {
         data[SpanDataConvention.HTTP_END_TIMESTAMP] = 2000L
       }
 
-    val fakeOkHttpNetworkDetails =
-      NetworkRequestData(
-        "POST",
-        404,
-        250L,
-        340L,
-        ReplayNetworkRequestOrResponse(
-          100L,
-          NetworkBody.fromJsonArray(listOf("item1", "item2", "item3")),
-          mapOf("Content-Type" to "application/json"),
-        ),
-        ReplayNetworkRequestOrResponse(
-          500L,
-          NetworkBody.fromJsonObject(mapOf("status" to "success", "message" to "OK")),
-          mapOf("Content-Type" to "text/plain"),
-        ),
-      )
+    val fakeOkHttpNetworkDetails = NetworkRequestData("POST")
+    fakeOkHttpNetworkDetails.setRequestDetails(
+      ReplayNetworkRequestOrResponse(
+        150L,
+        NetworkBody.fromJsonArray(listOf("item1", "item2", "item3")),
+        mapOf("Content-Type" to "application/json"),
+      ),
+    )
+    fakeOkHttpNetworkDetails.setResponseDetails(
+      404,
+      ReplayNetworkRequestOrResponse(
+        550L,
+        NetworkBody.fromJsonObject(mapOf("status" to "success", "message" to "OK")),
+        mapOf("Content-Type" to "text/plain"),
+      ),
+    )
     val hintWithFakeOKHttpNetworkDetails = Hint()
     hintWithFakeOKHttpNetworkDetails.set("replay:networkDetails", fakeOkHttpNetworkDetails)
 
@@ -510,20 +508,20 @@ class DefaultReplayBreadcrumbConverterTest {
     // Meta data
     assertEquals("POST", rrwebEvent.data!!["method"])
     assertEquals(404, rrwebEvent.data!!["statusCode"])
-    assertEquals(250L, rrwebEvent.data!!["requestBodySize"])
-    assertEquals(340L, rrwebEvent.data!!["responseBodySize"])
+    assertEquals(150L, rrwebEvent.data!!["requestBodySize"])
+    assertEquals(550L, rrwebEvent.data!!["responseBodySize"])
 
     // Request data
     val requestData = rrwebEvent.data!!["request"] as? Map<*, *>
     assertNotNull(requestData)
-    assertEquals(100L, requestData["size"])
+    assertEquals(150L, requestData["size"])
     assertEquals(listOf("item1", "item2", "item3"), requestData["body"])
     assertEquals(mapOf("Content-Type" to "application/json"), requestData["headers"])
 
     // Response data
     val responseData = rrwebEvent.data!!["response"] as? Map<*, *>
     assertNotNull(responseData)
-    assertEquals(500L, responseData["size"])
+    assertEquals(550L, responseData["size"])
     assertEquals(mapOf("status" to "success", "message" to "OK"), responseData["body"])
     assertEquals(mapOf("Content-Type" to "text/plain"), responseData["headers"])
   }
@@ -537,25 +535,23 @@ class DefaultReplayBreadcrumbConverterTest {
         data["to"] = "/home"
       }
     val hint = Hint()
-    hint.set(
-      "replay:networkDetails",
-      NetworkRequestData(
-        "GET",
-        200,
-        540L,
-        220L,
-        ReplayNetworkRequestOrResponse(
-          100L,
-          NetworkBody.fromString("request body content"),
-          mapOf("Content-Type" to "application/json"),
-        ),
-        ReplayNetworkRequestOrResponse(
-          100L,
-          NetworkBody.fromString("respnse body content"),
-          mapOf("Content-Type" to "application/json"),
-        ),
+    val networkRequestData = NetworkRequestData("GET")
+    networkRequestData.setRequestDetails(
+      ReplayNetworkRequestOrResponse(
+        100L,
+        NetworkBody.fromString("request body content"),
+        mapOf("Content-Type" to "application/json"),
       ),
     )
+    networkRequestData.setResponseDetails(
+      200,
+      ReplayNetworkRequestOrResponse(
+        100L,
+        NetworkBody.fromString("respnse body content"),
+        mapOf("Content-Type" to "application/json"),
+      ),
+    )
+    hint.set("replay:networkDetails", networkRequestData)
 
     val options = SentryOptions.empty()
     options.beforeBreadcrumb = null

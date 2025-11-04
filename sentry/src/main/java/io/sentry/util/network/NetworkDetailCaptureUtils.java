@@ -16,26 +16,26 @@ public final class NetworkDetailCaptureUtils {
   /** Functional interface for extracting network body content from HTTP objects. */
   public interface NetworkBodyExtractor<T> {
     @Nullable
-    NetworkBody extract(@NotNull T httpObject);
+    NetworkBody extract(@NotNull final T httpObject);
   }
 
   /** Functional interface for extracting headers from HTTP objects. */
   public interface NetworkHeaderExtractor<T> {
     @NotNull
-    Map<String, String> extract(@NotNull T httpObject);
+    Map<String, String> extract(@NotNull final T httpObject);
   }
 
   public static @Nullable NetworkRequestData initializeForUrl(
-      @NotNull String url,
-      @Nullable String method,
-      @Nullable String[] networkDetailAllowUrls,
-      @Nullable String[] networkDetailDenyUrls) {
+      @NotNull final String url,
+      @Nullable final String method,
+      @Nullable final String[] networkDetailAllowUrls,
+      @Nullable final String[] networkDetailDenyUrls) {
 
     if (!shouldCaptureUrl(url, networkDetailAllowUrls, networkDetailDenyUrls)) {
       return null;
     }
 
-    return new NetworkRequestData(method, null, null, null, null, null);
+    return new NetworkRequestData(method);
   }
 
   /**
@@ -43,12 +43,12 @@ public final class NetworkDetailCaptureUtils {
    * configuration.
    */
   public static <T> @NotNull ReplayNetworkRequestOrResponse createRequest(
-      @NotNull T httpObject,
-      @Nullable Long bodySize,
-      boolean networkCaptureBodies,
-      @NotNull NetworkBodyExtractor<T> bodyExtractor,
-      @NotNull String[] networkRequestHeaders,
-      @NotNull NetworkHeaderExtractor<T> headerExtractor) {
+      @NotNull final T httpObject,
+      @Nullable final Long bodySize,
+      final boolean networkCaptureBodies,
+      @NotNull final NetworkBodyExtractor<T> bodyExtractor,
+      @NotNull final String[] networkRequestHeaders,
+      @NotNull final NetworkHeaderExtractor<T> headerExtractor) {
 
     return createRequestOrResponseInternal(
         httpObject,
@@ -60,12 +60,12 @@ public final class NetworkDetailCaptureUtils {
   }
 
   public static <T> @NotNull ReplayNetworkRequestOrResponse createResponse(
-      @NotNull T httpObject,
-      @Nullable Long bodySize,
-      boolean networkCaptureBodies,
-      @NotNull NetworkBodyExtractor<T> bodyExtractor,
-      @NotNull String[] networkResponseHeaders,
-      @NotNull NetworkHeaderExtractor<T> headerExtractor) {
+      @NotNull final T httpObject,
+      @Nullable final Long bodySize,
+      final boolean networkCaptureBodies,
+      @NotNull final NetworkBodyExtractor<T> bodyExtractor,
+      @NotNull final String[] networkResponseHeaders,
+      @NotNull final NetworkHeaderExtractor<T> headerExtractor) {
 
     return createRequestOrResponseInternal(
         httpObject,
@@ -86,9 +86,9 @@ public final class NetworkDetailCaptureUtils {
    * @return true if the URL should be captured, false otherwise
    */
   private static boolean shouldCaptureUrl(
-      @NotNull String url,
-      @Nullable String[] networkDetailAllowUrls,
-      @Nullable String[] networkDetailDenyUrls) {
+      @NotNull final String url,
+      @Nullable final String[] networkDetailAllowUrls,
+      @Nullable final String[] networkDetailDenyUrls) {
 
     // If there are deny patterns and URL matches any, don't capture.
     if (networkDetailDenyUrls != null) {
@@ -115,7 +115,7 @@ public final class NetworkDetailCaptureUtils {
   }
 
   private static @NotNull Map<String, String> getCaptureHeaders(
-      @Nullable Map<String, String> allHeaders, @NotNull String[] allowedHeaders) {
+      @Nullable final Map<String, String> allHeaders, @NotNull final String[] allowedHeaders) {
 
     Map<String, String> capturedHeaders = new HashMap<>();
 
@@ -134,12 +134,12 @@ public final class NetworkDetailCaptureUtils {
   }
 
   private static <T> @NotNull ReplayNetworkRequestOrResponse createRequestOrResponseInternal(
-      @NotNull T httpObject,
-      @Nullable Long bodySize,
-      boolean networkCaptureBodies,
-      @NotNull NetworkBodyExtractor<T> bodyExtractor,
-      @NotNull String[] allowedHeaders,
-      @NotNull NetworkHeaderExtractor<T> headerExtractor) {
+      @NotNull final T httpObject,
+      @Nullable final Long bodySize,
+      final boolean networkCaptureBodies,
+      @NotNull final NetworkBodyExtractor<T> bodyExtractor,
+      @NotNull final String[] allowedHeaders,
+      @NotNull final NetworkHeaderExtractor<T> headerExtractor) {
 
     NetworkBody body = null;
 

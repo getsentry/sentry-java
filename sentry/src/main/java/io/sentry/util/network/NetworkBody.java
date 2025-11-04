@@ -20,7 +20,7 @@ public interface NetworkBody {
    * @param value The map representing the JSON object
    * @return A NetworkBody instance for the JSON object
    */
-  static @NotNull NetworkBody fromJsonObject(@NotNull Map<String, Object> value) {
+  static @NotNull NetworkBody fromJsonObject(@NotNull final Map<String, Object> value) {
     return new JsonObjectImpl(value);
   }
 
@@ -30,7 +30,7 @@ public interface NetworkBody {
    * @param value The list representing the JSON array
    * @return A NetworkBody instance for the JSON array
    */
-  static @NotNull NetworkBody fromJsonArray(@NotNull List<Object> value) {
+  static @NotNull NetworkBody fromJsonArray(@NotNull final List<Object> value) {
     return new JsonArrayImpl(value);
   }
 
@@ -40,7 +40,7 @@ public interface NetworkBody {
    * @param value The string content
    * @return A NetworkBody instance for the string
    */
-  static @NotNull NetworkBody fromString(@NotNull String value) {
+  static @NotNull NetworkBody fromString(@NotNull final String value) {
     return new StringBodyImpl(value);
   }
 
@@ -58,7 +58,7 @@ public interface NetworkBody {
   final class JsonObjectImpl implements NetworkBody {
     private final @NotNull Map<String, Object> value;
 
-    JsonObjectImpl(@NotNull Map<String, Object> value) {
+    JsonObjectImpl(@NotNull final Map<String, Object> value) {
       this.value = value;
     }
 
@@ -77,7 +77,7 @@ public interface NetworkBody {
   final class JsonArrayImpl implements NetworkBody {
     private final @NotNull List<Object> value;
 
-    JsonArrayImpl(@NotNull List<Object> value) {
+    JsonArrayImpl(@NotNull final List<Object> value) {
       this.value = value;
     }
 
@@ -96,7 +96,7 @@ public interface NetworkBody {
   final class StringBodyImpl implements NetworkBody {
     private final @NotNull String value;
 
-    StringBodyImpl(@NotNull String value) {
+    StringBodyImpl(@NotNull final String value) {
       this.value = value;
     }
 

@@ -30,11 +30,11 @@ public final class NetworkBodyParser {
    * @return A NetworkBody or null if bytes are null/empty
    */
   public static @Nullable NetworkBody fromBytes(
-      @Nullable byte[] bytes,
-      @Nullable String contentType,
-      @Nullable String charset,
-      int maxSizeBytes,
-      @Nullable SentryOptions logger) {
+      @Nullable final byte[] bytes,
+      @Nullable final String contentType,
+      @Nullable final String charset,
+      final int maxSizeBytes,
+      @Nullable final SentryOptions logger) {
 
     if (bytes == null || bytes.length == 0) {
       return null;
@@ -71,7 +71,7 @@ public final class NetworkBodyParser {
   }
 
   private static @Nullable NetworkBody parse(
-      @Nullable String content, @Nullable String contentType, @Nullable SentryOptions logger) {
+      @Nullable final String content, @Nullable final String contentType, @Nullable final SentryOptions logger) {
 
     if (content == null || content.isEmpty()) {
       return null;
@@ -118,7 +118,7 @@ public final class NetworkBodyParser {
 
   /** Parses URL-encoded form data into a JsonObject NetworkBody. */
   private static @Nullable NetworkBody parseFormUrlEncoded(
-      @NotNull String content, @Nullable SentryOptions logger) {
+      @NotNull final String content, @Nullable final SentryOptions logger) {
     try {
       Map<String, Object> params = new HashMap<>();
       String[] pairs = content.split("&", -1);
@@ -160,7 +160,7 @@ public final class NetworkBodyParser {
 
   /** Creates a truncated NetworkBody from oversized bytes with proper UTF-8 character handling. */
   private static @NotNull NetworkBody createTruncatedNetworkBody(
-      @NotNull byte[] bytes, int maxSizeBytes, @Nullable String charset) {
+      @NotNull final byte[] bytes, final int maxSizeBytes, @Nullable final String charset) {
     byte[] truncatedBytes = new byte[maxSizeBytes];
     System.arraycopy(bytes, 0, truncatedBytes, 0, maxSizeBytes);
 
@@ -185,7 +185,7 @@ public final class NetworkBodyParser {
   }
 
   /** Checks if the content type is binary and shouldn't be converted to string. */
-  private static boolean isBinaryContentType(@NotNull String contentType) {
+  private static boolean isBinaryContentType(@NotNull final String contentType) {
     String lower = contentType.toLowerCase();
     return lower.contains("image/")
         || lower.contains("video/")
