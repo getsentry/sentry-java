@@ -233,10 +233,7 @@ public final class JavaContinuousProfiler
               "start,jfr,event=wall,nobatch,interval=%s,file=%s",
               profilingIntervalMicros, filename);
 
-      logger.log(SentryLevel.INFO, command);
-
       profiler.execute(command);
-
     } catch (Exception e) {
       logger.log(SentryLevel.ERROR, "Failed to start profiling: ", e);
       filename = "";

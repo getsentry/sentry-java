@@ -5,6 +5,7 @@
 ### Features
 
 - Remove vendored code and upgrade to async profiler 4.2 ([#4856](https://github.com/getsentry/sentry-java/pull/4856))
+  - This adds support for JDK 23+
 
 ### Improvements
 
