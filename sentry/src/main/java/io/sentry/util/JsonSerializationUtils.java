@@ -65,4 +65,90 @@ public final class JsonSerializationUtils {
       return null;
     }
   }
+
+  /**
+   * Calculates the size in bytes of a serializable object when serialized to JSON without actually
+   * storing the serialized data. This is more memory efficient than {@link #bytesFrom(ISerializer,
+   * ILogger, JsonSerializable)} when you only need the size.
+   *
+   * @param serializer the serializer
+   * @param logger the logger
+   * @param serializable the serializable object
+   * @return the size in bytes, or -1 if serialization fails
+   */
+  public static long byteSizeOf(
+      final @NotNull ISerializer serializer,
+      final @NotNull ILogger logger,
+      final @Nullable JsonSerializable serializable) {
+    if (serializable == null) {
+      return 0;
+    }
+    try {
+      final ByteCountingWriter writer = new ByteCountingWriter();
+      serializer.serialize(serializable, writer);
+      return writer.getByteCount();
+    } catch (Throwable t) {
+      logger.log(SentryLevel.ERROR, "Could not calculate size of serializable", t);
+      return 0;
+    }
+  }
+
+  /**
+   * A Writer that counts the number of bytes that would be written in UTF-8 encoding without
+   * actually storing the data.
+   */
+  private static final class ByteCountingWriter extends Writer {
+    private long byteCount = 0L;
+
+    @Override
+    public void write(final char[] cbuf, final int off, final int len) {
+      for (int i = off; i < off + len; i++) {
+        byteCount += utf8ByteCount(cbuf[i]);
+      }
+    }
+
+    @Override
+    public void write(final int c) {
+      byteCount += utf8ByteCount((char) c);
+    }
+
+    @Override
+    public void write(final @NotNull String str, final int off, final int len) {
+      for (int i = off; i < off + len; i++) {
+        byteCount += utf8ByteCount(str.charAt(i));
+      }
+    }
+
+    @Override
+    public void flush() {
+      // Nothing to flush since we don't store data
+    }
+
+    @Override
+    public void close() {
+      // Nothing to close
+    }
+
+    public long getByteCount() {
+      return byteCount;
+    }
+
+    /**
+     * Calculates the number of bytes needed to encode a character in UTF-8.
+     *
+     * @param c the character
+     * @return the number of bytes (1-4)
+     */
+    private static int utf8ByteCount(final char c) {
+      if (c <= 0x7F) {
+        return 1; // ASCII
+      } else if (c <= 0x7FF) {
+        return 2; // 2-byte character
+      } else if (Character.isSurrogate(c)) {
+        return 2; // Surrogate pair, counted as 2 bytes each (total 4 for the pair)
+      } else {
+        return 3; // 3-byte character
+      }
+    }
+  }
 }
