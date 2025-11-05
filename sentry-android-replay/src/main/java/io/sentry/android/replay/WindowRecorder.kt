@@ -244,6 +244,21 @@ internal class WindowRecorder(
   override fun getExecutor(): ScheduledExecutorService = replayExecutor
 
   override fun getMainLooperHandler(): MainLooperHandler = mainLooperHandler
+
+  override fun getBackgroundHandler(): Handler {
+    // only start the background thread if it's actually needed, as it's only used by Canvas Capture
+    // Strategy
+    if (backgroundProcessingHandler == null) {
+      backgroundProcessingHandlerLock.acquire().use {
+        if (backgroundProcessingHandler == null) {
+          backgroundProcessingHandlerThread = HandlerThread("SentryReplayBackgroundProcessing")
+          backgroundProcessingHandlerThread?.start()
+          backgroundProcessingHandler = Handler(backgroundProcessingHandlerThread!!.looper)
+        }
+      }
+    }
+    return backgroundProcessingHandler!!
+  }
 }
 
 internal interface ExecutorProvider {
@@ -252,4 +267,7 @@ internal interface ExecutorProvider {
 
   /** Returns a handler associated with the main thread looper. */
   fun getMainLooperHandler(): MainLooperHandler
+
+  /** Returns a handler associated with a background thread looper. */
+  fun getBackgroundHandler(): Handler
 }
