@@ -2,6 +2,46 @@
 
 ## Unreleased
 
+### Fixes
+
+- Removed SentryExecutorService limit for delayed scheduled tasks ([#4846](https://github.com/getsentry/sentry-java/pull/4846))
+- Fix visual artifacts for the Canvas strategy on some devices ([#4861](https://github.com/getsentry/sentry-java/pull/4861))
+
+### Improvements
+
+- Fallback to distinct-id as user.id logging attribute when user is not set ([#4847](https://github.com/getsentry/sentry-java/pull/4847))
+- Report Timber.tag() as `timber.tag` log attribute ([#4845](https://github.com/getsentry/sentry-java/pull/4845))
+- Session Replay: Add screenshot strategy serialization to RRWeb events ([#4851](https://github.com/getsentry/sentry-java/pull/4851))
+
+### Dependencies
+
+- Bump Native SDK from v0.11.3 to v0.12.1 ([#4859](https://github.com/getsentry/sentry-java/pull/4859))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0121)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.11.3...0.12.1)
+
+## 8.25.0
+
+### Fixes
+
+- [ANR] Removed AndroidTransactionProfiler lock ([#4817](https://github.com/getsentry/sentry-java/pull/4817))
+- Avoid ExecutorService for DefaultCompositePerformanceCollector timeout ([#4841](https://github.com/getsentry/sentry-java/pull/4841))
+  - This avoids infinite data collection for never stopped transactions, leading to OOMs
+- Fix wrong .super() call in SentryTimberTree ([#4844](https://github.com/getsentry/sentry-java/pull/4844))
+
+### Improvements
+
+- [ANR] Defer some class availability checks ([#4825](https://github.com/getsentry/sentry-java/pull/4825))
+- Collect PerformanceCollectionData only for sampled transactions ([#4834](https://github.com/getsentry/sentry-java/pull/4834))
+  - **Breaking change**: Transactions with a deferred sampling decision (`sampled == null`) won't be collecting any performance data anymore (CPU, RAM, slow/frozen frames).
+
+### Dependencies
+
+- Bump Native SDK from v0.11.2 to v0.11.3 ([#4810](https://github.com/getsentry/sentry-java/pull/4810))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0113)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.11.2...0.11.3)
+
+## 8.24.0
+
 ### Features
 
 - Attach MDC properties to logs as attributes ([#4786](https://github.com/getsentry/sentry-java/pull/4786))
@@ -37,6 +77,11 @@
 - Session Replay: Avoid deadlock when pausing replay if no connection ([#4788](https://github.com/getsentry/sentry-java/pull/4788))
 - Session Replay: Fix capturing roots with no windows ([#4805](https://github.com/getsentry/sentry-java/pull/4805))
 - Session Replay: Fix `java.lang.IllegalArgumentException: width and height must be > 0` ([#4805](https://github.com/getsentry/sentry-java/pull/4805))
+- Handle `NoOpScopes` in `Context` when starting a span through OpenTelemetry ([#4823](https://github.com/getsentry/sentry-java/pull/4823))
+  - This fixes "java.lang.IllegalArgumentException: The DSN is required" when combining WebFlux and OpenTelemetry
+- Session Replay: Do not use recycled screenshots for masking ([#4790](https://github.com/getsentry/sentry-java/pull/4790))
+  - This fixes native crashes seen in `Canvas.<init>`/`ScreenshotRecorder.capture`
+- Session Replay: Ensure bitmaps are recycled properly ([#4820](https://github.com/getsentry/sentry-java/pull/4820))
 
 ### Miscellaneous
 

@@ -131,9 +131,10 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
 
     final File crashMarkerFile = new File(outboxPath, STARTUP_CRASH_MARKER_FILE);
     try {
-      final boolean exists = crashMarkerFile.exists();
+      final boolean exists =
+          options.getRuntimeManager().runWithRelaxedPolicy(() -> crashMarkerFile.exists());
       if (exists) {
-        if (!crashMarkerFile.delete()) {
+        if (!options.getRuntimeManager().runWithRelaxedPolicy(() -> crashMarkerFile.delete())) {
           options
               .getLogger()
               .log(
