@@ -78,9 +78,9 @@ internal class CanvasStrategy(
       return@Runnable
     }
     val picture = unprocessedPictureRef.getAndSet(null) ?: return@Runnable
-
     try {
-      // Draw picture to the Surface for PixelCopy
+      // It's safe to access the surface because the
+      // surface release within close() is executed on the same background handler
       val surfaceCanvas = surface.lockHardwareCanvas()
       try {
         surfaceCanvas.drawColor(Color.BLACK, PorterDuff.Mode.CLEAR)
@@ -92,16 +92,27 @@ internal class CanvasStrategy(
       if (screenshot == null) {
         screenshotLock.acquire().use {
           if (screenshot == null) {
-            screenshot = Bitmap.createBitmap(picture.width, picture.height, Bitmap.Config.ARGB_8888)
+            screenshot =
+              Bitmap.createBitmap(
+                config.recordingWidth,
+                config.recordingHeight,
+                Bitmap.Config.ARGB_8888,
+              )
           }
         }
       }
 
-      // Trigger PixelCopy capture
       PixelCopy.request(
         surface,
         screenshot!!,
         { result ->
+          if (isClosed.get()) {
+            options.logger.log(
+              SentryLevel.DEBUG,
+              "CanvasStrategy is closed, ignoring capture result",
+            )
+            return@request
+          }
           if (result == PixelCopy.SUCCESS) {
             lastCaptureSuccessful.set(true)
             val bitmap = screenshot
@@ -119,7 +130,7 @@ internal class CanvasStrategy(
         executor.getBackgroundHandler(),
       )
     } catch (t: Throwable) {
-      options.logger.log(SentryLevel.ERROR, "Canvas Strategy: picture render failed")
+      options.logger.log(SentryLevel.ERROR, "Canvas Strategy: picture render failed", t)
       lastCaptureSuccessful.set(false)
     }
   }
@@ -153,8 +164,8 @@ internal class CanvasStrategy(
   override fun close() {
     isClosed.set(true)
     executor
-      .getExecutor()
-      .submit(
+      .getBackgroundHandler()
+      .post(
         ReplayRunnable("CanvasStrategy.close") {
           screenshot?.let { synchronized(it) { if (!it.isRecycled) it.recycle() } }
           surface.release()
