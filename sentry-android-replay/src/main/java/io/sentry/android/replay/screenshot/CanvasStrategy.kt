@@ -179,6 +179,7 @@ internal class CanvasStrategy(
           surfaceTexture.release()
         }
       )
+    unprocessedPictureRef.getAndSet(null)
   }
 
   override fun lastCaptureSuccessful(): Boolean = lastCaptureSuccessful.get()
