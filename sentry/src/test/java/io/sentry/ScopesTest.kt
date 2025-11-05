@@ -2875,7 +2875,11 @@ class ScopesTest {
 
   @Test
   fun `adds user fields to log attributes`() {
-    val (sut, mockClient) = getEnabledScopes { it.logs.isEnabled = true }
+    val (sut, mockClient) =
+      getEnabledScopes {
+        it.logs.isEnabled = true
+        it.distinctId = "distinctId"
+      }
 
     sut.configureScope { scope ->
       scope.user =
@@ -2909,11 +2913,12 @@ class ScopesTest {
   }
 
   @Test
-  fun `missing user does not break attributes`() {
+  fun `unset user does provide distinct-id as user-id`() {
     val (sut, mockClient) =
       getEnabledScopes {
         it.logs.isEnabled = true
         it.isSendDefaultPii = true
+        it.distinctId = "distinctId"
       }
 
     sut.logger().log(SentryLogLevel.WARN, "log message")
@@ -2923,6 +2928,29 @@ class ScopesTest {
         check {
           assertEquals("log message", it.body)
 
+          assertEquals("distinctId", it.attributes?.get("user.id")?.value)
+          assertNull(it.attributes?.get("user.name"))
+          assertNull(it.attributes?.get("user.email"))
+        },
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `unset user does provide null user-id when distinct-id is missing`() {
+    val (sut, mockClient) =
+      getEnabledScopes {
+        it.logs.isEnabled = true
+        it.isSendDefaultPii = true
+        it.distinctId = null
+      }
+
+    sut.logger().log(SentryLogLevel.WARN, "log message")
+
+    verify(mockClient)
+      .captureLog(
+        check {
+          assertEquals("log message", it.body)
           assertNull(it.attributes?.get("user.id"))
           assertNull(it.attributes?.get("user.name"))
           assertNull(it.attributes?.get("user.email"))
@@ -2937,6 +2965,7 @@ class ScopesTest {
       getEnabledScopes {
         it.logs.isEnabled = true
         it.isSendDefaultPii = true
+        it.distinctId = "distinctId"
       }
 
     sut.configureScope { scope -> scope.user = User() }
