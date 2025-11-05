@@ -346,6 +346,18 @@ public class SentryOptions {
    */
   private boolean enableDeduplication = true;
 
+  /**
+   * Enables event size limiting with {@link EventSizeLimitingEventProcessor}. When enabled, events
+   * exceeding 1MB will have breadcrumbs and stack frames reduced to stay under the limit.
+   */
+  private boolean enableEventSizeLimiting = false;
+
+  /**
+   * Callback invoked when an oversized event is detected. This allows custom handling of oversized
+   * events before the automatic reduction steps are applied.
+   */
+  private @Nullable OnOversizedErrorCallback onOversizedError;
+
   /** Maximum number of spans that can be atteched to single transaction. */
   private int maxSpans = 1000;
 
@@ -1714,6 +1726,44 @@ public class SentryOptions {
    */
   public void setEnableDeduplication(final boolean enableDeduplication) {
     this.enableDeduplication = enableDeduplication;
+  }
+
+  /**
+   * Returns if event size limiting is enabled.
+   *
+   * @return true if event size limiting is enabled, false otherwise
+   */
+  public boolean isEnableEventSizeLimiting() {
+    return enableEventSizeLimiting;
+  }
+
+  /**
+   * Enables or disables event size limiting. When enabled, events exceeding 1MB will have
+   * breadcrumbs and stack frames reduced to stay under the limit.
+   *
+   * @param enableEventSizeLimiting true to enable, false to disable
+   */
+  public void setEnableEventSizeLimiting(final boolean enableEventSizeLimiting) {
+    this.enableEventSizeLimiting = enableEventSizeLimiting;
+  }
+
+  /**
+   * Returns the onOversizedError callback.
+   *
+   * @return the onOversizedError callback or null if not set
+   */
+  public @Nullable OnOversizedErrorCallback getOnOversizedError() {
+    return onOversizedError;
+  }
+
+  /**
+   * Sets the onOversizedError callback. This callback is invoked when an oversized event is
+   * detected, before the automatic reduction steps are applied.
+   *
+   * @param onOversizedError the onOversizedError callback
+   */
+  public void setOnOversizedError(@Nullable OnOversizedErrorCallback onOversizedError) {
+    this.onOversizedError = onOversizedError;
   }
 
   /**
@@ -3098,6 +3148,21 @@ public class SentryOptions {
      */
     @Nullable
     Breadcrumb execute(@NotNull Breadcrumb breadcrumb, @NotNull Hint hint);
+  }
+
+  /** The OnOversizedError callback */
+  public interface OnOversizedErrorCallback {
+
+    /**
+     * Called when an oversized event is detected. This callback allows custom handling of oversized
+     * events before automatic reduction steps are applied.
+     *
+     * @param event the oversized event
+     * @param hint the hints
+     * @return the modified event (should ideally be reduced in size)
+     */
+    @NotNull
+    SentryEvent execute(@NotNull SentryEvent event, @NotNull Hint hint);
   }
 
   /** The OnDiscard callback */

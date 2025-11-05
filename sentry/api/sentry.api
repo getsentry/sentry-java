@@ -347,6 +347,7 @@ public final class io/sentry/DataCategory : java/lang/Enum {
 	public static final field Default Lio/sentry/DataCategory;
 	public static final field Error Lio/sentry/DataCategory;
 	public static final field Feedback Lio/sentry/DataCategory;
+	public static final field LogByte Lio/sentry/DataCategory;
 	public static final field LogItem Lio/sentry/DataCategory;
 	public static final field Monitor Lio/sentry/DataCategory;
 	public static final field Profile Lio/sentry/DataCategory;
@@ -3384,6 +3385,7 @@ public class io/sentry/SentryOptions {
 	public fun getMaxTraceFileSize ()J
 	public fun getModulesLoader ()Lio/sentry/internal/modules/IModulesLoader;
 	public fun getOnDiscard ()Lio/sentry/SentryOptions$OnDiscardCallback;
+	public fun getOnOversizedError ()Lio/sentry/SentryOptions$OnOversizedErrorCallback;
 	public fun getOpenTelemetryMode ()Lio/sentry/SentryOpenTelemetryMode;
 	public fun getOptionsObservers ()Ljava/util/List;
 	public fun getOutboxPath ()Ljava/lang/String;
@@ -3434,6 +3436,7 @@ public class io/sentry/SentryOptions {
 	public fun isEnableAutoSessionTracking ()Z
 	public fun isEnableBackpressureHandling ()Z
 	public fun isEnableDeduplication ()Z
+	public fun isEnableEventSizeLimiting ()Z
 	public fun isEnableExternalConfiguration ()Z
 	public fun isEnablePrettySerializationOutput ()Z
 	public fun isEnableScopePersistence ()Z
@@ -3490,6 +3493,7 @@ public class io/sentry/SentryOptions {
 	public fun setEnableAutoSessionTracking (Z)V
 	public fun setEnableBackpressureHandling (Z)V
 	public fun setEnableDeduplication (Z)V
+	public fun setEnableEventSizeLimiting (Z)V
 	public fun setEnableExternalConfiguration (Z)V
 	public fun setEnablePrettySerializationOutput (Z)V
 	public fun setEnableScopePersistence (Z)V
@@ -3531,6 +3535,7 @@ public class io/sentry/SentryOptions {
 	public fun setMaxTraceFileSize (J)V
 	public fun setModulesLoader (Lio/sentry/internal/modules/IModulesLoader;)V
 	public fun setOnDiscard (Lio/sentry/SentryOptions$OnDiscardCallback;)V
+	public fun setOnOversizedError (Lio/sentry/SentryOptions$OnOversizedErrorCallback;)V
 	public fun setOpenTelemetryMode (Lio/sentry/SentryOpenTelemetryMode;)V
 	public fun setPrintUncaughtStackTrace (Z)V
 	public fun setProfileLifecycle (Lio/sentry/ProfileLifecycle;)V
@@ -3638,6 +3643,10 @@ public abstract interface class io/sentry/SentryOptions$Logs$BeforeSendLogCallba
 
 public abstract interface class io/sentry/SentryOptions$OnDiscardCallback {
 	public abstract fun execute (Lio/sentry/clientreport/DiscardReason;Lio/sentry/DataCategory;Ljava/lang/Long;)V
+}
+
+public abstract interface class io/sentry/SentryOptions$OnOversizedErrorCallback {
+	public abstract fun execute (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
 }
 
 public abstract interface class io/sentry/SentryOptions$ProfilesSamplerCallback {
@@ -6996,6 +7005,10 @@ public final class io/sentry/util/EventProcessorUtils {
 	public static fun unwrap (Ljava/util/List;)Ljava/util/List;
 }
 
+public final class io/sentry/util/EventSizeLimitingUtils {
+	public static fun limitEventSize (Lio/sentry/SentryEvent;Lio/sentry/Hint;Lio/sentry/SentryOptions;)Lio/sentry/SentryEvent;
+}
+
 public final class io/sentry/util/ExceptionUtils {
 	public fun <init> ()V
 	public static fun findRootCause (Ljava/lang/Throwable;)Ljava/lang/Throwable;
@@ -7062,6 +7075,7 @@ public final class io/sentry/util/IntegrationUtils {
 public final class io/sentry/util/JsonSerializationUtils {
 	public fun <init> ()V
 	public static fun atomicIntegerArrayToList (Ljava/util/concurrent/atomic/AtomicIntegerArray;)Ljava/util/List;
+	public static fun byteSizeOf (Lio/sentry/ISerializer;Lio/sentry/ILogger;Lio/sentry/JsonSerializable;)J
 	public static fun bytesFrom (Lio/sentry/ISerializer;Lio/sentry/ILogger;Lio/sentry/JsonSerializable;)[B
 	public static fun calendarToMap (Ljava/util/Calendar;)Ljava/util/Map;
 }

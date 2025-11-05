@@ -163,6 +163,10 @@ public final class SentryClient implements ISentryClient {
       }
     }
 
+    if (event != null) {
+      event = EventSizeLimitingUtils.limitEventSize(event, hint, options);
+    }
+
     if (event == null) {
       return SentryId.EMPTY_ID;
     }
@@ -1183,6 +1187,7 @@ public final class SentryClient implements ISentryClient {
     }
 
     if (logEvent != null) {
+      final @NotNull SentryLogEvent tmpLogEvent = logEvent;
       logEvent = executeBeforeSendLog(logEvent);
 
       if (logEvent == null) {
@@ -1190,6 +1195,13 @@ public final class SentryClient implements ISentryClient {
         options
             .getClientReportRecorder()
             .recordLostEvent(DiscardReason.BEFORE_SEND, DataCategory.LogItem);
+        final @NotNull long logEventNumberOfBytes =
+            JsonSerializationUtils.byteSizeOf(
+                options.getSerializer(), options.getLogger(), tmpLogEvent);
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(
+                DiscardReason.BEFORE_SEND, DataCategory.LogByte, logEventNumberOfBytes);
         return;
       }
 
