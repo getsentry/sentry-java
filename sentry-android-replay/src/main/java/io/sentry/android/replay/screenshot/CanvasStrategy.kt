@@ -15,16 +15,18 @@ import android.graphics.NinePatch
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.Picture
-import android.graphics.PixelFormat
 import android.graphics.PorterDuff
 import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.Region
 import android.graphics.RenderNode
+import android.graphics.SurfaceTexture
 import android.graphics.fonts.Font
 import android.graphics.text.MeasuredText
-import android.media.ImageReader
 import android.os.Build
+import android.os.Handler
+import android.view.PixelCopy
+import android.view.Surface
 import android.view.View
 import androidx.annotation.RequiresApi
 import io.sentry.SentryLevel
@@ -35,14 +37,12 @@ import io.sentry.android.replay.ScreenshotRecorderConfig
 import io.sentry.android.replay.util.ReplayRunnable
 import io.sentry.util.AutoClosableReentrantLock
 import io.sentry.util.IntegrationUtils
-import java.io.Closeable
 import java.util.WeakHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.LazyThreadSafetyMode.NONE
-import kotlin.use
 
-@SuppressLint("UseKtx")
+@SuppressLint("NewApi", "UseKtx")
 internal class CanvasStrategy(
   private val executor: ExecutorProvider,
   private val screenshotRecorderCallback: ScreenshotRecorderCallback?,
@@ -51,73 +51,19 @@ internal class CanvasStrategy(
 ) : ScreenshotStrategy {
 
   @Volatile private var screenshot: Bitmap? = null
-
-  // Lock to synchronize screenshot creation
+  private var unprocessedPictureRef = AtomicReference<Picture>(null)
   private val screenshotLock = AutoClosableReentrantLock()
   private val prescaledMatrix by
     lazy(NONE) { Matrix().apply { preScale(config.scaleFactorX, config.scaleFactorY) } }
   private val lastCaptureSuccessful = AtomicBoolean(false)
   private val textIgnoringCanvas = TextIgnoringDelegateCanvas()
-
   private val isClosed = AtomicBoolean(false)
 
-  private val onImageAvailableListener: (holder: PictureReaderHolder) -> Unit = { holder ->
-    if (isClosed.get()) {
-      options.logger.log(SentryLevel.ERROR, "CanvasStrategy already closed, skipping image")
-      holder.close()
-    } else {
-      try {
-        val image = holder.reader.acquireLatestImage()
-        try {
-          if (image.planes.size > 0) {
-            val plane = image.planes[0]
-
-            if (screenshot == null) {
-              screenshotLock.acquire().use {
-                if (screenshot == null) {
-                  screenshot =
-                    Bitmap.createBitmap(holder.width, holder.height, Bitmap.Config.ARGB_8888)
-                }
-              }
-            }
-
-            val bitmap = screenshot
-            if (bitmap != null) {
-              val buffer = plane.buffer.rewind()
-              synchronized(bitmap) {
-                if (!bitmap.isRecycled) {
-                  bitmap.copyPixelsFromBuffer(buffer)
-                  lastCaptureSuccessful.set(true)
-                }
-              }
-              screenshotRecorderCallback?.onScreenshotRecorded(bitmap)
-            }
-          }
-        } finally {
-          try {
-            image.close()
-          } catch (_: Throwable) {
-            // ignored
-          }
-        }
-      } catch (e: Throwable) {
-        options.logger.log(SentryLevel.ERROR, "CanvasStrategy: image processing failed", e)
-      } finally {
-        if (isClosed.get()) {
-          holder.close()
-        } else {
-          freePictureRef.set(holder)
-        }
-      }
+  private val surfaceTexture =
+    SurfaceTexture(false).apply {
+      setDefaultBufferSize(config.recordingWidth, config.recordingHeight)
     }
-  }
-
-  private var freePictureRef =
-    AtomicReference(
-      PictureReaderHolder(config.recordingWidth, config.recordingHeight, onImageAvailableListener)
-    )
-
-  private var unprocessedPictureRef = AtomicReference<PictureReaderHolder>(null)
+  private val surface = Surface(surfaceTexture)
 
   init {
     IntegrationUtils.addIntegrationToSdkVersion("ReplayCanvasStrategy")
@@ -132,54 +78,89 @@ internal class CanvasStrategy(
       )
       return@Runnable
     }
-    val holder = unprocessedPictureRef.getAndSet(null) ?: return@Runnable
-
+    val picture = unprocessedPictureRef.getAndSet(null) ?: return@Runnable
     try {
-      if (!holder.setup.getAndSet(true)) {
-        holder.reader.setOnImageAvailableListener(holder, executor.getBackgroundHandler())
+      // It's safe to access the surface because the
+      // surface release within close() is executed on the same background handler
+      val surfaceCanvas = surface.lockHardwareCanvas()
+      try {
+        surfaceCanvas.drawColor(Color.BLACK, PorterDuff.Mode.CLEAR)
+        picture.draw(surfaceCanvas)
+      } finally {
+        surface.unlockCanvasAndPost(surfaceCanvas)
       }
 
-      val surface = holder.reader.surface
-      val canvas = surface.lockHardwareCanvas()
-      try {
-        canvas.drawColor(Color.BLACK, PorterDuff.Mode.CLEAR)
-        holder.picture.draw(canvas)
-      } finally {
-        surface.unlockCanvasAndPost(canvas)
+      if (screenshot == null) {
+        screenshotLock.acquire().use {
+          if (screenshot == null) {
+            screenshot =
+              Bitmap.createBitmap(
+                config.recordingWidth,
+                config.recordingHeight,
+                Bitmap.Config.ARGB_8888,
+              )
+          }
+        }
       }
-    } catch (t: Throwable) {
+
       if (isClosed.get()) {
-        holder.close()
-      } else {
-        freePictureRef.set(holder)
+        options.logger.log(
+          SentryLevel.DEBUG,
+          "Canvas Strategy already closed, skipping pixel copy request",
+        )
+        return@Runnable
       }
+      PixelCopy.request(
+        surface,
+        screenshot!!,
+        { result ->
+          if (isClosed.get()) {
+            options.logger.log(
+              SentryLevel.DEBUG,
+              "CanvasStrategy is closed, ignoring capture result",
+            )
+            return@request
+          }
+          if (result == PixelCopy.SUCCESS) {
+            lastCaptureSuccessful.set(true)
+            val bitmap = screenshot
+            if (bitmap != null && !bitmap.isRecycled) {
+              screenshotRecorderCallback?.onScreenshotRecorded(bitmap)
+            }
+          } else {
+            options.logger.log(
+              SentryLevel.ERROR,
+              "Canvas Strategy: PixelCopy failed with code $result",
+            )
+            lastCaptureSuccessful.set(false)
+          }
+        },
+        executor.getBackgroundHandler(),
+      )
+    } catch (t: Throwable) {
       options.logger.log(SentryLevel.ERROR, "Canvas Strategy: picture render failed", t)
+      lastCaptureSuccessful.set(false)
     }
   }
 
-  @SuppressLint("UnclosedTrace")
+  @SuppressLint("NewApi")
   override fun capture(root: View) {
     if (isClosed.get()) {
       return
     }
-    val holder = freePictureRef.getAndSet(null)
-    if (holder == null) {
-      options.logger.log(SentryLevel.DEBUG, "No free Picture available, skipping capture")
-      lastCaptureSuccessful.set(false)
-      return
-    }
 
-    val pictureCanvas = holder.picture.beginRecording(config.recordingWidth, config.recordingHeight)
-    textIgnoringCanvas.delegate = pictureCanvas
+    val picture = Picture()
+    val canvas = picture.beginRecording(config.recordingWidth, config.recordingHeight)
+    textIgnoringCanvas.delegate = canvas
     textIgnoringCanvas.setMatrix(prescaledMatrix)
     root.draw(textIgnoringCanvas)
-    holder.picture.endRecording()
+    picture.endRecording()
 
-    if (isClosed.get()) {
-      holder.close()
-    } else {
-      unprocessedPictureRef.set(holder)
-      executor.getExecutor().submit(ReplayRunnable("screenshot_recorder.canvas", pictureRenderTask))
+    if (!isClosed.get()) {
+      unprocessedPictureRef.set(picture)
+      executor
+        .getBackgroundHandler()
+        .postSafely(ReplayRunnable("screenshot_recorder.canvas", pictureRenderTask))
     }
   }
 
@@ -190,30 +171,18 @@ internal class CanvasStrategy(
   override fun close() {
     isClosed.set(true)
     executor
-      .getExecutor()
-      .submit(
-        ReplayRunnable(
-          "CanvasStrategy.close",
-          {
-            screenshot?.let {
-              synchronized(it) {
-                if (!it.isRecycled) {
-                  it.recycle()
-                }
-              }
-            }
-          },
-        )
+      .getBackgroundHandler()
+      .postSafely(
+        ReplayRunnable("CanvasStrategy.close") {
+          screenshot?.let { synchronized(it) { if (!it.isRecycled) it.recycle() } }
+          surface.release()
+          surfaceTexture.release()
+        }
       )
-
-    // the image can be free, unprocessed or in transit
-    freePictureRef.getAndSet(null)?.reader?.close()
-    unprocessedPictureRef.getAndSet(null)?.reader?.close()
+    unprocessedPictureRef.getAndSet(null)
   }
 
-  override fun lastCaptureSuccessful(): Boolean {
-    return lastCaptureSuccessful.get()
-  }
+  override fun lastCaptureSuccessful(): Boolean = lastCaptureSuccessful.get()
 
   override fun emitLastScreenshot() {
     if (lastCaptureSuccessful()) {
@@ -221,6 +190,18 @@ internal class CanvasStrategy(
       if (bitmap != null && !bitmap.isRecycled) {
         screenshotRecorderCallback?.onScreenshotRecorded(bitmap)
       }
+    }
+  }
+
+  fun Handler.postSafely(runnable: ReplayRunnable) {
+    try {
+      post(runnable)
+    } catch (t: Throwable) {
+      options.logger.log(
+        SentryLevel.ERROR,
+        "Canvas Strategy: failed to post runnable ${runnable.taskName}",
+        t,
+      )
     }
   }
 }
@@ -1028,33 +1009,6 @@ private class TextIgnoringDelegateCanvas : Canvas() {
       } else {
         null
       }
-    }
-  }
-}
-
-private class PictureReaderHolder(
-  val width: Int,
-  val height: Int,
-  val listener: (holder: PictureReaderHolder) -> Unit,
-) : ImageReader.OnImageAvailableListener, Closeable {
-  val picture = Picture()
-
-  @SuppressLint("InlinedApi")
-  val reader: ImageReader = ImageReader.newInstance(width, height, PixelFormat.RGBA_8888, 1)
-
-  var setup = AtomicBoolean(false)
-
-  override fun onImageAvailable(reader: ImageReader?) {
-    if (reader != null) {
-      listener(this)
-    }
-  }
-
-  override fun close() {
-    try {
-      reader.close()
-    } catch (_: Throwable) {
-      // ignored
     }
   }
 }
