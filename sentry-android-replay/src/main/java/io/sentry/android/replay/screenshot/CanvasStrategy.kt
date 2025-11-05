@@ -24,6 +24,7 @@ import android.graphics.SurfaceTexture
 import android.graphics.fonts.Font
 import android.graphics.text.MeasuredText
 import android.os.Build
+import android.os.Handler
 import android.view.PixelCopy
 import android.view.Surface
 import android.view.View
@@ -102,6 +103,13 @@ internal class CanvasStrategy(
         }
       }
 
+      if (isClosed.get()) {
+        options.logger.log(
+          SentryLevel.DEBUG,
+          "Canvas Strategy already closed, skipping pixel copy request",
+        )
+        return@Runnable
+      }
       PixelCopy.request(
         surface,
         screenshot!!,
@@ -150,10 +158,9 @@ internal class CanvasStrategy(
 
     if (!isClosed.get()) {
       unprocessedPictureRef.set(picture)
-      // use the same handler for PixelCopy and pictureRenderTask
       executor
         .getBackgroundHandler()
-        .post(ReplayRunnable("screenshot_recorder.canvas", pictureRenderTask))
+        .postSafely(ReplayRunnable("screenshot_recorder.canvas", pictureRenderTask))
     }
   }
 
@@ -165,7 +172,7 @@ internal class CanvasStrategy(
     isClosed.set(true)
     executor
       .getBackgroundHandler()
-      .post(
+      .postSafely(
         ReplayRunnable("CanvasStrategy.close") {
           screenshot?.let { synchronized(it) { if (!it.isRecycled) it.recycle() } }
           surface.release()
@@ -182,6 +189,18 @@ internal class CanvasStrategy(
       if (bitmap != null && !bitmap.isRecycled) {
         screenshotRecorderCallback?.onScreenshotRecorded(bitmap)
       }
+    }
+  }
+
+  fun Handler.postSafely(runnable: ReplayRunnable) {
+    try {
+      post(runnable)
+    } catch (t: Throwable) {
+      options.logger.log(
+        SentryLevel.ERROR,
+        "Canvas Strategy: failed to post runnable ${runnable.taskName}",
+        t,
+      )
     }
   }
 }
