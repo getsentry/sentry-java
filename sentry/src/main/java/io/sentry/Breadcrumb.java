@@ -706,24 +706,88 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable, Comparab
     this.level = level;
   }
 
-  @SuppressWarnings("JavaUtilDate")
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     Breadcrumb that = (Breadcrumb) o;
-    return getTimestamp().getTime() == that.getTimestamp().getTime()
-        && Objects.equals(message, that.message)
-        && Objects.equals(type, that.type)
-        && Objects.equals(category, that.category)
-        && Objects.equals(origin, that.origin)
-        && level == that.level;
+
+    if ("http".equals(type)) {
+      return httpBreadcrumbEquals(this, that);
+    } else {
+      return breadcrumbEquals(this, that);
+    }
   }
 
   @Override
-  @SuppressWarnings("JavaUtilDate")
   public int hashCode() {
-    return Objects.hash(getTimestamp().getTime(), message, type, category, origin, level);
+    if ("http".equals(type)) {
+      return httpBreadcrumbHashCode(this);
+    } else {
+      return breadcrumbHashCode(this);
+    }
+  }
+
+  /**
+   * Default breadcrumb equality check that excludes data map comparison. Compares core breadcrumb
+   * fields for general breadcrumb types.
+   */
+  @SuppressWarnings("JavaUtilDate")
+  private static boolean breadcrumbEquals(
+      final @NotNull Breadcrumb a, final @NotNull Breadcrumb b) {
+    return a.getTimestamp().getTime() == b.getTimestamp().getTime()
+        && Objects.equals(a.message, b.message)
+        && Objects.equals(a.type, b.type)
+        && Objects.equals(a.category, b.category)
+        && Objects.equals(a.origin, b.origin)
+        && a.level == b.level;
+  }
+
+  /**
+   * The fields compared here correspond to those set by {@link #http(String, String, Integer)},
+   * ensuring that breadcrumbs created via these factory methods are properly distinguished even
+   * when they share the same timestamp.
+   */
+  private static boolean httpBreadcrumbEquals(
+      final @NotNull Breadcrumb a, final @NotNull Breadcrumb b) {
+    return breadcrumbEquals(a, b)
+        && Objects.equals(a.getData("status_code"), b.getData("status_code"))
+        && Objects.equals(a.getData("url"), b.getData("url"))
+        && Objects.equals(a.getData("method"), b.getData("method"))
+        && Objects.equals(a.getData("http.fragment"), b.getData("http.fragment"))
+        && Objects.equals(a.getData("http.query"), b.getData("http.query"));
+  }
+
+  /** Default breadcrumb hash code that excludes data map. */
+  @SuppressWarnings("JavaUtilDate")
+  private static int breadcrumbHashCode(final @NotNull Breadcrumb breadcrumb) {
+    return Objects.hash(
+        breadcrumb.getTimestamp().getTime(),
+        breadcrumb.message,
+        breadcrumb.type,
+        breadcrumb.category,
+        breadcrumb.origin,
+        breadcrumb.level);
+  }
+
+  /**
+   * HTTP breadcrumb hash code that includes specific data fields for {@link #http(String, String,
+   * Integer)} Breadcrumbs.
+   */
+  @SuppressWarnings("JavaUtilDate")
+  private static int httpBreadcrumbHashCode(final @NotNull Breadcrumb breadcrumb) {
+    return Objects.hash(
+        breadcrumb.getTimestamp().getTime(),
+        breadcrumb.message,
+        breadcrumb.type,
+        breadcrumb.category,
+        breadcrumb.origin,
+        breadcrumb.level,
+        breadcrumb.getData("status_code"),
+        breadcrumb.getData("url"),
+        breadcrumb.getData("method"),
+        breadcrumb.getData("http.fragment"),
+        breadcrumb.getData("http.query"));
   }
 
   // region json
