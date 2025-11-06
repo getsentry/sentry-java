@@ -4,11 +4,15 @@
 
 ### Features
 
-- Add feature flags API ([#4812](https://github.com/getsentry/sentry-java/pull/4812))
+- Add feature flags API ([#4812](https://github.com/getsentry/sentry-java/pull/4812)) and ([#4831](https://github.com/getsentry/sentry-java/pull/4831))
   - You may now keep track of your feature flag evaluations and have them show up in Sentry.
-  - You may use top level API (`Sentry.addFeatureFlag("my-feature-flag", true);`) or `IScope` and `IScopes` API
+  - Top level API (`Sentry.addFeatureFlag("my-feature-flag", true);`) writes to scopes and the current span (if there is one)
+  - It is also possible to use API on `IScope`, `IScopes`, `ISpan` and `ITransaction` directly
   - Feature flag evaluations tracked on scope(s) will be added to any errors reported to Sentry.
-  - The SDK keeps the latest 100 evaluations from scope(s), replacing old entries as new evaluations are added.
+    - The SDK keeps the latest 100 evaluations from scope(s), replacing old entries as new evaluations are added.
+  - For feature flag evaluations tracked on spans:
+    - Only 10 evaluations are tracked per span, existing flags are updated but new ones exceeding the limit are ignored
+    - Spans do not inherit evaluations from their parent
 
 ### Fixes
 
