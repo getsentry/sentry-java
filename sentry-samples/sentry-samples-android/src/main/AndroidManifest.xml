@@ -84,7 +84,7 @@
           android:exported="false" />
 
         <!--    NOTE: Replace the test DSN below with YOUR OWN DSN to see the events from this app in your Sentry project/dashboard-->
-        <meta-data android:name="io.sentry.dsn" android:value="https://1053864c67cc410aa1ffc9701bd6f93d@o447951.ingest.us.sentry.io/5428559" />
+        <meta-data android:name="io.sentry.dsn" android:value="https://8a26495179336af214ba94bafed37efc@o447951.ingest.us.sentry.io/4509161790832641" />
 
         <!--    how to enable Sentry's debug mode-->
         <meta-data android:name="io.sentry.debug" android:value="${sentryDebug}" />
@@ -133,11 +133,11 @@
 <!--        <meta-data android:name="io.sentry.traces.profiling.sample-rate" android:value="1.0" />-->
 
         <!-- Enable profiling, adjust in production env -->
-        <meta-data android:name="io.sentry.traces.profiling.session-sample-rate" android:value="1.0" />
+        <meta-data android:name="io.sentry.traces.profiling.session-sample-rate" android:value="0.0" />
         <!-- Set profiling lifecycle, can be `manual` or `trace` -->
         <meta-data android:name="io.sentry.traces.profiling.lifecycle" android:value="manual" />
         <!-- Enable profiling on app start -->
-        <meta-data android:name="io.sentry.traces.profiling.start-on-app-start" android:value="true" />
+        <meta-data android:name="io.sentry.traces.profiling.start-on-app-start" android:value="false" />
 
         <!--    how to disable the Activity auto instrumentation for tracing-->
         <!--    <meta-data android:name="io.sentry.traces.activity.enable" android:value="false" />-->
@@ -184,10 +184,8 @@
         <!--    how to disable sentry -->
         <!--    <meta-data android:name="io.sentry.enabled" android:value="false" /> -->
 
-      <meta-data android:name="io.sentry.performance-v2.enable" android:value="true" />
-
       <meta-data android:name="io.sentry.session-replay.screenshot-strategy" android:value="canvas" />
-      <meta-data android:name="io.sentry.session-replay.session-sample-rate" android:value="1" />
+      <meta-data android:name="io.sentry.session-replay.session-sample-rate" android:value="0.0" />
       <meta-data android:name="io.sentry.session-replay.mask-all-text" android:value="true" />
     </application>
 </manifest>

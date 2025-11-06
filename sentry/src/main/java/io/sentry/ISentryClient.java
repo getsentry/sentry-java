@@ -47,6 +47,8 @@ public interface ISentryClient {
    */
   void flush(long timeoutMillis);
 
+  void flushLogs(long timeoutMillis);
+
   /**
    * Captures the event.
    *

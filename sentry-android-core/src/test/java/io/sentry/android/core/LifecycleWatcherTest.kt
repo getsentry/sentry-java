@@ -5,12 +5,14 @@ import io.sentry.DateUtils
 import io.sentry.IContinuousProfiler
 import io.sentry.IScope
 import io.sentry.IScopes
+import io.sentry.ISentryClient
 import io.sentry.ReplayController
 import io.sentry.ScopeCallback
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.Session
 import io.sentry.Session.State
+import io.sentry.test.ImmediateExecutorService
 import io.sentry.transport.ICurrentDateProvider
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -36,10 +38,13 @@ class LifecycleWatcherTest {
     val replayController = mock<ReplayController>()
     val continuousProfiler = mock<IContinuousProfiler>()
 
+    val client = mock<ISentryClient>()
+
     fun getSUT(
       sessionIntervalMillis: Long = 0L,
       enableAutoSessionTracking: Boolean = true,
       enableAppLifecycleBreadcrumbs: Boolean = true,
+      enableLogFlushing: Boolean = true,
       session: Session? = null,
     ): LifecycleWatcher {
       val argumentCaptor: ArgumentCaptor<ScopeCallback> =
@@ -49,15 +54,20 @@ class LifecycleWatcherTest {
       whenever(scopes.configureScope(argumentCaptor.capture())).thenAnswer {
         argumentCaptor.value.run(scope)
       }
+      whenever(scope.client).thenReturn(client)
+
       options.setReplayController(replayController)
       options.setContinuousProfiler(continuousProfiler)
+      options.executorService = ImmediateExecutorService()
       whenever(scopes.options).thenReturn(options)
+      whenever(scopes.globalScope).thenReturn(scope)
 
       return LifecycleWatcher(
         scopes,
         sessionIntervalMillis,
         enableAutoSessionTracking,
         enableAppLifecycleBreadcrumbs,
+        enableLogFlushing,
         dateProvider,
       )
     }
@@ -294,5 +304,28 @@ class LifecycleWatcherTest {
 
     watcher.onBackground()
     verify(fixture.replayController, timeout(10000)).stop()
+  }
+
+  @Test
+  fun `flush logs when going in background`() {
+    val watcher = fixture.getSUT(enableLogFlushing = true)
+
+    watcher.onForeground()
+    watcher.onBackground()
+
+    watcher.onForeground()
+    watcher.onBackground()
+
+    verify(fixture.client, times(2)).flushLogs(any())
+  }
+
+  @Test
+  fun `do not flush logs when going in background when logging is disabled`() {
+    val watcher = fixture.getSUT(enableLogFlushing = false)
+
+    watcher.onForeground()
+    watcher.onBackground()
+
+    verify(fixture.client, never()).flushLogs(any())
   }
 }

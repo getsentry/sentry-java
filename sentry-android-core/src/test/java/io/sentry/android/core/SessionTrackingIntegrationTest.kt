@@ -142,6 +142,10 @@ class SessionTrackingIntegrationTest {
       TODO("Not yet implemented")
     }
 
+    override fun flushLogs(timeoutMillis: Long) {
+      TODO("Not yet implemented")
+    }
+
     override fun captureFeedback(feedback: Feedback, hint: Hint?, scope: IScope): SentryId {
       TODO("Not yet implemented")
     }

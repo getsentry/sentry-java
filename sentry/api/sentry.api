@@ -1041,6 +1041,7 @@ public abstract interface class io/sentry/ISentryClient {
 	public abstract fun close ()V
 	public abstract fun close (Z)V
 	public abstract fun flush (J)V
+	public abstract fun flushLogs (J)V
 	public abstract fun getRateLimiter ()Lio/sentry/transport/RateLimiter;
 	public abstract fun isEnabled ()Z
 	public fun isHealthy ()Z
@@ -2824,6 +2825,7 @@ public final class io/sentry/SentryClient : io/sentry/ISentryClient {
 	public fun close ()V
 	public fun close (Z)V
 	public fun flush (J)V
+	public fun flushLogs (J)V
 	public fun getRateLimiter ()Lio/sentry/transport/RateLimiter;
 	public fun isEnabled ()Z
 	public fun isHealthy ()Z

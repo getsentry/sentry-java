@@ -1542,8 +1542,13 @@ public final class SentryClient implements ISentryClient {
 
   @Override
   public void flush(final long timeoutMillis) {
-    loggerBatchProcessor.flush(timeoutMillis);
+    flushLogs(timeoutMillis);
     transport.flush(timeoutMillis);
+  }
+
+  @Override
+  public void flushLogs(final long timeoutMillis) {
+    loggerBatchProcessor.flush(timeoutMillis);
   }
 
   @Override
