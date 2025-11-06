@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Features
+
+- Add feature flags API ([#4812](https://github.com/getsentry/sentry-java/pull/4812))
+  - You may now keep track of your feature flag evaluations and have them show up in Sentry.
+  - You may use top level API (`Sentry.addFeatureFlag("my-feature-flag", true);`) or `IScope` and `IScopes` API
+  - Feature flag evaluations tracked on scope(s) will be added to any errors reported to Sentry.
+  - The SDK keeps the latest 100 evaluations from scope(s), replacing old entries as new evaluations are added.
+
 ### Fixes
 
 - Removed SentryExecutorService limit for delayed scheduled tasks ([#4846](https://github.com/getsentry/sentry-java/pull/4846))
