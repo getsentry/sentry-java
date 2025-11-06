@@ -82,7 +82,8 @@ public final class NetworkDetailCaptureUtils {
    *
    * @param url The URL to check
    * @param networkDetailAllowUrls Array of regex patterns that allow capture
-   * @param networkDetailDenyUrls Array of regex patterns to explicitly deny capture. Takes precedence over networkDetailAllowUrls.
+   * @param networkDetailDenyUrls Array of regex patterns to explicitly deny capture. Takes
+   *     precedence over networkDetailAllowUrls.
    * @return true if the URL should be captured, false otherwise
    */
   private static boolean shouldCaptureUrl(

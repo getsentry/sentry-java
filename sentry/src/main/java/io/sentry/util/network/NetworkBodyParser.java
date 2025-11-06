@@ -48,7 +48,8 @@ public final class NetworkBodyParser {
 
     // Check size limit and truncate if necessary
     if (bytes.length > maxSizeBytes) {
-      logger.log(SentryLevel.WARNING, "Content exceeds max size limit of " + maxSizeBytes + " bytes");
+      logger.log(
+          SentryLevel.WARNING, "Content exceeds max size limit of " + maxSizeBytes + " bytes");
       return createTruncatedNetworkBody(bytes, maxSizeBytes, charset);
     }
 
@@ -66,7 +67,9 @@ public final class NetworkBodyParser {
   }
 
   private static @Nullable NetworkBody parse(
-      @Nullable final String content, @Nullable final String contentType, @Nullable final ILogger logger) {
+      @Nullable final String content,
+      @Nullable final String contentType,
+      @Nullable final ILogger logger) {
 
     if (content == null || content.isEmpty()) {
       return null;

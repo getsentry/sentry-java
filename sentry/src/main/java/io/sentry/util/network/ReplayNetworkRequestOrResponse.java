@@ -15,7 +15,9 @@ public final class ReplayNetworkRequestOrResponse {
   private final @NotNull Map<String, String> headers;
 
   public ReplayNetworkRequestOrResponse(
-      @Nullable final Long size, @Nullable final NetworkBody body, @NotNull final Map<String, String> headers) {
+      @Nullable final Long size,
+      @Nullable final NetworkBody body,
+      @NotNull final Map<String, String> headers) {
     this.size = size;
     this.body = body;
     this.headers = headers;
