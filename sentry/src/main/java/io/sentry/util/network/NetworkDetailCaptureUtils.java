@@ -81,8 +81,8 @@ public final class NetworkDetailCaptureUtils {
    * href="https://docs.sentry.io/platforms/javascript/session-replay/configuration/">docs.sentry.io</a>
    *
    * @param url The URL to check
-   * @param networkDetailAllowUrls Array of regex patterns that allow capture (null means allow all)
-   * @param networkDetailDenyUrls Array of regex patterns that deny capture (null means deny none)
+   * @param networkDetailAllowUrls Array of regex patterns that allow capture
+   * @param networkDetailDenyUrls Array of regex patterns to explicitly deny capture. Takes precedence over networkDetailAllowUrls.
    * @return true if the URL should be captured, false otherwise
    */
   private static boolean shouldCaptureUrl(
