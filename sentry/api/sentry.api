@@ -4314,6 +4314,7 @@ public final class io/sentry/TypeCheckHint {
 	public static final field SENTRY_EVENT_DROP_REASON Ljava/lang/String;
 	public static final field SENTRY_IS_FROM_HYBRID_SDK Ljava/lang/String;
 	public static final field SENTRY_JAVASCRIPT_SDK_NAME Ljava/lang/String;
+	public static final field SENTRY_REPLAY_NETWORK_DETAILS Ljava/lang/String;
 	public static final field SENTRY_SYNTHETIC_EXCEPTION Ljava/lang/String;
 	public static final field SENTRY_TYPE_CHECK_HINT Ljava/lang/String;
 	public static final field SERVLET_REQUEST Ljava/lang/String;
@@ -7315,7 +7316,7 @@ public final class io/sentry/util/network/NetworkBody$StringBodyImpl : io/sentry
 }
 
 public final class io/sentry/util/network/NetworkBodyParser {
-	public static fun fromBytes ([BLjava/lang/String;Ljava/lang/String;ILio/sentry/SentryOptions;)Lio/sentry/util/network/NetworkBody;
+	public static fun fromBytes ([BLjava/lang/String;Ljava/lang/String;ILio/sentry/ILogger;)Lio/sentry/util/network/NetworkBody;
 }
 
 public final class io/sentry/util/network/NetworkDetailCaptureUtils {
@@ -7333,7 +7334,7 @@ public abstract interface class io/sentry/util/network/NetworkDetailCaptureUtils
 }
 
 public final class io/sentry/util/network/NetworkRequestData {
-	public fun <init> (Ljava/lang/String;Ljava/lang/Integer;Ljava/lang/Long;Ljava/lang/Long;Lio/sentry/util/network/ReplayNetworkRequestOrResponse;Lio/sentry/util/network/ReplayNetworkRequestOrResponse;)V
+	public fun <init> (Ljava/lang/String;)V
 	public fun getMethod ()Ljava/lang/String;
 	public fun getRequest ()Lio/sentry/util/network/ReplayNetworkRequestOrResponse;
 	public fun getRequestBodySize ()Ljava/lang/Long;
