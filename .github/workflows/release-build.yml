@@ -32,7 +32,7 @@ jobs:
         run: make publish
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ github.sha }}
           if-no-files-found: error
