@@ -271,9 +271,9 @@ public open class SentryOkHttpInterceptor(
 
   /** Extracts headers from OkHttp Headers object into a map */
   private fun okhttp3.Headers.toMap(): Map<String, String> {
-    val headers = mutableMapOf<String, String>()
-    for (name in names()) {
-      headers[name] = get(name) ?: ""
+    val headers = linkedMapOf<String, String>()
+    for (i in 0 until size) {
+      headers[name(i)] = value(i)
     }
     return headers
   }
