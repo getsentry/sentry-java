@@ -59,9 +59,7 @@ public final class NetworkBodyParser {
       String content = new String(bytes, effectiveCharset);
       return parse(content, contentType, logger);
     } catch (UnsupportedEncodingException e) {
-      if (logger != null) {
-        logger.log(SentryLevel.WARNING, "Failed to decode bytes: " + e.getMessage());
-      }
+      logger.log(SentryLevel.WARNING, "Failed to decode bytes: " + e.getMessage());
       return NetworkBody.fromString("[Failed to decode bytes, " + bytes.length + " bytes]");
     }
   }
