@@ -70,7 +70,7 @@ public final class FeatureFlagBuffer implements IFeatureFlagBuffer {
   }
 
   @Override
-  public @NotNull FeatureFlags getFeatureFlags() {
+  public @Nullable FeatureFlags getFeatureFlags() {
     List<FeatureFlag> featureFlags = new ArrayList<>();
     for (FeatureFlagEntry entry : flags) {
       featureFlags.add(entry.toFeatureFlag());

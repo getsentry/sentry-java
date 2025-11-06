@@ -125,7 +125,7 @@ public final class OtelSentrySpanProcessor implements SpanProcessor {
 
   private IScopes forkScopes(final @NotNull Context context, final @NotNull SpanData span) {
     final @Nullable IScopes scopesFromContext = context.get(SENTRY_SCOPES_KEY);
-    if (scopesFromContext == null) {
+    if (scopesFromContext == null || scopesFromContext.isNoOp()) {
       return Sentry.forkedRootScopes("spanprocessor.new");
     }
     if (isRootSpan(span)) {

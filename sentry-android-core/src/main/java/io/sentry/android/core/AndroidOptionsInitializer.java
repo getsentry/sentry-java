@@ -200,8 +200,8 @@ final class AndroidOptionsInitializer {
       options.setVersionDetector(new DefaultVersionDetector(options));
     }
 
-    final boolean isAndroidXScrollViewAvailable =
-        loadClass.isClassAvailable("androidx.core.view.ScrollingView", options);
+    final @NotNull LazyEvaluator<Boolean> isAndroidXScrollViewAvailable =
+        loadClass.isClassAvailableLazy("androidx.core.view.ScrollingView", options);
     final boolean isComposeUpstreamAvailable =
         loadClass.isClassAvailable(COMPOSE_CLASS_NAME, options);
 
@@ -449,7 +449,8 @@ final class AndroidOptionsInitializer {
 
     if (options.getDistinctId() == null) {
       try {
-        options.setDistinctId(Installation.id(context));
+        options.setDistinctId(
+            options.getRuntimeManager().runWithRelaxedPolicy(() -> Installation.id(context)));
       } catch (RuntimeException e) {
         options.getLogger().log(SentryLevel.ERROR, "Could not generate distinct Id.", e);
       }

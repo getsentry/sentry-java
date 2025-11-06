@@ -270,7 +270,14 @@ public final class LoggerApi implements ILoggerApi {
 
   private void setUser(final @NotNull HashMap<String, SentryLogEventAttributeValue> attributes) {
     final @Nullable User user = scopes.getCombinedScopeView().getUser();
-    if (user != null) {
+    if (user == null) {
+      // In case no user is set, we should fallback to the distinct id, known as installation id,
+      // which is used on Android as default user id
+      final @Nullable String id = scopes.getOptions().getDistinctId();
+      if (id != null) {
+        attributes.put("user.id", new SentryLogEventAttributeValue(SentryAttributeType.STRING, id));
+      }
+    } else {
       final @Nullable String id = user.getId();
       if (id != null) {
         attributes.put("user.id", new SentryLogEventAttributeValue(SentryAttributeType.STRING, id));

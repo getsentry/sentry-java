@@ -9,7 +9,7 @@ import io.sentry.SentryReplayEvent.ReplayType
 import io.sentry.android.replay.ReplayCache
 import io.sentry.android.replay.ScreenshotRecorderConfig
 import io.sentry.android.replay.capture.CaptureStrategy.ReplaySegment
-import io.sentry.android.replay.util.submitSafely
+import io.sentry.android.replay.util.ReplayRunnable
 import io.sentry.protocol.SentryId
 import io.sentry.transport.ICurrentDateProvider
 import io.sentry.util.FileUtils
@@ -79,55 +79,57 @@ internal class SessionCaptureStrategy(
     // reflecting the exact time of when it was captured
     val currentConfig = recorderConfig
     val frameTimestamp = dateProvider.currentTimeMillis
-    replayExecutor.submitSafely(options, "$TAG.add_frame") {
-      cache?.store(frameTimestamp)
+    replayExecutor.submit(
+      ReplayRunnable("$TAG.add_frame") {
+        cache?.store(frameTimestamp)
 
-      val currentSegmentTimestamp = segmentTimestamp
-      currentSegmentTimestamp
-        ?: run {
-          options.logger.log(DEBUG, "Segment timestamp is not set, not recording frame")
-          return@submitSafely
-        }
+        val currentSegmentTimestamp = segmentTimestamp
+        currentSegmentTimestamp
+          ?: run {
+            options.logger.log(DEBUG, "Segment timestamp is not set, not recording frame")
+            return@ReplayRunnable
+          }
 
-      if (isTerminating.get()) {
-        options.logger.log(
-          DEBUG,
-          "Not capturing segment, because the app is terminating, will be captured on next launch",
-        )
-        return@submitSafely
-      }
-
-      if (currentConfig == null) {
-        options.logger.log(DEBUG, "Recorder config is not set, not capturing a segment")
-        return@submitSafely
-      }
-
-      val now = dateProvider.currentTimeMillis
-      if ((now - currentSegmentTimestamp.time >= options.sessionReplay.sessionSegmentDuration)) {
-        val segment =
-          createSegmentInternal(
-            options.sessionReplay.sessionSegmentDuration,
-            currentSegmentTimestamp,
-            currentReplayId,
-            currentSegment,
-            currentConfig.recordingHeight,
-            currentConfig.recordingWidth,
-            currentConfig.frameRate,
-            currentConfig.bitRate,
+        if (isTerminating.get()) {
+          options.logger.log(
+            DEBUG,
+            "Not capturing segment, because the app is terminating, will be captured on next launch",
           )
-        if (segment is ReplaySegment.Created) {
-          segment.capture(scopes)
-          currentSegment++
-          // set next segment timestamp as close to the previous one as possible to avoid gaps
-          segmentTimestamp = segment.replay.timestamp
+          return@ReplayRunnable
+        }
+
+        if (currentConfig == null) {
+          options.logger.log(DEBUG, "Recorder config is not set, not capturing a segment")
+          return@ReplayRunnable
+        }
+
+        val now = dateProvider.currentTimeMillis
+        if ((now - currentSegmentTimestamp.time >= options.sessionReplay.sessionSegmentDuration)) {
+          val segment =
+            createSegmentInternal(
+              options.sessionReplay.sessionSegmentDuration,
+              currentSegmentTimestamp,
+              currentReplayId,
+              currentSegment,
+              currentConfig.recordingHeight,
+              currentConfig.recordingWidth,
+              currentConfig.frameRate,
+              currentConfig.bitRate,
+            )
+          if (segment is ReplaySegment.Created) {
+            segment.capture(scopes)
+            currentSegment++
+            // set next segment timestamp as close to the previous one as possible to avoid gaps
+            segmentTimestamp = segment.replay.timestamp
+          }
+        }
+
+        if ((now - replayStartTimestamp.get() >= options.sessionReplay.sessionDuration)) {
+          options.replayController.stop()
+          options.logger.log(INFO, "Session replay deadline exceeded (1h), stopping recording")
         }
       }
-
-      if ((now - replayStartTimestamp.get() >= options.sessionReplay.sessionDuration)) {
-        options.replayController.stop()
-        options.logger.log(INFO, "Session replay deadline exceeded (1h), stopping recording")
-      }
-    }
+    )
   }
 
   override fun onConfigurationChanged(recorderConfig: ScreenshotRecorderConfig) {
@@ -161,19 +163,21 @@ internal class SessionCaptureStrategy(
     val currentSegmentTimestamp = segmentTimestamp ?: return
     val duration = now - currentSegmentTimestamp.time
     val replayId = currentReplayId
-    replayExecutor.submitSafely(options, "$TAG.$taskName") {
-      val segment =
-        createSegmentInternal(
-          duration,
-          currentSegmentTimestamp,
-          replayId,
-          currentSegment,
-          currentConfig.recordingHeight,
-          currentConfig.recordingWidth,
-          currentConfig.frameRate,
-          currentConfig.bitRate,
-        )
-      onSegmentCreated(segment)
-    }
+    replayExecutor.submit(
+      ReplayRunnable("$TAG.$taskName") {
+        val segment =
+          createSegmentInternal(
+            duration,
+            currentSegmentTimestamp,
+            replayId,
+            currentSegment,
+            currentConfig.recordingHeight,
+            currentConfig.recordingWidth,
+            currentConfig.frameRate,
+            currentConfig.bitRate,
+          )
+        onSegmentCreated(segment)
+      }
+    )
   }
 }
