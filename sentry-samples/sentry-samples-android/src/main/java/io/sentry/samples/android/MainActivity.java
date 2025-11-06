@@ -374,26 +374,6 @@ public class MainActivity extends AppCompatActivity {
     Sentry.logger().log(SentryLogLevel.INFO, "MainActivity created");
   }
 
-  @Override
-  protected void onStart() {
-    super.onStart();
-    final ISpan span = Sentry.getSpan();
-    if (span != null) {
-      span.startChild("data.load", "MainActivity: 001");
-      new Thread(
-              () -> {
-                try {
-                  Thread.sleep(25000L);
-                } catch (Exception e) {
-                  // ignored
-                }
-                //        span.finish();
-              },
-              "data.load")
-          .start();
-    }
-  }
-
   private void stackOverflow() {
     stackOverflow();
   }
