@@ -18,6 +18,7 @@
 
 - Removed SentryExecutorService limit for delayed scheduled tasks ([#4846](https://github.com/getsentry/sentry-java/pull/4846))
 - Fix visual artifacts for the Canvas strategy on some devices ([#4861](https://github.com/getsentry/sentry-java/pull/4861))
+- Copy active span on scope clone ([#4878](https://github.com/getsentry/sentry-java/pull/4878))
 
 ### Improvements
 
