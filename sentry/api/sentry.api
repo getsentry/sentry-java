@@ -7313,21 +7313,6 @@ public final class io/sentry/util/UrlUtils$UrlDetails {
 	public fun getUrlOrFallback ()Ljava/lang/String;
 }
 
-public abstract interface class io/sentry/util/runtime/IRuntimeManager {
-	public abstract fun runWithRelaxedPolicy (Lio/sentry/util/runtime/IRuntimeManager$IRuntimeManagerCallback;)Ljava/lang/Object;
-	public abstract fun runWithRelaxedPolicy (Ljava/lang/Runnable;)V
-}
-
-public abstract interface class io/sentry/util/runtime/IRuntimeManager$IRuntimeManagerCallback {
-	public abstract fun run ()Ljava/lang/Object;
-}
-
-public final class io/sentry/util/runtime/NeutralRuntimeManager : io/sentry/util/runtime/IRuntimeManager {
-	public fun <init> ()V
-	public fun runWithRelaxedPolicy (Lio/sentry/util/runtime/IRuntimeManager$IRuntimeManagerCallback;)Ljava/lang/Object;
-	public fun runWithRelaxedPolicy (Ljava/lang/Runnable;)V
-}
-
 public abstract interface class io/sentry/util/network/NetworkBody {
 	public static fun fromJsonArray (Ljava/util/List;)Lio/sentry/util/network/NetworkBody;
 	public static fun fromJsonObject (Ljava/util/Map;)Lio/sentry/util/network/NetworkBody;
@@ -7390,6 +7375,21 @@ public final class io/sentry/util/network/ReplayNetworkRequestOrResponse {
 	public fun getHeaders ()Ljava/util/Map;
 	public fun getSize ()Ljava/lang/Long;
 	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/sentry/util/runtime/IRuntimeManager {
+	public abstract fun runWithRelaxedPolicy (Lio/sentry/util/runtime/IRuntimeManager$IRuntimeManagerCallback;)Ljava/lang/Object;
+	public abstract fun runWithRelaxedPolicy (Ljava/lang/Runnable;)V
+}
+
+public abstract interface class io/sentry/util/runtime/IRuntimeManager$IRuntimeManagerCallback {
+	public abstract fun run ()Ljava/lang/Object;
+}
+
+public final class io/sentry/util/runtime/NeutralRuntimeManager : io/sentry/util/runtime/IRuntimeManager {
+	public fun <init> ()V
+	public fun runWithRelaxedPolicy (Lio/sentry/util/runtime/IRuntimeManager$IRuntimeManagerCallback;)Ljava/lang/Object;
+	public fun runWithRelaxedPolicy (Ljava/lang/Runnable;)V
 }
 
 public abstract interface class io/sentry/util/thread/IThreadChecker {
