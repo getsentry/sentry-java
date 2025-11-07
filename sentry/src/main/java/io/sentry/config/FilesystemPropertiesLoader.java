@@ -24,7 +24,7 @@ final class FilesystemPropertiesLoader implements PropertiesLoader {
   @Override
   public @Nullable Properties load() {
     try {
-      final File f = new File(filePath);
+      final File f = new File(filePath.trim());
       if (f.isFile() && f.canRead()) {
         try (InputStream is = new BufferedInputStream(new FileInputStream(f))) {
           final Properties properties = new Properties();
@@ -38,7 +38,7 @@ final class FilesystemPropertiesLoader implements PropertiesLoader {
         logger.log(
           SentryLevel.ERROR, "Failed to load Sentry configuration since it is not readable: %s", filePath);
       }
-    } catch (IOException e) {
+    } catch (Throwable e) {
       logger.log(
           SentryLevel.ERROR, e, "Failed to load Sentry configuration from file: %s", filePath);
       return null;
