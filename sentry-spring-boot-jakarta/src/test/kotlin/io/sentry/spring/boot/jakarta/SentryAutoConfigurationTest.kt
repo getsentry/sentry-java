@@ -13,6 +13,8 @@ import io.sentry.IProfileConverter
 import io.sentry.IScopes
 import io.sentry.ITransportFactory
 import io.sentry.Integration
+import io.sentry.NoOpContinuousProfiler
+import io.sentry.NoOpProfileConverter
 import io.sentry.NoOpTransportFactory
 import io.sentry.ProfileLifecycle
 import io.sentry.SamplingContext
@@ -22,6 +24,8 @@ import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel
 import io.sentry.SentryLogEvent
 import io.sentry.SentryOptions
+import io.sentry.asyncprofiler.profiling.JavaContinuousProfiler
+import io.sentry.asyncprofiler.provider.AsyncProfilerProfileConverterProvider
 import io.sentry.checkEvent
 import io.sentry.clientreport.DiscardReason
 import io.sentry.opentelemetry.SentryAutoConfigurationCustomizerProvider
@@ -51,6 +55,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import org.aspectj.lang.ProceedingJoinPoint
 import org.assertj.core.api.Assertions.assertThat
+import org.mockito.internal.util.MockUtil.isMock
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.mock
@@ -1068,13 +1073,69 @@ class SentryAutoConfigurationTest {
     contextRunner
       .withPropertyValues(
         "sentry.dsn=http://key@localhost/proj",
-        "sentry.traces-sample-rate=1.0",
-        "sentry.auto-init=false",
-        "debug=true",
+        "sentry.profile-session-sample-rate=1.0",
       )
       .run {
         assertThat(it).hasSingleBean(IContinuousProfiler::class.java)
         assertThat(it).hasSingleBean(IProfileConverter::class.java)
+        assertThat(it)
+          .getBean(IProfileConverter::class.java)
+          .isInstanceOf(
+            AsyncProfilerProfileConverterProvider.AsyncProfilerProfileConverter::class.java
+          )
+        assertThat(it)
+          .getBean(IContinuousProfiler::class.java)
+          .isInstanceOf(JavaContinuousProfiler::class.java)
+        assertThat(it)
+          .getBean(IProfileConverter::class.java)
+          .isSameAs(Sentry.getGlobalScope().options.profilerConverter)
+        assertThat(it)
+          .getBean(IContinuousProfiler::class.java)
+          .isSameAs(Sentry.getGlobalScope().options.continuousProfiler)
+      }
+  }
+
+  @Test
+  fun `when AgentMarker is on the classpath and ContinuousProfiling is enabled IContinuousProfiler and IProfileConverter exist beans are taken from options`() {
+    SentryIntegrationPackageStorage.getInstance().clearStorage()
+
+    contextRunner
+      .withPropertyValues(
+        "sentry.dsn=http://key@localhost/proj",
+        "sentry.profile-session-sample-rate=1.0",
+        "sentry.auto-init=false",
+        "debug=true",
+      )
+      .withUserConfiguration(CustomProfilerOptionsConfigurationConfiguration::class.java)
+      .run {
+        val profiler = it.getBean(IContinuousProfiler::class.java)
+        assertTrue(isMock(profiler))
+        assertThat(it).hasSingleBean(IContinuousProfiler::class.java)
+        assertThat(it).hasSingleBean(IProfileConverter::class.java)
+        assertThat(it)
+          .getBean(IProfileConverter::class.java)
+          .isSameAs(Sentry.getGlobalScope().options.profilerConverter)
+        assertThat(it)
+          .getBean(IContinuousProfiler::class.java)
+          .isSameAs(Sentry.getGlobalScope().options.continuousProfiler)
+      }
+  }
+
+  @Test
+  fun `when AgentMarker is on the classpath and ContinuousProfiling is disabled NoOp Beans are created`() {
+    SentryIntegrationPackageStorage.getInstance().clearStorage()
+
+    contextRunner
+      .withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.auto-init=false")
+      .run {
+        assertThat(it).hasSingleBean(IContinuousProfiler::class.java)
+        assertThat(it).hasSingleBean(IProfileConverter::class.java)
+        assertThat(it)
+          .getBean(IProfileConverter::class.java)
+          .isInstanceOf(NoOpProfileConverter::class.java)
+        assertThat(it)
+          .getBean(IContinuousProfiler::class.java)
+          .isInstanceOf(NoOpContinuousProfiler::class.java)
       }
   }
 
@@ -1084,7 +1145,6 @@ class SentryAutoConfigurationTest {
     contextRunner
       .withPropertyValues(
         "sentry.dsn=http://key@localhost/proj",
-        "sentry.traces-sample-rate=1.0",
         "sentry.profile-session-sample-rate=1.0",
         "debug=true",
       )
@@ -1138,6 +1198,17 @@ class SentryAutoConfigurationTest {
   open class OverridingOptionsConfigurationConfiguration {
 
     @Bean open fun sentryOptionsConfiguration() = Sentry.OptionsConfiguration<SentryOptions> {}
+  }
+
+  @Configuration(proxyBeanMethods = false)
+  open class CustomProfilerOptionsConfigurationConfiguration {
+    private val profiler = mock<IContinuousProfiler>()
+
+    @Bean
+    open fun customOptionsConfiguration() =
+      Sentry.OptionsConfiguration<SentryOptions> { it.setContinuousProfiler(profiler) }
+
+    @Bean open fun beforeSendCallback() = CustomBeforeSendCallback()
   }
 
   @Configuration(proxyBeanMethods = false)

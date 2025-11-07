@@ -85,6 +85,7 @@ dependencies {
   testImplementation(libs.okhttp.mockwebserver)
   testImplementation(libs.otel)
   testImplementation(libs.otel.extension.autoconfigure.spi)
+  testImplementation(projects.sentryAsyncProfiler)
   /**
    * Adding a version of opentelemetry-spring-boot-starter that doesn't support Spring Boot 4 causes
    * java.lang.IllegalArgumentException: Could not find class
