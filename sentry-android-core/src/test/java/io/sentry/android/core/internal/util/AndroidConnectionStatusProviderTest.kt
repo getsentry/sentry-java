@@ -25,8 +25,10 @@ import io.sentry.android.core.AppState
 import io.sentry.android.core.BuildInfoProvider
 import io.sentry.android.core.ContextUtils
 import io.sentry.android.core.SystemEventsBreadcrumbsIntegration
+import io.sentry.test.DeferredExecutorService
 import io.sentry.test.ImmediateExecutorService
 import io.sentry.transport.ICurrentDateProvider
+import io.sentry.util.thread.IThreadChecker
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -38,6 +40,7 @@ import kotlin.test.assertTrue
 import org.junit.runner.RunWith
 import org.mockito.MockedStatic
 import org.mockito.Mockito.mockStatic
+import org.mockito.Mockito.never
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argThat
@@ -206,6 +209,41 @@ class AndroidConnectionStatusProviderTest {
   }
 
   @Test
+  fun `When cache is updating, return UNKNOWN for connectionStatus on main thread`() {
+    whenever(networkInfo.isConnected).thenReturn(true)
+    // When we are on the main thread
+    val mockThreadChecker = mock<IThreadChecker>()
+    options.threadChecker = mockThreadChecker
+    whenever(mockThreadChecker.isMainThread()).thenReturn(true)
+
+    // The update is done on the background
+    val executorService = DeferredExecutorService()
+    options.executorService = executorService
+
+    // Advance time beyond TTL (2 minutes)
+    currentTime += 2 * 60 * 1000L
+
+    // Connection status is unknown while we update the cache
+    assertEquals(
+      IConnectionStatusProvider.ConnectionStatus.UNKNOWN,
+      connectionStatusProvider.connectionStatus,
+    )
+
+    verify(connectivityManager, never()).activeNetworkInfo
+    verify(connectivityManager, never()).activeNetwork
+
+    // When background cache update is done
+    executorService.runAll()
+
+    // Connection status is updated
+    verify(connectivityManager).activeNetwork
+    assertEquals(
+      IConnectionStatusProvider.ConnectionStatus.CONNECTED,
+      connectionStatusProvider.connectionStatus,
+    )
+  }
+
+  @Test
   fun `When there's no permission, return null for getConnectionType`() {
     whenever(contextMock.checkPermission(any(), any(), any())).thenReturn(PERMISSION_DENIED)
 
@@ -217,6 +255,35 @@ class AndroidConnectionStatusProviderTest {
     whenever(connectivityManager.activeNetwork).thenReturn(null)
 
     assertNull(connectionStatusProvider.connectionType)
+  }
+
+  @Test
+  fun `When cache is updating, return null for getConnectionType on main thread`() {
+    whenever(networkInfo.isConnected).thenReturn(true)
+    // When we are on the main thread
+    val mockThreadChecker = mock<IThreadChecker>()
+    options.threadChecker = mockThreadChecker
+    whenever(mockThreadChecker.isMainThread()).thenReturn(true)
+
+    // The update is done on the background
+    val executorService = DeferredExecutorService()
+    options.executorService = executorService
+
+    // Advance time beyond TTL (2 minutes)
+    currentTime += 2 * 60 * 1000L
+
+    // Connection type is null while we update the cache
+    assertNull(connectionStatusProvider.connectionType)
+
+    verify(connectivityManager, never()).activeNetworkInfo
+    verify(connectivityManager, never()).activeNetwork
+
+    // When background cache update is done
+    executorService.runAll()
+
+    // Connection type is updated
+    verify(connectivityManager).activeNetwork
+    assertNotNull(connectionStatusProvider.connectionType)
   }
 
   @Test

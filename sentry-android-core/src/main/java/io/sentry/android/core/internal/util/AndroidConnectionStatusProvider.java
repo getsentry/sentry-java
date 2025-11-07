@@ -147,6 +147,12 @@ public final class AndroidConnectionStatusProvider
           : ConnectionStatus.DISCONNECTED;
     }
 
+    // If cache is being updated, and there's no cached data, return UNKNOWN status until cache is
+    // updated
+    if (isUpdatingCache.get()) {
+      return ConnectionStatus.UNKNOWN;
+    }
+
     // Fallback to legacy method when NetworkCapabilities not available
     final ConnectivityManager connectivityManager =
         getConnectivityManager(context, options.getLogger());
@@ -162,6 +168,12 @@ public final class AndroidConnectionStatusProvider
     final NetworkCapabilities capabilities = cachedNetworkCapabilities;
     if (capabilities != null) {
       return getConnectionType(capabilities);
+    }
+
+    // If cache is being updated, and there's no cached data, return UNKNOWN status until cache is
+    // updated
+    if (isUpdatingCache.get()) {
+      return null;
     }
 
     // Fallback to legacy method when NetworkCapabilities not available
@@ -402,10 +414,10 @@ public final class AndroidConnectionStatusProvider
   @RequiresApi(api = Build.VERSION_CODES.M)
   private void updateCacheFromConnectivityManager() {
     final ConnectivityManager connectivityManager =
-      getConnectivityManager(context, options.getLogger());
+        getConnectivityManager(context, options.getLogger());
     if (connectivityManager != null) {
       final @Nullable NetworkCapabilities capabilities =
-        getNetworkCapabilities(connectivityManager);
+          getNetworkCapabilities(connectivityManager);
 
       try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
         cachedNetworkCapabilities = capabilities;
@@ -413,13 +425,13 @@ public final class AndroidConnectionStatusProvider
 
         if (capabilities != null) {
           options
-            .getLogger()
-            .log(
-              SentryLevel.DEBUG,
-              "Cache updated - Status: "
-                + getConnectionStatusFromCache()
-                + ", Type: "
-                + getConnectionTypeFromCache());
+              .getLogger()
+              .log(
+                  SentryLevel.DEBUG,
+                  "Cache updated - Status: "
+                      + getConnectionStatusFromCache()
+                      + ", Type: "
+                      + getConnectionTypeFromCache());
         }
       }
     }
