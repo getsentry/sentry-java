@@ -34,11 +34,12 @@ class AppLifecycleIntegrationTest {
   }
 
   @Test
-  fun `When SessionTracking and AppLifecycle breadcrumbs are disabled, lifecycle watcher should not be started`() {
+  fun `When SessionTracking and AppLifecycle breadcrumbs and Logs are disabled, lifecycle watcher should not be started`() {
     val sut = fixture.getSut()
     fixture.options.apply {
       isEnableAppLifecycleBreadcrumbs = false
       isEnableAutoSessionTracking = false
+      logs.isEnabled = false
     }
 
     sut.register(fixture.scopes, fixture.options)

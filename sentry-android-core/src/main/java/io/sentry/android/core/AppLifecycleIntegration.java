@@ -45,7 +45,8 @@ public final class AppLifecycleIntegration implements Integration, Closeable {
             this.options.isEnableAppLifecycleBreadcrumbs());
 
     if (this.options.isEnableAutoSessionTracking()
-        || this.options.isEnableAppLifecycleBreadcrumbs()) {
+        || this.options.isEnableAppLifecycleBreadcrumbs()
+        || this.options.getLogs().isEnabled()) {
       try (final ISentryLifecycleToken ignored = lock.acquire()) {
         if (watcher != null) {
           return;
@@ -56,7 +57,8 @@ public final class AppLifecycleIntegration implements Integration, Closeable {
                 scopes,
                 this.options.getSessionTrackingIntervalMillis(),
                 this.options.isEnableAutoSessionTracking(),
-                this.options.isEnableAppLifecycleBreadcrumbs());
+                this.options.isEnableAppLifecycleBreadcrumbs(),
+                this.options.getLogs().isEnabled());
 
         AppState.getInstance().addAppStateListener(watcher);
       }

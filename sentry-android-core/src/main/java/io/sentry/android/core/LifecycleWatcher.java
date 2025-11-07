@@ -5,6 +5,7 @@ import io.sentry.IScopes;
 import io.sentry.ISentryLifecycleToken;
 import io.sentry.SentryLevel;
 import io.sentry.Session;
+import io.sentry.logger.LoggerBatchProcessor;
 import io.sentry.transport.CurrentDateProvider;
 import io.sentry.transport.ICurrentDateProvider;
 import io.sentry.util.AutoClosableReentrantLock;
@@ -29,18 +30,22 @@ final class LifecycleWatcher implements AppState.AppStateListener {
   private final boolean enableSessionTracking;
   private final boolean enableAppLifecycleBreadcrumbs;
 
+  private final boolean enableLogFlushing;
+
   private final @NotNull ICurrentDateProvider currentDateProvider;
 
   LifecycleWatcher(
       final @NotNull IScopes scopes,
       final long sessionIntervalMillis,
       final boolean enableSessionTracking,
-      final boolean enableAppLifecycleBreadcrumbs) {
+      final boolean enableAppLifecycleBreadcrumbs,
+      final boolean enableLogFlushing) {
     this(
         scopes,
         sessionIntervalMillis,
         enableSessionTracking,
         enableAppLifecycleBreadcrumbs,
+        enableLogFlushing,
         CurrentDateProvider.getInstance());
   }
 
@@ -49,10 +54,12 @@ final class LifecycleWatcher implements AppState.AppStateListener {
       final long sessionIntervalMillis,
       final boolean enableSessionTracking,
       final boolean enableAppLifecycleBreadcrumbs,
+      final boolean enableLogFlushing,
       final @NotNull ICurrentDateProvider currentDateProvider) {
     this.sessionIntervalMillis = sessionIntervalMillis;
     this.enableSessionTracking = enableSessionTracking;
     this.enableAppLifecycleBreadcrumbs = enableAppLifecycleBreadcrumbs;
+    this.enableLogFlushing = enableLogFlushing;
     this.scopes = scopes;
     this.currentDateProvider = currentDateProvider;
   }
@@ -101,6 +108,29 @@ final class LifecycleWatcher implements AppState.AppStateListener {
     scheduleEndSession();
 
     addAppBreadcrumb("background");
+
+    if (enableLogFlushing) {
+      try {
+        scopes
+            .getOptions()
+            .getExecutorService()
+            .submit(
+                new Runnable() {
+                  @Override
+                  public void run() {
+                    scopes
+                        .getGlobalScope()
+                        .getClient()
+                        .flushLogs(LoggerBatchProcessor.FLUSH_AFTER_MS);
+                  }
+                });
+      } catch (Throwable t) {
+        scopes
+            .getOptions()
+            .getLogger()
+            .log(SentryLevel.ERROR, t, "Failed to submit log flush runnable");
+      }
+    }
   }
 
   private void scheduleEndSession() {

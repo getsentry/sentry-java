@@ -39,6 +39,9 @@ final class NoOpSentryClient implements ISentryClient {
   public void flush(long timeoutMillis) {}
 
   @Override
+  public void flushLogs(long timeoutMillis) {}
+
+  @Override
   public @NotNull SentryId captureFeedback(
       @NotNull Feedback feedback, @Nullable Hint hint, @NotNull IScope scope) {
     return SentryId.EMPTY_ID;
