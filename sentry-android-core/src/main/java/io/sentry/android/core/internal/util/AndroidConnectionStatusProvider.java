@@ -380,36 +380,15 @@ public final class AndroidConnectionStatusProvider
         return;
       }
 
-      // Fallback: query current active network in the background
-      submitSafe(
-          () -> {
-            // Avoid concurrent updates
-            if (!isUpdatingCache.getAndSet(true)) {
-              final ConnectivityManager connectivityManager =
-                  getConnectivityManager(context, options.getLogger());
-              if (connectivityManager != null) {
-                final @Nullable NetworkCapabilities capabilities =
-                    getNetworkCapabilities(connectivityManager);
-
-                try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
-                  cachedNetworkCapabilities = capabilities;
-                  lastCacheUpdateTime = timeProvider.getCurrentTimeMillis();
-
-                  if (capabilities != null) {
-                    options
-                        .getLogger()
-                        .log(
-                            SentryLevel.DEBUG,
-                            "Cache updated - Status: "
-                                + getConnectionStatusFromCache()
-                                + ", Type: "
-                                + getConnectionTypeFromCache());
-                  }
-                }
-              }
-              isUpdatingCache.set(false);
-            }
-          });
+      // Avoid concurrent updates
+      if (!isUpdatingCache.getAndSet(true)) {
+        // Fallback: query current active network in the background
+        if (options.getThreadChecker().isMainThread()) {
+          submitSafe(() -> updateCacheFromConnectivityManager());
+        } else {
+          updateCacheFromConnectivityManager();
+        }
+      }
 
     } catch (Throwable t) {
       options.getLogger().log(SentryLevel.WARNING, "Failed to update connection status cache", t);
@@ -418,6 +397,33 @@ public final class AndroidConnectionStatusProvider
         lastCacheUpdateTime = timeProvider.getCurrentTimeMillis();
       }
     }
+  }
+
+  @RequiresApi(api = Build.VERSION_CODES.M)
+  private void updateCacheFromConnectivityManager() {
+    final ConnectivityManager connectivityManager =
+      getConnectivityManager(context, options.getLogger());
+    if (connectivityManager != null) {
+      final @Nullable NetworkCapabilities capabilities =
+        getNetworkCapabilities(connectivityManager);
+
+      try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+        cachedNetworkCapabilities = capabilities;
+        lastCacheUpdateTime = timeProvider.getCurrentTimeMillis();
+
+        if (capabilities != null) {
+          options
+            .getLogger()
+            .log(
+              SentryLevel.DEBUG,
+              "Cache updated - Status: "
+                + getConnectionStatusFromCache()
+                + ", Type: "
+                + getConnectionTypeFromCache());
+        }
+      }
+    }
+    isUpdatingCache.set(false);
   }
 
   private boolean isCacheValid() {
