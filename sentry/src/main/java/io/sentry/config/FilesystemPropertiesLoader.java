@@ -31,6 +31,12 @@ final class FilesystemPropertiesLoader implements PropertiesLoader {
           properties.load(is);
           return properties;
         }
+      } else if (!f.isFile()) {
+        logger.log(
+          SentryLevel.ERROR, "Failed to load Sentry configuration since it is not a file or does not exist: %s", filePath);
+      } else if (!f.canRead()) {
+        logger.log(
+          SentryLevel.ERROR, "Failed to load Sentry configuration since it is not readable: %s", filePath);
       }
     } catch (IOException e) {
       logger.log(
