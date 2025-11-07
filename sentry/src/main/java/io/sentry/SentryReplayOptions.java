@@ -146,6 +146,16 @@ public final class SentryReplayOptions {
    */
   private boolean debug = false;
 
+  /**
+   * The screenshot strategy to use for capturing screenshots during replay recording. Defaults to
+   * {@link ScreenshotStrategyType#PIXEL_COPY}. If set to {@link ScreenshotStrategyType#CANVAS}, the
+   * SDK will use the Canvas API to capture screenshots, which will always mask all Texts and
+   * Bitmaps drawn on the screen, causing {@link #addMaskViewClass} and {@link #addUnmaskViewClass}
+   * to be ignored.
+   */
+  @ApiStatus.Experimental
+  private @NotNull ScreenshotStrategyType screenshotStrategy = ScreenshotStrategyType.PIXEL_COPY;
+
   public SentryReplayOptions(final boolean empty, final @Nullable SdkVersion sdkVersion) {
     if (!empty) {
       setMaskAllText(true);
@@ -345,5 +355,25 @@ public final class SentryReplayOptions {
    */
   public void setDebug(final boolean debug) {
     this.debug = debug;
+  }
+
+  /**
+   * Gets the screenshot strategy used for capturing screenshots during replay recording.
+   *
+   * @return the screenshot strategy
+   */
+  @ApiStatus.Experimental
+  public @NotNull ScreenshotStrategyType getScreenshotStrategy() {
+    return screenshotStrategy;
+  }
+
+  /**
+   * Sets the screenshot strategy to use for capturing screenshots during replay recording.
+   *
+   * @param screenshotStrategy the screenshot strategy to use
+   */
+  @ApiStatus.Experimental
+  public void setScreenshotStrategy(final @NotNull ScreenshotStrategyType screenshotStrategy) {
+    this.screenshotStrategy = screenshotStrategy;
   }
 }

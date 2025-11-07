@@ -776,13 +776,10 @@ public abstract interface class io/sentry/IContinuousProfiler {
 }
 
 public abstract interface class io/sentry/IDistributionApi {
-	public abstract fun checkForUpdate (Lio/sentry/IDistributionApi$UpdateCallback;)V
+	public abstract fun checkForUpdate ()Ljava/util/concurrent/Future;
 	public abstract fun checkForUpdateBlocking ()Lio/sentry/UpdateStatus;
 	public abstract fun downloadUpdate (Lio/sentry/UpdateInfo;)V
-}
-
-public abstract interface class io/sentry/IDistributionApi$UpdateCallback {
-	public abstract fun onResult (Lio/sentry/UpdateStatus;)V
+	public abstract fun isEnabled ()Z
 }
 
 public abstract interface class io/sentry/IEnvelopeReader {
@@ -1493,10 +1490,11 @@ public final class io/sentry/NoOpContinuousProfiler : io/sentry/IContinuousProfi
 }
 
 public final class io/sentry/NoOpDistributionApi : io/sentry/IDistributionApi {
-	public fun checkForUpdate (Lio/sentry/IDistributionApi$UpdateCallback;)V
+	public fun checkForUpdate ()Ljava/util/concurrent/Future;
 	public fun checkForUpdateBlocking ()Lio/sentry/UpdateStatus;
 	public fun downloadUpdate (Lio/sentry/UpdateInfo;)V
 	public static fun getInstance ()Lio/sentry/NoOpDistributionApi;
+	public fun isEnabled ()Z
 }
 
 public final class io/sentry/NoOpEnvelopeReader : io/sentry/IEnvelopeReader {
@@ -2526,6 +2524,13 @@ public final class io/sentry/ScopesStorageFactory {
 	public static fun create (Lio/sentry/util/LoadClass;Lio/sentry/ILogger;)Lio/sentry/IScopesStorage;
 }
 
+public final class io/sentry/ScreenshotStrategyType : java/lang/Enum {
+	public static final field CANVAS Lio/sentry/ScreenshotStrategyType;
+	public static final field PIXEL_COPY Lio/sentry/ScreenshotStrategyType;
+	public static fun valueOf (Ljava/lang/String;)Lio/sentry/ScreenshotStrategyType;
+	public static fun values ()[Lio/sentry/ScreenshotStrategyType;
+}
+
 public final class io/sentry/SendCachedEnvelopeFireAndForgetIntegration : io/sentry/IConnectionStatusProvider$IConnectionStatusObserver, io/sentry/Integration, java/io/Closeable {
 	public fun <init> (Lio/sentry/SendCachedEnvelopeFireAndForgetIntegration$SendFireAndForgetFactory;)V
 	public fun close ()V
@@ -3394,6 +3399,7 @@ public class io/sentry/SentryOptions {
 	public fun getReadTimeoutMillis ()I
 	public fun getRelease ()Ljava/lang/String;
 	public fun getReplayController ()Lio/sentry/ReplayController;
+	public fun getRuntimeManager ()Lio/sentry/util/runtime/IRuntimeManager;
 	public fun getSampleRate ()Ljava/lang/Double;
 	public fun getScopeObservers ()Ljava/util/List;
 	public fun getSdkVersion ()Lio/sentry/protocol/SdkVersion;
@@ -3539,6 +3545,7 @@ public class io/sentry/SentryOptions {
 	public fun setReadTimeoutMillis (I)V
 	public fun setRelease (Ljava/lang/String;)V
 	public fun setReplayController (Lio/sentry/ReplayController;)V
+	public fun setRuntimeManager (Lio/sentry/util/runtime/IRuntimeManager;)V
 	public fun setSampleRate (Ljava/lang/Double;)V
 	public fun setSdkVersion (Lio/sentry/protocol/SdkVersion;)V
 	public fun setSendClientReports (Z)V
@@ -3751,6 +3758,7 @@ public final class io/sentry/SentryReplayOptions {
 	public fun getMaskViewContainerClass ()Ljava/lang/String;
 	public fun getOnErrorSampleRate ()Ljava/lang/Double;
 	public fun getQuality ()Lio/sentry/SentryReplayOptions$SentryReplayQuality;
+	public fun getScreenshotStrategy ()Lio/sentry/ScreenshotStrategyType;
 	public fun getSdkVersion ()Lio/sentry/protocol/SdkVersion;
 	public fun getSessionDuration ()J
 	public fun getSessionSampleRate ()Ljava/lang/Double;
@@ -3767,6 +3775,7 @@ public final class io/sentry/SentryReplayOptions {
 	public fun setMaskViewContainerClass (Ljava/lang/String;)V
 	public fun setOnErrorSampleRate (Ljava/lang/Double;)V
 	public fun setQuality (Lio/sentry/SentryReplayOptions$SentryReplayQuality;)V
+	public fun setScreenshotStrategy (Lio/sentry/ScreenshotStrategyType;)V
 	public fun setSdkVersion (Lio/sentry/protocol/SdkVersion;)V
 	public fun setSessionSampleRate (Ljava/lang/Double;)V
 	public fun setTrackConfiguration (Z)V
@@ -4356,6 +4365,7 @@ public final class io/sentry/UpdateInfo {
 	public fun getCreatedDate ()Ljava/lang/String;
 	public fun getDownloadUrl ()Ljava/lang/String;
 	public fun getId ()Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
 }
 
 public abstract class io/sentry/UpdateStatus {
@@ -4365,20 +4375,24 @@ public abstract class io/sentry/UpdateStatus {
 public final class io/sentry/UpdateStatus$NewRelease : io/sentry/UpdateStatus {
 	public fun <init> (Lio/sentry/UpdateInfo;)V
 	public fun getInfo ()Lio/sentry/UpdateInfo;
+	public fun toString ()Ljava/lang/String;
 }
 
 public final class io/sentry/UpdateStatus$NoNetwork : io/sentry/UpdateStatus {
 	public fun <init> (Ljava/lang/String;)V
 	public fun getMessage ()Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
 }
 
 public final class io/sentry/UpdateStatus$UpToDate : io/sentry/UpdateStatus {
 	public static fun getInstance ()Lio/sentry/UpdateStatus$UpToDate;
+	public fun toString ()Ljava/lang/String;
 }
 
 public final class io/sentry/UpdateStatus$UpdateError : io/sentry/UpdateStatus {
 	public fun <init> (Ljava/lang/String;)V
 	public fun getMessage ()Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
 }
 
 public final class io/sentry/UserFeedback : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
@@ -7074,12 +7088,21 @@ public class io/sentry/util/LoadClass {
 	public fun <init> ()V
 	public fun isClassAvailable (Ljava/lang/String;Lio/sentry/ILogger;)Z
 	public fun isClassAvailable (Ljava/lang/String;Lio/sentry/SentryOptions;)Z
+	public fun isClassAvailableLazy (Ljava/lang/String;Lio/sentry/ILogger;)Lio/sentry/util/LazyEvaluator;
+	public fun isClassAvailableLazy (Ljava/lang/String;Lio/sentry/SentryOptions;)Lio/sentry/util/LazyEvaluator;
 	public fun loadClass (Ljava/lang/String;Lio/sentry/ILogger;)Ljava/lang/Class;
 }
 
 public final class io/sentry/util/LogUtils {
 	public fun <init> ()V
 	public static fun logNotInstanceOf (Ljava/lang/Class;Ljava/lang/Object;Lio/sentry/ILogger;)V
+}
+
+public final class io/sentry/util/LoggerPropertiesUtil {
+	public fun <init> ()V
+	public static fun applyPropertiesToAttributes (Lio/sentry/SentryAttributes;Ljava/util/List;Ljava/util/Map;)V
+	public static fun applyPropertiesToEvent (Lio/sentry/SentryEvent;Ljava/util/List;Ljava/util/Map;)V
+	public static fun applyPropertiesToEvent (Lio/sentry/SentryEvent;Ljava/util/List;Ljava/util/Map;Ljava/lang/String;)V
 }
 
 public final class io/sentry/util/MapObjectReader : io/sentry/ObjectReader {
@@ -7288,6 +7311,21 @@ public final class io/sentry/util/UrlUtils$UrlDetails {
 	public fun getQuery ()Ljava/lang/String;
 	public fun getUrl ()Ljava/lang/String;
 	public fun getUrlOrFallback ()Ljava/lang/String;
+}
+
+public abstract interface class io/sentry/util/runtime/IRuntimeManager {
+	public abstract fun runWithRelaxedPolicy (Lio/sentry/util/runtime/IRuntimeManager$IRuntimeManagerCallback;)Ljava/lang/Object;
+	public abstract fun runWithRelaxedPolicy (Ljava/lang/Runnable;)V
+}
+
+public abstract interface class io/sentry/util/runtime/IRuntimeManager$IRuntimeManagerCallback {
+	public abstract fun run ()Ljava/lang/Object;
+}
+
+public final class io/sentry/util/runtime/NeutralRuntimeManager : io/sentry/util/runtime/IRuntimeManager {
+	public fun <init> ()V
+	public fun runWithRelaxedPolicy (Lio/sentry/util/runtime/IRuntimeManager$IRuntimeManagerCallback;)Ljava/lang/Object;
+	public fun runWithRelaxedPolicy (Ljava/lang/Runnable;)V
 }
 
 public abstract interface class io/sentry/util/network/NetworkBody {

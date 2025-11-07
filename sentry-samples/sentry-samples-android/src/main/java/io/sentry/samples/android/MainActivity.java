@@ -29,6 +29,7 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Future;
 import timber.log.Timber;
 
 public class MainActivity extends AppCompatActivity {
@@ -272,6 +273,11 @@ public class MainActivity extends AppCompatActivity {
           startActivity(new Intent(this, ProfilingActivity.class));
         });
 
+    binding.openCustomTabsActivity.setOnClickListener(
+        view -> {
+          startActivity(new Intent(this, CustomTabsActivity.class));
+        });
+
     binding.openFrameDataForSpans.setOnClickListener(
         view -> startActivity(new Intent(this, FrameDataForSpansActivity.class)));
 
@@ -310,35 +316,56 @@ public class MainActivity extends AppCompatActivity {
     binding.checkForUpdate.setOnClickListener(
         view -> {
           Toast.makeText(this, "Checking for updates...", Toast.LENGTH_SHORT).show();
-          Sentry.distribution()
-              .checkForUpdate(
-                  result -> {
-                    runOnUiThread(
-                        () -> {
-                          String message;
-                          if (result instanceof UpdateStatus.NewRelease) {
-                            UpdateStatus.NewRelease newRelease = (UpdateStatus.NewRelease) result;
-                            message =
-                                "Update available: "
-                                    + newRelease.getInfo().getBuildVersion()
-                                    + " (Build "
-                                    + newRelease.getInfo().getBuildNumber()
-                                    + ")\nDownload URL: "
-                                    + newRelease.getInfo().getDownloadUrl();
-                          } else if (result instanceof UpdateStatus.UpToDate) {
-                            message = "App is up to date!";
-                          } else if (result instanceof UpdateStatus.NoNetwork) {
-                            UpdateStatus.NoNetwork noNetwork = (UpdateStatus.NoNetwork) result;
-                            message = "No network connection: " + noNetwork.getMessage();
-                          } else if (result instanceof UpdateStatus.UpdateError) {
-                            UpdateStatus.UpdateError error = (UpdateStatus.UpdateError) result;
-                            message = "Error checking for updates: " + error.getMessage();
-                          } else {
-                            message = "Unknown status";
-                          }
-                          Toast.makeText(this, message, Toast.LENGTH_LONG).show();
-                        });
-                  });
+          Future<UpdateStatus> future = Sentry.distribution().checkForUpdate();
+          // In production, convert this to use your preferred async library (RxJava, Coroutines,
+          // etc.)
+          // This sample uses raw threads and Future.get() for simplicity
+          // Process result on background thread, then update UI
+          new Thread(
+                  () -> {
+                    try {
+                      UpdateStatus result = future.get();
+                      runOnUiThread(
+                          () -> {
+                            String message;
+                            if (result instanceof UpdateStatus.NewRelease) {
+                              UpdateStatus.NewRelease newRelease = (UpdateStatus.NewRelease) result;
+                              message =
+                                  "Update available: "
+                                      + newRelease.getInfo().getBuildVersion()
+                                      + " (Build "
+                                      + newRelease.getInfo().getBuildNumber()
+                                      + ")\nDownload URL: "
+                                      + newRelease.getInfo().getDownloadUrl();
+                            } else if (result instanceof UpdateStatus.UpToDate) {
+                              message = "App is up to date!";
+                            } else if (result instanceof UpdateStatus.NoNetwork) {
+                              UpdateStatus.NoNetwork noNetwork = (UpdateStatus.NoNetwork) result;
+                              message = "No network connection: " + noNetwork.getMessage();
+                            } else if (result instanceof UpdateStatus.UpdateError) {
+                              UpdateStatus.UpdateError error = (UpdateStatus.UpdateError) result;
+                              message = "Error checking for updates: " + error.getMessage();
+                            } else {
+                              message = "Unknown status";
+                            }
+                            Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+                          });
+                    } catch (Exception e) {
+                      runOnUiThread(
+                          () ->
+                              Toast.makeText(
+                                      this,
+                                      "Error checking for updates: " + e.getMessage(),
+                                      Toast.LENGTH_LONG)
+                                  .show());
+                    }
+                  })
+              .start();
+        });
+
+    binding.openCameraActivity.setOnClickListener(
+        view -> {
+          startActivity(new Intent(this, CameraXActivity.class));
         });
 
     binding.openHttpRequestActivity.setOnClickListener(
