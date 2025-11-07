@@ -3744,6 +3744,7 @@ public final class io/sentry/SentryReplayOptions {
 	public static final field EXOPLAYER_CLASS_NAME Ljava/lang/String;
 	public static final field EXOPLAYER_STYLED_CLASS_NAME Ljava/lang/String;
 	public static final field IMAGE_VIEW_CLASS_NAME Ljava/lang/String;
+	public static final field MAX_NETWORK_BODY_SIZE I
 	public static final field TEXT_VIEW_CLASS_NAME Ljava/lang/String;
 	public static final field VIDEO_VIEW_CLASS_NAME Ljava/lang/String;
 	public static final field WEB_VIEW_CLASS_NAME Ljava/lang/String;
@@ -4322,6 +4323,7 @@ public final class io/sentry/TypeCheckHint {
 	public static final field SENTRY_EVENT_DROP_REASON Ljava/lang/String;
 	public static final field SENTRY_IS_FROM_HYBRID_SDK Ljava/lang/String;
 	public static final field SENTRY_JAVASCRIPT_SDK_NAME Ljava/lang/String;
+	public static final field SENTRY_REPLAY_NETWORK_DETAILS Ljava/lang/String;
 	public static final field SENTRY_SYNTHETIC_EXCEPTION Ljava/lang/String;
 	public static final field SENTRY_TYPE_CHECK_HINT Ljava/lang/String;
 	public static final field SERVLET_REQUEST Ljava/lang/String;
@@ -7309,6 +7311,70 @@ public final class io/sentry/util/UrlUtils$UrlDetails {
 	public fun getQuery ()Ljava/lang/String;
 	public fun getUrl ()Ljava/lang/String;
 	public fun getUrlOrFallback ()Ljava/lang/String;
+}
+
+public abstract interface class io/sentry/util/network/NetworkBody {
+	public static fun fromJsonArray (Ljava/util/List;)Lio/sentry/util/network/NetworkBody;
+	public static fun fromJsonObject (Ljava/util/Map;)Lio/sentry/util/network/NetworkBody;
+	public static fun fromString (Ljava/lang/String;)Lio/sentry/util/network/NetworkBody;
+	public abstract fun getValue ()Ljava/lang/Object;
+}
+
+public final class io/sentry/util/network/NetworkBody$JsonArrayImpl : io/sentry/util/network/NetworkBody {
+	public synthetic fun getValue ()Ljava/lang/Object;
+	public fun getValue ()Ljava/util/List;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/sentry/util/network/NetworkBody$JsonObjectImpl : io/sentry/util/network/NetworkBody {
+	public synthetic fun getValue ()Ljava/lang/Object;
+	public fun getValue ()Ljava/util/Map;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/sentry/util/network/NetworkBody$StringBodyImpl : io/sentry/util/network/NetworkBody {
+	public synthetic fun getValue ()Ljava/lang/Object;
+	public fun getValue ()Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/sentry/util/network/NetworkBodyParser {
+	public static fun fromBytes ([BLjava/lang/String;Ljava/lang/String;ILio/sentry/ILogger;)Lio/sentry/util/network/NetworkBody;
+}
+
+public final class io/sentry/util/network/NetworkDetailCaptureUtils {
+	public static fun createRequest (Ljava/lang/Object;Ljava/lang/Long;ZLio/sentry/util/network/NetworkDetailCaptureUtils$NetworkBodyExtractor;[Ljava/lang/String;Lio/sentry/util/network/NetworkDetailCaptureUtils$NetworkHeaderExtractor;)Lio/sentry/util/network/ReplayNetworkRequestOrResponse;
+	public static fun createResponse (Ljava/lang/Object;Ljava/lang/Long;ZLio/sentry/util/network/NetworkDetailCaptureUtils$NetworkBodyExtractor;[Ljava/lang/String;Lio/sentry/util/network/NetworkDetailCaptureUtils$NetworkHeaderExtractor;)Lio/sentry/util/network/ReplayNetworkRequestOrResponse;
+	public static fun initializeForUrl (Ljava/lang/String;Ljava/lang/String;[Ljava/lang/String;[Ljava/lang/String;)Lio/sentry/util/network/NetworkRequestData;
+}
+
+public abstract interface class io/sentry/util/network/NetworkDetailCaptureUtils$NetworkBodyExtractor {
+	public abstract fun extract (Ljava/lang/Object;)Lio/sentry/util/network/NetworkBody;
+}
+
+public abstract interface class io/sentry/util/network/NetworkDetailCaptureUtils$NetworkHeaderExtractor {
+	public abstract fun extract (Ljava/lang/Object;)Ljava/util/Map;
+}
+
+public final class io/sentry/util/network/NetworkRequestData {
+	public fun <init> (Ljava/lang/String;)V
+	public fun getMethod ()Ljava/lang/String;
+	public fun getRequest ()Lio/sentry/util/network/ReplayNetworkRequestOrResponse;
+	public fun getRequestBodySize ()Ljava/lang/Long;
+	public fun getResponse ()Lio/sentry/util/network/ReplayNetworkRequestOrResponse;
+	public fun getResponseBodySize ()Ljava/lang/Long;
+	public fun getStatusCode ()Ljava/lang/Integer;
+	public fun setRequestDetails (Lio/sentry/util/network/ReplayNetworkRequestOrResponse;)V
+	public fun setResponseDetails (ILio/sentry/util/network/ReplayNetworkRequestOrResponse;)V
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/sentry/util/network/ReplayNetworkRequestOrResponse {
+	public fun <init> (Ljava/lang/Long;Lio/sentry/util/network/NetworkBody;Ljava/util/Map;)V
+	public fun getBody ()Lio/sentry/util/network/NetworkBody;
+	public fun getHeaders ()Ljava/util/Map;
+	public fun getSize ()Ljava/lang/Long;
+	public fun toString ()Ljava/lang/String;
 }
 
 public abstract interface class io/sentry/util/runtime/IRuntimeManager {
