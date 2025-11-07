@@ -857,16 +857,15 @@ public final class AndroidConnectionStatusProvider
     submitSafe(r, null);
   }
 
-  private void submitSafe(final @NotNull Runnable r, final @Nullable Runnable onFinally) {
+  private void submitSafe(final @NotNull Runnable r, final @Nullable Runnable onError) {
     try {
       options.getExecutorService().submit(r);
     } catch (Throwable e) {
       options
           .getLogger()
           .log(SentryLevel.ERROR, "AndroidConnectionStatusProvider submit failed", e);
-    } finally {
-      if (onFinally != null) {
-        onFinally.run();
+      if (onError != null) {
+        onError.run();
       }
     }
   }
