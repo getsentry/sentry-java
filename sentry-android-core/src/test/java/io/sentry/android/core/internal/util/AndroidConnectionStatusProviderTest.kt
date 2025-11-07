@@ -106,6 +106,7 @@ class AndroidConnectionStatusProviderTest {
     options = SentryOptions()
     options.setLogger(logger)
     options.executorService = ImmediateExecutorService()
+    options.threadChecker = AndroidThreadChecker.getInstance()
 
     // Reset current time for each test to ensure cache isolation
     currentTime = 1000L
@@ -128,6 +129,7 @@ class AndroidConnectionStatusProviderTest {
 
   @AfterTest
   fun `tear down`() {
+    options.executorService = ImmediateExecutorService()
     // clear the cache and ensure proper cleanup
     connectionStatusProvider.close()
     contextUtilsStaticMock.close()

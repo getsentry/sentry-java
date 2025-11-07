@@ -396,7 +396,7 @@ public final class AndroidConnectionStatusProvider
       if (!isUpdatingCache.getAndSet(true)) {
         // Fallback: query current active network in the background
         if (options.getThreadChecker().isMainThread()) {
-          submitSafe(() -> updateCacheFromConnectivityManager());
+          submitSafe(() -> updateCacheFromConnectivityManager(), () -> isUpdatingCache.set(false));
         } else {
           updateCacheFromConnectivityManager();
         }
@@ -854,12 +854,20 @@ public final class AndroidConnectionStatusProvider
   }
 
   private void submitSafe(@NotNull Runnable r) {
+    submitSafe(r, null);
+  }
+
+  private void submitSafe(final @NotNull Runnable r, final @Nullable Runnable onFinally) {
     try {
       options.getExecutorService().submit(r);
     } catch (Throwable e) {
       options
           .getLogger()
           .log(SentryLevel.ERROR, "AndroidConnectionStatusProvider submit failed", e);
+    } finally {
+      if (onFinally != null) {
+        onFinally.run();
+      }
     }
   }
 }
