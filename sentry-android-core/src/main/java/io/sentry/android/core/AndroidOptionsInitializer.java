@@ -254,9 +254,11 @@ final class AndroidOptionsInitializer {
       options.setCompositePerformanceCollector(new DefaultCompositePerformanceCollector(options));
     }
 
-    if (options.getReplayController().getBreadcrumbConverter() instanceof NoOpReplayBreadcrumbConverter) {
-      options.getReplayController().setBreadcrumbConverter(new DefaultReplayBreadcrumbConverter(options));
-
+    if (options.getReplayController().getBreadcrumbConverter()
+        instanceof NoOpReplayBreadcrumbConverter) {
+      options
+          .getReplayController()
+          .setBreadcrumbConverter(new DefaultReplayBreadcrumbConverter(options));
     }
 
     // Check if the profiler was already instantiated in the app start.

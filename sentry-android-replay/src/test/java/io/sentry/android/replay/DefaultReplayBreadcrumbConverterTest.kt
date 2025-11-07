@@ -425,7 +425,7 @@ class DefaultReplayBreadcrumbConverterTest {
         100L,
         NetworkBody.fromString("request body content"),
         mapOf("Content-Type" to "application/json"),
-      ),
+      )
     )
     fakeOkHttpNetworkDetails.setResponseDetails(
       200,
@@ -487,7 +487,7 @@ class DefaultReplayBreadcrumbConverterTest {
         150L,
         NetworkBody.fromJsonArray(listOf("item1", "item2", "item3")),
         mapOf("Content-Type" to "application/json"),
-      ),
+      )
     )
     fakeOkHttpNetworkDetails.setResponseDetails(
       404,
@@ -542,7 +542,7 @@ class DefaultReplayBreadcrumbConverterTest {
         100L,
         NetworkBody.fromString("request body content"),
         mapOf("Content-Type" to "application/json"),
-      ),
+      )
     )
     networkRequestData.setResponseDetails(
       200,

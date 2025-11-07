@@ -301,10 +301,7 @@ public open class SentryOkHttpInterceptor(
         logger,
       )
     } catch (e: Exception) {
-      logger.log(
-        io.sentry.SentryLevel.ERROR,
-        "Failed to parse buffered request body: ${e.message}",
-      )
+      logger.log(io.sentry.SentryLevel.ERROR, "Failed to parse buffered request body: ${e.message}")
       return null
     }
   }
