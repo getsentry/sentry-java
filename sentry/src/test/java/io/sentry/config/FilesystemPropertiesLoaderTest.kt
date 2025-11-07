@@ -26,7 +26,8 @@ class FilesystemPropertiesLoaderTest {
   fun `returns properties when file has whitespace`() {
     val file = folder.newFile("sentry.properties")
     file.writeText("dsn=some-dsn", Charset.defaultCharset())
-    val loader = FilesystemPropertiesLoader("   " + file.absolutePath + "  ", NoOpLogger.getInstance())
+    val loader =
+      FilesystemPropertiesLoader("   " + file.absolutePath + "  ", NoOpLogger.getInstance())
     val properties = loader.load()
     assertNotNull(properties)
     assertEquals("some-dsn", properties["dsn"])
