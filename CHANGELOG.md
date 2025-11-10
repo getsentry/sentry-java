@@ -7,6 +7,7 @@
 - Removed SentryExecutorService limit for delayed scheduled tasks ([#4846](https://github.com/getsentry/sentry-java/pull/4846))
 - Fix visual artifacts for the Canvas strategy on some devices ([#4861](https://github.com/getsentry/sentry-java/pull/4861))
 - [Config] Trim whitespace on properties path ([#4880](https://github.com/getsentry/sentry-java/pull/4880))
+- Only set `DefaultReplayBreadcrumbConverter` if replay is available ([#4888](https://github.com/getsentry/sentry-java/pull/4888))
 
 ### Improvements
 
@@ -19,6 +20,7 @@
 - Bump Native SDK from v0.11.3 to v0.12.1 ([#4859](https://github.com/getsentry/sentry-java/pull/4859))
   - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0121)
   - [diff](https://github.com/getsentry/sentry-native/compare/0.11.3...0.12.1)
+- Bump Spring Boot 4 to RC2 ([#4886](https://github.com/getsentry/sentry-java/pull/4886))
 
 ## 8.25.0
 
