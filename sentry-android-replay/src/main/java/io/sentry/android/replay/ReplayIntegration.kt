@@ -95,7 +95,7 @@ public class ReplayIntegration(
     this.gestureRecorderProvider = gestureRecorderProvider
   }
 
-  private var lastKnownConnectionStatus: ConnectionStatus = ConnectionStatus.UNKNOWN
+  @Volatile private var lastKnownConnectionStatus: ConnectionStatus = ConnectionStatus.UNKNOWN
   private var debugMaskingEnabled: Boolean = false
   private lateinit var options: SentryOptions
   private var scopes: IScopes? = null
@@ -378,7 +378,8 @@ public class ReplayIntegration(
   private fun checkCanRecord() {
     if (
       captureStrategy is SessionCaptureStrategy &&
-        (scopes?.rateLimiter?.isActiveForCategory(All) == true ||
+        (lastKnownConnectionStatus == DISCONNECTED ||
+          scopes?.rateLimiter?.isActiveForCategory(All) == true ||
           scopes?.rateLimiter?.isActiveForCategory(Replay) == true)
     ) {
       pauseInternal()
