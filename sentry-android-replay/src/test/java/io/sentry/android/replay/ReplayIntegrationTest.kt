@@ -120,7 +120,6 @@ class ReplayIntegrationTest {
       context: Context,
       sessionSampleRate: Double = 1.0,
       onErrorSampleRate: Double = 1.0,
-      isOffline: Boolean = false,
       isRateLimited: Boolean = false,
       recorderProvider: (() -> Recorder)? = null,
       replayCaptureStrategyProvider: ((isFullSession: Boolean) -> CaptureStrategy)? = null,
@@ -130,9 +129,6 @@ class ReplayIntegrationTest {
       options.run {
         sessionReplay.onErrorSampleRate = onErrorSampleRate
         sessionReplay.sessionSampleRate = sessionSampleRate
-        connectionStatusProvider = mock {
-          on { connectionStatus }.thenReturn(if (isOffline) DISCONNECTED else CONNECTED)
-        }
       }
       if (isRateLimited) {
         whenever(rateLimiter.isActiveForCategory(any())).thenReturn(true)
@@ -623,13 +619,13 @@ class ReplayIntegrationTest {
         context,
         recorderProvider = { recorder },
         replayCaptureStrategyProvider = { captureStrategy },
-        isOffline = true,
       )
 
     replay.register(fixture.scopes, fixture.options)
     replay.start()
     replay.onScreenshotRecorded(mock<Bitmap>())
 
+    replay.onConnectionStatusChanged(DISCONNECTED)
     verify(recorder).pause()
   }
 
@@ -903,10 +899,10 @@ class ReplayIntegrationTest {
         context,
         recorderProvider = { recorder },
         replayCaptureStrategyProvider = { captureStrategy },
-        isOffline = true,
       )
 
     replay.register(fixture.scopes, fixture.options)
+    replay.onConnectionStatusChanged(DISCONNECTED)
     replay.start()
 
     replay.pause()
