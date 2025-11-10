@@ -31,7 +31,7 @@ retrofit = "2.9.0"
 slf4j = "1.7.30"
 springboot2 = "2.7.18"
 springboot3 = "3.5.0"
-springboot4 = "4.0.0-M3"
+springboot4 = "4.0.0-RC1"
 # Android
 targetSdk = "34"
 compileSdk = "34"
@@ -65,6 +65,7 @@ springboot4 = { id = "org.springframework.boot", version.ref = "springboot4" }
 spring-dependency-management = { id = "io.spring.dependency-management", version = "1.0.11.RELEASE" }
 gretty = { id = "org.gretty", version = "4.0.0" }
 animalsniffer = { id = "ru.vyarus.animalsniffer", version = "2.0.1" }
+sentry = { id = "io.sentry.android.gradle", version = "6.0.0-alpha.6"}
 
 [libraries]
 apache-httpclient = { module = "org.apache.httpcomponents.client5:httpclient5", version = "5.0.4" }
@@ -134,7 +135,7 @@ quartz = { module = "org.quartz-scheduler:quartz", version = "2.3.0" }
 reactor-core = { module = "io.projectreactor:reactor-core", version = "3.5.3" }
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 retrofit-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "retrofit" }
-sentry-native-ndk = { module = "io.sentry:sentry-native-ndk", version = "0.11.3" }
+sentry-native-ndk = { module = "io.sentry:sentry-native-ndk", version = "0.12.1" }
 servlet-api = { module = "javax.servlet:javax.servlet-api", version = "3.1.0" }
 servlet-jakarta-api = { module = "jakarta.servlet:jakarta.servlet-api", version = "6.1.0" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
@@ -165,6 +166,7 @@ springboot3-starter-security = { module = "org.springframework.boot:spring-boot-
 springboot3-starter-jdbc = { module = "org.springframework.boot:spring-boot-starter-jdbc", version.ref = "springboot3" }
 springboot3-starter-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator", version.ref = "springboot3" }
 springboot4-otel = { module = "io.opentelemetry.instrumentation:opentelemetry-spring-boot-starter", version.ref = "otelInstrumentation" }
+springboot4-resttestclient = { module = "org.springframework.boot:spring-boot-resttestclient", version.ref = "springboot4" }
 springboot4-starter = { module = "org.springframework.boot:spring-boot-starter", version.ref = "springboot4" }
 springboot4-starter-graphql = { module = "org.springframework.boot:spring-boot-starter-graphql", version.ref = "springboot4" }
 springboot4-starter-quartz = { module = "org.springframework.boot:spring-boot-starter-quartz", version.ref = "springboot4" }
