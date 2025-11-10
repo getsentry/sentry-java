@@ -24,6 +24,7 @@ public final class LoggerBatchProcessor implements ILoggerBatchProcessor {
 
   public static final int FLUSH_AFTER_MS = 5000;
   public static final int MAX_BATCH_SIZE = 100;
+  public static final int MAX_QUEUE_SIZE = 1000;
 
   private final @NotNull SentryOptions options;
   private final @NotNull ISentryClient client;
@@ -46,6 +47,9 @@ public final class LoggerBatchProcessor implements ILoggerBatchProcessor {
 
   @Override
   public void add(final @NotNull SentryLogEvent logEvent) {
+    if (pendingCount.getCount() >= MAX_QUEUE_SIZE) {
+      return;
+    }
     pendingCount.increment();
     queue.offer(logEvent);
     maybeSchedule(false, false);
