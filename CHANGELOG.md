@@ -8,6 +8,7 @@
 - Fix visual artifacts for the Canvas strategy on some devices ([#4861](https://github.com/getsentry/sentry-java/pull/4861))
 - [Config] Trim whitespace on properties path ([#4880](https://github.com/getsentry/sentry-java/pull/4880))
 - Only set `DefaultReplayBreadcrumbConverter` if replay is available ([#4888](https://github.com/getsentry/sentry-java/pull/4888))
+- Prevent ANR by caching connection status instead of blocking calls ([#4891](https://github.com/getsentry/sentry-java/pull/4891))
 
 ### Improvements
 
