@@ -14,6 +14,7 @@
 - Fallback to distinct-id as user.id logging attribute when user is not set ([#4847](https://github.com/getsentry/sentry-java/pull/4847))
 - Report Timber.tag() as `timber.tag` log attribute ([#4845](https://github.com/getsentry/sentry-java/pull/4845))
 - Session Replay: Add screenshot strategy serialization to RRWeb events ([#4851](https://github.com/getsentry/sentry-java/pull/4851))
+- Log why a properties file was not loaded ([#4879](https://github.com/getsentry/sentry-java/pull/4879))
 
 ### Dependencies
 
