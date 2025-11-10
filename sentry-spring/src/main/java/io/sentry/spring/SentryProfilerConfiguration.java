@@ -3,8 +3,6 @@ package io.sentry.spring;
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.IContinuousProfiler;
 import io.sentry.IProfileConverter;
-import io.sentry.NoOpContinuousProfiler;
-import io.sentry.NoOpProfileConverter;
 import io.sentry.Sentry;
 import io.sentry.SentryOptions;
 import io.sentry.util.InitUtil;
@@ -26,12 +24,11 @@ public class SentryProfilerConfiguration {
   @ConditionalOnMissingBean(name = "sentryOpenTelemetryProfilerConfiguration")
   public IContinuousProfiler sentryOpenTelemetryProfilerConfiguration() {
     SentryOptions options = Sentry.getGlobalScope().getOptions();
-    IContinuousProfiler profiler = NoOpContinuousProfiler.getInstance();
 
     if (Sentry.isEnabled()) {
       return InitUtil.initializeProfiler(options);
     } else {
-      return profiler;
+      return options.getContinuousProfiler();
     }
   }
 
@@ -39,12 +36,11 @@ public class SentryProfilerConfiguration {
   @ConditionalOnMissingBean(name = "sentryOpenTelemetryProfilerConverterConfiguration")
   public IProfileConverter sentryOpenTelemetryProfilerConverterConfiguration() {
     SentryOptions options = Sentry.getGlobalScope().getOptions();
-    IProfileConverter converter = NoOpProfileConverter.getInstance();
 
     if (Sentry.isEnabled()) {
       return InitUtil.initializeProfileConverter(options);
     } else {
-      return converter;
+      return options.getProfilerConverter();
     }
   }
 }
