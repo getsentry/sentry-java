@@ -1007,6 +1007,22 @@ class SentryAutoConfigurationTest {
   }
 
   @Test
+  fun `when JavaContinuousProfiler is not on the classpath and ContinuousProfiling is enabled IProfileConverter beans are not created`() {
+    SentryIntegrationPackageStorage.getInstance().clearStorage()
+    contextRunner
+      .withPropertyValues(
+        "sentry.dsn=http://key@localhost/proj",
+        "sentry.profile-session-sample-rate=1.0",
+        "debug=true",
+      )
+      .withClassLoader(FilteredClassLoader(JavaContinuousProfiler::class.java))
+      .run {
+        assertThat(it).doesNotHaveBean(IContinuousProfiler::class.java)
+        assertThat(it).doesNotHaveBean(IProfileConverter::class.java)
+      }
+  }
+
+  @Test
   fun `creates quartz config`() {
     contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj").run {
       assertThat(it).hasSingleBean(SchedulerFactoryBeanCustomizer::class.java)

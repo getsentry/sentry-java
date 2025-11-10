@@ -7,7 +7,11 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
 @Configuration(proxyBeanMethods = false)
-@ConditionalOnClass(name = {"io.sentry.opentelemetry.agent.AgentMarker"})
+@ConditionalOnClass(
+    name = {
+      "io.sentry.opentelemetry.agent.AgentMarker",
+      "io.sentry.asyncprofiler.profiling.JavaContinuousProfiler"
+    })
 @Open
 @Import(SentryProfilerConfiguration.class)
 public class SentryProfilerAutoConfiguration {}
