@@ -2,15 +2,23 @@
 
 ## Unreleased
 
+### Fixes
+
+- Removed SentryExecutorService limit for delayed scheduled tasks ([#4846](https://github.com/getsentry/sentry-java/pull/4846))
+- Fix visual artifacts for the Canvas strategy on some devices ([#4861](https://github.com/getsentry/sentry-java/pull/4861))
+- Fix profilerId propagation ([#4833](https://github.com/getsentry/sentry-java/pull/4833))
+
 ### Improvements
 
 - Fallback to distinct-id as user.id logging attribute when user is not set ([#4847](https://github.com/getsentry/sentry-java/pull/4847))
 - Report Timber.tag() as `timber.tag` log attribute ([#4845](https://github.com/getsentry/sentry-java/pull/4845))
 - Session Replay: Add screenshot strategy serialization to RRWeb events ([#4851](https://github.com/getsentry/sentry-java/pull/4851))
 
-### Fixes
+### Dependencies
 
-- Fix profilerId propagation ([#4833](https://github.com/getsentry/sentry-java/pull/4833))
+- Bump Native SDK from v0.11.3 to v0.12.1 ([#4859](https://github.com/getsentry/sentry-java/pull/4859))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0121)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.11.3...0.12.1)
 
 ## 8.25.0
 

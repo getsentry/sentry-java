@@ -115,17 +115,19 @@ class SentrySpringIntegrationTest {
 
     restTemplate.exchange("http://localhost:$port/hello", HttpMethod.GET, entity, Void::class.java)
 
-    verify(transport)
-      .send(
-        checkEvent { event ->
-          assertThat(event.request).isNotNull()
-          assertThat(event.request!!.url).isEqualTo("http://localhost:$port/hello")
-          assertThat(event.user).isNotNull()
-          assertThat(event.user!!.username).isEqualTo("user")
-          assertThat(event.user!!.ipAddress).isEqualTo("169.128.0.1")
-        },
-        anyOrNull(),
-      )
+    await.untilAsserted {
+      verify(transport)
+        .send(
+          checkEvent { event ->
+            assertThat(event.request).isNotNull()
+            assertThat(event.request!!.url).isEqualTo("http://localhost:$port/hello")
+            assertThat(event.user).isNotNull()
+            assertThat(event.user!!.username).isEqualTo("user")
+            assertThat(event.user!!.ipAddress).isEqualTo("169.128.0.1")
+          },
+          anyOrNull(),
+        )
+    }
   }
 
   @Test
@@ -140,14 +142,16 @@ class SentrySpringIntegrationTest {
       Void::class.java,
     )
 
-    verify(transport)
-      .send(
-        checkEvent { event ->
-          assertThat(event.request).isNotNull()
-          assertThat(event.request!!.data).isEqualTo("""{"body":"content"}""")
-        },
-        anyOrNull(),
-      )
+    await.untilAsserted {
+      verify(transport)
+        .send(
+          checkEvent { event ->
+            assertThat(event.request).isNotNull()
+            assertThat(event.request!!.data).isEqualTo("""{"body":"content"}""")
+          },
+          anyOrNull(),
+        )
+    }
   }
 
   @Test
@@ -162,14 +166,16 @@ class SentrySpringIntegrationTest {
       Void::class.java,
     )
 
-    verify(transport)
-      .send(
-        checkEvent { event ->
-          assertThat(event.request).isNotNull()
-          assertThat(event.request!!.data).isEqualTo("""{"body":"content"}""")
-        },
-        anyOrNull(),
-      )
+    await.untilAsserted {
+      verify(transport)
+        .send(
+          checkEvent { event ->
+            assertThat(event.request).isNotNull()
+            assertThat(event.request!!.data).isEqualTo("""{"body":"content"}""")
+          },
+          anyOrNull(),
+        )
+    }
   }
 
   @Test
@@ -181,14 +187,16 @@ class SentrySpringIntegrationTest {
 
     restTemplate.exchange("http://localhost:$port/hello", HttpMethod.GET, entity, Void::class.java)
 
-    verify(transport)
-      .send(
-        checkEvent { event ->
-          assertThat(event.user).isNotNull()
-          assertThat(event.user!!.ipAddress).isEqualTo("169.128.0.1")
-        },
-        anyOrNull(),
-      )
+    await.untilAsserted {
+      verify(transport)
+        .send(
+          checkEvent { event ->
+            assertThat(event.user).isNotNull()
+            assertThat(event.user!!.ipAddress).isEqualTo("169.128.0.1")
+          },
+          anyOrNull(),
+        )
+    }
   }
 
   @Test
@@ -197,18 +205,20 @@ class SentrySpringIntegrationTest {
 
     restTemplate.getForEntity("http://localhost:$port/throws", String::class.java)
 
-    verify(transport)
-      .send(
-        checkEvent { event ->
-          assertThat(event.exceptions).isNotNull().isNotEmpty
-          val ex = event.exceptions!!.first()
-          assertThat(ex.value).isEqualTo("something went wrong")
-          assertThat(ex.mechanism).isNotNull()
-          assertThat(ex.mechanism!!.isHandled).isFalse()
-          assertThat(ex.mechanism!!.type).isEqualTo(SentryExceptionResolver.MECHANISM_TYPE)
-        },
-        anyOrNull(),
-      )
+    await.untilAsserted {
+      verify(transport)
+        .send(
+          checkEvent { event ->
+            assertThat(event.exceptions).isNotNull().isNotEmpty
+            val ex = event.exceptions!!.first()
+            assertThat(ex.value).isEqualTo("something went wrong")
+            assertThat(ex.mechanism).isNotNull()
+            assertThat(ex.mechanism!!.isHandled).isFalse()
+            assertThat(ex.mechanism!!.type).isEqualTo(SentryExceptionResolver.MECHANISM_TYPE)
+          },
+          anyOrNull(),
+        )
+    }
   }
 
   @Test
@@ -217,11 +227,13 @@ class SentrySpringIntegrationTest {
 
     restTemplate.getForEntity("http://localhost:$port/throws", String::class.java)
 
-    verify(transport)
-      .send(
-        checkEvent { event -> assertThat(event.transaction).isEqualTo("GET /throws") },
-        anyOrNull(),
-      )
+    await.untilAsserted {
+      verify(transport)
+        .send(
+          checkEvent { event -> assertThat(event.transaction).isEqualTo("GET /throws") },
+          anyOrNull(),
+        )
+    }
   }
 
   @Test
@@ -230,7 +242,7 @@ class SentrySpringIntegrationTest {
 
     restTemplate.getForEntity("http://localhost:$port/throws-handled", String::class.java)
 
-    await.during(Duration.ofSeconds(2)).untilAsserted {
+    await.atMost(3, TimeUnit.SECONDS).during(Duration.ofSeconds(2)).untilAsserted {
       verify(transport, never())
         .send(checkEvent { event -> assertThat(event).isNotNull() }, anyOrNull())
     }
@@ -240,29 +252,35 @@ class SentrySpringIntegrationTest {
   fun `calling a method annotated with @SentryCaptureException captures exception`() {
     val exception = java.lang.RuntimeException("test exception")
     anotherService.aMethodThatTakesAnException(exception)
-    verify(transport)
-      .send(
-        checkEvent { assertThat(it.exceptions!!.first().value).isEqualTo(exception.message) },
-        anyOrNull(),
-      )
+    await.untilAsserted {
+      verify(transport)
+        .send(
+          checkEvent { assertThat(it.exceptions!!.first().value).isEqualTo(exception.message) },
+          anyOrNull(),
+        )
+    }
   }
 
   @Test
   fun `calling a method annotated with @SentryCaptureException captures exception in later param`() {
     val exception = java.lang.RuntimeException("test exception")
     anotherService.aMethodThatTakesAnExceptionAsLaterParam("a", "b", exception)
-    verify(transport)
-      .send(
-        checkEvent { assertThat(it.exceptions!!.first().value).isEqualTo(exception.message) },
-        anyOrNull(),
-      )
+    await.untilAsserted {
+      verify(transport)
+        .send(
+          checkEvent { assertThat(it.exceptions!!.first().value).isEqualTo(exception.message) },
+          anyOrNull(),
+        )
+    }
   }
 
   @Test
   fun `calling a method annotated with @SentryTransaction creates transaction`() {
     someService.aMethod()
-    verify(transport)
-      .send(checkTransaction { assertThat(it.status).isEqualTo(SpanStatus.OK) }, anyOrNull())
+    await.untilAsserted {
+      verify(transport)
+        .send(checkTransaction { assertThat(it.status).isEqualTo(SpanStatus.OK) }, anyOrNull())
+    }
   }
 
   @Test
@@ -272,14 +290,16 @@ class SentrySpringIntegrationTest {
     } catch (e: Exception) {
       scopes.captureException(e)
     }
-    verify(transport)
-      .send(
-        checkEvent {
-          assertThat(it.contexts.trace).isNotNull
-          assertThat(it.contexts.trace!!.operation).isEqualTo("bean")
-        },
-        anyOrNull(),
-      )
+    await.untilAsserted {
+      verify(transport)
+        .send(
+          checkEvent {
+            assertThat(it.contexts.trace).isNotNull
+            assertThat(it.contexts.trace!!.operation).isEqualTo("bean")
+          },
+          anyOrNull(),
+        )
+    }
   }
 
   @Test
@@ -289,14 +309,16 @@ class SentrySpringIntegrationTest {
     } catch (e: Exception) {
       scopes.captureException(e)
     }
-    verify(transport)
-      .send(
-        checkEvent {
-          assertThat(it.contexts.trace).isNotNull
-          assertThat(it.contexts.trace!!.operation).isEqualTo("child-op")
-        },
-        anyOrNull(),
-      )
+    await.untilAsserted {
+      verify(transport)
+        .send(
+          checkEvent {
+            assertThat(it.contexts.trace).isNotNull
+            assertThat(it.contexts.trace!!.operation).isEqualTo("child-op")
+          },
+          anyOrNull(),
+        )
+    }
   }
 
   @Test
