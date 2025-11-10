@@ -6,6 +6,7 @@
 
 - Removed SentryExecutorService limit for delayed scheduled tasks ([#4846](https://github.com/getsentry/sentry-java/pull/4846))
 - Fix visual artifacts for the Canvas strategy on some devices ([#4861](https://github.com/getsentry/sentry-java/pull/4861))
+- Only set `DefaultReplayBreadcrumbConverter` if replay is available ([#4888](https://github.com/getsentry/sentry-java/pull/4888))
 
 ### Improvements
 
