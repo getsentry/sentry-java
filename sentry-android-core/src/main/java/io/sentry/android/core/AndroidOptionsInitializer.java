@@ -146,13 +146,15 @@ final class AndroidOptionsInitializer {
       final @NotNull SentryAndroidOptions options,
       final @NotNull Context context,
       final @NotNull io.sentry.util.LoadClass loadClass,
-      final @NotNull ActivityFramesTracker activityFramesTracker) {
+      final @NotNull ActivityFramesTracker activityFramesTracker,
+      final boolean isReplayAvailable) {
     initializeIntegrationsAndProcessors(
         options,
         context,
         new BuildInfoProvider(new AndroidLogger()),
         loadClass,
-        activityFramesTracker);
+        activityFramesTracker,
+        isReplayAvailable);
   }
 
   static void initializeIntegrationsAndProcessors(
@@ -160,7 +162,8 @@ final class AndroidOptionsInitializer {
       final @NotNull Context context,
       final @NotNull BuildInfoProvider buildInfoProvider,
       final @NotNull io.sentry.util.LoadClass loadClass,
-      final @NotNull ActivityFramesTracker activityFramesTracker) {
+      final @NotNull ActivityFramesTracker activityFramesTracker,
+      final boolean isReplayAvailable) {
 
     if (options.getCacheDirPath() != null
         && options.getEnvelopeDiskCache() instanceof NoOpEnvelopeCache) {
@@ -254,8 +257,9 @@ final class AndroidOptionsInitializer {
       options.setCompositePerformanceCollector(new DefaultCompositePerformanceCollector(options));
     }
 
-    if (options.getReplayController().getBreadcrumbConverter()
-        instanceof NoOpReplayBreadcrumbConverter) {
+    if (isReplayAvailable
+        && options.getReplayController().getBreadcrumbConverter()
+            instanceof NoOpReplayBreadcrumbConverter) {
       options
           .getReplayController()
           .setBreadcrumbConverter(new DefaultReplayBreadcrumbConverter(options));
