@@ -13,6 +13,8 @@
   - For feature flag evaluations tracked on spans:
     - Only 10 evaluations are tracked per span, existing flags are updated but new ones exceeding the limit are ignored
     - Spans do not inherit evaluations from their parent
+- Remove vendored code and upgrade to async profiler 4.2 ([#4856](https://github.com/getsentry/sentry-java/pull/4856))
+  - This adds support for JDK 23+
 
 ### Fixes
 
