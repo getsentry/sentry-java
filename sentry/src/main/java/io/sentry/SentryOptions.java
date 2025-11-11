@@ -394,6 +394,9 @@ public class SentryOptions {
   /** Profiler that runs continuously until stopped. */
   private @NotNull IContinuousProfiler continuousProfiler = NoOpContinuousProfiler.getInstance();
 
+  /** Profiler that runs continuously until stopped. */
+  private @NotNull IProfileConverter profilerConverter = NoOpProfileConverter.getInstance();
+
   /**
    * Contains a list of origins to which `sentry-trace` header should be sent in HTTP integrations.
    */
@@ -610,6 +613,14 @@ public class SentryOptions {
   private @NotNull IRuntimeManager runtimeManager = new NeutralRuntimeManager();
 
   private @Nullable String profilingTracesDirPath;
+
+  public @NotNull IProfileConverter getProfilerConverter() {
+    return profilerConverter;
+  }
+
+  public void setProfilerConverter(@NotNull IProfileConverter profilerConverter) {
+    this.profilerConverter = profilerConverter;
+  }
 
   /**
    * Configuration options for Sentry Build Distribution. NOTE: Ideally this would be in

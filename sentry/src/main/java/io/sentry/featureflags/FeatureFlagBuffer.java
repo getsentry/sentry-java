@@ -79,7 +79,7 @@ public final class FeatureFlagBuffer implements IFeatureFlagBuffer {
   }
 
   @Override
-  public IFeatureFlagBuffer clone() {
+  public @NotNull IFeatureFlagBuffer clone() {
     return new FeatureFlagBuffer(this);
   }
 

@@ -14,6 +14,7 @@ Sentry SDK for Java and Android
 ===========
 [![GH Workflow](https://img.shields.io/github/actions/workflow/status/getsentry/sentry-java/build.yml?branch=main)](https://github.com/getsentry/sentry-java/actions)
 [![codecov](https://codecov.io/gh/getsentry/sentry-java/branch/main/graph/badge.svg)](https://codecov.io/gh/getsentry/sentry-java)
+[![X Follow](https://img.shields.io/twitter/follow/sentry?label=sentry&style=social)](https://x.com/intent/follow?screen_name=sentry)
 [![Discord Chat](https://img.shields.io/discord/621778831602221064?logo=discord&logoColor=ffffff&color=7389D8)](https://discord.gg/PXa5Apfe7K)
 
 | Packages                                | Maven Central                                                                                                                                                                                                                        | Minimum Android API Version |
