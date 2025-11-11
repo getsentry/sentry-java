@@ -96,6 +96,8 @@ class JavaContinuousProfilerTest {
     fixture.options.cacheDirPath?.let { File(it).deleteRecursively() }
 
     Sentry.stopProfiler()
+    fixture.executor.runAll()
+    Sentry.flush(1000)
     Sentry.close()
     fixture.mockedSentry.close()
   }
