@@ -16,6 +16,7 @@ import io.sentry.ITransactionProfiler;
 import io.sentry.NoOpCompositePerformanceCollector;
 import io.sentry.NoOpConnectionStatusProvider;
 import io.sentry.NoOpContinuousProfiler;
+import io.sentry.NoOpReplayBreadcrumbConverter;
 import io.sentry.NoOpSocketTagger;
 import io.sentry.NoOpTransactionProfiler;
 import io.sentry.NoopVersionDetector;
@@ -145,13 +146,15 @@ final class AndroidOptionsInitializer {
       final @NotNull SentryAndroidOptions options,
       final @NotNull Context context,
       final @NotNull io.sentry.util.LoadClass loadClass,
-      final @NotNull ActivityFramesTracker activityFramesTracker) {
+      final @NotNull ActivityFramesTracker activityFramesTracker,
+      final boolean isReplayAvailable) {
     initializeIntegrationsAndProcessors(
         options,
         context,
         new BuildInfoProvider(new AndroidLogger()),
         loadClass,
-        activityFramesTracker);
+        activityFramesTracker,
+        isReplayAvailable);
   }
 
   static void initializeIntegrationsAndProcessors(
@@ -159,7 +162,8 @@ final class AndroidOptionsInitializer {
       final @NotNull Context context,
       final @NotNull BuildInfoProvider buildInfoProvider,
       final @NotNull io.sentry.util.LoadClass loadClass,
-      final @NotNull ActivityFramesTracker activityFramesTracker) {
+      final @NotNull ActivityFramesTracker activityFramesTracker,
+      final boolean isReplayAvailable) {
 
     if (options.getCacheDirPath() != null
         && options.getEnvelopeDiskCache() instanceof NoOpEnvelopeCache) {
@@ -251,6 +255,14 @@ final class AndroidOptionsInitializer {
     }
     if (options.getCompositePerformanceCollector() instanceof NoOpCompositePerformanceCollector) {
       options.setCompositePerformanceCollector(new DefaultCompositePerformanceCollector(options));
+    }
+
+    if (isReplayAvailable
+        && options.getReplayController().getBreadcrumbConverter()
+            instanceof NoOpReplayBreadcrumbConverter) {
+      options
+          .getReplayController()
+          .setBreadcrumbConverter(new DefaultReplayBreadcrumbConverter(options));
     }
 
     // Check if the profiler was already instantiated in the app start.
@@ -406,7 +418,6 @@ final class AndroidOptionsInitializer {
     if (isReplayAvailable) {
       final ReplayIntegration replay =
           new ReplayIntegration(context, CurrentDateProvider.getInstance());
-      replay.setBreadcrumbConverter(new DefaultReplayBreadcrumbConverter());
       options.addIntegration(replay);
       options.setReplayController(replay);
     }

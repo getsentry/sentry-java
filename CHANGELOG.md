@@ -2,12 +2,29 @@
 
 ## Unreleased
 
+### Fixes
+
+- Removed SentryExecutorService limit for delayed scheduled tasks ([#4846](https://github.com/getsentry/sentry-java/pull/4846))
+- Fix visual artifacts for the Canvas strategy on some devices ([#4861](https://github.com/getsentry/sentry-java/pull/4861))
+- [Config] Trim whitespace on properties path ([#4880](https://github.com/getsentry/sentry-java/pull/4880))
+- Only set `DefaultReplayBreadcrumbConverter` if replay is available ([#4888](https://github.com/getsentry/sentry-java/pull/4888))
+- Session Replay: Cache connection status instead of using blocking calls ([#4891](https://github.com/getsentry/sentry-java/pull/4891))
+- Fix log count in client reports ([#4869](https://github.com/getsentry/sentry-java/pull/4869))
+
 ### Improvements
 
 - Fallback to distinct-id as user.id logging attribute when user is not set ([#4847](https://github.com/getsentry/sentry-java/pull/4847))
 - Report Timber.tag() as `timber.tag` log attribute ([#4845](https://github.com/getsentry/sentry-java/pull/4845))
 - Session Replay: Add screenshot strategy serialization to RRWeb events ([#4851](https://github.com/getsentry/sentry-java/pull/4851))
 - Report discarded log bytes ([#4871](https://github.com/getsentry/sentry-java/pull/4871))
+- Log why a properties file was not loaded ([#4879](https://github.com/getsentry/sentry-java/pull/4879))
+
+### Dependencies
+
+- Bump Native SDK from v0.11.3 to v0.12.1 ([#4859](https://github.com/getsentry/sentry-java/pull/4859))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0121)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.11.3...0.12.1)
+- Bump Spring Boot 4 to RC2 ([#4886](https://github.com/getsentry/sentry-java/pull/4886))
 
 ## 8.25.0
 
