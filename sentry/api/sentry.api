@@ -1086,6 +1086,7 @@ public abstract interface class io/sentry/ISocketTagger {
 }
 
 public abstract interface class io/sentry/ISpan {
+	public abstract fun addFeatureFlag (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public abstract fun finish ()V
 	public abstract fun finish (Lio/sentry/SpanStatus;)V
 	public abstract fun finish (Lio/sentry/SpanStatus;Lio/sentry/SentryDate;)V
@@ -1781,6 +1782,7 @@ public final class io/sentry/NoOpSocketTagger : io/sentry/ISocketTagger {
 }
 
 public final class io/sentry/NoOpSpan : io/sentry/ISpan {
+	public fun addFeatureFlag (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public fun finish ()V
 	public fun finish (Lio/sentry/SpanStatus;)V
 	public fun finish (Lio/sentry/SpanStatus;Lio/sentry/SentryDate;)V
@@ -1828,6 +1830,7 @@ public final class io/sentry/NoOpSpanFactory : io/sentry/ISpanFactory {
 }
 
 public final class io/sentry/NoOpTransaction : io/sentry/ITransaction {
+	public fun addFeatureFlag (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public fun finish ()V
 	public fun finish (Lio/sentry/SpanStatus;)V
 	public fun finish (Lio/sentry/SpanStatus;Lio/sentry/SentryDate;)V
@@ -3859,6 +3862,7 @@ public final class io/sentry/SentryTraceHeader {
 public final class io/sentry/SentryTracer : io/sentry/ITransaction {
 	public fun <init> (Lio/sentry/TransactionContext;Lio/sentry/IScopes;)V
 	public fun <init> (Lio/sentry/TransactionContext;Lio/sentry/IScopes;Lio/sentry/TransactionOptions;)V
+	public fun addFeatureFlag (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public fun finish ()V
 	public fun finish (Lio/sentry/SpanStatus;)V
 	public fun finish (Lio/sentry/SpanStatus;Lio/sentry/SentryDate;)V
@@ -3999,6 +4003,7 @@ public final class io/sentry/ShutdownHookIntegration : io/sentry/Integration, ja
 
 public final class io/sentry/Span : io/sentry/ISpan {
 	public fun <init> (Lio/sentry/TransactionContext;Lio/sentry/SentryTracer;Lio/sentry/IScopes;Lio/sentry/SpanOptions;)V
+	public fun addFeatureFlag (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public fun finish ()V
 	public fun finish (Lio/sentry/SpanStatus;)V
 	public fun finish (Lio/sentry/SpanStatus;Lio/sentry/SentryDate;)V
@@ -4051,6 +4056,7 @@ public class io/sentry/SpanContext : io/sentry/JsonSerializable, io/sentry/JsonU
 	protected field baggage Lio/sentry/Baggage;
 	protected field data Ljava/util/Map;
 	protected field description Ljava/lang/String;
+	protected field featureFlags Lio/sentry/featureflags/IFeatureFlagBuffer;
 	protected field op Ljava/lang/String;
 	protected field origin Ljava/lang/String;
 	protected field status Lio/sentry/SpanStatus;
@@ -4060,11 +4066,13 @@ public class io/sentry/SpanContext : io/sentry/JsonSerializable, io/sentry/JsonU
 	public fun <init> (Lio/sentry/protocol/SentryId;Lio/sentry/SpanId;Ljava/lang/String;Lio/sentry/SpanId;Lio/sentry/TracesSamplingDecision;)V
 	public fun <init> (Ljava/lang/String;)V
 	public fun <init> (Ljava/lang/String;Lio/sentry/TracesSamplingDecision;)V
+	public fun addFeatureFlag (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public fun copyForChild (Ljava/lang/String;Lio/sentry/SpanId;Lio/sentry/SpanId;)Lio/sentry/SpanContext;
 	public fun equals (Ljava/lang/Object;)Z
 	public fun getBaggage ()Lio/sentry/Baggage;
 	public fun getData ()Ljava/util/Map;
 	public fun getDescription ()Ljava/lang/String;
+	public fun getFeatureFlagBuffer ()Lio/sentry/featureflags/IFeatureFlagBuffer;
 	public fun getInstrumenter ()Lio/sentry/Instrumenter;
 	public fun getOperation ()Ljava/lang/String;
 	public fun getOrigin ()Ljava/lang/String;
@@ -4764,6 +4772,14 @@ public final class io/sentry/featureflags/NoOpFeatureFlagBuffer : io/sentry/feat
 	public synthetic fun clone ()Ljava/lang/Object;
 	public fun getFeatureFlags ()Lio/sentry/protocol/FeatureFlags;
 	public static fun getInstance ()Lio/sentry/featureflags/NoOpFeatureFlagBuffer;
+}
+
+public final class io/sentry/featureflags/SpanFeatureFlagBuffer : io/sentry/featureflags/IFeatureFlagBuffer {
+	public fun add (Ljava/lang/String;Ljava/lang/Boolean;)V
+	public fun clone ()Lio/sentry/featureflags/IFeatureFlagBuffer;
+	public synthetic fun clone ()Ljava/lang/Object;
+	public static fun create ()Lio/sentry/featureflags/IFeatureFlagBuffer;
+	public fun getFeatureFlags ()Lio/sentry/protocol/FeatureFlags;
 }
 
 public abstract interface class io/sentry/hints/AbnormalExit {
@@ -5486,6 +5502,7 @@ public final class io/sentry/protocol/Device$JsonKeys {
 }
 
 public final class io/sentry/protocol/FeatureFlag : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+	public static final field DATA_PREFIX Ljava/lang/String;
 	public fun <init> (Ljava/lang/String;Z)V
 	public fun equals (Ljava/lang/Object;)Z
 	public fun getFlag ()Ljava/lang/String;

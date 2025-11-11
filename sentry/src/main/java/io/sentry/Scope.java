@@ -124,6 +124,7 @@ public final class Scope implements IScope {
   private Scope(final @NotNull Scope scope) {
     this.transaction = scope.transaction;
     this.transactionName = scope.transactionName;
+    this.activeSpan = scope.activeSpan;
     this.session = scope.session;
     this.options = scope.options;
     this.level = scope.level;
