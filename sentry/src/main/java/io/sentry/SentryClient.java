@@ -983,7 +983,8 @@ public final class SentryClient implements ISentryClient {
           new SentryEnvelope(
               new SentryEnvelopeHeader(sentryId, options.getSdkVersion(), null),
               Collections.singletonList(
-                  SentryEnvelopeItem.fromProfileChunk(profileChunk, options.getSerializer())));
+                  SentryEnvelopeItem.fromProfileChunk(
+                      profileChunk, options.getSerializer(), options.getProfilerConverter())));
       sentryId = sendEnvelope(envelope, null);
     } catch (IOException | SentryEnvelopeException e) {
       options

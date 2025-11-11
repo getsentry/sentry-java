@@ -1580,6 +1580,11 @@ public final class io/sentry/NoOpLogger : io/sentry/ILogger {
 	public fun log (Lio/sentry/SentryLevel;Ljava/lang/Throwable;Ljava/lang/String;[Ljava/lang/Object;)V
 }
 
+public final class io/sentry/NoOpProfileConverter : io/sentry/IProfileConverter {
+	public fun convertFromFile (Ljava/lang/String;)Lio/sentry/protocol/profiling/SentryProfile;
+	public static fun getInstance ()Lio/sentry/NoOpProfileConverter;
+}
+
 public final class io/sentry/NoOpReplayBreadcrumbConverter : io/sentry/ReplayBreadcrumbConverter {
 	public fun convert (Lio/sentry/Breadcrumb;)Lio/sentry/rrweb/RRWebEvent;
 	public static fun getInstance ()Lio/sentry/NoOpReplayBreadcrumbConverter;
@@ -2898,6 +2903,7 @@ public final class io/sentry/SentryEnvelopeItem {
 	public static fun fromEvent (Lio/sentry/ISerializer;Lio/sentry/SentryBaseEvent;)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromLogs (Lio/sentry/ISerializer;Lio/sentry/SentryLogEvents;)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromProfileChunk (Lio/sentry/ProfileChunk;Lio/sentry/ISerializer;)Lio/sentry/SentryEnvelopeItem;
+	public static fun fromProfileChunk (Lio/sentry/ProfileChunk;Lio/sentry/ISerializer;Lio/sentry/IProfileConverter;)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromProfilingTrace (Lio/sentry/ProfilingTraceData;JLio/sentry/ISerializer;)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromReplay (Lio/sentry/ISerializer;Lio/sentry/ILogger;Lio/sentry/SentryReplayEvent;Lio/sentry/ReplayRecording;Z)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromSession (Lio/sentry/ISerializer;Lio/sentry/Session;)Lio/sentry/SentryEnvelopeItem;
@@ -3390,6 +3396,7 @@ public class io/sentry/SentryOptions {
 	public fun getPerformanceCollectors ()Ljava/util/List;
 	public fun getProfileLifecycle ()Lio/sentry/ProfileLifecycle;
 	public fun getProfileSessionSampleRate ()Ljava/lang/Double;
+	public fun getProfilerConverter ()Lio/sentry/IProfileConverter;
 	public fun getProfilesSampleRate ()Ljava/lang/Double;
 	public fun getProfilesSampler ()Lio/sentry/SentryOptions$ProfilesSamplerCallback;
 	public fun getProfilingTracesDirPath ()Ljava/lang/String;
@@ -3535,6 +3542,7 @@ public class io/sentry/SentryOptions {
 	public fun setPrintUncaughtStackTrace (Z)V
 	public fun setProfileLifecycle (Lio/sentry/ProfileLifecycle;)V
 	public fun setProfileSessionSampleRate (Ljava/lang/Double;)V
+	public fun setProfilerConverter (Lio/sentry/IProfileConverter;)V
 	public fun setProfilesSampleRate (Ljava/lang/Double;)V
 	public fun setProfilesSampler (Lio/sentry/SentryOptions$ProfilesSamplerCallback;)V
 	public fun setProfilingTracesDirPath (Ljava/lang/String;)V
@@ -7053,6 +7061,8 @@ public final class io/sentry/util/HttpUtils {
 
 public final class io/sentry/util/InitUtil {
 	public fun <init> ()V
+	public static fun initializeProfileConverter (Lio/sentry/SentryOptions;)Lio/sentry/IProfileConverter;
+	public static fun initializeProfiler (Lio/sentry/SentryOptions;)Lio/sentry/IContinuousProfiler;
 	public static fun shouldInit (Lio/sentry/SentryOptions;Lio/sentry/SentryOptions;Z)Z
 }
 
