@@ -24,6 +24,7 @@
 - Fix log count in client reports ([#4869](https://github.com/getsentry/sentry-java/pull/4869))
 - Fix profilerId propagation ([#4833](https://github.com/getsentry/sentry-java/pull/4833))
 - Fix profiling init for Spring and Spring Boot w Agent auto-init ([#4815](https://github.com/getsentry/sentry-java/pull/4815))
+- Copy active span on scope clone ([#4878](https://github.com/getsentry/sentry-java/pull/4878))
 
 ### Improvements
 
