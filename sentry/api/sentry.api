@@ -347,6 +347,7 @@ public final class io/sentry/DataCategory : java/lang/Enum {
 	public static final field Default Lio/sentry/DataCategory;
 	public static final field Error Lio/sentry/DataCategory;
 	public static final field Feedback Lio/sentry/DataCategory;
+	public static final field LogByte Lio/sentry/DataCategory;
 	public static final field LogItem Lio/sentry/DataCategory;
 	public static final field Monitor Lio/sentry/DataCategory;
 	public static final field Profile Lio/sentry/DataCategory;
@@ -7074,6 +7075,7 @@ public final class io/sentry/util/IntegrationUtils {
 public final class io/sentry/util/JsonSerializationUtils {
 	public fun <init> ()V
 	public static fun atomicIntegerArrayToList (Ljava/util/concurrent/atomic/AtomicIntegerArray;)Ljava/util/List;
+	public static fun byteSizeOf (Lio/sentry/ISerializer;Lio/sentry/ILogger;Lio/sentry/JsonSerializable;)J
 	public static fun bytesFrom (Lio/sentry/ISerializer;Lio/sentry/ILogger;Lio/sentry/JsonSerializable;)[B
 	public static fun calendarToMap (Ljava/util/Calendar;)Ljava/util/Map;
 }
