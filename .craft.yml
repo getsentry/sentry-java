@@ -64,3 +64,4 @@ targets:
       maven:io.sentry:sentry-apollo-4:
       maven:io.sentry:sentry-reactor:
       maven:io.sentry:sentry-ktor-client:
+      maven:io.sentry:sentry-async-profiler:
