@@ -8,6 +8,7 @@ import io.sentry.SentryEvent
 import io.sentry.SentryItemType
 import io.sentry.SentryLogEvents
 import io.sentry.SentryOptions
+import io.sentry.protocol.FeatureFlag
 import io.sentry.protocol.SentrySpan
 import io.sentry.protocol.SentryTransaction
 import io.sentry.systemtest.graphql.GraphqlTestClient
@@ -154,7 +155,7 @@ class TestHelper(backendUrl: String) {
   }
 
   fun ensureErrorReceived(callback: ((SentryEvent) -> Boolean)) {
-    ensureEnvelopeReceived { envelopeString ->
+    ensureEnvelopeReceived(retryCount = 3) { envelopeString ->
       val deserializeEnvelope = jsonSerializer.deserializeEnvelope(envelopeString.byteInputStream())
       if (deserializeEnvelope == null) {
         return@ensureEnvelopeReceived false
@@ -273,6 +274,94 @@ class TestHelper(backendUrl: String) {
     }
 
     return true
+  }
+
+  fun doesTransactionHave(
+    transaction: SentryTransaction,
+    op: String,
+    featureFlag: FeatureFlag? = null,
+  ): Boolean {
+    val matches = transaction.contexts.trace?.operation == op
+    if (!matches) {
+      println("Unable to find transaction with op $op:")
+      logObject(transaction)
+      return false
+    }
+
+    val foundFlag = transaction.contexts.trace?.data?.get(featureFlag?.flag)
+    if (featureFlag != null && foundFlag == null) {
+      println("Unable to find span with feature flag ${featureFlag?.flag}:")
+      logObject(transaction)
+      return false
+    }
+    if (featureFlag != null && foundFlag != featureFlag.result) {
+      println("Feature flag ${featureFlag?.flag} has unexpected result ${foundFlag}:")
+      logObject(transaction)
+      return false
+    }
+
+    return true
+  }
+
+  fun doesTransactionHaveSpanWith(
+    transaction: SentryTransaction,
+    op: String,
+    featureFlag: FeatureFlag? = null,
+    noFeatureFlags: Boolean = false,
+  ): Boolean {
+    val foundSpan = transaction.spans.firstOrNull { span -> span.op == op }
+    if (foundSpan == null) {
+      println("Unable to find span with op $op:")
+      logObject(transaction)
+      return false
+    }
+
+    val featureFlagNames =
+      foundSpan.data?.keys?.filter { it.startsWith("flag.evaluation.") } ?: emptyList()
+    if (noFeatureFlags && featureFlagNames.isNotEmpty()) {
+      println("Expected 0 feature flags but found ${featureFlagNames}:")
+      logObject(transaction)
+      return false
+    }
+
+    val foundFlag = foundSpan.data?.get(featureFlag?.flag)
+    if (featureFlag != null && foundFlag == null) {
+      println("Unable to find span with feature flag ${featureFlag?.flag}:")
+      logObject(transaction)
+      return false
+    }
+    if (featureFlag != null && foundFlag != featureFlag.result) {
+      println("Feature flag ${featureFlag?.flag} has unexpected result ${foundFlag}:")
+      logObject(transaction)
+      return false
+    }
+
+    return true
+  }
+
+  fun doesEventHaveExceptionMessage(event: SentryEvent, expectedMessage: String): Boolean {
+    val exceptions = event.exceptions
+    if (exceptions == null) {
+      println("Unable to find exceptions in event")
+      return false
+    }
+
+    val foundException = exceptions.firstOrNull { expectedMessage == it.value }
+    return foundException != null
+  }
+
+  fun doesEventHaveFlag(event: SentryEvent, flag: String, result: Boolean): Boolean {
+    val featureFlags = event.contexts.featureFlags
+    if (featureFlags == null) {
+      println("Unable to find feature flags in event:")
+      return false
+    }
+    val foundFlag =
+      featureFlags.values.firstOrNull { featureFlag ->
+        println("checking flag ${featureFlag.flag}:${featureFlag.result}")
+        featureFlag.flag == flag && featureFlag.result == result
+      }
+    return foundFlag != null
   }
 
   fun findJar(prefix: String, inDir: String = "build/libs"): File {

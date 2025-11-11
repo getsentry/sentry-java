@@ -166,7 +166,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
     // userId should be set even if event is Cached as the userId is static and won't change anyway.
     if (user.getId() == null) {
-      user.setId(Installation.id(context));
+      user.setId(options.getRuntimeManager().runWithRelaxedPolicy(() -> Installation.id(context)));
     }
     if (user.getIpAddress() == null && options.isSendDefaultPii()) {
       user.setIpAddress(IpAddressUtils.DEFAULT_IP_ADDRESS);
@@ -336,7 +336,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
    */
   public @NotNull User getDefaultUser(final @NotNull Context context) {
     final @NotNull User user = new User();
-    user.setId(Installation.id(context));
+    user.setId(options.getRuntimeManager().runWithRelaxedPolicy(() -> Installation.id(context)));
     return user;
   }
 

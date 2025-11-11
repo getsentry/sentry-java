@@ -85,6 +85,7 @@ dependencies {
   testImplementation(libs.okhttp.mockwebserver)
   testImplementation(libs.otel)
   testImplementation(libs.otel.extension.autoconfigure.spi)
+  testImplementation(projects.sentryAsyncProfiler)
   /**
    * Adding a version of opentelemetry-spring-boot-starter that doesn't support Spring Boot 4 causes
    * java.lang.IllegalArgumentException: Could not find class
@@ -102,6 +103,7 @@ dependencies {
   testImplementation(libs.springboot4.starter.webflux)
   testImplementation(libs.springboot4.starter.restclient)
   testImplementation(libs.springboot4.starter.webclient)
+  testImplementation(libs.springboot4.resttestclient)
 }
 
 configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }

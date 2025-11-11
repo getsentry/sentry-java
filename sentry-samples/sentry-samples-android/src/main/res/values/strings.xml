@@ -23,6 +23,7 @@
   <string name="open_permissions_activity">Open Permissions Activity</string>
   <string name="open_compose_activity">Open Compose Activity</string>
   <string name="open_profiling_activity">Open Profiling Activity</string>
+  <string name="open_custom_tabs_activity">Open Custom Tabs Activity</string>
   <string name="open_frame_data_for_spans">Open Frame Data for Spans Activity</string>
   <string name="open_metrics">Delightful Developer Metrics</string>
   <string name="test_timber_integration">Test Timber</string>
@@ -53,4 +54,6 @@ Nulla interdum gravida augue, vel fringilla lorem bibendum vel. In hac habitasse
   <string name="profiling_start">Start Profiling</string>
   <string name="profiling_result">Profile trace file size = %d bytes \nItem payload size = %d bytes \nData sent to Sentry size = %d bytes</string>
   <string name="open_camera_activity">Open Camera Activity</string>
+  <string name="open_http_request_activity">Open Trigger HTTP Request Activity</string>
+  <string name="trigger_okhttp_request">Trigger OkHttp Request</string>
 </resources>

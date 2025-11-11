@@ -20,6 +20,14 @@ public final class SentryReplayOptions {
   public static final String EXOPLAYER_STYLED_CLASS_NAME =
       "com.google.android.exoplayer2.ui.StyledPlayerView";
 
+  /**
+   * Maximum size in bytes for network request/response bodies to be captured in replays. Bodies
+   * larger than this will be truncated or replaced with a placeholder message. Aligned <a
+   * href="https://github.com/getsentry/sentry-javascript/blob/98de756506705b60d1ca86cbbcfad3fd76062f8f/packages/replay-internal/src/constants.ts#L33">
+   * with JS</a>
+   */
+  @ApiStatus.Internal public static final int MAX_NETWORK_BODY_SIZE = 150 * 1024;
+
   public enum SentryReplayQuality {
     /** Video Scale: 80% Bit Rate: 50.000 JPEG Compression: 10 */
     LOW(0.8f, 50_000, 10),
@@ -138,6 +146,16 @@ public final class SentryReplayOptions {
    * attempt to print out useful debugging information if something goes wrong. Default is disabled.
    */
   private boolean debug = false;
+
+  /**
+   * The screenshot strategy to use for capturing screenshots during replay recording. Defaults to
+   * {@link ScreenshotStrategyType#PIXEL_COPY}. If set to {@link ScreenshotStrategyType#CANVAS}, the
+   * SDK will use the Canvas API to capture screenshots, which will always mask all Texts and
+   * Bitmaps drawn on the screen, causing {@link #addMaskViewClass} and {@link #addUnmaskViewClass}
+   * to be ignored.
+   */
+  @ApiStatus.Experimental
+  private @NotNull ScreenshotStrategyType screenshotStrategy = ScreenshotStrategyType.PIXEL_COPY;
 
   public SentryReplayOptions(final boolean empty, final @Nullable SdkVersion sdkVersion) {
     if (!empty) {
@@ -338,5 +356,25 @@ public final class SentryReplayOptions {
    */
   public void setDebug(final boolean debug) {
     this.debug = debug;
+  }
+
+  /**
+   * Gets the screenshot strategy used for capturing screenshots during replay recording.
+   *
+   * @return the screenshot strategy
+   */
+  @ApiStatus.Experimental
+  public @NotNull ScreenshotStrategyType getScreenshotStrategy() {
+    return screenshotStrategy;
+  }
+
+  /**
+   * Sets the screenshot strategy to use for capturing screenshots during replay recording.
+   *
+   * @param screenshotStrategy the screenshot strategy to use
+   */
+  @ApiStatus.Experimental
+  public void setScreenshotStrategy(final @NotNull ScreenshotStrategyType screenshotStrategy) {
+    this.screenshotStrategy = screenshotStrategy;
   }
 }

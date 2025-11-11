@@ -385,4 +385,9 @@ public final class ScopesAdapter implements IScopes {
   public @NotNull ILoggerApi logger() {
     return Sentry.getCurrentScopes().logger();
   }
+
+  @Override
+  public void addFeatureFlag(final @Nullable String flag, final @Nullable Boolean result) {
+    Sentry.addFeatureFlag(flag, result);
+  }
 }

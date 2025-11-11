@@ -2,9 +2,112 @@
 
 ## 8.23.1-alpha.1
 
+### Features
+
+- Add feature flags API ([#4812](https://github.com/getsentry/sentry-java/pull/4812)) and ([#4831](https://github.com/getsentry/sentry-java/pull/4831))
+  - You may now keep track of your feature flag evaluations and have them show up in Sentry.
+  - Top level API (`Sentry.addFeatureFlag("my-feature-flag", true);`) writes to scopes and the current span (if there is one)
+  - It is also possible to use API on `IScope`, `IScopes`, `ISpan` and `ITransaction` directly
+  - Feature flag evaluations tracked on scope(s) will be added to any errors reported to Sentry.
+    - The SDK keeps the latest 100 evaluations from scope(s), replacing old entries as new evaluations are added.
+  - For feature flag evaluations tracked on spans:
+    - Only 10 evaluations are tracked per span, existing flags are updated but new ones exceeding the limit are ignored
+    - Spans do not inherit evaluations from their parent
+- Drop log events once buffer hits hard limit ([#4889](https://github.com/getsentry/sentry-java/pull/4889))
+  - If we have 1000 log events queued up, we drop any new logs coming in to prevent OOM
+- Remove vendored code and upgrade to async profiler 4.2 ([#4856](https://github.com/getsentry/sentry-java/pull/4856))
+  - This adds support for JDK 23+
+
 ### Fixes
 
+- Removed SentryExecutorService limit for delayed scheduled tasks ([#4846](https://github.com/getsentry/sentry-java/pull/4846))
+- Fix visual artifacts for the Canvas strategy on some devices ([#4861](https://github.com/getsentry/sentry-java/pull/4861))
+- [Config] Trim whitespace on properties path ([#4880](https://github.com/getsentry/sentry-java/pull/4880))
+- Only set `DefaultReplayBreadcrumbConverter` if replay is available ([#4888](https://github.com/getsentry/sentry-java/pull/4888))
+- Session Replay: Cache connection status instead of using blocking calls ([#4891](https://github.com/getsentry/sentry-java/pull/4891))
+- Fix log count in client reports ([#4869](https://github.com/getsentry/sentry-java/pull/4869))
+- Fix profilerId propagation ([#4833](https://github.com/getsentry/sentry-java/pull/4833))
+- Fix profiling init for Spring and Spring Boot w Agent auto-init ([#4815](https://github.com/getsentry/sentry-java/pull/4815))
+- Copy active span on scope clone ([#4878](https://github.com/getsentry/sentry-java/pull/4878))
+
+### Improvements
+
+- Fallback to distinct-id as user.id logging attribute when user is not set ([#4847](https://github.com/getsentry/sentry-java/pull/4847))
+- Report Timber.tag() as `timber.tag` log attribute ([#4845](https://github.com/getsentry/sentry-java/pull/4845))
+- Session Replay: Add screenshot strategy serialization to RRWeb events ([#4851](https://github.com/getsentry/sentry-java/pull/4851))
+- Report discarded log bytes ([#4871](https://github.com/getsentry/sentry-java/pull/4871))
+- Log why a properties file was not loaded ([#4879](https://github.com/getsentry/sentry-java/pull/4879))
+
+### Dependencies
+
+- Bump Native SDK from v0.11.3 to v0.12.1 ([#4859](https://github.com/getsentry/sentry-java/pull/4859))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0121)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.11.3...0.12.1)
+- Bump Spring Boot 4 to RC2 ([#4886](https://github.com/getsentry/sentry-java/pull/4886))
+
+## 8.25.0
+
+### Fixes
+
+- [ANR] Removed AndroidTransactionProfiler lock ([#4817](https://github.com/getsentry/sentry-java/pull/4817))
+- Avoid ExecutorService for DefaultCompositePerformanceCollector timeout ([#4841](https://github.com/getsentry/sentry-java/pull/4841))
+  - This avoids infinite data collection for never stopped transactions, leading to OOMs
+- Fix wrong .super() call in SentryTimberTree ([#4844](https://github.com/getsentry/sentry-java/pull/4844))
+
+### Improvements
+
+- [ANR] Defer some class availability checks ([#4825](https://github.com/getsentry/sentry-java/pull/4825))
+- Collect PerformanceCollectionData only for sampled transactions ([#4834](https://github.com/getsentry/sentry-java/pull/4834))
+  - **Breaking change**: Transactions with a deferred sampling decision (`sampled == null`) won't be collecting any performance data anymore (CPU, RAM, slow/frozen frames).
+
+### Dependencies
+
+- Bump Native SDK from v0.11.2 to v0.11.3 ([#4810](https://github.com/getsentry/sentry-java/pull/4810))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0113)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.11.2...0.11.3)
+
+## 8.24.0
+
+### Features
+
+- Attach MDC properties to logs as attributes ([#4786](https://github.com/getsentry/sentry-java/pull/4786))
+  - MDC properties set using supported logging frameworks (Logback, Log4j2, java.util.Logging) are now attached to structured logs as attributes.
+  - The attribute reflected on the log is `mdc.<key>`, where `<key>` is the original key in the MDC.
+  - This means that you will be able to filter/aggregate logs in the product based on these properties.
+  - Only properties with keys matching the configured `contextTags` are sent as log attributes.
+    - You can configure which properties are sent using `options.setContextTags` if initalizing manually, or by specifying a comma-separated list of keys with a `context-tags` entry in `sentry.properties` or `sentry.context-tags` in `application.properties`.
+    - Note that keys containing spaces are not supported.
+- Add experimental Sentry Android Distribution module for integrating with Sentry Build Distribution to check for and install updates ([#4804](https://github.com/getsentry/sentry-java/pull/4804))
+- Allow passing a different `Handler` to `SystemEventsBreadcrumbsIntegration` and `AndroidConnectionStatusProvider` so their callbacks are deliver to that handler ([#4808](https://github.com/getsentry/sentry-java/pull/4808))
+- Session Replay: Add new _experimental_ Canvas Capture Strategy ([#4777](https://github.com/getsentry/sentry-java/pull/4777))
+  - A new screenshot capture strategy that uses Android's Canvas API for more accurate and reliable text and image masking
+  - Any `.drawText()` or `.drawBitmap()` calls are replaced by rectangles, ensuring no text or images are present in the resulting output
+  - Note: If this strategy is used, all text and images will be masked, regardless of any masking configuration
+  - To enable this feature, set the `screenshotStrategy`, either via code:
+    ```kotlin
+    SentryAndroid.init(context) { options ->
+      options.sessionReplay.screenshotStrategy = ScreenshotStrategyType.CANVAS
+    }
+    ```
+    or AndroidManifest.xml:
+    ```xml
+    <application>
+      <meta-data android:name="io.sentry.session-replay.screenshot-strategy" android:value="canvas" />
+    </application>
+    ```
+
+### Fixes
+
+- Avoid StrictMode warnings ([#4724](https://github.com/getsentry/sentry-java/pull/4724))
 - Use logger from options for JVM profiler ([#4771](https://github.com/getsentry/sentry-java/pull/4771))
+- Session Replay: Avoid deadlock when pausing replay if no connection ([#4788](https://github.com/getsentry/sentry-java/pull/4788))
+- Session Replay: Fix capturing roots with no windows ([#4805](https://github.com/getsentry/sentry-java/pull/4805))
+- Session Replay: Fix `java.lang.IllegalArgumentException: width and height must be > 0` ([#4805](https://github.com/getsentry/sentry-java/pull/4805))
+- Handle `NoOpScopes` in `Context` when starting a span through OpenTelemetry ([#4823](https://github.com/getsentry/sentry-java/pull/4823))
+  - This fixes "java.lang.IllegalArgumentException: The DSN is required" when combining WebFlux and OpenTelemetry
+- Session Replay: Do not use recycled screenshots for masking ([#4790](https://github.com/getsentry/sentry-java/pull/4790))
+  - This fixes native crashes seen in `Canvas.<init>`/`ScreenshotRecorder.capture`
+- Session Replay: Ensure bitmaps are recycled properly ([#4820](https://github.com/getsentry/sentry-java/pull/4820))
 
 ### Miscellaneous
 

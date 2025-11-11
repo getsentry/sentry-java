@@ -31,8 +31,8 @@ import io.sentry.android.replay.capture.SessionCaptureStrategy
 import io.sentry.android.replay.gestures.GestureRecorder
 import io.sentry.android.replay.gestures.TouchRecorderCallback
 import io.sentry.android.replay.util.MainLooperHandler
+import io.sentry.android.replay.util.ReplayExecutorService
 import io.sentry.android.replay.util.appContext
-import io.sentry.android.replay.util.gracefullyShutdown
 import io.sentry.android.replay.util.sample
 import io.sentry.android.replay.util.submitSafely
 import io.sentry.cache.PersistingScopeObserver.BREADCRUMBS_FILENAME
@@ -95,6 +95,7 @@ public class ReplayIntegration(
     this.gestureRecorderProvider = gestureRecorderProvider
   }
 
+  @Volatile private var lastKnownConnectionStatus: ConnectionStatus = ConnectionStatus.UNKNOWN
   private var debugMaskingEnabled: Boolean = false
   private lateinit var options: SentryOptions
   private var scopes: IScopes? = null
@@ -103,7 +104,8 @@ public class ReplayIntegration(
   private val random by lazy { Random() }
   internal val rootViewsSpy by lazy { RootViewsSpy.install() }
   private val replayExecutor by lazy {
-    Executors.newSingleThreadScheduledExecutor(ReplayExecutorServiceThreadFactory())
+    val delegate = Executors.newSingleThreadScheduledExecutor(ReplayExecutorServiceThreadFactory())
+    ReplayExecutorService(delegate, options)
   }
 
   internal val isEnabled = AtomicBoolean(false)
@@ -218,7 +220,7 @@ public class ReplayIntegration(
 
       if (
         isManualPause.get() ||
-          options.connectionStatusProvider.connectionStatus == DISCONNECTED ||
+          lastKnownConnectionStatus == DISCONNECTED ||
           scopes?.rateLimiter?.isActiveForCategory(All) == true ||
           scopes?.rateLimiter?.isActiveForCategory(Replay) == true
       ) {
@@ -307,15 +309,13 @@ public class ReplayIntegration(
     scopes?.configureScope { screen = it.screen?.substringAfterLast('.') }
     captureStrategy?.onScreenshotRecorded(bitmap) { frameTimeStamp ->
       addFrame(bitmap, frameTimeStamp, screen)
-      checkCanRecord()
     }
+    checkCanRecord()
   }
 
   override fun onScreenshotRecorded(screenshot: File, frameTimestamp: Long) {
-    captureStrategy?.onScreenshotRecorded { _ ->
-      addFrame(screenshot, frameTimestamp)
-      checkCanRecord()
-    }
+    captureStrategy?.onScreenshotRecorded { _ -> addFrame(screenshot, frameTimestamp) }
+    checkCanRecord()
   }
 
   override fun close() {
@@ -330,12 +330,14 @@ public class ReplayIntegration(
       recorder?.close()
       recorder = null
       rootViewsSpy.close()
-      replayExecutor.gracefullyShutdown(options)
+      replayExecutor.shutdown()
       lifecycle.currentState = CLOSED
     }
   }
 
   override fun onConnectionStatusChanged(status: ConnectionStatus) {
+    lastKnownConnectionStatus = status
+
     if (captureStrategy !is SessionCaptureStrategy) {
       // we only want to stop recording when offline for session mode
       return
@@ -376,7 +378,7 @@ public class ReplayIntegration(
   private fun checkCanRecord() {
     if (
       captureStrategy is SessionCaptureStrategy &&
-        (options.connectionStatusProvider.connectionStatus == DISCONNECTED ||
+        (lastKnownConnectionStatus == DISCONNECTED ||
           scopes?.rateLimiter?.isActiveForCategory(All) == true ||
           scopes?.rateLimiter?.isActiveForCategory(Replay) == true)
     ) {

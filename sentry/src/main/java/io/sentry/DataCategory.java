@@ -10,6 +10,7 @@ public enum DataCategory {
   Session("session"),
   Attachment("attachment"),
   LogItem("log_item"),
+  LogByte("log_byte"),
   Monitor("monitor"),
   Profile("profile"),
   ProfileChunkUi("profile_chunk_ui"),

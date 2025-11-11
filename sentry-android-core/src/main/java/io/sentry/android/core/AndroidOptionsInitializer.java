@@ -16,6 +16,7 @@ import io.sentry.ITransactionProfiler;
 import io.sentry.NoOpCompositePerformanceCollector;
 import io.sentry.NoOpConnectionStatusProvider;
 import io.sentry.NoOpContinuousProfiler;
+import io.sentry.NoOpReplayBreadcrumbConverter;
 import io.sentry.NoOpSocketTagger;
 import io.sentry.NoOpTransactionProfiler;
 import io.sentry.NoopVersionDetector;
@@ -30,6 +31,7 @@ import io.sentry.android.core.internal.gestures.AndroidViewGestureTargetLocator;
 import io.sentry.android.core.internal.modules.AssetsModulesLoader;
 import io.sentry.android.core.internal.util.AndroidConnectionStatusProvider;
 import io.sentry.android.core.internal.util.AndroidCurrentDateProvider;
+import io.sentry.android.core.internal.util.AndroidRuntimeManager;
 import io.sentry.android.core.internal.util.AndroidThreadChecker;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.android.core.performance.AppStartMetrics;
@@ -108,7 +110,7 @@ final class AndroidOptionsInitializer {
       final @NotNull BuildInfoProvider buildInfoProvider) {
     Objects.requireNonNull(context, "The context is required.");
 
-    context = ContextUtils.getApplicationContext(context);
+    @NotNull final Context finalContext = ContextUtils.getApplicationContext(context);
 
     Objects.requireNonNull(options, "The options object is required.");
     Objects.requireNonNull(logger, "The ILogger object is required.");
@@ -120,17 +122,22 @@ final class AndroidOptionsInitializer {
     options.setDefaultScopeType(ScopeType.CURRENT);
     options.setOpenTelemetryMode(SentryOpenTelemetryMode.OFF);
     options.setDateProvider(new SentryAndroidDateProvider());
+    options.setRuntimeManager(new AndroidRuntimeManager());
 
     // set a lower flush timeout on Android to avoid ANRs
     options.setFlushTimeoutMillis(DEFAULT_FLUSH_TIMEOUT_MS);
 
     options.setFrameMetricsCollector(
-        new SentryFrameMetricsCollector(context, logger, buildInfoProvider));
+        new SentryFrameMetricsCollector(finalContext, logger, buildInfoProvider));
 
-    ManifestMetadataReader.applyMetadata(context, options, buildInfoProvider);
-    options.setCacheDirPath(getCacheDir(context).getAbsolutePath());
+    ManifestMetadataReader.applyMetadata(finalContext, options, buildInfoProvider);
 
-    readDefaultOptionValues(options, context, buildInfoProvider);
+    options.setCacheDirPath(
+        options
+            .getRuntimeManager()
+            .runWithRelaxedPolicy(() -> getCacheDir(finalContext).getAbsolutePath()));
+
+    readDefaultOptionValues(options, finalContext, buildInfoProvider);
     AppState.getInstance().registerLifecycleObserver(options);
   }
 
@@ -139,13 +146,15 @@ final class AndroidOptionsInitializer {
       final @NotNull SentryAndroidOptions options,
       final @NotNull Context context,
       final @NotNull io.sentry.util.LoadClass loadClass,
-      final @NotNull ActivityFramesTracker activityFramesTracker) {
+      final @NotNull ActivityFramesTracker activityFramesTracker,
+      final boolean isReplayAvailable) {
     initializeIntegrationsAndProcessors(
         options,
         context,
         new BuildInfoProvider(new AndroidLogger()),
         loadClass,
-        activityFramesTracker);
+        activityFramesTracker,
+        isReplayAvailable);
   }
 
   static void initializeIntegrationsAndProcessors(
@@ -153,7 +162,8 @@ final class AndroidOptionsInitializer {
       final @NotNull Context context,
       final @NotNull BuildInfoProvider buildInfoProvider,
       final @NotNull io.sentry.util.LoadClass loadClass,
-      final @NotNull ActivityFramesTracker activityFramesTracker) {
+      final @NotNull ActivityFramesTracker activityFramesTracker,
+      final boolean isReplayAvailable) {
 
     if (options.getCacheDirPath() != null
         && options.getEnvelopeDiskCache() instanceof NoOpEnvelopeCache) {
@@ -194,8 +204,8 @@ final class AndroidOptionsInitializer {
       options.setVersionDetector(new DefaultVersionDetector(options));
     }
 
-    final boolean isAndroidXScrollViewAvailable =
-        loadClass.isClassAvailable("androidx.core.view.ScrollingView", options);
+    final @NotNull LazyEvaluator<Boolean> isAndroidXScrollViewAvailable =
+        loadClass.isClassAvailableLazy("androidx.core.view.ScrollingView", options);
     final boolean isComposeUpstreamAvailable =
         loadClass.isClassAvailable(COMPOSE_CLASS_NAME, options);
 
@@ -245,6 +255,14 @@ final class AndroidOptionsInitializer {
     }
     if (options.getCompositePerformanceCollector() instanceof NoOpCompositePerformanceCollector) {
       options.setCompositePerformanceCollector(new DefaultCompositePerformanceCollector(options));
+    }
+
+    if (isReplayAvailable
+        && options.getReplayController().getBreadcrumbConverter()
+            instanceof NoOpReplayBreadcrumbConverter) {
+      options
+          .getReplayController()
+          .setBreadcrumbConverter(new DefaultReplayBreadcrumbConverter(options));
     }
 
     // Check if the profiler was already instantiated in the app start.
@@ -400,7 +418,6 @@ final class AndroidOptionsInitializer {
     if (isReplayAvailable) {
       final ReplayIntegration replay =
           new ReplayIntegration(context, CurrentDateProvider.getInstance());
-      replay.setBreadcrumbConverter(new DefaultReplayBreadcrumbConverter());
       options.addIntegration(replay);
       options.setReplayController(replay);
     }
@@ -443,7 +460,8 @@ final class AndroidOptionsInitializer {
 
     if (options.getDistinctId() == null) {
       try {
-        options.setDistinctId(Installation.id(context));
+        options.setDistinctId(
+            options.getRuntimeManager().runWithRelaxedPolicy(() -> Installation.id(context)));
       } catch (RuntimeException e) {
         options.getLogger().log(SentryLevel.ERROR, "Could not generate distinct Id.", e);
       }

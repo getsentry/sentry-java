@@ -30,6 +30,7 @@ plugins {
     alias(libs.plugins.gradle.versions) apply false
     alias(libs.plugins.spring.dependency.management) apply false
     id("io.sentry.javadoc.aggregate")
+    alias(libs.plugins.sentry) apply false
 }
 
 buildscript {
@@ -83,6 +84,7 @@ apiValidation {
             "sentry-uitest-android-critical",
             "test-app-plain",
             "test-app-sentry",
+            "test-app-size",
             "sentry-samples-netflix-dgs"
         )
     )
@@ -161,7 +163,7 @@ subprojects {
         }
     }
 
-    if (!this.name.contains("sample") && !this.name.contains("integration-tests") && this.name != "sentry-system-test-support" && this.name != "sentry-test-support" && this.name != "sentry-android-distribution") {
+    if (!this.name.contains("sample") && !this.name.contains("integration-tests") && this.name != "sentry-system-test-support" && this.name != "sentry-test-support") {
         apply<DistributionPlugin>()
         apply<com.vanniktech.maven.publish.MavenPublishPlugin>()
 

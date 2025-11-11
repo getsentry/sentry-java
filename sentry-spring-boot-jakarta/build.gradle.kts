@@ -88,6 +88,7 @@ dependencies {
   testImplementation(libs.springboot3.starter.test)
   testImplementation(libs.springboot3.starter.web)
   testImplementation(libs.springboot3.starter.webflux)
+  testImplementation(projects.sentryAsyncProfiler)
 }
 
 configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }

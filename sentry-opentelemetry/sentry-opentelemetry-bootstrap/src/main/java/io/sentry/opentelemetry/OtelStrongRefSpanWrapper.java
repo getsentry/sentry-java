@@ -310,4 +310,9 @@ public final class OtelStrongRefSpanWrapper implements IOtelSpanWrapper {
   public @Nullable Attributes getOpenTelemetrySpanAttributes() {
     return delegate.getOpenTelemetrySpanAttributes();
   }
+
+  @Override
+  public void addFeatureFlag(final @Nullable String flag, final @Nullable Boolean result) {
+    delegate.addFeatureFlag(flag, result);
+  }
 }
