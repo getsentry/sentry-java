@@ -152,6 +152,7 @@ class AndroidTransactionProfilerTest {
       buildInfoProvider,
       loadClass,
       activityFramesTracker,
+      false,
     )
     // Profiler doesn't start if the folder doesn't exists.
     // Usually it's generated when calling Sentry.init, but for tests we can create it manually.

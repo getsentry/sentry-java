@@ -984,7 +984,8 @@ public final class SentryClient implements ISentryClient {
           new SentryEnvelope(
               new SentryEnvelopeHeader(sentryId, options.getSdkVersion(), null),
               Collections.singletonList(
-                  SentryEnvelopeItem.fromProfileChunk(profileChunk, options.getSerializer())));
+                  SentryEnvelopeItem.fromProfileChunk(
+                      profileChunk, options.getSerializer(), options.getProfilerConverter())));
       sentryId = sendEnvelope(envelope, null);
     } catch (IOException | SentryEnvelopeException e) {
       options
@@ -1184,6 +1185,7 @@ public final class SentryClient implements ISentryClient {
     }
 
     if (logEvent != null) {
+      final @NotNull SentryLogEvent tmpLogEvent = logEvent;
       logEvent = executeBeforeSendLog(logEvent);
 
       if (logEvent == null) {
@@ -1191,6 +1193,13 @@ public final class SentryClient implements ISentryClient {
         options
             .getClientReportRecorder()
             .recordLostEvent(DiscardReason.BEFORE_SEND, DataCategory.LogItem);
+        final @NotNull long logEventNumberOfBytes =
+            JsonSerializationUtils.byteSizeOf(
+                options.getSerializer(), options.getLogger(), tmpLogEvent);
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(
+                DiscardReason.BEFORE_SEND, DataCategory.LogByte, logEventNumberOfBytes);
         return;
       }
 

@@ -310,6 +310,7 @@ public final class SentrySpanExporter implements SpanExporter {
     @NotNull TransactionNameSource transactionNameSource = spanInfo.getTransactionNameSource();
     @Nullable SpanId parentSpanId = null;
     @Nullable Baggage baggage = null;
+    @NotNull SentryId profilerId = SentryId.EMPTY_ID;
 
     if (sentrySpanMaybe != null) {
       final @NotNull IOtelSpanWrapper sentrySpan = sentrySpanMaybe;
@@ -325,6 +326,7 @@ public final class SentrySpanExporter implements SpanExporter {
       final @NotNull SpanContext spanContext = sentrySpan.getSpanContext();
       parentSpanId = spanContext.getParentSpanId();
       baggage = spanContext.getBaggage();
+      profilerId = spanContext.getProfilerId();
     }
 
     final @NotNull TransactionContext transactionContext =
@@ -337,6 +339,7 @@ public final class SentrySpanExporter implements SpanExporter {
     transactionContext.setTransactionNameSource(transactionNameSource);
     transactionContext.setOperation(spanInfo.getOp());
     transactionContext.setInstrumenter(Instrumenter.SENTRY);
+    transactionContext.setProfilerId(profilerId);
     if (sentrySpanMaybe != null) {
       transactionContext.setSamplingDecision(sentrySpanMaybe.getSamplingDecision());
       transactionOptions.setOrigin(sentrySpanMaybe.getSpanContext().getOrigin());
