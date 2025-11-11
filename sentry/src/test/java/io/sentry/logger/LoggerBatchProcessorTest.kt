@@ -1,14 +1,19 @@
 package io.sentry.logger
 
+import io.sentry.DataCategory
 import io.sentry.ISentryClient
 import io.sentry.SentryLogEvent
 import io.sentry.SentryLogEvents
 import io.sentry.SentryLogLevel
 import io.sentry.SentryNanotimeDate
 import io.sentry.SentryOptions
+import io.sentry.clientreport.ClientReportTestHelper
+import io.sentry.clientreport.DiscardReason
+import io.sentry.clientreport.DiscardedEvent
 import io.sentry.protocol.SentryId
 import io.sentry.test.DeferredExecutorService
 import io.sentry.test.injectForField
+import io.sentry.util.JsonSerializationUtils
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -53,5 +58,44 @@ class LoggerBatchProcessorTest {
 
     assertTrue(log1000Found, "Log 1000 should have been sent")
     assertFalse(log1001Found, "Log 1001 should not have been sent")
+  }
+
+  @Test
+  fun `records client report when log event is dropped due to queue overflow`() {
+    // given
+    val mockClient = mock<ISentryClient>()
+    val mockExecutor = DeferredExecutorService()
+    val options = SentryOptions()
+    val processor = LoggerBatchProcessor(options, mockClient)
+    processor.injectForField("executorService", mockExecutor)
+
+    // fill the queue to MAX_QUEUE_SIZE
+    for (i in 1..1000) {
+      val logEvent =
+        SentryLogEvent(SentryId(), SentryNanotimeDate(), "log message $i", SentryLogLevel.INFO)
+      processor.add(logEvent)
+    }
+
+    // add one more log event that should be dropped
+    val droppedLogEvent =
+      SentryLogEvent(SentryId(), SentryNanotimeDate(), "dropped log", SentryLogLevel.INFO)
+    processor.add(droppedLogEvent)
+
+    // calculate expected bytes for the dropped log event
+    val expectedBytes =
+      JsonSerializationUtils.byteSizeOf(options.serializer, options.logger, droppedLogEvent)
+
+    // verify that a client report was recorded for the dropped log item and bytes
+    val expectedEvents =
+      mutableListOf(
+        DiscardedEvent(DiscardReason.QUEUE_OVERFLOW.reason, DataCategory.LogItem.category, 1),
+        DiscardedEvent(
+          DiscardReason.QUEUE_OVERFLOW.reason,
+          DataCategory.Attachment.category,
+          expectedBytes,
+        ),
+      )
+
+    ClientReportTestHelper.assertClientReport(options.clientReportRecorder, expectedEvents)
   }
 }

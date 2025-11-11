@@ -1,5 +1,6 @@
 package io.sentry.logger;
 
+import io.sentry.DataCategory;
 import io.sentry.ISentryClient;
 import io.sentry.ISentryExecutorService;
 import io.sentry.ISentryLifecycleToken;
@@ -8,8 +9,10 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryLogEvent;
 import io.sentry.SentryLogEvents;
 import io.sentry.SentryOptions;
+import io.sentry.clientreport.DiscardReason;
 import io.sentry.transport.ReusableCountLatch;
 import io.sentry.util.AutoClosableReentrantLock;
+import io.sentry.util.JsonSerializationUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
@@ -48,6 +51,15 @@ public final class LoggerBatchProcessor implements ILoggerBatchProcessor {
   @Override
   public void add(final @NotNull SentryLogEvent logEvent) {
     if (pendingCount.getCount() >= MAX_QUEUE_SIZE) {
+      options
+          .getClientReportRecorder()
+          .recordLostEvent(DiscardReason.QUEUE_OVERFLOW, DataCategory.LogItem);
+      final long lostBytes =
+          JsonSerializationUtils.byteSizeOf(
+              options.getSerializer(), options.getLogger(), logEvent);
+      options
+          .getClientReportRecorder()
+          .recordLostEvent(DiscardReason.QUEUE_OVERFLOW, DataCategory.Attachment, lostBytes);
       return;
     }
     pendingCount.increment();
