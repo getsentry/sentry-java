@@ -16,6 +16,10 @@ import io.sentry.SentryEnvelope
 import io.sentry.SentryEnvelopeHeader
 import io.sentry.SentryEnvelopeItem
 import io.sentry.SentryEvent
+import io.sentry.SentryLogEvent
+import io.sentry.SentryLogEvents
+import io.sentry.SentryLogLevel
+import io.sentry.SentryLongDate
 import io.sentry.SentryOptions
 import io.sentry.SentryReplayEvent
 import io.sentry.SentryTracer
@@ -345,6 +349,34 @@ class ClientReportTest {
     verify(onDiscardMock, times(1)).execute(DiscardReason.RATELIMIT_BACKOFF, DataCategory.Error, 1)
     verify(onDiscardMock, times(1)).execute(DiscardReason.QUEUE_OVERFLOW, DataCategory.Error, 1)
     verify(onDiscardMock, times(1)).execute(DiscardReason.BEFORE_SEND, DataCategory.Profile, 1)
+  }
+
+  @Test
+  fun `recording lost client report counts log entries`() {
+    val onDiscardMock = mock<SentryOptions.OnDiscardCallback>()
+    givenClientReportRecorder { options -> options.onDiscard = onDiscardMock }
+
+    val envelope =
+      testHelper.newEnvelope(
+        SentryEnvelopeItem.fromLogs(
+          opts.serializer,
+          SentryLogEvents(
+            listOf(
+              SentryLogEvent(SentryId(), SentryLongDate(1), "log message 1", SentryLogLevel.ERROR),
+              SentryLogEvent(SentryId(), SentryLongDate(2), "log message 2", SentryLogLevel.WARN),
+            )
+          ),
+        )
+      )
+
+    clientReportRecorder.recordLostEnvelopeItem(DiscardReason.NETWORK_ERROR, envelope.items.first())
+
+    verify(onDiscardMock, times(1)).execute(DiscardReason.NETWORK_ERROR, DataCategory.LogItem, 2)
+
+    val clientReport = clientReportRecorder.resetCountsAndGenerateClientReport()
+    val logItem =
+      clientReport!!.discardedEvents!!.first { it.category == DataCategory.LogItem.category }
+    assertEquals(2, logItem.quantity)
   }
 
   private fun givenClientReportRecorder(
