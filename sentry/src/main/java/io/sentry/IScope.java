@@ -1,7 +1,9 @@
 package io.sentry;
 
+import io.sentry.featureflags.IFeatureFlagBuffer;
 import io.sentry.internal.eventprocessor.EventProcessorAndOrder;
 import io.sentry.protocol.Contexts;
+import io.sentry.protocol.FeatureFlags;
 import io.sentry.protocol.Request;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
@@ -422,4 +424,14 @@ public interface IScope {
 
   @ApiStatus.Internal
   void replaceOptions(final @NotNull SentryOptions options);
+
+  void addFeatureFlag(final @Nullable String flag, final @Nullable Boolean result);
+
+  @ApiStatus.Internal
+  @Nullable
+  FeatureFlags getFeatureFlags();
+
+  @ApiStatus.Internal
+  @NotNull
+  IFeatureFlagBuffer getFeatureFlagBuffer();
 }

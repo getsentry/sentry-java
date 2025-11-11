@@ -30,6 +30,7 @@ class CombinedContextsViewSerializationTest {
       isolation.setOperatingSystem(OperatingSystemSerializationTest.Fixture().getSut())
       isolation.setResponse(ResponseSerializationTest.Fixture().getSut())
       isolation.setSpring(SpringSerializationTest.Fixture().getSut())
+      isolation.setFeatureFlags(FeatureFlagsSerializationTest.Fixture().getSut())
 
       global.setRuntime(SentryRuntimeSerializationTest.Fixture().getSut())
       global.setGpu(GpuSerializationTest.Fixture().getSut())

@@ -1,5 +1,6 @@
 package io.sentry.samples.log4j2;
 
+import io.sentry.Sentry;
 import java.util.UUID;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -18,6 +19,8 @@ public class Main {
     ThreadContext.put("requestId", UUID.randomUUID().toString());
     // ThreadContext tag not listed in log4j2.xml
     ThreadContext.put("context-tag", "context-tag-value");
+
+    Sentry.addFeatureFlag("my-feature-flag", true);
 
     // logging arguments are converted to Sentry Event parameters
     LOGGER.info("User has made a purchase of product: {}", 445);

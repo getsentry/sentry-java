@@ -552,6 +552,8 @@ public final class io/sentry/systemtest/util/SentryMockServerClient : io/sentry/
 public final class io/sentry/systemtest/util/TestHelper {
 	public fun <init> (Ljava/lang/String;)V
 	public final fun doesContainLogWithBody (Lio/sentry/SentryLogEvents;Ljava/lang/String;)Z
+	public final fun doesEventHaveExceptionMessage (Lio/sentry/SentryEvent;Ljava/lang/String;)Z
+	public final fun doesEventHaveFlag (Lio/sentry/SentryEvent;Ljava/lang/String;Z)Z
 	public final fun doesTransactionContainSpanWithDescription (Lio/sentry/protocol/SentryTransaction;Ljava/lang/String;)Z
 	public final fun doesTransactionContainSpanWithOp (Lio/sentry/protocol/SentryTransaction;Ljava/lang/String;)Z
 	public final fun doesTransactionContainSpanWithOpAndDescription (Lio/sentry/protocol/SentryTransaction;Ljava/lang/String;Ljava/lang/String;)Z

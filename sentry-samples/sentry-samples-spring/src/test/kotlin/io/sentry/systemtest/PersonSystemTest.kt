@@ -20,6 +20,11 @@ class PersonSystemTest {
     restClient.getPerson(11L)
     assertEquals(500, restClient.lastKnownStatusCode)
 
+    testHelper.ensureErrorReceived { event ->
+      testHelper.doesEventHaveExceptionMessage(event, "Something went wrong [id=11]") &&
+        testHelper.doesEventHaveFlag(event, "my-feature-flag", true)
+    }
+
     testHelper.ensureTransactionReceived { transaction, envelopeHeader ->
       testHelper.doesTransactionHaveOp(transaction, "http.server")
     }

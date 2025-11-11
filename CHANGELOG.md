@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Features
+
+- Add feature flags API ([#4812](https://github.com/getsentry/sentry-java/pull/4812))
+  - You may now keep track of your feature flag evaluations and have them show up in Sentry.
+  - You may use top level API (`Sentry.addFeatureFlag("my-feature-flag", true);`) or `IScope` and `IScopes` API
+  - Feature flag evaluations tracked on scope(s) will be added to any errors reported to Sentry.
+  - The SDK keeps the latest 100 evaluations from scope(s), replacing old entries as new evaluations are added.
+
 ### Fixes
 
 - Removed SentryExecutorService limit for delayed scheduled tasks ([#4846](https://github.com/getsentry/sentry-java/pull/4846))
@@ -18,6 +26,7 @@
 - Fallback to distinct-id as user.id logging attribute when user is not set ([#4847](https://github.com/getsentry/sentry-java/pull/4847))
 - Report Timber.tag() as `timber.tag` log attribute ([#4845](https://github.com/getsentry/sentry-java/pull/4845))
 - Session Replay: Add screenshot strategy serialization to RRWeb events ([#4851](https://github.com/getsentry/sentry-java/pull/4851))
+- Report discarded log bytes ([#4871](https://github.com/getsentry/sentry-java/pull/4871))
 - Log why a properties file was not loaded ([#4879](https://github.com/getsentry/sentry-java/pull/4879))
 
 ### Dependencies
