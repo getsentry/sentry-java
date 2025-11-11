@@ -57,6 +57,11 @@ class ConsoleApplicationSystemTest {
       } != null
     }
 
+    testHelper.ensureErrorReceived { event ->
+      event.message?.message == "important warning" &&
+        testHelper.doesEventHaveFlag(event, "my-feature-flag", true)
+    }
+
     testHelper.ensureLogsReceived { logs, _ ->
       testHelper.doesContainLogWithBody(logs, "User has made a purchase of product: 445") &&
         testHelper.doesContainLogWithBody(logs, "Something went wrong")

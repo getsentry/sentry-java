@@ -1,8 +1,11 @@
 package io.sentry;
 
+import io.sentry.featureflags.FeatureFlagBuffer;
+import io.sentry.featureflags.IFeatureFlagBuffer;
 import io.sentry.internal.eventprocessor.EventProcessorAndOrder;
 import io.sentry.protocol.App;
 import io.sentry.protocol.Contexts;
+import io.sentry.protocol.FeatureFlags;
 import io.sentry.protocol.Request;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.TransactionNameSource;
@@ -103,6 +106,8 @@ public final class Scope implements IScope {
   private final @NotNull Map<Throwable, Pair<WeakReference<ISpan>, String>> throwableToSpan =
       Collections.synchronizedMap(new WeakHashMap<>());
 
+  private final @NotNull IFeatureFlagBuffer featureFlags;
+
   /**
    * Scope's ctor
    *
@@ -111,6 +116,7 @@ public final class Scope implements IScope {
   public Scope(final @NotNull SentryOptions options) {
     this.options = Objects.requireNonNull(options, "SentryOptions is required.");
     this.breadcrumbs = createBreadcrumbsList(this.options.getMaxBreadcrumbs());
+    this.featureFlags = FeatureFlagBuffer.create(options);
     this.propagationContext = new PropagationContext();
     this.lastEventId = SentryId.EMPTY_ID;
   }
@@ -172,6 +178,8 @@ public final class Scope implements IScope {
     this.contexts = new Contexts(scope.contexts);
 
     this.attachments = new CopyOnWriteArrayList<>(scope.attachments);
+
+    this.featureFlags = scope.featureFlags.clone();
 
     this.propagationContext = new PropagationContext(scope.propagationContext);
   }
@@ -1117,6 +1125,21 @@ public final class Scope implements IScope {
   @Override
   public @NotNull ISentryClient getClient() {
     return client;
+  }
+
+  @Override
+  public void addFeatureFlag(final @Nullable String flag, final @Nullable Boolean result) {
+    featureFlags.add(flag, result);
+  }
+
+  @Override
+  public @Nullable FeatureFlags getFeatureFlags() {
+    return featureFlags.getFeatureFlags();
+  }
+
+  @Override
+  public @NotNull IFeatureFlagBuffer getFeatureFlagBuffer() {
+    return featureFlags;
   }
 
   @Override

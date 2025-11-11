@@ -328,4 +328,7 @@ public final class NoOpScopes implements IScopes {
   public @NotNull ILoggerApi logger() {
     return NoOpLoggerApi.getInstance();
   }
+
+  @Override
+  public void addFeatureFlag(final @Nullable String flag, final @Nullable Boolean result) {}
 }
