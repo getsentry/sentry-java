@@ -5034,6 +5034,7 @@ public final class io/sentry/logger/LoggerApi : io/sentry/logger/ILoggerApi {
 public final class io/sentry/logger/LoggerBatchProcessor : io/sentry/logger/ILoggerBatchProcessor {
 	public static final field FLUSH_AFTER_MS I
 	public static final field MAX_BATCH_SIZE I
+	public static final field MAX_QUEUE_SIZE I
 	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/ISentryClient;)V
 	public fun add (Lio/sentry/SentryLogEvent;)V
 	public fun close (Z)V
