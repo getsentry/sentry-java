@@ -1342,4 +1342,8 @@ public final class Sentry {
     final @NotNull SentryOptions options = getCurrentScopes().getOptions();
     options.getFeedbackOptions().getDialogHandler().showDialog(associatedEventId, configurator);
   }
+
+  public static void addFeatureFlag(final @Nullable String flag, final @Nullable Boolean result) {
+    getCurrentScopes().addFeatureFlag(flag, result);
+  }
 }
