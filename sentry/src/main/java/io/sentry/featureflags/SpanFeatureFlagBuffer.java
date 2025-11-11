@@ -65,7 +65,7 @@ public final class SpanFeatureFlagBuffer implements IFeatureFlagBuffer {
 
   /**
    * Does not really clone but instead return a new empty instance.
-   * 
+   *
    * @return a new empty instance
    */
   @Override
