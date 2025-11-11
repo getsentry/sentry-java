@@ -5,7 +5,6 @@ import io.sentry.SentryLevel;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 import org.jetbrains.annotations.NotNull;
@@ -24,15 +23,25 @@ final class FilesystemPropertiesLoader implements PropertiesLoader {
   @Override
   public @Nullable Properties load() {
     try {
-      final File f = new File(filePath);
+      final File f = new File(filePath.trim());
       if (f.isFile() && f.canRead()) {
         try (InputStream is = new BufferedInputStream(new FileInputStream(f))) {
           final Properties properties = new Properties();
           properties.load(is);
           return properties;
         }
+      } else if (!f.isFile()) {
+        logger.log(
+            SentryLevel.ERROR,
+            "Failed to load Sentry configuration since it is not a file or does not exist: %s",
+            filePath);
+      } else if (!f.canRead()) {
+        logger.log(
+            SentryLevel.ERROR,
+            "Failed to load Sentry configuration since it is not readable: %s",
+            filePath);
       }
-    } catch (IOException e) {
+    } catch (Throwable e) {
       logger.log(
           SentryLevel.ERROR, e, "Failed to load Sentry configuration from file: %s", filePath);
       return null;
