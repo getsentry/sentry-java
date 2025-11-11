@@ -55,7 +55,7 @@ class ConsoleApplicationSystemTest {
     // Verify we received the RuntimeException
     testHelper.ensureErrorReceived { event ->
       event.exceptions?.any { ex -> ex.type == "RuntimeException" && ex.value == "Some error!" } ==
-        true
+        true && testHelper.doesEventHaveFlag(event, "my-feature-flag", true)
     }
 
     // Verify we received the detailed event with fingerprint

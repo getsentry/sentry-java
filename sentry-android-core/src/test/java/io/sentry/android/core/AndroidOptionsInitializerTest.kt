@@ -117,6 +117,7 @@ class AndroidOptionsInitializerTest {
         if (useRealContext) context else mockContext,
         loadClass,
         activityFramesTracker,
+        false,
       )
     }
 
@@ -162,6 +163,7 @@ class AndroidOptionsInitializerTest {
         buildInfo,
         loadClass,
         activityFramesTracker,
+        isReplayAvailable,
       )
     }
 

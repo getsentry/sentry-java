@@ -198,6 +198,13 @@ public class SentryOptions {
    */
   private int maxBreadcrumbs = 100;
 
+  /**
+   * This variable controls the total amount of feature flag evaluations that should be stored on
+   * the scope. The most recent `maxFeatureFlags` evaluations are stored on each scope. Default is
+   * 100
+   */
+  private int maxFeatureFlags = 100;
+
   /** Sets the release. SDK will try to automatically configure a release out of the box */
   private @Nullable String release;
 
@@ -386,6 +393,9 @@ public class SentryOptions {
 
   /** Profiler that runs continuously until stopped. */
   private @NotNull IContinuousProfiler continuousProfiler = NoOpContinuousProfiler.getInstance();
+
+  /** Profiler that runs continuously until stopped. */
+  private @NotNull IProfileConverter profilerConverter = NoOpProfileConverter.getInstance();
 
   /**
    * Contains a list of origins to which `sentry-trace` header should be sent in HTTP integrations.
@@ -603,6 +613,14 @@ public class SentryOptions {
   private @NotNull IRuntimeManager runtimeManager = new NeutralRuntimeManager();
 
   private @Nullable String profilingTracesDirPath;
+
+  public @NotNull IProfileConverter getProfilerConverter() {
+    return profilerConverter;
+  }
+
+  public void setProfilerConverter(@NotNull IProfileConverter profilerConverter) {
+    this.profilerConverter = profilerConverter;
+  }
 
   /**
    * Configuration options for Sentry Build Distribution. NOTE: Ideally this would be in
@@ -1028,6 +1046,24 @@ public class SentryOptions {
    */
   public void setMaxBreadcrumbs(int maxBreadcrumbs) {
     this.maxBreadcrumbs = maxBreadcrumbs;
+  }
+
+  /**
+   * Returns the max feature flags Default is 100
+   *
+   * @return the max feature flags
+   */
+  public int getMaxFeatureFlags() {
+    return maxFeatureFlags;
+  }
+
+  /**
+   * Sets the max feature flags Default is 100
+   *
+   * @param maxFeatureFlags the max feature flags
+   */
+  public void setMaxFeatureFlags(int maxFeatureFlags) {
+    this.maxFeatureFlags = maxFeatureFlags;
   }
 
   /**

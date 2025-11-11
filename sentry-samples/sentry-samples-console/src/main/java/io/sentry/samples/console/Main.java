@@ -126,6 +126,8 @@ public class Main {
     // Only data added to the scope on `configureScope` above is included.
     Sentry.captureMessage("Some warning!", SentryLevel.WARNING);
 
+    Sentry.addFeatureFlag("my-feature-flag", true);
+
     // Sending exception:
     Exception exception = new RuntimeException("Some error!");
     Sentry.captureException(exception);

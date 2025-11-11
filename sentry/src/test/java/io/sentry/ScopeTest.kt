@@ -12,6 +12,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNotSame
 import kotlin.test.assertNull
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 import org.junit.Assert.assertArrayEquals
 import org.mockito.kotlin.any
@@ -153,6 +154,21 @@ class ScopeTest {
     assertArrayEquals(attachment.bytes ?: byteArrayOf(), actual.bytes ?: byteArrayOf())
     assertEquals(attachment.filename, actual.filename)
     assertEquals(attachment.contentType, actual.contentType)
+  }
+
+  @Test
+  fun `copying scope copies active span`() {
+    val scope = Scope(SentryOptions())
+
+    val transaction =
+      SentryTracer(TransactionContext("transaction-name", "op"), NoOpScopes.getInstance())
+    val span = transaction.startChild("child1")
+
+    scope.setActiveSpan(span)
+
+    val clone = scope.clone()
+
+    assertSame(span, clone.span)
   }
 
   @Test
@@ -1105,6 +1121,36 @@ class ScopeTest {
     scope.removeContexts(null)
 
     assertTrue(scope.contexts.isEmpty)
+  }
+
+  @Test
+  fun `feature flags can be added and are deduplicated`() {
+    val scope = Scope(SentryOptions.empty())
+
+    scope.addFeatureFlag("flag1", true)
+    scope.addFeatureFlag("flag1", false)
+
+    val flags = scope.featureFlags
+    assertNotNull(flags)
+    assertEquals(1, flags.values.size)
+
+    val flag0 = flags.values.first()
+    assertEquals("flag1", flag0.flag)
+    assertFalse(flag0.result)
+  }
+
+  @Test
+  fun `null feature flags are ignored`() {
+    val scope = Scope(SentryOptions.empty())
+
+    scope.addFeatureFlag(null, true)
+    scope.addFeatureFlag("flag1", null)
+    scope.addFeatureFlag(null, null)
+
+    val flags = scope.featureFlags
+    assertNotNull(flags)
+
+    assertEquals(0, flags.values.size)
   }
 
   private fun eventProcessor(): EventProcessor =

@@ -1,7 +1,10 @@
 package io.sentry;
 
+import io.sentry.featureflags.IFeatureFlagBuffer;
+import io.sentry.featureflags.NoOpFeatureFlagBuffer;
 import io.sentry.internal.eventprocessor.EventProcessorAndOrder;
 import io.sentry.protocol.Contexts;
+import io.sentry.protocol.FeatureFlags;
 import io.sentry.protocol.Request;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
@@ -296,4 +299,17 @@ public final class NoOpScope implements IScope {
 
   @Override
   public void replaceOptions(@NotNull SentryOptions options) {}
+
+  @Override
+  public void addFeatureFlag(final @Nullable String flag, final @Nullable Boolean result) {}
+
+  @Override
+  public @Nullable FeatureFlags getFeatureFlags() {
+    return null;
+  }
+
+  @Override
+  public @NotNull IFeatureFlagBuffer getFeatureFlagBuffer() {
+    return NoOpFeatureFlagBuffer.getInstance();
+  }
 }
