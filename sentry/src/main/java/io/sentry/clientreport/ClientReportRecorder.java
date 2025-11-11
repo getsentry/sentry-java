@@ -6,6 +6,7 @@ import io.sentry.SentryEnvelope;
 import io.sentry.SentryEnvelopeItem;
 import io.sentry.SentryItemType;
 import io.sentry.SentryLevel;
+import io.sentry.SentryLogEvents;
 import io.sentry.SentryOptions;
 import io.sentry.protocol.SentrySpan;
 import io.sentry.protocol.SentryTransaction;
@@ -98,9 +99,19 @@ public final class ClientReportRecorder implements IClientReportRecorder {
                 reason.getReason(), DataCategory.Span.getCategory(), spans.size() + 1L);
             executeOnDiscard(reason, DataCategory.Span, spans.size() + 1L);
           }
+          recordLostEventInternal(reason.getReason(), itemCategory.getCategory(), 1L);
+          executeOnDiscard(reason, itemCategory, 1L);
+        } else if (itemCategory.equals(DataCategory.LogItem)) {
+          final @Nullable SentryLogEvents logs = envelopeItem.getLogs(options.getSerializer());
+          if (logs != null) {
+            final long count = logs.getItems().size();
+            recordLostEventInternal(reason.getReason(), itemCategory.getCategory(), count);
+            executeOnDiscard(reason, itemCategory, count);
+          }
+        } else {
+          recordLostEventInternal(reason.getReason(), itemCategory.getCategory(), 1L);
+          executeOnDiscard(reason, itemCategory, 1L);
         }
-        recordLostEventInternal(reason.getReason(), itemCategory.getCategory(), 1L);
-        executeOnDiscard(reason, itemCategory, 1L);
       }
     } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, e, "Unable to record lost envelope item.");
