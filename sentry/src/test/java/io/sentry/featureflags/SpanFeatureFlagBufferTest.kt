@@ -85,29 +85,29 @@ class SpanFeatureFlagBufferTest {
   @Test
   fun `maintains insertion order`() {
     val buffer = SpanFeatureFlagBuffer.create()
-    buffer.add("first", true)
-    buffer.add("second", false)
-    buffer.add("third", true)
+    buffer.add("uno", true)
+    buffer.add("due", false)
+    buffer.add("tre", true)
 
     val featureFlags = buffer.featureFlags
     assertNotNull(featureFlags)
     val featureFlagValues = featureFlags.values
     assertEquals(3, featureFlagValues.size)
 
-    assertEquals("first", featureFlagValues[0]!!.flag)
-    assertEquals("second", featureFlagValues[1]!!.flag)
-    assertEquals("third", featureFlagValues[2]!!.flag)
+    assertEquals("uno", featureFlagValues[0]!!.flag)
+    assertEquals("due", featureFlagValues[1]!!.flag)
+    assertEquals("tre", featureFlagValues[2]!!.flag)
   }
 
   @Test
   fun `updating existing flag maintains its position`() {
     val buffer = SpanFeatureFlagBuffer.create()
-    buffer.add("first", true)
-    buffer.add("second", false)
-    buffer.add("third", true)
+    buffer.add("uno", true)
+    buffer.add("due", false)
+    buffer.add("tre", true)
 
-    // Update the first flag
-    buffer.add("first", false)
+    // Update the uno flag
+    buffer.add("uno", false)
 
     val featureFlags = buffer.featureFlags
     assertNotNull(featureFlags)
@@ -115,9 +115,9 @@ class SpanFeatureFlagBufferTest {
     assertEquals(3, featureFlagValues.size)
 
     // Order should remain the same
-    assertEquals("first", featureFlagValues[0]!!.flag)
+    assertEquals("uno", featureFlagValues[0]!!.flag)
     assertFalse(featureFlagValues[0]!!.result) // Value updated
-    assertEquals("second", featureFlagValues[1]!!.flag)
-    assertEquals("third", featureFlagValues[2]!!.flag)
+    assertEquals("due", featureFlagValues[1]!!.flag)
+    assertEquals("tre", featureFlagValues[2]!!.flag)
   }
 }
