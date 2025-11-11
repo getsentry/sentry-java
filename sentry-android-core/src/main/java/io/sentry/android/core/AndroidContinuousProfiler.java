@@ -190,6 +190,7 @@ public class AndroidContinuousProfiler
       }
 
       // If device is offline, we don't start the profiler, to avoid flooding the cache
+      // TODO .getConnectionStatus() may be blocking, investigate if this can be done async
       if (scopes.getOptions().getConnectionStatusProvider().getConnectionStatus() == DISCONNECTED) {
         logger.log(SentryLevel.WARNING, "Device is offline. Stopping profiler.");
         // Let's stop and reset profiler id, as the profile is now broken anyway
