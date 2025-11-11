@@ -1,6 +1,6 @@
 # Changelog
 
-## 8.23.1-alpha.1
+## Unreleased
 
 ### Features
 
@@ -29,6 +29,8 @@
 - Fix profilerId propagation ([#4833](https://github.com/getsentry/sentry-java/pull/4833))
 - Fix profiling init for Spring and Spring Boot w Agent auto-init ([#4815](https://github.com/getsentry/sentry-java/pull/4815))
 - Copy active span on scope clone ([#4878](https://github.com/getsentry/sentry-java/pull/4878))
+- Avoid forking `rootScopes` for Reactor if current thread has NoOpScopes ([#4793](https://github.com/getsentry/sentry-java/pull/4793))
+  - This reduces the SDKs overhead by avoiding unnecessary scope forks
 
 ### Improvements
 
