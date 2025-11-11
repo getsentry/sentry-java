@@ -203,6 +203,7 @@ public final class DeviceInfoUtil {
       device.setBatteryTemperature(getBatteryTemperature(batteryIntent));
     }
 
+    // TODO .getConnectionStatus() may be blocking, investigate if this can be done async
     Boolean connected;
     switch (options.getConnectionStatusProvider().getConnectionStatus()) {
       case DISCONNECTED:
