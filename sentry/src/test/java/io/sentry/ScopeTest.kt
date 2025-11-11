@@ -12,6 +12,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNotSame
 import kotlin.test.assertNull
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 import org.junit.Assert.assertArrayEquals
 import org.mockito.kotlin.any
@@ -153,6 +154,21 @@ class ScopeTest {
     assertArrayEquals(attachment.bytes ?: byteArrayOf(), actual.bytes ?: byteArrayOf())
     assertEquals(attachment.filename, actual.filename)
     assertEquals(attachment.contentType, actual.contentType)
+  }
+
+  @Test
+  fun `copying scope copies active span`() {
+    val scope = Scope(SentryOptions())
+
+    val transaction =
+      SentryTracer(TransactionContext("transaction-name", "op"), NoOpScopes.getInstance())
+    val span = transaction.startChild("child1")
+
+    scope.setActiveSpan(span)
+
+    val clone = scope.clone()
+
+    assertSame(span, clone.span)
   }
 
   @Test
