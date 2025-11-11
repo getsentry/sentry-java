@@ -10,6 +10,7 @@
 - Only set `DefaultReplayBreadcrumbConverter` if replay is available ([#4888](https://github.com/getsentry/sentry-java/pull/4888))
 - Session Replay: Cache connection status instead of using blocking calls ([#4891](https://github.com/getsentry/sentry-java/pull/4891))
 - Fix log count in client reports ([#4869](https://github.com/getsentry/sentry-java/pull/4869))
+- Fix profilerId propagation ([#4833](https://github.com/getsentry/sentry-java/pull/4833))
 - Fix profiling init for Spring and Spring Boot w Agent auto-init ([#4815](https://github.com/getsentry/sentry-java/pull/4815))
 
 ### Improvements
