@@ -95,6 +95,7 @@ public class ReplayIntegration(
     this.gestureRecorderProvider = gestureRecorderProvider
   }
 
+  @Volatile private var lastKnownConnectionStatus: ConnectionStatus = ConnectionStatus.UNKNOWN
   private var debugMaskingEnabled: Boolean = false
   private lateinit var options: SentryOptions
   private var scopes: IScopes? = null
@@ -219,7 +220,7 @@ public class ReplayIntegration(
 
       if (
         isManualPause.get() ||
-          options.connectionStatusProvider.connectionStatus == DISCONNECTED ||
+          lastKnownConnectionStatus == DISCONNECTED ||
           scopes?.rateLimiter?.isActiveForCategory(All) == true ||
           scopes?.rateLimiter?.isActiveForCategory(Replay) == true
       ) {
@@ -335,6 +336,8 @@ public class ReplayIntegration(
   }
 
   override fun onConnectionStatusChanged(status: ConnectionStatus) {
+    lastKnownConnectionStatus = status
+
     if (captureStrategy !is SessionCaptureStrategy) {
       // we only want to stop recording when offline for session mode
       return
@@ -375,7 +378,7 @@ public class ReplayIntegration(
   private fun checkCanRecord() {
     if (
       captureStrategy is SessionCaptureStrategy &&
-        (options.connectionStatusProvider.connectionStatus == DISCONNECTED ||
+        (lastKnownConnectionStatus == DISCONNECTED ||
           scopes?.rateLimiter?.isActiveForCategory(All) == true ||
           scopes?.rateLimiter?.isActiveForCategory(Replay) == true)
     ) {

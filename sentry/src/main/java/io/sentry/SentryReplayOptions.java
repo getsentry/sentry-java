@@ -20,6 +20,14 @@ public final class SentryReplayOptions {
   public static final String EXOPLAYER_STYLED_CLASS_NAME =
       "com.google.android.exoplayer2.ui.StyledPlayerView";
 
+  /**
+   * Maximum size in bytes for network request/response bodies to be captured in replays. Bodies
+   * larger than this will be truncated or replaced with a placeholder message. Aligned <a
+   * href="https://github.com/getsentry/sentry-javascript/blob/98de756506705b60d1ca86cbbcfad3fd76062f8f/packages/replay-internal/src/constants.ts#L33">
+   * with JS</a>
+   */
+  @ApiStatus.Internal public static final int MAX_NETWORK_BODY_SIZE = 150 * 1024;
+
   public enum SentryReplayQuality {
     /** Video Scale: 80% Bit Rate: 50.000 JPEG Compression: 10 */
     LOW(0.8f, 50_000, 10),
