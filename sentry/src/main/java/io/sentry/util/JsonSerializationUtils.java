@@ -74,7 +74,7 @@ public final class JsonSerializationUtils {
    * @param serializer the serializer
    * @param logger the logger
    * @param serializable the serializable object
-   * @return the size in bytes, or -1 if serialization fails
+   * @return the size in bytes, or 0 if serialization fails
    */
   public static long byteSizeOf(
       final @NotNull ISerializer serializer,
