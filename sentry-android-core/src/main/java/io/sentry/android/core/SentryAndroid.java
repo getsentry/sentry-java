@@ -171,7 +171,12 @@ public final class SentryAndroid {
             }
 
             AndroidOptionsInitializer.initializeIntegrationsAndProcessors(
-                options, context, buildInfoProvider, loadClass, activityFramesTracker);
+                options,
+                context,
+                buildInfoProvider,
+                loadClass,
+                activityFramesTracker,
+                isReplayAvailable);
 
             deduplicateIntegrations(options, isFragmentAvailable, isTimberAvailable);
           },
