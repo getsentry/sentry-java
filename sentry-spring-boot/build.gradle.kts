@@ -72,6 +72,7 @@ dependencies {
   testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryAgent)
   testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryAgentcustomization)
   testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
+  testImplementation(projects.sentryAsyncProfiler)
 }
 
 configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
