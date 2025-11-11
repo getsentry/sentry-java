@@ -13,6 +13,8 @@
   - For feature flag evaluations tracked on spans:
     - Only 10 evaluations are tracked per span, existing flags are updated but new ones exceeding the limit are ignored
     - Spans do not inherit evaluations from their parent
+- Drop log events once buffer hits hard limit ([#4889](https://github.com/getsentry/sentry-java/pull/4889))
+  - If we have 1000 log events queued up, we drop any new logs coming in to prevent OOM
 
 ### Fixes
 
