@@ -55,8 +55,7 @@ public final class LoggerBatchProcessor implements ILoggerBatchProcessor {
           .getClientReportRecorder()
           .recordLostEvent(DiscardReason.QUEUE_OVERFLOW, DataCategory.LogItem);
       final long lostBytes =
-          JsonSerializationUtils.byteSizeOf(
-              options.getSerializer(), options.getLogger(), logEvent);
+          JsonSerializationUtils.byteSizeOf(options.getSerializer(), options.getLogger(), logEvent);
       options
           .getClientReportRecorder()
           .recordLostEvent(DiscardReason.QUEUE_OVERFLOW, DataCategory.Attachment, lostBytes);
