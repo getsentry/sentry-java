@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixes
+
+- Fix log count in client reports ([#4869](https://github.com/getsentry/sentry-java/pull/4869))
+
 ### Improvements
 
 - Fallback to distinct-id as user.id logging attribute when user is not set ([#4847](https://github.com/getsentry/sentry-java/pull/4847))
