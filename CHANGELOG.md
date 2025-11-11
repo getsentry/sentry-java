@@ -15,6 +15,8 @@
     - Spans do not inherit evaluations from their parent
 - Drop log events once buffer hits hard limit ([#4889](https://github.com/getsentry/sentry-java/pull/4889))
   - If we have 1000 log events queued up, we drop any new logs coming in to prevent OOM
+- Remove vendored code and upgrade to async profiler 4.2 ([#4856](https://github.com/getsentry/sentry-java/pull/4856))
+  - This adds support for JDK 23+
 
 ### Fixes
 

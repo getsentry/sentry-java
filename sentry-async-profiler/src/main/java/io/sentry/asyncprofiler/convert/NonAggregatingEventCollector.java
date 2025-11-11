@@ -1,9 +1,9 @@
 package io.sentry.asyncprofiler.convert;
 
-import io.sentry.asyncprofiler.vendor.asyncprofiler.jfr.event.Event;
-import io.sentry.asyncprofiler.vendor.asyncprofiler.jfr.event.EventCollector;
 import java.util.ArrayList;
 import java.util.List;
+import one.jfr.event.Event;
+import one.jfr.event.EventCollector;
 import org.jetbrains.annotations.ApiStatus;
 
 @ApiStatus.Internal
