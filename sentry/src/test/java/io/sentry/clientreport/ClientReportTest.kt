@@ -377,6 +377,9 @@ class ClientReportTest {
     val logItem =
       clientReport!!.discardedEvents!!.first { it.category == DataCategory.LogItem.category }
     assertEquals(2, logItem.quantity)
+    val logByte =
+      clientReport!!.discardedEvents!!.first { it.category == DataCategory.LogByte.category }
+    assertEquals(226, logByte.quantity)
   }
 
   private fun givenClientReportRecorder(

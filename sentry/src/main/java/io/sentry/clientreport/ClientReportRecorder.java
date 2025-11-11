@@ -6,6 +6,7 @@ import io.sentry.SentryEnvelope;
 import io.sentry.SentryEnvelopeItem;
 import io.sentry.SentryItemType;
 import io.sentry.SentryLevel;
+import io.sentry.SentryLogEvent;
 import io.sentry.SentryLogEvents;
 import io.sentry.SentryOptions;
 import io.sentry.protocol.SentrySpan;
@@ -104,9 +105,15 @@ public final class ClientReportRecorder implements IClientReportRecorder {
         } else if (itemCategory.equals(DataCategory.LogItem)) {
           final @Nullable SentryLogEvents logs = envelopeItem.getLogs(options.getSerializer());
           if (logs != null) {
-            final long count = logs.getItems().size();
+            final @NotNull List<SentryLogEvent> items = logs.getItems();
+            final long count = items.size();
             recordLostEventInternal(reason.getReason(), itemCategory.getCategory(), count);
+            final long logBytes = envelopeItem.getData().length;
+            recordLostEventInternal(
+                reason.getReason(), DataCategory.LogByte.getCategory(), logBytes);
             executeOnDiscard(reason, itemCategory, count);
+          } else {
+            options.getLogger().log(SentryLevel.ERROR, "Unable to parse lost logs envelope item.");
           }
         } else {
           recordLostEventInternal(reason.getReason(), itemCategory.getCategory(), 1L);
