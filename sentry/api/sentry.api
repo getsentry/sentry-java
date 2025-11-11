@@ -3792,6 +3792,11 @@ public final class io/sentry/SentryReplayOptions {
 	public fun getFrameRate ()I
 	public fun getMaskViewClasses ()Ljava/util/Set;
 	public fun getMaskViewContainerClass ()Ljava/lang/String;
+	public fun getNetworkDetailAllowUrls ()[Ljava/lang/String;
+	public fun getNetworkDetailDenyUrls ()[Ljava/lang/String;
+	public static fun getNetworkDetailsDefaultHeaders ()[Ljava/lang/String;
+	public fun getNetworkRequestHeaders ()[Ljava/lang/String;
+	public fun getNetworkResponseHeaders ()[Ljava/lang/String;
 	public fun getOnErrorSampleRate ()Ljava/lang/Double;
 	public fun getQuality ()Lio/sentry/SentryReplayOptions$SentryReplayQuality;
 	public fun getScreenshotStrategy ()Lio/sentry/ScreenshotStrategyType;
@@ -3802,6 +3807,7 @@ public final class io/sentry/SentryReplayOptions {
 	public fun getUnmaskViewClasses ()Ljava/util/Set;
 	public fun getUnmaskViewContainerClass ()Ljava/lang/String;
 	public fun isDebug ()Z
+	public fun isNetworkCaptureBodies ()Z
 	public fun isSessionReplayEnabled ()Z
 	public fun isSessionReplayForErrorsEnabled ()Z
 	public fun isTrackConfiguration ()Z
@@ -3809,6 +3815,11 @@ public final class io/sentry/SentryReplayOptions {
 	public fun setMaskAllImages (Z)V
 	public fun setMaskAllText (Z)V
 	public fun setMaskViewContainerClass (Ljava/lang/String;)V
+	public fun setNetworkCaptureBodies (Z)V
+	public fun setNetworkDetailAllowUrls ([Ljava/lang/String;)V
+	public fun setNetworkDetailDenyUrls ([Ljava/lang/String;)V
+	public fun setNetworkRequestHeaders (Ljava/util/List;)V
+	public fun setNetworkResponseHeaders (Ljava/util/List;)V
 	public fun setOnErrorSampleRate (Ljava/lang/Double;)V
 	public fun setQuality (Lio/sentry/SentryReplayOptions$SentryReplayQuality;)V
 	public fun setScreenshotStrategy (Lio/sentry/ScreenshotStrategyType;)V
