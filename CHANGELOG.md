@@ -6,6 +6,12 @@
 
 - Do not send manual log origin ([#4897](https://github.com/getsentry/sentry-java/pull/4897))
 
+### Dependencies
+
+- Bump Gradle from v8.14.3 to v9.2.0 ([#4848](https://github.com/getsentry/sentry-java/pull/4848))
+  - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v920)
+  - [diff](https://github.com/gradle/gradle/compare/v8.14.3...v9.2.0)
+
 ## 8.26.0
 
 ### Features
