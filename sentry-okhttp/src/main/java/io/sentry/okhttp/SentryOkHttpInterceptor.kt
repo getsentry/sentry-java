@@ -61,16 +61,6 @@ public open class SentryOkHttpInterceptor(
       SentryIntegrationPackageStorage.getInstance()
         .addPackage("maven:io.sentry:sentry-okhttp", BuildConfig.VERSION_NAME)
     }
-
-    /** Fake options for testing network detail capture */
-    private val FAKE_OPTIONS =
-      object {
-        val networkDetailAllowUrls: Array<String> = emptyArray()
-        val networkDetailDenyUrls: Array<String> = emptyArray()
-        val networkCaptureBodies: Boolean = false
-        val networkRequestHeaders: Array<String> = emptyArray()
-        val networkResponseHeaders: Array<String> = emptyArray()
-      }
   }
 
   public constructor() : this(ScopesAdapter.getInstance())
@@ -119,8 +109,8 @@ public open class SentryOkHttpInterceptor(
       NetworkDetailCaptureUtils.initializeForUrl(
         request.url.toString(),
         request.method,
-        FAKE_OPTIONS.networkDetailAllowUrls,
-        FAKE_OPTIONS.networkDetailDenyUrls,
+        scopes.options.sessionReplay.networkDetailAllowUrls,
+        scopes.options.sessionReplay.networkDetailDenyUrls,
       )
 
     try {
@@ -152,7 +142,7 @@ public open class SentryOkHttpInterceptor(
         NetworkDetailCaptureUtils.createRequest(
           request,
           requestContentLength,
-          FAKE_OPTIONS.networkCaptureBodies,
+          scopes.options.sessionReplay.isNetworkCaptureBodies,
           { req ->
             req.body?.let { originalBody ->
               val buffer = okio.Buffer()
@@ -167,7 +157,7 @@ public open class SentryOkHttpInterceptor(
               safeExtractRequestBody(bodyBytes, originalBody.contentType(), scopes.options.logger)
             }
           },
-          FAKE_OPTIONS.networkRequestHeaders,
+          scopes.options.sessionReplay.networkRequestHeaders,
           { req: Request -> req.headers.toMap() },
         )
       )
@@ -211,9 +201,9 @@ public open class SentryOkHttpInterceptor(
           NetworkDetailCaptureUtils.createResponse(
             it,
             it.body?.contentLength(),
-            FAKE_OPTIONS.networkCaptureBodies,
+            scopes.options.sessionReplay.isNetworkCaptureBodies,
             { resp: Response -> resp.extractResponseBody(scopes.options.logger) },
-            FAKE_OPTIONS.networkResponseHeaders,
+            scopes.options.sessionReplay.networkResponseHeaders,
             { resp: Response -> resp.headers.toMap() },
           ),
         )
