@@ -2586,6 +2586,43 @@ class ScopesTest {
   }
 
   @Test
+  fun `log with manual origin does not have origin attribute`() {
+    val (sut, mockClient) = getEnabledScopes { it.logs.isEnabled = true }
+
+    sut.logger().log(SentryLogLevel.WARN, "log message")
+
+    verify(mockClient)
+      .captureLog(
+        check {
+          assertEquals("log message", it.body)
+          assertNull(it.attributes!!.get("sentry.origin"))
+        },
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `log with non manual origin does have origin attribute`() {
+    val (sut, mockClient) = getEnabledScopes { it.logs.isEnabled = true }
+
+    sut
+      .logger()
+      .log(SentryLogLevel.WARN, SentryLogParameters().also { it.origin = "other" }, "log message")
+
+    verify(mockClient)
+      .captureLog(
+        check {
+          assertEquals("log message", it.body)
+          assertEquals(
+            "other",
+            (it.attributes!!.get("sentry.origin") as? SentryLogEventAttributeValue)?.value,
+          )
+        },
+        anyOrNull(),
+      )
+  }
+
+  @Test
   fun `creating log with format string works`() {
     val (sut, mockClient) =
       getEnabledScopes {

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Improvements
+
+- Do not send manual log origin ([#4897](https://github.com/getsentry/sentry-java/pull/4897))
+
 ## 8.26.0
 
 ### Features
