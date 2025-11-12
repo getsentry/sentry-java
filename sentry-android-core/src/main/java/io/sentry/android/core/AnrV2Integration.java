@@ -12,9 +12,19 @@ import io.sentry.Hint;
 import io.sentry.ILogger;
 import io.sentry.IScopes;
 import io.sentry.Integration;
+import io.sentry.ProfileChunk;
+import io.sentry.ProfileContext;
 import io.sentry.SentryEvent;
+import io.sentry.SentryExceptionFactory;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import io.sentry.SentryStackTraceFactory;
+import io.sentry.android.core.anr.AggregatedStackTrace;
+import io.sentry.android.core.anr.AnrCulpritIdentifier;
+import io.sentry.android.core.anr.AnrException;
+import io.sentry.android.core.anr.AnrProfile;
+import io.sentry.android.core.anr.AnrProfileManager;
+import io.sentry.android.core.anr.StackTraceConverter;
 import io.sentry.android.core.cache.AndroidEnvelopeCache;
 import io.sentry.android.core.internal.threaddump.Lines;
 import io.sentry.android.core.internal.threaddump.ThreadDumpParser;
@@ -28,6 +38,7 @@ import io.sentry.protocol.DebugMeta;
 import io.sentry.protocol.Message;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryThread;
+import io.sentry.protocol.profiling.SentryProfile;
 import io.sentry.transport.CurrentDateProvider;
 import io.sentry.transport.ICurrentDateProvider;
 import io.sentry.util.HintUtils;
@@ -41,6 +52,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.ApiStatus;
@@ -284,6 +296,8 @@ public class AnrV2Integration implements Integration, Closeable {
         }
       }
 
+      applyAnrProfile(isBackground, anrTimestamp, event);
+
       final @NotNull SentryId sentryId = scopes.captureEvent(event, hint);
       final boolean isEventDropped = sentryId.equals(SentryId.EMPTY_ID);
       if (!isEventDropped) {
@@ -295,6 +309,67 @@ public class AnrV2Integration implements Integration, Closeable {
                   SentryLevel.WARNING,
                   "Timed out waiting to flush ANR event to disk. Event: %s",
                   event.getEventId());
+        }
+      }
+    }
+
+    private void applyAnrProfile(
+        final boolean isBackground, final long anrTimestamp, final @NotNull SentryEvent event) {
+
+      // as of now AnrProfilingIntegration only generates profiles in foreground
+      if (isBackground) {
+        return;
+      }
+
+      @Nullable AnrProfile anrProfile = null;
+      try {
+        final AnrProfileManager provider = new AnrProfileManager(options);
+        anrProfile = provider.load();
+      } catch (Throwable t) {
+        options.getLogger().log(SentryLevel.INFO, "Could not retrieve ANR profile");
+      }
+
+      if (anrProfile != null) {
+        options.getLogger().log(SentryLevel.INFO, "ANR profile found");
+        // TODO maybe be less strict around the end timestamp
+        if (anrTimestamp >= anrProfile.startTimeMs && anrTimestamp <= anrProfile.endtimeMs) {
+          final SentryProfile profile = StackTraceConverter.convert(anrProfile);
+          final ProfileChunk chunk =
+              new ProfileChunk(
+                  new SentryId(),
+                  new SentryId(),
+                  null,
+                  new HashMap<>(0),
+                  anrTimestamp / 1000.0d,
+                  ProfileChunk.PLATFORM_JAVA,
+                  options);
+          chunk.setSentryProfile(profile);
+
+          options.getLogger().log(SentryLevel.DEBUG, "");
+          scopes.captureProfileChunk(chunk);
+
+          final @Nullable AggregatedStackTrace culprit =
+              AnrCulpritIdentifier.identify(anrProfile.stacks);
+          if (culprit != null) {
+            // TODO if quality is low (e.g. when culprit is pollNative())
+            // consider throwing the ANR using a static fingerprint to reduce noise
+            final @NotNull StackTraceElement[] stack = culprit.getStack();
+            if (stack.length > 0) {
+              final StackTraceElement stackTraceElement = culprit.getStack()[0];
+              final String message =
+                  stackTraceElement.getClassName() + "." + stackTraceElement.getMethodName();
+              final AnrException exception = new AnrException(message);
+              exception.setStackTrace(stack);
+
+              // TODO should this be re-used from somewhere else?
+              final SentryExceptionFactory factory =
+                  new SentryExceptionFactory(new SentryStackTraceFactory(options));
+              event.setExceptions(factory.getSentryExceptions(exception));
+              event.getContexts().setProfile(new ProfileContext(chunk.getProfilerId()));
+            }
+          }
+        } else {
+          options.getLogger().log(SentryLevel.DEBUG, "ANR profile found, but doesn't match");
         }
       }
     }

@@ -34,7 +34,7 @@ public final class ProfileChunk implements JsonUnknown, JsonSerializable {
   private @NotNull String version;
   private double timestamp;
 
-  private final @NotNull File traceFile;
+  private final @Nullable File traceFile;
 
   /** Profile trace encoded with Base64. */
   private @Nullable String sampledProfile = null;
@@ -47,7 +47,7 @@ public final class ProfileChunk implements JsonUnknown, JsonSerializable {
     this(
         SentryId.EMPTY_ID,
         SentryId.EMPTY_ID,
-        new File("dummy"),
+        null,
         new HashMap<>(),
         0.0,
         PLATFORM_ANDROID,
@@ -57,7 +57,7 @@ public final class ProfileChunk implements JsonUnknown, JsonSerializable {
   public ProfileChunk(
       final @NotNull SentryId profilerId,
       final @NotNull SentryId chunkId,
-      final @NotNull File traceFile,
+      final @Nullable File traceFile,
       final @NotNull Map<String, ProfileMeasurement> measurements,
       final @NotNull Double timestamp,
       final @NotNull String platform,
@@ -119,7 +119,7 @@ public final class ProfileChunk implements JsonUnknown, JsonSerializable {
     this.sampledProfile = sampledProfile;
   }
 
-  public @NotNull File getTraceFile() {
+  public @Nullable File getTraceFile() {
     return traceFile;
   }
 

@@ -143,6 +143,8 @@ final class ManifestMetadataReader {
 
   static final String FEEDBACK_SHOW_BRANDING = "io.sentry.feedback.show-branding";
 
+  static final String ENABLE_ANR_PROFILING = "io.sentry.anr.enable-profiling";
+
   /** ManifestMetadataReader ctor */
   private ManifestMetadataReader() {}
 
@@ -522,6 +524,9 @@ final class ManifestMetadataReader {
                 metadata, logger, FEEDBACK_USE_SENTRY_USER, feedbackOptions.isUseSentryUser()));
         feedbackOptions.setShowBranding(
             readBool(metadata, logger, FEEDBACK_SHOW_BRANDING, feedbackOptions.isShowBranding()));
+
+        options.setEnableAnrProfiling(
+            readBool(metadata, logger, ENABLE_ANR_PROFILING, options.isEnableAnrProfiling()));
       }
       options
           .getLogger()

@@ -25,6 +25,7 @@ import io.sentry.SendFireAndForgetEnvelopeSender;
 import io.sentry.SendFireAndForgetOutboxSender;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOpenTelemetryMode;
+import io.sentry.android.core.anr.AnrProfilingIntegration;
 import io.sentry.android.core.cache.AndroidEnvelopeCache;
 import io.sentry.android.core.internal.debugmeta.AssetsDebugMetaLoader;
 import io.sentry.android.core.internal.gestures.AndroidViewGestureTargetLocator;
@@ -390,6 +391,10 @@ final class AndroidOptionsInitializer {
     // AnrIntegration must be installed before ReplayIntegration, as ReplayIntegration relies on
     // it to set the replayId in case of an ANR
     options.addIntegration(AnrIntegrationFactory.create(context, buildInfoProvider));
+
+    if (options.isEnableAnrProfiling()) {
+      options.addIntegration(new AnrProfilingIntegration());
+    }
 
     // registerActivityLifecycleCallbacks is only available if Context is an AppContext
     if (context instanceof Application) {
