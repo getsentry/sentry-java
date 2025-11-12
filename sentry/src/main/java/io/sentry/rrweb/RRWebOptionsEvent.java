@@ -59,6 +59,7 @@ public final class RRWebOptionsEvent extends RRWebEvent implements JsonSerializa
             ? "pixelCopy"
             : "canvas";
     optionsPayload.put("screenshotStrategy", screenshotStrategy);
+    optionsPayload.put("networkDetailHasUrls", replayOptions.getNetworkDetailAllowUrls().length > 0);
   }
 
   @NotNull
