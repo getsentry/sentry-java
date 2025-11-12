@@ -2,7 +2,7 @@ package io.sentry;
 
 import io.sentry.protocol.SdkVersion;
 import io.sentry.util.SampleRateUtils;
-import java.util.ArrayList;
+
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -197,13 +197,14 @@ public final class SentryReplayOptions {
    * Additional request headers to capture for URLs defined in networkDetailAllowUrls. The default
    * headers (Content-Type, Content-Length, Accept) are always included in addition to these.
    */
-  private @NotNull List<String> networkRequestHeaders = new ArrayList<>();
+  private @NotNull String[] networkRequestHeaders = DEFAULT_HEADERS.clone();
 
   /**
    * Additional response headers to capture for URLs defined in networkDetailAllowUrls. The default
    * headers (Content-Type, Content-Length, Accept) are always included in addition to these.
    */
-  private @NotNull List<String> networkResponseHeaders = new ArrayList<>();
+  private @NotNull String[] networkResponseHeaders = DEFAULT_HEADERS.clone();
+
 
   public SentryReplayOptions(final boolean empty, final @Nullable SdkVersion sdkVersion) {
     if (!empty) {
@@ -488,38 +489,37 @@ public final class SentryReplayOptions {
    * @return the complete network request headers array
    */
   public @NotNull String[] getNetworkRequestHeaders() {
-    return mergeHeaders(DEFAULT_HEADERS, networkRequestHeaders);
+    return networkRequestHeaders;
   }
 
   /**
-   * Sets additional request headers to capture for URLs defined in networkDetailAllowUrls. The
+   * Sets request headers to capture for URLs defined in networkDetailAllowUrls. The
    * default headers (Content-Type, Content-Length, Accept) are always included automatically.
    *
    * @param networkRequestHeaders additional network request headers list
    */
   public void setNetworkRequestHeaders(final @NotNull List<String> networkRequestHeaders) {
-    this.networkRequestHeaders = new ArrayList<>(networkRequestHeaders);
+    this.networkRequestHeaders = mergeHeaders(DEFAULT_HEADERS, networkRequestHeaders);
   }
 
   /**
    * Gets all response headers to capture for URLs defined in networkDetailAllowUrls. This includes
-   * both the default headers (Content-Type, Content-Length, Content-Encoding) and any additional
-   * headers.
+   * both the default headers (Content-Type, Content-Length, Accept) and any additional headers.
    *
    * @return the complete network response headers array
    */
   public @NotNull String[] getNetworkResponseHeaders() {
-    return mergeHeaders(DEFAULT_HEADERS, networkResponseHeaders);
+    return networkResponseHeaders;
   }
 
   /**
-   * Sets additional response headers to capture for URLs defined in networkDetailAllowUrls. The
+   * Sets response headers to capture for URLs defined in networkDetailAllowUrls. The
    * default headers (Content-Type, Content-Length, Accept) are always included automatically.
    *
    * @param networkResponseHeaders the additional network response headers list
    */
   public void setNetworkResponseHeaders(final @NotNull List<String> networkResponseHeaders) {
-    this.networkResponseHeaders = new ArrayList<>(networkResponseHeaders);
+    this.networkResponseHeaders = mergeHeaders(DEFAULT_HEADERS, networkResponseHeaders);
   }
 
   /**
