@@ -5,6 +5,7 @@ io.sentry.cache.tape
 io.sentry.clientreport
 io.sentry.config
 io.sentry.exception
+io.sentry.featureflags
 io.sentry.hints
 io.sentry.instrumentation.file
 io.sentry.internal
@@ -22,6 +23,7 @@ io.sentry.protocol.profiling
 io.sentry.rrweb
 io.sentry.transport
 io.sentry.util
+io.sentry.util.network
 io.sentry.util.runtime
 io.sentry.util.thread
 io.sentry.vendor
