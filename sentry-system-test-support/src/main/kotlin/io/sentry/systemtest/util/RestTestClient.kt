@@ -49,4 +49,22 @@ class RestTestClient(private val backendBaseUrl: String) : LoggingInsecureRestCl
 
     return callTyped(request, true)
   }
+
+  fun checkFeatureFlag(flagKey: String): FeatureFlagResponse? {
+    val request = Request.Builder().url("$backendBaseUrl/feature-flag/check/$flagKey")
+
+    return callTyped(request, true)
+  }
+
+  fun errorWithFeatureFlag(flagKey: String): String? {
+    val request = Request.Builder().url("$backendBaseUrl/feature-flag/error/$flagKey")
+
+    val response = call(request, true)
+    return response?.body?.string()
+  }
 }
+
+data class FeatureFlagResponse(
+  val flagKey: String,
+  val value: Boolean,
+)

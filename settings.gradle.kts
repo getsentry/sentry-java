@@ -65,6 +65,7 @@ include(
     "sentry-opentelemetry:sentry-opentelemetry-agentless-spring",
     "sentry-quartz",
     "sentry-okhttp",
+    "sentry-openfeature",
     "sentry-reactor",
     "sentry-async-profiler",
     "sentry-ktor-client",
