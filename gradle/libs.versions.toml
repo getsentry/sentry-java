@@ -93,6 +93,8 @@ androidx-navigation-compose = { module = "androidx.navigation:navigation-compose
 androidx-sqlite = { module = "androidx.sqlite:sqlite", version = "2.5.2" }
 androidx-recyclerview = { module = "androidx.recyclerview:recyclerview", version = "1.2.1" }
 androidx-browser = { module = "androidx.browser:browser", version = "1.8.0" }
+async-profiler = { module = "tools.profiler:async-profiler", version = "4.2" }
+async-profiler-jfr-converter = { module = "tools.profiler:jfr-converter", version = "4.2" }
 coil-compose = { module = "io.coil-kt:coil-compose", version = "2.6.0" }
 commons-compress = {module = "org.apache.commons:commons-compress", version = "1.25.0"}
 context-propagation = { module = "io.micrometer:context-propagation", version = "1.1.0" }
