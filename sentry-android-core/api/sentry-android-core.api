@@ -516,11 +516,22 @@ public class io/sentry/android/core/anr/AnrProfilingIntegration : io/sentry/Inte
 	public static final field POLLING_INTERVAL_MS J
 	public static final field THRESHOLD_ANR_MS J
 	public fun <init> ()V
+	protected fun checkMainThread (Ljava/lang/Thread;)V
 	public fun close ()V
+	protected fun getProfileManager ()Lio/sentry/android/core/anr/AnrProfileManager;
+	protected fun getState ()Lio/sentry/android/core/anr/AnrProfilingIntegration$MainThreadState;
 	public fun onBackground ()V
 	public fun onForeground ()V
 	public fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
 	public fun run ()V
+}
+
+protected final class io/sentry/android/core/anr/AnrProfilingIntegration$MainThreadState : java/lang/Enum {
+	public static final field ANR_DETECTED Lio/sentry/android/core/anr/AnrProfilingIntegration$MainThreadState;
+	public static final field IDLE Lio/sentry/android/core/anr/AnrProfilingIntegration$MainThreadState;
+	public static final field SUSPICIOUS Lio/sentry/android/core/anr/AnrProfilingIntegration$MainThreadState;
+	public static fun valueOf (Ljava/lang/String;)Lio/sentry/android/core/anr/AnrProfilingIntegration$MainThreadState;
+	public static fun values ()[Lio/sentry/android/core/anr/AnrProfilingIntegration$MainThreadState;
 }
 
 public final class io/sentry/android/core/anr/AnrStackTrace : java/lang/Comparable {
