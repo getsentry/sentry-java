@@ -2,13 +2,15 @@
 
 ## Unreleased
 
-### Features
+### Improvements
 
+- Do not send manual log origin ([#4897](https://github.com/getsentry/sentry-java/pull/4897))
 - Add ANR profiling integration ([#4899](https://github.com/getsentry/sentry-java/pull/4899))
   - Captures main thread profile when ANR is detected
   - Identifies culprit code causing application hangs
   - Profiles are attached to ANR error events for better diagnostics
   - Enable via `options.setEnableAnrProfiling(true)` or Android manifest: `<meta-data android:name="io.sentry.anr.enable-profiling" android:value="true" />`
+
 
 ## 8.26.0
 
