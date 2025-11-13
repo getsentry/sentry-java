@@ -31,7 +31,9 @@ public class AnrProfilingIntegration
 
   private final AtomicBoolean enabled = new AtomicBoolean(true);
   private final Runnable updater = () -> lastMainThreadExecutionTime = SystemClock.uptimeMillis();
-  private final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
+  private final @NotNull AutoClosableReentrantLock lifecycleLock = new AutoClosableReentrantLock();
+  private final @NotNull AutoClosableReentrantLock profileManagerLock =
+      new AutoClosableReentrantLock();
 
   private volatile long lastMainThreadExecutionTime = SystemClock.uptimeMillis();
   private volatile MainThreadState mainThreadState = MainThreadState.IDLE;
@@ -52,6 +54,13 @@ public class AnrProfilingIntegration
   public void close() throws IOException {
     onBackground();
     enabled.set(false);
+
+    try (final @NotNull ISentryLifecycleToken ignored = profileManagerLock.acquire()) {
+      final @Nullable AnrProfileManager p = profileManager;
+      if (p != null) {
+        p.close();
+      }
+    }
   }
 
   @Override
@@ -59,7 +68,7 @@ public class AnrProfilingIntegration
     if (!enabled.get()) {
       return;
     }
-    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+    try (final @NotNull ISentryLifecycleToken ignored = lifecycleLock.acquire()) {
       if (inForeground) {
         return;
       }
@@ -81,7 +90,7 @@ public class AnrProfilingIntegration
     if (!enabled.get()) {
       return;
     }
-    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+    try (final @NotNull ISentryLifecycleToken ignored = lifecycleLock.acquire()) {
       if (!inForeground) {
         return;
       }
@@ -168,14 +177,17 @@ public class AnrProfilingIntegration
   @TestOnly
   @NonNull
   protected AnrProfileManager getProfileManager() {
-    final @Nullable AnrProfileManager r = profileManager;
-    if (r != null) {
-      return r;
-    } else {
-      final AnrProfileManager newManager =
-          new AnrProfileManager(Objects.requireNonNull(options, "Options can't be null"));
-      profileManager = newManager;
-      return newManager;
+    try (final @NotNull ISentryLifecycleToken ignored = profileManagerLock.acquire()) {
+      final @Nullable AnrProfileManager r = profileManager;
+      if (r != null) {
+        return r;
+      } else {
+
+        final AnrProfileManager newManager =
+            new AnrProfileManager(Objects.requireNonNull(options, "Options can't be null"));
+        profileManager = newManager;
+        return newManager;
+      }
     }
   }
 

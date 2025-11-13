@@ -9,6 +9,7 @@ import io.sentry.SentryOptions;
 import io.sentry.cache.tape.ObjectQueue;
 import io.sentry.cache.tape.QueueFile;
 import java.io.ByteArrayInputStream;
+import java.io.Closeable;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -19,7 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
-public class AnrProfileManager {
+public class AnrProfileManager implements Closeable {
 
   private static final int MAX_NUM_STACKTRACES =
       (int) ((THRESHOLD_ANR_MS / POLLING_INTERVAL_MS) * 2);
@@ -84,5 +85,10 @@ public class AnrProfileManager {
   @NotNull
   public AnrProfile load() throws IOException {
     return new AnrProfile(queue.asList());
+  }
+
+  @Override
+  public void close() throws IOException {
+    queue.close();
   }
 }

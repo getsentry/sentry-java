@@ -322,8 +322,7 @@ public class AnrV2Integration implements Integration, Closeable {
       }
 
       @Nullable AnrProfile anrProfile = null;
-      try {
-        final AnrProfileManager provider = new AnrProfileManager(options);
+      try (final AnrProfileManager provider = new AnrProfileManager(options)) {
         anrProfile = provider.load();
       } catch (Throwable t) {
         options.getLogger().log(SentryLevel.INFO, "Could not retrieve ANR profile");
@@ -331,7 +330,6 @@ public class AnrV2Integration implements Integration, Closeable {
 
       if (anrProfile != null) {
         options.getLogger().log(SentryLevel.INFO, "ANR profile found");
-        // TODO maybe be less strict around the end timestamp
         if (anrTimestamp >= anrProfile.startTimeMs && anrTimestamp <= anrProfile.endtimeMs) {
           final SentryProfile profile = StackTraceConverter.convert(anrProfile);
           final ProfileChunk chunk =
@@ -351,8 +349,8 @@ public class AnrV2Integration implements Integration, Closeable {
           final @Nullable AggregatedStackTrace culprit =
               AnrCulpritIdentifier.identify(anrProfile.stacks);
           if (culprit != null) {
-            // TODO if quality is low (e.g. when culprit is pollNative())
-            // consider throwing the ANR using a static fingerprint to reduce noise
+            // TODO Consider setting a static fingerprint to reduce noise
+            // if culprit quality is low (e.g. when culprit frame is pollNative())
             final @NotNull StackTraceElement[] stack = culprit.getStack();
             if (stack.length > 0) {
               final StackTraceElement stackTraceElement = culprit.getStack()[0];

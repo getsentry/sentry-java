@@ -23,6 +23,8 @@ public class AnrProfile {
 
     if (!this.stacks.isEmpty()) {
       startTimeMs = this.stacks.get(0).timestampMs;
+
+      // adding 10s to be less strict around end time
       endtimeMs = this.stacks.get(this.stacks.size() - 1).timestampMs + 10_000L;
     } else {
       startTimeMs = 0L;

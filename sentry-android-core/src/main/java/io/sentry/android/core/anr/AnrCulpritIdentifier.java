@@ -15,7 +15,7 @@ public class AnrCulpritIdentifier {
   // common Java and Android packages who are less relevant for being the actual culprit
   private static final List<String> lowQualityPackages = new ArrayList<>(9);
 
-  {
+  static {
     lowQualityPackages.add("java.lang");
     lowQualityPackages.add("java.util");
     lowQualityPackages.add("android.app");
@@ -28,25 +28,30 @@ public class AnrCulpritIdentifier {
   }
 
   /**
-   * @param dumps
-   * @return
+   * @param stacks the captured stacktraces
+   * @return the most common occurring stacktrace identified as the culprit
    */
   @Nullable
-  public static AggregatedStackTrace identify(final @NotNull List<AnrStackTrace> dumps) {
-    if (dumps.isEmpty()) {
+  public static AggregatedStackTrace identify(final @NotNull List<AnrStackTrace> stacks) {
+    if (stacks.isEmpty()) {
       return null;
     }
 
     // fold all stacktraces and count their occurrences
-    final Map<Integer, AggregatedStackTrace> stackTraceMap = new HashMap<>();
-    for (final AnrStackTrace dump : dumps) {
+    final @NotNull Map<Integer, AggregatedStackTrace> stackTraceMap = new HashMap<>();
+    for (final AnrStackTrace stackTrace : stacks) {
+
+      if (stackTrace.stack.length < 2) {
+        continue;
+      }
 
       // entry 0 is the most detailed element in the stacktrace
       // so create sub-stacks (1..n, 2..n, ...) to capture the most common root cause of an ANR
-      for (int i = 0; i < dump.stack.length - 1; i++) {
-        final int key = subArrayHashCode(dump.stack, i, dump.stack.length - 1);
+      for (int i = 0; i < stackTrace.stack.length - 1; i++) {
+        // TODO using hashcode is actually a bad key
+        final int key = subArrayHashCode(stackTrace.stack, i, stackTrace.stack.length - 1);
         int quality = 10;
-        final String clazz = dump.stack[i].getClassName();
+        final String clazz = stackTrace.stack[i].getClassName();
         for (String ignoredPackage : lowQualityPackages) {
           if (clazz.startsWith(ignoredPackage)) {
             quality = 1;
@@ -58,12 +63,20 @@ public class AnrCulpritIdentifier {
         if (aggregatedStackTrace == null) {
           aggregatedStackTrace =
               new AggregatedStackTrace(
-                  dump.stack, i, dump.stack.length - 1, dump.timestampMs, quality);
+                  stackTrace.stack,
+                  i,
+                  stackTrace.stack.length - 1,
+                  stackTrace.timestampMs,
+                  quality);
           stackTraceMap.put(key, aggregatedStackTrace);
         } else {
-          aggregatedStackTrace.add(dump.timestampMs);
+          aggregatedStackTrace.add(stackTrace.timestampMs);
         }
       }
+    }
+
+    if (stackTraceMap.isEmpty()) {
+      return null;
     }
 
     // the deepest stacktrace with most count wins

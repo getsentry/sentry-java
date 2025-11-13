@@ -35,7 +35,7 @@ public class AggregatedStackTrace {
     this.stack = stack;
     this.stackStartIdx = stackStartIdx;
     this.stackEndIdx = stackEndIdx;
-    this.depth = stackEndIdx - stackStartIdx;
+    this.depth = stackEndIdx - stackStartIdx + 1;
     this.startTimeMs = timestampMs;
     this.endTimeMs = timestampMs;
     this.count = 1;

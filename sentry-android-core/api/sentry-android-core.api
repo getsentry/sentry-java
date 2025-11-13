@@ -505,10 +505,11 @@ public class io/sentry/android/core/anr/AnrProfile {
 	public fun <init> (Ljava/util/List;)V
 }
 
-public class io/sentry/android/core/anr/AnrProfileManager {
+public class io/sentry/android/core/anr/AnrProfileManager : java/io/Closeable {
 	public fun <init> (Lio/sentry/SentryOptions;)V
 	public fun add (Lio/sentry/android/core/anr/AnrStackTrace;)V
 	public fun clear ()V
+	public fun close ()V
 	public fun load ()Lio/sentry/android/core/anr/AnrProfile;
 }
 
