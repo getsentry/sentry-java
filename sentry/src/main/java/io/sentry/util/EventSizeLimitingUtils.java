@@ -39,58 +39,69 @@ public final class EventSizeLimitingUtils {
       final @NotNull SentryEvent event,
       final @NotNull Hint hint,
       final @NotNull SentryOptions options) {
-    if (!options.isEnableEventSizeLimiting()) {
-      return event;
-    }
-
-    if (isSizeOk(event, options)) {
-      return event;
-    }
-
-    options
-        .getLogger()
-        .log(
-            SentryLevel.INFO,
-            "Event %s exceeds %d bytes limit. Reducing size by dropping fields.",
-            event.getEventId(),
-            MAX_EVENT_SIZE_BYTES);
-
-    @NotNull SentryEvent reducedEvent = event;
-
-    final @Nullable SentryOptions.OnOversizedErrorCallback callback = options.getOnOversizedError();
-    if (callback != null) {
-      try {
-        reducedEvent = callback.execute(reducedEvent, hint);
-        if (isSizeOk(reducedEvent, options)) {
-          return reducedEvent;
-        }
-      } catch (Exception e) {
-        options
-            .getLogger()
-            .log(
-                SentryLevel.ERROR,
-                "The onOversizedError callback threw an exception. It will be ignored and automatic reduction will continue.",
-                e);
-        reducedEvent = event;
+    try {
+      if (!options.isEnableEventSizeLimiting()) {
+        return event;
       }
-    }
 
-    reducedEvent = removeAllBreadcrumbs(reducedEvent, options);
-    if (isSizeOk(reducedEvent, options)) {
-      return reducedEvent;
-    }
+      if (isSizeOk(event, options)) {
+        return event;
+      }
 
-    reducedEvent = truncateStackFrames(reducedEvent, options);
-    if (!isSizeOk(reducedEvent, options)) {
       options
           .getLogger()
           .log(
-              SentryLevel.WARNING,
-              "Event %s still exceeds size limit after reducing all fields. Event may be rejected by server.",
-              event.getEventId());
-    }
+              SentryLevel.INFO,
+              "Event %s exceeds %d bytes limit. Reducing size by dropping fields.",
+              event.getEventId(),
+              MAX_EVENT_SIZE_BYTES);
 
-    return reducedEvent;
+      @NotNull SentryEvent reducedEvent = event;
+
+      final @Nullable SentryOptions.OnOversizedErrorCallback callback =
+          options.getOnOversizedError();
+      if (callback != null) {
+        try {
+          reducedEvent = callback.execute(reducedEvent, hint);
+          if (isSizeOk(reducedEvent, options)) {
+            return reducedEvent;
+          }
+        } catch (Throwable e) {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.ERROR,
+                  "The onOversizedError callback threw an exception. It will be ignored and automatic reduction will continue.",
+                  e);
+          reducedEvent = event;
+        }
+      }
+
+      reducedEvent = removeAllBreadcrumbs(reducedEvent, options);
+      if (isSizeOk(reducedEvent, options)) {
+        return reducedEvent;
+      }
+
+      reducedEvent = truncateStackFrames(reducedEvent, options);
+      if (!isSizeOk(reducedEvent, options)) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.WARNING,
+                "Event %s still exceeds size limit after reducing all fields. Event may be rejected by server.",
+                event.getEventId());
+      }
+
+      return reducedEvent;
+    } catch (Throwable e) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.ERROR,
+              "An error occurred while limiting event size. Event will be sent as-is.",
+              e);
+      return event;
+    }
   }
 
   private static boolean isSizeOk(
