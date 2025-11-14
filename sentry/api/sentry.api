@@ -2631,6 +2631,7 @@ public final class io/sentry/Sentry {
 	public static fun getBaggage ()Lio/sentry/BaggageHeader;
 	public static fun getCurrentHub ()Lio/sentry/IHub;
 	public static fun getCurrentScopes ()Lio/sentry/IScopes;
+	public static fun getCurrentScopes (Z)Lio/sentry/IScopes;
 	public static fun getGlobalScope ()Lio/sentry/IScope;
 	public static fun getLastEventId ()Lio/sentry/protocol/SentryId;
 	public static fun getSpan ()Lio/sentry/ISpan;
