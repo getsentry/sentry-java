@@ -43,7 +43,7 @@ public final class EventSizeLimitingUtils {
       return event;
     }
 
-    if (!isTooLarge(event, options)) {
+    if (isSizeOk(event, options)) {
       return event;
     }
 
@@ -61,7 +61,7 @@ public final class EventSizeLimitingUtils {
     if (callback != null) {
       try {
         reducedEvent = callback.execute(reducedEvent, hint);
-        if (!isTooLarge(reducedEvent, options)) {
+        if (isSizeOk(reducedEvent, options)) {
           return reducedEvent;
         }
       } catch (Exception e) {
@@ -76,12 +76,12 @@ public final class EventSizeLimitingUtils {
     }
 
     reducedEvent = removeAllBreadcrumbs(reducedEvent, options);
-    if (!isTooLarge(reducedEvent, options)) {
+    if (isSizeOk(reducedEvent, options)) {
       return reducedEvent;
     }
 
     reducedEvent = truncateStackFrames(reducedEvent, options);
-    if (isTooLarge(reducedEvent, options)) {
+    if (!isSizeOk(reducedEvent, options)) {
       options
           .getLogger()
           .log(
@@ -93,11 +93,11 @@ public final class EventSizeLimitingUtils {
     return reducedEvent;
   }
 
-  private static boolean isTooLarge(
+  private static boolean isSizeOk(
       final @NotNull SentryEvent event, final @NotNull SentryOptions options) {
     final long size =
         JsonSerializationUtils.byteSizeOf(options.getSerializer(), options.getLogger(), event);
-    return size > MAX_EVENT_SIZE_BYTES;
+    return size <= MAX_EVENT_SIZE_BYTES;
   }
 
   private static @NotNull SentryEvent removeAllBreadcrumbs(
