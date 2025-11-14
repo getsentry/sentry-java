@@ -37,6 +37,8 @@ import org.jetbrains.annotations.TestOnly;
 public final class SentryClient implements ISentryClient {
   static final String SENTRY_PROTOCOL_VERSION = "7";
 
+  private static final int LOG_FLUSH_ON_CRASH_TIMEOUT_MILLIS = 500;
+
   private boolean enabled;
 
   private final @NotNull SentryOptions options;
@@ -243,6 +245,11 @@ public final class SentryClient implements ISentryClient {
     // any running transaction / profiling data.
     if (scope != null) {
       finalizeTransaction(scope, hint);
+    }
+    // if event is backfillable or cached, it's an event from the past.
+    // Otherwise, we want to flush logs, as we encountered a crash.
+    if (event != null && !isBackfillable && !isCached && event.isCrashed()) {
+      loggerBatchProcessor.flush(LOG_FLUSH_ON_CRASH_TIMEOUT_MILLIS);
     }
 
     return sentryId;
