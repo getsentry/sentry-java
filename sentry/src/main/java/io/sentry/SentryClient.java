@@ -13,6 +13,7 @@ import io.sentry.logger.LoggerBatchProcessor;
 import io.sentry.logger.NoOpLoggerBatchProcessor;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.DebugMeta;
+import io.sentry.protocol.FeatureFlags;
 import io.sentry.protocol.Feedback;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
@@ -987,7 +988,8 @@ public final class SentryClient implements ISentryClient {
           new SentryEnvelope(
               new SentryEnvelopeHeader(sentryId, options.getSdkVersion(), null),
               Collections.singletonList(
-                  SentryEnvelopeItem.fromProfileChunk(profileChunk, options.getSerializer())));
+                  SentryEnvelopeItem.fromProfileChunk(
+                      profileChunk, options.getSerializer(), options.getProfilerConverter())));
       sentryId = sendEnvelope(envelope, null);
     } catch (IOException | SentryEnvelopeException e) {
       options
@@ -1259,6 +1261,13 @@ public final class SentryClient implements ISentryClient {
               .setTrace(TransactionContext.fromPropagationContext(scope.getPropagationContext()));
         } else {
           event.getContexts().setTrace(span.getSpanContext());
+        }
+      }
+
+      if (event.getContexts().getFeatureFlags() == null) {
+        final @Nullable FeatureFlags featureFlags = scope.getFeatureFlags();
+        if (featureFlags != null) {
+          event.getContexts().setFeatureFlags(featureFlags);
         }
       }
 

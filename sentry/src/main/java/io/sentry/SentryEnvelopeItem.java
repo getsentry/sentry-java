@@ -6,7 +6,6 @@ import static io.sentry.vendor.Base64.NO_WRAP;
 
 import io.sentry.clientreport.ClientReport;
 import io.sentry.exception.SentryEnvelopeException;
-import io.sentry.profiling.ProfilingServiceLoader;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.profiling.SentryProfile;
 import io.sentry.util.FileUtils;
@@ -283,6 +282,15 @@ public final class SentryEnvelopeItem {
       final @NotNull ProfileChunk profileChunk, final @NotNull ISerializer serializer)
       throws SentryEnvelopeException {
 
+    return fromProfileChunk(profileChunk, serializer, NoOpProfileConverter.getInstance());
+  }
+
+  public static @NotNull SentryEnvelopeItem fromProfileChunk(
+      final @NotNull ProfileChunk profileChunk,
+      final @NotNull ISerializer serializer,
+      final @NotNull IProfileConverter profileConverter)
+      throws SentryEnvelopeException {
+
     final @NotNull File traceFile = profileChunk.getTraceFile();
     // Using CachedItem, so we read the trace file in the background
     final CachedItem cachedItem =
@@ -296,9 +304,7 @@ public final class SentryEnvelopeItem {
               }
 
               if (ProfileChunk.PLATFORM_JAVA.equals(profileChunk.getPlatform())) {
-                final IProfileConverter profileConverter =
-                    ProfilingServiceLoader.loadProfileConverter();
-                if (profileConverter != null) {
+                if (!NoOpProfileConverter.getInstance().equals(profileConverter)) {
                   try {
                     final SentryProfile profile =
                         profileConverter.convertFromFile(traceFile.getAbsolutePath());
@@ -308,7 +314,7 @@ public final class SentryEnvelopeItem {
                   }
                 } else {
                   throw new SentryEnvelopeException(
-                      "Could not load a ProfileConverter, dropping chunk.");
+                      "No ProfileConverter available, dropping chunk.");
                 }
               } else {
                 // The payload of the profile item is a json including the trace file encoded with

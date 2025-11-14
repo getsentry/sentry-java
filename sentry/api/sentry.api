@@ -228,6 +228,7 @@ public final class io/sentry/CombinedContextsView : io/sentry/protocol/Contexts 
 	public fun getApp ()Lio/sentry/protocol/App;
 	public fun getBrowser ()Lio/sentry/protocol/Browser;
 	public fun getDevice ()Lio/sentry/protocol/Device;
+	public fun getFeatureFlags ()Lio/sentry/protocol/FeatureFlags;
 	public fun getGpu ()Lio/sentry/protocol/Gpu;
 	public fun getOperatingSystem ()Lio/sentry/protocol/OperatingSystem;
 	public fun getResponse ()Lio/sentry/protocol/Response;
@@ -246,6 +247,7 @@ public final class io/sentry/CombinedContextsView : io/sentry/protocol/Contexts 
 	public fun setApp (Lio/sentry/protocol/App;)V
 	public fun setBrowser (Lio/sentry/protocol/Browser;)V
 	public fun setDevice (Lio/sentry/protocol/Device;)V
+	public fun setFeatureFlags (Lio/sentry/protocol/FeatureFlags;)V
 	public fun setGpu (Lio/sentry/protocol/Gpu;)V
 	public fun setOperatingSystem (Lio/sentry/protocol/OperatingSystem;)V
 	public fun setResponse (Lio/sentry/protocol/Response;)V
@@ -262,6 +264,7 @@ public final class io/sentry/CombinedScopeView : io/sentry/IScope {
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;)V
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;Lio/sentry/Hint;)V
 	public fun addEventProcessor (Lio/sentry/EventProcessor;)V
+	public fun addFeatureFlag (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public fun assignTraceContext (Lio/sentry/SentryEvent;)V
 	public fun bindClient (Lio/sentry/ISentryClient;)V
 	public fun clear ()V
@@ -279,6 +282,8 @@ public final class io/sentry/CombinedScopeView : io/sentry/IScope {
 	public fun getEventProcessors ()Ljava/util/List;
 	public fun getEventProcessorsWithOrder ()Ljava/util/List;
 	public fun getExtras ()Ljava/util/Map;
+	public fun getFeatureFlagBuffer ()Lio/sentry/featureflags/IFeatureFlagBuffer;
+	public fun getFeatureFlags ()Lio/sentry/protocol/FeatureFlags;
 	public fun getFingerprint ()Ljava/util/List;
 	public fun getLastEventId ()Lio/sentry/protocol/SentryId;
 	public fun getLevel ()Lio/sentry/SentryLevel;
@@ -608,6 +613,7 @@ public final class io/sentry/HttpStatusCodeRange {
 public final class io/sentry/HubAdapter : io/sentry/IHub {
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;)V
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;Lio/sentry/Hint;)V
+	public fun addFeatureFlag (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public fun bindClient (Lio/sentry/ISentryClient;)V
 	public fun captureCheckIn (Lio/sentry/CheckIn;)Lio/sentry/protocol/SentryId;
 	public fun captureEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
@@ -680,6 +686,7 @@ public final class io/sentry/HubScopesWrapper : io/sentry/IHub {
 	public fun <init> (Lio/sentry/IScopes;)V
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;)V
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;Lio/sentry/Hint;)V
+	public fun addFeatureFlag (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public fun bindClient (Lio/sentry/ISentryClient;)V
 	public fun captureCheckIn (Lio/sentry/CheckIn;)Lio/sentry/protocol/SentryId;
 	public fun captureEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
@@ -839,6 +846,7 @@ public abstract interface class io/sentry/IScope {
 	public abstract fun addBreadcrumb (Lio/sentry/Breadcrumb;)V
 	public abstract fun addBreadcrumb (Lio/sentry/Breadcrumb;Lio/sentry/Hint;)V
 	public abstract fun addEventProcessor (Lio/sentry/EventProcessor;)V
+	public abstract fun addFeatureFlag (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public abstract fun assignTraceContext (Lio/sentry/SentryEvent;)V
 	public abstract fun bindClient (Lio/sentry/ISentryClient;)V
 	public abstract fun clear ()V
@@ -855,6 +863,8 @@ public abstract interface class io/sentry/IScope {
 	public abstract fun getEventProcessors ()Ljava/util/List;
 	public abstract fun getEventProcessorsWithOrder ()Ljava/util/List;
 	public abstract fun getExtras ()Ljava/util/Map;
+	public abstract fun getFeatureFlagBuffer ()Lio/sentry/featureflags/IFeatureFlagBuffer;
+	public abstract fun getFeatureFlags ()Lio/sentry/protocol/FeatureFlags;
 	public abstract fun getFingerprint ()Ljava/util/List;
 	public abstract fun getLastEventId ()Lio/sentry/protocol/SentryId;
 	public abstract fun getLevel ()Lio/sentry/SentryLevel;
@@ -924,6 +934,7 @@ public abstract interface class io/sentry/IScopes {
 	public abstract fun addBreadcrumb (Lio/sentry/Breadcrumb;Lio/sentry/Hint;)V
 	public fun addBreadcrumb (Ljava/lang/String;)V
 	public fun addBreadcrumb (Ljava/lang/String;Ljava/lang/String;)V
+	public abstract fun addFeatureFlag (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public abstract fun bindClient (Lio/sentry/ISentryClient;)V
 	public abstract fun captureCheckIn (Lio/sentry/CheckIn;)Lio/sentry/protocol/SentryId;
 	public fun captureEnvelope (Lio/sentry/SentryEnvelope;)Lio/sentry/protocol/SentryId;
@@ -1075,6 +1086,7 @@ public abstract interface class io/sentry/ISocketTagger {
 }
 
 public abstract interface class io/sentry/ISpan {
+	public abstract fun addFeatureFlag (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public abstract fun finish ()V
 	public abstract fun finish (Lio/sentry/SpanStatus;)V
 	public abstract fun finish (Lio/sentry/SpanStatus;Lio/sentry/SentryDate;)V
@@ -1506,6 +1518,7 @@ public final class io/sentry/NoOpEnvelopeReader : io/sentry/IEnvelopeReader {
 public final class io/sentry/NoOpHub : io/sentry/IHub {
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;)V
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;Lio/sentry/Hint;)V
+	public fun addFeatureFlag (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public fun bindClient (Lio/sentry/ISentryClient;)V
 	public fun captureCheckIn (Lio/sentry/CheckIn;)Lio/sentry/protocol/SentryId;
 	public fun captureEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
@@ -1581,6 +1594,11 @@ public final class io/sentry/NoOpLogger : io/sentry/ILogger {
 	public fun log (Lio/sentry/SentryLevel;Ljava/lang/Throwable;Ljava/lang/String;[Ljava/lang/Object;)V
 }
 
+public final class io/sentry/NoOpProfileConverter : io/sentry/IProfileConverter {
+	public fun convertFromFile (Ljava/lang/String;)Lio/sentry/protocol/profiling/SentryProfile;
+	public static fun getInstance ()Lio/sentry/NoOpProfileConverter;
+}
+
 public final class io/sentry/NoOpReplayBreadcrumbConverter : io/sentry/ReplayBreadcrumbConverter {
 	public fun convert (Lio/sentry/Breadcrumb;)Lio/sentry/rrweb/RRWebEvent;
 	public static fun getInstance ()Lio/sentry/NoOpReplayBreadcrumbConverter;
@@ -1607,6 +1625,7 @@ public final class io/sentry/NoOpScope : io/sentry/IScope {
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;)V
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;Lio/sentry/Hint;)V
 	public fun addEventProcessor (Lio/sentry/EventProcessor;)V
+	public fun addFeatureFlag (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public fun assignTraceContext (Lio/sentry/SentryEvent;)V
 	public fun bindClient (Lio/sentry/ISentryClient;)V
 	public fun clear ()V
@@ -1624,6 +1643,8 @@ public final class io/sentry/NoOpScope : io/sentry/IScope {
 	public fun getEventProcessors ()Ljava/util/List;
 	public fun getEventProcessorsWithOrder ()Ljava/util/List;
 	public fun getExtras ()Ljava/util/Map;
+	public fun getFeatureFlagBuffer ()Lio/sentry/featureflags/IFeatureFlagBuffer;
+	public fun getFeatureFlags ()Lio/sentry/protocol/FeatureFlags;
 	public fun getFingerprint ()Ljava/util/List;
 	public static fun getInstance ()Lio/sentry/NoOpScope;
 	public fun getLastEventId ()Lio/sentry/protocol/SentryId;
@@ -1673,6 +1694,7 @@ public final class io/sentry/NoOpScope : io/sentry/IScope {
 public final class io/sentry/NoOpScopes : io/sentry/IScopes {
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;)V
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;Lio/sentry/Hint;)V
+	public fun addFeatureFlag (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public fun bindClient (Lio/sentry/ISentryClient;)V
 	public fun captureCheckIn (Lio/sentry/CheckIn;)Lio/sentry/protocol/SentryId;
 	public fun captureEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
@@ -1760,6 +1782,7 @@ public final class io/sentry/NoOpSocketTagger : io/sentry/ISocketTagger {
 }
 
 public final class io/sentry/NoOpSpan : io/sentry/ISpan {
+	public fun addFeatureFlag (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public fun finish ()V
 	public fun finish (Lio/sentry/SpanStatus;)V
 	public fun finish (Lio/sentry/SpanStatus;Lio/sentry/SentryDate;)V
@@ -1807,6 +1830,7 @@ public final class io/sentry/NoOpSpanFactory : io/sentry/ISpanFactory {
 }
 
 public final class io/sentry/NoOpTransaction : io/sentry/ITransaction {
+	public fun addFeatureFlag (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public fun finish ()V
 	public fun finish (Lio/sentry/SpanStatus;)V
 	public fun finish (Lio/sentry/SpanStatus;Lio/sentry/SentryDate;)V
@@ -2266,6 +2290,7 @@ public final class io/sentry/Scope : io/sentry/IScope {
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;)V
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;Lio/sentry/Hint;)V
 	public fun addEventProcessor (Lio/sentry/EventProcessor;)V
+	public fun addFeatureFlag (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public fun assignTraceContext (Lio/sentry/SentryEvent;)V
 	public fun bindClient (Lio/sentry/ISentryClient;)V
 	public fun clear ()V
@@ -2283,6 +2308,8 @@ public final class io/sentry/Scope : io/sentry/IScope {
 	public fun getEventProcessors ()Ljava/util/List;
 	public fun getEventProcessorsWithOrder ()Ljava/util/List;
 	public fun getExtras ()Ljava/util/Map;
+	public fun getFeatureFlagBuffer ()Lio/sentry/featureflags/IFeatureFlagBuffer;
+	public fun getFeatureFlags ()Lio/sentry/protocol/FeatureFlags;
 	public fun getFingerprint ()Ljava/util/List;
 	public fun getLastEventId ()Lio/sentry/protocol/SentryId;
 	public fun getLevel ()Lio/sentry/SentryLevel;
@@ -2381,6 +2408,7 @@ public final class io/sentry/Scopes : io/sentry/IScopes {
 	public fun <init> (Lio/sentry/IScope;Lio/sentry/IScope;Lio/sentry/IScope;Ljava/lang/String;)V
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;)V
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;Lio/sentry/Hint;)V
+	public fun addFeatureFlag (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public fun bindClient (Lio/sentry/ISentryClient;)V
 	public fun captureCheckIn (Lio/sentry/CheckIn;)Lio/sentry/protocol/SentryId;
 	public fun captureEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
@@ -2452,6 +2480,7 @@ public final class io/sentry/Scopes : io/sentry/IScopes {
 public final class io/sentry/ScopesAdapter : io/sentry/IScopes {
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;)V
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;Lio/sentry/Hint;)V
+	public fun addFeatureFlag (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public fun bindClient (Lio/sentry/ISentryClient;)V
 	public fun captureCheckIn (Lio/sentry/CheckIn;)Lio/sentry/protocol/SentryId;
 	public fun captureEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
@@ -2569,6 +2598,7 @@ public final class io/sentry/Sentry {
 	public static fun addBreadcrumb (Lio/sentry/Breadcrumb;Lio/sentry/Hint;)V
 	public static fun addBreadcrumb (Ljava/lang/String;)V
 	public static fun addBreadcrumb (Ljava/lang/String;Ljava/lang/String;)V
+	public static fun addFeatureFlag (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public static fun bindClient (Lio/sentry/ISentryClient;)V
 	public static fun captureCheckIn (Lio/sentry/CheckIn;)Lio/sentry/protocol/SentryId;
 	public static fun captureEvent (Lio/sentry/SentryEvent;)Lio/sentry/protocol/SentryId;
@@ -2899,6 +2929,7 @@ public final class io/sentry/SentryEnvelopeItem {
 	public static fun fromEvent (Lio/sentry/ISerializer;Lio/sentry/SentryBaseEvent;)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromLogs (Lio/sentry/ISerializer;Lio/sentry/SentryLogEvents;)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromProfileChunk (Lio/sentry/ProfileChunk;Lio/sentry/ISerializer;)Lio/sentry/SentryEnvelopeItem;
+	public static fun fromProfileChunk (Lio/sentry/ProfileChunk;Lio/sentry/ISerializer;Lio/sentry/IProfileConverter;)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromProfilingTrace (Lio/sentry/ProfilingTraceData;JLio/sentry/ISerializer;)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromReplay (Lio/sentry/ISerializer;Lio/sentry/ILogger;Lio/sentry/SentryReplayEvent;Lio/sentry/ReplayRecording;Z)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromSession (Lio/sentry/ISerializer;Lio/sentry/Session;)Lio/sentry/SentryEnvelopeItem;
@@ -3379,6 +3410,7 @@ public class io/sentry/SentryOptions {
 	public fun getMaxBreadcrumbs ()I
 	public fun getMaxCacheItems ()I
 	public fun getMaxDepth ()I
+	public fun getMaxFeatureFlags ()I
 	public fun getMaxQueueSize ()I
 	public fun getMaxRequestBodySize ()Lio/sentry/SentryOptions$RequestSize;
 	public fun getMaxSpans ()I
@@ -3392,6 +3424,7 @@ public class io/sentry/SentryOptions {
 	public fun getPerformanceCollectors ()Ljava/util/List;
 	public fun getProfileLifecycle ()Lio/sentry/ProfileLifecycle;
 	public fun getProfileSessionSampleRate ()Ljava/lang/Double;
+	public fun getProfilerConverter ()Lio/sentry/IProfileConverter;
 	public fun getProfilesSampleRate ()Ljava/lang/Double;
 	public fun getProfilesSampler ()Lio/sentry/SentryOptions$ProfilesSamplerCallback;
 	public fun getProfilingTracesDirPath ()Ljava/lang/String;
@@ -3529,6 +3562,7 @@ public class io/sentry/SentryOptions {
 	public fun setMaxBreadcrumbs (I)V
 	public fun setMaxCacheItems (I)V
 	public fun setMaxDepth (I)V
+	public fun setMaxFeatureFlags (I)V
 	public fun setMaxQueueSize (I)V
 	public fun setMaxRequestBodySize (Lio/sentry/SentryOptions$RequestSize;)V
 	public fun setMaxSpans (I)V
@@ -3540,6 +3574,7 @@ public class io/sentry/SentryOptions {
 	public fun setPrintUncaughtStackTrace (Z)V
 	public fun setProfileLifecycle (Lio/sentry/ProfileLifecycle;)V
 	public fun setProfileSessionSampleRate (Ljava/lang/Double;)V
+	public fun setProfilerConverter (Lio/sentry/IProfileConverter;)V
 	public fun setProfilesSampleRate (Ljava/lang/Double;)V
 	public fun setProfilesSampler (Lio/sentry/SentryOptions$ProfilesSamplerCallback;)V
 	public fun setProfilingTracesDirPath (Ljava/lang/String;)V
@@ -3753,6 +3788,7 @@ public final class io/sentry/SentryReplayOptions {
 	public static final field EXOPLAYER_CLASS_NAME Ljava/lang/String;
 	public static final field EXOPLAYER_STYLED_CLASS_NAME Ljava/lang/String;
 	public static final field IMAGE_VIEW_CLASS_NAME Ljava/lang/String;
+	public static final field MAX_NETWORK_BODY_SIZE I
 	public static final field TEXT_VIEW_CLASS_NAME Ljava/lang/String;
 	public static final field VIDEO_VIEW_CLASS_NAME Ljava/lang/String;
 	public static final field WEB_VIEW_CLASS_NAME Ljava/lang/String;
@@ -3834,6 +3870,7 @@ public final class io/sentry/SentryTraceHeader {
 public final class io/sentry/SentryTracer : io/sentry/ITransaction {
 	public fun <init> (Lio/sentry/TransactionContext;Lio/sentry/IScopes;)V
 	public fun <init> (Lio/sentry/TransactionContext;Lio/sentry/IScopes;Lio/sentry/TransactionOptions;)V
+	public fun addFeatureFlag (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public fun finish ()V
 	public fun finish (Lio/sentry/SpanStatus;)V
 	public fun finish (Lio/sentry/SpanStatus;Lio/sentry/SentryDate;)V
@@ -3974,6 +4011,7 @@ public final class io/sentry/ShutdownHookIntegration : io/sentry/Integration, ja
 
 public final class io/sentry/Span : io/sentry/ISpan {
 	public fun <init> (Lio/sentry/TransactionContext;Lio/sentry/SentryTracer;Lio/sentry/IScopes;Lio/sentry/SpanOptions;)V
+	public fun addFeatureFlag (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public fun finish ()V
 	public fun finish (Lio/sentry/SpanStatus;)V
 	public fun finish (Lio/sentry/SpanStatus;Lio/sentry/SentryDate;)V
@@ -4026,6 +4064,7 @@ public class io/sentry/SpanContext : io/sentry/JsonSerializable, io/sentry/JsonU
 	protected field baggage Lio/sentry/Baggage;
 	protected field data Ljava/util/Map;
 	protected field description Ljava/lang/String;
+	protected field featureFlags Lio/sentry/featureflags/IFeatureFlagBuffer;
 	protected field op Ljava/lang/String;
 	protected field origin Ljava/lang/String;
 	protected field status Lio/sentry/SpanStatus;
@@ -4035,11 +4074,13 @@ public class io/sentry/SpanContext : io/sentry/JsonSerializable, io/sentry/JsonU
 	public fun <init> (Lio/sentry/protocol/SentryId;Lio/sentry/SpanId;Ljava/lang/String;Lio/sentry/SpanId;Lio/sentry/TracesSamplingDecision;)V
 	public fun <init> (Ljava/lang/String;)V
 	public fun <init> (Ljava/lang/String;Lio/sentry/TracesSamplingDecision;)V
+	public fun addFeatureFlag (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public fun copyForChild (Ljava/lang/String;Lio/sentry/SpanId;Lio/sentry/SpanId;)Lio/sentry/SpanContext;
 	public fun equals (Ljava/lang/Object;)Z
 	public fun getBaggage ()Lio/sentry/Baggage;
 	public fun getData ()Ljava/util/Map;
 	public fun getDescription ()Ljava/lang/String;
+	public fun getFeatureFlagBuffer ()Lio/sentry/featureflags/IFeatureFlagBuffer;
 	public fun getInstrumenter ()Lio/sentry/Instrumenter;
 	public fun getOperation ()Ljava/lang/String;
 	public fun getOrigin ()Ljava/lang/String;
@@ -4331,6 +4372,7 @@ public final class io/sentry/TypeCheckHint {
 	public static final field SENTRY_EVENT_DROP_REASON Ljava/lang/String;
 	public static final field SENTRY_IS_FROM_HYBRID_SDK Ljava/lang/String;
 	public static final field SENTRY_JAVASCRIPT_SDK_NAME Ljava/lang/String;
+	public static final field SENTRY_REPLAY_NETWORK_DETAILS Ljava/lang/String;
 	public static final field SENTRY_SYNTHETIC_EXCEPTION Ljava/lang/String;
 	public static final field SENTRY_TYPE_CHECK_HINT Ljava/lang/String;
 	public static final field SERVLET_REQUEST Ljava/lang/String;
@@ -4716,6 +4758,38 @@ public final class io/sentry/exception/SentryHttpClientException : java/lang/Exc
 	public fun <init> (Ljava/lang/String;)V
 }
 
+public final class io/sentry/featureflags/FeatureFlagBuffer : io/sentry/featureflags/IFeatureFlagBuffer {
+	public fun add (Ljava/lang/String;Ljava/lang/Boolean;)V
+	public fun clone ()Lio/sentry/featureflags/IFeatureFlagBuffer;
+	public synthetic fun clone ()Ljava/lang/Object;
+	public static fun create (Lio/sentry/SentryOptions;)Lio/sentry/featureflags/IFeatureFlagBuffer;
+	public fun getFeatureFlags ()Lio/sentry/protocol/FeatureFlags;
+	public static fun merged (Lio/sentry/SentryOptions;Lio/sentry/featureflags/IFeatureFlagBuffer;Lio/sentry/featureflags/IFeatureFlagBuffer;Lio/sentry/featureflags/IFeatureFlagBuffer;)Lio/sentry/featureflags/IFeatureFlagBuffer;
+}
+
+public abstract interface class io/sentry/featureflags/IFeatureFlagBuffer {
+	public abstract fun add (Ljava/lang/String;Ljava/lang/Boolean;)V
+	public abstract fun clone ()Lio/sentry/featureflags/IFeatureFlagBuffer;
+	public abstract fun getFeatureFlags ()Lio/sentry/protocol/FeatureFlags;
+}
+
+public final class io/sentry/featureflags/NoOpFeatureFlagBuffer : io/sentry/featureflags/IFeatureFlagBuffer {
+	public fun <init> ()V
+	public fun add (Ljava/lang/String;Ljava/lang/Boolean;)V
+	public fun clone ()Lio/sentry/featureflags/IFeatureFlagBuffer;
+	public synthetic fun clone ()Ljava/lang/Object;
+	public fun getFeatureFlags ()Lio/sentry/protocol/FeatureFlags;
+	public static fun getInstance ()Lio/sentry/featureflags/NoOpFeatureFlagBuffer;
+}
+
+public final class io/sentry/featureflags/SpanFeatureFlagBuffer : io/sentry/featureflags/IFeatureFlagBuffer {
+	public fun add (Ljava/lang/String;Ljava/lang/Boolean;)V
+	public fun clone ()Lio/sentry/featureflags/IFeatureFlagBuffer;
+	public synthetic fun clone ()Ljava/lang/Object;
+	public static fun create ()Lio/sentry/featureflags/IFeatureFlagBuffer;
+	public fun getFeatureFlags ()Lio/sentry/protocol/FeatureFlags;
+}
+
 public abstract interface class io/sentry/hints/AbnormalExit {
 	public abstract fun ignoreCurrentThread ()Z
 	public abstract fun mechanism ()Ljava/lang/String;
@@ -4968,6 +5042,7 @@ public final class io/sentry/logger/LoggerApi : io/sentry/logger/ILoggerApi {
 public final class io/sentry/logger/LoggerBatchProcessor : io/sentry/logger/ILoggerBatchProcessor {
 	public static final field FLUSH_AFTER_MS I
 	public static final field MAX_BATCH_SIZE I
+	public static final field MAX_QUEUE_SIZE I
 	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/ISentryClient;)V
 	public fun add (Lio/sentry/SentryLogEvent;)V
 	public fun close (Z)V
@@ -5187,6 +5262,7 @@ public class io/sentry/protocol/Contexts : io/sentry/JsonSerializable {
 	public fun getApp ()Lio/sentry/protocol/App;
 	public fun getBrowser ()Lio/sentry/protocol/Browser;
 	public fun getDevice ()Lio/sentry/protocol/Device;
+	public fun getFeatureFlags ()Lio/sentry/protocol/FeatureFlags;
 	public fun getFeedback ()Lio/sentry/protocol/Feedback;
 	public fun getGpu ()Lio/sentry/protocol/Gpu;
 	public fun getOperatingSystem ()Lio/sentry/protocol/OperatingSystem;
@@ -5208,6 +5284,7 @@ public class io/sentry/protocol/Contexts : io/sentry/JsonSerializable {
 	public fun setApp (Lio/sentry/protocol/App;)V
 	public fun setBrowser (Lio/sentry/protocol/Browser;)V
 	public fun setDevice (Lio/sentry/protocol/Device;)V
+	public fun setFeatureFlags (Lio/sentry/protocol/FeatureFlags;)V
 	public fun setFeedback (Lio/sentry/protocol/Feedback;)V
 	public fun setGpu (Lio/sentry/protocol/Gpu;)V
 	public fun setOperatingSystem (Lio/sentry/protocol/OperatingSystem;)V
@@ -5430,6 +5507,56 @@ public final class io/sentry/protocol/Device$JsonKeys {
 	public static final field STORAGE_SIZE Ljava/lang/String;
 	public static final field TIMEZONE Ljava/lang/String;
 	public static final field USABLE_MEMORY Ljava/lang/String;
+	public fun <init> ()V
+}
+
+public final class io/sentry/protocol/FeatureFlag : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+	public static final field DATA_PREFIX Ljava/lang/String;
+	public fun <init> (Ljava/lang/String;Z)V
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getFlag ()Ljava/lang/String;
+	public fun getResult ()Ljava/lang/Boolean;
+	public fun getUnknown ()Ljava/util/Map;
+	public fun hashCode ()I
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+	public fun setFlag (Ljava/lang/String;)V
+	public fun setResult (Ljava/lang/Boolean;)V
+	public fun setUnknown (Ljava/util/Map;)V
+}
+
+public final class io/sentry/protocol/FeatureFlag$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Lio/sentry/protocol/FeatureFlag;
+	public synthetic fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/protocol/FeatureFlag$JsonKeys {
+	public static final field FLAG Ljava/lang/String;
+	public static final field RESULT Ljava/lang/String;
+	public fun <init> ()V
+}
+
+public final class io/sentry/protocol/FeatureFlags : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+	public static final field TYPE Ljava/lang/String;
+	public fun <init> ()V
+	public fun <init> (Ljava/util/List;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getUnknown ()Ljava/util/Map;
+	public fun getValues ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+	public fun setUnknown (Ljava/util/Map;)V
+	public fun setValues (Ljava/util/List;)V
+}
+
+public final class io/sentry/protocol/FeatureFlags$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Lio/sentry/protocol/FeatureFlags;
+	public synthetic fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/protocol/FeatureFlags$JsonKeys {
+	public static final field VALUES Ljava/lang/String;
 	public fun <init> ()V
 }
 
@@ -7064,6 +7191,8 @@ public final class io/sentry/util/HttpUtils {
 
 public final class io/sentry/util/InitUtil {
 	public fun <init> ()V
+	public static fun initializeProfileConverter (Lio/sentry/SentryOptions;)Lio/sentry/IProfileConverter;
+	public static fun initializeProfiler (Lio/sentry/SentryOptions;)Lio/sentry/IContinuousProfiler;
 	public static fun shouldInit (Lio/sentry/SentryOptions;Lio/sentry/SentryOptions;Z)Z
 }
 
@@ -7323,6 +7452,70 @@ public final class io/sentry/util/UrlUtils$UrlDetails {
 	public fun getQuery ()Ljava/lang/String;
 	public fun getUrl ()Ljava/lang/String;
 	public fun getUrlOrFallback ()Ljava/lang/String;
+}
+
+public abstract interface class io/sentry/util/network/NetworkBody {
+	public static fun fromJsonArray (Ljava/util/List;)Lio/sentry/util/network/NetworkBody;
+	public static fun fromJsonObject (Ljava/util/Map;)Lio/sentry/util/network/NetworkBody;
+	public static fun fromString (Ljava/lang/String;)Lio/sentry/util/network/NetworkBody;
+	public abstract fun getValue ()Ljava/lang/Object;
+}
+
+public final class io/sentry/util/network/NetworkBody$JsonArrayImpl : io/sentry/util/network/NetworkBody {
+	public synthetic fun getValue ()Ljava/lang/Object;
+	public fun getValue ()Ljava/util/List;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/sentry/util/network/NetworkBody$JsonObjectImpl : io/sentry/util/network/NetworkBody {
+	public synthetic fun getValue ()Ljava/lang/Object;
+	public fun getValue ()Ljava/util/Map;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/sentry/util/network/NetworkBody$StringBodyImpl : io/sentry/util/network/NetworkBody {
+	public synthetic fun getValue ()Ljava/lang/Object;
+	public fun getValue ()Ljava/lang/String;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/sentry/util/network/NetworkBodyParser {
+	public static fun fromBytes ([BLjava/lang/String;Ljava/lang/String;ILio/sentry/ILogger;)Lio/sentry/util/network/NetworkBody;
+}
+
+public final class io/sentry/util/network/NetworkDetailCaptureUtils {
+	public static fun createRequest (Ljava/lang/Object;Ljava/lang/Long;ZLio/sentry/util/network/NetworkDetailCaptureUtils$NetworkBodyExtractor;[Ljava/lang/String;Lio/sentry/util/network/NetworkDetailCaptureUtils$NetworkHeaderExtractor;)Lio/sentry/util/network/ReplayNetworkRequestOrResponse;
+	public static fun createResponse (Ljava/lang/Object;Ljava/lang/Long;ZLio/sentry/util/network/NetworkDetailCaptureUtils$NetworkBodyExtractor;[Ljava/lang/String;Lio/sentry/util/network/NetworkDetailCaptureUtils$NetworkHeaderExtractor;)Lio/sentry/util/network/ReplayNetworkRequestOrResponse;
+	public static fun initializeForUrl (Ljava/lang/String;Ljava/lang/String;[Ljava/lang/String;[Ljava/lang/String;)Lio/sentry/util/network/NetworkRequestData;
+}
+
+public abstract interface class io/sentry/util/network/NetworkDetailCaptureUtils$NetworkBodyExtractor {
+	public abstract fun extract (Ljava/lang/Object;)Lio/sentry/util/network/NetworkBody;
+}
+
+public abstract interface class io/sentry/util/network/NetworkDetailCaptureUtils$NetworkHeaderExtractor {
+	public abstract fun extract (Ljava/lang/Object;)Ljava/util/Map;
+}
+
+public final class io/sentry/util/network/NetworkRequestData {
+	public fun <init> (Ljava/lang/String;)V
+	public fun getMethod ()Ljava/lang/String;
+	public fun getRequest ()Lio/sentry/util/network/ReplayNetworkRequestOrResponse;
+	public fun getRequestBodySize ()Ljava/lang/Long;
+	public fun getResponse ()Lio/sentry/util/network/ReplayNetworkRequestOrResponse;
+	public fun getResponseBodySize ()Ljava/lang/Long;
+	public fun getStatusCode ()Ljava/lang/Integer;
+	public fun setRequestDetails (Lio/sentry/util/network/ReplayNetworkRequestOrResponse;)V
+	public fun setResponseDetails (ILio/sentry/util/network/ReplayNetworkRequestOrResponse;)V
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/sentry/util/network/ReplayNetworkRequestOrResponse {
+	public fun <init> (Ljava/lang/Long;Lio/sentry/util/network/NetworkBody;Ljava/util/Map;)V
+	public fun getBody ()Lio/sentry/util/network/NetworkBody;
+	public fun getHeaders ()Ljava/util/Map;
+	public fun getSize ()Ljava/lang/Long;
+	public fun toString ()Ljava/lang/String;
 }
 
 public abstract interface class io/sentry/util/runtime/IRuntimeManager {

@@ -112,6 +112,8 @@ public final class ClientReportRecorder implements IClientReportRecorder {
             recordLostEventInternal(
                 reason.getReason(), DataCategory.LogByte.getCategory(), logBytes);
             executeOnDiscard(reason, itemCategory, count);
+          } else {
+            options.getLogger().log(SentryLevel.ERROR, "Unable to parse lost logs envelope item.");
           }
         } else {
           recordLostEventInternal(reason.getReason(), itemCategory.getCategory(), 1L);
