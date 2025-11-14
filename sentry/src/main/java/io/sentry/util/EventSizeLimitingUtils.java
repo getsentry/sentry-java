@@ -17,23 +17,13 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Utility class that limits event size to 1MB by incrementally dropping fields when the event
- * exceeds the limit. This runs after beforeSend and right before sending the event.
- *
- * <p>Fields are reduced in order of least importance:
- *
- * <ol>
- *   <li>All breadcrumbs
- *   <li>Exception stack frames (keep 250 frames from start and 250 frames from end, removing
- *       middle)
- * </ol>
- *
- * <p>Note: Extras, tags, threads, request data, debug meta, and contexts are preserved.
+ * exceeds the limit.
  */
 @ApiStatus.Internal
 public final class EventSizeLimitingUtils {
 
-  private static final long MAX_EVENT_SIZE_BYTES = 1024 * 1024; // 1MB
-  private static final int FRAMES_PER_SIDE = 250; // Keep 250 frames from start and 250 from end
+  private static final long MAX_EVENT_SIZE_BYTES = 1024 * 1024;
+  private static final int FRAMES_PER_SIDE = 250;
 
   private EventSizeLimitingUtils() {}
 
@@ -57,22 +47,20 @@ public final class EventSizeLimitingUtils {
       return event;
     }
 
-    long eventSize = byteSizeOf(event, options);
     options
         .getLogger()
         .log(
             SentryLevel.INFO,
-            "Event size (%d bytes) exceeds %d bytes limit. Reducing size by dropping fields.",
-            eventSize,
+            "Event %s exceeds %d bytes limit. Reducing size by dropping fields.",
+            event.getEventId(),
             MAX_EVENT_SIZE_BYTES);
 
-    SentryEvent reducedEvent = event;
+    @NotNull SentryEvent reducedEvent = event;
 
-    // Step 0: Invoke custom callback if defined
-    final SentryOptions.OnOversizedErrorCallback onOversizedError = options.getOnOversizedError();
-    if (onOversizedError != null) {
+    final @Nullable SentryOptions.OnOversizedErrorCallback callback = options.getOnOversizedError();
+    if (callback != null) {
       try {
-        reducedEvent = onOversizedError.execute(reducedEvent, hint);
+        reducedEvent = callback.execute(reducedEvent, hint);
         if (!isTooLarge(reducedEvent, options)) {
           return reducedEvent;
         }
@@ -83,48 +71,33 @@ public final class EventSizeLimitingUtils {
                 SentryLevel.ERROR,
                 "The onOversizedError callback threw an exception. It will be ignored and automatic reduction will continue.",
                 e);
-        // Continue with automatic reduction if callback fails
         reducedEvent = event;
       }
     }
 
-    // Step 1: Remove all breadcrumbs
     reducedEvent = removeAllBreadcrumbs(reducedEvent, options);
     if (!isTooLarge(reducedEvent, options)) {
       return reducedEvent;
     }
 
-    // Step 2: Truncate stack frames (keep 250 from start and 250 from end)
     reducedEvent = truncateStackFrames(reducedEvent, options);
     if (isTooLarge(reducedEvent, options)) {
-      long finalEventSize = byteSizeOf(reducedEvent, options);
       options
           .getLogger()
           .log(
               SentryLevel.WARNING,
-              "Event size (%d bytes) still exceeds limit after reducing all fields. Event may be rejected by server.",
-              finalEventSize);
+              "Event %s still exceeds size limit after reducing all fields. Event may be rejected by server.",
+              event.getEventId());
     }
 
     return reducedEvent;
   }
 
-  /**
-   * Checks if the event exceeds the size limit.
-   *
-   * @param event the event to check
-   * @param options the SentryOptions
-   * @return true if the event exceeds the size limit
-   */
   private static boolean isTooLarge(
       final @NotNull SentryEvent event, final @NotNull SentryOptions options) {
-    return byteSizeOf(event, options) > MAX_EVENT_SIZE_BYTES;
-  }
-
-  /** Calculates the size of the event when serialized to JSON without actually storing the data. */
-  private static long byteSizeOf(
-      final @NotNull SentryEvent event, final @NotNull SentryOptions options) {
-    return JsonSerializationUtils.byteSizeOf(options.getSerializer(), options.getLogger(), event);
+    final long size =
+        JsonSerializationUtils.byteSizeOf(options.getSerializer(), options.getLogger(), event);
+    return size > MAX_EVENT_SIZE_BYTES;
   }
 
   private static @NotNull SentryEvent removeAllBreadcrumbs(
@@ -135,22 +108,23 @@ public final class EventSizeLimitingUtils {
       options
           .getLogger()
           .log(
-              SentryLevel.DEBUG, "Removed %d breadcrumbs to reduce event size", breadcrumbs.size());
+              SentryLevel.DEBUG,
+              "Removed breadcrumbs to reduce size of event %s",
+              event.getEventId());
     }
     return event;
   }
 
   private static @NotNull SentryEvent truncateStackFrames(
       final @NotNull SentryEvent event, final @NotNull SentryOptions options) {
-    final List<SentryException> exceptions = event.getExceptions();
+    final @Nullable List<SentryException> exceptions = event.getExceptions();
     if (exceptions != null) {
-      for (final SentryException exception : exceptions) {
-        final SentryStackTrace stacktrace = exception.getStacktrace();
+      for (final @NotNull SentryException exception : exceptions) {
+        final @Nullable SentryStackTrace stacktrace = exception.getStacktrace();
         if (stacktrace != null) {
-          final List<SentryStackFrame> frames = stacktrace.getFrames();
-          if (frames != null && frames.size() > FRAMES_PER_SIDE * 2) {
-            // Keep first 250 frames and last 250 frames, removing middle
-            final List<SentryStackFrame> truncatedFrames = new ArrayList<>();
+          final @Nullable List<SentryStackFrame> frames = stacktrace.getFrames();
+          if (frames != null && frames.size() > (FRAMES_PER_SIDE * 2)) {
+            final @NotNull List<SentryStackFrame> truncatedFrames = new ArrayList<>();
             truncatedFrames.addAll(frames.subList(0, FRAMES_PER_SIDE));
             truncatedFrames.addAll(frames.subList(frames.size() - FRAMES_PER_SIDE, frames.size()));
             stacktrace.setFrames(truncatedFrames);
@@ -158,25 +132,21 @@ public final class EventSizeLimitingUtils {
                 .getLogger()
                 .log(
                     SentryLevel.DEBUG,
-                    "Truncated stack frames from %d to %d (removed middle) for exception %s",
-                    frames.size(),
-                    truncatedFrames.size(),
-                    exception.getType());
+                    "Truncated exception stack frames of event %s",
+                    event.getEventId());
           }
         }
       }
     }
 
-    // Also truncate thread stack traces
-    final List<SentryThread> threads = event.getThreads();
+    final @Nullable List<SentryThread> threads = event.getThreads();
     if (threads != null) {
       for (final SentryThread thread : threads) {
-        final SentryStackTrace stacktrace = thread.getStacktrace();
+        final @Nullable SentryStackTrace stacktrace = thread.getStacktrace();
         if (stacktrace != null) {
-          final List<SentryStackFrame> frames = stacktrace.getFrames();
-          if (frames != null && frames.size() > FRAMES_PER_SIDE * 2) {
-            // Keep first 250 frames and last 250 frames, removing middle
-            final List<SentryStackFrame> truncatedFrames = new ArrayList<>();
+          final @Nullable List<SentryStackFrame> frames = stacktrace.getFrames();
+          if (frames != null && frames.size() > (FRAMES_PER_SIDE * 2)) {
+            final @NotNull List<SentryStackFrame> truncatedFrames = new ArrayList<>();
             truncatedFrames.addAll(frames.subList(0, FRAMES_PER_SIDE));
             truncatedFrames.addAll(frames.subList(frames.size() - FRAMES_PER_SIDE, frames.size()));
             stacktrace.setFrames(truncatedFrames);
@@ -184,10 +154,8 @@ public final class EventSizeLimitingUtils {
                 .getLogger()
                 .log(
                     SentryLevel.DEBUG,
-                    "Truncated stack frames from %d to %d (removed middle) for thread %d",
-                    frames.size(),
-                    truncatedFrames.size(),
-                    thread.getId());
+                    "Truncated thread stack frames for event %s",
+                    event.getEventId());
           }
         }
       }
