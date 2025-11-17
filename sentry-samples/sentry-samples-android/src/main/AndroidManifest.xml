@@ -201,7 +201,7 @@
       <!-- Disable network body capture for urls specified in .network-detail-allow-urls -->
 <!--      <meta-data android:name="io.sentry.session-replay.network-capture-bodies" android:value="false" />-->
       <!-- Some random headers to extract. See TriggerHttpRequestActivity to set these on a test http request -->
-      <meta-data android:name="io.sentry.session-replay.network-request-headers" android:value="Authorization,X-Custom-Header,X-Test-Request,blah, blee" />
+      <meta-data android:name="io.sentry.session-replay.network-request-headers" android:value="Authorization,X-Custom-Header,X-Test-Request" />
       <meta-data android:name="io.sentry.session-replay.network-response-headers" android:value="X-Response-Time,X-Cache-Status,X-Test-Response" />
     </application>
 </manifest>
