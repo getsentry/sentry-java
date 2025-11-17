@@ -1,11 +1,14 @@
 package io.sentry.openfeature;
 
+import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
+
 import dev.openfeature.sdk.BooleanHook;
 import dev.openfeature.sdk.FlagEvaluationDetails;
 import dev.openfeature.sdk.FlagValueType;
 import dev.openfeature.sdk.HookContext;
 import io.sentry.IScopes;
 import io.sentry.ScopesAdapter;
+import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryLevel;
 import java.util.Map;
 import java.util.Objects;
@@ -16,8 +19,18 @@ import org.jetbrains.annotations.VisibleForTesting;
 public final class SentryOpenFeatureHook implements BooleanHook {
   private final IScopes scopes;
 
+  static {
+    SentryIntegrationPackageStorage.getInstance()
+        .addPackage("maven:io.sentry:sentry-openfeature", BuildConfig.VERSION_NAME);
+  }
+
   public SentryOpenFeatureHook() {
     this(ScopesAdapter.getInstance());
+    addPackageAndIntegrationInfo();
+  }
+
+  private void addPackageAndIntegrationInfo() {
+    addIntegrationToSdkVersion("OpenFeature");
   }
 
   @VisibleForTesting
