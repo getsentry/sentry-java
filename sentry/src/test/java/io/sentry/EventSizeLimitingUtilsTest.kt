@@ -137,12 +137,12 @@ class EventSizeLimitingUtilsTest {
   }
 
   @Test
-  fun `invokes onOversizedError callback when event exceeds size limit`() {
+  fun `invokes onOversizedEvent callback when event exceeds size limit`() {
     val options = fixture.getOptions()
     var callbackInvoked = false
     var receivedEvent: SentryEvent? = null
     var receivedHint: Hint? = null
-    options.setOnOversizedError { event, hint ->
+    options.setOnOversizedEvent { event, hint ->
       callbackInvoked = true
       receivedEvent = event
       receivedHint = hint
@@ -169,9 +169,9 @@ class EventSizeLimitingUtilsTest {
   }
 
   @Test
-  fun `onOversizedError callback successfully reduces size below limit`() {
+  fun `onOversizedEvent callback successfully reduces size below limit`() {
     val options = fixture.getOptions()
-    options.setOnOversizedError { event, _ ->
+    options.setOnOversizedEvent { event, _ ->
       // Remove all breadcrumbs to reduce size
       event.setBreadcrumbs(null)
       event
@@ -195,10 +195,10 @@ class EventSizeLimitingUtilsTest {
   }
 
   @Test
-  fun `onOversizedError callback insufficient reduction continues with automatic steps`() {
+  fun `onOversizedEvent callback insufficient reduction continues with automatic steps`() {
     val options = fixture.getOptions()
     var callbackInvoked = false
-    options.setOnOversizedError { event, _ ->
+    options.setOnOversizedEvent { event, _ ->
       callbackInvoked = true
       // Remove only some breadcrumbs, not enough to reduce size below limit
       val breadcrumbs = event.getBreadcrumbs()
@@ -231,9 +231,9 @@ class EventSizeLimitingUtilsTest {
   }
 
   @Test
-  fun `onOversizedError callback exception continues with automatic reduction`() {
+  fun `onOversizedEvent callback exception continues with automatic reduction`() {
     val options = fixture.getOptions()
-    options.setOnOversizedError { _, _ -> throw RuntimeException("Callback error") }
+    options.setOnOversizedEvent { _, _ -> throw RuntimeException("Callback error") }
     val event = createLargeEvent()
 
     // Add breadcrumbs to make it large
@@ -252,10 +252,10 @@ class EventSizeLimitingUtilsTest {
   }
 
   @Test
-  fun `onOversizedError callback not invoked when event is below size limit`() {
+  fun `onOversizedEvent callback not invoked when event is below size limit`() {
     val options = fixture.getOptions()
     var callbackInvoked = false
-    options.setOnOversizedError { _, _ ->
+    options.setOnOversizedEvent { _, _ ->
       callbackInvoked = true
       SentryEvent()
     }
@@ -271,11 +271,11 @@ class EventSizeLimitingUtilsTest {
   }
 
   @Test
-  fun `onOversizedError callback not invoked when event size limiting is disabled`() {
+  fun `onOversizedEvent callback not invoked when event size limiting is disabled`() {
     val options = SentryOptions()
     options.isEnableEventSizeLimiting = false
     var callbackInvoked = false
-    options.setOnOversizedError { _, _ ->
+    options.setOnOversizedEvent { _, _ ->
       callbackInvoked = true
       SentryEvent()
     }
@@ -298,14 +298,14 @@ class EventSizeLimitingUtilsTest {
   }
 
   @Test
-  fun `onOversizedError callback can replace event with a different event`() {
+  fun `onOversizedEvent callback can replace event with a different event`() {
     val options = fixture.getOptions()
     val replacementEvent = SentryEvent()
     val replacementMessage = Message()
     replacementMessage.message = "Replacement event"
     replacementEvent.setMessage(replacementMessage)
     var callbackInvoked = false
-    options.setOnOversizedError { _, _ ->
+    options.setOnOversizedEvent { _, _ ->
       callbackInvoked = true
       replacementEvent // Return a completely different event
     }
@@ -327,10 +327,10 @@ class EventSizeLimitingUtilsTest {
   }
 
   @Test
-  fun `onOversizedError callback returning same event unchanged continues with automatic reduction`() {
+  fun `onOversizedEvent callback returning same event unchanged continues with automatic reduction`() {
     val options = fixture.getOptions()
     var callbackInvoked = false
-    options.setOnOversizedError { event, _ ->
+    options.setOnOversizedEvent { event, _ ->
       callbackInvoked = true
       event // Return the same event without modifications
     }
@@ -353,10 +353,10 @@ class EventSizeLimitingUtilsTest {
   }
 
   @Test
-  fun `onOversizedError callback receives correct hint object`() {
+  fun `onOversizedEvent callback receives correct hint object`() {
     val options = fixture.getOptions()
     var receivedHint: Hint? = null
-    options.setOnOversizedError { event, hint ->
+    options.setOnOversizedEvent { event, hint ->
       receivedHint = hint
       event
     }
@@ -380,9 +380,9 @@ class EventSizeLimitingUtilsTest {
   }
 
   @Test
-  fun `onOversizedError callback can modify extras to reduce size`() {
+  fun `onOversizedEvent callback can modify extras to reduce size`() {
     val options = fixture.getOptions()
-    options.setOnOversizedError { event, _ ->
+    options.setOnOversizedEvent { event, _ ->
       // Remove extras to reduce size
       event.setExtras(null)
       event
@@ -402,9 +402,9 @@ class EventSizeLimitingUtilsTest {
   }
 
   @Test
-  fun `onOversizedError callback can modify contexts to reduce size`() {
+  fun `onOversizedEvent callback can modify contexts to reduce size`() {
     val options = fixture.getOptions()
-    options.setOnOversizedError { event, _ ->
+    options.setOnOversizedEvent { event, _ ->
       // Remove contexts to reduce size
       event.contexts.keys().toList().forEach { event.contexts.remove(it) }
       event
@@ -426,10 +426,10 @@ class EventSizeLimitingUtilsTest {
   }
 
   @Test
-  fun `onOversizedError callback multiple invocations not expected`() {
+  fun `onOversizedEvent callback multiple invocations not expected`() {
     val options = fixture.getOptions()
     var callbackInvocationCount = 0
-    options.setOnOversizedError { event, _ ->
+    options.setOnOversizedEvent { event, _ ->
       callbackInvocationCount++
       event
     }

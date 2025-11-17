@@ -58,8 +58,8 @@ public final class EventSizeLimitingUtils {
 
       @NotNull SentryEvent reducedEvent = event;
 
-      final @Nullable SentryOptions.OnOversizedErrorCallback callback =
-          options.getOnOversizedError();
+      final @Nullable SentryOptions.OnOversizedEventCallback callback =
+          options.getOnOversizedEvent();
       if (callback != null) {
         try {
           reducedEvent = callback.execute(reducedEvent, hint);
@@ -71,7 +71,7 @@ public final class EventSizeLimitingUtils {
               .getLogger()
               .log(
                   SentryLevel.ERROR,
-                  "The onOversizedError callback threw an exception. It will be ignored and automatic reduction will continue.",
+                  "The onOversizedEvent callback threw an exception. It will be ignored and automatic reduction will continue.",
                   e);
           reducedEvent = event;
         }

@@ -363,7 +363,7 @@ public class SentryOptions {
    * Callback invoked when an oversized event is detected. This allows custom handling of oversized
    * events before the automatic reduction steps are applied.
    */
-  private @Nullable OnOversizedErrorCallback onOversizedError;
+  private @Nullable OnOversizedEventCallback onOversizedEvent;
 
   /** Maximum number of spans that can be atteched to single transaction. */
   private int maxSpans = 1000;
@@ -1784,22 +1784,22 @@ public class SentryOptions {
   }
 
   /**
-   * Returns the onOversizedError callback.
+   * Returns the onOversizedEvent callback.
    *
-   * @return the onOversizedError callback or null if not set
+   * @return the onOversizedEvent callback or null if not set
    */
-  public @Nullable OnOversizedErrorCallback getOnOversizedError() {
-    return onOversizedError;
+  public @Nullable OnOversizedEventCallback getOnOversizedEvent() {
+    return onOversizedEvent;
   }
 
   /**
-   * Sets the onOversizedError callback. This callback is invoked when an oversized event is
+   * Sets the onOversizedEvent callback. This callback is invoked when an oversized event is
    * detected, before the automatic reduction steps are applied.
    *
-   * @param onOversizedError the onOversizedError callback
+   * @param onOversizedEvent the onOversizedEvent callback
    */
-  public void setOnOversizedError(@Nullable OnOversizedErrorCallback onOversizedError) {
-    this.onOversizedError = onOversizedError;
+  public void setOnOversizedEvent(@Nullable OnOversizedEventCallback onOversizedEvent) {
+    this.onOversizedEvent = onOversizedEvent;
   }
 
   /**
@@ -3186,8 +3186,8 @@ public class SentryOptions {
     Breadcrumb execute(@NotNull Breadcrumb breadcrumb, @NotNull Hint hint);
   }
 
-  /** The OnOversizedError callback */
-  public interface OnOversizedErrorCallback {
+  /** The OnOversizedEvent callback */
+  public interface OnOversizedEventCallback {
 
     /**
      * Called when an oversized event is detected. This callback allows custom handling of oversized
