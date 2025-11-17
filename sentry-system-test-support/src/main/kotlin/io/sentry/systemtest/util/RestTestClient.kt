@@ -64,7 +64,4 @@ class RestTestClient(private val backendBaseUrl: String) : LoggingInsecureRestCl
   }
 }
 
-data class FeatureFlagResponse(
-  val flagKey: String,
-  val value: Boolean,
-)
+data class FeatureFlagResponse(val flagKey: String, val value: Boolean)

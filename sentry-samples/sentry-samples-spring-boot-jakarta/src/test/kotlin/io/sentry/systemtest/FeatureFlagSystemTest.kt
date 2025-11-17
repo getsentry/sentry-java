@@ -1,8 +1,8 @@
 package io.sentry.systemtest
 
 import io.sentry.protocol.FeatureFlag
-import io.sentry.systemtest.util.TestHelper
 import io.sentry.systemtest.util.FeatureFlagResponse
+import io.sentry.systemtest.util.TestHelper
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -49,8 +49,7 @@ class FeatureFlagSystemTest {
       testHelper.doesEventHaveExceptionMessage(
         event,
         "Error occurred with feature flag: beta-features = true",
-      ) &&
-        testHelper.doesEventHaveFlag(event, "beta-features", true)
+      ) && testHelper.doesEventHaveFlag(event, "beta-features", true)
     }
 
     // Verify feature flag is also included in the transaction
@@ -101,4 +100,3 @@ class FeatureFlagSystemTest {
     }
   }
 }
-

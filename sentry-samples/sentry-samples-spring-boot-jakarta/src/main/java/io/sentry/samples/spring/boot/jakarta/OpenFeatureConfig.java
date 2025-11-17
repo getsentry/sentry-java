@@ -33,49 +33,49 @@ public class OpenFeatureConfig {
 
   private Map<String, Object> createFeatureFlags() {
     Map<String, Object> flags = new HashMap<>();
-    
+
     // Boolean flags
     flags.put("new-checkout-flow", true);
     flags.put("experimental-feature", false);
     flags.put("enable-caching", true);
     flags.put("dark-mode", false);
     flags.put("beta-features", true);
-    
+
     // String flags
     flags.put("theme-color", "blue");
     flags.put("api-version", "v2");
     flags.put("default-language", "en");
     flags.put("welcome-message", "Welcome to Sentry!");
-    
+
     // Integer flags
     flags.put("max-retries", 3);
     flags.put("page-size", 20);
     flags.put("timeout-seconds", 30);
     flags.put("max-connections", 100);
-    
+
     // Double flags
     flags.put("discount-percentage", 0.15);
     flags.put("tax-rate", 0.08);
     flags.put("conversion-rate", 0.025);
-    
+
     // Object/Structure flags (stored as Map)
     Map<String, Object> configMap = new HashMap<>();
     configMap.put("enabled", true);
     configMap.put("threshold", 100);
     configMap.put("mode", "production");
     flags.put("advanced-config", configMap);
-    
+
     Map<String, Object> uiConfig = new HashMap<>();
     uiConfig.put("layout", "grid");
     uiConfig.put("itemsPerPage", 12);
     flags.put("ui-settings", uiConfig);
-    
+
     return flags;
   }
 
   /**
-   * Simple in-memory provider for demo purposes.
-   * In production, use a real provider like LaunchDarkly, Flagsmith, etc.
+   * Simple in-memory provider for demo purposes. In production, use a real provider like
+   * LaunchDarkly, Flagsmith, etc.
    */
   private static class InMemoryProvider implements FeatureProvider {
     private final Map<String, Object> flags;
@@ -224,4 +224,3 @@ public class OpenFeatureConfig {
     }
   }
 }
-
