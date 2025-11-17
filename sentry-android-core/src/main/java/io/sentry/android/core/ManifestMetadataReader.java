@@ -555,7 +555,7 @@ final class ManifestMetadataReader {
                     options.getSessionReplay().isNetworkCaptureBodies() /* defaultValue */));
 
         if (options.getSessionReplay().getNetworkRequestHeaders().length
-            == SentryReplayOptions.getNetworkDetailsDefaultHeaders().length) { // Only has defaults
+            == SentryReplayOptions.getNetworkDetailsDefaultHeaders().size()) { // Only has defaults
           final @Nullable List<String> requestHeaders =
               readList(metadata, logger, REPLAYS_NETWORK_REQUEST_HEADERS);
           if (requestHeaders != null) {
@@ -573,7 +573,7 @@ final class ManifestMetadataReader {
         }
 
         if (options.getSessionReplay().getNetworkResponseHeaders().length
-            == SentryReplayOptions.getNetworkDetailsDefaultHeaders().length) { // Only has defaults
+            == SentryReplayOptions.getNetworkDetailsDefaultHeaders().size()) { // Only has defaults
           final @Nullable List<String> responseHeaders =
               readList(metadata, logger, REPLAYS_NETWORK_RESPONSE_HEADERS);
           if (responseHeaders != null && !responseHeaders.isEmpty()) {

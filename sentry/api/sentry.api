@@ -3794,7 +3794,7 @@ public final class io/sentry/SentryReplayOptions {
 	public fun getMaskViewContainerClass ()Ljava/lang/String;
 	public fun getNetworkDetailAllowUrls ()[Ljava/lang/String;
 	public fun getNetworkDetailDenyUrls ()[Ljava/lang/String;
-	public static fun getNetworkDetailsDefaultHeaders ()[Ljava/lang/String;
+	public static fun getNetworkDetailsDefaultHeaders ()Ljava/util/List;
 	public fun getNetworkRequestHeaders ()[Ljava/lang/String;
 	public fun getNetworkResponseHeaders ()[Ljava/lang/String;
 	public fun getOnErrorSampleRate ()Ljava/lang/Double;

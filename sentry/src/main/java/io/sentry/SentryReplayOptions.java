@@ -2,8 +2,8 @@ package io.sentry;
 
 import io.sentry.protocol.SdkVersion;
 import io.sentry.util.SampleRateUtils;
-
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -181,30 +181,30 @@ public final class SentryReplayOptions {
   private boolean networkCaptureBodies = true;
 
   /** Default headers that are always captured for URLs defined in networkDetailAllowUrls. */
-  private static final @NotNull String[] DEFAULT_HEADERS =
-      new String[] {"Content-Type", "Content-Length", "Accept"};
+  private static final @NotNull List<String> DEFAULT_HEADERS =
+      Collections.unmodifiableList(Arrays.asList("Content-Type", "Content-Length", "Accept"));
 
   /**
    * Gets the default headers that are always captured for URLs defined in networkDetailAllowUrls.
-   * Returns a defensive copy to prevent modification.
+   *
+   * @return an unmodifiable list
    */
   @ApiStatus.Internal
-  public static @NotNull String[] getNetworkDetailsDefaultHeaders() {
-    return DEFAULT_HEADERS.clone();
+  public static @NotNull List<String> getNetworkDetailsDefaultHeaders() {
+    return DEFAULT_HEADERS;
   }
 
   /**
    * Additional request headers to capture for URLs defined in networkDetailAllowUrls. The default
    * headers (Content-Type, Content-Length, Accept) are always included in addition to these.
    */
-  private @NotNull String[] networkRequestHeaders = DEFAULT_HEADERS.clone();
+  private @NotNull String[] networkRequestHeaders = DEFAULT_HEADERS.toArray(new String[0]);
 
   /**
    * Additional response headers to capture for URLs defined in networkDetailAllowUrls. The default
    * headers (Content-Type, Content-Length, Accept) are always included in addition to these.
    */
-  private @NotNull String[] networkResponseHeaders = DEFAULT_HEADERS.clone();
-
+  private @NotNull String[] networkResponseHeaders = DEFAULT_HEADERS.toArray(new String[0]);
 
   public SentryReplayOptions(final boolean empty, final @Nullable SdkVersion sdkVersion) {
     if (!empty) {
@@ -493,8 +493,8 @@ public final class SentryReplayOptions {
   }
 
   /**
-   * Sets request headers to capture for URLs defined in networkDetailAllowUrls. The
-   * default headers (Content-Type, Content-Length, Accept) are always included automatically.
+   * Sets request headers to capture for URLs defined in networkDetailAllowUrls. The default headers
+   * (Content-Type, Content-Length, Accept) are always included automatically.
    *
    * @param networkRequestHeaders additional network request headers list
    */
@@ -513,8 +513,8 @@ public final class SentryReplayOptions {
   }
 
   /**
-   * Sets response headers to capture for URLs defined in networkDetailAllowUrls. The
-   * default headers (Content-Type, Content-Length, Accept) are always included automatically.
+   * Sets response headers to capture for URLs defined in networkDetailAllowUrls. The default
+   * headers (Content-Type, Content-Length, Accept) are always included automatically.
    *
    * @param networkResponseHeaders the additional network response headers list
    */
@@ -529,9 +529,9 @@ public final class SentryReplayOptions {
    * @param additionalHeaders additional headers to merge
    */
   private static @NotNull String[] mergeHeaders(
-      final @NotNull String[] defaultHeaders, final @NotNull List<String> additionalHeaders) {
+      final @NotNull List<String> defaultHeaders, final @NotNull List<String> additionalHeaders) {
     final Set<String> merged = new LinkedHashSet<>();
-    merged.addAll(Arrays.asList(defaultHeaders));
+    merged.addAll(defaultHeaders);
     merged.addAll(additionalHeaders);
     return merged.toArray(new String[0]);
   }
