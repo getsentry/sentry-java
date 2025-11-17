@@ -7,6 +7,10 @@
 - Implement OpenFeature Integration that tracks Feature Flag evaluations ([#4910](https://github.com/getsentry/sentry-java/pull/4910))
   - To make use of it, add the `sentry-openfeature` dependency and register the the hook using: `openFeatureApiInstance.addHooks(new SentryOpenFeatureHook());`
 
+### Improvements
+
+- Do not send manual log origin ([#4897](https://github.com/getsentry/sentry-java/pull/4897))
+
 ## 8.26.0
 
 ### Features

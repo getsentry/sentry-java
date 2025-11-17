@@ -163,9 +163,11 @@ public final class LoggerApi implements ILoggerApi {
       final @NotNull SpanId spanId,
       final @Nullable Object... args) {
     final @NotNull HashMap<String, SentryLogEventAttributeValue> attributes = new HashMap<>();
-    attributes.put(
-        "sentry.origin",
-        new SentryLogEventAttributeValue(SentryAttributeType.STRING, params.getOrigin()));
+    final @NotNull String origin = params.getOrigin();
+    if (!"manual".equalsIgnoreCase(origin)) {
+      attributes.put(
+          "sentry.origin", new SentryLogEventAttributeValue(SentryAttributeType.STRING, origin));
+    }
 
     final @Nullable SentryAttributes incomingAttributes = params.getAttributes();
 
