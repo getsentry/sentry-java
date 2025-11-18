@@ -24,6 +24,7 @@ public final class EventSizeLimitingUtils {
 
   private static final long MAX_EVENT_SIZE_BYTES = 1024 * 1024;
   private static final int MAX_FRAMES_PER_STACK = 500;
+  private static final int FRAMES_PER_SIDE = MAX_FRAMES_PER_STACK / 2;
 
   private EventSizeLimitingUtils() {}
 
@@ -133,19 +134,8 @@ public final class EventSizeLimitingUtils {
       for (final @NotNull SentryException exception : exceptions) {
         final @Nullable SentryStackTrace stacktrace = exception.getStacktrace();
         if (stacktrace != null) {
-          final @Nullable List<SentryStackFrame> frames = stacktrace.getFrames();
-          if (frames != null && frames.size() > (FRAMES_PER_SIDE * 2)) {
-            final @NotNull List<SentryStackFrame> truncatedFrames = new ArrayList<>();
-            truncatedFrames.addAll(frames.subList(0, FRAMES_PER_SIDE));
-            truncatedFrames.addAll(frames.subList(frames.size() - FRAMES_PER_SIDE, frames.size()));
-            stacktrace.setFrames(truncatedFrames);
-            options
-                .getLogger()
-                .log(
-                    SentryLevel.DEBUG,
-                    "Truncated exception stack frames of event %s",
-                    event.getEventId());
-          }
+          truncateStackFramesInStackTrace(
+              stacktrace, event, options, "Truncated exception stack frames of event %s");
         }
       }
     }
@@ -155,24 +145,27 @@ public final class EventSizeLimitingUtils {
       for (final SentryThread thread : threads) {
         final @Nullable SentryStackTrace stacktrace = thread.getStacktrace();
         if (stacktrace != null) {
-          final @Nullable List<SentryStackFrame> frames = stacktrace.getFrames();
-          if (frames != null && frames.size() > (FRAMES_PER_SIDE * 2)) {
-            final @NotNull List<SentryStackFrame> truncatedFrames =
-                new ArrayList<>(FRAMES_PER_SIDE * 2);
-            truncatedFrames.addAll(frames.subList(0, FRAMES_PER_SIDE));
-            truncatedFrames.addAll(frames.subList(frames.size() - FRAMES_PER_SIDE, frames.size()));
-            stacktrace.setFrames(truncatedFrames);
-            options
-                .getLogger()
-                .log(
-                    SentryLevel.DEBUG,
-                    "Truncated thread stack frames for event %s",
-                    event.getEventId());
-          }
+          truncateStackFramesInStackTrace(
+              stacktrace, event, options, "Truncated thread stack frames for event %s");
         }
       }
     }
 
     return event;
+  }
+
+  private static void truncateStackFramesInStackTrace(
+      final @NotNull SentryStackTrace stacktrace,
+      final @NotNull SentryEvent event,
+      final @NotNull SentryOptions options,
+      final @NotNull String logMessage) {
+    final @Nullable List<SentryStackFrame> frames = stacktrace.getFrames();
+    if (frames != null && frames.size() > MAX_FRAMES_PER_STACK) {
+      final @NotNull List<SentryStackFrame> truncatedFrames = new ArrayList<>(MAX_FRAMES_PER_STACK);
+      truncatedFrames.addAll(frames.subList(0, FRAMES_PER_SIDE));
+      truncatedFrames.addAll(frames.subList(frames.size() - FRAMES_PER_SIDE, frames.size()));
+      stacktrace.setFrames(truncatedFrames);
+      options.getLogger().log(SentryLevel.DEBUG, logMessage, event.getEventId());
+    }
   }
 }
