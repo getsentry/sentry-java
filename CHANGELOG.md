@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Features
+
+- Detect oversized events and reduce their size ([#4903](https://github.com/getsentry/sentry-java/pull/4903))
+  - You can opt into this new behaviour by setting `enableEventSizeLimiting` to `true` (`sentry.enable-event-size-limiting=true` for Spring Boot `application.properties`)
+  - You may optionally register an `onOversizedEvent` callback to implement custom logic that is executed in case an oversized event is detected
+    - This is executed first and if event size was reduced sufficiently, no further truncation is performed
+  - Currently we are dropping breadcrumbs and if that isn't sufficient also stack frames in order to get an events size down
+
 ### Improvements
 
 - Do not send manual log origin ([#4897](https://github.com/getsentry/sentry-java/pull/4897))
