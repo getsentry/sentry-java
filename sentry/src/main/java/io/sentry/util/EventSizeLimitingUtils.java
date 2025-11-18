@@ -23,7 +23,7 @@ import org.jetbrains.annotations.Nullable;
 public final class EventSizeLimitingUtils {
 
   private static final long MAX_EVENT_SIZE_BYTES = 1024 * 1024;
-  private static final int FRAMES_PER_SIDE = 250;
+  private static final int MAX_FRAMES_PER_STACK = 500;
 
   private EventSizeLimitingUtils() {}
 
@@ -113,7 +113,7 @@ public final class EventSizeLimitingUtils {
 
   private static @NotNull SentryEvent removeAllBreadcrumbs(
       final @NotNull SentryEvent event, final @NotNull SentryOptions options) {
-    final List<Breadcrumb> breadcrumbs = event.getBreadcrumbs();
+    final @Nullable List<Breadcrumb> breadcrumbs = event.getBreadcrumbs();
     if (breadcrumbs != null && !breadcrumbs.isEmpty()) {
       event.setBreadcrumbs(null);
       options
@@ -157,7 +157,7 @@ public final class EventSizeLimitingUtils {
         if (stacktrace != null) {
           final @Nullable List<SentryStackFrame> frames = stacktrace.getFrames();
           if (frames != null && frames.size() > (FRAMES_PER_SIDE * 2)) {
-            final @NotNull List<SentryStackFrame> truncatedFrames = new ArrayList<>();
+            final @NotNull List<SentryStackFrame> truncatedFrames = new ArrayList<>(FRAMES_PER_SIDE * 2);
             truncatedFrames.addAll(frames.subList(0, FRAMES_PER_SIDE));
             truncatedFrames.addAll(frames.subList(frames.size() - FRAMES_PER_SIDE, frames.size()));
             stacktrace.setFrames(truncatedFrames);
