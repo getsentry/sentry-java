@@ -1882,4 +1882,29 @@ class ManifestMetadataReaderTest {
       fixture.options.sessionReplay.screenshotStrategy,
     )
   }
+
+  @Test
+  fun `applyMetadata reads enableAnrProfiling to options`() {
+    // Arrange
+    val bundle = bundleOf(ManifestMetadataReader.ENABLE_ANR_PROFILING to true)
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertTrue(fixture.options.isEnableAnrProfiling)
+  }
+
+  @Test
+  fun `applyMetadata reads enableAnrProfiling to options and keeps default`() {
+    // Arrange
+    val context = fixture.getContext()
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertFalse(fixture.options.isEnableAnrProfiling)
+  }
 }

@@ -7382,6 +7382,7 @@ public final class io/sentry/util/StringUtils {
 	public static fun camelCase (Ljava/lang/String;)Ljava/lang/String;
 	public static fun capitalize (Ljava/lang/String;)Ljava/lang/String;
 	public static fun countOf (Ljava/lang/String;C)I
+	public static fun getOrEmpty (Ljava/lang/String;)Ljava/lang/String;
 	public static fun getStringAfterDot (Ljava/lang/String;)Ljava/lang/String;
 	public static fun join (Ljava/lang/CharSequence;Ljava/lang/Iterable;)Ljava/lang/String;
 	public static fun normalizeUUID (Ljava/lang/String;)Ljava/lang/String;
