@@ -157,7 +157,8 @@ public final class EventSizeLimitingUtils {
         if (stacktrace != null) {
           final @Nullable List<SentryStackFrame> frames = stacktrace.getFrames();
           if (frames != null && frames.size() > (FRAMES_PER_SIDE * 2)) {
-            final @NotNull List<SentryStackFrame> truncatedFrames = new ArrayList<>(FRAMES_PER_SIDE * 2);
+            final @NotNull List<SentryStackFrame> truncatedFrames =
+                new ArrayList<>(FRAMES_PER_SIDE * 2);
             truncatedFrames.addAll(frames.subList(0, FRAMES_PER_SIDE));
             truncatedFrames.addAll(frames.subList(frames.size() - FRAMES_PER_SIDE, frames.size()));
             stacktrace.setFrames(truncatedFrames);
