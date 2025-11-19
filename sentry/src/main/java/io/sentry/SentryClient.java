@@ -164,6 +164,10 @@ public final class SentryClient implements ISentryClient {
       }
     }
 
+    if (event != null) {
+      event = EventSizeLimitingUtils.limitEventSize(event, hint, options);
+    }
+
     if (event == null) {
       return SentryId.EMPTY_ID;
     }

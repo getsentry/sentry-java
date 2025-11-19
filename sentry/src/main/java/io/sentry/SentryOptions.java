@@ -353,6 +353,18 @@ public class SentryOptions {
    */
   private boolean enableDeduplication = true;
 
+  /**
+   * Enables event size limiting with {@link EventSizeLimitingEventProcessor}. When enabled, events
+   * exceeding 1MB will have breadcrumbs and stack frames reduced to stay under the limit.
+   */
+  private boolean enableEventSizeLimiting = false;
+
+  /**
+   * Callback invoked when an oversized event is detected. This allows custom handling of oversized
+   * events before the automatic reduction steps are applied.
+   */
+  private @Nullable OnOversizedEventCallback onOversizedEvent;
+
   /** Maximum number of spans that can be atteched to single transaction. */
   private int maxSpans = 1000;
 
@@ -1753,6 +1765,44 @@ public class SentryOptions {
   }
 
   /**
+   * Returns if event size limiting is enabled.
+   *
+   * @return true if event size limiting is enabled, false otherwise
+   */
+  public boolean isEnableEventSizeLimiting() {
+    return enableEventSizeLimiting;
+  }
+
+  /**
+   * Enables or disables event size limiting. When enabled, events exceeding 1MB will have
+   * breadcrumbs and stack frames reduced to stay under the limit.
+   *
+   * @param enableEventSizeLimiting true to enable, false to disable
+   */
+  public void setEnableEventSizeLimiting(final boolean enableEventSizeLimiting) {
+    this.enableEventSizeLimiting = enableEventSizeLimiting;
+  }
+
+  /**
+   * Returns the onOversizedEvent callback.
+   *
+   * @return the onOversizedEvent callback or null if not set
+   */
+  public @Nullable OnOversizedEventCallback getOnOversizedEvent() {
+    return onOversizedEvent;
+  }
+
+  /**
+   * Sets the onOversizedEvent callback. This callback is invoked when an oversized event is
+   * detected, before the automatic reduction steps are applied.
+   *
+   * @param onOversizedEvent the onOversizedEvent callback
+   */
+  public void setOnOversizedEvent(@Nullable OnOversizedEventCallback onOversizedEvent) {
+    this.onOversizedEvent = onOversizedEvent;
+  }
+
+  /**
    * Returns if tracing should be enabled. If tracing is disabled, starting transactions returns
    * {@link NoOpTransaction}.
    *
@@ -3134,6 +3184,21 @@ public class SentryOptions {
      */
     @Nullable
     Breadcrumb execute(@NotNull Breadcrumb breadcrumb, @NotNull Hint hint);
+  }
+
+  /** The OnOversizedEvent callback */
+  public interface OnOversizedEventCallback {
+
+    /**
+     * Called when an oversized event is detected. This callback allows custom handling of oversized
+     * events before automatic reduction steps are applied.
+     *
+     * @param event the oversized event
+     * @param hint the hints
+     * @return the modified event (should ideally be reduced in size)
+     */
+    @NotNull
+    SentryEvent execute(@NotNull SentryEvent event, @NotNull Hint hint);
   }
 
   /** The OnDiscard callback */
