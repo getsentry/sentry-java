@@ -3864,7 +3864,7 @@ public final class io/sentry/SentryStackTraceFactory {
 }
 
 public final class io/sentry/SentryThreadFactory {
-	public fun <init> (Lio/sentry/SentryStackTraceFactory;Lio/sentry/SentryOptions;)V
+	public fun <init> (Lio/sentry/SentryStackTraceFactory;)V
 }
 
 public final class io/sentry/SentryTraceHeader {
