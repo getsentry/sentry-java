@@ -1,9 +1,12 @@
 package io.sentry.util.network;
 
-import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.VisibleForTesting;
 
 /**
  * Utility class for network capture operations shared across HTTP client integrations. Provides
@@ -115,19 +118,24 @@ public final class NetworkDetailCaptureUtils {
     return false;
   }
 
-  private static @NotNull Map<String, String> getCaptureHeaders(
+  @VisibleForTesting
+  static @NotNull Map<String, String> getCaptureHeaders(
       @Nullable final Map<String, String> allHeaders, @NotNull final String[] allowedHeaders) {
 
-    Map<String, String> capturedHeaders = new HashMap<>();
-
-    if (allHeaders == null) {
+    final Map<String, String> capturedHeaders = new LinkedHashMap<>();
+    if (allHeaders == null || allowedHeaders.length == 0) {
       return capturedHeaders;
     }
 
+    // Convert to lowercase for case-insensitive matching
+    Set<String> normalizedAllowed = new HashSet<>();
     for (String header : allowedHeaders) {
-      String value = allHeaders.get(header);
-      if (value != null) {
-        capturedHeaders.put(header, value);
+      normalizedAllowed.add(header.toLowerCase());
+    }
+
+    for (Map.Entry<String, String> entry : allHeaders.entrySet()) {
+      if (normalizedAllowed.contains(entry.getKey().toLowerCase())) {
+        capturedHeaders.put(entry.getKey(), entry.getValue());
       }
     }
 
