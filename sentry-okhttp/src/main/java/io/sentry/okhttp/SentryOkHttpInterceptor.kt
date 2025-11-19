@@ -209,6 +209,9 @@ public open class SentryOkHttpInterceptor(
         )
       }
 
+      // Set network details on the OkHttpEvent so it can include them in the breadcrumb hint
+      okHttpEvent?.setNetworkDetails(networkDetailData)
+
       finishSpan(span, request, response, isFromEventListener, okHttpEvent)
 
       // The SentryOkHttpEventListener will send the breadcrumb itself if used for this call
