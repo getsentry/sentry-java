@@ -66,8 +66,6 @@ kotlin { explicitApi() }
 dependencies {
   api(projects.sentry)
 
-  // LaunchDarkly Android Client SDK
-  // Note: This is for Android client-side applications
   compileOnly(libs.launchdarkly.android)
 
   implementation(kotlin(Config.kotlinStdLib, Config.kotlinStdLibVersionAndroid))
@@ -80,7 +78,6 @@ dependencies {
   testImplementation(libs.androidx.test.ext.junit)
   testImplementation(libs.mockito.kotlin)
   testImplementation(libs.mockito.inline)
-  // LaunchDarkly Android Client SDK for tests
   testImplementation(libs.launchdarkly.android)
 }
 

@@ -20,9 +20,6 @@ tasks.withType<KotlinCompile>().configureEach {
 dependencies {
   api(projects.sentry)
 
-  // LaunchDarkly Java Server SDK (for JVM/server-side applications)
-  // Note: For Android applications, use sentry-launchdarkly-android module with
-  // com.launchdarkly:launchdarkly-android-client-sdk instead
   compileOnly(libs.launchdarkly.server)
 
   compileOnly(libs.jetbrains.annotations)
@@ -38,7 +35,6 @@ dependencies {
   testImplementation(libs.kotlin.test.junit)
   testImplementation(libs.mockito.kotlin)
   testImplementation(libs.mockito.inline)
-  // LaunchDarkly Java Server SDK for tests
   testImplementation(libs.launchdarkly.server)
 }
 
