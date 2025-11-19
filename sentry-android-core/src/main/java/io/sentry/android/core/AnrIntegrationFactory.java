@@ -13,7 +13,8 @@ public final class AnrIntegrationFactory {
   public static Integration create(
       final @NotNull Context context, final @NotNull BuildInfoProvider buildInfoProvider) {
     if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.R) {
-      return new AnrV2Integration(context);
+      // return new AnrV2Integration(context);
+      return new AnrIntegration(context);
     } else {
       return new AnrIntegration(context);
     }
