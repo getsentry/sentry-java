@@ -60,6 +60,8 @@ Sentry SDK for Java and Android
 | sentry-quartz                           | ![Maven Central Version](https://img.shields.io/maven-central/v/io.sentry/sentry-quartz?style=for-the-badge&logo=sentry&color=green)                           |
 | sentry-openfeign                        | ![Maven Central Version](https://img.shields.io/maven-central/v/io.sentry/sentry-openfeign?style=for-the-badge&logo=sentry&color=green)                        |
 | sentry-openfeature                      | ![Maven Central Version](https://img.shields.io/maven-central/v/io.sentry/sentry-openfeature?style=for-the-badge&logo=sentry&color=green)                      |
+| sentry-launchdarkly-android             | ![Maven Central Version](https://img.shields.io/maven-central/v/io.sentry/sentry-launchdarkly-android?style=for-the-badge&logo=sentry&color=green)             |
+| sentry-launchdarkly-server              | ![Maven Central Version](https://img.shields.io/maven-central/v/io.sentry/sentry-launchdarkly-server?style=for-the-badge&logo=sentry&color=green)              |
 | sentry-opentelemetry-agent              | ![Maven Central Version](https://img.shields.io/maven-central/v/io.sentry/sentry-opentelemetry-agent?style=for-the-badge&logo=sentry&color=green)              |
 | sentry-opentelemetry-agentcustomization | ![Maven Central Version](https://img.shields.io/maven-central/v/io.sentry/sentry-opentelemetry-agentcustomization?style=for-the-badge&logo=sentry&color=green) |
 | sentry-opentelemetry-core               | ![Maven Central Version](https://img.shields.io/maven-central/v/io.sentry/sentry-opentelemetry-core?style=for-the-badge&logo=sentry&color=green)               |
