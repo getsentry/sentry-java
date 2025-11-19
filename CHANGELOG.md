@@ -4,6 +4,8 @@
 
 ### Features
 
+- Implement OpenFeature Integration that tracks Feature Flag evaluations ([#4910](https://github.com/getsentry/sentry-java/pull/4910))
+  - To make use of it, add the `sentry-openfeature` dependency and register the the hook using: `openFeatureApiInstance.addHooks(new SentryOpenFeatureHook());`
 - Detect oversized events and reduce their size ([#4903](https://github.com/getsentry/sentry-java/pull/4903))
   - You can opt into this new behaviour by setting `enableEventSizeLimiting` to `true` (`sentry.enable-event-size-limiting=true` for Spring Boot `application.properties`)
   - You may optionally register an `onOversizedEvent` callback to implement custom logic that is executed in case an oversized event is detected
