@@ -192,5 +192,16 @@
       <meta-data android:name="io.sentry.session-replay.screenshot-strategy" android:value="canvas" />
       <meta-data android:name="io.sentry.session-replay.session-sample-rate" android:value="1" />
       <meta-data android:name="io.sentry.session-replay.mask-all-text" android:value="true" />
+
+      <!-- Testing Network Details  -->
+      <!-- Catpure network details for all urls -->
+      <meta-data android:name="io.sentry.session-replay.network-detail-allow-urls" android:value=".*" />
+      <!-- Exclude any url with the substring 'deny' -->
+      <meta-data android:name="io.sentry.session-replay.network-detail-deny-urls" android:value=".*deny.*" />
+      <!-- Disable network body capture for urls specified in .network-detail-allow-urls -->
+<!--      <meta-data android:name="io.sentry.session-replay.network-capture-bodies" android:value="false" />-->
+      <!-- Some random headers to extract. See TriggerHttpRequestActivity to set these on a test http request -->
+      <meta-data android:name="io.sentry.session-replay.network-request-headers" android:value="Authorization,X-Custom-Header,X-Test-Request" />
+      <meta-data android:name="io.sentry.session-replay.network-response-headers" android:value="X-Response-Time,X-Cache-Status,X-Test-Response" />
     </application>
 </manifest>

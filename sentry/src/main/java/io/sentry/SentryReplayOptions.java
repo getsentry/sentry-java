@@ -2,6 +2,10 @@ package io.sentry;
 
 import io.sentry.protocol.SdkVersion;
 import io.sentry.util.SampleRateUtils;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -156,6 +160,51 @@ public final class SentryReplayOptions {
    */
   @ApiStatus.Experimental
   private @NotNull ScreenshotStrategyType screenshotStrategy = ScreenshotStrategyType.PIXEL_COPY;
+
+  /**
+   * Capture request and response details for XHR and fetch requests that match the given URLs.
+   * Default is empty (network details not collected).
+   */
+  private @NotNull String[] networkDetailAllowUrls = new String[0];
+
+  /**
+   * Do not capture request and response details for these URLs. Takes precedence over
+   * networkDetailAllowUrls. Default is empty.
+   */
+  private @NotNull String[] networkDetailDenyUrls = new String[0];
+
+  /**
+   * Decide whether to capture request and response bodies for URLs defined in
+   * networkDetailAllowUrls. Default is true, but capturing bodies requires at least one url
+   * specified via {@link #setNetworkDetailAllowUrls(String[])}.
+   */
+  private boolean networkCaptureBodies = true;
+
+  /** Default headers that are always captured for URLs defined in networkDetailAllowUrls. */
+  private static final @NotNull List<String> DEFAULT_HEADERS =
+      Collections.unmodifiableList(Arrays.asList("Content-Type", "Content-Length", "Accept"));
+
+  /**
+   * Gets the default headers that are always captured for URLs defined in networkDetailAllowUrls.
+   *
+   * @return an unmodifiable list
+   */
+  @ApiStatus.Internal
+  public static @NotNull List<String> getNetworkDetailsDefaultHeaders() {
+    return DEFAULT_HEADERS;
+  }
+
+  /**
+   * Additional request headers to capture for URLs defined in networkDetailAllowUrls. The default
+   * headers (Content-Type, Content-Length, Accept) are always included in addition to these.
+   */
+  private @NotNull String[] networkRequestHeaders = DEFAULT_HEADERS.toArray(new String[0]);
+
+  /**
+   * Additional response headers to capture for URLs defined in networkDetailAllowUrls. The default
+   * headers (Content-Type, Content-Length, Accept) are always included in addition to these.
+   */
+  private @NotNull String[] networkResponseHeaders = DEFAULT_HEADERS.toArray(new String[0]);
 
   public SentryReplayOptions(final boolean empty, final @Nullable SdkVersion sdkVersion) {
     if (!empty) {
@@ -376,5 +425,114 @@ public final class SentryReplayOptions {
   @ApiStatus.Experimental
   public void setScreenshotStrategy(final @NotNull ScreenshotStrategyType screenshotStrategy) {
     this.screenshotStrategy = screenshotStrategy;
+  }
+
+  /**
+   * Gets the array of URLs for which network request and response details should be captured.
+   *
+   * @return the network detail allow URLs array
+   */
+  public @NotNull String[] getNetworkDetailAllowUrls() {
+    return networkDetailAllowUrls;
+  }
+
+  /**
+   * Sets the array of URLs for which network request and response details should be captured.
+   *
+   * @param networkDetailAllowUrls the network detail allow URLs array
+   */
+  public void setNetworkDetailAllowUrls(final @NotNull String[] networkDetailAllowUrls) {
+    this.networkDetailAllowUrls = networkDetailAllowUrls;
+  }
+
+  /**
+   * Gets the array of URLs for which network request and response details should NOT be captured.
+   *
+   * @return the network detail deny URLs array
+   */
+  public @NotNull String[] getNetworkDetailDenyUrls() {
+    return networkDetailDenyUrls;
+  }
+
+  /**
+   * Sets the array of URLs for which network request and response details should NOT be captured.
+   * Takes precedence over networkDetailAllowUrls.
+   *
+   * @param networkDetailDenyUrls the network detail deny URLs array
+   */
+  public void setNetworkDetailDenyUrls(final @NotNull String[] networkDetailDenyUrls) {
+    this.networkDetailDenyUrls = networkDetailDenyUrls;
+  }
+
+  /**
+   * Gets whether to capture request and response bodies for URLs defined in networkDetailAllowUrls.
+   *
+   * @return true if network capture bodies is enabled, false otherwise
+   */
+  public boolean isNetworkCaptureBodies() {
+    return networkCaptureBodies;
+  }
+
+  /**
+   * Sets whether to capture request and response bodies for URLs defined in networkDetailAllowUrls.
+   *
+   * @param networkCaptureBodies true to enable network capture bodies, false otherwise
+   */
+  public void setNetworkCaptureBodies(final boolean networkCaptureBodies) {
+    this.networkCaptureBodies = networkCaptureBodies;
+  }
+
+  /**
+   * Gets all request headers to capture for URLs defined in networkDetailAllowUrls. This includes
+   * both the default headers (Content-Type, Content-Length, Accept) and any additional headers.
+   *
+   * @return the complete network request headers array
+   */
+  public @NotNull String[] getNetworkRequestHeaders() {
+    return networkRequestHeaders;
+  }
+
+  /**
+   * Sets request headers to capture for URLs defined in networkDetailAllowUrls. The default headers
+   * (Content-Type, Content-Length, Accept) are always included automatically.
+   *
+   * @param networkRequestHeaders additional network request headers list
+   */
+  public void setNetworkRequestHeaders(final @NotNull List<String> networkRequestHeaders) {
+    this.networkRequestHeaders = mergeHeaders(DEFAULT_HEADERS, networkRequestHeaders);
+  }
+
+  /**
+   * Gets all response headers to capture for URLs defined in networkDetailAllowUrls. This includes
+   * both the default headers (Content-Type, Content-Length, Accept) and any additional headers.
+   *
+   * @return the complete network response headers array
+   */
+  public @NotNull String[] getNetworkResponseHeaders() {
+    return networkResponseHeaders;
+  }
+
+  /**
+   * Sets response headers to capture for URLs defined in networkDetailAllowUrls. The default
+   * headers (Content-Type, Content-Length, Accept) are always included automatically.
+   *
+   * @param networkResponseHeaders the additional network response headers list
+   */
+  public void setNetworkResponseHeaders(final @NotNull List<String> networkResponseHeaders) {
+    this.networkResponseHeaders = mergeHeaders(DEFAULT_HEADERS, networkResponseHeaders);
+  }
+
+  /**
+   * Merges default headers with additional headers, removing duplicates while preserving order.
+   *
+   * @param defaultHeaders the default headers that are always included
+   * @param additionalHeaders additional headers to merge
+   */
+  private static @NotNull String[] mergeHeaders(
+      final @NotNull List<String> defaultHeaders, final @NotNull List<String> additionalHeaders) {
+    final Set<String> merged = new LinkedHashSet<>();
+    merged.addAll(defaultHeaders);
+    merged.addAll(additionalHeaders);
+    return merged.toArray(new String[0]);
   }
 }
