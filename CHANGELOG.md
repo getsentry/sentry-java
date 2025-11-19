@@ -14,6 +14,7 @@
 
 ### Improvements
 
+- Decouple SentryThreadFactory from SentryOptions ([#4918](https://github.com/getsentry/sentry-java/pull/4918))
 - Do not send manual log origin ([#4897](https://github.com/getsentry/sentry-java/pull/4897))
 
 ## 8.26.0
