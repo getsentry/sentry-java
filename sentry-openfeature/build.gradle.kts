@@ -35,7 +35,7 @@ dependencies {
   testImplementation(libs.kotlin.test.junit)
   testImplementation(libs.mockito.kotlin)
   testImplementation(libs.mockito.inline)
-  testImplementation("dev.openfeature:sdk:1.15.1")
+  testImplementation(libs.openfeature)
 }
 
 configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
