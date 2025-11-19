@@ -8,7 +8,7 @@
   - You can opt into this new behaviour by setting `enableEventSizeLimiting` to `true` (`sentry.enable-event-size-limiting=true` for Spring Boot `application.properties`)
   - You may optionally register an `onOversizedEvent` callback to implement custom logic that is executed in case an oversized event is detected
     - This is executed first and if event size was reduced sufficiently, no further truncation is performed
-  - Currently we are dropping breadcrumbs and if that isn't sufficient also stack frames in order to get an events size down
+  - In case we detect an oversized event, we first drop breadcrumbs and if that isn't sufficient we also drop stack frames in order to get an events size down
 
 ### Improvements
 
