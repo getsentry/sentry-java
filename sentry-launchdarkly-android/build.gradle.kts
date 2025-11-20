@@ -29,9 +29,7 @@ android {
     getByName("release") { consumerProguardFiles("proguard-rules.pro") }
   }
 
-  kotlin {
-    compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8
-  }
+  kotlin { compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8 }
 
   testOptions {
     animationsDisabled = true

@@ -8,7 +8,6 @@ import io.sentry.ILogger
 import io.sentry.IScopes
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
-import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -188,7 +187,8 @@ class SentryLaunchDarklyAndroidHookTest {
 
     val result = hook.afterEvaluation(seriesContext, seriesData, evaluationDetail)
 
-    verify(mockLogger).log(eq(SentryLevel.ERROR), eq("Failed to capture feature flag evaluation"), any())
+    verify(mockLogger)
+      .log(eq(SentryLevel.ERROR), eq("Failed to capture feature flag evaluation"), any())
     verify(mockScopes, never()).addFeatureFlag(any(), any())
     assertEquals(seriesData, result)
     assertEquals("existingValue", result["existingKey"])
@@ -230,4 +230,3 @@ class SentryLaunchDarklyAndroidHookTest {
     return seriesContext
   }
 }
-

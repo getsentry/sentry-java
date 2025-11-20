@@ -205,7 +205,8 @@ class SentryLaunchDarklyServerHookTest {
 
     val result = hook.afterEvaluation(seriesContext, seriesData, evaluationDetail)
 
-    verify(mockLogger).log(eq(SentryLevel.ERROR), eq("Failed to capture feature flag evaluation"), any())
+    verify(mockLogger)
+      .log(eq(SentryLevel.ERROR), eq("Failed to capture feature flag evaluation"), any())
     verify(mockScopes, never()).addFeatureFlag(any(), any())
     assertEquals(seriesData, result)
     assertEquals("existingValue", result["existingKey"])
@@ -235,4 +236,3 @@ class SentryLaunchDarklyServerHookTest {
     assertEquals("value", result["key"])
   }
 }
-
