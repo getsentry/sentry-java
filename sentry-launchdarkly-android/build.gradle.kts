@@ -67,8 +67,7 @@ dependencies {
   api(projects.sentry)
 
   compileOnly(libs.launchdarkly.android)
-
-  implementation(kotlin(Config.kotlinStdLib, Config.kotlinStdLibVersionAndroid))
+  compileOnly(libs.jetbrains.annotations)
 
   // tests
   testImplementation(projects.sentry)
