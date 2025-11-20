@@ -117,6 +117,10 @@ public class TriggerHttpRequestActivity extends AppCompatActivity {
             .get()
             .addHeader("User-Agent", "Sentry-Sample-Android")
             .addHeader("Accept", "application/json")
+            // Test headers for network detail filtering
+            .addHeader("Authorization", "Bearer test-token-12345")
+            .addHeader("X-Custom-Header", "custom-value-for-testing")
+            .addHeader("X-Test-Request", "network-detail-test")
             .build();
 
     displayRequest("GET", request);
@@ -196,10 +200,23 @@ public class TriggerHttpRequestActivity extends AppCompatActivity {
                 final long responseTime = System.currentTimeMillis() - startTime;
                 final String finalBody = body;
 
+                // Capture response headers for network detail testing
+                final StringBuilder responseHeaders = new StringBuilder();
+                for (int i = 0; i < response.headers().size(); i++) {
+                  responseHeaders
+                      .append("  ")
+                      .append(response.headers().name(i))
+                      .append(": ")
+                      .append(response.headers().value(i))
+                      .append("\n");
+                }
+                final String finalResponseHeaders = responseHeaders.toString();
+
                 runOnUiThread(
                     () -> {
                       showLoading(false);
-                      displayResponse(statusMessage, statusCode, finalBody, responseTime);
+                      displayResponse(
+                          statusMessage, statusCode, finalBody, responseTime, finalResponseHeaders);
                     });
 
                 response.close();
@@ -237,27 +254,36 @@ public class TriggerHttpRequestActivity extends AppCompatActivity {
   }
 
   private void displayResponse(String status, Integer code, String body, long responseTime) {
+    displayResponse(status, code, body, responseTime, null);
+  }
+
+  private void displayResponse(
+      String status, Integer code, String body, long responseTime, String headers) {
     StringBuilder sb = new StringBuilder();
     sb.append("[").append(getCurrentTime()).append("]\n");
     sb.append("━━━━━━━━━━━━━━━━━━━━━━━━\n");
 
     if (code != null) {
       sb.append("STATUS: ").append(code).append(" ").append(status).append("\n");
-      sb.append("RESPONSE TIME: ").append(responseTime).append("ms\n\n");
+      sb.append("RESPONSE TIME: ").append(responseTime).append("ms\n");
     } else {
-      sb.append("STATUS: ").append(status).append("\n\n");
+      sb.append("STATUS: ").append(status).append("\n");
+    }
+
+    if (headers != null && !headers.isEmpty()) {
+      sb.append("\nRESPONSE HEADERS:\n").append(headers);
     }
 
     if (body != null && !body.isEmpty()) {
       try {
         if (body.trim().startsWith("{") || body.trim().startsWith("[")) {
           JSONObject json = new JSONObject(body);
-          sb.append("BODY (JSON):\n").append(json.toString(2));
+          sb.append("\nBODY (JSON):\n").append(json.toString(2));
         } else {
-          sb.append("BODY:\n").append(body);
+          sb.append("\nBODY:\n").append(body);
         }
       } catch (Exception e) {
-        sb.append("BODY:\n").append(body);
+        sb.append("\nBODY:\n").append(body);
       }
     }
 

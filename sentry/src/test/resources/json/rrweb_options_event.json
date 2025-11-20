@@ -7,6 +7,7 @@
       "unmaskedViewClasses": ["com.example.MyClass"],
       "nativeSdkVersion": "7.19.1",
       "errorSampleRate": 0.1,
+      "networkDetailHasUrls": false,
       "maskAllImages": false,
       "maskAllText": false,
       "maskedViewClasses": [],
