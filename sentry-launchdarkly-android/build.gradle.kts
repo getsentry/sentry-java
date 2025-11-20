@@ -1,12 +1,8 @@
-import io.gitlab.arturbosch.detekt.Detekt
-
 plugins {
   id("com.android.library")
-  alias(libs.plugins.kotlin.android)
   jacoco
   alias(libs.plugins.jacoco.android)
   alias(libs.plugins.gradle.versions)
-  alias(libs.plugins.detekt)
 }
 
 android {
@@ -32,12 +28,6 @@ android {
     getByName("release") { consumerProguardFiles("proguard-rules.pro") }
   }
 
-  kotlin {
-    compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8
-    compilerOptions.languageVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
-    compilerOptions.apiVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
-  }
-
   testOptions {
     animationsDisabled = true
     unitTests.apply {
@@ -61,8 +51,6 @@ android {
   }
 }
 
-kotlin { explicitApi() }
-
 dependencies {
   api(projects.sentry)
 
@@ -72,15 +60,7 @@ dependencies {
   // tests
   testImplementation(projects.sentry)
   testImplementation(projects.sentryTestSupport)
-  testImplementation(kotlin(Config.kotlinStdLib))
-  testImplementation(libs.kotlin.test.junit)
   testImplementation(libs.androidx.test.ext.junit)
-  testImplementation(libs.mockito.kotlin)
   testImplementation(libs.mockito.inline)
   testImplementation(libs.launchdarkly.android)
-}
-
-tasks.withType<Detekt>().configureEach {
-  // Target version of the generated JVM bytecode. It is used for type resolution.
-  jvmTarget = JavaVersion.VERSION_1_8.toString()
 }
