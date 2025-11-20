@@ -1,5 +1,6 @@
 plugins {
   id("com.android.library")
+  alias(libs.plugins.kotlin.android)
   jacoco
   alias(libs.plugins.jacoco.android)
   alias(libs.plugins.gradle.versions)
@@ -26,6 +27,10 @@ android {
   buildTypes {
     getByName("debug") { consumerProguardFiles("proguard-rules.pro") }
     getByName("release") { consumerProguardFiles("proguard-rules.pro") }
+  }
+
+  kotlin {
+    compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8
   }
 
   testOptions {
@@ -60,7 +65,10 @@ dependencies {
   // tests
   testImplementation(projects.sentry)
   testImplementation(projects.sentryTestSupport)
+  testImplementation(kotlin(Config.kotlinStdLib, Config.kotlinStdLibVersionAndroid))
   testImplementation(libs.androidx.test.ext.junit)
+  testImplementation(libs.kotlin.test.junit)
+  testImplementation(libs.mockito.kotlin)
   testImplementation(libs.mockito.inline)
   testImplementation(libs.launchdarkly.android)
 }
