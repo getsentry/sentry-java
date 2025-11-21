@@ -66,6 +66,8 @@ include(
     "sentry-quartz",
     "sentry-okhttp",
     "sentry-openfeature",
+    "sentry-launchdarkly-server",
+    "sentry-launchdarkly-android",
     "sentry-reactor",
     "sentry-async-profiler",
     "sentry-ktor-client",
