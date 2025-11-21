@@ -1,0 +1,1 @@
+typeSearchIndex = [{"l":"All Classes and Interfaces","u":"allclasses-index.html"},{"p":"io.sentry.openfeature","l":"BuildConfig"},{"p":"io.sentry.openfeature","l":"SentryOpenFeatureHook"}];updateSearchResults();
