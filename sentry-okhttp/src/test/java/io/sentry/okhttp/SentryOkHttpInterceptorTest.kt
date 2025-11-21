@@ -710,9 +710,9 @@ class SentryOkHttpInterceptorTest {
     val interceptor = SentryOkHttpInterceptor(fixture.scopes)
     val headerMap = with(interceptor) { headers.toMap() }
 
-    // Duplicate headers will be collapsed into 1 concatenated entry with ", " separator
-    assertEquals("sessionId=123, userId=456, theme=dark", headerMap["Set-Cookie"])
-    assertEquals("text/html, application/json", headerMap["Accept"])
+    // Duplicate headers will be collapsed into 1 concatenated entry with "; " separator
+    assertEquals("sessionId=123; userId=456; theme=dark", headerMap["Set-Cookie"])
+    assertEquals("text/html; application/json", headerMap["Accept"])
     assertEquals("value", headerMap["Single-Header"])
   }
 }

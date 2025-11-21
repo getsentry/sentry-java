@@ -272,8 +272,8 @@ public open class SentryOkHttpInterceptor(
       val value = value(i)
       val existingValue = headers[name]
       if (existingValue != null) {
-        // Concatenate duplicate headers with comma separator
-        headers[name] = "$existingValue, $value"
+        // Concatenate duplicate headers with semicolon separator
+        headers[name] = "$existingValue; $value"
       } else {
         headers[name] = value
       }
