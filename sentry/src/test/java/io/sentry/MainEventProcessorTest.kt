@@ -249,7 +249,7 @@ class MainEventProcessorTest {
   }
 
   @Test
-  fun `when attach threads is disabled, but the hint is Abnormal, still sets threads`() {
+  fun `when attach threads is disabled, but the hint is Abnormal, still sets threads and stacktraces`() {
     val sut = fixture.getSut(attachThreads = false, attachStackTrace = false)
 
     var event = SentryEvent(RuntimeException("error"))
@@ -258,6 +258,20 @@ class MainEventProcessorTest {
 
     assertNotNull(event.threads)
     assertEquals(1, event.threads!!.count { it.isCrashed == true })
+    assertNotNull(event.threads!!.first().stacktrace)
+  }
+
+  @Test
+  fun `when attach threads is enabled, but stacktraces is not its reflected`() {
+    val sut = fixture.getSut(attachThreads = true, attachStackTrace = false)
+
+    var event = SentryEvent(RuntimeException("error"))
+    val hint = Hint()
+    event = sut.process(event, hint)
+
+    assertNotNull(event.threads)
+    assertEquals(1, event.threads!!.count { it.isCrashed == true })
+    assertNull(event.threads!!.first().stacktrace)
   }
 
   @Test
