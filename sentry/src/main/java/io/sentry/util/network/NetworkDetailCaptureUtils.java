@@ -130,7 +130,9 @@ public final class NetworkDetailCaptureUtils {
     // Convert to lowercase for case-insensitive matching
     Set<String> normalizedAllowed = new HashSet<>();
     for (String header : allowedHeaders) {
-      normalizedAllowed.add(header.toLowerCase());
+      if (header != null) {
+        normalizedAllowed.add(header.toLowerCase());
+      }
     }
 
     for (Map.Entry<String, String> entry : allHeaders.entrySet()) {
