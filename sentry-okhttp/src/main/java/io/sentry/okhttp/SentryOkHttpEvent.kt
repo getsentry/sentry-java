@@ -10,6 +10,7 @@ import io.sentry.TypeCheckHint
 import io.sentry.transport.CurrentDateProvider
 import io.sentry.util.Platform
 import io.sentry.util.UrlUtils
+import io.sentry.util.network.NetworkRequestData
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
@@ -27,6 +28,7 @@ internal class SentryOkHttpEvent(private val scopes: IScopes, private val reques
   internal val callSpan: ISpan?
   private var response: Response? = null
   private var clientErrorResponse: Response? = null
+  private var networkDetails: NetworkRequestData? = null
   internal val isEventFinished = AtomicBoolean(false)
   private var url: String
   private var method: String
@@ -135,6 +137,11 @@ internal class SentryOkHttpEvent(private val scopes: IScopes, private val reques
     }
   }
 
+  /** Sets the [NetworkRequestData] for network detail capture. */
+  fun setNetworkDetails(networkRequestData: NetworkRequestData?) {
+    this.networkDetails = networkRequestData
+  }
+
   /** Record event start if the callRootSpan is not null. */
   fun onEventStart(event: String) {
     callSpan ?: return
@@ -162,6 +169,9 @@ internal class SentryOkHttpEvent(private val scopes: IScopes, private val reques
     val hint = Hint()
     hint.set(TypeCheckHint.OKHTTP_REQUEST, request)
     response?.let { hint.set(TypeCheckHint.OKHTTP_RESPONSE, it) }
+
+    // Include network details in the hint for session replay
+    networkDetails?.let { hint.set(TypeCheckHint.SENTRY_REPLAY_NETWORK_DETAILS, it) }
 
     // needs this as unix timestamp for rrweb
     breadcrumb.setData(

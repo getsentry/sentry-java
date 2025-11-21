@@ -680,4 +680,39 @@ class SentryOkHttpInterceptorTest {
     assertNotNull(recordedRequest.getHeader(SentryTraceHeader.SENTRY_TRACE_HEADER))
     assertNull(recordedRequest.getHeader(W3CTraceparentHeader.TRACEPARENT_HEADER))
   }
+
+  @Test
+  fun `toMap handles duplicate headers correctly`() {
+    // Create a response with duplicate headers
+    val mockResponse =
+      MockResponse()
+        .setResponseCode(200)
+        .setBody("test")
+        .addHeader("Set-Cookie", "sessionId=123")
+        .addHeader("Set-Cookie", "userId=456")
+        .addHeader("Set-Cookie", "theme=dark")
+        .addHeader("Accept", "text/html")
+        .addHeader("Accept", "application/json")
+        .addHeader("Single-Header", "value")
+
+    fixture.server.enqueue(mockResponse)
+
+    // Execute request to get response with headers
+    val sut = fixture.getSut()
+    val response = sut.newCall(getRequest()).execute()
+    val headers = response.headers
+
+    // Optional: verify OkHttp preserves duplicate headers
+    assertEquals(3, headers.values("Set-Cookie").size)
+    assertEquals(2, headers.values("Accept").size)
+    assertEquals(1, headers.values("Single-Header").size)
+
+    val interceptor = SentryOkHttpInterceptor(fixture.scopes)
+    val headerMap = with(interceptor) { headers.toMap() }
+
+    // Duplicate headers will be collapsed into 1 concatenated entry with "; " separator
+    assertEquals("sessionId=123; userId=456; theme=dark", headerMap["Set-Cookie"])
+    assertEquals("text/html; application/json", headerMap["Accept"])
+    assertEquals("value", headerMap["Single-Header"])
+  }
 }

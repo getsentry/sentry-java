@@ -15,6 +15,7 @@ import io.sentry.TransactionContext
 import io.sentry.TypeCheckHint
 import io.sentry.exception.SentryHttpClientException
 import io.sentry.test.getProperty
+import io.sentry.util.network.NetworkRequestData
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -423,6 +424,34 @@ class SentryOkHttpEventTest {
     val sut = fixture.getSut()
     sut.finish()
     verify(fixture.scopes, never()).captureEvent(any(), any<Hint>())
+  }
+
+  @Test
+  fun `when finish is called, the breadcrumb sent includes network details data on its hint`() {
+    val sut = fixture.getSut()
+    val networkRequestData = NetworkRequestData("GET")
+
+    sut.setNetworkDetails(networkRequestData)
+    sut.finish()
+
+    verify(fixture.scopes)
+      .addBreadcrumb(
+        any<Breadcrumb>(),
+        check { assertEquals(networkRequestData, it[TypeCheckHint.SENTRY_REPLAY_NETWORK_DETAILS]) },
+      )
+  }
+
+  @Test
+  fun `when setNetworkDetails is not called, no network details data is captured`() {
+    val sut = fixture.getSut()
+
+    sut.finish()
+
+    verify(fixture.scopes)
+      .addBreadcrumb(
+        any<Breadcrumb>(),
+        check { assertNull(it[TypeCheckHint.SENTRY_REPLAY_NETWORK_DETAILS]) },
+      )
   }
 
   /** Retrieve all the spans started in the event using reflection. */
