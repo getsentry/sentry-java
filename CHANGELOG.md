@@ -19,6 +19,10 @@
 
 - Do not send manual log origin ([#4897](https://github.com/getsentry/sentry-java/pull/4897))
 
+### Dependencies
+
+- Bump Spring Boot 4 to GA ([#4923](https://github.com/getsentry/sentry-java/pull/4923))
+
 ## 8.26.0
 
 ### Features
