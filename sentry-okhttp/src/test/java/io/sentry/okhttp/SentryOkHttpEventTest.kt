@@ -437,7 +437,7 @@ class SentryOkHttpEventTest {
     verify(fixture.scopes)
       .addBreadcrumb(
         any<Breadcrumb>(),
-        check { assertEquals(networkRequestData, it[TypeCheckHint.SENTRY_REPLAY_NETWORK_DETAILS]) }
+        check { assertEquals(networkRequestData, it[TypeCheckHint.SENTRY_REPLAY_NETWORK_DETAILS]) },
       )
   }
 
@@ -450,7 +450,7 @@ class SentryOkHttpEventTest {
     verify(fixture.scopes)
       .addBreadcrumb(
         any<Breadcrumb>(),
-        check { assertNull(it[TypeCheckHint.SENTRY_REPLAY_NETWORK_DETAILS]) }
+        check { assertNull(it[TypeCheckHint.SENTRY_REPLAY_NETWORK_DETAILS]) },
       )
   }
 
