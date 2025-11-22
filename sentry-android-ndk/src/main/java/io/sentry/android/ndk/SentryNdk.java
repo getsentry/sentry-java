@@ -74,7 +74,11 @@ public final class SentryNdk {
         }
 
         //noinspection UnstableApiUsage
-        io.sentry.ndk.SentryNdk.init(ndkOptions);
+        final int initResult = io.sentry.ndk.SentryNdk.init(ndkOptions);
+        if (initResult != 0) {
+          throw new IllegalStateException(
+              "Failed to initialize Sentry NDK. Native init returned code " + initResult);
+        }
 
         // only add scope sync observer if the scope sync is enabled.
         if (options.isEnableScopeSync()) {
