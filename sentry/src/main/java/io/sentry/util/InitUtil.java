@@ -108,12 +108,14 @@ public final class InitUtil {
   }
 
   private static boolean shouldInitializeProfiler(@NotNull SentryOptions options) {
-    return Platform.isJvm() && options.isContinuousProfilingEnabled()
+    return Platform.isJvm()
+        && options.isContinuousProfilingEnabled()
         && options.getContinuousProfiler() instanceof NoOpContinuousProfiler;
   }
 
   private static boolean shouldInitializeProfileConverter(@NotNull SentryOptions options) {
-    return Platform.isJvm() && options.isContinuousProfilingEnabled()
+    return Platform.isJvm()
+        && options.isContinuousProfilingEnabled()
         && options.getProfilerConverter() instanceof NoOpProfileConverter;
   }
 
