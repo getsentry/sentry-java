@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Do not log if `sentry.properties` in rundir has not been found ([#4929](https://github.com/getsentry/sentry-java/pull/4929))
+
 ## 8.27.0
 
 ### Features
