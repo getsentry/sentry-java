@@ -20,7 +20,8 @@ final class FilesystemPropertiesLoader implements PropertiesLoader {
     this(filePath, logger, true);
   }
 
-  public FilesystemPropertiesLoader(@NotNull String filePath, @NotNull ILogger logger, boolean logNonExisting) {
+  public FilesystemPropertiesLoader(
+      @NotNull String filePath, @NotNull ILogger logger, boolean logNonExisting) {
     this.filePath = filePath;
     this.logger = logger;
     this.logNonExisting = logNonExisting;
@@ -39,9 +40,9 @@ final class FilesystemPropertiesLoader implements PropertiesLoader {
       } else if (!f.isFile()) {
         if (logNonExisting) {
           logger.log(
-            SentryLevel.ERROR,
-            "Failed to load Sentry configuration since it is not a file or does not exist: %s",
-            filePath);
+              SentryLevel.ERROR,
+              "Failed to load Sentry configuration since it is not a file or does not exist: %s",
+              filePath);
         }
       } else if (!f.canRead()) {
         logger.log(
