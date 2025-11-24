@@ -14,10 +14,16 @@ import org.jetbrains.annotations.Nullable;
 final class FilesystemPropertiesLoader implements PropertiesLoader {
   private final @NotNull String filePath;
   private final @NotNull ILogger logger;
+  private boolean logNonExisting;
 
   public FilesystemPropertiesLoader(@NotNull String filePath, @NotNull ILogger logger) {
+    this(filePath, logger, true);
+  }
+
+  public FilesystemPropertiesLoader(@NotNull String filePath, @NotNull ILogger logger, boolean logNonExisting) {
     this.filePath = filePath;
     this.logger = logger;
+    this.logNonExisting = logNonExisting;
   }
 
   @Override
@@ -31,10 +37,12 @@ final class FilesystemPropertiesLoader implements PropertiesLoader {
           return properties;
         }
       } else if (!f.isFile()) {
-        logger.log(
+        if (logNonExisting) {
+          logger.log(
             SentryLevel.ERROR,
             "Failed to load Sentry configuration since it is not a file or does not exist: %s",
             filePath);
+        }
       } else if (!f.canRead()) {
         logger.log(
             SentryLevel.ERROR,
