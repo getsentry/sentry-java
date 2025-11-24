@@ -32,7 +32,7 @@ retrofit = "2.9.0"
 slf4j = "1.7.30"
 springboot2 = "2.7.18"
 springboot3 = "3.5.0"
-springboot4 = "4.0.0-RC2"
+springboot4 = "4.0.0"
 # Android
 targetSdk = "34"
 compileSdk = "34"
@@ -117,6 +117,8 @@ kotlinx-coroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core",
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktorClient" }
 ktor-client-java = { module = "io.ktor:ktor-client-java", version.ref = "ktorClient" }
+launchdarkly-android = { module = "com.launchdarkly:launchdarkly-android-client-sdk", version = "5.9.2" }
+launchdarkly-server = { module = "com.launchdarkly:launchdarkly-java-server-sdk", version = "7.10.2" }
 log4j-api = { module = "org.apache.logging.log4j:log4j-api", version.ref = "log4j2" }
 log4j-core = { module = "org.apache.logging.log4j:log4j-core", version.ref = "log4j2" }
 leakcanary = { module = "com.squareup.leakcanary:leakcanary-android", version = "2.14" }
