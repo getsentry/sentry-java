@@ -17,6 +17,7 @@
 - Do not send manual log origin ([#4897](https://github.com/getsentry/sentry-java/pull/4897))
 
 ### Fixes
+
 - Fix missing thread stacks for ANRv1 events ([#4918](https://github.com/getsentry/sentry-java/pull/4918))
 
 ## 8.26.0
