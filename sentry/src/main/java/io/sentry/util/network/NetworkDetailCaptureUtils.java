@@ -136,7 +136,7 @@ public final class NetworkDetailCaptureUtils {
     }
 
     for (Map.Entry<String, String> entry : allHeaders.entrySet()) {
-      if (normalizedAllowed.contains(entry.getKey().toLowerCase())) {
+      if (normalizedAllowed.contains(entry.getKey().toLowerCase(Locale.ROOT))) {
         capturedHeaders.put(entry.getKey(), entry.getValue());
       }
     }
