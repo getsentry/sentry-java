@@ -227,6 +227,8 @@ public final class SentryAndroidOptions extends SentryOptions {
 
   private @Nullable SentryFrameMetricsCollector frameMetricsCollector;
 
+  private boolean tombstonesEnabled = false;
+
   public SentryAndroidOptions() {
     setSentryClientName(BuildConfig.SENTRY_ANDROID_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
     setSdkVersion(createSdkVersion());
@@ -298,6 +300,26 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   public void setAnrReportInDebug(boolean anrReportInDebug) {
     this.anrReportInDebug = anrReportInDebug;
+  }
+
+  /**
+   * Sets Tombstone reporting (ApplicationExitInfo.REASON_CRASH_NATIVE) to enabled or disabled.
+   *
+   * @param tombstonesEnabled true for enabled and false for disabled
+   */
+  @ApiStatus.Internal
+  public void setTombstonesEnabled(boolean tombstonesEnabled) {
+    this.tombstonesEnabled = tombstonesEnabled;
+  }
+
+  /**
+   * Checks if Tombstone reporting (ApplicationExitInfo.REASON_CRASH_NATIVE) is enabled or disabled Default is disabled
+   *
+   * @return true if enabled or false otherwise
+   */
+  @ApiStatus.Internal
+  public boolean isTombstonesEnabled() {
+    return tombstonesEnabled;
   }
 
   public boolean isEnableActivityLifecycleBreadcrumbs() {

@@ -5,6 +5,7 @@ import static io.sentry.android.core.NdkIntegration.SENTRY_NDK_CLASS_NAME;
 import android.app.Application;
 import android.content.Context;
 import android.content.pm.PackageInfo;
+import android.os.Build;
 import io.sentry.CompositePerformanceCollector;
 import io.sentry.DeduplicateMultithreadedEventProcessor;
 import io.sentry.DefaultCompositePerformanceCollector;
@@ -371,6 +372,10 @@ final class AndroidOptionsInitializer {
     // because sentry-native move files around and we don't want to watch that.
     final Class<?> sentryNdkClass = loadClass.loadClass(SENTRY_NDK_CLASS_NAME, options.getLogger());
     options.addIntegration(new NdkIntegration(sentryNdkClass));
+
+    if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.R) {
+      options.addIntegration(new TombstoneIntegration(context));
+    }
 
     // this integration uses android.os.FileObserver, we can't move to sentry
     // before creating a pure java impl.
