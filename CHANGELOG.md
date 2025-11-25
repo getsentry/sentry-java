@@ -1,6 +1,35 @@
 # Changelog
 
-## Unreleased
+## 8.27.1
+
+### Fixes
+
+- Do not log if `sentry.properties` in rundir has not been found ([#4929](https://github.com/getsentry/sentry-java/pull/4929))
+
+## 8.27.0
+
+### Features
+
+- Implement OpenFeature Integration that tracks Feature Flag evaluations ([#4910](https://github.com/getsentry/sentry-java/pull/4910))
+  - To make use of it, add the `sentry-openfeature` dependency and register the the hook using: `openFeatureApiInstance.addHooks(new SentryOpenFeatureHook());`
+- Implement LaunchDarkly Integrations that track Feature Flag evaluations ([#4917](https://github.com/getsentry/sentry-java/pull/4917))
+  - For Android, please add `sentry-launchdarkly-android` as a dependency and register the `SentryLaunchDarklyAndroidHook`
+  - For Server / JVM, please add `sentry-launchdarkly-server` as a dependency and register the `SentryLaunchDarklyServerHook`
+- Detect oversized events and reduce their size ([#4903](https://github.com/getsentry/sentry-java/pull/4903))
+  - You can opt into this new behaviour by setting `enableEventSizeLimiting` to `true` (`sentry.enable-event-size-limiting=true` for Spring Boot `application.properties`)
+  - You may optionally register an `onOversizedEvent` callback to implement custom logic that is executed in case an oversized event is detected
+    - This is executed first and if event size was reduced sufficiently, no further truncation is performed
+  - In case we detect an oversized event, we first drop breadcrumbs and if that isn't sufficient we also drop stack frames in order to get an events size down
+
+### Improvements
+
+- Do not send manual log origin ([#4897](https://github.com/getsentry/sentry-java/pull/4897))
+
+### Dependencies
+
+- Bump Spring Boot 4 to GA ([#4923](https://github.com/getsentry/sentry-java/pull/4923))
+
+## 8.26.0
 
 ### Features
 
