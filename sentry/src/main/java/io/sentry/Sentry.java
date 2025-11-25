@@ -97,16 +97,33 @@ public final class Sentry {
     return new HubScopesWrapper(getCurrentScopes());
   }
 
-  @ApiStatus.Internal // exposed for the coroutines integration in SentryContext
+  @ApiStatus.Internal
   @SuppressWarnings("deprecation")
   public static @NotNull IScopes getCurrentScopes() {
+    return getCurrentScopes(true);
+  }
+
+  /**
+   * Returns the current contexts scopes.
+   *
+   * @param ensureForked if true, forks root scopes in case there are no scopes for this context if
+   *     false, returns NoOpScopes if there are no scopes for this context
+   * @return current scopes, a root scopes fork or NoopScopes
+   */
+  @ApiStatus.Internal
+  @SuppressWarnings("deprecation")
+  public static @NotNull IScopes getCurrentScopes(final boolean ensureForked) {
     if (globalHubMode) {
       return rootScopes;
     }
     @Nullable IScopes scopes = getScopesStorage().get();
     if (scopes == null || scopes.isNoOp()) {
-      scopes = rootScopes.forkedScopes("getCurrentScopes");
-      getScopesStorage().set(scopes);
+      if (!ensureForked) {
+        return NoOpScopes.getInstance();
+      } else {
+        scopes = rootScopes.forkedScopes("getCurrentScopes");
+        getScopesStorage().set(scopes);
+      }
     }
     return scopes;
   }
