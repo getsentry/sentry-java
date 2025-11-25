@@ -94,7 +94,8 @@ class RRWebOptionsEventSerializationTest {
       (payload["networkDetailAllowUrls"] as List<String>),
     )
     assertEquals(
-      (SentryReplayOptions.getNetworkDetailsDefaultHeaders() + listOf("Authorization", "X-Custom")).toSet(),
+      (SentryReplayOptions.getNetworkDetailsDefaultHeaders() + listOf("Authorization", "X-Custom"))
+        .toSet(),
       (payload["networkRequestHeaders"] as List<String>).toSet(),
     )
     assertEquals(

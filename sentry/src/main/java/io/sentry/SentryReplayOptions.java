@@ -443,7 +443,8 @@ public final class SentryReplayOptions {
    * @param networkDetailAllowUrls the network detail allow URLs list
    */
   public void setNetworkDetailAllowUrls(final @NotNull List<String> networkDetailAllowUrls) {
-    this.networkDetailAllowUrls = Collections.unmodifiableList(new ArrayList<>(networkDetailAllowUrls));
+    this.networkDetailAllowUrls =
+        Collections.unmodifiableList(new ArrayList<>(networkDetailAllowUrls));
   }
 
   /**
@@ -462,7 +463,8 @@ public final class SentryReplayOptions {
    * @param networkDetailDenyUrls the network detail deny URLs list
    */
   public void setNetworkDetailDenyUrls(final @NotNull List<String> networkDetailDenyUrls) {
-    this.networkDetailDenyUrls = Collections.unmodifiableList(new ArrayList<>(networkDetailDenyUrls));
+    this.networkDetailDenyUrls =
+        Collections.unmodifiableList(new ArrayList<>(networkDetailDenyUrls));
   }
 
   /**

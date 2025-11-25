@@ -519,9 +519,7 @@ final class ManifestMetadataReader {
               }
             }
             if (!filteredUrls.isEmpty()) {
-              options
-                  .getSessionReplay()
-                  .setNetworkDetailAllowUrls(filteredUrls);
+              options.getSessionReplay().setNetworkDetailAllowUrls(filteredUrls);
             }
           }
         }
@@ -538,9 +536,7 @@ final class ManifestMetadataReader {
               }
             }
             if (!filteredUrls.isEmpty()) {
-              options
-                  .getSessionReplay()
-                  .setNetworkDetailDenyUrls(filteredUrls);
+              options.getSessionReplay().setNetworkDetailDenyUrls(filteredUrls);
             }
           }
         }
