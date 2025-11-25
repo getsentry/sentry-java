@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Improvements
+
+- Avoid forking `rootScopes` for Reactor if current thread has `NoOpScopes` ([#4793](https://github.com/getsentry/sentry-java/pull/4793))
+  - This reduces the SDKs overhead by avoiding unnecessary scope forks
+
+## 8.27.1
+
 ### Fixes
 
 - Do not log if `sentry.properties` in rundir has not been found ([#4929](https://github.com/getsentry/sentry-java/pull/4929))
