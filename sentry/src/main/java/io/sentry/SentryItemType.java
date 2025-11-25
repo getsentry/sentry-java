@@ -23,6 +23,7 @@ public enum SentryItemType implements JsonSerializable {
   CheckIn("check_in"),
   Feedback("feedback"),
   Log("log"),
+  Span("span"),
   Unknown("__unknown__"); // DataCategory.Unknown
 
   private final String itemType;
