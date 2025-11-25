@@ -6,6 +6,11 @@
 
 - Support `span` envelope item type ([#4935](https://github.com/getsentry/sentry-java/pull/4935))
 
+### Improvements
+
+- Avoid forking `rootScopes` for Reactor if current thread has `NoOpScopes` ([#4793](https://github.com/getsentry/sentry-java/pull/4793))
+  - This reduces the SDKs overhead by avoiding unnecessary scope forks
+
 ## 8.27.1
 
 ### Fixes
