@@ -21,7 +21,7 @@
 
 ### Features
 
-- Enable capturing additional network details in your session replays (okhttp).
+- Add option to capture additional network details for session replays (OkHttp) ([#4919](https://github.com/getsentry/sentry-java/pull/4919)
   - Depends on `SentryOkHttpInterceptor` to intercept the request and extract request/response bodies.
   - To enable, configure your sentry SDK using the "io.sentry.session-replay.network-*" options via [manifest](https://github.com/getsentry/sentry-java/blob/b03edbb1b0d8b871c62a09bc02cbd8a4e1f6fea1/sentry-samples/sentry-samples-android/src/main/AndroidManifest.xml#L196-L205)
     - Or manually specify SentryReplayOptions via [SentryAndroid#init](https://github.com/getsentry/sentry-java/blob/c83e427e8baca17098f882f8b45fc7c5a80c1d8c/sentry-samples/sentry-samples-android/src/main/java/io/sentry/samples/android/MyApplication.java#L16-L28) 
