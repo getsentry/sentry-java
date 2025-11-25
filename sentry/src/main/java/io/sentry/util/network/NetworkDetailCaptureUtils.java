@@ -131,7 +131,7 @@ public final class NetworkDetailCaptureUtils {
     Set<String> normalizedAllowed = new HashSet<>();
     for (String header : allowedHeaders) {
       if (header != null) {
-        normalizedAllowed.add(header.toLowerCase());
+        normalizedAllowed.add(header.toLowerCase(Locale.ROOT));
       }
     }
 
