@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Support `span` envelope item type ([#4935](https://github.com/getsentry/sentry-java/pull/4935))
+
 ## 8.27.1
 
 ### Fixes
