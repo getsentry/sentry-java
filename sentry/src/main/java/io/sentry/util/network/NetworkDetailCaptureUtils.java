@@ -2,6 +2,7 @@ package io.sentry.util.network;
 
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import org.jetbrains.annotations.NotNull;
