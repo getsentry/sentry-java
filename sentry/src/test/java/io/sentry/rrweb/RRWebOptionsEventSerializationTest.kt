@@ -2,10 +2,10 @@ package io.sentry.rrweb
 
 import io.sentry.ILogger
 import io.sentry.SentryOptions
+import io.sentry.SentryReplayOptions
 import io.sentry.SentryReplayOptions.SentryReplayQuality.LOW
 import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SerializationUtils
-import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -56,10 +56,10 @@ class RRWebOptionsEventSerializationTest {
   fun `network detail fields are not included when networkDetailAllowUrls is empty`() {
     val options =
       SentryOptions().apply {
-        sessionReplay.setNetworkDetailAllowUrls(emptyArray())
+        sessionReplay.setNetworkDetailAllowUrls(emptyList())
 
         // Any config is ignored when no allowUrls are specified.
-        sessionReplay.setNetworkDetailDenyUrls(arrayOf("https://internal.example.com/*"))
+        sessionReplay.setNetworkDetailDenyUrls(listOf("https://internal.example.com/*"))
         sessionReplay.setNetworkRequestHeaders(listOf("Authorization", "X-Custom"))
         sessionReplay.setNetworkResponseHeaders(listOf("X-RateLimit", "Content-Type"))
       }
@@ -78,7 +78,7 @@ class RRWebOptionsEventSerializationTest {
   fun `networkDetailAllowUrls and headers are included when networkDetailAllowUrls is configured`() {
     val options =
       SentryOptions().apply {
-        sessionReplay.setNetworkDetailAllowUrls(arrayOf("https://api.example.com/*"))
+        sessionReplay.setNetworkDetailAllowUrls(listOf("https://api.example.com/*"))
         sessionReplay.setNetworkRequestHeaders(listOf("Authorization", "X-Custom"))
         sessionReplay.setNetworkResponseHeaders(listOf("X-RateLimit", "Content-Type"))
       }
@@ -89,17 +89,17 @@ class RRWebOptionsEventSerializationTest {
     assertTrue(payload.containsKey("networkRequestHeaders"))
     assertTrue(payload.containsKey("networkResponseHeaders"))
     assertEquals(true, payload["networkDetailHasUrls"])
-    assertContentEquals(
-      arrayOf("https://api.example.com/*"),
-      payload["networkDetailAllowUrls"] as Array<String>,
+    assertEquals(
+      listOf("https://api.example.com/*"),
+      (payload["networkDetailAllowUrls"] as List<String>),
     )
-    assertContentEquals(
-      arrayOf("Content-Type", "Content-Length", "Accept", "Authorization", "X-Custom"),
-      payload["networkRequestHeaders"] as Array<String>,
+    assertEquals(
+      (SentryReplayOptions.getNetworkDetailsDefaultHeaders() + listOf("Authorization", "X-Custom")).toSet(),
+      (payload["networkRequestHeaders"] as List<String>).toSet(),
     )
-    assertContentEquals(
-      arrayOf("Content-Type", "Content-Length", "Accept", "X-RateLimit"),
-      payload["networkResponseHeaders"] as Array<String>,
+    assertEquals(
+      (SentryReplayOptions.getNetworkDetailsDefaultHeaders() + listOf("X-RateLimit")).toSet(),
+      (payload["networkResponseHeaders"] as List<String>).toSet(),
     )
   }
 
@@ -107,21 +107,21 @@ class RRWebOptionsEventSerializationTest {
   fun `networkDetailDenyUrls are included when networkDetailAllowUrls is configured`() {
     val options =
       SentryOptions().apply {
-        sessionReplay.setNetworkDetailAllowUrls(arrayOf("https://api.example.com/*"))
-        sessionReplay.setNetworkDetailDenyUrls(arrayOf("https://internal.example.com/*"))
+        sessionReplay.setNetworkDetailAllowUrls(listOf("https://api.example.com/*"))
+        sessionReplay.setNetworkDetailDenyUrls(listOf("https://internal.example.com/*"))
       }
     val event = RRWebOptionsEvent(options)
 
     val payload = event.optionsPayload
     assertTrue(payload.containsKey("networkDetailAllowUrls"))
     assertTrue(payload.containsKey("networkDetailDenyUrls"))
-    assertContentEquals(
-      arrayOf("https://api.example.com/*"),
-      payload["networkDetailAllowUrls"] as Array<String>,
+    assertEquals(
+      listOf("https://api.example.com/*"),
+      (payload["networkDetailAllowUrls"] as List<String>),
     )
-    assertContentEquals(
-      arrayOf("https://internal.example.com/*"),
-      payload["networkDetailDenyUrls"] as Array<String>,
+    assertEquals(
+      listOf("https://internal.example.com/*"),
+      (payload["networkDetailDenyUrls"] as List<String>),
     )
   }
 
@@ -129,7 +129,7 @@ class RRWebOptionsEventSerializationTest {
   fun `networkCaptureBodies is included when networkDetailAllowUrls is configured`() {
     val options =
       SentryOptions().apply {
-        sessionReplay.setNetworkDetailAllowUrls(arrayOf("https://api.example.com/*"))
+        sessionReplay.setNetworkDetailAllowUrls(listOf("https://api.example.com/*"))
         sessionReplay.setNetworkCaptureBodies(false)
       }
     val event = RRWebOptionsEvent(options)
@@ -143,7 +143,7 @@ class RRWebOptionsEventSerializationTest {
   fun `default networkCaptureBodies is included when networkDetailAllowUrls is configured`() {
     val options =
       SentryOptions().apply {
-        sessionReplay.setNetworkDetailAllowUrls(arrayOf("https://api.example.com/*"))
+        sessionReplay.setNetworkDetailAllowUrls(listOf("https://api.example.com/*"))
       }
     val event = RRWebOptionsEvent(options)
 
@@ -156,7 +156,7 @@ class RRWebOptionsEventSerializationTest {
   fun `default network request and response headers are included when networkDetailAllowUrls is configured but no custom headers set`() {
     val options =
       SentryOptions().apply {
-        sessionReplay.setNetworkDetailAllowUrls(arrayOf("https://api.example.com/*"))
+        sessionReplay.setNetworkDetailAllowUrls(listOf("https://api.example.com/*"))
         // No custom headers set, should use defaults only
       }
     val event = RRWebOptionsEvent(options)
@@ -164,13 +164,13 @@ class RRWebOptionsEventSerializationTest {
     val payload = event.optionsPayload
     assertTrue(payload.containsKey("networkRequestHeaders"))
     assertTrue(payload.containsKey("networkResponseHeaders"))
-    assertContentEquals(
-      arrayOf("Content-Type", "Content-Length", "Accept"),
-      payload["networkRequestHeaders"] as Array<String>,
+    assertEquals(
+      SentryReplayOptions.getNetworkDetailsDefaultHeaders().toSet(),
+      (payload["networkRequestHeaders"] as List<String>).toSet(),
     )
-    assertContentEquals(
-      arrayOf("Content-Type", "Content-Length", "Accept"),
-      payload["networkResponseHeaders"] as Array<String>,
+    assertEquals(
+      SentryReplayOptions.getNetworkDetailsDefaultHeaders().toSet(),
+      (payload["networkResponseHeaders"] as List<String>).toSet(),
     )
   }
 }

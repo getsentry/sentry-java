@@ -19,7 +19,7 @@ class NetworkDetailCaptureUtilsTest {
       }
 
     // Test: allowedHeaders with different casing
-    val allowedHeaders = arrayOf("content-type", "AUTHORIZATION", "x-custom-header", "ACCEPT")
+    val allowedHeaders = listOf("content-type", "AUTHORIZATION", "x-custom-header", "ACCEPT")
 
     val result = NetworkDetailCaptureUtils.getCaptureHeaders(allHeaders, allowedHeaders)
 
@@ -41,7 +41,7 @@ class NetworkDetailCaptureUtilsTest {
 
   @Test
   fun `getCaptureHeaders should handle null allHeaders`() {
-    val allowedHeaders = arrayOf("content-type")
+    val allowedHeaders = listOf("content-type")
 
     val result = NetworkDetailCaptureUtils.getCaptureHeaders(null, allowedHeaders)
 
@@ -51,7 +51,7 @@ class NetworkDetailCaptureUtilsTest {
   @Test
   fun `getCaptureHeaders should handle empty allowedHeaders`() {
     val allHeaders = mapOf("Content-Type" to "application/json")
-    val allowedHeaders = arrayOf<String>()
+    val allowedHeaders = emptyList<String>()
 
     val result = NetworkDetailCaptureUtils.getCaptureHeaders(allHeaders, allowedHeaders)
 
@@ -67,7 +67,7 @@ class NetworkDetailCaptureUtilsTest {
         "X-Unwanted-Header" to "should-not-appear",
       )
 
-    val allowedHeaders = arrayOf("content-type", "authorization")
+    val allowedHeaders = listOf("content-type", "authorization")
 
     val result = NetworkDetailCaptureUtils.getCaptureHeaders(allHeaders, allowedHeaders)
 
@@ -89,7 +89,7 @@ class NetworkDetailCaptureUtilsTest {
       )
 
     // allowedHeaders contains null elements which should be ignored
-    val allowedHeaders = arrayOf(null, "content-type", null, "authorization", null)
+    val allowedHeaders = listOf(null, "content-type", null, "authorization", null)
 
     val result = NetworkDetailCaptureUtils.getCaptureHeaders(allHeaders, allowedHeaders)
 
