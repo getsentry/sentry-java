@@ -215,6 +215,9 @@ public final class ClientReportRecorder implements IClientReportRecorder {
     if (SentryItemType.Log.equals(itemType)) {
       return DataCategory.LogItem;
     }
+    if (SentryItemType.Span.equals(itemType)) {
+      return DataCategory.Span;
+    }
 
     return DataCategory.Default;
   }
