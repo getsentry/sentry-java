@@ -20,21 +20,14 @@ public final class SentryThreadFactory {
   /** the SentryStackTraceFactory */
   private final @NotNull SentryStackTraceFactory sentryStackTraceFactory;
 
-  /** the SentryOptions. */
-  private final @NotNull SentryOptions options;
-
   /**
    * ctor SentryThreadFactory that takes a SentryStackTraceFactory
    *
    * @param sentryStackTraceFactory the SentryStackTraceFactory
-   * @param options the SentryOptions
    */
-  public SentryThreadFactory(
-      final @NotNull SentryStackTraceFactory sentryStackTraceFactory,
-      final @NotNull SentryOptions options) {
+  public SentryThreadFactory(final @NotNull SentryStackTraceFactory sentryStackTraceFactory) {
     this.sentryStackTraceFactory =
         Objects.requireNonNull(sentryStackTraceFactory, "The SentryStackTraceFactory is required.");
-    this.options = Objects.requireNonNull(options, "The SentryOptions is required");
   }
 
   /**
@@ -44,12 +37,12 @@ public final class SentryThreadFactory {
    * @return a list of SentryThread with a single item or null
    */
   @Nullable
-  List<SentryThread> getCurrentThread() {
+  List<SentryThread> getCurrentThread(final boolean attachStackTrace) {
     final Map<Thread, StackTraceElement[]> threads = new HashMap<>();
     final Thread currentThread = Thread.currentThread();
     threads.put(currentThread, currentThread.getStackTrace());
 
-    return getCurrentThreads(threads, null, false);
+    return getCurrentThreads(threads, null, false, attachStackTrace);
   }
 
   /**
@@ -63,13 +56,18 @@ public final class SentryThreadFactory {
    */
   @Nullable
   List<SentryThread> getCurrentThreads(
-      final @Nullable List<Long> mechanismThreadIds, final boolean ignoreCurrentThread) {
-    return getCurrentThreads(Thread.getAllStackTraces(), mechanismThreadIds, ignoreCurrentThread);
+      final @Nullable List<Long> mechanismThreadIds,
+      final boolean ignoreCurrentThread,
+      final boolean attachStackTrace) {
+    return getCurrentThreads(
+        Thread.getAllStackTraces(), mechanismThreadIds, ignoreCurrentThread, attachStackTrace);
   }
 
   @Nullable
-  List<SentryThread> getCurrentThreads(final @Nullable List<Long> mechanismThreadIds) {
-    return getCurrentThreads(Thread.getAllStackTraces(), mechanismThreadIds, false);
+  List<SentryThread> getCurrentThreads(
+      final @Nullable List<Long> mechanismThreadIds, final boolean attachStackTrace) {
+    return getCurrentThreads(
+        Thread.getAllStackTraces(), mechanismThreadIds, false, attachStackTrace);
   }
 
   /**
@@ -87,7 +85,8 @@ public final class SentryThreadFactory {
   List<SentryThread> getCurrentThreads(
       final @NotNull Map<Thread, StackTraceElement[]> threads,
       final @Nullable List<Long> mechanismThreadIds,
-      final boolean ignoreCurrentThread) {
+      final boolean ignoreCurrentThread,
+      final boolean attachStackTrace) {
     List<SentryThread> result = null;
 
     final Thread currentThread = Thread.currentThread();
@@ -109,7 +108,7 @@ public final class SentryThreadFactory {
                     && mechanismThreadIds.contains(thread.getId())
                     && !ignoreCurrentThread);
 
-        result.add(getSentryThread(crashed, item.getValue(), item.getKey()));
+        result.add(getSentryThread(crashed, item.getValue(), item.getKey(), attachStackTrace));
       }
     }
 
@@ -127,7 +126,8 @@ public final class SentryThreadFactory {
   private @NotNull SentryThread getSentryThread(
       final boolean crashed,
       final @NotNull StackTraceElement[] stackFramesElements,
-      final @NotNull Thread thread) {
+      final @NotNull Thread thread,
+      final boolean attachStacktrace) {
     final SentryThread sentryThread = new SentryThread();
 
     sentryThread.setName(thread.getName());
@@ -137,15 +137,17 @@ public final class SentryThreadFactory {
     sentryThread.setState(thread.getState().name());
     sentryThread.setCrashed(crashed);
 
-    final List<SentryStackFrame> frames =
-        sentryStackTraceFactory.getStackFrames(stackFramesElements, false);
+    if (attachStacktrace) {
+      final List<SentryStackFrame> frames =
+          sentryStackTraceFactory.getStackFrames(stackFramesElements, false);
 
-    if (options.isAttachStacktrace() && frames != null && !frames.isEmpty()) {
-      final SentryStackTrace sentryStackTrace = new SentryStackTrace(frames);
-      // threads are always gotten either via Thread.currentThread() or Thread.getAllStackTraces()
-      sentryStackTrace.setSnapshot(true);
+      if (frames != null && !frames.isEmpty()) {
+        final SentryStackTrace sentryStackTrace = new SentryStackTrace(frames);
+        // threads are always gotten either via Thread.currentThread() or Thread.getAllStackTraces()
+        sentryStackTrace.setSnapshot(true);
 
-      sentryThread.setStacktrace(sentryStackTrace);
+        sentryThread.setStacktrace(sentryStackTrace);
+      }
     }
 
     return sentryThread;

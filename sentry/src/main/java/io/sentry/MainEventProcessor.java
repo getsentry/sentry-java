@@ -35,7 +35,7 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
         new SentryStackTraceFactory(this.options);
 
     sentryExceptionFactory = new SentryExceptionFactory(sentryStackTraceFactory);
-    sentryThreadFactory = new SentryThreadFactory(sentryStackTraceFactory, this.options);
+    sentryThreadFactory = new SentryThreadFactory(sentryStackTraceFactory);
   }
 
   MainEventProcessor(
@@ -255,17 +255,20 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
       if (options.isAttachThreads() || HintUtils.hasType(hint, AbnormalExit.class)) {
         final Object sentrySdkHint = HintUtils.getSentrySdkHint(hint);
         boolean ignoreCurrentThread = false;
+        boolean attachStacktrace = options.isAttachStacktrace();
         if (sentrySdkHint instanceof AbnormalExit) {
           ignoreCurrentThread = ((AbnormalExit) sentrySdkHint).ignoreCurrentThread();
+          attachStacktrace = true;
         }
         event.setThreads(
-            sentryThreadFactory.getCurrentThreads(mechanismThreadIds, ignoreCurrentThread));
+            sentryThreadFactory.getCurrentThreads(
+                mechanismThreadIds, ignoreCurrentThread, attachStacktrace));
       } else if (options.isAttachStacktrace()
           && (eventExceptions == null || eventExceptions.isEmpty())
           && !isCachedHint(hint)) {
         // when attachStacktrace is enabled, we attach only the current thread and its stack traces,
         // if there are no exceptions, exceptions have its own stack traces.
-        event.setThreads(sentryThreadFactory.getCurrentThread());
+        event.setThreads(sentryThreadFactory.getCurrentThread(options.isAttachStacktrace()));
       }
     }
   }

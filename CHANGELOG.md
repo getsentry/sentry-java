@@ -7,6 +7,10 @@
 - Avoid forking `rootScopes` for Reactor if current thread has `NoOpScopes` ([#4793](https://github.com/getsentry/sentry-java/pull/4793))
   - This reduces the SDKs overhead by avoiding unnecessary scope forks
 
+### Fixes 
+
+- Fix missing thread stacks for ANRv1 events ([#4918](https://github.com/getsentry/sentry-java/pull/4918))
+
 ## 8.27.1
 
 ### Fixes
