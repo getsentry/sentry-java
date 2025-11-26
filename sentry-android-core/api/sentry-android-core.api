@@ -339,6 +339,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun isEnableSystemEventBreadcrumbs ()Z
 	public fun isEnableSystemEventBreadcrumbsExtras ()Z
 	public fun isReportHistoricalAnrs ()Z
+	public fun isTombstoneEnabled ()Z
 	public fun setAnrEnabled (Z)V
 	public fun setAnrReportInDebug (Z)V
 	public fun setAnrTimeoutIntervalMillis (J)V
@@ -367,6 +368,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun setNativeHandlerStrategy (Lio/sentry/android/core/NdkHandlerStrategy;)V
 	public fun setNativeSdkName (Ljava/lang/String;)V
 	public fun setReportHistoricalAnrs (Z)V
+	public fun setTombstoneEnabled (Z)V
 }
 
 public abstract interface class io/sentry/android/core/SentryAndroidOptions$BeforeCaptureCallback {
@@ -453,6 +455,17 @@ public final class io/sentry/android/core/SystemEventsBreadcrumbsIntegration : i
 	public fun onBackground ()V
 	public fun onForeground ()V
 	public fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
+}
+
+public class io/sentry/android/core/TombstoneIntegration : io/sentry/Integration, java/io/Closeable {
+	public fun <init> (Landroid/content/Context;)V
+	public fun close ()V
+	public fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
+}
+
+public class io/sentry/android/core/TombstoneIntegration$TombstoneProcessor : java/lang/Runnable {
+	public fun <init> (Landroid/content/Context;Lio/sentry/IScopes;Lio/sentry/android/core/SentryAndroidOptions;Lio/sentry/transport/ICurrentDateProvider;)V
+	public fun run ()V
 }
 
 public final class io/sentry/android/core/UserInteractionIntegration : android/app/Application$ActivityLifecycleCallbacks, io/sentry/Integration, java/io/Closeable {

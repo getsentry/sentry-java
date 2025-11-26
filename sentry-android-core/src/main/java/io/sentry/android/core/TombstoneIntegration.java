@@ -24,9 +24,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@ApiStatus.Internal
 public class TombstoneIntegration implements Integration, Closeable {
   static final long NINETY_DAYS_THRESHOLD = TimeUnit.DAYS.toMillis(91);
 
@@ -58,9 +60,9 @@ public class TombstoneIntegration implements Integration, Closeable {
         .log(
             SentryLevel.DEBUG,
             "TombstoneIntegration enabled: %s",
-            this.options.isTombstonesEnabled());
+            this.options.isTombstoneEnabled());
 
-    if (this.options.isTombstonesEnabled()) {
+    if (this.options.isTombstoneEnabled()) {
       if (this.options.getCacheDirPath() == null) {
         this.options
             .getLogger()
@@ -87,6 +89,7 @@ public class TombstoneIntegration implements Integration, Closeable {
     }
   }
 
+  @ApiStatus.Internal
   public static class TombstoneProcessor implements Runnable {
 
     @NotNull private final Context context;
