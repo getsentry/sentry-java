@@ -33,6 +33,7 @@ import okhttp3.Interceptor
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
+import org.jetbrains.annotations.VisibleForTesting
 
 /**
  * The Sentry's [SentryOkHttpInterceptor], it will automatically add a breadcrumb and start a span
@@ -209,6 +210,9 @@ public open class SentryOkHttpInterceptor(
         )
       }
 
+      // Set network details on the OkHttpEvent so it can include them in the breadcrumb hint
+      okHttpEvent?.setNetworkDetails(networkDetailData)
+
       finishSpan(span, request, response, isFromEventListener, okHttpEvent)
 
       // The SentryOkHttpEventListener will send the breadcrumb itself if used for this call
@@ -260,10 +264,19 @@ public open class SentryOkHttpInterceptor(
   }
 
   /** Extracts headers from OkHttp Headers object into a map */
-  private fun okhttp3.Headers.toMap(): Map<String, String> {
+  @VisibleForTesting
+  internal fun okhttp3.Headers.toMap(): Map<String, String> {
     val headers = linkedMapOf<String, String>()
     for (i in 0 until size) {
-      headers[name(i)] = value(i)
+      val name = name(i)
+      val value = value(i)
+      val existingValue = headers[name]
+      if (existingValue != null) {
+        // Concatenate duplicate headers with semicolon separator
+        headers[name] = "$existingValue; $value"
+      } else {
+        headers[name] = value
+      }
     }
     return headers
   }

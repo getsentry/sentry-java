@@ -1,5 +1,69 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Add option to capture additional OkHttp network request/response details in session replays ([#4919](https://github.com/getsentry/sentry-java/pull/4919))
+  - Depends on `SentryOkHttpInterceptor` to intercept the request and extract request/response bodies
+  - To enable, add url regexes via the `io.sentry.session-replay.network-detail-allow-urls` metadata tag in AndroidManifest ([code sample](https://github.com/getsentry/sentry-java/blob/b03edbb1b0d8b871c62a09bc02cbd8a4e1f6fea1/sentry-samples/sentry-samples-android/src/main/AndroidManifest.xml#L196-L205))
+    - Or you can manually specify SentryReplayOptions via `SentryAndroid#init`:  
+_(Make sure you disable the auto init via manifest meta-data: io.sentry.auto-init=false)_
+
+<details>
+  <summary>Kotlin</summary>
+
+```kotlin
+SentryAndroid.init(
+    this,
+    options -> {
+      // options.dsn = "https://examplePublicKey@o0.ingest.sentry.io/0"
+      // options.sessionReplay.sessionSampleRate = 1.0
+      // options.sessionReplay.onErrorSampleRate = 1.0
+      // ..
+
+      options.sessionReplay.networkDetailAllowUrls = listOf(".*")
+      options.sessionReplay.networkDetailDenyUrls = listOf(".*deny.*")
+      options.sessionReplay.networkRequestHeaders = listOf("Authorization", "X-Custom-Header", "X-Test-Request")
+      options.sessionReplay.networkResponseHeaders = listOf("X-Response-Time", "X-Cache-Status", "X-Test-Response")
+    });
+```
+
+</details>
+
+<details>
+  <summary>Java</summary>
+
+```java
+SentryAndroid.init(
+    this,
+    options -> {
+        options.getSessionReplay().setNetworkDetailAllowUrls(Arrays.asList(".*"));
+        options.getSessionReplay().setNetworkDetailDenyUrls(Arrays.asList(".*deny.*"));
+        options.getSessionReplay().setNetworkRequestHeaders(
+            Arrays.asList("Authorization", "X-Custom-Header", "X-Test-Request"));
+        options.getSessionReplay().setNetworkResponseHeaders(
+            Arrays.asList("X-Response-Time", "X-Cache-Status", "X-Test-Response"));
+    });
+
+```
+
+</details>
+
+
+### Improvements
+
+- Avoid forking `rootScopes` for Reactor if current thread has `NoOpScopes` ([#4793](https://github.com/getsentry/sentry-java/pull/4793))
+  - This reduces the SDKs overhead by avoiding unnecessary scope forks
+
+### Fixes 
+
+- Fix missing thread stacks for ANRv1 events ([#4918](https://github.com/getsentry/sentry-java/pull/4918))
+
+### Internal
+
+- Support `span` envelope item type ([#4935](https://github.com/getsentry/sentry-java/pull/4935))
+
 ## 8.27.1
 
 ### Fixes

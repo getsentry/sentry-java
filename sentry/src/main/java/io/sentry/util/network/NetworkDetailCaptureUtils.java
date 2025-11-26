@@ -1,9 +1,14 @@
 package io.sentry.util.network;
 
-import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.VisibleForTesting;
 
 /**
  * Utility class for network capture operations shared across HTTP client integrations. Provides
@@ -28,8 +33,8 @@ public final class NetworkDetailCaptureUtils {
   public static @Nullable NetworkRequestData initializeForUrl(
       @NotNull final String url,
       @Nullable final String method,
-      @Nullable final String[] networkDetailAllowUrls,
-      @Nullable final String[] networkDetailDenyUrls) {
+      @Nullable final List<String> networkDetailAllowUrls,
+      @Nullable final List<String> networkDetailDenyUrls) {
 
     if (!shouldCaptureUrl(url, networkDetailAllowUrls, networkDetailDenyUrls)) {
       return null;
@@ -47,7 +52,7 @@ public final class NetworkDetailCaptureUtils {
       @Nullable final Long bodySize,
       final boolean networkCaptureBodies,
       @NotNull final NetworkBodyExtractor<T> bodyExtractor,
-      @NotNull final String[] networkRequestHeaders,
+      @NotNull final List<String> networkRequestHeaders,
       @NotNull final NetworkHeaderExtractor<T> headerExtractor) {
 
     return createRequestOrResponseInternal(
@@ -64,7 +69,7 @@ public final class NetworkDetailCaptureUtils {
       @Nullable final Long bodySize,
       final boolean networkCaptureBodies,
       @NotNull final NetworkBodyExtractor<T> bodyExtractor,
-      @NotNull final String[] networkResponseHeaders,
+      @NotNull final List<String> networkResponseHeaders,
       @NotNull final NetworkHeaderExtractor<T> headerExtractor) {
 
     return createRequestOrResponseInternal(
@@ -81,15 +86,15 @@ public final class NetworkDetailCaptureUtils {
    * href="https://docs.sentry.io/platforms/javascript/session-replay/configuration/">docs.sentry.io</a>
    *
    * @param url The URL to check
-   * @param networkDetailAllowUrls Array of regex patterns that allow capture
-   * @param networkDetailDenyUrls Array of regex patterns to explicitly deny capture. Takes
+   * @param networkDetailAllowUrls List of regex patterns that allow capture
+   * @param networkDetailDenyUrls List of regex patterns to explicitly deny capture. Takes
    *     precedence over networkDetailAllowUrls.
    * @return true if the URL should be captured, false otherwise
    */
   private static boolean shouldCaptureUrl(
       @NotNull final String url,
-      @Nullable final String[] networkDetailAllowUrls,
-      @Nullable final String[] networkDetailDenyUrls) {
+      @Nullable final List<String> networkDetailAllowUrls,
+      @Nullable final List<String> networkDetailDenyUrls) {
 
     // If there are deny patterns and URL matches any, don't capture.
     if (networkDetailDenyUrls != null) {
@@ -115,19 +120,26 @@ public final class NetworkDetailCaptureUtils {
     return false;
   }
 
-  private static @NotNull Map<String, String> getCaptureHeaders(
-      @Nullable final Map<String, String> allHeaders, @NotNull final String[] allowedHeaders) {
+  @VisibleForTesting
+  static @NotNull Map<String, String> getCaptureHeaders(
+      @Nullable final Map<String, String> allHeaders, @NotNull final List<String> allowedHeaders) {
 
-    Map<String, String> capturedHeaders = new HashMap<>();
-
+    final Map<String, String> capturedHeaders = new LinkedHashMap<>();
     if (allHeaders == null) {
       return capturedHeaders;
     }
 
+    // Convert to lowercase for case-insensitive matching
+    Set<String> normalizedAllowed = new HashSet<>();
     for (String header : allowedHeaders) {
-      String value = allHeaders.get(header);
-      if (value != null) {
-        capturedHeaders.put(header, value);
+      if (header != null) {
+        normalizedAllowed.add(header.toLowerCase(Locale.ROOT));
+      }
+    }
+
+    for (Map.Entry<String, String> entry : allHeaders.entrySet()) {
+      if (normalizedAllowed.contains(entry.getKey().toLowerCase(Locale.ROOT))) {
+        capturedHeaders.put(entry.getKey(), entry.getValue());
       }
     }
 
@@ -139,7 +151,7 @@ public final class NetworkDetailCaptureUtils {
       @Nullable final Long bodySize,
       final boolean networkCaptureBodies,
       @NotNull final NetworkBodyExtractor<T> bodyExtractor,
-      @NotNull final String[] allowedHeaders,
+      @NotNull final List<String> allowedHeaders,
       @NotNull final NetworkHeaderExtractor<T> headerExtractor) {
 
     NetworkBody body = null;
