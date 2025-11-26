@@ -10,6 +10,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import io.sentry.Sentry;
+import io.sentry.okhttp.SentryOkHttpEventListener;
 import io.sentry.okhttp.SentryOkHttpInterceptor;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -80,14 +81,14 @@ public class TriggerHttpRequestActivity extends AppCompatActivity {
 
   private void setupOkHttpClient() {
     // OkHttpClient with Sentry integration for monitoring HTTP requests
+    // Both SentryOkHttpEventListener and SentryOkHttpInterceptor are enabled to test
+    // network detail capture when both components are used together
     okHttpClient =
         new OkHttpClient.Builder()
             .connectTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
             .readTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
             .writeTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
-            // performance monitoring
-            //            .eventListener(new SentryOkHttpEventListener())
-            // breadcrumbs and failed request capture
+            .eventListener(new SentryOkHttpEventListener())
             .addInterceptor(new SentryOkHttpInterceptor())
             .build();
   }
