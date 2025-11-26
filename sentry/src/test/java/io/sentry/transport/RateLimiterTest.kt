@@ -4,16 +4,16 @@ import io.sentry.Attachment
 import io.sentry.CheckIn
 import io.sentry.CheckInStatus
 import io.sentry.DataCategory.Replay
+import io.sentry.EnvelopeReader
 import io.sentry.Hint
 import io.sentry.ILogger
 import io.sentry.IScopes
 import io.sentry.ISerializer
+import io.sentry.JsonSerializer
 import io.sentry.NoOpLogger
 import io.sentry.ProfileChunk
 import io.sentry.ProfilingTraceData
 import io.sentry.ReplayRecording
-import io.sentry.EnvelopeReader
-import io.sentry.JsonSerializer
 import io.sentry.SentryEnvelope
 import io.sentry.SentryEnvelopeHeader
 import io.sentry.SentryEnvelopeItem
@@ -543,7 +543,8 @@ class RateLimiterTest {
     // There is no span API yet so we'll create the envelope manually using EnvelopeReader
     // This mimics how hybrid SDKs would send span v2 envelope items
     val spanPayload = """{"items":[]}"""
-    val spanItemHeader = """{"type":"span","length":${spanPayload.length},"content_type":"application/vnd.sentry.items.span.v2+json","item_count":1}"""
+    val spanItemHeader =
+      """{"type":"span","length":${spanPayload.length},"content_type":"application/vnd.sentry.items.span.v2+json","item_count":1}"""
     val envelopeHeader = """{}"""
     val rawEnvelope = "$envelopeHeader\n$spanItemHeader\n$spanPayload"
 
