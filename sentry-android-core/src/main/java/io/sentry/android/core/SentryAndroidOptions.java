@@ -82,7 +82,7 @@ public final class SentryAndroidOptions extends SentryOptions {
    *   <li>The transaction status will be {@link SpanStatus#OK} if none is set.
    * </ul>
    *
-   * The transaction is automatically bound to the {@link IScope}, but only if there's no
+   * <p>The transaction is automatically bound to the {@link IScope}, but only if there's no
    * transaction already bound to the Scope.
    */
   private boolean enableAutoActivityLifecycleTracing = true;
@@ -313,7 +313,8 @@ public final class SentryAndroidOptions extends SentryOptions {
   }
 
   /**
-   * Checks if Tombstone reporting (ApplicationExitInfo.REASON_CRASH_NATIVE) is enabled or disabled Default is disabled
+   * Checks if Tombstone reporting (ApplicationExitInfo.REASON_CRASH_NATIVE) is enabled or disabled
+   * Default is disabled
    *
    * @return true if enabled or false otherwise
    */

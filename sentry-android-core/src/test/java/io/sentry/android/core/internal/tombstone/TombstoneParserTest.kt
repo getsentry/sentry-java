@@ -6,43 +6,44 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
 class TombstoneParserTest {
-  val expectedRegisters = setOf(
-    "x8",
-    "x9",
-    "esr",
-    "lr",
-    "pst",
-    "x10",
-    "x12",
-    "x11",
-    "x14",
-    "x13",
-    "x16",
-    "x15",
-    "sp",
-    "x18",
-    "x17",
-    "x19",
-    "pc",
-    "x21",
-    "x20",
-    "x0",
-    "x23",
-    "x1",
-    "x22",
-    "x2",
-    "x25",
-    "x3",
-    "x24",
-    "x4",
-    "x27",
-    "x5",
-    "x26",
-    "x6",
-    "x29",
-    "x7",
-    "x28"
-  )
+  val expectedRegisters =
+    setOf(
+      "x8",
+      "x9",
+      "esr",
+      "lr",
+      "pst",
+      "x10",
+      "x12",
+      "x11",
+      "x14",
+      "x13",
+      "x16",
+      "x15",
+      "sp",
+      "x18",
+      "x17",
+      "x19",
+      "pc",
+      "x21",
+      "x20",
+      "x0",
+      "x23",
+      "x1",
+      "x22",
+      "x2",
+      "x25",
+      "x3",
+      "x24",
+      "x4",
+      "x27",
+      "x5",
+      "x26",
+      "x6",
+      "x29",
+      "x7",
+      "x28",
+    )
 
   @Test
   fun `parses a snapshot tombstone into Event`() {
@@ -52,7 +53,10 @@ class TombstoneParserTest {
 
     // top-level data
     assertNotNull(event.eventId)
-    assertEquals("Fatal signal SIGSEGV (11), SEGV_MAPERR (1), pid = 21891 (io.sentry.samples.android)", event.message!!.formatted)
+    assertEquals(
+      "Fatal signal SIGSEGV (11), SEGV_MAPERR (1), pid = 21891 (io.sentry.samples.android)",
+      event.message!!.formatted,
+    )
     assertEquals("native", event.platform)
     assertEquals("FATAL", event.level!!.name)
 

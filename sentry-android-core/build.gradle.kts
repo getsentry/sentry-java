@@ -113,16 +113,8 @@ dependencies {
 }
 
 protobuf {
-  protoc {
-    artifact = libs.protoc.get().toString()
-  }
+  protoc { artifact = libs.protoc.get().toString() }
   generateProtoTasks {
-    all().forEach { task ->
-      task.builtins {
-        create("java") {
-          option("lite")
-        }
-      }
-    }
+    all().forEach { task -> task.builtins { create("java") { option("lite") } } }
   }
 }

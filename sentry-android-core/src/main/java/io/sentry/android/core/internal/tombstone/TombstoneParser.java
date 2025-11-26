@@ -1,15 +1,6 @@
 package io.sentry.android.core.internal.tombstone;
 
 import androidx.annotation.NonNull;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.protocol.DebugImage;
@@ -20,6 +11,13 @@ import io.sentry.protocol.SentryException;
 import io.sentry.protocol.SentryStackFrame;
 import io.sentry.protocol.SentryStackTrace;
 import io.sentry.protocol.SentryThread;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 public class TombstoneParser {
 
@@ -44,7 +42,7 @@ public class TombstoneParser {
     SentryEvent event = new SentryEvent();
     event.setLevel(SentryLevel.FATAL);
 
-    // we must use the "native" platform because otherwise the stack-trace would not be correctly parsed
+    // must use the "native" platform because otherwise the stack-trace wouldn't be correctly parsed
     event.setPlatform("native");
 
     event.setMessage(constructMessage(tombstone));
@@ -57,10 +55,11 @@ public class TombstoneParser {
   }
 
   @NonNull
-  private List<SentryThread> createThreads(TombstoneProtos.Tombstone tombstone, SentryException exc) {
+  private List<SentryThread> createThreads(
+      TombstoneProtos.Tombstone tombstone, SentryException exc) {
     List<SentryThread> threads = new ArrayList<>();
     for (Map.Entry<Integer, TombstoneProtos.Thread> threadEntry :
-      tombstone.getThreadsMap().entrySet()) {
+        tombstone.getThreadsMap().entrySet()) {
 
       SentryThread thread = new SentryThread();
       thread.setId(Long.valueOf(threadEntry.getKey()));
@@ -70,7 +69,8 @@ public class TombstoneParser {
       thread.setStacktrace(stacktrace);
       if (tombstone.getTid() == threadEntry.getValue().getId()) {
         thread.setCrashed(true);
-        // even though we refer to the thread_id from the exception, the backend currently requires a stack-trace in exception
+        // even though we refer to the thread_id from the exception,
+        // the backend currently requires a stack-trace in exception
         exc.setStacktrace(stacktrace);
       }
       threads.add(thread);
@@ -80,11 +80,11 @@ public class TombstoneParser {
   }
 
   @NonNull
-  private static SentryStackTrace createStackTrace(Map.Entry<Integer, TombstoneProtos.Thread> threadEntry) {
+  private static SentryStackTrace createStackTrace(
+      Map.Entry<Integer, TombstoneProtos.Thread> threadEntry) {
     List<SentryStackFrame> frames = new ArrayList<>();
 
-    for (TombstoneProtos.BacktraceFrame frame :
-      threadEntry.getValue().getCurrentBacktraceList()) {
+    for (TombstoneProtos.BacktraceFrame frame : threadEntry.getValue().getCurrentBacktraceList()) {
       SentryStackFrame stackFrame = new SentryStackFrame();
       stackFrame.setPackage(frame.getFileName());
       stackFrame.setFunction(frame.getFunctionName());
@@ -96,7 +96,7 @@ public class TombstoneParser {
     stacktrace.setFrames(frames);
 
     Map<String, Object> unknown = new HashMap<>();
-    // `libunwindstack` used for tombstone generation already applies instruction address adjustment:
+    // `libunwindstack` used for tombstones already applies instruction address adjustment:
     // https://android.googlesource.com/platform/system/unwinding/+/refs/heads/main/libunwindstack/Regs.cpp#175
     // prevent "processing" from doing it again.
     unknown.put("instruction_addr_adjustment", "none");
@@ -136,8 +136,8 @@ public class TombstoneParser {
     meta.put("code_name", signalInfo.getCodeName());
 
     Mechanism mechanism = new Mechanism();
-    // this follows the current processing triggers strictly, changing any of these alters grouping and name (long-term we might want to
-    // have a tombstone mechanism)
+    // this follows the current processing triggers strictly, changing any of these
+    // alters grouping and name (long-term we might want to have a tombstone mechanism)
     mechanism.setType("signalhandler");
     mechanism.setHandled(false);
     mechanism.setSynthetic(true);
@@ -153,14 +153,15 @@ public class TombstoneParser {
 
     // reproduce the message `debuggerd` would use to dump the stack trace in logcat
     message.setFormatted(
-      String.format(Locale.getDefault(),
-        "Fatal signal %s (%d), %s (%d), pid = %d (%s)",
-        signalInfo.getName(),
-        signalInfo.getNumber(),
-        signalInfo.getCodeName(),
-        signalInfo.getCode(),
-        tombstone.getPid(),
-        String.join(" ", tombstone.getCommandLineList())));
+        String.format(
+            Locale.getDefault(),
+            "Fatal signal %s (%d), %s (%d), pid = %d (%s)",
+            signalInfo.getName(),
+            signalInfo.getNumber(),
+            signalInfo.getCodeName(),
+            signalInfo.getCode(),
+            tombstone.getPid(),
+            String.join(" ", tombstone.getCommandLineList())));
 
     return message;
   }
@@ -171,8 +172,8 @@ public class TombstoneParser {
     for (TombstoneProtos.MemoryMapping module : tombstone.getMemoryMappingsList()) {
       // exclude anonymous and non-executable maps
       if (module.getBuildId().isEmpty()
-        || module.getMappingName().isEmpty()
-        || !module.getExecute()) {
+          || module.getMappingName().isEmpty()
+          || !module.getExecute()) {
         continue;
       }
       DebugImage image = new DebugImage();
