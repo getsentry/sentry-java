@@ -121,7 +121,7 @@ public class TombstoneParser {
     exception.setMechanism(createMechanismFromSignalInfo(signalInfo));
     exception.setThreadId((long) tombstone.getTid());
 
-    List<SentryException> exceptions = new ArrayList<>();
+    List<SentryException> exceptions = new ArrayList<>(1);
     exceptions.add(exception);
 
     return exceptions;
