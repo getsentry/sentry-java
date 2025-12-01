@@ -4,10 +4,12 @@ import io.sentry.Attachment
 import io.sentry.CheckIn
 import io.sentry.CheckInStatus
 import io.sentry.DataCategory.Replay
+import io.sentry.EnvelopeReader
 import io.sentry.Hint
 import io.sentry.ILogger
 import io.sentry.IScopes
 import io.sentry.ISerializer
+import io.sentry.JsonSerializer
 import io.sentry.NoOpLogger
 import io.sentry.ProfileChunk
 import io.sentry.ProfilingTraceData
@@ -531,6 +533,33 @@ class RateLimiterTest {
 
     verify(fixture.clientReportRecorder, times(1))
       .recordLostEnvelopeItem(eq(DiscardReason.RATELIMIT_BACKOFF), same(feedbackEventItem))
+    verifyNoMoreInteractions(fixture.clientReportRecorder)
+  }
+
+  @Test
+  fun `drop span items as lost`() {
+    val rateLimiter = fixture.getSUT()
+
+    // There is no span API yet so we'll create the envelope manually using EnvelopeReader
+    // This mimics how hybrid SDKs would send span v2 envelope items
+    val spanPayload = """{"items":[]}"""
+    val spanItemHeader =
+      """{"type":"span","length":${spanPayload.length},"content_type":"application/vnd.sentry.items.span.v2+json","item_count":1}"""
+    val envelopeHeader = """{}"""
+    val rawEnvelope = "$envelopeHeader\n$spanItemHeader\n$spanPayload"
+
+    val options = SentryOptions()
+    val envelopeReader = EnvelopeReader(JsonSerializer(options))
+    val spanEnvelope = envelopeReader.read(rawEnvelope.byteInputStream())!!
+    val spanItem = spanEnvelope.items.first()
+
+    rateLimiter.updateRetryAfterLimits("60:span:key", null, 1)
+    val result = rateLimiter.filter(spanEnvelope, Hint())
+
+    assertNull(result)
+
+    verify(fixture.clientReportRecorder, times(1))
+      .recordLostEnvelopeItem(eq(DiscardReason.RATELIMIT_BACKOFF), same(spanItem))
     verifyNoMoreInteractions(fixture.clientReportRecorder)
   }
 

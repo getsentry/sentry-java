@@ -33,6 +33,7 @@ import okhttp3.Interceptor
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
+import org.jetbrains.annotations.VisibleForTesting
 
 /**
  * The Sentry's [SentryOkHttpInterceptor], it will automatically add a breadcrumb and start a span
@@ -61,16 +62,6 @@ public open class SentryOkHttpInterceptor(
       SentryIntegrationPackageStorage.getInstance()
         .addPackage("maven:io.sentry:sentry-okhttp", BuildConfig.VERSION_NAME)
     }
-
-    /** Fake options for testing network detail capture */
-    private val FAKE_OPTIONS =
-      object {
-        val networkDetailAllowUrls: Array<String> = emptyArray()
-        val networkDetailDenyUrls: Array<String> = emptyArray()
-        val networkCaptureBodies: Boolean = false
-        val networkRequestHeaders: Array<String> = emptyArray()
-        val networkResponseHeaders: Array<String> = emptyArray()
-      }
   }
 
   public constructor() : this(ScopesAdapter.getInstance())
@@ -119,8 +110,8 @@ public open class SentryOkHttpInterceptor(
       NetworkDetailCaptureUtils.initializeForUrl(
         request.url.toString(),
         request.method,
-        FAKE_OPTIONS.networkDetailAllowUrls,
-        FAKE_OPTIONS.networkDetailDenyUrls,
+        scopes.options.sessionReplay.networkDetailAllowUrls,
+        scopes.options.sessionReplay.networkDetailDenyUrls,
       )
 
     try {
@@ -152,7 +143,7 @@ public open class SentryOkHttpInterceptor(
         NetworkDetailCaptureUtils.createRequest(
           request,
           requestContentLength,
-          FAKE_OPTIONS.networkCaptureBodies,
+          scopes.options.sessionReplay.isNetworkCaptureBodies,
           { req ->
             req.body?.let { originalBody ->
               val buffer = okio.Buffer()
@@ -167,7 +158,7 @@ public open class SentryOkHttpInterceptor(
               safeExtractRequestBody(bodyBytes, originalBody.contentType(), scopes.options.logger)
             }
           },
-          FAKE_OPTIONS.networkRequestHeaders,
+          scopes.options.sessionReplay.networkRequestHeaders,
           { req: Request -> req.headers.toMap() },
         )
       )
@@ -211,13 +202,16 @@ public open class SentryOkHttpInterceptor(
           NetworkDetailCaptureUtils.createResponse(
             it,
             it.body?.contentLength(),
-            FAKE_OPTIONS.networkCaptureBodies,
+            scopes.options.sessionReplay.isNetworkCaptureBodies,
             { resp: Response -> resp.extractResponseBody(scopes.options.logger) },
-            FAKE_OPTIONS.networkResponseHeaders,
+            scopes.options.sessionReplay.networkResponseHeaders,
             { resp: Response -> resp.headers.toMap() },
           ),
         )
       }
+
+      // Set network details on the OkHttpEvent so it can include them in the breadcrumb hint
+      okHttpEvent?.setNetworkDetails(networkDetailData)
 
       finishSpan(span, request, response, isFromEventListener, okHttpEvent)
 
@@ -270,10 +264,19 @@ public open class SentryOkHttpInterceptor(
   }
 
   /** Extracts headers from OkHttp Headers object into a map */
-  private fun okhttp3.Headers.toMap(): Map<String, String> {
+  @VisibleForTesting
+  internal fun okhttp3.Headers.toMap(): Map<String, String> {
     val headers = linkedMapOf<String, String>()
     for (i in 0 until size) {
-      headers[name(i)] = value(i)
+      val name = name(i)
+      val value = value(i)
+      val existingValue = headers[name]
+      if (existingValue != null) {
+        // Concatenate duplicate headers with semicolon separator
+        headers[name] = "$existingValue; $value"
+      } else {
+        headers[name] = value
+      }
     }
     return headers
   }

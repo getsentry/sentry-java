@@ -10,8 +10,10 @@ import io.sentry.ScreenshotStrategyType;
 import io.sentry.SentryFeedbackOptions;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryLevel;
+import io.sentry.SentryReplayOptions;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.util.Objects;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -113,6 +115,21 @@ final class ManifestMetadataReader {
 
   static final String REPLAYS_DEBUG = "io.sentry.session-replay.debug";
   static final String REPLAYS_SCREENSHOT_STRATEGY = "io.sentry.session-replay.screenshot-strategy";
+
+  static final String REPLAYS_NETWORK_DETAIL_ALLOW_URLS =
+      "io.sentry.session-replay.network-detail-allow-urls";
+
+  static final String REPLAYS_NETWORK_DETAIL_DENY_URLS =
+      "io.sentry.session-replay.network-detail-deny-urls";
+
+  static final String REPLAYS_NETWORK_CAPTURE_BODIES =
+      "io.sentry.session-replay.network-capture-bodies";
+
+  static final String REPLAYS_NETWORK_REQUEST_HEADERS =
+      "io.sentry.session-replay.network-request-headers";
+
+  static final String REPLAYS_NETWORK_RESPONSE_HEADERS =
+      "io.sentry.session-replay.network-response-headers";
 
   static final String FORCE_INIT = "io.sentry.force-init";
 
@@ -490,6 +507,87 @@ final class ManifestMetadataReader {
             options.getSessionReplay().setScreenshotStrategy(ScreenshotStrategyType.PIXEL_COPY);
           }
         }
+
+        // Network Details Configuration
+        if (options.getSessionReplay().getNetworkDetailAllowUrls().isEmpty()) {
+          final @Nullable List<String> allowUrls =
+              readList(metadata, logger, REPLAYS_NETWORK_DETAIL_ALLOW_URLS);
+          if (allowUrls != null && !allowUrls.isEmpty()) {
+            final List<String> filteredUrls = new ArrayList<>();
+            for (String url : allowUrls) {
+              final String trimmedUrl = url.trim();
+              if (!trimmedUrl.isEmpty()) {
+                filteredUrls.add(trimmedUrl);
+              }
+            }
+            if (!filteredUrls.isEmpty()) {
+              options.getSessionReplay().setNetworkDetailAllowUrls(filteredUrls);
+            }
+          }
+        }
+
+        if (options.getSessionReplay().getNetworkDetailDenyUrls().isEmpty()) {
+          final @Nullable List<String> denyUrls =
+              readList(metadata, logger, REPLAYS_NETWORK_DETAIL_DENY_URLS);
+          if (denyUrls != null && !denyUrls.isEmpty()) {
+            final List<String> filteredUrls = new ArrayList<>();
+            for (String url : denyUrls) {
+              final String trimmedUrl = url.trim();
+              if (!trimmedUrl.isEmpty()) {
+                filteredUrls.add(trimmedUrl);
+              }
+            }
+            if (!filteredUrls.isEmpty()) {
+              options.getSessionReplay().setNetworkDetailDenyUrls(filteredUrls);
+            }
+          }
+        }
+
+        options
+            .getSessionReplay()
+            .setNetworkCaptureBodies(
+                readBool(
+                    metadata,
+                    logger,
+                    REPLAYS_NETWORK_CAPTURE_BODIES,
+                    options.getSessionReplay().isNetworkCaptureBodies() /* defaultValue */));
+
+        if (options.getSessionReplay().getNetworkRequestHeaders().size()
+            == SentryReplayOptions.getNetworkDetailsDefaultHeaders().size()) { // Only has defaults
+          final @Nullable List<String> requestHeaders =
+              readList(metadata, logger, REPLAYS_NETWORK_REQUEST_HEADERS);
+          if (requestHeaders != null) {
+            final List<String> filteredHeaders = new ArrayList<>();
+            for (String header : requestHeaders) {
+              final String trimmedHeader = header.trim();
+              if (!trimmedHeader.isEmpty()) {
+                filteredHeaders.add(trimmedHeader);
+              }
+            }
+            if (!filteredHeaders.isEmpty()) {
+              options.getSessionReplay().setNetworkRequestHeaders(filteredHeaders);
+            }
+          }
+        }
+
+        if (options.getSessionReplay().getNetworkResponseHeaders().size()
+            == SentryReplayOptions.getNetworkDetailsDefaultHeaders().size()) { // Only has defaults
+          final @Nullable List<String> responseHeaders =
+              readList(metadata, logger, REPLAYS_NETWORK_RESPONSE_HEADERS);
+          if (responseHeaders != null && !responseHeaders.isEmpty()) {
+            final List<String> filteredHeaders = new ArrayList<>();
+            for (String header : responseHeaders) {
+              final String trimmedHeader = header.trim();
+              if (!trimmedHeader.isEmpty()) {
+                filteredHeaders.add(trimmedHeader);
+              }
+            }
+            if (!filteredHeaders.isEmpty()) {
+              options.getSessionReplay().setNetworkResponseHeaders(filteredHeaders);
+            }
+          }
+        }
+
         options.setIgnoredErrors(readList(metadata, logger, IGNORED_ERRORS));
 
         final @Nullable List<String> includes = readList(metadata, logger, IN_APP_INCLUDES);
