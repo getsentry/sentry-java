@@ -264,11 +264,6 @@ public class TombstoneIntegration implements Integration, Closeable {
         return;
       }
 
-      if (event == null) {
-        logTombstoneFailure(exitInfo);
-        return;
-      }
-
       final long tombstoneTimestamp = exitInfo.getTimestamp();
       event.setTimestamp(DateUtils.getDateTime(tombstoneTimestamp));
 
