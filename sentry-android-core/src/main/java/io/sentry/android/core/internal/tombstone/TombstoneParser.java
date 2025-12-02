@@ -25,7 +25,7 @@ public class TombstoneParser implements Closeable {
   private final InputStream tombstoneStream;
   private final Map<String, String> excTypeValueMap = new HashMap<>();
 
-  public TombstoneParser(InputStream tombstoneStream) {
+  public TombstoneParser(@NonNull final InputStream tombstoneStream) {
     this.tombstoneStream = tombstoneStream;
 
     // keep the current signal type -> value mapping for compatibility
@@ -37,10 +37,13 @@ public class TombstoneParser implements Closeable {
     excTypeValueMap.put("SIGSEGV", "Segfault");
   }
 
+  @NonNull
   public SentryEvent parse() throws IOException {
-    TombstoneProtos.Tombstone tombstone = TombstoneProtos.Tombstone.parseFrom(tombstoneStream);
+    @NonNull
+    final TombstoneProtos.Tombstone tombstone =
+        TombstoneProtos.Tombstone.parseFrom(tombstoneStream);
 
-    SentryEvent event = new SentryEvent();
+    final SentryEvent event = new SentryEvent();
     event.setLevel(SentryLevel.FATAL);
 
     // must use the "native" platform because otherwise the stack-trace wouldn't be correctly parsed
@@ -50,6 +53,7 @@ public class TombstoneParser implements Closeable {
     event.setDebugMeta(createDebugMeta(tombstone));
     event.setExceptions(createException(tombstone));
     assert event.getExceptions() != null;
+    assert event.getExceptions().size() == 1;
     event.setThreads(createThreads(tombstone, event.getExceptions().get(0)));
 
     return event;
@@ -57,17 +61,17 @@ public class TombstoneParser implements Closeable {
 
   @NonNull
   private List<SentryThread> createThreads(
-      TombstoneProtos.Tombstone tombstone, SentryException exc) {
-    List<SentryThread> threads = new ArrayList<>();
+      @NonNull final TombstoneProtos.Tombstone tombstone, @NonNull final SentryException exc) {
+    final List<SentryThread> threads = new ArrayList<>();
     for (Map.Entry<Integer, TombstoneProtos.Thread> threadEntry :
         tombstone.getThreadsMap().entrySet()) {
-      TombstoneProtos.Thread threadEntryValue = threadEntry.getValue();
+      final TombstoneProtos.Thread threadEntryValue = threadEntry.getValue();
 
-      SentryThread thread = new SentryThread();
+      final SentryThread thread = new SentryThread();
       thread.setId(Long.valueOf(threadEntry.getKey()));
       thread.setName(threadEntryValue.getName());
 
-      SentryStackTrace stacktrace = createStackTrace(threadEntryValue);
+      final SentryStackTrace stacktrace = createStackTrace(threadEntryValue);
       thread.setStacktrace(stacktrace);
       if (tombstone.getTid() == threadEntryValue.getId()) {
         thread.setCrashed(true);
@@ -82,18 +86,18 @@ public class TombstoneParser implements Closeable {
   }
 
   @NonNull
-  private static SentryStackTrace createStackTrace(TombstoneProtos.Thread thread) {
-    List<SentryStackFrame> frames = new ArrayList<>();
+  private static SentryStackTrace createStackTrace(@NonNull final TombstoneProtos.Thread thread) {
+    final List<SentryStackFrame> frames = new ArrayList<>();
 
     for (TombstoneProtos.BacktraceFrame frame : thread.getCurrentBacktraceList()) {
-      SentryStackFrame stackFrame = new SentryStackFrame();
+      final SentryStackFrame stackFrame = new SentryStackFrame();
       stackFrame.setPackage(frame.getFileName());
       stackFrame.setFunction(frame.getFunctionName());
       stackFrame.setInstructionAddr(String.format("0x%x", frame.getPc()));
       frames.add(0, stackFrame);
     }
 
-    SentryStackTrace stacktrace = new SentryStackTrace();
+    final SentryStackTrace stacktrace = new SentryStackTrace();
     stacktrace.setFrames(frames);
 
     // `libunwindstack` used for tombstones already applies instruction address adjustment:
@@ -101,7 +105,7 @@ public class TombstoneParser implements Closeable {
     // prevent "processing" from doing it again.
     stacktrace.setInstructionAddressAdjustment("none");
 
-    Map<String, String> registers = new HashMap<>();
+    final Map<String, String> registers = new HashMap<>();
     for (TombstoneProtos.Register register : thread.getRegistersList()) {
       registers.put(register.getName(), String.format("0x%x", register.getU64()));
     }
@@ -111,27 +115,28 @@ public class TombstoneParser implements Closeable {
   }
 
   @NonNull
-  private List<SentryException> createException(TombstoneProtos.Tombstone tombstone) {
-    SentryException exception = new SentryException();
+  private List<SentryException> createException(@NonNull TombstoneProtos.Tombstone tombstone) {
+    final SentryException exception = new SentryException();
 
     if (tombstone.hasSignalInfo()) {
-      TombstoneProtos.Signal signalInfo = tombstone.getSignalInfo();
+      final TombstoneProtos.Signal signalInfo = tombstone.getSignalInfo();
       exception.setType(signalInfo.getName());
       exception.setValue(excTypeValueMap.get(signalInfo.getName()));
       exception.setMechanism(createMechanismFromSignalInfo(signalInfo));
     }
 
     exception.setThreadId((long) tombstone.getTid());
-    List<SentryException> exceptions = new ArrayList<>(1);
+    final List<SentryException> exceptions = new ArrayList<>(1);
     exceptions.add(exception);
 
     return exceptions;
   }
 
   @NonNull
-  private static Mechanism createMechanismFromSignalInfo(TombstoneProtos.Signal signalInfo) {
+  private static Mechanism createMechanismFromSignalInfo(
+      @NonNull final TombstoneProtos.Signal signalInfo) {
 
-    Mechanism mechanism = new Mechanism();
+    final Mechanism mechanism = new Mechanism();
     // this follows the current processing triggers strictly, changing any of these
     // alters grouping and name (long-term we might want to have a tombstone mechanism)
     // TODO: if we align this with ANRv2 this would be overwritten in a BackfillingEventProcessor as
@@ -144,7 +149,7 @@ public class TombstoneParser implements Closeable {
     mechanism.setHandled(false);
     mechanism.setSynthetic(true);
 
-    Map<String, Object> meta = new HashMap<>();
+    final Map<String, Object> meta = new HashMap<>();
     meta.put("number", signalInfo.getNumber());
     meta.put("name", signalInfo.getName());
     meta.put("code", signalInfo.getCode());
@@ -155,9 +160,9 @@ public class TombstoneParser implements Closeable {
   }
 
   @NonNull
-  private Message constructMessage(TombstoneProtos.Tombstone tombstone) {
-    Message message = new Message();
-    TombstoneProtos.Signal signalInfo = tombstone.getSignalInfo();
+  private Message constructMessage(@NonNull final TombstoneProtos.Tombstone tombstone) {
+    final Message message = new Message();
+    final TombstoneProtos.Signal signalInfo = tombstone.getSignalInfo();
 
     // reproduce the message `debuggerd` would use to dump the stack trace in logcat
     message.setFormatted(
@@ -174,8 +179,8 @@ public class TombstoneParser implements Closeable {
     return message;
   }
 
-  private DebugMeta createDebugMeta(TombstoneProtos.Tombstone tombstone) {
-    List<DebugImage> images = new ArrayList<>();
+  private DebugMeta createDebugMeta(@NonNull final TombstoneProtos.Tombstone tombstone) {
+    final List<DebugImage> images = new ArrayList<>();
 
     for (TombstoneProtos.MemoryMapping module : tombstone.getMemoryMappingsList()) {
       // exclude anonymous and non-executable maps
@@ -184,7 +189,7 @@ public class TombstoneParser implements Closeable {
           || !module.getExecute()) {
         continue;
       }
-      DebugImage image = new DebugImage();
+      final DebugImage image = new DebugImage();
       image.setCodeId(module.getBuildId());
       image.setCodeFile(module.getMappingName());
       image.setDebugId(module.getBuildId());
@@ -195,7 +200,7 @@ public class TombstoneParser implements Closeable {
       images.add(image);
     }
 
-    DebugMeta debugMeta = new DebugMeta();
+    final DebugMeta debugMeta = new DebugMeta();
     debugMeta.setImages(images);
 
     return debugMeta;

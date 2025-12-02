@@ -213,7 +213,8 @@ public class TombstoneIntegration implements Integration, Closeable {
 
     @RequiresApi(api = Build.VERSION_CODES.R)
     private void reportNonEnrichedHistoricalTombstones(
-        List<ApplicationExitInfo> exitInfos, @Nullable Long lastReportedTombstoneTimestamp) {
+        final @NotNull List<ApplicationExitInfo> exitInfos,
+        final @Nullable Long lastReportedTombstoneTimestamp) {
       // we reverse the list, because the OS puts errors in order of appearance, last-to-first
       // and we want to write a marker file after each ANR has been processed, so in case the app
       // gets killed meanwhile, we can proceed from the last reported ANR and not process the entire
@@ -245,10 +246,11 @@ public class TombstoneIntegration implements Integration, Closeable {
     }
 
     @RequiresApi(api = Build.VERSION_CODES.R)
-    private void reportAsSentryEvent(ApplicationExitInfo exitInfo, boolean enrich) {
-      SentryEvent event;
+    private void reportAsSentryEvent(
+        final @NotNull ApplicationExitInfo exitInfo, final boolean enrich) {
+      final SentryEvent event;
       try {
-        InputStream tombstoneInputStream = exitInfo.getTraceInputStream();
+        final InputStream tombstoneInputStream = exitInfo.getTraceInputStream();
         if (tombstoneInputStream == null) {
           logTombstoneFailure(exitInfo);
           return;
@@ -292,7 +294,7 @@ public class TombstoneIntegration implements Integration, Closeable {
     }
 
     @RequiresApi(api = Build.VERSION_CODES.R)
-    private void logTombstoneFailure(ApplicationExitInfo exitInfo) {
+    private void logTombstoneFailure(final @NotNull ApplicationExitInfo exitInfo) {
       options
           .getLogger()
           .log(
