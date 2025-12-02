@@ -8,20 +8,32 @@ import android.content.Context;
 import android.os.Build;
 import androidx.annotation.RequiresApi;
 import io.sentry.DateUtils;
+import io.sentry.Hint;
+import io.sentry.ILogger;
 import io.sentry.IScopes;
 import io.sentry.Integration;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import io.sentry.android.core.cache.AndroidEnvelopeCache;
 import io.sentry.android.core.internal.tombstone.TombstoneParser;
 import io.sentry.cache.EnvelopeCache;
 import io.sentry.cache.IEnvelopeCache;
+import io.sentry.hints.Backfillable;
+import io.sentry.hints.BlockingFlushHint;
+import io.sentry.hints.NativeCrashExit;
+import io.sentry.protocol.SentryId;
 import io.sentry.transport.CurrentDateProvider;
 import io.sentry.transport.ICurrentDateProvider;
+import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
+import java.io.InputStream;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.ApiStatus;
@@ -115,6 +127,11 @@ public class TombstoneIntegration implements Integration, Closeable {
       final ActivityManager activityManager =
           (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
 
+      if (activityManager == null) {
+        options.getLogger().log(SentryLevel.ERROR, "Failed to retrieve ActivityManager.");
+        return;
+      }
+
       final List<ApplicationExitInfo> applicationExitInfoList;
       applicationExitInfoList = activityManager.getHistoricalProcessExitReasons(null, 0, 0);
 
@@ -134,8 +151,7 @@ public class TombstoneIntegration implements Integration, Closeable {
                   "Timed out waiting to flush previous session to its own file.");
 
           // if we timed out waiting here, we can already flush the latch, because the timeout is
-          // big
-          // enough to wait for it only once and we don't have to wait again in
+          // big enough to wait for it only once and we don't have to wait again in
           // PreviousSessionFinalizer
           ((EnvelopeCache) cache).flushPreviousSession();
         }
@@ -143,6 +159,8 @@ public class TombstoneIntegration implements Integration, Closeable {
 
       // making a deep copy as we're modifying the list
       final List<ApplicationExitInfo> exitInfos = new ArrayList<>(applicationExitInfoList);
+      final @Nullable Long lastReportedTombstoneTimestamp =
+          AndroidEnvelopeCache.lastReportedTombstone(options);
 
       // search for the latest Tombstone to report it separately as we're gonna enrich it. The
       // latest
@@ -152,8 +170,6 @@ public class TombstoneIntegration implements Integration, Closeable {
         if (applicationExitInfo.getReason() == ApplicationExitInfo.REASON_CRASH_NATIVE) {
           latestTombstone = applicationExitInfo;
           // remove it, so it's not reported twice
-          // TODO: if we fail after this, we effectively lost the ApplicationExitInfo (maybe only
-          // remove after we reported it)
           exitInfos.remove(applicationExitInfo);
           break;
         }
@@ -171,25 +187,151 @@ public class TombstoneIntegration implements Integration, Closeable {
       if (latestTombstone.getTimestamp() < threshold) {
         options
             .getLogger()
-            .log(SentryLevel.DEBUG, "Latest Tombstones happened too long ago, returning early.");
+            .log(SentryLevel.DEBUG, "Latest Tombstone happened too long ago, returning early.");
         return;
       }
 
-      reportAsSentryEvent(latestTombstone);
+      if (lastReportedTombstoneTimestamp != null
+          && latestTombstone.getTimestamp() <= lastReportedTombstoneTimestamp) {
+        options
+            .getLogger()
+            .log(SentryLevel.DEBUG, "Latest Tombstone has already been reported, returning early.");
+        return;
+      }
+
+      if (options.isReportHistoricalTombstones()) {
+        // report the remainder without enriching
+        reportNonEnrichedHistoricalTombstones(exitInfos, lastReportedTombstoneTimestamp);
+      }
+
+      // report the latest Tombstone with enriching, if contexts are available, otherwise report it
+      // non-enriched
+      reportAsSentryEvent(latestTombstone, true);
     }
 
     @RequiresApi(api = Build.VERSION_CODES.R)
-    private void reportAsSentryEvent(ApplicationExitInfo exitInfo) {
+    private void reportNonEnrichedHistoricalTombstones(
+        List<ApplicationExitInfo> exitInfos, @Nullable Long lastReportedTombstoneTimestamp) {
+      // we reverse the list, because the OS puts errors in order of appearance, last-to-first
+      // and we want to write a marker file after each ANR has been processed, so in case the app
+      // gets killed meanwhile, we can proceed from the last reported ANR and not process the entire
+      // list again
+      Collections.reverse(exitInfos);
+      for (ApplicationExitInfo applicationExitInfo : exitInfos) {
+        if (applicationExitInfo.getReason() == ApplicationExitInfo.REASON_CRASH_NATIVE) {
+          if (applicationExitInfo.getTimestamp() < threshold) {
+            options
+                .getLogger()
+                .log(SentryLevel.DEBUG, "Tombstone happened too long ago %s.", applicationExitInfo);
+            continue;
+          }
+
+          if (lastReportedTombstoneTimestamp != null
+              && applicationExitInfo.getTimestamp() <= lastReportedTombstoneTimestamp) {
+            options
+                .getLogger()
+                .log(
+                    SentryLevel.DEBUG,
+                    "Tombstone has already been reported %s.",
+                    applicationExitInfo);
+            continue;
+          }
+
+          reportAsSentryEvent(applicationExitInfo, false); // do not enrich past events
+        }
+      }
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.R)
+    private void reportAsSentryEvent(ApplicationExitInfo exitInfo, boolean enrich) {
       SentryEvent event;
       try {
-        TombstoneParser parser = new TombstoneParser(exitInfo.getTraceInputStream());
+        InputStream tombstoneInputStream = exitInfo.getTraceInputStream();
+        if (tombstoneInputStream == null) {
+          logTombstoneFailure(exitInfo);
+          return;
+        }
+
+        final TombstoneParser parser = new TombstoneParser(tombstoneInputStream);
         event = parser.parse();
-        event.setTimestamp(DateUtils.getDateTime(exitInfo.getTimestamp()));
       } catch (IOException e) {
-        throw new RuntimeException(e);
+        logTombstoneFailure(exitInfo);
+        return;
       }
 
-      scopes.captureEvent(event);
+      if (event == null) {
+        logTombstoneFailure(exitInfo);
+        return;
+      }
+
+      final long tombstoneTimestamp = exitInfo.getTimestamp();
+      event.setTimestamp(DateUtils.getDateTime(tombstoneTimestamp));
+
+      final TombstoneHint tombstoneHint =
+          new TombstoneHint(
+              options.getFlushTimeoutMillis(), options.getLogger(), tombstoneTimestamp, enrich);
+      final Hint hint = HintUtils.createWithTypeCheckHint(tombstoneHint);
+
+      final @NotNull SentryId sentryId = scopes.captureEvent(event, hint);
+      final boolean isEventDropped = sentryId.equals(SentryId.EMPTY_ID);
+      if (!isEventDropped) {
+        // Block until the event is flushed to disk and the last_reported_tombstone marker is
+        // updated
+        if (!tombstoneHint.waitFlush()) {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.WARNING,
+                  "Timed out waiting to flush Tombstone event to disk. Event: %s",
+                  event.getEventId());
+        }
+      }
     }
+
+    @RequiresApi(api = Build.VERSION_CODES.R)
+    private void logTombstoneFailure(ApplicationExitInfo exitInfo) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "Native crash report from %s does not contain a valid tombstone.",
+              DateTimeFormatter.ISO_INSTANT.format(Instant.ofEpochMilli(exitInfo.getTimestamp())));
+    }
+  }
+
+  @ApiStatus.Internal
+  public static final class TombstoneHint extends BlockingFlushHint
+      implements Backfillable, NativeCrashExit {
+
+    private final long tombstoneTimestamp;
+    private final boolean shouldEnrich;
+
+    public TombstoneHint(
+        long flushTimeoutMillis,
+        @NotNull ILogger logger,
+        long tombstoneTimestamp,
+        boolean shouldEnrich) {
+      super(flushTimeoutMillis, logger);
+      this.tombstoneTimestamp = tombstoneTimestamp;
+      this.shouldEnrich = shouldEnrich;
+    }
+
+    @Override
+    public Long timestamp() {
+      return tombstoneTimestamp;
+    }
+
+    @Override
+    public boolean shouldEnrich() {
+      return shouldEnrich;
+    }
+
+    @Override
+    public boolean isFlushable(@Nullable SentryId eventId) {
+      return true;
+    }
+
+    @Override
+    public void setFlushable(@NotNull SentryId eventId) {}
   }
 }
