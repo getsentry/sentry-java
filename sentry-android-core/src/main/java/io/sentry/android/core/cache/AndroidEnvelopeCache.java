@@ -10,6 +10,7 @@ import io.sentry.SentryOptions;
 import io.sentry.UncaughtExceptionHandlerIntegration;
 import io.sentry.android.core.AnrV2Integration;
 import io.sentry.android.core.SentryAndroidOptions;
+import io.sentry.android.core.TombstoneIntegration;
 import io.sentry.android.core.internal.util.AndroidCurrentDateProvider;
 import io.sentry.android.core.performance.AppStartMetrics;
 import io.sentry.android.core.performance.TimeSpan;
@@ -31,6 +32,7 @@ import org.jetbrains.annotations.TestOnly;
 public final class AndroidEnvelopeCache extends EnvelopeCache {
 
   public static final String LAST_ANR_REPORT = "last_anr_report";
+  public static final String LAST_TOMBSTONE_REPORT = "last_tombstone_report";
 
   private final @NotNull ICurrentDateProvider currentDateProvider;
 
@@ -94,6 +96,22 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
 
           writeLastReportedAnrMarker(timestamp);
         });
+
+    HintUtils.runIfHasType(
+        hint,
+        TombstoneIntegration.TombstoneHint.class,
+        (tombstoneHint) -> {
+          final @Nullable Long timestamp = tombstoneHint.timestamp();
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.DEBUG,
+                  "Writing last reported Tombstone marker with timestamp %d",
+                  timestamp);
+
+          writeLastReportedTombstoneMarker(timestamp);
+        });
+
     return didStore;
   }
 
@@ -152,14 +170,18 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
     return false;
   }
 
-  public static @Nullable Long lastReportedAnr(final @NotNull SentryOptions options) {
+  private static @Nullable Long lastReportedMarker(
+      final @NotNull SentryOptions options,
+      @NotNull String reportFilename,
+      @NotNull String markerCategory) {
     final String cacheDirPath =
         Objects.requireNonNull(
-            options.getCacheDirPath(), "Cache dir path should be set for getting ANRs reported");
+            options.getCacheDirPath(),
+            "Cache dir path should be set for getting " + markerCategory + "s reported");
 
-    final File lastAnrMarker = new File(cacheDirPath, LAST_ANR_REPORT);
+    final File lastMarker = new File(cacheDirPath, reportFilename);
     try {
-      final String content = FileUtils.readText(lastAnrMarker);
+      final String content = FileUtils.readText(lastMarker);
       // we wrapped into try-catch already
       //noinspection ConstantConditions
       return content.equals("null") ? null : Long.parseLong(content.trim());
@@ -167,27 +189,55 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
       if (e instanceof FileNotFoundException) {
         options
             .getLogger()
-            .log(DEBUG, "Last ANR marker does not exist. %s.", lastAnrMarker.getAbsolutePath());
+            .log(
+                DEBUG,
+                "Last " + markerCategory + " marker does not exist. %s.",
+                lastMarker.getAbsolutePath());
       } else {
-        options.getLogger().log(ERROR, "Error reading last ANR marker", e);
+        options.getLogger().log(ERROR, "Error reading last " + markerCategory + " marker", e);
       }
     }
     return null;
   }
 
-  private void writeLastReportedAnrMarker(final @Nullable Long timestamp) {
+  private void writeLastReportedMarker(
+      final @Nullable Long timestamp,
+      @NotNull String reportFilename,
+      @NotNull String markerCategory) {
     final String cacheDirPath = options.getCacheDirPath();
     if (cacheDirPath == null) {
-      options.getLogger().log(DEBUG, "Cache dir path is null, the ANR marker will not be written");
+      options
+          .getLogger()
+          .log(
+              DEBUG,
+              "Cache dir path is null, the " + markerCategory + " marker will not be written");
       return;
     }
 
-    final File anrMarker = new File(cacheDirPath, LAST_ANR_REPORT);
+    final File anrMarker = new File(cacheDirPath, reportFilename);
     try (final OutputStream outputStream = new FileOutputStream(anrMarker)) {
       outputStream.write(String.valueOf(timestamp).getBytes(UTF_8));
       outputStream.flush();
     } catch (Throwable e) {
-      options.getLogger().log(ERROR, "Error writing the ANR marker to the disk", e);
+      options
+          .getLogger()
+          .log(ERROR, "Error writing the " + markerCategory + " marker to the disk", e);
     }
+  }
+
+  public static @Nullable Long lastReportedAnr(final @NotNull SentryOptions options) {
+    return lastReportedMarker(options, LAST_ANR_REPORT, "ANR");
+  }
+
+  private void writeLastReportedAnrMarker(final @Nullable Long timestamp) {
+    this.writeLastReportedMarker(timestamp, LAST_ANR_REPORT, "ANR");
+  }
+
+  public static @Nullable Long lastReportedTombstone(final @NotNull SentryOptions options) {
+    return lastReportedMarker(options, LAST_TOMBSTONE_REPORT, "Tombstone");
+  }
+
+  private void writeLastReportedTombstoneMarker(final @Nullable Long timestamp) {
+    this.writeLastReportedMarker(timestamp, LAST_TOMBSTONE_REPORT, "Tombstone");
   }
 }
