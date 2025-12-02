@@ -60,14 +60,15 @@ public class TombstoneParser {
     List<SentryThread> threads = new ArrayList<>();
     for (Map.Entry<Integer, TombstoneProtos.Thread> threadEntry :
         tombstone.getThreadsMap().entrySet()) {
+      TombstoneProtos.Thread threadEntryValue = threadEntry.getValue();
 
       SentryThread thread = new SentryThread();
       thread.setId(Long.valueOf(threadEntry.getKey()));
-      thread.setName(threadEntry.getValue().getName());
+      thread.setName(threadEntryValue.getName());
 
-      SentryStackTrace stacktrace = createStackTrace(threadEntry);
+      SentryStackTrace stacktrace = createStackTrace(threadEntryValue);
       thread.setStacktrace(stacktrace);
-      if (tombstone.getTid() == threadEntry.getValue().getId()) {
+      if (tombstone.getTid() == threadEntryValue.getId()) {
         thread.setCrashed(true);
         // even though we refer to the thread_id from the exception,
         // the backend currently requires a stack-trace in exception
@@ -80,11 +81,10 @@ public class TombstoneParser {
   }
 
   @NonNull
-  private static SentryStackTrace createStackTrace(
-      Map.Entry<Integer, TombstoneProtos.Thread> threadEntry) {
+  private static SentryStackTrace createStackTrace(TombstoneProtos.Thread thread) {
     List<SentryStackFrame> frames = new ArrayList<>();
 
-    for (TombstoneProtos.BacktraceFrame frame : threadEntry.getValue().getCurrentBacktraceList()) {
+    for (TombstoneProtos.BacktraceFrame frame : thread.getCurrentBacktraceList()) {
       SentryStackFrame stackFrame = new SentryStackFrame();
       stackFrame.setPackage(frame.getFileName());
       stackFrame.setFunction(frame.getFunctionName());
@@ -95,15 +95,13 @@ public class TombstoneParser {
     SentryStackTrace stacktrace = new SentryStackTrace();
     stacktrace.setFrames(frames);
 
-    Map<String, Object> unknown = new HashMap<>();
     // `libunwindstack` used for tombstones already applies instruction address adjustment:
     // https://android.googlesource.com/platform/system/unwinding/+/refs/heads/main/libunwindstack/Regs.cpp#175
     // prevent "processing" from doing it again.
-    unknown.put("instruction_addr_adjustment", "none");
-    stacktrace.setUnknown(unknown);
+    stacktrace.setInstructionAddressAdjustment("none");
 
     Map<String, String> registers = new HashMap<>();
-    for (TombstoneProtos.Register register : threadEntry.getValue().getRegistersList()) {
+    for (TombstoneProtos.Register register : thread.getRegistersList()) {
       registers.put(register.getName(), String.format("0x%x", register.getU64()));
     }
     stacktrace.setRegisters(registers);
@@ -113,14 +111,16 @@ public class TombstoneParser {
 
   @NonNull
   private List<SentryException> createException(TombstoneProtos.Tombstone tombstone) {
-    TombstoneProtos.Signal signalInfo = tombstone.getSignalInfo();
-
     SentryException exception = new SentryException();
-    exception.setType(signalInfo.getName());
-    exception.setValue(excTypeValueMap.get(signalInfo.getName()));
-    exception.setMechanism(createMechanismFromSignalInfo(signalInfo));
-    exception.setThreadId((long) tombstone.getTid());
 
+    if (tombstone.hasSignalInfo()) {
+      TombstoneProtos.Signal signalInfo = tombstone.getSignalInfo();
+      exception.setType(signalInfo.getName());
+      exception.setValue(excTypeValueMap.get(signalInfo.getName()));
+      exception.setMechanism(createMechanismFromSignalInfo(signalInfo));
+    }
+
+    exception.setThreadId((long) tombstone.getTid());
     List<SentryException> exceptions = new ArrayList<>(1);
     exceptions.add(exception);
 
@@ -129,18 +129,23 @@ public class TombstoneParser {
 
   @NonNull
   private static Mechanism createMechanismFromSignalInfo(TombstoneProtos.Signal signalInfo) {
+
+    Mechanism mechanism = new Mechanism();
+    // this follows the current processing triggers strictly, changing any of these
+    // alters grouping and name (long-term we might want to have a tombstone mechanism)
+    // TODO: if we align this with ANRv2 this would be overwritten in a BackfillingEventProcessor as
+    //       `ApplicationExitInfo` not sure what the right call is. `ApplicationExitInfo` is certainly correct. But `signalhandler` isn't
+    //       wrong either, since all native crashes retrieved via `REASON_CRASH_NATIVE` will be signals. I am not sure what the side-effect
+    //       in ingestion/processing will be if we change the mechanism, but initially i wanted to stay close to the Native SDK.
+    mechanism.setType("signalhandler");
+    mechanism.setHandled(false);
+    mechanism.setSynthetic(true);
+
     Map<String, Object> meta = new HashMap<>();
     meta.put("number", signalInfo.getNumber());
     meta.put("name", signalInfo.getName());
     meta.put("code", signalInfo.getCode());
     meta.put("code_name", signalInfo.getCodeName());
-
-    Mechanism mechanism = new Mechanism();
-    // this follows the current processing triggers strictly, changing any of these
-    // alters grouping and name (long-term we might want to have a tombstone mechanism)
-    mechanism.setType("signalhandler");
-    mechanism.setHandled(false);
-    mechanism.setSynthetic(true);
     mechanism.setMeta(meta);
 
     return mechanism;
@@ -154,7 +159,7 @@ public class TombstoneParser {
     // reproduce the message `debuggerd` would use to dump the stack trace in logcat
     message.setFormatted(
         String.format(
-            Locale.getDefault(),
+            Locale.ROOT,
             "Fatal signal %s (%d), %s (%d), pid = %d (%s)",
             signalInfo.getName(),
             signalInfo.getNumber(),

@@ -66,6 +66,15 @@ public final class SentryStackTrace implements JsonUnknown, JsonSerializable {
    */
   private @Nullable Boolean snapshot;
 
+  /**
+   * This value indicates if, and how, `instruction_addr`  values in the stack frames need to be adjusted before they are symbolicated.
+   * TODO: should we make this an enum or is a string value fine?
+   *
+   * @see SentryStackFrame#getInstructionAddr()
+   * @see SentryStackFrame#setInstructionAddr(String)
+   */
+  private @Nullable String instructionAddressAdjustment;
+
   @SuppressWarnings("unused")
   private @Nullable Map<String, Object> unknown;
 
@@ -122,10 +131,19 @@ public final class SentryStackTrace implements JsonUnknown, JsonSerializable {
     this.unknown = unknown;
   }
 
+  public @Nullable String getInstructionAddressAdjustment() {
+    return instructionAddressAdjustment;
+  }
+
+  public void setInstructionAddressAdjustment(@Nullable String instructionAddressAdjustment) {
+    this.instructionAddressAdjustment = instructionAddressAdjustment;
+  }
+
   public static final class JsonKeys {
     public static final String FRAMES = "frames";
     public static final String REGISTERS = "registers";
     public static final String SNAPSHOT = "snapshot";
+    public static final String INSTRUCTION_ADDRESS_ADJUSTMENT = "instruction_add_adjustment";
   }
 
   @Override
@@ -140,6 +158,9 @@ public final class SentryStackTrace implements JsonUnknown, JsonSerializable {
     }
     if (snapshot != null) {
       writer.name(JsonKeys.SNAPSHOT).value(snapshot);
+    }
+    if (instructionAddressAdjustment != null) {
+      writer.name(JsonKeys.INSTRUCTION_ADDRESS_ADJUSTMENT).value(instructionAddressAdjustment);
     }
     if (unknown != null) {
       for (String key : unknown.keySet()) {
@@ -173,6 +194,9 @@ public final class SentryStackTrace implements JsonUnknown, JsonSerializable {
             break;
           case JsonKeys.SNAPSHOT:
             sentryStackTrace.snapshot = reader.nextBooleanOrNull();
+            break;
+          case JsonKeys.INSTRUCTION_ADDRESS_ADJUSTMENT:
+            sentryStackTrace.instructionAddressAdjustment = reader.nextStringOrNull();
             break;
           default:
             if (unknown == null) {
