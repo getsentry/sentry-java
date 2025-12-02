@@ -143,7 +143,7 @@ public final class SentryStackTrace implements JsonUnknown, JsonSerializable {
     public static final String FRAMES = "frames";
     public static final String REGISTERS = "registers";
     public static final String SNAPSHOT = "snapshot";
-    public static final String INSTRUCTION_ADDRESS_ADJUSTMENT = "instruction_add_adjustment";
+    public static final String INSTRUCTION_ADDRESS_ADJUSTMENT = "instruction_addr_adjustment";
   }
 
   @Override
