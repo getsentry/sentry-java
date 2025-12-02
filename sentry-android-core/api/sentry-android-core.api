@@ -507,10 +507,19 @@ public class io/sentry/android/core/anr/AnrProfile {
 
 public class io/sentry/android/core/anr/AnrProfileManager : java/io/Closeable {
 	public fun <init> (Lio/sentry/SentryOptions;)V
+	public fun <init> (Lio/sentry/SentryOptions;Ljava/io/File;)V
 	public fun add (Lio/sentry/android/core/anr/AnrStackTrace;)V
 	public fun clear ()V
 	public fun close ()V
 	public fun load ()Lio/sentry/android/core/anr/AnrProfile;
+}
+
+public class io/sentry/android/core/anr/AnrProfileRotationHelper {
+	public fun <init> ()V
+	public static fun deleteLastFile (Ljava/io/File;)Z
+	public static fun getCurrentFile (Ljava/io/File;)Ljava/io/File;
+	public static fun getLastFile (Ljava/io/File;)Ljava/io/File;
+	public static fun rotate ()V
 }
 
 public class io/sentry/android/core/anr/AnrProfilingIntegration : io/sentry/Integration, io/sentry/android/core/AppState$AppStateListener, java/io/Closeable, java/lang/Runnable {

@@ -15,6 +15,7 @@ import io.sentry.android.core.AppState;
 import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.Objects;
 import java.io.Closeable;
+import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.ApiStatus;
@@ -178,16 +179,15 @@ public class AnrProfilingIntegration
   @NonNull
   protected AnrProfileManager getProfileManager() {
     try (final @NotNull ISentryLifecycleToken ignored = profileManagerLock.acquire()) {
-      final @Nullable AnrProfileManager r = profileManager;
-      if (r != null) {
-        return r;
-      } else {
-
-        final AnrProfileManager newManager =
-            new AnrProfileManager(Objects.requireNonNull(options, "Options can't be null"));
-        profileManager = newManager;
-        return newManager;
+      if (profileManager == null) {
+        final @NotNull SentryOptions opts =
+            Objects.requireNonNull(options, "Options can't be null");
+        final @NotNull File currentFile =
+            AnrProfileRotationHelper.getCurrentFile(new File(opts.getCacheDirPath()));
+        profileManager = new AnrProfileManager(opts, currentFile);
       }
+
+      return profileManager;
     }
   }
 

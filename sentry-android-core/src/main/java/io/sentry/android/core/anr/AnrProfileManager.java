@@ -28,8 +28,10 @@ public class AnrProfileManager implements Closeable {
   @NotNull private final ObjectQueue<AnrStackTrace> queue;
 
   public AnrProfileManager(final @NotNull SentryOptions options) {
+    this(options, new File(options.getCacheDirPath(), "anr_profile"));
+  }
 
-    final @NotNull File file = new File(options.getCacheDirPath(), "anr_profile");
+  public AnrProfileManager(final @NotNull SentryOptions options, final @NotNull File file) {
     final @NotNull ILogger logger = options.getLogger();
 
     @Nullable QueueFile queueFile = null;

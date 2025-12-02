@@ -24,6 +24,7 @@ import io.sentry.android.core.anr.AnrCulpritIdentifier;
 import io.sentry.android.core.anr.AnrException;
 import io.sentry.android.core.anr.AnrProfile;
 import io.sentry.android.core.anr.AnrProfileManager;
+import io.sentry.android.core.anr.AnrProfileRotationHelper;
 import io.sentry.android.core.anr.StackTraceConverter;
 import io.sentry.android.core.cache.AndroidEnvelopeCache;
 import io.sentry.android.core.internal.threaddump.Lines;
@@ -47,6 +48,7 @@ import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -322,10 +324,25 @@ public class AnrV2Integration implements Integration, Closeable {
       }
 
       @Nullable AnrProfile anrProfile = null;
-      try (final AnrProfileManager provider = new AnrProfileManager(options)) {
-        anrProfile = provider.load();
+      final File cacheDir = new File(options.getCacheDirPath());
+
+      try {
+        final File lastFile = AnrProfileRotationHelper.getLastFile(cacheDir);
+
+        if (lastFile.exists()) {
+          options.getLogger().log(SentryLevel.DEBUG, "Reading ANR profile from rotated file");
+          try (final AnrProfileManager provider = new AnrProfileManager(options, lastFile)) {
+            anrProfile = provider.load();
+          }
+        } else {
+          options.getLogger().log(SentryLevel.DEBUG, "No ANR profile file found");
+        }
       } catch (Throwable t) {
-        options.getLogger().log(SentryLevel.INFO, "Could not retrieve ANR profile");
+        options.getLogger().log(SentryLevel.INFO, "Could not retrieve ANR profile", t);
+      } finally {
+        if (AnrProfileRotationHelper.deleteLastFile(cacheDir)) {
+          options.getLogger().log(SentryLevel.DEBUG, "Deleted old ANR profile file");
+        }
       }
 
       if (anrProfile != null) {
@@ -342,8 +359,6 @@ public class AnrV2Integration implements Integration, Closeable {
                   ProfileChunk.PLATFORM_JAVA,
                   options);
           chunk.setSentryProfile(profile);
-
-          options.getLogger().log(SentryLevel.DEBUG, "");
           scopes.captureProfileChunk(chunk);
 
           final @Nullable AggregatedStackTrace culprit =

@@ -25,6 +25,7 @@ import io.sentry.SendFireAndForgetEnvelopeSender;
 import io.sentry.SendFireAndForgetOutboxSender;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOpenTelemetryMode;
+import io.sentry.android.core.anr.AnrProfileRotationHelper;
 import io.sentry.android.core.anr.AnrProfilingIntegration;
 import io.sentry.android.core.cache.AndroidEnvelopeCache;
 import io.sentry.android.core.internal.debugmeta.AssetsDebugMetaLoader;
@@ -137,6 +138,8 @@ final class AndroidOptionsInitializer {
         options
             .getRuntimeManager()
             .runWithRelaxedPolicy(() -> getCacheDir(finalContext).getAbsolutePath()));
+
+    AnrProfileRotationHelper.rotate();
 
     readDefaultOptionValues(options, finalContext, buildInfoProvider);
     AppState.getInstance().registerLifecycleObserver(options);
