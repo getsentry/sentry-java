@@ -218,6 +218,17 @@ public final class SentryAndroidOptions extends SentryOptions {
   private boolean reportHistoricalAnrs = false;
 
   /**
+   * Controls whether to report historical Tombstones from the {@link ApplicationExitInfo} system
+   * API. When enabled, reports all of the Tombstones available in the {@link
+   * ActivityManager#getHistoricalProcessExitReasons(String, int, int)} list, as opposed to
+   * reporting only the latest one.
+   *
+   * <p>These events do not affect crash rate nor are they enriched with additional information from
+   * {@link IScope} like breadcrumbs.
+   */
+  private boolean reportHistoricalTombstones = false;
+
+  /**
    * Controls whether to send ANR (v2) thread dump as an attachment with plain text. The thread dump
    * is being attached from {@link ApplicationExitInfo#getTraceInputStream()}, if available.
    */
@@ -591,6 +602,14 @@ public final class SentryAndroidOptions extends SentryOptions {
 
   public void setReportHistoricalAnrs(final boolean reportHistoricalAnrs) {
     this.reportHistoricalAnrs = reportHistoricalAnrs;
+  }
+
+  public boolean isReportHistoricalTombstones() {
+    return reportHistoricalTombstones;
+  }
+
+  public void setReportHistoricalTombstones(final boolean reportHistoricalTombstones) {
+    this.reportHistoricalTombstones = reportHistoricalTombstones;
   }
 
   public boolean isAttachAnrThreadDump() {
