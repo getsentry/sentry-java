@@ -15,7 +15,6 @@ import io.sentry.internal.modules.NoOpModulesLoader;
 import io.sentry.internal.modules.ResourcesModulesLoader;
 import io.sentry.logger.ILoggerApi;
 import io.sentry.opentelemetry.OpenTelemetryUtil;
-import io.sentry.profiling.ProfilingServiceLoader;
 import io.sentry.protocol.Feedback;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
@@ -98,16 +97,33 @@ public final class Sentry {
     return new HubScopesWrapper(getCurrentScopes());
   }
 
-  @ApiStatus.Internal // exposed for the coroutines integration in SentryContext
+  @ApiStatus.Internal
   @SuppressWarnings("deprecation")
   public static @NotNull IScopes getCurrentScopes() {
+    return getCurrentScopes(true);
+  }
+
+  /**
+   * Returns the current contexts scopes.
+   *
+   * @param ensureForked if true, forks root scopes in case there are no scopes for this context if
+   *     false, returns NoOpScopes if there are no scopes for this context
+   * @return current scopes, a root scopes fork or NoopScopes
+   */
+  @ApiStatus.Internal
+  @SuppressWarnings("deprecation")
+  public static @NotNull IScopes getCurrentScopes(final boolean ensureForked) {
     if (globalHubMode) {
       return rootScopes;
     }
     @Nullable IScopes scopes = getScopesStorage().get();
     if (scopes == null || scopes.isNoOp()) {
-      scopes = rootScopes.forkedScopes("getCurrentScopes");
-      getScopesStorage().set(scopes);
+      if (!ensureForked) {
+        return NoOpScopes.getInstance();
+      } else {
+        scopes = rootScopes.forkedScopes("getCurrentScopes");
+        getScopesStorage().set(scopes);
+      }
     }
     return scopes;
   }
@@ -691,38 +707,8 @@ public final class Sentry {
   }
 
   private static void initJvmContinuousProfiling(@NotNull SentryOptions options) {
-
-    if (options.isContinuousProfilingEnabled()
-        && options.getContinuousProfiler() == NoOpContinuousProfiler.getInstance()) {
-      try {
-        String profilingTracesDirPath = options.getProfilingTracesDirPath();
-        if (profilingTracesDirPath == null) {
-          File tempDir = new File(System.getProperty("java.io.tmpdir"), "sentry_profiling_traces");
-          boolean createDirectorySuccess = tempDir.mkdirs() || tempDir.exists();
-
-          if (!createDirectorySuccess) {
-            throw new IllegalArgumentException(
-                "Creating a fallback directory for profiling failed in "
-                    + tempDir.getAbsolutePath());
-          }
-          profilingTracesDirPath = tempDir.getAbsolutePath();
-          options.setProfilingTracesDirPath(profilingTracesDirPath);
-        }
-
-        final IContinuousProfiler continuousProfiler =
-            ProfilingServiceLoader.loadContinuousProfiler(
-                options.getLogger(),
-                profilingTracesDirPath,
-                options.getProfilingTracesHz(),
-                options.getExecutorService());
-
-        options.setContinuousProfiler(continuousProfiler);
-      } catch (Exception e) {
-        options
-            .getLogger()
-            .log(SentryLevel.ERROR, "Failed to create default profiling traces directory", e);
-      }
-    }
+    InitUtil.initializeProfiler(options);
+    InitUtil.initializeProfileConverter(options);
   }
 
   /** Close the SDK */
@@ -1372,5 +1358,9 @@ public final class Sentry {
       final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator) {
     final @NotNull SentryOptions options = getCurrentScopes().getOptions();
     options.getFeedbackOptions().getDialogHandler().showDialog(associatedEventId, configurator);
+  }
+
+  public static void addFeatureFlag(final @Nullable String flag, final @Nullable Boolean result) {
+    getCurrentScopes().addFeatureFlag(flag, result);
   }
 }

@@ -64,24 +64,11 @@
       android:name=".PermissionsActivity"
       android:exported="false" />
 
-    <activity
-      android:name=".ProfilingActivity"
-      android:exported="false" />
-
-    <activity
-      android:name=".CustomTabsActivity"
-      android:exported="false" />
-
-    <activity
-      android:name=".compose.ComposeActivity"
-      android:exported="false" />
-
-    <activity android:name=".FrameDataForSpansActivity"
+    <activity android:name=".TriggerHttpRequestActivity"
       android:exported="false"/>
 
-    <activity
-      android:name=".CameraXActivity"
-      android:exported="false" />
+    <!--    NOTE: Replace the test DSN below with YOUR OWN DSN to see the events from this app in your Sentry project/dashboard-->
+    <meta-data android:name="io.sentry.dsn" android:value="https://1053864c67cc410aa1ffc9701bd6f93d@o447951.ingest.us.sentry.io/5428559" />
 
     <!--    NOTE: Replace the test DSN below with YOUR OWN DSN to see the events from this app in your Sentry project/dashboard-->
     <meta-data android:name="io.sentry.dsn" android:value="https://8a26495179336af214ba94bafed37efc@o447951.ingest.us.sentry.io/4509161790832641" />
@@ -184,8 +171,19 @@
     <!--    how to disable sentry -->
     <!--    <meta-data android:name="io.sentry.enabled" android:value="false" /> -->
 
-    <meta-data android:name="io.sentry.session-replay.screenshot-strategy" android:value="canvas" />
-    <meta-data android:name="io.sentry.session-replay.session-sample-rate" android:value="0.0" />
-    <meta-data android:name="io.sentry.session-replay.mask-all-text" android:value="true" />
-  </application>
+      <meta-data android:name="io.sentry.session-replay.screenshot-strategy" android:value="canvas" />
+      <meta-data android:name="io.sentry.session-replay.session-sample-rate" android:value="1" />
+      <meta-data android:name="io.sentry.session-replay.mask-all-text" android:value="true" />
+
+      <!-- Testing Network Details  -->
+      <!-- Catpure network details for all urls -->
+      <meta-data android:name="io.sentry.session-replay.network-detail-allow-urls" android:value=".*" />
+      <!-- Exclude any url with the substring 'deny' -->
+      <meta-data android:name="io.sentry.session-replay.network-detail-deny-urls" android:value=".*deny.*" />
+      <!-- Disable network body capture for urls specified in .network-detail-allow-urls -->
+<!--      <meta-data android:name="io.sentry.session-replay.network-capture-bodies" android:value="false" />-->
+      <!-- Some random headers to extract. See TriggerHttpRequestActivity to set these on a test http request -->
+      <meta-data android:name="io.sentry.session-replay.network-request-headers" android:value="Authorization,X-Custom-Header,X-Test-Request" />
+      <meta-data android:name="io.sentry.session-replay.network-response-headers" android:value="X-Response-Time,X-Cache-Status,X-Test-Response" />
+    </application>
 </manifest>

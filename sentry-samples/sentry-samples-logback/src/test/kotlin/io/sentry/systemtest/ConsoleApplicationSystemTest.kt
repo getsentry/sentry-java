@@ -54,6 +54,11 @@ class ConsoleApplicationSystemTest {
     }
 
     testHelper.ensureErrorReceived { event ->
+      event.message?.message == "important warning" &&
+        testHelper.doesEventHaveFlag(event, "my-feature-flag", true)
+    }
+
+    testHelper.ensureErrorReceived { event ->
       event.breadcrumbs?.firstOrNull {
         it.message == "User has made a purchase of product: 445" && it.level == SentryLevel.INFO
       } != null

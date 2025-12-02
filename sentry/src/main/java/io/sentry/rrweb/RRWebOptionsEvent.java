@@ -59,6 +59,21 @@ public final class RRWebOptionsEvent extends RRWebEvent implements JsonSerializa
             ? "pixelCopy"
             : "canvas";
     optionsPayload.put("screenshotStrategy", screenshotStrategy);
+    optionsPayload.put(
+        "networkDetailHasUrls", !replayOptions.getNetworkDetailAllowUrls().isEmpty());
+
+    // Add network detail configuration options
+    if (!replayOptions.getNetworkDetailAllowUrls().isEmpty()) {
+      optionsPayload.put("networkDetailAllowUrls", replayOptions.getNetworkDetailAllowUrls());
+
+      optionsPayload.put("networkRequestHeaders", replayOptions.getNetworkRequestHeaders());
+      optionsPayload.put("networkResponseHeaders", replayOptions.getNetworkResponseHeaders());
+      optionsPayload.put("networkCaptureBodies", replayOptions.isNetworkCaptureBodies());
+
+      if (!replayOptions.getNetworkDetailDenyUrls().isEmpty()) {
+        optionsPayload.put("networkDetailDenyUrls", replayOptions.getNetworkDetailDenyUrls());
+      }
+    }
   }
 
   @NotNull

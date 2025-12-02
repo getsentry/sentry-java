@@ -2,23 +2,142 @@
 
 ## Unreleased
 
+### Features
+
+- Add option to capture additional OkHttp network request/response details in session replays ([#4919](https://github.com/getsentry/sentry-java/pull/4919))
+  - Depends on `SentryOkHttpInterceptor` to intercept the request and extract request/response bodies
+  - To enable, add url regexes via the `io.sentry.session-replay.network-detail-allow-urls` metadata tag in AndroidManifest ([code sample](https://github.com/getsentry/sentry-java/blob/b03edbb1b0d8b871c62a09bc02cbd8a4e1f6fea1/sentry-samples/sentry-samples-android/src/main/AndroidManifest.xml#L196-L205))
+    - Or you can manually specify SentryReplayOptions via `SentryAndroid#init`:  
+_(Make sure you disable the auto init via manifest meta-data: io.sentry.auto-init=false)_
+
+<details>
+  <summary>Kotlin</summary>
+
+```kotlin
+SentryAndroid.init(
+    this,
+    options -> {
+      // options.dsn = "https://examplePublicKey@o0.ingest.sentry.io/0"
+      // options.sessionReplay.sessionSampleRate = 1.0
+      // options.sessionReplay.onErrorSampleRate = 1.0
+      // ..
+
+      options.sessionReplay.networkDetailAllowUrls = listOf(".*")
+      options.sessionReplay.networkDetailDenyUrls = listOf(".*deny.*")
+      options.sessionReplay.networkRequestHeaders = listOf("Authorization", "X-Custom-Header", "X-Test-Request")
+      options.sessionReplay.networkResponseHeaders = listOf("X-Response-Time", "X-Cache-Status", "X-Test-Response")
+    });
+```
+
+</details>
+
+<details>
+  <summary>Java</summary>
+
+```java
+SentryAndroid.init(
+    this,
+    options -> {
+        options.getSessionReplay().setNetworkDetailAllowUrls(Arrays.asList(".*"));
+        options.getSessionReplay().setNetworkDetailDenyUrls(Arrays.asList(".*deny.*"));
+        options.getSessionReplay().setNetworkRequestHeaders(
+            Arrays.asList("Authorization", "X-Custom-Header", "X-Test-Request"));
+        options.getSessionReplay().setNetworkResponseHeaders(
+            Arrays.asList("X-Response-Time", "X-Cache-Status", "X-Test-Response"));
+    });
+
+```
+
+</details>
+- Android: Flush logs when app enters background ([#4873](https://github.com/getsentry/sentry-java/pull/4873))
+
+
+### Improvements
+
+- Avoid forking `rootScopes` for Reactor if current thread has `NoOpScopes` ([#4793](https://github.com/getsentry/sentry-java/pull/4793))
+  - This reduces the SDKs overhead by avoiding unnecessary scope forks
+
+### Fixes 
+
+- Fix missing thread stacks for ANRv1 events ([#4918](https://github.com/getsentry/sentry-java/pull/4918))
+
+### Internal
+
+- Support `span` envelope item type ([#4935](https://github.com/getsentry/sentry-java/pull/4935))
+
+## 8.27.1
+
+### Fixes
+
+- Do not log if `sentry.properties` in rundir has not been found ([#4929](https://github.com/getsentry/sentry-java/pull/4929))
+
+## 8.27.0
+
+### Features
+
+- Implement OpenFeature Integration that tracks Feature Flag evaluations ([#4910](https://github.com/getsentry/sentry-java/pull/4910))
+  - To make use of it, add the `sentry-openfeature` dependency and register the the hook using: `openFeatureApiInstance.addHooks(new SentryOpenFeatureHook());`
+- Implement LaunchDarkly Integrations that track Feature Flag evaluations ([#4917](https://github.com/getsentry/sentry-java/pull/4917))
+  - For Android, please add `sentry-launchdarkly-android` as a dependency and register the `SentryLaunchDarklyAndroidHook`
+  - For Server / JVM, please add `sentry-launchdarkly-server` as a dependency and register the `SentryLaunchDarklyServerHook`
+- Detect oversized events and reduce their size ([#4903](https://github.com/getsentry/sentry-java/pull/4903))
+  - You can opt into this new behaviour by setting `enableEventSizeLimiting` to `true` (`sentry.enable-event-size-limiting=true` for Spring Boot `application.properties`)
+  - You may optionally register an `onOversizedEvent` callback to implement custom logic that is executed in case an oversized event is detected
+    - This is executed first and if event size was reduced sufficiently, no further truncation is performed
+  - In case we detect an oversized event, we first drop breadcrumbs and if that isn't sufficient we also drop stack frames in order to get an events size down
+
+### Improvements
+
+- Do not send manual log origin ([#4897](https://github.com/getsentry/sentry-java/pull/4897))
+
+### Dependencies
+
+- Bump Spring Boot 4 to GA ([#4923](https://github.com/getsentry/sentry-java/pull/4923))
+
+## 8.26.0
+
+### Features
+
+- Add feature flags API ([#4812](https://github.com/getsentry/sentry-java/pull/4812)) and ([#4831](https://github.com/getsentry/sentry-java/pull/4831))
+  - You may now keep track of your feature flag evaluations and have them show up in Sentry.
+  - Top level API (`Sentry.addFeatureFlag("my-feature-flag", true);`) writes to scopes and the current span (if there is one)
+  - It is also possible to use API on `IScope`, `IScopes`, `ISpan` and `ITransaction` directly
+  - Feature flag evaluations tracked on scope(s) will be added to any errors reported to Sentry.
+    - The SDK keeps the latest 100 evaluations from scope(s), replacing old entries as new evaluations are added.
+  - For feature flag evaluations tracked on spans:
+    - Only 10 evaluations are tracked per span, existing flags are updated but new ones exceeding the limit are ignored
+    - Spans do not inherit evaluations from their parent
+- Drop log events once buffer hits hard limit ([#4889](https://github.com/getsentry/sentry-java/pull/4889))
+  - If we have 1000 log events queued up, we drop any new logs coming in to prevent OOM
+- Remove vendored code and upgrade to async profiler 4.2 ([#4856](https://github.com/getsentry/sentry-java/pull/4856))
+  - This adds support for JDK 23+
+
 ### Fixes
 
 - Removed SentryExecutorService limit for delayed scheduled tasks ([#4846](https://github.com/getsentry/sentry-java/pull/4846))
 - Fix visual artifacts for the Canvas strategy on some devices ([#4861](https://github.com/getsentry/sentry-java/pull/4861))
+- [Config] Trim whitespace on properties path ([#4880](https://github.com/getsentry/sentry-java/pull/4880))
+- Only set `DefaultReplayBreadcrumbConverter` if replay is available ([#4888](https://github.com/getsentry/sentry-java/pull/4888))
+- Session Replay: Cache connection status instead of using blocking calls ([#4891](https://github.com/getsentry/sentry-java/pull/4891))
+- Fix log count in client reports ([#4869](https://github.com/getsentry/sentry-java/pull/4869))
+- Fix profilerId propagation ([#4833](https://github.com/getsentry/sentry-java/pull/4833))
+- Fix profiling init for Spring and Spring Boot w Agent auto-init ([#4815](https://github.com/getsentry/sentry-java/pull/4815))
+- Copy active span on scope clone ([#4878](https://github.com/getsentry/sentry-java/pull/4878))
 
 ### Improvements
 
 - Fallback to distinct-id as user.id logging attribute when user is not set ([#4847](https://github.com/getsentry/sentry-java/pull/4847))
 - Report Timber.tag() as `timber.tag` log attribute ([#4845](https://github.com/getsentry/sentry-java/pull/4845))
 - Session Replay: Add screenshot strategy serialization to RRWeb events ([#4851](https://github.com/getsentry/sentry-java/pull/4851))
-- Android: Flush log when app enters background ([#4873](https://github.com/getsentry/sentry-java/pull/4873))
+- Report discarded log bytes ([#4871](https://github.com/getsentry/sentry-java/pull/4871))
+- Log why a properties file was not loaded ([#4879](https://github.com/getsentry/sentry-java/pull/4879))
 
 ### Dependencies
 
 - Bump Native SDK from v0.11.3 to v0.12.1 ([#4859](https://github.com/getsentry/sentry-java/pull/4859))
   - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0121)
   - [diff](https://github.com/getsentry/sentry-native/compare/0.11.3...0.12.1)
+- Bump Spring Boot 4 to RC2 ([#4886](https://github.com/getsentry/sentry-java/pull/4886))
 
 ## 8.25.0
 

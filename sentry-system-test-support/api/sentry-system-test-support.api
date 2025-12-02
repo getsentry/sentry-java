@@ -516,6 +516,19 @@ public final class io/sentry/systemtest/util/EnvelopesReceived {
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class io/sentry/systemtest/util/FeatureFlagResponse {
+	public fun <init> (Ljava/lang/String;Z)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Z
+	public final fun copy (Ljava/lang/String;Z)Lio/sentry/systemtest/util/FeatureFlagResponse;
+	public static synthetic fun copy$default (Lio/sentry/systemtest/util/FeatureFlagResponse;Ljava/lang/String;ZILjava/lang/Object;)Lio/sentry/systemtest/util/FeatureFlagResponse;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getFlagKey ()Ljava/lang/String;
+	public final fun getValue ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public class io/sentry/systemtest/util/LoggingInsecureRestClient {
 	public fun <init> ()V
 	protected final fun call (Lokhttp3/Request$Builder;ZLjava/util/Map;)Lokhttp3/Response;
@@ -530,10 +543,12 @@ public class io/sentry/systemtest/util/LoggingInsecureRestClient {
 
 public final class io/sentry/systemtest/util/RestTestClient : io/sentry/systemtest/util/LoggingInsecureRestClient {
 	public fun <init> (Ljava/lang/String;)V
+	public final fun checkFeatureFlag (Ljava/lang/String;)Lio/sentry/systemtest/util/FeatureFlagResponse;
 	public final fun createPerson (Lio/sentry/systemtest/Person;Ljava/util/Map;)Lio/sentry/systemtest/Person;
 	public static synthetic fun createPerson$default (Lio/sentry/systemtest/util/RestTestClient;Lio/sentry/systemtest/Person;Ljava/util/Map;ILjava/lang/Object;)Lio/sentry/systemtest/Person;
 	public final fun createPersonDistributedTracing (Lio/sentry/systemtest/Person;Ljava/util/Map;)Lio/sentry/systemtest/Person;
 	public static synthetic fun createPersonDistributedTracing$default (Lio/sentry/systemtest/util/RestTestClient;Lio/sentry/systemtest/Person;Ljava/util/Map;ILjava/lang/Object;)Lio/sentry/systemtest/Person;
+	public final fun errorWithFeatureFlag (Ljava/lang/String;)Ljava/lang/String;
 	public final fun getPerson (J)Lio/sentry/systemtest/Person;
 	public final fun getPersonDistributedTracing (JLjava/util/Map;)Lio/sentry/systemtest/Person;
 	public static synthetic fun getPersonDistributedTracing$default (Lio/sentry/systemtest/util/RestTestClient;JLjava/util/Map;ILjava/lang/Object;)Lio/sentry/systemtest/Person;
@@ -552,10 +567,16 @@ public final class io/sentry/systemtest/util/SentryMockServerClient : io/sentry/
 public final class io/sentry/systemtest/util/TestHelper {
 	public fun <init> (Ljava/lang/String;)V
 	public final fun doesContainLogWithBody (Lio/sentry/SentryLogEvents;Ljava/lang/String;)Z
+	public final fun doesEventHaveExceptionMessage (Lio/sentry/SentryEvent;Ljava/lang/String;)Z
+	public final fun doesEventHaveFlag (Lio/sentry/SentryEvent;Ljava/lang/String;Z)Z
 	public final fun doesTransactionContainSpanWithDescription (Lio/sentry/protocol/SentryTransaction;Ljava/lang/String;)Z
 	public final fun doesTransactionContainSpanWithOp (Lio/sentry/protocol/SentryTransaction;Ljava/lang/String;)Z
 	public final fun doesTransactionContainSpanWithOpAndDescription (Lio/sentry/protocol/SentryTransaction;Ljava/lang/String;Ljava/lang/String;)Z
+	public final fun doesTransactionHave (Lio/sentry/protocol/SentryTransaction;Ljava/lang/String;Lio/sentry/protocol/FeatureFlag;)Z
+	public static synthetic fun doesTransactionHave$default (Lio/sentry/systemtest/util/TestHelper;Lio/sentry/protocol/SentryTransaction;Ljava/lang/String;Lio/sentry/protocol/FeatureFlag;ILjava/lang/Object;)Z
 	public final fun doesTransactionHaveOp (Lio/sentry/protocol/SentryTransaction;Ljava/lang/String;)Z
+	public final fun doesTransactionHaveSpanWith (Lio/sentry/protocol/SentryTransaction;Ljava/lang/String;Lio/sentry/protocol/FeatureFlag;Z)Z
+	public static synthetic fun doesTransactionHaveSpanWith$default (Lio/sentry/systemtest/util/TestHelper;Lio/sentry/protocol/SentryTransaction;Ljava/lang/String;Lio/sentry/protocol/FeatureFlag;ZILjava/lang/Object;)Z
 	public final fun doesTransactionHaveTraceId (Lio/sentry/protocol/SentryTransaction;Ljava/lang/String;)Z
 	public final fun ensureEnvelopeCountIncreased ()V
 	public final fun ensureEnvelopeReceived (ILkotlin/jvm/functions/Function1;)V

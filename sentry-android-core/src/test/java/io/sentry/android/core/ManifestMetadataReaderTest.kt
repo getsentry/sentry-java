@@ -1882,4 +1882,250 @@ class ManifestMetadataReaderTest {
       fixture.options.sessionReplay.screenshotStrategy,
     )
   }
+
+  // Network Detail Configuration Tests
+
+  @Test
+  fun `applyMetadata reads comma-separated networkDetailAllowUrls from manifest`() {
+    // Arrange
+    val expectedUrls = "https://api.example.com/.*,https://cdn.example.com/.*"
+    val bundle = bundleOf(ManifestMetadataReader.REPLAYS_NETWORK_DETAIL_ALLOW_URLS to expectedUrls)
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    val urls = fixture.options.sessionReplay.networkDetailAllowUrls
+    assertEquals(2, urls.size)
+    assertEquals("https://api.example.com/.*", urls[0])
+    assertEquals("https://cdn.example.com/.*", urls[1])
+  }
+
+  @Test
+  fun `applyMetadata keeps empty networkDetailAllowUrls when not present`() {
+    // Arrange
+    val context = fixture.getContext()
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertEquals(0, fixture.options.sessionReplay.networkDetailAllowUrls.size)
+  }
+
+  @Test
+  fun `applyMetadata reads comma-separated networkDetailDenyUrls from manifest`() {
+    // Arrange
+    val expectedUrls = "https://private.example.com/.*,https://internal.example.com/.*"
+    val bundle = bundleOf(ManifestMetadataReader.REPLAYS_NETWORK_DETAIL_DENY_URLS to expectedUrls)
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    val urls = fixture.options.sessionReplay.networkDetailDenyUrls
+    assertEquals(2, urls.size)
+    assertEquals("https://private.example.com/.*", urls[0])
+    assertEquals("https://internal.example.com/.*", urls[1])
+  }
+
+  @Test
+  fun `applyMetadata keeps empty networkDetailDenyUrls when not present`() {
+    // Arrange
+    val context = fixture.getContext()
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertEquals(0, fixture.options.sessionReplay.networkDetailDenyUrls.size)
+  }
+
+  @Test
+  fun `applyMetadata reads networkCaptureBodies from manifest`() {
+    // Arrange
+    val bundle = bundleOf(ManifestMetadataReader.REPLAYS_NETWORK_CAPTURE_BODIES to false)
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertFalse(fixture.options.sessionReplay.isNetworkCaptureBodies)
+  }
+
+  @Test
+  fun `applyMetadata keeps default networkCaptureBodies as true when not present`() {
+    // Arrange
+    val context = fixture.getContext()
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertTrue(fixture.options.sessionReplay.isNetworkCaptureBodies)
+  }
+
+  @Test
+  fun `applyMetadata keeps the default networkRequestHeaders`() {
+    // Arrange
+    val context = fixture.getContext()
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    val headers = fixture.options.sessionReplay.networkRequestHeaders
+    val defaultHeaders = SentryReplayOptions.getNetworkDetailsDefaultHeaders()
+
+    // Should have exactly the default headers
+    assertEquals(defaultHeaders.size, headers.size)
+    defaultHeaders.forEach { defaultHeader -> assertTrue(headers.contains(defaultHeader)) }
+  }
+
+  @Test
+  fun `applyMetadata reads networkRequestHeaders from manifest`() {
+    // Arrange
+    val expectedHeaders = "Authorization,X-Custom-Header,X-Request-Id"
+    val bundle = bundleOf(ManifestMetadataReader.REPLAYS_NETWORK_REQUEST_HEADERS to expectedHeaders)
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    val allHeaders = fixture.options.sessionReplay.networkRequestHeaders
+    val defaultHeaders = SentryReplayOptions.getNetworkDetailsDefaultHeaders()
+
+    // Should include default headers + additional headers
+    defaultHeaders.forEach { defaultHeader ->
+      assertTrue(allHeaders.contains(defaultHeader)) // default
+    }
+    assertTrue(allHeaders.contains("Authorization")) // additional
+    assertTrue(allHeaders.contains("X-Custom-Header")) // additional
+    assertTrue(allHeaders.contains("X-Request-Id")) // additional
+  }
+
+  @Test
+  fun `applyMetadata keeps the default networkResponseHeaders`() {
+    // Arrange
+    val context = fixture.getContext()
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    val headers = fixture.options.sessionReplay.networkResponseHeaders
+    val defaultHeaders = SentryReplayOptions.getNetworkDetailsDefaultHeaders()
+
+    // Should have exactly the default headers
+    assertEquals(defaultHeaders.size, headers.size)
+    defaultHeaders.forEach { defaultHeader -> assertTrue(headers.contains(defaultHeader)) }
+  }
+
+  @Test
+  fun `applyMetadata reads networkResponseHeaders from manifest`() {
+    // Arrange
+    val expectedHeaders = "X-Response-Time,X-Cache-Status,X-Server-Id"
+    val bundle =
+      bundleOf(ManifestMetadataReader.REPLAYS_NETWORK_RESPONSE_HEADERS to expectedHeaders)
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    val allHeaders = fixture.options.sessionReplay.networkResponseHeaders
+    // Should include default headers + additional headers
+    val defaultHeaders = SentryReplayOptions.getNetworkDetailsDefaultHeaders()
+    defaultHeaders.forEach { defaultHeader -> assertTrue(allHeaders.contains(defaultHeader)) }
+    assertTrue(allHeaders.contains("X-Response-Time")) // additional
+    assertTrue(allHeaders.contains("X-Cache-Status")) // additional
+    assertTrue(allHeaders.contains("X-Server-Id")) // additional
+  }
+
+  @Test
+  fun `applyMetadata skips empty strings for networkDetailAllowUrls and networkDetailDenyUrls`() {
+    // Arrange
+    val bundle =
+      bundleOf(
+        ManifestMetadataReader.REPLAYS_NETWORK_DETAIL_ALLOW_URLS to ", ",
+        ManifestMetadataReader.REPLAYS_NETWORK_DETAIL_DENY_URLS to " ,, ",
+      )
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertEquals(0, fixture.options.sessionReplay.networkDetailAllowUrls.size)
+    assertEquals(0, fixture.options.sessionReplay.networkDetailDenyUrls.size)
+  }
+
+  @Test
+  fun `applyMetadata skips empty strings for networkRequestHeaders and networkResponseHeaders`() {
+    // Arrange
+    val bundle =
+      bundleOf(
+        ManifestMetadataReader.REPLAYS_NETWORK_REQUEST_HEADERS to ",",
+        ManifestMetadataReader.REPLAYS_NETWORK_RESPONSE_HEADERS to " ,",
+      )
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    // Should still have default headers even with empty string
+    val defaultHeaders = SentryReplayOptions.getNetworkDetailsDefaultHeaders()
+
+    val requestHeaders = fixture.options.sessionReplay.networkRequestHeaders
+    assertEquals(defaultHeaders.size, requestHeaders.size)
+    defaultHeaders.forEach { defaultHeader -> assertTrue(requestHeaders.contains(defaultHeader)) }
+
+    val responseHeaders = fixture.options.sessionReplay.networkResponseHeaders
+    assertEquals(defaultHeaders.size, responseHeaders.size)
+    defaultHeaders.forEach { defaultHeader -> assertTrue(responseHeaders.contains(defaultHeader)) }
+  }
+
+  @Test
+  fun `applyMetadata trims whitespace from network URLs`() {
+    // Arrange
+    val bundle =
+      bundleOf(
+        ManifestMetadataReader.REPLAYS_NETWORK_DETAIL_ALLOW_URLS to
+          " https://api.example.com/.* , https://cdn.example.com/.* "
+      )
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    val urls = fixture.options.sessionReplay.networkDetailAllowUrls
+    assertEquals(2, urls.size)
+    assertEquals("https://api.example.com/.*", urls[0])
+    assertEquals("https://cdn.example.com/.*", urls[1])
+  }
+
+  @Test
+  fun `applyMetadata trims whitespace from network headers`() {
+    // Arrange
+    val bundle =
+      bundleOf(
+        ManifestMetadataReader.REPLAYS_NETWORK_REQUEST_HEADERS to
+          " Authorization , X-Custom-Header "
+      )
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    val headers = fixture.options.sessionReplay.networkRequestHeaders
+    assertTrue(headers.contains("Authorization"))
+    assertTrue(headers.contains("X-Custom-Header"))
+  }
 }

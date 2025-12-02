@@ -41,6 +41,7 @@ targets:
       maven:io.sentry:sentry-android-fragment:
       maven:io.sentry:sentry-bom:
       maven:io.sentry:sentry-openfeign:
+      #maven:io.sentry:sentry-openfeature:
       maven:io.sentry:sentry-opentelemetry-agent:
       maven:io.sentry:sentry-opentelemetry-agentcustomization:
       maven:io.sentry:sentry-opentelemetry-agentless:
@@ -64,3 +65,4 @@ targets:
       maven:io.sentry:sentry-apollo-4:
       maven:io.sentry:sentry-reactor:
       maven:io.sentry:sentry-ktor-client:
+      maven:io.sentry:sentry-async-profiler:

@@ -1,9 +1,15 @@
 package io.sentry.util;
 
+import io.sentry.IContinuousProfiler;
+import io.sentry.IProfileConverter;
 import io.sentry.ManifestVersionDetector;
+import io.sentry.NoOpContinuousProfiler;
+import io.sentry.NoOpProfileConverter;
 import io.sentry.NoopVersionDetector;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import io.sentry.profiling.ProfilingServiceLoader;
+import java.io.File;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -45,5 +51,88 @@ public final class InitUtil {
     }
 
     return previousOptions.getInitPriority().ordinal() <= newOptions.getInitPriority().ordinal();
+  }
+
+  public static IContinuousProfiler initializeProfiler(@NotNull SentryOptions options) {
+    if (!shouldInitializeProfiler(options)) {
+      return options.getContinuousProfiler();
+    }
+
+    try {
+      String profilingTracesDirPath = getOrCreateProfilingTracesDir(options);
+      IContinuousProfiler profiler =
+          ProfilingServiceLoader.loadContinuousProfiler(
+              options.getLogger(),
+              profilingTracesDirPath,
+              options.getProfilingTracesHz(),
+              options.getExecutorService());
+
+      if (profiler instanceof NoOpContinuousProfiler) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.WARNING,
+                "Could not load profiler, profiling will be disabled. If you are using Spring or Spring Boot with the OTEL Agent profiler init will be retried.");
+      } else {
+        options.setContinuousProfiler(profiler);
+        options.getLogger().log(SentryLevel.INFO, "Successfully loaded profiler");
+      }
+    } catch (Exception e) {
+      options
+          .getLogger()
+          .log(SentryLevel.ERROR, "Failed to create default profiling traces directory", e);
+    }
+
+    return options.getContinuousProfiler();
+  }
+
+  public static IProfileConverter initializeProfileConverter(@NotNull SentryOptions options) {
+    if (!shouldInitializeProfileConverter(options)) {
+      return options.getProfilerConverter();
+    }
+
+    IProfileConverter converter = ProfilingServiceLoader.loadProfileConverter();
+
+    if (converter instanceof NoOpProfileConverter) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "Could not load profile converter. If you are using Spring or Spring Boot with the OTEL Agent, profile converter init will be retried.");
+    } else {
+      options.setProfilerConverter(converter);
+      options.getLogger().log(SentryLevel.INFO, "Successfully loaded profile converter");
+    }
+
+    return options.getProfilerConverter();
+  }
+
+  private static boolean shouldInitializeProfiler(@NotNull SentryOptions options) {
+    return Platform.isJvm()
+        && options.isContinuousProfilingEnabled()
+        && options.getContinuousProfiler() instanceof NoOpContinuousProfiler;
+  }
+
+  private static boolean shouldInitializeProfileConverter(@NotNull SentryOptions options) {
+    return Platform.isJvm()
+        && options.isContinuousProfilingEnabled()
+        && options.getProfilerConverter() instanceof NoOpProfileConverter;
+  }
+
+  private static String getOrCreateProfilingTracesDir(@NotNull SentryOptions options) {
+    String profilingTracesDirPath = options.getProfilingTracesDirPath();
+    if (profilingTracesDirPath != null) {
+      return profilingTracesDirPath;
+    }
+
+    File tempDir = new File(System.getProperty("java.io.tmpdir"), "sentry_profiling_traces");
+    if (!tempDir.mkdirs() && !tempDir.exists()) {
+      throw new IllegalArgumentException(
+          "Creating a fallback directory for profiling failed in " + tempDir.getAbsolutePath());
+    }
+
+    profilingTracesDirPath = tempDir.getAbsolutePath();
+    options.setProfilingTracesDirPath(profilingTracesDirPath);
+    return profilingTracesDirPath;
   }
 }

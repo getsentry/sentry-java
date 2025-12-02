@@ -20,7 +20,8 @@ kotlin { explicitApi() }
 dependencies {
   api(projects.sentry)
 
-  implementation("tools.profiler:async-profiler:3.0")
+  implementation(libs.async.profiler)
+  implementation(libs.async.profiler.jfr.converter)
 
   compileOnly(libs.jetbrains.annotations)
   compileOnly(libs.nopen.annotations)
