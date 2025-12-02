@@ -189,6 +189,9 @@ final class AndroidOptionsInitializer {
     options.addEventProcessor(new ScreenshotEventProcessor(options, buildInfoProvider));
     options.addEventProcessor(new ViewHierarchyEventProcessor(options));
     options.addEventProcessor(new AnrV2EventProcessor(context, options, buildInfoProvider));
+    if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.S) {
+      options.addEventProcessor(new TombstoneEventProcessor(context, options, buildInfoProvider));
+    }
     if (options.getTransportGate() instanceof NoOpTransportGate) {
       options.setTransportGate(new AndroidTransportGate(options));
     }
@@ -373,7 +376,7 @@ final class AndroidOptionsInitializer {
     final Class<?> sentryNdkClass = loadClass.loadClass(SENTRY_NDK_CLASS_NAME, options.getLogger());
     options.addIntegration(new NdkIntegration(sentryNdkClass));
 
-    if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.R) {
+    if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.S) {
       options.addIntegration(new TombstoneIntegration(context));
     }
 
