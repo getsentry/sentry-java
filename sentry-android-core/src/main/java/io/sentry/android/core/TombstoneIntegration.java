@@ -40,6 +40,8 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+// TODO: This is very very close to ANRv2Integration in terms of mechanism. Find an abstraction
+//       split that separates the equivalent mechanism from the differing policy between the two.
 @ApiStatus.Internal
 public class TombstoneIntegration implements Integration, Closeable {
   static final long NINETY_DAYS_THRESHOLD = TimeUnit.DAYS.toMillis(91);

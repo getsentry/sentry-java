@@ -122,6 +122,12 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
       return event;
     }
 
+    // TODO: right now, any event with a Backfillable Hint will get here. This is fine if the
+    //       enrichment code is generically applicable to any Backfilling Event. However some parts
+    //       in the ANRv2EventProcessor are specific to ANRs and currently override the tombstone
+    //       events. Similar to the Integration we should find an abstraction split that allows to
+    //       separate the generic from the specific.
+
     // we always set exception values, platform, os and device even if the ANR is not enrich-able
     // even though the OS context may change in the meantime (OS update), we consider this an
     // edge-case
@@ -255,6 +261,7 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
     // sentry does not yet have a capability to provide default server-side fingerprint rules,
     // so we're doing this on the SDK side to group background and foreground ANRs separately
     // even if they have similar stacktraces
+    // TODO: this will always set the fingerprint of tombstones to foreground-anr
     final boolean isBackgroundAnr = isBackgroundAnr(hint);
     if (event.getFingerprints() == null) {
       event.setFingerprints(
@@ -385,6 +392,8 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
     // TODO: not entirely correct, because we define background ANRs as not the ones of
     //  IMPORTANCE_FOREGROUND, but this doesn't mean the app was in foreground when an ANR happened
     //  but it's our best effort for now. We could serialize AppState in theory.
+
+    // TODO: this will always be true of tombstones
     app.setInForeground(!isBackgroundAnr(hint));
 
     final PackageInfo packageInfo = ContextUtils.getPackageInfo(context, buildInfoProvider);
@@ -533,6 +542,9 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
   private void setPlatform(final @NotNull SentryBaseEvent event) {
     if (event.getPlatform() == null) {
       // this actually means JVM related.
+      // TODO: since we write this from the tombstone parser we are current unaffected. It is good
+      //       that it doesn't overwrite previous platform values, however we still rely on the
+      //       order in which each event processor was called.
       event.setPlatform(SentryBaseEvent.DEFAULT_PLATFORM);
     }
   }
@@ -564,12 +576,16 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
     // and make an exception out of its stacktrace
     final Mechanism mechanism = new Mechanism();
     if (!((Backfillable) hint).shouldEnrich()) {
+      // TODO: this currently overrides the signalhandler mechanism we set in the TombstoneParser
+      //       with a new type (can be the right choice down the road, but currently is
+      //       unintentional, and it might be better to leave it close to the Native SDK)
       // we only enrich the latest ANR in the list, so this is historical
       mechanism.setType("HistoricalAppExitInfo");
     } else {
       mechanism.setType("AppExitInfo");
     }
 
+    // TODO: this currently overrides the tombstone exceptions
     final boolean isBackgroundAnr = isBackgroundAnr(hint);
     String message = "ANR";
     if (isBackgroundAnr) {
