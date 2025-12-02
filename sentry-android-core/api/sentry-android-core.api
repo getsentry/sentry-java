@@ -457,6 +457,10 @@ public final class io/sentry/android/core/SystemEventsBreadcrumbsIntegration : i
 	public fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
 }
 
+public class io/sentry/android/core/TombstoneEventProcessor : io/sentry/BackfillingEventProcessor {
+	public fun <init> (Landroid/content/Context;Lio/sentry/android/core/SentryAndroidOptions;Lio/sentry/android/core/BuildInfoProvider;)V
+}
+
 public class io/sentry/android/core/TombstoneIntegration : io/sentry/Integration, java/io/Closeable {
 	public fun <init> (Landroid/content/Context;)V
 	public fun close ()V
