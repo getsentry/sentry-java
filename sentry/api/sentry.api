@@ -2631,6 +2631,7 @@ public final class io/sentry/Sentry {
 	public static fun getBaggage ()Lio/sentry/BaggageHeader;
 	public static fun getCurrentHub ()Lio/sentry/IHub;
 	public static fun getCurrentScopes ()Lio/sentry/IScopes;
+	public static fun getCurrentScopes (Z)Lio/sentry/IScopes;
 	public static fun getGlobalScope ()Lio/sentry/IScope;
 	public static fun getLastEventId ()Lio/sentry/protocol/SentryId;
 	public static fun getSpan ()Lio/sentry/ISpan;
@@ -3136,6 +3137,7 @@ public final class io/sentry/SentryItemType : java/lang/Enum, io/sentry/JsonSeri
 	public static final field ReplayRecording Lio/sentry/SentryItemType;
 	public static final field ReplayVideo Lio/sentry/SentryItemType;
 	public static final field Session Lio/sentry/SentryItemType;
+	public static final field Span Lio/sentry/SentryItemType;
 	public static final field Transaction Lio/sentry/SentryItemType;
 	public static final field Unknown Lio/sentry/SentryItemType;
 	public static final field UserFeedback Lio/sentry/SentryItemType;
@@ -3800,11 +3802,11 @@ public final class io/sentry/SentryReplayOptions {
 	public fun getFrameRate ()I
 	public fun getMaskViewClasses ()Ljava/util/Set;
 	public fun getMaskViewContainerClass ()Ljava/lang/String;
-	public fun getNetworkDetailAllowUrls ()[Ljava/lang/String;
-	public fun getNetworkDetailDenyUrls ()[Ljava/lang/String;
+	public fun getNetworkDetailAllowUrls ()Ljava/util/List;
+	public fun getNetworkDetailDenyUrls ()Ljava/util/List;
 	public static fun getNetworkDetailsDefaultHeaders ()Ljava/util/List;
-	public fun getNetworkRequestHeaders ()[Ljava/lang/String;
-	public fun getNetworkResponseHeaders ()[Ljava/lang/String;
+	public fun getNetworkRequestHeaders ()Ljava/util/List;
+	public fun getNetworkResponseHeaders ()Ljava/util/List;
 	public fun getOnErrorSampleRate ()Ljava/lang/Double;
 	public fun getQuality ()Lio/sentry/SentryReplayOptions$SentryReplayQuality;
 	public fun getScreenshotStrategy ()Lio/sentry/ScreenshotStrategyType;
@@ -3824,8 +3826,8 @@ public final class io/sentry/SentryReplayOptions {
 	public fun setMaskAllText (Z)V
 	public fun setMaskViewContainerClass (Ljava/lang/String;)V
 	public fun setNetworkCaptureBodies (Z)V
-	public fun setNetworkDetailAllowUrls ([Ljava/lang/String;)V
-	public fun setNetworkDetailDenyUrls ([Ljava/lang/String;)V
+	public fun setNetworkDetailAllowUrls (Ljava/util/List;)V
+	public fun setNetworkDetailDenyUrls (Ljava/util/List;)V
 	public fun setNetworkRequestHeaders (Ljava/util/List;)V
 	public fun setNetworkResponseHeaders (Ljava/util/List;)V
 	public fun setOnErrorSampleRate (Ljava/lang/Double;)V
@@ -3864,7 +3866,7 @@ public final class io/sentry/SentryStackTraceFactory {
 }
 
 public final class io/sentry/SentryThreadFactory {
-	public fun <init> (Lio/sentry/SentryStackTraceFactory;Lio/sentry/SentryOptions;)V
+	public fun <init> (Lio/sentry/SentryStackTraceFactory;)V
 }
 
 public final class io/sentry/SentryTraceHeader {
@@ -7495,9 +7497,9 @@ public final class io/sentry/util/network/NetworkBodyParser {
 }
 
 public final class io/sentry/util/network/NetworkDetailCaptureUtils {
-	public static fun createRequest (Ljava/lang/Object;Ljava/lang/Long;ZLio/sentry/util/network/NetworkDetailCaptureUtils$NetworkBodyExtractor;[Ljava/lang/String;Lio/sentry/util/network/NetworkDetailCaptureUtils$NetworkHeaderExtractor;)Lio/sentry/util/network/ReplayNetworkRequestOrResponse;
-	public static fun createResponse (Ljava/lang/Object;Ljava/lang/Long;ZLio/sentry/util/network/NetworkDetailCaptureUtils$NetworkBodyExtractor;[Ljava/lang/String;Lio/sentry/util/network/NetworkDetailCaptureUtils$NetworkHeaderExtractor;)Lio/sentry/util/network/ReplayNetworkRequestOrResponse;
-	public static fun initializeForUrl (Ljava/lang/String;Ljava/lang/String;[Ljava/lang/String;[Ljava/lang/String;)Lio/sentry/util/network/NetworkRequestData;
+	public static fun createRequest (Ljava/lang/Object;Ljava/lang/Long;ZLio/sentry/util/network/NetworkDetailCaptureUtils$NetworkBodyExtractor;Ljava/util/List;Lio/sentry/util/network/NetworkDetailCaptureUtils$NetworkHeaderExtractor;)Lio/sentry/util/network/ReplayNetworkRequestOrResponse;
+	public static fun createResponse (Ljava/lang/Object;Ljava/lang/Long;ZLio/sentry/util/network/NetworkDetailCaptureUtils$NetworkBodyExtractor;Ljava/util/List;Lio/sentry/util/network/NetworkDetailCaptureUtils$NetworkHeaderExtractor;)Lio/sentry/util/network/ReplayNetworkRequestOrResponse;
+	public static fun initializeForUrl (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/util/List;)Lio/sentry/util/network/NetworkRequestData;
 }
 
 public abstract interface class io/sentry/util/network/NetworkDetailCaptureUtils$NetworkBodyExtractor {

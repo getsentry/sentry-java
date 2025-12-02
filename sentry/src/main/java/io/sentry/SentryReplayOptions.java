@@ -2,6 +2,7 @@ package io.sentry;
 
 import io.sentry.protocol.SdkVersion;
 import io.sentry.util.SampleRateUtils;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -165,18 +166,18 @@ public final class SentryReplayOptions {
    * Capture request and response details for XHR and fetch requests that match the given URLs.
    * Default is empty (network details not collected).
    */
-  private @NotNull String[] networkDetailAllowUrls = new String[0];
+  private @NotNull List<String> networkDetailAllowUrls = Collections.emptyList();
 
   /**
    * Do not capture request and response details for these URLs. Takes precedence over
    * networkDetailAllowUrls. Default is empty.
    */
-  private @NotNull String[] networkDetailDenyUrls = new String[0];
+  private @NotNull List<String> networkDetailDenyUrls = Collections.emptyList();
 
   /**
    * Decide whether to capture request and response bodies for URLs defined in
    * networkDetailAllowUrls. Default is true, but capturing bodies requires at least one url
-   * specified via {@link #setNetworkDetailAllowUrls(String[])}.
+   * specified via {@link #setNetworkDetailAllowUrls(List)}.
    */
   private boolean networkCaptureBodies = true;
 
@@ -198,13 +199,13 @@ public final class SentryReplayOptions {
    * Additional request headers to capture for URLs defined in networkDetailAllowUrls. The default
    * headers (Content-Type, Content-Length, Accept) are always included in addition to these.
    */
-  private @NotNull String[] networkRequestHeaders = DEFAULT_HEADERS.toArray(new String[0]);
+  private @NotNull List<String> networkRequestHeaders = DEFAULT_HEADERS;
 
   /**
    * Additional response headers to capture for URLs defined in networkDetailAllowUrls. The default
    * headers (Content-Type, Content-Length, Accept) are always included in addition to these.
    */
-  private @NotNull String[] networkResponseHeaders = DEFAULT_HEADERS.toArray(new String[0]);
+  private @NotNull List<String> networkResponseHeaders = DEFAULT_HEADERS;
 
   public SentryReplayOptions(final boolean empty, final @Nullable SdkVersion sdkVersion) {
     if (!empty) {
@@ -428,40 +429,42 @@ public final class SentryReplayOptions {
   }
 
   /**
-   * Gets the array of URLs for which network request and response details should be captured.
+   * Gets the list of URLs for which network request and response details should be captured.
    *
-   * @return the network detail allow URLs array
+   * @return the network detail allow URLs list
    */
-  public @NotNull String[] getNetworkDetailAllowUrls() {
+  public @NotNull List<String> getNetworkDetailAllowUrls() {
     return networkDetailAllowUrls;
   }
 
   /**
-   * Sets the array of URLs for which network request and response details should be captured.
+   * Sets the list of URLs for which network request and response details should be captured.
    *
-   * @param networkDetailAllowUrls the network detail allow URLs array
+   * @param networkDetailAllowUrls the network detail allow URLs list
    */
-  public void setNetworkDetailAllowUrls(final @NotNull String[] networkDetailAllowUrls) {
-    this.networkDetailAllowUrls = networkDetailAllowUrls;
+  public void setNetworkDetailAllowUrls(final @NotNull List<String> networkDetailAllowUrls) {
+    this.networkDetailAllowUrls =
+        Collections.unmodifiableList(new ArrayList<>(networkDetailAllowUrls));
   }
 
   /**
-   * Gets the array of URLs for which network request and response details should NOT be captured.
+   * Gets the list of URLs for which network request and response details should NOT be captured.
    *
-   * @return the network detail deny URLs array
+   * @return the network detail deny URLs list
    */
-  public @NotNull String[] getNetworkDetailDenyUrls() {
+  public @NotNull List<String> getNetworkDetailDenyUrls() {
     return networkDetailDenyUrls;
   }
 
   /**
-   * Sets the array of URLs for which network request and response details should NOT be captured.
+   * Sets the list of URLs for which network request and response details should NOT be captured.
    * Takes precedence over networkDetailAllowUrls.
    *
-   * @param networkDetailDenyUrls the network detail deny URLs array
+   * @param networkDetailDenyUrls the network detail deny URLs list
    */
-  public void setNetworkDetailDenyUrls(final @NotNull String[] networkDetailDenyUrls) {
-    this.networkDetailDenyUrls = networkDetailDenyUrls;
+  public void setNetworkDetailDenyUrls(final @NotNull List<String> networkDetailDenyUrls) {
+    this.networkDetailDenyUrls =
+        Collections.unmodifiableList(new ArrayList<>(networkDetailDenyUrls));
   }
 
   /**
@@ -486,9 +489,9 @@ public final class SentryReplayOptions {
    * Gets all request headers to capture for URLs defined in networkDetailAllowUrls. This includes
    * both the default headers (Content-Type, Content-Length, Accept) and any additional headers.
    *
-   * @return the complete network request headers array
+   * @return an unmodifiable list of the request headers to extract
    */
-  public @NotNull String[] getNetworkRequestHeaders() {
+  public @NotNull List<String> getNetworkRequestHeaders() {
     return networkRequestHeaders;
   }
 
@@ -506,9 +509,9 @@ public final class SentryReplayOptions {
    * Gets all response headers to capture for URLs defined in networkDetailAllowUrls. This includes
    * both the default headers (Content-Type, Content-Length, Accept) and any additional headers.
    *
-   * @return the complete network response headers array
+   * @return an unmodifiable list of the response headers to extract
    */
-  public @NotNull String[] getNetworkResponseHeaders() {
+  public @NotNull List<String> getNetworkResponseHeaders() {
     return networkResponseHeaders;
   }
 
@@ -527,12 +530,13 @@ public final class SentryReplayOptions {
    *
    * @param defaultHeaders the default headers that are always included
    * @param additionalHeaders additional headers to merge
+   * @return an unmodifiable list of merged headers
    */
-  private static @NotNull String[] mergeHeaders(
+  private static @NotNull List<String> mergeHeaders(
       final @NotNull List<String> defaultHeaders, final @NotNull List<String> additionalHeaders) {
     final Set<String> merged = new LinkedHashSet<>();
     merged.addAll(defaultHeaders);
     merged.addAll(additionalHeaders);
-    return merged.toArray(new String[0]);
+    return Collections.unmodifiableList(new ArrayList<>(merged));
   }
 }

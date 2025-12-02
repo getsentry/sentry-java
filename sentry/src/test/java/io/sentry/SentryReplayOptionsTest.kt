@@ -67,7 +67,7 @@ class SentryReplayOptionsTest {
       options.networkRequestHeaders.size,
     )
 
-    val headers = options.networkRequestHeaders.toList()
+    val headers = options.networkRequestHeaders
     SentryReplayOptions.getNetworkDetailsDefaultHeaders().forEach { defaultHeader ->
       assertEquals(true, headers.contains(defaultHeader))
     }
@@ -81,7 +81,7 @@ class SentryReplayOptionsTest {
       options.networkResponseHeaders.size,
     )
 
-    val headers = options.networkResponseHeaders.toList()
+    val headers = options.networkResponseHeaders
     SentryReplayOptions.getNetworkDetailsDefaultHeaders().forEach { defaultHeader ->
       assertEquals(true, headers.contains(defaultHeader))
     }
@@ -99,7 +99,7 @@ class SentryReplayOptionsTest {
       options.networkRequestHeaders.size,
     )
 
-    val headers = options.networkRequestHeaders.toList()
+    val headers = options.networkRequestHeaders
     SentryReplayOptions.getNetworkDetailsDefaultHeaders().forEach { defaultHeader ->
       assertTrue(headers.contains(defaultHeader))
     }
@@ -119,7 +119,7 @@ class SentryReplayOptionsTest {
       options.networkResponseHeaders.size,
     )
 
-    val headers = options.networkResponseHeaders.toList()
+    val headers = options.networkResponseHeaders
     SentryReplayOptions.getNetworkDetailsDefaultHeaders().forEach { defaultHeader ->
       assertTrue(headers.contains(defaultHeader))
     }
