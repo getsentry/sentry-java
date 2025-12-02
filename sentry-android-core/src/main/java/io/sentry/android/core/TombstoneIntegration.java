@@ -254,8 +254,9 @@ public class TombstoneIntegration implements Integration, Closeable {
           return;
         }
 
-        final TombstoneParser parser = new TombstoneParser(tombstoneInputStream);
-        event = parser.parse();
+        try (final TombstoneParser parser = new TombstoneParser(tombstoneInputStream)) {
+          event = parser.parse();
+        }
       } catch (IOException e) {
         logTombstoneFailure(exitInfo);
         return;

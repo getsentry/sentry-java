@@ -11,6 +11,7 @@ import io.sentry.protocol.SentryException;
 import io.sentry.protocol.SentryStackFrame;
 import io.sentry.protocol.SentryStackTrace;
 import io.sentry.protocol.SentryThread;
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -19,7 +20,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-public class TombstoneParser {
+public class TombstoneParser implements Closeable {
 
   private final InputStream tombstoneStream;
   private final Map<String, String> excTypeValueMap = new HashMap<>();
@@ -198,5 +199,10 @@ public class TombstoneParser {
     debugMeta.setImages(images);
 
     return debugMeta;
+  }
+
+  @Override
+  public void close() throws IOException {
+    tombstoneStream.close();
   }
 }
