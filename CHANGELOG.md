@@ -64,6 +64,12 @@ SentryAndroid.init(
 
 - Support `span` envelope item type ([#4935](https://github.com/getsentry/sentry-java/pull/4935))
 
+### Dependencies
+
+- Bump Native SDK from v0.12.1 to v0.12.2 ([#4944](https://github.com/getsentry/sentry-java/pull/4944))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0122)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.12.1...0.12.2)
+
 ## 8.27.1
 
 ### Fixes
