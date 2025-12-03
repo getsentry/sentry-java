@@ -3409,6 +3409,7 @@ public class io/sentry/SentryOptions {
 	public fun getIntegrations ()Ljava/util/List;
 	public fun getInternalTracesSampler ()Lio/sentry/TracesSampler;
 	public fun getLogger ()Lio/sentry/ILogger;
+	public fun getLoggerApiFactory ()Lio/sentry/logger/ILoggerApiFactory;
 	public fun getLogs ()Lio/sentry/SentryOptions$Logs;
 	public fun getMaxAttachmentSize ()J
 	public fun getMaxBreadcrumbs ()I
@@ -3561,6 +3562,7 @@ public class io/sentry/SentryOptions {
 	public fun setInitPriority (Lio/sentry/InitPriority;)V
 	public fun setInstrumenter (Lio/sentry/Instrumenter;)V
 	public fun setLogger (Lio/sentry/ILogger;)V
+	public fun setLoggerApiFactory (Lio/sentry/logger/ILoggerApiFactory;)V
 	public fun setLogs (Lio/sentry/SentryOptions$Logs;)V
 	public fun setMaxAttachmentSize (J)V
 	public fun setMaxBreadcrumbs (I)V
@@ -5023,6 +5025,11 @@ public abstract interface class io/sentry/internal/viewhierarchy/ViewHierarchyEx
 	public abstract fun export (Lio/sentry/protocol/ViewHierarchyNode;Ljava/lang/Object;)Z
 }
 
+public final class io/sentry/logger/DefaultLoggerApiFactory : io/sentry/logger/ILoggerApiFactory {
+	public fun <init> ()V
+	public fun create (Lio/sentry/Scopes;)Lio/sentry/logger/LoggerApi;
+}
+
 public abstract interface class io/sentry/logger/ILoggerApi {
 	public abstract fun debug (Ljava/lang/String;[Ljava/lang/Object;)V
 	public abstract fun error (Ljava/lang/String;[Ljava/lang/Object;)V
@@ -5035,13 +5042,18 @@ public abstract interface class io/sentry/logger/ILoggerApi {
 	public abstract fun warn (Ljava/lang/String;[Ljava/lang/Object;)V
 }
 
+public abstract interface class io/sentry/logger/ILoggerApiFactory {
+	public abstract fun create (Lio/sentry/Scopes;)Lio/sentry/logger/LoggerApi;
+}
+
 public abstract interface class io/sentry/logger/ILoggerBatchProcessor {
 	public abstract fun add (Lio/sentry/SentryLogEvent;)V
 	public abstract fun close (Z)V
 	public abstract fun flush (J)V
 }
 
-public final class io/sentry/logger/LoggerApi : io/sentry/logger/ILoggerApi {
+public class io/sentry/logger/LoggerApi : io/sentry/logger/ILoggerApi {
+	protected final field scopes Lio/sentry/Scopes;
 	public fun <init> (Lio/sentry/Scopes;)V
 	public fun debug (Ljava/lang/String;[Ljava/lang/Object;)V
 	public fun error (Ljava/lang/String;[Ljava/lang/Object;)V
