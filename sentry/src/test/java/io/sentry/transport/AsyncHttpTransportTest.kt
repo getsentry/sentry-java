@@ -107,7 +107,7 @@ class AsyncHttpTransportTest {
   }
 
   @Test
-  fun `stores envelope after unsuccessful send`() {
+  fun `discards envelope after unsuccessful send 500`() {
     // given
     val envelope = SentryEnvelope.from(fixture.sentryOptions.serializer, createSession(), null)
     whenever(fixture.transportGate.isConnected).thenReturn(true)
@@ -128,7 +128,59 @@ class AsyncHttpTransportTest {
     order.verify(fixture.sentryOptions.envelopeDiskCache).storeEnvelope(eq(envelope), anyOrNull())
 
     order.verify(fixture.connection).send(eq(envelope))
-    verify(fixture.sentryOptions.envelopeDiskCache, never()).discard(any())
+    order.verify(fixture.sentryOptions.envelopeDiskCache).discard(eq(envelope))
+  }
+
+  @Test
+  fun `discards envelope after unsuccessful send 400`() {
+    // given
+    val envelope = SentryEnvelope.from(fixture.sentryOptions.serializer, createSession(), null)
+    whenever(fixture.transportGate.isConnected).thenReturn(true)
+    whenever(fixture.rateLimiter.filter(eq(envelope), anyOrNull())).thenReturn(envelope)
+    whenever(fixture.connection.send(any())).thenReturn(TransportResult.error(400))
+
+    // when
+    try {
+      fixture.getSUT().send(envelope)
+    } catch (e: IllegalStateException) {
+      // expected - this is how the AsyncConnection signals failure to the executor for it to retry
+    }
+
+    // then
+    val order = inOrder(fixture.connection, fixture.sentryOptions.envelopeDiskCache)
+
+    // because storeBeforeSend is enabled by default
+    order.verify(fixture.sentryOptions.envelopeDiskCache).storeEnvelope(eq(envelope), anyOrNull())
+
+    order.verify(fixture.connection).send(eq(envelope))
+    order.verify(fixture.sentryOptions.envelopeDiskCache).discard(eq(envelope))
+  }
+
+  @Test
+  fun `discards envelope after unsuccessful send 429`() {
+    // given
+    val envelope = SentryEnvelope.from(fixture.sentryOptions.serializer, createSession(), null)
+    whenever(fixture.transportGate.isConnected).thenReturn(true)
+    whenever(fixture.rateLimiter.filter(eq(envelope), anyOrNull())).thenReturn(envelope)
+    whenever(fixture.sentryOptions.envelopeDiskCache.storeEnvelope(any(), anyOrNull()))
+      .thenReturn(true)
+    whenever(fixture.connection.send(any())).thenReturn(TransportResult.error(429))
+
+    // when
+    try {
+      fixture.getSUT().send(envelope)
+    } catch (e: IllegalStateException) {
+      // expected - this is how the AsyncConnection signals failure to the executor for it to retry
+    }
+
+    // then
+    val order = inOrder(fixture.connection, fixture.sentryOptions.envelopeDiskCache)
+
+    // because storeBeforeSend is enabled by default
+    order.verify(fixture.sentryOptions.envelopeDiskCache).storeEnvelope(eq(envelope), anyOrNull())
+
+    order.verify(fixture.connection).send(eq(envelope))
+    order.verify(fixture.sentryOptions.envelopeDiskCache).discard(eq(envelope))
   }
 
   @Test
