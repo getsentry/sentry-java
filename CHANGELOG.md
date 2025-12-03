@@ -55,6 +55,9 @@ SentryAndroid.init(
 
 - Avoid forking `rootScopes` for Reactor if current thread has `NoOpScopes` ([#4793](https://github.com/getsentry/sentry-java/pull/4793))
   - This reduces the SDKs overhead by avoiding unnecessary scope forks
+- Discard envelopes on `4xx` and `5xx` response ([#4950](https://github.com/getsentry/sentry-java/pull/4950))
+  - This aims to not overwhelm Sentry after an outage where too many events are sent at once
+  - We also do not have to re-send on a `4xx` since that's likely an SDK (e.g. wrong serialization) or envelope problem (e.g. too large) and sending it again won't change the result 
 
 ### Fixes 
 
