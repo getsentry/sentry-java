@@ -227,6 +227,8 @@ public final class SentryAndroidOptions extends SentryOptions {
 
   private @Nullable SentryFrameMetricsCollector frameMetricsCollector;
 
+  private boolean enableAnrProfiling = false;
+
   public SentryAndroidOptions() {
     setSentryClientName(BuildConfig.SENTRY_ANDROID_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
     setSdkVersion(createSdkVersion());
@@ -624,6 +626,14 @@ public final class SentryAndroidOptions extends SentryOptions {
   public void setEnableSystemEventBreadcrumbsExtras(
       final boolean enableSystemEventBreadcrumbsExtras) {
     this.enableSystemEventBreadcrumbsExtras = enableSystemEventBreadcrumbsExtras;
+  }
+
+  public boolean isEnableAnrProfiling() {
+    return enableAnrProfiling;
+  }
+
+  public void setEnableAnrProfiling(final boolean enableAnrProfiling) {
+    this.enableAnrProfiling = enableAnrProfiling;
   }
 
   static class AndroidUserFeedbackIDialogHandler implements SentryFeedbackOptions.IDialogHandler {

@@ -189,6 +189,8 @@
 
       <meta-data android:name="io.sentry.performance-v2.enable" android:value="true" />
 
+      <meta-data android:name="io.sentry.anr.enable-profiling" android:value="true" />
+
       <meta-data android:name="io.sentry.session-replay.screenshot-strategy" android:value="canvas" />
       <meta-data android:name="io.sentry.session-replay.session-sample-rate" android:value="1" />
       <meta-data android:name="io.sentry.session-replay.mask-all-text" android:value="true" />
