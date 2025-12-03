@@ -20,7 +20,7 @@ jobs:
           java-version: '17'
 
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       # TODO: remove this when upstream is fixed
       - name: Disable Gradle configuration cache (see https://github.com/fossas/fossa-cli/issues/872)
