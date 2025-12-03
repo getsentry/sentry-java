@@ -165,16 +165,24 @@ public class TombstoneParser implements Closeable {
     final TombstoneProtos.Signal signalInfo = tombstone.getSignalInfo();
 
     // reproduce the message `debuggerd` would use to dump the stack trace in logcat
-    message.setFormatted(
-        String.format(
-            Locale.ROOT,
-            "Fatal signal %s (%d), %s (%d), pid = %d (%s)",
-            signalInfo.getName(),
-            signalInfo.getNumber(),
-            signalInfo.getCodeName(),
-            signalInfo.getCode(),
-            tombstone.getPid(),
-            String.join(" ", tombstone.getCommandLineList())));
+    String command = String.join(" ", tombstone.getCommandLineList());
+    if (tombstone.hasSignalInfo()) {
+      String abortMessage = tombstone.getAbortMessage();
+      message.setFormatted(
+          String.format(
+              Locale.ROOT,
+              "%sFatal signal %s (%d), %s (%d), pid = %d (%s)",
+              abortMessage != null ? abortMessage + ": " : "",
+              signalInfo.getName(),
+              signalInfo.getNumber(),
+              signalInfo.getCodeName(),
+              signalInfo.getCode(),
+              tombstone.getPid(),
+              command));
+    } else {
+      message.setFormatted(
+          String.format(Locale.ROOT, "Fatal exit pid = %d (%s)", tombstone.getPid(), command));
+    }
 
     return message;
   }
