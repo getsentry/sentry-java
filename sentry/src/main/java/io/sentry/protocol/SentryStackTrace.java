@@ -67,8 +67,9 @@ public final class SentryStackTrace implements JsonUnknown, JsonSerializable {
   private @Nullable Boolean snapshot;
 
   /**
-   * This value indicates if, and how, `instruction_addr`  values in the stack frames need to be adjusted before they are symbolicated.
-   * TODO: should we make this an enum or is a string value fine?
+   * This value indicates if, and how, `instruction_addr` values in the stack frames need to be
+   * adjusted before they are symbolicated. TODO: should we make this an enum or is a string value
+   * fine?
    *
    * @see SentryStackFrame#getInstructionAddr()
    * @see SentryStackFrame#setInstructionAddr(String)

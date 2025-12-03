@@ -604,10 +604,12 @@ public final class SentryAndroidOptions extends SentryOptions {
     this.reportHistoricalAnrs = reportHistoricalAnrs;
   }
 
+  @ApiStatus.Internal
   public boolean isReportHistoricalTombstones() {
     return reportHistoricalTombstones;
   }
 
+  @ApiStatus.Internal
   public void setReportHistoricalTombstones(final boolean reportHistoricalTombstones) {
     this.reportHistoricalTombstones = reportHistoricalTombstones;
   }

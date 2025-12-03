@@ -4845,6 +4845,10 @@ public abstract interface class io/sentry/hints/Flushable {
 	public abstract fun waitFlush ()Z
 }
 
+public abstract interface class io/sentry/hints/NativeCrashExit {
+	public abstract fun timestamp ()Ljava/lang/Long;
+}
+
 public abstract interface class io/sentry/hints/Resettable {
 	public abstract fun reset ()V
 }
@@ -6215,11 +6219,13 @@ public final class io/sentry/protocol/SentryStackTrace : io/sentry/JsonSerializa
 	public fun <init> ()V
 	public fun <init> (Ljava/util/List;)V
 	public fun getFrames ()Ljava/util/List;
+	public fun getInstructionAddressAdjustment ()Ljava/lang/String;
 	public fun getRegisters ()Ljava/util/Map;
 	public fun getSnapshot ()Ljava/lang/Boolean;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setFrames (Ljava/util/List;)V
+	public fun setInstructionAddressAdjustment (Ljava/lang/String;)V
 	public fun setRegisters (Ljava/util/Map;)V
 	public fun setSnapshot (Ljava/lang/Boolean;)V
 	public fun setUnknown (Ljava/util/Map;)V
@@ -6233,6 +6239,7 @@ public final class io/sentry/protocol/SentryStackTrace$Deserializer : io/sentry/
 
 public final class io/sentry/protocol/SentryStackTrace$JsonKeys {
 	public static final field FRAMES Ljava/lang/String;
+	public static final field INSTRUCTION_ADDRESS_ADJUSTMENT Ljava/lang/String;
 	public static final field REGISTERS Ljava/lang/String;
 	public static final field SNAPSHOT Ljava/lang/String;
 	public fun <init> ()V

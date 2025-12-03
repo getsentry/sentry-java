@@ -23,6 +23,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
+import java.util.Arrays;
+import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -82,35 +84,9 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
       }
     }
 
-    HintUtils.runIfHasType(
-        hint,
-        AnrV2Integration.AnrV2Hint.class,
-        (anrHint) -> {
-          final @Nullable Long timestamp = anrHint.timestamp();
-          options
-              .getLogger()
-              .log(
-                  SentryLevel.DEBUG,
-                  "Writing last reported ANR marker with timestamp %d",
-                  timestamp);
-
-          writeLastReportedAnrMarker(timestamp);
-        });
-
-    HintUtils.runIfHasType(
-        hint,
-        TombstoneIntegration.TombstoneHint.class,
-        (tombstoneHint) -> {
-          final @Nullable Long timestamp = tombstoneHint.timestamp();
-          options
-              .getLogger()
-              .log(
-                  SentryLevel.DEBUG,
-                  "Writing last reported Tombstone marker with timestamp %d",
-                  timestamp);
-
-          writeLastReportedTombstoneMarker(timestamp);
-        });
+    for (TimestampMarkerHandler<?> handler : TIMESTAMP_MARKER_HANDLERS) {
+      handler.handle(this, hint, options);
+    }
 
     return didStore;
   }
@@ -150,9 +126,9 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
     final File crashMarkerFile = new File(outboxPath, STARTUP_CRASH_MARKER_FILE);
     try {
       final boolean exists =
-          options.getRuntimeManager().runWithRelaxedPolicy(() -> crashMarkerFile.exists());
+          options.getRuntimeManager().runWithRelaxedPolicy(crashMarkerFile::exists);
       if (exists) {
-        if (!options.getRuntimeManager().runWithRelaxedPolicy(() -> crashMarkerFile.delete())) {
+        if (!options.getRuntimeManager().runWithRelaxedPolicy(crashMarkerFile::delete)) {
           options
               .getLogger()
               .log(
@@ -173,11 +149,11 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
   private static @Nullable Long lastReportedMarker(
       final @NotNull SentryOptions options,
       @NotNull String reportFilename,
-      @NotNull String markerCategory) {
+      @NotNull String markerLabel) {
     final String cacheDirPath =
         Objects.requireNonNull(
             options.getCacheDirPath(),
-            "Cache dir path should be set for getting " + markerCategory + "s reported");
+            "Cache dir path should be set for getting " + markerLabel + "s reported");
 
     final File lastMarker = new File(cacheDirPath, reportFilename);
     try {
@@ -191,10 +167,10 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
             .getLogger()
             .log(
                 DEBUG,
-                "Last " + markerCategory + " marker does not exist. %s.",
+                "Last " + markerLabel + " marker does not exist. %s.",
                 lastMarker.getAbsolutePath());
       } else {
-        options.getLogger().log(ERROR, "Error reading last " + markerCategory + " marker", e);
+        options.getLogger().log(ERROR, "Error reading last " + markerLabel + " marker", e);
       }
     }
     return null;
@@ -226,18 +202,68 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
   }
 
   public static @Nullable Long lastReportedAnr(final @NotNull SentryOptions options) {
-    return lastReportedMarker(options, LAST_ANR_REPORT, "ANR");
-  }
-
-  private void writeLastReportedAnrMarker(final @Nullable Long timestamp) {
-    this.writeLastReportedMarker(timestamp, LAST_ANR_REPORT, "ANR");
+    return lastReportedMarker(options, LAST_ANR_REPORT, LAST_ANR_MARKER_LABEL);
   }
 
   public static @Nullable Long lastReportedTombstone(final @NotNull SentryOptions options) {
-    return lastReportedMarker(options, LAST_TOMBSTONE_REPORT, "Tombstone");
+    return lastReportedMarker(options, LAST_TOMBSTONE_REPORT, LAST_TOMBSTONE_MARKER_LABEL);
   }
 
-  private void writeLastReportedTombstoneMarker(final @Nullable Long timestamp) {
-    this.writeLastReportedMarker(timestamp, LAST_TOMBSTONE_REPORT, "Tombstone");
+  private static final class TimestampMarkerHandler<T> {
+    interface TimestampExtractor<T> {
+      @NotNull
+      Long extract(T value);
+    }
+
+    private final @NotNull Class<T> type;
+    private final @NotNull String label;
+    private final @NotNull String reportFilename;
+    private final @NotNull TimestampExtractor<T> timestampProvider;
+
+    TimestampMarkerHandler(
+        final @NotNull Class<T> type,
+        final @NotNull String label,
+        final @NotNull String reportFilename,
+        final @NotNull TimestampExtractor<T> timestampProvider) {
+      this.type = type;
+      this.label = label;
+      this.reportFilename = reportFilename;
+      this.timestampProvider = timestampProvider;
+    }
+
+    void handle(
+        final @NotNull AndroidEnvelopeCache cache,
+        final @NotNull Hint hint,
+        final @NotNull SentryAndroidOptions options) {
+      HintUtils.runIfHasType(
+          hint,
+          type,
+          (typedHint) -> {
+            final @NotNull Long timestamp = timestampProvider.extract(typedHint);
+            options
+                .getLogger()
+                .log(
+                    SentryLevel.DEBUG,
+                    "Writing last reported %s marker with timestamp %d",
+                    label,
+                    timestamp);
+            cache.writeLastReportedMarker(timestamp, reportFilename, label);
+          });
+    }
   }
+
+  public static final String LAST_TOMBSTONE_MARKER_LABEL = "Tombstone";
+  public static final String LAST_ANR_MARKER_LABEL = "ANR";
+  private static final List<TimestampMarkerHandler<?>> TIMESTAMP_MARKER_HANDLERS =
+      Arrays.asList(
+          new TimestampMarkerHandler<>(
+              AnrV2Integration.AnrV2Hint.class,
+              LAST_ANR_MARKER_LABEL,
+              LAST_ANR_REPORT,
+              AnrV2Integration.AnrV2Hint::timestamp),
+          new TimestampMarkerHandler<>(
+              TombstoneIntegration.TombstoneHint.class,
+              LAST_TOMBSTONE_MARKER_LABEL,
+              LAST_TOMBSTONE_REPORT,
+              TombstoneIntegration.TombstoneHint::timestamp));
 }

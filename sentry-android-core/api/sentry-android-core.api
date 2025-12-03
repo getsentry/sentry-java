@@ -339,6 +339,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun isEnableSystemEventBreadcrumbs ()Z
 	public fun isEnableSystemEventBreadcrumbsExtras ()Z
 	public fun isReportHistoricalAnrs ()Z
+	public fun isReportHistoricalTombstones ()Z
 	public fun isTombstoneEnabled ()Z
 	public fun setAnrEnabled (Z)V
 	public fun setAnrReportInDebug (Z)V
@@ -368,6 +369,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun setNativeHandlerStrategy (Lio/sentry/android/core/NdkHandlerStrategy;)V
 	public fun setNativeSdkName (Ljava/lang/String;)V
 	public fun setReportHistoricalAnrs (Z)V
+	public fun setReportHistoricalTombstones (Z)V
 	public fun setTombstoneEnabled (Z)V
 }
 
@@ -467,9 +469,21 @@ public class io/sentry/android/core/TombstoneIntegration : io/sentry/Integration
 	public fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
 }
 
-public class io/sentry/android/core/TombstoneIntegration$TombstoneProcessor : java/lang/Runnable {
-	public fun <init> (Landroid/content/Context;Lio/sentry/IScopes;Lio/sentry/android/core/SentryAndroidOptions;Lio/sentry/transport/ICurrentDateProvider;)V
-	public fun run ()V
+public final class io/sentry/android/core/TombstoneIntegration$TombstoneHint : io/sentry/hints/BlockingFlushHint, io/sentry/hints/Backfillable, io/sentry/hints/NativeCrashExit {
+	public fun <init> (JLio/sentry/ILogger;JZ)V
+	public fun isFlushable (Lio/sentry/protocol/SentryId;)Z
+	public fun setFlushable (Lio/sentry/protocol/SentryId;)V
+	public fun shouldEnrich ()Z
+	public fun timestamp ()Ljava/lang/Long;
+}
+
+public class io/sentry/android/core/TombstoneIntegration$TombstonePolicy : io/sentry/android/core/ApplicationExitInfoHistoryDispatcher$ApplicationExitInfoPolicy {
+	public fun <init> (Lio/sentry/android/core/SentryAndroidOptions;)V
+	public fun buildReport (Landroid/app/ApplicationExitInfo;Z)Lio/sentry/android/core/ApplicationExitInfoHistoryDispatcher$Report;
+	public fun getLabel ()Ljava/lang/String;
+	public fun getLastReportedTimestamp ()Ljava/lang/Long;
+	public fun getTargetReason ()I
+	public fun shouldReportHistorical ()Z
 }
 
 public final class io/sentry/android/core/UserInteractionIntegration : android/app/Application$ActivityLifecycleCallbacks, io/sentry/Integration, java/io/Closeable {
@@ -498,7 +512,9 @@ public final class io/sentry/android/core/ViewHierarchyEventProcessor : io/sentr
 }
 
 public final class io/sentry/android/core/cache/AndroidEnvelopeCache : io/sentry/cache/EnvelopeCache {
+	public static final field LAST_ANR_MARKER_LABEL Ljava/lang/String;
 	public static final field LAST_ANR_REPORT Ljava/lang/String;
+	public static final field LAST_TOMBSTONE_MARKER_LABEL Ljava/lang/String;
 	public static final field LAST_TOMBSTONE_REPORT Ljava/lang/String;
 	public fun <init> (Lio/sentry/android/core/SentryAndroidOptions;)V
 	public fun getDirectory ()Ljava/io/File;
