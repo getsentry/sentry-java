@@ -87,7 +87,7 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
   private final @Nullable PersistingScopeObserver persistingScopeObserver;
 
   // Only ANRv2 events are currently enriched with hint-specific content.
-  // This can be extended to other hints like CrashNativeHint.
+  // This can be extended to other hints like NativeCrashExit.
   private final @NotNull List<HintEnricher> hintEnrichers =
       Collections.singletonList(new AnrHintEnricher());
 
@@ -142,6 +142,8 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
       hintEnricher.applyPreEnrichment(event, backfillable, unwrappedHint);
     }
 
+    // We always set  os and device even if the ApplicationExitInfo event is not enrich-able.
+    // The OS context may change in the meantime (OS update); we consider this an edge-case.
     mergeOS(event);
     setDevice(event);
 
@@ -690,6 +692,7 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
     public void applyPreEnrichment(
         @NotNull SentryEvent event, @NotNull Backfillable hint, @NotNull Object rawHint) {
       final boolean isBackgroundAnr = isBackgroundAnr(rawHint);
+      // we always set exception values and default platform even if the ANR is not enrich-able
       setDefaultPlatform(event);
       setAnrExceptions(event, hint, isBackgroundAnr);
     }
@@ -704,6 +707,9 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
 
     private void setDefaultAnrFingerprint(
         final @NotNull SentryEvent event, final boolean isBackgroundAnr) {
+      // sentry does not yet have a capability to provide default server-side fingerprint rules,
+      // so we're doing this on the SDK side to group background and foreground ANRs separately
+      // even if they have similar stacktraces.
       if (event.getFingerprints() == null) {
         event.setFingerprints(
             Arrays.asList("{{ default }}", isBackgroundAnr ? "background-anr" : "foreground-anr"));
@@ -717,6 +723,9 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
         app = new App();
         event.getContexts().setApp(app);
       }
+      // TODO: not entirely correct, because we define background ANRs as not the ones of
+      //  IMPORTANCE_FOREGROUND, but this doesn't mean the app was in foreground when an ANR
+      //  happened but it's our best effort for now. We could serialize AppState in theory.
       if (app.getInForeground() == null) {
         app.setInForeground(inForeground);
       }
@@ -742,8 +751,11 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
       if (event.getExceptions() != null) {
         return;
       }
+      // AnrV2 threads contain a thread dump from the OS, so we just search for the main thread dump
+      // and make an exception out of its stacktrace
       final Mechanism mechanism = new Mechanism();
       if (!hint.shouldEnrich()) {
+        // we only enrich the latest ANR in the list, so this is historical
         mechanism.setType("HistoricalAppExitInfo");
       } else {
         mechanism.setType("AppExitInfo");
@@ -758,6 +770,8 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
 
       SentryThread mainThread = findMainThread(event.getThreads());
       if (mainThread == null) {
+        // if there's no main thread in the event threads, we just create a dummy thread so the
+        // exception is properly created as well, but without stacktrace
         mainThread = new SentryThread();
         mainThread.setStacktrace(new SentryStackTrace());
       }
