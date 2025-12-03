@@ -172,7 +172,7 @@ public class TombstoneParser implements Closeable {
           String.format(
               Locale.ROOT,
               "%sFatal signal %s (%d), %s (%d), pid = %d (%s)",
-              abortMessage != null ? abortMessage + ": " : "",
+              !abortMessage.isEmpty() ? abortMessage + ": " : "",
               signalInfo.getName(),
               signalInfo.getNumber(),
               signalInfo.getCodeName(),
