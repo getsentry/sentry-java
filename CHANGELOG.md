@@ -4,6 +4,10 @@
 
 ### Features
 
+- Add new experimental option to capture profiles for ANRs ([#4899](https://github.com/getsentry/sentry-java/pull/4899))
+  - This feature will capture a stack profile of the main thread when it gets unresponsive
+  - The profile gets attached to the ANR event on the next app start, providing a flamegraph of the ANR issue on the sentry issue details page
+  - Enable via `options.setEnableAnrProfiling(true)` or Android manifest: `<meta-data android:name="io.sentry.anr.enable-profiling" android:value="true" />`
 - Add option to capture additional OkHttp network request/response details in session replays ([#4919](https://github.com/getsentry/sentry-java/pull/4919))
   - Depends on `SentryOkHttpInterceptor` to intercept the request and extract request/response bodies
   - To enable, add url regexes via the `io.sentry.session-replay.network-detail-allow-urls` metadata tag in AndroidManifest ([code sample](https://github.com/getsentry/sentry-java/blob/b03edbb1b0d8b871c62a09bc02cbd8a4e1f6fea1/sentry-samples/sentry-samples-android/src/main/AndroidManifest.xml#L196-L205))
@@ -94,12 +98,6 @@ SentryAndroid.init(
 ### Improvements
 
 - Do not send manual log origin ([#4897](https://github.com/getsentry/sentry-java/pull/4897))
-- Add ANR profiling integration ([#4899](https://github.com/getsentry/sentry-java/pull/4899))
-  - Captures main thread profile when ANR is detected
-  - Identifies culprit code causing application hangs
-  - Profiles are attached to ANR error events for better diagnostics
-  - Enable via `options.setEnableAnrProfiling(true)` or Android manifest: `<meta-data android:name="io.sentry.anr.enable-profiling" android:value="true" />`
-
 
 ### Dependencies
 
