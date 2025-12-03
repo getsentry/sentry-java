@@ -15,6 +15,8 @@ import io.sentry.internal.gestures.GestureTargetLocator;
 import io.sentry.internal.modules.IModulesLoader;
 import io.sentry.internal.modules.NoOpModulesLoader;
 import io.sentry.internal.viewhierarchy.ViewHierarchyExporter;
+import io.sentry.logger.DefaultLoggerApiFactory;
+import io.sentry.logger.ILoggerApiFactory;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.transport.ITransport;
@@ -625,6 +627,15 @@ public class SentryOptions {
   private @NotNull IRuntimeManager runtimeManager = new NeutralRuntimeManager();
 
   private @Nullable String profilingTracesDirPath;
+
+  private final @NotNull LazyEvaluator<ILoggerApiFactory> loggerApiFactory =
+      new LazyEvaluator<>(
+          new LazyEvaluator.Evaluator<ILoggerApiFactory>() {
+            @Override
+            public @NotNull ILoggerApiFactory evaluate() {
+              return new DefaultLoggerApiFactory();
+            }
+          });
 
   public @NotNull IProfileConverter getProfilerConverter() {
     return profilerConverter;
@@ -3530,6 +3541,16 @@ public class SentryOptions {
   @ApiStatus.Experimental
   public void setLogs(@NotNull SentryOptions.Logs logs) {
     this.logs = logs;
+  }
+
+  @ApiStatus.Internal
+  public @NotNull ILoggerApiFactory getLoggerApiFactory() {
+    return loggerApiFactory.getValue();
+  }
+
+  @ApiStatus.Internal
+  public void setLoggerApiFactory(final @NotNull ILoggerApiFactory loggerApiFactory) {
+    this.loggerApiFactory.setValue(loggerApiFactory);
   }
 
   public static final class Proxy {

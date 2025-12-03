@@ -44,7 +44,6 @@ class LifecycleWatcherTest {
       sessionIntervalMillis: Long = 0L,
       enableAutoSessionTracking: Boolean = true,
       enableAppLifecycleBreadcrumbs: Boolean = true,
-      enableLogFlushing: Boolean = true,
       session: Session? = null,
     ): LifecycleWatcher {
       val argumentCaptor: ArgumentCaptor<ScopeCallback> =
@@ -67,7 +66,6 @@ class LifecycleWatcherTest {
         sessionIntervalMillis,
         enableAutoSessionTracking,
         enableAppLifecycleBreadcrumbs,
-        enableLogFlushing,
         dateProvider,
       )
     }
@@ -304,28 +302,5 @@ class LifecycleWatcherTest {
 
     watcher.onBackground()
     verify(fixture.replayController, timeout(10000)).stop()
-  }
-
-  @Test
-  fun `flush logs when going in background`() {
-    val watcher = fixture.getSUT(enableLogFlushing = true)
-
-    watcher.onForeground()
-    watcher.onBackground()
-
-    watcher.onForeground()
-    watcher.onBackground()
-
-    verify(fixture.client, times(2)).flushLogs(any())
-  }
-
-  @Test
-  fun `do not flush logs when going in background when logging is disabled`() {
-    val watcher = fixture.getSUT(enableLogFlushing = false)
-
-    watcher.onForeground()
-    watcher.onBackground()
-
-    verify(fixture.client, never()).flushLogs(any())
   }
 }

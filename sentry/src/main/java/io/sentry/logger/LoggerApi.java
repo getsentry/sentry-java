@@ -1,5 +1,6 @@
 package io.sentry.logger;
 
+import com.jakewharton.nopen.annotation.Open;
 import io.sentry.HostnameCache;
 import io.sentry.IScope;
 import io.sentry.ISpan;
@@ -21,12 +22,15 @@ import io.sentry.protocol.User;
 import io.sentry.util.Platform;
 import io.sentry.util.TracingUtils;
 import java.util.HashMap;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class LoggerApi implements ILoggerApi {
+@ApiStatus.Internal
+@Open
+public class LoggerApi implements ILoggerApi {
 
-  private final @NotNull Scopes scopes;
+  protected final @NotNull Scopes scopes;
 
   public LoggerApi(final @NotNull Scopes scopes) {
     this.scopes = scopes;

@@ -926,4 +926,10 @@ class AndroidOptionsInitializerTest {
     fixture.initSut()
     assertIs<AndroidRuntimeManager>(fixture.sentryOptions.runtimeManager)
   }
+
+  @Test
+  fun `AndroidLoggerApiFactory is set in the options`() {
+    fixture.initSut()
+    assertIs<AndroidLoggerApiFactory>(fixture.sentryOptions.loggerApiFactory)
+  }
 }

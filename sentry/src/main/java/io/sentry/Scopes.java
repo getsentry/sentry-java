@@ -4,7 +4,6 @@ import io.sentry.clientreport.DiscardReason;
 import io.sentry.hints.SessionEndHint;
 import io.sentry.hints.SessionStartHint;
 import io.sentry.logger.ILoggerApi;
-import io.sentry.logger.LoggerApi;
 import io.sentry.protocol.*;
 import io.sentry.transport.RateLimiter;
 import io.sentry.util.HintUtils;
@@ -56,7 +55,7 @@ public final class Scopes implements IScopes {
     final @NotNull SentryOptions options = getOptions();
     validateOptions(options);
     this.compositePerformanceCollector = options.getCompositePerformanceCollector();
-    this.logger = new LoggerApi(this);
+    this.logger = options.getLoggerApiFactory().create(this);
   }
 
   public @NotNull String getCreator() {
@@ -461,6 +460,10 @@ public final class Scopes implements IScopes {
           }
         } else {
           executorService.close(getOptions().getShutdownTimeoutMillis());
+        }
+
+        if (logger instanceof Closeable) {
+          ((Closeable) logger).close();
         }
 
         // TODO: should we end session before closing client?

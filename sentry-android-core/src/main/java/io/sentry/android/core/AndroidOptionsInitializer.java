@@ -139,6 +139,8 @@ final class AndroidOptionsInitializer {
 
     readDefaultOptionValues(options, finalContext, buildInfoProvider);
     AppState.getInstance().registerLifecycleObserver(options);
+
+    options.setLoggerApiFactory(new AndroidLoggerApiFactory());
   }
 
   @TestOnly

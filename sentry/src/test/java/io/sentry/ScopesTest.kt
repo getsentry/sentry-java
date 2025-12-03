@@ -7,6 +7,8 @@ import io.sentry.clientreport.DiscardReason
 import io.sentry.clientreport.DiscardedEvent
 import io.sentry.hints.SessionEndHint
 import io.sentry.hints.SessionStartHint
+import io.sentry.logger.ILoggerApiFactory
+import io.sentry.logger.LoggerApi
 import io.sentry.logger.SentryLogParameters
 import io.sentry.protocol.Feedback
 import io.sentry.protocol.SentryId
@@ -19,6 +21,7 @@ import io.sentry.test.createTestScopes
 import io.sentry.test.initForTest
 import io.sentry.util.HintUtils
 import io.sentry.util.StringUtils
+import java.io.Closeable
 import java.io.File
 import java.nio.file.Files
 import java.util.Queue
@@ -3210,6 +3213,17 @@ class ScopesTest {
     sut.captureException(RuntimeException("test exception"))
 
     verify(mockClient).captureEvent(any(), check { assertNull(it.featureFlags) }, anyOrNull())
+  }
+
+  @Test
+  fun `scope close calls logger close`() {
+    val closeableLogger = mock<LoggerApi>(extraInterfaces = arrayOf(Closeable::class))
+    val loggerFactory = ILoggerApiFactory { closeableLogger }
+
+    val (scopes, _, _) = getEnabledScopes { options -> options.loggerApiFactory = loggerFactory }
+    scopes.close()
+
+    verify(closeableLogger as Closeable).close()
   }
 
   private val dsnTest = "https://key@sentry.io/proj"
