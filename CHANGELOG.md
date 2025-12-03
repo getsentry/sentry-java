@@ -59,6 +59,7 @@ SentryAndroid.init(
 ### Fixes 
 
 - Fix missing thread stacks for ANRv1 events ([#4918](https://github.com/getsentry/sentry-java/pull/4918))
+- Fix handling of unparseable mime-type on request filter ([#4939](https://github.com/getsentry/sentry-java/pull/4939))
 
 ### Internal
 
