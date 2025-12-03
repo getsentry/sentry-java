@@ -259,9 +259,10 @@ class AndroidOptionsInitializerTest {
   }
 
   @Test
-  fun `AnrV2EventProcessor added to processors list`() {
+  fun `ApplicationExitInfoProcessor added to processors list`() {
     fixture.initSut()
-    val actual = fixture.sentryOptions.eventProcessors.firstOrNull { it is AnrV2EventProcessor }
+    val actual =
+      fixture.sentryOptions.eventProcessors.firstOrNull { it is ApplicationExitInfoEventProcessor }
     assertNotNull(actual)
   }
 

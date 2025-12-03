@@ -188,10 +188,8 @@ final class AndroidOptionsInitializer {
     options.addEventProcessor(new PerformanceAndroidEventProcessor(options, activityFramesTracker));
     options.addEventProcessor(new ScreenshotEventProcessor(options, buildInfoProvider));
     options.addEventProcessor(new ViewHierarchyEventProcessor(options));
-    options.addEventProcessor(new AnrV2EventProcessor(context, options, buildInfoProvider));
-    if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.S) {
-      options.addEventProcessor(new TombstoneEventProcessor(context, options, buildInfoProvider));
-    }
+    options.addEventProcessor(
+        new ApplicationExitInfoEventProcessor(context, options, buildInfoProvider));
     if (options.getTransportGate() instanceof NoOpTransportGate) {
       options.setTransportGate(new AndroidTransportGate(options));
     }

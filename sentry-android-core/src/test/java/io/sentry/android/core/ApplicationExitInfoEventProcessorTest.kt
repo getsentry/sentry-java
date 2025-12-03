@@ -47,6 +47,7 @@ import io.sentry.protocol.OperatingSystem
 import io.sentry.protocol.Request
 import io.sentry.protocol.Response
 import io.sentry.protocol.SdkVersion
+import io.sentry.protocol.SentryException
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryStackFrame
 import io.sentry.protocol.SentryStackTrace
@@ -74,7 +75,7 @@ import org.robolectric.shadows.ShadowActivityManager
 import org.robolectric.shadows.ShadowBuild
 
 @RunWith(AndroidJUnit4::class)
-class AnrV2EventProcessorTest {
+class ApplicationExitInfoEventProcessorTest {
   @get:Rule val tmpDir = TemporaryFolder()
 
   class Fixture {
@@ -93,7 +94,7 @@ class AnrV2EventProcessorTest {
       populateOptionsCache: Boolean = false,
       replayErrorSampleRate: Double? = null,
       isSendDefaultPii: Boolean = true,
-    ): AnrV2EventProcessor {
+    ): ApplicationExitInfoEventProcessor {
       options.cacheDirPath = dir.newFolder().absolutePath
       options.environment = "release"
       options.isSendDefaultPii = isSendDefaultPii
@@ -150,7 +151,7 @@ class AnrV2EventProcessorTest {
         }
       }
 
-      return AnrV2EventProcessor(context, options, buildInfo)
+      return ApplicationExitInfoEventProcessor(context, options, buildInfo)
     }
 
     fun <T : Any> persistScope(filename: String, entity: T) {
@@ -204,7 +205,7 @@ class AnrV2EventProcessorTest {
 
   @Test
   fun `when backfillable event is not enrichable, sets different mechanism`() {
-    val hint = HintUtils.createWithTypeCheckHint(BackfillableHint(shouldEnrich = false))
+    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(shouldEnrich = false))
 
     val processed = processEvent(hint)
 
@@ -213,7 +214,7 @@ class AnrV2EventProcessorTest {
 
   @Test
   fun `when backfillable event is not enrichable, sets platform`() {
-    val hint = HintUtils.createWithTypeCheckHint(BackfillableHint(shouldEnrich = false))
+    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(shouldEnrich = false))
 
     val processed = processEvent(hint)
 
@@ -277,7 +278,7 @@ class AnrV2EventProcessorTest {
 
   @Test
   fun `when backfillable event is enrichable, still sets static data`() {
-    val hint = HintUtils.createWithTypeCheckHint(BackfillableHint())
+    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint())
 
     val processed = processEvent(hint)
 
@@ -352,9 +353,18 @@ class AnrV2EventProcessorTest {
     assertEquals("io.sentry.android.core.test", processed.contexts.app!!.appName)
     assertEquals("1.2.0", processed.contexts.app!!.appVersion)
     assertEquals("232", processed.contexts.app!!.appBuild)
-    assertEquals(true, processed.contexts.app!!.inForeground)
+    assertNull(processed.contexts.app!!.inForeground)
     // tags
     assertEquals("tag", processed.tags!!["option"])
+  }
+
+  @Test
+  fun `when ANR event is enrichable, sets foreground flag`() {
+    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint())
+
+    val processed = processEvent(hint, populateOptionsCache = true)
+
+    assertEquals(true, processed.contexts.app!!.inForeground)
   }
 
   @Test
@@ -596,6 +606,29 @@ class AnrV2EventProcessorTest {
   }
 
   @Test
+  fun `tombstone hint does not override platform or exceptions`() {
+    val hint =
+      HintUtils.createWithTypeCheckHint(
+        TombstoneIntegration.TombstoneHint(
+          fixture.options.flushTimeoutMillis,
+          NoOpLogger.getInstance(),
+          0,
+          true,
+        )
+      )
+
+    val processed =
+      processEvent(hint, populateScopeCache = false, populateOptionsCache = false) {
+        platform = "native"
+        exceptions = listOf(SentryException().apply { type = "NativeCrash" })
+      }
+
+    assertEquals("native", processed.platform)
+    assertEquals("NativeCrash", processed.exceptions!!.first().type)
+    assertNull(processed.fingerprints)
+  }
+
+  @Test
   fun `sets replayId when replay folder exists`() {
     val hint = HintUtils.createWithTypeCheckHint(BackfillableHint())
     val processor = fixture.getSut(tmpDir, populateScopeCache = true)
@@ -691,14 +724,17 @@ class AnrV2EventProcessorTest {
     return processor.process(original, hint)!!
   }
 
-  internal class AbnormalExitHint(val mechanism: String? = null) : AbnormalExit, Backfillable {
+  internal class AbnormalExitHint(
+    val mechanism: String? = null,
+    private val shouldEnrich: Boolean = true,
+  ) : AbnormalExit, Backfillable {
     override fun mechanism(): String? = mechanism
 
     override fun ignoreCurrentThread(): Boolean = false
 
     override fun timestamp(): Long? = null
 
-    override fun shouldEnrich(): Boolean = true
+    override fun shouldEnrich(): Boolean = shouldEnrich
   }
 
   internal class BackfillableHint(private val shouldEnrich: Boolean = true) : Backfillable {

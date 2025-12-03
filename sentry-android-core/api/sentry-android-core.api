@@ -129,13 +129,6 @@ public final class io/sentry/android/core/AnrIntegrationFactory {
 	public static fun create (Landroid/content/Context;Lio/sentry/android/core/BuildInfoProvider;)Lio/sentry/Integration;
 }
 
-public final class io/sentry/android/core/AnrV2EventProcessor : io/sentry/BackfillingEventProcessor {
-	public fun <init> (Landroid/content/Context;Lio/sentry/android/core/SentryAndroidOptions;Lio/sentry/android/core/BuildInfoProvider;)V
-	public fun getOrder ()Ljava/lang/Long;
-	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
-	public fun process (Lio/sentry/protocol/SentryTransaction;Lio/sentry/Hint;)Lio/sentry/protocol/SentryTransaction;
-}
-
 public class io/sentry/android/core/AnrV2Integration : io/sentry/Integration, java/io/Closeable {
 	public fun <init> (Landroid/content/Context;)V
 	public fun close ()V
@@ -189,6 +182,13 @@ public final class io/sentry/android/core/AppState$LifecycleObserver : androidx/
 	public fun getListeners ()Ljava/util/List;
 	public fun onStart (Landroidx/lifecycle/LifecycleOwner;)V
 	public fun onStop (Landroidx/lifecycle/LifecycleOwner;)V
+}
+
+public final class io/sentry/android/core/ApplicationExitInfoEventProcessor : io/sentry/BackfillingEventProcessor {
+	public fun <init> (Landroid/content/Context;Lio/sentry/android/core/SentryAndroidOptions;Lio/sentry/android/core/BuildInfoProvider;)V
+	public fun getOrder ()Ljava/lang/Long;
+	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
+	public fun process (Lio/sentry/protocol/SentryTransaction;Lio/sentry/Hint;)Lio/sentry/protocol/SentryTransaction;
 }
 
 public final class io/sentry/android/core/BuildConfig {
