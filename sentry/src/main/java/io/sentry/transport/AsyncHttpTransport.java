@@ -309,14 +309,12 @@ public final class AsyncHttpTransport implements ITransport {
 
             options.getLogger().log(SentryLevel.ERROR, message);
 
-            if (result.getResponseCode() >= 400) {
+            // ignore e.g. 429 as we're not the ones actively dropping
+            if (result.getResponseCode() >= 400 && result.getResponseCode() != 429) {
               envelopeCache.discard(envelope);
-              // ignore e.g. 429 as we're not the ones actively dropping
-              if (result.getResponseCode() != 429) {
-                options
-                    .getClientReportRecorder()
-                    .recordLostEnvelope(DiscardReason.NETWORK_ERROR, envelopeWithClientReport);
-              }
+              options
+                  .getClientReportRecorder()
+                  .recordLostEnvelope(DiscardReason.NETWORK_ERROR, envelopeWithClientReport);
             }
 
             throw new IllegalStateException(message);
