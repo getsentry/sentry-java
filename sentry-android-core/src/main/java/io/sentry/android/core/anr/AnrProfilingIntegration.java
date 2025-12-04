@@ -55,6 +55,7 @@ public class AnrProfilingIntegration
   public void close() throws IOException {
     onBackground();
     enabled.set(false);
+    AppState.getInstance().removeAppStateListener(this);
 
     try (final @NotNull ISentryLifecycleToken ignored = profileManagerLock.acquire()) {
       final @Nullable AnrProfileManager p = profileManager;

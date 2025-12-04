@@ -48,15 +48,12 @@ class AnrProfilingIntegrationTest {
 
   @Test
   fun `onForeground starts monitoring thread`() {
-    // Arrange
     val integration = AnrProfilingIntegration()
     integration.register(mockScopes, options)
 
-    // Act
     integration.onForeground()
     Thread.sleep(100) // Allow thread to start
 
-    // Assert
     val thread = integration.getProperty<Thread?>("thread")
     assertNotNull(thread)
     assertTrue(thread.isAlive)
@@ -65,7 +62,6 @@ class AnrProfilingIntegrationTest {
 
   @Test
   fun `onBackground stops monitoring thread`() {
-    // Arrange
     val integration = AnrProfilingIntegration()
     integration.register(mockScopes, options)
     integration.onForeground()
@@ -74,17 +70,14 @@ class AnrProfilingIntegrationTest {
     val thread = integration.getProperty<Thread?>("thread")
     assertNotNull(thread)
 
-    // Act
     integration.onBackground()
     thread.join(2000) // Wait for thread to stop
 
-    // Assert
     assertTrue(!thread.isAlive)
   }
 
   @Test
   fun `close disables integration and interrupts thread`() {
-    // Arrange
     val integration = AnrProfilingIntegration()
     integration.register(mockScopes, options)
     integration.onForeground()
@@ -93,19 +86,19 @@ class AnrProfilingIntegrationTest {
     val thread = integration.getProperty<Thread?>("thread")
     assertNotNull(thread)
 
-    // Act
+    assertTrue(AppState.getInstance().lifecycleObserver.listeners.isNotEmpty())
+
     integration.close()
     thread.join(2000)
 
-    // Assert
     assertTrue(!thread.isAlive)
     val enabled = integration.getProperty<java.util.concurrent.atomic.AtomicBoolean>("enabled")
     assertTrue(!enabled.get())
+    assertTrue(AppState.getInstance().lifecycleObserver.listeners.isEmpty())
   }
 
   @Test
   fun `lifecycle methods have no influence after close`() {
-    // Arrange
     val integration = AnrProfilingIntegration()
     integration.register(mockScopes, options)
     integration.close()
@@ -118,11 +111,9 @@ class AnrProfilingIntegrationTest {
 
   @Test
   fun `multiple foreground calls do not create multiple threads`() {
-    // Arrange
     val integration = AnrProfilingIntegration()
     integration.register(mockScopes, options)
 
-    // Act
     integration.onForeground()
     Thread.sleep(100)
     val thread1 = integration.getProperty<Thread?>("thread")
@@ -131,7 +122,6 @@ class AnrProfilingIntegrationTest {
     Thread.sleep(100)
     val thread2 = integration.getProperty<Thread?>("thread")
 
-    // Assert
     assertNotNull(thread1)
     assertNotNull(thread2)
     assertEquals(thread1, thread2, "Should reuse the same thread")
@@ -145,7 +135,6 @@ class AnrProfilingIntegrationTest {
     val integration = AnrProfilingIntegration()
     integration.register(mockScopes, options)
 
-    // Act
     integration.onForeground()
     Thread.sleep(100)
     val thread1 = integration.getProperty<Thread?>("thread")
@@ -156,7 +145,6 @@ class AnrProfilingIntegrationTest {
     Thread.sleep(100)
     val thread2 = integration.getProperty<Thread?>("thread")
 
-    // Assert
     assertNotNull(thread1)
     assertNotNull(thread2)
     assertTrue(thread1 != thread2, "Should create a new thread after background")
@@ -166,7 +154,6 @@ class AnrProfilingIntegrationTest {
 
   @Test
   fun `properly walks through state transitions and collects stack traces`() {
-    // Arrange
     val mainThread = Thread.currentThread()
     SystemClock.setCurrentTimeMillis(1_00)
 
@@ -174,7 +161,6 @@ class AnrProfilingIntegrationTest {
     integration.register(mockScopes, options)
     integration.onForeground()
 
-    // Act
     SystemClock.setCurrentTimeMillis(1_000)
     integration.checkMainThread(mainThread)
     assertEquals(AnrProfilingIntegration.MainThreadState.IDLE, integration.state)
