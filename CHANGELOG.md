@@ -4,6 +4,7 @@
 
 ### Features
 
+- Android: Flush logs when app enters background ([#4951](https://github.com/getsentry/sentry-java/pull/4951))
 - Add option to capture additional OkHttp network request/response details in session replays ([#4919](https://github.com/getsentry/sentry-java/pull/4919))
   - Depends on `SentryOkHttpInterceptor` to intercept the request and extract request/response bodies
   - To enable, add url regexes via the `io.sentry.session-replay.network-detail-allow-urls` metadata tag in AndroidManifest ([code sample](https://github.com/getsentry/sentry-java/blob/b03edbb1b0d8b871c62a09bc02cbd8a4e1f6fea1/sentry-samples/sentry-samples-android/src/main/AndroidManifest.xml#L196-L205))
