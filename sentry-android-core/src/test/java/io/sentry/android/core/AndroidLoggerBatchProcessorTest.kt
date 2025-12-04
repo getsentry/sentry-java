@@ -4,6 +4,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.ISentryClient
 import io.sentry.SentryLogEvent
 import io.sentry.SentryLogLevel
+import io.sentry.SentryOptions
 import io.sentry.protocol.SentryId
 import io.sentry.test.ImmediateExecutorService
 import kotlin.test.AfterTest
@@ -24,10 +25,14 @@ class AndroidLoggerBatchProcessorTest {
     val options = SentryAndroidOptions()
     val client: ISentryClient = mock()
 
-    fun getSut(useImmediateExecutor: Boolean = false): AndroidLoggerBatchProcessor {
+    fun getSut(
+      useImmediateExecutor: Boolean = false,
+      config: ((SentryOptions) -> Unit)? = null,
+    ): AndroidLoggerBatchProcessor {
       if (useImmediateExecutor) {
         options.executorService = ImmediateExecutorService()
       }
+      config?.invoke(options)
       return AndroidLoggerBatchProcessor(options, client)
     }
   }
@@ -63,13 +68,12 @@ class AndroidLoggerBatchProcessorTest {
 
   @Test
   fun `onBackground handles executor exception gracefully`() {
-    val options = SentryAndroidOptions()
-    // Use a rejecting executor
-    val rejectingExecutor = mock<io.sentry.ISentryExecutorService>()
-    whenever(rejectingExecutor.submit(any())).thenThrow(RuntimeException("Rejected"))
-    options.executorService = rejectingExecutor
-
-    val sut = AndroidLoggerBatchProcessor(options, fixture.client)
+    val sut =
+      fixture.getSut { options ->
+        val rejectingExecutor = mock<io.sentry.ISentryExecutorService>()
+        whenever(rejectingExecutor.submit(any())).thenThrow(RuntimeException("Rejected"))
+        options.executorService = rejectingExecutor
+      }
 
     // Should not throw
     sut.onBackground()
