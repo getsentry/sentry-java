@@ -775,6 +775,15 @@ class AndroidOptionsInitializerTest {
   }
 
   @Test
+  fun `AndroidLoggerBatchProcessorFactory is set to options`() {
+    fixture.initSut()
+
+    assertTrue {
+      fixture.sentryOptions.logs.loggerBatchProcessorFactory is AndroidLoggerBatchProcessorFactory
+    }
+  }
+
+  @Test
   fun `does not install ComposeGestureTargetLocator, if sentry-compose is not available`() {
     fixture.initSutWithClassLoader()
 

@@ -82,6 +82,18 @@ public final class io/sentry/android/core/AndroidLogger : io/sentry/ILogger {
 	public fun log (Lio/sentry/SentryLevel;Ljava/lang/Throwable;Ljava/lang/String;[Ljava/lang/Object;)V
 }
 
+public final class io/sentry/android/core/AndroidLoggerBatchProcessor : io/sentry/logger/LoggerBatchProcessor, io/sentry/android/core/AppState$AppStateListener {
+	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/ISentryClient;)V
+	public fun close (Z)V
+	public fun onBackground ()V
+	public fun onForeground ()V
+}
+
+public final class io/sentry/android/core/AndroidLoggerBatchProcessorFactory : io/sentry/logger/ILoggerBatchProcessorFactory {
+	public fun <init> ()V
+	public fun create (Lio/sentry/SentryOptions;Lio/sentry/SentryClient;)Lio/sentry/logger/ILoggerBatchProcessor;
+}
+
 public class io/sentry/android/core/AndroidMemoryCollector : io/sentry/IPerformanceSnapshotCollector {
 	public fun <init> ()V
 	public fun collect (Lio/sentry/PerformanceCollectionData;)V

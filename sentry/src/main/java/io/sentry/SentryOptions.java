@@ -15,6 +15,8 @@ import io.sentry.internal.gestures.GestureTargetLocator;
 import io.sentry.internal.modules.IModulesLoader;
 import io.sentry.internal.modules.NoOpModulesLoader;
 import io.sentry.internal.viewhierarchy.ViewHierarchyExporter;
+import io.sentry.logger.DefaultLoggerBatchProcessorFactory;
+import io.sentry.logger.ILoggerBatchProcessorFactory;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.transport.ITransport;
@@ -3672,6 +3674,9 @@ public class SentryOptions {
      */
     private @Nullable BeforeSendLogCallback beforeSend;
 
+    private @NotNull ILoggerBatchProcessorFactory loggerBatchProcessorFactory =
+        new DefaultLoggerBatchProcessorFactory();
+
     /**
      * Whether Sentry Logs feature is enabled and Sentry.logger() usages are sent to Sentry.
      *
@@ -3706,6 +3711,17 @@ public class SentryOptions {
      */
     public void setBeforeSend(@Nullable BeforeSendLogCallback beforeSendLog) {
       this.beforeSend = beforeSendLog;
+    }
+
+    @ApiStatus.Internal
+    public @NotNull ILoggerBatchProcessorFactory getLoggerBatchProcessorFactory() {
+      return loggerBatchProcessorFactory;
+    }
+
+    @ApiStatus.Internal
+    public void setLoggerBatchProcessorFactory(
+        final @NotNull ILoggerBatchProcessorFactory loggerBatchProcessorFactory) {
+      this.loggerBatchProcessorFactory = loggerBatchProcessorFactory;
     }
 
     /** The BeforeSendLog callback */
