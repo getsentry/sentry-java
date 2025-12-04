@@ -3669,9 +3669,11 @@ public final class io/sentry/SentryOptions$DistributionOptions {
 public final class io/sentry/SentryOptions$Logs {
 	public fun <init> ()V
 	public fun getBeforeSend ()Lio/sentry/SentryOptions$Logs$BeforeSendLogCallback;
+	public fun getLoggerBatchProcessorFactory ()Lio/sentry/logger/ILoggerBatchProcessorFactory;
 	public fun isEnabled ()Z
 	public fun setBeforeSend (Lio/sentry/SentryOptions$Logs$BeforeSendLogCallback;)V
 	public fun setEnabled (Z)V
+	public fun setLoggerBatchProcessorFactory (Lio/sentry/logger/ILoggerBatchProcessorFactory;)V
 }
 
 public abstract interface class io/sentry/SentryOptions$Logs$BeforeSendLogCallback {
@@ -5021,6 +5023,11 @@ public abstract interface class io/sentry/internal/viewhierarchy/ViewHierarchyEx
 	public abstract fun export (Lio/sentry/protocol/ViewHierarchyNode;Ljava/lang/Object;)Z
 }
 
+public final class io/sentry/logger/DefaultLoggerBatchProcessorFactory : io/sentry/logger/ILoggerBatchProcessorFactory {
+	public fun <init> ()V
+	public fun create (Lio/sentry/SentryOptions;Lio/sentry/SentryClient;)Lio/sentry/logger/ILoggerBatchProcessor;
+}
+
 public abstract interface class io/sentry/logger/ILoggerApi {
 	public abstract fun debug (Ljava/lang/String;[Ljava/lang/Object;)V
 	public abstract fun error (Ljava/lang/String;[Ljava/lang/Object;)V
@@ -5039,6 +5046,10 @@ public abstract interface class io/sentry/logger/ILoggerBatchProcessor {
 	public abstract fun flush (J)V
 }
 
+public abstract interface class io/sentry/logger/ILoggerBatchProcessorFactory {
+	public abstract fun create (Lio/sentry/SentryOptions;Lio/sentry/SentryClient;)Lio/sentry/logger/ILoggerBatchProcessor;
+}
+
 public final class io/sentry/logger/LoggerApi : io/sentry/logger/ILoggerApi {
 	public fun <init> (Lio/sentry/Scopes;)V
 	public fun debug (Ljava/lang/String;[Ljava/lang/Object;)V
@@ -5052,10 +5063,11 @@ public final class io/sentry/logger/LoggerApi : io/sentry/logger/ILoggerApi {
 	public fun warn (Ljava/lang/String;[Ljava/lang/Object;)V
 }
 
-public final class io/sentry/logger/LoggerBatchProcessor : io/sentry/logger/ILoggerBatchProcessor {
+public class io/sentry/logger/LoggerBatchProcessor : io/sentry/logger/ILoggerBatchProcessor {
 	public static final field FLUSH_AFTER_MS I
 	public static final field MAX_BATCH_SIZE I
 	public static final field MAX_QUEUE_SIZE I
+	protected final field options Lio/sentry/SentryOptions;
 	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/ISentryClient;)V
 	public fun add (Lio/sentry/SentryLogEvent;)V
 	public fun close (Z)V
