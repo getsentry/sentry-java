@@ -242,7 +242,7 @@ class AnrV2IntegrationTest {
   fun `when latest ANR is older than 90 days, does not capture events`() {
     val oldTimestamp =
       System.currentTimeMillis() -
-        AnrV2Integration.NINETY_DAYS_THRESHOLD -
+        ApplicationExitInfoHistoryDispatcher.NINETY_DAYS_THRESHOLD -
         TimeUnit.DAYS.toMillis(2)
     val integration = fixture.getSut(tmpDir)
     fixture.addAppExitInfo(timestamp = oldTimestamp)
@@ -510,7 +510,7 @@ class AnrV2IntegrationTest {
     thread {
       Thread.sleep(200L)
       val sessionHint = HintUtils.createWithTypeCheckHint(SessionStartHint())
-      fixture.options.envelopeDiskCache.store(
+      fixture.options.envelopeDiskCache.storeEnvelope(
         SentryEnvelope(SentryId.EMPTY_ID, null, emptyList()),
         sessionHint,
       )
