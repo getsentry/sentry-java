@@ -1,6 +1,7 @@
 package io.sentry
 
 import io.sentry.SentryOptions.RequestSize
+import io.sentry.logger.ILoggerBatchProcessorFactory
 import io.sentry.util.StringUtils
 import java.io.File
 import java.net.Proxy
@@ -12,6 +13,7 @@ import kotlin.test.assertIs
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
@@ -907,5 +909,13 @@ class SentryOptionsTest {
     val options = SentryOptions()
     options.maxFeatureFlags = 50
     assertEquals(50, options.maxFeatureFlags)
+  }
+
+  @Test
+  fun `loggerBatchFactory can be changed`() {
+    val mock = mock<ILoggerBatchProcessorFactory>()
+    val options = SentryOptions()
+    options.logs.loggerBatchProcessorFactory = mock
+    assertSame(mock, options.logs.loggerBatchProcessorFactory)
   }
 }

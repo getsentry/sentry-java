@@ -1,5 +1,6 @@
 package io.sentry.logger;
 
+import com.jakewharton.nopen.annotation.Open;
 import io.sentry.DataCategory;
 import io.sentry.ISentryClient;
 import io.sentry.ISentryExecutorService;
@@ -23,13 +24,14 @@ import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class LoggerBatchProcessor implements ILoggerBatchProcessor {
+@Open
+public class LoggerBatchProcessor implements ILoggerBatchProcessor {
 
   public static final int FLUSH_AFTER_MS = 5000;
   public static final int MAX_BATCH_SIZE = 100;
   public static final int MAX_QUEUE_SIZE = 1000;
 
-  private final @NotNull SentryOptions options;
+  protected final @NotNull SentryOptions options;
   private final @NotNull ISentryClient client;
   private final @NotNull Queue<SentryLogEvent> queue;
   private final @NotNull ISentryExecutorService executorService;
