@@ -137,15 +137,27 @@ public class TombstoneIntegration implements Integration, Closeable {
       try {
         final InputStream tombstoneInputStream = exitInfo.getTraceInputStream();
         if (tombstoneInputStream == null) {
-          logTombstoneFailure(exitInfo);
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.WARNING,
+                  "No tombstone InputStream available for ApplicationExitInfo from %s",
+                  DateTimeFormatter.ISO_INSTANT.format(
+                      Instant.ofEpochMilli(exitInfo.getTimestamp())));
           return null;
         }
 
         try (final TombstoneParser parser = new TombstoneParser(tombstoneInputStream)) {
           event = parser.parse();
         }
-      } catch (IOException e) {
-        logTombstoneFailure(exitInfo);
+      } catch (Throwable e) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.WARNING,
+                "Failed to parse tombstone from %s: %s",
+                DateTimeFormatter.ISO_INSTANT.format(Instant.ofEpochMilli(exitInfo.getTimestamp())),
+                e.getMessage());
         return null;
       }
 
@@ -158,16 +170,6 @@ public class TombstoneIntegration implements Integration, Closeable {
       final Hint hint = HintUtils.createWithTypeCheckHint(tombstoneHint);
 
       return new ApplicationExitInfoHistoryDispatcher.Report(event, hint, tombstoneHint);
-    }
-
-    @RequiresApi(api = Build.VERSION_CODES.R)
-    private void logTombstoneFailure(final @NotNull ApplicationExitInfo exitInfo) {
-      options
-          .getLogger()
-          .log(
-              SentryLevel.WARNING,
-              "Native crash report from %s does not contain a valid tombstone.",
-              DateTimeFormatter.ISO_INSTANT.format(Instant.ofEpochMilli(exitInfo.getTimestamp())));
     }
   }
 
