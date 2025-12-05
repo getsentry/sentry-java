@@ -1,6 +1,6 @@
 package io.sentry.util.network;
 
-import java.util.List;
+import io.sentry.JsonRawString;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 
@@ -15,23 +15,13 @@ import org.jetbrains.annotations.NotNull;
 public interface NetworkBody {
 
   /**
-   * Creates a NetworkBody from a JSON object.
+   * Creates a NetworkBody from a Java object which should be serialized to JSON.
    *
    * @param value The map representing the JSON object
    * @return A NetworkBody instance for the JSON object
    */
   static @NotNull NetworkBody fromJsonObject(@NotNull final Map<String, Object> value) {
     return new JsonObjectImpl(value);
-  }
-
-  /**
-   * Creates a NetworkBody from a JSON array.
-   *
-   * @param value The list representing the JSON array
-   * @return A NetworkBody instance for the JSON array
-   */
-  static @NotNull NetworkBody fromJsonArray(@NotNull final List<Object> value) {
-    return new JsonArrayImpl(value);
   }
 
   /**
@@ -42,6 +32,10 @@ public interface NetworkBody {
    */
   static @NotNull NetworkBody fromString(@NotNull final String value) {
     return new StringBodyImpl(value);
+  }
+
+  static @NotNull NetworkBody fromRawJson(@NotNull String rawJson) {
+    return new JsonRawImpl(rawJson);
   }
 
   /**
@@ -73,22 +67,21 @@ public interface NetworkBody {
     }
   }
 
-  /** Implementation for JSON array bodies */
-  final class JsonArrayImpl implements NetworkBody {
-    private final @NotNull List<Object> value;
+  final class JsonRawImpl implements NetworkBody {
+    private final @NotNull JsonRawString value;
 
-    JsonArrayImpl(@NotNull final List<Object> value) {
-      this.value = value;
+    JsonRawImpl(@NotNull final String value) {
+      this.value = new JsonRawString(value);
     }
 
     @Override
-    public @NotNull List<Object> getValue() {
+    public @NotNull JsonRawString getValue() {
       return value;
     }
 
     @Override
     public String toString() {
-      return "NetworkBody.JsonArray{" + value + '}';
+      return "JsonRawImpl{" + value + '}';
     }
   }
 

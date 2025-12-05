@@ -73,6 +73,8 @@ public final class JsonObjectSerializer {
       writer.value(object.toString());
     } else if (object instanceof Calendar) {
       serializeMap(writer, logger, calendarToMap((Calendar) object));
+    } else if (object instanceof JsonRawString) {
+      writer.jsonValue(((JsonRawString) object).getValue());
     } else if (object.getClass().isEnum()) {
       writer.value(object.toString());
     } else {

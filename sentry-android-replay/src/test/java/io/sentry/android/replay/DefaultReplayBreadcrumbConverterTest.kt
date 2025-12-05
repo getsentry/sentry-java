@@ -2,6 +2,7 @@ package io.sentry.android.replay
 
 import io.sentry.Breadcrumb
 import io.sentry.Hint
+import io.sentry.JsonRawString
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.SpanDataConvention
@@ -485,7 +486,7 @@ class DefaultReplayBreadcrumbConverterTest {
     fakeOkHttpNetworkDetails.setRequestDetails(
       ReplayNetworkRequestOrResponse(
         150L,
-        NetworkBody.fromJsonArray(listOf("item1", "item2", "item3")),
+        NetworkBody.fromRawJson("[\"item1\", \"item2\", \"item3\"]"),
         mapOf("Content-Type" to "application/json"),
       )
     )
@@ -516,7 +517,7 @@ class DefaultReplayBreadcrumbConverterTest {
     val requestData = rrwebEvent.data!!["request"] as? Map<*, *>
     assertNotNull(requestData)
     assertEquals(150L, requestData["size"])
-    assertEquals(listOf("item1", "item2", "item3"), requestData["body"])
+    assertEquals(JsonRawString("[\"item1\", \"item2\", \"item3\"]"), requestData["body"])
     assertEquals(mapOf("Content-Type" to "application/json"), requestData["headers"])
 
     // Response data

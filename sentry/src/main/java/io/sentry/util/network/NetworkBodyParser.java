@@ -1,14 +1,13 @@
 package io.sentry.util.network;
 
 import io.sentry.ILogger;
-import io.sentry.JsonObjectReader;
 import io.sentry.SentryLevel;
-import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -67,48 +66,28 @@ public final class NetworkBodyParser {
   private static @Nullable NetworkBody parse(
       @Nullable final String content,
       @Nullable final String contentType,
-      @Nullable final ILogger logger) {
+      @NotNull final ILogger logger) {
 
     if (content == null || content.isEmpty()) {
       return null;
     }
 
-    // Handle based on content type hint if provided
-    if (contentType != null) {
-      String lowerContentType = contentType.toLowerCase();
+    try {
+      // TODO content-type can contain actual encoding, e.g. "application/json; charset=utf-8"
+      if (contentType != null) {
+        final @NotNull String lowerContentType = contentType.toLowerCase(Locale.ROOT);
 
-      if (lowerContentType.contains("application/x-www-form-urlencoded")) {
-        return parseFormUrlEncoded(content, logger);
-      }
-
-      if (lowerContentType.contains("xml")) {
-        // For XML, return as string (could be enhanced to parse XML structure)
-        return NetworkBody.fromString(content);
-      }
-    }
-
-    // Try to parse as JSON using the existing JsonObjectReader
-    String trimmed = content.trim();
-    if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
-      try (JsonObjectReader reader = new JsonObjectReader(new StringReader(trimmed))) {
-        Object parsed = reader.nextObjectOrNull();
-        if (parsed instanceof Map) {
-          @SuppressWarnings("unchecked")
-          Map<String, Object> map = (Map<String, Object>) parsed;
-          return NetworkBody.fromJsonObject(map);
-        } else if (parsed instanceof List) {
-          @SuppressWarnings("unchecked")
-          List<Object> list = (List<Object>) parsed;
-          return NetworkBody.fromJsonArray(list);
+        if (lowerContentType.equals("application/x-www-form-urlencoded")) {
+          return parseFormUrlEncoded(content, logger);
         }
-      } catch (Exception e) {
-        if (logger != null) {
-          logger.log(SentryLevel.WARNING, "Failed to parse JSON: " + e.getMessage());
+
+        if (lowerContentType.contains("application/json")) {
+          return NetworkBody.fromRawJson(content);
         }
       }
+    } catch (Throwable t) {
+      logger.log(SentryLevel.WARNING, "Failed to perform content type network body parsing", t);
     }
-
-    // Default to string representation
     return NetworkBody.fromString(content);
   }
 
@@ -182,7 +161,7 @@ public final class NetworkBodyParser {
 
   /** Checks if the content type is binary and shouldn't be converted to string. */
   private static boolean isBinaryContentType(@NotNull final String contentType) {
-    String lower = contentType.toLowerCase();
+    final @NotNull String lower = contentType.toLowerCase(Locale.ROOT);
     return lower.contains("image/")
         || lower.contains("video/")
         || lower.contains("audio/")
