@@ -16,6 +16,7 @@ import io.sentry.protocol.SentryId;
 import io.sentry.transport.ICurrentDateProvider;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.ApiStatus;
@@ -131,9 +132,10 @@ final class ApplicationExitInfoHistoryDispatcher implements Runnable {
   @RequiresApi(api = Build.VERSION_CODES.R)
   private @Nullable ApplicationExitInfo removeLatest(
       final @NotNull List<ApplicationExitInfo> exitInfos) {
-    for (ApplicationExitInfo applicationExitInfo : exitInfos) {
+    for (Iterator<ApplicationExitInfo> it = exitInfos.iterator(); it.hasNext(); ) {
+      ApplicationExitInfo applicationExitInfo = it.next();
       if (applicationExitInfo.getReason() == policy.getTargetReason()) {
-        exitInfos.remove(applicationExitInfo);
+        it.remove();
         return applicationExitInfo;
       }
     }
