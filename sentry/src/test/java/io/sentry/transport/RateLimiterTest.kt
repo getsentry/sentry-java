@@ -580,7 +580,7 @@ class RateLimiterTest {
     val metricEnvelope = envelopeReader.read(rawEnvelope.byteInputStream())!!
     val metricItem = metricEnvelope.items.first()
 
-    rateLimiter.updateRetryAfterLimits("60:span:key", null, 1)
+    rateLimiter.updateRetryAfterLimits("60:trace_metric:key", null, 1)
     val result = rateLimiter.filter(metricEnvelope, Hint())
 
     assertNull(result)
