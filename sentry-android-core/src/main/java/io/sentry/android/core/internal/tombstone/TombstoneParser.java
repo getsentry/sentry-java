@@ -52,8 +52,9 @@ public class TombstoneParser implements Closeable {
     event.setMessage(constructMessage(tombstone));
     event.setDebugMeta(createDebugMeta(tombstone));
     event.setExceptions(createException(tombstone));
-    assert event.getExceptions() != null;
-    assert event.getExceptions().size() == 1;
+    if (event.getExceptions() == null || event.getExceptions().isEmpty()) {
+      throw new RuntimeException("Failed to decode exception information from tombstone");
+    }
     event.setThreads(createThreads(tombstone, event.getExceptions().get(0)));
 
     return event;
