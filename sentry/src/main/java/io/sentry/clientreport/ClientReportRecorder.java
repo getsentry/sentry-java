@@ -218,7 +218,10 @@ public final class ClientReportRecorder implements IClientReportRecorder {
     if (SentryItemType.Span.equals(itemType)) {
       return DataCategory.Span;
     }
-
+    if (SentryItemType.TraceMetric.equals(itemType)) {
+      return DataCategory.TraceMetric;
+    }
+    
     return DataCategory.Default;
   }
 }
