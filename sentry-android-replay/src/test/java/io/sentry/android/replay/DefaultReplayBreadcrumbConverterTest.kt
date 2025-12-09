@@ -423,7 +423,7 @@ class DefaultReplayBreadcrumbConverterTest {
     fakeOkHttpNetworkDetails.setRequestDetails(
       ReplayNetworkRequestOrResponse(
         100L,
-         NetworkBody("request body content"),
+        NetworkBody("request body content"),
         mapOf("Content-Type" to "application/json"),
       )
     )
