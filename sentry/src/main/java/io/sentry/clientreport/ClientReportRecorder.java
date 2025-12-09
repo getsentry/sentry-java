@@ -221,7 +221,7 @@ public final class ClientReportRecorder implements IClientReportRecorder {
     if (SentryItemType.TraceMetric.equals(itemType)) {
       return DataCategory.TraceMetric;
     }
-    
+
     return DataCategory.Default;
   }
 }
