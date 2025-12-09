@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Improve network body parsing and truncation handling ([#4958](https://github.com/getsentry/sentry-java/pull/4958))
+
 ## 8.28.0
 
 ### Features
