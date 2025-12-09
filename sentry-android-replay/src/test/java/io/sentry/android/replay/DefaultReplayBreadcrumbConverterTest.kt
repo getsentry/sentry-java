@@ -423,7 +423,7 @@ class DefaultReplayBreadcrumbConverterTest {
     fakeOkHttpNetworkDetails.setRequestDetails(
       ReplayNetworkRequestOrResponse(
         100L,
-        NetworkBody.fromString("request body content"),
+         NetworkBody("request body content"),
         mapOf("Content-Type" to "application/json"),
       )
     )
@@ -431,7 +431,7 @@ class DefaultReplayBreadcrumbConverterTest {
       200,
       ReplayNetworkRequestOrResponse(
         500L,
-        NetworkBody.fromJsonObject(mapOf("status" to "success", "message" to "OK")),
+        NetworkBody(mapOf("status" to "success", "message" to "OK")),
         mapOf("Content-Type" to "text/plain"),
       ),
     )
@@ -485,7 +485,7 @@ class DefaultReplayBreadcrumbConverterTest {
     fakeOkHttpNetworkDetails.setRequestDetails(
       ReplayNetworkRequestOrResponse(
         150L,
-        NetworkBody.fromJsonArray(listOf("item1", "item2", "item3")),
+        NetworkBody(listOf("item1", "item2", "item3")),
         mapOf("Content-Type" to "application/json"),
       )
     )
@@ -493,7 +493,7 @@ class DefaultReplayBreadcrumbConverterTest {
       404,
       ReplayNetworkRequestOrResponse(
         550L,
-        NetworkBody.fromJsonObject(mapOf("status" to "success", "message" to "OK")),
+        NetworkBody(mapOf("status" to "success", "message" to "OK")),
         mapOf("Content-Type" to "text/plain"),
       ),
     )
@@ -540,7 +540,7 @@ class DefaultReplayBreadcrumbConverterTest {
     networkRequestData.setRequestDetails(
       ReplayNetworkRequestOrResponse(
         100L,
-        NetworkBody.fromString("request body content"),
+        NetworkBody("request body content"),
         mapOf("Content-Type" to "application/json"),
       )
     )
@@ -548,7 +548,7 @@ class DefaultReplayBreadcrumbConverterTest {
       200,
       ReplayNetworkRequestOrResponse(
         100L,
-        NetworkBody.fromString("respnse body content"),
+        NetworkBody("response body content"),
         mapOf("Content-Type" to "application/json"),
       ),
     )
