@@ -60,9 +60,9 @@ public final class NetworkBodyParser {
       return parse(content, contentType, isPartial, logger);
     } catch (UnsupportedEncodingException e) {
       logger.log(SentryLevel.WARNING, "Failed to decode bytes: " + e.getMessage());
-      final List<NetworkBody.NetworkBodyWarning> warnings = new ArrayList<>();
-      warnings.add(NetworkBody.NetworkBodyWarning.BODY_PARSE_ERROR);
-      return new NetworkBody("[Failed to decode bytes, " + bytes.length + " bytes]", warnings);
+      return new NetworkBody(
+          "[Failed to decode bytes, " + bytes.length + " bytes]",
+          Collections.singletonList(NetworkBody.NetworkBodyWarning.BODY_PARSE_ERROR));
     }
   }
 

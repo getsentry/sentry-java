@@ -5,8 +5,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Represents the body content of a network request or response. Can be one of: JSON object, JSON
- * array, or string.
+ * Represents the body content of a network request or response.
  *
  * <p>See <a
  * href="https://github.com/getsentry/sentry-javascript/blob/develop/packages/replay-internal/src/types/request.ts">Javascript
@@ -36,6 +35,8 @@ public final class NetworkBody {
     return warnings;
   }
 
+  // Based on
+  // https://github.com/getsentry/sentry/blob/ccb61aa9b0f33e1333830093a5ce3bd5db88ef33/static/app/utils/replays/replay.tsx#L5-L12
   public enum NetworkBodyWarning {
     JSON_TRUNCATED("JSON_TRUNCATED"),
     TEXT_TRUNCATED("TEXT_TRUNCATED"),
