@@ -1,19 +1,24 @@
 package io.sentry.util.network;
 
 import io.sentry.ILogger;
-import io.sentry.JsonObjectReader;
 import io.sentry.SentryLevel;
+import io.sentry.vendor.gson.stream.JsonReader;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /** Utility class for parsing and creating NetworkBody instances. */
+@ApiStatus.Internal
 public final class NetworkBodyParser {
 
   private NetworkBodyParser() {}
@@ -42,31 +47,29 @@ public final class NetworkBodyParser {
 
     if (contentType != null && isBinaryContentType(contentType)) {
       // For binary content, return a description instead of the actual content
-      return NetworkBody.fromString(
+      return new NetworkBody(
           "[Binary data, " + bytes.length + " bytes, type: " + contentType + "]");
     }
 
-    // Check size limit and truncate if necessary
-    if (bytes.length > maxSizeBytes) {
-      logger.log(
-          SentryLevel.WARNING, "Content exceeds max size limit of " + maxSizeBytes + " bytes");
-      return createTruncatedNetworkBody(bytes, maxSizeBytes, charset);
-    }
+    final boolean isPartial = bytes.length >= maxSizeBytes;
 
     // Convert to string and parse
     try {
-      String effectiveCharset = charset != null ? charset : "UTF-8";
-      String content = new String(bytes, effectiveCharset);
-      return parse(content, contentType, logger);
+      final String effectiveCharset = charset != null ? charset : "UTF-8";
+      final String content = new String(bytes, effectiveCharset);
+      return parse(content, contentType, isPartial, logger);
     } catch (UnsupportedEncodingException e) {
       logger.log(SentryLevel.WARNING, "Failed to decode bytes: " + e.getMessage());
-      return NetworkBody.fromString("[Failed to decode bytes, " + bytes.length + " bytes]");
+      final List<NetworkBody.NetworkBodyWarning> warnings = new ArrayList<>();
+      warnings.add(NetworkBody.NetworkBodyWarning.BODY_PARSE_ERROR);
+      return new NetworkBody("[Failed to decode bytes, " + bytes.length + " bytes]", warnings);
     }
   }
 
   private static @Nullable NetworkBody parse(
       @Nullable final String content,
       @Nullable final String contentType,
+      final boolean isPartial,
       @Nullable final ILogger logger) {
 
     if (content == null || content.isEmpty()) {
@@ -75,46 +78,45 @@ public final class NetworkBodyParser {
 
     // Handle based on content type hint if provided
     if (contentType != null) {
-      String lowerContentType = contentType.toLowerCase();
-
+      final @NotNull String lowerContentType = contentType.toLowerCase(Locale.ROOT);
       if (lowerContentType.contains("application/x-www-form-urlencoded")) {
-        return parseFormUrlEncoded(content, logger);
-      }
-
-      if (lowerContentType.contains("xml")) {
-        // For XML, return as string (could be enhanced to parse XML structure)
-        return NetworkBody.fromString(content);
-      }
-    }
-
-    // Try to parse as JSON using the existing JsonObjectReader
-    String trimmed = content.trim();
-    if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
-      try (JsonObjectReader reader = new JsonObjectReader(new StringReader(trimmed))) {
-        Object parsed = reader.nextObjectOrNull();
-        if (parsed instanceof Map) {
-          @SuppressWarnings("unchecked")
-          Map<String, Object> map = (Map<String, Object>) parsed;
-          return NetworkBody.fromJsonObject(map);
-        } else if (parsed instanceof List) {
-          @SuppressWarnings("unchecked")
-          List<Object> list = (List<Object>) parsed;
-          return NetworkBody.fromJsonArray(list);
-        }
-      } catch (Exception e) {
-        if (logger != null) {
-          logger.log(SentryLevel.WARNING, "Failed to parse JSON: " + e.getMessage());
-        }
+        return parseFormUrlEncoded(content, isPartial, logger);
+      } else if (lowerContentType.contains("application/json")) {
+        return parseJson(content, isPartial, logger);
       }
     }
 
     // Default to string representation
-    return NetworkBody.fromString(content);
+    return new NetworkBody(content);
+  }
+
+  @NotNull
+  private static NetworkBody parseJson(
+      final @NotNull String content, final boolean isPartial, final @Nullable ILogger logger) {
+    try (final JsonReader reader = new JsonReader(new StringReader(content))) {
+      final @Nullable Object data = readJsonSafely(reader);
+      if (data != null) {
+        final @Nullable List<NetworkBody.NetworkBodyWarning> warnings;
+        if (isPartial) {
+          warnings = Collections.singletonList(NetworkBody.NetworkBodyWarning.JSON_TRUNCATED);
+        } else {
+          warnings = null;
+        }
+        return new NetworkBody(data, warnings);
+      }
+    } catch (Exception e) {
+      if (logger != null) {
+        logger.log(SentryLevel.WARNING, "Failed to parse JSON: " + e.getMessage());
+      }
+    }
+    return new NetworkBody(
+        null, Collections.singletonList(NetworkBody.NetworkBodyWarning.INVALID_JSON));
   }
 
   /** Parses URL-encoded form data into a JsonObject NetworkBody. */
-  private static @Nullable NetworkBody parseFormUrlEncoded(
-      @NotNull final String content, @Nullable final ILogger logger) {
+  @NotNull
+  private static NetworkBody parseFormUrlEncoded(
+      @NotNull final String content, final boolean isPartial, @Nullable final ILogger logger) {
     try {
       Map<String, Object> params = new HashMap<>();
       String[] pairs = content.split("&", -1);
@@ -144,40 +146,20 @@ public final class NetworkBodyParser {
           }
         }
       }
-
-      return NetworkBody.fromJsonObject(params);
+      final List<NetworkBody.NetworkBodyWarning> warnings;
+      if (isPartial) {
+        warnings = Collections.singletonList(NetworkBody.NetworkBodyWarning.TEXT_TRUNCATED);
+      } else {
+        warnings = null;
+      }
+      return new NetworkBody(params, warnings);
     } catch (UnsupportedEncodingException e) {
       if (logger != null) {
         logger.log(SentryLevel.WARNING, "Failed to parse form data: " + e.getMessage());
       }
-      return null;
     }
-  }
-
-  /** Creates a truncated NetworkBody from oversized bytes with proper UTF-8 character handling. */
-  private static @NotNull NetworkBody createTruncatedNetworkBody(
-      @NotNull final byte[] bytes, final int maxSizeBytes, @Nullable final String charset) {
-    byte[] truncatedBytes = new byte[maxSizeBytes];
-    System.arraycopy(bytes, 0, truncatedBytes, 0, maxSizeBytes);
-
-    try {
-      String effectiveCharset = charset != null ? charset : "UTF-8";
-      String content = new String(truncatedBytes, effectiveCharset);
-
-      // Find the last complete character by checking for replacement character
-      int lastValidIndex = content.length();
-      while (lastValidIndex > 0 && content.charAt(lastValidIndex - 1) == '\uFFFD') {
-        lastValidIndex--;
-      }
-      if (lastValidIndex < content.length()) {
-        content = content.substring(0, lastValidIndex);
-      }
-      content += "...[truncated]";
-      return NetworkBody.fromString(content);
-    } catch (UnsupportedEncodingException e) {
-      return NetworkBody.fromString(
-          "[Failed to decode truncated bytes, " + bytes.length + " bytes]");
-    }
+    return new NetworkBody(
+        null, Collections.singletonList(NetworkBody.NetworkBodyWarning.BODY_PARSE_ERROR));
   }
 
   /** Checks if the content type is binary and shouldn't be converted to string. */
@@ -190,5 +172,63 @@ public final class NetworkBodyParser {
         || lower.contains("application/pdf")
         || lower.contains("application/zip")
         || lower.contains("application/gzip");
+  }
+
+  @Nullable
+  private static Object readJsonSafely(final @NotNull JsonReader reader) {
+    try {
+      switch (reader.peek()) {
+        case BEGIN_OBJECT:
+          final @NotNull Map<String, Object> map = new LinkedHashMap<>();
+          reader.beginObject();
+          try {
+            while (reader.hasNext()) {
+              try {
+                String name = reader.nextName();
+                map.put(name, readJsonSafely(reader)); // recursive call
+              } catch (Exception e) {
+                // ignored
+              }
+            }
+            reader.endObject();
+          } catch (Exception e) {
+            // ignored
+          }
+          return map;
+
+        case BEGIN_ARRAY:
+          final List<Object> list = new ArrayList<>();
+          reader.beginArray();
+          try {
+            while (reader.hasNext()) {
+              list.add(readJsonSafely(reader)); // recursive call
+            }
+            reader.endArray();
+          } catch (Exception e) {
+            // ignored
+          }
+
+          return list;
+
+        case STRING:
+          return reader.nextString();
+
+        case NUMBER:
+          // You can customize number handling (int, long, double) here
+          return reader.nextDouble();
+
+        case BOOLEAN:
+          return reader.nextBoolean();
+
+        case NULL:
+          reader.nextNull();
+          return null;
+
+        default:
+          throw new IllegalStateException("Unexpected JSON token: " + reader.peek());
+      }
+    } catch (Exception e) {
+      return null;
+    }
   }
 }
