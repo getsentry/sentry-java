@@ -4,7 +4,7 @@
 
 ### Internal
 
-- Support `metric` envelope item type ([#X](https://github.com/getsentry/sentry-java/pull/X))
+- Support `metric` envelope item type ([#4956](https://github.com/getsentry/sentry-java/pull/4956))
 
 ## 8.28.0
 
