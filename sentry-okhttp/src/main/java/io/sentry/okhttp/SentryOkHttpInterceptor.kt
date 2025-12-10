@@ -318,9 +318,8 @@ public open class SentryOkHttpInterceptor(
         val maxBodySize = SentryReplayOptions.MAX_NETWORK_BODY_SIZE
 
         // Peek at the body (doesn't consume it)
-        val peekBody = peekBody(maxBodySize.toLong() + 1)
+        val peekBody = peekBody(maxBodySize.toLong())
         val bodyBytes = peekBody.bytes()
-        val truncated = bodyBytes.size > maxBodySize
 
         val charset = contentType?.charset(Charsets.UTF_8)?.name() ?: "UTF-8"
         return NetworkBodyParser.fromBytes(

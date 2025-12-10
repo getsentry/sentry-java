@@ -87,7 +87,9 @@ public final class NetworkBodyParser {
     }
 
     // Default to string representation
-    return new NetworkBody(content);
+    final List<NetworkBody.NetworkBodyWarning> warnings =
+        isPartial ? Collections.singletonList(NetworkBody.NetworkBodyWarning.TEXT_TRUNCATED) : null;
+    return new NetworkBody(content, warnings);
   }
 
   @NotNull
