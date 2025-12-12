@@ -243,7 +243,9 @@ public open class DefaultReplayBreadcrumbConverter() : ReplayBreadcrumbConverter
           request.size?.let { requestData["size"] = it }
           request.body?.let {
             requestData["body"] = it.body
-            requestData["warnings"] = it.warnings?.map { w -> w.value }
+            it.warnings?.let { warnings ->
+              requestData["warnings"] = warnings.map { warning -> warning.value }
+            }
           }
 
           if (request.headers.isNotEmpty()) {
@@ -260,7 +262,9 @@ public open class DefaultReplayBreadcrumbConverter() : ReplayBreadcrumbConverter
           response.size?.let { responseData["size"] = it }
           response.body?.let {
             responseData["body"] = it.body
-            responseData["warnings"] = it.warnings?.map { w -> w.value }
+            it.warnings?.let { warnings ->
+              responseData["warnings"] = warnings.map { warning -> warning.value }
+            }
           }
 
           if (response.headers.isNotEmpty()) {

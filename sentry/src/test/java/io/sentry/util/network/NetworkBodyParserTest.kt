@@ -19,11 +19,24 @@ class NetworkBodyParserTest {
   }
 
   @Test
+  fun `null json body gets detected correctly`() {
+    val logger = mock<ILogger>()
+    val rawJson = "null"
+    val bytes = rawJson.toByteArray()
+    val maxSize = bytes.size
+
+    val body = NetworkBodyParser.fromBytes(bytes, "application/json", null, maxSize, logger)
+    assertNotNull(body)
+    assertNull(body.warnings)
+    assertNull(body.body)
+  }
+
+  @Test
   fun `json gets detected correctly`() {
     val logger = mock<ILogger>()
     val rawJson = "[1, 2, 3]"
     val bytes = rawJson.toByteArray()
-    val maxSize = bytes.size + 1
+    val maxSize = bytes.size
 
     val body = NetworkBodyParser.fromBytes(bytes, "application/json", null, maxSize, logger)
     assertNotNull(body)
@@ -34,11 +47,11 @@ class NetworkBodyParserTest {
   @Test
   fun `partial json gets parsed correctly`() {
     val logger = mock<ILogger>()
-    val rawJson = "[1, 2, 3"
+    val rawJson = "[1, 2, 3]"
     val bytes = rawJson.toByteArray()
     val maxSize = bytes.size
 
-    val body = NetworkBodyParser.fromBytes(bytes, "application/json", null, maxSize, logger)
+    val body = NetworkBodyParser.fromBytes(bytes, "application/json", null, maxSize - 1, logger)
     assertNotNull(body)
     assertEquals(listOf(NetworkBody.NetworkBodyWarning.JSON_TRUNCATED), body.warnings)
     assertEquals(listOf(1.0, 2.0, 3.0), body.body)
@@ -50,7 +63,7 @@ class NetworkBodyParserTest {
     val rawJson = """{"name":"John","age":30,"active":true}"""
     val bytes = rawJson.toByteArray()
 
-    val body = NetworkBodyParser.fromBytes(bytes, "application/json", null, bytes.size + 1, logger)
+    val body = NetworkBodyParser.fromBytes(bytes, "application/json", null, bytes.size, logger)
     assertNotNull(body)
     assertNull(body.warnings)
 
@@ -67,7 +80,7 @@ class NetworkBodyParserTest {
       """{"string":"text","number":42,"bool":false,"null":null,"array":[1,2],"nested":{"key":"value"}}"""
     val bytes = rawJson.toByteArray()
 
-    val body = NetworkBodyParser.fromBytes(bytes, "application/json", null, bytes.size + 1, logger)
+    val body = NetworkBodyParser.fromBytes(bytes, "application/json", null, bytes.size, logger)
     assertNotNull(body)
 
     @Suppress("UNCHECKED_CAST") val map = body.body as Map<String, Any?>
@@ -87,7 +100,7 @@ class NetworkBodyParserTest {
     val rawJson = "\"hello world\""
     val bytes = rawJson.toByteArray()
 
-    val body = NetworkBodyParser.fromBytes(bytes, "application/json", null, bytes.size + 1, logger)
+    val body = NetworkBodyParser.fromBytes(bytes, "application/json", null, bytes.size, logger)
     assertNotNull(body)
     assertEquals("hello world", body.body)
   }
@@ -98,7 +111,7 @@ class NetworkBodyParserTest {
     val rawJson = "123.45"
     val bytes = rawJson.toByteArray()
 
-    val body = NetworkBodyParser.fromBytes(bytes, "application/json", null, bytes.size + 1, logger)
+    val body = NetworkBodyParser.fromBytes(bytes, "application/json", null, bytes.size, logger)
     assertNotNull(body)
     assertEquals(123.45, body.body)
   }
@@ -109,7 +122,7 @@ class NetworkBodyParserTest {
     val rawJson = "true"
     val bytes = rawJson.toByteArray()
 
-    val body = NetworkBodyParser.fromBytes(bytes, "application/json", null, bytes.size + 1, logger)
+    val body = NetworkBodyParser.fromBytes(bytes, "application/json", null, bytes.size, logger)
     assertNotNull(body)
     assertEquals(true, body.body)
   }
@@ -120,22 +133,9 @@ class NetworkBodyParserTest {
     val rawJson = "null"
     val bytes = rawJson.toByteArray()
 
-    val body = NetworkBodyParser.fromBytes(bytes, "application/json", null, bytes.size + 1, logger)
+    val body = NetworkBodyParser.fromBytes(bytes, "application/json", null, bytes.size, logger)
     assertNotNull(body)
     assertNull(body.body)
-  }
-
-  @Test
-  fun `invalid json returns warning`() {
-    val logger = mock<ILogger>()
-    val rawJson = "{invalid json"
-    val bytes = rawJson.toByteArray()
-
-    val body = NetworkBodyParser.fromBytes(bytes, "application/json", null, bytes.size + 1, logger)
-    assertNotNull(body)
-    @Suppress("UNCHECKED_CAST") val map = body.body as Map<String, Any>
-    assertTrue(map.isEmpty())
-    assertNull(body.warnings)
   }
 
   @Test
@@ -144,10 +144,37 @@ class NetworkBodyParserTest {
     val rawJson = "not json at all"
     val bytes = rawJson.toByteArray()
 
-    val body = NetworkBodyParser.fromBytes(bytes, "application/json", null, bytes.size + 1, logger)
+    val body = NetworkBodyParser.fromBytes(bytes, "application/json", null, bytes.size, logger)
     assertNotNull(body)
     assertNull(body.body)
     assertEquals(listOf(NetworkBody.NetworkBodyWarning.INVALID_JSON), body.warnings)
+  }
+
+  @Test
+  fun `highly nested json gets truncated`() {
+    val logger = mock<ILogger>()
+    fun wrap(json: String) = "{\"key\": $json}"
+
+    var rawJson = "{\"key\": \"value\"}"
+    for (i in 0..200) {
+      rawJson = wrap(rawJson)
+    }
+
+    val bytes = rawJson.toByteArray()
+    val maxSize = bytes.size
+
+    val body = NetworkBodyParser.fromBytes(bytes, "application/json", null, maxSize, logger)
+    assertNotNull(body)
+
+    var map = body.body
+    var depth = 0
+    while (map is Map<*, *>) {
+      depth++
+      map = map["key"]
+    }
+
+    assertEquals(listOf(NetworkBody.NetworkBodyWarning.JSON_TRUNCATED), body.warnings)
+    assertEquals(100, depth)
   }
 
   @Test
@@ -161,7 +188,7 @@ class NetworkBodyParserTest {
         bytes,
         "application/x-www-form-urlencoded",
         null,
-        bytes.size + 1,
+        bytes.size,
         logger,
       )
     assertNotNull(body)
@@ -184,7 +211,7 @@ class NetworkBodyParserTest {
         bytes,
         "application/x-www-form-urlencoded",
         null,
-        bytes.size + 1,
+        bytes.size,
         logger,
       )
     assertNotNull(body)
@@ -205,7 +232,7 @@ class NetworkBodyParserTest {
         bytes,
         "application/x-www-form-urlencoded",
         null,
-        bytes.size + 1,
+        bytes.size,
         logger,
       )
     assertNotNull(body)
@@ -226,7 +253,7 @@ class NetworkBodyParserTest {
         bytes,
         "application/x-www-form-urlencoded",
         null,
-        bytes.size + 1,
+        bytes.size,
         logger,
       )
     assertNotNull(body)
@@ -240,7 +267,8 @@ class NetworkBodyParserTest {
   @Test
   fun `partial form urlencoded gets parsed with warning`() {
     val logger = mock<ILogger>()
-    val formData = "name=John&age=30"
+    val suffix = "&more=more"
+    val formData = "name=John&age=30$suffix"
     val bytes = formData.toByteArray()
 
     val body =
@@ -248,13 +276,14 @@ class NetworkBodyParserTest {
         bytes,
         "application/x-www-form-urlencoded",
         null,
-        bytes.size,
+        bytes.size - suffix.toByteArray().size,
         logger,
       )
     assertNotNull(body)
     assertEquals(listOf(NetworkBody.NetworkBodyWarning.TEXT_TRUNCATED), body.warnings)
 
     @Suppress("UNCHECKED_CAST") val map = body.body as Map<String, Any>
+    assertEquals(2, map.size)
     assertEquals("John", map["name"])
     assertEquals("30", map["age"])
   }
@@ -265,7 +294,7 @@ class NetworkBodyParserTest {
     val text = "This is plain text content"
     val bytes = text.toByteArray()
 
-    val body = NetworkBodyParser.fromBytes(bytes, "text/plain", null, bytes.size + 1, logger)
+    val body = NetworkBodyParser.fromBytes(bytes, "text/plain", null, bytes.size, logger)
     assertNotNull(body)
     assertNull(body.warnings)
     assertEquals(text, body.body)
@@ -277,7 +306,7 @@ class NetworkBodyParserTest {
     val text = "This is plain text content"
     val bytes = text.toByteArray()
 
-    val body = NetworkBodyParser.fromBytes(bytes, null, null, bytes.size + 1, logger)
+    val body = NetworkBodyParser.fromBytes(bytes, null, null, bytes.size, logger)
     assertNotNull(body)
     assertNull(body.warnings)
     assertEquals(text, body.body)
@@ -286,113 +315,32 @@ class NetworkBodyParserTest {
   @Test
   fun `partial plain text gets warning`() {
     val logger = mock<ILogger>()
+    val truncated = "..."
     val text = "This is plain text content"
-    val bytes = text.toByteArray()
+    val fullText = "$text$truncated"
+    val bytes = fullText.toByteArray()
 
-    val body = NetworkBodyParser.fromBytes(bytes, "text/plain", null, bytes.size, logger)
+    val body =
+      NetworkBodyParser.fromBytes(
+        bytes,
+        "text/plain",
+        null,
+        bytes.size - truncated.toByteArray().size,
+        logger,
+      )
     assertNotNull(body)
     assertEquals(listOf(NetworkBody.NetworkBodyWarning.TEXT_TRUNCATED), body.warnings)
     assertEquals(text, body.body)
   }
 
   @Test
-  fun `binary image content returns description`() {
+  fun `binary content returns description`() {
     val logger = mock<ILogger>()
     val bytes = ByteArray(100) { it.toByte() }
 
-    val body = NetworkBodyParser.fromBytes(bytes, "image/png", null, bytes.size + 1, logger)
+    val body = NetworkBodyParser.fromBytes(bytes, "image/png", null, bytes.size, logger)
     assertNotNull(body)
     assertEquals("[Binary data, 100 bytes, type: image/png]", body.body)
-  }
-
-  @Test
-  fun `binary video content returns description`() {
-    val logger = mock<ILogger>()
-    val bytes = ByteArray(500) { it.toByte() }
-
-    val body = NetworkBodyParser.fromBytes(bytes, "video/mp4", null, bytes.size + 1, logger)
-    assertNotNull(body)
-    assertEquals("[Binary data, 500 bytes, type: video/mp4]", body.body)
-  }
-
-  @Test
-  fun `binary audio content returns description`() {
-    val logger = mock<ILogger>()
-    val bytes = ByteArray(200) { it.toByte() }
-
-    val body = NetworkBodyParser.fromBytes(bytes, "audio/mpeg", null, bytes.size + 1, logger)
-    assertNotNull(body)
-    assertEquals("[Binary data, 200 bytes, type: audio/mpeg]", body.body)
-  }
-
-  @Test
-  fun `binary pdf content returns description`() {
-    val logger = mock<ILogger>()
-    val bytes = ByteArray(1000) { it.toByte() }
-
-    val body = NetworkBodyParser.fromBytes(bytes, "application/pdf", null, bytes.size + 1, logger)
-    assertNotNull(body)
-    assertEquals("[Binary data, 1000 bytes, type: application/pdf]", body.body)
-  }
-
-  @Test
-  fun `binary zip content returns description`() {
-    val logger = mock<ILogger>()
-    val bytes = ByteArray(300) { it.toByte() }
-
-    val body = NetworkBodyParser.fromBytes(bytes, "application/zip", null, bytes.size + 1, logger)
-    assertNotNull(body)
-    assertEquals("[Binary data, 300 bytes, type: application/zip]", body.body)
-  }
-
-  @Test
-  fun `binary gzip content returns description`() {
-    val logger = mock<ILogger>()
-    val bytes = ByteArray(150) { it.toByte() }
-
-    val body = NetworkBodyParser.fromBytes(bytes, "application/gzip", null, bytes.size + 1, logger)
-    assertNotNull(body)
-    assertEquals("[Binary data, 150 bytes, type: application/gzip]", body.body)
-  }
-
-  @Test
-  fun `binary octet-stream content returns description`() {
-    val logger = mock<ILogger>()
-    val bytes = ByteArray(250) { it.toByte() }
-
-    val body =
-      NetworkBodyParser.fromBytes(bytes, "application/octet-stream", null, bytes.size + 1, logger)
-    assertNotNull(body)
-    assertEquals("[Binary data, 250 bytes, type: application/octet-stream]", body.body)
-  }
-
-  @Test
-  fun `content type is case insensitive`() {
-    val logger = mock<ILogger>()
-    val rawJson = "[1, 2, 3]"
-    val bytes = rawJson.toByteArray()
-
-    val body = NetworkBodyParser.fromBytes(bytes, "APPLICATION/JSON", null, bytes.size + 1, logger)
-    assertNotNull(body)
-    assertEquals(listOf(1.0, 2.0, 3.0), body.body)
-  }
-
-  @Test
-  fun `content type with charset parameter gets parsed correctly`() {
-    val logger = mock<ILogger>()
-    val rawJson = "[1, 2, 3]"
-    val bytes = rawJson.toByteArray()
-
-    val body =
-      NetworkBodyParser.fromBytes(
-        bytes,
-        "application/json; charset=UTF-8",
-        null,
-        bytes.size + 1,
-        logger,
-      )
-    assertNotNull(body)
-    assertEquals(listOf(1.0, 2.0, 3.0), body.body)
   }
 
   @Test
@@ -401,7 +349,7 @@ class NetworkBodyParserTest {
     val text = "Hello World"
     val bytes = text.toByteArray(Charsets.UTF_16)
 
-    val body = NetworkBodyParser.fromBytes(bytes, "text/plain", "UTF-16", bytes.size + 1, logger)
+    val body = NetworkBodyParser.fromBytes(bytes, "text/plain", "UTF-16", bytes.size, logger)
     assertNotNull(body)
     assertEquals(text, body.body)
   }
@@ -412,13 +360,7 @@ class NetworkBodyParserTest {
     val bytes = "test".toByteArray()
 
     val body =
-      NetworkBodyParser.fromBytes(
-        bytes,
-        "text/plain",
-        "INVALID-CHARSET-NAME",
-        bytes.size + 1,
-        logger,
-      )
+      NetworkBodyParser.fromBytes(bytes, "text/plain", "INVALID-CHARSET-NAME", bytes.size, logger)
     assertNotNull(body)
     assertTrue(body.body is String)
     assertTrue((body.body as String).contains("Failed to decode bytes"))

@@ -27,7 +27,7 @@ public final class NetworkBodyParser {
    * Creates a NetworkBody from raw bytes with content type information. This is useful for handling
    * binary or unknown content types.
    *
-   * @param bytes The raw bytes of the body
+   * @param bytes The raw bytes of the body, may be truncated
    * @param contentType Optional content type hint to help with parsing
    * @param charset Optional charset to use for text conversion (defaults to UTF-8)
    * @param maxSizeBytes Maximum size to process
@@ -51,12 +51,12 @@ public final class NetworkBodyParser {
           "[Binary data, " + bytes.length + " bytes, type: " + contentType + "]");
     }
 
-    final boolean isPartial = bytes.length >= maxSizeBytes;
-
     // Convert to string and parse
     try {
       final String effectiveCharset = charset != null ? charset : "UTF-8";
-      final String content = new String(bytes, effectiveCharset);
+      final int size = Math.min(bytes.length, maxSizeBytes);
+      final boolean isPartial = bytes.length > maxSizeBytes;
+      final String content = new String(bytes, 0, size, effectiveCharset);
       return parse(content, contentType, isPartial, logger);
     } catch (UnsupportedEncodingException e) {
       logger.log(SentryLevel.WARNING, "Failed to decode bytes: " + e.getMessage());
@@ -86,7 +86,7 @@ public final class NetworkBodyParser {
       }
     }
 
-    // Default to string representation
+    // Default to string representation, e.g. for XML
     final List<NetworkBody.NetworkBodyWarning> warnings =
         isPartial ? Collections.singletonList(NetworkBody.NetworkBodyWarning.TEXT_TRUNCATED) : null;
     return new NetworkBody(content, warnings);
@@ -96,11 +96,17 @@ public final class NetworkBodyParser {
   private static NetworkBody parseJson(
       final @NotNull String content, final boolean isPartial, final @Nullable ILogger logger) {
     try (final JsonReader reader = new JsonReader(new StringReader(content))) {
-      final @Nullable Object data = readJsonSafely(reader);
-      if (data != null) {
+      final @NotNull SaferJsonParser.Result result = SaferJsonParser.parse(reader);
+      final @Nullable Object data = result.data;
+      if (data == null && !isPartial && !result.errored && !result.hitMaxDepth) {
+        // In case the actual JSON body is simply null, simply return null
+        return new NetworkBody(null);
+      } else {
         final @Nullable List<NetworkBody.NetworkBodyWarning> warnings;
-        if (isPartial) {
+        if (isPartial || result.hitMaxDepth) {
           warnings = Collections.singletonList(NetworkBody.NetworkBodyWarning.JSON_TRUNCATED);
+        } else if (result.errored) {
+          warnings = Collections.singletonList(NetworkBody.NetworkBodyWarning.INVALID_JSON);
         } else {
           warnings = null;
         }
@@ -166,7 +172,7 @@ public final class NetworkBodyParser {
 
   /** Checks if the content type is binary and shouldn't be converted to string. */
   private static boolean isBinaryContentType(@NotNull final String contentType) {
-    String lower = contentType.toLowerCase();
+    final @NotNull String lower = contentType.toLowerCase(Locale.ROOT);
     return lower.contains("image/")
         || lower.contains("video/")
         || lower.contains("audio/")
@@ -176,61 +182,88 @@ public final class NetworkBodyParser {
         || lower.contains("application/gzip");
   }
 
-  @Nullable
-  private static Object readJsonSafely(final @NotNull JsonReader reader) {
-    try {
-      switch (reader.peek()) {
-        case BEGIN_OBJECT:
-          final @NotNull Map<String, Object> map = new LinkedHashMap<>();
-          reader.beginObject();
-          try {
-            while (reader.hasNext()) {
-              try {
-                String name = reader.nextName();
-                map.put(name, readJsonSafely(reader)); // recursive call
-              } catch (Exception e) {
-                // ignored
-              }
-            }
-            reader.endObject();
-          } catch (Exception e) {
-            // ignored
-          }
-          return map;
+  private static class SaferJsonParser {
 
-        case BEGIN_ARRAY:
-          final List<Object> list = new ArrayList<>();
-          reader.beginArray();
-          try {
-            while (reader.hasNext()) {
-              list.add(readJsonSafely(reader)); // recursive call
-            }
-            reader.endArray();
-          } catch (Exception e) {
-            // ignored
-          }
+    private static final int MAX_DEPTH = 100;
 
-          return list;
+    private static class Result {
+      private @Nullable Object data;
+      private boolean hitMaxDepth;
+      private boolean errored;
+    }
 
-        case STRING:
-          return reader.nextString();
+    final Result result = new Result();
 
-        case NUMBER:
-          // You can customize number handling (int, long, double) here
-          return reader.nextDouble();
+    private SaferJsonParser() {}
 
-        case BOOLEAN:
-          return reader.nextBoolean();
+    @NotNull
+    public static SaferJsonParser.Result parse(final @NotNull JsonReader reader) {
+      final SaferJsonParser parser = new SaferJsonParser();
+      parser.result.data = parser.parse(reader, 0);
+      return parser.result;
+    }
 
-        case NULL:
-          reader.nextNull();
-          return null;
-
-        default:
-          throw new IllegalStateException("Unexpected JSON token: " + reader.peek());
+    @Nullable
+    private Object parse(final @NotNull JsonReader reader, final int currentDepth) {
+      if (result.errored) {
+        return null;
       }
-    } catch (Exception e) {
-      return null;
+      if (currentDepth >= MAX_DEPTH) {
+        result.hitMaxDepth = true;
+        return null;
+      }
+      try {
+        switch (reader.peek()) {
+          case BEGIN_OBJECT:
+            final @NotNull Map<String, Object> map = new LinkedHashMap<>();
+            try {
+              reader.beginObject();
+              while (reader.hasNext() && !result.errored) {
+                final String name = reader.nextName();
+                map.put(name, parse(reader, currentDepth + 1));
+              }
+              reader.endObject();
+            } catch (Exception e) {
+              result.errored = true;
+              return map;
+            }
+            return map;
+
+          case BEGIN_ARRAY:
+            final @NotNull List<Object> list = new ArrayList<>();
+            try {
+              reader.beginArray();
+              while (reader.hasNext() && !result.errored) {
+                list.add(parse(reader, currentDepth + 1));
+              }
+              reader.endArray();
+            } catch (Exception e) {
+              result.errored = true;
+              return list;
+            }
+            return list;
+
+          case STRING:
+            return reader.nextString();
+
+          case NUMBER:
+            return reader.nextDouble();
+
+          case BOOLEAN:
+            return reader.nextBoolean();
+
+          case NULL:
+            reader.nextNull();
+            return null;
+
+          default:
+            result.errored = true;
+            return null;
+        }
+      } catch (final Exception ignored) {
+        result.errored = true;
+        return null;
+      }
     }
   }
 }
