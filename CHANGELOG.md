@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Internal
+
+- Support `metric` envelope item type ([#4956](https://github.com/getsentry/sentry-java/pull/4956))
+
 ## 8.28.0
 
 ### Features
