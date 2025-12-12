@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixes
+
+- Session Replay: Improve network body parsing and truncation handling ([#4958](https://github.com/getsentry/sentry-java/pull/4958))
+
 ### Internal
 
 - Support `metric` envelope item type ([#4956](https://github.com/getsentry/sentry-java/pull/4956))

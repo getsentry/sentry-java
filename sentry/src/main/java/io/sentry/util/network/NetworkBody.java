@@ -1,113 +1,61 @@
 package io.sentry.util.network;
 
 import java.util.List;
-import java.util.Map;
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.Nullable;
 
 /**
- * Represents the body content of a network request or response. Can be one of: JSON object, JSON
- * array, or string.
+ * Represents the body content of a network request or response.
  *
  * <p>See <a
  * href="https://github.com/getsentry/sentry-javascript/blob/develop/packages/replay-internal/src/types/request.ts">Javascript
  * types</a>
  */
-public interface NetworkBody {
+@ApiStatus.Internal
+public final class NetworkBody {
 
-  /**
-   * Creates a NetworkBody from a JSON object.
-   *
-   * @param value The map representing the JSON object
-   * @return A NetworkBody instance for the JSON object
-   */
-  static @NotNull NetworkBody fromJsonObject(@NotNull final Map<String, Object> value) {
-    return new JsonObjectImpl(value);
+  private final @Nullable Object body;
+  private final @Nullable List<NetworkBodyWarning> warnings;
+
+  public NetworkBody(final @Nullable Object body) {
+    this(body, null);
   }
 
-  /**
-   * Creates a NetworkBody from a JSON array.
-   *
-   * @param value The list representing the JSON array
-   * @return A NetworkBody instance for the JSON array
-   */
-  static @NotNull NetworkBody fromJsonArray(@NotNull final List<Object> value) {
-    return new JsonArrayImpl(value);
+  public NetworkBody(
+      final @Nullable Object body, final @Nullable List<NetworkBodyWarning> warnings) {
+    this.body = body;
+    this.warnings = warnings;
   }
 
-  /**
-   * Creates a NetworkBody from string content.
-   *
-   * @param value The string content
-   * @return A NetworkBody instance for the string
-   */
-  static @NotNull NetworkBody fromString(@NotNull final String value) {
-    return new StringBodyImpl(value);
+  public @Nullable Object getBody() {
+    return body;
   }
 
-  /**
-   * Gets the underlying value of this NetworkBody.
-   *
-   * @return The value as an Object (could be Map, List, or String)
-   */
-  @NotNull
-  Object getValue();
+  public @Nullable List<NetworkBodyWarning> getWarnings() {
+    return warnings;
+  }
 
-  // Private implementation classes
+  // Based on
+  // https://github.com/getsentry/sentry/blob/ccb61aa9b0f33e1333830093a5ce3bd5db88ef33/static/app/utils/replays/replay.tsx#L5-L12
+  public enum NetworkBodyWarning {
+    JSON_TRUNCATED("JSON_TRUNCATED"),
+    TEXT_TRUNCATED("TEXT_TRUNCATED"),
+    INVALID_JSON("INVALID_JSON"),
+    BODY_PARSE_ERROR("BODY_PARSE_ERROR");
 
-  /** Implementation for JSON object bodies */
-  final class JsonObjectImpl implements NetworkBody {
-    private final @NotNull Map<String, Object> value;
+    private final String value;
 
-    JsonObjectImpl(@NotNull final Map<String, Object> value) {
+    NetworkBodyWarning(String value) {
       this.value = value;
     }
 
-    @Override
-    public @NotNull Map<String, Object> getValue() {
+    public String getValue() {
       return value;
-    }
-
-    @Override
-    public String toString() {
-      return "NetworkBody.JsonObject{" + value + '}';
     }
   }
 
-  /** Implementation for JSON array bodies */
-  final class JsonArrayImpl implements NetworkBody {
-    private final @NotNull List<Object> value;
-
-    JsonArrayImpl(@NotNull final List<Object> value) {
-      this.value = value;
-    }
-
-    @Override
-    public @NotNull List<Object> getValue() {
-      return value;
-    }
-
-    @Override
-    public String toString() {
-      return "NetworkBody.JsonArray{" + value + '}';
-    }
-  }
-
-  /** Implementation for string bodies */
-  final class StringBodyImpl implements NetworkBody {
-    private final @NotNull String value;
-
-    StringBodyImpl(@NotNull final String value) {
-      this.value = value;
-    }
-
-    @Override
-    public @NotNull String getValue() {
-      return value;
-    }
-
-    @Override
-    public String toString() {
-      return "NetworkBody.StringBody{" + value + '}';
-    }
+  @Override
+  public String toString() {
+    return "NetworkBody{" + "body=" + body + ", warnings=" + warnings + '}';
   }
 }

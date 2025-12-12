@@ -7481,29 +7481,22 @@ public final class io/sentry/util/UrlUtils$UrlDetails {
 	public fun getUrlOrFallback ()Ljava/lang/String;
 }
 
-public abstract interface class io/sentry/util/network/NetworkBody {
-	public static fun fromJsonArray (Ljava/util/List;)Lio/sentry/util/network/NetworkBody;
-	public static fun fromJsonObject (Ljava/util/Map;)Lio/sentry/util/network/NetworkBody;
-	public static fun fromString (Ljava/lang/String;)Lio/sentry/util/network/NetworkBody;
-	public abstract fun getValue ()Ljava/lang/Object;
-}
-
-public final class io/sentry/util/network/NetworkBody$JsonArrayImpl : io/sentry/util/network/NetworkBody {
-	public synthetic fun getValue ()Ljava/lang/Object;
-	public fun getValue ()Ljava/util/List;
+public final class io/sentry/util/network/NetworkBody {
+	public fun <init> (Ljava/lang/Object;)V
+	public fun <init> (Ljava/lang/Object;Ljava/util/List;)V
+	public fun getBody ()Ljava/lang/Object;
+	public fun getWarnings ()Ljava/util/List;
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class io/sentry/util/network/NetworkBody$JsonObjectImpl : io/sentry/util/network/NetworkBody {
-	public synthetic fun getValue ()Ljava/lang/Object;
-	public fun getValue ()Ljava/util/Map;
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class io/sentry/util/network/NetworkBody$StringBodyImpl : io/sentry/util/network/NetworkBody {
-	public synthetic fun getValue ()Ljava/lang/Object;
+public final class io/sentry/util/network/NetworkBody$NetworkBodyWarning : java/lang/Enum {
+	public static final field BODY_PARSE_ERROR Lio/sentry/util/network/NetworkBody$NetworkBodyWarning;
+	public static final field INVALID_JSON Lio/sentry/util/network/NetworkBody$NetworkBodyWarning;
+	public static final field JSON_TRUNCATED Lio/sentry/util/network/NetworkBody$NetworkBodyWarning;
+	public static final field TEXT_TRUNCATED Lio/sentry/util/network/NetworkBody$NetworkBodyWarning;
 	public fun getValue ()Ljava/lang/String;
-	public fun toString ()Ljava/lang/String;
+	public static fun valueOf (Ljava/lang/String;)Lio/sentry/util/network/NetworkBody$NetworkBodyWarning;
+	public static fun values ()[Lio/sentry/util/network/NetworkBody$NetworkBodyWarning;
 }
 
 public final class io/sentry/util/network/NetworkBodyParser {
