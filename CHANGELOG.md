@@ -4,7 +4,7 @@
 
 ### Fixes
 
-- Improve network body parsing and truncation handling ([#4958](https://github.com/getsentry/sentry-java/pull/4958))
+- Session Replay: Improve network body parsing and truncation handling ([#4958](https://github.com/getsentry/sentry-java/pull/4958))
 
 ### Internal
 
