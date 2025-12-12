@@ -4,16 +4,20 @@ import io.sentry.SentryEnvelope
 import io.sentry.SentryOptions
 import io.sentry.SentryOptionsManipulator
 import io.sentry.Session
+import io.sentry.cache.IEnvelopeCache
 import io.sentry.clientreport.ClientReportTestHelper.Companion.retryableHint
 import io.sentry.clientreport.ClientReportTestHelper.Companion.retryableUncaughtExceptionHint
 import io.sentry.clientreport.ClientReportTestHelper.Companion.uncaughtExceptionHint
 import io.sentry.clientreport.DiscardReason
 import io.sentry.clientreport.IClientReportRecorder
 import io.sentry.dsnString
+import io.sentry.hints.Retryable
 import io.sentry.protocol.User
+import io.sentry.util.HintUtils
 import java.io.IOException
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.eq
@@ -31,11 +35,12 @@ class AsyncHttpTransportClientReportTest {
     var transportGate = mock<ITransportGate>()
     var executor = mock<QueuedThreadPoolExecutor>()
     var rateLimiter = mock<RateLimiter>()
+    var envelopeCache = mock<IEnvelopeCache>()
     var sentryOptions: SentryOptions =
       SentryOptions().apply {
         dsn = dsnString
         setSerializer(mock())
-        setEnvelopeDiskCache(mock())
+        setEnvelopeDiskCache(envelopeCache)
       }
     var clientReportRecorder = mock<IClientReportRecorder>()
     val envelopeBeforeAttachingClientReport =
@@ -66,23 +71,36 @@ class AsyncHttpTransportClientReportTest {
       .attachReportToEnvelope(same(fixture.envelopeBeforeAttachingClientReport))
     verify(fixture.clientReportRecorder, never()).recordLostEnvelope(any(), any())
     verifyNoMoreInteractions(fixture.clientReportRecorder)
+    verify(fixture.envelopeCache).discard(fixture.envelopeBeforeAttachingClientReport)
   }
 
   @Test
-  fun `does not record lost envelope on 500 error for retryable`() {
+  fun `records lost envelope on 500 error for retryable`() {
     // given
     givenSetup(TransportResult.error(500))
+    whenever(
+        fixture.envelopeCache.storeEnvelope(eq(fixture.envelopeBeforeAttachingClientReport), any())
+      )
+      .thenReturn(true)
 
     // when
+    val retryableHint = retryableHint()
     assertFailsWith(java.lang.IllegalStateException::class) {
-      fixture.getSUT().send(fixture.envelopeBeforeAttachingClientReport, retryableHint())
+      fixture.getSUT().send(fixture.envelopeBeforeAttachingClientReport, retryableHint)
     }
 
     // then
     verify(fixture.clientReportRecorder, times(1))
       .attachReportToEnvelope(same(fixture.envelopeBeforeAttachingClientReport))
-    verify(fixture.clientReportRecorder, never()).recordLostEnvelope(any(), any())
+    verify(fixture.clientReportRecorder, times(1))
+      .recordLostEnvelope(
+        eq(DiscardReason.NETWORK_ERROR),
+        same(fixture.envelopeAfterAttachingClientReport),
+      )
     verifyNoMoreInteractions(fixture.clientReportRecorder)
+    val sentrySdkHint = HintUtils.getSentrySdkHint(retryableHint)
+    assertFalse((sentrySdkHint as Retryable).isRetry)
+    verify(fixture.envelopeCache).discard(fixture.envelopeBeforeAttachingClientReport)
   }
 
   @Test
@@ -104,23 +122,36 @@ class AsyncHttpTransportClientReportTest {
         same(fixture.envelopeAfterAttachingClientReport),
       )
     verifyNoMoreInteractions(fixture.clientReportRecorder)
+    verify(fixture.envelopeCache).discard(fixture.envelopeBeforeAttachingClientReport)
   }
 
   @Test
-  fun `does not record lost envelope on 400 error for retryable`() {
+  fun `records lost envelope on 400 error for retryable`() {
     // given
     givenSetup(TransportResult.error(400))
+    whenever(
+        fixture.envelopeCache.storeEnvelope(eq(fixture.envelopeBeforeAttachingClientReport), any())
+      )
+      .thenReturn(true)
 
     // when
+    val retryableHint = retryableHint()
     assertFailsWith(java.lang.IllegalStateException::class) {
-      fixture.getSUT().send(fixture.envelopeBeforeAttachingClientReport, retryableHint())
+      fixture.getSUT().send(fixture.envelopeBeforeAttachingClientReport, retryableHint)
     }
 
     // then
     verify(fixture.clientReportRecorder, times(1))
       .attachReportToEnvelope(same(fixture.envelopeBeforeAttachingClientReport))
-    verify(fixture.clientReportRecorder, never()).recordLostEnvelope(any(), any())
+    verify(fixture.clientReportRecorder, times(1))
+      .recordLostEnvelope(
+        eq(DiscardReason.NETWORK_ERROR),
+        same(fixture.envelopeAfterAttachingClientReport),
+      )
     verifyNoMoreInteractions(fixture.clientReportRecorder)
+    val sentrySdkHint = HintUtils.getSentrySdkHint(retryableHint)
+    assertFalse((sentrySdkHint as Retryable).isRetry)
+    verify(fixture.envelopeCache).discard(fixture.envelopeBeforeAttachingClientReport)
   }
 
   @Test
