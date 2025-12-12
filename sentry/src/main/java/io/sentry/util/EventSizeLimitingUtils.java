@@ -1,5 +1,7 @@
 package io.sentry.util;
 
+import static io.sentry.SentryOptions.MAX_EVENT_SIZE_BYTES;
+
 import io.sentry.Breadcrumb;
 import io.sentry.Hint;
 import io.sentry.SentryEvent;
@@ -22,7 +24,6 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public final class EventSizeLimitingUtils {
 
-  private static final long MAX_EVENT_SIZE_BYTES = 1024 * 1024;
   private static final int MAX_FRAMES_PER_STACK = 500;
   private static final int FRAMES_PER_SIDE = MAX_FRAMES_PER_STACK / 2;
 
