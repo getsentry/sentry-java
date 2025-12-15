@@ -682,9 +682,8 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
 
     @Override
     public boolean supports(@NotNull Object hint) {
-      // TODO: not sure about this. all tests are written with AbnormalExit, but enrichment changes
-      //  are ANR-specific. I called it AnrHintEnricher because that is what it does, but it
-      //  actually triggers on AbnormalExit. Let me know what makes most sense.
+      // While this is specifically an ANR enricher we discriminate enrichment application
+      // on the broader AbnormalExit hints for now.
       return hint instanceof AbnormalExit;
     }
 
