@@ -10,6 +10,7 @@ import io.sentry.util.CollectionUtils;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
@@ -68,13 +69,12 @@ public final class SentryStackTrace implements JsonUnknown, JsonSerializable {
 
   /**
    * This value indicates if, and how, `instruction_addr` values in the stack frames need to be
-   * adjusted before they are symbolicated. TODO: should we make this an enum or is a string value
-   * fine?
+   * adjusted before they are symbolicated.
    *
    * @see SentryStackFrame#getInstructionAddr()
    * @see SentryStackFrame#setInstructionAddr(String)
    */
-  private @Nullable String instructionAddressAdjustment;
+  private @Nullable InstructionAddressAdjustment instructionAddressAdjustment;
 
   @SuppressWarnings("unused")
   private @Nullable Map<String, Object> unknown;
@@ -132,11 +132,12 @@ public final class SentryStackTrace implements JsonUnknown, JsonSerializable {
     this.unknown = unknown;
   }
 
-  public @Nullable String getInstructionAddressAdjustment() {
+  public @Nullable InstructionAddressAdjustment getInstructionAddressAdjustment() {
     return instructionAddressAdjustment;
   }
 
-  public void setInstructionAddressAdjustment(@Nullable String instructionAddressAdjustment) {
+  public void setInstructionAddressAdjustment(
+      @Nullable InstructionAddressAdjustment instructionAddressAdjustment) {
     this.instructionAddressAdjustment = instructionAddressAdjustment;
   }
 
@@ -161,7 +162,9 @@ public final class SentryStackTrace implements JsonUnknown, JsonSerializable {
       writer.name(JsonKeys.SNAPSHOT).value(snapshot);
     }
     if (instructionAddressAdjustment != null) {
-      writer.name(JsonKeys.INSTRUCTION_ADDRESS_ADJUSTMENT).value(instructionAddressAdjustment);
+      writer
+          .name(JsonKeys.INSTRUCTION_ADDRESS_ADJUSTMENT)
+          .value(logger, instructionAddressAdjustment);
     }
     if (unknown != null) {
       for (String key : unknown.keySet()) {
@@ -197,7 +200,8 @@ public final class SentryStackTrace implements JsonUnknown, JsonSerializable {
             sentryStackTrace.snapshot = reader.nextBooleanOrNull();
             break;
           case JsonKeys.INSTRUCTION_ADDRESS_ADJUSTMENT:
-            sentryStackTrace.instructionAddressAdjustment = reader.nextStringOrNull();
+            sentryStackTrace.instructionAddressAdjustment =
+                reader.nextOrNull(logger, new InstructionAddressAdjustment.Deserializer());
             break;
           default:
             if (unknown == null) {
@@ -214,4 +218,26 @@ public final class SentryStackTrace implements JsonUnknown, JsonSerializable {
   }
 
   // endregion
+
+  public enum InstructionAddressAdjustment implements JsonSerializable {
+    AUTO,
+    ALL,
+    ALL_BUT_FIRST,
+    NONE;
+
+    @Override
+    public void serialize(@NotNull ObjectWriter writer, @NotNull ILogger logger)
+        throws IOException {
+      writer.value(toString().toLowerCase(Locale.ROOT));
+    }
+
+    public static final class Deserializer
+        implements JsonDeserializer<InstructionAddressAdjustment> {
+      @Override
+      public @NotNull SentryStackTrace.InstructionAddressAdjustment deserialize(
+          @NotNull ObjectReader reader, @NotNull ILogger logger) throws Exception {
+        return InstructionAddressAdjustment.valueOf(reader.nextString().toUpperCase(Locale.ROOT));
+      }
+    }
+  }
 }

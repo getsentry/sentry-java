@@ -6233,13 +6233,13 @@ public final class io/sentry/protocol/SentryStackTrace : io/sentry/JsonSerializa
 	public fun <init> ()V
 	public fun <init> (Ljava/util/List;)V
 	public fun getFrames ()Ljava/util/List;
-	public fun getInstructionAddressAdjustment ()Ljava/lang/String;
+	public fun getInstructionAddressAdjustment ()Lio/sentry/protocol/SentryStackTrace$InstructionAddressAdjustment;
 	public fun getRegisters ()Ljava/util/Map;
 	public fun getSnapshot ()Ljava/lang/Boolean;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setFrames (Ljava/util/List;)V
-	public fun setInstructionAddressAdjustment (Ljava/lang/String;)V
+	public fun setInstructionAddressAdjustment (Lio/sentry/protocol/SentryStackTrace$InstructionAddressAdjustment;)V
 	public fun setRegisters (Ljava/util/Map;)V
 	public fun setSnapshot (Ljava/lang/Boolean;)V
 	public fun setUnknown (Ljava/util/Map;)V
@@ -6248,6 +6248,22 @@ public final class io/sentry/protocol/SentryStackTrace : io/sentry/JsonSerializa
 public final class io/sentry/protocol/SentryStackTrace$Deserializer : io/sentry/JsonDeserializer {
 	public fun <init> ()V
 	public fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Lio/sentry/protocol/SentryStackTrace;
+	public synthetic fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/protocol/SentryStackTrace$InstructionAddressAdjustment : java/lang/Enum, io/sentry/JsonSerializable {
+	public static final field ALL Lio/sentry/protocol/SentryStackTrace$InstructionAddressAdjustment;
+	public static final field ALL_BUT_FIRST Lio/sentry/protocol/SentryStackTrace$InstructionAddressAdjustment;
+	public static final field AUTO Lio/sentry/protocol/SentryStackTrace$InstructionAddressAdjustment;
+	public static final field NONE Lio/sentry/protocol/SentryStackTrace$InstructionAddressAdjustment;
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+	public static fun valueOf (Ljava/lang/String;)Lio/sentry/protocol/SentryStackTrace$InstructionAddressAdjustment;
+	public static fun values ()[Lio/sentry/protocol/SentryStackTrace$InstructionAddressAdjustment;
+}
+
+public final class io/sentry/protocol/SentryStackTrace$InstructionAddressAdjustment$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Lio/sentry/protocol/SentryStackTrace$InstructionAddressAdjustment;
 	public synthetic fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
 }
 

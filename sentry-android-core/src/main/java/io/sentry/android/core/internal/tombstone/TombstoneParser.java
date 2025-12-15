@@ -104,7 +104,7 @@ public class TombstoneParser implements Closeable {
     // `libunwindstack` used for tombstones already applies instruction address adjustment:
     // https://android.googlesource.com/platform/system/unwinding/+/refs/heads/main/libunwindstack/Regs.cpp#175
     // prevent "processing" from doing it again.
-    stacktrace.setInstructionAddressAdjustment("none");
+    stacktrace.setInstructionAddressAdjustment(SentryStackTrace.InstructionAddressAdjustment.NONE);
 
     final Map<String, String> registers = new HashMap<>();
     for (TombstoneProtos.Register register : thread.getRegistersList()) {
