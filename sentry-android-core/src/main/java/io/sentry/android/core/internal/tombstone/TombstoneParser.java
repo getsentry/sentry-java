@@ -140,12 +140,6 @@ public class TombstoneParser implements Closeable {
     final Mechanism mechanism = new Mechanism();
     // this follows the current processing triggers strictly, changing any of these
     // alters grouping and name (long-term we might want to have a tombstone mechanism)
-    // TODO: if we align this with ANRv2 this would be overwritten in a BackfillingEventProcessor as
-    //       `ApplicationExitInfo` not sure what the right call is. `ApplicationExitInfo` is
-    //       certainly correct. But `signalhandler` isn't wrong either, since all native crashes
-    //       retrieved via `REASON_CRASH_NATIVE` will be signals. I am not sure what the side-effect
-    //       in ingestion/processing will be if we change the mechanism, but initially i wanted to
-    //       stay close to the Native SDK.
     mechanism.setType("signalhandler");
     mechanism.setHandled(false);
     mechanism.setSynthetic(true);
