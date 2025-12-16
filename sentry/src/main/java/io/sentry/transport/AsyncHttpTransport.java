@@ -309,18 +309,13 @@ public final class AsyncHttpTransport implements ITransport {
 
             options.getLogger().log(SentryLevel.ERROR, message);
 
-            // ignore e.g. 429 as we're not the ones actively dropping
-            if (result.getResponseCode() >= 400 && result.getResponseCode() != 429) {
-              if (!cached) {
-                HintUtils.runIfDoesNotHaveType(
-                    hint,
-                    Retryable.class,
-                    (hint) -> {
-                      options
-                          .getClientReportRecorder()
-                          .recordLostEnvelope(
-                              DiscardReason.NETWORK_ERROR, envelopeWithClientReport);
-                    });
+            if (result.getResponseCode() >= 400) {
+              envelopeCache.discard(envelope);
+              // ignore e.g. 429 as we're not the ones actively dropping
+              if (result.getResponseCode() != 429) {
+                options
+                    .getClientReportRecorder()
+                    .recordLostEnvelope(DiscardReason.NETWORK_ERROR, envelopeWithClientReport);
               }
             }
 
