@@ -483,8 +483,8 @@ public final class io/sentry/android/core/ViewHierarchyEventProcessor : io/sentr
 }
 
 public class io/sentry/android/core/anr/AggregatedStackTrace {
-	public fun <init> ([Ljava/lang/StackTraceElement;IIJI)V
-	public fun add (J)V
+	public fun <init> ([Ljava/lang/StackTraceElement;IIJF)V
+	public fun addOccurrence (J)V
 	public fun getStack ()[Ljava/lang/StackTraceElement;
 }
 

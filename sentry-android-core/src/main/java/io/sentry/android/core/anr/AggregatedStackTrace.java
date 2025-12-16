@@ -2,14 +2,15 @@ package io.sentry.android.core.anr;
 
 import java.util.Arrays;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
 
 @ApiStatus.Internal
 public class AggregatedStackTrace {
   // the number of frames of the stacktrace
   final int depth;
 
-  // the quality of the stack trace, higher means better
-  final int quality;
+  // the quality of the stack trace, higher means better (ratio of app frames: 0.0 to 1.0)
+  final float quality;
 
   private final StackTraceElement[] stack;
 
@@ -20,10 +21,10 @@ public class AggregatedStackTrace {
   // the total number of times this exact stacktrace was captured
   int count;
 
-  // first time the stacktrace occured
+  // first time the stacktrace occurred
   private long startTimeMs;
 
-  // last time the stacktrace occured
+  // last time the stacktrace occurred
   private long endTimeMs;
 
   public AggregatedStackTrace(
@@ -31,7 +32,7 @@ public class AggregatedStackTrace {
       final int stackStartIdx,
       final int stackEndIdx,
       final long timestampMs,
-      final int quality) {
+      final float quality) {
     this.stack = stack;
     this.stackStartIdx = stackStartIdx;
     this.stackEndIdx = stackEndIdx;
@@ -42,12 +43,13 @@ public class AggregatedStackTrace {
     this.quality = quality;
   }
 
-  public void add(long timestampMs) {
+  public void addOccurrence(final long timestampMs) {
     this.startTimeMs = Math.min(startTimeMs, timestampMs);
     this.endTimeMs = Math.max(endTimeMs, timestampMs);
     this.count++;
   }
 
+  @NotNull
   public StackTraceElement[] getStack() {
     return Arrays.copyOfRange(stack, stackStartIdx, stackEndIdx + 1);
   }

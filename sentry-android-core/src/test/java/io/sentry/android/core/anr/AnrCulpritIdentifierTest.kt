@@ -4,25 +4,18 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
-import kotlin.test.assertTrue
 
 class AnrCulpritIdentifierTest {
 
   @Test
   fun `returns null for empty dumps`() {
-    // Arrange
     val dumps = emptyList<AnrStackTrace>()
-
-    // Act
     val result = AnrCulpritIdentifier.identify(dumps)
-
-    // Assert
     assertNull(result)
   }
 
   @Test
   fun `identifies single stack trace`() {
-    // Arrange
     val stackTraceElements =
       arrayOf(
         StackTraceElement("com.example.MyClass", "method1", "MyClass.java", 42),
@@ -30,27 +23,25 @@ class AnrCulpritIdentifierTest {
       )
     val dumps = listOf(AnrStackTrace(1000, stackTraceElements))
 
-    // Act
     val result = AnrCulpritIdentifier.identify(dumps)
 
-    // Assert
     assertNotNull(result)
     assertEquals(1, result.count)
-    assertTrue(result.depth > 0)
+    assertEquals("com.example.MyClass", result.stack.first().className)
+    assertEquals(2, result.depth)
   }
 
   @Test
-  fun `identifies most common stack trace from multiple dumps`() {
-    // Arrange
+  fun `identifies most common, most detailed stack trace from multiple dumps`() {
     val commonElements =
       arrayOf(
-        StackTraceElement("com.example.MyClass", "method1", "MyClass.java", 42),
-        StackTraceElement("com.example.AnotherClass", "method2", "AnotherClass.java", 100),
+        StackTraceElement("com.example.CommonClass", "commonMethod1", "CommonClass.java", 42),
+        StackTraceElement("com.example.CommonClass", "commonMethod2", "CommonClass.java", 100),
       )
     val rareElements =
       arrayOf(
         StackTraceElement("com.example.RareClass", "rareMethod", "RareClass.java", 50),
-        StackTraceElement("com.example.AnotherClass", "method2", "AnotherClass.java", 100),
+        StackTraceElement("com.example.CommonClass", "commonMethod2", "CommonClass.java", 100),
       )
     val dumps =
       listOf(
@@ -59,18 +50,32 @@ class AnrCulpritIdentifierTest {
         AnrStackTrace(3000, rareElements),
       )
 
-    // Act
     val result = AnrCulpritIdentifier.identify(dumps)
 
-    // Assert
     assertNotNull(result)
-    // The common element should have higher count (appears twice) vs rare (appears once)
     assertEquals(2, result.count)
+    assertEquals("com.example.CommonClass", result.stack.first().className)
+    assertEquals("commonMethod1", result.stack.first().methodName)
+  }
+
+  @Test
+  fun `provides 0 quality score when stack only contains framework packages`() {
+    val frameworkElements =
+      arrayOf(
+        StackTraceElement("java.lang.Object", "wait", "Object.java", 42),
+        StackTraceElement("android.os.Handler", "handleMessage", "Handler.java", 100),
+      )
+    val dumps =
+      listOf(AnrStackTrace(1000, frameworkElements), AnrStackTrace(2000, frameworkElements))
+
+    val result = AnrCulpritIdentifier.identify(dumps)
+
+    assertNotNull(result)
+    assertEquals(0f, result.quality)
   }
 
   @Test
   fun `applies lower quality score to framework packages`() {
-    // Arrange
     val frameworkElements =
       arrayOf(
         StackTraceElement("java.lang.Object", "wait", "Object.java", 42),
@@ -81,6 +86,7 @@ class AnrCulpritIdentifierTest {
         StackTraceElement("com.example.MyClass", "method1", "MyClass.java", 42),
         StackTraceElement("android.os.Handler", "handleMessage", "Handler.java", 100),
       )
+
     val dumps =
       listOf(
         AnrStackTrace(1000, frameworkElements),
@@ -88,46 +94,34 @@ class AnrCulpritIdentifierTest {
         AnrStackTrace(3000, appElements),
       )
 
-    // Act
     val result = AnrCulpritIdentifier.identify(dumps)
 
-    // Assert
     assertNotNull(result)
-    // Should identify a culprit from the stacks
-    assertTrue(result.count > 0)
+    assertEquals("com.example.MyClass", result.stack.first().className)
   }
 
   @Test
-  fun `prefers deeper stack traces on quality tie`() {
-    // Arrange
+  fun `prefers deeper stack traces`() {
     val shallowStack =
       arrayOf(StackTraceElement("com.example.MyClass", "method1", "MyClass.java", 42))
+
     val deepStack =
       arrayOf(
         StackTraceElement("com.example.MyClass", "method1", "MyClass.java", 42),
         StackTraceElement("com.example.AnotherClass", "method2", "AnotherClass.java", 100),
         StackTraceElement("com.example.ThirdClass", "method3", "ThirdClass.java", 150),
       )
-    val dumps =
-      listOf(
-        AnrStackTrace(1000, shallowStack),
-        AnrStackTrace(2000, shallowStack),
-        AnrStackTrace(3000, deepStack),
-        AnrStackTrace(4000, deepStack),
-      )
+    val dumps = listOf(AnrStackTrace(1000, shallowStack), AnrStackTrace(2000, deepStack))
 
-    // Act
     val result = AnrCulpritIdentifier.identify(dumps)
 
-    // Assert
     assertNotNull(result)
-    // Both have count 2, but deep stack should be preferred due to depth
-    assertTrue(result.depth >= 1)
+    assertEquals(3, result.depth)
+    assertEquals("com.example.MyClass", result.stack.first().className)
   }
 
   @Test
   fun `handles mixed framework and app code`() {
-    // Arrange
     val mixedElements =
       arrayOf(
         StackTraceElement("com.example.Activity", "onCreate", "Activity.java", 42),
@@ -136,12 +130,10 @@ class AnrCulpritIdentifierTest {
       )
     val dumps = listOf(AnrStackTrace(1000, mixedElements))
 
-    // Act
     val result = AnrCulpritIdentifier.identify(dumps)
 
-    // Assert
     assertNotNull(result)
-    // Should identify the custom app code as culprit, not the framework code
-    assertTrue(result.getStack().any { it.className.startsWith("com.example.") })
+    assertEquals(2f / 3f, result.quality, 0.0001f)
+    assertEquals("com.example.Activity", result.stack.first().className)
   }
 }
