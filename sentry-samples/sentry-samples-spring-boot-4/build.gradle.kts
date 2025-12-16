@@ -55,6 +55,7 @@ dependencies {
   implementation(projects.sentryLogback)
   implementation(projects.sentryGraphql22)
   implementation(projects.sentryQuartz)
+  implementation(projects.sentryAsyncProfiler)
 
   // database query tracing
   implementation(projects.sentryJdbc)
