@@ -17,6 +17,7 @@ import io.sentry.UncaughtExceptionHandlerIntegration.UncaughtExceptionHint
 import io.sentry.cache.EnvelopeCache.PREFIX_CURRENT_SESSION_FILE
 import io.sentry.cache.EnvelopeCache.SUFFIX_SESSION_FILE
 import io.sentry.hints.AbnormalExit
+import io.sentry.hints.NativeCrashExit
 import io.sentry.hints.SessionEndHint
 import io.sentry.hints.SessionStartHint
 import io.sentry.protocol.SentryId
@@ -345,6 +346,53 @@ class EnvelopeCacheTest {
       )
     assertEquals(Ok, updatedSession!!.status)
     assertEquals(null, updatedSession.abnormalMechanism)
+  }
+
+  @Test
+  fun `NativeCrashExit hint marks previous session as crashed with crash timestamp`() {
+    val cache = fixture.getSUT()
+
+    val previousSessionFile = EnvelopeCache.getPreviousSessionFile(fixture.options.cacheDirPath!!)
+    val session = createSession()
+    fixture.options.serializer.serialize(session, previousSessionFile.bufferedWriter())
+
+    val nativeCrashTimestamp = session.started!!.time + TimeUnit.HOURS.toMillis(3)
+    val envelope = SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null)
+    val nativeCrashHint = NativeCrashExit { nativeCrashTimestamp }
+    val hints = HintUtils.createWithTypeCheckHint(nativeCrashHint)
+    cache.storeEnvelope(envelope, hints)
+
+    val updatedSession =
+      fixture.options.serializer.deserialize(
+        previousSessionFile.bufferedReader(),
+        Session::class.java,
+      )
+    assertEquals(State.Crashed, updatedSession!!.status)
+    assertEquals(nativeCrashTimestamp, updatedSession.timestamp!!.time)
+  }
+
+  @Test
+  fun `when NativeCrashExit happened before previous session start, does not mark as crashed`() {
+    val cache = fixture.getSUT()
+
+    val previousSessionFile = EnvelopeCache.getPreviousSessionFile(fixture.options.cacheDirPath!!)
+    val session = createSession()
+    val nativeCrashTimestamp = session.started!!.time - TimeUnit.HOURS.toMillis(3)
+    fixture.options.serializer.serialize(session, previousSessionFile.bufferedWriter())
+
+    val envelope = SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null)
+    val nativeCrashHint = NativeCrashExit { nativeCrashTimestamp }
+    val hints = HintUtils.createWithTypeCheckHint(nativeCrashHint)
+    cache.storeEnvelope(envelope, hints)
+
+    val updatedSession =
+      fixture.options.serializer.deserialize(
+        previousSessionFile.bufferedReader(),
+        Session::class.java,
+      )
+    assertEquals(Ok, updatedSession!!.status)
+    assertTrue(nativeCrashTimestamp < updatedSession.started!!.time)
+    assertTrue(nativeCrashTimestamp < updatedSession.timestamp!!.time)
   }
 
   @Test
