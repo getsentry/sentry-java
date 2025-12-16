@@ -157,7 +157,7 @@ class AsyncHttpTransportTest {
   }
 
   @Test
-  fun `stores envelope after unsuccessful send 429`() {
+  fun `discards envelope after unsuccessful send 429`() {
     // given
     val envelope = SentryEnvelope.from(fixture.sentryOptions.serializer, createSession(), null)
     whenever(fixture.transportGate.isConnected).thenReturn(true)
@@ -180,7 +180,7 @@ class AsyncHttpTransportTest {
     order.verify(fixture.sentryOptions.envelopeDiskCache).storeEnvelope(eq(envelope), anyOrNull())
 
     order.verify(fixture.connection).send(eq(envelope))
-    verify(fixture.sentryOptions.envelopeDiskCache, never()).discard(any())
+    order.verify(fixture.sentryOptions.envelopeDiskCache).discard(eq(envelope))
   }
 
   @Test
