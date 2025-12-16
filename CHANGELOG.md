@@ -2,12 +2,34 @@
 
 ## Unreleased
 
+### Improvements
+
+- Discard envelopes on `4xx` and `5xx` response ([#4950](https://github.com/getsentry/sentry-java/pull/4950))
+  - This aims to not overwhelm Sentry after an outage or load shedding (including HTTP 429) where too many events are sent at once
+
 ### Features
 
 - Add new experimental option to capture profiles for ANRs ([#4899](https://github.com/getsentry/sentry-java/pull/4899))
   - This feature will capture a stack profile of the main thread when it gets unresponsive
   - The profile gets attached to the ANR event on the next app start, providing a flamegraph of the ANR issue on the sentry issue details page
   - Enable via `options.setEnableAnrProfiling(true)` or Android manifest: `<meta-data android:name="io.sentry.anr.enable-profiling" android:value="true" />`
+
+## 8.29.0
+
+### Fixes
+
+- Support serialization of primitive arrays (boolean[], byte[], short[], char[], int[], long[], float[], double[]) ([#4968](https://github.com/getsentry/sentry-java/pull/4968))
+- Session Replay: Improve network body parsing and truncation handling ([#4958](https://github.com/getsentry/sentry-java/pull/4958))
+
+### Internal
+
+- Support `metric` envelope item type ([#4956](https://github.com/getsentry/sentry-java/pull/4956))
+
+## 8.28.0
+
+### Features
+
+- Android: Flush logs when app enters background ([#4951](https://github.com/getsentry/sentry-java/pull/4951))
 - Add option to capture additional OkHttp network request/response details in session replays ([#4919](https://github.com/getsentry/sentry-java/pull/4919))
   - Depends on `SentryOkHttpInterceptor` to intercept the request and extract request/response bodies
   - To enable, add url regexes via the `io.sentry.session-replay.network-detail-allow-urls` metadata tag in AndroidManifest ([code sample](https://github.com/getsentry/sentry-java/blob/b03edbb1b0d8b871c62a09bc02cbd8a4e1f6fea1/sentry-samples/sentry-samples-android/src/main/AndroidManifest.xml#L196-L205))
@@ -63,6 +85,7 @@ SentryAndroid.init(
 ### Fixes 
 
 - Fix missing thread stacks for ANRv1 events ([#4918](https://github.com/getsentry/sentry-java/pull/4918))
+- Fix handling of unparseable mime-type on request filter ([#4939](https://github.com/getsentry/sentry-java/pull/4939))
 
 ### Internal
 
