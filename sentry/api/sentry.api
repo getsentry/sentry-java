@@ -362,6 +362,7 @@ public final class io/sentry/DataCategory : java/lang/Enum {
 	public static final field Security Lio/sentry/DataCategory;
 	public static final field Session Lio/sentry/DataCategory;
 	public static final field Span Lio/sentry/DataCategory;
+	public static final field TraceMetric Lio/sentry/DataCategory;
 	public static final field Transaction Lio/sentry/DataCategory;
 	public static final field Unknown Lio/sentry/DataCategory;
 	public static final field UserReport Lio/sentry/DataCategory;
@@ -3138,6 +3139,7 @@ public final class io/sentry/SentryItemType : java/lang/Enum, io/sentry/JsonSeri
 	public static final field ReplayVideo Lio/sentry/SentryItemType;
 	public static final field Session Lio/sentry/SentryItemType;
 	public static final field Span Lio/sentry/SentryItemType;
+	public static final field TraceMetric Lio/sentry/SentryItemType;
 	public static final field Transaction Lio/sentry/SentryItemType;
 	public static final field Unknown Lio/sentry/SentryItemType;
 	public static final field UserFeedback Lio/sentry/SentryItemType;
@@ -3669,9 +3671,11 @@ public final class io/sentry/SentryOptions$DistributionOptions {
 public final class io/sentry/SentryOptions$Logs {
 	public fun <init> ()V
 	public fun getBeforeSend ()Lio/sentry/SentryOptions$Logs$BeforeSendLogCallback;
+	public fun getLoggerBatchProcessorFactory ()Lio/sentry/logger/ILoggerBatchProcessorFactory;
 	public fun isEnabled ()Z
 	public fun setBeforeSend (Lio/sentry/SentryOptions$Logs$BeforeSendLogCallback;)V
 	public fun setEnabled (Z)V
+	public fun setLoggerBatchProcessorFactory (Lio/sentry/logger/ILoggerBatchProcessorFactory;)V
 }
 
 public abstract interface class io/sentry/SentryOptions$Logs$BeforeSendLogCallback {
@@ -5021,6 +5025,11 @@ public abstract interface class io/sentry/internal/viewhierarchy/ViewHierarchyEx
 	public abstract fun export (Lio/sentry/protocol/ViewHierarchyNode;Ljava/lang/Object;)Z
 }
 
+public final class io/sentry/logger/DefaultLoggerBatchProcessorFactory : io/sentry/logger/ILoggerBatchProcessorFactory {
+	public fun <init> ()V
+	public fun create (Lio/sentry/SentryOptions;Lio/sentry/SentryClient;)Lio/sentry/logger/ILoggerBatchProcessor;
+}
+
 public abstract interface class io/sentry/logger/ILoggerApi {
 	public abstract fun debug (Ljava/lang/String;[Ljava/lang/Object;)V
 	public abstract fun error (Ljava/lang/String;[Ljava/lang/Object;)V
@@ -5039,6 +5048,10 @@ public abstract interface class io/sentry/logger/ILoggerBatchProcessor {
 	public abstract fun flush (J)V
 }
 
+public abstract interface class io/sentry/logger/ILoggerBatchProcessorFactory {
+	public abstract fun create (Lio/sentry/SentryOptions;Lio/sentry/SentryClient;)Lio/sentry/logger/ILoggerBatchProcessor;
+}
+
 public final class io/sentry/logger/LoggerApi : io/sentry/logger/ILoggerApi {
 	public fun <init> (Lio/sentry/Scopes;)V
 	public fun debug (Ljava/lang/String;[Ljava/lang/Object;)V
@@ -5052,10 +5065,11 @@ public final class io/sentry/logger/LoggerApi : io/sentry/logger/ILoggerApi {
 	public fun warn (Ljava/lang/String;[Ljava/lang/Object;)V
 }
 
-public final class io/sentry/logger/LoggerBatchProcessor : io/sentry/logger/ILoggerBatchProcessor {
+public class io/sentry/logger/LoggerBatchProcessor : io/sentry/logger/ILoggerBatchProcessor {
 	public static final field FLUSH_AFTER_MS I
 	public static final field MAX_BATCH_SIZE I
 	public static final field MAX_QUEUE_SIZE I
+	protected final field options Lio/sentry/SentryOptions;
 	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/ISentryClient;)V
 	public fun add (Lio/sentry/SentryLogEvent;)V
 	public fun close (Z)V
@@ -7467,29 +7481,22 @@ public final class io/sentry/util/UrlUtils$UrlDetails {
 	public fun getUrlOrFallback ()Ljava/lang/String;
 }
 
-public abstract interface class io/sentry/util/network/NetworkBody {
-	public static fun fromJsonArray (Ljava/util/List;)Lio/sentry/util/network/NetworkBody;
-	public static fun fromJsonObject (Ljava/util/Map;)Lio/sentry/util/network/NetworkBody;
-	public static fun fromString (Ljava/lang/String;)Lio/sentry/util/network/NetworkBody;
-	public abstract fun getValue ()Ljava/lang/Object;
-}
-
-public final class io/sentry/util/network/NetworkBody$JsonArrayImpl : io/sentry/util/network/NetworkBody {
-	public synthetic fun getValue ()Ljava/lang/Object;
-	public fun getValue ()Ljava/util/List;
+public final class io/sentry/util/network/NetworkBody {
+	public fun <init> (Ljava/lang/Object;)V
+	public fun <init> (Ljava/lang/Object;Ljava/util/List;)V
+	public fun getBody ()Ljava/lang/Object;
+	public fun getWarnings ()Ljava/util/List;
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class io/sentry/util/network/NetworkBody$JsonObjectImpl : io/sentry/util/network/NetworkBody {
-	public synthetic fun getValue ()Ljava/lang/Object;
-	public fun getValue ()Ljava/util/Map;
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class io/sentry/util/network/NetworkBody$StringBodyImpl : io/sentry/util/network/NetworkBody {
-	public synthetic fun getValue ()Ljava/lang/Object;
+public final class io/sentry/util/network/NetworkBody$NetworkBodyWarning : java/lang/Enum {
+	public static final field BODY_PARSE_ERROR Lio/sentry/util/network/NetworkBody$NetworkBodyWarning;
+	public static final field INVALID_JSON Lio/sentry/util/network/NetworkBody$NetworkBodyWarning;
+	public static final field JSON_TRUNCATED Lio/sentry/util/network/NetworkBody$NetworkBodyWarning;
+	public static final field TEXT_TRUNCATED Lio/sentry/util/network/NetworkBody$NetworkBodyWarning;
 	public fun getValue ()Ljava/lang/String;
-	public fun toString ()Ljava/lang/String;
+	public static fun valueOf (Ljava/lang/String;)Lio/sentry/util/network/NetworkBody$NetworkBodyWarning;
+	public static fun values ()[Lio/sentry/util/network/NetworkBody$NetworkBodyWarning;
 }
 
 public final class io/sentry/util/network/NetworkBodyParser {

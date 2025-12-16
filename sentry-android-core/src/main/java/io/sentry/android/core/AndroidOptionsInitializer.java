@@ -123,6 +123,7 @@ final class AndroidOptionsInitializer {
     options.setOpenTelemetryMode(SentryOpenTelemetryMode.OFF);
     options.setDateProvider(new SentryAndroidDateProvider());
     options.setRuntimeManager(new AndroidRuntimeManager());
+    options.getLogs().setLoggerBatchProcessorFactory(new AndroidLoggerBatchProcessorFactory());
 
     // set a lower flush timeout on Android to avoid ANRs
     options.setFlushTimeoutMillis(DEFAULT_FLUSH_TIMEOUT_MS);
