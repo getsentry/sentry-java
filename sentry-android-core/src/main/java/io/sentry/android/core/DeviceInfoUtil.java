@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.BatteryManager;
 import android.os.Build;
+import android.os.Environment;
 import android.os.LocaleList;
 import android.os.StatFs;
 import android.os.SystemClock;
@@ -148,7 +149,7 @@ public final class DeviceInfoUtil {
 
     // setting such values require IO hence we don't run for transactions
     if (collectDeviceIO && options.isCollectAdditionalContext()) {
-      setDeviceIO(device, collectDynamicData);
+      setDeviceIO(device, collectDynamicData, options.isCollectExternalStorageContext());
     }
 
     return device;
@@ -195,7 +196,10 @@ public final class DeviceInfoUtil {
     return splitApksInfo;
   }
 
-  private void setDeviceIO(final @NotNull Device device, final boolean includeDynamicData) {
+  private void setDeviceIO(
+      final @NotNull Device device,
+      final boolean includeDynamicData,
+      final boolean includeExternalStorage) {
     final Intent batteryIntent = getBatteryIntent();
     if (batteryIntent != null) {
       device.setBatteryLevel(getBatteryLevel(batteryIntent, options));
@@ -232,18 +236,22 @@ public final class DeviceInfoUtil {
         .getRuntimeManager()
         .runWithRelaxedPolicy(
             () -> {
-              final @Nullable File internalStorageFile = context.getExternalFilesDir(null);
-              if (internalStorageFile != null) {
-                StatFs internalStorageStat = new StatFs(internalStorageFile.getPath());
+              final @Nullable File dataDir = Environment.getDataDirectory();
+              ;
+              if (dataDir != null) {
+                StatFs internalStorageStat = new StatFs(dataDir.getPath());
                 device.setStorageSize(getTotalInternalStorage(internalStorageStat));
                 device.setFreeStorage(getUnusedInternalStorage(internalStorageStat));
               }
 
-              final @Nullable StatFs externalStorageStat =
-                  getExternalStorageStat(internalStorageFile);
-              if (externalStorageStat != null) {
-                device.setExternalStorageSize(getTotalExternalStorage(externalStorageStat));
-                device.setExternalFreeStorage(getUnusedExternalStorage(externalStorageStat));
+              if (includeExternalStorage) {
+                final @Nullable File internalStorageFile = context.getExternalFilesDir(null);
+                final @Nullable StatFs externalStorageStat =
+                    getExternalStorageStat(internalStorageFile);
+                if (externalStorageStat != null) {
+                  device.setExternalStorageSize(getTotalExternalStorage(externalStorageStat));
+                  device.setExternalFreeStorage(getUnusedExternalStorage(externalStorageStat));
+                }
               }
             });
 

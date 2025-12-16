@@ -1159,6 +1159,31 @@ class ManifestMetadataReaderTest {
   }
 
   @Test
+  fun `applyMetadata reads collect external storage to options`() {
+    // Arrange
+    val bundle = bundleOf(ManifestMetadataReader.COLLECT_EXTERNAL_STORAGE_CONTEXT to false)
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertFalse(fixture.options.isCollectExternalStorageContext)
+  }
+
+  @Test
+  fun `applyMetadata reads collect external storage and keep default value if not found`() {
+    // Arrange
+    val context = fixture.getContext()
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertTrue(fixture.options.isCollectExternalStorageContext)
+  }
+
+  @Test
   fun `applyMetadata reads send default pii and keep default value if not found`() {
     // Arrange
     val context = fixture.getContext()
