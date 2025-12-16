@@ -46,7 +46,6 @@ class PersonSystemTest {
 
   @Test
   fun `create person works`() {
-    var profilerId: SentryId? = null
     val restClient = testHelper.restClient
     val person = Person("firstA", "lastB")
     val returnedPerson = restClient.createPerson(person)
@@ -56,7 +55,6 @@ class PersonSystemTest {
     assertEquals(person.lastName, returnedPerson!!.lastName)
 
     testHelper.ensureTransactionReceived { transaction, envelopeHeader ->
-      profilerId = transaction.contexts.profile?.profilerId
       testHelper.doesTransactionContainSpanWithOp(transaction, "PersonService.create") &&
         testHelper.doesTransactionContainSpanWithOpAndDescription(
           transaction,
