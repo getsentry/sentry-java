@@ -122,7 +122,7 @@ public final class SentryAndroidOptions extends SentryOptions {
   private boolean collectAdditionalContext = true;
 
   /** Enables or disables collecting of external storage context. */
-  private boolean collectExternalStorageContext = true;
+  private boolean collectExternalStorageContext = false;
 
   /**
    * Controls how many seconds to wait for sending events in case there were Startup Crashes in the
