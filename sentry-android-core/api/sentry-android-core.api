@@ -491,6 +491,7 @@ public class io/sentry/android/core/anr/AggregatedStackTrace {
 public class io/sentry/android/core/anr/AnrCulpritIdentifier {
 	public fun <init> ()V
 	public static fun identify (Ljava/util/List;)Lio/sentry/android/core/anr/AggregatedStackTrace;
+	public static fun isSystemFrame (Ljava/lang/String;)Z
 }
 
 public class io/sentry/android/core/anr/AnrException : java/lang/Exception {
@@ -517,7 +518,7 @@ public class io/sentry/android/core/anr/AnrProfileManager : java/io/Closeable {
 public class io/sentry/android/core/anr/AnrProfileRotationHelper {
 	public fun <init> ()V
 	public static fun deleteLastFile (Ljava/io/File;)Z
-	public static fun getCurrentFile (Ljava/io/File;)Ljava/io/File;
+	public static fun getFileForRecording (Ljava/io/File;)Ljava/io/File;
 	public static fun getLastFile (Ljava/io/File;)Ljava/io/File;
 	public static fun rotate ()V
 }

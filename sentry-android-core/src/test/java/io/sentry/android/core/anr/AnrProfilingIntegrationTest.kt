@@ -5,6 +5,7 @@ import io.sentry.ILogger
 import io.sentry.IScopes
 import io.sentry.SentryOptions
 import io.sentry.android.core.AppState
+import io.sentry.android.core.SentryAndroidOptions
 import io.sentry.test.getProperty
 import java.io.File
 import java.nio.file.Files
@@ -12,6 +13,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import org.junit.runner.RunWith
@@ -23,7 +25,7 @@ class AnrProfilingIntegrationTest {
   private lateinit var tempDir: File
   private lateinit var mockScopes: IScopes
   private lateinit var mockLogger: ILogger
-  private lateinit var options: SentryOptions
+  private lateinit var options: SentryAndroidOptions
 
   @BeforeTest
   fun setup() {
@@ -31,9 +33,10 @@ class AnrProfilingIntegrationTest {
     mockScopes = mock()
     mockLogger = mock()
     options =
-      SentryOptions().apply {
+      SentryAndroidOptions().apply {
         cacheDirPath = tempDir.absolutePath
         setLogger(mockLogger)
+        isEnableAnrProfiling = true
       }
     AppState.getInstance().resetInstance()
   }
@@ -157,8 +160,15 @@ class AnrProfilingIntegrationTest {
     val mainThread = Thread.currentThread()
     SystemClock.setCurrentTimeMillis(1_00)
 
+    val androidOptions =
+      SentryAndroidOptions().apply {
+        cacheDirPath = tempDir.absolutePath
+        setLogger(mockLogger)
+        isEnableAnrProfiling = true
+      }
+
     val integration = AnrProfilingIntegration()
-    integration.register(mockScopes, options)
+    integration.register(mockScopes, androidOptions)
     integration.onForeground()
 
     SystemClock.setCurrentTimeMillis(1_000)
@@ -174,6 +184,66 @@ class AnrProfilingIntegrationTest {
     integration.checkMainThread(mainThread)
     assertEquals(AnrProfilingIntegration.MainThreadState.ANR_DETECTED, integration.state)
     assertEquals(2, integration.profileManager.load().stacks.size)
+
+    integration.close()
+  }
+
+  @Test
+  fun `does not register when options is not SentryAndroidOptions`() {
+    val plainOptions =
+      SentryOptions().apply {
+        cacheDirPath = tempDir.absolutePath
+        setLogger(mockLogger)
+      }
+
+    val integration = AnrProfilingIntegration()
+
+    try {
+      integration.register(mockScopes, plainOptions)
+    } catch (e: IllegalArgumentException) {
+      // ignored
+    }
+
+    // Verify no listeners were added
+    val lifecycleObserver = AppState.getInstance().lifecycleObserver
+    if (lifecycleObserver != null) {
+      assertTrue(lifecycleObserver.listeners.isEmpty())
+    }
+  }
+
+  @Test
+  fun `does not register when ANR profiling is disabled`() {
+    val androidOptions =
+      SentryAndroidOptions().apply {
+        cacheDirPath = tempDir.absolutePath
+        setLogger(mockLogger)
+        isEnableAnrProfiling = false
+      }
+
+    val integration = AnrProfilingIntegration()
+    integration.register(mockScopes, androidOptions)
+
+    // When ANR profiling is disabled, the integration doesn't add itself to AppState
+    // So the lifecycle observer may be null or have no listeners
+    val lifecycleObserver = AppState.getInstance().lifecycleObserver
+    if (lifecycleObserver != null) {
+      assertTrue(lifecycleObserver.listeners.isEmpty())
+    }
+  }
+
+  @Test
+  fun `registers when ANR profiling is enabled`() {
+    val androidOptions =
+      SentryAndroidOptions().apply {
+        cacheDirPath = tempDir.absolutePath
+        setLogger(mockLogger)
+        isEnableAnrProfiling = true
+      }
+
+    val integration = AnrProfilingIntegration()
+    integration.register(mockScopes, androidOptions)
+
+    assertFalse(AppState.getInstance().lifecycleObserver.listeners.isEmpty())
 
     integration.close()
   }

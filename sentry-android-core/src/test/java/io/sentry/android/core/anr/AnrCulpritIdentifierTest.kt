@@ -136,4 +136,37 @@ class AnrCulpritIdentifierTest {
     assertEquals(2f / 3f, result.quality, 0.0001f)
     assertEquals("com.example.Activity", result.stack.first().className)
   }
+
+  @Test
+  fun `isSystemFrame returns true for java lang packages`() {
+    assertEquals(true, AnrCulpritIdentifier.isSystemFrame("java.lang.Object"))
+    assertEquals(true, AnrCulpritIdentifier.isSystemFrame("java.lang.Thread"))
+  }
+
+  @Test
+  fun `isSystemFrame returns true for java util packages`() {
+    assertEquals(true, AnrCulpritIdentifier.isSystemFrame("java.util.ArrayList"))
+  }
+
+  @Test
+  fun `isSystemFrame returns true for android packages`() {
+    assertEquals(true, AnrCulpritIdentifier.isSystemFrame("android.app.Activity"))
+    assertEquals(true, AnrCulpritIdentifier.isSystemFrame("android.os.Handler"))
+    assertEquals(true, AnrCulpritIdentifier.isSystemFrame("android.os.Looper"))
+    assertEquals(true, AnrCulpritIdentifier.isSystemFrame("android.view.View"))
+    assertEquals(true, AnrCulpritIdentifier.isSystemFrame("android.widget.TextView"))
+  }
+
+  @Test
+  fun `isSystemFrame returns true for internal android packages`() {
+    assertEquals(true, AnrCulpritIdentifier.isSystemFrame("com.android.internal.os.ZygoteInit"))
+    assertEquals(true, AnrCulpritIdentifier.isSystemFrame("com.google.android.gms.common.api.Api"))
+  }
+
+  @Test
+  fun `isSystemFrame returns false for app packages`() {
+    assertEquals(false, AnrCulpritIdentifier.isSystemFrame("com.example.MyClass"))
+    assertEquals(false, AnrCulpritIdentifier.isSystemFrame("io.sentry.samples.MainActivity"))
+    assertEquals(false, AnrCulpritIdentifier.isSystemFrame("org.myapp.Feature"))
+  }
 }

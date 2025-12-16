@@ -26,13 +26,16 @@ public final class AnrStackTrace implements Comparable<AnrStackTrace> {
   }
 
   public void serialize(final @NotNull DataOutputStream dos) throws IOException {
-    dos.writeShort(1);
+    dos.writeShort(1); // version
     dos.writeLong(timestampMs);
     dos.writeInt(stack.length);
     for (final @NotNull StackTraceElement element : stack) {
       dos.writeUTF(StringUtils.getOrEmpty(element.getClassName()));
       dos.writeUTF(StringUtils.getOrEmpty(element.getMethodName()));
-      dos.writeUTF(StringUtils.getOrEmpty(element.getFileName()));
+      // Write null as a special marker to preserve null vs empty string distinction
+      final @Nullable String fileName = element.getFileName();
+      dos.writeBoolean(fileName == null);
+      dos.writeUTF(fileName == null ? "" : fileName);
       dos.writeInt(element.getLineNumber());
     }
   }
@@ -49,7 +52,10 @@ public final class AnrStackTrace implements Comparable<AnrStackTrace> {
         for (int i = 0; i < stackLength; i++) {
           final @NotNull String className = dis.readUTF();
           final @NotNull String methodName = dis.readUTF();
-          final @Nullable String fileName = dis.readUTF();
+          // Read the null marker to restore null vs empty string distinction
+          final boolean isFileNameNull = dis.readBoolean();
+          final @NotNull String fileNameStr = dis.readUTF();
+          final @Nullable String fileName = isFileNameNull ? null : fileNameStr;
           final int lineNumber = dis.readInt();
           final StackTraceElement element =
               new StackTraceElement(className, methodName, fileName, lineNumber);

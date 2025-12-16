@@ -395,9 +395,7 @@ final class AndroidOptionsInitializer {
     // it to set the replayId in case of an ANR
     options.addIntegration(AnrIntegrationFactory.create(context, buildInfoProvider));
 
-    if (options.isEnableAnrProfiling()) {
-      options.addIntegration(new AnrProfilingIntegration());
-    }
+    options.addIntegration(new AnrProfilingIntegration());
 
     // registerActivityLifecycleCallbacks is only available if Context is an AppContext
     if (context instanceof Application) {

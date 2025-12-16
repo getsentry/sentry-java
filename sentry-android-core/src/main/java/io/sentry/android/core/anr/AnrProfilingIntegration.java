@@ -1,9 +1,10 @@
 package io.sentry.android.core.anr;
 
+import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
+
 import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
-import androidx.annotation.NonNull;
 import io.sentry.ILogger;
 import io.sentry.IScopes;
 import io.sentry.ISentryLifecycleToken;
@@ -12,6 +13,7 @@ import io.sentry.NoOpLogger;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.AppState;
+import io.sentry.android.core.SentryAndroidOptions;
 import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.Objects;
 import java.io.Closeable;
@@ -40,15 +42,26 @@ public class AnrProfilingIntegration
   private volatile MainThreadState mainThreadState = MainThreadState.IDLE;
   private volatile @Nullable AnrProfileManager profileManager;
   private volatile @NotNull ILogger logger = NoOpLogger.getInstance();
-  private volatile @Nullable SentryOptions options;
+  private volatile @Nullable SentryAndroidOptions options;
   private volatile @Nullable Thread thread = null;
   private volatile boolean inForeground = false;
 
   @Override
-  public void register(@NotNull IScopes scopes, @NotNull SentryOptions options) {
-    this.options = options;
-    logger = options.getLogger();
-    AppState.getInstance().addAppStateListener(this);
+  public void register(final @NotNull IScopes scopes, final @NotNull SentryOptions options) {
+    this.options =
+        Objects.requireNonNull(
+            (options instanceof SentryAndroidOptions) ? (SentryAndroidOptions) options : null,
+            "SentryAndroidOptions is required");
+    this.logger = options.getLogger();
+
+    if (this.options == null) {
+      return;
+    }
+
+    if (((SentryAndroidOptions) options).isEnableAnrProfiling()) {
+      addIntegrationToSdkVersion("AnrProfiling");
+      AppState.getInstance().addAppStateListener(this);
+    }
   }
 
   @Override
@@ -81,9 +94,9 @@ public class AnrProfilingIntegration
         oldThread.interrupt();
       }
 
-      final @NotNull Thread newThread = new Thread(this, "AnrProfilingIntegration");
-      newThread.start();
-      thread = newThread;
+      final @NotNull Thread profilingThread = new Thread(this, "AnrProfilingIntegration");
+      profilingThread.start();
+      thread = profilingThread;
     }
   }
 
@@ -177,14 +190,14 @@ public class AnrProfilingIntegration
   }
 
   @TestOnly
-  @NonNull
+  @NotNull
   protected AnrProfileManager getProfileManager() {
     try (final @NotNull ISentryLifecycleToken ignored = profileManagerLock.acquire()) {
       if (profileManager == null) {
         final @NotNull SentryOptions opts =
             Objects.requireNonNull(options, "Options can't be null");
         final @NotNull File currentFile =
-            AnrProfileRotationHelper.getCurrentFile(new File(opts.getCacheDirPath()));
+            AnrProfileRotationHelper.getFileForRecording(new File(opts.getCacheDirPath()));
         profileManager = new AnrProfileManager(opts, currentFile);
       }
 

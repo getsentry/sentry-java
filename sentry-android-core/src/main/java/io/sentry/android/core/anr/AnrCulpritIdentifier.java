@@ -13,18 +13,18 @@ import org.jetbrains.annotations.Nullable;
 public class AnrCulpritIdentifier {
 
   // common Java and Android packages who are less relevant for being the actual culprit
-  private static final List<String> systemAndFrameWorkPackages = new ArrayList<>(9);
+  private static final List<String> systemAndFrameworkPackages = new ArrayList<>(9);
 
   static {
-    systemAndFrameWorkPackages.add("java.lang");
-    systemAndFrameWorkPackages.add("java.util");
-    systemAndFrameWorkPackages.add("android.app");
-    systemAndFrameWorkPackages.add("android.os.Handler");
-    systemAndFrameWorkPackages.add("android.os.Looper");
-    systemAndFrameWorkPackages.add("android.view");
-    systemAndFrameWorkPackages.add("android.widget");
-    systemAndFrameWorkPackages.add("com.android.internal");
-    systemAndFrameWorkPackages.add("com.google.android");
+    systemAndFrameworkPackages.add("java.lang");
+    systemAndFrameworkPackages.add("java.util");
+    systemAndFrameworkPackages.add("android.app");
+    systemAndFrameworkPackages.add("android.os.Handler");
+    systemAndFrameworkPackages.add("android.os.Looper");
+    systemAndFrameworkPackages.add("android.view");
+    systemAndFrameworkPackages.add("android.widget");
+    systemAndFrameworkPackages.add("com.android.internal");
+    systemAndFrameworkPackages.add("com.google.android");
   }
 
   private static final class StackTraceKey {
@@ -148,8 +148,8 @@ public class AnrCulpritIdentifier {
             Float.compare(c1.count * c1.quality * c1.depth, c2.count * c2.quality * c2.depth));
   }
 
-  private static boolean isSystemFrame(final @NotNull String clazz) {
-    for (final String systemPackage : systemAndFrameWorkPackages) {
+  public static boolean isSystemFrame(final @NotNull String clazz) {
+    for (final String systemPackage : systemAndFrameworkPackages) {
       if (clazz.startsWith(systemPackage)) {
         return true;
       }
