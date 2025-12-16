@@ -5,7 +5,6 @@ import com.apollographql.apollo3.api.Operation
 import io.sentry.JsonSerializer
 import io.sentry.ProfileChunk
 import io.sentry.SentryEnvelopeHeader
-import io.sentry.SentryEnvelopeItem
 import io.sentry.SentryEvent
 import io.sentry.SentryItemType
 import io.sentry.SentryLogEvents
@@ -181,17 +180,15 @@ class TestHelper(backendUrl: String) {
       return false
     }
 
-
-    val chunk = BufferedReader(InputStreamReader(ByteArrayInputStream(profileChunkItem.data), Charsets.UTF_8)).use { eventReader ->
-       jsonSerializer.deserialize(eventReader, ProfileChunk::class.java)
-    }
+    val chunk =
+      BufferedReader(InputStreamReader(ByteArrayInputStream(profileChunkItem.data), Charsets.UTF_8))
+        .use { eventReader -> jsonSerializer.deserialize(eventReader, ProfileChunk::class.java) }
 
     if (chunk == null) {
       return false
     }
 
     return callback(chunk, envelopeHeader)
-
   }
 
   fun ensureErrorReceived(callback: ((SentryEvent) -> Boolean)) {
