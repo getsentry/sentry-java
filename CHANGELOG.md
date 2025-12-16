@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Improvements
+
+- Expose `MAX_EVENT_SIZE_BYTES` constant in SentryOptions ([#4962](https://github.com/getsentry/sentry-java/pull/4962))
+
 ## 8.29.0
 
 ### Fixes
