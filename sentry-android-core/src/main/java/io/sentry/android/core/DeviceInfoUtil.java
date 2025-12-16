@@ -237,7 +237,6 @@ public final class DeviceInfoUtil {
         .runWithRelaxedPolicy(
             () -> {
               final @Nullable File dataDir = Environment.getDataDirectory();
-              ;
               if (dataDir != null) {
                 StatFs internalStorageStat = new StatFs(dataDir.getPath());
                 device.setStorageSize(getTotalInternalStorage(internalStorageStat));
