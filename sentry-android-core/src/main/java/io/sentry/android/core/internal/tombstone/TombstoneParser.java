@@ -25,6 +25,10 @@ public class TombstoneParser implements Closeable {
   private final InputStream tombstoneStream;
   private final Map<String, String> excTypeValueMap = new HashMap<>();
 
+  private static String formatHex(long value) {
+    return String.format("0x%x", value);
+  }
+
   public TombstoneParser(@NonNull final InputStream tombstoneStream) {
     this.tombstoneStream = tombstoneStream;
 
@@ -94,7 +98,7 @@ public class TombstoneParser implements Closeable {
       final SentryStackFrame stackFrame = new SentryStackFrame();
       stackFrame.setPackage(frame.getFileName());
       stackFrame.setFunction(frame.getFunctionName());
-      stackFrame.setInstructionAddr(String.format("0x%x", frame.getPc()));
+      stackFrame.setInstructionAddr(formatHex(frame.getPc()));
       frames.add(0, stackFrame);
     }
 
@@ -108,7 +112,7 @@ public class TombstoneParser implements Closeable {
 
     final Map<String, String> registers = new HashMap<>();
     for (TombstoneProtos.Register register : thread.getRegistersList()) {
-      registers.put(register.getName(), String.format("0x%x", register.getU64()));
+      registers.put(register.getName(), formatHex(register.getU64()));
     }
     stacktrace.setRegisters(registers);
 
@@ -196,7 +200,7 @@ public class TombstoneParser implements Closeable {
       image.setCodeId(module.getBuildId());
       image.setCodeFile(module.getMappingName());
       image.setDebugId(module.getBuildId());
-      image.setImageAddr(String.format("0x%x", module.getBeginAddress()));
+      image.setImageAddr(formatHex(module.getBeginAddress()));
       image.setImageSize(module.getEndAddress() - module.getBeginAddress());
       image.setType("elf");
 
