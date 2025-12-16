@@ -4,6 +4,7 @@
 
 ### Fixes
 
+- Support serialization of primitive arrays (boolean[], byte[], short[], char[], int[], long[], float[], double[]) ([#4968](https://github.com/getsentry/sentry-java/pull/4968))
 - Session Replay: Improve network body parsing and truncation handling ([#4958](https://github.com/getsentry/sentry-java/pull/4958))
 
 ### Internal
