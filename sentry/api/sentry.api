@@ -3420,6 +3420,7 @@ public class io/sentry/SentryOptions {
 	public fun getMaxRequestBodySize ()Lio/sentry/SentryOptions$RequestSize;
 	public fun getMaxSpans ()I
 	public fun getMaxTraceFileSize ()J
+	public fun getMetrics ()Lio/sentry/SentryOptions$Metrics;
 	public fun getModulesLoader ()Lio/sentry/internal/modules/IModulesLoader;
 	public fun getOnDiscard ()Lio/sentry/SentryOptions$OnDiscardCallback;
 	public fun getOnOversizedEvent ()Lio/sentry/SentryOptions$OnOversizedEventCallback;
@@ -3572,6 +3573,7 @@ public class io/sentry/SentryOptions {
 	public fun setMaxRequestBodySize (Lio/sentry/SentryOptions$RequestSize;)V
 	public fun setMaxSpans (I)V
 	public fun setMaxTraceFileSize (J)V
+	public fun setMetrics (Lio/sentry/SentryOptions$Metrics;)V
 	public fun setModulesLoader (Lio/sentry/internal/modules/IModulesLoader;)V
 	public fun setOnDiscard (Lio/sentry/SentryOptions$OnDiscardCallback;)V
 	public fun setOnOversizedEvent (Lio/sentry/SentryOptions$OnOversizedEventCallback;)V
@@ -3626,10 +3628,6 @@ public abstract interface class io/sentry/SentryOptions$BeforeBreadcrumbCallback
 	public abstract fun execute (Lio/sentry/Breadcrumb;Lio/sentry/Hint;)Lio/sentry/Breadcrumb;
 }
 
-public abstract interface class io/sentry/SentryOptions$BeforeEmitMetricCallback {
-	public abstract fun execute (Ljava/lang/String;Ljava/util/Map;)Z
-}
-
 public abstract interface class io/sentry/SentryOptions$BeforeEnvelopeCallback {
 	public abstract fun execute (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)V
 }
@@ -3681,6 +3679,18 @@ public final class io/sentry/SentryOptions$Logs {
 
 public abstract interface class io/sentry/SentryOptions$Logs$BeforeSendLogCallback {
 	public abstract fun execute (Lio/sentry/SentryLogEvent;)Lio/sentry/SentryLogEvent;
+}
+
+public final class io/sentry/SentryOptions$Metrics {
+	public fun <init> ()V
+	public fun getBeforeSend ()Lio/sentry/SentryOptions$Metrics$BeforeSendMetricCallback;
+	public fun isEnabled ()Z
+	public fun setBeforeSend (Lio/sentry/SentryOptions$Metrics$BeforeSendMetricCallback;)V
+	public fun setEnabled (Z)V
+}
+
+public abstract interface class io/sentry/SentryOptions$Metrics$BeforeSendMetricCallback {
+	public abstract fun execute (Ljava/lang/Object;)Ljava/lang/Object;
 }
 
 public abstract interface class io/sentry/SentryOptions$OnDiscardCallback {
