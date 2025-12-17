@@ -661,6 +661,7 @@ public final class io/sentry/HubAdapter : io/sentry/IHub {
 	public fun isHealthy ()Z
 	public fun logger ()Lio/sentry/logger/ILoggerApi;
 	public fun makeCurrent ()Lio/sentry/ISentryLifecycleToken;
+	public fun metrics ()Lio/sentry/metrics/IMetricsApi;
 	public fun popScope ()V
 	public fun pushIsolationScope ()Lio/sentry/ISentryLifecycleToken;
 	public fun pushScope ()Lio/sentry/ISentryLifecycleToken;
@@ -732,6 +733,7 @@ public final class io/sentry/HubScopesWrapper : io/sentry/IHub {
 	public fun isHealthy ()Z
 	public fun logger ()Lio/sentry/logger/ILoggerApi;
 	public fun makeCurrent ()Lio/sentry/ISentryLifecycleToken;
+	public fun metrics ()Lio/sentry/metrics/IMetricsApi;
 	public fun popScope ()V
 	public fun pushIsolationScope ()Lio/sentry/ISentryLifecycleToken;
 	public fun pushScope ()Lio/sentry/ISentryLifecycleToken;
@@ -992,6 +994,7 @@ public abstract interface class io/sentry/IScopes {
 	public fun isNoOp ()Z
 	public abstract fun logger ()Lio/sentry/logger/ILoggerApi;
 	public abstract fun makeCurrent ()Lio/sentry/ISentryLifecycleToken;
+	public abstract fun metrics ()Lio/sentry/metrics/IMetricsApi;
 	public abstract fun popScope ()V
 	public abstract fun pushIsolationScope ()Lio/sentry/ISentryLifecycleToken;
 	public abstract fun pushScope ()Lio/sentry/ISentryLifecycleToken;
@@ -1565,6 +1568,7 @@ public final class io/sentry/NoOpHub : io/sentry/IHub {
 	public fun isNoOp ()Z
 	public fun logger ()Lio/sentry/logger/ILoggerApi;
 	public fun makeCurrent ()Lio/sentry/ISentryLifecycleToken;
+	public fun metrics ()Lio/sentry/metrics/IMetricsApi;
 	public fun popScope ()V
 	public fun pushIsolationScope ()Lio/sentry/ISentryLifecycleToken;
 	public fun pushScope ()Lio/sentry/ISentryLifecycleToken;
@@ -1741,6 +1745,7 @@ public final class io/sentry/NoOpScopes : io/sentry/IScopes {
 	public fun isNoOp ()Z
 	public fun logger ()Lio/sentry/logger/ILoggerApi;
 	public fun makeCurrent ()Lio/sentry/ISentryLifecycleToken;
+	public fun metrics ()Lio/sentry/metrics/IMetricsApi;
 	public fun popScope ()V
 	public fun pushIsolationScope ()Lio/sentry/ISentryLifecycleToken;
 	public fun pushScope ()Lio/sentry/ISentryLifecycleToken;
@@ -2456,6 +2461,7 @@ public final class io/sentry/Scopes : io/sentry/IScopes {
 	public fun isHealthy ()Z
 	public fun logger ()Lio/sentry/logger/ILoggerApi;
 	public fun makeCurrent ()Lio/sentry/ISentryLifecycleToken;
+	public fun metrics ()Lio/sentry/metrics/IMetricsApi;
 	public fun popScope ()V
 	public fun pushIsolationScope ()Lio/sentry/ISentryLifecycleToken;
 	public fun pushScope ()Lio/sentry/ISentryLifecycleToken;
@@ -2528,6 +2534,7 @@ public final class io/sentry/ScopesAdapter : io/sentry/IScopes {
 	public fun isHealthy ()Z
 	public fun logger ()Lio/sentry/logger/ILoggerApi;
 	public fun makeCurrent ()Lio/sentry/ISentryLifecycleToken;
+	public fun metrics ()Lio/sentry/metrics/IMetricsApi;
 	public fun popScope ()V
 	public fun pushIsolationScope ()Lio/sentry/ISentryLifecycleToken;
 	public fun pushScope ()Lio/sentry/ISentryLifecycleToken;
@@ -2648,6 +2655,7 @@ public final class io/sentry/Sentry {
 	public static fun isEnabled ()Z
 	public static fun isHealthy ()Z
 	public static fun logger ()Lio/sentry/logger/ILoggerApi;
+	public static fun metrics ()Lio/sentry/metrics/IMetricsApi;
 	public static fun popScope ()V
 	public static fun pushIsolationScope ()Lio/sentry/ISentryLifecycleToken;
 	public static fun pushScope ()Lio/sentry/ISentryLifecycleToken;
@@ -5121,6 +5129,20 @@ public final class io/sentry/logger/SentryLogParameters {
 	public fun setAttributes (Lio/sentry/SentryAttributes;)V
 	public fun setOrigin (Ljava/lang/String;)V
 	public fun setTimestamp (Lio/sentry/SentryDate;)V
+}
+
+public abstract interface class io/sentry/metrics/IMetricsApi {
+	public abstract fun count (Ljava/lang/String;)V
+}
+
+public final class io/sentry/metrics/MetricsApi : io/sentry/metrics/IMetricsApi {
+	public fun <init> (Lio/sentry/Scopes;)V
+	public fun count (Ljava/lang/String;)V
+}
+
+public final class io/sentry/metrics/NoOpMetricsApi : io/sentry/metrics/IMetricsApi {
+	public fun count (Ljava/lang/String;)V
+	public static fun getInstance ()Lio/sentry/metrics/NoOpMetricsApi;
 }
 
 public final class io/sentry/opentelemetry/OpenTelemetryUtil {
