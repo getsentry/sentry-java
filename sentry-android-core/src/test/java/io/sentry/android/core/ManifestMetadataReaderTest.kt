@@ -1161,14 +1161,14 @@ class ManifestMetadataReaderTest {
   @Test
   fun `applyMetadata reads collect external storage to options`() {
     // Arrange
-    val bundle = bundleOf(ManifestMetadataReader.COLLECT_EXTERNAL_STORAGE_CONTEXT to false)
+    val bundle = bundleOf(ManifestMetadataReader.COLLECT_EXTERNAL_STORAGE_CONTEXT to true)
     val context = fixture.getContext(metaData = bundle)
 
     // Act
     ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
     // Assert
-    assertFalse(fixture.options.isCollectExternalStorageContext)
+    assertTrue(fixture.options.isCollectExternalStorageContext)
   }
 
   @Test
@@ -1180,7 +1180,7 @@ class ManifestMetadataReaderTest {
     ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
     // Assert
-    assertTrue(fixture.options.isCollectExternalStorageContext)
+    assertFalse(fixture.options.isCollectExternalStorageContext)
   }
 
   @Test
