@@ -12,6 +12,7 @@
 - Add new experimental option to capture profiles for ANRs ([#4899](https://github.com/getsentry/sentry-java/pull/4899))
   - This feature will capture a stack profile of the main thread when it gets unresponsive
   - The profile gets attached to the ANR event on the next app start, providing a flamegraph of the ANR issue on the sentry issue details page
+  - Breaking change: if the ANR stacktrace contains only system frames (e.g. `java.lang` or `android.os`), a static fingerprint is set on the ANR event, causing all ANR events to be grouped into a single issue, reducing the overall ANR issue noise. 
   - Enable via `options.setEnableAnrProfiling(true)` or Android manifest: `<meta-data android:name="io.sentry.anr.enable-profiling" android:value="true" />`
 
 ## 8.29.0
