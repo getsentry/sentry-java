@@ -624,6 +624,8 @@ public class SentryOptions {
 
   private @NotNull SentryOptions.Logs logs = new SentryOptions.Logs();
 
+  private @NotNull SentryOptions.Metrics metrics = new SentryOptions.Metrics();
+
   private @NotNull ISocketTagger socketTagger = NoOpSocketTagger.getInstance();
 
   /** Runtime manager to manage runtime policies, like StrictMode on Android. */
@@ -3261,20 +3263,6 @@ public class SentryOptions {
     void execute(@NotNull SentryEnvelope envelope, @Nullable Hint hint);
   }
 
-  /** The BeforeEmitMetric callback */
-  @ApiStatus.Experimental
-  public interface BeforeEmitMetricCallback {
-
-    /**
-     * A callback which gets called right before a metric is about to be emitted.
-     *
-     * @param key the metric key
-     * @param tags the metric tags
-     * @return true if the metric should be emitted, false otherwise
-     */
-    boolean execute(@NotNull String key, @Nullable Map<String, String> tags);
-  }
-
   /**
    * Creates SentryOptions instance without initializing any of the internal parts.
    *
@@ -3537,6 +3525,16 @@ public class SentryOptions {
     this.logs = logs;
   }
 
+  @ApiStatus.Experimental
+  public @NotNull SentryOptions.Metrics getMetrics() {
+    return metrics;
+  }
+
+  @ApiStatus.Experimental
+  public void setMetrics(@NotNull SentryOptions.Metrics metrics) {
+    this.metrics = metrics;
+  }
+
   public static final class Proxy {
     private @Nullable String host;
     private @Nullable String port;
@@ -3738,6 +3736,67 @@ public class SentryOptions {
        */
       @Nullable
       SentryLogEvent execute(@NotNull SentryLogEvent event);
+    }
+  }
+
+  public static final class Metrics {
+
+    /** Whether Sentry Metrics feature is enabled and metrics are sent to Sentry. */
+    private boolean enable = false;
+
+    /**
+     * This function is called with a metric key and tags and can return false to skip sending the
+     * metric
+     */
+    private @Nullable BeforeSendMetricCallback beforeSend;
+
+    /**
+     * Whether Sentry Metrics feature is enabled and metrics are sent to Sentry.
+     *
+     * @return true if Sentry Metrics should be enabled
+     */
+    public boolean isEnabled() {
+      return enable;
+    }
+
+    /**
+     * Whether Sentry Metrics feature is enabled and metrics are sent to Sentry.
+     *
+     * @param enableMetrics true if Sentry Metrics should be enabled
+     */
+    public void setEnabled(boolean enableMetrics) {
+      this.enable = enableMetrics;
+    }
+
+    /**
+     * Returns the BeforeSendMetric callback
+     *
+     * @return the beforeSend callback or null if not set
+     */
+    public @Nullable BeforeSendMetricCallback getBeforeSend() {
+      return beforeSend;
+    }
+
+    /**
+     * Sets the beforeSend callback for metrics
+     *
+     * @param beforeSend the beforeSend callback for metrics
+     */
+    public void setBeforeSend(@Nullable BeforeSendMetricCallback beforeSend) {
+      this.beforeSend = beforeSend;
+    }
+
+    public interface BeforeSendMetricCallback {
+
+      /**
+       * A callback which gets called right before a metric is about to be sent.
+       *
+       * @param metric the metric
+       * @return the original metric, mutated metric or null if metric was dropped
+       */
+      // TODO replace with SentryMetric
+      @Nullable
+      Object execute(@NotNull Object metric);
     }
   }
 
