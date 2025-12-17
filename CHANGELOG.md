@@ -5,6 +5,9 @@
 ### Improvements
 
 - Expose `MAX_EVENT_SIZE_BYTES` constant in SentryOptions ([#4962](https://github.com/getsentry/sentry-java/pull/4962))
+- Discard envelopes on `4xx` and `5xx` response ([#4950](https://github.com/getsentry/sentry-java/pull/4950))
+  - This aims to not overwhelm Sentry after an outage or load shedding (including HTTP 429) where too many events are sent at once
+
 
 ## 8.29.0
 
