@@ -17,6 +17,8 @@ import io.sentry.internal.modules.NoOpModulesLoader;
 import io.sentry.internal.viewhierarchy.ViewHierarchyExporter;
 import io.sentry.logger.DefaultLoggerBatchProcessorFactory;
 import io.sentry.logger.ILoggerBatchProcessorFactory;
+import io.sentry.metrics.DefaultMetricsBatchProcessorFactory;
+import io.sentry.metrics.IMetricsBatchProcessorFactory;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.transport.ITransport;
@@ -3750,6 +3752,9 @@ public class SentryOptions {
      */
     private @Nullable BeforeSendMetricCallback beforeSend;
 
+    private @NotNull IMetricsBatchProcessorFactory metricsBatchProcessorFactory =
+        new DefaultMetricsBatchProcessorFactory();
+
     /**
      * Whether Sentry Metrics feature is enabled and metrics are sent to Sentry.
      *
@@ -3786,6 +3791,17 @@ public class SentryOptions {
       this.beforeSend = beforeSend;
     }
 
+    @ApiStatus.Internal
+    public @NotNull IMetricsBatchProcessorFactory getMetricsBatchProcessorFactory() {
+      return metricsBatchProcessorFactory;
+    }
+
+    @ApiStatus.Internal
+    public void setMetricsBatchProcessorFactory(
+        final @NotNull IMetricsBatchProcessorFactory metricsBatchProcessorFactory) {
+      this.metricsBatchProcessorFactory = metricsBatchProcessorFactory;
+    }
+
     public interface BeforeSendMetricCallback {
 
       /**
@@ -3795,7 +3811,7 @@ public class SentryOptions {
        * @return the original metric, mutated metric or null if metric was dropped
        */
       @Nullable
-      SentryMetricsEvents execute(@NotNull SentryMetricsEvents metric);
+      SentryMetricsEvent execute(@NotNull SentryMetricsEvent metric);
     }
   }
 

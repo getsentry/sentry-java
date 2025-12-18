@@ -305,6 +305,8 @@ public interface ISentryClient {
 
   void captureLog(@NotNull SentryLogEvent logEvent, @Nullable IScope scope);
 
+  void captureMetric(@NotNull SentryMetricsEvent logEvent, @Nullable IScope scope);
+
   @ApiStatus.Internal
   void captureBatchedLogEvents(@NotNull SentryLogEvents logEvents);
 

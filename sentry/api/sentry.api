@@ -461,6 +461,7 @@ public abstract interface class io/sentry/EventProcessor {
 	public fun getOrder ()Ljava/lang/Long;
 	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
 	public fun process (Lio/sentry/SentryLogEvent;)Lio/sentry/SentryLogEvent;
+	public fun process (Lio/sentry/SentryMetricsEvent;)Lio/sentry/SentryMetricsEvent;
 	public fun process (Lio/sentry/SentryReplayEvent;Lio/sentry/Hint;)Lio/sentry/SentryReplayEvent;
 	public fun process (Lio/sentry/protocol/SentryTransaction;Lio/sentry/Hint;)Lio/sentry/protocol/SentryTransaction;
 }
@@ -1045,6 +1046,7 @@ public abstract interface class io/sentry/ISentryClient {
 	public abstract fun captureLog (Lio/sentry/SentryLogEvent;Lio/sentry/IScope;)V
 	public fun captureMessage (Ljava/lang/String;Lio/sentry/SentryLevel;)Lio/sentry/protocol/SentryId;
 	public fun captureMessage (Ljava/lang/String;Lio/sentry/SentryLevel;Lio/sentry/IScope;)Lio/sentry/protocol/SentryId;
+	public abstract fun captureMetric (Lio/sentry/SentryMetricsEvent;Lio/sentry/IScope;)V
 	public abstract fun captureProfileChunk (Lio/sentry/ProfileChunk;Lio/sentry/IScope;)Lio/sentry/protocol/SentryId;
 	public abstract fun captureReplayEvent (Lio/sentry/SentryReplayEvent;Lio/sentry/IScope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureSession (Lio/sentry/Session;)V
@@ -2859,6 +2861,7 @@ public final class io/sentry/SentryClient : io/sentry/ISentryClient {
 	public fun captureEvent (Lio/sentry/SentryEvent;Lio/sentry/IScope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureFeedback (Lio/sentry/protocol/Feedback;Lio/sentry/Hint;Lio/sentry/IScope;)Lio/sentry/protocol/SentryId;
 	public fun captureLog (Lio/sentry/SentryLogEvent;Lio/sentry/IScope;)V
+	public fun captureMetric (Lio/sentry/SentryMetricsEvent;Lio/sentry/IScope;)V
 	public fun captureProfileChunk (Lio/sentry/ProfileChunk;Lio/sentry/IScope;)Lio/sentry/protocol/SentryId;
 	public fun captureReplayEvent (Lio/sentry/SentryReplayEvent;Lio/sentry/IScope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureSession (Lio/sentry/Session;Lio/sentry/Hint;)V
@@ -3755,13 +3758,15 @@ public abstract interface class io/sentry/SentryOptions$Logs$BeforeSendLogCallba
 public final class io/sentry/SentryOptions$Metrics {
 	public fun <init> ()V
 	public fun getBeforeSend ()Lio/sentry/SentryOptions$Metrics$BeforeSendMetricCallback;
+	public fun getMetricsBatchProcessorFactory ()Lio/sentry/metrics/IMetricsBatchProcessorFactory;
 	public fun isEnabled ()Z
 	public fun setBeforeSend (Lio/sentry/SentryOptions$Metrics$BeforeSendMetricCallback;)V
 	public fun setEnabled (Z)V
+	public fun setMetricsBatchProcessorFactory (Lio/sentry/metrics/IMetricsBatchProcessorFactory;)V
 }
 
 public abstract interface class io/sentry/SentryOptions$Metrics$BeforeSendMetricCallback {
-	public abstract fun execute (Lio/sentry/SentryMetricsEvents;)Lio/sentry/SentryMetricsEvents;
+	public abstract fun execute (Lio/sentry/SentryMetricsEvent;)Lio/sentry/SentryMetricsEvent;
 }
 
 public abstract interface class io/sentry/SentryOptions$OnDiscardCallback {
