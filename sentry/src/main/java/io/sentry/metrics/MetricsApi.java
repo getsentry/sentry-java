@@ -33,8 +33,33 @@ public final class MetricsApi implements IMetricsApi {
   }
 
   @Override
-  public void count(@NotNull String name) {
-    captureMetrics(SentryLogParameters.create(null, null), name, "counter", 1.0);
+  public void count(final @NotNull String name) {
+    captureMetrics(SentryLogParameters.create(null, null), name, "counter", 1.0, null);
+  }
+
+  @Override
+  public void count(final @NotNull String name, final @Nullable Double value) {
+    captureMetrics(SentryLogParameters.create(null, null), name, "counter", value, null);
+  }
+
+  @Override
+  public void count(final @NotNull String name, final @Nullable String unit) {
+    captureMetrics(SentryLogParameters.create(null, null), name, "counter", 1.0, unit);
+  }
+
+  @Override
+  public void count(
+      final @NotNull String name, final @Nullable Double value, final @Nullable String unit) {
+    captureMetrics(SentryLogParameters.create(null, null), name, "counter", value, unit);
+  }
+
+  @Override
+  public void count(
+      final @NotNull String name,
+      final @Nullable Double value,
+      final @Nullable String unit,
+      final @NotNull SentryLogParameters params) {
+    captureMetrics(params, name, "counter", value, unit);
   }
 
   @SuppressWarnings("AnnotateFormatMethod")
@@ -42,7 +67,8 @@ public final class MetricsApi implements IMetricsApi {
       final @NotNull SentryLogParameters params,
       final @Nullable String name,
       final @Nullable String type,
-      final @Nullable Double value) {
+      final @Nullable Double value,
+      final @Nullable String unit) {
     final @NotNull SentryOptions options = scopes.getOptions();
     try {
       if (!scopes.isEnabled()) {
@@ -90,6 +116,7 @@ public final class MetricsApi implements IMetricsApi {
       final SentryMetricsEvent metricsEvent =
           new SentryMetricsEvent(traceId, timestampToUse, name, type, value);
       metricsEvent.setSpanId(spanId);
+      metricsEvent.setUnit(unit);
       metricsEvent.setAttributes(createAttributes(params));
 
       scopes.getClient().captureMetric(metricsEvent, combinedScope);

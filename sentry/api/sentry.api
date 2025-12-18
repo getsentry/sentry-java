@@ -5206,6 +5206,10 @@ public final class io/sentry/metrics/DefaultMetricsBatchProcessorFactory : io/se
 
 public abstract interface class io/sentry/metrics/IMetricsApi {
 	public abstract fun count (Ljava/lang/String;)V
+	public abstract fun count (Ljava/lang/String;Ljava/lang/Double;)V
+	public abstract fun count (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;)V
+	public abstract fun count (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;Lio/sentry/logger/SentryLogParameters;)V
+	public abstract fun count (Ljava/lang/String;Ljava/lang/String;)V
 }
 
 public abstract interface class io/sentry/metrics/IMetricsBatchProcessor {
@@ -5221,6 +5225,10 @@ public abstract interface class io/sentry/metrics/IMetricsBatchProcessorFactory 
 public final class io/sentry/metrics/MetricsApi : io/sentry/metrics/IMetricsApi {
 	public fun <init> (Lio/sentry/Scopes;)V
 	public fun count (Ljava/lang/String;)V
+	public fun count (Ljava/lang/String;Ljava/lang/Double;)V
+	public fun count (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;)V
+	public fun count (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;Lio/sentry/logger/SentryLogParameters;)V
+	public fun count (Ljava/lang/String;Ljava/lang/String;)V
 }
 
 public class io/sentry/metrics/MetricsBatchProcessor : io/sentry/metrics/IMetricsBatchProcessor {
@@ -5236,6 +5244,10 @@ public class io/sentry/metrics/MetricsBatchProcessor : io/sentry/metrics/IMetric
 
 public final class io/sentry/metrics/NoOpMetricsApi : io/sentry/metrics/IMetricsApi {
 	public fun count (Ljava/lang/String;)V
+	public fun count (Ljava/lang/String;Ljava/lang/Double;)V
+	public fun count (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;)V
+	public fun count (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;Lio/sentry/logger/SentryLogParameters;)V
+	public fun count (Ljava/lang/String;Ljava/lang/String;)V
 	public static fun getInstance ()Lio/sentry/metrics/NoOpMetricsApi;
 }
 
