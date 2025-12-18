@@ -336,6 +336,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun isAttachScreenshot ()Z
 	public fun isAttachViewHierarchy ()Z
 	public fun isCollectAdditionalContext ()Z
+	public fun isCollectExternalStorageContext ()Z
 	public fun isEnableActivityLifecycleBreadcrumbs ()Z
 	public fun isEnableActivityLifecycleTracingAutoFinish ()Z
 	public fun isEnableAnrProfiling ()Z
@@ -361,6 +362,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun setBeforeScreenshotCaptureCallback (Lio/sentry/android/core/SentryAndroidOptions$BeforeCaptureCallback;)V
 	public fun setBeforeViewHierarchyCaptureCallback (Lio/sentry/android/core/SentryAndroidOptions$BeforeCaptureCallback;)V
 	public fun setCollectAdditionalContext (Z)V
+	public fun setCollectExternalStorageContext (Z)V
 	public fun setDebugImagesLoader (Lio/sentry/android/core/IDebugImagesLoader;)V
 	public fun setEnableActivityLifecycleBreadcrumbs (Z)V
 	public fun setEnableActivityLifecycleTracingAutoFinish (Z)V

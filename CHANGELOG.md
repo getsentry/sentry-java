@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Fixes
+
+- Fix ANRs when collecting device context ([#4970](https://github.com/getsentry/sentry-java/pull/4970))
+  - **IMPORTANT:** This disables collecting external storage size (total/free) by default, to enable it back
+    use `options.isCollectExternalStorageContext = true` or `<meta-data android:name="io.sentry.external-storage-context" android:value="true" />`
+
 ### Improvements
 
 - Discard envelopes on `4xx` and `5xx` response ([#4950](https://github.com/getsentry/sentry-java/pull/4950))
