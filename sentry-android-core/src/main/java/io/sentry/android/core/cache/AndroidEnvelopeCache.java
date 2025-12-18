@@ -126,9 +126,9 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
     final File crashMarkerFile = new File(outboxPath, STARTUP_CRASH_MARKER_FILE);
     try {
       final boolean exists =
-          options.getRuntimeManager().runWithRelaxedPolicy(crashMarkerFile::exists);
+          options.getRuntimeManager().runWithRelaxedPolicy(() -> crashMarkerFile.exists());
       if (exists) {
-        if (!options.getRuntimeManager().runWithRelaxedPolicy(crashMarkerFile::delete)) {
+        if (!options.getRuntimeManager().runWithRelaxedPolicy(() -> crashMarkerFile.delete())) {
           options
               .getLogger()
               .log(
@@ -260,10 +260,10 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
               AnrV2Integration.AnrV2Hint.class,
               LAST_ANR_MARKER_LABEL,
               LAST_ANR_REPORT,
-              AnrV2Integration.AnrV2Hint::timestamp),
+              anrV2Hint -> anrV2Hint.timestamp()),
           new TimestampMarkerHandler<>(
               TombstoneIntegration.TombstoneHint.class,
               LAST_TOMBSTONE_MARKER_LABEL,
               LAST_TOMBSTONE_REPORT,
-              TombstoneIntegration.TombstoneHint::timestamp));
+              tombstoneHint -> tombstoneHint.timestamp()));
 }
