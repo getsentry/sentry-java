@@ -56,6 +56,9 @@ public class SentryOptions {
 
   @ApiStatus.Internal public static final @NotNull String DEFAULT_PROPAGATION_TARGETS = ".*";
 
+  /** Maximum size of an event in bytes. Events exceeding this limit will be reduced. */
+  public static final long MAX_EVENT_SIZE_BYTES = 1024 * 1024;
+
   /** Default Log level if not specified Default is DEBUG */
   static final SentryLevel DEFAULT_DIAGNOSTIC_LEVEL = SentryLevel.DEBUG;
 
