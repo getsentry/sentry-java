@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 
 public class TombstoneParser implements Closeable {
 
@@ -56,10 +57,8 @@ public class TombstoneParser implements Closeable {
     event.setMessage(constructMessage(tombstone));
     event.setDebugMeta(createDebugMeta(tombstone));
     event.setExceptions(createException(tombstone));
-    if (event.getExceptions() == null || event.getExceptions().isEmpty()) {
-      throw new RuntimeException("Failed to decode exception information from tombstone");
-    }
-    event.setThreads(createThreads(tombstone, event.getExceptions().get(0)));
+    event.setThreads(
+        createThreads(tombstone, Objects.requireNonNull(event.getExceptions()).get(0)));
 
     return event;
   }
