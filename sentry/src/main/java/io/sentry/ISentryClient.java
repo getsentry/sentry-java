@@ -309,6 +309,9 @@ public interface ISentryClient {
   void captureBatchedLogEvents(@NotNull SentryLogEvents logEvents);
 
   @ApiStatus.Internal
+  void captureBatchedMetricsEvents(@NotNull SentryMetricsEvents metricsEvents);
+
+  @ApiStatus.Internal
   @Nullable
   RateLimiter getRateLimiter();
 
