@@ -546,15 +546,6 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
     }
   }
 
-  // by default we assume that the ANR is foreground, unless abnormalMechanism is "anr_background"
-  private boolean isBackgroundAnr(final @NotNull Object hint) {
-    if (hint instanceof AbnormalExit) {
-      final String abnormalMechanism = ((AbnormalExit) hint).mechanism();
-      return "anr_background".equals(abnormalMechanism);
-    }
-    return false;
-  }
-
   private void mergeUser(final @NotNull SentryBaseEvent event) {
     @Nullable User user = event.getUser();
     if (user == null) {
@@ -685,6 +676,15 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
       // While this is specifically an ANR enricher we discriminate enrichment application
       // on the broader AbnormalExit hints for now.
       return hint instanceof AbnormalExit;
+    }
+
+    // by default we assume that the ANR is foreground, unless abnormalMechanism is "anr_background"
+    private boolean isBackgroundAnr(final @NotNull Object hint) {
+      if (hint instanceof AbnormalExit) {
+        final String abnormalMechanism = ((AbnormalExit) hint).mechanism();
+        return "anr_background".equals(abnormalMechanism);
+      }
+      return false;
     }
 
     @Override
