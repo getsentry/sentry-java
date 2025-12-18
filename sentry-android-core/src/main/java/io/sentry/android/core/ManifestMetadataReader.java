@@ -86,6 +86,7 @@ final class ManifestMetadataReader {
   static final String ATTACH_VIEW_HIERARCHY = "io.sentry.attach-view-hierarchy";
   static final String CLIENT_REPORTS_ENABLE = "io.sentry.send-client-reports";
   static final String COLLECT_ADDITIONAL_CONTEXT = "io.sentry.additional-context";
+  static final String COLLECT_EXTERNAL_STORAGE_CONTEXT = "io.sentry.external-storage-context";
 
   static final String SEND_DEFAULT_PII = "io.sentry.send-default-pii";
 
@@ -337,6 +338,13 @@ final class ManifestMetadataReader {
                 logger,
                 COLLECT_ADDITIONAL_CONTEXT,
                 options.isCollectAdditionalContext()));
+
+        options.setCollectExternalStorageContext(
+            readBool(
+                metadata,
+                logger,
+                COLLECT_EXTERNAL_STORAGE_CONTEXT,
+                options.isCollectExternalStorageContext()));
 
         if (options.getTracesSampleRate() == null) {
           final double tracesSampleRate = readDouble(metadata, logger, TRACES_SAMPLE_RATE);
