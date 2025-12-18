@@ -18,6 +18,7 @@ import io.sentry.SentryEnvelope
 import io.sentry.SentryEvent
 import io.sentry.SentryLogEvent
 import io.sentry.SentryLogEvents
+import io.sentry.SentryMetricsEvents
 import io.sentry.SentryReplayEvent
 import io.sentry.Session
 import io.sentry.TraceContext
@@ -189,6 +190,10 @@ class SessionTrackingIntegrationTest {
     }
 
     override fun captureBatchedLogEvents(logEvents: SentryLogEvents) {
+      TODO("Not yet implemented")
+    }
+
+    override fun captureBatchedMetricsEvents(metricsEvents: SentryMetricsEvents) {
       TODO("Not yet implemented")
     }
 
