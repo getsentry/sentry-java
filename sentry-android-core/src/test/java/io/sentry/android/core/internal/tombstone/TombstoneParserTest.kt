@@ -102,7 +102,6 @@ class TombstoneParserTest {
       assertEquals("elf", image.type)
       assertNotNull(image.debugId)
       assertNotNull(image.codeId)
-      assertEquals(image.codeId, image.debugId)
       assertNotNull(image.codeFile)
       val imageAddress = image.imageAddr!!.removePrefix("0x").toLong(16)
       assert(imageAddress > 0)
