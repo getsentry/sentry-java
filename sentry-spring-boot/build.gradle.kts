@@ -19,6 +19,13 @@ tasks.withType<KotlinCompile>().configureEach {
   compilerOptions.apiVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
 }
 
+configurations.all {
+  resolutionStrategy {
+    force(libs.okhttp)
+    force(libs.okhttp.mockwebserver)
+  }
+}
+
 dependencies {
   api(projects.sentry)
   api(projects.sentrySpring)
