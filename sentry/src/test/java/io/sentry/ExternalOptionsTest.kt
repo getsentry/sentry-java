@@ -377,6 +377,25 @@ class ExternalOptionsTest {
   }
 
   @Test
+  fun `creates options with enableMetrics set to true`() {
+    withPropertiesFile("metrics.enabled=true") { options ->
+      assertTrue(options.isEnableMetrics == true)
+    }
+  }
+
+  @Test
+  fun `creates options with enableMetrics set to false`() {
+    withPropertiesFile("metrics.enabled=false") { options ->
+      assertTrue(options.isEnableMetrics == false)
+    }
+  }
+
+  @Test
+  fun `creates options with enableMetrics set to null when not set`() {
+    withPropertiesFile { assertNull(it.isEnableMetrics) }
+  }
+
+  @Test
   fun `creates options with profileSessionSampleRate set to 0_8`() {
     withPropertiesFile("profile-session-sample-rate=0.8") { options ->
       assertTrue(options.profileSessionSampleRate == 0.8)
