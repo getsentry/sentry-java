@@ -198,7 +198,7 @@ public class TombstoneParser implements Closeable {
       final DebugImage image = new DebugImage();
       image.setCodeId(module.getBuildId());
       image.setCodeFile(module.getMappingName());
-      image.setDebugId(module.getBuildId());
+      image.setDebugId(OleGuidFormatter.convert(module.getBuildId()));
       image.setImageAddr(formatHex(module.getBeginAddress()));
       image.setImageSize(module.getEndAddress() - module.getBeginAddress());
       image.setType("elf");
