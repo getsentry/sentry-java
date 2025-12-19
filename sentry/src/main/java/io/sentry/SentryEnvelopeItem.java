@@ -158,6 +158,17 @@ public final class SentryEnvelopeItem {
     }
   }
 
+  public @Nullable SentryMetricsEvents getMetrics(final @NotNull ISerializer serializer)
+      throws Exception {
+    if (header == null || header.getType() != SentryItemType.TraceMetric) {
+      return null;
+    }
+    try (final Reader eventReader =
+        new BufferedReader(new InputStreamReader(new ByteArrayInputStream(getData()), UTF_8))) {
+      return serializer.deserialize(eventReader, SentryMetricsEvents.class);
+    }
+  }
+
   public static SentryEnvelopeItem fromUserFeedback(
       final @NotNull ISerializer serializer, final @NotNull UserFeedback userFeedback) {
     Objects.requireNonNull(serializer, "ISerializer is required.");
