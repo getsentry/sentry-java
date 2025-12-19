@@ -100,6 +100,18 @@ public class io/sentry/android/core/AndroidMemoryCollector : io/sentry/IPerforma
 	public fun setup ()V
 }
 
+public final class io/sentry/android/core/AndroidMetricsBatchProcessor : io/sentry/metrics/MetricsBatchProcessor, io/sentry/android/core/AppState$AppStateListener {
+	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/ISentryClient;)V
+	public fun close (Z)V
+	public fun onBackground ()V
+	public fun onForeground ()V
+}
+
+public final class io/sentry/android/core/AndroidMetricsBatchProcessorFactory : io/sentry/metrics/IMetricsBatchProcessorFactory {
+	public fun <init> ()V
+	public fun create (Lio/sentry/SentryOptions;Lio/sentry/SentryClient;)Lio/sentry/metrics/IMetricsBatchProcessor;
+}
+
 public class io/sentry/android/core/AndroidProfiler {
 	protected final field lock Lio/sentry/util/AutoClosableReentrantLock;
 	public fun <init> (Ljava/lang/String;ILio/sentry/android/core/internal/util/SentryFrameMetricsCollector;Lio/sentry/ISentryExecutorService;Lio/sentry/ILogger;)V
