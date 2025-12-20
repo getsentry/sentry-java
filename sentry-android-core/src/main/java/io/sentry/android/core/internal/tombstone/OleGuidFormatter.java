@@ -20,7 +20,7 @@ import androidx.annotation.Nullable;
  * c0bcc3f1-9827-fe65-3058-404b2831d9e6
  * </pre>
  *
- * Note: Java bytes are signed. When promoted (e.g. during formatting or bit shifts), they
+ * <p>Note: Java bytes are signed. When promoted (e.g. during formatting or bit shifts), they
  * sign-extend to int, unlike uint8_t in C. We therefore mask with & 0xff to preserve the intended
  * unsigned byte values.
  */
@@ -78,6 +78,10 @@ public class OleGuidFormatter {
     for (int byteIdx = 0; byteIdx < numBytes; byteIdx++) {
       int hi = Character.digit(hex.charAt(byteIdx * 2), numBytes);
       int lo = Character.digit(hex.charAt(byteIdx * 2 + 1), numBytes);
+      if (hi < 0 || lo < 0) {
+        throw new IllegalArgumentException(
+            "GUID conversion input hex string contains invalid characters");
+      }
       result[byteIdx] = (byte) ((hi << 4) | lo);
     }
     return result;

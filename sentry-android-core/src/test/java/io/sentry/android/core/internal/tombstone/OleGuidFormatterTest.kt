@@ -25,6 +25,19 @@ class OleGuidFormatterTest {
   }
 
   @Test
+  fun `an input string with with an invalid hex character throws`() {
+    // fail the low nibble conversion
+    assertFailsWith<IllegalArgumentException> {
+      OleGuidFormatter.convert("g123456789abcdef0123456789abcdef")
+    }
+
+    // fail the high nibble conversion
+    assertFailsWith<IllegalArgumentException> {
+      OleGuidFormatter.convert("0h23456789abcdef0123456789abcdef")
+    }
+  }
+
+  @Test
   fun `an input example from the develop docs leads to the expected result`() {
     val input = "f1c3bcc0279865fe3058404b2831d9e64135386c"
     val output = OleGuidFormatter.convert(input)
