@@ -67,7 +67,8 @@ class TombstoneIntegrationTest : ApplicationExitIntegrationTestBase<TombstoneHin
     assertTrue(crashedThread.isCrashed!!)
 
     val image =
-      event.debugMeta?.images?.find { image -> image.debugId == "f60b4b74005f33fb3ef3b98aa4546008" }
+      event.debugMeta?.images?.find { image -> image.codeId == "f60b4b74005f33fb3ef3b98aa4546008" }
+    assertEquals("744b0bf6-5f00-fb33-3ef3-b98aa4546008", image!!.debugId)
     assertNotNull(image)
     assertEquals("/system/lib64/libcompiler_rt.so", image.codeFile)
     assertEquals("0x764c32a000", image.imageAddr)
