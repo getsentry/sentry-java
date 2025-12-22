@@ -3,6 +3,7 @@ package io.sentry.android.core.internal.tombstone;
 import androidx.annotation.NonNull;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
+import io.sentry.android.core.internal.util.NativeEventUtils;
 import io.sentry.protocol.DebugImage;
 import io.sentry.protocol.DebugMeta;
 import io.sentry.protocol.Mechanism;
@@ -196,9 +197,13 @@ public class TombstoneParser implements Closeable {
         continue;
       }
       final DebugImage image = new DebugImage();
-      image.setCodeId(module.getBuildId());
+      final String codeId = module.getBuildId();
+      image.setCodeId(codeId);
       image.setCodeFile(module.getMappingName());
-      image.setDebugId(OleGuidFormatter.convert(module.getBuildId()));
+
+      final String debugId = NativeEventUtils.buildIdToDebugId(codeId);
+      image.setDebugId(debugId != null ? debugId : codeId);
+
       image.setImageAddr(formatHex(module.getBeginAddress()));
       image.setImageSize(module.getEndAddress() - module.getBeginAddress());
       image.setType("elf");

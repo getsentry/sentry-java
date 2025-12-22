@@ -1,5 +1,6 @@
 package io.sentry.android.core.internal.tombstone
 
+import java.io.ByteArrayInputStream
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -107,5 +108,71 @@ class TombstoneParserTest {
       assert(imageAddress > 0)
       assert(image.imageSize!! > 0)
     }
+  }
+
+  @Test
+  fun `debugId falls back to codeId when OleGuidFormatter conversion fails`() {
+    // Create a tombstone with a memory mapping that has an invalid buildId
+    // (contains 'ZZ' which are not valid hex characters)
+    val invalidBuildId = "ZZ00112233445566778899aabbccddeeff00112233"
+    val validBuildId = "f1c3bcc0279865fe3058404b2831d9e64135386c"
+
+    val tombstone =
+      TombstoneProtos.Tombstone.newBuilder()
+        .setPid(1234)
+        .setTid(1234)
+        .setSignalInfo(
+          TombstoneProtos.Signal.newBuilder()
+            .setNumber(11)
+            .setName("SIGSEGV")
+            .setCode(1)
+            .setCodeName("SEGV_MAPERR")
+        )
+        .addMemoryMappings(
+          TombstoneProtos.MemoryMapping.newBuilder()
+            .setBuildId(invalidBuildId)
+            .setMappingName("/system/lib64/libc.so")
+            .setBeginAddress(0x7000000000)
+            .setEndAddress(0x7000001000)
+            .setExecute(true)
+        )
+        .addMemoryMappings(
+          TombstoneProtos.MemoryMapping.newBuilder()
+            .setBuildId(validBuildId)
+            .setMappingName("/system/lib64/libm.so")
+            .setBeginAddress(0x7000002000)
+            .setEndAddress(0x7000003000)
+            .setExecute(true)
+        )
+        .putThreads(
+          1234,
+          TombstoneProtos.Thread.newBuilder()
+            .setId(1234)
+            .setName("main")
+            .addCurrentBacktrace(
+              TombstoneProtos.BacktraceFrame.newBuilder()
+                .setPc(0x7000000100)
+                .setFunctionName("crash")
+                .setFileName("/system/lib64/libc.so")
+            )
+            .build(),
+        )
+        .build()
+
+    val parser = TombstoneParser(ByteArrayInputStream(tombstone.toByteArray()))
+    val event = parser.parse()
+
+    val images = event.debugMeta!!.images!!
+    assertEquals(2, images.size)
+
+    // First image has invalid buildId - debugId should fall back to codeId
+    val invalidImage = images.find { it.codeFile == "/system/lib64/libc.so" }!!
+    assertEquals(invalidBuildId, invalidImage.codeId)
+    assertEquals(invalidBuildId, invalidImage.debugId)
+
+    // Second image has valid buildId - debugId should be converted
+    val validImage = images.find { it.codeFile == "/system/lib64/libm.so" }!!
+    assertEquals(validBuildId, validImage.codeId)
+    assertEquals("c0bcc3f1-9827-fe65-3058-404b2831d9e6", validImage.debugId)
   }
 }
