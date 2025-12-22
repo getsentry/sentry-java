@@ -546,6 +546,36 @@ public final class SentryEnvelopeItem {
     return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
   }
 
+  public static SentryEnvelopeItem fromMetrics(
+      final @NotNull ISerializer serializer, final @NotNull SentryMetricsEvents metricsEvents) {
+    Objects.requireNonNull(serializer, "ISerializer is required.");
+    Objects.requireNonNull(metricsEvents, "SentryMetricsEvents is required.");
+
+    final CachedItem cachedItem =
+        new CachedItem(
+            () -> {
+              try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                  final Writer writer = new BufferedWriter(new OutputStreamWriter(stream, UTF_8))) {
+                serializer.serialize(metricsEvents, writer);
+                return stream.toByteArray();
+              }
+            });
+
+    SentryEnvelopeItemHeader itemHeader =
+        new SentryEnvelopeItemHeader(
+            SentryItemType.TraceMetric,
+            () -> cachedItem.getBytes().length,
+            "application/vnd.sentry.items.trace-metric+json",
+            null,
+            null,
+            null,
+            metricsEvents.getItems().size());
+
+    // avoid method refs on Android due to some issues with older AGP setups
+    // noinspection Convert2MethodRef
+    return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
+  }
+
   private static class CachedItem {
     private @Nullable byte[] bytes;
     private final @Nullable Callable<byte[]> dataFactory;
