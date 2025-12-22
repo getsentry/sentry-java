@@ -14,6 +14,7 @@ import io.sentry.internal.modules.ManifestModulesLoader;
 import io.sentry.internal.modules.NoOpModulesLoader;
 import io.sentry.internal.modules.ResourcesModulesLoader;
 import io.sentry.logger.ILoggerApi;
+import io.sentry.metrics.IMetricsApi;
 import io.sentry.opentelemetry.OpenTelemetryUtil;
 import io.sentry.protocol.Feedback;
 import io.sentry.protocol.SentryId;
@@ -1342,6 +1343,11 @@ public final class Sentry {
   @NotNull
   public static IDistributionApi distribution() {
     return getCurrentScopes().getScope().getOptions().getDistributionController();
+  }
+
+  @NotNull
+  public static IMetricsApi metrics() {
+    return getCurrentScopes().metrics();
   }
 
   public static void showUserFeedbackDialog() {
