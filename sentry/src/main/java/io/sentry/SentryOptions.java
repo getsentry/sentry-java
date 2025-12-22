@@ -3742,7 +3742,7 @@ public class SentryOptions {
   public static final class Metrics {
 
     /** Whether Sentry Metrics feature is enabled and metrics are sent to Sentry. */
-    private boolean enable = false;
+    private boolean enable = true;
 
     /**
      * This function is called with a metric key and tags and can return false to skip sending the
