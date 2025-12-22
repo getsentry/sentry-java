@@ -32,4 +32,18 @@ public final class NoOpMetricsApi implements IMetricsApi {
       final @Nullable Double value,
       final @Nullable String unit,
       final @NotNull SentryLogParameters params) {}
+
+  @Override
+  public void distribution(final @NotNull String name, final @Nullable Double value) {}
+
+  @Override
+  public void distribution(
+      final @NotNull String name, final @Nullable Double value, final @Nullable String unit) {}
+
+  @Override
+  public void distribution(
+      final @NotNull String name,
+      final @Nullable Double value,
+      final @Nullable String unit,
+      final @NotNull SentryLogParameters params) {}
 }
