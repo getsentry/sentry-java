@@ -86,16 +86,30 @@ final class PreviousSessionFinalizer implements Runnable {
                   "Stream from path %s resulted in a null envelope.",
                   previousSessionFile.getAbsolutePath());
         } else {
-          Date timestamp = null;
           final File crashMarkerFile =
               new File(options.getCacheDirPath(), NATIVE_CRASH_MARKER_FILE);
-          if (crashMarkerFile.exists()) {
+
+          if (session.getStatus() == Session.State.Crashed) {
+            // this means the session was already updated from tombstone data and there is no need
+            // to consider the crash-marker file from the Native SDK. However, we can use this to
+            // set crashedLastRun.
+            SentryCrashLastRunState.getInstance().setCrashedLastRun(true);
+          } else if (crashMarkerFile.exists()) {
+            // this means that the Native SDK is solely responsible for Native crashes and we must
+            // update the session state and timestamp.
             options
                 .getLogger()
                 .log(INFO, "Crash marker file exists, last Session is gonna be Crashed.");
 
-            timestamp = getTimestampFromCrashMarkerFile(crashMarkerFile);
+            @Nullable Date timestamp = getTimestampFromCrashMarkerFile(crashMarkerFile);
+            session.update(Session.State.Crashed, null, true);
+            session.end(timestamp);
+          }
 
+          // Independent of whether the TombstoneIntegration is active or the Native SDK operates
+          // alone, we must finalize the Native SDK crash marker life-cycle, otherwise it would
+          // report crashes forever.
+          if (crashMarkerFile.exists()) {
             if (!crashMarkerFile.delete()) {
               options
                   .getLogger()
@@ -104,12 +118,6 @@ final class PreviousSessionFinalizer implements Runnable {
                       "Failed to delete the crash marker file. %s.",
                       crashMarkerFile.getAbsolutePath());
             }
-            session.update(Session.State.Crashed, null, true);
-          }
-          // if the session has abnormal mechanism, we do not overwrite its end timestamp, because
-          // it's already set
-          if (session.getAbnormalMechanism() == null) {
-            session.end(timestamp);
           }
 
           // if the App. has been upgraded and there's a new version of the SDK running,

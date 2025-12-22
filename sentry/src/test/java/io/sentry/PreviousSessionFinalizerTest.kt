@@ -4,7 +4,11 @@ import io.sentry.Session.State.Crashed
 import io.sentry.cache.EnvelopeCache
 import java.io.File
 import java.util.Date
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -16,6 +20,16 @@ import org.mockito.kotlin.verify
 
 class PreviousSessionFinalizerTest {
   @get:Rule val tmpDir = TemporaryFolder()
+
+  @BeforeTest
+  fun `set up`() {
+    SentryCrashLastRunState.getInstance().reset()
+  }
+
+  @AfterTest
+  fun `tear down`() {
+    SentryCrashLastRunState.getInstance().reset()
+  }
 
   class Fixture {
     val options = SentryOptions()
@@ -204,5 +218,63 @@ class PreviousSessionFinalizerTest {
         any<Any>(),
       )
     verify(fixture.scopes, never()).captureEnvelope(any())
+  }
+
+  @Test
+  fun `when previous session is already crashed, sets crashedLastRun to true`() {
+    // Create a session that is already in Crashed state (simulating tombstone integration)
+    val crashedSession =
+      Session(null, null, null, "io.sentry.sample@1.0").apply { update(Crashed, null, true) }
+
+    val finalizer = fixture.getSut(tmpDir, session = crashedSession)
+
+    // crashedLastRun should not be set before running the finalizer
+    assertNull(SentryCrashLastRunState.getInstance().isCrashedLastRun(null, false))
+
+    finalizer.run()
+
+    // crashedLastRun should be set to true after running the finalizer
+    assertTrue(SentryCrashLastRunState.getInstance().isCrashedLastRun(null, false)!!)
+  }
+
+  @Test
+  fun `when native crash marker exists but session is not crashed, does not set crashedLastRun`() {
+    // Session is not crashed, but native crash marker exists
+    val finalizer =
+      fixture.getSut(
+        tmpDir,
+        session = Session(null, null, null, "io.sentry.sample@1.0"),
+        nativeCrashTimestamp = Date(2023, 10, 1),
+      )
+
+    // crashedLastRun should not be set before running the finalizer
+    assertNull(SentryCrashLastRunState.getInstance().isCrashedLastRun(null, false))
+
+    finalizer.run()
+
+    // crashedLastRun should NOT be set by PreviousSessionFinalizer for native crash marker case
+    // (it's handled by EnvelopeCache at session start instead)
+    assertNull(SentryCrashLastRunState.getInstance().isCrashedLastRun(null, false))
+  }
+
+  @Test
+  fun `when previous session is already crashed and native crash marker exists, sets crashedLastRun and deletes marker`() {
+    // Session is already crashed (tombstone case) AND native crash marker exists
+    val crashedSession =
+      Session(null, null, null, "io.sentry.sample@1.0").apply { update(Crashed, null, true) }
+
+    val finalizer =
+      fixture.getSut(tmpDir, session = crashedSession, nativeCrashTimestamp = Date(2023, 10, 1))
+
+    val nativeCrashMarker =
+      File(fixture.options.cacheDirPath!!, EnvelopeCache.NATIVE_CRASH_MARKER_FILE)
+    assertTrue(nativeCrashMarker.exists())
+
+    finalizer.run()
+
+    // crashedLastRun should be set to true
+    assertTrue(SentryCrashLastRunState.getInstance().isCrashedLastRun(null, false)!!)
+    // Native crash marker should be deleted
+    assertFalse(nativeCrashMarker.exists())
   }
 }

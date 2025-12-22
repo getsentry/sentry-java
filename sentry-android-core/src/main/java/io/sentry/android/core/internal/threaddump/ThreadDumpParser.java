@@ -22,14 +22,11 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryLockReason;
 import io.sentry.SentryOptions;
 import io.sentry.SentryStackTraceFactory;
+import io.sentry.android.core.internal.util.NativeEventUtils;
 import io.sentry.protocol.DebugImage;
 import io.sentry.protocol.SentryStackFrame;
 import io.sentry.protocol.SentryStackTrace;
 import io.sentry.protocol.SentryThread;
-import java.math.BigInteger;
-import java.nio.BufferUnderflowException;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -128,25 +125,6 @@ public class ThreadDumpParser {
   @NotNull
   public List<SentryThread> getThreads() {
     return threads;
-  }
-
-  @Nullable
-  private static String buildIdToDebugId(final @NotNull String buildId) {
-    try {
-      // Abuse BigInteger as a hex string parser. Extra byte needed to handle leading zeros.
-      final ByteBuffer buf = ByteBuffer.wrap(new BigInteger("10" + buildId, 16).toByteArray());
-      buf.get();
-      return String.format(
-          "%08x-%04x-%04x-%04x-%04x%08x",
-          buf.order(ByteOrder.LITTLE_ENDIAN).getInt(),
-          buf.getShort(),
-          buf.getShort(),
-          buf.order(ByteOrder.BIG_ENDIAN).getShort(),
-          buf.getShort(),
-          buf.getInt());
-    } catch (NumberFormatException | BufferUnderflowException e) {
-      return null;
-    }
   }
 
   public void parse(final @NotNull Lines lines) {
@@ -279,7 +257,7 @@ public class ThreadDumpParser {
         frame.setPlatform("native");
 
         final String buildId = nativeRe.group(8);
-        final String debugId = buildId == null ? null : buildIdToDebugId(buildId);
+        final String debugId = buildId == null ? null : NativeEventUtils.buildIdToDebugId(buildId);
         if (debugId != null) {
           if (!debugImages.containsKey(debugId)) {
             final DebugImage debugImage = new DebugImage();
