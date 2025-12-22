@@ -2,45 +2,41 @@ package io.sentry;
 
 import static io.sentry.DateUtils.doubleToBigDecimal;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
+import io.sentry.protocol.SentryId;
+import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-
-import io.sentry.protocol.SentryId;
-import io.sentry.vendor.gson.stream.JsonToken;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public final class SentryMetricsEvent implements JsonUnknown, JsonSerializable {
 
   private @NotNull SentryId traceId;
   private @Nullable SpanId spanId;
-  /**
-   * Timestamp in seconds (epoch time) indicating when the metric was recorded.
-   */
+
+  /** Timestamp in seconds (epoch time) indicating when the metric was recorded. */
   private @NotNull Double timestamp;
+
   /**
-   * The name of the metric.
-   * This should follow a hierarchical naming convention using dots as separators
-   * (e.g., api.response_time, db.query.duration).
+   * The name of the metric. This should follow a hierarchical naming convention using dots as
+   * separators (e.g., api.response_time, db.query.duration).
    */
   private @NotNull String name;
-  /**
-   * The unit of measurement for the metric value.
-   */
+
+  /** The unit of measurement for the metric value. */
   private @Nullable String unit;
+
   /**
-   * The type of metric. One of:
-   * - counter: A metric that increments counts
-   * - gauge: A metric that tracks a value that can go up or down
-   * - distribution: A metric that tracks the statistical distribution of values
+   * The type of metric. One of: - counter: A metric that increments counts - gauge: A metric that
+   * tracks a value that can go up or down - distribution: A metric that tracks the statistical
+   * distribution of values
    */
   private @NotNull String type;
+
   /**
-   * The numeric value of the metric. The interpretation depends on the metric type:
-   * - For counter metrics: the count to increment by (should default to 1)
-   * - For gauge metrics: the current value
+   * The numeric value of the metric. The interpretation depends on the metric type: - For counter
+   * metrics: the count to increment by (should default to 1) - For gauge metrics: the current value
    * - For distribution metrics: a single measured value
    */
   private @NotNull Double value;
@@ -279,7 +275,8 @@ public final class SentryMetricsEvent implements JsonUnknown, JsonSerializable {
         throw exception;
       }
 
-      final SentryMetricsEvent logEvent = new SentryMetricsEvent(traceId, timestamp, name, type, value);
+      final SentryMetricsEvent logEvent =
+          new SentryMetricsEvent(traceId, timestamp, name, type, value);
 
       logEvent.setAttributes(attributes);
       logEvent.setSpanId(spanId);
