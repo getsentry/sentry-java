@@ -60,7 +60,7 @@ public class LoggerBatchProcessor implements ILoggerBatchProcessor {
           JsonSerializationUtils.byteSizeOf(options.getSerializer(), options.getLogger(), logEvent);
       options
           .getClientReportRecorder()
-          .recordLostEvent(DiscardReason.QUEUE_OVERFLOW, DataCategory.Attachment, lostBytes);
+          .recordLostEvent(DiscardReason.QUEUE_OVERFLOW, DataCategory.LogByte, lostBytes);
       return;
     }
     pendingCount.increment();
