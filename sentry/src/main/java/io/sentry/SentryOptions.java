@@ -3480,6 +3480,10 @@ public class SentryOptions {
       getLogs().setEnabled(options.isEnableLogs());
     }
 
+    if (options.isEnableMetrics() != null) {
+      getMetrics().setEnabled(options.isEnableMetrics());
+    }
+
     if (options.getProfileSessionSampleRate() != null) {
       setProfileSessionSampleRate(options.getProfileSessionSampleRate());
     }
