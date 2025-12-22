@@ -94,6 +94,12 @@ final class NoOpSentryClient implements ISentryClient {
     // do nothing
   }
 
+  @ApiStatus.Internal
+  @Override
+  public void captureBatchedMetricsEvents(@NotNull SentryMetricsEvents metricsEvents) {
+    // do nothing
+  }
+
   @Override
   public @Nullable RateLimiter getRateLimiter() {
     return null;
