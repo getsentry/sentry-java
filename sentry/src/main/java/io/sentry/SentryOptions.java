@@ -3531,12 +3531,10 @@ public class SentryOptions {
     this.logs = logs;
   }
 
-  @ApiStatus.Experimental
   public @NotNull SentryOptions.Metrics getMetrics() {
     return metrics;
   }
 
-  @ApiStatus.Experimental
   public void setMetrics(@NotNull SentryOptions.Metrics metrics) {
     this.metrics = metrics;
   }
