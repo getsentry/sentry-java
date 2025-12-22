@@ -162,7 +162,7 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
       final String content = FileUtils.readText(lastAnrMarker);
       // we wrapped into try-catch already
       //noinspection ConstantConditions
-      return content.equals("null") ? null : Long.parseLong(content.trim());
+      return (content == null || content.equals("null")) ? null : Long.parseLong(content.trim());
     } catch (Throwable e) {
       if (e instanceof FileNotFoundException) {
         options
