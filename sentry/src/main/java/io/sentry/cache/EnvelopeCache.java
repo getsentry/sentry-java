@@ -131,9 +131,6 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
 
       boolean crashedLastRun = false;
       final File crashMarkerFile = new File(options.getCacheDirPath(), NATIVE_CRASH_MARKER_FILE);
-      // TODO: this should probably check whether the Native SDK integration is currently enabled or
-      // remove the marker file if it isn't. Otherwise, application that disable the Native SDK,
-      // will report a crash for the last run forever.
       if (crashMarkerFile.exists()) {
         crashedLastRun = true;
       }
@@ -158,7 +155,6 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
         }
       }
 
-      // TODO: maybe set crashLastRun for tombstone too?
       SentryCrashLastRunState.getInstance().setCrashedLastRun(crashedLastRun);
 
       flushPreviousSession();
