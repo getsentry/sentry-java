@@ -7,6 +7,7 @@
 - Fix ANRs when collecting device context ([#4970](https://github.com/getsentry/sentry-java/pull/4970))
   - **IMPORTANT:** This disables collecting external storage size (total/free) by default, to enable it back
     use `options.isCollectExternalStorageContext = true` or `<meta-data android:name="io.sentry.external-storage-context" android:value="true" />`
+- Fix `NullPointerException` when reading ANR marker ([#4979](https://github.com/getsentry/sentry-java/pull/4979))
 
 ### Improvements
 
