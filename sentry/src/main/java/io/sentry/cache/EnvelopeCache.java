@@ -462,6 +462,10 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
   public void movePreviousSession(
       final @NotNull File currentSessionFile, final @NotNull File previousSessionFile) {
     try (final @NotNull ISentryLifecycleToken ignored = sessionLock.acquire()) {
+      if (!currentSessionFile.exists()) {
+        return;
+      }
+
       if (previousSessionFile.exists()) {
         options.getLogger().log(DEBUG, "Previous session file already exists, deleting it.");
         if (!previousSessionFile.delete()) {
@@ -471,19 +475,17 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
         }
       }
 
-      if (currentSessionFile.exists()) {
-        options.getLogger().log(INFO, "Moving current session to previous session.");
+      options.getLogger().log(INFO, "Moving current session to previous session.");
 
-        try {
-          final boolean renamed = currentSessionFile.renameTo(previousSessionFile);
-          if (!renamed) {
-            options.getLogger().log(WARNING, "Unable to move current session to previous session.");
-          }
-        } catch (Throwable e) {
-          options
-              .getLogger()
-              .log(SentryLevel.ERROR, "Error moving current session to previous session.", e);
+      try {
+        final boolean renamed = currentSessionFile.renameTo(previousSessionFile);
+        if (!renamed) {
+          options.getLogger().log(WARNING, "Unable to move current session to previous session.");
         }
+      } catch (Throwable e) {
+        options
+            .getLogger()
+            .log(SentryLevel.ERROR, "Error moving current session to previous session.", e);
       }
     }
   }

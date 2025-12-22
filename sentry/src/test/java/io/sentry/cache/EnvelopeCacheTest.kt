@@ -495,6 +495,37 @@ class EnvelopeCacheTest {
   }
 
   @Test
+  fun `movePreviousSession is idempotent wrt the previous session`() {
+    val cache = fixture.getSUT()
+
+    val currentSessionFile = EnvelopeCache.getCurrentSessionFile(fixture.options.cacheDirPath!!)
+    val previousSessionFile = EnvelopeCache.getPreviousSessionFile(fixture.options.cacheDirPath!!)
+
+    // Create a current session file
+    currentSessionFile.createNewFile()
+    currentSessionFile.writeText("session content from last run")
+
+    assertTrue(currentSessionFile.exists())
+    assertFalse(previousSessionFile.exists())
+
+    // First call: moves session.json -> previous_session.json
+    cache.movePreviousSession(currentSessionFile, previousSessionFile)
+
+    assertFalse(currentSessionFile.exists())
+    assertTrue(previousSessionFile.exists())
+    assertEquals("session content from last run", previousSessionFile.readText())
+
+    // Second call should be idempotent: previous_session.json should be preserved
+    // This simulates the race where both MovePreviousSession runnable and
+    // storeInternal (SessionStart) both call movePreviousSession
+    cache.movePreviousSession(currentSessionFile, previousSessionFile)
+
+    // previous_session.json should still exist with original content
+    assertTrue(previousSessionFile.exists())
+    assertEquals("session content from last run", previousSessionFile.readText())
+  }
+
+  @Test
   fun `movePreviousSession deletes file and moves session when previous session file already exists`() {
     val cache = fixture.getSUT()
 
