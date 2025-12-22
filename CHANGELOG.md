@@ -15,6 +15,12 @@
 - Discard envelopes on `4xx` and `5xx` response ([#4950](https://github.com/getsentry/sentry-java/pull/4950))
   - This aims to not overwhelm Sentry after an outage or load shedding (including HTTP 429) where too many events are sent at once
 
+### Dependencies
+
+- Bump Gradle from v8.14.3 to v9.2.1 ([#4913](https://github.com/getsentry/sentry-java/pull/4913))
+  - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v921)
+  - [diff](https://github.com/gradle/gradle/compare/v8.14.3...v9.2.1)
+
 ## 8.29.0
 
 ### Fixes
