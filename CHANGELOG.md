@@ -4,6 +4,21 @@
 
 ### Fixes
 
+- Fix ANRs when collecting device context ([#4970](https://github.com/getsentry/sentry-java/pull/4970))
+  - **IMPORTANT:** This disables collecting external storage size (total/free) by default, to enable it back
+    use `options.isCollectExternalStorageContext = true` or `<meta-data android:name="io.sentry.external-storage-context" android:value="true" />`
+
+### Improvements
+
+- Expose `MAX_EVENT_SIZE_BYTES` constant in SentryOptions ([#4962](https://github.com/getsentry/sentry-java/pull/4962))
+- Discard envelopes on `4xx` and `5xx` response ([#4950](https://github.com/getsentry/sentry-java/pull/4950))
+  - This aims to not overwhelm Sentry after an outage or load shedding (including HTTP 429) where too many events are sent at once
+
+## 8.29.0
+
+### Fixes
+
+- Support serialization of primitive arrays (boolean[], byte[], short[], char[], int[], long[], float[], double[]) ([#4968](https://github.com/getsentry/sentry-java/pull/4968))
 - Session Replay: Improve network body parsing and truncation handling ([#4958](https://github.com/getsentry/sentry-java/pull/4958))
 
 ### Internal
