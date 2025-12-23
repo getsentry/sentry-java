@@ -49,6 +49,7 @@ dependencies {
   implementation(projects.sentryLogback)
   implementation(projects.sentryGraphql22)
   implementation(projects.sentryQuartz)
+  implementation(projects.sentryAsyncProfiler)
   implementation(projects.sentryOpentelemetry.sentryOpentelemetryAgentlessSpring)
 
   // database query tracing

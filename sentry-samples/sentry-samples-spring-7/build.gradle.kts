@@ -39,6 +39,7 @@ dependencies {
   implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
   implementation(projects.sentrySpring7)
   implementation(projects.sentryLogback)
+  implementation(projects.sentryAsyncProfiler)
   implementation(libs.jackson.databind)
   implementation(libs.logback.classic)
   implementation(libs.servlet.jakarta.api)
