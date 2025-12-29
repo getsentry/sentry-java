@@ -537,4 +537,127 @@ class AppStartMetricsTest {
 
     assertEquals(secondActivity, CurrentActivityHolder.getInstance().activity)
   }
+
+  @Test
+  fun `firstPostUptimeMillis is properly cleared`() {
+    val metrics = AppStartMetrics.getInstance()
+    metrics.registerLifecycleCallbacks(mock<Application>())
+    Shadows.shadowOf(Looper.getMainLooper()).idle()
+
+    val reflectionField = AppStartMetrics::class.java.getDeclaredField("firstPostUptimeMillis")
+    reflectionField.isAccessible = true
+    val firstPostValue = reflectionField.getLong(metrics)
+    assertTrue(firstPostValue > 0)
+
+    metrics.clear()
+
+    val clearedValue = reflectionField.getLong(metrics)
+    assertEquals(-1, clearedValue)
+  }
+
+  @Test
+  fun `firstPostUptimeMillis is set when registerLifecycleCallbacks is called`() {
+    val metrics = AppStartMetrics.getInstance()
+    val beforeRegister = SystemClock.uptimeMillis()
+
+    metrics.registerLifecycleCallbacks(mock<Application>())
+    Shadows.shadowOf(Looper.getMainLooper()).idle()
+
+    val afterIdle = SystemClock.uptimeMillis()
+
+    val reflectionField = AppStartMetrics::class.java.getDeclaredField("firstPostUptimeMillis")
+    reflectionField.isAccessible = true
+    val firstPostValue = reflectionField.getLong(metrics)
+
+    assertTrue(firstPostValue >= beforeRegister)
+    assertTrue(firstPostValue <= afterIdle)
+  }
+
+  @Test
+  fun `Sets app launch type to WARM when activity created after firstPost`() {
+    val metrics = AppStartMetrics.getInstance()
+    assertEquals(AppStartMetrics.AppStartType.UNKNOWN, metrics.appStartType)
+
+    metrics.registerLifecycleCallbacks(mock<Application>())
+    Shadows.shadowOf(Looper.getMainLooper()).idle()
+
+    SystemClock.setCurrentTimeMillis(SystemClock.uptimeMillis() + 100)
+    metrics.onActivityCreated(mock<Activity>(), null)
+
+    assertEquals(AppStartMetrics.AppStartType.WARM, metrics.appStartType)
+  }
+
+  @Test
+  fun `Sets app launch type to COLD when activity created before firstPost executes`() {
+    val metrics = AppStartMetrics.getInstance()
+    assertEquals(AppStartMetrics.AppStartType.UNKNOWN, metrics.appStartType)
+
+    metrics.registerLifecycleCallbacks(mock<Application>())
+    metrics.onActivityCreated(mock<Activity>(), null)
+
+    assertEquals(AppStartMetrics.AppStartType.COLD, metrics.appStartType)
+
+    Shadows.shadowOf(Looper.getMainLooper()).idle()
+
+    assertEquals(AppStartMetrics.AppStartType.COLD, metrics.appStartType)
+  }
+
+  @Test
+  fun `Sets app launch type to COLD when activity created at same time as firstPost`() {
+    val metrics = AppStartMetrics.getInstance()
+
+    val now = SystemClock.uptimeMillis()
+    val reflectionField = AppStartMetrics::class.java.getDeclaredField("firstPostUptimeMillis")
+    reflectionField.isAccessible = true
+    reflectionField.setLong(metrics, now)
+
+    SystemClock.setCurrentTimeMillis(now)
+    metrics.onActivityCreated(mock<Activity>(), null)
+
+    assertEquals(AppStartMetrics.AppStartType.COLD, metrics.appStartType)
+  }
+
+  @Test
+  fun `savedInstanceState check takes precedence over firstPost timing`() {
+    val metrics = AppStartMetrics.getInstance()
+
+    metrics.registerLifecycleCallbacks(mock<Application>())
+    Shadows.shadowOf(Looper.getMainLooper()).idle()
+
+    SystemClock.setCurrentTimeMillis(SystemClock.uptimeMillis() + 100)
+    metrics.onActivityCreated(mock<Activity>(), mock<Bundle>())
+
+    assertEquals(AppStartMetrics.AppStartType.WARM, metrics.appStartType)
+  }
+
+  @Test
+  fun `timeout check takes precedence over firstPost timing`() {
+    val metrics = AppStartMetrics.getInstance()
+
+    metrics.registerLifecycleCallbacks(mock<Application>())
+    Shadows.shadowOf(Looper.getMainLooper()).idle()
+
+    val futureTime = SystemClock.uptimeMillis() + TimeUnit.MINUTES.toMillis(2)
+    SystemClock.setCurrentTimeMillis(futureTime)
+    metrics.onActivityCreated(mock<Activity>(), null)
+
+    assertEquals(AppStartMetrics.AppStartType.WARM, metrics.appStartType)
+    assertTrue(metrics.appStartTimeSpan.hasStarted())
+    assertEquals(futureTime, metrics.appStartTimeSpan.startUptimeMs)
+  }
+
+  @Test
+  fun `firstPost timing does not affect subsequent activity creations`() {
+    val metrics = AppStartMetrics.getInstance()
+
+    metrics.registerLifecycleCallbacks(mock<Application>())
+    Shadows.shadowOf(Looper.getMainLooper()).idle()
+
+    SystemClock.setCurrentTimeMillis(SystemClock.uptimeMillis() + 100)
+    metrics.onActivityCreated(mock<Activity>(), null)
+    assertEquals(AppStartMetrics.AppStartType.WARM, metrics.appStartType)
+
+    metrics.onActivityCreated(mock<Activity>(), mock<Bundle>())
+    assertEquals(AppStartMetrics.AppStartType.WARM, metrics.appStartType)
+  }
 }
