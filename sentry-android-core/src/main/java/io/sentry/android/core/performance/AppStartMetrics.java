@@ -57,6 +57,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
 
   private @NotNull AppStartType appStartType = AppStartType.UNKNOWN;
   private boolean appLaunchedInForeground;
+  private volatile long firstPostUptimeMillis = -1;
 
   private final @NotNull TimeSpan appStartSpan;
   private final @NotNull TimeSpan sdkInitTimeSpan;
@@ -234,6 +235,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     shouldSendStartMeasurements = true;
     firstDrawDone.set(false);
     activeActivitiesCounter.set(0);
+    firstPostUptimeMillis = -1;
   }
 
   public @Nullable ITransactionProfiler getAppStartProfiler() {
@@ -316,7 +318,15 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     // (possibly others) the first task posted on the main thread is called before the
     // Activity.onCreate callback. This is a workaround for that, so that the Activity.onCreate
     // callback is called before the application one.
-    new Handler(Looper.getMainLooper()).post(() -> checkCreateTimeOnMain());
+    new Handler(Looper.getMainLooper())
+        .post(
+            new Runnable() {
+              @Override
+              public void run() {
+                firstPostUptimeMillis = SystemClock.uptimeMillis();
+                checkCreateTimeOnMain();
+              }
+            });
   }
 
   private void checkCreateTimeOnMain() {
@@ -348,7 +358,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     if (activeActivitiesCounter.incrementAndGet() == 1 && !firstDrawDone.get()) {
       final long nowUptimeMs = SystemClock.uptimeMillis();
 
-      // If the app (process) was launched more than 1 minute ago, it's likely wrong
+      // If the app (process) was launched more than 1 minute ago, consider it a warm start
       final long durationSinceAppStartMillis = nowUptimeMs - appStartSpan.getStartUptimeMs();
       if (!appLaunchedInForeground || durationSinceAppStartMillis > TimeUnit.MINUTES.toMillis(1)) {
         appStartType = AppStartType.WARM;
@@ -360,8 +370,12 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
         CLASS_LOADED_UPTIME_MS = nowUptimeMs;
         contentProviderOnCreates.clear();
         applicationOnCreate.reset();
+      } else if (savedInstanceState != null) {
+        appStartType = AppStartType.WARM;
+      } else if (firstPostUptimeMillis > 0 && nowUptimeMs > firstPostUptimeMillis) {
+        appStartType = AppStartType.WARM;
       } else {
-        appStartType = savedInstanceState == null ? AppStartType.COLD : AppStartType.WARM;
+        appStartType = AppStartType.COLD;
       }
     }
     appLaunchedInForeground = true;
