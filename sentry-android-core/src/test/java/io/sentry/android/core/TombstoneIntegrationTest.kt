@@ -17,7 +17,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowActivityManager.ApplicationExitInfoBuilder
 
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [30])
+@Config(sdk = [31])
 class TombstoneIntegrationTest : ApplicationExitIntegrationTestBase<TombstoneHint>() {
 
   override val config =
