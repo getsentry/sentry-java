@@ -14,6 +14,7 @@ import io.sentry.hints.Cached
 import io.sentry.hints.DiskFlushNotification
 import io.sentry.hints.TransactionEnd
 import io.sentry.logger.ILoggerBatchProcessor
+import io.sentry.metrics.IMetricsBatchProcessor
 import io.sentry.protocol.Contexts
 import io.sentry.protocol.Feedback
 import io.sentry.protocol.Mechanism
@@ -335,6 +336,74 @@ class SentryClientTest {
       SentryLogEvent(SentryId(), SentryNanotimeDate(), "actual message", SentryLogLevel.WARN)
     sut.captureLog(actual, scope)
     verify(batchProcessor).add(check { assertEquals("expected message", it.body) })
+    verifyNoMoreInteractions(batchProcessor)
+  }
+
+  @Test
+  fun `when beforeSendMetric is set, callback is invoked`() {
+    val scope = createScope()
+    var invoked = false
+    fixture.sentryOptions.metrics.setBeforeSend { m ->
+      invoked = true
+      m
+    }
+    val sut = fixture.getSut()
+    sut.captureMetric(
+      SentryMetricsEvent(SentryId(), SentryNanotimeDate(), "name", "gauge", 123.0),
+      scope,
+    )
+    assertTrue(invoked)
+  }
+
+  @Test
+  fun `when beforeSendMetric returns null, metric is dropped`() {
+    val scope = createScope()
+    fixture.sentryOptions.metrics.setBeforeSend { _: SentryMetricsEvent -> null }
+    val sut = fixture.getSut()
+    sut.captureMetric(
+      SentryMetricsEvent(SentryId(), SentryNanotimeDate(), "name", "gauge", 123.0),
+      scope,
+    )
+    verify(fixture.transport, never()).send(any(), anyOrNull())
+
+    assertClientReport(
+      fixture.sentryOptions.clientReportRecorder,
+      listOf(DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.TraceMetric.category, 1)),
+    )
+  }
+
+  @Test
+  fun `when beforeSendMetric throws an exception, metric is dropped`() {
+    val scope = createScope()
+    val exception = Exception("test")
+
+    exception.stackTrace.toString()
+    fixture.sentryOptions.metrics.setBeforeSend { _ -> throw exception }
+    val sut = fixture.getSut()
+    sut.captureMetric(
+      SentryMetricsEvent(SentryId(), SentryNanotimeDate(), "name", "gauge", 123.0),
+      scope,
+    )
+
+    assertClientReport(
+      fixture.sentryOptions.clientReportRecorder,
+      listOf(DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.TraceMetric.category, 1)),
+    )
+  }
+
+  @Test
+  fun `when beforeSendMetric is returns new instance, new instance is sent`() {
+    val scope = createScope()
+    val expected =
+      SentryMetricsEvent(SentryId(), SentryNanotimeDate(), "expected name", "gauge", 123.0)
+    fixture.sentryOptions.metrics.setBeforeSend { _ -> expected }
+    val sut = fixture.getSut()
+    val batchProcessor = mock<IMetricsBatchProcessor>()
+    sut.injectForField("metricsBatchProcessor", batchProcessor)
+    val actual =
+      SentryMetricsEvent(SentryId(), SentryNanotimeDate(), "actual name", "counter", 97.0)
+    sut.captureMetric(actual, scope)
+    verify(batchProcessor).add(check { assertEquals("expected name", it.name) })
     verifyNoMoreInteractions(batchProcessor)
   }
 
