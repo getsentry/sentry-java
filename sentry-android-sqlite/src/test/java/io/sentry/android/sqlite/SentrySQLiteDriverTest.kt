@@ -29,7 +29,7 @@ class SentrySQLiteDriverTest {
       sentryTracer = SentryTracer(TransactionContext("name", "op"), scopes)
       whenever(scopes.span).thenReturn(sentryTracer)
 
-      return SentrySQLiteDriver(scopes, mockDriver)
+      return SentrySQLiteDriver(mockDriver, scopes)
     }
   }
 

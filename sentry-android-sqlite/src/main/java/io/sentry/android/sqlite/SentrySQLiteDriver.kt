@@ -13,26 +13,21 @@ import io.sentry.ScopesAdapter
  *
  * Usage - wrap this around your current [SQLiteDriver]:
  * ```
- * val driver = SentrySQLiteDriver(AndroidSQLiteDriver())
+ * val driver = SentrySQLiteDriver.create(AndroidSQLiteDriver())
  * ```
  *
  * If you use Room you can wrap the default [AndroidSQLiteDriver]:
  * ```
  * val database = Room.databaseBuilder(context, MyDatabase::class.java, "dbName")
- *     .setDriver(SentrySQLiteDriver(AndroidSQLiteDriver()))
+ *     .setDriver(SentrySQLiteDriver.create(AndroidSQLiteDriver()))
  *     ...
  *     .build()
  * ```
  */
 public class SentrySQLiteDriver internal constructor(
-  private val scopes: IScopes,
   private val delegate: SQLiteDriver,
+  private val scopes: IScopes = ScopesAdapter.getInstance(),
 ) : SQLiteDriver {
-  /**
-   * @param delegate The [SQLiteDriver] instance to delegate calls to.
-   */
-  public constructor(delegate: SQLiteDriver) : this(ScopesAdapter.getInstance(), delegate)
-
   override fun open(fileName: String): SQLiteConnection {
     val sqliteSpanManager = SQLiteSpanManager(
       scopes,
@@ -43,6 +38,20 @@ public class SentrySQLiteDriver internal constructor(
     )
     val connection = delegate.open(fileName)
     return SentrySQLiteConnection(connection, sqliteSpanManager)
+  }
+
+  public companion object {
+    /**
+     * @param delegate The [SQLiteDriver] instance to delegate calls to.
+     */
+    @JvmStatic
+    public fun create(delegate: SQLiteDriver): SQLiteDriver {
+      if (delegate is SentrySQLiteDriver) {
+        return delegate
+      } else {
+        return SentrySQLiteDriver(delegate)
+      }
+    }
   }
 }
 
