@@ -8,10 +8,29 @@ import io.sentry.IScopes
 import io.sentry.ScopesAdapter
 
 
+/**
+ * Automatically adds a Sentry span to the current scope for each database query executed.
+ *
+ * Usage - wrap this around your current [SQLiteDriver]:
+ * ```
+ * val driver = SentrySQLiteDriver(AndroidSQLiteDriver())
+ * ```
+ *
+ * If you use Room you can wrap the default [AndroidSQLiteDriver]:
+ * ```
+ * val database = Room.databaseBuilder(context, MyDatabase::class.java, "dbName")
+ *     .setDriver(SentrySQLiteDriver(AndroidSQLiteDriver()))
+ *     ...
+ *     .build()
+ * ```
+ */
 public class SentrySQLiteDriver internal constructor(
   private val scopes: IScopes,
   private val delegate: SQLiteDriver,
 ) : SQLiteDriver {
+  /**
+   * @param delegate The [SQLiteDriver] instance to delegate calls to.
+   */
   public constructor(delegate: SQLiteDriver) : this(ScopesAdapter.getInstance(), delegate)
 
   override fun open(fileName: String): SQLiteConnection {
