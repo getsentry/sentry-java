@@ -4,13 +4,19 @@ import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.SQLiteDriver
 import androidx.sqlite.SQLiteStatement
 import io.sentry.android.sqlite.SQLiteSpanManager
+import io.sentry.IScopes
+import io.sentry.ScopesAdapter
 
 
-public class SentrySQLiteDriver(
+public class SentrySQLiteDriver internal constructor(
+  private val scopes: IScopes,
   private val delegate: SQLiteDriver,
 ) : SQLiteDriver {
+  public constructor(delegate: SQLiteDriver) : this(ScopesAdapter.getInstance(), delegate)
+
   override fun open(fileName: String): SQLiteConnection {
     val sqliteSpanManager = SQLiteSpanManager(
+      scopes,
       // SQLiteDriver.open docs say:
       // >> To open an in-memory database use the special name :memory: as the fileName.
       // SQLiteSpanManager expects null for an in-memory databaseName, so replace ":memory:" with null.
