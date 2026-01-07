@@ -93,6 +93,13 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     return event;
   }
 
+  @Override
+  public @Nullable SentryMetricsEvent process(@NotNull SentryMetricsEvent event) {
+    setDevice(event);
+    setOs(event);
+    return event;
+  }
+
   /**
    * The last exception is usually used for picking the issue title, but the convention is to send
    * inner exceptions first, e.g. [inner, outer] This doesn't work very well on Android, as some
@@ -237,6 +244,34 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   }
 
   private void setOs(final @NotNull SentryLogEvent event) {
+    try {
+      event.setAttribute(
+          "os.name", new SentryLogEventAttributeValue(SentryAttributeType.STRING, "Android"));
+      event.setAttribute(
+          "os.version",
+          new SentryLogEventAttributeValue(SentryAttributeType.STRING, Build.VERSION.RELEASE));
+    } catch (Throwable e) {
+      options.getLogger().log(SentryLevel.ERROR, "Failed to retrieve os system", e);
+    }
+  }
+
+  private void setDevice(final @NotNull SentryMetricsEvent event) {
+    try {
+      event.setAttribute(
+          "device.brand",
+          new SentryLogEventAttributeValue(SentryAttributeType.STRING, Build.BRAND));
+      event.setAttribute(
+          "device.model",
+          new SentryLogEventAttributeValue(SentryAttributeType.STRING, Build.MODEL));
+      event.setAttribute(
+          "device.family",
+          new SentryLogEventAttributeValue(SentryAttributeType.STRING, deviceFamily.getValue()));
+    } catch (Throwable e) {
+      options.getLogger().log(SentryLevel.ERROR, "Failed to retrieve device info", e);
+    }
+  }
+
+  private void setOs(final @NotNull SentryMetricsEvent event) {
     try {
       event.setAttribute(
           "os.name", new SentryLogEventAttributeValue(SentryAttributeType.STRING, "Android"));
