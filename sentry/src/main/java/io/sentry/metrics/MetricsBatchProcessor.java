@@ -38,6 +38,7 @@ public class MetricsBatchProcessor implements IMetricsBatchProcessor {
   private static final @NotNull AutoClosableReentrantLock scheduleLock =
       new AutoClosableReentrantLock();
   private volatile boolean hasScheduled = false;
+  private volatile boolean isShuttingDown = false;
 
   private final @NotNull ReusableCountLatch pendingCount = new ReusableCountLatch();
 
@@ -51,6 +52,9 @@ public class MetricsBatchProcessor implements IMetricsBatchProcessor {
 
   @Override
   public void add(final @NotNull SentryMetricsEvent metricsEvent) {
+    if (isShuttingDown) {
+      return;
+    }
     if (pendingCount.getCount() >= MAX_QUEUE_SIZE) {
       options
           .getClientReportRecorder()
@@ -65,6 +69,7 @@ public class MetricsBatchProcessor implements IMetricsBatchProcessor {
   @SuppressWarnings("FutureReturnValueIgnored")
   @Override
   public void close(final boolean isRestarting) {
+    isShuttingDown = true;
     if (isRestarting) {
       maybeSchedule(true, true);
       executorService.submit(() -> executorService.close(options.getShutdownTimeoutMillis()));
