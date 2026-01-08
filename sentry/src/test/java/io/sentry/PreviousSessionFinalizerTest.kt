@@ -245,12 +245,14 @@ class PreviousSessionFinalizerTest {
 
     val finalizer = fixture.getSut(tmpDir, session = crashedSession)
 
-    // If the EnvelopeCache stored a SessionStart and no native crash marker was present then crashedLastRun would be false
+    // If the EnvelopeCache stored a SessionStart and no native crash marker was present then
+    // crashedLastRun would be false
     SentryCrashLastRunState.getInstance().setCrashedLastRun(false)
 
     finalizer.run()
 
-    // the finalizer must be aware that this could have happened before and reset the crashedLastRun to true
+    // the finalizer must be aware that this could have happened before and reset the crashedLastRun
+    // to true
     assertTrue(SentryCrashLastRunState.getInstance().isCrashedLastRun(null, false)!!)
   }
 

@@ -93,7 +93,8 @@ final class PreviousSessionFinalizer implements Runnable {
             // this means the session was already updated from tombstone data and there is no need
             // to consider the crash-marker file from the Native SDK. However, we can use this to
             // reset crashedLastRun.
-            final @NotNull SentryCrashLastRunState crashLastRunState = SentryCrashLastRunState.getInstance();
+            final @NotNull SentryCrashLastRunState crashLastRunState =
+                SentryCrashLastRunState.getInstance();
             crashLastRunState.reset();
             crashLastRunState.setCrashedLastRun(true);
           } else if (crashMarkerFile.exists()) {
