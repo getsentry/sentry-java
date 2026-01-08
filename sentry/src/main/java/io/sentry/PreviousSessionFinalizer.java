@@ -107,6 +107,9 @@ final class PreviousSessionFinalizer implements Runnable {
             @Nullable Date timestamp = getTimestampFromCrashMarkerFile(crashMarkerFile);
             session.update(Session.State.Crashed, null, true);
             session.end(timestamp);
+          } else if (session.getAbnormalMechanism() == null) {
+              // this means the session hasn't crashed or abnormally exited and there was no native crash marker, we only end it _now_.
+              session.end();
           }
 
           // Independent of whether the TombstoneIntegration is active or the Native SDK operates
