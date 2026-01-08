@@ -58,5 +58,6 @@ sentry {
   includeDependenciesReport.set(false)
   telemetry.set(false)
   autoInstallation.enabled.set(false)
+  distribution.enabled.set(providers.environmentVariable("SENTRY_AUTH_TOKEN").isPresent)
   sizeAnalysis.enabled.set(providers.environmentVariable("SENTRY_AUTH_TOKEN").isPresent)
 }
