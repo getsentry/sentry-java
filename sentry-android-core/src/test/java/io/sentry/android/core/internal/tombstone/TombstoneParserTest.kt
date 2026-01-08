@@ -1,7 +1,6 @@
 package io.sentry.android.core.internal.tombstone
 
 import java.io.ByteArrayInputStream
-import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -48,8 +47,8 @@ class TombstoneParserTest {
 
   @Test
   fun `parses a snapshot tombstone into Event`() {
-    val tombstone = File("src/test/resources/tombstone.pb")
-    val parser = TombstoneParser(tombstone.inputStream())
+    val tombstoneStream = TombstoneParserTest::class.java.getResourceAsStream("/tombstone.pb")!!
+    val parser = TombstoneParser(tombstoneStream)
     val event = parser.parse()
 
     // top-level data
