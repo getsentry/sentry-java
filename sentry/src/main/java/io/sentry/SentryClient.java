@@ -1657,6 +1657,7 @@ public final class SentryClient implements ISentryClient {
     try {
       flush(isRestarting ? 0 : options.getShutdownTimeoutMillis());
       loggerBatchProcessor.close(isRestarting);
+      metricsBatchProcessor.close(isRestarting);
       transport.close(isRestarting);
     } catch (IOException e) {
       options
@@ -1684,6 +1685,7 @@ public final class SentryClient implements ISentryClient {
   @Override
   public void flush(final long timeoutMillis) {
     loggerBatchProcessor.flush(timeoutMillis);
+    metricsBatchProcessor.flush(timeoutMillis);
     transport.flush(timeoutMillis);
   }
 
