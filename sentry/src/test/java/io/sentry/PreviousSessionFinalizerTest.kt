@@ -113,11 +113,13 @@ class PreviousSessionFinalizerTest {
 
   @Test
   fun `if previous session exists, sends session update with current end time`() {
-    // we start the session 20 seconds before now, this should create enough distance to the current
-    // DateTime to detect an update
-    val sessionCreationCaptureInterval = 20000
+    // we start the session 20 seconds before _now_. This should create enough distance to the
+    // capture timestamp to stably detect an update from inside the captureEvent mock.
+    val sessionCreationToFinalizerInterval = 20000
     val sessionCreationTimestamp =
-      DateUtils.getDateTime(DateUtils.getCurrentDateTime().time - sessionCreationCaptureInterval)
+      DateUtils.getDateTime(
+        DateUtils.getCurrentDateTime().time - sessionCreationToFinalizerInterval
+      )
 
     val finalizer =
       fixture.getSut(
@@ -145,13 +147,13 @@ class PreviousSessionFinalizerTest {
     verify(fixture.scopes)
       .captureEnvelope(
         argThat {
-          val captureEnvelopeTimestamp = DateUtils.getCurrentDateTime().time
+          val captureTimestamp = DateUtils.getCurrentDateTime().time
           val session = fixture.sessionFromEnvelope(this)
           session.release == "io.sentry.sample@1.0" &&
             session.started!!.time == sessionCreationTimestamp.time &&
-            captureEnvelopeTimestamp - session.started!!.time > sessionCreationCaptureInterval &&
+            captureTimestamp - session.started!!.time > sessionCreationToFinalizerInterval &&
             session.timestamp!!.time != sessionCreationTimestamp.time &&
-            captureEnvelopeTimestamp - session.timestamp!!.time < 1000
+            captureTimestamp - session.timestamp!!.time < 1000
         }
       )
   }
