@@ -20,6 +20,7 @@ import io.sentry.SentryUUID;
 import io.sentry.Session;
 import io.sentry.UncaughtExceptionHandlerIntegration;
 import io.sentry.hints.AbnormalExit;
+import io.sentry.hints.NativeCrashExit;
 import io.sentry.hints.SessionEnd;
 import io.sentry.hints.SessionStart;
 import io.sentry.transport.NoOpEnvelopeCache;
@@ -119,7 +120,8 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
       }
     }
 
-    if (HintUtils.hasType(hint, AbnormalExit.class)) {
+    if (HintUtils.hasType(hint, AbnormalExit.class)
+        || HintUtils.hasType(hint, NativeCrashExit.class)) {
       tryEndPreviousSession(hint);
     }
 
@@ -197,20 +199,20 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
   @SuppressWarnings("JavaUtilDate")
   private void tryEndPreviousSession(final @NotNull Hint hint) {
     final Object sdkHint = HintUtils.getSentrySdkHint(hint);
-    if (sdkHint instanceof AbnormalExit) {
-      final File previousSessionFile = getPreviousSessionFile(directory.getAbsolutePath());
+    final File previousSessionFile = getPreviousSessionFile(directory.getAbsolutePath());
 
-      if (previousSessionFile.exists()) {
-        options.getLogger().log(WARNING, "Previous session is not ended, we'd need to end it.");
+    if (previousSessionFile.exists()) {
+      options.getLogger().log(WARNING, "Previous session is not ended, we'd need to end it.");
 
-        try (final Reader reader =
-            new BufferedReader(
-                new InputStreamReader(new FileInputStream(previousSessionFile), UTF_8))) {
-          final Session session = serializer.getValue().deserialize(reader, Session.class);
-          if (session != null) {
+      try (final Reader reader =
+          new BufferedReader(
+              new InputStreamReader(new FileInputStream(previousSessionFile), UTF_8))) {
+        final Session session = serializer.getValue().deserialize(reader, Session.class);
+        if (session != null) {
+          Date timestamp = null;
+          if (sdkHint instanceof AbnormalExit) {
             final AbnormalExit abnormalHint = (AbnormalExit) sdkHint;
             final @Nullable Long abnormalExitTimestamp = abnormalHint.timestamp();
-            Date timestamp = null;
 
             if (abnormalExitTimestamp != null) {
               timestamp = DateUtils.getDateTime(abnormalExitTimestamp);
@@ -228,17 +230,33 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
 
             final String abnormalMechanism = abnormalHint.mechanism();
             session.update(Session.State.Abnormal, null, true, abnormalMechanism);
-            // we have to use the actual timestamp of the Abnormal Exit here to mark the session
-            // as finished at the time it happened
-            session.end(timestamp);
-            writeSessionToDisk(previousSessionFile, session);
+          } else if (sdkHint instanceof NativeCrashExit) {
+            final NativeCrashExit nativeCrashHint = (NativeCrashExit) sdkHint;
+            final @NotNull Long nativeCrashExitTimestamp = nativeCrashHint.timestamp();
+
+            timestamp = DateUtils.getDateTime(nativeCrashExitTimestamp);
+            // sanity check if the native crash exit actually happened when the session was alive
+            final Date sessionStart = session.getStarted();
+            if (sessionStart == null || timestamp.before(sessionStart)) {
+              options
+                  .getLogger()
+                  .log(
+                      WARNING,
+                      "Native crash exit happened before previous session start, not ending the session.");
+              return;
+            }
+            session.update(Session.State.Crashed, null, true, null);
           }
-        } catch (Throwable e) {
-          options.getLogger().log(SentryLevel.ERROR, "Error processing previous session.", e);
+          // we have to use the actual timestamp of the Abnormal or Crash Exit here to mark the
+          // session as finished at the time it happened
+          session.end(timestamp);
+          writeSessionToDisk(previousSessionFile, session);
         }
-      } else {
-        options.getLogger().log(DEBUG, "No previous session file to end.");
+      } catch (Throwable e) {
+        options.getLogger().log(SentryLevel.ERROR, "Error processing previous session.", e);
       }
+    } else {
+      options.getLogger().log(DEBUG, "No previous session file to end.");
     }
   }
 
@@ -440,6 +458,10 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
   public void movePreviousSession(
       final @NotNull File currentSessionFile, final @NotNull File previousSessionFile) {
     try (final @NotNull ISentryLifecycleToken ignored = sessionLock.acquire()) {
+      if (!currentSessionFile.exists()) {
+        return;
+      }
+
       if (previousSessionFile.exists()) {
         options.getLogger().log(DEBUG, "Previous session file already exists, deleting it.");
         if (!previousSessionFile.delete()) {
@@ -449,19 +471,17 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
         }
       }
 
-      if (currentSessionFile.exists()) {
-        options.getLogger().log(INFO, "Moving current session to previous session.");
+      options.getLogger().log(INFO, "Moving current session to previous session.");
 
-        try {
-          final boolean renamed = currentSessionFile.renameTo(previousSessionFile);
-          if (!renamed) {
-            options.getLogger().log(WARNING, "Unable to move current session to previous session.");
-          }
-        } catch (Throwable e) {
-          options
-              .getLogger()
-              .log(SentryLevel.ERROR, "Error moving current session to previous session.", e);
+      try {
+        final boolean renamed = currentSessionFile.renameTo(previousSessionFile);
+        if (!renamed) {
+          options.getLogger().log(WARNING, "Unable to move current session to previous session.");
         }
+      } catch (Throwable e) {
+        options
+            .getLogger()
+            .log(SentryLevel.ERROR, "Error moving current session to previous session.", e);
       }
     }
   }
