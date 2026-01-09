@@ -25,6 +25,13 @@ tasks.withType<KotlinCompile>().configureEach {
 }
 
 dependencies {
+  constraints {
+    testImplementation(libs.okhttp) { version { strictly(libs.versions.okhttp.get()) } }
+    testImplementation(libs.okhttp.mockwebserver) {
+      version { strictly(libs.versions.okhttp.get()) }
+    }
+  }
+
   api(projects.sentry)
   api(projects.sentrySpringJakarta)
   compileOnly(projects.sentryLogback)

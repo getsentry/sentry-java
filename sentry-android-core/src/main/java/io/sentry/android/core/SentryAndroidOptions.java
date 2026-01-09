@@ -121,6 +121,9 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   private boolean collectAdditionalContext = true;
 
+  /** Enables or disables collecting of external storage context. */
+  private boolean collectExternalStorageContext = false;
+
   /**
    * Controls how many seconds to wait for sending events in case there were Startup Crashes in the
    * previous run. Sentry SDKs normally send events from a background queue, but in the case of
@@ -412,6 +415,14 @@ public final class SentryAndroidOptions extends SentryOptions {
 
   public void setCollectAdditionalContext(boolean collectAdditionalContext) {
     this.collectAdditionalContext = collectAdditionalContext;
+  }
+
+  public boolean isCollectExternalStorageContext() {
+    return collectExternalStorageContext;
+  }
+
+  public void setCollectExternalStorageContext(final boolean collectExternalStorageContext) {
+    this.collectExternalStorageContext = collectExternalStorageContext;
   }
 
   public boolean isEnableFramesTracking() {
