@@ -6,6 +6,7 @@ import io.sentry.SentryEvent
 import io.sentry.SentryLevel
 import io.sentry.android.core.TombstoneIntegration.TombstoneHint
 import io.sentry.android.core.cache.AndroidEnvelopeCache
+import java.util.zip.GZIPInputStream
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
@@ -47,7 +48,9 @@ class TombstoneIntegrationTest : ApplicationExitIntegrationTestBase<TombstoneHin
             } else {
               whenever(mock.traceInputStream)
                 .thenReturn(
-                  TombstoneIntegrationTest::class.java.getResourceAsStream("/tombstone.pb")
+                  GZIPInputStream(
+                    TombstoneIntegrationTest::class.java.getResourceAsStream("/tombstone.pb.gz")
+                  )
                 )
             }
           }

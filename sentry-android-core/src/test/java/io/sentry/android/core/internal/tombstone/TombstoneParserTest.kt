@@ -1,6 +1,7 @@
 package io.sentry.android.core.internal.tombstone
 
 import java.io.ByteArrayInputStream
+import java.util.zip.GZIPInputStream
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -47,7 +48,8 @@ class TombstoneParserTest {
 
   @Test
   fun `parses a snapshot tombstone into Event`() {
-    val tombstoneStream = TombstoneParserTest::class.java.getResourceAsStream("/tombstone.pb")!!
+    val tombstoneStream =
+      GZIPInputStream(TombstoneParserTest::class.java.getResourceAsStream("/tombstone.pb.gz"))
     val parser = TombstoneParser(tombstoneStream)
     val event = parser.parse()
 
