@@ -27,7 +27,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v2
 
       - name: Set up Java 17
         uses: actions/setup-java@v5
@@ -77,7 +77,7 @@ jobs:
             arch: x86_64
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v2
 
       - name: Enable KVM
         run: |
