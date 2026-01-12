@@ -10,7 +10,7 @@ class MetricsSystemTest {
 
   @Before
   fun setup() {
-    testHelper = TestHelper("http://localhost:8080")
+    testHelper = TestHelper("http://localhost:8080/sentry-samples-spring-jakarta-0.0.1-SNAPSHOT")
     testHelper.reset()
   }
 
