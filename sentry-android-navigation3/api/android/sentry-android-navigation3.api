@@ -7,7 +7,6 @@ public final class io/sentry/android/navigation3/BuildConfig {
 }
 
 public final class io/sentry/android/navigation3/SentryNavigation3IntegrationKt {
-	public static final fun withSentryObservableEffect (Landroidx/compose/runtime/snapshots/SnapshotStateList;ZZLkotlin/jvm/functions/Function1;Lio/sentry/IScopes;Landroidx/compose/runtime/Composer;II)Landroidx/compose/runtime/snapshots/SnapshotStateList;
-	public static final fun withSentryObservableEffect (Landroidx/compose/runtime/snapshots/SnapshotStateList;ZZLkotlin/jvm/functions/Function1;Lio/sentry/IScopes;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;II)V
+	public static final fun SentryNavigation3Traced (Ljava/util/List;ZZLkotlin/jvm/functions/Function1;Lio/sentry/IScopes;Landroidx/compose/runtime/Composer;II)V
 }
 

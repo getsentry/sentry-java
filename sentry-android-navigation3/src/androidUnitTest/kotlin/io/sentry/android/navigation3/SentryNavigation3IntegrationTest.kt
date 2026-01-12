@@ -54,7 +54,6 @@ class SentryNavigation3IntegrationTest {
   fun `adds breadcrumb on navigation`() {
     val observer =
       SentryBackStackObserver(
-        backStack = backStack,
         enableNavigationBreadcrumbs = true,
         enableNavigationTracing = false,
         keyToRoute = { it },
@@ -81,7 +80,6 @@ class SentryNavigation3IntegrationTest {
   fun `adds breadcrumb with from and to routes`() {
     val observer =
       SentryBackStackObserver(
-        backStack = backStack,
         enableNavigationBreadcrumbs = true,
         enableNavigationTracing = false,
         keyToRoute = { it },
@@ -109,7 +107,6 @@ class SentryNavigation3IntegrationTest {
   fun `captures back stack keys in breadcrumb`() {
     val observer =
       SentryBackStackObserver(
-        backStack = backStack,
         enableNavigationBreadcrumbs = true,
         enableNavigationTracing = false,
         keyToRoute = { it },
@@ -137,7 +134,6 @@ class SentryNavigation3IntegrationTest {
   fun `does not add breadcrumb when disabled`() {
     val observer =
       SentryBackStackObserver(
-        backStack = backStack,
         enableNavigationBreadcrumbs = false,
         enableNavigationTracing = false,
         keyToRoute = { it },
@@ -161,7 +157,6 @@ class SentryNavigation3IntegrationTest {
 
     val observer =
       SentryBackStackObserver(
-        backStack = backStack,
         enableNavigationBreadcrumbs = false,
         enableNavigationTracing = true,
         keyToRoute = { it },
@@ -191,7 +186,6 @@ class SentryNavigation3IntegrationTest {
 
     val observer =
       SentryBackStackObserver(
-        backStack = backStack,
         enableNavigationBreadcrumbs = false,
         enableNavigationTracing = true,
         keyToRoute = { it },
@@ -215,7 +209,6 @@ class SentryNavigation3IntegrationTest {
 
     val observer =
       SentryBackStackObserver(
-        backStack = backStack,
         enableNavigationBreadcrumbs = false,
         enableNavigationTracing = true,
         keyToRoute = { it },
@@ -244,7 +237,6 @@ class SentryNavigation3IntegrationTest {
 
     val observer =
       SentryBackStackObserver(
-        backStack = backStack,
         enableNavigationBreadcrumbs = false,
         enableNavigationTracing = true,
         keyToRoute = { it },
@@ -272,7 +264,6 @@ class SentryNavigation3IntegrationTest {
 
     val observer =
       SentryBackStackObserver(
-        backStack = backStack,
         enableNavigationBreadcrumbs = false,
         enableNavigationTracing = true,
         keyToRoute = { it },
@@ -300,7 +291,6 @@ class SentryNavigation3IntegrationTest {
 
     val observer =
       SentryBackStackObserver(
-        backStack = backStack,
         enableNavigationBreadcrumbs = false,
         enableNavigationTracing = false,
         keyToRoute = { it },
@@ -321,7 +311,6 @@ class SentryNavigation3IntegrationTest {
 
     val observer =
       SentryBackStackObserver(
-        backStack = backStack,
         enableNavigationBreadcrumbs = false,
         enableNavigationTracing = false,
         keyToRoute = { it },
@@ -342,7 +331,6 @@ class SentryNavigation3IntegrationTest {
     val customBackStack = mutableStateListOf<NavKey>()
     val observer =
       SentryBackStackObserver(
-        backStack = customBackStack,
         enableNavigationBreadcrumbs = true,
         enableNavigationTracing = false,
         keyToRoute = { it.route },
@@ -364,7 +352,6 @@ class SentryNavigation3IntegrationTest {
   fun `handles null route from keyToRoute`() {
     val observer =
       SentryBackStackObserver(
-        backStack = backStack,
         enableNavigationBreadcrumbs = true,
         enableNavigationTracing = true,
         keyToRoute = { null },
@@ -393,7 +380,6 @@ class SentryNavigation3IntegrationTest {
 
     val observer =
       SentryBackStackObserver(
-        backStack = backStack,
         enableNavigationBreadcrumbs = false,
         enableNavigationTracing = true,
         keyToRoute = { it },
