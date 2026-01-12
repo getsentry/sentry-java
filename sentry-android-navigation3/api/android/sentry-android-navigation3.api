@@ -1,0 +1,12 @@
+public final class io/sentry/android/navigation3/BuildConfig {
+	public static final field BUILD_TYPE Ljava/lang/String;
+	public static final field DEBUG Z
+	public static final field LIBRARY_PACKAGE_NAME Ljava/lang/String;
+	public static final field VERSION_NAME Ljava/lang/String;
+	public fun <init> ()V
+}
+
+public final class io/sentry/android/navigation3/SentryNavigation3IntegrationKt {
+	public static final fun withSentryObservableEffect (Landroidx/compose/runtime/snapshots/SnapshotStateList;ZZLkotlin/jvm/functions/Function1;Lio/sentry/IScopes;Landroidx/compose/runtime/Composer;II)Landroidx/compose/runtime/snapshots/SnapshotStateList;
+}
+
