@@ -3,6 +3,7 @@ package io.sentry.metrics;
 import io.sentry.HostnameCache;
 import io.sentry.IScope;
 import io.sentry.ISpan;
+import io.sentry.MeasurementUnit;
 import io.sentry.PropagationContext;
 import io.sentry.Scopes;
 import io.sentry.SentryAttribute;
@@ -42,13 +43,15 @@ public final class MetricsApi implements IMetricsApi {
   }
 
   @Override
-  public void count(final @NotNull String name, final @Nullable String unit) {
+  public void count(final @NotNull String name, final @Nullable MeasurementUnit unit) {
     captureMetrics(SentryMetricsParameters.create(null, null), name, "counter", 1.0, unit);
   }
 
   @Override
   public void count(
-      final @NotNull String name, final @Nullable Double value, final @Nullable String unit) {
+      final @NotNull String name,
+      final @Nullable Double value,
+      final @Nullable MeasurementUnit unit) {
     captureMetrics(SentryMetricsParameters.create(null, null), name, "counter", value, unit);
   }
 
@@ -56,7 +59,7 @@ public final class MetricsApi implements IMetricsApi {
   public void count(
       final @NotNull String name,
       final @Nullable Double value,
-      final @Nullable String unit,
+      final @Nullable MeasurementUnit unit,
       final @NotNull SentryMetricsParameters params) {
     captureMetrics(params, name, "counter", value, unit);
   }
@@ -68,7 +71,9 @@ public final class MetricsApi implements IMetricsApi {
 
   @Override
   public void distribution(
-      final @NotNull String name, final @Nullable Double value, final @Nullable String unit) {
+      final @NotNull String name,
+      final @Nullable Double value,
+      final @Nullable MeasurementUnit unit) {
     captureMetrics(SentryMetricsParameters.create(null, null), name, "distribution", value, unit);
   }
 
@@ -76,7 +81,7 @@ public final class MetricsApi implements IMetricsApi {
   public void distribution(
       final @NotNull String name,
       final @Nullable Double value,
-      final @Nullable String unit,
+      final @Nullable MeasurementUnit unit,
       final @NotNull SentryMetricsParameters params) {
     captureMetrics(params, name, "distribution", value, unit);
   }
@@ -88,7 +93,9 @@ public final class MetricsApi implements IMetricsApi {
 
   @Override
   public void gauge(
-      final @NotNull String name, final @Nullable Double value, final @Nullable String unit) {
+      final @NotNull String name,
+      final @Nullable Double value,
+      final @Nullable MeasurementUnit unit) {
     captureMetrics(SentryMetricsParameters.create(null, null), name, "gauge", value, unit);
   }
 
@@ -96,7 +103,7 @@ public final class MetricsApi implements IMetricsApi {
   public void gauge(
       final @NotNull String name,
       final @Nullable Double value,
-      final @Nullable String unit,
+      final @Nullable MeasurementUnit unit,
       final @NotNull SentryMetricsParameters params) {
     captureMetrics(params, name, "gauge", value, unit);
   }
@@ -107,7 +114,7 @@ public final class MetricsApi implements IMetricsApi {
       final @Nullable String name,
       final @Nullable String type,
       final @Nullable Double value,
-      final @Nullable String unit) {
+      final @Nullable MeasurementUnit unit) {
     final @NotNull SentryOptions options = scopes.getOptions();
     try {
       if (!scopes.isEnabled()) {
@@ -155,7 +162,9 @@ public final class MetricsApi implements IMetricsApi {
       final SentryMetricsEvent metricsEvent =
           new SentryMetricsEvent(traceId, timestampToUse, name, type, value);
       metricsEvent.setSpanId(spanId);
-      metricsEvent.setUnit(unit);
+      if (unit != null) {
+        metricsEvent.setUnit(unit.apiName());
+      }
       metricsEvent.setAttributes(createAttributes(params));
 
       scopes.getClient().captureMetric(metricsEvent, combinedScope, params.getHint());

@@ -1,5 +1,6 @@
 package io.sentry.samples.spring7.web;
 
+import io.sentry.MeasurementUnit;
 import io.sentry.Sentry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,13 +22,15 @@ public class MetricController {
 
   @GetMapping("gauge/{count}")
   String gauge(@PathVariable("count") Long count) {
-    Sentry.metrics().gauge("memory.free", count.doubleValue(), "byte");
+    Sentry.metrics().gauge("memory.free", count.doubleValue(), MeasurementUnit.Information.BYTE);
     return "gauge metric tracked";
   }
 
   @GetMapping("distribution/{count}")
-  String distribution(@PathVariable("count") Long count) {
-    Sentry.metrics().distribution("distributionMetric", count.doubleValue(), "child");
+  String distribution(@PathVariable Long count) {
+    Sentry.metrics()
+        .distribution(
+            "distributionMetric", count.doubleValue(), MeasurementUnit.Duration.MILLISECOND);
     return "distribution metric tracked";
   }
 }

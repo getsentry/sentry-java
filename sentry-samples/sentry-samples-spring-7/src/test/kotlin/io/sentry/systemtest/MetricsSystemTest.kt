@@ -49,7 +49,7 @@ class MetricsSystemTest {
     Thread.sleep(10000)
 
     testHelper.ensureMetricsReceived { event, header ->
-      testHelper.doesContainMetric(event, "distributionMetric", "distribution", 23.0)
+      testHelper.doesContainMetric(event, "distributionMetric", "distribution", 23.0, "millisecond")
     }
   }
 }

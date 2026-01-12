@@ -1,5 +1,6 @@
 package io.sentry.metrics;
 
+import io.sentry.MeasurementUnit;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -19,17 +20,19 @@ public final class NoOpMetricsApi implements IMetricsApi {
   public void count(final @NotNull String name, final @Nullable Double value) {}
 
   @Override
-  public void count(final @NotNull String name, final @Nullable String unit) {}
-
-  @Override
-  public void count(
-      final @NotNull String name, final @Nullable Double value, final @Nullable String unit) {}
+  public void count(final @NotNull String name, final @Nullable MeasurementUnit unit) {}
 
   @Override
   public void count(
       final @NotNull String name,
       final @Nullable Double value,
-      final @Nullable String unit,
+      final @Nullable MeasurementUnit unit) {}
+
+  @Override
+  public void count(
+      final @NotNull String name,
+      final @Nullable Double value,
+      final @Nullable MeasurementUnit unit,
       final @NotNull SentryMetricsParameters params) {}
 
   @Override
@@ -37,13 +40,15 @@ public final class NoOpMetricsApi implements IMetricsApi {
 
   @Override
   public void distribution(
-      final @NotNull String name, final @Nullable Double value, final @Nullable String unit) {}
+      final @NotNull String name,
+      final @Nullable Double value,
+      final @Nullable MeasurementUnit unit) {}
 
   @Override
   public void distribution(
       final @NotNull String name,
       final @Nullable Double value,
-      final @Nullable String unit,
+      final @Nullable MeasurementUnit unit,
       final @NotNull SentryMetricsParameters params) {}
 
   @Override
@@ -51,12 +56,14 @@ public final class NoOpMetricsApi implements IMetricsApi {
 
   @Override
   public void gauge(
-      final @NotNull String name, final @Nullable Double value, final @Nullable String unit) {}
+      final @NotNull String name,
+      final @Nullable Double value,
+      final @Nullable MeasurementUnit unit) {}
 
   @Override
   public void gauge(
       final @NotNull String name,
       final @Nullable Double value,
-      final @Nullable String unit,
+      final @Nullable MeasurementUnit unit,
       final @NotNull SentryMetricsParameters params) {}
 }
