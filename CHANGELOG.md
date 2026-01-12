@@ -12,9 +12,6 @@
 ### Improvements
 
 - Update Android targetSdk to API 36 (Android 16) ([#5016](https://github.com/getsentry/sentry-java/pull/5016))
-  - Migrated from deprecated `Thread.getId()` to `Thread.threadId()` with backward compatibility
-  - Created `ThreadUtil` helper for version-aware thread ID retrieval
-  - Updated sample app to use `OnBackPressedCallback` instead of deprecated `onBackPressed()`
 - Expose `MAX_EVENT_SIZE_BYTES` constant in SentryOptions ([#4962](https://github.com/getsentry/sentry-java/pull/4962))
 - Discard envelopes on `4xx` and `5xx` response ([#4950](https://github.com/getsentry/sentry-java/pull/4950))
   - This aims to not overwhelm Sentry after an outage or load shedding (including HTTP 429) where too many events are sent at once

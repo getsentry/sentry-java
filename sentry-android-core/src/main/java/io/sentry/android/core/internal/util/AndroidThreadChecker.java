@@ -1,9 +1,9 @@
 package io.sentry.android.core.internal.util;
 
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Process;
-import io.sentry.android.core.util.ThreadUtil;
 import io.sentry.protocol.SentryThread;
 import io.sentry.util.thread.IThreadChecker;
 import org.jetbrains.annotations.ApiStatus;
@@ -25,14 +25,32 @@ public final class AndroidThreadChecker implements IThreadChecker {
     new Handler(Looper.getMainLooper()).post(() -> mainThreadSystemId = Process.myTid());
   }
 
+  /**
+   * Gets the thread ID in a way that's compatible across Android versions.
+   *
+   * <p>Uses {@link Thread#threadId()} on Android 14 (API 34) and above, and falls back to {@link
+   * Thread#getId()} on older versions.
+   *
+   * @param thread the thread to get the ID for
+   * @return the thread ID
+   */
+  @SuppressWarnings("deprecation")
+  public static long getThreadId(final @NotNull Thread thread) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+      return thread.threadId();
+    } else {
+      return thread.getId();
+    }
+  }
+
   @Override
   public boolean isMainThread(final long threadId) {
-    return ThreadUtil.getThreadId(Looper.getMainLooper().getThread()) == threadId;
+    return getThreadId(Looper.getMainLooper().getThread()) == threadId;
   }
 
   @Override
   public boolean isMainThread(final @NotNull Thread thread) {
-    return isMainThread(ThreadUtil.getThreadId(thread));
+    return isMainThread(getThreadId(thread));
   }
 
   @Override
