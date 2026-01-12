@@ -3325,6 +3325,36 @@ class ScopesTest {
   }
 
   @Test
+  fun `creating count metric with attributes from map and shortcut factory method works`() {
+    val (sut, mockClient) = getEnabledScopes()
+
+    sut
+      .metrics()
+      .count(
+        "metric name",
+        1.0,
+        "visit",
+        SentryMetricsParameters.create(mapOf("attrname1" to "attrval1")),
+      )
+
+    verify(mockClient)
+      .captureMetric(
+        check {
+          assertEquals("metric name", it.name)
+          assertEquals(1.0, it.value)
+          assertEquals("visit", it.unit)
+          assertEquals("counter", it.type)
+
+          val attr1 = it.attributes?.get("attrname1")!!
+          assertEquals("attrval1", attr1.value)
+          assertEquals("string", attr1.type)
+        },
+        anyOrNull(),
+        anyOrNull(),
+      )
+  }
+
+  @Test
   fun `creating count metric with attributes works`() {
     val (sut, mockClient) = getEnabledScopes()
 
