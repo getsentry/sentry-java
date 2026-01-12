@@ -28,6 +28,7 @@ class SentryNavigation3IntegrationTest {
   private lateinit var scopes: IScopes
   private lateinit var options: SentryOptions
   private lateinit var backStack: SnapshotStateList<String>
+  private lateinit var transactionHolder: NavigationTransactionHolder
 
   @BeforeTest
   fun setup() {
@@ -46,6 +47,7 @@ class SentryNavigation3IntegrationTest {
     }
 
     backStack = mutableStateListOf()
+    transactionHolder = NavigationTransactionHolder()
   }
 
   @Test
@@ -57,6 +59,7 @@ class SentryNavigation3IntegrationTest {
         enableNavigationTracing = false,
         keyToRoute = { it },
         scopes = scopes,
+        transactionHolder = transactionHolder,
       )
 
     // Simulate navigation
@@ -83,6 +86,7 @@ class SentryNavigation3IntegrationTest {
         enableNavigationTracing = false,
         keyToRoute = { it },
         scopes = scopes,
+        transactionHolder = transactionHolder,
       )
 
     // First navigation
@@ -110,6 +114,7 @@ class SentryNavigation3IntegrationTest {
         enableNavigationTracing = false,
         keyToRoute = { it },
         scopes = scopes,
+        transactionHolder = transactionHolder,
       )
 
     backStack.add("home")
@@ -137,6 +142,7 @@ class SentryNavigation3IntegrationTest {
         enableNavigationTracing = false,
         keyToRoute = { it },
         scopes = scopes,
+        transactionHolder = transactionHolder,
       )
 
     backStack.add("home")
@@ -160,6 +166,7 @@ class SentryNavigation3IntegrationTest {
         enableNavigationTracing = true,
         keyToRoute = { it },
         scopes = scopes,
+        transactionHolder = transactionHolder,
       )
 
     backStack.add("home")
@@ -189,6 +196,7 @@ class SentryNavigation3IntegrationTest {
         enableNavigationTracing = true,
         keyToRoute = { it },
         scopes = scopes,
+        transactionHolder = transactionHolder,
       )
 
     backStack.add("home")
@@ -212,6 +220,7 @@ class SentryNavigation3IntegrationTest {
         enableNavigationTracing = true,
         keyToRoute = { it },
         scopes = scopes,
+        transactionHolder = transactionHolder,
       )
 
     backStack.add("home")
@@ -240,6 +249,7 @@ class SentryNavigation3IntegrationTest {
         enableNavigationTracing = true,
         keyToRoute = { it },
         scopes = scopes,
+        transactionHolder = transactionHolder,
       )
 
     backStack.add("home")
@@ -267,6 +277,7 @@ class SentryNavigation3IntegrationTest {
         enableNavigationTracing = true,
         keyToRoute = { it },
         scopes = scopes,
+        transactionHolder = transactionHolder,
       )
 
     backStack.add("home")
@@ -294,6 +305,7 @@ class SentryNavigation3IntegrationTest {
         enableNavigationTracing = false,
         keyToRoute = { it },
         scopes = scopes,
+        transactionHolder = transactionHolder,
       )
 
     backStack.add("home")
@@ -314,6 +326,7 @@ class SentryNavigation3IntegrationTest {
         enableNavigationTracing = false,
         keyToRoute = { it },
         scopes = scopes,
+        transactionHolder = transactionHolder,
       )
 
     backStack.add("home")
@@ -334,6 +347,7 @@ class SentryNavigation3IntegrationTest {
         enableNavigationTracing = false,
         keyToRoute = { it.route },
         scopes = scopes,
+        transactionHolder = transactionHolder,
       )
 
     val key = NavKey("home", 1)
@@ -355,6 +369,7 @@ class SentryNavigation3IntegrationTest {
         enableNavigationTracing = true,
         keyToRoute = { null },
         scopes = scopes,
+        transactionHolder = transactionHolder,
       )
 
     backStack.add("home")
@@ -383,6 +398,7 @@ class SentryNavigation3IntegrationTest {
         enableNavigationTracing = true,
         keyToRoute = { it },
         scopes = scopes,
+        transactionHolder = transactionHolder,
       )
 
     backStack.add("home")
