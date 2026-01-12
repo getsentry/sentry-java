@@ -63,7 +63,7 @@ public interface EventProcessor {
    * @return the event itself, a mutated SentryMetricsEvent or null
    */
   @Nullable
-  default SentryMetricsEvent process(@NotNull SentryMetricsEvent event) {
+  default SentryMetricsEvent process(@NotNull SentryMetricsEvent event, @NotNull Hint hint) {
     return event;
   }
 

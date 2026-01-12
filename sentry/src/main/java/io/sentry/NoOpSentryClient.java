@@ -89,7 +89,8 @@ final class NoOpSentryClient implements ISentryClient {
   }
 
   @Override
-  public void captureMetric(@NotNull SentryMetricsEvent metricsEvent, @Nullable IScope scope) {
+  public void captureMetric(
+      @NotNull SentryMetricsEvent metricsEvent, @Nullable IScope scope, @Nullable Hint hint) {
     // do nothing
   }
 

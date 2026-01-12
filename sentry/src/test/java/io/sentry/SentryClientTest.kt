@@ -361,7 +361,7 @@ class SentryClientTest {
   fun `when beforeSendMetric is set, callback is invoked`() {
     val scope = createScope()
     var invoked = false
-    fixture.sentryOptions.metrics.setBeforeSend { m ->
+    fixture.sentryOptions.metrics.setBeforeSend { m, hint ->
       invoked = true
       m
     }
@@ -369,6 +369,7 @@ class SentryClientTest {
     sut.captureMetric(
       SentryMetricsEvent(SentryId(), SentryNanotimeDate(), "name", "gauge", 123.0),
       scope,
+      null,
     )
     assertTrue(invoked)
   }
@@ -376,11 +377,12 @@ class SentryClientTest {
   @Test
   fun `when beforeSendMetric returns null, metric is dropped`() {
     val scope = createScope()
-    fixture.sentryOptions.metrics.setBeforeSend { _: SentryMetricsEvent -> null }
+    fixture.sentryOptions.metrics.setBeforeSend { _: SentryMetricsEvent, hint -> null }
     val sut = fixture.getSut()
     sut.captureMetric(
       SentryMetricsEvent(SentryId(), SentryNanotimeDate(), "name", "gauge", 123.0),
       scope,
+      null,
     )
     verify(fixture.transport, never()).send(any(), anyOrNull())
 
@@ -396,11 +398,12 @@ class SentryClientTest {
     val exception = Exception("test")
 
     exception.stackTrace.toString()
-    fixture.sentryOptions.metrics.setBeforeSend { _ -> throw exception }
+    fixture.sentryOptions.metrics.setBeforeSend { _, hint -> throw exception }
     val sut = fixture.getSut()
     sut.captureMetric(
       SentryMetricsEvent(SentryId(), SentryNanotimeDate(), "name", "gauge", 123.0),
       scope,
+      null,
     )
 
     assertClientReport(
@@ -414,13 +417,13 @@ class SentryClientTest {
     val scope = createScope()
     val expected =
       SentryMetricsEvent(SentryId(), SentryNanotimeDate(), "expected name", "gauge", 123.0)
-    fixture.sentryOptions.metrics.setBeforeSend { _ -> expected }
+    fixture.sentryOptions.metrics.setBeforeSend { _, hint -> expected }
     val sut = fixture.getSut()
     val batchProcessor = mock<IMetricsBatchProcessor>()
     sut.injectForField("metricsBatchProcessor", batchProcessor)
     val actual =
       SentryMetricsEvent(SentryId(), SentryNanotimeDate(), "actual name", "counter", 97.0)
-    sut.captureMetric(actual, scope)
+    sut.captureMetric(actual, scope, null)
     verify(batchProcessor).add(check { assertEquals("expected name", it.name) })
     verifyNoMoreInteractions(batchProcessor)
   }

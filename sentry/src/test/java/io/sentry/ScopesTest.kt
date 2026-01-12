@@ -3134,7 +3134,7 @@ class ScopesTest {
     sut.close()
 
     sut.metrics().count("metric name")
-    verify(mockClient, never()).captureMetric(any(), anyOrNull())
+    verify(mockClient, never()).captureMetric(any(), anyOrNull(), anyOrNull())
   }
 
   @Test
@@ -3142,7 +3142,7 @@ class ScopesTest {
     val (sut, mockClient) = getEnabledScopes { it.metrics.isEnabled = false }
 
     sut.metrics().count("metric name")
-    verify(mockClient, never()).captureMetric(any(), anyOrNull())
+    verify(mockClient, never()).captureMetric(any(), anyOrNull(), anyOrNull())
   }
 
   @Test
@@ -3158,6 +3158,7 @@ class ScopesTest {
           assertEquals(1.0, it.value)
           assertEquals("counter", it.type)
         },
+        anyOrNull(),
         anyOrNull(),
       )
   }
@@ -3176,6 +3177,7 @@ class ScopesTest {
           assertEquals("gauge", it.type)
         },
         anyOrNull(),
+        anyOrNull(),
       )
   }
 
@@ -3193,6 +3195,7 @@ class ScopesTest {
           assertEquals("distribution", it.type)
         },
         anyOrNull(),
+        anyOrNull(),
       )
   }
 
@@ -3208,6 +3211,7 @@ class ScopesTest {
           assertEquals("metric name", it.name)
           assertNull(it.attributes!!.get("sentry.origin"))
         },
+        anyOrNull(),
         anyOrNull(),
       )
   }
@@ -3230,6 +3234,7 @@ class ScopesTest {
           )
         },
         anyOrNull(),
+        anyOrNull(),
       )
   }
 
@@ -3248,6 +3253,7 @@ class ScopesTest {
           assertEquals("counter", it.type)
         },
         anyOrNull(),
+        anyOrNull(),
       )
   }
 
@@ -3264,6 +3270,7 @@ class ScopesTest {
           assertEquals(1.0, it.value)
           assertEquals("counter", it.type)
         },
+        anyOrNull(),
         anyOrNull(),
       )
   }
@@ -3282,6 +3289,7 @@ class ScopesTest {
           assertEquals("visit", it.unit)
           assertEquals("counter", it.type)
         },
+        anyOrNull(),
         anyOrNull(),
       )
   }
@@ -3311,6 +3319,7 @@ class ScopesTest {
           assertEquals("attrval1", attr1.value)
           assertEquals("string", attr1.type)
         },
+        anyOrNull(),
         anyOrNull(),
       )
   }
@@ -3380,6 +3389,7 @@ class ScopesTest {
           assertEquals("double", nameddoubleattr.type)
         },
         anyOrNull(),
+        anyOrNull(),
       )
   }
 
@@ -3412,6 +3422,7 @@ class ScopesTest {
           assertEquals("string", attr1.type)
         },
         anyOrNull(),
+        anyOrNull(),
       )
   }
 
@@ -3430,6 +3441,7 @@ class ScopesTest {
           assertEquals("distribution", it.type)
         },
         anyOrNull(),
+        anyOrNull(),
       )
   }
 
@@ -3446,6 +3458,7 @@ class ScopesTest {
           assertEquals(1.0, it.value)
           assertEquals("distribution", it.type)
         },
+        anyOrNull(),
         anyOrNull(),
       )
   }
@@ -3475,6 +3488,7 @@ class ScopesTest {
           assertEquals("attrval1", attr1.value)
           assertEquals("string", attr1.type)
         },
+        anyOrNull(),
         anyOrNull(),
       )
   }
@@ -3544,6 +3558,7 @@ class ScopesTest {
           assertEquals("double", nameddoubleattr.type)
         },
         anyOrNull(),
+        anyOrNull(),
       )
   }
 
@@ -3576,6 +3591,7 @@ class ScopesTest {
           assertEquals("string", attr1.type)
         },
         anyOrNull(),
+        anyOrNull(),
       )
   }
 
@@ -3594,6 +3610,7 @@ class ScopesTest {
           assertEquals("gauge", it.type)
         },
         anyOrNull(),
+        anyOrNull(),
       )
   }
 
@@ -3610,6 +3627,7 @@ class ScopesTest {
           assertEquals(128.0, it.value)
           assertEquals("gauge", it.type)
         },
+        anyOrNull(),
         anyOrNull(),
       )
   }
@@ -3639,6 +3657,7 @@ class ScopesTest {
           assertEquals("attrval1", attr1.value)
           assertEquals("string", attr1.type)
         },
+        anyOrNull(),
         anyOrNull(),
       )
   }
@@ -3708,6 +3727,7 @@ class ScopesTest {
           assertEquals("double", nameddoubleattr.type)
         },
         anyOrNull(),
+        anyOrNull(),
       )
   }
 
@@ -3739,6 +3759,7 @@ class ScopesTest {
           assertEquals("attrval1", attr1.value)
           assertEquals("string", attr1.type)
         },
+        anyOrNull(),
         anyOrNull(),
       )
   }
@@ -3779,6 +3800,7 @@ class ScopesTest {
           assertEquals("string", userEmail.type)
         },
         anyOrNull(),
+        anyOrNull(),
       )
   }
 
@@ -3806,6 +3828,7 @@ class ScopesTest {
           assertNull(it.attributes?.get("user.email"))
         },
         anyOrNull(),
+        anyOrNull(),
       )
   }
 
@@ -3829,6 +3852,7 @@ class ScopesTest {
           assertNull(it.attributes?.get("user.email"))
         },
         anyOrNull(),
+        anyOrNull(),
       )
   }
 
@@ -3850,6 +3874,7 @@ class ScopesTest {
           assertNull(it.attributes?.get("user.name"))
           assertNull(it.attributes?.get("user.email"))
         },
+        anyOrNull(),
         anyOrNull(),
       )
   }
@@ -3875,6 +3900,7 @@ class ScopesTest {
           assertNull(it.attributes?.get("user.email"))
         },
         anyOrNull(),
+        anyOrNull(),
       )
   }
 
@@ -3893,6 +3919,7 @@ class ScopesTest {
           assertEquals(replayId.toString(), logReplayId.value)
         },
         anyOrNull(),
+        anyOrNull(),
       )
   }
 
@@ -3908,6 +3935,7 @@ class ScopesTest {
           val logReplayId = it.attributes?.get("sentry.replay_id")
           assertNull(logReplayId)
         },
+        anyOrNull(),
         anyOrNull(),
       )
   }
@@ -3929,6 +3957,7 @@ class ScopesTest {
           assertNull(logReplayType)
         },
         anyOrNull(),
+        anyOrNull(),
       )
   }
 
@@ -3949,6 +3978,7 @@ class ScopesTest {
           assertEquals(replayId.toString(), logReplayId!!.value)
           assertNull(logReplayType)
         },
+        anyOrNull(),
         anyOrNull(),
       )
   }
@@ -3972,6 +4002,7 @@ class ScopesTest {
           assertEquals(replayId.toString(), logReplayId!!.value)
           assertTrue(logReplayType.value as Boolean)
         },
+        anyOrNull(),
         anyOrNull(),
       )
   }
