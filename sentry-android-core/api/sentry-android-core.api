@@ -659,3 +659,7 @@ public abstract interface class io/sentry/android/core/util/AndroidLazyEvaluator
 	public abstract fun evaluate (Landroid/content/Context;)Ljava/lang/Object;
 }
 
+public final class io/sentry/android/core/util/ThreadUtil {
+	public static fun getThreadId (Ljava/lang/Thread;)J
+}
+

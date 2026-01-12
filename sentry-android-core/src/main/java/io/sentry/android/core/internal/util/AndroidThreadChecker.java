@@ -3,6 +3,7 @@ package io.sentry.android.core.internal.util;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Process;
+import io.sentry.android.core.util.ThreadUtil;
 import io.sentry.protocol.SentryThread;
 import io.sentry.util.thread.IThreadChecker;
 import org.jetbrains.annotations.ApiStatus;
@@ -26,12 +27,12 @@ public final class AndroidThreadChecker implements IThreadChecker {
 
   @Override
   public boolean isMainThread(final long threadId) {
-    return Looper.getMainLooper().getThread().getId() == threadId;
+    return ThreadUtil.getThreadId(Looper.getMainLooper().getThread()) == threadId;
   }
 
   @Override
   public boolean isMainThread(final @NotNull Thread thread) {
-    return isMainThread(thread.getId());
+    return isMainThread(ThreadUtil.getThreadId(thread));
   }
 
   @Override

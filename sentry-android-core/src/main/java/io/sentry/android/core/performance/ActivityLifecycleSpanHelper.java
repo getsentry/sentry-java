@@ -8,6 +8,7 @@ import io.sentry.SentryDate;
 import io.sentry.SpanDataConvention;
 import io.sentry.SpanStatus;
 import io.sentry.android.core.AndroidDateUtils;
+import io.sentry.android.core.util.ThreadUtil;
 import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -129,7 +130,8 @@ public class ActivityLifecycleSpanHelper {
   }
 
   private void setDefaultStartSpanData(final @NotNull ISpan span) {
-    span.setData(SpanDataConvention.THREAD_ID, Looper.getMainLooper().getThread().getId());
+    span.setData(
+        SpanDataConvention.THREAD_ID, ThreadUtil.getThreadId(Looper.getMainLooper().getThread()));
     span.setData(SpanDataConvention.THREAD_NAME, "main");
     span.setData(SpanDataConvention.CONTRIBUTES_TTID, true);
     span.setData(SpanDataConvention.CONTRIBUTES_TTFD, true);
