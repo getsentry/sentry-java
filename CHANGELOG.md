@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Features
+
+- Add sentry-android-navigation3 module for Android Navigation 3 integration ([#5023](https://github.com/getsentry/sentry-java/pull/5023))
+
 ### Fixes
 
 - Fix ANRs when collecting device context ([#4970](https://github.com/getsentry/sentry-java/pull/4970))
