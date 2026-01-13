@@ -3,17 +3,13 @@ on:
   release:
     types: [released]
 
-permissions:
-  contents: write
-  pull-requests: write
-
 jobs:
   build-and-deploy-javadocs:
     name: Build and deploy Javadocs
     runs-on: ubuntu-latest
     steps:
       - name: Checkout 🛎️
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+        uses: actions/checkout@v6
         with:
           submodules: 'recursive'
 
