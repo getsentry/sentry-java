@@ -124,10 +124,14 @@ class TestHelper(backendUrl: String) {
     name: String,
     type: String,
     value: Double,
+    unit: String? = null,
   ): Boolean {
     val metricItem =
       metrics.items.firstOrNull { metricItem ->
-        metricItem.name == name && metricItem.type == type && metricItem.value == value
+        metricItem.name == name &&
+          metricItem.type == type &&
+          metricItem.value == value &&
+          (unit == null || metricItem.unit == unit)
       }
     if (metricItem == null) {
       println("Unable to find metric item with name $name, type $type and value $value in metrics:")

@@ -8,6 +8,7 @@ import io.sentry.clientreport.DiscardedEvent
 import io.sentry.hints.SessionEndHint
 import io.sentry.hints.SessionStartHint
 import io.sentry.logger.SentryLogParameters
+import io.sentry.metrics.MetricsUnit
 import io.sentry.metrics.SentryMetricsParameters
 import io.sentry.protocol.Feedback
 import io.sentry.protocol.SentryId
@@ -3222,7 +3223,7 @@ class ScopesTest {
 
     sut
       .metrics()
-      .count("metric name", 1.0, "visit", SentryMetricsParameters().also { it.origin = "other" })
+      .count("metric name", 1.0, MetricsUnit.Information.BYTE, SentryMetricsParameters().also { it.origin = "other" })
 
     verify(mockClient)
       .captureMetric(
@@ -3242,14 +3243,14 @@ class ScopesTest {
   fun `creating count metric with value and unit works`() {
     val (sut, mockClient) = getEnabledScopes()
 
-    sut.metrics().count("metric name", 1.0, "visit")
+    sut.metrics().count("metric name", 1.0, MetricsUnit.Information.BYTE)
 
     verify(mockClient)
       .captureMetric(
         check {
           assertEquals("metric name", it.name)
           assertEquals(1.0, it.value)
-          assertEquals("visit", it.unit)
+          assertEquals(MetricsUnit.Information.BYTE, it.unit)
           assertEquals("counter", it.type)
         },
         anyOrNull(),
@@ -3279,14 +3280,14 @@ class ScopesTest {
   fun `creating count metric with unit works`() {
     val (sut, mockClient) = getEnabledScopes()
 
-    sut.metrics().count("metric name", "visit")
+    sut.metrics().count("metric name", MetricsUnit.Information.BYTE)
 
     verify(mockClient)
       .captureMetric(
         check {
           assertEquals("metric name", it.name)
           assertEquals(1.0, it.value)
-          assertEquals("visit", it.unit)
+          assertEquals(MetricsUnit.Information.BYTE, it.unit)
           assertEquals("counter", it.type)
         },
         anyOrNull(),
@@ -3303,7 +3304,7 @@ class ScopesTest {
       .count(
         "metric name",
         1.0,
-        "visit",
+        MetricsUnit.Information.BYTE,
         SentryMetricsParameters.create(SentryAttributes.fromMap(mapOf("attrname1" to "attrval1"))),
       )
 
@@ -3312,7 +3313,7 @@ class ScopesTest {
         check {
           assertEquals("metric name", it.name)
           assertEquals(1.0, it.value)
-          assertEquals("visit", it.unit)
+          assertEquals(MetricsUnit.Information.BYTE, it.unit)
           assertEquals("counter", it.type)
 
           val attr1 = it.attributes?.get("attrname1")!!
@@ -3333,7 +3334,7 @@ class ScopesTest {
       .count(
         "metric name",
         1.0,
-        "visit",
+        MetricsUnit.Information.BYTE,
         SentryMetricsParameters.create(mapOf("attrname1" to "attrval1")),
       )
 
@@ -3342,7 +3343,7 @@ class ScopesTest {
         check {
           assertEquals("metric name", it.name)
           assertEquals(1.0, it.value)
-          assertEquals("visit", it.unit)
+          assertEquals(MetricsUnit.Information.BYTE, it.unit)
           assertEquals("counter", it.type)
 
           val attr1 = it.attributes?.get("attrname1")!!
@@ -3363,7 +3364,7 @@ class ScopesTest {
       .count(
         "metric name",
         1.0,
-        "visit",
+        MetricsUnit.Information.BYTE,
         SentryMetricsParameters.create(
           SentryAttributes.of(
             SentryAttribute.stringAttribute("strattr", "strval"),
@@ -3383,7 +3384,7 @@ class ScopesTest {
         check {
           assertEquals("metric name", it.name)
           assertEquals(1.0, it.value)
-          assertEquals("visit", it.unit)
+          assertEquals(MetricsUnit.Information.BYTE, it.unit)
           assertEquals("counter", it.type)
 
           val strattr = it.attributes?.get("strattr")!!
@@ -3432,7 +3433,7 @@ class ScopesTest {
       .count(
         "metric name",
         1.0,
-        "visit",
+        MetricsUnit.Information.BYTE,
         SentryMetricsParameters.create(
           SentryLongDate(123),
           SentryAttributes.of(SentryAttribute.named("attrname1", "attrval1")),
@@ -3444,7 +3445,7 @@ class ScopesTest {
         check {
           assertEquals("metric name", it.name)
           assertEquals(1.0, it.value)
-          assertEquals("visit", it.unit)
+          assertEquals(MetricsUnit.Information.BYTE, it.unit)
           assertEquals("counter", it.type)
 
           val attr1 = it.attributes?.get("attrname1")!!
@@ -3460,14 +3461,14 @@ class ScopesTest {
   fun `creating distribution metric with value and unit works`() {
     val (sut, mockClient) = getEnabledScopes()
 
-    sut.metrics().distribution("metric name", 1.0, "ms")
+    sut.metrics().distribution("metric name", 1.0, MetricsUnit.Duration.MILLISECOND)
 
     verify(mockClient)
       .captureMetric(
         check {
           assertEquals("metric name", it.name)
           assertEquals(1.0, it.value)
-          assertEquals("ms", it.unit)
+          assertEquals(MetricsUnit.Duration.MILLISECOND, it.unit)
           assertEquals("distribution", it.type)
         },
         anyOrNull(),
@@ -3502,7 +3503,7 @@ class ScopesTest {
       .distribution(
         "metric name",
         3.7,
-        "ms",
+        MetricsUnit.Duration.MILLISECOND,
         SentryMetricsParameters.create(SentryAttributes.fromMap(mapOf("attrname1" to "attrval1"))),
       )
 
@@ -3511,7 +3512,7 @@ class ScopesTest {
         check {
           assertEquals("metric name", it.name)
           assertEquals(3.7, it.value)
-          assertEquals("ms", it.unit)
+          assertEquals(MetricsUnit.Duration.MILLISECOND, it.unit)
           assertEquals("distribution", it.type)
 
           val attr1 = it.attributes?.get("attrname1")!!
@@ -3532,7 +3533,7 @@ class ScopesTest {
       .distribution(
         "metric name",
         3.7,
-        "ms",
+        MetricsUnit.Duration.MILLISECOND,
         SentryMetricsParameters.create(
           SentryAttributes.of(
             SentryAttribute.stringAttribute("strattr", "strval"),
@@ -3552,7 +3553,7 @@ class ScopesTest {
         check {
           assertEquals("metric name", it.name)
           assertEquals(3.7, it.value)
-          assertEquals("ms", it.unit)
+          assertEquals(MetricsUnit.Duration.MILLISECOND, it.unit)
           assertEquals("distribution", it.type)
 
           val strattr = it.attributes?.get("strattr")!!
@@ -3601,7 +3602,7 @@ class ScopesTest {
       .distribution(
         "metric name",
         3.7,
-        "ms",
+        MetricsUnit.Duration.MILLISECOND,
         SentryMetricsParameters.create(
           SentryLongDate(123),
           SentryAttributes.of(SentryAttribute.named("attrname1", "attrval1")),
@@ -3613,7 +3614,7 @@ class ScopesTest {
         check {
           assertEquals("metric name", it.name)
           assertEquals(3.7, it.value)
-          assertEquals("ms", it.unit)
+          assertEquals(MetricsUnit.Duration.MILLISECOND, it.unit)
           assertEquals("distribution", it.type)
 
           val attr1 = it.attributes?.get("attrname1")!!
@@ -3629,14 +3630,14 @@ class ScopesTest {
   fun `creating gauge metric with value and unit works`() {
     val (sut, mockClient) = getEnabledScopes()
 
-    sut.metrics().gauge("metric name", 128.0, "byte")
+    sut.metrics().gauge("metric name", 128.0, MetricsUnit.Information.BYTE)
 
     verify(mockClient)
       .captureMetric(
         check {
           assertEquals("metric name", it.name)
           assertEquals(128.0, it.value)
-          assertEquals("byte", it.unit)
+          assertEquals(MetricsUnit.Information.BYTE, it.unit)
           assertEquals("gauge", it.type)
         },
         anyOrNull(),
@@ -3671,7 +3672,7 @@ class ScopesTest {
       .gauge(
         "metric name",
         256.0,
-        "byte",
+        MetricsUnit.Information.BYTE,
         SentryMetricsParameters.create(SentryAttributes.fromMap(mapOf("attrname1" to "attrval1"))),
       )
 
@@ -3680,7 +3681,7 @@ class ScopesTest {
         check {
           assertEquals("metric name", it.name)
           assertEquals(256.0, it.value)
-          assertEquals("byte", it.unit)
+          assertEquals(MetricsUnit.Information.BYTE, it.unit)
           assertEquals("gauge", it.type)
 
           val attr1 = it.attributes?.get("attrname1")!!
@@ -3701,7 +3702,7 @@ class ScopesTest {
       .gauge(
         "metric name",
         256.0,
-        "byte",
+        MetricsUnit.Information.BYTE,
         SentryMetricsParameters.create(
           SentryAttributes.of(
             SentryAttribute.stringAttribute("strattr", "strval"),
@@ -3721,7 +3722,7 @@ class ScopesTest {
         check {
           assertEquals("metric name", it.name)
           assertEquals(256.0, it.value)
-          assertEquals("byte", it.unit)
+          assertEquals(MetricsUnit.Information.BYTE, it.unit)
           assertEquals("gauge", it.type)
 
           val strattr = it.attributes?.get("strattr")!!
@@ -3770,7 +3771,7 @@ class ScopesTest {
       .gauge(
         "metric name",
         256.0,
-        "byte",
+        MetricsUnit.Information.BYTE,
         SentryMetricsParameters.create(
           SentryLongDate(123),
           SentryAttributes.of(SentryAttribute.named("attrname1", "attrval1")),
@@ -3782,7 +3783,7 @@ class ScopesTest {
         check {
           assertEquals("metric name", it.name)
           assertEquals(256.0, it.value)
-          assertEquals("byte", it.unit)
+          assertEquals(MetricsUnit.Information.BYTE, it.unit)
           assertEquals("gauge", it.type)
 
           val attr1 = it.attributes?.get("attrname1")!!
