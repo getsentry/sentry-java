@@ -3,6 +3,10 @@ on:
   release:
     types: [released]
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   build-and-deploy-javadocs:
     name: Build and deploy Javadocs
