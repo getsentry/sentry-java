@@ -19,15 +19,15 @@ public class MetricController {
     return "count metric increased";
   }
 
-  @GetMapping("gauge/{count}")
-  String gauge(@PathVariable("count") Long count) {
-    Sentry.metrics().gauge("memory.free", count.doubleValue(), "byte");
+  @GetMapping("gauge/{value}")
+  String gauge(@PathVariable("value") Long value) {
+    Sentry.metrics().gauge("memory.free", value.doubleValue(), "byte");
     return "gauge metric tracked";
   }
 
-  @GetMapping("distribution/{count}")
-  String distribution(@PathVariable("count") Long count) {
-    Sentry.metrics().distribution("distributionMetric", count.doubleValue(), "child");
+  @GetMapping("distribution/{value}")
+  String distribution(@PathVariable("value") Long value) {
+    Sentry.metrics().distribution("distributionMetric", value.doubleValue(), "child");
     return "distribution metric tracked";
   }
 }
