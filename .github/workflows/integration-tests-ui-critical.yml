@@ -17,10 +17,6 @@ env:
   APK_ARTIFACT_NAME: "sentry-uitest-android-critical-release"
   MAESTRO_VERSION: "1.39.0"
 
-permissions:
-  contents: write
-  pull-requests: write
-
 jobs:
   build:
     name: Build
@@ -31,7 +27,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+        uses: actions/checkout@v6
 
       - name: Set up Java 17
         uses: actions/setup-java@v5
@@ -81,7 +77,7 @@ jobs:
             arch: x86_64
     steps:
       - name: Checkout code
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+        uses: actions/checkout@v6
 
       - name: Enable KVM
         run: |
