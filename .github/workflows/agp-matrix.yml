@@ -10,10 +10,6 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-permissions:
-  contents: write
-  pull-requests: write
-
 jobs:
   agp-matrix-compatibility:
     timeout-minutes: 30
@@ -32,7 +28,7 @@ jobs:
 
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+        uses: actions/checkout@v6
         with:
           submodules: 'recursive'
 
