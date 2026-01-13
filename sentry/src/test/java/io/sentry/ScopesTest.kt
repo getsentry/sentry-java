@@ -3223,7 +3223,12 @@ class ScopesTest {
 
     sut
       .metrics()
-      .count("metric name", 1.0, MetricsUnit.Information.BYTE, SentryMetricsParameters().also { it.origin = "other" })
+      .count(
+        "metric name",
+        1.0,
+        MetricsUnit.Information.BYTE,
+        SentryMetricsParameters().also { it.origin = "other" },
+      )
 
     verify(mockClient)
       .captureMetric(
