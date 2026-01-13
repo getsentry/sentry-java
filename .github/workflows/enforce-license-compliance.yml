@@ -6,10 +6,6 @@ on:
   pull_request:
     branches: [master, main]
 
-permissions:
-  contents: write
-  pull-requests: write
-
 jobs:
   enforce-license-compliance:
     runs-on: ubuntu-latest
@@ -24,7 +20,7 @@ jobs:
           java-version: '17'
 
       - name: Checkout
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+        uses: actions/checkout@v6
 
       # TODO: remove this when upstream is fixed
       - name: Disable Gradle configuration cache (see https://github.com/fossas/fossa-cli/issues/872)
