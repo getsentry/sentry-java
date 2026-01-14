@@ -160,7 +160,7 @@ public final class MetricsApi implements IMetricsApi {
 
       scopes.getClient().captureMetric(metricsEvent, combinedScope, params.getHint());
     } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.ERROR, "Error while capturing log event", e);
+      options.getLogger().log(SentryLevel.ERROR, "Error while capturing metrics event", e);
     }
   }
 
