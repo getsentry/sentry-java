@@ -3794,9 +3794,8 @@ public class SentryOptions {
        * @param metric the metric
        * @return the original metric, mutated metric or null if metric was dropped
        */
-      // TODO replace with SentryMetric
       @Nullable
-      Object execute(@NotNull Object metric);
+      SentryMetricsEvents execute(@NotNull SentryMetricsEvents metric);
     }
   }
 
