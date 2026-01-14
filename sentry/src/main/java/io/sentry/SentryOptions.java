@@ -17,6 +17,8 @@ import io.sentry.internal.modules.NoOpModulesLoader;
 import io.sentry.internal.viewhierarchy.ViewHierarchyExporter;
 import io.sentry.logger.DefaultLoggerBatchProcessorFactory;
 import io.sentry.logger.ILoggerBatchProcessorFactory;
+import io.sentry.metrics.DefaultMetricsBatchProcessorFactory;
+import io.sentry.metrics.IMetricsBatchProcessorFactory;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.transport.ITransport;
@@ -623,6 +625,8 @@ public class SentryOptions {
   private long deadlineTimeout = TransactionOptions.DEFAULT_DEADLINE_TIMEOUT_AUTO_TRANSACTION;
 
   private @NotNull SentryOptions.Logs logs = new SentryOptions.Logs();
+
+  private @NotNull SentryOptions.Metrics metrics = new SentryOptions.Metrics();
 
   private @NotNull ISocketTagger socketTagger = NoOpSocketTagger.getInstance();
 
@@ -3261,20 +3265,6 @@ public class SentryOptions {
     void execute(@NotNull SentryEnvelope envelope, @Nullable Hint hint);
   }
 
-  /** The BeforeEmitMetric callback */
-  @ApiStatus.Experimental
-  public interface BeforeEmitMetricCallback {
-
-    /**
-     * A callback which gets called right before a metric is about to be emitted.
-     *
-     * @param key the metric key
-     * @param tags the metric tags
-     * @return true if the metric should be emitted, false otherwise
-     */
-    boolean execute(@NotNull String key, @Nullable Map<String, String> tags);
-  }
-
   /**
    * Creates SentryOptions instance without initializing any of the internal parts.
    *
@@ -3490,6 +3480,10 @@ public class SentryOptions {
       getLogs().setEnabled(options.isEnableLogs());
     }
 
+    if (options.isEnableMetrics() != null) {
+      getMetrics().setEnabled(options.isEnableMetrics());
+    }
+
     if (options.getProfileSessionSampleRate() != null) {
       setProfileSessionSampleRate(options.getProfileSessionSampleRate());
     }
@@ -3535,6 +3529,14 @@ public class SentryOptions {
   @ApiStatus.Experimental
   public void setLogs(@NotNull SentryOptions.Logs logs) {
     this.logs = logs;
+  }
+
+  public @NotNull SentryOptions.Metrics getMetrics() {
+    return metrics;
+  }
+
+  public void setMetrics(@NotNull SentryOptions.Metrics metrics) {
+    this.metrics = metrics;
   }
 
   public static final class Proxy {
@@ -3738,6 +3740,81 @@ public class SentryOptions {
        */
       @Nullable
       SentryLogEvent execute(@NotNull SentryLogEvent event);
+    }
+  }
+
+  public static final class Metrics {
+
+    /** Whether Sentry Metrics feature is enabled and metrics are sent to Sentry. */
+    private boolean enable = true;
+
+    /**
+     * This function is called with a metric key and tags and can return false to skip sending the
+     * metric
+     */
+    private @Nullable BeforeSendMetricCallback beforeSend;
+
+    private @NotNull IMetricsBatchProcessorFactory metricsBatchProcessorFactory =
+        new DefaultMetricsBatchProcessorFactory();
+
+    /**
+     * Whether Sentry Metrics feature is enabled and metrics are sent to Sentry.
+     *
+     * @return true if Sentry Metrics should be enabled
+     */
+    public boolean isEnabled() {
+      return enable;
+    }
+
+    /**
+     * Whether Sentry Metrics feature is enabled and metrics are sent to Sentry.
+     *
+     * @param enableMetrics true if Sentry Metrics should be enabled
+     */
+    public void setEnabled(final boolean enableMetrics) {
+      this.enable = enableMetrics;
+    }
+
+    /**
+     * Returns the BeforeSendMetric callback
+     *
+     * @return the beforeSend callback or null if not set
+     */
+    public @Nullable BeforeSendMetricCallback getBeforeSend() {
+      return beforeSend;
+    }
+
+    /**
+     * Sets the beforeSend callback for metrics
+     *
+     * @param beforeSend the beforeSend callback for metrics
+     */
+    public void setBeforeSend(final @Nullable BeforeSendMetricCallback beforeSend) {
+      this.beforeSend = beforeSend;
+    }
+
+    @ApiStatus.Internal
+    public @NotNull IMetricsBatchProcessorFactory getMetricsBatchProcessorFactory() {
+      return metricsBatchProcessorFactory;
+    }
+
+    @ApiStatus.Internal
+    public void setMetricsBatchProcessorFactory(
+        final @NotNull IMetricsBatchProcessorFactory metricsBatchProcessorFactory) {
+      this.metricsBatchProcessorFactory = metricsBatchProcessorFactory;
+    }
+
+    public interface BeforeSendMetricCallback {
+
+      /**
+       * A callback which gets called right before a metric is about to be sent.
+       *
+       * @param metric the metric
+       * @return the original metric, mutated metric or null if metric was dropped
+       */
+      @Nullable
+      SentryMetricsEvent execute(
+          final @NotNull SentryMetricsEvent metric, final @NotNull Hint hint);
     }
   }
 

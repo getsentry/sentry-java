@@ -21,6 +21,13 @@
 - Add a Tombstone integration that detects native crashes without relying on the NDK integration, but instead using `ApplicationExitInfo.REASON_CRASH_NATIVE` on Android 12+. ([#4933](https://github.com/getsentry/sentry-java/pull/4933))
   - Currently exposed via options as an _internal_ API only.
   - If enabled alongside the NDK integration, crashes will be reported as two separate events. Users should enable only one; deduplication between both integrations will be added in a future release.
+- Add Sentry Metrics to Java SDK ([#5026](https://github.com/getsentry/sentry-java/pull/5026))
+  - Metrics are enabled by default
+  - APIs are namespaced under `Sentry.metrics()`
+  - We offer the following APIs:
+    - `count`: A metric that increments counts
+    - `gauge`: A metric that tracks a value that can go up or down
+    - `distribution`: A metric that tracks the statistical distribution of values
 
 ## 8.29.0
 
