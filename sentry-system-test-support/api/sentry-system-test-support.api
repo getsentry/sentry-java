@@ -587,6 +587,7 @@ public final class io/sentry/systemtest/util/TestHelper {
 	public final fun ensureNoEnvelopeReceived (Lkotlin/jvm/functions/Function1;)V
 	public final fun ensureNoErrors (Lcom/apollographql/apollo3/api/ApolloResponse;)V
 	public final fun ensureNoTransactionReceived (Lkotlin/jvm/functions/Function2;)V
+	public final fun ensureProfileChunkReceived (Lkotlin/jvm/functions/Function2;)V
 	public final fun ensureTransactionReceived (Lkotlin/jvm/functions/Function2;)V
 	public final fun ensureTransactionWithSpanReceived (Lkotlin/jvm/functions/Function1;)V
 	public final fun findJar (Ljava/lang/String;Ljava/lang/String;)Ljava/io/File;

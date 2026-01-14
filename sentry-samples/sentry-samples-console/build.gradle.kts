@@ -34,6 +34,7 @@ tasks.withType<KotlinCompile>().configureEach {
 
 dependencies {
   implementation(projects.sentry)
+  implementation(projects.sentryAsyncProfiler)
 
   testImplementation(kotlin(Config.kotlinStdLib))
   testImplementation(projects.sentry)

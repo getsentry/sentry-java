@@ -87,6 +87,9 @@ public final class JsonSerializer implements ISerializer {
         Device.DeviceOrientation.class, new Device.DeviceOrientation.Deserializer());
     deserializersByClass.put(Feedback.class, new Feedback.Deserializer());
     deserializersByClass.put(Gpu.class, new Gpu.Deserializer());
+    deserializersByClass.put(
+        SentryStackTrace.InstructionAddressAdjustment.class,
+        new SentryStackTrace.InstructionAddressAdjustment.Deserializer());
     deserializersByClass.put(MeasurementValue.class, new MeasurementValue.Deserializer());
     deserializersByClass.put(Mechanism.class, new Mechanism.Deserializer());
     deserializersByClass.put(Message.class, new Message.Deserializer());
