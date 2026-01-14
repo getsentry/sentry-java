@@ -5,6 +5,8 @@ import io.sentry.hints.SessionEndHint;
 import io.sentry.hints.SessionStartHint;
 import io.sentry.logger.ILoggerApi;
 import io.sentry.logger.LoggerApi;
+import io.sentry.metrics.IMetricsApi;
+import io.sentry.metrics.MetricsApi;
 import io.sentry.protocol.*;
 import io.sentry.transport.RateLimiter;
 import io.sentry.util.HintUtils;
@@ -31,6 +33,7 @@ public final class Scopes implements IScopes {
 
   private final @NotNull CombinedScopeView combinedScope;
   private final @NotNull ILoggerApi logger;
+  private final @NotNull IMetricsApi metrics;
 
   public Scopes(
       final @NotNull IScope scope,
@@ -57,6 +60,7 @@ public final class Scopes implements IScopes {
     validateOptions(options);
     this.compositePerformanceCollector = options.getCompositePerformanceCollector();
     this.logger = new LoggerApi(this);
+    this.metrics = new MetricsApi(this);
   }
 
   public @NotNull String getCreator() {
@@ -1218,6 +1222,11 @@ public final class Scopes implements IScopes {
   @Override
   public @NotNull ILoggerApi logger() {
     return logger;
+  }
+
+  @Override
+  public @NotNull IMetricsApi metrics() {
+    return metrics;
   }
 
   @Override
