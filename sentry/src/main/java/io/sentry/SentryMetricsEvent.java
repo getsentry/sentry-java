@@ -79,7 +79,7 @@ public final class SentryMetricsEvent implements JsonUnknown, JsonSerializable {
     return name;
   }
 
-  public void setName(@NotNull String name) {
+  public void setName(final @NotNull String name) {
     this.name = name;
   }
 
@@ -87,7 +87,7 @@ public final class SentryMetricsEvent implements JsonUnknown, JsonSerializable {
     return type;
   }
 
-  public void setType(@NotNull String type) {
+  public void setType(final @NotNull String type) {
     this.type = type;
   }
 
@@ -95,7 +95,7 @@ public final class SentryMetricsEvent implements JsonUnknown, JsonSerializable {
     return unit;
   }
 
-  public void setUnit(@Nullable String unit) {
+  public void setUnit(final @Nullable String unit) {
     this.unit = unit;
   }
 
@@ -103,7 +103,7 @@ public final class SentryMetricsEvent implements JsonUnknown, JsonSerializable {
     return spanId;
   }
 
-  public void setSpanId(@Nullable SpanId spanId) {
+  public void setSpanId(final @Nullable SpanId spanId) {
     this.spanId = spanId;
   }
 
@@ -111,7 +111,7 @@ public final class SentryMetricsEvent implements JsonUnknown, JsonSerializable {
     return value;
   }
 
-  public void setValue(@NotNull Double value) {
+  public void setValue(final @NotNull Double value) {
     this.value = value;
   }
 
@@ -241,36 +241,36 @@ public final class SentryMetricsEvent implements JsonUnknown, JsonSerializable {
       reader.endObject();
 
       if (traceId == null) {
-        String message = "Missing required field \"" + JsonKeys.TRACE_ID + "\"";
-        Exception exception = new IllegalStateException(message);
+        final String message = "Missing required field \"" + JsonKeys.TRACE_ID + "\"";
+        final Exception exception = new IllegalStateException(message);
         logger.log(SentryLevel.ERROR, message, exception);
         throw exception;
       }
 
       if (timestamp == null) {
-        String message = "Missing required field \"" + JsonKeys.TIMESTAMP + "\"";
-        Exception exception = new IllegalStateException(message);
+        final String message = "Missing required field \"" + JsonKeys.TIMESTAMP + "\"";
+        final Exception exception = new IllegalStateException(message);
         logger.log(SentryLevel.ERROR, message, exception);
         throw exception;
       }
 
       if (type == null) {
-        String message = "Missing required field \"" + JsonKeys.TYPE + "\"";
-        Exception exception = new IllegalStateException(message);
+        final String message = "Missing required field \"" + JsonKeys.TYPE + "\"";
+        final Exception exception = new IllegalStateException(message);
         logger.log(SentryLevel.ERROR, message, exception);
         throw exception;
       }
 
       if (name == null) {
-        String message = "Missing required field \"" + JsonKeys.NAME + "\"";
-        Exception exception = new IllegalStateException(message);
+        final String message = "Missing required field \"" + JsonKeys.NAME + "\"";
+        final Exception exception = new IllegalStateException(message);
         logger.log(SentryLevel.ERROR, message, exception);
         throw exception;
       }
 
       if (value == null) {
-        String message = "Missing required field \"" + JsonKeys.VALUE + "\"";
-        Exception exception = new IllegalStateException(message);
+        final String message = "Missing required field \"" + JsonKeys.VALUE + "\"";
+        final Exception exception = new IllegalStateException(message);
         logger.log(SentryLevel.ERROR, message, exception);
         throw exception;
       }

@@ -9,7 +9,7 @@ public interface IMetricsBatchProcessor {
   void close(boolean isRestarting);
 
   /**
-   * Flushes log events.
+   * Flushes metrics.
    *
    * @param timeoutMillis time in milliseconds
    */

@@ -12,7 +12,7 @@ public final class AndroidMetricsBatchProcessor extends MetricsBatchProcessor
     implements AppState.AppStateListener {
 
   public AndroidMetricsBatchProcessor(
-      @NotNull SentryOptions options, @NotNull ISentryClient client) {
+      final @NotNull SentryOptions options, final @NotNull ISentryClient client) {
     super(options, client);
     AppState.getInstance().addAppStateListener(this);
   }

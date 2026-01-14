@@ -3771,7 +3771,7 @@ public class SentryOptions {
      *
      * @param enableMetrics true if Sentry Metrics should be enabled
      */
-    public void setEnabled(boolean enableMetrics) {
+    public void setEnabled(final boolean enableMetrics) {
       this.enable = enableMetrics;
     }
 
@@ -3789,7 +3789,7 @@ public class SentryOptions {
      *
      * @param beforeSend the beforeSend callback for metrics
      */
-    public void setBeforeSend(@Nullable BeforeSendMetricCallback beforeSend) {
+    public void setBeforeSend(final @Nullable BeforeSendMetricCallback beforeSend) {
       this.beforeSend = beforeSend;
     }
 
@@ -3813,7 +3813,7 @@ public class SentryOptions {
        * @return the original metric, mutated metric or null if metric was dropped
        */
       @Nullable
-      SentryMetricsEvent execute(@NotNull SentryMetricsEvent metric);
+      SentryMetricsEvent execute(final @NotNull SentryMetricsEvent metric);
     }
   }
 

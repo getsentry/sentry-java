@@ -9,7 +9,7 @@ import org.jetbrains.annotations.NotNull;
 public final class AndroidMetricsBatchProcessorFactory implements IMetricsBatchProcessorFactory {
   @Override
   public @NotNull IMetricsBatchProcessor create(
-      @NotNull SentryOptions options, @NotNull SentryClient client) {
+      final @NotNull SentryOptions options, final @NotNull SentryClient client) {
     return new AndroidMetricsBatchProcessor(options, client);
   }
 }
