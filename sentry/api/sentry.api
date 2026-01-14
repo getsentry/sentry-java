@@ -5283,6 +5283,7 @@ public final class io/sentry/metrics/SentryMetricsParameters {
 	public fun <init> ()V
 	public static fun create (Lio/sentry/SentryAttributes;)Lio/sentry/metrics/SentryMetricsParameters;
 	public static fun create (Lio/sentry/SentryDate;Lio/sentry/SentryAttributes;)Lio/sentry/metrics/SentryMetricsParameters;
+	public static fun create (Ljava/util/Map;)Lio/sentry/metrics/SentryMetricsParameters;
 	public fun getAttributes ()Lio/sentry/SentryAttributes;
 	public fun getHint ()Lio/sentry/Hint;
 	public fun getOrigin ()Ljava/lang/String;

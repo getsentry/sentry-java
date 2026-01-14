@@ -3,6 +3,7 @@ package io.sentry.metrics;
 import io.sentry.Hint;
 import io.sentry.SentryAttributes;
 import io.sentry.SentryDate;
+import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -59,5 +60,16 @@ public final class SentryMetricsParameters {
   public static @NotNull SentryMetricsParameters create(
       final @Nullable SentryAttributes attributes) {
     return create(null, attributes);
+  }
+
+  /**
+   * A shortcut for SentryMetricsParameters.create(SentryAttributes.fromMap())
+   *
+   * @param attributes a map of attributes
+   * @return parameters
+   */
+  public static @NotNull SentryMetricsParameters create(
+      final @Nullable Map<String, Object> attributes) {
+    return create(null, SentryAttributes.fromMap(attributes));
   }
 }
