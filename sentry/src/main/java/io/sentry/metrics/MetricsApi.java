@@ -82,6 +82,26 @@ public final class MetricsApi implements IMetricsApi {
     captureMetrics(params, name, "distribution", value, unit);
   }
 
+  @Override
+  public void gauge(final @NotNull String name, final @Nullable Double value) {
+    captureMetrics(SentryLogParameters.create(null, null), name, "gauge", value, null);
+  }
+
+  @Override
+  public void gauge(
+      final @NotNull String name, final @Nullable Double value, final @Nullable String unit) {
+    captureMetrics(SentryLogParameters.create(null, null), name, "gauge", value, unit);
+  }
+
+  @Override
+  public void gauge(
+      final @NotNull String name,
+      final @Nullable Double value,
+      final @Nullable String unit,
+      final @NotNull SentryLogParameters params) {
+    captureMetrics(params, name, "gauge", value, unit);
+  }
+
   @SuppressWarnings("AnnotateFormatMethod")
   private void captureMetrics(
       final @NotNull SentryLogParameters params,

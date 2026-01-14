@@ -31,6 +31,13 @@ public interface IMetricsApi {
       final @Nullable String unit,
       final @NotNull SentryLogParameters params);
 
-  // gauge
-  //
+  void gauge(final @NotNull String name, final @Nullable Double value);
+
+  void gauge(final @NotNull String name, final @Nullable Double value, final @Nullable String unit);
+
+  void gauge(
+      final @NotNull String name,
+      final @Nullable Double value,
+      final @Nullable String unit,
+      final @NotNull SentryLogParameters params);
 }
