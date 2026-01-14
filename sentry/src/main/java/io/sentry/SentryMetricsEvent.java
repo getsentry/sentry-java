@@ -107,6 +107,14 @@ public final class SentryMetricsEvent implements JsonUnknown, JsonSerializable {
     this.spanId = spanId;
   }
 
+  public @Nullable SentryId getTraceId() {
+    return traceId;
+  }
+
+  public void setTraceId(final @Nullable SentryId traceId) {
+    this.traceId = traceId;
+  }
+
   public @NotNull Double getValue() {
     return value;
   }

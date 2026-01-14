@@ -1,8 +1,8 @@
 ---
 alwaysApply: false
-description: Metrics
+description: Metrics API
 ---
-# Java SDK Metrics
+# Java SDK Metrics API
 
 Metrics are enabled by default.
 
