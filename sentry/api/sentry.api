@@ -5210,6 +5210,9 @@ public abstract interface class io/sentry/metrics/IMetricsApi {
 	public abstract fun count (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;)V
 	public abstract fun count (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;Lio/sentry/logger/SentryLogParameters;)V
 	public abstract fun count (Ljava/lang/String;Ljava/lang/String;)V
+	public abstract fun distribution (Ljava/lang/String;Ljava/lang/Double;)V
+	public abstract fun distribution (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;)V
+	public abstract fun distribution (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;Lio/sentry/logger/SentryLogParameters;)V
 }
 
 public abstract interface class io/sentry/metrics/IMetricsBatchProcessor {
@@ -5229,6 +5232,9 @@ public final class io/sentry/metrics/MetricsApi : io/sentry/metrics/IMetricsApi 
 	public fun count (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;)V
 	public fun count (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;Lio/sentry/logger/SentryLogParameters;)V
 	public fun count (Ljava/lang/String;Ljava/lang/String;)V
+	public fun distribution (Ljava/lang/String;Ljava/lang/Double;)V
+	public fun distribution (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;)V
+	public fun distribution (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;Lio/sentry/logger/SentryLogParameters;)V
 }
 
 public class io/sentry/metrics/MetricsBatchProcessor : io/sentry/metrics/IMetricsBatchProcessor {
@@ -5248,6 +5254,9 @@ public final class io/sentry/metrics/NoOpMetricsApi : io/sentry/metrics/IMetrics
 	public fun count (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;)V
 	public fun count (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;Lio/sentry/logger/SentryLogParameters;)V
 	public fun count (Ljava/lang/String;Ljava/lang/String;)V
+	public fun distribution (Ljava/lang/String;Ljava/lang/Double;)V
+	public fun distribution (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;)V
+	public fun distribution (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;Lio/sentry/logger/SentryLogParameters;)V
 	public static fun getInstance ()Lio/sentry/metrics/NoOpMetricsApi;
 }
 

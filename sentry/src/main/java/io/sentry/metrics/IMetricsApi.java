@@ -20,7 +20,17 @@ public interface IMetricsApi {
       final @Nullable String unit,
       final @NotNull SentryLogParameters params);
 
-  // distribution
+  void distribution(final @NotNull String name, final @Nullable Double value);
+
+  void distribution(
+      final @NotNull String name, final @Nullable Double value, final @Nullable String unit);
+
+  void distribution(
+      final @NotNull String name,
+      final @Nullable Double value,
+      final @Nullable String unit,
+      final @NotNull SentryLogParameters params);
+
   // gauge
   //
 }
