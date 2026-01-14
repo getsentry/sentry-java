@@ -8,6 +8,7 @@
   - **IMPORTANT:** This disables collecting external storage size (total/free) by default, to enable it back
     use `options.isCollectExternalStorageContext = true` or `<meta-data android:name="io.sentry.external-storage-context" android:value="true" />`
 - Fix `NullPointerException` when reading ANR marker ([#4979](https://github.com/getsentry/sentry-java/pull/4979))
+- Report discarded log in batch processor as `log_byte` ([#4971](https://github.com/getsentry/sentry-java/pull/4971))
 
 ### Improvements
 
