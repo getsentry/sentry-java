@@ -37,10 +37,21 @@ Use the `fetch_rules` tool to include these rules when working on specific areas
 - **`feature_flags`**: Use when working with:
   - Feature flag tracking and evaluation
   - `addFeatureFlag()`, `getFeatureFlags()` methods
-  - `FeatureFlagBuffer`, `FeatureFlag` protocol
+  - `FeatureFlagBuffer`, `SpanFeatureFlagBuffer`, `FeatureFlag` protocol
   - `maxFeatureFlags` option and buffer management
   - Feature flag merging across scope types
   - Scope-based vs span-based feature flag APIs
+  - Scope-based API: `Sentry`, `IScopes`, `IScope` APIs
+  - Span-based API: `ISpan`, `ITransaction` APIs
+  - Integrations: LaunchDarkly (Android/JVM), OpenFeature (JVM)
+
+- **`metrics`**: Use when working with:
+  - Metrics API (`Sentry.metrics()`, `IScopes.metrics()`)
+  - `IMetricsApi`, `MetricsApi` implementation
+  - Metrics types: `count`, `distribution`, `gauge`
+  - `MetricsBatchProcessor`, batching and queue management
+  - `SentryMetricsEvent`, `SentryMetricsEvents`
+  - `SentryOptions.getMetrics()`, `beforeSend` callback
 
 ### Integration & Infrastructure
 - **`opentelemetry`**: Use when working with:
@@ -72,3 +83,4 @@ Use the `fetch_rules` tool to include these rules when working on specific areas
    - Cache/offline/network → `offline`
    - System test/e2e/sample → `e2e_tests`
    - Feature flag/addFeatureFlag/flag evaluation → `feature_flags`
+   - Metrics/count/distribution/gauge → `metrics`
