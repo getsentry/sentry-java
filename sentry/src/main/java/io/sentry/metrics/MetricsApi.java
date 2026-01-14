@@ -14,7 +14,6 @@ import io.sentry.SentryLogEventAttributeValue;
 import io.sentry.SentryMetricsEvent;
 import io.sentry.SentryOptions;
 import io.sentry.SpanId;
-import io.sentry.logger.SentryLogParameters;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
@@ -34,23 +33,23 @@ public final class MetricsApi implements IMetricsApi {
 
   @Override
   public void count(final @NotNull String name) {
-    captureMetrics(SentryLogParameters.create(null, null), name, "counter", 1.0, null);
+    captureMetrics(SentryMetricsParameters.create(null, null), name, "counter", 1.0, null);
   }
 
   @Override
   public void count(final @NotNull String name, final @Nullable Double value) {
-    captureMetrics(SentryLogParameters.create(null, null), name, "counter", value, null);
+    captureMetrics(SentryMetricsParameters.create(null, null), name, "counter", value, null);
   }
 
   @Override
   public void count(final @NotNull String name, final @Nullable String unit) {
-    captureMetrics(SentryLogParameters.create(null, null), name, "counter", 1.0, unit);
+    captureMetrics(SentryMetricsParameters.create(null, null), name, "counter", 1.0, unit);
   }
 
   @Override
   public void count(
       final @NotNull String name, final @Nullable Double value, final @Nullable String unit) {
-    captureMetrics(SentryLogParameters.create(null, null), name, "counter", value, unit);
+    captureMetrics(SentryMetricsParameters.create(null, null), name, "counter", value, unit);
   }
 
   @Override
@@ -58,19 +57,19 @@ public final class MetricsApi implements IMetricsApi {
       final @NotNull String name,
       final @Nullable Double value,
       final @Nullable String unit,
-      final @NotNull SentryLogParameters params) {
+      final @NotNull SentryMetricsParameters params) {
     captureMetrics(params, name, "counter", value, unit);
   }
 
   @Override
   public void distribution(final @NotNull String name, final @Nullable Double value) {
-    captureMetrics(SentryLogParameters.create(null, null), name, "distribution", value, null);
+    captureMetrics(SentryMetricsParameters.create(null, null), name, "distribution", value, null);
   }
 
   @Override
   public void distribution(
       final @NotNull String name, final @Nullable Double value, final @Nullable String unit) {
-    captureMetrics(SentryLogParameters.create(null, null), name, "distribution", value, unit);
+    captureMetrics(SentryMetricsParameters.create(null, null), name, "distribution", value, unit);
   }
 
   @Override
@@ -78,19 +77,19 @@ public final class MetricsApi implements IMetricsApi {
       final @NotNull String name,
       final @Nullable Double value,
       final @Nullable String unit,
-      final @NotNull SentryLogParameters params) {
+      final @NotNull SentryMetricsParameters params) {
     captureMetrics(params, name, "distribution", value, unit);
   }
 
   @Override
   public void gauge(final @NotNull String name, final @Nullable Double value) {
-    captureMetrics(SentryLogParameters.create(null, null), name, "gauge", value, null);
+    captureMetrics(SentryMetricsParameters.create(null, null), name, "gauge", value, null);
   }
 
   @Override
   public void gauge(
       final @NotNull String name, final @Nullable Double value, final @Nullable String unit) {
-    captureMetrics(SentryLogParameters.create(null, null), name, "gauge", value, unit);
+    captureMetrics(SentryMetricsParameters.create(null, null), name, "gauge", value, unit);
   }
 
   @Override
@@ -98,13 +97,13 @@ public final class MetricsApi implements IMetricsApi {
       final @NotNull String name,
       final @Nullable Double value,
       final @Nullable String unit,
-      final @NotNull SentryLogParameters params) {
+      final @NotNull SentryMetricsParameters params) {
     captureMetrics(params, name, "gauge", value, unit);
   }
 
   @SuppressWarnings("AnnotateFormatMethod")
   private void captureMetrics(
-      final @NotNull SentryLogParameters params,
+      final @NotNull SentryMetricsParameters params,
       final @Nullable String name,
       final @Nullable String type,
       final @Nullable Double value,
@@ -166,7 +165,7 @@ public final class MetricsApi implements IMetricsApi {
   }
 
   private @NotNull HashMap<String, SentryLogEventAttributeValue> createAttributes(
-      final @NotNull SentryLogParameters params) {
+      final @NotNull SentryMetricsParameters params) {
     final @NotNull HashMap<String, SentryLogEventAttributeValue> attributes = new HashMap<>();
     final @NotNull String origin = params.getOrigin();
     if (!"manual".equalsIgnoreCase(origin)) {

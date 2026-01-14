@@ -1,6 +1,5 @@
 package io.sentry.metrics;
 
-import io.sentry.logger.SentryLogParameters;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -31,7 +30,7 @@ public final class NoOpMetricsApi implements IMetricsApi {
       final @NotNull String name,
       final @Nullable Double value,
       final @Nullable String unit,
-      final @NotNull SentryLogParameters params) {}
+      final @NotNull SentryMetricsParameters params) {}
 
   @Override
   public void distribution(final @NotNull String name, final @Nullable Double value) {}
@@ -45,7 +44,7 @@ public final class NoOpMetricsApi implements IMetricsApi {
       final @NotNull String name,
       final @Nullable Double value,
       final @Nullable String unit,
-      final @NotNull SentryLogParameters params) {}
+      final @NotNull SentryMetricsParameters params) {}
 
   @Override
   public void gauge(final @NotNull String name, final @Nullable Double value) {}
@@ -59,5 +58,5 @@ public final class NoOpMetricsApi implements IMetricsApi {
       final @NotNull String name,
       final @Nullable Double value,
       final @Nullable String unit,
-      final @NotNull SentryLogParameters params) {}
+      final @NotNull SentryMetricsParameters params) {}
 }

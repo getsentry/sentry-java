@@ -5211,14 +5211,14 @@ public abstract interface class io/sentry/metrics/IMetricsApi {
 	public abstract fun count (Ljava/lang/String;)V
 	public abstract fun count (Ljava/lang/String;Ljava/lang/Double;)V
 	public abstract fun count (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;)V
-	public abstract fun count (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;Lio/sentry/logger/SentryLogParameters;)V
+	public abstract fun count (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;Lio/sentry/metrics/SentryMetricsParameters;)V
 	public abstract fun count (Ljava/lang/String;Ljava/lang/String;)V
 	public abstract fun distribution (Ljava/lang/String;Ljava/lang/Double;)V
 	public abstract fun distribution (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;)V
-	public abstract fun distribution (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;Lio/sentry/logger/SentryLogParameters;)V
+	public abstract fun distribution (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;Lio/sentry/metrics/SentryMetricsParameters;)V
 	public abstract fun gauge (Ljava/lang/String;Ljava/lang/Double;)V
 	public abstract fun gauge (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;)V
-	public abstract fun gauge (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;Lio/sentry/logger/SentryLogParameters;)V
+	public abstract fun gauge (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;Lio/sentry/metrics/SentryMetricsParameters;)V
 }
 
 public abstract interface class io/sentry/metrics/IMetricsBatchProcessor {
@@ -5236,14 +5236,14 @@ public final class io/sentry/metrics/MetricsApi : io/sentry/metrics/IMetricsApi 
 	public fun count (Ljava/lang/String;)V
 	public fun count (Ljava/lang/String;Ljava/lang/Double;)V
 	public fun count (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;)V
-	public fun count (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;Lio/sentry/logger/SentryLogParameters;)V
+	public fun count (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;Lio/sentry/metrics/SentryMetricsParameters;)V
 	public fun count (Ljava/lang/String;Ljava/lang/String;)V
 	public fun distribution (Ljava/lang/String;Ljava/lang/Double;)V
 	public fun distribution (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;)V
-	public fun distribution (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;Lio/sentry/logger/SentryLogParameters;)V
+	public fun distribution (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;Lio/sentry/metrics/SentryMetricsParameters;)V
 	public fun gauge (Ljava/lang/String;Ljava/lang/Double;)V
 	public fun gauge (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;)V
-	public fun gauge (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;Lio/sentry/logger/SentryLogParameters;)V
+	public fun gauge (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;Lio/sentry/metrics/SentryMetricsParameters;)V
 }
 
 public class io/sentry/metrics/MetricsBatchProcessor : io/sentry/metrics/IMetricsBatchProcessor {
@@ -5261,14 +5261,14 @@ public final class io/sentry/metrics/NoOpMetricsApi : io/sentry/metrics/IMetrics
 	public fun count (Ljava/lang/String;)V
 	public fun count (Ljava/lang/String;Ljava/lang/Double;)V
 	public fun count (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;)V
-	public fun count (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;Lio/sentry/logger/SentryLogParameters;)V
+	public fun count (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;Lio/sentry/metrics/SentryMetricsParameters;)V
 	public fun count (Ljava/lang/String;Ljava/lang/String;)V
 	public fun distribution (Ljava/lang/String;Ljava/lang/Double;)V
 	public fun distribution (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;)V
-	public fun distribution (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;Lio/sentry/logger/SentryLogParameters;)V
+	public fun distribution (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;Lio/sentry/metrics/SentryMetricsParameters;)V
 	public fun gauge (Ljava/lang/String;Ljava/lang/Double;)V
 	public fun gauge (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;)V
-	public fun gauge (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;Lio/sentry/logger/SentryLogParameters;)V
+	public fun gauge (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;Lio/sentry/metrics/SentryMetricsParameters;)V
 	public static fun getInstance ()Lio/sentry/metrics/NoOpMetricsApi;
 }
 
@@ -5277,6 +5277,18 @@ public final class io/sentry/metrics/NoOpMetricsBatchProcessor : io/sentry/metri
 	public fun close (Z)V
 	public fun flush (J)V
 	public static fun getInstance ()Lio/sentry/metrics/NoOpMetricsBatchProcessor;
+}
+
+public final class io/sentry/metrics/SentryMetricsParameters {
+	public fun <init> ()V
+	public static fun create (Lio/sentry/SentryAttributes;)Lio/sentry/metrics/SentryMetricsParameters;
+	public static fun create (Lio/sentry/SentryDate;Lio/sentry/SentryAttributes;)Lio/sentry/metrics/SentryMetricsParameters;
+	public fun getAttributes ()Lio/sentry/SentryAttributes;
+	public fun getOrigin ()Ljava/lang/String;
+	public fun getTimestamp ()Lio/sentry/SentryDate;
+	public fun setAttributes (Lio/sentry/SentryAttributes;)V
+	public fun setOrigin (Ljava/lang/String;)V
+	public fun setTimestamp (Lio/sentry/SentryDate;)V
 }
 
 public final class io/sentry/opentelemetry/OpenTelemetryUtil {

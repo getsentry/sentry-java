@@ -8,6 +8,7 @@ import io.sentry.clientreport.DiscardedEvent
 import io.sentry.hints.SessionEndHint
 import io.sentry.hints.SessionStartHint
 import io.sentry.logger.SentryLogParameters
+import io.sentry.metrics.SentryMetricsParameters
 import io.sentry.protocol.Feedback
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryTransaction
@@ -3217,7 +3218,7 @@ class ScopesTest {
 
     sut
       .metrics()
-      .count("metric name", 1.0, "visit", SentryLogParameters().also { it.origin = "other" })
+      .count("metric name", 1.0, "visit", SentryMetricsParameters().also { it.origin = "other" })
 
     verify(mockClient)
       .captureMetric(
@@ -3295,7 +3296,7 @@ class ScopesTest {
         "metric name",
         1.0,
         "visit",
-        SentryLogParameters.create(SentryAttributes.fromMap(mapOf("attrname1" to "attrval1"))),
+        SentryMetricsParameters.create(SentryAttributes.fromMap(mapOf("attrname1" to "attrval1"))),
       )
 
     verify(mockClient)
@@ -3324,7 +3325,7 @@ class ScopesTest {
         "metric name",
         1.0,
         "visit",
-        SentryLogParameters.create(
+        SentryMetricsParameters.create(
           SentryAttributes.of(
             SentryAttribute.stringAttribute("strattr", "strval"),
             SentryAttribute.booleanAttribute("boolattr", true),
@@ -3392,7 +3393,7 @@ class ScopesTest {
         "metric name",
         1.0,
         "visit",
-        SentryLogParameters.create(
+        SentryMetricsParameters.create(
           SentryLongDate(123),
           SentryAttributes.of(SentryAttribute.named("attrname1", "attrval1")),
         ),
@@ -3459,7 +3460,7 @@ class ScopesTest {
         "metric name",
         3.7,
         "ms",
-        SentryLogParameters.create(SentryAttributes.fromMap(mapOf("attrname1" to "attrval1"))),
+        SentryMetricsParameters.create(SentryAttributes.fromMap(mapOf("attrname1" to "attrval1"))),
       )
 
     verify(mockClient)
@@ -3488,7 +3489,7 @@ class ScopesTest {
         "metric name",
         3.7,
         "ms",
-        SentryLogParameters.create(
+        SentryMetricsParameters.create(
           SentryAttributes.of(
             SentryAttribute.stringAttribute("strattr", "strval"),
             SentryAttribute.booleanAttribute("boolattr", true),
@@ -3556,7 +3557,7 @@ class ScopesTest {
         "metric name",
         3.7,
         "ms",
-        SentryLogParameters.create(
+        SentryMetricsParameters.create(
           SentryLongDate(123),
           SentryAttributes.of(SentryAttribute.named("attrname1", "attrval1")),
         ),
@@ -3623,7 +3624,7 @@ class ScopesTest {
         "metric name",
         256.0,
         "byte",
-        SentryLogParameters.create(SentryAttributes.fromMap(mapOf("attrname1" to "attrval1"))),
+        SentryMetricsParameters.create(SentryAttributes.fromMap(mapOf("attrname1" to "attrval1"))),
       )
 
     verify(mockClient)
@@ -3652,7 +3653,7 @@ class ScopesTest {
         "metric name",
         256.0,
         "byte",
-        SentryLogParameters.create(
+        SentryMetricsParameters.create(
           SentryAttributes.of(
             SentryAttribute.stringAttribute("strattr", "strval"),
             SentryAttribute.booleanAttribute("boolattr", true),
@@ -3720,7 +3721,7 @@ class ScopesTest {
         "metric name",
         256.0,
         "byte",
-        SentryLogParameters.create(
+        SentryMetricsParameters.create(
           SentryLongDate(123),
           SentryAttributes.of(SentryAttribute.named("attrname1", "attrval1")),
         ),
