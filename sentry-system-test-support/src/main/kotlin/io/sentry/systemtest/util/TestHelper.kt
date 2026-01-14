@@ -3,6 +3,7 @@ package io.sentry.systemtest.util
 import com.apollographql.apollo3.api.ApolloResponse
 import com.apollographql.apollo3.api.Operation
 import io.sentry.JsonSerializer
+import io.sentry.ProfileChunk
 import io.sentry.SentryEnvelopeHeader
 import io.sentry.SentryEvent
 import io.sentry.SentryItemType
@@ -13,7 +14,10 @@ import io.sentry.protocol.FeatureFlag
 import io.sentry.protocol.SentrySpan
 import io.sentry.protocol.SentryTransaction
 import io.sentry.systemtest.graphql.GraphqlTestClient
+import java.io.BufferedReader
+import java.io.ByteArrayInputStream
 import java.io.File
+import java.io.InputStreamReader
 import java.io.PrintWriter
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -81,6 +85,10 @@ class TestHelper(backendUrl: String) {
 
   fun ensureTransactionReceived(callback: ((SentryTransaction, SentryEnvelopeHeader) -> Boolean)) {
     ensureEnvelopeReceived { envelopeString -> checkIfTransactionMatches(envelopeString, callback) }
+  }
+
+  fun ensureProfileChunkReceived(callback: ((ProfileChunk, SentryEnvelopeHeader) -> Boolean)) {
+    ensureEnvelopeReceived { envelopeString -> checkIfProfileMatches(envelopeString, callback) }
   }
 
   fun ensureNoTransactionReceived(
@@ -205,6 +213,35 @@ class TestHelper(backendUrl: String) {
     }
 
     return callback(transaction, envelopeHeader)
+  }
+
+  private fun checkIfProfileMatches(
+    envelopeString: String,
+    callback: ((ProfileChunk, SentryEnvelopeHeader) -> Boolean),
+  ): Boolean {
+    val deserializeEnvelope = jsonSerializer.deserializeEnvelope(envelopeString.byteInputStream())
+    if (deserializeEnvelope == null) {
+      return false
+    }
+
+    val envelopeHeader = deserializeEnvelope.header
+
+    val profileChunkItem =
+      deserializeEnvelope.items.firstOrNull { it.header.type == SentryItemType.ProfileChunk }
+
+    if (profileChunkItem == null) {
+      return false
+    }
+
+    val chunk =
+      BufferedReader(InputStreamReader(ByteArrayInputStream(profileChunkItem.data), Charsets.UTF_8))
+        .use { eventReader -> jsonSerializer.deserialize(eventReader, ProfileChunk::class.java) }
+
+    if (chunk == null) {
+      return false
+    }
+
+    return callback(chunk, envelopeHeader)
   }
 
   fun ensureErrorReceived(callback: ((SentryEvent) -> Boolean)) {
