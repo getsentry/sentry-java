@@ -3813,7 +3813,8 @@ public class SentryOptions {
        * @return the original metric, mutated metric or null if metric was dropped
        */
       @Nullable
-      SentryMetricsEvent execute(final @NotNull SentryMetricsEvent metric);
+      SentryMetricsEvent execute(
+          final @NotNull SentryMetricsEvent metric, final @NotNull Hint hint);
     }
   }
 

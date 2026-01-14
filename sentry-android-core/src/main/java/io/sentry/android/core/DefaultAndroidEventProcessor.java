@@ -94,7 +94,8 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   }
 
   @Override
-  public @Nullable SentryMetricsEvent process(@NotNull SentryMetricsEvent event) {
+  public @Nullable SentryMetricsEvent process(
+      final @NotNull SentryMetricsEvent event, final @NotNull Hint hint) {
     setDevice(event);
     setOs(event);
     return event;

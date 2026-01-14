@@ -517,10 +517,12 @@ public final class SentryClient implements ISentryClient {
 
   @Nullable
   private SentryMetricsEvent processMetricsEvent(
-      @NotNull SentryMetricsEvent event, final @NotNull List<EventProcessor> eventProcessors) {
+      @NotNull SentryMetricsEvent event,
+      final @NotNull List<EventProcessor> eventProcessors,
+      final @NotNull Hint hint) {
     for (final EventProcessor processor : eventProcessors) {
       try {
-        event = processor.process(event);
+        event = processor.process(event, hint);
       } catch (Throwable e) {
         options
             .getLogger()
@@ -1278,23 +1280,30 @@ public final class SentryClient implements ISentryClient {
 
   @ApiStatus.Experimental
   @Override
-  public void captureMetric(@Nullable SentryMetricsEvent metricsEvent, @Nullable IScope scope) {
+  public void captureMetric(
+      @Nullable SentryMetricsEvent metricsEvent,
+      final @Nullable IScope scope,
+      @Nullable Hint hint) {
+    if (hint == null) {
+      hint = new Hint();
+    }
+
     if (metricsEvent != null && scope != null) {
-      metricsEvent = processMetricsEvent(metricsEvent, scope.getEventProcessors());
+      metricsEvent = processMetricsEvent(metricsEvent, scope.getEventProcessors(), hint);
       if (metricsEvent == null) {
         return;
       }
     }
 
     if (metricsEvent != null) {
-      metricsEvent = processMetricsEvent(metricsEvent, options.getEventProcessors());
+      metricsEvent = processMetricsEvent(metricsEvent, options.getEventProcessors(), hint);
       if (metricsEvent == null) {
         return;
       }
     }
 
     if (metricsEvent != null) {
-      metricsEvent = executeBeforeSendMetric(metricsEvent);
+      metricsEvent = executeBeforeSendMetric(metricsEvent, hint);
 
       if (metricsEvent == null) {
         options
@@ -1625,12 +1634,13 @@ public final class SentryClient implements ISentryClient {
     return event;
   }
 
-  private @Nullable SentryMetricsEvent executeBeforeSendMetric(@NotNull SentryMetricsEvent event) {
+  private @Nullable SentryMetricsEvent executeBeforeSendMetric(
+      @NotNull SentryMetricsEvent event, final @NotNull Hint hint) {
     final SentryOptions.Metrics.BeforeSendMetricCallback beforeSendMetric =
         options.getMetrics().getBeforeSend();
     if (beforeSendMetric != null) {
       try {
-        event = beforeSendMetric.execute(event);
+        event = beforeSendMetric.execute(event, hint);
       } catch (Throwable e) {
         options
             .getLogger()

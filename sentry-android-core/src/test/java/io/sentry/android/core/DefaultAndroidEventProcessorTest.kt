@@ -636,7 +636,8 @@ class DefaultAndroidEventProcessorTest {
           "42e6bd2a-c45e-414d-8066-ed5196fbc686",
           "counter",
           123.0,
-        )
+        ),
+        Hint(),
       )
 
     assertNotNull(processedEvent?.attributes?.get("device.brand"))

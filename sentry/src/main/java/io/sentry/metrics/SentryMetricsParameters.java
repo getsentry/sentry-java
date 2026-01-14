@@ -1,5 +1,6 @@
 package io.sentry.metrics;
 
+import io.sentry.Hint;
 import io.sentry.SentryAttributes;
 import io.sentry.SentryDate;
 import org.jetbrains.annotations.NotNull;
@@ -10,6 +11,8 @@ public final class SentryMetricsParameters {
   private @Nullable SentryDate timestamp;
   private @Nullable SentryAttributes attributes;
   private @NotNull String origin = "manual";
+
+  private @Nullable Hint hint = null;
 
   public @Nullable SentryDate getTimestamp() {
     return timestamp;
@@ -33,6 +36,14 @@ public final class SentryMetricsParameters {
 
   public void setOrigin(final @NotNull String origin) {
     this.origin = origin;
+  }
+
+  public @Nullable Hint getHint() {
+    return hint;
+  }
+
+  public void setHint(final @Nullable Hint hint) {
+    this.hint = hint;
   }
 
   public static @NotNull SentryMetricsParameters create(
