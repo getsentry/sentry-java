@@ -1,6 +1,7 @@
 package io.sentry.samples.spring.boot4;
 
 import io.sentry.Sentry;
+import io.sentry.metrics.MetricsUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,14 +21,15 @@ public class MetricController {
   }
 
   @GetMapping("gauge/{value}")
-  String gauge(@PathVariable Long value) {
-    Sentry.metrics().gauge("memory.free", value.doubleValue(), "byte");
+  String gauge(@PathVariable("value") Long value) {
+    Sentry.metrics().gauge("memory.free", value.doubleValue(), MetricsUnit.Information.BYTE);
     return "gauge metric tracked";
   }
 
   @GetMapping("distribution/{value}")
-  String distribution(@PathVariable Long value) {
-    Sentry.metrics().distribution("distributionMetric", value.doubleValue(), "child");
+  String distribution(@PathVariable("value") Long value) {
+    Sentry.metrics()
+        .distribution("distributionMetric", value.doubleValue(), MetricsUnit.Duration.MILLISECOND);
     return "distribution metric tracked";
   }
 }
