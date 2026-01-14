@@ -23,6 +23,7 @@ import io.sentry.SentryEvent
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel
 import io.sentry.SentryLogEvent
+import io.sentry.SentryMetricsEvent
 import io.sentry.SentryOptions
 import io.sentry.asyncprofiler.profiling.JavaContinuousProfiler
 import io.sentry.asyncprofiler.provider.AsyncProfilerProfileConverterProvider
@@ -378,6 +379,17 @@ class SentryAutoConfigurationTest {
       .run {
         assertThat(it.getBean(SentryOptions::class.java).logs.beforeSend)
           .isInstanceOf(CustomBeforeSendLogsCallback::class.java)
+      }
+  }
+
+  @Test
+  fun `registers metrics beforeSendCallback on SentryOptions`() {
+    contextRunner
+      .withPropertyValues("sentry.dsn=http://key@localhost/proj")
+      .withUserConfiguration(CustomBeforeSendMetricCallbackConfiguration::class.java)
+      .run {
+        assertThat(it.getBean(SentryOptions::class.java).metrics.beforeSend)
+          .isInstanceOf(CustomBeforeSendMetricCallback::class.java)
       }
   }
 
@@ -1260,6 +1272,16 @@ class SentryAutoConfigurationTest {
 
   class CustomBeforeSendLogsCallback : SentryOptions.Logs.BeforeSendLogCallback {
     override fun execute(event: SentryLogEvent): SentryLogEvent? = null
+  }
+
+  @Configuration(proxyBeanMethods = false)
+  open class CustomBeforeSendMetricCallbackConfiguration {
+
+    @Bean open fun beforeSendCallback() = CustomBeforeSendMetricCallback()
+  }
+
+  class CustomBeforeSendMetricCallback : SentryOptions.Metrics.BeforeSendMetricCallback {
+    override fun execute(metric: SentryMetricsEvent, hint: Hint): SentryMetricsEvent? = null
   }
 
   @Configuration(proxyBeanMethods = false)
