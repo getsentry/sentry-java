@@ -27,3 +27,4 @@ spring-server.txt
 spy.log
 .kotlin
 **/tomcat.8080/webapps/
+**/__pycache__

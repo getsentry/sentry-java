@@ -36,8 +36,7 @@ public class LoggerBatchProcessor implements ILoggerBatchProcessor {
   private final @NotNull Queue<SentryLogEvent> queue;
   private final @NotNull ISentryExecutorService executorService;
   private volatile @Nullable Future<?> scheduledFlush;
-  private static final @NotNull AutoClosableReentrantLock scheduleLock =
-      new AutoClosableReentrantLock();
+  private final @NotNull AutoClosableReentrantLock scheduleLock = new AutoClosableReentrantLock();
   private volatile boolean hasScheduled = false;
 
   private final @NotNull ReusableCountLatch pendingCount = new ReusableCountLatch();
