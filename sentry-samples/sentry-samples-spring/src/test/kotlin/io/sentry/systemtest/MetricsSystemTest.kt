@@ -20,8 +20,6 @@ class MetricsSystemTest {
     assertEquals("count metric increased", restClient.getCountMetric())
     assertEquals(200, restClient.lastKnownStatusCode)
 
-    Thread.sleep(10000)
-
     testHelper.ensureMetricsReceived { event, header ->
       testHelper.doesContainMetric(event, "countMetric", "counter", 1.0)
     }
@@ -33,8 +31,6 @@ class MetricsSystemTest {
     assertEquals("gauge metric tracked", restClient.getGaugeMetric(14))
     assertEquals(200, restClient.lastKnownStatusCode)
 
-    Thread.sleep(10000)
-
     testHelper.ensureMetricsReceived { event, header ->
       testHelper.doesContainMetric(event, "memory.free", "gauge", 14.0)
     }
@@ -45,8 +41,6 @@ class MetricsSystemTest {
     val restClient = testHelper.restClient
     assertEquals("distribution metric tracked", restClient.getDistributionMetric(23))
     assertEquals(200, restClient.lastKnownStatusCode)
-
-    Thread.sleep(10000)
 
     testHelper.ensureMetricsReceived { event, header ->
       testHelper.doesContainMetric(event, "distributionMetric", "distribution", 23.0)

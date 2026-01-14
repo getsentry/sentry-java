@@ -69,14 +69,14 @@ class RestTestClient(private val backendBaseUrl: String) : LoggingInsecureRestCl
     return callTyped(request, true)
   }
 
-  fun getGaugeMetric(count: Long): String? {
-    val request = Request.Builder().url("$backendBaseUrl/metric/gauge/$count")
+  fun getGaugeMetric(value: Long): String? {
+    val request = Request.Builder().url("$backendBaseUrl/metric/gauge/$value")
 
     return callTyped(request, true)
   }
 
-  fun getDistributionMetric(count: Long): String? {
-    val request = Request.Builder().url("$backendBaseUrl/metric/distribution/$count")
+  fun getDistributionMetric(value: Long): String? {
+    val request = Request.Builder().url("$backendBaseUrl/metric/distribution/$value")
 
     return callTyped(request, true)
   }
