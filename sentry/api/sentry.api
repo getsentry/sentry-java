@@ -1029,6 +1029,7 @@ public abstract interface class io/sentry/IScopesStorage {
 
 public abstract interface class io/sentry/ISentryClient {
 	public abstract fun captureBatchedLogEvents (Lio/sentry/SentryLogEvents;)V
+	public abstract fun captureBatchedMetricsEvents (Lio/sentry/SentryMetricsEvents;)V
 	public abstract fun captureCheckIn (Lio/sentry/CheckIn;Lio/sentry/IScope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureEnvelope (Lio/sentry/SentryEnvelope;)Lio/sentry/protocol/SentryId;
 	public abstract fun captureEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
@@ -2852,6 +2853,7 @@ public final class io/sentry/SentryBaseEvent$Serializer {
 public final class io/sentry/SentryClient : io/sentry/ISentryClient {
 	public fun <init> (Lio/sentry/SentryOptions;)V
 	public fun captureBatchedLogEvents (Lio/sentry/SentryLogEvents;)V
+	public fun captureBatchedMetricsEvents (Lio/sentry/SentryMetricsEvents;)V
 	public fun captureCheckIn (Lio/sentry/CheckIn;Lio/sentry/IScope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureEvent (Lio/sentry/SentryEvent;Lio/sentry/IScope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
@@ -2938,6 +2940,7 @@ public final class io/sentry/SentryEnvelopeItem {
 	public static fun fromClientReport (Lio/sentry/ISerializer;Lio/sentry/clientreport/ClientReport;)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromEvent (Lio/sentry/ISerializer;Lio/sentry/SentryBaseEvent;)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromLogs (Lio/sentry/ISerializer;Lio/sentry/SentryLogEvents;)Lio/sentry/SentryEnvelopeItem;
+	public static fun fromMetrics (Lio/sentry/ISerializer;Lio/sentry/SentryMetricsEvents;)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromProfileChunk (Lio/sentry/ProfileChunk;Lio/sentry/ISerializer;)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromProfileChunk (Lio/sentry/ProfileChunk;Lio/sentry/ISerializer;Lio/sentry/IProfileConverter;)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromProfilingTrace (Lio/sentry/ProfilingTraceData;JLio/sentry/ISerializer;)Lio/sentry/SentryEnvelopeItem;
@@ -3322,6 +3325,66 @@ public final class io/sentry/SentryLongDate : io/sentry/SentryDate {
 	public fun nanoTimestamp ()J
 }
 
+public final class io/sentry/SentryMetricsEvent : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+	public fun <init> (Lio/sentry/protocol/SentryId;Lio/sentry/SentryDate;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Double;)V
+	public fun <init> (Lio/sentry/protocol/SentryId;Ljava/lang/Double;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Double;)V
+	public fun getAttributes ()Ljava/util/Map;
+	public fun getName ()Ljava/lang/String;
+	public fun getSpanId ()Lio/sentry/SpanId;
+	public fun getTimestamp ()Ljava/lang/Double;
+	public fun getType ()Ljava/lang/String;
+	public fun getUnit ()Ljava/lang/String;
+	public fun getUnknown ()Ljava/util/Map;
+	public fun getValue ()Ljava/lang/Double;
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+	public fun setAttribute (Ljava/lang/String;Lio/sentry/SentryLogEventAttributeValue;)V
+	public fun setAttributes (Ljava/util/Map;)V
+	public fun setName (Ljava/lang/String;)V
+	public fun setSpanId (Lio/sentry/SpanId;)V
+	public fun setTimestamp (Ljava/lang/Double;)V
+	public fun setType (Ljava/lang/String;)V
+	public fun setUnit (Ljava/lang/String;)V
+	public fun setUnknown (Ljava/util/Map;)V
+	public fun setValue (Ljava/lang/Double;)V
+}
+
+public final class io/sentry/SentryMetricsEvent$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Lio/sentry/SentryMetricsEvent;
+	public synthetic fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/SentryMetricsEvent$JsonKeys {
+	public static final field ATTRIBUTES Ljava/lang/String;
+	public static final field NAME Ljava/lang/String;
+	public static final field SPAN_ID Ljava/lang/String;
+	public static final field TIMESTAMP Ljava/lang/String;
+	public static final field TRACE_ID Ljava/lang/String;
+	public static final field TYPE Ljava/lang/String;
+	public static final field UNIT Ljava/lang/String;
+	public static final field VALUE Ljava/lang/String;
+	public fun <init> ()V
+}
+
+public final class io/sentry/SentryMetricsEvents : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+	public fun <init> (Ljava/util/List;)V
+	public fun getItems ()Ljava/util/List;
+	public fun getUnknown ()Ljava/util/Map;
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+	public fun setUnknown (Ljava/util/Map;)V
+}
+
+public final class io/sentry/SentryMetricsEvents$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Lio/sentry/SentryMetricsEvents;
+	public synthetic fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/SentryMetricsEvents$JsonKeys {
+	public static final field ITEMS Ljava/lang/String;
+	public fun <init> ()V
+}
+
 public final class io/sentry/SentryNanotimeDate : io/sentry/SentryDate {
 	public fun <init> ()V
 	public fun <init> (Ljava/util/Date;J)V
@@ -3698,7 +3761,7 @@ public final class io/sentry/SentryOptions$Metrics {
 }
 
 public abstract interface class io/sentry/SentryOptions$Metrics$BeforeSendMetricCallback {
-	public abstract fun execute (Ljava/lang/Object;)Ljava/lang/Object;
+	public abstract fun execute (Lio/sentry/SentryMetricsEvents;)Lio/sentry/SentryMetricsEvents;
 }
 
 public abstract interface class io/sentry/SentryOptions$OnDiscardCallback {
@@ -5131,8 +5194,23 @@ public final class io/sentry/logger/SentryLogParameters {
 	public fun setTimestamp (Lio/sentry/SentryDate;)V
 }
 
+public final class io/sentry/metrics/DefaultMetricsBatchProcessorFactory : io/sentry/metrics/IMetricsBatchProcessorFactory {
+	public fun <init> ()V
+	public fun create (Lio/sentry/SentryOptions;Lio/sentry/SentryClient;)Lio/sentry/metrics/IMetricsBatchProcessor;
+}
+
 public abstract interface class io/sentry/metrics/IMetricsApi {
 	public abstract fun count (Ljava/lang/String;)V
+}
+
+public abstract interface class io/sentry/metrics/IMetricsBatchProcessor {
+	public abstract fun add (Lio/sentry/SentryMetricsEvent;)V
+	public abstract fun close (Z)V
+	public abstract fun flush (J)V
+}
+
+public abstract interface class io/sentry/metrics/IMetricsBatchProcessorFactory {
+	public abstract fun create (Lio/sentry/SentryOptions;Lio/sentry/SentryClient;)Lio/sentry/metrics/IMetricsBatchProcessor;
 }
 
 public final class io/sentry/metrics/MetricsApi : io/sentry/metrics/IMetricsApi {
@@ -5140,9 +5218,27 @@ public final class io/sentry/metrics/MetricsApi : io/sentry/metrics/IMetricsApi 
 	public fun count (Ljava/lang/String;)V
 }
 
+public class io/sentry/metrics/MetricsBatchProcessor : io/sentry/metrics/IMetricsBatchProcessor {
+	public static final field FLUSH_AFTER_MS I
+	public static final field MAX_BATCH_SIZE I
+	public static final field MAX_QUEUE_SIZE I
+	protected final field options Lio/sentry/SentryOptions;
+	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/ISentryClient;)V
+	public fun add (Lio/sentry/SentryMetricsEvent;)V
+	public fun close (Z)V
+	public fun flush (J)V
+}
+
 public final class io/sentry/metrics/NoOpMetricsApi : io/sentry/metrics/IMetricsApi {
 	public fun count (Ljava/lang/String;)V
 	public static fun getInstance ()Lio/sentry/metrics/NoOpMetricsApi;
+}
+
+public final class io/sentry/metrics/NoOpMetricsBatchProcessor : io/sentry/metrics/IMetricsBatchProcessor {
+	public fun add (Lio/sentry/SentryMetricsEvent;)V
+	public fun close (Z)V
+	public fun flush (J)V
+	public static fun getInstance ()Lio/sentry/metrics/NoOpMetricsBatchProcessor;
 }
 
 public final class io/sentry/opentelemetry/OpenTelemetryUtil {

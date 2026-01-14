@@ -693,6 +693,19 @@ public final class SentryClient implements ISentryClient {
     return new SentryEnvelope(envelopeHeader, envelopeItems);
   }
 
+  private @NotNull SentryEnvelope buildEnvelope(final @NotNull SentryMetricsEvents metricsEvents) {
+    final List<SentryEnvelopeItem> envelopeItems = new ArrayList<>();
+
+    final SentryEnvelopeItem metricsItem =
+        SentryEnvelopeItem.fromMetrics(options.getSerializer(), metricsEvents);
+    envelopeItems.add(metricsItem);
+
+    final SentryEnvelopeHeader envelopeHeader =
+        new SentryEnvelopeHeader(null, options.getSdkVersion(), null);
+
+    return new SentryEnvelope(envelopeHeader, envelopeItems);
+  }
+
   private @NotNull SentryEnvelope buildEnvelope(
       final @NotNull SentryReplayEvent event,
       final @Nullable ReplayRecording replayRecording,
@@ -1218,7 +1231,18 @@ public final class SentryClient implements ISentryClient {
       final @NotNull SentryEnvelope envelope = buildEnvelope(logEvents);
       sendEnvelope(envelope, null);
     } catch (IOException e) {
-      options.getLogger().log(SentryLevel.WARNING, e, "Capturing log failed.");
+      options.getLogger().log(SentryLevel.WARNING, e, "Capturing logs failed.");
+    }
+  }
+
+  @ApiStatus.Internal
+  @Override
+  public void captureBatchedMetricsEvents(final @NotNull SentryMetricsEvents metricsEvents) {
+    try {
+      final @NotNull SentryEnvelope envelope = buildEnvelope(metricsEvents);
+      sendEnvelope(envelope, null);
+    } catch (IOException e) {
+      options.getLogger().log(SentryLevel.WARNING, e, "Capturing metrics failed.");
     }
   }
 
