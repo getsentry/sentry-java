@@ -35,8 +35,7 @@ public class MetricsBatchProcessor implements IMetricsBatchProcessor {
   private final @NotNull Queue<SentryMetricsEvent> queue;
   private final @NotNull ISentryExecutorService executorService;
   private volatile @Nullable Future<?> scheduledFlush;
-  private final @NotNull AutoClosableReentrantLock scheduleLock =
-      new AutoClosableReentrantLock();
+  private final @NotNull AutoClosableReentrantLock scheduleLock = new AutoClosableReentrantLock();
   private volatile boolean hasScheduled = false;
   private volatile boolean isShuttingDown = false;
 
