@@ -3338,6 +3338,7 @@ public final class io/sentry/SentryMetricsEvent : io/sentry/JsonSerializable, io
 	public fun getName ()Ljava/lang/String;
 	public fun getSpanId ()Lio/sentry/SpanId;
 	public fun getTimestamp ()Ljava/lang/Double;
+	public fun getTraceId ()Lio/sentry/protocol/SentryId;
 	public fun getType ()Ljava/lang/String;
 	public fun getUnit ()Ljava/lang/String;
 	public fun getUnknown ()Ljava/util/Map;
@@ -3348,6 +3349,7 @@ public final class io/sentry/SentryMetricsEvent : io/sentry/JsonSerializable, io
 	public fun setName (Ljava/lang/String;)V
 	public fun setSpanId (Lio/sentry/SpanId;)V
 	public fun setTimestamp (Ljava/lang/Double;)V
+	public fun setTraceId (Lio/sentry/protocol/SentryId;)V
 	public fun setType (Ljava/lang/String;)V
 	public fun setUnit (Ljava/lang/String;)V
 	public fun setUnknown (Ljava/util/Map;)V
