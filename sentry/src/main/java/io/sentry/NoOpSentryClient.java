@@ -88,6 +88,11 @@ final class NoOpSentryClient implements ISentryClient {
     // do nothing
   }
 
+  @Override
+  public void captureMetric(@NotNull SentryMetricsEvent metricsEvent, @Nullable IScope scope) {
+    // do nothing
+  }
+
   @ApiStatus.Internal
   @Override
   public void captureBatchedLogEvents(@NotNull SentryLogEvents logEvents) {
