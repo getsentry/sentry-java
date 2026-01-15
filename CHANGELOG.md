@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Features
+
+- Added `io.sentry.ndk.sdk-name` Android manifest option to configure the native SDK's name ([#5027](https://github.com/getsentry/sentry-java/pull/5027))
+
+## 8.30.0
+
 ### Fixes
 
 - Fix ANRs when collecting device context ([#4970](https://github.com/getsentry/sentry-java/pull/4970))
@@ -28,7 +34,7 @@
     - `count`: A metric that increments counts
     - `gauge`: A metric that tracks a value that can go up or down
     - `distribution`: A metric that tracks the statistical distribution of values
-- Added `io.sentry.ndk.sdk-name` Android manifest option to configure the native SDK's name ([#5027](https://github.com/getsentry/sentry-java/pull/5027))
+  - For more details, see the Metrics documentation: https://docs.sentry.io/product/explore/metrics/getting-started/
 
 ## 8.29.0
 
