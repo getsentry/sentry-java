@@ -158,6 +158,17 @@ public final class SentryEnvelopeItem {
     }
   }
 
+  public @Nullable SentryMetricsEvents getMetrics(final @NotNull ISerializer serializer)
+      throws Exception {
+    if (header == null || header.getType() != SentryItemType.TraceMetric) {
+      return null;
+    }
+    try (final Reader eventReader =
+        new BufferedReader(new InputStreamReader(new ByteArrayInputStream(getData()), UTF_8))) {
+      return serializer.deserialize(eventReader, SentryMetricsEvents.class);
+    }
+  }
+
   public static SentryEnvelopeItem fromUserFeedback(
       final @NotNull ISerializer serializer, final @NotNull UserFeedback userFeedback) {
     Objects.requireNonNull(serializer, "ISerializer is required.");
@@ -540,6 +551,36 @@ public final class SentryEnvelopeItem {
             null,
             null,
             logEvents.getItems().size());
+
+    // avoid method refs on Android due to some issues with older AGP setups
+    // noinspection Convert2MethodRef
+    return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
+  }
+
+  public static SentryEnvelopeItem fromMetrics(
+      final @NotNull ISerializer serializer, final @NotNull SentryMetricsEvents metricsEvents) {
+    Objects.requireNonNull(serializer, "ISerializer is required.");
+    Objects.requireNonNull(metricsEvents, "SentryMetricsEvents is required.");
+
+    final CachedItem cachedItem =
+        new CachedItem(
+            () -> {
+              try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                  final Writer writer = new BufferedWriter(new OutputStreamWriter(stream, UTF_8))) {
+                serializer.serialize(metricsEvents, writer);
+                return stream.toByteArray();
+              }
+            });
+
+    SentryEnvelopeItemHeader itemHeader =
+        new SentryEnvelopeItemHeader(
+            SentryItemType.TraceMetric,
+            () -> cachedItem.getBytes().length,
+            "application/vnd.sentry.items.trace-metric+json",
+            null,
+            null,
+            null,
+            metricsEvents.getItems().size());
 
     // avoid method refs on Android due to some issues with older AGP setups
     // noinspection Convert2MethodRef

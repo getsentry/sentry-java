@@ -5,11 +5,15 @@ import android.os.Build
 import android.os.Looper
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import io.sentry.DateUtils
 import io.sentry.DiagnosticLogger
 import io.sentry.Hint
 import io.sentry.IScopes
 import io.sentry.SentryEvent
 import io.sentry.SentryLevel
+import io.sentry.SentryLogEvent
+import io.sentry.SentryLogLevel
+import io.sentry.SentryMetricsEvent
 import io.sentry.SentryTracer
 import io.sentry.TransactionContext
 import io.sentry.TypeCheckHint.SENTRY_DART_SDK_NAME
@@ -17,6 +21,7 @@ import io.sentry.android.core.internal.util.CpuInfoUtils
 import io.sentry.protocol.OperatingSystem
 import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryException
+import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryStackFrame
 import io.sentry.protocol.SentryStackTrace
 import io.sentry.protocol.SentryThread
@@ -618,5 +623,47 @@ class DefaultAndroidEventProcessorTest {
       assertEquals("IllegalStateException", it.exceptions!![0].type)
       assertEquals("IllegalArgumentException", it.exceptions!![1].type)
     }
+  }
+
+  @Test
+  fun `device and os are set on metric`() {
+    val sut = fixture.getSut(context)
+    val processedEvent: SentryMetricsEvent? =
+      sut.process(
+        SentryMetricsEvent(
+          SentryId("5c1f73d39486827b9e60ceb1fc23277a"),
+          DateUtils.dateToSeconds(DateUtils.getDateTime("2004-04-10T18:24:03.000Z")),
+          "42e6bd2a-c45e-414d-8066-ed5196fbc686",
+          "counter",
+          123.0,
+        ),
+        Hint(),
+      )
+
+    assertNotNull(processedEvent?.attributes?.get("device.brand"))
+    assertNotNull(processedEvent?.attributes?.get("device.model"))
+    assertNotNull(processedEvent?.attributes?.get("device.family"))
+    assertNotNull(processedEvent?.attributes?.get("os.name"))
+    assertNotNull(processedEvent?.attributes?.get("os.version"))
+  }
+
+  @Test
+  fun `device and os are set on log`() {
+    val sut = fixture.getSut(context)
+    val processedEvent: SentryLogEvent? =
+      sut.process(
+        SentryLogEvent(
+          SentryId("5c1f73d39486827b9e60ceb1fc23277a"),
+          DateUtils.dateToSeconds(DateUtils.getDateTime("2004-04-10T18:24:03.000Z")),
+          "message",
+          SentryLogLevel.WARN,
+        )
+      )
+
+    assertNotNull(processedEvent?.attributes?.get("device.brand"))
+    assertNotNull(processedEvent?.attributes?.get("device.model"))
+    assertNotNull(processedEvent?.attributes?.get("device.family"))
+    assertNotNull(processedEvent?.attributes?.get("os.name"))
+    assertNotNull(processedEvent?.attributes?.get("os.version"))
   }
 }
