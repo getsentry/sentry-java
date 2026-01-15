@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 8.30.0
 
 ### Fixes
 
