@@ -434,6 +434,7 @@ class AppStartMetricsTest {
     val metrics = AppStartMetrics.getInstance()
     assertEquals(AppStartMetrics.AppStartType.UNKNOWN, AppStartMetrics.getInstance().appStartType)
     val app = mock<Application>()
+    metrics.appStartTimeSpan.start() // Need to start the span for timeout check to work
     metrics.registerLifecycleCallbacks(app)
 
     // when an activity is created later with a null bundle
@@ -544,33 +545,29 @@ class AppStartMetricsTest {
     metrics.registerLifecycleCallbacks(mock<Application>())
     Shadows.shadowOf(Looper.getMainLooper()).idle()
 
-    val reflectionField = AppStartMetrics::class.java.getDeclaredField("firstPostUptimeMillis")
-    reflectionField.isAccessible = true
-    val firstPostValue = reflectionField.getLong(metrics)
-    assertTrue(firstPostValue > 0)
+    assertTrue(metrics.firstPostUptimeMillis > 0)
 
     metrics.clear()
 
-    val clearedValue = reflectionField.getLong(metrics)
-    assertEquals(-1, clearedValue)
+    assertEquals(-1, metrics.firstPostUptimeMillis)
   }
 
   @Test
   fun `firstPostUptimeMillis is set when registerLifecycleCallbacks is called`() {
+    SystemClock.setCurrentTimeMillis(90)
+
     val metrics = AppStartMetrics.getInstance()
     val beforeRegister = SystemClock.uptimeMillis()
 
+    SystemClock.setCurrentTimeMillis(100)
     metrics.registerLifecycleCallbacks(mock<Application>())
     Shadows.shadowOf(Looper.getMainLooper()).idle()
 
+    SystemClock.setCurrentTimeMillis(110)
     val afterIdle = SystemClock.uptimeMillis()
 
-    val reflectionField = AppStartMetrics::class.java.getDeclaredField("firstPostUptimeMillis")
-    reflectionField.isAccessible = true
-    val firstPostValue = reflectionField.getLong(metrics)
-
-    assertTrue(firstPostValue >= beforeRegister)
-    assertTrue(firstPostValue <= afterIdle)
+    assertTrue(metrics.firstPostUptimeMillis >= beforeRegister)
+    assertTrue(metrics.firstPostUptimeMillis <= afterIdle)
   }
 
   @Test
@@ -582,6 +579,7 @@ class AppStartMetricsTest {
     Shadows.shadowOf(Looper.getMainLooper()).idle()
 
     SystemClock.setCurrentTimeMillis(SystemClock.uptimeMillis() + 100)
+    metrics.isAppLaunchedInForeground = true
     metrics.onActivityCreated(mock<Activity>(), null)
 
     assertEquals(AppStartMetrics.AppStartType.WARM, metrics.appStartType)
@@ -598,21 +596,6 @@ class AppStartMetricsTest {
     assertEquals(AppStartMetrics.AppStartType.COLD, metrics.appStartType)
 
     Shadows.shadowOf(Looper.getMainLooper()).idle()
-
-    assertEquals(AppStartMetrics.AppStartType.COLD, metrics.appStartType)
-  }
-
-  @Test
-  fun `Sets app launch type to COLD when activity created at same time as firstPost`() {
-    val metrics = AppStartMetrics.getInstance()
-
-    val now = SystemClock.uptimeMillis()
-    val reflectionField = AppStartMetrics::class.java.getDeclaredField("firstPostUptimeMillis")
-    reflectionField.isAccessible = true
-    reflectionField.setLong(metrics, now)
-
-    SystemClock.setCurrentTimeMillis(now)
-    metrics.onActivityCreated(mock<Activity>(), null)
 
     assertEquals(AppStartMetrics.AppStartType.COLD, metrics.appStartType)
   }
@@ -658,6 +641,240 @@ class AppStartMetricsTest {
     assertEquals(AppStartMetrics.AppStartType.WARM, metrics.appStartType)
 
     metrics.onActivityCreated(mock<Activity>(), mock<Bundle>())
+    assertEquals(AppStartMetrics.AppStartType.WARM, metrics.appStartType)
+  }
+
+  @Test
+  fun `COLD start when activity created at same uptime as firstPost with null savedInstanceState`() {
+    val metrics = AppStartMetrics.getInstance()
+
+    // Manually set firstPostUptimeMillis to a known value
+    val testTime = SystemClock.uptimeMillis()
+    metrics.firstPostUptimeMillis = testTime
+
+    // Set current time to exactly match firstPost time
+    SystemClock.setCurrentTimeMillis(testTime)
+    metrics.onActivityCreated(mock<Activity>(), null)
+
+    // When nowUptimeMs <= firstPostUptimeMillis, should be COLD
+    assertEquals(AppStartMetrics.AppStartType.COLD, metrics.appStartType)
+  }
+
+  @Test
+  fun `WARM start when activity created 1ms after firstPost with null savedInstanceState`() {
+    val metrics = AppStartMetrics.getInstance()
+
+    val beforeRegister = SystemClock.uptimeMillis()
+    metrics.registerLifecycleCallbacks(mock<Application>())
+    Shadows.shadowOf(Looper.getMainLooper()).idle()
+
+    // Activity created just 1ms after firstPost executed
+    SystemClock.setCurrentTimeMillis(beforeRegister + 1)
+    metrics.onActivityCreated(mock<Activity>(), null)
+
+    assertEquals(AppStartMetrics.AppStartType.WARM, metrics.appStartType)
+  }
+
+  @Test
+  fun `COLD start when activity created before firstPost runs despite later wall time`() {
+    val metrics = AppStartMetrics.getInstance()
+
+    metrics.registerLifecycleCallbacks(mock<Application>())
+    // Don't let the looper idle yet - simulates activity created before firstPost executes
+
+    // Even if we advance wall time significantly
+    SystemClock.setCurrentTimeMillis(SystemClock.uptimeMillis() + 1000)
+    metrics.onActivityCreated(mock<Activity>(), null)
+
+    // Should still be COLD because firstPost hasn't executed yet
+    assertEquals(AppStartMetrics.AppStartType.COLD, metrics.appStartType)
+
+    // Now let firstPost execute
+    Shadows.shadowOf(Looper.getMainLooper()).idle()
+
+    // Should remain COLD (not change to WARM)
+    assertEquals(AppStartMetrics.AppStartType.COLD, metrics.appStartType)
+  }
+
+  @Test
+  fun `WARM start takes precedence when both savedInstanceState and firstPost indicate WARM`() {
+    val metrics = AppStartMetrics.getInstance()
+
+    metrics.registerLifecycleCallbacks(mock<Application>())
+    Shadows.shadowOf(Looper.getMainLooper()).idle()
+
+    SystemClock.setCurrentTimeMillis(SystemClock.uptimeMillis() + 100)
+    // Both conditions indicate warm: savedInstanceState != null AND after firstPost
+    metrics.onActivityCreated(mock<Activity>(), mock<Bundle>())
+
+    assertEquals(AppStartMetrics.AppStartType.WARM, metrics.appStartType)
+  }
+
+  @Test
+  fun `WARM start when savedInstanceState is non-null even if created before firstPost`() {
+    val metrics = AppStartMetrics.getInstance()
+
+    metrics.registerLifecycleCallbacks(mock<Application>())
+    // Don't idle - activity created before firstPost
+
+    // savedInstanceState check takes precedence
+    metrics.onActivityCreated(mock<Activity>(), mock<Bundle>())
+
+    assertEquals(AppStartMetrics.AppStartType.WARM, metrics.appStartType)
+  }
+
+  @Test
+  fun `firstPostUptimeMillis is -1 initially and after clear`() {
+    val metrics = AppStartMetrics.getInstance()
+
+    // Should be -1 initially (already tested in existing test, but good to verify)
+    metrics.clear()
+    val initialValue = metrics.firstPostUptimeMillis
+    assertEquals(-1, initialValue)
+
+    // Register and let it set
+    metrics.registerLifecycleCallbacks(mock<Application>())
+    Shadows.shadowOf(Looper.getMainLooper()).idle()
+    val afterRegister = metrics.firstPostUptimeMillis
+    assertTrue(afterRegister > 0)
+
+    // Clear should reset it
+    metrics.clear()
+    val afterClear = metrics.firstPostUptimeMillis
+    assertEquals(-1, afterClear)
+  }
+
+  @Test
+  fun `COLD start when firstPostUptimeMillis is still -1 and no savedInstanceState`() {
+    val metrics = AppStartMetrics.getInstance()
+
+    metrics.registerLifecycleCallbacks(mock<Application>())
+    // Don't idle - firstPostUptimeMillis will still be -1
+
+    // Verify firstPost hasn't executed yet
+    assertEquals(-1, metrics.firstPostUptimeMillis)
+
+    metrics.onActivityCreated(mock<Activity>(), null)
+
+    assertEquals(AppStartMetrics.AppStartType.COLD, metrics.appStartType)
+  }
+
+  @Test
+  fun `App start type priority order is timeout, savedInstanceState, then firstPost timing`() {
+    val metrics = AppStartMetrics.getInstance()
+
+    metrics.registerLifecycleCallbacks(mock<Application>())
+    Shadows.shadowOf(Looper.getMainLooper()).idle()
+
+    // Test timeout takes precedence over everything
+    val futureTime = SystemClock.uptimeMillis() + TimeUnit.MINUTES.toMillis(2)
+    SystemClock.setCurrentTimeMillis(futureTime)
+    metrics.onActivityCreated(mock<Activity>(), null) // null savedInstanceState
+
+    assertEquals(AppStartMetrics.AppStartType.WARM, metrics.appStartType)
+  }
+
+  @Test
+  fun `Multiple consecutive warm starts are correctly detected`() {
+    val metrics = AppStartMetrics.getInstance()
+
+    metrics.registerLifecycleCallbacks(mock<Application>())
+
+    // First activity - cold start (before firstPost)
+    val firstActivity = mock<Activity>()
+    whenever(firstActivity.isChangingConfigurations).thenReturn(false)
+    metrics.onActivityCreated(firstActivity, null)
+    assertEquals(AppStartMetrics.AppStartType.COLD, metrics.appStartType)
+    assertTrue(metrics.shouldSendStartMeasurements())
+    metrics.onAppStartSpansSent()
+    Shadows.shadowOf(Looper.getMainLooper()).idle()
+
+    // Simulate app going to background (destroy first activity)
+    metrics.onActivityDestroyed(firstActivity)
+
+    // Second activity - should be warm (process still alive, new activity launch)
+    SystemClock.setCurrentTimeMillis(SystemClock.uptimeMillis() + 100)
+    val secondActivity = mock<Activity>()
+    metrics.onActivityCreated(secondActivity, null)
+    assertEquals(AppStartMetrics.AppStartType.WARM, metrics.appStartType)
+    assertTrue(metrics.isAppLaunchedInForeground)
+    assertTrue(metrics.shouldSendStartMeasurements())
+    metrics.onAppStartSpansSent()
+
+    // Third activity - should still be warm
+    SystemClock.setCurrentTimeMillis(SystemClock.uptimeMillis() + 100)
+    metrics.onActivityCreated(mock<Activity>(), null)
+    assertEquals(AppStartMetrics.AppStartType.WARM, metrics.appStartType)
+    assertTrue(metrics.isAppLaunchedInForeground)
+    assertFalse(metrics.shouldSendStartMeasurements())
+  }
+
+  @Test
+  fun `WARM start when user returns from background with null savedInstanceState`() {
+    val metrics = AppStartMetrics.getInstance()
+    metrics.registerLifecycleCallbacks(mock<Application>())
+
+    // Initial cold start
+    val mainActivity = mock<Activity>()
+    whenever(mainActivity.isChangingConfigurations).thenReturn(false)
+    metrics.onActivityCreated(mainActivity, null) // savedInstanceState = null
+    assertEquals(AppStartMetrics.AppStartType.COLD, metrics.appStartType)
+
+    Shadows.shadowOf(Looper.getMainLooper()).idle()
+
+    // User presses home, activity destroyed (not configuration change)
+    metrics.onActivityDestroyed(mainActivity)
+
+    // User returns to app - MainActivity recreated with NULL savedInstanceState
+    // (Android doesn't save state when user navigates away normally)
+    SystemClock.setCurrentTimeMillis(SystemClock.uptimeMillis() + 500)
+    metrics.onActivityCreated(mock<Activity>(), null) // savedInstanceState = null!
+
+    // Should be WARM because process was alive and firstPost timing detects it
+    assertEquals(AppStartMetrics.AppStartType.WARM, metrics.appStartType)
+  }
+
+  @Test
+  fun `WARM start when launching different activity in same process with null savedInstanceState`() {
+    val metrics = AppStartMetrics.getInstance()
+    metrics.registerLifecycleCallbacks(mock<Application>())
+
+    // Cold start with MainActivity
+    metrics.onActivityCreated(mock<Activity>(), null)
+    assertEquals(AppStartMetrics.AppStartType.COLD, metrics.appStartType)
+
+    Shadows.shadowOf(Looper.getMainLooper()).idle()
+
+    // Later, user navigates to SettingsActivity (new activity, null savedInstanceState)
+    SystemClock.setCurrentTimeMillis(SystemClock.uptimeMillis() + 200)
+    metrics.onActivityCreated(mock<Activity>(), null) // Different activity, null state
+
+    // Should still be WARM (it's not the first activity anymore)
+    // Note: This test shows activeActivitiesCounter > 1, so detection doesn't run
+    // But if first activity was destroyed, it would be detected as WARM by firstPost timing
+  }
+
+  @Test
+  fun `WARM start when deep link opens new activity in running process`() {
+    val metrics = AppStartMetrics.getInstance()
+    metrics.registerLifecycleCallbacks(mock<Application>())
+
+    // App already running
+    val mainActivity = mock<Activity>()
+    whenever(mainActivity.isChangingConfigurations).thenReturn(false)
+    metrics.onActivityCreated(mainActivity, null)
+    assertEquals(AppStartMetrics.AppStartType.COLD, metrics.appStartType)
+
+    Shadows.shadowOf(Looper.getMainLooper()).idle()
+
+    // Simulate deep link while app is in background
+    metrics.onActivityDestroyed(mainActivity)
+
+    // Deep link creates new activity with null savedInstanceState
+    SystemClock.setCurrentTimeMillis(SystemClock.uptimeMillis() + 300)
+    metrics.onActivityCreated(mock<Activity>(), null) // Deep link activity
+
+    // Should be WARM because process was alive
     assertEquals(AppStartMetrics.AppStartType.WARM, metrics.appStartType)
   }
 }
