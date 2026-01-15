@@ -28,6 +28,7 @@
     - `count`: A metric that increments counts
     - `gauge`: A metric that tracks a value that can go up or down
     - `distribution`: A metric that tracks the statistical distribution of values
+  - For more details, see the Metrics documentation: https://docs.sentry.io/product/explore/metrics/getting-started/
 
 ## 8.29.0
 
