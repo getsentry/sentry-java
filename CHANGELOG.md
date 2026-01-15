@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Added `io.sentry.ndk.sdk-name` Android manifest option to configure the native SDK's name ([#5027](https://github.com/getsentry/sentry-java/pull/5027))
+
 ## 8.30.0
 
 ### Fixes

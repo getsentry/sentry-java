@@ -647,6 +647,32 @@ class ManifestMetadataReaderTest {
   }
 
   @Test
+  fun `applyMetadata reads nativeSdkName to options`() {
+    // Arrange
+    val expectedValue = "sentry.native.android.unity"
+    val bundle = bundleOf(ManifestMetadataReader.NDK_SDK_NAME to expectedValue)
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertEquals(expectedValue, fixture.options.nativeSdkName)
+  }
+
+  @Test
+  fun `applyMetadata reads nativeSdkName and keeps default`() {
+    // Arrange
+    val context = fixture.getContext()
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertNull(fixture.options.nativeSdkName)
+  }
+
+  @Test
   fun `applyMetadata reads tracesSampleRate from metadata`() {
     // Arrange
     val expectedSampleRate = 0.99f
