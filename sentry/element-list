@@ -15,6 +15,7 @@ io.sentry.internal.gestures
 io.sentry.internal.modules
 io.sentry.internal.viewhierarchy
 io.sentry.logger
+io.sentry.metrics
 io.sentry.opentelemetry
 io.sentry.profilemeasurements
 io.sentry.profiling
