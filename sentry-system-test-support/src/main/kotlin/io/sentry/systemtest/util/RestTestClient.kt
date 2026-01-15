@@ -62,6 +62,24 @@ class RestTestClient(private val backendBaseUrl: String) : LoggingInsecureRestCl
     val response = call(request, true)
     return response?.body?.string()
   }
+
+  fun getCountMetric(): String? {
+    val request = Request.Builder().url("$backendBaseUrl/metric/count")
+
+    return callTyped(request, true)
+  }
+
+  fun getGaugeMetric(value: Long): String? {
+    val request = Request.Builder().url("$backendBaseUrl/metric/gauge/$value")
+
+    return callTyped(request, true)
+  }
+
+  fun getDistributionMetric(value: Long): String? {
+    val request = Request.Builder().url("$backendBaseUrl/metric/distribution/$value")
+
+    return callTyped(request, true)
+  }
 }
 
 data class FeatureFlagResponse(val flagKey: String, val value: Boolean)

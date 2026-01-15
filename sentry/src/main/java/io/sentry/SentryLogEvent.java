@@ -53,7 +53,7 @@ public final class SentryLogEvent implements JsonUnknown, JsonSerializable {
     return body;
   }
 
-  public void setBody(@NotNull String body) {
+  public void setBody(final @NotNull String body) {
     this.body = body;
   }
 
@@ -88,7 +88,7 @@ public final class SentryLogEvent implements JsonUnknown, JsonSerializable {
     return severityNumber;
   }
 
-  public void setSeverityNumber(@Nullable Integer severityNumber) {
+  public void setSeverityNumber(final @Nullable Integer severityNumber) {
     this.severityNumber = severityNumber;
   }
 
@@ -120,7 +120,7 @@ public final class SentryLogEvent implements JsonUnknown, JsonSerializable {
 
     if (unknown != null) {
       for (String key : unknown.keySet()) {
-        Object value = unknown.get(key);
+        final Object value = unknown.get(key);
         writer.name(key).value(logger, value);
       }
     }
@@ -185,29 +185,29 @@ public final class SentryLogEvent implements JsonUnknown, JsonSerializable {
       reader.endObject();
 
       if (traceId == null) {
-        String message = "Missing required field \"" + JsonKeys.TRACE_ID + "\"";
-        Exception exception = new IllegalStateException(message);
+        final String message = "Missing required field \"" + JsonKeys.TRACE_ID + "\"";
+        final Exception exception = new IllegalStateException(message);
         logger.log(SentryLevel.ERROR, message, exception);
         throw exception;
       }
 
       if (timestamp == null) {
-        String message = "Missing required field \"" + JsonKeys.TIMESTAMP + "\"";
-        Exception exception = new IllegalStateException(message);
+        final String message = "Missing required field \"" + JsonKeys.TIMESTAMP + "\"";
+        final Exception exception = new IllegalStateException(message);
         logger.log(SentryLevel.ERROR, message, exception);
         throw exception;
       }
 
       if (body == null) {
-        String message = "Missing required field \"" + JsonKeys.BODY + "\"";
-        Exception exception = new IllegalStateException(message);
+        final String message = "Missing required field \"" + JsonKeys.BODY + "\"";
+        final Exception exception = new IllegalStateException(message);
         logger.log(SentryLevel.ERROR, message, exception);
         throw exception;
       }
 
       if (level == null) {
-        String message = "Missing required field \"" + JsonKeys.LEVEL + "\"";
-        Exception exception = new IllegalStateException(message);
+        final String message = "Missing required field \"" + JsonKeys.LEVEL + "\"";
+        final Exception exception = new IllegalStateException(message);
         logger.log(SentryLevel.ERROR, message, exception);
         throw exception;
       }

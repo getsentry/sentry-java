@@ -1712,6 +1712,44 @@ class ManifestMetadataReaderTest {
   }
 
   @Test
+  fun `applyMetadata reads metrics enabled and keep default value if not found`() {
+    // Arrange
+    val context = fixture.getContext()
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertTrue(fixture.options.metrics.isEnabled)
+  }
+
+  @Test
+  fun `applyMetadata reads metrics enabled to options`() {
+    // Arrange
+    val bundle = bundleOf(ManifestMetadataReader.ENABLE_METRICS to false)
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertFalse(fixture.options.metrics.isEnabled)
+  }
+
+  @Test
+  fun `applyMetadata reads metrics enabled to options when set to true`() {
+    // Arrange
+    val bundle = bundleOf(ManifestMetadataReader.ENABLE_METRICS to true)
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertTrue(fixture.options.metrics.isEnabled)
+  }
+
+  @Test
   fun `applyMetadata reads feedback name required and keep default value if not found`() {
     // Arrange
     val context = fixture.getContext()

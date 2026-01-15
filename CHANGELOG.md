@@ -8,13 +8,28 @@
   - **IMPORTANT:** This disables collecting external storage size (total/free) by default, to enable it back
     use `options.isCollectExternalStorageContext = true` or `<meta-data android:name="io.sentry.external-storage-context" android:value="true" />`
 - Fix `NullPointerException` when reading ANR marker ([#4979](https://github.com/getsentry/sentry-java/pull/4979))
-- Improve app start type detection with main thread timing ([#4999](https://github.com/getsentry/sentry-java/pull/4999))
+- Report discarded log in batch processor as `log_byte` ([#4971](https://github.com/getsentry/sentry-java/pull/4971))
+- Fix warm app start type detection for edge cases ([#4999](https://github.com/getsentry/sentry-java/pull/4999))
 
 ### Improvements
 
 - Expose `MAX_EVENT_SIZE_BYTES` constant in SentryOptions ([#4962](https://github.com/getsentry/sentry-java/pull/4962))
 - Discard envelopes on `4xx` and `5xx` response ([#4950](https://github.com/getsentry/sentry-java/pull/4950))
   - This aims to not overwhelm Sentry after an outage or load shedding (including HTTP 429) where too many events are sent at once
+
+### Feature
+
+- Add a Tombstone integration that detects native crashes without relying on the NDK integration, but instead using `ApplicationExitInfo.REASON_CRASH_NATIVE` on Android 12+. ([#4933](https://github.com/getsentry/sentry-java/pull/4933))
+  - Currently exposed via options as an _internal_ API only.
+  - If enabled alongside the NDK integration, crashes will be reported as two separate events. Users should enable only one; deduplication between both integrations will be added in a future release.
+- Add Sentry Metrics to Java SDK ([#5026](https://github.com/getsentry/sentry-java/pull/5026))
+  - Metrics are enabled by default
+  - APIs are namespaced under `Sentry.metrics()`
+  - We offer the following APIs:
+    - `count`: A metric that increments counts
+    - `gauge`: A metric that tracks a value that can go up or down
+    - `distribution`: A metric that tracks the statistical distribution of values
+  - For more details, see the Metrics documentation: https://docs.sentry.io/product/explore/metrics/getting-started/
 
 ## 8.29.0
 
