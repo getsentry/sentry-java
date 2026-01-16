@@ -6,6 +6,12 @@
 
 - Added `io.sentry.ndk.sdk-name` Android manifest option to configure the native SDK's name ([#5027](https://github.com/getsentry/sentry-java/pull/5027))
 
+### Dependencies
+
+- Bump Gradle from v8.14.3 to v9.2.1 ([#4913](https://github.com/getsentry/sentry-java/pull/4913))
+  - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v921)
+  - [diff](https://github.com/gradle/gradle/compare/v8.14.3...v9.2.1)
+
 ## 8.30.0
 
 ### Fixes
