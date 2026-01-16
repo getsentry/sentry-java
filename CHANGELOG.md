@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixes
+
+- Fix warm app start type detection for edge cases ([#4999](https://github.com/getsentry/sentry-java/pull/4999))
+
 ### Features
 
 - Added `io.sentry.ndk.sdk-name` Android manifest option to configure the native SDK's name ([#5027](https://github.com/getsentry/sentry-java/pull/5027))
