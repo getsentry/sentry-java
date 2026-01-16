@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixes
+
+- Fix warm app start type detection for edge cases ([#4999](https://github.com/getsentry/sentry-java/pull/4999))
+
 ### Features
 
 - Added `io.sentry.ndk.sdk-name` Android manifest option to configure the native SDK's name ([#5027](https://github.com/getsentry/sentry-java/pull/5027))
@@ -15,7 +19,6 @@
     use `options.isCollectExternalStorageContext = true` or `<meta-data android:name="io.sentry.external-storage-context" android:value="true" />`
 - Fix `NullPointerException` when reading ANR marker ([#4979](https://github.com/getsentry/sentry-java/pull/4979))
 - Report discarded log in batch processor as `log_byte` ([#4971](https://github.com/getsentry/sentry-java/pull/4971))
-- Fix warm app start type detection for edge cases ([#4999](https://github.com/getsentry/sentry-java/pull/4999))
 
 ### Improvements
 
