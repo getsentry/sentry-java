@@ -6,6 +6,12 @@
 
 - Added `io.sentry.ndk.sdk-name` Android manifest option to configure the native SDK's name ([#5027](https://github.com/getsentry/sentry-java/pull/5027))
 
+### Dependencies
+
+- Bump Native SDK from v0.12.2 to v0.12.3 ([#5012](https://github.com/getsentry/sentry-java/pull/5012))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0123)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.12.2...0.12.3)
+
 ## 8.30.0
 
 ### Fixes
