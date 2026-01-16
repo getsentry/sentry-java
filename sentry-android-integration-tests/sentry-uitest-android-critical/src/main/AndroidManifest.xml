@@ -3,9 +3,10 @@
   xmlns:tools="http://schemas.android.com/tools">
 
   <application
+    android:name=".App"
     android:label="Sentry UI Tests Critical"
-    android:supportsRtl="true"
-    tools:targetApi="31">
+    android:supportsRtl="true">
+
     <meta-data
       android:name="io.sentry.dsn"
       android:value="https://5b38df1abca1468bac6d7517530f6802@o447951.ingest.us.sentry.io/5428559" />
@@ -15,8 +16,8 @@
 
     <activity
       android:name=".MainActivity"
-      android:launchMode="singleTask"
-      android:exported="true">
+      android:exported="true"
+      android:launchMode="singleTask">
       <intent-filter>
         <action android:name="android.intent.action.MAIN" />
         <category android:name="android.intent.category.LAUNCHER" />

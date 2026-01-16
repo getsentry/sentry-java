@@ -3,9 +3,11 @@ package io.sentry.android.core.performance;
 import android.app.Activity;
 import android.app.Application;
 import android.content.ContentProvider;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.MessageQueue;
 import android.os.SystemClock;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -65,7 +67,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
               return ContextUtils.isForegroundImportance();
             }
           });
-  private volatile long firstPostUptimeMillis = -1;
+  private volatile long firstIdle = -1;
 
   private final @NotNull TimeSpan appStartSpan;
   private final @NotNull TimeSpan sdkInitTimeSpan;
@@ -221,13 +223,13 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   }
 
   @TestOnly
-  void setFirstPostUptimeMillis(final long firstPostUptimeMillis) {
-    this.firstPostUptimeMillis = firstPostUptimeMillis;
+  void setFirstIdle(final long firstIdle) {
+    this.firstIdle = firstIdle;
   }
 
   @TestOnly
-  long getFirstPostUptimeMillis() {
-    return firstPostUptimeMillis;
+  long getFirstIdle() {
+    return firstIdle;
   }
 
   @TestOnly
@@ -247,12 +249,12 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     }
     appStartContinuousProfiler = null;
     appStartSamplingDecision = null;
-    appLaunchedInForeground.setValue(false);
+    appLaunchedInForeground.resetValue();
     isCallbackRegistered = false;
     shouldSendStartMeasurements = true;
     firstDrawDone.set(false);
     activeActivitiesCounter.set(0);
-    firstPostUptimeMillis = -1;
+    firstIdle = -1;
   }
 
   public @Nullable ITransactionProfiler getAppStartProfiler() {
@@ -320,7 +322,8 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   }
 
   /**
-   * Register a callback to check if an activity was started after the application was created
+   * Register a callback to check if an activity was started after the application was created. Must
+   * be called from the main thread.
    *
    * @param application The application object to register the callback to
    */
@@ -331,40 +334,52 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     isCallbackRegistered = true;
     appLaunchedInForeground.resetValue();
     application.registerActivityLifecycleCallbacks(instance);
-    // We post on the main thread a task to post a check on the main thread. On Pixel devices
-    // (possibly others) the first task posted on the main thread is called before the
-    // Activity.onCreate callback. This is a workaround for that, so that the Activity.onCreate
-    // callback is called before the application one.
-    new Handler(Looper.getMainLooper())
-        .post(
-            new Runnable() {
-              @Override
-              public void run() {
-                firstPostUptimeMillis = SystemClock.uptimeMillis();
-                checkCreateTimeOnMain();
-              }
-            });
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+      Looper.getMainLooper()
+          .getQueue()
+          .addIdleHandler(
+              new MessageQueue.IdleHandler() {
+                @Override
+                public boolean queueIdle() {
+                  firstIdle = SystemClock.uptimeMillis();
+                  checkCreateTimeOnMain();
+                  return false;
+                }
+              });
+    } else {
+      // We post on the main thread a task to post a check on the main thread. On Pixel devices
+      // (possibly others) the first task posted on the main thread is called before the
+      // Activity.onCreate callback. This is a workaround for that, so that the Activity.onCreate
+      // callback is called before the application one.
+      final Handler handler = new Handler(Looper.getMainLooper());
+      handler.post(
+          new Runnable() {
+            @Override
+            public void run() {
+              // not technically correct, but close enough for pre-M
+              firstIdle = SystemClock.uptimeMillis();
+              handler.post(() -> checkCreateTimeOnMain());
+            }
+          });
+    }
   }
 
   private void checkCreateTimeOnMain() {
-    new Handler(Looper.getMainLooper())
-        .post(
-            () -> {
-              // if no activity has ever been created, app was launched in background
-              if (activeActivitiesCounter.get() == 0) {
-                appLaunchedInForeground.setValue(false);
+    // if no activity has ever been created, app was launched in background
+    if (activeActivitiesCounter.get() == 0) {
+      appLaunchedInForeground.setValue(false);
 
-                // we stop the app start profilers, as they are useless and likely to timeout
-                if (appStartProfiler != null && appStartProfiler.isRunning()) {
-                  appStartProfiler.close();
-                  appStartProfiler = null;
-                }
-                if (appStartContinuousProfiler != null && appStartContinuousProfiler.isRunning()) {
-                  appStartContinuousProfiler.close(true);
-                  appStartContinuousProfiler = null;
-                }
-              }
-            });
+      // we stop the app start profilers, as they are useless and likely to timeout
+      if (appStartProfiler != null && appStartProfiler.isRunning()) {
+        appStartProfiler.close();
+        appStartProfiler = null;
+      }
+      if (appStartContinuousProfiler != null && appStartContinuousProfiler.isRunning()) {
+        appStartContinuousProfiler.close(true);
+        appStartContinuousProfiler = null;
+      }
+    }
   }
 
   @Override
@@ -389,10 +404,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
         applicationOnCreate.reset();
       } else if (savedInstanceState != null) {
         appStartType = AppStartType.WARM;
-      } else if (firstPostUptimeMillis != -1
-          && activityCreatedUptimeMillis > firstPostUptimeMillis) {
-        // Application creation always queues Activity creation
-        // So if Activity is created after our first measured post, it's a warm start
+      } else if (firstIdle != -1 && activityCreatedUptimeMillis > firstIdle) {
         appStartType = AppStartType.WARM;
       } else {
         appStartType = AppStartType.COLD;
