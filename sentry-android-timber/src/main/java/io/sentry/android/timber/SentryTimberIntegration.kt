@@ -16,7 +16,7 @@ import timber.log.Timber
 public class SentryTimberIntegration(
   public val minEventLevel: SentryLevel = SentryLevel.ERROR,
   public val minBreadcrumbLevel: SentryLevel = SentryLevel.INFO,
-  public val minLogsLevel: SentryLogLevel = SentryLogLevel.INFO,
+  public val minLogLevel: SentryLogLevel = SentryLogLevel.INFO,
 ) : Integration, Closeable {
   private lateinit var tree: SentryTimberTree
   private lateinit var logger: ILogger
@@ -31,7 +31,7 @@ public class SentryTimberIntegration(
   override fun register(scopes: IScopes, options: SentryOptions) {
     logger = options.logger
 
-    tree = SentryTimberTree(scopes, minEventLevel, minBreadcrumbLevel, minLogsLevel)
+    tree = SentryTimberTree(scopes, minEventLevel, minBreadcrumbLevel, minLogLevel)
     Timber.plant(tree)
 
     logger.log(SentryLevel.DEBUG, "SentryTimberIntegration installed.")
