@@ -49,6 +49,15 @@ Data is also passed on to newly forked child scopes but not to parents.
 
 Current scope can be retrieved from `Scopes` via `getScope`.
 
+### Combined Scope
+
+This is a special scope type that combines global, isolation and current scope.
+
+Refer to `CombinedScopeView` for each field of interest to see whether values from the three individual scopes are merged,
+whether a specific one is used or whether we're simply using the first one that has a value.
+
+Also see the section about `defaultScopeType` further down.
+
 ## Storage of `Scopes`
 
 `Scopes` are stored in a `ThreadLocal` by default (NOTE: this is different for OpenTelemetry, see opentelemetry.mdc).

@@ -2,12 +2,25 @@
 
 ## Unreleased
 
+### Features
+
+- Added `io.sentry.ndk.sdk-name` Android manifest option to configure the native SDK's name ([#5027](https://github.com/getsentry/sentry-java/pull/5027))
+
+### Dependencies
+
+- Bump Native SDK from v0.12.2 to v0.12.3 ([#5012](https://github.com/getsentry/sentry-java/pull/5012))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0123)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.12.2...0.12.3)
+
+## 8.30.0
+
 ### Fixes
 
 - Fix ANRs when collecting device context ([#4970](https://github.com/getsentry/sentry-java/pull/4970))
   - **IMPORTANT:** This disables collecting external storage size (total/free) by default, to enable it back
     use `options.isCollectExternalStorageContext = true` or `<meta-data android:name="io.sentry.external-storage-context" android:value="true" />`
 - Fix `NullPointerException` when reading ANR marker ([#4979](https://github.com/getsentry/sentry-java/pull/4979))
+- Report discarded log in batch processor as `log_byte` ([#4971](https://github.com/getsentry/sentry-java/pull/4971))
 
 ### Improvements
 
@@ -20,6 +33,14 @@
 - Add a Tombstone integration that detects native crashes without relying on the NDK integration, but instead using `ApplicationExitInfo.REASON_CRASH_NATIVE` on Android 12+. ([#4933](https://github.com/getsentry/sentry-java/pull/4933))
   - Currently exposed via options as an _internal_ API only.
   - If enabled alongside the NDK integration, crashes will be reported as two separate events. Users should enable only one; deduplication between both integrations will be added in a future release.
+- Add Sentry Metrics to Java SDK ([#5026](https://github.com/getsentry/sentry-java/pull/5026))
+  - Metrics are enabled by default
+  - APIs are namespaced under `Sentry.metrics()`
+  - We offer the following APIs:
+    - `count`: A metric that increments counts
+    - `gauge`: A metric that tracks a value that can go up or down
+    - `distribution`: A metric that tracks the statistical distribution of values
+  - For more details, see the Metrics documentation: https://docs.sentry.io/product/explore/metrics/getting-started/
 
 ## 8.29.0
 

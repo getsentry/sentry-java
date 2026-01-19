@@ -20,6 +20,8 @@ import io.sentry.SentryLogEvent
 import io.sentry.SentryLogEvents
 import io.sentry.SentryLogLevel
 import io.sentry.SentryLongDate
+import io.sentry.SentryMetricsEvent
+import io.sentry.SentryMetricsEvents
 import io.sentry.SentryOptions
 import io.sentry.SentryReplayEvent
 import io.sentry.SentryTracer
@@ -380,6 +382,36 @@ class ClientReportTest {
     val logByte =
       clientReport!!.discardedEvents!!.first { it.category == DataCategory.LogByte.category }
     assertEquals(226, logByte.quantity)
+  }
+
+  @Test
+  fun `recording lost client report counts metric entries`() {
+    val onDiscardMock = mock<SentryOptions.OnDiscardCallback>()
+    givenClientReportRecorder { options -> options.onDiscard = onDiscardMock }
+
+    val envelope =
+      testHelper.newEnvelope(
+        SentryEnvelopeItem.fromMetrics(
+          opts.serializer,
+          SentryMetricsEvents(
+            listOf(
+              SentryMetricsEvent(SentryId(), SentryLongDate(1), "metric1", "counter", 1.0),
+              SentryMetricsEvent(SentryId(), SentryLongDate(2), "metric2", "gauge", 2.0),
+              SentryMetricsEvent(SentryId(), SentryLongDate(3), "metric3", "distribution", 3.0),
+            )
+          ),
+        )
+      )
+
+    clientReportRecorder.recordLostEnvelopeItem(DiscardReason.NETWORK_ERROR, envelope.items.first())
+
+    verify(onDiscardMock, times(1))
+      .execute(DiscardReason.NETWORK_ERROR, DataCategory.TraceMetric, 3)
+
+    val clientReport = clientReportRecorder.resetCountsAndGenerateClientReport()
+    val metricItem =
+      clientReport!!.discardedEvents!!.first { it.category == DataCategory.TraceMetric.category }
+    assertEquals(3, metricItem.quantity)
   }
 
   private fun givenClientReportRecorder(

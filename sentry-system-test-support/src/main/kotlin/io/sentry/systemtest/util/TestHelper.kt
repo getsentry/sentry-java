@@ -8,6 +8,7 @@ import io.sentry.SentryEnvelopeHeader
 import io.sentry.SentryEvent
 import io.sentry.SentryItemType
 import io.sentry.SentryLogEvents
+import io.sentry.SentryMetricsEvents
 import io.sentry.SentryOptions
 import io.sentry.protocol.FeatureFlag
 import io.sentry.protocol.SentrySpan
@@ -124,6 +125,58 @@ class TestHelper(backendUrl: String) {
     }
 
     return callback(logs, envelopeHeader)
+  }
+
+  fun doesContainMetric(
+    metrics: SentryMetricsEvents,
+    name: String,
+    type: String,
+    value: Double,
+    unit: String? = null,
+  ): Boolean {
+    val metricItem =
+      metrics.items.firstOrNull { metricItem ->
+        metricItem.name == name &&
+          metricItem.type == type &&
+          metricItem.value == value &&
+          (unit == null || metricItem.unit == unit)
+      }
+    if (metricItem == null) {
+      println("Unable to find metric item with name $name, type $type and value $value in metrics:")
+      logObject(metrics)
+      return false
+    }
+
+    return true
+  }
+
+  fun ensureMetricsReceived(callback: ((SentryMetricsEvents, SentryEnvelopeHeader) -> Boolean)) {
+    ensureEnvelopeReceived { envelopeString -> checkIfMetricsMatch(envelopeString, callback) }
+  }
+
+  private fun checkIfMetricsMatch(
+    envelopeString: String,
+    callback: ((SentryMetricsEvents, SentryEnvelopeHeader) -> Boolean),
+  ): Boolean {
+    val deserializeEnvelope = jsonSerializer.deserializeEnvelope(envelopeString.byteInputStream())
+    if (deserializeEnvelope == null) {
+      return false
+    }
+
+    val envelopeHeader = deserializeEnvelope.header
+
+    val metricsItem =
+      deserializeEnvelope.items.firstOrNull { it.header.type == SentryItemType.TraceMetric }
+    if (metricsItem == null) {
+      return false
+    }
+
+    val metrics = metricsItem.getMetrics(jsonSerializer)
+    if (metrics == null) {
+      return false
+    }
+
+    return callback(metrics, envelopeHeader)
   }
 
   fun doesContainLogWithBody(logs: SentryLogEvents, body: String): Boolean {

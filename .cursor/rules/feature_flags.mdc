@@ -10,15 +10,35 @@ There is a scope based and a span based API for tracking feature flag evaluation
 
 The `addFeatureFlag` method can be used to track feature flag evaluations. It exists on `Sentry` static API as well as `IScopes` and `IScope`.
 
+When using static API, `IScopes` or COMBINED scope type, Sentry will also invoke `addFeatureFlag` on the current span. This does not happen, when directly invoking `addFeatureFlag` on `IScope` (except for COMBINED scope type).
+
 The `maxFeatureFlags` option controls how many flags are tracked per scope and also how many are sent to Sentry as part of events.
 Scope based feature flags can also be disabled by setting the value to 0. Defaults to 100 feature flag evaluations.
 
 Order of feature flag evaluations is important as we only keep track of the last {maxFeatureFlag} items.
 
-When a feature flag evluation with the same name is added, the previous one is removed and the new one is stored so that it'll be dropped last.
+When a feature flag evaluation with the same name is added, the previous one is removed and the new one is stored so that it'll be dropped last.
+Refer to `FeatureFlagBuffer` fore more details. `FeatureFlagBuffer` has been optimized for storing scope based feature flag evaluations, especially clone performance.
 
-When sending out an error event, feature flag buffers from all three scope types (global, isolation and current scope) are merged, chosing the newest {maxFeatureFlag} entries across all scope types. Feature flags are sent as part of the `flags` context.
+When sending out an error event, feature flag buffers from all three scope types (global, isolation and current scope) are merged, choosing the newest {maxFeatureFlag} entries across all scope types. Feature flags are sent as part of the `flags` context.
 
 ## Span Based API
 
-tbd
+It's also possible to use the `addFeatureFlag` method on `ISpan` (and by extension `ITransaction`). Feature flag evaluations tracked this way
+will not be added to the scope and thus won't be added to error events.
+
+Each span has its own `SpanFeatureFlagBuffer`. When starting a child span, feature flag evaluations are NOT copied from the parent. Each span starts out with an empty buffer and has its own limit.
+`SpanFeatureFlagBuffer` has been optimized for storing feature flag evaluations on spans.
+
+Spans have a hard coded limit of 10 feature flag evaluations. When full, new entries are rejected. Updates to existing entries are still allowed even if full.
+
+## Integrations
+
+We offer integrations that automatically track feature flag evaluations.
+
+Android:
+- LaunchDarkly (`SentryLaunchDarklyAndroidHook`)
+
+JVM (non Android):
+- LaunchDarkly (`SentryLaunchDarklyServerHook`)
+- OpenFeature (`SentryOpenFeatureHook`)

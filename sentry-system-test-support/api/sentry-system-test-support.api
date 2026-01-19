@@ -549,6 +549,9 @@ public final class io/sentry/systemtest/util/RestTestClient : io/sentry/systemte
 	public final fun createPersonDistributedTracing (Lio/sentry/systemtest/Person;Ljava/util/Map;)Lio/sentry/systemtest/Person;
 	public static synthetic fun createPersonDistributedTracing$default (Lio/sentry/systemtest/util/RestTestClient;Lio/sentry/systemtest/Person;Ljava/util/Map;ILjava/lang/Object;)Lio/sentry/systemtest/Person;
 	public final fun errorWithFeatureFlag (Ljava/lang/String;)Ljava/lang/String;
+	public final fun getCountMetric ()Ljava/lang/String;
+	public final fun getDistributionMetric (J)Ljava/lang/String;
+	public final fun getGaugeMetric (J)Ljava/lang/String;
 	public final fun getPerson (J)Lio/sentry/systemtest/Person;
 	public final fun getPersonDistributedTracing (JLjava/util/Map;)Lio/sentry/systemtest/Person;
 	public static synthetic fun getPersonDistributedTracing$default (Lio/sentry/systemtest/util/RestTestClient;JLjava/util/Map;ILjava/lang/Object;)Lio/sentry/systemtest/Person;
@@ -567,6 +570,8 @@ public final class io/sentry/systemtest/util/SentryMockServerClient : io/sentry/
 public final class io/sentry/systemtest/util/TestHelper {
 	public fun <init> (Ljava/lang/String;)V
 	public final fun doesContainLogWithBody (Lio/sentry/SentryLogEvents;Ljava/lang/String;)Z
+	public final fun doesContainMetric (Lio/sentry/SentryMetricsEvents;Ljava/lang/String;Ljava/lang/String;DLjava/lang/String;)Z
+	public static synthetic fun doesContainMetric$default (Lio/sentry/systemtest/util/TestHelper;Lio/sentry/SentryMetricsEvents;Ljava/lang/String;Ljava/lang/String;DLjava/lang/String;ILjava/lang/Object;)Z
 	public final fun doesEventHaveExceptionMessage (Lio/sentry/SentryEvent;Ljava/lang/String;)Z
 	public final fun doesEventHaveFlag (Lio/sentry/SentryEvent;Ljava/lang/String;Z)Z
 	public final fun doesTransactionContainSpanWithDescription (Lio/sentry/protocol/SentryTransaction;Ljava/lang/String;)Z
@@ -584,6 +589,7 @@ public final class io/sentry/systemtest/util/TestHelper {
 	public final fun ensureErrorCount (Lcom/apollographql/apollo3/api/ApolloResponse;I)V
 	public final fun ensureErrorReceived (Lkotlin/jvm/functions/Function1;)V
 	public final fun ensureLogsReceived (Lkotlin/jvm/functions/Function2;)V
+	public final fun ensureMetricsReceived (Lkotlin/jvm/functions/Function2;)V
 	public final fun ensureNoEnvelopeReceived (Lkotlin/jvm/functions/Function1;)V
 	public final fun ensureNoErrors (Lcom/apollographql/apollo3/api/ApolloResponse;)V
 	public final fun ensureNoTransactionReceived (Lkotlin/jvm/functions/Function2;)V
