@@ -36,7 +36,7 @@ public final class AndroidThreadChecker implements IThreadChecker {
    */
   @SuppressWarnings("deprecation")
   public static long getThreadId(final @NotNull Thread thread) {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
       return thread.threadId();
     } else {
       return thread.getId();
