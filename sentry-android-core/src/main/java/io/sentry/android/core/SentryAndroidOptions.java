@@ -175,6 +175,13 @@ public final class SentryAndroidOptions extends SentryOptions {
   private boolean enableScopeSync = true;
 
   /**
+   * A correlation ID used to associate native crash events (from sentry-native) with tombstone
+   * events (from ApplicationExitInfo). This is set via ActivityManager.setProcessStateSummary() and
+   * passed to the native SDK during initialization.
+   */
+  private @Nullable String nativeCrashCorrelationId;
+
+  /**
    * Whether to enable automatic trace ID generation. This is mainly used by the Hybrid SDKs to
    * control the trace ID generation from the outside.
    */
@@ -605,6 +612,27 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   public void setEnableScopeSync(boolean enableScopeSync) {
     this.enableScopeSync = enableScopeSync;
+  }
+
+  /**
+   * Returns the correlation ID used to associate native crash events with tombstone events.
+   *
+   * @return the correlation ID, or null if not set
+   */
+  @ApiStatus.Internal
+  public @Nullable String getNativeCrashCorrelationId() {
+    return nativeCrashCorrelationId;
+  }
+
+  /**
+   * Sets the correlation ID used to associate native crash events with tombstone events. This is
+   * typically set automatically during SDK initialization.
+   *
+   * @param nativeCrashCorrelationId the correlation ID
+   */
+  @ApiStatus.Internal
+  public void setNativeCrashCorrelationId(final @Nullable String nativeCrashCorrelationId) {
+    this.nativeCrashCorrelationId = nativeCrashCorrelationId;
   }
 
   public boolean isReportHistoricalAnrs() {

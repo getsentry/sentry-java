@@ -15,6 +15,7 @@ import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.ApplicationExitInfoHistoryDispatcher.ApplicationExitInfoPolicy;
+import io.sentry.android.core.NativeEventCollector.NativeEventData;
 import io.sentry.android.core.cache.AndroidEnvelopeCache;
 import io.sentry.android.core.internal.tombstone.TombstoneParser;
 import io.sentry.hints.Backfillable;
@@ -28,6 +29,7 @@ import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import org.jetbrains.annotations.ApiStatus;
@@ -103,9 +105,11 @@ public class TombstoneIntegration implements Integration, Closeable {
   public static class TombstonePolicy implements ApplicationExitInfoPolicy {
 
     private final @NotNull SentryAndroidOptions options;
+    private final @NotNull NativeEventCollector nativeEventCollector;
 
     public TombstonePolicy(final @NotNull SentryAndroidOptions options) {
       this.options = options;
+      this.nativeEventCollector = new NativeEventCollector(options);
     }
 
     @Override
@@ -133,7 +137,7 @@ public class TombstoneIntegration implements Integration, Closeable {
     @Override
     public @Nullable ApplicationExitInfoHistoryDispatcher.Report buildReport(
         final @NotNull ApplicationExitInfo exitInfo, final boolean enrich) {
-      final SentryEvent event;
+      SentryEvent event;
       try {
         final InputStream tombstoneInputStream = exitInfo.getTraceInputStream();
         if (tombstoneInputStream == null) {
@@ -164,12 +168,68 @@ public class TombstoneIntegration implements Integration, Closeable {
       final long tombstoneTimestamp = exitInfo.getTimestamp();
       event.setTimestamp(DateUtils.getDateTime(tombstoneTimestamp));
 
+      // Extract correlation ID from process state summary (if set during previous session)
+      final @Nullable String correlationId = extractCorrelationId(exitInfo);
+      if (correlationId != null) {
+        options
+            .getLogger()
+            .log(SentryLevel.DEBUG, "Tombstone correlation ID found: %s", correlationId);
+      }
+
+      // Try to find and remove matching native event from outbox
+      final @Nullable NativeEventData matchingNativeEvent =
+          nativeEventCollector.findAndRemoveMatchingNativeEvent(tombstoneTimestamp, correlationId);
+
+      if (matchingNativeEvent != null) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Found matching native event for tombstone, removing from outbox: %s",
+                matchingNativeEvent.getFile().getName());
+
+        // Delete from outbox so OutboxSender doesn't send it
+        boolean deletionSuccess = nativeEventCollector.deleteNativeEventFile(matchingNativeEvent);
+
+        if (deletionSuccess) {
+          event = mergeNaiveCrashes(matchingNativeEvent.getEvent(), event);
+        }
+      } else {
+        options.getLogger().log(SentryLevel.DEBUG, "No matching native event found for tombstone.");
+      }
+
       final TombstoneHint tombstoneHint =
           new TombstoneHint(
               options.getFlushTimeoutMillis(), options.getLogger(), tombstoneTimestamp, enrich);
       final Hint hint = HintUtils.createWithTypeCheckHint(tombstoneHint);
 
       return new ApplicationExitInfoHistoryDispatcher.Report(event, hint, tombstoneHint);
+    }
+
+    private SentryEvent mergeNaiveCrashes(
+        final @NotNull SentryEvent nativeEvent, final @NotNull SentryEvent tombstoneEvent) {
+      nativeEvent.setExceptions(tombstoneEvent.getExceptions());
+      nativeEvent.setDebugMeta(tombstoneEvent.getDebugMeta());
+      nativeEvent.setThreads(tombstoneEvent.getThreads());
+      return nativeEvent;
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.R)
+    private @Nullable String extractCorrelationId(final @NotNull ApplicationExitInfo exitInfo) {
+      try {
+        final byte[] summary = exitInfo.getProcessStateSummary();
+        if (summary != null && summary.length > 0) {
+          return new String(summary, StandardCharsets.UTF_8);
+        }
+      } catch (Throwable e) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Failed to extract correlation ID from process state summary",
+                e);
+      }
+      return null;
     }
   }
 

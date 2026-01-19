@@ -291,6 +291,21 @@ public final class io/sentry/android/core/LoadClass : io/sentry/util/LoadClass {
 	public fun loadClass (Ljava/lang/String;Lio/sentry/ILogger;)Ljava/lang/Class;
 }
 
+public final class io/sentry/android/core/NativeEventCollector {
+	public fun <init> (Lio/sentry/android/core/SentryAndroidOptions;)V
+	public fun collect ()V
+	public fun deleteNativeEventFile (Lio/sentry/android/core/NativeEventCollector$NativeEventData;)Z
+	public fun findAndRemoveMatchingNativeEvent (JLjava/lang/String;)Lio/sentry/android/core/NativeEventCollector$NativeEventData;
+}
+
+public final class io/sentry/android/core/NativeEventCollector$NativeEventData {
+	public fun getCorrelationId ()Ljava/lang/String;
+	public fun getEnvelope ()Lio/sentry/SentryEnvelope;
+	public fun getEvent ()Lio/sentry/SentryEvent;
+	public fun getFile ()Ljava/io/File;
+	public fun getTimestampMs ()J
+}
+
 public final class io/sentry/android/core/NdkHandlerStrategy : java/lang/Enum {
 	public static final field SENTRY_HANDLER_STRATEGY_CHAIN_AT_START Lio/sentry/android/core/NdkHandlerStrategy;
 	public static final field SENTRY_HANDLER_STRATEGY_DEFAULT Lio/sentry/android/core/NdkHandlerStrategy;
@@ -339,6 +354,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun getBeforeViewHierarchyCaptureCallback ()Lio/sentry/android/core/SentryAndroidOptions$BeforeCaptureCallback;
 	public fun getDebugImagesLoader ()Lio/sentry/android/core/IDebugImagesLoader;
 	public fun getFrameMetricsCollector ()Lio/sentry/android/core/internal/util/SentryFrameMetricsCollector;
+	public fun getNativeCrashCorrelationId ()Ljava/lang/String;
 	public fun getNativeSdkName ()Ljava/lang/String;
 	public fun getNdkHandlerStrategy ()I
 	public fun getStartupCrashDurationThresholdMillis ()J
@@ -392,6 +408,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun setEnableSystemEventBreadcrumbs (Z)V
 	public fun setEnableSystemEventBreadcrumbsExtras (Z)V
 	public fun setFrameMetricsCollector (Lio/sentry/android/core/internal/util/SentryFrameMetricsCollector;)V
+	public fun setNativeCrashCorrelationId (Ljava/lang/String;)V
 	public fun setNativeHandlerStrategy (Lio/sentry/android/core/NdkHandlerStrategy;)V
 	public fun setNativeSdkName (Ljava/lang/String;)V
 	public fun setReportHistoricalAnrs (Z)V
