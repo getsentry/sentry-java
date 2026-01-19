@@ -5,6 +5,7 @@
 ### Features
 
 - Added `io.sentry.ndk.sdk-name` Android manifest option to configure the native SDK's name ([#5027](https://github.com/getsentry/sentry-java/pull/5027))
+- Merge Tombstone and Native SDK events into single crash event. ([#5037](https://github.com/getsentry/sentry-java/pull/5037))
 
 ### Dependencies
 
