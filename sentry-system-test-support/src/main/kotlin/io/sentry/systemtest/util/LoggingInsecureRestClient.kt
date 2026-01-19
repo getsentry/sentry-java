@@ -26,6 +26,9 @@ open class LoggingInsecureRestClient {
     if (response?.isSuccessful != true) {
       return null
     }
+    if (T::class == String::class) {
+      return responseBody as? T
+    }
     return responseBody?.let { objectMapper().readValue(it, T::class.java) }
   }
 

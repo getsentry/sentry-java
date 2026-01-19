@@ -102,5 +102,11 @@ class ConsoleApplicationSystemTest {
         breadcrumb.message?.contains("Processed by") == true
       } == true
     }
+
+    testHelper.ensureMetricsReceived { metricsEvents, sentryEnvelopeHeader ->
+      testHelper.doesContainMetric(metricsEvents, "countMetric", "counter", 1.0) &&
+        testHelper.doesContainMetric(metricsEvents, "gaugeMetric", "gauge", 5.0) &&
+        testHelper.doesContainMetric(metricsEvents, "distributionMetric", "distribution", 7.0)
+    }
   }
 }

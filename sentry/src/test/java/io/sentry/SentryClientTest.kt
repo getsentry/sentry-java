@@ -14,6 +14,9 @@ import io.sentry.hints.Cached
 import io.sentry.hints.DiskFlushNotification
 import io.sentry.hints.TransactionEnd
 import io.sentry.logger.ILoggerBatchProcessor
+import io.sentry.logger.ILoggerBatchProcessorFactory
+import io.sentry.metrics.IMetricsBatchProcessor
+import io.sentry.metrics.IMetricsBatchProcessorFactory
 import io.sentry.protocol.Contexts
 import io.sentry.protocol.Feedback
 import io.sentry.protocol.Mechanism
@@ -77,6 +80,10 @@ class SentryClientTest {
   class Fixture {
     var transport = mock<ITransport>()
     var factory = mock<ITransportFactory>()
+    var loggerBatchProcessor = mock<ILoggerBatchProcessor>()
+    var loggerBatchProcessorFactory = mock<ILoggerBatchProcessorFactory>()
+    var metricsBatchProcessor = mock<IMetricsBatchProcessor>()
+    var metricsBatchProcessorFactory = mock<IMetricsBatchProcessorFactory>()
     val maxAttachmentSize: Long = (5 * 1024 * 1024).toLong()
     val scopes = mock<IScopes>()
     val sentryTracer: SentryTracer
@@ -93,12 +100,16 @@ class SentryClientTest {
         setLogger(mock())
         maxAttachmentSize = this@Fixture.maxAttachmentSize
         setTransportFactory(factory)
+        logs.setLoggerBatchProcessorFactory(loggerBatchProcessorFactory)
+        metrics.setMetricsBatchProcessorFactory(metricsBatchProcessorFactory)
         release = "0.0.1"
         isTraceSampling = true
       }
 
     init {
       whenever(factory.create(any(), any())).thenReturn(transport)
+      whenever(loggerBatchProcessorFactory.create(any(), any())).thenReturn(loggerBatchProcessor)
+      whenever(metricsBatchProcessorFactory.create(any(), any())).thenReturn(metricsBatchProcessor)
       whenever(scopes.options).thenReturn(sentryOptions)
       sentryTracer =
         SentryTracer(
@@ -167,21 +178,29 @@ class SentryClientTest {
 
   @Test
   fun `when client is closed with isRestarting false, transport waits`() {
-    val sut = fixture.getSut()
+    val sut = fixture.getSut { options -> options.logs.isEnabled = true }
     assertTrue(sut.isEnabled)
     sut.close(false)
     assertNotEquals(0, fixture.sentryOptions.shutdownTimeoutMillis)
     verify(fixture.transport).flush(eq(fixture.sentryOptions.shutdownTimeoutMillis))
+    verify(fixture.loggerBatchProcessor).flush(eq(fixture.sentryOptions.shutdownTimeoutMillis))
+    verify(fixture.metricsBatchProcessor).flush(eq(fixture.sentryOptions.shutdownTimeoutMillis))
     verify(fixture.transport).close(eq(false))
+    verify(fixture.loggerBatchProcessor).close(eq(false))
+    verify(fixture.metricsBatchProcessor).close(eq(false))
   }
 
   @Test
   fun `when client is closed with isRestarting true, transport does not wait`() {
-    val sut = fixture.getSut()
+    val sut = fixture.getSut { options -> options.logs.isEnabled = true }
     assertTrue(sut.isEnabled)
     sut.close(true)
     verify(fixture.transport).flush(eq(0))
+    verify(fixture.loggerBatchProcessor).flush(eq(0))
+    verify(fixture.metricsBatchProcessor).flush(eq(0))
     verify(fixture.transport).close(eq(true))
+    verify(fixture.loggerBatchProcessor).close(eq(true))
+    verify(fixture.metricsBatchProcessor).close(eq(true))
   }
 
   @Test
@@ -335,6 +354,77 @@ class SentryClientTest {
       SentryLogEvent(SentryId(), SentryNanotimeDate(), "actual message", SentryLogLevel.WARN)
     sut.captureLog(actual, scope)
     verify(batchProcessor).add(check { assertEquals("expected message", it.body) })
+    verifyNoMoreInteractions(batchProcessor)
+  }
+
+  @Test
+  fun `when beforeSendMetric is set, callback is invoked`() {
+    val scope = createScope()
+    var invoked = false
+    fixture.sentryOptions.metrics.setBeforeSend { m, hint ->
+      invoked = true
+      m
+    }
+    val sut = fixture.getSut()
+    sut.captureMetric(
+      SentryMetricsEvent(SentryId(), SentryNanotimeDate(), "name", "gauge", 123.0),
+      scope,
+      null,
+    )
+    assertTrue(invoked)
+  }
+
+  @Test
+  fun `when beforeSendMetric returns null, metric is dropped`() {
+    val scope = createScope()
+    fixture.sentryOptions.metrics.setBeforeSend { _: SentryMetricsEvent, hint -> null }
+    val sut = fixture.getSut()
+    sut.captureMetric(
+      SentryMetricsEvent(SentryId(), SentryNanotimeDate(), "name", "gauge", 123.0),
+      scope,
+      null,
+    )
+    verify(fixture.transport, never()).send(any(), anyOrNull())
+
+    assertClientReport(
+      fixture.sentryOptions.clientReportRecorder,
+      listOf(DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.TraceMetric.category, 1)),
+    )
+  }
+
+  @Test
+  fun `when beforeSendMetric throws an exception, metric is dropped`() {
+    val scope = createScope()
+    val exception = Exception("test")
+
+    exception.stackTrace.toString()
+    fixture.sentryOptions.metrics.setBeforeSend { _, hint -> throw exception }
+    val sut = fixture.getSut()
+    sut.captureMetric(
+      SentryMetricsEvent(SentryId(), SentryNanotimeDate(), "name", "gauge", 123.0),
+      scope,
+      null,
+    )
+
+    assertClientReport(
+      fixture.sentryOptions.clientReportRecorder,
+      listOf(DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.TraceMetric.category, 1)),
+    )
+  }
+
+  @Test
+  fun `when beforeSendMetric is returns new instance, new instance is sent`() {
+    val scope = createScope()
+    val expected =
+      SentryMetricsEvent(SentryId(), SentryNanotimeDate(), "expected name", "gauge", 123.0)
+    fixture.sentryOptions.metrics.setBeforeSend { _, hint -> expected }
+    val sut = fixture.getSut()
+    val batchProcessor = mock<IMetricsBatchProcessor>()
+    sut.injectForField("metricsBatchProcessor", batchProcessor)
+    val actual =
+      SentryMetricsEvent(SentryId(), SentryNanotimeDate(), "actual name", "counter", 97.0)
+    sut.captureMetric(actual, scope, null)
+    verify(batchProcessor).add(check { assertEquals("expected name", it.name) })
     verifyNoMoreInteractions(batchProcessor)
   }
 

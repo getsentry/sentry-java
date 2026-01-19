@@ -123,6 +123,7 @@ public final class JsonSerializer implements ISerializer {
     deserializersByClass.put(SentryLevel.class, new SentryLevel.Deserializer());
     deserializersByClass.put(SentryLockReason.class, new SentryLockReason.Deserializer());
     deserializersByClass.put(SentryLogEvents.class, new SentryLogEvents.Deserializer());
+    deserializersByClass.put(SentryMetricsEvents.class, new SentryMetricsEvents.Deserializer());
     deserializersByClass.put(SentryPackage.class, new SentryPackage.Deserializer());
     deserializersByClass.put(SentryRuntime.class, new SentryRuntime.Deserializer());
     deserializersByClass.put(SentryReplayEvent.class, new SentryReplayEvent.Deserializer());
