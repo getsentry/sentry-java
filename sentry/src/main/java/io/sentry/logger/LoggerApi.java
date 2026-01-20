@@ -243,7 +243,9 @@ public final class LoggerApi implements ILoggerApi {
       setServerName(attributes);
     }
 
-    setUser(attributes);
+    if (scopes.getOptions().isSendDefaultPii()) {
+      setUser(attributes);
+    }
 
     return attributes;
   }
