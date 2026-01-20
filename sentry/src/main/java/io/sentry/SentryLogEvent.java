@@ -13,6 +13,7 @@ import org.jetbrains.annotations.Nullable;
 public final class SentryLogEvent implements JsonUnknown, JsonSerializable {
 
   private @NotNull SentryId traceId;
+  private @Nullable SpanId spanId;
   private @NotNull Double timestamp;
   private @NotNull String body;
   private @NotNull SentryLogLevel level;
@@ -92,10 +93,27 @@ public final class SentryLogEvent implements JsonUnknown, JsonSerializable {
     this.severityNumber = severityNumber;
   }
 
+  public @Nullable SpanId getSpanId() {
+    return spanId;
+  }
+
+  public void setSpanId(final @Nullable SpanId spanId) {
+    this.spanId = spanId;
+  }
+
+  public @NotNull SentryId getTraceId() {
+    return traceId;
+  }
+
+  public void setTraceId(final @NotNull SentryId traceId) {
+    this.traceId = traceId;
+  }
+
   // region json
   public static final class JsonKeys {
     public static final String TIMESTAMP = "timestamp";
     public static final String TRACE_ID = "trace_id";
+    public static final String SPAN_ID = "span_id";
     public static final String LEVEL = "level";
     public static final String SEVERITY_NUMBER = "severity_number";
     public static final String BODY = "body";
@@ -109,6 +127,9 @@ public final class SentryLogEvent implements JsonUnknown, JsonSerializable {
     writer.beginObject();
     writer.name(JsonKeys.TIMESTAMP).value(logger, doubleToBigDecimal(timestamp));
     writer.name(JsonKeys.TRACE_ID).value(logger, traceId);
+    if (spanId != null) {
+      writer.name(JsonKeys.SPAN_ID).value(logger, spanId);
+    }
     writer.name(JsonKeys.BODY).value(body);
     writer.name(JsonKeys.LEVEL).value(logger, level);
     if (severityNumber != null) {
@@ -145,6 +166,7 @@ public final class SentryLogEvent implements JsonUnknown, JsonSerializable {
         final @NotNull ObjectReader reader, final @NotNull ILogger logger) throws Exception {
       @Nullable Map<String, Object> unknown = null;
       @Nullable SentryId traceId = null;
+      @Nullable SpanId spanId = null;
       @Nullable Double timestamp = null;
       @Nullable String body = null;
       @Nullable SentryLogLevel level = null;
@@ -157,6 +179,9 @@ public final class SentryLogEvent implements JsonUnknown, JsonSerializable {
         switch (nextName) {
           case JsonKeys.TRACE_ID:
             traceId = reader.nextOrNull(logger, new SentryId.Deserializer());
+            break;
+          case JsonKeys.SPAN_ID:
+            spanId = reader.nextOrNull(logger, new SpanId.Deserializer());
             break;
           case JsonKeys.TIMESTAMP:
             timestamp = reader.nextDoubleOrNull();
@@ -216,6 +241,7 @@ public final class SentryLogEvent implements JsonUnknown, JsonSerializable {
 
       logEvent.setAttributes(attributes);
       logEvent.setSeverityNumber(severityNumber);
+      logEvent.setSpanId(spanId);
       logEvent.setUnknown(unknown);
 
       return logEvent;

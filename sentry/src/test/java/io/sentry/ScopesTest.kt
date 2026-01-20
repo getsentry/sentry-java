@@ -3157,6 +3157,52 @@ class ScopesTest {
       )
   }
 
+  @Test
+  fun `log event has spanId from active span`() {
+    val (sut, mockClient) = getEnabledScopes { it.logs.isEnabled = true }
+
+    val transaction =
+      sut.startTransaction(
+        "test transaction",
+        "test.op",
+        TransactionOptions().also { it.isBindToScope = true },
+      )
+
+    sut.logger().log(SentryLogLevel.WARN, "log message")
+
+    verify(mockClient)
+      .captureLog(
+        check {
+          assertEquals("log message", it.body)
+          assertEquals(transaction.spanContext.traceId, it.traceId)
+          assertEquals(transaction.spanContext.spanId, it.spanId)
+        },
+        anyOrNull(),
+      )
+
+    transaction.finish()
+  }
+
+  @Test
+  fun `log event has spanId from propagation context when no active span`() {
+    val (sut, mockClient) = getEnabledScopes { it.logs.isEnabled = true }
+
+    var propagationContext: PropagationContext? = null
+    sut.configureScope { propagationContext = it.propagationContext }
+
+    sut.logger().log(SentryLogLevel.WARN, "log message")
+
+    verify(mockClient)
+      .captureLog(
+        check {
+          assertEquals("log message", it.body)
+          assertEquals(propagationContext!!.traceId, it.traceId)
+          assertEquals(propagationContext!!.spanId, it.spanId)
+        },
+        anyOrNull(),
+      )
+  }
+
   // endregion
 
   // region metrics
@@ -4069,6 +4115,54 @@ class ScopesTest {
           val logReplayType = it.attributes?.get("sentry._internal.replay_is_buffering")!!
           assertEquals(replayId.toString(), logReplayId!!.value)
           assertTrue(logReplayType.value as Boolean)
+        },
+        anyOrNull(),
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `metric event has spanId from active span`() {
+    val (sut, mockClient) = getEnabledScopes { it.metrics.isEnabled = true }
+
+    val transaction =
+      sut.startTransaction(
+        "test transaction",
+        "test.op",
+        TransactionOptions().also { it.isBindToScope = true },
+      )
+
+    sut.metrics().count("metric name")
+
+    verify(mockClient)
+      .captureMetric(
+        check {
+          assertEquals("metric name", it.name)
+          assertEquals(transaction.spanContext.traceId, it.traceId)
+          assertEquals(transaction.spanContext.spanId, it.spanId)
+        },
+        anyOrNull(),
+        anyOrNull(),
+      )
+
+    transaction.finish()
+  }
+
+  @Test
+  fun `metric event has spanId from propagation context when no active span`() {
+    val (sut, mockClient) = getEnabledScopes { it.metrics.isEnabled = true }
+
+    var propagationContext: PropagationContext? = null
+    sut.configureScope { propagationContext = it.propagationContext }
+
+    sut.metrics().count("metric name")
+
+    verify(mockClient)
+      .captureMetric(
+        check {
+          assertEquals("metric name", it.name)
+          assertEquals(propagationContext!!.traceId, it.traceId)
+          assertEquals(propagationContext!!.spanId, it.spanId)
         },
         anyOrNull(),
         anyOrNull(),
