@@ -5,6 +5,7 @@
 ### Features
 
 - Added `io.sentry.ndk.sdk-name` Android manifest option to configure the native SDK's name ([#5027](https://github.com/getsentry/sentry-java/pull/5027))
+- Replace `sentry.trace.parent_span_id` attribute with `spanId` property on `SentryLogEvent` ([#5040](https://github.com/getsentry/sentry-java/pull/5040))
 
 ### Dependencies
 
