@@ -11,6 +11,10 @@
 
 - Only attach user attributes to logs if `sendDefaultPii` is enabled ([#5036](https://github.com/getsentry/sentry-java/pull/5036))
 
+### Fixes
+
+- Reject new logs if `LoggerBatchProcessor` is shutting down ([#5041](https://github.com/getsentry/sentry-java/pull/5041))
+
 ### Dependencies
 
 - Bump Native SDK from v0.12.2 to v0.12.3 ([#5012](https://github.com/getsentry/sentry-java/pull/5012))
