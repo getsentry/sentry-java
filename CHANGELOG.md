@@ -6,6 +6,10 @@
 
 - Added `io.sentry.ndk.sdk-name` Android manifest option to configure the native SDK's name ([#5027](https://github.com/getsentry/sentry-java/pull/5027))
 
+### Fixes
+
+- Only attach user attributes to logs if `sendDefaultPii` is enabled ([#5036](https://github.com/getsentry/sentry-java/pull/5036))
+
 ### Dependencies
 
 - Bump Native SDK from v0.12.2 to v0.12.3 ([#5012](https://github.com/getsentry/sentry-java/pull/5012))

@@ -2913,11 +2913,12 @@ class ScopesTest {
   }
 
   @Test
-  fun `adds user fields to log attributes`() {
+  fun `adds user fields to log attributes if sendDefaultPii is true`() {
     val (sut, mockClient) =
       getEnabledScopes {
         it.logs.isEnabled = true
         it.distinctId = "distinctId"
+        it.isSendDefaultPii = true
       }
 
     sut.configureScope { scope ->
@@ -2946,6 +2947,37 @@ class ScopesTest {
           val userEmail = it.attributes?.get("user.email")!!
           assertEquals("user@sentry.io", userEmail.value)
           assertEquals("string", userEmail.type)
+        },
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `does not add user fields to log attributes by default`() {
+    val (sut, mockClient) =
+      getEnabledScopes {
+        it.logs.isEnabled = true
+        it.distinctId = "distinctId"
+      }
+
+    sut.configureScope { scope ->
+      scope.user =
+        User().also {
+          it.id = "usrid"
+          it.username = "usrname"
+          it.email = "user@sentry.io"
+        }
+    }
+    sut.logger().log(SentryLogLevel.WARN, "log message")
+
+    verify(mockClient)
+      .captureLog(
+        check {
+          assertEquals("log message", it.body)
+
+          assertNull(it.attributes?.get("user.id"))
+          assertNull(it.attributes?.get("user.name"))
+          assertNull(it.attributes?.get("user.email"))
         },
         anyOrNull(),
       )
