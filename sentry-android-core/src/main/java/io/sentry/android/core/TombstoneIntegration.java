@@ -192,7 +192,7 @@ public class TombstoneIntegration implements Integration, Closeable {
         boolean deletionSuccess = nativeEventCollector.deleteNativeEventFile(matchingNativeEvent);
 
         if (deletionSuccess) {
-          event = mergeNaiveCrashes(matchingNativeEvent.getEvent(), event);
+          event = mergeNativeCrashes(matchingNativeEvent.getEvent(), event);
         }
       } else {
         options.getLogger().log(SentryLevel.DEBUG, "No matching native event found for tombstone.");
@@ -206,7 +206,7 @@ public class TombstoneIntegration implements Integration, Closeable {
       return new ApplicationExitInfoHistoryDispatcher.Report(event, hint, tombstoneHint);
     }
 
-    private SentryEvent mergeNaiveCrashes(
+   private SentryEvent mergeNativeCrashes(
         final @NotNull SentryEvent nativeEvent, final @NotNull SentryEvent tombstoneEvent) {
       nativeEvent.setExceptions(tombstoneEvent.getExceptions());
       nativeEvent.setDebugMeta(tombstoneEvent.getDebugMeta());
