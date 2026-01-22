@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Internal
+
+- Set `write` permission for `statuses` in the changelog preview GHA workflow. ([#5053](https://github.com/getsentry/sentry-java/pull/5053))
+
 ## 8.31.0
 
 ### Features
