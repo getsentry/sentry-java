@@ -28,3 +28,6 @@ spy.log
 .kotlin
 **/tomcat.8080/webapps/
 **/__pycache__
+
+# Local Claude Code settings that should not be committed
+.claude/settings.local.json
