@@ -11,6 +11,7 @@ import io.sentry.SentryLogEvent
 import io.sentry.SentryLogEventAttributeValue
 import io.sentry.SentryLogEvents
 import io.sentry.SentryLogLevel
+import io.sentry.SpanId
 import java.io.StringReader
 import java.io.StringWriter
 import kotlin.test.assertEquals
@@ -31,6 +32,7 @@ class SentryLogsSerializationTest {
               SentryLogLevel.INFO,
             )
             .also {
+              it.spanId = SpanId("0a53026963414893")
               it.attributes =
                 mutableMapOf(
                   "sentry.sdk.name" to

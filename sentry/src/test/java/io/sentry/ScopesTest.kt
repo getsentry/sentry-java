@@ -2913,11 +2913,12 @@ class ScopesTest {
   }
 
   @Test
-  fun `adds user fields to log attributes`() {
+  fun `adds user fields to log attributes if sendDefaultPii is true`() {
     val (sut, mockClient) =
       getEnabledScopes {
         it.logs.isEnabled = true
         it.distinctId = "distinctId"
+        it.isSendDefaultPii = true
       }
 
     sut.configureScope { scope ->
@@ -2946,6 +2947,37 @@ class ScopesTest {
           val userEmail = it.attributes?.get("user.email")!!
           assertEquals("user@sentry.io", userEmail.value)
           assertEquals("string", userEmail.type)
+        },
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `does not add user fields to log attributes by default`() {
+    val (sut, mockClient) =
+      getEnabledScopes {
+        it.logs.isEnabled = true
+        it.distinctId = "distinctId"
+      }
+
+    sut.configureScope { scope ->
+      scope.user =
+        User().also {
+          it.id = "usrid"
+          it.username = "usrname"
+          it.email = "user@sentry.io"
+        }
+    }
+    sut.logger().log(SentryLogLevel.WARN, "log message")
+
+    verify(mockClient)
+      .captureLog(
+        check {
+          assertEquals("log message", it.body)
+
+          assertNull(it.attributes?.get("user.id"))
+          assertNull(it.attributes?.get("user.name"))
+          assertNull(it.attributes?.get("user.email"))
         },
         anyOrNull(),
       )
@@ -3120,6 +3152,52 @@ class ScopesTest {
           val logReplayType = it.attributes?.get("sentry._internal.replay_is_buffering")!!
           assertEquals(replayId.toString(), logReplayId!!.value)
           assertTrue(logReplayType.value as Boolean)
+        },
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `log event has spanId from active span`() {
+    val (sut, mockClient) = getEnabledScopes { it.logs.isEnabled = true }
+
+    val transaction =
+      sut.startTransaction(
+        "test transaction",
+        "test.op",
+        TransactionOptions().also { it.isBindToScope = true },
+      )
+
+    sut.logger().log(SentryLogLevel.WARN, "log message")
+
+    verify(mockClient)
+      .captureLog(
+        check {
+          assertEquals("log message", it.body)
+          assertEquals(transaction.spanContext.traceId, it.traceId)
+          assertEquals(transaction.spanContext.spanId, it.spanId)
+        },
+        anyOrNull(),
+      )
+
+    transaction.finish()
+  }
+
+  @Test
+  fun `log event has spanId from propagation context when no active span`() {
+    val (sut, mockClient) = getEnabledScopes { it.logs.isEnabled = true }
+
+    var propagationContext: PropagationContext? = null
+    sut.configureScope { propagationContext = it.propagationContext }
+
+    sut.logger().log(SentryLogLevel.WARN, "log message")
+
+    verify(mockClient)
+      .captureLog(
+        check {
+          assertEquals("log message", it.body)
+          assertEquals(propagationContext!!.traceId, it.traceId)
+          assertEquals(propagationContext!!.spanId, it.spanId)
         },
         anyOrNull(),
       )
@@ -4037,6 +4115,54 @@ class ScopesTest {
           val logReplayType = it.attributes?.get("sentry._internal.replay_is_buffering")!!
           assertEquals(replayId.toString(), logReplayId!!.value)
           assertTrue(logReplayType.value as Boolean)
+        },
+        anyOrNull(),
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `metric event has spanId from active span`() {
+    val (sut, mockClient) = getEnabledScopes { it.metrics.isEnabled = true }
+
+    val transaction =
+      sut.startTransaction(
+        "test transaction",
+        "test.op",
+        TransactionOptions().also { it.isBindToScope = true },
+      )
+
+    sut.metrics().count("metric name")
+
+    verify(mockClient)
+      .captureMetric(
+        check {
+          assertEquals("metric name", it.name)
+          assertEquals(transaction.spanContext.traceId, it.traceId)
+          assertEquals(transaction.spanContext.spanId, it.spanId)
+        },
+        anyOrNull(),
+        anyOrNull(),
+      )
+
+    transaction.finish()
+  }
+
+  @Test
+  fun `metric event has spanId from propagation context when no active span`() {
+    val (sut, mockClient) = getEnabledScopes { it.metrics.isEnabled = true }
+
+    var propagationContext: PropagationContext? = null
+    sut.configureScope { propagationContext = it.propagationContext }
+
+    sut.metrics().count("metric name")
+
+    verify(mockClient)
+      .captureMetric(
+        check {
+          assertEquals("metric name", it.name)
+          assertEquals(propagationContext!!.traceId, it.traceId)
+          assertEquals(propagationContext!!.spanId, it.spanId)
         },
         anyOrNull(),
         anyOrNull(),
