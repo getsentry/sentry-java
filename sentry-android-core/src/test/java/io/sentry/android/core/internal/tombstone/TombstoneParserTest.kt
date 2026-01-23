@@ -72,7 +72,7 @@ class TombstoneParserTest {
     assertNotNull(crashedThreadId)
 
     val mechanism = exception.mechanism
-    assertEquals("tombstone", mechanism!!.type)
+    assertEquals("Tombstone", mechanism!!.type)
     assertEquals(false, mechanism.isHandled)
     assertEquals(true, mechanism.synthetic)
     assertEquals("SIGSEGV", mechanism.meta!!["name"])
