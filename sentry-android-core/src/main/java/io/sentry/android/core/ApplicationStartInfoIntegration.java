@@ -283,72 +283,66 @@ public final class ApplicationStartInfoIntegration implements Integration, Close
     return tags;
   }
 
+  @RequiresApi(api = 35)
   private @NotNull String getStartupTypeLabel(final int startType) {
-    if (Build.VERSION.SDK_INT >= 35) {
-      switch (startType) {
-        case android.app.ApplicationStartInfo.START_TYPE_COLD:
-          return "cold";
-        case android.app.ApplicationStartInfo.START_TYPE_WARM:
-          return "warm";
-        case android.app.ApplicationStartInfo.START_TYPE_HOT:
-          return "hot";
-        default:
-          return "unknown";
-      }
+    switch (startType) {
+      case android.app.ApplicationStartInfo.START_TYPE_COLD:
+        return "cold";
+      case android.app.ApplicationStartInfo.START_TYPE_WARM:
+        return "warm";
+      case android.app.ApplicationStartInfo.START_TYPE_HOT:
+        return "hot";
+      default:
+        return "unknown";
     }
-    return "unknown";
   }
 
+  @RequiresApi(api = 35)
   private @NotNull String getLaunchModeLabel(final int launchMode) {
-    if (Build.VERSION.SDK_INT >= 35) {
-      switch (launchMode) {
-        case android.app.ApplicationStartInfo.LAUNCH_MODE_STANDARD:
-          return "standard";
-        case android.app.ApplicationStartInfo.LAUNCH_MODE_SINGLE_TOP:
-          return "single_top";
-        case android.app.ApplicationStartInfo.LAUNCH_MODE_SINGLE_INSTANCE:
-          return "single_instance";
-        case android.app.ApplicationStartInfo.LAUNCH_MODE_SINGLE_TASK:
-          return "single_task";
-        case android.app.ApplicationStartInfo.LAUNCH_MODE_SINGLE_INSTANCE_PER_TASK:
-          return "single_instance_per_task";
-        default:
-          return "unknown";
-      }
+    switch (launchMode) {
+      case android.app.ApplicationStartInfo.LAUNCH_MODE_STANDARD:
+        return "standard";
+      case android.app.ApplicationStartInfo.LAUNCH_MODE_SINGLE_TOP:
+        return "single_top";
+      case android.app.ApplicationStartInfo.LAUNCH_MODE_SINGLE_INSTANCE:
+        return "single_instance";
+      case android.app.ApplicationStartInfo.LAUNCH_MODE_SINGLE_TASK:
+        return "single_task";
+      case android.app.ApplicationStartInfo.LAUNCH_MODE_SINGLE_INSTANCE_PER_TASK:
+        return "single_instance_per_task";
+      default:
+        return "unknown";
     }
-    return "unknown";
   }
 
+  @RequiresApi(api = 35)
   private @NotNull String getReasonLabel(final int reason) {
-    if (Build.VERSION.SDK_INT >= 35) {
-      switch (reason) {
-        case android.app.ApplicationStartInfo.START_REASON_ALARM:
-          return "alarm";
-        case android.app.ApplicationStartInfo.START_REASON_BACKUP:
-          return "backup";
-        case android.app.ApplicationStartInfo.START_REASON_BOOT_COMPLETE:
-          return "boot_complete";
-        case android.app.ApplicationStartInfo.START_REASON_BROADCAST:
-          return "broadcast";
-        case android.app.ApplicationStartInfo.START_REASON_CONTENT_PROVIDER:
-          return "content_provider";
-        case android.app.ApplicationStartInfo.START_REASON_JOB:
-          return "job";
-        case android.app.ApplicationStartInfo.START_REASON_LAUNCHER:
-          return "launcher";
-        case android.app.ApplicationStartInfo.START_REASON_OTHER:
-          return "other";
-        case android.app.ApplicationStartInfo.START_REASON_PUSH:
-          return "push";
-        case android.app.ApplicationStartInfo.START_REASON_SERVICE:
-          return "service";
-        case android.app.ApplicationStartInfo.START_REASON_START_ACTIVITY:
-          return "start_activity";
-        default:
-          return "unknown";
-      }
+    switch (reason) {
+      case android.app.ApplicationStartInfo.START_REASON_ALARM:
+        return "alarm";
+      case android.app.ApplicationStartInfo.START_REASON_BACKUP:
+        return "backup";
+      case android.app.ApplicationStartInfo.START_REASON_BOOT_COMPLETE:
+        return "boot_complete";
+      case android.app.ApplicationStartInfo.START_REASON_BROADCAST:
+        return "broadcast";
+      case android.app.ApplicationStartInfo.START_REASON_CONTENT_PROVIDER:
+        return "content_provider";
+      case android.app.ApplicationStartInfo.START_REASON_JOB:
+        return "job";
+      case android.app.ApplicationStartInfo.START_REASON_LAUNCHER:
+        return "launcher";
+      case android.app.ApplicationStartInfo.START_REASON_OTHER:
+        return "other";
+      case android.app.ApplicationStartInfo.START_REASON_PUSH:
+        return "push";
+      case android.app.ApplicationStartInfo.START_REASON_SERVICE:
+        return "service";
+      case android.app.ApplicationStartInfo.START_REASON_START_ACTIVITY:
+        return "start_activity";
+      default:
+        return "unknown";
     }
-    return "unknown";
   }
 
   // Helper methods to access timestamps from the startupTimestamps map
