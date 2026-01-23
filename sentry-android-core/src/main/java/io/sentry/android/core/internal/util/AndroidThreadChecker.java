@@ -28,7 +28,7 @@ public final class AndroidThreadChecker implements IThreadChecker {
   /**
    * Gets the thread ID in a way that's compatible across Android versions.
    *
-   * <p>Uses {@link Thread#threadId()} on Android 14 (API 34) and above, and falls back to {@link
+   * <p>Uses {@link Thread#threadId()} on Android 16 (API 36) and above, and falls back to {@link
    * Thread#getId()} on older versions.
    *
    * @param thread the thread to get the ID for
