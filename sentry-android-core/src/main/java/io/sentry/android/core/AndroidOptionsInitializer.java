@@ -5,6 +5,7 @@ import static io.sentry.android.core.NdkIntegration.SENTRY_NDK_CLASS_NAME;
 import android.app.Application;
 import android.content.Context;
 import android.content.pm.PackageInfo;
+import android.os.Build;
 import io.sentry.CompositePerformanceCollector;
 import io.sentry.DeduplicateMultithreadedEventProcessor;
 import io.sentry.DefaultCompositePerformanceCollector;
@@ -124,6 +125,7 @@ final class AndroidOptionsInitializer {
     options.setDateProvider(new SentryAndroidDateProvider());
     options.setRuntimeManager(new AndroidRuntimeManager());
     options.getLogs().setLoggerBatchProcessorFactory(new AndroidLoggerBatchProcessorFactory());
+    options.getMetrics().setMetricsBatchProcessorFactory(new AndroidMetricsBatchProcessorFactory());
 
     // set a lower flush timeout on Android to avoid ANRs
     options.setFlushTimeoutMillis(DEFAULT_FLUSH_TIMEOUT_MS);
@@ -188,7 +190,8 @@ final class AndroidOptionsInitializer {
     options.addEventProcessor(new PerformanceAndroidEventProcessor(options, activityFramesTracker));
     options.addEventProcessor(new ScreenshotEventProcessor(options, buildInfoProvider));
     options.addEventProcessor(new ViewHierarchyEventProcessor(options));
-    options.addEventProcessor(new AnrV2EventProcessor(context, options, buildInfoProvider));
+    options.addEventProcessor(
+        new ApplicationExitInfoEventProcessor(context, options, buildInfoProvider));
     if (options.getTransportGate() instanceof NoOpTransportGate) {
       options.setTransportGate(new AndroidTransportGate(options));
     }
@@ -372,6 +375,10 @@ final class AndroidOptionsInitializer {
     // because sentry-native move files around and we don't want to watch that.
     final Class<?> sentryNdkClass = loadClass.loadClass(SENTRY_NDK_CLASS_NAME, options.getLogger());
     options.addIntegration(new NdkIntegration(sentryNdkClass));
+
+    if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.S) {
+      options.addIntegration(new TombstoneIntegration(context));
+    }
 
     // this integration uses android.os.FileObserver, we can't move to sentry
     // before creating a pure java impl.

@@ -69,12 +69,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * AnrV2Integration processes events on a background thread, hence the event processors will also be
- * invoked on the same background thread, so we can safely read data from disk synchronously.
+ * Processes cached ApplicationExitInfo events (ANRs, tombstones) on a background thread, so we can
+ * safely read data from disk synchronously.
  */
 @ApiStatus.Internal
 @WorkerThread
-public final class AnrV2EventProcessor implements BackfillingEventProcessor {
+public final class ApplicationExitInfoEventProcessor implements BackfillingEventProcessor {
 
   private final @NotNull Context context;
 
@@ -86,7 +86,12 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
 
   private final @Nullable PersistingScopeObserver persistingScopeObserver;
 
-  public AnrV2EventProcessor(
+  // Only ANRv2 events are currently enriched with hint-specific content.
+  // This can be extended to other hints like NativeCrashExit.
+  private final @NotNull List<HintEnricher> hintEnrichers =
+      Collections.singletonList(new AnrHintEnricher());
+
+  public ApplicationExitInfoEventProcessor(
       final @NotNull Context context,
       final @NotNull SentryAndroidOptions options,
       final @NotNull BuildInfoProvider buildInfoProvider) {
@@ -99,6 +104,15 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
         new SentryStackTraceFactory(this.options);
 
     sentryExceptionFactory = new SentryExceptionFactory(sentryStackTraceFactory);
+  }
+
+  private @Nullable HintEnricher findEnricher(final @NotNull Object hint) {
+    for (HintEnricher enricher : hintEnrichers) {
+      if (enricher.supports(hint)) {
+        return enricher;
+      }
+    }
+    return null;
   }
 
   @Override
@@ -121,16 +135,19 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
               "The event is not Backfillable, but has been passed to BackfillingEventProcessor, skipping.");
       return event;
     }
+    final @NotNull Backfillable backfillable = (Backfillable) unwrappedHint;
+    final @Nullable HintEnricher hintEnricher = findEnricher(unwrappedHint);
 
-    // we always set exception values, platform, os and device even if the ANR is not enrich-able
-    // even though the OS context may change in the meantime (OS update), we consider this an
-    // edge-case
-    setExceptions(event, unwrappedHint);
-    setPlatform(event);
+    if (hintEnricher != null) {
+      hintEnricher.applyPreEnrichment(event, backfillable, unwrappedHint);
+    }
+
+    // We always set  os and device even if the ApplicationExitInfo event is not enrich-able.
+    // The OS context may change in the meantime (OS update); we consider this an edge-case.
     mergeOS(event);
     setDevice(event);
 
-    if (!((Backfillable) unwrappedHint).shouldEnrich()) {
+    if (!backfillable.shouldEnrich()) {
       options
           .getLogger()
           .log(
@@ -139,17 +156,21 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
       return event;
     }
 
-    backfillScope(event, unwrappedHint);
+    backfillScope(event);
 
-    backfillOptions(event, unwrappedHint);
+    backfillOptions(event);
 
     setStaticValues(event);
+
+    if (hintEnricher != null) {
+      hintEnricher.applyPostEnrichment(event, backfillable, unwrappedHint);
+    }
 
     return event;
   }
 
   // region scope persisted values
-  private void backfillScope(final @NotNull SentryEvent event, final @NotNull Object hint) {
+  private void backfillScope(final @NotNull SentryEvent event) {
     setRequest(event);
     setUser(event);
     setScopeTags(event);
@@ -157,7 +178,7 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
     setExtras(event);
     setContexts(event);
     setTransaction(event);
-    setFingerprints(event, hint);
+    setFingerprints(event);
     setLevel(event);
     setTrace(event);
     setReplayId(event);
@@ -193,8 +214,11 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
 
   private void setReplayId(final @NotNull SentryEvent event) {
     @Nullable String persistedReplayId = readFromDisk(options, REPLAY_FILENAME, String.class);
-    final @NotNull File replayFolder =
-        new File(options.getCacheDirPath(), "replay_" + persistedReplayId);
+    @Nullable String cacheDirPath = options.getCacheDirPath();
+    if (cacheDirPath == null) {
+      return;
+    }
+    final @NotNull File replayFolder = new File(cacheDirPath, "replay_" + persistedReplayId);
     if (!replayFolder.exists()) {
       if (!sampleReplay(event)) {
         return;
@@ -203,7 +227,7 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
       // latest replay folder that was modified before the ANR event.
       persistedReplayId = null;
       long lastModified = Long.MIN_VALUE;
-      final File[] dirs = new File(options.getCacheDirPath()).listFiles();
+      final File[] dirs = new File(cacheDirPath).listFiles();
       if (dirs != null) {
         for (File dir : dirs) {
           if (dir.isDirectory() && dir.getName().startsWith("replay_")) {
@@ -229,9 +253,7 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
   private void setTrace(final @NotNull SentryEvent event) {
     final SpanContext spanContext = readFromDisk(options, TRACE_FILENAME, SpanContext.class);
     if (event.getContexts().getTrace() == null) {
-      if (spanContext != null
-          && spanContext.getSpanId() != null
-          && spanContext.getTraceId() != null) {
+      if (spanContext != null) {
         event.getContexts().setTrace(spanContext);
       }
     }
@@ -245,20 +267,11 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
   }
 
   @SuppressWarnings("unchecked")
-  private void setFingerprints(final @NotNull SentryEvent event, final @NotNull Object hint) {
+  private void setFingerprints(final @NotNull SentryEvent event) {
     final List<String> fingerprint =
         (List<String>) readFromDisk(options, FINGERPRINT_FILENAME, List.class);
     if (event.getFingerprints() == null) {
       event.setFingerprints(fingerprint);
-    }
-
-    // sentry does not yet have a capability to provide default server-side fingerprint rules,
-    // so we're doing this on the SDK side to group background and foreground ANRs separately
-    // even if they have similar stacktraces
-    final boolean isBackgroundAnr = isBackgroundAnr(hint);
-    if (event.getFingerprints() == null) {
-      event.setFingerprints(
-          Arrays.asList("{{ default }}", isBackgroundAnr ? "background-anr" : "foreground-anr"));
     }
   }
 
@@ -366,26 +379,22 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
   // endregion
 
   // region options persisted values
-  private void backfillOptions(final @NotNull SentryEvent event, final @NotNull Object hint) {
+  private void backfillOptions(final @NotNull SentryEvent event) {
     setRelease(event);
     setEnvironment(event);
     setDist(event);
     setDebugMeta(event);
     setSdk(event);
-    setApp(event, hint);
+    setApp(event);
     setOptionsTags(event);
   }
 
-  private void setApp(final @NotNull SentryBaseEvent event, final @NotNull Object hint) {
+  private void setApp(final @NotNull SentryBaseEvent event) {
     App app = event.getContexts().getApp();
     if (app == null) {
       app = new App();
     }
     app.setAppName(ContextUtils.getApplicationName(context));
-    // TODO: not entirely correct, because we define background ANRs as not the ones of
-    //  IMPORTANCE_FOREGROUND, but this doesn't mean the app was in foreground when an ANR happened
-    //  but it's our best effort for now. We could serialize AppState in theory.
-    app.setInForeground(!isBackgroundAnr(hint));
 
     final PackageInfo packageInfo = ContextUtils.getPackageInfo(context, buildInfoProvider);
     if (packageInfo != null) {
@@ -530,63 +539,11 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
     setSideLoadedInfo(event);
   }
 
-  private void setPlatform(final @NotNull SentryBaseEvent event) {
+  private void setDefaultPlatform(final @NotNull SentryBaseEvent event) {
     if (event.getPlatform() == null) {
       // this actually means JVM related.
       event.setPlatform(SentryBaseEvent.DEFAULT_PLATFORM);
     }
-  }
-
-  @Nullable
-  private SentryThread findMainThread(final @Nullable List<SentryThread> threads) {
-    if (threads != null) {
-      for (SentryThread thread : threads) {
-        final String name = thread.getName();
-        if (name != null && name.equals("main")) {
-          return thread;
-        }
-      }
-    }
-    return null;
-  }
-
-  // by default we assume that the ANR is foreground, unless abnormalMechanism is "anr_background"
-  private boolean isBackgroundAnr(final @NotNull Object hint) {
-    if (hint instanceof AbnormalExit) {
-      final String abnormalMechanism = ((AbnormalExit) hint).mechanism();
-      return "anr_background".equals(abnormalMechanism);
-    }
-    return false;
-  }
-
-  private void setExceptions(final @NotNull SentryEvent event, final @NotNull Object hint) {
-    // AnrV2 threads contain a thread dump from the OS, so we just search for the main thread dump
-    // and make an exception out of its stacktrace
-    final Mechanism mechanism = new Mechanism();
-    if (!((Backfillable) hint).shouldEnrich()) {
-      // we only enrich the latest ANR in the list, so this is historical
-      mechanism.setType("HistoricalAppExitInfo");
-    } else {
-      mechanism.setType("AppExitInfo");
-    }
-
-    final boolean isBackgroundAnr = isBackgroundAnr(hint);
-    String message = "ANR";
-    if (isBackgroundAnr) {
-      message = "Background " + message;
-    }
-    final ApplicationNotResponding anr =
-        new ApplicationNotResponding(message, Thread.currentThread());
-
-    SentryThread mainThread = findMainThread(event.getThreads());
-    if (mainThread == null) {
-      // if there's no main thread in the event threads, we just create a dummy thread so the
-      // exception is properly created as well, but without stacktrace
-      mainThread = new SentryThread();
-      mainThread.setStacktrace(new SentryStackTrace());
-    }
-    event.setExceptions(
-        sentryExceptionFactory.getSentryExceptionsFromThread(mainThread, mechanism, anr));
   }
 
   private void mergeUser(final @NotNull SentryBaseEvent event) {
@@ -699,6 +656,126 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
       }
       event.getContexts().put(osNameKey, currentOS);
     }
+    // endregion
   }
-  // endregion
+
+  private interface HintEnricher {
+    boolean supports(@NotNull Object hint);
+
+    void applyPreEnrichment(
+        @NotNull SentryEvent event, @NotNull Backfillable hint, @NotNull Object rawHint);
+
+    void applyPostEnrichment(
+        @NotNull SentryEvent event, @NotNull Backfillable hint, @NotNull Object rawHint);
+  }
+
+  private final class AnrHintEnricher implements HintEnricher {
+
+    @Override
+    public boolean supports(@NotNull Object hint) {
+      // While this is specifically an ANR enricher we discriminate enrichment application
+      // on the broader AbnormalExit hints for now.
+      return hint instanceof AbnormalExit;
+    }
+
+    // by default we assume that the ANR is foreground, unless abnormalMechanism is "anr_background"
+    private boolean isBackgroundAnr(final @NotNull Object hint) {
+      if (hint instanceof AbnormalExit) {
+        final String abnormalMechanism = ((AbnormalExit) hint).mechanism();
+        return "anr_background".equals(abnormalMechanism);
+      }
+      return false;
+    }
+
+    @Override
+    public void applyPreEnrichment(
+        @NotNull SentryEvent event, @NotNull Backfillable hint, @NotNull Object rawHint) {
+      final boolean isBackgroundAnr = isBackgroundAnr(rawHint);
+      // we always set exception values and default platform even if the ANR is not enrich-able
+      setDefaultPlatform(event);
+      setAnrExceptions(event, hint, isBackgroundAnr);
+    }
+
+    @Override
+    public void applyPostEnrichment(
+        @NotNull SentryEvent event, @NotNull Backfillable hint, @NotNull Object rawHint) {
+      final boolean isBackgroundAnr = isBackgroundAnr(rawHint);
+      setAppForeground(event, !isBackgroundAnr);
+      setDefaultAnrFingerprint(event, isBackgroundAnr);
+    }
+
+    private void setDefaultAnrFingerprint(
+        final @NotNull SentryEvent event, final boolean isBackgroundAnr) {
+      // sentry does not yet have a capability to provide default server-side fingerprint rules,
+      // so we're doing this on the SDK side to group background and foreground ANRs separately
+      // even if they have similar stacktraces.
+      if (event.getFingerprints() == null) {
+        event.setFingerprints(
+            Arrays.asList("{{ default }}", isBackgroundAnr ? "background-anr" : "foreground-anr"));
+      }
+    }
+
+    private void setAppForeground(
+        final @NotNull SentryBaseEvent event, final boolean inForeground) {
+      App app = event.getContexts().getApp();
+      if (app == null) {
+        app = new App();
+        event.getContexts().setApp(app);
+      }
+      // TODO: not entirely correct, because we define background ANRs as not the ones of
+      //  IMPORTANCE_FOREGROUND, but this doesn't mean the app was in foreground when an ANR
+      //  happened but it's our best effort for now. We could serialize AppState in theory.
+      if (app.getInForeground() == null) {
+        app.setInForeground(inForeground);
+      }
+    }
+
+    @Nullable
+    private SentryThread findMainThread(final @Nullable List<SentryThread> threads) {
+      if (threads != null) {
+        for (SentryThread thread : threads) {
+          final String name = thread.getName();
+          if (name != null && name.equals("main")) {
+            return thread;
+          }
+        }
+      }
+      return null;
+    }
+
+    private void setAnrExceptions(
+        final @NotNull SentryEvent event,
+        final @NotNull Backfillable hint,
+        final boolean isBackgroundAnr) {
+      if (event.getExceptions() != null) {
+        return;
+      }
+      // AnrV2 threads contain a thread dump from the OS, so we just search for the main thread dump
+      // and make an exception out of its stacktrace
+      final Mechanism mechanism = new Mechanism();
+      if (!hint.shouldEnrich()) {
+        // we only enrich the latest ANR in the list, so this is historical
+        mechanism.setType("HistoricalAppExitInfo");
+      } else {
+        mechanism.setType("AppExitInfo");
+      }
+
+      String message = "ANR";
+      if (isBackgroundAnr) {
+        message = "Background " + message;
+      }
+      final ApplicationNotResponding anr =
+          new ApplicationNotResponding(message, Thread.currentThread());
+
+      SentryThread mainThread = findMainThread(event.getThreads());
+      if (mainThread == null) {
+        // if there's no main thread in the event threads, we just create a dummy thread so the
+        // exception is properly created as well, but without stacktrace
+        mainThread = new SentryThread();
+        mainThread.setStacktrace(new SentryStackTrace());
+      }
+      event.setExceptions(
+          sentryExceptionFactory.getSentryExceptionsFromThread(mainThread, mechanism, anr));
+    }
+  }
 }

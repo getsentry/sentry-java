@@ -3,16 +3,21 @@ package io.sentry.systemtest.util
 import com.apollographql.apollo3.api.ApolloResponse
 import com.apollographql.apollo3.api.Operation
 import io.sentry.JsonSerializer
+import io.sentry.ProfileChunk
 import io.sentry.SentryEnvelopeHeader
 import io.sentry.SentryEvent
 import io.sentry.SentryItemType
 import io.sentry.SentryLogEvents
+import io.sentry.SentryMetricsEvents
 import io.sentry.SentryOptions
 import io.sentry.protocol.FeatureFlag
 import io.sentry.protocol.SentrySpan
 import io.sentry.protocol.SentryTransaction
 import io.sentry.systemtest.graphql.GraphqlTestClient
+import java.io.BufferedReader
+import java.io.ByteArrayInputStream
 import java.io.File
+import java.io.InputStreamReader
 import java.io.PrintWriter
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -82,6 +87,10 @@ class TestHelper(backendUrl: String) {
     ensureEnvelopeReceived { envelopeString -> checkIfTransactionMatches(envelopeString, callback) }
   }
 
+  fun ensureProfileChunkReceived(callback: ((ProfileChunk, SentryEnvelopeHeader) -> Boolean)) {
+    ensureEnvelopeReceived { envelopeString -> checkIfProfileMatches(envelopeString, callback) }
+  }
+
   fun ensureNoTransactionReceived(
     callback: ((SentryTransaction, SentryEnvelopeHeader) -> Boolean)
   ) {
@@ -118,6 +127,58 @@ class TestHelper(backendUrl: String) {
     return callback(logs, envelopeHeader)
   }
 
+  fun doesContainMetric(
+    metrics: SentryMetricsEvents,
+    name: String,
+    type: String,
+    value: Double,
+    unit: String? = null,
+  ): Boolean {
+    val metricItem =
+      metrics.items.firstOrNull { metricItem ->
+        metricItem.name == name &&
+          metricItem.type == type &&
+          metricItem.value == value &&
+          (unit == null || metricItem.unit == unit)
+      }
+    if (metricItem == null) {
+      println("Unable to find metric item with name $name, type $type and value $value in metrics:")
+      logObject(metrics)
+      return false
+    }
+
+    return true
+  }
+
+  fun ensureMetricsReceived(callback: ((SentryMetricsEvents, SentryEnvelopeHeader) -> Boolean)) {
+    ensureEnvelopeReceived { envelopeString -> checkIfMetricsMatch(envelopeString, callback) }
+  }
+
+  private fun checkIfMetricsMatch(
+    envelopeString: String,
+    callback: ((SentryMetricsEvents, SentryEnvelopeHeader) -> Boolean),
+  ): Boolean {
+    val deserializeEnvelope = jsonSerializer.deserializeEnvelope(envelopeString.byteInputStream())
+    if (deserializeEnvelope == null) {
+      return false
+    }
+
+    val envelopeHeader = deserializeEnvelope.header
+
+    val metricsItem =
+      deserializeEnvelope.items.firstOrNull { it.header.type == SentryItemType.TraceMetric }
+    if (metricsItem == null) {
+      return false
+    }
+
+    val metrics = metricsItem.getMetrics(jsonSerializer)
+    if (metrics == null) {
+      return false
+    }
+
+    return callback(metrics, envelopeHeader)
+  }
+
   fun doesContainLogWithBody(logs: SentryLogEvents, body: String): Boolean {
     val logItem = logs.items.firstOrNull { logItem -> logItem.body == body }
     if (logItem == null) {
@@ -152,6 +213,35 @@ class TestHelper(backendUrl: String) {
     }
 
     return callback(transaction, envelopeHeader)
+  }
+
+  private fun checkIfProfileMatches(
+    envelopeString: String,
+    callback: ((ProfileChunk, SentryEnvelopeHeader) -> Boolean),
+  ): Boolean {
+    val deserializeEnvelope = jsonSerializer.deserializeEnvelope(envelopeString.byteInputStream())
+    if (deserializeEnvelope == null) {
+      return false
+    }
+
+    val envelopeHeader = deserializeEnvelope.header
+
+    val profileChunkItem =
+      deserializeEnvelope.items.firstOrNull { it.header.type == SentryItemType.ProfileChunk }
+
+    if (profileChunkItem == null) {
+      return false
+    }
+
+    val chunk =
+      BufferedReader(InputStreamReader(ByteArrayInputStream(profileChunkItem.data), Charsets.UTF_8))
+        .use { eventReader -> jsonSerializer.deserialize(eventReader, ProfileChunk::class.java) }
+
+    if (chunk == null) {
+      return false
+    }
+
+    return callback(chunk, envelopeHeader)
   }
 
   fun ensureErrorReceived(callback: ((SentryEvent) -> Boolean)) {

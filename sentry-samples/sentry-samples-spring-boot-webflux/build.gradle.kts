@@ -27,6 +27,7 @@ dependencies {
   implementation(projects.sentrySpringBootStarter)
   implementation(projects.sentryLogback)
   implementation(projects.sentryGraphql)
+  implementation(projects.sentryAsyncProfiler)
 
   testImplementation(kotlin(Config.kotlinStdLib))
   testImplementation(projects.sentrySystemTestSupport)
