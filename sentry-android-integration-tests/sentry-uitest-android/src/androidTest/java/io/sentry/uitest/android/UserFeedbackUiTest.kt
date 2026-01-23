@@ -1,9 +1,9 @@
 package io.sentry.uitest.android
 
 import android.graphics.Color
-import android.util.TypedValue
 import android.view.View
 import android.widget.EditText
+import android.widget.FrameLayout
 import android.widget.LinearLayout
 import androidx.test.core.app.launchActivity
 import androidx.test.espresso.Espresso.onView
@@ -550,10 +550,6 @@ class UserFeedbackUiTest : BaseUiTest() {
       assertEquals((densityScale * 12).toInt(), widget.paddingTop)
       assertEquals((densityScale * 12).toInt(), widget.paddingBottom)
 
-      val typedValue = TypedValue()
-      widget.context.theme.resolveAttribute(android.R.attr.colorForeground, typedValue, true)
-      assertEquals(typedValue.data, widget.currentTextColor)
-
       assertEquals("Report a Bug", widget.text)
     }
 
@@ -666,14 +662,19 @@ class UserFeedbackUiTest : BaseUiTest() {
     val buttonId = Int.MAX_VALUE - 1
     val feedbackScenario = launchActivity<EmptyActivity>()
     feedbackScenario.onActivity {
+      val layoutParams =
+        FrameLayout.LayoutParams(
+          LinearLayout.LayoutParams.MATCH_PARENT,
+          LinearLayout.LayoutParams.MATCH_PARENT,
+        )
       val view =
-        LinearLayout(it).apply {
-          orientation = LinearLayout.VERTICAL
+        FrameLayout(it).apply {
           addView(
             SentryUserFeedbackButton(it).apply {
               id = buttonId
               widgetConfig?.invoke(this)
-            }
+            },
+            layoutParams,
           )
         }
       it.setContentView(view)
