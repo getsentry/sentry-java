@@ -9,8 +9,8 @@ import io.sentry.ISentryLifecycleToken;
 import io.sentry.ITransaction;
 import io.sentry.Integration;
 import io.sentry.SentryDate;
-import io.sentry.SentryInstantDate;
 import io.sentry.SentryLevel;
+import io.sentry.SentryNanotimeDate;
 import io.sentry.SentryOptions;
 import io.sentry.SpanStatus;
 import io.sentry.TransactionContext;
@@ -22,7 +22,7 @@ import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.IntegrationUtils;
 import java.io.Closeable;
 import java.io.IOException;
-import java.time.Instant;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -83,7 +83,7 @@ public final class ApplicationStartInfoIntegration implements Integration, Close
               () -> {
                 try (final ISentryLifecycleToken ignored = startLock.acquire()) {
                   if (!isClosed) {
-                    startTracking(scopes, options);
+                    trackAppStart(scopes, options);
                   }
                 }
               });
@@ -97,7 +97,7 @@ public final class ApplicationStartInfoIntegration implements Integration, Close
   }
 
   @RequiresApi(api = 35)
-  private void startTracking(
+  private void trackAppStart(
       final @NotNull IScopes scopes, final @NotNull SentryAndroidOptions options) {
     final ActivityManager activityManager =
         (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
@@ -107,7 +107,6 @@ public final class ApplicationStartInfoIntegration implements Integration, Close
       return;
     }
 
-    // Register listener for current app start completion
     try {
       // Wrap ISentryExecutorService as Executor for Android API
       final java.util.concurrent.Executor executor = options.getExecutorService()::submit;
@@ -116,7 +115,7 @@ public final class ApplicationStartInfoIntegration implements Integration, Close
           executor,
           startInfo -> {
             try {
-              reportStartInfo(startInfo, scopes, options);
+              onApplicationStartInfoAvailable(startInfo, scopes, options);
             } catch (Throwable e) {
               options
                   .getLogger()
@@ -135,16 +134,7 @@ public final class ApplicationStartInfoIntegration implements Integration, Close
   }
 
   @RequiresApi(api = 35)
-  private void reportStartInfo(
-      final @NotNull android.app.ApplicationStartInfo startInfo,
-      final @NotNull IScopes scopes,
-      final @NotNull SentryAndroidOptions options) {
-    // Create transaction
-    createTransaction(startInfo, scopes, options);
-  }
-
-  @RequiresApi(api = 35)
-  private void createTransaction(
+  private void onApplicationStartInfoAvailable(
       final @NotNull android.app.ApplicationStartInfo startInfo,
       final @NotNull IScopes scopes,
       final @NotNull SentryAndroidOptions options) {
@@ -155,8 +145,7 @@ public final class ApplicationStartInfoIntegration implements Integration, Close
     final String transactionName = "app.start." + getReasonLabel(startInfo.getReason());
 
     // Create timestamp
-    final SentryDate startTimestamp =
-        new SentryInstantDate(Instant.ofEpochMilli(getStartTimestamp(startInfo)));
+    final SentryDate startTimestamp = dateFromMillis(getStartTimestamp(startInfo));
 
     // Calculate duration (use first frame or fully drawn as end)
     long endTimestamp =
@@ -165,9 +154,7 @@ public final class ApplicationStartInfoIntegration implements Integration, Close
             : getFullyDrawnTimestamp(startInfo);
 
     final SentryDate endDate =
-        endTimestamp > 0
-            ? new SentryInstantDate(Instant.ofEpochMilli(endTimestamp))
-            : options.getDateProvider().now();
+        endTimestamp > 0 ? dateFromMillis(endTimestamp) : options.getDateProvider().now();
 
     // Create transaction
     final TransactionContext transactionContext =
@@ -185,14 +172,14 @@ public final class ApplicationStartInfoIntegration implements Integration, Close
     }
 
     // Create child spans for startup milestones (all start from app launch timestamp)
-    createStartupSpans(transaction, startInfo, startTimestamp);
+    attachAppStartMetricData(transaction, startInfo, startTimestamp);
 
     // Finish transaction
     transaction.finish(SpanStatus.OK, endDate);
   }
 
   @RequiresApi(api = 35)
-  private void createStartupSpans(
+  private void attachAppStartMetricData(
       final @NotNull ITransaction transaction,
       final @NotNull android.app.ApplicationStartInfo startInfo,
       final @NotNull SentryDate startTimestamp) {
@@ -203,9 +190,7 @@ public final class ApplicationStartInfoIntegration implements Integration, Close
       final io.sentry.ISpan bindSpan =
           transaction.startChild(
               "app.start.bind_application", null, startTimestamp, io.sentry.Instrumenter.SENTRY);
-      bindSpan.finish(
-          SpanStatus.OK,
-          new SentryInstantDate(Instant.ofEpochMilli(getBindApplicationTimestamp(startInfo))));
+      bindSpan.finish(SpanStatus.OK, dateFromMillis(getBindApplicationTimestamp(startInfo)));
     }
 
     // Add content provider onCreate spans from AppStartMetrics
@@ -214,10 +199,8 @@ public final class ApplicationStartInfoIntegration implements Integration, Close
         appStartMetrics.getContentProviderOnCreateTimeSpans();
     for (final TimeSpan cpSpan : contentProviderSpans) {
       if (cpSpan.hasStarted() && cpSpan.hasStopped()) {
-        final SentryDate cpStartDate =
-            new SentryInstantDate(Instant.ofEpochMilli(cpSpan.getStartTimestampMs()));
-        final SentryDate cpEndDate =
-            new SentryInstantDate(Instant.ofEpochMilli(cpSpan.getProjectedStopTimestampMs()));
+        final SentryDate cpStartDate = dateFromMillis(cpSpan.getStartTimestampMs());
+        final SentryDate cpEndDate = dateFromMillis(cpSpan.getProjectedStopTimestampMs());
 
         final io.sentry.ISpan contentProviderSpan =
             transaction.startChild(
@@ -244,15 +227,12 @@ public final class ApplicationStartInfoIntegration implements Integration, Close
               startTimestamp,
               io.sentry.Instrumenter.SENTRY);
       onCreateSpan.finish(
-          SpanStatus.OK,
-          new SentryInstantDate(Instant.ofEpochMilli(getApplicationOnCreateTimestamp(startInfo))));
+          SpanStatus.OK, dateFromMillis(getApplicationOnCreateTimestamp(startInfo)));
     } else if (appOnCreateSpan.hasStarted() && appOnCreateSpan.hasStopped()) {
       // Fallback to AppStartMetrics timing
-      final SentryDate appOnCreateStart =
-          new SentryInstantDate(Instant.ofEpochMilli(appOnCreateSpan.getStartTimestampMs()));
+      final SentryDate appOnCreateStart = dateFromMillis(appOnCreateSpan.getStartTimestampMs());
       final SentryDate appOnCreateEnd =
-          new SentryInstantDate(
-              Instant.ofEpochMilli(appOnCreateSpan.getProjectedStopTimestampMs()));
+          dateFromMillis(appOnCreateSpan.getProjectedStopTimestampMs());
 
       final io.sentry.ISpan onCreateSpan =
           transaction.startChild(
@@ -268,9 +248,7 @@ public final class ApplicationStartInfoIntegration implements Integration, Close
       final io.sentry.ISpan ttidSpan =
           transaction.startChild(
               "app.start.ttid", null, startTimestamp, io.sentry.Instrumenter.SENTRY);
-      ttidSpan.finish(
-          SpanStatus.OK,
-          new SentryInstantDate(Instant.ofEpochMilli(getFirstFrameTimestamp(startInfo))));
+      ttidSpan.finish(SpanStatus.OK, dateFromMillis(getFirstFrameTimestamp(startInfo)));
     }
 
     // Span 4: app.start.ttfd (from fork to fully drawn - time to full display)
@@ -278,9 +256,7 @@ public final class ApplicationStartInfoIntegration implements Integration, Close
       final io.sentry.ISpan ttfdSpan =
           transaction.startChild(
               "app.start.ttfd", null, startTimestamp, io.sentry.Instrumenter.SENTRY);
-      ttfdSpan.finish(
-          SpanStatus.OK,
-          new SentryInstantDate(Instant.ofEpochMilli(getFullyDrawnTimestamp(startInfo))));
+      ttfdSpan.finish(SpanStatus.OK, dateFromMillis(getFullyDrawnTimestamp(startInfo)));
     }
   }
 
@@ -419,5 +395,13 @@ public final class ApplicationStartInfoIntegration implements Integration, Close
     try (final ISentryLifecycleToken ignored = startLock.acquire()) {
       isClosed = true;
     }
+  }
+
+  /**
+   * Creates a SentryDate from milliseconds timestamp. Uses SentryNanotimeDate for compatibility
+   * with older Android versions.
+   */
+  private static @NotNull SentryDate dateFromMillis(final long millis) {
+    return new SentryNanotimeDate(new Date(millis), 0);
   }
 }
