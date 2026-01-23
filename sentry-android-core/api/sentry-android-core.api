@@ -215,6 +215,19 @@ public final class io/sentry/android/core/ApplicationExitInfoEventProcessor : io
 	public fun process (Lio/sentry/protocol/SentryTransaction;Lio/sentry/Hint;)Lio/sentry/protocol/SentryTransaction;
 }
 
+public final class io/sentry/android/core/ApplicationStartInfoIntegration : io/sentry/Integration, java/io/Closeable {
+	public fun <init> (Landroid/content/Context;)V
+	public fun close ()V
+	public final fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
+}
+
+public final class io/sentry/android/core/ApplicationStartInfoIntegration$ApplicationStartInfoHint : io/sentry/hints/BlockingFlushHint, io/sentry/hints/Backfillable {
+	public fun isFlushable (Lio/sentry/protocol/SentryId;)Z
+	public fun setFlushable (Lio/sentry/protocol/SentryId;)V
+	public fun shouldEnrich ()Z
+	public fun timestamp ()Ljava/lang/Long;
+}
+
 public final class io/sentry/android/core/BuildConfig {
 	public static final field BUILD_TYPE Ljava/lang/String;
 	public static final field DEBUG Z
@@ -353,6 +366,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun isEnableActivityLifecycleTracingAutoFinish ()Z
 	public fun isEnableAppComponentBreadcrumbs ()Z
 	public fun isEnableAppLifecycleBreadcrumbs ()Z
+	public fun isEnableApplicationStartInfo ()Z
 	public fun isEnableAutoActivityLifecycleTracing ()Z
 	public fun isEnableAutoTraceIdGeneration ()Z
 	public fun isEnableFramesTracking ()Z
@@ -381,6 +395,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun setEnableActivityLifecycleTracingAutoFinish (Z)V
 	public fun setEnableAppComponentBreadcrumbs (Z)V
 	public fun setEnableAppLifecycleBreadcrumbs (Z)V
+	public fun setEnableApplicationStartInfo (Z)V
 	public fun setEnableAutoActivityLifecycleTracing (Z)V
 	public fun setEnableAutoTraceIdGeneration (Z)V
 	public fun setEnableFramesTracking (Z)V
@@ -536,12 +551,15 @@ public final class io/sentry/android/core/ViewHierarchyEventProcessor : io/sentr
 public final class io/sentry/android/core/cache/AndroidEnvelopeCache : io/sentry/cache/EnvelopeCache {
 	public static final field LAST_ANR_MARKER_LABEL Ljava/lang/String;
 	public static final field LAST_ANR_REPORT Ljava/lang/String;
+	public static final field LAST_APP_START_INFO_MARKER_LABEL Ljava/lang/String;
+	public static final field LAST_APP_START_INFO_REPORT Ljava/lang/String;
 	public static final field LAST_TOMBSTONE_MARKER_LABEL Ljava/lang/String;
 	public static final field LAST_TOMBSTONE_REPORT Ljava/lang/String;
 	public fun <init> (Lio/sentry/android/core/SentryAndroidOptions;)V
 	public fun getDirectory ()Ljava/io/File;
 	public static fun hasStartupCrashMarker (Lio/sentry/SentryOptions;)Z
 	public static fun lastReportedAnr (Lio/sentry/SentryOptions;)Ljava/lang/Long;
+	public static fun lastReportedApplicationStartInfo (Lio/sentry/SentryOptions;)Ljava/lang/Long;
 	public static fun lastReportedTombstone (Lio/sentry/SentryOptions;)Ljava/lang/Long;
 	public fun store (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)V
 	public fun storeEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Z
