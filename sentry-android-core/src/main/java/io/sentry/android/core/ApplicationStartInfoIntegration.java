@@ -230,35 +230,37 @@ public final class ApplicationStartInfoIntegration implements Integration, Close
     }
 
     // Span 2: app.start.application_oncreate (from fork to Application.onCreate)
-    // Use ApplicationStartInfo timestamp if available, otherwise fall back to AppStartMetrics
+    // Use ApplicationStartInfo timestamp if available, enriched with AppStartMetrics description
+    final TimeSpan appOnCreateSpan = appStartMetrics.getApplicationOnCreateTimeSpan();
+    final String appOnCreateDescription =
+        appOnCreateSpan.hasStarted() ? appOnCreateSpan.getDescription() : null;
+
     if (getApplicationOnCreateTimestamp(startInfo) > 0) {
+      // Use precise timestamp from ApplicationStartInfo
       final io.sentry.ISpan onCreateSpan =
           transaction.startChild(
               "app.start.application_oncreate",
-              null,
+              appOnCreateDescription,
               startTimestamp,
               io.sentry.Instrumenter.SENTRY);
       onCreateSpan.finish(
           SpanStatus.OK,
           new SentryInstantDate(Instant.ofEpochMilli(getApplicationOnCreateTimestamp(startInfo))));
-    } else {
+    } else if (appOnCreateSpan.hasStarted() && appOnCreateSpan.hasStopped()) {
       // Fallback to AppStartMetrics timing
-      final TimeSpan appOnCreateSpan = appStartMetrics.getApplicationOnCreateTimeSpan();
-      if (appOnCreateSpan.hasStarted() && appOnCreateSpan.hasStopped()) {
-        final SentryDate appOnCreateStart =
-            new SentryInstantDate(Instant.ofEpochMilli(appOnCreateSpan.getStartTimestampMs()));
-        final SentryDate appOnCreateEnd =
-            new SentryInstantDate(
-                Instant.ofEpochMilli(appOnCreateSpan.getProjectedStopTimestampMs()));
+      final SentryDate appOnCreateStart =
+          new SentryInstantDate(Instant.ofEpochMilli(appOnCreateSpan.getStartTimestampMs()));
+      final SentryDate appOnCreateEnd =
+          new SentryInstantDate(
+              Instant.ofEpochMilli(appOnCreateSpan.getProjectedStopTimestampMs()));
 
-        final io.sentry.ISpan onCreateSpan =
-            transaction.startChild(
-                "app.start.application_oncreate",
-                appOnCreateSpan.getDescription(),
-                appOnCreateStart,
-                io.sentry.Instrumenter.SENTRY);
-        onCreateSpan.finish(SpanStatus.OK, appOnCreateEnd);
-      }
+      final io.sentry.ISpan onCreateSpan =
+          transaction.startChild(
+              "app.start.application_oncreate",
+              appOnCreateDescription,
+              appOnCreateStart,
+              io.sentry.Instrumenter.SENTRY);
+      onCreateSpan.finish(SpanStatus.OK, appOnCreateEnd);
     }
 
     // Span 3: app.start.ttid (from fork to first frame - time to initial display)
