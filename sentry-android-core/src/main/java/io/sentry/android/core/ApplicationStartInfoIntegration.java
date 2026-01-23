@@ -4,7 +4,6 @@ import android.app.ActivityManager;
 import android.content.Context;
 import android.os.Build;
 import androidx.annotation.RequiresApi;
-import io.sentry.Hint;
 import io.sentry.IScopes;
 import io.sentry.ISentryLifecycleToken;
 import io.sentry.ITransaction;
@@ -16,15 +15,10 @@ import io.sentry.SentryOptions;
 import io.sentry.SpanStatus;
 import io.sentry.TransactionContext;
 import io.sentry.TransactionOptions;
-import io.sentry.android.core.cache.AndroidEnvelopeCache;
 import io.sentry.android.core.performance.AppStartMetrics;
 import io.sentry.android.core.performance.TimeSpan;
-import io.sentry.hints.Backfillable;
-import io.sentry.hints.BlockingFlushHint;
-import io.sentry.protocol.SentryId;
 import io.sentry.protocol.TransactionNameSource;
 import io.sentry.util.AutoClosableReentrantLock;
-import io.sentry.util.HintUtils;
 import io.sentry.util.IntegrationUtils;
 import java.io.Closeable;
 import java.io.IOException;
@@ -39,8 +33,6 @@ import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
 public final class ApplicationStartInfoIntegration implements Integration, Closeable {
-
-  static final long NINETY_DAYS_THRESHOLD = TimeUnit.DAYS.toMillis(91);
 
   private final @NotNull Context context;
   private final @NotNull AutoClosableReentrantLock startLock = new AutoClosableReentrantLock();
@@ -115,60 +107,30 @@ public final class ApplicationStartInfoIntegration implements Integration, Close
       return;
     }
 
-    // Collect historical start info
-    // TODO: Add completion listener support when API becomes available
-    collectHistoricalStartInfo(activityManager, scopes, options);
-  }
-
-  @RequiresApi(api = 35)
-  private void collectHistoricalStartInfo(
-      final @NotNull ActivityManager activityManager,
-      final @NotNull IScopes scopes,
-      final @NotNull SentryAndroidOptions options) {
+    // Register listener for current app start completion
     try {
-      final List<android.app.ApplicationStartInfo> startInfoList =
-          activityManager.getHistoricalProcessStartReasons(5);
+      // Wrap ISentryExecutorService as Executor for Android API
+      final java.util.concurrent.Executor executor = options.getExecutorService()::submit;
 
-      if (startInfoList == null || startInfoList.isEmpty()) {
-        options
-            .getLogger()
-            .log(SentryLevel.DEBUG, "No historical ApplicationStartInfo records found.");
-        return;
-      }
+      activityManager.addApplicationStartInfoCompletionListener(
+          executor,
+          startInfo -> {
+            try {
+              reportStartInfo(startInfo, scopes, options);
+            } catch (Throwable e) {
+              options
+                  .getLogger()
+                  .log(SentryLevel.ERROR, "Error reporting ApplicationStartInfo.", e);
+            }
+          });
 
-      final long threshold =
-          options.getDateProvider().now().nanoTimestamp() / 1000000 - NINETY_DAYS_THRESHOLD;
-      final @Nullable Long lastReportedTimestamp =
-          AndroidEnvelopeCache.lastReportedApplicationStartInfo(options);
-
-      for (android.app.ApplicationStartInfo startInfo : startInfoList) {
-        if (getStartTimestamp(startInfo) < threshold) {
-          options
-              .getLogger()
-              .log(
-                  SentryLevel.DEBUG,
-                  "ApplicationStartInfo happened too long ago, skipping: %s",
-                  startInfo);
-          continue;
-        }
-
-        if (lastReportedTimestamp != null
-            && getStartTimestamp(startInfo) <= lastReportedTimestamp) {
-          options
-              .getLogger()
-              .log(
-                  SentryLevel.DEBUG,
-                  "ApplicationStartInfo has already been reported, skipping: %s",
-                  startInfo);
-          continue;
-        }
-
-        reportStartInfo(startInfo, scopes, options, false);
-      }
+      options
+          .getLogger()
+          .log(SentryLevel.DEBUG, "ApplicationStartInfo completion listener registered.");
     } catch (Throwable e) {
       options
           .getLogger()
-          .log(SentryLevel.ERROR, "Error collecting historical ApplicationStartInfo.", e);
+          .log(SentryLevel.ERROR, "Failed to register ApplicationStartInfo listener.", e);
     }
   }
 
@@ -176,23 +138,17 @@ public final class ApplicationStartInfoIntegration implements Integration, Close
   private void reportStartInfo(
       final @NotNull android.app.ApplicationStartInfo startInfo,
       final @NotNull IScopes scopes,
-      final @NotNull SentryAndroidOptions options,
-      final boolean isCurrentLaunch) {
-    try {
-      // Create transaction
-      createTransaction(startInfo, scopes, options, isCurrentLaunch);
-    } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.ERROR, "Error reporting ApplicationStartInfo.", e);
-    }
+      final @NotNull SentryAndroidOptions options) {
+    // Create transaction
+    createTransaction(startInfo, scopes, options);
   }
 
   @RequiresApi(api = 35)
   private void createTransaction(
       final @NotNull android.app.ApplicationStartInfo startInfo,
       final @NotNull IScopes scopes,
-      final @NotNull SentryAndroidOptions options,
-      final boolean isCurrentLaunch) {
-    // Extract attributes
+      final @NotNull SentryAndroidOptions options) {
+    // Extract tags
     final Map<String, String> tags = extractTags(startInfo);
 
     // Create transaction name based on reason
@@ -212,16 +168,6 @@ public final class ApplicationStartInfoIntegration implements Integration, Close
         endTimestamp > 0
             ? new SentryInstantDate(Instant.ofEpochMilli(endTimestamp))
             : options.getDateProvider().now();
-
-    // Create hint for marker tracking
-    final ApplicationStartInfoHint startInfoHint =
-        new ApplicationStartInfoHint(
-            options.getFlushTimeoutMillis(),
-            options.getLogger(),
-            getStartTimestamp(startInfo),
-            isCurrentLaunch);
-
-    final Hint hint = HintUtils.createWithTypeCheckHint(startInfoHint);
 
     // Create transaction
     final TransactionContext transactionContext =
@@ -243,17 +189,6 @@ public final class ApplicationStartInfoIntegration implements Integration, Close
 
     // Finish transaction
     transaction.finish(SpanStatus.OK, endDate);
-
-    // Capture hint to write marker
-    final @NotNull SentryId sentryId = scopes.captureEvent(null, hint);
-    final boolean isEventDropped = sentryId.equals(SentryId.EMPTY_ID);
-    if (!isEventDropped && !startInfoHint.waitFlush()) {
-      options
-          .getLogger()
-          .log(
-              SentryLevel.WARNING,
-              "Timed out waiting to flush ApplicationStartInfo marker to disk.");
-    }
   }
 
   @RequiresApi(api = 35)
@@ -452,41 +387,5 @@ public final class ApplicationStartInfoIntegration implements Integration, Close
     try (final ISentryLifecycleToken ignored = startLock.acquire()) {
       isClosed = true;
     }
-  }
-
-  @ApiStatus.Internal
-  public static final class ApplicationStartInfoHint extends BlockingFlushHint
-      implements Backfillable {
-
-    private final long timestamp;
-    private final boolean isCurrentLaunch;
-
-    ApplicationStartInfoHint(
-        final long timeoutMillis,
-        final @NotNull io.sentry.ILogger logger,
-        final long timestamp,
-        final boolean isCurrentLaunch) {
-      super(timeoutMillis, logger);
-      this.timestamp = timestamp;
-      this.isCurrentLaunch = isCurrentLaunch;
-    }
-
-    @Override
-    public boolean shouldEnrich() {
-      return isCurrentLaunch;
-    }
-
-    @NotNull
-    public Long timestamp() {
-      return timestamp;
-    }
-
-    @Override
-    public boolean isFlushable(@Nullable SentryId eventId) {
-      return true;
-    }
-
-    @Override
-    public void setFlushable(@NotNull SentryId eventId) {}
   }
 }

@@ -9,7 +9,6 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.UncaughtExceptionHandlerIntegration;
 import io.sentry.android.core.AnrV2Integration;
-import io.sentry.android.core.ApplicationStartInfoIntegration;
 import io.sentry.android.core.SentryAndroidOptions;
 import io.sentry.android.core.TombstoneIntegration;
 import io.sentry.android.core.internal.util.AndroidCurrentDateProvider;
@@ -36,7 +35,6 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
 
   public static final String LAST_ANR_REPORT = "last_anr_report";
   public static final String LAST_TOMBSTONE_REPORT = "last_tombstone_report";
-  public static final String LAST_APP_START_INFO_REPORT = "last_app_start_info_report";
 
   private final @NotNull ICurrentDateProvider currentDateProvider;
 
@@ -211,12 +209,6 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
     return lastReportedMarker(options, LAST_TOMBSTONE_REPORT, LAST_TOMBSTONE_MARKER_LABEL);
   }
 
-  public static @Nullable Long lastReportedApplicationStartInfo(
-      final @NotNull SentryOptions options) {
-    return lastReportedMarker(
-        options, LAST_APP_START_INFO_REPORT, LAST_APP_START_INFO_MARKER_LABEL);
-  }
-
   private static final class TimestampMarkerHandler<T> {
     interface TimestampExtractor<T> {
       @NotNull
@@ -262,7 +254,6 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
 
   public static final String LAST_TOMBSTONE_MARKER_LABEL = "Tombstone";
   public static final String LAST_ANR_MARKER_LABEL = "ANR";
-  public static final String LAST_APP_START_INFO_MARKER_LABEL = "ApplicationStartInfo";
   private static final List<TimestampMarkerHandler<?>> TIMESTAMP_MARKER_HANDLERS =
       Arrays.asList(
           new TimestampMarkerHandler<>(
@@ -274,10 +265,5 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
               TombstoneIntegration.TombstoneHint.class,
               LAST_TOMBSTONE_MARKER_LABEL,
               LAST_TOMBSTONE_REPORT,
-              tombstoneHint -> tombstoneHint.timestamp()),
-          new TimestampMarkerHandler<>(
-              ApplicationStartInfoIntegration.ApplicationStartInfoHint.class,
-              LAST_APP_START_INFO_MARKER_LABEL,
-              LAST_APP_START_INFO_REPORT,
-              applicationStartInfoHint -> applicationStartInfoHint.timestamp()));
+              tombstoneHint -> tombstoneHint.timestamp()));
 }

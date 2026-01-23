@@ -221,13 +221,6 @@ public final class io/sentry/android/core/ApplicationStartInfoIntegration : io/s
 	public final fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
 }
 
-public final class io/sentry/android/core/ApplicationStartInfoIntegration$ApplicationStartInfoHint : io/sentry/hints/BlockingFlushHint, io/sentry/hints/Backfillable {
-	public fun isFlushable (Lio/sentry/protocol/SentryId;)Z
-	public fun setFlushable (Lio/sentry/protocol/SentryId;)V
-	public fun shouldEnrich ()Z
-	public fun timestamp ()Ljava/lang/Long;
-}
-
 public final class io/sentry/android/core/BuildConfig {
 	public static final field BUILD_TYPE Ljava/lang/String;
 	public static final field DEBUG Z
@@ -551,15 +544,12 @@ public final class io/sentry/android/core/ViewHierarchyEventProcessor : io/sentr
 public final class io/sentry/android/core/cache/AndroidEnvelopeCache : io/sentry/cache/EnvelopeCache {
 	public static final field LAST_ANR_MARKER_LABEL Ljava/lang/String;
 	public static final field LAST_ANR_REPORT Ljava/lang/String;
-	public static final field LAST_APP_START_INFO_MARKER_LABEL Ljava/lang/String;
-	public static final field LAST_APP_START_INFO_REPORT Ljava/lang/String;
 	public static final field LAST_TOMBSTONE_MARKER_LABEL Ljava/lang/String;
 	public static final field LAST_TOMBSTONE_REPORT Ljava/lang/String;
 	public fun <init> (Lio/sentry/android/core/SentryAndroidOptions;)V
 	public fun getDirectory ()Ljava/io/File;
 	public static fun hasStartupCrashMarker (Lio/sentry/SentryOptions;)Z
 	public static fun lastReportedAnr (Lio/sentry/SentryOptions;)Ljava/lang/Long;
-	public static fun lastReportedApplicationStartInfo (Lio/sentry/SentryOptions;)Ljava/lang/Long;
 	public static fun lastReportedTombstone (Lio/sentry/SentryOptions;)Ljava/lang/Long;
 	public fun store (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)V
 	public fun storeEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Z
