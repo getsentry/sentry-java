@@ -54,6 +54,9 @@ abstract class ApplicationExitIntegrationTestBase<THint : Any> {
   @BeforeTest
   fun `set up`() {
     val context = ApplicationProvider.getApplicationContext<Context>()
+    // the integration test app has no native library and as such we have to inject one here
+    context.applicationInfo.nativeLibraryDir =
+      "/data/app/~~YtXYvdWm5vDHUWYCmVLG_Q==/io.sentry.samples.android-Q2_nG8SyOi4X_6hGGDGE2Q==/lib/arm64"
     fixture.init(context)
   }
 

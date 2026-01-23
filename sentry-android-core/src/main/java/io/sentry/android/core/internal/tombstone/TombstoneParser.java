@@ -21,18 +21,30 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import org.jetbrains.annotations.NotNull;
 
 public class TombstoneParser implements Closeable {
 
   private final InputStream tombstoneStream;
+  @NotNull private final List<String> inAppIncludes;
+  @NotNull private final List<String> inAppExcludes;
+  // TODO: in theory can be null, but practically not for native crashes
+  private final String nativeLibraryDir;
   private final Map<String, String> excTypeValueMap = new HashMap<>();
 
   private static String formatHex(long value) {
     return String.format("0x%x", value);
   }
 
-  public TombstoneParser(@NonNull final InputStream tombstoneStream) {
+  public TombstoneParser(
+      @NonNull final InputStream tombstoneStream,
+      @NotNull List<String> inAppIncludes,
+      @NotNull List<String> inAppExcludes,
+      String nativeLibraryDir) {
     this.tombstoneStream = tombstoneStream;
+    this.inAppIncludes = inAppIncludes;
+    this.inAppExcludes = inAppExcludes;
+    this.nativeLibraryDir = nativeLibraryDir;
 
     // keep the current signal type -> value mapping for compatibility
     excTypeValueMap.put("SIGILL", "IllegalInstruction");
@@ -91,14 +103,38 @@ public class TombstoneParser implements Closeable {
   }
 
   @NonNull
-  private static SentryStackTrace createStackTrace(@NonNull final TombstoneProtos.Thread thread) {
+  private SentryStackTrace createStackTrace(@NonNull final TombstoneProtos.Thread thread) {
     final List<SentryStackFrame> frames = new ArrayList<>();
 
     for (TombstoneProtos.BacktraceFrame frame : thread.getCurrentBacktraceList()) {
+      if (frame.getFileName().endsWith("libart.so")) {
+        // We ignore all ART frames for time being because they aren't actionable for app developers
+        continue;
+      }
       final SentryStackFrame stackFrame = new SentryStackFrame();
       stackFrame.setPackage(frame.getFileName());
       stackFrame.setFunction(frame.getFunctionName());
       stackFrame.setInstructionAddr(formatHex(frame.getPc()));
+
+      // TODO: is this the right order?
+      boolean inApp = false;
+      for (String inclusion : this.inAppIncludes) {
+        if (frame.getFunctionName().startsWith(inclusion)) {
+          inApp = true;
+          break;
+        }
+      }
+
+      for (String exclusion : this.inAppExcludes) {
+        if (frame.getFunctionName().startsWith(exclusion)) {
+          inApp = false;
+          break;
+        }
+      }
+
+      inApp = inApp || frame.getFileName().startsWith(this.nativeLibraryDir);
+
+      stackFrame.setInApp(inApp);
       frames.add(0, stackFrame);
     }
 

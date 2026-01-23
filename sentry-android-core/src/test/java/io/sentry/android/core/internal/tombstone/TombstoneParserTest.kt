@@ -46,11 +46,16 @@ class TombstoneParserTest {
       "x28",
     )
 
+  val inAppIncludes = arrayListOf("io.sentry.samples.android")
+  val inAppExcludes = arrayListOf<String>()
+  val nativeLibraryDir =
+    "/data/app/~~YtXYvdWm5vDHUWYCmVLG_Q==/io.sentry.samples.android-Q2_nG8SyOi4X_6hGGDGE2Q==/lib/arm64"
+
   @Test
   fun `parses a snapshot tombstone into Event`() {
     val tombstoneStream =
       GZIPInputStream(TombstoneParserTest::class.java.getResourceAsStream("/tombstone.pb.gz"))
-    val parser = TombstoneParser(tombstoneStream)
+    val parser = TombstoneParser(tombstoneStream, inAppIncludes, inAppExcludes, nativeLibraryDir)
     val event = parser.parse()
 
     // top-level data
@@ -93,6 +98,15 @@ class TombstoneParserTest {
         assertNotNull(frame.function)
         assertNotNull(frame.`package`)
         assertNotNull(frame.instructionAddr)
+
+        if (thread.id == crashedThreadId) {
+          if (frame.isInApp!!) {
+            assert(
+              frame.function!!.startsWith(inAppIncludes[0]) ||
+                frame.filename!!.startsWith(nativeLibraryDir)
+            )
+          }
+        }
       }
 
       assert(thread.stacktrace!!.registers!!.keys.containsAll(expectedRegisters))
@@ -160,7 +174,13 @@ class TombstoneParserTest {
         )
         .build()
 
-    val parser = TombstoneParser(ByteArrayInputStream(tombstone.toByteArray()))
+    val parser =
+      TombstoneParser(
+        ByteArrayInputStream(tombstone.toByteArray()),
+        inAppIncludes,
+        inAppExcludes,
+        nativeLibraryDir,
+      )
     val event = parser.parse()
 
     val images = event.debugMeta!!.images!!
