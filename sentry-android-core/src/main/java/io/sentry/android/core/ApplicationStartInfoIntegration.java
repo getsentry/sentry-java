@@ -35,13 +35,17 @@ import org.jetbrains.annotations.Nullable;
 public final class ApplicationStartInfoIntegration implements Integration, Closeable {
 
   private final @NotNull Context context;
+  private final @NotNull BuildInfoProvider buildInfoProvider;
   private final @NotNull AutoClosableReentrantLock startLock = new AutoClosableReentrantLock();
   private @Nullable SentryAndroidOptions options;
   private @Nullable IScopes scopes;
   private boolean isClosed = false;
 
-  public ApplicationStartInfoIntegration(final @NotNull Context context) {
+  public ApplicationStartInfoIntegration(
+      final @NotNull Context context, final @NotNull BuildInfoProvider buildInfoProvider) {
     this.context = ContextUtils.getApplicationContext(context);
+    this.buildInfoProvider =
+        java.util.Objects.requireNonNull(buildInfoProvider, "BuildInfoProvider is required");
   }
 
   @Override
@@ -65,14 +69,13 @@ public final class ApplicationStartInfoIntegration implements Integration, Close
       return;
     }
 
-    final BuildInfoProvider buildInfo = new BuildInfoProvider(options.getLogger());
-    if (buildInfo.getSdkInfoVersion() < 35) {
+    if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.VANILLA_ICE_CREAM) {
       options
           .getLogger()
           .log(
               SentryLevel.INFO,
               "ApplicationStartInfo requires API level 35+. Current: %d",
-              buildInfo.getSdkInfoVersion());
+              buildInfoProvider.getSdkInfoVersion());
       return;
     }
 
@@ -83,7 +86,7 @@ public final class ApplicationStartInfoIntegration implements Integration, Close
               () -> {
                 try (final ISentryLifecycleToken ignored = startLock.acquire()) {
                   if (!isClosed) {
-                    trackAppStart(scopes, options);
+                    registerAppStartListener(scopes, options);
                   }
                 }
               });
@@ -97,7 +100,7 @@ public final class ApplicationStartInfoIntegration implements Integration, Close
   }
 
   @RequiresApi(api = 35)
-  private void trackAppStart(
+  private void registerAppStartListener(
       final @NotNull IScopes scopes, final @NotNull SentryAndroidOptions options) {
     final ActivityManager activityManager =
         (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);

@@ -216,7 +216,7 @@ public final class io/sentry/android/core/ApplicationExitInfoEventProcessor : io
 }
 
 public final class io/sentry/android/core/ApplicationStartInfoIntegration : io/sentry/Integration, java/io/Closeable {
-	public fun <init> (Landroid/content/Context;)V
+	public fun <init> (Landroid/content/Context;Lio/sentry/android/core/BuildInfoProvider;)V
 	public fun close ()V
 	public final fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
 }

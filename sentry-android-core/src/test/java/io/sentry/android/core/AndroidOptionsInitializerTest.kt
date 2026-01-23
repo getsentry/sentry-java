@@ -936,4 +936,12 @@ class AndroidOptionsInitializerTest {
     fixture.initSut()
     assertIs<AndroidRuntimeManager>(fixture.sentryOptions.runtimeManager)
   }
+
+  @Test
+  fun `ApplicationStartInfoIntegration is added to integration list`() {
+    fixture.initSut()
+    val actual =
+      fixture.sentryOptions.integrations.firstOrNull { it is ApplicationStartInfoIntegration }
+    assertNotNull(actual)
+  }
 }

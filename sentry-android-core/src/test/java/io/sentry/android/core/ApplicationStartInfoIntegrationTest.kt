@@ -35,6 +35,7 @@ class ApplicationStartInfoIntegrationTest {
   private lateinit var scopes: IScopes
   private lateinit var activityManager: ActivityManager
   private lateinit var executor: ISentryExecutorService
+  private lateinit var buildInfoProvider: BuildInfoProvider
 
   @Before
   fun setup() {
@@ -43,12 +44,16 @@ class ApplicationStartInfoIntegrationTest {
     scopes = mock()
     activityManager = mock()
     executor = mock()
+    buildInfoProvider = mock()
 
     // Setup default options
     options.isEnableApplicationStartInfo = true
     options.executorService = executor
     options.setLogger(mock<io.sentry.ILogger>())
     options.dateProvider = mock<io.sentry.SentryDateProvider>()
+
+    // Mock BuildInfoProvider to return API 35+
+    whenever(buildInfoProvider.sdkInfoVersion).thenReturn(Build.VERSION_CODES.VANILLA_ICE_CREAM)
 
     // Execute tasks immediately for testing
     whenever(executor.submit(any<Callable<*>>())).thenAnswer {
@@ -69,7 +74,7 @@ class ApplicationStartInfoIntegrationTest {
   @Test
   fun `integration does not register when disabled`() {
     options.isEnableApplicationStartInfo = false
-    val integration = ApplicationStartInfoIntegration(context)
+    val integration = ApplicationStartInfoIntegration(context, buildInfoProvider)
 
     integration.register(scopes, options)
 
@@ -78,7 +83,7 @@ class ApplicationStartInfoIntegrationTest {
 
   @Test
   fun `integration registers completion listener on API 35+`() {
-    val integration = ApplicationStartInfoIntegration(context)
+    val integration = ApplicationStartInfoIntegration(context, buildInfoProvider)
     integration.register(scopes, options)
 
     verify(activityManager).addApplicationStartInfoCompletionListener(any(), any())
@@ -87,7 +92,7 @@ class ApplicationStartInfoIntegrationTest {
   @Test
   fun `transaction includes correct tags from ApplicationStartInfo`() {
     val listenerCaptor = argumentCaptor<Consumer<android.app.ApplicationStartInfo>>()
-    val integration = ApplicationStartInfoIntegration(context)
+    val integration = ApplicationStartInfoIntegration(context, buildInfoProvider)
     integration.register(scopes, options)
 
     verify(activityManager)
@@ -106,7 +111,7 @@ class ApplicationStartInfoIntegrationTest {
   @Test
   fun `transaction includes start type from ApplicationStartInfo`() {
     val listenerCaptor = argumentCaptor<Consumer<android.app.ApplicationStartInfo>>()
-    val integration = ApplicationStartInfoIntegration(context)
+    val integration = ApplicationStartInfoIntegration(context, buildInfoProvider)
     integration.register(scopes, options)
 
     verify(activityManager)
@@ -129,7 +134,7 @@ class ApplicationStartInfoIntegrationTest {
   @Test
   fun `transaction includes launch mode from ApplicationStartInfo`() {
     val listenerCaptor = argumentCaptor<Consumer<android.app.ApplicationStartInfo>>()
-    val integration = ApplicationStartInfoIntegration(context)
+    val integration = ApplicationStartInfoIntegration(context, buildInfoProvider)
     integration.register(scopes, options)
 
     verify(activityManager)
@@ -153,7 +158,7 @@ class ApplicationStartInfoIntegrationTest {
   @Test
   fun `creates bind_application span when timestamp available`() {
     val listenerCaptor = argumentCaptor<Consumer<android.app.ApplicationStartInfo>>()
-    val integration = ApplicationStartInfoIntegration(context)
+    val integration = ApplicationStartInfoIntegration(context, buildInfoProvider)
     integration.register(scopes, options)
 
     verify(activityManager)
@@ -179,7 +184,7 @@ class ApplicationStartInfoIntegrationTest {
   @Test
   fun `creates application_oncreate span when timestamp available`() {
     val listenerCaptor = argumentCaptor<Consumer<android.app.ApplicationStartInfo>>()
-    val integration = ApplicationStartInfoIntegration(context)
+    val integration = ApplicationStartInfoIntegration(context, buildInfoProvider)
     integration.register(scopes, options)
 
     verify(activityManager)
@@ -206,7 +211,7 @@ class ApplicationStartInfoIntegrationTest {
   @Test
   fun `creates ttid span when timestamp available`() {
     val listenerCaptor = argumentCaptor<Consumer<android.app.ApplicationStartInfo>>()
-    val integration = ApplicationStartInfoIntegration(context)
+    val integration = ApplicationStartInfoIntegration(context, buildInfoProvider)
     integration.register(scopes, options)
 
     verify(activityManager)
@@ -230,7 +235,7 @@ class ApplicationStartInfoIntegrationTest {
   @Test
   fun `creates ttfd span when timestamp available`() {
     val listenerCaptor = argumentCaptor<Consumer<android.app.ApplicationStartInfo>>()
-    val integration = ApplicationStartInfoIntegration(context)
+    val integration = ApplicationStartInfoIntegration(context, buildInfoProvider)
     integration.register(scopes, options)
 
     verify(activityManager)
@@ -253,7 +258,7 @@ class ApplicationStartInfoIntegrationTest {
 
   @Test
   fun `closes integration without errors`() {
-    val integration = ApplicationStartInfoIntegration(context)
+    val integration = ApplicationStartInfoIntegration(context, buildInfoProvider)
     integration.register(scopes, options)
 
     integration.close()
@@ -263,7 +268,7 @@ class ApplicationStartInfoIntegrationTest {
   @Test
   fun `transaction name includes reason label`() {
     val listenerCaptor = argumentCaptor<Consumer<android.app.ApplicationStartInfo>>()
-    val integration = ApplicationStartInfoIntegration(context)
+    val integration = ApplicationStartInfoIntegration(context, buildInfoProvider)
     integration.register(scopes, options)
 
     verify(activityManager)

@@ -354,7 +354,7 @@ public final class SentryAndroidOptions extends SentryOptions {
    *
    * @param enableApplicationStartInfo true for enabled and false for disabled
    */
-  @ApiStatus.Internal
+  @ApiStatus.Experimental
   public void setEnableApplicationStartInfo(final boolean enableApplicationStartInfo) {
     this.enableApplicationStartInfo = enableApplicationStartInfo;
   }
@@ -364,7 +364,7 @@ public final class SentryAndroidOptions extends SentryOptions {
    *
    * @return true if enabled or false otherwise
    */
-  @ApiStatus.Internal
+  @ApiStatus.Experimental
   public boolean isEnableApplicationStartInfo() {
     return enableApplicationStartInfo;
   }
