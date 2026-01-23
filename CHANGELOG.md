@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+# Unreleased
+
+### Features
+
+- Update Android targetSdk to API 36 (Android 16) ([#5016](https://github.com/getsentry/sentry-java/pull/5016))
 
 ### Internal
 
