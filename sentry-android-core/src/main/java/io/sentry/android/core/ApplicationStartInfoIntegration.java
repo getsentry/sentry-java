@@ -290,22 +290,52 @@ public final class ApplicationStartInfoIntegration implements Integration, Close
     // Add reason
     tags.put("start.reason", getReasonLabel(startInfo.getReason()));
 
-    // Add AppStartMetrics information
-    final @NotNull AppStartMetrics appStartMetrics = AppStartMetrics.getInstance();
+    // Add startup type from ApplicationStartInfo
+    tags.put("start.type", getStartupTypeLabel(startInfo.getStartType()));
 
-    // Add app start type (cold, warm, unknown)
-    final AppStartMetrics.AppStartType appStartType = appStartMetrics.getAppStartType();
-    if (appStartType != AppStartMetrics.AppStartType.UNKNOWN) {
-      tags.put("start.type", appStartType.name().toLowerCase());
-    }
-
-    // Add foreground launch indicator
-    tags.put("start.foreground", String.valueOf(appStartMetrics.isAppLaunchedInForeground()));
+    // Add launch mode from ApplicationStartInfo
+    tags.put("start.launch_mode", getLaunchModeLabel(startInfo.getLaunchMode()));
 
     // Note: Additional properties like component type, importance, etc. may be added
     // when they become available in future Android API levels
 
     return tags;
+  }
+
+  private @NotNull String getStartupTypeLabel(final int startType) {
+    if (Build.VERSION.SDK_INT >= 35) {
+      switch (startType) {
+        case android.app.ApplicationStartInfo.START_TYPE_COLD:
+          return "cold";
+        case android.app.ApplicationStartInfo.START_TYPE_WARM:
+          return "warm";
+        case android.app.ApplicationStartInfo.START_TYPE_HOT:
+          return "hot";
+        default:
+          return "unknown";
+      }
+    }
+    return "unknown";
+  }
+
+  private @NotNull String getLaunchModeLabel(final int launchMode) {
+    if (Build.VERSION.SDK_INT >= 35) {
+      switch (launchMode) {
+        case android.app.ApplicationStartInfo.LAUNCH_MODE_STANDARD:
+          return "standard";
+        case android.app.ApplicationStartInfo.LAUNCH_MODE_SINGLE_TOP:
+          return "single_top";
+        case android.app.ApplicationStartInfo.LAUNCH_MODE_SINGLE_INSTANCE:
+          return "single_instance";
+        case android.app.ApplicationStartInfo.LAUNCH_MODE_SINGLE_TASK:
+          return "single_task";
+        case android.app.ApplicationStartInfo.LAUNCH_MODE_SINGLE_INSTANCE_PER_TASK:
+          return "single_instance_per_task";
+        default:
+          return "unknown";
+      }
+    }
+    return "unknown";
   }
 
   private @NotNull String getReasonLabel(final int reason) {

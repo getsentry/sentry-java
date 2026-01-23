@@ -9,7 +9,6 @@ import io.sentry.ISentryExecutorService
 import io.sentry.ISpan
 import io.sentry.ITransaction
 import io.sentry.TransactionContext
-import io.sentry.android.core.performance.AppStartMetrics
 import java.util.concurrent.Callable
 import java.util.function.Consumer
 import kotlin.test.Test
@@ -105,9 +104,7 @@ class ApplicationStartInfoIntegrationTest {
   }
 
   @Test
-  fun `transaction includes app start type from AppStartMetrics`() {
-    AppStartMetrics.getInstance().setAppStartType(AppStartMetrics.AppStartType.COLD)
-
+  fun `transaction includes start type from ApplicationStartInfo`() {
     val listenerCaptor = argumentCaptor<Consumer<android.app.ApplicationStartInfo>>()
     val integration = ApplicationStartInfoIntegration(context)
     integration.register(scopes, options)
@@ -120,13 +117,17 @@ class ApplicationStartInfoIntegrationTest {
       .thenReturn(mockTransaction)
 
     val startInfo = createMockApplicationStartInfo()
+    whenever(startInfo.startType)
+      .thenReturn(
+        if (Build.VERSION.SDK_INT >= 35) android.app.ApplicationStartInfo.START_TYPE_COLD else 0
+      )
     listenerCaptor.firstValue.accept(startInfo)
 
     verify(mockTransaction).setTag("start.type", "cold")
   }
 
   @Test
-  fun `transaction includes foreground launch indicator`() {
+  fun `transaction includes launch mode from ApplicationStartInfo`() {
     val listenerCaptor = argumentCaptor<Consumer<android.app.ApplicationStartInfo>>()
     val integration = ApplicationStartInfoIntegration(context)
     integration.register(scopes, options)
@@ -139,9 +140,14 @@ class ApplicationStartInfoIntegrationTest {
       .thenReturn(mockTransaction)
 
     val startInfo = createMockApplicationStartInfo()
+    whenever(startInfo.launchMode)
+      .thenReturn(
+        if (Build.VERSION.SDK_INT >= 35) android.app.ApplicationStartInfo.LAUNCH_MODE_STANDARD
+        else 0
+      )
     listenerCaptor.firstValue.accept(startInfo)
 
-    verify(mockTransaction).setTag(eq("start.foreground"), any())
+    verify(mockTransaction).setTag("start.launch_mode", "standard")
   }
 
   @Test
