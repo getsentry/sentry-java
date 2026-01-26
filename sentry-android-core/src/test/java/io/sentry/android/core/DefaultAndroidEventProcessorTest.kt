@@ -87,6 +87,7 @@ class DefaultAndroidEventProcessorTest {
     context = ApplicationProvider.getApplicationContext()
     AppState.getInstance().resetInstance()
     DeviceInfoUtil.resetInstance()
+    CpuInfoUtils.getInstance().clear()
   }
 
   @Test
