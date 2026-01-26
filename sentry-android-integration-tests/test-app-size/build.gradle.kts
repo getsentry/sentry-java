@@ -58,5 +58,8 @@ sentry {
   includeDependenciesReport.set(false)
   telemetry.set(false)
   autoInstallation.enabled.set(false)
-  sizeAnalysis.enabled.set(providers.environmentVariable("SENTRY_AUTH_TOKEN").isPresent)
+  val authTokenPresent =
+    providers.environmentVariable("SENTRY_AUTH_TOKEN").map { it.isNotBlank() }.getOrElse(false)
+  distribution.enabled.set(authTokenPresent)
+  sizeAnalysis.enabled.set(authTokenPresent)
 }

@@ -37,6 +37,7 @@ final class ManifestMetadataReader {
   static final String AUTO_INIT = "io.sentry.auto-init";
   static final String NDK_ENABLE = "io.sentry.ndk.enable";
   static final String NDK_SCOPE_SYNC_ENABLE = "io.sentry.ndk.scope-sync.enable";
+  static final String NDK_SDK_NAME = "io.sentry.ndk.sdk-name";
   static final String RELEASE = "io.sentry.release";
   static final String ENVIRONMENT = "io.sentry.environment";
   static final String SDK_NAME = "io.sentry.sdk.name";
@@ -144,6 +145,8 @@ final class ManifestMetadataReader {
 
   static final String ENABLE_LOGS = "io.sentry.logs.enabled";
 
+  static final String ENABLE_METRICS = "io.sentry.metrics.enabled";
+
   static final String ENABLE_AUTO_TRACE_ID_GENERATION =
       "io.sentry.traces.enable-auto-id-generation";
 
@@ -249,6 +252,12 @@ final class ManifestMetadataReader {
 
         options.setEnableScopeSync(
             readBool(metadata, logger, NDK_SCOPE_SYNC_ENABLE, options.isEnableScopeSync()));
+
+        final @Nullable String nativeSdkName =
+            readString(metadata, logger, NDK_SDK_NAME, options.getNativeSdkName());
+        if (nativeSdkName != null) {
+          options.setNativeSdkName(nativeSdkName);
+        }
 
         options.setRelease(readString(metadata, logger, RELEASE, options.getRelease()));
 
@@ -613,6 +622,11 @@ final class ManifestMetadataReader {
         options
             .getLogs()
             .setEnabled(readBool(metadata, logger, ENABLE_LOGS, options.getLogs().isEnabled()));
+
+        options
+            .getMetrics()
+            .setEnabled(
+                readBool(metadata, logger, ENABLE_METRICS, options.getMetrics().isEnabled()));
 
         final @NotNull SentryFeedbackOptions feedbackOptions = options.getFeedbackOptions();
         feedbackOptions.setNameRequired(

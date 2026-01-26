@@ -3,14 +3,18 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: Version to release
-        required: true
+        description: Version to release (or "auto")
+        required: false
       force:
         description: Force a release even when there are release-blockers (optional)
         required: false
       merge_target:
         description: Target branch to merge into. Uses the default branch as a fallback (optional)
         required: false
+
+permissions:
+  contents: write
+  pull-requests: write
 
 jobs:
   release:
@@ -30,7 +34,7 @@ jobs:
           fetch-depth: 0
           submodules: 'recursive'
       - name: Prepare release
-        uses: getsentry/action-prepare-release@v1
+        uses: getsentry/craft@fd370d4d54bec9ff07f909d88a3c4aec6f0ba22b # v2
         env:
           GITHUB_TOKEN: ${{ steps.token.outputs.token }}
         with:

@@ -1,5 +1,6 @@
 package io.sentry.systemtest
 
+import io.sentry.protocol.SentryId
 import io.sentry.systemtest.util.TestHelper
 import java.util.concurrent.TimeUnit
 import org.junit.Assert.assertEquals
@@ -24,10 +25,12 @@ class ConsoleApplicationSystemTest {
         jarFile,
         mapOf(
           "SENTRY_DSN" to testHelper.dsn,
-          //          "SENTRY_AUTO_INIT" to "false",
+          //                    "SENTRY_AUTO_INIT" to "true",
           "SENTRY_TRACES_SAMPLE_RATE" to "1.0",
           "SENTRY_ENABLE_PRETTY_SERIALIZATION_OUTPUT" to "false",
           "SENTRY_DEBUG" to "true",
+          "SENTRY_PROFILE_SESSION_SAMPLE_RATE" to "1.0",
+          "SENTRY_PROFILE_LIFECYCLE" to "TRACE",
           "OTEL_METRICS_EXPORTER" to "none",
           "OTEL_LOGS_EXPORTER" to "none",
           "OTEL_TRACES_EXPORTER" to "none",
@@ -42,6 +45,8 @@ class ConsoleApplicationSystemTest {
   }
 
   private fun verifyExpectedEvents() {
+    var profilerId: SentryId? = null
+
     // Verify we received a "Fatal message!" event
     testHelper.ensureErrorReceived { event ->
       event.message?.formatted == "Fatal message!" && event.level?.name == "FATAL"
@@ -67,8 +72,13 @@ class ConsoleApplicationSystemTest {
 
     // Verify we received transaction events
     testHelper.ensureTransactionReceived { transaction, _ ->
+      profilerId = transaction.contexts.profile?.profilerId
       transaction.transaction == "transaction name" &&
         transaction.spans?.any { span -> span.op == "child" } == true
+    }
+
+    testHelper.ensureProfileChunkReceived { profileChunk, envelopeHeader ->
+      profileChunk.profilerId == profilerId
     }
 
     // Verify we received the loop messages (should be 10 of them)
@@ -96,6 +106,12 @@ class ConsoleApplicationSystemTest {
       event.breadcrumbs?.any { breadcrumb ->
         breadcrumb.message?.contains("Processed by") == true
       } == true
+    }
+
+    testHelper.ensureMetricsReceived { metricsEvents, sentryEnvelopeHeader ->
+      testHelper.doesContainMetric(metricsEvents, "countMetric", "counter", 1.0) &&
+        testHelper.doesContainMetric(metricsEvents, "gaugeMetric", "gauge", 5.0) &&
+        testHelper.doesContainMetric(metricsEvents, "distributionMetric", "distribution", 7.0)
     }
   }
 }

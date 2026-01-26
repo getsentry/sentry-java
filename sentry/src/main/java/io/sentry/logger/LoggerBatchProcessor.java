@@ -36,9 +36,9 @@ public class LoggerBatchProcessor implements ILoggerBatchProcessor {
   private final @NotNull Queue<SentryLogEvent> queue;
   private final @NotNull ISentryExecutorService executorService;
   private volatile @Nullable Future<?> scheduledFlush;
-  private static final @NotNull AutoClosableReentrantLock scheduleLock =
-      new AutoClosableReentrantLock();
+  private final @NotNull AutoClosableReentrantLock scheduleLock = new AutoClosableReentrantLock();
   private volatile boolean hasScheduled = false;
+  private volatile boolean isShuttingDown = false;
 
   private final @NotNull ReusableCountLatch pendingCount = new ReusableCountLatch();
 
@@ -52,6 +52,9 @@ public class LoggerBatchProcessor implements ILoggerBatchProcessor {
 
   @Override
   public void add(final @NotNull SentryLogEvent logEvent) {
+    if (isShuttingDown) {
+      return;
+    }
     if (pendingCount.getCount() >= MAX_QUEUE_SIZE) {
       options
           .getClientReportRecorder()
@@ -60,7 +63,7 @@ public class LoggerBatchProcessor implements ILoggerBatchProcessor {
           JsonSerializationUtils.byteSizeOf(options.getSerializer(), options.getLogger(), logEvent);
       options
           .getClientReportRecorder()
-          .recordLostEvent(DiscardReason.QUEUE_OVERFLOW, DataCategory.Attachment, lostBytes);
+          .recordLostEvent(DiscardReason.QUEUE_OVERFLOW, DataCategory.LogByte, lostBytes);
       return;
     }
     pendingCount.increment();
@@ -71,6 +74,7 @@ public class LoggerBatchProcessor implements ILoggerBatchProcessor {
   @SuppressWarnings("FutureReturnValueIgnored")
   @Override
   public void close(final boolean isRestarting) {
+    isShuttingDown = true;
     if (isRestarting) {
       maybeSchedule(true, true);
       executorService.submit(() -> executorService.close(options.getShutdownTimeoutMillis()));

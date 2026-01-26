@@ -99,8 +99,8 @@ public final class SentryLogEventAttributeValue implements JsonUnknown, JsonSeri
       reader.endObject();
 
       if (type == null) {
-        String message = "Missing required field \"" + JsonKeys.TYPE + "\"";
-        Exception exception = new IllegalStateException(message);
+        final String message = "Missing required field \"" + JsonKeys.TYPE + "\"";
+        final Exception exception = new IllegalStateException(message);
         logger.log(SentryLevel.ERROR, message, exception);
         throw exception;
       }
