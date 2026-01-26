@@ -96,6 +96,7 @@ class MainActivity : AppCompatActivity() {
   private var screenLoadCount = 0
   internal lateinit var imageFile: File
 
+  @SuppressLint("NewApi")
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     SharedState.isOrientationChange = intent.getBooleanExtra("isOrientationChange", false)
@@ -149,8 +150,10 @@ class MainActivity : AppCompatActivity() {
       applicationContext.resources.openRawResource(R.raw.sentry).use { inputStream ->
         FileOutputStream(file).use { outputStream ->
           val bytes = ByteArray(1024)
-          while (inputStream.read(bytes) != -1) {
-            outputStream.write(bytes)
+          var length = inputStream.read(bytes)
+          while (length != -1) {
+            outputStream.write(bytes, 0, length)
+            length = inputStream.read(bytes)
           }
           outputStream.flush()
         }
