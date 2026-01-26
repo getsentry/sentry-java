@@ -43,6 +43,7 @@ import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.GenericViewHiera
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.ImageViewHierarchyNode
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.TextViewHierarchyNode
 import java.io.File
+import java.lang.reflect.InvocationTargetException
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -174,9 +175,9 @@ class ComposeMaskingOptionsTest {
   @Test
   fun `when retrieving the semantics fails, an error is thrown`() {
     val node = mock<LayoutNode>()
-    whenever(node.collapsedSemantics).thenThrow(RuntimeException("Compose Runtime Error"))
+    whenever(node.semanticsConfiguration).thenThrow(RuntimeException("Compose Runtime Error"))
 
-    assertThrows(RuntimeException::class.java) {
+    assertThrows(InvocationTargetException::class.java) {
       ComposeViewHierarchyNode.retrieveSemanticsConfiguration(node)
     }
   }
