@@ -4,6 +4,11 @@
 
 ### Features
 
+- Add ApplicationStartInfo API support for Android 15+ ([#5055](https://github.com/getsentry/sentry-java/pull/5055))
+  - Captures detailed app startup timing data from Android system
+  - Creates transactions with milestone spans (bind_application, application_oncreate, ttid, ttfd)
+  - Enriches with AppStartMetrics data (content provider spans, class names)
+  - Opt-in via `SentryAndroidOptions.setEnableApplicationStartInfo(boolean)` (disabled by default)
 - Update Android targetSdk to API 36 (Android 16) ([#5016](https://github.com/getsentry/sentry-java/pull/5016))
 
 ### Internal
