@@ -4521,13 +4521,14 @@ public class io/sentry/UncaughtExceptionHandlerIntegration$UncaughtExceptionHint
 }
 
 public final class io/sentry/UpdateInfo {
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;)V
 	public fun getAppName ()Ljava/lang/String;
 	public fun getBuildNumber ()I
 	public fun getBuildVersion ()Ljava/lang/String;
 	public fun getCreatedDate ()Ljava/lang/String;
 	public fun getDownloadUrl ()Ljava/lang/String;
 	public fun getId ()Ljava/lang/String;
+	public fun getInstallGroups ()Ljava/util/List;
 	public fun toString ()Ljava/lang/String;
 }
 
