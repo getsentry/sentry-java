@@ -13,7 +13,7 @@
   - **Breaking:** Users who enable Spotlight must now add the `io.sentry:sentry-spotlight` dependency:
     ```kotlin
     dependencies {
-        debugImplementation("io.sentry:sentry-spotlight:{{VERSION}}")
+        debugImplementation("io.sentry:sentry-spotlight:8.32.0")
     }
     ```
 
