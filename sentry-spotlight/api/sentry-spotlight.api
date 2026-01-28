@@ -6,7 +6,6 @@ public final class io/sentry/spotlight/SpotlightIntegration : io/sentry/Integrat
 	public fun <init> ()V
 	public fun close ()V
 	public fun execute (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)V
-	public fun getSpotlightConnectionUrl ()Ljava/lang/String;
 	public fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
 }
 
