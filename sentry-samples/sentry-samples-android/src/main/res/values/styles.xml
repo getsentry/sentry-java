@@ -1,4 +1,4 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
 
   <!-- Base application theme. -->
   <style name="AppTheme" parent="Theme.AppCompat.DayNight.DarkActionBar">
@@ -6,6 +6,16 @@
     <item name="colorPrimary">@color/colorPrimary</item>
     <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
     <item name="colorAccent">@color/colorAccent</item>
+    <!-- Set a custom theme for dialogs, to customize user feedback dialog -->
+    <!--<item name="android:dialogTheme">@style/AppThemeDialog</item>-->
+  </style>
+
+  <style name="AppTheme.Main" parent="Theme.AppCompat.DayNight.NoActionBar">
+    <!-- Customize your theme here. -->
+    <item name="colorPrimary">@color/colorPrimary</item>
+    <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+    <item name="colorAccent">@color/colorAccent</item>
+    <item name="android:windowLightStatusBar" tools:targetApi="23">true</item>
     <!-- Set a custom theme for dialogs, to customize user feedback dialog -->
     <!--<item name="android:dialogTheme">@style/AppThemeDialog</item>-->
   </style>

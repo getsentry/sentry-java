@@ -1,5 +1,6 @@
 package io.sentry.android.replay
 
+import android.annotation.SuppressLint
 import android.annotation.TargetApi
 import android.graphics.Point
 import android.os.Handler
@@ -19,6 +20,7 @@ import java.lang.ref.WeakReference
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.atomic.AtomicBoolean
 
+@SuppressLint("UseRequiresApi")
 @TargetApi(26)
 internal class WindowRecorder(
   private val options: SentryOptions,

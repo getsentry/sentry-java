@@ -1,5 +1,6 @@
 package io.sentry.android.replay.capture
 
+import android.annotation.SuppressLint
 import android.annotation.TargetApi
 import android.view.MotionEvent
 import io.sentry.Breadcrumb
@@ -42,6 +43,7 @@ import java.util.concurrent.atomic.AtomicReference
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
+@SuppressLint("UseRequiresApi")
 @TargetApi(26)
 internal abstract class BaseCaptureStrategy(
   private val options: SentryOptions,

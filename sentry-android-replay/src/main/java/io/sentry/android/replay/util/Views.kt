@@ -28,6 +28,7 @@ import java.lang.NullPointerException
  * Recursively traverses the view hierarchy and creates a [ViewHierarchyNode] for each view.
  * Supports Compose view hierarchy as well.
  */
+@SuppressLint("UseKtx")
 internal fun View.traverse(parentNode: ViewHierarchyNode, options: SentryOptions) {
   if (this !is ViewGroup) {
     return
@@ -87,7 +88,7 @@ internal fun View.isVisibleToUser(): Pair<Boolean, Rect?> {
   return false to null
 }
 
-@SuppressLint("ObsoleteSdkInt")
+@SuppressLint("ObsoleteSdkInt", "UseRequiresApi")
 @TargetApi(21)
 internal fun Drawable?.isMaskable(): Boolean {
   // TODO: maybe find a way how to check if the drawable is coming from the apk or loaded from
