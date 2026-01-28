@@ -83,3 +83,8 @@
 -dontwarn io.sentry.android.distribution.DistributionIntegration
 -keepnames class io.sentry.android.distribution.DistributionIntegration
 ##---------------End: proguard configuration for sentry-android-distribution  ----------
+
+##---------------Begin: proguard configuration for sentry-spotlight  ----------
+-dontwarn io.sentry.spotlight.SpotlightIntegration
+-keepnames class io.sentry.spotlight.SpotlightIntegration
+##---------------End: proguard configuration for sentry-spotlight  ----------
