@@ -17,6 +17,9 @@
 - Bump Native SDK from v0.12.3 to v0.12.4 ([#5061](https://github.com/getsentry/sentry-java/pull/5061))
   - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0124)
   - [diff](https://github.com/getsentry/sentry-native/compare/0.12.3...0.12.4)
+- Bump Gradle from v8.14.3 to v9.3.0 ([#5063](https://github.com/getsentry/sentry-java/pull/5063))
+  - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v930)
+  - [diff](https://github.com/gradle/gradle/compare/v8.14.3...v9.3.0)
 
 ## 8.31.0
 
