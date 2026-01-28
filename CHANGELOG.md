@@ -6,6 +6,7 @@
 
 - Add `installGroupsOverride` parameter and `installGroups` property to Build Distribution SDK ([#5062](https://github.com/getsentry/sentry-java/pull/5062))
 - Update Android targetSdk to API 36 (Android 16) ([#5016](https://github.com/getsentry/sentry-java/pull/5016))
+- Merge Tombstone and Native SDK events into single crash event. ([#5037](https://github.com/getsentry/sentry-java/pull/5037))
 
 ### Internal
 
