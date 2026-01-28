@@ -1,10 +1,21 @@
-package io.sentry;
+package io.sentry.spotlight;
 
 import static io.sentry.SentryLevel.DEBUG;
 import static io.sentry.SentryLevel.ERROR;
 import static io.sentry.SentryLevel.WARNING;
 import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
 
+import io.sentry.Hint;
+import io.sentry.ILogger;
+import io.sentry.IScopes;
+import io.sentry.ISentryExecutorService;
+import io.sentry.Integration;
+import io.sentry.NoOpLogger;
+import io.sentry.NoOpSentryExecutorService;
+import io.sentry.SentryEnvelope;
+import io.sentry.SentryExecutorService;
+import io.sentry.SentryIntegrationPackageStorage;
+import io.sentry.SentryOptions;
 import io.sentry.util.Platform;
 import java.io.Closeable;
 import java.io.IOException;
@@ -16,11 +27,15 @@ import java.util.zip.GZIPOutputStream;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.TestOnly;
 
 @ApiStatus.Internal
 public final class SpotlightIntegration
     implements Integration, SentryOptions.BeforeEnvelopeCallback, Closeable {
+
+  static {
+    SentryIntegrationPackageStorage.getInstance()
+        .addPackage("maven:io.sentry:sentry-spotlight", BuildConfig.VERSION_NAME);
+  }
 
   private @Nullable SentryOptions options;
   private @NotNull ILogger logger = NoOpLogger.getInstance();
@@ -78,8 +93,7 @@ public final class SpotlightIntegration
     }
   }
 
-  @TestOnly
-  public String getSpotlightConnectionUrl() {
+  String getSpotlightConnectionUrl() {
     if (options != null && options.getSpotlightConnectionUrl() != null) {
       return options.getSpotlightConnectionUrl();
     }

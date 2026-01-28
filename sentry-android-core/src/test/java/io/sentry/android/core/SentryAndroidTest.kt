@@ -26,7 +26,6 @@ import io.sentry.SentryOptions
 import io.sentry.SentryOptions.BeforeSendCallback
 import io.sentry.Session
 import io.sentry.ShutdownHookIntegration
-import io.sentry.SpotlightIntegration
 import io.sentry.SystemOutLogger
 import io.sentry.UncaughtExceptionHandlerIntegration
 import io.sentry.android.core.cache.AndroidEnvelopeCache
@@ -46,6 +45,7 @@ import io.sentry.cache.PersistingScopeObserver.TRANSACTION_FILENAME
 import io.sentry.cache.tape.QueueFile
 import io.sentry.protocol.Contexts
 import io.sentry.protocol.SentryId
+import io.sentry.spotlight.SpotlightIntegration
 import io.sentry.test.applyTestOptions
 import io.sentry.transport.NoOpEnvelopeCache
 import io.sentry.util.StringUtils

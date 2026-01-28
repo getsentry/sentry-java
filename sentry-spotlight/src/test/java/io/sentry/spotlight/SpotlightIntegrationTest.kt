@@ -1,10 +1,9 @@
-package io.sentry.internal
+package io.sentry.spotlight
 
 import io.sentry.IScopes
 import io.sentry.SentryOptions
 import io.sentry.SentryOptions.BeforeEnvelopeCallback
-import io.sentry.SpotlightIntegration
-import io.sentry.util.PlatformTestManipulator
+import io.sentry.util.SpotlightPlatformTestManipulator
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -52,10 +51,10 @@ class SpotlightIntegrationTest {
   fun `spotlight connection url falls back to platform defaults`() {
     val spotlight = SpotlightIntegration()
 
-    PlatformTestManipulator.pretendIsAndroid(true)
+    SpotlightPlatformTestManipulator.pretendIsAndroid(true)
     assertEquals("http://10.0.2.2:8969/stream", spotlight.spotlightConnectionUrl)
 
-    PlatformTestManipulator.pretendIsAndroid(false)
+    SpotlightPlatformTestManipulator.pretendIsAndroid(false)
     assertEquals("http://localhost:8969/stream", spotlight.spotlightConnectionUrl)
   }
 

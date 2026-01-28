@@ -1786,6 +1786,16 @@ public final class io/sentry/NoOpScopesStorage : io/sentry/IScopesStorage {
 	public fun set (Lio/sentry/IScopes;)Lio/sentry/ISentryLifecycleToken;
 }
 
+public final class io/sentry/NoOpSentryExecutorService : io/sentry/ISentryExecutorService {
+	public fun close (J)V
+	public static fun getInstance ()Lio/sentry/ISentryExecutorService;
+	public fun isClosed ()Z
+	public fun prewarm ()V
+	public fun schedule (Ljava/lang/Runnable;J)Ljava/util/concurrent/Future;
+	public fun submit (Ljava/lang/Runnable;)Ljava/util/concurrent/Future;
+	public fun submit (Ljava/util/concurrent/Callable;)Ljava/util/concurrent/Future;
+}
+
 public final class io/sentry/NoOpSocketTagger : io/sentry/ISocketTagger {
 	public static fun getInstance ()Lio/sentry/ISocketTagger;
 	public fun tagSockets ()V
@@ -4340,14 +4350,6 @@ public final class io/sentry/SpanStatus$Deserializer : io/sentry/JsonDeserialize
 	public fun <init> ()V
 	public fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Lio/sentry/SpanStatus;
 	public synthetic fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
-}
-
-public final class io/sentry/SpotlightIntegration : io/sentry/Integration, io/sentry/SentryOptions$BeforeEnvelopeCallback, java/io/Closeable {
-	public fun <init> ()V
-	public fun close ()V
-	public fun execute (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)V
-	public fun getSpotlightConnectionUrl ()Ljava/lang/String;
-	public fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
 }
 
 public final class io/sentry/SystemOutLogger : io/sentry/ILogger {
