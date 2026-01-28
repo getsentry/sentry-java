@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixes
+
+- Fix warm app start type detection for edge cases ([#4999](https://github.com/getsentry/sentry-java/pull/4999))
+
 ### Features
 
 - Update Android targetSdk to API 36 (Android 16) ([#5016](https://github.com/getsentry/sentry-java/pull/5016))
