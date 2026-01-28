@@ -78,19 +78,6 @@ public final class NativeEventCollector {
     public long getTimestampMs() {
       return timestampMs;
     }
-
-    /**
-     * Extracts the correlation ID from the event's extra data.
-     *
-     * @return the correlation ID, or null if not present
-     */
-    public @Nullable String getCorrelationId() {
-      final @Nullable Object correlationId = event.getExtra("sentry.native.correlation_id");
-      if (correlationId instanceof String) {
-        return (String) correlationId;
-      }
-      return null;
-    }
   }
 
   /**
@@ -151,36 +138,20 @@ public final class NativeEventCollector {
   }
 
   /**
-   * Finds a native event that matches the given tombstone timestamp or correlation ID. If a match
-   * is found, it is removed from the internal list so it won't be matched again.
+   * Finds a native event that matches the given tombstone timestamp. If a match is found, it is
+   * removed from the internal list so it won't be matched again.
    *
    * <p>This method will lazily collect native events from the outbox on first call.
    *
    * @param tombstoneTimestampMs the timestamp from ApplicationExitInfo
-   * @param correlationId the correlation ID from processStateSummary, or null
    * @return the matching native event data, or null if no match found
    */
   public @Nullable NativeEventData findAndRemoveMatchingNativeEvent(
-      final long tombstoneTimestampMs, final @Nullable String correlationId) {
+      final long tombstoneTimestampMs) {
 
     // Lazily collect on first use (runs on executor thread, not main thread)
     collect();
 
-    // First, try to match by correlation ID (when sentry-native supports it)
-    if (correlationId != null) {
-      for (final NativeEventData nativeEvent : nativeEvents) {
-        final @Nullable String nativeCorrelationId = nativeEvent.getCorrelationId();
-        if (correlationId.equals(nativeCorrelationId)) {
-          options
-              .getLogger()
-              .log(SentryLevel.DEBUG, "Matched native event by correlation ID: %s", correlationId);
-          nativeEvents.remove(nativeEvent);
-          return nativeEvent;
-        }
-      }
-    }
-
-    // Fall back to timestamp-based matching
     for (final NativeEventData nativeEvent : nativeEvents) {
       final long timeDiff = Math.abs(tombstoneTimestampMs - nativeEvent.getTimestampMs());
       if (timeDiff <= TIMESTAMP_TOLERANCE_MS) {

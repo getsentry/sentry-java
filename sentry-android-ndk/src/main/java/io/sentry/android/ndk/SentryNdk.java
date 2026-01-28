@@ -73,12 +73,6 @@ public final class SentryNdk {
           ndkOptions.setTracesSampleRate(tracesSampleRate.floatValue());
         }
 
-        // TODO: Pass correlation ID to native SDK when sentry-native supports it
-        // final @Nullable String correlationId = options.getNativeCrashCorrelationId();
-        // if (correlationId != null) {
-        //   ndkOptions.setCorrelationId(correlationId);
-        // }
-
         //noinspection UnstableApiUsage
         io.sentry.ndk.SentryNdk.init(ndkOptions);
 

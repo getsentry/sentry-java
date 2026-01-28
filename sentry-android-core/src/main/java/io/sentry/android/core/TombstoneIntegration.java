@@ -34,7 +34,6 @@ import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -181,17 +180,9 @@ public class TombstoneIntegration implements Integration, Closeable {
       final long tombstoneTimestamp = exitInfo.getTimestamp();
       event.setTimestamp(DateUtils.getDateTime(tombstoneTimestamp));
 
-      // Extract correlation ID from process state summary (if set during previous session)
-      final @Nullable String correlationId = extractCorrelationId(exitInfo);
-      if (correlationId != null) {
-        options
-            .getLogger()
-            .log(SentryLevel.DEBUG, "Tombstone correlation ID found: %s", correlationId);
-      }
-
       // Try to find and remove matching native event from outbox
       final @Nullable NativeEventData matchingNativeEvent =
-          nativeEventCollector.findAndRemoveMatchingNativeEvent(tombstoneTimestamp, correlationId);
+          nativeEventCollector.findAndRemoveMatchingNativeEvent(tombstoneTimestamp);
 
       if (matchingNativeEvent != null) {
         options
@@ -247,24 +238,6 @@ public class TombstoneIntegration implements Integration, Closeable {
       }
 
       return nativeEvent;
-    }
-
-    @RequiresApi(api = Build.VERSION_CODES.R)
-    private @Nullable String extractCorrelationId(final @NotNull ApplicationExitInfo exitInfo) {
-      try {
-        final byte[] summary = exitInfo.getProcessStateSummary();
-        if (summary != null && summary.length > 0) {
-          return new String(summary, StandardCharsets.UTF_8);
-        }
-      } catch (Throwable e) {
-        options
-            .getLogger()
-            .log(
-                SentryLevel.DEBUG,
-                "Failed to extract correlation ID from process state summary",
-                e);
-      }
-      return null;
     }
   }
 

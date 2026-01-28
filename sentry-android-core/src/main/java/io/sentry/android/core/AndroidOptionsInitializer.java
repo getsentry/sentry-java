@@ -2,7 +2,6 @@ package io.sentry.android.core;
 
 import static io.sentry.android.core.NdkIntegration.SENTRY_NDK_CLASS_NAME;
 
-import android.app.ActivityManager;
 import android.app.Application;
 import android.content.Context;
 import android.content.pm.PackageInfo;
@@ -58,10 +57,8 @@ import io.sentry.util.LazyEvaluator;
 import io.sentry.util.Objects;
 import io.sentry.util.thread.NoOpThreadChecker;
 import java.io.File;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
@@ -246,11 +243,6 @@ final class AndroidOptionsInitializer {
     }
     if (options.getSocketTagger() instanceof NoOpSocketTagger) {
       options.setSocketTagger(AndroidSocketTagger.getInstance());
-    }
-
-    // Set native crash correlation ID before NDK integration is registered
-    if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.R) {
-      setNativeCrashCorrelationId(context, options);
     }
 
     if (options.getPerformanceCollectors().isEmpty()) {
@@ -505,34 +497,5 @@ final class AndroidOptionsInitializer {
    */
   static @NotNull File getCacheDir(final @NotNull Context context) {
     return new File(context.getCacheDir(), "sentry");
-  }
-
-  /**
-   * Sets a native crash correlation ID that can be used to associate native crash events (from
-   * sentry-native) with tombstone events (from ApplicationExitInfo). The ID is stored via
-   * ActivityManager.setProcessStateSummary() and passed to the native SDK.
-   *
-   * @param context the Application context
-   * @param options the SentryAndroidOptions
-   */
-  private static void setNativeCrashCorrelationId(
-      final @NotNull Context context, final @NotNull SentryAndroidOptions options) {
-    final String correlationId = UUID.randomUUID().toString();
-    options.setNativeCrashCorrelationId(correlationId);
-
-    try {
-      final ActivityManager am =
-          (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
-      if (am != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-        am.setProcessStateSummary(correlationId.getBytes(StandardCharsets.UTF_8));
-        options
-            .getLogger()
-            .log(SentryLevel.DEBUG, "Native crash correlation ID set: %s", correlationId);
-      }
-    } catch (Throwable e) {
-      options
-          .getLogger()
-          .log(SentryLevel.WARNING, "Failed to set process state summary for correlation ID", e);
-    }
   }
 }
