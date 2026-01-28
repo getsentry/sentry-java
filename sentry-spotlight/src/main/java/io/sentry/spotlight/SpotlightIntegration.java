@@ -27,7 +27,6 @@ import java.util.zip.GZIPOutputStream;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.TestOnly;
 
 @ApiStatus.Internal
 public final class SpotlightIntegration
@@ -94,8 +93,7 @@ public final class SpotlightIntegration
     }
   }
 
-  @TestOnly
-  public String getSpotlightConnectionUrl() {
+  String getSpotlightConnectionUrl() {
     if (options != null && options.getSpotlightConnectionUrl() != null) {
       return options.getSpotlightConnectionUrl();
     }
