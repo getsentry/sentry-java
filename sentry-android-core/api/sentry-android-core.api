@@ -302,7 +302,6 @@ public final class io/sentry/android/core/NativeEventCollector$NativeEventData {
 	public fun getEnvelope ()Lio/sentry/SentryEnvelope;
 	public fun getEvent ()Lio/sentry/SentryEvent;
 	public fun getFile ()Ljava/io/File;
-	public fun getTimestampMs ()J
 }
 
 public final class io/sentry/android/core/NdkHandlerStrategy : java/lang/Enum {
