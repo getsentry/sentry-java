@@ -1,5 +1,6 @@
 package io.sentry.android.replay.util
 
+import android.annotation.SuppressLint
 import android.annotation.TargetApi
 import io.sentry.ReplayRecording
 import io.sentry.SentryOptions
@@ -12,6 +13,7 @@ import java.util.concurrent.ScheduledExecutorService
 
 // TODO: enable this back after we are able to serialize individual touches to disk to not overload
 // cpu
+@SuppressLint("UseRequiresApi")
 @Suppress("unused")
 @TargetApi(26)
 internal class PersistableLinkedList(
