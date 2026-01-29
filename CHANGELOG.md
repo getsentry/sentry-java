@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixes
+
+- Fix warm app start type detection for edge cases ([#4999](https://github.com/getsentry/sentry-java/pull/4999))
+
 ### Features
 
 - Add `installGroupsOverride` parameter and `installGroups` property to Build Distribution SDK ([#5062](https://github.com/getsentry/sentry-java/pull/5062))

@@ -1,0 +1,27 @@
+appId: io.sentry.uitest.android.critical
+name: App Launch Tests
+---
+# Test 1: A fresh start is considered a cold start
+- launchApp:
+    stopApp: false
+- assertVisible: "Welcome!"
+- assertVisible: "App Start Type: COLD"
+
+# Test 2: Background/foreground transition (WARM start)
+- launchApp:
+    stopApp: false
+- assertVisible: "Welcome!"
+- tapOn: "Finish Activity"
+- launchApp:
+    stopApp: false
+- assertVisible: "App Start Type: WARM"
+
+# Test 3: Launch app after a broadcast receiver already created the application
+# Uncomment once https://github.com/mobile-dev-inc/Maestro/pull/2925 is merged
+# - killApp
+# - sendBroadcast:
+#     action: io.sentry.uitest.android.critical.ACTION
+#     receiver: io.sentry.uitest.android.critical/.EmptyBroadcastReceiver
+# - launchApp:
+#     stopApp: false
+# - assertVisible: "App Start Type: WARM"
