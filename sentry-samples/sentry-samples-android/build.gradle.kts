@@ -127,6 +127,7 @@ dependencies {
   implementation(projects.sentryCompose)
   implementation(projects.sentryKotlinExtensions)
   implementation(projects.sentryOkhttp)
+  implementation(projects.sentrySpotlight)
 
   //    how to exclude androidx if release health feature is disabled
   //    implementation(projects.sentryAndroid) {
