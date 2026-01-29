@@ -164,7 +164,7 @@ final class ManifestMetadataReader {
 
   static final String FEEDBACK_SHOW_BRANDING = "io.sentry.feedback.show-branding";
 
-  static final String SPOTLIGHT_ENABLE = "io.sentry.spotlight.enabled";
+  static final String SPOTLIGHT_ENABLE = "io.sentry.spotlight.enable";
 
   static final String SPOTLIGHT_CONNECTION_URL = "io.sentry.spotlight.url";
 

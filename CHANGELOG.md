@@ -6,7 +6,7 @@
 
 - Add `installGroupsOverride` parameter and `installGroups` property to Build Distribution SDK ([#5062](https://github.com/getsentry/sentry-java/pull/5062))
 - Update Android targetSdk to API 36 (Android 16) ([#5016](https://github.com/getsentry/sentry-java/pull/5016))
-- Add AndroidManifest support for Spotlight configuration via `io.sentry.spotlight.enabled` and `io.sentry.spotlight.url` ([#5064](https://github.com/getsentry/sentry-java/pull/5064))
+- Add AndroidManifest support for Spotlight configuration via `io.sentry.spotlight.enable` and `io.sentry.spotlight.url` ([#5064](https://github.com/getsentry/sentry-java/pull/5064))
 
 ### Fixes
 
