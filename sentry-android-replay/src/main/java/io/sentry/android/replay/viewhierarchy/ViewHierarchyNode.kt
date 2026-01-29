@@ -1,5 +1,6 @@
 package io.sentry.android.replay.viewhierarchy
 
+import android.annotation.SuppressLint
 import android.annotation.TargetApi
 import android.graphics.Rect
 import android.view.View
@@ -15,6 +16,7 @@ import io.sentry.android.replay.util.isVisibleToUser
 import io.sentry.android.replay.util.toOpaque
 import io.sentry.android.replay.util.totalPaddingTopSafe
 
+@SuppressLint("UseRequiresApi")
 @TargetApi(26)
 internal sealed class ViewHierarchyNode(
   val x: Float,
