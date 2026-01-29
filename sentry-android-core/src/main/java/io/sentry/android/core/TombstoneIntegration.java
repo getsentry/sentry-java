@@ -15,12 +15,18 @@ import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.ApplicationExitInfoHistoryDispatcher.ApplicationExitInfoPolicy;
+import io.sentry.android.core.NativeEventCollector.NativeEventData;
 import io.sentry.android.core.cache.AndroidEnvelopeCache;
+import io.sentry.android.core.internal.tombstone.NativeExceptionMechanism;
 import io.sentry.android.core.internal.tombstone.TombstoneParser;
 import io.sentry.hints.Backfillable;
 import io.sentry.hints.BlockingFlushHint;
 import io.sentry.hints.NativeCrashExit;
+import io.sentry.protocol.DebugMeta;
+import io.sentry.protocol.Mechanism;
+import io.sentry.protocol.SentryException;
 import io.sentry.protocol.SentryId;
+import io.sentry.protocol.SentryThread;
 import io.sentry.transport.CurrentDateProvider;
 import io.sentry.transport.ICurrentDateProvider;
 import io.sentry.util.HintUtils;
@@ -30,6 +36,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -83,7 +90,7 @@ public class TombstoneIntegration implements Integration, Closeable {
                     scopes,
                     this.options,
                     dateProvider,
-                    new TombstonePolicy(this.options)));
+                    new TombstonePolicy(this.options, this.context)));
       } catch (Throwable e) {
         options.getLogger().log(SentryLevel.DEBUG, "Failed to start tombstone processor.", e);
       }
@@ -103,9 +110,13 @@ public class TombstoneIntegration implements Integration, Closeable {
   public static class TombstonePolicy implements ApplicationExitInfoPolicy {
 
     private final @NotNull SentryAndroidOptions options;
+    private final @NotNull NativeEventCollector nativeEventCollector;
+    @NotNull private final Context context;
 
-    public TombstonePolicy(final @NotNull SentryAndroidOptions options) {
+    public TombstonePolicy(final @NotNull SentryAndroidOptions options, @NotNull Context context) {
       this.options = options;
+      this.nativeEventCollector = new NativeEventCollector(options);
+      this.context = context;
     }
 
     @Override
@@ -133,7 +144,7 @@ public class TombstoneIntegration implements Integration, Closeable {
     @Override
     public @Nullable ApplicationExitInfoHistoryDispatcher.Report buildReport(
         final @NotNull ApplicationExitInfo exitInfo, final boolean enrich) {
-      final SentryEvent event;
+      SentryEvent event;
       try {
         final InputStream tombstoneInputStream = exitInfo.getTraceInputStream();
         if (tombstoneInputStream == null) {
@@ -147,7 +158,12 @@ public class TombstoneIntegration implements Integration, Closeable {
           return null;
         }
 
-        try (final TombstoneParser parser = new TombstoneParser(tombstoneInputStream)) {
+        try (final TombstoneParser parser =
+            new TombstoneParser(
+                tombstoneInputStream,
+                this.options.getInAppIncludes(),
+                this.options.getInAppExcludes(),
+                this.context.getApplicationInfo().nativeLibraryDir)) {
           event = parser.parse();
         }
       } catch (Throwable e) {
@@ -164,12 +180,64 @@ public class TombstoneIntegration implements Integration, Closeable {
       final long tombstoneTimestamp = exitInfo.getTimestamp();
       event.setTimestamp(DateUtils.getDateTime(tombstoneTimestamp));
 
+      // Try to find and remove matching native event from outbox
+      final @Nullable NativeEventData matchingNativeEvent =
+          nativeEventCollector.findAndRemoveMatchingNativeEvent(tombstoneTimestamp);
+
+      if (matchingNativeEvent != null) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Found matching native event for tombstone, removing from outbox: %s",
+                matchingNativeEvent.getFile().getName());
+
+        // Delete from outbox so OutboxSender doesn't send it
+        boolean deletionSuccess = nativeEventCollector.deleteNativeEventFile(matchingNativeEvent);
+
+        if (deletionSuccess) {
+          event = mergeNativeCrashes(matchingNativeEvent.getEvent(), event);
+        }
+      } else {
+        options.getLogger().log(SentryLevel.DEBUG, "No matching native event found for tombstone.");
+      }
+
       final TombstoneHint tombstoneHint =
           new TombstoneHint(
               options.getFlushTimeoutMillis(), options.getLogger(), tombstoneTimestamp, enrich);
       final Hint hint = HintUtils.createWithTypeCheckHint(tombstoneHint);
 
       return new ApplicationExitInfoHistoryDispatcher.Report(event, hint, tombstoneHint);
+    }
+
+    private SentryEvent mergeNativeCrashes(
+        final @NotNull SentryEvent nativeEvent, final @NotNull SentryEvent tombstoneEvent) {
+      // we take the event data verbatim from the Native SDK and only apply tombstone data where we
+      // are sure that it will improve the outcome:
+      // * context from the Native SDK will be closer to what users want than any backfilling
+      // * the Native SDK only tracks the crashing thread  (vs. tombstone dumps all)
+      // * even for the crashing  we expect a much better stack-trace (+ symbolication)
+      // * tombstone adds additional exception meta-data to signal handler content
+      // * we add debug-meta for consistency since the Native SDK caches memory maps early
+      @Nullable List<SentryException> tombstoneExceptions = tombstoneEvent.getExceptions();
+      @Nullable DebugMeta tombstoneDebugMeta = tombstoneEvent.getDebugMeta();
+      @Nullable List<SentryThread> tombstoneThreads = tombstoneEvent.getThreads();
+      if (tombstoneExceptions != null
+          && !tombstoneExceptions.isEmpty()
+          && tombstoneDebugMeta != null
+          && tombstoneThreads != null) {
+        // native crashes don't nest, we always expect one level.
+        SentryException exception = tombstoneExceptions.get(0);
+        @Nullable Mechanism mechanism = exception.getMechanism();
+        if (mechanism != null) {
+          mechanism.setType(NativeExceptionMechanism.TOMBSTONE_MERGED.getValue());
+        }
+        nativeEvent.setExceptions(tombstoneExceptions);
+        nativeEvent.setDebugMeta(tombstoneDebugMeta);
+        nativeEvent.setThreads(tombstoneThreads);
+      }
+
+      return nativeEvent;
     }
   }
 
