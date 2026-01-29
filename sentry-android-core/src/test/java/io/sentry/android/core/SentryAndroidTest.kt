@@ -48,7 +48,6 @@ import io.sentry.cache.tape.QueueFile
 import io.sentry.protocol.Contexts
 import io.sentry.protocol.SentryId
 import io.sentry.test.applyTestOptions
-import io.sentry.test.initForTest
 import io.sentry.transport.NoOpEnvelopeCache
 import io.sentry.util.StringUtils
 import java.io.ByteArrayOutputStream
@@ -541,7 +540,7 @@ class SentryAndroidTest {
     }
 
     assertTrue(optionsRef.eventProcessors.any { it is DefaultAndroidEventProcessor })
-    assertTrue(optionsRef.eventProcessors.any { it is AnrV2EventProcessor })
+    assertTrue(optionsRef.eventProcessors.any { it is ApplicationExitInfoEventProcessor })
   }
 
   private fun prefillScopeCache(options: SentryOptions, cacheDir: String) {

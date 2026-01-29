@@ -91,7 +91,7 @@ class LoggerBatchProcessorTest {
         DiscardedEvent(DiscardReason.QUEUE_OVERFLOW.reason, DataCategory.LogItem.category, 1),
         DiscardedEvent(
           DiscardReason.QUEUE_OVERFLOW.reason,
-          DataCategory.Attachment.category,
+          DataCategory.LogByte.category,
           expectedBytes,
         ),
       )
