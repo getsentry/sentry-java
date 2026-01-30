@@ -164,6 +164,10 @@ final class ManifestMetadataReader {
 
   static final String FEEDBACK_SHOW_BRANDING = "io.sentry.feedback.show-branding";
 
+  static final String SPOTLIGHT_ENABLE = "io.sentry.spotlight.enable";
+
+  static final String SPOTLIGHT_CONNECTION_URL = "io.sentry.spotlight.url";
+
   static final String ENABLE_ANR_PROFILING = "io.sentry.anr.enable-profiling";
 
   /** ManifestMetadataReader ctor */
@@ -644,6 +648,15 @@ final class ManifestMetadataReader {
                 metadata, logger, FEEDBACK_USE_SENTRY_USER, feedbackOptions.isUseSentryUser()));
         feedbackOptions.setShowBranding(
             readBool(metadata, logger, FEEDBACK_SHOW_BRANDING, feedbackOptions.isShowBranding()));
+
+        options.setEnableSpotlight(
+            readBool(metadata, logger, SPOTLIGHT_ENABLE, options.isEnableSpotlight()));
+
+        final @Nullable String spotlightUrl =
+            readString(metadata, logger, SPOTLIGHT_CONNECTION_URL, null);
+        if (spotlightUrl != null) {
+          options.setSpotlightConnectionUrl(spotlightUrl);
+        }
 
         options.setEnableAnrProfiling(
             readBool(metadata, logger, ENABLE_ANR_PROFILING, options.isEnableAnrProfiling()));

@@ -2242,4 +2242,76 @@ class ManifestMetadataReaderTest {
     assertTrue(headers.contains("Authorization"))
     assertTrue(headers.contains("X-Custom-Header"))
   }
+
+  // Spotlight Configuration Tests
+
+  @Test
+  fun `applyMetadata reads spotlight enabled and keeps default value if not found`() {
+    // Arrange
+    val context = fixture.getContext()
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertFalse(fixture.options.isEnableSpotlight)
+  }
+
+  @Test
+  fun `applyMetadata reads spotlight enabled to options`() {
+    // Arrange
+    val bundle = bundleOf(ManifestMetadataReader.SPOTLIGHT_ENABLE to true)
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertTrue(fixture.options.isEnableSpotlight)
+  }
+
+  @Test
+  fun `applyMetadata reads spotlight url and keeps null if not found`() {
+    // Arrange
+    val context = fixture.getContext()
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertNull(fixture.options.spotlightConnectionUrl)
+  }
+
+  @Test
+  fun `applyMetadata reads spotlight url to options`() {
+    // Arrange
+    val expectedUrl = "http://10.0.2.2:8969/stream"
+    val bundle = bundleOf(ManifestMetadataReader.SPOTLIGHT_CONNECTION_URL to expectedUrl)
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertEquals(expectedUrl, fixture.options.spotlightConnectionUrl)
+  }
+
+  @Test
+  fun `applyMetadata reads both spotlight enabled and url to options`() {
+    // Arrange
+    val expectedUrl = "http://localhost:8969/stream"
+    val bundle =
+      bundleOf(
+        ManifestMetadataReader.SPOTLIGHT_ENABLE to true,
+        ManifestMetadataReader.SPOTLIGHT_CONNECTION_URL to expectedUrl,
+      )
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertTrue(fixture.options.isEnableSpotlight)
+    assertEquals(expectedUrl, fixture.options.spotlightConnectionUrl)
+  }
 }
