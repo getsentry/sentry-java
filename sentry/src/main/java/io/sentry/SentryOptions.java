@@ -664,6 +664,9 @@ public class SentryOptions {
 
     /** Optional build configuration name for filtering (e.g., "debug", "release", "staging") */
     public @Nullable String buildConfiguration = null;
+
+    /** Optional install groups for filtering updates */
+    public @Nullable List<String> installGroupsOverride = null;
   }
 
   private @NotNull DistributionOptions distribution = new DistributionOptions();
