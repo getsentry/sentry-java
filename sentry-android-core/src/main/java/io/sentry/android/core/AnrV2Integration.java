@@ -367,20 +367,23 @@ public class AnrV2Integration implements Integration, Closeable {
 
   private static boolean hasOnlySystemFrames(final @NotNull SentryEvent event) {
     final List<SentryException> exceptions = event.getExceptions();
-    if (exceptions != null) {
-      for (final SentryException exception : exceptions) {
-        final @Nullable SentryStackTrace stacktrace = exception.getStacktrace();
-        if (stacktrace != null) {
-          final @Nullable List<SentryStackFrame> frames = stacktrace.getFrames();
-          if (frames != null && !frames.isEmpty()) {
-            for (final SentryStackFrame frame : frames) {
-              if (frame.isInApp() != null && frame.isInApp()) {
-                return false;
-              }
-              final @Nullable String module = frame.getModule();
-              if (module != null && !AnrCulpritIdentifier.isSystemFrame(frame.getModule())) {
-                return false;
-              }
+    if (exceptions == null || exceptions.isEmpty()) {
+      // No exceptions means we haven't verified frames - don't apply special fingerprinting
+      return false;
+    }
+
+    for (final SentryException exception : exceptions) {
+      final @Nullable SentryStackTrace stacktrace = exception.getStacktrace();
+      if (stacktrace != null) {
+        final @Nullable List<SentryStackFrame> frames = stacktrace.getFrames();
+        if (frames != null && !frames.isEmpty()) {
+          for (final SentryStackFrame frame : frames) {
+            if (frame.isInApp() != null && frame.isInApp()) {
+              return false;
+            }
+            final @Nullable String module = frame.getModule();
+            if (module != null && !AnrCulpritIdentifier.isSystemFrame(frame.getModule())) {
+              return false;
             }
           }
         }
