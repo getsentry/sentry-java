@@ -20,6 +20,7 @@ rootProject.buildFileName = "build.gradle.kts"
 includeBuild("build-logic")
 include(
     "sentry",
+    "sentry-spotlight",
     "sentry-kotlin-extensions",
     "sentry-android-distribution",
     "sentry-android-core",

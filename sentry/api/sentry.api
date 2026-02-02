@@ -1786,6 +1786,16 @@ public final class io/sentry/NoOpScopesStorage : io/sentry/IScopesStorage {
 	public fun set (Lio/sentry/IScopes;)Lio/sentry/ISentryLifecycleToken;
 }
 
+public final class io/sentry/NoOpSentryExecutorService : io/sentry/ISentryExecutorService {
+	public fun close (J)V
+	public static fun getInstance ()Lio/sentry/ISentryExecutorService;
+	public fun isClosed ()Z
+	public fun prewarm ()V
+	public fun schedule (Ljava/lang/Runnable;J)Ljava/util/concurrent/Future;
+	public fun submit (Ljava/lang/Runnable;)Ljava/util/concurrent/Future;
+	public fun submit (Ljava/util/concurrent/Callable;)Ljava/util/concurrent/Future;
+}
+
 public final class io/sentry/NoOpSocketTagger : io/sentry/ISocketTagger {
 	public static fun getInstance ()Lio/sentry/ISocketTagger;
 	public fun tagSockets ()V
@@ -4342,14 +4352,6 @@ public final class io/sentry/SpanStatus$Deserializer : io/sentry/JsonDeserialize
 	public synthetic fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
 }
 
-public final class io/sentry/SpotlightIntegration : io/sentry/Integration, io/sentry/SentryOptions$BeforeEnvelopeCallback, java/io/Closeable {
-	public fun <init> ()V
-	public fun close ()V
-	public fun execute (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)V
-	public fun getSpotlightConnectionUrl ()Ljava/lang/String;
-	public fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
-}
-
 public final class io/sentry/SystemOutLogger : io/sentry/ILogger {
 	public fun <init> ()V
 	public fun isEnabled (Lio/sentry/SentryLevel;)Z
@@ -4521,13 +4523,14 @@ public class io/sentry/UncaughtExceptionHandlerIntegration$UncaughtExceptionHint
 }
 
 public final class io/sentry/UpdateInfo {
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;)V
 	public fun getAppName ()Ljava/lang/String;
 	public fun getBuildNumber ()I
 	public fun getBuildVersion ()Ljava/lang/String;
 	public fun getCreatedDate ()Ljava/lang/String;
 	public fun getDownloadUrl ()Ljava/lang/String;
 	public fun getId ()Ljava/lang/String;
+	public fun getInstallGroups ()Ljava/util/List;
 	public fun toString ()Ljava/lang/String;
 }
 

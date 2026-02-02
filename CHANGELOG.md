@@ -4,12 +4,26 @@
 
 ### Features
 
-- Add ApplicationStartInfo API support for Android 15+ ([#5055](https://github.com/getsentry/sentry-java/pull/5055))
-  - Captures detailed app startup timing data from Android system
-  - Creates transactions with milestone spans (bind_application, application_oncreate, ttid, ttfd)
-  - Enriches with AppStartMetrics data (content provider spans, class names)
-  - Opt-in via `SentryAndroidOptions.setEnableApplicationStartInfo(boolean)` (disabled by default)
+- Add `installGroupsOverride` parameter and `installGroups` property to Build Distribution SDK ([#5062](https://github.com/getsentry/sentry-java/pull/5062))
 - Update Android targetSdk to API 36 (Android 16) ([#5016](https://github.com/getsentry/sentry-java/pull/5016))
+- Add AndroidManifest support for Spotlight configuration via `io.sentry.spotlight.enable` and `io.sentry.spotlight.url` ([#5064](https://github.com/getsentry/sentry-java/pull/5064))
+- Add ApplicationStartInfo API support for Android 15+ ([#5055](https://github.com/getsentry/sentry-java/pull/5055))
+  - Captures detailed app startup timing data based on [ApplicationStartInfo APIs](https://developer.android.com/reference/android/app/ApplicationStartInfo)
+  - Opt-in via `SentryAndroidOptions.setEnableApplicationStartInfo(boolean)` (disabled by default)
+
+### Fixes
+
+- Extract `SpotlightIntegration` to separate `sentry-spotlight` module to prevent insecure HTTP URLs from appearing in release APKs ([#5064](https://github.com/getsentry/sentry-java/pull/5064))
+  - **Breaking:** Users who enable Spotlight must now add the `io.sentry:sentry-spotlight` dependency:
+    ```kotlin
+    dependencies {
+        debugImplementation("io.sentry:sentry-spotlight:<version>")
+    }
+    ```
+
+### Fixes
+
+- Fix scroll target detection for Jetpack Compose ([#5017](https://github.com/getsentry/sentry-java/pull/5017))
 
 ### Internal
 
