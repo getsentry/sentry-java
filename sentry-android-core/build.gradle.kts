@@ -102,6 +102,7 @@ dependencies {
   testImplementation(libs.mockito.kotlin)
   testImplementation(libs.mockito.inline)
   testImplementation(projects.sentryTestSupport)
+  testImplementation(projects.sentrySpotlight)
   testImplementation(projects.sentryAndroidFragment)
   testImplementation(projects.sentryAndroidTimber)
   testImplementation(projects.sentryAndroidReplay)

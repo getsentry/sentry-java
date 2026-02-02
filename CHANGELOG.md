@@ -7,6 +7,17 @@
 - Add `installGroupsOverride` parameter and `installGroups` property to Build Distribution SDK ([#5062](https://github.com/getsentry/sentry-java/pull/5062))
 - Update Android targetSdk to API 36 (Android 16) ([#5016](https://github.com/getsentry/sentry-java/pull/5016))
 - Merge Tombstone and Native SDK events into single crash event. ([#5037](https://github.com/getsentry/sentry-java/pull/5037))
+- Add AndroidManifest support for Spotlight configuration via `io.sentry.spotlight.enable` and `io.sentry.spotlight.url` ([#5064](https://github.com/getsentry/sentry-java/pull/5064))
+
+### Fixes
+
+- Extract `SpotlightIntegration` to separate `sentry-spotlight` module to prevent insecure HTTP URLs from appearing in release APKs ([#5064](https://github.com/getsentry/sentry-java/pull/5064))
+  - **Breaking:** Users who enable Spotlight must now add the `io.sentry:sentry-spotlight` dependency:
+    ```kotlin
+    dependencies {
+        debugImplementation("io.sentry:sentry-spotlight:<version>")
+    }
+    ```
 
 ### Fixes
 
