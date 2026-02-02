@@ -6,20 +6,18 @@ import android.os.Build
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.IScopes
 import io.sentry.ISentryExecutorService
-import io.sentry.ISpan
-import io.sentry.ITransaction
-import io.sentry.TransactionContext
+import io.sentry.protocol.SentryTransaction
 import java.util.concurrent.Callable
 import java.util.function.Consumer
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 import org.junit.Before
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argumentCaptor
-import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
@@ -50,7 +48,12 @@ class ApplicationStartInfoIntegrationTest {
     options.isEnableApplicationStartInfo = true
     options.executorService = executor
     options.setLogger(mock<io.sentry.ILogger>())
-    options.dateProvider = mock<io.sentry.SentryDateProvider>()
+
+    val mockDateProvider = mock<io.sentry.SentryDateProvider>()
+    val mockDate = mock<io.sentry.SentryDate>()
+    whenever(mockDate.nanoTimestamp()).thenReturn(System.currentTimeMillis() * 1_000_000L)
+    whenever(mockDateProvider.now()).thenReturn(mockDate)
+    options.dateProvider = mockDateProvider
 
     // Mock BuildInfoProvider to return API 35+
     whenever(buildInfoProvider.sdkInfoVersion).thenReturn(Build.VERSION_CODES.VANILLA_ICE_CREAM)
@@ -92,168 +95,117 @@ class ApplicationStartInfoIntegrationTest {
   @Test
   fun `transaction includes correct tags from ApplicationStartInfo`() {
     val listenerCaptor = argumentCaptor<Consumer<android.app.ApplicationStartInfo>>()
+    val transactionCaptor = argumentCaptor<SentryTransaction>()
     val integration = ApplicationStartInfoIntegration(context, buildInfoProvider)
     integration.register(scopes, options)
 
     verify(activityManager)
       .addApplicationStartInfoCompletionListener(any(), listenerCaptor.capture())
 
-    val mockTransaction = mock<ITransaction>()
-    whenever(scopes.startTransaction(any(), any<io.sentry.TransactionOptions>()))
-      .thenReturn(mockTransaction)
-
     val startInfo = createMockApplicationStartInfo()
     listenerCaptor.firstValue.accept(startInfo)
 
-    verify(mockTransaction).setTag(eq("start.reason"), any())
+    verify(scopes).captureTransaction(transactionCaptor.capture(), anyOrNull(), anyOrNull())
+    val transaction = transactionCaptor.firstValue
+    assertNotNull(transaction.tags)
+    assertTrue(transaction.tags!!.containsKey("start.reason"))
+    assertTrue(transaction.tags!!.containsKey("start.type"))
+    assertTrue(transaction.tags!!.containsKey("start.launch_mode"))
   }
 
   @Test
   fun `transaction includes start type from ApplicationStartInfo`() {
     val listenerCaptor = argumentCaptor<Consumer<android.app.ApplicationStartInfo>>()
+    val transactionCaptor = argumentCaptor<SentryTransaction>()
     val integration = ApplicationStartInfoIntegration(context, buildInfoProvider)
     integration.register(scopes, options)
 
     verify(activityManager)
       .addApplicationStartInfoCompletionListener(any(), listenerCaptor.capture())
 
-    val mockTransaction = mock<ITransaction>()
-    whenever(scopes.startTransaction(any(), any<io.sentry.TransactionOptions>()))
-      .thenReturn(mockTransaction)
-
-    val startInfo = createMockApplicationStartInfo()
-    whenever(startInfo.startType)
-      .thenReturn(
-        if (Build.VERSION.SDK_INT >= 35) android.app.ApplicationStartInfo.START_TYPE_COLD else 0
-      )
+    val startInfo =
+      createMockApplicationStartInfo(startType = android.app.ApplicationStartInfo.START_TYPE_COLD)
     listenerCaptor.firstValue.accept(startInfo)
 
-    verify(mockTransaction).setTag("start.type", "cold")
+    verify(scopes).captureTransaction(transactionCaptor.capture(), anyOrNull(), anyOrNull())
+    assertEquals("cold", transactionCaptor.firstValue.tags!!["start.type"])
   }
 
   @Test
   fun `transaction includes launch mode from ApplicationStartInfo`() {
     val listenerCaptor = argumentCaptor<Consumer<android.app.ApplicationStartInfo>>()
+    val transactionCaptor = argumentCaptor<SentryTransaction>()
     val integration = ApplicationStartInfoIntegration(context, buildInfoProvider)
     integration.register(scopes, options)
 
     verify(activityManager)
       .addApplicationStartInfoCompletionListener(any(), listenerCaptor.capture())
 
-    val mockTransaction = mock<ITransaction>()
-    whenever(scopes.startTransaction(any(), any<io.sentry.TransactionOptions>()))
-      .thenReturn(mockTransaction)
-
-    val startInfo = createMockApplicationStartInfo()
-    whenever(startInfo.launchMode)
-      .thenReturn(
-        if (Build.VERSION.SDK_INT >= 35) android.app.ApplicationStartInfo.LAUNCH_MODE_STANDARD
-        else 0
+    val startInfo =
+      createMockApplicationStartInfo(
+        launchMode = android.app.ApplicationStartInfo.LAUNCH_MODE_STANDARD
       )
     listenerCaptor.firstValue.accept(startInfo)
 
-    verify(mockTransaction).setTag("start.launch_mode", "standard")
+    verify(scopes).captureTransaction(transactionCaptor.capture(), anyOrNull(), anyOrNull())
+    assertEquals("standard", transactionCaptor.firstValue.tags!!["start.launch_mode"])
   }
 
   @Test
   fun `creates bind_application span when timestamp available`() {
     val listenerCaptor = argumentCaptor<Consumer<android.app.ApplicationStartInfo>>()
+    val transactionCaptor = argumentCaptor<SentryTransaction>()
     val integration = ApplicationStartInfoIntegration(context, buildInfoProvider)
     integration.register(scopes, options)
 
     verify(activityManager)
       .addApplicationStartInfoCompletionListener(any(), listenerCaptor.capture())
-
-    val mockTransaction = mock<ITransaction>()
-    val mockSpan = mock<ISpan>()
-    whenever(scopes.startTransaction(any(), any<io.sentry.TransactionOptions>()))
-      .thenReturn(mockTransaction)
-    whenever(
-        mockTransaction.startChild(eq("app.start.bind_application"), anyOrNull(), any(), any())
-      )
-      .thenReturn(mockSpan)
 
     val startInfo =
       createMockApplicationStartInfo(forkTime = 1000000000L, bindApplicationTime = 1100000000L)
     listenerCaptor.firstValue.accept(startInfo)
 
-    verify(mockTransaction).startChild(eq("app.start.bind_application"), anyOrNull(), any(), any())
-    verify(mockSpan).finish(any(), any())
-  }
-
-  @Test
-  fun `creates application_oncreate span when timestamp available`() {
-    val listenerCaptor = argumentCaptor<Consumer<android.app.ApplicationStartInfo>>()
-    val integration = ApplicationStartInfoIntegration(context, buildInfoProvider)
-    integration.register(scopes, options)
-
-    verify(activityManager)
-      .addApplicationStartInfoCompletionListener(any(), listenerCaptor.capture())
-
-    val mockTransaction = mock<ITransaction>()
-    val mockSpan = mock<ISpan>()
-    whenever(scopes.startTransaction(any(), any<io.sentry.TransactionOptions>()))
-      .thenReturn(mockTransaction)
-    whenever(
-        mockTransaction.startChild(eq("app.start.application_oncreate"), anyOrNull(), any(), any())
-      )
-      .thenReturn(mockSpan)
-
-    val startInfo =
-      createMockApplicationStartInfo(forkTime = 1000000000L, applicationOnCreateTime = 1200000000L)
-    listenerCaptor.firstValue.accept(startInfo)
-
-    verify(mockTransaction)
-      .startChild(eq("app.start.application_oncreate"), anyOrNull(), any(), any())
-    verify(mockSpan).finish(any(), any())
+    verify(scopes).captureTransaction(transactionCaptor.capture(), anyOrNull(), anyOrNull())
+    val spans = transactionCaptor.firstValue.spans
+    assertTrue(spans.any { it.op == "bind_application" })
   }
 
   @Test
   fun `creates ttid span when timestamp available`() {
     val listenerCaptor = argumentCaptor<Consumer<android.app.ApplicationStartInfo>>()
+    val transactionCaptor = argumentCaptor<SentryTransaction>()
     val integration = ApplicationStartInfoIntegration(context, buildInfoProvider)
     integration.register(scopes, options)
 
     verify(activityManager)
       .addApplicationStartInfoCompletionListener(any(), listenerCaptor.capture())
-
-    val mockTransaction = mock<ITransaction>()
-    val mockSpan = mock<ISpan>()
-    whenever(scopes.startTransaction(any(), any<io.sentry.TransactionOptions>()))
-      .thenReturn(mockTransaction)
-    whenever(mockTransaction.startChild(eq("app.start.ttid"), anyOrNull(), any(), any()))
-      .thenReturn(mockSpan)
 
     val startInfo =
       createMockApplicationStartInfo(forkTime = 1000000000L, firstFrameTime = 1500000000L)
     listenerCaptor.firstValue.accept(startInfo)
 
-    verify(mockTransaction).startChild(eq("app.start.ttid"), anyOrNull(), any(), any())
-    verify(mockSpan).finish(any(), any())
+    verify(scopes).captureTransaction(transactionCaptor.capture(), anyOrNull(), anyOrNull())
+    val spans = transactionCaptor.firstValue.spans
+    assertTrue(spans.any { it.op == "ttid" })
   }
 
   @Test
   fun `creates ttfd span when timestamp available`() {
     val listenerCaptor = argumentCaptor<Consumer<android.app.ApplicationStartInfo>>()
+    val transactionCaptor = argumentCaptor<SentryTransaction>()
     val integration = ApplicationStartInfoIntegration(context, buildInfoProvider)
     integration.register(scopes, options)
 
     verify(activityManager)
       .addApplicationStartInfoCompletionListener(any(), listenerCaptor.capture())
 
-    val mockTransaction = mock<ITransaction>()
-    val mockSpan = mock<ISpan>()
-    whenever(scopes.startTransaction(any(), any<io.sentry.TransactionOptions>()))
-      .thenReturn(mockTransaction)
-    whenever(mockTransaction.startChild(eq("app.start.ttfd"), anyOrNull(), any(), any()))
-      .thenReturn(mockSpan)
-
     val startInfo =
       createMockApplicationStartInfo(forkTime = 1000000000L, fullyDrawnTime = 2000000000L)
     listenerCaptor.firstValue.accept(startInfo)
 
-    verify(mockTransaction).startChild(eq("app.start.ttfd"), anyOrNull(), any(), any())
-    verify(mockSpan).finish(any(), any())
+    verify(scopes).captureTransaction(transactionCaptor.capture(), anyOrNull(), anyOrNull())
+    val spans = transactionCaptor.firstValue.spans
+    assertTrue(spans.any { it.op == "ttfd" })
   }
 
   @Test
@@ -266,63 +218,60 @@ class ApplicationStartInfoIntegrationTest {
   }
 
   @Test
-  fun `transaction name includes reason label`() {
+  fun `transaction name is app_start`() {
     val listenerCaptor = argumentCaptor<Consumer<android.app.ApplicationStartInfo>>()
+    val transactionCaptor = argumentCaptor<SentryTransaction>()
     val integration = ApplicationStartInfoIntegration(context, buildInfoProvider)
     integration.register(scopes, options)
 
     verify(activityManager)
       .addApplicationStartInfoCompletionListener(any(), listenerCaptor.capture())
 
-    var capturedContext: TransactionContext? = null
-    whenever(scopes.startTransaction(any(), any<io.sentry.TransactionOptions>())).thenAnswer {
-      capturedContext = it.arguments[0] as TransactionContext
-      mock()
-    }
-
     val startInfo = createMockApplicationStartInfo()
-    whenever(startInfo.reason)
-      .thenReturn(
-        if (Build.VERSION.SDK_INT >= 35) android.app.ApplicationStartInfo.START_REASON_LAUNCHER
-        else 0
-      )
     listenerCaptor.firstValue.accept(startInfo)
 
-    assertNotNull(capturedContext)
-    assertEquals("app.start.launcher", capturedContext!!.name)
+    verify(scopes).captureTransaction(transactionCaptor.capture(), anyOrNull(), anyOrNull())
+    assertEquals("app.start", transactionCaptor.firstValue.transaction)
+  }
+
+  @Test
+  fun `does not register on API lower than 35`() {
+    whenever(buildInfoProvider.sdkInfoVersion).thenReturn(34)
+    val integration = ApplicationStartInfoIntegration(context, buildInfoProvider)
+
+    integration.register(scopes, options)
+
+    verify(activityManager, never()).addApplicationStartInfoCompletionListener(any(), any())
   }
 
   // Helper methods
   private fun createMockApplicationStartInfo(
     forkTime: Long = 1000000000L, // nanoseconds
     bindApplicationTime: Long = 0L,
-    applicationOnCreateTime: Long = 0L,
     firstFrameTime: Long = 0L,
     fullyDrawnTime: Long = 0L,
+    reason: Int = android.app.ApplicationStartInfo.START_REASON_LAUNCHER,
+    startType: Int = android.app.ApplicationStartInfo.START_TYPE_COLD,
+    launchMode: Int = android.app.ApplicationStartInfo.LAUNCH_MODE_STANDARD,
   ): android.app.ApplicationStartInfo {
     val startInfo = mock<android.app.ApplicationStartInfo>()
 
     val timestamps = mutableMapOf<Int, Long>()
-    if (Build.VERSION.SDK_INT >= 35) {
-      timestamps[android.app.ApplicationStartInfo.START_TIMESTAMP_FORK] = forkTime
-      if (bindApplicationTime > 0) {
-        timestamps[android.app.ApplicationStartInfo.START_TIMESTAMP_BIND_APPLICATION] =
-          bindApplicationTime
-      }
-      if (applicationOnCreateTime > 0) {
-        timestamps[android.app.ApplicationStartInfo.START_TIMESTAMP_APPLICATION_ONCREATE] =
-          applicationOnCreateTime
-      }
-      if (firstFrameTime > 0) {
-        timestamps[android.app.ApplicationStartInfo.START_TIMESTAMP_FIRST_FRAME] = firstFrameTime
-      }
-      if (fullyDrawnTime > 0) {
-        timestamps[android.app.ApplicationStartInfo.START_TIMESTAMP_FULLY_DRAWN] = fullyDrawnTime
-      }
-
-      whenever(startInfo.reason).thenReturn(android.app.ApplicationStartInfo.START_REASON_LAUNCHER)
+    timestamps[android.app.ApplicationStartInfo.START_TIMESTAMP_FORK] = forkTime
+    if (bindApplicationTime > 0) {
+      timestamps[android.app.ApplicationStartInfo.START_TIMESTAMP_BIND_APPLICATION] =
+        bindApplicationTime
+    }
+    if (firstFrameTime > 0) {
+      timestamps[android.app.ApplicationStartInfo.START_TIMESTAMP_FIRST_FRAME] = firstFrameTime
+    }
+    if (fullyDrawnTime > 0) {
+      timestamps[android.app.ApplicationStartInfo.START_TIMESTAMP_FULLY_DRAWN] = fullyDrawnTime
     }
 
+    whenever(startInfo.reason).thenReturn(reason)
+    whenever(startInfo.startType).thenReturn(startType)
+    whenever(startInfo.launchMode).thenReturn(launchMode)
     whenever(startInfo.startupTimestamps).thenReturn(timestamps)
 
     return startInfo
