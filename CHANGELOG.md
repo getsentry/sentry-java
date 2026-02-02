@@ -7,6 +7,9 @@
 - Add `installGroupsOverride` parameter and `installGroups` property to Build Distribution SDK ([#5062](https://github.com/getsentry/sentry-java/pull/5062))
 - Update Android targetSdk to API 36 (Android 16) ([#5016](https://github.com/getsentry/sentry-java/pull/5016))
 - Add AndroidManifest support for Spotlight configuration via `io.sentry.spotlight.enable` and `io.sentry.spotlight.url` ([#5064](https://github.com/getsentry/sentry-java/pull/5064))
+- Add ApplicationStartInfo API support for Android 15+ ([#5055](https://github.com/getsentry/sentry-java/pull/5055))
+  - Captures detailed app startup timing data based on [ApplicationStartInfo APIs](https://developer.android.com/reference/android/app/ApplicationStartInfo)
+  - Opt-in via `SentryAndroidOptions.setEnableApplicationStartInfo(boolean)` (disabled by default)
 
 ### Fixes
 

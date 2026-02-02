@@ -380,6 +380,8 @@ final class AndroidOptionsInitializer {
       options.addIntegration(new TombstoneIntegration(context));
     }
 
+    options.addIntegration(new ApplicationStartInfoIntegration(context, buildInfoProvider));
+
     // this integration uses android.os.FileObserver, we can't move to sentry
     // before creating a pure java impl.
     options.addIntegration(EnvelopeFileObserverIntegration.getOutboxFileObserver());
