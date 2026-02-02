@@ -18,7 +18,9 @@ import io.sentry.SpanContext;
 import io.sentry.SpanDataConvention;
 import io.sentry.SpanId;
 import io.sentry.SpanStatus;
+import io.sentry.TracesSamplingDecision;
 import io.sentry.android.core.internal.util.AndroidThreadChecker;
+import io.sentry.android.core.performance.ActivityLifecycleTimeSpan;
 import io.sentry.android.core.performance.AppStartMetrics;
 import io.sentry.android.core.performance.TimeSpan;
 import io.sentry.protocol.SentryId;
@@ -28,6 +30,7 @@ import io.sentry.protocol.TransactionInfo;
 import io.sentry.protocol.TransactionNameSource;
 import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.IntegrationUtils;
+import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Date;
@@ -52,7 +55,7 @@ public final class ApplicationStartInfoIntegration implements Integration, Close
       final @NotNull Context context, final @NotNull BuildInfoProvider buildInfoProvider) {
     this.context = ContextUtils.getApplicationContext(context);
     this.buildInfoProvider =
-        java.util.Objects.requireNonNull(buildInfoProvider, "BuildInfoProvider is required");
+        Objects.requireNonNull(buildInfoProvider, "BuildInfoProvider is required");
   }
 
   @Override
@@ -70,9 +73,9 @@ public final class ApplicationStartInfoIntegration implements Integration, Close
             "ApplicationStartInfoIntegration enabled: %s",
             options.isEnableApplicationStartInfo());
 
-    //    if (!options.isEnableApplicationStartInfo()) {
-    //      return;
-    //    }
+    if (!options.isEnableApplicationStartInfo()) {
+      return;
+    }
 
     if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.VANILLA_ICE_CREAM) {
       options
@@ -157,9 +160,7 @@ public final class ApplicationStartInfoIntegration implements Integration, Close
     final long unixTimeOffsetMs = currentUnixMs - currentRealtimeMs;
 
     final Map<String, String> tags = extractTags(startInfo);
-    final String transactionName = "app.start." + getReasonLabel(startInfo.getReason());
     final long startRealtimeMs = getStartTimestampMs(startInfo);
-
     final long ttidRealtimeMs = getFirstFrameTimestampMs(startInfo);
     final long ttfdRealtimeMs = getFullyDrawnTimestampMs(startInfo);
     final long bindApplicationRealtimeMs = getBindApplicationTimestampMs(startInfo);
@@ -172,36 +173,30 @@ public final class ApplicationStartInfoIntegration implements Integration, Close
             ? dateFromUnixTime(unixTimeOffsetMs + endTimestamp)
             : options.getDateProvider().now();
 
-    // Create trace context
     final SentryId traceId = new SentryId();
     final SpanId spanId = new SpanId();
     final SpanContext traceContext =
-        new SpanContext(traceId, spanId, "app.startDate.info", null, null);
+        new SpanContext(traceId, spanId, "app.start", null, new TracesSamplingDecision(true));
     traceContext.setStatus(SpanStatus.OK);
 
-    // Convert timestamps to seconds
     final double startTimestampSecs = dateToSeconds(startDate);
     final double endTimestampSecs = dateToSeconds(endDate);
 
-    // Create transaction directly
     final SentryTransaction transaction =
         new SentryTransaction(
-            transactionName,
+            "app.start",
             startTimestampSecs,
             endTimestampSecs,
             new java.util.ArrayList<>(),
             new HashMap<>(),
             new TransactionInfo(TransactionNameSource.COMPONENT.apiName()));
 
-    // Set trace context
     transaction.getContexts().setTrace(traceContext);
 
-    // Set tags
     for (Map.Entry<String, String> entry : tags.entrySet()) {
       transaction.setTag(entry.getKey(), entry.getValue());
     }
 
-    // Add spans
     if (bindApplicationRealtimeMs > 0) {
       transaction
           .getSpans()
@@ -214,6 +209,12 @@ public final class ApplicationStartInfoIntegration implements Integration, Close
                   startDate,
                   dateFromUnixTime(unixTimeOffsetMs + bindApplicationRealtimeMs)));
     }
+
+    if (startInfo.getStartType() == ApplicationStartInfo.START_TYPE_COLD) {
+      attachColdStartInstrumentations(transaction, traceId, spanId);
+    }
+
+    attachActivitySpans(transaction, traceId, spanId);
 
     if (ttidRealtimeMs > 0) {
       transaction
@@ -239,26 +240,6 @@ public final class ApplicationStartInfoIntegration implements Integration, Close
                   null,
                   startDate,
                   dateFromUnixTime(unixTimeOffsetMs + ttfdRealtimeMs)));
-    }
-
-    attachAppStartMetrics(transaction, traceId, spanId, unixTimeOffsetMs);
-
-    // if application instrumentation was disabled, report app start info data
-    final TimeSpan appOnCreateSpan = AppStartMetrics.getInstance().getApplicationOnCreateTimeSpan();
-    if (!appOnCreateSpan.hasStarted() || appOnCreateSpan.hasStopped()) {
-      final long applicationOnCreateRealtimeMs = getApplicationOnCreateTimestampMs(startInfo);
-      if (applicationOnCreateRealtimeMs > 0) {
-        transaction
-            .getSpans()
-            .add(
-                createSpan(
-                    traceId,
-                    spanId,
-                    "application.onCreate",
-                    null,
-                    startDate,
-                    dateFromUnixTime(unixTimeOffsetMs + applicationOnCreateRealtimeMs)));
-      }
     }
 
     scopes.captureTransaction(transaction, null, null);
@@ -299,11 +280,10 @@ public final class ApplicationStartInfoIntegration implements Integration, Close
   }
 
   @RequiresApi(api = 35)
-  private void attachAppStartMetrics(
+  private void attachColdStartInstrumentations(
       final @NotNull SentryTransaction transaction,
       final @NotNull SentryId traceId,
-      final @NotNull SpanId parentSpanId,
-      final long unixTimeOffsetMs) {
+      final @NotNull SpanId parentSpanId) {
 
     final @NotNull AppStartMetrics appStartMetrics = AppStartMetrics.getInstance();
     final @NotNull List<TimeSpan> contentProviderSpans =
@@ -320,7 +300,7 @@ public final class ApplicationStartInfoIntegration implements Integration, Close
                 createSpan(
                     traceId,
                     parentSpanId,
-                    "contentprovider.load",
+                    "contentprovider.on_create",
                     cpSpan.getDescription(),
                     cpStartDate,
                     cpEndDate));
@@ -342,10 +322,58 @@ public final class ApplicationStartInfoIntegration implements Integration, Close
               createSpan(
                   traceId,
                   parentSpanId,
-                  "application.onCreate",
+                  "application.on_create",
                   appOnCreateDescription,
                   appOnCreateStart,
                   appOnCreateEnd));
+    }
+  }
+
+  @RequiresApi(api = 35)
+  private void attachActivitySpans(
+      final @NotNull SentryTransaction transaction,
+      final @NotNull SentryId traceId,
+      final @NotNull SpanId parentSpanId) {
+
+    final @NotNull AppStartMetrics appStartMetrics = AppStartMetrics.getInstance();
+    final @NotNull List<ActivityLifecycleTimeSpan> activityLifecycleTimeSpans =
+        appStartMetrics.getActivityLifecycleTimeSpans();
+
+    for (final ActivityLifecycleTimeSpan span : activityLifecycleTimeSpans) {
+      final TimeSpan onCreate = span.getOnCreate();
+      final TimeSpan onStart = span.getOnStart();
+
+      if (onCreate.hasStarted() && onCreate.hasStopped()) {
+        final SentryDate start = dateFromUnixTime(onCreate.getStartTimestampMs());
+        final SentryDate end = dateFromUnixTime(onCreate.getProjectedStopTimestampMs());
+
+        transaction
+            .getSpans()
+            .add(
+                createSpan(
+                    traceId,
+                    parentSpanId,
+                    "activity.on_create",
+                    onCreate.getDescription(),
+                    start,
+                    end));
+      }
+
+      if (onStart.hasStarted() && onStart.hasStopped()) {
+        final SentryDate start = dateFromUnixTime(onStart.getStartTimestampMs());
+        final SentryDate end = dateFromUnixTime(onStart.getProjectedStopTimestampMs());
+
+        transaction
+            .getSpans()
+            .add(
+                createSpan(
+                    traceId,
+                    parentSpanId,
+                    "activity.on_start",
+                    onStart.getDescription(),
+                    start,
+                    end));
+      }
     }
   }
 
@@ -435,15 +463,6 @@ public final class ApplicationStartInfoIntegration implements Integration, Close
 
     final Long bindTime = timestamps.get(ApplicationStartInfo.START_TIMESTAMP_BIND_APPLICATION);
     return bindTime != null ? TimeUnit.NANOSECONDS.toMillis(bindTime) : 0;
-  }
-
-  @RequiresApi(api = 35)
-  private long getApplicationOnCreateTimestampMs(
-      final @NotNull android.app.ApplicationStartInfo startInfo) {
-    final Map<Integer, Long> timestamps = startInfo.getStartupTimestamps();
-    final Long onCreateTime =
-        timestamps.get(ApplicationStartInfo.START_TIMESTAMP_APPLICATION_ONCREATE);
-    return onCreateTime != null ? TimeUnit.NANOSECONDS.toMillis(onCreateTime) : 0;
   }
 
   @RequiresApi(api = 35)
