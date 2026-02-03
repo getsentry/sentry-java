@@ -137,13 +137,24 @@ jobs:
           script: |
             adb uninstall io.sentry.uitest.android.critical || echo "Already uninstalled (or not found)"
             adb install -r -d "${{env.APK_NAME}}"
+
+            adb shell screenrecord --size 720x1280 --bit-rate 2000000 /sdcard/recording.mp4 &
+            SCREENRECORD_PID=$!
+
             maestro test "${{env.BASE_PATH}}/maestro" --debug-output "${{env.BASE_PATH}}/maestro-logs"
+            MAESTRO_EXIT_CODE=$?
+
+            kill $SCREENRECORD_PID 2>/dev/null || true
+            wait $SCREENRECORD_PID 2>/dev/null || true
+            adb pull /sdcard/recording.mp4 "${{env.BASE_PATH}}/maestro-logs/recording.mp4"
+
+            exit $MAESTRO_EXIT_CODE
 
       - name: Upload Maestro test results
         if: failure()
         uses: actions/upload-artifact@v6
         with:
-          name: maestro-logs
+          name: maestro-logs-${{ matrix.api-level }}-${{ matrix.arch }}-${{ matrix.target }}
           include-hidden-files: true # maestro debug logs are stored within maestro-logs/.maestro/
           path: "${{env.BASE_PATH}}/maestro-logs"
           retention-days: 1
