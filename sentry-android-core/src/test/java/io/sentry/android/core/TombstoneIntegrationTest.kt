@@ -82,8 +82,8 @@ class TombstoneIntegrationTest : ApplicationExitIntegrationTestBase<TombstoneHin
     assertEquals("744b0bf6-5f00-fb33-3ef3-b98aa4546008", image!!.debugId)
     assertNotNull(image)
     assertEquals("/system/lib64/libcompiler_rt.so", image.codeFile)
-    assertEquals("0x764c32a000", image.imageAddr)
-    assertEquals(32768, image.imageSize)
+    assertEquals("0x764c325000", image.imageAddr)
+    assertEquals(57344, image.imageSize)
   }
 
   @Test

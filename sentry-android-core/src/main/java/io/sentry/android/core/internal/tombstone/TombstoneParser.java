@@ -210,29 +210,105 @@ public class TombstoneParser implements Closeable {
     return message;
   }
 
+  /**
+   * Helper class to accumulate memory mappings into a single module. Modules in the Sentry sense
+   * are the entire readable memory map for a file, not just the executable segment. This is
+   * important to maintain the file-offset contract of map entries, which is necessary to resolve
+   * runtime instruction addresses in the files uploaded for symbolication.
+   */
+  private static class ModuleAccumulator {
+    String mappingName;
+    String buildId;
+    long beginAddress;
+    long endAddress;
+
+    ModuleAccumulator(TombstoneProtos.MemoryMapping mapping) {
+      this.mappingName = mapping.getMappingName();
+      this.buildId = mapping.getBuildId();
+      this.beginAddress = mapping.getBeginAddress();
+      this.endAddress = mapping.getEndAddress();
+    }
+
+    void extendTo(long newEndAddress) {
+      this.endAddress = newEndAddress;
+    }
+
+    DebugImage toDebugImage() {
+      if (buildId.isEmpty()) {
+        return null;
+      }
+      final DebugImage image = new DebugImage();
+      image.setCodeId(buildId);
+      image.setCodeFile(mappingName);
+
+      final String debugId = NativeEventUtils.buildIdToDebugId(buildId);
+      image.setDebugId(debugId != null ? debugId : buildId);
+
+      image.setImageAddr(formatHex(beginAddress));
+      image.setImageSize(endAddress - beginAddress);
+      image.setType("elf");
+
+      return image;
+    }
+  }
+
   private DebugMeta createDebugMeta(@NonNull final TombstoneProtos.Tombstone tombstone) {
     final List<DebugImage> images = new ArrayList<>();
 
-    for (TombstoneProtos.MemoryMapping module : tombstone.getMemoryMappingsList()) {
-      // exclude anonymous and non-executable maps
-      if (module.getBuildId().isEmpty()
-          || module.getMappingName().isEmpty()
-          || !module.getExecute()) {
+    // Coalesce memory mappings into modules similar to how sentry-native does it.
+    // A module consists of all readable mappings for the same file, starting from
+    // the first mapping that has a valid ELF header (indicated by offset 0 with build_id).
+    // In sentry-native, is_valid_elf_header() reads the ELF magic bytes from memory,
+    // which is only present at the start of the file (offset 0). We use offset == 0
+    // combined with non-empty build_id as a proxy for this check.
+    ModuleAccumulator currentModule = null;
+
+    for (TombstoneProtos.MemoryMapping mapping : tombstone.getMemoryMappingsList()) {
+      // Skip mappings that are not readable
+      if (!mapping.getRead()) {
         continue;
       }
-      final DebugImage image = new DebugImage();
-      final String codeId = module.getBuildId();
-      image.setCodeId(codeId);
-      image.setCodeFile(module.getMappingName());
 
-      final String debugId = NativeEventUtils.buildIdToDebugId(codeId);
-      image.setDebugId(debugId != null ? debugId : codeId);
+      // Skip mappings with empty name or in /dev/
+      final String mappingName = mapping.getMappingName();
+      if (mappingName.isEmpty() || mappingName.startsWith("/dev/")) {
+        continue;
+      }
 
-      image.setImageAddr(formatHex(module.getBeginAddress()));
-      image.setImageSize(module.getEndAddress() - module.getBeginAddress());
-      image.setType("elf");
+      final boolean hasBuildId = !mapping.getBuildId().isEmpty();
+      final boolean isFileStart = mapping.getOffset() == 0;
 
-      images.add(image);
+      if (hasBuildId && isFileStart) {
+        // Check for duplicated mappings: On Android, the same ELF can have multiple
+        // mappings at offset 0 with different permissions (r--p, r-xp, r--p).
+        // If it's the same file as the current module, just extend it.
+        if (currentModule != null && mappingName.equals(currentModule.mappingName)) {
+          currentModule.extendTo(mapping.getEndAddress());
+          continue;
+        }
+
+        // Flush the previous module (different file)
+        if (currentModule != null) {
+          final DebugImage image = currentModule.toDebugImage();
+          if (image != null) {
+            images.add(image);
+          }
+        }
+
+        // Start a new module
+        currentModule = new ModuleAccumulator(mapping);
+      } else if (currentModule != null && mappingName.equals(currentModule.mappingName)) {
+        // Extend the current module with this mapping (same file, continuation)
+        currentModule.extendTo(mapping.getEndAddress());
+      }
+    }
+
+    // Flush the last module
+    if (currentModule != null) {
+      final DebugImage image = currentModule.toDebugImage();
+      if (image != null) {
+        images.add(image);
+      }
     }
 
     final DebugMeta debugMeta = new DebugMeta();
