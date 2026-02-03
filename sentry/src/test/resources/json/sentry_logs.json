@@ -4,6 +4,7 @@
     {
       "timestamp": 1081621443.000000,
       "trace_id": "5c1f73d39486827b9e60ceb1fc23277a",
+      "span_id": "0a53026963414893",
       "body": "42e6bd2a-c45e-414d-8066-ed5196fbc686",
       "level": "info",
       "severity_number": 10,

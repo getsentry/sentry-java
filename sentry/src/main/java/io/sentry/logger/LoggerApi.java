@@ -131,7 +131,8 @@ public final class LoggerApi implements ILoggerApi {
           span == null ? propagationContext.getSpanId() : span.getSpanContext().getSpanId();
       final SentryLogEvent logEvent =
           new SentryLogEvent(traceId, timestampToUse, messageToUse, level);
-      logEvent.setAttributes(createAttributes(params, message, spanId, args));
+      logEvent.setSpanId(spanId);
+      logEvent.setAttributes(createAttributes(params, message, args));
       logEvent.setSeverityNumber(level.getSeverityNumber());
 
       scopes.getClient().captureLog(logEvent, combinedScope);
@@ -160,7 +161,6 @@ public final class LoggerApi implements ILoggerApi {
   private @NotNull HashMap<String, SentryLogEventAttributeValue> createAttributes(
       final @NotNull SentryLogParameters params,
       final @NotNull String message,
-      final @NotNull SpanId spanId,
       final @Nullable Object... args) {
     final @NotNull HashMap<String, SentryLogEventAttributeValue> attributes = new HashMap<>();
     final @NotNull String origin = params.getOrigin();
@@ -239,15 +239,13 @@ public final class LoggerApi implements ILoggerApi {
           "sentry.release", new SentryLogEventAttributeValue(SentryAttributeType.STRING, release));
     }
 
-    attributes.put(
-        "sentry.trace.parent_span_id",
-        new SentryLogEventAttributeValue(SentryAttributeType.STRING, spanId));
-
     if (Platform.isJvm()) {
       setServerName(attributes);
     }
 
-    setUser(attributes);
+    if (scopes.getOptions().isSendDefaultPii()) {
+      setUser(attributes);
+    }
 
     return attributes;
   }
