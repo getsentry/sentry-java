@@ -141,8 +141,10 @@ jobs:
             adb shell screenrecord --size 720x1280 --bit-rate 2000000 /sdcard/recording.mp4 &
             SCREENRECORD_PID=$!
 
+            set +e
             maestro test "${{env.BASE_PATH}}/maestro" --debug-output "${{env.BASE_PATH}}/maestro-logs"
             MAESTRO_EXIT_CODE=$?
+            set -e
 
             kill $SCREENRECORD_PID 2>/dev/null || true
             wait $SCREENRECORD_PID 2>/dev/null || true
