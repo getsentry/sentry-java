@@ -117,6 +117,9 @@ public class TombstoneParser implements Closeable {
       stackFrame.setFunction(frame.getFunctionName());
       stackFrame.setInstructionAddr(formatHex(frame.getPc()));
 
+      // inAppIncludes/inAppExcludes filter by Java/Kotlin package names, which don't overlap
+      // with native C/C++ function names (e.g., "crash", "__libc_init"). For native frames,
+      // isInApp() returns null, making nativeLibraryDir the effective in-app check.
       @Nullable
       Boolean inApp =
           SentryStackTraceFactory.isInApp(frame.getFunctionName(), inAppIncludes, inAppExcludes);
