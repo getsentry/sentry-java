@@ -3,6 +3,7 @@ package io.sentry.android.core.internal.tombstone;
 import androidx.annotation.NonNull;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
+import io.sentry.SentryStackTraceFactory;
 import io.sentry.android.core.internal.util.NativeEventUtils;
 import io.sentry.protocol.DebugImage;
 import io.sentry.protocol.DebugMeta;
@@ -22,6 +23,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class TombstoneParser implements Closeable {
 
@@ -116,23 +118,11 @@ public class TombstoneParser implements Closeable {
       stackFrame.setFunction(frame.getFunctionName());
       stackFrame.setInstructionAddr(formatHex(frame.getPc()));
 
-      // TODO: is this the right order?
-      boolean inApp = false;
-      for (String inclusion : this.inAppIncludes) {
-        if (frame.getFunctionName().startsWith(inclusion)) {
-          inApp = true;
-          break;
-        }
-      }
+      @Nullable
+      Boolean inApp =
+          SentryStackTraceFactory.isInApp(frame.getFunctionName(), inAppIncludes, inAppExcludes);
 
-      for (String exclusion : this.inAppExcludes) {
-        if (frame.getFunctionName().startsWith(exclusion)) {
-          inApp = false;
-          break;
-        }
-      }
-
-      inApp = inApp || frame.getFileName().startsWith(this.nativeLibraryDir);
+      inApp = (inApp != null && inApp) || frame.getFileName().startsWith(this.nativeLibraryDir);
 
       stackFrame.setInApp(inApp);
       frames.add(0, stackFrame);
