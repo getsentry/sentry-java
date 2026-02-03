@@ -2,16 +2,23 @@ package io.sentry.android.core
 
 import android.app.ApplicationExitInfo
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import io.sentry.DateUtils
+import io.sentry.Hint
 import io.sentry.SentryEvent
 import io.sentry.SentryLevel
 import io.sentry.android.core.TombstoneIntegration.TombstoneHint
 import io.sentry.android.core.cache.AndroidEnvelopeCache
+import java.io.File
 import java.util.zip.GZIPInputStream
+import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import org.junit.runner.RunWith
+import org.mockito.kotlin.any
+import org.mockito.kotlin.argThat
 import org.mockito.kotlin.spy
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowActivityManager.ApplicationExitInfoBuilder
@@ -77,5 +84,67 @@ class TombstoneIntegrationTest : ApplicationExitIntegrationTestBase<TombstoneHin
     assertEquals("/system/lib64/libcompiler_rt.so", image.codeFile)
     assertEquals("0x764c32a000", image.imageAddr)
     assertEquals(32768, image.imageSize)
+  }
+
+  @Test
+  fun `when matching native event has attachments, they are added to the hint`() {
+    val integration =
+      fixture.getSut(tmpDir, lastReportedTimestamp = oldTimestamp) { options ->
+        // Set up the outbox directory with the native envelope containing an attachment
+        // Use newTimestamp to match the tombstone timestamp
+        val outboxDir = File(options.outboxPath!!)
+        outboxDir.mkdirs()
+        createNativeEnvelopeWithAttachment(outboxDir, newTimestamp)
+      }
+
+    // Add tombstone with timestamp matching the native event
+    fixture.addAppExitInfo(timestamp = newTimestamp)
+
+    integration.register(fixture.scopes, fixture.options)
+
+    verify(fixture.scopes)
+      .captureEvent(
+        any(),
+        argThat<Hint> {
+          val attachments = this.attachments
+          attachments.size == 2 &&
+            attachments[0].filename == "test-attachment.txt" &&
+            attachments[0].contentType == "text/plain" &&
+            String(attachments[0].bytes!!) == "some attachment content" &&
+            attachments[1].filename == "test-another-attachment.txt" &&
+            attachments[1].contentType == "text/plain" &&
+            String(attachments[1].bytes!!) == "another attachment content"
+        },
+      )
+  }
+
+  private fun createNativeEnvelopeWithAttachment(outboxDir: File, timestamp: Long): File {
+    val isoTimestamp = DateUtils.getTimestamp(DateUtils.getDateTime(timestamp))
+
+    val eventJson =
+      """{"event_id":"9ec79c33ec9942ab8353589fcb2e04dc","timestamp":"$isoTimestamp","platform":"native","level":"fatal"}"""
+    val eventJsonSize = eventJson.toByteArray(Charsets.UTF_8).size
+
+    val attachment1Content = "some attachment content"
+    val attachment1ContentSize = attachment1Content.toByteArray(Charsets.UTF_8).size
+
+    val attachment2Content = "another attachment content"
+    val attachment2ContentSize = attachment2Content.toByteArray(Charsets.UTF_8).size
+
+    val envelopeContent =
+      """
+    {"event_id":"9ec79c33ec9942ab8353589fcb2e04dc"}
+    {"type":"attachment","length":$attachment1ContentSize,"filename":"test-attachment.txt","content_type":"text/plain"}
+    $attachment1Content
+    {"type":"attachment","length":$attachment2ContentSize,"filename":"test-another-attachment.txt","content_type":"text/plain"}
+    $attachment2Content
+    {"type":"event","length":$eventJsonSize,"content_type":"application/json"}
+    $eventJson
+  """
+        .trimIndent()
+
+    return File(outboxDir, "native-envelope-with-attachment.envelope").apply {
+      writeText(envelopeContent)
+    }
   }
 }

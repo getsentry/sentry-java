@@ -5,13 +5,18 @@ import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
 import android.app.ApplicationExitInfo;
 import android.content.Context;
 import android.os.Build;
+import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+import io.sentry.Attachment;
 import io.sentry.DateUtils;
 import io.sentry.Hint;
 import io.sentry.ILogger;
 import io.sentry.IScopes;
 import io.sentry.Integration;
+import io.sentry.SentryEnvelope;
+import io.sentry.SentryEnvelopeItem;
 import io.sentry.SentryEvent;
+import io.sentry.SentryItemType;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.ApplicationExitInfoHistoryDispatcher.ApplicationExitInfoPolicy;
@@ -180,37 +185,78 @@ public class TombstoneIntegration implements Integration, Closeable {
       final long tombstoneTimestamp = exitInfo.getTimestamp();
       event.setTimestamp(DateUtils.getDateTime(tombstoneTimestamp));
 
-      // Try to find and remove matching native event from outbox
-      final @Nullable NativeEventData matchingNativeEvent =
-          nativeEventCollector.findAndRemoveMatchingNativeEvent(tombstoneTimestamp);
-
-      if (matchingNativeEvent != null) {
-        options
-            .getLogger()
-            .log(
-                SentryLevel.DEBUG,
-                "Found matching native event for tombstone, removing from outbox: %s",
-                matchingNativeEvent.getFile().getName());
-
-        // Delete from outbox so OutboxSender doesn't send it
-        boolean deletionSuccess = nativeEventCollector.deleteNativeEventFile(matchingNativeEvent);
-
-        if (deletionSuccess) {
-          event = mergeNativeCrashes(matchingNativeEvent.getEvent(), event);
-        }
-      } else {
-        options.getLogger().log(SentryLevel.DEBUG, "No matching native event found for tombstone.");
-      }
-
       final TombstoneHint tombstoneHint =
           new TombstoneHint(
               options.getFlushTimeoutMillis(), options.getLogger(), tombstoneTimestamp, enrich);
       final Hint hint = HintUtils.createWithTypeCheckHint(tombstoneHint);
 
+      try {
+        mergeWithMatchingNativeEvents(tombstoneTimestamp, event, hint);
+      } catch (Throwable e) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.WARNING,
+                "Failed to merge native event with tombstone, continuing without merge: %s",
+                e.getMessage());
+      }
+
       return new ApplicationExitInfoHistoryDispatcher.Report(event, hint, tombstoneHint);
     }
 
-    private SentryEvent mergeNativeCrashes(
+    private void mergeWithMatchingNativeEvents(
+        long tombstoneTimestamp, SentryEvent event, Hint hint) {
+      // Try to find and remove matching native event from outbox
+      final @Nullable NativeEventData matchingNativeEvent =
+          nativeEventCollector.findAndRemoveMatchingNativeEvent(tombstoneTimestamp);
+
+      if (matchingNativeEvent == null) {
+        options.getLogger().log(SentryLevel.DEBUG, "No matching native event found for tombstone.");
+        return;
+      }
+
+      options
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Found matching native event for tombstone, removing from outbox: %s",
+              matchingNativeEvent.getFile().getName());
+
+      // Delete from outbox so OutboxSender doesn't send it
+      boolean deletionSuccess = nativeEventCollector.deleteNativeEventFile(matchingNativeEvent);
+
+      if (deletionSuccess) {
+        mergeNativeCrashes(matchingNativeEvent.getEvent(), event);
+        addNativeAttachmentsToTombstoneHint(matchingNativeEvent, hint);
+      }
+    }
+
+    private void addNativeAttachmentsToTombstoneHint(
+        @NonNull NativeEventData matchingNativeEvent, Hint hint) {
+      @NotNull SentryEnvelope nativeEnvelope = matchingNativeEvent.getEnvelope();
+      for (SentryEnvelopeItem item : nativeEnvelope.getItems()) {
+        try {
+          @Nullable String attachmentFileName = item.getHeader().getFileName();
+          if (item.getHeader().getType() != SentryItemType.Attachment
+              || attachmentFileName == null) {
+            continue;
+          }
+          hint.addAttachment(
+              new Attachment(
+                  item.getData(),
+                  attachmentFileName,
+                  item.getHeader().getContentType(),
+                  item.getHeader().getAttachmentType(),
+                  false));
+        } catch (Throwable e) {
+          options
+              .getLogger()
+              .log(SentryLevel.DEBUG, "Failed to process envelope item: %s", e.getMessage());
+        }
+      }
+    }
+
+    private void mergeNativeCrashes(
         final @NotNull SentryEvent nativeEvent, final @NotNull SentryEvent tombstoneEvent) {
       // we take the event data verbatim from the Native SDK and only apply tombstone data where we
       // are sure that it will improve the outcome:
@@ -236,8 +282,6 @@ public class TombstoneIntegration implements Integration, Closeable {
         nativeEvent.setDebugMeta(tombstoneDebugMeta);
         nativeEvent.setThreads(tombstoneThreads);
       }
-
-      return nativeEvent;
     }
   }
 
