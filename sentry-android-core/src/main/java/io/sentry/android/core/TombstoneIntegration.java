@@ -191,7 +191,11 @@ public class TombstoneIntegration implements Integration, Closeable {
       final Hint hint = HintUtils.createWithTypeCheckHint(tombstoneHint);
 
       try {
-        mergeWithMatchingNativeEvents(tombstoneTimestamp, event, hint);
+        final @Nullable SentryEvent mergedEvent =
+            mergeWithMatchingNativeEvents(tombstoneTimestamp, event, hint);
+        if (mergedEvent != null) {
+          event = mergedEvent;
+        }
       } catch (Throwable e) {
         options
             .getLogger()
@@ -204,15 +208,21 @@ public class TombstoneIntegration implements Integration, Closeable {
       return new ApplicationExitInfoHistoryDispatcher.Report(event, hint, tombstoneHint);
     }
 
-    private void mergeWithMatchingNativeEvents(
-        long tombstoneTimestamp, SentryEvent event, Hint hint) {
+    /**
+     * Attempts to find a matching native SDK event for the tombstone and merge them.
+     *
+     * @return The merged native event (with tombstone data applied) if a match was found and
+     *     merged, or null if no matching event was found or merge failed.
+     */
+    private @Nullable SentryEvent mergeWithMatchingNativeEvents(
+        long tombstoneTimestamp, SentryEvent tombstoneEvent, Hint hint) {
       // Try to find and remove matching native event from outbox
       final @Nullable NativeEventData matchingNativeEvent =
           nativeEventCollector.findAndRemoveMatchingNativeEvent(tombstoneTimestamp);
 
       if (matchingNativeEvent == null) {
         options.getLogger().log(SentryLevel.DEBUG, "No matching native event found for tombstone.");
-        return;
+        return null;
       }
 
       options
@@ -226,9 +236,12 @@ public class TombstoneIntegration implements Integration, Closeable {
       boolean deletionSuccess = nativeEventCollector.deleteNativeEventFile(matchingNativeEvent);
 
       if (deletionSuccess) {
-        mergeNativeCrashes(matchingNativeEvent.getEvent(), event);
+        final SentryEvent nativeEvent = matchingNativeEvent.getEvent();
+        mergeNativeCrashes(nativeEvent, tombstoneEvent);
         addNativeAttachmentsToTombstoneHint(matchingNativeEvent, hint);
+        return nativeEvent;
       }
+      return null;
     }
 
     private void addNativeAttachmentsToTombstoneHint(

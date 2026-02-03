@@ -17,6 +17,7 @@ import kotlin.test.assertTrue
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argThat
+import org.mockito.kotlin.check
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -116,6 +117,64 @@ class TombstoneIntegrationTest : ApplicationExitIntegrationTestBase<TombstoneHin
             String(attachments[1].bytes!!) == "another attachment content"
         },
       )
+  }
+
+  @Test
+  fun `when merging with native event, uses native event as base with tombstone stack traces`() {
+    val integration =
+      fixture.getSut(tmpDir, lastReportedTimestamp = oldTimestamp) { options ->
+        val outboxDir = File(options.outboxPath!!)
+        outboxDir.mkdirs()
+        createNativeEnvelopeWithContext(outboxDir, newTimestamp)
+      }
+
+    // Add tombstone with timestamp matching the native event
+    fixture.addAppExitInfo(timestamp = newTimestamp)
+
+    integration.register(fixture.scopes, fixture.options)
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check<SentryEvent> { event ->
+          // Verify native SDK context is preserved
+          assertEquals("native-sdk-user-id", event.user?.id)
+          assertEquals("native-sdk-tag-value", event.getTag("native-sdk-tag"))
+
+          // Verify tombstone stack trace data is applied
+          assertNotNull(event.exceptions)
+          assertTrue(event.exceptions!!.isNotEmpty())
+          assertEquals("TombstoneMerged", event.exceptions!![0].mechanism?.type)
+
+          // Verify tombstone debug meta is applied
+          assertNotNull(event.debugMeta)
+          assertTrue(event.debugMeta!!.images!!.isNotEmpty())
+
+          // Verify tombstone threads are applied (tombstone has 62 threads)
+          assertEquals(62, event.threads?.size)
+        },
+        any<Hint>(),
+      )
+  }
+
+  private fun createNativeEnvelopeWithContext(outboxDir: File, timestamp: Long): File {
+    val isoTimestamp = DateUtils.getTimestamp(DateUtils.getDateTime(timestamp))
+
+    // Native SDK event with user context and tags that should be preserved after merge
+    val eventJson =
+      """{"event_id":"9ec79c33ec9942ab8353589fcb2e04dc","timestamp":"$isoTimestamp","platform":"native","level":"fatal","user":{"id":"native-sdk-user-id"},"tags":{"native-sdk-tag":"native-sdk-tag-value"}}"""
+    val eventJsonSize = eventJson.toByteArray(Charsets.UTF_8).size
+
+    val envelopeContent =
+      """
+    {"event_id":"9ec79c33ec9942ab8353589fcb2e04dc"}
+    {"type":"event","length":$eventJsonSize,"content_type":"application/json"}
+    $eventJson
+  """
+        .trimIndent()
+
+    return File(outboxDir, "native-envelope-with-context.envelope").apply {
+      writeText(envelopeContent)
+    }
   }
 
   private fun createNativeEnvelopeWithAttachment(outboxDir: File, timestamp: Long): File {
