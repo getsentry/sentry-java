@@ -144,5 +144,6 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: maestro-logs
+          include-hidden-files: true # maestro debug logs are stored within maestro-logs/.maestro/
           path: "${{env.BASE_PATH}}/maestro-logs"
           retention-days: 1
