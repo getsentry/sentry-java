@@ -30,8 +30,7 @@ public class TombstoneParser implements Closeable {
   private final InputStream tombstoneStream;
   @NotNull private final List<String> inAppIncludes;
   @NotNull private final List<String> inAppExcludes;
-  // TODO: in theory can be null, but practically not for native crashes
-  private final String nativeLibraryDir;
+  @Nullable private final String nativeLibraryDir;
   private final Map<String, String> excTypeValueMap = new HashMap<>();
 
   private static String formatHex(long value) {
@@ -42,7 +41,7 @@ public class TombstoneParser implements Closeable {
       @NonNull final InputStream tombstoneStream,
       @NotNull List<String> inAppIncludes,
       @NotNull List<String> inAppExcludes,
-      String nativeLibraryDir) {
+      @Nullable String nativeLibraryDir) {
     this.tombstoneStream = tombstoneStream;
     this.inAppIncludes = inAppIncludes;
     this.inAppExcludes = inAppExcludes;
@@ -122,7 +121,9 @@ public class TombstoneParser implements Closeable {
       Boolean inApp =
           SentryStackTraceFactory.isInApp(frame.getFunctionName(), inAppIncludes, inAppExcludes);
 
-      inApp = (inApp != null && inApp) || frame.getFileName().startsWith(this.nativeLibraryDir);
+      final boolean isInNativeLibraryDir =
+          nativeLibraryDir != null && frame.getFileName().startsWith(nativeLibraryDir);
+      inApp = (inApp != null && inApp) || isInNativeLibraryDir;
 
       stackFrame.setInApp(inApp);
       frames.add(0, stackFrame);

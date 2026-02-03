@@ -410,6 +410,26 @@ class TombstoneParserTest {
     assertEquals(expectedJson, actualJson)
   }
 
+  @Test
+  fun `parses tombstone when nativeLibraryDir is null`() {
+    val tombstoneStream =
+      GZIPInputStream(TombstoneParserTest::class.java.getResourceAsStream("/tombstone.pb.gz"))
+    val parser = TombstoneParser(tombstoneStream, inAppIncludes, inAppExcludes, null)
+    val event = parser.parse()
+
+    // Parsing should succeed without NPE
+    assertNotNull(event)
+    assertEquals(62, event.threads!!.size)
+
+    // Without nativeLibraryDir, frames can only be marked inApp via inAppIncludes
+    // All frames should still have inApp set (either true or false)
+    for (thread in event.threads!!) {
+      for (frame in thread.stacktrace!!.frames!!) {
+        assertNotNull(frame.isInApp)
+      }
+    }
+  }
+
   private fun serializeDebugMeta(debugMeta: DebugMeta): String {
     val logger = mock<ILogger>()
     val writer = StringWriter()
