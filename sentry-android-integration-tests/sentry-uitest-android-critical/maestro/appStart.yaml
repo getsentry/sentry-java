@@ -26,8 +26,8 @@ name: App Launch Tests
 - tapOn: "Finish Activity"
 - assertNotVisible: "Welcome!"
 - swipe:
-    start: 50%, 0%
-    end: 50%, 50%
+    start: 50%, 1%
+    end: 50%, 90%
 - tapOn: "Sentry Test Notification"
 - assertVisible: "App Start Type: WARM"
 
@@ -41,8 +41,8 @@ name: App Launch Tests
 - tapOn: "Trigger Notification"
 - killApp
 - swipe:
-    start: 50%, 0%
-    end: 50%, 50%
+    start: 50%, 1%
+    end: 50%, 90%
 - tapOn: "Sentry Test Notification"
 - assertVisible: "App Start Type: COLD"
 
