@@ -1,8 +1,11 @@
 package io.sentry.android.core.performance;
 
 import android.app.Activity;
+import android.app.ActivityManager;
 import android.app.Application;
+import android.app.ApplicationStartInfo;
 import android.content.ContentProvider;
+import android.content.Context;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -335,7 +338,25 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     appLaunchedInForeground.resetValue();
     application.registerActivityLifecycleCallbacks(instance);
 
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+    final @Nullable ActivityManager activityManager =
+        (ActivityManager) application.getSystemService(Context.ACTIVITY_SERVICE);
+
+    if (activityManager != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+      final List<ApplicationStartInfo> historicalProcessStartReasons =
+          activityManager.getHistoricalProcessStartReasons(1);
+      if (!historicalProcessStartReasons.isEmpty()) {
+        final @NotNull ApplicationStartInfo info = historicalProcessStartReasons.get(0);
+        if (info.getStartupState() == ApplicationStartInfo.STARTUP_STATE_STARTED) {
+          if (info.getStartType() == ApplicationStartInfo.START_TYPE_COLD) {
+            appStartType = AppStartType.COLD;
+          } else {
+            appStartType = AppStartType.WARM;
+          }
+        }
+      }
+    }
+
+    if (appStartType == AppStartType.UNKNOWN && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
       Looper.getMainLooper()
           .getQueue()
           .addIdleHandler(
@@ -347,7 +368,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
                   return false;
                 }
               });
-    } else {
+    } else if (appStartType == AppStartType.UNKNOWN) {
       // We post on the main thread a task to post a check on the main thread. On Pixel devices
       // (possibly others) the first task posted on the main thread is called before the
       // Activity.onCreate callback. This is a workaround for that, so that the Activity.onCreate
@@ -402,12 +423,15 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
         CLASS_LOADED_UPTIME_MS = activityCreatedUptimeMillis;
         contentProviderOnCreates.clear();
         applicationOnCreate.reset();
-      } else if (savedInstanceState != null) {
-        appStartType = AppStartType.WARM;
-      } else if (firstIdle != -1 && activityCreatedUptimeMillis > firstIdle) {
-        appStartType = AppStartType.WARM;
-      } else {
-        appStartType = AppStartType.COLD;
+      } else if (appStartType == AppStartType.UNKNOWN) {
+        // pre API 35 handling
+        if (savedInstanceState != null) {
+          appStartType = AppStartType.WARM;
+        } else if (firstIdle != -1 && activityCreatedUptimeMillis > firstIdle) {
+          appStartType = AppStartType.WARM;
+        } else {
+          appStartType = AppStartType.COLD;
+        }
       }
     }
     appLaunchedInForeground.setValue(true);
@@ -451,6 +475,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     // if the app is moving into background
     // as the next onActivityCreated will treat it as a new warm app start
     if (remainingActivities == 0 && !activity.isChangingConfigurations()) {
+      appStartType = AppStartType.WARM;
       appLaunchedInForeground.setValue(true);
       shouldSendStartMeasurements = true;
       firstDrawDone.set(false);

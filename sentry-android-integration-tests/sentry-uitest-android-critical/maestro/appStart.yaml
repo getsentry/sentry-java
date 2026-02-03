@@ -16,7 +16,38 @@ name: App Launch Tests
     stopApp: false
 - assertVisible: "App Start Type: WARM"
 
-# Test 3: Launch app after a broadcast receiver already created the application
+# Test 3: Notification (WARM start)
+- launchApp:
+    stopApp: true
+    permissions:
+      all: allow
+- assertVisible: "Welcome!"
+- tapOn: "Trigger Notification"
+- tapOn: "Finish Activity"
+- assertNotVisible: "Welcome!"
+- swipe:
+    start: 50%, 0%
+    end: 50%, 50%
+- tapOn: "Sentry Test Notification"
+- assertVisible: "App Start Type: WARM"
+
+
+# Test 4: Notification (COLD start)
+- launchApp:
+    stopApp: true
+    permissions:
+      all: allow
+- assertVisible: "Welcome!"
+- tapOn: "Trigger Notification"
+- killApp
+- swipe:
+    start: 50%, 0%
+    end: 50%, 50%
+- tapOn: "Sentry Test Notification"
+- assertVisible: "App Start Type: COLD"
+
+
+# Test 5: Launch app after a broadcast receiver already created the application
 # Uncomment once https://github.com/mobile-dev-inc/Maestro/pull/2925 is merged
 # - killApp
 # - sendBroadcast:

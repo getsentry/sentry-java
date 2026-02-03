@@ -1,9 +1,13 @@
 package io.sentry.uitest.android.critical
 
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -20,15 +24,30 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import io.sentry.Sentry
 import io.sentry.android.core.performance.AppStartMetrics
+import io.sentry.uitest.android.critical.NotificationHelper.showNotification
 import java.io.File
 import kotlinx.coroutines.delay
 
 class MainActivity : ComponentActivity() {
+  private lateinit var requestPermissionLauncher: ActivityResultLauncher<String?>
+
   override fun onCreate(savedInstanceState: Bundle?) {
+    setTheme(android.R.style.Theme_DeviceDefault_NoActionBar)
+
     super.onCreate(savedInstanceState)
     val outboxPath =
       Sentry.getCurrentHub().options.outboxPath ?: throw RuntimeException("Outbox path is not set.")
 
+    requestPermissionLauncher =
+      registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
+        if (isGranted) {
+          // Permission granted, show notification
+          postNotification()
+        } else {
+          // Permission denied, handle accordingly
+          Toast.makeText(this, "Notification permission denied", Toast.LENGTH_SHORT).show()
+        }
+      }
     setContent {
       var appStartType by remember { mutableStateOf("") }
 
@@ -39,7 +58,7 @@ class MainActivity : ComponentActivity() {
 
       MaterialTheme {
         Surface {
-          Column(modifier = Modifier.fillMaxSize().padding(20.dp)) {
+          Column(modifier = Modifier.fillMaxSize().padding(24.dp)) {
             Text(text = "Welcome!")
             Text(text = "App Start Type: $appStartType")
 
@@ -63,6 +82,17 @@ class MainActivity : ComponentActivity() {
             Button(onClick = { finish() }) { Text("Finish Activity") }
             Button(
               onClick = {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                  requestPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                } else {
+                  postNotification()
+                }
+              }
+            ) {
+              Text("Trigger Notification")
+            }
+            Button(
+              onClick = {
                 startActivity(
                   Intent(this@MainActivity, MainActivity::class.java).apply {
                     addFlags(
@@ -80,5 +110,13 @@ class MainActivity : ComponentActivity() {
         }
       }
     }
+  }
+
+  fun postNotification() {
+    NotificationHelper.showNotification(
+      this@MainActivity,
+      "Sentry Test Notification",
+      "This is a test notification.",
+    )
   }
 }
