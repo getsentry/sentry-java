@@ -118,13 +118,17 @@ public final class NativeEventCollector {
     }
 
     final File outboxDir = new File(outboxPath);
-    if (!outboxDir.isDirectory()) {
-      options.getLogger().log(SentryLevel.DEBUG, "Outbox path is not a directory: %s", outboxPath);
+    final File[] files = outboxDir.listFiles();
+    if (files == null) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Outbox path is not a directory or an I/O error occurred: %s",
+              outboxPath);
       return;
     }
-
-    final File[] files = outboxDir.listFiles((d, name) -> isRelevantFileName(name));
-    if (files == null || files.length == 0) {
+    if (files.length == 0) {
       options.getLogger().log(SentryLevel.DEBUG, "No envelope files found in outbox.");
       return;
     }
@@ -134,7 +138,7 @@ public final class NativeEventCollector {
         .log(SentryLevel.DEBUG, "Scanning %d files in outbox for native events.", files.length);
 
     for (final File file : files) {
-      if (!file.isFile()) {
+      if (!file.isFile() || !isRelevantFileName(file.getName())) {
         continue;
       }
 
