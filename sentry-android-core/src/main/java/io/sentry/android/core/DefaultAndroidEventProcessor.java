@@ -37,7 +37,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
   private final @NotNull BuildInfoProvider buildInfoProvider;
   private final @NotNull SentryAndroidOptions options;
-  private final @Nullable Future<DeviceInfoUtil> deviceInfoUtil;
+  @TestOnly final @Nullable Future<DeviceInfoUtil> deviceInfoUtil;
   private final @NotNull LazyEvaluator<String> deviceFamily =
       new LazyEvaluator<>(() -> ContextUtils.getFamily(NoOpLogger.getInstance()));
 

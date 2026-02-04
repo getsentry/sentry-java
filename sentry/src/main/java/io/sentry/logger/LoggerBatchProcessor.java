@@ -38,6 +38,7 @@ public class LoggerBatchProcessor implements ILoggerBatchProcessor {
   private volatile @Nullable Future<?> scheduledFlush;
   private final @NotNull AutoClosableReentrantLock scheduleLock = new AutoClosableReentrantLock();
   private volatile boolean hasScheduled = false;
+  private volatile boolean isShuttingDown = false;
 
   private final @NotNull ReusableCountLatch pendingCount = new ReusableCountLatch();
 
@@ -51,6 +52,9 @@ public class LoggerBatchProcessor implements ILoggerBatchProcessor {
 
   @Override
   public void add(final @NotNull SentryLogEvent logEvent) {
+    if (isShuttingDown) {
+      return;
+    }
     if (pendingCount.getCount() >= MAX_QUEUE_SIZE) {
       options
           .getClientReportRecorder()
@@ -70,6 +74,7 @@ public class LoggerBatchProcessor implements ILoggerBatchProcessor {
   @SuppressWarnings("FutureReturnValueIgnored")
   @Override
   public void close(final boolean isRestarting) {
+    isShuttingDown = true;
     if (isRestarting) {
       maybeSchedule(true, true);
       executorService.submit(() -> executorService.close(options.getShutdownTimeoutMillis()));

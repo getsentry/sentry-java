@@ -34,14 +34,14 @@ springboot2 = "2.7.18"
 springboot3 = "3.5.0"
 springboot4 = "4.0.0"
 # Android
-targetSdk = "34"
-compileSdk = "34"
+targetSdk = "36"
+compileSdk = "36"
 minSdk = "21"
 spotless = "7.0.4"
 gummyBears = "0.12.0"
 camerax = "1.3.0"
 openfeature = "1.18.2"
-protobuf = "4.33.1"
+protobuf = "3.25.8"
 
 [plugins]
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
@@ -82,7 +82,9 @@ androidx-annotation = { module = "androidx.annotation:annotation", version = "1.
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version = "1.8.2" }
 androidx-compose-foundation = { module = "androidx.compose.foundation:foundation", version.ref = "androidxCompose" }
 androidx-compose-foundation-layout = { module = "androidx.compose.foundation:foundation-layout", version.ref = "androidxCompose" }
-androidx-compose-material3 = { module = "androidx.compose.material3:material3", version = "1.2.1" }
+androidx-compose-material3 = { module = "androidx.compose.material3:material3", version = "1.4.0" }
+androidx-compose-material-icons-core = { module = "androidx.compose.material:material-icons-core", version="1.7.8" }
+androidx-compose-material-icons-extended = { module = "androidx.compose.material:material-icons-extended", version="1.7.8" }
 androidx-compose-ui = { module = "androidx.compose.ui:ui", version.ref = "androidxCompose" }
 # Note: don't change without testing forwards compatibility
 androidx-compose-ui-replay = { module = "androidx.compose.ui:ui", version = "1.5.0" }
@@ -147,7 +149,7 @@ quartz = { module = "org.quartz-scheduler:quartz", version = "2.3.0" }
 reactor-core = { module = "io.projectreactor:reactor-core", version = "3.5.3" }
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 retrofit-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "retrofit" }
-sentry-native-ndk = { module = "io.sentry:sentry-native-ndk", version = "0.12.3" }
+sentry-native-ndk = { module = "io.sentry:sentry-native-ndk", version = "0.12.4" }
 servlet-api = { module = "javax.servlet:javax.servlet-api", version = "3.1.0" }
 servlet-jakarta-api = { module = "jakarta.servlet:jakarta.servlet-api", version = "6.1.0" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
@@ -204,15 +206,15 @@ tomcat-catalina-jakarta = { module = "org.apache.tomcat:tomcat-catalina", versio
 tomcat-embed-jasper-jakarta = { module = "org.apache.tomcat.embed:tomcat-embed-jasper", version = "11.0.10" }
 
 # test libraries
-androidx-compose-ui-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4", version = "1.6.8" }
+androidx-compose-ui-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4", version = "1.9.5" }
 androidx-test-core = { module = "androidx.test:core", version.ref = "androidxTestCore" }
 androidx-test-core-ktx = { module = "androidx.test:core-ktx", version.ref = "androidxTestCore" }
 androidx-test-espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "espresso" }
 androidx-test-espresso-idling-resource = { module = "androidx.test.espresso:espresso-idling-resource", version.ref = "espresso" }
-androidx-test-ext-junit = { module = "androidx.test.ext:junit", version = "1.1.5" }
-androidx-test-orchestrator = { module = "androidx.test:orchestrator", version = "1.5.0" }
+androidx-test-ext-junit = { module = "androidx.test.ext:junit", version = "1.3.0" }
+androidx-test-orchestrator = { module = "androidx.test:orchestrator", version = "1.6.1" }
 androidx-test-rules = { module = "androidx.test:rules", version.ref = "androidxTestCore" }
-androidx-test-runner = { module = "androidx.test:runner", version = "1.6.2" }
+androidx-test-runner = { module = "androidx.test:runner", version = "1.7.0" }
 awaitility-kotlin = { module = "org.awaitility:awaitility-kotlin", version = "4.1.1" }
 awaitility-kotlin-spring7 = { module = "org.awaitility:awaitility-kotlin", version = "4.3.0" }
 awaitility3-kotlin = { module = "org.awaitility:awaitility-kotlin", version = "3.1.6" }
