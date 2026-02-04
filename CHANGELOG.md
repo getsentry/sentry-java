@@ -5,6 +5,14 @@
 ### Features
 
 - Added `io.sentry.ndk.sdk-name` Android manifest option to configure the native SDK's name ([#5027](https://github.com/getsentry/sentry-java/pull/5027))
+- Collect database transaction spans (`BEGIN`, `COMMIT`, `ROLLBACK`) ([#5072](https://github.com/getsentry/sentry-java/pull/5072))
+  - To enable creation of these spans, set `options.enableDatabaseTransactionTracing` to `true`
+  - `enable-database-transaction-tracing=true` when using `sentry.properties`
+  - For Spring Boot, use `sentry.enable-database-transaction-tracing=true` in `application.properties` or in `application.yml`:
+    ```yaml
+    sentry:
+      enable-database-transaction-tracing: true
+    ```
 
 ### Dependencies
 
