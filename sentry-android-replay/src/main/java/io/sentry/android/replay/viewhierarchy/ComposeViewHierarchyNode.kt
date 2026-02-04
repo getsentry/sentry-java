@@ -2,6 +2,7 @@
 
 package io.sentry.android.replay.viewhierarchy
 
+import android.annotation.SuppressLint
 import android.annotation.TargetApi
 import android.view.View
 import androidx.compose.ui.graphics.isUnspecified
@@ -32,6 +33,7 @@ import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.TextViewHierarch
 import java.lang.ref.WeakReference
 import java.lang.reflect.Method
 
+@SuppressLint("UseRequiresApi")
 @TargetApi(26)
 internal object ComposeViewHierarchyNode {
   private val getSemanticsConfigurationMethod: Method? by lazy {

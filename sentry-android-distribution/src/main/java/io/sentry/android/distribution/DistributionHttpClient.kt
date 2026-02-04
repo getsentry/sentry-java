@@ -27,6 +27,7 @@ internal class DistributionHttpClient(private val options: SentryOptions) {
     val versionCode: Long,
     val versionName: String,
     val buildConfiguration: String,
+    val installGroupsOverride: List<String>? = null,
   )
 
   /**
@@ -58,6 +59,9 @@ internal class DistributionHttpClient(private val options: SentryOptions) {
       append("&build_number=${URLEncoder.encode(params.versionCode.toString(), "UTF-8")}")
       append("&build_version=${URLEncoder.encode(params.versionName, "UTF-8")}")
       append("&build_configuration=${URLEncoder.encode(params.buildConfiguration, "UTF-8")}")
+      params.installGroupsOverride?.forEach { group ->
+        append("&install_groups=${URLEncoder.encode(group, "UTF-8")}")
+      }
     }
     val url = URL(urlString)
 

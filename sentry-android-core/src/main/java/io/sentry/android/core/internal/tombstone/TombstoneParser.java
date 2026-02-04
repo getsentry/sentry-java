@@ -142,9 +142,7 @@ public class TombstoneParser implements Closeable {
       @NonNull final TombstoneProtos.Signal signalInfo) {
 
     final Mechanism mechanism = new Mechanism();
-    // this follows the current processing triggers strictly, changing any of these
-    // alters grouping and name (long-term we might want to have a tombstone mechanism)
-    mechanism.setType("signalhandler");
+    mechanism.setType(NativeExceptionMechanism.TOMBSTONE.getValue());
     mechanism.setHandled(false);
     mechanism.setSynthetic(true);
 

@@ -82,7 +82,9 @@ androidx-annotation = { module = "androidx.annotation:annotation", version = "1.
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version = "1.8.2" }
 androidx-compose-foundation = { module = "androidx.compose.foundation:foundation", version.ref = "androidxCompose" }
 androidx-compose-foundation-layout = { module = "androidx.compose.foundation:foundation-layout", version.ref = "androidxCompose" }
-androidx-compose-material3 = { module = "androidx.compose.material3:material3", version = "1.2.1" }
+androidx-compose-material3 = { module = "androidx.compose.material3:material3", version = "1.4.0" }
+androidx-compose-material-icons-core = { module = "androidx.compose.material:material-icons-core", version="1.7.8" }
+androidx-compose-material-icons-extended = { module = "androidx.compose.material:material-icons-extended", version="1.7.8" }
 androidx-compose-ui = { module = "androidx.compose.ui:ui", version.ref = "androidxCompose" }
 # Note: don't change without testing forwards compatibility
 androidx-compose-ui-replay = { module = "androidx.compose.ui:ui", version = "1.5.0" }
@@ -147,7 +149,7 @@ quartz = { module = "org.quartz-scheduler:quartz", version = "2.3.0" }
 reactor-core = { module = "io.projectreactor:reactor-core", version = "3.5.3" }
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 retrofit-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "retrofit" }
-sentry-native-ndk = { module = "io.sentry:sentry-native-ndk", version = "0.12.3" }
+sentry-native-ndk = { module = "io.sentry:sentry-native-ndk", version = "0.12.4" }
 servlet-api = { module = "javax.servlet:javax.servlet-api", version = "3.1.0" }
 servlet-jakarta-api = { module = "jakarta.servlet:jakarta.servlet-api", version = "6.1.0" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
