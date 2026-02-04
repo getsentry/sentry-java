@@ -7,6 +7,7 @@ import io.sentry.SentryLogLevel
 import io.sentry.SentryOptions
 import io.sentry.checkEvent
 import io.sentry.checkLogs
+import io.sentry.test.applyTestOptions
 import io.sentry.test.initForTest
 import io.sentry.transport.ITransport
 import java.time.Instant
@@ -44,6 +45,7 @@ class SentryHandlerTest {
       val options = SentryOptions()
       options.dsn = "http://key@localhost/proj"
       options.setTransportFactory { _, _ -> transport }
+      applyTestOptions(options)
       contextTags?.forEach { options.addContextTag(it) }
       logger = Logger.getLogger("jul.SentryHandlerTest")
       handler = SentryHandler(options, configureWithLogManager, true)
@@ -415,7 +417,7 @@ class SentryHandlerTest {
     fixture = Fixture(minimumLevel = Level.FINEST)
     fixture.logger.finest("testing trace level")
 
-    Sentry.flush(1000)
+    Sentry.flush(10)
 
     verify(fixture.transport)
       .send(
@@ -431,7 +433,7 @@ class SentryHandlerTest {
     fixture = Fixture(minimumLevel = Level.FINE)
     fixture.logger.fine("testing trace level")
 
-    Sentry.flush(1000)
+    Sentry.flush(10)
 
     verify(fixture.transport)
       .send(checkLogs { event -> assertEquals(SentryLogLevel.DEBUG, event.items.first().level) })
@@ -442,7 +444,7 @@ class SentryHandlerTest {
     fixture = Fixture(minimumLevel = Level.CONFIG)
     fixture.logger.config("testing debug level")
 
-    Sentry.flush(1000)
+    Sentry.flush(10)
 
     verify(fixture.transport)
       .send(checkLogs { event -> assertEquals(SentryLogLevel.DEBUG, event.items.first().level) })
@@ -453,7 +455,7 @@ class SentryHandlerTest {
     fixture = Fixture(minimumLevel = Level.INFO)
     fixture.logger.info("testing info level")
 
-    Sentry.flush(1000)
+    Sentry.flush(10)
 
     verify(fixture.transport)
       .send(checkLogs { event -> assertEquals(SentryLogLevel.INFO, event.items.first().level) })
@@ -464,7 +466,7 @@ class SentryHandlerTest {
     fixture = Fixture(minimumLevel = Level.WARNING)
     fixture.logger.warning("testing warn level")
 
-    Sentry.flush(1000)
+    Sentry.flush(10)
 
     verify(fixture.transport)
       .send(checkLogs { event -> assertEquals(SentryLogLevel.WARN, event.items.first().level) })
@@ -475,7 +477,7 @@ class SentryHandlerTest {
     fixture = Fixture(minimumLevel = Level.SEVERE)
     fixture.logger.severe("testing error level")
 
-    Sentry.flush(1000)
+    Sentry.flush(10)
 
     verify(fixture.transport)
       .send(checkLogs { event -> assertEquals(SentryLogLevel.ERROR, event.items.first().level) })
