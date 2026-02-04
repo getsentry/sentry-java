@@ -60,23 +60,23 @@ jobs:
       matrix:
         include:
           - api-level: 31 # Android 12
-            target: aosp_atd
+            target: google_apis
             channel: canary # Necessary for ATDs
             arch: x86_64
           - api-level: 33 # Android 13
-            target: aosp_atd
+            target: google_apis
             channel: canary # Necessary for ATDs
             arch: x86_64
           - api-level: 34 # Android 14
-            target: aosp_atd
+            target: google_apis
             channel: canary # Necessary for ATDs
             arch: x86_64
           - api-level: 35 # Android 15
-            target: aosp_atd
+            target: google_apis
             channel: canary # Necessary for ATDs
             arch: x86_64
           - api-level: 36 # Android 16
-            target: aosp_atd
+            target: google_apis
             channel: canary # Necessary for ATDs
             arch: x86_64
     steps:
@@ -109,7 +109,7 @@ jobs:
           force-avd-creation: false
           disable-animations: true
           disable-spellchecker: true
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          emulator-options: -no-window -gpu auto -noaudio -no-boot-anim -camera-back none
           disk-size: 4096M
           script: echo "Generated AVD snapshot for caching."
 
@@ -133,7 +133,7 @@ jobs:
           force-avd-creation: false
           disable-animations: true
           disable-spellchecker: true
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot-save
+          emulator-options: -no-window -gpu auto -noaudio -no-boot-anim -camera-back none -no-snapshot-save
           script: |
             adb uninstall io.sentry.uitest.android.critical || echo "Already uninstalled (or not found)"
             adb install -r -d "${{env.APK_NAME}}"
