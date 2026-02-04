@@ -25,15 +25,22 @@ import org.mockito.kotlin.whenever
 
 class SentryJdbcEventListenerTest {
   class Fixture {
+    lateinit var options: SentryOptions
     val scopes =
-      mock<IScopes>().apply {
-        whenever(options)
-          .thenReturn(SentryOptions().apply { sdkVersion = SdkVersion("test", "1.2.3") })
-      }
+      mock<IScopes>().apply { whenever(this.options).thenAnswer { this@Fixture.options } }
     lateinit var tx: SentryTracer
     val actualDataSource = JDBCDataSource()
 
-    fun getSut(withRunningTransaction: Boolean = true, existingRow: Int? = null): DataSource {
+    fun getSut(
+      withRunningTransaction: Boolean = true,
+      existingRow: Int? = null,
+      enableDatabaseTransactionTracing: Boolean = false,
+    ): DataSource {
+      options =
+        SentryOptions().apply {
+          sdkVersion = SdkVersion("test", "1.2.3")
+          isEnableDatabaseTransactionTracing = enableDatabaseTransactionTracing
+        }
       tx = SentryTracer(TransactionContext("name", "op"), scopes)
       if (withRunningTransaction) {
         whenever(scopes.span).thenReturn(tx)
@@ -171,8 +178,8 @@ class SentryJdbcEventListenerTest {
   }
 
   @Test
-  fun `creates span for commit`() {
-    val sut = fixture.getSut()
+  fun `creates span for commit when database transaction tracing is enabled`() {
+    val sut = fixture.getSut(enableDatabaseTransactionTracing = true)
 
     sut.connection.use {
       it.autoCommit = false
@@ -187,8 +194,8 @@ class SentryJdbcEventListenerTest {
   }
 
   @Test
-  fun `creates span for rollback`() {
-    val sut = fixture.getSut()
+  fun `creates span for rollback when database transaction tracing is enabled`() {
+    val sut = fixture.getSut(enableDatabaseTransactionTracing = true)
 
     sut.connection.use {
       it.autoCommit = false
@@ -204,7 +211,7 @@ class SentryJdbcEventListenerTest {
 
   @Test
   fun `commit span has database details`() {
-    val sut = fixture.getSut()
+    val sut = fixture.getSut(enableDatabaseTransactionTracing = true)
 
     sut.connection.use {
       it.autoCommit = false
@@ -220,7 +227,7 @@ class SentryJdbcEventListenerTest {
 
   @Test
   fun `rollback span has database details`() {
-    val sut = fixture.getSut()
+    val sut = fixture.getSut(enableDatabaseTransactionTracing = true)
 
     sut.connection.use {
       it.autoCommit = false
@@ -236,7 +243,8 @@ class SentryJdbcEventListenerTest {
 
   @Test
   fun `does not create commit span when there is no running transaction`() {
-    val sut = fixture.getSut(withRunningTransaction = false)
+    val sut =
+      fixture.getSut(withRunningTransaction = false, enableDatabaseTransactionTracing = true)
 
     sut.connection.use {
       it.autoCommit = false
@@ -250,7 +258,8 @@ class SentryJdbcEventListenerTest {
 
   @Test
   fun `does not create rollback span when there is no running transaction`() {
-    val sut = fixture.getSut(withRunningTransaction = false)
+    val sut =
+      fixture.getSut(withRunningTransaction = false, enableDatabaseTransactionTracing = true)
 
     sut.connection.use {
       it.autoCommit = false
@@ -263,8 +272,8 @@ class SentryJdbcEventListenerTest {
   }
 
   @Test
-  fun `creates span for transaction begin when setAutoCommit false`() {
-    val sut = fixture.getSut()
+  fun `creates span for transaction begin when setAutoCommit false and database transaction tracing is enabled`() {
+    val sut = fixture.getSut(enableDatabaseTransactionTracing = true)
 
     sut.connection.use {
       it.autoCommit = false
@@ -280,7 +289,7 @@ class SentryJdbcEventListenerTest {
 
   @Test
   fun `transaction begin span has database details`() {
-    val sut = fixture.getSut()
+    val sut = fixture.getSut(enableDatabaseTransactionTracing = true)
 
     sut.connection.use {
       it.autoCommit = false
@@ -296,7 +305,7 @@ class SentryJdbcEventListenerTest {
 
   @Test
   fun `does not create begin span when already in manual commit mode`() {
-    val sut = fixture.getSut()
+    val sut = fixture.getSut(enableDatabaseTransactionTracing = true)
 
     sut.connection.use {
       it.autoCommit = false
@@ -311,7 +320,8 @@ class SentryJdbcEventListenerTest {
 
   @Test
   fun `does not create begin span when there is no running transaction`() {
-    val sut = fixture.getSut(withRunningTransaction = false)
+    val sut =
+      fixture.getSut(withRunningTransaction = false, enableDatabaseTransactionTracing = true)
 
     sut.connection.use {
       it.autoCommit = false
@@ -321,5 +331,41 @@ class SentryJdbcEventListenerTest {
 
     val beginSpans = fixture.tx.children.filter { it.operation == "db.sql.transaction.begin" }
     assertTrue(beginSpans.isEmpty())
+  }
+
+  @Test
+  fun `does not create transaction spans when database transaction tracing is disabled`() {
+    val sut = fixture.getSut(enableDatabaseTransactionTracing = false)
+
+    sut.connection.use {
+      it.autoCommit = false
+      it.prepareStatement("INSERT INTO foo VALUES (1)").executeUpdate()
+      it.commit()
+    }
+
+    val beginSpans = fixture.tx.children.filter { it.operation == "db.sql.transaction.begin" }
+    val commitSpans = fixture.tx.children.filter { it.operation == "db.sql.transaction.commit" }
+    assertTrue(beginSpans.isEmpty())
+    assertTrue(commitSpans.isEmpty())
+    // Query spans should still be created
+    val querySpans = fixture.tx.children.filter { it.operation == "db.query" }
+    assertEquals(1, querySpans.size)
+  }
+
+  @Test
+  fun `does not create rollback span when database transaction tracing is disabled`() {
+    val sut = fixture.getSut(enableDatabaseTransactionTracing = false)
+
+    sut.connection.use {
+      it.autoCommit = false
+      it.prepareStatement("INSERT INTO foo VALUES (1)").executeUpdate()
+      it.rollback()
+    }
+
+    val rollbackSpans = fixture.tx.children.filter { it.operation == "db.sql.transaction.rollback" }
+    assertTrue(rollbackSpans.isEmpty())
+    // Query spans should still be created
+    val querySpans = fixture.tx.children.filter { it.operation == "db.query" }
+    assertEquals(1, querySpans.size)
   }
 }

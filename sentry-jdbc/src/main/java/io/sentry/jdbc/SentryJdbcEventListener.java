@@ -69,6 +69,9 @@ public class SentryJdbcEventListener extends SimpleJdbcEventListener {
       final @NotNull ConnectionInformation connectionInformation,
       boolean newAutoCommit,
       boolean currentAutoCommit) {
+    if (!isDatabaseTransactionTracingEnabled()) {
+      return;
+    }
     final boolean isSwitchingToManualCommit = !newAutoCommit && currentAutoCommit;
     if (isSwitchingToManualCommit) {
       startSpan(CURRENT_TRANSACTION_SPAN, "db.sql.transaction.begin", "BEGIN");
@@ -81,6 +84,9 @@ public class SentryJdbcEventListener extends SimpleJdbcEventListener {
       final boolean newAutoCommit,
       final boolean oldAutoCommit,
       final @Nullable SQLException e) {
+    if (!isDatabaseTransactionTracingEnabled()) {
+      return;
+    }
     final boolean isSwitchingToManualCommit = !newAutoCommit && oldAutoCommit;
     if (isSwitchingToManualCommit) {
       finishSpan(CURRENT_TRANSACTION_SPAN, connectionInformation, e);
@@ -89,6 +95,9 @@ public class SentryJdbcEventListener extends SimpleJdbcEventListener {
 
   @Override
   public void onBeforeCommit(final @NotNull ConnectionInformation connectionInformation) {
+    if (!isDatabaseTransactionTracingEnabled()) {
+      return;
+    }
     startSpan(CURRENT_TRANSACTION_SPAN, "db.sql.transaction.commit", "COMMIT");
   }
 
@@ -97,11 +106,17 @@ public class SentryJdbcEventListener extends SimpleJdbcEventListener {
       final @NotNull ConnectionInformation connectionInformation,
       final long timeElapsedNanos,
       final @Nullable SQLException e) {
+    if (!isDatabaseTransactionTracingEnabled()) {
+      return;
+    }
     finishSpan(CURRENT_TRANSACTION_SPAN, connectionInformation, e);
   }
 
   @Override
   public void onBeforeRollback(final @NotNull ConnectionInformation connectionInformation) {
+    if (!isDatabaseTransactionTracingEnabled()) {
+      return;
+    }
     startSpan(CURRENT_TRANSACTION_SPAN, "db.sql.transaction.rollback", "ROLLBACK");
   }
 
@@ -110,7 +125,14 @@ public class SentryJdbcEventListener extends SimpleJdbcEventListener {
       final @NotNull ConnectionInformation connectionInformation,
       final long timeElapsedNanos,
       final @Nullable SQLException e) {
+    if (!isDatabaseTransactionTracingEnabled()) {
+      return;
+    }
     finishSpan(CURRENT_TRANSACTION_SPAN, connectionInformation, e);
+  }
+
+  private boolean isDatabaseTransactionTracingEnabled() {
+    return scopes.getOptions().isEnableDatabaseTransactionTracing();
   }
 
   private void startSpan(
