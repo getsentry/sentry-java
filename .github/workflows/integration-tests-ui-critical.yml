@@ -137,9 +137,8 @@ jobs:
           script: |
             adb uninstall io.sentry.uitest.android.critical || echo "Already uninstalled (or not found)"
             adb install -r -d "${{env.APK_NAME}}"
-            adb shell "screenrecord --size 720x1280 --bit-rate 2000000 /sdcard/recording.mp4 &" && sleep 2 && maestro test "${{env.BASE_PATH}}/maestro" --debug-output "${{env.BASE_PATH}}/maestro-logs" || MAESTRO_EXIT_CODE=$?; adb shell "kill -2 \$(pgrep screenrecord)" 2>/dev/null || true; sleep 3; adb pull /sdcard/recording.mp4 "${{env.BASE_PATH}}/maestro-logs/recording.mp4" || true; adb shell rm /sdcard/recording.mp4 || true; exit ${MAESTRO_EXIT_CODE:-0}
+            adb shell "screenrecord --size 720x1280 --bit-rate 2000000 /sdcard/recording.mp4 &" && sleep 2 && maestro test "${{env.BASE_PATH}}/maestro" --debug-output "${{env.BASE_PATH}}/maestro-logs/debug-logs" || MAESTRO_EXIT_CODE=$?; adb shell "kill -2 \$(pgrep screenrecord)" 2>/dev/null || true; sleep 3; adb pull /sdcard/recording.mp4 "${{env.BASE_PATH}}/maestro-logs/recording.mp4" || true; adb shell rm /sdcard/recording.mp4 || true; exit ${MAESTRO_EXIT_CODE:-0}
       - name: Upload Maestro test results
-        if: failure()
         uses: actions/upload-artifact@v6
         with:
           name: maestro-logs-${{ matrix.api-level }}-${{ matrix.arch }}-${{ matrix.target }}
