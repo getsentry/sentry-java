@@ -71,7 +71,10 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
       try {
         Sentry.init(options);
       } catch (IllegalArgumentException e) {
-        addWarn("Failed to init Sentry during appender initialization: " + e.getMessage());
+        final @Nullable String errorMessage = e.getMessage();
+        if (errorMessage == null || !errorMessage.startsWith("DSN is required.")) {
+          addWarn("Failed to init Sentry during appender initialization: " + errorMessage);
+        }
       }
     } else if (!Sentry.isEnabled()) {
       options
