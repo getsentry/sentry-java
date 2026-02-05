@@ -112,6 +112,11 @@ public class TombstoneParser implements Closeable {
         // We ignore all ART frames for time being because they aren't actionable for app developers
         continue;
       }
+      if (frame.getFileName().startsWith("<anonymous") && frame.getFunctionName().isEmpty()) {
+        // Code in anonymous VMAs that does not resolve to a function name, cannot be symbolicated
+        // in the backend either, and thus has no value in the UI.
+        continue;
+      }
       final SentryStackFrame stackFrame = new SentryStackFrame();
       stackFrame.setPackage(frame.getFileName());
       stackFrame.setFunction(frame.getFunctionName());
