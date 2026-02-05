@@ -2289,4 +2289,88 @@ class ManifestMetadataReaderTest {
     assertTrue(fixture.options.isEnableSpotlight)
     assertEquals(expectedUrl, fixture.options.spotlightConnectionUrl)
   }
+
+  // Screenshot masking tests
+
+  @Test
+  fun `applyMetadata reads screenshot mask-all-text to options`() {
+    // Arrange
+    val bundle = bundleOf(ManifestMetadataReader.SCREENSHOT_MASK_ALL_TEXT to true)
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertTrue(
+      fixture.options.screenshotOptions.maskViewClasses.contains("android.widget.TextView")
+    )
+  }
+
+  @Test
+  fun `applyMetadata reads screenshot mask-all-images to options`() {
+    // Arrange
+    val bundle = bundleOf(ManifestMetadataReader.SCREENSHOT_MASK_ALL_IMAGES to true)
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertTrue(
+      fixture.options.screenshotOptions.maskViewClasses.contains("android.widget.ImageView")
+    )
+  }
+
+  @Test
+  fun `applyMetadata without specifying screenshot mask-all-text, stays false`() {
+    // Arrange
+    val context = fixture.getContext()
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertFalse(
+      fixture.options.screenshotOptions.maskViewClasses.contains("android.widget.TextView")
+    )
+  }
+
+  @Test
+  fun `applyMetadata without specifying screenshot mask-all-images, stays false`() {
+    // Arrange
+    val context = fixture.getContext()
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertFalse(
+      fixture.options.screenshotOptions.maskViewClasses.contains("android.widget.ImageView")
+    )
+  }
+
+  @Test
+  fun `applyMetadata reads both screenshot masking options`() {
+    // Arrange
+    val bundle =
+      bundleOf(
+        ManifestMetadataReader.SCREENSHOT_MASK_ALL_TEXT to true,
+        ManifestMetadataReader.SCREENSHOT_MASK_ALL_IMAGES to true,
+      )
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertTrue(
+      fixture.options.screenshotOptions.maskViewClasses.contains("android.widget.TextView")
+    )
+    assertTrue(
+      fixture.options.screenshotOptions.maskViewClasses.contains("android.widget.ImageView")
+    )
+    // maskAllImages should also add WebView
+    assertTrue(fixture.options.screenshotOptions.maskViewClasses.contains("android.webkit.WebView"))
+  }
 }

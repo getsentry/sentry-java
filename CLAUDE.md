@@ -127,6 +127,11 @@ The repository is organized into multiple modules:
 - System tests validate end-to-end functionality with sample applications
 - Coverage reports are generated for both JaCoCo (Java/Android) and Kover (KMP modules)
 
+### Dependency Management
+- All dependencies must be declared in `gradle/libs.versions.toml` (Gradle version catalog)
+- Reference dependencies in build files using the `libs.` accessor (e.g., `libs.dropbox.differ`)
+- Never hardcode version strings directly in `build.gradle.kts` files
+
 ### Contributing Guidelines
 1. Follow existing code style and language
 2. Do not modify API files (e.g. sentry.api) manually - run `./gradlew apiDump` to regenerate them

@@ -17,9 +17,9 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.TextUnit
+import io.sentry.ILogger
 import io.sentry.SentryLevel
-import io.sentry.SentryOptions
-import io.sentry.SentryReplayOptions
+import io.sentry.SentryMaskingOptions
 import io.sentry.android.replay.SentryReplayModifiers
 import io.sentry.android.replay.util.ComposeTextLayout
 import io.sentry.android.replay.util.boundsInWindow
@@ -70,18 +70,18 @@ internal object ComposeViewHierarchyNode {
    */
   private fun getProxyClassName(isImage: Boolean, config: SemanticsConfiguration?): String =
     when {
-      isImage -> SentryReplayOptions.IMAGE_VIEW_CLASS_NAME
+      isImage -> SentryMaskingOptions.IMAGE_VIEW_CLASS_NAME
       config != null &&
         (config.contains(SemanticsProperties.Text) ||
           config.contains(SemanticsActions.SetText) ||
           config.contains(SemanticsProperties.EditableText)) ->
-        SentryReplayOptions.TEXT_VIEW_CLASS_NAME
+        SentryMaskingOptions.TEXT_VIEW_CLASS_NAME
       else -> "android.view.View"
     }
 
   private fun SemanticsConfiguration?.shouldMask(
     isImage: Boolean,
-    options: SentryOptions,
+    options: SentryMaskingOptions,
   ): Boolean {
     val sentryPrivacyModifier = this?.getOrNull(SentryReplayModifiers.SentryPrivacy)
     if (sentryPrivacyModifier == "unmask") {
@@ -93,11 +93,11 @@ internal object ComposeViewHierarchyNode {
     }
 
     val className = getProxyClassName(isImage, this)
-    if (options.sessionReplay.unmaskViewClasses.contains(className)) {
+    if (options.unmaskViewClasses.contains(className)) {
       return false
     }
 
-    return options.sessionReplay.maskViewClasses.contains(className)
+    return options.maskViewClasses.contains(className)
   }
 
   @Suppress("ktlint:standard:backing-property-naming")
@@ -108,7 +108,8 @@ internal object ComposeViewHierarchyNode {
     parent: ViewHierarchyNode?,
     distance: Int,
     isComposeRoot: Boolean,
-    options: SentryOptions,
+    options: SentryMaskingOptions,
+    logger: ILogger,
   ): ViewHierarchyNode? {
     val isInTree = node.isPlaced && node.isAttached
     if (!isInTree) {
@@ -127,7 +128,7 @@ internal object ComposeViewHierarchyNode {
     } catch (t: Throwable) {
       if (!semanticsRetrievalErrorLogged) {
         semanticsRetrievalErrorLogged = true
-        options.logger.log(
+        logger.log(
           SentryLevel.ERROR,
           t,
           """
@@ -257,7 +258,12 @@ internal object ComposeViewHierarchyNode {
     }
   }
 
-  fun fromView(view: View, parent: ViewHierarchyNode?, options: SentryOptions): Boolean {
+  fun fromView(
+    view: View,
+    parent: ViewHierarchyNode?,
+    options: SentryMaskingOptions,
+    logger: ILogger,
+  ): Boolean {
     if (!view::class.java.name.contains("AndroidComposeView")) {
       return false
     }
@@ -268,9 +274,9 @@ internal object ComposeViewHierarchyNode {
 
     try {
       val rootNode = (view as? Owner)?.root ?: return false
-      rootNode.traverse(parent, isComposeRoot = true, options)
+      rootNode.traverse(parent, isComposeRoot = true, options, logger)
     } catch (e: Throwable) {
-      options.logger.log(
+      logger.log(
         SentryLevel.ERROR,
         e,
         """
@@ -290,7 +296,8 @@ internal object ComposeViewHierarchyNode {
   private fun LayoutNode.traverse(
     parentNode: ViewHierarchyNode,
     isComposeRoot: Boolean,
-    options: SentryOptions,
+    options: SentryMaskingOptions,
+    logger: ILogger,
   ) {
     val children = this.children
     if (children.isEmpty()) {
@@ -300,10 +307,10 @@ internal object ComposeViewHierarchyNode {
     val childNodes = ArrayList<ViewHierarchyNode>(children.size)
     for (index in children.indices) {
       val child = children[index]
-      val childNode = fromComposeNode(child, parentNode, index, isComposeRoot, options)
+      val childNode = fromComposeNode(child, parentNode, index, isComposeRoot, options, logger)
       if (childNode != null) {
         childNodes.add(childNode)
-        child.traverse(childNode, isComposeRoot = false, options)
+        child.traverse(childNode, isComposeRoot = false, options, logger)
       }
     }
     parentNode.children = childNodes

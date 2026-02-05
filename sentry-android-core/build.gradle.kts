@@ -108,6 +108,7 @@ dependencies {
   testImplementation(projects.sentryAndroidReplay)
   testImplementation(projects.sentryCompose)
   testImplementation(projects.sentryAndroidNdk)
+  testImplementation(libs.dropbox.differ)
   testRuntimeOnly(libs.androidx.compose.ui)
   testRuntimeOnly(libs.androidx.fragment.ktx)
   testRuntimeOnly(libs.timber)

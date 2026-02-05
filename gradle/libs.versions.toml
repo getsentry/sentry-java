@@ -236,3 +236,4 @@ msgpack = { module = "org.msgpack:msgpack-core", version = "0.9.8" }
 okhttp-mockwebserver = { module = "com.squareup.okhttp3:mockwebserver", version.ref = "okhttp" }
 okio = { module = "com.squareup.okio:okio", version = "1.13.0" }
 roboelectric = { module = "org.robolectric:robolectric", version = "4.14" }
+dropbox-differ = { module = "com.dropbox.differ:differ-jvm", version = "0.3.0" }

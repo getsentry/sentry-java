@@ -9,21 +9,11 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-import java.util.concurrent.CopyOnWriteArraySet;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class SentryReplayOptions {
-
-  public static final String TEXT_VIEW_CLASS_NAME = "android.widget.TextView";
-  public static final String IMAGE_VIEW_CLASS_NAME = "android.widget.ImageView";
-  public static final String WEB_VIEW_CLASS_NAME = "android.webkit.WebView";
-  public static final String VIDEO_VIEW_CLASS_NAME = "android.widget.VideoView";
-  public static final String ANDROIDX_MEDIA_VIEW_CLASS_NAME = "androidx.media3.ui.PlayerView";
-  public static final String EXOPLAYER_CLASS_NAME = "com.google.android.exoplayer2.ui.PlayerView";
-  public static final String EXOPLAYER_STYLED_CLASS_NAME =
-      "com.google.android.exoplayer2.ui.StyledPlayerView";
+public final class SentryReplayOptions extends SentryMaskingOptions {
 
   /**
    * Maximum size in bytes for network request/response bodies to be captured in replays. Bodies
@@ -79,36 +69,6 @@ public final class SentryReplayOptions {
    * default is null (disabled).
    */
   private @Nullable Double onErrorSampleRate;
-
-  /**
-   * Mask all views with the specified class names. The class name is the fully qualified class name
-   * of the view, e.g. android.widget.TextView. The subclasses of the specified classes will be
-   * masked as well.
-   *
-   * <p>If you're using an obfuscation tool, make sure to add the respective proguard rules to keep
-   * the class names.
-   *
-   * <p>Default is empty.
-   */
-  private Set<String> maskViewClasses = new CopyOnWriteArraySet<>();
-
-  /**
-   * Ignore all views with the specified class names from masking. The class name is the fully
-   * qualified class name of the view, e.g. android.widget.TextView. The subclasses of the specified
-   * classes will be ignored as well.
-   *
-   * <p>If you're using an obfuscation tool, make sure to add the respective proguard rules to keep
-   * the class names.
-   *
-   * <p>Default is empty.
-   */
-  private Set<String> unmaskViewClasses = new CopyOnWriteArraySet<>();
-
-  /** The class name of the view container that masks all of its children. */
-  private @Nullable String maskViewContainerClass = null;
-
-  /** The class name of the view container that unmasks its direct children. */
-  private @Nullable String unmaskViewContainerClass = null;
 
   /**
    * Defines the quality of the session replay. The higher the quality, the more accurate the replay
@@ -211,11 +171,11 @@ public final class SentryReplayOptions {
     if (!empty) {
       setMaskAllText(true);
       setMaskAllImages(true);
-      maskViewClasses.add(WEB_VIEW_CLASS_NAME);
-      maskViewClasses.add(VIDEO_VIEW_CLASS_NAME);
-      maskViewClasses.add(ANDROIDX_MEDIA_VIEW_CLASS_NAME);
-      maskViewClasses.add(EXOPLAYER_CLASS_NAME);
-      maskViewClasses.add(EXOPLAYER_STYLED_CLASS_NAME);
+      addMaskViewClass(WEB_VIEW_CLASS_NAME);
+      addMaskViewClass(VIDEO_VIEW_CLASS_NAME);
+      addMaskViewClass(ANDROIDX_MEDIA_VIEW_CLASS_NAME);
+      addMaskViewClass(EXOPLAYER_CLASS_NAME);
+      addMaskViewClass(EXOPLAYER_STYLED_CLASS_NAME);
       this.sdkVersion = sdkVersion;
     }
   }
@@ -268,58 +228,6 @@ public final class SentryReplayOptions {
     this.sessionSampleRate = sessionSampleRate;
   }
 
-  /**
-   * Mask all text content. Draws a rectangle of text bounds with text color on top. By default only
-   * views extending TextView are masked.
-   *
-   * <p>Default is enabled.
-   */
-  public void setMaskAllText(final boolean maskAllText) {
-    if (maskAllText) {
-      addMaskViewClass(TEXT_VIEW_CLASS_NAME);
-      unmaskViewClasses.remove(TEXT_VIEW_CLASS_NAME);
-    } else {
-      addUnmaskViewClass(TEXT_VIEW_CLASS_NAME);
-      maskViewClasses.remove(TEXT_VIEW_CLASS_NAME);
-    }
-  }
-
-  /**
-   * Mask all image content. Draws a rectangle of image bounds with image's dominant color on top.
-   * By default only views extending ImageView with BitmapDrawable or custom Drawable type are
-   * masked. ColorDrawable, InsetDrawable, VectorDrawable are all considered non-PII, as they come
-   * from the apk.
-   *
-   * <p>Default is enabled.
-   */
-  public void setMaskAllImages(final boolean maskAllImages) {
-    if (maskAllImages) {
-      addMaskViewClass(IMAGE_VIEW_CLASS_NAME);
-      unmaskViewClasses.remove(IMAGE_VIEW_CLASS_NAME);
-    } else {
-      addUnmaskViewClass(IMAGE_VIEW_CLASS_NAME);
-      maskViewClasses.remove(IMAGE_VIEW_CLASS_NAME);
-    }
-  }
-
-  @NotNull
-  public Set<String> getMaskViewClasses() {
-    return this.maskViewClasses;
-  }
-
-  public void addMaskViewClass(final @NotNull String className) {
-    this.maskViewClasses.add(className);
-  }
-
-  @NotNull
-  public Set<String> getUnmaskViewClasses() {
-    return this.unmaskViewClasses;
-  }
-
-  public void addUnmaskViewClass(final @NotNull String className) {
-    this.unmaskViewClasses.add(className);
-  }
-
   @ApiStatus.Internal
   public @NotNull SentryReplayQuality getQuality() {
     return quality;
@@ -347,27 +255,6 @@ public final class SentryReplayOptions {
   @ApiStatus.Internal
   public long getSessionDuration() {
     return sessionDuration;
-  }
-
-  @ApiStatus.Internal
-  public void setMaskViewContainerClass(@NotNull String containerClass) {
-    addMaskViewClass(containerClass);
-    maskViewContainerClass = containerClass;
-  }
-
-  @ApiStatus.Internal
-  public void setUnmaskViewContainerClass(@NotNull String containerClass) {
-    unmaskViewContainerClass = containerClass;
-  }
-
-  @ApiStatus.Internal
-  public @Nullable String getMaskViewContainerClass() {
-    return maskViewContainerClass;
-  }
-
-  @ApiStatus.Internal
-  public @Nullable String getUnmaskViewContainerClass() {
-    return unmaskViewContainerClass;
   }
 
   @ApiStatus.Internal

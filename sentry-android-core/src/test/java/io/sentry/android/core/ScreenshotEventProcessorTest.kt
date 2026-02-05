@@ -1,9 +1,24 @@
 package io.sentry.android.core
 
 import android.app.Activity
+import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.drawable.Drawable
+import android.os.Bundle
+import android.os.Looper
 import android.view.View
-import android.view.Window
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.LinearLayout.LayoutParams
+import android.widget.RadioButton
+import android.widget.TextView
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.dropbox.differ.Color as DifferColor
+import com.dropbox.differ.Image
+import com.dropbox.differ.SimpleImageComparator
 import io.sentry.Attachment
 import io.sentry.Hint
 import io.sentry.MainEventProcessor
@@ -12,6 +27,7 @@ import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.TypeCheckHint.ANDROID_ACTIVITY
 import io.sentry.protocol.SentryException
 import io.sentry.util.thread.IThreadChecker
+import java.io.File
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -21,40 +37,51 @@ import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 import org.junit.runner.RunWith
-import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.robolectric.Robolectric.buildActivity
+import org.robolectric.Shadows.shadowOf
+import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
+import org.robolectric.shadows.ShadowPixelCopy
 
 @RunWith(AndroidJUnit4::class)
+@Config(shadows = [ShadowPixelCopy::class], sdk = [30])
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
 class ScreenshotEventProcessorTest {
+
+  companion object {
+    /**
+     * Set to `true` to record/update golden images for snapshot tests. When `true`, screenshots
+     * will be saved to src/test/resources/snapshots/{testName}.png. Set back to `false` after
+     * recording to run comparison tests.
+     */
+    private const val RECORD_SNAPSHOTS = false
+
+    private val SNAPSHOTS_DIR =
+      File("src/test/resources/snapshots/ScreenshotEventProcessorTest").also {
+        if (RECORD_SNAPSHOTS) it.mkdirs()
+      }
+  }
+
   private class Fixture {
-    val buildInfo = mock<BuildInfoProvider>()
-    val activity = mock<Activity>()
-    val window = mock<Window>()
-    val view = mock<View>()
-    val rootView = mock<View>()
+    lateinit var activity: Activity
     val threadChecker = mock<IThreadChecker>()
     val options = SentryAndroidOptions().apply { dsn = "https://key@sentry.io/proj" }
     val mainProcessor = MainEventProcessor(options)
 
     init {
-      whenever(rootView.width).thenReturn(1)
-      whenever(rootView.height).thenReturn(1)
-      whenever(view.rootView).thenReturn(rootView)
-      whenever(window.decorView).thenReturn(view)
-      whenever(window.peekDecorView()).thenReturn(view)
-      whenever(activity.window).thenReturn(window)
-      whenever(activity.runOnUiThread(any())).then { it.getArgument<Runnable>(0).run() }
-
       whenever(threadChecker.isMainThread).thenReturn(true)
     }
 
-    fun getSut(attachScreenshot: Boolean = false): ScreenshotEventProcessor {
+    fun getSut(
+      attachScreenshot: Boolean = false,
+      isReplayAvailable: Boolean = false,
+    ): ScreenshotEventProcessor {
       options.isAttachScreenshot = attachScreenshot
       options.threadChecker = threadChecker
 
-      return ScreenshotEventProcessor(options, buildInfo)
+      return ScreenshotEventProcessor(options, BuildInfoProvider(options.logger), isReplayAvailable)
     }
   }
 
@@ -62,8 +89,12 @@ class ScreenshotEventProcessorTest {
 
   @BeforeTest
   fun `set up`() {
+    System.setProperty("robolectric.areWindowsMarkedVisible", "true")
+    System.setProperty("robolectric.pixelCopyRenderMode", "hardware")
+
     fixture = Fixture()
     CurrentActivityHolder.getInstance().clearActivity()
+    fixture.activity = buildActivity(MaskingActivity::class.java, null).setup().get()
   }
 
   @Test
@@ -108,7 +139,7 @@ class ScreenshotEventProcessorTest {
     val sut = fixture.getSut(true)
     val hint = Hint()
 
-    whenever(fixture.activity.isFinishing).thenReturn(true)
+    fixture.activity.finish()
     CurrentActivityHolder.getInstance().setActivity(fixture.activity)
 
     val event = fixture.mainProcessor.process(getEvent(), hint)
@@ -122,8 +153,8 @@ class ScreenshotEventProcessorTest {
     val sut = fixture.getSut(true)
     val hint = Hint()
 
-    whenever(fixture.rootView.width).thenReturn(0)
-    whenever(fixture.rootView.height).thenReturn(0)
+    val root = fixture.activity.window.decorView
+    root.layout(0, 0, 0, 0)
     CurrentActivityHolder.getInstance().setActivity(fixture.activity)
 
     val event = fixture.mainProcessor.process(getEvent(), hint)
@@ -165,6 +196,7 @@ class ScreenshotEventProcessorTest {
   }
 
   @Test
+  @Config(sdk = [23])
   fun `when screenshot event processor is called from background thread it executes on main thread`() {
     val sut = fixture.getSut(true)
     whenever(fixture.threadChecker.isMainThread).thenReturn(false)
@@ -175,7 +207,7 @@ class ScreenshotEventProcessorTest {
     val event = fixture.mainProcessor.process(getEvent(), hint)
     sut.process(event, hint)
 
-    verify(fixture.activity).runOnUiThread(any())
+    shadowOf(Looper.getMainLooper()).idle()
     assertNotNull(hint.screenshot)
   }
 
@@ -291,5 +323,166 @@ class ScreenshotEventProcessorTest {
     assertNotNull(hint.screenshot)
   }
 
+  // region Snapshot Tests
+
+  @Test
+  fun `snapshot - screenshot without masking`() {
+    val bytes = processEventForSnapshots("screenshot_no_masking", isReplayAvailable = false)
+    assertNotNull(bytes)
+  }
+
+  @Test
+  fun `snapshot - screenshot with text masking enabled`() {
+    val bytes =
+      processEventForSnapshots("screenshot_mask_text") { it.screenshotOptions.setMaskAllText(true) }
+    assertNotNull(bytes)
+  }
+
+  @Test
+  fun `snapshot - screenshot with image masking enabled`() {
+    val bytes =
+      processEventForSnapshots("screenshot_mask_images") {
+        it.screenshotOptions.setMaskAllImages(true)
+      }
+    assertNotNull(bytes)
+  }
+
+  @Test
+  fun `snapshot - screenshot with all masking enabled`() {
+    val bytes =
+      processEventForSnapshots("screenshot_mask_all") {
+        it.screenshotOptions.setMaskAllText(true)
+        it.screenshotOptions.setMaskAllImages(true)
+      }
+    assertNotNull(bytes)
+  }
+
+  @Test
+  fun `snapshot - screenshot with custom view masking`() {
+    val bytes =
+      processEventForSnapshots("screenshot_mask_custom_view") {
+        // CustomView draws white, so masking it should draw black on top
+        it.screenshotOptions.addMaskViewClass(CustomView::class.java.name)
+      }
+    assertNotNull(bytes)
+  }
+
+  // endregion
+
   private fun getEvent(): SentryEvent = SentryEvent(Throwable("Throwable"))
+
+  /**
+   * Helper method for snapshot testing. Processes an event and captures a screenshot, then either
+   * saves it as a golden image (when RECORD_SNAPSHOTS=true) or compares it against an existing
+   * golden image.
+   *
+   * @param testName The name used for the golden image file (without extension)
+   * @param attachScreenshot Whether to enable screenshot attachment
+   * @param isReplayAvailable Whether the replay module is available (enables masking)
+   * @param configureOptions Lambda to configure additional options before processing
+   * @return The captured screenshot bytes, or null if no screenshot was captured
+   */
+  private fun processEventForSnapshots(
+    testName: String,
+    attachScreenshot: Boolean = true,
+    isReplayAvailable: Boolean = true,
+    configureOptions: (SentryAndroidOptions) -> Unit = {},
+  ): ByteArray? {
+    configureOptions(fixture.options)
+    val sut = fixture.getSut(attachScreenshot, isReplayAvailable)
+    val hint = Hint()
+
+    CurrentActivityHolder.getInstance().setActivity(fixture.activity)
+
+    val event = fixture.mainProcessor.process(getEvent(), hint)
+    sut.process(event, hint)
+
+    val screenshot = hint.screenshot ?: return null
+    val bytes = screenshot.bytes ?: screenshot.byteProvider?.call() ?: return null
+
+    val snapshotFile = File(SNAPSHOTS_DIR, "$testName.png")
+    if (RECORD_SNAPSHOTS) {
+      snapshotFile.writeBytes(bytes)
+      println("Recorded snapshot: ${snapshotFile.absolutePath}")
+    } else if (snapshotFile.exists()) {
+      val expectedBitmap = BitmapFactory.decodeFile(snapshotFile.absolutePath)
+      val actualBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+
+      val result =
+        SimpleImageComparator(maxDistance = 0.01f)
+          .compare(BitmapImage(expectedBitmap), BitmapImage(actualBitmap))
+      assertEquals(
+        0,
+        result.pixelDifferences,
+        "Screenshot does not match golden image: ${snapshotFile.absolutePath}. " +
+          "Pixel differences: ${result.pixelDifferences}",
+      )
+    }
+
+    return bytes
+  }
+
+  /** Adapter to wrap Android Bitmap for use with dropbox/differ library */
+  private class BitmapImage(private val bitmap: Bitmap) : Image {
+    override val height: Int
+      get() = bitmap.height
+
+    override val width: Int
+      get() = bitmap.width
+
+    override fun getPixel(x: Int, y: Int): DifferColor = DifferColor(bitmap.getPixel(x, y))
+  }
+}
+
+private class CustomView(context: Context) : View(context) {
+  override fun onDraw(canvas: Canvas) {
+    super.onDraw(canvas)
+    canvas.drawColor(Color.WHITE)
+  }
+}
+
+private class MaskingActivity : Activity() {
+
+  override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+    val linearLayout =
+      LinearLayout(this).apply {
+        setBackgroundColor(android.R.color.white)
+        orientation = LinearLayout.VERTICAL
+        layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
+      }
+
+    val textView =
+      TextView(this).apply {
+        text = "Hello, World!"
+        layoutParams = LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT)
+      }
+    linearLayout.addView(textView)
+
+    val image = this::class.java.classLoader?.getResource("Tongariro.jpg")!!
+    val imageView =
+      ImageView(this).apply {
+        setImageDrawable(Drawable.createFromPath(image.path))
+        layoutParams = LayoutParams(50, 50).apply { setMargins(0, 16, 0, 0) }
+      }
+    linearLayout.addView(imageView)
+
+    val radioButton =
+      RadioButton(this).apply {
+        text = "Radio Button"
+        layoutParams =
+          LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT).apply {
+            setMargins(0, 16, 0, 0)
+          }
+      }
+    linearLayout.addView(radioButton)
+
+    val customView =
+      CustomView(this).apply {
+        layoutParams = LayoutParams(50, 50).apply { setMargins(0, 16, 0, 0) }
+      }
+    linearLayout.addView(customView)
+
+    setContentView(linearLayout)
+  }
 }
