@@ -148,14 +148,16 @@ public final class ScreenshotEventProcessor implements EventProcessor, Closeable
 
   private @NotNull Bitmap applyMasking(
       final @NotNull Bitmap screenshot, final @NotNull View rootView) {
+    Bitmap mutableBitmap = screenshot;
+    boolean createdCopy = false;
     try {
       // Make bitmap mutable if needed
-      Bitmap mutableBitmap = screenshot;
       if (!screenshot.isMutable()) {
         mutableBitmap = screenshot.copy(Bitmap.Config.ARGB_8888, true);
         if (mutableBitmap == null) {
           return screenshot;
         }
+        createdCopy = true;
       }
 
       // we can access it here, since it's "internal" only for Kotlin
@@ -170,13 +172,17 @@ public final class ScreenshotEventProcessor implements EventProcessor, Closeable
       }
 
       // Recycle original if we created a copy
-      if (mutableBitmap != screenshot && !screenshot.isRecycled()) {
+      if (createdCopy && !screenshot.isRecycled()) {
         screenshot.recycle();
       }
 
       return mutableBitmap;
     } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, "Failed to mask screenshot", e);
+      // Recycle the copy if we created one, to avoid memory leak
+      if (createdCopy && !mutableBitmap.isRecycled()) {
+        mutableBitmap.recycle();
+      }
       return screenshot;
     }
   }
