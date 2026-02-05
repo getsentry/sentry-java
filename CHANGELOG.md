@@ -6,7 +6,7 @@
 
 - Add screenshot masking support using view hierarchy ([#5073](https://github.com/getsentry/sentry-java/pull/5073))
   - Masks sensitive content (text, images) in error screenshots before sending to Sentry
-  - Reuses Session Replay's masking logic; requires `sentry-android-replay` module at runtime
+  - Reuses Session Replay's masking logic; **requires `sentry-android-replay` module at runtime**
   - To enable masking programmatically:
     ```kotlin
     SentryAndroid.init(context) { options ->
