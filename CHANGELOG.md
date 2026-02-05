@@ -11,6 +11,14 @@
 - Add `installGroupsOverride` parameter and `installGroups` property to Build Distribution SDK ([#5062](https://github.com/getsentry/sentry-java/pull/5062))
 - Update Android targetSdk to API 36 (Android 16) ([#5016](https://github.com/getsentry/sentry-java/pull/5016))
 - Add AndroidManifest support for Spotlight configuration via `io.sentry.spotlight.enable` and `io.sentry.spotlight.url` ([#5064](https://github.com/getsentry/sentry-java/pull/5064))
+- Collect database transaction spans (`BEGIN`, `COMMIT`, `ROLLBACK`) ([#5072](https://github.com/getsentry/sentry-java/pull/5072))
+  - To enable creation of these spans, set `options.enableDatabaseTransactionTracing` to `true`
+  - `enable-database-transaction-tracing=true` when using `sentry.properties`
+  - For Spring Boot, use `sentry.enable-database-transaction-tracing=true` in `application.properties` or in `application.yml`:
+    ```yaml
+    sentry:
+      enable-database-transaction-tracing: true
+    ```
 
 ### Fixes
 
