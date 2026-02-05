@@ -25,10 +25,15 @@ name: App Start Tests
 - tapOn: "Trigger Notification"
 - tapOn: "Finish Activity"
 - assertNotVisible: "Welcome!"
-- swipe:
-    start: 50%, 0%
-    end: 50%, 90%
-    duration: 2000
+- repeat:
+    times: 3
+    while:
+      notVisible: "Sentry Test Notification"
+    commands:
+      - swipe:
+          start: 0%, 0%
+          end: 0%, 60%
+          duration: 4000
 - tapOn: "Sentry Test Notification"
 - assertVisible: "App Start Type: WARM"
 
@@ -41,10 +46,15 @@ name: App Start Tests
 - tapOn: "Trigger Notification"
 - tapOn: "Finish Activity"
 - killApp
-- swipe:
-    start: 50%, 0%
-    end: 50%, 90%
-    duration: 2000
+- repeat:
+    times: 3
+    while:
+      notVisible: "Sentry Test Notification"
+    commands:
+      - swipe:
+          start: 0%, 0%
+          end: 0%, 60%
+          duration: 4000
 - tapOn: "Sentry Test Notification"
 - assertVisible: "App Start Type: COLD"
 # Test 5: Launch app after a broadcast receiver already created the application
