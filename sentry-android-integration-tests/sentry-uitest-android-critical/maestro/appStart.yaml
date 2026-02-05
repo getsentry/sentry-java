@@ -1,5 +1,5 @@
 appId: io.sentry.uitest.android.critical
-name: App Launch Tests
+name: App Start Tests
 ---
 # Test 1: A fresh start is considered a cold start
 - launchApp:
@@ -26,11 +26,11 @@ name: App Launch Tests
 - tapOn: "Finish Activity"
 - assertNotVisible: "Welcome!"
 - swipe:
-    start: 50%, 1%
-    end: 50%, 90%
+    from:
+      id: status_bar
+    direction: DOWN
 - tapOn: "Sentry Test Notification"
 - assertVisible: "App Start Type: WARM"
-
 
 # Test 4: Notification (COLD start)
 - launchApp:
@@ -39,14 +39,14 @@ name: App Launch Tests
       all: allow
 - assertVisible: "Welcome!"
 - tapOn: "Trigger Notification"
+- tapOn: "Finish Activity"
 - killApp
 - swipe:
-    start: 50%, 1%
-    end: 50%, 90%
+    from:
+      id: status_bar
+    direction: DOWN
 - tapOn: "Sentry Test Notification"
 - assertVisible: "App Start Type: COLD"
-
-
 # Test 5: Launch app after a broadcast receiver already created the application
 # Uncomment once https://github.com/mobile-dev-inc/Maestro/pull/2925 is merged
 # - killApp
