@@ -78,6 +78,15 @@ class TombstoneIntegrationTest : ApplicationExitIntegrationTestBase<TombstoneHin
     assertEquals("samples.android", crashedThread!!.name)
     assertTrue(crashedThread.isCrashed!!)
 
+    // Verify that frames from the app's native library are marked as in-app
+    val inAppFrames = crashedThread.stacktrace!!.frames!!.filter { it.isInApp == true }
+    assertTrue(inAppFrames.size >= 3, "Expected at least 3 in-app frames, got ${inAppFrames.size}")
+    // Should include the native sample library crash function
+    assertTrue(
+      inAppFrames.any { it.`package`?.contains("libnative-sample.so") == true },
+      "Expected in-app frame from libnative-sample.so",
+    )
+
     val image =
       event.debugMeta?.images?.find { image -> image.codeId == "f60b4b74005f33fb3ef3b98aa4546008" }
     assertEquals("744b0bf6-5f00-fb33-3ef3-b98aa4546008", image!!.debugId)

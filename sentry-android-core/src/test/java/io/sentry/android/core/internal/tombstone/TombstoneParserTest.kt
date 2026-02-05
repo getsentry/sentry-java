@@ -54,7 +54,7 @@ class TombstoneParserTest {
   val inAppIncludes = arrayListOf("io.sentry.samples.android")
   val inAppExcludes = arrayListOf<String>()
   val nativeLibraryDir =
-    "/data/app/~~YtXYvdWm5vDHUWYCmVLG_Q==/io.sentry.samples.android-Q2_nG8SyOi4X_6hGGDGE2Q==/lib/arm64"
+    "/data/app/~~gu-2hA9_Zg6tfIuDAbLpKA==/io.sentry.samples.android-MFqmKAMnl9AjNlHcO3mejA==/lib/arm64"
 
   @Test
   fun `parses a snapshot tombstone into Event`() {
@@ -108,7 +108,7 @@ class TombstoneParserTest {
           if (frame.isInApp!!) {
             assert(
               frame.function!!.startsWith(inAppIncludes[0]) ||
-                frame.filename!!.startsWith(nativeLibraryDir)
+                frame.`package`!!.startsWith(nativeLibraryDir)
             )
           }
         }
@@ -397,8 +397,7 @@ class TombstoneParserTest {
 
   @Test
   fun `debug meta images snapshot test`() {
-    // also test against a full snapshot so that we can track regressions in the VMA -> module
-    // reduction
+    // test against a full snapshot so that we can track regressions in the VMA -> module reduction
     val tombstoneStream =
       GZIPInputStream(TombstoneParserTest::class.java.getResourceAsStream("/tombstone.pb.gz"))
     val parser = TombstoneParser(tombstoneStream, inAppIncludes, inAppExcludes, nativeLibraryDir)
