@@ -110,4 +110,27 @@ class SentryScreenshotOptionsTest {
     assertEquals("com.example.MaskContainer", options.maskViewContainerClass)
     assertEquals("com.example.UnmaskContainer", options.unmaskViewContainerClass)
   }
+
+  @Test
+  fun `setMaskAllImages false removes sensitive view classes added by true`() {
+    val options = SentryScreenshotOptions()
+    options.setMaskAllImages(true)
+
+    // Verify classes were added
+    assertTrue(options.maskViewClasses.contains(SentryMaskingOptions.WEB_VIEW_CLASS_NAME))
+    assertTrue(options.maskViewClasses.contains(SentryMaskingOptions.VIDEO_VIEW_CLASS_NAME))
+
+    options.setMaskAllImages(false)
+
+    // Verify all sensitive classes were removed
+    assertFalse(options.maskViewClasses.contains(SentryMaskingOptions.IMAGE_VIEW_CLASS_NAME))
+    assertFalse(options.maskViewClasses.contains(SentryMaskingOptions.WEB_VIEW_CLASS_NAME))
+    assertFalse(options.maskViewClasses.contains(SentryMaskingOptions.VIDEO_VIEW_CLASS_NAME))
+    assertFalse(
+      options.maskViewClasses.contains(SentryMaskingOptions.ANDROIDX_MEDIA_VIEW_CLASS_NAME)
+    )
+    assertFalse(options.maskViewClasses.contains(SentryMaskingOptions.EXOPLAYER_CLASS_NAME))
+    assertFalse(options.maskViewClasses.contains(SentryMaskingOptions.EXOPLAYER_STYLED_CLASS_NAME))
+    assertTrue(options.maskViewClasses.isEmpty())
+  }
 }

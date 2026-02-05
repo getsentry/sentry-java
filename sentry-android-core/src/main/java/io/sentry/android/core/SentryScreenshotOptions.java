@@ -30,6 +30,8 @@ public final class SentryScreenshotOptions extends SentryMaskingOptions {
     super.setMaskAllImages(maskAllImages);
     if (maskAllImages) {
       addSensitiveViewClasses();
+    } else {
+      removeSensitiveViewClasses();
     }
   }
 
@@ -39,5 +41,13 @@ public final class SentryScreenshotOptions extends SentryMaskingOptions {
     addMaskViewClass(ANDROIDX_MEDIA_VIEW_CLASS_NAME);
     addMaskViewClass(EXOPLAYER_CLASS_NAME);
     addMaskViewClass(EXOPLAYER_STYLED_CLASS_NAME);
+  }
+
+  private void removeSensitiveViewClasses() {
+    getMaskViewClasses().remove(WEB_VIEW_CLASS_NAME);
+    getMaskViewClasses().remove(VIDEO_VIEW_CLASS_NAME);
+    getMaskViewClasses().remove(ANDROIDX_MEDIA_VIEW_CLASS_NAME);
+    getMaskViewClasses().remove(EXOPLAYER_CLASS_NAME);
+    getMaskViewClasses().remove(EXOPLAYER_STYLED_CLASS_NAME);
   }
 }
