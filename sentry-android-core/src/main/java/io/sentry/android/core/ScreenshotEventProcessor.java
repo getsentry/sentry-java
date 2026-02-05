@@ -66,13 +66,16 @@ public final class ScreenshotEventProcessor implements EventProcessor, Closeable
   }
 
   private boolean isMaskingEnabled() {
+    if (options.getScreenshotOptions().getMaskViewClasses().isEmpty()) {
+      return false;
+    }
     if (maskRenderer == null) {
       options
           .getLogger()
           .log(SentryLevel.WARNING, "Screenshot masking requires sentry-android-replay module");
       return false;
     }
-    return !options.getScreenshotOptions().getMaskViewClasses().isEmpty();
+    return true;
   }
 
   @Override
