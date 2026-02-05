@@ -139,6 +139,21 @@ The repository is organized into multiple modules:
 4. New features must be **opt-in by default** - extend `SentryOptions` or similar Option classes with getters/setters
 5. Consider backwards compatibility
 
+## Getting PR Information
+
+Use `gh pr view` to get PR details from the current branch. This is needed when adding changelog entries, which require the PR number.
+
+```bash
+# Get PR number for current branch
+gh pr view --json number -q '.number'
+
+# Get PR number for a specific branch
+gh pr view <branch-name> --json number -q '.number'
+
+# Get PR URL
+gh pr view --json url -q '.url'
+```
+
 ## Domain-Specific Knowledge Areas
 
 For complex SDK functionality, refer to the detailed cursor rules in `.cursor/rules/`:
