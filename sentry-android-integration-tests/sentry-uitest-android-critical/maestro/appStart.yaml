@@ -25,14 +25,15 @@ name: App Start Tests
 - tapOn: "Trigger Notification"
 - tapOn: "Finish Activity"
 - assertNotVisible: "Welcome!"
+- waitForAnimationToEnd
 - repeat:
     times: 3
     while:
       notVisible: "Sentry Test Notification"
     commands:
       - swipe:
-          start: 0%, 0%
-          end: 0%, 60%
+          start: 90%, 0%
+          end: 90%, 100%
           duration: 4000
 - tapOn: "Sentry Test Notification"
 - assertVisible: "App Start Type: WARM"
@@ -45,15 +46,17 @@ name: App Start Tests
 - assertVisible: "Welcome!"
 - tapOn: "Trigger Notification"
 - tapOn: "Finish Activity"
+- assertNotVisible: "Welcome!"
 - killApp
+- waitForAnimationToEnd
 - repeat:
     times: 3
     while:
       notVisible: "Sentry Test Notification"
     commands:
       - swipe:
-          start: 0%, 0%
-          end: 0%, 60%
+          start: 90%, 0%
+          end: 90%, 100%
           duration: 4000
 - tapOn: "Sentry Test Notification"
 - assertVisible: "App Start Type: COLD"
