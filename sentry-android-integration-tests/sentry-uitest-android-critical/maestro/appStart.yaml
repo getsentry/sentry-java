@@ -26,9 +26,8 @@ name: App Start Tests
 - tapOn: "Finish Activity"
 - assertNotVisible: "Welcome!"
 - swipe:
-    from:
-      id: status_bar
-    direction: DOWN
+    start: 10%, 0%
+    end: 10%, 100%
 - tapOn: "Sentry Test Notification"
 - assertVisible: "App Start Type: WARM"
 
@@ -42,9 +41,8 @@ name: App Start Tests
 - tapOn: "Finish Activity"
 - killApp
 - swipe:
-    from:
-      id: status_bar
-    direction: DOWN
+    start: 10%, 0%
+    end: 10%, 100%
 - tapOn: "Sentry Test Notification"
 - assertVisible: "App Start Type: COLD"
 # Test 5: Launch app after a broadcast receiver already created the application
