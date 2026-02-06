@@ -34,6 +34,8 @@ final class ManifestMetadataReader {
   static final String ANR_TIMEOUT_INTERVAL_MILLIS = "io.sentry.anr.timeout-interval-millis";
   static final String ANR_ATTACH_THREAD_DUMPS = "io.sentry.anr.attach-thread-dumps";
 
+  static final String TOMBSTONE_ENABLE = "io.sentry.tombstone.enable";
+
   static final String AUTO_INIT = "io.sentry.auto-init";
   static final String NDK_ENABLE = "io.sentry.ndk.enable";
   static final String NDK_SCOPE_SYNC_ENABLE = "io.sentry.ndk.scope-sync.enable";
@@ -205,6 +207,8 @@ final class ManifestMetadataReader {
         }
 
         options.setAnrEnabled(readBool(metadata, logger, ANR_ENABLE, options.isAnrEnabled()));
+        options.setTombstoneEnabled(
+            readBool(metadata, logger, TOMBSTONE_ENABLE, options.isTombstoneEnabled()));
 
         // use enableAutoSessionTracking as fallback
         options.setEnableAutoSessionTracking(

@@ -15,6 +15,20 @@
     sentry:
       enable-database-transaction-tracing: true
     ```
+- Add support for collecting native crashes using Tombstones ([#4933](https://github.com/getsentry/sentry-java/pull/4933), [#5037](https://github.com/getsentry/sentry-java/pull/5037))
+  - Added Tombstone integration that detects native crashes using `ApplicationExitInfo.REASON_CRASH_NATIVE` on Android 12+
+  - Crashes enriched with Tombstones contain more crash details and detailed thread info
+  - Tombstone and NDK integrations are now automatically merged into a single crash event, eliminating duplicate reports
+  - To enable it, add the integration in your Sentry initialization:
+    ```kotlin
+    SentryAndroid.init(context, options -> {
+        options.isTombstoneEnabled = true
+    })
+    ```
+    or in the `AndroidManifest.xml` using:
+    ```xml
+    <meta-data android:name="io.sentry.tombstone.enable" android:value="true" />
+    ```
 
 ### Fixes
 

@@ -72,6 +72,38 @@ public final class SentryStackTraceFactory {
   }
 
   /**
+   * Provides the logic to decide whether a className is part of the includes or excludes list of
+   * strings. The bias is towards includes, meaning once a className starts with a prefix in the
+   * includes list, it immediately returns, ignoring any counter entry in excludes.
+   *
+   * @param className the className
+   * @return true if it is or false otherwise
+   */
+  @Nullable
+  public static Boolean isInApp(
+      final @Nullable String className,
+      final @NotNull List<String> includes,
+      final @NotNull List<String> excludes) {
+    if (className == null || className.isEmpty()) {
+      return true;
+    }
+
+    for (String include : includes) {
+      if (className.startsWith(include)) {
+        return true;
+      }
+    }
+
+    for (String exclude : excludes) {
+      if (className.startsWith(exclude)) {
+        return false;
+      }
+    }
+
+    return null;
+  }
+
+  /**
    * Returns if the className is InApp or not.
    *
    * @param className the className
@@ -79,25 +111,7 @@ public final class SentryStackTraceFactory {
    */
   @Nullable
   public Boolean isInApp(final @Nullable String className) {
-    if (className == null || className.isEmpty()) {
-      return true;
-    }
-
-    final List<String> inAppIncludes = options.getInAppIncludes();
-    for (String include : inAppIncludes) {
-      if (className.startsWith(include)) {
-        return true;
-      }
-    }
-
-    final List<String> inAppExcludes = options.getInAppExcludes();
-    for (String exclude : inAppExcludes) {
-      if (className.startsWith(exclude)) {
-        return false;
-      }
-    }
-
-    return null;
+    return isInApp(className, options.getInAppIncludes(), options.getInAppExcludes());
   }
 
   /**
