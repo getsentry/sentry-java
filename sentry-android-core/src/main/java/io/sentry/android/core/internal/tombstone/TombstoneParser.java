@@ -125,9 +125,14 @@ public class TombstoneParser implements Closeable {
       // inAppIncludes/inAppExcludes filter by Java/Kotlin package names, which don't overlap
       // with native C/C++ function names (e.g., "crash", "__libc_init"). For native frames,
       // isInApp() returns null, making nativeLibraryDir the effective in-app check.
+      // Protobuf returns "" for unset function names, which would incorrectly return true
+      // from isInApp(), so we treat empty as false to let nativeLibraryDir decide.
+      final String functionName = frame.getFunctionName();
       @Nullable
       Boolean inApp =
-          SentryStackTraceFactory.isInApp(frame.getFunctionName(), inAppIncludes, inAppExcludes);
+          functionName.isEmpty()
+              ? Boolean.FALSE
+              : SentryStackTraceFactory.isInApp(functionName, inAppIncludes, inAppExcludes);
 
       final boolean isInNativeLibraryDir =
           nativeLibraryDir != null && frame.getFileName().startsWith(nativeLibraryDir);
