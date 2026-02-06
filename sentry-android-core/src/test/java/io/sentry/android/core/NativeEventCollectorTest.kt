@@ -148,6 +148,21 @@ class NativeEventCollectorTest {
   }
 
   @Test
+  fun `collects native event that follows large java event in same envelope`() {
+    // This test verifies that BoundedInputStream.close() correctly handles being
+    // called multiple times (once by InputStreamReader.close() and once by
+    // try-with-resources). With a large payload (>8KB buffer), there will be
+    // remaining bytes after early JSON parsing exit, and double-close would
+    // corrupt the stream position if remaining isn't reset.
+    val sut = fixture.getSut(tmpDir)
+    copyEnvelopeToOutbox("java-then-native-large.txt")
+
+    val timestamp = DateUtils.getDateTime("2023-07-15T10:31:00.000Z").time
+    val match = sut.findAndRemoveMatchingNativeEvent(timestamp)
+    assertNotNull(match)
+  }
+
+  @Test
   fun `ignores non-native events when collecting multiple envelopes`() {
     val sut = fixture.getSut(tmpDir)
     copyEnvelopeToOutbox("native-event.txt")

@@ -527,6 +527,10 @@ public final class NativeEventCollector {
       // but don't close the underlying stream, because we might have other
       // envelope items to read.
       skipBytes(inner, remaining);
+
+      // Reset remaining to 0 to handle multiple close() calls (e.g., from
+      // try-with-resources when wrapped by InputStreamReader).
+      remaining = 0;
     }
   }
 }
