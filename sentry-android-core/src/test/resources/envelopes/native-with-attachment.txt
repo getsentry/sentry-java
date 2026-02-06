@@ -1,5 +1,5 @@
 {"event_id":"9ec79c33ec9942ab8353589fcb2e04dc"}
 {"type":"attachment","length":20,"filename":"log.txt","content_type":"text/plain"}
 some attachment data
-{"type":"event","length":123,"content_type":"application/json"}
+{"type":"event","length":122,"content_type":"application/json"}
 {"event_id":"9ec79c33ec9942ab8353589fcb2e04dc","timestamp":"2023-07-15T11:45:30.500Z","platform":"native","level":"fatal"}

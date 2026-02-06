@@ -1,3 +1,3 @@
 {"event_id":"9ec79c33ec9942ab8353589fcb2e04dc"}
-{"type":"event","length":123,"content_type":"application/json"}
+{"type":"event","length":122,"content_type":"application/json"}
 {"event_id":"9ec79c33ec9942ab8353589fcb2e04dc","timestamp":"2023-07-15T10:30:00.000Z","platform":"native","level":"fatal"}
