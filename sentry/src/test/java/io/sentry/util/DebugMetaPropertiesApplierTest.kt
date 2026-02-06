@@ -138,4 +138,87 @@ class DebugMetaPropertiesApplierTest {
     assertEquals("", options.distribution.orgAuthToken)
     assertNull(options.distribution.buildConfiguration)
   }
+
+  @Test
+  fun `applies installGroupsOverride from properties`() {
+    val properties = Properties()
+    properties.setProperty(
+      "io.sentry.distribution.install-groups-override",
+      "internal,beta-testers",
+    )
+
+    val options = SentryOptions()
+    DebugMetaPropertiesApplier.apply(options, listOf(properties))
+
+    assertEquals(listOf("internal", "beta-testers"), options.distribution.installGroupsOverride)
+  }
+
+  @Test
+  fun `applies installGroupsOverride with trimming`() {
+    val properties = Properties()
+    properties.setProperty(
+      "io.sentry.distribution.install-groups-override",
+      " internal , beta-testers , qa ",
+    )
+
+    val options = SentryOptions()
+    DebugMetaPropertiesApplier.apply(options, listOf(properties))
+
+    assertEquals(
+      listOf("internal", "beta-testers", "qa"),
+      options.distribution.installGroupsOverride,
+    )
+  }
+
+  @Test
+  fun `applies single installGroupsOverride value`() {
+    val properties = Properties()
+    properties.setProperty("io.sentry.distribution.install-groups-override", "internal")
+
+    val options = SentryOptions()
+    DebugMetaPropertiesApplier.apply(options, listOf(properties))
+
+    assertEquals(listOf("internal"), options.distribution.installGroupsOverride)
+  }
+
+  @Test
+  fun `does not override existing installGroupsOverride`() {
+    val properties = Properties()
+    properties.setProperty("io.sentry.distribution.install-groups-override", "properties-group")
+
+    val options = SentryOptions()
+    options.distribution.installGroupsOverride = listOf("existing-group")
+
+    DebugMetaPropertiesApplier.apply(options, listOf(properties))
+
+    assertEquals(listOf("existing-group"), options.distribution.installGroupsOverride)
+  }
+
+  @Test
+  fun `does not apply empty installGroupsOverride`() {
+    val properties = Properties()
+    properties.setProperty("io.sentry.distribution.install-groups-override", "")
+
+    val options = SentryOptions()
+    DebugMetaPropertiesApplier.apply(options, listOf(properties))
+
+    assertNull(options.distribution.installGroupsOverride)
+  }
+
+  @Test
+  fun `ignores empty values in installGroupsOverride list`() {
+    val properties = Properties()
+    properties.setProperty(
+      "io.sentry.distribution.install-groups-override",
+      "internal,,beta-testers, ,qa",
+    )
+
+    val options = SentryOptions()
+    DebugMetaPropertiesApplier.apply(options, listOf(properties))
+
+    assertEquals(
+      listOf("internal", "beta-testers", "qa"),
+      options.distribution.installGroupsOverride,
+    )
+  }
 }

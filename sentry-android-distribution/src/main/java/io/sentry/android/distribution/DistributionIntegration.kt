@@ -150,6 +150,7 @@ public class DistributionIntegration(context: Context) : Integration, IDistribut
         versionCode = versionCode,
         versionName = versionName,
         buildConfiguration = buildConfiguration,
+        installGroupsOverride = sentryOptions.distribution.installGroupsOverride,
       )
     } catch (e: PackageManager.NameNotFoundException) {
       sentryOptions.logger.log(SentryLevel.ERROR, e, "Failed to get package info")
