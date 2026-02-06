@@ -149,7 +149,7 @@ quartz = { module = "org.quartz-scheduler:quartz", version = "2.3.0" }
 reactor-core = { module = "io.projectreactor:reactor-core", version = "3.5.3" }
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 retrofit-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "retrofit" }
-sentry-native-ndk = { module = "io.sentry:sentry-native-ndk", version = "0.12.4" }
+sentry-native-ndk = { module = "io.sentry:sentry-native-ndk", version = "0.12.6" }
 servlet-api = { module = "javax.servlet:javax.servlet-api", version = "3.1.0" }
 servlet-jakarta-api = { module = "jakarta.servlet:jakarta.servlet-api", version = "6.1.0" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
