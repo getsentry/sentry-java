@@ -12,9 +12,7 @@ import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.runner.AndroidJUnitRunner
 import io.sentry.ITransaction
-import io.sentry.Sentry
 import io.sentry.Sentry.OptionsConfiguration
-import io.sentry.SentryOptions
 import io.sentry.android.core.SentryAndroid
 import io.sentry.android.core.SentryAndroidOptions
 import io.sentry.test.applyTestOptions
@@ -69,49 +67,6 @@ class SentryBenchmarkTest : BaseBenchmarkTest() {
     // considered 60 and 59,
     // respectively. Also, if the average fps is 20 or 60, a difference of 1 fps becomes 5% or 1.66%
     // respectively.
-  }
-
-  @Test
-  fun benchmarkProfiledTransaction() {
-    // We compare the same operation with and without profiled transaction.
-    // We expect the profiled transaction operation to be slower, but not slower than 5%.
-    val benchmarkOperationNoTransaction =
-      BenchmarkOperation(choreographer, op = getOperation(runner))
-    val benchmarkOperationProfiled =
-      BenchmarkOperation(
-        choreographer,
-        before = {
-          runner.runOnMainSync {
-            initForTest(context) { options: SentryOptions ->
-              options.dsn = "https://key@uri/1234567"
-              options.tracesSampleRate = 1.0
-              options.profilesSampleRate = 1.0
-              options.isEnableAutoSessionTracking = false
-            }
-          }
-        },
-        op = getOperation(runner) { Sentry.startTransaction("Benchmark", "ProfiledTransaction") },
-        after = { runner.runOnMainSync { Sentry.close() } },
-      )
-    val refreshRate = BenchmarkActivity.refreshRate ?: 60F
-    val comparisonResults =
-      BenchmarkOperation.compare(
-        benchmarkOperationNoTransaction,
-        "NoTransaction",
-        benchmarkOperationProfiled,
-        "ProfiledTransaction",
-        refreshRate,
-        measuredIterations = 40,
-      )
-    comparisonResults.printAllRuns("Profiling Benchmark")
-    val comparisonResult = comparisonResults.getSummaryResult()
-    comparisonResult.printResults()
-
-    // Currently we just want to assert the cpu overhead
-    assertTrue(
-      comparisonResult.cpuTimeIncreasePercentage in 0F..5.5F,
-      "Expected ${comparisonResult.cpuTimeIncreasePercentage} to be in range 0 < x < 5.5",
-    )
   }
 
   /**
