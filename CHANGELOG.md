@@ -2,10 +2,6 @@
 
 ## Unreleased
 
-### Fixes
-
-- Fix cold/warm app start type detection for Android devices running API level 34+ ([#4999](https://github.com/getsentry/sentry-java/pull/4999))
-
 ### Features
 
 - Add `installGroupsOverride` parameter and `installGroups` property to Build Distribution SDK ([#5062](https://github.com/getsentry/sentry-java/pull/5062))
@@ -32,6 +28,7 @@
 - Fix scroll target detection for Jetpack Compose ([#5017](https://github.com/getsentry/sentry-java/pull/5017))
 - No longer fork Sentry `Scopes` for `reactor-kafka` consumer poll `Runnable` ([#5080](https://github.com/getsentry/sentry-java/pull/5080))
   - This was causing a memory leak because `reactor-kafka`'s poll event reschedules itself infinitely, and each invocation of `SentryScheduleHook` created forked scopes with a parent reference, building an unbounded chain that couldn't be garbage collected.
+- Fix cold/warm app start type detection for Android devices running API level 34+ ([#4999](https://github.com/getsentry/sentry-java/pull/4999))
 
 ### Internal
 
