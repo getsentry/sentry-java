@@ -109,7 +109,7 @@ jobs:
           force-avd-creation: false
           disable-animations: true
           disable-spellchecker: true
-          emulator-options: -no-window -gpu auto -noaudio -no-boot-anim -camera-back none
+          emulator-options: -memory 4096 -no-window -gpu auto -noaudio -no-boot-anim -camera-back none
           disk-size: 4096M
           script: echo "Generated AVD snapshot for caching."
 
@@ -133,7 +133,7 @@ jobs:
           force-avd-creation: false
           disable-animations: true
           disable-spellchecker: true
-          emulator-options: -no-window -gpu auto -noaudio -no-boot-anim -camera-back none -no-snapshot-save
+          emulator-options: -memory 4096 -no-window -gpu auto -noaudio -no-boot-anim -camera-back none -no-snapshot-save
           script: |
             adb uninstall io.sentry.uitest.android.critical || echo "Already uninstalled (or not found)"
             adb install -r -d "${{env.APK_NAME}}"
