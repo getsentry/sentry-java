@@ -1,6 +1,5 @@
 package io.sentry.uitest.android.benchmark
 
-import android.content.Context
 import android.os.Bundle
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.launchActivity
@@ -12,10 +11,6 @@ import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.runner.AndroidJUnitRunner
 import io.sentry.ITransaction
-import io.sentry.Sentry.OptionsConfiguration
-import io.sentry.android.core.SentryAndroid
-import io.sentry.android.core.SentryAndroidOptions
-import io.sentry.test.applyTestOptions
 import io.sentry.uitest.android.benchmark.util.BenchmarkOperation
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -102,15 +97,5 @@ class SentryBenchmarkTest : BaseBenchmarkTest() {
       onView(withId(R.id.benchmark_transaction_list)).perform(swipeUp())
       Espresso.onIdle()
     }
-  }
-}
-
-fun initForTest(
-  context: Context,
-  optionsConfiguration: OptionsConfiguration<SentryAndroidOptions>,
-) {
-  SentryAndroid.init(context) {
-    applyTestOptions(it)
-    optionsConfiguration.configure(it)
   }
 }
