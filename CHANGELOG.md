@@ -4,7 +4,7 @@
 
 ### Fixes
 
-- Fix warm app start type detection for edge cases ([#4999](https://github.com/getsentry/sentry-java/pull/4999))
+- Fix cold/warm app start type detection for Android devices running API level 34+ ([#4999](https://github.com/getsentry/sentry-java/pull/4999))
 
 ### Features
 
