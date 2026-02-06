@@ -7,13 +7,13 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.android.core.SentryShadowActivityManager
 import io.sentry.android.core.SentryShadowProcess
+import kotlin.test.Test
+import kotlin.test.assertEquals
 import org.junit.Before
 import org.junit.runner.RunWith
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import org.robolectric.annotation.Config
-import kotlin.test.Test
-import kotlin.test.assertEquals
 
 @RunWith(AndroidJUnit4::class)
 @Config(
@@ -58,7 +58,8 @@ class AppStartMetricsTestApi35 {
   @Test
   fun `does not set app start type when ApplicationStartInfo list is invalid`() {
     val mockStartInfo = mock<ApplicationStartInfo>()
-    whenever(mockStartInfo.startupState).thenReturn(ApplicationStartInfo.STARTUP_STATE_FIRST_FRAME_DRAWN)
+    whenever(mockStartInfo.startupState)
+      .thenReturn(ApplicationStartInfo.STARTUP_STATE_FIRST_FRAME_DRAWN)
     whenever(mockStartInfo.startType).thenReturn(ApplicationStartInfo.START_TYPE_WARM)
     SentryShadowActivityManager.setHistoricalProcessStartReasons(listOf(mockStartInfo))
 
