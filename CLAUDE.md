@@ -127,12 +127,32 @@ The repository is organized into multiple modules:
 - System tests validate end-to-end functionality with sample applications
 - Coverage reports are generated for both JaCoCo (Java/Android) and Kover (KMP modules)
 
+### Dependency Management
+- All dependencies must be declared in `gradle/libs.versions.toml` (Gradle version catalog)
+- Reference dependencies in build files using the `libs.` accessor (e.g., `libs.dropbox.differ`)
+- Never hardcode version strings directly in `build.gradle.kts` files
+
 ### Contributing Guidelines
 1. Follow existing code style and language
 2. Do not modify API files (e.g. sentry.api) manually - run `./gradlew apiDump` to regenerate them
 3. Write comprehensive tests
 4. New features must be **opt-in by default** - extend `SentryOptions` or similar Option classes with getters/setters
 5. Consider backwards compatibility
+
+## Getting PR Information
+
+Use `gh pr view` to get PR details from the current branch. This is needed when adding changelog entries, which require the PR number.
+
+```bash
+# Get PR number for current branch
+gh pr view --json number -q '.number'
+
+# Get PR number for a specific branch
+gh pr view <branch-name> --json number -q '.number'
+
+# Get PR URL
+gh pr view --json url -q '.url'
+```
 
 ## Domain-Specific Knowledge Areas
 

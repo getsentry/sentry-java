@@ -243,6 +243,15 @@ public final class SentryAndroidOptions extends SentryOptions {
 
   private boolean enableTombstone = false;
 
+  /**
+   * Screenshot masking options. Configure which views should be masked when capturing screenshots
+   * on error events.
+   *
+   * <p>Note: Screenshot masking requires the {@code sentry-android-replay} module to be present at
+   * runtime. If the replay module is not available, screenshots will be captured without masking.
+   */
+  private final @NotNull SentryScreenshotOptions screenshotOptions = new SentryScreenshotOptions();
+
   public SentryAndroidOptions() {
     setSentryClientName(BuildConfig.SENTRY_ANDROID_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
     setSdkVersion(createSdkVersion());
@@ -679,6 +688,15 @@ public final class SentryAndroidOptions extends SentryOptions {
   public void setEnableSystemEventBreadcrumbsExtras(
       final boolean enableSystemEventBreadcrumbsExtras) {
     this.enableSystemEventBreadcrumbsExtras = enableSystemEventBreadcrumbsExtras;
+  }
+
+  /**
+   * Returns the screenshot masking options.
+   *
+   * @return the screenshot masking options
+   */
+  public @NotNull SentryScreenshotOptions getScreenshotOptions() {
+    return screenshotOptions;
   }
 
   static class AndroidUserFeedbackIDialogHandler implements SentryFeedbackOptions.IDialogHandler {

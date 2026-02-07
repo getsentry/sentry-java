@@ -7,7 +7,7 @@ import android.view.View
 import android.view.ViewParent
 import android.widget.ImageView
 import android.widget.TextView
-import io.sentry.SentryOptions
+import io.sentry.SentryMaskingOptions
 import io.sentry.android.replay.R
 import io.sentry.android.replay.util.AndroidTextLayout
 import io.sentry.android.replay.util.TextLayout
@@ -286,7 +286,7 @@ internal sealed class ViewHierarchyNode(
       return false
     }
 
-    private fun View.shouldMask(options: SentryOptions): Boolean {
+    private fun View.shouldMask(options: SentryMaskingOptions): Boolean {
       if (
         (tag as? String)?.lowercase()?.contains(SENTRY_UNMASK_TAG) == true ||
           getTag(R.id.sentry_privacy) == "unmask"
@@ -309,28 +309,33 @@ internal sealed class ViewHierarchyNode(
         return false
       }
 
-      if (this.javaClass.isAssignableFrom(options.sessionReplay.unmaskViewClasses)) {
+      if (this.javaClass.isAssignableFrom(options.unmaskViewClasses)) {
         return false
       }
 
-      return this.javaClass.isAssignableFrom(options.sessionReplay.maskViewClasses)
+      return this.javaClass.isAssignableFrom(options.maskViewClasses)
     }
 
-    private fun ViewParent.isUnmaskContainer(options: SentryOptions): Boolean {
-      val unmaskContainer = options.sessionReplay.unmaskViewContainerClass ?: return false
+    private fun ViewParent.isUnmaskContainer(options: SentryMaskingOptions): Boolean {
+      val unmaskContainer = options.unmaskViewContainerClass ?: return false
       return this.javaClass.name == unmaskContainer
     }
 
-    private fun View.isMaskContainer(options: SentryOptions): Boolean {
-      val maskContainer = options.sessionReplay.maskViewContainerClass ?: return false
+    private fun View.isMaskContainer(options: SentryMaskingOptions): Boolean {
+      val maskContainer = options.maskViewContainerClass ?: return false
       return this.javaClass.name == maskContainer
     }
 
+    /**
+     * Creates a ViewHierarchyNode from a View using SentryMaskingOptions directly. This allows for
+     * reuse with both session replay and screenshot masking.
+     */
+    @JvmStatic
     fun fromView(
       view: View,
       parent: ViewHierarchyNode?,
       distance: Int,
-      options: SentryOptions,
+      options: SentryMaskingOptions,
     ): ViewHierarchyNode {
       val (isVisible, visibleRect) = view.isVisibleToUser()
       val shouldMask = isVisible && view.shouldMask(options)

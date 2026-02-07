@@ -312,8 +312,9 @@ public final class io/sentry/android/core/NetworkBreadcrumbsIntegration : io/sen
 	public fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
 }
 
-public final class io/sentry/android/core/ScreenshotEventProcessor : io/sentry/EventProcessor {
-	public fun <init> (Lio/sentry/android/core/SentryAndroidOptions;Lio/sentry/android/core/BuildInfoProvider;)V
+public final class io/sentry/android/core/ScreenshotEventProcessor : io/sentry/EventProcessor, java/io/Closeable {
+	public fun <init> (Lio/sentry/android/core/SentryAndroidOptions;Lio/sentry/android/core/BuildInfoProvider;Z)V
+	public fun close ()V
 	public fun getOrder ()Ljava/lang/Long;
 	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
 	public fun process (Lio/sentry/protocol/SentryTransaction;Lio/sentry/Hint;)Lio/sentry/protocol/SentryTransaction;
@@ -341,6 +342,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun getFrameMetricsCollector ()Lio/sentry/android/core/internal/util/SentryFrameMetricsCollector;
 	public fun getNativeSdkName ()Ljava/lang/String;
 	public fun getNdkHandlerStrategy ()I
+	public fun getScreenshotOptions ()Lio/sentry/android/core/SentryScreenshotOptions;
 	public fun getStartupCrashDurationThresholdMillis ()J
 	public fun isAnrEnabled ()Z
 	public fun isAnrReportInDebug ()Z
@@ -435,6 +437,11 @@ public final class io/sentry/android/core/SentryPerformanceProvider {
 	public fun getType (Landroid/net/Uri;)Ljava/lang/String;
 	public fun onCreate ()Z
 	public fun shutdown ()V
+}
+
+public final class io/sentry/android/core/SentryScreenshotOptions : io/sentry/SentryMaskingOptions {
+	public fun <init> ()V
+	public fun setMaskAllImages (Z)V
 }
 
 public class io/sentry/android/core/SentryUserFeedbackButton : android/widget/Button {
