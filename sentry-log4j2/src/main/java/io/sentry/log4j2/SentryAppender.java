@@ -184,7 +184,10 @@ public class SentryAppender extends AbstractAppender {
             Optional.ofNullable(transportFactory).ifPresent(options::setTransportFactory);
           });
     } catch (IllegalArgumentException e) {
-      LOGGER.warn("Failed to init Sentry during appender initialization: " + e.getMessage());
+      final @Nullable String errorMessage = e.getMessage();
+      if (errorMessage == null || !errorMessage.startsWith("DSN is required.")) {
+        LOGGER.warn("Failed to init Sentry during appender initialization: " + errorMessage);
+      }
     }
     addPackageAndIntegrationInfo();
     super.start();
