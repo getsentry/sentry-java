@@ -195,6 +195,28 @@ class SentryAndroidOptionsTest {
     assertTrue(sentryOptions.isEnableSystemEventBreadcrumbsExtras)
   }
 
+  @Test
+  fun `anr profiling disabled by default`() {
+    val sentryOptions = SentryAndroidOptions()
+
+    assertFalse(sentryOptions.isEnableAnrProfiling)
+  }
+
+  @Test
+  fun `anr profiling can be enabled`() {
+    val sentryOptions = SentryAndroidOptions()
+    sentryOptions.isEnableAnrProfiling = true
+    assertTrue(sentryOptions.isEnableAnrProfiling)
+  }
+
+  @Test
+  fun `anr profiling can be disabled`() {
+    val sentryOptions = SentryAndroidOptions()
+    sentryOptions.isEnableAnrProfiling = true
+    sentryOptions.isEnableAnrProfiling = false
+    assertFalse(sentryOptions.isEnableAnrProfiling)
+  }
+
   private class CustomDebugImagesLoader : IDebugImagesLoader {
     override fun loadDebugImages(): List<DebugImage>? = null
 
