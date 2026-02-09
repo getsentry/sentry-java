@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 8.32.0
 
 ### Features
 
@@ -8,6 +8,28 @@
 - Add `installGroups` property to Build Distribution SDK ([#5062](https://github.com/getsentry/sentry-java/pull/5062))
 - Update Android targetSdk to API 36 (Android 16) ([#5016](https://github.com/getsentry/sentry-java/pull/5016))
 - Add AndroidManifest support for Spotlight configuration via `io.sentry.spotlight.enable` and `io.sentry.spotlight.url` ([#5064](https://github.com/getsentry/sentry-java/pull/5064))
+- Collect database transaction spans (`BEGIN`, `COMMIT`, `ROLLBACK`) ([#5072](https://github.com/getsentry/sentry-java/pull/5072))
+  - To enable creation of these spans, set `options.enableDatabaseTransactionTracing` to `true`
+  - `enable-database-transaction-tracing=true` when using `sentry.properties`
+  - For Spring Boot, use `sentry.enable-database-transaction-tracing=true` in `application.properties` or in `application.yml`:
+    ```yaml
+    sentry:
+      enable-database-transaction-tracing: true
+    ```
+- Add support for collecting native crashes using Tombstones ([#4933](https://github.com/getsentry/sentry-java/pull/4933), [#5037](https://github.com/getsentry/sentry-java/pull/5037))
+  - Added Tombstone integration that detects native crashes using `ApplicationExitInfo.REASON_CRASH_NATIVE` on Android 12+
+  - Crashes enriched with Tombstones contain more crash details and detailed thread info
+  - Tombstone and NDK integrations are now automatically merged into a single crash event, eliminating duplicate reports
+  - To enable it, add the integration in your Sentry initialization:
+    ```kotlin
+    SentryAndroid.init(context, options -> {
+        options.isTombstoneEnabled = true
+    })
+    ```
+    or in the `AndroidManifest.xml` using:
+    ```xml
+    <meta-data android:name="io.sentry.tombstone.enable" android:value="true" />
+    ```
 
 ### Fixes
 
@@ -18,10 +40,10 @@
         debugImplementation("io.sentry:sentry-spotlight:<version>")
     }
     ```
-
-### Fixes
-
 - Fix scroll target detection for Jetpack Compose ([#5017](https://github.com/getsentry/sentry-java/pull/5017))
+- No longer fork Sentry `Scopes` for `reactor-kafka` consumer poll `Runnable` ([#5080](https://github.com/getsentry/sentry-java/pull/5080))
+  - This was causing a memory leak because `reactor-kafka`'s poll event reschedules itself infinitely, and each invocation of `SentryScheduleHook` created forked scopes with a parent reference, building an unbounded chain that couldn't be garbage collected.
+- Fix cold/warm app start type detection for Android devices running API level 34+ ([#4999](https://github.com/getsentry/sentry-java/pull/4999))
 
 ### Internal
 

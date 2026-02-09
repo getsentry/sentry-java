@@ -1,0 +1,3 @@
+{"event_id":"bdd63725a2b84c1eabd761106e17d390","sdk":{"name":"sentry.dart.flutter","version":"6.0.0-beta.3","packages":[{"name":"pub:sentry","version":"6.0.0-beta.3"},{"name":"pub:sentry_flutter","version":"6.0.0-beta.3"}],"integrations":["isolateErrorIntegration","runZonedGuardedIntegration","widgetsFlutterBindingIntegration","flutterErrorIntegration","widgetsBindingIntegration","nativeSdkIntegration","loadAndroidImageListIntegration","loadReleaseIntegration"]}}
+{"content_type":"application/json","type":"user_report","length":103}
+{"event_id":"bdd63725a2b84c1eabd761106e17d390","name":"jonas","email":"a@b.com","comments":"bad stuff"}

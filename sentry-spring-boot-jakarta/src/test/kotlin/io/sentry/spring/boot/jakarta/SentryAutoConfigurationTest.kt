@@ -202,6 +202,7 @@ class SentryAutoConfigurationTest {
         "sentry.ignored-errors=Some error,Another .*",
         "sentry.ignored-transactions=transactionName1,transactionNameB",
         "sentry.enable-backpressure-handling=false",
+        "sentry.enable-database-transaction-tracing=true",
         "sentry.enable-spotlight=true",
         "sentry.spotlight-connection-url=http://local.sentry.io:1234",
         "sentry.force-init=true",
@@ -257,6 +258,7 @@ class SentryAutoConfigurationTest {
         assertThat(options.ignoredTransactions)
           .containsOnly(FilterString("transactionName1"), FilterString("transactionNameB"))
         assertThat(options.isEnableBackpressureHandling).isEqualTo(false)
+        assertThat(options.isEnableDatabaseTransactionTracing).isEqualTo(true)
         assertThat(options.isForceInit).isEqualTo(true)
         assertThat(options.isGlobalHubMode).isEqualTo(true)
         assertThat(options.isCaptureOpenTelemetryEvents).isEqualTo(true)
