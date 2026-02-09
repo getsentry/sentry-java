@@ -512,6 +512,7 @@ public final class io/sentry/ExternalOptions {
 	public fun getTracesSampleRate ()Ljava/lang/Double;
 	public fun isCaptureOpenTelemetryEvents ()Ljava/lang/Boolean;
 	public fun isEnableBackpressureHandling ()Ljava/lang/Boolean;
+	public fun isEnableDatabaseTransactionTracing ()Ljava/lang/Boolean;
 	public fun isEnableLogs ()Ljava/lang/Boolean;
 	public fun isEnableMetrics ()Ljava/lang/Boolean;
 	public fun isEnablePrettySerializationOutput ()Ljava/lang/Boolean;
@@ -527,6 +528,7 @@ public final class io/sentry/ExternalOptions {
 	public fun setDist (Ljava/lang/String;)V
 	public fun setDsn (Ljava/lang/String;)V
 	public fun setEnableBackpressureHandling (Ljava/lang/Boolean;)V
+	public fun setEnableDatabaseTransactionTracing (Ljava/lang/Boolean;)V
 	public fun setEnableDeduplication (Ljava/lang/Boolean;)V
 	public fun setEnableLogs (Ljava/lang/Boolean;)V
 	public fun setEnableMetrics (Ljava/lang/Boolean;)V
@@ -1784,6 +1786,16 @@ public final class io/sentry/NoOpScopesStorage : io/sentry/IScopesStorage {
 	public static fun getInstance ()Lio/sentry/NoOpScopesStorage;
 	public fun init ()V
 	public fun set (Lio/sentry/IScopes;)Lio/sentry/ISentryLifecycleToken;
+}
+
+public final class io/sentry/NoOpSentryExecutorService : io/sentry/ISentryExecutorService {
+	public fun close (J)V
+	public static fun getInstance ()Lio/sentry/ISentryExecutorService;
+	public fun isClosed ()Z
+	public fun prewarm ()V
+	public fun schedule (Ljava/lang/Runnable;J)Ljava/util/concurrent/Future;
+	public fun submit (Ljava/lang/Runnable;)Ljava/util/concurrent/Future;
+	public fun submit (Ljava/util/concurrent/Callable;)Ljava/util/concurrent/Future;
 }
 
 public final class io/sentry/NoOpSocketTagger : io/sentry/ISocketTagger {
@@ -3238,7 +3250,9 @@ public final class io/sentry/SentryLogEvent : io/sentry/JsonSerializable, io/sen
 	public fun getBody ()Ljava/lang/String;
 	public fun getLevel ()Lio/sentry/SentryLogLevel;
 	public fun getSeverityNumber ()Ljava/lang/Integer;
+	public fun getSpanId ()Lio/sentry/SpanId;
 	public fun getTimestamp ()Ljava/lang/Double;
+	public fun getTraceId ()Lio/sentry/protocol/SentryId;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setAttribute (Ljava/lang/String;Lio/sentry/SentryLogEventAttributeValue;)V
@@ -3246,7 +3260,9 @@ public final class io/sentry/SentryLogEvent : io/sentry/JsonSerializable, io/sen
 	public fun setBody (Ljava/lang/String;)V
 	public fun setLevel (Lio/sentry/SentryLogLevel;)V
 	public fun setSeverityNumber (Ljava/lang/Integer;)V
+	public fun setSpanId (Lio/sentry/SpanId;)V
 	public fun setTimestamp (Ljava/lang/Double;)V
+	public fun setTraceId (Lio/sentry/protocol/SentryId;)V
 	public fun setUnknown (Ljava/util/Map;)V
 }
 
@@ -3261,6 +3277,7 @@ public final class io/sentry/SentryLogEvent$JsonKeys {
 	public static final field BODY Ljava/lang/String;
 	public static final field LEVEL Ljava/lang/String;
 	public static final field SEVERITY_NUMBER Ljava/lang/String;
+	public static final field SPAN_ID Ljava/lang/String;
 	public static final field TIMESTAMP Ljava/lang/String;
 	public static final field TRACE_ID Ljava/lang/String;
 	public fun <init> ()V
@@ -3553,6 +3570,7 @@ public class io/sentry/SentryOptions {
 	public fun isEnableAppStartProfiling ()Z
 	public fun isEnableAutoSessionTracking ()Z
 	public fun isEnableBackpressureHandling ()Z
+	public fun isEnableDatabaseTransactionTracing ()Z
 	public fun isEnableDeduplication ()Z
 	public fun isEnableEventSizeLimiting ()Z
 	public fun isEnableExternalConfiguration ()Z
@@ -3610,6 +3628,7 @@ public class io/sentry/SentryOptions {
 	public fun setEnableAppStartProfiling (Z)V
 	public fun setEnableAutoSessionTracking (Z)V
 	public fun setEnableBackpressureHandling (Z)V
+	public fun setEnableDatabaseTransactionTracing (Z)V
 	public fun setEnableDeduplication (Z)V
 	public fun setEnableEventSizeLimiting (Z)V
 	public fun setEnableExternalConfiguration (Z)V
@@ -3959,6 +3978,7 @@ public final class io/sentry/SentryStackTraceFactory {
 	public fun getInAppCallStack ()Ljava/util/List;
 	public fun getStackFrames ([Ljava/lang/StackTraceElement;Z)Ljava/util/List;
 	public fun isInApp (Ljava/lang/String;)Ljava/lang/Boolean;
+	public static fun isInApp (Ljava/lang/String;Ljava/util/List;Ljava/util/List;)Ljava/lang/Boolean;
 }
 
 public final class io/sentry/SentryThreadFactory {
@@ -4337,14 +4357,6 @@ public final class io/sentry/SpanStatus$Deserializer : io/sentry/JsonDeserialize
 	public synthetic fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
 }
 
-public final class io/sentry/SpotlightIntegration : io/sentry/Integration, io/sentry/SentryOptions$BeforeEnvelopeCallback, java/io/Closeable {
-	public fun <init> ()V
-	public fun close ()V
-	public fun execute (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)V
-	public fun getSpotlightConnectionUrl ()Ljava/lang/String;
-	public fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
-}
-
 public final class io/sentry/SystemOutLogger : io/sentry/ILogger {
 	public fun <init> ()V
 	public fun isEnabled (Lio/sentry/SentryLevel;)Z
@@ -4516,13 +4528,14 @@ public class io/sentry/UncaughtExceptionHandlerIntegration$UncaughtExceptionHint
 }
 
 public final class io/sentry/UpdateInfo {
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;)V
 	public fun getAppName ()Ljava/lang/String;
 	public fun getBuildNumber ()I
 	public fun getBuildVersion ()Ljava/lang/String;
 	public fun getCreatedDate ()Ljava/lang/String;
 	public fun getDownloadUrl ()Ljava/lang/String;
 	public fun getId ()Ljava/lang/String;
+	public fun getInstallGroups ()Ljava/util/List;
 	public fun toString ()Ljava/lang/String;
 }
 

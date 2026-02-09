@@ -482,6 +482,9 @@ public class SentryOptions {
   /** Whether OPTIONS requests should be traced. */
   private boolean traceOptionsRequests = true;
 
+  /** Whether database transaction spans (BEGIN, COMMIT, ROLLBACK) should be traced. */
+  private boolean enableDatabaseTransactionTracing = false;
+
   /** Date provider to retrieve the current date from. */
   @ApiStatus.Internal
   private final @NotNull LazyEvaluator<SentryDateProvider> dateProvider =
@@ -2582,6 +2585,24 @@ public class SentryOptions {
   }
 
   /**
+   * Whether database transaction spans (BEGIN, COMMIT, ROLLBACK) should be traced.
+   *
+   * @return true if database transaction spans should be traced
+   */
+  public boolean isEnableDatabaseTransactionTracing() {
+    return enableDatabaseTransactionTracing;
+  }
+
+  /**
+   * Whether database transaction spans (BEGIN, COMMIT, ROLLBACK) should be traced.
+   *
+   * @param enableDatabaseTransactionTracing true if database transaction spans should be traced
+   */
+  public void setEnableDatabaseTransactionTracing(boolean enableDatabaseTransactionTracing) {
+    this.enableDatabaseTransactionTracing = enableDatabaseTransactionTracing;
+  }
+
+  /**
    * Whether Sentry is enabled.
    *
    * @return true if Sentry should be enabled
@@ -3308,7 +3329,16 @@ public class SentryOptions {
       integrations.add(new UncaughtExceptionHandlerIntegration());
 
       integrations.add(new ShutdownHookIntegration());
-      integrations.add(new SpotlightIntegration());
+
+      // SpotlightIntegration is loaded via reflection to allow the sentry-spotlight module
+      // to be excluded from release builds, preventing insecure HTTP URLs from appearing in APKs
+      try {
+        final Class<?> clazz = Class.forName("io.sentry.spotlight.SpotlightIntegration");
+        final Integration spotlight = (Integration) clazz.getConstructor().newInstance();
+        integrations.add(spotlight);
+      } catch (Throwable ignored) {
+        // SpotlightIntegration not available
+      }
 
       eventProcessors.add(new MainEventProcessor(this));
       eventProcessors.add(new DuplicateEventDetectionEventProcessor(this));
@@ -3431,6 +3461,9 @@ public class SentryOptions {
     }
     if (options.isEnableBackpressureHandling() != null) {
       setEnableBackpressureHandling(options.isEnableBackpressureHandling());
+    }
+    if (options.isEnableDatabaseTransactionTracing() != null) {
+      setEnableDatabaseTransactionTracing(options.isEnableDatabaseTransactionTracing());
     }
     if (options.getMaxRequestBodySize() != null) {
       setMaxRequestBodySize(options.getMaxRequestBodySize());

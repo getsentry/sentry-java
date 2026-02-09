@@ -3,6 +3,7 @@ package io.sentry.android.core.internal.tombstone;
 import androidx.annotation.NonNull;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
+import io.sentry.SentryStackTraceFactory;
 import io.sentry.android.core.internal.util.NativeEventUtils;
 import io.sentry.protocol.DebugImage;
 import io.sentry.protocol.DebugMeta;
@@ -21,18 +22,30 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class TombstoneParser implements Closeable {
 
   private final InputStream tombstoneStream;
+  @NotNull private final List<String> inAppIncludes;
+  @NotNull private final List<String> inAppExcludes;
+  @Nullable private final String nativeLibraryDir;
   private final Map<String, String> excTypeValueMap = new HashMap<>();
 
   private static String formatHex(long value) {
     return String.format("0x%x", value);
   }
 
-  public TombstoneParser(@NonNull final InputStream tombstoneStream) {
+  public TombstoneParser(
+      @NonNull final InputStream tombstoneStream,
+      @NotNull List<String> inAppIncludes,
+      @NotNull List<String> inAppExcludes,
+      @Nullable String nativeLibraryDir) {
     this.tombstoneStream = tombstoneStream;
+    this.inAppIncludes = inAppIncludes;
+    this.inAppExcludes = inAppExcludes;
+    this.nativeLibraryDir = nativeLibraryDir;
 
     // keep the current signal type -> value mapping for compatibility
     excTypeValueMap.put("SIGILL", "IllegalInstruction");
@@ -91,14 +104,41 @@ public class TombstoneParser implements Closeable {
   }
 
   @NonNull
-  private static SentryStackTrace createStackTrace(@NonNull final TombstoneProtos.Thread thread) {
+  private SentryStackTrace createStackTrace(@NonNull final TombstoneProtos.Thread thread) {
     final List<SentryStackFrame> frames = new ArrayList<>();
 
     for (TombstoneProtos.BacktraceFrame frame : thread.getCurrentBacktraceList()) {
+      if (frame.getFileName().endsWith("libart.so")) {
+        // We ignore all ART frames for time being because they aren't actionable for app developers
+        continue;
+      }
+      if (frame.getFileName().startsWith("<anonymous") && frame.getFunctionName().isEmpty()) {
+        // Code in anonymous VMAs that does not resolve to a function name, cannot be symbolicated
+        // in the backend either, and thus has no value in the UI.
+        continue;
+      }
       final SentryStackFrame stackFrame = new SentryStackFrame();
       stackFrame.setPackage(frame.getFileName());
       stackFrame.setFunction(frame.getFunctionName());
       stackFrame.setInstructionAddr(formatHex(frame.getPc()));
+
+      // inAppIncludes/inAppExcludes filter by Java/Kotlin package names, which don't overlap
+      // with native C/C++ function names (e.g., "crash", "__libc_init"). For native frames,
+      // isInApp() returns null, making nativeLibraryDir the effective in-app check.
+      // Protobuf returns "" for unset function names, which would incorrectly return true
+      // from isInApp(), so we treat empty as false to let nativeLibraryDir decide.
+      final String functionName = frame.getFunctionName();
+      @Nullable
+      Boolean inApp =
+          functionName.isEmpty()
+              ? Boolean.FALSE
+              : SentryStackTraceFactory.isInApp(functionName, inAppIncludes, inAppExcludes);
+
+      final boolean isInNativeLibraryDir =
+          nativeLibraryDir != null && frame.getFileName().startsWith(nativeLibraryDir);
+      inApp = (inApp != null && inApp) || isInNativeLibraryDir;
+
+      stackFrame.setInApp(inApp);
       frames.add(0, stackFrame);
     }
 
@@ -142,9 +182,7 @@ public class TombstoneParser implements Closeable {
       @NonNull final TombstoneProtos.Signal signalInfo) {
 
     final Mechanism mechanism = new Mechanism();
-    // this follows the current processing triggers strictly, changing any of these
-    // alters grouping and name (long-term we might want to have a tombstone mechanism)
-    mechanism.setType("signalhandler");
+    mechanism.setType(NativeExceptionMechanism.TOMBSTONE.getValue());
     mechanism.setHandled(false);
     mechanism.setSynthetic(true);
 
@@ -186,29 +224,105 @@ public class TombstoneParser implements Closeable {
     return message;
   }
 
+  /**
+   * Helper class to accumulate memory mappings into a single module. Modules in the Sentry sense
+   * are the entire readable memory map for a file, not just the executable segment. This is
+   * important to maintain the file-offset contract of map entries, which is necessary to resolve
+   * runtime instruction addresses in the files uploaded for symbolication.
+   */
+  private static class ModuleAccumulator {
+    String mappingName;
+    String buildId;
+    long beginAddress;
+    long endAddress;
+
+    ModuleAccumulator(TombstoneProtos.MemoryMapping mapping) {
+      this.mappingName = mapping.getMappingName();
+      this.buildId = mapping.getBuildId();
+      this.beginAddress = mapping.getBeginAddress();
+      this.endAddress = mapping.getEndAddress();
+    }
+
+    void extendTo(long newEndAddress) {
+      this.endAddress = newEndAddress;
+    }
+
+    DebugImage toDebugImage() {
+      if (buildId.isEmpty()) {
+        return null;
+      }
+      final DebugImage image = new DebugImage();
+      image.setCodeId(buildId);
+      image.setCodeFile(mappingName);
+
+      final String debugId = NativeEventUtils.buildIdToDebugId(buildId);
+      image.setDebugId(debugId != null ? debugId : buildId);
+
+      image.setImageAddr(formatHex(beginAddress));
+      image.setImageSize(endAddress - beginAddress);
+      image.setType("elf");
+
+      return image;
+    }
+  }
+
   private DebugMeta createDebugMeta(@NonNull final TombstoneProtos.Tombstone tombstone) {
     final List<DebugImage> images = new ArrayList<>();
 
-    for (TombstoneProtos.MemoryMapping module : tombstone.getMemoryMappingsList()) {
-      // exclude anonymous and non-executable maps
-      if (module.getBuildId().isEmpty()
-          || module.getMappingName().isEmpty()
-          || !module.getExecute()) {
+    // Coalesce memory mappings into modules similar to how sentry-native does it.
+    // A module consists of all readable mappings for the same file, starting from
+    // the first mapping that has a valid ELF header (indicated by offset 0 with build_id).
+    // In sentry-native, is_valid_elf_header() reads the ELF magic bytes from memory,
+    // which is only present at the start of the file (offset 0). We use offset == 0
+    // combined with non-empty build_id as a proxy for this check.
+    ModuleAccumulator currentModule = null;
+
+    for (TombstoneProtos.MemoryMapping mapping : tombstone.getMemoryMappingsList()) {
+      // Skip mappings that are not readable
+      if (!mapping.getRead()) {
         continue;
       }
-      final DebugImage image = new DebugImage();
-      final String codeId = module.getBuildId();
-      image.setCodeId(codeId);
-      image.setCodeFile(module.getMappingName());
 
-      final String debugId = NativeEventUtils.buildIdToDebugId(codeId);
-      image.setDebugId(debugId != null ? debugId : codeId);
+      // Skip mappings with empty name or in /dev/
+      final String mappingName = mapping.getMappingName();
+      if (mappingName.isEmpty() || mappingName.startsWith("/dev/")) {
+        continue;
+      }
 
-      image.setImageAddr(formatHex(module.getBeginAddress()));
-      image.setImageSize(module.getEndAddress() - module.getBeginAddress());
-      image.setType("elf");
+      final boolean hasBuildId = !mapping.getBuildId().isEmpty();
+      final boolean isFileStart = mapping.getOffset() == 0;
 
-      images.add(image);
+      if (hasBuildId && isFileStart) {
+        // Check for duplicated mappings: On Android, the same ELF can have multiple
+        // mappings at offset 0 with different permissions (r--p, r-xp, r--p).
+        // If it's the same file as the current module, just extend it.
+        if (currentModule != null && mappingName.equals(currentModule.mappingName)) {
+          currentModule.extendTo(mapping.getEndAddress());
+          continue;
+        }
+
+        // Flush the previous module (different file)
+        if (currentModule != null) {
+          final DebugImage image = currentModule.toDebugImage();
+          if (image != null) {
+            images.add(image);
+          }
+        }
+
+        // Start a new module
+        currentModule = new ModuleAccumulator(mapping);
+      } else if (currentModule != null && mappingName.equals(currentModule.mappingName)) {
+        // Extend the current module with this mapping (same file, continuation)
+        currentModule.extendTo(mapping.getEndAddress());
+      }
+    }
+
+    // Flush the last module
+    if (currentModule != null) {
+      final DebugImage image = currentModule.toDebugImage();
+      if (image != null) {
+        images.add(image);
+      }
     }
 
     final DebugMeta debugMeta = new DebugMeta();

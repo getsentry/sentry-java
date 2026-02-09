@@ -299,6 +299,20 @@ class ExternalOptionsTest {
   }
 
   @Test
+  fun `creates options with enableDatabaseTransactionTracing set to true`() {
+    withPropertiesFile("enable-database-transaction-tracing=true") { options ->
+      assertTrue(options.isEnableDatabaseTransactionTracing == true)
+    }
+  }
+
+  @Test
+  fun `creates options with enableDatabaseTransactionTracing set to false`() {
+    withPropertiesFile("enable-database-transaction-tracing=false") { options ->
+      assertTrue(options.isEnableDatabaseTransactionTracing == false)
+    }
+  }
+
+  @Test
   fun `creates options with cron defaults`() {
     withPropertiesFile(
       listOf(
