@@ -7,9 +7,18 @@
 - Add `installGroupsOverride` parameter and `installGroups` property to Build Distribution SDK ([#5062](https://github.com/getsentry/sentry-java/pull/5062))
 - Update Android targetSdk to API 36 (Android 16) ([#5016](https://github.com/getsentry/sentry-java/pull/5016))
 - Add AndroidManifest support for Spotlight configuration via `io.sentry.spotlight.enable` and `io.sentry.spotlight.url` ([#5064](https://github.com/getsentry/sentry-java/pull/5064))
+- Collect database transaction spans (`BEGIN`, `COMMIT`, `ROLLBACK`) ([#5072](https://github.com/getsentry/sentry-java/pull/5072))
+  - To enable creation of these spans, set `options.enableDatabaseTransactionTracing` to `true`
+  - `enable-database-transaction-tracing=true` when using `sentry.properties`
+  - For Spring Boot, use `sentry.enable-database-transaction-tracing=true` in `application.properties` or in `application.yml`:
+    ```yaml
+    sentry:
+      enable-database-transaction-tracing: true
+    ```
 - Add ApplicationStartInfo API support for Android 15+ ([#5055](https://github.com/getsentry/sentry-java/pull/5055))
   - Captures detailed app startup timing data based on [ApplicationStartInfo APIs](https://developer.android.com/reference/android/app/ApplicationStartInfo)
   - Opt-in via `SentryAndroidOptions.setEnableApplicationStartInfo(boolean)` (disabled by default)
+
 
 ### Fixes
 
@@ -20,10 +29,10 @@
         debugImplementation("io.sentry:sentry-spotlight:<version>")
     }
     ```
-
-### Fixes
-
 - Fix scroll target detection for Jetpack Compose ([#5017](https://github.com/getsentry/sentry-java/pull/5017))
+- No longer fork Sentry `Scopes` for `reactor-kafka` consumer poll `Runnable` ([#5080](https://github.com/getsentry/sentry-java/pull/5080))
+  - This was causing a memory leak because `reactor-kafka`'s poll event reschedules itself infinitely, and each invocation of `SentryScheduleHook` created forked scopes with a parent reference, building an unbounded chain that couldn't be garbage collected.
+- Fix cold/warm app start type detection for Android devices running API level 34+ ([#4999](https://github.com/getsentry/sentry-java/pull/4999))
 
 ### Internal
 

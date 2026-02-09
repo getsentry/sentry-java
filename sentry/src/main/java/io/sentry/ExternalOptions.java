@@ -53,6 +53,7 @@ public final class ExternalOptions {
   private @Nullable Boolean sendModules;
   private @Nullable Boolean sendDefaultPii;
   private @Nullable Boolean enableBackpressureHandling;
+  private @Nullable Boolean enableDatabaseTransactionTracing;
   private @Nullable Boolean globalHubMode;
   private @Nullable Boolean forceInit;
   private @Nullable Boolean captureOpenTelemetryEvents;
@@ -150,6 +151,9 @@ public final class ExternalOptions {
 
     options.setEnableBackpressureHandling(
         propertiesProvider.getBooleanProperty("enable-backpressure-handling"));
+
+    options.setEnableDatabaseTransactionTracing(
+        propertiesProvider.getBooleanProperty("enable-database-transaction-tracing"));
 
     options.setGlobalHubMode(propertiesProvider.getBooleanProperty("global-hub-mode"));
 
@@ -477,6 +481,15 @@ public final class ExternalOptions {
   @ApiStatus.Experimental
   public @Nullable Boolean isEnableBackpressureHandling() {
     return enableBackpressureHandling;
+  }
+
+  public void setEnableDatabaseTransactionTracing(
+      final @Nullable Boolean enableDatabaseTransactionTracing) {
+    this.enableDatabaseTransactionTracing = enableDatabaseTransactionTracing;
+  }
+
+  public @Nullable Boolean isEnableDatabaseTransactionTracing() {
+    return enableDatabaseTransactionTracing;
   }
 
   public void setGlobalHubMode(final @Nullable Boolean globalHubMode) {

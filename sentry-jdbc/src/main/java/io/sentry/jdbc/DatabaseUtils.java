@@ -20,6 +20,11 @@ public final class DatabaseUtils {
 
     final @Nullable ConnectionInformation connectionInformation =
         statementInformation.getConnectionInformation();
+    return readFrom(connectionInformation);
+  }
+
+  public static DatabaseDetails readFrom(
+      final @Nullable ConnectionInformation connectionInformation) {
     if (connectionInformation == null) {
       return EMPTY;
     }
