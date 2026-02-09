@@ -3978,6 +3978,7 @@ public final class io/sentry/SentryStackTraceFactory {
 	public fun getInAppCallStack ()Ljava/util/List;
 	public fun getStackFrames ([Ljava/lang/StackTraceElement;Z)Ljava/util/List;
 	public fun isInApp (Ljava/lang/String;)Ljava/lang/Boolean;
+	public static fun isInApp (Ljava/lang/String;Ljava/util/List;Ljava/util/List;)Ljava/lang/Boolean;
 }
 
 public final class io/sentry/SentryThreadFactory {
