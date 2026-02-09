@@ -1,0 +1,1 @@
+typeSearchIndex = [{"l":"All Classes and Interfaces","u":"allclasses-index.html"},{"p":"io.sentry.spotlight","l":"BuildConfig"},{"p":"io.sentry.spotlight","l":"SpotlightIntegration"}];updateSearchResults();
