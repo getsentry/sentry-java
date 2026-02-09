@@ -3758,6 +3758,7 @@ public final class io/sentry/SentryOptions$Cron {
 
 public final class io/sentry/SentryOptions$DistributionOptions {
 	public field buildConfiguration Ljava/lang/String;
+	public field installGroupsOverride Ljava/util/List;
 	public field orgAuthToken Ljava/lang/String;
 	public field orgSlug Ljava/lang/String;
 	public field projectSlug Ljava/lang/String;
