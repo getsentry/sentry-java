@@ -188,7 +188,12 @@ class SentryReplayOptionsTest {
     SentryReplayOptions.trackCustomMasking()
     SentryReplayOptions.trackCustomMasking()
     assertTrue(hasCustomMaskingIntegration())
-    assertEquals(1, SentryIntegrationPackageStorage.getInstance().integrations.count { it == "ReplayCustomMasking" })
+    assertEquals(
+      1,
+      SentryIntegrationPackageStorage.getInstance().integrations.count {
+        it == "ReplayCustomMasking"
+      },
+    )
   }
 
   @Test
