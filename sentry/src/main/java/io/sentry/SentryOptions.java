@@ -482,6 +482,9 @@ public class SentryOptions {
   /** Whether OPTIONS requests should be traced. */
   private boolean traceOptionsRequests = true;
 
+  /** Whether database transaction spans (BEGIN, COMMIT, ROLLBACK) should be traced. */
+  private boolean enableDatabaseTransactionTracing = false;
+
   /** Date provider to retrieve the current date from. */
   @ApiStatus.Internal
   private final @NotNull LazyEvaluator<SentryDateProvider> dateProvider =
@@ -664,6 +667,9 @@ public class SentryOptions {
 
     /** Optional build configuration name for filtering (e.g., "debug", "release", "staging") */
     public @Nullable String buildConfiguration = null;
+
+    /** Optional install groups for filtering updates */
+    public @Nullable List<String> installGroupsOverride = null;
   }
 
   private @NotNull DistributionOptions distribution = new DistributionOptions();
@@ -2582,6 +2588,24 @@ public class SentryOptions {
   }
 
   /**
+   * Whether database transaction spans (BEGIN, COMMIT, ROLLBACK) should be traced.
+   *
+   * @return true if database transaction spans should be traced
+   */
+  public boolean isEnableDatabaseTransactionTracing() {
+    return enableDatabaseTransactionTracing;
+  }
+
+  /**
+   * Whether database transaction spans (BEGIN, COMMIT, ROLLBACK) should be traced.
+   *
+   * @param enableDatabaseTransactionTracing true if database transaction spans should be traced
+   */
+  public void setEnableDatabaseTransactionTracing(boolean enableDatabaseTransactionTracing) {
+    this.enableDatabaseTransactionTracing = enableDatabaseTransactionTracing;
+  }
+
+  /**
    * Whether Sentry is enabled.
    *
    * @return true if Sentry should be enabled
@@ -3440,6 +3464,9 @@ public class SentryOptions {
     }
     if (options.isEnableBackpressureHandling() != null) {
       setEnableBackpressureHandling(options.isEnableBackpressureHandling());
+    }
+    if (options.isEnableDatabaseTransactionTracing() != null) {
+      setEnableDatabaseTransactionTracing(options.isEnableDatabaseTransactionTracing());
     }
     if (options.getMaxRequestBodySize() != null) {
       setMaxRequestBodySize(options.getMaxRequestBodySize());
