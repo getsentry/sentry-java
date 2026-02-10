@@ -6,6 +6,12 @@
 
 - Add `installGroupsOverride` parameter to Build Distribution SDK for programmatic filtering, with support for configuration via properties file using `io.sentry.distribution.install-groups-override` ([#5066](https://github.com/getsentry/sentry-java/pull/5066))
 
+### Dependencies
+
+- Bump Native SDK from v0.12.4 to v0.12.6 ([#5071](https://github.com/getsentry/sentry-java/pull/5071))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0126)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.12.4...0.12.6)
+
 ### Internal
 
 - Add integration to track session replay custom masking ([#5070](https://github.com/getsentry/sentry-java/pull/5070))
