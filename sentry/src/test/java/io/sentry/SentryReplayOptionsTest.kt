@@ -197,6 +197,7 @@ class SentryReplayOptionsTest {
       },
     )
   }
+
   @Test
   fun `addMaskViewClass adds ReplayCustomMasking integration`() {
     val options = SentryReplayOptions(false, null)
