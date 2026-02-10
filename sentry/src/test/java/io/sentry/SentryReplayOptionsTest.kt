@@ -177,10 +177,18 @@ class SentryReplayOptionsTest {
   }
 
   @Test
-  fun `trackCustomMasking only adds integration once`() {
+  fun `setMaskAllText true does not set custom integration`() {
     val options = SentryReplayOptions(false, null)
     options.setMaskAllText(true)
     options.setMaskAllImages(true)
+    assertFalse(hasCustomMaskingIntegration())
+  }
+
+  @Test
+  fun `trackCustomMasking only adds integration once`() {
+    val options = SentryReplayOptions(false, null)
+    options.setMaskAllText(false)
+    options.setMaskAllImages(false)
     assertTrue(hasCustomMaskingIntegration())
     assertEquals(
       1,
@@ -189,7 +197,6 @@ class SentryReplayOptionsTest {
       },
     )
   }
-
   @Test
   fun `addMaskViewClass adds ReplayCustomMasking integration`() {
     val options = SentryReplayOptions(false, null)

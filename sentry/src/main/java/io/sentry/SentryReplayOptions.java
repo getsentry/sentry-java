@@ -281,11 +281,11 @@ public final class SentryReplayOptions {
    * <p>Default is enabled.
    */
   public void setMaskAllText(final boolean maskAllText) {
-    trackCustomMasking();
     if (maskAllText) {
       maskViewClasses.add(TEXT_VIEW_CLASS_NAME);
       unmaskViewClasses.remove(TEXT_VIEW_CLASS_NAME);
     } else {
+      trackCustomMasking();
       unmaskViewClasses.add(TEXT_VIEW_CLASS_NAME);
       maskViewClasses.remove(TEXT_VIEW_CLASS_NAME);
     }
@@ -300,11 +300,11 @@ public final class SentryReplayOptions {
    * <p>Default is enabled.
    */
   public void setMaskAllImages(final boolean maskAllImages) {
-    trackCustomMasking();
     if (maskAllImages) {
       maskViewClasses.add(IMAGE_VIEW_CLASS_NAME);
       unmaskViewClasses.remove(IMAGE_VIEW_CLASS_NAME);
     } else {
+      trackCustomMasking();
       unmaskViewClasses.add(IMAGE_VIEW_CLASS_NAME);
       maskViewClasses.remove(IMAGE_VIEW_CLASS_NAME);
     }
