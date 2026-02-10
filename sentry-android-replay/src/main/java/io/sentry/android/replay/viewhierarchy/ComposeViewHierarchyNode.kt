@@ -85,12 +85,12 @@ internal object ComposeViewHierarchyNode {
   ): Boolean {
     val sentryPrivacyModifier = this?.getOrNull(SentryReplayModifiers.SentryPrivacy)
     if (sentryPrivacyModifier == "unmask") {
-      SentryReplayOptions.trackCustomMaskingTag()
+      SentryReplayOptions.trackCustomMasking()
       return false
     }
 
     if (sentryPrivacyModifier == "mask") {
-      SentryReplayOptions.trackCustomMaskingTag()
+      SentryReplayOptions.trackCustomMasking()
       return true
     }
 

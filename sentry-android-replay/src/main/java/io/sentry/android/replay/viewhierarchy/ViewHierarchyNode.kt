@@ -292,7 +292,7 @@ internal sealed class ViewHierarchyNode(
         (tag as? String)?.lowercase()?.contains(SENTRY_UNMASK_TAG) == true ||
           getTag(R.id.sentry_privacy) == "unmask"
       ) {
-        SentryReplayOptions.trackCustomMaskingTag()
+        SentryReplayOptions.trackCustomMasking()
         return false
       }
 
@@ -300,7 +300,7 @@ internal sealed class ViewHierarchyNode(
         (tag as? String)?.lowercase()?.contains(SENTRY_MASK_TAG) == true ||
           getTag(R.id.sentry_privacy) == "mask"
       ) {
-        SentryReplayOptions.trackCustomMaskingTag()
+        SentryReplayOptions.trackCustomMasking()
         return true
       }
 

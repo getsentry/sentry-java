@@ -20,7 +20,7 @@ import org.jetbrains.annotations.TestOnly;
 public final class SentryReplayOptions {
 
   private static final String CUSTOM_MASKING_INTEGRATION_NAME = "ReplayCustomMasking";
-  private static volatile boolean customMaskingTagTracked = false;
+  private static volatile boolean customMaskingTracked = false;
 
   public static final String TEXT_VIEW_CLASS_NAME = "android.widget.TextView";
   public static final String IMAGE_VIEW_CLASS_NAME = "android.widget.ImageView";
@@ -282,7 +282,7 @@ public final class SentryReplayOptions {
    * <p>Default is enabled.
    */
   public void setMaskAllText(final boolean maskAllText) {
-    trackCustomMaskingTag();
+    trackCustomMasking();
     if (maskAllText) {
       maskViewClasses.add(TEXT_VIEW_CLASS_NAME);
       unmaskViewClasses.remove(TEXT_VIEW_CLASS_NAME);
@@ -301,7 +301,7 @@ public final class SentryReplayOptions {
    * <p>Default is enabled.
    */
   public void setMaskAllImages(final boolean maskAllImages) {
-    trackCustomMaskingTag();
+    trackCustomMasking();
     if (maskAllImages) {
       maskViewClasses.add(IMAGE_VIEW_CLASS_NAME);
       unmaskViewClasses.remove(IMAGE_VIEW_CLASS_NAME);
@@ -317,7 +317,7 @@ public final class SentryReplayOptions {
   }
 
   public void addMaskViewClass(final @NotNull String className) {
-    trackCustomMaskingTag();
+    trackCustomMasking();
     this.maskViewClasses.add(className);
   }
 
@@ -327,7 +327,7 @@ public final class SentryReplayOptions {
   }
 
   public void addUnmaskViewClass(final @NotNull String className) {
-    trackCustomMaskingTag();
+    trackCustomMasking();
     this.unmaskViewClasses.add(className);
   }
 
@@ -382,16 +382,16 @@ public final class SentryReplayOptions {
   }
 
   @ApiStatus.Internal
-  public static void trackCustomMaskingTag() {
-    if (!customMaskingTagTracked) {
-      customMaskingTagTracked = true;
+  public static void trackCustomMasking() {
+    if (!customMaskingTracked) {
+      customMaskingTracked = true;
       addIntegrationToSdkVersion(CUSTOM_MASKING_INTEGRATION_NAME);
     }
   }
 
   @TestOnly
-  public static void resetCustomMaskingTagTracked() {
-    customMaskingTagTracked = false;
+  public static void resetCustomMaskingTracked() {
+    customMaskingTracked = false;
   }
 
   @ApiStatus.Internal

@@ -11,7 +11,7 @@ class SentryReplayOptionsTest {
   @BeforeTest
   fun setup() {
     SentryIntegrationPackageStorage.getInstance().clearStorage()
-    SentryReplayOptions.resetCustomMaskingTagTracked()
+    SentryReplayOptions.resetCustomMaskingTracked()
   }
 
   @Test
@@ -178,15 +178,15 @@ class SentryReplayOptionsTest {
   }
 
   @Test
-  fun `trackCustomMaskingTag adds ReplayCustomMasking integration`() {
-    SentryReplayOptions.trackCustomMaskingTag()
+  fun `trackCustomMasking adds ReplayCustomMasking integration`() {
+    SentryReplayOptions.trackCustomMasking()
     assertTrue(hasCustomMaskingIntegration())
   }
 
   @Test
-  fun `trackCustomMaskingTag only adds integration once`() {
-    SentryReplayOptions.trackCustomMaskingTag()
-    SentryReplayOptions.trackCustomMaskingTag()
+  fun `trackCustomMasking only adds integration once`() {
+    SentryReplayOptions.trackCustomMasking()
+    SentryReplayOptions.trackCustomMasking()
     assertTrue(hasCustomMaskingIntegration())
     assertEquals(1, SentryIntegrationPackageStorage.getInstance().integrations.count { it == "ReplayCustomMasking" })
   }
