@@ -11,6 +11,7 @@ class SentryReplayOptionsTest {
   @BeforeTest
   fun setup() {
     SentryIntegrationPackageStorage.getInstance().clearStorage()
+    SentryReplayOptions.resetCustomMaskingTagTracked()
   }
 
   @Test
@@ -163,17 +164,31 @@ class SentryReplayOptionsTest {
   }
 
   @Test
-  fun `setMaskViewContainerClass adds ReplayCustomMasking integration`() {
+  fun `setMaskViewContainerClass does not add ReplayCustomMasking integration`() {
     val options = SentryReplayOptions(false, null)
     options.setMaskViewContainerClass("com.example.MyContainer")
+    assertFalse(hasCustomMaskingIntegration())
+  }
+
+  @Test
+  fun `setUnmaskViewContainerClass does not add ReplayCustomMasking integration`() {
+    val options = SentryReplayOptions(false, null)
+    options.setUnmaskViewContainerClass("com.example.MyContainer")
+    assertFalse(hasCustomMaskingIntegration())
+  }
+
+  @Test
+  fun `trackCustomMaskingTag adds ReplayCustomMasking integration`() {
+    SentryReplayOptions.trackCustomMaskingTag()
     assertTrue(hasCustomMaskingIntegration())
   }
 
   @Test
-  fun `setUnmaskViewContainerClass adds ReplayCustomMasking integration`() {
-    val options = SentryReplayOptions(false, null)
-    options.setUnmaskViewContainerClass("com.example.MyContainer")
+  fun `trackCustomMaskingTag only adds integration once`() {
+    SentryReplayOptions.trackCustomMaskingTag()
+    SentryReplayOptions.trackCustomMaskingTag()
     assertTrue(hasCustomMaskingIntegration())
+    assertEquals(1, SentryIntegrationPackageStorage.getInstance().integrations.count { it == "ReplayCustomMasking" })
   }
 
   @Test
