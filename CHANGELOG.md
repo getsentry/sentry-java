@@ -12,6 +12,10 @@
   - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0126)
   - [diff](https://github.com/getsentry/sentry-native/compare/0.12.4...0.12.6)
 
+### Internal
+
+- Add integration to track session replay custom masking ([#5070](https://github.com/getsentry/sentry-java/pull/5070))
+
 ## 8.32.0
 
 ### Features
