@@ -8,7 +8,6 @@ import android.view.ViewParent
 import android.widget.ImageView
 import android.widget.TextView
 import io.sentry.SentryOptions
-import io.sentry.SentryReplayOptions
 import io.sentry.android.replay.R
 import io.sentry.android.replay.util.AndroidTextLayout
 import io.sentry.android.replay.util.TextLayout
@@ -292,7 +291,7 @@ internal sealed class ViewHierarchyNode(
         (tag as? String)?.lowercase()?.contains(SENTRY_UNMASK_TAG) == true ||
           getTag(R.id.sentry_privacy) == "unmask"
       ) {
-        SentryReplayOptions.trackCustomMasking()
+        options.sessionReplay.trackCustomMasking()
         return false
       }
 
@@ -300,7 +299,7 @@ internal sealed class ViewHierarchyNode(
         (tag as? String)?.lowercase()?.contains(SENTRY_MASK_TAG) == true ||
           getTag(R.id.sentry_privacy) == "mask"
       ) {
-        SentryReplayOptions.trackCustomMasking()
+        options.sessionReplay.trackCustomMasking()
         return true
       }
 

@@ -11,7 +11,6 @@ class SentryReplayOptionsTest {
   @BeforeTest
   fun setup() {
     SentryIntegrationPackageStorage.getInstance().clearStorage()
-    SentryReplayOptions.resetCustomMaskingTracked()
   }
 
   @Test
@@ -178,15 +177,10 @@ class SentryReplayOptionsTest {
   }
 
   @Test
-  fun `trackCustomMasking adds ReplayCustomMasking integration`() {
-    SentryReplayOptions.trackCustomMasking()
-    assertTrue(hasCustomMaskingIntegration())
-  }
-
-  @Test
   fun `trackCustomMasking only adds integration once`() {
-    SentryReplayOptions.trackCustomMasking()
-    SentryReplayOptions.trackCustomMasking()
+    val options = SentryReplayOptions(false, null)
+    options.setMaskAllText(true)
+    options.setMaskAllImages(true)
     assertTrue(hasCustomMaskingIntegration())
     assertEquals(
       1,

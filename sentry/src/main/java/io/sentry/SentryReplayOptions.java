@@ -15,12 +15,11 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.TestOnly;
 
 public final class SentryReplayOptions {
 
   private static final String CUSTOM_MASKING_INTEGRATION_NAME = "ReplayCustomMasking";
-  private static volatile boolean customMaskingTracked = false;
+  private volatile boolean customMaskingTracked = false;
 
   public static final String TEXT_VIEW_CLASS_NAME = "android.widget.TextView";
   public static final String IMAGE_VIEW_CLASS_NAME = "android.widget.ImageView";
@@ -382,16 +381,11 @@ public final class SentryReplayOptions {
   }
 
   @ApiStatus.Internal
-  public static void trackCustomMasking() {
+  public void trackCustomMasking() {
     if (!customMaskingTracked) {
       customMaskingTracked = true;
       addIntegrationToSdkVersion(CUSTOM_MASKING_INTEGRATION_NAME);
     }
-  }
-
-  @TestOnly
-  public static void resetCustomMaskingTracked() {
-    customMaskingTracked = false;
   }
 
   @ApiStatus.Internal

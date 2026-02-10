@@ -3953,6 +3953,7 @@ public final class io/sentry/SentryReplayOptions {
 	public fun setSessionSampleRate (Ljava/lang/Double;)V
 	public fun setTrackConfiguration (Z)V
 	public fun setUnmaskViewContainerClass (Ljava/lang/String;)V
+	public fun trackCustomMasking ()V
 }
 
 public final class io/sentry/SentryReplayOptions$SentryReplayQuality : java/lang/Enum {
