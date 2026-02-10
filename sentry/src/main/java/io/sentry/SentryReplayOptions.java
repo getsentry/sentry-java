@@ -282,7 +282,7 @@ public final class SentryReplayOptions {
    * <p>Default is enabled.
    */
   public void setMaskAllText(final boolean maskAllText) {
-    addIntegrationToSdkVersion(CUSTOM_MASKING_INTEGRATION_NAME);
+    trackCustomMaskingTag();
     if (maskAllText) {
       maskViewClasses.add(TEXT_VIEW_CLASS_NAME);
       unmaskViewClasses.remove(TEXT_VIEW_CLASS_NAME);
@@ -301,7 +301,7 @@ public final class SentryReplayOptions {
    * <p>Default is enabled.
    */
   public void setMaskAllImages(final boolean maskAllImages) {
-    addIntegrationToSdkVersion(CUSTOM_MASKING_INTEGRATION_NAME);
+    trackCustomMaskingTag();
     if (maskAllImages) {
       maskViewClasses.add(IMAGE_VIEW_CLASS_NAME);
       unmaskViewClasses.remove(IMAGE_VIEW_CLASS_NAME);
@@ -317,7 +317,7 @@ public final class SentryReplayOptions {
   }
 
   public void addMaskViewClass(final @NotNull String className) {
-    addIntegrationToSdkVersion(CUSTOM_MASKING_INTEGRATION_NAME);
+    trackCustomMaskingTag();
     this.maskViewClasses.add(className);
   }
 
@@ -327,7 +327,7 @@ public final class SentryReplayOptions {
   }
 
   public void addUnmaskViewClass(final @NotNull String className) {
-    addIntegrationToSdkVersion(CUSTOM_MASKING_INTEGRATION_NAME);
+    trackCustomMaskingTag();
     this.unmaskViewClasses.add(className);
   }
 
