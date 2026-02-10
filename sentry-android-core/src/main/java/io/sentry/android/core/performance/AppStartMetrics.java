@@ -85,6 +85,11 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   private final AtomicInteger activeActivitiesCounter = new AtomicInteger();
   private final AtomicBoolean firstDrawDone = new AtomicBoolean(false);
 
+  // ApplicationStartInfo data (API 35+)
+  private volatile @Nullable ApplicationStartInfo applicationStartInfo = null;
+  private volatile @Nullable Map<String, String> applicationStartInfoTags = null;
+  private volatile long applicationStartInfoUnixOffsetMs = 0;
+
   public static @NotNull AppStartMetrics getInstance() {
     if (instance == null) {
       try (final @NotNull ISentryLifecycleToken ignored = staticLock.acquire()) {
@@ -235,6 +240,43 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     return firstIdle;
   }
 
+  /**
+   * Store ApplicationStartInfo data for later access.
+   *
+   * @param info The ApplicationStartInfo from Android system
+   * @param tags Extracted tags (start.reason, start.type, start.launch_mode)
+   * @param unixOffsetMs Offset to convert realtime to unix time
+   */
+  public void setApplicationStartInfo(
+      final @Nullable ApplicationStartInfo info,
+      final @Nullable Map<String, String> tags,
+      final long unixOffsetMs) {
+    this.applicationStartInfo = info;
+    this.applicationStartInfoTags = tags;
+    this.applicationStartInfoUnixOffsetMs = unixOffsetMs;
+  }
+
+  /**
+   * @return The stored ApplicationStartInfo, or null if not available
+   */
+  public @Nullable ApplicationStartInfo getApplicationStartInfo() {
+    return applicationStartInfo;
+  }
+
+  /**
+   * @return The extracted tags from ApplicationStartInfo, or null if not available
+   */
+  public @Nullable Map<String, String> getApplicationStartInfoTags() {
+    return applicationStartInfoTags;
+  }
+
+  /**
+   * @return The unix time offset for ApplicationStartInfo timestamps
+   */
+  public long getApplicationStartInfoUnixOffsetMs() {
+    return applicationStartInfoUnixOffsetMs;
+  }
+
   @TestOnly
   public void clear() {
     appStartType = AppStartType.UNKNOWN;
@@ -258,6 +300,9 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     firstDrawDone.set(false);
     activeActivitiesCounter.set(0);
     firstIdle = -1;
+    applicationStartInfo = null;
+    applicationStartInfoTags = null;
+    applicationStartInfoUnixOffsetMs = 0;
   }
 
   public @Nullable ITransactionProfiler getAppStartProfiler() {
