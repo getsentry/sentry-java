@@ -730,15 +730,17 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
       // sentry does not yet have a capability to provide default server-side fingerprint rules,
       // so we're doing this on the SDK side to group background and foreground ANRs separately
       // even if they have similar stacktraces.
-      if (event.getFingerprints() == null) {
-        if (options.isEnableAnrProfiling() && hasOnlySystemFrames(event)) {
-          // If profiling did not identify any app frames, we want to statically group these events
-          // to avoid ANR noise due to {{ default }} stacktrace grouping
-          event.setFingerprints(
-              Arrays.asList(
-                  "system-frames-only-anr", isBackgroundAnr ? "background-anr" : "foreground-anr"));
-          return;
-        }
+      if (event.getFingerprints() != null) {
+        return;
+      }
+
+      if (options.isEnableAnrProfiling() && hasOnlySystemFrames(event)) {
+        // If profiling did not identify any app frames, we want to statically group these events
+        // to avoid ANR noise due to {{ default }} stacktrace grouping
+        event.setFingerprints(
+            Arrays.asList(
+                "system-frames-only-anr", isBackgroundAnr ? "background-anr" : "foreground-anr"));
+      } else {
         event.setFingerprints(
             Arrays.asList("{{ default }}", isBackgroundAnr ? "background-anr" : "foreground-anr"));
       }
