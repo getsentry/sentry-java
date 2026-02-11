@@ -810,12 +810,17 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
     private void applyAnrProfile(
         @NotNull SentryEvent event, @NotNull Backfillable hint, boolean isBackgroundAnr) {
 
-      // Skip background ANRs (profiling only runs in foreground)
+      // Skip background ANRs (as profiling only runs in foreground)
       if (isBackgroundAnr) {
         return;
       }
 
-      // Get timestamp from hint (ANR hints implement AbnormalExit which has timestamp())
+      final String cacheDirPath = options.getCacheDirPath();
+      if (cacheDirPath == null) {
+        return;
+      }
+      final File cacheDir = new File(cacheDirPath);
+
       if (!(hint instanceof AbnormalExit)) {
         return;
       }
@@ -826,13 +831,6 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
       } else {
         anrTimestamp = event.getTimestamp().getTime();
       }
-
-      // Read profile from disk
-      final String cacheDirPath = options.getCacheDirPath();
-      if (cacheDirPath == null) {
-        return;
-      }
-      final File cacheDir = new File(cacheDirPath);
 
       AnrProfile anrProfile = null;
       try {
@@ -857,14 +855,12 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
         return;
       }
 
-      // Validate timestamp
       options.getLogger().log(SentryLevel.INFO, "ANR profile found");
       if (anrTimestamp < anrProfile.startTimeMs || anrTimestamp > anrProfile.endtimeMs) {
         options.getLogger().log(SentryLevel.DEBUG, "ANR profile found, but doesn't match");
         return;
       }
 
-      // Identify culprit
       final AggregatedStackTrace culprit = AnrCulpritIdentifier.identify(anrProfile.stacks);
       if (culprit == null) {
         return;
@@ -873,7 +869,6 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
       // Capture profile chunk
       final SentryId profilerId = captureAnrProfile(anrTimestamp, anrProfile);
 
-      // Set exceptions with culprit
       final StackTraceElement[] stack = culprit.getStack();
       if (stack.length > 0) {
         final StackTraceElement stackTraceElement = stack[0];
@@ -882,7 +877,14 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
         final AnrException exception = new AnrException(message);
         exception.setStackTrace(stack);
 
-        event.setExceptions(sentryExceptionFactory.getSentryExceptions(exception));
+        final @NotNull List<SentryException> sentryException =
+            sentryExceptionFactory.getSentryExceptions(exception);
+        for (final @NotNull SentryException e : sentryException) {
+          final Mechanism mechanism = new Mechanism();
+          mechanism.setType("ANR");
+          e.setMechanism(mechanism);
+        }
+        event.setExceptions(sentryException);
 
         if (profilerId != null) {
           event.getContexts().setProfile(new ProfileContext(profilerId));

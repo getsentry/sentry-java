@@ -141,7 +141,6 @@ public final class StackTraceConverter {
     frame.setFunction(element.getMethodName());
     frame.setModule(element.getClassName());
     frame.setLineno(element.getLineNumber() > 0 ? element.getLineNumber() : null);
-    frame.setInApp(true);
     if (element.isNativeMethod()) {
       frame.setNative(true);
     }

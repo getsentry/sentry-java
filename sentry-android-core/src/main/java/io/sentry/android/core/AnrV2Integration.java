@@ -86,11 +86,7 @@ public class AnrV2Integration implements Integration, Closeable {
             .getExecutorService()
             .submit(
                 new ApplicationExitInfoHistoryDispatcher(
-                    context,
-                    scopes,
-                    this.options,
-                    dateProvider,
-                    new AnrV2Policy(scopes, this.options)));
+                    context, scopes, this.options, dateProvider, new AnrV2Policy(this.options)));
       } catch (Throwable e) {
         options.getLogger().log(SentryLevel.DEBUG, "Failed to start ANR processor.", e);
       }
@@ -109,11 +105,9 @@ public class AnrV2Integration implements Integration, Closeable {
   private static final class AnrV2Policy
       implements ApplicationExitInfoHistoryDispatcher.ApplicationExitInfoPolicy {
 
-    private final @NotNull IScopes scopes;
     private final @NotNull SentryAndroidOptions options;
 
-    AnrV2Policy(final @NotNull IScopes scopes, final @NotNull SentryAndroidOptions options) {
-      this.scopes = scopes;
+    AnrV2Policy(final @NotNull SentryAndroidOptions options) {
       this.options = options;
     }
 

@@ -54,10 +54,6 @@ public class AnrProfilingIntegration
             "SentryAndroidOptions is required");
     this.logger = options.getLogger();
 
-    if (this.options == null) {
-      return;
-    }
-
     if (((SentryAndroidOptions) options).isEnableAnrProfiling()) {
       addIntegrationToSdkVersion("AnrProfiling");
       AppState.getInstance().addAppStateListener(this);
@@ -151,7 +147,7 @@ public class AnrProfilingIntegration
     final long now = SystemClock.uptimeMillis();
     final long diff = now - lastMainThreadExecutionTime;
 
-    if (diff < 1000) {
+    if (diff < THRESHOLD_SUSPICION_MS) {
       mainThreadState = MainThreadState.IDLE;
     }
 
