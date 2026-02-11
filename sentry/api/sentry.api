@@ -3440,6 +3440,7 @@ public class io/sentry/SentryOptions {
 	public static final field MAX_EVENT_SIZE_BYTES J
 	protected final field lock Lio/sentry/util/AutoClosableReentrantLock;
 	public fun <init> ()V
+	public fun activate ()V
 	public fun addBundleId (Ljava/lang/String;)V
 	public fun addContextTag (Ljava/lang/String;)V
 	public fun addEventProcessor (Lio/sentry/EventProcessor;)V

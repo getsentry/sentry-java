@@ -342,7 +342,7 @@ final class AndroidOptionsInitializer {
                 options.getLogger(),
                 options.getProfilingTracesDirPath(),
                 options.getProfilingTracesHz(),
-                options.getExecutorService()));
+                () -> options.getExecutorService()));
       }
     }
   }

@@ -16,6 +16,7 @@ import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.profilemeasurements.ProfileMeasurement;
 import io.sentry.profilemeasurements.ProfileMeasurementValue;
 import io.sentry.util.AutoClosableReentrantLock;
+import io.sentry.util.LazyEvaluator;
 import io.sentry.util.Objects;
 import java.io.File;
 import java.util.ArrayDeque;
@@ -92,7 +93,8 @@ public class AndroidProfiler {
   private final @NotNull ArrayDeque<ProfileMeasurementValue> frozenFrameRenderMeasurements =
       new ArrayDeque<>();
   private final @NotNull Map<String, ProfileMeasurement> measurementsMap = new HashMap<>();
-  private final @Nullable ISentryExecutorService timeoutExecutorService;
+  private final @Nullable LazyEvaluator.Evaluator<ISentryExecutorService>
+      timeoutExecutorServiceSupplier;
   private final @NotNull ILogger logger;
   private volatile boolean isRunning = false;
   protected final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
@@ -101,14 +103,15 @@ public class AndroidProfiler {
       final @NotNull String tracesFilesDirPath,
       final int intervalUs,
       final @NotNull SentryFrameMetricsCollector frameMetricsCollector,
-      final @Nullable ISentryExecutorService timeoutExecutorService,
+      final @Nullable LazyEvaluator.Evaluator<ISentryExecutorService>
+              timeoutExecutorServiceSupplier,
       final @NotNull ILogger logger) {
     this.traceFilesDir =
         new File(Objects.requireNonNull(tracesFilesDirPath, "TracesFilesDirPath is required"));
     this.intervalUs = intervalUs;
     this.logger = Objects.requireNonNull(logger, "Logger is required");
     // Timeout executor is nullable, as timeouts will not be there for continuous profiling
-    this.timeoutExecutorService = timeoutExecutorService;
+    this.timeoutExecutorServiceSupplier = timeoutExecutorServiceSupplier;
     this.frameMetricsCollector =
         Objects.requireNonNull(frameMetricsCollector, "SentryFrameMetricsCollector is required");
   }
@@ -185,10 +188,11 @@ public class AndroidProfiler {
 
       // We stop profiling after a timeout to avoid huge profiles to be sent
       try {
-        if (timeoutExecutorService != null) {
+        if (timeoutExecutorServiceSupplier != null) {
           scheduledFinish =
-              timeoutExecutorService.schedule(
-                  () -> endAndCollect(true, null), PROFILING_TIMEOUT_MILLIS);
+              timeoutExecutorServiceSupplier
+                  .evaluate()
+                  .schedule(() -> endAndCollect(true, null), PROFILING_TIMEOUT_MILLIS);
         }
       } catch (RejectedExecutionException e) {
         logger.log(

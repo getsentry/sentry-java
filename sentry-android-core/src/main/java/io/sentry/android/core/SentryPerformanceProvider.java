@@ -165,6 +165,7 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
       return;
     }
 
+    final @NotNull SentryExecutorService startupExecutorService = new SentryExecutorService();
     final @NotNull IContinuousProfiler appStartContinuousProfiler =
         new AndroidContinuousProfiler(
             buildInfoProvider,
@@ -173,7 +174,7 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
             logger,
             profilingOptions.getProfilingTracesDirPath(),
             profilingOptions.getProfilingTracesHz(),
-            new SentryExecutorService());
+            () -> startupExecutorService);
     appStartMetrics.setAppStartProfiler(null);
     appStartMetrics.setAppStartContinuousProfiler(appStartContinuousProfiler);
     logger.log(SentryLevel.DEBUG, "App start continuous profiling started.");

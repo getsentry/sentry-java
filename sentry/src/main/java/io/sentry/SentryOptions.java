@@ -646,6 +646,17 @@ public class SentryOptions {
     this.profilerConverter = profilerConverter;
   }
 
+  /** Starts expensive parts of the options during Sentry.init */
+  @ApiStatus.Internal
+  public void activate() {
+    if (executorService instanceof NoOpSentryExecutorService) {
+      // SentryExecutorService should be initialized before any
+      // SendCachedEventFireAndForgetIntegration
+      executorService = new SentryExecutorService(this);
+      executorService.prewarm();
+    }
+  }
+
   /**
    * Configuration options for Sentry Build Distribution. NOTE: Ideally this would be in
    * SentryAndroidOptions, but there's a circular dependency issue between sentry-android-core and
@@ -3319,10 +3330,6 @@ public class SentryOptions {
 
     if (!empty) {
       setSpanFactory(SpanFactoryFactory.create(new LoadClass(), NoOpLogger.getInstance()));
-      // SentryExecutorService should be initialized before any
-      // SendCachedEventFireAndForgetIntegration
-      executorService = new SentryExecutorService(this);
-      executorService.prewarm();
 
       // UncaughtExceptionHandlerIntegration should be inited before any other Integration.
       // if there's an error on the setup, we are able to capture it
