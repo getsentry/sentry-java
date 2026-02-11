@@ -15,7 +15,7 @@ env:
   BUILD_PATH: "build/outputs/apk/release"
   APK_NAME: "sentry-uitest-android-critical-release.apk"
   APK_ARTIFACT_NAME: "sentry-uitest-android-critical-release"
-  MAESTRO_VERSION: "1.39.0"
+  MAESTRO_VERSION: "2.1.0"
 
 jobs:
   build:
@@ -36,7 +36,7 @@ jobs:
           java-version: '17'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@4d9f0ba0025fe599b4ebab900eb7f3a1d93ef4c2
+        uses: gradle/actions/setup-gradle@f29f5a9d7b09a7c6b29859002d29d24e1674c884
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
@@ -60,23 +60,23 @@ jobs:
       matrix:
         include:
           - api-level: 31 # Android 12
-            target: aosp_atd
+            target: google_apis
             channel: canary # Necessary for ATDs
             arch: x86_64
           - api-level: 33 # Android 13
-            target: aosp_atd
+            target: google_apis
             channel: canary # Necessary for ATDs
             arch: x86_64
           - api-level: 34 # Android 14
-            target: aosp_atd
+            target: google_apis
             channel: canary # Necessary for ATDs
             arch: x86_64
           - api-level: 35 # Android 15
-            target: aosp_atd
+            target: google_apis
             channel: canary # Necessary for ATDs
             arch: x86_64
           - api-level: 36 # Android 16
-            target: aosp_atd
+            target: google_apis
             channel: canary # Necessary for ATDs
             arch: x86_64
     steps:
@@ -109,7 +109,7 @@ jobs:
           force-avd-creation: false
           disable-animations: true
           disable-spellchecker: true
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          emulator-options: -memory 4096 -no-window -gpu auto -noaudio -no-boot-anim -camera-back none
           disk-size: 4096M
           script: echo "Generated AVD snapshot for caching."
 
@@ -133,16 +133,16 @@ jobs:
           force-avd-creation: false
           disable-animations: true
           disable-spellchecker: true
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot-save
+          emulator-options: -memory 4096 -no-window -gpu auto -noaudio -no-boot-anim -camera-back none -no-snapshot-save
           script: |
             adb uninstall io.sentry.uitest.android.critical || echo "Already uninstalled (or not found)"
             adb install -r -d "${{env.APK_NAME}}"
-            maestro test "${{env.BASE_PATH}}/maestro" --debug-output "${{env.BASE_PATH}}/maestro-logs"
+            mkdir "${{env.BASE_PATH}}/maestro-logs/" || true; adb emu screenrecord start --time-limit 360 "${{env.BASE_PATH}}/maestro-logs/recording.webm" || true; maestro test "${{env.BASE_PATH}}/maestro" --test-output-dir="${{env.BASE_PATH}}/maestro-logs/test-output" || MAESTRO_EXIT_CODE=$?; adb emu screenrecord stop || true; adb logcat -d > "${{env.BASE_PATH}}/maestro-logs/logcat.txt" || true; exit ${MAESTRO_EXIT_CODE:-0}
 
       - name: Upload Maestro test results
-        if: failure()
+        if: ${{ always() }}
         uses: actions/upload-artifact@v6
         with:
-          name: maestro-logs
+          name: maestro-logs-${{ matrix.api-level }}-${{ matrix.arch }}-${{ matrix.target }}
           path: "${{env.BASE_PATH}}/maestro-logs"
           retention-days: 1

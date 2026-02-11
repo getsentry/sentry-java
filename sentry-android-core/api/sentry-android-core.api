@@ -291,6 +291,19 @@ public final class io/sentry/android/core/LoadClass : io/sentry/util/LoadClass {
 	public fun loadClass (Ljava/lang/String;Lio/sentry/ILogger;)Ljava/lang/Class;
 }
 
+public final class io/sentry/android/core/NativeEventCollector {
+	public fun <init> (Lio/sentry/android/core/SentryAndroidOptions;)V
+	public fun collect ()V
+	public fun deleteNativeEventFile (Lio/sentry/android/core/NativeEventCollector$NativeEventData;)Z
+	public fun findAndRemoveMatchingNativeEvent (J)Lio/sentry/android/core/NativeEventCollector$NativeEventData;
+}
+
+public final class io/sentry/android/core/NativeEventCollector$NativeEventData {
+	public fun getEnvelope ()Lio/sentry/SentryEnvelope;
+	public fun getEvent ()Lio/sentry/SentryEvent;
+	public fun getFile ()Ljava/io/File;
+}
+
 public final class io/sentry/android/core/NdkHandlerStrategy : java/lang/Enum {
 	public static final field SENTRY_HANDLER_STRATEGY_CHAIN_AT_START Lio/sentry/android/core/NdkHandlerStrategy;
 	public static final field SENTRY_HANDLER_STRATEGY_DEFAULT Lio/sentry/android/core/NdkHandlerStrategy;
@@ -502,7 +515,7 @@ public final class io/sentry/android/core/TombstoneIntegration$TombstoneHint : i
 }
 
 public class io/sentry/android/core/TombstoneIntegration$TombstonePolicy : io/sentry/android/core/ApplicationExitInfoHistoryDispatcher$ApplicationExitInfoPolicy {
-	public fun <init> (Lio/sentry/android/core/SentryAndroidOptions;)V
+	public fun <init> (Lio/sentry/android/core/SentryAndroidOptions;Landroid/content/Context;)V
 	public fun buildReport (Landroid/app/ApplicationExitInfo;Z)Lio/sentry/android/core/ApplicationExitInfoHistoryDispatcher$Report;
 	public fun getLabel ()Ljava/lang/String;
 	public fun getLastReportedTimestamp ()Ljava/lang/Long;

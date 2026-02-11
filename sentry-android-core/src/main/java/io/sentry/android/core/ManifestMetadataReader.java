@@ -34,6 +34,8 @@ final class ManifestMetadataReader {
   static final String ANR_TIMEOUT_INTERVAL_MILLIS = "io.sentry.anr.timeout-interval-millis";
   static final String ANR_ATTACH_THREAD_DUMPS = "io.sentry.anr.attach-thread-dumps";
 
+  static final String TOMBSTONE_ENABLE = "io.sentry.tombstone.enable";
+
   static final String AUTO_INIT = "io.sentry.auto-init";
   static final String NDK_ENABLE = "io.sentry.ndk.enable";
   static final String NDK_SCOPE_SYNC_ENABLE = "io.sentry.ndk.scope-sync.enable";
@@ -164,6 +166,10 @@ final class ManifestMetadataReader {
 
   static final String FEEDBACK_SHOW_BRANDING = "io.sentry.feedback.show-branding";
 
+  static final String SPOTLIGHT_ENABLE = "io.sentry.spotlight.enable";
+
+  static final String SPOTLIGHT_CONNECTION_URL = "io.sentry.spotlight.url";
+
   static final String ENABLE_ANR_PROFILING = "io.sentry.anr.enable-profiling";
 
   /** ManifestMetadataReader ctor */
@@ -203,6 +209,8 @@ final class ManifestMetadataReader {
         }
 
         options.setAnrEnabled(readBool(metadata, logger, ANR_ENABLE, options.isAnrEnabled()));
+        options.setTombstoneEnabled(
+            readBool(metadata, logger, TOMBSTONE_ENABLE, options.isTombstoneEnabled()));
 
         // use enableAutoSessionTracking as fallback
         options.setEnableAutoSessionTracking(
@@ -644,6 +652,15 @@ final class ManifestMetadataReader {
                 metadata, logger, FEEDBACK_USE_SENTRY_USER, feedbackOptions.isUseSentryUser()));
         feedbackOptions.setShowBranding(
             readBool(metadata, logger, FEEDBACK_SHOW_BRANDING, feedbackOptions.isShowBranding()));
+
+        options.setEnableSpotlight(
+            readBool(metadata, logger, SPOTLIGHT_ENABLE, options.isEnableSpotlight()));
+
+        final @Nullable String spotlightUrl =
+            readString(metadata, logger, SPOTLIGHT_CONNECTION_URL, null);
+        if (spotlightUrl != null) {
+          options.setSpotlightConnectionUrl(spotlightUrl);
+        }
 
         options.setEnableAnrProfiling(
             readBool(metadata, logger, ENABLE_ANR_PROFILING, options.isEnableAnrProfiling()));

@@ -305,7 +305,7 @@ public class AnrV2Integration implements Integration, Closeable {
               options);
       chunk.setSentryProfile(profile);
       final SentryId profilerId = scopes.captureProfileChunk(chunk);
-      if (profilerId.equals(SentryId.EMPTY_ID)) {
+      if (SentryId.EMPTY_ID.equals(profilerId)) {
         return null;
       } else {
         return chunk.getProfilerId();

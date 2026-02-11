@@ -3,9 +3,11 @@ package io.sentry;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-final class NoOpSentryExecutorService implements ISentryExecutorService {
+@ApiStatus.Internal
+public final class NoOpSentryExecutorService implements ISentryExecutorService {
   private static final NoOpSentryExecutorService instance = new NoOpSentryExecutorService();
 
   private NoOpSentryExecutorService() {}
