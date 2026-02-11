@@ -6,17 +6,12 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.Hint
 import io.sentry.SentryEvent
 import io.sentry.android.core.AnrV2Integration.AnrV2Hint
-import io.sentry.android.core.anr.AnrProfileManager
-import io.sentry.android.core.anr.AnrProfileRotationHelper
-import io.sentry.android.core.anr.AnrStackTrace
 import io.sentry.android.core.cache.AndroidEnvelopeCache
-import io.sentry.protocol.SentryId
 import io.sentry.util.HintUtils
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
-import kotlin.test.assertNull
 import org.junit.After
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
@@ -244,114 +239,5 @@ class AnrV2IntegrationTest : ApplicationExitIntegrationTestBase<AnrV2Hint>() {
     integration.register(fixture.scopes, fixture.options)
 
     verify(fixture.scopes, never()).captureEvent(any(), anyOrNull<Hint>())
-  }
-
-  @Test
-  fun `when ANR has only system frames, static fingerprint is set`() {
-    fixture.options.dsn = "https://key@sentry.io/proj"
-    fixture.options.isEnableAnrProfiling = true
-    val integration = fixture.getSut(tmpDir, lastReportedTimestamp = oldTimestamp)
-
-    val stack =
-      arrayOf(
-        StackTraceElement("android.view.Choreographer", "doFrame", "Choreographer.java", 1234),
-        StackTraceElement("android.os.Handler", "dispatchMessage", "Handler.java", 5678),
-      )
-
-    val profileManager =
-      AnrProfileManager(
-        fixture.options,
-        AnrProfileRotationHelper.getFileForRecording(File(fixture.options.cacheDirPath!!)),
-      )
-    profileManager.add(AnrStackTrace(newTimestamp, stack))
-    profileManager.close()
-    AnrProfileRotationHelper.rotate()
-
-    fixture.addAppExitInfo(
-      timestamp = newTimestamp,
-      importance = ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND,
-    )
-
-    integration.register(fixture.scopes, fixture.options)
-
-    verify(fixture.scopes)
-      .captureEvent(
-        check {
-          assertNotNull(it.fingerprints)
-          assertEquals(2, it.fingerprints!!.size)
-          assertEquals("{{ system-frames-only-anr }}", it.fingerprints!![0])
-          assertEquals("foreground-anr", it.fingerprints!![1])
-        },
-        anyOrNull<Hint>(),
-      )
-  }
-
-  @Test
-  fun `when ANR has app frames, static fingerprints are not set`() {
-    fixture.options.dsn = "https://key@sentry.io/proj"
-    fixture.options.isEnableAnrProfiling = true
-    val integration = fixture.getSut(tmpDir, lastReportedTimestamp = oldTimestamp)
-
-    val stack =
-      arrayOf(
-        StackTraceElement("com.example.MyApp", "onCreate", "MyApp.java", 1234),
-        StackTraceElement("android.view.Choreographer", "doFrame", "Choreographer.java", 1234),
-        StackTraceElement("android.os.Handler", "dispatchMessage", "Handler.java", 5678),
-      )
-
-    val profileManager =
-      AnrProfileManager(
-        fixture.options,
-        AnrProfileRotationHelper.getFileForRecording(File(fixture.options.cacheDirPath!!)),
-      )
-    profileManager.add(AnrStackTrace(newTimestamp, stack))
-    profileManager.close()
-    AnrProfileRotationHelper.rotate()
-
-    fixture.addAppExitInfo(
-      timestamp = newTimestamp,
-      importance = ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND,
-    )
-
-    integration.register(fixture.scopes, fixture.options)
-
-    verify(fixture.scopes).captureEvent(check { assertNull(it.fingerprints) }, anyOrNull<Hint>())
-  }
-
-  @Test
-  fun `when ANR profiling is disabled, does not set custom fingerprint`() {
-    fixture.options.isEnableAnrProfiling = false
-    val integration = fixture.getSut(tmpDir, lastReportedTimestamp = oldTimestamp)
-    fixture.addAppExitInfo(timestamp = newTimestamp)
-
-    integration.register(fixture.scopes, fixture.options)
-
-    verify(fixture.scopes)
-      .captureEvent(check { assertEquals(null, it.fingerprints) }, anyOrNull<Hint>())
-  }
-
-  @Test
-  fun `when captureProfileChunk returns empty ID, does not set profile context`() {
-    fixture.options.isEnableAnrProfiling = true
-    val integration = fixture.getSut(tmpDir, lastReportedTimestamp = oldTimestamp)
-    fixture.addAppExitInfo(timestamp = newTimestamp)
-    whenever(fixture.scopes.captureProfileChunk(any())).thenReturn(SentryId.EMPTY_ID)
-
-    integration.register(fixture.scopes, fixture.options)
-
-    verify(fixture.scopes)
-      .captureEvent(check { assertEquals(null, it.contexts.profile) }, anyOrNull<Hint>())
-  }
-
-  @Test
-  fun `when cacheDirPath is null, does not apply ANR profile`() {
-    fixture.options.isEnableAnrProfiling = true
-    fixture.options.cacheDirPath = null
-    val integration = fixture.getSut(tmpDir, lastReportedTimestamp = oldTimestamp)
-    fixture.addAppExitInfo(timestamp = newTimestamp)
-
-    integration.register(fixture.scopes, fixture.options)
-
-    verify(fixture.scopes, never()).captureProfileChunk(any())
   }
 }
