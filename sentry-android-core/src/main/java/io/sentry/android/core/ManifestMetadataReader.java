@@ -170,7 +170,7 @@ final class ManifestMetadataReader {
 
   static final String SPOTLIGHT_CONNECTION_URL = "io.sentry.spotlight.url";
 
-  static final String ENABLE_ANR_PROFILING = "io.sentry.anr.enable-profiling";
+  static final String ENABLE_ANR_PROFILING = "io.sentry.anr.profiling.enable";
 
   /** ManifestMetadataReader ctor */
   private ManifestMetadataReader() {}
