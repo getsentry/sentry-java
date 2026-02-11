@@ -5,6 +5,11 @@
 ### Features
 
 - Add `installGroupsOverride` parameter to Build Distribution SDK for programmatic filtering, with support for configuration via properties file using `io.sentry.distribution.install-groups-override` ([#5066](https://github.com/getsentry/sentry-java/pull/5066))
+- Add new experimental option to capture profiles for ANRs ([#4899](https://github.com/getsentry/sentry-java/pull/4899))
+  - This feature will capture a stack profile of the main thread when it gets unresponsive
+  - The profile gets attached to the ANR event on the next app start, providing a flamegraph of the ANR issue on the sentry issue details page
+  - Breaking change: if the ANR stacktrace contains only system frames (e.g. `java.lang` or `android.os`), a static fingerprint is set on the ANR event, causing all ANR events to be grouped into a single issue, reducing the overall ANR issue noise
+  - Enable via `options.setEnableAnrProfiling(true)` or Android manifest: `<meta-data android:name="io.sentry.anr.enable-profiling" android:value="true" />`
 
 ### Dependencies
 
@@ -108,11 +113,6 @@
 
 ### Features
 
-- Add new experimental option to capture profiles for ANRs ([#4899](https://github.com/getsentry/sentry-java/pull/4899))
-  - This feature will capture a stack profile of the main thread when it gets unresponsive
-  - The profile gets attached to the ANR event on the next app start, providing a flamegraph of the ANR issue on the sentry issue details page
-  - Breaking change: if the ANR stacktrace contains only system frames (e.g. `java.lang` or `android.os`), a static fingerprint is set on the ANR event, causing all ANR events to be grouped into a single issue, reducing the overall ANR issue noise
-  - Enable via `options.setEnableAnrProfiling(true)` or Android manifest: `<meta-data android:name="io.sentry.anr.enable-profiling" android:value="true" />`
 - Add a Tombstone integration that detects native crashes without relying on the NDK integration, but instead using `ApplicationExitInfo.REASON_CRASH_NATIVE` on Android 12+. ([#4933](https://github.com/getsentry/sentry-java/pull/4933))
   - Currently exposed via options as an _internal_ API only.
   - If enabled alongside the NDK integration, crashes will be reported as two separate events. Users should enable only one; deduplication between both integrations will be added in a future release.
