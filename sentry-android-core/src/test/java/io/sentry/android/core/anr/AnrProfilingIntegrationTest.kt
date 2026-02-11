@@ -3,6 +3,7 @@ package io.sentry.android.core.anr
 import android.os.SystemClock
 import io.sentry.ILogger
 import io.sentry.IScopes
+import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryOptions
 import io.sentry.android.core.AppState
 import io.sentry.android.core.SentryAndroidOptions
@@ -244,6 +245,7 @@ class AnrProfilingIntegrationTest {
     integration.register(mockScopes, androidOptions)
 
     assertFalse(AppState.getInstance().lifecycleObserver.listeners.isEmpty())
+    assertTrue(SentryIntegrationPackageStorage.getInstance().integrations.contains("AnrProfiling"))
 
     integration.close()
   }
