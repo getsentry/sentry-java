@@ -4,7 +4,27 @@
 
 ### Features
 
-- Add `installGroupsOverride` parameter and `installGroups` property to Build Distribution SDK ([#5062](https://github.com/getsentry/sentry-java/pull/5062))
+- Add `installGroupsOverride` parameter to Build Distribution SDK for programmatic filtering, with support for configuration via properties file using `io.sentry.distribution.install-groups-override` ([#5066](https://github.com/getsentry/sentry-java/pull/5066))
+
+### Fixes
+
+- When merging tombstones with Native SDK, use the tombstone message if the Native SDK didn't explicitly provide one. ([#5095](https://github.com/getsentry/sentry-java/pull/5095))
+
+### Dependencies
+
+- Bump Native SDK from v0.12.4 to v0.12.6 ([#5071](https://github.com/getsentry/sentry-java/pull/5071))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0126)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.12.4...0.12.6)
+
+### Internal
+
+- Add integration to track session replay custom masking ([#5070](https://github.com/getsentry/sentry-java/pull/5070))
+
+## 8.32.0
+
+### Features
+
+- Add `installGroups` property to Build Distribution SDK ([#5062](https://github.com/getsentry/sentry-java/pull/5062))
 - Update Android targetSdk to API 36 (Android 16) ([#5016](https://github.com/getsentry/sentry-java/pull/5016))
 - Add AndroidManifest support for Spotlight configuration via `io.sentry.spotlight.enable` and `io.sentry.spotlight.url` ([#5064](https://github.com/getsentry/sentry-java/pull/5064))
 - Collect database transaction spans (`BEGIN`, `COMMIT`, `ROLLBACK`) ([#5072](https://github.com/getsentry/sentry-java/pull/5072))
@@ -14,6 +34,20 @@
     ```yaml
     sentry:
       enable-database-transaction-tracing: true
+    ```
+- Add support for collecting native crashes using Tombstones ([#4933](https://github.com/getsentry/sentry-java/pull/4933), [#5037](https://github.com/getsentry/sentry-java/pull/5037))
+  - Added Tombstone integration that detects native crashes using `ApplicationExitInfo.REASON_CRASH_NATIVE` on Android 12+
+  - Crashes enriched with Tombstones contain more crash details and detailed thread info
+  - Tombstone and NDK integrations are now automatically merged into a single crash event, eliminating duplicate reports
+  - To enable it, add the integration in your Sentry initialization:
+    ```kotlin
+    SentryAndroid.init(context, options -> {
+        options.isTombstoneEnabled = true
+    })
+    ```
+    or in the `AndroidManifest.xml` using:
+    ```xml
+    <meta-data android:name="io.sentry.tombstone.enable" android:value="true" />
     ```
 
 ### Fixes
@@ -28,6 +62,7 @@
 - Fix scroll target detection for Jetpack Compose ([#5017](https://github.com/getsentry/sentry-java/pull/5017))
 - No longer fork Sentry `Scopes` for `reactor-kafka` consumer poll `Runnable` ([#5080](https://github.com/getsentry/sentry-java/pull/5080))
   - This was causing a memory leak because `reactor-kafka`'s poll event reschedules itself infinitely, and each invocation of `SentryScheduleHook` created forked scopes with a parent reference, building an unbounded chain that couldn't be garbage collected.
+- Fix cold/warm app start type detection for Android devices running API level 34+ ([#4999](https://github.com/getsentry/sentry-java/pull/4999))
 
 ### Internal
 

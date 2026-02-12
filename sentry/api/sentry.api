@@ -3759,6 +3759,7 @@ public final class io/sentry/SentryOptions$Cron {
 
 public final class io/sentry/SentryOptions$DistributionOptions {
 	public field buildConfiguration Ljava/lang/String;
+	public field installGroupsOverride Ljava/util/List;
 	public field orgAuthToken Ljava/lang/String;
 	public field orgSlug Ljava/lang/String;
 	public field projectSlug Ljava/lang/String;
@@ -3953,6 +3954,7 @@ public final class io/sentry/SentryReplayOptions {
 	public fun setSessionSampleRate (Ljava/lang/Double;)V
 	public fun setTrackConfiguration (Z)V
 	public fun setUnmaskViewContainerClass (Ljava/lang/String;)V
+	public fun trackCustomMasking ()V
 }
 
 public final class io/sentry/SentryReplayOptions$SentryReplayQuality : java/lang/Enum {
@@ -3979,6 +3981,7 @@ public final class io/sentry/SentryStackTraceFactory {
 	public fun getInAppCallStack ()Ljava/util/List;
 	public fun getStackFrames ([Ljava/lang/StackTraceElement;Z)Ljava/util/List;
 	public fun isInApp (Ljava/lang/String;)Ljava/lang/Boolean;
+	public static fun isInApp (Ljava/lang/String;Ljava/util/List;Ljava/util/List;)Ljava/lang/Boolean;
 }
 
 public final class io/sentry/SentryThreadFactory {
