@@ -1,10 +1,32 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Add `installGroupsOverride` parameter to Build Distribution SDK for programmatic filtering, with support for configuration via properties file using `io.sentry.distribution.install-groups-override` ([#5066](https://github.com/getsentry/sentry-java/pull/5066))
+
+### Fixes
+
+- When merging tombstones with Native SDK, use the tombstone message if the Native SDK didn't explicitly provide one. ([#5095](https://github.com/getsentry/sentry-java/pull/5095))
+- Fix thread leak caused by eager creation of `SentryExecutorService` in `SentryOptions` ([#5093](https://github.com/getsentry/sentry-java/pull/5093))
+  - There were cases where we created options that ended up unused but we failed to clean those up.
+
+### Dependencies
+
+- Bump Native SDK from v0.12.4 to v0.12.6 ([#5071](https://github.com/getsentry/sentry-java/pull/5071))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0126)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.12.4...0.12.6)
+
+### Internal
+
+- Add integration to track session replay custom masking ([#5070](https://github.com/getsentry/sentry-java/pull/5070))
+
 ## 8.32.0
 
 ### Features
 
-- Add `installGroupsOverride` parameter and `installGroups` property to Build Distribution SDK ([#5062](https://github.com/getsentry/sentry-java/pull/5062))
+- Add `installGroups` property to Build Distribution SDK ([#5062](https://github.com/getsentry/sentry-java/pull/5062))
 - Update Android targetSdk to API 36 (Android 16) ([#5016](https://github.com/getsentry/sentry-java/pull/5016))
 - Add AndroidManifest support for Spotlight configuration via `io.sentry.spotlight.enable` and `io.sentry.spotlight.url` ([#5064](https://github.com/getsentry/sentry-java/pull/5064))
 - Collect database transaction spans (`BEGIN`, `COMMIT`, `ROLLBACK`) ([#5072](https://github.com/getsentry/sentry-java/pull/5072))

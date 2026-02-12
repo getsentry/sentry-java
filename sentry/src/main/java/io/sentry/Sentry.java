@@ -329,6 +329,8 @@ public final class Sentry {
                   "Sentry has been already initialized. Previous configuration will be overwritten.");
         }
 
+        options.activate();
+
         final IScopes scopes = getCurrentScopes();
         scopes.close(true);
 
