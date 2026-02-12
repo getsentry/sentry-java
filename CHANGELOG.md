@@ -9,6 +9,8 @@
 ### Fixes
 
 - When merging tombstones with Native SDK, use the tombstone message if the Native SDK didn't explicitly provide one. ([#5095](https://github.com/getsentry/sentry-java/pull/5095))
+- Fix thread leak caused by eager creation of `SentryExecutorService` in `SentryOptions` ([#5093](https://github.com/getsentry/sentry-java/pull/5093))
+  - There were cases where we created options that ended up unused but we failed to clean those up.
 
 ### Dependencies
 

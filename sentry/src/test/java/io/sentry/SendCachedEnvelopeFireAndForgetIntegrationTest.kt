@@ -33,6 +33,7 @@ class SendCachedEnvelopeFireAndForgetIntegrationTest {
       options.setDebug(true)
       options.setLogger(logger)
       options.sdkVersion = SdkVersion("test", "1.2.3")
+      options.activate()
     }
 
     fun getSut(): SendCachedEnvelopeFireAndForgetIntegration =
