@@ -193,6 +193,30 @@ class AnrProfilingIntegrationTest {
   }
 
   @Test
+  fun `background foreground transitions don't trigger an ANR`() {
+    val mainThread = Thread.currentThread()
+    SystemClock.setCurrentTimeMillis(1_000)
+
+    val androidOptions =
+      SentryAndroidOptions().apply {
+        cacheDirPath = tempDir.absolutePath
+        setLogger(mockLogger)
+        isEnableAnrProfiling = true
+      }
+
+    val integration = AnrProfilingIntegration()
+    integration.register(mockScopes, androidOptions)
+    integration.onBackground()
+
+    SystemClock.setCurrentTimeMillis(20_000)
+    integration.onForeground()
+
+    Thread.sleep(100)
+    integration.checkMainThread(mainThread)
+    assertEquals(AnrProfilingIntegration.MainThreadState.IDLE, integration.state)
+  }
+
+  @Test
   fun `does not register when options is not SentryAndroidOptions`() {
     val plainOptions =
       SentryOptions().apply {

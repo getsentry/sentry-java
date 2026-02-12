@@ -93,6 +93,7 @@ public class AnrProfilingIntegration
         return;
       }
       inForeground = true;
+      updater.run();
 
       final @Nullable Thread oldThread = thread;
       if (oldThread != null) {
