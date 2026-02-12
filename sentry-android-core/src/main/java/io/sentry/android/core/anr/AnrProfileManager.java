@@ -8,6 +8,7 @@ import io.sentry.ILogger;
 import io.sentry.SentryOptions;
 import io.sentry.cache.tape.ObjectQueue;
 import io.sentry.cache.tape.QueueFile;
+import io.sentry.util.Objects;
 import java.io.ByteArrayInputStream;
 import java.io.Closeable;
 import java.io.DataInputStream;
@@ -28,7 +29,11 @@ public class AnrProfileManager implements Closeable {
   @NotNull private final ObjectQueue<AnrStackTrace> queue;
 
   public AnrProfileManager(final @NotNull SentryOptions options) {
-    this(options, new File(options.getCacheDirPath(), "anr_profile"));
+    this(
+        options,
+        new File(
+            Objects.requireNonNull(options.getCacheDirPath(), "cacheDirPath is required"),
+            "anr_profile"));
   }
 
   public AnrProfileManager(final @NotNull SentryOptions options, final @NotNull File file) {

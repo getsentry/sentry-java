@@ -830,8 +830,10 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
       final long anrTimestamp;
       if (anrTimestampObj != null) {
         anrTimestamp = anrTimestampObj;
-      } else {
+      } else if (event.getTimestamp() != null) {
         anrTimestamp = event.getTimestamp().getTime();
+      } else {
+        return;
       }
 
       AnrProfile anrProfile = null;
@@ -858,7 +860,7 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
       }
 
       options.getLogger().log(SentryLevel.INFO, "ANR profile found");
-      if (anrTimestamp < anrProfile.startTimeMs || anrTimestamp > anrProfile.endtimeMs) {
+      if (anrTimestamp < anrProfile.startTimeMs || anrTimestamp > anrProfile.endTimeMs) {
         options.getLogger().log(SentryLevel.DEBUG, "ANR profile found, but doesn't match");
         return;
       }
@@ -886,6 +888,8 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
           mechanism.setType("ANR");
           e.setMechanism(mechanism);
         }
+        // Replaces the original ANR exception with the profile-derived one,
+        // as we assume the profiling stacktrace is more detailed
         event.setExceptions(sentryException);
 
         if (profilerId != null) {

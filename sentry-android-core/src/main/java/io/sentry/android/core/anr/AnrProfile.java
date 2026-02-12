@@ -10,7 +10,7 @@ public class AnrProfile {
   public final List<AnrStackTrace> stacks;
 
   public final long startTimeMs;
-  public final long endtimeMs;
+  public final long endTimeMs;
 
   public AnrProfile(List<AnrStackTrace> stacks) {
     this.stacks = new ArrayList<>(stacks.size());
@@ -25,10 +25,10 @@ public class AnrProfile {
       startTimeMs = this.stacks.get(0).timestampMs;
 
       // adding 10s to be less strict around end time
-      endtimeMs = this.stacks.get(this.stacks.size() - 1).timestampMs + 10_000L;
+      endTimeMs = this.stacks.get(this.stacks.size() - 1).timestampMs + 10_000L;
     } else {
       startTimeMs = 0L;
-      endtimeMs = 0L;
+      endTimeMs = 0L;
     }
   }
 }

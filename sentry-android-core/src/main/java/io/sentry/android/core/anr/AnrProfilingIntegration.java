@@ -20,6 +20,7 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -31,6 +32,7 @@ public class AnrProfilingIntegration
   public static final long POLLING_INTERVAL_MS = 66;
   private static final long THRESHOLD_SUSPICION_MS = 1000;
   public static final long THRESHOLD_ANR_MS = 4000;
+  static final int MAX_NUM_STACKS = (int) (10_000 / POLLING_INTERVAL_MS);
 
   private final AtomicBoolean enabled = new AtomicBoolean(true);
   private final Runnable updater = () -> lastMainThreadExecutionTime = SystemClock.uptimeMillis();
@@ -39,6 +41,7 @@ public class AnrProfilingIntegration
       new AutoClosableReentrantLock();
 
   private volatile long lastMainThreadExecutionTime = SystemClock.uptimeMillis();
+  final AtomicInteger numCollectedStacks = new AtomicInteger();
   private volatile MainThreadState mainThreadState = MainThreadState.IDLE;
   private volatile @Nullable AnrProfileManager profileManager;
   private volatile @NotNull ILogger logger = NoOpLogger.getInstance();
@@ -53,6 +56,11 @@ public class AnrProfilingIntegration
             (options instanceof SentryAndroidOptions) ? (SentryAndroidOptions) options : null,
             "SentryAndroidOptions is required");
     this.logger = options.getLogger();
+
+    if (options.getCacheDirPath() == null) {
+      logger.log(SentryLevel.WARNING, "ANR Profiling is enabled but cacheDirPath is not set");
+      return;
+    }
 
     if (((SentryAndroidOptions) options).isEnableAnrProfiling()) {
       addIntegrationToSdkVersion("AnrProfiling");
@@ -71,6 +79,7 @@ public class AnrProfilingIntegration
       if (p != null) {
         p.close();
       }
+      profileManager = null;
     }
   }
 
@@ -138,7 +147,7 @@ public class AnrProfilingIntegration
         }
       }
     } catch (Throwable t) {
-      logger.log(SentryLevel.WARNING, "Failed execute AnrStacktraceIntegration", t);
+      logger.log(SentryLevel.WARNING, "Failed to execute AnrStacktraceIntegration", t);
     }
   }
 
@@ -152,7 +161,9 @@ public class AnrProfilingIntegration
     }
 
     if (mainThreadState == MainThreadState.IDLE && diff > THRESHOLD_SUSPICION_MS) {
-      logger.log(SentryLevel.DEBUG, "ANR: main thread is suspicious");
+      if (logger.isEnabled(SentryLevel.DEBUG)) {
+        logger.log(SentryLevel.DEBUG, "ANR: main thread is suspicious");
+      }
       mainThreadState = MainThreadState.SUSPICIOUS;
       clearStacks();
     }
@@ -160,21 +171,30 @@ public class AnrProfilingIntegration
     // if we are suspicious, we need to collect stack traces
     if (mainThreadState == MainThreadState.SUSPICIOUS
         || mainThreadState == MainThreadState.ANR_DETECTED) {
-      final long start = SystemClock.uptimeMillis();
-      final @NotNull AnrStackTrace trace =
-          new AnrStackTrace(System.currentTimeMillis(), mainThread.getStackTrace());
-      final long duration = SystemClock.uptimeMillis() - start;
-      logger.log(
-          SentryLevel.DEBUG,
-          "AnrWatchdog: capturing main thread stacktrace took " + duration + "ms");
-
-      addStackTrace(trace);
+      if (numCollectedStacks.get() < MAX_NUM_STACKS) {
+        final long start = SystemClock.uptimeMillis();
+        final @NotNull AnrStackTrace trace =
+            new AnrStackTrace(System.currentTimeMillis(), mainThread.getStackTrace());
+        final long duration = SystemClock.uptimeMillis() - start;
+        if (logger.isEnabled(SentryLevel.DEBUG)) {
+          logger.log(
+              SentryLevel.DEBUG,
+              "AnrWatchdog: capturing main thread stacktrace took " + duration + "ms");
+        }
+        addStackTrace(trace);
+      } else {
+        if (logger.isEnabled(SentryLevel.DEBUG)) {
+          logger.log(
+              SentryLevel.DEBUG,
+              "ANR: reached maximum number of collected stack traces, skipping further collection");
+        }
+      }
     }
 
-    // TODO is this still required,
-    // maybe add stop condition
     if (mainThreadState == MainThreadState.SUSPICIOUS && diff > THRESHOLD_ANR_MS) {
-      logger.log(SentryLevel.DEBUG, "ANR: main thread ANR threshold reached");
+      if (logger.isEnabled(SentryLevel.DEBUG)) {
+        logger.log(SentryLevel.DEBUG, "ANR: main thread ANR threshold reached");
+      }
       mainThreadState = MainThreadState.ANR_DETECTED;
     }
   }
@@ -192,8 +212,12 @@ public class AnrProfilingIntegration
       if (profileManager == null) {
         final @NotNull SentryOptions opts =
             Objects.requireNonNull(options, "Options can't be null");
+        final @Nullable String cacheDirPath = opts.getCacheDirPath();
+        if (cacheDirPath == null) {
+          throw new IllegalStateException("cacheDirPath is required for ANR profiling");
+        }
         final @NotNull File currentFile =
-            AnrProfileRotationHelper.getFileForRecording(new File(opts.getCacheDirPath()));
+            AnrProfileRotationHelper.getFileForRecording(new File(cacheDirPath));
         profileManager = new AnrProfileManager(opts, currentFile);
       }
 
@@ -202,10 +226,12 @@ public class AnrProfilingIntegration
   }
 
   private void clearStacks() throws IOException {
+    numCollectedStacks.set(0);
     getProfileManager().clear();
   }
 
   private void addStackTrace(@NotNull final AnrStackTrace trace) throws IOException {
+    numCollectedStacks.incrementAndGet();
     getProfileManager().add(trace);
   }
 

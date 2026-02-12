@@ -94,4 +94,34 @@ class AnrStackTraceTest {
     assertNull(deserialized.stack[0].fileName)
     assertEquals(42, deserialized.stack[1].lineNumber)
   }
+
+  @Test
+  fun `deserialize returns null for oversized stack length`() {
+    val bytes = ByteArrayOutputStream()
+    val dos = DataOutputStream(bytes)
+    dos.writeShort(1) // version
+    dos.writeLong(1234567890L) // timestamp
+    dos.writeInt(1001) // stackLength exceeds MAX_STACK_LENGTH
+    dos.flush()
+
+    val dis = DataInputStream(ByteArrayInputStream(bytes.toByteArray()))
+    val deserialized = AnrStackTrace.deserialize(dis)
+
+    assertNull(deserialized)
+  }
+
+  @Test
+  fun `deserialize returns null for negative stack length`() {
+    val bytes = ByteArrayOutputStream()
+    val dos = DataOutputStream(bytes)
+    dos.writeShort(1) // version
+    dos.writeLong(1234567890L) // timestamp
+    dos.writeInt(-1) // negative stackLength
+    dos.flush()
+
+    val dis = DataInputStream(ByteArrayInputStream(bytes.toByteArray()))
+    val deserialized = AnrStackTrace.deserialize(dis)
+
+    assertNull(deserialized)
+  }
 }

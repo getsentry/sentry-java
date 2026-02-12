@@ -186,7 +186,10 @@ class AnrProfilingIntegrationTest {
     assertEquals(AnrProfilingIntegration.MainThreadState.ANR_DETECTED, integration.state)
     assertEquals(2, integration.profileManager.load().stacks.size)
 
-    integration.close()
+    for (i in 0 until AnrProfilingIntegration.MAX_NUM_STACKS + 1) {
+      integration.checkMainThread(mainThread)
+    }
+    assertEquals(AnrProfilingIntegration.MAX_NUM_STACKS, integration.numCollectedStacks.get())
   }
 
   @Test

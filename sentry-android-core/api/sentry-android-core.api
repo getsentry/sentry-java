@@ -566,7 +566,7 @@ public class io/sentry/android/core/anr/AnrException : java/lang/Exception {
 }
 
 public class io/sentry/android/core/anr/AnrProfile {
-	public final field endtimeMs J
+	public final field endTimeMs J
 	public final field stacks Ljava/util/List;
 	public final field startTimeMs J
 	public fun <init> (Ljava/util/List;)V

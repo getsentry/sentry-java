@@ -12,6 +12,8 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public final class AnrStackTrace implements Comparable<AnrStackTrace> {
 
+  private static final int MAX_STACK_LENGTH = 1000;
+
   public final StackTraceElement[] stack;
   public final long timestampMs;
 
@@ -47,6 +49,9 @@ public final class AnrStackTrace implements Comparable<AnrStackTrace> {
       if (version == 1) {
         final long timestampMs = dis.readLong();
         final int stackLength = dis.readInt();
+        if (stackLength < 0 || stackLength > MAX_STACK_LENGTH) {
+          return null;
+        }
         final @NotNull StackTraceElement[] stack = new StackTraceElement[stackLength];
 
         for (int i = 0; i < stackLength; i++) {
