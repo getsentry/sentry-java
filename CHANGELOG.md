@@ -6,6 +6,10 @@
 
 - Add `installGroupsOverride` parameter to Build Distribution SDK for programmatic filtering, with support for configuration via properties file using `io.sentry.distribution.install-groups-override` ([#5066](https://github.com/getsentry/sentry-java/pull/5066))
 
+### Fixes
+
+- When merging tombstones with Native SDK, use the tombstone message if the Native SDK didn't explicitly provide one. ([#5095](https://github.com/getsentry/sentry-java/pull/5095))
+
 ### Dependencies
 
 - Bump Native SDK from v0.12.4 to v0.12.6 ([#5071](https://github.com/getsentry/sentry-java/pull/5071))
