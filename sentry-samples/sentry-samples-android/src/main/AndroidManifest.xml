@@ -198,10 +198,6 @@
     <!--    how to disable the app components breadcrumbs integration-->
     <!--    <meta-data android:name="io.sentry.breadcrumbs.app-components" android:value="false" />-->
 
-    <meta-data
-      android:name="io.sentry.anr.enable-profiling"
-      android:value="true" />
-
     <!--    how to enable the attach screenshot feature-->
     <meta-data
       android:name="io.sentry.attach-screenshot"
