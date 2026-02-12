@@ -11,6 +11,7 @@
 - When merging tombstones with Native SDK, use the tombstone message if the Native SDK didn't explicitly provide one. ([#5095](https://github.com/getsentry/sentry-java/pull/5095))
 - Fix thread leak caused by eager creation of `SentryExecutorService` in `SentryOptions` ([#5093](https://github.com/getsentry/sentry-java/pull/5093))
   - There were cases where we created options that ended up unused but we failed to clean those up.
+- Session Replay: Add `androidx.camera.view.PreviewView` to default `maskedViewClasses` to mask camera previews by default. ([#5097](https://github.com/getsentry/sentry-java/pull/5097))
 
 ### Dependencies
 
