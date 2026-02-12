@@ -261,6 +261,9 @@
       android:name="io.sentry.spotlight.enable"
       android:value="true" />
     <meta-data
+      android:name="io.sentry.tombstone.enable"
+      android:value="true" />
+    <meta-data
       android:name="io.sentry.anr.profiling.enable"
       android:value="true" />
   </application>
