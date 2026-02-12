@@ -1,6 +1,7 @@
 package io.sentry.android.core.anr
 
 import android.os.SystemClock
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.ILogger
 import io.sentry.IScopes
 import io.sentry.SentryIntegrationPackageStorage
@@ -8,8 +9,6 @@ import io.sentry.SentryOptions
 import io.sentry.android.core.AppState
 import io.sentry.android.core.SentryAndroidOptions
 import io.sentry.test.getProperty
-import java.io.File
-import java.nio.file.Files
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -17,25 +16,27 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import org.junit.Rule
+import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.mockito.kotlin.mock
-import org.robolectric.RobolectricTestRunner
 
-@RunWith(RobolectricTestRunner::class)
+@RunWith(AndroidJUnit4::class)
 class AnrProfilingIntegrationTest {
-  private lateinit var tempDir: File
+
+  @get:Rule val tmpDir = TemporaryFolder()
+
   private lateinit var mockScopes: IScopes
   private lateinit var mockLogger: ILogger
   private lateinit var options: SentryAndroidOptions
 
   @BeforeTest
   fun setup() {
-    tempDir = Files.createTempDirectory("anr_profile_test").toFile()
     mockScopes = mock()
     mockLogger = mock()
     options =
       SentryAndroidOptions().apply {
-        cacheDirPath = tempDir.absolutePath
+        cacheDirPath = tmpDir.root.absolutePath
         setLogger(mockLogger)
         isEnableAnrProfiling = true
       }
@@ -44,9 +45,6 @@ class AnrProfilingIntegrationTest {
 
   @AfterTest
   fun cleanup() {
-    if (::tempDir.isInitialized && tempDir.exists()) {
-      tempDir.deleteRecursively()
-    }
     AppState.getInstance().resetInstance()
   }
 
@@ -163,7 +161,7 @@ class AnrProfilingIntegrationTest {
 
     val androidOptions =
       SentryAndroidOptions().apply {
-        cacheDirPath = tempDir.absolutePath
+        cacheDirPath = tmpDir.root.absolutePath
         setLogger(mockLogger)
         isEnableAnrProfiling = true
       }
@@ -199,7 +197,7 @@ class AnrProfilingIntegrationTest {
 
     val androidOptions =
       SentryAndroidOptions().apply {
-        cacheDirPath = tempDir.absolutePath
+        cacheDirPath = tmpDir.root.absolutePath
         setLogger(mockLogger)
         isEnableAnrProfiling = true
       }
@@ -220,7 +218,7 @@ class AnrProfilingIntegrationTest {
   fun `does not register when options is not SentryAndroidOptions`() {
     val plainOptions =
       SentryOptions().apply {
-        cacheDirPath = tempDir.absolutePath
+        cacheDirPath = tmpDir.root.absolutePath
         setLogger(mockLogger)
       }
 
@@ -243,7 +241,7 @@ class AnrProfilingIntegrationTest {
   fun `does not register when ANR profiling is disabled`() {
     val androidOptions =
       SentryAndroidOptions().apply {
-        cacheDirPath = tempDir.absolutePath
+        cacheDirPath = tmpDir.root.absolutePath
         setLogger(mockLogger)
         isEnableAnrProfiling = false
       }
@@ -263,7 +261,7 @@ class AnrProfilingIntegrationTest {
   fun `registers when ANR profiling is enabled`() {
     val androidOptions =
       SentryAndroidOptions().apply {
-        cacheDirPath = tempDir.absolutePath
+        cacheDirPath = tmpDir.root.absolutePath
         setLogger(mockLogger)
         isEnableAnrProfiling = true
       }

@@ -2,28 +2,20 @@ package io.sentry.android.core.anr
 
 import io.sentry.SentryOptions
 import java.io.File
-import java.nio.file.Files
-import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import org.junit.Rule
+import org.junit.rules.TemporaryFolder
 import org.mockito.kotlin.mock
 
 class AnrProfileManagerTest {
-  private lateinit var tempDir: File
-
-  @AfterTest
-  fun cleanup() {
-    if (::tempDir.isInitialized && tempDir.exists()) {
-      tempDir.deleteRecursively()
-    }
-  }
+  @get:Rule val tmpDir = TemporaryFolder()
 
   private fun createOptions(): SentryOptions {
-    tempDir = Files.createTempDirectory("anr_profile_test").toFile()
     val options = SentryOptions()
-    options.cacheDirPath = tempDir.absolutePath
+    options.cacheDirPath = tmpDir.newFolder().absolutePath
     options.setLogger(mock())
     return options
   }
