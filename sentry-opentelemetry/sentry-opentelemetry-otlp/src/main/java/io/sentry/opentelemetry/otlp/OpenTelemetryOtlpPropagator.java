@@ -18,7 +18,6 @@ import io.sentry.ScopesAdapter;
 import io.sentry.SentryLevel;
 import io.sentry.SentryTraceHeader;
 import io.sentry.exception.InvalidSentryTraceHeaderException;
-
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -31,7 +30,7 @@ public final class OpenTelemetryOtlpPropagator implements TextMapPropagator {
       Arrays.asList(SENTRY_TRACE_HEADER, BaggageHeader.BAGGAGE_HEADER);
 
   public static final @NotNull ContextKey<Baggage> SENTRY_BAGGAGE_KEY =
-    ContextKey.named("sentry.baggage");
+      ContextKey.named("sentry.baggage");
   private final @NotNull IScopes scopes;
 
   public OpenTelemetryOtlpPropagator() {
@@ -61,7 +60,14 @@ public final class OpenTelemetryOtlpPropagator implements TextMapPropagator {
       return;
     }
 
-    setter.set(carrier, SENTRY_TRACE_HEADER, otelSpanContext.getTraceId() + "-" + otelSpanContext.getSpanId() + "-" + (otelSpanContext.isSampled() ? "1" : "0"));
+    setter.set(
+        carrier,
+        SENTRY_TRACE_HEADER,
+        otelSpanContext.getTraceId()
+            + "-"
+            + otelSpanContext.getSpanId()
+            + "-"
+            + (otelSpanContext.isSampled() ? "1" : "0"));
 
     final @Nullable Baggage baggage = context.get(SENTRY_BAGGAGE_KEY);
     if (baggage != null) {
@@ -72,8 +78,7 @@ public final class OpenTelemetryOtlpPropagator implements TextMapPropagator {
   @Override
   public <C> Context extract(
       final Context context, final C carrier, final TextMapGetter<C> getter) {
-    final @Nullable String sentryTraceString =
-        getter.get(carrier, SENTRY_TRACE_HEADER);
+    final @Nullable String sentryTraceString = getter.get(carrier, SENTRY_TRACE_HEADER);
     if (sentryTraceString == null) {
       return context;
     }
@@ -95,9 +100,7 @@ public final class OpenTelemetryOtlpPropagator implements TextMapPropagator {
       Span wrappedSpan = Span.wrap(otelSpanContext);
 
       final @NotNull Context modifiedContext =
-          context
-              .with(wrappedSpan)
-              .with(SENTRY_BAGGAGE_KEY, baggage);
+          context.with(wrappedSpan).with(SENTRY_BAGGAGE_KEY, baggage);
 
       scopes
           .getOptions()

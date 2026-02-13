@@ -18,8 +18,8 @@ dependencies {
   api(projects.sentry)
 
   compileOnly(libs.otel)
-//  compileOnly(libs.otel.semconv)
-//  compileOnly(libs.otel.semconv.incubating)
+  //  compileOnly(libs.otel.semconv)
+  //  compileOnly(libs.otel.semconv.incubating)
 
   compileOnly(libs.jetbrains.annotations)
   compileOnly(libs.nopen.annotations)
@@ -35,8 +35,8 @@ dependencies {
   testImplementation(libs.mockito.kotlin)
 
   testImplementation(libs.otel)
-//  testImplementation(libs.otel.semconv)
-//  testImplementation(libs.otel.semconv.incubating)
+  //  testImplementation(libs.otel.semconv)
+  //  testImplementation(libs.otel.semconv.incubating)
 }
 
 configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
