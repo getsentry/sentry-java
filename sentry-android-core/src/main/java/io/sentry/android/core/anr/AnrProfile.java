@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
 
 @ApiStatus.Internal
 public class AnrProfile {
@@ -12,7 +13,7 @@ public class AnrProfile {
   public final long startTimeMs;
   public final long endTimeMs;
 
-  public AnrProfile(List<AnrStackTrace> stacks) {
+  public AnrProfile(final @NotNull List<AnrStackTrace> stacks) {
     this.stacks = new ArrayList<>(stacks.size());
     for (AnrStackTrace stack : stacks) {
       if (stack != null) {

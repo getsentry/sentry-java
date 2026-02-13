@@ -10,7 +10,6 @@ import io.sentry.cache.tape.ObjectQueue;
 import io.sentry.cache.tape.QueueFile;
 import io.sentry.util.Objects;
 import java.io.ByteArrayInputStream;
-import java.io.Closeable;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -21,7 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
-public class AnrProfileManager implements Closeable {
+public class AnrProfileManager implements AutoCloseable {
 
   private static final int MAX_NUM_STACKTRACES =
       (int) ((THRESHOLD_ANR_MS / POLLING_INTERVAL_MS) * 2);
@@ -63,6 +62,8 @@ public class AnrProfileManager implements Closeable {
               new ObjectQueue.Converter<AnrStackTrace>() {
                 @Override
                 public AnrStackTrace from(final byte[] source) throws IOException {
+                  // no need to close the streams since they are backed by byte arrays and don't
+                  // hold any resources
                   final @NotNull ByteArrayInputStream bis = new ByteArrayInputStream(source);
                   final @NotNull DataInputStream dis = new DataInputStream(bis);
                   return AnrStackTrace.deserialize(dis);
@@ -72,9 +73,10 @@ public class AnrProfileManager implements Closeable {
                 public void toStream(
                     final @NotNull AnrStackTrace value, final @NotNull OutputStream sink)
                     throws IOException {
-                  final @NotNull DataOutputStream dos = new DataOutputStream(sink);
-                  value.serialize(dos);
-                  dos.flush();
+                  try (final @NotNull DataOutputStream dos = new DataOutputStream(sink)) {
+                    value.serialize(dos);
+                    dos.flush();
+                  }
                   sink.flush();
                 }
               });

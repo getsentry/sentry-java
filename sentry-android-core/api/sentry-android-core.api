@@ -567,7 +567,7 @@ public class io/sentry/android/core/anr/AnrProfile {
 	public fun <init> (Ljava/util/List;)V
 }
 
-public class io/sentry/android/core/anr/AnrProfileManager : java/io/Closeable {
+public class io/sentry/android/core/anr/AnrProfileManager : java/lang/AutoCloseable {
 	public fun <init> (Lio/sentry/SentryOptions;)V
 	public fun <init> (Lio/sentry/SentryOptions;Ljava/io/File;)V
 	public fun add (Lio/sentry/android/core/anr/AnrStackTrace;)V

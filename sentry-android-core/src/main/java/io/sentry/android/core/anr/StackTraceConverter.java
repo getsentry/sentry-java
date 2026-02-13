@@ -5,6 +5,7 @@ import io.sentry.protocol.profiling.SentryProfile;
 import io.sentry.protocol.profiling.SentrySample;
 import io.sentry.protocol.profiling.SentryThreadMetadata;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -86,8 +87,8 @@ public final class StackTraceConverter {
     threadMetadata.setName(MAIN_THREAD_NAME);
     threadMetadata.setPriority(Thread.NORM_PRIORITY);
 
-    final @NotNull Map<String, SentryThreadMetadata> threadMetadataMap = new HashMap<>();
-    threadMetadataMap.put(MAIN_THREAD_ID, threadMetadata);
+    final @NotNull Map<String, SentryThreadMetadata> threadMetadataMap =
+        Collections.singletonMap(MAIN_THREAD_ID, threadMetadata);
     profile.setThreadMetadata(threadMetadataMap);
 
     return profile;

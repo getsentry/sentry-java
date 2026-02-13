@@ -35,12 +35,16 @@ public class AnrProfileRotationHelper {
       final File currentFile = new File(cacheDir, RECORDING_FILE_NAME);
       final File oldFile = new File(cacheDir, OLD_FILE_NAME);
 
-      if (oldFile.exists()) {
+      try {
         oldFile.delete();
+      } catch (Throwable e) {
+        // ignored
       }
 
-      if (currentFile.exists()) {
+      try {
         currentFile.renameTo(oldFile);
+      } catch (Throwable e) {
+        // ignored
       }
 
       shouldRotate.set(false);

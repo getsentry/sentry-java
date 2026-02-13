@@ -232,6 +232,9 @@ public class AnrProfilingIntegration
   }
 
   private void addStackTrace(@NotNull final AnrStackTrace trace) throws IOException {
+    if (!enabled.get()) {
+      return;
+    }
     numCollectedStacks.incrementAndGet();
     getProfileManager().add(trace);
   }
