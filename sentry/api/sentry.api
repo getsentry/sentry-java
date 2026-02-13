@@ -7938,3 +7938,4 @@ public final class io/sentry/vendor/gson/stream/MalformedJsonException : java/io
 	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;)V
 	public fun <init> (Ljava/lang/Throwable;)V
 }
+
