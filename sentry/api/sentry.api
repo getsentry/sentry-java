@@ -3904,6 +3904,7 @@ public final class io/sentry/SentryReplayEvent$ReplayType$Deserializer : io/sent
 
 public final class io/sentry/SentryReplayOptions {
 	public static final field ANDROIDX_MEDIA_VIEW_CLASS_NAME Ljava/lang/String;
+	public static final field CAMERAX_PREVIEW_VIEW_CLASS_NAME Ljava/lang/String;
 	public static final field EXOPLAYER_CLASS_NAME Ljava/lang/String;
 	public static final field EXOPLAYER_STYLED_CLASS_NAME Ljava/lang/String;
 	public static final field IMAGE_VIEW_CLASS_NAME Ljava/lang/String;

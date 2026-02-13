@@ -13,6 +13,7 @@
   - There were cases where we created options that ended up unused but we failed to clean those up.
 - No longer log a warning if a logging integration cannot initialize Sentry due to missing DSN ([#5075](https://github.com/getsentry/sentry-java/pull/5075))
   - While this may have been useful to some, it caused lots of confusion.
+- Session Replay: Add `androidx.camera.view.PreviewView` to default `maskedViewClasses` to mask camera previews by default. ([#5097](https://github.com/getsentry/sentry-java/pull/5097))
 
 ### Dependencies
 
