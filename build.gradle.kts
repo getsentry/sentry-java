@@ -77,6 +77,7 @@ apiValidation {
             "sentry-samples-spring-boot-4",
             "sentry-samples-spring-boot-4-opentelemetry",
             "sentry-samples-spring-boot-4-opentelemetry-noagent",
+            "sentry-samples-spring-boot-4-otlp",
             "sentry-samples-spring-boot-4-webflux",
             "sentry-samples-ktor-client",
             "sentry-uitest-android",
