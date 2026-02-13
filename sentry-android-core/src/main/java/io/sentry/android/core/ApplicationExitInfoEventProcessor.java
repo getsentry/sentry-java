@@ -41,7 +41,6 @@ import io.sentry.SentryStackTraceFactory;
 import io.sentry.SpanContext;
 import io.sentry.android.core.anr.AggregatedStackTrace;
 import io.sentry.android.core.anr.AnrCulpritIdentifier;
-import io.sentry.android.core.anr.AnrException;
 import io.sentry.android.core.anr.AnrProfile;
 import io.sentry.android.core.anr.AnrProfileManager;
 import io.sentry.android.core.anr.AnrProfileRotationHelper;
@@ -49,6 +48,7 @@ import io.sentry.android.core.anr.StackTraceConverter;
 import io.sentry.android.core.internal.util.CpuInfoUtils;
 import io.sentry.cache.PersistingOptionsObserver;
 import io.sentry.cache.PersistingScopeObserver;
+import io.sentry.exception.ExceptionMechanismException;
 import io.sentry.hints.AbnormalExit;
 import io.sentry.hints.Backfillable;
 import io.sentry.protocol.App;
@@ -871,25 +871,28 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
       }
 
       // Capture profile chunk
-      final SentryId profilerId = captureAnrProfile(anrTimestamp, anrProfile);
+      final @Nullable SentryId profilerId = captureAnrProfile(anrTimestamp, anrProfile);
+      final @NotNull StackTraceElement[] stack = culprit.getStack();
 
-      final StackTraceElement[] stack = culprit.getStack();
       if (stack.length > 0) {
         final StackTraceElement stackTraceElement = stack[0];
         final String message =
             stackTraceElement.getClassName() + "." + stackTraceElement.getMethodName();
-        final AnrException exception = new AnrException(message);
+        final ApplicationNotResponding exception = new ApplicationNotResponding(message);
         exception.setStackTrace(stack);
+
+        final Mechanism mechanism = new Mechanism();
+        mechanism.setType("ANR");
+        final ExceptionMechanismException error =
+            new ExceptionMechanismException(mechanism, exception, null, false);
 
         final @NotNull List<SentryException> sentryException =
             sentryExceptionFactory.getSentryExceptions(exception);
-        for (final @NotNull SentryException e : sentryException) {
-          final Mechanism mechanism = new Mechanism();
-          mechanism.setType("ANR");
-          e.setMechanism(mechanism);
-        }
-        // Replaces the original ANR exception with the profile-derived one,
-        // as we assume the profiling stacktrace is more detailed
+
+        // Replace the original ANR exception with the profile-derived one,
+        // as we assume the profiling culprit identification is more valuable
+        // the event threads are kept as-is, so the original main thread stacktrace is still
+        // available
         event.setExceptions(sentryException);
 
         if (profilerId != null) {

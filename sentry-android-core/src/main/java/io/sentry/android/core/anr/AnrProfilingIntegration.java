@@ -57,12 +57,12 @@ public class AnrProfilingIntegration
             "SentryAndroidOptions is required");
     this.logger = options.getLogger();
 
-    if (options.getCacheDirPath() == null) {
-      logger.log(SentryLevel.WARNING, "ANR Profiling is enabled but cacheDirPath is not set");
-      return;
-    }
-
     if (((SentryAndroidOptions) options).isEnableAnrProfiling()) {
+      if (options.getCacheDirPath() == null) {
+        logger.log(SentryLevel.WARNING, "ANR Profiling is enabled but cacheDirPath is not set");
+        return;
+      }
+
       addIntegrationToSdkVersion("AnrProfiling");
       AppState.getInstance().addAppStateListener(this);
     }
