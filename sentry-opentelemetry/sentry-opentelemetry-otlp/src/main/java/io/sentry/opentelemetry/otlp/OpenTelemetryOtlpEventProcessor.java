@@ -39,11 +39,7 @@ public final class OpenTelemetryOtlpEventProcessor implements EventProcessor {
     if (TraceId.isValid(traceId) && SpanId.isValid(spanId)) {
       final @NotNull SpanContext spanContext =
           new SpanContext(
-              new SentryId(traceId),
-              new io.sentry.SpanId(spanId),
-              "opentelemetry",
-              null,
-              null);
+              new SentryId(traceId), new io.sentry.SpanId(spanId), "opentelemetry", null, null);
 
       event.getContexts().setTrace(spanContext);
       scopes
@@ -81,20 +77,21 @@ public final class OpenTelemetryOtlpEventProcessor implements EventProcessor {
       event.setSpanId(new io.sentry.SpanId(spanId));
     } else {
       scopes
-        .getOptions()
-        .getLogger()
-        .log(
-          SentryLevel.DEBUG,
-          "Not linking Sentry event to any transaction created via OpenTelemetry as traceId %s or spanId %s are invalid.",
-          traceId,
-          spanId);
+          .getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Not linking Sentry event to any transaction created via OpenTelemetry as traceId %s or spanId %s are invalid.",
+              traceId,
+              spanId);
     }
 
     return event;
   }
 
   @Override
-  public @Nullable SentryMetricsEvent process(@NotNull SentryMetricsEvent event, @NotNull Hint hint) {
+  public @Nullable SentryMetricsEvent process(
+      @NotNull SentryMetricsEvent event, @NotNull Hint hint) {
     @NotNull final Span otelSpan = Span.current();
     @NotNull final String traceId = otelSpan.getSpanContext().getTraceId();
     @NotNull final String spanId = otelSpan.getSpanContext().getSpanId();
@@ -104,13 +101,13 @@ public final class OpenTelemetryOtlpEventProcessor implements EventProcessor {
       event.setSpanId(new io.sentry.SpanId(spanId));
     } else {
       scopes
-        .getOptions()
-        .getLogger()
-        .log(
-          SentryLevel.DEBUG,
-          "Not linking Sentry event to any transaction created via OpenTelemetry as traceId %s or spanId %s are invalid.",
-          traceId,
-          spanId);
+          .getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Not linking Sentry event to any transaction created via OpenTelemetry as traceId %s or spanId %s are invalid.",
+              traceId,
+              spanId);
     }
 
     return event;
