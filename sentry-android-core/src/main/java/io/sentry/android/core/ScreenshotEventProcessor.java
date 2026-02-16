@@ -126,9 +126,9 @@ public final class ScreenshotEventProcessor implements EventProcessor, Closeable
     if (isMaskingEnabled()) {
       final @Nullable View rootView =
           activity.getWindow() != null
-                  && activity.getWindow().getDecorView() != null
-                  && activity.getWindow().getDecorView().getRootView() != null
-              ? activity.getWindow().getDecorView().getRootView()
+                  && activity.getWindow().peekDecorView() != null
+                  && activity.getWindow().peekDecorView().getRootView() != null
+              ? activity.getWindow().peekDecorView().getRootView()
               : null;
       if (rootView != null) {
         screenshot = applyMasking(screenshot, rootView);
