@@ -38,6 +38,7 @@ public final class io/sentry/opentelemetry/OtelSentrySpanProcessor : io/opentele
 public final class io/sentry/opentelemetry/OtelSpanContext : io/sentry/SpanContext {
 	public fun <init> (Lio/opentelemetry/sdk/trace/ReadWriteSpan;Lio/sentry/TracesSamplingDecision;Lio/sentry/opentelemetry/IOtelSpanWrapper;Lio/sentry/SpanId;Lio/sentry/Baggage;)V
 	public fun getOperation ()Ljava/lang/String;
+	public fun getSampled ()Ljava/lang/Boolean;
 	public fun getStatus ()Lio/sentry/SpanStatus;
 	public fun setOperation (Ljava/lang/String;)V
 	public fun setStatus (Lio/sentry/SpanStatus;)V
