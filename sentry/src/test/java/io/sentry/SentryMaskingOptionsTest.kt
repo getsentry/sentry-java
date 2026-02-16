@@ -8,7 +8,11 @@ import kotlin.test.assertTrue
 
 class SentryMaskingOptionsTest {
 
-  private class TestMaskingOptions : SentryMaskingOptions()
+  private class TestMaskingOptions : SentryMaskingOptions() {
+    override fun trackCustomMasking() {
+      // no-op for tests
+    }
+  }
 
   @Test
   fun `maskViewClasses is empty by default`() {
