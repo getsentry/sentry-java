@@ -297,7 +297,7 @@ public final class SentryReplayOptions extends SentryMaskingOptions {
     return sessionDuration;
   }
 
-  @ApiStatus.Internal
+  @Override
   public void trackCustomMasking() {
     if (!customMaskingTracked) {
       customMaskingTracked = true;

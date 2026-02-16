@@ -455,6 +455,7 @@ public final class io/sentry/android/core/SentryPerformanceProvider {
 public final class io/sentry/android/core/SentryScreenshotOptions : io/sentry/SentryMaskingOptions {
 	public fun <init> ()V
 	public fun setMaskAllImages (Z)V
+	public fun trackCustomMasking ()V
 }
 
 public class io/sentry/android/core/SentryUserFeedbackButton : android/widget/Button {

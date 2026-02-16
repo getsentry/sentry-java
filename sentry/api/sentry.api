@@ -3368,6 +3368,7 @@ public abstract class io/sentry/SentryMaskingOptions {
 	public fun setMaskAllText (Z)V
 	public fun setMaskViewContainerClass (Ljava/lang/String;)V
 	public fun setUnmaskViewContainerClass (Ljava/lang/String;)V
+	public abstract fun trackCustomMasking ()V
 }
 
 public final class io/sentry/SentryMetricsEvent : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
@@ -3928,6 +3929,8 @@ public final class io/sentry/SentryReplayOptions : io/sentry/SentryMaskingOption
 	public static final field MAX_NETWORK_BODY_SIZE I
 	public fun <init> (Ljava/lang/Double;Ljava/lang/Double;Lio/sentry/protocol/SdkVersion;)V
 	public fun <init> (ZLio/sentry/protocol/SdkVersion;)V
+	public fun addMaskViewClass (Ljava/lang/String;)V
+	public fun addUnmaskViewClass (Ljava/lang/String;)V
 	public fun getErrorReplayDuration ()J
 	public fun getFrameRate ()I
 	public fun getNetworkDetailAllowUrls ()Ljava/util/List;
@@ -3948,6 +3951,8 @@ public final class io/sentry/SentryReplayOptions : io/sentry/SentryMaskingOption
 	public fun isSessionReplayForErrorsEnabled ()Z
 	public fun isTrackConfiguration ()Z
 	public fun setDebug (Z)V
+	public fun setMaskAllImages (Z)V
+	public fun setMaskAllText (Z)V
 	public fun setNetworkCaptureBodies (Z)V
 	public fun setNetworkDetailAllowUrls (Ljava/util/List;)V
 	public fun setNetworkDetailDenyUrls (Ljava/util/List;)V

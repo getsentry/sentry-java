@@ -19,6 +19,11 @@ public final class SentryScreenshotOptions extends SentryMaskingOptions {
     // maskViewClasses starts empty, so nothing is masked by default.
   }
 
+  @Override
+  public void trackCustomMasking() {
+    // No-op for screenshots, custom masking tracking is only relevant for session replay.
+  }
+
   /**
    * {@inheritDoc}
    *

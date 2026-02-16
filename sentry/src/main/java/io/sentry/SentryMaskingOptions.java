@@ -2,6 +2,7 @@ package io.sentry;
 
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -119,4 +120,8 @@ public abstract class SentryMaskingOptions {
   public void setUnmaskViewContainerClass(@NotNull String containerClass) {
     unmaskViewContainerClass = containerClass;
   }
+
+  /** Hook for subclasses to track custom masking usage. */
+  @ApiStatus.Internal
+  public abstract void trackCustomMasking();
 }
