@@ -134,6 +134,8 @@ okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
 okhttp-bom = { module = "com.squareup.okhttp3:okhttp-bom", version.ref = "okhttp" }
 openfeature = { module = "dev.openfeature:sdk", version.ref = "openfeature" }
 otel = { module = "io.opentelemetry:opentelemetry-sdk", version.ref = "otel" }
+otel-exporter-otlp = { module = "io.opentelemetry:opentelemetry-exporter-otlp", version.ref = "otel" }
+otel-exporter-logging = { module = "io.opentelemetry:opentelemetry-exporter-logging", version.ref = "otel" }
 otel-extension-autoconfigure = { module = "io.opentelemetry:opentelemetry-sdk-extension-autoconfigure", version.ref = "otel" }
 otel-extension-autoconfigure-spi = { module = "io.opentelemetry:opentelemetry-sdk-extension-autoconfigure-spi", version.ref = "otel" }
 otel-instrumentation-bom = { module = "io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom", version.ref = "otelInstrumentation" }

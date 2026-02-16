@@ -75,6 +75,7 @@ include(
     "sentry-ktor-client",
     "sentry-samples:sentry-samples-android",
     "sentry-samples:sentry-samples-console",
+    "sentry-samples:sentry-samples-console-otlp",
     "sentry-samples:sentry-samples-console-opentelemetry-noagent",
     "sentry-samples:sentry-samples-jul",
     "sentry-samples:sentry-samples-ktor-client",

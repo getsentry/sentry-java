@@ -1,0 +1,16 @@
+public final class io/sentry/opentelemetry/otlp/OpenTelemetryOtlpEventProcessor : io/sentry/EventProcessor {
+	public fun <init> ()V
+	public fun getOrder ()Ljava/lang/Long;
+	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
+	public fun process (Lio/sentry/SentryLogEvent;)Lio/sentry/SentryLogEvent;
+	public fun process (Lio/sentry/SentryMetricsEvent;Lio/sentry/Hint;)Lio/sentry/SentryMetricsEvent;
+}
+
+public final class io/sentry/opentelemetry/otlp/OpenTelemetryOtlpPropagator : io/opentelemetry/context/propagation/TextMapPropagator {
+	public static final field SENTRY_BAGGAGE_KEY Lio/opentelemetry/context/ContextKey;
+	public fun <init> ()V
+	public fun extract (Lio/opentelemetry/context/Context;Ljava/lang/Object;Lio/opentelemetry/context/propagation/TextMapGetter;)Lio/opentelemetry/context/Context;
+	public fun fields ()Ljava/util/Collection;
+	public fun inject (Lio/opentelemetry/context/Context;Ljava/lang/Object;Lio/opentelemetry/context/propagation/TextMapSetter;)V
+}
+
