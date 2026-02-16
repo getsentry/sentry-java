@@ -41,7 +41,7 @@ public final class io/sentry/android/core/ActivityLifecycleIntegration : android
 }
 
 public class io/sentry/android/core/AndroidContinuousProfiler : io/sentry/IContinuousProfiler, io/sentry/transport/RateLimiter$IRateLimitObserver {
-	public fun <init> (Lio/sentry/android/core/BuildInfoProvider;Lio/sentry/android/core/internal/util/SentryFrameMetricsCollector;Lio/sentry/ILogger;Ljava/lang/String;ILio/sentry/ISentryExecutorService;)V
+	public fun <init> (Lio/sentry/android/core/BuildInfoProvider;Lio/sentry/android/core/internal/util/SentryFrameMetricsCollector;Lio/sentry/ILogger;Ljava/lang/String;ILio/sentry/util/LazyEvaluator$Evaluator;)V
 	public fun close (Z)V
 	public fun getChunkId ()Lio/sentry/protocol/SentryId;
 	public fun getProfilerId ()Lio/sentry/protocol/SentryId;
@@ -114,7 +114,7 @@ public final class io/sentry/android/core/AndroidMetricsBatchProcessorFactory : 
 
 public class io/sentry/android/core/AndroidProfiler {
 	protected final field lock Lio/sentry/util/AutoClosableReentrantLock;
-	public fun <init> (Ljava/lang/String;ILio/sentry/android/core/internal/util/SentryFrameMetricsCollector;Lio/sentry/ISentryExecutorService;Lio/sentry/ILogger;)V
+	public fun <init> (Ljava/lang/String;ILio/sentry/android/core/internal/util/SentryFrameMetricsCollector;Lio/sentry/util/LazyEvaluator$Evaluator;Lio/sentry/ILogger;)V
 	public fun close ()V
 	public fun endAndCollect (ZLjava/util/List;)Lio/sentry/android/core/AndroidProfiler$ProfileEndData;
 	public fun start ()Lio/sentry/android/core/AndroidProfiler$ProfileStartData;
@@ -289,6 +289,19 @@ public final class io/sentry/android/core/LoadClass : io/sentry/util/LoadClass {
 	public fun isClassAvailable (Ljava/lang/String;Lio/sentry/ILogger;)Z
 	public fun isClassAvailable (Ljava/lang/String;Lio/sentry/SentryOptions;)Z
 	public fun loadClass (Ljava/lang/String;Lio/sentry/ILogger;)Ljava/lang/Class;
+}
+
+public final class io/sentry/android/core/NativeEventCollector {
+	public fun <init> (Lio/sentry/android/core/SentryAndroidOptions;)V
+	public fun collect ()V
+	public fun deleteNativeEventFile (Lio/sentry/android/core/NativeEventCollector$NativeEventData;)Z
+	public fun findAndRemoveMatchingNativeEvent (J)Lio/sentry/android/core/NativeEventCollector$NativeEventData;
+}
+
+public final class io/sentry/android/core/NativeEventCollector$NativeEventData {
+	public fun getEnvelope ()Lio/sentry/SentryEnvelope;
+	public fun getEvent ()Lio/sentry/SentryEvent;
+	public fun getFile ()Ljava/io/File;
 }
 
 public final class io/sentry/android/core/NdkHandlerStrategy : java/lang/Enum {
@@ -507,7 +520,7 @@ public final class io/sentry/android/core/TombstoneIntegration$TombstoneHint : i
 }
 
 public class io/sentry/android/core/TombstoneIntegration$TombstonePolicy : io/sentry/android/core/ApplicationExitInfoHistoryDispatcher$ApplicationExitInfoPolicy {
-	public fun <init> (Lio/sentry/android/core/SentryAndroidOptions;)V
+	public fun <init> (Lio/sentry/android/core/SentryAndroidOptions;Landroid/content/Context;)V
 	public fun buildReport (Landroid/app/ApplicationExitInfo;Z)Lio/sentry/android/core/ApplicationExitInfoHistoryDispatcher$Report;
 	public fun getLabel ()Ljava/lang/String;
 	public fun getLastReportedTimestamp ()Ljava/lang/Long;

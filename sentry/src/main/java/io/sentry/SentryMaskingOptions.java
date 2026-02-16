@@ -15,6 +15,7 @@ public abstract class SentryMaskingOptions {
   public static final String IMAGE_VIEW_CLASS_NAME = "android.widget.ImageView";
   public static final String WEB_VIEW_CLASS_NAME = "android.webkit.WebView";
   public static final String VIDEO_VIEW_CLASS_NAME = "android.widget.VideoView";
+  public static final String CAMERAX_PREVIEW_VIEW_CLASS_NAME = "androidx.camera.view.PreviewView";
   public static final String ANDROIDX_MEDIA_VIEW_CLASS_NAME = "androidx.media3.ui.PlayerView";
   public static final String EXOPLAYER_CLASS_NAME = "com.google.android.exoplayer2.ui.PlayerView";
   public static final String EXOPLAYER_STYLED_CLASS_NAME =

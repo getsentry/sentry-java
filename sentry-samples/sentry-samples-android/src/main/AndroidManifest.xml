@@ -262,5 +262,8 @@
     <meta-data
       android:name="io.sentry.screenshot.mask-all-images"
       android:value="true" />
+    <meta-data
+      android:name="io.sentry.tombstone.enable"
+      android:value="true" />
   </application>
 </manifest>

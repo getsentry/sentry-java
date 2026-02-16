@@ -330,7 +330,6 @@ public final class SentryAndroidOptions extends SentryOptions {
    *
    * @param enableTombstone true for enabled and false for disabled
    */
-  @ApiStatus.Internal
   public void setTombstoneEnabled(boolean enableTombstone) {
     this.enableTombstone = enableTombstone;
   }
@@ -341,7 +340,6 @@ public final class SentryAndroidOptions extends SentryOptions {
    *
    * @return true if enabled or false otherwise
    */
-  @ApiStatus.Internal
   public boolean isTombstoneEnabled() {
     return enableTombstone;
   }
@@ -624,12 +622,10 @@ public final class SentryAndroidOptions extends SentryOptions {
     this.reportHistoricalAnrs = reportHistoricalAnrs;
   }
 
-  @ApiStatus.Internal
   public boolean isReportHistoricalTombstones() {
     return reportHistoricalTombstones;
   }
 
-  @ApiStatus.Internal
   public void setReportHistoricalTombstones(final boolean reportHistoricalTombstones) {
     this.reportHistoricalTombstones = reportHistoricalTombstones;
   }

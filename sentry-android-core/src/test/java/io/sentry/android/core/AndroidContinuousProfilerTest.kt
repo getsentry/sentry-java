@@ -98,7 +98,7 @@ class AndroidContinuousProfilerTest {
         options.logger,
         options.profilingTracesDirPath,
         options.profilingTracesHz,
-        options.executorService,
+        { options.executorService },
       )
     }
   }

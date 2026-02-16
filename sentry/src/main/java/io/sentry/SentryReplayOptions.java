@@ -1,5 +1,7 @@
 package io.sentry;
 
+import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
+
 import io.sentry.protocol.SdkVersion;
 import io.sentry.util.SampleRateUtils;
 import java.util.ArrayList;
@@ -14,6 +16,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class SentryReplayOptions extends SentryMaskingOptions {
+
+  private static final String CUSTOM_MASKING_INTEGRATION_NAME = "ReplayCustomMasking";
+  private volatile boolean customMaskingTracked = false;
+  private boolean defaultsInitialized = false;
 
   /**
    * Maximum size in bytes for network request/response bodies to be captured in replays. Bodies
@@ -173,9 +179,11 @@ public final class SentryReplayOptions extends SentryMaskingOptions {
       setMaskAllImages(true);
       addMaskViewClass(WEB_VIEW_CLASS_NAME);
       addMaskViewClass(VIDEO_VIEW_CLASS_NAME);
+      addMaskViewClass(CAMERAX_PREVIEW_VIEW_CLASS_NAME);
       addMaskViewClass(ANDROIDX_MEDIA_VIEW_CLASS_NAME);
       addMaskViewClass(EXOPLAYER_CLASS_NAME);
       addMaskViewClass(EXOPLAYER_STYLED_CLASS_NAME);
+      defaultsInitialized = true;
       this.sdkVersion = sdkVersion;
     }
   }
@@ -228,6 +236,38 @@ public final class SentryReplayOptions extends SentryMaskingOptions {
     this.sessionSampleRate = sessionSampleRate;
   }
 
+  @Override
+  public void setMaskAllText(final boolean maskAllText) {
+    if (!maskAllText && defaultsInitialized) {
+      trackCustomMasking();
+    }
+    super.setMaskAllText(maskAllText);
+  }
+
+  @Override
+  public void setMaskAllImages(final boolean maskAllImages) {
+    if (!maskAllImages && defaultsInitialized) {
+      trackCustomMasking();
+    }
+    super.setMaskAllImages(maskAllImages);
+  }
+
+  @Override
+  public void addMaskViewClass(final @NotNull String className) {
+    if (defaultsInitialized) {
+      trackCustomMasking();
+    }
+    super.addMaskViewClass(className);
+  }
+
+  @Override
+  public void addUnmaskViewClass(final @NotNull String className) {
+    if (defaultsInitialized) {
+      trackCustomMasking();
+    }
+    super.addUnmaskViewClass(className);
+  }
+
   @ApiStatus.Internal
   public @NotNull SentryReplayQuality getQuality() {
     return quality;
@@ -255,6 +295,14 @@ public final class SentryReplayOptions extends SentryMaskingOptions {
   @ApiStatus.Internal
   public long getSessionDuration() {
     return sessionDuration;
+  }
+
+  @ApiStatus.Internal
+  public void trackCustomMasking() {
+    if (!customMaskingTracked) {
+      customMaskingTracked = true;
+      addIntegrationToSdkVersion(CUSTOM_MASKING_INTEGRATION_NAME);
+    }
   }
 
   @ApiStatus.Internal

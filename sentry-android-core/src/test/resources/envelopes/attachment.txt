@@ -1,0 +1,3 @@
+{}
+{"type":"attachment","length":61,"filename":"attachment.txt","content_type":"text/plain"}
+some plain text attachment file which include two line breaks

@@ -5,23 +5,33 @@
 ### Features
 
 - Add screenshot masking support using view hierarchy ([#5077](https://github.com/getsentry/sentry-java/pull/5077))
-  - Masks sensitive content (text, images) in error screenshots before sending to Sentry
-  - Reuses Session Replay's masking logic; **requires `sentry-android-replay` module at runtime**
-  - To enable masking programmatically:
-    ```kotlin
-    SentryAndroid.init(context) { options ->
-        options.isAttachScreenshot = true
-        options.screenshotOptions.setMaskAllText(true)
-        options.screenshotOptions.setMaskAllImages(true)
-    }
-    ```
-  - Or via AndroidManifest.xml:
-    ```xml
-    <meta-data android:name="io.sentry.attach-screenshot" android:value="true" />
-    <meta-data android:name="io.sentry.screenshot.mask-all-text" android:value="true" />
-    <meta-data android:name="io.sentry.screenshot.mask-all-images" android:value="true" />
-    ```
-- Add `installGroupsOverride` parameter and `installGroups` property to Build Distribution SDK ([#5062](https://github.com/getsentry/sentry-java/pull/5062))
+- Add `installGroupsOverride` parameter to Build Distribution SDK for programmatic filtering, with support for configuration via properties file using `io.sentry.distribution.install-groups-override` ([#5066](https://github.com/getsentry/sentry-java/pull/5066))
+
+### Fixes
+
+- When merging tombstones with Native SDK, use the tombstone message if the Native SDK didn't explicitly provide one. ([#5095](https://github.com/getsentry/sentry-java/pull/5095))
+- Fix thread leak caused by eager creation of `SentryExecutorService` in `SentryOptions` ([#5093](https://github.com/getsentry/sentry-java/pull/5093))
+  - There were cases where we created options that ended up unused but we failed to clean those up.
+- Attach user attributes to logs and metrics regardless of `sendDefaultPii` ([#5099](https://github.com/getsentry/sentry-java/pull/5099))
+- No longer log a warning if a logging integration cannot initialize Sentry due to missing DSN ([#5075](https://github.com/getsentry/sentry-java/pull/5075))
+  - While this may have been useful to some, it caused lots of confusion.
+- Session Replay: Add `androidx.camera.view.PreviewView` to default `maskedViewClasses` to mask camera previews by default. ([#5097](https://github.com/getsentry/sentry-java/pull/5097))
+
+### Dependencies
+
+- Bump Native SDK from v0.12.4 to v0.12.7 ([#5071](https://github.com/getsentry/sentry-java/pull/5071), [#5098](https://github.com/getsentry/sentry-java/pull/5098))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0127)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.12.4...0.12.7)
+
+### Internal
+
+- Add integration to track session replay custom masking ([#5070](https://github.com/getsentry/sentry-java/pull/5070))
+
+## 8.32.0
+
+### Features
+
+- Add `installGroups` property to Build Distribution SDK ([#5062](https://github.com/getsentry/sentry-java/pull/5062))
 - Update Android targetSdk to API 36 (Android 16) ([#5016](https://github.com/getsentry/sentry-java/pull/5016))
 - Add AndroidManifest support for Spotlight configuration via `io.sentry.spotlight.enable` and `io.sentry.spotlight.url` ([#5064](https://github.com/getsentry/sentry-java/pull/5064))
 - Collect database transaction spans (`BEGIN`, `COMMIT`, `ROLLBACK`) ([#5072](https://github.com/getsentry/sentry-java/pull/5072))
@@ -31,6 +41,20 @@
     ```yaml
     sentry:
       enable-database-transaction-tracing: true
+    ```
+- Add support for collecting native crashes using Tombstones ([#4933](https://github.com/getsentry/sentry-java/pull/4933), [#5037](https://github.com/getsentry/sentry-java/pull/5037))
+  - Added Tombstone integration that detects native crashes using `ApplicationExitInfo.REASON_CRASH_NATIVE` on Android 12+
+  - Crashes enriched with Tombstones contain more crash details and detailed thread info
+  - Tombstone and NDK integrations are now automatically merged into a single crash event, eliminating duplicate reports
+  - To enable it, add the integration in your Sentry initialization:
+    ```kotlin
+    SentryAndroid.init(context, options -> {
+        options.isTombstoneEnabled = true
+    })
+    ```
+    or in the `AndroidManifest.xml` using:
+    ```xml
+    <meta-data android:name="io.sentry.tombstone.enable" android:value="true" />
     ```
 
 ### Fixes
@@ -42,10 +66,10 @@
         debugImplementation("io.sentry:sentry-spotlight:<version>")
     }
     ```
-
-### Fixes
-
 - Fix scroll target detection for Jetpack Compose ([#5017](https://github.com/getsentry/sentry-java/pull/5017))
+- No longer fork Sentry `Scopes` for `reactor-kafka` consumer poll `Runnable` ([#5080](https://github.com/getsentry/sentry-java/pull/5080))
+  - This was causing a memory leak because `reactor-kafka`'s poll event reschedules itself infinitely, and each invocation of `SentryScheduleHook` created forked scopes with a parent reference, building an unbounded chain that couldn't be garbage collected.
+- Fix cold/warm app start type detection for Android devices running API level 34+ ([#4999](https://github.com/getsentry/sentry-java/pull/4999))
 
 ### Internal
 
