@@ -13,11 +13,12 @@ import org.jetbrains.annotations.Nullable;
 public class AnrCulpritIdentifier {
 
   // common Java and Android packages who are less relevant for being the actual culprit
-  private static final List<String> systemAndFrameworkPackages = new ArrayList<>(9);
+  private static final List<String> systemAndFrameworkPackages = new ArrayList<>(11);
 
   static {
     systemAndFrameworkPackages.add("java.lang");
     systemAndFrameworkPackages.add("java.util");
+
     systemAndFrameworkPackages.add("android.app");
     systemAndFrameworkPackages.add("android.os.Handler");
     systemAndFrameworkPackages.add("android.os.Looper");
@@ -25,6 +26,9 @@ public class AnrCulpritIdentifier {
     systemAndFrameworkPackages.add("android.widget");
     systemAndFrameworkPackages.add("com.android.internal");
     systemAndFrameworkPackages.add("com.google.android");
+
+    systemAndFrameworkPackages.add("kotlin");
+    systemAndFrameworkPackages.add("kotlinx.coroutines");
   }
 
   private static final class StackTraceKey {

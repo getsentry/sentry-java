@@ -57,8 +57,8 @@ public class AnrProfilingIntegration
             "SentryAndroidOptions is required");
     this.logger = options.getLogger();
 
-    if (((SentryAndroidOptions) options).isEnableAnrProfiling()) {
-      if (options.getCacheDirPath() == null) {
+    if (this.options.isEnableAnrProfiling()) {
+      if (this.options.getCacheDirPath() == null) {
         logger.log(SentryLevel.WARNING, "ANR Profiling is enabled but cacheDirPath is not set");
         return;
       }
@@ -74,12 +74,30 @@ public class AnrProfilingIntegration
     enabled.set(false);
     AppState.getInstance().removeAppStateListener(this);
 
-    try (final @NotNull ISentryLifecycleToken ignored = profileManagerLock.acquire()) {
-      final @Nullable AnrProfileManager p = profileManager;
-      if (p != null) {
-        p.close();
+    final @Nullable SentryAndroidOptions opts = options;
+    if (opts != null) {
+      try {
+        opts.getExecutorService()
+            .submit(
+                new Runnable() {
+                  @Override
+                  public void run() {
+                    try (final @NotNull ISentryLifecycleToken ignored =
+                            profileManagerLock.acquire()) {
+                      if (profileManager != null) {
+                        //noinspection DataFlowIssue
+                        profileManager.close();
+                      }
+                    } catch (IOException e) {
+                      logger.log(SentryLevel.WARNING, "Failed to close AnrProfileManager");
+                    } finally {
+                      profileManager = null;
+                    }
+                  }
+                });
+      } catch (Throwable t) {
+        logger.log(SentryLevel.WARNING, "Failed to submit AnrProfileManager close");
       }
-      profileManager = null;
     }
   }
 
@@ -101,6 +119,7 @@ public class AnrProfilingIntegration
       }
 
       final @NotNull Thread profilingThread = new Thread(this, "AnrProfilingIntegration");
+      profilingThread.setDaemon(true);
       profilingThread.start();
       thread = profilingThread;
     }

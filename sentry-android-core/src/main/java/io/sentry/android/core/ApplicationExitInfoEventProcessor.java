@@ -887,7 +887,7 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
             new ExceptionMechanismException(mechanism, exception, null, false);
 
         final @NotNull List<SentryException> sentryException =
-            sentryExceptionFactory.getSentryExceptions(exception);
+            sentryExceptionFactory.getSentryExceptions(error);
 
         // Replace the original ANR exception with the profile-derived one,
         // as we assume the profiling culprit identification is more valuable
