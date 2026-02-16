@@ -43,6 +43,7 @@ public final class SentryScreenshotOptions extends SentryMaskingOptions {
   private void addSensitiveViewClasses() {
     addMaskViewClass(WEB_VIEW_CLASS_NAME);
     addMaskViewClass(VIDEO_VIEW_CLASS_NAME);
+    addMaskViewClass(CAMERAX_PREVIEW_VIEW_CLASS_NAME);
     addMaskViewClass(ANDROIDX_MEDIA_VIEW_CLASS_NAME);
     addMaskViewClass(EXOPLAYER_CLASS_NAME);
     addMaskViewClass(EXOPLAYER_STYLED_CLASS_NAME);
@@ -51,6 +52,7 @@ public final class SentryScreenshotOptions extends SentryMaskingOptions {
   private void removeSensitiveViewClasses() {
     getMaskViewClasses().remove(WEB_VIEW_CLASS_NAME);
     getMaskViewClasses().remove(VIDEO_VIEW_CLASS_NAME);
+    getMaskViewClasses().remove(CAMERAX_PREVIEW_VIEW_CLASS_NAME);
     getMaskViewClasses().remove(ANDROIDX_MEDIA_VIEW_CLASS_NAME);
     getMaskViewClasses().remove(EXOPLAYER_CLASS_NAME);
     getMaskViewClasses().remove(EXOPLAYER_STYLED_CLASS_NAME);

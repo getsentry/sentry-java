@@ -3357,6 +3357,10 @@ public abstract class io/sentry/SentryMaskingOptions {
 	public static final field TEXT_VIEW_CLASS_NAME Ljava/lang/String;
 	public static final field VIDEO_VIEW_CLASS_NAME Ljava/lang/String;
 	public static final field WEB_VIEW_CLASS_NAME Ljava/lang/String;
+	protected field maskViewClasses Ljava/util/Set;
+	protected field maskViewContainerClass Ljava/lang/String;
+	protected field unmaskViewClasses Ljava/util/Set;
+	protected field unmaskViewContainerClass Ljava/lang/String;
 	public fun <init> ()V
 	public fun addMaskViewClass (Ljava/lang/String;)V
 	public fun addUnmaskViewClass (Ljava/lang/String;)V

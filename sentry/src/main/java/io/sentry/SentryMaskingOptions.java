@@ -32,7 +32,7 @@ public abstract class SentryMaskingOptions {
    *
    * <p>Default is empty.
    */
-  private Set<String> maskViewClasses = new CopyOnWriteArraySet<>();
+  protected Set<String> maskViewClasses = new CopyOnWriteArraySet<>();
 
   /**
    * Ignore all views with the specified class names from masking. The class name is the fully
@@ -44,13 +44,13 @@ public abstract class SentryMaskingOptions {
    *
    * <p>Default is empty.
    */
-  private Set<String> unmaskViewClasses = new CopyOnWriteArraySet<>();
+  protected Set<String> unmaskViewClasses = new CopyOnWriteArraySet<>();
 
   /** The class name of the view container that masks all of its children. */
-  private @Nullable String maskViewContainerClass = null;
+  protected @Nullable String maskViewContainerClass = null;
 
   /** The class name of the view container that unmasks its direct children. */
-  private @Nullable String unmaskViewContainerClass = null;
+  protected @Nullable String unmaskViewContainerClass = null;
 
   /**
    * Mask all text content. Draws a rectangle of text bounds with text color on top. By default only
@@ -60,10 +60,10 @@ public abstract class SentryMaskingOptions {
    */
   public void setMaskAllText(final boolean maskAllText) {
     if (maskAllText) {
-      addMaskViewClass(TEXT_VIEW_CLASS_NAME);
+      maskViewClasses.add(TEXT_VIEW_CLASS_NAME);
       unmaskViewClasses.remove(TEXT_VIEW_CLASS_NAME);
     } else {
-      addUnmaskViewClass(TEXT_VIEW_CLASS_NAME);
+      unmaskViewClasses.add(TEXT_VIEW_CLASS_NAME);
       maskViewClasses.remove(TEXT_VIEW_CLASS_NAME);
     }
   }
@@ -78,10 +78,10 @@ public abstract class SentryMaskingOptions {
    */
   public void setMaskAllImages(final boolean maskAllImages) {
     if (maskAllImages) {
-      addMaskViewClass(IMAGE_VIEW_CLASS_NAME);
+      maskViewClasses.add(IMAGE_VIEW_CLASS_NAME);
       unmaskViewClasses.remove(IMAGE_VIEW_CLASS_NAME);
     } else {
-      addUnmaskViewClass(IMAGE_VIEW_CLASS_NAME);
+      unmaskViewClasses.add(IMAGE_VIEW_CLASS_NAME);
       maskViewClasses.remove(IMAGE_VIEW_CLASS_NAME);
     }
   }

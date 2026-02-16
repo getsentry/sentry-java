@@ -19,7 +19,6 @@ public final class SentryReplayOptions extends SentryMaskingOptions {
 
   private static final String CUSTOM_MASKING_INTEGRATION_NAME = "ReplayCustomMasking";
   private volatile boolean customMaskingTracked = false;
-  private boolean defaultsInitialized = false;
 
   /**
    * Maximum size in bytes for network request/response bodies to be captured in replays. Bodies
@@ -175,15 +174,15 @@ public final class SentryReplayOptions extends SentryMaskingOptions {
 
   public SentryReplayOptions(final boolean empty, final @Nullable SdkVersion sdkVersion) {
     if (!empty) {
-      setMaskAllText(true);
-      setMaskAllImages(true);
-      addMaskViewClass(WEB_VIEW_CLASS_NAME);
-      addMaskViewClass(VIDEO_VIEW_CLASS_NAME);
-      addMaskViewClass(CAMERAX_PREVIEW_VIEW_CLASS_NAME);
-      addMaskViewClass(ANDROIDX_MEDIA_VIEW_CLASS_NAME);
-      addMaskViewClass(EXOPLAYER_CLASS_NAME);
-      addMaskViewClass(EXOPLAYER_STYLED_CLASS_NAME);
-      defaultsInitialized = true;
+      // Add default mask classes directly without setting usingCustomMasking flag
+      maskViewClasses.add(TEXT_VIEW_CLASS_NAME);
+      maskViewClasses.add(IMAGE_VIEW_CLASS_NAME);
+      maskViewClasses.add(WEB_VIEW_CLASS_NAME);
+      maskViewClasses.add(VIDEO_VIEW_CLASS_NAME);
+      maskViewClasses.add(CAMERAX_PREVIEW_VIEW_CLASS_NAME);
+      maskViewClasses.add(ANDROIDX_MEDIA_VIEW_CLASS_NAME);
+      maskViewClasses.add(EXOPLAYER_CLASS_NAME);
+      maskViewClasses.add(EXOPLAYER_STYLED_CLASS_NAME);
       this.sdkVersion = sdkVersion;
     }
   }
@@ -238,34 +237,38 @@ public final class SentryReplayOptions extends SentryMaskingOptions {
 
   @Override
   public void setMaskAllText(final boolean maskAllText) {
-    if (!maskAllText && defaultsInitialized) {
+    if (maskAllText) {
+      maskViewClasses.add(TEXT_VIEW_CLASS_NAME);
+      unmaskViewClasses.remove(TEXT_VIEW_CLASS_NAME);
+    } else {
       trackCustomMasking();
+      unmaskViewClasses.add(TEXT_VIEW_CLASS_NAME);
+      maskViewClasses.remove(TEXT_VIEW_CLASS_NAME);
     }
-    super.setMaskAllText(maskAllText);
   }
 
   @Override
   public void setMaskAllImages(final boolean maskAllImages) {
-    if (!maskAllImages && defaultsInitialized) {
+    if (maskAllImages) {
+      maskViewClasses.add(IMAGE_VIEW_CLASS_NAME);
+      unmaskViewClasses.remove(IMAGE_VIEW_CLASS_NAME);
+    } else {
       trackCustomMasking();
+      unmaskViewClasses.add(IMAGE_VIEW_CLASS_NAME);
+      maskViewClasses.remove(IMAGE_VIEW_CLASS_NAME);
     }
-    super.setMaskAllImages(maskAllImages);
   }
 
   @Override
   public void addMaskViewClass(final @NotNull String className) {
-    if (defaultsInitialized) {
-      trackCustomMasking();
-    }
-    super.addMaskViewClass(className);
+    trackCustomMasking();
+    this.maskViewClasses.add(className);
   }
 
   @Override
   public void addUnmaskViewClass(final @NotNull String className) {
-    if (defaultsInitialized) {
-      trackCustomMasking();
-    }
-    super.addUnmaskViewClass(className);
+    trackCustomMasking();
+    this.unmaskViewClasses.add(className);
   }
 
   @ApiStatus.Internal
