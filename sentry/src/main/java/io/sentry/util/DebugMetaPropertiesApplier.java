@@ -98,11 +98,14 @@ public final class DebugMetaPropertiesApplier {
       final @Nullable String projectSlug = getDistributionProjectSlug(properties);
       final @Nullable String orgAuthToken = getDistributionAuthToken(properties);
       final @Nullable String buildConfiguration = getDistributionBuildConfiguration(properties);
+      final @Nullable String installGroupsOverride =
+          getDistributionInstallGroupsOverride(properties);
 
       if (orgSlug != null
           || projectSlug != null
           || orgAuthToken != null
-          || buildConfiguration != null) {
+          || buildConfiguration != null
+          || installGroupsOverride != null) {
         final @NotNull SentryOptions.DistributionOptions distributionOptions =
             options.getDistribution();
 
@@ -139,6 +142,26 @@ public final class DebugMetaPropertiesApplier {
           distributionOptions.buildConfiguration = buildConfiguration;
         }
 
+        if (installGroupsOverride != null
+            && !installGroupsOverride.isEmpty()
+            && distributionOptions.installGroupsOverride == null) {
+          final @NotNull String[] groups = installGroupsOverride.split(",", -1);
+          final @NotNull List<String> groupList = new java.util.ArrayList<>();
+          for (final String group : groups) {
+            final String trimmedGroup = group.trim();
+            if (!trimmedGroup.isEmpty()) {
+              groupList.add(trimmedGroup);
+            }
+          }
+          if (!groupList.isEmpty()) {
+            options
+                .getLogger()
+                .log(
+                    SentryLevel.DEBUG, "Distribution install groups override found: %s", groupList);
+            distributionOptions.installGroupsOverride = groupList;
+          }
+        }
+
         // We only process the first properties file that contains distribution options
         // to maintain consistency with other properties like proguardUuid
         break;
@@ -164,5 +187,10 @@ public final class DebugMetaPropertiesApplier {
   private static @Nullable String getDistributionBuildConfiguration(
       final @NotNull Properties debugMetaProperties) {
     return debugMetaProperties.getProperty("io.sentry.distribution.build-configuration");
+  }
+
+  private static @Nullable String getDistributionInstallGroupsOverride(
+      final @NotNull Properties debugMetaProperties) {
+    return debugMetaProperties.getProperty("io.sentry.distribution.install-groups-override");
   }
 }

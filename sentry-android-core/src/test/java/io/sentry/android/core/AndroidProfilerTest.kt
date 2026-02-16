@@ -12,6 +12,7 @@ import io.sentry.android.core.internal.util.SentryFrameMetricsCollector
 import io.sentry.profilemeasurements.ProfileMeasurement
 import io.sentry.test.getCtor
 import io.sentry.test.getProperty
+import io.sentry.util.LazyEvaluator
 import java.io.File
 import java.util.concurrent.Callable
 import java.util.concurrent.Future
@@ -44,7 +45,7 @@ class AndroidProfilerTest {
       String::class.java,
       Int::class.java,
       SentryFrameMetricsCollector::class.java,
-      ISentryExecutorService::class.java,
+      LazyEvaluator.Evaluator::class.java,
       ILogger::class.java,
     )
   private val fixture = Fixture()
@@ -100,7 +101,7 @@ class AndroidProfilerTest {
         options.profilingTracesDirPath!!,
         interval,
         frameMetricsCollector,
-        options.executorService,
+        { options.executorService },
         options.logger,
       )
   }
@@ -154,19 +155,19 @@ class AndroidProfilerTest {
 
     assertFailsWith<IllegalArgumentException> {
       ctor.newInstance(
-        arrayOf(null, 0, mock(), mock<SentryExecutorService>(), mock<AndroidLogger>())
+        arrayOf(null, 0, mock(), { mock<SentryExecutorService>() }, mock<AndroidLogger>())
       )
     }
     assertFailsWith<IllegalArgumentException> {
       ctor.newInstance(
-        arrayOf("mock", 0, null, mock<SentryExecutorService>(), mock<AndroidLogger>())
+        arrayOf("mock", 0, null, { mock<SentryExecutorService>() }, mock<AndroidLogger>())
       )
     }
     assertFailsWith<IllegalArgumentException> {
       ctor.newInstance(arrayOf("mock", 0, mock(), null, mock<AndroidLogger>()))
     }
     assertFailsWith<IllegalArgumentException> {
-      ctor.newInstance(arrayOf("mock", 0, mock(), mock<SentryExecutorService>(), null))
+      ctor.newInstance(arrayOf("mock", 0, mock(), { mock<SentryExecutorService>() }, null))
     }
   }
 

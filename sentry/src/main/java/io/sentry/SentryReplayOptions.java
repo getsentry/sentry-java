@@ -1,5 +1,7 @@
 package io.sentry;
 
+import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
+
 import io.sentry.protocol.SdkVersion;
 import io.sentry.util.SampleRateUtils;
 import java.util.ArrayList;
@@ -16,10 +18,14 @@ import org.jetbrains.annotations.Nullable;
 
 public final class SentryReplayOptions {
 
+  private static final String CUSTOM_MASKING_INTEGRATION_NAME = "ReplayCustomMasking";
+  private volatile boolean customMaskingTracked = false;
+
   public static final String TEXT_VIEW_CLASS_NAME = "android.widget.TextView";
   public static final String IMAGE_VIEW_CLASS_NAME = "android.widget.ImageView";
   public static final String WEB_VIEW_CLASS_NAME = "android.webkit.WebView";
   public static final String VIDEO_VIEW_CLASS_NAME = "android.widget.VideoView";
+  public static final String CAMERAX_PREVIEW_VIEW_CLASS_NAME = "androidx.camera.view.PreviewView";
   public static final String ANDROIDX_MEDIA_VIEW_CLASS_NAME = "androidx.media3.ui.PlayerView";
   public static final String EXOPLAYER_CLASS_NAME = "com.google.android.exoplayer2.ui.PlayerView";
   public static final String EXOPLAYER_STYLED_CLASS_NAME =
@@ -209,10 +215,12 @@ public final class SentryReplayOptions {
 
   public SentryReplayOptions(final boolean empty, final @Nullable SdkVersion sdkVersion) {
     if (!empty) {
-      setMaskAllText(true);
-      setMaskAllImages(true);
+      // Add default mask classes directly without setting usingCustomMasking flag
+      maskViewClasses.add(TEXT_VIEW_CLASS_NAME);
+      maskViewClasses.add(IMAGE_VIEW_CLASS_NAME);
       maskViewClasses.add(WEB_VIEW_CLASS_NAME);
       maskViewClasses.add(VIDEO_VIEW_CLASS_NAME);
+      maskViewClasses.add(CAMERAX_PREVIEW_VIEW_CLASS_NAME);
       maskViewClasses.add(ANDROIDX_MEDIA_VIEW_CLASS_NAME);
       maskViewClasses.add(EXOPLAYER_CLASS_NAME);
       maskViewClasses.add(EXOPLAYER_STYLED_CLASS_NAME);
@@ -276,10 +284,11 @@ public final class SentryReplayOptions {
    */
   public void setMaskAllText(final boolean maskAllText) {
     if (maskAllText) {
-      addMaskViewClass(TEXT_VIEW_CLASS_NAME);
+      maskViewClasses.add(TEXT_VIEW_CLASS_NAME);
       unmaskViewClasses.remove(TEXT_VIEW_CLASS_NAME);
     } else {
-      addUnmaskViewClass(TEXT_VIEW_CLASS_NAME);
+      trackCustomMasking();
+      unmaskViewClasses.add(TEXT_VIEW_CLASS_NAME);
       maskViewClasses.remove(TEXT_VIEW_CLASS_NAME);
     }
   }
@@ -294,10 +303,11 @@ public final class SentryReplayOptions {
    */
   public void setMaskAllImages(final boolean maskAllImages) {
     if (maskAllImages) {
-      addMaskViewClass(IMAGE_VIEW_CLASS_NAME);
+      maskViewClasses.add(IMAGE_VIEW_CLASS_NAME);
       unmaskViewClasses.remove(IMAGE_VIEW_CLASS_NAME);
     } else {
-      addUnmaskViewClass(IMAGE_VIEW_CLASS_NAME);
+      trackCustomMasking();
+      unmaskViewClasses.add(IMAGE_VIEW_CLASS_NAME);
       maskViewClasses.remove(IMAGE_VIEW_CLASS_NAME);
     }
   }
@@ -308,6 +318,7 @@ public final class SentryReplayOptions {
   }
 
   public void addMaskViewClass(final @NotNull String className) {
+    trackCustomMasking();
     this.maskViewClasses.add(className);
   }
 
@@ -317,6 +328,7 @@ public final class SentryReplayOptions {
   }
 
   public void addUnmaskViewClass(final @NotNull String className) {
+    trackCustomMasking();
     this.unmaskViewClasses.add(className);
   }
 
@@ -351,7 +363,7 @@ public final class SentryReplayOptions {
 
   @ApiStatus.Internal
   public void setMaskViewContainerClass(@NotNull String containerClass) {
-    addMaskViewClass(containerClass);
+    maskViewClasses.add(containerClass);
     maskViewContainerClass = containerClass;
   }
 
@@ -368,6 +380,14 @@ public final class SentryReplayOptions {
   @ApiStatus.Internal
   public @Nullable String getUnmaskViewContainerClass() {
     return unmaskViewContainerClass;
+  }
+
+  @ApiStatus.Internal
+  public void trackCustomMasking() {
+    if (!customMaskingTracked) {
+      customMaskingTracked = true;
+      addIntegrationToSdkVersion(CUSTOM_MASKING_INTEGRATION_NAME);
+    }
   }
 
   @ApiStatus.Internal

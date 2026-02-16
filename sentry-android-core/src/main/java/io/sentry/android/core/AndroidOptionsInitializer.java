@@ -244,6 +244,7 @@ final class AndroidOptionsInitializer {
     if (options.getSocketTagger() instanceof NoOpSocketTagger) {
       options.setSocketTagger(AndroidSocketTagger.getInstance());
     }
+
     if (options.getPerformanceCollectors().isEmpty()) {
       options.addPerformanceCollector(new AndroidMemoryCollector());
       options.addPerformanceCollector(new AndroidCpuCollector(options.getLogger()));
@@ -342,7 +343,7 @@ final class AndroidOptionsInitializer {
                 options.getLogger(),
                 options.getProfilingTracesDirPath(),
                 options.getProfilingTracesHz(),
-                options.getExecutorService()));
+                () -> options.getExecutorService()));
       }
     }
   }

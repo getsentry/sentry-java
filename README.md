@@ -67,6 +67,7 @@ Sentry SDK for Java and Android
 | sentry-opentelemetry-core               | ![Maven Central Version](https://img.shields.io/maven-central/v/io.sentry/sentry-opentelemetry-core?style=for-the-badge&logo=sentry&color=green)               |
 | sentry-okhttp                           | ![Maven Central Version](https://img.shields.io/maven-central/v/io.sentry/sentry-okhttp?style=for-the-badge&logo=sentry&color=green)                           |
 | sentry-reactor                          | ![Maven Central Version](https://img.shields.io/maven-central/v/io.sentry/sentry-reactor?style=for-the-badge&logo=sentry&color=green)                          |
+| sentry-spotlight                        | ![Maven Central Version](https://img.shields.io/maven-central/v/io.sentry/sentry-spotlight?style=for-the-badge&logo=sentry&color=green)                        |
 
 # Releases
 
