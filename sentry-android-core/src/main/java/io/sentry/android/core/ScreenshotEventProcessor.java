@@ -62,20 +62,16 @@ public final class ScreenshotEventProcessor implements EventProcessor {
 
     if (options.isAttachScreenshot()) {
       addIntegrationToSdkVersion("Screenshot");
+      if (!isReplayAvailable && !options.getScreenshotOptions().getMaskViewClasses().isEmpty()) {
+        options
+            .getLogger()
+            .log(SentryLevel.WARNING, "Screenshot masking requires sentry-android-replay module");
+      }
     }
   }
 
   private boolean isMaskingEnabled() {
-    if (options.getScreenshotOptions().getMaskViewClasses().isEmpty()) {
-      return false;
-    }
-    if (!isReplayAvailable) {
-      options
-          .getLogger()
-          .log(SentryLevel.WARNING, "Screenshot masking requires sentry-android-replay module");
-      return false;
-    }
-    return true;
+    return !options.getScreenshotOptions().getMaskViewClasses().isEmpty() && isReplayAvailable;
   }
 
   @Override
