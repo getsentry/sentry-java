@@ -237,40 +237,30 @@ public final class SentryReplayOptions extends SentryMaskingOptions {
 
   @Override
   public void setMaskAllText(final boolean maskAllText) {
-    if (maskAllText) {
-      maskViewClasses.add(TEXT_VIEW_CLASS_NAME);
-      unmaskViewClasses.remove(TEXT_VIEW_CLASS_NAME);
-    } else {
+    if (!maskAllText) {
       trackCustomMasking();
-      unmaskViewClasses.add(TEXT_VIEW_CLASS_NAME);
-      maskViewClasses.remove(TEXT_VIEW_CLASS_NAME);
     }
+    super.setMaskAllText(maskAllText);
   }
 
   @Override
   public void setMaskAllImages(final boolean maskAllImages) {
-    if (maskAllImages) {
-      maskViewClasses.add(IMAGE_VIEW_CLASS_NAME);
-      unmaskViewClasses.remove(IMAGE_VIEW_CLASS_NAME);
-    } else {
+    if (!maskAllImages) {
       trackCustomMasking();
-      unmaskViewClasses.add(IMAGE_VIEW_CLASS_NAME);
-      maskViewClasses.remove(IMAGE_VIEW_CLASS_NAME);
     }
+    super.setMaskAllImages(maskAllImages);
   }
 
   @Override
   public void addMaskViewClass(final @NotNull String className) {
     trackCustomMasking();
-    this.maskViewClasses.add(className);
-    this.unmaskViewClasses.remove(className);
+    super.addMaskViewClass(className);
   }
 
   @Override
   public void addUnmaskViewClass(final @NotNull String className) {
     trackCustomMasking();
-    this.unmaskViewClasses.add(className);
-    this.maskViewClasses.remove(className);
+    super.addUnmaskViewClass(className);
   }
 
   @ApiStatus.Internal
