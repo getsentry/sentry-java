@@ -210,7 +210,7 @@ public final class ScreenshotEventProcessor implements EventProcessor {
       if (!screenshot.isMutable()) {
         mutableBitmap = screenshot.copy(Bitmap.Config.ARGB_8888, true);
         if (mutableBitmap == null) {
-          return screenshot;
+          return null;
         }
         createdCopy = true;
       }
