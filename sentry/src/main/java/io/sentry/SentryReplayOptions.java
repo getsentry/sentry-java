@@ -263,12 +263,14 @@ public final class SentryReplayOptions extends SentryMaskingOptions {
   public void addMaskViewClass(final @NotNull String className) {
     trackCustomMasking();
     this.maskViewClasses.add(className);
+    this.unmaskViewClasses.remove(className);
   }
 
   @Override
   public void addUnmaskViewClass(final @NotNull String className) {
     trackCustomMasking();
     this.unmaskViewClasses.add(className);
+    this.maskViewClasses.remove(className);
   }
 
   @ApiStatus.Internal

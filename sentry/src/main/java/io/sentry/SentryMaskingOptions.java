@@ -93,6 +93,7 @@ public abstract class SentryMaskingOptions {
 
   public void addMaskViewClass(final @NotNull String className) {
     this.maskViewClasses.add(className);
+    this.unmaskViewClasses.remove(className);
   }
 
   @NotNull
@@ -102,6 +103,7 @@ public abstract class SentryMaskingOptions {
 
   public void addUnmaskViewClass(final @NotNull String className) {
     this.unmaskViewClasses.add(className);
+    this.maskViewClasses.remove(className);
   }
 
   public @Nullable String getMaskViewContainerClass() {
