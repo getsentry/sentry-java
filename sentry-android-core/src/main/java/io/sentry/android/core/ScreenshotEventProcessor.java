@@ -126,14 +126,15 @@ public final class ScreenshotEventProcessor implements EventProcessor {
     if (isMaskingEnabled()) {
       final @Nullable ViewHierarchyNode rootNode = captureViewHierarchy(activity);
       if (rootNode == null) {
-        // Don't return unmasked screenshot when masking is configured
+        screenshot.recycle();
         return event;
       }
-      screenshot = applyMasking(screenshot, rootNode);
-      if (screenshot == null) {
-        // Don't return unmasked screenshot when masking is configured
+      final @Nullable Bitmap masked = applyMasking(screenshot, rootNode);
+      if (masked == null) {
+        // applyMasking already recycles its bitmaps on failure
         return event;
       }
+      screenshot = masked;
     }
 
     final Bitmap finalScreenshot = screenshot;
@@ -210,6 +211,7 @@ public final class ScreenshotEventProcessor implements EventProcessor {
       if (!screenshot.isMutable()) {
         mutableBitmap = screenshot.copy(Bitmap.Config.ARGB_8888, true);
         if (mutableBitmap == null) {
+          screenshot.recycle();
           return null;
         }
         createdCopy = true;
@@ -225,11 +227,14 @@ public final class ScreenshotEventProcessor implements EventProcessor {
       return mutableBitmap;
     } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, "Failed to mask screenshot", e);
-      // Recycle the copy if we created one, to avoid memory leak
-      if (createdCopy && !mutableBitmap.isRecycled()) {
-        mutableBitmap.recycle();
+      if (createdCopy) {
+        if (!mutableBitmap.isRecycled()) {
+          mutableBitmap.recycle();
+        }
       }
-      // Don't return unmasked screenshot when masking is configured
+      if (!screenshot.isRecycled()) {
+        screenshot.recycle();
+      }
       return null;
     }
   }
