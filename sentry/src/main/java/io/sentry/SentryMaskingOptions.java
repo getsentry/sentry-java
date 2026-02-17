@@ -109,7 +109,7 @@ public abstract class SentryMaskingOptions {
   }
 
   public void setMaskViewContainerClass(@NotNull String containerClass) {
-    addMaskViewClass(containerClass);
+    maskViewClasses.add(containerClass);
     maskViewContainerClass = containerClass;
   }
 

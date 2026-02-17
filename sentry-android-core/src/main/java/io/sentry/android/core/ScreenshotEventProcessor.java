@@ -21,8 +21,9 @@ import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
-import java.io.Closeable;
-import java.io.IOException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -32,7 +33,7 @@ import org.jetbrains.annotations.Nullable;
  * captured.
  */
 @ApiStatus.Internal
-public final class ScreenshotEventProcessor implements EventProcessor, Closeable {
+public final class ScreenshotEventProcessor implements EventProcessor {
 
   private final @NotNull SentryAndroidOptions options;
   private final @NotNull BuildInfoProvider buildInfoProvider;
@@ -40,8 +41,9 @@ public final class ScreenshotEventProcessor implements EventProcessor, Closeable
   private final @NotNull Debouncer debouncer;
   private static final long DEBOUNCE_WAIT_TIME_MS = 2000;
   private static final int DEBOUNCE_MAX_EXECUTIONS = 3;
+  private static final long MASKING_TIMEOUT_MS = 2000;
 
-  private @Nullable MaskRenderer maskRenderer = null;
+  private final boolean isReplayAvailable;
 
   public ScreenshotEventProcessor(
       final @NotNull SentryAndroidOptions options,
@@ -56,9 +58,7 @@ public final class ScreenshotEventProcessor implements EventProcessor, Closeable
             DEBOUNCE_WAIT_TIME_MS,
             DEBOUNCE_MAX_EXECUTIONS);
 
-    if (isReplayAvailable) {
-      maskRenderer = new MaskRenderer();
-    }
+    this.isReplayAvailable = isReplayAvailable;
 
     if (options.isAttachScreenshot()) {
       addIntegrationToSdkVersion("Screenshot");
@@ -69,7 +69,7 @@ public final class ScreenshotEventProcessor implements EventProcessor, Closeable
     if (options.getScreenshotOptions().getMaskViewClasses().isEmpty()) {
       return false;
     }
-    if (maskRenderer == null) {
+    if (!isReplayAvailable) {
       options
           .getLogger()
           .log(SentryLevel.WARNING, "Screenshot masking requires sentry-android-replay module");
@@ -124,14 +124,13 @@ public final class ScreenshotEventProcessor implements EventProcessor, Closeable
 
     // Apply masking if enabled and replay module is available
     if (isMaskingEnabled()) {
-      final @Nullable View rootView =
-          activity.getWindow() != null
-                  && activity.getWindow().peekDecorView() != null
-                  && activity.getWindow().peekDecorView().getRootView() != null
-              ? activity.getWindow().peekDecorView().getRootView()
-              : null;
-      if (rootView != null) {
-        screenshot = applyMasking(screenshot, rootView);
+      final @Nullable ViewHierarchyNode rootNode = captureViewHierarchy(activity);
+      if (rootNode == null) {
+        return event;
+      }
+      screenshot = applyMasking(screenshot, rootNode);
+      if (screenshot == null) {
+        return event;
       }
     }
 
@@ -146,11 +145,65 @@ public final class ScreenshotEventProcessor implements EventProcessor, Closeable
     return event;
   }
 
-  private @NotNull Bitmap applyMasking(
-      final @NotNull Bitmap screenshot, final @NotNull View rootView) {
+  /**
+   * Captures the view hierarchy on the main thread, since view traversal requires it. If already on
+   * the main thread, captures directly; otherwise posts to the main thread and waits.
+   */
+  private @Nullable ViewHierarchyNode captureViewHierarchy(final @NotNull Activity activity) {
+    if (options.getThreadChecker().isMainThread()) {
+      return buildViewHierarchy(activity);
+    }
+
+    final AtomicReference<ViewHierarchyNode> result = new AtomicReference<>(null);
+    final CountDownLatch latch = new CountDownLatch(1);
+
+    activity.runOnUiThread(
+        () -> {
+          try {
+            result.set(buildViewHierarchy(activity));
+          } finally {
+            latch.countDown();
+          }
+        });
+
+    try {
+      if (!latch.await(MASKING_TIMEOUT_MS, TimeUnit.MILLISECONDS)) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.WARNING, "Timed out waiting for view hierarchy capture on main thread");
+        return null;
+      }
+    } catch (Throwable e) {
+      options.getLogger().log(SentryLevel.ERROR, "Failed to capture view hierarchy", e);
+      return null;
+    }
+
+    return result.get();
+  }
+
+  private @Nullable ViewHierarchyNode buildViewHierarchy(final @NotNull Activity activity) {
+    final @Nullable View rootView =
+        activity.getWindow() != null
+                && activity.getWindow().peekDecorView() != null
+                && activity.getWindow().peekDecorView().getRootView() != null
+            ? activity.getWindow().peekDecorView().getRootView()
+            : null;
+    if (rootView == null) {
+      return null;
+    }
+
+    final ViewHierarchyNode rootNode =
+        ViewHierarchyNode.Companion.fromView(rootView, null, 0, options.getScreenshotOptions());
+    ViewsKt.traverse(rootView, rootNode, options.getScreenshotOptions(), options.getLogger());
+    return rootNode;
+  }
+
+  private @Nullable Bitmap applyMasking(
+      final @NotNull Bitmap screenshot, final @NotNull ViewHierarchyNode rootNode) {
     Bitmap mutableBitmap = screenshot;
     boolean createdCopy = false;
-    try {
+    try (final MaskRenderer maskRenderer = new MaskRenderer()) {
       // Make bitmap mutable if needed
       if (!screenshot.isMutable()) {
         mutableBitmap = screenshot.copy(Bitmap.Config.ARGB_8888, true);
@@ -160,16 +213,7 @@ public final class ScreenshotEventProcessor implements EventProcessor, Closeable
         createdCopy = true;
       }
 
-      // we can access it here, since it's "internal" only for Kotlin
-
-      // Build view hierarchy and apply masks
-      final ViewHierarchyNode rootNode =
-          ViewHierarchyNode.Companion.fromView(rootView, null, 0, options.getScreenshotOptions());
-      ViewsKt.traverse(rootView, rootNode, options.getScreenshotOptions(), options.getLogger());
-
-      if (maskRenderer != null) {
-        maskRenderer.renderMasks(mutableBitmap, rootNode, null);
-      }
+      maskRenderer.renderMasks(mutableBitmap, rootNode, null);
 
       // Recycle original if we created a copy
       if (createdCopy && !screenshot.isRecycled()) {
@@ -183,19 +227,13 @@ public final class ScreenshotEventProcessor implements EventProcessor, Closeable
       if (createdCopy && !mutableBitmap.isRecycled()) {
         mutableBitmap.recycle();
       }
-      return screenshot;
+      // Don't return unmasked screenshot when masking is configured
+      return null;
     }
   }
 
   @Override
   public @Nullable Long getOrder() {
     return 10000L;
-  }
-
-  @Override
-  public void close() throws IOException {
-    if (maskRenderer != null) {
-      maskRenderer.close();
-    }
   }
 }

@@ -325,9 +325,8 @@ public final class io/sentry/android/core/NetworkBreadcrumbsIntegration : io/sen
 	public fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
 }
 
-public final class io/sentry/android/core/ScreenshotEventProcessor : io/sentry/EventProcessor, java/io/Closeable {
+public final class io/sentry/android/core/ScreenshotEventProcessor : io/sentry/EventProcessor {
 	public fun <init> (Lio/sentry/android/core/SentryAndroidOptions;Lio/sentry/android/core/BuildInfoProvider;Z)V
-	public fun close ()V
 	public fun getOrder ()Ljava/lang/Long;
 	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
 	public fun process (Lio/sentry/protocol/SentryTransaction;Lio/sentry/Hint;)Lio/sentry/protocol/SentryTransaction;

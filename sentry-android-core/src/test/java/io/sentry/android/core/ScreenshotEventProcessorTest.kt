@@ -323,6 +323,51 @@ class ScreenshotEventProcessorTest {
     assertNotNull(hint.screenshot)
   }
 
+  @Test
+  fun `when masking is configured and VH capture fails, no screenshot is attached`() {
+    val sut = fixture.getSut(attachScreenshot = true, isReplayAvailable = true)
+    fixture.options.screenshotOptions.setMaskAllText(true)
+    val hint = Hint()
+
+    // No activity set, so VH capture will return null (no rootView)
+    CurrentActivityHolder.getInstance().clearActivity()
+
+    val event = fixture.mainProcessor.process(getEvent(), hint)
+    sut.process(event, hint)
+
+    assertNull(hint.screenshot)
+  }
+
+  @Test
+  fun `when masking is configured but replay is not available, screenshot is still captured without masking`() {
+    val sut = fixture.getSut(attachScreenshot = true, isReplayAvailable = false)
+    fixture.options.screenshotOptions.setMaskAllText(true)
+    val hint = Hint()
+
+    CurrentActivityHolder.getInstance().setActivity(fixture.activity)
+
+    val event = fixture.mainProcessor.process(getEvent(), hint)
+    sut.process(event, hint)
+
+    assertNotNull(hint.screenshot)
+  }
+
+  @Test
+  fun `when masking is configured from background thread, VH is captured on main thread`() {
+    fixture.options.screenshotOptions.setMaskAllText(true)
+    val sut = fixture.getSut(attachScreenshot = true, isReplayAvailable = true)
+    whenever(fixture.threadChecker.isMainThread).thenReturn(false)
+
+    CurrentActivityHolder.getInstance().setActivity(fixture.activity)
+
+    val hint = Hint()
+    val event = fixture.mainProcessor.process(getEvent(), hint)
+    sut.process(event, hint)
+
+    shadowOf(Looper.getMainLooper()).idle()
+    assertNotNull(hint.screenshot)
+  }
+
   // region Snapshot Tests
 
   @Test
