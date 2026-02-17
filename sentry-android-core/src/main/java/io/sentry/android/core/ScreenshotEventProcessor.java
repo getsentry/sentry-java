@@ -126,10 +126,12 @@ public final class ScreenshotEventProcessor implements EventProcessor {
     if (isMaskingEnabled()) {
       final @Nullable ViewHierarchyNode rootNode = captureViewHierarchy(activity);
       if (rootNode == null) {
+        // Don't return unmasked screenshot when masking is configured
         return event;
       }
       screenshot = applyMasking(screenshot, rootNode);
       if (screenshot == null) {
+        // Don't return unmasked screenshot when masking is configured
         return event;
       }
     }

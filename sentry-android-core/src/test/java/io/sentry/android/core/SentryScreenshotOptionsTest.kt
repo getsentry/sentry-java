@@ -41,7 +41,7 @@ class SentryScreenshotOptionsTest {
     assertTrue(options.maskViewClasses.contains(SentryMaskingOptions.WEB_VIEW_CLASS_NAME))
     assertTrue(options.maskViewClasses.contains(SentryMaskingOptions.VIDEO_VIEW_CLASS_NAME))
     assertTrue(
-      options.maskViewClasses.contains(SentryMaskingOptions.ANDROIDX_MEDIA_VIEW_CLASS_NAME)
+      options.maskViewClasses.contains(SentryMaskingOptions.CAMERAX_PREVIEW_VIEW_CLASS_NAME)
     )
     assertTrue(
       options.maskViewClasses.contains(SentryMaskingOptions.ANDROIDX_MEDIA_VIEW_CLASS_NAME)
@@ -108,15 +108,6 @@ class SentryScreenshotOptionsTest {
 
     options.setMaskAllImages(false)
 
-    // Verify all sensitive classes were removed
-    assertFalse(options.maskViewClasses.contains(SentryMaskingOptions.IMAGE_VIEW_CLASS_NAME))
-    assertFalse(options.maskViewClasses.contains(SentryMaskingOptions.WEB_VIEW_CLASS_NAME))
-    assertFalse(options.maskViewClasses.contains(SentryMaskingOptions.VIDEO_VIEW_CLASS_NAME))
-    assertFalse(
-      options.maskViewClasses.contains(SentryMaskingOptions.ANDROIDX_MEDIA_VIEW_CLASS_NAME)
-    )
-    assertFalse(options.maskViewClasses.contains(SentryMaskingOptions.EXOPLAYER_CLASS_NAME))
-    assertFalse(options.maskViewClasses.contains(SentryMaskingOptions.EXOPLAYER_STYLED_CLASS_NAME))
     assertTrue(options.maskViewClasses.isEmpty())
   }
 }
