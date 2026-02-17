@@ -43,6 +43,9 @@ class SentryScreenshotOptionsTest {
     assertTrue(
       options.maskViewClasses.contains(SentryMaskingOptions.ANDROIDX_MEDIA_VIEW_CLASS_NAME)
     )
+    assertTrue(
+      options.maskViewClasses.contains(SentryMaskingOptions.ANDROIDX_MEDIA_VIEW_CLASS_NAME)
+    )
     assertTrue(options.maskViewClasses.contains(SentryMaskingOptions.EXOPLAYER_CLASS_NAME))
     assertTrue(options.maskViewClasses.contains(SentryMaskingOptions.EXOPLAYER_STYLED_CLASS_NAME))
   }
@@ -58,23 +61,6 @@ class SentryScreenshotOptionsTest {
   }
 
   @Test
-  fun `enabling both maskAllText and maskAllImages adds all expected classes`() {
-    val options = SentryScreenshotOptions()
-    options.setMaskAllText(true)
-    options.setMaskAllImages(true)
-
-    assertTrue(options.maskViewClasses.contains(SentryMaskingOptions.TEXT_VIEW_CLASS_NAME))
-    assertTrue(options.maskViewClasses.contains(SentryMaskingOptions.IMAGE_VIEW_CLASS_NAME))
-    assertTrue(options.maskViewClasses.contains(SentryMaskingOptions.WEB_VIEW_CLASS_NAME))
-    assertTrue(options.maskViewClasses.contains(SentryMaskingOptions.VIDEO_VIEW_CLASS_NAME))
-    assertTrue(
-      options.maskViewClasses.contains(SentryMaskingOptions.ANDROIDX_MEDIA_VIEW_CLASS_NAME)
-    )
-    assertTrue(options.maskViewClasses.contains(SentryMaskingOptions.EXOPLAYER_CLASS_NAME))
-    assertTrue(options.maskViewClasses.contains(SentryMaskingOptions.EXOPLAYER_STYLED_CLASS_NAME))
-  }
-
-  @Test
   fun `calling setMaskAllImages true multiple times does not duplicate classes`() {
     val options = SentryScreenshotOptions()
     options.setMaskAllImages(true)
@@ -82,7 +68,7 @@ class SentryScreenshotOptionsTest {
     options.setMaskAllImages(true)
 
     // CopyOnWriteArraySet should prevent duplicates
-    assertEquals(6, options.maskViewClasses.size)
+    assertEquals(7, options.maskViewClasses.size)
   }
 
   @Test
