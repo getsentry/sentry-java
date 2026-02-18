@@ -441,6 +441,21 @@ public final class Scopes implements IScopes {
             }
           }
         }
+        for (EventProcessor eventProcessor : getOptions().getEventProcessors()) {
+          if (eventProcessor instanceof Closeable) {
+            try {
+              ((Closeable) eventProcessor).close();
+            } catch (Throwable e) {
+              getOptions()
+                  .getLogger()
+                  .log(
+                      SentryLevel.WARNING,
+                      "Failed to close the event processor {}.",
+                      eventProcessor,
+                      e);
+            }
+          }
+        }
 
         configureScope(scope -> scope.clear());
         configureScope(ScopeType.ISOLATION, scope -> scope.clear());

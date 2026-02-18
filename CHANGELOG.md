@@ -4,6 +4,7 @@
 
 ### Features
 
+- Add screenshot masking support using view hierarchy ([#5077](https://github.com/getsentry/sentry-java/pull/5077))
 - Add `installGroupsOverride` parameter to Build Distribution SDK for programmatic filtering, with support for configuration via properties file using `io.sentry.distribution.install-groups-override` ([#5066](https://github.com/getsentry/sentry-java/pull/5066))
 
 ### Fixes

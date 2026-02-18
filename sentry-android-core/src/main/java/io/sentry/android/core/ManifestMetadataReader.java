@@ -170,6 +170,10 @@ final class ManifestMetadataReader {
 
   static final String SPOTLIGHT_CONNECTION_URL = "io.sentry.spotlight.url";
 
+  static final String SCREENSHOT_MASK_ALL_TEXT = "io.sentry.screenshot.mask-all-text";
+
+  static final String SCREENSHOT_MASK_ALL_IMAGES = "io.sentry.screenshot.mask-all-images";
+
   /** ManifestMetadataReader ctor */
   private ManifestMetadataReader() {}
 
@@ -659,6 +663,14 @@ final class ManifestMetadataReader {
         if (spotlightUrl != null) {
           options.setSpotlightConnectionUrl(spotlightUrl);
         }
+
+        // Screenshot masking options (default to false for backwards compatibility)
+        options
+            .getScreenshotOptions()
+            .setMaskAllText(readBool(metadata, logger, SCREENSHOT_MASK_ALL_TEXT, false));
+        options
+            .getScreenshotOptions()
+            .setMaskAllImages(readBool(metadata, logger, SCREENSHOT_MASK_ALL_IMAGES, false));
       }
       options
           .getLogger()
