@@ -176,6 +176,16 @@ class ExternalOptionsTest {
   }
 
   @Test
+  fun `creates options with shutdownTimeout using external properties`() {
+    withPropertiesFile("shutdown-timeout=2000") { assertEquals(2000L, it.shutdownTimeout) }
+  }
+
+  @Test
+  fun `creates options with sessionFlushTimeout using external properties`() {
+    withPropertiesFile("session-flush-timeout=2000") { assertEquals(2000L, it.sessionFlushTimeout) }
+  }
+
+  @Test
   fun `creates options with ignored exception types using external properties`() {
     val logger = mock<ILogger>()
     // Setting few types of classes:
