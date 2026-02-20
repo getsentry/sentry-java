@@ -203,13 +203,13 @@ public final class SystemEventsBreadcrumbsIntegration
     }
 
     try {
-      options.getExecutorService().submit(() -> unregisterReceiver());
+      options.getExecutorService().submit(() -> unregisterReceiver(options));
     } catch (RejectedExecutionException e) {
-      unregisterReceiver();
+      unregisterReceiver(options);
     }
   }
 
-  private void unregisterReceiver() {
+  private void unregisterReceiver(final @NotNull SentryAndroidOptions options) {
     final @Nullable SystemEventsBroadcastReceiver receiverRef;
     try (final @NotNull ISentryLifecycleToken ignored = receiverLock.acquire()) {
       isStopped = true;
@@ -218,7 +218,16 @@ public final class SystemEventsBreadcrumbsIntegration
     }
 
     if (receiverRef != null) {
-      context.unregisterReceiver(receiverRef);
+      try {
+        context.unregisterReceiver(receiverRef);
+      } catch (IllegalArgumentException exception) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.ERROR,
+                exception,
+                "Failed to unregister SystemEventsBroadcastReceiver: the receiver is already unregistered or was never registered.");
+      }
     }
   }
 
