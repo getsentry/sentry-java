@@ -289,6 +289,10 @@ SentryAndroid.init(
 
 ## 8.25.0
 
+### Features
+
+- Add sentry-android-navigation3 module for Android Navigation 3 integration ([#5023](https://github.com/getsentry/sentry-java/pull/5023))
+
 ### Fixes
 
 - [ANR] Removed AndroidTransactionProfiler lock ([#4817](https://github.com/getsentry/sentry-java/pull/4817))
