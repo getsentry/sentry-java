@@ -16,6 +16,15 @@ import io.sentry.ISentryExecutorService
 import io.sentry.SentryLevel
 import io.sentry.test.DeferredExecutorService
 import io.sentry.test.ImmediateExecutorService
+import java.util.concurrent.CountDownLatch
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
@@ -32,15 +41,6 @@ import org.robolectric.annotation.Config
 import org.robolectric.shadow.api.Shadow
 import org.robolectric.shadows.ShadowActivityManager
 import org.robolectric.shadows.ShadowBuild
-import java.util.concurrent.CountDownLatch
-import kotlin.test.AfterTest
-import kotlin.test.BeforeTest
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertNotNull
-import kotlin.test.assertNull
-import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [Build.VERSION_CODES.TIRAMISU])
@@ -436,9 +436,9 @@ class SystemEventsBreadcrumbsIntegrationTest {
     sut.register(fixture.scopes, fixture.options)
 
     Thread {
-      sut.close()
-      latch.countDown()
-    }
+        sut.close()
+        latch.countDown()
+      }
       .start()
 
     latch.await()
@@ -520,9 +520,9 @@ class SystemEventsBreadcrumbsIntegrationTest {
     assertNotNull(sut.receiver)
 
     Thread {
-      sut.close()
-      latch.countDown()
-    }
+        sut.close()
+        latch.countDown()
+      }
       .start()
 
     latch.await()
