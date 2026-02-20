@@ -222,12 +222,11 @@ public final class SystemEventsBreadcrumbsIntegration
         context.unregisterReceiver(receiverRef);
       } catch (IllegalArgumentException exception) {
         options
-          .getLogger()
-          .log(
-            SentryLevel.ERROR,
-            exception,
-            "Failed to unregister SystemEventsBroadcastReceiver: the receiver is already unregistered or was never registered."
-          );
+            .getLogger()
+            .log(
+                SentryLevel.ERROR,
+                exception,
+                "Failed to unregister SystemEventsBroadcastReceiver: the receiver is already unregistered or was never registered.");
       }
     }
   }
