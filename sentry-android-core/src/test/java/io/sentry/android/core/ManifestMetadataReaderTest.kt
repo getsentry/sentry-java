@@ -188,6 +188,31 @@ class ManifestMetadataReaderTest {
   }
 
   @Test
+  fun `applyMetadata reads dist to options`() {
+    // Arrange
+    val bundle = bundleOf(ManifestMetadataReader.DIST to "test-dist")
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertEquals("test-dist", fixture.options.dist)
+  }
+
+  @Test
+  fun `applyMetadata reads dist and keep default value if not found`() {
+    // Arrange
+    val context = fixture.getContext()
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertNull(fixture.options.dist)
+  }
+
+  @Test
   fun `applyMetadata reads session tracking interval to options`() {
     // Arrange
 
