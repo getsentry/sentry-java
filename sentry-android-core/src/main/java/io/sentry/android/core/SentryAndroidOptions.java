@@ -243,6 +243,37 @@ public final class SentryAndroidOptions extends SentryOptions {
 
   private boolean enableTombstone = false;
 
+  /**
+   * Controls whether to collect and report application startup information from the {@link
+   * android.app.ApplicationStartInfo} system API (Android 15+). When enabled, creates transactions
+   * and metrics for each application start event.
+   *
+   * <p>Requires API level 35 (Android 15) or higher.
+   *
+   * <p>Default is false (opt-in).
+   */
+  private boolean enableApplicationStartInfo = false;
+
+  /**
+   * Controls whether to generate transactions from ApplicationStartInfo data. Requires {@link
+   * #enableApplicationStartInfo} to be true.
+   *
+   * <p>Requires API level 35 (Android 15) or higher.
+   *
+   * <p>Default is false (opt-in).
+   */
+  @ApiStatus.Experimental private boolean enableApplicationStartInfoTracing = false;
+
+  /**
+   * Controls whether to emit metrics from ApplicationStartInfo data. Requires {@link
+   * #enableApplicationStartInfo} to be true.
+   *
+   * <p>Requires API level 35 (Android 15) or higher.
+   *
+   * <p>Default is false (opt-in).
+   */
+  @ApiStatus.Experimental private boolean enableApplicationStartInfoMetrics = false;
+
   public SentryAndroidOptions() {
     setSentryClientName(BuildConfig.SENTRY_ANDROID_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
     setSdkVersion(createSdkVersion());
@@ -333,6 +364,69 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   public boolean isTombstoneEnabled() {
     return enableTombstone;
+  }
+
+  /**
+   * Sets ApplicationStartInfo collection to enabled or disabled. Requires API level 35 (Android 15)
+   * or higher.
+   *
+   * @param enableApplicationStartInfo true for enabled and false for disabled
+   */
+  @ApiStatus.Experimental
+  public void setEnableApplicationStartInfo(final boolean enableApplicationStartInfo) {
+    this.enableApplicationStartInfo = enableApplicationStartInfo;
+  }
+
+  /**
+   * Checks if ApplicationStartInfo collection is enabled or disabled. Default is disabled.
+   *
+   * @return true if enabled or false otherwise
+   */
+  @ApiStatus.Experimental
+  public boolean isEnableApplicationStartInfo() {
+    return enableApplicationStartInfo;
+  }
+
+  /**
+   * Controls whether to generate transactions from ApplicationStartInfo data. Requires {@link
+   * #enableApplicationStartInfo} to be true.
+   *
+   * @param enable true to enable transaction generation, false to disable
+   */
+  @ApiStatus.Experimental
+  public void setEnableApplicationStartInfoTracing(final boolean enable) {
+    this.enableApplicationStartInfoTracing = enable;
+  }
+
+  /**
+   * Checks if ApplicationStartInfo tracing is enabled or disabled. Default is disabled.
+   *
+   * @return true if enabled or false otherwise
+   */
+  @ApiStatus.Experimental
+  public boolean isEnableApplicationStartInfoTracing() {
+    return enableApplicationStartInfoTracing;
+  }
+
+  /**
+   * Controls whether to emit metrics from ApplicationStartInfo data. Requires {@link
+   * #enableApplicationStartInfo} to be true.
+   *
+   * @param enable true to enable metrics emission, false to disable
+   */
+  @ApiStatus.Experimental
+  public void setEnableApplicationStartInfoMetrics(final boolean enable) {
+    this.enableApplicationStartInfoMetrics = enable;
+  }
+
+  /**
+   * Checks if ApplicationStartInfo metrics are enabled or disabled. Default is disabled.
+   *
+   * @return true if enabled or false otherwise
+   */
+  @ApiStatus.Experimental
+  public boolean isEnableApplicationStartInfoMetrics() {
+    return enableApplicationStartInfoMetrics;
   }
 
   public boolean isEnableActivityLifecycleBreadcrumbs() {

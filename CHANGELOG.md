@@ -5,6 +5,9 @@
 ### Features
 
 - Add `installGroupsOverride` parameter to Build Distribution SDK for programmatic filtering, with support for configuration via properties file using `io.sentry.distribution.install-groups-override` ([#5066](https://github.com/getsentry/sentry-java/pull/5066))
+- Add ApplicationStartInfo API support for Android 15+ ([#5055](https://github.com/getsentry/sentry-java/pull/5055))
+  - Captures detailed app startup timing data based on [ApplicationStartInfo APIs](https://developer.android.com/reference/android/app/ApplicationStartInfo)
+  - Opt-in via `SentryAndroidOptions.setEnableApplicationStartInfo(boolean)` (disabled by default)
 
 ### Fixes
 
@@ -55,6 +58,7 @@
     ```xml
     <meta-data android:name="io.sentry.tombstone.enable" android:value="true" />
     ```
+>>>>>>> main
 
 ### Fixes
 
