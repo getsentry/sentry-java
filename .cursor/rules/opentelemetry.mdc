@@ -14,6 +14,7 @@ The Sentry Java SDK provides comprehensive OpenTelemetry integration through mul
 - `sentry-opentelemetry-agentless-spring`: Spring-specific agentless integration
 - `sentry-opentelemetry-bootstrap`: Classes that go into the bootstrap classloader when the agent is used. For agentless they are simply used in the applications classloader.
 - `sentry-opentelemetry-agentcustomization`: Classes that help wire up Sentry in OpenTelemetry. These land in the agent classloader when the agent is used. For agentless they are simply used in the application classloader.
+- `sentry-opentelemetry-otlp`: Classes for using OpenTelemetry to send spans to Sentry using the OTLP endpoint and have Sentry use OpenTelemetry trace and span id.
 
 ## Advantages over using Sentry without OpenTelemetry
 
@@ -86,3 +87,9 @@ After creating the transaction with child spans `SentrySpanExporter` uses Sentry
 ## Troubleshooting
 
 To debug forking of `Scopes`, we added a reference to `parent` `Scopes` and a `creator` String to store the reason why `Scopes` were created or forked.
+
+# OTLP
+When using `sentry-opentelemetry-otlp`, Sentry only loads trace ID and span ID from OpenTelemetry `Context` (via `OpenTelemetryOtlpEventProcessor`). Sentry does not rely on OpenTelemetry `Context` for scope storage and propagation, instead relying on its `DefaultScopesStorage`.
+It is common to keep Performance in Sentry SDK disabled since that part is taken over by OpenTelemetry.
+The `sentry-opentelemetry-otlp` module is not connected to the other `sentry-opentelemetry-*` modules but instead intended only when the goal is to run OpenTelemetry for creating spans and Sentry for other products like errors, logs, metrics etc.
+The OTLP module does not easily work with the OpenTelemetry agent as it would require customizing the agent.JAR in order to get the propagator loaded.

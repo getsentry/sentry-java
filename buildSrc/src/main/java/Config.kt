@@ -64,6 +64,7 @@ object Config {
         val SENTRY_SPRING_BOOT_4_STARTER_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.spring-boot-4-starter"
         val SENTRY_OPENTELEMETRY_BOOTSTRAP_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.opentelemetry.bootstrap"
         val SENTRY_OPENTELEMETRY_CORE_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.opentelemetry.core"
+        val SENTRY_OPENTELEMETRY_OTLP_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.opentelemetry.otlp"
         val SENTRY_OPENTELEMETRY_AGENT_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.opentelemetry.agent"
         val SENTRY_OPENTELEMETRY_AGENTLESS_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.opentelemetry.agentless"
         val SENTRY_OPENTELEMETRY_AGENTLESS_SPRING_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.opentelemetry.agentless-spring"
