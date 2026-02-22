@@ -170,6 +170,8 @@ final class ManifestMetadataReader {
 
   static final String SPOTLIGHT_CONNECTION_URL = "io.sentry.spotlight.url";
 
+  static final String ENABLE_ANR_PROFILING = "io.sentry.anr.profiling.enable";
+
   /** ManifestMetadataReader ctor */
   private ManifestMetadataReader() {}
 
@@ -659,6 +661,9 @@ final class ManifestMetadataReader {
         if (spotlightUrl != null) {
           options.setSpotlightConnectionUrl(spotlightUrl);
         }
+
+        options.setEnableAnrProfiling(
+            readBool(metadata, logger, ENABLE_ANR_PROFILING, options.isEnableAnrProfiling()));
       }
       options
           .getLogger()

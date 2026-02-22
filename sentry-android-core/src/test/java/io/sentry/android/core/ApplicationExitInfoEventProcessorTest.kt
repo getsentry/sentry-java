@@ -8,13 +8,18 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.Breadcrumb
 import io.sentry.Hint
+import io.sentry.IScopes
 import io.sentry.IpAddressUtils
 import io.sentry.NoOpLogger
+import io.sentry.Sentry
 import io.sentry.SentryBaseEvent
 import io.sentry.SentryEvent
 import io.sentry.SentryLevel
 import io.sentry.SentryLevel.DEBUG
 import io.sentry.SpanContext
+import io.sentry.android.core.anr.AnrProfileManager
+import io.sentry.android.core.anr.AnrProfileRotationHelper
+import io.sentry.android.core.anr.AnrStackTrace
 import io.sentry.cache.PersistingOptionsObserver.DIST_FILENAME
 import io.sentry.cache.PersistingOptionsObserver.ENVIRONMENT_FILENAME
 import io.sentry.cache.PersistingOptionsObserver.OPTIONS_CACHE
@@ -67,6 +72,8 @@ import kotlin.test.assertTrue
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
+import org.mockito.Mockito.mockStatic
+import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import org.robolectric.annotation.Config
@@ -626,6 +633,181 @@ class ApplicationExitInfoEventProcessorTest {
     assertEquals("native", processed.platform)
     assertEquals("NativeCrash", processed.exceptions!!.first().type)
     assertNull(processed.fingerprints)
+  }
+
+  @Test
+  fun `sets system-frames-only fingerprint when ANR profiling enabled and no app frames`() {
+    fixture.options.isEnableAnrProfiling = true
+    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(mechanism = "anr_foreground"))
+
+    val processed =
+      processEvent(hint, populateScopeCache = false) {
+        threads =
+          listOf(
+            SentryThread().apply {
+              name = "main"
+              stacktrace =
+                SentryStackTrace().apply {
+                  frames =
+                    listOf(
+                      SentryStackFrame().apply {
+                        module = "java.lang"
+                        filename = "Thread.java"
+                        function = "run"
+                      }
+                    )
+                }
+            }
+          )
+      }
+
+    assertEquals(listOf("system-frames-only-anr", "foreground-anr"), processed.fingerprints)
+  }
+
+  @Test
+  fun `does not set system-frames-only fingerprint when ANR profiling is disabled but no app frames are present`() {
+    fixture.options.isEnableAnrProfiling = false
+    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(mechanism = "anr_foreground"))
+
+    val processed =
+      processEvent(hint, populateScopeCache = false) {
+        threads =
+          listOf(
+            SentryThread().apply {
+              name = "main"
+              stacktrace =
+                SentryStackTrace().apply {
+                  frames =
+                    listOf(
+                      SentryStackFrame().apply {
+                        module = "java.lang"
+                        filename = "Thread.java"
+                        function = "run"
+                      }
+                    )
+                }
+            }
+          )
+      }
+
+    assertEquals(listOf("{{ default }}", "foreground-anr"), processed.fingerprints)
+  }
+
+  @Test
+  fun `sets default fingerprint when ANR profiling enabled and app frames are present`() {
+    fixture.options.isEnableAnrProfiling = true
+    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(mechanism = "anr_foreground"))
+
+    val processed =
+      processEvent(hint, populateScopeCache = false) {
+        threads =
+          listOf(
+            SentryThread().apply {
+              name = "main"
+              stacktrace =
+                SentryStackTrace().apply {
+                  frames =
+                    listOf(
+                      SentryStackFrame().apply {
+                        module = "com.example.MyApp"
+                        function = "onCreate"
+                      }
+                    )
+                }
+            }
+          )
+      }
+
+    assertEquals(listOf("{{ default }}", "foreground-anr"), processed.fingerprints)
+  }
+
+  @Test
+  fun `does not set profile context when ANR profiling is disabled`() {
+    fixture.options.isEnableAnrProfiling = false
+    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(mechanism = "anr_foreground"))
+    val processed =
+      processEvent(hint, populateScopeCache = false) {
+        threads =
+          listOf(
+            SentryThread().apply {
+              name = "main"
+              stacktrace =
+                SentryStackTrace().apply {
+                  frames =
+                    listOf(
+                      SentryStackFrame().apply {
+                        module = "com.example.MyApp"
+                        function = "onCreate"
+                      }
+                    )
+                }
+            }
+          )
+      }
+    assertNull(processed.contexts.profile)
+  }
+
+  @Test
+  fun `applies ANR profile if available`() {
+    fixture.options.isEnableAnrProfiling = true
+    val processor =
+      fixture.getSut(
+        tmpDir,
+        populateScopeCache = false,
+        populateOptionsCache = false,
+        isSendDefaultPii = false,
+      )
+
+    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(mechanism = "anr_foreground"))
+
+    AnrProfileManager(
+        fixture.options,
+        AnrProfileRotationHelper.getFileForRecording(File(fixture.options.cacheDirPath!!)),
+      )
+      .apply {
+        add(
+          AnrStackTrace(
+            System.currentTimeMillis(),
+            arrayOf(
+              StackTraceElement(
+                "android.view.Choreographer",
+                "doFrame",
+                "Choreographer.java",
+                1234,
+              ),
+              StackTraceElement("android.os.Handler", "dispatchMessage", "Handler.java", 5678),
+            ),
+          )
+        )
+        close()
+      }
+    AnrProfileRotationHelper.rotate()
+
+    val scopes = mock<IScopes>()
+    whenever(scopes.captureProfileChunk(any())).thenReturn(SentryId())
+
+    mockStatic(Sentry::class.java).use { mockedSentry ->
+      mockedSentry.`when`<Any> { Sentry.getCurrentScopes() }.thenReturn(scopes)
+
+      val processed = processor.process(SentryEvent(), hint)
+
+      assertNotNull(processed?.contexts?.profile)
+      assertNotNull(processed.contexts.profile?.profilerId)
+    }
+  }
+
+  @Test
+  fun `does not crash when ANR profiling is enabled but cache dir is null`() {
+    fixture.options.isEnableAnrProfiling = true
+    fixture.options.cacheDirPath = null
+    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(mechanism = "anr_foreground"))
+    val original = SentryEvent()
+
+    val processor = fixture.getSut(tmpDir)
+    val processed = processor.process(original, hint)
+
+    assertNotNull(processed)
+    assertNull(processed.contexts.profile)
   }
 
   @Test

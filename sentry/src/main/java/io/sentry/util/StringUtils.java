@@ -26,6 +26,14 @@ public final class StringUtils {
 
   private StringUtils() {}
 
+  public static @NotNull String getOrEmpty(final @Nullable String str) {
+    if (str == null) {
+      return "";
+    } else {
+      return str;
+    }
+  }
+
   public static @Nullable String getStringAfterDot(final @Nullable String str) {
     if (str != null) {
       final int lastDotIndex = str.lastIndexOf(".");

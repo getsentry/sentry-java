@@ -174,9 +174,9 @@ public final class SentryExceptionFactory {
       final List<SentryStackFrame> frames =
           sentryStackTraceFactory.getStackFrames(
               currentThrowable.getStackTrace(), includeSentryFrames);
+      final @Nullable Long threadId = thread != null ? thread.getId() : null;
       SentryException exception =
-          getSentryException(
-              currentThrowable, exceptionMechanism, thread.getId(), frames, snapshot);
+          getSentryException(currentThrowable, exceptionMechanism, threadId, frames, snapshot);
       exceptions.addFirst(exception);
 
       if (exceptionMechanism.getType() == null) {

@@ -364,6 +364,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun isCollectExternalStorageContext ()Z
 	public fun isEnableActivityLifecycleBreadcrumbs ()Z
 	public fun isEnableActivityLifecycleTracingAutoFinish ()Z
+	public fun isEnableAnrProfiling ()Z
 	public fun isEnableAppComponentBreadcrumbs ()Z
 	public fun isEnableAppLifecycleBreadcrumbs ()Z
 	public fun isEnableAutoActivityLifecycleTracing ()Z
@@ -392,6 +393,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun setDebugImagesLoader (Lio/sentry/android/core/IDebugImagesLoader;)V
 	public fun setEnableActivityLifecycleBreadcrumbs (Z)V
 	public fun setEnableActivityLifecycleTracingAutoFinish (Z)V
+	public fun setEnableAnrProfiling (Z)V
 	public fun setEnableAppComponentBreadcrumbs (Z)V
 	public fun setEnableAppLifecycleBreadcrumbs (Z)V
 	public fun setEnableAutoActivityLifecycleTracing (Z)V
@@ -544,6 +546,79 @@ public final class io/sentry/android/core/ViewHierarchyEventProcessor : io/sentr
 	public static fun snapshotViewHierarchy (Landroid/view/View;)Lio/sentry/protocol/ViewHierarchy;
 	public static fun snapshotViewHierarchy (Landroid/view/View;Ljava/util/List;)Lio/sentry/protocol/ViewHierarchy;
 	public static fun snapshotViewHierarchyAsData (Landroid/app/Activity;Lio/sentry/util/thread/IThreadChecker;Lio/sentry/ISerializer;Lio/sentry/ILogger;)[B
+}
+
+public class io/sentry/android/core/anr/AggregatedStackTrace {
+	public fun <init> ([Ljava/lang/StackTraceElement;IIJF)V
+	public fun addOccurrence (J)V
+	public fun getStack ()[Ljava/lang/StackTraceElement;
+}
+
+public class io/sentry/android/core/anr/AnrCulpritIdentifier {
+	public fun <init> ()V
+	public static fun identify (Ljava/util/List;)Lio/sentry/android/core/anr/AggregatedStackTrace;
+	public static fun isSystemFrame (Ljava/lang/String;)Z
+}
+
+public class io/sentry/android/core/anr/AnrProfile {
+	public final field endTimeMs J
+	public final field stacks Ljava/util/List;
+	public final field startTimeMs J
+	public fun <init> (Ljava/util/List;)V
+}
+
+public class io/sentry/android/core/anr/AnrProfileManager : java/lang/AutoCloseable {
+	public fun <init> (Lio/sentry/SentryOptions;)V
+	public fun <init> (Lio/sentry/SentryOptions;Ljava/io/File;)V
+	public fun add (Lio/sentry/android/core/anr/AnrStackTrace;)V
+	public fun clear ()V
+	public fun close ()V
+	public fun load ()Lio/sentry/android/core/anr/AnrProfile;
+}
+
+public class io/sentry/android/core/anr/AnrProfileRotationHelper {
+	public fun <init> ()V
+	public static fun deleteLastFile (Ljava/io/File;)Z
+	public static fun getFileForRecording (Ljava/io/File;)Ljava/io/File;
+	public static fun getLastFile (Ljava/io/File;)Ljava/io/File;
+	public static fun rotate ()V
+}
+
+public class io/sentry/android/core/anr/AnrProfilingIntegration : io/sentry/Integration, io/sentry/android/core/AppState$AppStateListener, java/io/Closeable, java/lang/Runnable {
+	public static final field POLLING_INTERVAL_MS J
+	public static final field THRESHOLD_ANR_MS J
+	public fun <init> ()V
+	protected fun checkMainThread (Ljava/lang/Thread;)V
+	public fun close ()V
+	protected fun getProfileManager ()Lio/sentry/android/core/anr/AnrProfileManager;
+	protected fun getState ()Lio/sentry/android/core/anr/AnrProfilingIntegration$MainThreadState;
+	public fun onBackground ()V
+	public fun onForeground ()V
+	public fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
+	public fun run ()V
+}
+
+protected final class io/sentry/android/core/anr/AnrProfilingIntegration$MainThreadState : java/lang/Enum {
+	public static final field ANR_DETECTED Lio/sentry/android/core/anr/AnrProfilingIntegration$MainThreadState;
+	public static final field IDLE Lio/sentry/android/core/anr/AnrProfilingIntegration$MainThreadState;
+	public static final field SUSPICIOUS Lio/sentry/android/core/anr/AnrProfilingIntegration$MainThreadState;
+	public static fun valueOf (Ljava/lang/String;)Lio/sentry/android/core/anr/AnrProfilingIntegration$MainThreadState;
+	public static fun values ()[Lio/sentry/android/core/anr/AnrProfilingIntegration$MainThreadState;
+}
+
+public final class io/sentry/android/core/anr/AnrStackTrace : java/lang/Comparable {
+	public final field stack [Ljava/lang/StackTraceElement;
+	public final field timestampMs J
+	public fun <init> (J[Ljava/lang/StackTraceElement;)V
+	public fun compareTo (Lio/sentry/android/core/anr/AnrStackTrace;)I
+	public synthetic fun compareTo (Ljava/lang/Object;)I
+	public static fun deserialize (Ljava/io/DataInputStream;)Lio/sentry/android/core/anr/AnrStackTrace;
+	public fun serialize (Ljava/io/DataOutputStream;)V
+}
+
+public final class io/sentry/android/core/anr/StackTraceConverter {
+	public fun <init> ()V
+	public static fun convert (Lio/sentry/android/core/anr/AnrProfile;)Lio/sentry/protocol/profiling/SentryProfile;
 }
 
 public final class io/sentry/android/core/cache/AndroidEnvelopeCache : io/sentry/cache/EnvelopeCache {

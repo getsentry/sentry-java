@@ -8,13 +8,17 @@ import io.sentry.SentryEvent
 import io.sentry.android.core.AnrV2Integration.AnrV2Hint
 import io.sentry.android.core.cache.AndroidEnvelopeCache
 import io.sentry.util.HintUtils
+import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import org.junit.After
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argThat
 import org.mockito.kotlin.check
+import org.mockito.kotlin.never
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -159,6 +163,11 @@ class AnrV2IntegrationTest : ApplicationExitIntegrationTestBase<AnrV2Hint>() {
     assertEquals("/apex/com.android.runtime/lib64/bionic/libc.so", image.codeFile)
   }
 
+  @After
+  fun cleanup() {
+    fixture.options.cacheDirPath?.let { File(it).deleteRecursively() }
+  }
+
   @Test
   fun `when latest ANR has foreground importance, sets abnormal mechanism to anr_foreground`() {
     val integration =
@@ -210,5 +219,25 @@ class AnrV2IntegrationTest : ApplicationExitIntegrationTestBase<AnrV2Hint>() {
     integration.register(fixture.scopes, fixture.options)
 
     verify(fixture.scopes).captureEvent(any(), check<Hint> { assertNotNull(it.threadDump) })
+  }
+
+  @Test
+  fun `when traceInputStream is null, does not report ANR`() {
+    val integration = fixture.getSut(tmpDir, lastReportedTimestamp = oldTimestamp)
+    fixture.addAppExitInfo(timestamp = newTimestamp, addTrace = false)
+
+    integration.register(fixture.scopes, fixture.options)
+
+    verify(fixture.scopes, never()).captureEvent(any(), anyOrNull<Hint>())
+  }
+
+  @Test
+  fun `when traceInputStream has bad data, does not report ANR`() {
+    val integration = fixture.getSut(tmpDir, lastReportedTimestamp = oldTimestamp)
+    fixture.addAppExitInfo(timestamp = newTimestamp, addBadTrace = true)
+
+    integration.register(fixture.scopes, fixture.options)
+
+    verify(fixture.scopes, never()).captureEvent(any(), anyOrNull<Hint>())
   }
 }

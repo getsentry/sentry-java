@@ -29,6 +29,9 @@ import io.sentry.BackfillingEventProcessor;
 import io.sentry.Breadcrumb;
 import io.sentry.Hint;
 import io.sentry.IpAddressUtils;
+import io.sentry.ProfileChunk;
+import io.sentry.ProfileContext;
+import io.sentry.Sentry;
 import io.sentry.SentryBaseEvent;
 import io.sentry.SentryEvent;
 import io.sentry.SentryExceptionFactory;
@@ -36,9 +39,16 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.SentryStackTraceFactory;
 import io.sentry.SpanContext;
+import io.sentry.android.core.anr.AggregatedStackTrace;
+import io.sentry.android.core.anr.AnrCulpritIdentifier;
+import io.sentry.android.core.anr.AnrProfile;
+import io.sentry.android.core.anr.AnrProfileManager;
+import io.sentry.android.core.anr.AnrProfileRotationHelper;
+import io.sentry.android.core.anr.StackTraceConverter;
 import io.sentry.android.core.internal.util.CpuInfoUtils;
 import io.sentry.cache.PersistingOptionsObserver;
 import io.sentry.cache.PersistingScopeObserver;
+import io.sentry.exception.ExceptionMechanismException;
 import io.sentry.hints.AbnormalExit;
 import io.sentry.hints.Backfillable;
 import io.sentry.protocol.App;
@@ -50,10 +60,14 @@ import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.OperatingSystem;
 import io.sentry.protocol.Request;
 import io.sentry.protocol.SdkVersion;
+import io.sentry.protocol.SentryException;
+import io.sentry.protocol.SentryId;
+import io.sentry.protocol.SentryStackFrame;
 import io.sentry.protocol.SentryStackTrace;
 import io.sentry.protocol.SentryThread;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
+import io.sentry.protocol.profiling.SentryProfile;
 import io.sentry.util.HintUtils;
 import io.sentry.util.SentryRandom;
 import java.io.File;
@@ -700,8 +714,15 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
     public void applyPostEnrichment(
         @NotNull SentryEvent event, @NotNull Backfillable hint, @NotNull Object rawHint) {
       final boolean isBackgroundAnr = isBackgroundAnr(rawHint);
-      setAppForeground(event, !isBackgroundAnr);
+
+      if (options.isEnableAnrProfiling()) {
+        applyAnrProfile(event, hint, isBackgroundAnr);
+      }
+
       setDefaultAnrFingerprint(event, isBackgroundAnr);
+
+      // Set app foreground state
+      setAppForeground(event, !isBackgroundAnr);
     }
 
     private void setDefaultAnrFingerprint(
@@ -709,7 +730,17 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
       // sentry does not yet have a capability to provide default server-side fingerprint rules,
       // so we're doing this on the SDK side to group background and foreground ANRs separately
       // even if they have similar stacktraces.
-      if (event.getFingerprints() == null) {
+      if (event.getFingerprints() != null) {
+        return;
+      }
+
+      if (options.isEnableAnrProfiling() && hasOnlySystemFrames(event)) {
+        // If profiling did not identify any app frames, we want to statically group these events
+        // to avoid ANR noise due to {{ default }} stacktrace grouping
+        event.setFingerprints(
+            Arrays.asList(
+                "system-frames-only-anr", isBackgroundAnr ? "background-anr" : "foreground-anr"));
+      } else {
         event.setFingerprints(
             Arrays.asList("{{ default }}", isBackgroundAnr ? "background-anr" : "foreground-anr"));
       }
@@ -776,6 +807,146 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
       }
       event.setExceptions(
           sentryExceptionFactory.getSentryExceptionsFromThread(mainThread, mechanism, anr));
+    }
+
+    private void applyAnrProfile(
+        @NotNull SentryEvent event, @NotNull Backfillable hint, boolean isBackgroundAnr) {
+
+      // Skip background ANRs (as profiling only runs in foreground)
+      if (isBackgroundAnr) {
+        return;
+      }
+
+      final String cacheDirPath = options.getCacheDirPath();
+      if (cacheDirPath == null) {
+        return;
+      }
+      final File cacheDir = new File(cacheDirPath);
+
+      if (!(hint instanceof AbnormalExit)) {
+        return;
+      }
+      final Long anrTimestampObj = ((AbnormalExit) hint).timestamp();
+      final long anrTimestamp;
+      if (anrTimestampObj != null) {
+        anrTimestamp = anrTimestampObj;
+      } else if (event.getTimestamp() != null) {
+        anrTimestamp = event.getTimestamp().getTime();
+      } else {
+        return;
+      }
+
+      AnrProfile anrProfile = null;
+      try {
+        final File lastFile = AnrProfileRotationHelper.getLastFile(cacheDir);
+        if (lastFile.exists()) {
+          options.getLogger().log(SentryLevel.DEBUG, "Reading ANR profile");
+          try (final AnrProfileManager provider = new AnrProfileManager(options, lastFile)) {
+            anrProfile = provider.load();
+          }
+        } else {
+          options.getLogger().log(SentryLevel.DEBUG, "No ANR profile file found");
+        }
+      } catch (Throwable t) {
+        options.getLogger().log(SentryLevel.INFO, "Could not retrieve ANR profile", t);
+      } finally {
+        if (!AnrProfileRotationHelper.deleteLastFile(cacheDir)) {
+          options.getLogger().log(SentryLevel.INFO, "Could not delete ANR profile file");
+        }
+      }
+
+      if (anrProfile == null) {
+        return;
+      }
+
+      options.getLogger().log(SentryLevel.INFO, "ANR profile found");
+      if (anrTimestamp < anrProfile.startTimeMs || anrTimestamp > anrProfile.endTimeMs) {
+        options.getLogger().log(SentryLevel.DEBUG, "ANR profile found, but doesn't match");
+        return;
+      }
+
+      final AggregatedStackTrace culprit = AnrCulpritIdentifier.identify(anrProfile.stacks);
+      if (culprit == null) {
+        return;
+      }
+
+      // Capture profile chunk
+      final @Nullable SentryId profilerId = captureAnrProfile(anrTimestamp, anrProfile);
+      final @NotNull StackTraceElement[] stack = culprit.getStack();
+
+      if (stack.length > 0) {
+        final StackTraceElement stackTraceElement = stack[0];
+        final String message =
+            stackTraceElement.getClassName() + "." + stackTraceElement.getMethodName();
+        final ApplicationNotResponding exception = new ApplicationNotResponding(message);
+        exception.setStackTrace(stack);
+
+        final Mechanism mechanism = new Mechanism();
+        mechanism.setType("ANR");
+        final ExceptionMechanismException error =
+            new ExceptionMechanismException(mechanism, exception, null, false);
+
+        final @NotNull List<SentryException> sentryException =
+            sentryExceptionFactory.getSentryExceptions(error);
+
+        // Replace the original ANR exception with the profile-derived one,
+        // as we assume the profiling culprit identification is more valuable
+        // the event threads are kept as-is, so the original main thread stacktrace is still
+        // available
+        event.setExceptions(sentryException);
+
+        if (profilerId != null) {
+          event.getContexts().setProfile(new ProfileContext(profilerId));
+        }
+      }
+    }
+
+    @Nullable
+    private SentryId captureAnrProfile(final long anrTimestampMs, @NotNull AnrProfile anrProfile) {
+      final SentryProfile profile = StackTraceConverter.convert(anrProfile);
+      final ProfileChunk chunk =
+          new ProfileChunk(
+              new SentryId(),
+              new SentryId(),
+              null,
+              new HashMap<>(0),
+              anrTimestampMs / 1000.0d,
+              ProfileChunk.PLATFORM_JAVA,
+              options);
+      chunk.setSentryProfile(profile);
+
+      final SentryId profilerId = Sentry.getCurrentScopes().captureProfileChunk(chunk);
+      if (SentryId.EMPTY_ID.equals(profilerId)) {
+        return null;
+      } else {
+        return chunk.getProfilerId();
+      }
+    }
+
+    private boolean hasOnlySystemFrames(@NotNull SentryEvent event) {
+      final List<SentryException> exceptions = event.getExceptions();
+      if (exceptions == null || exceptions.isEmpty()) {
+        return false;
+      }
+
+      for (final SentryException exception : exceptions) {
+        final SentryStackTrace stacktrace = exception.getStacktrace();
+        if (stacktrace != null) {
+          final List<SentryStackFrame> frames = stacktrace.getFrames();
+          if (frames != null && !frames.isEmpty()) {
+            for (final SentryStackFrame frame : frames) {
+              if (frame.isInApp() != null && frame.isInApp()) {
+                return false;
+              }
+              final String module = frame.getModule();
+              if (module != null && !AnrCulpritIdentifier.isSystemFrame(module)) {
+                return false;
+              }
+            }
+          }
+        }
+      }
+      return true;
     }
   }
 }

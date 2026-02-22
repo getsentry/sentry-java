@@ -139,11 +139,18 @@ public final class AnrIntegration implements Integration, Closeable {
       message = "Background " + message;
     }
 
-    final ApplicationNotResponding error = new ApplicationNotResponding(message, anr.getThread());
+    final @Nullable Thread thread = anr.getThread();
+    final @NotNull ApplicationNotResponding error;
+    if (thread == null) {
+      error = new ApplicationNotResponding(message);
+    } else {
+      error = new ApplicationNotResponding(message, anr.getThread());
+    }
+
     final Mechanism mechanism = new Mechanism();
     mechanism.setType("ANR");
 
-    return new ExceptionMechanismException(mechanism, error, error.getThread(), true);
+    return new ExceptionMechanismException(mechanism, error, thread, true);
   }
 
   @TestOnly
