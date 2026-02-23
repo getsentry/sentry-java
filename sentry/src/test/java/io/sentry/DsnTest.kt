@@ -90,6 +90,12 @@ class DsnTest {
   }
 
   @Test
+  fun `dsn parsed with leading and trailing whitespace`() {
+    val dsn = Dsn("  https://key@host/id  ")
+    assertEquals("https://host/api/id", dsn.sentryUri.toURL().toString())
+  }
+
+  @Test
   fun `non http protocols are not accepted`() {
     assertFailsWith<IllegalArgumentException> { Dsn("ftp://publicKey:secretKey@host/path/id") }
     assertFailsWith<IllegalArgumentException> { Dsn("jar://publicKey:secretKey@host/path/id") }
