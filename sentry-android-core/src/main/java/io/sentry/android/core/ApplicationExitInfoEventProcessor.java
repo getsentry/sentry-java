@@ -6,6 +6,7 @@ import static io.sentry.cache.PersistingOptionsObserver.PROGUARD_UUID_FILENAME;
 import static io.sentry.cache.PersistingOptionsObserver.RELEASE_FILENAME;
 import static io.sentry.cache.PersistingOptionsObserver.REPLAY_ERROR_SAMPLE_RATE_FILENAME;
 import static io.sentry.cache.PersistingOptionsObserver.SDK_VERSION_FILENAME;
+import static io.sentry.cache.PersistingScopeObserver.ATTACHMENTS_FILENAME;
 import static io.sentry.cache.PersistingScopeObserver.BREADCRUMBS_FILENAME;
 import static io.sentry.cache.PersistingScopeObserver.CONTEXTS_FILENAME;
 import static io.sentry.cache.PersistingScopeObserver.EXTRAS_FILENAME;
@@ -25,6 +26,7 @@ import android.content.pm.PackageInfo;
 import android.os.Build;
 import android.util.DisplayMetrics;
 import androidx.annotation.WorkerThread;
+import io.sentry.Attachment;
 import io.sentry.BackfillingEventProcessor;
 import io.sentry.Breadcrumb;
 import io.sentry.Hint;
@@ -37,6 +39,7 @@ import io.sentry.SentryOptions;
 import io.sentry.SentryStackTraceFactory;
 import io.sentry.SpanContext;
 import io.sentry.android.core.internal.util.CpuInfoUtils;
+import io.sentry.cache.PersistedAttachment;
 import io.sentry.cache.PersistingOptionsObserver;
 import io.sentry.cache.PersistingScopeObserver;
 import io.sentry.hints.AbnormalExit;
@@ -157,6 +160,8 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
     }
 
     backfillScope(event);
+
+    setPersistedAttachments(hint);
 
     backfillOptions(event);
 
@@ -355,6 +360,48 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
     if (event.getUser() == null) {
       final User user = readFromDisk(options, USER_FILENAME, User.class);
       event.setUser(user);
+    }
+  }
+
+  @SuppressWarnings("unchecked")
+  private void setPersistedAttachments(final @NotNull Hint hint) {
+    if (persistingScopeObserver == null) {
+      return;
+    }
+    final List<PersistedAttachment> persisted =
+        (List<PersistedAttachment>) readFromDisk(options, ATTACHMENTS_FILENAME, List.class);
+    if (persisted == null || persisted.isEmpty()) {
+      return;
+    }
+
+    // Collect existing attachment filenames to avoid duplicates (e.g. when a native envelope
+    // was already merged with the tombstone and its attachments were already added to the hint)
+    final java.util.Set<String> existingFilenames = new java.util.HashSet<>();
+    for (final Attachment existing : hint.getAttachments()) {
+      existingFilenames.add(existing.getFilename());
+    }
+
+    for (final PersistedAttachment pa : persisted) {
+      if (existingFilenames.contains(pa.getFilename())) {
+        continue;
+      }
+      final File file = new File(pa.getPathname());
+      if (!file.exists() || !file.canRead()) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.WARNING,
+                "Persisted attachment file not available: %s",
+                pa.getPathname());
+        continue;
+      }
+      hint.addAttachment(
+          new Attachment(
+              pa.getPathname(),
+              pa.getFilename(),
+              pa.getContentType(),
+              pa.getAttachmentType(),
+              false));
     }
   }
 

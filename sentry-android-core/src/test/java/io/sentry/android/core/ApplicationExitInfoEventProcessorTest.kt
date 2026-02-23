@@ -6,15 +6,18 @@ import android.content.Context
 import android.os.Build
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import io.sentry.Attachment
 import io.sentry.Breadcrumb
 import io.sentry.Hint
 import io.sentry.IpAddressUtils
 import io.sentry.NoOpLogger
 import io.sentry.SentryBaseEvent
+import io.sentry.SentryEnvelope
 import io.sentry.SentryEvent
 import io.sentry.SentryLevel
 import io.sentry.SentryLevel.DEBUG
 import io.sentry.SpanContext
+import io.sentry.cache.PersistedAttachment
 import io.sentry.cache.PersistingOptionsObserver.DIST_FILENAME
 import io.sentry.cache.PersistingOptionsObserver.ENVIRONMENT_FILENAME
 import io.sentry.cache.PersistingOptionsObserver.OPTIONS_CACHE
@@ -23,6 +26,7 @@ import io.sentry.cache.PersistingOptionsObserver.RELEASE_FILENAME
 import io.sentry.cache.PersistingOptionsObserver.REPLAY_ERROR_SAMPLE_RATE_FILENAME
 import io.sentry.cache.PersistingOptionsObserver.SDK_VERSION_FILENAME
 import io.sentry.cache.PersistingScopeObserver
+import io.sentry.cache.PersistingScopeObserver.ATTACHMENTS_FILENAME
 import io.sentry.cache.PersistingScopeObserver.BREADCRUMBS_FILENAME
 import io.sentry.cache.PersistingScopeObserver.CONTEXTS_FILENAME
 import io.sentry.cache.PersistingScopeObserver.EXTRAS_FILENAME
@@ -703,6 +707,137 @@ class ApplicationExitInfoEventProcessorTest {
         .findPersistingScopeObserver()
         ?.read(fixture.options, REPLAY_FILENAME, String::class.java),
     )
+  }
+
+  @Test
+  fun `persisted attachments are added to hint for ANR events`() {
+    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint())
+    val attachmentFile = tmpDir.newFile("user-log.txt")
+    attachmentFile.writeText("log content")
+
+    val processor = fixture.getSut(tmpDir, populateScopeCache = true)
+    fixture.persistScope(
+      ATTACHMENTS_FILENAME,
+      listOf(
+        PersistedAttachment(
+          attachmentFile.absolutePath,
+          "user-log.txt",
+          "text/plain",
+          "event.attachment",
+        )
+      ),
+    )
+
+    processor.process(SentryEvent(), hint)
+
+    val attachments = hint.attachments
+    assertTrue(attachments.any { it.filename == "user-log.txt" })
+  }
+
+  @Test
+  fun `persisted attachments are added to hint for tombstone events`() {
+    val hint =
+      HintUtils.createWithTypeCheckHint(
+        TombstoneIntegration.TombstoneHint(
+          fixture.options.flushTimeoutMillis,
+          NoOpLogger.getInstance(),
+          0,
+          true,
+        )
+      )
+    val attachmentFile = tmpDir.newFile("user-log.txt")
+    attachmentFile.writeText("log content")
+
+    val processor = fixture.getSut(tmpDir, populateScopeCache = true)
+    fixture.persistScope(
+      ATTACHMENTS_FILENAME,
+      listOf(
+        PersistedAttachment(
+          attachmentFile.absolutePath,
+          "user-log.txt",
+          "text/plain",
+          "event.attachment",
+        )
+      ),
+    )
+
+    processor.process(SentryEvent(), hint)
+
+    val attachments = hint.attachments
+    assertTrue(attachments.any { it.filename == "user-log.txt" })
+  }
+
+  @Test
+  fun `persisted attachments are deduplicated by filename`() {
+    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint())
+    val attachmentFile = tmpDir.newFile("user-log.txt")
+    attachmentFile.writeText("log content")
+
+    // Pre-add an attachment with the same filename to the hint
+    hint.addAttachment(Attachment(attachmentFile.absolutePath, "user-log.txt", "text/plain"))
+
+    val processor = fixture.getSut(tmpDir, populateScopeCache = true)
+    fixture.persistScope(
+      ATTACHMENTS_FILENAME,
+      listOf(
+        PersistedAttachment(
+          attachmentFile.absolutePath,
+          "user-log.txt",
+          "text/plain",
+          "event.attachment",
+        )
+      ),
+    )
+
+    processor.process(SentryEvent(), hint)
+
+    val attachments = hint.attachments.filter { it.filename == "user-log.txt" }
+    assertEquals(1, attachments.size)
+  }
+
+  @Test
+  fun `persisted attachments are skipped when file does not exist`() {
+    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint())
+
+    val processor = fixture.getSut(tmpDir, populateScopeCache = true)
+    fixture.persistScope(
+      ATTACHMENTS_FILENAME,
+      listOf(
+        PersistedAttachment(
+          "/nonexistent/path/file.txt",
+          "file.txt",
+          "text/plain",
+          "event.attachment",
+        )
+      ),
+    )
+
+    processor.process(SentryEvent(), hint)
+
+    assertTrue(hint.attachments.isEmpty())
+  }
+
+  @Test
+  fun `persisted attachments are not added when shouldEnrich is false`() {
+    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(shouldEnrich = false))
+    val attachmentFile = tmpDir.newFile("user-log.txt")
+
+    val processor = fixture.getSut(tmpDir, populateScopeCache = true)
+    fixture.persistScope(
+      ATTACHMENTS_FILENAME,
+      listOf(
+        PersistedAttachment(
+          attachmentFile.absolutePath,
+          "user-log.txt",
+          "text/plain",
+          "event.attachment",
+        )
+      ),
+    )
+
+    processor.process(SentryEvent(), hint)
+
+    assertTrue(hint.attachments.isEmpty())
   }
 
   private fun processEvent(

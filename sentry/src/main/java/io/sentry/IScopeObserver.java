@@ -5,6 +5,7 @@ import io.sentry.protocol.Request;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -45,4 +46,8 @@ public interface IScopeObserver {
   void setTrace(@Nullable SpanContext spanContext, @NotNull IScope scope);
 
   void setReplayId(@NotNull SentryId replayId);
+
+  void addAttachment(@NotNull Attachment attachment);
+
+  void setAttachments(@NotNull List<Attachment> attachments);
 }

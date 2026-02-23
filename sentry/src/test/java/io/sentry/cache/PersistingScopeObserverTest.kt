@@ -1,5 +1,6 @@
 package io.sentry.cache
 
+import io.sentry.Attachment
 import io.sentry.Breadcrumb
 import io.sentry.DateUtils
 import io.sentry.Scope
@@ -7,6 +8,7 @@ import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.SpanContext
 import io.sentry.SpanId
+import io.sentry.cache.PersistingScopeObserver.ATTACHMENTS_FILENAME
 import io.sentry.cache.PersistingScopeObserver.BREADCRUMBS_FILENAME
 import io.sentry.cache.PersistingScopeObserver.CONTEXTS_FILENAME
 import io.sentry.cache.PersistingScopeObserver.EXTRAS_FILENAME
@@ -95,7 +97,7 @@ class PersistingScopeObserverTest<T>(
       fixture.options,
       filename,
       // need to cast breadcrumbs to a regular List, not kotlin lists
-      if (entity!!::class.java.name.contains("List")) List::class.java else entity!!::class.java,
+      if (entity!!::class.java.name.contains("List")) List::class.java else entity::class.java,
     )
 
   companion object {
@@ -301,5 +303,95 @@ class PersistingScopeObserverTest<T>(
         contexts(),
         replayId(),
       )
+  }
+}
+
+class PersistingScopeObserverAttachmentTest {
+  @get:Rule val tmpDir = TemporaryFolder()
+
+  private val options = SentryOptions()
+
+  private fun getSut(): PersistingScopeObserver {
+    options.run {
+      executorService = ImmediateExecutorService()
+      cacheDirPath = tmpDir.newFolder().absolutePath
+    }
+    return PersistingScopeObserver(options)
+  }
+
+  @Suppress("unchecked_cast")
+  private fun readAttachments(sut: PersistingScopeObserver): List<PersistedAttachment>? =
+    sut.read(options, ATTACHMENTS_FILENAME, List::class.java) as? List<PersistedAttachment>
+
+  @Test
+  fun `addAttachment persists pathname-based attachment`() {
+    val sut = getSut()
+    val file = tmpDir.newFile("test.txt")
+    sut.addAttachment(Attachment(file.absolutePath, "test.txt", "text/plain"))
+
+    val persisted = readAttachments(sut)
+    assertEquals(1, persisted?.size)
+    assertEquals(file.absolutePath, persisted!![0].pathname)
+    assertEquals("test.txt", persisted[0].filename)
+    assertEquals("text/plain", persisted[0].contentType)
+  }
+
+  @Test
+  fun `addAttachment skips byte-array attachment`() {
+    val sut = getSut()
+    sut.addAttachment(Attachment(byteArrayOf(1, 2, 3), "bytes.bin"))
+
+    val persisted = readAttachments(sut)
+    assertEquals(null, persisted)
+  }
+
+  @Test
+  fun `addAttachment accumulates multiple attachments`() {
+    val sut = getSut()
+    val file1 = tmpDir.newFile("a.txt")
+    val file2 = tmpDir.newFile("b.txt")
+    sut.addAttachment(Attachment(file1.absolutePath))
+    sut.addAttachment(Attachment(file2.absolutePath))
+
+    val persisted = readAttachments(sut)
+    assertEquals(2, persisted?.size)
+  }
+
+  @Test
+  fun `setAttachments with empty list deletes file`() {
+    val sut = getSut()
+    val file = tmpDir.newFile("test.txt")
+    sut.addAttachment(Attachment(file.absolutePath))
+    sut.setAttachments(emptyList())
+
+    val persisted = readAttachments(sut)
+    assertEquals(null, persisted)
+  }
+
+  @Test
+  fun `setAttachments filters out non-pathname attachments`() {
+    val sut = getSut()
+    val file = tmpDir.newFile("keep.txt")
+    sut.setAttachments(
+      listOf(
+        Attachment(file.absolutePath, "keep.txt", "text/plain"),
+        Attachment(byteArrayOf(1, 2), "drop.bin"),
+      )
+    )
+
+    val persisted = readAttachments(sut)
+    assertEquals(1, persisted?.size)
+    assertEquals("keep.txt", persisted!![0].filename)
+  }
+
+  @Test
+  fun `resetCache clears attachments`() {
+    val sut = getSut()
+    val file = tmpDir.newFile("test.txt")
+    sut.addAttachment(Attachment(file.absolutePath))
+    sut.resetCache()
+
+    val persisted = readAttachments(sut)
+    assertEquals(null, persisted)
   }
 }

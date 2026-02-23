@@ -102,6 +102,9 @@ public final class JsonSerializer implements ISerializer {
     deserializersByClass.put(ProfileMeasurement.class, new ProfileMeasurement.Deserializer());
     deserializersByClass.put(
         ProfileMeasurementValue.class, new ProfileMeasurementValue.Deserializer());
+    deserializersByClass.put(
+        io.sentry.cache.PersistedAttachment.class,
+        new io.sentry.cache.PersistedAttachment.Deserializer());
     deserializersByClass.put(Request.class, new Request.Deserializer());
     deserializersByClass.put(ReplayRecording.class, new ReplayRecording.Deserializer());
     deserializersByClass.put(RRWebBreadcrumbEvent.class, new RRWebBreadcrumbEvent.Deserializer());

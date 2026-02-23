@@ -919,9 +919,11 @@ public abstract interface class io/sentry/IScope {
 }
 
 public abstract interface class io/sentry/IScopeObserver {
+	public abstract fun addAttachment (Lio/sentry/Attachment;)V
 	public abstract fun addBreadcrumb (Lio/sentry/Breadcrumb;)V
 	public abstract fun removeExtra (Ljava/lang/String;)V
 	public abstract fun removeTag (Ljava/lang/String;)V
+	public abstract fun setAttachments (Ljava/util/List;)V
 	public abstract fun setBreadcrumbs (Ljava/util/Collection;)V
 	public abstract fun setContexts (Lio/sentry/protocol/Contexts;)V
 	public abstract fun setExtra (Ljava/lang/String;Ljava/lang/String;)V
@@ -2400,9 +2402,11 @@ public abstract interface class io/sentry/ScopeCallback {
 
 public abstract class io/sentry/ScopeObserverAdapter : io/sentry/IScopeObserver {
 	public fun <init> ()V
+	public fun addAttachment (Lio/sentry/Attachment;)V
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;)V
 	public fun removeExtra (Ljava/lang/String;)V
 	public fun removeTag (Ljava/lang/String;)V
+	public fun setAttachments (Ljava/util/List;)V
 	public fun setBreadcrumbs (Ljava/util/Collection;)V
 	public fun setContexts (Lio/sentry/protocol/Contexts;)V
 	public fun setExtra (Ljava/lang/String;Ljava/lang/String;)V
@@ -4658,6 +4662,23 @@ public abstract interface class io/sentry/cache/IEnvelopeCache : java/lang/Itera
 	public fun storeEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Z
 }
 
+public final class io/sentry/cache/PersistedAttachment : io/sentry/JsonSerializable {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getAttachmentType ()Ljava/lang/String;
+	public fun getContentType ()Ljava/lang/String;
+	public fun getFilename ()Ljava/lang/String;
+	public fun getPathname ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+}
+
+public final class io/sentry/cache/PersistedAttachment$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Lio/sentry/cache/PersistedAttachment;
+	public synthetic fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
 public final class io/sentry/cache/PersistingOptionsObserver : io/sentry/IOptionsObserver {
 	public static final field DIST_FILENAME Ljava/lang/String;
 	public static final field ENVIRONMENT_FILENAME Ljava/lang/String;
@@ -4680,6 +4701,7 @@ public final class io/sentry/cache/PersistingOptionsObserver : io/sentry/IOption
 }
 
 public final class io/sentry/cache/PersistingScopeObserver : io/sentry/ScopeObserverAdapter {
+	public static final field ATTACHMENTS_FILENAME Ljava/lang/String;
 	public static final field BREADCRUMBS_FILENAME Ljava/lang/String;
 	public static final field CONTEXTS_FILENAME Ljava/lang/String;
 	public static final field EXTRAS_FILENAME Ljava/lang/String;
@@ -4693,9 +4715,11 @@ public final class io/sentry/cache/PersistingScopeObserver : io/sentry/ScopeObse
 	public static final field TRANSACTION_FILENAME Ljava/lang/String;
 	public static final field USER_FILENAME Ljava/lang/String;
 	public fun <init> (Lio/sentry/SentryOptions;)V
+	public fun addAttachment (Lio/sentry/Attachment;)V
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;)V
 	public fun read (Lio/sentry/SentryOptions;Ljava/lang/String;Ljava/lang/Class;)Ljava/lang/Object;
 	public fun resetCache ()V
+	public fun setAttachments (Ljava/util/List;)V
 	public fun setBreadcrumbs (Ljava/util/Collection;)V
 	public fun setContexts (Lio/sentry/protocol/Contexts;)V
 	public fun setExtras (Ljava/util/Map;)V

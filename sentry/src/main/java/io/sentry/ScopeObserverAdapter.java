@@ -5,6 +5,7 @@ import io.sentry.protocol.Request;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -57,4 +58,10 @@ public abstract class ScopeObserverAdapter implements IScopeObserver {
 
   @Override
   public void setReplayId(@NotNull SentryId replayId) {}
+
+  @Override
+  public void addAttachment(@NotNull Attachment attachment) {}
+
+  @Override
+  public void setAttachments(@NotNull List<Attachment> attachments) {}
 }

@@ -13,11 +13,19 @@ public final class io/sentry/android/ndk/DebugImagesLoader : io/sentry/android/c
 	public fun loadDebugImagesForAddresses (Ljava/util/Set;)Ljava/util/Set;
 }
 
+public abstract interface class io/sentry/android/ndk/INativeScopeAttachments {
+	public abstract fun attachBytes ([BLjava/lang/String;)V
+	public abstract fun attachFile (Ljava/lang/String;)V
+	public abstract fun clearAttachments ()V
+}
+
 public final class io/sentry/android/ndk/NdkScopeObserver : io/sentry/ScopeObserverAdapter {
 	public fun <init> (Lio/sentry/SentryOptions;)V
+	public fun addAttachment (Lio/sentry/Attachment;)V
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;)V
 	public fun removeExtra (Ljava/lang/String;)V
 	public fun removeTag (Ljava/lang/String;)V
+	public fun setAttachments (Ljava/util/List;)V
 	public fun setExtra (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setTrace (Lio/sentry/SpanContext;Lio/sentry/IScope;)V

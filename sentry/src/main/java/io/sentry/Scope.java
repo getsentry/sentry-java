@@ -854,12 +854,18 @@ public final class Scope implements IScope {
   @Override
   public void addAttachment(final @NotNull Attachment attachment) {
     attachments.add(attachment);
+    for (final IScopeObserver observer : options.getScopeObservers()) {
+      observer.addAttachment(attachment);
+    }
   }
 
   /** Clear all attachments. */
   @Override
   public void clearAttachments() {
     attachments.clear();
+    for (final IScopeObserver observer : options.getScopeObservers()) {
+      observer.setAttachments(new CopyOnWriteArrayList<>());
+    }
   }
 
   /**

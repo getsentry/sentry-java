@@ -1,5 +1,6 @@
 package io.sentry.android.ndk
 
+import io.sentry.Attachment
 import io.sentry.Breadcrumb
 import io.sentry.DateUtils
 import io.sentry.JsonSerializer
@@ -17,9 +18,12 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 
+/** A mock-friendly interface combining INativeScope and INativeScopeAttachments. */
+private interface NativeScopeWithAttachments : INativeScope, INativeScopeAttachments
+
 class NdkScopeObserverTest {
   private class Fixture {
-    val nativeScope = mock<INativeScope>()
+    val nativeScope = mock<NativeScopeWithAttachments>()
     val options =
       SentryOptions().apply {
         setSerializer(JsonSerializer(mock()))
@@ -152,5 +156,59 @@ class NdkScopeObserverTest {
     verify(fixture.nativeScope).setUser(anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull())
     verify(fixture.nativeScope)
       .addBreadcrumb(anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull())
+  }
+
+  @Test
+  fun `addAttachment with pathname calls attachFile`() {
+    val sut = fixture.getSut()
+
+    sut.addAttachment(Attachment("/data/files/log.txt", "log.txt", "text/plain"))
+
+    verify(fixture.nativeScope).attachFile("/data/files/log.txt")
+  }
+
+  @Test
+  fun `addAttachment with bytes calls attachBytes`() {
+    val sut = fixture.getSut()
+    val bytes = byteArrayOf(1, 2, 3)
+
+    sut.addAttachment(Attachment(bytes, "data.bin"))
+
+    verify(fixture.nativeScope).attachBytes(eq(bytes), eq("data.bin"))
+  }
+
+  @Test
+  fun `addAttachment with byteProvider calls attachBytes`() {
+    val sut = fixture.getSut()
+    val bytes = byteArrayOf(4, 5, 6)
+
+    sut.addAttachment(Attachment.fromByteProvider({ bytes }, "provided.bin", null, false))
+
+    verify(fixture.nativeScope).attachBytes(eq(bytes), eq("provided.bin"))
+  }
+
+  @Test
+  fun `setAttachments clears and re-adds`() {
+    val sut = fixture.getSut()
+
+    sut.setAttachments(
+      listOf(
+        Attachment("/data/files/a.txt", "a.txt", "text/plain"),
+        Attachment(byteArrayOf(1), "b.bin"),
+      )
+    )
+
+    verify(fixture.nativeScope).clearAttachments()
+    verify(fixture.nativeScope).attachFile("/data/files/a.txt")
+    verify(fixture.nativeScope).attachBytes(eq(byteArrayOf(1)), eq("b.bin"))
+  }
+
+  @Test
+  fun `addAttachment does nothing when nativeScope does not support attachments`() {
+    val plainScope = mock<INativeScope>()
+    val sut = NdkScopeObserver(fixture.options, plainScope)
+
+    // should not throw
+    sut.addAttachment(Attachment("/data/files/log.txt"))
   }
 }
