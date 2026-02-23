@@ -18,6 +18,7 @@ dependencies {
   api(projects.sentry)
 
   compileOnly(libs.otel)
+  compileOnly(libs.otel.extension.autoconfigure.spi)
   //  compileOnly(libs.otel.semconv)
   //  compileOnly(libs.otel.semconv.incubating)
 

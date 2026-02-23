@@ -4,12 +4,10 @@ import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.context.Scope;
-import io.opentelemetry.context.propagation.TextMapPropagator;
 import io.opentelemetry.sdk.autoconfigure.AutoConfiguredOpenTelemetrySdk;
 import io.sentry.*;
 import io.sentry.clientreport.DiscardReason;
 import io.sentry.opentelemetry.otlp.OpenTelemetryOtlpEventProcessor;
-import io.sentry.opentelemetry.otlp.OpenTelemetryOtlpPropagator;
 import io.sentry.protocol.Message;
 import io.sentry.protocol.User;
 import java.util.Collections;
@@ -38,11 +36,9 @@ public class Main {
               properties.put(
                   "otel.exporter.otlp.traces.headers",
                   "x-sentry-auth=sentry sentry_key=502f25099c204a2fbf4cb16edc5975d1");
+              properties.put("otel.propagators", "tracecontext,baggage,sentry");
               return properties;
             })
-        .addPropagatorCustomizer(
-            (propagator, config) ->
-                TextMapPropagator.composite(propagator, new OpenTelemetryOtlpPropagator()))
         .build();
 
     Sentry.init(

@@ -14,3 +14,9 @@ public final class io/sentry/opentelemetry/otlp/OpenTelemetryOtlpPropagator : io
 	public fun inject (Lio/opentelemetry/context/Context;Ljava/lang/Object;Lio/opentelemetry/context/propagation/TextMapSetter;)V
 }
 
+public final class io/sentry/opentelemetry/otlp/OpenTelemetryOtlpPropagatorProvider : io/opentelemetry/sdk/autoconfigure/spi/ConfigurablePropagatorProvider {
+	public fun <init> ()V
+	public fun getName ()Ljava/lang/String;
+	public fun getPropagator (Lio/opentelemetry/sdk/autoconfigure/spi/ConfigProperties;)Lio/opentelemetry/context/propagation/TextMapPropagator;
+}
+
