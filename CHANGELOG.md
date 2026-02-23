@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Add support for `SENTRY_SAMPLE_RATE` environment variable / `sample-rate` property ([#5112](https://github.com/getsentry/sentry-java/pull/5112))
+
 ## 8.33.0
 
 ### Features
