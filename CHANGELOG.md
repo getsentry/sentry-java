@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Create `sentry-opentelemetry-otlp` module for combining OpenTelemetry SDK OTLP export with Sentry SDK ([#5100](https://github.com/getsentry/sentry-java/pull/5100))
+  - OpenTelemetry is configured to send spans to Sentry directly using an OTLP endpoint.
+  - Sentry only uses trace and span ID from OpenTelemetry (via `OpenTelemetryOtlpEventProcessor`) but will not send spans through OpenTelemetry nor use OpenTelemetry `Context` for `Scopes` propagation.
+
 ## 8.33.0
 
 ### Features
