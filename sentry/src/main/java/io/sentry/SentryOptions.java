@@ -3394,6 +3394,9 @@ public class SentryOptions {
     if (options.getPrintUncaughtStackTrace() != null) {
       setPrintUncaughtStackTrace(options.getPrintUncaughtStackTrace());
     }
+    if (options.getSampleRate() != null) {
+      setSampleRate(options.getSampleRate());
+    }
     if (options.getTracesSampleRate() != null) {
       setTracesSampleRate(options.getTracesSampleRate());
     }
