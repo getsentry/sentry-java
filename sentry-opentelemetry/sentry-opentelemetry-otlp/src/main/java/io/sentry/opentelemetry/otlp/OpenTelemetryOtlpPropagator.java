@@ -90,11 +90,16 @@ public final class OpenTelemetryOtlpPropagator implements TextMapPropagator {
       final Baggage baggage = Baggage.fromHeader(baggageString);
       final @NotNull TraceState traceState = TraceState.getDefault();
 
+      final @NotNull TraceFlags traceFlags =
+          Boolean.FALSE.equals(sentryTraceHeader.isSampled())
+              ? TraceFlags.getDefault()
+              : TraceFlags.getSampled();
+
       SpanContext otelSpanContext =
           SpanContext.createFromRemoteParent(
               sentryTraceHeader.getTraceId().toString(),
               sentryTraceHeader.getSpanId().toString(),
-              TraceFlags.getSampled(),
+              traceFlags,
               traceState);
 
       Span wrappedSpan = Span.wrap(otelSpanContext);
