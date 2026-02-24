@@ -35,11 +35,8 @@ tasks.withType<KotlinCompile>().configureEach {
 dependencies {
   implementation(projects.sentryOpentelemetry.sentryOpentelemetryOtlp)
   implementation(projects.sentryAsyncProfiler)
-  implementation(libs.otel)
   implementation(libs.otel.semconv)
   implementation(libs.otel.semconv.incubating)
-  implementation(libs.otel.extension.autoconfigure)
-  implementation(libs.otel.exporter.otlp)
   implementation(libs.otel.exporter.logging)
 
   testImplementation(kotlin(Config.kotlinStdLib))

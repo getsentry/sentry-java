@@ -17,7 +17,9 @@ tasks.withType<KotlinCompile>().configureEach {
 dependencies {
   api(projects.sentry)
 
-  compileOnly(libs.otel)
+  implementation(libs.otel)
+  implementation(libs.otel.extension.autoconfigure)
+  implementation(libs.otel.exporter.otlp)
   compileOnly(libs.otel.extension.autoconfigure.spi)
   //  compileOnly(libs.otel.semconv)
   //  compileOnly(libs.otel.semconv.incubating)
