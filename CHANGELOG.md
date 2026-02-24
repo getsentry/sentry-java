@@ -1,10 +1,15 @@
 # Changelog
 
-## 8.33.0
+## Unreleased
 
 ### Features
 
 - The `ManifestMetaDataReader` now read the `DIST` ([#5107](https://github.com/getsentry/sentry-java/pull/5107))
+
+## 8.33.0
+
+### Features
+
 - Add `installGroupsOverride` parameter to Build Distribution SDK for programmatic filtering, with support for configuration via properties file using `io.sentry.distribution.install-groups-override` ([#5066](https://github.com/getsentry/sentry-java/pull/5066))
 
 ### Fixes
