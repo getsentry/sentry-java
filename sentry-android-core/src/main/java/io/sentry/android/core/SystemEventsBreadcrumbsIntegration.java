@@ -222,11 +222,9 @@ public final class SystemEventsBreadcrumbsIntegration
         context.unregisterReceiver(receiverRef);
       } catch (Throwable exception) {
         options
-          .getLogger()
-          .log(
-            SentryLevel.ERROR,
-            exception,
-            "Failed to unregister SystemEventsBroadcastReceiver", exception);
+            .getLogger()
+            .log(
+                SentryLevel.ERROR, exception, "Failed to unregister SystemEventsBroadcastReceiver");
       }
     }
   }
