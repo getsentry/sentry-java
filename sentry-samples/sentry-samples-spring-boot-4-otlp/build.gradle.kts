@@ -56,8 +56,7 @@ dependencies {
   implementation(projects.sentryGraphql22)
   implementation(projects.sentryQuartz)
   implementation(projects.sentryAsyncProfiler)
-  implementation(projects.sentryOpentelemetry.sentryOpentelemetryOtlp)
-  implementation(libs.springboot4.otel)
+  implementation(projects.sentryOpentelemetry.sentryOpentelemetryOtlpSpring)
 
   // database query tracing
   implementation(projects.sentryJdbc)
