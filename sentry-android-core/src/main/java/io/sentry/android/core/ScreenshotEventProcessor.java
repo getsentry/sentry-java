@@ -62,7 +62,7 @@ public final class ScreenshotEventProcessor implements EventProcessor {
 
     if (options.isAttachScreenshot()) {
       addIntegrationToSdkVersion("Screenshot");
-      if (!isReplayAvailable && !options.getScreenshotOptions().getMaskViewClasses().isEmpty()) {
+      if (!isReplayAvailable && !options.getScreenshot().getMaskViewClasses().isEmpty()) {
         options
             .getLogger()
             .log(SentryLevel.WARNING, "Screenshot masking requires sentry-android-replay module");
@@ -71,7 +71,7 @@ public final class ScreenshotEventProcessor implements EventProcessor {
   }
 
   private boolean isMaskingEnabled() {
-    return !options.getScreenshotOptions().getMaskViewClasses().isEmpty() && isReplayAvailable;
+    return !options.getScreenshot().getMaskViewClasses().isEmpty() && isReplayAvailable;
   }
 
   @Override
@@ -193,8 +193,8 @@ public final class ScreenshotEventProcessor implements EventProcessor {
     }
 
     final ViewHierarchyNode rootNode =
-        ViewHierarchyNode.Companion.fromView(rootView, null, 0, options.getScreenshotOptions());
-    ViewsKt.traverse(rootView, rootNode, options.getScreenshotOptions(), options.getLogger());
+        ViewHierarchyNode.Companion.fromView(rootView, null, 0, options.getScreenshot());
+    ViewsKt.traverse(rootView, rootNode, options.getScreenshot(), options.getLogger());
     return rootNode;
   }
 

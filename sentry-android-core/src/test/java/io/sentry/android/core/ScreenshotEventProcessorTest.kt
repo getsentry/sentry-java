@@ -326,7 +326,7 @@ class ScreenshotEventProcessorTest {
   @Test
   fun `when masking is configured and VH capture fails, no screenshot is attached`() {
     val sut = fixture.getSut(attachScreenshot = true, isReplayAvailable = true)
-    fixture.options.screenshotOptions.setMaskAllText(true)
+    fixture.options.screenshot.setMaskAllText(true)
     val hint = Hint()
 
     // No activity set, so VH capture will return null (no rootView)
@@ -341,7 +341,7 @@ class ScreenshotEventProcessorTest {
   @Test
   fun `when masking is configured but replay is not available, screenshot is still captured without masking`() {
     val sut = fixture.getSut(attachScreenshot = true, isReplayAvailable = false)
-    fixture.options.screenshotOptions.setMaskAllText(true)
+    fixture.options.screenshot.setMaskAllText(true)
     val hint = Hint()
 
     CurrentActivityHolder.getInstance().setActivity(fixture.activity)
@@ -354,7 +354,7 @@ class ScreenshotEventProcessorTest {
 
   @Test
   fun `when masking is configured from background thread, VH is captured on main thread`() {
-    fixture.options.screenshotOptions.setMaskAllText(true)
+    fixture.options.screenshot.setMaskAllText(true)
     val sut = fixture.getSut(attachScreenshot = true, isReplayAvailable = true)
     whenever(fixture.threadChecker.isMainThread).thenReturn(false)
 
@@ -379,16 +379,14 @@ class ScreenshotEventProcessorTest {
   @Test
   fun `snapshot - screenshot with text masking enabled`() {
     val bytes =
-      processEventForSnapshots("screenshot_mask_text") { it.screenshotOptions.setMaskAllText(true) }
+      processEventForSnapshots("screenshot_mask_text") { it.screenshot.setMaskAllText(true) }
     assertNotNull(bytes)
   }
 
   @Test
   fun `snapshot - screenshot with image masking enabled`() {
     val bytes =
-      processEventForSnapshots("screenshot_mask_images") {
-        it.screenshotOptions.setMaskAllImages(true)
-      }
+      processEventForSnapshots("screenshot_mask_images") { it.screenshot.setMaskAllImages(true) }
     assertNotNull(bytes)
   }
 
@@ -396,8 +394,8 @@ class ScreenshotEventProcessorTest {
   fun `snapshot - screenshot with all masking enabled`() {
     val bytes =
       processEventForSnapshots("screenshot_mask_all") {
-        it.screenshotOptions.setMaskAllText(true)
-        it.screenshotOptions.setMaskAllImages(true)
+        it.screenshot.setMaskAllText(true)
+        it.screenshot.setMaskAllImages(true)
       }
     assertNotNull(bytes)
   }
@@ -407,7 +405,7 @@ class ScreenshotEventProcessorTest {
     val bytes =
       processEventForSnapshots("screenshot_mask_custom_view") {
         // CustomView draws white, so masking it should draw black on top
-        it.screenshotOptions.addMaskViewClass(CustomView::class.java.name)
+        it.screenshot.addMaskViewClass(CustomView::class.java.name)
       }
     assertNotNull(bytes)
   }

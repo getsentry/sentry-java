@@ -666,10 +666,10 @@ final class ManifestMetadataReader {
 
         // Screenshot masking options (default to false for backwards compatibility)
         options
-            .getScreenshotOptions()
+            .getScreenshot()
             .setMaskAllText(readBool(metadata, logger, SCREENSHOT_MASK_ALL_TEXT, false));
         options
-            .getScreenshotOptions()
+            .getScreenshot()
             .setMaskAllImages(readBool(metadata, logger, SCREENSHOT_MASK_ALL_IMAGES, false));
       }
       options

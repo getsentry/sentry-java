@@ -250,7 +250,7 @@ public final class SentryAndroidOptions extends SentryOptions {
    * <p>Note: Screenshot masking requires the {@code sentry-android-replay} module to be present at
    * runtime. If the replay module is not available, screenshots will be captured without masking.
    */
-  private final @NotNull SentryScreenshotOptions screenshotOptions = new SentryScreenshotOptions();
+  private final @NotNull SentryScreenshotOptions screenshot = new SentryScreenshotOptions();
 
   public SentryAndroidOptions() {
     setSentryClientName(BuildConfig.SENTRY_ANDROID_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
@@ -691,8 +691,8 @@ public final class SentryAndroidOptions extends SentryOptions {
    *
    * @return the screenshot masking options
    */
-  public @NotNull SentryScreenshotOptions getScreenshotOptions() {
-    return screenshotOptions;
+  public @NotNull SentryScreenshotOptions getScreenshot() {
+    return screenshot;
   }
 
   static class AndroidUserFeedbackIDialogHandler implements SentryFeedbackOptions.IDialogHandler {

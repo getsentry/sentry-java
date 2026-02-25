@@ -2302,9 +2302,7 @@ class ManifestMetadataReaderTest {
     ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
     // Assert
-    assertTrue(
-      fixture.options.screenshotOptions.maskViewClasses.contains("android.widget.TextView")
-    )
+    assertTrue(fixture.options.screenshot.maskViewClasses.contains("android.widget.TextView"))
   }
 
   @Test
@@ -2317,9 +2315,7 @@ class ManifestMetadataReaderTest {
     ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
     // Assert
-    assertTrue(
-      fixture.options.screenshotOptions.maskViewClasses.contains("android.widget.ImageView")
-    )
+    assertTrue(fixture.options.screenshot.maskViewClasses.contains("android.widget.ImageView"))
   }
 
   @Test
@@ -2331,9 +2327,7 @@ class ManifestMetadataReaderTest {
     ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
     // Assert
-    assertFalse(
-      fixture.options.screenshotOptions.maskViewClasses.contains("android.widget.TextView")
-    )
+    assertFalse(fixture.options.screenshot.maskViewClasses.contains("android.widget.TextView"))
   }
 
   @Test
@@ -2345,9 +2339,7 @@ class ManifestMetadataReaderTest {
     ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
     // Assert
-    assertFalse(
-      fixture.options.screenshotOptions.maskViewClasses.contains("android.widget.ImageView")
-    )
+    assertFalse(fixture.options.screenshot.maskViewClasses.contains("android.widget.ImageView"))
   }
 
   @Test
@@ -2364,13 +2356,9 @@ class ManifestMetadataReaderTest {
     ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
     // Assert
-    assertTrue(
-      fixture.options.screenshotOptions.maskViewClasses.contains("android.widget.TextView")
-    )
-    assertTrue(
-      fixture.options.screenshotOptions.maskViewClasses.contains("android.widget.ImageView")
-    )
+    assertTrue(fixture.options.screenshot.maskViewClasses.contains("android.widget.TextView"))
+    assertTrue(fixture.options.screenshot.maskViewClasses.contains("android.widget.ImageView"))
     // maskAllImages should also add WebView
-    assertTrue(fixture.options.screenshotOptions.maskViewClasses.contains("android.webkit.WebView"))
+    assertTrue(fixture.options.screenshot.maskViewClasses.contains("android.webkit.WebView"))
   }
 }
