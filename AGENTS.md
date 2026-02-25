@@ -1,8 +1,18 @@
-# CLAUDE.md
+# AGENTS.md
+
+This file provides guidance to AI coding agents when working with code in this repository.
 
 ## STOP — Required Reading (Do This First)
 
-Before doing ANYTHING else (including answering questions), you MUST use the Read tool to load [AGENTS.md](AGENTS.md) and follow ALL of its instructions, including reading the required `.cursor/rules/*.mdc` files it references.
+Before doing ANYTHING else (including answering questions), you MUST use the Read tool to load these files:
+1. `.cursor/rules/coding.mdc`
+2. `.cursor/rules/overview_dev.mdc`
+
+Then identify and read any topically relevant `.cursor/rules/*.mdc` files for the area you're working on (e.g., `opentelemetry.mdc` for OTel work, `metrics.mdc` for metrics work). Use the Glob tool on `.cursor/rules/*.mdc` to discover available rule files.
+
+Do NOT skip this step. Do NOT proceed without reading these files first.
+
+## Project Overview
 
 This is the Sentry Java/Android SDK - a comprehensive error monitoring and performance tracking SDK for Java and Android applications. The repository contains multiple modules for different integrations and platforms.
 
@@ -101,7 +111,7 @@ The repository is organized into multiple modules:
 - **Reactive**: `sentry-reactor`, `sentry-ktor-client`
 - **Monitoring**: `sentry-opentelemetry*`, `sentry-quartz`
 
-### Utility Modules  
+### Utility Modules
 - **`sentry-test-support`** - Shared test utilities
 - **`sentry-system-test-support`** - System testing infrastructure
 - **`sentry-samples`** - Example applications
@@ -127,45 +137,12 @@ The repository is organized into multiple modules:
 - System tests validate end-to-end functionality with sample applications
 - Coverage reports are generated for both JaCoCo (Java/Android) and Kover (KMP modules)
 
-### Dependency Management
-- All dependencies must be declared in `gradle/libs.versions.toml` (Gradle version catalog)
-- Reference dependencies in build files using the `libs.` accessor (e.g., `libs.dropbox.differ`)
-- Never hardcode version strings directly in `build.gradle.kts` files
-
 ### Contributing Guidelines
 1. Follow existing code style and language
 2. Do not modify API files (e.g. sentry.api) manually - run `./gradlew apiDump` to regenerate them
 3. Write comprehensive tests
 4. New features must be **opt-in by default** - extend `SentryOptions` or similar Option classes with getters/setters
 5. Consider backwards compatibility
-
-## Getting PR Information
-
-Use `gh pr view` to get PR details from the current branch. This is needed when adding changelog entries, which require the PR number.
-
-```bash
-# Get PR number for current branch
-gh pr view --json number -q '.number'
-
-# Get PR number for a specific branch
-gh pr view <branch-name> --json number -q '.number'
-
-# Get PR URL
-gh pr view --json url -q '.url'
-```
-
-## Domain-Specific Knowledge Areas
-
-For complex SDK functionality, refer to the detailed cursor rules in `.cursor/rules/`:
-
-- **Scopes and Hub Management**: See `.cursor/rules/scopes.mdc` for details on `IScopes`, scope types (global/isolation/current), thread-local storage, forking behavior, and v7→v8 migration patterns
-- **Event Deduplication**: See `.cursor/rules/deduplication.mdc` for `DuplicateEventDetectionEventProcessor` and `enableDeduplication` option
-- **Offline Behavior and Caching**: See `.cursor/rules/offline.mdc` for envelope caching, retry logic, transport behavior, and Android vs JVM differences
-- **OpenTelemetry Integration**: See `.cursor/rules/opentelemetry.mdc` for agent vs agentless modes, span processing, context propagation, and configuration
-- **System Testing (E2E)**: See `.cursor/rules/e2e_tests.mdc` for system test framework, mock server setup, and CI workflows
-
-### Usage Pattern
-When working on these specific areas, read the corresponding cursor rule file first to understand the detailed architecture, then proceed with implementation.
 
 ## Useful Resources
 
@@ -174,4 +151,3 @@ When working on these specific areas, read the corresponding cursor rule file fi
 - Git commit message conventions: https://develop.sentry.dev/engineering-practices/commit-messages/
 
 This SDK is production-ready and used by thousands of applications. Changes should be thoroughly tested and maintain backwards compatibility.
-Do NOT skip this step. Do NOT proceed without reading these files first.

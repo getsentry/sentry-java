@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Fixes
+
+- Fix crash when unregistering `SystemEventsBroadcastReceiver` with try-catch block. ([#5106](https://github.com/getsentry/sentry-java/pull/5106))
+
+## 8.33.0
+
 ### Features
 
 - Add screenshot masking support using view hierarchy ([#5077](https://github.com/getsentry/sentry-java/pull/5077))
