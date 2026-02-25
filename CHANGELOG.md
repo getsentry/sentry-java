@@ -2,6 +2,28 @@
 
 ## Unreleased
 
+### Features
+
+- Add screenshot masking support using view hierarchy ([#5077](https://github.com/getsentry/sentry-java/pull/5077))
+  - Masks sensitive content (text, images) in error screenshots using the same view hierarchy approach as Session Replay
+  - Requires the `sentry-android-replay` module to be present at runtime for masking to work
+  - Enable via code:
+    ```kotlin
+    SentryAndroid.init(context) { options ->
+        options.isAttachScreenshot = true
+        options.screenshot.setMaskAllText(true)
+        options.screenshot.setMaskAllImages(true)
+        // Or mask specific view classes
+        options.screenshot.addMaskViewClass("com.example.MyCustomView")
+    }
+    ```
+  - Or via `AndroidManifest.xml`:
+    ```xml
+    <meta-data android:name="io.sentry.attach-screenshot" android:value="true" />
+    <meta-data android:name="io.sentry.screenshot.mask-all-text" android:value="true" />
+    <meta-data android:name="io.sentry.screenshot.mask-all-images" android:value="true" />
+    ```
+
 ### Fixes
 
 - Fix crash when unregistering `SystemEventsBroadcastReceiver` with try-catch block. ([#5106](https://github.com/getsentry/sentry-java/pull/5106))
@@ -10,7 +32,6 @@
 
 ### Features
 
-- Add screenshot masking support using view hierarchy ([#5077](https://github.com/getsentry/sentry-java/pull/5077))
 - Add `installGroupsOverride` parameter to Build Distribution SDK for programmatic filtering, with support for configuration via properties file using `io.sentry.distribution.install-groups-override` ([#5066](https://github.com/getsentry/sentry-java/pull/5066))
 
 ### Fixes
