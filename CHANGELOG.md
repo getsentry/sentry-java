@@ -5,6 +5,7 @@
 ### Fixes
 
 - Fix crash when unregistering `SystemEventsBroadcastReceiver` with try-catch block. ([#5106](https://github.com/getsentry/sentry-java/pull/5106))
+- Log an actionable error message when Relay returns HTTP 413 (Content Too Large) ([#5115](https://github.com/getsentry/sentry-java/pull/5115))
 
 ## 8.33.0
 
