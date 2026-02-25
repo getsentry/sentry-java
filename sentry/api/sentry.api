@@ -4793,6 +4793,7 @@ public final class io/sentry/clientreport/DiscardReason : java/lang/Enum {
 	public static final field QUEUE_OVERFLOW Lio/sentry/clientreport/DiscardReason;
 	public static final field RATELIMIT_BACKOFF Lio/sentry/clientreport/DiscardReason;
 	public static final field SAMPLE_RATE Lio/sentry/clientreport/DiscardReason;
+	public static final field SEND_ERROR Lio/sentry/clientreport/DiscardReason;
 	public fun getReason ()Ljava/lang/String;
 	public static fun valueOf (Ljava/lang/String;)Lio/sentry/clientreport/DiscardReason;
 	public static fun values ()[Lio/sentry/clientreport/DiscardReason;
