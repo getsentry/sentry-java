@@ -35,6 +35,7 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
 
   public static final String LAST_ANR_REPORT = "last_anr_report";
   public static final String LAST_TOMBSTONE_REPORT = "last_tombstone_report";
+  public static final String LAST_APP_START_REPORT = "last_app_start_report";
 
   private final @NotNull ICurrentDateProvider currentDateProvider;
 
@@ -209,6 +210,29 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
     return lastReportedMarker(options, LAST_TOMBSTONE_REPORT, LAST_TOMBSTONE_MARKER_LABEL);
   }
 
+  public static @Nullable Long lastReportedAppStart(final @NotNull SentryOptions options) {
+    return lastReportedMarker(options, LAST_APP_START_REPORT, LAST_APP_START_MARKER_LABEL);
+  }
+
+  public static void storeAppStartTimestamp(
+      final @NotNull SentryOptions options, final long timestamp) {
+    final String cacheDirPath = options.getCacheDirPath();
+    if (cacheDirPath == null) {
+      options
+          .getLogger()
+          .log(DEBUG, "Cache dir path is null, the App Start marker will not be written");
+      return;
+    }
+
+    final File marker = new File(cacheDirPath, LAST_APP_START_REPORT);
+    try (final OutputStream outputStream = new FileOutputStream(marker)) {
+      outputStream.write(String.valueOf(timestamp).getBytes(UTF_8));
+      outputStream.flush();
+    } catch (Throwable e) {
+      options.getLogger().log(ERROR, "Error writing the App Start marker to the disk", e);
+    }
+  }
+
   private static final class TimestampMarkerHandler<T> {
     interface TimestampExtractor<T> {
       @NotNull
@@ -254,6 +278,7 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
 
   public static final String LAST_TOMBSTONE_MARKER_LABEL = "Tombstone";
   public static final String LAST_ANR_MARKER_LABEL = "ANR";
+  public static final String LAST_APP_START_MARKER_LABEL = "App Start";
   private static final List<TimestampMarkerHandler<?>> TIMESTAMP_MARKER_HANDLERS =
       Arrays.asList(
           new TimestampMarkerHandler<>(
