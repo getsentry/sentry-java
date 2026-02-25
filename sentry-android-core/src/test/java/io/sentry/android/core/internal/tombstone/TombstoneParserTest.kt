@@ -14,41 +14,40 @@ import org.mockito.kotlin.mock
 class TombstoneParserTest {
   val expectedRegisters =
     setOf(
+      "x0",
+      "x1",
+      "x2",
+      "x3",
+      "x4",
+      "x5",
+      "x6",
+      "x7",
       "x8",
       "x9",
-      "esr",
-      "lr",
-      "pst",
       "x10",
-      "x12",
       "x11",
-      "x14",
+      "x12",
       "x13",
-      "x16",
+      "x14",
       "x15",
-      "sp",
-      "x18",
+      "x16",
       "x17",
+      "x18",
       "x19",
-      "pc",
-      "x21",
       "x20",
-      "x0",
-      "x23",
-      "x1",
+      "x21",
       "x22",
-      "x2",
-      "x25",
-      "x3",
+      "x23",
       "x24",
-      "x4",
-      "x27",
-      "x5",
+      "x25",
       "x26",
-      "x6",
-      "x29",
-      "x7",
+      "x27",
       "x28",
+      "x29",
+      "lr",
+      "sp",
+      "pc",
+      "pst",
     )
 
   val inAppIncludes = arrayListOf("io.sentry.samples.android")
@@ -538,7 +537,9 @@ class TombstoneParserTest {
         }
       }
 
-      assertNotNull(thread.stacktrace!!.registers)
+      assert(thread.stacktrace!!.registers!!.keys.containsAll(expectedRegisters)) {
+        "Thread ${thread.id} is missing registers: ${expectedRegisters - thread.stacktrace!!.registers!!.keys}"
+      }
     }
     assert(hasCrashedThread) { "No crashed thread found matching exception threadId" }
 
