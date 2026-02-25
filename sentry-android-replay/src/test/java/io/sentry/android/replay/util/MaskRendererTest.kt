@@ -317,21 +317,8 @@ class MaskRendererTest {
   @Test
   fun `close recycles internal bitmap`() {
     val renderer = MaskRenderer()
-    // Trigger lazy initialization by calling renderMasks
-    val bitmap = Bitmap.createBitmap(10, 10, Bitmap.Config.ARGB_8888)
-    val node =
-      GenericViewHierarchyNode(
-        x = 0f,
-        y = 0f,
-        width = 10,
-        height = 10,
-        elevation = 0f,
-        distance = 0,
-        shouldMask = false,
-        isVisible = true,
-        visibleRect = Rect(0, 0, 10, 10),
-      )
-    renderer.renderMasks(bitmap, node, null)
+    // Trigger lazy initialization
+    renderer.singlePixelBitmap
 
     renderer.close()
     assertTrue(renderer.singlePixelBitmap.isRecycled)
