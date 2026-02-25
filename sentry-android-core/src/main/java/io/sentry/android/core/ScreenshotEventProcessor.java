@@ -182,20 +182,25 @@ public final class ScreenshotEventProcessor implements EventProcessor {
   }
 
   private @Nullable ViewHierarchyNode buildViewHierarchy(final @NotNull Activity activity) {
-    final @Nullable View rootView =
-        activity.getWindow() != null
-                && activity.getWindow().peekDecorView() != null
-                && activity.getWindow().peekDecorView().getRootView() != null
-            ? activity.getWindow().peekDecorView().getRootView()
-            : null;
-    if (rootView == null) {
+    try {
+      final @Nullable View rootView =
+          activity.getWindow() != null
+                  && activity.getWindow().peekDecorView() != null
+                  && activity.getWindow().peekDecorView().getRootView() != null
+              ? activity.getWindow().peekDecorView().getRootView()
+              : null;
+      if (rootView == null) {
+        return null;
+      }
+
+      final ViewHierarchyNode rootNode =
+          ViewHierarchyNode.Companion.fromView(rootView, null, 0, options.getScreenshot());
+      ViewsKt.traverse(rootView, rootNode, options.getScreenshot(), options.getLogger());
+      return rootNode;
+    } catch (Throwable e) {
+      options.getLogger().log(SentryLevel.ERROR, "Failed to build view hierarchy", e);
       return null;
     }
-
-    final ViewHierarchyNode rootNode =
-        ViewHierarchyNode.Companion.fromView(rootView, null, 0, options.getScreenshot());
-    ViewsKt.traverse(rootView, rootNode, options.getScreenshot(), options.getLogger());
-    return rootNode;
   }
 
   private @Nullable Bitmap applyMasking(

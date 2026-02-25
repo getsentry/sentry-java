@@ -26,8 +26,9 @@ internal class MaskRenderer : Closeable {
   }
 
   // Single pixel bitmap for dominant color sampling (averaging the region)
-  internal val singlePixelBitmap: Bitmap by
+  private val lazySinglePixelBitmap: Lazy<Bitmap> =
     lazy(NONE) { Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888) }
+  internal val singlePixelBitmap: Bitmap by lazySinglePixelBitmap
   private val singlePixelBitmapCanvas: Canvas by lazy(NONE) { Canvas(singlePixelBitmap) }
   private val maskingPaint by lazy(NONE) { Paint() }
 
@@ -110,7 +111,7 @@ internal class MaskRenderer : Closeable {
 
   /** Releases resources. Call when done with this renderer. */
   override fun close() {
-    if (!singlePixelBitmap.isRecycled) {
+    if (lazySinglePixelBitmap.isInitialized() && !singlePixelBitmap.isRecycled) {
       singlePixelBitmap.recycle()
     }
   }
