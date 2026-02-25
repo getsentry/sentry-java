@@ -156,16 +156,16 @@ public final class ScreenshotEventProcessor implements EventProcessor {
     final AtomicReference<ViewHierarchyNode> result = new AtomicReference<>(null);
     final CountDownLatch latch = new CountDownLatch(1);
 
-    activity.runOnUiThread(
-        () -> {
-          try {
-            result.set(buildViewHierarchy(activity));
-          } finally {
-            latch.countDown();
-          }
-        });
-
     try {
+      activity.runOnUiThread(
+          () -> {
+            try {
+              result.set(buildViewHierarchy(activity));
+            } finally {
+              latch.countDown();
+            }
+          });
+
       if (!latch.await(MASKING_TIMEOUT_MS, TimeUnit.MILLISECONDS)) {
         options
             .getLogger()
