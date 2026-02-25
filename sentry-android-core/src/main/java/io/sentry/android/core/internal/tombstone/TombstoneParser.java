@@ -135,31 +135,27 @@ public class TombstoneParser implements Closeable {
       final SentryStackFrame stackFrame = new SentryStackFrame();
       if (isJavaFrame(frame)) {
         stackFrame.setPlatform("java");
+        final String module = extractJavaModuleName(frame.getFunctionName());
         stackFrame.setFunction(extractJavaFunctionName(frame.getFunctionName()));
-        stackFrame.setModule(extractJavaModuleName(frame.getFunctionName()));
+        stackFrame.setModule(module);
+
+        // For Java frames, check in-app against the module (package name), which is what
+        // inAppIncludes/inAppExcludes are designed to match against.
+        @Nullable
+        Boolean inApp =
+            (module == null || module.isEmpty())
+                ? Boolean.FALSE
+                : SentryStackTraceFactory.isInApp(module, inAppIncludes, inAppExcludes);
+        stackFrame.setInApp(inApp != null && inApp);
       } else {
         stackFrame.setPackage(frame.getFileName());
         stackFrame.setFunction(frame.getFunctionName());
         stackFrame.setInstructionAddr(formatHex(frame.getPc()));
+
+        final boolean isInNativeLibraryDir =
+            nativeLibraryDir != null && frame.getFileName().startsWith(nativeLibraryDir);
+        stackFrame.setInApp(isInNativeLibraryDir);
       }
-
-      // inAppIncludes/inAppExcludes filter by Java/Kotlin package names, which don't overlap
-      // with native C/C++ function names (e.g., "crash", "__libc_init"). For native frames,
-      // isInApp() returns null, making nativeLibraryDir the effective in-app check.
-      // Protobuf returns "" for unset function names, which would incorrectly return true
-      // from isInApp(), so we treat empty as false to let nativeLibraryDir decide.
-      final String functionName = frame.getFunctionName();
-      @Nullable
-      Boolean inApp =
-          functionName.isEmpty()
-              ? Boolean.FALSE
-              : SentryStackTraceFactory.isInApp(functionName, inAppIncludes, inAppExcludes);
-
-      final boolean isInNativeLibraryDir =
-          nativeLibraryDir != null && frame.getFileName().startsWith(nativeLibraryDir);
-      inApp = (inApp != null && inApp) || isInNativeLibraryDir;
-
-      stackFrame.setInApp(inApp);
       frames.add(0, stackFrame);
     }
 
@@ -180,19 +176,50 @@ public class TombstoneParser implements Closeable {
     return stacktrace;
   }
 
+  /**
+   * Normalizes a PrettyMethod-formatted function name by stripping the return type prefix and
+   * parameter list suffix that dex2oat may include when compiling AOT frames into the symtab.
+   *
+   * <p>e.g. "void com.example.MyClass.myMethod(int, java.lang.String)" ->
+   * "com.example.MyClass.myMethod"
+   */
+  private static String normalizeFunctionName(String fqFunctionName) {
+    String normalized = fqFunctionName.trim();
+
+    // When dex2oat compiles AOT frames, PrettyMethod with_signature format may be used:
+    // "void com.example.MyClass.myMethod(int, java.lang.String)"
+    // A space is never part of a normal fully-qualified method name, so its presence
+    // reliably indicates the with_signature format.
+    final int spaceIndex = normalized.indexOf(' ');
+    if (spaceIndex >= 0) {
+      // Strip return type prefix
+      normalized = normalized.substring(spaceIndex + 1).trim();
+
+      // Strip parameter list suffix
+      final int parenIndex = normalized.indexOf('(');
+      if (parenIndex >= 0) {
+        normalized = normalized.substring(0, parenIndex);
+      }
+    }
+
+    return normalized;
+  }
+
   private static @Nullable String extractJavaModuleName(String fqFunctionName) {
-    if (fqFunctionName.contains(".")) {
-      return fqFunctionName.substring(0, fqFunctionName.lastIndexOf("."));
+    final String normalized = normalizeFunctionName(fqFunctionName);
+    if (normalized.contains(".")) {
+      return normalized.substring(0, normalized.lastIndexOf("."));
     } else {
       return "";
     }
   }
 
   private static @Nullable String extractJavaFunctionName(String fqFunctionName) {
-    if (fqFunctionName.contains(".")) {
-      return fqFunctionName.substring(fqFunctionName.lastIndexOf(".") + 1);
+    final String normalized = normalizeFunctionName(fqFunctionName);
+    if (normalized.contains(".")) {
+      return normalized.substring(normalized.lastIndexOf(".") + 1);
     } else {
-      return fqFunctionName;
+      return normalized;
     }
   }
 
