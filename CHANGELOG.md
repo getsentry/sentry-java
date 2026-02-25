@@ -2,10 +2,16 @@
 
 ## Unreleased
 
+### Features
+
 - Create `sentry-opentelemetry-otlp` and `sentry-opentelemetry-otlp-spring` modules for combining OpenTelemetry SDK OTLP export with Sentry SDK ([#5100](https://github.com/getsentry/sentry-java/pull/5100))
   - OpenTelemetry is configured to send spans to Sentry directly using an OTLP endpoint.
   - Sentry only uses trace and span ID from OpenTelemetry (via `OpenTelemetryOtlpEventProcessor`) but will not send spans through OpenTelemetry nor use OpenTelemetry `Context` for `Scopes` propagation.
   - See the OTLP setup docs for [Java](https://docs.sentry.io/platforms/java/opentelemetry/setup/otlp/) and [Spring Boot](https://docs.sentry.io/platforms/java/guides/spring-boot/opentelemetry/setup/otlp/) for installation and configuration instructions.
+
+### Fixes
+
+- Fix crash when unregistering `SystemEventsBroadcastReceiver` with try-catch block. ([#5106](https://github.com/getsentry/sentry-java/pull/5106))
 
 ## 8.33.0
 
