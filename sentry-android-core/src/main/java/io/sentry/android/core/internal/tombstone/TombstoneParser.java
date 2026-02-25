@@ -33,6 +33,20 @@ public class TombstoneParser implements Closeable {
   @Nullable private final String nativeLibraryDir;
   private final Map<String, String> excTypeValueMap = new HashMap<>();
 
+  private static boolean isJavaFrame(@NonNull final TombstoneProtos.BacktraceFrame frame) {
+    final String fileName = frame.getFileName();
+    return !fileName.endsWith(".so")
+        && !fileName.endsWith("app_process64")
+        && (fileName.endsWith(".jar")
+            || fileName.endsWith(".odex")
+            || fileName.endsWith(".vdex")
+            || fileName.endsWith(".oat")
+            || fileName.startsWith("[anon:dalvik-")
+            || fileName.startsWith("<anonymous:")
+            || fileName.startsWith("[anon_shmem:dalvik-")
+            || fileName.startsWith("/memfd:jit-cache"));
+  }
+
   private static String formatHex(long value) {
     return String.format("0x%x", value);
   }
@@ -108,7 +122,8 @@ public class TombstoneParser implements Closeable {
     final List<SentryStackFrame> frames = new ArrayList<>();
 
     for (TombstoneProtos.BacktraceFrame frame : thread.getCurrentBacktraceList()) {
-      if (frame.getFileName().endsWith("libart.so")) {
+      if (frame.getFileName().endsWith("libart.so")
+          || Objects.equals(frame.getFunctionName(), "art_jni_trampoline")) {
         // We ignore all ART frames for time being because they aren't actionable for app developers
         continue;
       }
@@ -118,9 +133,15 @@ public class TombstoneParser implements Closeable {
         continue;
       }
       final SentryStackFrame stackFrame = new SentryStackFrame();
-      stackFrame.setPackage(frame.getFileName());
-      stackFrame.setFunction(frame.getFunctionName());
-      stackFrame.setInstructionAddr(formatHex(frame.getPc()));
+      if (isJavaFrame(frame)) {
+        stackFrame.setPlatform("java");
+        stackFrame.setFunction(extractJavaFunctionName(frame.getFunctionName()));
+        stackFrame.setModule(extractJavaModuleName(frame.getFunctionName()));
+      } else {
+        stackFrame.setPackage(frame.getFileName());
+        stackFrame.setFunction(frame.getFunctionName());
+        stackFrame.setInstructionAddr(formatHex(frame.getPc()));
+      }
 
       // inAppIncludes/inAppExcludes filter by Java/Kotlin package names, which don't overlap
       // with native C/C++ function names (e.g., "crash", "__libc_init"). For native frames,
@@ -157,6 +178,22 @@ public class TombstoneParser implements Closeable {
     stacktrace.setRegisters(registers);
 
     return stacktrace;
+  }
+
+  private static @Nullable String extractJavaModuleName(String fqFunctionName) {
+    if (fqFunctionName.contains(".")) {
+      return fqFunctionName.substring(0, fqFunctionName.lastIndexOf("."));
+    } else {
+      return "";
+    }
+  }
+
+  private static @Nullable String extractJavaFunctionName(String fqFunctionName) {
+    if (fqFunctionName.contains(".")) {
+      return fqFunctionName.substring(fqFunctionName.lastIndexOf(".") + 1);
+    } else {
+      return fqFunctionName;
+    }
   }
 
   @NonNull
@@ -296,7 +333,7 @@ public class TombstoneParser implements Closeable {
         // Check for duplicated mappings: On Android, the same ELF can have multiple
         // mappings at offset 0 with different permissions (r--p, r-xp, r--p).
         // If it's the same file as the current module, just extend it.
-        if (currentModule != null && mappingName.equals(currentModule.mappingName)) {
+        if (currentModule != null && Objects.equals(mappingName, currentModule.mappingName)) {
           currentModule.extendTo(mapping.getEndAddress());
           continue;
         }
@@ -311,7 +348,7 @@ public class TombstoneParser implements Closeable {
 
         // Start a new module
         currentModule = new ModuleAccumulator(mapping);
-      } else if (currentModule != null && mappingName.equals(currentModule.mappingName)) {
+      } else if (currentModule != null && Objects.equals(mappingName, currentModule.mappingName)) {
         // Extend the current module with this mapping (same file, continuation)
         currentModule.extendTo(mapping.getEndAddress());
       }

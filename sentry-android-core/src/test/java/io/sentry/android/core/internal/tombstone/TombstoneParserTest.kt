@@ -101,14 +101,20 @@ class TombstoneParserTest {
 
       for (frame in thread.stacktrace!!.frames!!) {
         assertNotNull(frame.function)
-        assertNotNull(frame.`package`)
-        assertNotNull(frame.instructionAddr)
+        if (frame.platform == "java") {
+          // Java frames have module instead of package/instructionAddr
+          assertNotNull(frame.module)
+        } else {
+          assertNotNull(frame.`package`)
+          assertNotNull(frame.instructionAddr)
+        }
 
         if (thread.id == crashedThreadId) {
           if (frame.isInApp!!) {
             assert(
-              frame.function!!.startsWith(inAppIncludes[0]) ||
-                frame.`package`!!.startsWith(nativeLibraryDir)
+              frame.module?.startsWith(inAppIncludes[0]) == true ||
+                frame.function!!.startsWith(inAppIncludes[0]) ||
+                frame.`package`?.startsWith(nativeLibraryDir) == true
             )
           }
         }
@@ -427,6 +433,35 @@ class TombstoneParserTest {
         assertNotNull(frame.isInApp)
       }
     }
+  }
+
+  @Test
+  fun `java frames snapshot test for all threads`() {
+    val tombstoneStream =
+      GZIPInputStream(TombstoneParserTest::class.java.getResourceAsStream("/tombstone.pb.gz"))
+    val parser = TombstoneParser(tombstoneStream, inAppIncludes, inAppExcludes, nativeLibraryDir)
+    val event = parser.parse()
+
+    val logger = mock<ILogger>()
+    val writer = StringWriter()
+    val jsonWriter = JsonObjectWriter(writer, 100)
+    jsonWriter.beginObject()
+    for (thread in event.threads!!) {
+      val javaFrames = thread.stacktrace!!.frames!!.filter { it.platform == "java" }
+      if (javaFrames.isEmpty()) continue
+      jsonWriter.name(thread.id.toString())
+      jsonWriter.beginArray()
+      for (frame in javaFrames) {
+        frame.serialize(jsonWriter, logger)
+      }
+      jsonWriter.endArray()
+    }
+    jsonWriter.endObject()
+
+    val actualJson = writer.toString()
+    val expectedJson = readGzippedResourceFile("/tombstone_java_frames.json.gz")
+
+    assertEquals(expectedJson, actualJson)
   }
 
   private fun serializeDebugMeta(debugMeta: DebugMeta): String {
