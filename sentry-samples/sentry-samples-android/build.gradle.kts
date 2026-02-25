@@ -7,6 +7,7 @@ plugins {
   id("com.android.application")
   alias(libs.plugins.kotlin.android)
   alias(libs.plugins.kotlin.compose)
+  alias(libs.plugins.sentry)
 }
 
 android {
@@ -116,6 +117,12 @@ android {
   @Suppress("UnstableApiUsage") packagingOptions { jniLibs { useLegacyPackaging = true } }
 }
 
+sentry {
+  autoUploadProguardMapping = false
+  autoUploadNativeSymbols = false
+  autoUploadSourceContext = false
+}
+
 dependencies {
   implementation(
     kotlin(Config.kotlinStdLib, org.jetbrains.kotlin.config.KotlinCompilerVersion.VERSION)
@@ -124,7 +131,8 @@ dependencies {
   implementation(projects.sentryAndroid)
   implementation(projects.sentryAndroidFragment)
   implementation(projects.sentryAndroidTimber)
-  implementation(projects.sentryCompose)
+  // implementation(projects.sentryCompose) // TODO: re-enable, disabled due to R8 duplicate class
+  // error with KMP module
   implementation(projects.sentryKotlinExtensions)
   implementation(projects.sentryOkhttp)
   implementation(projects.sentrySpotlight)

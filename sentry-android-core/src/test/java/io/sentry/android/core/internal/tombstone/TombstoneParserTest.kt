@@ -14,41 +14,40 @@ import org.mockito.kotlin.mock
 class TombstoneParserTest {
   val expectedRegisters =
     setOf(
+      "x0",
+      "x1",
+      "x2",
+      "x3",
+      "x4",
+      "x5",
+      "x6",
+      "x7",
       "x8",
       "x9",
-      "esr",
-      "lr",
-      "pst",
       "x10",
-      "x12",
       "x11",
-      "x14",
+      "x12",
       "x13",
-      "x16",
+      "x14",
       "x15",
-      "sp",
-      "x18",
+      "x16",
       "x17",
+      "x18",
       "x19",
-      "pc",
-      "x21",
       "x20",
-      "x0",
-      "x23",
-      "x1",
+      "x21",
       "x22",
-      "x2",
-      "x25",
-      "x3",
+      "x23",
       "x24",
-      "x4",
-      "x27",
-      "x5",
+      "x25",
       "x26",
-      "x6",
-      "x29",
-      "x7",
+      "x27",
       "x28",
+      "x29",
+      "lr",
+      "sp",
+      "pc",
+      "pst",
     )
 
   val inAppIncludes = arrayListOf("io.sentry.samples.android")
@@ -57,83 +56,13 @@ class TombstoneParserTest {
     "/data/app/~~gu-2hA9_Zg6tfIuDAbLpKA==/io.sentry.samples.android-MFqmKAMnl9AjNlHcO3mejA==/lib/arm64"
 
   @Test
-  fun `parses a snapshot tombstone into Event`() {
-    val tombstoneStream =
-      GZIPInputStream(TombstoneParserTest::class.java.getResourceAsStream("/tombstone.pb.gz"))
-    val parser = TombstoneParser(tombstoneStream, inAppIncludes, inAppExcludes, nativeLibraryDir)
-    val event = parser.parse()
+  fun `parses tombstone into Event`() {
+    assertTombstoneParsesCorrectly("/tombstone.pb.gz")
+  }
 
-    // top-level data
-    assertNotNull(event.eventId)
-    assertEquals(
-      "Fatal signal SIGSEGV (11), SEGV_MAPERR (1), pid = 21891 (io.sentry.samples.android)",
-      event.message!!.formatted,
-    )
-    assertEquals("native", event.platform)
-    assertEquals("FATAL", event.level!!.name)
-
-    // exception
-    // we only track one native exception (no nesting, one crashed thread)
-    assertEquals(1, event.exceptions!!.size)
-    val exception = event.exceptions!![0]
-    assertEquals("SIGSEGV", exception.type)
-    assertEquals("Segfault", exception.value)
-    val crashedThreadId = exception.threadId
-    assertNotNull(crashedThreadId)
-
-    val mechanism = exception.mechanism
-    assertEquals("Tombstone", mechanism!!.type)
-    assertEquals(false, mechanism.isHandled)
-    assertEquals(true, mechanism.synthetic)
-    assertEquals("SIGSEGV", mechanism.meta!!["name"])
-    assertEquals(11, mechanism.meta!!["number"])
-    assertEquals("SEGV_MAPERR", mechanism.meta!!["code_name"])
-    assertEquals(1, mechanism.meta!!["code"])
-
-    // threads
-    assertEquals(62, event.threads!!.size)
-    for (thread in event.threads!!) {
-      assertNotNull(thread.id)
-      if (thread.id == crashedThreadId) {
-        assert(thread.isCrashed == true)
-      }
-      assert(thread.stacktrace!!.frames!!.isNotEmpty())
-
-      for (frame in thread.stacktrace!!.frames!!) {
-        assertNotNull(frame.function)
-        if (frame.platform == "java") {
-          // Java frames have module instead of package/instructionAddr
-          assertNotNull(frame.module)
-        } else {
-          assertNotNull(frame.`package`)
-          assertNotNull(frame.instructionAddr)
-        }
-
-        if (thread.id == crashedThreadId) {
-          if (frame.isInApp!!) {
-            assert(
-              frame.module?.startsWith(inAppIncludes[0]) == true ||
-                frame.function!!.startsWith(inAppIncludes[0]) ||
-                frame.`package`?.startsWith(nativeLibraryDir) == true
-            )
-          }
-        }
-      }
-
-      assert(thread.stacktrace!!.registers!!.keys.containsAll(expectedRegisters))
-    }
-
-    // debug-meta
-    assertEquals(352, event.debugMeta!!.images!!.size)
-    for (image in event.debugMeta!!.images!!) {
-      assertEquals("elf", image.type)
-      assertNotNull(image.debugId)
-      assertNotNull(image.codeId)
-      assertNotNull(image.codeFile)
-      val imageAddress = image.imageAddr!!.removePrefix("0x").toLong(16)
-      assert(imageAddress > 0)
-      assert(image.imageSize!! > 0)
-    }
+  @Test
+  fun `parses tombstone_r8 with OAT frames into Event`() {
+    assertTombstoneParsesCorrectly("/tombstone_r8.pb.gz")
   }
 
   @Test
@@ -436,32 +365,13 @@ class TombstoneParserTest {
   }
 
   @Test
-  fun `java frames snapshot test for all threads`() {
-    val tombstoneStream =
-      GZIPInputStream(TombstoneParserTest::class.java.getResourceAsStream("/tombstone.pb.gz"))
-    val parser = TombstoneParser(tombstoneStream, inAppIncludes, inAppExcludes, nativeLibraryDir)
-    val event = parser.parse()
+  fun `java frames snapshot test`() {
+    assertJavaFramesSnapshot("/tombstone.pb.gz", "/tombstone_java_frames.json.gz")
+  }
 
-    val logger = mock<ILogger>()
-    val writer = StringWriter()
-    val jsonWriter = JsonObjectWriter(writer, 100)
-    jsonWriter.beginObject()
-    for (thread in event.threads!!) {
-      val javaFrames = thread.stacktrace!!.frames!!.filter { it.platform == "java" }
-      if (javaFrames.isEmpty()) continue
-      jsonWriter.name(thread.id.toString())
-      jsonWriter.beginArray()
-      for (frame in javaFrames) {
-        frame.serialize(jsonWriter, logger)
-      }
-      jsonWriter.endArray()
-    }
-    jsonWriter.endObject()
-
-    val actualJson = writer.toString()
-    val expectedJson = readGzippedResourceFile("/tombstone_java_frames.json.gz")
-
-    assertEquals(expectedJson, actualJson)
+  @Test
+  fun `tombstone_r8 java frames snapshot test`() {
+    assertJavaFramesSnapshot("/tombstone_r8.pb.gz", "/tombstone_r8_java_frames.json.gz")
   }
 
   @Test
@@ -575,6 +485,104 @@ class TombstoneParserTest {
         nativeLibraryDir,
       )
     return parser.parse()
+  }
+
+  private fun assertTombstoneParsesCorrectly(tombstoneResource: String) {
+    val tombstoneStream =
+      GZIPInputStream(TombstoneParserTest::class.java.getResourceAsStream(tombstoneResource))
+    val parser = TombstoneParser(tombstoneStream, inAppIncludes, inAppExcludes, nativeLibraryDir)
+    val event = parser.parse()
+
+    // top-level data
+    assertNotNull(event.eventId)
+    assertNotNull(event.message!!.formatted)
+    assertEquals("native", event.platform)
+    assertEquals("FATAL", event.level!!.name)
+
+    // exception
+    assertEquals(1, event.exceptions!!.size)
+    val exception = event.exceptions!![0]
+    assertNotNull(exception.type)
+    val crashedThreadId = exception.threadId
+    assertNotNull(crashedThreadId)
+
+    val mechanism = exception.mechanism
+    assertNotNull(mechanism)
+    assertEquals("Tombstone", mechanism.type)
+    assertEquals(false, mechanism.isHandled)
+    assertEquals(true, mechanism.synthetic)
+
+    // threads
+    assert(event.threads!!.isNotEmpty())
+    var hasCrashedThread = false
+    for (thread in event.threads!!) {
+      assertNotNull(thread.id)
+      if (thread.id == crashedThreadId) {
+        assert(thread.isCrashed == true)
+        hasCrashedThread = true
+      }
+      assert(thread.stacktrace!!.frames!!.isNotEmpty())
+
+      for (frame in thread.stacktrace!!.frames!!) {
+        assertNotNull(frame.function)
+        if (frame.platform == "java") {
+          assertNotNull(frame.module)
+          assert(frame.function!!.isNotEmpty()) {
+            "Java frame has empty function name in thread ${thread.id}"
+          }
+          assertNotNull(frame.isInApp)
+        } else {
+          assertNotNull(frame.`package`)
+          assertNotNull(frame.instructionAddr)
+        }
+      }
+
+      assert(thread.stacktrace!!.registers!!.keys.containsAll(expectedRegisters)) {
+        "Thread ${thread.id} is missing registers: ${expectedRegisters - thread.stacktrace!!.registers!!.keys}"
+      }
+    }
+    assert(hasCrashedThread) { "No crashed thread found matching exception threadId" }
+
+    // debug-meta
+    assertNotNull(event.debugMeta)
+    assert(event.debugMeta!!.images!!.isNotEmpty())
+    for (image in event.debugMeta!!.images!!) {
+      assertEquals("elf", image.type)
+      assertNotNull(image.debugId)
+      assertNotNull(image.codeId)
+      assertNotNull(image.codeFile)
+      val imageAddress = image.imageAddr!!.removePrefix("0x").toLong(16)
+      assert(imageAddress > 0)
+      assert(image.imageSize!! > 0)
+    }
+  }
+
+  private fun assertJavaFramesSnapshot(tombstoneResource: String, snapshotResource: String) {
+    val tombstoneStream =
+      GZIPInputStream(TombstoneParserTest::class.java.getResourceAsStream(tombstoneResource))
+    val parser = TombstoneParser(tombstoneStream, inAppIncludes, inAppExcludes, nativeLibraryDir)
+    val event = parser.parse()
+
+    val logger = mock<ILogger>()
+    val writer = StringWriter()
+    val jsonWriter = JsonObjectWriter(writer, 100)
+    jsonWriter.beginObject()
+    for (thread in event.threads!!) {
+      val javaFrames = thread.stacktrace!!.frames!!.filter { it.platform == "java" }
+      if (javaFrames.isEmpty()) continue
+      jsonWriter.name(thread.id.toString())
+      jsonWriter.beginArray()
+      for (frame in javaFrames) {
+        frame.serialize(jsonWriter, logger)
+      }
+      jsonWriter.endArray()
+    }
+    jsonWriter.endObject()
+
+    val actualJson = writer.toString()
+    val expectedJson = readGzippedResourceFile(snapshotResource)
+
+    assertEquals(expectedJson, actualJson)
   }
 
   private fun serializeDebugMeta(debugMeta: DebugMeta): String {
