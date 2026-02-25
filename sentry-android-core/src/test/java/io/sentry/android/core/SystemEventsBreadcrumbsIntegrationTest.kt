@@ -52,6 +52,7 @@ class SystemEventsBreadcrumbsIntegrationTest {
     lateinit var shadowActivityManager: ShadowActivityManager
 
     fun getSut(
+      contextForSut: Context = context,
       enableSystemEventBreadcrumbs: Boolean = true,
       enableSystemEventBreadcrumbsExtras: Boolean = false,
       executorService: ISentryExecutorService = ImmediateExecutorService(),
@@ -64,7 +65,7 @@ class SystemEventsBreadcrumbsIntegrationTest {
           this.executorService = executorService
         }
       return SystemEventsBreadcrumbsIntegration(
-        context,
+        contextForSut,
         SystemEventsBreadcrumbsIntegration.getDefaultActions().toTypedArray(),
         handler,
       )
@@ -311,6 +312,20 @@ class SystemEventsBreadcrumbsIntegrationTest {
     sut.register(fixture.scopes, fixture.options)
 
     assertFalse(fixture.options.isEnableSystemEventBreadcrumbs)
+  }
+
+  @Test
+  fun `Do not crash if receiver already unregistered`() {
+    val realContext = ApplicationProvider.getApplicationContext<Context>()
+    val sut = fixture.getSut(realContext)
+
+    sut.register(fixture.scopes, fixture.options)
+
+    realContext.unregisterReceiver(sut.receiver)
+
+    val result = runCatching { sut.onBackground() }
+
+    assertFalse(result.isFailure)
   }
 
   @Test
