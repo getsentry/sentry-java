@@ -27,6 +27,21 @@ public final class SentryLogEventAttributeValue implements JsonUnknown, JsonSeri
     this(type.apiName(), value);
   }
 
+  /**
+   * Creates a {@link SentryLogEventAttributeValue} from a {@link SentryAttribute}, inferring the
+   * type if not explicitly set.
+   *
+   * @param attribute the attribute
+   * @return the attribute value
+   */
+  public static @NotNull SentryLogEventAttributeValue fromAttribute(
+      final @NotNull SentryAttribute attribute) {
+    final @Nullable Object value = attribute.getValue();
+    final @NotNull SentryAttributeType type =
+        attribute.getType() == null ? SentryAttributeType.inferFrom(value) : attribute.getType();
+    return new SentryLogEventAttributeValue(type, value);
+  }
+
   public @NotNull String getType() {
     return type;
   }

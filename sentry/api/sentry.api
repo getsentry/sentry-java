@@ -276,6 +276,7 @@ public final class io/sentry/CombinedScopeView : io/sentry/IScope {
 	public synthetic fun clone ()Ljava/lang/Object;
 	public fun endSession ()Lio/sentry/Session;
 	public fun getAttachments ()Ljava/util/List;
+	public fun getAttributes ()Ljava/util/Map;
 	public fun getBreadcrumbs ()Ljava/util/Queue;
 	public fun getClient ()Lio/sentry/ISentryClient;
 	public fun getContexts ()Lio/sentry/protocol/Contexts;
@@ -298,11 +299,15 @@ public final class io/sentry/CombinedScopeView : io/sentry/IScope {
 	public fun getTransaction ()Lio/sentry/ITransaction;
 	public fun getTransactionName ()Ljava/lang/String;
 	public fun getUser ()Lio/sentry/protocol/User;
+	public fun removeAttribute (Ljava/lang/String;)V
 	public fun removeContexts (Ljava/lang/String;)V
 	public fun removeExtra (Ljava/lang/String;)V
 	public fun removeTag (Ljava/lang/String;)V
 	public fun replaceOptions (Lio/sentry/SentryOptions;)V
 	public fun setActiveSpan (Lio/sentry/ISpan;)V
+	public fun setAttribute (Lio/sentry/SentryAttribute;)V
+	public fun setAttribute (Ljava/lang/String;Ljava/lang/Object;)V
+	public fun setAttributes (Lio/sentry/SentryAttributes;)V
 	public fun setContexts (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public fun setContexts (Ljava/lang/String;Ljava/lang/Character;)V
 	public fun setContexts (Ljava/lang/String;Ljava/lang/Number;)V
@@ -670,10 +675,14 @@ public final class io/sentry/HubAdapter : io/sentry/IHub {
 	public fun popScope ()V
 	public fun pushIsolationScope ()Lio/sentry/ISentryLifecycleToken;
 	public fun pushScope ()Lio/sentry/ISentryLifecycleToken;
+	public fun removeAttribute (Ljava/lang/String;)V
 	public fun removeExtra (Ljava/lang/String;)V
 	public fun removeTag (Ljava/lang/String;)V
 	public fun reportFullyDisplayed ()V
 	public fun setActiveSpan (Lio/sentry/ISpan;)V
+	public fun setAttribute (Lio/sentry/SentryAttribute;)V
+	public fun setAttribute (Ljava/lang/String;Ljava/lang/Object;)V
+	public fun setAttributes (Lio/sentry/SentryAttributes;)V
 	public fun setExtra (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setFingerprint (Ljava/util/List;)V
 	public fun setLevel (Lio/sentry/SentryLevel;)V
@@ -742,10 +751,14 @@ public final class io/sentry/HubScopesWrapper : io/sentry/IHub {
 	public fun popScope ()V
 	public fun pushIsolationScope ()Lio/sentry/ISentryLifecycleToken;
 	public fun pushScope ()Lio/sentry/ISentryLifecycleToken;
+	public fun removeAttribute (Ljava/lang/String;)V
 	public fun removeExtra (Ljava/lang/String;)V
 	public fun removeTag (Ljava/lang/String;)V
 	public fun reportFullyDisplayed ()V
 	public fun setActiveSpan (Lio/sentry/ISpan;)V
+	public fun setAttribute (Lio/sentry/SentryAttribute;)V
+	public fun setAttribute (Ljava/lang/String;Ljava/lang/Object;)V
+	public fun setAttributes (Lio/sentry/SentryAttributes;)V
 	public fun setExtra (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setFingerprint (Ljava/util/List;)V
 	public fun setLevel (Lio/sentry/SentryLevel;)V
@@ -865,6 +878,7 @@ public abstract interface class io/sentry/IScope {
 	public abstract fun clone ()Lio/sentry/IScope;
 	public abstract fun endSession ()Lio/sentry/Session;
 	public abstract fun getAttachments ()Ljava/util/List;
+	public abstract fun getAttributes ()Ljava/util/Map;
 	public abstract fun getBreadcrumbs ()Ljava/util/Queue;
 	public abstract fun getClient ()Lio/sentry/ISentryClient;
 	public abstract fun getContexts ()Lio/sentry/protocol/Contexts;
@@ -887,11 +901,15 @@ public abstract interface class io/sentry/IScope {
 	public abstract fun getTransaction ()Lio/sentry/ITransaction;
 	public abstract fun getTransactionName ()Ljava/lang/String;
 	public abstract fun getUser ()Lio/sentry/protocol/User;
+	public abstract fun removeAttribute (Ljava/lang/String;)V
 	public abstract fun removeContexts (Ljava/lang/String;)V
 	public abstract fun removeExtra (Ljava/lang/String;)V
 	public abstract fun removeTag (Ljava/lang/String;)V
 	public abstract fun replaceOptions (Lio/sentry/SentryOptions;)V
 	public abstract fun setActiveSpan (Lio/sentry/ISpan;)V
+	public abstract fun setAttribute (Lio/sentry/SentryAttribute;)V
+	public abstract fun setAttribute (Ljava/lang/String;Ljava/lang/Object;)V
+	public abstract fun setAttributes (Lio/sentry/SentryAttributes;)V
 	public abstract fun setContexts (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public abstract fun setContexts (Ljava/lang/String;Ljava/lang/Character;)V
 	public abstract fun setContexts (Ljava/lang/String;Ljava/lang/Number;)V
@@ -1003,10 +1021,14 @@ public abstract interface class io/sentry/IScopes {
 	public abstract fun popScope ()V
 	public abstract fun pushIsolationScope ()Lio/sentry/ISentryLifecycleToken;
 	public abstract fun pushScope ()Lio/sentry/ISentryLifecycleToken;
+	public abstract fun removeAttribute (Ljava/lang/String;)V
 	public abstract fun removeExtra (Ljava/lang/String;)V
 	public abstract fun removeTag (Ljava/lang/String;)V
 	public abstract fun reportFullyDisplayed ()V
 	public abstract fun setActiveSpan (Lio/sentry/ISpan;)V
+	public abstract fun setAttribute (Lio/sentry/SentryAttribute;)V
+	public abstract fun setAttribute (Ljava/lang/String;Ljava/lang/Object;)V
+	public abstract fun setAttributes (Lio/sentry/SentryAttributes;)V
 	public abstract fun setExtra (Ljava/lang/String;Ljava/lang/String;)V
 	public abstract fun setFingerprint (Ljava/util/List;)V
 	public abstract fun setLevel (Lio/sentry/SentryLevel;)V
@@ -1579,10 +1601,14 @@ public final class io/sentry/NoOpHub : io/sentry/IHub {
 	public fun popScope ()V
 	public fun pushIsolationScope ()Lio/sentry/ISentryLifecycleToken;
 	public fun pushScope ()Lio/sentry/ISentryLifecycleToken;
+	public fun removeAttribute (Ljava/lang/String;)V
 	public fun removeExtra (Ljava/lang/String;)V
 	public fun removeTag (Ljava/lang/String;)V
 	public fun reportFullyDisplayed ()V
 	public fun setActiveSpan (Lio/sentry/ISpan;)V
+	public fun setAttribute (Lio/sentry/SentryAttribute;)V
+	public fun setAttribute (Ljava/lang/String;Ljava/lang/Object;)V
+	public fun setAttributes (Lio/sentry/SentryAttributes;)V
 	public fun setExtra (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setFingerprint (Ljava/util/List;)V
 	public fun setLevel (Lio/sentry/SentryLevel;)V
@@ -1649,6 +1675,7 @@ public final class io/sentry/NoOpScope : io/sentry/IScope {
 	public synthetic fun clone ()Ljava/lang/Object;
 	public fun endSession ()Lio/sentry/Session;
 	public fun getAttachments ()Ljava/util/List;
+	public fun getAttributes ()Ljava/util/Map;
 	public fun getBreadcrumbs ()Ljava/util/Queue;
 	public fun getClient ()Lio/sentry/ISentryClient;
 	public fun getContexts ()Lio/sentry/protocol/Contexts;
@@ -1672,11 +1699,15 @@ public final class io/sentry/NoOpScope : io/sentry/IScope {
 	public fun getTransaction ()Lio/sentry/ITransaction;
 	public fun getTransactionName ()Ljava/lang/String;
 	public fun getUser ()Lio/sentry/protocol/User;
+	public fun removeAttribute (Ljava/lang/String;)V
 	public fun removeContexts (Ljava/lang/String;)V
 	public fun removeExtra (Ljava/lang/String;)V
 	public fun removeTag (Ljava/lang/String;)V
 	public fun replaceOptions (Lio/sentry/SentryOptions;)V
 	public fun setActiveSpan (Lio/sentry/ISpan;)V
+	public fun setAttribute (Lio/sentry/SentryAttribute;)V
+	public fun setAttribute (Ljava/lang/String;Ljava/lang/Object;)V
+	public fun setAttributes (Lio/sentry/SentryAttributes;)V
 	public fun setContexts (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public fun setContexts (Ljava/lang/String;Ljava/lang/Character;)V
 	public fun setContexts (Ljava/lang/String;Ljava/lang/Number;)V
@@ -1756,10 +1787,14 @@ public final class io/sentry/NoOpScopes : io/sentry/IScopes {
 	public fun popScope ()V
 	public fun pushIsolationScope ()Lio/sentry/ISentryLifecycleToken;
 	public fun pushScope ()Lio/sentry/ISentryLifecycleToken;
+	public fun removeAttribute (Ljava/lang/String;)V
 	public fun removeExtra (Ljava/lang/String;)V
 	public fun removeTag (Ljava/lang/String;)V
 	public fun reportFullyDisplayed ()V
 	public fun setActiveSpan (Lio/sentry/ISpan;)V
+	public fun setAttribute (Lio/sentry/SentryAttribute;)V
+	public fun setAttribute (Ljava/lang/String;Ljava/lang/Object;)V
+	public fun setAttributes (Lio/sentry/SentryAttributes;)V
 	public fun setExtra (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setFingerprint (Ljava/util/List;)V
 	public fun setLevel (Lio/sentry/SentryLevel;)V
@@ -2325,6 +2360,7 @@ public final class io/sentry/Scope : io/sentry/IScope {
 	public synthetic fun clone ()Ljava/lang/Object;
 	public fun endSession ()Lio/sentry/Session;
 	public fun getAttachments ()Ljava/util/List;
+	public fun getAttributes ()Ljava/util/Map;
 	public fun getBreadcrumbs ()Ljava/util/Queue;
 	public fun getClient ()Lio/sentry/ISentryClient;
 	public fun getContexts ()Lio/sentry/protocol/Contexts;
@@ -2347,11 +2383,15 @@ public final class io/sentry/Scope : io/sentry/IScope {
 	public fun getTransaction ()Lio/sentry/ITransaction;
 	public fun getTransactionName ()Ljava/lang/String;
 	public fun getUser ()Lio/sentry/protocol/User;
+	public fun removeAttribute (Ljava/lang/String;)V
 	public fun removeContexts (Ljava/lang/String;)V
 	public fun removeExtra (Ljava/lang/String;)V
 	public fun removeTag (Ljava/lang/String;)V
 	public fun replaceOptions (Lio/sentry/SentryOptions;)V
 	public fun setActiveSpan (Lio/sentry/ISpan;)V
+	public fun setAttribute (Lio/sentry/SentryAttribute;)V
+	public fun setAttribute (Ljava/lang/String;Ljava/lang/Object;)V
+	public fun setAttributes (Lio/sentry/SentryAttributes;)V
 	public fun setContexts (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public fun setContexts (Ljava/lang/String;Ljava/lang/Character;)V
 	public fun setContexts (Ljava/lang/String;Ljava/lang/Number;)V
@@ -2482,10 +2522,14 @@ public final class io/sentry/Scopes : io/sentry/IScopes {
 	public fun popScope ()V
 	public fun pushIsolationScope ()Lio/sentry/ISentryLifecycleToken;
 	public fun pushScope ()Lio/sentry/ISentryLifecycleToken;
+	public fun removeAttribute (Ljava/lang/String;)V
 	public fun removeExtra (Ljava/lang/String;)V
 	public fun removeTag (Ljava/lang/String;)V
 	public fun reportFullyDisplayed ()V
 	public fun setActiveSpan (Lio/sentry/ISpan;)V
+	public fun setAttribute (Lio/sentry/SentryAttribute;)V
+	public fun setAttribute (Ljava/lang/String;Ljava/lang/Object;)V
+	public fun setAttributes (Lio/sentry/SentryAttributes;)V
 	public fun setExtra (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setFingerprint (Ljava/util/List;)V
 	public fun setLevel (Lio/sentry/SentryLevel;)V
@@ -2555,10 +2599,14 @@ public final class io/sentry/ScopesAdapter : io/sentry/IScopes {
 	public fun popScope ()V
 	public fun pushIsolationScope ()Lio/sentry/ISentryLifecycleToken;
 	public fun pushScope ()Lio/sentry/ISentryLifecycleToken;
+	public fun removeAttribute (Ljava/lang/String;)V
 	public fun removeExtra (Ljava/lang/String;)V
 	public fun removeTag (Ljava/lang/String;)V
 	public fun reportFullyDisplayed ()V
 	public fun setActiveSpan (Lio/sentry/ISpan;)V
+	public fun setAttribute (Lio/sentry/SentryAttribute;)V
+	public fun setAttribute (Ljava/lang/String;Ljava/lang/Object;)V
+	public fun setAttributes (Lio/sentry/SentryAttributes;)V
 	public fun setExtra (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setFingerprint (Ljava/util/List;)V
 	public fun setLevel (Lio/sentry/SentryLevel;)V
@@ -2676,10 +2724,14 @@ public final class io/sentry/Sentry {
 	public static fun popScope ()V
 	public static fun pushIsolationScope ()Lio/sentry/ISentryLifecycleToken;
 	public static fun pushScope ()Lio/sentry/ISentryLifecycleToken;
+	public static fun removeAttribute (Ljava/lang/String;)V
 	public static fun removeExtra (Ljava/lang/String;)V
 	public static fun removeTag (Ljava/lang/String;)V
 	public static fun replay ()Lio/sentry/IReplayApi;
 	public static fun reportFullyDisplayed ()V
+	public static fun setAttribute (Lio/sentry/SentryAttribute;)V
+	public static fun setAttribute (Ljava/lang/String;Ljava/lang/Object;)V
+	public static fun setAttributes (Lio/sentry/SentryAttributes;)V
 	public static fun setCurrentHub (Lio/sentry/IHub;)Lio/sentry/ISentryLifecycleToken;
 	public static fun setCurrentScopes (Lio/sentry/IScopes;)Lio/sentry/ISentryLifecycleToken;
 	public static fun setExtra (Ljava/lang/String;Ljava/lang/String;)V
@@ -2777,6 +2829,7 @@ public final class io/sentry/SentryAttributeType : java/lang/Enum {
 	public static final field INTEGER Lio/sentry/SentryAttributeType;
 	public static final field STRING Lio/sentry/SentryAttributeType;
 	public fun apiName ()Ljava/lang/String;
+	public static fun inferFrom (Ljava/lang/Object;)Lio/sentry/SentryAttributeType;
 	public static fun valueOf (Ljava/lang/String;)Lio/sentry/SentryAttributeType;
 	public static fun values ()[Lio/sentry/SentryAttributeType;
 }
@@ -3286,6 +3339,7 @@ public final class io/sentry/SentryLogEvent$JsonKeys {
 public final class io/sentry/SentryLogEventAttributeValue : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> (Lio/sentry/SentryAttributeType;Ljava/lang/Object;)V
 	public fun <init> (Ljava/lang/String;Ljava/lang/Object;)V
+	public static fun fromAttribute (Lio/sentry/SentryAttribute;)Lio/sentry/SentryLogEventAttributeValue;
 	public fun getType ()Ljava/lang/String;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun getValue ()Ljava/lang/Object;

@@ -301,6 +301,24 @@ public final class NoOpScope implements IScope {
   public void replaceOptions(@NotNull SentryOptions options) {}
 
   @Override
+  public void setAttribute(@Nullable String key, @Nullable Object value) {}
+
+  @Override
+  public void setAttribute(@NotNull SentryAttribute attribute) {}
+
+  @Override
+  public void setAttributes(@NotNull SentryAttributes attributes) {}
+
+  @Override
+  public void removeAttribute(@Nullable String key) {}
+
+  @ApiStatus.Internal
+  @Override
+  public @NotNull Map<String, SentryAttribute> getAttributes() {
+    return new HashMap<>();
+  }
+
+  @Override
   public void addFeatureFlag(final @Nullable String flag, final @Nullable Boolean result) {}
 
   @Override

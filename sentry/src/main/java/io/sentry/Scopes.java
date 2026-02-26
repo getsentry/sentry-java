@@ -1230,6 +1230,26 @@ public final class Scopes implements IScopes {
   }
 
   @Override
+  public void setAttribute(final @Nullable String key, final @Nullable Object value) {
+    combinedScope.setAttribute(key, value);
+  }
+
+  @Override
+  public void setAttribute(final @NotNull SentryAttribute attribute) {
+    combinedScope.setAttribute(attribute);
+  }
+
+  @Override
+  public void setAttributes(final @NotNull SentryAttributes attributes) {
+    combinedScope.setAttributes(attributes);
+  }
+
+  @Override
+  public void removeAttribute(final @Nullable String key) {
+    combinedScope.removeAttribute(key);
+  }
+
+  @Override
   public void addFeatureFlag(final @Nullable String flag, final @Nullable Boolean result) {
     combinedScope.addFeatureFlag(flag, result);
   }

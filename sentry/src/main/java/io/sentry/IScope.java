@@ -425,6 +425,44 @@ public interface IScope {
   @ApiStatus.Internal
   void replaceOptions(final @NotNull SentryOptions options);
 
+  /**
+   * Sets an attribute on the Scope.
+   *
+   * @param key the key
+   * @param value the value
+   */
+  void setAttribute(final @Nullable String key, final @Nullable Object value);
+
+  /**
+   * Sets an attribute on the Scope.
+   *
+   * @param attribute the attribute
+   */
+  void setAttribute(final @NotNull SentryAttribute attribute);
+
+  /**
+   * Sets multiple attributes on the Scope.
+   *
+   * @param attributes the attributes
+   */
+  void setAttributes(final @NotNull SentryAttributes attributes);
+
+  /**
+   * Removes an attribute from the Scope.
+   *
+   * @param key the key
+   */
+  void removeAttribute(final @Nullable String key);
+
+  /**
+   * Returns the Scope's attributes
+   *
+   * @return the attributes map
+   */
+  @ApiStatus.Internal
+  @NotNull
+  Map<String, SentryAttribute> getAttributes();
+
   void addFeatureFlag(final @Nullable String flag, final @Nullable Boolean result);
 
   @ApiStatus.Internal

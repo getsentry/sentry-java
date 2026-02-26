@@ -1368,6 +1368,43 @@ public final class Sentry {
     options.getFeedbackOptions().getDialogHandler().showDialog(associatedEventId, configurator);
   }
 
+  /**
+   * Sets an attribute on the scope.
+   *
+   * @param key the key
+   * @param value the value
+   */
+  public static void setAttribute(final @Nullable String key, final @Nullable Object value) {
+    getCurrentScopes().setAttribute(key, value);
+  }
+
+  /**
+   * Sets an attribute on the scope.
+   *
+   * @param attribute the attribute
+   */
+  public static void setAttribute(final @NotNull SentryAttribute attribute) {
+    getCurrentScopes().setAttribute(attribute);
+  }
+
+  /**
+   * Sets multiple attributes on the scope.
+   *
+   * @param attributes the attributes
+   */
+  public static void setAttributes(final @NotNull SentryAttributes attributes) {
+    getCurrentScopes().setAttributes(attributes);
+  }
+
+  /**
+   * Removes an attribute from the scope.
+   *
+   * @param key the key
+   */
+  public static void removeAttribute(final @Nullable String key) {
+    getCurrentScopes().removeAttribute(key);
+  }
+
   public static void addFeatureFlag(final @Nullable String flag, final @Nullable Boolean result) {
     getCurrentScopes().addFeatureFlag(flag, result);
   }

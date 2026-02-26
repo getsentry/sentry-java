@@ -14,6 +14,7 @@ import io.sentry.util.EventProcessorUtils;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -239,6 +240,35 @@ public final class CombinedScopeView implements IScope {
   @Override
   public void removeTag(@Nullable String key) {
     getDefaultWriteScope().removeTag(key);
+  }
+
+  @Override
+  public @NotNull Map<String, SentryAttribute> getAttributes() {
+    final @NotNull Map<String, SentryAttribute> allAttributes = new HashMap<>();
+    allAttributes.putAll(globalScope.getAttributes());
+    allAttributes.putAll(isolationScope.getAttributes());
+    allAttributes.putAll(scope.getAttributes());
+    return allAttributes;
+  }
+
+  @Override
+  public void setAttribute(@Nullable String key, @Nullable Object value) {
+    getDefaultWriteScope().setAttribute(key, value);
+  }
+
+  @Override
+  public void setAttribute(@NotNull SentryAttribute attribute) {
+    getDefaultWriteScope().setAttribute(attribute);
+  }
+
+  @Override
+  public void setAttributes(@NotNull SentryAttributes attributes) {
+    getDefaultWriteScope().setAttributes(attributes);
+  }
+
+  @Override
+  public void removeAttribute(@Nullable String key) {
+    getDefaultWriteScope().removeAttribute(key);
   }
 
   @Override

@@ -65,6 +65,9 @@ public final class Scope implements IScope {
   /** Scope's tags */
   private @NotNull Map<String, @NotNull String> tags = new ConcurrentHashMap<>();
 
+  /** Scope's attributes */
+  private @NotNull Map<String, @NotNull SentryAttribute> attributes = new ConcurrentHashMap<>();
+
   /** Scope's extras */
   private @NotNull Map<String, @NotNull Object> extra = new ConcurrentHashMap<>();
 
@@ -163,6 +166,18 @@ public final class Scope implements IScope {
     }
 
     this.tags = tagsClone;
+
+    final Map<String, SentryAttribute> attributesRef = scope.attributes;
+
+    final Map<String, @NotNull SentryAttribute> attributesClone = new ConcurrentHashMap<>();
+
+    for (Map.Entry<String, SentryAttribute> item : attributesRef.entrySet()) {
+      if (item != null) {
+        attributesClone.put(item.getKey(), item.getValue()); // shallow copy
+      }
+    }
+
+    this.attributes = attributesClone;
 
     final Map<String, Object> extraRef = scope.extra;
 
@@ -554,6 +569,7 @@ public final class Scope implements IScope {
     fingerprint.clear();
     clearBreadcrumbs();
     tags.clear();
+    attributes.clear();
     extra.clear();
     eventProcessors.clear();
     clearTransaction();
@@ -611,6 +627,60 @@ public final class Scope implements IScope {
       observer.removeTag(key);
       observer.setTags(tags);
     }
+  }
+
+  /**
+   * Returns the Scope's attributes
+   *
+   * @return the attributes map
+   */
+  @ApiStatus.Internal
+  @SuppressWarnings("NullAway") // attributes are never null
+  @Override
+  public @NotNull Map<String, SentryAttribute> getAttributes() {
+    return CollectionUtils.newConcurrentHashMap(attributes);
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public void setAttribute(final @Nullable String key, final @Nullable Object value) {
+    if (key == null) {
+      return;
+    }
+    if (value == null) {
+      removeAttribute(key);
+    } else {
+      this.attributes.put(key, SentryAttribute.named(key, value));
+    }
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public void setAttribute(final @NotNull SentryAttribute attribute) {
+    if (attribute == null) {
+      return;
+    }
+    this.attributes.put(attribute.getName(), attribute);
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public void setAttributes(final @NotNull SentryAttributes attributes) {
+    if (attributes == null) {
+      return;
+    }
+    for (SentryAttribute attribute : attributes.getAttributes().values()) {
+      this.attributes.put(attribute.getName(), attribute);
+    }
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public void removeAttribute(final @Nullable String key) {
+    if (key == null) {
+      return;
+    }
+    this.attributes.remove(key);
   }
 
   /**

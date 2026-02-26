@@ -339,5 +339,17 @@ public final class NoOpHub implements IHub {
   }
 
   @Override
+  public void setAttribute(final @Nullable String key, final @Nullable Object value) {}
+
+  @Override
+  public void setAttribute(final @NotNull SentryAttribute attribute) {}
+
+  @Override
+  public void setAttributes(final @NotNull SentryAttributes attributes) {}
+
+  @Override
+  public void removeAttribute(final @Nullable String key) {}
+
+  @Override
   public void addFeatureFlag(final @Nullable String flag, final @Nullable Boolean result) {}
 }

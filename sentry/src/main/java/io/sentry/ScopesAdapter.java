@@ -393,6 +393,26 @@ public final class ScopesAdapter implements IScopes {
   }
 
   @Override
+  public void setAttribute(final @Nullable String key, final @Nullable Object value) {
+    Sentry.setAttribute(key, value);
+  }
+
+  @Override
+  public void setAttribute(final @NotNull SentryAttribute attribute) {
+    Sentry.setAttribute(attribute);
+  }
+
+  @Override
+  public void setAttributes(final @NotNull SentryAttributes attributes) {
+    Sentry.setAttributes(attributes);
+  }
+
+  @Override
+  public void removeAttribute(final @Nullable String key) {
+    Sentry.removeAttribute(key);
+  }
+
+  @Override
   public void addFeatureFlag(final @Nullable String flag, final @Nullable Boolean result) {
     Sentry.addFeatureFlag(flag, result);
   }
