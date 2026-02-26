@@ -2829,7 +2829,6 @@ public final class io/sentry/SentryAttributeType : java/lang/Enum {
 	public static final field INTEGER Lio/sentry/SentryAttributeType;
 	public static final field STRING Lio/sentry/SentryAttributeType;
 	public fun apiName ()Ljava/lang/String;
-	public static fun inferFrom (Ljava/lang/Object;)Lio/sentry/SentryAttributeType;
 	public static fun valueOf (Ljava/lang/String;)Lio/sentry/SentryAttributeType;
 	public static fun values ()[Lio/sentry/SentryAttributeType;
 }
@@ -3339,7 +3338,6 @@ public final class io/sentry/SentryLogEvent$JsonKeys {
 public final class io/sentry/SentryLogEventAttributeValue : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> (Lio/sentry/SentryAttributeType;Ljava/lang/Object;)V
 	public fun <init> (Ljava/lang/String;Ljava/lang/Object;)V
-	public static fun fromAttribute (Lio/sentry/SentryAttribute;)Lio/sentry/SentryLogEventAttributeValue;
 	public fun getType ()Ljava/lang/String;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun getValue ()Ljava/lang/Object;

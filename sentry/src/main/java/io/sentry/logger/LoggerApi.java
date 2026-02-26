@@ -21,7 +21,6 @@ import io.sentry.protocol.User;
 import io.sentry.util.Platform;
 import io.sentry.util.TracingUtils;
 import java.util.HashMap;
-import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -164,14 +163,6 @@ public final class LoggerApi implements ILoggerApi {
       final @NotNull String message,
       final @Nullable Object... args) {
     final @NotNull HashMap<String, SentryLogEventAttributeValue> attributes = new HashMap<>();
-
-    final @NotNull Map<String, SentryAttribute> scopeAttributes =
-        scopes.getCombinedScopeView().getAttributes();
-    for (SentryAttribute scopeAttribute : scopeAttributes.values()) {
-      attributes.put(
-          scopeAttribute.getName(), SentryLogEventAttributeValue.fromAttribute(scopeAttribute));
-    }
-
     final @NotNull String origin = params.getOrigin();
     if (!"manual".equalsIgnoreCase(origin)) {
       attributes.put(
@@ -182,14 +173,17 @@ public final class LoggerApi implements ILoggerApi {
 
     if (incomingAttributes != null) {
       for (SentryAttribute attribute : incomingAttributes.getAttributes().values()) {
-        attributes.put(attribute.getName(), SentryLogEventAttributeValue.fromAttribute(attribute));
+        final @Nullable Object value = attribute.getValue();
+        final @NotNull SentryAttributeType type =
+            attribute.getType() == null ? getType(value) : attribute.getType();
+        attributes.put(attribute.getName(), new SentryLogEventAttributeValue(type, value));
       }
     }
 
     if (args != null) {
       int i = 0;
       for (Object arg : args) {
-        final @NotNull SentryAttributeType type = SentryAttributeType.inferFrom(arg);
+        final @NotNull SentryAttributeType type = getType(arg);
         attributes.put(
             "sentry.message.parameter." + i, new SentryLogEventAttributeValue(type, arg));
         i++;
@@ -297,5 +291,18 @@ public final class LoggerApi implements ILoggerApi {
             "user.email", new SentryLogEventAttributeValue(SentryAttributeType.STRING, email));
       }
     }
+  }
+
+  private @NotNull SentryAttributeType getType(final @Nullable Object arg) {
+    if (arg instanceof Boolean) {
+      return SentryAttributeType.BOOLEAN;
+    }
+    if (arg instanceof Integer) {
+      return SentryAttributeType.INTEGER;
+    }
+    if (arg instanceof Number) {
+      return SentryAttributeType.DOUBLE;
+    }
+    return SentryAttributeType.STRING;
   }
 }

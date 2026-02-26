@@ -4,7 +4,7 @@
 
 ### Features
 
-- Add API to set attributes on scope that are automatically included in logs and metrics ([#5118](https://github.com/getsentry/sentry-java/pull/5118))
+- Add scope-level attributes API ([#5118](https://github.com/getsentry/sentry-java/pull/5118))
 
 ### Fixes
 
