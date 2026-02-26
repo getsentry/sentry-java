@@ -16,8 +16,6 @@ public class MetricController {
 
   @GetMapping("count")
   String count() {
-    Sentry.setAttribute("user.type", "admin");
-    Sentry.setAttribute("feature.version", 2);
     Sentry.metrics().count("countMetric");
     return "count metric increased";
   }

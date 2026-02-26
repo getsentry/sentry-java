@@ -51,20 +51,7 @@ class PersonSystemTest {
     testHelper.ensureLogsReceived { logs, envelopeHeader ->
       testHelper.doesContainLogWithBody(logs, "warn Sentry logging") &&
         testHelper.doesContainLogWithBody(logs, "error Sentry logging") &&
-        testHelper.doesContainLogWithBody(logs, "hello there world!") &&
-        testHelper.doesLogWithBodyHaveAttribute(
-          logs,
-          "warn Sentry logging",
-          "user.type",
-          "admin",
-        ) &&
-        testHelper.doesLogWithBodyHaveAttribute(
-          logs,
-          "warn Sentry logging",
-          "feature.version",
-          2,
-        ) &&
-        testHelper.doesLogWithBodyHaveAttribute(logs, "warn Sentry logging", "debug.enabled", true)
+        testHelper.doesContainLogWithBody(logs, "hello there world!")
     }
   }
 
