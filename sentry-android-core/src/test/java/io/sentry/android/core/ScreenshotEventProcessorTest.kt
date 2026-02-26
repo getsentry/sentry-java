@@ -339,7 +339,7 @@ class ScreenshotEventProcessorTest {
   }
 
   @Test
-  fun `when masking is configured but replay is not available, screenshot is still captured without masking`() {
+  fun `when masking is configured but replay is not available, screenshot is not captured`() {
     val sut = fixture.getSut(attachScreenshot = true, isReplayAvailable = false)
     fixture.options.screenshot.setMaskAllText(true)
     val hint = Hint()
@@ -349,7 +349,7 @@ class ScreenshotEventProcessorTest {
     val event = fixture.mainProcessor.process(getEvent(), hint)
     sut.process(event, hint)
 
-    assertNotNull(hint.screenshot)
+    assertNull(hint.screenshot)
   }
 
   @Test
