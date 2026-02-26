@@ -23,7 +23,6 @@ public class PersonController {
 
   @GetMapping("{id}")
   Person person(@PathVariable Long id) {
-    // Set scope attributes - these are automatically attached to logs and metrics
     Sentry.setAttribute("user.type", "admin");
     Sentry.setAttribute("feature.version", 2);
     Sentry.setAttribute("debug.enabled", true);

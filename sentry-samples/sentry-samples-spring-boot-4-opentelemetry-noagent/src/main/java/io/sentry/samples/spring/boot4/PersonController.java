@@ -34,7 +34,6 @@ public class PersonController {
     Sentry.addFeatureFlag("outer-feature-flag", true);
     Span span = tracer.spanBuilder("spanCreatedThroughOtelApi").startSpan();
     try (final @NotNull Scope spanScope = span.makeCurrent()) {
-      // Set scope attributes - these are automatically attached to logs and metrics
       Sentry.setAttribute("user.type", "admin");
       Sentry.setAttribute("feature.version", 2);
       Sentry.setAttribute("debug.enabled", true);
