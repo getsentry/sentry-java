@@ -4,6 +4,7 @@
 
 ### Features
 
+- Support collections and arrays in log attribute type inference ([#5124](https://github.com/getsentry/sentry-java/pull/5124))
 - Add scope-level attributes API ([#5118](https://github.com/getsentry/sentry-java/pull/5118))
 - Automatically include scope attributes in logs and metrics ([#5120](https://github.com/getsentry/sentry-java/pull/5120))
 
