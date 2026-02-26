@@ -46,9 +46,15 @@ class MaskingOptionsTest {
 
     val options = SentryOptions().apply { sessionReplay.maskAllText = true }
 
-    val textNode = ViewHierarchyNode.fromView(MaskingOptionsActivity.textView!!, null, 0, options)
+    val textNode =
+      ViewHierarchyNode.fromView(MaskingOptionsActivity.textView!!, null, 0, options.sessionReplay)
     val radioButtonNode =
-      ViewHierarchyNode.fromView(MaskingOptionsActivity.radioButton!!, null, 0, options)
+      ViewHierarchyNode.fromView(
+        MaskingOptionsActivity.radioButton!!,
+        null,
+        0,
+        options.sessionReplay,
+      )
 
     assertTrue(textNode is TextViewHierarchyNode)
     assertTrue(textNode.shouldMask)
@@ -64,9 +70,15 @@ class MaskingOptionsTest {
 
     val options = SentryOptions().apply { sessionReplay.maskAllText = false }
 
-    val textNode = ViewHierarchyNode.fromView(MaskingOptionsActivity.textView!!, null, 0, options)
+    val textNode =
+      ViewHierarchyNode.fromView(MaskingOptionsActivity.textView!!, null, 0, options.sessionReplay)
     val radioButtonNode =
-      ViewHierarchyNode.fromView(MaskingOptionsActivity.radioButton!!, null, 0, options)
+      ViewHierarchyNode.fromView(
+        MaskingOptionsActivity.radioButton!!,
+        null,
+        0,
+        options.sessionReplay,
+      )
 
     assertTrue(textNode is TextViewHierarchyNode)
     assertFalse(textNode.shouldMask)
@@ -82,7 +94,8 @@ class MaskingOptionsTest {
 
     val options = SentryOptions().apply { sessionReplay.maskAllImages = true }
 
-    val imageNode = ViewHierarchyNode.fromView(MaskingOptionsActivity.imageView!!, null, 0, options)
+    val imageNode =
+      ViewHierarchyNode.fromView(MaskingOptionsActivity.imageView!!, null, 0, options.sessionReplay)
 
     assertTrue(imageNode is ImageViewHierarchyNode)
     assertTrue(imageNode.shouldMask)
@@ -95,7 +108,8 @@ class MaskingOptionsTest {
 
     val options = SentryOptions().apply { sessionReplay.maskAllImages = false }
 
-    val imageNode = ViewHierarchyNode.fromView(MaskingOptionsActivity.imageView!!, null, 0, options)
+    val imageNode =
+      ViewHierarchyNode.fromView(MaskingOptionsActivity.imageView!!, null, 0, options.sessionReplay)
 
     assertTrue(imageNode is ImageViewHierarchyNode)
     assertFalse(imageNode.shouldMask)
@@ -109,7 +123,8 @@ class MaskingOptionsTest {
     val options = SentryOptions().apply { sessionReplay.maskAllText = false }
 
     MaskingOptionsActivity.textView!!.tag = "sentry-mask"
-    val textNode = ViewHierarchyNode.fromView(MaskingOptionsActivity.textView!!, null, 0, options)
+    val textNode =
+      ViewHierarchyNode.fromView(MaskingOptionsActivity.textView!!, null, 0, options.sessionReplay)
 
     assertTrue(textNode.shouldMask)
   }
@@ -122,7 +137,8 @@ class MaskingOptionsTest {
     val options = SentryOptions().apply { sessionReplay.maskAllText = true }
 
     MaskingOptionsActivity.textView!!.tag = "sentry-unmask"
-    val textNode = ViewHierarchyNode.fromView(MaskingOptionsActivity.textView!!, null, 0, options)
+    val textNode =
+      ViewHierarchyNode.fromView(MaskingOptionsActivity.textView!!, null, 0, options.sessionReplay)
 
     assertFalse(textNode.shouldMask)
   }
@@ -135,7 +151,8 @@ class MaskingOptionsTest {
     val options = SentryOptions().apply { sessionReplay.maskAllText = false }
 
     MaskingOptionsActivity.textView!!.sentryReplayMask()
-    val textNode = ViewHierarchyNode.fromView(MaskingOptionsActivity.textView!!, null, 0, options)
+    val textNode =
+      ViewHierarchyNode.fromView(MaskingOptionsActivity.textView!!, null, 0, options.sessionReplay)
 
     assertTrue(textNode.shouldMask)
   }
@@ -148,7 +165,8 @@ class MaskingOptionsTest {
     val options = SentryOptions().apply { sessionReplay.maskAllText = true }
 
     MaskingOptionsActivity.textView!!.sentryReplayUnmask()
-    val textNode = ViewHierarchyNode.fromView(MaskingOptionsActivity.textView!!, null, 0, options)
+    val textNode =
+      ViewHierarchyNode.fromView(MaskingOptionsActivity.textView!!, null, 0, options.sessionReplay)
 
     assertFalse(textNode.shouldMask)
   }
@@ -161,7 +179,8 @@ class MaskingOptionsTest {
     val options = SentryOptions().apply { sessionReplay.maskAllText = true }
 
     MaskingOptionsActivity.textView!!.visibility = View.GONE
-    val textNode = ViewHierarchyNode.fromView(MaskingOptionsActivity.textView!!, null, 0, options)
+    val textNode =
+      ViewHierarchyNode.fromView(MaskingOptionsActivity.textView!!, null, 0, options.sessionReplay)
 
     assertFalse(textNode.shouldMask)
   }
@@ -177,7 +196,12 @@ class MaskingOptionsTest {
       }
 
     val customViewNode =
-      ViewHierarchyNode.fromView(MaskingOptionsActivity.customView!!, null, 0, options)
+      ViewHierarchyNode.fromView(
+        MaskingOptionsActivity.customView!!,
+        null,
+        0,
+        options.sessionReplay,
+      )
 
     assertTrue(customViewNode.shouldMask)
   }
@@ -193,9 +217,15 @@ class MaskingOptionsTest {
         sessionReplay.unmaskViewClasses.add(RadioButton::class.java.canonicalName)
       }
 
-    val textNode = ViewHierarchyNode.fromView(MaskingOptionsActivity.textView!!, null, 0, options)
+    val textNode =
+      ViewHierarchyNode.fromView(MaskingOptionsActivity.textView!!, null, 0, options.sessionReplay)
     val radioButtonNode =
-      ViewHierarchyNode.fromView(MaskingOptionsActivity.radioButton!!, null, 0, options)
+      ViewHierarchyNode.fromView(
+        MaskingOptionsActivity.radioButton!!,
+        null,
+        0,
+        options.sessionReplay,
+      )
 
     assertTrue(textNode.shouldMask)
     assertFalse(radioButtonNode.shouldMask)
@@ -216,10 +246,12 @@ class MaskingOptionsTest {
         MaskingOptionsActivity.textView!!.parent as LinearLayout,
         null,
         0,
-        options,
+        options.sessionReplay,
       )
-    val textNode = ViewHierarchyNode.fromView(MaskingOptionsActivity.textView!!, null, 0, options)
-    val imageNode = ViewHierarchyNode.fromView(MaskingOptionsActivity.imageView!!, null, 0, options)
+    val textNode =
+      ViewHierarchyNode.fromView(MaskingOptionsActivity.textView!!, null, 0, options.sessionReplay)
+    val imageNode =
+      ViewHierarchyNode.fromView(MaskingOptionsActivity.imageView!!, null, 0, options.sessionReplay)
 
     assertFalse(linearLayoutNode.shouldMask)
     assertTrue(textNode.shouldMask)
