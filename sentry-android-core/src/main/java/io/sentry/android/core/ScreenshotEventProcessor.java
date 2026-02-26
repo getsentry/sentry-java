@@ -23,6 +23,7 @@ import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -44,6 +45,7 @@ public final class ScreenshotEventProcessor implements EventProcessor {
   private static final long MASKING_TIMEOUT_MS = 2000;
 
   private final boolean isReplayAvailable;
+  private final AtomicBoolean isReplayModuleAbsenceLogged = new AtomicBoolean(false);
 
   public ScreenshotEventProcessor(
       final @NotNull SentryAndroidOptions options,
@@ -62,11 +64,6 @@ public final class ScreenshotEventProcessor implements EventProcessor {
 
     if (options.isAttachScreenshot()) {
       addIntegrationToSdkVersion("Screenshot");
-      if (!isReplayAvailable && !options.getScreenshot().getMaskViewClasses().isEmpty()) {
-        options
-            .getLogger()
-            .log(SentryLevel.WARNING, "Screenshot masking requires sentry-android-replay module");
-      }
     }
   }
 
@@ -93,6 +90,15 @@ public final class ScreenshotEventProcessor implements EventProcessor {
 
       return event;
     }
+    if (!isReplayAvailable && !options.getScreenshot().getMaskViewClasses().isEmpty()) {
+      if (!isReplayModuleAbsenceLogged.getAndSet(true)) {
+        options
+            .getLogger()
+            .log(SentryLevel.WARNING, "Screenshot masking requires sentry-android-replay module");
+      }
+      return event;
+    }
+
     final @Nullable Activity activity = CurrentActivityHolder.getInstance().getActivity();
     if (activity == null || HintUtils.isFromHybridSdk(hint)) {
       return event;
