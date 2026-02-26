@@ -244,7 +244,7 @@ public final class CombinedScopeView implements IScope {
 
   @Override
   public @NotNull Map<String, SentryAttribute> getAttributes() {
-    final @NotNull Map<String, SentryAttribute> allAttributes = new HashMap<>();
+    final @NotNull Map<String, SentryAttribute> allAttributes = new ConcurrentHashMap<>();
     allAttributes.putAll(globalScope.getAttributes());
     allAttributes.putAll(isolationScope.getAttributes());
     allAttributes.putAll(scope.getAttributes());
