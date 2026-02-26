@@ -6,7 +6,6 @@
 
 - Add scope-level attributes API ([#5118](https://github.com/getsentry/sentry-java/pull/5118))
 - Automatically include scope attributes in logs and metrics ([#5120](https://github.com/getsentry/sentry-java/pull/5120))
-- Showcase scope attributes in Spring Boot 4 samples with e2e tests ([#5121](https://github.com/getsentry/sentry-java/pull/5121))
 
 ### Fixes
 
