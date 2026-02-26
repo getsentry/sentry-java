@@ -190,6 +190,68 @@ class TestHelper(backendUrl: String) {
     return true
   }
 
+  fun doesLogWithBodyHaveAttribute(
+    logs: SentryLogEvents,
+    body: String,
+    attributeKey: String,
+    attributeValue: Any?,
+  ): Boolean {
+    val logItem = logs.items.firstOrNull { logItem -> logItem.body == body }
+    if (logItem == null) {
+      println("Unable to find log item with body $body in logs:")
+      logObject(logs)
+      return false
+    }
+
+    val attr = logItem.attributes?.get(attributeKey)
+    if (attr == null) {
+      println("Unable to find attribute $attributeKey on log with body $body:")
+      logObject(logItem)
+      return false
+    }
+
+    if (attr.value != attributeValue) {
+      println(
+        "Attribute $attributeKey has value ${attr.value} but expected $attributeValue on log with body $body:"
+      )
+      logObject(logItem)
+      return false
+    }
+
+    return true
+  }
+
+  fun doesMetricHaveAttribute(
+    metrics: SentryMetricsEvents,
+    metricName: String,
+    attributeKey: String,
+    attributeValue: Any?,
+  ): Boolean {
+    val metricItem = metrics.items.firstOrNull { it.name == metricName }
+    if (metricItem == null) {
+      println("Unable to find metric with name $metricName in metrics:")
+      logObject(metrics)
+      return false
+    }
+
+    val attr = metricItem.attributes?.get(attributeKey)
+    if (attr == null) {
+      println("Unable to find attribute $attributeKey on metric $metricName:")
+      logObject(metricItem)
+      return false
+    }
+
+    if (attr.value != attributeValue) {
+      println(
+        "Attribute $attributeKey has value ${attr.value} but expected $attributeValue on metric $metricName:"
+      )
+      logObject(metricItem)
+      return false
+    }
+
+    return true
+  }
+
   private fun checkIfTransactionMatches(
     envelopeString: String,
     callback: ((SentryTransaction, SentryEnvelopeHeader) -> Boolean),

@@ -16,6 +16,9 @@ public class MetricController {
 
   @GetMapping("count")
   String count() {
+    // Set scope attributes - these are automatically attached to metrics
+    Sentry.setAttribute("user.type", "admin");
+    Sentry.setAttribute("feature.version", 2);
     Sentry.metrics().count("countMetric");
     return "count metric increased";
   }

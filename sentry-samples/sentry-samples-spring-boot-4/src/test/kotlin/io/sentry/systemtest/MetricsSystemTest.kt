@@ -21,7 +21,9 @@ class MetricsSystemTest {
     assertEquals(200, restClient.lastKnownStatusCode)
 
     testHelper.ensureMetricsReceived { event, header ->
-      testHelper.doesContainMetric(event, "countMetric", "counter", 1.0)
+      testHelper.doesContainMetric(event, "countMetric", "counter", 1.0) &&
+        testHelper.doesMetricHaveAttribute(event, "countMetric", "user.type", "admin") &&
+        testHelper.doesMetricHaveAttribute(event, "countMetric", "feature.version", 2)
     }
   }
 
