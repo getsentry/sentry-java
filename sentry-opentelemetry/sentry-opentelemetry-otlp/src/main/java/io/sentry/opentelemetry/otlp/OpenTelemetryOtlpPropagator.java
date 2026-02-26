@@ -87,7 +87,6 @@ public final class OpenTelemetryOtlpPropagator implements TextMapPropagator {
       SentryTraceHeader sentryTraceHeader = new SentryTraceHeader(sentryTraceString);
 
       final @Nullable String baggageString = getter.get(carrier, BaggageHeader.BAGGAGE_HEADER);
-      final Baggage baggage = Baggage.fromHeader(baggageString);
       final @NotNull TraceState traceState = TraceState.getDefault();
 
       final @NotNull TraceFlags traceFlags =
@@ -104,8 +103,11 @@ public final class OpenTelemetryOtlpPropagator implements TextMapPropagator {
 
       Span wrappedSpan = Span.wrap(otelSpanContext);
 
-      final @NotNull Context modifiedContext =
-          context.with(wrappedSpan).with(SENTRY_BAGGAGE_KEY, baggage);
+      @NotNull Context modifiedContext = context.with(wrappedSpan);
+      if (baggageString != null) {
+        modifiedContext =
+            modifiedContext.with(SENTRY_BAGGAGE_KEY, Baggage.fromHeader(baggageString));
+      }
 
       scopes
           .getOptions()

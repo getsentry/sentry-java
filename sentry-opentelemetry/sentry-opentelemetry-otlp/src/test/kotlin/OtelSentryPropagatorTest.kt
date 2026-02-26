@@ -69,6 +69,37 @@ class OpenTelemetryOtlpPropagatorTest {
   }
 
   @Test
+  fun `extract does not store baggage in context when baggage header is missing`() {
+    val propagator = OpenTelemetryOtlpPropagator()
+    val carrier: Map<String, String> =
+      mapOf("sentry-trace" to "f9118105af4a2d42b4124532cd1065ff-424cffc8f94feeee-1")
+    val newContext = propagator.extract(Context.root(), carrier, MapGetter())
+
+    assertNull(newContext.get(OpenTelemetryOtlpPropagator.SENTRY_BAGGAGE_KEY))
+  }
+
+  @Test
+  fun `does not inject baggage header when baggage is missing from context`() {
+    val propagator = OpenTelemetryOtlpPropagator()
+    val carrier = mutableMapOf<String, String>()
+
+    val otelSpanContext =
+      SpanContext.create(
+        "f9118105af4a2d42b4124532cd1065ff",
+        "424cffc8f94feeee",
+        TraceFlags.getSampled(),
+        TraceState.getDefault(),
+      )
+    val otelSpan = Span.wrap(otelSpanContext)
+    val context = Context.root().with(otelSpan)
+
+    propagator.inject(context, carrier, MapSetter())
+
+    assertEquals("f9118105af4a2d42b4124532cd1065ff-424cffc8f94feeee-1", carrier["sentry-trace"])
+    assertNull(carrier["baggage"])
+  }
+
+  @Test
   fun `extract sets sampled trace flag when sentry-trace has sampled=0`() {
     val propagator = OpenTelemetryOtlpPropagator()
     val carrier: Map<String, String> =
