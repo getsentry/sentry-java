@@ -186,6 +186,146 @@ class TombstoneIntegrationTest : ApplicationExitIntegrationTestBase<TombstoneHin
     }
   }
 
+  @Test
+  fun `when native event has no message, tombstone message is applied`() {
+    val integration =
+      fixture.getSut(tmpDir, lastReportedTimestamp = oldTimestamp) { options ->
+        val outboxDir = File(options.outboxPath!!)
+        outboxDir.mkdirs()
+        createNativeEnvelope(outboxDir, newTimestamp, messageJson = null)
+      }
+
+    fixture.addAppExitInfo(timestamp = newTimestamp)
+    integration.register(fixture.scopes, fixture.options)
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check<SentryEvent> { event ->
+          // Tombstone message should be applied
+          assertNotNull(event.message)
+          assertNotNull(event.message!!.formatted)
+          // The message contains the signal info from the tombstone
+          assertTrue(event.message!!.formatted!!.contains("Fatal signal"))
+        },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `when native event has message with null template, tombstone message is applied`() {
+    val integration =
+      fixture.getSut(tmpDir, lastReportedTimestamp = oldTimestamp) { options ->
+        val outboxDir = File(options.outboxPath!!)
+        outboxDir.mkdirs()
+        createNativeEnvelope(
+          outboxDir,
+          newTimestamp,
+          messageJson = """{"formatted":"some formatted text"}""",
+        )
+      }
+
+    fixture.addAppExitInfo(timestamp = newTimestamp)
+    integration.register(fixture.scopes, fixture.options)
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check<SentryEvent> { event ->
+          // Tombstone message should be applied
+          assertNotNull(event.message)
+          assertNotNull(event.message!!.formatted)
+          assertTrue(event.message!!.formatted!!.contains("Fatal signal"))
+        },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `when native event has message with empty template, tombstone message is applied`() {
+    val integration =
+      fixture.getSut(tmpDir, lastReportedTimestamp = oldTimestamp) { options ->
+        val outboxDir = File(options.outboxPath!!)
+        outboxDir.mkdirs()
+        createNativeEnvelope(
+          outboxDir,
+          newTimestamp,
+          messageJson = """{"message":"","formatted":"some formatted text"}""",
+        )
+      }
+
+    fixture.addAppExitInfo(timestamp = newTimestamp)
+    integration.register(fixture.scopes, fixture.options)
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check<SentryEvent> { event ->
+          // Tombstone message should be applied
+          assertNotNull(event.message)
+          assertNotNull(event.message!!.formatted)
+          assertTrue(event.message!!.formatted!!.contains("Fatal signal"))
+        },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `when native event has message with content, native message is preserved`() {
+    val integration =
+      fixture.getSut(tmpDir, lastReportedTimestamp = oldTimestamp) { options ->
+        val outboxDir = File(options.outboxPath!!)
+        outboxDir.mkdirs()
+        createNativeEnvelope(
+          outboxDir,
+          newTimestamp,
+          messageJson =
+            """{"message":"Native SDK crash message","formatted":"The crash happened at 0xDEADBEEF"}""",
+        )
+      }
+
+    fixture.addAppExitInfo(timestamp = newTimestamp)
+    integration.register(fixture.scopes, fixture.options)
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check<SentryEvent> { event ->
+          // Native SDK message should be preserved
+          assertNotNull(event.message)
+          assertEquals("Native SDK crash message", event.message!!.message)
+          assertEquals("The crash happened at 0xDEADBEEF", event.message!!.formatted)
+        },
+        any<Hint>(),
+      )
+  }
+
+  /**
+   * Creates a native envelope file with an optional message field.
+   *
+   * @param messageJson The JSON for the message field (e.g.,
+   *   `{"message":"text","formatted":"text"}`), or null to omit the message field entirely.
+   */
+  private fun createNativeEnvelope(
+    outboxDir: File,
+    timestamp: Long,
+    messageJson: String? = null,
+    fileName: String = "native-envelope.envelope",
+  ): File {
+    val isoTimestamp = DateUtils.getTimestamp(DateUtils.getDateTime(timestamp))
+    val messageField = if (messageJson != null) ""","message":$messageJson""" else ""
+
+    val eventJson =
+      """{"event_id":"9ec79c33ec9942ab8353589fcb2e04dc","timestamp":"$isoTimestamp","platform":"native","level":"fatal"$messageField}"""
+    val eventJsonSize = eventJson.toByteArray(Charsets.UTF_8).size
+
+    val envelopeContent =
+      """
+    {"event_id":"9ec79c33ec9942ab8353589fcb2e04dc"}
+    {"type":"event","length":$eventJsonSize,"content_type":"application/json"}
+    $eventJson
+  """
+        .trimIndent()
+
+    return File(outboxDir, fileName).apply { writeText(envelopeContent) }
+  }
+
   private fun createNativeEnvelopeWithAttachment(outboxDir: File, timestamp: Long): File {
     val isoTimestamp = DateUtils.getTimestamp(DateUtils.getDateTime(timestamp))
 

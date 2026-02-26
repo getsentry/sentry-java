@@ -26,3 +26,6 @@
 -keepnames class com.google.android.exoplayer2.ui.PlayerView
 -dontwarn com.google.android.exoplayer2.ui.StyledPlayerView
 -keepnames class com.google.android.exoplayer2.ui.StyledPlayerView
+# Rules to detect a PreviewView view to later mask it
+-dontwarn androidx.camera.view.PreviewView
+-keepnames class androidx.camera.view.PreviewView

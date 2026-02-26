@@ -257,6 +257,12 @@
       android:name="io.sentry.spotlight.enable"
       android:value="true" />
     <meta-data
+      android:name="io.sentry.screenshot.mask-all-text"
+      android:value="true" />
+    <meta-data
+      android:name="io.sentry.screenshot.mask-all-images"
+      android:value="true" />
+    <meta-data
       android:name="io.sentry.tombstone.enable"
       android:value="true" />
     <meta-data

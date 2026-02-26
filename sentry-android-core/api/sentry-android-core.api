@@ -41,7 +41,7 @@ public final class io/sentry/android/core/ActivityLifecycleIntegration : android
 }
 
 public class io/sentry/android/core/AndroidContinuousProfiler : io/sentry/IContinuousProfiler, io/sentry/transport/RateLimiter$IRateLimitObserver {
-	public fun <init> (Lio/sentry/android/core/BuildInfoProvider;Lio/sentry/android/core/internal/util/SentryFrameMetricsCollector;Lio/sentry/ILogger;Ljava/lang/String;ILio/sentry/ISentryExecutorService;)V
+	public fun <init> (Lio/sentry/android/core/BuildInfoProvider;Lio/sentry/android/core/internal/util/SentryFrameMetricsCollector;Lio/sentry/ILogger;Ljava/lang/String;ILio/sentry/util/LazyEvaluator$Evaluator;)V
 	public fun close (Z)V
 	public fun getChunkId ()Lio/sentry/protocol/SentryId;
 	public fun getProfilerId ()Lio/sentry/protocol/SentryId;
@@ -114,7 +114,7 @@ public final class io/sentry/android/core/AndroidMetricsBatchProcessorFactory : 
 
 public class io/sentry/android/core/AndroidProfiler {
 	protected final field lock Lio/sentry/util/AutoClosableReentrantLock;
-	public fun <init> (Ljava/lang/String;ILio/sentry/android/core/internal/util/SentryFrameMetricsCollector;Lio/sentry/ISentryExecutorService;Lio/sentry/ILogger;)V
+	public fun <init> (Ljava/lang/String;ILio/sentry/android/core/internal/util/SentryFrameMetricsCollector;Lio/sentry/util/LazyEvaluator$Evaluator;Lio/sentry/ILogger;)V
 	public fun close ()V
 	public fun endAndCollect (ZLjava/util/List;)Lio/sentry/android/core/AndroidProfiler$ProfileEndData;
 	public fun start ()Lio/sentry/android/core/AndroidProfiler$ProfileStartData;
@@ -326,7 +326,7 @@ public final class io/sentry/android/core/NetworkBreadcrumbsIntegration : io/sen
 }
 
 public final class io/sentry/android/core/ScreenshotEventProcessor : io/sentry/EventProcessor {
-	public fun <init> (Lio/sentry/android/core/SentryAndroidOptions;Lio/sentry/android/core/BuildInfoProvider;)V
+	public fun <init> (Lio/sentry/android/core/SentryAndroidOptions;Lio/sentry/android/core/BuildInfoProvider;Z)V
 	public fun getOrder ()Ljava/lang/Long;
 	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
 	public fun process (Lio/sentry/protocol/SentryTransaction;Lio/sentry/Hint;)Lio/sentry/protocol/SentryTransaction;
@@ -354,6 +354,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun getFrameMetricsCollector ()Lio/sentry/android/core/internal/util/SentryFrameMetricsCollector;
 	public fun getNativeSdkName ()Ljava/lang/String;
 	public fun getNdkHandlerStrategy ()I
+	public fun getScreenshot ()Lio/sentry/android/core/SentryScreenshotOptions;
 	public fun getStartupCrashDurationThresholdMillis ()J
 	public fun isAnrEnabled ()Z
 	public fun isAnrReportInDebug ()Z
@@ -450,6 +451,12 @@ public final class io/sentry/android/core/SentryPerformanceProvider {
 	public fun getType (Landroid/net/Uri;)Ljava/lang/String;
 	public fun onCreate ()Z
 	public fun shutdown ()V
+}
+
+public final class io/sentry/android/core/SentryScreenshotOptions : io/sentry/SentryMaskingOptions {
+	public fun <init> ()V
+	public fun setMaskAllImages (Z)V
+	public fun trackCustomMasking ()V
 }
 
 public class io/sentry/android/core/SentryUserFeedbackButton : android/widget/Button {

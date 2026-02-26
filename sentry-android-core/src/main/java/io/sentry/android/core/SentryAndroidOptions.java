@@ -241,9 +241,18 @@ public final class SentryAndroidOptions extends SentryOptions {
 
   private @Nullable SentryFrameMetricsCollector frameMetricsCollector;
 
-  private boolean enableAnrProfiling = false;
-
   private boolean enableTombstone = false;
+
+  /**
+   * Screenshot masking options. Configure which views should be masked when capturing screenshots
+   * on error events.
+   *
+   * <p>Note: Screenshot masking requires the {@code sentry-android-replay} module to be present at
+   * runtime. If the replay module is not available, screenshots will be captured without masking.
+   */
+  private final @NotNull SentryScreenshotOptions screenshot = new SentryScreenshotOptions();
+
+  private boolean enableAnrProfiling = false;
 
   public SentryAndroidOptions() {
     setSentryClientName(BuildConfig.SENTRY_ANDROID_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
@@ -677,6 +686,15 @@ public final class SentryAndroidOptions extends SentryOptions {
   public void setEnableSystemEventBreadcrumbsExtras(
       final boolean enableSystemEventBreadcrumbsExtras) {
     this.enableSystemEventBreadcrumbsExtras = enableSystemEventBreadcrumbsExtras;
+  }
+
+  /**
+   * Returns the screenshot masking options.
+   *
+   * @return the screenshot masking options
+   */
+  public @NotNull SentryScreenshotOptions getScreenshot() {
+    return screenshot;
   }
 
   public boolean isEnableAnrProfiling() {

@@ -291,6 +291,14 @@ public class TombstoneIntegration implements Integration, Closeable {
         if (mechanism != null) {
           mechanism.setType(NativeExceptionMechanism.TOMBSTONE_MERGED.getValue());
         }
+
+        // Don't overwrite existing messages in the native event
+        if (nativeEvent.getMessage() == null
+            || nativeEvent.getMessage().getMessage() == null
+            || nativeEvent.getMessage().getMessage().isEmpty()) {
+          nativeEvent.setMessage(tombstoneEvent.getMessage());
+        }
+
         nativeEvent.setExceptions(tombstoneExceptions);
         nativeEvent.setDebugMeta(tombstoneDebugMeta);
         nativeEvent.setThreads(tombstoneThreads);

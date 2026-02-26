@@ -192,7 +192,8 @@ final class AndroidOptionsInitializer {
     options.addEventProcessor(
         new DefaultAndroidEventProcessor(context, buildInfoProvider, options));
     options.addEventProcessor(new PerformanceAndroidEventProcessor(options, activityFramesTracker));
-    options.addEventProcessor(new ScreenshotEventProcessor(options, buildInfoProvider));
+    options.addEventProcessor(
+        new ScreenshotEventProcessor(options, buildInfoProvider, isReplayAvailable));
     options.addEventProcessor(new ViewHierarchyEventProcessor(options));
     options.addEventProcessor(
         new ApplicationExitInfoEventProcessor(context, options, buildInfoProvider));
@@ -347,7 +348,7 @@ final class AndroidOptionsInitializer {
                 options.getLogger(),
                 options.getProfilingTracesDirPath(),
                 options.getProfilingTracesHz(),
-                options.getExecutorService()));
+                () -> options.getExecutorService()));
       }
     }
   }

@@ -776,9 +776,12 @@ class SentryTest {
       it.profilesSampleRate = 1.0
       it.cacheDirPath = getTempPath()
       it.setLogger(logger)
+      it.executorService = SentryExecutorService()
+      it.executorService.prewarm()
       it.executorService.close(0)
       it.isDebug = true
     }
+
     verify(logger)
       .log(
         eq(SentryLevel.ERROR),
@@ -874,6 +877,7 @@ class SentryTest {
       it.release = "io.sentry.sample@1.1.0+220"
       it.environment = "debug"
 
+      it.executorService = SentryExecutorService()
       it.executorService.submit {
         // here the values should be still old. Sentry.init will submit another runnable
         // to notify the options observers, but because the executor is single-threaded, the
@@ -942,6 +946,7 @@ class SentryTest {
         previousSessionFile.bufferedWriter(),
       )
 
+      it.executorService = SentryExecutorService()
       it.executorService.submit {
         // here the previous session should still exist. Sentry.init will submit another runnable
         // to finalize the previous session, but because the executor is single-threaded, the

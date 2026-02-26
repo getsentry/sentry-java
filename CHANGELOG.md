@@ -4,6 +4,34 @@
 
 ### Features
 
+- Add screenshot masking support using view hierarchy ([#5077](https://github.com/getsentry/sentry-java/pull/5077))
+  - Masks sensitive content (text, images) in error screenshots using the same view hierarchy approach as Session Replay
+  - Requires the `sentry-android-replay` module to be present at runtime for masking to work
+  - Enable via code:
+    ```kotlin
+    SentryAndroid.init(context) { options ->
+        options.isAttachScreenshot = true
+        options.screenshot.setMaskAllText(true)
+        options.screenshot.setMaskAllImages(true)
+        // Or mask specific view classes
+        options.screenshot.addMaskViewClass("com.example.MyCustomView")
+    }
+    ```
+  - Or via `AndroidManifest.xml`:
+    ```xml
+    <meta-data android:name="io.sentry.attach-screenshot" android:value="true" />
+    <meta-data android:name="io.sentry.screenshot.mask-all-text" android:value="true" />
+    <meta-data android:name="io.sentry.screenshot.mask-all-images" android:value="true" />
+    ```
+
+### Fixes
+
+- Fix crash when unregistering `SystemEventsBroadcastReceiver` with try-catch block. ([#5106](https://github.com/getsentry/sentry-java/pull/5106))
+
+## 8.33.0
+
+### Features
+
 - Add `installGroupsOverride` parameter to Build Distribution SDK for programmatic filtering, with support for configuration via properties file using `io.sentry.distribution.install-groups-override` ([#5066](https://github.com/getsentry/sentry-java/pull/5066))
 - Add new experimental option to capture profiles for ANRs ([#4899](https://github.com/getsentry/sentry-java/pull/4899))
   - This feature will capture a stack profile of the main thread when it gets unresponsive
@@ -11,11 +39,21 @@
   - Breaking change: if the ANR stacktrace contains only system frames (e.g. `java.lang` or `android.os`), a static fingerprint is set on the ANR event, causing all ANR events to be grouped into a single issue, reducing the overall ANR issue noise
   - Enable via `options.setEnableAnrProfiling(true)` or Android manifest: `<meta-data android:name="io.sentry.anr.profiling.enable" android:value="true" />`
 
+### Fixes
+
+- When merging tombstones with Native SDK, use the tombstone message if the Native SDK didn't explicitly provide one. ([#5095](https://github.com/getsentry/sentry-java/pull/5095))
+- Fix thread leak caused by eager creation of `SentryExecutorService` in `SentryOptions` ([#5093](https://github.com/getsentry/sentry-java/pull/5093))
+  - There were cases where we created options that ended up unused but we failed to clean those up.
+- Attach user attributes to logs and metrics regardless of `sendDefaultPii` ([#5099](https://github.com/getsentry/sentry-java/pull/5099))
+- No longer log a warning if a logging integration cannot initialize Sentry due to missing DSN ([#5075](https://github.com/getsentry/sentry-java/pull/5075))
+  - While this may have been useful to some, it caused lots of confusion.
+- Session Replay: Add `androidx.camera.view.PreviewView` to default `maskedViewClasses` to mask camera previews by default. ([#5097](https://github.com/getsentry/sentry-java/pull/5097))
+
 ### Dependencies
 
-- Bump Native SDK from v0.12.4 to v0.12.6 ([#5071](https://github.com/getsentry/sentry-java/pull/5071))
-  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0126)
-  - [diff](https://github.com/getsentry/sentry-native/compare/0.12.4...0.12.6)
+- Bump Native SDK from v0.12.4 to v0.12.7 ([#5071](https://github.com/getsentry/sentry-java/pull/5071), [#5098](https://github.com/getsentry/sentry-java/pull/5098))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0127)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.12.4...0.12.7)
 
 ### Internal
 

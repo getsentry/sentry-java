@@ -230,9 +230,7 @@ public final class MetricsApi implements IMetricsApi {
       setServerName(attributes);
     }
 
-    if (scopes.getOptions().isSendDefaultPii()) {
-      setUser(attributes);
-    }
+    setUser(attributes);
 
     return attributes;
   }
