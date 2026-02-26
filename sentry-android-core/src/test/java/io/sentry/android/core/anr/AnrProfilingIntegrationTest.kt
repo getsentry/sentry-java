@@ -15,6 +15,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
@@ -63,7 +64,7 @@ class AnrProfilingIntegrationTest {
   }
 
   @Test
-  fun `onBackground stops monitoring thread`() {
+  fun `onBackground pauses monitoring thread`() {
     val integration = AnrProfilingIntegration()
     integration.register(mockScopes, options)
     integration.onForeground()
@@ -73,9 +74,14 @@ class AnrProfilingIntegrationTest {
     assertNotNull(thread)
 
     integration.onBackground()
-    thread.join(2000) // Wait for thread to stop
+    Thread.sleep(200) // Allow thread to enter wait state
 
-    assertTrue(!thread.isAlive)
+    // Thread should still be alive but waiting
+    assertTrue(thread.isAlive)
+
+    integration.close()
+    thread.join(2000)
+    assertFalse(thread.isAlive)
   }
 
   @Test
@@ -132,8 +138,7 @@ class AnrProfilingIntegrationTest {
   }
 
   @Test
-  fun `foreground after background restarts thread`() {
-    // Arrange
+  fun `foreground after background reuses thread`() {
     val integration = AnrProfilingIntegration()
     integration.register(mockScopes, options)
 
@@ -149,7 +154,8 @@ class AnrProfilingIntegrationTest {
 
     assertNotNull(thread1)
     assertNotNull(thread2)
-    assertTrue(thread1 != thread2, "Should create a new thread after background")
+    assertSame(thread1, thread2, "Should reuse the same thread after background")
+    assertTrue(thread1.isAlive)
 
     integration.close()
   }

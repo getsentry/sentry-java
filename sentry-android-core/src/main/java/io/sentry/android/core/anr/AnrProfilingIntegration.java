@@ -48,6 +48,8 @@ public class AnrProfilingIntegration
   private volatile @Nullable SentryAndroidOptions options;
   private volatile @Nullable Thread thread = null;
   private volatile boolean inForeground = false;
+  private volatile @Nullable Handler mainHandler;
+  private volatile @Nullable Thread mainThread;
 
   @Override
   public void register(final @NotNull IScopes scopes, final @NotNull SentryOptions options) {
@@ -63,6 +65,10 @@ public class AnrProfilingIntegration
         return;
       }
 
+      final Looper mainLooper = Looper.getMainLooper();
+      this.mainThread = mainLooper.getThread();
+      this.mainHandler = new Handler(mainLooper);
+
       addIntegrationToSdkVersion("AnrProfiling");
       AppState.getInstance().addAppStateListener(this);
     }
@@ -70,9 +76,23 @@ public class AnrProfilingIntegration
 
   @Override
   public void close() throws IOException {
-    onBackground();
     enabled.set(false);
     AppState.getInstance().removeAppStateListener(this);
+
+    // Remove any pending updater callbacks from the main handler
+    final @Nullable Handler handler = mainHandler;
+    if (handler != null) {
+      handler.removeCallbacks(updater);
+    }
+
+    // Wake and interrupt the thread so it exits
+    final @Nullable Thread t = thread;
+    if (t != null) {
+      synchronized (this) {
+        notifyAll();
+      }
+      t.interrupt();
+    }
 
     final @Nullable SentryAndroidOptions opts = options;
     if (opts != null) {
@@ -95,7 +115,7 @@ public class AnrProfilingIntegration
                     }
                   }
                 });
-      } catch (Throwable t) {
+      } catch (Throwable e) {
         logger.log(SentryLevel.WARNING, "Failed to submit AnrProfileManager close");
       }
     }
@@ -113,15 +133,19 @@ public class AnrProfilingIntegration
       inForeground = true;
       updater.run();
 
-      final @Nullable Thread oldThread = thread;
-      if (oldThread != null) {
-        oldThread.interrupt();
+      final @Nullable Thread existingThread = thread;
+      if (existingThread != null && existingThread.isAlive()) {
+        // Wake the existing thread
+        synchronized (this) {
+          notifyAll();
+        }
       }
-
-      final @NotNull Thread profilingThread = new Thread(this, "AnrProfilingIntegration");
-      profilingThread.setDaemon(true);
-      profilingThread.start();
-      thread = profilingThread;
+      if (existingThread == null || !existingThread.isAlive()) {
+        final @NotNull Thread profilingThread = new Thread(this, "AnrProfilingIntegration");
+        profilingThread.setDaemon(true);
+        profilingThread.start();
+        thread = profilingThread;
+      }
     }
   }
 
@@ -131,32 +155,37 @@ public class AnrProfilingIntegration
       return;
     }
     try (final @NotNull ISentryLifecycleToken ignored = lifecycleLock.acquire()) {
-      if (!inForeground) {
-        return;
-      }
-
       inForeground = false;
-      final @Nullable Thread oldThread = thread;
-      if (oldThread != null) {
-        oldThread.interrupt();
-      }
     }
   }
 
   @Override
   public void run() {
-    // get main thread Handler so we can post messages
-    final Looper mainLooper = Looper.getMainLooper();
-    final Thread mainThread = mainLooper.getThread();
-    final Handler mainHandler = new Handler(mainLooper);
+    final @Nullable Handler handler = mainHandler;
+    final @Nullable Thread mt = mainThread;
+    if (handler == null || mt == null) {
+      return;
+    }
 
     try {
       while (enabled.get() && !Thread.currentThread().isInterrupted()) {
         try {
-          checkMainThread(mainThread);
+          if (!inForeground) {
+            // Wait until we're back in the foreground or disabled
+            synchronized (this) {
+              while (!inForeground && enabled.get()) {
+                wait();
+              }
+            }
+            // Reset the updater timestamp after waking to avoid false suspicion
+            updater.run();
+            continue;
+          }
 
-          mainHandler.removeCallbacks(updater);
-          mainHandler.post(updater);
+          checkMainThread(mt);
+
+          handler.removeCallbacks(updater);
+          handler.post(updater);
 
           // noinspection BusyWait
           Thread.sleep(POLLING_INTERVAL_MS);
