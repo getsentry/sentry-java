@@ -95,24 +95,24 @@ public class AnrProfilingIntegration
     }
 
     final @Nullable SentryAndroidOptions opts = options;
+    final @Nullable AnrProfileManager pm;
+    try (final @NotNull ISentryLifecycleToken ignored = profileManagerLock.acquire()) {
+      pm = profileManager;
+      profileManager = null;
+    }
     if (opts != null) {
       try {
         opts.getExecutorService()
             .submit(
-                new Runnable() {
-                  @Override
-                  public void run() {
-                    try (final @NotNull ISentryLifecycleToken ignored =
-                            profileManagerLock.acquire()) {
-                      if (profileManager != null) {
-                        //noinspection DataFlowIssue
-                        profileManager.close();
-                      }
-                    } catch (IOException e) {
-                      logger.log(SentryLevel.WARNING, "Failed to close AnrProfileManager");
-                    } finally {
-                      profileManager = null;
-                    }
+                () -> {
+                  if (pm == null) {
+                    return;
+                  }
+
+                  try {
+                    pm.close();
+                  } catch (IOException e) {
+                    logger.log(SentryLevel.WARNING, "Failed to close AnrProfileManager");
                   }
                 });
       } catch (Throwable e) {

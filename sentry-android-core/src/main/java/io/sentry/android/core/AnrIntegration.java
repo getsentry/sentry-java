@@ -144,7 +144,7 @@ public final class AnrIntegration implements Integration, Closeable {
     if (thread == null) {
       error = new ApplicationNotResponding(message);
     } else {
-      error = new ApplicationNotResponding(message, anr.getThread());
+      error = new ApplicationNotResponding(message, thread);
     }
 
     final Mechanism mechanism = new Mechanism();
