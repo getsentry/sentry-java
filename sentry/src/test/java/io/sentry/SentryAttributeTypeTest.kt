@@ -77,4 +77,39 @@ class SentryAttributeTypeTest {
   fun `inferFrom returns STRING for null`() {
     assertEquals(SentryAttributeType.STRING, SentryAttributeType.inferFrom(null))
   }
+
+  @Test
+  fun `inferFrom returns ARRAY for List of Strings`() {
+    assertEquals(SentryAttributeType.ARRAY, SentryAttributeType.inferFrom(listOf("a", "b")))
+  }
+
+  @Test
+  fun `inferFrom returns ARRAY for List of Integers`() {
+    assertEquals(SentryAttributeType.ARRAY, SentryAttributeType.inferFrom(listOf(1, 2, 3)))
+  }
+
+  @Test
+  fun `inferFrom returns ARRAY for Set of Booleans`() {
+    assertEquals(SentryAttributeType.ARRAY, SentryAttributeType.inferFrom(setOf(true, false)))
+  }
+
+  @Test
+  fun `inferFrom returns ARRAY for String array`() {
+    assertEquals(SentryAttributeType.ARRAY, SentryAttributeType.inferFrom(arrayOf("a", "b")))
+  }
+
+  @Test
+  fun `inferFrom returns ARRAY for int array`() {
+    assertEquals(SentryAttributeType.ARRAY, SentryAttributeType.inferFrom(intArrayOf(1, 2)))
+  }
+
+  @Test
+  fun `inferFrom returns ARRAY for empty list`() {
+    assertEquals(SentryAttributeType.ARRAY, SentryAttributeType.inferFrom(emptyList<String>()))
+  }
+
+  @Test
+  fun `inferFrom returns ARRAY for mixed-type list`() {
+    assertEquals(SentryAttributeType.ARRAY, SentryAttributeType.inferFrom(listOf("a", 1, true)))
+  }
 }

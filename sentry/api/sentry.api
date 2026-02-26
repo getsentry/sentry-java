@@ -2813,6 +2813,7 @@ public final class io/sentry/SentryAppStartProfilingOptions$JsonKeys {
 }
 
 public final class io/sentry/SentryAttribute {
+	public static fun arrayAttribute (Ljava/lang/String;Ljava/util/Collection;)Lio/sentry/SentryAttribute;
 	public static fun booleanAttribute (Ljava/lang/String;Ljava/lang/Boolean;)Lio/sentry/SentryAttribute;
 	public static fun doubleAttribute (Ljava/lang/String;Ljava/lang/Double;)Lio/sentry/SentryAttribute;
 	public fun getName ()Ljava/lang/String;
@@ -2824,6 +2825,7 @@ public final class io/sentry/SentryAttribute {
 }
 
 public final class io/sentry/SentryAttributeType : java/lang/Enum {
+	public static final field ARRAY Lio/sentry/SentryAttributeType;
 	public static final field BOOLEAN Lio/sentry/SentryAttributeType;
 	public static final field DOUBLE Lio/sentry/SentryAttributeType;
 	public static final field INTEGER Lio/sentry/SentryAttributeType;
