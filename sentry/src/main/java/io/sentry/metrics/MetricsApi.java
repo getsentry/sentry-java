@@ -20,6 +20,7 @@ import io.sentry.protocol.User;
 import io.sentry.util.Platform;
 import io.sentry.util.TracingUtils;
 import java.util.HashMap;
+import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -167,6 +168,14 @@ public final class MetricsApi implements IMetricsApi {
   private @NotNull HashMap<String, SentryLogEventAttributeValue> createAttributes(
       final @NotNull SentryMetricsParameters params) {
     final @NotNull HashMap<String, SentryLogEventAttributeValue> attributes = new HashMap<>();
+
+    final @NotNull Map<String, SentryAttribute> scopeAttributes =
+        scopes.getCombinedScopeView().getAttributes();
+    for (SentryAttribute scopeAttribute : scopeAttributes.values()) {
+      attributes.put(
+          scopeAttribute.getName(), SentryLogEventAttributeValue.fromAttribute(scopeAttribute));
+    }
+
     final @NotNull String origin = params.getOrigin();
     if (!"manual".equalsIgnoreCase(origin)) {
       attributes.put(
@@ -177,10 +186,7 @@ public final class MetricsApi implements IMetricsApi {
 
     if (incomingAttributes != null) {
       for (SentryAttribute attribute : incomingAttributes.getAttributes().values()) {
-        final @Nullable Object value = attribute.getValue();
-        final @NotNull SentryAttributeType type =
-            attribute.getType() == null ? getType(value) : attribute.getType();
-        attributes.put(attribute.getName(), new SentryLogEventAttributeValue(type, value));
+        attributes.put(attribute.getName(), SentryLogEventAttributeValue.fromAttribute(attribute));
       }
     }
 
@@ -278,18 +284,5 @@ public final class MetricsApi implements IMetricsApi {
             "user.email", new SentryLogEventAttributeValue(SentryAttributeType.STRING, email));
       }
     }
-  }
-
-  private @NotNull SentryAttributeType getType(final @Nullable Object arg) {
-    if (arg instanceof Boolean) {
-      return SentryAttributeType.BOOLEAN;
-    }
-    if (arg instanceof Integer) {
-      return SentryAttributeType.INTEGER;
-    }
-    if (arg instanceof Number) {
-      return SentryAttributeType.DOUBLE;
-    }
-    return SentryAttributeType.STRING;
   }
 }
