@@ -256,12 +256,12 @@ public final class CombinedScopeView implements IScope {
   }
 
   @Override
-  public void setAttribute(@NotNull SentryAttribute attribute) {
+  public void setAttribute(@Nullable SentryAttribute attribute) {
     getDefaultWriteScope().setAttribute(attribute);
   }
 
   @Override
-  public void setAttributes(@NotNull SentryAttributes attributes) {
+  public void setAttributes(@Nullable SentryAttributes attributes) {
     getDefaultWriteScope().setAttributes(attributes);
   }
 

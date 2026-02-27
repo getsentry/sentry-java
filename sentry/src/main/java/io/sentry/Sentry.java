@@ -1383,7 +1383,7 @@ public final class Sentry {
    *
    * @param attribute the attribute
    */
-  public static void setAttribute(final @NotNull SentryAttribute attribute) {
+  public static void setAttribute(final @Nullable SentryAttribute attribute) {
     getCurrentScopes().setAttribute(attribute);
   }
 
@@ -1392,7 +1392,7 @@ public final class Sentry {
    *
    * @param attributes the attributes
    */
-  public static void setAttributes(final @NotNull SentryAttributes attributes) {
+  public static void setAttributes(final @Nullable SentryAttributes attributes) {
     getCurrentScopes().setAttributes(attributes);
   }
 

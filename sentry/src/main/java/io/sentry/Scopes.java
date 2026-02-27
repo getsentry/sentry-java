@@ -1242,7 +1242,7 @@ public final class Scopes implements IScopes {
   }
 
   @Override
-  public void setAttribute(final @NotNull SentryAttribute attribute) {
+  public void setAttribute(final @Nullable SentryAttribute attribute) {
     if (!isEnabled()) {
       getOptions()
           .getLogger()
@@ -1254,7 +1254,7 @@ public final class Scopes implements IScopes {
   }
 
   @Override
-  public void setAttributes(final @NotNull SentryAttributes attributes) {
+  public void setAttributes(final @Nullable SentryAttributes attributes) {
     if (!isEnabled()) {
       getOptions()
           .getLogger()
