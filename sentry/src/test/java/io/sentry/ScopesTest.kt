@@ -2726,10 +2726,12 @@ class ScopesTest {
             SentryAttribute.booleanAttribute("boolattr", true),
             SentryAttribute.integerAttribute("intattr", 17),
             SentryAttribute.doubleAttribute("doubleattr", 3.8),
+            SentryAttribute.arrayAttribute("arrayattr", listOf("a", "b")),
             SentryAttribute.named("namedstrattr", "namedstrval"),
             SentryAttribute.named("namedboolattr", false),
             SentryAttribute.named("namedintattr", 18),
             SentryAttribute.named("nameddoubleattr", 4.9),
+            SentryAttribute.named("namedarrayattr", listOf("x", "y")),
           )
         ),
         "log message",
@@ -2758,6 +2760,10 @@ class ScopesTest {
           assertEquals(3.8, doubleattr.value)
           assertEquals("double", doubleattr.type)
 
+          val arrayattr = it.attributes?.get("arrayattr")!!
+          assertEquals(listOf("a", "b"), arrayattr.value)
+          assertEquals("array", arrayattr.type)
+
           val namedstrattr = it.attributes?.get("namedstrattr")!!
           assertEquals("namedstrval", namedstrattr.value)
           assertEquals("string", namedstrattr.type)
@@ -2773,6 +2779,10 @@ class ScopesTest {
           val nameddoubleattr = it.attributes?.get("nameddoubleattr")!!
           assertEquals(4.9, nameddoubleattr.value)
           assertEquals("double", nameddoubleattr.type)
+
+          val namedarrayattr = it.attributes?.get("namedarrayattr")!!
+          assertEquals(listOf("x", "y"), namedarrayattr.value)
+          assertEquals("array", namedarrayattr.type)
         },
         anyOrNull(),
       )
@@ -3460,10 +3470,12 @@ class ScopesTest {
             SentryAttribute.booleanAttribute("boolattr", true),
             SentryAttribute.integerAttribute("intattr", 17),
             SentryAttribute.doubleAttribute("doubleattr", 3.8),
+            SentryAttribute.arrayAttribute("arrayattr", listOf("a", "b")),
             SentryAttribute.named("namedstrattr", "namedstrval"),
             SentryAttribute.named("namedboolattr", false),
             SentryAttribute.named("namedintattr", 18),
             SentryAttribute.named("nameddoubleattr", 4.9),
+            SentryAttribute.named("namedarrayattr", listOf("x", "y")),
           )
         ),
       )
@@ -3492,6 +3504,10 @@ class ScopesTest {
           assertEquals(3.8, doubleattr.value)
           assertEquals("double", doubleattr.type)
 
+          val arrayattr = it.attributes?.get("arrayattr")!!
+          assertEquals(listOf("a", "b"), arrayattr.value)
+          assertEquals("array", arrayattr.type)
+
           val namedstrattr = it.attributes?.get("namedstrattr")!!
           assertEquals("namedstrval", namedstrattr.value)
           assertEquals("string", namedstrattr.type)
@@ -3507,6 +3523,10 @@ class ScopesTest {
           val nameddoubleattr = it.attributes?.get("nameddoubleattr")!!
           assertEquals(4.9, nameddoubleattr.value)
           assertEquals("double", nameddoubleattr.type)
+
+          val namedarrayattr = it.attributes?.get("namedarrayattr")!!
+          assertEquals(listOf("x", "y"), namedarrayattr.value)
+          assertEquals("array", namedarrayattr.type)
         },
         anyOrNull(),
         anyOrNull(),
@@ -3629,10 +3649,12 @@ class ScopesTest {
             SentryAttribute.booleanAttribute("boolattr", true),
             SentryAttribute.integerAttribute("intattr", 17),
             SentryAttribute.doubleAttribute("doubleattr", 3.8),
+            SentryAttribute.arrayAttribute("arrayattr", listOf("a", "b")),
             SentryAttribute.named("namedstrattr", "namedstrval"),
             SentryAttribute.named("namedboolattr", false),
             SentryAttribute.named("namedintattr", 18),
             SentryAttribute.named("nameddoubleattr", 4.9),
+            SentryAttribute.named("namedarrayattr", listOf("x", "y")),
           )
         ),
       )
@@ -3661,6 +3683,10 @@ class ScopesTest {
           assertEquals(3.8, doubleattr.value)
           assertEquals("double", doubleattr.type)
 
+          val arrayattr = it.attributes?.get("arrayattr")!!
+          assertEquals(listOf("a", "b"), arrayattr.value)
+          assertEquals("array", arrayattr.type)
+
           val namedstrattr = it.attributes?.get("namedstrattr")!!
           assertEquals("namedstrval", namedstrattr.value)
           assertEquals("string", namedstrattr.type)
@@ -3676,6 +3702,10 @@ class ScopesTest {
           val nameddoubleattr = it.attributes?.get("nameddoubleattr")!!
           assertEquals(4.9, nameddoubleattr.value)
           assertEquals("double", nameddoubleattr.type)
+
+          val namedarrayattr = it.attributes?.get("namedarrayattr")!!
+          assertEquals(listOf("x", "y"), namedarrayattr.value)
+          assertEquals("array", namedarrayattr.type)
         },
         anyOrNull(),
         anyOrNull(),
@@ -3798,10 +3828,12 @@ class ScopesTest {
             SentryAttribute.booleanAttribute("boolattr", true),
             SentryAttribute.integerAttribute("intattr", 17),
             SentryAttribute.doubleAttribute("doubleattr", 3.8),
+            SentryAttribute.arrayAttribute("arrayattr", listOf("a", "b")),
             SentryAttribute.named("namedstrattr", "namedstrval"),
             SentryAttribute.named("namedboolattr", false),
             SentryAttribute.named("namedintattr", 18),
             SentryAttribute.named("nameddoubleattr", 4.9),
+            SentryAttribute.named("namedarrayattr", listOf("x", "y")),
           )
         ),
       )
@@ -3830,6 +3862,10 @@ class ScopesTest {
           assertEquals(3.8, doubleattr.value)
           assertEquals("double", doubleattr.type)
 
+          val arrayattr = it.attributes?.get("arrayattr")!!
+          assertEquals(listOf("a", "b"), arrayattr.value)
+          assertEquals("array", arrayattr.type)
+
           val namedstrattr = it.attributes?.get("namedstrattr")!!
           assertEquals("namedstrval", namedstrattr.value)
           assertEquals("string", namedstrattr.type)
@@ -3845,6 +3881,10 @@ class ScopesTest {
           val nameddoubleattr = it.attributes?.get("nameddoubleattr")!!
           assertEquals(4.9, nameddoubleattr.value)
           assertEquals("double", nameddoubleattr.type)
+
+          val namedarrayattr = it.attributes?.get("namedarrayattr")!!
+          assertEquals(listOf("x", "y"), namedarrayattr.value)
+          assertEquals("array", namedarrayattr.type)
         },
         anyOrNull(),
         anyOrNull(),
