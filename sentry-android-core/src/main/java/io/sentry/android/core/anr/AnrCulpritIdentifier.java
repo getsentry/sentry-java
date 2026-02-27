@@ -149,7 +149,9 @@ public class AnrCulpritIdentifier {
     return Collections.max(
         stackTraceMap.values(),
         (c1, c2) ->
-            Float.compare(c1.count * c1.quality * c1.depth, c2.count * c2.quality * c2.depth));
+            Float.compare(
+                c1.count * (1.0f + c1.quality) * c1.depth,
+                c2.count * (1.0f + c2.quality) * c2.depth));
   }
 
   public static boolean isSystemFrame(final @NotNull String clazz) {

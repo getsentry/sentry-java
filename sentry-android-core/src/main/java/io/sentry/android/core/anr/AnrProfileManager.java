@@ -76,8 +76,8 @@ public class AnrProfileManager implements AutoCloseable {
                   try (final @NotNull DataOutputStream dos = new DataOutputStream(sink)) {
                     value.serialize(dos);
                     dos.flush();
+                    sink.flush();
                   }
-                  sink.flush();
                 }
               });
     }

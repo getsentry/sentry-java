@@ -87,12 +87,7 @@ class AnrCulpritIdentifierTest {
         StackTraceElement("android.os.Handler", "handleMessage", "Handler.java", 100),
       )
 
-    val dumps =
-      listOf(
-        AnrStackTrace(1000, frameworkElements),
-        AnrStackTrace(2000, frameworkElements),
-        AnrStackTrace(3000, appElements),
-      )
+    val dumps = listOf(AnrStackTrace(1000, frameworkElements), AnrStackTrace(2000, appElements))
 
     val result = AnrCulpritIdentifier.identify(dumps)
 
