@@ -26,6 +26,7 @@
 
 ### Fixes
 
+- Remove `AndroidRuntimeManager` StrictMode relaxation to prevent ANRs during SDK init ([#5127](https://github.com/getsentry/sentry-java/pull/5127))
 - Fix crash when unregistering `SystemEventsBroadcastReceiver` with try-catch block. ([#5106](https://github.com/getsentry/sentry-java/pull/5106))
 
 ## 8.33.0
