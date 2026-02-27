@@ -1231,22 +1231,52 @@ public final class Scopes implements IScopes {
 
   @Override
   public void setAttribute(final @Nullable String key, final @Nullable Object value) {
-    combinedScope.setAttribute(key, value);
+    if (!isEnabled()) {
+      getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.WARNING, "Instance is disabled and this 'setAttribute' call is a no-op.");
+    } else {
+      getCombinedScopeView().setAttribute(key, value);
+    }
   }
 
   @Override
   public void setAttribute(final @NotNull SentryAttribute attribute) {
-    combinedScope.setAttribute(attribute);
+    if (!isEnabled()) {
+      getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.WARNING, "Instance is disabled and this 'setAttribute' call is a no-op.");
+    } else {
+      getCombinedScopeView().setAttribute(attribute);
+    }
   }
 
   @Override
   public void setAttributes(final @NotNull SentryAttributes attributes) {
-    combinedScope.setAttributes(attributes);
+    if (!isEnabled()) {
+      getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "Instance is disabled and this 'setAttributes' call is a no-op.");
+    } else {
+      getCombinedScopeView().setAttributes(attributes);
+    }
   }
 
   @Override
   public void removeAttribute(final @Nullable String key) {
-    combinedScope.removeAttribute(key);
+    if (!isEnabled()) {
+      getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "Instance is disabled and this 'removeAttribute' call is a no-op.");
+    } else {
+      getCombinedScopeView().removeAttribute(key);
+    }
   }
 
   @Override

@@ -1290,6 +1290,50 @@ class ScopesTest {
 
   // endregion
 
+  // region setAttribute tests
+  @Test
+  fun `when setAttribute is called on disabled client, do nothing`() {
+    val scopes = generateScopes()
+    var scope: IScope? = null
+    scopes.configureScope { scope = it }
+    scopes.close()
+
+    scopes.setAttribute("test", "test")
+    assertEquals(0, scope?.attributes?.count())
+  }
+
+  @Test
+  fun `when setAttribute with SentryAttribute is called on disabled client, do nothing`() {
+    val scopes = generateScopes()
+    var scope: IScope? = null
+    scopes.configureScope { scope = it }
+    scopes.close()
+
+    scopes.setAttribute(SentryAttribute.stringAttribute("test", "test"))
+    assertEquals(0, scope?.attributes?.count())
+  }
+
+  @Test
+  fun `when setAttributes is called on disabled client, do nothing`() {
+    val scopes = generateScopes()
+    var scope: IScope? = null
+    scopes.configureScope { scope = it }
+    scopes.close()
+
+    scopes.setAttributes(SentryAttributes.of(SentryAttribute.stringAttribute("test", "test")))
+    assertEquals(0, scope?.attributes?.count())
+  }
+
+  @Test
+  fun `when removeAttribute is called on disabled client, do nothing`() {
+    val scopes = generateScopes()
+    scopes.close()
+
+    scopes.removeAttribute("test")
+  }
+
+  // endregion
+
   // region captureEnvelope tests
   @Test
   fun `when captureEnvelope is called and envelope is null, throws IllegalArgumentException`() {
