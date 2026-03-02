@@ -303,18 +303,9 @@ public final class AsyncHttpTransport implements ITransport {
           if (result.isSuccess()) {
             envelopeCache.discard(envelope);
           } else {
-            final String message;
-            if (result.getResponseCode() == 413) {
-              message =
-                  "Envelope was discarded by the server because it was too large."
-                      + " Consider reducing the size of events, breadcrumbs, or attachments."
-                      + " You can use the `SentryOptions.onOversizedEvent` callback"
-                      + " to customize how oversized events are handled.";
-            } else {
-              message =
-                  "The transport failed to send the envelope with response code "
-                      + result.getResponseCode();
-            }
+            final String message =
+                "The transport failed to send the envelope with response code "
+                    + result.getResponseCode();
 
             options.getLogger().log(SentryLevel.ERROR, message);
 
