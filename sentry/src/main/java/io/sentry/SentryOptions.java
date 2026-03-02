@@ -655,6 +655,24 @@ public class SentryOptions {
       executorService = new SentryExecutorService(this);
       executorService.prewarm();
     }
+
+    // SpotlightIntegration is loaded via reflection to allow the sentry-spotlight module
+    // to be excluded from release builds, preventing insecure HTTP URLs from appearing in APKs
+    try {
+      final Class<?> clazz = Class.forName("io.sentry.spotlight.SpotlightIntegration");
+      boolean alreadyRegistered = false;
+      for (final Integration integration : integrations) {
+        if (clazz.isInstance(integration)) {
+          alreadyRegistered = true;
+          break;
+        }
+      }
+      if (!alreadyRegistered) {
+        integrations.add((Integration) clazz.getConstructor().newInstance());
+      }
+    } catch (Throwable ignored) {
+      // SpotlightIntegration not available
+    }
   }
 
   /**
@@ -3339,16 +3357,6 @@ public class SentryOptions {
       integrations.add(new UncaughtExceptionHandlerIntegration());
 
       integrations.add(new ShutdownHookIntegration());
-
-      // SpotlightIntegration is loaded via reflection to allow the sentry-spotlight module
-      // to be excluded from release builds, preventing insecure HTTP URLs from appearing in APKs
-      try {
-        final Class<?> clazz = Class.forName("io.sentry.spotlight.SpotlightIntegration");
-        final Integration spotlight = (Integration) clazz.getConstructor().newInstance();
-        integrations.add(spotlight);
-      } catch (Throwable ignored) {
-        // SpotlightIntegration not available
-      }
 
       eventProcessors.add(new MainEventProcessor(this));
       eventProcessors.add(new DuplicateEventDetectionEventProcessor(this));
