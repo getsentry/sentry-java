@@ -1,7 +1,6 @@
 ##---------------Begin: proguard configuration for android-core  ----------
 
 ##---------------Begin: proguard configuration for androidx.core  ----------
--keep class androidx.core.view.GestureDetectorCompat { <init>(...); }
 -keep class androidx.core.app.FrameMetricsAggregator { <init>(...); }
 -keep interface androidx.core.view.ScrollingView { *; }
 ##---------------End: proguard configuration for androidx.core  ----------
