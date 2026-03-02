@@ -30,6 +30,7 @@
 
 ### Fixes
 
+- Fix ANR caused by `GestureDetectorCompat` Handler/MessageQueue lock contention in `SentryWindowCallback` ([#5138](https://github.com/getsentry/sentry-java/pull/5138))
 - Fix crash when unregistering `SystemEventsBroadcastReceiver` with try-catch block. ([#5106](https://github.com/getsentry/sentry-java/pull/5106))
 
 ### Dependencies
