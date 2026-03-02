@@ -50,7 +50,11 @@ class PropagationContextTest {
   private val incomingTraceId = "bc6d53f15eb88f4320054569b8c553d4"
   private val sentryTrace = "bc6d53f15eb88f4320054569b8c553d4-b72fa28504b07285-1"
 
-  private fun makeOptions(dsnOrgId: String?, explicitOrgId: String? = null, strict: Boolean = false): SentryOptions {
+  private fun makeOptions(
+    dsnOrgId: String?,
+    explicitOrgId: String? = null,
+    strict: Boolean = false,
+  ): SentryOptions {
     val options = SentryOptions()
     if (dsnOrgId != null) {
       options.dsn = "https://key@o$dsnOrgId.ingest.sentry.io/123"
@@ -73,70 +77,130 @@ class PropagationContextTest {
   @Test
   fun `strict=false, matching orgs - continues trace`() {
     val options = makeOptions(dsnOrgId = "1", strict = false)
-    val pc = PropagationContext.fromHeaders(NoOpLogger.getInstance(), sentryTrace, makeBaggage("1"), options)
+    val pc =
+      PropagationContext.fromHeaders(
+        NoOpLogger.getInstance(),
+        sentryTrace,
+        makeBaggage("1"),
+        options,
+      )
     assertEquals(incomingTraceId, pc.traceId.toString())
   }
 
   @Test
   fun `strict=false, baggage missing org - continues trace`() {
     val options = makeOptions(dsnOrgId = "1", strict = false)
-    val pc = PropagationContext.fromHeaders(NoOpLogger.getInstance(), sentryTrace, makeBaggage(null), options)
+    val pc =
+      PropagationContext.fromHeaders(
+        NoOpLogger.getInstance(),
+        sentryTrace,
+        makeBaggage(null),
+        options,
+      )
     assertEquals(incomingTraceId, pc.traceId.toString())
   }
 
   @Test
   fun `strict=false, sdk missing org - continues trace`() {
     val options = makeOptions(dsnOrgId = null, strict = false)
-    val pc = PropagationContext.fromHeaders(NoOpLogger.getInstance(), sentryTrace, makeBaggage("1"), options)
+    val pc =
+      PropagationContext.fromHeaders(
+        NoOpLogger.getInstance(),
+        sentryTrace,
+        makeBaggage("1"),
+        options,
+      )
     assertEquals(incomingTraceId, pc.traceId.toString())
   }
 
   @Test
   fun `strict=false, both missing org - continues trace`() {
     val options = makeOptions(dsnOrgId = null, strict = false)
-    val pc = PropagationContext.fromHeaders(NoOpLogger.getInstance(), sentryTrace, makeBaggage(null), options)
+    val pc =
+      PropagationContext.fromHeaders(
+        NoOpLogger.getInstance(),
+        sentryTrace,
+        makeBaggage(null),
+        options,
+      )
     assertEquals(incomingTraceId, pc.traceId.toString())
   }
 
   @Test
   fun `strict=false, mismatched orgs - starts new trace`() {
     val options = makeOptions(dsnOrgId = "2", strict = false)
-    val pc = PropagationContext.fromHeaders(NoOpLogger.getInstance(), sentryTrace, makeBaggage("1"), options)
+    val pc =
+      PropagationContext.fromHeaders(
+        NoOpLogger.getInstance(),
+        sentryTrace,
+        makeBaggage("1"),
+        options,
+      )
     assertNotEquals(incomingTraceId, pc.traceId.toString())
   }
 
   @Test
   fun `strict=true, matching orgs - continues trace`() {
     val options = makeOptions(dsnOrgId = "1", strict = true)
-    val pc = PropagationContext.fromHeaders(NoOpLogger.getInstance(), sentryTrace, makeBaggage("1"), options)
+    val pc =
+      PropagationContext.fromHeaders(
+        NoOpLogger.getInstance(),
+        sentryTrace,
+        makeBaggage("1"),
+        options,
+      )
     assertEquals(incomingTraceId, pc.traceId.toString())
   }
 
   @Test
   fun `strict=true, baggage missing org - starts new trace`() {
     val options = makeOptions(dsnOrgId = "1", strict = true)
-    val pc = PropagationContext.fromHeaders(NoOpLogger.getInstance(), sentryTrace, makeBaggage(null), options)
+    val pc =
+      PropagationContext.fromHeaders(
+        NoOpLogger.getInstance(),
+        sentryTrace,
+        makeBaggage(null),
+        options,
+      )
     assertNotEquals(incomingTraceId, pc.traceId.toString())
   }
 
   @Test
   fun `strict=true, sdk missing org - starts new trace`() {
     val options = makeOptions(dsnOrgId = null, strict = true)
-    val pc = PropagationContext.fromHeaders(NoOpLogger.getInstance(), sentryTrace, makeBaggage("1"), options)
+    val pc =
+      PropagationContext.fromHeaders(
+        NoOpLogger.getInstance(),
+        sentryTrace,
+        makeBaggage("1"),
+        options,
+      )
     assertNotEquals(incomingTraceId, pc.traceId.toString())
   }
 
   @Test
   fun `strict=true, both missing org - continues trace`() {
     val options = makeOptions(dsnOrgId = null, strict = true)
-    val pc = PropagationContext.fromHeaders(NoOpLogger.getInstance(), sentryTrace, makeBaggage(null), options)
+    val pc =
+      PropagationContext.fromHeaders(
+        NoOpLogger.getInstance(),
+        sentryTrace,
+        makeBaggage(null),
+        options,
+      )
     assertEquals(incomingTraceId, pc.traceId.toString())
   }
 
   @Test
   fun `strict=true, mismatched orgs - starts new trace`() {
     val options = makeOptions(dsnOrgId = "2", strict = true)
-    val pc = PropagationContext.fromHeaders(NoOpLogger.getInstance(), sentryTrace, makeBaggage("1"), options)
+    val pc =
+      PropagationContext.fromHeaders(
+        NoOpLogger.getInstance(),
+        sentryTrace,
+        makeBaggage("1"),
+        options,
+      )
     assertNotEquals(incomingTraceId, pc.traceId.toString())
   }
 }
