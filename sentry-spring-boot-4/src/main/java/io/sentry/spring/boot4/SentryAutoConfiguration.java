@@ -25,6 +25,7 @@ import io.sentry.spring7.SentryUserProvider;
 import io.sentry.spring7.SentryWebConfiguration;
 import io.sentry.spring7.SpringProfilesEventProcessor;
 import io.sentry.spring7.SpringSecuritySentryUserProvider;
+import io.sentry.spring7.cache.SentryCacheBeanPostProcessor;
 import io.sentry.spring7.checkin.SentryCheckInAdviceConfiguration;
 import io.sentry.spring7.checkin.SentryCheckInPointcutConfiguration;
 import io.sentry.spring7.checkin.SentryQuartzConfiguration;
@@ -65,6 +66,7 @@ import org.springframework.boot.restclient.autoconfigure.RestClientAutoConfigura
 import org.springframework.boot.restclient.autoconfigure.RestTemplateAutoConfiguration;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.boot.webclient.autoconfigure.WebClientAutoConfiguration;
+import org.springframework.cache.CacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
@@ -228,6 +230,19 @@ public class SentryAutoConfiguration {
       SchedulerFactoryBean.class
     })
     static class QuartzConfiguration {}
+
+    @Configuration(proxyBeanMethods = false)
+    @ConditionalOnClass(CacheManager.class)
+    @ConditionalOnProperty(name = "sentry.enable-cache-tracing", havingValue = "true")
+    @Open
+    static class SentryCacheConfiguration {
+
+      @Bean
+      public static @NotNull SentryCacheBeanPostProcessor sentryCacheBeanPostProcessor() {
+        SentryIntegrationPackageStorage.getInstance().addIntegration("SpringCache");
+        return new SentryCacheBeanPostProcessor();
+      }
+    }
 
     @Configuration(proxyBeanMethods = false)
     @ConditionalOnClass(ProceedingJoinPoint.class)
