@@ -31,6 +31,7 @@
 ### Fixes
 
 - Fix crash when unregistering `SystemEventsBroadcastReceiver` with try-catch block. ([#5106](https://github.com/getsentry/sentry-java/pull/5106))
+- Use `peekDecorView` instead of `getDecorView` in `SentryGestureListener` to avoid forcing view hierarchy construction ([#5134](https://github.com/getsentry/sentry-java/pull/5134))
 
 ## 8.33.0
 
