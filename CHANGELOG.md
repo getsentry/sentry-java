@@ -32,6 +32,12 @@
 
 - Fix crash when unregistering `SystemEventsBroadcastReceiver` with try-catch block. ([#5106](https://github.com/getsentry/sentry-java/pull/5106))
 
+### Dependencies
+
+- Bump Native SDK from v0.12.7 to v0.13.1 ([#5104](https://github.com/getsentry/sentry-java/pull/5104))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0131)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.12.7...0.13.1)
+
 ## 8.33.0
 
 ### Features
