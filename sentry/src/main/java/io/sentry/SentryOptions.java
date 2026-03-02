@@ -46,6 +46,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.atomic.AtomicBoolean;
 import javax.net.ssl.SSLSocketFactory;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -317,6 +318,12 @@ public class SentryOptions {
 
   /** Sentry Executor Service that sends cached events and envelopes on App. start. */
   private @NotNull ISentryExecutorService executorService = NoOpSentryExecutorService.getInstance();
+
+  /**
+   * Whether SpotlightIntegration has already been loaded via reflection. This prevents re-adding it
+   * if the user removed it in their configuration callback and activate() is called again.
+   */
+  private final @NotNull AtomicBoolean spotlightIntegrationLoaded = new AtomicBoolean(false);
 
   /** connection timeout in milliseconds. */
   private int connectionTimeoutMillis = 30_000;
@@ -657,21 +664,15 @@ public class SentryOptions {
     }
 
     // SpotlightIntegration is loaded via reflection to allow the sentry-spotlight module
-    // to be excluded from release builds, preventing insecure HTTP URLs from appearing in APKs
-    try {
-      final Class<?> clazz = Class.forName("io.sentry.spotlight.SpotlightIntegration");
-      boolean alreadyRegistered = false;
-      for (final Integration integration : integrations) {
-        if (clazz.isInstance(integration)) {
-          alreadyRegistered = true;
-          break;
-        }
-      }
-      if (!alreadyRegistered) {
+    // to be excluded from release builds, preventing insecure HTTP URLs from appearing in APKs.
+    // Only attempt once to avoid re-adding after user removal in their configuration callback.
+    if (spotlightIntegrationLoaded.compareAndSet(false, true)) {
+      try {
+        final Class<?> clazz = Class.forName("io.sentry.spotlight.SpotlightIntegration");
         integrations.add((Integration) clazz.getConstructor().newInstance());
+      } catch (Throwable ignored) {
+        // SpotlightIntegration not available
       }
-    } catch (Throwable ignored) {
-      // SpotlightIntegration not available
     }
   }
 
