@@ -44,7 +44,7 @@ jobs:
         run: make assembleUiTestCriticalRelease
 
       - name: Upload APK artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ${{env.APK_ARTIFACT_NAME}}
           path: "${{env.BASE_PATH}}/${{env.BUILD_PATH}}/${{env.APK_NAME}}"
@@ -141,7 +141,7 @@ jobs:
 
       - name: Upload Maestro test results
         if: ${{ always() }}
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: maestro-logs-${{ matrix.api-level }}-${{ matrix.arch }}-${{ matrix.target }}
           path: "${{env.BASE_PATH}}/maestro-logs"
