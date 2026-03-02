@@ -3348,6 +3348,33 @@ public final class io/sentry/SentryLongDate : io/sentry/SentryDate {
 	public fun nanoTimestamp ()J
 }
 
+public abstract class io/sentry/SentryMaskingOptions {
+	public static final field ANDROIDX_MEDIA_VIEW_CLASS_NAME Ljava/lang/String;
+	public static final field CAMERAX_PREVIEW_VIEW_CLASS_NAME Ljava/lang/String;
+	public static final field EXOPLAYER_CLASS_NAME Ljava/lang/String;
+	public static final field EXOPLAYER_STYLED_CLASS_NAME Ljava/lang/String;
+	public static final field IMAGE_VIEW_CLASS_NAME Ljava/lang/String;
+	public static final field TEXT_VIEW_CLASS_NAME Ljava/lang/String;
+	public static final field VIDEO_VIEW_CLASS_NAME Ljava/lang/String;
+	public static final field WEB_VIEW_CLASS_NAME Ljava/lang/String;
+	protected field maskViewClasses Ljava/util/Set;
+	protected field maskViewContainerClass Ljava/lang/String;
+	protected field unmaskViewClasses Ljava/util/Set;
+	protected field unmaskViewContainerClass Ljava/lang/String;
+	public fun <init> ()V
+	public fun addMaskViewClass (Ljava/lang/String;)V
+	public fun addUnmaskViewClass (Ljava/lang/String;)V
+	public fun getMaskViewClasses ()Ljava/util/Set;
+	public fun getMaskViewContainerClass ()Ljava/lang/String;
+	public fun getUnmaskViewClasses ()Ljava/util/Set;
+	public fun getUnmaskViewContainerClass ()Ljava/lang/String;
+	public fun setMaskAllImages (Z)V
+	public fun setMaskAllText (Z)V
+	public fun setMaskViewContainerClass (Ljava/lang/String;)V
+	public fun setUnmaskViewContainerClass (Ljava/lang/String;)V
+	public abstract fun trackCustomMasking ()V
+}
+
 public final class io/sentry/SentryMetricsEvent : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> (Lio/sentry/protocol/SentryId;Lio/sentry/SentryDate;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Double;)V
 	public fun <init> (Lio/sentry/protocol/SentryId;Ljava/lang/Double;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Double;)V
@@ -3902,24 +3929,14 @@ public final class io/sentry/SentryReplayEvent$ReplayType$Deserializer : io/sent
 	public synthetic fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
 }
 
-public final class io/sentry/SentryReplayOptions {
-	public static final field ANDROIDX_MEDIA_VIEW_CLASS_NAME Ljava/lang/String;
-	public static final field CAMERAX_PREVIEW_VIEW_CLASS_NAME Ljava/lang/String;
-	public static final field EXOPLAYER_CLASS_NAME Ljava/lang/String;
-	public static final field EXOPLAYER_STYLED_CLASS_NAME Ljava/lang/String;
-	public static final field IMAGE_VIEW_CLASS_NAME Ljava/lang/String;
+public final class io/sentry/SentryReplayOptions : io/sentry/SentryMaskingOptions {
 	public static final field MAX_NETWORK_BODY_SIZE I
-	public static final field TEXT_VIEW_CLASS_NAME Ljava/lang/String;
-	public static final field VIDEO_VIEW_CLASS_NAME Ljava/lang/String;
-	public static final field WEB_VIEW_CLASS_NAME Ljava/lang/String;
 	public fun <init> (Ljava/lang/Double;Ljava/lang/Double;Lio/sentry/protocol/SdkVersion;)V
 	public fun <init> (ZLio/sentry/protocol/SdkVersion;)V
 	public fun addMaskViewClass (Ljava/lang/String;)V
 	public fun addUnmaskViewClass (Ljava/lang/String;)V
 	public fun getErrorReplayDuration ()J
 	public fun getFrameRate ()I
-	public fun getMaskViewClasses ()Ljava/util/Set;
-	public fun getMaskViewContainerClass ()Ljava/lang/String;
 	public fun getNetworkDetailAllowUrls ()Ljava/util/List;
 	public fun getNetworkDetailDenyUrls ()Ljava/util/List;
 	public static fun getNetworkDetailsDefaultHeaders ()Ljava/util/List;
@@ -3932,8 +3949,6 @@ public final class io/sentry/SentryReplayOptions {
 	public fun getSessionDuration ()J
 	public fun getSessionSampleRate ()Ljava/lang/Double;
 	public fun getSessionSegmentDuration ()J
-	public fun getUnmaskViewClasses ()Ljava/util/Set;
-	public fun getUnmaskViewContainerClass ()Ljava/lang/String;
 	public fun isDebug ()Z
 	public fun isNetworkCaptureBodies ()Z
 	public fun isSessionReplayEnabled ()Z
@@ -3942,7 +3957,6 @@ public final class io/sentry/SentryReplayOptions {
 	public fun setDebug (Z)V
 	public fun setMaskAllImages (Z)V
 	public fun setMaskAllText (Z)V
-	public fun setMaskViewContainerClass (Ljava/lang/String;)V
 	public fun setNetworkCaptureBodies (Z)V
 	public fun setNetworkDetailAllowUrls (Ljava/util/List;)V
 	public fun setNetworkDetailDenyUrls (Ljava/util/List;)V
@@ -3954,7 +3968,6 @@ public final class io/sentry/SentryReplayOptions {
 	public fun setSdkVersion (Lio/sentry/protocol/SdkVersion;)V
 	public fun setSessionSampleRate (Ljava/lang/Double;)V
 	public fun setTrackConfiguration (Z)V
-	public fun setUnmaskViewContainerClass (Ljava/lang/String;)V
 	public fun trackCustomMasking ()V
 }
 
