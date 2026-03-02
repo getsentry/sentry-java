@@ -121,4 +121,36 @@ class DsnTest {
     Dsn("HTTP://publicKey:secretKey@host/path/id")
     Dsn("HTTPS://publicKey:secretKey@host/path/id")
   }
+
+  @Test
+  fun `extracts org id from host`() {
+    val dsn = Dsn("https://key@o123.ingest.sentry.io/456")
+    assertEquals("123", dsn.orgId)
+  }
+
+  @Test
+  fun `extracts single digit org id from host`() {
+    val dsn = Dsn("https://key@o1.ingest.us.sentry.io/456")
+    assertEquals("1", dsn.orgId)
+  }
+
+  @Test
+  fun `returns null org id when host has no org prefix`() {
+    val dsn = Dsn("https://key@sentry.io/456")
+    assertNull(dsn.orgId)
+  }
+
+  @Test
+  fun `returns null org id for non-standard host`() {
+    val dsn = Dsn("http://key@localhost:9000/456")
+    assertNull(dsn.orgId)
+  }
+
+  @Test
+  fun `org id can be overridden via setter`() {
+    val dsn = Dsn("https://key@o123.ingest.sentry.io/456")
+    assertEquals("123", dsn.orgId)
+    dsn.setOrgId("999")
+    assertEquals("999", dsn.orgId)
+  }
 }

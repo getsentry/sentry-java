@@ -2,15 +2,20 @@ package io.sentry;
 
 import io.sentry.util.Objects;
 import java.net.URI;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 final class Dsn {
+  private static final @NotNull Pattern ORG_ID_PATTERN = Pattern.compile("^o(\\d+)\\.");
+
   private final @NotNull String projectId;
   private final @Nullable String path;
   private final @Nullable String secretKey;
   private final @NotNull String publicKey;
   private final @NotNull URI sentryUri;
+  private @Nullable String orgId;
 
   /*
   / The project ID which the authenticated user is bound to.
@@ -87,8 +92,25 @@ final class Dsn {
       sentryUri =
           new URI(
               scheme, null, uri.getHost(), uri.getPort(), path + "api/" + projectId, null, null);
+
+      // Extract org ID from host (e.g., "o123.ingest.sentry.io" -> "123")
+      final String host = uri.getHost();
+      if (host != null) {
+        final Matcher matcher = ORG_ID_PATTERN.matcher(host);
+        if (matcher.find()) {
+          orgId = matcher.group(1);
+        }
+      }
     } catch (Throwable e) {
       throw new IllegalArgumentException(e);
     }
+  }
+
+  public @Nullable String getOrgId() {
+    return orgId;
+  }
+
+  void setOrgId(final @Nullable String orgId) {
+    this.orgId = orgId;
   }
 }
