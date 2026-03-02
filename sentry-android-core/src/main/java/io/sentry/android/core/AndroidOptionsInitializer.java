@@ -142,6 +142,7 @@ final class AndroidOptionsInitializer {
 
     readDefaultOptionValues(options, finalContext, buildInfoProvider);
     AppState.getInstance().registerLifecycleObserver(options);
+    options.activate();
   }
 
   @TestOnly
