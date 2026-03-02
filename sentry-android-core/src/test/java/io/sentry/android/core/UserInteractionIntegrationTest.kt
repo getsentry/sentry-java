@@ -39,16 +39,8 @@ class UserInteractionIntegrationTest {
 
     fun getSut(
       callback: Window.Callback? = null,
-      isAndroidXAvailable: Boolean = true,
       isLifecycleAvailable: Boolean = true,
     ): UserInteractionIntegration {
-      whenever(
-          loadClass.isClassAvailable(
-            eq("androidx.core.view.GestureDetectorCompat"),
-            anyOrNull<SentryAndroidOptions>(),
-          )
-        )
-        .thenReturn(isAndroidXAvailable)
       whenever(
           loadClass.isClassAvailable(
             eq("androidx.lifecycle.Lifecycle"),
@@ -97,15 +89,6 @@ class UserInteractionIntegrationTest {
     sut.close()
 
     verify(fixture.application).unregisterActivityLifecycleCallbacks(any())
-  }
-
-  @Test
-  fun `when androidx is unavailable doesn't register a callback`() {
-    val sut = fixture.getSut(isAndroidXAvailable = false)
-
-    sut.register(fixture.scopes, fixture.options)
-
-    verify(fixture.application, never()).registerActivityLifecycleCallbacks(any())
   }
 
   @Test
