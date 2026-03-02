@@ -98,19 +98,13 @@ class DsnTest {
   @Test
   fun `when dsn is empty, throws exception`() {
     val ex = assertFailsWith<IllegalArgumentException> { Dsn("") }
-    assertEquals(
-      "java.lang.IllegalArgumentException: The DSN is empty.",
-      ex.message,
-    )
+    assertEquals("java.lang.IllegalArgumentException: The DSN is empty.", ex.message)
   }
 
   @Test
   fun `when dsn is only whitespace, throws exception`() {
     val ex = assertFailsWith<IllegalArgumentException> { Dsn("   ") }
-    assertEquals(
-      "java.lang.IllegalArgumentException: The DSN is empty.",
-      ex.message,
-    )
+    assertEquals("java.lang.IllegalArgumentException: The DSN is empty.", ex.message)
   }
 
   @Test
