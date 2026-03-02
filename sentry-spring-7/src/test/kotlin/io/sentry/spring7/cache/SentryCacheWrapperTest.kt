@@ -22,12 +22,14 @@ class SentryCacheWrapperTest {
 
   private lateinit var scopes: IScopes
   private lateinit var delegate: Cache
+  private lateinit var options: SentryOptions
 
   @BeforeTest
   fun setup() {
     scopes = mock()
     delegate = mock()
-    whenever(scopes.options).thenReturn(SentryOptions())
+    options = SentryOptions().apply { isEnableCacheTracing = true }
+    whenever(scopes.options).thenReturn(options)
     whenever(delegate.name).thenReturn("testCache")
   }
 
@@ -221,6 +223,21 @@ class SentryCacheWrapperTest {
     wrapper.get("myKey")
 
     verify(delegate).get("myKey")
+  }
+
+  // -- no span when option is disabled --
+
+  @Test
+  fun `does not create span when enableCacheTracing is false`() {
+    options.isEnableCacheTracing = false
+    val tx = createTransaction()
+    val wrapper = SentryCacheWrapper(delegate, scopes)
+    whenever(delegate.get("myKey")).thenReturn(null)
+
+    wrapper.get("myKey")
+
+    verify(delegate).get("myKey")
+    assertEquals(0, tx.spans.size)
   }
 
   // -- error handling --

@@ -397,6 +397,7 @@ class SentryOptionsTest {
     externalOptions.ignoredErrors = listOf("Some error", "Another .*")
     externalOptions.isEnableBackpressureHandling = false
     externalOptions.isEnableDatabaseTransactionTracing = true
+    externalOptions.isEnableCacheTracing = true
     externalOptions.maxRequestBodySize = SentryOptions.RequestSize.MEDIUM
     externalOptions.isSendDefaultPii = true
     externalOptions.isForceInit = true
@@ -459,6 +460,7 @@ class SentryOptionsTest {
     )
     assertFalse(options.isEnableBackpressureHandling)
     assertTrue(options.isEnableDatabaseTransactionTracing)
+    assertTrue(options.isEnableCacheTracing)
     assertTrue(options.isForceInit)
     assertNotNull(options.cron)
     assertEquals(10L, options.cron?.defaultCheckinMargin)
@@ -675,6 +677,11 @@ class SentryOptionsTest {
   @Test
   fun `when options are initialized, enableDatabaseTransactionTracing is set to false by default`() {
     assertFalse(SentryOptions().isEnableDatabaseTransactionTracing)
+  }
+
+  @Test
+  fun `when options are initialized, enableCacheTracing is set to false by default`() {
+    assertFalse(SentryOptions().isEnableCacheTracing)
   }
 
   @Test
