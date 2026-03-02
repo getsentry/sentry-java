@@ -50,6 +50,10 @@ public final class SentryGestureDetector {
     if (velocityTracker == null) {
       velocityTracker = VelocityTracker.obtain();
     }
+
+    if (action == MotionEvent.ACTION_DOWN) {
+      velocityTracker.clear();
+    }
     velocityTracker.addMovement(event);
 
     switch (action) {
