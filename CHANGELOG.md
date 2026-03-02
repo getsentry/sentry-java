@@ -31,6 +31,7 @@
 ### Fixes
 
 - Fix crash when unregistering `SystemEventsBroadcastReceiver` with try-catch block. ([#5106](https://github.com/getsentry/sentry-java/pull/5106))
+- Identify and correctly structure Java/Kotlin frames in mixed Tombstone stack traces. ([#5116](https://github.com/getsentry/sentry-java/pull/5116))
 
 ### Dependencies
 

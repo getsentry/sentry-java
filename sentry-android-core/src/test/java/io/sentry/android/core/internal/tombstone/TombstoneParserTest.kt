@@ -101,14 +101,20 @@ class TombstoneParserTest {
 
       for (frame in thread.stacktrace!!.frames!!) {
         assertNotNull(frame.function)
-        assertNotNull(frame.`package`)
-        assertNotNull(frame.instructionAddr)
+        if (frame.platform == "java") {
+          // Java frames have module instead of package/instructionAddr
+          assertNotNull(frame.module)
+        } else {
+          assertNotNull(frame.`package`)
+          assertNotNull(frame.instructionAddr)
+        }
 
         if (thread.id == crashedThreadId) {
           if (frame.isInApp!!) {
             assert(
-              frame.function!!.startsWith(inAppIncludes[0]) ||
-                frame.`package`!!.startsWith(nativeLibraryDir)
+              frame.module?.startsWith(inAppIncludes[0]) == true ||
+                frame.function!!.startsWith(inAppIncludes[0]) ||
+                frame.`package`?.startsWith(nativeLibraryDir) == true
             )
           }
         }
@@ -427,6 +433,148 @@ class TombstoneParserTest {
         assertNotNull(frame.isInApp)
       }
     }
+  }
+
+  @Test
+  fun `java frames snapshot test for all threads`() {
+    val tombstoneStream =
+      GZIPInputStream(TombstoneParserTest::class.java.getResourceAsStream("/tombstone.pb.gz"))
+    val parser = TombstoneParser(tombstoneStream, inAppIncludes, inAppExcludes, nativeLibraryDir)
+    val event = parser.parse()
+
+    val logger = mock<ILogger>()
+    val writer = StringWriter()
+    val jsonWriter = JsonObjectWriter(writer, 100)
+    jsonWriter.beginObject()
+    for (thread in event.threads!!) {
+      val javaFrames = thread.stacktrace!!.frames!!.filter { it.platform == "java" }
+      if (javaFrames.isEmpty()) continue
+      jsonWriter.name(thread.id.toString())
+      jsonWriter.beginArray()
+      for (frame in javaFrames) {
+        frame.serialize(jsonWriter, logger)
+      }
+      jsonWriter.endArray()
+    }
+    jsonWriter.endObject()
+
+    val actualJson = writer.toString()
+    val expectedJson = readGzippedResourceFile("/tombstone_java_frames.json.gz")
+
+    assertEquals(expectedJson, actualJson)
+  }
+
+  @Test
+  fun `extracts java function and module from plain PrettyMethod format`() {
+    val event = parseTombstoneWithJavaFunctionName("com.example.MyClass.myMethod")
+    val frame = event.threads!![0].stacktrace!!.frames!![0]
+    assertEquals("java", frame.platform)
+    assertEquals("myMethod", frame.function)
+    assertEquals("com.example.MyClass", frame.module)
+  }
+
+  @Test
+  fun `extracts java function and module from PrettyMethod with_signature format`() {
+    val event =
+      parseTombstoneWithJavaFunctionName("void com.example.MyClass.myMethod(int, java.lang.String)")
+    val frame = event.threads!![0].stacktrace!!.frames!![0]
+    assertEquals("java", frame.platform)
+    assertEquals("myMethod", frame.function)
+    assertEquals("com.example.MyClass", frame.module)
+  }
+
+  @Test
+  fun `extracts java function and module from PrettyMethod with_signature with object return type`() {
+    val event =
+      parseTombstoneWithJavaFunctionName("java.lang.String com.example.MyClass.myMethod(int)")
+    val frame = event.threads!![0].stacktrace!!.frames!![0]
+    assertEquals("java", frame.platform)
+    assertEquals("myMethod", frame.function)
+    assertEquals("com.example.MyClass", frame.module)
+  }
+
+  @Test
+  fun `extracts java function and module from PrettyMethod with_signature with no params`() {
+    val event = parseTombstoneWithJavaFunctionName("void com.example.MyClass.myMethod()")
+    val frame = event.threads!![0].stacktrace!!.frames!![0]
+    assertEquals("java", frame.platform)
+    assertEquals("myMethod", frame.function)
+    assertEquals("com.example.MyClass", frame.module)
+  }
+
+  @Test
+  fun `handles bare function name without package`() {
+    val event = parseTombstoneWithJavaFunctionName("myMethod")
+    val frame = event.threads!![0].stacktrace!!.frames!![0]
+    assertEquals("java", frame.platform)
+    assertEquals("myMethod", frame.function)
+    assertEquals("", frame.module)
+  }
+
+  @Test
+  fun `handles PrettyMethod with_signature bare function name`() {
+    val event = parseTombstoneWithJavaFunctionName("void myMethod()")
+    val frame = event.threads!![0].stacktrace!!.frames!![0]
+    assertEquals("java", frame.platform)
+    assertEquals("myMethod", frame.function)
+    assertEquals("", frame.module)
+  }
+
+  @Test
+  fun `java frame with_signature format is correctly detected as inApp`() {
+    val event =
+      parseTombstoneWithJavaFunctionName("void io.sentry.samples.android.MyClass.myMethod(int)")
+    val frame = event.threads!![0].stacktrace!!.frames!![0]
+    assertEquals("java", frame.platform)
+    assertEquals(true, frame.isInApp)
+  }
+
+  @Test
+  fun `java frame with_signature format is correctly detected as not inApp`() {
+    val event =
+      parseTombstoneWithJavaFunctionName(
+        "void android.os.Handler.handleCallback(android.os.Message)"
+      )
+    val frame = event.threads!![0].stacktrace!!.frames!![0]
+    assertEquals("java", frame.platform)
+    assertEquals(false, frame.isInApp)
+  }
+
+  private fun parseTombstoneWithJavaFunctionName(functionName: String): io.sentry.SentryEvent {
+    val tombstone =
+      TombstoneProtos.Tombstone.newBuilder()
+        .setPid(1234)
+        .setTid(1234)
+        .setSignalInfo(
+          TombstoneProtos.Signal.newBuilder()
+            .setNumber(11)
+            .setName("SIGSEGV")
+            .setCode(1)
+            .setCodeName("SEGV_MAPERR")
+        )
+        .putThreads(
+          1234,
+          TombstoneProtos.Thread.newBuilder()
+            .setId(1234)
+            .setName("main")
+            .addCurrentBacktrace(
+              TombstoneProtos.BacktraceFrame.newBuilder()
+                .setPc(0x1000)
+                .setFunctionName(functionName)
+                .setFileName("/data/app/base.apk!classes.oat")
+            )
+            .build(),
+        )
+        .build()
+
+    val parser =
+      TombstoneParser(
+        ByteArrayInputStream(tombstone.toByteArray()),
+        inAppIncludes,
+        inAppExcludes,
+        nativeLibraryDir,
+      )
+    return parser.parse()
   }
 
   private fun serializeDebugMeta(debugMeta: DebugMeta): String {
