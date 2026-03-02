@@ -2,11 +2,44 @@
 
 ## Unreleased
 
+### Features
+
+- Create `sentry-opentelemetry-otlp` and `sentry-opentelemetry-otlp-spring` modules for combining OpenTelemetry SDK OTLP export with Sentry SDK ([#5100](https://github.com/getsentry/sentry-java/pull/5100))
+  - OpenTelemetry is configured to send spans to Sentry directly using an OTLP endpoint.
+  - Sentry only uses trace and span ID from OpenTelemetry (via `OpenTelemetryOtlpEventProcessor`) but will not send spans through OpenTelemetry nor use OpenTelemetry `Context` for `Scopes` propagation.
+  - See the OTLP setup docs for [Java](https://docs.sentry.io/platforms/java/opentelemetry/setup/otlp/) and [Spring Boot](https://docs.sentry.io/platforms/java/guides/spring-boot/opentelemetry/setup/otlp/) for installation and configuration instructions.
+- Add screenshot masking support using view hierarchy ([#5077](https://github.com/getsentry/sentry-java/pull/5077))
+  - Masks sensitive content (text, images) in error screenshots using the same view hierarchy approach as Session Replay
+  - Requires the `sentry-android-replay` module to be present at runtime for masking to work
+  - Enable via code:
+    ```kotlin
+    SentryAndroid.init(context) { options ->
+        options.isAttachScreenshot = true
+        options.screenshot.setMaskAllText(true)
+        options.screenshot.setMaskAllImages(true)
+        // Or mask specific view classes
+        options.screenshot.addMaskViewClass("com.example.MyCustomView")
+    }
+    ```
+  - Or via `AndroidManifest.xml`:
+    ```xml
+    <meta-data android:name="io.sentry.attach-screenshot" android:value="true" />
+    <meta-data android:name="io.sentry.screenshot.mask-all-text" android:value="true" />
+    <meta-data android:name="io.sentry.screenshot.mask-all-images" android:value="true" />
+    ```
+
 ### Fixes
 
 - Fix crash when unregistering `SystemEventsBroadcastReceiver` with try-catch block. ([#5106](https://github.com/getsentry/sentry-java/pull/5106))
 - Log an actionable error message when Relay returns HTTP 413 (Content Too Large) ([#5115](https://github.com/getsentry/sentry-java/pull/5115))
   - Also switch the client report discard reason for all HTTP 4xx/5xx errors (except 429) from `network_error` to `send_error`
+- Trim DSN string before parsing to avoid `URISyntaxException` caused by trailing whitespace ([#5113](https://github.com/getsentry/sentry-java/pull/5113))
+
+### Dependencies
+
+- Bump Native SDK from v0.12.7 to v0.13.1 ([#5104](https://github.com/getsentry/sentry-java/pull/5104))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0131)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.12.7...0.13.1)
 
 ## 8.33.0
 
