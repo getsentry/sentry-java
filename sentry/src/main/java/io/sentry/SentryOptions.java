@@ -749,7 +749,7 @@ public class SentryOptions {
    * @param dsn the DSN
    */
   public void setDsn(final @Nullable String dsn) {
-    this.dsn = dsn;
+    this.dsn = dsn != null ? dsn.trim() : null;
     this.parsedDsn.resetValue();
 
     dsnHash = StringUtils.calculateStringHash(this.dsn, logger);

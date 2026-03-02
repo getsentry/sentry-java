@@ -50,8 +50,11 @@ final class Dsn {
 
   Dsn(@Nullable String dsn) throws IllegalArgumentException {
     try {
-      Objects.requireNonNull(dsn, "The DSN is required.");
-      final URI uri = new URI(dsn).normalize();
+      final String dsnString = Objects.requireNonNull(dsn, "The DSN is required.").trim();
+      if (dsnString.isEmpty()) {
+        throw new IllegalArgumentException("The DSN is empty.");
+      }
+      final URI uri = new URI(dsnString).normalize();
       final String scheme = uri.getScheme();
       if (!("http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme))) {
         throw new IllegalArgumentException("Invalid DSN scheme: " + scheme);
