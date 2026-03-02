@@ -210,6 +210,10 @@ public final class SentryCacheWrapper implements Cache {
   }
 
   private @Nullable ISpan startSpan(final @NotNull String operation, final @Nullable Object key) {
+    if (!scopes.getOptions().isEnableCacheTracing()) {
+      return null;
+    }
+
     final ISpan activeSpan = scopes.getSpan();
     if (activeSpan == null || activeSpan.isNoOp()) {
       return null;
