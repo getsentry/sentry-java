@@ -589,6 +589,24 @@ class SentryOptionsTest {
   }
 
   @Test
+  fun `when setting dsn with whitespace, it is trimmed and produces the same cache dir path`() {
+    val dsn = "http://key@localhost/proj"
+    val options1 =
+      SentryOptions().apply {
+        setDsn(dsn)
+        cacheDirPath = "${File.separator}test"
+      }
+    val options2 =
+      SentryOptions().apply {
+        setDsn("  $dsn  ")
+        cacheDirPath = "${File.separator}test"
+      }
+
+    assertEquals(dsn, options2.dsn)
+    assertEquals(options1.cacheDirPath, options2.cacheDirPath)
+  }
+
+  @Test
   fun `when options are initialized, idleTimeout is 3000`() {
     assertEquals(3000L, SentryOptions().idleTimeout)
   }

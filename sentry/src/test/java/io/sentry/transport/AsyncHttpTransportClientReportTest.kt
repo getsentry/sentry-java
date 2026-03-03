@@ -94,7 +94,7 @@ class AsyncHttpTransportClientReportTest {
       .attachReportToEnvelope(same(fixture.envelopeBeforeAttachingClientReport))
     verify(fixture.clientReportRecorder, times(1))
       .recordLostEnvelope(
-        eq(DiscardReason.NETWORK_ERROR),
+        eq(DiscardReason.SEND_ERROR),
         same(fixture.envelopeAfterAttachingClientReport),
       )
     verifyNoMoreInteractions(fixture.clientReportRecorder)
@@ -118,7 +118,7 @@ class AsyncHttpTransportClientReportTest {
       .attachReportToEnvelope(same(fixture.envelopeBeforeAttachingClientReport))
     verify(fixture.clientReportRecorder, times(1))
       .recordLostEnvelope(
-        eq(DiscardReason.NETWORK_ERROR),
+        eq(DiscardReason.SEND_ERROR),
         same(fixture.envelopeAfterAttachingClientReport),
       )
     verifyNoMoreInteractions(fixture.clientReportRecorder)
@@ -145,7 +145,7 @@ class AsyncHttpTransportClientReportTest {
       .attachReportToEnvelope(same(fixture.envelopeBeforeAttachingClientReport))
     verify(fixture.clientReportRecorder, times(1))
       .recordLostEnvelope(
-        eq(DiscardReason.NETWORK_ERROR),
+        eq(DiscardReason.SEND_ERROR),
         same(fixture.envelopeAfterAttachingClientReport),
       )
     verifyNoMoreInteractions(fixture.clientReportRecorder)
@@ -169,10 +169,61 @@ class AsyncHttpTransportClientReportTest {
       .attachReportToEnvelope(same(fixture.envelopeBeforeAttachingClientReport))
     verify(fixture.clientReportRecorder, times(1))
       .recordLostEnvelope(
-        eq(DiscardReason.NETWORK_ERROR),
+        eq(DiscardReason.SEND_ERROR),
         same(fixture.envelopeAfterAttachingClientReport),
       )
     verifyNoMoreInteractions(fixture.clientReportRecorder)
+  }
+
+  @Test
+  fun `records lost envelope with send_error on 413 for retryable`() {
+    // given
+    givenSetup(TransportResult.error(413))
+    whenever(
+        fixture.envelopeCache.storeEnvelope(eq(fixture.envelopeBeforeAttachingClientReport), any())
+      )
+      .thenReturn(true)
+
+    // when
+    val retryableHint = retryableHint()
+    assertFailsWith(java.lang.IllegalStateException::class) {
+      fixture.getSUT().send(fixture.envelopeBeforeAttachingClientReport, retryableHint)
+    }
+
+    // then
+    verify(fixture.clientReportRecorder, times(1))
+      .attachReportToEnvelope(same(fixture.envelopeBeforeAttachingClientReport))
+    verify(fixture.clientReportRecorder, times(1))
+      .recordLostEnvelope(
+        eq(DiscardReason.SEND_ERROR),
+        same(fixture.envelopeAfterAttachingClientReport),
+      )
+    verifyNoMoreInteractions(fixture.clientReportRecorder)
+    val sentrySdkHint = HintUtils.getSentrySdkHint(retryableHint)
+    assertFalse((sentrySdkHint as Retryable).isRetry)
+    verify(fixture.envelopeCache).discard(fixture.envelopeBeforeAttachingClientReport)
+  }
+
+  @Test
+  fun `records lost envelope with send_error on 413 for non retryable`() {
+    // given
+    givenSetup(TransportResult.error(413))
+
+    // when
+    assertFailsWith(java.lang.IllegalStateException::class) {
+      fixture.getSUT().send(fixture.envelopeBeforeAttachingClientReport)
+    }
+
+    // then
+    verify(fixture.clientReportRecorder, times(1))
+      .attachReportToEnvelope(same(fixture.envelopeBeforeAttachingClientReport))
+    verify(fixture.clientReportRecorder, times(1))
+      .recordLostEnvelope(
+        eq(DiscardReason.SEND_ERROR),
+        same(fixture.envelopeAfterAttachingClientReport),
+      )
+    verifyNoMoreInteractions(fixture.clientReportRecorder)
+    verify(fixture.envelopeCache).discard(fixture.envelopeBeforeAttachingClientReport)
   }
 
   @Test

@@ -145,7 +145,7 @@ class ApacheHttpClientTransportClientReportTest {
       .attachReportToEnvelope(same(fixture.envelopeBeforeClientReportAttached))
     verify(fixture.clientReportRecorder, times(1))
       .recordLostEnvelope(
-        eq(DiscardReason.NETWORK_ERROR),
+        eq(DiscardReason.SEND_ERROR),
         same(fixture.envelopeAfterClientReportAttached),
       )
     verifyNoMoreInteractions(fixture.clientReportRecorder)
@@ -173,7 +173,7 @@ class ApacheHttpClientTransportClientReportTest {
       .attachReportToEnvelope(same(fixture.envelopeBeforeClientReportAttached))
     verify(fixture.clientReportRecorder, times(1))
       .recordLostEnvelope(
-        eq(DiscardReason.NETWORK_ERROR),
+        eq(DiscardReason.SEND_ERROR),
         same(fixture.envelopeAfterClientReportAttached),
       )
     verifyNoMoreInteractions(fixture.clientReportRecorder)
@@ -182,6 +182,34 @@ class ApacheHttpClientTransportClientReportTest {
   @Test
   fun `does not record lost envelope on 400 error for retryable`() {
     val sut = fixture.getSut(SimpleHttpResponse(400))
+
+    sut.send(fixture.envelopeBeforeClientReportAttached, retryableHint())
+
+    verify(fixture.clientReportRecorder, times(1))
+      .attachReportToEnvelope(same(fixture.envelopeBeforeClientReportAttached))
+    verify(fixture.clientReportRecorder, never()).recordLostEnvelope(any(), any())
+    verifyNoMoreInteractions(fixture.clientReportRecorder)
+  }
+
+  @Test
+  fun `records lost envelope with send_error on 413 for non retryable`() {
+    val sut = fixture.getSut(SimpleHttpResponse(413))
+
+    sut.send(fixture.envelopeBeforeClientReportAttached)
+
+    verify(fixture.clientReportRecorder, times(1))
+      .attachReportToEnvelope(same(fixture.envelopeBeforeClientReportAttached))
+    verify(fixture.clientReportRecorder, times(1))
+      .recordLostEnvelope(
+        eq(DiscardReason.SEND_ERROR),
+        same(fixture.envelopeAfterClientReportAttached),
+      )
+    verifyNoMoreInteractions(fixture.clientReportRecorder)
+  }
+
+  @Test
+  fun `does not record lost envelope on 413 error for retryable`() {
+    val sut = fixture.getSut(SimpleHttpResponse(413))
 
     sut.send(fixture.envelopeBeforeClientReportAttached, retryableHint())
 

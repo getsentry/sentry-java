@@ -258,7 +258,7 @@ class MainEventProcessorTest {
 
     assertNotNull(event.threads)
     assertEquals(1, event.threads!!.count { it.isCrashed == true })
-    assertNotNull(event.threads!!.first().stacktrace)
+    assertNotNull(event.threads!!.first { it.isCrashed == true }.stacktrace)
   }
 
   @Test

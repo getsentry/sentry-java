@@ -113,16 +113,29 @@ public final class ApacheHttpClientTransport implements ITransport {
                   @Override
                   public void completed(SimpleHttpResponse response) {
                     if (response.getCode() != 200) {
-                      options
-                          .getLogger()
-                          .log(ERROR, "Request failed, API returned %s", response.getCode());
+                      if (response.getCode() == 413) {
+                        options
+                            .getLogger()
+                            .log(
+                                ERROR,
+                                "Envelope was discarded by the server because it was too large."
+                                    + " Consider reducing the size of events, breadcrumbs,"
+                                    + " or attachments."
+                                    + " You can use the `SentryOptions.onOversizedEvent`"
+                                    + " callback to customize how oversized events"
+                                    + " are handled.");
+                      } else {
+                        options
+                            .getLogger()
+                            .log(ERROR, "Request failed, API returned %s", response.getCode());
+                      }
 
                       if (response.getCode() >= 400 && response.getCode() != 429) {
                         if (!HintUtils.hasType(hint, Retryable.class)) {
                           options
                               .getClientReportRecorder()
                               .recordLostEnvelope(
-                                  DiscardReason.NETWORK_ERROR, envelopeWithClientReport);
+                                  DiscardReason.SEND_ERROR, envelopeWithClientReport);
                         }
                       }
                     } else {
