@@ -21,7 +21,7 @@ object NotificationHelper {
     // Create notification channel for Android 8.0+ (API 26+)
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
       val channel =
-        NotificationChannel(CHANNEL_ID, "Notifications", NotificationManager.IMPORTANCE_DEFAULT)
+        NotificationChannel(CHANNEL_ID, "Notifications", NotificationManager.IMPORTANCE_HIGH)
       channel.description = "description"
       notificationManager.createNotificationChannel(channel)
     }
