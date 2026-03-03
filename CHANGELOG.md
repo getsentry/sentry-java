@@ -45,6 +45,10 @@
   - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0131)
   - [diff](https://github.com/getsentry/sentry-native/compare/0.12.7...0.13.1)
 
+### Internal
+
+- Check notification permission before launching request to fix flaky API 34 tests ([#5146](https://github.com/getsentry/sentry-java/pull/5146))
+
 ## 8.33.0
 
 ### Features
