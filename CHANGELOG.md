@@ -4,6 +4,7 @@
 
 ### Features
 
+- Add scope-level attributes API ([#5118](https://github.com/getsentry/sentry-java/pull/5118))
 - Create `sentry-opentelemetry-otlp` and `sentry-opentelemetry-otlp-spring` modules for combining OpenTelemetry SDK OTLP export with Sentry SDK ([#5100](https://github.com/getsentry/sentry-java/pull/5100))
   - OpenTelemetry is configured to send spans to Sentry directly using an OTLP endpoint.
   - Sentry only uses trace and span ID from OpenTelemetry (via `OpenTelemetryOtlpEventProcessor`) but will not send spans through OpenTelemetry nor use OpenTelemetry `Context` for `Scopes` propagation.
