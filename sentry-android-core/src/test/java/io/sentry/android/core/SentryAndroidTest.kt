@@ -16,6 +16,7 @@ import io.sentry.DateUtils
 import io.sentry.Hint
 import io.sentry.ILogger
 import io.sentry.ISentryClient
+import io.sentry.NoOpSentryExecutorService
 import io.sentry.Sentry
 import io.sentry.Sentry.OptionsConfiguration
 import io.sentry.SentryEnvelope
@@ -526,6 +527,19 @@ class SentryAndroidTest {
 
     assertEquals(99, AppStartMetrics.getInstance().sdkInitTimeSpan.startUptimeMs)
     assertEquals(99, AppStartMetrics.getInstance().appStartTimeSpan.startUptimeMs)
+  }
+
+  @Test
+  fun `executor service is not NoOp when AndroidConnectionStatusProvider is initialized`() {
+    var executorServiceIsNoOp = true
+    fixture.initSut(context = context) { options ->
+      options.dsn = "https://key@sentry.io/123"
+      // the config callback runs before initializeIntegrationsAndProcessors, which creates
+      // AndroidConnectionStatusProvider - so if the executor is already real here,
+      // it's guaranteed to be real when the provider calls submitSafe()
+      executorServiceIsNoOp = options.executorService is NoOpSentryExecutorService
+    }
+    assertFalse(executorServiceIsNoOp)
   }
 
   @Test

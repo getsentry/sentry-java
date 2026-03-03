@@ -34,6 +34,7 @@
 - Log an actionable error message when Relay returns HTTP 413 (Content Too Large) ([#5115](https://github.com/getsentry/sentry-java/pull/5115))
   - Also switch the client report discard reason for all HTTP 4xx/5xx errors (except 429) from `network_error` to `send_error`
 - Trim DSN string before parsing to avoid `URISyntaxException` caused by trailing whitespace ([#5113](https://github.com/getsentry/sentry-java/pull/5113))
+- Reduce allocations and bytecode instructions during `Sentry.init` ([#5135](https://github.com/getsentry/sentry-java/pull/5135))
 
 ### Dependencies
 

@@ -142,6 +142,7 @@ final class AndroidOptionsInitializer {
 
     readDefaultOptionValues(options, finalContext, buildInfoProvider);
     AppState.getInstance().registerLifecycleObserver(options);
+    options.activate();
   }
 
   @TestOnly
@@ -200,7 +201,7 @@ final class AndroidOptionsInitializer {
     final @NotNull AppStartMetrics appStartMetrics = AppStartMetrics.getInstance();
 
     if (options.getModulesLoader() instanceof NoOpModulesLoader) {
-      options.setModulesLoader(new AssetsModulesLoader(context, options.getLogger()));
+      options.setModulesLoader(new AssetsModulesLoader(context, options));
     }
     if (options.getDebugMetaLoader() instanceof NoOpDebugMetaLoader) {
       options.setDebugMetaLoader(new AssetsDebugMetaLoader(context, options.getLogger()));
