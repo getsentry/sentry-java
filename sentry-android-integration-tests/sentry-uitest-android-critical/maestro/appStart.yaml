@@ -37,10 +37,11 @@ name: App Start Tests
     while:
       notVisible: "Sentry Test Notification"
     commands:
+      # Short swipe to open notification shade without expanding to quick settings
       - swipe:
-          start: 50%, 1%
-          end: 50%, 50%
-          duration: 1000
+          start: 50%, 0%
+          end: 50%, 25%
+          duration: 500
       - waitForAnimationToEnd
 - tapOn: "Sentry Test Notification"
 - assertVisible: "App Start Type: WARM"
@@ -67,10 +68,11 @@ name: App Start Tests
     while:
       notVisible: "Sentry Test Notification"
     commands:
+      # Short swipe to open notification shade without expanding to quick settings
       - swipe:
-          start: 50%, 1%
-          end: 50%, 50%
-          duration: 1000
+          start: 50%, 0%
+          end: 50%, 25%
+          duration: 500
       - waitForAnimationToEnd
 - tapOn: "Sentry Test Notification"
 - assertVisible: "App Start Type: COLD"
