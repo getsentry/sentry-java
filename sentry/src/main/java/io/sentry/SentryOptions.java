@@ -31,8 +31,6 @@ import io.sentry.util.LoadClass;
 import io.sentry.util.Platform;
 import io.sentry.util.SampleRateUtils;
 import io.sentry.util.StringUtils;
-import io.sentry.util.runtime.IRuntimeManager;
-import io.sentry.util.runtime.NeutralRuntimeManager;
 import io.sentry.util.thread.IThreadChecker;
 import io.sentry.util.thread.NoOpThreadChecker;
 import java.io.File;
@@ -639,9 +637,6 @@ public class SentryOptions {
   private @NotNull SentryOptions.Metrics metrics = new SentryOptions.Metrics();
 
   private @NotNull ISocketTagger socketTagger = NoOpSocketTagger.getInstance();
-
-  /** Runtime manager to manage runtime policies, like StrictMode on Android. */
-  private @NotNull IRuntimeManager runtimeManager = new NeutralRuntimeManager();
 
   private @Nullable String profilingTracesDirPath;
 
@@ -3156,26 +3151,6 @@ public class SentryOptions {
    */
   public void setSocketTagger(final @Nullable ISocketTagger socketTagger) {
     this.socketTagger = socketTagger != null ? socketTagger : NoOpSocketTagger.getInstance();
-  }
-
-  /**
-   * Returns the IRuntimeManager
-   *
-   * @return the runtime manager
-   */
-  @ApiStatus.Internal
-  public @NotNull IRuntimeManager getRuntimeManager() {
-    return runtimeManager;
-  }
-
-  /**
-   * Sets the IRuntimeManager
-   *
-   * @param runtimeManager the runtime manager
-   */
-  @ApiStatus.Internal
-  public void setRuntimeManager(final @NotNull IRuntimeManager runtimeManager) {
-    this.runtimeManager = runtimeManager;
   }
 
   /**
