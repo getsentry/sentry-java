@@ -3564,7 +3564,6 @@ public class io/sentry/SentryOptions {
 	public fun getReadTimeoutMillis ()I
 	public fun getRelease ()Ljava/lang/String;
 	public fun getReplayController ()Lio/sentry/ReplayController;
-	public fun getRuntimeManager ()Lio/sentry/util/runtime/IRuntimeManager;
 	public fun getSampleRate ()Ljava/lang/Double;
 	public fun getScopeObservers ()Ljava/util/List;
 	public fun getSdkVersion ()Lio/sentry/protocol/SdkVersion;
@@ -3718,7 +3717,6 @@ public class io/sentry/SentryOptions {
 	public fun setReadTimeoutMillis (I)V
 	public fun setRelease (Ljava/lang/String;)V
 	public fun setReplayController (Lio/sentry/ReplayController;)V
-	public fun setRuntimeManager (Lio/sentry/util/runtime/IRuntimeManager;)V
 	public fun setSampleRate (Ljava/lang/Double;)V
 	public fun setSdkVersion (Lio/sentry/protocol/SdkVersion;)V
 	public fun setSendClientReports (Z)V
@@ -4806,6 +4804,7 @@ public final class io/sentry/clientreport/DiscardReason : java/lang/Enum {
 	public static final field QUEUE_OVERFLOW Lio/sentry/clientreport/DiscardReason;
 	public static final field RATELIMIT_BACKOFF Lio/sentry/clientreport/DiscardReason;
 	public static final field SAMPLE_RATE Lio/sentry/clientreport/DiscardReason;
+	public static final field SEND_ERROR Lio/sentry/clientreport/DiscardReason;
 	public fun getReason ()Ljava/lang/String;
 	public static fun valueOf (Ljava/lang/String;)Lio/sentry/clientreport/DiscardReason;
 	public static fun values ()[Lio/sentry/clientreport/DiscardReason;
@@ -7809,21 +7808,6 @@ public final class io/sentry/util/network/ReplayNetworkRequestOrResponse {
 	public fun getHeaders ()Ljava/util/Map;
 	public fun getSize ()Ljava/lang/Long;
 	public fun toString ()Ljava/lang/String;
-}
-
-public abstract interface class io/sentry/util/runtime/IRuntimeManager {
-	public abstract fun runWithRelaxedPolicy (Lio/sentry/util/runtime/IRuntimeManager$IRuntimeManagerCallback;)Ljava/lang/Object;
-	public abstract fun runWithRelaxedPolicy (Ljava/lang/Runnable;)V
-}
-
-public abstract interface class io/sentry/util/runtime/IRuntimeManager$IRuntimeManagerCallback {
-	public abstract fun run ()Ljava/lang/Object;
-}
-
-public final class io/sentry/util/runtime/NeutralRuntimeManager : io/sentry/util/runtime/IRuntimeManager {
-	public fun <init> ()V
-	public fun runWithRelaxedPolicy (Lio/sentry/util/runtime/IRuntimeManager$IRuntimeManagerCallback;)Ljava/lang/Object;
-	public fun runWithRelaxedPolicy (Ljava/lang/Runnable;)V
 }
 
 public abstract interface class io/sentry/util/thread/IThreadChecker {

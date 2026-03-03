@@ -30,8 +30,19 @@
 
 ### Fixes
 
+- Remove `AndroidRuntimeManager` StrictMode relaxation to prevent ANRs during SDK init ([#5127](https://github.com/getsentry/sentry-java/pull/5127))
 - Fix crash when unregistering `SystemEventsBroadcastReceiver` with try-catch block. ([#5106](https://github.com/getsentry/sentry-java/pull/5106))
 - Use `peekDecorView` instead of `getDecorView` in `SentryGestureListener` to avoid forcing view hierarchy construction ([#5134](https://github.com/getsentry/sentry-java/pull/5134))
+- Log an actionable error message when Relay returns HTTP 413 (Content Too Large) ([#5115](https://github.com/getsentry/sentry-java/pull/5115))
+  - Also switch the client report discard reason for all HTTP 4xx/5xx errors (except 429) from `network_error` to `send_error`
+- Trim DSN string before parsing to avoid `URISyntaxException` caused by trailing whitespace ([#5113](https://github.com/getsentry/sentry-java/pull/5113))
+- Reduce allocations and bytecode instructions during `Sentry.init` ([#5135](https://github.com/getsentry/sentry-java/pull/5135))
+
+### Dependencies
+
+- Bump Native SDK from v0.12.7 to v0.13.1 ([#5104](https://github.com/getsentry/sentry-java/pull/5104))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0131)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.12.7...0.13.1)
 
 ## 8.33.0
 
