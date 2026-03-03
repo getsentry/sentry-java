@@ -60,4 +60,9 @@ public final class SentryAttribute {
       final @NotNull String name, final @Nullable Collection<?> value) {
     return new SentryAttribute(name, SentryAttributeType.ARRAY, value);
   }
+
+  public static @NotNull SentryAttribute arrayAttribute(
+      final @NotNull String name, final @Nullable Object[] value) {
+    return new SentryAttribute(name, SentryAttributeType.ARRAY, value);
+  }
 }

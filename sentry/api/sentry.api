@@ -2814,6 +2814,7 @@ public final class io/sentry/SentryAppStartProfilingOptions$JsonKeys {
 
 public final class io/sentry/SentryAttribute {
 	public static fun arrayAttribute (Ljava/lang/String;Ljava/util/Collection;)Lio/sentry/SentryAttribute;
+	public static fun arrayAttribute (Ljava/lang/String;[Ljava/lang/Object;)Lio/sentry/SentryAttribute;
 	public static fun booleanAttribute (Ljava/lang/String;Ljava/lang/Boolean;)Lio/sentry/SentryAttribute;
 	public static fun doubleAttribute (Ljava/lang/String;Ljava/lang/Double;)Lio/sentry/SentryAttribute;
 	public fun getName ()Ljava/lang/String;
