@@ -4,6 +4,10 @@
 
 ### Features
 
+- Add cache tracing instrumentation for Spring Boot 4 ([#5137](https://github.com/getsentry/sentry-java/pull/5137), [#5141](https://github.com/getsentry/sentry-java/pull/5141), [#5142](https://github.com/getsentry/sentry-java/pull/5142))
+  - Wraps Spring `CacheManager` and `Cache` beans to produce `cache.get`, `cache.put`, `cache.remove`, and `cache.flush` spans
+  - Enable via `sentry.enable-cache-tracing=true`
+
 - Create `sentry-opentelemetry-otlp` and `sentry-opentelemetry-otlp-spring` modules for combining OpenTelemetry SDK OTLP export with Sentry SDK ([#5100](https://github.com/getsentry/sentry-java/pull/5100))
   - OpenTelemetry is configured to send spans to Sentry directly using an OTLP endpoint.
   - Sentry only uses trace and span ID from OpenTelemetry (via `OpenTelemetryOtlpEventProcessor`) but will not send spans through OpenTelemetry nor use OpenTelemetry `Context` for `Scopes` propagation.
