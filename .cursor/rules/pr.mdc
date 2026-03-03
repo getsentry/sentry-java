@@ -1,0 +1,231 @@
+---
+alwaysApply: false
+description: Pull request creation, stacked PRs, and PR workflow
+---
+
+# Pull Request Rules
+
+## Creating a Pull Request
+
+### Step 1: Ensure Feature Branch
+
+If on `main`, create and switch to a new branch:
+
+```bash
+git checkout -b <type>/<short-description>
+```
+
+Branch names use `feat/`, `fix/`, `ref/`, etc. matching the commit type.
+
+### Step 2: Format Code and Regenerate API Files
+
+```bash
+./gradlew spotlessApply apiDump
+```
+
+This is **required** before every PR. Fix any failures before continuing.
+
+### Step 3: Commit Changes
+
+Use `git status --porcelain` to review changes. Ignore files only relevant for local testing (hardcoded debug toggles, sample app config, `.env` files). Restore those with `git checkout -- <file>`.
+
+Follow [Sentry commit message conventions](https://develop.sentry.dev/engineering-practices/commit-messages/):
+
+```
+<type>(<scope>): <subject>
+```
+
+Allowed types: `feat`, `fix`, `ref`, `chore`, `docs`, `test`, `perf`, `build`, `ci`, `style`, `meta`, `license`
+
+- Use imperative present tense ("add" not "added")
+- Capitalize subject, no trailing period
+- Keep under 100 characters
+
+### Step 4: Push
+
+```bash
+git push -u origin HEAD
+```
+
+If push fails due to diverged history, ask the user — do not force-push.
+
+### Step 5: Create PR
+
+Create a draft PR using the repo's PR template:
+
+```markdown
+## :scroll: Description
+<Describe the changes in detail>
+
+## :bulb: Motivation and Context
+<Why is this change required? What problem does it solve?>
+
+## :green_heart: How did you test it?
+<Describe how you tested>
+
+## :pencil: Checklist
+- [ ] I added GH Issue ID _&_ Linear ID
+- [ ] I added tests to verify the changes.
+- [ ] No new PII added or SDK only sends newly added PII if `sendDefaultPII` is enabled.
+- [ ] I updated the docs if needed.
+- [ ] I updated the wizard if needed.
+- [ ] Review from the native team if needed.
+- [ ] No breaking change or entry added to the changelog.
+- [ ] No breaking change for hybrid SDKs or communicated to hybrid SDKs.
+
+## :crystal_ball: Next steps
+```
+
+### Step 6: Update Changelog
+
+Add an entry to `CHANGELOG.md` under `## Unreleased` in the appropriate subsection:
+
+| Change Type | Subsection |
+|---|---|
+| New feature | `### Features` |
+| Bug fix | `### Fixes` |
+| Refactoring, internal cleanup | `### Internal` |
+| Dependency update | `### Dependencies` |
+
+Entry format:
+
+```markdown
+- <Short description> ([#<PR_NUMBER>](https://github.com/getsentry/sentry-java/pull/<PR_NUMBER>))
+```
+
+Commit changelog separately:
+
+```bash
+git add CHANGELOG.md && git commit -m "changelog" && git push
+```
+
+### PR Title Format
+
+Follow the commit message format:
+
+```
+<type>(<scope>): <Subject>
+```
+
+Examples:
+- `feat(core): Add structured logging support`
+- `fix(android): Prevent crash on API 21 when registering receiver`
+
+---
+
+## Stacked PRs
+
+Stacked PRs split a large feature into small, easy-to-review PRs where each builds on the previous one. This follows the same concept as the [Graphite](https://graphite.dev/) stacking workflow.
+
+### Structure
+
+```
+main → stack-pr-1 → stack-pr-2 → stack-pr-3 → ...
+```
+
+- The first PR in the stack targets `main` as its base branch.
+- Each subsequent PR targets the previous stack PR's branch as its base.
+- Each PR contains only incremental changes on top of the previous one.
+
+### Branch Naming
+
+Prefer a shared prefix for the feature, with descriptive suffixes per PR. The type prefix (`feat/`, `fix/`, etc.) may vary depending on the nature of each PR's changes:
+
+```
+feat/scope-attributes              # PR 1
+feat/scope-attributes-logger       # PR 2
+fix/attribute-type-detection        # PR 3 (fix, different name — that's fine)
+```
+
+### PR Title Naming
+
+Include the topic name and a sequential number in brackets:
+
+```
+<type>(<scope>): [<Topic> <N>] <Subject>
+```
+
+Examples:
+- `feat(core): [Global Attributes 1] Add scope-level attributes API`
+- `feat(core): [Global Attributes 2] Wire scope attributes into LoggerApi and MetricsApi`
+- `feat(samples): [Global Attributes 3] Showcase scope attributes in Spring Boot 4 sample`
+
+### Finding All PRs in a Stack
+
+Do **not** rely on branch name patterns — later PRs in a stack may use different prefixes or naming. Instead:
+
+1. Find the PR for the current branch:
+   ```bash
+   gh pr list --head "$(git branch --show-current)" --json number,title,baseRefName --jq '.[0]'
+   ```
+2. Read the stack comment on that PR — it lists every PR in the stack.
+3. If there is no stack comment yet, walk the chain in both directions:
+   ```bash
+   # Find the PR whose head branch is the current PR's base (go up)
+   gh pr list --head <baseRefName> --json number,title,baseRefName
+
+   # Find PRs whose base branch is the current PR's head (go down)
+   gh pr list --base <currentBranch> --json number,title,headRefName
+   ```
+   Repeat until you reach `main` going up and find no more PRs going down.
+
+### Creating a New Stacked PR
+
+1. Start from the tip of the previous stack branch (or `main` for the first PR).
+2. Create a new branch, make changes, format, commit, and push.
+3. Create the PR with `--base <previous-branch>`:
+   ```bash
+   gh pr create --base feat/previous-branch --draft --title "<type>(<scope>): [<Topic> <N>] <Subject>" --body "..."
+   ```
+4. Add the stack comment to the new PR and update it on all existing PRs in the stack (see below).
+
+### Stack Comment
+
+Every PR in the stack must have a comment listing all PRs in the stack. When a new PR is added, update the comment on **all** PRs in the stack.
+
+Format:
+
+```markdown
+## PR Stack (<Topic>)
+
+- [#5118](https://github.com/getsentry/sentry-java/pull/5118) — Add scope-level attributes API
+- [#5120](https://github.com/getsentry/sentry-java/pull/5120) — Wire scope attributes into LoggerApi and MetricsApi
+- [#5121](https://github.com/getsentry/sentry-java/pull/5121) — Showcase scope attributes in Spring Boot 4 samples
+```
+
+No status column — GitHub already shows that.
+
+To add or update the stack comment on a PR:
+
+```bash
+# Find existing stack comment (if any)
+gh api repos/getsentry/sentry-java/issues/<PR_NUMBER>/comments --jq '.[] | select(.body | startswith("## PR Stack")) | .id'
+
+# Create new comment
+gh pr comment <PR_NUMBER> --body "<stack comment body>"
+
+# Or update existing comment
+gh api repos/getsentry/sentry-java/issues/comments/<COMMENT_ID> -X PATCH -f body="<stack comment body>"
+```
+
+### Merging Stacked PRs
+
+Merge in order from bottom to top (PR 1 first, then PR 2, etc.). After each merge, the next PR's base automatically becomes the merged branch's target. GitHub handles rebasing onto the new base. Verify each PR's diff still looks correct after the previous one merges.
+
+### Syncing the Stack
+
+When a base PR changes (e.g. after addressing review feedback on PR 1), merge the changes forward through the stack:
+
+```bash
+# On the branch for PR 2
+git checkout feat/scope-attributes-logger
+git merge feat/scope-attributes
+git push
+
+# On the branch for PR 3
+git checkout feat/scope-attributes-sample
+git merge feat/scope-attributes-logger
+git push
+```
+
+Prefer merge over rebase — it preserves commit history, doesn't invalidate existing review comments, and avoids the need for force-pushing. Only rebase if explicitly requested.

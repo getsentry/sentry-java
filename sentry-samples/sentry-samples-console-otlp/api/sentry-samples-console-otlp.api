@@ -1,0 +1,5 @@
+public class io/sentry/samples/console/Main {
+	public fun <init> ()V
+	public static fun main ([Ljava/lang/String;)V
+}
+
