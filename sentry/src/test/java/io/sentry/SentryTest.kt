@@ -964,7 +964,9 @@ class SentryTest {
     }
 
     await.untilTrue(triggered)
-    assertFalse(previousSessionFile.exists())
+    // The PreviousSessionFinalizer runs as a separate task after the test's task in the
+    // single-threaded executor, so we need to wait for it to delete the file too.
+    await.until { !previousSessionFile.exists() }
   }
 
   @Test
