@@ -27,14 +27,14 @@ name: App Start Tests
 - assertNotVisible: "Welcome!"
 - waitForAnimationToEnd
 - repeat:
-    times: 3
+    times: 5
     while:
       notVisible: "Sentry Test Notification"
     commands:
       - swipe:
-          start: 90%, 0%
-          end: 90%, 100%
-          duration: 4000
+          start: 50%, 1%
+          end: 50%, 50%
+          duration: 1000
 - tapOn: "Sentry Test Notification"
 - assertVisible: "App Start Type: WARM"
 
@@ -50,14 +50,14 @@ name: App Start Tests
 - killApp
 - waitForAnimationToEnd
 - repeat:
-    times: 3
+    times: 5
     while:
       notVisible: "Sentry Test Notification"
     commands:
       - swipe:
-          start: 90%, 0%
-          end: 90%, 100%
-          duration: 4000
+          start: 50%, 1%
+          end: 50%, 50%
+          duration: 1000
 - tapOn: "Sentry Test Notification"
 - assertVisible: "App Start Type: COLD"
 # Test 5: Launch app after a broadcast receiver already created the application
