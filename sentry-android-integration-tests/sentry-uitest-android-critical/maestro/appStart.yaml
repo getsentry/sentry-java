@@ -23,6 +23,12 @@ name: App Start Tests
       all: allow
 - assertVisible: "Welcome!"
 - tapOn: "Trigger Notification"
+# Grant notification permission if the system dialog appears
+- runFlow:
+    when:
+      visible: "Allow"
+    commands:
+      - tapOn: "Allow"
 - tapOn: "Finish Activity"
 - assertNotVisible: "Welcome!"
 - waitForAnimationToEnd
@@ -35,6 +41,7 @@ name: App Start Tests
           start: 50%, 1%
           end: 50%, 50%
           duration: 1000
+      - waitForAnimationToEnd
 - tapOn: "Sentry Test Notification"
 - assertVisible: "App Start Type: WARM"
 
@@ -45,6 +52,12 @@ name: App Start Tests
       all: allow
 - assertVisible: "Welcome!"
 - tapOn: "Trigger Notification"
+# Grant notification permission if the system dialog appears
+- runFlow:
+    when:
+      visible: "Allow"
+    commands:
+      - tapOn: "Allow"
 - tapOn: "Finish Activity"
 - assertNotVisible: "Welcome!"
 - killApp
@@ -58,6 +71,7 @@ name: App Start Tests
           start: 50%, 1%
           end: 50%, 50%
           duration: 1000
+      - waitForAnimationToEnd
 - tapOn: "Sentry Test Notification"
 - assertVisible: "App Start Type: COLD"
 # Test 5: Launch app after a broadcast receiver already created the application
