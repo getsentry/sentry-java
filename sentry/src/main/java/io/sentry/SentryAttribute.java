@@ -1,5 +1,6 @@
 package io.sentry;
 
+import java.util.Collection;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -53,5 +54,10 @@ public final class SentryAttribute {
   public static @NotNull SentryAttribute stringAttribute(
       final @NotNull String name, final @Nullable String value) {
     return new SentryAttribute(name, SentryAttributeType.STRING, value);
+  }
+
+  public static @NotNull SentryAttribute arrayAttribute(
+      final @NotNull String name, final @Nullable Collection<?> value) {
+    return new SentryAttribute(name, SentryAttributeType.ARRAY, value);
   }
 }

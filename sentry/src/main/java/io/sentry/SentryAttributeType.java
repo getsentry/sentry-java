@@ -1,6 +1,7 @@
 package io.sentry;
 
 import java.math.BigInteger;
+import java.util.Collection;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -11,7 +12,8 @@ public enum SentryAttributeType {
   STRING,
   BOOLEAN,
   INTEGER,
-  DOUBLE;
+  DOUBLE,
+  ARRAY;
 
   public @NotNull String apiName() {
     return name().toLowerCase(Locale.ROOT);
@@ -32,6 +34,9 @@ public enum SentryAttributeType {
     }
     if (value instanceof Number) {
       return DOUBLE;
+    }
+    if (value instanceof Collection || (value != null && value.getClass().isArray())) {
+      return ARRAY;
     }
     return STRING;
   }
