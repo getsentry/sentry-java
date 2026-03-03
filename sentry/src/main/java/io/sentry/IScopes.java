@@ -761,14 +761,14 @@ public interface IScopes {
    *
    * @param attribute the attribute
    */
-  void setAttribute(final @NotNull SentryAttribute attribute);
+  void setAttribute(final @Nullable SentryAttribute attribute);
 
   /**
    * Sets multiple attributes.
    *
    * @param attributes the attributes
    */
-  void setAttributes(final @NotNull SentryAttributes attributes);
+  void setAttributes(final @Nullable SentryAttributes attributes);
 
   /**
    * Removes an attribute.

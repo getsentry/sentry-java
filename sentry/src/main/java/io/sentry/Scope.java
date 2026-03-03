@@ -656,7 +656,7 @@ public final class Scope implements IScope {
 
   /** {@inheritDoc} */
   @Override
-  public void setAttribute(final @NotNull SentryAttribute attribute) {
+  public void setAttribute(final @Nullable SentryAttribute attribute) {
     if (attribute == null) {
       return;
     }
@@ -665,7 +665,7 @@ public final class Scope implements IScope {
 
   /** {@inheritDoc} */
   @Override
-  public void setAttributes(final @NotNull SentryAttributes attributes) {
+  public void setAttributes(final @Nullable SentryAttributes attributes) {
     if (attributes == null) {
       return;
     }

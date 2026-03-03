@@ -386,12 +386,12 @@ public final class HubScopesWrapper implements IHub {
   }
 
   @Override
-  public void setAttribute(final @NotNull SentryAttribute attribute) {
+  public void setAttribute(final @Nullable SentryAttribute attribute) {
     scopes.setAttribute(attribute);
   }
 
   @Override
-  public void setAttributes(final @NotNull SentryAttributes attributes) {
+  public void setAttributes(final @Nullable SentryAttributes attributes) {
     scopes.setAttributes(attributes);
   }
 
