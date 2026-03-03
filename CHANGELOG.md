@@ -27,6 +27,7 @@
     <meta-data android:name="io.sentry.screenshot.mask-all-text" android:value="true" />
     <meta-data android:name="io.sentry.screenshot.mask-all-images" android:value="true" />
     ```
+- The `ManifestMetaDataReader` now read the `DIST` ([#5107](https://github.com/getsentry/sentry-java/pull/5107))
 
 ### Fixes
 
