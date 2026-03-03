@@ -31,6 +31,7 @@
 ### Fixes
 
 - Remove `AndroidRuntimeManager` StrictMode relaxation to prevent ANRs during SDK init ([#5127](https://github.com/getsentry/sentry-java/pull/5127))
+  - **IMPORTANT:** StrictMode violations may appear again in debug builds. This is intentional to prevent ANRs in production releases.
 - Fix crash when unregistering `SystemEventsBroadcastReceiver` with try-catch block. ([#5106](https://github.com/getsentry/sentry-java/pull/5106))
 - Log an actionable error message when Relay returns HTTP 413 (Content Too Large) ([#5115](https://github.com/getsentry/sentry-java/pull/5115))
   - Also switch the client report discard reason for all HTTP 4xx/5xx errors (except 429) from `network_error` to `send_error`
