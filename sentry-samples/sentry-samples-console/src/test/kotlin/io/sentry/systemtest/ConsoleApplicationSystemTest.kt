@@ -106,7 +106,9 @@ class ConsoleApplicationSystemTest {
     testHelper.ensureMetricsReceived { metricsEvents, sentryEnvelopeHeader ->
       testHelper.doesContainMetric(metricsEvents, "countMetric", "counter", 1.0) &&
         testHelper.doesContainMetric(metricsEvents, "gaugeMetric", "gauge", 5.0) &&
-        testHelper.doesContainMetric(metricsEvents, "distributionMetric", "distribution", 7.0)
+        testHelper.doesContainMetric(metricsEvents, "distributionMetric", "distribution", 7.0) &&
+        testHelper.doesMetricHaveAttribute(metricsEvents, "countMetric", "user.type", "admin") &&
+        testHelper.doesMetricHaveAttribute(metricsEvents, "countMetric", "feature.version", 2)
     }
   }
 }

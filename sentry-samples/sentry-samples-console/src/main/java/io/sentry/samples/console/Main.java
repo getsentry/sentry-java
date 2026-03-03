@@ -128,6 +128,8 @@ public class Main {
 
     Sentry.addFeatureFlag("my-feature-flag", true);
 
+    Sentry.setAttribute("user.type", "admin");
+    Sentry.setAttribute("feature.version", 2);
     captureMetrics();
 
     // Sending exception:

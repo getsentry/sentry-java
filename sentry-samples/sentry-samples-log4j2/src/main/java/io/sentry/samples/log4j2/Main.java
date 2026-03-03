@@ -20,6 +20,9 @@ public class Main {
     // ThreadContext tag not listed in log4j2.xml
     ThreadContext.put("context-tag", "context-tag-value");
 
+    Sentry.setAttribute("user.type", "admin");
+    Sentry.setAttribute("feature.version", 2);
+    Sentry.setAttribute("debug.enabled", true);
     Sentry.addFeatureFlag("my-feature-flag", true);
 
     // logging arguments are converted to Sentry Event parameters
