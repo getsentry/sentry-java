@@ -79,6 +79,21 @@ class DeferredExecutorService : ISentryExecutorService {
   fun hasScheduledRunnables(): Boolean = scheduledRunnables.isNotEmpty()
 }
 
+class NonOverridableNoOpSentryExecutorService : ISentryExecutorService {
+  override fun submit(runnable: Runnable): Future<*> = FutureTask<Void> { null }
+
+  override fun <T> submit(callable: Callable<T>): Future<T> = FutureTask<T> { null }
+
+  override fun schedule(runnable: Runnable, delayMillis: Long): Future<*> =
+    FutureTask<Void> { null }
+
+  override fun close(timeoutMillis: Long) {}
+
+  override fun isClosed(): Boolean = false
+
+  override fun prewarm() = Unit
+}
+
 fun createSentryClientMock(enabled: Boolean = true) =
   mock<ISentryClient>().also {
     val isEnabled = AtomicBoolean(enabled)

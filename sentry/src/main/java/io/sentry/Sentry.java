@@ -612,7 +612,7 @@ public final class Sentry {
     final String outboxPath = options.getOutboxPath();
     if (outboxPath != null) {
       final File outboxDir = new File(outboxPath);
-      options.getRuntimeManager().runWithRelaxedPolicy(() -> outboxDir.mkdirs());
+      outboxDir.mkdirs();
     } else {
       logger.log(SentryLevel.INFO, "No outbox dir path is defined in options.");
     }
@@ -620,7 +620,7 @@ public final class Sentry {
     final String cacheDirPath = options.getCacheDirPath();
     if (cacheDirPath != null) {
       final File cacheDir = new File(cacheDirPath);
-      options.getRuntimeManager().runWithRelaxedPolicy(() -> cacheDir.mkdirs());
+      cacheDir.mkdirs();
       final IEnvelopeCache envelopeCache = options.getEnvelopeDiskCache();
       // only overwrite the cache impl if it's not already set
       if (envelopeCache instanceof NoOpEnvelopeCache) {
@@ -633,7 +633,7 @@ public final class Sentry {
         && profilingTracesDirPath != null) {
 
       final File profilingTracesDir = new File(profilingTracesDirPath);
-      options.getRuntimeManager().runWithRelaxedPolicy(() -> profilingTracesDir.mkdirs());
+      profilingTracesDir.mkdirs();
 
       try {
         options

@@ -19,7 +19,8 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.ViewTreeObserver
 import android.widget.TextView
-import io.sentry.SentryOptions
+import io.sentry.ILogger
+import io.sentry.SentryMaskingOptions
 import io.sentry.android.replay.viewhierarchy.ComposeViewHierarchyNode
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode
 import java.lang.NullPointerException
@@ -27,14 +28,22 @@ import java.lang.NullPointerException
 /**
  * Recursively traverses the view hierarchy and creates a [ViewHierarchyNode] for each view.
  * Supports Compose view hierarchy as well.
+ *
+ * @param parentNode The parent node in the view hierarchy
+ * @param options The masking configuration to use
+ * @param logger Logger for error reporting during Compose traversal
  */
 @SuppressLint("UseKtx")
-internal fun View.traverse(parentNode: ViewHierarchyNode, options: SentryOptions) {
+internal fun View.traverse(
+  parentNode: ViewHierarchyNode,
+  options: SentryMaskingOptions,
+  logger: ILogger,
+) {
   if (this !is ViewGroup) {
     return
   }
 
-  if (ComposeViewHierarchyNode.fromView(this, parentNode, options)) {
+  if (ComposeViewHierarchyNode.fromView(this, parentNode, options, logger)) {
     // if it's a compose view, we can skip the children as they are already traversed in
     // the ComposeViewHierarchyNode.fromView method
     return
@@ -50,7 +59,7 @@ internal fun View.traverse(parentNode: ViewHierarchyNode, options: SentryOptions
     if (child != null) {
       val childNode = ViewHierarchyNode.fromView(child, parentNode, indexOfChild(child), options)
       childNodes.add(childNode)
-      child.traverse(childNode, options)
+      child.traverse(childNode, options, logger)
     }
   }
   parentNode.children = childNodes
