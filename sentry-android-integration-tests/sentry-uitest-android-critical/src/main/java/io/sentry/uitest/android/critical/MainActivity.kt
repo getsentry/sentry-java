@@ -1,6 +1,7 @@
 package io.sentry.uitest.android.critical
 
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
@@ -22,6 +23,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import io.sentry.Sentry
 import io.sentry.android.core.performance.AppStartMetrics
 import io.sentry.uitest.android.critical.NotificationHelper.showNotification
@@ -82,7 +84,13 @@ class MainActivity : ComponentActivity() {
             Button(onClick = { finish() }) { Text("Finish Activity") }
             Button(
               onClick = {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                if (
+                  Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                    ContextCompat.checkSelfPermission(
+                      this@MainActivity,
+                      android.Manifest.permission.POST_NOTIFICATIONS,
+                    ) != PackageManager.PERMISSION_GRANTED
+                ) {
                   requestPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
                 } else {
                   postNotification()
