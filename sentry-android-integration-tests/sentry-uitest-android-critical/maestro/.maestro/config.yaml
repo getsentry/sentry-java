@@ -1,3 +1,9 @@
 platform:
   android:
     disableAnimations: true
+onFlowStart:
+  - runFlow:
+      when:
+        visible: "Close app"
+      commands:
+        - tapOn: "Close app"
