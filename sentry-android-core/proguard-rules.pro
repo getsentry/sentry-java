@@ -80,6 +80,10 @@
 ##---------------Begin: proguard configuration for sentry-android-replay  ----------
 -dontwarn io.sentry.android.replay.ReplayIntegration
 -dontwarn io.sentry.android.replay.DefaultReplayBreadcrumbConverter
+-dontwarn io.sentry.android.replay.util.MaskRenderer
+-dontwarn io.sentry.android.replay.util.ViewsKt
+-dontwarn io.sentry.android.replay.viewhierarchy.ViewHierarchyNode$Companion
+-dontwarn io.sentry.android.replay.viewhierarchy.ViewHierarchyNode
 -keepnames class io.sentry.android.replay.ReplayIntegration
 ##---------------End: proguard configuration for sentry-android-replay  ----------
 
