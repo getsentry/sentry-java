@@ -213,17 +213,19 @@ Format:
 
 No status column — GitHub already shows that. The `---` separates the stack list from the rest of the PR description.
 
-To update the PR description:
+To update the PR description, use `--body-file` to avoid shell quoting issues with special characters in the body:
 
 ```bash
-# Get current PR description
-gh pr view <PR_NUMBER> --json body --jq '.body'
+# Get current PR description into a temp file
+gh pr view <PR_NUMBER> --json body --jq '.body' > /tmp/pr-body.md
 
-# Update the description (prepend or replace the stack list section)
-gh pr edit <PR_NUMBER> --body "<updated body>"
+# Edit /tmp/pr-body.md to prepend or replace the stack list section
+# (replace everything from "## PR Stack" up to and including the "---" separator,
+#  or prepend before the existing description if no stack list exists yet)
+
+# Update the description
+gh pr edit <PR_NUMBER> --body-file /tmp/pr-body.md
 ```
-
-When updating, replace everything from `## PR Stack` up to and including the `---` separator. If no stack list exists yet, prepend it before the existing description.
 
 ### Merging Stacked PRs (done by the user, not the agent)
 

@@ -171,7 +171,7 @@ git push
 If no changelog entry is needed, add `#skip-changelog` to the PR description to disable the changelog CI check:
 
 ```bash
-gh pr edit <PR_NUMBER> --body "$(gh pr view <PR_NUMBER> --json body --jq '.body')
-
-#skip-changelog"
+gh pr view <PR_NUMBER> --json body --jq '.body' > /tmp/pr-body.md
+printf '\n#skip-changelog\n' >> /tmp/pr-body.md
+gh pr edit <PR_NUMBER> --body-file /tmp/pr-body.md
 ```
