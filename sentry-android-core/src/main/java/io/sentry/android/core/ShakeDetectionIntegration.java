@@ -74,10 +74,6 @@ public final class ShakeDetectionIntegration
     if (activity == currentActivity) {
       stopShakeDetection();
       currentActivity = null;
-      // Reset dialog flag — the dialog cannot outlive the activity, so if
-      // showDialog silently failed or the activity is finishing, clear the flag
-      // to avoid permanently blocking shake-to-feedback.
-      isDialogShowing = false;
     }
   }
 
@@ -96,7 +92,12 @@ public final class ShakeDetectionIntegration
       final @NotNull Activity activity, final @NotNull Bundle outState) {}
 
   @Override
-  public void onActivityDestroyed(final @NotNull Activity activity) {}
+  public void onActivityDestroyed(final @NotNull Activity activity) {
+    // Reset dialog flag — the dialog cannot outlive the activity being destroyed,
+    // so clear the flag to avoid permanently blocking shake-to-feedback
+    // (e.g. if showDialog silently failed).
+    isDialogShowing = false;
+  }
 
   private void startShakeDetection(final @NotNull Activity activity) {
     if (options == null) {
