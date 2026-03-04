@@ -100,6 +100,11 @@ class MainActivity : ComponentActivity() {
               Text("Trigger Notification")
             }
             Button(
+              onClick = { android.os.Process.killProcess(android.os.Process.myPid()) }
+            ) {
+              Text("Kill Process")
+            }
+            Button(
               onClick = {
                 startActivity(
                   Intent(this@MainActivity, MainActivity::class.java).apply {

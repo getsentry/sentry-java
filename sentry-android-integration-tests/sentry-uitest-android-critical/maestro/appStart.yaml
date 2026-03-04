@@ -65,9 +65,9 @@ name: App Start Tests
       visible: "Allow"
     commands:
       - tapOn: "Allow"
-- tapOn: "Finish Activity"
-- assertNotVisible: "Welcome!"
-- killApp
+# Use "Kill Process" button instead of killApp to avoid am force-stop
+# which clears notifications on API 33+
+- tapOn: "Kill Process"
 - waitForAnimationToEnd
 - repeat:
     times: 5
