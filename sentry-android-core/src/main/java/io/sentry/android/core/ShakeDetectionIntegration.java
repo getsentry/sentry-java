@@ -26,6 +26,7 @@ public final class ShakeDetectionIntegration
   private @Nullable SentryShakeDetector shakeDetector;
   private @Nullable SentryAndroidOptions options;
   private volatile @Nullable Activity currentActivity;
+  private volatile boolean isDialogShowing = false;
 
   public ShakeDetectionIntegration(final @NotNull Application application) {
     this.application = Objects.requireNonNull(application, "Application is required");
@@ -102,12 +103,28 @@ public final class ShakeDetectionIntegration
         activity,
         () -> {
           final Activity active = currentActivity;
-          if (active != null && options != null) {
+          if (active != null && options != null && !isDialogShowing) {
             active.runOnUiThread(
                 () -> {
+                  if (isDialogShowing) {
+                    return;
+                  }
                   try {
+                    isDialogShowing = true;
+                    final Runnable previousOnFormClose =
+                        options.getFeedbackOptions().getOnFormClose();
+                    options
+                        .getFeedbackOptions()
+                        .setOnFormClose(
+                            () -> {
+                              isDialogShowing = false;
+                              if (previousOnFormClose != null) {
+                                previousOnFormClose.run();
+                              }
+                            });
                     options.getFeedbackOptions().getDialogHandler().showDialog(null, null);
                   } catch (Throwable e) {
+                    isDialogShowing = false;
                     options
                         .getLogger()
                         .log(SentryLevel.ERROR, "Failed to show feedback dialog on shake.", e);
