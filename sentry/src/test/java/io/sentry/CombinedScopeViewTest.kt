@@ -1242,6 +1242,73 @@ class CombinedScopeViewTest {
     kotlin.test.assertTrue(scope.contexts.isEmpty)
   }
 
+  @Test
+  fun `attributes are combined from all scopes`() {
+    val combined = fixture.getSut()
+
+    fixture.scope.setAttribute("scopeAttr", "scopeValue")
+    fixture.isolationScope.setAttribute("isolationAttr", "isolationValue")
+    fixture.globalScope.setAttribute("globalAttr", "globalValue")
+
+    val attrs = combined.attributes
+    assertEquals("scopeValue", attrs["scopeAttr"]?.value)
+    assertEquals("isolationValue", attrs["isolationAttr"]?.value)
+    assertEquals("globalValue", attrs["globalAttr"]?.value)
+  }
+
+  @Test
+  fun `setAttribute writes to default scope`() {
+    val combined = fixture.getSut()
+    combined.setAttribute("anAttr", "aValue")
+
+    assertEquals(ScopeType.ISOLATION, fixture.options.defaultScopeType)
+    assertNull(fixture.scope.attributes["anAttr"])
+    assertEquals("aValue", fixture.isolationScope.attributes["anAttr"]?.value)
+    assertNull(fixture.globalScope.attributes["anAttr"])
+  }
+
+  @Test
+  fun `prefer current scope value for attributes with same key`() {
+    val combined = fixture.getSut()
+
+    fixture.scope.setAttribute("anAttr", "scopeValue")
+    fixture.isolationScope.setAttribute("anAttr", "isolationValue")
+    fixture.globalScope.setAttribute("anAttr", "globalValue")
+
+    assertEquals("scopeValue", combined.attributes["anAttr"]?.value)
+  }
+
+  @Test
+  fun `uses isolation scope value for attributes with same key if scope does not have it`() {
+    val combined = fixture.getSut()
+
+    fixture.isolationScope.setAttribute("anAttr", "isolationValue")
+    fixture.globalScope.setAttribute("anAttr", "globalValue")
+
+    assertEquals("isolationValue", combined.attributes["anAttr"]?.value)
+  }
+
+  @Test
+  fun `uses global scope value for attributes with same key if scope and isolation scope do not have it`() {
+    val combined = fixture.getSut()
+
+    fixture.globalScope.setAttribute("anAttr", "globalValue")
+
+    assertEquals("globalValue", combined.attributes["anAttr"]?.value)
+  }
+
+  @Test
+  fun `removeAttribute removes from default scope`() {
+    val combined = fixture.getSut()
+
+    fixture.isolationScope.setAttribute("anAttr", "isolationValue")
+
+    combined.removeAttribute("anAttr")
+
+    assertEquals(ScopeType.ISOLATION, fixture.options.defaultScopeType)
+    assertTrue(fixture.isolationScope.attributes.isEmpty())
+  }
+
   private fun createTransaction(name: String, scopes: Scopes? = null): ITransaction {
     val scopesToUse = scopes ?: fixture.scopes
     return SentryTracer(TransactionContext(name, "op", TracesSamplingDecision(true)), scopesToUse)
