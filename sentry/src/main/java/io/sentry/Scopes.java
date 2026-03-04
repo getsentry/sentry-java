@@ -1135,7 +1135,8 @@ public final class Scopes implements IScopes {
       final @Nullable String sentryTrace, final @Nullable List<String> baggageHeaders) {
     @NotNull
     PropagationContext propagationContext =
-        PropagationContext.fromHeaders(getOptions().getLogger(), sentryTrace, baggageHeaders);
+        PropagationContext.fromHeaders(
+            getOptions().getLogger(), sentryTrace, baggageHeaders, getOptions());
     configureScope(
         (scope) -> {
           scope.withPropagationContext(

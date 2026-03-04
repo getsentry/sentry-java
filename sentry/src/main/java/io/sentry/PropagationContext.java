@@ -23,6 +23,20 @@ public final class PropagationContext {
       final @NotNull ILogger logger,
       final @Nullable String sentryTraceHeaderString,
       final @Nullable List<String> baggageHeaderStrings) {
+    @Nullable SentryOptions options = null;
+    try {
+      options = Sentry.getCurrentScopes().getOptions();
+    } catch (Throwable ignored) {
+      // options may not be available if Sentry is not initialized
+    }
+    return fromHeaders(logger, sentryTraceHeaderString, baggageHeaderStrings, options);
+  }
+
+  public static @NotNull PropagationContext fromHeaders(
+      final @NotNull ILogger logger,
+      final @Nullable String sentryTraceHeaderString,
+      final @Nullable List<String> baggageHeaderStrings,
+      final @Nullable SentryOptions options) {
     if (sentryTraceHeaderString == null) {
       return new PropagationContext();
     }
@@ -30,6 +44,12 @@ public final class PropagationContext {
     try {
       final @NotNull SentryTraceHeader traceHeader = new SentryTraceHeader(sentryTraceHeaderString);
       final @NotNull Baggage baggage = Baggage.fromHeader(baggageHeaderStrings, logger);
+
+      if (options != null && !shouldContinueTrace(options, baggage)) {
+        logger.log(SentryLevel.DEBUG, "Not continuing trace due to org ID mismatch.");
+        return new PropagationContext();
+      }
+
       return fromHeaders(traceHeader, baggage, null);
     } catch (InvalidSentryTraceHeaderException e) {
       logger.log(SentryLevel.DEBUG, e, "Failed to parse Sentry trace header: %s", e.getMessage());
@@ -148,5 +168,26 @@ public final class PropagationContext {
     final @Nullable Double sampleRand = baggage.getSampleRand();
     // should never be null since we ensure it in ctor
     return sampleRand == null ? 0.0 : sampleRand;
+  }
+
+  static boolean shouldContinueTrace(
+      final @NotNull SentryOptions options, final @Nullable Baggage baggage) {
+    final @Nullable String sdkOrgId = options.getEffectiveOrgId();
+    final @Nullable String baggageOrgId = baggage != null ? baggage.getOrgId() : null;
+
+    // Mismatched org IDs always reject regardless of strict mode
+    if (sdkOrgId != null && baggageOrgId != null && !sdkOrgId.equals(baggageOrgId)) {
+      return false;
+    }
+
+    // In strict mode, both must be present and match (unless both are missing)
+    if (options.isStrictTraceContinuation()) {
+      if (sdkOrgId == null && baggageOrgId == null) {
+        return true;
+      }
+      return sdkOrgId != null && sdkOrgId.equals(baggageOrgId);
+    }
+
+    return true;
   }
 }

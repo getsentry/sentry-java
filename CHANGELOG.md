@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Add strict trace continuation support ([#5136](https://github.com/getsentry/sentry-java/pull/5136))
+  - The SDK now extracts `org_id` from the DSN host and propagates it via `sentry-org_id` in the baggage header.
+  - When an incoming trace has a mismatched `org_id`, the SDK starts a new trace instead of continuing the foreign one.
+  - New option `strictTraceContinuation` (default `false`): when enabled, both the SDK's org ID and the incoming baggage org ID must be present and match for a trace to be continued.
+  - New option `orgId`: allows explicitly setting the organization ID for self-hosted and Relay setups where it cannot be extracted from the DSN.
+
 ## 8.34.0
 
 ### Features
