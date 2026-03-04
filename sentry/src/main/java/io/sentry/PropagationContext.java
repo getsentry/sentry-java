@@ -27,6 +27,7 @@ public final class PropagationContext {
     try {
       options = Sentry.getCurrentScopes().getOptions();
     } catch (Throwable ignored) {
+      // options may not be available if Sentry is not initialized
     }
     return fromHeaders(logger, sentryTraceHeaderString, baggageHeaderStrings, options);
   }
