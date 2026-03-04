@@ -35,7 +35,7 @@ name: App Start Tests
 - repeat:
     times: 5
     while:
-      notVisible: "Sentry Test Notification"
+      notVisible: "App Start Type: WARM"
     commands:
       # Reset to home screen to collapse any open shade/quick settings
       - pressKey: back
@@ -46,7 +46,10 @@ name: App Start Tests
           start: 90%, 0%
           end: 90%, 50%
           duration: 2000
-- tapOn: "Sentry Test Notification"
+      # Tap immediately after swipe while shade is still open
+      - tapOn:
+          text: "Sentry Test Notification"
+          optional: true
 - assertVisible: "App Start Type: WARM"
 
 # Test 4: Notification (COLD start)
@@ -69,7 +72,7 @@ name: App Start Tests
 - repeat:
     times: 5
     while:
-      notVisible: "Sentry Test Notification"
+      notVisible: "App Start Type: COLD"
     commands:
       # Reset to home screen to collapse any open shade/quick settings
       - pressKey: back
@@ -80,7 +83,10 @@ name: App Start Tests
           start: 90%, 0%
           end: 90%, 50%
           duration: 2000
-- tapOn: "Sentry Test Notification"
+      # Tap immediately after swipe while shade is still open
+      - tapOn:
+          text: "Sentry Test Notification"
+          optional: true
 - assertVisible: "App Start Type: COLD"
 # Test 5: Launch app after a broadcast receiver already created the application
 # Uncomment once https://github.com/mobile-dev-inc/Maestro/pull/2925 is merged
