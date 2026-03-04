@@ -574,8 +574,7 @@ class SentryAutoConfigurationTest {
 
   @Test
   fun `when tracing is enabled, creates tracing filter`() {
-    tracingEnabledRunner
-      .run { assertThat(it).hasBean("sentryTracingFilter") }
+    tracingEnabledRunner.run { assertThat(it).hasBean("sentryTracingFilter") }
   }
 
   @Test
@@ -609,18 +608,16 @@ class SentryAutoConfigurationTest {
 
   @Test
   fun `when tracing is enabled and sentryTracingFilter already exists, does not create tracing filter`() {
-    tracingEnabledRunner
-      .withUserConfiguration(CustomSentryTracingFilter::class.java)
-      .run {
-        assertThat(it).hasBean("sentryTracingFilter")
-        val filter = it.getBean("sentryTracingFilter")
+    tracingEnabledRunner.withUserConfiguration(CustomSentryTracingFilter::class.java).run {
+      assertThat(it).hasBean("sentryTracingFilter")
+      val filter = it.getBean("sentryTracingFilter")
 
-        if (filter is FilterRegistrationBean<*>) {
-          assertThat(filter.filter).isNotInstanceOf(SentryTracingFilter::class.java)
-        } else {
-          assertThat(filter).isNotInstanceOf(SentryTracingFilter::class.java)
-        }
+      if (filter is FilterRegistrationBean<*>) {
+        assertThat(filter.filter).isNotInstanceOf(SentryTracingFilter::class.java)
+      } else {
+        assertThat(filter).isNotInstanceOf(SentryTracingFilter::class.java)
       }
+    }
   }
 
   @Test
@@ -640,8 +637,7 @@ class SentryAutoConfigurationTest {
 
   @Test
   fun `when tracing is enabled creates AOP beans to support @SentryTransaction`() {
-    tracingEnabledRunner
-      .run { assertThat(it).hasSentryTransactionBeans() }
+    tracingEnabledRunner.run { assertThat(it).hasSentryTransactionBeans() }
   }
 
   @Test
@@ -668,9 +664,9 @@ class SentryAutoConfigurationTest {
 
   @Test
   fun `when Spring AOP is not on the classpath, does not create AOP beans to support @SentryTransaction`() {
-    tracingEnabledRunner
-      .withClassLoader(FilteredClassLoader(ProceedingJoinPoint::class.java))
-      .run { assertThat(it).doesNotHaveSentryTransactionBeans() }
+    tracingEnabledRunner.withClassLoader(FilteredClassLoader(ProceedingJoinPoint::class.java)).run {
+      assertThat(it).doesNotHaveSentryTransactionBeans()
+    }
   }
 
   @Test
@@ -686,8 +682,7 @@ class SentryAutoConfigurationTest {
 
   @Test
   fun `when tracing is enabled creates AOP beans to support @SentrySpan`() {
-    tracingEnabledRunner
-      .run { assertThat(it).hasSentrySpanBeans() }
+    tracingEnabledRunner.run { assertThat(it).hasSentrySpanBeans() }
   }
 
   @Test
@@ -714,9 +709,9 @@ class SentryAutoConfigurationTest {
 
   @Test
   fun `when Spring AOP is not on the classpath, does not create AOP beans to support @SentrySpan`() {
-    tracingEnabledRunner
-      .withClassLoader(FilteredClassLoader(ProceedingJoinPoint::class.java))
-      .run { assertThat(it).doesNotHaveSentrySpanBeans() }
+    tracingEnabledRunner.withClassLoader(FilteredClassLoader(ProceedingJoinPoint::class.java)).run {
+      assertThat(it).doesNotHaveSentrySpanBeans()
+    }
   }
 
   @Test
@@ -732,41 +727,44 @@ class SentryAutoConfigurationTest {
 
   @Test
   fun `when tracing is enabled and RestTemplate is on the classpath, SentrySpanRestTemplateCustomizer bean is created`() {
-    tracingEnabledRunner
-      .run { assertThat(it).hasSingleBean(SentrySpanRestTemplateCustomizer::class.java) }
+    tracingEnabledRunner.run {
+      assertThat(it).hasSingleBean(SentrySpanRestTemplateCustomizer::class.java)
+    }
   }
 
   @Test
   fun `when tracing is enabled and RestTemplate is not on the classpath, SentrySpanRestTemplateCustomizer bean is not created`() {
-    tracingEnabledRunner
-      .withClassLoader(FilteredClassLoader(RestTemplate::class.java))
-      .run { assertThat(it).doesNotHaveBean(SentrySpanRestTemplateCustomizer::class.java) }
+    tracingEnabledRunner.withClassLoader(FilteredClassLoader(RestTemplate::class.java)).run {
+      assertThat(it).doesNotHaveBean(SentrySpanRestTemplateCustomizer::class.java)
+    }
   }
 
   @Test
   fun `when tracing is enabled and RestClient is on the classpath, SentrySpanRestClientCustomizer bean is created`() {
-    tracingEnabledRunner
-      .run { assertThat(it).hasSingleBean(SentrySpanRestClientCustomizer::class.java) }
+    tracingEnabledRunner.run {
+      assertThat(it).hasSingleBean(SentrySpanRestClientCustomizer::class.java)
+    }
   }
 
   @Test
   fun `when tracing is enabled and RestClient is not on the classpath, SentrySpanRestClientCustomizer bean is not created`() {
-    tracingEnabledRunner
-      .withClassLoader(FilteredClassLoader(RestClient::class.java))
-      .run { assertThat(it).doesNotHaveBean(SentrySpanRestClientCustomizer::class.java) }
+    tracingEnabledRunner.withClassLoader(FilteredClassLoader(RestClient::class.java)).run {
+      assertThat(it).doesNotHaveBean(SentrySpanRestClientCustomizer::class.java)
+    }
   }
 
   @Test
   fun `when tracing is enabled and WebClient is on the classpath, SentrySpanWebClientCustomizer bean is created`() {
-    tracingEnabledRunner
-      .run { assertThat(it).hasSingleBean(SentrySpanWebClientCustomizer::class.java) }
+    tracingEnabledRunner.run {
+      assertThat(it).hasSingleBean(SentrySpanWebClientCustomizer::class.java)
+    }
   }
 
   @Test
   fun `when tracing is enabled and WebClient is not on the classpath, SentrySpanWebClientCustomizer bean is not created`() {
-    tracingEnabledRunner
-      .withClassLoader(FilteredClassLoader(WebClient::class.java))
-      .run { assertThat(it).doesNotHaveBean(SentrySpanWebClientCustomizer::class.java) }
+    tracingEnabledRunner.withClassLoader(FilteredClassLoader(WebClient::class.java)).run {
+      assertThat(it).doesNotHaveBean(SentrySpanWebClientCustomizer::class.java)
+    }
   }
 
   @Test

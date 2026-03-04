@@ -182,12 +182,16 @@ class ExternalOptionsTest {
 
   @Test
   fun `creates options with shutdownTimeoutMillis using external properties`() {
-    withPropertiesFile("shutdown-timeout-millis=2000") { assertEquals(2000L, it.shutdownTimeoutMillis) }
+    withPropertiesFile("shutdown-timeout-millis=2000") {
+      assertEquals(2000L, it.shutdownTimeoutMillis)
+    }
   }
 
   @Test
   fun `creates options with sessionFlushTimeoutMillis using external properties`() {
-    withPropertiesFile("session-flush-timeout-millis=2000") { assertEquals(2000L, it.sessionFlushTimeoutMillis) }
+    withPropertiesFile("session-flush-timeout-millis=2000") {
+      assertEquals(2000L, it.sessionFlushTimeoutMillis)
+    }
   }
 
   @Test
