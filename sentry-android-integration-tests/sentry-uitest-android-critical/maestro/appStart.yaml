@@ -33,18 +33,19 @@ name: App Start Tests
 - assertNotVisible: "Welcome!"
 - waitForAnimationToEnd
 - repeat:
-    times: 3
+    times: 5
     while:
       notVisible: "Sentry Test Notification"
     commands:
-      # Reset to home screen to prevent swipes from accumulating
-      # into quick settings expansion
+      # Reset to home screen to collapse any open shade/quick settings
+      - pressKey: back
       - pressKey: home
       - waitForAnimationToEnd
+      # Half-screen swipe: long enough to open shade, short enough to avoid quick settings
       - swipe:
           start: 90%, 0%
-          end: 90%, 100%
-          duration: 4000
+          end: 90%, 50%
+          duration: 2000
 - tapOn: "Sentry Test Notification"
 - assertVisible: "App Start Type: WARM"
 
@@ -66,18 +67,19 @@ name: App Start Tests
 - killApp
 - waitForAnimationToEnd
 - repeat:
-    times: 3
+    times: 5
     while:
       notVisible: "Sentry Test Notification"
     commands:
-      # Reset to home screen to prevent swipes from accumulating
-      # into quick settings expansion
+      # Reset to home screen to collapse any open shade/quick settings
+      - pressKey: back
       - pressKey: home
       - waitForAnimationToEnd
+      # Half-screen swipe: long enough to open shade, short enough to avoid quick settings
       - swipe:
           start: 90%, 0%
-          end: 90%, 100%
-          duration: 4000
+          end: 90%, 50%
+          duration: 2000
 - tapOn: "Sentry Test Notification"
 - assertVisible: "App Start Type: COLD"
 # Test 5: Launch app after a broadcast receiver already created the application

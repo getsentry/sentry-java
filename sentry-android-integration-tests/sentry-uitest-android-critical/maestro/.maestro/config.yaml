@@ -8,9 +8,6 @@ onFlowStart:
         visible: "Close app"
       commands:
         - tapOn: "Close app"
-  # Collapse notification shade if left open from a previous test
-  - swipe:
-      start: 50%, 50%
-      end: 50%, 1%
-      duration: 300
+  # Close notification shade if left open from a previous test
+  - pressKey: back
   - pressKey: home
