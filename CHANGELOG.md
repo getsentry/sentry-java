@@ -4,7 +4,7 @@
 
 ### Features
 
-- Allow configuring `shutdown-timeout` and `session-flush-timeout` via `sentry.properties` and environment variables (`SENTRY_SHUTDOWN_TIMEOUT`, `SENTRY_SESSION_FLUSH_TIMEOUT`) ([#4641](https://github.com/getsentry/sentry-java/pull/4641))
+- Allow configuring `shutdown-timeout-millis` and `session-flush-timeout-millis` via `sentry.properties` and environment variables (`SENTRY_SHUTDOWN_TIMEOUT_MILLIS`, `SENTRY_SESSION_FLUSH_TIMEOUT_MILLIS`) ([#4641](https://github.com/getsentry/sentry-java/pull/4641))
 - Add experimental Sentry Android Distribution module for integrating with Sentry Build Distribution to check for and install updates ([#4804](https://github.com/getsentry/sentry-java/pull/4804))
 
 ### Fixes

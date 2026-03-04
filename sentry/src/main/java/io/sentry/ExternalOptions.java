@@ -135,8 +135,9 @@ public final class ExternalOptions {
       options.addBundleId(bundleId);
     }
     options.setIdleTimeout(propertiesProvider.getLongProperty("idle-timeout"));
-    options.setShutdownTimeoutMillis(propertiesProvider.getLongProperty("shutdown-timeout"));
-    options.setSessionFlushTimeoutMillis(propertiesProvider.getLongProperty("session-flush-timeout"));
+    options.setShutdownTimeoutMillis(propertiesProvider.getLongProperty("shutdown-timeout-millis"));
+    options.setSessionFlushTimeoutMillis(
+        propertiesProvider.getLongProperty("session-flush-timeout-millis"));
 
     options.setIgnoredErrors(propertiesProvider.getListOrNull("ignored-errors"));
 
