@@ -5,8 +5,11 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.os.SystemClock;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
+import java.util.concurrent.atomic.AtomicLong;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -15,16 +18,25 @@ import org.jetbrains.annotations.Nullable;
  *
  * <p>The accelerometer sensor (TYPE_ACCELEROMETER) does NOT require any special permissions on
  * Android. The BODY_SENSORS permission is only needed for heart rate and similar body sensors.
+ *
+ * <p>Requires at least {@link #SHAKE_COUNT_THRESHOLD} accelerometer readings above {@link
+ * #SHAKE_THRESHOLD_GRAVITY} within {@link #SHAKE_WINDOW_MS} to trigger a shake event.
  */
+@ApiStatus.Internal
 public final class SentryShakeDetector implements SensorEventListener {
 
   private static final float SHAKE_THRESHOLD_GRAVITY = 2.7f;
+  private static final int SHAKE_WINDOW_MS = 1500;
+  private static final int SHAKE_COUNT_THRESHOLD = 2;
   private static final int SHAKE_COOLDOWN_MS = 1000;
 
   private @Nullable SensorManager sensorManager;
-  private long lastShakeTimestamp = 0;
-  private @Nullable Listener listener;
+  private final @NotNull AtomicLong lastShakeTimestamp = new AtomicLong(0);
+  private volatile @Nullable Listener listener;
   private final @NotNull ILogger logger;
+
+  private int shakeCount = 0;
+  private long firstShakeTimestamp = 0;
 
   public interface Listener {
     void onShake();
@@ -47,7 +59,7 @@ public final class SentryShakeDetector implements SensorEventListener {
           SentryLevel.WARNING, "Accelerometer sensor not available. Shake detection disabled.");
       return;
     }
-    sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_UI);
+    sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL);
   }
 
   public void stop() {
@@ -68,11 +80,26 @@ public final class SentryShakeDetector implements SensorEventListener {
     float gZ = event.values[2] / SensorManager.GRAVITY_EARTH;
     double gForce = Math.sqrt(gX * gX + gY * gY + gZ * gZ);
     if (gForce > SHAKE_THRESHOLD_GRAVITY) {
-      long now = System.currentTimeMillis();
-      if (now - lastShakeTimestamp > SHAKE_COOLDOWN_MS) {
-        lastShakeTimestamp = now;
-        if (listener != null) {
-          listener.onShake();
+      long now = SystemClock.elapsedRealtime();
+
+      // Reset counter if outside the detection window
+      if (now - firstShakeTimestamp > SHAKE_WINDOW_MS) {
+        shakeCount = 0;
+        firstShakeTimestamp = now;
+      }
+
+      shakeCount++;
+
+      if (shakeCount >= SHAKE_COUNT_THRESHOLD) {
+        // Enforce cooldown so we don't fire repeatedly
+        long lastShake = lastShakeTimestamp.get();
+        if (now - lastShake > SHAKE_COOLDOWN_MS) {
+          lastShakeTimestamp.set(now);
+          shakeCount = 0;
+          final @Nullable Listener currentListener = listener;
+          if (currentListener != null) {
+            currentListener.onShake();
+          }
         }
       }
     }

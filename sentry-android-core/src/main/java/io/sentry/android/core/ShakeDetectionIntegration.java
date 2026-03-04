@@ -25,7 +25,7 @@ public final class ShakeDetectionIntegration
   private final @NotNull Application application;
   private @Nullable SentryShakeDetector shakeDetector;
   private @Nullable SentryAndroidOptions options;
-  private @Nullable Activity currentActivity;
+  private volatile @Nullable Activity currentActivity;
 
   public ShakeDetectionIntegration(final @NotNull Application application) {
     this.application = Objects.requireNonNull(application, "Application is required");
@@ -42,6 +42,13 @@ public final class ShakeDetectionIntegration
     addIntegrationToSdkVersion("ShakeDetection");
     application.registerActivityLifecycleCallbacks(this);
     options.getLogger().log(SentryLevel.DEBUG, "ShakeDetectionIntegration installed.");
+
+    // In case of a deferred init, hook into any already-resumed activity
+    final @Nullable Activity activity = CurrentActivityHolder.getInstance().getActivity();
+    if (activity != null) {
+      currentActivity = activity;
+      startShakeDetection(activity);
+    }
   }
 
   @Override
@@ -58,8 +65,13 @@ public final class ShakeDetectionIntegration
 
   @Override
   public void onActivityPaused(final @NotNull Activity activity) {
-    stopShakeDetection();
-    currentActivity = null;
+    // Only stop if this is the activity we're tracking. When transitioning between
+    // activities, B.onResume may fire before A.onPause — stopping unconditionally
+    // would kill shake detection for the new activity.
+    if (activity == currentActivity) {
+      stopShakeDetection();
+      currentActivity = null;
+    }
   }
 
   @Override
@@ -80,9 +92,11 @@ public final class ShakeDetectionIntegration
   public void onActivityDestroyed(final @NotNull Activity activity) {}
 
   private void startShakeDetection(final @NotNull Activity activity) {
-    if (shakeDetector != null || options == null) {
+    if (options == null) {
       return;
     }
+    // Stop any existing detector (e.g. when transitioning between activities)
+    stopShakeDetection();
     shakeDetector = new SentryShakeDetector(options.getLogger());
     shakeDetector.start(
         activity,
@@ -90,7 +104,15 @@ public final class ShakeDetectionIntegration
           final Activity active = currentActivity;
           if (active != null && options != null) {
             active.runOnUiThread(
-                () -> options.getFeedbackOptions().getDialogHandler().showDialog(null, null));
+                () -> {
+                  try {
+                    options.getFeedbackOptions().getDialogHandler().showDialog(null, null);
+                  } catch (Throwable e) {
+                    options
+                        .getLogger()
+                        .log(SentryLevel.ERROR, "Failed to show feedback dialog on shake.", e);
+                  }
+                });
           }
         });
   }

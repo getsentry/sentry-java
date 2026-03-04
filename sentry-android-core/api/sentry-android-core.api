@@ -457,6 +457,18 @@ public final class io/sentry/android/core/SentryScreenshotOptions : io/sentry/Se
 	public fun trackCustomMasking ()V
 }
 
+public final class io/sentry/android/core/SentryShakeDetector : android/hardware/SensorEventListener {
+	public fun <init> (Lio/sentry/ILogger;)V
+	public fun onAccuracyChanged (Landroid/hardware/Sensor;I)V
+	public fun onSensorChanged (Landroid/hardware/SensorEvent;)V
+	public fun start (Landroid/content/Context;Lio/sentry/android/core/SentryShakeDetector$Listener;)V
+	public fun stop ()V
+}
+
+public abstract interface class io/sentry/android/core/SentryShakeDetector$Listener {
+	public abstract fun onShake ()V
+}
+
 public class io/sentry/android/core/SentryUserFeedbackButton : android/widget/Button {
 	public fun <init> (Landroid/content/Context;)V
 	public fun <init> (Landroid/content/Context;Landroid/util/AttributeSet;)V
@@ -483,6 +495,19 @@ public class io/sentry/android/core/SentryUserFeedbackDialog$Builder {
 
 public abstract interface class io/sentry/android/core/SentryUserFeedbackDialog$OptionsConfiguration {
 	public abstract fun configure (Landroid/content/Context;Lio/sentry/SentryFeedbackOptions;)V
+}
+
+public final class io/sentry/android/core/ShakeDetectionIntegration : android/app/Application$ActivityLifecycleCallbacks, io/sentry/Integration, java/io/Closeable {
+	public fun <init> (Landroid/app/Application;)V
+	public fun close ()V
+	public fun onActivityCreated (Landroid/app/Activity;Landroid/os/Bundle;)V
+	public fun onActivityDestroyed (Landroid/app/Activity;)V
+	public fun onActivityPaused (Landroid/app/Activity;)V
+	public fun onActivityResumed (Landroid/app/Activity;)V
+	public fun onActivitySaveInstanceState (Landroid/app/Activity;Landroid/os/Bundle;)V
+	public fun onActivityStarted (Landroid/app/Activity;)V
+	public fun onActivityStopped (Landroid/app/Activity;)V
+	public fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
 }
 
 public class io/sentry/android/core/SpanFrameMetricsCollector : io/sentry/IPerformanceContinuousCollector, io/sentry/android/core/internal/util/SentryFrameMetricsCollector$FrameMetricsCollectorListener {
