@@ -4,6 +4,7 @@
 
 ### Features
 
+- Add support for `SENTRY_SAMPLE_RATE` environment variable / `sample-rate` property ([#5112](https://github.com/getsentry/sentry-java/pull/5112))
 - Create `sentry-opentelemetry-otlp` and `sentry-opentelemetry-otlp-spring` modules for combining OpenTelemetry SDK OTLP export with Sentry SDK ([#5100](https://github.com/getsentry/sentry-java/pull/5100))
   - OpenTelemetry is configured to send spans to Sentry directly using an OTLP endpoint.
   - Sentry only uses trace and span ID from OpenTelemetry (via `OpenTelemetryOtlpEventProcessor`) but will not send spans through OpenTelemetry nor use OpenTelemetry `Context` for `Scopes` propagation.

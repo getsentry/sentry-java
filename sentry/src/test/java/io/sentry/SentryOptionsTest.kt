@@ -376,6 +376,7 @@ class SentryOptionsTest {
     externalOptions.setTag("tag1", "value1")
     externalOptions.setTag("tag2", "value2")
     externalOptions.enableUncaughtExceptionHandler = false
+    externalOptions.sampleRate = 0.3
     externalOptions.tracesSampleRate = 0.5
     externalOptions.profilesSampleRate = 0.5
     externalOptions.addInAppInclude("com.app")
@@ -433,6 +434,7 @@ class SentryOptionsTest {
     assertEquals(java.net.Proxy.Type.SOCKS, options.proxy!!.type)
     assertEquals(mapOf("tag1" to "value1", "tag2" to "value2"), options.tags)
     assertFalse(options.isEnableUncaughtExceptionHandler)
+    assertEquals(0.3, options.sampleRate)
     assertEquals(0.5, options.tracesSampleRate)
     assertEquals(0.5, options.profilesSampleRate)
     assertEquals(listOf("com.app"), options.inAppIncludes)

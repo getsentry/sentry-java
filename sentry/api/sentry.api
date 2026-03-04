@@ -504,6 +504,7 @@ public final class io/sentry/ExternalOptions {
 	public fun getProguardUuid ()Ljava/lang/String;
 	public fun getProxy ()Lio/sentry/SentryOptions$Proxy;
 	public fun getRelease ()Ljava/lang/String;
+	public fun getSampleRate ()Ljava/lang/Double;
 	public fun getSendClientReports ()Ljava/lang/Boolean;
 	public fun getServerName ()Ljava/lang/String;
 	public fun getSpotlightConnectionUrl ()Ljava/lang/String;
@@ -552,6 +553,7 @@ public final class io/sentry/ExternalOptions {
 	public fun setProguardUuid (Ljava/lang/String;)V
 	public fun setProxy (Lio/sentry/SentryOptions$Proxy;)V
 	public fun setRelease (Ljava/lang/String;)V
+	public fun setSampleRate (Ljava/lang/Double;)V
 	public fun setSendClientReports (Ljava/lang/Boolean;)V
 	public fun setSendDefaultPii (Ljava/lang/Boolean;)V
 	public fun setSendModules (Ljava/lang/Boolean;)V
