@@ -27,6 +27,7 @@ public final class ShakeDetectionIntegration
   private @Nullable SentryAndroidOptions options;
   private volatile @Nullable Activity currentActivity;
   private volatile boolean isDialogShowing = false;
+  private volatile @Nullable Activity dialogActivity;
   private @Nullable Runnable originalOnFormClose;
 
   public ShakeDetectionIntegration(final @NotNull Application application) {
@@ -93,10 +94,12 @@ public final class ShakeDetectionIntegration
 
   @Override
   public void onActivityDestroyed(final @NotNull Activity activity) {
-    // Reset dialog flag — the dialog cannot outlive the activity being destroyed,
-    // so clear the flag to avoid permanently blocking shake-to-feedback
-    // (e.g. if showDialog silently failed).
-    isDialogShowing = false;
+    // Only reset if this is the activity that hosts the dialog — the dialog cannot
+    // outlive its host activity being destroyed.
+    if (activity == dialogActivity) {
+      isDialogShowing = false;
+      dialogActivity = null;
+    }
   }
 
   private void startShakeDetection(final @NotNull Activity activity) {
@@ -118,11 +121,13 @@ public final class ShakeDetectionIntegration
                   }
                   try {
                     isDialogShowing = true;
+                    dialogActivity = active;
                     options
                         .getFeedbackOptions()
                         .setOnFormClose(
                             () -> {
                               isDialogShowing = false;
+                              dialogActivity = null;
                               options.getFeedbackOptions().setOnFormClose(originalOnFormClose);
                               if (originalOnFormClose != null) {
                                 originalOnFormClose.run();
@@ -131,6 +136,8 @@ public final class ShakeDetectionIntegration
                     options.getFeedbackOptions().getDialogHandler().showDialog(null, null);
                   } catch (Throwable e) {
                     isDialogShowing = false;
+                    dialogActivity = null;
+                    options.getFeedbackOptions().setOnFormClose(originalOnFormClose);
                     options
                         .getLogger()
                         .log(SentryLevel.ERROR, "Failed to show feedback dialog on shake.", e);
