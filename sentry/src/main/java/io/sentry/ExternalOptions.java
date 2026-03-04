@@ -34,8 +34,8 @@ public final class ExternalOptions {
   private final @NotNull List<String> contextTags = new CopyOnWriteArrayList<>();
   private @Nullable String proguardUuid;
   private @Nullable Long idleTimeout;
-  private @Nullable Long shutdownTimeout;
-  private @Nullable Long sessionFlushTimeout;
+  private @Nullable Long shutdownTimeoutMillis;
+  private @Nullable Long sessionFlushTimeoutMillis;
   private final @NotNull Set<Class<? extends Throwable>> ignoredExceptionsForType =
       new CopyOnWriteArraySet<>();
   private @Nullable List<String> ignoredErrors;
@@ -135,8 +135,8 @@ public final class ExternalOptions {
       options.addBundleId(bundleId);
     }
     options.setIdleTimeout(propertiesProvider.getLongProperty("idle-timeout"));
-    options.setShutdownTimeout(propertiesProvider.getLongProperty("shutdown-timeout"));
-    options.setSessionFlushTimeout(propertiesProvider.getLongProperty("session-flush-timeout"));
+    options.setShutdownTimeoutMillis(propertiesProvider.getLongProperty("shutdown-timeout"));
+    options.setSessionFlushTimeoutMillis(propertiesProvider.getLongProperty("session-flush-timeout"));
 
     options.setIgnoredErrors(propertiesProvider.getListOrNull("ignored-errors"));
 
@@ -397,20 +397,20 @@ public final class ExternalOptions {
     this.idleTimeout = idleTimeout;
   }
 
-  public @Nullable Long getShutdownTimeout() {
-    return shutdownTimeout;
+  public @Nullable Long getShutdownTimeoutMillis() {
+    return shutdownTimeoutMillis;
   }
 
-  public void setShutdownTimeout(final @Nullable Long shutdownTimeout) {
-    this.shutdownTimeout = shutdownTimeout;
+  public void setShutdownTimeoutMillis(final @Nullable Long shutdownTimeoutMillis) {
+    this.shutdownTimeoutMillis = shutdownTimeoutMillis;
   }
 
-  public @Nullable Long getSessionFlushTimeout() {
-    return sessionFlushTimeout;
+  public @Nullable Long getSessionFlushTimeoutMillis() {
+    return sessionFlushTimeoutMillis;
   }
 
-  public void setSessionFlushTimeout(final @Nullable Long sessionFlushTimeout) {
-    this.sessionFlushTimeout = sessionFlushTimeout;
+  public void setSessionFlushTimeoutMillis(final @Nullable Long sessionFlushTimeoutMillis) {
+    this.sessionFlushTimeoutMillis = sessionFlushTimeoutMillis;
   }
 
   public @Nullable List<String> getIgnoredErrors() {

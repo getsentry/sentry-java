@@ -3307,11 +3307,11 @@ public class SentryOptions {
     if (options.getIdleTimeout() != null) {
       setIdleTimeout(options.getIdleTimeout());
     }
-    if (options.getShutdownTimeout() != null) {
-      setShutdownTimeoutMillis(options.getShutdownTimeout());
+    if (options.getShutdownTimeoutMillis() != null) {
+      setShutdownTimeoutMillis(options.getShutdownTimeoutMillis());
     }
-    if (options.getSessionFlushTimeout() != null) {
-      setSessionFlushTimeoutMillis(options.getSessionFlushTimeout());
+    if (options.getSessionFlushTimeoutMillis() != null) {
+      setSessionFlushTimeoutMillis(options.getSessionFlushTimeoutMillis());
     }
     for (String bundleId : options.getBundleIds()) {
       addBundleId(bundleId);
