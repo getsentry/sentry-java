@@ -74,6 +74,10 @@ public final class ShakeDetectionIntegration
     if (activity == currentActivity) {
       stopShakeDetection();
       currentActivity = null;
+      // Reset dialog flag — the dialog cannot outlive the activity, so if
+      // showDialog silently failed or the activity is finishing, clear the flag
+      // to avoid permanently blocking shake-to-feedback.
+      isDialogShowing = false;
     }
   }
 
