@@ -27,6 +27,7 @@ public final class ShakeDetectionIntegration
   private @Nullable SentryAndroidOptions options;
   private volatile @Nullable Activity currentActivity;
   private volatile boolean isDialogShowing = false;
+  private @Nullable Runnable originalOnFormClose;
 
   public ShakeDetectionIntegration(final @NotNull Application application) {
     this.application = Objects.requireNonNull(application, "Application is required");
@@ -41,6 +42,7 @@ public final class ShakeDetectionIntegration
     }
 
     addIntegrationToSdkVersion("ShakeDetection");
+    originalOnFormClose = this.options.getFeedbackOptions().getOnFormClose();
     application.registerActivityLifecycleCallbacks(this);
     options.getLogger().log(SentryLevel.DEBUG, "ShakeDetectionIntegration installed.");
 
@@ -111,15 +113,14 @@ public final class ShakeDetectionIntegration
                   }
                   try {
                     isDialogShowing = true;
-                    final Runnable previousOnFormClose =
-                        options.getFeedbackOptions().getOnFormClose();
                     options
                         .getFeedbackOptions()
                         .setOnFormClose(
                             () -> {
                               isDialogShowing = false;
-                              if (previousOnFormClose != null) {
-                                previousOnFormClose.run();
+                              options.getFeedbackOptions().setOnFormClose(originalOnFormClose);
+                              if (originalOnFormClose != null) {
+                                originalOnFormClose.run();
                               }
                             });
                     options.getFeedbackOptions().getDialogHandler().showDialog(null, null);
