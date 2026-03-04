@@ -19,7 +19,10 @@ object NotificationHelper {
       context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
     // Create notification channel for Android 8.0+ (API 26+)
+    // Delete first to ensure the channel is recreated with the correct importance,
+    // since Android preserves channel settings across app reinstalls (adb install -r).
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      notificationManager.deleteNotificationChannel(CHANNEL_ID)
       val channel =
         NotificationChannel(CHANNEL_ID, "Notifications", NotificationManager.IMPORTANCE_HIGH)
       channel.description = "description"
