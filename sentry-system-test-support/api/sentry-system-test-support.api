@@ -574,6 +574,8 @@ public final class io/sentry/systemtest/util/TestHelper {
 	public static synthetic fun doesContainMetric$default (Lio/sentry/systemtest/util/TestHelper;Lio/sentry/SentryMetricsEvents;Ljava/lang/String;Ljava/lang/String;DLjava/lang/String;ILjava/lang/Object;)Z
 	public final fun doesEventHaveExceptionMessage (Lio/sentry/SentryEvent;Ljava/lang/String;)Z
 	public final fun doesEventHaveFlag (Lio/sentry/SentryEvent;Ljava/lang/String;Z)Z
+	public final fun doesLogWithBodyHaveAttribute (Lio/sentry/SentryLogEvents;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;)Z
+	public final fun doesMetricHaveAttribute (Lio/sentry/SentryMetricsEvents;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;)Z
 	public final fun doesTransactionContainSpanWithDescription (Lio/sentry/protocol/SentryTransaction;Ljava/lang/String;)Z
 	public final fun doesTransactionContainSpanWithOp (Lio/sentry/protocol/SentryTransaction;Ljava/lang/String;)Z
 	public final fun doesTransactionContainSpanWithOpAndDescription (Lio/sentry/protocol/SentryTransaction;Ljava/lang/String;Ljava/lang/String;)Z

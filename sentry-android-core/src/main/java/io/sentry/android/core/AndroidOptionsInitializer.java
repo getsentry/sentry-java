@@ -34,7 +34,6 @@ import io.sentry.android.core.internal.gestures.AndroidViewGestureTargetLocator;
 import io.sentry.android.core.internal.modules.AssetsModulesLoader;
 import io.sentry.android.core.internal.util.AndroidConnectionStatusProvider;
 import io.sentry.android.core.internal.util.AndroidCurrentDateProvider;
-import io.sentry.android.core.internal.util.AndroidRuntimeManager;
 import io.sentry.android.core.internal.util.AndroidThreadChecker;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.android.core.performance.AppStartMetrics;
@@ -125,7 +124,6 @@ final class AndroidOptionsInitializer {
     options.setDefaultScopeType(ScopeType.CURRENT);
     options.setOpenTelemetryMode(SentryOpenTelemetryMode.OFF);
     options.setDateProvider(new SentryAndroidDateProvider());
-    options.setRuntimeManager(new AndroidRuntimeManager());
     options.getLogs().setLoggerBatchProcessorFactory(new AndroidLoggerBatchProcessorFactory());
     options.getMetrics().setMetricsBatchProcessorFactory(new AndroidMetricsBatchProcessorFactory());
 
@@ -137,15 +135,13 @@ final class AndroidOptionsInitializer {
 
     ManifestMetadataReader.applyMetadata(finalContext, options, buildInfoProvider);
 
-    options.setCacheDirPath(
-        options
-            .getRuntimeManager()
-            .runWithRelaxedPolicy(() -> getCacheDir(finalContext).getAbsolutePath()));
+    options.setCacheDirPath(getCacheDir(finalContext).getAbsolutePath());
 
     AnrProfileRotationHelper.rotate();
 
     readDefaultOptionValues(options, finalContext, buildInfoProvider);
     AppState.getInstance().registerLifecycleObserver(options);
+    options.activate();
   }
 
   @TestOnly
@@ -204,7 +200,7 @@ final class AndroidOptionsInitializer {
     final @NotNull AppStartMetrics appStartMetrics = AppStartMetrics.getInstance();
 
     if (options.getModulesLoader() instanceof NoOpModulesLoader) {
-      options.setModulesLoader(new AssetsModulesLoader(context, options.getLogger()));
+      options.setModulesLoader(new AssetsModulesLoader(context, options));
     }
     if (options.getDebugMetaLoader() instanceof NoOpDebugMetaLoader) {
       options.setDebugMetaLoader(new AssetsDebugMetaLoader(context, options.getLogger()));
@@ -476,8 +472,7 @@ final class AndroidOptionsInitializer {
 
     if (options.getDistinctId() == null) {
       try {
-        options.setDistinctId(
-            options.getRuntimeManager().runWithRelaxedPolicy(() -> Installation.id(context)));
+        options.setDistinctId(Installation.id(context));
       } catch (RuntimeException e) {
         options.getLogger().log(SentryLevel.ERROR, "Could not generate distinct Id.", e);
       }

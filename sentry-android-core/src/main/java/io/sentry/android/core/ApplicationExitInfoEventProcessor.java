@@ -578,7 +578,7 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
 
   private @Nullable String getDeviceId() {
     try {
-      return options.getRuntimeManager().runWithRelaxedPolicy(() -> Installation.id(context));
+      return Installation.id(context);
     } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, "Error getting installationId.", e);
     }

@@ -20,6 +20,11 @@
           "type": "string",
           "value": "production"
         },
+        "custom.array":
+        {
+          "type": "array",
+          "value": ["a", "b"]
+        },
         "sentry.sdk.version":
         {
           "type": "string",
