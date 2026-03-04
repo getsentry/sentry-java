@@ -12,6 +12,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNotSame
 import kotlin.test.assertNull
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 import org.junit.Assert.assertArrayEquals
 import org.mockito.kotlin.any
@@ -156,6 +157,21 @@ class ScopeTest {
   }
 
   @Test
+  fun `copying scope copies active span`() {
+    val scope = Scope(SentryOptions())
+
+    val transaction =
+      SentryTracer(TransactionContext("transaction-name", "op"), NoOpScopes.getInstance())
+    val span = transaction.startChild("child1")
+
+    scope.setActiveSpan(span)
+
+    val clone = scope.clone()
+
+    assertSame(span, clone.span)
+  }
+
+  @Test
   fun `copying scope and changing the original values wont change the clone values`() {
     val scope = Scope(SentryOptions())
     val level = SentryLevel.DEBUG
@@ -275,6 +291,7 @@ class ScopeTest {
     scope.setTag("some", "tag")
     scope.screen = "MainActivity"
     scope.setExtra("some", "extra")
+    scope.setAttribute("some", "attribute")
     scope.addEventProcessor(eventProcessor())
     scope.addAttachment(Attachment("path"))
 
@@ -288,6 +305,7 @@ class ScopeTest {
     assertEquals(0, scope.fingerprint.size)
     assertEquals(0, scope.breadcrumbs.size)
     assertEquals(0, scope.tags.size)
+    assertEquals(0, scope.attributes.size)
     assertEquals(0, scope.extras.size)
     assertEquals(0, scope.eventProcessors.size)
     assertEquals(0, scope.attachments.size)
@@ -1105,6 +1123,138 @@ class ScopeTest {
     scope.removeContexts(null)
 
     assertTrue(scope.contexts.isEmpty)
+  }
+
+  @Test
+  fun `feature flags can be added and are deduplicated`() {
+    val scope = Scope(SentryOptions.empty())
+
+    scope.addFeatureFlag("flag1", true)
+    scope.addFeatureFlag("flag1", false)
+
+    val flags = scope.featureFlags
+    assertNotNull(flags)
+    assertEquals(1, flags.values.size)
+
+    val flag0 = flags.values.first()
+    assertEquals("flag1", flag0.flag)
+    assertFalse(flag0.result)
+  }
+
+  @Test
+  fun `null feature flags are ignored`() {
+    val scope = Scope(SentryOptions.empty())
+
+    scope.addFeatureFlag(null, true)
+    scope.addFeatureFlag("flag1", null)
+    scope.addFeatureFlag(null, null)
+
+    val flags = scope.featureFlags
+    assertNotNull(flags)
+
+    assertEquals(0, flags.values.size)
+  }
+
+  @Test
+  fun `setAttribute stores attribute on scope`() {
+    val scope = Scope(SentryOptions())
+    scope.setAttribute("key1", "value1")
+    val attrs = scope.attributes
+    assertEquals(1, attrs.size)
+    assertEquals("value1", attrs["key1"]?.value)
+  }
+
+  @Test
+  fun `setAttribute with SentryAttribute stores attribute on scope`() {
+    val scope = Scope(SentryOptions())
+    scope.setAttribute(SentryAttribute.stringAttribute("key1", "value1"))
+    val attrs = scope.attributes
+    assertEquals(1, attrs.size)
+    assertEquals("value1", attrs["key1"]?.value)
+    assertEquals(SentryAttributeType.STRING, attrs["key1"]?.type)
+  }
+
+  @Test
+  fun `setAttributes stores multiple attributes on scope`() {
+    val scope = Scope(SentryOptions())
+    scope.setAttributes(
+      SentryAttributes.of(
+        SentryAttribute.stringAttribute("key1", "value1"),
+        SentryAttribute.integerAttribute("key2", 42),
+      )
+    )
+    val attrs = scope.attributes
+    assertEquals(2, attrs.size)
+    assertEquals("value1", attrs["key1"]?.value)
+    assertEquals(42, attrs["key2"]?.value)
+  }
+
+  @Test
+  fun `setAttribute with same key overwrites`() {
+    val scope = Scope(SentryOptions())
+    scope.setAttribute("key1", "value1")
+    scope.setAttribute("key1", "value2")
+    val attrs = scope.attributes
+    assertEquals(1, attrs.size)
+    assertEquals("value2", attrs["key1"]?.value)
+  }
+
+  @Test
+  fun `setAttribute with null key is no-op`() {
+    val scope = Scope(SentryOptions())
+    scope.setAttribute(null, "value1")
+    assertEquals(0, scope.attributes.size)
+  }
+
+  @Test
+  fun `setAttribute with null value removes attribute`() {
+    val scope = Scope(SentryOptions())
+    scope.setAttribute("key1", "value1")
+    assertEquals(1, scope.attributes.size)
+    scope.setAttribute("key1", null)
+    assertEquals(0, scope.attributes.size)
+  }
+
+  @Test
+  fun `removeAttribute removes attribute from scope`() {
+    val scope = Scope(SentryOptions())
+    scope.setAttribute("key1", "value1")
+    scope.setAttribute("key2", "value2")
+    scope.removeAttribute("key1")
+    val attrs = scope.attributes
+    assertEquals(1, attrs.size)
+    assertNull(attrs["key1"])
+    assertEquals("value2", attrs["key2"]?.value)
+  }
+
+  @Test
+  fun `removeAttribute with null key is no-op`() {
+    val scope = Scope(SentryOptions())
+    scope.setAttribute("key1", "value1")
+    scope.removeAttribute(null)
+    assertEquals(1, scope.attributes.size)
+  }
+
+  @Test
+  fun `scope clone copies attributes independently`() {
+    val scope = Scope(SentryOptions())
+    scope.setAttribute("key1", "value1")
+
+    val clone = scope.clone()
+    clone.setAttribute("key2", "value2")
+
+    assertEquals(1, scope.attributes.size)
+    assertEquals(2, clone.attributes.size)
+  }
+
+  @Test
+  fun `clear removes attributes`() {
+    val scope = Scope(SentryOptions())
+    scope.setAttribute("key1", "value1")
+    assertEquals(1, scope.attributes.size)
+
+    scope.clear()
+    assertEquals(0, scope.attributes.size)
   }
 
   private fun eventProcessor(): EventProcessor =

@@ -28,7 +28,7 @@ class ProfilingServiceLoaderTest {
 }
 
 class JavaProfileConverterProviderStub : JavaProfileConverterProvider {
-  override fun getProfileConverter(): IProfileConverter? {
+  override fun getProfileConverter(): IProfileConverter {
     return ProfileConverterStub()
   }
 }

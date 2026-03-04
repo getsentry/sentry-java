@@ -1,0 +1,12 @@
+{
+  "values": [
+    {
+      "flag": "flag-1",
+      "result": true
+    },
+    {
+      "flag": "flag-2",
+      "result": false
+    }
+  ]
+}

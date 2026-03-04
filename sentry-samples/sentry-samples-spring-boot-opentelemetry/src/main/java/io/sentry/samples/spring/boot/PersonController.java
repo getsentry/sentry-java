@@ -29,11 +29,13 @@ public class PersonController {
 
   @GetMapping("{id}")
   Person person(@PathVariable Long id) {
+    Sentry.addFeatureFlag("transaction-feature-flag", true);
     Span span = tracer.spanBuilder("spanCreatedThroughOtelApi").startSpan();
     try (final @NotNull Scope spanScope = span.makeCurrent()) {
       Sentry.logger().warn("warn Sentry logging");
       Sentry.logger().error("error Sentry logging");
       Sentry.logger().info("hello %s %s", "there", "world!");
+      Sentry.addFeatureFlag("my-feature-flag", true);
       ISpan currentSpan = Sentry.getSpan();
       ISpan sentrySpan = currentSpan.startChild("spanCreatedThroughSentryApi");
       try {

@@ -57,6 +57,7 @@ public final class io/sentry/opentelemetry/OtelSpanUtils {
 
 public final class io/sentry/opentelemetry/OtelSpanWrapper : io/sentry/opentelemetry/IOtelSpanWrapper {
 	public fun <init> (Lio/opentelemetry/sdk/trace/ReadWriteSpan;Lio/sentry/IScopes;Lio/sentry/SentryDate;Lio/sentry/TracesSamplingDecision;Lio/sentry/opentelemetry/IOtelSpanWrapper;Lio/sentry/SpanId;Lio/sentry/Baggage;)V
+	public fun addFeatureFlag (Ljava/lang/String;Ljava/lang/Boolean;)V
 	public fun finish ()V
 	public fun finish (Lio/sentry/SpanStatus;)V
 	public fun finish (Lio/sentry/SpanStatus;Lio/sentry/SentryDate;)V

@@ -30,6 +30,7 @@ plugins {
     alias(libs.plugins.gradle.versions) apply false
     alias(libs.plugins.spring.dependency.management) apply false
     id("io.sentry.javadoc.aggregate")
+    alias(libs.plugins.sentry) apply false
 }
 
 buildscript {
@@ -76,6 +77,7 @@ apiValidation {
             "sentry-samples-spring-boot-4",
             "sentry-samples-spring-boot-4-opentelemetry",
             "sentry-samples-spring-boot-4-opentelemetry-noagent",
+            "sentry-samples-spring-boot-4-otlp",
             "sentry-samples-spring-boot-4-webflux",
             "sentry-samples-ktor-client",
             "sentry-uitest-android",
@@ -83,7 +85,9 @@ apiValidation {
             "sentry-uitest-android-critical",
             "test-app-plain",
             "test-app-sentry",
-            "sentry-samples-netflix-dgs"
+            "test-app-size",
+            "sentry-samples-netflix-dgs",
+            "sentry-samples-console-otlp"
         )
     )
 }

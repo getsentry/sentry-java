@@ -1,0 +1,51 @@
+# Rules to not warn about missing classes. We use them, but we only want to measure the SDK size overhead and not run the app, so we keep it lean
+# This is generated automatically by the Android Gradle plugin.
+-dontwarn kotlin.Lazy
+-dontwarn kotlin.LazyKt
+-dontwarn kotlin.LazyThreadSafetyMode
+-dontwarn kotlin.Metadata
+-dontwarn kotlin.NoWhenBranchMatchedException
+-dontwarn kotlin.Pair
+-dontwarn kotlin.TuplesKt
+-dontwarn kotlin.Unit
+-dontwarn kotlin.collections.CollectionsKt
+-dontwarn kotlin.comparisons.ComparisonsKt
+-dontwarn kotlin.enums.EnumEntries
+-dontwarn kotlin.enums.EnumEntriesKt
+-dontwarn kotlin.io.CloseableKt
+-dontwarn kotlin.io.FilesKt
+-dontwarn kotlin.io.TextStreamsKt
+-dontwarn kotlin.jdk7.AutoCloseableKt
+-dontwarn kotlin.jvm.functions.Function0
+-dontwarn kotlin.jvm.functions.Function1
+-dontwarn kotlin.jvm.internal.DefaultConstructorMarker
+-dontwarn kotlin.jvm.internal.Intrinsics
+-dontwarn kotlin.jvm.internal.Lambda
+-dontwarn kotlin.jvm.internal.MutablePropertyReference1
+-dontwarn kotlin.jvm.internal.MutablePropertyReference1Impl
+-dontwarn kotlin.jvm.internal.Ref$ObjectRef
+-dontwarn kotlin.jvm.internal.Reflection
+-dontwarn kotlin.jvm.internal.SourceDebugExtension
+-dontwarn kotlin.jvm.internal.TypeIntrinsics
+-dontwarn kotlin.properties.ReadWriteProperty
+-dontwarn kotlin.ranges.LongProgression
+-dontwarn kotlin.ranges.LongRange
+-dontwarn kotlin.ranges.RangesKt
+-dontwarn kotlin.reflect.KMutableProperty1
+-dontwarn kotlin.reflect.KProperty
+-dontwarn kotlin.sequences.Sequence
+-dontwarn kotlin.text.Charsets
+-dontwarn kotlin.text.Regex
+-dontwarn kotlin.text.StringsKt
+-dontwarn timber.log.Timber$Tree
+-dontwarn kotlin.Deprecated
+-dontwarn kotlin.Function
+-dontwarn kotlin.jvm.JvmStatic
+-dontwarn kotlin.jvm.functions.Function2
+-dontwarn kotlin.jvm.functions.Function3
+-dontwarn kotlin.jvm.internal.Ref$BooleanRef
+-dontwarn kotlin.math.MathKt
+-dontwarn okhttp3.EventListener
+-dontwarn okhttp3.Interceptor
+# Assume all classes are used to not strip them out, e.g. integrations like Compose or Sqlite
+-keep class io.sentry.**

@@ -1,6 +1,7 @@
 package io.sentry
 
 import io.sentry.SentryOptions.RequestSize
+import io.sentry.logger.ILoggerBatchProcessorFactory
 import io.sentry.util.StringUtils
 import java.io.File
 import java.net.Proxy
@@ -12,6 +13,7 @@ import kotlin.test.assertIs
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
@@ -374,6 +376,7 @@ class SentryOptionsTest {
     externalOptions.setTag("tag1", "value1")
     externalOptions.setTag("tag2", "value2")
     externalOptions.enableUncaughtExceptionHandler = false
+    externalOptions.sampleRate = 0.3
     externalOptions.tracesSampleRate = 0.5
     externalOptions.profilesSampleRate = 0.5
     externalOptions.addInAppInclude("com.app")
@@ -396,6 +399,7 @@ class SentryOptionsTest {
     externalOptions.ignoredTransactions = listOf("transactionName1", "transaction-name-B")
     externalOptions.ignoredErrors = listOf("Some error", "Another .*")
     externalOptions.isEnableBackpressureHandling = false
+    externalOptions.isEnableDatabaseTransactionTracing = true
     externalOptions.maxRequestBodySize = SentryOptions.RequestSize.MEDIUM
     externalOptions.isSendDefaultPii = true
     externalOptions.isForceInit = true
@@ -411,6 +415,7 @@ class SentryOptionsTest {
     externalOptions.spotlightConnectionUrl = "http://local.sentry.io:1234"
     externalOptions.isGlobalHubMode = true
     externalOptions.isEnableLogs = true
+    externalOptions.isEnableMetrics = false
     externalOptions.profileSessionSampleRate = 0.8
     externalOptions.profilingTracesDirPath = "/profiling-traces"
     externalOptions.profileLifecycle = ProfileLifecycle.TRACE
@@ -431,6 +436,7 @@ class SentryOptionsTest {
     assertEquals(java.net.Proxy.Type.SOCKS, options.proxy!!.type)
     assertEquals(mapOf("tag1" to "value1", "tag2" to "value2"), options.tags)
     assertFalse(options.isEnableUncaughtExceptionHandler)
+    assertEquals(0.3, options.sampleRate)
     assertEquals(0.5, options.tracesSampleRate)
     assertEquals(0.5, options.profilesSampleRate)
     assertEquals(listOf("com.app"), options.inAppIncludes)
@@ -458,6 +464,7 @@ class SentryOptionsTest {
       options.ignoredErrors,
     )
     assertFalse(options.isEnableBackpressureHandling)
+    assertTrue(options.isEnableDatabaseTransactionTracing)
     assertTrue(options.isForceInit)
     assertNotNull(options.cron)
     assertEquals(10L, options.cron?.defaultCheckinMargin)
@@ -471,6 +478,7 @@ class SentryOptionsTest {
     assertEquals("http://local.sentry.io:1234", options.spotlightConnectionUrl)
     assertTrue(options.isGlobalHubMode!!)
     assertTrue(options.logs.isEnabled!!)
+    assertFalse(options.metrics.isEnabled)
     assertEquals(0.8, options.profileSessionSampleRate)
     assertEquals("/profiling-traces${File.separator}${hash}", options.profilingTracesDirPath)
     assertEquals(ProfileLifecycle.TRACE, options.profileLifecycle)
@@ -482,6 +490,14 @@ class SentryOptionsTest {
     val options = SentryOptions()
     options.merge(externalOptions)
     assertTrue(options.isEnableUncaughtExceptionHandler)
+  }
+
+  @Test
+  fun `merging options when enableMetrics is not set preserves the default value`() {
+    val externalOptions = ExternalOptions()
+    val options = SentryOptions()
+    options.merge(externalOptions)
+    assertTrue(options.metrics.isEnabled)
   }
 
   @Test
@@ -579,6 +595,24 @@ class SentryOptionsTest {
   }
 
   @Test
+  fun `when setting dsn with whitespace, it is trimmed and produces the same cache dir path`() {
+    val dsn = "http://key@localhost/proj"
+    val options1 =
+      SentryOptions().apply {
+        setDsn(dsn)
+        cacheDirPath = "${File.separator}test"
+      }
+    val options2 =
+      SentryOptions().apply {
+        setDsn("  $dsn  ")
+        cacheDirPath = "${File.separator}test"
+      }
+
+    assertEquals(dsn, options2.dsn)
+    assertEquals(options1.cacheDirPath, options2.cacheDirPath)
+  }
+
+  @Test
   fun `when options are initialized, idleTimeout is 3000`() {
     assertEquals(3000L, SentryOptions().idleTimeout)
   }
@@ -660,6 +694,16 @@ class SentryOptionsTest {
   @Test
   fun `when options are initialized, enableBackpressureHandling is set to true by default`() {
     assertTrue(SentryOptions().isEnableBackpressureHandling)
+  }
+
+  @Test
+  fun `when options are initialized, enableDatabaseTransactionTracing is set to false by default`() {
+    assertFalse(SentryOptions().isEnableDatabaseTransactionTracing)
+  }
+
+  @Test
+  fun `when options are initialized, metrics is enabled by default`() {
+    assertTrue(SentryOptions().metrics.isEnabled)
   }
 
   @Test
@@ -898,5 +942,26 @@ class SentryOptionsTest {
     val options = SentryOptions()
     options.isPropagateTraceparent = true
     assertTrue(options.isPropagateTraceparent)
+  }
+
+  @Test
+  fun `maxFeatureFlags defaults to 100`() {
+    val options = SentryOptions()
+    assertEquals(100, options.maxFeatureFlags)
+  }
+
+  @Test
+  fun `maxFeatureFlags can be changed`() {
+    val options = SentryOptions()
+    options.maxFeatureFlags = 50
+    assertEquals(50, options.maxFeatureFlags)
+  }
+
+  @Test
+  fun `loggerBatchFactory can be changed`() {
+    val mock = mock<ILoggerBatchProcessorFactory>()
+    val options = SentryOptions()
+    options.logs.loggerBatchProcessorFactory = mock
+    assertSame(mock, options.logs.loggerBatchProcessorFactory)
   }
 }

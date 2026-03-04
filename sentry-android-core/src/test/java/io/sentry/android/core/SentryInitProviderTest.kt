@@ -168,6 +168,7 @@ class SentryInitProviderTest {
       mockContext,
       loadClass,
       activityFramesTracker,
+      false,
     )
 
     assertFalse(sentryOptions.isEnableNdk)

@@ -189,4 +189,7 @@ public final class NoOpSpan implements ISpan {
   public @NotNull ISentryLifecycleToken makeCurrent() {
     return NoOpScopesLifecycleToken.getInstance();
   }
+
+  @Override
+  public void addFeatureFlag(final @Nullable String flag, final @Nullable Boolean result) {}
 }

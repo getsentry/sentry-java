@@ -23,6 +23,7 @@ import io.sentry.TransactionOptions
 import io.sentry.android.core.SentryAndroidOptions
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.TransactionNameSource
+import io.sentry.util.LazyEvaluator
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
@@ -65,7 +66,8 @@ class SentryGestureListenerTracingTest {
       options.tracesSampleRate = tracesSampleRate
       options.isEnableUserInteractionTracing = isEnableUserInteractionTracing
       options.isEnableUserInteractionBreadcrumbs = true
-      options.gestureTargetLocators = listOf(AndroidViewGestureTargetLocator(true))
+      options.gestureTargetLocators =
+        listOf(AndroidViewGestureTargetLocator(LazyEvaluator { true }))
       options.isEnableAutoTraceIdGeneration = isEnableAutoTraceIdGeneration
 
       whenever(scopes.options).thenReturn(options)

@@ -4,6 +4,7 @@ import io.sentry.protocol.App;
 import io.sentry.protocol.Browser;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.Device;
+import io.sentry.protocol.FeatureFlags;
 import io.sentry.protocol.Gpu;
 import io.sentry.protocol.OperatingSystem;
 import io.sentry.protocol.Response;
@@ -14,6 +15,7 @@ import java.io.IOException;
 import java.util.Enumeration;
 import java.util.Map;
 import java.util.Set;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -223,6 +225,27 @@ public final class CombinedContextsView extends Contexts {
   @Override
   public void setSpring(@NotNull Spring spring) {
     getDefaultContexts().setSpring(spring);
+  }
+
+  @Override
+  public @Nullable FeatureFlags getFeatureFlags() {
+    // these are not intended to be set on a scopes Context directly
+    final @Nullable FeatureFlags current = currentContexts.getFeatureFlags();
+    if (current != null) {
+      return current;
+    }
+    final @Nullable FeatureFlags isolation = isolationContexts.getFeatureFlags();
+    if (isolation != null) {
+      return isolation;
+    }
+    return globalContexts.getFeatureFlags();
+  }
+
+  @ApiStatus.Internal
+  @Override
+  /** Not intended to be set on a scopes Context directly */
+  public void setFeatureFlags(@NotNull FeatureFlags spring) {
+    getDefaultContexts().setFeatureFlags(spring);
   }
 
   @Override

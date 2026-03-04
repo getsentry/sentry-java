@@ -181,6 +181,14 @@ public class Contexts implements JsonSerializable {
     this.put(Spring.TYPE, spring);
   }
 
+  public @Nullable FeatureFlags getFeatureFlags() {
+    return toContextType(FeatureFlags.TYPE, FeatureFlags.class);
+  }
+
+  public void setFeatureFlags(final @NotNull FeatureFlags featureFlags) {
+    this.put(FeatureFlags.TYPE, featureFlags);
+  }
+
   public int size() {
     // since this used to extend map
     return internalStorage.size();
@@ -338,6 +346,9 @@ public class Contexts implements JsonSerializable {
             break;
           case Spring.TYPE:
             contexts.setSpring(new Spring.Deserializer().deserialize(reader, logger));
+            break;
+          case FeatureFlags.TYPE:
+            contexts.setFeatureFlags(new FeatureFlags.Deserializer().deserialize(reader, logger));
             break;
           default:
             Object object = reader.nextObjectOrNull();

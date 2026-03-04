@@ -57,6 +57,7 @@ internal class UpdateResponseParser(private val options: SentryOptions) {
     val downloadUrl = json.optString("download_url", "")
     val appName = json.optString("app_name", "")
     val createdDate = json.optString("created_date", "")
+    val installGroups = parseInstallGroups(json)
 
     // Validate required fields (optString returns "null" for null values)
     val missingFields = mutableListOf<String>()
@@ -77,6 +78,26 @@ internal class UpdateResponseParser(private val options: SentryOptions) {
       )
     }
 
-    return UpdateInfo(id, buildVersion, buildNumber, downloadUrl, appName, createdDate)
+    return UpdateInfo(
+      id,
+      buildVersion,
+      buildNumber,
+      downloadUrl,
+      appName,
+      createdDate,
+      installGroups,
+    )
+  }
+
+  private fun parseInstallGroups(json: JSONObject): List<String>? {
+    val installGroupsArray = json.optJSONArray("install_groups") ?: return null
+    val installGroups = mutableListOf<String>()
+    for (i in 0 until installGroupsArray.length()) {
+      val group = installGroupsArray.optString(i)
+      if (group.isNotEmpty() && group != "null") {
+        installGroups.add(group)
+      }
+    }
+    return if (installGroups.isEmpty()) null else installGroups
   }
 }

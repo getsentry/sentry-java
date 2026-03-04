@@ -7,12 +7,14 @@
       "unmaskedViewClasses": ["com.example.MyClass"],
       "nativeSdkVersion": "7.19.1",
       "errorSampleRate": 0.1,
+      "networkDetailHasUrls": false,
       "maskAllImages": false,
       "maskAllText": false,
       "maskedViewClasses": [],
       "nativeSdkName": "sentry.java",
       "sessionSampleRate": 0.5,
-      "quality": "low"
+      "quality": "low",
+      "screenshotStrategy": "pixelCopy"
     }
   }
 }

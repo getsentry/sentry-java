@@ -4,6 +4,7 @@ import io.sentry.protocol.SentryId
 import io.sentry.protocol.TransactionNameSource
 import io.sentry.protocol.User
 import io.sentry.test.createTestScopes
+import io.sentry.test.getProperty
 import io.sentry.util.thread.IThreadChecker
 import java.time.LocalDateTime
 import java.time.ZoneOffset
@@ -1170,9 +1171,20 @@ class SentryTracerTest {
   }
 
   @Test
-  fun `when transaction is created, but not profiled, compositePerformanceCollector is started anyway`() {
-    val transaction = fixture.getSut()
+  fun `when transaction is created and sampled, but not profiled, compositePerformanceCollector is started anyway`() {
+    val transaction = fixture.getSut(samplingDecision = TracesSamplingDecision(true))
     verify(fixture.compositePerformanceCollector).start(anyOrNull<ITransaction>())
+    assertEquals(
+      fixture.compositePerformanceCollector,
+      transaction.getProperty("compositePerformanceCollector"),
+    )
+  }
+
+  @Test
+  fun `when transaction is created, but not sampled, compositePerformanceCollector is not started nor set`() {
+    val transaction = fixture.getSut(samplingDecision = TracesSamplingDecision(false))
+    verify(fixture.compositePerformanceCollector, never()).start(anyOrNull<ITransaction>())
+    assertNull(transaction.getProperty("compositePerformanceCollector"))
   }
 
   @Test
@@ -1188,7 +1200,7 @@ class SentryTracerTest {
 
   @Test
   fun `when transaction is finished, compositePerformanceCollector is stopped`() {
-    val transaction = fixture.getSut()
+    val transaction = fixture.getSut(samplingDecision = TracesSamplingDecision(true))
     transaction.finish()
     verify(fixture.compositePerformanceCollector)
       .stop(check<ITransaction> { assertEquals(transaction, it) })
@@ -1196,13 +1208,24 @@ class SentryTracerTest {
 
   @Test
   fun `when a span is started and finished the compositePerformanceCollector gets notified`() {
-    val transaction = fixture.getSut()
+    val transaction = fixture.getSut(samplingDecision = TracesSamplingDecision(true))
 
     val span = transaction.startChild("op.span")
     span.finish()
 
     verify(fixture.compositePerformanceCollector).onSpanStarted(check { assertEquals(span, it) })
     verify(fixture.compositePerformanceCollector).onSpanFinished(check { assertEquals(span, it) })
+  }
+
+  @Test
+  fun `when a span is started and finished the compositePerformanceCollector gets never notified if not sampled`() {
+    val transaction = fixture.getSut(samplingDecision = TracesSamplingDecision(false))
+
+    val span = transaction.startChild("op.span")
+    span.finish()
+
+    verify(fixture.compositePerformanceCollector, never()).onSpanStarted(any())
+    verify(fixture.compositePerformanceCollector, never()).onSpanFinished(any())
   }
 
   @Test
@@ -1393,6 +1416,7 @@ class SentryTracerTest {
       }
     val transaction =
       fixture.getSut(
+        samplingDecision = TracesSamplingDecision(true),
         optionsConfiguration = { it.profilesSampleRate = 1.0 },
         performanceCollector = mockPerformanceCollector,
       )

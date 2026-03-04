@@ -1,24 +1,32 @@
 package io.sentry;
 
+import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
+
 import io.sentry.protocol.SdkVersion;
 import io.sentry.util.SampleRateUtils;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-import java.util.concurrent.CopyOnWriteArraySet;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class SentryReplayOptions {
+public final class SentryReplayOptions extends SentryMaskingOptions {
 
-  public static final String TEXT_VIEW_CLASS_NAME = "android.widget.TextView";
-  public static final String IMAGE_VIEW_CLASS_NAME = "android.widget.ImageView";
-  public static final String WEB_VIEW_CLASS_NAME = "android.webkit.WebView";
-  public static final String VIDEO_VIEW_CLASS_NAME = "android.widget.VideoView";
-  public static final String ANDROIDX_MEDIA_VIEW_CLASS_NAME = "androidx.media3.ui.PlayerView";
-  public static final String EXOPLAYER_CLASS_NAME = "com.google.android.exoplayer2.ui.PlayerView";
-  public static final String EXOPLAYER_STYLED_CLASS_NAME =
-      "com.google.android.exoplayer2.ui.StyledPlayerView";
+  private static final String CUSTOM_MASKING_INTEGRATION_NAME = "ReplayCustomMasking";
+  private volatile boolean customMaskingTracked = false;
+
+  /**
+   * Maximum size in bytes for network request/response bodies to be captured in replays. Bodies
+   * larger than this will be truncated or replaced with a placeholder message. Aligned <a
+   * href="https://github.com/getsentry/sentry-javascript/blob/98de756506705b60d1ca86cbbcfad3fd76062f8f/packages/replay-internal/src/constants.ts#L33">
+   * with JS</a>
+   */
+  @ApiStatus.Internal public static final int MAX_NETWORK_BODY_SIZE = 150 * 1024;
 
   public enum SentryReplayQuality {
     /** Video Scale: 80% Bit Rate: 50.000 JPEG Compression: 10 */
@@ -68,36 +76,6 @@ public final class SentryReplayOptions {
   private @Nullable Double onErrorSampleRate;
 
   /**
-   * Mask all views with the specified class names. The class name is the fully qualified class name
-   * of the view, e.g. android.widget.TextView. The subclasses of the specified classes will be
-   * masked as well.
-   *
-   * <p>If you're using an obfuscation tool, make sure to add the respective proguard rules to keep
-   * the class names.
-   *
-   * <p>Default is empty.
-   */
-  private Set<String> maskViewClasses = new CopyOnWriteArraySet<>();
-
-  /**
-   * Ignore all views with the specified class names from masking. The class name is the fully
-   * qualified class name of the view, e.g. android.widget.TextView. The subclasses of the specified
-   * classes will be ignored as well.
-   *
-   * <p>If you're using an obfuscation tool, make sure to add the respective proguard rules to keep
-   * the class names.
-   *
-   * <p>Default is empty.
-   */
-  private Set<String> unmaskViewClasses = new CopyOnWriteArraySet<>();
-
-  /** The class name of the view container that masks all of its children. */
-  private @Nullable String maskViewContainerClass = null;
-
-  /** The class name of the view container that unmasks its direct children. */
-  private @Nullable String unmaskViewContainerClass = null;
-
-  /**
    * Defines the quality of the session replay. The higher the quality, the more accurate the replay
    * will be, but also more data to transfer and more CPU load, defaults to MEDIUM.
    */
@@ -139,12 +117,69 @@ public final class SentryReplayOptions {
    */
   private boolean debug = false;
 
+  /**
+   * The screenshot strategy to use for capturing screenshots during replay recording. Defaults to
+   * {@link ScreenshotStrategyType#PIXEL_COPY}. If set to {@link ScreenshotStrategyType#CANVAS}, the
+   * SDK will use the Canvas API to capture screenshots, which will always mask all Texts and
+   * Bitmaps drawn on the screen, causing {@link #addMaskViewClass} and {@link #addUnmaskViewClass}
+   * to be ignored.
+   */
+  @ApiStatus.Experimental
+  private @NotNull ScreenshotStrategyType screenshotStrategy = ScreenshotStrategyType.PIXEL_COPY;
+
+  /**
+   * Capture request and response details for XHR and fetch requests that match the given URLs.
+   * Default is empty (network details not collected).
+   */
+  private @NotNull List<String> networkDetailAllowUrls = Collections.emptyList();
+
+  /**
+   * Do not capture request and response details for these URLs. Takes precedence over
+   * networkDetailAllowUrls. Default is empty.
+   */
+  private @NotNull List<String> networkDetailDenyUrls = Collections.emptyList();
+
+  /**
+   * Decide whether to capture request and response bodies for URLs defined in
+   * networkDetailAllowUrls. Default is true, but capturing bodies requires at least one url
+   * specified via {@link #setNetworkDetailAllowUrls(List)}.
+   */
+  private boolean networkCaptureBodies = true;
+
+  /** Default headers that are always captured for URLs defined in networkDetailAllowUrls. */
+  private static final @NotNull List<String> DEFAULT_HEADERS =
+      Collections.unmodifiableList(Arrays.asList("Content-Type", "Content-Length", "Accept"));
+
+  /**
+   * Gets the default headers that are always captured for URLs defined in networkDetailAllowUrls.
+   *
+   * @return an unmodifiable list
+   */
+  @ApiStatus.Internal
+  public static @NotNull List<String> getNetworkDetailsDefaultHeaders() {
+    return DEFAULT_HEADERS;
+  }
+
+  /**
+   * Additional request headers to capture for URLs defined in networkDetailAllowUrls. The default
+   * headers (Content-Type, Content-Length, Accept) are always included in addition to these.
+   */
+  private @NotNull List<String> networkRequestHeaders = DEFAULT_HEADERS;
+
+  /**
+   * Additional response headers to capture for URLs defined in networkDetailAllowUrls. The default
+   * headers (Content-Type, Content-Length, Accept) are always included in addition to these.
+   */
+  private @NotNull List<String> networkResponseHeaders = DEFAULT_HEADERS;
+
   public SentryReplayOptions(final boolean empty, final @Nullable SdkVersion sdkVersion) {
     if (!empty) {
-      setMaskAllText(true);
-      setMaskAllImages(true);
+      // Add default mask classes directly without setting usingCustomMasking flag
+      maskViewClasses.add(TEXT_VIEW_CLASS_NAME);
+      maskViewClasses.add(IMAGE_VIEW_CLASS_NAME);
       maskViewClasses.add(WEB_VIEW_CLASS_NAME);
       maskViewClasses.add(VIDEO_VIEW_CLASS_NAME);
+      maskViewClasses.add(CAMERAX_PREVIEW_VIEW_CLASS_NAME);
       maskViewClasses.add(ANDROIDX_MEDIA_VIEW_CLASS_NAME);
       maskViewClasses.add(EXOPLAYER_CLASS_NAME);
       maskViewClasses.add(EXOPLAYER_STYLED_CLASS_NAME);
@@ -200,56 +235,32 @@ public final class SentryReplayOptions {
     this.sessionSampleRate = sessionSampleRate;
   }
 
-  /**
-   * Mask all text content. Draws a rectangle of text bounds with text color on top. By default only
-   * views extending TextView are masked.
-   *
-   * <p>Default is enabled.
-   */
+  @Override
   public void setMaskAllText(final boolean maskAllText) {
-    if (maskAllText) {
-      addMaskViewClass(TEXT_VIEW_CLASS_NAME);
-      unmaskViewClasses.remove(TEXT_VIEW_CLASS_NAME);
-    } else {
-      addUnmaskViewClass(TEXT_VIEW_CLASS_NAME);
-      maskViewClasses.remove(TEXT_VIEW_CLASS_NAME);
+    if (!maskAllText) {
+      trackCustomMasking();
     }
+    super.setMaskAllText(maskAllText);
   }
 
-  /**
-   * Mask all image content. Draws a rectangle of image bounds with image's dominant color on top.
-   * By default only views extending ImageView with BitmapDrawable or custom Drawable type are
-   * masked. ColorDrawable, InsetDrawable, VectorDrawable are all considered non-PII, as they come
-   * from the apk.
-   *
-   * <p>Default is enabled.
-   */
+  @Override
   public void setMaskAllImages(final boolean maskAllImages) {
-    if (maskAllImages) {
-      addMaskViewClass(IMAGE_VIEW_CLASS_NAME);
-      unmaskViewClasses.remove(IMAGE_VIEW_CLASS_NAME);
-    } else {
-      addUnmaskViewClass(IMAGE_VIEW_CLASS_NAME);
-      maskViewClasses.remove(IMAGE_VIEW_CLASS_NAME);
+    if (!maskAllImages) {
+      trackCustomMasking();
     }
+    super.setMaskAllImages(maskAllImages);
   }
 
-  @NotNull
-  public Set<String> getMaskViewClasses() {
-    return this.maskViewClasses;
-  }
-
+  @Override
   public void addMaskViewClass(final @NotNull String className) {
-    this.maskViewClasses.add(className);
+    trackCustomMasking();
+    super.addMaskViewClass(className);
   }
 
-  @NotNull
-  public Set<String> getUnmaskViewClasses() {
-    return this.unmaskViewClasses;
-  }
-
+  @Override
   public void addUnmaskViewClass(final @NotNull String className) {
-    this.unmaskViewClasses.add(className);
+    trackCustomMasking();
+    super.addUnmaskViewClass(className);
   }
 
   @ApiStatus.Internal
@@ -281,25 +292,12 @@ public final class SentryReplayOptions {
     return sessionDuration;
   }
 
-  @ApiStatus.Internal
-  public void setMaskViewContainerClass(@NotNull String containerClass) {
-    addMaskViewClass(containerClass);
-    maskViewContainerClass = containerClass;
-  }
-
-  @ApiStatus.Internal
-  public void setUnmaskViewContainerClass(@NotNull String containerClass) {
-    unmaskViewContainerClass = containerClass;
-  }
-
-  @ApiStatus.Internal
-  public @Nullable String getMaskViewContainerClass() {
-    return maskViewContainerClass;
-  }
-
-  @ApiStatus.Internal
-  public @Nullable String getUnmaskViewContainerClass() {
-    return unmaskViewContainerClass;
+  @Override
+  public void trackCustomMasking() {
+    if (!customMaskingTracked) {
+      customMaskingTracked = true;
+      addIntegrationToSdkVersion(CUSTOM_MASKING_INTEGRATION_NAME);
+    }
   }
 
   @ApiStatus.Internal
@@ -338,5 +336,137 @@ public final class SentryReplayOptions {
    */
   public void setDebug(final boolean debug) {
     this.debug = debug;
+  }
+
+  /**
+   * Gets the screenshot strategy used for capturing screenshots during replay recording.
+   *
+   * @return the screenshot strategy
+   */
+  @ApiStatus.Experimental
+  public @NotNull ScreenshotStrategyType getScreenshotStrategy() {
+    return screenshotStrategy;
+  }
+
+  /**
+   * Sets the screenshot strategy to use for capturing screenshots during replay recording.
+   *
+   * @param screenshotStrategy the screenshot strategy to use
+   */
+  @ApiStatus.Experimental
+  public void setScreenshotStrategy(final @NotNull ScreenshotStrategyType screenshotStrategy) {
+    this.screenshotStrategy = screenshotStrategy;
+  }
+
+  /**
+   * Gets the list of URLs for which network request and response details should be captured.
+   *
+   * @return the network detail allow URLs list
+   */
+  public @NotNull List<String> getNetworkDetailAllowUrls() {
+    return networkDetailAllowUrls;
+  }
+
+  /**
+   * Sets the list of URLs for which network request and response details should be captured.
+   *
+   * @param networkDetailAllowUrls the network detail allow URLs list
+   */
+  public void setNetworkDetailAllowUrls(final @NotNull List<String> networkDetailAllowUrls) {
+    this.networkDetailAllowUrls =
+        Collections.unmodifiableList(new ArrayList<>(networkDetailAllowUrls));
+  }
+
+  /**
+   * Gets the list of URLs for which network request and response details should NOT be captured.
+   *
+   * @return the network detail deny URLs list
+   */
+  public @NotNull List<String> getNetworkDetailDenyUrls() {
+    return networkDetailDenyUrls;
+  }
+
+  /**
+   * Sets the list of URLs for which network request and response details should NOT be captured.
+   * Takes precedence over networkDetailAllowUrls.
+   *
+   * @param networkDetailDenyUrls the network detail deny URLs list
+   */
+  public void setNetworkDetailDenyUrls(final @NotNull List<String> networkDetailDenyUrls) {
+    this.networkDetailDenyUrls =
+        Collections.unmodifiableList(new ArrayList<>(networkDetailDenyUrls));
+  }
+
+  /**
+   * Gets whether to capture request and response bodies for URLs defined in networkDetailAllowUrls.
+   *
+   * @return true if network capture bodies is enabled, false otherwise
+   */
+  public boolean isNetworkCaptureBodies() {
+    return networkCaptureBodies;
+  }
+
+  /**
+   * Sets whether to capture request and response bodies for URLs defined in networkDetailAllowUrls.
+   *
+   * @param networkCaptureBodies true to enable network capture bodies, false otherwise
+   */
+  public void setNetworkCaptureBodies(final boolean networkCaptureBodies) {
+    this.networkCaptureBodies = networkCaptureBodies;
+  }
+
+  /**
+   * Gets all request headers to capture for URLs defined in networkDetailAllowUrls. This includes
+   * both the default headers (Content-Type, Content-Length, Accept) and any additional headers.
+   *
+   * @return an unmodifiable list of the request headers to extract
+   */
+  public @NotNull List<String> getNetworkRequestHeaders() {
+    return networkRequestHeaders;
+  }
+
+  /**
+   * Sets request headers to capture for URLs defined in networkDetailAllowUrls. The default headers
+   * (Content-Type, Content-Length, Accept) are always included automatically.
+   *
+   * @param networkRequestHeaders additional network request headers list
+   */
+  public void setNetworkRequestHeaders(final @NotNull List<String> networkRequestHeaders) {
+    this.networkRequestHeaders = mergeHeaders(DEFAULT_HEADERS, networkRequestHeaders);
+  }
+
+  /**
+   * Gets all response headers to capture for URLs defined in networkDetailAllowUrls. This includes
+   * both the default headers (Content-Type, Content-Length, Accept) and any additional headers.
+   *
+   * @return an unmodifiable list of the response headers to extract
+   */
+  public @NotNull List<String> getNetworkResponseHeaders() {
+    return networkResponseHeaders;
+  }
+
+  /**
+   * Sets response headers to capture for URLs defined in networkDetailAllowUrls. The default
+   * headers (Content-Type, Content-Length, Accept) are always included automatically.
+   *
+   * @param networkResponseHeaders the additional network response headers list
+   */
+  public void setNetworkResponseHeaders(final @NotNull List<String> networkResponseHeaders) {
+    this.networkResponseHeaders = mergeHeaders(DEFAULT_HEADERS, networkResponseHeaders);
+  }
+
+  /**
+   * Merges default headers with additional headers, removing duplicates while preserving order.
+   *
+   * @param defaultHeaders the default headers that are always included
+   * @param additionalHeaders additional headers to merge
+   * @return an unmodifiable list of merged headers
+   */
+  private static @NotNull List<String> mergeHeaders(
+      final @NotNull List<String> defaultHeaders, final @NotNull List<String> additionalHeaders) {
+    final Set<String> merged = new LinkedHashSet<>();
+    merged.addAll(defaultHeaders);
+    merged.addAll(additionalHeaders);
+    return Collections.unmodifiableList(new ArrayList<>(merged));
   }
 }

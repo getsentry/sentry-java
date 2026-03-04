@@ -8,6 +8,7 @@ plugins {
   alias(libs.plugins.jacoco.android)
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
+  alias(libs.plugins.protobuf)
 }
 
 android {
@@ -83,6 +84,7 @@ dependencies {
   implementation(libs.androidx.lifecycle.common.java8)
   implementation(libs.androidx.lifecycle.process)
   implementation(libs.androidx.core)
+  implementation(libs.protobuf.javalite)
 
   errorprone(libs.errorprone.core)
   errorprone(libs.nopen.checker)
@@ -100,12 +102,21 @@ dependencies {
   testImplementation(libs.mockito.kotlin)
   testImplementation(libs.mockito.inline)
   testImplementation(projects.sentryTestSupport)
+  testImplementation(projects.sentrySpotlight)
   testImplementation(projects.sentryAndroidFragment)
   testImplementation(projects.sentryAndroidTimber)
   testImplementation(projects.sentryAndroidReplay)
   testImplementation(projects.sentryCompose)
   testImplementation(projects.sentryAndroidNdk)
+  testImplementation(libs.dropbox.differ)
   testRuntimeOnly(libs.androidx.compose.ui)
   testRuntimeOnly(libs.androidx.fragment.ktx)
   testRuntimeOnly(libs.timber)
+}
+
+protobuf {
+  protoc { artifact = libs.protoc.get().toString() }
+  generateProtoTasks {
+    all().forEach { task -> task.builtins { create("java") { option("lite") } } }
+  }
 }

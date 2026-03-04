@@ -15,7 +15,7 @@ env:
   BUILD_PATH: "build/outputs/apk/release"
   APK_NAME: "sentry-uitest-android-critical-release.apk"
   APK_ARTIFACT_NAME: "sentry-uitest-android-critical-release"
-  MAESTRO_VERSION: "1.39.0"
+  MAESTRO_VERSION: "2.1.0"
 
 jobs:
   build:
@@ -27,7 +27,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Set up Java 17
         uses: actions/setup-java@v5
@@ -36,7 +36,7 @@ jobs:
           java-version: '17'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@4d9f0ba0025fe599b4ebab900eb7f3a1d93ef4c2
+        uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
@@ -44,7 +44,7 @@ jobs:
         run: make assembleUiTestCriticalRelease
 
       - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{env.APK_ARTIFACT_NAME}}
           path: "${{env.BASE_PATH}}/${{env.BUILD_PATH}}/${{env.APK_NAME}}"
@@ -60,24 +60,28 @@ jobs:
       matrix:
         include:
           - api-level: 31 # Android 12
-            target: aosp_atd
+            target: google_apis
             channel: canary # Necessary for ATDs
             arch: x86_64
           - api-level: 33 # Android 13
-            target: aosp_atd
+            target: google_apis
             channel: canary # Necessary for ATDs
             arch: x86_64
           - api-level: 34 # Android 14
-            target: aosp_atd
+            target: google_apis
             channel: canary # Necessary for ATDs
             arch: x86_64
           - api-level: 35 # Android 15
-            target: aosp_atd
+            target: google_apis
+            channel: canary # Necessary for ATDs
+            arch: x86_64
+          - api-level: 36 # Android 16
+            target: google_apis
             channel: canary # Necessary for ATDs
             arch: x86_64
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Enable KVM
         run: |
@@ -86,7 +90,7 @@ jobs:
           sudo udevadm trigger --name-match=kvm
 
       - name: AVD cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         id: avd-cache
         with:
           path: |
@@ -96,7 +100,7 @@ jobs:
 
       - name: Create AVD and generate snapshot for caching
         if: steps.avd-cache.outputs.cache-hit != 'true'
-        uses: reactivecircus/android-emulator-runner@1dcd0090116d15e7c562f8db72807de5e036a4ed # pin@v2
+        uses: reactivecircus/android-emulator-runner@b530d96654c385303d652368551fb075bc2f0b6b # pin@v2
         with:
           api-level: ${{ matrix.api-level }}
           target: ${{ matrix.target }}
@@ -105,12 +109,12 @@ jobs:
           force-avd-creation: false
           disable-animations: true
           disable-spellchecker: true
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          emulator-options: -memory 4096 -no-window -gpu auto -noaudio -no-boot-anim -camera-back none
           disk-size: 4096M
           script: echo "Generated AVD snapshot for caching."
 
       - name: Download APK artifact
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           name: ${{env.APK_ARTIFACT_NAME}}
 
@@ -120,7 +124,7 @@ jobs:
           version: ${{env.MAESTRO_VERSION}}
 
       - name: Run tests
-        uses: reactivecircus/android-emulator-runner@1dcd0090116d15e7c562f8db72807de5e036a4ed # pin@v2.34.0
+        uses: reactivecircus/android-emulator-runner@b530d96654c385303d652368551fb075bc2f0b6b # pin@v2.35.0
         with:
           api-level: ${{ matrix.api-level }}
           target: ${{ matrix.target }}
@@ -129,16 +133,16 @@ jobs:
           force-avd-creation: false
           disable-animations: true
           disable-spellchecker: true
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot-save
+          emulator-options: -memory 4096 -no-window -gpu auto -noaudio -no-boot-anim -camera-back none -no-snapshot-save
           script: |
             adb uninstall io.sentry.uitest.android.critical || echo "Already uninstalled (or not found)"
             adb install -r -d "${{env.APK_NAME}}"
-            maestro test "${{env.BASE_PATH}}/maestro" --debug-output "${{env.BASE_PATH}}/maestro-logs"
+            mkdir "${{env.BASE_PATH}}/maestro-logs/" || true; adb emu screenrecord start --time-limit 360 "${{env.BASE_PATH}}/maestro-logs/recording.webm" || true; maestro test "${{env.BASE_PATH}}/maestro" --test-output-dir="${{env.BASE_PATH}}/maestro-logs/test-output" || MAESTRO_EXIT_CODE=$?; adb emu screenrecord stop || true; adb logcat -d > "${{env.BASE_PATH}}/maestro-logs/logcat.txt" || true; exit ${MAESTRO_EXIT_CODE:-0}
 
       - name: Upload Maestro test results
-        if: failure()
-        uses: actions/upload-artifact@v4
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v7
         with:
-          name: maestro-logs
+          name: maestro-logs-${{ matrix.api-level }}-${{ matrix.arch }}-${{ matrix.target }}
           path: "${{env.BASE_PATH}}/maestro-logs"
           retention-days: 1

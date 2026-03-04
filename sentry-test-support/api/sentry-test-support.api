@@ -1,4 +1,6 @@
 public final class io/sentry/AssertionsKt {
+	public static final fun assertEnvelopeEvent (Ljava/util/List;Lio/sentry/ILogger;Lkotlin/jvm/functions/Function2;)Lio/sentry/SentryEvent;
+	public static synthetic fun assertEnvelopeEvent$default (Ljava/util/List;Lio/sentry/ILogger;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)Lio/sentry/SentryEvent;
 	public static final fun assertEnvelopeFeedback (Ljava/util/List;Lio/sentry/ILogger;Lkotlin/jvm/functions/Function2;)Lio/sentry/SentryEvent;
 	public static synthetic fun assertEnvelopeFeedback$default (Ljava/util/List;Lio/sentry/ILogger;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)Lio/sentry/SentryEvent;
 	public static final fun assertEnvelopeProfile (Ljava/util/List;Lio/sentry/ILogger;Lkotlin/jvm/functions/Function2;)Lio/sentry/ProfilingTraceData;
@@ -51,6 +53,16 @@ public final class io/sentry/test/MocksKt {
 	public static synthetic fun createSentryClientMock$default (ZILjava/lang/Object;)Lio/sentry/ISentryClient;
 	public static final fun createTestScopes (Lio/sentry/SentryOptions;ZLio/sentry/IScope;Lio/sentry/IScope;Lio/sentry/IScope;)Lio/sentry/Scopes;
 	public static synthetic fun createTestScopes$default (Lio/sentry/SentryOptions;ZLio/sentry/IScope;Lio/sentry/IScope;Lio/sentry/IScope;ILjava/lang/Object;)Lio/sentry/Scopes;
+}
+
+public final class io/sentry/test/NonOverridableNoOpSentryExecutorService : io/sentry/ISentryExecutorService {
+	public fun <init> ()V
+	public fun close (J)V
+	public fun isClosed ()Z
+	public fun prewarm ()V
+	public fun schedule (Ljava/lang/Runnable;J)Ljava/util/concurrent/Future;
+	public fun submit (Ljava/lang/Runnable;)Ljava/util/concurrent/Future;
+	public fun submit (Ljava/util/concurrent/Callable;)Ljava/util/concurrent/Future;
 }
 
 public final class io/sentry/test/ReflectionKt {

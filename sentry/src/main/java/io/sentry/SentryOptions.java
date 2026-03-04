@@ -15,6 +15,10 @@ import io.sentry.internal.gestures.GestureTargetLocator;
 import io.sentry.internal.modules.IModulesLoader;
 import io.sentry.internal.modules.NoOpModulesLoader;
 import io.sentry.internal.viewhierarchy.ViewHierarchyExporter;
+import io.sentry.logger.DefaultLoggerBatchProcessorFactory;
+import io.sentry.logger.ILoggerBatchProcessorFactory;
+import io.sentry.metrics.DefaultMetricsBatchProcessorFactory;
+import io.sentry.metrics.IMetricsBatchProcessorFactory;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.transport.ITransport;
@@ -27,8 +31,6 @@ import io.sentry.util.LoadClass;
 import io.sentry.util.Platform;
 import io.sentry.util.SampleRateUtils;
 import io.sentry.util.StringUtils;
-import io.sentry.util.runtime.IRuntimeManager;
-import io.sentry.util.runtime.NeutralRuntimeManager;
 import io.sentry.util.thread.IThreadChecker;
 import io.sentry.util.thread.NoOpThreadChecker;
 import java.io.File;
@@ -42,6 +44,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.atomic.AtomicBoolean;
 import javax.net.ssl.SSLSocketFactory;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -53,6 +56,9 @@ import org.jetbrains.annotations.TestOnly;
 public class SentryOptions {
 
   @ApiStatus.Internal public static final @NotNull String DEFAULT_PROPAGATION_TARGETS = ".*";
+
+  /** Maximum size of an event in bytes. Events exceeding this limit will be reduced. */
+  public static final long MAX_EVENT_SIZE_BYTES = 1024 * 1024;
 
   /** Default Log level if not specified Default is DEBUG */
   static final SentryLevel DEFAULT_DIAGNOSTIC_LEVEL = SentryLevel.DEBUG;
@@ -198,6 +204,13 @@ public class SentryOptions {
    */
   private int maxBreadcrumbs = 100;
 
+  /**
+   * This variable controls the total amount of feature flag evaluations that should be stored on
+   * the scope. The most recent `maxFeatureFlags` evaluations are stored on each scope. Default is
+   * 100
+   */
+  private int maxFeatureFlags = 100;
+
   /** Sets the release. SDK will try to automatically configure a release out of the box */
   private @Nullable String release;
 
@@ -304,6 +317,12 @@ public class SentryOptions {
   /** Sentry Executor Service that sends cached events and envelopes on App. start. */
   private @NotNull ISentryExecutorService executorService = NoOpSentryExecutorService.getInstance();
 
+  /**
+   * Whether SpotlightIntegration has already been loaded via reflection. This prevents re-adding it
+   * if the user removed it in their configuration callback and activate() is called again.
+   */
+  private final @NotNull AtomicBoolean spotlightIntegrationLoaded = new AtomicBoolean(false);
+
   /** connection timeout in milliseconds. */
   private int connectionTimeoutMillis = 30_000;
 
@@ -346,6 +365,18 @@ public class SentryOptions {
    */
   private boolean enableDeduplication = true;
 
+  /**
+   * Enables event size limiting with {@link EventSizeLimitingEventProcessor}. When enabled, events
+   * exceeding 1MB will have breadcrumbs and stack frames reduced to stay under the limit.
+   */
+  private boolean enableEventSizeLimiting = false;
+
+  /**
+   * Callback invoked when an oversized event is detected. This allows custom handling of oversized
+   * events before the automatic reduction steps are applied.
+   */
+  private @Nullable OnOversizedEventCallback onOversizedEvent;
+
   /** Maximum number of spans that can be atteched to single transaction. */
   private int maxSpans = 1000;
 
@@ -386,6 +417,9 @@ public class SentryOptions {
 
   /** Profiler that runs continuously until stopped. */
   private @NotNull IContinuousProfiler continuousProfiler = NoOpContinuousProfiler.getInstance();
+
+  /** Profiler that runs continuously until stopped. */
+  private @NotNull IProfileConverter profilerConverter = NoOpProfileConverter.getInstance();
 
   /**
    * Contains a list of origins to which `sentry-trace` header should be sent in HTTP integrations.
@@ -452,6 +486,9 @@ public class SentryOptions {
   // TODO [MAJOR] this should default to false on the next major
   /** Whether OPTIONS requests should be traced. */
   private boolean traceOptionsRequests = true;
+
+  /** Whether database transaction spans (BEGIN, COMMIT, ROLLBACK) should be traced. */
+  private boolean enableDatabaseTransactionTracing = false;
 
   /** Date provider to retrieve the current date from. */
   @ApiStatus.Internal
@@ -597,12 +634,42 @@ public class SentryOptions {
 
   private @NotNull SentryOptions.Logs logs = new SentryOptions.Logs();
 
+  private @NotNull SentryOptions.Metrics metrics = new SentryOptions.Metrics();
+
   private @NotNull ISocketTagger socketTagger = NoOpSocketTagger.getInstance();
 
-  /** Runtime manager to manage runtime policies, like StrictMode on Android. */
-  private @NotNull IRuntimeManager runtimeManager = new NeutralRuntimeManager();
-
   private @Nullable String profilingTracesDirPath;
+
+  public @NotNull IProfileConverter getProfilerConverter() {
+    return profilerConverter;
+  }
+
+  public void setProfilerConverter(@NotNull IProfileConverter profilerConverter) {
+    this.profilerConverter = profilerConverter;
+  }
+
+  /** Starts expensive parts of the options during Sentry.init */
+  @ApiStatus.Internal
+  public void activate() {
+    if (executorService instanceof NoOpSentryExecutorService) {
+      // SentryExecutorService should be initialized before any
+      // SendCachedEventFireAndForgetIntegration
+      executorService = new SentryExecutorService(this);
+      executorService.prewarm();
+    }
+
+    // SpotlightIntegration is loaded via reflection to allow the sentry-spotlight module
+    // to be excluded from release builds, preventing insecure HTTP URLs from appearing in APKs.
+    // Only attempt once to avoid re-adding after user removal in their configuration callback.
+    if (spotlightIntegrationLoaded.compareAndSet(false, true)) {
+      try {
+        final Class<?> clazz = Class.forName("io.sentry.spotlight.SpotlightIntegration");
+        integrations.add((Integration) clazz.getConstructor().newInstance());
+      } catch (Throwable ignored) {
+        // SpotlightIntegration not available
+      }
+    }
+  }
 
   /**
    * Configuration options for Sentry Build Distribution. NOTE: Ideally this would be in
@@ -625,6 +692,9 @@ public class SentryOptions {
 
     /** Optional build configuration name for filtering (e.g., "debug", "release", "staging") */
     public @Nullable String buildConfiguration = null;
+
+    /** Optional install groups for filtering updates */
+    public @Nullable List<String> installGroupsOverride = null;
   }
 
   private @NotNull DistributionOptions distribution = new DistributionOptions();
@@ -693,7 +763,7 @@ public class SentryOptions {
    * @param dsn the DSN
    */
   public void setDsn(final @Nullable String dsn) {
-    this.dsn = dsn;
+    this.dsn = dsn != null ? dsn.trim() : null;
     this.parsedDsn.resetValue();
 
     dsnHash = StringUtils.calculateStringHash(this.dsn, logger);
@@ -1028,6 +1098,24 @@ public class SentryOptions {
    */
   public void setMaxBreadcrumbs(int maxBreadcrumbs) {
     this.maxBreadcrumbs = maxBreadcrumbs;
+  }
+
+  /**
+   * Returns the max feature flags Default is 100
+   *
+   * @return the max feature flags
+   */
+  public int getMaxFeatureFlags() {
+    return maxFeatureFlags;
+  }
+
+  /**
+   * Sets the max feature flags Default is 100
+   *
+   * @param maxFeatureFlags the max feature flags
+   */
+  public void setMaxFeatureFlags(int maxFeatureFlags) {
+    this.maxFeatureFlags = maxFeatureFlags;
   }
 
   /**
@@ -1714,6 +1802,44 @@ public class SentryOptions {
    */
   public void setEnableDeduplication(final boolean enableDeduplication) {
     this.enableDeduplication = enableDeduplication;
+  }
+
+  /**
+   * Returns if event size limiting is enabled.
+   *
+   * @return true if event size limiting is enabled, false otherwise
+   */
+  public boolean isEnableEventSizeLimiting() {
+    return enableEventSizeLimiting;
+  }
+
+  /**
+   * Enables or disables event size limiting. When enabled, events exceeding 1MB will have
+   * breadcrumbs and stack frames reduced to stay under the limit.
+   *
+   * @param enableEventSizeLimiting true to enable, false to disable
+   */
+  public void setEnableEventSizeLimiting(final boolean enableEventSizeLimiting) {
+    this.enableEventSizeLimiting = enableEventSizeLimiting;
+  }
+
+  /**
+   * Returns the onOversizedEvent callback.
+   *
+   * @return the onOversizedEvent callback or null if not set
+   */
+  public @Nullable OnOversizedEventCallback getOnOversizedEvent() {
+    return onOversizedEvent;
+  }
+
+  /**
+   * Sets the onOversizedEvent callback. This callback is invoked when an oversized event is
+   * detected, before the automatic reduction steps are applied.
+   *
+   * @param onOversizedEvent the onOversizedEvent callback
+   */
+  public void setOnOversizedEvent(@Nullable OnOversizedEventCallback onOversizedEvent) {
+    this.onOversizedEvent = onOversizedEvent;
   }
 
   /**
@@ -2487,6 +2613,24 @@ public class SentryOptions {
   }
 
   /**
+   * Whether database transaction spans (BEGIN, COMMIT, ROLLBACK) should be traced.
+   *
+   * @return true if database transaction spans should be traced
+   */
+  public boolean isEnableDatabaseTransactionTracing() {
+    return enableDatabaseTransactionTracing;
+  }
+
+  /**
+   * Whether database transaction spans (BEGIN, COMMIT, ROLLBACK) should be traced.
+   *
+   * @param enableDatabaseTransactionTracing true if database transaction spans should be traced
+   */
+  public void setEnableDatabaseTransactionTracing(boolean enableDatabaseTransactionTracing) {
+    this.enableDatabaseTransactionTracing = enableDatabaseTransactionTracing;
+  }
+
+  /**
    * Whether Sentry is enabled.
    *
    * @return true if Sentry should be enabled
@@ -3010,26 +3154,6 @@ public class SentryOptions {
   }
 
   /**
-   * Returns the IRuntimeManager
-   *
-   * @return the runtime manager
-   */
-  @ApiStatus.Internal
-  public @NotNull IRuntimeManager getRuntimeManager() {
-    return runtimeManager;
-  }
-
-  /**
-   * Sets the IRuntimeManager
-   *
-   * @param runtimeManager the runtime manager
-   */
-  @ApiStatus.Internal
-  public void setRuntimeManager(final @NotNull IRuntimeManager runtimeManager) {
-    this.runtimeManager = runtimeManager;
-  }
-
-  /**
    * Load the lazy fields. Useful to load in the background, so that results are already cached. DO
    * NOT CALL THIS METHOD ON THE MAIN THREAD.
    */
@@ -3100,6 +3224,21 @@ public class SentryOptions {
     Breadcrumb execute(@NotNull Breadcrumb breadcrumb, @NotNull Hint hint);
   }
 
+  /** The OnOversizedEvent callback */
+  public interface OnOversizedEventCallback {
+
+    /**
+     * Called when an oversized event is detected. This callback allows custom handling of oversized
+     * events before automatic reduction steps are applied.
+     *
+     * @param event the oversized event
+     * @param hint the hints
+     * @return the modified event (should ideally be reduced in size)
+     */
+    @NotNull
+    SentryEvent execute(@NotNull SentryEvent event, @NotNull Hint hint);
+  }
+
   /** The OnDiscard callback */
   public interface OnDiscardCallback {
 
@@ -3155,20 +3294,6 @@ public class SentryOptions {
     void execute(@NotNull SentryEnvelope envelope, @Nullable Hint hint);
   }
 
-  /** The BeforeEmitMetric callback */
-  @ApiStatus.Experimental
-  public interface BeforeEmitMetricCallback {
-
-    /**
-     * A callback which gets called right before a metric is about to be emitted.
-     *
-     * @param key the metric key
-     * @param tags the metric tags
-     * @return true if the metric should be emitted, false otherwise
-     */
-    boolean execute(@NotNull String key, @Nullable Map<String, String> tags);
-  }
-
   /**
    * Creates SentryOptions instance without initializing any of the internal parts.
    *
@@ -3202,17 +3327,12 @@ public class SentryOptions {
 
     if (!empty) {
       setSpanFactory(SpanFactoryFactory.create(new LoadClass(), NoOpLogger.getInstance()));
-      // SentryExecutorService should be initialized before any
-      // SendCachedEventFireAndForgetIntegration
-      executorService = new SentryExecutorService(this);
-      executorService.prewarm();
 
       // UncaughtExceptionHandlerIntegration should be inited before any other Integration.
       // if there's an error on the setup, we are able to capture it
       integrations.add(new UncaughtExceptionHandlerIntegration());
 
       integrations.add(new ShutdownHookIntegration());
-      integrations.add(new SpotlightIntegration());
 
       eventProcessors.add(new MainEventProcessor(this));
       eventProcessors.add(new DuplicateEventDetectionEventProcessor(this));
@@ -3257,6 +3377,9 @@ public class SentryOptions {
     }
     if (options.getPrintUncaughtStackTrace() != null) {
       setPrintUncaughtStackTrace(options.getPrintUncaughtStackTrace());
+    }
+    if (options.getSampleRate() != null) {
+      setSampleRate(options.getSampleRate());
     }
     if (options.getTracesSampleRate() != null) {
       setTracesSampleRate(options.getTracesSampleRate());
@@ -3342,6 +3465,9 @@ public class SentryOptions {
     if (options.isEnableBackpressureHandling() != null) {
       setEnableBackpressureHandling(options.isEnableBackpressureHandling());
     }
+    if (options.isEnableDatabaseTransactionTracing() != null) {
+      setEnableDatabaseTransactionTracing(options.isEnableDatabaseTransactionTracing());
+    }
     if (options.getMaxRequestBodySize() != null) {
       setMaxRequestBodySize(options.getMaxRequestBodySize());
     }
@@ -3390,6 +3516,10 @@ public class SentryOptions {
       getLogs().setEnabled(options.isEnableLogs());
     }
 
+    if (options.isEnableMetrics() != null) {
+      getMetrics().setEnabled(options.isEnableMetrics());
+    }
+
     if (options.getProfileSessionSampleRate() != null) {
       setProfileSessionSampleRate(options.getProfileSessionSampleRate());
     }
@@ -3435,6 +3565,14 @@ public class SentryOptions {
   @ApiStatus.Experimental
   public void setLogs(@NotNull SentryOptions.Logs logs) {
     this.logs = logs;
+  }
+
+  public @NotNull SentryOptions.Metrics getMetrics() {
+    return metrics;
+  }
+
+  public void setMetrics(@NotNull SentryOptions.Metrics metrics) {
+    this.metrics = metrics;
   }
 
   public static final class Proxy {
@@ -3577,6 +3715,9 @@ public class SentryOptions {
      */
     private @Nullable BeforeSendLogCallback beforeSend;
 
+    private @NotNull ILoggerBatchProcessorFactory loggerBatchProcessorFactory =
+        new DefaultLoggerBatchProcessorFactory();
+
     /**
      * Whether Sentry Logs feature is enabled and Sentry.logger() usages are sent to Sentry.
      *
@@ -3613,6 +3754,17 @@ public class SentryOptions {
       this.beforeSend = beforeSendLog;
     }
 
+    @ApiStatus.Internal
+    public @NotNull ILoggerBatchProcessorFactory getLoggerBatchProcessorFactory() {
+      return loggerBatchProcessorFactory;
+    }
+
+    @ApiStatus.Internal
+    public void setLoggerBatchProcessorFactory(
+        final @NotNull ILoggerBatchProcessorFactory loggerBatchProcessorFactory) {
+      this.loggerBatchProcessorFactory = loggerBatchProcessorFactory;
+    }
+
     /** The BeforeSendLog callback */
     public interface BeforeSendLogCallback {
 
@@ -3624,6 +3776,81 @@ public class SentryOptions {
        */
       @Nullable
       SentryLogEvent execute(@NotNull SentryLogEvent event);
+    }
+  }
+
+  public static final class Metrics {
+
+    /** Whether Sentry Metrics feature is enabled and metrics are sent to Sentry. */
+    private boolean enable = true;
+
+    /**
+     * This function is called with a metric key and tags and can return false to skip sending the
+     * metric
+     */
+    private @Nullable BeforeSendMetricCallback beforeSend;
+
+    private @NotNull IMetricsBatchProcessorFactory metricsBatchProcessorFactory =
+        new DefaultMetricsBatchProcessorFactory();
+
+    /**
+     * Whether Sentry Metrics feature is enabled and metrics are sent to Sentry.
+     *
+     * @return true if Sentry Metrics should be enabled
+     */
+    public boolean isEnabled() {
+      return enable;
+    }
+
+    /**
+     * Whether Sentry Metrics feature is enabled and metrics are sent to Sentry.
+     *
+     * @param enableMetrics true if Sentry Metrics should be enabled
+     */
+    public void setEnabled(final boolean enableMetrics) {
+      this.enable = enableMetrics;
+    }
+
+    /**
+     * Returns the BeforeSendMetric callback
+     *
+     * @return the beforeSend callback or null if not set
+     */
+    public @Nullable BeforeSendMetricCallback getBeforeSend() {
+      return beforeSend;
+    }
+
+    /**
+     * Sets the beforeSend callback for metrics
+     *
+     * @param beforeSend the beforeSend callback for metrics
+     */
+    public void setBeforeSend(final @Nullable BeforeSendMetricCallback beforeSend) {
+      this.beforeSend = beforeSend;
+    }
+
+    @ApiStatus.Internal
+    public @NotNull IMetricsBatchProcessorFactory getMetricsBatchProcessorFactory() {
+      return metricsBatchProcessorFactory;
+    }
+
+    @ApiStatus.Internal
+    public void setMetricsBatchProcessorFactory(
+        final @NotNull IMetricsBatchProcessorFactory metricsBatchProcessorFactory) {
+      this.metricsBatchProcessorFactory = metricsBatchProcessorFactory;
+    }
+
+    public interface BeforeSendMetricCallback {
+
+      /**
+       * A callback which gets called right before a metric is about to be sent.
+       *
+       * @param metric the metric
+       * @return the original metric, mutated metric or null if metric was dropped
+       */
+      @Nullable
+      SentryMetricsEvent execute(
+          final @NotNull SentryMetricsEvent metric, final @NotNull Hint hint);
     }
   }
 

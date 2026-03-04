@@ -58,7 +58,7 @@ public final class PropertiesProviderFactory {
     }
 
     final Properties runDirectoryProperties =
-        new FilesystemPropertiesLoader("sentry.properties", logger).load();
+        new FilesystemPropertiesLoader("sentry.properties", logger, false).load();
     if (runDirectoryProperties != null) {
       providers.add(new SimplePropertiesProvider(runDirectoryProperties));
     }

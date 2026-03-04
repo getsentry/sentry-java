@@ -16,6 +16,7 @@ body:
         - sentry-apollo
         - sentry-apollo-3
         - sentry-compose
+        - sentry-launchdarkly-android
         - sentry-okhttp
         - other
     validations:

@@ -29,6 +29,7 @@ import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.Message;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.util.CollectionUtils;
+import io.sentry.util.LoggerPropertiesUtil;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
@@ -70,7 +71,10 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
       try {
         Sentry.init(options);
       } catch (IllegalArgumentException e) {
-        addWarn("Failed to init Sentry during appender initialization: " + e.getMessage());
+        final @Nullable String errorMessage = e.getMessage();
+        if (errorMessage == null || !errorMessage.startsWith("DSN is required.")) {
+          addWarn("Failed to init Sentry during appender initialization: " + errorMessage);
+        }
       }
     } else if (!Sentry.isEnabled()) {
       options
@@ -152,20 +156,7 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
       // get tags from ScopesAdapter options to allow getting the correct tags if Sentry has been
       // initialized somewhere else
       final List<String> contextTags = ScopesAdapter.getInstance().getOptions().getContextTags();
-      if (!contextTags.isEmpty()) {
-        for (final String contextTag : contextTags) {
-          // if mdc tag is listed in SentryOptions, apply as event tag
-          if (mdcProperties.containsKey(contextTag)) {
-            event.setTag(contextTag, mdcProperties.get(contextTag));
-            // remove from all tags applied to logging event
-            mdcProperties.remove(contextTag);
-          }
-        }
-      }
-      // put the rest of mdc tags in contexts
-      if (!mdcProperties.isEmpty()) {
-        event.getContexts().put("MDC", mdcProperties);
-      }
+      LoggerPropertiesUtil.applyPropertiesToEvent(event, contextTags, mdcProperties);
     }
 
     return event;
@@ -194,6 +185,11 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
       }
       arguments = loggingEvent.getArgumentArray();
     }
+
+    final @NotNull Map<String, String> mdcProperties = loggingEvent.getMDCPropertyMap();
+    final @NotNull List<String> contextTags =
+        ScopesAdapter.getInstance().getOptions().getContextTags();
+    LoggerPropertiesUtil.applyPropertiesToAttributes(attributes, contextTags, mdcProperties);
 
     final @NotNull SentryLogParameters params = SentryLogParameters.create(attributes);
     params.setOrigin("auto.log.logback");

@@ -106,12 +106,10 @@ class BufferCaptureStrategyTest {
         dateProvider,
         Random(),
         mock {
-          doAnswer { invocation ->
-              (invocation.arguments[0] as Runnable).run()
-              null
-            }
-            .whenever(it)
-            .submit(any<Runnable>())
+          whenever(it.submit(any<Runnable>())).doAnswer { invocation ->
+            (invocation.arguments[0] as Runnable).run()
+            null
+          }
         },
       ) { _ ->
         replayCache
@@ -356,6 +354,7 @@ class BufferCaptureStrategyTest {
     strategy.onConfigurationChanged(fixture.recorderConfig)
 
     val oldTimestamp = strategy.segmentTimestamp
+    whenever(fixture.replayCache.firstFrameTimestamp()).thenReturn(oldTimestamp!!.time)
 
     strategy.captureReplay(false) { newTimestamp ->
       assertEquals(oldTimestamp!!.time + VIDEO_DURATION, newTimestamp.time)

@@ -41,7 +41,7 @@ public final class io/sentry/android/core/ActivityLifecycleIntegration : android
 }
 
 public class io/sentry/android/core/AndroidContinuousProfiler : io/sentry/IContinuousProfiler, io/sentry/transport/RateLimiter$IRateLimitObserver {
-	public fun <init> (Lio/sentry/android/core/BuildInfoProvider;Lio/sentry/android/core/internal/util/SentryFrameMetricsCollector;Lio/sentry/ILogger;Ljava/lang/String;ILio/sentry/ISentryExecutorService;)V
+	public fun <init> (Lio/sentry/android/core/BuildInfoProvider;Lio/sentry/android/core/internal/util/SentryFrameMetricsCollector;Lio/sentry/ILogger;Ljava/lang/String;ILio/sentry/util/LazyEvaluator$Evaluator;)V
 	public fun close (Z)V
 	public fun getChunkId ()Lio/sentry/protocol/SentryId;
 	public fun getProfilerId ()Lio/sentry/protocol/SentryId;
@@ -82,15 +82,39 @@ public final class io/sentry/android/core/AndroidLogger : io/sentry/ILogger {
 	public fun log (Lio/sentry/SentryLevel;Ljava/lang/Throwable;Ljava/lang/String;[Ljava/lang/Object;)V
 }
 
+public final class io/sentry/android/core/AndroidLoggerBatchProcessor : io/sentry/logger/LoggerBatchProcessor, io/sentry/android/core/AppState$AppStateListener {
+	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/ISentryClient;)V
+	public fun close (Z)V
+	public fun onBackground ()V
+	public fun onForeground ()V
+}
+
+public final class io/sentry/android/core/AndroidLoggerBatchProcessorFactory : io/sentry/logger/ILoggerBatchProcessorFactory {
+	public fun <init> ()V
+	public fun create (Lio/sentry/SentryOptions;Lio/sentry/SentryClient;)Lio/sentry/logger/ILoggerBatchProcessor;
+}
+
 public class io/sentry/android/core/AndroidMemoryCollector : io/sentry/IPerformanceSnapshotCollector {
 	public fun <init> ()V
 	public fun collect (Lio/sentry/PerformanceCollectionData;)V
 	public fun setup ()V
 }
 
+public final class io/sentry/android/core/AndroidMetricsBatchProcessor : io/sentry/metrics/MetricsBatchProcessor, io/sentry/android/core/AppState$AppStateListener {
+	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/ISentryClient;)V
+	public fun close (Z)V
+	public fun onBackground ()V
+	public fun onForeground ()V
+}
+
+public final class io/sentry/android/core/AndroidMetricsBatchProcessorFactory : io/sentry/metrics/IMetricsBatchProcessorFactory {
+	public fun <init> ()V
+	public fun create (Lio/sentry/SentryOptions;Lio/sentry/SentryClient;)Lio/sentry/metrics/IMetricsBatchProcessor;
+}
+
 public class io/sentry/android/core/AndroidProfiler {
 	protected final field lock Lio/sentry/util/AutoClosableReentrantLock;
-	public fun <init> (Ljava/lang/String;ILio/sentry/android/core/internal/util/SentryFrameMetricsCollector;Lio/sentry/ISentryExecutorService;Lio/sentry/ILogger;)V
+	public fun <init> (Ljava/lang/String;ILio/sentry/android/core/internal/util/SentryFrameMetricsCollector;Lio/sentry/util/LazyEvaluator$Evaluator;Lio/sentry/ILogger;)V
 	public fun close ()V
 	public fun endAndCollect (ZLjava/util/List;)Lio/sentry/android/core/AndroidProfiler$ProfileEndData;
 	public fun start ()Lio/sentry/android/core/AndroidProfiler$ProfileStartData;
@@ -127,13 +151,6 @@ public final class io/sentry/android/core/AnrIntegration : io/sentry/Integration
 public final class io/sentry/android/core/AnrIntegrationFactory {
 	public fun <init> ()V
 	public static fun create (Landroid/content/Context;Lio/sentry/android/core/BuildInfoProvider;)Lio/sentry/Integration;
-}
-
-public final class io/sentry/android/core/AnrV2EventProcessor : io/sentry/BackfillingEventProcessor {
-	public fun <init> (Landroid/content/Context;Lio/sentry/android/core/SentryAndroidOptions;Lio/sentry/android/core/BuildInfoProvider;)V
-	public fun getOrder ()Ljava/lang/Long;
-	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
-	public fun process (Lio/sentry/protocol/SentryTransaction;Lio/sentry/Hint;)Lio/sentry/protocol/SentryTransaction;
 }
 
 public class io/sentry/android/core/AnrV2Integration : io/sentry/Integration, java/io/Closeable {
@@ -189,6 +206,13 @@ public final class io/sentry/android/core/AppState$LifecycleObserver : androidx/
 	public fun getListeners ()Ljava/util/List;
 	public fun onStart (Landroidx/lifecycle/LifecycleOwner;)V
 	public fun onStop (Landroidx/lifecycle/LifecycleOwner;)V
+}
+
+public final class io/sentry/android/core/ApplicationExitInfoEventProcessor : io/sentry/BackfillingEventProcessor {
+	public fun <init> (Landroid/content/Context;Lio/sentry/android/core/SentryAndroidOptions;Lio/sentry/android/core/BuildInfoProvider;)V
+	public fun getOrder ()Ljava/lang/Long;
+	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
+	public fun process (Lio/sentry/protocol/SentryTransaction;Lio/sentry/Hint;)Lio/sentry/protocol/SentryTransaction;
 }
 
 public final class io/sentry/android/core/BuildConfig {
@@ -267,6 +291,19 @@ public final class io/sentry/android/core/LoadClass : io/sentry/util/LoadClass {
 	public fun loadClass (Ljava/lang/String;Lio/sentry/ILogger;)Ljava/lang/Class;
 }
 
+public final class io/sentry/android/core/NativeEventCollector {
+	public fun <init> (Lio/sentry/android/core/SentryAndroidOptions;)V
+	public fun collect ()V
+	public fun deleteNativeEventFile (Lio/sentry/android/core/NativeEventCollector$NativeEventData;)Z
+	public fun findAndRemoveMatchingNativeEvent (J)Lio/sentry/android/core/NativeEventCollector$NativeEventData;
+}
+
+public final class io/sentry/android/core/NativeEventCollector$NativeEventData {
+	public fun getEnvelope ()Lio/sentry/SentryEnvelope;
+	public fun getEvent ()Lio/sentry/SentryEvent;
+	public fun getFile ()Ljava/io/File;
+}
+
 public final class io/sentry/android/core/NdkHandlerStrategy : java/lang/Enum {
 	public static final field SENTRY_HANDLER_STRATEGY_CHAIN_AT_START Lio/sentry/android/core/NdkHandlerStrategy;
 	public static final field SENTRY_HANDLER_STRATEGY_DEFAULT Lio/sentry/android/core/NdkHandlerStrategy;
@@ -289,7 +326,7 @@ public final class io/sentry/android/core/NetworkBreadcrumbsIntegration : io/sen
 }
 
 public final class io/sentry/android/core/ScreenshotEventProcessor : io/sentry/EventProcessor {
-	public fun <init> (Lio/sentry/android/core/SentryAndroidOptions;Lio/sentry/android/core/BuildInfoProvider;)V
+	public fun <init> (Lio/sentry/android/core/SentryAndroidOptions;Lio/sentry/android/core/BuildInfoProvider;Z)V
 	public fun getOrder ()Ljava/lang/Long;
 	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
 	public fun process (Lio/sentry/protocol/SentryTransaction;Lio/sentry/Hint;)Lio/sentry/protocol/SentryTransaction;
@@ -317,6 +354,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun getFrameMetricsCollector ()Lio/sentry/android/core/internal/util/SentryFrameMetricsCollector;
 	public fun getNativeSdkName ()Ljava/lang/String;
 	public fun getNdkHandlerStrategy ()I
+	public fun getScreenshot ()Lio/sentry/android/core/SentryScreenshotOptions;
 	public fun getStartupCrashDurationThresholdMillis ()J
 	public fun isAnrEnabled ()Z
 	public fun isAnrReportInDebug ()Z
@@ -324,6 +362,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun isAttachScreenshot ()Z
 	public fun isAttachViewHierarchy ()Z
 	public fun isCollectAdditionalContext ()Z
+	public fun isCollectExternalStorageContext ()Z
 	public fun isEnableActivityLifecycleBreadcrumbs ()Z
 	public fun isEnableActivityLifecycleTracingAutoFinish ()Z
 	public fun isEnableAppComponentBreadcrumbs ()Z
@@ -339,6 +378,8 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun isEnableSystemEventBreadcrumbs ()Z
 	public fun isEnableSystemEventBreadcrumbsExtras ()Z
 	public fun isReportHistoricalAnrs ()Z
+	public fun isReportHistoricalTombstones ()Z
+	public fun isTombstoneEnabled ()Z
 	public fun setAnrEnabled (Z)V
 	public fun setAnrReportInDebug (Z)V
 	public fun setAnrTimeoutIntervalMillis (J)V
@@ -348,6 +389,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun setBeforeScreenshotCaptureCallback (Lio/sentry/android/core/SentryAndroidOptions$BeforeCaptureCallback;)V
 	public fun setBeforeViewHierarchyCaptureCallback (Lio/sentry/android/core/SentryAndroidOptions$BeforeCaptureCallback;)V
 	public fun setCollectAdditionalContext (Z)V
+	public fun setCollectExternalStorageContext (Z)V
 	public fun setDebugImagesLoader (Lio/sentry/android/core/IDebugImagesLoader;)V
 	public fun setEnableActivityLifecycleBreadcrumbs (Z)V
 	public fun setEnableActivityLifecycleTracingAutoFinish (Z)V
@@ -367,6 +409,8 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun setNativeHandlerStrategy (Lio/sentry/android/core/NdkHandlerStrategy;)V
 	public fun setNativeSdkName (Ljava/lang/String;)V
 	public fun setReportHistoricalAnrs (Z)V
+	public fun setReportHistoricalTombstones (Z)V
+	public fun setTombstoneEnabled (Z)V
 }
 
 public abstract interface class io/sentry/android/core/SentryAndroidOptions$BeforeCaptureCallback {
@@ -405,6 +449,12 @@ public final class io/sentry/android/core/SentryPerformanceProvider {
 	public fun getType (Landroid/net/Uri;)Ljava/lang/String;
 	public fun onCreate ()Z
 	public fun shutdown ()V
+}
+
+public final class io/sentry/android/core/SentryScreenshotOptions : io/sentry/SentryMaskingOptions {
+	public fun <init> ()V
+	public fun setMaskAllImages (Z)V
+	public fun trackCustomMasking ()V
 }
 
 public class io/sentry/android/core/SentryUserFeedbackButton : android/widget/Button {
@@ -446,12 +496,36 @@ public class io/sentry/android/core/SpanFrameMetricsCollector : io/sentry/IPerfo
 
 public final class io/sentry/android/core/SystemEventsBreadcrumbsIntegration : io/sentry/Integration, io/sentry/android/core/AppState$AppStateListener, java/io/Closeable {
 	public fun <init> (Landroid/content/Context;)V
+	public fun <init> (Landroid/content/Context;Landroid/os/Handler;)V
 	public fun <init> (Landroid/content/Context;Ljava/util/List;)V
 	public fun close ()V
 	public static fun getDefaultActions ()Ljava/util/List;
 	public fun onBackground ()V
 	public fun onForeground ()V
 	public fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
+}
+
+public class io/sentry/android/core/TombstoneIntegration : io/sentry/Integration, java/io/Closeable {
+	public fun <init> (Landroid/content/Context;)V
+	public fun close ()V
+	public fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
+}
+
+public final class io/sentry/android/core/TombstoneIntegration$TombstoneHint : io/sentry/hints/BlockingFlushHint, io/sentry/hints/Backfillable, io/sentry/hints/NativeCrashExit {
+	public fun <init> (JLio/sentry/ILogger;JZ)V
+	public fun isFlushable (Lio/sentry/protocol/SentryId;)Z
+	public fun setFlushable (Lio/sentry/protocol/SentryId;)V
+	public fun shouldEnrich ()Z
+	public fun timestamp ()Ljava/lang/Long;
+}
+
+public class io/sentry/android/core/TombstoneIntegration$TombstonePolicy : io/sentry/android/core/ApplicationExitInfoHistoryDispatcher$ApplicationExitInfoPolicy {
+	public fun <init> (Lio/sentry/android/core/SentryAndroidOptions;Landroid/content/Context;)V
+	public fun buildReport (Landroid/app/ApplicationExitInfo;Z)Lio/sentry/android/core/ApplicationExitInfoHistoryDispatcher$Report;
+	public fun getLabel ()Ljava/lang/String;
+	public fun getLastReportedTimestamp ()Ljava/lang/Long;
+	public fun getTargetReason ()I
+	public fun shouldReportHistorical ()Z
 }
 
 public final class io/sentry/android/core/UserInteractionIntegration : android/app/Application$ActivityLifecycleCallbacks, io/sentry/Integration, java/io/Closeable {
@@ -480,11 +554,15 @@ public final class io/sentry/android/core/ViewHierarchyEventProcessor : io/sentr
 }
 
 public final class io/sentry/android/core/cache/AndroidEnvelopeCache : io/sentry/cache/EnvelopeCache {
+	public static final field LAST_ANR_MARKER_LABEL Ljava/lang/String;
 	public static final field LAST_ANR_REPORT Ljava/lang/String;
+	public static final field LAST_TOMBSTONE_MARKER_LABEL Ljava/lang/String;
+	public static final field LAST_TOMBSTONE_REPORT Ljava/lang/String;
 	public fun <init> (Lio/sentry/android/core/SentryAndroidOptions;)V
 	public fun getDirectory ()Ljava/io/File;
 	public static fun hasStartupCrashMarker (Lio/sentry/SentryOptions;)Z
 	public static fun lastReportedAnr (Lio/sentry/SentryOptions;)Ljava/lang/Long;
+	public static fun lastReportedTombstone (Lio/sentry/SentryOptions;)Ljava/lang/Long;
 	public fun store (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)V
 	public fun storeEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Z
 }

@@ -33,7 +33,10 @@ import io.sentry.SpanOptions;
 import io.sentry.SpanStatus;
 import io.sentry.TransactionContext;
 import io.sentry.TransactionOptions;
+import io.sentry.featureflags.IFeatureFlagBuffer;
 import io.sentry.protocol.Contexts;
+import io.sentry.protocol.FeatureFlag;
+import io.sentry.protocol.FeatureFlags;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.TransactionNameSource;
 import java.util.Arrays;
@@ -260,6 +263,16 @@ public final class SentrySpanExporter implements SpanExporter {
         targetSpan.setData(entry.getKey(), entry.getValue());
       }
 
+      final @NotNull SpanContext spanContext = sourceSpan.getSpanContext();
+      final @NotNull IFeatureFlagBuffer featureFlagBuffer = spanContext.getFeatureFlagBuffer();
+      final @Nullable FeatureFlags featureFlags = featureFlagBuffer.getFeatureFlags();
+      if (featureFlags != null) {
+        for (FeatureFlag featureFlag : featureFlags.getValues()) {
+          targetSpan.setData(
+              FeatureFlag.DATA_PREFIX + featureFlag.getFlag(), featureFlag.getResult());
+        }
+      }
+
       final @NotNull Map<String, String> tags = sourceSpan.getTags();
       for (Map.Entry<String, String> entry : tags.entrySet()) {
         targetSpan.setTag(entry.getKey(), entry.getValue());
@@ -297,6 +310,7 @@ public final class SentrySpanExporter implements SpanExporter {
     @NotNull TransactionNameSource transactionNameSource = spanInfo.getTransactionNameSource();
     @Nullable SpanId parentSpanId = null;
     @Nullable Baggage baggage = null;
+    @NotNull SentryId profilerId = SentryId.EMPTY_ID;
 
     if (sentrySpanMaybe != null) {
       final @NotNull IOtelSpanWrapper sentrySpan = sentrySpanMaybe;
@@ -312,6 +326,7 @@ public final class SentrySpanExporter implements SpanExporter {
       final @NotNull SpanContext spanContext = sentrySpan.getSpanContext();
       parentSpanId = spanContext.getParentSpanId();
       baggage = spanContext.getBaggage();
+      profilerId = spanContext.getProfilerId();
     }
 
     final @NotNull TransactionContext transactionContext =
@@ -324,6 +339,7 @@ public final class SentrySpanExporter implements SpanExporter {
     transactionContext.setTransactionNameSource(transactionNameSource);
     transactionContext.setOperation(spanInfo.getOp());
     transactionContext.setInstrumenter(Instrumenter.SENTRY);
+    transactionContext.setProfilerId(profilerId);
     if (sentrySpanMaybe != null) {
       transactionContext.setSamplingDecision(sentrySpanMaybe.getSamplingDecision());
       transactionOptions.setOrigin(sentrySpanMaybe.getSpanContext().getOrigin());

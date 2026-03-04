@@ -57,6 +57,17 @@ public interface EventProcessor {
   }
 
   /**
+   * May mutate or drop a SentryMetricsEvent
+   *
+   * @param event the SentryMetricsEvent
+   * @return the event itself, a mutated SentryMetricsEvent or null
+   */
+  @Nullable
+  default SentryMetricsEvent process(@NotNull SentryMetricsEvent event, @NotNull Hint hint) {
+    return event;
+  }
+
+  /**
    * Controls when this EventProcessor is invoked.
    *
    * @return order higher number = later, lower number = earlier (negative values may also be

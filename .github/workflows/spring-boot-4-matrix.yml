@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        springboot-version: [ '4.0.0-M1', '4.0.0-M2', '4.0.0-M3' ]
+        springboot-version: [ '4.0.0' ]
 
     name: Spring Boot ${{ matrix.springboot-version }}
     env:
@@ -28,7 +28,7 @@ jobs:
 
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           submodules: 'recursive'
 
@@ -50,13 +50,13 @@ jobs:
 
       # Workaround for https://github.com/gradle/actions/issues/21 to use config cache
       - name: Cache buildSrc
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: buildSrc/build
           key: build-logic-${{ hashFiles('buildSrc/src/**', 'buildSrc/build.gradle.kts','buildSrc/settings.gradle.kts') }}
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@4d9f0ba0025fe599b4ebab900eb7f3a1d93ef4c2
+        uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
@@ -80,6 +80,7 @@ jobs:
             -e '/.*"sentry-android-integration-tests:sentry-uitest-android",/d' \
             -e '/.*"sentry-android-integration-tests:sentry-uitest-android-critical",/d' \
             -e '/.*"sentry-android-integration-tests:test-app-sentry",/d' \
+            -e '/.*"sentry-android-integration-tests:test-app-size",/d' \
             -e '/.*"sentry-samples:sentry-samples-android",/d' \
             -e '/.*"sentry-android-replay",/d' \
             settings.gradle.kts
@@ -91,6 +92,7 @@ jobs:
             -e '/.*"sentry-uitest-android-benchmark",/d' \
             -e '/.*"sentry-uitest-android-critical",/d' \
             -e '/.*"test-app-sentry",/d' \
+            -e '/.*"test-app-size",/d' \
             -e '/.*"sentry-samples-android",/d' \
             build.gradle.kts
 
@@ -149,7 +151,7 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: test-results-springboot-4-${{ matrix.springboot-version }}
           path: |
@@ -171,7 +173,7 @@ jobs:
 
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
-        uses: codecov/test-results-action@47f89e9acb64b76debcd5ea40642d25a4adced9f
+        uses: codecov/test-results-action@0fa95f0e1eeaafde2c782583b36b28ad0d8c77d3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           file: '**/build/test-results/**/*.xml'

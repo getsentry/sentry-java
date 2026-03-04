@@ -23,6 +23,7 @@ public final class ExternalOptions {
   private @Nullable Boolean enableUncaughtExceptionHandler;
   private @Nullable Boolean debug;
   private @Nullable Boolean enableDeduplication;
+  private @Nullable Double sampleRate;
   private @Nullable Double tracesSampleRate;
   private @Nullable Double profilesSampleRate;
   private @Nullable SentryOptions.RequestSize maxRequestBodySize;
@@ -46,6 +47,7 @@ public final class ExternalOptions {
   private @Nullable Boolean enablePrettySerializationOutput;
   private @Nullable Boolean enableSpotlight;
   private @Nullable Boolean enableLogs;
+  private @Nullable Boolean enableMetrics;
   private @Nullable String spotlightConnectionUrl;
 
   private @Nullable List<String> ignoredCheckIns;
@@ -54,6 +56,7 @@ public final class ExternalOptions {
   private @Nullable Boolean sendModules;
   private @Nullable Boolean sendDefaultPii;
   private @Nullable Boolean enableBackpressureHandling;
+  private @Nullable Boolean enableDatabaseTransactionTracing;
   private @Nullable Boolean globalHubMode;
   private @Nullable Boolean forceInit;
   private @Nullable Boolean captureOpenTelemetryEvents;
@@ -77,6 +80,7 @@ public final class ExternalOptions {
         propertiesProvider.getBooleanProperty("uncaught.handler.enabled"));
     options.setPrintUncaughtStackTrace(
         propertiesProvider.getBooleanProperty("uncaught.handler.print-stacktrace"));
+    options.setSampleRate(propertiesProvider.getDoubleProperty("sample-rate"));
     options.setTracesSampleRate(propertiesProvider.getDoubleProperty("traces-sample-rate"));
     options.setProfilesSampleRate(propertiesProvider.getDoubleProperty("profiles-sample-rate"));
     options.setDebug(propertiesProvider.getBooleanProperty("debug"));
@@ -155,12 +159,17 @@ public final class ExternalOptions {
     options.setEnableBackpressureHandling(
         propertiesProvider.getBooleanProperty("enable-backpressure-handling"));
 
+    options.setEnableDatabaseTransactionTracing(
+        propertiesProvider.getBooleanProperty("enable-database-transaction-tracing"));
+
     options.setGlobalHubMode(propertiesProvider.getBooleanProperty("global-hub-mode"));
 
     options.setCaptureOpenTelemetryEvents(
         propertiesProvider.getBooleanProperty("capture-open-telemetry-events"));
 
     options.setEnableLogs(propertiesProvider.getBooleanProperty("logs.enabled"));
+
+    options.setEnableMetrics(propertiesProvider.getBooleanProperty("metrics.enabled"));
 
     for (final String ignoredExceptionType :
         propertiesProvider.getList("ignored-exceptions-for-type")) {
@@ -291,6 +300,14 @@ public final class ExternalOptions {
 
   public void setEnableDeduplication(final @Nullable Boolean enableDeduplication) {
     this.enableDeduplication = enableDeduplication;
+  }
+
+  public @Nullable Double getSampleRate() {
+    return sampleRate;
+  }
+
+  public void setSampleRate(final @Nullable Double sampleRate) {
+    this.sampleRate = sampleRate;
   }
 
   public @Nullable Double getTracesSampleRate() {
@@ -497,6 +514,15 @@ public final class ExternalOptions {
     return enableBackpressureHandling;
   }
 
+  public void setEnableDatabaseTransactionTracing(
+      final @Nullable Boolean enableDatabaseTransactionTracing) {
+    this.enableDatabaseTransactionTracing = enableDatabaseTransactionTracing;
+  }
+
+  public @Nullable Boolean isEnableDatabaseTransactionTracing() {
+    return enableDatabaseTransactionTracing;
+  }
+
   public void setGlobalHubMode(final @Nullable Boolean globalHubMode) {
     this.globalHubMode = globalHubMode;
   }
@@ -558,6 +584,14 @@ public final class ExternalOptions {
 
   public @Nullable Boolean isEnableLogs() {
     return enableLogs;
+  }
+
+  public void setEnableMetrics(final @Nullable Boolean enableMetrics) {
+    this.enableMetrics = enableMetrics;
+  }
+
+  public @Nullable Boolean isEnableMetrics() {
+    return enableMetrics;
   }
 
   public @Nullable Double getProfileSessionSampleRate() {

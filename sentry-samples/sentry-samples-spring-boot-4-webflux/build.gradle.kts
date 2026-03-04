@@ -25,6 +25,7 @@ dependencies {
   implementation(projects.sentryLogback)
   implementation(projects.sentryJdbc)
   implementation(projects.sentryGraphql22)
+  implementation(projects.sentryAsyncProfiler)
   implementation(libs.context.propagation)
   implementation(libs.springboot4.starter.actuator)
   implementation(libs.springboot4.starter.graphql)

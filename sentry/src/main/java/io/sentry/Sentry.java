@@ -14,8 +14,8 @@ import io.sentry.internal.modules.ManifestModulesLoader;
 import io.sentry.internal.modules.NoOpModulesLoader;
 import io.sentry.internal.modules.ResourcesModulesLoader;
 import io.sentry.logger.ILoggerApi;
+import io.sentry.metrics.IMetricsApi;
 import io.sentry.opentelemetry.OpenTelemetryUtil;
-import io.sentry.profiling.ProfilingServiceLoader;
 import io.sentry.protocol.Feedback;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
@@ -98,16 +98,33 @@ public final class Sentry {
     return new HubScopesWrapper(getCurrentScopes());
   }
 
-  @ApiStatus.Internal // exposed for the coroutines integration in SentryContext
+  @ApiStatus.Internal
   @SuppressWarnings("deprecation")
   public static @NotNull IScopes getCurrentScopes() {
+    return getCurrentScopes(true);
+  }
+
+  /**
+   * Returns the current contexts scopes.
+   *
+   * @param ensureForked if true, forks root scopes in case there are no scopes for this context if
+   *     false, returns NoOpScopes if there are no scopes for this context
+   * @return current scopes, a root scopes fork or NoopScopes
+   */
+  @ApiStatus.Internal
+  @SuppressWarnings("deprecation")
+  public static @NotNull IScopes getCurrentScopes(final boolean ensureForked) {
     if (globalHubMode) {
       return rootScopes;
     }
     @Nullable IScopes scopes = getScopesStorage().get();
     if (scopes == null || scopes.isNoOp()) {
-      scopes = rootScopes.forkedScopes("getCurrentScopes");
-      getScopesStorage().set(scopes);
+      if (!ensureForked) {
+        return NoOpScopes.getInstance();
+      } else {
+        scopes = rootScopes.forkedScopes("getCurrentScopes");
+        getScopesStorage().set(scopes);
+      }
     }
     return scopes;
   }
@@ -311,6 +328,8 @@ public final class Sentry {
                   SentryLevel.WARNING,
                   "Sentry has been already initialized. Previous configuration will be overwritten.");
         }
+
+        options.activate();
 
         final IScopes scopes = getCurrentScopes();
         scopes.close(true);
@@ -593,7 +612,7 @@ public final class Sentry {
     final String outboxPath = options.getOutboxPath();
     if (outboxPath != null) {
       final File outboxDir = new File(outboxPath);
-      options.getRuntimeManager().runWithRelaxedPolicy(() -> outboxDir.mkdirs());
+      outboxDir.mkdirs();
     } else {
       logger.log(SentryLevel.INFO, "No outbox dir path is defined in options.");
     }
@@ -601,7 +620,7 @@ public final class Sentry {
     final String cacheDirPath = options.getCacheDirPath();
     if (cacheDirPath != null) {
       final File cacheDir = new File(cacheDirPath);
-      options.getRuntimeManager().runWithRelaxedPolicy(() -> cacheDir.mkdirs());
+      cacheDir.mkdirs();
       final IEnvelopeCache envelopeCache = options.getEnvelopeDiskCache();
       // only overwrite the cache impl if it's not already set
       if (envelopeCache instanceof NoOpEnvelopeCache) {
@@ -614,7 +633,7 @@ public final class Sentry {
         && profilingTracesDirPath != null) {
 
       final File profilingTracesDir = new File(profilingTracesDirPath);
-      options.getRuntimeManager().runWithRelaxedPolicy(() -> profilingTracesDir.mkdirs());
+      profilingTracesDir.mkdirs();
 
       try {
         options
@@ -691,38 +710,8 @@ public final class Sentry {
   }
 
   private static void initJvmContinuousProfiling(@NotNull SentryOptions options) {
-
-    if (options.isContinuousProfilingEnabled()
-        && options.getContinuousProfiler() == NoOpContinuousProfiler.getInstance()) {
-      try {
-        String profilingTracesDirPath = options.getProfilingTracesDirPath();
-        if (profilingTracesDirPath == null) {
-          File tempDir = new File(System.getProperty("java.io.tmpdir"), "sentry_profiling_traces");
-          boolean createDirectorySuccess = tempDir.mkdirs() || tempDir.exists();
-
-          if (!createDirectorySuccess) {
-            throw new IllegalArgumentException(
-                "Creating a fallback directory for profiling failed in "
-                    + tempDir.getAbsolutePath());
-          }
-          profilingTracesDirPath = tempDir.getAbsolutePath();
-          options.setProfilingTracesDirPath(profilingTracesDirPath);
-        }
-
-        final IContinuousProfiler continuousProfiler =
-            ProfilingServiceLoader.loadContinuousProfiler(
-                options.getLogger(),
-                profilingTracesDirPath,
-                options.getProfilingTracesHz(),
-                options.getExecutorService());
-
-        options.setContinuousProfiler(continuousProfiler);
-      } catch (Exception e) {
-        options
-            .getLogger()
-            .log(SentryLevel.ERROR, "Failed to create default profiling traces directory", e);
-      }
-    }
+    InitUtil.initializeProfiler(options);
+    InitUtil.initializeProfileConverter(options);
   }
 
   /** Close the SDK */
@@ -1358,6 +1347,11 @@ public final class Sentry {
     return getCurrentScopes().getScope().getOptions().getDistributionController();
   }
 
+  @NotNull
+  public static IMetricsApi metrics() {
+    return getCurrentScopes().metrics();
+  }
+
   public static void showUserFeedbackDialog() {
     showUserFeedbackDialog(null);
   }
@@ -1372,5 +1366,46 @@ public final class Sentry {
       final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator) {
     final @NotNull SentryOptions options = getCurrentScopes().getOptions();
     options.getFeedbackOptions().getDialogHandler().showDialog(associatedEventId, configurator);
+  }
+
+  /**
+   * Sets an attribute on the scope.
+   *
+   * @param key the key
+   * @param value the value
+   */
+  public static void setAttribute(final @Nullable String key, final @Nullable Object value) {
+    getCurrentScopes().setAttribute(key, value);
+  }
+
+  /**
+   * Sets an attribute on the scope.
+   *
+   * @param attribute the attribute
+   */
+  public static void setAttribute(final @Nullable SentryAttribute attribute) {
+    getCurrentScopes().setAttribute(attribute);
+  }
+
+  /**
+   * Sets multiple attributes on the scope.
+   *
+   * @param attributes the attributes
+   */
+  public static void setAttributes(final @Nullable SentryAttributes attributes) {
+    getCurrentScopes().setAttributes(attributes);
+  }
+
+  /**
+   * Removes an attribute from the scope.
+   *
+   * @param key the key
+   */
+  public static void removeAttribute(final @Nullable String key) {
+    getCurrentScopes().removeAttribute(key);
+  }
+
+  public static void addFeatureFlag(final @Nullable String flag, final @Nullable Boolean result) {
+    getCurrentScopes().addFeatureFlag(flag, result);
   }
 }

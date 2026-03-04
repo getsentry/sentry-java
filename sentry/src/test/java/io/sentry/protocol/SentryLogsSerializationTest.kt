@@ -11,6 +11,7 @@ import io.sentry.SentryLogEvent
 import io.sentry.SentryLogEventAttributeValue
 import io.sentry.SentryLogEvents
 import io.sentry.SentryLogLevel
+import io.sentry.SpanId
 import java.io.StringReader
 import java.io.StringWriter
 import kotlin.test.assertEquals
@@ -31,11 +32,13 @@ class SentryLogsSerializationTest {
               SentryLogLevel.INFO,
             )
             .also {
+              it.spanId = SpanId("0a53026963414893")
               it.attributes =
                 mutableMapOf(
                   "sentry.sdk.name" to
                     SentryLogEventAttributeValue("string", "sentry.java.spring-boot.jakarta"),
                   "sentry.environment" to SentryLogEventAttributeValue("string", "production"),
+                  "custom.array" to SentryLogEventAttributeValue("array", listOf("a", "b")),
                   "sentry.sdk.version" to SentryLogEventAttributeValue("string", "8.11.1"),
                   "sentry.trace.parent_span_id" to
                     SentryLogEventAttributeValue("string", "f28b86350e534671"),

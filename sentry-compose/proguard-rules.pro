@@ -12,6 +12,7 @@
 -keepnames class androidx.compose.foundation.ClickableElement
 -keepnames class androidx.compose.foundation.CombinedClickableElement
 -keepnames class androidx.compose.foundation.ScrollingLayoutElement
+-keepnames class androidx.compose.foundation.ScrollingContainerElement
 -keepnames class androidx.compose.ui.platform.TestTagElement { *; }
 -keepnames class io.sentry.compose.SentryModifier$SentryTagModifierNodeElement { *; }
 

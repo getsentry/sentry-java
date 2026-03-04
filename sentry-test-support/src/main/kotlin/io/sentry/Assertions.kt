@@ -73,6 +73,16 @@ inline fun <reified T> assertEnvelopeItem(
  * Asserts a transaction exists in [items] and returns the first one. Otherwise it throws an
  * [AssertionError].
  */
+inline fun assertEnvelopeEvent(
+  items: List<SentryEnvelopeItem>,
+  logger: ILogger = NoOpLogger.getInstance(),
+  predicate: (index: Int, item: SentryEvent) -> Unit = { _, _ -> },
+): SentryEvent = assertEnvelopeItem(items, SentryItemType.Event, logger, predicate)
+
+/**
+ * Asserts a transaction exists in [items] and returns the first one. Otherwise it throws an
+ * [AssertionError].
+ */
 inline fun assertEnvelopeTransaction(
   items: List<SentryEnvelopeItem>,
   logger: ILogger = NoOpLogger.getInstance(),

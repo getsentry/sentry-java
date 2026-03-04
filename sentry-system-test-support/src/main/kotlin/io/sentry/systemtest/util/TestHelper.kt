@@ -3,15 +3,21 @@ package io.sentry.systemtest.util
 import com.apollographql.apollo3.api.ApolloResponse
 import com.apollographql.apollo3.api.Operation
 import io.sentry.JsonSerializer
+import io.sentry.ProfileChunk
 import io.sentry.SentryEnvelopeHeader
 import io.sentry.SentryEvent
 import io.sentry.SentryItemType
 import io.sentry.SentryLogEvents
+import io.sentry.SentryMetricsEvents
 import io.sentry.SentryOptions
+import io.sentry.protocol.FeatureFlag
 import io.sentry.protocol.SentrySpan
 import io.sentry.protocol.SentryTransaction
 import io.sentry.systemtest.graphql.GraphqlTestClient
+import java.io.BufferedReader
+import java.io.ByteArrayInputStream
 import java.io.File
+import java.io.InputStreamReader
 import java.io.PrintWriter
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -81,6 +87,10 @@ class TestHelper(backendUrl: String) {
     ensureEnvelopeReceived { envelopeString -> checkIfTransactionMatches(envelopeString, callback) }
   }
 
+  fun ensureProfileChunkReceived(callback: ((ProfileChunk, SentryEnvelopeHeader) -> Boolean)) {
+    ensureEnvelopeReceived { envelopeString -> checkIfProfileMatches(envelopeString, callback) }
+  }
+
   fun ensureNoTransactionReceived(
     callback: ((SentryTransaction, SentryEnvelopeHeader) -> Boolean)
   ) {
@@ -117,11 +127,125 @@ class TestHelper(backendUrl: String) {
     return callback(logs, envelopeHeader)
   }
 
+  fun doesContainMetric(
+    metrics: SentryMetricsEvents,
+    name: String,
+    type: String,
+    value: Double,
+    unit: String? = null,
+  ): Boolean {
+    val metricItem =
+      metrics.items.firstOrNull { metricItem ->
+        metricItem.name == name &&
+          metricItem.type == type &&
+          metricItem.value == value &&
+          (unit == null || metricItem.unit == unit)
+      }
+    if (metricItem == null) {
+      println("Unable to find metric item with name $name, type $type and value $value in metrics:")
+      logObject(metrics)
+      return false
+    }
+
+    return true
+  }
+
+  fun ensureMetricsReceived(callback: ((SentryMetricsEvents, SentryEnvelopeHeader) -> Boolean)) {
+    ensureEnvelopeReceived { envelopeString -> checkIfMetricsMatch(envelopeString, callback) }
+  }
+
+  private fun checkIfMetricsMatch(
+    envelopeString: String,
+    callback: ((SentryMetricsEvents, SentryEnvelopeHeader) -> Boolean),
+  ): Boolean {
+    val deserializeEnvelope = jsonSerializer.deserializeEnvelope(envelopeString.byteInputStream())
+    if (deserializeEnvelope == null) {
+      return false
+    }
+
+    val envelopeHeader = deserializeEnvelope.header
+
+    val metricsItem =
+      deserializeEnvelope.items.firstOrNull { it.header.type == SentryItemType.TraceMetric }
+    if (metricsItem == null) {
+      return false
+    }
+
+    val metrics = metricsItem.getMetrics(jsonSerializer)
+    if (metrics == null) {
+      return false
+    }
+
+    return callback(metrics, envelopeHeader)
+  }
+
   fun doesContainLogWithBody(logs: SentryLogEvents, body: String): Boolean {
     val logItem = logs.items.firstOrNull { logItem -> logItem.body == body }
     if (logItem == null) {
       println("Unable to find log item with body $body in logs:")
       logObject(logs)
+      return false
+    }
+
+    return true
+  }
+
+  fun doesLogWithBodyHaveAttribute(
+    logs: SentryLogEvents,
+    body: String,
+    attributeKey: String,
+    attributeValue: Any?,
+  ): Boolean {
+    val logItem = logs.items.firstOrNull { logItem -> logItem.body == body }
+    if (logItem == null) {
+      println("Unable to find log item with body $body in logs:")
+      logObject(logs)
+      return false
+    }
+
+    val attr = logItem.attributes?.get(attributeKey)
+    if (attr == null) {
+      println("Unable to find attribute $attributeKey on log with body $body:")
+      logObject(logItem)
+      return false
+    }
+
+    if (attr.value != attributeValue) {
+      println(
+        "Attribute $attributeKey has value ${attr.value} but expected $attributeValue on log with body $body:"
+      )
+      logObject(logItem)
+      return false
+    }
+
+    return true
+  }
+
+  fun doesMetricHaveAttribute(
+    metrics: SentryMetricsEvents,
+    metricName: String,
+    attributeKey: String,
+    attributeValue: Any?,
+  ): Boolean {
+    val metricItem = metrics.items.firstOrNull { it.name == metricName }
+    if (metricItem == null) {
+      println("Unable to find metric with name $metricName in metrics:")
+      logObject(metrics)
+      return false
+    }
+
+    val attr = metricItem.attributes?.get(attributeKey)
+    if (attr == null) {
+      println("Unable to find attribute $attributeKey on metric $metricName:")
+      logObject(metricItem)
+      return false
+    }
+
+    if (attr.value != attributeValue) {
+      println(
+        "Attribute $attributeKey has value ${attr.value} but expected $attributeValue on metric $metricName:"
+      )
+      logObject(metricItem)
       return false
     }
 
@@ -153,8 +277,37 @@ class TestHelper(backendUrl: String) {
     return callback(transaction, envelopeHeader)
   }
 
+  private fun checkIfProfileMatches(
+    envelopeString: String,
+    callback: ((ProfileChunk, SentryEnvelopeHeader) -> Boolean),
+  ): Boolean {
+    val deserializeEnvelope = jsonSerializer.deserializeEnvelope(envelopeString.byteInputStream())
+    if (deserializeEnvelope == null) {
+      return false
+    }
+
+    val envelopeHeader = deserializeEnvelope.header
+
+    val profileChunkItem =
+      deserializeEnvelope.items.firstOrNull { it.header.type == SentryItemType.ProfileChunk }
+
+    if (profileChunkItem == null) {
+      return false
+    }
+
+    val chunk =
+      BufferedReader(InputStreamReader(ByteArrayInputStream(profileChunkItem.data), Charsets.UTF_8))
+        .use { eventReader -> jsonSerializer.deserialize(eventReader, ProfileChunk::class.java) }
+
+    if (chunk == null) {
+      return false
+    }
+
+    return callback(chunk, envelopeHeader)
+  }
+
   fun ensureErrorReceived(callback: ((SentryEvent) -> Boolean)) {
-    ensureEnvelopeReceived { envelopeString ->
+    ensureEnvelopeReceived(retryCount = 3) { envelopeString ->
       val deserializeEnvelope = jsonSerializer.deserializeEnvelope(envelopeString.byteInputStream())
       if (deserializeEnvelope == null) {
         return@ensureEnvelopeReceived false
@@ -273,6 +426,94 @@ class TestHelper(backendUrl: String) {
     }
 
     return true
+  }
+
+  fun doesTransactionHave(
+    transaction: SentryTransaction,
+    op: String,
+    featureFlag: FeatureFlag? = null,
+  ): Boolean {
+    val matches = transaction.contexts.trace?.operation == op
+    if (!matches) {
+      println("Unable to find transaction with op $op:")
+      logObject(transaction)
+      return false
+    }
+
+    val foundFlag = transaction.contexts.trace?.data?.get(featureFlag?.flag)
+    if (featureFlag != null && foundFlag == null) {
+      println("Unable to find span with feature flag ${featureFlag?.flag}:")
+      logObject(transaction)
+      return false
+    }
+    if (featureFlag != null && foundFlag != featureFlag.result) {
+      println("Feature flag ${featureFlag?.flag} has unexpected result ${foundFlag}:")
+      logObject(transaction)
+      return false
+    }
+
+    return true
+  }
+
+  fun doesTransactionHaveSpanWith(
+    transaction: SentryTransaction,
+    op: String,
+    featureFlag: FeatureFlag? = null,
+    noFeatureFlags: Boolean = false,
+  ): Boolean {
+    val foundSpan = transaction.spans.firstOrNull { span -> span.op == op }
+    if (foundSpan == null) {
+      println("Unable to find span with op $op:")
+      logObject(transaction)
+      return false
+    }
+
+    val featureFlagNames =
+      foundSpan.data?.keys?.filter { it.startsWith("flag.evaluation.") } ?: emptyList()
+    if (noFeatureFlags && featureFlagNames.isNotEmpty()) {
+      println("Expected 0 feature flags but found ${featureFlagNames}:")
+      logObject(transaction)
+      return false
+    }
+
+    val foundFlag = foundSpan.data?.get(featureFlag?.flag)
+    if (featureFlag != null && foundFlag == null) {
+      println("Unable to find span with feature flag ${featureFlag?.flag}:")
+      logObject(transaction)
+      return false
+    }
+    if (featureFlag != null && foundFlag != featureFlag.result) {
+      println("Feature flag ${featureFlag?.flag} has unexpected result ${foundFlag}:")
+      logObject(transaction)
+      return false
+    }
+
+    return true
+  }
+
+  fun doesEventHaveExceptionMessage(event: SentryEvent, expectedMessage: String): Boolean {
+    val exceptions = event.exceptions
+    if (exceptions == null) {
+      println("Unable to find exceptions in event")
+      return false
+    }
+
+    val foundException = exceptions.firstOrNull { expectedMessage == it.value }
+    return foundException != null
+  }
+
+  fun doesEventHaveFlag(event: SentryEvent, flag: String, result: Boolean): Boolean {
+    val featureFlags = event.contexts.featureFlags
+    if (featureFlags == null) {
+      println("Unable to find feature flags in event:")
+      return false
+    }
+    val foundFlag =
+      featureFlags.values.firstOrNull { featureFlag ->
+        println("checking flag ${featureFlag.flag}:${featureFlag.result}")
+        featureFlag.flag == flag && featureFlag.result == result
+      }
+    return foundFlag != null
   }
 
   fun findJar(prefix: String, inDir: String = "build/libs"): File {

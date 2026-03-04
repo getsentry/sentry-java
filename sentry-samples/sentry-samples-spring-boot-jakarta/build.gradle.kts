@@ -53,6 +53,10 @@ dependencies {
   implementation(projects.sentryGraphql22)
   implementation(projects.sentryQuartz)
   implementation(projects.sentryAsyncProfiler)
+  implementation(projects.sentryOpenfeature)
+
+  // OpenFeature SDK
+  implementation(libs.openfeature)
 
   // database query tracing
   implementation(projects.sentryJdbc)

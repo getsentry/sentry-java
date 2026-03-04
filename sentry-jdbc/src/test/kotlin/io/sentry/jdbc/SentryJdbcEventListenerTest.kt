@@ -1,6 +1,6 @@
 package io.sentry.jdbc
 
-import com.p6spy.engine.common.StatementInformation
+import com.p6spy.engine.common.ConnectionInformation
 import com.p6spy.engine.spy.P6DataSource
 import io.sentry.IScopes
 import io.sentry.SentryOptions
@@ -25,15 +25,22 @@ import org.mockito.kotlin.whenever
 
 class SentryJdbcEventListenerTest {
   class Fixture {
+    lateinit var options: SentryOptions
     val scopes =
-      mock<IScopes>().apply {
-        whenever(options)
-          .thenReturn(SentryOptions().apply { sdkVersion = SdkVersion("test", "1.2.3") })
-      }
+      mock<IScopes>().apply { whenever(this.options).thenAnswer { this@Fixture.options } }
     lateinit var tx: SentryTracer
     val actualDataSource = JDBCDataSource()
 
-    fun getSut(withRunningTransaction: Boolean = true, existingRow: Int? = null): DataSource {
+    fun getSut(
+      withRunningTransaction: Boolean = true,
+      existingRow: Int? = null,
+      enableDatabaseTransactionTracing: Boolean = false,
+    ): DataSource {
+      options =
+        SentryOptions().apply {
+          sdkVersion = SdkVersion("test", "1.2.3")
+          isEnableDatabaseTransactionTracing = enableDatabaseTransactionTracing
+        }
       tx = SentryTracer(TransactionContext("name", "op"), scopes)
       if (withRunningTransaction) {
         whenever(scopes.span).thenReturn(tx)
@@ -146,7 +153,7 @@ class SentryJdbcEventListenerTest {
     Mockito.mockStatic(DatabaseUtils::class.java).use { utils ->
       var invocationCount = 0
       utils
-        .`when`<Any> { DatabaseUtils.readFrom(any<StatementInformation>()) }
+        .`when`<Any> { DatabaseUtils.readFrom(any<ConnectionInformation>()) }
         .thenAnswer {
           invocationCount++
           DatabaseDetails("a", "b")
@@ -168,5 +175,197 @@ class SentryJdbcEventListenerTest {
 
       assertEquals(1, invocationCount)
     }
+  }
+
+  @Test
+  fun `creates span for commit when database transaction tracing is enabled`() {
+    val sut = fixture.getSut(enableDatabaseTransactionTracing = true)
+
+    sut.connection.use {
+      it.autoCommit = false
+      it.prepareStatement("INSERT INTO foo VALUES (1)").executeUpdate()
+      it.commit()
+    }
+
+    val commitSpans = fixture.tx.children.filter { it.operation == "db.sql.transaction.commit" }
+    assertEquals(1, commitSpans.size)
+    assertEquals(SpanStatus.OK, commitSpans[0].status)
+    assertEquals("auto.db.jdbc", commitSpans[0].spanContext.origin)
+  }
+
+  @Test
+  fun `creates span for rollback when database transaction tracing is enabled`() {
+    val sut = fixture.getSut(enableDatabaseTransactionTracing = true)
+
+    sut.connection.use {
+      it.autoCommit = false
+      it.prepareStatement("INSERT INTO foo VALUES (1)").executeUpdate()
+      it.rollback()
+    }
+
+    val rollbackSpans = fixture.tx.children.filter { it.operation == "db.sql.transaction.rollback" }
+    assertEquals(1, rollbackSpans.size)
+    assertEquals(SpanStatus.OK, rollbackSpans[0].status)
+    assertEquals("auto.db.jdbc", rollbackSpans[0].spanContext.origin)
+  }
+
+  @Test
+  fun `commit span has database details`() {
+    val sut = fixture.getSut(enableDatabaseTransactionTracing = true)
+
+    sut.connection.use {
+      it.autoCommit = false
+      it.prepareStatement("INSERT INTO foo VALUES (1)").executeUpdate()
+      it.commit()
+    }
+
+    val commitSpans = fixture.tx.children.filter { it.operation == "db.sql.transaction.commit" }
+    assertEquals(1, commitSpans.size)
+    assertEquals("hsqldb", commitSpans[0].data[DB_SYSTEM_KEY])
+    assertEquals("testdb", commitSpans[0].data[DB_NAME_KEY])
+  }
+
+  @Test
+  fun `rollback span has database details`() {
+    val sut = fixture.getSut(enableDatabaseTransactionTracing = true)
+
+    sut.connection.use {
+      it.autoCommit = false
+      it.prepareStatement("INSERT INTO foo VALUES (1)").executeUpdate()
+      it.rollback()
+    }
+
+    val rollbackSpans = fixture.tx.children.filter { it.operation == "db.sql.transaction.rollback" }
+    assertEquals(1, rollbackSpans.size)
+    assertEquals("hsqldb", rollbackSpans[0].data[DB_SYSTEM_KEY])
+    assertEquals("testdb", rollbackSpans[0].data[DB_NAME_KEY])
+  }
+
+  @Test
+  fun `does not create commit span when there is no running transaction`() {
+    val sut =
+      fixture.getSut(withRunningTransaction = false, enableDatabaseTransactionTracing = true)
+
+    sut.connection.use {
+      it.autoCommit = false
+      it.prepareStatement("INSERT INTO foo VALUES (1)").executeUpdate()
+      it.commit()
+    }
+
+    val commitSpans = fixture.tx.children.filter { it.operation == "db.sql.transaction.commit" }
+    assertTrue(commitSpans.isEmpty())
+  }
+
+  @Test
+  fun `does not create rollback span when there is no running transaction`() {
+    val sut =
+      fixture.getSut(withRunningTransaction = false, enableDatabaseTransactionTracing = true)
+
+    sut.connection.use {
+      it.autoCommit = false
+      it.prepareStatement("INSERT INTO foo VALUES (1)").executeUpdate()
+      it.rollback()
+    }
+
+    val rollbackSpans = fixture.tx.children.filter { it.operation == "db.sql.transaction.rollback" }
+    assertTrue(rollbackSpans.isEmpty())
+  }
+
+  @Test
+  fun `creates span for transaction begin when setAutoCommit false and database transaction tracing is enabled`() {
+    val sut = fixture.getSut(enableDatabaseTransactionTracing = true)
+
+    sut.connection.use {
+      it.autoCommit = false
+      it.prepareStatement("INSERT INTO foo VALUES (1)").executeUpdate()
+      it.commit()
+    }
+
+    val beginSpans = fixture.tx.children.filter { it.operation == "db.sql.transaction.begin" }
+    assertEquals(1, beginSpans.size)
+    assertEquals(SpanStatus.OK, beginSpans[0].status)
+    assertEquals("auto.db.jdbc", beginSpans[0].spanContext.origin)
+  }
+
+  @Test
+  fun `transaction begin span has database details`() {
+    val sut = fixture.getSut(enableDatabaseTransactionTracing = true)
+
+    sut.connection.use {
+      it.autoCommit = false
+      it.prepareStatement("INSERT INTO foo VALUES (1)").executeUpdate()
+      it.commit()
+    }
+
+    val beginSpans = fixture.tx.children.filter { it.operation == "db.sql.transaction.begin" }
+    assertEquals(1, beginSpans.size)
+    assertEquals("hsqldb", beginSpans[0].data[DB_SYSTEM_KEY])
+    assertEquals("testdb", beginSpans[0].data[DB_NAME_KEY])
+  }
+
+  @Test
+  fun `does not create begin span when already in manual commit mode`() {
+    val sut = fixture.getSut(enableDatabaseTransactionTracing = true)
+
+    sut.connection.use {
+      it.autoCommit = false
+      it.autoCommit = false // setting again should not create another span
+      it.prepareStatement("INSERT INTO foo VALUES (1)").executeUpdate()
+      it.commit()
+    }
+
+    val beginSpans = fixture.tx.children.filter { it.operation == "db.sql.transaction.begin" }
+    assertEquals(1, beginSpans.size)
+  }
+
+  @Test
+  fun `does not create begin span when there is no running transaction`() {
+    val sut =
+      fixture.getSut(withRunningTransaction = false, enableDatabaseTransactionTracing = true)
+
+    sut.connection.use {
+      it.autoCommit = false
+      it.prepareStatement("INSERT INTO foo VALUES (1)").executeUpdate()
+      it.commit()
+    }
+
+    val beginSpans = fixture.tx.children.filter { it.operation == "db.sql.transaction.begin" }
+    assertTrue(beginSpans.isEmpty())
+  }
+
+  @Test
+  fun `does not create transaction spans when database transaction tracing is disabled`() {
+    val sut = fixture.getSut(enableDatabaseTransactionTracing = false)
+
+    sut.connection.use {
+      it.autoCommit = false
+      it.prepareStatement("INSERT INTO foo VALUES (1)").executeUpdate()
+      it.commit()
+    }
+
+    val beginSpans = fixture.tx.children.filter { it.operation == "db.sql.transaction.begin" }
+    val commitSpans = fixture.tx.children.filter { it.operation == "db.sql.transaction.commit" }
+    assertTrue(beginSpans.isEmpty())
+    assertTrue(commitSpans.isEmpty())
+    // Query spans should still be created
+    val querySpans = fixture.tx.children.filter { it.operation == "db.query" }
+    assertEquals(1, querySpans.size)
+  }
+
+  @Test
+  fun `does not create rollback span when database transaction tracing is disabled`() {
+    val sut = fixture.getSut(enableDatabaseTransactionTracing = false)
+
+    sut.connection.use {
+      it.autoCommit = false
+      it.prepareStatement("INSERT INTO foo VALUES (1)").executeUpdate()
+      it.rollback()
+    }
+
+    val rollbackSpans = fixture.tx.children.filter { it.operation == "db.sql.transaction.rollback" }
+    assertTrue(rollbackSpans.isEmpty())
+    // Query spans should still be created
+    val querySpans = fixture.tx.children.filter { it.operation == "db.query" }
+    assertEquals(1, querySpans.size)
   }
 }

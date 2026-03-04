@@ -72,15 +72,24 @@ public final class SystemEventsBreadcrumbsIntegration
   private final @NotNull AutoClosableReentrantLock receiverLock = new AutoClosableReentrantLock();
   // Track previous battery state to avoid duplicate breadcrumbs when values haven't changed
   private @Nullable BatteryState previousBatteryState;
+  @TestOnly @Nullable Handler customHandler = null;
 
   public SystemEventsBreadcrumbsIntegration(final @NotNull Context context) {
-    this(context, getDefaultActionsInternal());
+    this(context, getDefaultActionsInternal(), null);
+  }
+
+  public SystemEventsBreadcrumbsIntegration(
+      final @NotNull Context context, final @NotNull Handler handler) {
+    this(context, getDefaultActionsInternal(), handler);
   }
 
   SystemEventsBreadcrumbsIntegration(
-      final @NotNull Context context, final @NotNull String[] actions) {
+      final @NotNull Context context,
+      final @NotNull String[] actions,
+      final @Nullable Handler handler) {
     this.context = ContextUtils.getApplicationContext(context);
     this.actions = actions;
+    this.customHandler = handler;
   }
 
   public SystemEventsBreadcrumbsIntegration(
@@ -143,7 +152,7 @@ public final class SystemEventsBreadcrumbsIntegration
                       filter.addAction(item);
                     }
                   }
-                  if (handlerThread == null) {
+                  if (customHandler == null && handlerThread == null) {
                     handlerThread =
                         new HandlerThread(
                             "SystemEventsReceiver", Process.THREAD_PRIORITY_BACKGROUND);
@@ -154,7 +163,12 @@ public final class SystemEventsBreadcrumbsIntegration
                     // official docs
 
                     // onReceive will be called on this handler thread
-                    final @NotNull Handler handler = new Handler(handlerThread.getLooper());
+                    @NotNull Handler handler;
+                    if (customHandler != null) {
+                      handler = customHandler;
+                    } else {
+                      handler = new Handler(handlerThread.getLooper());
+                    }
                     ContextUtils.registerReceiver(context, options, receiver, filter, handler);
                     if (!isReceiverRegistered.getAndSet(true)) {
                       options
@@ -189,13 +203,13 @@ public final class SystemEventsBreadcrumbsIntegration
     }
 
     try {
-      options.getExecutorService().submit(() -> unregisterReceiver());
+      options.getExecutorService().submit(() -> unregisterReceiver(options));
     } catch (RejectedExecutionException e) {
-      unregisterReceiver();
+      unregisterReceiver(options);
     }
   }
 
-  private void unregisterReceiver() {
+  private void unregisterReceiver(final @NotNull SentryAndroidOptions options) {
     final @Nullable SystemEventsBroadcastReceiver receiverRef;
     try (final @NotNull ISentryLifecycleToken ignored = receiverLock.acquire()) {
       isStopped = true;
@@ -204,7 +218,14 @@ public final class SystemEventsBreadcrumbsIntegration
     }
 
     if (receiverRef != null) {
-      context.unregisterReceiver(receiverRef);
+      try {
+        context.unregisterReceiver(receiverRef);
+      } catch (Throwable exception) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.ERROR, exception, "Failed to unregister SystemEventsBroadcastReceiver");
+      }
     }
   }
 

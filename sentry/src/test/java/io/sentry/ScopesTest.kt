@@ -8,6 +8,8 @@ import io.sentry.clientreport.DiscardedEvent
 import io.sentry.hints.SessionEndHint
 import io.sentry.hints.SessionStartHint
 import io.sentry.logger.SentryLogParameters
+import io.sentry.metrics.MetricsUnit
+import io.sentry.metrics.SentryMetricsParameters
 import io.sentry.protocol.Feedback
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryTransaction
@@ -1284,6 +1286,50 @@ class ScopesTest {
 
     scopes.setExtra("test", "test")
     assertEquals(1, scope?.extras?.count())
+  }
+
+  // endregion
+
+  // region setAttribute tests
+  @Test
+  fun `when setAttribute is called on disabled client, do nothing`() {
+    val scopes = generateScopes()
+    var scope: IScope? = null
+    scopes.configureScope { scope = it }
+    scopes.close()
+
+    scopes.setAttribute("test", "test")
+    assertEquals(0, scope?.attributes?.count())
+  }
+
+  @Test
+  fun `when setAttribute with SentryAttribute is called on disabled client, do nothing`() {
+    val scopes = generateScopes()
+    var scope: IScope? = null
+    scopes.configureScope { scope = it }
+    scopes.close()
+
+    scopes.setAttribute(SentryAttribute.stringAttribute("test", "test"))
+    assertEquals(0, scope?.attributes?.count())
+  }
+
+  @Test
+  fun `when setAttributes is called on disabled client, do nothing`() {
+    val scopes = generateScopes()
+    var scope: IScope? = null
+    scopes.configureScope { scope = it }
+    scopes.close()
+
+    scopes.setAttributes(SentryAttributes.of(SentryAttribute.stringAttribute("test", "test")))
+    assertEquals(0, scope?.attributes?.count())
+  }
+
+  @Test
+  fun `when removeAttribute is called on disabled client, do nothing`() {
+    val scopes = generateScopes()
+    scopes.close()
+
+    scopes.removeAttribute("test")
   }
 
   // endregion
@@ -2586,6 +2632,43 @@ class ScopesTest {
   }
 
   @Test
+  fun `log with manual origin does not have origin attribute`() {
+    val (sut, mockClient) = getEnabledScopes { it.logs.isEnabled = true }
+
+    sut.logger().log(SentryLogLevel.WARN, "log message")
+
+    verify(mockClient)
+      .captureLog(
+        check {
+          assertEquals("log message", it.body)
+          assertNull(it.attributes!!.get("sentry.origin"))
+        },
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `log with non manual origin does have origin attribute`() {
+    val (sut, mockClient) = getEnabledScopes { it.logs.isEnabled = true }
+
+    sut
+      .logger()
+      .log(SentryLogLevel.WARN, SentryLogParameters().also { it.origin = "other" }, "log message")
+
+    verify(mockClient)
+      .captureLog(
+        check {
+          assertEquals("log message", it.body)
+          assertEquals(
+            "other",
+            (it.attributes!!.get("sentry.origin") as? SentryLogEventAttributeValue)?.value,
+          )
+        },
+        anyOrNull(),
+      )
+  }
+
+  @Test
   fun `creating log with format string works`() {
     val (sut, mockClient) =
       getEnabledScopes {
@@ -2687,10 +2770,12 @@ class ScopesTest {
             SentryAttribute.booleanAttribute("boolattr", true),
             SentryAttribute.integerAttribute("intattr", 17),
             SentryAttribute.doubleAttribute("doubleattr", 3.8),
+            SentryAttribute.arrayAttribute("arrayattr", listOf("a", "b")),
             SentryAttribute.named("namedstrattr", "namedstrval"),
             SentryAttribute.named("namedboolattr", false),
             SentryAttribute.named("namedintattr", 18),
             SentryAttribute.named("nameddoubleattr", 4.9),
+            SentryAttribute.named("namedarrayattr", listOf("x", "y")),
           )
         ),
         "log message",
@@ -2719,6 +2804,10 @@ class ScopesTest {
           assertEquals(3.8, doubleattr.value)
           assertEquals("double", doubleattr.type)
 
+          val arrayattr = it.attributes?.get("arrayattr")!!
+          assertEquals(listOf("a", "b"), arrayattr.value)
+          assertEquals("array", arrayattr.type)
+
           val namedstrattr = it.attributes?.get("namedstrattr")!!
           assertEquals("namedstrval", namedstrattr.value)
           assertEquals("string", namedstrattr.type)
@@ -2734,6 +2823,10 @@ class ScopesTest {
           val nameddoubleattr = it.attributes?.get("nameddoubleattr")!!
           assertEquals(4.9, nameddoubleattr.value)
           assertEquals("double", nameddoubleattr.type)
+
+          val namedarrayattr = it.attributes?.get("namedarrayattr")!!
+          assertEquals(listOf("x", "y"), namedarrayattr.value)
+          assertEquals("array", namedarrayattr.type)
         },
         anyOrNull(),
       )
@@ -2874,8 +2967,13 @@ class ScopesTest {
   }
 
   @Test
-  fun `adds user fields to log attributes`() {
-    val (sut, mockClient) = getEnabledScopes { it.logs.isEnabled = true }
+  fun `adds user fields to log attributes if sendDefaultPii is true`() {
+    val (sut, mockClient) =
+      getEnabledScopes {
+        it.logs.isEnabled = true
+        it.distinctId = "distinctId"
+        it.isSendDefaultPii = true
+      }
 
     sut.configureScope { scope ->
       scope.user =
@@ -2909,11 +3007,50 @@ class ScopesTest {
   }
 
   @Test
-  fun `missing user does not break attributes`() {
+  fun `adds user fields to log attributes even if sendDefaultPii is false`() {
     val (sut, mockClient) =
       getEnabledScopes {
         it.logs.isEnabled = true
-        it.isSendDefaultPii = true
+        it.distinctId = "distinctId"
+      }
+
+    sut.configureScope { scope ->
+      scope.user =
+        User().also {
+          it.id = "usrid"
+          it.username = "usrname"
+          it.email = "user@sentry.io"
+        }
+    }
+    sut.logger().log(SentryLogLevel.WARN, "log message")
+
+    verify(mockClient)
+      .captureLog(
+        check {
+          assertEquals("log message", it.body)
+
+          val userId = it.attributes?.get("user.id")!!
+          assertEquals("usrid", userId.value)
+          assertEquals("string", userId.type)
+
+          val userName = it.attributes?.get("user.name")!!
+          assertEquals("usrname", userName.value)
+          assertEquals("string", userName.type)
+
+          val userEmail = it.attributes?.get("user.email")!!
+          assertEquals("user@sentry.io", userEmail.value)
+          assertEquals("string", userEmail.type)
+        },
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `unset user does provide distinct-id as user-id`() {
+    val (sut, mockClient) =
+      getEnabledScopes {
+        it.logs.isEnabled = true
+        it.distinctId = "distinctId"
       }
 
     sut.logger().log(SentryLogLevel.WARN, "log message")
@@ -2923,6 +3060,28 @@ class ScopesTest {
         check {
           assertEquals("log message", it.body)
 
+          assertEquals("distinctId", it.attributes?.get("user.id")?.value)
+          assertNull(it.attributes?.get("user.name"))
+          assertNull(it.attributes?.get("user.email"))
+        },
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `unset user does provide null user-id when distinct-id is missing`() {
+    val (sut, mockClient) =
+      getEnabledScopes {
+        it.logs.isEnabled = true
+        it.distinctId = null
+      }
+
+    sut.logger().log(SentryLogLevel.WARN, "log message")
+
+    verify(mockClient)
+      .captureLog(
+        check {
+          assertEquals("log message", it.body)
           assertNull(it.attributes?.get("user.id"))
           assertNull(it.attributes?.get("user.name"))
           assertNull(it.attributes?.get("user.email"))
@@ -2937,6 +3096,7 @@ class ScopesTest {
       getEnabledScopes {
         it.logs.isEnabled = true
         it.isSendDefaultPii = true
+        it.distinctId = "distinctId"
       }
 
     sut.configureScope { scope -> scope.user = User() }
@@ -3057,6 +3217,1048 @@ class ScopesTest {
       )
   }
 
+  @Test
+  fun `log event has spanId from active span`() {
+    val (sut, mockClient) = getEnabledScopes { it.logs.isEnabled = true }
+
+    val transaction =
+      sut.startTransaction(
+        "test transaction",
+        "test.op",
+        TransactionOptions().also { it.isBindToScope = true },
+      )
+
+    sut.logger().log(SentryLogLevel.WARN, "log message")
+
+    verify(mockClient)
+      .captureLog(
+        check {
+          assertEquals("log message", it.body)
+          assertEquals(transaction.spanContext.traceId, it.traceId)
+          assertEquals(transaction.spanContext.spanId, it.spanId)
+        },
+        anyOrNull(),
+      )
+
+    transaction.finish()
+  }
+
+  @Test
+  fun `log event has spanId from propagation context when no active span`() {
+    val (sut, mockClient) = getEnabledScopes { it.logs.isEnabled = true }
+
+    var propagationContext: PropagationContext? = null
+    sut.configureScope { propagationContext = it.propagationContext }
+
+    sut.logger().log(SentryLogLevel.WARN, "log message")
+
+    verify(mockClient)
+      .captureLog(
+        check {
+          assertEquals("log message", it.body)
+          assertEquals(propagationContext!!.traceId, it.traceId)
+          assertEquals(propagationContext!!.spanId, it.spanId)
+        },
+        anyOrNull(),
+      )
+  }
+
+  // endregion
+
+  // region metrics
+
+  @Test
+  fun `when captureMetric is called on disabled client, do nothing`() {
+    val (sut, mockClient) = getEnabledScopes()
+    sut.close()
+
+    sut.metrics().count("metric name")
+    verify(mockClient, never()).captureMetric(any(), anyOrNull(), anyOrNull())
+  }
+
+  @Test
+  fun `when metrics is not enabled, do nothing`() {
+    val (sut, mockClient) = getEnabledScopes { it.metrics.isEnabled = false }
+
+    sut.metrics().count("metric name")
+    verify(mockClient, never()).captureMetric(any(), anyOrNull(), anyOrNull())
+  }
+
+  @Test
+  fun `creating count metric works`() {
+    val (sut, mockClient) = getEnabledScopes()
+
+    sut.metrics().count("count metric")
+
+    verify(mockClient)
+      .captureMetric(
+        check {
+          assertEquals("count metric", it.name)
+          assertEquals(1.0, it.value)
+          assertEquals("counter", it.type)
+        },
+        anyOrNull(),
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `creating gauge metric works`() {
+    val (sut, mockClient) = getEnabledScopes()
+
+    sut.metrics().gauge("gauge metric", 2.3)
+
+    verify(mockClient)
+      .captureMetric(
+        check {
+          assertEquals("gauge metric", it.name)
+          assertEquals(2.3, it.value)
+          assertEquals("gauge", it.type)
+        },
+        anyOrNull(),
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `creating distribution metric works`() {
+    val (sut, mockClient) = getEnabledScopes()
+
+    sut.metrics().distribution("distribution metric", 3.4)
+
+    verify(mockClient)
+      .captureMetric(
+        check {
+          assertEquals("distribution metric", it.name)
+          assertEquals(3.4, it.value)
+          assertEquals("distribution", it.type)
+        },
+        anyOrNull(),
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `metric with manual origin does not have origin attribute`() {
+    val (sut, mockClient) = getEnabledScopes()
+
+    sut.metrics().count("metric name")
+
+    verify(mockClient)
+      .captureMetric(
+        check {
+          assertEquals("metric name", it.name)
+          assertNull(it.attributes!!.get("sentry.origin"))
+        },
+        anyOrNull(),
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `metric with non manual origin does have origin attribute`() {
+    val (sut, mockClient) = getEnabledScopes { it.logs.isEnabled = true }
+
+    sut
+      .metrics()
+      .count(
+        "metric name",
+        1.0,
+        MetricsUnit.Information.BYTE,
+        SentryMetricsParameters().also { it.origin = "other" },
+      )
+
+    verify(mockClient)
+      .captureMetric(
+        check {
+          assertEquals("metric name", it.name)
+          assertEquals(
+            "other",
+            (it.attributes!!.get("sentry.origin") as? SentryLogEventAttributeValue)?.value,
+          )
+        },
+        anyOrNull(),
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `creating count metric with value and unit works`() {
+    val (sut, mockClient) = getEnabledScopes()
+
+    sut.metrics().count("metric name", 1.0, MetricsUnit.Information.BYTE)
+
+    verify(mockClient)
+      .captureMetric(
+        check {
+          assertEquals("metric name", it.name)
+          assertEquals(1.0, it.value)
+          assertEquals(MetricsUnit.Information.BYTE, it.unit)
+          assertEquals("counter", it.type)
+        },
+        anyOrNull(),
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `creating count metric with value works`() {
+    val (sut, mockClient) = getEnabledScopes()
+
+    sut.metrics().count("metric name", 1.0)
+
+    verify(mockClient)
+      .captureMetric(
+        check {
+          assertEquals("metric name", it.name)
+          assertEquals(1.0, it.value)
+          assertEquals("counter", it.type)
+        },
+        anyOrNull(),
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `creating count metric with unit works`() {
+    val (sut, mockClient) = getEnabledScopes()
+
+    sut.metrics().count("metric name", MetricsUnit.Information.BYTE)
+
+    verify(mockClient)
+      .captureMetric(
+        check {
+          assertEquals("metric name", it.name)
+          assertEquals(1.0, it.value)
+          assertEquals(MetricsUnit.Information.BYTE, it.unit)
+          assertEquals("counter", it.type)
+        },
+        anyOrNull(),
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `creating count metric with attributes from map works`() {
+    val (sut, mockClient) = getEnabledScopes()
+
+    sut
+      .metrics()
+      .count(
+        "metric name",
+        1.0,
+        MetricsUnit.Information.BYTE,
+        SentryMetricsParameters.create(SentryAttributes.fromMap(mapOf("attrname1" to "attrval1"))),
+      )
+
+    verify(mockClient)
+      .captureMetric(
+        check {
+          assertEquals("metric name", it.name)
+          assertEquals(1.0, it.value)
+          assertEquals(MetricsUnit.Information.BYTE, it.unit)
+          assertEquals("counter", it.type)
+
+          val attr1 = it.attributes?.get("attrname1")!!
+          assertEquals("attrval1", attr1.value)
+          assertEquals("string", attr1.type)
+        },
+        anyOrNull(),
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `creating count metric with attributes from map and shortcut factory method works`() {
+    val (sut, mockClient) = getEnabledScopes()
+
+    sut
+      .metrics()
+      .count(
+        "metric name",
+        1.0,
+        MetricsUnit.Information.BYTE,
+        SentryMetricsParameters.create(mapOf("attrname1" to "attrval1")),
+      )
+
+    verify(mockClient)
+      .captureMetric(
+        check {
+          assertEquals("metric name", it.name)
+          assertEquals(1.0, it.value)
+          assertEquals(MetricsUnit.Information.BYTE, it.unit)
+          assertEquals("counter", it.type)
+
+          val attr1 = it.attributes?.get("attrname1")!!
+          assertEquals("attrval1", attr1.value)
+          assertEquals("string", attr1.type)
+        },
+        anyOrNull(),
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `creating count metric with attributes works`() {
+    val (sut, mockClient) = getEnabledScopes()
+
+    sut
+      .metrics()
+      .count(
+        "metric name",
+        1.0,
+        MetricsUnit.Information.BYTE,
+        SentryMetricsParameters.create(
+          SentryAttributes.of(
+            SentryAttribute.stringAttribute("strattr", "strval"),
+            SentryAttribute.booleanAttribute("boolattr", true),
+            SentryAttribute.integerAttribute("intattr", 17),
+            SentryAttribute.doubleAttribute("doubleattr", 3.8),
+            SentryAttribute.arrayAttribute("arrayattr", listOf("a", "b")),
+            SentryAttribute.named("namedstrattr", "namedstrval"),
+            SentryAttribute.named("namedboolattr", false),
+            SentryAttribute.named("namedintattr", 18),
+            SentryAttribute.named("nameddoubleattr", 4.9),
+            SentryAttribute.named("namedarrayattr", listOf("x", "y")),
+          )
+        ),
+      )
+
+    verify(mockClient)
+      .captureMetric(
+        check {
+          assertEquals("metric name", it.name)
+          assertEquals(1.0, it.value)
+          assertEquals(MetricsUnit.Information.BYTE, it.unit)
+          assertEquals("counter", it.type)
+
+          val strattr = it.attributes?.get("strattr")!!
+          assertEquals("strval", strattr.value)
+          assertEquals("string", strattr.type)
+
+          val boolattr = it.attributes?.get("boolattr")!!
+          assertEquals(true, boolattr.value)
+          assertEquals("boolean", boolattr.type)
+
+          val intattr = it.attributes?.get("intattr")!!
+          assertEquals(17, intattr.value)
+          assertEquals("integer", intattr.type)
+
+          val doubleattr = it.attributes?.get("doubleattr")!!
+          assertEquals(3.8, doubleattr.value)
+          assertEquals("double", doubleattr.type)
+
+          val arrayattr = it.attributes?.get("arrayattr")!!
+          assertEquals(listOf("a", "b"), arrayattr.value)
+          assertEquals("array", arrayattr.type)
+
+          val namedstrattr = it.attributes?.get("namedstrattr")!!
+          assertEquals("namedstrval", namedstrattr.value)
+          assertEquals("string", namedstrattr.type)
+
+          val namedboolattr = it.attributes?.get("namedboolattr")!!
+          assertEquals(false, namedboolattr.value)
+          assertEquals("boolean", namedboolattr.type)
+
+          val namedintattr = it.attributes?.get("namedintattr")!!
+          assertEquals(18, namedintattr.value)
+          assertEquals("integer", namedintattr.type)
+
+          val nameddoubleattr = it.attributes?.get("nameddoubleattr")!!
+          assertEquals(4.9, nameddoubleattr.value)
+          assertEquals("double", nameddoubleattr.type)
+
+          val namedarrayattr = it.attributes?.get("namedarrayattr")!!
+          assertEquals(listOf("x", "y"), namedarrayattr.value)
+          assertEquals("array", namedarrayattr.type)
+        },
+        anyOrNull(),
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `creating count metric with attributes and timestamp works`() {
+    val (sut, mockClient) = getEnabledScopes()
+
+    sut
+      .metrics()
+      .count(
+        "metric name",
+        1.0,
+        MetricsUnit.Information.BYTE,
+        SentryMetricsParameters.create(
+          SentryLongDate(123),
+          SentryAttributes.of(SentryAttribute.named("attrname1", "attrval1")),
+        ),
+      )
+
+    verify(mockClient)
+      .captureMetric(
+        check {
+          assertEquals("metric name", it.name)
+          assertEquals(1.0, it.value)
+          assertEquals(MetricsUnit.Information.BYTE, it.unit)
+          assertEquals("counter", it.type)
+
+          val attr1 = it.attributes?.get("attrname1")!!
+          assertEquals("attrval1", attr1.value)
+          assertEquals("string", attr1.type)
+        },
+        anyOrNull(),
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `creating distribution metric with value and unit works`() {
+    val (sut, mockClient) = getEnabledScopes()
+
+    sut.metrics().distribution("metric name", 1.0, MetricsUnit.Duration.MILLISECOND)
+
+    verify(mockClient)
+      .captureMetric(
+        check {
+          assertEquals("metric name", it.name)
+          assertEquals(1.0, it.value)
+          assertEquals(MetricsUnit.Duration.MILLISECOND, it.unit)
+          assertEquals("distribution", it.type)
+        },
+        anyOrNull(),
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `creating distribution metric with value works`() {
+    val (sut, mockClient) = getEnabledScopes()
+
+    sut.metrics().distribution("metric name", 1.0)
+
+    verify(mockClient)
+      .captureMetric(
+        check {
+          assertEquals("metric name", it.name)
+          assertEquals(1.0, it.value)
+          assertEquals("distribution", it.type)
+        },
+        anyOrNull(),
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `creating distribution metric with attributes from map works`() {
+    val (sut, mockClient) = getEnabledScopes()
+
+    sut
+      .metrics()
+      .distribution(
+        "metric name",
+        3.7,
+        MetricsUnit.Duration.MILLISECOND,
+        SentryMetricsParameters.create(SentryAttributes.fromMap(mapOf("attrname1" to "attrval1"))),
+      )
+
+    verify(mockClient)
+      .captureMetric(
+        check {
+          assertEquals("metric name", it.name)
+          assertEquals(3.7, it.value)
+          assertEquals(MetricsUnit.Duration.MILLISECOND, it.unit)
+          assertEquals("distribution", it.type)
+
+          val attr1 = it.attributes?.get("attrname1")!!
+          assertEquals("attrval1", attr1.value)
+          assertEquals("string", attr1.type)
+        },
+        anyOrNull(),
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `creating distribution metric with attributes works`() {
+    val (sut, mockClient) = getEnabledScopes()
+
+    sut
+      .metrics()
+      .distribution(
+        "metric name",
+        3.7,
+        MetricsUnit.Duration.MILLISECOND,
+        SentryMetricsParameters.create(
+          SentryAttributes.of(
+            SentryAttribute.stringAttribute("strattr", "strval"),
+            SentryAttribute.booleanAttribute("boolattr", true),
+            SentryAttribute.integerAttribute("intattr", 17),
+            SentryAttribute.doubleAttribute("doubleattr", 3.8),
+            SentryAttribute.arrayAttribute("arrayattr", listOf("a", "b")),
+            SentryAttribute.named("namedstrattr", "namedstrval"),
+            SentryAttribute.named("namedboolattr", false),
+            SentryAttribute.named("namedintattr", 18),
+            SentryAttribute.named("nameddoubleattr", 4.9),
+            SentryAttribute.named("namedarrayattr", listOf("x", "y")),
+          )
+        ),
+      )
+
+    verify(mockClient)
+      .captureMetric(
+        check {
+          assertEquals("metric name", it.name)
+          assertEquals(3.7, it.value)
+          assertEquals(MetricsUnit.Duration.MILLISECOND, it.unit)
+          assertEquals("distribution", it.type)
+
+          val strattr = it.attributes?.get("strattr")!!
+          assertEquals("strval", strattr.value)
+          assertEquals("string", strattr.type)
+
+          val boolattr = it.attributes?.get("boolattr")!!
+          assertEquals(true, boolattr.value)
+          assertEquals("boolean", boolattr.type)
+
+          val intattr = it.attributes?.get("intattr")!!
+          assertEquals(17, intattr.value)
+          assertEquals("integer", intattr.type)
+
+          val doubleattr = it.attributes?.get("doubleattr")!!
+          assertEquals(3.8, doubleattr.value)
+          assertEquals("double", doubleattr.type)
+
+          val arrayattr = it.attributes?.get("arrayattr")!!
+          assertEquals(listOf("a", "b"), arrayattr.value)
+          assertEquals("array", arrayattr.type)
+
+          val namedstrattr = it.attributes?.get("namedstrattr")!!
+          assertEquals("namedstrval", namedstrattr.value)
+          assertEquals("string", namedstrattr.type)
+
+          val namedboolattr = it.attributes?.get("namedboolattr")!!
+          assertEquals(false, namedboolattr.value)
+          assertEquals("boolean", namedboolattr.type)
+
+          val namedintattr = it.attributes?.get("namedintattr")!!
+          assertEquals(18, namedintattr.value)
+          assertEquals("integer", namedintattr.type)
+
+          val nameddoubleattr = it.attributes?.get("nameddoubleattr")!!
+          assertEquals(4.9, nameddoubleattr.value)
+          assertEquals("double", nameddoubleattr.type)
+
+          val namedarrayattr = it.attributes?.get("namedarrayattr")!!
+          assertEquals(listOf("x", "y"), namedarrayattr.value)
+          assertEquals("array", namedarrayattr.type)
+        },
+        anyOrNull(),
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `creating distribution metric with attributes and timestamp works`() {
+    val (sut, mockClient) = getEnabledScopes()
+
+    sut
+      .metrics()
+      .distribution(
+        "metric name",
+        3.7,
+        MetricsUnit.Duration.MILLISECOND,
+        SentryMetricsParameters.create(
+          SentryLongDate(123),
+          SentryAttributes.of(SentryAttribute.named("attrname1", "attrval1")),
+        ),
+      )
+
+    verify(mockClient)
+      .captureMetric(
+        check {
+          assertEquals("metric name", it.name)
+          assertEquals(3.7, it.value)
+          assertEquals(MetricsUnit.Duration.MILLISECOND, it.unit)
+          assertEquals("distribution", it.type)
+
+          val attr1 = it.attributes?.get("attrname1")!!
+          assertEquals("attrval1", attr1.value)
+          assertEquals("string", attr1.type)
+        },
+        anyOrNull(),
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `creating gauge metric with value and unit works`() {
+    val (sut, mockClient) = getEnabledScopes()
+
+    sut.metrics().gauge("metric name", 128.0, MetricsUnit.Information.BYTE)
+
+    verify(mockClient)
+      .captureMetric(
+        check {
+          assertEquals("metric name", it.name)
+          assertEquals(128.0, it.value)
+          assertEquals(MetricsUnit.Information.BYTE, it.unit)
+          assertEquals("gauge", it.type)
+        },
+        anyOrNull(),
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `creating gauge metric with value works`() {
+    val (sut, mockClient) = getEnabledScopes()
+
+    sut.metrics().gauge("metric name", 128.0)
+
+    verify(mockClient)
+      .captureMetric(
+        check {
+          assertEquals("metric name", it.name)
+          assertEquals(128.0, it.value)
+          assertEquals("gauge", it.type)
+        },
+        anyOrNull(),
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `creating gauge metric with attributes from map works`() {
+    val (sut, mockClient) = getEnabledScopes()
+
+    sut
+      .metrics()
+      .gauge(
+        "metric name",
+        256.0,
+        MetricsUnit.Information.BYTE,
+        SentryMetricsParameters.create(SentryAttributes.fromMap(mapOf("attrname1" to "attrval1"))),
+      )
+
+    verify(mockClient)
+      .captureMetric(
+        check {
+          assertEquals("metric name", it.name)
+          assertEquals(256.0, it.value)
+          assertEquals(MetricsUnit.Information.BYTE, it.unit)
+          assertEquals("gauge", it.type)
+
+          val attr1 = it.attributes?.get("attrname1")!!
+          assertEquals("attrval1", attr1.value)
+          assertEquals("string", attr1.type)
+        },
+        anyOrNull(),
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `creating gauge metric with attributes works`() {
+    val (sut, mockClient) = getEnabledScopes()
+
+    sut
+      .metrics()
+      .gauge(
+        "metric name",
+        256.0,
+        MetricsUnit.Information.BYTE,
+        SentryMetricsParameters.create(
+          SentryAttributes.of(
+            SentryAttribute.stringAttribute("strattr", "strval"),
+            SentryAttribute.booleanAttribute("boolattr", true),
+            SentryAttribute.integerAttribute("intattr", 17),
+            SentryAttribute.doubleAttribute("doubleattr", 3.8),
+            SentryAttribute.arrayAttribute("arrayattr", listOf("a", "b")),
+            SentryAttribute.named("namedstrattr", "namedstrval"),
+            SentryAttribute.named("namedboolattr", false),
+            SentryAttribute.named("namedintattr", 18),
+            SentryAttribute.named("nameddoubleattr", 4.9),
+            SentryAttribute.named("namedarrayattr", listOf("x", "y")),
+          )
+        ),
+      )
+
+    verify(mockClient)
+      .captureMetric(
+        check {
+          assertEquals("metric name", it.name)
+          assertEquals(256.0, it.value)
+          assertEquals(MetricsUnit.Information.BYTE, it.unit)
+          assertEquals("gauge", it.type)
+
+          val strattr = it.attributes?.get("strattr")!!
+          assertEquals("strval", strattr.value)
+          assertEquals("string", strattr.type)
+
+          val boolattr = it.attributes?.get("boolattr")!!
+          assertEquals(true, boolattr.value)
+          assertEquals("boolean", boolattr.type)
+
+          val intattr = it.attributes?.get("intattr")!!
+          assertEquals(17, intattr.value)
+          assertEquals("integer", intattr.type)
+
+          val doubleattr = it.attributes?.get("doubleattr")!!
+          assertEquals(3.8, doubleattr.value)
+          assertEquals("double", doubleattr.type)
+
+          val arrayattr = it.attributes?.get("arrayattr")!!
+          assertEquals(listOf("a", "b"), arrayattr.value)
+          assertEquals("array", arrayattr.type)
+
+          val namedstrattr = it.attributes?.get("namedstrattr")!!
+          assertEquals("namedstrval", namedstrattr.value)
+          assertEquals("string", namedstrattr.type)
+
+          val namedboolattr = it.attributes?.get("namedboolattr")!!
+          assertEquals(false, namedboolattr.value)
+          assertEquals("boolean", namedboolattr.type)
+
+          val namedintattr = it.attributes?.get("namedintattr")!!
+          assertEquals(18, namedintattr.value)
+          assertEquals("integer", namedintattr.type)
+
+          val nameddoubleattr = it.attributes?.get("nameddoubleattr")!!
+          assertEquals(4.9, nameddoubleattr.value)
+          assertEquals("double", nameddoubleattr.type)
+
+          val namedarrayattr = it.attributes?.get("namedarrayattr")!!
+          assertEquals(listOf("x", "y"), namedarrayattr.value)
+          assertEquals("array", namedarrayattr.type)
+        },
+        anyOrNull(),
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `creating gauge metric with attributes and timestamp works`() {
+    val (sut, mockClient) = getEnabledScopes()
+
+    sut
+      .metrics()
+      .gauge(
+        "metric name",
+        256.0,
+        MetricsUnit.Information.BYTE,
+        SentryMetricsParameters.create(
+          SentryLongDate(123),
+          SentryAttributes.of(SentryAttribute.named("attrname1", "attrval1")),
+        ),
+      )
+
+    verify(mockClient)
+      .captureMetric(
+        check {
+          assertEquals("metric name", it.name)
+          assertEquals(256.0, it.value)
+          assertEquals(MetricsUnit.Information.BYTE, it.unit)
+          assertEquals("gauge", it.type)
+
+          val attr1 = it.attributes?.get("attrname1")!!
+          assertEquals("attrval1", attr1.value)
+          assertEquals("string", attr1.type)
+        },
+        anyOrNull(),
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `adds user fields to metric attributes if sendDefaultPii is true`() {
+    val (sut, mockClient) =
+      getEnabledScopes {
+        it.distinctId = "distinctId"
+        it.isSendDefaultPii = true
+      }
+
+    sut.configureScope { scope ->
+      scope.user =
+        User().also {
+          it.id = "usrid"
+          it.username = "usrname"
+          it.email = "user@sentry.io"
+        }
+    }
+    sut.metrics().count("metric name")
+
+    verify(mockClient)
+      .captureMetric(
+        check {
+          assertEquals("metric name", it.name)
+
+          val userId = it.attributes?.get("user.id")!!
+          assertEquals("usrid", userId.value)
+          assertEquals("string", userId.type)
+
+          val userName = it.attributes?.get("user.name")!!
+          assertEquals("usrname", userName.value)
+          assertEquals("string", userName.type)
+
+          val userEmail = it.attributes?.get("user.email")!!
+          assertEquals("user@sentry.io", userEmail.value)
+          assertEquals("string", userEmail.type)
+        },
+        anyOrNull(),
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `adds user fields to metric attributes even if sendDefaultPii is false`() {
+    val (sut, mockClient) = getEnabledScopes { it.distinctId = "distinctId" }
+
+    sut.configureScope { scope ->
+      scope.user =
+        User().also {
+          it.id = "usrid"
+          it.username = "usrname"
+          it.email = "user@sentry.io"
+        }
+    }
+    sut.metrics().count("metric name")
+
+    verify(mockClient)
+      .captureMetric(
+        check {
+          assertEquals("metric name", it.name)
+
+          val userId = it.attributes?.get("user.id")!!
+          assertEquals("usrid", userId.value)
+          assertEquals("string", userId.type)
+
+          val userName = it.attributes?.get("user.name")!!
+          assertEquals("usrname", userName.value)
+          assertEquals("string", userName.type)
+
+          val userEmail = it.attributes?.get("user.email")!!
+          assertEquals("user@sentry.io", userEmail.value)
+          assertEquals("string", userEmail.type)
+        },
+        anyOrNull(),
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `unset user does provide distinct-id as user-id for metrics`() {
+    val (sut, mockClient) = getEnabledScopes { it.distinctId = "distinctId" }
+
+    sut.metrics().count("metric name")
+
+    verify(mockClient)
+      .captureMetric(
+        check {
+          assertEquals("metric name", it.name)
+
+          assertEquals("distinctId", it.attributes?.get("user.id")?.value)
+          assertNull(it.attributes?.get("user.name"))
+          assertNull(it.attributes?.get("user.email"))
+        },
+        anyOrNull(),
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `unset user does provide null user-id when distinct-id is missing for metrics`() {
+    val (sut, mockClient) = getEnabledScopes { it.distinctId = null }
+
+    sut.metrics().count("metric name")
+
+    verify(mockClient)
+      .captureMetric(
+        check {
+          assertEquals("metric name", it.name)
+          assertNull(it.attributes?.get("user.id"))
+          assertNull(it.attributes?.get("user.name"))
+          assertNull(it.attributes?.get("user.email"))
+        },
+        anyOrNull(),
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `missing user fields do not break attributes for metrics`() {
+    val (sut, mockClient) =
+      getEnabledScopes {
+        it.isSendDefaultPii = true
+        it.distinctId = "distinctId"
+      }
+
+    sut.configureScope { scope -> scope.user = User() }
+    sut.metrics().count("metric name")
+
+    verify(mockClient)
+      .captureMetric(
+        check {
+          assertEquals("metric name", it.name)
+
+          assertNull(it.attributes?.get("user.id"))
+          assertNull(it.attributes?.get("user.name"))
+          assertNull(it.attributes?.get("user.email"))
+        },
+        anyOrNull(),
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `adds session replay id to metric attributes`() {
+    val (sut, mockClient) = getEnabledScopes()
+    val replayId = SentryId()
+    sut.scope.replayId = replayId
+    sut.metrics().count("metric name")
+
+    verify(mockClient)
+      .captureMetric(
+        check {
+          assertEquals("metric name", it.name)
+          val logReplayId = it.attributes?.get("sentry.replay_id")!!
+          assertEquals(replayId.toString(), logReplayId.value)
+        },
+        anyOrNull(),
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `missing session replay id do not break metric attributes`() {
+    val (sut, mockClient) = getEnabledScopes()
+    sut.metrics().count("metric name")
+
+    verify(mockClient)
+      .captureMetric(
+        check {
+          assertEquals("metric name", it.name)
+          val logReplayId = it.attributes?.get("sentry.replay_id")
+          assertNull(logReplayId)
+        },
+        anyOrNull(),
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `does not add session replay buffering to metric attributes if no replay id in scope and in controller`() {
+    val (sut, mockClient) = getEnabledScopes()
+
+    sut.metrics().count("metric name")
+    assertEquals(SentryId.EMPTY_ID, sut.options.replayController.replayId)
+
+    verify(mockClient)
+      .captureMetric(
+        check {
+          assertEquals("metric name", it.name)
+          val logReplayId = it.attributes?.get("sentry.replay_id")
+          val logReplayType = it.attributes?.get("sentry._internal.replay_is_buffering")
+          assertNull(logReplayId)
+          assertNull(logReplayType)
+        },
+        anyOrNull(),
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `does not add session replay buffering to metric attributes if replay id in scope`() {
+    val (sut, mockClient) = getEnabledScopes()
+    val replayId = SentryId()
+    sut.scope.replayId = replayId
+
+    sut.metrics().count("metric name")
+
+    verify(mockClient)
+      .captureMetric(
+        check {
+          assertEquals("metric name", it.name)
+          val logReplayId = it.attributes?.get("sentry.replay_id")
+          val logReplayType = it.attributes?.get("sentry._internal.replay_is_buffering")
+          assertEquals(replayId.toString(), logReplayId!!.value)
+          assertNull(logReplayType)
+        },
+        anyOrNull(),
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `adds session replay buffering to metric attributes if replay id in controller and not in scope`() {
+    val mockReplayController = mock<ReplayController>()
+    val (sut, mockClient) = getEnabledScopes { it.setReplayController(mockReplayController) }
+    val replayId = SentryId()
+    sut.scope.replayId = SentryId.EMPTY_ID
+    whenever(mockReplayController.replayId).thenReturn(replayId)
+
+    sut.metrics().count("metric name")
+
+    verify(mockClient)
+      .captureMetric(
+        check {
+          assertEquals("metric name", it.name)
+          val logReplayId = it.attributes?.get("sentry.replay_id")
+          val logReplayType = it.attributes?.get("sentry._internal.replay_is_buffering")!!
+          assertEquals(replayId.toString(), logReplayId!!.value)
+          assertTrue(logReplayType.value as Boolean)
+        },
+        anyOrNull(),
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `metric event has spanId from active span`() {
+    val (sut, mockClient) = getEnabledScopes { it.metrics.isEnabled = true }
+
+    val transaction =
+      sut.startTransaction(
+        "test transaction",
+        "test.op",
+        TransactionOptions().also { it.isBindToScope = true },
+      )
+
+    sut.metrics().count("metric name")
+
+    verify(mockClient)
+      .captureMetric(
+        check {
+          assertEquals("metric name", it.name)
+          assertEquals(transaction.spanContext.traceId, it.traceId)
+          assertEquals(transaction.spanContext.spanId, it.spanId)
+        },
+        anyOrNull(),
+        anyOrNull(),
+      )
+
+    transaction.finish()
+  }
+
+  @Test
+  fun `metric event has spanId from propagation context when no active span`() {
+    val (sut, mockClient) = getEnabledScopes { it.metrics.isEnabled = true }
+
+    var propagationContext: PropagationContext? = null
+    sut.configureScope { propagationContext = it.propagationContext }
+
+    sut.metrics().count("metric name")
+
+    verify(mockClient)
+      .captureMetric(
+        check {
+          assertEquals("metric name", it.name)
+          assertEquals(propagationContext!!.traceId, it.traceId)
+          assertEquals(propagationContext!!.spanId, it.spanId)
+        },
+        anyOrNull(),
+        anyOrNull(),
+      )
+  }
+
   // endregion
 
   @Test
@@ -3081,6 +4283,69 @@ class ScopesTest {
     assertTrue(scopes.scope.extras.isEmpty())
     assertTrue(scopes.isolationScope.extras.isEmpty())
     assertTrue(scopes.globalScope.extras.isEmpty())
+  }
+
+  @Test
+  fun `feature flags can be added to scopes`() {
+    val (sut, mockClient) = getEnabledScopes()
+
+    sut.addFeatureFlag("test-feature-flag", true)
+    sut.scope.addFeatureFlag("current-feature-flag", true)
+    sut.isolationScope.addFeatureFlag("isolation-feature-flag", false)
+    sut.globalScope.addFeatureFlag("global-feature-flag", true)
+
+    sut.captureException(RuntimeException("test exception"))
+
+    verify(mockClient)
+      .captureEvent(
+        any(),
+        check {
+          val featureFlags = it.featureFlags
+          assertNotNull(featureFlags)
+
+          val flag0 = featureFlags.values[0]
+          assertEquals("test-feature-flag", flag0.flag)
+          assertTrue(flag0.result)
+
+          val flag1 = featureFlags.values[1]
+          assertEquals("current-feature-flag", flag1.flag)
+          assertTrue(flag1.result)
+
+          val flag2 = featureFlags.values[2]
+          assertEquals("isolation-feature-flag", flag2.flag)
+          assertFalse(flag2.result)
+
+          val flag3 = featureFlags.values[3]
+          assertEquals("global-feature-flag", flag3.flag)
+          assertTrue(flag3.result)
+        },
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `null feature flags are ignored`() {
+    val (sut, mockClient) = getEnabledScopes()
+
+    sut.addFeatureFlag(null, true)
+    sut.addFeatureFlag("flag-1", null)
+    sut.addFeatureFlag(null, null)
+
+    sut.scope.addFeatureFlag(null, true)
+    sut.scope.addFeatureFlag("current-feature-flag", null)
+    sut.scope.addFeatureFlag(null, null)
+
+    sut.isolationScope.addFeatureFlag(null, false)
+    sut.isolationScope.addFeatureFlag("isolation-feature-flag", null)
+    sut.isolationScope.addFeatureFlag(null, null)
+
+    sut.globalScope.addFeatureFlag(null, true)
+    sut.globalScope.addFeatureFlag("global-feature-flag", null)
+    sut.globalScope.addFeatureFlag(null, null)
+
+    sut.captureException(RuntimeException("test exception"))
+
+    verify(mockClient).captureEvent(any(), check { assertNull(it.featureFlags) }, anyOrNull())
   }
 
   private val dsnTest = "https://key@sentry.io/proj"

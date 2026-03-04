@@ -6,7 +6,6 @@ import static io.sentry.vendor.Base64.NO_WRAP;
 
 import io.sentry.clientreport.ClientReport;
 import io.sentry.exception.SentryEnvelopeException;
-import io.sentry.profiling.ProfilingServiceLoader;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.profiling.SentryProfile;
 import io.sentry.util.FileUtils;
@@ -159,6 +158,17 @@ public final class SentryEnvelopeItem {
     }
   }
 
+  public @Nullable SentryMetricsEvents getMetrics(final @NotNull ISerializer serializer)
+      throws Exception {
+    if (header == null || header.getType() != SentryItemType.TraceMetric) {
+      return null;
+    }
+    try (final Reader eventReader =
+        new BufferedReader(new InputStreamReader(new ByteArrayInputStream(getData()), UTF_8))) {
+      return serializer.deserialize(eventReader, SentryMetricsEvents.class);
+    }
+  }
+
   public static SentryEnvelopeItem fromUserFeedback(
       final @NotNull ISerializer serializer, final @NotNull UserFeedback userFeedback) {
     Objects.requireNonNull(serializer, "ISerializer is required.");
@@ -283,6 +293,15 @@ public final class SentryEnvelopeItem {
       final @NotNull ProfileChunk profileChunk, final @NotNull ISerializer serializer)
       throws SentryEnvelopeException {
 
+    return fromProfileChunk(profileChunk, serializer, NoOpProfileConverter.getInstance());
+  }
+
+  public static @NotNull SentryEnvelopeItem fromProfileChunk(
+      final @NotNull ProfileChunk profileChunk,
+      final @NotNull ISerializer serializer,
+      final @NotNull IProfileConverter profileConverter)
+      throws SentryEnvelopeException {
+
     final @NotNull File traceFile = profileChunk.getTraceFile();
     // Using CachedItem, so we read the trace file in the background
     final CachedItem cachedItem =
@@ -296,9 +315,7 @@ public final class SentryEnvelopeItem {
               }
 
               if (ProfileChunk.PLATFORM_JAVA.equals(profileChunk.getPlatform())) {
-                final IProfileConverter profileConverter =
-                    ProfilingServiceLoader.loadProfileConverter();
-                if (profileConverter != null) {
+                if (!NoOpProfileConverter.getInstance().equals(profileConverter)) {
                   try {
                     final SentryProfile profile =
                         profileConverter.convertFromFile(traceFile.getAbsolutePath());
@@ -308,7 +325,7 @@ public final class SentryEnvelopeItem {
                   }
                 } else {
                   throw new SentryEnvelopeException(
-                      "Could not load a ProfileConverter, dropping chunk.");
+                      "No ProfileConverter available, dropping chunk.");
                 }
               } else {
                 // The payload of the profile item is a json including the trace file encoded with
@@ -534,6 +551,36 @@ public final class SentryEnvelopeItem {
             null,
             null,
             logEvents.getItems().size());
+
+    // avoid method refs on Android due to some issues with older AGP setups
+    // noinspection Convert2MethodRef
+    return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
+  }
+
+  public static SentryEnvelopeItem fromMetrics(
+      final @NotNull ISerializer serializer, final @NotNull SentryMetricsEvents metricsEvents) {
+    Objects.requireNonNull(serializer, "ISerializer is required.");
+    Objects.requireNonNull(metricsEvents, "SentryMetricsEvents is required.");
+
+    final CachedItem cachedItem =
+        new CachedItem(
+            () -> {
+              try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                  final Writer writer = new BufferedWriter(new OutputStreamWriter(stream, UTF_8))) {
+                serializer.serialize(metricsEvents, writer);
+                return stream.toByteArray();
+              }
+            });
+
+    SentryEnvelopeItemHeader itemHeader =
+        new SentryEnvelopeItemHeader(
+            SentryItemType.TraceMetric,
+            () -> cachedItem.getBytes().length,
+            "application/vnd.sentry.items.trace-metric+json",
+            null,
+            null,
+            null,
+            metricsEvents.getItems().size());
 
     // avoid method refs on Android due to some issues with older AGP setups
     // noinspection Convert2MethodRef

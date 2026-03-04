@@ -20,6 +20,13 @@ tasks.withType<KotlinCompile>().configureEach {
 }
 
 dependencies {
+  constraints {
+    testImplementation(libs.okhttp) { version { strictly(libs.versions.okhttp.get()) } }
+    testImplementation(libs.okhttp.mockwebserver) {
+      version { strictly(libs.versions.okhttp.get()) }
+    }
+  }
+
   api(projects.sentry)
   api(projects.sentrySpring)
   compileOnly(projects.sentryLogback)
@@ -72,6 +79,7 @@ dependencies {
   testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryAgent)
   testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryAgentcustomization)
   testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
+  testImplementation(projects.sentryAsyncProfiler)
 }
 
 configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }

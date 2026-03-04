@@ -127,6 +127,7 @@ dependencies {
   implementation(projects.sentryCompose)
   implementation(projects.sentryKotlinExtensions)
   implementation(projects.sentryOkhttp)
+  implementation(projects.sentrySpotlight)
 
   //    how to exclude androidx if release health feature is disabled
   //    implementation(projects.sentryAndroid) {
@@ -142,8 +143,11 @@ dependencies {
   implementation(libs.androidx.compose.foundation)
   implementation(libs.androidx.compose.foundation.layout)
   implementation(libs.androidx.compose.material3)
+  implementation(libs.androidx.compose.material.icons.core)
+  implementation(libs.androidx.compose.material.icons.extended)
   implementation(libs.androidx.navigation.compose)
   implementation(libs.androidx.recyclerview)
+  implementation(libs.androidx.browser)
   implementation(libs.coil.compose)
   implementation(libs.kotlinx.coroutines.android)
   implementation(libs.retrofit)

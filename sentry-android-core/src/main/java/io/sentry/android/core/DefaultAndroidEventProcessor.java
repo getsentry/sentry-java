@@ -37,7 +37,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
   private final @NotNull BuildInfoProvider buildInfoProvider;
   private final @NotNull SentryAndroidOptions options;
-  private final @Nullable Future<DeviceInfoUtil> deviceInfoUtil;
+  @TestOnly final @Nullable Future<DeviceInfoUtil> deviceInfoUtil;
   private final @NotNull LazyEvaluator<String> deviceFamily =
       new LazyEvaluator<>(() -> ContextUtils.getFamily(NoOpLogger.getInstance()));
 
@@ -88,6 +88,14 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
   @Override
   public @Nullable SentryLogEvent process(@NotNull SentryLogEvent event) {
+    setDevice(event);
+    setOs(event);
+    return event;
+  }
+
+  @Override
+  public @Nullable SentryMetricsEvent process(
+      final @NotNull SentryMetricsEvent event, final @NotNull Hint hint) {
     setDevice(event);
     setOs(event);
     return event;
@@ -237,6 +245,34 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   }
 
   private void setOs(final @NotNull SentryLogEvent event) {
+    try {
+      event.setAttribute(
+          "os.name", new SentryLogEventAttributeValue(SentryAttributeType.STRING, "Android"));
+      event.setAttribute(
+          "os.version",
+          new SentryLogEventAttributeValue(SentryAttributeType.STRING, Build.VERSION.RELEASE));
+    } catch (Throwable e) {
+      options.getLogger().log(SentryLevel.ERROR, "Failed to retrieve os system", e);
+    }
+  }
+
+  private void setDevice(final @NotNull SentryMetricsEvent event) {
+    try {
+      event.setAttribute(
+          "device.brand",
+          new SentryLogEventAttributeValue(SentryAttributeType.STRING, Build.BRAND));
+      event.setAttribute(
+          "device.model",
+          new SentryLogEventAttributeValue(SentryAttributeType.STRING, Build.MODEL));
+      event.setAttribute(
+          "device.family",
+          new SentryLogEventAttributeValue(SentryAttributeType.STRING, deviceFamily.getValue()));
+    } catch (Throwable e) {
+      options.getLogger().log(SentryLevel.ERROR, "Failed to retrieve device info", e);
+    }
+  }
+
+  private void setOs(final @NotNull SentryMetricsEvent event) {
     try {
       event.setAttribute(
           "os.name", new SentryLogEventAttributeValue(SentryAttributeType.STRING, "Android"));

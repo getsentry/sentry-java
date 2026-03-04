@@ -82,7 +82,7 @@ public final class SentryAndroidOptions extends SentryOptions {
    *   <li>The transaction status will be {@link SpanStatus#OK} if none is set.
    * </ul>
    *
-   * The transaction is automatically bound to the {@link IScope}, but only if there's no
+   * <p>The transaction is automatically bound to the {@link IScope}, but only if there's no
    * transaction already bound to the Scope.
    */
   private boolean enableAutoActivityLifecycleTracing = true;
@@ -120,6 +120,9 @@ public final class SentryAndroidOptions extends SentryOptions {
    * (IPC)
    */
   private boolean collectAdditionalContext = true;
+
+  /** Enables or disables collecting of external storage context. */
+  private boolean collectExternalStorageContext = false;
 
   /**
    * Controls how many seconds to wait for sending events in case there were Startup Crashes in the
@@ -218,6 +221,17 @@ public final class SentryAndroidOptions extends SentryOptions {
   private boolean reportHistoricalAnrs = false;
 
   /**
+   * Controls whether to report historical Tombstones from the {@link ApplicationExitInfo} system
+   * API. When enabled, reports all of the Tombstones available in the {@link
+   * ActivityManager#getHistoricalProcessExitReasons(String, int, int)} list, as opposed to
+   * reporting only the latest one.
+   *
+   * <p>These events do not affect crash rate nor are they enriched with additional information from
+   * {@link IScope} like breadcrumbs.
+   */
+  private boolean reportHistoricalTombstones = false;
+
+  /**
    * Controls whether to send ANR (v2) thread dump as an attachment with plain text. The thread dump
    * is being attached from {@link ApplicationExitInfo#getTraceInputStream()}, if available.
    */
@@ -226,6 +240,17 @@ public final class SentryAndroidOptions extends SentryOptions {
   private boolean enablePerformanceV2 = true;
 
   private @Nullable SentryFrameMetricsCollector frameMetricsCollector;
+
+  private boolean enableTombstone = false;
+
+  /**
+   * Screenshot masking options. Configure which views should be masked when capturing screenshots
+   * on error events.
+   *
+   * <p>Note: Screenshot masking requires the {@code sentry-android-replay} module to be present at
+   * runtime. If the replay module is not available, screenshots will be captured without masking.
+   */
+  private final @NotNull SentryScreenshotOptions screenshot = new SentryScreenshotOptions();
 
   public SentryAndroidOptions() {
     setSentryClientName(BuildConfig.SENTRY_ANDROID_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
@@ -298,6 +323,25 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   public void setAnrReportInDebug(boolean anrReportInDebug) {
     this.anrReportInDebug = anrReportInDebug;
+  }
+
+  /**
+   * Sets Tombstone reporting (ApplicationExitInfo.REASON_CRASH_NATIVE) to enabled or disabled.
+   *
+   * @param enableTombstone true for enabled and false for disabled
+   */
+  public void setTombstoneEnabled(boolean enableTombstone) {
+    this.enableTombstone = enableTombstone;
+  }
+
+  /**
+   * Checks if Tombstone reporting (ApplicationExitInfo.REASON_CRASH_NATIVE) is enabled or disabled
+   * Default is disabled
+   *
+   * @return true if enabled or false otherwise
+   */
+  public boolean isTombstoneEnabled() {
+    return enableTombstone;
   }
 
   public boolean isEnableActivityLifecycleBreadcrumbs() {
@@ -412,6 +456,14 @@ public final class SentryAndroidOptions extends SentryOptions {
 
   public void setCollectAdditionalContext(boolean collectAdditionalContext) {
     this.collectAdditionalContext = collectAdditionalContext;
+  }
+
+  public boolean isCollectExternalStorageContext() {
+    return collectExternalStorageContext;
+  }
+
+  public void setCollectExternalStorageContext(final boolean collectExternalStorageContext) {
+    this.collectExternalStorageContext = collectExternalStorageContext;
   }
 
   public boolean isEnableFramesTracking() {
@@ -570,6 +622,14 @@ public final class SentryAndroidOptions extends SentryOptions {
     this.reportHistoricalAnrs = reportHistoricalAnrs;
   }
 
+  public boolean isReportHistoricalTombstones() {
+    return reportHistoricalTombstones;
+  }
+
+  public void setReportHistoricalTombstones(final boolean reportHistoricalTombstones) {
+    this.reportHistoricalTombstones = reportHistoricalTombstones;
+  }
+
   public boolean isAttachAnrThreadDump() {
     return attachAnrThreadDump;
   }
@@ -624,6 +684,15 @@ public final class SentryAndroidOptions extends SentryOptions {
   public void setEnableSystemEventBreadcrumbsExtras(
       final boolean enableSystemEventBreadcrumbsExtras) {
     this.enableSystemEventBreadcrumbsExtras = enableSystemEventBreadcrumbsExtras;
+  }
+
+  /**
+   * Returns the screenshot masking options.
+   *
+   * @return the screenshot masking options
+   */
+  public @NotNull SentryScreenshotOptions getScreenshot() {
+    return screenshot;
   }
 
   static class AndroidUserFeedbackIDialogHandler implements SentryFeedbackOptions.IDialogHandler {

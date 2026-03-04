@@ -6,6 +6,7 @@ import android.app.ApplicationExitInfo
 import android.content.Context
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import androidx.test.core.app.ApplicationProvider
@@ -15,6 +16,7 @@ import io.sentry.DateUtils
 import io.sentry.Hint
 import io.sentry.ILogger
 import io.sentry.ISentryClient
+import io.sentry.NoOpSentryExecutorService
 import io.sentry.Sentry
 import io.sentry.Sentry.OptionsConfiguration
 import io.sentry.SentryEnvelope
@@ -25,7 +27,6 @@ import io.sentry.SentryOptions
 import io.sentry.SentryOptions.BeforeSendCallback
 import io.sentry.Session
 import io.sentry.ShutdownHookIntegration
-import io.sentry.SpotlightIntegration
 import io.sentry.SystemOutLogger
 import io.sentry.UncaughtExceptionHandlerIntegration
 import io.sentry.android.core.cache.AndroidEnvelopeCache
@@ -45,8 +46,8 @@ import io.sentry.cache.PersistingScopeObserver.TRANSACTION_FILENAME
 import io.sentry.cache.tape.QueueFile
 import io.sentry.protocol.Contexts
 import io.sentry.protocol.SentryId
+import io.sentry.spotlight.SpotlightIntegration
 import io.sentry.test.applyTestOptions
-import io.sentry.test.initForTest
 import io.sentry.transport.NoOpEnvelopeCache
 import io.sentry.util.StringUtils
 import java.io.ByteArrayOutputStream
@@ -237,13 +238,19 @@ class SentryAndroidTest {
   }
 
   @Test
-  fun `deduplicates fragment and timber integrations`() {
+  fun `deduplicates fragment, timber and system events integrations`() {
     var refOptions: SentryAndroidOptions? = null
-
     fixture.initSut(autoInit = true) {
       it.addIntegration(FragmentLifecycleIntegration(ApplicationProvider.getApplicationContext()))
 
       it.addIntegration(SentryTimberIntegration(minEventLevel = FATAL, minBreadcrumbLevel = DEBUG))
+
+      it.addIntegration(
+        SystemEventsBreadcrumbsIntegration(
+          ApplicationProvider.getApplicationContext(),
+          CustomHandler(Looper.getMainLooper()),
+        )
+      )
       refOptions = it
     }
 
@@ -256,6 +263,11 @@ class SentryAndroidTest {
     // fragment integration is not auto-installed in the test, since the context is not Application
     // but we just verify here that the single integration is preserved
     assertEquals(refOptions!!.integrations.filterIsInstance<FragmentLifecycleIntegration>().size, 1)
+
+    val systemEventsIntegrations =
+      refOptions!!.integrations.filterIsInstance<SystemEventsBreadcrumbsIntegration>()
+    assertEquals(systemEventsIntegrations.size, 1)
+    assertTrue(systemEventsIntegrations.first().customHandler is CustomHandler)
   }
 
   @Test
@@ -518,6 +530,19 @@ class SentryAndroidTest {
   }
 
   @Test
+  fun `executor service is not NoOp when AndroidConnectionStatusProvider is initialized`() {
+    var executorServiceIsNoOp = true
+    fixture.initSut(context = context) { options ->
+      options.dsn = "https://key@sentry.io/123"
+      // the config callback runs before initializeIntegrationsAndProcessors, which creates
+      // AndroidConnectionStatusProvider - so if the executor is already real here,
+      // it's guaranteed to be real when the provider calls submitSafe()
+      executorServiceIsNoOp = options.executorService is NoOpSentryExecutorService
+    }
+    assertFalse(executorServiceIsNoOp)
+  }
+
+  @Test
   fun `if the config options block throws still intializes android event processors`() {
     lateinit var optionsRef: SentryOptions
     fixture.initSut(context = mock<Application>()) { options ->
@@ -527,7 +552,7 @@ class SentryAndroidTest {
     }
 
     assertTrue(optionsRef.eventProcessors.any { it is DefaultAndroidEventProcessor })
-    assertTrue(optionsRef.eventProcessors.any { it is AnrV2EventProcessor })
+    assertTrue(optionsRef.eventProcessors.any { it is ApplicationExitInfoEventProcessor })
   }
 
   private fun prefillScopeCache(options: SentryOptions, cacheDir: String) {
@@ -580,3 +605,5 @@ fun initForTest(context: Context, logger: ILogger) {
 fun initForTest(context: Context) {
   SentryAndroid.init(context)
 }
+
+class CustomHandler(looper: Looper) : Handler(looper)

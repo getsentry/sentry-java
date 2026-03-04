@@ -45,6 +45,7 @@ dependencies {
   implementation(kotlin(Config.kotlinStdLib))
   implementation(projects.sentrySpring)
   implementation(projects.sentryLogback)
+  implementation(projects.sentryAsyncProfiler)
   implementation(libs.jackson.databind)
   implementation(libs.logback.classic)
   implementation(libs.servlet.api)

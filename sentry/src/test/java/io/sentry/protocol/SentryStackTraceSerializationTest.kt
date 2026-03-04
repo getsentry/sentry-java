@@ -8,6 +8,7 @@ import io.sentry.JsonSerializable
 import java.io.StringReader
 import java.io.StringWriter
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import org.junit.Test
 import org.mockito.kotlin.mock
 
@@ -58,6 +59,30 @@ class SentryStackTraceSerializationTest {
     val actual = deserialize(expectedJson)
     val actualJson = serialize(actual)
     assertEquals(expectedJson, actualJson)
+  }
+
+  @Test
+  fun `instructionAddressAdjustment serializes and deserializes correctly`() {
+    val testCases =
+      listOf(
+        SentryStackTrace.InstructionAddressAdjustment.AUTO to "auto",
+        SentryStackTrace.InstructionAddressAdjustment.ALL to "all",
+        SentryStackTrace.InstructionAddressAdjustment.ALL_BUT_FIRST to "all_but_first",
+        SentryStackTrace.InstructionAddressAdjustment.NONE to "none",
+      )
+
+    for ((enumValue, expectedJson) in testCases) {
+      val stackTrace = SentryStackTrace().apply { instructionAddressAdjustment = enumValue }
+      val json = serialize(stackTrace)
+
+      assertTrue(
+        json.contains("\"instruction_addr_adjustment\":\"$expectedJson\""),
+        "Expected $enumValue to serialize as \"$expectedJson\"",
+      )
+
+      val deserialized = deserialize(json)
+      assertEquals(enumValue, deserialized.instructionAddressAdjustment)
+    }
   }
 
   // Helper

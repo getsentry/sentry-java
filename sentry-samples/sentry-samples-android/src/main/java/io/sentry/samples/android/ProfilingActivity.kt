@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.View
 import android.widget.SeekBar
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import io.sentry.ITransaction
@@ -24,6 +25,21 @@ class ProfilingActivity : AppCompatActivity() {
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
+
+    onBackPressedDispatcher.addCallback(
+      this,
+      object : OnBackPressedCallback(true) {
+        override fun handleOnBackPressed() {
+          if (profileFinished) {
+            isEnabled = false
+            onBackPressedDispatcher.onBackPressed()
+          } else {
+            Toast.makeText(this@ProfilingActivity, R.string.profiling_running, Toast.LENGTH_SHORT)
+              .show()
+          }
+        }
+      },
+    )
     binding = ActivityProfilingBinding.inflate(layoutInflater)
 
     binding.profilingDurationSeekbar.setOnSeekBarChangeListener(
@@ -155,14 +171,6 @@ class ProfilingActivity : AppCompatActivity() {
       n <= 1 -> 1
       else -> fibonacci(n - 1) + fibonacci(n - 2)
     }
-
-  override fun onBackPressed() {
-    if (profileFinished) {
-      super.onBackPressed()
-    } else {
-      Toast.makeText(this, R.string.profiling_running, Toast.LENGTH_SHORT).show()
-    }
-  }
 
   private fun getProfileDuration(): Float {
     // Minimum duration of the profile is 100 milliseconds

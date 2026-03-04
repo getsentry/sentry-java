@@ -5,6 +5,7 @@ import io.sentry.ILogger;
 import io.sentry.IProfileConverter;
 import io.sentry.ISentryExecutorService;
 import io.sentry.NoOpContinuousProfiler;
+import io.sentry.NoOpProfileConverter;
 import io.sentry.ScopesAdapter;
 import io.sentry.SentryLevel;
 import java.util.Iterator;
@@ -51,7 +52,7 @@ public final class ProfilingServiceLoader {
    *
    * @return an IProfileConverter instance or null if no provider is found
    */
-  public static @Nullable IProfileConverter loadProfileConverter() {
+  public static @NotNull IProfileConverter loadProfileConverter() {
     ILogger logger = ScopesAdapter.getInstance().getGlobalScope().getOptions().getLogger();
     try {
       JavaProfileConverterProvider provider =
@@ -63,12 +64,16 @@ public final class ProfilingServiceLoader {
             provider.getClass().getName());
         return provider.getProfileConverter();
       } else {
-        logger.log(SentryLevel.DEBUG, "No profile converter provider found, returning null");
-        return null;
+        logger.log(
+            SentryLevel.DEBUG, "No profile converter provider found, using NoOpProfileConverter");
+        return NoOpProfileConverter.getInstance();
       }
     } catch (Throwable t) {
-      logger.log(SentryLevel.ERROR, "Failed to load profile converter provider, returning null", t);
-      return null;
+      logger.log(
+          SentryLevel.ERROR,
+          "Failed to load profile converter provider, using NoOpProfileConverter",
+          t);
+      return NoOpProfileConverter.getInstance();
     }
   }
 

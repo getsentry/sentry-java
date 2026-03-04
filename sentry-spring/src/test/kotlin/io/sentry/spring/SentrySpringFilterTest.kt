@@ -267,6 +267,12 @@ class SentrySpringFilterTest {
           expectedToBeCached = false,
         ),
         TestParams(
+          maxRequestBodySize = MEDIUM,
+          body = "xxx",
+          expectedToBeCached = false,
+          contentType = "invalid",
+        ),
+        TestParams(
           maxRequestBodySize = ALWAYS,
           body = "x".repeat(10001),
           expectedToBeCached = true,

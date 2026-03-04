@@ -1,6 +1,7 @@
 package io.sentry;
 
 import io.sentry.logger.ILoggerApi;
+import io.sentry.metrics.IMetricsApi;
 import io.sentry.protocol.Feedback;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
@@ -372,5 +373,35 @@ public final class HubScopesWrapper implements IHub {
   @Override
   public @NotNull ILoggerApi logger() {
     return scopes.logger();
+  }
+
+  @Override
+  public @NotNull IMetricsApi metrics() {
+    return scopes.metrics();
+  }
+
+  @Override
+  public void setAttribute(final @Nullable String key, final @Nullable Object value) {
+    scopes.setAttribute(key, value);
+  }
+
+  @Override
+  public void setAttribute(final @Nullable SentryAttribute attribute) {
+    scopes.setAttribute(attribute);
+  }
+
+  @Override
+  public void setAttributes(final @Nullable SentryAttributes attributes) {
+    scopes.setAttributes(attributes);
+  }
+
+  @Override
+  public void removeAttribute(final @Nullable String key) {
+    scopes.removeAttribute(key);
+  }
+
+  @Override
+  public void addFeatureFlag(final @Nullable String flag, final @Nullable Boolean result) {
+    scopes.addFeatureFlag(flag, result);
   }
 }

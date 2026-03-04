@@ -53,10 +53,19 @@ public final class SentryExecutorService implements ISentryExecutorService {
     this(new ScheduledThreadPoolExecutor(1, new SentryExecutorServiceThreadFactory()), null);
   }
 
+  private boolean isQueueAvailable() {
+    // If limit is reached, purge cancelled tasks from the queue
+    if (executorService.getQueue().size() >= MAX_QUEUE_SIZE) {
+      executorService.purge();
+    }
+    // Check limit again after purge
+    return executorService.getQueue().size() < MAX_QUEUE_SIZE;
+  }
+
   @Override
   public @NotNull Future<?> submit(final @NotNull Runnable runnable)
       throws RejectedExecutionException {
-    if (executorService.getQueue().size() < MAX_QUEUE_SIZE) {
+    if (isQueueAvailable()) {
       return executorService.submit(runnable);
     }
     if (options != null) {
@@ -70,7 +79,7 @@ public final class SentryExecutorService implements ISentryExecutorService {
   @Override
   public @NotNull <T> Future<T> submit(final @NotNull Callable<T> callable)
       throws RejectedExecutionException {
-    if (executorService.getQueue().size() < MAX_QUEUE_SIZE) {
+    if (isQueueAvailable()) {
       return executorService.submit(callable);
     }
     if (options != null) {
@@ -84,15 +93,7 @@ public final class SentryExecutorService implements ISentryExecutorService {
   @Override
   public @NotNull Future<?> schedule(final @NotNull Runnable runnable, final long delayMillis)
       throws RejectedExecutionException {
-    if (executorService.getQueue().size() < MAX_QUEUE_SIZE) {
-      return executorService.schedule(runnable, delayMillis, TimeUnit.MILLISECONDS);
-    }
-    if (options != null) {
-      options
-          .getLogger()
-          .log(SentryLevel.WARNING, "Task " + runnable + " rejected from " + executorService);
-    }
-    return new CancelledFuture<>();
+    return executorService.schedule(runnable, delayMillis, TimeUnit.MILLISECONDS);
   }
 
   @Override

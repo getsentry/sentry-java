@@ -17,6 +17,7 @@ import io.sentry.UncaughtExceptionHandlerIntegration.UncaughtExceptionHint
 import io.sentry.cache.EnvelopeCache.PREFIX_CURRENT_SESSION_FILE
 import io.sentry.cache.EnvelopeCache.SUFFIX_SESSION_FILE
 import io.sentry.hints.AbnormalExit
+import io.sentry.hints.NativeCrashExit
 import io.sentry.hints.SessionEndHint
 import io.sentry.hints.SessionStartHint
 import io.sentry.protocol.SentryId
@@ -348,6 +349,53 @@ class EnvelopeCacheTest {
   }
 
   @Test
+  fun `NativeCrashExit hint marks previous session as crashed with crash timestamp`() {
+    val cache = fixture.getSUT()
+
+    val previousSessionFile = EnvelopeCache.getPreviousSessionFile(fixture.options.cacheDirPath!!)
+    val session = createSession()
+    fixture.options.serializer.serialize(session, previousSessionFile.bufferedWriter())
+
+    val nativeCrashTimestamp = session.started!!.time + TimeUnit.HOURS.toMillis(3)
+    val envelope = SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null)
+    val nativeCrashHint = NativeCrashExit { nativeCrashTimestamp }
+    val hints = HintUtils.createWithTypeCheckHint(nativeCrashHint)
+    cache.storeEnvelope(envelope, hints)
+
+    val updatedSession =
+      fixture.options.serializer.deserialize(
+        previousSessionFile.bufferedReader(),
+        Session::class.java,
+      )
+    assertEquals(State.Crashed, updatedSession!!.status)
+    assertEquals(nativeCrashTimestamp, updatedSession.timestamp!!.time)
+  }
+
+  @Test
+  fun `when NativeCrashExit happened before previous session start, does not mark as crashed`() {
+    val cache = fixture.getSUT()
+
+    val previousSessionFile = EnvelopeCache.getPreviousSessionFile(fixture.options.cacheDirPath!!)
+    val session = createSession()
+    val nativeCrashTimestamp = session.started!!.time - TimeUnit.HOURS.toMillis(3)
+    fixture.options.serializer.serialize(session, previousSessionFile.bufferedWriter())
+
+    val envelope = SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null)
+    val nativeCrashHint = NativeCrashExit { nativeCrashTimestamp }
+    val hints = HintUtils.createWithTypeCheckHint(nativeCrashHint)
+    cache.storeEnvelope(envelope, hints)
+
+    val updatedSession =
+      fixture.options.serializer.deserialize(
+        previousSessionFile.bufferedReader(),
+        Session::class.java,
+      )
+    assertEquals(Ok, updatedSession!!.status)
+    assertTrue(nativeCrashTimestamp < updatedSession.started!!.time)
+    assertTrue(nativeCrashTimestamp < updatedSession.timestamp!!.time)
+  }
+
+  @Test
   fun `failing to store returns false`() {
     val serializer = mock<ISerializer>()
     val envelope = SentryEnvelope.from(SentryOptions.empty().serializer, createSession(), null)
@@ -444,6 +492,37 @@ class EnvelopeCacheTest {
     // Nothing should happen
     assertFalse(currentSessionFile.exists())
     assertFalse(previousSessionFile.exists())
+  }
+
+  @Test
+  fun `movePreviousSession is idempotent wrt the previous session`() {
+    val cache = fixture.getSUT()
+
+    val currentSessionFile = EnvelopeCache.getCurrentSessionFile(fixture.options.cacheDirPath!!)
+    val previousSessionFile = EnvelopeCache.getPreviousSessionFile(fixture.options.cacheDirPath!!)
+
+    // Create a current session file
+    currentSessionFile.createNewFile()
+    currentSessionFile.writeText("session content from last run")
+
+    assertTrue(currentSessionFile.exists())
+    assertFalse(previousSessionFile.exists())
+
+    // First call: moves session.json -> previous_session.json
+    cache.movePreviousSession(currentSessionFile, previousSessionFile)
+
+    assertFalse(currentSessionFile.exists())
+    assertTrue(previousSessionFile.exists())
+    assertEquals("session content from last run", previousSessionFile.readText())
+
+    // Second call should be idempotent: previous_session.json should be preserved
+    // This simulates the race where both MovePreviousSession runnable and
+    // storeInternal (SessionStart) both call movePreviousSession
+    cache.movePreviousSession(currentSessionFile, previousSessionFile)
+
+    // previous_session.json should still exist with original content
+    assertTrue(previousSessionFile.exists())
+    assertEquals("session content from last run", previousSessionFile.readText())
   }
 
   @Test

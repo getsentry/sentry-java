@@ -7,8 +7,8 @@ import io.sentry.IScopes
 import io.sentry.ISentryExecutorService
 import io.sentry.SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForget
 import io.sentry.SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForgetFactory
+import io.sentry.SentryExecutorService
 import io.sentry.SentryLevel.DEBUG
-import io.sentry.SentryOptions
 import io.sentry.test.DeferredExecutorService
 import io.sentry.test.ImmediateExecutorService
 import io.sentry.transport.RateLimiter
@@ -46,7 +46,7 @@ class SendCachedEnvelopeIntegrationTest {
       options.cacheDirPath = cacheDirPath
       options.setLogger(logger)
       options.isDebug = true
-      options.executorService = mockExecutorService ?: SentryOptions().executorService
+      options.executorService = mockExecutorService ?: SentryExecutorService()
 
       whenever(sender.send()).then {
         Thread.sleep(delaySend)

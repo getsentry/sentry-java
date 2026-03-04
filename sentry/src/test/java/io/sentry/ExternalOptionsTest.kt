@@ -102,6 +102,11 @@ class ExternalOptionsTest {
   }
 
   @Test
+  fun `creates options with sampleRate using external properties`() {
+    withPropertiesFile("sample-rate=0.2") { assertEquals(0.2, it.sampleRate) }
+  }
+
+  @Test
   fun `creates options with tracesSampleRate using external properties`() {
     withPropertiesFile("traces-sample-rate=0.2") { assertEquals(0.2, it.tracesSampleRate) }
   }
@@ -309,6 +314,20 @@ class ExternalOptionsTest {
   }
 
   @Test
+  fun `creates options with enableDatabaseTransactionTracing set to true`() {
+    withPropertiesFile("enable-database-transaction-tracing=true") { options ->
+      assertTrue(options.isEnableDatabaseTransactionTracing == true)
+    }
+  }
+
+  @Test
+  fun `creates options with enableDatabaseTransactionTracing set to false`() {
+    withPropertiesFile("enable-database-transaction-tracing=false") { options ->
+      assertTrue(options.isEnableDatabaseTransactionTracing == false)
+    }
+  }
+
+  @Test
   fun `creates options with cron defaults`() {
     withPropertiesFile(
       listOf(
@@ -384,6 +403,25 @@ class ExternalOptionsTest {
   @Test
   fun `creates options with enableLogs set to true`() {
     withPropertiesFile("logs.enabled=true") { options -> assertTrue(options.isEnableLogs == true) }
+  }
+
+  @Test
+  fun `creates options with enableMetrics set to true`() {
+    withPropertiesFile("metrics.enabled=true") { options ->
+      assertTrue(options.isEnableMetrics == true)
+    }
+  }
+
+  @Test
+  fun `creates options with enableMetrics set to false`() {
+    withPropertiesFile("metrics.enabled=false") { options ->
+      assertTrue(options.isEnableMetrics == false)
+    }
+  }
+
+  @Test
+  fun `creates options with enableMetrics set to null when not set`() {
+    withPropertiesFile { assertNull(it.isEnableMetrics) }
   }
 
   @Test

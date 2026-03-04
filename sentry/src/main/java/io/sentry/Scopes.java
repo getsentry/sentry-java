@@ -5,6 +5,8 @@ import io.sentry.hints.SessionEndHint;
 import io.sentry.hints.SessionStartHint;
 import io.sentry.logger.ILoggerApi;
 import io.sentry.logger.LoggerApi;
+import io.sentry.metrics.IMetricsApi;
+import io.sentry.metrics.MetricsApi;
 import io.sentry.protocol.*;
 import io.sentry.transport.RateLimiter;
 import io.sentry.util.HintUtils;
@@ -31,6 +33,7 @@ public final class Scopes implements IScopes {
 
   private final @NotNull CombinedScopeView combinedScope;
   private final @NotNull ILoggerApi logger;
+  private final @NotNull IMetricsApi metrics;
 
   public Scopes(
       final @NotNull IScope scope,
@@ -57,6 +60,7 @@ public final class Scopes implements IScopes {
     validateOptions(options);
     this.compositePerformanceCollector = options.getCompositePerformanceCollector();
     this.logger = new LoggerApi(this);
+    this.metrics = new MetricsApi(this);
   }
 
   public @NotNull String getCreator() {
@@ -434,6 +438,21 @@ public final class Scopes implements IScopes {
               getOptions()
                   .getLogger()
                   .log(SentryLevel.WARNING, "Failed to close the integration {}.", integration, e);
+            }
+          }
+        }
+        for (EventProcessor eventProcessor : getOptions().getEventProcessors()) {
+          if (eventProcessor instanceof Closeable) {
+            try {
+              ((Closeable) eventProcessor).close();
+            } catch (Throwable e) {
+              getOptions()
+                  .getLogger()
+                  .log(
+                      SentryLevel.WARNING,
+                      "Failed to close the event processor {}.",
+                      eventProcessor,
+                      e);
             }
           }
         }
@@ -1218,6 +1237,66 @@ public final class Scopes implements IScopes {
   @Override
   public @NotNull ILoggerApi logger() {
     return logger;
+  }
+
+  @Override
+  public @NotNull IMetricsApi metrics() {
+    return metrics;
+  }
+
+  @Override
+  public void setAttribute(final @Nullable String key, final @Nullable Object value) {
+    if (!isEnabled()) {
+      getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.WARNING, "Instance is disabled and this 'setAttribute' call is a no-op.");
+    } else {
+      getCombinedScopeView().setAttribute(key, value);
+    }
+  }
+
+  @Override
+  public void setAttribute(final @Nullable SentryAttribute attribute) {
+    if (!isEnabled()) {
+      getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.WARNING, "Instance is disabled and this 'setAttribute' call is a no-op.");
+    } else {
+      getCombinedScopeView().setAttribute(attribute);
+    }
+  }
+
+  @Override
+  public void setAttributes(final @Nullable SentryAttributes attributes) {
+    if (!isEnabled()) {
+      getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "Instance is disabled and this 'setAttributes' call is a no-op.");
+    } else {
+      getCombinedScopeView().setAttributes(attributes);
+    }
+  }
+
+  @Override
+  public void removeAttribute(final @Nullable String key) {
+    if (!isEnabled()) {
+      getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "Instance is disabled and this 'removeAttribute' call is a no-op.");
+    } else {
+      getCombinedScopeView().removeAttribute(key);
+    }
+  }
+
+  @Override
+  public void addFeatureFlag(final @Nullable String flag, final @Nullable Boolean result) {
+    combinedScope.addFeatureFlag(flag, result);
   }
 
   private static void validateOptions(final @NotNull SentryOptions options) {

@@ -22,7 +22,7 @@ jobs:
 
     steps:
       - name: Git checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           submodules: 'recursive'
 
@@ -33,7 +33,7 @@ jobs:
           java-version: '17'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@4d9f0ba0025fe599b4ebab900eb7f3a1d93ef4c2
+        uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
@@ -75,7 +75,7 @@ jobs:
 
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
-        uses: codecov/test-results-action@47f89e9acb64b76debcd5ea40642d25a4adced9f
+        uses: codecov/test-results-action@0fa95f0e1eeaafde2c782583b36b28ad0d8c77d3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           file: ./artifacts/*.xml

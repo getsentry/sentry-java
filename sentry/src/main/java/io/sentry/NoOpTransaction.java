@@ -251,4 +251,7 @@ public final class NoOpTransaction implements ITransaction {
   public boolean isNoOp() {
     return true;
   }
+
+  @Override
+  public void addFeatureFlag(final @Nullable String flag, final @Nullable Boolean result) {}
 }

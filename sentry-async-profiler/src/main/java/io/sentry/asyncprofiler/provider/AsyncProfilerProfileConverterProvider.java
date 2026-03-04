@@ -5,7 +5,6 @@ import io.sentry.asyncprofiler.convert.JfrAsyncProfilerToSentryProfileConverter;
 import io.sentry.profiling.JavaProfileConverterProvider;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * AsyncProfiler implementation of {@link JavaProfileConverterProvider}. This provider integrates
@@ -15,7 +14,7 @@ import org.jetbrains.annotations.Nullable;
 public final class AsyncProfilerProfileConverterProvider implements JavaProfileConverterProvider {
 
   @Override
-  public @Nullable IProfileConverter getProfileConverter() {
+  public @NotNull IProfileConverter getProfileConverter() {
     return new AsyncProfilerProfileConverter();
   }
 

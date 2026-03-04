@@ -56,6 +56,7 @@ dependencies {
   implementation(projects.sentryLogback)
   implementation(projects.sentryGraphql22)
   implementation(projects.sentryQuartz)
+  implementation(projects.sentryAsyncProfiler)
   implementation(libs.otel)
 
   // database query tracing

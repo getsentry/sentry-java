@@ -1,6 +1,5 @@
 package io.sentry.uitest.android.benchmark
 
-import android.content.Context
 import android.os.Bundle
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.launchActivity
@@ -12,12 +11,6 @@ import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.runner.AndroidJUnitRunner
 import io.sentry.ITransaction
-import io.sentry.Sentry
-import io.sentry.Sentry.OptionsConfiguration
-import io.sentry.SentryOptions
-import io.sentry.android.core.SentryAndroid
-import io.sentry.android.core.SentryAndroidOptions
-import io.sentry.test.applyTestOptions
 import io.sentry.uitest.android.benchmark.util.BenchmarkOperation
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -71,49 +64,6 @@ class SentryBenchmarkTest : BaseBenchmarkTest() {
     // respectively.
   }
 
-  @Test
-  fun benchmarkProfiledTransaction() {
-    // We compare the same operation with and without profiled transaction.
-    // We expect the profiled transaction operation to be slower, but not slower than 5%.
-    val benchmarkOperationNoTransaction =
-      BenchmarkOperation(choreographer, op = getOperation(runner))
-    val benchmarkOperationProfiled =
-      BenchmarkOperation(
-        choreographer,
-        before = {
-          runner.runOnMainSync {
-            initForTest(context) { options: SentryOptions ->
-              options.dsn = "https://key@uri/1234567"
-              options.tracesSampleRate = 1.0
-              options.profilesSampleRate = 1.0
-              options.isEnableAutoSessionTracking = false
-            }
-          }
-        },
-        op = getOperation(runner) { Sentry.startTransaction("Benchmark", "ProfiledTransaction") },
-        after = { runner.runOnMainSync { Sentry.close() } },
-      )
-    val refreshRate = BenchmarkActivity.refreshRate ?: 60F
-    val comparisonResults =
-      BenchmarkOperation.compare(
-        benchmarkOperationNoTransaction,
-        "NoTransaction",
-        benchmarkOperationProfiled,
-        "ProfiledTransaction",
-        refreshRate,
-        measuredIterations = 40,
-      )
-    comparisonResults.printAllRuns("Profiling Benchmark")
-    val comparisonResult = comparisonResults.getSummaryResult()
-    comparisonResult.printResults()
-
-    // Currently we just want to assert the cpu overhead
-    assertTrue(
-      comparisonResult.cpuTimeIncreasePercentage in 0F..5.5F,
-      "Expected ${comparisonResult.cpuTimeIncreasePercentage} to be in range 0 < x < 5.5",
-    )
-  }
-
   /**
    * Operation that will be compared: it launches [BenchmarkActivity], swipe the list and closes it.
    * The [transactionBuilder] is used to create the transaction before the swipes.
@@ -147,15 +97,5 @@ class SentryBenchmarkTest : BaseBenchmarkTest() {
       onView(withId(R.id.benchmark_transaction_list)).perform(swipeUp())
       Espresso.onIdle()
     }
-  }
-}
-
-fun initForTest(
-  context: Context,
-  optionsConfiguration: OptionsConfiguration<SentryAndroidOptions>,
-) {
-  SentryAndroid.init(context) {
-    applyTestOptions(it)
-    optionsConfiguration.configure(it)
   }
 }

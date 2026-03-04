@@ -87,7 +87,10 @@ public class ComposeGestureTargetLocator(private val logger: ILogger) : GestureT
                 "androidx.compose.foundation.CombinedClickableElement" == type
             ) {
               isClickable = true
-            } else if ("androidx.compose.foundation.ScrollingLayoutElement" == type) {
+            } else if (
+              "androidx.compose.foundation.ScrollingLayoutElement" == type ||
+                "androidx.compose.foundation.ScrollingContainerElement" == type
+            ) {
               isScrollable = true
             }
           }

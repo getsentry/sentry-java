@@ -274,4 +274,6 @@ public interface ISpan {
   @ApiStatus.Internal
   @NotNull
   ISentryLifecycleToken makeCurrent();
+
+  void addFeatureFlag(@Nullable String flag, @Nullable Boolean result);
 }

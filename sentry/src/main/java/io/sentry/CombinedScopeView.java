@@ -2,8 +2,11 @@ package io.sentry;
 
 import static io.sentry.Scope.createBreadcrumbsList;
 
+import io.sentry.featureflags.FeatureFlagBuffer;
+import io.sentry.featureflags.IFeatureFlagBuffer;
 import io.sentry.internal.eventprocessor.EventProcessorAndOrder;
 import io.sentry.protocol.Contexts;
+import io.sentry.protocol.FeatureFlags;
 import io.sentry.protocol.Request;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
@@ -236,6 +239,35 @@ public final class CombinedScopeView implements IScope {
   @Override
   public void removeTag(@Nullable String key) {
     getDefaultWriteScope().removeTag(key);
+  }
+
+  @Override
+  public @NotNull Map<String, SentryAttribute> getAttributes() {
+    final @NotNull Map<String, SentryAttribute> allAttributes = new ConcurrentHashMap<>();
+    allAttributes.putAll(globalScope.getAttributes());
+    allAttributes.putAll(isolationScope.getAttributes());
+    allAttributes.putAll(scope.getAttributes());
+    return allAttributes;
+  }
+
+  @Override
+  public void setAttribute(@Nullable String key, @Nullable Object value) {
+    getDefaultWriteScope().setAttribute(key, value);
+  }
+
+  @Override
+  public void setAttribute(@Nullable SentryAttribute attribute) {
+    getDefaultWriteScope().setAttribute(attribute);
+  }
+
+  @Override
+  public void setAttributes(@Nullable SentryAttributes attributes) {
+    getDefaultWriteScope().setAttributes(attributes);
+  }
+
+  @Override
+  public void removeAttribute(@Nullable String key) {
+    getDefaultWriteScope().removeAttribute(key);
   }
 
   @Override
@@ -506,5 +538,28 @@ public final class CombinedScopeView implements IScope {
   @Override
   public void setReplayId(@NotNull SentryId replayId) {
     getDefaultWriteScope().setReplayId(replayId);
+  }
+
+  @Override
+  public void addFeatureFlag(final @Nullable String flag, final @Nullable Boolean result) {
+    getDefaultWriteScope().addFeatureFlag(flag, result);
+    final @Nullable ISpan span = getSpan();
+    if (span != null) {
+      span.addFeatureFlag(flag, result);
+    }
+  }
+
+  @Override
+  public @Nullable FeatureFlags getFeatureFlags() {
+    return getFeatureFlagBuffer().getFeatureFlags();
+  }
+
+  @Override
+  public @NotNull IFeatureFlagBuffer getFeatureFlagBuffer() {
+    return FeatureFlagBuffer.merged(
+        getOptions(),
+        globalScope.getFeatureFlagBuffer(),
+        isolationScope.getFeatureFlagBuffer(),
+        scope.getFeatureFlagBuffer());
   }
 }

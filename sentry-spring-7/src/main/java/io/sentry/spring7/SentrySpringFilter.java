@@ -26,6 +26,7 @@ import java.io.IOException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.http.MediaType;
+import org.springframework.util.InvalidMimeTypeException;
 import org.springframework.util.MimeType;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.util.ContentCachingRequestWrapper;
@@ -131,8 +132,12 @@ public class SentrySpringFilter extends OncePerRequestFilter {
   }
 
   private static boolean shouldCacheMimeType(String contentType) {
-    return MimeType.valueOf(contentType).isCompatibleWith(MediaType.APPLICATION_JSON)
-        || MimeType.valueOf(contentType).isCompatibleWith(MediaType.APPLICATION_FORM_URLENCODED);
+    try {
+      return MimeType.valueOf(contentType).isCompatibleWith(MediaType.APPLICATION_JSON)
+          || MimeType.valueOf(contentType).isCompatibleWith(MediaType.APPLICATION_FORM_URLENCODED);
+    } catch (InvalidMimeTypeException e) {
+      return false;
+    }
   }
 
   static final class RequestBodyExtractingEventProcessor implements EventProcessor {

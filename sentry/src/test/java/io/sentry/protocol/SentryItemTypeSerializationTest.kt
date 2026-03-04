@@ -32,6 +32,8 @@ class SentryItemTypeSerializationTest {
     assertEquals(serialize(SentryItemType.ReplayVideo), json("replay_video"))
     assertEquals(serialize(SentryItemType.CheckIn), json("check_in"))
     assertEquals(serialize(SentryItemType.Feedback), json("feedback"))
+    assertEquals(serialize(SentryItemType.Span), json("span"))
+    assertEquals(serialize(SentryItemType.TraceMetric), json("trace_metric"))
   }
 
   @Test
@@ -49,6 +51,8 @@ class SentryItemTypeSerializationTest {
     assertEquals(deserialize(json("replay_video")), SentryItemType.ReplayVideo)
     assertEquals(deserialize(json("check_in")), SentryItemType.CheckIn)
     assertEquals(deserialize(json("feedback")), SentryItemType.Feedback)
+    assertEquals(deserialize(json("span")), SentryItemType.Span)
+    assertEquals(deserialize(json("trace_metric")), SentryItemType.TraceMetric)
   }
 
   private fun json(type: String): String = "{\"type\":\"${type}\"}"

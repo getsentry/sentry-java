@@ -126,6 +126,10 @@ public class Main {
     // Only data added to the scope on `configureScope` above is included.
     Sentry.captureMessage("Some warning!", SentryLevel.WARNING);
 
+    Sentry.addFeatureFlag("my-feature-flag", true);
+
+    captureMetrics();
+
     // Sending exception:
     Exception exception = new RuntimeException("Some error!");
     Sentry.captureException(exception);
@@ -183,6 +187,12 @@ public class Main {
     // All events that have not been sent yet are being flushed on JVM exit. Events can be also
     // flushed manually:
     // Sentry.close();
+  }
+
+  private static void captureMetrics() {
+    Sentry.metrics().count("countMetric");
+    Sentry.metrics().gauge("gaugeMetric", 5.0);
+    Sentry.metrics().distribution("distributionMetric", 7.0);
   }
 
   private static class SomeEventProcessor implements EventProcessor {

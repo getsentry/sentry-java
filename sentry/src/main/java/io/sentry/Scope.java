@@ -1,8 +1,11 @@
 package io.sentry;
 
+import io.sentry.featureflags.FeatureFlagBuffer;
+import io.sentry.featureflags.IFeatureFlagBuffer;
 import io.sentry.internal.eventprocessor.EventProcessorAndOrder;
 import io.sentry.protocol.App;
 import io.sentry.protocol.Contexts;
+import io.sentry.protocol.FeatureFlags;
 import io.sentry.protocol.Request;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.TransactionNameSource;
@@ -62,6 +65,9 @@ public final class Scope implements IScope {
   /** Scope's tags */
   private @NotNull Map<String, @NotNull String> tags = new ConcurrentHashMap<>();
 
+  /** Scope's attributes */
+  private @NotNull Map<String, @NotNull SentryAttribute> attributes = new ConcurrentHashMap<>();
+
   /** Scope's extras */
   private @NotNull Map<String, @NotNull Object> extra = new ConcurrentHashMap<>();
 
@@ -103,6 +109,8 @@ public final class Scope implements IScope {
   private final @NotNull Map<Throwable, Pair<WeakReference<ISpan>, String>> throwableToSpan =
       Collections.synchronizedMap(new WeakHashMap<>());
 
+  private final @NotNull IFeatureFlagBuffer featureFlags;
+
   /**
    * Scope's ctor
    *
@@ -111,6 +119,7 @@ public final class Scope implements IScope {
   public Scope(final @NotNull SentryOptions options) {
     this.options = Objects.requireNonNull(options, "SentryOptions is required.");
     this.breadcrumbs = createBreadcrumbsList(this.options.getMaxBreadcrumbs());
+    this.featureFlags = FeatureFlagBuffer.create(options);
     this.propagationContext = new PropagationContext();
     this.lastEventId = SentryId.EMPTY_ID;
   }
@@ -118,6 +127,7 @@ public final class Scope implements IScope {
   private Scope(final @NotNull Scope scope) {
     this.transaction = scope.transaction;
     this.transactionName = scope.transactionName;
+    this.activeSpan = scope.activeSpan;
     this.session = scope.session;
     this.options = scope.options;
     this.level = scope.level;
@@ -157,6 +167,18 @@ public final class Scope implements IScope {
 
     this.tags = tagsClone;
 
+    final Map<String, SentryAttribute> attributesRef = scope.attributes;
+
+    final Map<String, @NotNull SentryAttribute> attributesClone = new ConcurrentHashMap<>();
+
+    for (Map.Entry<String, SentryAttribute> item : attributesRef.entrySet()) {
+      if (item != null) {
+        attributesClone.put(item.getKey(), item.getValue()); // shallow copy
+      }
+    }
+
+    this.attributes = attributesClone;
+
     final Map<String, Object> extraRef = scope.extra;
 
     Map<String, @NotNull Object> extraClone = new ConcurrentHashMap<>();
@@ -172,6 +194,8 @@ public final class Scope implements IScope {
     this.contexts = new Contexts(scope.contexts);
 
     this.attachments = new CopyOnWriteArrayList<>(scope.attachments);
+
+    this.featureFlags = scope.featureFlags.clone();
 
     this.propagationContext = new PropagationContext(scope.propagationContext);
   }
@@ -545,6 +569,7 @@ public final class Scope implements IScope {
     fingerprint.clear();
     clearBreadcrumbs();
     tags.clear();
+    attributes.clear();
     extra.clear();
     eventProcessors.clear();
     clearTransaction();
@@ -602,6 +627,60 @@ public final class Scope implements IScope {
       observer.removeTag(key);
       observer.setTags(tags);
     }
+  }
+
+  /**
+   * Returns the Scope's attributes
+   *
+   * @return the attributes map
+   */
+  @ApiStatus.Internal
+  @SuppressWarnings("NullAway") // attributes are never null
+  @Override
+  public @NotNull Map<String, SentryAttribute> getAttributes() {
+    return CollectionUtils.newConcurrentHashMap(attributes);
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public void setAttribute(final @Nullable String key, final @Nullable Object value) {
+    if (key == null) {
+      return;
+    }
+    if (value == null) {
+      removeAttribute(key);
+    } else {
+      this.attributes.put(key, SentryAttribute.named(key, value));
+    }
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public void setAttribute(final @Nullable SentryAttribute attribute) {
+    if (attribute == null) {
+      return;
+    }
+    this.attributes.put(attribute.getName(), attribute);
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public void setAttributes(final @Nullable SentryAttributes attributes) {
+    if (attributes == null) {
+      return;
+    }
+    for (SentryAttribute attribute : attributes.getAttributes().values()) {
+      this.attributes.put(attribute.getName(), attribute);
+    }
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public void removeAttribute(final @Nullable String key) {
+    if (key == null) {
+      return;
+    }
+    this.attributes.remove(key);
   }
 
   /**
@@ -1117,6 +1196,21 @@ public final class Scope implements IScope {
   @Override
   public @NotNull ISentryClient getClient() {
     return client;
+  }
+
+  @Override
+  public void addFeatureFlag(final @Nullable String flag, final @Nullable Boolean result) {
+    featureFlags.add(flag, result);
+  }
+
+  @Override
+  public @Nullable FeatureFlags getFeatureFlags() {
+    return featureFlags.getFeatureFlags();
+  }
+
+  @Override
+  public @NotNull IFeatureFlagBuffer getFeatureFlagBuffer() {
+    return featureFlags;
   }
 
   @Override

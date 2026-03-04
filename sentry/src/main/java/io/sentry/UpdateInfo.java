@@ -1,5 +1,6 @@
 package io.sentry;
 
+import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -13,6 +14,7 @@ public final class UpdateInfo {
   private final @NotNull String downloadUrl;
   private final @NotNull String appName;
   private final @Nullable String createdDate;
+  private final @Nullable List<String> installGroups;
 
   public UpdateInfo(
       final @NotNull String id,
@@ -20,13 +22,15 @@ public final class UpdateInfo {
       final int buildNumber,
       final @NotNull String downloadUrl,
       final @NotNull String appName,
-      final @Nullable String createdDate) {
+      final @Nullable String createdDate,
+      final @Nullable List<String> installGroups) {
     this.id = id;
     this.buildVersion = buildVersion;
     this.buildNumber = buildNumber;
     this.downloadUrl = downloadUrl;
     this.appName = appName;
     this.createdDate = createdDate;
+    this.installGroups = installGroups;
   }
 
   public @NotNull String getId() {
@@ -53,6 +57,10 @@ public final class UpdateInfo {
     return createdDate;
   }
 
+  public @Nullable List<String> getInstallGroups() {
+    return installGroups;
+  }
+
   @Override
   public String toString() {
     return "UpdateInfo{"
@@ -73,6 +81,8 @@ public final class UpdateInfo {
         + ", createdDate='"
         + createdDate
         + '\''
+        + ", installGroups="
+        + installGroups
         + '}';
   }
 }
