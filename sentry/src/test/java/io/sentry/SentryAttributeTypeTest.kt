@@ -112,4 +112,11 @@ class SentryAttributeTypeTest {
   fun `inferFrom returns ARRAY for mixed-type list`() {
     assertEquals(SentryAttributeType.ARRAY, SentryAttributeType.inferFrom(listOf("a", 1, true)))
   }
+
+  @Test
+  fun `arrayAttribute factory accepts Object array`() {
+    val attr = SentryAttribute.arrayAttribute("key", arrayOf("a", "b"))
+    assertEquals("key", attr.name)
+    assertEquals(SentryAttributeType.ARRAY, attr.type)
+  }
 }

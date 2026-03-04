@@ -304,10 +304,10 @@ public final class NoOpScope implements IScope {
   public void setAttribute(@Nullable String key, @Nullable Object value) {}
 
   @Override
-  public void setAttribute(@NotNull SentryAttribute attribute) {}
+  public void setAttribute(@Nullable SentryAttribute attribute) {}
 
   @Override
-  public void setAttributes(@NotNull SentryAttributes attributes) {}
+  public void setAttributes(@Nullable SentryAttributes attributes) {}
 
   @Override
   public void removeAttribute(@Nullable String key) {}

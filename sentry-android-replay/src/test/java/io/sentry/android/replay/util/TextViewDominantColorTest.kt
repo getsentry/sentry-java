@@ -33,7 +33,13 @@ class TextViewDominantColorTest {
 
     TextViewActivity.textView?.setTextColor(Color.WHITE)
 
-    val node = ViewHierarchyNode.fromView(TextViewActivity.textView!!, null, 0, SentryOptions())
+    val node =
+      ViewHierarchyNode.fromView(
+        TextViewActivity.textView!!,
+        null,
+        0,
+        SentryOptions().sessionReplay,
+      )
     assertTrue(node is TextViewHierarchyNode)
     assertNull(node.layout?.dominantTextColor)
   }
@@ -53,7 +59,13 @@ class TextViewDominantColorTest {
 
     shadowOf(Looper.getMainLooper()).idle()
 
-    val node = ViewHierarchyNode.fromView(TextViewActivity.textView!!, null, 0, SentryOptions())
+    val node =
+      ViewHierarchyNode.fromView(
+        TextViewActivity.textView!!,
+        null,
+        0,
+        SentryOptions().sessionReplay,
+      )
     assertTrue(node is TextViewHierarchyNode)
     assertEquals(Color.RED, node.layout?.dominantTextColor)
   }
@@ -74,7 +86,13 @@ class TextViewDominantColorTest {
 
     shadowOf(Looper.getMainLooper()).idle()
 
-    val node = ViewHierarchyNode.fromView(TextViewActivity.textView!!, null, 0, SentryOptions())
+    val node =
+      ViewHierarchyNode.fromView(
+        TextViewActivity.textView!!,
+        null,
+        0,
+        SentryOptions().sessionReplay,
+      )
     assertTrue(node is TextViewHierarchyNode)
     assertEquals(Color.BLACK, node.layout?.dominantTextColor)
   }

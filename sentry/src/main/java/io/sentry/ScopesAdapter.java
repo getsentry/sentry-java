@@ -398,12 +398,12 @@ public final class ScopesAdapter implements IScopes {
   }
 
   @Override
-  public void setAttribute(final @NotNull SentryAttribute attribute) {
+  public void setAttribute(final @Nullable SentryAttribute attribute) {
     Sentry.setAttribute(attribute);
   }
 
   @Override
-  public void setAttributes(final @NotNull SentryAttributes attributes) {
+  public void setAttributes(final @Nullable SentryAttributes attributes) {
     Sentry.setAttributes(attributes);
   }
 

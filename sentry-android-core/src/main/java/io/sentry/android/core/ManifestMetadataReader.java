@@ -41,6 +41,7 @@ final class ManifestMetadataReader {
   static final String NDK_SCOPE_SYNC_ENABLE = "io.sentry.ndk.scope-sync.enable";
   static final String NDK_SDK_NAME = "io.sentry.ndk.sdk-name";
   static final String RELEASE = "io.sentry.release";
+  static final String DIST = "io.sentry.dist";
   static final String ENVIRONMENT = "io.sentry.environment";
   static final String SDK_NAME = "io.sentry.sdk.name";
   static final String SDK_VERSION = "io.sentry.sdk.version";
@@ -170,6 +171,10 @@ final class ManifestMetadataReader {
 
   static final String SPOTLIGHT_CONNECTION_URL = "io.sentry.spotlight.url";
 
+  static final String SCREENSHOT_MASK_ALL_TEXT = "io.sentry.screenshot.mask-all-text";
+
+  static final String SCREENSHOT_MASK_ALL_IMAGES = "io.sentry.screenshot.mask-all-images";
+
   /** ManifestMetadataReader ctor */
   private ManifestMetadataReader() {}
 
@@ -268,6 +273,8 @@ final class ManifestMetadataReader {
         }
 
         options.setRelease(readString(metadata, logger, RELEASE, options.getRelease()));
+
+        options.setDist(readString(metadata, logger, DIST, options.getDist()));
 
         options.setEnvironment(readString(metadata, logger, ENVIRONMENT, options.getEnvironment()));
 
@@ -659,6 +666,14 @@ final class ManifestMetadataReader {
         if (spotlightUrl != null) {
           options.setSpotlightConnectionUrl(spotlightUrl);
         }
+
+        // Screenshot masking options (default to false for backwards compatibility)
+        options
+            .getScreenshot()
+            .setMaskAllText(readBool(metadata, logger, SCREENSHOT_MASK_ALL_TEXT, false));
+        options
+            .getScreenshot()
+            .setMaskAllImages(readBool(metadata, logger, SCREENSHOT_MASK_ALL_IMAGES, false));
       }
       options
           .getLogger()

@@ -102,8 +102,7 @@ public final class InternalSentrySdk {
       }
       if (user.getId() == null) {
         try {
-          user.setId(
-              options.getRuntimeManager().runWithRelaxedPolicy(() -> Installation.id(context)));
+          user.setId(Installation.id(context));
         } catch (RuntimeException e) {
           logger.log(SentryLevel.ERROR, "Could not retrieve installation ID", e);
         }
