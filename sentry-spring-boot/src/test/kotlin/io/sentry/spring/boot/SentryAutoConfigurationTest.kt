@@ -779,7 +779,7 @@ class SentryAutoConfigurationTest {
 
   @Test
   fun `when sentry-apache-http-client-5 is not on the classpath, does not create apache transport factory`() {
-    contextRunner
+    baseContextRunner
       .withPropertyValues("sentry.dsn=http://key@localhost/proj")
       .withClassLoader(FilteredClassLoader(ApacheHttpClientTransportFactory::class.java))
       .run {
