@@ -33,23 +33,15 @@ name: App Start Tests
 - assertNotVisible: "Welcome!"
 - waitForAnimationToEnd
 - repeat:
-    times: 5
+    times: 3
     while:
-      notVisible: "App Start Type: WARM"
+      notVisible: "Sentry Test Notification"
     commands:
-      # Reset to home screen to collapse any open shade/quick settings
-      - pressKey: back
-      - pressKey: home
-      - waitForAnimationToEnd
-      # Half-screen swipe: long enough to open shade, short enough to avoid quick settings
       - swipe:
           start: 90%, 0%
-          end: 90%, 50%
-          duration: 2000
-      # Tap immediately after swipe while shade is still open
-      - tapOn:
-          text: "Sentry Test Notification"
-          optional: true
+          end: 90%, 100%
+          duration: 4000
+- tapOn: "Sentry Test Notification"
 - assertVisible: "App Start Type: WARM"
 
 # Test 4: Notification (COLD start)
@@ -65,28 +57,20 @@ name: App Start Tests
       visible: "Allow"
     commands:
       - tapOn: "Allow"
-# Use "Kill Process" button instead of killApp to avoid am force-stop
-# which clears notifications on API 33+
-- tapOn: "Kill Process"
+- tapOn: "Finish Activity"
+- assertNotVisible: "Welcome!"
+- killApp
 - waitForAnimationToEnd
 - repeat:
-    times: 5
+    times: 3
     while:
-      notVisible: "App Start Type: COLD"
+      notVisible: "Sentry Test Notification"
     commands:
-      # Reset to home screen to collapse any open shade/quick settings
-      - pressKey: back
-      - pressKey: home
-      - waitForAnimationToEnd
-      # Half-screen swipe: long enough to open shade, short enough to avoid quick settings
       - swipe:
           start: 90%, 0%
-          end: 90%, 50%
-          duration: 2000
-      # Tap immediately after swipe while shade is still open
-      - tapOn:
-          text: "Sentry Test Notification"
-          optional: true
+          end: 90%, 100%
+          duration: 4000
+- tapOn: "Sentry Test Notification"
 - assertVisible: "App Start Type: COLD"
 # Test 5: Launch app after a broadcast receiver already created the application
 # Uncomment once https://github.com/mobile-dev-inc/Maestro/pull/2925 is merged
