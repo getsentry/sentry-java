@@ -1,7 +1,6 @@
 package io.sentry.android.core;
 
 import static io.sentry.Sentry.getCurrentScopes;
-
 import static io.sentry.SentryLevel.INFO;
 import static io.sentry.SentryLevel.WARNING;
 
