@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Android: Add proguard rules to prevent error about missing Replay classes ([#5152](https://github.com/getsentry/sentry-java/pull/5152))
+
 ## 8.34.0
 
 ### Features
