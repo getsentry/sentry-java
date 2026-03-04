@@ -504,6 +504,7 @@ public final class io/sentry/ExternalOptions {
 	public fun getInAppExcludes ()Ljava/util/List;
 	public fun getInAppIncludes ()Ljava/util/List;
 	public fun getMaxRequestBodySize ()Lio/sentry/SentryOptions$RequestSize;
+	public fun getOrgId ()Ljava/lang/String;
 	public fun getPrintUncaughtStackTrace ()Ljava/lang/Boolean;
 	public fun getProfileLifecycle ()Lio/sentry/ProfileLifecycle;
 	public fun getProfileSessionSampleRate ()Ljava/lang/Double;
@@ -531,6 +532,7 @@ public final class io/sentry/ExternalOptions {
 	public fun isGlobalHubMode ()Ljava/lang/Boolean;
 	public fun isSendDefaultPii ()Ljava/lang/Boolean;
 	public fun isSendModules ()Ljava/lang/Boolean;
+	public fun isStrictTraceContinuation ()Ljava/lang/Boolean;
 	public fun setCaptureOpenTelemetryEvents (Ljava/lang/Boolean;)V
 	public fun setCron (Lio/sentry/SentryOptions$Cron;)V
 	public fun setDebug (Ljava/lang/Boolean;)V
@@ -553,6 +555,7 @@ public final class io/sentry/ExternalOptions {
 	public fun setIgnoredErrors (Ljava/util/List;)V
 	public fun setIgnoredTransactions (Ljava/util/List;)V
 	public fun setMaxRequestBodySize (Lio/sentry/SentryOptions$RequestSize;)V
+	public fun setOrgId (Ljava/lang/String;)V
 	public fun setPrintUncaughtStackTrace (Ljava/lang/Boolean;)V
 	public fun setProfileLifecycle (Lio/sentry/ProfileLifecycle;)V
 	public fun setProfileSessionSampleRate (Ljava/lang/Double;)V
@@ -567,6 +570,7 @@ public final class io/sentry/ExternalOptions {
 	public fun setSendModules (Ljava/lang/Boolean;)V
 	public fun setServerName (Ljava/lang/String;)V
 	public fun setSpotlightConnectionUrl (Ljava/lang/String;)V
+	public fun setStrictTraceContinuation (Ljava/lang/Boolean;)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setTracesSampleRate (Ljava/lang/Double;)V
 }

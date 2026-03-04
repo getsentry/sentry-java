@@ -81,7 +81,7 @@ class PropagationContextTest {
       PropagationContext.fromHeaders(
         NoOpLogger.getInstance(),
         sentryTrace,
-        makeBaggage("1"),
+        listOf(makeBaggage("1")),
         options,
       )
     assertEquals(incomingTraceId, pc.traceId.toString())
@@ -94,7 +94,7 @@ class PropagationContextTest {
       PropagationContext.fromHeaders(
         NoOpLogger.getInstance(),
         sentryTrace,
-        makeBaggage(null),
+        listOf(makeBaggage(null)),
         options,
       )
     assertEquals(incomingTraceId, pc.traceId.toString())
@@ -107,7 +107,7 @@ class PropagationContextTest {
       PropagationContext.fromHeaders(
         NoOpLogger.getInstance(),
         sentryTrace,
-        makeBaggage("1"),
+        listOf(makeBaggage("1")),
         options,
       )
     assertEquals(incomingTraceId, pc.traceId.toString())
@@ -120,7 +120,7 @@ class PropagationContextTest {
       PropagationContext.fromHeaders(
         NoOpLogger.getInstance(),
         sentryTrace,
-        makeBaggage(null),
+        listOf(makeBaggage(null)),
         options,
       )
     assertEquals(incomingTraceId, pc.traceId.toString())
@@ -133,7 +133,7 @@ class PropagationContextTest {
       PropagationContext.fromHeaders(
         NoOpLogger.getInstance(),
         sentryTrace,
-        makeBaggage("1"),
+        listOf(makeBaggage("1")),
         options,
       )
     assertNotEquals(incomingTraceId, pc.traceId.toString())
@@ -146,7 +146,7 @@ class PropagationContextTest {
       PropagationContext.fromHeaders(
         NoOpLogger.getInstance(),
         sentryTrace,
-        makeBaggage("1"),
+        listOf(makeBaggage("1")),
         options,
       )
     assertEquals(incomingTraceId, pc.traceId.toString())
@@ -159,7 +159,7 @@ class PropagationContextTest {
       PropagationContext.fromHeaders(
         NoOpLogger.getInstance(),
         sentryTrace,
-        makeBaggage(null),
+        listOf(makeBaggage(null)),
         options,
       )
     assertNotEquals(incomingTraceId, pc.traceId.toString())
@@ -172,7 +172,7 @@ class PropagationContextTest {
       PropagationContext.fromHeaders(
         NoOpLogger.getInstance(),
         sentryTrace,
-        makeBaggage("1"),
+        listOf(makeBaggage("1")),
         options,
       )
     assertNotEquals(incomingTraceId, pc.traceId.toString())
@@ -185,7 +185,7 @@ class PropagationContextTest {
       PropagationContext.fromHeaders(
         NoOpLogger.getInstance(),
         sentryTrace,
-        makeBaggage(null),
+        listOf(makeBaggage(null)),
         options,
       )
     assertEquals(incomingTraceId, pc.traceId.toString())
@@ -198,7 +198,7 @@ class PropagationContextTest {
       PropagationContext.fromHeaders(
         NoOpLogger.getInstance(),
         sentryTrace,
-        makeBaggage("1"),
+        listOf(makeBaggage("1")),
         options,
       )
     assertNotEquals(incomingTraceId, pc.traceId.toString())

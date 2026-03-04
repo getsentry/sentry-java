@@ -23,7 +23,12 @@ public final class PropagationContext {
       final @NotNull ILogger logger,
       final @Nullable String sentryTraceHeaderString,
       final @Nullable List<String> baggageHeaderStrings) {
-    return fromHeaders(logger, sentryTraceHeaderString, baggageHeaderStrings, null);
+    @Nullable SentryOptions options = null;
+    try {
+      options = Sentry.getCurrentScopes().getOptions();
+    } catch (Throwable ignored) {
+    }
+    return fromHeaders(logger, sentryTraceHeaderString, baggageHeaderStrings, options);
   }
 
   public static @NotNull PropagationContext fromHeaders(

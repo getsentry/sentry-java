@@ -15,7 +15,7 @@ final class Dsn {
   private final @Nullable String secretKey;
   private final @NotNull String publicKey;
   private final @NotNull URI sentryUri;
-  private @Nullable String orgId;
+  private final @Nullable String orgId;
 
   /*
   / The project ID which the authenticated user is bound to.
@@ -94,13 +94,15 @@ final class Dsn {
               scheme, null, uri.getHost(), uri.getPort(), path + "api/" + projectId, null, null);
 
       // Extract org ID from host (e.g., "o123.ingest.sentry.io" -> "123")
+      String extractedOrgId = null;
       final String host = uri.getHost();
       if (host != null) {
         final Matcher matcher = ORG_ID_PATTERN.matcher(host);
         if (matcher.find()) {
-          orgId = matcher.group(1);
+          extractedOrgId = matcher.group(1);
         }
       }
+      orgId = extractedOrgId;
     } catch (Throwable e) {
       throw new IllegalArgumentException(e);
     }
@@ -108,9 +110,5 @@ final class Dsn {
 
   public @Nullable String getOrgId() {
     return orgId;
-  }
-
-  void setOrgId(final @Nullable String orgId) {
-    this.orgId = orgId;
   }
 }

@@ -3571,6 +3571,12 @@ public class SentryOptions {
     if (options.getProfileLifecycle() != null) {
       setProfileLifecycle(options.getProfileLifecycle());
     }
+    if (options.isStrictTraceContinuation() != null) {
+      setStrictTraceContinuation(options.isStrictTraceContinuation());
+    }
+    if (options.getOrgId() != null) {
+      setOrgId(options.getOrgId());
+    }
   }
 
   private @NotNull SdkVersion createSdkVersion() {
