@@ -8,6 +8,7 @@
   - Automatically include scope attributes in logs and metrics ([#5120](https://github.com/getsentry/sentry-java/pull/5120))
   - New APIs are `Sentry.setAttribute`, `Sentry.setAttributes`, `Sentry.removeAttribute`
 - Support collections and arrays in attribute type inference ([#5124](https://github.com/getsentry/sentry-java/pull/5124))
+- Add support for `SENTRY_SAMPLE_RATE` environment variable / `sample-rate` property ([#5112](https://github.com/getsentry/sentry-java/pull/5112))
 - Create `sentry-opentelemetry-otlp` and `sentry-opentelemetry-otlp-spring` modules for combining OpenTelemetry SDK OTLP export with Sentry SDK ([#5100](https://github.com/getsentry/sentry-java/pull/5100))
   - OpenTelemetry is configured to send spans to Sentry directly using an OTLP endpoint.
   - Sentry only uses trace and span ID from OpenTelemetry (via `OpenTelemetryOtlpEventProcessor`) but will not send spans through OpenTelemetry nor use OpenTelemetry `Context` for `Scopes` propagation.
@@ -31,6 +32,7 @@
     <meta-data android:name="io.sentry.screenshot.mask-all-text" android:value="true" />
     <meta-data android:name="io.sentry.screenshot.mask-all-images" android:value="true" />
     ```
+- The `ManifestMetaDataReader` now read the `DIST` ([#5107](https://github.com/getsentry/sentry-java/pull/5107))
 
 ### Fixes
 
