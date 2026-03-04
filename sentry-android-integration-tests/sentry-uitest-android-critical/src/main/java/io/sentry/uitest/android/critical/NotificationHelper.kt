@@ -24,7 +24,7 @@ object NotificationHelper {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
       notificationManager.deleteNotificationChannel(CHANNEL_ID)
       val channel =
-        NotificationChannel(CHANNEL_ID, "Notifications", NotificationManager.IMPORTANCE_HIGH)
+        NotificationChannel(CHANNEL_ID, "Notifications", NotificationManager.IMPORTANCE_DEFAULT)
       channel.description = "description"
       notificationManager.createNotificationChannel(channel)
     }
