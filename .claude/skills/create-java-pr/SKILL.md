@@ -1,11 +1,23 @@
 ---
 name: create-java-pr
-description: Create a pull request in sentry-java. Use when asked to "create pr", "prepare pr", "prep pr", "open pr", "ready for pr", "prepare for review", "finalize changes". Handles branch creation, code formatting, API dump, committing, pushing, PR creation, and changelog.
+description: Create a pull request in sentry-java. Use when asked to "create pr", "prepare pr", "prep pr", "open pr", "ready for pr", "prepare for review", "finalize changes". Handles branch creation, code formatting, API dump, committing, pushing, PR creation, changelog, and stacked PRs.
 ---
 
 # Create Pull Request (sentry-java)
 
 Prepare local changes and create a pull request for the sentry-java repo.
+
+**Required reading:** Before proceeding, read `.cursor/rules/pr.mdc` for the full PR and stacked PR workflow details. That file is the source of truth for PR conventions, stack comment format, branch naming, and merge strategy.
+
+## Step 0: Determine PR Type
+
+Ask the user (or infer from context) whether this is:
+
+- **Standalone PR** — a regular PR targeting `main`. Follow Steps 1–6 as written.
+- **First PR of a new stack** — ask for a topic name (e.g. "Global Attributes"). Create a collection branch from `main`, then branch the first PR off it. The first PR targets the collection branch.
+- **Next PR in an existing stack** — identify the previous stack branch and topic. This PR targets the previous stack branch.
+
+If the user mentions "stack", "stacked PR", or provides a topic name with a number (e.g. `[Topic 2]`), treat it as a stacked PR. See `.cursor/rules/pr.mdc` § "Stacked PRs" for full details.
 
 ## Step 1: Ensure Feature Branch
 
@@ -20,6 +32,8 @@ git checkout -b <type>/<short-description>
 ```
 
 Derive the branch name from the changes being made. Use `feat/`, `fix/`, `ref/`, etc. matching the commit type conventions.
+
+**For stacked PRs:** For the first PR in a new stack, first create and push the collection branch (see `.cursor/rules/pr.mdc` § "Creating the Collection Branch"), then branch the PR off it. For subsequent PRs, branch off the previous stack branch. Use the naming conventions from `.cursor/rules/pr.mdc` § "Branch Naming".
 
 ## Step 2: Format Code and Regenerate API Files
 
@@ -92,13 +106,38 @@ Invoke the `sentry-skills:create-pr` skill to create a draft PR. When providing 
 
 Fill in each section based on the changes being PR'd. Check any checklist items that apply.
 
-Then continue to Step 6.
+**For stacked PRs:**
+
+- Pass `--base <previous-stack-branch>` so the PR targets the previous branch (first PR in a stack targets the collection branch).
+- Use the stacked PR title format: `<type>(<scope>): [<Topic> <N>] <Subject>` (see `.cursor/rules/pr.mdc` § "PR Title Naming").
+- Include the stack list at the top of the PR body, before the `## :scroll: Description` section (see `.cursor/rules/pr.mdc` § "Stack List in PR Description" for the format).
+
+Then continue to Step 5.5 (stacked PRs only) or Step 6.
+
+## Step 5.5: Update Stack List on All PRs (stacked PRs only)
+
+Skip this step for standalone PRs.
+
+After creating the PR, update the PR description on **every other PR in the stack** so all PRs have the same up-to-date stack list. Follow the format and commands in `.cursor/rules/pr.mdc` § "Stack List in PR Description".
 
 ## Step 6: Update Changelog
 
-After the PR is created, add an entry to `CHANGELOG.md` under the `## Unreleased` section.
+First, determine whether a changelog entry is needed. **Skip this step** (and go straight to "No changelog needed" below) if the changes are not user-facing, for example:
 
-### Determine the subsection
+- Test-only changes (new tests, test refactors, test fixtures)
+- CI/CD or build configuration changes
+- Documentation-only changes
+- Code comments or formatting-only changes
+- Internal refactors with no behavior change visible to SDK users
+- Sample app changes
+
+If unsure, ask the user.
+
+### If changelog is needed
+
+Add an entry to `CHANGELOG.md` under the `## Unreleased` section.
+
+#### Determine the subsection
 
 | Change Type | Subsection |
 |---|---|
@@ -109,7 +148,7 @@ After the PR is created, add an entry to `CHANGELOG.md` under the `## Unreleased
 
 Create the subsection under `## Unreleased` if it does not already exist.
 
-### Entry format
+#### Entry format
 
 ```markdown
 - <Short description of the change> ([#<PR_NUMBER>](https://github.com/getsentry/sentry-java/pull/<PR_NUMBER>))
@@ -117,7 +156,7 @@ Create the subsection under `## Unreleased` if it does not already exist.
 
 Use the PR number returned by `sentry-skills:create-pr`. Match the style of existing entries — sentence case, ending with the PR link, no trailing period.
 
-### Commit and push
+#### Commit and push
 
 Stage `CHANGELOG.md`, commit with message `changelog`, and push:
 
@@ -125,4 +164,14 @@ Stage `CHANGELOG.md`, commit with message `changelog`, and push:
 git add CHANGELOG.md
 git commit -m "changelog"
 git push
+```
+
+### No changelog needed
+
+If no changelog entry is needed, add `#skip-changelog` to the PR description to disable the changelog CI check:
+
+```bash
+gh pr edit <PR_NUMBER> --body "$(gh pr view <PR_NUMBER> --json body --jq '.body')
+
+#skip-changelog"
 ```
