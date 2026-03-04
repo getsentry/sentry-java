@@ -48,13 +48,6 @@ final class PreviousSessionFinalizer implements Runnable {
       return;
     }
 
-    if (!options.isEnableAutoSessionTracking()) {
-      options
-          .getLogger()
-          .log(DEBUG, "Session tracking is disabled, bailing from previous session finalizer.");
-      return;
-    }
-
     final IEnvelopeCache cache = options.getEnvelopeDiskCache();
     if (cache instanceof EnvelopeCache) {
       if (!((EnvelopeCache) cache).waitPreviousSessionFlush()) {
