@@ -663,10 +663,7 @@ final class ManifestMetadataReader {
 
         options.setStrictTraceContinuation(
             readBool(
-                metadata,
-                logger,
-                STRICT_TRACE_CONTINUATION,
-                options.isStrictTraceContinuation()));
+                metadata, logger, STRICT_TRACE_CONTINUATION, options.isStrictTraceContinuation()));
 
         final @Nullable String orgId = readString(metadata, logger, ORG_ID, null);
         if (orgId != null) {
