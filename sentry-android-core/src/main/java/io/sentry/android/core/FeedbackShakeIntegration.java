@@ -28,7 +28,6 @@ public final class FeedbackShakeIntegration
   private volatile @Nullable Activity currentActivity;
   private volatile boolean isDialogShowing = false;
   private volatile @Nullable Activity dialogActivity;
-  private @Nullable Runnable originalOnFormClose;
 
   public FeedbackShakeIntegration(final @NotNull Application application) {
     this.application = Objects.requireNonNull(application, "Application is required");
@@ -43,7 +42,6 @@ public final class FeedbackShakeIntegration
     }
 
     addIntegrationToSdkVersion("FeedbackShake");
-    originalOnFormClose = this.options.getFeedbackOptions().getOnFormClose();
     application.registerActivityLifecycleCallbacks(this);
     options.getLogger().log(SentryLevel.DEBUG, "FeedbackShakeIntegration installed.");
 
@@ -119,6 +117,8 @@ public final class FeedbackShakeIntegration
                   if (isDialogShowing) {
                     return;
                   }
+                  final Runnable previousOnFormClose =
+                      options.getFeedbackOptions().getOnFormClose();
                   try {
                     isDialogShowing = true;
                     dialogActivity = active;
@@ -128,16 +128,16 @@ public final class FeedbackShakeIntegration
                             () -> {
                               isDialogShowing = false;
                               dialogActivity = null;
-                              options.getFeedbackOptions().setOnFormClose(originalOnFormClose);
-                              if (originalOnFormClose != null) {
-                                originalOnFormClose.run();
+                              options.getFeedbackOptions().setOnFormClose(previousOnFormClose);
+                              if (previousOnFormClose != null) {
+                                previousOnFormClose.run();
                               }
                             });
                     options.getFeedbackOptions().getDialogHandler().showDialog(null, null);
                   } catch (Throwable e) {
                     isDialogShowing = false;
                     dialogActivity = null;
-                    options.getFeedbackOptions().setOnFormClose(originalOnFormClose);
+                    options.getFeedbackOptions().setOnFormClose(previousOnFormClose);
                     options
                         .getLogger()
                         .log(SentryLevel.ERROR, "Failed to show feedback dialog on shake.", e);
