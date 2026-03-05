@@ -8,6 +8,9 @@ import io.sentry.SentryLevel
 import io.sentry.SentryLogLevel
 import io.sentry.checkEvent
 import io.sentry.checkLogs
+import io.sentry.logger.ILoggerBatchProcessorFactory
+import io.sentry.logger.LoggerBatchProcessor
+import io.sentry.test.ImmediateExecutorService
 import io.sentry.test.initForTest
 import io.sentry.transport.ITransport
 import java.time.Instant
@@ -93,7 +96,14 @@ class SentryAppenderTest {
 
       loggerContext.updateLoggers(config)
 
-      appender.start()
+      appender.start(
+        appender.getOptionsConfiguration { options ->
+          options.logs.loggerBatchProcessorFactory =
+            ILoggerBatchProcessorFactory { options, client ->
+              LoggerBatchProcessor(options, client, ImmediateExecutorService())
+            }
+        }
+      )
       loggerContext.start()
 
       return LogManager.getContext().getLogger(SentryAppenderTest::class.java.name)
