@@ -98,7 +98,7 @@ public final class FeedbackShakeIntegration
     if (activity == dialogActivity) {
       isDialogShowing = false;
       dialogActivity = null;
-      if (options != null && previousOnFormClose != null) {
+      if (options != null) {
         options.getFeedbackOptions().setOnFormClose(previousOnFormClose);
       }
       previousOnFormClose = null;
