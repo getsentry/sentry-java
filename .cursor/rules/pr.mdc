@@ -204,9 +204,9 @@ Format:
 ```markdown
 ## PR Stack (<Topic>)
 
-- [#5118](https://github.com/getsentry/sentry-java/pull/5118) — Add scope-level attributes API
-- [#5120](https://github.com/getsentry/sentry-java/pull/5120) — Wire scope attributes into LoggerApi and MetricsApi
-- [#5121](https://github.com/getsentry/sentry-java/pull/5121) — Showcase scope attributes in Spring Boot 4 samples
+- #5118
+- #5120
+- #5121
 
 ---
 ```
