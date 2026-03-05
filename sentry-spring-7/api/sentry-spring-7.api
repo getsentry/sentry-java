@@ -104,6 +104,12 @@ public final class io/sentry/spring7/SpringSecuritySentryUserProvider : io/sentr
 	public fun provideUser ()Lio/sentry/protocol/User;
 }
 
+public final class io/sentry/spring7/cache/SentryCacheBeanPostProcessor : org/springframework/beans/factory/config/BeanPostProcessor, org/springframework/core/PriorityOrdered {
+	public fun <init> ()V
+	public fun getOrder ()I
+	public fun postProcessAfterInitialization (Ljava/lang/Object;Ljava/lang/String;)Ljava/lang/Object;
+}
+
 public final class io/sentry/spring7/cache/SentryCacheManagerWrapper : org/springframework/cache/CacheManager {
 	public fun <init> (Lorg/springframework/cache/CacheManager;Lio/sentry/IScopes;)V
 	public fun getCache (Ljava/lang/String;)Lorg/springframework/cache/Cache;

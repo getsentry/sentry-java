@@ -11,6 +11,9 @@
 
 ### Features
 
+- Add cache tracing instrumentation for Spring Boot 4 ([#5137](https://github.com/getsentry/sentry-java/pull/5137), [#5141](https://github.com/getsentry/sentry-java/pull/5141), [#5142](https://github.com/getsentry/sentry-java/pull/5142))
+  - Wraps Spring `CacheManager` and `Cache` beans to produce `cache.get`, `cache.put`, `cache.remove`, and `cache.flush` spans
+  - Enable via `sentry.enable-cache-tracing=true`
 - Allow configuring shutdown and session flush timeouts externally ([#4641](https://github.com/getsentry/sentry-java/pull/4641))
   - `sentry.properties`: `shutdown-timeout-millis`, `session-flush-timeout-millis`
   - Environment variables: `SENTRY_SHUTDOWN_TIMEOUT_MILLIS`, `SENTRY_SESSION_FLUSH_TIMEOUT_MILLIS`
