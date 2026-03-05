@@ -16,6 +16,7 @@ import io.sentry.android.core.AppState;
 import io.sentry.android.core.SentryAndroidOptions;
 import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.Objects;
+import io.sentry.util.SentryRandom;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
@@ -47,6 +48,7 @@ public class AnrProfilingIntegration
   private volatile @NotNull ILogger logger = NoOpLogger.getInstance();
   private volatile @Nullable SentryAndroidOptions options;
   private volatile @Nullable Thread thread = null;
+  private volatile boolean sampled = false;
   private volatile boolean inForeground = false;
   private volatile @Nullable Handler mainHandler;
   private volatile @Nullable Thread mainThread;
@@ -59,7 +61,7 @@ public class AnrProfilingIntegration
             "SentryAndroidOptions is required");
     this.logger = options.getLogger();
 
-    if (this.options.isEnableAnrProfiling()) {
+    if (this.options.isAnrProfilingEnabled()) {
       if (this.options.getCacheDirPath() == null) {
         logger.log(SentryLevel.WARNING, "ANR Profiling is enabled but cacheDirPath is not set");
         return;
@@ -207,6 +209,7 @@ public class AnrProfilingIntegration
 
     if (diff < THRESHOLD_SUSPICION_MS) {
       mainThreadState = MainThreadState.IDLE;
+      sampled = false;
     }
 
     if (mainThreadState == MainThreadState.IDLE && diff > THRESHOLD_SUSPICION_MS) {
@@ -214,12 +217,22 @@ public class AnrProfilingIntegration
         logger.log(SentryLevel.DEBUG, "ANR: main thread is suspicious");
       }
       mainThreadState = MainThreadState.SUSPICIOUS;
-      clearStacks();
+
+      final @Nullable SentryAndroidOptions opts = options;
+      final @Nullable Double sampleRate = opts != null ? opts.getAnrProfilingSampleRate() : null;
+      if (sampleRate != null && SentryRandom.current().nextDouble() < sampleRate) {
+        sampled = true;
+      }
+
+      if (sampled) {
+        clearStacks();
+      }
     }
 
-    // if we are suspicious, we need to collect stack traces
-    if (mainThreadState == MainThreadState.SUSPICIOUS
-        || mainThreadState == MainThreadState.ANR_DETECTED) {
+    // if we are suspicious and sampled, we need to collect stack traces
+    if (sampled
+        && (mainThreadState == MainThreadState.SUSPICIOUS
+            || mainThreadState == MainThreadState.ANR_DETECTED)) {
       if (numCollectedStacks.get() < MAX_NUM_STACKS) {
         final long start = SystemClock.uptimeMillis();
         final @NotNull AnrStackTrace trace =

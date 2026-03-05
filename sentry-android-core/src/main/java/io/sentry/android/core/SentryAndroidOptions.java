@@ -17,6 +17,7 @@ import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryId;
+import io.sentry.util.SampleRateUtils;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -252,7 +253,7 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   private final @NotNull SentryScreenshotOptions screenshot = new SentryScreenshotOptions();
 
-  private boolean enableAnrProfiling = false;
+  private @Nullable Double anrProfilingSampleRate;
 
   public SentryAndroidOptions() {
     setSentryClientName(BuildConfig.SENTRY_ANDROID_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
@@ -697,12 +698,22 @@ public final class SentryAndroidOptions extends SentryOptions {
     return screenshot;
   }
 
-  public boolean isEnableAnrProfiling() {
-    return enableAnrProfiling;
+  public @Nullable Double getAnrProfilingSampleRate() {
+    return anrProfilingSampleRate;
   }
 
-  public void setEnableAnrProfiling(final boolean enableAnrProfiling) {
-    this.enableAnrProfiling = enableAnrProfiling;
+  public void setAnrProfilingSampleRate(final @Nullable Double anrProfilingSampleRate) {
+    if (!SampleRateUtils.isValidSampleRate(anrProfilingSampleRate)) {
+      throw new IllegalArgumentException(
+          "The value "
+              + anrProfilingSampleRate
+              + " is not valid. Use null to disable or values >= 0.0 and <= 1.0.");
+    }
+    this.anrProfilingSampleRate = anrProfilingSampleRate;
+  }
+
+  public boolean isAnrProfilingEnabled() {
+    return anrProfilingSampleRate != null && anrProfilingSampleRate > 0;
   }
 
   static class AndroidUserFeedbackIDialogHandler implements SentryFeedbackOptions.IDialogHandler {

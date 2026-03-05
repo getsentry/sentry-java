@@ -39,7 +39,7 @@ class AnrProfilingIntegrationTest {
       SentryAndroidOptions().apply {
         cacheDirPath = tmpDir.root.absolutePath
         setLogger(mockLogger)
-        isEnableAnrProfiling = true
+        anrProfilingSampleRate = 1.0
       }
     AppState.getInstance().resetInstance()
   }
@@ -169,7 +169,7 @@ class AnrProfilingIntegrationTest {
       SentryAndroidOptions().apply {
         cacheDirPath = tmpDir.root.absolutePath
         setLogger(mockLogger)
-        isEnableAnrProfiling = true
+        anrProfilingSampleRate = 1.0
       }
 
     val integration = AnrProfilingIntegration()
@@ -205,7 +205,7 @@ class AnrProfilingIntegrationTest {
       SentryAndroidOptions().apply {
         cacheDirPath = tmpDir.root.absolutePath
         setLogger(mockLogger)
-        isEnableAnrProfiling = true
+        anrProfilingSampleRate = 1.0
       }
 
     val integration = AnrProfilingIntegration()
@@ -249,7 +249,7 @@ class AnrProfilingIntegrationTest {
       SentryAndroidOptions().apply {
         cacheDirPath = tmpDir.root.absolutePath
         setLogger(mockLogger)
-        isEnableAnrProfiling = false
+        anrProfilingSampleRate = null
       }
 
     val integration = AnrProfilingIntegration()
@@ -264,12 +264,42 @@ class AnrProfilingIntegrationTest {
   }
 
   @Test
+  fun `does not collect stacks when sample rate is zero`() {
+    val mainThread = Thread.currentThread()
+    SystemClock.setCurrentTimeMillis(1_00)
+
+    val androidOptions =
+      SentryAndroidOptions().apply {
+        cacheDirPath = tmpDir.root.absolutePath
+        setLogger(mockLogger)
+        anrProfilingSampleRate = 0.0
+      }
+
+    val integration = AnrProfilingIntegration()
+    integration.register(mockScopes, androidOptions)
+    integration.onForeground()
+
+    // Transition to suspicious
+    SystemClock.setCurrentTimeMillis(3_000)
+    integration.checkMainThread(mainThread)
+    assertEquals(AnrProfilingIntegration.MainThreadState.SUSPICIOUS, integration.state)
+
+    // Transition to ANR
+    SystemClock.setCurrentTimeMillis(6_000)
+    integration.checkMainThread(mainThread)
+    assertEquals(AnrProfilingIntegration.MainThreadState.ANR_DETECTED, integration.state)
+
+    // No stacks should have been collected
+    assertEquals(0, integration.numCollectedStacks.get())
+  }
+
+  @Test
   fun `registers when ANR profiling is enabled`() {
     val androidOptions =
       SentryAndroidOptions().apply {
         cacheDirPath = tmpDir.root.absolutePath
         setLogger(mockLogger)
-        isEnableAnrProfiling = true
+        anrProfilingSampleRate = 1.0
       }
 
     val integration = AnrProfilingIntegration()
