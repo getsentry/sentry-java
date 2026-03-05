@@ -3451,6 +3451,12 @@ public class SentryOptions {
     if (options.getIdleTimeout() != null) {
       setIdleTimeout(options.getIdleTimeout());
     }
+    if (options.getShutdownTimeoutMillis() != null) {
+      setShutdownTimeoutMillis(options.getShutdownTimeoutMillis());
+    }
+    if (options.getSessionFlushTimeoutMillis() != null) {
+      setSessionFlushTimeoutMillis(options.getSessionFlushTimeoutMillis());
+    }
     for (String bundleId : options.getBundleIds()) {
       addBundleId(bundleId);
     }

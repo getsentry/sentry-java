@@ -8,6 +8,9 @@ import io.sentry.SentryLevel
 import io.sentry.SentryLogLevel
 import io.sentry.checkEvent
 import io.sentry.checkLogs
+import io.sentry.logger.ILoggerBatchProcessorFactory
+import io.sentry.logger.LoggerBatchProcessor
+import io.sentry.test.ImmediateExecutorService
 import io.sentry.test.initForTest
 import io.sentry.transport.ITransport
 import java.time.Instant
@@ -93,7 +96,14 @@ class SentryAppenderTest {
 
       loggerContext.updateLoggers(config)
 
-      appender.start()
+      appender.start(
+        appender.getOptionsConfiguration { options ->
+          options.logs.loggerBatchProcessorFactory =
+            ILoggerBatchProcessorFactory { options, client ->
+              LoggerBatchProcessor(options, client, ImmediateExecutorService())
+            }
+        }
+      )
       loggerContext.start()
 
       return LogManager.getContext().getLogger(SentryAppenderTest::class.java.name)
@@ -248,7 +258,7 @@ class SentryAppenderTest {
     val logger = fixture.getSut(minimumLevel = Level.TRACE)
     logger.trace("testing trace level")
 
-    Sentry.flush(1000)
+    Sentry.flush(10)
 
     verify(fixture.transport)
       .send(
@@ -267,7 +277,7 @@ class SentryAppenderTest {
     val logger = fixture.getSut(minimumLevel = Level.DEBUG)
     logger.debug("testing debug level")
 
-    Sentry.flush(1000)
+    Sentry.flush(10)
 
     verify(fixture.transport)
       .send(checkLogs { event -> assertEquals(SentryLogLevel.DEBUG, event.items.first().level) })
@@ -278,7 +288,7 @@ class SentryAppenderTest {
     val logger = fixture.getSut(minimumLevel = Level.INFO)
     logger.info("testing info level")
 
-    Sentry.flush(1000)
+    Sentry.flush(10)
 
     verify(fixture.transport)
       .send(checkLogs { event -> assertEquals(SentryLogLevel.INFO, event.items.first().level) })
@@ -289,7 +299,7 @@ class SentryAppenderTest {
     val logger = fixture.getSut(minimumLevel = Level.WARN)
     logger.warn("testing warn level")
 
-    Sentry.flush(1000)
+    Sentry.flush(10)
 
     verify(fixture.transport)
       .send(checkLogs { event -> assertEquals(SentryLogLevel.WARN, event.items.first().level) })
@@ -300,7 +310,7 @@ class SentryAppenderTest {
     val logger = fixture.getSut(minimumLevel = Level.ERROR)
     logger.error("testing error level")
 
-    Sentry.flush(1000)
+    Sentry.flush(10)
 
     verify(fixture.transport)
       .send(checkLogs { event -> assertEquals(SentryLogLevel.ERROR, event.items.first().level) })
@@ -311,7 +321,7 @@ class SentryAppenderTest {
     val logger = fixture.getSut(minimumLevel = Level.FATAL)
     logger.fatal("testing fatal level")
 
-    Sentry.flush(1000)
+    Sentry.flush(10)
 
     verify(fixture.transport)
       .send(checkLogs { event -> assertEquals(SentryLogLevel.FATAL, event.items.first().level) })

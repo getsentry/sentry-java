@@ -18,6 +18,10 @@ import io.sentry.SentryLogLevel
 import io.sentry.SentryOptions
 import io.sentry.checkEvent
 import io.sentry.checkLogs
+import io.sentry.logger.ILoggerBatchProcessorFactory
+import io.sentry.logger.LoggerBatchProcessor
+import io.sentry.test.ImmediateExecutorService
+import io.sentry.test.applyTestOptions
 import io.sentry.test.initForTest
 import io.sentry.transport.ITransport
 import java.time.Instant
@@ -68,6 +72,10 @@ class SentryAppenderTest {
       options.dsn = dsn
       options.isSendDefaultPii = sendDefaultPii
       options.logs.isEnabled = enableLogs
+      options.logs.loggerBatchProcessorFactory = ILoggerBatchProcessorFactory { options, client ->
+        LoggerBatchProcessor(options, client, ImmediateExecutorService())
+      }
+      applyTestOptions(options)
       contextTags?.forEach { options.addContextTag(it) }
       appender.setOptions(options)
       appender.setMinimumBreadcrumbLevel(minimumBreadcrumbLevel)
@@ -317,7 +325,7 @@ class SentryAppenderTest {
     fixture = Fixture(minimumLevel = Level.TRACE, enableLogs = true)
     fixture.logger.trace("testing trace level")
 
-    Sentry.flush(1000)
+    Sentry.flush(10)
 
     verify(fixture.transport)
       .send(checkLogs { logs -> assertEquals(SentryLogLevel.TRACE, logs.items.first().level) })
@@ -328,7 +336,7 @@ class SentryAppenderTest {
     fixture = Fixture(minimumLevel = Level.DEBUG, enableLogs = true)
     fixture.logger.debug("testing debug level")
 
-    Sentry.flush(1000)
+    Sentry.flush(10)
 
     verify(fixture.transport)
       .send(checkLogs { logs -> assertEquals(SentryLogLevel.DEBUG, logs.items.first().level) })
@@ -339,7 +347,7 @@ class SentryAppenderTest {
     fixture = Fixture(minimumLevel = Level.INFO, enableLogs = true)
     fixture.logger.info("testing info level")
 
-    Sentry.flush(1000)
+    Sentry.flush(10)
 
     verify(fixture.transport)
       .send(checkLogs { logs -> assertEquals(SentryLogLevel.INFO, logs.items.first().level) })
@@ -350,7 +358,7 @@ class SentryAppenderTest {
     fixture = Fixture(minimumLevel = Level.WARN, enableLogs = true)
     fixture.logger.warn("testing warn level")
 
-    Sentry.flush(1000)
+    Sentry.flush(10)
 
     verify(fixture.transport)
       .send(checkLogs { logs -> assertEquals(SentryLogLevel.WARN, logs.items.first().level) })
@@ -361,7 +369,7 @@ class SentryAppenderTest {
     fixture = Fixture(minimumLevel = Level.ERROR, enableLogs = true)
     fixture.logger.error("testing error level")
 
-    Sentry.flush(1000)
+    Sentry.flush(10)
 
     verify(fixture.transport)
       .send(checkLogs { logs -> assertEquals(SentryLogLevel.ERROR, logs.items.first().level) })
@@ -372,7 +380,7 @@ class SentryAppenderTest {
     fixture = Fixture(minimumLevel = Level.TRACE, enableLogs = true)
     fixture.logger.trace("Testing {} level", "TRACE")
 
-    Sentry.flush(1000)
+    Sentry.flush(10)
 
     verify(fixture.transport)
       .send(
@@ -394,7 +402,7 @@ class SentryAppenderTest {
     fixture = Fixture(minimumLevel = Level.TRACE, enableLogs = true, encoder = encoder)
     fixture.logger.trace("Testing {} level", "TRACE")
 
-    Sentry.flush(1000)
+    Sentry.flush(10)
 
     verify(fixture.transport)
       .send(
@@ -420,7 +428,7 @@ class SentryAppenderTest {
       )
     fixture.logger.trace("Testing {} level", "TRACE")
 
-    Sentry.flush(1000)
+    Sentry.flush(10)
 
     verify(fixture.transport)
       .send(
@@ -447,7 +455,7 @@ class SentryAppenderTest {
       )
     fixture.logger.trace("Testing {} level", "TRACE")
 
-    Sentry.flush(1000)
+    Sentry.flush(10)
 
     verify(fixture.transport)
       .send(
