@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Common: Finalize previous session even when auto session tracking is disabled ([#5154](https://github.com/getsentry/sentry-java/pull/5154))
+- Android: Add proguard rules to prevent error about missing Replay classes ([#5153](https://github.com/getsentry/sentry-java/pull/5153))
+
 ## 8.34.0
 
 ### Features
@@ -7,6 +14,10 @@
 - Add cache tracing instrumentation for Spring Boot 4 ([#5137](https://github.com/getsentry/sentry-java/pull/5137), [#5141](https://github.com/getsentry/sentry-java/pull/5141), [#5142](https://github.com/getsentry/sentry-java/pull/5142))
   - Wraps Spring `CacheManager` and `Cache` beans to produce `cache.get`, `cache.put`, `cache.remove`, and `cache.flush` spans
   - Enable via `sentry.enable-cache-tracing=true`
+- Allow configuring shutdown and session flush timeouts externally ([#4641](https://github.com/getsentry/sentry-java/pull/4641))
+  - `sentry.properties`: `shutdown-timeout-millis`, `session-flush-timeout-millis`
+  - Environment variables: `SENTRY_SHUTDOWN_TIMEOUT_MILLIS`, `SENTRY_SESSION_FLUSH_TIMEOUT_MILLIS`
+  - Spring Boot `application.properties`: `sentry.shutdownTimeoutMillis`, `sentry.sessionFlushTimeoutMillis`
 - Add scope-level attributes API ([#5118](https://github.com/getsentry/sentry-java/pull/5118)) via ([#5148](https://github.com/getsentry/sentry-java/pull/5148))
   - Automatically include scope attributes in logs and metrics ([#5120](https://github.com/getsentry/sentry-java/pull/5120))
   - New APIs are `Sentry.setAttribute`, `Sentry.setAttributes`, `Sentry.removeAttribute`
