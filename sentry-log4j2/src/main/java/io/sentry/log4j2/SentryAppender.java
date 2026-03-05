@@ -165,7 +165,6 @@ public class SentryAppender extends AbstractAppender {
   @Override
   public void start() {
     start(getOptionsConfiguration(null));
-    super.start();
   }
 
   @NotNull
@@ -203,6 +202,7 @@ public class SentryAppender extends AbstractAppender {
       }
     }
     addPackageAndIntegrationInfo();
+    super.start();
   }
 
   @Override
