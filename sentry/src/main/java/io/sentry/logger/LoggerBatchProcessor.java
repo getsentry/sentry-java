@@ -21,8 +21,10 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.TestOnly;
 
 @Open
 public class LoggerBatchProcessor implements ILoggerBatchProcessor {
@@ -44,10 +46,19 @@ public class LoggerBatchProcessor implements ILoggerBatchProcessor {
 
   public LoggerBatchProcessor(
       final @NotNull SentryOptions options, final @NotNull ISentryClient client) {
+    this(options, client, new SentryExecutorService(options));
+  }
+
+  @ApiStatus.Internal
+  @TestOnly
+  public LoggerBatchProcessor(
+      final @NotNull SentryOptions options,
+      final @NotNull ISentryClient client,
+      final @NotNull ISentryExecutorService executorService) {
     this.options = options;
     this.client = client;
     this.queue = new ConcurrentLinkedQueue<>();
-    this.executorService = new SentryExecutorService(options);
+    this.executorService = executorService;
   }
 
   @Override
