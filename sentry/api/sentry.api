@@ -5259,6 +5259,7 @@ public class io/sentry/logger/LoggerBatchProcessor : io/sentry/logger/ILoggerBat
 	public static final field MAX_QUEUE_SIZE I
 	protected final field options Lio/sentry/SentryOptions;
 	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/ISentryClient;)V
+	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/ISentryClient;Lio/sentry/ISentryExecutorService;)V
 	public fun add (Lio/sentry/SentryLogEvent;)V
 	public fun close (Z)V
 	public fun flush (J)V
