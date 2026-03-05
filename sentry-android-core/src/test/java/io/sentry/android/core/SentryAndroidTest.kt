@@ -488,7 +488,7 @@ class SentryAndroidTest {
           it is ActivityLifecycleIntegration ||
           it is ActivityBreadcrumbsIntegration ||
           it is UserInteractionIntegration ||
-          it is ShakeDetectionIntegration ||
+          it is FeedbackShakeIntegration ||
           it is FragmentLifecycleIntegration ||
           it is SentryTimberIntegration ||
           it is AppComponentsBreadcrumbsIntegration ||

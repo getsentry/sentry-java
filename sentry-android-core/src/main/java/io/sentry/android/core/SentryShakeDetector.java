@@ -63,11 +63,11 @@ public final class SentryShakeDetector implements SensorEventListener {
   }
 
   public void stop() {
+    listener = null;
     if (sensorManager != null) {
       sensorManager.unregisterListener(this);
       sensorManager = null;
     }
-    listener = null;
   }
 
   @Override

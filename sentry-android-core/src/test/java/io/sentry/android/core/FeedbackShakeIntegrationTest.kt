@@ -15,7 +15,7 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
 @RunWith(AndroidJUnit4::class)
-class ShakeDetectionIntegrationTest {
+class FeedbackShakeIntegrationTest {
 
   private class Fixture {
     val application = mock<Application>()
@@ -28,9 +28,9 @@ class ShakeDetectionIntegrationTest {
       options.feedbackOptions.setDialogHandler(dialogHandler)
     }
 
-    fun getSut(useShakeGesture: Boolean = true): ShakeDetectionIntegration {
+    fun getSut(useShakeGesture: Boolean = true): FeedbackShakeIntegration {
       options.feedbackOptions.isUseShakeGesture = useShakeGesture
-      return ShakeDetectionIntegration(application)
+      return FeedbackShakeIntegration(application)
     }
   }
 

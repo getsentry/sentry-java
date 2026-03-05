@@ -19,7 +19,7 @@ import org.jetbrains.annotations.Nullable;
  * Detects shake gestures and shows the user feedback dialog when a shake is detected. Only active
  * when {@link io.sentry.SentryFeedbackOptions#isUseShakeGesture()} returns {@code true}.
  */
-public final class ShakeDetectionIntegration
+public final class FeedbackShakeIntegration
     implements Integration, Closeable, Application.ActivityLifecycleCallbacks {
 
   private final @NotNull Application application;
@@ -30,7 +30,7 @@ public final class ShakeDetectionIntegration
   private volatile @Nullable Activity dialogActivity;
   private @Nullable Runnable originalOnFormClose;
 
-  public ShakeDetectionIntegration(final @NotNull Application application) {
+  public FeedbackShakeIntegration(final @NotNull Application application) {
     this.application = Objects.requireNonNull(application, "Application is required");
   }
 
@@ -42,10 +42,10 @@ public final class ShakeDetectionIntegration
       return;
     }
 
-    addIntegrationToSdkVersion("ShakeDetection");
+    addIntegrationToSdkVersion("FeedbackShake");
     originalOnFormClose = this.options.getFeedbackOptions().getOnFormClose();
     application.registerActivityLifecycleCallbacks(this);
-    options.getLogger().log(SentryLevel.DEBUG, "ShakeDetectionIntegration installed.");
+    options.getLogger().log(SentryLevel.DEBUG, "FeedbackShakeIntegration installed.");
 
     // In case of a deferred init, hook into any already-resumed activity
     final @Nullable Activity activity = CurrentActivityHolder.getInstance().getActivity();
