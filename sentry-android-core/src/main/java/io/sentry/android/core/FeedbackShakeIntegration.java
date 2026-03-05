@@ -28,6 +28,7 @@ public final class FeedbackShakeIntegration
   private volatile @Nullable Activity currentActivity;
   private volatile boolean isDialogShowing = false;
   private volatile @Nullable Activity dialogActivity;
+  private @Nullable Runnable previousOnFormClose;
 
   public FeedbackShakeIntegration(final @NotNull Application application) {
     this.application = Objects.requireNonNull(application, "Application is required");
@@ -97,6 +98,10 @@ public final class FeedbackShakeIntegration
     if (activity == dialogActivity) {
       isDialogShowing = false;
       dialogActivity = null;
+      if (options != null && previousOnFormClose != null) {
+        options.getFeedbackOptions().setOnFormClose(previousOnFormClose);
+      }
+      previousOnFormClose = null;
     }
   }
 
@@ -117,11 +122,10 @@ public final class FeedbackShakeIntegration
                   if (isDialogShowing) {
                     return;
                   }
-                  final Runnable previousOnFormClose =
-                      options.getFeedbackOptions().getOnFormClose();
                   try {
                     isDialogShowing = true;
                     dialogActivity = active;
+                    previousOnFormClose = options.getFeedbackOptions().getOnFormClose();
                     options
                         .getFeedbackOptions()
                         .setOnFormClose(
@@ -132,12 +136,14 @@ public final class FeedbackShakeIntegration
                               if (previousOnFormClose != null) {
                                 previousOnFormClose.run();
                               }
+                              previousOnFormClose = null;
                             });
                     options.getFeedbackOptions().getDialogHandler().showDialog(null, null);
                   } catch (Throwable e) {
                     isDialogShowing = false;
                     dialogActivity = null;
                     options.getFeedbackOptions().setOnFormClose(previousOnFormClose);
+                    previousOnFormClose = null;
                     options
                         .getLogger()
                         .log(SentryLevel.ERROR, "Failed to show feedback dialog on shake.", e);
