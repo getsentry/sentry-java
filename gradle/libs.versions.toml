@@ -2,6 +2,7 @@
 apollo = "2.5.9"
 androidxLifecycle = "2.2.0"
 androidxNavigation = "2.4.2"
+androidxNavigation3 = "1.0.0"
 androidxTestCore = "1.7.0"
 androidxCompose = "1.6.3"
 asyncProfiler = "4.2"
@@ -96,6 +97,8 @@ androidx-lifecycle-common-java8 = { module = "androidx.lifecycle:lifecycle-commo
 androidx-lifecycle-process = { module = "androidx.lifecycle:lifecycle-process", version.ref = "androidxLifecycle" }
 androidx-navigation-runtime = { module = "androidx.navigation:navigation-runtime", version.ref = "androidxNavigation" }
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "androidxNavigation" }
+androidx-navigation3-runtime = { module = "androidx.navigation3:navigation3-runtime", version.ref = "androidxNavigation3" }
+androidx-compose-runtime = { module = "androidx.compose.runtime:runtime", version.ref = "androidxCompose" }
 androidx-sqlite = { module = "androidx.sqlite:sqlite", version = "2.5.2" }
 androidx-recyclerview = { module = "androidx.recyclerview:recyclerview", version = "1.2.1" }
 androidx-browser = { module = "androidx.browser:browser", version = "1.8.0" }
