@@ -180,7 +180,18 @@ final class HttpConnection {
       updateRetryAfterLimits(connection, responseCode);
 
       if (!isSuccessfulResponseCode(responseCode)) {
-        options.getLogger().log(ERROR, "Request failed, API returned %s", responseCode);
+        if (responseCode == 413) {
+          options
+              .getLogger()
+              .log(
+                  ERROR,
+                  "Envelope was discarded by the server because it was too large."
+                      + " Consider reducing the size of events, breadcrumbs, or attachments."
+                      + " You can use the `SentryOptions.onOversizedEvent` callback"
+                      + " to customize how oversized events are handled.");
+        } else {
+          options.getLogger().log(ERROR, "Request failed, API returned %s", responseCode);
+        }
         // double check because call is expensive
         if (options.isDebug()) {
           final @NotNull String errorMessage = getErrorMessageFromStream(connection);
