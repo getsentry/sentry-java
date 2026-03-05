@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Android: Add `filterTouchesWhenObscured` to prevent Tapjacking on user feedback dialog ([#5155](https://github.com/getsentry/sentry-java/pull/5155))
+
 ## 8.34.0
 
 ### Features
