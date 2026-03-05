@@ -4,6 +4,7 @@
 
 ### Fixes
 
+- Common: Finalize previous session even when auto session tracking is disabled ([#5154](https://github.com/getsentry/sentry-java/pull/5154))
 - Android: Add proguard rules to prevent error about missing Replay classes ([#5153](https://github.com/getsentry/sentry-java/pull/5153))
 
 ## 8.34.0
