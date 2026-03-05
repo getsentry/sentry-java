@@ -349,6 +349,8 @@ public class TombstoneParser implements Closeable {
 
   @Override
   public void close() throws IOException {
-    tombstoneStream.close();
+    if (tombstoneStream != null) {
+      tombstoneStream.close();
+    }
   }
 }
