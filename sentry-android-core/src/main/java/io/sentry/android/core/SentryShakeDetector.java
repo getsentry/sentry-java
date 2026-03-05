@@ -78,8 +78,8 @@ public final class SentryShakeDetector implements SensorEventListener {
     float gX = event.values[0] / SensorManager.GRAVITY_EARTH;
     float gY = event.values[1] / SensorManager.GRAVITY_EARTH;
     float gZ = event.values[2] / SensorManager.GRAVITY_EARTH;
-    double gForce = Math.sqrt(gX * gX + gY * gY + gZ * gZ);
-    if (gForce > SHAKE_THRESHOLD_GRAVITY) {
+    double gForceSquared = gX * gX + gY * gY + gZ * gZ;
+    if (gForceSquared > SHAKE_THRESHOLD_GRAVITY * SHAKE_THRESHOLD_GRAVITY) {
       long now = SystemClock.elapsedRealtime();
 
       // Reset counter if outside the detection window
