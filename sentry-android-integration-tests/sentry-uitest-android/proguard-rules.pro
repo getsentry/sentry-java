@@ -40,8 +40,4 @@
 -dontwarn org.mockito.internal.**
 -dontwarn org.jetbrains.annotations.**
 -dontwarn io.sentry.android.replay.ReplayIntegration
--dontwarn io.sentry.android.replay.util.MaskRenderer
--dontwarn io.sentry.android.replay.util.ViewsKt
--dontwarn io.sentry.android.replay.viewhierarchy.ViewHierarchyNode$Companion
--dontwarn io.sentry.android.replay.viewhierarchy.ViewHierarchyNode
 -keep class curtains.** { *; }
