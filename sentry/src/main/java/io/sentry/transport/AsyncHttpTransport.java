@@ -315,7 +315,7 @@ public final class AsyncHttpTransport implements ITransport {
               if (result.getResponseCode() != 429) {
                 options
                     .getClientReportRecorder()
-                    .recordLostEnvelope(DiscardReason.NETWORK_ERROR, envelopeWithClientReport);
+                    .recordLostEnvelope(DiscardReason.SEND_ERROR, envelopeWithClientReport);
               }
             }
 

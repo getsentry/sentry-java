@@ -1,9 +1,14 @@
 # Changelog
 
-## Unreleased
+## 8.34.0
 
 ### Features
 
+- Add scope-level attributes API ([#5118](https://github.com/getsentry/sentry-java/pull/5118)) via ([#5148](https://github.com/getsentry/sentry-java/pull/5148))
+  - Automatically include scope attributes in logs and metrics ([#5120](https://github.com/getsentry/sentry-java/pull/5120))
+  - New APIs are `Sentry.setAttribute`, `Sentry.setAttributes`, `Sentry.removeAttribute`
+- Support collections and arrays in attribute type inference ([#5124](https://github.com/getsentry/sentry-java/pull/5124))
+- Add support for `SENTRY_SAMPLE_RATE` environment variable / `sample-rate` property ([#5112](https://github.com/getsentry/sentry-java/pull/5112))
 - Create `sentry-opentelemetry-otlp` and `sentry-opentelemetry-otlp-spring` modules for combining OpenTelemetry SDK OTLP export with Sentry SDK ([#5100](https://github.com/getsentry/sentry-java/pull/5100))
   - OpenTelemetry is configured to send spans to Sentry directly using an OTLP endpoint.
   - Sentry only uses trace and span ID from OpenTelemetry (via `OpenTelemetryOtlpEventProcessor`) but will not send spans through OpenTelemetry nor use OpenTelemetry `Context` for `Scopes` propagation.
@@ -27,10 +32,19 @@
     <meta-data android:name="io.sentry.screenshot.mask-all-text" android:value="true" />
     <meta-data android:name="io.sentry.screenshot.mask-all-images" android:value="true" />
     ```
+- The `ManifestMetaDataReader` now read the `DIST` ([#5107](https://github.com/getsentry/sentry-java/pull/5107))
 
 ### Fixes
 
+- Fix attribute type detection for `Long`, `Short`, `Byte`, `BigInteger`, `AtomicInteger`, and `AtomicLong` being incorrectly inferred as `double` instead of `integer` ([#5122](https://github.com/getsentry/sentry-java/pull/5122))
+- Remove `AndroidRuntimeManager` StrictMode relaxation to prevent ANRs during SDK init ([#5127](https://github.com/getsentry/sentry-java/pull/5127))
+  - **IMPORTANT:** StrictMode violations may appear again in debug builds. This is intentional to prevent ANRs in production releases.
 - Fix crash when unregistering `SystemEventsBroadcastReceiver` with try-catch block. ([#5106](https://github.com/getsentry/sentry-java/pull/5106))
+- Use `peekDecorView` instead of `getDecorView` in `SentryGestureListener` to avoid forcing view hierarchy construction ([#5134](https://github.com/getsentry/sentry-java/pull/5134))
+- Log an actionable error message when Relay returns HTTP 413 (Content Too Large) ([#5115](https://github.com/getsentry/sentry-java/pull/5115))
+  - Also switch the client report discard reason for all HTTP 4xx/5xx errors (except 429) from `network_error` to `send_error`
+- Trim DSN string before parsing to avoid `URISyntaxException` caused by trailing whitespace ([#5113](https://github.com/getsentry/sentry-java/pull/5113))
+- Reduce allocations and bytecode instructions during `Sentry.init` ([#5135](https://github.com/getsentry/sentry-java/pull/5135))
 
 ### Dependencies
 

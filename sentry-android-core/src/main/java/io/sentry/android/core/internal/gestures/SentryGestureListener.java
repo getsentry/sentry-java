@@ -347,7 +347,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
       return null;
     }
 
-    final View decorView = window.getDecorView();
+    final View decorView = window.peekDecorView();
     if (decorView == null) {
       options
           .getLogger()

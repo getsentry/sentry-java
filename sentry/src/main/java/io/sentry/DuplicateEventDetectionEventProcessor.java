@@ -1,6 +1,5 @@
 package io.sentry;
 
-import io.sentry.util.Objects;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -16,7 +15,7 @@ public final class DuplicateEventDetectionEventProcessor implements EventProcess
   private final @NotNull SentryOptions options;
 
   public DuplicateEventDetectionEventProcessor(final @NotNull SentryOptions options) {
-    this.options = Objects.requireNonNull(options, "options are required");
+    this.options = options;
   }
 
   @Override
