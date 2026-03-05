@@ -7,6 +7,9 @@ import io.sentry.SentryLogLevel
 import io.sentry.SentryOptions
 import io.sentry.checkEvent
 import io.sentry.checkLogs
+import io.sentry.logger.ILoggerBatchProcessorFactory
+import io.sentry.logger.LoggerBatchProcessor
+import io.sentry.test.ImmediateExecutorService
 import io.sentry.test.applyTestOptions
 import io.sentry.test.initForTest
 import io.sentry.transport.ITransport
@@ -45,6 +48,9 @@ class SentryHandlerTest {
       val options = SentryOptions()
       options.dsn = "http://key@localhost/proj"
       options.setTransportFactory { _, _ -> transport }
+      options.logs.loggerBatchProcessorFactory = ILoggerBatchProcessorFactory { options, client ->
+        LoggerBatchProcessor(options, client, ImmediateExecutorService())
+      }
       applyTestOptions(options)
       contextTags?.forEach { options.addContextTag(it) }
       logger = Logger.getLogger("jul.SentryHandlerTest")
