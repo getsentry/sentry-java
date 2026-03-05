@@ -28,7 +28,7 @@ public final class FeedbackShakeIntegration
   private volatile @Nullable Activity currentActivity;
   private volatile boolean isDialogShowing = false;
   private volatile @Nullable Activity dialogActivity;
-  private @Nullable Runnable previousOnFormClose;
+  private volatile @Nullable Runnable previousOnFormClose;
 
   public FeedbackShakeIntegration(final @NotNull Application application) {
     this.application = Objects.requireNonNull(application, "Application is required");
