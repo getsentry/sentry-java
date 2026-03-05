@@ -9,6 +9,9 @@ import org.quartz.SimpleTrigger;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.restclient.RestTemplateBuilder;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.quartz.CronTriggerFactoryBean;
@@ -19,10 +22,16 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
 
 @SpringBootApplication
+@EnableCaching
 @EnableScheduling
 public class SentryDemoApplication {
   public static void main(String[] args) {
     SpringApplication.run(SentryDemoApplication.class, args);
+  }
+
+  @Bean
+  CacheManager cacheManager() {
+    return new ConcurrentMapCacheManager("todos");
   }
 
   @Bean
