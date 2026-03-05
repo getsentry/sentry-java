@@ -3,7 +3,6 @@ package io.sentry.samples.android;
 import android.app.Application;
 import android.os.StrictMode;
 import io.sentry.Sentry;
-import io.sentry.android.core.SentryAndroid;
 
 /** Apps. main Application. */
 public class MyApplication extends Application {
@@ -14,12 +13,19 @@ public class MyApplication extends Application {
     strictMode();
     super.onCreate();
 
-    // Enable shake gesture to open feedback form (for testing)
-    SentryAndroid.init(
-        this,
-        options -> {
-          options.getFeedbackOptions().setUseShakeGesture(true);
-        });
+    // Example how to initialize the SDK manually which allows access to SentryOptions callbacks.
+    // Make sure you disable the auto init via manifest meta-data: io.sentry.auto-init=false
+    // SentryAndroid.init(
+    //    this,
+    //    options -> {
+    //      /*
+    //      use options, for example, to add a beforeSend callback:
+    //
+    //      options.setBeforeSend((event, hint) -> {
+    //        process event
+    //      });
+    //       */
+    //    });
   }
 
   private void strictMode() {
