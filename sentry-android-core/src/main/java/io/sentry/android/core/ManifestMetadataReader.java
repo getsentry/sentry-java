@@ -688,7 +688,8 @@ final class ManifestMetadataReader {
         }
 
         options.setEnableAnrFingerprinting(
-            readBool(metadata, logger, ENABLE_ANR_FINGERPRINTING, true));
+            readBool(
+                metadata, logger, ENABLE_ANR_FINGERPRINTING, options.isEnableAnrFingerprinting()));
       }
       options
           .getLogger()
