@@ -7,6 +7,7 @@
 - Common: Finalize previous session even when auto session tracking is disabled ([#5154](https://github.com/getsentry/sentry-java/pull/5154))
 - Android: Add `filterTouchesWhenObscured` to prevent Tapjacking on user feedback dialog ([#5155](https://github.com/getsentry/sentry-java/pull/5155))
 - Android: Add proguard rules to prevent error about missing Replay classes ([#5153](https://github.com/getsentry/sentry-java/pull/5153))
+- Android: Remove the dependency on protobuf-lite for tombstones ([#5157](https://github.com/getsentry/sentry-java/pull/5157))
 
 ## 8.34.0
 
