@@ -255,7 +255,7 @@ public final class SentryAndroidOptions extends SentryOptions {
 
   private @Nullable Double anrProfilingSampleRate;
 
-  private boolean enableAnrFingerprinting = false;
+  private boolean enableAnrFingerprinting = true;
 
   public SentryAndroidOptions() {
     setSentryClientName(BuildConfig.SENTRY_ANDROID_SDK_NAME + "/" + BuildConfig.VERSION_NAME);

@@ -2044,7 +2044,7 @@ class ManifestMetadataReaderTest {
     ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
     // Assert
-    assertFalse(fixture.options.isEnableAnrFingerprinting)
+    assertTrue(fixture.options.isEnableAnrFingerprinting)
   }
 
   // Network Detail Configuration Tests
