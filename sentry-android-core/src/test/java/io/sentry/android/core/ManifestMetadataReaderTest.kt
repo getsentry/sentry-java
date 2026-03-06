@@ -1998,20 +1998,20 @@ class ManifestMetadataReaderTest {
   }
 
   @Test
-  fun `applyMetadata reads enableAnrProfiling to options`() {
+  fun `applyMetadata reads anrProfilingSampleRate to options`() {
     // Arrange
-    val bundle = bundleOf(ManifestMetadataReader.ENABLE_ANR_PROFILING to true)
+    val bundle = bundleOf(ManifestMetadataReader.ANR_PROFILING_SAMPLE_RATE to 0.5f)
     val context = fixture.getContext(metaData = bundle)
 
     // Act
     ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
     // Assert
-    assertTrue(fixture.options.isEnableAnrProfiling)
+    assertEquals(0.5, fixture.options.anrProfilingSampleRate!!, 0.01)
   }
 
   @Test
-  fun `applyMetadata reads enableAnrProfiling to options and keeps default`() {
+  fun `applyMetadata keeps anrProfilingSampleRate default when not set in manifest`() {
     // Arrange
     val context = fixture.getContext()
 
@@ -2019,7 +2019,7 @@ class ManifestMetadataReaderTest {
     ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
     // Assert
-    assertFalse(fixture.options.isEnableAnrProfiling)
+    assertNull(fixture.options.anrProfilingSampleRate)
   }
 
   // Network Detail Configuration Tests

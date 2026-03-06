@@ -347,6 +347,7 @@ public final class io/sentry/android/core/SentryAndroidDateProvider : io/sentry/
 public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/SentryOptions {
 	public fun <init> ()V
 	public fun enableAllAutoBreadcrumbs (Z)V
+	public fun getAnrProfilingSampleRate ()Ljava/lang/Double;
 	public fun getAnrTimeoutIntervalMillis ()J
 	public fun getBeforeScreenshotCaptureCallback ()Lio/sentry/android/core/SentryAndroidOptions$BeforeCaptureCallback;
 	public fun getBeforeViewHierarchyCaptureCallback ()Lio/sentry/android/core/SentryAndroidOptions$BeforeCaptureCallback;
@@ -357,6 +358,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun getScreenshot ()Lio/sentry/android/core/SentryScreenshotOptions;
 	public fun getStartupCrashDurationThresholdMillis ()J
 	public fun isAnrEnabled ()Z
+	public fun isAnrProfilingEnabled ()Z
 	public fun isAnrReportInDebug ()Z
 	public fun isAttachAnrThreadDump ()Z
 	public fun isAttachScreenshot ()Z
@@ -365,7 +367,6 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun isCollectExternalStorageContext ()Z
 	public fun isEnableActivityLifecycleBreadcrumbs ()Z
 	public fun isEnableActivityLifecycleTracingAutoFinish ()Z
-	public fun isEnableAnrProfiling ()Z
 	public fun isEnableAppComponentBreadcrumbs ()Z
 	public fun isEnableAppLifecycleBreadcrumbs ()Z
 	public fun isEnableAutoActivityLifecycleTracing ()Z
@@ -382,6 +383,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun isReportHistoricalTombstones ()Z
 	public fun isTombstoneEnabled ()Z
 	public fun setAnrEnabled (Z)V
+	public fun setAnrProfilingSampleRate (Ljava/lang/Double;)V
 	public fun setAnrReportInDebug (Z)V
 	public fun setAnrTimeoutIntervalMillis (J)V
 	public fun setAttachAnrThreadDump (Z)V
@@ -394,7 +396,6 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun setDebugImagesLoader (Lio/sentry/android/core/IDebugImagesLoader;)V
 	public fun setEnableActivityLifecycleBreadcrumbs (Z)V
 	public fun setEnableActivityLifecycleTracingAutoFinish (Z)V
-	public fun setEnableAnrProfiling (Z)V
 	public fun setEnableAppComponentBreadcrumbs (Z)V
 	public fun setEnableAppLifecycleBreadcrumbs (Z)V
 	public fun setEnableAutoActivityLifecycleTracing (Z)V

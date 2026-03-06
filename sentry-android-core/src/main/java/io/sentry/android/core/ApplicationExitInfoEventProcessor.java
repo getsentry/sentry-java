@@ -715,7 +715,7 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
         @NotNull SentryEvent event, @NotNull Backfillable hint, @NotNull Object rawHint) {
       final boolean isBackgroundAnr = isBackgroundAnr(rawHint);
 
-      if (options.isEnableAnrProfiling()) {
+      if (options.isAnrProfilingEnabled()) {
         applyAnrProfile(event, hint, isBackgroundAnr);
       }
 
@@ -734,7 +734,7 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
         return;
       }
 
-      if (options.isEnableAnrProfiling() && hasOnlySystemFrames(event)) {
+      if (options.isAnrProfilingEnabled() && hasOnlySystemFrames(event)) {
         // If profiling did not identify any app frames, we want to statically group these events
         // to avoid ANR noise due to {{ default }} stacktrace grouping
         event.setFingerprints(

@@ -637,7 +637,7 @@ class ApplicationExitInfoEventProcessorTest {
 
   @Test
   fun `sets system-frames-only fingerprint when ANR profiling enabled and no app frames`() {
-    fixture.options.isEnableAnrProfiling = true
+    fixture.options.anrProfilingSampleRate = 1.0
     val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(mechanism = "anr_foreground"))
 
     val processed =
@@ -666,7 +666,7 @@ class ApplicationExitInfoEventProcessorTest {
 
   @Test
   fun `does not set system-frames-only fingerprint when ANR profiling is disabled but no app frames are present`() {
-    fixture.options.isEnableAnrProfiling = false
+    fixture.options.anrProfilingSampleRate = null
     val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(mechanism = "anr_foreground"))
 
     val processed =
@@ -695,7 +695,7 @@ class ApplicationExitInfoEventProcessorTest {
 
   @Test
   fun `sets default fingerprint when ANR profiling enabled and app frames are present`() {
-    fixture.options.isEnableAnrProfiling = true
+    fixture.options.anrProfilingSampleRate = 1.0
     val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(mechanism = "anr_foreground"))
 
     val processed =
@@ -723,7 +723,7 @@ class ApplicationExitInfoEventProcessorTest {
 
   @Test
   fun `does not set profile context when ANR profiling is disabled`() {
-    fixture.options.isEnableAnrProfiling = false
+    fixture.options.anrProfilingSampleRate = null
     val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(mechanism = "anr_foreground"))
     val processed =
       processEvent(hint, populateScopeCache = false) {
@@ -749,7 +749,7 @@ class ApplicationExitInfoEventProcessorTest {
 
   @Test
   fun `applies ANR profile if available`() {
-    fixture.options.isEnableAnrProfiling = true
+    fixture.options.anrProfilingSampleRate = 1.0
     val processor =
       fixture.getSut(
         tmpDir,
@@ -798,7 +798,7 @@ class ApplicationExitInfoEventProcessorTest {
 
   @Test
   fun `does not crash when ANR profiling is enabled but cache dir is null`() {
-    fixture.options.isEnableAnrProfiling = true
+    fixture.options.anrProfilingSampleRate = 1.0
     fixture.options.cacheDirPath = null
     val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(mechanism = "anr_foreground"))
     val original = SentryEvent()
