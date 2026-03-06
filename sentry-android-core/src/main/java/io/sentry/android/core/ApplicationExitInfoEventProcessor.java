@@ -734,8 +734,8 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
         return;
       }
 
-      if (options.isAnrProfilingEnabled() && hasOnlySystemFrames(event)) {
-        // If profiling did not identify any app frames, we want to statically group these events
+      if (options.isEnableAnrFingerprinting() && hasOnlySystemFrames(event)) {
+        // If the stacktrace only contains system frames, we want to statically group these events
         // to avoid ANR noise due to {{ default }} stacktrace grouping
         event.setFingerprints(
             Arrays.asList(

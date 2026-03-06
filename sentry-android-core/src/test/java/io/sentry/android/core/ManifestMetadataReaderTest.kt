@@ -2022,6 +2022,31 @@ class ManifestMetadataReaderTest {
     assertNull(fixture.options.anrProfilingSampleRate)
   }
 
+  @Test
+  fun `applyMetadata reads enableAnrFingerprinting to options`() {
+    // Arrange
+    val bundle = bundleOf(ManifestMetadataReader.ENABLE_ANR_FINGERPRINTING to true)
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertTrue(fixture.options.isEnableAnrFingerprinting)
+  }
+
+  @Test
+  fun `applyMetadata keeps enableAnrFingerprinting default when not set in manifest`() {
+    // Arrange
+    val context = fixture.getContext()
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertTrue(fixture.options.isEnableAnrFingerprinting)
+  }
+
   // Network Detail Configuration Tests
 
   @Test
