@@ -23,6 +23,9 @@ public class Main {
     MDC.put("userId", UUID.randomUUID().toString());
     MDC.put("requestId", UUID.randomUUID().toString());
 
+    Sentry.setAttribute("user.type", "admin");
+    Sentry.setAttribute("feature.version", 2);
+    Sentry.setAttribute("debug.enabled", true);
     Sentry.addFeatureFlag("my-feature-flag", true);
 
     LOGGER.warning("important warning");
