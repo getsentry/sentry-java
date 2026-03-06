@@ -255,6 +255,8 @@ public final class SentryAndroidOptions extends SentryOptions {
 
   private @Nullable Double anrProfilingSampleRate;
 
+  private boolean enableAnrFingerprinting = false;
+
   public SentryAndroidOptions() {
     setSentryClientName(BuildConfig.SENTRY_ANDROID_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
     setSdkVersion(createSdkVersion());
@@ -714,6 +716,29 @@ public final class SentryAndroidOptions extends SentryOptions {
 
   public boolean isAnrProfilingEnabled() {
     return anrProfilingSampleRate != null && anrProfilingSampleRate > 0;
+  }
+
+  /**
+   * Returns whether ANR fingerprinting is enabled. When enabled, the SDK assigns static
+   * fingerprints to ANR events that would otherwise produce noisy grouping. Currently, this applies
+   * a static fingerprint to ANRs whose stacktraces contain only system frames and no application
+   * frames.
+   *
+   * @return true if ANR fingerprinting is enabled
+   */
+  public boolean isEnableAnrFingerprinting() {
+    return enableAnrFingerprinting;
+  }
+
+  /**
+   * Sets whether ANR fingerprinting is enabled. When enabled, the SDK assigns static fingerprints
+   * to ANR events that would otherwise produce noisy grouping. Currently, this applies a static
+   * fingerprint to ANRs whose stacktraces contain only system frames and no application frames.
+   *
+   * @param enableAnrFingerprinting true to enable ANR fingerprinting
+   */
+  public void setEnableAnrFingerprinting(final boolean enableAnrFingerprinting) {
+    this.enableAnrFingerprinting = enableAnrFingerprinting;
   }
 
   static class AndroidUserFeedbackIDialogHandler implements SentryFeedbackOptions.IDialogHandler {

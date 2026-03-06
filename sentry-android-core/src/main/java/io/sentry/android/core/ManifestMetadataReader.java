@@ -177,6 +177,8 @@ final class ManifestMetadataReader {
 
   static final String ANR_PROFILING_SAMPLE_RATE = "io.sentry.anr.profiling.sample-rate";
 
+  static final String ENABLE_ANR_FINGERPRINTING = "io.sentry.anr.enable-fingerprinting";
+
   /** ManifestMetadataReader ctor */
   private ManifestMetadataReader() {}
 
@@ -684,6 +686,9 @@ final class ManifestMetadataReader {
             options.setAnrProfilingSampleRate(anrProfilingSampleRate);
           }
         }
+
+        options.setEnableAnrFingerprinting(
+            readBool(metadata, logger, ENABLE_ANR_FINGERPRINTING, false));
       }
       options
           .getLogger()
