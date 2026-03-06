@@ -418,6 +418,7 @@ abstract class ApplicationExitIntegrationTestBase<THint : Any> {
         extraOptions(this)
       }
       options.cacheDirPath?.let { cacheDir ->
+        File(cacheDir).mkdirs()
         lastReportedFile = File(cacheDir, config.lastReportedFileName)
         lastReportedFile.writeText(lastReportedTimestamp.toString())
       }

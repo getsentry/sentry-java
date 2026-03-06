@@ -45,6 +45,14 @@
     <meta-data android:name="io.sentry.screenshot.mask-all-images" android:value="true" />
     ```
 - The `ManifestMetaDataReader` now read the `DIST` ([#5107](https://github.com/getsentry/sentry-java/pull/5107))
+- Add new experimental option to capture profiles for ANRs ([#4899](https://github.com/getsentry/sentry-java/pull/4899))
+  - This feature will capture a stack profile of the main thread when it gets unresponsive
+  - The profile gets attached to the ANR event on the next app start, providing a flamegraph of the ANR issue on the sentry issue details page
+  - Enable via `options.setAnrProfilingSampleRate(<sample-rate>)` or AndroidManifest.xml: `<meta-data android:name="io.sentry.anr.profiling.sample-rate" android:value="[0.0-1.0]" />`
+  - The sample rate controls the probability of collecting a profile for each detected foreground ANR (0.0 to 1.0, null to disable)
+- Add `enableAnrFingerprinting` option to reduce ANR noise by assigning static fingerprints to ANR events with system-only stacktraces
+  - When enabled, ANRs whose stacktraces contain only system frames (e.g. `java.lang` or `android.os`) are grouped into a single issue instead of creating many separate issues
+  - Enable via `options.setEnableAnrFingerprinting(true)` or AndroidManifest.xml: `<meta-data android:name="io.sentry.anr.enable-fingerprinting" android:value="true" />`
 
 ### Fixes
 
@@ -180,7 +188,7 @@
 - Discard envelopes on `4xx` and `5xx` response ([#4950](https://github.com/getsentry/sentry-java/pull/4950))
   - This aims to not overwhelm Sentry after an outage or load shedding (including HTTP 429) where too many events are sent at once
 
-### Feature
+### Features
 
 - Add a Tombstone integration that detects native crashes without relying on the NDK integration, but instead using `ApplicationExitInfo.REASON_CRASH_NATIVE` on Android 12+. ([#4933](https://github.com/getsentry/sentry-java/pull/4933))
   - Currently exposed via options as an _internal_ API only.
