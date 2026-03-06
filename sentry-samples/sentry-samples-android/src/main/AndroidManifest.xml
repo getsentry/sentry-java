@@ -268,5 +268,8 @@
     <meta-data
       android:name="io.sentry.anr.profiling.sample-rate"
       android:value="1.0" />
+    <meta-data
+      android:name="io.sentry.anr.enable-fingerprinting"
+      android:value="true" />
   </application>
 </manifest>

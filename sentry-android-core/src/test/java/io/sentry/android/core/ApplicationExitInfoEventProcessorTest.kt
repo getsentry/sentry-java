@@ -668,8 +668,8 @@ class ApplicationExitInfoEventProcessorTest {
   }
 
   @Test
-  fun `sets system-frames-only fingerprint when ANR profiling enabled and no app frames`() {
-    fixture.options.anrProfilingSampleRate = 1.0
+  fun `sets system-frames-only fingerprint when ANR fingerprinting enabled and no app frames`() {
+    fixture.options.isEnableAnrFingerprinting = true
     val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(mechanism = "anr_foreground"))
 
     val processed =
@@ -697,8 +697,8 @@ class ApplicationExitInfoEventProcessorTest {
   }
 
   @Test
-  fun `does not set system-frames-only fingerprint when ANR profiling is disabled but no app frames are present`() {
-    fixture.options.anrProfilingSampleRate = null
+  fun `does not set system-frames-only fingerprint when ANR fingerprinting is disabled and no app frames are present`() {
+    fixture.options.isEnableAnrFingerprinting = false
     val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(mechanism = "anr_foreground"))
 
     val processed =
@@ -726,8 +726,8 @@ class ApplicationExitInfoEventProcessorTest {
   }
 
   @Test
-  fun `sets default fingerprint when ANR profiling enabled and app frames are present`() {
-    fixture.options.anrProfilingSampleRate = 1.0
+  fun `sets default fingerprint when ANR fingerprinting enabled and app frames are present`() {
+    fixture.options.isEnableAnrFingerprinting = true
     val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(mechanism = "anr_foreground"))
 
     val processed =
