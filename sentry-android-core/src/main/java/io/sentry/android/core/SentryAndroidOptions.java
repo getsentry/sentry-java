@@ -724,11 +724,8 @@ public final class SentryAndroidOptions extends SentryOptions {
    * a static fingerprint to ANRs whose stacktraces contain only system frames and no application
    * frames.
    *
-   * <p>This is an experimental feature and may be changed or removed in a future release.
-   *
    * @return true if ANR fingerprinting is enabled
    */
-  @ApiStatus.Experimental
   public boolean isEnableAnrFingerprinting() {
     return enableAnrFingerprinting;
   }
@@ -738,11 +735,8 @@ public final class SentryAndroidOptions extends SentryOptions {
    * to ANR events that would otherwise produce noisy grouping. Currently, this applies a static
    * fingerprint to ANRs whose stacktraces contain only system frames and no application frames.
    *
-   * <p>This is an experimental feature and may be changed or removed in a future release.
-   *
    * @param enableAnrFingerprinting true to enable ANR fingerprinting
    */
-  @ApiStatus.Experimental
   public void setEnableAnrFingerprinting(final boolean enableAnrFingerprinting) {
     this.enableAnrFingerprinting = enableAnrFingerprinting;
   }
