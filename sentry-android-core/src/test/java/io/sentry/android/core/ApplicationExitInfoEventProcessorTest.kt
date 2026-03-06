@@ -603,12 +603,44 @@ class ApplicationExitInfoEventProcessorTest {
   fun `sets default fingerprint to distinguish between background and foreground ANRs`() {
     val backgroundHint =
       HintUtils.createWithTypeCheckHint(AbnormalExitHint(mechanism = "anr_background"))
-    val processedBackground = processEvent(backgroundHint, populateScopeCache = false)
+    val processedBackground =
+      processEvent(backgroundHint, populateScopeCache = false) {
+        exceptions =
+          listOf(
+            SentryException().apply {
+              this.stacktrace =
+                SentryStackTrace(
+                  listOf(
+                    SentryStackFrame().apply {
+                      module = "io.sentry.samples.MainActivity"
+                      function = "run"
+                    }
+                  )
+                )
+            }
+          )
+      }
     assertEquals(listOf("{{ default }}", "background-anr"), processedBackground.fingerprints)
 
     val foregroundHint =
       HintUtils.createWithTypeCheckHint(AbnormalExitHint(mechanism = "anr_foreground"))
-    val processedForeground = processEvent(foregroundHint, populateScopeCache = false)
+    val processedForeground =
+      processEvent(foregroundHint, populateScopeCache = false) {
+        exceptions =
+          listOf(
+            SentryException().apply {
+              this.stacktrace =
+                SentryStackTrace(
+                  listOf(
+                    SentryStackFrame().apply {
+                      module = "io.sentry.samples.MainActivity"
+                      function = "run"
+                    }
+                  )
+                )
+            }
+          )
+      }
     assertEquals(listOf("{{ default }}", "foreground-anr"), processedForeground.fingerprints)
   }
 
