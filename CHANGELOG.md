@@ -2,6 +2,12 @@
 
 ## 8.34.1
 
+### Features
+
+- Show feedback form on device shake ([#5150](https://github.com/getsentry/sentry-java/pull/5150))
+  - Enable via `options.getFeedbackOptions().setUseShakeGesture(true)`
+  - Uses the device's accelerometer — no special permissions required
+
 ### Fixes
 
 - Common: Finalize previous session even when auto session tracking is disabled ([#5154](https://github.com/getsentry/sentry-java/pull/5154))
