@@ -1,10 +1,10 @@
 ---
 alwaysApply: false
-description: Java SDK Profiling
+description: JVM Continuous Profiling (sentry-async-profiler)
 ---
-# Java SDK Profiling
+# JVM Continuous Profiling
 
-The Sentry Java SDK provides continuous profiling through the `sentry-async-profiler` module, which integrates async-profiler for low-overhead CPU profiling.
+The `sentry-async-profiler` module integrates async-profiler for low-overhead CPU profiling on JVM.
 
 ## Module Structure
 
@@ -25,9 +25,10 @@ The Sentry Java SDK provides continuous profiling through the `sentry-async-prof
 ### `JavaContinuousProfiler` (sentry-async-profiler)
 - Wraps native async-profiler library
 - Writes JFR files to `profilingTracesDirPath`
-- Rotates chunks periodically (`MAX_CHUNK_DURATION_MILLIS`)
+- Rotates chunks periodically (`MAX_CHUNK_DURATION_MILLIS`, default 10s)
 - Implements `RateLimiter.IRateLimitObserver` for rate limiting
 - Maintains `rootSpanCounter` for TRACE mode lifecycle
+- Platform: "java", Chunk ID always `EMPTY_ID`
 
 ### `ProfileChunk`
 - Contains profiler ID (session-level, persists across chunks), chunk ID, JFR file reference
@@ -40,12 +41,11 @@ The Sentry Java SDK provides continuous profiling through the `sentry-async-prof
 
 ## Configuration
 
-- **`profilesSampleRate`**: Sample rate (0.0 to 1.0). If set with `tracesSampleRate`, enables transaction profiling. If set alone, enables continuous profiling.
+- **`profilesSampleRate`**: Sample rate (0.0 to 1.0)
 - **`profileLifecycle`**: `ProfileLifecycle.MANUAL` (default) or `ProfileLifecycle.TRACE`
 - **`cacheDirPath`**: Directory for JFR files (required)
 - **`profilingTracesHz`**: Sampling frequency in Hz (default: 101)
 
-Example:
 ```java
 options.setProfilesSampleRate(1.0);
 options.setCacheDirPath("/tmp/sentry-cache");
@@ -85,7 +85,7 @@ options.setProfileLifecycle(ProfileLifecycle.MANUAL);
 
 ## TRACE Mode Lifecycle
 - `rootSpanCounter` incremented when sampled root span starts
-- `rootSpanCounter` decremented when root span finishes  
+- `rootSpanCounter` decremented when root span finishes
 - Profiler runs while counter > 0
 - Allows multiple concurrent transactions to share profiler session
 
@@ -105,19 +105,6 @@ options.setProfileLifecycle(ProfileLifecycle.MANUAL);
 - `ProfileChunk.Builder` buffered in `payloadBuilders` if offline
 - Sent when SDK comes online, files deleted after successful send
 - Profiler can start before SDK initialized - chunks buffered until scopes available (`initScopes()`)
-
-## Platform Differences
-
-### JVM (sentry-async-profiler)
-- Native async-profiler library
-- Platform: "java"
-- Chunk ID always `EMPTY_ID`
-
-### Android (sentry-android-core)
-- `AndroidContinuousProfiler` with `Debug.startMethodTracingSampling()`
-- Longer chunk duration (60s vs 10s for JVM)
-- Includes measurements (frames, memory)
-- Platform: "android"
 
 ## Extending
 

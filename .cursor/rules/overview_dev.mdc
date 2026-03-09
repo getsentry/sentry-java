@@ -53,15 +53,21 @@ Use the `fetch_rules` tool to include these rules when working on specific areas
   - `SentryMetricsEvent`, `SentryMetricsEvents`
   - `SentryOptions.getMetrics()`, `beforeSend` callback
 
-- **`profiling`**: Use when working with:
-  - Continuous profiling (`sentry-async-profiler` module)
-  - `IContinuousProfiler`, `JavaContinuousProfiler`, `AndroidContinuousProfiler`
-  - `ProfileChunk`, chunk rotation and sending
+- **`profiling_jvm`**: Use when working with:
+  - JVM continuous profiling (`sentry-async-profiler` module)
+  - `IContinuousProfiler`, `JavaContinuousProfiler`
+  - `ProfileChunk`, chunk rotation, JFR file handling
   - `ProfileLifecycle` (MANUAL vs TRACE modes)
-  - `profilesSampleRate`, `profilingTracesHz`, `profileLifecycle` options
-  - Integration with rate limiting, offline caching, scopes
-  - JFR file handling, async-profiler integration
-  - Platform differences (JVM vs Android profiling)
+  - async-profiler integration, ServiceLoader discovery
+  - Rate limiting, offline caching, scopes integration
+
+- **`profiling_android`**: Use when working with:
+  - Android profiling (`sentry-android-core`)
+  - `AndroidContinuousProfiler`, `AndroidProfiler`, `AndroidTransactionProfiler`
+  - `Debug.startMethodTracingSampling()`, trace files
+  - Frame metrics, CPU, memory measurement collectors
+  - `SentryFrameMetricsCollector`, `SpanFrameMetricsCollector`
+  - App start profiling, `AndroidOptionsInitializer` setup
 
 ### Integration & Infrastructure
 - **`opentelemetry`**: Use when working with:
@@ -94,4 +100,5 @@ Use the `fetch_rules` tool to include these rules when working on specific areas
    - System test/e2e/sample → `e2e_tests`
    - Feature flag/addFeatureFlag/flag evaluation → `feature_flags`
    - Metrics/count/distribution/gauge → `metrics`
-   - Profiling/profiler/ProfileChunk/JFR → `profiling`
+   - JVM profiling/async-profiler/JFR/ProfileChunk → `profiling_jvm`
+   - Android profiling/AndroidProfiler/frame metrics/method tracing → `profiling_android`
