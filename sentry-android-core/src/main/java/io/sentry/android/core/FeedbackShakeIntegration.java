@@ -145,15 +145,16 @@ public final class FeedbackShakeIntegration
                   }
                   try {
                     isDialogShowing = true;
-                    previousOnFormClose = options.getFeedbackOptions().getOnFormClose();
+                    final Runnable captured = options.getFeedbackOptions().getOnFormClose();
+                    previousOnFormClose = captured;
                     options
                         .getFeedbackOptions()
                         .setOnFormClose(
                             () -> {
                               isDialogShowing = false;
-                              options.getFeedbackOptions().setOnFormClose(previousOnFormClose);
-                              if (previousOnFormClose != null) {
-                                previousOnFormClose.run();
+                              options.getFeedbackOptions().setOnFormClose(captured);
+                              if (captured != null) {
+                                captured.run();
                               }
                               previousOnFormClose = null;
                             });
