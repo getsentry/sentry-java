@@ -5,6 +5,8 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.os.Handler;
+import android.os.HandlerThread;
 import android.os.SystemClock;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
@@ -21,6 +23,9 @@ import org.jetbrains.annotations.Nullable;
  *
  * <p>Requires at least {@link #SHAKE_COUNT_THRESHOLD} accelerometer readings above {@link
  * #SHAKE_THRESHOLD_GRAVITY} within {@link #SHAKE_WINDOW_MS} to trigger a shake event.
+ *
+ * <p>Sensor events are delivered on a background {@link HandlerThread} to avoid polluting the main
+ * thread.
  */
 @ApiStatus.Internal
 public final class SentryShakeDetector implements SensorEventListener {
@@ -31,6 +36,8 @@ public final class SentryShakeDetector implements SensorEventListener {
   private static final int SHAKE_COOLDOWN_MS = 1000;
 
   private @Nullable SensorManager sensorManager;
+  private @Nullable Sensor accelerometer;
+  private @Nullable HandlerThread handlerThread;
   private final @NotNull AtomicLong lastShakeTimestamp = new AtomicLong(0);
   private volatile @Nullable Listener listener;
   private final @NotNull ILogger logger;
@@ -46,27 +53,46 @@ public final class SentryShakeDetector implements SensorEventListener {
     this.logger = logger;
   }
 
+  /**
+   * Initializes the sensor manager and accelerometer sensor. This is separated from start() so the
+   * values can be resolved once and reused across activity transitions.
+   */
+  void init(final @NotNull Context context) {
+    if (sensorManager == null) {
+      sensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
+    }
+    if (sensorManager != null && accelerometer == null) {
+      accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER, false);
+    }
+  }
+
   public void start(final @NotNull Context context, final @NotNull Listener shakeListener) {
     this.listener = shakeListener;
-    sensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
+    init(context);
     if (sensorManager == null) {
       logger.log(SentryLevel.WARNING, "SensorManager is not available. Shake detection disabled.");
       return;
     }
-    Sensor accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
     if (accelerometer == null) {
       logger.log(
           SentryLevel.WARNING, "Accelerometer sensor not available. Shake detection disabled.");
       return;
     }
-    sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+    handlerThread = new HandlerThread("sentry-shake");
+    handlerThread.start();
+    final Handler handler = new Handler(handlerThread.getLooper());
+    sensorManager.registerListener(
+        this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL, handler);
   }
 
   public void stop() {
     listener = null;
     if (sensorManager != null) {
       sensorManager.unregisterListener(this);
-      sensorManager = null;
+    }
+    if (handlerThread != null) {
+      handlerThread.quitSafely();
+      handlerThread = null;
     }
   }
 

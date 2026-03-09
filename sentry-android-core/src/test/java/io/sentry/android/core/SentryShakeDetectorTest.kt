@@ -4,6 +4,7 @@ import android.content.Context
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorManager
+import android.os.Handler
 import android.os.SystemClock
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.ILogger
@@ -11,6 +12,7 @@ import kotlin.test.Test
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
+import org.mockito.kotlin.isA
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
@@ -28,7 +30,7 @@ class SentryShakeDetectorTest {
 
     init {
       whenever(context.getSystemService(Context.SENSOR_SERVICE)).thenReturn(sensorManager)
-      whenever(sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)).thenReturn(accelerometer)
+      whenever(sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER, false)).thenReturn(accelerometer)
     }
 
     fun getSut(): SentryShakeDetector {
@@ -44,7 +46,7 @@ class SentryShakeDetectorTest {
     sut.start(fixture.context, fixture.listener)
 
     verify(fixture.sensorManager)
-      .registerListener(eq(sut), eq(fixture.accelerometer), eq(SensorManager.SENSOR_DELAY_NORMAL))
+      .registerListener(eq(sut), eq(fixture.accelerometer), eq(SensorManager.SENSOR_DELAY_NORMAL), isA<Handler>())
   }
 
   @Test
@@ -63,17 +65,17 @@ class SentryShakeDetectorTest {
     val sut = fixture.getSut()
     sut.start(fixture.context, fixture.listener)
 
-    verify(fixture.sensorManager, never()).registerListener(any(), any<Sensor>(), any())
+    verify(fixture.sensorManager, never()).registerListener(any(), any<Sensor>(), any<Int>(), any<Handler>())
   }
 
   @Test
   fun `does not crash when accelerometer is null`() {
-    whenever(fixture.sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)).thenReturn(null)
+    whenever(fixture.sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER, false)).thenReturn(null)
 
     val sut = fixture.getSut()
     sut.start(fixture.context, fixture.listener)
 
-    verify(fixture.sensorManager, never()).registerListener(any(), any<Sensor>(), any())
+    verify(fixture.sensorManager, never()).registerListener(any(), any<Sensor>(), any<Int>(), any<Handler>())
   }
 
   @Test

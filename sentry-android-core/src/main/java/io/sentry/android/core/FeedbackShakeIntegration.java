@@ -23,15 +23,15 @@ public final class FeedbackShakeIntegration
     implements Integration, Closeable, Application.ActivityLifecycleCallbacks {
 
   private final @NotNull Application application;
-  private @Nullable SentryShakeDetector shakeDetector;
+  private final @NotNull SentryShakeDetector shakeDetector;
   private @Nullable SentryAndroidOptions options;
   private volatile @Nullable Activity currentActivity;
   private volatile boolean isDialogShowing = false;
-  private volatile @Nullable Activity dialogActivity;
   private volatile @Nullable Runnable previousOnFormClose;
 
   public FeedbackShakeIntegration(final @NotNull Application application) {
     this.application = Objects.requireNonNull(application, "Application is required");
+    this.shakeDetector = new SentryShakeDetector(io.sentry.NoOpLogger.getInstance());
   }
 
   @Override
@@ -41,6 +41,9 @@ public final class FeedbackShakeIntegration
     if (!this.options.getFeedbackOptions().isUseShakeGesture()) {
       return;
     }
+
+    // Re-assign a properly configured detector logger now that options are available
+    shakeDetector.init(application);
 
     addIntegrationToSdkVersion("FeedbackShake");
     application.registerActivityLifecycleCallbacks(this);
@@ -95,9 +98,8 @@ public final class FeedbackShakeIntegration
   public void onActivityDestroyed(final @NotNull Activity activity) {
     // Only reset if this is the activity that hosts the dialog — the dialog cannot
     // outlive its host activity being destroyed.
-    if (activity == dialogActivity) {
+    if (isDialogShowing && activity == currentActivity) {
       isDialogShowing = false;
-      dialogActivity = null;
       if (options != null) {
         options.getFeedbackOptions().setOnFormClose(previousOnFormClose);
       }
@@ -109,14 +111,17 @@ public final class FeedbackShakeIntegration
     if (options == null) {
       return;
     }
-    // Stop any existing detector (e.g. when transitioning between activities)
+    // Stop any existing detection (e.g. when transitioning between activities)
     stopShakeDetection();
-    shakeDetector = new SentryShakeDetector(options.getLogger());
     shakeDetector.start(
         activity,
         () -> {
           final Activity active = currentActivity;
-          if (active != null && options != null && !isDialogShowing) {
+          final Boolean inBackground = AppState.getInstance().isInBackground();
+          if (active != null
+              && options != null
+              && !isDialogShowing
+              && !Boolean.TRUE.equals(inBackground)) {
             active.runOnUiThread(
                 () -> {
                   if (isDialogShowing) {
@@ -124,24 +129,21 @@ public final class FeedbackShakeIntegration
                   }
                   try {
                     isDialogShowing = true;
-                    dialogActivity = active;
                     previousOnFormClose = options.getFeedbackOptions().getOnFormClose();
                     options
                         .getFeedbackOptions()
                         .setOnFormClose(
                             () -> {
                               isDialogShowing = false;
-                              dialogActivity = null;
                               options.getFeedbackOptions().setOnFormClose(previousOnFormClose);
                               if (previousOnFormClose != null) {
                                 previousOnFormClose.run();
                               }
                               previousOnFormClose = null;
                             });
-                    options.getFeedbackOptions().getDialogHandler().showDialog(null, null);
+                    new SentryUserFeedbackDialog.Builder(active).create().show();
                   } catch (Throwable e) {
                     isDialogShowing = false;
-                    dialogActivity = null;
                     options.getFeedbackOptions().setOnFormClose(previousOnFormClose);
                     previousOnFormClose = null;
                     options
@@ -154,9 +156,6 @@ public final class FeedbackShakeIntegration
   }
 
   private void stopShakeDetection() {
-    if (shakeDetector != null) {
-      shakeDetector.stop();
-      shakeDetector = null;
-    }
+    shakeDetector.stop();
   }
 }
