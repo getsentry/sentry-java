@@ -31,6 +31,7 @@ class TransactionContextTest {
         logger,
         SentryTraceHeader(SentryId(), SpanId(), false).value,
         "sentry-trace_id=a,sentry-transaction=sentryTransaction,sentry-sample_rate=0.3",
+        null,
       )
     val context = TransactionContext.fromPropagationContext(propagationContext)
     assertNull(context.sampled)
@@ -48,6 +49,7 @@ class TransactionContextTest {
         logger,
         SentryTraceHeader(SentryId(), SpanId(), false).value,
         "sentry-trace_id=a,sentry-transaction=sentryTransaction",
+        null,
       )
     val context = TransactionContext.fromPropagationContext(propagationContext)
     assertNull(context.sampled)
@@ -65,6 +67,7 @@ class TransactionContextTest {
         logger,
         SentryTraceHeader(SentryId(), SpanId(), true).value,
         "sentry-trace_id=a,sentry-transaction=sentryTransaction,sentry-sample_rate=0.3",
+        null,
       )
     val context = TransactionContext.fromPropagationContext(propagationContext)
     assertNull(context.sampled)
@@ -82,6 +85,7 @@ class TransactionContextTest {
         logger,
         SentryTraceHeader(SentryId(), SpanId(), true).value,
         "sentry-trace_id=a,sentry-transaction=sentryTransaction",
+        null,
       )
     val context = TransactionContext.fromPropagationContext(propagationContext)
     assertNull(context.sampled)

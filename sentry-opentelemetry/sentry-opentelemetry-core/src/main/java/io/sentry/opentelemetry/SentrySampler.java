@@ -91,7 +91,7 @@ public final class SentrySampler implements Sampler {
     final @NotNull PropagationContext propagationContext =
         sentryTraceHeader == null
             ? new PropagationContext(new SentryId(traceId), randomSpanId, null, baggage, null)
-            : PropagationContext.fromHeaders(sentryTraceHeader, baggage, randomSpanId);
+            : PropagationContext.fromHeaders(sentryTraceHeader, baggage, randomSpanId, scopes.getOptions());
 
     final @NotNull TransactionContext transactionContext =
         TransactionContext.fromPropagationContext(propagationContext);

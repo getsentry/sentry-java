@@ -15,7 +15,7 @@ final class Dsn {
   private final @Nullable String secretKey;
   private final @NotNull String publicKey;
   private final @NotNull URI sentryUri;
-  private @Nullable String orgId;
+  private final @Nullable String orgId;
 
   /*
   / The project ID which the authenticated user is bound to.
@@ -112,7 +112,4 @@ final class Dsn {
     return orgId;
   }
 
-  public void setOrgId(final @Nullable String orgId) {
-    this.orgId = orgId;
-  }
 }

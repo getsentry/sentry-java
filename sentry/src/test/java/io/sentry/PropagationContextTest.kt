@@ -15,6 +15,7 @@ class PropagationContextTest {
         NoOpLogger.getInstance(),
         "2722d9f6ec019ade60c776169d9a8904-cedf5b7571cb4972-1",
         "sentry-trace_id=a,sentry-transaction=sentryTransaction",
+        null,
       )
     assertFalse(propagationContext.baggage.isMutable)
     assertTrue(propagationContext.baggage.isShouldFreeze)
@@ -27,6 +28,7 @@ class PropagationContextTest {
         NoOpLogger.getInstance(),
         "2722d9f6ec019ade60c776169d9a8904-cedf5b7571cb4972-1",
         "a=b",
+        null,
       )
     assertTrue(propagationContext.baggage.isMutable)
     assertFalse(propagationContext.baggage.isShouldFreeze)
@@ -39,6 +41,7 @@ class PropagationContextTest {
         NoOpLogger.getInstance(),
         "2722d9f6ec019ade60c776169d9a8904-cedf5b7571cb4972-1",
         null as? String?,
+        null,
       )
     assertNotNull(propagationContext.baggage)
     assertTrue(propagationContext.baggage.isMutable)

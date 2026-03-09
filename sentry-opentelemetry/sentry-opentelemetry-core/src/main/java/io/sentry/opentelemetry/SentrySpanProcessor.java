@@ -127,7 +127,7 @@ public final class SentrySpanProcessor implements SpanProcessor {
                   new SentryId(traceData.getTraceId()), spanId, null, null, null)
               : TransactionContext.fromPropagationContext(
                   PropagationContext.fromHeaders(
-                      traceData.getSentryTraceHeader(), traceData.getBaggage(), spanId));
+                      traceData.getSentryTraceHeader(), traceData.getBaggage(), spanId, scopes.getOptions()));
       ;
       transactionContext.setName(transactionName);
       transactionContext.setTransactionNameSource(transactionNameSource);

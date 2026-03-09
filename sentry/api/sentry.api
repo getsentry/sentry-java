@@ -2272,10 +2272,9 @@ public final class io/sentry/PropagationContext {
 	public fun <init> (Lio/sentry/PropagationContext;)V
 	public fun <init> (Lio/sentry/protocol/SentryId;Lio/sentry/SpanId;Lio/sentry/SpanId;Lio/sentry/Baggage;Ljava/lang/Boolean;)V
 	public static fun fromExistingTrace (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Double;Ljava/lang/Double;)Lio/sentry/PropagationContext;
-	public static fun fromHeaders (Lio/sentry/ILogger;Ljava/lang/String;Ljava/lang/String;)Lio/sentry/PropagationContext;
-	public static fun fromHeaders (Lio/sentry/ILogger;Ljava/lang/String;Ljava/util/List;)Lio/sentry/PropagationContext;
+	public static fun fromHeaders (Lio/sentry/ILogger;Ljava/lang/String;Ljava/lang/String;Lio/sentry/SentryOptions;)Lio/sentry/PropagationContext;
 	public static fun fromHeaders (Lio/sentry/ILogger;Ljava/lang/String;Ljava/util/List;Lio/sentry/SentryOptions;)Lio/sentry/PropagationContext;
-	public static fun fromHeaders (Lio/sentry/SentryTraceHeader;Lio/sentry/Baggage;Lio/sentry/SpanId;)Lio/sentry/PropagationContext;
+	public static fun fromHeaders (Lio/sentry/SentryTraceHeader;Lio/sentry/Baggage;Lio/sentry/SpanId;Lio/sentry/SentryOptions;)Lio/sentry/PropagationContext;
 	public fun getBaggage ()Lio/sentry/Baggage;
 	public fun getParentSpanId ()Lio/sentry/SpanId;
 	public fun getSampleRand ()Ljava/lang/Double;

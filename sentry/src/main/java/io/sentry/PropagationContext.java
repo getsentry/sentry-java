@@ -15,21 +15,9 @@ public final class PropagationContext {
   public static PropagationContext fromHeaders(
       final @NotNull ILogger logger,
       final @Nullable String sentryTraceHeader,
-      final @Nullable String baggageHeader) {
-    return fromHeaders(logger, sentryTraceHeader, Arrays.asList(baggageHeader));
-  }
-
-  public static @NotNull PropagationContext fromHeaders(
-      final @NotNull ILogger logger,
-      final @Nullable String sentryTraceHeaderString,
-      final @Nullable List<String> baggageHeaderStrings) {
-    @Nullable SentryOptions options = null;
-    try {
-      options = Sentry.getCurrentScopes().getOptions();
-    } catch (Throwable ignored) {
-      // options may not be available if Sentry is not initialized
-    }
-    return fromHeaders(logger, sentryTraceHeaderString, baggageHeaderStrings, options);
+      final @Nullable String baggageHeader,
+      final @Nullable SentryOptions options) {
+    return fromHeaders(logger, sentryTraceHeader, Arrays.asList(baggageHeader), options);
   }
 
   public static @NotNull PropagationContext fromHeaders(
@@ -50,7 +38,7 @@ public final class PropagationContext {
         return new PropagationContext();
       }
 
-      return fromHeaders(traceHeader, baggage, null);
+      return fromHeaders(traceHeader, baggage, null, null);
     } catch (InvalidSentryTraceHeaderException e) {
       logger.log(SentryLevel.DEBUG, e, "Failed to parse Sentry trace header: %s", e.getMessage());
       return new PropagationContext();
@@ -60,7 +48,12 @@ public final class PropagationContext {
   public static @NotNull PropagationContext fromHeaders(
       final @NotNull SentryTraceHeader sentryTraceHeader,
       final @Nullable Baggage baggage,
-      final @Nullable SpanId spanId) {
+      final @Nullable SpanId spanId,
+      final @Nullable SentryOptions options) {
+    if (options != null && !shouldContinueTrace(options, baggage)) {
+      return new PropagationContext();
+    }
+
     final @NotNull SpanId spanIdToUse = spanId == null ? new SpanId() : spanId;
 
     return new PropagationContext(

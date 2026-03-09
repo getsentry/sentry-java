@@ -146,11 +146,4 @@ class DsnTest {
     assertNull(dsn.orgId)
   }
 
-  @Test
-  fun `org id can be overridden via setter`() {
-    val dsn = Dsn("https://key@o123.ingest.sentry.io/456")
-    assertEquals("123", dsn.orgId)
-    dsn.setOrgId("999")
-    assertEquals("999", dsn.orgId)
-  }
 }
