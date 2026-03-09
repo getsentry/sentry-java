@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Add JCache (JSR-107) cache tracing via new `sentry-jcache` module ([#5179](https://github.com/getsentry/sentry-java/pull/5179))
+
 ## 8.34.1
 
 ### Fixes
