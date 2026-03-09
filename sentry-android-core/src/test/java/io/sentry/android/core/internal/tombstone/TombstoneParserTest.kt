@@ -1,9 +1,13 @@
 package io.sentry.android.core.internal.tombstone
 
+import com.abovevacant.epitaph.core.BacktraceFrame
+import com.abovevacant.epitaph.core.MemoryMapping
+import com.abovevacant.epitaph.core.Signal
+import com.abovevacant.epitaph.core.Tombstone
+import com.abovevacant.epitaph.core.TombstoneThread
 import io.sentry.ILogger
 import io.sentry.JsonObjectWriter
 import io.sentry.protocol.DebugMeta
-import java.io.ByteArrayInputStream
 import java.io.StringWriter
 import java.util.zip.GZIPInputStream
 import kotlin.test.Test
@@ -56,12 +60,15 @@ class TombstoneParserTest {
   val nativeLibraryDir =
     "/data/app/~~gu-2hA9_Zg6tfIuDAbLpKA==/io.sentry.samples.android-MFqmKAMnl9AjNlHcO3mejA==/lib/arm64"
 
+  val parser = TombstoneParser(inAppIncludes, inAppExcludes, nativeLibraryDir)
+
   @Test
   fun `parses a snapshot tombstone into Event`() {
     val tombstoneStream =
       GZIPInputStream(TombstoneParserTest::class.java.getResourceAsStream("/tombstone.pb.gz"))
-    val parser = TombstoneParser(tombstoneStream, inAppIncludes, inAppExcludes, nativeLibraryDir)
-    val event = parser.parse()
+    val streamParser =
+      TombstoneParser(tombstoneStream, inAppIncludes, inAppExcludes, nativeLibraryDir)
+    val event = streamParser.parse()
 
     // top-level data
     assertNotNull(event.eventId)
@@ -137,87 +144,82 @@ class TombstoneParserTest {
     val buildId = "f1c3bcc0279865fe3058404b2831d9e64135386c"
 
     val tombstone =
-      TombstoneProtos.Tombstone.newBuilder()
-        .setPid(1234)
-        .setTid(1234)
-        .setSignalInfo(
-          TombstoneProtos.Signal.newBuilder()
-            .setNumber(11)
-            .setName("SIGSEGV")
-            .setCode(1)
-            .setCodeName("SEGV_MAPERR")
-        )
+      Tombstone.Builder()
+        .pid(1234)
+        .tid(1234)
+        .signal(Signal(11, "SIGSEGV", 1, "SEGV_MAPERR", false, 0, 0, false, 0, null))
         // First mapping: r--p at offset 0 (ELF header, has build_id)
-        .addMemoryMappings(
-          TombstoneProtos.MemoryMapping.newBuilder()
-            .setBuildId(buildId)
-            .setMappingName("/system/lib64/libc.so")
-            .setBeginAddress(0x7000000000)
-            .setEndAddress(0x7000001000)
-            .setOffset(0)
-            .setRead(true)
-            .setWrite(false)
-            .setExecute(false)
+        .addMemoryMapping(
+          MemoryMapping(
+            0x7000000000,
+            0x7000001000,
+            0,
+            true,
+            false,
+            false,
+            "/system/lib64/libc.so",
+            buildId,
+            0,
+          )
         )
         // Second mapping: r-xp at offset 0x1000 (executable segment)
-        .addMemoryMappings(
-          TombstoneProtos.MemoryMapping.newBuilder()
-            .setBuildId(buildId)
-            .setMappingName("/system/lib64/libc.so")
-            .setBeginAddress(0x7000001000)
-            .setEndAddress(0x7000010000)
-            .setOffset(0x1000)
-            .setRead(true)
-            .setWrite(false)
-            .setExecute(true)
+        .addMemoryMapping(
+          MemoryMapping(
+            0x7000001000,
+            0x7000010000,
+            0x1000,
+            true,
+            false,
+            true,
+            "/system/lib64/libc.so",
+            buildId,
+            0,
+          )
         )
         // Third mapping: r--p at offset 0x10000 (read-only data)
-        .addMemoryMappings(
-          TombstoneProtos.MemoryMapping.newBuilder()
-            .setBuildId(buildId)
-            .setMappingName("/system/lib64/libc.so")
-            .setBeginAddress(0x7000010000)
-            .setEndAddress(0x7000011000)
-            .setOffset(0x10000)
-            .setRead(true)
-            .setWrite(false)
-            .setExecute(false)
+        .addMemoryMapping(
+          MemoryMapping(
+            0x7000010000,
+            0x7000011000,
+            0x10000,
+            true,
+            false,
+            false,
+            "/system/lib64/libc.so",
+            buildId,
+            0,
+          )
         )
         // Fourth mapping: rw-p at offset 0x11000 (writable data)
-        .addMemoryMappings(
-          TombstoneProtos.MemoryMapping.newBuilder()
-            .setBuildId(buildId)
-            .setMappingName("/system/lib64/libc.so")
-            .setBeginAddress(0x7000011000)
-            .setEndAddress(0x7000012000)
-            .setOffset(0x11000)
-            .setRead(true)
-            .setWrite(true)
-            .setExecute(false)
+        .addMemoryMapping(
+          MemoryMapping(
+            0x7000011000,
+            0x7000012000,
+            0x11000,
+            true,
+            true,
+            false,
+            "/system/lib64/libc.so",
+            buildId,
+            0,
+          )
         )
-        .putThreads(
-          1234,
-          TombstoneProtos.Thread.newBuilder()
-            .setId(1234)
-            .setName("main")
-            .addCurrentBacktrace(
-              TombstoneProtos.BacktraceFrame.newBuilder()
-                .setPc(0x7000001100)
-                .setFunctionName("crash")
-                .setFileName("/system/lib64/libc.so")
-            )
-            .build(),
+        .addThread(
+          TombstoneThread(
+            1234,
+            "main",
+            emptyList(),
+            emptyList(),
+            emptyList(),
+            listOf(BacktraceFrame(0, 0x7000001100, 0, "crash", 0, "/system/lib64/libc.so", 0, "")),
+            emptyList(),
+            0,
+            0,
+          )
         )
         .build()
 
-    val parser =
-      TombstoneParser(
-        ByteArrayInputStream(tombstone.toByteArray()),
-        inAppIncludes,
-        inAppExcludes,
-        nativeLibraryDir,
-      )
-    val event = parser.parse()
+    val event = parser.parse(tombstone)
 
     // All 4 mappings should be coalesced into a single module
     val images = event.debugMeta!!.images!!
@@ -238,77 +240,69 @@ class TombstoneParserTest {
     val buildId = "f1c3bcc0279865fe3058404b2831d9e64135386c"
 
     val tombstone =
-      TombstoneProtos.Tombstone.newBuilder()
-        .setPid(1234)
-        .setTid(1234)
-        .setSignalInfo(
-          TombstoneProtos.Signal.newBuilder()
-            .setNumber(11)
-            .setName("SIGSEGV")
-            .setCode(1)
-            .setCodeName("SEGV_MAPERR")
-        )
+      Tombstone.Builder()
+        .pid(1234)
+        .tid(1234)
+        .signal(Signal(11, "SIGSEGV", 1, "SEGV_MAPERR", false, 0, 0, false, 0, null))
         // First mapping: r--p at offset 0
-        .addMemoryMappings(
-          TombstoneProtos.MemoryMapping.newBuilder()
-            .setBuildId(buildId)
-            .setMappingName("/system/lib64/libdl.so")
-            .setBeginAddress(0x7000000000)
-            .setEndAddress(0x7000001000)
-            .setOffset(0)
-            .setRead(true)
-            .setWrite(false)
-            .setExecute(false)
+        .addMemoryMapping(
+          MemoryMapping(
+            0x7000000000,
+            0x7000001000,
+            0,
+            true,
+            false,
+            false,
+            "/system/lib64/libdl.so",
+            buildId,
+            0,
+          )
         )
         // Second mapping: r-xp at offset 0 (duplicate!)
-        .addMemoryMappings(
-          TombstoneProtos.MemoryMapping.newBuilder()
-            .setBuildId(buildId)
-            .setMappingName("/system/lib64/libdl.so")
-            .setBeginAddress(0x7000001000)
-            .setEndAddress(0x7000002000)
-            .setOffset(0)
-            .setRead(true)
-            .setWrite(false)
-            .setExecute(true)
+        .addMemoryMapping(
+          MemoryMapping(
+            0x7000001000,
+            0x7000002000,
+            0,
+            true,
+            false,
+            true,
+            "/system/lib64/libdl.so",
+            buildId,
+            0,
+          )
         )
         // Third mapping: r--p at offset 0 (another duplicate!)
-        .addMemoryMappings(
-          TombstoneProtos.MemoryMapping.newBuilder()
-            .setBuildId(buildId)
-            .setMappingName("/system/lib64/libdl.so")
-            .setBeginAddress(0x7000002000)
-            .setEndAddress(0x7000003000)
-            .setOffset(0)
-            .setRead(true)
-            .setWrite(false)
-            .setExecute(false)
+        .addMemoryMapping(
+          MemoryMapping(
+            0x7000002000,
+            0x7000003000,
+            0,
+            true,
+            false,
+            false,
+            "/system/lib64/libdl.so",
+            buildId,
+            0,
+          )
         )
-        .putThreads(
-          1234,
-          TombstoneProtos.Thread.newBuilder()
-            .setId(1234)
-            .setName("main")
-            .addCurrentBacktrace(
-              TombstoneProtos.BacktraceFrame.newBuilder()
-                .setPc(0x7000001100)
-                .setFunctionName("crash")
-                .setFileName("/system/lib64/libdl.so")
-            )
-            .build(),
+        .addThread(
+          TombstoneThread(
+            1234,
+            "main",
+            emptyList(),
+            emptyList(),
+            emptyList(),
+            listOf(BacktraceFrame(0, 0x7000001100, 0, "crash", 0, "/system/lib64/libdl.so", 0, "")),
+            emptyList(),
+            0,
+            0,
+          )
         )
         .build()
 
-    val parser =
-      TombstoneParser(
-        ByteArrayInputStream(tombstone.toByteArray()),
-        inAppIncludes,
-        inAppExcludes,
-        nativeLibraryDir,
-      )
-    val event = parser.parse()
+    val event = parser.parse(tombstone)
 
-    // All duplicate mappings should be coalesced into a single module
     val images = event.debugMeta!!.images!!
     assertEquals(1, images.size)
 
@@ -327,59 +321,52 @@ class TombstoneParserTest {
     val validBuildId = "f1c3bcc0279865fe3058404b2831d9e64135386c"
 
     val tombstone =
-      TombstoneProtos.Tombstone.newBuilder()
-        .setPid(1234)
-        .setTid(1234)
-        .setSignalInfo(
-          TombstoneProtos.Signal.newBuilder()
-            .setNumber(11)
-            .setName("SIGSEGV")
-            .setCode(1)
-            .setCodeName("SEGV_MAPERR")
+      Tombstone.Builder()
+        .pid(1234)
+        .tid(1234)
+        .signal(Signal(11, "SIGSEGV", 1, "SEGV_MAPERR", false, 0, 0, false, 0, null))
+        .addMemoryMapping(
+          MemoryMapping(
+            0x7000000000,
+            0x7000001000,
+            0,
+            true,
+            false,
+            true,
+            "/system/lib64/libc.so",
+            invalidBuildId,
+            0,
+          )
         )
-        .addMemoryMappings(
-          TombstoneProtos.MemoryMapping.newBuilder()
-            .setBuildId(invalidBuildId)
-            .setMappingName("/system/lib64/libc.so")
-            .setBeginAddress(0x7000000000)
-            .setEndAddress(0x7000001000)
-            .setOffset(0)
-            .setRead(true)
-            .setExecute(true)
+        .addMemoryMapping(
+          MemoryMapping(
+            0x7000002000,
+            0x7000003000,
+            0,
+            true,
+            false,
+            true,
+            "/system/lib64/libm.so",
+            validBuildId,
+            0,
+          )
         )
-        .addMemoryMappings(
-          TombstoneProtos.MemoryMapping.newBuilder()
-            .setBuildId(validBuildId)
-            .setMappingName("/system/lib64/libm.so")
-            .setBeginAddress(0x7000002000)
-            .setEndAddress(0x7000003000)
-            .setOffset(0)
-            .setRead(true)
-            .setExecute(true)
-        )
-        .putThreads(
-          1234,
-          TombstoneProtos.Thread.newBuilder()
-            .setId(1234)
-            .setName("main")
-            .addCurrentBacktrace(
-              TombstoneProtos.BacktraceFrame.newBuilder()
-                .setPc(0x7000000100)
-                .setFunctionName("crash")
-                .setFileName("/system/lib64/libc.so")
-            )
-            .build(),
+        .addThread(
+          TombstoneThread(
+            1234,
+            "main",
+            emptyList(),
+            emptyList(),
+            emptyList(),
+            listOf(BacktraceFrame(0, 0x7000000100, 0, "crash", 0, "/system/lib64/libc.so", 0, "")),
+            emptyList(),
+            0,
+            0,
+          )
         )
         .build()
 
-    val parser =
-      TombstoneParser(
-        ByteArrayInputStream(tombstone.toByteArray()),
-        inAppIncludes,
-        inAppExcludes,
-        nativeLibraryDir,
-      )
-    val event = parser.parse()
+    val event = parser.parse(tombstone)
 
     val images = event.debugMeta!!.images!!
     assertEquals(2, images.size)
@@ -400,8 +387,9 @@ class TombstoneParserTest {
     // test against a full snapshot so that we can track regressions in the VMA -> module reduction
     val tombstoneStream =
       GZIPInputStream(TombstoneParserTest::class.java.getResourceAsStream("/tombstone.pb.gz"))
-    val parser = TombstoneParser(tombstoneStream, inAppIncludes, inAppExcludes, nativeLibraryDir)
-    val event = parser.parse()
+    val streamParser =
+      TombstoneParser(tombstoneStream, inAppIncludes, inAppExcludes, nativeLibraryDir)
+    val event = streamParser.parse()
 
     val actualJson = serializeDebugMeta(event.debugMeta!!)
     val expectedJson = readGzippedResourceFile("/tombstone_debug_meta.json.gz")

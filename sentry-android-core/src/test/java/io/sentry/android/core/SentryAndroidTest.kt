@@ -29,6 +29,7 @@ import io.sentry.Session
 import io.sentry.ShutdownHookIntegration
 import io.sentry.SystemOutLogger
 import io.sentry.UncaughtExceptionHandlerIntegration
+import io.sentry.android.core.anr.AnrProfilingIntegration
 import io.sentry.android.core.cache.AndroidEnvelopeCache
 import io.sentry.android.core.performance.AppStartMetrics
 import io.sentry.android.fragment.FragmentLifecycleIntegration
@@ -485,6 +486,7 @@ class SentryAndroidTest {
           it is EnvelopeFileObserverIntegration ||
           it is AppLifecycleIntegration ||
           it is AnrIntegration ||
+          it is AnrProfilingIntegration ||
           it is ActivityLifecycleIntegration ||
           it is ActivityBreadcrumbsIntegration ||
           it is UserInteractionIntegration ||

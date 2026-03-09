@@ -5261,6 +5261,7 @@ public class io/sentry/logger/LoggerBatchProcessor : io/sentry/logger/ILoggerBat
 	public static final field MAX_QUEUE_SIZE I
 	protected final field options Lio/sentry/SentryOptions;
 	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/ISentryClient;)V
+	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/ISentryClient;Lio/sentry/ISentryExecutorService;)V
 	public fun add (Lio/sentry/SentryLogEvent;)V
 	public fun close (Z)V
 	public fun flush (J)V
@@ -7758,6 +7759,7 @@ public final class io/sentry/util/StringUtils {
 	public static fun camelCase (Ljava/lang/String;)Ljava/lang/String;
 	public static fun capitalize (Ljava/lang/String;)Ljava/lang/String;
 	public static fun countOf (Ljava/lang/String;C)I
+	public static fun getOrEmpty (Ljava/lang/String;)Ljava/lang/String;
 	public static fun getStringAfterDot (Ljava/lang/String;)Ljava/lang/String;
 	public static fun join (Ljava/lang/CharSequence;Ljava/lang/Iterable;)Ljava/lang/String;
 	public static fun normalizeUUID (Ljava/lang/String;)Ljava/lang/String;

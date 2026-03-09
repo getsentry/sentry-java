@@ -210,27 +210,16 @@ class PreviousSessionFinalizerTest {
   }
 
   @Test
-  fun `if session tracking is disabled, does not wait for previous session flush`() {
+  fun `if session tracking is disabled, still finalizes previous session`() {
     val finalizer =
       fixture.getSut(
         tmpDir,
-        flushTimeoutMillis = 500L,
+        session = Session(null, null, null, "io.sentry.sample@1.0"),
         sessionTrackingEnabled = false,
-        shouldAwait = true,
       )
     finalizer.run()
 
-    verify(fixture.logger, never())
-      .log(
-        any(),
-        argThat {
-          startsWith(
-            "Timed out waiting to flush previous session to its own file in session finalizer."
-          )
-        },
-        any<Any>(),
-      )
-    verify(fixture.scopes, never()).captureEnvelope(any())
+    verify(fixture.scopes).captureEnvelope(any())
   }
 
   @Test
