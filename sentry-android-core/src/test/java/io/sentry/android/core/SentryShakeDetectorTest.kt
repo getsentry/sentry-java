@@ -30,7 +30,8 @@ class SentryShakeDetectorTest {
 
     init {
       whenever(context.getSystemService(Context.SENSOR_SERVICE)).thenReturn(sensorManager)
-      whenever(sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER, false)).thenReturn(accelerometer)
+      whenever(sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER, false))
+        .thenReturn(accelerometer)
     }
 
     fun getSut(): SentryShakeDetector {
@@ -46,7 +47,12 @@ class SentryShakeDetectorTest {
     sut.start(fixture.context, fixture.listener)
 
     verify(fixture.sensorManager)
-      .registerListener(eq(sut), eq(fixture.accelerometer), eq(SensorManager.SENSOR_DELAY_NORMAL), isA<Handler>())
+      .registerListener(
+        eq(sut),
+        eq(fixture.accelerometer),
+        eq(SensorManager.SENSOR_DELAY_NORMAL),
+        isA<Handler>(),
+      )
   }
 
   @Test
@@ -65,17 +71,20 @@ class SentryShakeDetectorTest {
     val sut = fixture.getSut()
     sut.start(fixture.context, fixture.listener)
 
-    verify(fixture.sensorManager, never()).registerListener(any(), any<Sensor>(), any<Int>(), any<Handler>())
+    verify(fixture.sensorManager, never())
+      .registerListener(any(), any<Sensor>(), any<Int>(), any<Handler>())
   }
 
   @Test
   fun `does not crash when accelerometer is null`() {
-    whenever(fixture.sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER, false)).thenReturn(null)
+    whenever(fixture.sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER, false))
+      .thenReturn(null)
 
     val sut = fixture.getSut()
     sut.start(fixture.context, fixture.listener)
 
-    verify(fixture.sensorManager, never()).registerListener(any(), any<Sensor>(), any<Int>(), any<Handler>())
+    verify(fixture.sensorManager, never())
+      .registerListener(any(), any<Sensor>(), any<Int>(), any<Handler>())
   }
 
   @Test

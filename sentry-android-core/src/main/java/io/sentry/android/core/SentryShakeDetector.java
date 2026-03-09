@@ -81,8 +81,7 @@ public final class SentryShakeDetector implements SensorEventListener {
     handlerThread = new HandlerThread("sentry-shake");
     handlerThread.start();
     final Handler handler = new Handler(handlerThread.getLooper());
-    sensorManager.registerListener(
-        this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL, handler);
+    sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL, handler);
   }
 
   public void stop() {
