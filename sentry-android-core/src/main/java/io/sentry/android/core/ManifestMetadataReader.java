@@ -175,6 +175,10 @@ final class ManifestMetadataReader {
 
   static final String SCREENSHOT_MASK_ALL_IMAGES = "io.sentry.screenshot.mask-all-images";
 
+  static final String ANR_PROFILING_SAMPLE_RATE = "io.sentry.anr.profiling.sample-rate";
+
+  static final String ENABLE_ANR_FINGERPRINTING = "io.sentry.anr.enable-fingerprinting";
+
   /** ManifestMetadataReader ctor */
   private ManifestMetadataReader() {}
 
@@ -674,6 +678,18 @@ final class ManifestMetadataReader {
         options
             .getScreenshot()
             .setMaskAllImages(readBool(metadata, logger, SCREENSHOT_MASK_ALL_IMAGES, false));
+
+        if (options.getAnrProfilingSampleRate() == null) {
+          final double anrProfilingSampleRate =
+              readDouble(metadata, logger, ANR_PROFILING_SAMPLE_RATE);
+          if (anrProfilingSampleRate != -1) {
+            options.setAnrProfilingSampleRate(anrProfilingSampleRate);
+          }
+        }
+
+        options.setEnableAnrFingerprinting(
+            readBool(
+                metadata, logger, ENABLE_ANR_FINGERPRINTING, options.isEnableAnrFingerprinting()));
       }
       options
           .getLogger()
