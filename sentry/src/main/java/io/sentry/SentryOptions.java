@@ -31,8 +31,6 @@ import io.sentry.util.LoadClass;
 import io.sentry.util.Platform;
 import io.sentry.util.SampleRateUtils;
 import io.sentry.util.StringUtils;
-import io.sentry.util.runtime.IRuntimeManager;
-import io.sentry.util.runtime.NeutralRuntimeManager;
 import io.sentry.util.thread.IThreadChecker;
 import io.sentry.util.thread.NoOpThreadChecker;
 import java.io.File;
@@ -46,6 +44,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.atomic.AtomicBoolean;
 import javax.net.ssl.SSLSocketFactory;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -318,6 +317,12 @@ public class SentryOptions {
   /** Sentry Executor Service that sends cached events and envelopes on App. start. */
   private @NotNull ISentryExecutorService executorService = NoOpSentryExecutorService.getInstance();
 
+  /**
+   * Whether SpotlightIntegration has already been loaded via reflection. This prevents re-adding it
+   * if the user removed it in their configuration callback and activate() is called again.
+   */
+  private final @NotNull AtomicBoolean spotlightIntegrationLoaded = new AtomicBoolean(false);
+
   /** connection timeout in milliseconds. */
   private int connectionTimeoutMillis = 30_000;
 
@@ -482,6 +487,9 @@ public class SentryOptions {
   /** Whether OPTIONS requests should be traced. */
   private boolean traceOptionsRequests = true;
 
+  /** Whether database transaction spans (BEGIN, COMMIT, ROLLBACK) should be traced. */
+  private boolean enableDatabaseTransactionTracing = false;
+
   /** Date provider to retrieve the current date from. */
   @ApiStatus.Internal
   private final @NotNull LazyEvaluator<SentryDateProvider> dateProvider =
@@ -630,9 +638,6 @@ public class SentryOptions {
 
   private @NotNull ISocketTagger socketTagger = NoOpSocketTagger.getInstance();
 
-  /** Runtime manager to manage runtime policies, like StrictMode on Android. */
-  private @NotNull IRuntimeManager runtimeManager = new NeutralRuntimeManager();
-
   private @Nullable String profilingTracesDirPath;
 
   public @NotNull IProfileConverter getProfilerConverter() {
@@ -641,6 +646,29 @@ public class SentryOptions {
 
   public void setProfilerConverter(@NotNull IProfileConverter profilerConverter) {
     this.profilerConverter = profilerConverter;
+  }
+
+  /** Starts expensive parts of the options during Sentry.init */
+  @ApiStatus.Internal
+  public void activate() {
+    if (executorService instanceof NoOpSentryExecutorService) {
+      // SentryExecutorService should be initialized before any
+      // SendCachedEventFireAndForgetIntegration
+      executorService = new SentryExecutorService(this);
+      executorService.prewarm();
+    }
+
+    // SpotlightIntegration is loaded via reflection to allow the sentry-spotlight module
+    // to be excluded from release builds, preventing insecure HTTP URLs from appearing in APKs.
+    // Only attempt once to avoid re-adding after user removal in their configuration callback.
+    if (spotlightIntegrationLoaded.compareAndSet(false, true)) {
+      try {
+        final Class<?> clazz = Class.forName("io.sentry.spotlight.SpotlightIntegration");
+        integrations.add((Integration) clazz.getConstructor().newInstance());
+      } catch (Throwable ignored) {
+        // SpotlightIntegration not available
+      }
+    }
   }
 
   /**
@@ -664,6 +692,9 @@ public class SentryOptions {
 
     /** Optional build configuration name for filtering (e.g., "debug", "release", "staging") */
     public @Nullable String buildConfiguration = null;
+
+    /** Optional install groups for filtering updates */
+    public @Nullable List<String> installGroupsOverride = null;
   }
 
   private @NotNull DistributionOptions distribution = new DistributionOptions();
@@ -732,7 +763,7 @@ public class SentryOptions {
    * @param dsn the DSN
    */
   public void setDsn(final @Nullable String dsn) {
-    this.dsn = dsn;
+    this.dsn = dsn != null ? dsn.trim() : null;
     this.parsedDsn.resetValue();
 
     dsnHash = StringUtils.calculateStringHash(this.dsn, logger);
@@ -2582,6 +2613,24 @@ public class SentryOptions {
   }
 
   /**
+   * Whether database transaction spans (BEGIN, COMMIT, ROLLBACK) should be traced.
+   *
+   * @return true if database transaction spans should be traced
+   */
+  public boolean isEnableDatabaseTransactionTracing() {
+    return enableDatabaseTransactionTracing;
+  }
+
+  /**
+   * Whether database transaction spans (BEGIN, COMMIT, ROLLBACK) should be traced.
+   *
+   * @param enableDatabaseTransactionTracing true if database transaction spans should be traced
+   */
+  public void setEnableDatabaseTransactionTracing(boolean enableDatabaseTransactionTracing) {
+    this.enableDatabaseTransactionTracing = enableDatabaseTransactionTracing;
+  }
+
+  /**
    * Whether Sentry is enabled.
    *
    * @return true if Sentry should be enabled
@@ -3105,26 +3154,6 @@ public class SentryOptions {
   }
 
   /**
-   * Returns the IRuntimeManager
-   *
-   * @return the runtime manager
-   */
-  @ApiStatus.Internal
-  public @NotNull IRuntimeManager getRuntimeManager() {
-    return runtimeManager;
-  }
-
-  /**
-   * Sets the IRuntimeManager
-   *
-   * @param runtimeManager the runtime manager
-   */
-  @ApiStatus.Internal
-  public void setRuntimeManager(final @NotNull IRuntimeManager runtimeManager) {
-    this.runtimeManager = runtimeManager;
-  }
-
-  /**
    * Load the lazy fields. Useful to load in the background, so that results are already cached. DO
    * NOT CALL THIS METHOD ON THE MAIN THREAD.
    */
@@ -3298,26 +3327,12 @@ public class SentryOptions {
 
     if (!empty) {
       setSpanFactory(SpanFactoryFactory.create(new LoadClass(), NoOpLogger.getInstance()));
-      // SentryExecutorService should be initialized before any
-      // SendCachedEventFireAndForgetIntegration
-      executorService = new SentryExecutorService(this);
-      executorService.prewarm();
 
       // UncaughtExceptionHandlerIntegration should be inited before any other Integration.
       // if there's an error on the setup, we are able to capture it
       integrations.add(new UncaughtExceptionHandlerIntegration());
 
       integrations.add(new ShutdownHookIntegration());
-
-      // SpotlightIntegration is loaded via reflection to allow the sentry-spotlight module
-      // to be excluded from release builds, preventing insecure HTTP URLs from appearing in APKs
-      try {
-        final Class<?> clazz = Class.forName("io.sentry.spotlight.SpotlightIntegration");
-        final Integration spotlight = (Integration) clazz.getConstructor().newInstance();
-        integrations.add(spotlight);
-      } catch (Throwable ignored) {
-        // SpotlightIntegration not available
-      }
 
       eventProcessors.add(new MainEventProcessor(this));
       eventProcessors.add(new DuplicateEventDetectionEventProcessor(this));
@@ -3362,6 +3377,9 @@ public class SentryOptions {
     }
     if (options.getPrintUncaughtStackTrace() != null) {
       setPrintUncaughtStackTrace(options.getPrintUncaughtStackTrace());
+    }
+    if (options.getSampleRate() != null) {
+      setSampleRate(options.getSampleRate());
     }
     if (options.getTracesSampleRate() != null) {
       setTracesSampleRate(options.getTracesSampleRate());
@@ -3412,6 +3430,12 @@ public class SentryOptions {
     if (options.getIdleTimeout() != null) {
       setIdleTimeout(options.getIdleTimeout());
     }
+    if (options.getShutdownTimeoutMillis() != null) {
+      setShutdownTimeoutMillis(options.getShutdownTimeoutMillis());
+    }
+    if (options.getSessionFlushTimeoutMillis() != null) {
+      setSessionFlushTimeoutMillis(options.getSessionFlushTimeoutMillis());
+    }
     for (String bundleId : options.getBundleIds()) {
       addBundleId(bundleId);
     }
@@ -3440,6 +3464,9 @@ public class SentryOptions {
     }
     if (options.isEnableBackpressureHandling() != null) {
       setEnableBackpressureHandling(options.isEnableBackpressureHandling());
+    }
+    if (options.isEnableDatabaseTransactionTracing() != null) {
+      setEnableDatabaseTransactionTracing(options.isEnableDatabaseTransactionTracing());
     }
     if (options.getMaxRequestBodySize() != null) {
       setMaxRequestBodySize(options.getMaxRequestBodySize());

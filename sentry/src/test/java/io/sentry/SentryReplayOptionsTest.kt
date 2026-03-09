@@ -1,10 +1,18 @@
 package io.sentry
 
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class SentryReplayOptionsTest {
+
+  @BeforeTest
+  fun setup() {
+    SentryIntegrationPackageStorage.getInstance().clearStorage()
+  }
+
   @Test
   fun `uses medium quality as default`() {
     val replayOptions = SentryReplayOptions(true, null)
@@ -125,5 +133,89 @@ class SentryReplayOptionsTest {
     }
     assertTrue(headers.contains("X-Response-Header"))
     assertTrue(headers.contains("X-Debug-Header"))
+  }
+
+  // Custom Masking Integration Tests
+
+  private fun hasCustomMaskingIntegration(): Boolean {
+    return SentryIntegrationPackageStorage.getInstance()
+      .integrations
+      .contains("ReplayCustomMasking")
+  }
+
+  @Test
+  fun `default options does not add ReplayCustomMasking integration`() {
+    SentryReplayOptions(false, null)
+    assertFalse(hasCustomMaskingIntegration())
+  }
+
+  @Test
+  fun `empty options does not add ReplayCustomMasking integration`() {
+    SentryReplayOptions(true, null)
+    assertFalse(hasCustomMaskingIntegration())
+  }
+
+  @Test
+  fun `addUnmaskViewClass adds ReplayCustomMasking integration`() {
+    val options = SentryReplayOptions(false, null)
+    options.addUnmaskViewClass("com.example.MyTextView")
+    assertTrue(hasCustomMaskingIntegration())
+  }
+
+  @Test
+  fun `setMaskViewContainerClass does not add ReplayCustomMasking integration`() {
+    val options = SentryReplayOptions(false, null)
+    options.setMaskViewContainerClass("com.example.MyContainer")
+    assertFalse(hasCustomMaskingIntegration())
+  }
+
+  @Test
+  fun `setUnmaskViewContainerClass does not add ReplayCustomMasking integration`() {
+    val options = SentryReplayOptions(false, null)
+    options.setUnmaskViewContainerClass("com.example.MyContainer")
+    assertFalse(hasCustomMaskingIntegration())
+  }
+
+  @Test
+  fun `setMaskAllText true does not set custom integration`() {
+    val options = SentryReplayOptions(false, null)
+    options.setMaskAllText(true)
+    options.setMaskAllImages(true)
+    assertFalse(hasCustomMaskingIntegration())
+  }
+
+  @Test
+  fun `trackCustomMasking only adds integration once`() {
+    val options = SentryReplayOptions(false, null)
+    options.setMaskAllText(false)
+    options.setMaskAllImages(false)
+    assertTrue(hasCustomMaskingIntegration())
+    assertEquals(
+      1,
+      SentryIntegrationPackageStorage.getInstance().integrations.count {
+        it == "ReplayCustomMasking"
+      },
+    )
+  }
+
+  @Test
+  fun `addMaskViewClass adds ReplayCustomMasking integration`() {
+    val options = SentryReplayOptions(false, null)
+    options.addMaskViewClass("com.example.MySensitiveView")
+    assertTrue(hasCustomMaskingIntegration())
+  }
+
+  @Test
+  fun `setMaskAllText adds ReplayCustomMasking integration`() {
+    val options = SentryReplayOptions(false, null)
+    options.setMaskAllText(false)
+    assertTrue(hasCustomMaskingIntegration())
+  }
+
+  @Test
+  fun `setMaskAllImages adds ReplayCustomMasking integration`() {
+    val options = SentryReplayOptions(false, null)
+    options.setMaskAllImages(false)
+    assertTrue(hasCustomMaskingIntegration())
   }
 }

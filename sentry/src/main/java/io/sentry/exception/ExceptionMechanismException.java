@@ -4,6 +4,7 @@ import io.sentry.protocol.Mechanism;
 import io.sentry.util.Objects;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * A throwable decorator that holds an {@link io.sentry.protocol.Mechanism} related to the decorated
@@ -15,7 +16,7 @@ public final class ExceptionMechanismException extends RuntimeException {
 
   private final @NotNull Mechanism exceptionMechanism;
   private final @NotNull Throwable throwable;
-  private final @NotNull Thread thread;
+  private final @Nullable Thread thread;
   private final boolean snapshot;
 
   /**
@@ -29,11 +30,11 @@ public final class ExceptionMechanismException extends RuntimeException {
   public ExceptionMechanismException(
       final @NotNull Mechanism mechanism,
       final @NotNull Throwable throwable,
-      final @NotNull Thread thread,
+      final @Nullable Thread thread,
       final boolean snapshot) {
     exceptionMechanism = Objects.requireNonNull(mechanism, "Mechanism is required.");
     this.throwable = Objects.requireNonNull(throwable, "Throwable is required.");
-    this.thread = Objects.requireNonNull(thread, "Thread is required.");
+    this.thread = thread;
     this.snapshot = snapshot;
   }
 
@@ -47,7 +48,7 @@ public final class ExceptionMechanismException extends RuntimeException {
   public ExceptionMechanismException(
       final @NotNull Mechanism mechanism,
       final @NotNull Throwable throwable,
-      final @NotNull Thread thread) {
+      final @Nullable Thread thread) {
     this(mechanism, throwable, thread, false);
   }
 
@@ -74,7 +75,7 @@ public final class ExceptionMechanismException extends RuntimeException {
    *
    * @return the Thread
    */
-  public @NotNull Thread getThread() {
+  public @Nullable Thread getThread() {
     return thread;
   }
 

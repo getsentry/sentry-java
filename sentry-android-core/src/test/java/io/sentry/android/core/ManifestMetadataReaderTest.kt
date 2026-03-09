@@ -188,6 +188,31 @@ class ManifestMetadataReaderTest {
   }
 
   @Test
+  fun `applyMetadata reads dist to options`() {
+    // Arrange
+    val bundle = bundleOf(ManifestMetadataReader.DIST to "test-dist")
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertEquals("test-dist", fixture.options.dist)
+  }
+
+  @Test
+  fun `applyMetadata reads dist and keep default value if not found`() {
+    // Arrange
+    val context = fixture.getContext()
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertNull(fixture.options.dist)
+  }
+
+  @Test
   fun `applyMetadata reads session tracking interval to options`() {
     // Arrange
 
@@ -1972,6 +1997,56 @@ class ManifestMetadataReaderTest {
     )
   }
 
+  @Test
+  fun `applyMetadata reads anrProfilingSampleRate to options`() {
+    // Arrange
+    val bundle = bundleOf(ManifestMetadataReader.ANR_PROFILING_SAMPLE_RATE to 0.5f)
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertEquals(0.5, fixture.options.anrProfilingSampleRate!!, 0.01)
+  }
+
+  @Test
+  fun `applyMetadata keeps anrProfilingSampleRate default when not set in manifest`() {
+    // Arrange
+    val context = fixture.getContext()
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertNull(fixture.options.anrProfilingSampleRate)
+  }
+
+  @Test
+  fun `applyMetadata reads enableAnrFingerprinting to options`() {
+    // Arrange
+    val bundle = bundleOf(ManifestMetadataReader.ENABLE_ANR_FINGERPRINTING to true)
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertTrue(fixture.options.isEnableAnrFingerprinting)
+  }
+
+  @Test
+  fun `applyMetadata keeps enableAnrFingerprinting default when not set in manifest`() {
+    // Arrange
+    val context = fixture.getContext()
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertTrue(fixture.options.isEnableAnrFingerprinting)
+  }
+
   // Network Detail Configuration Tests
 
   @Test
@@ -2288,5 +2363,77 @@ class ManifestMetadataReaderTest {
     // Assert
     assertTrue(fixture.options.isEnableSpotlight)
     assertEquals(expectedUrl, fixture.options.spotlightConnectionUrl)
+  }
+
+  // Screenshot masking tests
+
+  @Test
+  fun `applyMetadata reads screenshot mask-all-text to options`() {
+    // Arrange
+    val bundle = bundleOf(ManifestMetadataReader.SCREENSHOT_MASK_ALL_TEXT to true)
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertTrue(fixture.options.screenshot.maskViewClasses.contains("android.widget.TextView"))
+  }
+
+  @Test
+  fun `applyMetadata reads screenshot mask-all-images to options`() {
+    // Arrange
+    val bundle = bundleOf(ManifestMetadataReader.SCREENSHOT_MASK_ALL_IMAGES to true)
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertTrue(fixture.options.screenshot.maskViewClasses.contains("android.widget.ImageView"))
+  }
+
+  @Test
+  fun `applyMetadata without specifying screenshot mask-all-text, stays false`() {
+    // Arrange
+    val context = fixture.getContext()
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertFalse(fixture.options.screenshot.maskViewClasses.contains("android.widget.TextView"))
+  }
+
+  @Test
+  fun `applyMetadata without specifying screenshot mask-all-images, stays false`() {
+    // Arrange
+    val context = fixture.getContext()
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertFalse(fixture.options.screenshot.maskViewClasses.contains("android.widget.ImageView"))
+  }
+
+  @Test
+  fun `applyMetadata reads both screenshot masking options`() {
+    // Arrange
+    val bundle =
+      bundleOf(
+        ManifestMetadataReader.SCREENSHOT_MASK_ALL_TEXT to true,
+        ManifestMetadataReader.SCREENSHOT_MASK_ALL_IMAGES to true,
+      )
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertTrue(fixture.options.screenshot.maskViewClasses.contains("android.widget.TextView"))
+    assertTrue(fixture.options.screenshot.maskViewClasses.contains("android.widget.ImageView"))
+    // maskAllImages should also add WebView
+    assertTrue(fixture.options.screenshot.maskViewClasses.contains("android.webkit.WebView"))
   }
 }

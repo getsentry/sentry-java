@@ -17,6 +17,7 @@ import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryThread
 import io.sentry.test.ImmediateExecutorService
+import io.sentry.test.NonOverridableNoOpSentryExecutorService
 import io.sentry.test.createSentryClientMock
 import io.sentry.test.initForTest
 import io.sentry.test.injectForField
@@ -776,9 +777,12 @@ class SentryTest {
       it.profilesSampleRate = 1.0
       it.cacheDirPath = getTempPath()
       it.setLogger(logger)
+      it.executorService = SentryExecutorService()
+      it.executorService.prewarm()
       it.executorService.close(0)
       it.isDebug = true
     }
+
     verify(logger)
       .log(
         eq(SentryLevel.ERROR),
@@ -874,6 +878,7 @@ class SentryTest {
       it.release = "io.sentry.sample@1.1.0+220"
       it.environment = "debug"
 
+      it.executorService = SentryExecutorService()
       it.executorService.submit {
         // here the values should be still old. Sentry.init will submit another runnable
         // to notify the options observers, but because the executor is single-threaded, the
@@ -942,6 +947,7 @@ class SentryTest {
         previousSessionFile.bufferedWriter(),
       )
 
+      it.executorService = SentryExecutorService()
       it.executorService.submit {
         // here the previous session should still exist. Sentry.init will submit another runnable
         // to finalize the previous session, but because the executor is single-threaded, the
@@ -958,7 +964,9 @@ class SentryTest {
     }
 
     await.untilTrue(triggered)
-    assertFalse(previousSessionFile.exists())
+    // The PreviousSessionFinalizer runs as a separate task after the test's task in the
+    // single-threaded executor, so we need to wait for it to delete the file too.
+    await.until { !previousSessionFile.exists() }
   }
 
   @Test
@@ -1212,7 +1220,7 @@ class SentryTest {
       it.profilesSampleRate = 1.0
       it.tracesSampler = mockSampleTracer
       it.profilesSampler = mockProfilesSampler
-      it.executorService = NoOpSentryExecutorService.getInstance()
+      it.executorService = NonOverridableNoOpSentryExecutorService()
       it.cacheDirPath = getTempPath()
     }
     // Samplers are called with isForNextAppStart flag set to true
@@ -1231,7 +1239,7 @@ class SentryTest {
       it.profilesSampleRate = 1.0
       it.tracesSampler = mockSampleTracer
       it.profilesSampler = mockProfilesSampler
-      it.executorService = NoOpSentryExecutorService.getInstance()
+      it.executorService = NonOverridableNoOpSentryExecutorService()
       it.cacheDirPath = null
     }
     // Samplers are called with isForNextAppStart flag set to true

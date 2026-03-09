@@ -5,6 +5,7 @@ import android.app.Application
 import android.content.ContentProvider
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -137,7 +138,7 @@ class AppStartMetricsTest {
     appStartTimeSpan.start()
     assertTrue(appStartTimeSpan.hasStarted())
     AppStartMetrics.getInstance().onActivityCreated(mock(), mock())
-    Shadows.shadowOf(Looper.getMainLooper()).idle()
+    waitForMainLooperIdle()
 
     val options = SentryAndroidOptions().apply { isEnablePerformanceV2 = false }
 
@@ -164,7 +165,7 @@ class AppStartMetricsTest {
     }
 
     // when the looper runs
-    Shadows.shadowOf(Looper.getMainLooper()).idle()
+    waitForMainLooperIdle()
 
     // but no activity creation happened
     // then the app wasn't launched in foreground and nothing should be sent
@@ -194,7 +195,7 @@ class AppStartMetricsTest {
     metrics.registerLifecycleCallbacks(mock<Application>())
 
     // when the handler callback is executed and no activity was launched
-    Shadows.shadowOf(Looper.getMainLooper()).idle()
+    waitForMainLooperIdle()
 
     // isAppLaunchedInForeground should be false
     assertFalse(metrics.isAppLaunchedInForeground)
@@ -205,6 +206,11 @@ class AppStartMetricsTest {
     // then a warm start should be set
     assertTrue(metrics.isAppLaunchedInForeground)
     assertEquals(AppStartMetrics.AppStartType.WARM, metrics.appStartType)
+  }
+
+  private fun waitForMainLooperIdle() {
+    Handler(Looper.getMainLooper()).post {}
+    Shadows.shadowOf(Looper.getMainLooper()).idle()
   }
 
   @Test
@@ -231,7 +237,7 @@ class AppStartMetricsTest {
     appStartTimeSpan.setStartedAt(1)
     assertTrue(appStartTimeSpan.hasStarted())
     // Job on main thread checks if activity was launched
-    Shadows.shadowOf(Looper.getMainLooper()).idle()
+    waitForMainLooperIdle()
 
     val timeSpan =
       AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback(SentryAndroidOptions())
@@ -246,7 +252,7 @@ class AppStartMetricsTest {
 
     AppStartMetrics.getInstance().registerLifecycleCallbacks(mock())
     // Job on main thread checks if activity was launched
-    Shadows.shadowOf(Looper.getMainLooper()).idle()
+    waitForMainLooperIdle()
 
     verify(profiler).close()
   }
@@ -259,7 +265,7 @@ class AppStartMetricsTest {
 
     AppStartMetrics.getInstance().registerLifecycleCallbacks(mock())
     // Job on main thread checks if activity was launched
-    Shadows.shadowOf(Looper.getMainLooper()).idle()
+    waitForMainLooperIdle()
 
     verify(profiler).close(eq(true))
   }
@@ -273,7 +279,7 @@ class AppStartMetricsTest {
 
     AppStartMetrics.getInstance().registerLifecycleCallbacks(mock())
     // Job on main thread checks if activity was launched
-    Shadows.shadowOf(Looper.getMainLooper()).idle()
+    waitForMainLooperIdle()
 
     verify(profiler, never()).close()
   }
@@ -287,7 +293,7 @@ class AppStartMetricsTest {
 
     AppStartMetrics.getInstance().registerLifecycleCallbacks(mock())
     // Job on main thread checks if activity was launched
-    Shadows.shadowOf(Looper.getMainLooper()).idle()
+    waitForMainLooperIdle()
 
     verify(profiler, never()).close(any())
   }
@@ -331,7 +337,7 @@ class AppStartMetricsTest {
     AppStartMetrics.getInstance().registerLifecycleCallbacks(application)
     assertTrue(AppStartMetrics.getInstance().isAppLaunchedInForeground)
     // Main thread performs the check and sets the flag to false if no activity was created
-    Shadows.shadowOf(Looper.getMainLooper()).idle()
+    waitForMainLooperIdle()
     assertFalse(AppStartMetrics.getInstance().isAppLaunchedInForeground)
   }
 
@@ -344,7 +350,7 @@ class AppStartMetricsTest {
     // An activity was created
     AppStartMetrics.getInstance().onActivityCreated(mock(), null)
     // Main thread performs the check and keeps the flag to true
-    Shadows.shadowOf(Looper.getMainLooper()).idle()
+    waitForMainLooperIdle()
     assertTrue(AppStartMetrics.getInstance().isAppLaunchedInForeground)
   }
 
@@ -434,6 +440,7 @@ class AppStartMetricsTest {
     val metrics = AppStartMetrics.getInstance()
     assertEquals(AppStartMetrics.AppStartType.UNKNOWN, AppStartMetrics.getInstance().appStartType)
     val app = mock<Application>()
+    metrics.appStartTimeSpan.start() // Need to start the span for timeout check to work
     metrics.registerLifecycleCallbacks(app)
 
     // when an activity is created later with a null bundle
@@ -536,5 +543,321 @@ class AppStartMetricsTest {
     metrics.onActivityDestroyed(firstActivity)
 
     assertEquals(secondActivity, CurrentActivityHolder.getInstance().activity)
+  }
+
+  @Test
+  fun `firstIdle is properly cleared`() {
+    val metrics = AppStartMetrics.getInstance()
+    metrics.registerLifecycleCallbacks(mock<Application>())
+    waitForMainLooperIdle()
+
+    assertTrue(metrics.firstIdle > 0)
+
+    metrics.clear()
+
+    assertEquals(-1, metrics.firstIdle)
+  }
+
+  @Test
+  fun `firstIdle is set when registerLifecycleCallbacks is called`() {
+    SystemClock.setCurrentTimeMillis(90)
+
+    val metrics = AppStartMetrics.getInstance()
+    val beforeRegister = SystemClock.uptimeMillis()
+
+    SystemClock.setCurrentTimeMillis(100)
+    metrics.registerLifecycleCallbacks(mock<Application>())
+    waitForMainLooperIdle()
+
+    SystemClock.setCurrentTimeMillis(110)
+    val afterIdle = SystemClock.uptimeMillis()
+
+    assertTrue(metrics.firstIdle >= beforeRegister)
+    assertTrue(metrics.firstIdle <= afterIdle)
+  }
+
+  @Test
+  fun `Sets app launch type to WARM when activity created after firstIdle`() {
+    val metrics = AppStartMetrics.getInstance()
+    assertEquals(AppStartMetrics.AppStartType.UNKNOWN, metrics.appStartType)
+
+    metrics.registerLifecycleCallbacks(mock<Application>())
+    waitForMainLooperIdle()
+
+    SystemClock.setCurrentTimeMillis(SystemClock.uptimeMillis() + 100)
+    metrics.isAppLaunchedInForeground = true
+    metrics.onActivityCreated(mock<Activity>(), null)
+
+    assertEquals(AppStartMetrics.AppStartType.WARM, metrics.appStartType)
+  }
+
+  @Test
+  fun `Sets app launch type to COLD when activity created before firstIdle executes`() {
+    val metrics = AppStartMetrics.getInstance()
+    assertEquals(AppStartMetrics.AppStartType.UNKNOWN, metrics.appStartType)
+
+    metrics.registerLifecycleCallbacks(mock<Application>())
+    metrics.onActivityCreated(mock<Activity>(), null)
+
+    assertEquals(AppStartMetrics.AppStartType.COLD, metrics.appStartType)
+
+    waitForMainLooperIdle()
+
+    assertEquals(AppStartMetrics.AppStartType.COLD, metrics.appStartType)
+  }
+
+  @Test
+  fun `savedInstanceState check takes precedence over firstIdle timing`() {
+    val metrics = AppStartMetrics.getInstance()
+
+    metrics.registerLifecycleCallbacks(mock<Application>())
+    waitForMainLooperIdle()
+
+    SystemClock.setCurrentTimeMillis(SystemClock.uptimeMillis() + 100)
+    metrics.onActivityCreated(mock<Activity>(), mock<Bundle>())
+
+    assertEquals(AppStartMetrics.AppStartType.WARM, metrics.appStartType)
+  }
+
+  @Test
+  fun `timeout check takes precedence over firstIdle timing`() {
+    val metrics = AppStartMetrics.getInstance()
+
+    metrics.registerLifecycleCallbacks(mock<Application>())
+    waitForMainLooperIdle()
+
+    val futureTime = SystemClock.uptimeMillis() + TimeUnit.MINUTES.toMillis(2)
+    SystemClock.setCurrentTimeMillis(futureTime)
+    metrics.onActivityCreated(mock<Activity>(), null)
+
+    assertEquals(AppStartMetrics.AppStartType.WARM, metrics.appStartType)
+    assertTrue(metrics.appStartTimeSpan.hasStarted())
+    assertEquals(futureTime, metrics.appStartTimeSpan.startUptimeMs)
+  }
+
+  @Test
+  fun `firstIdle timing does not affect subsequent activity creations`() {
+    val metrics = AppStartMetrics.getInstance()
+
+    metrics.registerLifecycleCallbacks(mock<Application>())
+    waitForMainLooperIdle()
+
+    SystemClock.setCurrentTimeMillis(SystemClock.uptimeMillis() + 100)
+    metrics.onActivityCreated(mock<Activity>(), null)
+    assertEquals(AppStartMetrics.AppStartType.WARM, metrics.appStartType)
+
+    metrics.onActivityCreated(mock<Activity>(), mock<Bundle>())
+    assertEquals(AppStartMetrics.AppStartType.WARM, metrics.appStartType)
+  }
+
+  @Test
+  fun `COLD start when activity created at same uptime as firstIdle with null savedInstanceState`() {
+    val metrics = AppStartMetrics.getInstance()
+
+    // Manually set firstIdle to a known value
+    val testTime = SystemClock.uptimeMillis()
+    metrics.firstIdle = testTime
+
+    // Set current time to exactly match firstIdle time
+    SystemClock.setCurrentTimeMillis(testTime)
+    metrics.onActivityCreated(mock<Activity>(), null)
+
+    // When nowUptimeMs <= firstIdle, should be COLD
+    assertEquals(AppStartMetrics.AppStartType.COLD, metrics.appStartType)
+  }
+
+  @Test
+  fun `WARM start when activity created 1ms after firstIdle with null savedInstanceState`() {
+    val metrics = AppStartMetrics.getInstance()
+
+    val beforeRegister = SystemClock.uptimeMillis()
+    metrics.registerLifecycleCallbacks(mock<Application>())
+    waitForMainLooperIdle()
+
+    // Activity created just 1ms after firstIdle executed
+    SystemClock.setCurrentTimeMillis(beforeRegister + 1)
+    metrics.onActivityCreated(mock<Activity>(), null)
+
+    assertEquals(AppStartMetrics.AppStartType.WARM, metrics.appStartType)
+  }
+
+  @Test
+  fun `COLD start when activity created before firstIdle runs despite later wall time`() {
+    val metrics = AppStartMetrics.getInstance()
+
+    metrics.registerLifecycleCallbacks(mock<Application>())
+    // Don't let the looper idle yet - simulates activity created before firstIdle executes
+
+    // Even if we advance wall time significantly
+    SystemClock.setCurrentTimeMillis(SystemClock.uptimeMillis() + 1000)
+    metrics.onActivityCreated(mock<Activity>(), null)
+
+    // Should still be COLD because firstIdle hasn't executed yet
+    assertEquals(AppStartMetrics.AppStartType.COLD, metrics.appStartType)
+
+    // Now let firstIdle execute
+    waitForMainLooperIdle()
+
+    // Should remain COLD (not change to WARM)
+    assertEquals(AppStartMetrics.AppStartType.COLD, metrics.appStartType)
+  }
+
+  @Test
+  fun `WARM start takes precedence when both savedInstanceState and firstIdle indicate WARM`() {
+    val metrics = AppStartMetrics.getInstance()
+
+    metrics.registerLifecycleCallbacks(mock<Application>())
+    waitForMainLooperIdle()
+
+    SystemClock.setCurrentTimeMillis(SystemClock.uptimeMillis() + 100)
+    // Both conditions indicate warm: savedInstanceState != null AND after firstIdle
+    metrics.onActivityCreated(mock<Activity>(), mock<Bundle>())
+
+    assertEquals(AppStartMetrics.AppStartType.WARM, metrics.appStartType)
+  }
+
+  @Test
+  fun `WARM start when savedInstanceState is non-null even if created before firstIdle`() {
+    val metrics = AppStartMetrics.getInstance()
+
+    metrics.registerLifecycleCallbacks(mock<Application>())
+    // Don't idle - activity created before firstIdle
+
+    // savedInstanceState check takes precedence
+    metrics.onActivityCreated(mock<Activity>(), mock<Bundle>())
+
+    assertEquals(AppStartMetrics.AppStartType.WARM, metrics.appStartType)
+  }
+
+  @Test
+  fun `firstIdle is -1 initially and after clear`() {
+    val metrics = AppStartMetrics.getInstance()
+
+    // Should be -1 initially (already tested in existing test, but good to verify)
+    metrics.clear()
+    val initialValue = metrics.firstIdle
+    assertEquals(-1, initialValue)
+
+    // Register and let it set
+    metrics.registerLifecycleCallbacks(mock<Application>())
+    waitForMainLooperIdle()
+    val afterRegister = metrics.firstIdle
+    assertTrue(afterRegister > 0)
+
+    // Clear should reset it
+    metrics.clear()
+    val afterClear = metrics.firstIdle
+    assertEquals(-1, afterClear)
+  }
+
+  @Test
+  fun `COLD start when firstIdle is still -1 and no savedInstanceState`() {
+    val metrics = AppStartMetrics.getInstance()
+
+    metrics.registerLifecycleCallbacks(mock<Application>())
+    // Don't idle - firstIdle will still be -1
+
+    // Verify firstIdle hasn't executed yet
+    assertEquals(-1, metrics.firstIdle)
+
+    metrics.onActivityCreated(mock<Activity>(), null)
+
+    assertEquals(AppStartMetrics.AppStartType.COLD, metrics.appStartType)
+  }
+
+  @Test
+  fun `App start type priority order is timeout, savedInstanceState, then firstIdle timing`() {
+    val metrics = AppStartMetrics.getInstance()
+
+    metrics.registerLifecycleCallbacks(mock<Application>())
+    waitForMainLooperIdle()
+
+    // Test timeout takes precedence over everything
+    val futureTime = SystemClock.uptimeMillis() + TimeUnit.MINUTES.toMillis(2)
+    SystemClock.setCurrentTimeMillis(futureTime)
+    metrics.onActivityCreated(mock<Activity>(), null) // null savedInstanceState
+
+    assertEquals(AppStartMetrics.AppStartType.WARM, metrics.appStartType)
+  }
+
+  @Test
+  fun `Multiple consecutive warm starts are correctly detected`() {
+    val metrics = AppStartMetrics.getInstance()
+
+    metrics.registerLifecycleCallbacks(mock<Application>())
+
+    // First activity - cold start (before firstIdle)
+    val firstActivity = mock<Activity>()
+    whenever(firstActivity.isChangingConfigurations).thenReturn(false)
+    metrics.onActivityCreated(firstActivity, null)
+    assertEquals(AppStartMetrics.AppStartType.COLD, metrics.appStartType)
+    assertTrue(metrics.shouldSendStartMeasurements())
+    metrics.onAppStartSpansSent()
+    waitForMainLooperIdle()
+
+    // Simulate app going to background (destroy first activity)
+    metrics.onActivityDestroyed(firstActivity)
+
+    // Second activity - should be warm (process still alive, new activity launch)
+    SystemClock.setCurrentTimeMillis(SystemClock.uptimeMillis() + 100)
+    val secondActivity = mock<Activity>()
+    metrics.onActivityCreated(secondActivity, null)
+    assertEquals(AppStartMetrics.AppStartType.WARM, metrics.appStartType)
+    assertTrue(metrics.isAppLaunchedInForeground)
+    assertTrue(metrics.shouldSendStartMeasurements())
+    metrics.onAppStartSpansSent()
+
+    // Third activity - should still be warm
+    SystemClock.setCurrentTimeMillis(SystemClock.uptimeMillis() + 100)
+    metrics.onActivityCreated(mock<Activity>(), null)
+    assertEquals(AppStartMetrics.AppStartType.WARM, metrics.appStartType)
+    assertTrue(metrics.isAppLaunchedInForeground)
+    assertFalse(metrics.shouldSendStartMeasurements())
+  }
+
+  @Test
+  fun `WARM start when user returns from background with null savedInstanceState`() {
+    val metrics = AppStartMetrics.getInstance()
+    metrics.registerLifecycleCallbacks(mock<Application>())
+
+    // Initial cold start
+    val mainActivity = mock<Activity>()
+    whenever(mainActivity.isChangingConfigurations).thenReturn(false)
+    metrics.onActivityCreated(mainActivity, null) // savedInstanceState = null
+    assertEquals(AppStartMetrics.AppStartType.COLD, metrics.appStartType)
+
+    waitForMainLooperIdle()
+
+    // User presses home, activity destroyed (not configuration change)
+    metrics.onActivityDestroyed(mainActivity)
+
+    // User returns to app - MainActivity recreated with NULL savedInstanceState
+    // (Android doesn't save state when user navigates away normally)
+    SystemClock.setCurrentTimeMillis(SystemClock.uptimeMillis() + 500)
+    metrics.onActivityCreated(mock<Activity>(), null) // savedInstanceState = null!
+
+    // Should be WARM because process was alive and firstIdle timing detects it
+    assertEquals(AppStartMetrics.AppStartType.WARM, metrics.appStartType)
+  }
+
+  @Test
+  fun `WARM start when launching different activity in same process with null savedInstanceState`() {
+    val metrics = AppStartMetrics.getInstance()
+    metrics.registerLifecycleCallbacks(mock<Application>())
+
+    // Cold start with MainActivity
+    val mainActivity = mock<Activity>()
+    metrics.onActivityCreated(mainActivity, null)
+    assertEquals(AppStartMetrics.AppStartType.COLD, metrics.appStartType)
+
+    waitForMainLooperIdle()
+
+    metrics.onActivityDestroyed(mainActivity)
+
+    // Later, user navigates to another activity
+    SystemClock.setCurrentTimeMillis(SystemClock.uptimeMillis() + 200)
+    metrics.onActivityCreated(mock<Activity>(), null)
+
+    assertEquals(AppStartMetrics.AppStartType.WARM, metrics.appStartType)
   }
 }

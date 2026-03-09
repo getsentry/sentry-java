@@ -15,9 +15,22 @@ These rules are automatically included in every conversation:
 Use the `fetch_rules` tool to include these rules when working on specific areas:
 
 ### Core SDK Functionality
+- **`api`**: Use when working with:
+  - Adding or modifying public API surface
+  - Binary compatibility, `.api` files, `apiDump`
+  - Understanding which classes to modify for new API (interfaces, implementations, no-ops, adapters)
+  - `IScope`, `IScopes`, `Sentry` static API
+  - Attributes, logging API, protocol classes
+
+- **`options`**: Use when working with:
+  - Adding or modifying SDK options (`SentryOptions`, namespaced options)
+  - External options (`ExternalOptions`, `sentry.properties`, environment variables)
+  - Android manifest metadata (`ManifestMetadataReader`)
+  - Spring Boot properties (`SentryProperties`)
+
 - **`scopes`**: Use when working with:
   - Hub/Scope management, forking, or lifecycle
-  - `Sentry.getCurrentScopes()`, `pushScope()`, `withScope()` 
+  - `Sentry.getCurrentScopes()`, `pushScope()`, `withScope()`
   - `ScopeType` (GLOBAL, ISOLATION, CURRENT)
   - Thread-local storage, scope bleeding issues
   - Migration from Hub API (v7 → v8)
@@ -79,6 +92,13 @@ Use the `fetch_rules` tool to include these rules when working on specific areas
 
 - **`new_module`**: Use when adding a new integration or sample module
 
+### Workflow
+- **`pr`**: Use when working with:
+  - Creating pull requests
+  - Stacked PRs, PR naming, stack comments
+  - PR changelog entries
+  - Merging or syncing stacked branches
+
 ### Testing
 - **`e2e_tests`**: Use when working with:
   - System tests, sample applications
@@ -92,6 +112,8 @@ Use the `fetch_rules` tool to include these rules when working on specific areas
 2. **Fetch on-demand**: Use `fetch_rules ["rule_name"]` when you identify specific domain work
 3. **Multiple rules**: Fetch multiple rules if task spans domains (e.g., `["scopes", "opentelemetry"]` for tracing scope issues)
 4. **Context clues**: Look for these keywords in requests to determine relevant rules:
+   - Public API/apiDump/.api files/binary compatibility/new method → `api`
+   - Options/SentryOptions/ExternalOptions/ManifestMetadataReader/sentry.properties → `options`
    - Scope/Hub/forking → `scopes`
    - Duplicate/dedup → `deduplication`
    - OpenTelemetry/tracing/spans → `opentelemetry`
@@ -100,5 +122,6 @@ Use the `fetch_rules` tool to include these rules when working on specific areas
    - System test/e2e/sample → `e2e_tests`
    - Feature flag/addFeatureFlag/flag evaluation → `feature_flags`
    - Metrics/count/distribution/gauge → `metrics`
+   - PR/pull request/stacked PR/stack → `pr`
    - JVM profiling/async-profiler/JFR/ProfileChunk → `profiling_jvm`
    - Android profiling/AndroidProfiler/frame metrics/method tracing → `profiling_android`

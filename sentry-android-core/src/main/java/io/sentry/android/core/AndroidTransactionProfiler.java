@@ -20,6 +20,7 @@ import io.sentry.SentryOptions;
 import io.sentry.android.core.internal.util.CpuInfoUtils;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.util.AutoClosableReentrantLock;
+import io.sentry.util.LazyEvaluator;
 import io.sentry.util.Objects;
 import java.util.ArrayList;
 import java.util.Date;
@@ -34,7 +35,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
   private final @Nullable String profilingTracesDirPath;
   private final boolean isProfilingEnabled;
   private final int profilingTracesHz;
-  private final @NotNull ISentryExecutorService executorService;
+  private final @NotNull LazyEvaluator.Evaluator<ISentryExecutorService> executorServiceSupplier;
   private final @NotNull BuildInfoProvider buildInfoProvider;
   private boolean isInitialized = false;
   private final @NotNull AtomicBoolean isRunning = new AtomicBoolean(false);
@@ -65,7 +66,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
         sentryAndroidOptions.getProfilingTracesDirPath(),
         sentryAndroidOptions.isProfilingEnabled(),
         sentryAndroidOptions.getProfilingTracesHz(),
-        sentryAndroidOptions.getExecutorService());
+        () -> sentryAndroidOptions.getExecutorService());
   }
 
   public AndroidTransactionProfiler(
@@ -77,6 +78,26 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
       final boolean isProfilingEnabled,
       final int profilingTracesHz,
       final @NotNull ISentryExecutorService executorService) {
+    this(
+        context,
+        buildInfoProvider,
+        frameMetricsCollector,
+        logger,
+        profilingTracesDirPath,
+        isProfilingEnabled,
+        profilingTracesHz,
+        () -> executorService);
+  }
+
+  public AndroidTransactionProfiler(
+      final @NotNull Context context,
+      final @NotNull BuildInfoProvider buildInfoProvider,
+      final @NotNull SentryFrameMetricsCollector frameMetricsCollector,
+      final @NotNull ILogger logger,
+      final @Nullable String profilingTracesDirPath,
+      final boolean isProfilingEnabled,
+      final int profilingTracesHz,
+      final @NotNull LazyEvaluator.Evaluator<ISentryExecutorService> executorServiceSupplier) {
     this.context =
         Objects.requireNonNull(
             ContextUtils.getApplicationContext(context), "The application context is required");
@@ -88,8 +109,9 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
     this.profilingTracesDirPath = profilingTracesDirPath;
     this.isProfilingEnabled = isProfilingEnabled;
     this.profilingTracesHz = profilingTracesHz;
-    this.executorService =
-        Objects.requireNonNull(executorService, "The ISentryExecutorService is required.");
+    this.executorServiceSupplier =
+        Objects.requireNonNull(
+            executorServiceSupplier, "A supplier for ISentryExecutorService is required.");
     this.profileStartTimestamp = DateUtils.getCurrentDateTime();
   }
 
@@ -123,7 +145,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
             profilingTracesDirPath,
             (int) SECONDS.toMicros(1) / profilingTracesHz,
             frameMetricsCollector,
-            executorService,
+            executorServiceSupplier,
             logger);
   }
 

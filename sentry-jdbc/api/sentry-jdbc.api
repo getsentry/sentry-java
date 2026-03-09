@@ -6,6 +6,7 @@ public final class io/sentry/jdbc/BuildConfig {
 public final class io/sentry/jdbc/DatabaseUtils {
 	public fun <init> ()V
 	public static fun parse (Ljava/lang/String;)Lio/sentry/jdbc/DatabaseUtils$DatabaseDetails;
+	public static fun readFrom (Lcom/p6spy/engine/common/ConnectionInformation;)Lio/sentry/jdbc/DatabaseUtils$DatabaseDetails;
 	public static fun readFrom (Lcom/p6spy/engine/common/StatementInformation;)Lio/sentry/jdbc/DatabaseUtils$DatabaseDetails;
 }
 
@@ -19,6 +20,12 @@ public class io/sentry/jdbc/SentryJdbcEventListener : com/p6spy/engine/event/Sim
 	public fun <init> ()V
 	public fun <init> (Lio/sentry/IScopes;)V
 	public fun onAfterAnyExecute (Lcom/p6spy/engine/common/StatementInformation;JLjava/sql/SQLException;)V
+	public fun onAfterCommit (Lcom/p6spy/engine/common/ConnectionInformation;JLjava/sql/SQLException;)V
+	public fun onAfterRollback (Lcom/p6spy/engine/common/ConnectionInformation;JLjava/sql/SQLException;)V
+	public fun onAfterSetAutoCommit (Lcom/p6spy/engine/common/ConnectionInformation;ZZLjava/sql/SQLException;)V
 	public fun onBeforeAnyExecute (Lcom/p6spy/engine/common/StatementInformation;)V
+	public fun onBeforeCommit (Lcom/p6spy/engine/common/ConnectionInformation;)V
+	public fun onBeforeRollback (Lcom/p6spy/engine/common/ConnectionInformation;)V
+	public fun onBeforeSetAutoCommit (Lcom/p6spy/engine/common/ConnectionInformation;ZZ)V
 }
 

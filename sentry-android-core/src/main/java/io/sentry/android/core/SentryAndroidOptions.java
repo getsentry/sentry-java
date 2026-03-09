@@ -17,6 +17,7 @@ import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryId;
+import io.sentry.util.SampleRateUtils;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -243,6 +244,19 @@ public final class SentryAndroidOptions extends SentryOptions {
 
   private boolean enableTombstone = false;
 
+  /**
+   * Screenshot masking options. Configure which views should be masked when capturing screenshots
+   * on error events.
+   *
+   * <p>Note: Screenshot masking requires the {@code sentry-android-replay} module to be present at
+   * runtime. If the replay module is not available, screenshots will be captured without masking.
+   */
+  private final @NotNull SentryScreenshotOptions screenshot = new SentryScreenshotOptions();
+
+  private @Nullable Double anrProfilingSampleRate;
+
+  private boolean enableAnrFingerprinting = true;
+
   public SentryAndroidOptions() {
     setSentryClientName(BuildConfig.SENTRY_ANDROID_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
     setSdkVersion(createSdkVersion());
@@ -321,7 +335,6 @@ public final class SentryAndroidOptions extends SentryOptions {
    *
    * @param enableTombstone true for enabled and false for disabled
    */
-  @ApiStatus.Internal
   public void setTombstoneEnabled(boolean enableTombstone) {
     this.enableTombstone = enableTombstone;
   }
@@ -332,7 +345,6 @@ public final class SentryAndroidOptions extends SentryOptions {
    *
    * @return true if enabled or false otherwise
    */
-  @ApiStatus.Internal
   public boolean isTombstoneEnabled() {
     return enableTombstone;
   }
@@ -615,12 +627,10 @@ public final class SentryAndroidOptions extends SentryOptions {
     this.reportHistoricalAnrs = reportHistoricalAnrs;
   }
 
-  @ApiStatus.Internal
   public boolean isReportHistoricalTombstones() {
     return reportHistoricalTombstones;
   }
 
-  @ApiStatus.Internal
   public void setReportHistoricalTombstones(final boolean reportHistoricalTombstones) {
     this.reportHistoricalTombstones = reportHistoricalTombstones;
   }
@@ -679,6 +689,56 @@ public final class SentryAndroidOptions extends SentryOptions {
   public void setEnableSystemEventBreadcrumbsExtras(
       final boolean enableSystemEventBreadcrumbsExtras) {
     this.enableSystemEventBreadcrumbsExtras = enableSystemEventBreadcrumbsExtras;
+  }
+
+  /**
+   * Returns the screenshot masking options.
+   *
+   * @return the screenshot masking options
+   */
+  public @NotNull SentryScreenshotOptions getScreenshot() {
+    return screenshot;
+  }
+
+  public @Nullable Double getAnrProfilingSampleRate() {
+    return anrProfilingSampleRate;
+  }
+
+  public void setAnrProfilingSampleRate(final @Nullable Double anrProfilingSampleRate) {
+    if (!SampleRateUtils.isValidSampleRate(anrProfilingSampleRate)) {
+      throw new IllegalArgumentException(
+          "The value "
+              + anrProfilingSampleRate
+              + " is not valid. Use null to disable or values >= 0.0 and <= 1.0.");
+    }
+    this.anrProfilingSampleRate = anrProfilingSampleRate;
+  }
+
+  public boolean isAnrProfilingEnabled() {
+    return anrProfilingSampleRate != null && anrProfilingSampleRate > 0;
+  }
+
+  /**
+   * Returns whether ANR fingerprinting is enabled. When enabled, the SDK assigns static
+   * fingerprints to ANR events that would otherwise produce noisy grouping. Currently, this applies
+   * a static fingerprint to ANRs whose stacktraces contain only system frames and no application
+   * frames.
+   *
+   * @return true if ANR fingerprinting is enabled
+   */
+  public boolean isEnableAnrFingerprinting() {
+    return enableAnrFingerprinting;
+  }
+
+  /**
+   * Sets whether ANR fingerprinting is enabled. When enabled, the SDK assigns static fingerprints
+   * to ANR events that would otherwise produce noisy grouping. Currently, this applies a static
+   * fingerprint to ANRs whose stacktraces contain only system frames and no application frames.
+   *
+   * @param enableAnrFingerprinting true to enable ANR fingerprinting
+   */
+  public void setEnableAnrFingerprinting(final boolean enableAnrFingerprinting) {
+    this.enableAnrFingerprinting = enableAnrFingerprinting;
   }
 
   static class AndroidUserFeedbackIDialogHandler implements SentryFeedbackOptions.IDialogHandler {

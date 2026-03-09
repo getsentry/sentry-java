@@ -376,6 +376,7 @@ class SentryOptionsTest {
     externalOptions.setTag("tag1", "value1")
     externalOptions.setTag("tag2", "value2")
     externalOptions.enableUncaughtExceptionHandler = false
+    externalOptions.sampleRate = 0.3
     externalOptions.tracesSampleRate = 0.5
     externalOptions.profilesSampleRate = 0.5
     externalOptions.addInAppInclude("com.app")
@@ -386,6 +387,8 @@ class SentryOptionsTest {
     externalOptions.addContextTag("requestId")
     externalOptions.proguardUuid = "1234"
     externalOptions.idleTimeout = 1500L
+    externalOptions.shutdownTimeoutMillis = 1499L
+    externalOptions.sessionFlushTimeoutMillis = 1498L
     externalOptions.bundleIds.addAll(
       listOf("12ea7a02-46ac-44c0-a5bb-6d1fd9586411 ", " faa3ab42-b1bd-4659-af8e-1682324aa744")
     )
@@ -396,6 +399,7 @@ class SentryOptionsTest {
     externalOptions.ignoredTransactions = listOf("transactionName1", "transaction-name-B")
     externalOptions.ignoredErrors = listOf("Some error", "Another .*")
     externalOptions.isEnableBackpressureHandling = false
+    externalOptions.isEnableDatabaseTransactionTracing = true
     externalOptions.maxRequestBodySize = SentryOptions.RequestSize.MEDIUM
     externalOptions.isSendDefaultPii = true
     externalOptions.isForceInit = true
@@ -432,6 +436,7 @@ class SentryOptionsTest {
     assertEquals(java.net.Proxy.Type.SOCKS, options.proxy!!.type)
     assertEquals(mapOf("tag1" to "value1", "tag2" to "value2"), options.tags)
     assertFalse(options.isEnableUncaughtExceptionHandler)
+    assertEquals(0.3, options.sampleRate)
     assertEquals(0.5, options.tracesSampleRate)
     assertEquals(0.5, options.profilesSampleRate)
     assertEquals(listOf("com.app"), options.inAppIncludes)
@@ -440,6 +445,8 @@ class SentryOptionsTest {
     assertEquals(listOf("userId", "requestId"), options.contextTags)
     assertEquals("1234", options.proguardUuid)
     assertEquals(1500L, options.idleTimeout)
+    assertEquals(1499L, options.shutdownTimeoutMillis)
+    assertEquals(1498L, options.sessionFlushTimeoutMillis)
     assertEquals(
       setOf("12ea7a02-46ac-44c0-a5bb-6d1fd9586411", "faa3ab42-b1bd-4659-af8e-1682324aa744"),
       options.bundleIds,
@@ -457,6 +464,7 @@ class SentryOptionsTest {
       options.ignoredErrors,
     )
     assertFalse(options.isEnableBackpressureHandling)
+    assertTrue(options.isEnableDatabaseTransactionTracing)
     assertTrue(options.isForceInit)
     assertNotNull(options.cron)
     assertEquals(10L, options.cron?.defaultCheckinMargin)
@@ -587,6 +595,24 @@ class SentryOptionsTest {
   }
 
   @Test
+  fun `when setting dsn with whitespace, it is trimmed and produces the same cache dir path`() {
+    val dsn = "http://key@localhost/proj"
+    val options1 =
+      SentryOptions().apply {
+        setDsn(dsn)
+        cacheDirPath = "${File.separator}test"
+      }
+    val options2 =
+      SentryOptions().apply {
+        setDsn("  $dsn  ")
+        cacheDirPath = "${File.separator}test"
+      }
+
+    assertEquals(dsn, options2.dsn)
+    assertEquals(options1.cacheDirPath, options2.cacheDirPath)
+  }
+
+  @Test
   fun `when options are initialized, idleTimeout is 3000`() {
     assertEquals(3000L, SentryOptions().idleTimeout)
   }
@@ -668,6 +694,11 @@ class SentryOptionsTest {
   @Test
   fun `when options are initialized, enableBackpressureHandling is set to true by default`() {
     assertTrue(SentryOptions().isEnableBackpressureHandling)
+  }
+
+  @Test
+  fun `when options are initialized, enableDatabaseTransactionTracing is set to false by default`() {
+    assertFalse(SentryOptions().isEnableDatabaseTransactionTracing)
   }
 
   @Test

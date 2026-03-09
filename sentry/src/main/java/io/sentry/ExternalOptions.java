@@ -23,6 +23,7 @@ public final class ExternalOptions {
   private @Nullable Boolean enableUncaughtExceptionHandler;
   private @Nullable Boolean debug;
   private @Nullable Boolean enableDeduplication;
+  private @Nullable Double sampleRate;
   private @Nullable Double tracesSampleRate;
   private @Nullable Double profilesSampleRate;
   private @Nullable SentryOptions.RequestSize maxRequestBodySize;
@@ -34,6 +35,8 @@ public final class ExternalOptions {
   private final @NotNull List<String> contextTags = new CopyOnWriteArrayList<>();
   private @Nullable String proguardUuid;
   private @Nullable Long idleTimeout;
+  private @Nullable Long shutdownTimeoutMillis;
+  private @Nullable Long sessionFlushTimeoutMillis;
   private final @NotNull Set<Class<? extends Throwable>> ignoredExceptionsForType =
       new CopyOnWriteArraySet<>();
   private @Nullable List<String> ignoredErrors;
@@ -53,6 +56,7 @@ public final class ExternalOptions {
   private @Nullable Boolean sendModules;
   private @Nullable Boolean sendDefaultPii;
   private @Nullable Boolean enableBackpressureHandling;
+  private @Nullable Boolean enableDatabaseTransactionTracing;
   private @Nullable Boolean globalHubMode;
   private @Nullable Boolean forceInit;
   private @Nullable Boolean captureOpenTelemetryEvents;
@@ -76,6 +80,7 @@ public final class ExternalOptions {
         propertiesProvider.getBooleanProperty("uncaught.handler.enabled"));
     options.setPrintUncaughtStackTrace(
         propertiesProvider.getBooleanProperty("uncaught.handler.print-stacktrace"));
+    options.setSampleRate(propertiesProvider.getDoubleProperty("sample-rate"));
     options.setTracesSampleRate(propertiesProvider.getDoubleProperty("traces-sample-rate"));
     options.setProfilesSampleRate(propertiesProvider.getDoubleProperty("profiles-sample-rate"));
     options.setDebug(propertiesProvider.getBooleanProperty("debug"));
@@ -134,6 +139,9 @@ public final class ExternalOptions {
       options.addBundleId(bundleId);
     }
     options.setIdleTimeout(propertiesProvider.getLongProperty("idle-timeout"));
+    options.setShutdownTimeoutMillis(propertiesProvider.getLongProperty("shutdown-timeout-millis"));
+    options.setSessionFlushTimeoutMillis(
+        propertiesProvider.getLongProperty("session-flush-timeout-millis"));
 
     options.setIgnoredErrors(propertiesProvider.getListOrNull("ignored-errors"));
 
@@ -150,6 +158,9 @@ public final class ExternalOptions {
 
     options.setEnableBackpressureHandling(
         propertiesProvider.getBooleanProperty("enable-backpressure-handling"));
+
+    options.setEnableDatabaseTransactionTracing(
+        propertiesProvider.getBooleanProperty("enable-database-transaction-tracing"));
 
     options.setGlobalHubMode(propertiesProvider.getBooleanProperty("global-hub-mode"));
 
@@ -291,6 +302,14 @@ public final class ExternalOptions {
     this.enableDeduplication = enableDeduplication;
   }
 
+  public @Nullable Double getSampleRate() {
+    return sampleRate;
+  }
+
+  public void setSampleRate(final @Nullable Double sampleRate) {
+    this.sampleRate = sampleRate;
+  }
+
   public @Nullable Double getTracesSampleRate() {
     return tracesSampleRate;
   }
@@ -396,6 +415,22 @@ public final class ExternalOptions {
     this.idleTimeout = idleTimeout;
   }
 
+  public @Nullable Long getShutdownTimeoutMillis() {
+    return shutdownTimeoutMillis;
+  }
+
+  public void setShutdownTimeoutMillis(final @Nullable Long shutdownTimeoutMillis) {
+    this.shutdownTimeoutMillis = shutdownTimeoutMillis;
+  }
+
+  public @Nullable Long getSessionFlushTimeoutMillis() {
+    return sessionFlushTimeoutMillis;
+  }
+
+  public void setSessionFlushTimeoutMillis(final @Nullable Long sessionFlushTimeoutMillis) {
+    this.sessionFlushTimeoutMillis = sessionFlushTimeoutMillis;
+  }
+
   public @Nullable List<String> getIgnoredErrors() {
     return ignoredErrors;
   }
@@ -477,6 +512,15 @@ public final class ExternalOptions {
   @ApiStatus.Experimental
   public @Nullable Boolean isEnableBackpressureHandling() {
     return enableBackpressureHandling;
+  }
+
+  public void setEnableDatabaseTransactionTracing(
+      final @Nullable Boolean enableDatabaseTransactionTracing) {
+    this.enableDatabaseTransactionTracing = enableDatabaseTransactionTracing;
+  }
+
+  public @Nullable Boolean isEnableDatabaseTransactionTracing() {
+    return enableDatabaseTransactionTracing;
   }
 
   public void setGlobalHubMode(final @Nullable Boolean globalHubMode) {

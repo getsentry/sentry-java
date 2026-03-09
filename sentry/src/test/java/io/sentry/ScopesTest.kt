@@ -1290,6 +1290,50 @@ class ScopesTest {
 
   // endregion
 
+  // region setAttribute tests
+  @Test
+  fun `when setAttribute is called on disabled client, do nothing`() {
+    val scopes = generateScopes()
+    var scope: IScope? = null
+    scopes.configureScope { scope = it }
+    scopes.close()
+
+    scopes.setAttribute("test", "test")
+    assertEquals(0, scope?.attributes?.count())
+  }
+
+  @Test
+  fun `when setAttribute with SentryAttribute is called on disabled client, do nothing`() {
+    val scopes = generateScopes()
+    var scope: IScope? = null
+    scopes.configureScope { scope = it }
+    scopes.close()
+
+    scopes.setAttribute(SentryAttribute.stringAttribute("test", "test"))
+    assertEquals(0, scope?.attributes?.count())
+  }
+
+  @Test
+  fun `when setAttributes is called on disabled client, do nothing`() {
+    val scopes = generateScopes()
+    var scope: IScope? = null
+    scopes.configureScope { scope = it }
+    scopes.close()
+
+    scopes.setAttributes(SentryAttributes.of(SentryAttribute.stringAttribute("test", "test")))
+    assertEquals(0, scope?.attributes?.count())
+  }
+
+  @Test
+  fun `when removeAttribute is called on disabled client, do nothing`() {
+    val scopes = generateScopes()
+    scopes.close()
+
+    scopes.removeAttribute("test")
+  }
+
+  // endregion
+
   // region captureEnvelope tests
   @Test
   fun `when captureEnvelope is called and envelope is null, throws IllegalArgumentException`() {
@@ -2726,10 +2770,12 @@ class ScopesTest {
             SentryAttribute.booleanAttribute("boolattr", true),
             SentryAttribute.integerAttribute("intattr", 17),
             SentryAttribute.doubleAttribute("doubleattr", 3.8),
+            SentryAttribute.arrayAttribute("arrayattr", listOf("a", "b")),
             SentryAttribute.named("namedstrattr", "namedstrval"),
             SentryAttribute.named("namedboolattr", false),
             SentryAttribute.named("namedintattr", 18),
             SentryAttribute.named("nameddoubleattr", 4.9),
+            SentryAttribute.named("namedarrayattr", listOf("x", "y")),
           )
         ),
         "log message",
@@ -2758,6 +2804,10 @@ class ScopesTest {
           assertEquals(3.8, doubleattr.value)
           assertEquals("double", doubleattr.type)
 
+          val arrayattr = it.attributes?.get("arrayattr")!!
+          assertEquals(listOf("a", "b"), arrayattr.value)
+          assertEquals("array", arrayattr.type)
+
           val namedstrattr = it.attributes?.get("namedstrattr")!!
           assertEquals("namedstrval", namedstrattr.value)
           assertEquals("string", namedstrattr.type)
@@ -2773,6 +2823,10 @@ class ScopesTest {
           val nameddoubleattr = it.attributes?.get("nameddoubleattr")!!
           assertEquals(4.9, nameddoubleattr.value)
           assertEquals("double", nameddoubleattr.type)
+
+          val namedarrayattr = it.attributes?.get("namedarrayattr")!!
+          assertEquals(listOf("x", "y"), namedarrayattr.value)
+          assertEquals("array", namedarrayattr.type)
         },
         anyOrNull(),
       )
@@ -2953,7 +3007,7 @@ class ScopesTest {
   }
 
   @Test
-  fun `does not add user fields to log attributes by default`() {
+  fun `adds user fields to log attributes even if sendDefaultPii is false`() {
     val (sut, mockClient) =
       getEnabledScopes {
         it.logs.isEnabled = true
@@ -2975,9 +3029,17 @@ class ScopesTest {
         check {
           assertEquals("log message", it.body)
 
-          assertNull(it.attributes?.get("user.id"))
-          assertNull(it.attributes?.get("user.name"))
-          assertNull(it.attributes?.get("user.email"))
+          val userId = it.attributes?.get("user.id")!!
+          assertEquals("usrid", userId.value)
+          assertEquals("string", userId.type)
+
+          val userName = it.attributes?.get("user.name")!!
+          assertEquals("usrname", userName.value)
+          assertEquals("string", userName.type)
+
+          val userEmail = it.attributes?.get("user.email")!!
+          assertEquals("user@sentry.io", userEmail.value)
+          assertEquals("string", userEmail.type)
         },
         anyOrNull(),
       )
@@ -2988,7 +3050,6 @@ class ScopesTest {
     val (sut, mockClient) =
       getEnabledScopes {
         it.logs.isEnabled = true
-        it.isSendDefaultPii = true
         it.distinctId = "distinctId"
       }
 
@@ -3012,7 +3073,6 @@ class ScopesTest {
     val (sut, mockClient) =
       getEnabledScopes {
         it.logs.isEnabled = true
-        it.isSendDefaultPii = true
         it.distinctId = null
       }
 
@@ -3454,10 +3514,12 @@ class ScopesTest {
             SentryAttribute.booleanAttribute("boolattr", true),
             SentryAttribute.integerAttribute("intattr", 17),
             SentryAttribute.doubleAttribute("doubleattr", 3.8),
+            SentryAttribute.arrayAttribute("arrayattr", listOf("a", "b")),
             SentryAttribute.named("namedstrattr", "namedstrval"),
             SentryAttribute.named("namedboolattr", false),
             SentryAttribute.named("namedintattr", 18),
             SentryAttribute.named("nameddoubleattr", 4.9),
+            SentryAttribute.named("namedarrayattr", listOf("x", "y")),
           )
         ),
       )
@@ -3486,6 +3548,10 @@ class ScopesTest {
           assertEquals(3.8, doubleattr.value)
           assertEquals("double", doubleattr.type)
 
+          val arrayattr = it.attributes?.get("arrayattr")!!
+          assertEquals(listOf("a", "b"), arrayattr.value)
+          assertEquals("array", arrayattr.type)
+
           val namedstrattr = it.attributes?.get("namedstrattr")!!
           assertEquals("namedstrval", namedstrattr.value)
           assertEquals("string", namedstrattr.type)
@@ -3501,6 +3567,10 @@ class ScopesTest {
           val nameddoubleattr = it.attributes?.get("nameddoubleattr")!!
           assertEquals(4.9, nameddoubleattr.value)
           assertEquals("double", nameddoubleattr.type)
+
+          val namedarrayattr = it.attributes?.get("namedarrayattr")!!
+          assertEquals(listOf("x", "y"), namedarrayattr.value)
+          assertEquals("array", namedarrayattr.type)
         },
         anyOrNull(),
         anyOrNull(),
@@ -3623,10 +3693,12 @@ class ScopesTest {
             SentryAttribute.booleanAttribute("boolattr", true),
             SentryAttribute.integerAttribute("intattr", 17),
             SentryAttribute.doubleAttribute("doubleattr", 3.8),
+            SentryAttribute.arrayAttribute("arrayattr", listOf("a", "b")),
             SentryAttribute.named("namedstrattr", "namedstrval"),
             SentryAttribute.named("namedboolattr", false),
             SentryAttribute.named("namedintattr", 18),
             SentryAttribute.named("nameddoubleattr", 4.9),
+            SentryAttribute.named("namedarrayattr", listOf("x", "y")),
           )
         ),
       )
@@ -3655,6 +3727,10 @@ class ScopesTest {
           assertEquals(3.8, doubleattr.value)
           assertEquals("double", doubleattr.type)
 
+          val arrayattr = it.attributes?.get("arrayattr")!!
+          assertEquals(listOf("a", "b"), arrayattr.value)
+          assertEquals("array", arrayattr.type)
+
           val namedstrattr = it.attributes?.get("namedstrattr")!!
           assertEquals("namedstrval", namedstrattr.value)
           assertEquals("string", namedstrattr.type)
@@ -3670,6 +3746,10 @@ class ScopesTest {
           val nameddoubleattr = it.attributes?.get("nameddoubleattr")!!
           assertEquals(4.9, nameddoubleattr.value)
           assertEquals("double", nameddoubleattr.type)
+
+          val namedarrayattr = it.attributes?.get("namedarrayattr")!!
+          assertEquals(listOf("x", "y"), namedarrayattr.value)
+          assertEquals("array", namedarrayattr.type)
         },
         anyOrNull(),
         anyOrNull(),
@@ -3792,10 +3872,12 @@ class ScopesTest {
             SentryAttribute.booleanAttribute("boolattr", true),
             SentryAttribute.integerAttribute("intattr", 17),
             SentryAttribute.doubleAttribute("doubleattr", 3.8),
+            SentryAttribute.arrayAttribute("arrayattr", listOf("a", "b")),
             SentryAttribute.named("namedstrattr", "namedstrval"),
             SentryAttribute.named("namedboolattr", false),
             SentryAttribute.named("namedintattr", 18),
             SentryAttribute.named("nameddoubleattr", 4.9),
+            SentryAttribute.named("namedarrayattr", listOf("x", "y")),
           )
         ),
       )
@@ -3824,6 +3906,10 @@ class ScopesTest {
           assertEquals(3.8, doubleattr.value)
           assertEquals("double", doubleattr.type)
 
+          val arrayattr = it.attributes?.get("arrayattr")!!
+          assertEquals(listOf("a", "b"), arrayattr.value)
+          assertEquals("array", arrayattr.type)
+
           val namedstrattr = it.attributes?.get("namedstrattr")!!
           assertEquals("namedstrval", namedstrattr.value)
           assertEquals("string", namedstrattr.type)
@@ -3839,6 +3925,10 @@ class ScopesTest {
           val nameddoubleattr = it.attributes?.get("nameddoubleattr")!!
           assertEquals(4.9, nameddoubleattr.value)
           assertEquals("double", nameddoubleattr.type)
+
+          val namedarrayattr = it.attributes?.get("namedarrayattr")!!
+          assertEquals(listOf("x", "y"), namedarrayattr.value)
+          assertEquals("array", namedarrayattr.type)
         },
         anyOrNull(),
         anyOrNull(),
@@ -3919,7 +4009,7 @@ class ScopesTest {
   }
 
   @Test
-  fun `does not add user fields to metric attributes by default`() {
+  fun `adds user fields to metric attributes even if sendDefaultPii is false`() {
     val (sut, mockClient) = getEnabledScopes { it.distinctId = "distinctId" }
 
     sut.configureScope { scope ->
@@ -3937,9 +4027,17 @@ class ScopesTest {
         check {
           assertEquals("metric name", it.name)
 
-          assertNull(it.attributes?.get("user.id"))
-          assertNull(it.attributes?.get("user.name"))
-          assertNull(it.attributes?.get("user.email"))
+          val userId = it.attributes?.get("user.id")!!
+          assertEquals("usrid", userId.value)
+          assertEquals("string", userId.type)
+
+          val userName = it.attributes?.get("user.name")!!
+          assertEquals("usrname", userName.value)
+          assertEquals("string", userName.type)
+
+          val userEmail = it.attributes?.get("user.email")!!
+          assertEquals("user@sentry.io", userEmail.value)
+          assertEquals("string", userEmail.type)
         },
         anyOrNull(),
         anyOrNull(),
@@ -3948,11 +4046,7 @@ class ScopesTest {
 
   @Test
   fun `unset user does provide distinct-id as user-id for metrics`() {
-    val (sut, mockClient) =
-      getEnabledScopes {
-        it.isSendDefaultPii = true
-        it.distinctId = "distinctId"
-      }
+    val (sut, mockClient) = getEnabledScopes { it.distinctId = "distinctId" }
 
     sut.metrics().count("metric name")
 
@@ -3972,11 +4066,7 @@ class ScopesTest {
 
   @Test
   fun `unset user does provide null user-id when distinct-id is missing for metrics`() {
-    val (sut, mockClient) =
-      getEnabledScopes {
-        it.isSendDefaultPii = true
-        it.distinctId = null
-      }
+    val (sut, mockClient) = getEnabledScopes { it.distinctId = null }
 
     sut.metrics().count("metric name")
 
