@@ -13,6 +13,8 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -52,7 +54,7 @@ class SentryCacheWrapperTest {
     assertEquals(1, tx.spans.size)
     val span = tx.spans.first()
     assertEquals("cache.get", span.operation)
-    assertEquals("testCache", span.description)
+    assertEquals("myKey", span.description)
     assertEquals(SpanStatus.OK, span.status)
     assertEquals(true, span.getData(SpanDataConvention.CACHE_HIT_KEY))
     assertEquals(listOf("myKey"), span.getData(SpanDataConvention.CACHE_KEY_KEY))
@@ -103,17 +105,34 @@ class SentryCacheWrapperTest {
   // -- get(Object key, Callable<T>) --
 
   @Test
-  fun `get with callable creates span with cache hit true`() {
+  fun `get with callable creates span with cache hit true on hit`() {
     val tx = createTransaction()
     val wrapper = SentryCacheWrapper(delegate, scopes)
-    val callable = Callable { "loaded" }
-    whenever(delegate.get("myKey", callable)).thenReturn("loaded")
+    // Simulate cache hit: delegate returns value without invoking the loader
+    whenever(delegate.get(eq("myKey"), any<Callable<String>>())).thenReturn("cached")
 
-    val result = wrapper.get("myKey", callable)
+    val result = wrapper.get("myKey", Callable { "loaded" })
+
+    assertEquals("cached", result)
+    assertEquals(1, tx.spans.size)
+    assertEquals(true, tx.spans.first().getData(SpanDataConvention.CACHE_HIT_KEY))
+  }
+
+  @Test
+  fun `get with callable creates span with cache hit false on miss`() {
+    val tx = createTransaction()
+    val wrapper = SentryCacheWrapper(delegate, scopes)
+    // Simulate cache miss: delegate invokes the loader callable
+    whenever(delegate.get(eq("myKey"), any<Callable<String>>())).thenAnswer { invocation ->
+      val loader = invocation.getArgument<Callable<String>>(1)
+      loader.call()
+    }
+
+    val result = wrapper.get("myKey", Callable { "loaded" })
 
     assertEquals("loaded", result)
     assertEquals(1, tx.spans.size)
-    assertEquals(true, tx.spans.first().getData(SpanDataConvention.CACHE_HIT_KEY))
+    assertEquals(false, tx.spans.first().getData(SpanDataConvention.CACHE_HIT_KEY))
   }
 
   // -- put --
@@ -136,15 +155,15 @@ class SentryCacheWrapperTest {
   // -- putIfAbsent --
 
   @Test
-  fun `putIfAbsent creates cache put span`() {
+  fun `putIfAbsent delegates without creating span`() {
     val tx = createTransaction()
     val wrapper = SentryCacheWrapper(delegate, scopes)
     whenever(delegate.putIfAbsent("myKey", "myValue")).thenReturn(null)
 
     wrapper.putIfAbsent("myKey", "myValue")
 
-    assertEquals(1, tx.spans.size)
-    assertEquals("cache.put", tx.spans.first().operation)
+    verify(delegate).putIfAbsent("myKey", "myValue")
+    assertEquals(0, tx.spans.size)
   }
 
   // -- evict --

@@ -7,6 +7,7 @@ import io.sentry.SpanOptions;
 import io.sentry.SpanStatus;
 import java.util.Arrays;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -83,9 +84,15 @@ public final class SentryCacheWrapper implements Cache {
       return delegate.get(key, valueLoader);
     }
     try {
-      final T result = delegate.get(key, valueLoader);
-      // valueLoader is called on miss, so the method always returns a value
-      span.setData(SpanDataConvention.CACHE_HIT_KEY, true);
+      final AtomicBoolean loaderInvoked = new AtomicBoolean(false);
+      final T result =
+          delegate.get(
+              key,
+              () -> {
+                loaderInvoked.set(true);
+                return valueLoader.call();
+              });
+      span.setData(SpanDataConvention.CACHE_HIT_KEY, !loaderInvoked.get());
       span.setStatus(SpanStatus.OK);
       return result;
     } catch (Throwable e) {
@@ -116,24 +123,14 @@ public final class SentryCacheWrapper implements Cache {
     }
   }
 
+  // putIfAbsent is not instrumented — we cannot know ahead of time whether the put
+  // will actually happen, and emitting a cache.put span for a no-op would be misleading.
+  // This matches sentry-python and sentry-javascript which also skip conditional puts.
+  // We must override to bypass the default implementation which calls this.get() + this.put().
   @Override
   public @Nullable ValueWrapper putIfAbsent(
       final @NotNull Object key, final @Nullable Object value) {
-    final ISpan span = startSpan("cache.put", key);
-    if (span == null) {
-      return delegate.putIfAbsent(key, value);
-    }
-    try {
-      final ValueWrapper result = delegate.putIfAbsent(key, value);
-      span.setStatus(SpanStatus.OK);
-      return result;
-    } catch (Throwable e) {
-      span.setStatus(SpanStatus.INTERNAL_ERROR);
-      span.setThrowable(e);
-      throw e;
-    } finally {
-      span.finish();
-    }
+    return delegate.putIfAbsent(key, value);
   }
 
   @Override
@@ -220,9 +217,10 @@ public final class SentryCacheWrapper implements Cache {
 
     final SpanOptions spanOptions = new SpanOptions();
     spanOptions.setOrigin(TRACE_ORIGIN);
-    final ISpan span = activeSpan.startChild(operation, getName(), spanOptions);
-    if (key != null) {
-      span.setData(SpanDataConvention.CACHE_KEY_KEY, Arrays.asList(String.valueOf(key)));
+    final String keyString = key != null ? String.valueOf(key) : null;
+    final ISpan span = activeSpan.startChild(operation, keyString, spanOptions);
+    if (keyString != null) {
+      span.setData(SpanDataConvention.CACHE_KEY_KEY, Arrays.asList(keyString));
     }
     return span;
   }
