@@ -40,7 +40,7 @@ public final class SentryShakeDetector implements SensorEventListener {
   private @Nullable HandlerThread handlerThread;
   private final @NotNull AtomicLong lastShakeTimestamp = new AtomicLong(0);
   private volatile @Nullable Listener listener;
-  private final @NotNull ILogger logger;
+  private @NotNull ILogger logger;
 
   private int shakeCount = 0;
   private long firstShakeTimestamp = 0;
@@ -57,7 +57,12 @@ public final class SentryShakeDetector implements SensorEventListener {
    * Initializes the sensor manager and accelerometer sensor. This is separated from start() so the
    * values can be resolved once and reused across activity transitions.
    */
-  void init(final @NotNull Context context) {
+  void init(final @NotNull Context context, final @NotNull ILogger logger) {
+    this.logger = logger;
+    init(context);
+  }
+
+  private void init(final @NotNull Context context) {
     if (sensorManager == null) {
       sensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
     }

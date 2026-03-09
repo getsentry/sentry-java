@@ -42,8 +42,7 @@ public final class FeedbackShakeIntegration
       return;
     }
 
-    // Re-assign a properly configured detector logger now that options are available
-    shakeDetector.init(application);
+    shakeDetector.init(application, options.getLogger());
 
     addIntegrationToSdkVersion("FeedbackShake");
     application.registerActivityLifecycleCallbacks(this);
