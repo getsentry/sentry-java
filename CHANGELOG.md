@@ -20,7 +20,7 @@
   - New APIs are `Sentry.setAttribute`, `Sentry.setAttributes`, `Sentry.removeAttribute`
 - Support collections and arrays in attribute type inference ([#5124](https://github.com/getsentry/sentry-java/pull/5124))
 - Add support for `SENTRY_SAMPLE_RATE` environment variable / `sample-rate` property ([#5112](https://github.com/getsentry/sentry-java/pull/5112))
-- Add cache tracing instrumentation for Spring Boot 4 ([#5137](https://github.com/getsentry/sentry-java/pull/5137), [#5141](https://github.com/getsentry/sentry-java/pull/5141), [#5142](https://github.com/getsentry/sentry-java/pull/5142))
+- Add cache tracing instrumentation for Spring Boot 4 ([#5172](https://github.com/getsentry/sentry-java/pull/5172), [#5173](https://github.com/getsentry/sentry-java/pull/5173), [#5174](https://github.com/getsentry/sentry-java/pull/5174))
   - Wraps Spring `CacheManager` and `Cache` beans to produce `cache.get`, `cache.put`, `cache.remove`, and `cache.flush` spans
   - Enable via `sentry.enable-cache-tracing=true`
 - Create `sentry-opentelemetry-otlp` and `sentry-opentelemetry-otlp-spring` modules for combining OpenTelemetry SDK OTLP export with Sentry SDK ([#5100](https://github.com/getsentry/sentry-java/pull/5100))
