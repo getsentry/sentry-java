@@ -199,7 +199,7 @@ gh pr create --base main --draft --title "<type>(<scope>): <Topic>" --body "Coll
 
 ### Stack List in PR Description
 
-Every PR in the stack must have a stack list **at the top of its description** (before the `## :scroll: Description` section). When a new PR is added, update the description on **all** PRs in the stack.
+Every PR in the stack — **including the collection branch PR** — must have a stack list **at the top of its description** (before the `## :scroll: Description` section). When a new PR is added, update the description on **all** PRs in the stack and on the collection branch PR.
 
 Format:
 
@@ -214,6 +214,14 @@ Format:
 ```
 
 No status column — GitHub already shows that. The `---` separates the stack list from the rest of the PR description.
+
+**Merge method reminder:** On stack PRs (not the collection branch PR), add the following line at the very end of the PR description:
+
+```markdown
+> ⚠️ **Merge this PR using a merge commit** (not squash). Only the collection branch is squash-merged into main.
+```
+
+This does not apply to standalone PRs or the collection branch PR.
 
 To update the PR description, use `--body-file` to avoid shell quoting issues with special characters in the body:
 

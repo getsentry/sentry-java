@@ -113,6 +113,7 @@ Fill in each section based on the changes being PR'd. Check any checklist items 
 - Pass `--base <previous-stack-branch>` so the PR targets the previous branch (first PR in a stack targets the collection branch).
 - Use the stacked PR title format: `<type>(<scope>): [<Topic> <N>] <Subject>` (see `.cursor/rules/pr.mdc` § "PR Title Naming").
 - Include the stack list at the top of the PR body, before the `## :scroll: Description` section (see `.cursor/rules/pr.mdc` § "Stack List in PR Description" for the format).
+- Add a merge method reminder at the very end of the PR body (see `.cursor/rules/pr.mdc` § "Stack List in PR Description" for the exact text). This only applies to stack PRs, not the collection branch PR.
 
 Then continue to Step 5.5 (stacked PRs only) or Step 6.
 
@@ -120,7 +121,7 @@ Then continue to Step 5.5 (stacked PRs only) or Step 6.
 
 Skip this step for standalone PRs.
 
-After creating the PR, update the PR description on **every other PR in the stack** so all PRs have the same up-to-date stack list. Follow the format and commands in `.cursor/rules/pr.mdc` § "Stack List in PR Description".
+After creating the PR, update the PR description on **every other PR in the stack — including the collection branch PR** — so all PRs have the same up-to-date stack list. Follow the format and commands in `.cursor/rules/pr.mdc` § "Stack List in PR Description".
 
 ## Step 6: Update Changelog
 
