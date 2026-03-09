@@ -60,6 +60,16 @@ public final class FeedbackShakeIntegration
   public void close() throws IOException {
     application.unregisterActivityLifecycleCallbacks(this);
     stopShakeDetection();
+    // Restore onFormClose if a dialog is still showing, since lifecycle callbacks
+    // are now unregistered and onActivityDestroyed cleanup won't fire.
+    if (isDialogShowing) {
+      isDialogShowing = false;
+      if (options != null) {
+        options.getFeedbackOptions().setOnFormClose(previousOnFormClose);
+      }
+      previousOnFormClose = null;
+    }
+    currentActivity = null;
   }
 
   @Override
