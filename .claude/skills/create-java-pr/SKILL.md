@@ -120,7 +120,7 @@ Then continue to Step 5.5 (stacked PRs only) or Step 6.
 
 Skip this step for standalone PRs.
 
-After creating the PR, update the PR description on **every other PR in the stack** so all PRs have the same up-to-date stack list. Follow the format and commands in `.cursor/rules/pr.mdc` § "Stack List in PR Description".
+After creating the PR, update the PR description on **every other PR in the stack — including the collection branch PR** — so all PRs have the same up-to-date stack list. Follow the format and commands in `.cursor/rules/pr.mdc` § "Stack List in PR Description".
 
 ## Step 6: Update Changelog
 

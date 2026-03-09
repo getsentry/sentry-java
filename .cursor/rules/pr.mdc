@@ -199,7 +199,7 @@ gh pr create --base main --draft --title "<type>(<scope>): <Topic>" --body "Coll
 
 ### Stack List in PR Description
 
-Every PR in the stack must have a stack list **at the top of its description** (before the `## :scroll: Description` section). When a new PR is added, update the description on **all** PRs in the stack.
+Every PR in the stack — **including the collection branch PR** — must have a stack list **at the top of its description** (before the `## :scroll: Description` section). When a new PR is added, update the description on **all** PRs in the stack and on the collection branch PR.
 
 Format:
 
