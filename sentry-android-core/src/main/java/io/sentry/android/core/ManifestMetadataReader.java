@@ -167,6 +167,8 @@ final class ManifestMetadataReader {
 
   static final String FEEDBACK_SHOW_BRANDING = "io.sentry.feedback.show-branding";
 
+  static final String FEEDBACK_USE_SHAKE_GESTURE = "io.sentry.feedback.use-shake-gesture";
+
   static final String SPOTLIGHT_ENABLE = "io.sentry.spotlight.enable";
 
   static final String SPOTLIGHT_CONNECTION_URL = "io.sentry.spotlight.url";
@@ -661,6 +663,12 @@ final class ManifestMetadataReader {
                 metadata, logger, FEEDBACK_USE_SENTRY_USER, feedbackOptions.isUseSentryUser()));
         feedbackOptions.setShowBranding(
             readBool(metadata, logger, FEEDBACK_SHOW_BRANDING, feedbackOptions.isShowBranding()));
+        feedbackOptions.setUseShakeGesture(
+            readBool(
+                metadata,
+                logger,
+                FEEDBACK_USE_SHAKE_GESTURE,
+                feedbackOptions.isUseShakeGesture()));
 
         options.setEnableSpotlight(
             readBool(metadata, logger, SPOTLIGHT_ENABLE, options.isEnableSpotlight()));
