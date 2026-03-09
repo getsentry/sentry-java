@@ -35,6 +35,8 @@ Derive the branch name from the changes being made. Use `feat/`, `fix/`, `ref/`,
 
 **For stacked PRs:** For the first PR in a new stack, first create and push the collection branch (see `.cursor/rules/pr.mdc` § "Creating the Collection Branch"), then branch the PR off it. For subsequent PRs, branch off the previous stack branch. Use the naming conventions from `.cursor/rules/pr.mdc` § "Branch Naming".
 
+**CRITICAL: Never merge, fast-forward, or push commits into the collection branch.** It stays at its initial position until the user merges stack PRs through GitHub. Updating it will auto-merge and destroy the entire PR stack.
+
 ## Step 2: Format Code and Regenerate API Files
 
 ```bash
