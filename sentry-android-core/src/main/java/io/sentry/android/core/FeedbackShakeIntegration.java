@@ -105,6 +105,7 @@ public final class FeedbackShakeIntegration
     // outlive its host activity being destroyed.
     if (isDialogShowing && activity == currentActivity) {
       isDialogShowing = false;
+      currentActivity = null;
       if (options != null) {
         options.getFeedbackOptions().setOnFormClose(previousOnFormClose);
       }

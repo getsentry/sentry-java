@@ -91,6 +91,8 @@ public final class SentryShakeDetector implements SensorEventListener {
 
   public void stop() {
     listener = null;
+    shakeCount = 0;
+    firstShakeTimestamp = 0;
     if (sensorManager != null) {
       sensorManager.unregisterListener(this);
     }
