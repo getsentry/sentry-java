@@ -145,6 +145,7 @@ otel-semconv = { module = "io.opentelemetry.semconv:opentelemetry-semconv", vers
 otel-semconv-incubating = { module = "io.opentelemetry.semconv:opentelemetry-semconv-incubating", version.ref = "otelSemanticConventionsAlpha" }
 p6spy = { module = "p6spy:p6spy", version = "3.9.1" }
 epitaph = { module = "com.abovevacant:epitaph", version = "0.1.0" }
+jcache = { module = "javax.cache:cache-api", version = "1.1.1" }
 quartz = { module = "org.quartz-scheduler:quartz", version = "2.3.0" }
 reactor-core = { module = "io.projectreactor:reactor-core", version = "3.5.3" }
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }

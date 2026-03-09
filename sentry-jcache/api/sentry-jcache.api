@@ -1,0 +1,37 @@
+public final class io/sentry/jcache/BuildConfig {
+	public static final field SENTRY_JCACHE_SDK_NAME Ljava/lang/String;
+	public static final field VERSION_NAME Ljava/lang/String;
+}
+
+public final class io/sentry/jcache/SentryJCacheWrapper : javax/cache/Cache {
+	public fun <init> (Ljavax/cache/Cache;Lio/sentry/IScopes;)V
+	public fun clear ()V
+	public fun close ()V
+	public fun containsKey (Ljava/lang/Object;)Z
+	public fun deregisterCacheEntryListener (Ljavax/cache/configuration/CacheEntryListenerConfiguration;)V
+	public fun get (Ljava/lang/Object;)Ljava/lang/Object;
+	public fun getAll (Ljava/util/Set;)Ljava/util/Map;
+	public fun getAndPut (Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+	public fun getAndRemove (Ljava/lang/Object;)Ljava/lang/Object;
+	public fun getAndReplace (Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+	public fun getCacheManager ()Ljavax/cache/CacheManager;
+	public fun getConfiguration (Ljava/lang/Class;)Ljavax/cache/configuration/Configuration;
+	public fun getName ()Ljava/lang/String;
+	public fun invoke (Ljava/lang/Object;Ljavax/cache/processor/EntryProcessor;[Ljava/lang/Object;)Ljava/lang/Object;
+	public fun invokeAll (Ljava/util/Set;Ljavax/cache/processor/EntryProcessor;[Ljava/lang/Object;)Ljava/util/Map;
+	public fun isClosed ()Z
+	public fun iterator ()Ljava/util/Iterator;
+	public fun loadAll (Ljava/util/Set;ZLjavax/cache/integration/CompletionListener;)V
+	public fun put (Ljava/lang/Object;Ljava/lang/Object;)V
+	public fun putAll (Ljava/util/Map;)V
+	public fun putIfAbsent (Ljava/lang/Object;Ljava/lang/Object;)Z
+	public fun registerCacheEntryListener (Ljavax/cache/configuration/CacheEntryListenerConfiguration;)V
+	public fun remove (Ljava/lang/Object;)Z
+	public fun remove (Ljava/lang/Object;Ljava/lang/Object;)Z
+	public fun removeAll ()V
+	public fun removeAll (Ljava/util/Set;)V
+	public fun replace (Ljava/lang/Object;Ljava/lang/Object;)Z
+	public fun replace (Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Z
+	public fun unwrap (Ljava/lang/Class;)Ljava/lang/Object;
+}
+
