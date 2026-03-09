@@ -101,6 +101,7 @@ androidx-recyclerview = { module = "androidx.recyclerview:recyclerview", version
 androidx-browser = { module = "androidx.browser:browser", version = "1.8.0" }
 async-profiler = { module = "tools.profiler:async-profiler", version.ref = "asyncProfiler" }
 async-profiler-jfr-converter = { module = "tools.profiler:jfr-converter", version.ref = "asyncProfiler" }
+caffeine = { module = "com.github.ben-manes.caffeine:caffeine" }
 coil-compose = { module = "io.coil-kt:coil-compose", version = "2.6.0" }
 commons-compress = {module = "org.apache.commons:commons-compress", version = "1.25.0"}
 context-propagation = { module = "io.micrometer:context-propagation", version = "1.1.0" }
@@ -196,6 +197,7 @@ springboot4-starter-restclient = { module = "org.springframework.boot:spring-boo
 springboot4-starter-webclient = { module = "org.springframework.boot:spring-boot-starter-webclient", version.ref = "springboot4" }
 springboot4-starter-jdbc = { module = "org.springframework.boot:spring-boot-starter-jdbc", version.ref = "springboot4" }
 springboot4-starter-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator", version.ref = "springboot4" }
+springboot4-starter-cache = { module = "org.springframework.boot:spring-boot-starter-cache", version.ref = "springboot4" }
 timber = { module = "com.jakewharton.timber:timber", version = "4.7.1" }
 
 # Animalsniffer signature

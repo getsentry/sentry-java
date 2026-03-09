@@ -58,7 +58,8 @@ dependencies {
   implementation(projects.sentryAsyncProfiler)
 
   // cache tracing
-  implementation("com.github.ben-manes.caffeine:caffeine")
+  implementation(libs.springboot4.starter.cache)
+  implementation(libs.caffeine)
 
   // database query tracing
   implementation(projects.sentryJdbc)
