@@ -195,6 +195,44 @@ class SentryAndroidOptionsTest {
     assertTrue(sentryOptions.isEnableSystemEventBreadcrumbsExtras)
   }
 
+  @Test
+  fun `anr profiling sample rate is null by default`() {
+    val sentryOptions = SentryAndroidOptions()
+
+    assertNull(sentryOptions.anrProfilingSampleRate)
+    assertFalse(sentryOptions.isAnrProfilingEnabled)
+  }
+
+  @Test
+  fun `anr profiling can be enabled via sample rate`() {
+    val sentryOptions = SentryAndroidOptions()
+    sentryOptions.anrProfilingSampleRate = 1.0
+    assertEquals(1.0, sentryOptions.anrProfilingSampleRate)
+    assertTrue(sentryOptions.isAnrProfilingEnabled)
+  }
+
+  @Test
+  fun `anr profiling can be disabled via null sample rate`() {
+    val sentryOptions = SentryAndroidOptions()
+    sentryOptions.anrProfilingSampleRate = 1.0
+    sentryOptions.anrProfilingSampleRate = null
+    assertNull(sentryOptions.anrProfilingSampleRate)
+    assertFalse(sentryOptions.isAnrProfilingEnabled)
+  }
+
+  @Test
+  fun `anr profiling is disabled when sample rate is zero`() {
+    val sentryOptions = SentryAndroidOptions()
+    sentryOptions.anrProfilingSampleRate = 0.0
+    assertFalse(sentryOptions.isAnrProfilingEnabled)
+  }
+
+  @Test(expected = IllegalArgumentException::class)
+  fun `anr profiling rejects invalid sample rate`() {
+    val sentryOptions = SentryAndroidOptions()
+    sentryOptions.anrProfilingSampleRate = 2.0
+  }
+
   private class CustomDebugImagesLoader : IDebugImagesLoader {
     override fun loadDebugImages(): List<DebugImage>? = null
 
