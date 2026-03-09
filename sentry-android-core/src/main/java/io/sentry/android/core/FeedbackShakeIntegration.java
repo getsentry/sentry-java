@@ -76,7 +76,13 @@ public final class FeedbackShakeIntegration
     // would kill shake detection for the new activity.
     if (activity == currentActivity) {
       stopShakeDetection();
-      currentActivity = null;
+      // Keep currentActivity set when a dialog is showing so onActivityDestroyed
+      // can still match and clean up. Otherwise the cleanup condition
+      // (activity == currentActivity) would always be false since onPause fires
+      // before onDestroy.
+      if (!isDialogShowing) {
+        currentActivity = null;
+      }
     }
   }
 
