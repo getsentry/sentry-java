@@ -9,6 +9,15 @@
   - New option `strictTraceContinuation` (default `false`): when enabled, both the SDK's org ID **and** the incoming baggage org ID must be present and match for a trace to be continued. Traces with a missing org ID on either side are rejected.
   - New option `orgId`: allows explicitly setting the organization ID for self-hosted and Relay setups where it cannot be extracted from the DSN. Configurable via code, `sentry.properties` (`org-id`), or Android manifest (`io.sentry.org-id`).
 
+## 8.34.1
+
+### Fixes
+
+- Common: Finalize previous session even when auto session tracking is disabled ([#5154](https://github.com/getsentry/sentry-java/pull/5154))
+- Android: Add `filterTouchesWhenObscured` to prevent Tapjacking on user feedback dialog ([#5155](https://github.com/getsentry/sentry-java/pull/5155))
+- Android: Add proguard rules to prevent error about missing Replay classes ([#5153](https://github.com/getsentry/sentry-java/pull/5153))
+- Android: Remove the dependency on protobuf-lite for tombstones ([#5157](https://github.com/getsentry/sentry-java/pull/5157))
+
 ## 8.34.0
 
 ### Features
