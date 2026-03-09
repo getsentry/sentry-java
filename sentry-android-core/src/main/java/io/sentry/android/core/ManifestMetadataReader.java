@@ -665,10 +665,7 @@ final class ManifestMetadataReader {
             readBool(metadata, logger, FEEDBACK_SHOW_BRANDING, feedbackOptions.isShowBranding()));
         feedbackOptions.setUseShakeGesture(
             readBool(
-                metadata,
-                logger,
-                FEEDBACK_USE_SHAKE_GESTURE,
-                feedbackOptions.isUseShakeGesture()));
+                metadata, logger, FEEDBACK_USE_SHAKE_GESTURE, feedbackOptions.isUseShakeGesture()));
 
         options.setEnableSpotlight(
             readBool(metadata, logger, SPOTLIGHT_ENABLE, options.isEnableSpotlight()));
