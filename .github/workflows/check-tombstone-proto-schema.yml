@@ -1,0 +1,16 @@
+name: Check Tombstone Proto Schema
+
+on:
+  schedule:
+    - cron: '0 9 * * *'
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Check for newer Tombstone proto schema
+        run: ./scripts/check-tombstone-proto-schema.sh

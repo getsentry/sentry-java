@@ -17,7 +17,12 @@ import org.jetbrains.annotations.Nullable;
 final class ApplicationNotResponding extends RuntimeException {
   private static final long serialVersionUID = 252541144579117016L;
 
-  private final @NotNull Thread thread;
+  private final @Nullable Thread thread;
+
+  ApplicationNotResponding(final @Nullable String message) {
+    super(message);
+    this.thread = null;
+  }
 
   ApplicationNotResponding(final @Nullable String message, final @NotNull Thread thread) {
     super(message);
@@ -25,7 +30,7 @@ final class ApplicationNotResponding extends RuntimeException {
     setStackTrace(this.thread.getStackTrace());
   }
 
-  public @NotNull Thread getThread() {
+  public @Nullable Thread getThread() {
     return thread;
   }
 }

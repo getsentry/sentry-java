@@ -58,8 +58,8 @@ class ANRWatchDogTest {
       } while (anr == null && waitCount++ < 100)
 
       assertNotNull(anr)
-      assertEquals(expectedState, anr!!.thread.state)
-      assertEquals(stacktrace.className, anr!!.stackTrace[0].className)
+      assertEquals(expectedState, anr.thread!!.state)
+      assertEquals(stacktrace.className, anr.stackTrace[0].className)
     } finally {
       sut.interrupt()
       es.shutdown()
@@ -137,8 +137,8 @@ class ANRWatchDogTest {
       } while (anr == null && waitCount++ < 100)
 
       assertNotNull(anr)
-      assertEquals(expectedState, anr!!.thread.state)
-      assertEquals(stacktrace.className, anr!!.stackTrace[0].className)
+      assertEquals(expectedState, anr.thread!!.state)
+      assertEquals(stacktrace.className, anr.stackTrace[0].className)
     } finally {
       sut.interrupt()
       es.shutdown()
