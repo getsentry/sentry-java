@@ -185,6 +185,8 @@ git push -u origin HEAD
 gh pr create --base main --draft --title "<type>(<scope>): <Topic>" --body "Collection PR for the <Topic> stack. Squash-merge this once all stack PRs are merged."
 ```
 
+**CRITICAL: Do NOT manually update the collection branch.** Never merge, fast-forward, or push stack branch commits into the collection branch. The collection branch stays at its initial position (the empty commit on `main`) until the user merges individual stack PRs into it one by one through GitHub. If you fast-forward the collection branch to include stack commits, GitHub will auto-merge and delete all stack PR branches, destroying the entire stack.
+
 ### Creating a New Stacked PR
 
 1. Start from the tip of the previous stack branch (or the collection branch for the first PR).
@@ -197,7 +199,7 @@ gh pr create --base main --draft --title "<type>(<scope>): <Topic>" --body "Coll
 
 ### Stack List in PR Description
 
-Every PR in the stack must have a stack list **at the top of its description** (before the `## :scroll: Description` section). When a new PR is added, update the description on **all** PRs in the stack.
+Every PR in the stack — **including the collection branch PR** — must have a stack list **at the top of its description** (before the `## :scroll: Description` section). When a new PR is added, update the description on **all** PRs in the stack and on the collection branch PR.
 
 Format:
 
@@ -212,6 +214,14 @@ Format:
 ```
 
 No status column — GitHub already shows that. The `---` separates the stack list from the rest of the PR description.
+
+**Merge method reminder:** On stack PRs (not the collection branch PR), add the following line at the very end of the PR description:
+
+```markdown
+> ⚠️ **Merge this PR using a merge commit** (not squash). Only the collection branch is squash-merged into main.
+```
+
+This does not apply to standalone PRs or the collection branch PR.
 
 To update the PR description, use `--body-file` to avoid shell quoting issues with special characters in the body:
 
@@ -237,12 +247,12 @@ Once all stack PRs are merged into the collection branch, the collection PR is *
 
 ### Syncing the Stack
 
-When a base PR changes (e.g. after addressing review feedback on PR 1), merge the changes forward through the stack:
+When a base PR changes (e.g. after addressing review feedback on PR 1), merge the changes forward through the stack **between adjacent stack PR branches only**:
 
 ```bash
 # On the branch for PR 2
 git checkout feat/scope-attributes-logger
-git merge feat/scope-attributes
+git merge feat/scope-attributes-api
 git push
 
 # On the branch for PR 3
@@ -250,5 +260,7 @@ git checkout feat/scope-attributes-sample
 git merge feat/scope-attributes-logger
 git push
 ```
+
+**Never merge into the collection branch.** Syncing only happens between stack PR branches. The collection branch is untouched until the user merges PRs through GitHub.
 
 Prefer merge over rebase — it preserves commit history, doesn't invalidate existing review comments, and avoids the need for force-pushing. Only rebase if explicitly requested.
