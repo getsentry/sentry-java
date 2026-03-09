@@ -64,6 +64,16 @@ public final class FeedbackShakeIntegration
 
   @Override
   public void onActivityResumed(final @NotNull Activity activity) {
+    // If a dialog is showing on a different activity (e.g. user navigated via notification),
+    // clean up since the dialog's host activity is going away and onActivityDestroyed
+    // won't match currentActivity anymore.
+    if (isDialogShowing && currentActivity != null && currentActivity != activity) {
+      isDialogShowing = false;
+      if (options != null) {
+        options.getFeedbackOptions().setOnFormClose(previousOnFormClose);
+      }
+      previousOnFormClose = null;
+    }
     currentActivity = activity;
     startShakeDetection(activity);
   }
