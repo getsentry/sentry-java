@@ -50,6 +50,9 @@ dependencies {
   implementation(projects.sentryQuartz)
   implementation(projects.sentryAsyncProfiler)
 
+  // cache tracing
+  implementation("com.github.ben-manes.caffeine:caffeine")
+
   // database query tracing
   implementation(projects.sentryJdbc)
   runtimeOnly(libs.hsqldb)
