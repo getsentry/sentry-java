@@ -111,5 +111,4 @@ final class Dsn {
   public @Nullable String getOrgId() {
     return orgId;
   }
-
 }

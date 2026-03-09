@@ -470,9 +470,7 @@ class ExternalOptionsTest {
 
   @Test
   fun `creates options with orgId using external properties`() {
-    withPropertiesFile("org-id=12345") { options ->
-      assertEquals("12345", options.orgId)
-    }
+    withPropertiesFile("org-id=12345") { options -> assertEquals("12345", options.orgId) }
   }
 
   @Test

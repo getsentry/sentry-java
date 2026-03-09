@@ -145,5 +145,4 @@ class DsnTest {
     val dsn = Dsn("http://key@localhost:9000/456")
     assertNull(dsn.orgId)
   }
-
 }
