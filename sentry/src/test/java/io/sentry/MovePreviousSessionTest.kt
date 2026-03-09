@@ -65,13 +65,21 @@ class MovePreviousSessionTest {
   }
 
   @Test
-  fun `when session tracking is disabled, logs and returns early`() {
-    val sut = fixture.getSUT(isEnableSessionTracking = false, envelopeCache = fixture.cache)
+  fun `when session tracking is disabled, still moves previous session`() {
+    val sut = fixture.getSUT(isEnableSessionTracking = false)
+
+    val currentSessionFile = EnvelopeCache.getCurrentSessionFile(fixture.options.cacheDirPath!!)
+    val previousSessionFile = EnvelopeCache.getPreviousSessionFile(fixture.options.cacheDirPath!!)
+
+    currentSessionFile.createNewFile()
+    currentSessionFile.writeText("session content")
 
     sut.run()
 
-    verify(fixture.cache, never()).movePreviousSession(any(), any())
-    verify(fixture.cache, never()).flushPreviousSession()
+    (fixture.options.envelopeDiskCache as EnvelopeCache).waitPreviousSessionFlush()
+
+    assertFalse(currentSessionFile.exists())
+    assertTrue(previousSessionFile.exists())
   }
 
   @Test
