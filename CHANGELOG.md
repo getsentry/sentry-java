@@ -55,12 +55,6 @@
   - When enabled, ANRs whose stacktraces contain only system frames (e.g. `java.lang` or `android.os`) are grouped into a single issue instead of creating many separate issues
   - Enable via `options.setEnableAnrFingerprinting(true)` or AndroidManifest.xml: `<meta-data android:name="io.sentry.anr.enable-fingerprinting" android:value="true" />`
 
-### Features
-
-- Support collections and arrays in log attribute type inference ([#5124](https://github.com/getsentry/sentry-java/pull/5124))
-- Add scope-level attributes API ([#5118](https://github.com/getsentry/sentry-java/pull/5118))
-- Automatically include scope attributes in logs and metrics ([#5120](https://github.com/getsentry/sentry-java/pull/5120))
-
 ### Fixes
 
 - Fix attribute type detection for `Long`, `Short`, `Byte`, `BigInteger`, `AtomicInteger`, and `AtomicLong` being incorrectly inferred as `double` instead of `integer` ([#5122](https://github.com/getsentry/sentry-java/pull/5122))
