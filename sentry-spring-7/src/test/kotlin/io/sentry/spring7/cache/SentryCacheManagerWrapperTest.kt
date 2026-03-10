@@ -4,6 +4,7 @@ import io.sentry.IScopes
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
@@ -34,6 +35,18 @@ class SentryCacheManagerWrapperTest {
     val result = wrapper.getCache("missing")
 
     assertNull(result)
+  }
+
+  @Test
+  fun `getCache does not re-wrap SentryCacheWrapper`() {
+    val cache = mock<Cache>()
+    val wrappedCache = SentryCacheWrapper(cache, scopes)
+    whenever(delegate.getCache("test")).thenReturn(wrappedCache)
+
+    val wrapper = SentryCacheManagerWrapper(delegate, scopes)
+    val result = wrapper.getCache("test")
+
+    assertSame(wrappedCache, result)
   }
 
   @Test

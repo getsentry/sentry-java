@@ -102,6 +102,21 @@ class SentryCacheWrapperTest {
     assertEquals(false, tx.spans.first().getData(SpanDataConvention.CACHE_HIT_KEY))
   }
 
+  @Test
+  fun `get with type creates span with cache hit true for stored null value`() {
+    val tx = createTransaction()
+    val wrapper = SentryCacheWrapper(delegate, scopes)
+    val valueWrapper = mock<Cache.ValueWrapper>()
+    whenever(delegate.get("myKey", String::class.java)).thenReturn(null)
+    whenever(delegate.get("myKey")).thenReturn(valueWrapper)
+
+    val result = wrapper.get("myKey", String::class.java)
+
+    assertNull(result)
+    assertEquals(1, tx.spans.size)
+    assertEquals(true, tx.spans.first().getData(SpanDataConvention.CACHE_HIT_KEY))
+  }
+
   // -- get(Object key, Callable<T>) --
 
   @Test

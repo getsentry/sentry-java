@@ -27,6 +27,9 @@ public final class SentryCacheManagerWrapper implements CacheManager {
     if (cache == null) {
       return null;
     }
+    if (cache instanceof SentryCacheWrapper) {
+      return cache;
+    }
     return new SentryCacheWrapper(cache, scopes);
   }
 
