@@ -178,10 +178,10 @@ class SentryJCacheWrapperTest {
     assertEquals(0, tx.spans.size)
   }
 
-  // -- replace(K, V, V) --
+  // -- replace (passthrough, no span — conditional write) --
 
   @Test
-  fun `replace with old value creates cache put span`() {
+  fun `replace with old value delegates without creating span`() {
     val tx = createTransaction()
     val wrapper = SentryJCacheWrapper(delegate, scopes)
     whenever(delegate.replace("myKey", "old", "new")).thenReturn(true)
@@ -189,14 +189,12 @@ class SentryJCacheWrapperTest {
     val result = wrapper.replace("myKey", "old", "new")
 
     assertTrue(result)
-    assertEquals(1, tx.spans.size)
-    assertEquals("cache.put", tx.spans.first().operation)
+    verify(delegate).replace("myKey", "old", "new")
+    assertEquals(0, tx.spans.size)
   }
 
-  // -- replace(K, V) --
-
   @Test
-  fun `replace creates cache put span`() {
+  fun `replace delegates without creating span`() {
     val tx = createTransaction()
     val wrapper = SentryJCacheWrapper(delegate, scopes)
     whenever(delegate.replace("myKey", "value")).thenReturn(true)
@@ -204,14 +202,14 @@ class SentryJCacheWrapperTest {
     val result = wrapper.replace("myKey", "value")
 
     assertTrue(result)
-    assertEquals(1, tx.spans.size)
-    assertEquals("cache.put", tx.spans.first().operation)
+    verify(delegate).replace("myKey", "value")
+    assertEquals(0, tx.spans.size)
   }
 
-  // -- getAndReplace --
+  // -- getAndReplace (passthrough, no span — conditional write) --
 
   @Test
-  fun `getAndReplace creates cache put span`() {
+  fun `getAndReplace delegates without creating span`() {
     val tx = createTransaction()
     val wrapper = SentryJCacheWrapper(delegate, scopes)
     whenever(delegate.getAndReplace("myKey", "newValue")).thenReturn("oldValue")
@@ -219,8 +217,8 @@ class SentryJCacheWrapperTest {
     val result = wrapper.getAndReplace("myKey", "newValue")
 
     assertEquals("oldValue", result)
-    assertEquals(1, tx.spans.size)
-    assertEquals("cache.put", tx.spans.first().operation)
+    verify(delegate).getAndReplace("myKey", "newValue")
+    assertEquals(0, tx.spans.size)
   }
 
   // -- remove(K) --

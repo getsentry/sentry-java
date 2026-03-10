@@ -154,61 +154,22 @@ public final class SentryJCacheWrapper<K, V> implements Cache<K, V> {
     return delegate.putIfAbsent(key, value);
   }
 
+  // replace and getAndReplace are not instrumented — like putIfAbsent, they are conditional
+  // writes (only happen if the key exists / value matches). Emitting a cache.put span for a
+  // potential no-op would be misleading.
   @Override
   public boolean replace(final K key, final V oldValue, final V newValue) {
-    final ISpan span = startSpan("cache.put", key);
-    if (span == null) {
-      return delegate.replace(key, oldValue, newValue);
-    }
-    try {
-      final boolean result = delegate.replace(key, oldValue, newValue);
-      span.setStatus(SpanStatus.OK);
-      return result;
-    } catch (Throwable e) {
-      span.setStatus(SpanStatus.INTERNAL_ERROR);
-      span.setThrowable(e);
-      throw e;
-    } finally {
-      span.finish();
-    }
+    return delegate.replace(key, oldValue, newValue);
   }
 
   @Override
   public boolean replace(final K key, final V value) {
-    final ISpan span = startSpan("cache.put", key);
-    if (span == null) {
-      return delegate.replace(key, value);
-    }
-    try {
-      final boolean result = delegate.replace(key, value);
-      span.setStatus(SpanStatus.OK);
-      return result;
-    } catch (Throwable e) {
-      span.setStatus(SpanStatus.INTERNAL_ERROR);
-      span.setThrowable(e);
-      throw e;
-    } finally {
-      span.finish();
-    }
+    return delegate.replace(key, value);
   }
 
   @Override
   public V getAndReplace(final K key, final V value) {
-    final ISpan span = startSpan("cache.put", key);
-    if (span == null) {
-      return delegate.getAndReplace(key, value);
-    }
-    try {
-      final V result = delegate.getAndReplace(key, value);
-      span.setStatus(SpanStatus.OK);
-      return result;
-    } catch (Throwable e) {
-      span.setStatus(SpanStatus.INTERNAL_ERROR);
-      span.setThrowable(e);
-      throw e;
-    } finally {
-      span.finish();
-    }
+    return delegate.getAndReplace(key, value);
   }
 
   // -- remove operations --
