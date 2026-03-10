@@ -490,7 +490,7 @@ public class SentryOptions {
   /** Whether database transaction spans (BEGIN, COMMIT, ROLLBACK) should be traced. */
   private boolean enableDatabaseTransactionTracing = false;
 
-  /** Whether cache operations (get, put, evict, clear) should be traced. */
+  /** Whether cache operations (get, put, remove, flush) should be traced. */
   private boolean enableCacheTracing = false;
 
   /** Date provider to retrieve the current date from. */
@@ -2634,7 +2634,7 @@ public class SentryOptions {
   }
 
   /**
-   * Whether cache operations (get, put, evict, clear) should be traced.
+   * Whether cache operations (get, put, remove, flush) should be traced.
    *
    * @return true if cache operations should be traced
    */
@@ -2643,7 +2643,7 @@ public class SentryOptions {
   }
 
   /**
-   * Whether cache operations (get, put, evict, clear) should be traced.
+   * Whether cache operations (get, put, remove, flush) should be traced.
    *
    * @param enableCacheTracing true if cache operations should be traced
    */
