@@ -1345,7 +1345,8 @@ class JsonSerializerTest {
       "{\"profile_sampled\":true,\"profile_sample_rate\":0.8,\"continuous_profile_sampled\":true," +
         "\"trace_sampled\":false,\"trace_sample_rate\":0.1,\"profiling_traces_dir_path\":null,\"is_profiling_enabled\":false," +
         "\"is_continuous_profiling_enabled\":false,\"profile_lifecycle\":\"TRACE\",\"profiling_traces_hz\":65," +
-        "\"is_enable_app_start_profiling\":false,\"is_start_profiler_on_app_start\":true}"
+        "\"is_enable_app_start_profiling\":false,\"is_start_profiler_on_app_start\":true," +
+        "\"is_enable_perfetto_profiling\":false}"
     assertEquals(expected, actual)
   }
 

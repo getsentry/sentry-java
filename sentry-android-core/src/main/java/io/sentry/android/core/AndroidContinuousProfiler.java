@@ -4,6 +4,8 @@ import static io.sentry.DataCategory.All;
 import static io.sentry.IConnectionStatusProvider.ConnectionStatus.DISCONNECTED;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
+import android.annotation.SuppressLint;
+import android.content.Context;
 import android.os.Build;
 import io.sentry.CompositePerformanceCollector;
 import io.sentry.DataCategory;
@@ -51,6 +53,10 @@ public class AndroidContinuousProfiler
   private boolean isInitialized = false;
   private final @NotNull SentryFrameMetricsCollector frameMetricsCollector;
   private @Nullable AndroidProfiler profiler = null;
+  private @Nullable PerfettoProfiler perfettoProfiler = null;
+  private final boolean enablePerfettoProfiling;
+  private final @Nullable Context context;
+  private boolean isPerfettoActive = false;
   private boolean isRunning = false;
   private @Nullable IScopes scopes;
   private @Nullable Future<?> stopFuture;
@@ -75,20 +81,53 @@ public class AndroidContinuousProfiler
       final @Nullable String profilingTracesDirPath,
       final int profilingTracesHz,
       final @NotNull LazyEvaluator.Evaluator<ISentryExecutorService> executorServiceSupplier) {
+    this(
+        buildInfoProvider,
+        frameMetricsCollector,
+        logger,
+        profilingTracesDirPath,
+        profilingTracesHz,
+        executorServiceSupplier,
+        false,
+        null);
+  }
+
+  public AndroidContinuousProfiler(
+      final @NotNull BuildInfoProvider buildInfoProvider,
+      final @NotNull SentryFrameMetricsCollector frameMetricsCollector,
+      final @NotNull ILogger logger,
+      final @Nullable String profilingTracesDirPath,
+      final int profilingTracesHz,
+      final @NotNull LazyEvaluator.Evaluator<ISentryExecutorService> executorServiceSupplier,
+      final boolean enablePerfettoProfiling,
+      final @Nullable Context context) {
     this.logger = logger;
     this.frameMetricsCollector = frameMetricsCollector;
     this.buildInfoProvider = buildInfoProvider;
     this.profilingTracesDirPath = profilingTracesDirPath;
     this.profilingTracesHz = profilingTracesHz;
     this.executorServiceSupplier = executorServiceSupplier;
+    this.enablePerfettoProfiling = enablePerfettoProfiling;
+    this.context = context;
   }
 
+  @SuppressLint("NewApi")
   private void init() {
     // We initialize it only once
     if (isInitialized) {
       return;
     }
     isInitialized = true;
+
+    if (enablePerfettoProfiling
+        && buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.VANILLA_ICE_CREAM
+        && context != null) {
+      perfettoProfiler =
+          new PerfettoProfiler(context, frameMetricsCollector, logger, profilingTracesHz);
+      logger.log(SentryLevel.DEBUG, "Using Perfetto profiler (ProfilingManager).");
+      return;
+    }
+
     if (profilingTracesDirPath == null) {
       logger.log(
           SentryLevel.WARNING,
@@ -174,8 +213,8 @@ public class AndroidContinuousProfiler
 
     // Let's initialize trace folder and profiling interval
     init();
-    // init() didn't create profiler, should never happen
-    if (profiler == null) {
+    // init() didn't create any profiler
+    if (profiler == null && perfettoProfiler == null) {
       return;
     }
 
@@ -202,7 +241,15 @@ public class AndroidContinuousProfiler
     } else {
       startProfileChunkTimestamp = new SentryNanotimeDate();
     }
-    final AndroidProfiler.ProfileStartData startData = profiler.start();
+
+    final AndroidProfiler.ProfileStartData startData;
+    if (perfettoProfiler != null) {
+      startData = perfettoProfiler.start(MAX_CHUNK_DURATION_MILLIS);
+      isPerfettoActive = startData != null;
+    } else {
+      startData = profiler.start();
+      isPerfettoActive = false;
+    }
     // check if profiling started
     if (startData == null) {
       return;
@@ -262,10 +309,10 @@ public class AndroidContinuousProfiler
     initScopes();
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       if (stopFuture != null) {
-        stopFuture.cancel(true);
+        stopFuture.cancel(false);
       }
       // check if profiler was created and it's running
-      if (profiler == null || !isRunning) {
+      if ((profiler == null && perfettoProfiler == null) || !isRunning) {
         // When the profiler is stopped due to an error (e.g. offline or rate limited), reset the
         // ids
         profilerId = SentryId.EMPTY_ID;
@@ -284,8 +331,18 @@ public class AndroidContinuousProfiler
         performanceCollectionData = performanceCollector.stop(chunkId.toString());
       }
 
-      final AndroidProfiler.ProfileEndData endData =
-          profiler.endAndCollect(false, performanceCollectionData);
+      final AndroidProfiler.ProfileEndData endData;
+      final String platform;
+      if (isPerfettoActive && perfettoProfiler != null) {
+        endData = perfettoProfiler.endAndCollect();
+        platform = ProfileChunk.PLATFORM_PERFETTO;
+      } else if (profiler != null) {
+        endData = profiler.endAndCollect(false, performanceCollectionData);
+        platform = ProfileChunk.PLATFORM_ANDROID;
+      } else {
+        endData = null;
+        platform = ProfileChunk.PLATFORM_ANDROID;
+      }
 
       // check if profiler end successfully
       if (endData == null) {
@@ -304,7 +361,7 @@ public class AndroidContinuousProfiler
                   endData.measurementsMap,
                   endData.traceFile,
                   startProfileChunkTimestamp,
-                  ProfileChunk.PLATFORM_ANDROID));
+                  platform));
         }
       }
 

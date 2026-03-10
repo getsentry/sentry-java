@@ -618,6 +618,14 @@ public class SentryOptions {
   private boolean startProfilerOnAppStart = false;
 
   /**
+   * Enables the use of Android's ProfilingManager (Perfetto) for profiling on Android 35+. When
+   * enabled and the device runs API 35 or above, profiling will use system-level Perfetto traces
+   * instead of Debug.startMethodTracingSampling. Default is disabled. This is a no-op on
+   * non-Android platforms.
+   */
+  private boolean enablePerfettoProfiling = false;
+
+  /**
    * Controls the deadline timeout in milliseconds for automatic transactions. When set to a
    * positive value, that value is used as the deadline timeout. When set to a value less than or
    * equal to 0, no deadline is applied and transactions will only finish when explicitly finished
@@ -2197,6 +2205,24 @@ public class SentryOptions {
    */
   public void setStartProfilerOnAppStart(final boolean startProfilerOnAppStart) {
     this.startProfilerOnAppStart = startProfilerOnAppStart;
+  }
+
+  /**
+   * Whether to use Android's ProfilingManager (Perfetto) for profiling on Android 35+.
+   *
+   * @return true if Perfetto profiling is enabled.
+   */
+  public boolean isEnablePerfettoProfiling() {
+    return enablePerfettoProfiling;
+  }
+
+  /**
+   * Set whether to use Android's ProfilingManager (Perfetto) for profiling on Android 35+.
+   *
+   * @param enablePerfettoProfiling true to enable Perfetto profiling.
+   */
+  public void setEnablePerfettoProfiling(final boolean enablePerfettoProfiling) {
+    this.enablePerfettoProfiling = enablePerfettoProfiling;
   }
 
   public long getDeadlineTimeout() {

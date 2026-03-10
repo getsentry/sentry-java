@@ -2004,6 +2004,7 @@ public final class io/sentry/PerformanceCollectionData {
 public final class io/sentry/ProfileChunk : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public static final field PLATFORM_ANDROID Ljava/lang/String;
 	public static final field PLATFORM_JAVA Ljava/lang/String;
+	public static final field PLATFORM_PERFETTO Ljava/lang/String;
 	public fun <init> ()V
 	public fun <init> (Lio/sentry/protocol/SentryId;Lio/sentry/protocol/SentryId;Ljava/io/File;Ljava/util/Map;Ljava/lang/Double;Ljava/lang/String;Lio/sentry/SentryOptions;)V
 	public fun equals (Ljava/lang/Object;)Z
@@ -2718,6 +2719,7 @@ public final class io/sentry/SentryAppStartProfilingOptions : io/sentry/JsonSeri
 	public fun isContinuousProfileSampled ()Z
 	public fun isContinuousProfilingEnabled ()Z
 	public fun isEnableAppStartProfiling ()Z
+	public fun isEnablePerfettoProfiling ()Z
 	public fun isProfileSampled ()Z
 	public fun isProfilingEnabled ()Z
 	public fun isStartProfilerOnAppStart ()Z
@@ -2726,6 +2728,7 @@ public final class io/sentry/SentryAppStartProfilingOptions : io/sentry/JsonSeri
 	public fun setContinuousProfileSampled (Z)V
 	public fun setContinuousProfilingEnabled (Z)V
 	public fun setEnableAppStartProfiling (Z)V
+	public fun setEnablePerfettoProfiling (Z)V
 	public fun setProfileLifecycle (Lio/sentry/ProfileLifecycle;)V
 	public fun setProfileSampleRate (Ljava/lang/Double;)V
 	public fun setProfileSampled (Z)V
@@ -2748,6 +2751,7 @@ public final class io/sentry/SentryAppStartProfilingOptions$JsonKeys {
 	public static final field CONTINUOUS_PROFILE_SAMPLED Ljava/lang/String;
 	public static final field IS_CONTINUOUS_PROFILING_ENABLED Ljava/lang/String;
 	public static final field IS_ENABLE_APP_START_PROFILING Ljava/lang/String;
+	public static final field IS_ENABLE_PERFETTO_PROFILING Ljava/lang/String;
 	public static final field IS_PROFILING_ENABLED Ljava/lang/String;
 	public static final field IS_START_PROFILER_ON_APP_START Ljava/lang/String;
 	public static final field PROFILE_LIFECYCLE Ljava/lang/String;
@@ -2958,6 +2962,7 @@ public final class io/sentry/SentryEnvelopeItem {
 	public static fun fromEvent (Lio/sentry/ISerializer;Lio/sentry/SentryBaseEvent;)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromLogs (Lio/sentry/ISerializer;Lio/sentry/SentryLogEvents;)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromMetrics (Lio/sentry/ISerializer;Lio/sentry/SentryMetricsEvents;)Lio/sentry/SentryEnvelopeItem;
+	public static fun fromPerfettoProfileChunk (Lio/sentry/ProfileChunk;Lio/sentry/ISerializer;)Ljava/util/List;
 	public static fun fromProfileChunk (Lio/sentry/ProfileChunk;Lio/sentry/ISerializer;)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromProfileChunk (Lio/sentry/ProfileChunk;Lio/sentry/ISerializer;Lio/sentry/IProfileConverter;)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromProfilingTrace (Lio/sentry/ProfilingTraceData;JLio/sentry/ISerializer;)Lio/sentry/SentryEnvelopeItem;
@@ -2975,11 +2980,13 @@ public final class io/sentry/SentryEnvelopeItem {
 
 public final class io/sentry/SentryEnvelopeItemHeader : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> (Lio/sentry/SentryItemType;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Integer;)V
+	public fun <init> (Lio/sentry/SentryItemType;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Integer;Ljava/lang/String;)V
 	public fun getAttachmentType ()Ljava/lang/String;
 	public fun getContentType ()Ljava/lang/String;
 	public fun getFileName ()Ljava/lang/String;
 	public fun getLength ()I
 	public fun getPlatform ()Ljava/lang/String;
+	public fun getProfileType ()Ljava/lang/String;
 	public fun getType ()Lio/sentry/SentryItemType;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
@@ -2999,6 +3006,7 @@ public final class io/sentry/SentryEnvelopeItemHeader$JsonKeys {
 	public static final field ITEM_COUNT Ljava/lang/String;
 	public static final field LENGTH Ljava/lang/String;
 	public static final field PLATFORM Ljava/lang/String;
+	public static final field PROFILE_TYPE Ljava/lang/String;
 	public static final field TYPE Ljava/lang/String;
 	public fun <init> ()V
 }
@@ -3163,6 +3171,7 @@ public final class io/sentry/SentryItemType : java/lang/Enum, io/sentry/JsonSeri
 	public static final field Log Lio/sentry/SentryItemType;
 	public static final field Profile Lio/sentry/SentryItemType;
 	public static final field ProfileChunk Lio/sentry/SentryItemType;
+	public static final field ProfileChunkData Lio/sentry/SentryItemType;
 	public static final field ReplayEvent Lio/sentry/SentryItemType;
 	public static final field ReplayRecording Lio/sentry/SentryItemType;
 	public static final field ReplayVideo Lio/sentry/SentryItemType;
@@ -3575,6 +3584,7 @@ public class io/sentry/SentryOptions {
 	public fun isEnableDeduplication ()Z
 	public fun isEnableEventSizeLimiting ()Z
 	public fun isEnableExternalConfiguration ()Z
+	public fun isEnablePerfettoProfiling ()Z
 	public fun isEnablePrettySerializationOutput ()Z
 	public fun isEnableScopePersistence ()Z
 	public fun isEnableScreenTracking ()Z
@@ -3633,6 +3643,7 @@ public class io/sentry/SentryOptions {
 	public fun setEnableDeduplication (Z)V
 	public fun setEnableEventSizeLimiting (Z)V
 	public fun setEnableExternalConfiguration (Z)V
+	public fun setEnablePerfettoProfiling (Z)V
 	public fun setEnablePrettySerializationOutput (Z)V
 	public fun setEnableScopePersistence (Z)V
 	public fun setEnableScreenTracking (Z)V

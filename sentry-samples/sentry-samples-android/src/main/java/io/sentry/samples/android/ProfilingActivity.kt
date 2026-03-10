@@ -7,16 +7,9 @@ import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
-import io.sentry.ITransaction
-import io.sentry.ProfilingTraceData
 import io.sentry.Sentry
-import io.sentry.SentryEnvelopeItem
 import io.sentry.samples.android.databinding.ActivityProfilingBinding
-import java.io.ByteArrayOutputStream
-import java.io.File
-import java.util.UUID
 import java.util.concurrent.Executors
-import java.util.zip.GZIPOutputStream
 
 class ProfilingActivity : AppCompatActivity() {
   private lateinit var binding: ActivityProfilingBinding
@@ -81,68 +74,26 @@ class ProfilingActivity : AppCompatActivity() {
       profileFinished = false
       val seconds = getProfileDuration()
       val threads = getBackgroundThreads()
-      val t = Sentry.startTransaction("Profiling Test", "$seconds s - $threads threads")
+
+      Sentry.startProfiler()
       repeat(threads) { executors.submit { runMathOperations() } }
       executors.submit { swipeList() }
 
       Thread {
           Thread.sleep((seconds * 1000).toLong())
-          finishTransactionAndPrintResults(t)
-          binding.root.post { binding.profilingProgressBar.visibility = View.GONE }
+          profileFinished = true
+          Sentry.stopProfiler()
+
+          binding.root.post {
+            binding.profilingProgressBar.visibility = View.GONE
+            binding.profilingResult.text =
+              getString(R.string.profiling_result_done, seconds, threads)
+          }
         }
         .start()
     }
     setContentView(binding.root)
     Sentry.reportFullyDisplayed()
-  }
-
-  private fun finishTransactionAndPrintResults(t: ITransaction) {
-    t.finish()
-    profileFinished = true
-    val profilesDirPath = Sentry.getCurrentScopes().options.profilingTracesDirPath
-    if (profilesDirPath == null) {
-      Toast.makeText(this, R.string.profiling_no_dir_set, Toast.LENGTH_SHORT).show()
-      return
-    }
-
-    // We have concurrent profiling now. We have to wait for all transactions to finish (e.g. button
-    // click)
-    //  before reading the profile, otherwise it's empty and a crash occurs
-    if (Sentry.getSpan() != null) {
-      val timeout = Sentry.getCurrentScopes().options.idleTimeout ?: 0
-      val duration = (getProfileDuration() * 1000).toLong()
-      Thread.sleep((timeout - duration).coerceAtLeast(0))
-    }
-
-    try {
-      // Get the last trace file, which is the current profile
-      val origProfileFile = File(profilesDirPath).listFiles()?.maxByOrNull { f -> f.lastModified() }
-      // Create a new profile file and copy the content of the original file into it
-      val profile = File(cacheDir, UUID.randomUUID().toString())
-      origProfileFile?.copyTo(profile)
-
-      val profileLength = profile.length()
-      val traceData = ProfilingTraceData(profile, t)
-      // Create envelope item from copied profile
-      val item =
-        SentryEnvelopeItem.fromProfilingTrace(
-          traceData,
-          Long.MAX_VALUE,
-          Sentry.getCurrentScopes().options.serializer,
-        )
-      val itemData = item.data
-
-      // Compress the envelope item using Gzip
-      val bos = ByteArrayOutputStream()
-      GZIPOutputStream(bos).bufferedWriter().use { it.write(String(itemData)) }
-
-      binding.root.post {
-        binding.profilingResult.text =
-          getString(R.string.profiling_result, profileLength, itemData.size, bos.toByteArray().size)
-      }
-    } catch (e: Exception) {
-      e.printStackTrace()
-    }
   }
 
   private fun swipeList() {
@@ -167,18 +118,16 @@ class ProfilingActivity : AppCompatActivity() {
 
   private fun fibonacci(n: Int): Int =
     when {
-      profileFinished -> n // If we destroy the activity we stop this function
+      profileFinished -> n
       n <= 1 -> 1
       else -> fibonacci(n - 1) + fibonacci(n - 2)
     }
 
   private fun getProfileDuration(): Float {
-    // Minimum duration of the profile is 100 milliseconds
     return binding.profilingDurationSeekbar.progress / 10.0F + 0.1F
   }
 
   private fun getBackgroundThreads(): Int {
-    // Minimum duration of the profile is 100 milliseconds
     return binding.profilingThreadsSeekbar.progress.coerceIn(
       0,
       Runtime.getRuntime().availableProcessors() - 1,

@@ -25,7 +25,9 @@ import java.io.Writer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import org.jetbrains.annotations.ApiStatus;
@@ -366,6 +368,75 @@ public final class SentryEnvelopeItem {
     // avoid method refs on Android due to some issues with older AGP setups
     // noinspection Convert2MethodRef
     return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
+  }
+
+  public static @NotNull List<SentryEnvelopeItem> fromPerfettoProfileChunk(
+      final @NotNull ProfileChunk profileChunk, final @NotNull ISerializer serializer)
+      throws SentryEnvelopeException {
+
+    final @NotNull File traceFile = profileChunk.getTraceFile();
+    final List<SentryEnvelopeItem> items = new ArrayList<>(2);
+
+    // Item 1: raw binary profile_chunk_data
+    final CachedItem binaryItem =
+        new CachedItem(
+            () -> {
+              if (!traceFile.exists()) {
+                throw new SentryEnvelopeException(
+                    String.format(
+                        "Dropping perfetto profile chunk, because the file '%s' doesn't exists",
+                        traceFile.getName()));
+              }
+              return readBytesFromFile(traceFile.getPath(), MAX_PROFILE_CHUNK_SIZE);
+            });
+
+    SentryEnvelopeItemHeader binaryHeader =
+        new SentryEnvelopeItemHeader(
+            SentryItemType.ProfileChunkData,
+            () -> binaryItem.getBytes().length,
+            "application/octet-stream",
+            traceFile.getName(),
+            null,
+            null,
+            null,
+            "ui");
+
+    // avoid method refs on Android due to some issues with older AGP setups
+    // noinspection Convert2MethodRef
+    items.add(new SentryEnvelopeItem(binaryHeader, () -> binaryItem.getBytes()));
+
+    // Item 2: JSON metadata profile_chunk
+    final CachedItem metadataItem =
+        new CachedItem(
+            () -> {
+              try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                  final Writer writer = new BufferedWriter(new OutputStreamWriter(stream, UTF_8))) {
+                serializer.serialize(profileChunk, writer);
+                return stream.toByteArray();
+              } catch (IOException e) {
+                throw new SentryEnvelopeException(
+                    String.format(
+                        "Failed to serialize perfetto profile chunk\n%s", e.getMessage()));
+              } finally {
+                traceFile.delete();
+              }
+            });
+
+    SentryEnvelopeItemHeader metadataHeader =
+        new SentryEnvelopeItemHeader(
+            SentryItemType.ProfileChunk,
+            () -> metadataItem.getBytes().length,
+            "application/json",
+            null,
+            null,
+            profileChunk.getPlatform(),
+            null,
+            "ui");
+
+    // noinspection Convert2MethodRef
+    items.add(new SentryEnvelopeItem(metadataHeader, () -> metadataItem.getBytes()));
+
+    return items;
   }
 
   public static @NotNull SentryEnvelopeItem fromProfilingTrace(

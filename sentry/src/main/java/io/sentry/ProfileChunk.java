@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 public final class ProfileChunk implements JsonUnknown, JsonSerializable {
   public static final String PLATFORM_ANDROID = "android";
   public static final String PLATFORM_JAVA = "java";
+  public static final String PLATFORM_PERFETTO = "perfetto";
 
   private @Nullable DebugMeta debugMeta;
   private @NotNull SentryId profilerId;

@@ -174,7 +174,9 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
             logger,
             profilingOptions.getProfilingTracesDirPath(),
             profilingOptions.getProfilingTracesHz(),
-            () -> startupExecutorService);
+            () -> startupExecutorService,
+            profilingOptions.isEnablePerfettoProfiling(),
+            context);
     appStartMetrics.setAppStartProfiler(null);
     appStartMetrics.setAppStartContinuousProfiler(appStartContinuousProfiler);
     logger.log(SentryLevel.DEBUG, "App start continuous profiling started.");
