@@ -1,9 +1,22 @@
 # Changelog
 
+## 8.34.1
+
+### Fixes
+
+- Common: Finalize previous session even when auto session tracking is disabled ([#5154](https://github.com/getsentry/sentry-java/pull/5154))
+- Android: Add `filterTouchesWhenObscured` to prevent Tapjacking on user feedback dialog ([#5155](https://github.com/getsentry/sentry-java/pull/5155))
+- Android: Add proguard rules to prevent error about missing Replay classes ([#5153](https://github.com/getsentry/sentry-java/pull/5153))
+- Android: Remove the dependency on protobuf-lite for tombstones ([#5157](https://github.com/getsentry/sentry-java/pull/5157))
+
 ## 8.34.0
 
 ### Features
 
+- Allow configuring shutdown and session flush timeouts externally ([#4641](https://github.com/getsentry/sentry-java/pull/4641))
+  - `sentry.properties`: `shutdown-timeout-millis`, `session-flush-timeout-millis`
+  - Environment variables: `SENTRY_SHUTDOWN_TIMEOUT_MILLIS`, `SENTRY_SESSION_FLUSH_TIMEOUT_MILLIS`
+  - Spring Boot `application.properties`: `sentry.shutdownTimeoutMillis`, `sentry.sessionFlushTimeoutMillis`
 - Add scope-level attributes API ([#5118](https://github.com/getsentry/sentry-java/pull/5118)) via ([#5148](https://github.com/getsentry/sentry-java/pull/5148))
   - Automatically include scope attributes in logs and metrics ([#5120](https://github.com/getsentry/sentry-java/pull/5120))
   - New APIs are `Sentry.setAttribute`, `Sentry.setAttributes`, `Sentry.removeAttribute`
@@ -33,6 +46,14 @@
     <meta-data android:name="io.sentry.screenshot.mask-all-images" android:value="true" />
     ```
 - The `ManifestMetaDataReader` now read the `DIST` ([#5107](https://github.com/getsentry/sentry-java/pull/5107))
+- Add new experimental option to capture profiles for ANRs ([#4899](https://github.com/getsentry/sentry-java/pull/4899))
+  - This feature will capture a stack profile of the main thread when it gets unresponsive
+  - The profile gets attached to the ANR event on the next app start, providing a flamegraph of the ANR issue on the sentry issue details page
+  - Enable via `options.setAnrProfilingSampleRate(<sample-rate>)` or AndroidManifest.xml: `<meta-data android:name="io.sentry.anr.profiling.sample-rate" android:value="[0.0-1.0]" />`
+  - The sample rate controls the probability of collecting a profile for each detected foreground ANR (0.0 to 1.0, null to disable)
+- Add `enableAnrFingerprinting` option to reduce ANR noise by assigning static fingerprints to ANR events with system-only stacktraces
+  - When enabled, ANRs whose stacktraces contain only system frames (e.g. `java.lang` or `android.os`) are grouped into a single issue instead of creating many separate issues
+  - Enable via `options.setEnableAnrFingerprinting(true)` or AndroidManifest.xml: `<meta-data android:name="io.sentry.anr.enable-fingerprinting" android:value="true" />`
 
 ### Features
 
@@ -174,7 +195,7 @@
 - Discard envelopes on `4xx` and `5xx` response ([#4950](https://github.com/getsentry/sentry-java/pull/4950))
   - This aims to not overwhelm Sentry after an outage or load shedding (including HTTP 429) where too many events are sent at once
 
-### Feature
+### Features
 
 - Add a Tombstone integration that detects native crashes without relying on the NDK integration, but instead using `ApplicationExitInfo.REASON_CRASH_NATIVE` on Android 12+. ([#4933](https://github.com/getsentry/sentry-java/pull/4933))
   - Currently exposed via options as an _internal_ API only.
