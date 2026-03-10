@@ -23,6 +23,9 @@ public class PersonController {
 
   @GetMapping("{id}")
   Person person(@PathVariable("id") Long id) {
+    Sentry.setAttribute("user.type", "admin");
+    Sentry.setAttribute("feature.version", 2);
+    Sentry.setAttribute("debug.enabled", true);
     Sentry.logger().warn("warn Sentry logging");
     Sentry.logger().error("error Sentry logging");
     Sentry.logger().info("hello %s %s", "there", "world!");
