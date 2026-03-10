@@ -288,7 +288,7 @@ class SentryJCacheWrapperTest {
   // -- removeAll() --
 
   @Test
-  fun `removeAll creates cache remove span`() {
+  fun `removeAll without keys creates cache flush span`() {
     val tx = createTransaction()
     val wrapper = SentryJCacheWrapper(delegate, scopes)
 
@@ -296,7 +296,7 @@ class SentryJCacheWrapperTest {
 
     verify(delegate).removeAll()
     assertEquals(1, tx.spans.size)
-    assertEquals("cache.remove", tx.spans.first().operation)
+    assertEquals("cache.flush", tx.spans.first().operation)
   }
 
   // -- clear --

@@ -252,7 +252,7 @@ public final class SentryJCacheWrapper<K, V> implements Cache<K, V> {
 
   @Override
   public void removeAll() {
-    final ISpan span = startSpan("cache.remove", null);
+    final ISpan span = startSpan("cache.flush", null);
     if (span == null) {
       delegate.removeAll();
       return;
