@@ -409,6 +409,9 @@ public final class SentryJCacheWrapper<K, V> implements Cache<K, V> {
     spanOptions.setOrigin(TRACE_ORIGIN);
     final String keyString = key != null ? String.valueOf(key) : null;
     final ISpan span = activeSpan.startChild(operation, keyString, spanOptions);
+    if (span.isNoOp()) {
+      return null;
+    }
     if (keyString != null) {
       span.setData(SpanDataConvention.CACHE_KEY_KEY, Arrays.asList(keyString));
     }
@@ -429,6 +432,9 @@ public final class SentryJCacheWrapper<K, V> implements Cache<K, V> {
     final SpanOptions spanOptions = new SpanOptions();
     spanOptions.setOrigin(TRACE_ORIGIN);
     final ISpan span = activeSpan.startChild(operation, delegate.getName(), spanOptions);
+    if (span.isNoOp()) {
+      return null;
+    }
     span.setData(
         SpanDataConvention.CACHE_KEY_KEY,
         keys.stream().map(String::valueOf).collect(Collectors.toList()));
