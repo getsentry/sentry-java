@@ -5,6 +5,8 @@
 ### Features
 
 - Add JCache (JSR-107) cache tracing via new `sentry-jcache` module ([#5179](https://github.com/getsentry/sentry-java/pull/5179))
+  - Wraps JCache `Cache` with `SentryJCacheWrapper` to produce `cache.get`, `cache.put`, `cache.remove`, and `cache.flush` spans
+  - Set `sentry.enable-cache-tracing` to `true` to enable this feature
 
 ## 8.34.1
 
