@@ -24,8 +24,8 @@ public final class SentryCacheManagerWrapper implements CacheManager {
   @Override
   public @Nullable Cache getCache(final @NotNull String name) {
     final Cache cache = delegate.getCache(name);
-    if (cache == null) {
-      return null;
+    if (cache == null || cache instanceof SentryCacheWrapper) {
+      return cache;
     }
     return new SentryCacheWrapper(cache, scopes);
   }
