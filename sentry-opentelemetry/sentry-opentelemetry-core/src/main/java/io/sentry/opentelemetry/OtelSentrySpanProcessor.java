@@ -22,6 +22,7 @@ import io.sentry.SentryDate;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.SentryLongDate;
+import io.sentry.SentryOptions;
 import io.sentry.SentryTraceHeader;
 import io.sentry.SpanId;
 import io.sentry.TracesSamplingDecision;
@@ -94,9 +95,16 @@ public final class OtelSentrySpanProcessor implements SpanProcessor {
         }
       }
 
-      final @NotNull PropagationContext propagationContext =
-          new PropagationContext(
-              new SentryId(traceId), sentrySpanId, sentryParentSpanId, baggage, sampled);
+      final @NotNull SentryOptions sentryOptions = scopes.getOptions();
+      final @NotNull PropagationContext propagationContext;
+      if (sentryTraceHeader != null) {
+        propagationContext =
+            PropagationContext.fromHeaders(sentryTraceHeader, baggage, sentrySpanId, sentryOptions);
+      } else {
+        propagationContext =
+            new PropagationContext(
+                new SentryId(traceId), sentrySpanId, sentryParentSpanId, baggage, sampled);
+      }
 
       baggage = propagationContext.getBaggage();
       baggage.setValuesFromSamplingDecision(samplingDecision);

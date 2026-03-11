@@ -2436,4 +2436,54 @@ class ManifestMetadataReaderTest {
     // maskAllImages should also add WebView
     assertTrue(fixture.options.screenshot.maskViewClasses.contains("android.webkit.WebView"))
   }
+
+  @Test
+  fun `applyMetadata reads strictTraceContinuation and keeps default value if not found`() {
+    // Arrange
+    val context = fixture.getContext()
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertFalse(fixture.options.isStrictTraceContinuation)
+  }
+
+  @Test
+  fun `applyMetadata reads strictTraceContinuation to options`() {
+    // Arrange
+    val bundle = bundleOf(ManifestMetadataReader.STRICT_TRACE_CONTINUATION to true)
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertTrue(fixture.options.isStrictTraceContinuation)
+  }
+
+  @Test
+  fun `applyMetadata reads orgId and keeps null if not found`() {
+    // Arrange
+    val context = fixture.getContext()
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertNull(fixture.options.orgId)
+  }
+
+  @Test
+  fun `applyMetadata reads orgId to options`() {
+    // Arrange
+    val bundle = bundleOf(ManifestMetadataReader.ORG_ID to "12345")
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertEquals("12345", fixture.options.orgId)
+  }
 }

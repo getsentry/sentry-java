@@ -15,14 +15,16 @@ public final class PropagationContext {
   public static PropagationContext fromHeaders(
       final @NotNull ILogger logger,
       final @Nullable String sentryTraceHeader,
-      final @Nullable String baggageHeader) {
-    return fromHeaders(logger, sentryTraceHeader, Arrays.asList(baggageHeader));
+      final @Nullable String baggageHeader,
+      final @Nullable SentryOptions options) {
+    return fromHeaders(logger, sentryTraceHeader, Arrays.asList(baggageHeader), options);
   }
 
   public static @NotNull PropagationContext fromHeaders(
       final @NotNull ILogger logger,
       final @Nullable String sentryTraceHeaderString,
-      final @Nullable List<String> baggageHeaderStrings) {
+      final @Nullable List<String> baggageHeaderStrings,
+      final @Nullable SentryOptions options) {
     if (sentryTraceHeaderString == null) {
       return new PropagationContext();
     }
@@ -30,7 +32,8 @@ public final class PropagationContext {
     try {
       final @NotNull SentryTraceHeader traceHeader = new SentryTraceHeader(sentryTraceHeaderString);
       final @NotNull Baggage baggage = Baggage.fromHeader(baggageHeaderStrings, logger);
-      return fromHeaders(traceHeader, baggage, null);
+
+      return fromHeaders(traceHeader, baggage, null, options);
     } catch (InvalidSentryTraceHeaderException e) {
       logger.log(SentryLevel.DEBUG, e, "Failed to parse Sentry trace header: %s", e.getMessage());
       return new PropagationContext();
@@ -40,7 +43,13 @@ public final class PropagationContext {
   public static @NotNull PropagationContext fromHeaders(
       final @NotNull SentryTraceHeader sentryTraceHeader,
       final @Nullable Baggage baggage,
-      final @Nullable SpanId spanId) {
+      final @Nullable SpanId spanId,
+      final @Nullable SentryOptions options) {
+    if (options != null && !shouldContinueTrace(options, baggage)) {
+      options.getLogger().log(SentryLevel.DEBUG, "Not continuing trace due to org ID mismatch.");
+      return new PropagationContext();
+    }
+
     final @NotNull SpanId spanIdToUse = spanId == null ? new SpanId() : spanId;
 
     return new PropagationContext(
@@ -148,5 +157,32 @@ public final class PropagationContext {
     final @Nullable Double sampleRand = baggage.getSampleRand();
     // should never be null since we ensure it in ctor
     return sampleRand == null ? 0.0 : sampleRand;
+  }
+
+  static boolean shouldContinueTrace(
+      final @NotNull SentryOptions options, final @Nullable Baggage baggage) {
+    final @Nullable String rawSdkOrgId = options.getEffectiveOrgId();
+    final @Nullable String sdkOrgId =
+        (rawSdkOrgId != null && !rawSdkOrgId.trim().isEmpty()) ? rawSdkOrgId.trim() : null;
+    final @Nullable String rawBaggageOrgId = baggage != null ? baggage.getOrgId() : null;
+    final @Nullable String baggageOrgId =
+        (rawBaggageOrgId != null && !rawBaggageOrgId.trim().isEmpty())
+            ? rawBaggageOrgId.trim()
+            : null;
+
+    // Mismatched org IDs always reject regardless of strict mode
+    if (sdkOrgId != null && baggageOrgId != null && !sdkOrgId.equals(baggageOrgId)) {
+      return false;
+    }
+
+    // In strict mode, both must be present and match (unless both are missing)
+    if (options.isStrictTraceContinuation()) {
+      if (sdkOrgId == null && baggageOrgId == null) {
+        return true;
+      }
+      return sdkOrgId != null && sdkOrgId.equals(baggageOrgId);
+    }
+
+    return true;
   }
 }
