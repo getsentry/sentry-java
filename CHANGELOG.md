@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-### Various fixes & improvements
+### Features
 
 - chore: Add THIRD_PARTY_NOTICES.md for vendored third-party code ([#5186](https://github.com/getsentry/sentry-java/pull/5186))
 
