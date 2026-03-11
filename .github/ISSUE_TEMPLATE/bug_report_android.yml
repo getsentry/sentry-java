@@ -55,6 +55,26 @@ body:
     validations:
       required: true
 
+  - type: dropdown
+    id: other_bug_reporting
+    attributes:
+      description: Are you using any other error monitoring solution alongside Sentry?
+      label: Other Error Monitoring Solution
+      options:
+        - "Yes"
+        - "No"
+    validations:
+      required: true
+
+  - type: input
+    id: other_bug_reporting_name
+    attributes:
+      label: Other Error Monitoring Solution Name
+      description: If yes, please enter the name of the other solution.
+      placeholder: e.g. Crashlytics
+    validations:
+      required: false
+
   - type: input
     id: version
     attributes:
