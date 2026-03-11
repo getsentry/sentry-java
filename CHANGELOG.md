@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- chore: Add THIRD_PARTY_NOTICES.md for vendored third-party code ([#5186](https://github.com/getsentry/sentry-java/pull/5186))
+
 ## 8.34.1
 
 ### Fixes
