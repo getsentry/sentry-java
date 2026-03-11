@@ -222,7 +222,7 @@ public final class ExternalOptions {
     }
 
     options.setStrictTraceContinuation(
-        propertiesProvider.getBooleanProperty("strict-trace-continuation"));
+        propertiesProvider.getBooleanProperty("enable-strict-trace-continuation"));
     options.setOrgId(propertiesProvider.getProperty("org-id"));
 
     options.setEnableSpotlight(propertiesProvider.getBooleanProperty("enable-spotlight"));

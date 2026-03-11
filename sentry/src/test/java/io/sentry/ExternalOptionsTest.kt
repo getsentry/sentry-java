@@ -451,14 +451,14 @@ class ExternalOptionsTest {
 
   @Test
   fun `creates options with strictTraceContinuation set to true`() {
-    withPropertiesFile("strict-trace-continuation=true") { options ->
+    withPropertiesFile("enable-strict-trace-continuation=true") { options ->
       assertTrue(options.isStrictTraceContinuation == true)
     }
   }
 
   @Test
   fun `creates options with strictTraceContinuation set to false`() {
-    withPropertiesFile("strict-trace-continuation=false") { options ->
+    withPropertiesFile("enable-strict-trace-continuation=false") { options ->
       assertTrue(options.isStrictTraceContinuation == false)
     }
   }

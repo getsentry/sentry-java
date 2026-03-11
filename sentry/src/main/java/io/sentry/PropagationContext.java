@@ -33,12 +33,7 @@ public final class PropagationContext {
       final @NotNull SentryTraceHeader traceHeader = new SentryTraceHeader(sentryTraceHeaderString);
       final @NotNull Baggage baggage = Baggage.fromHeader(baggageHeaderStrings, logger);
 
-      if (options != null && !shouldContinueTrace(options, baggage)) {
-        logger.log(SentryLevel.DEBUG, "Not continuing trace due to org ID mismatch.");
-        return new PropagationContext();
-      }
-
-      return fromHeaders(traceHeader, baggage, null, null);
+      return fromHeaders(traceHeader, baggage, null, options);
     } catch (InvalidSentryTraceHeaderException e) {
       logger.log(SentryLevel.DEBUG, e, "Failed to parse Sentry trace header: %s", e.getMessage());
       return new PropagationContext();
@@ -51,6 +46,9 @@ public final class PropagationContext {
       final @Nullable SpanId spanId,
       final @Nullable SentryOptions options) {
     if (options != null && !shouldContinueTrace(options, baggage)) {
+      options
+          .getLogger()
+          .log(SentryLevel.DEBUG, "Not continuing trace due to org ID mismatch.");
       return new PropagationContext();
     }
 
@@ -165,8 +163,14 @@ public final class PropagationContext {
 
   static boolean shouldContinueTrace(
       final @NotNull SentryOptions options, final @Nullable Baggage baggage) {
-    final @Nullable String sdkOrgId = options.getEffectiveOrgId();
-    final @Nullable String baggageOrgId = baggage != null ? baggage.getOrgId() : null;
+    final @Nullable String rawSdkOrgId = options.getEffectiveOrgId();
+    final @Nullable String sdkOrgId =
+        (rawSdkOrgId != null && !rawSdkOrgId.trim().isEmpty()) ? rawSdkOrgId.trim() : null;
+    final @Nullable String rawBaggageOrgId = baggage != null ? baggage.getOrgId() : null;
+    final @Nullable String baggageOrgId =
+        (rawBaggageOrgId != null && !rawBaggageOrgId.trim().isEmpty())
+            ? rawBaggageOrgId.trim()
+            : null;
 
     // Mismatched org IDs always reject regardless of strict mode
     if (sdkOrgId != null && baggageOrgId != null && !sdkOrgId.equals(baggageOrgId)) {
