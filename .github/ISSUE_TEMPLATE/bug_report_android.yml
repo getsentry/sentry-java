@@ -56,20 +56,23 @@ body:
       required: true
 
   - type: dropdown
-    id: other_error_monitoring_solution
+    id: other_error_monitoring
     attributes:
       description: Are you using any other error monitoring solution alongside Sentry?
       label: Other Error Monitoring Solution
       options:
+        - "Yes"
         - "No"
-        - "Bugsnag"
-        - "Datadog"
-        - "Firebase Crashlytics"
-        - "Instabug/Luciq"
-        - "NewRelic"
-        - "Other (please mention in issue description)"
     validations:
       required: true
+
+  - type: input
+    id: other_error_monitoring_name
+    attributes:
+      label: Other Error Monitoring Solution Name
+      description: If you're using another error monitoring solution side-by-side, please enter the name of the other solution.
+    validations:
+      required: false
 
   - type: input
     id: version
