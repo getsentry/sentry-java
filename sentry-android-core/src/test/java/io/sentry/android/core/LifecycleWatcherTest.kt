@@ -282,7 +282,8 @@ class LifecycleWatcherTest {
   @Test
   fun `background-foreground replay`() {
     whenever(fixture.dateProvider.currentTimeMillis).thenReturn(1L)
-    val watcher = fixture.getSUT(sessionIntervalMillis = 2L, enableAppLifecycleBreadcrumbs = false)
+    val watcher =
+      fixture.getSUT(sessionIntervalMillis = 500L, enableAppLifecycleBreadcrumbs = false)
     watcher.onForeground()
     verify(fixture.replayController).start()
 

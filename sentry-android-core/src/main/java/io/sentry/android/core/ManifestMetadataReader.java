@@ -41,6 +41,7 @@ final class ManifestMetadataReader {
   static final String NDK_SCOPE_SYNC_ENABLE = "io.sentry.ndk.scope-sync.enable";
   static final String NDK_SDK_NAME = "io.sentry.ndk.sdk-name";
   static final String RELEASE = "io.sentry.release";
+  static final String DIST = "io.sentry.dist";
   static final String ENVIRONMENT = "io.sentry.environment";
   static final String SDK_NAME = "io.sentry.sdk.name";
   static final String SDK_VERSION = "io.sentry.sdk.version";
@@ -174,6 +175,10 @@ final class ManifestMetadataReader {
 
   static final String SCREENSHOT_MASK_ALL_IMAGES = "io.sentry.screenshot.mask-all-images";
 
+  static final String ANR_PROFILING_SAMPLE_RATE = "io.sentry.anr.profiling.sample-rate";
+
+  static final String ENABLE_ANR_FINGERPRINTING = "io.sentry.anr.enable-fingerprinting";
+
   /** ManifestMetadataReader ctor */
   private ManifestMetadataReader() {}
 
@@ -272,6 +277,8 @@ final class ManifestMetadataReader {
         }
 
         options.setRelease(readString(metadata, logger, RELEASE, options.getRelease()));
+
+        options.setDist(readString(metadata, logger, DIST, options.getDist()));
 
         options.setEnvironment(readString(metadata, logger, ENVIRONMENT, options.getEnvironment()));
 
@@ -671,6 +678,18 @@ final class ManifestMetadataReader {
         options
             .getScreenshot()
             .setMaskAllImages(readBool(metadata, logger, SCREENSHOT_MASK_ALL_IMAGES, false));
+
+        if (options.getAnrProfilingSampleRate() == null) {
+          final double anrProfilingSampleRate =
+              readDouble(metadata, logger, ANR_PROFILING_SAMPLE_RATE);
+          if (anrProfilingSampleRate != -1) {
+            options.setAnrProfilingSampleRate(anrProfilingSampleRate);
+          }
+        }
+
+        options.setEnableAnrFingerprinting(
+            readBool(
+                metadata, logger, ENABLE_ANR_FINGERPRINTING, options.isEnableAnrFingerprinting()));
       }
       options
           .getLogger()

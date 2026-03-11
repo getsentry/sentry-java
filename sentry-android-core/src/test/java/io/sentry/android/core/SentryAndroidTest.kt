@@ -16,6 +16,7 @@ import io.sentry.DateUtils
 import io.sentry.Hint
 import io.sentry.ILogger
 import io.sentry.ISentryClient
+import io.sentry.NoOpSentryExecutorService
 import io.sentry.Sentry
 import io.sentry.Sentry.OptionsConfiguration
 import io.sentry.SentryEnvelope
@@ -28,6 +29,7 @@ import io.sentry.Session
 import io.sentry.ShutdownHookIntegration
 import io.sentry.SystemOutLogger
 import io.sentry.UncaughtExceptionHandlerIntegration
+import io.sentry.android.core.anr.AnrProfilingIntegration
 import io.sentry.android.core.cache.AndroidEnvelopeCache
 import io.sentry.android.core.performance.AppStartMetrics
 import io.sentry.android.fragment.FragmentLifecycleIntegration
@@ -475,7 +477,7 @@ class SentryAndroidTest {
     fixture.initSut(context = mock<Application>()) { options ->
       optionsRef = options
       options.dsn = "https://key@sentry.io/123"
-      assertEquals(18, options.integrations.size)
+      assertEquals(19, options.integrations.size)
       options.integrations.removeAll {
         it is UncaughtExceptionHandlerIntegration ||
           it is ShutdownHookIntegration ||
@@ -484,6 +486,7 @@ class SentryAndroidTest {
           it is EnvelopeFileObserverIntegration ||
           it is AppLifecycleIntegration ||
           it is AnrIntegration ||
+          it is AnrProfilingIntegration ||
           it is ActivityLifecycleIntegration ||
           it is ActivityBreadcrumbsIntegration ||
           it is UserInteractionIntegration ||
@@ -526,6 +529,19 @@ class SentryAndroidTest {
 
     assertEquals(99, AppStartMetrics.getInstance().sdkInitTimeSpan.startUptimeMs)
     assertEquals(99, AppStartMetrics.getInstance().appStartTimeSpan.startUptimeMs)
+  }
+
+  @Test
+  fun `executor service is not NoOp when AndroidConnectionStatusProvider is initialized`() {
+    var executorServiceIsNoOp = true
+    fixture.initSut(context = context) { options ->
+      options.dsn = "https://key@sentry.io/123"
+      // the config callback runs before initializeIntegrationsAndProcessors, which creates
+      // AndroidConnectionStatusProvider - so if the executor is already real here,
+      // it's guaranteed to be real when the provider calls submitSafe()
+      executorServiceIsNoOp = options.executorService is NoOpSentryExecutorService
+    }
+    assertFalse(executorServiceIsNoOp)
   }
 
   @Test

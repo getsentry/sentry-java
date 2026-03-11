@@ -53,9 +53,6 @@
 
 -keepnames class io.sentry.android.core.ApplicationNotResponding
 
-# protobuf-java lite
-# https://github.com/protocolbuffers/protobuf/blob/5d876c9fec1a6f2feb0750694f803f89312bffff/java/lite.md#r8-rule-to-make-production-app-builds-work
--keep class * extends com.google.protobuf.GeneratedMessageLite { *; }
 
 ##---------------End: proguard configuration for android-core  ----------
 
@@ -79,6 +76,10 @@
 ##---------------Begin: proguard configuration for sentry-android-replay  ----------
 -dontwarn io.sentry.android.replay.ReplayIntegration
 -dontwarn io.sentry.android.replay.DefaultReplayBreadcrumbConverter
+-dontwarn io.sentry.android.replay.util.MaskRenderer
+-dontwarn io.sentry.android.replay.util.ViewsKt
+-dontwarn io.sentry.android.replay.viewhierarchy.ViewHierarchyNode$Companion
+-dontwarn io.sentry.android.replay.viewhierarchy.ViewHierarchyNode
 -keepnames class io.sentry.android.replay.ReplayIntegration
 ##---------------End: proguard configuration for sentry-android-replay  ----------
 

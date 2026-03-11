@@ -376,6 +376,7 @@ class SentryOptionsTest {
     externalOptions.setTag("tag1", "value1")
     externalOptions.setTag("tag2", "value2")
     externalOptions.enableUncaughtExceptionHandler = false
+    externalOptions.sampleRate = 0.3
     externalOptions.tracesSampleRate = 0.5
     externalOptions.profilesSampleRate = 0.5
     externalOptions.addInAppInclude("com.app")
@@ -386,6 +387,8 @@ class SentryOptionsTest {
     externalOptions.addContextTag("requestId")
     externalOptions.proguardUuid = "1234"
     externalOptions.idleTimeout = 1500L
+    externalOptions.shutdownTimeoutMillis = 1499L
+    externalOptions.sessionFlushTimeoutMillis = 1498L
     externalOptions.bundleIds.addAll(
       listOf("12ea7a02-46ac-44c0-a5bb-6d1fd9586411 ", " faa3ab42-b1bd-4659-af8e-1682324aa744")
     )
@@ -433,6 +436,7 @@ class SentryOptionsTest {
     assertEquals(java.net.Proxy.Type.SOCKS, options.proxy!!.type)
     assertEquals(mapOf("tag1" to "value1", "tag2" to "value2"), options.tags)
     assertFalse(options.isEnableUncaughtExceptionHandler)
+    assertEquals(0.3, options.sampleRate)
     assertEquals(0.5, options.tracesSampleRate)
     assertEquals(0.5, options.profilesSampleRate)
     assertEquals(listOf("com.app"), options.inAppIncludes)
@@ -441,6 +445,8 @@ class SentryOptionsTest {
     assertEquals(listOf("userId", "requestId"), options.contextTags)
     assertEquals("1234", options.proguardUuid)
     assertEquals(1500L, options.idleTimeout)
+    assertEquals(1499L, options.shutdownTimeoutMillis)
+    assertEquals(1498L, options.sessionFlushTimeoutMillis)
     assertEquals(
       setOf("12ea7a02-46ac-44c0-a5bb-6d1fd9586411", "faa3ab42-b1bd-4659-af8e-1682324aa744"),
       options.bundleIds,
@@ -586,6 +592,24 @@ class SentryOptionsTest {
     assertNotEquals(cacheDirPathWithoutDsn, options.cacheDirPath)
     assertEquals(cacheDirPathWithoutDsn, options.cacheDirPath!!.substringBeforeLast("/"))
     assertFalse(cacheDirPathWithoutDsn.contains(hash.toString()))
+  }
+
+  @Test
+  fun `when setting dsn with whitespace, it is trimmed and produces the same cache dir path`() {
+    val dsn = "http://key@localhost/proj"
+    val options1 =
+      SentryOptions().apply {
+        setDsn(dsn)
+        cacheDirPath = "${File.separator}test"
+      }
+    val options2 =
+      SentryOptions().apply {
+        setDsn("  $dsn  ")
+        cacheDirPath = "${File.separator}test"
+      }
+
+    assertEquals(dsn, options2.dsn)
+    assertEquals(options1.cacheDirPath, options2.cacheDirPath)
   }
 
   @Test
