@@ -68,7 +68,7 @@ body:
     id: other_error_monitoring_name
     attributes:
       label: Other Error Monitoring Solution Name
-      description: If your using another error monitoring solution side-by-side, please enter the name of the other solution.
+      description: If you're using another error monitoring solution side-by-side, please enter the name of the other solution.
     validations:
       required: false
 
