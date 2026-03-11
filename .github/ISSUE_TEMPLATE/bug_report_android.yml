@@ -61,7 +61,7 @@ body:
       description: Are you using any other error monitoring solution alongside Sentry?
       label: Other Error Monitoring Solution
       options:
-        - "None"
+        - "No"
         - "Bugsnag"
         - "Datadog"
         - "Firebase Crashlytics"
