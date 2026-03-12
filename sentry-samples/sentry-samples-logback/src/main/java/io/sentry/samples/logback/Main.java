@@ -18,6 +18,9 @@ public class Main {
     // MDC tag not listed in logback.xml
     MDC.put("context-tag", "context-tag-value");
 
+    Sentry.setAttribute("user.type", "admin");
+    Sentry.setAttribute("feature.version", 2);
+    Sentry.setAttribute("debug.enabled", true);
     Sentry.addFeatureFlag("my-feature-flag", true);
     LOGGER.warn("important warning");
 

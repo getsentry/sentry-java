@@ -8,6 +8,28 @@
   - Enable via `options.getFeedbackOptions().setUseShakeGesture(true)` or manifest meta-data `io.sentry.feedback.use-shake-gesture`
   - Uses the device's accelerometer — no special permissions required
 
+## 8.35.0
+
+### Fixes
+
+- Android: Remove the dependency on protobuf-lite for tombstones ([#5157](https://github.com/getsentry/sentry-java/pull/5157))
+
+### Features
+
+- Add new experimental option to capture profiles for ANRs ([#4899](https://github.com/getsentry/sentry-java/pull/4899))
+  - This feature will capture a stack profile of the main thread when it gets unresponsive
+  - The profile gets attached to the ANR event on the next app start, providing a flamegraph of the ANR issue on the sentry issue details page
+  - Enable via `options.setAnrProfilingSampleRate(<sample-rate>)` or AndroidManifest.xml: `<meta-data android:name="io.sentry.anr.profiling.sample-rate" android:value="[0.0-1.0]" />`
+  - The sample rate controls the probability of collecting a profile for each detected foreground ANR (0.0 to 1.0, null to disable)
+
+### Behavioral Changes
+
+- Add `enableAnrFingerprinting` option which assigns static fingerprints to ANR events with system-only stacktraces
+  - When enabled, ANRs whose stacktraces contain only system frames (e.g. `java.lang` or `android.os`) are grouped into a single issue instead of creating many separate issues
+  - This will help to reduce overall ANR issue noise in the Sentry dashboard
+  - **IMPORTANT:** This option is enabled by default.
+  - Disable via `options.setEnableAnrFingerprinting(false)` or AndroidManifest.xml: `<meta-data android:name="io.sentry.anr.enable-fingerprinting" android:value="false" />`
+
 ## 8.34.1
 
 ### Fixes
@@ -15,7 +37,6 @@
 - Common: Finalize previous session even when auto session tracking is disabled ([#5154](https://github.com/getsentry/sentry-java/pull/5154))
 - Android: Add `filterTouchesWhenObscured` to prevent Tapjacking on user feedback dialog ([#5155](https://github.com/getsentry/sentry-java/pull/5155))
 - Android: Add proguard rules to prevent error about missing Replay classes ([#5153](https://github.com/getsentry/sentry-java/pull/5153))
-- Android: Remove the dependency on protobuf-lite for tombstones ([#5157](https://github.com/getsentry/sentry-java/pull/5157))
 
 ## 8.34.0
 
@@ -54,14 +75,6 @@
     <meta-data android:name="io.sentry.screenshot.mask-all-images" android:value="true" />
     ```
 - The `ManifestMetaDataReader` now read the `DIST` ([#5107](https://github.com/getsentry/sentry-java/pull/5107))
-- Add new experimental option to capture profiles for ANRs ([#4899](https://github.com/getsentry/sentry-java/pull/4899))
-  - This feature will capture a stack profile of the main thread when it gets unresponsive
-  - The profile gets attached to the ANR event on the next app start, providing a flamegraph of the ANR issue on the sentry issue details page
-  - Enable via `options.setAnrProfilingSampleRate(<sample-rate>)` or AndroidManifest.xml: `<meta-data android:name="io.sentry.anr.profiling.sample-rate" android:value="[0.0-1.0]" />`
-  - The sample rate controls the probability of collecting a profile for each detected foreground ANR (0.0 to 1.0, null to disable)
-- Add `enableAnrFingerprinting` option to reduce ANR noise by assigning static fingerprints to ANR events with system-only stacktraces
-  - When enabled, ANRs whose stacktraces contain only system frames (e.g. `java.lang` or `android.os`) are grouped into a single issue instead of creating many separate issues
-  - Enable via `options.setEnableAnrFingerprinting(true)` or AndroidManifest.xml: `<meta-data android:name="io.sentry.anr.enable-fingerprinting" android:value="true" />`
 
 ### Fixes
 

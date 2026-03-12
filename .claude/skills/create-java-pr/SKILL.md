@@ -123,6 +123,12 @@ Skip this step for standalone PRs.
 
 After creating the PR, update the PR description on **every other PR in the stack — including the collection branch PR** — so all PRs have the same up-to-date stack list. Follow the format and commands in `.cursor/rules/pr.mdc` § "Stack List in PR Description".
 
+**Important:** When updating PR bodies, never use shell redirects (`>`, `>>`) or pipes (`|`) or compound commands (`&&`). These create compound shell expressions that won't match permission patterns. Instead:
+- Use `gh pr view <NUMBER> --json body --jq '.body'` to get the body (output returned directly)
+- Use the `Write` tool to save it to a temp file
+- Use the `Edit` tool to modify the temp file
+- Use `gh pr edit <NUMBER> --body-file /tmp/pr-body.md` to update
+
 ## Step 6: Update Changelog
 
 First, determine whether a changelog entry is needed. **Skip this step** (and go straight to "No changelog needed" below) if the changes are not user-facing, for example:
@@ -173,8 +179,6 @@ git push
 
 If no changelog entry is needed, add `#skip-changelog` to the PR description to disable the changelog CI check:
 
-```bash
-gh pr view <PR_NUMBER> --json body --jq '.body' > /tmp/pr-body.md
-printf '\n#skip-changelog\n' >> /tmp/pr-body.md
-gh pr edit <PR_NUMBER> --body-file /tmp/pr-body.md
-```
+1. Get the current body: `gh pr view <PR_NUMBER> --json body --jq '.body'`
+2. Use the `Write` tool to save the output to `/tmp/pr-body.md`, appending `\n#skip-changelog\n` at the end
+3. Update: `gh pr edit <PR_NUMBER> --body-file /tmp/pr-body.md`
