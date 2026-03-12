@@ -158,7 +158,9 @@ internal object ComposeViewHierarchyNode {
         shouldMask = true,
         isImportantForContentCapture = false, // will be set by children
         isVisible =
-          !SentryLayoutNodeHelper.isTransparent(node) && visibleRect.height() > 0 && visibleRect.width() > 0,
+          !SentryLayoutNodeHelper.isTransparent(node) &&
+            visibleRect.height() > 0 &&
+            visibleRect.width() > 0,
         visibleRect = visibleRect,
       )
     }
