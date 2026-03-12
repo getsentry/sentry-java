@@ -13,8 +13,12 @@
   - The profile gets attached to the ANR event on the next app start, providing a flamegraph of the ANR issue on the sentry issue details page
   - Enable via `options.setAnrProfilingSampleRate(<sample-rate>)` or AndroidManifest.xml: `<meta-data android:name="io.sentry.anr.profiling.sample-rate" android:value="[0.0-1.0]" />`
   - The sample rate controls the probability of collecting a profile for each detected foreground ANR (0.0 to 1.0, null to disable)
-- **Breaking:** Add `enableAnrFingerprinting` option to reduce ANR noise by assigning static fingerprints to ANR events with system-only stacktraces
+
+### Behavioral Changes
+
+- Add `enableAnrFingerprinting` option which assigns static fingerprints to ANR events with system-only stacktraces
   - When enabled, ANRs whose stacktraces contain only system frames (e.g. `java.lang` or `android.os`) are grouped into a single issue instead of creating many separate issues
+  - This will help to reduce overall ANR issue noise in the Sentry dashboard
   - **IMPORTANT:** This option is enabled by default.
   - Disable via `options.setEnableAnrFingerprinting(false)` or AndroidManifest.xml: `<meta-data android:name="io.sentry.anr.enable-fingerprinting" android:value="false" />`
 
