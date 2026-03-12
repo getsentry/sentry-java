@@ -18,7 +18,7 @@
 
 - Add `enableAnrFingerprinting` option which assigns static fingerprints to ANR events with system-only stacktraces
   - When enabled, ANRs whose stacktraces contain only system frames (e.g. `java.lang` or `android.os`) are grouped into a single issue instead of creating many separate issues
-  - This will help to reduce overall "ANR issue noise" on sentry.io
+  - This will help to reduce overall ANR issue noise in the Sentry dashboard
   - **IMPORTANT:** This option is enabled by default.
   - Disable via `options.setEnableAnrFingerprinting(false)` or AndroidManifest.xml: `<meta-data android:name="io.sentry.anr.enable-fingerprinting" android:value="false" />`
 
