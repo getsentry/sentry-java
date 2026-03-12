@@ -70,6 +70,7 @@ kotlin { explicitApi() }
 
 dependencies {
   api(projects.sentry)
+  api(projects.sentryCompose)
 
   compileOnly(libs.androidx.compose.ui.replay)
   implementation(kotlin(Config.kotlinStdLib, Config.kotlinStdLibVersionAndroid))

@@ -30,6 +30,7 @@ import io.sentry.android.replay.util.toOpaque
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.GenericViewHierarchyNode
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.ImageViewHierarchyNode
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.TextViewHierarchyNode
+import io.sentry.compose.SentryLayoutNodeHelper
 import java.lang.ref.WeakReference
 import java.lang.reflect.Method
 
@@ -157,15 +158,13 @@ internal object ComposeViewHierarchyNode {
         shouldMask = true,
         isImportantForContentCapture = false, // will be set by children
         isVisible =
-          !node.outerCoordinator.isTransparent() &&
-            visibleRect.height() > 0 &&
-            visibleRect.width() > 0,
+          !SentryLayoutNodeHelper.isTransparent(node) && visibleRect.height() > 0 && visibleRect.width() > 0,
         visibleRect = visibleRect,
       )
     }
 
     val isVisible =
-      !node.outerCoordinator.isTransparent() &&
+      !SentryLayoutNodeHelper.isTransparent(node) &&
         (semantics == null || !semantics.contains(SemanticsProperties.InvisibleToUser)) &&
         visibleRect.height() > 0 &&
         visibleRect.width() > 0
@@ -301,7 +300,7 @@ internal object ComposeViewHierarchyNode {
     options: SentryMaskingOptions,
     logger: ILogger,
   ) {
-    val children = this.children
+    val children = SentryLayoutNodeHelper.getChildren(this)
     if (children.isEmpty()) {
       return
     }

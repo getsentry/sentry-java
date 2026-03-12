@@ -2,6 +2,7 @@ import io.gitlab.arturbosch.detekt.Detekt
 import org.jetbrains.dokka.gradle.DokkaTask
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
   alias(libs.plugins.kotlin.multiplatform)
@@ -116,6 +117,80 @@ android {
   androidComponents.beforeVariants {
     it.enable = !Config.Android.shouldSkipDebugVariant(it.buildType)
   }
+}
+
+// Compile Compose110Helper.kt against Compose 1.10 where internal LayoutNode accessors
+// are mangled with module name "ui" (e.g. getChildren$ui()) instead of "ui_release"
+val compose110Classpath by
+  configurations.creating {
+    isCanBeConsumed = false
+    isCanBeResolved = true
+    attributes {
+      attribute(Attribute.of("artifactType", String::class.java), "android-classes-jar")
+    }
+  }
+
+val compose110KotlinCompiler by
+  configurations.creating {
+    isCanBeConsumed = false
+    isCanBeResolved = true
+  }
+
+dependencies {
+  //noinspection UseTomlInstead
+  compose110Classpath("androidx.compose.ui:ui-android:1.10.0")
+  //noinspection UseTomlInstead
+  compose110KotlinCompiler("org.jetbrains.kotlin:kotlin-compiler-embeddable:2.2.0")
+}
+
+val compileCompose110 by
+  tasks.registering(JavaExec::class) {
+    val sourceDir = file("src/compose110/kotlin")
+    val outputDir = layout.buildDirectory.dir("classes/kotlin/compose110")
+    val compileClasspathFiles = compose110Classpath.incoming.files
+
+    inputs.dir(sourceDir)
+    inputs.files(compileClasspathFiles)
+    outputs.dir(outputDir)
+
+    classpath = compose110KotlinCompiler
+    mainClass.set("org.jetbrains.kotlin.cli.jvm.K2JVMCompiler")
+
+    argumentProviders.add(
+      CommandLineArgumentProvider {
+        val cp = compileClasspathFiles.files.joinToString(File.pathSeparator)
+        outputDir.get().asFile.mkdirs()
+        listOf(
+          sourceDir.absolutePath,
+          "-classpath",
+          cp,
+          "-d",
+          outputDir.get().asFile.absolutePath,
+          "-jvm-target",
+          "1.8",
+          "-language-version",
+          "1.9",
+          "-opt-in=androidx.compose.ui.ExperimentalComposeUiApi",
+          "-Xsuppress-version-warnings",
+          "-no-stdlib",
+        )
+      }
+    )
+  }
+
+// Make compose110 output available to the Android Kotlin compilation
+val compose110Output = files(compileCompose110.map { it.outputs.files })
+
+tasks.withType<KotlinCompile>().configureEach {
+  if (name == "compileReleaseKotlinAndroid" || name == "compileDebugKotlinAndroid") {
+    dependsOn(compileCompose110)
+    libraries.from(compose110Output)
+  }
+}
+
+// Include compose110 classes in the AAR
+android.libraryVariants.all {
+  registerPreJavacGeneratedBytecode(project.files(compileCompose110.map { it.outputs.files }))
 }
 
 tasks.withType<Detekt>().configureEach {
