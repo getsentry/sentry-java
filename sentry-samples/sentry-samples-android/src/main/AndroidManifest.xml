@@ -227,7 +227,7 @@
 
     <meta-data
       android:name="io.sentry.session-replay.screenshot-strategy"
-      android:value="canvas" />
+      android:value="pixelCopy" />
     <meta-data
       android:name="io.sentry.session-replay.session-sample-rate"
       android:value="1" />

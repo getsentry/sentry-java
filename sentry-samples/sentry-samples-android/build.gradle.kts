@@ -140,6 +140,8 @@ dependencies {
   implementation(libs.androidx.appcompat)
   implementation(libs.androidx.constraintlayout)
   implementation(libs.androidx.fragment.ktx)
+  implementation(platform(libs.androidx.compose.bom))
+  implementation(libs.androidx.compose.ui)
   implementation(libs.androidx.compose.foundation)
   implementation(libs.androidx.compose.foundation.layout)
   implementation(libs.androidx.compose.material3)
