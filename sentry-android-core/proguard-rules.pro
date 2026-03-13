@@ -54,9 +54,6 @@
 
 -keepnames class io.sentry.android.core.ApplicationNotResponding
 
-# protobuf-java lite
-# https://github.com/protocolbuffers/protobuf/blob/5d876c9fec1a6f2feb0750694f803f89312bffff/java/lite.md#r8-rule-to-make-production-app-builds-work
--keep class * extends com.google.protobuf.GeneratedMessageLite { *; }
 
 ##---------------End: proguard configuration for android-core  ----------
 
