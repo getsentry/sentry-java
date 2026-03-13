@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Android: Identify and correctly structure Java/Kotlin frames in mixed Tombstone stack traces. ([#5116](https://github.com/getsentry/sentry-java/pull/5116))
+
 ## 8.35.0
 
 ### Fixes
