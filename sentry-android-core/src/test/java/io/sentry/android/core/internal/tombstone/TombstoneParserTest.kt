@@ -440,39 +440,29 @@ class TombstoneParserTest {
 
   private fun parseTombstoneWithJavaFunctionName(functionName: String): io.sentry.SentryEvent {
     val tombstone =
-      TombstoneProtos.Tombstone.newBuilder()
-        .setPid(1234)
-        .setTid(1234)
-        .setSignalInfo(
-          TombstoneProtos.Signal.newBuilder()
-            .setNumber(11)
-            .setName("SIGSEGV")
-            .setCode(1)
-            .setCodeName("SEGV_MAPERR")
-        )
-        .putThreads(
-          1234,
-          TombstoneProtos.Thread.newBuilder()
-            .setId(1234)
-            .setName("main")
-            .addCurrentBacktrace(
-              TombstoneProtos.BacktraceFrame.newBuilder()
-                .setPc(0x1000)
-                .setFunctionName(functionName)
-                .setFileName("/data/app/base.apk!classes.oat")
-            )
-            .build(),
+      Tombstone.Builder()
+        .pid(1234)
+        .tid(1234)
+        .signal(Signal(11, "SIGSEGV", 1, "SEGV_MAPERR", false, 0, 0, false, 0, null))
+        .addThread(
+          TombstoneThread(
+            1234,
+            "main",
+            emptyList(),
+            emptyList(),
+            emptyList(),
+            listOf(
+              BacktraceFrame(0, 0x1000, 0, functionName, 0, "/data/app/base.apk!classes.oat", 0, "")
+            ),
+            emptyList(),
+            0,
+            0,
+          )
         )
         .build()
 
-    val parser =
-      TombstoneParser(
-        ByteArrayInputStream(tombstone.toByteArray()),
-        inAppIncludes,
-        inAppExcludes,
-        nativeLibraryDir,
-      )
-    return parser.parse()
+    val parser = TombstoneParser(inAppIncludes, inAppExcludes, nativeLibraryDir)
+    return parser.parse(tombstone)
   }
 
   private fun assertTombstoneParsesCorrectly(tombstoneResource: String) {
@@ -555,7 +545,8 @@ class TombstoneParserTest {
     val writer = StringWriter()
     val jsonWriter = JsonObjectWriter(writer, 100)
     jsonWriter.beginObject()
-    for (thread in event.threads!!) {
+    // Sort threads by ID for deterministic output (epitaph uses HashMap for threads)
+    for (thread in event.threads!!.sortedBy { it.id }) {
       val javaFrames = thread.stacktrace!!.frames!!.filter { it.platform == "java" }
       if (javaFrames.isEmpty()) continue
       jsonWriter.name(thread.id.toString())
