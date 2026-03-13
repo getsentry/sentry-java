@@ -67,7 +67,6 @@ class TombstoneParserTest {
     assertTombstoneParsesCorrectly("/tombstone.pb.gz")
   }
 
-
   @Test
   fun `parses tombstone_r8 with OAT frames into Event`() {
     assertTombstoneParsesCorrectly("/tombstone_r8.pb.gz")
