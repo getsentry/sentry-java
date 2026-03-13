@@ -3,7 +3,6 @@ package io.sentry;
 import io.sentry.protocol.SentryStackFrame;
 import io.sentry.protocol.SentryStackTrace;
 import io.sentry.protocol.SentryThread;
-import io.sentry.util.Objects;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -26,8 +25,7 @@ public final class SentryThreadFactory {
    * @param sentryStackTraceFactory the SentryStackTraceFactory
    */
   public SentryThreadFactory(final @NotNull SentryStackTraceFactory sentryStackTraceFactory) {
-    this.sentryStackTraceFactory =
-        Objects.requireNonNull(sentryStackTraceFactory, "The SentryStackTraceFactory is required.");
+    this.sentryStackTraceFactory = sentryStackTraceFactory;
   }
 
   /**

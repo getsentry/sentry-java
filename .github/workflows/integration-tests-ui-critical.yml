@@ -36,7 +36,7 @@ jobs:
           java-version: '17'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@f29f5a9d7b09a7c6b29859002d29d24e1674c884
+        uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
@@ -44,7 +44,7 @@ jobs:
         run: make assembleUiTestCriticalRelease
 
       - name: Upload APK artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ${{env.APK_ARTIFACT_NAME}}
           path: "${{env.BASE_PATH}}/${{env.BUILD_PATH}}/${{env.APK_NAME}}"
@@ -114,7 +114,7 @@ jobs:
           script: echo "Generated AVD snapshot for caching."
 
       - name: Download APK artifact
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: ${{env.APK_ARTIFACT_NAME}}
 
@@ -141,7 +141,7 @@ jobs:
 
       - name: Upload Maestro test results
         if: ${{ always() }}
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: maestro-logs-${{ matrix.api-level }}-${{ matrix.arch }}-${{ matrix.target }}
           path: "${{env.BASE_PATH}}/maestro-logs"
