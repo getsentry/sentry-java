@@ -121,6 +121,7 @@ sentry {
   autoUploadProguardMapping = false
   autoUploadNativeSymbols = false
   autoUploadSourceContext = false
+  autoInstallation { enabled = false }
 }
 
 dependencies {
@@ -131,8 +132,7 @@ dependencies {
   implementation(projects.sentryAndroid)
   implementation(projects.sentryAndroidFragment)
   implementation(projects.sentryAndroidTimber)
-  // implementation(projects.sentryCompose) // TODO: re-enable, disabled due to R8 duplicate class
-  // error with KMP module
+  implementation(projects.sentryCompose)
   implementation(projects.sentryKotlinExtensions)
   implementation(projects.sentryOkhttp)
   implementation(projects.sentrySpotlight)
