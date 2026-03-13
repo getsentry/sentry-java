@@ -1290,6 +1290,50 @@ class ScopesTest {
 
   // endregion
 
+  // region setAttribute tests
+  @Test
+  fun `when setAttribute is called on disabled client, do nothing`() {
+    val scopes = generateScopes()
+    var scope: IScope? = null
+    scopes.configureScope { scope = it }
+    scopes.close()
+
+    scopes.setAttribute("test", "test")
+    assertEquals(0, scope?.attributes?.count())
+  }
+
+  @Test
+  fun `when setAttribute with SentryAttribute is called on disabled client, do nothing`() {
+    val scopes = generateScopes()
+    var scope: IScope? = null
+    scopes.configureScope { scope = it }
+    scopes.close()
+
+    scopes.setAttribute(SentryAttribute.stringAttribute("test", "test"))
+    assertEquals(0, scope?.attributes?.count())
+  }
+
+  @Test
+  fun `when setAttributes is called on disabled client, do nothing`() {
+    val scopes = generateScopes()
+    var scope: IScope? = null
+    scopes.configureScope { scope = it }
+    scopes.close()
+
+    scopes.setAttributes(SentryAttributes.of(SentryAttribute.stringAttribute("test", "test")))
+    assertEquals(0, scope?.attributes?.count())
+  }
+
+  @Test
+  fun `when removeAttribute is called on disabled client, do nothing`() {
+    val scopes = generateScopes()
+    scopes.close()
+
+    scopes.removeAttribute("test")
+  }
+
+  // endregion
+
   // region captureEnvelope tests
   @Test
   fun `when captureEnvelope is called and envelope is null, throws IllegalArgumentException`() {
@@ -2726,10 +2770,12 @@ class ScopesTest {
             SentryAttribute.booleanAttribute("boolattr", true),
             SentryAttribute.integerAttribute("intattr", 17),
             SentryAttribute.doubleAttribute("doubleattr", 3.8),
+            SentryAttribute.arrayAttribute("arrayattr", listOf("a", "b")),
             SentryAttribute.named("namedstrattr", "namedstrval"),
             SentryAttribute.named("namedboolattr", false),
             SentryAttribute.named("namedintattr", 18),
             SentryAttribute.named("nameddoubleattr", 4.9),
+            SentryAttribute.named("namedarrayattr", listOf("x", "y")),
           )
         ),
         "log message",
@@ -2758,6 +2804,10 @@ class ScopesTest {
           assertEquals(3.8, doubleattr.value)
           assertEquals("double", doubleattr.type)
 
+          val arrayattr = it.attributes?.get("arrayattr")!!
+          assertEquals(listOf("a", "b"), arrayattr.value)
+          assertEquals("array", arrayattr.type)
+
           val namedstrattr = it.attributes?.get("namedstrattr")!!
           assertEquals("namedstrval", namedstrattr.value)
           assertEquals("string", namedstrattr.type)
@@ -2773,6 +2823,10 @@ class ScopesTest {
           val nameddoubleattr = it.attributes?.get("nameddoubleattr")!!
           assertEquals(4.9, nameddoubleattr.value)
           assertEquals("double", nameddoubleattr.type)
+
+          val namedarrayattr = it.attributes?.get("namedarrayattr")!!
+          assertEquals(listOf("x", "y"), namedarrayattr.value)
+          assertEquals("array", namedarrayattr.type)
         },
         anyOrNull(),
       )
@@ -3460,10 +3514,12 @@ class ScopesTest {
             SentryAttribute.booleanAttribute("boolattr", true),
             SentryAttribute.integerAttribute("intattr", 17),
             SentryAttribute.doubleAttribute("doubleattr", 3.8),
+            SentryAttribute.arrayAttribute("arrayattr", listOf("a", "b")),
             SentryAttribute.named("namedstrattr", "namedstrval"),
             SentryAttribute.named("namedboolattr", false),
             SentryAttribute.named("namedintattr", 18),
             SentryAttribute.named("nameddoubleattr", 4.9),
+            SentryAttribute.named("namedarrayattr", listOf("x", "y")),
           )
         ),
       )
@@ -3492,6 +3548,10 @@ class ScopesTest {
           assertEquals(3.8, doubleattr.value)
           assertEquals("double", doubleattr.type)
 
+          val arrayattr = it.attributes?.get("arrayattr")!!
+          assertEquals(listOf("a", "b"), arrayattr.value)
+          assertEquals("array", arrayattr.type)
+
           val namedstrattr = it.attributes?.get("namedstrattr")!!
           assertEquals("namedstrval", namedstrattr.value)
           assertEquals("string", namedstrattr.type)
@@ -3507,6 +3567,10 @@ class ScopesTest {
           val nameddoubleattr = it.attributes?.get("nameddoubleattr")!!
           assertEquals(4.9, nameddoubleattr.value)
           assertEquals("double", nameddoubleattr.type)
+
+          val namedarrayattr = it.attributes?.get("namedarrayattr")!!
+          assertEquals(listOf("x", "y"), namedarrayattr.value)
+          assertEquals("array", namedarrayattr.type)
         },
         anyOrNull(),
         anyOrNull(),
@@ -3629,10 +3693,12 @@ class ScopesTest {
             SentryAttribute.booleanAttribute("boolattr", true),
             SentryAttribute.integerAttribute("intattr", 17),
             SentryAttribute.doubleAttribute("doubleattr", 3.8),
+            SentryAttribute.arrayAttribute("arrayattr", listOf("a", "b")),
             SentryAttribute.named("namedstrattr", "namedstrval"),
             SentryAttribute.named("namedboolattr", false),
             SentryAttribute.named("namedintattr", 18),
             SentryAttribute.named("nameddoubleattr", 4.9),
+            SentryAttribute.named("namedarrayattr", listOf("x", "y")),
           )
         ),
       )
@@ -3661,6 +3727,10 @@ class ScopesTest {
           assertEquals(3.8, doubleattr.value)
           assertEquals("double", doubleattr.type)
 
+          val arrayattr = it.attributes?.get("arrayattr")!!
+          assertEquals(listOf("a", "b"), arrayattr.value)
+          assertEquals("array", arrayattr.type)
+
           val namedstrattr = it.attributes?.get("namedstrattr")!!
           assertEquals("namedstrval", namedstrattr.value)
           assertEquals("string", namedstrattr.type)
@@ -3676,6 +3746,10 @@ class ScopesTest {
           val nameddoubleattr = it.attributes?.get("nameddoubleattr")!!
           assertEquals(4.9, nameddoubleattr.value)
           assertEquals("double", nameddoubleattr.type)
+
+          val namedarrayattr = it.attributes?.get("namedarrayattr")!!
+          assertEquals(listOf("x", "y"), namedarrayattr.value)
+          assertEquals("array", namedarrayattr.type)
         },
         anyOrNull(),
         anyOrNull(),
@@ -3798,10 +3872,12 @@ class ScopesTest {
             SentryAttribute.booleanAttribute("boolattr", true),
             SentryAttribute.integerAttribute("intattr", 17),
             SentryAttribute.doubleAttribute("doubleattr", 3.8),
+            SentryAttribute.arrayAttribute("arrayattr", listOf("a", "b")),
             SentryAttribute.named("namedstrattr", "namedstrval"),
             SentryAttribute.named("namedboolattr", false),
             SentryAttribute.named("namedintattr", 18),
             SentryAttribute.named("nameddoubleattr", 4.9),
+            SentryAttribute.named("namedarrayattr", listOf("x", "y")),
           )
         ),
       )
@@ -3830,6 +3906,10 @@ class ScopesTest {
           assertEquals(3.8, doubleattr.value)
           assertEquals("double", doubleattr.type)
 
+          val arrayattr = it.attributes?.get("arrayattr")!!
+          assertEquals(listOf("a", "b"), arrayattr.value)
+          assertEquals("array", arrayattr.type)
+
           val namedstrattr = it.attributes?.get("namedstrattr")!!
           assertEquals("namedstrval", namedstrattr.value)
           assertEquals("string", namedstrattr.type)
@@ -3845,6 +3925,10 @@ class ScopesTest {
           val nameddoubleattr = it.attributes?.get("nameddoubleattr")!!
           assertEquals(4.9, nameddoubleattr.value)
           assertEquals("double", nameddoubleattr.type)
+
+          val namedarrayattr = it.attributes?.get("namedarrayattr")!!
+          assertEquals(listOf("x", "y"), namedarrayattr.value)
+          assertEquals("array", namedarrayattr.type)
         },
         anyOrNull(),
         anyOrNull(),

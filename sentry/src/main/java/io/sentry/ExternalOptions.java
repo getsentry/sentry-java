@@ -23,6 +23,7 @@ public final class ExternalOptions {
   private @Nullable Boolean enableUncaughtExceptionHandler;
   private @Nullable Boolean debug;
   private @Nullable Boolean enableDeduplication;
+  private @Nullable Double sampleRate;
   private @Nullable Double tracesSampleRate;
   private @Nullable Double profilesSampleRate;
   private @Nullable SentryOptions.RequestSize maxRequestBodySize;
@@ -34,6 +35,8 @@ public final class ExternalOptions {
   private final @NotNull List<String> contextTags = new CopyOnWriteArrayList<>();
   private @Nullable String proguardUuid;
   private @Nullable Long idleTimeout;
+  private @Nullable Long shutdownTimeoutMillis;
+  private @Nullable Long sessionFlushTimeoutMillis;
   private final @NotNull Set<Class<? extends Throwable>> ignoredExceptionsForType =
       new CopyOnWriteArraySet<>();
   private @Nullable List<String> ignoredErrors;
@@ -77,6 +80,7 @@ public final class ExternalOptions {
         propertiesProvider.getBooleanProperty("uncaught.handler.enabled"));
     options.setPrintUncaughtStackTrace(
         propertiesProvider.getBooleanProperty("uncaught.handler.print-stacktrace"));
+    options.setSampleRate(propertiesProvider.getDoubleProperty("sample-rate"));
     options.setTracesSampleRate(propertiesProvider.getDoubleProperty("traces-sample-rate"));
     options.setProfilesSampleRate(propertiesProvider.getDoubleProperty("profiles-sample-rate"));
     options.setDebug(propertiesProvider.getBooleanProperty("debug"));
@@ -135,6 +139,9 @@ public final class ExternalOptions {
       options.addBundleId(bundleId);
     }
     options.setIdleTimeout(propertiesProvider.getLongProperty("idle-timeout"));
+    options.setShutdownTimeoutMillis(propertiesProvider.getLongProperty("shutdown-timeout-millis"));
+    options.setSessionFlushTimeoutMillis(
+        propertiesProvider.getLongProperty("session-flush-timeout-millis"));
 
     options.setIgnoredErrors(propertiesProvider.getListOrNull("ignored-errors"));
 
@@ -295,6 +302,14 @@ public final class ExternalOptions {
     this.enableDeduplication = enableDeduplication;
   }
 
+  public @Nullable Double getSampleRate() {
+    return sampleRate;
+  }
+
+  public void setSampleRate(final @Nullable Double sampleRate) {
+    this.sampleRate = sampleRate;
+  }
+
   public @Nullable Double getTracesSampleRate() {
     return tracesSampleRate;
   }
@@ -398,6 +413,22 @@ public final class ExternalOptions {
 
   public void setIdleTimeout(final @Nullable Long idleTimeout) {
     this.idleTimeout = idleTimeout;
+  }
+
+  public @Nullable Long getShutdownTimeoutMillis() {
+    return shutdownTimeoutMillis;
+  }
+
+  public void setShutdownTimeoutMillis(final @Nullable Long shutdownTimeoutMillis) {
+    this.shutdownTimeoutMillis = shutdownTimeoutMillis;
+  }
+
+  public @Nullable Long getSessionFlushTimeoutMillis() {
+    return sessionFlushTimeoutMillis;
+  }
+
+  public void setSessionFlushTimeoutMillis(final @Nullable Long sessionFlushTimeoutMillis) {
+    this.sessionFlushTimeoutMillis = sessionFlushTimeoutMillis;
   }
 
   public @Nullable List<String> getIgnoredErrors() {

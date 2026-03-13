@@ -441,6 +441,21 @@ public final class Scopes implements IScopes {
             }
           }
         }
+        for (EventProcessor eventProcessor : getOptions().getEventProcessors()) {
+          if (eventProcessor instanceof Closeable) {
+            try {
+              ((Closeable) eventProcessor).close();
+            } catch (Throwable e) {
+              getOptions()
+                  .getLogger()
+                  .log(
+                      SentryLevel.WARNING,
+                      "Failed to close the event processor {}.",
+                      eventProcessor,
+                      e);
+            }
+          }
+        }
 
         configureScope(scope -> scope.clear());
         configureScope(ScopeType.ISOLATION, scope -> scope.clear());
@@ -1227,6 +1242,56 @@ public final class Scopes implements IScopes {
   @Override
   public @NotNull IMetricsApi metrics() {
     return metrics;
+  }
+
+  @Override
+  public void setAttribute(final @Nullable String key, final @Nullable Object value) {
+    if (!isEnabled()) {
+      getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.WARNING, "Instance is disabled and this 'setAttribute' call is a no-op.");
+    } else {
+      getCombinedScopeView().setAttribute(key, value);
+    }
+  }
+
+  @Override
+  public void setAttribute(final @Nullable SentryAttribute attribute) {
+    if (!isEnabled()) {
+      getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.WARNING, "Instance is disabled and this 'setAttribute' call is a no-op.");
+    } else {
+      getCombinedScopeView().setAttribute(attribute);
+    }
+  }
+
+  @Override
+  public void setAttributes(final @Nullable SentryAttributes attributes) {
+    if (!isEnabled()) {
+      getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "Instance is disabled and this 'setAttributes' call is a no-op.");
+    } else {
+      getCombinedScopeView().setAttributes(attributes);
+    }
+  }
+
+  @Override
+  public void removeAttribute(final @Nullable String key) {
+    if (!isEnabled()) {
+      getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "Instance is disabled and this 'removeAttribute' call is a no-op.");
+    } else {
+      getCombinedScopeView().removeAttribute(key);
+    }
   }
 
   @Override

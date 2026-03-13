@@ -102,6 +102,11 @@ class ExternalOptionsTest {
   }
 
   @Test
+  fun `creates options with sampleRate using external properties`() {
+    withPropertiesFile("sample-rate=0.2") { assertEquals(0.2, it.sampleRate) }
+  }
+
+  @Test
   fun `creates options with tracesSampleRate using external properties`() {
     withPropertiesFile("traces-sample-rate=0.2") { assertEquals(0.2, it.tracesSampleRate) }
   }
@@ -173,6 +178,20 @@ class ExternalOptionsTest {
   @Test
   fun `creates options with idleTimeout using external properties`() {
     withPropertiesFile("idle-timeout=2000") { assertEquals(2000L, it.idleTimeout) }
+  }
+
+  @Test
+  fun `creates options with shutdownTimeoutMillis using external properties`() {
+    withPropertiesFile("shutdown-timeout-millis=2000") {
+      assertEquals(2000L, it.shutdownTimeoutMillis)
+    }
+  }
+
+  @Test
+  fun `creates options with sessionFlushTimeoutMillis using external properties`() {
+    withPropertiesFile("session-flush-timeout-millis=2000") {
+      assertEquals(2000L, it.sessionFlushTimeoutMillis)
+    }
   }
 
   @Test

@@ -4,8 +4,93 @@
 
 ### Fixes
 
+- Android: Identify and correctly structure Java/Kotlin frames in mixed Tombstone stack traces. ([#5116](https://github.com/getsentry/sentry-java/pull/5116))
+
+## 8.35.0
+
+### Fixes
+
+- Android: Remove the dependency on protobuf-lite for tombstones ([#5157](https://github.com/getsentry/sentry-java/pull/5157))
+
+### Features
+
+- Add new experimental option to capture profiles for ANRs ([#4899](https://github.com/getsentry/sentry-java/pull/4899))
+  - This feature will capture a stack profile of the main thread when it gets unresponsive
+  - The profile gets attached to the ANR event on the next app start, providing a flamegraph of the ANR issue on the sentry issue details page
+  - Enable via `options.setAnrProfilingSampleRate(<sample-rate>)` or AndroidManifest.xml: `<meta-data android:name="io.sentry.anr.profiling.sample-rate" android:value="[0.0-1.0]" />`
+  - The sample rate controls the probability of collecting a profile for each detected foreground ANR (0.0 to 1.0, null to disable)
+
+### Behavioral Changes
+
+- Add `enableAnrFingerprinting` option which assigns static fingerprints to ANR events with system-only stacktraces
+  - When enabled, ANRs whose stacktraces contain only system frames (e.g. `java.lang` or `android.os`) are grouped into a single issue instead of creating many separate issues
+  - This will help to reduce overall ANR issue noise in the Sentry dashboard
+  - **IMPORTANT:** This option is enabled by default.
+  - Disable via `options.setEnableAnrFingerprinting(false)` or AndroidManifest.xml: `<meta-data android:name="io.sentry.anr.enable-fingerprinting" android:value="false" />`
+
+## 8.34.1
+
+### Fixes
+
+- Common: Finalize previous session even when auto session tracking is disabled ([#5154](https://github.com/getsentry/sentry-java/pull/5154))
+- Android: Add `filterTouchesWhenObscured` to prevent Tapjacking on user feedback dialog ([#5155](https://github.com/getsentry/sentry-java/pull/5155))
+- Android: Add proguard rules to prevent error about missing Replay classes ([#5153](https://github.com/getsentry/sentry-java/pull/5153))
+
+## 8.34.0
+
+### Features
+
+- Allow configuring shutdown and session flush timeouts externally ([#4641](https://github.com/getsentry/sentry-java/pull/4641))
+  - `sentry.properties`: `shutdown-timeout-millis`, `session-flush-timeout-millis`
+  - Environment variables: `SENTRY_SHUTDOWN_TIMEOUT_MILLIS`, `SENTRY_SESSION_FLUSH_TIMEOUT_MILLIS`
+  - Spring Boot `application.properties`: `sentry.shutdownTimeoutMillis`, `sentry.sessionFlushTimeoutMillis`
+- Add scope-level attributes API ([#5118](https://github.com/getsentry/sentry-java/pull/5118)) via ([#5148](https://github.com/getsentry/sentry-java/pull/5148))
+  - Automatically include scope attributes in logs and metrics ([#5120](https://github.com/getsentry/sentry-java/pull/5120))
+  - New APIs are `Sentry.setAttribute`, `Sentry.setAttributes`, `Sentry.removeAttribute`
+- Support collections and arrays in attribute type inference ([#5124](https://github.com/getsentry/sentry-java/pull/5124))
+- Add support for `SENTRY_SAMPLE_RATE` environment variable / `sample-rate` property ([#5112](https://github.com/getsentry/sentry-java/pull/5112))
+- Create `sentry-opentelemetry-otlp` and `sentry-opentelemetry-otlp-spring` modules for combining OpenTelemetry SDK OTLP export with Sentry SDK ([#5100](https://github.com/getsentry/sentry-java/pull/5100))
+  - OpenTelemetry is configured to send spans to Sentry directly using an OTLP endpoint.
+  - Sentry only uses trace and span ID from OpenTelemetry (via `OpenTelemetryOtlpEventProcessor`) but will not send spans through OpenTelemetry nor use OpenTelemetry `Context` for `Scopes` propagation.
+  - See the OTLP setup docs for [Java](https://docs.sentry.io/platforms/java/opentelemetry/setup/otlp/) and [Spring Boot](https://docs.sentry.io/platforms/java/guides/spring-boot/opentelemetry/setup/otlp/) for installation and configuration instructions.
+- Add screenshot masking support using view hierarchy ([#5077](https://github.com/getsentry/sentry-java/pull/5077))
+  - Masks sensitive content (text, images) in error screenshots using the same view hierarchy approach as Session Replay
+  - Requires the `sentry-android-replay` module to be present at runtime for masking to work
+  - Enable via code:
+    ```kotlin
+    SentryAndroid.init(context) { options ->
+        options.isAttachScreenshot = true
+        options.screenshot.setMaskAllText(true)
+        options.screenshot.setMaskAllImages(true)
+        // Or mask specific view classes
+        options.screenshot.addMaskViewClass("com.example.MyCustomView")
+    }
+    ```
+  - Or via `AndroidManifest.xml`:
+    ```xml
+    <meta-data android:name="io.sentry.attach-screenshot" android:value="true" />
+    <meta-data android:name="io.sentry.screenshot.mask-all-text" android:value="true" />
+    <meta-data android:name="io.sentry.screenshot.mask-all-images" android:value="true" />
+    ```
+- The `ManifestMetaDataReader` now read the `DIST` ([#5107](https://github.com/getsentry/sentry-java/pull/5107))
+
+### Fixes
+
+- Fix attribute type detection for `Long`, `Short`, `Byte`, `BigInteger`, `AtomicInteger`, and `AtomicLong` being incorrectly inferred as `double` instead of `integer` ([#5122](https://github.com/getsentry/sentry-java/pull/5122))
+- Remove `AndroidRuntimeManager` StrictMode relaxation to prevent ANRs during SDK init ([#5127](https://github.com/getsentry/sentry-java/pull/5127))
+  - **IMPORTANT:** StrictMode violations may appear again in debug builds. This is intentional to prevent ANRs in production releases.
 - Fix crash when unregistering `SystemEventsBroadcastReceiver` with try-catch block. ([#5106](https://github.com/getsentry/sentry-java/pull/5106))
-- Identify and correctly structure Java/Kotlin frames in mixed Tombstone stack traces. ([#5116](https://github.com/getsentry/sentry-java/pull/5116))
+- Use `peekDecorView` instead of `getDecorView` in `SentryGestureListener` to avoid forcing view hierarchy construction ([#5134](https://github.com/getsentry/sentry-java/pull/5134))
+- Log an actionable error message when Relay returns HTTP 413 (Content Too Large) ([#5115](https://github.com/getsentry/sentry-java/pull/5115))
+  - Also switch the client report discard reason for all HTTP 4xx/5xx errors (except 429) from `network_error` to `send_error`
+- Trim DSN string before parsing to avoid `URISyntaxException` caused by trailing whitespace ([#5113](https://github.com/getsentry/sentry-java/pull/5113))
+- Reduce allocations and bytecode instructions during `Sentry.init` ([#5135](https://github.com/getsentry/sentry-java/pull/5135))
+
+### Dependencies
+
+- Bump Native SDK from v0.12.7 to v0.13.1 ([#5104](https://github.com/getsentry/sentry-java/pull/5104))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0131)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.12.7...0.13.1)
 
 ## 8.33.0
 
@@ -123,7 +208,7 @@
 - Discard envelopes on `4xx` and `5xx` response ([#4950](https://github.com/getsentry/sentry-java/pull/4950))
   - This aims to not overwhelm Sentry after an outage or load shedding (including HTTP 429) where too many events are sent at once
 
-### Feature
+### Features
 
 - Add a Tombstone integration that detects native crashes without relying on the NDK integration, but instead using `ApplicationExitInfo.REASON_CRASH_NATIVE` on Android 12+. ([#4933](https://github.com/getsentry/sentry-java/pull/4933))
   - Currently exposed via options as an _internal_ API only.

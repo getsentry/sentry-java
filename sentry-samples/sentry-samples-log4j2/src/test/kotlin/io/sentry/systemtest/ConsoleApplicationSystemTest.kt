@@ -66,7 +66,20 @@ class ConsoleApplicationSystemTest {
 
     testHelper.ensureLogsReceived { logs, _ ->
       testHelper.doesContainLogWithBody(logs, "User has made a purchase of product: 445") &&
-        testHelper.doesContainLogWithBody(logs, "Something went wrong")
+        testHelper.doesContainLogWithBody(logs, "Something went wrong") &&
+        testHelper.doesLogWithBodyHaveAttribute(
+          logs,
+          "Something went wrong",
+          "user.type",
+          "admin",
+        ) &&
+        testHelper.doesLogWithBodyHaveAttribute(
+          logs,
+          "Something went wrong",
+          "feature.version",
+          2,
+        ) &&
+        testHelper.doesLogWithBodyHaveAttribute(logs, "Something went wrong", "debug.enabled", true)
     }
   }
 }
