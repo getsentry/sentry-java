@@ -13,6 +13,7 @@ import java.util.zip.GZIPInputStream
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import org.mockito.kotlin.mock
 
 class TombstoneParserTest {
@@ -496,7 +497,7 @@ class TombstoneParserTest {
     val frame = event.threads!![0].stacktrace!!.frames!![0]
     assertEquals("java", frame.platform)
     assertEquals("myMethod", frame.function)
-    assertEquals("", frame.module)
+    assertNull(frame.module)
   }
 
   @Test
@@ -505,7 +506,7 @@ class TombstoneParserTest {
     val frame = event.threads!![0].stacktrace!!.frames!![0]
     assertEquals("java", frame.platform)
     assertEquals("myMethod", frame.function)
-    assertEquals("", frame.module)
+    assertNull(frame.module)
   }
 
   @Test
