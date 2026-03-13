@@ -209,14 +209,9 @@ public class TombstoneParser implements Closeable {
     // reliably indicates the with_signature format.
     final int spaceIndex = normalized.indexOf(' ');
     if (spaceIndex >= 0) {
-      // Strip return type prefix
-      normalized = normalized.substring(spaceIndex + 1).trim();
-
-      // Strip parameter list suffix
-      final int parenIndex = normalized.indexOf('(');
-      if (parenIndex >= 0) {
-        normalized = normalized.substring(0, parenIndex);
-      }
+      final int parenIndex = normalized.indexOf('(', spaceIndex);
+      normalized =
+          normalized.substring(spaceIndex + 1, parenIndex >= 0 ? parenIndex : normalized.length());
     }
 
     return normalized;
