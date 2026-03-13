@@ -227,7 +227,7 @@ public class TombstoneParser implements Closeable {
     if (normalized.contains(".")) {
       return normalized.substring(0, normalized.lastIndexOf("."));
     } else {
-      return "";
+      return null;
     }
   }
 
