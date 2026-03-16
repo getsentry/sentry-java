@@ -92,9 +92,8 @@ public class ComposeGestureTargetLocator(private val logger: ILogger) : GestureT
             }
           }
         }
+        queue.addAll(node.zSortedChildren.asMutableList().map { Pair(it, tag) })
       }
-
-      queue.addAll(node.zSortedChildren.asMutableList().map { Pair(it, parentTag) })
     }
 
     return if (targetTag == null) {
