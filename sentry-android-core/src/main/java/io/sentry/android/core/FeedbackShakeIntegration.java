@@ -150,9 +150,7 @@ public final class FeedbackShakeIntegration
               && !Boolean.TRUE.equals(inBackground)) {
             active.runOnUiThread(
                 () -> {
-                  if (isDialogShowing
-                      || active.isFinishing()
-                      || active.isDestroyed()) {
+                  if (isDialogShowing || active.isFinishing() || active.isDestroyed()) {
                     return;
                   }
                   try {
