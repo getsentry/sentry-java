@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Add configurable `IScopesStorageFactory` to `SentryOptions` for providing a custom `IScopesStorage`, e.g. when the default `ThreadLocal`-backed storage is incompatible with non-pinning thread models ([#5199](https://github.com/getsentry/sentry-java/pull/5199))
+
 ## 8.35.0
 
 ### Fixes
