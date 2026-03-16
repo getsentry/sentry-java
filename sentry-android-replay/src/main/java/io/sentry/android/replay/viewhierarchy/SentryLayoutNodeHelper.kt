@@ -6,10 +6,9 @@
   "EXPOSED_FUNCTION_RETURN_TYPE",
 )
 
-package io.sentry.compose
+package io.sentry.android.replay.viewhierarchy
 
 import androidx.compose.ui.node.LayoutNode
-import org.jetbrains.annotations.ApiStatus
 
 /**
  * Provides access to internal LayoutNode members that are subject to Kotlin name-mangling.
@@ -19,8 +18,7 @@ import org.jetbrains.annotations.ApiStatus
  * Compose >= 1.10. This class detects the version on first use and delegates to the correct
  * accessor.
  */
-@ApiStatus.Internal
-public object SentryLayoutNodeHelper {
+internal object SentryLayoutNodeHelper {
   @Volatile private var compose110Helper: Compose110Helper? = null
   @Volatile private var useCompose110: Boolean? = null
 
@@ -33,7 +31,7 @@ public object SentryLayoutNodeHelper {
     return helper
   }
 
-  public fun getChildren(node: LayoutNode): List<LayoutNode> {
+  fun getChildren(node: LayoutNode): List<LayoutNode> {
     return if (useCompose110 == false) {
       node.children
     } else {
@@ -46,7 +44,7 @@ public object SentryLayoutNodeHelper {
     }
   }
 
-  public fun isTransparent(node: LayoutNode): Boolean {
+  fun isTransparent(node: LayoutNode): Boolean {
     return if (useCompose110 == false) {
       node.outerCoordinator.isTransparent()
     } else {

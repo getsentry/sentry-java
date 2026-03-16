@@ -6,7 +6,7 @@
   "EXPOSED_FUNCTION_RETURN_TYPE",
 )
 
-package io.sentry.compose
+package io.sentry.android.replay.viewhierarchy
 
 import androidx.compose.ui.node.LayoutNode
 import androidx.compose.ui.node.NodeCoordinator

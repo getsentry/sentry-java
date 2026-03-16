@@ -30,7 +30,6 @@ import io.sentry.android.replay.util.toOpaque
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.GenericViewHierarchyNode
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.ImageViewHierarchyNode
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.TextViewHierarchyNode
-import io.sentry.compose.SentryLayoutNodeHelper
 import java.lang.ref.WeakReference
 import java.lang.reflect.Method
 
