@@ -30,7 +30,7 @@ Use the `fetch_rules` tool to include these rules when working on specific areas
 
 - **`scopes`**: Use when working with:
   - Hub/Scope management, forking, or lifecycle
-  - `Sentry.getCurrentScopes()`, `pushScope()`, `withScope()` 
+  - `Sentry.getCurrentScopes()`, `pushScope()`, `withScope()`
   - `ScopeType` (GLOBAL, ISOLATION, CURRENT)
   - Thread-local storage, scope bleeding issues
   - Migration from Hub API (v7 → v8)
@@ -66,6 +66,18 @@ Use the `fetch_rules` tool to include these rules when working on specific areas
   - `SentryMetricsEvent`, `SentryMetricsEvents`
   - `SentryOptions.getMetrics()`, `beforeSend` callback
 
+- **`continuous_profiling_jvm`**: Use when working with:
+  - JVM continuous profiling (`sentry-async-profiler` module)
+  - `IContinuousProfiler`, `JavaContinuousProfiler`
+  - `ProfileChunk`, chunk rotation, JFR file handling
+  - `ProfileLifecycle` (MANUAL vs TRACE modes)
+  - async-profiler integration, ServiceLoader discovery
+  - Rate limiting, offline caching, scopes integration
+
+- **Android profiling**: There is currently no dedicated rule for this area yet.
+  - Inspect the relevant `sentry-android-core` profiling code directly
+  - Fetch other related rules as needed (for example `options`, `offline`, or `api`)
+
 ### Integration & Infrastructure
 - **`opentelemetry`**: Use when working with:
   - OpenTelemetry modules (`sentry-opentelemetry-*`)
@@ -99,7 +111,7 @@ Use the `fetch_rules` tool to include these rules when working on specific areas
    - Public API/apiDump/.api files/binary compatibility/new method → `api`
    - Options/SentryOptions/ExternalOptions/ManifestMetadataReader/sentry.properties → `options`
    - Scope/Hub/forking → `scopes`
-   - Duplicate/dedup → `deduplication` 
+   - Duplicate/dedup → `deduplication`
    - OpenTelemetry/tracing/spans → `opentelemetry`
    - new module/integration/sample → `new_module`
    - Cache/offline/network → `offline`
@@ -107,3 +119,5 @@ Use the `fetch_rules` tool to include these rules when working on specific areas
    - Feature flag/addFeatureFlag/flag evaluation → `feature_flags`
    - Metrics/count/distribution/gauge → `metrics`
    - PR/pull request/stacked PR/stack → `pr`
+   - JVM continuous profiling/async-profiler/JFR/ProfileChunk → `continuous_profiling_jvm`
+   - Android continuous profiling/AndroidProfiler/frame metrics/method tracing → no dedicated rule yet; inspect the code directly
