@@ -974,7 +974,7 @@ class SentryOptionsTest {
   @Test
   fun `scopesStorageFactory can be set and retrieved`() {
     val options = SentryOptions()
-    val factory = IScopesStorageFactory { _, _ -> DefaultScopesStorage() }
+    val factory = IScopesStorageFactory { DefaultScopesStorage() }
     options.scopesStorageFactory = factory
     assertSame(factory, options.scopesStorageFactory)
   }
@@ -982,7 +982,7 @@ class SentryOptionsTest {
   @Test
   fun `scopesStorageFactory can be set to null`() {
     val options = SentryOptions()
-    val factory = IScopesStorageFactory { _, _ -> DefaultScopesStorage() }
+    val factory = IScopesStorageFactory { DefaultScopesStorage() }
     options.scopesStorageFactory = factory
     options.scopesStorageFactory = null
     assertNull(options.scopesStorageFactory)

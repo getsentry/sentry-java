@@ -1061,7 +1061,7 @@ public abstract interface class io/sentry/IScopesStorage {
 }
 
 public abstract interface class io/sentry/IScopesStorageFactory {
-	public abstract fun create (Lio/sentry/util/LoadClass;Lio/sentry/ILogger;)Lio/sentry/IScopesStorage;
+	public abstract fun create ()Lio/sentry/IScopesStorage;
 }
 
 public abstract interface class io/sentry/ISentryClient {
@@ -2632,9 +2632,9 @@ public final class io/sentry/ScopesAdapter : io/sentry/IScopes {
 	public fun withScope (Lio/sentry/ScopeCallback;)V
 }
 
-public final class io/sentry/ScopesStorageFactory : io/sentry/IScopesStorageFactory {
+public final class io/sentry/ScopesStorageFactory {
 	public fun <init> ()V
-	public fun create (Lio/sentry/util/LoadClass;Lio/sentry/ILogger;)Lio/sentry/IScopesStorage;
+	public static fun create (Lio/sentry/util/LoadClass;Lio/sentry/ILogger;)Lio/sentry/IScopesStorage;
 }
 
 public final class io/sentry/ScreenshotStrategyType : java/lang/Enum {
