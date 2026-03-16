@@ -9,6 +9,7 @@
 package io.sentry.compose
 
 import androidx.compose.ui.node.LayoutNode
+import org.jetbrains.annotations.ApiStatus
 
 /**
  * Provides access to internal LayoutNode members that are subject to Kotlin name-mangling.
@@ -18,20 +19,26 @@ import androidx.compose.ui.node.LayoutNode
  * Compose >= 1.10. This class detects the version on first use and delegates to the correct
  * accessor.
  */
+@ApiStatus.Internal
 public object SentryLayoutNodeHelper {
   @Volatile private var compose110Helper: Compose110Helper? = null
   @Volatile private var useCompose110: Boolean? = null
 
+  private fun getHelper(): Compose110Helper {
+    compose110Helper?.let {
+      return it
+    }
+    val helper = Compose110Helper()
+    compose110Helper = helper
+    return helper
+  }
+
   public fun getChildren(node: LayoutNode): List<LayoutNode> {
-    return if (useCompose110 == true) {
-      compose110Helper!!.getChildren(node)
+    return if (useCompose110 == false) {
+      node.children
     } else {
-      val helper = Compose110Helper()
       try {
-        helper.getChildren(node).also {
-          compose110Helper = helper
-          useCompose110 = true
-        }
+        getHelper().getChildren(node).also { useCompose110 = true }
       } catch (_: NoSuchMethodError) {
         useCompose110 = false
         node.children
@@ -40,15 +47,11 @@ public object SentryLayoutNodeHelper {
   }
 
   public fun isTransparent(node: LayoutNode): Boolean {
-    return if (useCompose110 == true) {
-      compose110Helper!!.getOuterCoordinator(node).isTransparent()
+    return if (useCompose110 == false) {
+      node.outerCoordinator.isTransparent()
     } else {
-      val helper = Compose110Helper()
       try {
-        helper.getOuterCoordinator(node).isTransparent().also {
-          compose110Helper = helper
-          useCompose110 = true
-        }
+        getHelper().getOuterCoordinator(node).isTransparent().also { useCompose110 = true }
       } catch (_: NoSuchMethodError) {
         useCompose110 = false
         node.outerCoordinator.isTransparent()

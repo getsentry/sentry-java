@@ -6,19 +6,19 @@ public final class io/sentry/compose/BuildConfig {
 	public fun <init> ()V
 }
 
-public final class io/sentry/compose/ComposeHelper {
-	public static final field $stable I
-	public static final field INSTANCE Lio/sentry/compose/ComposeHelper;
-	public final fun getChildren (Landroidx/compose/ui/node/LayoutNode;)Ljava/util/List;
-	public final fun isTransparent (Landroidx/compose/ui/node/LayoutNode;)Z
-}
-
 public final class io/sentry/compose/SentryComposeHelperKt {
 	public static final fun boundsInWindow (Landroidx/compose/ui/layout/LayoutCoordinates;Landroidx/compose/ui/layout/LayoutCoordinates;)Landroidx/compose/ui/geometry/Rect;
 }
 
 public final class io/sentry/compose/SentryComposeTracingKt {
 	public static final fun SentryTraced (Ljava/lang/String;Landroidx/compose/ui/Modifier;ZLkotlin/jvm/functions/Function3;Landroidx/compose/runtime/Composer;II)V
+}
+
+public final class io/sentry/compose/SentryLayoutNodeHelper {
+	public static final field $stable I
+	public static final field INSTANCE Lio/sentry/compose/SentryLayoutNodeHelper;
+	public final fun getChildren (Landroidx/compose/ui/node/LayoutNode;)Ljava/util/List;
+	public final fun isTransparent (Landroidx/compose/ui/node/LayoutNode;)Z
 }
 
 public final class io/sentry/compose/SentryModifier {

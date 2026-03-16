@@ -52,11 +52,12 @@ public class ComposeGestureTargetLocator(private val logger: ILogger) : GestureT
 
     // the last known tag when iterating the node tree
     var lastKnownTag: String? = null
+    var isClickable = false
+    var isScrollable = false
+
     while (!queue.isEmpty()) {
       val node = queue.poll() ?: continue
       if (node.isPlaced && layoutNodeBoundsContain(rootLayoutNode, node, x, y)) {
-        var isClickable = false
-        var isScrollable = false
 
         val modifiers = node.getModifierInfo()
         for (index in modifiers.indices) {
