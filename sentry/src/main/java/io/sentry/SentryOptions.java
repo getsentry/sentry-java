@@ -557,6 +557,8 @@ public class SentryOptions {
 
   private @NotNull ISpanFactory spanFactory = NoOpSpanFactory.getInstance();
 
+  private @Nullable IScopesStorageFactory scopesStorageFactory;
+
   /**
    * Profiling traces rate. 101 hz means 101 traces in 1 second. Defaults to 101 to avoid possible
    * lockstep sampling. More on
@@ -3555,6 +3557,27 @@ public class SentryOptions {
   @ApiStatus.Internal
   public void setSpanFactory(final @NotNull ISpanFactory spanFactory) {
     this.spanFactory = spanFactory;
+  }
+
+  /**
+   * Returns the custom scopes storage factory, or null if auto-detection should be used.
+   *
+   * @return the custom scopes storage factory or null
+   */
+  @ApiStatus.Experimental
+  public @Nullable IScopesStorageFactory getScopesStorageFactory() {
+    return scopesStorageFactory;
+  }
+
+  /**
+   * Sets a custom factory for creating {@link IScopesStorage} implementations. When set, this
+   * factory takes precedence over the default auto-detection logic.
+   *
+   * @param scopesStorageFactory the custom factory, or null to use auto-detection
+   */
+  @ApiStatus.Experimental
+  public void setScopesStorageFactory(final @Nullable IScopesStorageFactory scopesStorageFactory) {
+    this.scopesStorageFactory = scopesStorageFactory;
   }
 
   @ApiStatus.Experimental
