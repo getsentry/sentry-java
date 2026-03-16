@@ -36,9 +36,9 @@ import java.lang.reflect.Method
 @SuppressLint("UseRequiresApi")
 @TargetApi(26)
 internal object ComposeViewHierarchyNode {
-  private val getSemanticsConfigurationMethod: Method? by lazy {
+  private val getCollapsedSemanticsMethod: Method? by lazy {
     try {
-      return@lazy LayoutNode::class.java.getDeclaredMethod("getSemanticsConfiguration").apply {
+      return@lazy LayoutNode::class.java.getDeclaredMethod("getCollapsedSemantics").apply {
         isAccessible = true
       }
     } catch (_: Throwable) {
@@ -51,17 +51,15 @@ internal object ComposeViewHierarchyNode {
 
   @JvmStatic
   internal fun retrieveSemanticsConfiguration(node: LayoutNode): SemanticsConfiguration? {
-    // Jetpack Compose 1.8 or newer provides SemanticsConfiguration via SemanticsInfo
-    // See
-    // https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:compose/ui/ui/src/commonMain/kotlin/androidx/compose/ui/node/LayoutNode.kt
-    // and
-    // https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:compose/ui/ui/src/commonMain/kotlin/androidx/compose/ui/semantics/SemanticsInfo.kt
-    getSemanticsConfigurationMethod?.let {
-      return it.invoke(node) as SemanticsConfiguration?
+    try {
+      return node.semanticsConfiguration
+    } catch (_: Exception) {
+      // for backwards compatibility
+      // Jetpack Compose 1.8 or older
+      return getCollapsedSemanticsMethod?.let {
+        return it.invoke(node) as SemanticsConfiguration?
+      }
     }
-
-    // for backwards compatibility
-    return node.collapsedSemantics
   }
 
   /**

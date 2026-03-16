@@ -9,51 +9,79 @@
 package io.sentry.android.replay.viewhierarchy
 
 import androidx.compose.ui.node.LayoutNode
+import androidx.compose.ui.node.NodeCoordinator
+import java.lang.reflect.Method
 
 /**
  * Provides access to internal LayoutNode members that are subject to Kotlin name-mangling.
  *
- * LayoutNode.children and LayoutNode.outerCoordinator are Kotlin `internal`, so their getters are
- * mangled with the module name: getChildren$ui_release() in Compose < 1.10 vs getChildren$ui() in
- * Compose >= 1.10. This class detects the version on first use and delegates to the correct
- * accessor.
+ * Compiled against Compose >= 1.10 where the mangled names use the "ui" module suffix (e.g.
+ * getChildren$ui()). For apps still on Compose < 1.10 (where the suffix is "$ui_release"), the
+ * direct call will throw [NoSuchMethodError] and we fall back to reflection-based accessors that
+ * are resolved and cached on first use.
  */
 internal object SentryLayoutNodeHelper {
-  @Volatile private var compose110Helper: Compose110Helper? = null
-  @Volatile private var useCompose110: Boolean? = null
+  private class Fallback(val getChildren: Method?, val getOuterCoordinator: Method?)
 
-  private fun getHelper(): Compose110Helper {
-    compose110Helper?.let {
-      return it
+  @Volatile private var useFallback: Boolean? = null
+  @Volatile private var fallback: Fallback? = null
+
+  private fun tryResolve(clazz: Class<*>, name: String): Method? {
+    return try {
+      clazz.getDeclaredMethod(name).apply { isAccessible = true }
+    } catch (_: NoSuchMethodException) {
+      null
     }
-    val helper = Compose110Helper()
-    compose110Helper = helper
-    return helper
   }
 
+  @Suppress("UNCHECKED_CAST")
   fun getChildren(node: LayoutNode): List<LayoutNode> {
-    return if (useCompose110 == false) {
-      node.children
-    } else {
-      try {
-        getHelper().getChildren(node).also { useCompose110 = true }
-      } catch (_: NoSuchMethodError) {
-        useCompose110 = false
-        node.children
+    when (useFallback) {
+      false -> return node.children
+      true -> {
+        return getFallback().getChildren!!.invoke(node) as List<LayoutNode>
+      }
+      null -> {
+        try {
+          return node.children.also { useFallback = false }
+        } catch (_: NoSuchMethodError) {
+          useFallback = true
+          return getFallback().getChildren!!.invoke(node) as List<LayoutNode>
+        }
       }
     }
   }
 
   fun isTransparent(node: LayoutNode): Boolean {
-    return if (useCompose110 == false) {
-      node.outerCoordinator.isTransparent()
-    } else {
-      try {
-        getHelper().getOuterCoordinator(node).isTransparent().also { useCompose110 = true }
-      } catch (_: NoSuchMethodError) {
-        useCompose110 = false
-        node.outerCoordinator.isTransparent()
+    when (useFallback) {
+      false -> return node.outerCoordinator.isTransparent()
+      true -> {
+        val fb = getFallback()
+        val coordinator = fb.getOuterCoordinator!!.invoke(node) as NodeCoordinator
+        return coordinator.isTransparent()
+      }
+      null -> {
+        try {
+          return node.outerCoordinator.isTransparent().also { useFallback = false }
+        } catch (_: NoSuchMethodError) {
+          useFallback = true
+          val fb = getFallback()
+          val coordinator = fb.getOuterCoordinator!!.invoke(node) as NodeCoordinator
+          return coordinator.isTransparent()
+        }
       }
     }
+  }
+
+  private fun getFallback(): Fallback {
+    fallback?.let {
+      return it
+    }
+
+    val layoutNodeClass = LayoutNode::class.java
+    val getChildren = tryResolve(layoutNodeClass, "getChildren\$ui_release")
+    val getOuterCoordinator = tryResolve(layoutNodeClass, "getOuterCoordinator\$ui_release")
+
+    return Fallback(getChildren, getOuterCoordinator).also { fallback = it }
   }
 }
