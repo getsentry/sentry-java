@@ -1723,4 +1723,50 @@ class SentryTest {
       javaClass.injectForField("name", "io.sentry.SentryTest\$CustomAndroidOptions")
     }
   }
+
+  @Test
+  fun `when scopesStorageFactory is set, it is used instead of default storage`() {
+    val customStorage = mock<IScopesStorage>()
+    whenever(customStorage.set(anyOrNull())).thenReturn(mock())
+    whenever(customStorage.get()).thenReturn(null)
+
+    initForTest {
+      it.dsn = dsn
+      it.scopesStorageFactory = IScopesStorageFactory { customStorage }
+    }
+
+    verify(customStorage).init()
+    verify(customStorage).set(any())
+  }
+
+  @Test
+  fun `when scopesStorageFactory is null, default auto-detection is used`() {
+    initForTest {
+      it.dsn = dsn
+      it.scopesStorageFactory = null
+    }
+
+    // Should work normally with DefaultScopesStorage
+    val scopes = Sentry.getCurrentScopes()
+    assertFalse(scopes.isNoOp)
+  }
+
+  @Test
+  fun `custom scopes storage from factory is functional`() {
+    val backingStorage = DefaultScopesStorage()
+    val factoryCalled = AtomicBoolean(false)
+
+    initForTest {
+      it.dsn = dsn
+      it.scopesStorageFactory = IScopesStorageFactory {
+        factoryCalled.set(true)
+        backingStorage
+      }
+    }
+
+    assertTrue(factoryCalled.get())
+
+    val scopes = Sentry.getCurrentScopes()
+    assertFalse(scopes.isNoOp)
+  }
 }

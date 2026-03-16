@@ -439,7 +439,10 @@ public final class Sentry {
 
   private static void initScopesStorage(SentryOptions options) {
     getScopesStorage().close();
-    if (SentryOpenTelemetryMode.OFF == options.getOpenTelemetryMode()) {
+    if (options.getScopesStorageFactory() != null) {
+      scopesStorage = options.getScopesStorageFactory().create();
+      scopesStorage.init();
+    } else if (SentryOpenTelemetryMode.OFF == options.getOpenTelemetryMode()) {
       scopesStorage = new DefaultScopesStorage();
     } else {
       scopesStorage = ScopesStorageFactory.create(new LoadClass(), NoOpLogger.getInstance());
