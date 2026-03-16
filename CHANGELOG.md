@@ -5,6 +5,7 @@
 ### Fixes
 
 - Android: Remove the dependency on protobuf-lite for tombstones ([#5157](https://github.com/getsentry/sentry-java/pull/5157))
+- Support masking/unmasking and click/scroll detection for Jetpack Compose 1.10+ ([#5189](https://github.com/getsentry/sentry-java/pull/5189))
 
 ### Features
 
