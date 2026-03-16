@@ -316,6 +316,32 @@ class ComposeGestureTargetLocatorTest {
     assertNull(result)
   }
 
+  @Test
+  fun `finds tagged clickable nested under untagged containers`() {
+    // Tree: root(no tag) -> container(no tag) -> container(no tag) -> clickable(tag="deep_btn")
+    val clickableChild = mockLayoutNode(
+      isPlaced = true, tag = "deep_btn", width = 10, height = 10,
+      semanticsKeys = listOf("OnClick"),
+    )
+    val innerContainer = mockLayoutNode(
+      isPlaced = true, tag = null, width = 30, height = 30,
+      children = listOf(clickableChild),
+    )
+    val outerContainer = mockLayoutNode(
+      isPlaced = true, tag = null, width = 60, height = 60,
+      children = listOf(innerContainer),
+    )
+    val root = mockLayoutNode(
+      isPlaced = true, tag = null, width = 100, height = 100,
+      children = listOf(outerContainer),
+    )
+    val owner = mockOwner(root)
+
+    val result = locator.locate(owner, 5f, 5f, UiElement.Type.CLICKABLE)
+    assertNotNull(result)
+    assertEquals("deep_btn", result!!.tag)
+  }
+
   // -- helpers --
 
   private fun mockOwner(rootNode: LayoutNode): Owner {
