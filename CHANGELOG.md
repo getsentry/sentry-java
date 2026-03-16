@@ -8,6 +8,12 @@
   - Enable via `options.getFeedbackOptions().setUseShakeGesture(true)` or manifest meta-data `io.sentry.feedback.use-shake-gesture`
   - Uses the device's accelerometer — no special permissions required
 
+### Dependencies
+
+- Bump Native SDK from v0.13.1 to v0.13.2 ([#5181](https://github.com/getsentry/sentry-java/pull/5181))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0132)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.13.1...0.13.2)
+
 ## 8.35.0
 
 ### Fixes
