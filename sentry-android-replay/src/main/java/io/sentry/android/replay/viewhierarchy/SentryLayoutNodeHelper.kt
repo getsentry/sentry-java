@@ -15,6 +15,9 @@ import java.lang.reflect.Method
 /**
  * Provides access to internal LayoutNode members that are subject to Kotlin name-mangling.
  *
+ * This class is not thread-safe, as Compose UI operations are expected to be performed on the main
+ * thread.
+ *
  * Compiled against Compose >= 1.10 where the mangled names use the "ui" module suffix (e.g.
  * getChildren$ui()). For apps still on Compose < 1.10 (where the suffix is "$ui_release"), the
  * direct call will throw [NoSuchMethodError] and we fall back to reflection-based accessors that
@@ -23,8 +26,8 @@ import java.lang.reflect.Method
 internal object SentryLayoutNodeHelper {
   private class Fallback(val getChildren: Method?, val getOuterCoordinator: Method?)
 
-  @Volatile private var useFallback: Boolean? = null
-  @Volatile private var fallback: Fallback? = null
+  private var useFallback: Boolean? = null
+  private var fallback: Fallback? = null
 
   private fun tryResolve(clazz: Class<*>, name: String): Method? {
     return try {

@@ -36,16 +36,17 @@ import java.lang.reflect.Method
 @SuppressLint("UseRequiresApi")
 @TargetApi(26)
 internal object ComposeViewHierarchyNode {
-  private val getCollapsedSemanticsMethod: Method? by lazy {
-    try {
-      return@lazy LayoutNode::class.java.getDeclaredMethod("getCollapsedSemantics").apply {
-        isAccessible = true
+  private val getCollapsedSemanticsMethod: Method? by
+    lazy(LazyThreadSafetyMode.NONE) {
+      try {
+        return@lazy LayoutNode::class.java.getDeclaredMethod("getCollapsedSemantics").apply {
+          isAccessible = true
+        }
+      } catch (_: Throwable) {
+        // ignore, as this method may not be available
       }
-    } catch (_: Throwable) {
-      // ignore, as this method may not be available
+      return@lazy null
     }
-    return@lazy null
-  }
 
   private var semanticsRetrievalErrorLogged: Boolean = false
 
@@ -53,7 +54,7 @@ internal object ComposeViewHierarchyNode {
   internal fun retrieveSemanticsConfiguration(node: LayoutNode): SemanticsConfiguration? {
     try {
       return node.semanticsConfiguration
-    } catch (_: Exception) {
+    } catch (_: Throwable) {
       // for backwards compatibility
       // Jetpack Compose 1.8 or older
       return getCollapsedSemanticsMethod?.let {
@@ -134,7 +135,7 @@ internal object ComposeViewHierarchyNode {
           """
                     Error retrieving semantics information from Compose tree. Most likely you're using
                     an unsupported version of androidx.compose.ui:ui. The supported
-                    version range is 1.5.0 - 1.8.0.
+                    version range is 1.5.0 - 1.10.2.
                     If you're using a newer version, please open a github issue with the version
                     you're using, so we can add support for it.
                     """
