@@ -8,12 +8,13 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
-public final class ScopesStorageFactory {
+public final class ScopesStorageFactory implements IScopesStorageFactory {
 
   private static final String OTEL_SCOPES_STORAGE =
       "io.sentry.opentelemetry.OtelContextScopesStorage";
 
-  public static @NotNull IScopesStorage create(
+  @Override
+  public @NotNull IScopesStorage create(
       final @NotNull LoadClass loadClass, final @NotNull ILogger logger) {
     final @NotNull IScopesStorage storage = createInternal(loadClass, logger);
     storage.init();

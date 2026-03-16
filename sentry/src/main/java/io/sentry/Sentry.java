@@ -439,13 +439,15 @@ public final class Sentry {
 
   private static void initScopesStorage(SentryOptions options) {
     getScopesStorage().close();
+    final @NotNull LoadClass loadClass = new LoadClass();
+    final @NotNull ILogger logger = NoOpLogger.getInstance();
     if (options.getScopesStorageFactory() != null) {
-      scopesStorage = options.getScopesStorageFactory().create();
+      scopesStorage = options.getScopesStorageFactory().create(loadClass, logger);
       scopesStorage.init();
     } else if (SentryOpenTelemetryMode.OFF == options.getOpenTelemetryMode()) {
       scopesStorage = new DefaultScopesStorage();
     } else {
-      scopesStorage = ScopesStorageFactory.create(new LoadClass(), NoOpLogger.getInstance());
+      scopesStorage = new ScopesStorageFactory().create(loadClass, logger);
     }
   }
 
