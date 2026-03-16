@@ -66,7 +66,7 @@ Use the `fetch_rules` tool to include these rules when working on specific areas
   - `SentryMetricsEvent`, `SentryMetricsEvents`
   - `SentryOptions.getMetrics()`, `beforeSend` callback
 
-- **`profiling_jvm`**: Use when working with:
+- **`continuous_profiling_jvm`**: Use when working with:
   - JVM continuous profiling (`sentry-async-profiler` module)
   - `IContinuousProfiler`, `JavaContinuousProfiler`
   - `ProfileChunk`, chunk rotation, JFR file handling
@@ -74,13 +74,9 @@ Use the `fetch_rules` tool to include these rules when working on specific areas
   - async-profiler integration, ServiceLoader discovery
   - Rate limiting, offline caching, scopes integration
 
-- **`profiling_android`**: Use when working with:
-  - Android profiling (`sentry-android-core`)
-  - `AndroidContinuousProfiler`, `AndroidProfiler`, `AndroidTransactionProfiler`
-  - `Debug.startMethodTracingSampling()`, trace files
-  - Frame metrics, CPU, memory measurement collectors
-  - `SentryFrameMetricsCollector`, `SpanFrameMetricsCollector`
-  - App start profiling, `AndroidOptionsInitializer` setup
+- **Android profiling**: There is currently no dedicated rule for this area yet.
+  - Inspect the relevant `sentry-android-core` profiling code directly
+  - Fetch other related rules as needed (for example `options`, `offline`, or `api`)
 
 ### Integration & Infrastructure
 - **`opentelemetry`**: Use when working with:
@@ -123,5 +119,5 @@ Use the `fetch_rules` tool to include these rules when working on specific areas
    - Feature flag/addFeatureFlag/flag evaluation → `feature_flags`
    - Metrics/count/distribution/gauge → `metrics`
    - PR/pull request/stacked PR/stack → `pr`
-   - JVM profiling/async-profiler/JFR/ProfileChunk → `profiling_jvm`
-   - Android profiling/AndroidProfiler/frame metrics/method tracing → `profiling_android`
+   - JVM continuous profiling/async-profiler/JFR/ProfileChunk → `continuous_profiling_jvm`
+   - Android continuous profiling/AndroidProfiler/frame metrics/method tracing → no dedicated rule yet; inspect the code directly
