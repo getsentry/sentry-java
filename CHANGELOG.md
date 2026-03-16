@@ -8,6 +8,8 @@
   - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0132)
   - [diff](https://github.com/getsentry/sentry-native/compare/0.13.1...0.13.2)
 - Bump `com.abovevacant:epitaph` to `0.1.1` to avoid old D8/R8 dexing crashes in downstream Android builds on old AGP versions such as 7.4.x. ([#5200](https://github.com/getsentry/sentry-java/pull/5200))
+  - [changelog](https://github.com/abovevacant/epitaph/blob/main/CHANGELOG.md#011---2026-03-16)
+  - [diff](https://github.com/abovevacant/epitaph/compare/v0.1.0...v0.1.1)
 
 ## 8.35.0
 
