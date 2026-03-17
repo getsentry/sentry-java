@@ -55,11 +55,14 @@ internal object ComposeViewHierarchyNode {
   internal fun retrieveSemanticsConfiguration(node: LayoutNode): SemanticsConfiguration? {
     try {
       return node.semanticsConfiguration
-    } catch (_: Throwable) {
+    } catch (t: Throwable) {
       // for backwards compatibility
       // Jetpack Compose 1.8 or older
-      return getCollapsedSemanticsMethod?.let {
-        return it.invoke(node) as SemanticsConfiguration?
+      return if (getCollapsedSemanticsMethod != null) {
+        getCollapsedSemanticsMethod!!.invoke(node) as SemanticsConfiguration
+      } else {
+        // re-throw t if there's no way to retrieve semantics
+        throw t
       }
     }
   }
