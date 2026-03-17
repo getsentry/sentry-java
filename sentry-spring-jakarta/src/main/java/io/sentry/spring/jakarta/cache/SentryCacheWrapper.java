@@ -20,6 +20,7 @@ import org.springframework.cache.Cache;
 public final class SentryCacheWrapper implements Cache {
 
   private static final String TRACE_ORIGIN = "auto.cache.spring";
+  private static final String OPERATION_ATTRIBUTE = "db.operation.name";
 
   private final @NotNull Cache delegate;
   private final @NotNull IScopes scopes;
@@ -41,7 +42,7 @@ public final class SentryCacheWrapper implements Cache {
 
   @Override
   public @Nullable ValueWrapper get(final @NotNull Object key) {
-    final ISpan span = startSpan("cache.get", key);
+    final ISpan span = startSpan("cache.get", key, "get");
     if (span == null) {
       return delegate.get(key);
     }
@@ -61,7 +62,7 @@ public final class SentryCacheWrapper implements Cache {
 
   @Override
   public @Nullable <T> T get(final @NotNull Object key, final @Nullable Class<T> type) {
-    final ISpan span = startSpan("cache.get", key);
+    final ISpan span = startSpan("cache.get", key, "get");
     if (span == null) {
       return delegate.get(key, type);
     }
@@ -81,7 +82,7 @@ public final class SentryCacheWrapper implements Cache {
 
   @Override
   public @Nullable <T> T get(final @NotNull Object key, final @NotNull Callable<T> valueLoader) {
-    final ISpan span = startSpan("cache.get", key);
+    final ISpan span = startSpan("cache.get", key, "get");
     if (span == null) {
       return delegate.get(key, valueLoader);
     }
@@ -108,7 +109,7 @@ public final class SentryCacheWrapper implements Cache {
 
   @Override
   public @Nullable CompletableFuture<?> retrieve(final @NotNull Object key) {
-    final ISpan span = startSpan("cache.get", key);
+    final ISpan span = startSpan("cache.get", key, "retrieve");
     if (span == null) {
       return delegate.retrieve(key);
     }
@@ -143,7 +144,7 @@ public final class SentryCacheWrapper implements Cache {
   @Override
   public <T> CompletableFuture<T> retrieve(
       final @NotNull Object key, final @NotNull Supplier<CompletableFuture<T>> valueLoader) {
-    final ISpan span = startSpan("cache.get", key);
+    final ISpan span = startSpan("cache.get", key, "retrieve");
     if (span == null) {
       return delegate.retrieve(key, valueLoader);
     }
@@ -178,7 +179,7 @@ public final class SentryCacheWrapper implements Cache {
 
   @Override
   public void put(final @NotNull Object key, final @Nullable Object value) {
-    final ISpan span = startSpan("cache.put", key);
+    final ISpan span = startSpan("cache.put", key, "put");
     if (span == null) {
       delegate.put(key, value);
       return;
@@ -207,7 +208,7 @@ public final class SentryCacheWrapper implements Cache {
 
   @Override
   public void evict(final @NotNull Object key) {
-    final ISpan span = startSpan("cache.remove", key);
+    final ISpan span = startSpan("cache.remove", key, "evict");
     if (span == null) {
       delegate.evict(key);
       return;
@@ -226,7 +227,7 @@ public final class SentryCacheWrapper implements Cache {
 
   @Override
   public boolean evictIfPresent(final @NotNull Object key) {
-    final ISpan span = startSpan("cache.remove", key);
+    final ISpan span = startSpan("cache.remove", key, "evictIfPresent");
     if (span == null) {
       return delegate.evictIfPresent(key);
     }
@@ -245,7 +246,7 @@ public final class SentryCacheWrapper implements Cache {
 
   @Override
   public void clear() {
-    final ISpan span = startSpan("cache.flush", null);
+    final ISpan span = startSpan("cache.flush", null, "clear");
     if (span == null) {
       delegate.clear();
       return;
@@ -264,7 +265,7 @@ public final class SentryCacheWrapper implements Cache {
 
   @Override
   public boolean invalidate() {
-    final ISpan span = startSpan("cache.flush", null);
+    final ISpan span = startSpan("cache.flush", null, "invalidate");
     if (span == null) {
       return delegate.invalidate();
     }
@@ -281,7 +282,10 @@ public final class SentryCacheWrapper implements Cache {
     }
   }
 
-  private @Nullable ISpan startSpan(final @NotNull String operation, final @Nullable Object key) {
+  private @Nullable ISpan startSpan(
+      final @NotNull String operation,
+      final @Nullable Object key,
+      final @NotNull String operationName) {
     if (!scopes.getOptions().isEnableCacheTracing()) {
       return null;
     }
@@ -301,6 +305,7 @@ public final class SentryCacheWrapper implements Cache {
     if (keyString != null) {
       span.setData(SpanDataConvention.CACHE_KEY_KEY, Arrays.asList(keyString));
     }
+    span.setData(OPERATION_ATTRIBUTE, operationName);
     return span;
   }
 }
