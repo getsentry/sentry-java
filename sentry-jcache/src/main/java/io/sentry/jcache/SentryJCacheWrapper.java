@@ -33,7 +33,6 @@ import org.jetbrains.annotations.Nullable;
 public final class SentryJCacheWrapper<K, V> implements Cache<K, V> {
 
   private static final String TRACE_ORIGIN = "auto.cache.jcache";
-  private static final String OPERATION_ATTRIBUTE = "db.operation.name";
 
   private final @NotNull Cache<K, V> delegate;
   private final @NotNull IScopes scopes;
@@ -424,7 +423,7 @@ public final class SentryJCacheWrapper<K, V> implements Cache<K, V> {
     if (keyString != null) {
       span.setData(SpanDataConvention.CACHE_KEY_KEY, Arrays.asList(keyString));
     }
-    span.setData(OPERATION_ATTRIBUTE, operationName);
+    span.setData(SpanDataConvention.DB_OPERATION_NAME_KEY, operationName);
     return span;
   }
 
@@ -450,7 +449,7 @@ public final class SentryJCacheWrapper<K, V> implements Cache<K, V> {
     span.setData(
         SpanDataConvention.CACHE_KEY_KEY,
         keys.stream().map(String::valueOf).collect(Collectors.toList()));
-    span.setData(OPERATION_ATTRIBUTE, operationName);
+    span.setData(SpanDataConvention.DB_OPERATION_NAME_KEY, operationName);
     return span;
   }
 }

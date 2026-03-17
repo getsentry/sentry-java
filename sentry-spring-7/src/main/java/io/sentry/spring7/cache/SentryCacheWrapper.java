@@ -20,7 +20,6 @@ import org.springframework.cache.Cache;
 public final class SentryCacheWrapper implements Cache {
 
   private static final String TRACE_ORIGIN = "auto.cache.spring";
-  private static final String OPERATION_ATTRIBUTE = "db.operation.name";
 
   private final @NotNull Cache delegate;
   private final @NotNull IScopes scopes;
@@ -305,7 +304,7 @@ public final class SentryCacheWrapper implements Cache {
     if (keyString != null) {
       span.setData(SpanDataConvention.CACHE_KEY_KEY, Arrays.asList(keyString));
     }
-    span.setData(OPERATION_ATTRIBUTE, operationName);
+    span.setData(SpanDataConvention.DB_OPERATION_NAME_KEY, operationName);
     return span;
   }
 }
