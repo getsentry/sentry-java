@@ -12,6 +12,7 @@ import io.sentry.SentryOptions;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -25,7 +26,7 @@ public final class FeedbackShakeIntegration
   private final @NotNull Application application;
   private final @NotNull SentryShakeDetector shakeDetector;
   private @Nullable SentryAndroidOptions options;
-  private volatile @Nullable Activity currentActivity;
+  private volatile @Nullable WeakReference<Activity> currentActivityRef;
   private volatile boolean isDialogShowing = false;
   private volatile @Nullable Runnable previousOnFormClose;
 
@@ -51,7 +52,7 @@ public final class FeedbackShakeIntegration
     // In case of a deferred init, hook into any already-resumed activity
     final @Nullable Activity activity = CurrentActivityHolder.getInstance().getActivity();
     if (activity != null) {
-      currentActivity = activity;
+      currentActivityRef = new WeakReference<>(activity);
       startShakeDetection(activity);
     }
   }
@@ -69,7 +70,7 @@ public final class FeedbackShakeIntegration
       }
       previousOnFormClose = null;
     }
-    currentActivity = null;
+    currentActivityRef = null;
   }
 
   @Override
@@ -77,14 +78,15 @@ public final class FeedbackShakeIntegration
     // If a dialog is showing on a different activity (e.g. user navigated via notification),
     // clean up since the dialog's host activity is going away and onActivityDestroyed
     // won't match currentActivity anymore.
-    if (isDialogShowing && currentActivity != null && currentActivity != activity) {
+    final @Nullable Activity current = currentActivityRef != null ? currentActivityRef.get() : null;
+    if (isDialogShowing && current != null && current != activity) {
       isDialogShowing = false;
       if (options != null) {
         options.getFeedbackOptions().setOnFormClose(previousOnFormClose);
       }
       previousOnFormClose = null;
     }
-    currentActivity = activity;
+    currentActivityRef = new WeakReference<>(activity);
     startShakeDetection(activity);
   }
 
@@ -93,14 +95,15 @@ public final class FeedbackShakeIntegration
     // Only stop if this is the activity we're tracking. When transitioning between
     // activities, B.onResume may fire before A.onPause — stopping unconditionally
     // would kill shake detection for the new activity.
-    if (activity == currentActivity) {
+    final @Nullable Activity current = currentActivityRef != null ? currentActivityRef.get() : null;
+    if (activity == current) {
       stopShakeDetection();
-      // Keep currentActivity set when a dialog is showing so onActivityDestroyed
+      // Keep currentActivityRef set when a dialog is showing so onActivityDestroyed
       // can still match and clean up. Otherwise the cleanup condition
-      // (activity == currentActivity) would always be false since onPause fires
+      // (activity == current) would always be false since onPause fires
       // before onDestroy.
       if (!isDialogShowing) {
-        currentActivity = null;
+        currentActivityRef = null;
       }
     }
   }
@@ -123,9 +126,10 @@ public final class FeedbackShakeIntegration
   public void onActivityDestroyed(final @NotNull Activity activity) {
     // Only reset if this is the activity that hosts the dialog — the dialog cannot
     // outlive its host activity being destroyed.
-    if (isDialogShowing && activity == currentActivity) {
+    final @Nullable Activity current = currentActivityRef != null ? currentActivityRef.get() : null;
+    if (isDialogShowing && activity == current) {
       isDialogShowing = false;
-      currentActivity = null;
+      currentActivityRef = null;
       if (options != null) {
         options.getFeedbackOptions().setOnFormClose(previousOnFormClose);
       }
@@ -142,7 +146,8 @@ public final class FeedbackShakeIntegration
     shakeDetector.start(
         activity,
         () -> {
-          final Activity active = currentActivity;
+          final @Nullable WeakReference<Activity> ref = currentActivityRef;
+          final Activity active = ref != null ? ref.get() : null;
           final Boolean inBackground = AppState.getInstance().isInBackground();
           if (active != null
               && options != null
