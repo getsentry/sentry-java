@@ -114,16 +114,14 @@ public class ComposeGestureTargetLocator(private val logger: ILogger) : GestureT
   }
 
   private fun extractTag(composeHelper: SentryComposeHelper, node: LayoutNode): String? {
-    var lastKnownTag: String? = null
     val modifiers = node.getModifierInfo()
     for (index in modifiers.indices) {
       val modifierInfo = modifiers[index]
-      val tag = composeHelper.extractTag(modifierInfo.modifier)
-      if (tag != null) {
-        lastKnownTag = tag
+      composeHelper.extractTag(modifierInfo.modifier).also {
+        return it
       }
     }
-    return lastKnownTag
+    return null
   }
 
   public companion object {
