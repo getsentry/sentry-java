@@ -477,6 +477,7 @@ public final class io/sentry/android/core/SentryScreenshotOptions : io/sentry/Se
 
 public final class io/sentry/android/core/SentryShakeDetector : android/hardware/SensorEventListener {
 	public fun <init> (Lio/sentry/ILogger;)V
+	public fun close ()V
 	public fun onAccuracyChanged (Landroid/hardware/Sensor;I)V
 	public fun onSensorChanged (Landroid/hardware/SensorEvent;)V
 	public fun start (Landroid/content/Context;Lio/sentry/android/core/SentryShakeDetector$Listener;)V
