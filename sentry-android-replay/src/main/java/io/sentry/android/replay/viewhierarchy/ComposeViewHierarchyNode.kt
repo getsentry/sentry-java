@@ -39,9 +39,10 @@ internal object ComposeViewHierarchyNode {
   private val getCollapsedSemanticsMethod: Method? by
     lazy(LazyThreadSafetyMode.NONE) {
       try {
-        return@lazy LayoutNode::class.java.getDeclaredMethod("getCollapsedSemantics\$ui_release").apply {
-          isAccessible = true
-        }
+        return@lazy LayoutNode::class
+          .java
+          .getDeclaredMethod("getCollapsedSemantics\$ui_release")
+          .apply { isAccessible = true }
       } catch (_: Throwable) {
         // ignore, as this method may not be available
       }
