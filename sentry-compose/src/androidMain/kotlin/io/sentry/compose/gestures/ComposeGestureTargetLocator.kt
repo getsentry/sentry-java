@@ -117,8 +117,9 @@ public class ComposeGestureTargetLocator(private val logger: ILogger) : GestureT
     val modifiers = node.getModifierInfo()
     for (index in modifiers.indices) {
       val modifierInfo = modifiers[index]
-      composeHelper.extractTag(modifierInfo.modifier).also {
-        return it
+      val tag = composeHelper.extractTag(modifierInfo.modifier)
+      if (tag != null) {
+        return tag
       }
     }
     return null
