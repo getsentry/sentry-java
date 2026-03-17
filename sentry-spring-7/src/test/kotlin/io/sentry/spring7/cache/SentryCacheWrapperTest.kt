@@ -328,15 +328,21 @@ class SentryCacheWrapperTest {
   // -- putIfAbsent --
 
   @Test
-  fun `putIfAbsent delegates without creating span`() {
+  fun `putIfAbsent creates cache put span`() {
     val tx = createTransaction()
     val wrapper = SentryCacheWrapper(delegate, scopes)
     whenever(delegate.putIfAbsent("myKey", "myValue")).thenReturn(null)
 
-    wrapper.putIfAbsent("myKey", "myValue")
+    val result = wrapper.putIfAbsent("myKey", "myValue")
 
+    assertNull(result)
     verify(delegate).putIfAbsent("myKey", "myValue")
-    assertEquals(0, tx.spans.size)
+    assertEquals(1, tx.spans.size)
+    val span = tx.spans.first()
+    assertEquals("cache.put", span.operation)
+    assertEquals(SpanStatus.OK, span.status)
+    assertEquals(listOf("myKey"), span.getData(SpanDataConvention.CACHE_KEY_KEY))
+    assertEquals("putIfAbsent", span.getData("db.operation.name"))
   }
 
   // -- evict --

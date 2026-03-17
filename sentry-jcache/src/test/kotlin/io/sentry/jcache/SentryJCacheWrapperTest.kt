@@ -171,7 +171,7 @@ class SentryJCacheWrapperTest {
   // -- putIfAbsent --
 
   @Test
-  fun `putIfAbsent delegates without creating span`() {
+  fun `putIfAbsent creates cache put span`() {
     val tx = createTransaction()
     val wrapper = SentryJCacheWrapper(delegate, scopes)
     whenever(delegate.putIfAbsent("myKey", "myValue")).thenReturn(true)
@@ -180,13 +180,18 @@ class SentryJCacheWrapperTest {
 
     assertTrue(result)
     verify(delegate).putIfAbsent("myKey", "myValue")
-    assertEquals(0, tx.spans.size)
+    assertEquals(1, tx.spans.size)
+    val span = tx.spans.first()
+    assertEquals("cache.put", span.operation)
+    assertEquals(SpanStatus.OK, span.status)
+    assertEquals(listOf("myKey"), span.getData(SpanDataConvention.CACHE_KEY_KEY))
+    assertEquals("putIfAbsent", span.getData("db.operation.name"))
   }
 
-  // -- replace (passthrough, no span — conditional write) --
+  // -- replace --
 
   @Test
-  fun `replace with old value delegates without creating span`() {
+  fun `replace with old value creates cache put span`() {
     val tx = createTransaction()
     val wrapper = SentryJCacheWrapper(delegate, scopes)
     whenever(delegate.replace("myKey", "old", "new")).thenReturn(true)
@@ -195,11 +200,15 @@ class SentryJCacheWrapperTest {
 
     assertTrue(result)
     verify(delegate).replace("myKey", "old", "new")
-    assertEquals(0, tx.spans.size)
+    assertEquals(1, tx.spans.size)
+    val span = tx.spans.first()
+    assertEquals("cache.put", span.operation)
+    assertEquals(SpanStatus.OK, span.status)
+    assertEquals("replace", span.getData("db.operation.name"))
   }
 
   @Test
-  fun `replace delegates without creating span`() {
+  fun `replace creates cache put span`() {
     val tx = createTransaction()
     val wrapper = SentryJCacheWrapper(delegate, scopes)
     whenever(delegate.replace("myKey", "value")).thenReturn(true)
@@ -208,13 +217,17 @@ class SentryJCacheWrapperTest {
 
     assertTrue(result)
     verify(delegate).replace("myKey", "value")
-    assertEquals(0, tx.spans.size)
+    assertEquals(1, tx.spans.size)
+    val span = tx.spans.first()
+    assertEquals("cache.put", span.operation)
+    assertEquals(SpanStatus.OK, span.status)
+    assertEquals("replace", span.getData("db.operation.name"))
   }
 
-  // -- getAndReplace (passthrough, no span — conditional write) --
+  // -- getAndReplace --
 
   @Test
-  fun `getAndReplace delegates without creating span`() {
+  fun `getAndReplace creates cache put span`() {
     val tx = createTransaction()
     val wrapper = SentryJCacheWrapper(delegate, scopes)
     whenever(delegate.getAndReplace("myKey", "newValue")).thenReturn("oldValue")
@@ -223,7 +236,11 @@ class SentryJCacheWrapperTest {
 
     assertEquals("oldValue", result)
     verify(delegate).getAndReplace("myKey", "newValue")
-    assertEquals(0, tx.spans.size)
+    assertEquals(1, tx.spans.size)
+    val span = tx.spans.first()
+    assertEquals("cache.put", span.operation)
+    assertEquals(SpanStatus.OK, span.status)
+    assertEquals("getAndReplace", span.getData("db.operation.name"))
   }
 
   // -- remove(K) --
