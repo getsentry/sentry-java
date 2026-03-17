@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixes
+
+- Support masking/unmasking and click/scroll detection for Jetpack Compose 1.10+ ([#5189](https://github.com/getsentry/sentry-java/pull/5189))
+
 ### Dependencies
 
 - Bump Native SDK from v0.13.1 to v0.13.2 ([#5181](https://github.com/getsentry/sentry-java/pull/5181))
