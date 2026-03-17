@@ -38,6 +38,7 @@ public final class SentryShakeDetector implements SensorEventListener {
   private @Nullable SensorManager sensorManager;
   private @Nullable Sensor accelerometer;
   private @Nullable HandlerThread handlerThread;
+  private @Nullable Handler handler;
   private final @NotNull AtomicLong lastShakeTimestamp = new AtomicLong(0);
   private volatile @Nullable Listener listener;
   private @NotNull ILogger logger;
@@ -69,6 +70,11 @@ public final class SentryShakeDetector implements SensorEventListener {
     if (sensorManager != null && accelerometer == null) {
       accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER, false);
     }
+    if (accelerometer != null && handlerThread == null) {
+      handlerThread = new HandlerThread("sentry-shake");
+      handlerThread.start();
+      handler = new Handler(handlerThread.getLooper());
+    }
   }
 
   public void start(final @NotNull Context context, final @NotNull Listener shakeListener) {
@@ -83,9 +89,6 @@ public final class SentryShakeDetector implements SensorEventListener {
           SentryLevel.WARNING, "Accelerometer sensor not available. Shake detection disabled.");
       return;
     }
-    handlerThread = new HandlerThread("sentry-shake");
-    handlerThread.start();
-    final Handler handler = new Handler(handlerThread.getLooper());
     sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL, handler);
   }
 
@@ -96,9 +99,15 @@ public final class SentryShakeDetector implements SensorEventListener {
     if (sensorManager != null) {
       sensorManager.unregisterListener(this);
     }
+  }
+
+  /** Stops detection and releases the background thread. */
+  public void close() {
+    stop();
     if (handlerThread != null) {
       handlerThread.quitSafely();
       handlerThread = null;
+      handler = null;
     }
   }
 
