@@ -33,6 +33,7 @@ import org.jetbrains.annotations.Nullable;
 public final class SentryJCacheWrapper<K, V> implements Cache<K, V> {
 
   private static final String TRACE_ORIGIN = "auto.cache.jcache";
+  private static final String OPERATION_ATTRIBUTE = "db.operation.name";
 
   private final @NotNull Cache<K, V> delegate;
   private final @NotNull IScopes scopes;
@@ -50,7 +51,7 @@ public final class SentryJCacheWrapper<K, V> implements Cache<K, V> {
 
   @Override
   public V get(final K key) {
-    final ISpan span = startSpan("cache.get", key);
+    final ISpan span = startSpan("cache.get", key, "get");
     if (span == null) {
       return delegate.get(key);
     }
@@ -70,7 +71,7 @@ public final class SentryJCacheWrapper<K, V> implements Cache<K, V> {
 
   @Override
   public Map<K, V> getAll(final Set<? extends K> keys) {
-    final ISpan span = startSpanForKeys("cache.get", keys);
+    final ISpan span = startSpanForKeys("cache.get", keys, "getAll");
     if (span == null) {
       return delegate.getAll(keys);
     }
@@ -97,7 +98,7 @@ public final class SentryJCacheWrapper<K, V> implements Cache<K, V> {
 
   @Override
   public void put(final K key, final V value) {
-    final ISpan span = startSpan("cache.put", key);
+    final ISpan span = startSpan("cache.put", key, "put");
     if (span == null) {
       delegate.put(key, value);
       return;
@@ -116,7 +117,7 @@ public final class SentryJCacheWrapper<K, V> implements Cache<K, V> {
 
   @Override
   public V getAndPut(final K key, final V value) {
-    final ISpan span = startSpan("cache.put", key);
+    final ISpan span = startSpan("cache.put", key, "getAndPut");
     if (span == null) {
       return delegate.getAndPut(key, value);
     }
@@ -135,7 +136,7 @@ public final class SentryJCacheWrapper<K, V> implements Cache<K, V> {
 
   @Override
   public void putAll(final Map<? extends K, ? extends V> map) {
-    final ISpan span = startSpanForKeys("cache.put", map.keySet());
+    final ISpan span = startSpanForKeys("cache.put", map.keySet(), "putAll");
     if (span == null) {
       delegate.putAll(map);
       return;
@@ -181,7 +182,7 @@ public final class SentryJCacheWrapper<K, V> implements Cache<K, V> {
 
   @Override
   public boolean remove(final K key) {
-    final ISpan span = startSpan("cache.remove", key);
+    final ISpan span = startSpan("cache.remove", key, "remove");
     if (span == null) {
       return delegate.remove(key);
     }
@@ -200,7 +201,7 @@ public final class SentryJCacheWrapper<K, V> implements Cache<K, V> {
 
   @Override
   public boolean remove(final K key, final V oldValue) {
-    final ISpan span = startSpan("cache.remove", key);
+    final ISpan span = startSpan("cache.remove", key, "remove");
     if (span == null) {
       return delegate.remove(key, oldValue);
     }
@@ -219,7 +220,7 @@ public final class SentryJCacheWrapper<K, V> implements Cache<K, V> {
 
   @Override
   public V getAndRemove(final K key) {
-    final ISpan span = startSpan("cache.remove", key);
+    final ISpan span = startSpan("cache.remove", key, "getAndRemove");
     if (span == null) {
       return delegate.getAndRemove(key);
     }
@@ -238,7 +239,7 @@ public final class SentryJCacheWrapper<K, V> implements Cache<K, V> {
 
   @Override
   public void removeAll(final Set<? extends K> keys) {
-    final ISpan span = startSpanForKeys("cache.remove", keys);
+    final ISpan span = startSpanForKeys("cache.remove", keys, "removeAll");
     if (span == null) {
       delegate.removeAll(keys);
       return;
@@ -257,7 +258,7 @@ public final class SentryJCacheWrapper<K, V> implements Cache<K, V> {
 
   @Override
   public void removeAll() {
-    final ISpan span = startSpan("cache.flush", null);
+    final ISpan span = startSpan("cache.flush", null, "removeAll");
     if (span == null) {
       delegate.removeAll();
       return;
@@ -278,7 +279,7 @@ public final class SentryJCacheWrapper<K, V> implements Cache<K, V> {
 
   @Override
   public void clear() {
-    final ISpan span = startSpan("cache.flush", null);
+    final ISpan span = startSpan("cache.flush", null, "clear");
     if (span == null) {
       delegate.clear();
       return;
@@ -306,7 +307,7 @@ public final class SentryJCacheWrapper<K, V> implements Cache<K, V> {
   public <T> T invoke(
       final K key, final EntryProcessor<K, V, T> entryProcessor, final Object... arguments)
       throws EntryProcessorException {
-    final ISpan span = startSpan("cache.get", key);
+    final ISpan span = startSpan("cache.get", key, "invoke");
     if (span == null) {
       return delegate.invoke(key, entryProcessor, arguments);
     }
@@ -328,7 +329,7 @@ public final class SentryJCacheWrapper<K, V> implements Cache<K, V> {
       final Set<? extends K> keys,
       final EntryProcessor<K, V, T> entryProcessor,
       final Object... arguments) {
-    final ISpan span = startSpanForKeys("cache.get", keys);
+    final ISpan span = startSpanForKeys("cache.get", keys, "invokeAll");
     if (span == null) {
       return delegate.invokeAll(keys, entryProcessor, arguments);
     }
@@ -400,7 +401,10 @@ public final class SentryJCacheWrapper<K, V> implements Cache<K, V> {
 
   // -- span helpers --
 
-  private @Nullable ISpan startSpan(final @NotNull String operation, final @Nullable Object key) {
+  private @Nullable ISpan startSpan(
+      final @NotNull String operation,
+      final @Nullable Object key,
+      final @NotNull String operationName) {
     if (!scopes.getOptions().isEnableCacheTracing()) {
       return null;
     }
@@ -420,11 +424,14 @@ public final class SentryJCacheWrapper<K, V> implements Cache<K, V> {
     if (keyString != null) {
       span.setData(SpanDataConvention.CACHE_KEY_KEY, Arrays.asList(keyString));
     }
+    span.setData(OPERATION_ATTRIBUTE, operationName);
     return span;
   }
 
   private @Nullable ISpan startSpanForKeys(
-      final @NotNull String operation, final @NotNull Set<?> keys) {
+      final @NotNull String operation,
+      final @NotNull Set<?> keys,
+      final @NotNull String operationName) {
     if (!scopes.getOptions().isEnableCacheTracing()) {
       return null;
     }
@@ -443,6 +450,7 @@ public final class SentryJCacheWrapper<K, V> implements Cache<K, V> {
     span.setData(
         SpanDataConvention.CACHE_KEY_KEY,
         keys.stream().map(String::valueOf).collect(Collectors.toList()));
+    span.setData(OPERATION_ATTRIBUTE, operationName);
     return span;
   }
 }
