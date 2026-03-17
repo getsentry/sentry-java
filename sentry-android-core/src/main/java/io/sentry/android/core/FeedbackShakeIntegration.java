@@ -37,7 +37,12 @@ public final class FeedbackShakeIntegration
 
   @Override
   public void register(final @NotNull IScopes scopes, final @NotNull SentryOptions sentryOptions) {
-    this.options = (SentryAndroidOptions) sentryOptions;
+    this.options =
+        Objects.requireNonNull(
+            (sentryOptions instanceof SentryAndroidOptions)
+                ? (SentryAndroidOptions) sentryOptions
+                : null,
+            "SentryAndroidOptions is required");
 
     if (!this.options.getFeedbackOptions().isUseShakeGesture()) {
       return;
