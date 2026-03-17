@@ -7,5 +7,5 @@ import org.jetbrains.annotations.NotNull;
 @ApiStatus.Experimental
 public interface IScopesStorageFactory {
   @NotNull
-  IScopesStorage create();
+  IScopesStorage create(@NotNull SentryOptions options);
 }

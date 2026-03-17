@@ -1061,7 +1061,7 @@ public abstract interface class io/sentry/IScopesStorage {
 }
 
 public abstract interface class io/sentry/IScopesStorageFactory {
-	public abstract fun create ()Lio/sentry/IScopesStorage;
+	public abstract fun create (Lio/sentry/SentryOptions;)Lio/sentry/IScopesStorage;
 }
 
 public abstract interface class io/sentry/ISentryClient {

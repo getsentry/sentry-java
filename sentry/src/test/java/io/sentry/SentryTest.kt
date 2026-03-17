@@ -1732,7 +1732,7 @@ class SentryTest {
 
     initForTest {
       it.dsn = dsn
-      it.scopesStorageFactory = IScopesStorageFactory { customStorage }
+      it.scopesStorageFactory = IScopesStorageFactory { _ -> customStorage }
     }
 
     verify(customStorage).init()
@@ -1758,7 +1758,7 @@ class SentryTest {
 
     initForTest {
       it.dsn = dsn
-      it.scopesStorageFactory = IScopesStorageFactory {
+      it.scopesStorageFactory = IScopesStorageFactory { _ ->
         factoryCalled.set(true)
         backingStorage
       }
