@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Features
+
+- Show feedback form on device shake ([#5150](https://github.com/getsentry/sentry-java/pull/5150))
+  - Enable via `options.getFeedbackOptions().setUseShakeGesture(true)` or manifest meta-data `io.sentry.feedback.use-shake-gesture`
+  - Uses the device's accelerometer — no special permissions required
+
 ### Fixes
 
 - Support masking/unmasking and click/scroll detection for Jetpack Compose 1.10+ ([#5189](https://github.com/getsentry/sentry-java/pull/5189))
