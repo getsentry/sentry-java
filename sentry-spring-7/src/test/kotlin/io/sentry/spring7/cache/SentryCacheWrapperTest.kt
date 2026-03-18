@@ -63,7 +63,7 @@ class SentryCacheWrapperTest {
     assertEquals(true, span.getData(SpanDataConvention.CACHE_HIT_KEY))
     assertEquals(listOf("myKey"), span.getData(SpanDataConvention.CACHE_KEY_KEY))
     assertEquals("auto.cache.spring", span.spanContext.origin)
-    assertEquals("get", span.getData("db.operation.name"))
+    assertEquals("get", span.getData(SpanDataConvention.CACHE_OPERATION_KEY))
   }
 
   @Test
@@ -191,7 +191,7 @@ class SentryCacheWrapperTest {
     assertEquals("myKey", span.description)
     assertEquals(SpanStatus.OK, span.status)
     assertEquals(true, span.getData(SpanDataConvention.CACHE_HIT_KEY))
-    assertEquals("retrieve", span.getData("db.operation.name"))
+    assertEquals("retrieve", span.getData(SpanDataConvention.CACHE_OPERATION_KEY))
     assertTrue(span.isFinished)
   }
 
@@ -356,7 +356,7 @@ class SentryCacheWrapperTest {
     assertEquals("cache.put", span.operation)
     assertEquals(SpanStatus.OK, span.status)
     assertEquals(listOf("myKey"), span.getData(SpanDataConvention.CACHE_KEY_KEY))
-    assertEquals("put", span.getData("db.operation.name"))
+    assertEquals("put", span.getData(SpanDataConvention.CACHE_OPERATION_KEY))
   }
 
   // -- putIfAbsent --
@@ -376,7 +376,7 @@ class SentryCacheWrapperTest {
     assertEquals("cache.putIfAbsent", span.operation)
     assertEquals(SpanStatus.OK, span.status)
     assertEquals(listOf("myKey"), span.getData(SpanDataConvention.CACHE_KEY_KEY))
-    assertEquals("putIfAbsent", span.getData("db.operation.name"))
+    assertEquals("putIfAbsent", span.getData(SpanDataConvention.CACHE_OPERATION_KEY))
   }
 
   // -- evict --
@@ -393,7 +393,7 @@ class SentryCacheWrapperTest {
     val span = tx.spans.first()
     assertEquals("cache.evict", span.operation)
     assertEquals(SpanStatus.OK, span.status)
-    assertEquals("evict", span.getData("db.operation.name"))
+    assertEquals("evict", span.getData(SpanDataConvention.CACHE_OPERATION_KEY))
   }
 
   // -- evictIfPresent --
@@ -409,7 +409,7 @@ class SentryCacheWrapperTest {
     assertTrue(result)
     assertEquals(1, tx.spans.size)
     assertEquals("cache.evictIfPresent", tx.spans.first().operation)
-    assertEquals("evictIfPresent", tx.spans.first().getData("db.operation.name"))
+    assertEquals("evictIfPresent", tx.spans.first().getData(SpanDataConvention.CACHE_OPERATION_KEY))
   }
 
   // -- clear --
@@ -427,7 +427,7 @@ class SentryCacheWrapperTest {
     assertEquals("cache.clear", span.operation)
     assertEquals(SpanStatus.OK, span.status)
     assertNull(span.getData(SpanDataConvention.CACHE_KEY_KEY))
-    assertEquals("clear", span.getData("db.operation.name"))
+    assertEquals("clear", span.getData(SpanDataConvention.CACHE_OPERATION_KEY))
   }
 
   // -- invalidate --
@@ -443,7 +443,7 @@ class SentryCacheWrapperTest {
     assertTrue(result)
     assertEquals(1, tx.spans.size)
     assertEquals("cache.invalidate", tx.spans.first().operation)
-    assertEquals("invalidate", tx.spans.first().getData("db.operation.name"))
+    assertEquals("invalidate", tx.spans.first().getData(SpanDataConvention.CACHE_OPERATION_KEY))
   }
 
   // -- no span when no active transaction --
