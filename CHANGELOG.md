@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Android: Files attached to the scope will now be synced to native ([#5211](https://github.com/getsentry/sentry-java/pull/5211))
+
 ## 8.36.0
 
 ### Features
