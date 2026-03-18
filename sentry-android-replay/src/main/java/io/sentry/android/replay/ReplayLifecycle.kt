@@ -46,7 +46,8 @@ internal class ReplayLifecycle {
     when (currentState) {
       ReplayState.INITIAL -> newState == ReplayState.STARTED || newState == ReplayState.CLOSED
       ReplayState.STARTED ->
-        newState == ReplayState.PAUSED ||
+        newState == ReplayState.RESUMED ||
+          newState == ReplayState.PAUSED ||
           newState == ReplayState.STOPPED ||
           newState == ReplayState.CLOSED
       ReplayState.RESUMED ->

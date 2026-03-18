@@ -421,6 +421,33 @@ class ReplayIntegrationTest {
   }
 
   @Test
+  fun `after stop, start and resume restarts replay`() {
+    val captureStrategy = mock<CaptureStrategy>()
+    val recorder = mock<Recorder>()
+    val replay =
+      fixture.getSut(
+        context,
+        recorderProvider = { recorder },
+        replayCaptureStrategyProvider = { captureStrategy },
+      )
+
+    replay.register(fixture.scopes, fixture.options)
+    replay.start()
+    replay.pause()
+    replay.stop()
+
+    assertFalse(replay.isRecording)
+
+    replay.start()
+    replay.resume()
+
+    assertTrue(replay.isRecording)
+    verify(captureStrategy, times(2)).start(any(), any(), anyOrNull())
+    verify(captureStrategy).resume()
+    verify(recorder).resume()
+  }
+
+  @Test
   fun `close cleans up resources`() {
     val recorder = mock<Recorder>()
     val captureStrategy = mock<CaptureStrategy>()

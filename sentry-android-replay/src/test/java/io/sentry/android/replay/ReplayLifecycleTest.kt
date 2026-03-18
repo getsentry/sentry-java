@@ -29,11 +29,11 @@ class ReplayLifecycleTest {
     val lifecycle = ReplayLifecycle()
     lifecycle.currentState = ReplayState.STARTED
 
+    assertTrue(lifecycle.isAllowed(ReplayState.RESUMED))
     assertTrue(lifecycle.isAllowed(ReplayState.PAUSED))
     assertTrue(lifecycle.isAllowed(ReplayState.STOPPED))
     assertTrue(lifecycle.isAllowed(ReplayState.CLOSED))
 
-    assertFalse(lifecycle.isAllowed(ReplayState.RESUMED))
     assertFalse(lifecycle.isAllowed(ReplayState.INITIAL))
   }
 
