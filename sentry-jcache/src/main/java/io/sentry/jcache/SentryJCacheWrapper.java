@@ -466,8 +466,7 @@ public final class SentryJCacheWrapper<K, V> implements Cache<K, V> {
     final SpanOptions spanOptions = new SpanOptions();
     spanOptions.setOrigin(TRACE_ORIGIN);
     final String keyString = key != null ? String.valueOf(key) : null;
-    final ISpan span =
-        activeSpan.startChild("cache." + operationName, keyString, spanOptions);
+    final ISpan span = activeSpan.startChild("cache." + operationName, keyString, spanOptions);
     if (span.isNoOp()) {
       return null;
     }
