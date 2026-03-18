@@ -473,10 +473,8 @@ public final class SentryJCacheWrapper<K, V> implements Cache<K, V> {
 
   private @Nullable ISpan startSpanForKeys(
       final @NotNull Set<?> keys, final @NotNull String operationName) {
-    return startSpan(
-        operationName,
-        delegate.getName(),
-        keys.stream().map(String::valueOf).collect(Collectors.toList()));
+    final List<String> keyStrings = keys.stream().map(String::valueOf).collect(Collectors.toList());
+    return startSpan(operationName, String.join(", ", keyStrings), keyStrings);
   }
 
   private @Nullable ISpan startSpan(

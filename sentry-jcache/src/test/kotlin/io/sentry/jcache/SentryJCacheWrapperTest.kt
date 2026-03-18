@@ -96,7 +96,8 @@ class SentryJCacheWrapperTest {
     assertEquals(1, tx.spans.size)
     val span = tx.spans.first()
     assertEquals("cache.getAll", span.operation)
-    assertEquals("testCache", span.description)
+    assertTrue(span.description!!.contains("k1"))
+    assertTrue(span.description!!.contains("k2"))
     assertEquals(true, span.getData(SpanDataConvention.CACHE_HIT_KEY))
     val cacheKeys = span.getData(SpanDataConvention.CACHE_KEY_KEY) as List<*>
     assertTrue(cacheKeys.containsAll(listOf("k1", "k2")))
@@ -165,7 +166,8 @@ class SentryJCacheWrapperTest {
     assertEquals(1, tx.spans.size)
     val span = tx.spans.first()
     assertEquals("cache.putAll", span.operation)
-    assertEquals("testCache", span.description)
+    assertTrue(span.description!!.contains("k1"))
+    assertTrue(span.description!!.contains("k2"))
     assertEquals(true, span.getData(SpanDataConvention.CACHE_WRITE))
     val cacheKeys = span.getData(SpanDataConvention.CACHE_KEY_KEY) as List<*>
     assertTrue(cacheKeys.containsAll(listOf("k1", "k2")))
@@ -318,7 +320,8 @@ class SentryJCacheWrapperTest {
     assertEquals(1, tx.spans.size)
     val span = tx.spans.first()
     assertEquals("cache.removeAll", span.operation)
-    assertEquals("testCache", span.description)
+    assertTrue(span.description!!.contains("k1"))
+    assertTrue(span.description!!.contains("k2"))
     assertEquals(true, span.getData(SpanDataConvention.CACHE_WRITE))
     assertEquals("removeAll", span.getData(SpanDataConvention.CACHE_OPERATION_KEY))
   }
