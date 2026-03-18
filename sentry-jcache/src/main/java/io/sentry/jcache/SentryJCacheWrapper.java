@@ -105,6 +105,7 @@ public final class SentryJCacheWrapper<K, V> implements Cache<K, V> {
     }
     try {
       delegate.put(key, value);
+      span.setData(SpanDataConvention.CACHE_WRITE, true);
       span.setStatus(SpanStatus.OK);
     } catch (Throwable e) {
       span.setStatus(SpanStatus.INTERNAL_ERROR);
@@ -123,6 +124,7 @@ public final class SentryJCacheWrapper<K, V> implements Cache<K, V> {
     }
     try {
       final V result = delegate.getAndPut(key, value);
+      span.setData(SpanDataConvention.CACHE_WRITE, true);
       span.setStatus(SpanStatus.OK);
       return result;
     } catch (Throwable e) {
@@ -143,6 +145,7 @@ public final class SentryJCacheWrapper<K, V> implements Cache<K, V> {
     }
     try {
       delegate.putAll(map);
+      span.setData(SpanDataConvention.CACHE_WRITE, true);
       span.setStatus(SpanStatus.OK);
     } catch (Throwable e) {
       span.setStatus(SpanStatus.INTERNAL_ERROR);
@@ -161,6 +164,7 @@ public final class SentryJCacheWrapper<K, V> implements Cache<K, V> {
     }
     try {
       final boolean result = delegate.putIfAbsent(key, value);
+      span.setData(SpanDataConvention.CACHE_WRITE, result);
       span.setStatus(SpanStatus.OK);
       return result;
     } catch (Throwable e) {
@@ -180,6 +184,7 @@ public final class SentryJCacheWrapper<K, V> implements Cache<K, V> {
     }
     try {
       final boolean result = delegate.replace(key, oldValue, newValue);
+      span.setData(SpanDataConvention.CACHE_WRITE, result);
       span.setStatus(SpanStatus.OK);
       return result;
     } catch (Throwable e) {
@@ -199,6 +204,7 @@ public final class SentryJCacheWrapper<K, V> implements Cache<K, V> {
     }
     try {
       final boolean result = delegate.replace(key, value);
+      span.setData(SpanDataConvention.CACHE_WRITE, result);
       span.setStatus(SpanStatus.OK);
       return result;
     } catch (Throwable e) {
@@ -218,6 +224,7 @@ public final class SentryJCacheWrapper<K, V> implements Cache<K, V> {
     }
     try {
       final V result = delegate.getAndReplace(key, value);
+      span.setData(SpanDataConvention.CACHE_WRITE, result != null);
       span.setStatus(SpanStatus.OK);
       return result;
     } catch (Throwable e) {
@@ -239,6 +246,7 @@ public final class SentryJCacheWrapper<K, V> implements Cache<K, V> {
     }
     try {
       final boolean result = delegate.remove(key);
+      span.setData(SpanDataConvention.CACHE_WRITE, result);
       span.setStatus(SpanStatus.OK);
       return result;
     } catch (Throwable e) {
@@ -258,6 +266,7 @@ public final class SentryJCacheWrapper<K, V> implements Cache<K, V> {
     }
     try {
       final boolean result = delegate.remove(key, oldValue);
+      span.setData(SpanDataConvention.CACHE_WRITE, result);
       span.setStatus(SpanStatus.OK);
       return result;
     } catch (Throwable e) {
@@ -277,6 +286,7 @@ public final class SentryJCacheWrapper<K, V> implements Cache<K, V> {
     }
     try {
       final V result = delegate.getAndRemove(key);
+      span.setData(SpanDataConvention.CACHE_WRITE, result != null);
       span.setStatus(SpanStatus.OK);
       return result;
     } catch (Throwable e) {
@@ -297,6 +307,7 @@ public final class SentryJCacheWrapper<K, V> implements Cache<K, V> {
     }
     try {
       delegate.removeAll(keys);
+      span.setData(SpanDataConvention.CACHE_WRITE, true);
       span.setStatus(SpanStatus.OK);
     } catch (Throwable e) {
       span.setStatus(SpanStatus.INTERNAL_ERROR);
@@ -316,6 +327,7 @@ public final class SentryJCacheWrapper<K, V> implements Cache<K, V> {
     }
     try {
       delegate.removeAll();
+      span.setData(SpanDataConvention.CACHE_WRITE, true);
       span.setStatus(SpanStatus.OK);
     } catch (Throwable e) {
       span.setStatus(SpanStatus.INTERNAL_ERROR);
@@ -337,6 +349,7 @@ public final class SentryJCacheWrapper<K, V> implements Cache<K, V> {
     }
     try {
       delegate.clear();
+      span.setData(SpanDataConvention.CACHE_WRITE, true);
       span.setStatus(SpanStatus.OK);
     } catch (Throwable e) {
       span.setStatus(SpanStatus.INTERNAL_ERROR);
