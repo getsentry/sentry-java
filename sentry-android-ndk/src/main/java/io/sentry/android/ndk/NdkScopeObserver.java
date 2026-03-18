@@ -152,7 +152,9 @@ public final class NdkScopeObserver extends ScopeObserverAdapter {
     final String pathname = attachment.getPathname();
     if (pathname == null) {
       // Only file-path attachments are getting synced to the native layer right now.
-      options.getLogger().log(SentryLevel.DEBUG, "Scope sync addAttachment skips non-file attachment.");
+      options
+          .getLogger()
+          .log(SentryLevel.DEBUG, "Scope sync addAttachment skips non-file attachment.");
       return;
     }
 
