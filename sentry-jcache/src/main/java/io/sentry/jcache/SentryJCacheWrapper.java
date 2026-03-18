@@ -57,7 +57,7 @@ public final class SentryJCacheWrapper<K, V> implements Cache<K, V> {
     }
     try {
       final V result = delegate.get(key);
-      span.setData(SpanDataConvention.CACHE_HIT_KEY, result != null);
+      span.setData(SpanDataConvention.CACHE_HIT, result != null);
       span.setStatus(SpanStatus.OK);
       return result;
     } catch (Throwable e) {
@@ -77,7 +77,7 @@ public final class SentryJCacheWrapper<K, V> implements Cache<K, V> {
     }
     try {
       final Map<K, V> result = delegate.getAll(keys);
-      span.setData(SpanDataConvention.CACHE_HIT_KEY, !result.isEmpty());
+      span.setData(SpanDataConvention.CACHE_HIT, !result.isEmpty());
       span.setStatus(SpanStatus.OK);
       return result;
     } catch (Throwable e) {
@@ -497,9 +497,9 @@ public final class SentryJCacheWrapper<K, V> implements Cache<K, V> {
       return null;
     }
     if (cacheKeys != null) {
-      span.setData(SpanDataConvention.CACHE_KEY_KEY, cacheKeys);
+      span.setData(SpanDataConvention.CACHE_KEY, cacheKeys);
     }
-    span.setData(SpanDataConvention.CACHE_OPERATION_KEY, operationName);
+    span.setData(SpanDataConvention.CACHE_OPERATION, operationName);
     return span;
   }
 }

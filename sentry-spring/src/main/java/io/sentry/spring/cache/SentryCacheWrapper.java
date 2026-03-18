@@ -45,7 +45,7 @@ public final class SentryCacheWrapper implements Cache {
     }
     try {
       final ValueWrapper result = delegate.get(key);
-      span.setData(SpanDataConvention.CACHE_HIT_KEY, result != null);
+      span.setData(SpanDataConvention.CACHE_HIT, result != null);
       span.setStatus(SpanStatus.OK);
       return result;
     } catch (Throwable e) {
@@ -65,7 +65,7 @@ public final class SentryCacheWrapper implements Cache {
     }
     try {
       final ValueWrapper wrapper = delegate.get(key);
-      span.setData(SpanDataConvention.CACHE_HIT_KEY, wrapper != null);
+      span.setData(SpanDataConvention.CACHE_HIT, wrapper != null);
       final T result = delegate.get(key, type);
       span.setStatus(SpanStatus.OK);
       return result;
@@ -93,7 +93,7 @@ public final class SentryCacheWrapper implements Cache {
                 loaderInvoked.set(true);
                 return valueLoader.call();
               });
-      span.setData(SpanDataConvention.CACHE_HIT_KEY, !loaderInvoked.get());
+      span.setData(SpanDataConvention.CACHE_HIT, !loaderInvoked.get());
       span.setData(SpanDataConvention.CACHE_WRITE, loaderInvoked.get());
       span.setStatus(SpanStatus.OK);
       return result;
@@ -246,9 +246,9 @@ public final class SentryCacheWrapper implements Cache {
       return null;
     }
     if (keyString != null) {
-      span.setData(SpanDataConvention.CACHE_KEY_KEY, Arrays.asList(keyString));
+      span.setData(SpanDataConvention.CACHE_KEY, Arrays.asList(keyString));
     }
-    span.setData(SpanDataConvention.CACHE_OPERATION_KEY, operationName);
+    span.setData(SpanDataConvention.CACHE_OPERATION, operationName);
     return span;
   }
 }
