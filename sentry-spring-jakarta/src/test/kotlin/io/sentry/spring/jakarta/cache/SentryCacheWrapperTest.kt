@@ -187,7 +187,7 @@ class SentryCacheWrapperTest {
     assertEquals("value", result!!.get())
     assertEquals(1, tx.spans.size)
     val span = tx.spans.first()
-    assertEquals("cache.get", span.operation)
+    assertEquals("cache.retrieve", span.operation)
     assertEquals("myKey", span.description)
     assertEquals(SpanStatus.OK, span.status)
     assertEquals(true, span.getData(SpanDataConvention.CACHE_HIT_KEY))
@@ -373,7 +373,7 @@ class SentryCacheWrapperTest {
     verify(delegate).putIfAbsent("myKey", "myValue")
     assertEquals(1, tx.spans.size)
     val span = tx.spans.first()
-    assertEquals("cache.put", span.operation)
+    assertEquals("cache.putIfAbsent", span.operation)
     assertEquals(SpanStatus.OK, span.status)
     assertEquals(listOf("myKey"), span.getData(SpanDataConvention.CACHE_KEY_KEY))
     assertEquals("putIfAbsent", span.getData("db.operation.name"))
@@ -391,7 +391,7 @@ class SentryCacheWrapperTest {
     verify(delegate).evict("myKey")
     assertEquals(1, tx.spans.size)
     val span = tx.spans.first()
-    assertEquals("cache.remove", span.operation)
+    assertEquals("cache.evict", span.operation)
     assertEquals(SpanStatus.OK, span.status)
     assertEquals("evict", span.getData("db.operation.name"))
   }
@@ -408,7 +408,7 @@ class SentryCacheWrapperTest {
 
     assertTrue(result)
     assertEquals(1, tx.spans.size)
-    assertEquals("cache.remove", tx.spans.first().operation)
+    assertEquals("cache.evictIfPresent", tx.spans.first().operation)
     assertEquals("evictIfPresent", tx.spans.first().getData("db.operation.name"))
   }
 
@@ -424,7 +424,7 @@ class SentryCacheWrapperTest {
     verify(delegate).clear()
     assertEquals(1, tx.spans.size)
     val span = tx.spans.first()
-    assertEquals("cache.flush", span.operation)
+    assertEquals("cache.clear", span.operation)
     assertEquals(SpanStatus.OK, span.status)
     assertNull(span.getData(SpanDataConvention.CACHE_KEY_KEY))
     assertEquals("clear", span.getData("db.operation.name"))
@@ -442,7 +442,7 @@ class SentryCacheWrapperTest {
 
     assertTrue(result)
     assertEquals(1, tx.spans.size)
-    assertEquals("cache.flush", tx.spans.first().operation)
+    assertEquals("cache.invalidate", tx.spans.first().operation)
     assertEquals("invalidate", tx.spans.first().getData("db.operation.name"))
   }
 
