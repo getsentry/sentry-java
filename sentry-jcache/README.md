@@ -10,4 +10,4 @@ JCache is a standard API — you need a provider implementation at runtime. Comm
 - [Apache Ignite](https://ignite.apache.org/)
 - [Infinispan](https://infinispan.org/)
 
-Please consult the documentation on how to install and use this integration in the Sentry Docs for [Java](https://docs.sentry.io/platforms/java/tracing/instrumentation/jcache/).
+Please consult the documentation on how to install and use this integration in the Sentry Docs for [Java](https://docs.sentry.io/platforms/java/integrations/jcache/).
