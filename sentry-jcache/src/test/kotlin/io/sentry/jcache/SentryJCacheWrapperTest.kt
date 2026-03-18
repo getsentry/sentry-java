@@ -94,7 +94,7 @@ class SentryJCacheWrapperTest {
     assertEquals(mapOf("k1" to "v1"), result)
     assertEquals(1, tx.spans.size)
     val span = tx.spans.first()
-    assertEquals("cache.get", span.operation)
+    assertEquals("cache.getAll", span.operation)
     assertEquals("testCache", span.description)
     assertEquals(true, span.getData(SpanDataConvention.CACHE_HIT_KEY))
     val cacheKeys = span.getData(SpanDataConvention.CACHE_KEY_KEY) as List<*>
@@ -144,7 +144,7 @@ class SentryJCacheWrapperTest {
 
     assertEquals("oldValue", result)
     assertEquals(1, tx.spans.size)
-    assertEquals("cache.put", tx.spans.first().operation)
+    assertEquals("cache.getAndPut", tx.spans.first().operation)
     assertEquals("getAndPut", tx.spans.first().getData("db.operation.name"))
   }
 
@@ -161,7 +161,7 @@ class SentryJCacheWrapperTest {
     verify(delegate).putAll(entries)
     assertEquals(1, tx.spans.size)
     val span = tx.spans.first()
-    assertEquals("cache.put", span.operation)
+    assertEquals("cache.putAll", span.operation)
     assertEquals("testCache", span.description)
     val cacheKeys = span.getData(SpanDataConvention.CACHE_KEY_KEY) as List<*>
     assertTrue(cacheKeys.containsAll(listOf("k1", "k2")))
@@ -182,7 +182,7 @@ class SentryJCacheWrapperTest {
     verify(delegate).putIfAbsent("myKey", "myValue")
     assertEquals(1, tx.spans.size)
     val span = tx.spans.first()
-    assertEquals("cache.put", span.operation)
+    assertEquals("cache.putIfAbsent", span.operation)
     assertEquals(SpanStatus.OK, span.status)
     assertEquals(listOf("myKey"), span.getData(SpanDataConvention.CACHE_KEY_KEY))
     assertEquals("putIfAbsent", span.getData("db.operation.name"))
@@ -202,7 +202,7 @@ class SentryJCacheWrapperTest {
     verify(delegate).replace("myKey", "old", "new")
     assertEquals(1, tx.spans.size)
     val span = tx.spans.first()
-    assertEquals("cache.put", span.operation)
+    assertEquals("cache.replace", span.operation)
     assertEquals(SpanStatus.OK, span.status)
     assertEquals("replace", span.getData("db.operation.name"))
   }
@@ -219,7 +219,7 @@ class SentryJCacheWrapperTest {
     verify(delegate).replace("myKey", "value")
     assertEquals(1, tx.spans.size)
     val span = tx.spans.first()
-    assertEquals("cache.put", span.operation)
+    assertEquals("cache.replace", span.operation)
     assertEquals(SpanStatus.OK, span.status)
     assertEquals("replace", span.getData("db.operation.name"))
   }
@@ -238,7 +238,7 @@ class SentryJCacheWrapperTest {
     verify(delegate).getAndReplace("myKey", "newValue")
     assertEquals(1, tx.spans.size)
     val span = tx.spans.first()
-    assertEquals("cache.put", span.operation)
+    assertEquals("cache.getAndReplace", span.operation)
     assertEquals(SpanStatus.OK, span.status)
     assertEquals("getAndReplace", span.getData("db.operation.name"))
   }
@@ -289,7 +289,7 @@ class SentryJCacheWrapperTest {
 
     assertEquals("value", result)
     assertEquals(1, tx.spans.size)
-    assertEquals("cache.remove", tx.spans.first().operation)
+    assertEquals("cache.getAndRemove", tx.spans.first().operation)
     assertEquals("getAndRemove", tx.spans.first().getData("db.operation.name"))
   }
 
@@ -306,7 +306,7 @@ class SentryJCacheWrapperTest {
     verify(delegate).removeAll(keys)
     assertEquals(1, tx.spans.size)
     val span = tx.spans.first()
-    assertEquals("cache.remove", span.operation)
+    assertEquals("cache.removeAll", span.operation)
     assertEquals("testCache", span.description)
     assertEquals("removeAll", span.getData("db.operation.name"))
   }
@@ -322,7 +322,7 @@ class SentryJCacheWrapperTest {
 
     verify(delegate).removeAll()
     assertEquals(1, tx.spans.size)
-    assertEquals("cache.flush", tx.spans.first().operation)
+    assertEquals("cache.removeAll", tx.spans.first().operation)
     assertEquals("removeAll", tx.spans.first().getData("db.operation.name"))
   }
 
@@ -338,7 +338,7 @@ class SentryJCacheWrapperTest {
     verify(delegate).clear()
     assertEquals(1, tx.spans.size)
     val span = tx.spans.first()
-    assertEquals("cache.flush", span.operation)
+    assertEquals("cache.clear", span.operation)
     assertEquals(SpanStatus.OK, span.status)
     assertNull(span.getData(SpanDataConvention.CACHE_KEY_KEY))
     assertEquals("clear", span.getData("db.operation.name"))
@@ -357,7 +357,7 @@ class SentryJCacheWrapperTest {
 
     assertEquals("result", result)
     assertEquals(1, tx.spans.size)
-    assertEquals("cache.get", tx.spans.first().operation)
+    assertEquals("cache.invoke", tx.spans.first().operation)
     assertEquals("invoke", tx.spans.first().getData("db.operation.name"))
   }
 
@@ -376,7 +376,7 @@ class SentryJCacheWrapperTest {
 
     assertEquals(resultMap, result)
     assertEquals(1, tx.spans.size)
-    assertEquals("cache.get", tx.spans.first().operation)
+    assertEquals("cache.invokeAll", tx.spans.first().operation)
     assertEquals("invokeAll", tx.spans.first().getData("db.operation.name"))
   }
 

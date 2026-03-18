@@ -128,7 +128,7 @@ public final class SentryCacheWrapper implements Cache {
   @Override
   public @Nullable ValueWrapper putIfAbsent(
       final @NotNull Object key, final @Nullable Object value) {
-    final ISpan span = startSpan("cache.put", key, "putIfAbsent");
+    final ISpan span = startSpan("cache.putIfAbsent", key, "putIfAbsent");
     if (span == null) {
       return delegate.putIfAbsent(key, value);
     }
@@ -147,7 +147,7 @@ public final class SentryCacheWrapper implements Cache {
 
   @Override
   public void evict(final @NotNull Object key) {
-    final ISpan span = startSpan("cache.remove", key, "evict");
+    final ISpan span = startSpan("cache.evict", key, "evict");
     if (span == null) {
       delegate.evict(key);
       return;
@@ -166,7 +166,7 @@ public final class SentryCacheWrapper implements Cache {
 
   @Override
   public boolean evictIfPresent(final @NotNull Object key) {
-    final ISpan span = startSpan("cache.remove", key, "evictIfPresent");
+    final ISpan span = startSpan("cache.evictIfPresent", key, "evictIfPresent");
     if (span == null) {
       return delegate.evictIfPresent(key);
     }
@@ -185,7 +185,7 @@ public final class SentryCacheWrapper implements Cache {
 
   @Override
   public void clear() {
-    final ISpan span = startSpan("cache.flush", null, "clear");
+    final ISpan span = startSpan("cache.clear", null, "clear");
     if (span == null) {
       delegate.clear();
       return;
@@ -204,7 +204,7 @@ public final class SentryCacheWrapper implements Cache {
 
   @Override
   public boolean invalidate() {
-    final ISpan span = startSpan("cache.flush", null, "invalidate");
+    final ISpan span = startSpan("cache.invalidate", null, "invalidate");
     if (span == null) {
       return delegate.invalidate();
     }
