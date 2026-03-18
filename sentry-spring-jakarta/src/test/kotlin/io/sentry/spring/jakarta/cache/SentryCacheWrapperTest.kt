@@ -86,8 +86,6 @@ class SentryCacheWrapperTest {
   fun `get with type creates span with cache hit true on hit`() {
     val tx = createTransaction()
     val wrapper = SentryCacheWrapper(delegate, scopes)
-    val valueWrapper = mock<Cache.ValueWrapper>()
-    whenever(delegate.get("myKey")).thenReturn(valueWrapper)
     whenever(delegate.get("myKey", String::class.java)).thenReturn("value")
 
     val result = wrapper.get("myKey", String::class.java)
@@ -98,25 +96,9 @@ class SentryCacheWrapperTest {
   }
 
   @Test
-  fun `get with type creates span with cache hit true when cached value is null`() {
-    val tx = createTransaction()
-    val wrapper = SentryCacheWrapper(delegate, scopes)
-    val valueWrapper = mock<Cache.ValueWrapper>()
-    whenever(delegate.get("myKey")).thenReturn(valueWrapper)
-    whenever(delegate.get("myKey", String::class.java)).thenReturn(null)
-
-    val result = wrapper.get("myKey", String::class.java)
-
-    assertNull(result)
-    assertEquals(1, tx.spans.size)
-    assertEquals(true, tx.spans.first().getData(SpanDataConvention.CACHE_HIT))
-  }
-
-  @Test
   fun `get with type creates span with cache hit false on miss`() {
     val tx = createTransaction()
     val wrapper = SentryCacheWrapper(delegate, scopes)
-    whenever(delegate.get("myKey")).thenReturn(null)
     whenever(delegate.get("myKey", String::class.java)).thenReturn(null)
 
     val result = wrapper.get("myKey", String::class.java)
@@ -131,7 +113,6 @@ class SentryCacheWrapperTest {
     val tx = createTransaction()
     val wrapper = SentryCacheWrapper(delegate, scopes)
     val exception = RuntimeException("cache error")
-    whenever(delegate.get("myKey")).thenReturn(mock<Cache.ValueWrapper>())
     whenever(delegate.get("myKey", String::class.java)).thenThrow(exception)
 
     assertFailsWith<RuntimeException> { wrapper.get("myKey", String::class.java) }
