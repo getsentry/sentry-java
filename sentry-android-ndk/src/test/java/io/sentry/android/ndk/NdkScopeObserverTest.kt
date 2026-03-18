@@ -1,5 +1,6 @@
 package io.sentry.android.ndk
 
+import io.sentry.Attachment
 import io.sentry.Breadcrumb
 import io.sentry.DateUtils
 import io.sentry.JsonSerializer
@@ -152,5 +153,34 @@ class NdkScopeObserverTest {
     verify(fixture.nativeScope).setUser(anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull())
     verify(fixture.nativeScope)
       .addBreadcrumb(anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull())
+  }
+
+  @Test
+  fun `add file-path attachment syncs to native scope`() {
+    val sut = fixture.getSut()
+
+    val attachment = Attachment("/data/data/com.example/files/log.txt")
+    sut.addAttachment(attachment)
+
+    verify(fixture.nativeScope).addAttachment("/data/data/com.example/files/log.txt")
+  }
+
+  @Test
+  fun `add byte attachment does not sync to native scope`() {
+    val sut = fixture.getSut()
+
+    val attachment = Attachment(byteArrayOf(1, 2, 3), "data.bin")
+    sut.addAttachment(attachment)
+
+    verify(fixture.nativeScope, never()).addAttachment(any())
+  }
+
+  @Test
+  fun `clear attachments forwards call to native scope`() {
+    val sut = fixture.getSut()
+
+    sut.clearAttachments()
+
+    verify(fixture.nativeScope).clearAttachments()
   }
 }

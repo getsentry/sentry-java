@@ -1,5 +1,6 @@
 package io.sentry.android.ndk;
 
+import io.sentry.Attachment;
 import io.sentry.Breadcrumb;
 import io.sentry.DateUtils;
 import io.sentry.IScope;
@@ -143,6 +144,31 @@ public final class NdkScopeObserver extends ScopeObserverAdapter {
                       spanContext.getTraceId().toString(), spanContext.getSpanId().toString()));
     } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, e, "Scope sync setTrace failed.");
+    }
+  }
+
+  @Override
+  public void addAttachment(final @NotNull Attachment attachment) {
+    final String pathname = attachment.getPathname();
+    if (pathname == null) {
+      // Only file-path attachments are getting synced to the native layer right now.
+      options.getLogger().log(SentryLevel.DEBUG, "Scope sync addAttachment skips non-file attachment.");
+      return;
+    }
+
+    try {
+      options.getExecutorService().submit(() -> nativeScope.addAttachment(pathname));
+    } catch (Throwable e) {
+      options.getLogger().log(SentryLevel.ERROR, e, "Scope sync addAttachment has an error.");
+    }
+  }
+
+  @Override
+  public void clearAttachments() {
+    try {
+      options.getExecutorService().submit(() -> nativeScope.clearAttachments());
+    } catch (Throwable e) {
+      options.getLogger().log(SentryLevel.ERROR, e, "Scope sync clearAttachments has an error.");
     }
   }
 }

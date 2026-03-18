@@ -45,4 +45,8 @@ public interface IScopeObserver {
   void setTrace(@Nullable SpanContext spanContext, @NotNull IScope scope);
 
   void setReplayId(@NotNull SentryId replayId);
+
+  void addAttachment(@NotNull Attachment attachment) {}
+
+  void clearAttachments() {}
 }
