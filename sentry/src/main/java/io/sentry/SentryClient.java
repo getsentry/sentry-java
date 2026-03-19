@@ -231,7 +231,25 @@ public final class SentryClient implements ISentryClient {
     // an event from the past. If it's cached, but with ApplyScopeData, it comes from the outbox
     // folder and we still want to capture replay (e.g. a native captureException error)
     if (event != null && !isBackfillable && !isCached && (event.isErrored() || event.isCrashed())) {
-      options.getReplayController().captureReplay(event.isCrashed());
+      boolean shouldCaptureReplay = true;
+      final SentryReplayOptions.BeforeErrorSamplingCallback beforeErrorSampling =
+          options.getSessionReplay().getBeforeErrorSampling();
+      if (beforeErrorSampling != null) {
+        try {
+          shouldCaptureReplay = beforeErrorSampling.execute(event, hint);
+        } catch (Throwable e) {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.ERROR,
+                  "The beforeErrorSampling callback threw an exception. Proceeding with replay capture.",
+                  e);
+          shouldCaptureReplay = true;
+        }
+      }
+      if (shouldCaptureReplay) {
+        options.getReplayController().captureReplay(event.isCrashed());
+      }
     }
 
     try {

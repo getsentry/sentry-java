@@ -17,6 +17,25 @@ import org.jetbrains.annotations.Nullable;
 
 public final class SentryReplayOptions extends SentryMaskingOptions {
 
+  /**
+   * Callback that is called before the error sample rate is checked for session replay. If the
+   * callback returns {@code false}, the replay will not be captured for this error event, and the
+   * {@code onErrorSampleRate} will not be checked. If the callback returns {@code true}, the {@code
+   * onErrorSampleRate} will be checked as usual. This allows developers to filter which errors
+   * trigger replay capture.
+   */
+  public interface BeforeErrorSamplingCallback {
+    /**
+     * Determines whether replay capture should proceed for the given error event.
+     *
+     * @param event the error event that triggered the replay capture
+     * @param hint the hint associated with the event
+     * @return {@code true} if the error sample rate should be checked, {@code false} to skip replay
+     *     capture entirely
+     */
+    boolean execute(@NotNull SentryEvent event, @NotNull Hint hint);
+  }
+
   private static final String CUSTOM_MASKING_INTEGRATION_NAME = "ReplayCustomMasking";
   private volatile boolean customMaskingTracked = false;
 
@@ -171,6 +190,12 @@ public final class SentryReplayOptions extends SentryMaskingOptions {
    * headers (Content-Type, Content-Length, Accept) are always included in addition to these.
    */
   private @NotNull List<String> networkResponseHeaders = DEFAULT_HEADERS;
+
+  /**
+   * A callback that is called before the error sample rate is checked for session replay. Can be
+   * used to filter which errors trigger replay capture.
+   */
+  private @Nullable BeforeErrorSamplingCallback beforeErrorSampling;
 
   public SentryReplayOptions(final boolean empty, final @Nullable SdkVersion sdkVersion) {
     if (!empty) {
@@ -468,5 +493,27 @@ public final class SentryReplayOptions extends SentryMaskingOptions {
     merged.addAll(defaultHeaders);
     merged.addAll(additionalHeaders);
     return Collections.unmodifiableList(new ArrayList<>(merged));
+  }
+
+  /**
+   * Gets the callback that is called before the error sample rate is checked for session replay.
+   *
+   * @return the callback, or {@code null} if not set
+   */
+  public @Nullable BeforeErrorSamplingCallback getBeforeErrorSampling() {
+    return beforeErrorSampling;
+  }
+
+  /**
+   * Sets the callback that is called before the error sample rate is checked for session replay.
+   * Returning {@code false} from the callback will skip replay capture for the error event entirely
+   * (the {@code onErrorSampleRate} will not be checked). Returning {@code true} will proceed with
+   * the normal error sample rate check.
+   *
+   * @param beforeErrorSampling the callback, or {@code null} to disable filtering
+   */
+  public void setBeforeErrorSampling(
+      final @Nullable BeforeErrorSamplingCallback beforeErrorSampling) {
+    this.beforeErrorSampling = beforeErrorSampling;
   }
 }
