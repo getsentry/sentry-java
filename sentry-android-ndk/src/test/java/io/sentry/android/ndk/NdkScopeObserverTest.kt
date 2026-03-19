@@ -166,13 +166,14 @@ class NdkScopeObserverTest {
   }
 
   @Test
-  fun `add byte attachment does not sync to native scope`() {
+  fun `add byte attachment syncs bytes to native scope`() {
     val sut = fixture.getSut()
 
-    val attachment = Attachment(byteArrayOf(1, 2, 3), "data.bin")
+    val bytes = byteArrayOf(1, 2, 3)
+    val attachment = Attachment(bytes, "data.bin")
     sut.addAttachment(attachment)
 
-    verify(fixture.nativeScope, never()).addAttachment(any())
+    verify(fixture.nativeScope).addAttachmentBytes(bytes, "data.bin")
   }
 
   @Test

@@ -150,19 +150,29 @@ public final class NdkScopeObserver extends ScopeObserverAdapter {
   @Override
   public void addAttachment(final @NotNull Attachment attachment) {
     final String pathname = attachment.getPathname();
-    if (pathname == null) {
-      // Only file-path attachments are getting synced to the native layer right now.
-      options
-          .getLogger()
-          .log(SentryLevel.DEBUG, "Scope sync addAttachment skips non-file attachment.");
+    if (pathname != null) {
+      try {
+        options.getExecutorService().submit(() -> nativeScope.addAttachment(pathname));
+      } catch (Throwable e) {
+        options.getLogger().log(SentryLevel.ERROR, e, "Scope sync addAttachment has an error.");
+      }
       return;
     }
 
-    try {
-      options.getExecutorService().submit(() -> nativeScope.addAttachment(pathname));
-    } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.ERROR, e, "Scope sync addAttachment has an error.");
+    final byte[] bytes = attachment.getBytes();
+    if (bytes != null) {
+      final String filename = attachment.getFilename();
+      try {
+        options.getExecutorService().submit(() -> nativeScope.addAttachmentBytes(bytes, filename));
+      } catch (Throwable e) {
+        options.getLogger().log(SentryLevel.ERROR, e, "Scope sync addAttachment has an error.");
+      }
+      return;
     }
+
+    options
+        .getLogger()
+        .log(SentryLevel.DEBUG, "Scope sync addAttachment skips attachment without path or bytes.");
   }
 
   @Override

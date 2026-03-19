@@ -46,7 +46,7 @@ public interface IScopeObserver {
 
   void setReplayId(@NotNull SentryId replayId);
 
-  void addAttachment(@NotNull Attachment attachment) {}
+  void addAttachment(@NotNull Attachment attachment);
 
-  void clearAttachments() {}
+  void clearAttachments();
 }
