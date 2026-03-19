@@ -13,9 +13,8 @@
         options.sessionReplay.beforeErrorSampling =
             SentryReplayOptions.BeforeErrorSamplingCallback { event, hint ->
                 // Skip replay for handled exceptions
-                val dominated = event.exceptions?.lastOrNull()
-                val isHandled = dominated?.mechanism?.isHandled == true
-                !isHandled
+                val hasUnhandled = event.exceptions?.any { it.mechanism?.isHandled == false } == true
+                hasUnhandled
             }
     }
     ```
