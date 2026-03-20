@@ -122,7 +122,8 @@ internal fun TextLayout?.getVisibleRects(
   paddingLeft: Int,
   paddingTop: Int,
 ): List<Rect> {
-  if (this == null) {
+
+  if (this == null || lineCount <= 1) {
     return listOf(globalRect)
   }
 

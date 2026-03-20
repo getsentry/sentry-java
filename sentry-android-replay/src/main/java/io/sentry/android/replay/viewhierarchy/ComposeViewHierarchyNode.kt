@@ -23,8 +23,8 @@ import io.sentry.SentryMaskingOptions
 import io.sentry.android.replay.SentryReplayModifiers
 import io.sentry.android.replay.util.ComposeTextLayout
 import io.sentry.android.replay.util.boundsInWindow
+import io.sentry.android.replay.util.findColor
 import io.sentry.android.replay.util.findPainter
-import io.sentry.android.replay.util.findTextAttributes
 import io.sentry.android.replay.util.isMaskable
 import io.sentry.android.replay.util.toOpaque
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.GenericViewHierarchyNode
@@ -189,11 +189,10 @@ internal object ComposeViewHierarchyNode {
           ?.action
           ?.invoke(textLayoutResults)
 
-        val (color, hasFillModifier) = node.findTextAttributes()
         val textLayoutResult = textLayoutResults.firstOrNull()
         var textColor = textLayoutResult?.layoutInput?.style?.color
         if (textColor?.isUnspecified == true) {
-          textColor = color
+          textColor = node.findColor()
         }
         val isLaidOut = textLayoutResult?.layoutInput?.style?.fontSize != TextUnit.Unspecified
         // TODO: support editable text (currently there's a way to get @Composable's padding only
@@ -202,7 +201,7 @@ internal object ComposeViewHierarchyNode {
         TextViewHierarchyNode(
           layout =
             if (textLayoutResult != null && !isEditable && isLaidOut) {
-              ComposeTextLayout(textLayoutResult, hasFillModifier)
+              ComposeTextLayout(textLayoutResult)
             } else {
               null
             },

@@ -13,28 +13,15 @@ import androidx.compose.ui.node.LayoutNode
 import androidx.compose.ui.text.TextLayoutResult
 import kotlin.math.roundToInt
 
-internal class ComposeTextLayout(
-  internal val layout: TextLayoutResult,
-  private val hasFillModifier: Boolean,
-) : TextLayout {
+internal class ComposeTextLayout(internal val layout: TextLayoutResult) : TextLayout {
   override val lineCount: Int
     get() = layout.lineCount
 
   override val dominantTextColor: Int?
     get() = null
 
-  override fun getPrimaryHorizontal(line: Int, offset: Int): Float {
-    val horizontalPos = layout.getHorizontalPosition(offset, usePrimaryDirection = true)
-    // when there's no `fill` modifier on a Text composable, compose still thinks that there's
-    // one and wrongly calculates horizontal position relative to node's start, not text's start
-    // for some reason. This is only the case for single-line text (multiline works fien).
-    // So we subtract line's left to get the correct position
-    return if (!hasFillModifier && lineCount == 1) {
-      horizontalPos - layout.getLineLeft(line)
-    } else {
-      horizontalPos
-    }
-  }
+  override fun getPrimaryHorizontal(line: Int, offset: Int) =
+    layout.getHorizontalPosition(offset, usePrimaryDirection = true)
 
   override fun getEllipsisCount(line: Int): Int = if (layout.isLineEllipsized(line)) 1 else 0
 
@@ -92,8 +79,6 @@ internal fun Painter.isMaskable(): Boolean {
     !className.contains("Brush")
 }
 
-internal data class TextAttributes(val color: Color?, val hasFillModifier: Boolean)
-
 /**
  * This method is necessary to mask text in Compose.
  *
@@ -108,10 +93,9 @@ internal data class TextAttributes(val color: Color?, val hasFillModifier: Boole
  *
  * We also add special proguard rules to keep the `Text` class names and their `color` member.
  */
-internal fun LayoutNode.findTextAttributes(): TextAttributes {
+internal fun LayoutNode.findColor(): Color? {
   val modifierInfos = getModifierInfo()
   var color: Color? = null
-  var hasFillModifier = false
   for (index in modifierInfos.indices) {
     val modifier = modifierInfos[index].modifier
     val modifierClassName = modifier::class.java.name
@@ -127,11 +111,9 @@ internal fun LayoutNode.findTextAttributes(): TextAttributes {
         } catch (e: Throwable) {
           null
         }
-    } else if (modifierClassName.contains("Fill")) {
-      hasFillModifier = true
     }
   }
-  return TextAttributes(color, hasFillModifier)
+  return color
 }
 
 /**
