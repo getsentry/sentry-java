@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixes
+
+- Session Replay: Fix Compose text masking mismatch with weighted text ([#5218](https://github.com/getsentry/sentry-java/pull/5218))
+
 ### Features
 
 - Android: Add `beforeErrorSampling` callback to Session Replay ([#5214](https://github.com/getsentry/sentry-java/pull/5214))
