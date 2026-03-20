@@ -128,21 +128,14 @@ internal fun TextLayout?.getVisibleRects(
 
   val rects = mutableListOf<Rect>()
   for (i in 0 until lineCount) {
-    val lineStart = getPrimaryHorizontal(i, getLineStart(i)).toInt()
-    val ellipsisCount = getEllipsisCount(i)
-    val lineVisibleEnd = getLineVisibleEnd(i)
-    var lineEnd =
-      getPrimaryHorizontal(i, lineVisibleEnd - ellipsisCount + if (ellipsisCount > 0) 1 else 0)
-        .toInt()
-    if (lineEnd == 0 && lineVisibleEnd > 0) {
-      // looks like the case for when emojis are present in text
-      lineEnd = getPrimaryHorizontal(i, lineVisibleEnd - 1).toInt() + 1
-    }
+    val lineLeft = getLineLeft(i).toInt()
+    val lineRight = getLineRight(i).toInt()
     val lineTop = getLineTop(i)
     val lineBottom = getLineBottom(i)
     val rect = Rect()
-    rect.left = globalRect.left + paddingLeft + lineStart
-    rect.right = rect.left + (lineEnd - lineStart)
+
+    rect.left = globalRect.left + paddingLeft + lineLeft
+    rect.right = globalRect.left + paddingLeft + lineRight
     rect.top = globalRect.top + paddingTop + lineTop
     rect.bottom = rect.top + (lineBottom - lineTop)
 
@@ -197,18 +190,13 @@ internal class AndroidTextLayout(private val layout: Layout) : TextLayout {
       return dominantColor?.toOpaque()
     }
 
-  override fun getPrimaryHorizontal(line: Int, offset: Int): Float =
-    layout.getPrimaryHorizontal(offset)
+  override fun getLineLeft(line: Int): Float = layout.getLineLeft(line)
 
-  override fun getEllipsisCount(line: Int): Int = layout.getEllipsisCount(line)
-
-  override fun getLineVisibleEnd(line: Int): Int = layout.getLineVisibleEnd(line)
+  override fun getLineRight(line: Int): Float = layout.getLineRight(line)
 
   override fun getLineTop(line: Int): Int = layout.getLineTop(line)
 
   override fun getLineBottom(line: Int): Int = layout.getLineBottom(line)
-
-  override fun getLineStart(line: Int): Int = layout.getLineStart(line)
 }
 
 internal fun View?.addOnDrawListenerSafe(listener: ViewTreeObserver.OnDrawListener) {
