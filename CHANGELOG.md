@@ -8,7 +8,7 @@
   - Allows filtering which errors trigger replay capture before the `onErrorSampleRate` is checked
   - Returning `false` skips replay capture entirely for that error; returning `true` proceeds with the normal sample rate check
   - Example usage:
-    ```java
+    ```kotlin
     SentryAndroid.init(context) { options ->
         options.sessionReplay.beforeErrorSampling =
             SentryReplayOptions.BeforeErrorSamplingCallback { event, hint ->
