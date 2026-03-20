@@ -2335,6 +2335,7 @@ public class SentryOptions {
   /**
    * Returns the effective org ID, preferring the explicit config option over the DSN-parsed value.
    */
+  @ApiStatus.Internal
   public @Nullable String getEffectiveOrgId() {
     if (orgId != null) {
       return orgId;
