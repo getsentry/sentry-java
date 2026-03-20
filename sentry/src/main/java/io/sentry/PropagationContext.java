@@ -46,7 +46,11 @@ public final class PropagationContext {
       final @Nullable SpanId spanId,
       final @Nullable SentryOptions options) {
     if (options != null && !shouldContinueTrace(options, baggage)) {
-      options.getLogger().log(SentryLevel.DEBUG, "Not continuing trace due to org ID mismatch.");
+      options
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Not continuing trace due to strict org ID validation failure.");
       return new PropagationContext();
     }
 
