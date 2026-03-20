@@ -4,7 +4,7 @@
 
 ### Features
 
-- Add `beforeErrorSampling` callback to Session Replay ([#5214](https://github.com/getsentry/sentry-java/pull/5214))
+- Android: Add `beforeErrorSampling` callback to Session Replay ([#5214](https://github.com/getsentry/sentry-java/pull/5214))
   - Allows filtering which errors trigger replay capture before the `onErrorSampleRate` is checked
   - Returning `false` skips replay capture entirely for that error; returning `true` proceeds with the normal sample rate check
   - Example usage:
