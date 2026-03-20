@@ -1,5 +1,24 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Android: Add `beforeErrorSampling` callback to Session Replay ([#5214](https://github.com/getsentry/sentry-java/pull/5214))
+  - Allows filtering which errors trigger replay capture before the `onErrorSampleRate` is checked
+  - Returning `false` skips replay capture entirely for that error; returning `true` proceeds with the normal sample rate check
+  - Example usage:
+    ```java
+    SentryAndroid.init(context) { options ->
+        options.sessionReplay.beforeErrorSampling =
+            SentryReplayOptions.BeforeErrorSamplingCallback { event, hint ->
+                // Skip replay for handled exceptions
+                val hasUnhandled = event.exceptions?.any { it.mechanism?.isHandled == false } == true
+                hasUnhandled
+            }
+    }
+    ```
+
 ## 8.36.0
 
 ### Features
