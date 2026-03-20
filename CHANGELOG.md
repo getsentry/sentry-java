@@ -12,9 +12,8 @@
     SentryAndroid.init(context) { options ->
         options.sessionReplay.beforeErrorSampling =
             SentryReplayOptions.BeforeErrorSamplingCallback { event, hint ->
-                // Skip replay for handled exceptions
-                val hasUnhandled = event.exceptions?.any { it.mechanism?.isHandled == false } == true
-                hasUnhandled
+                // Only capture replay for crashes (excluding e.g. handled exceptions)
+                event.isCrashed
             }
     }
     ```
