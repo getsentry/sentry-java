@@ -62,6 +62,7 @@ class SentryJCacheWrapperTest {
     assertEquals("myKey", span.description)
     assertEquals(SpanStatus.OK, span.status)
     assertEquals(true, span.getData(SpanDataConvention.CACHE_HIT_KEY))
+    assertNull(span.getData(SpanDataConvention.CACHE_WRITE))
     assertEquals(listOf("myKey"), span.getData(SpanDataConvention.CACHE_KEY_KEY))
     assertEquals("auto.cache.jcache", span.spanContext.origin)
     assertEquals("get", span.getData(SpanDataConvention.CACHE_OPERATION_KEY))
@@ -128,6 +129,7 @@ class SentryJCacheWrapperTest {
     val span = tx.spans.first()
     assertEquals("cache.put", span.operation)
     assertEquals(SpanStatus.OK, span.status)
+    assertEquals(true, span.getData(SpanDataConvention.CACHE_WRITE))
     assertEquals(listOf("myKey"), span.getData(SpanDataConvention.CACHE_KEY_KEY))
     assertEquals("put", span.getData(SpanDataConvention.CACHE_OPERATION_KEY))
   }
@@ -145,6 +147,7 @@ class SentryJCacheWrapperTest {
     assertEquals("oldValue", result)
     assertEquals(1, tx.spans.size)
     assertEquals("cache.getAndPut", tx.spans.first().operation)
+    assertEquals(true, tx.spans.first().getData(SpanDataConvention.CACHE_WRITE))
     assertEquals("getAndPut", tx.spans.first().getData(SpanDataConvention.CACHE_OPERATION_KEY))
   }
 
@@ -163,6 +166,7 @@ class SentryJCacheWrapperTest {
     val span = tx.spans.first()
     assertEquals("cache.putAll", span.operation)
     assertEquals("testCache", span.description)
+    assertEquals(true, span.getData(SpanDataConvention.CACHE_WRITE))
     val cacheKeys = span.getData(SpanDataConvention.CACHE_KEY_KEY) as List<*>
     assertTrue(cacheKeys.containsAll(listOf("k1", "k2")))
     assertEquals("putAll", span.getData(SpanDataConvention.CACHE_OPERATION_KEY))
@@ -184,6 +188,7 @@ class SentryJCacheWrapperTest {
     val span = tx.spans.first()
     assertEquals("cache.putIfAbsent", span.operation)
     assertEquals(SpanStatus.OK, span.status)
+    assertEquals(true, span.getData(SpanDataConvention.CACHE_WRITE))
     assertEquals(listOf("myKey"), span.getData(SpanDataConvention.CACHE_KEY_KEY))
     assertEquals("putIfAbsent", span.getData(SpanDataConvention.CACHE_OPERATION_KEY))
   }
@@ -204,6 +209,7 @@ class SentryJCacheWrapperTest {
     val span = tx.spans.first()
     assertEquals("cache.replace", span.operation)
     assertEquals(SpanStatus.OK, span.status)
+    assertEquals(true, span.getData(SpanDataConvention.CACHE_WRITE))
     assertEquals("replace", span.getData(SpanDataConvention.CACHE_OPERATION_KEY))
   }
 
@@ -221,6 +227,7 @@ class SentryJCacheWrapperTest {
     val span = tx.spans.first()
     assertEquals("cache.replace", span.operation)
     assertEquals(SpanStatus.OK, span.status)
+    assertEquals(true, span.getData(SpanDataConvention.CACHE_WRITE))
     assertEquals("replace", span.getData(SpanDataConvention.CACHE_OPERATION_KEY))
   }
 
@@ -240,6 +247,7 @@ class SentryJCacheWrapperTest {
     val span = tx.spans.first()
     assertEquals("cache.getAndReplace", span.operation)
     assertEquals(SpanStatus.OK, span.status)
+    assertEquals(true, span.getData(SpanDataConvention.CACHE_WRITE))
     assertEquals("getAndReplace", span.getData(SpanDataConvention.CACHE_OPERATION_KEY))
   }
 
@@ -258,6 +266,7 @@ class SentryJCacheWrapperTest {
     val span = tx.spans.first()
     assertEquals("cache.remove", span.operation)
     assertEquals(SpanStatus.OK, span.status)
+    assertEquals(true, span.getData(SpanDataConvention.CACHE_WRITE))
     assertEquals("remove", span.getData(SpanDataConvention.CACHE_OPERATION_KEY))
   }
 
@@ -274,6 +283,7 @@ class SentryJCacheWrapperTest {
     assertTrue(result)
     assertEquals(1, tx.spans.size)
     assertEquals("cache.remove", tx.spans.first().operation)
+    assertEquals(true, tx.spans.first().getData(SpanDataConvention.CACHE_WRITE))
     assertEquals("remove", tx.spans.first().getData(SpanDataConvention.CACHE_OPERATION_KEY))
   }
 
@@ -290,6 +300,7 @@ class SentryJCacheWrapperTest {
     assertEquals("value", result)
     assertEquals(1, tx.spans.size)
     assertEquals("cache.getAndRemove", tx.spans.first().operation)
+    assertEquals(true, tx.spans.first().getData(SpanDataConvention.CACHE_WRITE))
     assertEquals("getAndRemove", tx.spans.first().getData(SpanDataConvention.CACHE_OPERATION_KEY))
   }
 
@@ -308,6 +319,7 @@ class SentryJCacheWrapperTest {
     val span = tx.spans.first()
     assertEquals("cache.removeAll", span.operation)
     assertEquals("testCache", span.description)
+    assertEquals(true, span.getData(SpanDataConvention.CACHE_WRITE))
     assertEquals("removeAll", span.getData(SpanDataConvention.CACHE_OPERATION_KEY))
   }
 
@@ -323,6 +335,7 @@ class SentryJCacheWrapperTest {
     verify(delegate).removeAll()
     assertEquals(1, tx.spans.size)
     assertEquals("cache.removeAll", tx.spans.first().operation)
+    assertEquals(true, tx.spans.first().getData(SpanDataConvention.CACHE_WRITE))
     assertEquals("removeAll", tx.spans.first().getData(SpanDataConvention.CACHE_OPERATION_KEY))
   }
 
@@ -340,6 +353,7 @@ class SentryJCacheWrapperTest {
     val span = tx.spans.first()
     assertEquals("cache.clear", span.operation)
     assertEquals(SpanStatus.OK, span.status)
+    assertEquals(true, span.getData(SpanDataConvention.CACHE_WRITE))
     assertNull(span.getData(SpanDataConvention.CACHE_KEY_KEY))
     assertEquals("clear", span.getData(SpanDataConvention.CACHE_OPERATION_KEY))
   }

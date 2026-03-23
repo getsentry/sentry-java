@@ -96,6 +96,7 @@ public final class SentryCacheWrapper implements Cache {
                 return valueLoader.call();
               });
       span.setData(SpanDataConvention.CACHE_HIT_KEY, !loaderInvoked.get());
+      span.setData(SpanDataConvention.CACHE_WRITE, loaderInvoked.get());
       span.setStatus(SpanStatus.OK);
       return result;
     } catch (Throwable e) {
@@ -171,6 +172,7 @@ public final class SentryCacheWrapper implements Cache {
             span.setThrowable(throwable);
           } else {
             span.setData(SpanDataConvention.CACHE_HIT_KEY, !loaderInvoked.get());
+            span.setData(SpanDataConvention.CACHE_WRITE, loaderInvoked.get());
             span.setStatus(SpanStatus.OK);
           }
           span.finish();
@@ -186,6 +188,7 @@ public final class SentryCacheWrapper implements Cache {
     }
     try {
       delegate.put(key, value);
+      span.setData(SpanDataConvention.CACHE_WRITE, true);
       span.setStatus(SpanStatus.OK);
     } catch (Throwable e) {
       span.setStatus(SpanStatus.INTERNAL_ERROR);
@@ -205,6 +208,7 @@ public final class SentryCacheWrapper implements Cache {
     }
     try {
       final ValueWrapper result = delegate.putIfAbsent(key, value);
+      span.setData(SpanDataConvention.CACHE_WRITE, result == null);
       span.setStatus(SpanStatus.OK);
       return result;
     } catch (Throwable e) {
@@ -225,6 +229,7 @@ public final class SentryCacheWrapper implements Cache {
     }
     try {
       delegate.evict(key);
+      span.setData(SpanDataConvention.CACHE_WRITE, true);
       span.setStatus(SpanStatus.OK);
     } catch (Throwable e) {
       span.setStatus(SpanStatus.INTERNAL_ERROR);
@@ -243,6 +248,7 @@ public final class SentryCacheWrapper implements Cache {
     }
     try {
       final boolean result = delegate.evictIfPresent(key);
+      span.setData(SpanDataConvention.CACHE_WRITE, result);
       span.setStatus(SpanStatus.OK);
       return result;
     } catch (Throwable e) {
@@ -263,6 +269,7 @@ public final class SentryCacheWrapper implements Cache {
     }
     try {
       delegate.clear();
+      span.setData(SpanDataConvention.CACHE_WRITE, true);
       span.setStatus(SpanStatus.OK);
     } catch (Throwable e) {
       span.setStatus(SpanStatus.INTERNAL_ERROR);
@@ -281,6 +288,7 @@ public final class SentryCacheWrapper implements Cache {
     }
     try {
       final boolean result = delegate.invalidate();
+      span.setData(SpanDataConvention.CACHE_WRITE, true);
       span.setStatus(SpanStatus.OK);
       return result;
     } catch (Throwable e) {

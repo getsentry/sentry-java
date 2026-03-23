@@ -29,4 +29,5 @@ public interface SpanDataConvention {
   String CACHE_HIT_KEY = "cache.hit";
   String CACHE_KEY_KEY = "cache.key";
   String CACHE_OPERATION_KEY = "cache.operation";
+  String CACHE_WRITE = "cache.write";
 }
