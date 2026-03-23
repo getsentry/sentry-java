@@ -4,6 +4,7 @@ public final class io/sentry/jcache/BuildConfig {
 }
 
 public final class io/sentry/jcache/SentryJCacheWrapper : javax/cache/Cache {
+	public fun <init> (Ljavax/cache/Cache;)V
 	public fun <init> (Ljavax/cache/Cache;Lio/sentry/IScopes;)V
 	public fun clear ()V
 	public fun close ()V

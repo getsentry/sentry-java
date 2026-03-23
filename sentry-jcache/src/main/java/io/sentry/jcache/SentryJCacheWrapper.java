@@ -2,6 +2,7 @@ package io.sentry.jcache;
 
 import io.sentry.IScopes;
 import io.sentry.ISpan;
+import io.sentry.ScopesAdapter;
 import io.sentry.SpanDataConvention;
 import io.sentry.SpanOptions;
 import io.sentry.SpanStatus;
@@ -35,6 +36,10 @@ public final class SentryJCacheWrapper<K, V> implements Cache<K, V> {
 
   private final @NotNull Cache<K, V> delegate;
   private final @NotNull IScopes scopes;
+
+  public SentryJCacheWrapper(final @NotNull Cache<K, V> delegate) {
+    this(delegate, ScopesAdapter.getInstance());
+  }
 
   public SentryJCacheWrapper(final @NotNull Cache<K, V> delegate, final @NotNull IScopes scopes) {
     this.delegate = delegate;
