@@ -4,6 +4,7 @@
 
 ### Features
 
+- Android: Attachments on the scope will now be synced to native ([#5211](https://github.com/getsentry/sentry-java/pull/5211))
 - Android: Add `beforeErrorSampling` callback to Session Replay ([#5214](https://github.com/getsentry/sentry-java/pull/5214))
   - Allows filtering which errors trigger replay capture before the `onErrorSampleRate` is checked
   - Returning `false` skips replay capture entirely for that error; returning `true` proceeds with the normal sample rate check
