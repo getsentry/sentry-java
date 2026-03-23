@@ -8,6 +8,63 @@
   - By default, the SDK now extracts the organization ID from the DSN (e.g. `o123.ingest.sentry.io`) and compares it with the `sentry-org_id` value in incoming baggage headers. When the two differ, the SDK starts a fresh trace instead of continuing the foreign one. This guards against accidentally linking traces across organizations.
   - New option `enableStrictTraceContinuation` (default `false`): when enabled, both the SDK's org ID **and** the incoming baggage org ID must be present and match for a trace to be continued. Traces with a missing org ID on either side are rejected. Configurable via code (`setStrictTraceContinuation(true)`), `sentry.properties` (`enable-strict-trace-continuation=true`), Android manifest (`io.sentry.strict-trace-continuation.enabled`), or Spring Boot (`sentry.strict-trace-continuation=true`).
   - New option `orgId`: allows explicitly setting the organization ID for self-hosted and Relay setups where it cannot be extracted from the DSN. Configurable via code (`setOrgId("123")`), `sentry.properties` (`org-id=123`), Android manifest (`io.sentry.org-id`), or Spring Boot (`sentry.org-id=123`).
+- Android: Add `beforeErrorSampling` callback to Session Replay ([#5214](https://github.com/getsentry/sentry-java/pull/5214))
+  - Allows filtering which errors trigger replay capture before the `onErrorSampleRate` is checked
+  - Returning `false` skips replay capture entirely for that error; returning `true` proceeds with the normal sample rate check
+  - Example usage:
+    ```java
+    SentryAndroid.init(context) { options ->
+        options.sessionReplay.beforeErrorSampling =
+            SentryReplayOptions.BeforeErrorSamplingCallback { event, hint ->
+                // Skip replay for handled exceptions
+                val hasUnhandled = event.exceptions?.any { it.mechanism?.isHandled == false } == true
+                hasUnhandled
+            }
+    }
+    ```
+
+## 8.36.0
+
+### Features
+
+- Show feedback form on device shake ([#5150](https://github.com/getsentry/sentry-java/pull/5150))
+  - Enable via `options.getFeedbackOptions().setUseShakeGesture(true)` or manifest meta-data `io.sentry.feedback.use-shake-gesture`
+  - Uses the device's accelerometer — no special permissions required
+
+### Fixes
+
+- Support masking/unmasking and click/scroll detection for Jetpack Compose 1.10+ ([#5189](https://github.com/getsentry/sentry-java/pull/5189))
+
+### Dependencies
+
+- Bump Native SDK from v0.13.1 to v0.13.2 ([#5181](https://github.com/getsentry/sentry-java/pull/5181))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0132)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.13.1...0.13.2)
+- Bump `com.abovevacant:epitaph` to `0.1.1` to avoid old D8/R8 dexing crashes in downstream Android builds on old AGP versions such as 7.4.x. ([#5200](https://github.com/getsentry/sentry-java/pull/5200))
+  - [changelog](https://github.com/abovevacant/epitaph/blob/main/CHANGELOG.md#011---2026-03-16)
+  - [diff](https://github.com/abovevacant/epitaph/compare/v0.1.0...v0.1.1)
+
+## 8.35.0
+
+### Fixes
+
+- Android: Remove the dependency on protobuf-lite for tombstones ([#5157](https://github.com/getsentry/sentry-java/pull/5157))
+
+### Features
+
+- Add new experimental option to capture profiles for ANRs ([#4899](https://github.com/getsentry/sentry-java/pull/4899))
+  - This feature will capture a stack profile of the main thread when it gets unresponsive
+  - The profile gets attached to the ANR event on the next app start, providing a flamegraph of the ANR issue on the sentry issue details page
+  - Enable via `options.setAnrProfilingSampleRate(<sample-rate>)` or AndroidManifest.xml: `<meta-data android:name="io.sentry.anr.profiling.sample-rate" android:value="[0.0-1.0]" />`
+  - The sample rate controls the probability of collecting a profile for each detected foreground ANR (0.0 to 1.0, null to disable)
+
+### Behavioral Changes
+
+- Add `enableAnrFingerprinting` option which assigns static fingerprints to ANR events with system-only stacktraces
+  - When enabled, ANRs whose stacktraces contain only system frames (e.g. `java.lang` or `android.os`) are grouped into a single issue instead of creating many separate issues
+  - This will help to reduce overall ANR issue noise in the Sentry dashboard
+  - **IMPORTANT:** This option is enabled by default.
+  - Disable via `options.setEnableAnrFingerprinting(false)` or AndroidManifest.xml: `<meta-data android:name="io.sentry.anr.enable-fingerprinting" android:value="false" />`
 
 ## 8.34.1
 
@@ -16,7 +73,6 @@
 - Common: Finalize previous session even when auto session tracking is disabled ([#5154](https://github.com/getsentry/sentry-java/pull/5154))
 - Android: Add `filterTouchesWhenObscured` to prevent Tapjacking on user feedback dialog ([#5155](https://github.com/getsentry/sentry-java/pull/5155))
 - Android: Add proguard rules to prevent error about missing Replay classes ([#5153](https://github.com/getsentry/sentry-java/pull/5153))
-- Android: Remove the dependency on protobuf-lite for tombstones ([#5157](https://github.com/getsentry/sentry-java/pull/5157))
 
 ## 8.34.0
 
@@ -55,14 +111,6 @@
     <meta-data android:name="io.sentry.screenshot.mask-all-images" android:value="true" />
     ```
 - The `ManifestMetaDataReader` now read the `DIST` ([#5107](https://github.com/getsentry/sentry-java/pull/5107))
-- Add new experimental option to capture profiles for ANRs ([#4899](https://github.com/getsentry/sentry-java/pull/4899))
-  - This feature will capture a stack profile of the main thread when it gets unresponsive
-  - The profile gets attached to the ANR event on the next app start, providing a flamegraph of the ANR issue on the sentry issue details page
-  - Enable via `options.setAnrProfilingSampleRate(<sample-rate>)` or AndroidManifest.xml: `<meta-data android:name="io.sentry.anr.profiling.sample-rate" android:value="[0.0-1.0]" />`
-  - The sample rate controls the probability of collecting a profile for each detected foreground ANR (0.0 to 1.0, null to disable)
-- Add `enableAnrFingerprinting` option to reduce ANR noise by assigning static fingerprints to ANR events with system-only stacktraces
-  - When enabled, ANRs whose stacktraces contain only system frames (e.g. `java.lang` or `android.os`) are grouped into a single issue instead of creating many separate issues
-  - Enable via `options.setEnableAnrFingerprinting(true)` or AndroidManifest.xml: `<meta-data android:name="io.sentry.anr.enable-fingerprinting" android:value="true" />`
 
 ### Fixes
 

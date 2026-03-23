@@ -1951,6 +1951,31 @@ class ManifestMetadataReaderTest {
   }
 
   @Test
+  fun `applyMetadata reads feedback use shake gesture and keep default value if not found`() {
+    // Arrange
+    val context = fixture.getContext()
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertFalse(fixture.options.feedbackOptions.isUseShakeGesture)
+  }
+
+  @Test
+  fun `applyMetadata reads feedback use shake gesture to options`() {
+    // Arrange
+    val bundle = bundleOf(ManifestMetadataReader.FEEDBACK_USE_SHAKE_GESTURE to true)
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertTrue(fixture.options.feedbackOptions.isUseShakeGesture)
+  }
+
+  @Test
   fun `applyMetadata reads screenshot strategy canvas to options`() {
     // Arrange
     val bundle = bundleOf(ManifestMetadataReader.REPLAYS_SCREENSHOT_STRATEGY to "canvas")
