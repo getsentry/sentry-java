@@ -9,15 +9,42 @@ Prepare local changes and create a pull request for the sentry-java repo.
 
 **Required reading:** Before proceeding, read `.cursor/rules/pr.mdc` for the full PR and stacked PR workflow details. That file is the source of truth for PR conventions, stack comment format, branch naming, and merge strategy.
 
-## Step 0: Determine PR Type
+## Step 0: Determine PR Type From Git Branch Context
 
-Ask the user (or infer from context) whether this is:
+Infer PR type from the current branch before asking the user.
 
-- **Standalone PR** — a regular PR targeting `main`. Follow Steps 1–6 as written.
-- **First PR of a new stack** — ask for a topic name (e.g. "Global Attributes"). Create a collection branch from `main`, then branch the first PR off it. The first PR targets the collection branch.
-- **Next PR in an existing stack** — identify the previous stack branch and topic. This PR targets the previous stack branch.
+1. Get current branch:
 
-If the user mentions "stack", "stacked PR", or provides a topic name with a number (e.g. `[Topic 2]`), treat it as a stacked PR. See `.cursor/rules/pr.mdc` § "Stacked PRs" for full details.
+```bash
+git branch --show-current
+```
+
+2. Apply these rules:
+
+- **If branch is `main` or `master`**: default to a **standalone PR**.
+  - Do **not** assume stack mode from `main`.
+  - Only use stack mode if the user explicitly asks for a stacked PR.
+- **If branch is not `main`/`master`**:
+  - Check whether that branch already has a PR and what its base is:
+    ```bash
+    gh pr list --head "$(git branch --show-current)" --json number,baseRefName,title --jq '.[0]'
+    ```
+  - If that branch PR exists and `baseRefName` is **not** `main`/`master`, treat the work as a **stacked PR context**.
+  - If that branch PR exists and `baseRefName` **is** `main`/`master`, treat it as **standalone PR context**.
+  - If no PR exists for the current branch, check whether other PRs target it:
+    ```bash
+    gh pr list --base "$(git branch --show-current)" --json number,headRefName,title
+    ```
+    If there are downstream PRs, treat this as a stack base context.
+
+3. If signals are mixed or ambiguous, ask one focused question to confirm.
+
+PR types:
+- **Standalone PR** — regular PR targeting `main`.
+- **First PR of a new stack** — create collection branch from `main`, then first PR off it.
+- **Next PR in an existing stack** — target previous stack branch.
+
+If the user explicitly says "stack", "stacked PR", or provides numbered stack titles (e.g. `[Topic 2]`), honor that even if branch heuristics are inconclusive.
 
 ## Step 1: Ensure Feature Branch
 
