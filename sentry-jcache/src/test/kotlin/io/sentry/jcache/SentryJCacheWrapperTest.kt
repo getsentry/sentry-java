@@ -61,11 +61,11 @@ class SentryJCacheWrapperTest {
     assertEquals("cache.get", span.operation)
     assertEquals("myKey", span.description)
     assertEquals(SpanStatus.OK, span.status)
-    assertEquals(true, span.getData(SpanDataConvention.CACHE_HIT_KEY))
+    assertEquals(true, span.getData(SpanDataConvention.CACHE_HIT))
     assertNull(span.getData(SpanDataConvention.CACHE_WRITE))
-    assertEquals(listOf("myKey"), span.getData(SpanDataConvention.CACHE_KEY_KEY))
+    assertEquals(listOf("myKey"), span.getData(SpanDataConvention.CACHE_KEY))
     assertEquals("auto.cache.jcache", span.spanContext.origin)
-    assertEquals("get", span.getData(SpanDataConvention.CACHE_OPERATION_KEY))
+    assertEquals("get", span.getData(SpanDataConvention.CACHE_OPERATION))
   }
 
   @Test
@@ -78,7 +78,7 @@ class SentryJCacheWrapperTest {
 
     assertNull(result)
     assertEquals(1, tx.spans.size)
-    assertEquals(false, tx.spans.first().getData(SpanDataConvention.CACHE_HIT_KEY))
+    assertEquals(false, tx.spans.first().getData(SpanDataConvention.CACHE_HIT))
   }
 
   // -- getAll --
@@ -98,10 +98,10 @@ class SentryJCacheWrapperTest {
     assertEquals("cache.getAll", span.operation)
     assertTrue(span.description!!.contains("k1"))
     assertTrue(span.description!!.contains("k2"))
-    assertEquals(true, span.getData(SpanDataConvention.CACHE_HIT_KEY))
-    val cacheKeys = span.getData(SpanDataConvention.CACHE_KEY_KEY) as List<*>
+    assertEquals(true, span.getData(SpanDataConvention.CACHE_HIT))
+    val cacheKeys = span.getData(SpanDataConvention.CACHE_KEY) as List<*>
     assertTrue(cacheKeys.containsAll(listOf("k1", "k2")))
-    assertEquals("getAll", span.getData(SpanDataConvention.CACHE_OPERATION_KEY))
+    assertEquals("getAll", span.getData(SpanDataConvention.CACHE_OPERATION))
   }
 
   @Test
@@ -113,7 +113,7 @@ class SentryJCacheWrapperTest {
 
     wrapper.getAll(keys)
 
-    assertEquals(false, tx.spans.first().getData(SpanDataConvention.CACHE_HIT_KEY))
+    assertEquals(false, tx.spans.first().getData(SpanDataConvention.CACHE_HIT))
   }
 
   // -- put --
@@ -131,8 +131,8 @@ class SentryJCacheWrapperTest {
     assertEquals("cache.put", span.operation)
     assertEquals(SpanStatus.OK, span.status)
     assertEquals(true, span.getData(SpanDataConvention.CACHE_WRITE))
-    assertEquals(listOf("myKey"), span.getData(SpanDataConvention.CACHE_KEY_KEY))
-    assertEquals("put", span.getData(SpanDataConvention.CACHE_OPERATION_KEY))
+    assertEquals(listOf("myKey"), span.getData(SpanDataConvention.CACHE_KEY))
+    assertEquals("put", span.getData(SpanDataConvention.CACHE_OPERATION))
   }
 
   // -- getAndPut --
@@ -149,7 +149,7 @@ class SentryJCacheWrapperTest {
     assertEquals(1, tx.spans.size)
     assertEquals("cache.getAndPut", tx.spans.first().operation)
     assertEquals(true, tx.spans.first().getData(SpanDataConvention.CACHE_WRITE))
-    assertEquals("getAndPut", tx.spans.first().getData(SpanDataConvention.CACHE_OPERATION_KEY))
+    assertEquals("getAndPut", tx.spans.first().getData(SpanDataConvention.CACHE_OPERATION))
   }
 
   // -- putAll --
@@ -169,9 +169,9 @@ class SentryJCacheWrapperTest {
     assertTrue(span.description!!.contains("k1"))
     assertTrue(span.description!!.contains("k2"))
     assertEquals(true, span.getData(SpanDataConvention.CACHE_WRITE))
-    val cacheKeys = span.getData(SpanDataConvention.CACHE_KEY_KEY) as List<*>
+    val cacheKeys = span.getData(SpanDataConvention.CACHE_KEY) as List<*>
     assertTrue(cacheKeys.containsAll(listOf("k1", "k2")))
-    assertEquals("putAll", span.getData(SpanDataConvention.CACHE_OPERATION_KEY))
+    assertEquals("putAll", span.getData(SpanDataConvention.CACHE_OPERATION))
   }
 
   // -- putIfAbsent --
@@ -191,8 +191,8 @@ class SentryJCacheWrapperTest {
     assertEquals("cache.putIfAbsent", span.operation)
     assertEquals(SpanStatus.OK, span.status)
     assertEquals(true, span.getData(SpanDataConvention.CACHE_WRITE))
-    assertEquals(listOf("myKey"), span.getData(SpanDataConvention.CACHE_KEY_KEY))
-    assertEquals("putIfAbsent", span.getData(SpanDataConvention.CACHE_OPERATION_KEY))
+    assertEquals(listOf("myKey"), span.getData(SpanDataConvention.CACHE_KEY))
+    assertEquals("putIfAbsent", span.getData(SpanDataConvention.CACHE_OPERATION))
   }
 
   // -- replace --
@@ -212,7 +212,7 @@ class SentryJCacheWrapperTest {
     assertEquals("cache.replace", span.operation)
     assertEquals(SpanStatus.OK, span.status)
     assertEquals(true, span.getData(SpanDataConvention.CACHE_WRITE))
-    assertEquals("replace", span.getData(SpanDataConvention.CACHE_OPERATION_KEY))
+    assertEquals("replace", span.getData(SpanDataConvention.CACHE_OPERATION))
   }
 
   @Test
@@ -230,7 +230,7 @@ class SentryJCacheWrapperTest {
     assertEquals("cache.replace", span.operation)
     assertEquals(SpanStatus.OK, span.status)
     assertEquals(true, span.getData(SpanDataConvention.CACHE_WRITE))
-    assertEquals("replace", span.getData(SpanDataConvention.CACHE_OPERATION_KEY))
+    assertEquals("replace", span.getData(SpanDataConvention.CACHE_OPERATION))
   }
 
   // -- getAndReplace --
@@ -250,7 +250,7 @@ class SentryJCacheWrapperTest {
     assertEquals("cache.getAndReplace", span.operation)
     assertEquals(SpanStatus.OK, span.status)
     assertEquals(true, span.getData(SpanDataConvention.CACHE_WRITE))
-    assertEquals("getAndReplace", span.getData(SpanDataConvention.CACHE_OPERATION_KEY))
+    assertEquals("getAndReplace", span.getData(SpanDataConvention.CACHE_OPERATION))
   }
 
   // -- remove(K) --
@@ -269,7 +269,7 @@ class SentryJCacheWrapperTest {
     assertEquals("cache.remove", span.operation)
     assertEquals(SpanStatus.OK, span.status)
     assertEquals(true, span.getData(SpanDataConvention.CACHE_WRITE))
-    assertEquals("remove", span.getData(SpanDataConvention.CACHE_OPERATION_KEY))
+    assertEquals("remove", span.getData(SpanDataConvention.CACHE_OPERATION))
   }
 
   // -- remove(K, V) --
@@ -286,7 +286,7 @@ class SentryJCacheWrapperTest {
     assertEquals(1, tx.spans.size)
     assertEquals("cache.remove", tx.spans.first().operation)
     assertEquals(true, tx.spans.first().getData(SpanDataConvention.CACHE_WRITE))
-    assertEquals("remove", tx.spans.first().getData(SpanDataConvention.CACHE_OPERATION_KEY))
+    assertEquals("remove", tx.spans.first().getData(SpanDataConvention.CACHE_OPERATION))
   }
 
   // -- getAndRemove --
@@ -303,7 +303,7 @@ class SentryJCacheWrapperTest {
     assertEquals(1, tx.spans.size)
     assertEquals("cache.getAndRemove", tx.spans.first().operation)
     assertEquals(true, tx.spans.first().getData(SpanDataConvention.CACHE_WRITE))
-    assertEquals("getAndRemove", tx.spans.first().getData(SpanDataConvention.CACHE_OPERATION_KEY))
+    assertEquals("getAndRemove", tx.spans.first().getData(SpanDataConvention.CACHE_OPERATION))
   }
 
   // -- removeAll(Set) --
@@ -323,7 +323,7 @@ class SentryJCacheWrapperTest {
     assertTrue(span.description!!.contains("k1"))
     assertTrue(span.description!!.contains("k2"))
     assertEquals(true, span.getData(SpanDataConvention.CACHE_WRITE))
-    assertEquals("removeAll", span.getData(SpanDataConvention.CACHE_OPERATION_KEY))
+    assertEquals("removeAll", span.getData(SpanDataConvention.CACHE_OPERATION))
   }
 
   // -- removeAll() --
@@ -339,7 +339,7 @@ class SentryJCacheWrapperTest {
     assertEquals(1, tx.spans.size)
     assertEquals("cache.removeAll", tx.spans.first().operation)
     assertEquals(true, tx.spans.first().getData(SpanDataConvention.CACHE_WRITE))
-    assertEquals("removeAll", tx.spans.first().getData(SpanDataConvention.CACHE_OPERATION_KEY))
+    assertEquals("removeAll", tx.spans.first().getData(SpanDataConvention.CACHE_OPERATION))
   }
 
   // -- clear --
@@ -357,8 +357,8 @@ class SentryJCacheWrapperTest {
     assertEquals("cache.clear", span.operation)
     assertEquals(SpanStatus.OK, span.status)
     assertEquals(true, span.getData(SpanDataConvention.CACHE_WRITE))
-    assertNull(span.getData(SpanDataConvention.CACHE_KEY_KEY))
-    assertEquals("clear", span.getData(SpanDataConvention.CACHE_OPERATION_KEY))
+    assertNull(span.getData(SpanDataConvention.CACHE_KEY))
+    assertEquals("clear", span.getData(SpanDataConvention.CACHE_OPERATION))
   }
 
   // -- invoke --
@@ -375,7 +375,7 @@ class SentryJCacheWrapperTest {
     assertEquals("result", result)
     assertEquals(1, tx.spans.size)
     assertEquals("cache.invoke", tx.spans.first().operation)
-    assertEquals("invoke", tx.spans.first().getData(SpanDataConvention.CACHE_OPERATION_KEY))
+    assertEquals("invoke", tx.spans.first().getData(SpanDataConvention.CACHE_OPERATION))
   }
 
   // -- invokeAll --
@@ -394,7 +394,7 @@ class SentryJCacheWrapperTest {
     assertEquals(resultMap, result)
     assertEquals(1, tx.spans.size)
     assertEquals("cache.invokeAll", tx.spans.first().operation)
-    assertEquals("invokeAll", tx.spans.first().getData(SpanDataConvention.CACHE_OPERATION_KEY))
+    assertEquals("invokeAll", tx.spans.first().getData(SpanDataConvention.CACHE_OPERATION))
   }
 
   // -- passthrough operations --

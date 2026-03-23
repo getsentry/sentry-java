@@ -4342,9 +4342,9 @@ public final class io/sentry/SpanContext$JsonKeys {
 
 public abstract interface class io/sentry/SpanDataConvention {
 	public static final field BLOCKED_MAIN_THREAD_KEY Ljava/lang/String;
-	public static final field CACHE_HIT_KEY Ljava/lang/String;
-	public static final field CACHE_KEY_KEY Ljava/lang/String;
-	public static final field CACHE_OPERATION_KEY Ljava/lang/String;
+	public static final field CACHE_HIT Ljava/lang/String;
+	public static final field CACHE_KEY Ljava/lang/String;
+	public static final field CACHE_OPERATION Ljava/lang/String;
 	public static final field CACHE_WRITE Ljava/lang/String;
 	public static final field CALL_STACK_KEY Ljava/lang/String;
 	public static final field CONTRIBUTES_TTFD Ljava/lang/String;
