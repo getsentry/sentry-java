@@ -8,6 +8,7 @@ import io.sentry.SpanOptions;
 import io.sentry.SpanStatus;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -454,31 +455,22 @@ public final class SentryJCacheWrapper<K, V> implements Cache<K, V> {
 
   private @Nullable ISpan startSpan(
       final @Nullable Object key, final @NotNull String operationName) {
-    if (!scopes.getOptions().isEnableCacheTracing()) {
-      return null;
-    }
-
-    final ISpan activeSpan = scopes.getSpan();
-    if (activeSpan == null || activeSpan.isNoOp()) {
-      return null;
-    }
-
-    final SpanOptions spanOptions = new SpanOptions();
-    spanOptions.setOrigin(TRACE_ORIGIN);
     final String keyString = key != null ? String.valueOf(key) : null;
-    final ISpan span = activeSpan.startChild("cache." + operationName, keyString, spanOptions);
-    if (span.isNoOp()) {
-      return null;
-    }
-    if (keyString != null) {
-      span.setData(SpanDataConvention.CACHE_KEY_KEY, Arrays.asList(keyString));
-    }
-    span.setData(OPERATION_ATTRIBUTE, operationName);
-    return span;
+    return startSpan(operationName, keyString, keyString != null ? Arrays.asList(keyString) : null);
   }
 
   private @Nullable ISpan startSpanForKeys(
       final @NotNull Set<?> keys, final @NotNull String operationName) {
+    return startSpan(
+        operationName,
+        delegate.getName(),
+        keys.stream().map(String::valueOf).collect(Collectors.toList()));
+  }
+
+  private @Nullable ISpan startSpan(
+      final @NotNull String operationName,
+      final @Nullable String description,
+      final @Nullable List<String> cacheKeys) {
     if (!scopes.getOptions().isEnableCacheTracing()) {
       return null;
     }
@@ -490,14 +482,13 @@ public final class SentryJCacheWrapper<K, V> implements Cache<K, V> {
 
     final SpanOptions spanOptions = new SpanOptions();
     spanOptions.setOrigin(TRACE_ORIGIN);
-    final ISpan span =
-        activeSpan.startChild("cache." + operationName, delegate.getName(), spanOptions);
+    final ISpan span = activeSpan.startChild("cache." + operationName, description, spanOptions);
     if (span.isNoOp()) {
       return null;
     }
-    span.setData(
-        SpanDataConvention.CACHE_KEY_KEY,
-        keys.stream().map(String::valueOf).collect(Collectors.toList()));
+    if (cacheKeys != null) {
+      span.setData(SpanDataConvention.CACHE_KEY_KEY, cacheKeys);
+    }
     span.setData(OPERATION_ATTRIBUTE, operationName);
     return span;
   }
