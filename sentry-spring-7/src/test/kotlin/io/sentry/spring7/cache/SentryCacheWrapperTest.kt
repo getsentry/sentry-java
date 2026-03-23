@@ -7,6 +7,8 @@ import io.sentry.SpanDataConvention
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
 import java.util.concurrent.Callable
+import java.util.concurrent.CompletableFuture
+import java.util.function.Supplier
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -135,6 +137,172 @@ class SentryCacheWrapperTest {
     assertEquals("loaded", result)
     assertEquals(1, tx.spans.size)
     assertEquals(false, tx.spans.first().getData(SpanDataConvention.CACHE_HIT_KEY))
+  }
+
+  // -- retrieve(Object key) --
+
+  @Test
+  fun `retrieve creates span with cache hit true when future resolves with value`() {
+    val tx = createTransaction()
+    val wrapper = SentryCacheWrapper(delegate, scopes)
+    whenever(delegate.retrieve("myKey")).thenReturn(CompletableFuture.completedFuture("value"))
+
+    val result = wrapper.retrieve("myKey")
+
+    assertEquals("value", result!!.get())
+    assertEquals(1, tx.spans.size)
+    val span = tx.spans.first()
+    assertEquals("cache.get", span.operation)
+    assertEquals("myKey", span.description)
+    assertEquals(SpanStatus.OK, span.status)
+    assertEquals(true, span.getData(SpanDataConvention.CACHE_HIT_KEY))
+    assertTrue(span.isFinished)
+  }
+
+  @Test
+  fun `retrieve creates span with cache hit false when future resolves with null`() {
+    val tx = createTransaction()
+    val wrapper = SentryCacheWrapper(delegate, scopes)
+    whenever(delegate.retrieve("myKey")).thenReturn(CompletableFuture.completedFuture(null))
+
+    val result = wrapper.retrieve("myKey")
+
+    assertNull(result!!.get())
+    assertEquals(1, tx.spans.size)
+    assertEquals(false, tx.spans.first().getData(SpanDataConvention.CACHE_HIT_KEY))
+    assertTrue(tx.spans.first().isFinished)
+  }
+
+  @Test
+  fun `retrieve creates span with cache hit false when delegate returns null`() {
+    val tx = createTransaction()
+    val wrapper = SentryCacheWrapper(delegate, scopes)
+    whenever(delegate.retrieve("myKey")).thenReturn(null)
+
+    val result = wrapper.retrieve("myKey")
+
+    assertNull(result)
+    assertEquals(1, tx.spans.size)
+    val span = tx.spans.first()
+    assertEquals(false, span.getData(SpanDataConvention.CACHE_HIT_KEY))
+    assertEquals(SpanStatus.OK, span.status)
+    assertTrue(span.isFinished)
+  }
+
+  @Test
+  fun `retrieve sets error status when future completes exceptionally`() {
+    val tx = createTransaction()
+    val wrapper = SentryCacheWrapper(delegate, scopes)
+    val exception = RuntimeException("async cache error")
+    whenever(delegate.retrieve("myKey"))
+      .thenReturn(CompletableFuture<Any>().also { it.completeExceptionally(exception) })
+
+    val result = wrapper.retrieve("myKey")
+
+    assertFailsWith<Exception> { result!!.get() }
+    assertEquals(1, tx.spans.size)
+    val span = tx.spans.first()
+    assertEquals(SpanStatus.INTERNAL_ERROR, span.status)
+    assertEquals(exception, span.throwable)
+    assertTrue(span.isFinished)
+  }
+
+  @Test
+  fun `retrieve sets error status when delegate throws synchronously`() {
+    val tx = createTransaction()
+    val wrapper = SentryCacheWrapper(delegate, scopes)
+    val exception = RuntimeException("sync error")
+    whenever(delegate.retrieve("myKey")).thenThrow(exception)
+
+    assertFailsWith<RuntimeException> { wrapper.retrieve("myKey") }
+
+    assertEquals(1, tx.spans.size)
+    val span = tx.spans.first()
+    assertEquals(SpanStatus.INTERNAL_ERROR, span.status)
+    assertEquals(exception, span.throwable)
+    assertTrue(span.isFinished)
+  }
+
+  @Test
+  fun `retrieve does not create span when tracing is disabled`() {
+    options.isEnableCacheTracing = false
+    val tx = createTransaction()
+    val wrapper = SentryCacheWrapper(delegate, scopes)
+    whenever(delegate.retrieve("myKey")).thenReturn(CompletableFuture.completedFuture("value"))
+
+    wrapper.retrieve("myKey")
+
+    verify(delegate).retrieve("myKey")
+    assertEquals(0, tx.spans.size)
+  }
+
+  // -- retrieve(Object key, Supplier<CompletableFuture<T>>) --
+
+  @Test
+  fun `retrieve with loader creates span with cache hit true when loader not invoked`() {
+    val tx = createTransaction()
+    val wrapper = SentryCacheWrapper(delegate, scopes)
+    // Simulate cache hit: delegate returns value without invoking the loader
+    whenever(delegate.retrieve(eq("myKey"), any<Supplier<CompletableFuture<String>>>()))
+      .thenReturn(CompletableFuture.completedFuture("cached"))
+
+    val result = wrapper.retrieve("myKey") { CompletableFuture.completedFuture("loaded") }
+
+    assertEquals("cached", result.get())
+    assertEquals(1, tx.spans.size)
+    assertEquals(true, tx.spans.first().getData(SpanDataConvention.CACHE_HIT_KEY))
+    assertTrue(tx.spans.first().isFinished)
+  }
+
+  @Test
+  fun `retrieve with loader creates span with cache hit false when loader invoked`() {
+    val tx = createTransaction()
+    val wrapper = SentryCacheWrapper(delegate, scopes)
+    // Simulate cache miss: delegate invokes the loader supplier
+    whenever(delegate.retrieve(eq("myKey"), any<Supplier<CompletableFuture<String>>>()))
+      .thenAnswer { invocation ->
+        val loader = invocation.getArgument<Supplier<CompletableFuture<String>>>(1)
+        loader.get()
+      }
+
+    val result = wrapper.retrieve("myKey") { CompletableFuture.completedFuture("loaded") }
+
+    assertEquals("loaded", result.get())
+    assertEquals(1, tx.spans.size)
+    assertEquals(false, tx.spans.first().getData(SpanDataConvention.CACHE_HIT_KEY))
+    assertTrue(tx.spans.first().isFinished)
+  }
+
+  @Test
+  fun `retrieve with loader sets error status when future completes exceptionally`() {
+    val tx = createTransaction()
+    val wrapper = SentryCacheWrapper(delegate, scopes)
+    val exception = RuntimeException("async loader error")
+    whenever(delegate.retrieve(eq("myKey"), any<Supplier<CompletableFuture<String>>>()))
+      .thenReturn(CompletableFuture<String>().also { it.completeExceptionally(exception) })
+
+    val result = wrapper.retrieve("myKey") { CompletableFuture.completedFuture("loaded") }
+
+    assertFailsWith<Exception> { result.get() }
+    assertEquals(1, tx.spans.size)
+    val span = tx.spans.first()
+    assertEquals(SpanStatus.INTERNAL_ERROR, span.status)
+    assertEquals(exception, span.throwable)
+    assertTrue(span.isFinished)
+  }
+
+  @Test
+  fun `retrieve with loader does not create span when tracing is disabled`() {
+    options.isEnableCacheTracing = false
+    val tx = createTransaction()
+    val wrapper = SentryCacheWrapper(delegate, scopes)
+    whenever(delegate.retrieve(eq("myKey"), any<Supplier<CompletableFuture<String>>>()))
+      .thenReturn(CompletableFuture.completedFuture("cached"))
+
+    wrapper.retrieve("myKey") { CompletableFuture.completedFuture("loaded") }
+
+    verify(delegate).retrieve(eq("myKey"), any<Supplier<CompletableFuture<String>>>())
+    assertEquals(0, tx.spans.size)
   }
 
   // -- put --
