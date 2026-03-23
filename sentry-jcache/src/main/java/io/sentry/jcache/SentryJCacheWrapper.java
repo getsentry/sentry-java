@@ -468,7 +468,8 @@ public final class SentryJCacheWrapper<K, V> implements Cache<K, V> {
   private @Nullable ISpan startSpan(
       final @Nullable Object key, final @NotNull String operationName) {
     final String keyString = key != null ? String.valueOf(key) : null;
-    return startSpan(operationName, keyString, keyString != null ? Collections.singletonList(keyString) : null);
+    return startSpan(
+        operationName, keyString, keyString != null ? Collections.singletonList(keyString) : null);
   }
 
   private @Nullable ISpan startSpanForKeys(
