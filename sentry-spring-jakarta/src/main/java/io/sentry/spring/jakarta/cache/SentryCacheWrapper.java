@@ -67,8 +67,9 @@ public final class SentryCacheWrapper implements Cache {
       return delegate.get(key, type);
     }
     try {
+      final ValueWrapper wrapper = delegate.get(key);
+      span.setData(SpanDataConvention.CACHE_HIT_KEY, wrapper != null);
       final T result = delegate.get(key, type);
-      span.setData(SpanDataConvention.CACHE_HIT_KEY, result != null);
       span.setStatus(SpanStatus.OK);
       return result;
     } catch (Throwable e) {
