@@ -26,4 +26,6 @@ public interface SpanDataConvention {
   String HTTP_START_TIMESTAMP = "http.start_timestamp";
   String HTTP_END_TIMESTAMP = "http.end_timestamp";
   String PROFILER_ID = "profiler_id";
+  String CACHE_HIT_KEY = "cache.hit";
+  String CACHE_KEY_KEY = "cache.key";
 }
