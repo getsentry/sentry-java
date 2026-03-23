@@ -35,6 +35,9 @@ public final class SentryFeedbackOptions {
   /** Displays the Sentry logo inside of the form. Defaults to true. */
   private boolean showBranding = true;
 
+  /** Shows the feedback form when a shake gesture is detected. Defaults to {@code false}. */
+  private boolean useShakeGesture = false;
+
   // Text Customization
   /** The title of the feedback form. Defaults to "Report a Bug". */
   private @NotNull CharSequence formTitle = "Report a Bug";
@@ -102,6 +105,7 @@ public final class SentryFeedbackOptions {
     this.showEmail = other.showEmail;
     this.useSentryUser = other.useSentryUser;
     this.showBranding = other.showBranding;
+    this.useShakeGesture = other.useShakeGesture;
     this.formTitle = other.formTitle;
     this.submitButtonLabel = other.submitButtonLabel;
     this.cancelButtonLabel = other.cancelButtonLabel;
@@ -232,6 +236,24 @@ public final class SentryFeedbackOptions {
    */
   public void setShowBranding(final boolean showBranding) {
     this.showBranding = showBranding;
+  }
+
+  /**
+   * Shows the feedback form when a shake gesture is detected. Defaults to {@code false}.
+   *
+   * @return true if shake gesture triggers the feedback form
+   */
+  public boolean isUseShakeGesture() {
+    return useShakeGesture;
+  }
+
+  /**
+   * Sets whether the feedback form is shown when a shake gesture is detected.
+   *
+   * @param useShakeGesture true to enable shake gesture triggering
+   */
+  public void setUseShakeGesture(final boolean useShakeGesture) {
+    this.useShakeGesture = useShakeGesture;
   }
 
   /**
@@ -547,6 +569,8 @@ public final class SentryFeedbackOptions {
         + useSentryUser
         + ", showBranding="
         + showBranding
+        + ", useShakeGesture="
+        + useShakeGesture
         + ", formTitle='"
         + formTitle
         + '\''

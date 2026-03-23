@@ -206,9 +206,9 @@ Format:
 ```markdown
 ## PR Stack (<Topic>)
 
-- [#5118](https://github.com/getsentry/sentry-java/pull/5118) — Add scope-level attributes API
-- [#5120](https://github.com/getsentry/sentry-java/pull/5120) — Wire scope attributes into LoggerApi and MetricsApi
-- [#5121](https://github.com/getsentry/sentry-java/pull/5121) — Showcase scope attributes in Spring Boot 4 samples
+- #5118
+- #5120
+- #5121
 
 ---
 ```
@@ -223,19 +223,13 @@ No status column — GitHub already shows that. The `---` separates the stack li
 
 This does not apply to standalone PRs or the collection branch PR.
 
-To update the PR description, use `--body-file` to avoid shell quoting issues with special characters in the body:
+To update the PR description, use `--body-file` to avoid shell quoting issues with special characters in the body.
 
-```bash
-# Get current PR description into a temp file
-gh pr view <PR_NUMBER> --json body --jq '.body' > /tmp/pr-body.md
+**Important:** Do not use shell redirects (`>`, `>>`, `|`) or compound commands (`&&`, `||`). These create compound shell expressions that won't match permission patterns. Instead, use the `Write` and `Edit` tools for file manipulation:
 
-# Edit /tmp/pr-body.md to prepend or replace the stack list section
-# (replace everything from "## PR Stack" up to and including the "---" separator,
-#  or prepend before the existing description if no stack list exists yet)
-
-# Update the description
-gh pr edit <PR_NUMBER> --body-file /tmp/pr-body.md
-```
+1. Read the current body with `gh pr view <PR_NUMBER> --json body --jq '.body'` (the output is returned directly — use the `Write` tool to save it to `/tmp/pr-body.md`)
+2. Use the `Edit` tool to prepend or replace the stack list section in `/tmp/pr-body.md`
+3. Update the description: `gh pr edit <PR_NUMBER> --body-file /tmp/pr-body.md`
 
 ### Merging Stacked PRs (done by the user, not the agent)
 
