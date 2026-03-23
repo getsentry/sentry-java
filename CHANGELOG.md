@@ -19,6 +19,10 @@
     }
     ```
 
+### Dependencies
+
+- Bump OpenTelemetry dependencies to 1.60.1 / 2.26.0 / 1.40.0 ([#5225](https://github.com/getsentry/sentry-java/pull/5225))
+
 ## 8.36.0
 
 ### Features
