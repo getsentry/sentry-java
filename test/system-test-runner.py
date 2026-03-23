@@ -61,7 +61,8 @@ SENTRY_ENVIRONMENT_VARIABLES = {
     "OTEL_TRACES_EXPORTER": "none",
     "OTEL_METRICS_EXPORTER": "none",
     "OTEL_LOGS_EXPORTER": "none",
-    "SENTRY_LOGS_ENABLED": "true"
+    "SENTRY_LOGS_ENABLED": "true",
+    "SENTRY_ENABLE_CACHE_TRACING": "true"
 }
 
 class ServerType(Enum):

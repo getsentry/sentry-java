@@ -211,7 +211,7 @@ public class Main {
     Cache<String, String> rawCache = cacheManager.createCache("myCache", config);
 
     // Wrap with SentryJCacheWrapper to enable cache tracing
-    Cache<String, String> cache = new SentryJCacheWrapper<>(rawCache, Sentry.getCurrentScopes());
+    Cache<String, String> cache = new SentryJCacheWrapper<>(rawCache);
 
     // All cache operations inside a transaction produce child spans
     ITransaction transaction = Sentry.startTransaction("cache-demo", "demo");
