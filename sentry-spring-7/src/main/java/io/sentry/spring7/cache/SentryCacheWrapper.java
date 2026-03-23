@@ -196,14 +196,24 @@ public final class SentryCacheWrapper implements Cache {
     }
   }
 
-  // putIfAbsent is not instrumented — we cannot know ahead of time whether the put
-  // will actually happen, and emitting a cache.put span for a no-op would be misleading.
-  // This matches sentry-python and sentry-javascript which also skip conditional puts.
-  // We must override to bypass the default implementation which calls this.get() + this.put().
   @Override
   public @Nullable ValueWrapper putIfAbsent(
       final @NotNull Object key, final @Nullable Object value) {
-    return delegate.putIfAbsent(key, value);
+    final ISpan span = startSpan("cache.put", key, "putIfAbsent");
+    if (span == null) {
+      return delegate.putIfAbsent(key, value);
+    }
+    try {
+      final ValueWrapper result = delegate.putIfAbsent(key, value);
+      span.setStatus(SpanStatus.OK);
+      return result;
+    } catch (Throwable e) {
+      span.setStatus(SpanStatus.INTERNAL_ERROR);
+      span.setThrowable(e);
+      throw e;
+    } finally {
+      span.finish();
+    }
   }
 
   @Override

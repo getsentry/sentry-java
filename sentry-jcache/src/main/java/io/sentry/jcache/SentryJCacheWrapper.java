@@ -153,29 +153,80 @@ public final class SentryJCacheWrapper<K, V> implements Cache<K, V> {
     }
   }
 
-  // putIfAbsent is not instrumented — we cannot know ahead of time whether the put
-  // will actually happen, and emitting a cache.put span for a no-op would be misleading.
   @Override
   public boolean putIfAbsent(final K key, final V value) {
-    return delegate.putIfAbsent(key, value);
+    final ISpan span = startSpan("cache.put", key, "putIfAbsent");
+    if (span == null) {
+      return delegate.putIfAbsent(key, value);
+    }
+    try {
+      final boolean result = delegate.putIfAbsent(key, value);
+      span.setStatus(SpanStatus.OK);
+      return result;
+    } catch (Throwable e) {
+      span.setStatus(SpanStatus.INTERNAL_ERROR);
+      span.setThrowable(e);
+      throw e;
+    } finally {
+      span.finish();
+    }
   }
 
-  // replace and getAndReplace are not instrumented — like putIfAbsent, they are conditional
-  // writes (only happen if the key exists / value matches). Emitting a cache.put span for a
-  // potential no-op would be misleading.
   @Override
   public boolean replace(final K key, final V oldValue, final V newValue) {
-    return delegate.replace(key, oldValue, newValue);
+    final ISpan span = startSpan("cache.put", key, "replace");
+    if (span == null) {
+      return delegate.replace(key, oldValue, newValue);
+    }
+    try {
+      final boolean result = delegate.replace(key, oldValue, newValue);
+      span.setStatus(SpanStatus.OK);
+      return result;
+    } catch (Throwable e) {
+      span.setStatus(SpanStatus.INTERNAL_ERROR);
+      span.setThrowable(e);
+      throw e;
+    } finally {
+      span.finish();
+    }
   }
 
   @Override
   public boolean replace(final K key, final V value) {
-    return delegate.replace(key, value);
+    final ISpan span = startSpan("cache.put", key, "replace");
+    if (span == null) {
+      return delegate.replace(key, value);
+    }
+    try {
+      final boolean result = delegate.replace(key, value);
+      span.setStatus(SpanStatus.OK);
+      return result;
+    } catch (Throwable e) {
+      span.setStatus(SpanStatus.INTERNAL_ERROR);
+      span.setThrowable(e);
+      throw e;
+    } finally {
+      span.finish();
+    }
   }
 
   @Override
   public V getAndReplace(final K key, final V value) {
-    return delegate.getAndReplace(key, value);
+    final ISpan span = startSpan("cache.put", key, "getAndReplace");
+    if (span == null) {
+      return delegate.getAndReplace(key, value);
+    }
+    try {
+      final V result = delegate.getAndReplace(key, value);
+      span.setStatus(SpanStatus.OK);
+      return result;
+    } catch (Throwable e) {
+      span.setStatus(SpanStatus.INTERNAL_ERROR);
+      span.setThrowable(e);
+      throw e;
+    } finally {
+      span.finish();
+    }
   }
 
   // -- remove operations --
