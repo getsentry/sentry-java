@@ -7,7 +7,9 @@ import io.sentry.SpanOptions;
 import io.sentry.SpanStatus;
 import java.util.Arrays;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -102,6 +104,76 @@ public final class SentryCacheWrapper implements Cache {
     } finally {
       span.finish();
     }
+  }
+
+  @Override
+  public @Nullable CompletableFuture<?> retrieve(final @NotNull Object key) {
+    final ISpan span = startSpan("cache.get", key);
+    if (span == null) {
+      return delegate.retrieve(key);
+    }
+    final CompletableFuture<?> result;
+    try {
+      result = delegate.retrieve(key);
+    } catch (Throwable e) {
+      span.setStatus(SpanStatus.INTERNAL_ERROR);
+      span.setThrowable(e);
+      span.finish();
+      throw e;
+    }
+    if (result == null) {
+      span.setData(SpanDataConvention.CACHE_HIT_KEY, false);
+      span.setStatus(SpanStatus.OK);
+      span.finish();
+      return null;
+    }
+    return result.whenComplete(
+        (value, throwable) -> {
+          if (throwable != null) {
+            span.setStatus(SpanStatus.INTERNAL_ERROR);
+            span.setThrowable(throwable);
+          } else {
+            span.setData(SpanDataConvention.CACHE_HIT_KEY, value != null);
+            span.setStatus(SpanStatus.OK);
+          }
+          span.finish();
+        });
+  }
+
+  @Override
+  public <T> CompletableFuture<T> retrieve(
+      final @NotNull Object key, final @NotNull Supplier<CompletableFuture<T>> valueLoader) {
+    final ISpan span = startSpan("cache.get", key);
+    if (span == null) {
+      return delegate.retrieve(key, valueLoader);
+    }
+    final AtomicBoolean loaderInvoked = new AtomicBoolean(false);
+    final CompletableFuture<T> result;
+    try {
+      result =
+          delegate.retrieve(
+              key,
+              () -> {
+                loaderInvoked.set(true);
+                return valueLoader.get();
+              });
+    } catch (Throwable e) {
+      span.setStatus(SpanStatus.INTERNAL_ERROR);
+      span.setThrowable(e);
+      span.finish();
+      throw e;
+    }
+    return result.whenComplete(
+        (value, throwable) -> {
+          if (throwable != null) {
+            span.setStatus(SpanStatus.INTERNAL_ERROR);
+            span.setThrowable(throwable);
+          } else {
+            span.setData(SpanDataConvention.CACHE_HIT_KEY, !loaderInvoked.get());
+            span.setStatus(SpanStatus.OK);
+          }
+          span.finish();
+        });
   }
 
   @Override

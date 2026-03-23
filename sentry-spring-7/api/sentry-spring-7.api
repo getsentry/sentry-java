@@ -129,6 +129,8 @@ public final class io/sentry/spring7/cache/SentryCacheWrapper : org/springframew
 	public fun invalidate ()Z
 	public fun put (Ljava/lang/Object;Ljava/lang/Object;)V
 	public fun putIfAbsent (Ljava/lang/Object;Ljava/lang/Object;)Lorg/springframework/cache/Cache$ValueWrapper;
+	public fun retrieve (Ljava/lang/Object;)Ljava/util/concurrent/CompletableFuture;
+	public fun retrieve (Ljava/lang/Object;Ljava/util/function/Supplier;)Ljava/util/concurrent/CompletableFuture;
 }
 
 public abstract interface annotation class io/sentry/spring7/checkin/SentryCheckIn : java/lang/annotation/Annotation {
