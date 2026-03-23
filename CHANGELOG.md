@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Add cache tracing instrumentation for Spring Boot 4 ([#5172](https://github.com/getsentry/sentry-java/pull/5172), [#5173](https://github.com/getsentry/sentry-java/pull/5173), [#5174](https://github.com/getsentry/sentry-java/pull/5174))
+  - Wraps Spring `CacheManager` and `Cache` beans to produce `cache.get`, `cache.put`, `cache.remove`, and `cache.flush` spans
+  - Set `sentry.enable-cache-tracing` to `true` to enable this feature
+
 ## 8.34.1
 
 ### Fixes
