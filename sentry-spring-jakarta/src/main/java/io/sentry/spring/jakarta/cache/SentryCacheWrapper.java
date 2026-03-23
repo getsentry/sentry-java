@@ -5,7 +5,7 @@ import io.sentry.ISpan;
 import io.sentry.SpanDataConvention;
 import io.sentry.SpanOptions;
 import io.sentry.SpanStatus;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -318,7 +318,7 @@ public final class SentryCacheWrapper implements Cache {
       return null;
     }
     if (keyString != null) {
-      span.setData(SpanDataConvention.CACHE_KEY, Arrays.asList(keyString));
+      span.setData(SpanDataConvention.CACHE_KEY, Collections.singletonList(keyString));
     }
     span.setData(SpanDataConvention.CACHE_OPERATION, operationName);
     return span;

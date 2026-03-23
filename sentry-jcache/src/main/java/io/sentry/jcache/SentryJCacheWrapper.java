@@ -6,7 +6,7 @@ import io.sentry.ScopesAdapter;
 import io.sentry.SpanDataConvention;
 import io.sentry.SpanOptions;
 import io.sentry.SpanStatus;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -468,7 +468,8 @@ public final class SentryJCacheWrapper<K, V> implements Cache<K, V> {
   private @Nullable ISpan startSpan(
       final @Nullable Object key, final @NotNull String operationName) {
     final String keyString = key != null ? String.valueOf(key) : null;
-    return startSpan(operationName, keyString, keyString != null ? Arrays.asList(keyString) : null);
+    return startSpan(
+        operationName, keyString, keyString != null ? Collections.singletonList(keyString) : null);
   }
 
   private @Nullable ISpan startSpanForKeys(
