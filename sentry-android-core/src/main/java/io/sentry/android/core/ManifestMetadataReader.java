@@ -169,7 +169,7 @@ final class ManifestMetadataReader {
 
   static final String STRICT_TRACE_CONTINUATION = "io.sentry.strict-trace-continuation.enabled";
   static final String ORG_ID = "io.sentry.org-id";
-  
+
   static final String FEEDBACK_USE_SHAKE_GESTURE = "io.sentry.feedback.use-shake-gesture";
 
   static final String SPOTLIGHT_ENABLE = "io.sentry.spotlight.enable";
