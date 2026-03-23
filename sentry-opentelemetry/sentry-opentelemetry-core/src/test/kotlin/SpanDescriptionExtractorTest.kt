@@ -1,11 +1,11 @@
 package io.sentry.opentelemetry
 
 import io.opentelemetry.api.common.AttributeKey
+import io.opentelemetry.api.common.Attributes
 import io.opentelemetry.api.trace.SpanContext
 import io.opentelemetry.api.trace.SpanKind
 import io.opentelemetry.api.trace.TraceFlags
 import io.opentelemetry.api.trace.TraceState
-import io.opentelemetry.sdk.internal.AttributesMap
 import io.opentelemetry.sdk.trace.data.SpanData
 import io.opentelemetry.semconv.HttpAttributes
 import io.opentelemetry.semconv.UrlAttributes
@@ -22,14 +22,14 @@ class SpanDescriptionExtractorTest {
   private class Fixture {
     val sentrySpan = mock<IOtelSpanWrapper>()
     val otelSpan = mock<SpanData>()
-    val attributes = AttributesMap.create(100, 100)
+    var attributes: Attributes = Attributes.empty()
     var parentSpanContext = SpanContext.getInvalid()
     var spanKind = SpanKind.INTERNAL
     var spanName: String? = null
     var spanDescription: String? = null
 
     fun setup() {
-      whenever(otelSpan.attributes).thenReturn(attributes)
+      whenever(otelSpan.attributes).thenAnswer { attributes }
       whenever(otelSpan.parentSpanContext).thenReturn(parentSpanContext)
       whenever(otelSpan.kind).thenReturn(spanKind)
       spanName?.let { whenever(otelSpan.name).thenReturn(it) }
@@ -271,7 +271,22 @@ class SpanDescriptionExtractorTest {
   }
 
   private fun givenAttributes(map: Map<AttributeKey<out Any>, Any>) {
-    map.forEach { k, v -> fixture.attributes.put(k, v) }
+    fixture.attributes = buildAttributes(map)
+  }
+
+  private fun buildAttributes(map: Map<AttributeKey<out Any>, Any>): Attributes {
+    val builder = Attributes.builder()
+    map.forEach { (key, value) -> putAttribute(builder, key, value) }
+    return builder.build()
+  }
+
+  @Suppress("UNCHECKED_CAST")
+  private fun putAttribute(
+    builder: io.opentelemetry.api.common.AttributesBuilder,
+    key: AttributeKey<out Any>,
+    value: Any,
+  ) {
+    builder.put(key as AttributeKey<Any>, value)
   }
 
   private fun whenExtractingSpanInfo(): OtelSpanInfo {
