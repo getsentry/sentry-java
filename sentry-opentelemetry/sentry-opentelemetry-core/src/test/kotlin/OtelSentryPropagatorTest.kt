@@ -19,6 +19,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertSame
@@ -67,6 +68,26 @@ class OtelSentryPropagatorTest {
     val scopes = newContext.get(SENTRY_SCOPES_KEY)
     assertNotNull(scopes)
     assertSame(scopeInContext, scopes)
+  }
+
+  @Test
+  fun `ignores incoming headers when strict continuation rejects org id`() {
+    Sentry.init { options ->
+      options.dsn = "https://key@o2.ingest.sentry.io/123"
+      options.isStrictTraceContinuation = true
+    }
+    val propagator = OtelSentryPropagator()
+    val carrier: Map<String, String> =
+      mapOf(
+        "sentry-trace" to "f9118105af4a2d42b4124532cd1065ff-424cffc8f94feeee-1",
+        "baggage" to "sentry-trace_id=f9118105af4a2d42b4124532cd1065ff,sentry-org_id=1",
+      )
+
+    val newContext = propagator.extract(Context.root(), carrier, MapGetter())
+
+    assertFalse(Span.fromContext(newContext).spanContext.isValid)
+    assertNull(newContext.get(SENTRY_TRACE_KEY))
+    assertNull(newContext.get(SENTRY_BAGGAGE_KEY))
   }
 
   @Test

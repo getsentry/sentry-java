@@ -48,9 +48,7 @@ public final class PropagationContext {
     if (options != null && !TracingUtils.shouldContinueTrace(options, baggage)) {
       options
           .getLogger()
-          .log(
-              SentryLevel.DEBUG,
-              "Not continuing trace due to strict org ID validation failure.");
+          .log(SentryLevel.DEBUG, "Not continuing trace due to strict org ID validation failure.");
       return new PropagationContext();
     }
 
@@ -162,5 +160,4 @@ public final class PropagationContext {
     // should never be null since we ensure it in ctor
     return sampleRand == null ? 0.0 : sampleRand;
   }
-
 }
