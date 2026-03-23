@@ -1,0 +1,6 @@
+{
+  "skills": [
+    "../.claude/skills"
+  ],
+  "enableSkillCommands": true
+}
