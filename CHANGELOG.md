@@ -4,10 +4,10 @@
 
 ### Features
 
-- Add cache tracing instrumentation for Spring Boot 2, 3, and 4 ([#5172](https://github.com/getsentry/sentry-java/pull/5172), [#5173](https://github.com/getsentry/sentry-java/pull/5173), [#5174](https://github.com/getsentry/sentry-java/pull/5174), [#5190](https://github.com/getsentry/sentry-java/pull/5190), [#5191](https://github.com/getsentry/sentry-java/pull/5191))
+- Add cache tracing instrumentation for Spring Boot 2, 3, and 4 ([#5165](https://github.com/getsentry/sentry-java/pull/5165))
   - Wraps Spring `CacheManager` and `Cache` beans to produce cache spans
   - Set `sentry.enable-cache-tracing` to `true` to enable this feature
-- Add JCache (JSR-107) cache tracing via new `sentry-jcache` module ([#5179](https://github.com/getsentry/sentry-java/pull/5179))
+- Add JCache (JSR-107) cache tracing via new `sentry-jcache` module ([#5165](https://github.com/getsentry/sentry-java/pull/5165))
   - Wraps JCache `Cache` with `SentryJCacheWrapper` to produce cache spans
   - Set the `enableCacheTracing` option to `true` to enable this feature
 - Android: Add `beforeErrorSampling` callback to Session Replay ([#5214](https://github.com/getsentry/sentry-java/pull/5214))
