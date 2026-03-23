@@ -45,7 +45,7 @@ class CacheSystemTest {
     restClient.deleteCachedTodo(1L)
 
     testHelper.ensureTransactionReceived { transaction, _ ->
-      testHelper.doesTransactionContainSpanWithOp(transaction, "cache.remove")
+      testHelper.doesTransactionContainSpanWithOp(transaction, "cache.evict")
     }
   }
 }
