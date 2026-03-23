@@ -9,12 +9,27 @@ import android.graphics.Color
 import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.os.Looper
+import android.text.TextUtils
 import android.view.View
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.LinearLayout.LayoutParams
 import android.widget.RadioButton
 import android.widget.TextView
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Text
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.dropbox.differ.Color as DifferColor
 import com.dropbox.differ.Image
@@ -410,6 +425,48 @@ class ScreenshotEventProcessorTest {
     assertNotNull(bytes)
   }
 
+  @Test
+  fun `snapshot - screenshot with ellipsized text no masking`() {
+    fixture.activity = buildActivity(EllipsizedTextActivity::class.java, null).setup().get()
+    val bytes =
+      processEventForSnapshots(
+        "screenshot_mask_ellipsized_view_unmasked",
+        isReplayAvailable = false,
+      )
+    assertNotNull(bytes)
+  }
+
+  @Test
+  fun `snapshot - screenshot with ellipsized text masking`() {
+    fixture.activity = buildActivity(EllipsizedTextActivity::class.java, null).setup().get()
+    val bytes =
+      processEventForSnapshots("screenshot_mask_ellipsized_view_masked") {
+        it.screenshot.setMaskAllText(true)
+      }
+    assertNotNull(bytes)
+  }
+
+  @Test
+  fun `snapshot - compose text no masking`() {
+    fixture.activity = buildActivity(ComposeTextActivity::class.java, null).setup().get()
+    val bytes =
+      processEventForSnapshots(
+        "screenshot_mask_ellipsized_compose_unmasked",
+        isReplayAvailable = false,
+      )
+    assertNotNull(bytes)
+  }
+
+  @Test
+  fun `snapshot - compose text with masking`() {
+    fixture.activity = buildActivity(ComposeTextActivity::class.java, null).setup().get()
+    val bytes =
+      processEventForSnapshots("screenshot_mask_ellipsized_compose_masked") {
+        it.screenshot.setMaskAllText(true)
+      }
+    assertNotNull(bytes)
+  }
+
   // endregion
 
   private fun getEvent(): SentryEvent = SentryEvent(Throwable("Throwable"))
@@ -481,6 +538,189 @@ private class CustomView(context: Context) : View(context) {
   override fun onDraw(canvas: Canvas) {
     super.onDraw(canvas)
     canvas.drawColor(Color.WHITE)
+  }
+}
+
+private class EllipsizedTextActivity : Activity() {
+
+  override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+    val longText = "This is a very long text that should be ellipsized when it does not fit"
+
+    val linearLayout =
+      LinearLayout(this).apply {
+        setBackgroundColor(Color.WHITE)
+        orientation = LinearLayout.VERTICAL
+        layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
+        setPadding(10, 10, 10, 10)
+      }
+
+    // Ellipsize end
+    linearLayout.addView(
+      TextView(this).apply {
+        text = longText
+        setTextColor(Color.BLACK)
+        textSize = 16f
+        maxLines = 1
+        ellipsize = TextUtils.TruncateAt.END
+        setBackgroundColor(Color.LTGRAY)
+        layoutParams =
+          LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT).apply {
+            setMargins(0, 8, 0, 0)
+          }
+      }
+    )
+
+    // Ellipsize middle
+    linearLayout.addView(
+      TextView(this).apply {
+        text = longText
+        setTextColor(Color.BLACK)
+        textSize = 16f
+        maxLines = 1
+        ellipsize = TextUtils.TruncateAt.MIDDLE
+        setBackgroundColor(Color.LTGRAY)
+        layoutParams =
+          LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT).apply {
+            setMargins(0, 8, 0, 0)
+          }
+      }
+    )
+
+    // Ellipsize start
+    linearLayout.addView(
+      TextView(this).apply {
+        text = longText
+        setTextColor(Color.BLACK)
+        textSize = 16f
+        maxLines = 1
+        ellipsize = TextUtils.TruncateAt.START
+        setBackgroundColor(Color.LTGRAY)
+        layoutParams =
+          LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT).apply {
+            setMargins(0, 8, 0, 0)
+          }
+      }
+    )
+
+    // Non-ellipsized text for comparison
+    linearLayout.addView(
+      TextView(this).apply {
+        text = "Short text"
+        setTextColor(Color.BLACK)
+        textSize = 16f
+        setBackgroundColor(Color.LTGRAY)
+        layoutParams =
+          LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT).apply {
+            setMargins(0, 8, 0, 0)
+          }
+      }
+    )
+
+    setContentView(linearLayout)
+  }
+}
+
+private class ComposeTextActivity : ComponentActivity() {
+
+  override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+    val longText = "This is a very long text that should be ellipsized when it does not fit in view"
+
+    setContent {
+      Column(
+        modifier =
+          Modifier.fillMaxWidth()
+            .background(androidx.compose.ui.graphics.Color.White)
+            .padding(10.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+      ) {
+        // Ellipsis overflow
+        Text(
+          longText,
+          maxLines = 1,
+          overflow = TextOverflow.Ellipsis,
+          fontSize = 16.sp,
+          modifier =
+            Modifier.fillMaxWidth().background(androidx.compose.ui.graphics.Color.LightGray),
+        )
+
+        // Text with textAlign center
+        Text(
+          "Centered text",
+          textAlign = TextAlign.Center,
+          fontSize = 16.sp,
+          modifier =
+            Modifier.fillMaxWidth().background(androidx.compose.ui.graphics.Color.LightGray),
+        )
+
+        // Text with textAlign end
+        Text(
+          "End-aligned text",
+          textAlign = TextAlign.End,
+          fontSize = 16.sp,
+          modifier =
+            Modifier.fillMaxWidth().background(androidx.compose.ui.graphics.Color.LightGray),
+        )
+
+        // Ellipsis with textAlign center
+        Text(
+          longText,
+          maxLines = 1,
+          overflow = TextOverflow.Ellipsis,
+          textAlign = TextAlign.Center,
+          fontSize = 16.sp,
+          modifier =
+            Modifier.fillMaxWidth().background(androidx.compose.ui.graphics.Color.LightGray),
+        )
+
+        // Weighted row with text
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+          Text(
+            "Weight 1",
+            fontSize = 16.sp,
+            modifier = Modifier.weight(1f).background(androidx.compose.ui.graphics.Color.LightGray),
+          )
+          Text(
+            "Weight 1",
+            fontSize = 16.sp,
+            modifier = Modifier.weight(1f).background(androidx.compose.ui.graphics.Color.LightGray),
+          )
+        }
+
+        // Weighted row with ellipsized text
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+          Text(
+            longText,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            fontSize = 16.sp,
+            modifier = Modifier.weight(1f).background(androidx.compose.ui.graphics.Color.LightGray),
+          )
+          Text(
+            longText,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.End,
+            fontSize = 16.sp,
+            modifier = Modifier.weight(1f).background(androidx.compose.ui.graphics.Color.LightGray),
+          )
+        }
+
+        // Short text (for comparison)
+        Text(
+          "Short text",
+          fontSize = 16.sp,
+          modifier = Modifier.background(androidx.compose.ui.graphics.Color.LightGray),
+        )
+      }
+    }
   }
 }
 

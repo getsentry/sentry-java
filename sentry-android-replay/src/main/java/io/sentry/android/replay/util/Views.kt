@@ -190,9 +190,26 @@ internal class AndroidTextLayout(private val layout: Layout) : TextLayout {
       return dominantColor?.toOpaque()
     }
 
-  override fun getLineLeft(line: Int): Float = layout.getLineLeft(line)
+  /**
+   * If text gets ellipsized, we return the left and right bounds of the ellipsized text instead of the width, as it's set to
+   * some obscure VERY_WIDE value.
+   * E.g. see https://cs.android.com/android/platform/superproject/main/+/main:frameworks/base/core/java/android/widget/TextView.java;l=468?q=VERY_WIDE
+   */
+  override fun getLineLeft(line: Int): Float {
+    return if (layout.ellipsizedWidth > 0 && layout.ellipsizedWidth < layout.width) {
+      0f
+    } else {
+      layout.getLineLeft(line)
+    }
+  }
 
-  override fun getLineRight(line: Int): Float = layout.getLineRight(line)
+  override fun getLineRight(line: Int): Float {
+    return if (layout.ellipsizedWidth > 0 && layout.ellipsizedWidth < layout.width) {
+      layout.ellipsizedWidth.toFloat()
+    } else {
+      layout.getLineRight(line)
+    }
+  }
 
   override fun getLineTop(line: Int): Int = layout.getLineTop(line)
 
