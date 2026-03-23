@@ -4,7 +4,7 @@
 
 ### Features
 
-- Add cache tracing instrumentation for Spring Boot 4 ([#5172](https://github.com/getsentry/sentry-java/pull/5172), [#5173](https://github.com/getsentry/sentry-java/pull/5173), [#5174](https://github.com/getsentry/sentry-java/pull/5174))
+- Add cache tracing instrumentation for Spring Boot 2, 3, and 4 ([#5172](https://github.com/getsentry/sentry-java/pull/5172), [#5173](https://github.com/getsentry/sentry-java/pull/5173), [#5174](https://github.com/getsentry/sentry-java/pull/5174), [#5190](https://github.com/getsentry/sentry-java/pull/5190), [#5191](https://github.com/getsentry/sentry-java/pull/5191))
   - Wraps Spring `CacheManager` and `Cache` beans to produce `cache.get`, `cache.put`, `cache.remove`, and `cache.flush` spans
   - Set `sentry.enable-cache-tracing` to `true` to enable this feature
 - Add JCache (JSR-107) cache tracing via new `sentry-jcache` module ([#5179](https://github.com/getsentry/sentry-java/pull/5179))

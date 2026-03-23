@@ -169,6 +169,7 @@ springboot-starter-aop = { module = "org.springframework.boot:spring-boot-starte
 springboot-starter-security = { module = "org.springframework.boot:spring-boot-starter-security", version.ref = "springboot2" }
 springboot-starter-jdbc = { module = "org.springframework.boot:spring-boot-starter-jdbc", version.ref = "springboot2" }
 springboot-starter-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator", version.ref = "springboot2" }
+springboot-starter-cache = { module = "org.springframework.boot:spring-boot-starter-cache", version.ref = "springboot2" }
 springboot3-otel = { module = "io.opentelemetry.instrumentation:opentelemetry-spring-boot-starter", version.ref = "otelInstrumentation" }
 springboot3-starter = { module = "org.springframework.boot:spring-boot-starter", version.ref = "springboot3" }
 springboot3-starter-graphql = { module = "org.springframework.boot:spring-boot-starter-graphql", version.ref = "springboot3" }
