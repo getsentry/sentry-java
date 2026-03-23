@@ -21,7 +21,12 @@
 
 ### Dependencies
 
-- Bump OpenTelemetry dependencies to 1.60.1 / 2.26.0 / 1.40.0 ([#5225](https://github.com/getsentry/sentry-java/pull/5225))
+- Bump OpenTelemetry ([#5225](https://github.com/getsentry/sentry-java/pull/5225))
+  - `opentelemetry` to `1.60.1` (was `1.57.0`)
+  - `opentelemetry-instrumentation` to `2.26.0` (was `2.23.0`)
+  - `opentelemetry-instrumentation-alpha` to `2.26.0-alpha` (was `2.23.0-alpha`)
+  - `opentelemetry-semconv` to `1.40.0` (was `1.37.0`)
+  - `opentelemetry-semconv-alpha` to `1.40.0-alpha` (was `1.37.0-alpha`)
 
 ## 8.36.0
 
