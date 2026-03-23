@@ -510,4 +510,60 @@ class TracingUtilsTest {
     assertEquals(fixture.scope.propagationContext.spanId.toString(), parts[2])
     assertEquals("00", parts[3])
   }
+
+  private fun makeOptions(
+    dsnOrgId: String?,
+    explicitOrgId: String? = null,
+    strict: Boolean = false,
+  ): SentryOptions {
+    val options = SentryOptions()
+    if (dsnOrgId != null) {
+      options.dsn = "https://key@o$dsnOrgId.ingest.sentry.io/123"
+    } else {
+      options.dsn = "https://key@sentry.io/123"
+    }
+    options.orgId = explicitOrgId
+    options.isStrictTraceContinuation = strict
+    return options
+  }
+
+  private fun makeBaggage(orgId: String?): Baggage {
+    val raw =
+      if (orgId != null) {
+        "sentry-trace_id=bc6d53f15eb88f4320054569b8c553d4,sentry-org_id=$orgId"
+      } else {
+        "sentry-trace_id=bc6d53f15eb88f4320054569b8c553d4"
+      }
+    return Baggage.fromHeader(raw, NoOpLogger.getInstance())
+  }
+
+  @Test
+  fun `shouldContinueTrace strict=false matching org ids returns true`() {
+    val options = makeOptions(dsnOrgId = "1", strict = false)
+    assertTrue(TracingUtils.shouldContinueTrace(options, makeBaggage("1")))
+  }
+
+  @Test
+  fun `shouldContinueTrace strict=false mismatched org ids returns false`() {
+    val options = makeOptions(dsnOrgId = "2", strict = false)
+    assertFalse(TracingUtils.shouldContinueTrace(options, makeBaggage("1")))
+  }
+
+  @Test
+  fun `shouldContinueTrace strict=true matching org ids returns true`() {
+    val options = makeOptions(dsnOrgId = "1", strict = true)
+    assertTrue(TracingUtils.shouldContinueTrace(options, makeBaggage("1")))
+  }
+
+  @Test
+  fun `shouldContinueTrace strict=true missing baggage org id returns false`() {
+    val options = makeOptions(dsnOrgId = "1", strict = true)
+    assertFalse(TracingUtils.shouldContinueTrace(options, makeBaggage(null)))
+  }
+
+  @Test
+  fun `shouldContinueTrace strict=true both missing org ids returns true`() {
+    val options = makeOptions(dsnOrgId = null, strict = true)
+    assertTrue(TracingUtils.shouldContinueTrace(options, makeBaggage(null)))
+  }
 }

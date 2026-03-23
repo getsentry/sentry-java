@@ -45,7 +45,7 @@ public final class PropagationContext {
       final @Nullable Baggage baggage,
       final @Nullable SpanId spanId,
       final @Nullable SentryOptions options) {
-    if (options != null && !shouldContinueTrace(options, baggage)) {
+    if (options != null && !TracingUtils.shouldContinueTrace(options, baggage)) {
       options
           .getLogger()
           .log(
@@ -163,30 +163,4 @@ public final class PropagationContext {
     return sampleRand == null ? 0.0 : sampleRand;
   }
 
-  static boolean shouldContinueTrace(
-      final @NotNull SentryOptions options, final @Nullable Baggage baggage) {
-    final @Nullable String rawSdkOrgId = options.getEffectiveOrgId();
-    final @Nullable String sdkOrgId =
-        (rawSdkOrgId != null && !rawSdkOrgId.trim().isEmpty()) ? rawSdkOrgId.trim() : null;
-    final @Nullable String rawBaggageOrgId = baggage != null ? baggage.getOrgId() : null;
-    final @Nullable String baggageOrgId =
-        (rawBaggageOrgId != null && !rawBaggageOrgId.trim().isEmpty())
-            ? rawBaggageOrgId.trim()
-            : null;
-
-    // Mismatched org IDs always reject regardless of strict mode
-    if (sdkOrgId != null && baggageOrgId != null && !sdkOrgId.equals(baggageOrgId)) {
-      return false;
-    }
-
-    // In strict mode, both must be present and match (unless both are missing)
-    if (options.isStrictTraceContinuation()) {
-      if (sdkOrgId == null && baggageOrgId == null) {
-        return true;
-      }
-      return sdkOrgId != null && sdkOrgId.equals(baggageOrgId);
-    }
-
-    return true;
-  }
 }
