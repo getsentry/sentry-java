@@ -28,4 +28,5 @@ public interface SpanDataConvention {
   String PROFILER_ID = "profiler_id";
   String CACHE_HIT_KEY = "cache.hit";
   String CACHE_KEY_KEY = "cache.key";
+  String CACHE_OPERATION_KEY = "cache.operation";
 }
