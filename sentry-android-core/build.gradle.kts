@@ -4,6 +4,7 @@ import org.jetbrains.kotlin.config.KotlinCompilerVersion
 plugins {
   id("com.android.library")
   alias(libs.plugins.kotlin.android)
+  alias(libs.plugins.kotlin.compose)
   jacoco
   alias(libs.plugins.jacoco.android)
   alias(libs.plugins.errorprone)
@@ -108,7 +109,11 @@ dependencies {
   testImplementation(projects.sentryCompose)
   testImplementation(projects.sentryAndroidNdk)
   testImplementation(libs.dropbox.differ)
-  testRuntimeOnly(libs.androidx.compose.ui)
+  testImplementation(libs.androidx.activity.compose)
+  testImplementation(libs.androidx.compose.ui)
+  testImplementation(libs.androidx.compose.foundation)
+  testImplementation(libs.androidx.compose.foundation.layout)
+  testImplementation(libs.androidx.compose.material3)
   testRuntimeOnly(libs.androidx.fragment.ktx)
   testRuntimeOnly(libs.timber)
 }
