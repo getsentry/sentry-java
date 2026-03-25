@@ -964,4 +964,27 @@ class SentryOptionsTest {
     options.logs.loggerBatchProcessorFactory = mock
     assertSame(mock, options.logs.loggerBatchProcessorFactory)
   }
+
+  @Test
+  fun `scopesStorageFactory is null by default`() {
+    val options = SentryOptions()
+    assertNull(options.scopesStorageFactory)
+  }
+
+  @Test
+  fun `scopesStorageFactory can be set and retrieved`() {
+    val options = SentryOptions()
+    val factory = IScopesStorageFactory { _ -> DefaultScopesStorage() }
+    options.scopesStorageFactory = factory
+    assertSame(factory, options.scopesStorageFactory)
+  }
+
+  @Test
+  fun `scopesStorageFactory can be set to null`() {
+    val options = SentryOptions()
+    val factory = IScopesStorageFactory { _ -> DefaultScopesStorage() }
+    options.scopesStorageFactory = factory
+    options.scopesStorageFactory = null
+    assertNull(options.scopesStorageFactory)
+  }
 }
