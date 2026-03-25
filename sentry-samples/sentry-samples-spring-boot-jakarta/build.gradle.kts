@@ -55,6 +55,10 @@ dependencies {
   implementation(projects.sentryAsyncProfiler)
   implementation(projects.sentryOpenfeature)
 
+  // cache tracing
+  implementation(libs.springboot3.starter.cache)
+  implementation(libs.caffeine)
+
   // OpenFeature SDK
   implementation(libs.openfeature)
 

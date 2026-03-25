@@ -1,9 +1,20 @@
 # Changelog
 
-## Unreleased
+## 8.37.0
+
+### Fixes
+
+- Session Replay: Fix Compose text masking mismatch with weighted text ([#5218](https://github.com/getsentry/sentry-java/pull/5218))
 
 ### Features
 
+- Add cache tracing instrumentation for Spring Boot 2, 3, and 4 ([#5165](https://github.com/getsentry/sentry-java/pull/5165))
+  - Wraps Spring `CacheManager` and `Cache` beans to produce cache spans
+  - Set `sentry.enable-cache-tracing` to `true` to enable this feature
+- Add JCache (JSR-107) cache tracing via new `sentry-jcache` module ([#5165](https://github.com/getsentry/sentry-java/pull/5165))
+  - Wraps JCache `Cache` with `SentryJCacheWrapper` to produce cache spans
+  - Set the `enableCacheTracing` option to `true` to enable this feature
+- Add configurable `IScopesStorageFactory` to `SentryOptions` for providing a custom `IScopesStorage`, e.g. when the default `ThreadLocal`-backed storage is incompatible with non-pinning thread models ([#5199](https://github.com/getsentry/sentry-java/pull/5199))
 - Android: Add `beforeErrorSampling` callback to Session Replay ([#5214](https://github.com/getsentry/sentry-java/pull/5214))
   - Allows filtering which errors trigger replay capture before the `onErrorSampleRate` is checked
   - Returning `false` skips replay capture entirely for that error; returning `true` proceeds with the normal sample rate check
@@ -23,6 +34,12 @@
 - Bump Native SDK from v0.13.2 to v0.13.3 ([#5215](https://github.com/getsentry/sentry-java/pull/5215))
   - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0133)
   - [diff](https://github.com/getsentry/sentry-native/compare/0.13.2...0.13.3)
+- Bump OpenTelemetry ([#5225](https://github.com/getsentry/sentry-java/pull/5225))
+  - `opentelemetry` to `1.60.1` (was `1.57.0`)
+  - `opentelemetry-instrumentation` to `2.26.0` (was `2.23.0`)
+  - `opentelemetry-instrumentation-alpha` to `2.26.0-alpha` (was `2.23.0-alpha`)
+  - `opentelemetry-semconv` to `1.40.0` (was `1.37.0`)
+  - `opentelemetry-semconv-alpha` to `1.40.0-alpha` (was `1.37.0-alpha`)
 
 ## 8.36.0
 

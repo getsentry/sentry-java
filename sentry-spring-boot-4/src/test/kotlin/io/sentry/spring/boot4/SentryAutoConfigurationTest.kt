@@ -38,6 +38,7 @@ import io.sentry.spring7.SentryUserFilter
 import io.sentry.spring7.SentryUserProvider
 import io.sentry.spring7.SpringProfilesEventProcessor
 import io.sentry.spring7.SpringSecuritySentryUserProvider
+import io.sentry.spring7.cache.SentryCacheBeanPostProcessor
 import io.sentry.spring7.tracing.SentryTracingFilter
 import io.sentry.spring7.tracing.SpringServletTransactionNameProvider
 import io.sentry.spring7.tracing.TransactionNameProvider
@@ -231,6 +232,7 @@ class SentryAutoConfigurationTest {
         "sentry.ignored-transactions=transactionName1,transactionNameB",
         "sentry.enable-backpressure-handling=false",
         "sentry.enable-database-transaction-tracing=true",
+        "sentry.enable-cache-tracing=true",
         "sentry.enable-spotlight=true",
         "sentry.spotlight-connection-url=http://local.sentry.io:1234",
         "sentry.force-init=true",
@@ -284,6 +286,7 @@ class SentryAutoConfigurationTest {
           .containsOnly(FilterString("transactionName1"), FilterString("transactionNameB"))
         assertThat(options.isEnableBackpressureHandling).isEqualTo(false)
         assertThat(options.isEnableDatabaseTransactionTracing).isEqualTo(true)
+        assertThat(options.isEnableCacheTracing).isEqualTo(true)
         assertThat(options.isForceInit).isEqualTo(true)
         assertThat(options.isGlobalHubMode).isEqualTo(true)
         assertThat(options.isCaptureOpenTelemetryEvents).isEqualTo(true)
@@ -1177,6 +1180,33 @@ class SentryAutoConfigurationTest {
         assertThat(it).doesNotHaveBean(IContinuousProfiler::class.java)
         assertThat(it).doesNotHaveBean(IProfileConverter::class.java)
       }
+  }
+
+  @Test
+  fun `SentryCacheBeanPostProcessor is registered when enable-cache-tracing is true`() {
+    contextRunner
+      .withPropertyValues(
+        "sentry.dsn=http://key@localhost/proj",
+        "sentry.enable-cache-tracing=true",
+      )
+      .run { assertThat(it).hasSingleBean(SentryCacheBeanPostProcessor::class.java) }
+  }
+
+  @Test
+  fun `SentryCacheBeanPostProcessor is not registered when enable-cache-tracing is missing`() {
+    contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj").run {
+      assertThat(it).doesNotHaveBean(SentryCacheBeanPostProcessor::class.java)
+    }
+  }
+
+  @Test
+  fun `SentryCacheBeanPostProcessor is not registered when enable-cache-tracing is false`() {
+    contextRunner
+      .withPropertyValues(
+        "sentry.dsn=http://key@localhost/proj",
+        "sentry.enable-cache-tracing=false",
+      )
+      .run { assertThat(it).doesNotHaveBean(SentryCacheBeanPostProcessor::class.java) }
   }
 
   @Configuration(proxyBeanMethods = false)

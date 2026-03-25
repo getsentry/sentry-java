@@ -50,6 +50,24 @@ class RestTestClient(private val backendBaseUrl: String) : LoggingInsecureRestCl
     return callTyped(request, true)
   }
 
+  fun getCachedTodo(id: Long): Todo? {
+    val request = Request.Builder().url("$backendBaseUrl/cache/$id")
+
+    return callTyped(request, true)
+  }
+
+  fun saveCachedTodo(todo: Todo): Todo? {
+    val request = Request.Builder().url("$backendBaseUrl/cache/").post(toRequestBody(todo))
+
+    return callTyped(request, true)
+  }
+
+  fun deleteCachedTodo(id: Long) {
+    val request = Request.Builder().url("$backendBaseUrl/cache/$id").delete()
+
+    call(request, true)
+  }
+
   fun checkFeatureFlag(flagKey: String): FeatureFlagResponse? {
     val request = Request.Builder().url("$backendBaseUrl/feature-flag/check/$flagKey")
 
