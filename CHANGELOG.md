@@ -19,19 +19,21 @@
   - Allows filtering which errors trigger replay capture before the `onErrorSampleRate` is checked
   - Returning `false` skips replay capture entirely for that error; returning `true` proceeds with the normal sample rate check
   - Example usage:
-    ```java
+    ```kotlin
     SentryAndroid.init(context) { options ->
         options.sessionReplay.beforeErrorSampling =
             SentryReplayOptions.BeforeErrorSamplingCallback { event, hint ->
-                // Skip replay for handled exceptions
-                val hasUnhandled = event.exceptions?.any { it.mechanism?.isHandled == false } == true
-                hasUnhandled
+                // Only capture replay for crashes (excluding e.g. handled exceptions)
+                event.isCrashed
             }
     }
     ```
 
 ### Dependencies
 
+- Bump Native SDK from v0.13.2 to v0.13.3 ([#5215](https://github.com/getsentry/sentry-java/pull/5215))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0133)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.13.2...0.13.3)
 - Bump OpenTelemetry ([#5225](https://github.com/getsentry/sentry-java/pull/5225))
   - `opentelemetry` to `1.60.1` (was `1.57.0`)
   - `opentelemetry-instrumentation` to `2.26.0` (was `2.23.0`)
