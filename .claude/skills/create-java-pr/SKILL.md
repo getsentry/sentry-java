@@ -30,7 +30,12 @@ git branch --show-current
     gh pr list --head "$(git branch --show-current)" --json number,baseRefName,title --jq '.[0]'
     ```
   - If that branch PR exists and `baseRefName` is **not** `main`/`master`, treat the work as a **stacked PR context**.
-  - If that branch PR exists and `baseRefName` **is** `main`/`master`, treat it as **standalone PR context**.
+  - If that branch PR exists and `baseRefName` **is** `main`/`master`, also check whether other PRs target the current branch:
+    ```bash
+    gh pr list --base "$(git branch --show-current)" --json number,headRefName,title
+    ```
+    - If there are downstream PRs, treat this as a **stack base context** (collection branch).
+    - If there are no downstream PRs, treat it as **standalone PR context**.
   - If no PR exists for the current branch, check whether other PRs target it:
     ```bash
     gh pr list --base "$(git branch --show-current)" --json number,headRefName,title
