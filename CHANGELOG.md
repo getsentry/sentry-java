@@ -8,6 +8,12 @@
 
 ### Features
 
+- Add cache tracing instrumentation for Spring Boot 2, 3, and 4 ([#5165](https://github.com/getsentry/sentry-java/pull/5165))
+  - Wraps Spring `CacheManager` and `Cache` beans to produce cache spans
+  - Set `sentry.enable-cache-tracing` to `true` to enable this feature
+- Add JCache (JSR-107) cache tracing via new `sentry-jcache` module ([#5165](https://github.com/getsentry/sentry-java/pull/5165))
+  - Wraps JCache `Cache` with `SentryJCacheWrapper` to produce cache spans
+  - Set the `enableCacheTracing` option to `true` to enable this feature
 - Add configurable `IScopesStorageFactory` to `SentryOptions` for providing a custom `IScopesStorage`, e.g. when the default `ThreadLocal`-backed storage is incompatible with non-pinning thread models ([#5199](https://github.com/getsentry/sentry-java/pull/5199))
 - Android: Add `beforeErrorSampling` callback to Session Replay ([#5214](https://github.com/getsentry/sentry-java/pull/5214))
   - Allows filtering which errors trigger replay capture before the `onErrorSampleRate` is checked

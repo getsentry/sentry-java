@@ -332,6 +332,20 @@ class ExternalOptionsTest {
   }
 
   @Test
+  fun `creates options with enableCacheTracing set to true`() {
+    withPropertiesFile("enable-cache-tracing=true") { options ->
+      assertTrue(options.isEnableCacheTracing == true)
+    }
+  }
+
+  @Test
+  fun `creates options with enableCacheTracing set to false`() {
+    withPropertiesFile("enable-cache-tracing=false") { options ->
+      assertTrue(options.isEnableCacheTracing == false)
+    }
+  }
+
+  @Test
   fun `creates options with cron defaults`() {
     withPropertiesFile(
       listOf(

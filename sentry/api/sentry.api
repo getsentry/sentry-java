@@ -520,6 +520,7 @@ public final class io/sentry/ExternalOptions {
 	public fun getTracesSampleRate ()Ljava/lang/Double;
 	public fun isCaptureOpenTelemetryEvents ()Ljava/lang/Boolean;
 	public fun isEnableBackpressureHandling ()Ljava/lang/Boolean;
+	public fun isEnableCacheTracing ()Ljava/lang/Boolean;
 	public fun isEnableDatabaseTransactionTracing ()Ljava/lang/Boolean;
 	public fun isEnableLogs ()Ljava/lang/Boolean;
 	public fun isEnableMetrics ()Ljava/lang/Boolean;
@@ -536,6 +537,7 @@ public final class io/sentry/ExternalOptions {
 	public fun setDist (Ljava/lang/String;)V
 	public fun setDsn (Ljava/lang/String;)V
 	public fun setEnableBackpressureHandling (Ljava/lang/Boolean;)V
+	public fun setEnableCacheTracing (Ljava/lang/Boolean;)V
 	public fun setEnableDatabaseTransactionTracing (Ljava/lang/Boolean;)V
 	public fun setEnableDeduplication (Ljava/lang/Boolean;)V
 	public fun setEnableLogs (Ljava/lang/Boolean;)V
@@ -3667,6 +3669,7 @@ public class io/sentry/SentryOptions {
 	public fun isEnableAppStartProfiling ()Z
 	public fun isEnableAutoSessionTracking ()Z
 	public fun isEnableBackpressureHandling ()Z
+	public fun isEnableCacheTracing ()Z
 	public fun isEnableDatabaseTransactionTracing ()Z
 	public fun isEnableDeduplication ()Z
 	public fun isEnableEventSizeLimiting ()Z
@@ -3725,6 +3728,7 @@ public class io/sentry/SentryOptions {
 	public fun setEnableAppStartProfiling (Z)V
 	public fun setEnableAutoSessionTracking (Z)V
 	public fun setEnableBackpressureHandling (Z)V
+	public fun setEnableCacheTracing (Z)V
 	public fun setEnableDatabaseTransactionTracing (Z)V
 	public fun setEnableDeduplication (Z)V
 	public fun setEnableEventSizeLimiting (Z)V
@@ -4352,6 +4356,10 @@ public final class io/sentry/SpanContext$JsonKeys {
 
 public abstract interface class io/sentry/SpanDataConvention {
 	public static final field BLOCKED_MAIN_THREAD_KEY Ljava/lang/String;
+	public static final field CACHE_HIT Ljava/lang/String;
+	public static final field CACHE_KEY Ljava/lang/String;
+	public static final field CACHE_OPERATION Ljava/lang/String;
+	public static final field CACHE_WRITE Ljava/lang/String;
 	public static final field CALL_STACK_KEY Ljava/lang/String;
 	public static final field CONTRIBUTES_TTFD Ljava/lang/String;
 	public static final field CONTRIBUTES_TTID Ljava/lang/String;

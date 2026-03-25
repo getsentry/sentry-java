@@ -35,6 +35,9 @@ tasks.withType<KotlinCompile>().configureEach {
 dependencies {
   implementation(projects.sentry)
   implementation(projects.sentryAsyncProfiler)
+  implementation(projects.sentryJcache)
+  implementation(libs.jcache)
+  implementation(libs.caffeine.jcache)
 
   testImplementation(kotlin(Config.kotlinStdLib))
   testImplementation(projects.sentry)

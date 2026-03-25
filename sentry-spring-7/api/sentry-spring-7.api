@@ -104,6 +104,35 @@ public final class io/sentry/spring7/SpringSecuritySentryUserProvider : io/sentr
 	public fun provideUser ()Lio/sentry/protocol/User;
 }
 
+public final class io/sentry/spring7/cache/SentryCacheBeanPostProcessor : org/springframework/beans/factory/config/BeanPostProcessor, org/springframework/core/PriorityOrdered {
+	public fun <init> ()V
+	public fun getOrder ()I
+	public fun postProcessAfterInitialization (Ljava/lang/Object;Ljava/lang/String;)Ljava/lang/Object;
+}
+
+public final class io/sentry/spring7/cache/SentryCacheManagerWrapper : org/springframework/cache/CacheManager {
+	public fun <init> (Lorg/springframework/cache/CacheManager;Lio/sentry/IScopes;)V
+	public fun getCache (Ljava/lang/String;)Lorg/springframework/cache/Cache;
+	public fun getCacheNames ()Ljava/util/Collection;
+}
+
+public final class io/sentry/spring7/cache/SentryCacheWrapper : org/springframework/cache/Cache {
+	public fun <init> (Lorg/springframework/cache/Cache;Lio/sentry/IScopes;)V
+	public fun clear ()V
+	public fun evict (Ljava/lang/Object;)V
+	public fun evictIfPresent (Ljava/lang/Object;)Z
+	public fun get (Ljava/lang/Object;)Lorg/springframework/cache/Cache$ValueWrapper;
+	public fun get (Ljava/lang/Object;Ljava/lang/Class;)Ljava/lang/Object;
+	public fun get (Ljava/lang/Object;Ljava/util/concurrent/Callable;)Ljava/lang/Object;
+	public fun getName ()Ljava/lang/String;
+	public fun getNativeCache ()Ljava/lang/Object;
+	public fun invalidate ()Z
+	public fun put (Ljava/lang/Object;Ljava/lang/Object;)V
+	public fun putIfAbsent (Ljava/lang/Object;Ljava/lang/Object;)Lorg/springframework/cache/Cache$ValueWrapper;
+	public fun retrieve (Ljava/lang/Object;)Ljava/util/concurrent/CompletableFuture;
+	public fun retrieve (Ljava/lang/Object;Ljava/util/function/Supplier;)Ljava/util/concurrent/CompletableFuture;
+}
+
 public abstract interface annotation class io/sentry/spring7/checkin/SentryCheckIn : java/lang/annotation/Annotation {
 	public abstract fun heartbeat ()Z
 	public abstract fun monitorSlug ()Ljava/lang/String;

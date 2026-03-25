@@ -57,6 +57,10 @@ dependencies {
   implementation(projects.sentryQuartz)
   implementation(projects.sentryAsyncProfiler)
 
+  // cache tracing
+  implementation(libs.springboot4.starter.cache)
+  implementation(libs.caffeine)
+
   // database query tracing
   implementation(projects.sentryJdbc)
   runtimeOnly(libs.hsqldb)

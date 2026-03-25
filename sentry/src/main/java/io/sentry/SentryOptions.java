@@ -490,6 +490,9 @@ public class SentryOptions {
   /** Whether database transaction spans (BEGIN, COMMIT, ROLLBACK) should be traced. */
   private boolean enableDatabaseTransactionTracing = false;
 
+  /** Whether cache operations (get, put, remove, flush) should be traced. */
+  private boolean enableCacheTracing = false;
+
   /** Date provider to retrieve the current date from. */
   @ApiStatus.Internal
   private final @NotNull LazyEvaluator<SentryDateProvider> dateProvider =
@@ -2633,6 +2636,24 @@ public class SentryOptions {
   }
 
   /**
+   * Whether cache operations (get, put, remove, flush) should be traced.
+   *
+   * @return true if cache operations should be traced
+   */
+  public boolean isEnableCacheTracing() {
+    return enableCacheTracing;
+  }
+
+  /**
+   * Whether cache operations (get, put, remove, flush) should be traced.
+   *
+   * @param enableCacheTracing true if cache operations should be traced
+   */
+  public void setEnableCacheTracing(boolean enableCacheTracing) {
+    this.enableCacheTracing = enableCacheTracing;
+  }
+
+  /**
    * Whether Sentry is enabled.
    *
    * @return true if Sentry should be enabled
@@ -3469,6 +3490,9 @@ public class SentryOptions {
     }
     if (options.isEnableDatabaseTransactionTracing() != null) {
       setEnableDatabaseTransactionTracing(options.isEnableDatabaseTransactionTracing());
+    }
+    if (options.isEnableCacheTracing() != null) {
+      setEnableCacheTracing(options.isEnableCacheTracing());
     }
     if (options.getMaxRequestBodySize() != null) {
       setMaxRequestBodySize(options.getMaxRequestBodySize());
