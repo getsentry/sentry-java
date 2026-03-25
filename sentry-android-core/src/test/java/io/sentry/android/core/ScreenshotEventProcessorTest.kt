@@ -467,6 +467,42 @@ class ScreenshotEventProcessorTest {
     assertNotNull(bytes)
   }
 
+  @Test
+  fun `snapshot - multiline view text no masking`() {
+    fixture.activity = buildActivity(MultiLineTextActivity::class.java, null).setup().get()
+    val bytes =
+      processEventForSnapshots("screenshot_multiline_view_unmasked", isReplayAvailable = false)
+    assertNotNull(bytes)
+  }
+
+  @Test
+  fun `snapshot - multiline view text with masking`() {
+    fixture.activity = buildActivity(MultiLineTextActivity::class.java, null).setup().get()
+    val bytes =
+      processEventForSnapshots("screenshot_multiline_view_masked") {
+        it.screenshot.setMaskAllText(true)
+      }
+    assertNotNull(bytes)
+  }
+
+  @Test
+  fun `snapshot - multiline compose text no masking`() {
+    fixture.activity = buildActivity(ComposeMultiLineTextActivity::class.java, null).setup().get()
+    val bytes =
+      processEventForSnapshots("screenshot_multiline_compose_unmasked", isReplayAvailable = false)
+    assertNotNull(bytes)
+  }
+
+  @Test
+  fun `snapshot - multiline compose text with masking`() {
+    fixture.activity = buildActivity(ComposeMultiLineTextActivity::class.java, null).setup().get()
+    val bytes =
+      processEventForSnapshots("screenshot_multiline_compose_masked") {
+        it.screenshot.setMaskAllText(true)
+      }
+    assertNotNull(bytes)
+  }
+
   // endregion
 
   private fun getEvent(): SentryEvent = SentryEvent(Throwable("Throwable"))
@@ -714,6 +750,122 @@ private class ComposeTextActivity : ComponentActivity() {
         }
 
         // Short text (for comparison)
+        Text(
+          "Short text",
+          fontSize = 16.sp,
+          modifier = Modifier.background(androidx.compose.ui.graphics.Color.LightGray),
+        )
+      }
+    }
+  }
+}
+
+private class MultiLineTextActivity : Activity() {
+
+  override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+    val multiLineText =
+      "This is a long text that will wrap across multiple lines without being ellipsized. " +
+        "It should continue to flow naturally within the available width of the view."
+
+    val linearLayout =
+      LinearLayout(this).apply {
+        setBackgroundColor(Color.WHITE)
+        orientation = LinearLayout.VERTICAL
+        layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
+        setPadding(10, 10, 10, 10)
+      }
+
+    // Multi-line wrapping text (no maxLines, no ellipsize)
+    linearLayout.addView(
+      TextView(this).apply {
+        text = multiLineText
+        setTextColor(Color.BLACK)
+        textSize = 16f
+        setBackgroundColor(Color.LTGRAY)
+        layoutParams =
+          LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT).apply {
+            setMargins(0, 8, 0, 0)
+          }
+      }
+    )
+
+    // Multi-line text with maxLines = 3 (wraps but capped)
+    linearLayout.addView(
+      TextView(this).apply {
+        text = multiLineText
+        setTextColor(Color.BLACK)
+        textSize = 16f
+        maxLines = 3
+        setBackgroundColor(Color.LTGRAY)
+        layoutParams =
+          LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT).apply {
+            setMargins(0, 8, 0, 0)
+          }
+      }
+    )
+
+    // Short single-line text for comparison
+    linearLayout.addView(
+      TextView(this).apply {
+        text = "Short text"
+        setTextColor(Color.BLACK)
+        textSize = 16f
+        setBackgroundColor(Color.LTGRAY)
+        layoutParams =
+          LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT).apply {
+            setMargins(0, 8, 0, 0)
+          }
+      }
+    )
+
+    setContentView(linearLayout)
+  }
+}
+
+private class ComposeMultiLineTextActivity : ComponentActivity() {
+
+  override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+    val multiLineText =
+      "This is a long text that will wrap across multiple lines without being ellipsized. " +
+        "It should continue to flow naturally within the available width of the view."
+
+    setContent {
+      Column(
+        modifier =
+          Modifier.fillMaxWidth()
+            .background(androidx.compose.ui.graphics.Color.White)
+            .padding(10.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+      ) {
+        // Multi-line wrapping text (no maxLines, no overflow)
+        Text(
+          multiLineText,
+          fontSize = 16.sp,
+          modifier =
+            Modifier.fillMaxWidth().background(androidx.compose.ui.graphics.Color.LightGray),
+        )
+
+        // Multi-line text with maxLines = 3
+        Text(
+          multiLineText,
+          maxLines = 3,
+          fontSize = 16.sp,
+          modifier =
+            Modifier.fillMaxWidth().background(androidx.compose.ui.graphics.Color.LightGray),
+        )
+
+        // Multi-line centered text
+        Text(
+          multiLineText,
+          textAlign = TextAlign.Center,
+          fontSize = 16.sp,
+          modifier =
+            Modifier.fillMaxWidth().background(androidx.compose.ui.graphics.Color.LightGray),
+        )
+
+        // Short text for comparison
         Text(
           "Short text",
           fontSize = 16.sp,
