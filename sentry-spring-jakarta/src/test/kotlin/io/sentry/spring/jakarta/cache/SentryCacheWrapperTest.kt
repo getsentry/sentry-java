@@ -13,6 +13,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import org.mockito.kotlin.any
@@ -447,6 +448,21 @@ class SentryCacheWrapperTest {
     assertEquals(1, tx.spans.size)
     assertEquals("cache.invalidate", tx.spans.first().operation)
     assertEquals(true, tx.spans.first().getData(SpanDataConvention.CACHE_WRITE))
+    assertEquals("invalidate", tx.spans.first().getData(SpanDataConvention.CACHE_OPERATION))
+  }
+
+  @Test
+  fun `invalidate sets cache write false when cache had no mappings`() {
+    val tx = createTransaction()
+    val wrapper = SentryCacheWrapper(delegate, scopes)
+    whenever(delegate.invalidate()).thenReturn(false)
+
+    val result = wrapper.invalidate()
+
+    assertFalse(result)
+    assertEquals(1, tx.spans.size)
+    assertEquals("cache.invalidate", tx.spans.first().operation)
+    assertEquals(false, tx.spans.first().getData(SpanDataConvention.CACHE_WRITE))
     assertEquals("invalidate", tx.spans.first().getData(SpanDataConvention.CACHE_OPERATION))
   }
 
