@@ -10,7 +10,6 @@ import kotlin.test.Test
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
@@ -50,11 +49,11 @@ class FeedbackShakeIntegrationTest {
   }
 
   @Test
-  fun `when useShakeGesture is disabled does not register activity lifecycle callbacks`() {
+  fun `when useShakeGesture is disabled still registers activity lifecycle callbacks for runtime toggle`() {
     val sut = fixture.getSut(useShakeGesture = false)
     sut.register(fixture.scopes, fixture.options)
 
-    verify(fixture.application, never()).registerActivityLifecycleCallbacks(any())
+    verify(fixture.application).registerActivityLifecycleCallbacks(any())
   }
 
   @Test
@@ -102,5 +101,35 @@ class FeedbackShakeIntegrationTest {
   fun `close without register does not crash`() {
     val sut = fixture.getSut()
     sut.close()
+  }
+
+  @Test
+  fun `enabling shake at runtime starts detection on next activity resume`() {
+    val sut = fixture.getSut(useShakeGesture = false)
+    sut.register(fixture.scopes, fixture.options)
+
+    whenever(fixture.activity.getSystemService(any())).thenReturn(null)
+
+    // Shake is disabled, onActivityResumed should not crash
+    sut.onActivityResumed(fixture.activity)
+
+    // Now enable at runtime and resume a new activity
+    fixture.options.feedbackOptions.isUseShakeGesture = true
+    sut.onActivityResumed(fixture.activity)
+    // Should not throw — shake detection attempted (fails gracefully with null SensorManager)
+  }
+
+  @Test
+  fun `disabling shake at runtime stops detection on next activity resume`() {
+    val sut = fixture.getSut(useShakeGesture = true)
+    sut.register(fixture.scopes, fixture.options)
+
+    whenever(fixture.activity.getSystemService(any())).thenReturn(null)
+    sut.onActivityResumed(fixture.activity)
+
+    // Disable at runtime and resume
+    fixture.options.feedbackOptions.isUseShakeGesture = false
+    sut.onActivityResumed(fixture.activity)
+    // Should not throw — detection stopped gracefully
   }
 }

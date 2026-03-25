@@ -44,21 +44,17 @@ public final class FeedbackShakeIntegration
                 : null,
             "SentryAndroidOptions is required");
 
-    if (!this.options.getFeedbackOptions().isUseShakeGesture()) {
-      return;
-    }
-
-    shakeDetector.init(application, options.getLogger());
-
     addIntegrationToSdkVersion("FeedbackShake");
     application.registerActivityLifecycleCallbacks(this);
     options.getLogger().log(SentryLevel.DEBUG, "FeedbackShakeIntegration installed.");
 
-    // In case of a deferred init, hook into any already-resumed activity
-    final @Nullable Activity activity = CurrentActivityHolder.getInstance().getActivity();
-    if (activity != null) {
-      currentActivityRef = new WeakReference<>(activity);
-      startShakeDetection(activity);
+    if (this.options.getFeedbackOptions().isUseShakeGesture()) {
+      // In case of a deferred init, hook into any already-resumed activity
+      final @Nullable Activity activity = CurrentActivityHolder.getInstance().getActivity();
+      if (activity != null) {
+        currentActivityRef = new WeakReference<>(activity);
+        startShakeDetection(activity);
+      }
     }
   }
 
@@ -92,7 +88,12 @@ public final class FeedbackShakeIntegration
       previousOnFormClose = null;
     }
     currentActivityRef = new WeakReference<>(activity);
-    startShakeDetection(activity);
+    // Check dynamically so the flag can be toggled at runtime
+    if (options != null && options.getFeedbackOptions().isUseShakeGesture()) {
+      startShakeDetection(activity);
+    } else {
+      stopShakeDetection();
+    }
   }
 
   @Override
@@ -146,6 +147,8 @@ public final class FeedbackShakeIntegration
     if (options == null) {
       return;
     }
+    // Initialize sensor and thread if not already done (idempotent)
+    shakeDetector.init(application, options.getLogger());
     // Stop any existing detection (e.g. when transitioning between activities)
     stopShakeDetection();
     shakeDetector.start(
@@ -156,6 +159,7 @@ public final class FeedbackShakeIntegration
           final Boolean inBackground = AppState.getInstance().isInBackground();
           if (active != null
               && options != null
+              && options.getFeedbackOptions().isUseShakeGesture()
               && !isDialogShowing
               && !Boolean.TRUE.equals(inBackground)) {
             active.runOnUiThread(

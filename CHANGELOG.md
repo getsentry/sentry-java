@@ -8,6 +8,7 @@
 
 ### Features
 
+- Add `Sentry.enableFeedbackOnShake()` and `Sentry.disableFeedbackOnShake()` for runtime control of shake-to-report ([#5232](https://github.com/getsentry/sentry-java/pull/5232))
 - Add configurable `IScopesStorageFactory` to `SentryOptions` for providing a custom `IScopesStorage`, e.g. when the default `ThreadLocal`-backed storage is incompatible with non-pinning thread models ([#5199](https://github.com/getsentry/sentry-java/pull/5199))
 - Android: Add `beforeErrorSampling` callback to Session Replay ([#5214](https://github.com/getsentry/sentry-java/pull/5214))
   - Allows filtering which errors trigger replay capture before the `onErrorSampleRate` is checked

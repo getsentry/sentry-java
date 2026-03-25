@@ -1372,6 +1372,24 @@ public final class Sentry {
   }
 
   /**
+   * Enables shake-to-report for user feedback. When enabled, shaking the device will show the
+   * feedback dialog. Takes effect on the next activity transition. This can be toggled at runtime.
+   */
+  @ApiStatus.Experimental
+  public static void enableFeedbackOnShake() {
+    getCurrentScopes().getOptions().getFeedbackOptions().setUseShakeGesture(true);
+  }
+
+  /**
+   * Disables shake-to-report for user feedback. Takes effect on the next activity transition. If a
+   * shake occurs before the transition, the dialog will not be shown.
+   */
+  @ApiStatus.Experimental
+  public static void disableFeedbackOnShake() {
+    getCurrentScopes().getOptions().getFeedbackOptions().setUseShakeGesture(false);
+  }
+
+  /**
    * Sets an attribute on the scope.
    *
    * @param key the key
