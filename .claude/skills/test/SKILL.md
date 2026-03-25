@@ -1,7 +1,7 @@
 ---
 name: test
 description: Run tests for a specific SDK module. Use when asked to "run tests", "test module", "run unit tests", "run system tests", "run e2e tests", or test a specific class. Auto-detects unit vs system tests. Supports interactive mode.
-allowed-tools: Bash, Read, Glob
+allowed-tools: Bash, Read, Glob, AskUserQuestion
 argument-hint: [interactive] <module-name-or-file-path> [test-class-filter]
 ---
 
@@ -42,6 +42,7 @@ Determine the Gradle test task:
 |---------------|-----------|
 | `sentry-android-*` | `testDebugUnitTest` |
 | `sentry-compose*` | `testDebugUnitTest` |
+| `*-android` | `testDebugUnitTest` |
 | Everything else | `test` |
 
 **Interactive mode:** Before running, read the test class file and use AskUserQuestion to ask:
