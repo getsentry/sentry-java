@@ -5,6 +5,50 @@
 ### Features
 
 - Add configurable `IScopesStorageFactory` to `SentryOptions` for providing a custom `IScopesStorage`, e.g. when the default `ThreadLocal`-backed storage is incompatible with non-pinning thread models ([#5199](https://github.com/getsentry/sentry-java/pull/5199))
+- Android: Add `beforeErrorSampling` callback to Session Replay ([#5214](https://github.com/getsentry/sentry-java/pull/5214))
+  - Allows filtering which errors trigger replay capture before the `onErrorSampleRate` is checked
+  - Returning `false` skips replay capture entirely for that error; returning `true` proceeds with the normal sample rate check
+  - Example usage:
+    ```java
+    SentryAndroid.init(context) { options ->
+        options.sessionReplay.beforeErrorSampling =
+            SentryReplayOptions.BeforeErrorSamplingCallback { event, hint ->
+                // Skip replay for handled exceptions
+                val hasUnhandled = event.exceptions?.any { it.mechanism?.isHandled == false } == true
+                hasUnhandled
+            }
+    }
+    ```
+
+### Dependencies
+
+- Bump OpenTelemetry ([#5225](https://github.com/getsentry/sentry-java/pull/5225))
+  - `opentelemetry` to `1.60.1` (was `1.57.0`)
+  - `opentelemetry-instrumentation` to `2.26.0` (was `2.23.0`)
+  - `opentelemetry-instrumentation-alpha` to `2.26.0-alpha` (was `2.23.0-alpha`)
+  - `opentelemetry-semconv` to `1.40.0` (was `1.37.0`)
+  - `opentelemetry-semconv-alpha` to `1.40.0-alpha` (was `1.37.0-alpha`)
+
+## 8.36.0
+
+### Features
+
+- Show feedback form on device shake ([#5150](https://github.com/getsentry/sentry-java/pull/5150))
+  - Enable via `options.getFeedbackOptions().setUseShakeGesture(true)` or manifest meta-data `io.sentry.feedback.use-shake-gesture`
+  - Uses the device's accelerometer — no special permissions required
+
+### Fixes
+
+- Support masking/unmasking and click/scroll detection for Jetpack Compose 1.10+ ([#5189](https://github.com/getsentry/sentry-java/pull/5189))
+
+### Dependencies
+
+- Bump Native SDK from v0.13.1 to v0.13.2 ([#5181](https://github.com/getsentry/sentry-java/pull/5181))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0132)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.13.1...0.13.2)
+- Bump `com.abovevacant:epitaph` to `0.1.1` to avoid old D8/R8 dexing crashes in downstream Android builds on old AGP versions such as 7.4.x. ([#5200](https://github.com/getsentry/sentry-java/pull/5200))
+  - [changelog](https://github.com/abovevacant/epitaph/blob/main/CHANGELOG.md#011---2026-03-16)
+  - [diff](https://github.com/abovevacant/epitaph/compare/v0.1.0...v0.1.1)
 
 ## 8.35.0
 

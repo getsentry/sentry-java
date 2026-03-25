@@ -22,12 +22,12 @@ nopen = "1.0.1"
 # see https://www.jetbrains.com/help/kotlin-multiplatform-dev/compose-compatibility-and-versioning.html#kotlin-compatibility
 # see https://developer.android.com/jetpack/androidx/releases/compose-kotlin
 okhttp = "4.9.2"
-otel = "1.57.0"
-otelInstrumentation = "2.23.0"
-otelInstrumentationAlpha = "2.23.0-alpha"
+otel = "1.60.1"
+otelInstrumentation = "2.26.0"
+otelInstrumentationAlpha = "2.26.0-alpha"
 # check https://github.com/open-telemetry/opentelemetry-java-instrumentation/blob/main/dependencyManagement/build.gradle.kts#L49 for release version above to find a compatible version
-otelSemanticConventions = "1.37.0"
-otelSemanticConventionsAlpha = "1.37.0-alpha"
+otelSemanticConventions = "1.40.0"
+otelSemanticConventionsAlpha = "1.40.0-alpha"
 retrofit = "2.9.0"
 slf4j = "1.7.30"
 springboot2 = "2.7.18"
@@ -85,7 +85,7 @@ androidx-compose-material-icons-core = { module = "androidx.compose.material:mat
 androidx-compose-material-icons-extended = { module = "androidx.compose.material:material-icons-extended", version="1.7.8" }
 androidx-compose-ui = { module = "androidx.compose.ui:ui", version.ref = "androidxCompose" }
 # Note: don't change without testing forwards compatibility
-androidx-compose-ui-replay = { module = "androidx.compose.ui:ui", version = "1.5.0" }
+androidx-compose-ui-replay = { module = "androidx.compose.ui:ui", version = "1.10.2" }
 androidx-constraintlayout = { module = "androidx.constraintlayout:constraintlayout", version = "2.1.3" }
 androidx-core = { module = "androidx.core:core", version = "1.3.2" }
 androidx-core-ktx = { module = "androidx.core:core-ktx", version = "1.7.0" }
@@ -143,12 +143,12 @@ otel-javaagent-extension-api = { module = "io.opentelemetry.javaagent:openteleme
 otel-semconv = { module = "io.opentelemetry.semconv:opentelemetry-semconv", version.ref = "otelSemanticConventions" }
 otel-semconv-incubating = { module = "io.opentelemetry.semconv:opentelemetry-semconv-incubating", version.ref = "otelSemanticConventionsAlpha" }
 p6spy = { module = "p6spy:p6spy", version = "3.9.1" }
-epitaph = { module = "com.abovevacant:epitaph", version = "0.1.0" }
+epitaph = { module = "com.abovevacant:epitaph", version = "0.1.1" }
 quartz = { module = "org.quartz-scheduler:quartz", version = "2.3.0" }
 reactor-core = { module = "io.projectreactor:reactor-core", version = "3.5.3" }
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 retrofit-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "retrofit" }
-sentry-native-ndk = { module = "io.sentry:sentry-native-ndk", version = "0.13.1" }
+sentry-native-ndk = { module = "io.sentry:sentry-native-ndk", version = "0.13.3" }
 servlet-api = { module = "javax.servlet:javax.servlet-api", version = "3.1.0" }
 servlet-jakarta-api = { module = "jakarta.servlet:jakarta.servlet-api", version = "6.1.0" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }

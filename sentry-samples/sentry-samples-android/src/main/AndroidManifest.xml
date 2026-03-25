@@ -271,5 +271,8 @@
     <meta-data
       android:name="io.sentry.anr.enable-fingerprinting"
       android:value="true" />
+    <meta-data
+      android:name="io.sentry.feedback.use-shake-gesture"
+      android:value="true" />
   </application>
 </manifest>

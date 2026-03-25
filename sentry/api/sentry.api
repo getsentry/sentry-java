@@ -3162,6 +3162,7 @@ public final class io/sentry/SentryFeedbackOptions {
 	public fun isShowEmail ()Z
 	public fun isShowName ()Z
 	public fun isUseSentryUser ()Z
+	public fun isUseShakeGesture ()Z
 	public fun setCancelButtonLabel (Ljava/lang/CharSequence;)V
 	public fun setDialogHandler (Lio/sentry/SentryFeedbackOptions$IDialogHandler;)V
 	public fun setEmailLabel (Ljava/lang/CharSequence;)V
@@ -3184,6 +3185,7 @@ public final class io/sentry/SentryFeedbackOptions {
 	public fun setSubmitButtonLabel (Ljava/lang/CharSequence;)V
 	public fun setSuccessMessageText (Ljava/lang/CharSequence;)V
 	public fun setUseSentryUser (Z)V
+	public fun setUseShakeGesture (Z)V
 	public fun toString ()Ljava/lang/String;
 }
 
@@ -4002,6 +4004,7 @@ public final class io/sentry/SentryReplayOptions : io/sentry/SentryMaskingOption
 	public fun <init> (ZLio/sentry/protocol/SdkVersion;)V
 	public fun addMaskViewClass (Ljava/lang/String;)V
 	public fun addUnmaskViewClass (Ljava/lang/String;)V
+	public fun getBeforeErrorSampling ()Lio/sentry/SentryReplayOptions$BeforeErrorSamplingCallback;
 	public fun getErrorReplayDuration ()J
 	public fun getFrameRate ()I
 	public fun getNetworkDetailAllowUrls ()Ljava/util/List;
@@ -4021,6 +4024,7 @@ public final class io/sentry/SentryReplayOptions : io/sentry/SentryMaskingOption
 	public fun isSessionReplayEnabled ()Z
 	public fun isSessionReplayForErrorsEnabled ()Z
 	public fun isTrackConfiguration ()Z
+	public fun setBeforeErrorSampling (Lio/sentry/SentryReplayOptions$BeforeErrorSamplingCallback;)V
 	public fun setDebug (Z)V
 	public fun setMaskAllImages (Z)V
 	public fun setMaskAllText (Z)V
@@ -4036,6 +4040,10 @@ public final class io/sentry/SentryReplayOptions : io/sentry/SentryMaskingOption
 	public fun setSessionSampleRate (Ljava/lang/Double;)V
 	public fun setTrackConfiguration (Z)V
 	public fun trackCustomMasking ()V
+}
+
+public abstract interface class io/sentry/SentryReplayOptions$BeforeErrorSamplingCallback {
+	public abstract fun execute (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Z
 }
 
 public final class io/sentry/SentryReplayOptions$SentryReplayQuality : java/lang/Enum {
