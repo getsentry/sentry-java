@@ -1,4 +1,5 @@
 io.sentry.spring.jakarta
+io.sentry.spring.jakarta.cache
 io.sentry.spring.jakarta.checkin
 io.sentry.spring.jakarta.exception
 io.sentry.spring.jakarta.graphql
