@@ -13,38 +13,39 @@ import androidx.compose.ui.node.LayoutNode
 import androidx.compose.ui.text.TextLayoutResult
 import kotlin.math.roundToInt
 
-internal class ComposeTextLayout(
-  internal val layout: TextLayoutResult,
-  private val hasFillModifier: Boolean,
-) : TextLayout {
+internal class ComposeTextLayout(internal val layout: TextLayoutResult) : TextLayout {
   override val lineCount: Int
     get() = layout.lineCount
 
   override val dominantTextColor: Int?
     get() = null
 
-  override fun getPrimaryHorizontal(line: Int, offset: Int): Float {
-    val horizontalPos = layout.getHorizontalPosition(offset, usePrimaryDirection = true)
-    // when there's no `fill` modifier on a Text composable, compose still thinks that there's
-    // one and wrongly calculates horizontal position relative to node's start, not text's start
-    // for some reason. This is only the case for single-line text (multiline works fien).
-    // So we subtract line's left to get the correct position
-    return if (!hasFillModifier && lineCount == 1) {
-      horizontalPos - layout.getLineLeft(line)
-    } else {
-      horizontalPos
+  /**
+   * The paragraph may be laid out with a wider width (constraint maxWidth) than the actual node
+   * (layout result size). When that happens, getLineLeft/getLineRight return positions in the
+   * paragraph coordinate system, which don't match the node's bounds. In that case, text alignment
+   * has no visible effect, so we fall back to using line width starting from x=0.
+   */
+  private val paragraphWidthExceedsNode: Boolean
+    get() = layout.multiParagraph.width > layout.size.width
+
+  override fun getLineLeft(line: Int): Float {
+    if (paragraphWidthExceedsNode) {
+      return 0f
     }
+    return layout.getLineLeft(line)
   }
 
-  override fun getEllipsisCount(line: Int): Int = if (layout.isLineEllipsized(line)) 1 else 0
-
-  override fun getLineVisibleEnd(line: Int): Int = layout.getLineEnd(line, visibleEnd = true)
+  override fun getLineRight(line: Int): Float {
+    if (paragraphWidthExceedsNode) {
+      return layout.multiParagraph.getLineWidth(line)
+    }
+    return layout.getLineRight(line)
+  }
 
   override fun getLineTop(line: Int): Int = layout.getLineTop(line).roundToInt()
 
   override fun getLineBottom(line: Int): Int = layout.getLineBottom(line).roundToInt()
-
-  override fun getLineStart(line: Int): Int = layout.getLineStart(line)
 }
 
 // TODO: probably most of the below we can do via bytecode instrumentation and speed up at runtime
@@ -92,8 +93,6 @@ internal fun Painter.isMaskable(): Boolean {
     !className.contains("Brush")
 }
 
-internal data class TextAttributes(val color: Color?, val hasFillModifier: Boolean)
-
 /**
  * This method is necessary to mask text in Compose.
  *
@@ -101,37 +100,24 @@ internal data class TextAttributes(val color: Color?, val hasFillModifier: Boole
  * string in their name, e.g. TextStringSimpleElement or TextAnnotatedStringElement. We then get the
  * color from the modifier, to be able to mask it with the correct color.
  *
- * We also look up for classes that have a [Fill] modifier, usually they all have a `Fill` string in
- * their name, e.g. FillElement. This is necessary to workaround a Compose bug where single-line
- * text composable without a `fill` modifier still thinks that there's one and wrongly calculates
- * horizontal position.
- *
  * We also add special proguard rules to keep the `Text` class names and their `color` member.
  */
-internal fun LayoutNode.findTextAttributes(): TextAttributes {
+internal fun LayoutNode.findTextColor(): Color? {
   val modifierInfos = getModifierInfo()
-  var color: Color? = null
-  var hasFillModifier = false
   for (index in modifierInfos.indices) {
     val modifier = modifierInfos[index].modifier
     val modifierClassName = modifier::class.java.name
     if (modifierClassName.contains("Text")) {
-      color =
-        try {
-          (modifier::class
-              .java
-              .getDeclaredField("color")
-              .apply { isAccessible = true }
-              .get(modifier) as? ColorProducer)
-            ?.invoke()
-        } catch (e: Throwable) {
-          null
-        }
-    } else if (modifierClassName.contains("Fill")) {
-      hasFillModifier = true
+      return try {
+        (modifier::class.java.getDeclaredField("color").apply { isAccessible = true }.get(modifier)
+            as? ColorProducer)
+          ?.invoke()
+      } catch (e: Throwable) {
+        null
+      }
     }
   }
-  return TextAttributes(color, hasFillModifier)
+  return null
 }
 
 /**

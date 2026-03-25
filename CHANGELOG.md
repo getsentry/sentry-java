@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixes
+
+- Session Replay: Fix Compose text masking mismatch with weighted text ([#5218](https://github.com/getsentry/sentry-java/pull/5218))
+
 ### Features
 
 - Add configurable `IScopesStorageFactory` to `SentryOptions` for providing a custom `IScopesStorage`, e.g. when the default `ThreadLocal`-backed storage is incompatible with non-pinning thread models ([#5199](https://github.com/getsentry/sentry-java/pull/5199))
