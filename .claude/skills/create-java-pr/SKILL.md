@@ -34,20 +34,20 @@ git branch --show-current
     ```bash
     gh pr list --base "$(git branch --show-current)" --json number,headRefName,title
     ```
-    - If there are downstream PRs, treat this as a **stack base context** (collection branch).
+    - If there are downstream PRs, treat this as **next PR in an existing stack** with the current branch as the stack base (collection branch).
     - If there are no downstream PRs, treat it as **standalone PR context**.
   - If no PR exists for the current branch, check whether other PRs target it:
     ```bash
     gh pr list --base "$(git branch --show-current)" --json number,headRefName,title
     ```
-    If there are downstream PRs, treat this as a stack base context.
+    If there are downstream PRs, treat this as **next PR in an existing stack** with the current branch as the stack base (collection branch).
 
 3. If signals are mixed or ambiguous, ask one focused question to confirm.
 
 PR types:
 - **Standalone PR** — regular PR targeting `main`.
 - **First PR of a new stack** — create collection branch from `main`, then first PR off it.
-- **Next PR in an existing stack** — target previous stack branch.
+- **Next PR in an existing stack** — target the current stack base branch (usually the previous stack PR branch, or the collection branch if creating the first follow-up PR from the collection branch).
 
 If the user explicitly says "stack", "stacked PR", or provides numbered stack titles (e.g. `[Topic 2]`), honor that even if branch heuristics are inconclusive.
 
