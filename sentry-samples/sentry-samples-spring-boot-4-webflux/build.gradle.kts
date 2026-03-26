@@ -32,6 +32,10 @@ dependencies {
   implementation(libs.springboot4.starter.webflux)
   implementation(libs.springboot4.starter.webclient)
 
+  // cache tracing
+  implementation(libs.springboot4.starter.cache)
+  implementation(libs.caffeine)
+
   testImplementation(kotlin(Config.kotlinStdLib))
   testImplementation(projects.sentrySystemTestSupport)
   testImplementation(libs.apollo3.kotlin)

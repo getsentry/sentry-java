@@ -24,7 +24,7 @@ import io.sentry.android.replay.SentryReplayModifiers
 import io.sentry.android.replay.util.ComposeTextLayout
 import io.sentry.android.replay.util.boundsInWindow
 import io.sentry.android.replay.util.findPainter
-import io.sentry.android.replay.util.findTextAttributes
+import io.sentry.android.replay.util.findTextColor
 import io.sentry.android.replay.util.isMaskable
 import io.sentry.android.replay.util.toOpaque
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.GenericViewHierarchyNode
@@ -36,32 +36,35 @@ import java.lang.reflect.Method
 @SuppressLint("UseRequiresApi")
 @TargetApi(26)
 internal object ComposeViewHierarchyNode {
-  private val getSemanticsConfigurationMethod: Method? by lazy {
-    try {
-      return@lazy LayoutNode::class.java.getDeclaredMethod("getSemanticsConfiguration").apply {
-        isAccessible = true
+  private val getCollapsedSemanticsMethod: Method? by
+    lazy(LazyThreadSafetyMode.NONE) {
+      try {
+        return@lazy LayoutNode::class
+          .java
+          .getDeclaredMethod("getCollapsedSemantics\$ui_release")
+          .apply { isAccessible = true }
+      } catch (_: Throwable) {
+        // ignore, as this method may not be available
       }
-    } catch (_: Throwable) {
-      // ignore, as this method may not be available
+      return@lazy null
     }
-    return@lazy null
-  }
 
   private var semanticsRetrievalErrorLogged: Boolean = false
 
   @JvmStatic
   internal fun retrieveSemanticsConfiguration(node: LayoutNode): SemanticsConfiguration? {
-    // Jetpack Compose 1.8 or newer provides SemanticsConfiguration via SemanticsInfo
-    // See
-    // https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:compose/ui/ui/src/commonMain/kotlin/androidx/compose/ui/node/LayoutNode.kt
-    // and
-    // https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:compose/ui/ui/src/commonMain/kotlin/androidx/compose/ui/semantics/SemanticsInfo.kt
-    getSemanticsConfigurationMethod?.let {
-      return it.invoke(node) as SemanticsConfiguration?
+    return try {
+      node.semanticsConfiguration
+    } catch (t: Throwable) {
+      // for backwards compatibility
+      // Jetpack Compose 1.8 or older
+      if (getCollapsedSemanticsMethod != null) {
+        getCollapsedSemanticsMethod!!.invoke(node) as SemanticsConfiguration?
+      } else {
+        // re-throw t if there's no way to retrieve semantics
+        throw t
+      }
     }
-
-    // for backwards compatibility
-    return node.collapsedSemantics
   }
 
   /**
@@ -136,7 +139,7 @@ internal object ComposeViewHierarchyNode {
           """
                     Error retrieving semantics information from Compose tree. Most likely you're using
                     an unsupported version of androidx.compose.ui:ui. The supported
-                    version range is 1.5.0 - 1.8.0.
+                    version range is 1.5.0 - 1.10.2.
                     If you're using a newer version, please open a github issue with the version
                     you're using, so we can add support for it.
                     """
@@ -157,7 +160,7 @@ internal object ComposeViewHierarchyNode {
         shouldMask = true,
         isImportantForContentCapture = false, // will be set by children
         isVisible =
-          !node.outerCoordinator.isTransparent() &&
+          !SentryLayoutNodeHelper.isTransparent(node) &&
             visibleRect.height() > 0 &&
             visibleRect.width() > 0,
         visibleRect = visibleRect,
@@ -165,7 +168,7 @@ internal object ComposeViewHierarchyNode {
     }
 
     val isVisible =
-      !node.outerCoordinator.isTransparent() &&
+      !SentryLayoutNodeHelper.isTransparent(node) &&
         (semantics == null || !semantics.contains(SemanticsProperties.InvisibleToUser)) &&
         visibleRect.height() > 0 &&
         visibleRect.width() > 0
@@ -186,11 +189,10 @@ internal object ComposeViewHierarchyNode {
           ?.action
           ?.invoke(textLayoutResults)
 
-        val (color, hasFillModifier) = node.findTextAttributes()
         val textLayoutResult = textLayoutResults.firstOrNull()
         var textColor = textLayoutResult?.layoutInput?.style?.color
         if (textColor?.isUnspecified == true) {
-          textColor = color
+          textColor = node.findTextColor()
         }
         val isLaidOut = textLayoutResult?.layoutInput?.style?.fontSize != TextUnit.Unspecified
         // TODO: support editable text (currently there's a way to get @Composable's padding only
@@ -199,7 +201,7 @@ internal object ComposeViewHierarchyNode {
         TextViewHierarchyNode(
           layout =
             if (textLayoutResult != null && !isEditable && isLaidOut) {
-              ComposeTextLayout(textLayoutResult, hasFillModifier)
+              ComposeTextLayout(textLayoutResult)
             } else {
               null
             },
@@ -301,7 +303,7 @@ internal object ComposeViewHierarchyNode {
     options: SentryMaskingOptions,
     logger: ILogger,
   ) {
-    val children = this.children
+    val children = SentryLayoutNodeHelper.getChildren(this)
     if (children.isEmpty()) {
       return
     }

@@ -44,7 +44,6 @@ import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.GenericViewHiera
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.ImageViewHierarchyNode
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.TextViewHierarchyNode
 import java.io.File
-import java.lang.reflect.InvocationTargetException
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -183,7 +182,7 @@ class ComposeMaskingOptionsTest {
     val node = mock<LayoutNode>()
     whenever(node.semanticsConfiguration).thenThrow(RuntimeException("Compose Runtime Error"))
 
-    assertThrows(InvocationTargetException::class.java) {
+    assertThrows(RuntimeException::class.java) {
       ComposeViewHierarchyNode.retrieveSemanticsConfiguration(node)
     }
   }
