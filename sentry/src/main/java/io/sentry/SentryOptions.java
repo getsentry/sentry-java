@@ -505,6 +505,9 @@ public class SentryOptions {
   /** Whether database transaction spans (BEGIN, COMMIT, ROLLBACK) should be traced. */
   private boolean enableDatabaseTransactionTracing = false;
 
+  /** Whether cache operations (get, put, remove, flush) should be traced. */
+  private boolean enableCacheTracing = false;
+
   /** Date provider to retrieve the current date from. */
   @ApiStatus.Internal
   private final @NotNull LazyEvaluator<SentryDateProvider> dateProvider =
@@ -571,6 +574,8 @@ public class SentryOptions {
   private boolean enableAppStartProfiling = false;
 
   private @NotNull ISpanFactory spanFactory = NoOpSpanFactory.getInstance();
+
+  private @Nullable IScopesStorageFactory scopesStorageFactory;
 
   /**
    * Profiling traces rate. 101 hz means 101 traces in 1 second. Defaults to 101 to avoid possible
@@ -2682,6 +2687,24 @@ public class SentryOptions {
   }
 
   /**
+   * Whether cache operations (get, put, remove, flush) should be traced.
+   *
+   * @return true if cache operations should be traced
+   */
+  public boolean isEnableCacheTracing() {
+    return enableCacheTracing;
+  }
+
+  /**
+   * Whether cache operations (get, put, remove, flush) should be traced.
+   *
+   * @param enableCacheTracing true if cache operations should be traced
+   */
+  public void setEnableCacheTracing(boolean enableCacheTracing) {
+    this.enableCacheTracing = enableCacheTracing;
+  }
+
+  /**
    * Whether Sentry is enabled.
    *
    * @return true if Sentry should be enabled
@@ -3519,6 +3542,9 @@ public class SentryOptions {
     if (options.isEnableDatabaseTransactionTracing() != null) {
       setEnableDatabaseTransactionTracing(options.isEnableDatabaseTransactionTracing());
     }
+    if (options.isEnableCacheTracing() != null) {
+      setEnableCacheTracing(options.isEnableCacheTracing());
+    }
     if (options.getMaxRequestBodySize() != null) {
       setMaxRequestBodySize(options.getMaxRequestBodySize());
     }
@@ -3612,6 +3638,27 @@ public class SentryOptions {
   @ApiStatus.Internal
   public void setSpanFactory(final @NotNull ISpanFactory spanFactory) {
     this.spanFactory = spanFactory;
+  }
+
+  /**
+   * Returns the custom scopes storage factory, or null if auto-detection should be used.
+   *
+   * @return the custom scopes storage factory or null
+   */
+  @ApiStatus.Experimental
+  public @Nullable IScopesStorageFactory getScopesStorageFactory() {
+    return scopesStorageFactory;
+  }
+
+  /**
+   * Sets a custom factory for creating {@link IScopesStorage} implementations. When set, this
+   * factory takes precedence over the default auto-detection logic.
+   *
+   * @param scopesStorageFactory the custom factory, or null to use auto-detection
+   */
+  @ApiStatus.Experimental
+  public void setScopesStorageFactory(final @Nullable IScopesStorageFactory scopesStorageFactory) {
+    this.scopesStorageFactory = scopesStorageFactory;
   }
 
   @ApiStatus.Experimental

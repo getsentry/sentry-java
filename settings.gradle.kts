@@ -66,6 +66,7 @@ include(
     "sentry-opentelemetry:sentry-opentelemetry-agentless-spring",
     "sentry-opentelemetry:sentry-opentelemetry-otlp",
     "sentry-opentelemetry:sentry-opentelemetry-otlp-spring",
+    "sentry-jcache",
     "sentry-quartz",
     "sentry-okhttp",
     "sentry-openfeature",

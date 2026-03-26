@@ -22,12 +22,12 @@ nopen = "1.0.1"
 # see https://www.jetbrains.com/help/kotlin-multiplatform-dev/compose-compatibility-and-versioning.html#kotlin-compatibility
 # see https://developer.android.com/jetpack/androidx/releases/compose-kotlin
 okhttp = "4.9.2"
-otel = "1.57.0"
-otelInstrumentation = "2.23.0"
-otelInstrumentationAlpha = "2.23.0-alpha"
+otel = "1.60.1"
+otelInstrumentation = "2.26.0"
+otelInstrumentationAlpha = "2.26.0-alpha"
 # check https://github.com/open-telemetry/opentelemetry-java-instrumentation/blob/main/dependencyManagement/build.gradle.kts#L49 for release version above to find a compatible version
-otelSemanticConventions = "1.37.0"
-otelSemanticConventionsAlpha = "1.37.0-alpha"
+otelSemanticConventions = "1.40.0"
+otelSemanticConventionsAlpha = "1.40.0-alpha"
 retrofit = "2.9.0"
 slf4j = "1.7.30"
 springboot2 = "2.7.18"
@@ -99,6 +99,8 @@ androidx-recyclerview = { module = "androidx.recyclerview:recyclerview", version
 androidx-browser = { module = "androidx.browser:browser", version = "1.8.0" }
 async-profiler = { module = "tools.profiler:async-profiler", version.ref = "asyncProfiler" }
 async-profiler-jfr-converter = { module = "tools.profiler:jfr-converter", version.ref = "asyncProfiler" }
+caffeine = { module = "com.github.ben-manes.caffeine:caffeine" }
+caffeine-jcache = { module = "com.github.ben-manes.caffeine:jcache", version = "3.2.0" }
 coil-compose = { module = "io.coil-kt:coil-compose", version = "2.6.0" }
 commons-compress = {module = "org.apache.commons:commons-compress", version = "1.25.0"}
 context-propagation = { module = "io.micrometer:context-propagation", version = "1.1.0" }
@@ -144,6 +146,7 @@ otel-semconv = { module = "io.opentelemetry.semconv:opentelemetry-semconv", vers
 otel-semconv-incubating = { module = "io.opentelemetry.semconv:opentelemetry-semconv-incubating", version.ref = "otelSemanticConventionsAlpha" }
 p6spy = { module = "p6spy:p6spy", version = "3.9.1" }
 epitaph = { module = "com.abovevacant:epitaph", version = "0.1.1" }
+jcache = { module = "javax.cache:cache-api", version = "1.1.1" }
 quartz = { module = "org.quartz-scheduler:quartz", version = "2.3.0" }
 reactor-core = { module = "io.projectreactor:reactor-core", version = "3.5.3" }
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
@@ -166,6 +169,7 @@ springboot-starter-aop = { module = "org.springframework.boot:spring-boot-starte
 springboot-starter-security = { module = "org.springframework.boot:spring-boot-starter-security", version.ref = "springboot2" }
 springboot-starter-jdbc = { module = "org.springframework.boot:spring-boot-starter-jdbc", version.ref = "springboot2" }
 springboot-starter-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator", version.ref = "springboot2" }
+springboot-starter-cache = { module = "org.springframework.boot:spring-boot-starter-cache", version.ref = "springboot2" }
 springboot3-otel = { module = "io.opentelemetry.instrumentation:opentelemetry-spring-boot-starter", version.ref = "otelInstrumentation" }
 springboot3-starter = { module = "org.springframework.boot:spring-boot-starter", version.ref = "springboot3" }
 springboot3-starter-graphql = { module = "org.springframework.boot:spring-boot-starter-graphql", version.ref = "springboot3" }
@@ -178,6 +182,7 @@ springboot3-starter-aop = { module = "org.springframework.boot:spring-boot-start
 springboot3-starter-security = { module = "org.springframework.boot:spring-boot-starter-security", version.ref = "springboot3" }
 springboot3-starter-jdbc = { module = "org.springframework.boot:spring-boot-starter-jdbc", version.ref = "springboot3" }
 springboot3-starter-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator", version.ref = "springboot3" }
+springboot3-starter-cache = { module = "org.springframework.boot:spring-boot-starter-cache", version.ref = "springboot3" }
 springboot4-otel = { module = "io.opentelemetry.instrumentation:opentelemetry-spring-boot-starter", version.ref = "otelInstrumentation" }
 springboot4-resttestclient = { module = "org.springframework.boot:spring-boot-resttestclient", version.ref = "springboot4" }
 springboot4-starter = { module = "org.springframework.boot:spring-boot-starter", version.ref = "springboot4" }
@@ -193,6 +198,7 @@ springboot4-starter-restclient = { module = "org.springframework.boot:spring-boo
 springboot4-starter-webclient = { module = "org.springframework.boot:spring-boot-starter-webclient", version.ref = "springboot4" }
 springboot4-starter-jdbc = { module = "org.springframework.boot:spring-boot-starter-jdbc", version.ref = "springboot4" }
 springboot4-starter-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator", version.ref = "springboot4" }
+springboot4-starter-cache = { module = "org.springframework.boot:spring-boot-starter-cache", version.ref = "springboot4" }
 timber = { module = "com.jakewharton.timber:timber", version = "4.7.1" }
 
 # Animalsniffer signature
