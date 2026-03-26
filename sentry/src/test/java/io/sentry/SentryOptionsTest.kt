@@ -1079,7 +1079,7 @@ class SentryOptionsTest {
     options.orgId = "  999  "
     assertEquals("999", options.effectiveOrgId)
   }
-  
+
   @Test
   fun `scopesStorageFactory is null by default`() {
     val options = SentryOptions()
