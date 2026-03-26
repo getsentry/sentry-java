@@ -566,4 +566,28 @@ class TracingUtilsTest {
     val options = makeOptions(dsnOrgId = null, strict = true)
     assertTrue(TracingUtils.shouldContinueTrace(options, makeBaggage(null)))
   }
+
+  @Test
+  fun `shouldContinueTrace uses DSN fallback when explicit orgId is empty`() {
+    val options = makeOptions(dsnOrgId = "123", explicitOrgId = "", strict = true)
+    assertTrue(TracingUtils.shouldContinueTrace(options, makeBaggage("123")))
+  }
+
+  @Test
+  fun `shouldContinueTrace uses DSN fallback when explicit orgId is whitespace`() {
+    val options = makeOptions(dsnOrgId = "123", explicitOrgId = "   ", strict = true)
+    assertTrue(TracingUtils.shouldContinueTrace(options, makeBaggage("123")))
+  }
+
+  @Test
+  fun `shouldContinueTrace rejects mismatch after empty explicit orgId falls back to DSN`() {
+    val options = makeOptions(dsnOrgId = "123", explicitOrgId = "", strict = true)
+    assertFalse(TracingUtils.shouldContinueTrace(options, makeBaggage("999")))
+  }
+
+  @Test
+  fun `shouldContinueTrace strict=false with empty explicit orgId uses DSN fallback`() {
+    val options = makeOptions(dsnOrgId = "123", explicitOrgId = "", strict = false)
+    assertTrue(TracingUtils.shouldContinueTrace(options, makeBaggage("123")))
+  }
 }

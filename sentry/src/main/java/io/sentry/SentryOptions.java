@@ -2334,11 +2334,15 @@ public class SentryOptions {
 
   /**
    * Returns the effective org ID, preferring the explicit config option over the DSN-parsed value.
+   * Empty or whitespace-only explicit org IDs are treated as unset and fall back to the DSN.
    */
   @ApiStatus.Internal
   public @Nullable String getEffectiveOrgId() {
     if (orgId != null) {
-      return orgId;
+      final @NotNull String trimmed = orgId.trim();
+      if (!trimmed.isEmpty()) {
+        return trimmed;
+      }
     }
     try {
       final @Nullable String dsnOrgId = retrieveParsedDsn().getOrgId();

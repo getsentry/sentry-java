@@ -1032,4 +1032,44 @@ class SentryOptionsTest {
     options.dsn = "https://key@sentry.io/456"
     assertNull(options.effectiveOrgId)
   }
+
+  @Test
+  fun `getEffectiveOrgId falls back to DSN when explicit orgId is empty string`() {
+    val options = SentryOptions()
+    options.dsn = "https://key@o123.ingest.sentry.io/456"
+    options.orgId = ""
+    assertEquals("123", options.effectiveOrgId)
+  }
+
+  @Test
+  fun `getEffectiveOrgId falls back to DSN when explicit orgId is whitespace only`() {
+    val options = SentryOptions()
+    options.dsn = "https://key@o123.ingest.sentry.io/456"
+    options.orgId = "   "
+    assertEquals("123", options.effectiveOrgId)
+  }
+
+  @Test
+  fun `getEffectiveOrgId falls back to DSN when explicit orgId is tab and newline`() {
+    val options = SentryOptions()
+    options.dsn = "https://key@o123.ingest.sentry.io/456"
+    options.orgId = "\t\n"
+    assertEquals("123", options.effectiveOrgId)
+  }
+
+  @Test
+  fun `getEffectiveOrgId returns null when explicit orgId is empty and no DSN orgId`() {
+    val options = SentryOptions()
+    options.dsn = "https://key@sentry.io/456"
+    options.orgId = ""
+    assertNull(options.effectiveOrgId)
+  }
+
+  @Test
+  fun `getEffectiveOrgId trims whitespace from explicit orgId`() {
+    val options = SentryOptions()
+    options.dsn = "https://key@o123.ingest.sentry.io/456"
+    options.orgId = "  999  "
+    assertEquals("999", options.effectiveOrgId)
+  }
 }
