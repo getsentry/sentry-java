@@ -152,8 +152,9 @@ public class TombstoneParser implements Closeable {
       final SentryStackFrame stackFrame = new SentryStackFrame();
       if (isJavaFrame(frame)) {
         stackFrame.setPlatform("java");
-        final String module = extractJavaModuleName(frame.functionName);
-        stackFrame.setFunction(extractJavaFunctionName(frame.functionName));
+        final String normalizedFunctionName = normalizeFunctionName(frame.functionName);
+        final String module = extractJavaModuleName(normalizedFunctionName);
+        stackFrame.setFunction(extractJavaFunctionName(normalizedFunctionName));
         stackFrame.setModule(module);
 
         // For Java frames, check in-app against the module (package name), which is what
@@ -217,21 +218,19 @@ public class TombstoneParser implements Closeable {
     return normalized;
   }
 
-  private static @Nullable String extractJavaModuleName(String fqFunctionName) {
-    final String normalized = normalizeFunctionName(fqFunctionName);
-    if (normalized.contains(".")) {
-      return normalized.substring(0, normalized.lastIndexOf("."));
+  private static @Nullable String extractJavaModuleName(String normalizedFunctionName) {
+    if (normalizedFunctionName.contains(".")) {
+      return normalizedFunctionName.substring(0, normalizedFunctionName.lastIndexOf("."));
     } else {
       return null;
     }
   }
 
-  private static @Nullable String extractJavaFunctionName(String fqFunctionName) {
-    final String normalized = normalizeFunctionName(fqFunctionName);
-    if (normalized.contains(".")) {
-      return normalized.substring(normalized.lastIndexOf(".") + 1);
+  private static @Nullable String extractJavaFunctionName(String normalizedFunctionName) {
+    if (normalizedFunctionName.contains(".")) {
+      return normalizedFunctionName.substring(normalizedFunctionName.lastIndexOf(".") + 1);
     } else {
-      return normalized;
+      return normalizedFunctionName;
     }
   }
 
