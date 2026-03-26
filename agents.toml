@@ -1,0 +1,45 @@
+version = 1
+
+[[skills]]
+name = "dotagents"
+source = "getsentry/dotagents"
+
+[[skills]]
+name = "sentry-android-sdk"
+source = "getsentry/sentry-for-ai"
+
+[[skills]]
+name = "sentry-sdk-setup"
+source = "getsentry/sentry-for-ai"
+
+[[skills]]
+name = "sentry-sdk-upgrade"
+source = "getsentry/sentry-for-ai"
+
+[[skills]]
+name = "sentry-workflow"
+source = "getsentry/sentry-for-ai"
+
+[[skills]]
+name = "sentry-fix-issues"
+source = "getsentry/sentry-for-ai"
+
+[[skills]]
+name = "sentry-code-review"
+source = "getsentry/sentry-for-ai"
+
+[[skills]]
+name = "sentry-pr-code-review"
+source = "getsentry/sentry-for-ai"
+
+[[skills]]
+name = "sentry-feature-setup"
+source = "getsentry/sentry-for-ai"
+
+[[skills]]
+name = "sentry-create-alert"
+source = "getsentry/sentry-for-ai"
+
+[[skills]]
+name = "sentry-setup-ai-monitoring"
+source = "getsentry/sentry-for-ai"
