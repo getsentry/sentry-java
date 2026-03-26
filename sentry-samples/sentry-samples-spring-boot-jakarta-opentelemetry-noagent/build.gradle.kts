@@ -52,6 +52,10 @@ dependencies {
   implementation(projects.sentryAsyncProfiler)
   implementation(projects.sentryOpentelemetry.sentryOpentelemetryAgentlessSpring)
 
+  // cache tracing
+  implementation(libs.springboot3.starter.cache)
+  implementation(libs.caffeine)
+
   // database query tracing
   implementation(projects.sentryJdbc)
   runtimeOnly(libs.hsqldb)
