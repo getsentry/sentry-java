@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        springboot-version: [ '4.0.0' ]
+        springboot-version: [ '4.0.0', '4.1.0-M4' ]
 
     name: Spring Boot ${{ matrix.springboot-version }}
     env:
