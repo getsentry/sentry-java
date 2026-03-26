@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Fix deadlock in `SentryContextStorage.root()` with virtual threads and OpenTelemetry agent ([#5234](https://github.com/getsentry/sentry-java/pull/5234))
+
 ## 8.37.0
 
 ### Fixes
