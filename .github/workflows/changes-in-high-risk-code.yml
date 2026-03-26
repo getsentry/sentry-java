@@ -16,7 +16,7 @@ jobs:
       high_risk_code: ${{ steps.changes.outputs.high_risk_code }}
       high_risk_code_files: ${{ steps.changes.outputs.high_risk_code_files }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
       - name: Get changed files
         id: changes
         uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4.0.1
@@ -34,7 +34,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Comment on PR to notify of changes in high risk files
-        uses: actions/github-script@v8
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         env:
           high_risk_code: ${{ needs.files-changed.outputs.high_risk_code_files }}
         with:
