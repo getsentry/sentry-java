@@ -199,9 +199,7 @@ public final class TracingUtils {
   @ApiStatus.Internal
   public static boolean shouldContinueTrace(
       final @NotNull SentryOptions options, final @Nullable Baggage baggage) {
-    final @Nullable String rawSdkOrgId = options.getEffectiveOrgId();
-    final @Nullable String sdkOrgId =
-        (rawSdkOrgId != null && !rawSdkOrgId.trim().isEmpty()) ? rawSdkOrgId.trim() : null;
+    final @Nullable String sdkOrgId = options.getEffectiveOrgId();
     final @Nullable String rawBaggageOrgId = baggage != null ? baggage.getOrgId() : null;
     final @Nullable String baggageOrgId =
         (rawBaggageOrgId != null && !rawBaggageOrgId.trim().isEmpty())
