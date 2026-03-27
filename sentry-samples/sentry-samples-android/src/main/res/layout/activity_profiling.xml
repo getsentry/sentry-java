@@ -38,11 +38,34 @@
     android:gravity="center"
     android:text="@string/profiling_result" />
 
-  <Button
-    android:id="@+id/profiling_start"
-    android:layout_width="wrap_content"
+  <TextView
+    android:id="@+id/profiling_status"
+    android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:text="@string/profiling_start" />
+    android:gravity="center"
+    android:textStyle="bold"
+    android:paddingTop="8dp"
+    android:paddingBottom="4dp" />
+
+  <LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center">
+
+    <Button
+      android:id="@+id/profiling_start"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="@string/profiling_start" />
+
+    <Button
+      android:id="@+id/profiling_start_manual"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="@string/profiling_start_manual" />
+
+  </LinearLayout>
 
   <ProgressBar
     android:id="@+id/profiling_progress_bar"
