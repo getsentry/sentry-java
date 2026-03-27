@@ -1,5 +1,6 @@
 package io.sentry.samples.android
 
+import android.os.Build
 import android.os.Bundle
 import android.view.View
 import android.widget.SeekBar
@@ -22,6 +23,7 @@ class ProfilingActivity : AppCompatActivity() {
   private lateinit var binding: ActivityProfilingBinding
   private val executors = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors())
   private var profileFinished = true
+  private var manualProfilingActive = false
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
@@ -30,7 +32,7 @@ class ProfilingActivity : AppCompatActivity() {
       this,
       object : OnBackPressedCallback(true) {
         override fun handleOnBackPressed() {
-          if (profileFinished) {
+          if (profileFinished && !manualProfilingActive) {
             isEnabled = false
             onBackPressedDispatcher.onBackPressed()
           } else {
@@ -41,6 +43,16 @@ class ProfilingActivity : AppCompatActivity() {
       },
     )
     binding = ActivityProfilingBinding.inflate(layoutInflater)
+
+    // Show which profiler backend is active
+    val options = Sentry.getCurrentScopes().options
+    val isPerfetto = options.isUseProfilingManager && Build.VERSION.SDK_INT >= 35
+    binding.profilingStatus.text =
+      if (isPerfetto) {
+        getString(R.string.profiling_status_perfetto)
+      } else {
+        getString(R.string.profiling_status_legacy)
+      }
 
     binding.profilingDurationSeekbar.setOnSeekBarChangeListener(
       object : SeekBar.OnSeekBarChangeListener {
@@ -76,6 +88,7 @@ class ProfilingActivity : AppCompatActivity() {
     binding.profilingList.adapter = ProfilingListAdapter()
     binding.profilingList.layoutManager = LinearLayoutManager(this)
 
+    // Transaction-based profiling (existing)
     binding.profilingStart.setOnClickListener {
       binding.profilingProgressBar.visibility = View.VISIBLE
       profileFinished = false
@@ -92,6 +105,33 @@ class ProfilingActivity : AppCompatActivity() {
         }
         .start()
     }
+
+    // Manual continuous profiling (exercises Perfetto path on API 35+)
+    binding.profilingStartManual.setOnClickListener {
+      if (!manualProfilingActive) {
+        Sentry.startProfiler()
+        manualProfilingActive = true
+        profileFinished = false
+        binding.profilingStartManual.text = getString(R.string.profiling_stop_manual)
+        binding.profilingProgressBar.visibility = View.VISIBLE
+
+        // Start background work to generate interesting profile data
+        val threads = getBackgroundThreads()
+        repeat(threads) { executors.submit { runMathOperations() } }
+        executors.submit { swipeList() }
+
+        binding.profilingResult.text = getString(R.string.profiling_manual_started)
+      } else {
+        Sentry.stopProfiler()
+        manualProfilingActive = false
+        profileFinished = true
+        binding.profilingStartManual.text = getString(R.string.profiling_start_manual)
+        binding.profilingProgressBar.visibility = View.GONE
+
+        binding.profilingResult.text = getString(R.string.profiling_manual_stopped)
+      }
+    }
+
     setContentView(binding.root)
     Sentry.reportFullyDisplayed()
   }

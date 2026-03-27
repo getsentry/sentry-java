@@ -51,7 +51,13 @@ Nulla interdum gravida augue, vel fringilla lorem bibendum vel. In hac habitasse
   <string name="profiling_threads">Background threads to use: %d</string>
   <string name="profiling_running">Profiling is running</string>
   <string name="profiling_no_dir_set">No profiling dir path set</string>
-  <string name="profiling_start">Start Profiling</string>
+  <string name="profiling_start">Start (Transaction)</string>
+  <string name="profiling_start_manual">Start (Manual)</string>
+  <string name="profiling_stop_manual">Stop (Manual)</string>
+  <string name="profiling_status_perfetto">Profiler: Perfetto (ProfilingManager API 35+)</string>
+  <string name="profiling_status_legacy">Profiler: Legacy (simpleperf)</string>
+  <string name="profiling_manual_started">Manual profiler started</string>
+  <string name="profiling_manual_stopped">Manual profiler stopped — chunk sent to Sentry</string>
   <string name="profiling_result">Profile trace file size = %d bytes \nItem payload size = %d bytes \nData sent to Sentry size = %d bytes</string>
   <string name="open_camera_activity">Open Camera Activity</string>
   <string name="open_http_request_activity">Open Trigger HTTP Request Activity</string>

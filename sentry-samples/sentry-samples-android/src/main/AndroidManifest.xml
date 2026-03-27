@@ -163,6 +163,10 @@
     <meta-data
       android:name="io.sentry.traces.profiling.start-on-app-start"
       android:value="true" />
+    <!-- Enable ProfilingManager (Perfetto) on API 35+ -->
+    <meta-data
+      android:name="io.sentry.profiling.use-profiling-manager"
+      android:value="true" />
 
     <!--    how to disable the Activity auto instrumentation for tracing-->
     <!--    <meta-data android:name="io.sentry.traces.activity.enable" android:value="false" />-->
