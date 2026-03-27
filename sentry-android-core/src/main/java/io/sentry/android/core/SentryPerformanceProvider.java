@@ -129,6 +129,14 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
         return;
       }
 
+      if (profilingOptions.isUseProfilingManager()) {
+        logger.log(
+            SentryLevel.DEBUG,
+            "useProfilingManager is enabled. Skipping legacy app-start profiling — "
+                + "ProfilingManager will be initialized after Sentry.init().");
+        return;
+      }
+
       if (profilingOptions.isContinuousProfilingEnabled()
           && profilingOptions.isStartProfilerOnAppStart()) {
         createAndStartContinuousProfiler(context, profilingOptions, appStartMetrics);
@@ -163,7 +171,7 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
 
     final @NotNull SentryExecutorService startupExecutorService = new SentryExecutorService();
     final @NotNull IContinuousProfiler appStartContinuousProfiler =
-        new AndroidContinuousProfiler(
+        AndroidContinuousProfiler.createLegacy(
             buildInfoProvider,
             new SentryFrameMetricsCollector(
                 context.getApplicationContext(), logger, buildInfoProvider),
