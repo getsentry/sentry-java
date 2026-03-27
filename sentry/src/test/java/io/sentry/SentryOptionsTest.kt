@@ -758,6 +758,17 @@ class SentryOptionsTest {
   }
 
   @Test
+  fun `when options are initialized, useProfilingManager is set to false by default`() {
+    assertFalse(SentryOptions().isUseProfilingManager)
+  }
+
+  @Test
+  fun `when setUseProfilingManager is called, value is set`() {
+    val options = SentryOptions().apply { isUseProfilingManager = true }
+    assertTrue(options.isUseProfilingManager)
+  }
+
+  @Test
   fun `when options are initialized, profilingTracesHz is set to 101 by default`() {
     assertEquals(101, SentryOptions().profilingTracesHz)
   }

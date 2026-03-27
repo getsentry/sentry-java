@@ -1470,6 +1470,31 @@ class ManifestMetadataReaderTest {
   }
 
   @Test
+  fun `applyMetadata reads useProfilingManager flag to options`() {
+    // Arrange
+    val bundle = bundleOf(ManifestMetadataReader.USE_PROFILING_MANAGER to true)
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertTrue(fixture.options.isUseProfilingManager)
+  }
+
+  @Test
+  fun `applyMetadata reads useProfilingManager flag to options and keeps default if not found`() {
+    // Arrange
+    val context = fixture.getContext()
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertFalse(fixture.options.isUseProfilingManager)
+  }
+
+  @Test
   fun `applyMetadata reads enableScopePersistence flag to options`() {
     // Arrange
     val bundle = bundleOf(ManifestMetadataReader.ENABLE_SCOPE_PERSISTENCE to false)
