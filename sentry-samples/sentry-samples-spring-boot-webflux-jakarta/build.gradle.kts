@@ -31,6 +31,10 @@ dependencies {
   implementation(libs.springboot3.starter.graphql)
   implementation(libs.springboot3.starter.webflux)
 
+  // cache tracing
+  implementation(libs.springboot3.starter.cache)
+  implementation(libs.caffeine)
+
   testImplementation(kotlin(Config.kotlinStdLib))
   testImplementation(projects.sentrySystemTestSupport)
   testImplementation(libs.apollo3.kotlin)

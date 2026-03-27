@@ -59,6 +59,10 @@ dependencies {
   implementation(projects.sentryAsyncProfiler)
   implementation(libs.otel)
 
+  // cache tracing
+  implementation(libs.springboot4.starter.cache)
+  implementation(libs.caffeine)
+
   // database query tracing
   implementation(projects.sentryJdbc)
   runtimeOnly(libs.hsqldb)

@@ -41,6 +41,9 @@ public final class SentryContextStorage implements ContextStorage {
 
   @Override
   public Context root() {
-    return SentryContextWrapper.wrap(ContextStorage.super.root());
+    // Don't wrap() here — it triggers scope.clone() which acquires locks. Under virtual
+    // threads, lock.unlock() can re-enter here via OpenTelemetry executor instrumentation, causing
+    // a deadlock.
+    return ContextStorage.super.root();
   }
 }

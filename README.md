@@ -57,6 +57,7 @@ Sentry SDK for Java and Android
 | sentry-graphql                          | ![Maven Central Version](https://img.shields.io/maven-central/v/io.sentry/sentry-graphql?style=for-the-badge&logo=sentry&color=green)                          |
 | sentry-graphql-core                     | ![Maven Central Version](https://img.shields.io/maven-central/v/io.sentry/sentry-graphql-core?style=for-the-badge&logo=sentry&color=green)                     |
 | sentry-graphql-22                       | ![Maven Central Version](https://img.shields.io/maven-central/v/io.sentry/sentry-graphql-22?style=for-the-badge&logo=sentry&color=green)                       |
+| sentry-jcache                           | ![Maven Central Version](https://img.shields.io/maven-central/v/io.sentry/sentry-jcache?style=for-the-badge&logo=sentry&color=green)                           |
 | sentry-quartz                           | ![Maven Central Version](https://img.shields.io/maven-central/v/io.sentry/sentry-quartz?style=for-the-badge&logo=sentry&color=green)                           |
 | sentry-openfeign                        | ![Maven Central Version](https://img.shields.io/maven-central/v/io.sentry/sentry-openfeign?style=for-the-badge&logo=sentry&color=green)                        |
 | sentry-openfeature                      | ![Maven Central Version](https://img.shields.io/maven-central/v/io.sentry/sentry-openfeature?style=for-the-badge&logo=sentry&color=green)                      |
