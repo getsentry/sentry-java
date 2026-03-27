@@ -500,8 +500,7 @@ final class ManifestMetadataReader {
                 metadata, logger, ENABLE_APP_START_PROFILING, options.isEnableAppStartProfiling()));
 
         options.setUseProfilingManager(
-            readBool(
-                metadata, logger, USE_PROFILING_MANAGER, options.isUseProfilingManager()));
+            readBool(metadata, logger, USE_PROFILING_MANAGER, options.isUseProfilingManager()));
 
         options.setEnableScopePersistence(
             readBool(
