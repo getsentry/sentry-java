@@ -40,7 +40,8 @@ git branch --show-current
     ```bash
     gh pr list --base "$(git branch --show-current)" --json number,headRefName,title
     ```
-    If there are downstream PRs, treat this as **next PR in an existing stack** with the current branch as the stack base (collection branch).
+    - If there are downstream PRs, treat this as **next PR in an existing stack** with the current branch as the stack base (collection branch).
+    - If there are no downstream PRs either, treat it as **standalone PR context** (fresh feature branch).
 
 3. If signals are mixed or ambiguous, ask one focused question to confirm.
 
