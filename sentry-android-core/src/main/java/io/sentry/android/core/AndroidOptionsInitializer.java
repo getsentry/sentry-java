@@ -335,16 +335,24 @@ final class AndroidOptionsInitializer {
           performanceCollector.start(chunkId.toString());
         }
       } else {
+        final @NotNull SentryFrameMetricsCollector frameMetricsCollector =
+            Objects.requireNonNull(
+                options.getFrameMetricsCollector(), "options.getFrameMetricsCollector is required");
         options.setContinuousProfiler(
-            new AndroidContinuousProfiler(
-                buildInfoProvider,
-                Objects.requireNonNull(
-                    options.getFrameMetricsCollector(),
-                    "options.getFrameMetricsCollector is required"),
-                options.getLogger(),
-                options.getProfilingTracesDirPath(),
-                options.getProfilingTracesHz(),
-                () -> options.getExecutorService()));
+            options.isUseProfilingManager()
+                ? AndroidContinuousProfiler.createWithProfilingManager(
+                    context,
+                    buildInfoProvider,
+                    frameMetricsCollector,
+                    options.getLogger(),
+                    () -> options.getExecutorService())
+                : AndroidContinuousProfiler.createLegacy(
+                    buildInfoProvider,
+                    frameMetricsCollector,
+                    options.getLogger(),
+                    options.getProfilingTracesDirPath(),
+                    options.getProfilingTracesHz(),
+                    () -> options.getExecutorService()));
       }
     }
   }

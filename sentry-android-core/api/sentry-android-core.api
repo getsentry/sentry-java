@@ -41,8 +41,9 @@ public final class io/sentry/android/core/ActivityLifecycleIntegration : android
 }
 
 public class io/sentry/android/core/AndroidContinuousProfiler : io/sentry/IContinuousProfiler, io/sentry/transport/RateLimiter$IRateLimitObserver {
-	public fun <init> (Lio/sentry/android/core/BuildInfoProvider;Lio/sentry/android/core/internal/util/SentryFrameMetricsCollector;Lio/sentry/ILogger;Ljava/lang/String;ILio/sentry/util/LazyEvaluator$Evaluator;)V
 	public fun close (Z)V
+	public static fun createLegacy (Lio/sentry/android/core/BuildInfoProvider;Lio/sentry/android/core/internal/util/SentryFrameMetricsCollector;Lio/sentry/ILogger;Ljava/lang/String;ILio/sentry/util/LazyEvaluator$Evaluator;)Lio/sentry/android/core/AndroidContinuousProfiler;
+	public static fun createWithProfilingManager (Landroid/content/Context;Lio/sentry/android/core/BuildInfoProvider;Lio/sentry/android/core/internal/util/SentryFrameMetricsCollector;Lio/sentry/ILogger;Lio/sentry/util/LazyEvaluator$Evaluator;)Lio/sentry/android/core/AndroidContinuousProfiler;
 	public fun getChunkId ()Lio/sentry/protocol/SentryId;
 	public fun getProfilerId ()Lio/sentry/protocol/SentryId;
 	public fun getRootSpanCounter ()I
@@ -336,6 +337,12 @@ public final class io/sentry/android/core/NetworkBreadcrumbsIntegration : io/sen
 	public fun <init> (Landroid/content/Context;Lio/sentry/android/core/BuildInfoProvider;)V
 	public fun close ()V
 	public fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
+}
+
+public class io/sentry/android/core/PerfettoProfiler {
+	public fun <init> (Landroid/content/Context;Lio/sentry/android/core/internal/util/SentryFrameMetricsCollector;Lio/sentry/ILogger;)V
+	public fun endAndCollect ()Lio/sentry/android/core/AndroidProfiler$ProfileEndData;
+	public fun start (J)Lio/sentry/android/core/AndroidProfiler$ProfileStartData;
 }
 
 public final class io/sentry/android/core/ScreenshotEventProcessor : io/sentry/EventProcessor {

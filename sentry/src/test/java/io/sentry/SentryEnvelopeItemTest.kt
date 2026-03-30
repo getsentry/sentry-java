@@ -2,6 +2,7 @@ package io.sentry
 
 import io.sentry.exception.SentryEnvelopeException
 import io.sentry.protocol.ReplayRecordingSerializationTest
+import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryReplayEventSerializationTest
 import io.sentry.protocol.User
 import io.sentry.protocol.ViewHierarchy
@@ -594,6 +595,69 @@ class SentryEnvelopeItemTest {
         "allowed size of $maxSize bytes.",
       exception.message,
     )
+  }
+
+  @Test
+  fun `fromPerfettoProfileChunk creates single item with meta_length header`() {
+    val traceFile = tmpDir.newFile("trace.pftrace")
+    val traceBytes = byteArrayOf(0x50, 0x65, 0x72, 0x66) // "Perf"
+    traceFile.writeBytes(traceBytes)
+
+    val profileChunk =
+      ProfileChunk.Builder(
+          SentryId(),
+          SentryId(),
+          emptyMap(),
+          traceFile,
+          SentryNanotimeDate(),
+          ProfileChunk.PLATFORM_ANDROID,
+        )
+        .setContentType("perfetto")
+        .build(fixture.options)
+
+    val item = SentryEnvelopeItem.fromPerfettoProfileChunk(profileChunk, fixture.serializer)
+
+    assertEquals(SentryItemType.ProfileChunk, item.header.type)
+    assertEquals("application/octet-stream", item.header.contentType)
+    assertNotNull(item.header.metaLength)
+    assertEquals("android", item.header.platform)
+
+    val payload = item.data
+    val metaLength = item.header.metaLength!!
+    // Payload should be: [JSON metadata][binary trace]
+    val metadataBytes = payload.copyOfRange(0, metaLength)
+    val binaryBytes = payload.copyOfRange(metaLength, payload.size)
+
+    // Metadata should be valid JSON containing content_type: "perfetto"
+    val metadataJson = String(metadataBytes, Charsets.UTF_8)
+    assert(metadataJson.contains("\"content_type\":\"perfetto\""))
+    assert(metadataJson.contains("\"version\":\"2\""))
+
+    // Binary bytes should match original trace file
+    assertArrayEquals(traceBytes, binaryBytes)
+
+    // Trace file should be deleted
+    assertFalse(traceFile.exists())
+  }
+
+  @Test
+  fun `fromPerfettoProfileChunk with missing file throws`() {
+    val traceFile = File("nonexistent.pftrace")
+    val profileChunk =
+      ProfileChunk.Builder(
+          SentryId(),
+          SentryId(),
+          emptyMap(),
+          traceFile,
+          SentryNanotimeDate(),
+          ProfileChunk.PLATFORM_ANDROID,
+        )
+        .setContentType("perfetto")
+        .build(fixture.options)
+
+    assertFailsWith<SentryEnvelopeException> {
+      SentryEnvelopeItem.fromPerfettoProfileChunk(profileChunk, fixture.serializer)
+    }
   }
 
   @Test

@@ -4,6 +4,8 @@ import static io.sentry.DataCategory.All;
 import static io.sentry.IConnectionStatusProvider.ConnectionStatus.DISCONNECTED;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
+import android.annotation.SuppressLint;
+import android.content.Context;
 import android.os.Build;
 import io.sentry.CompositePerformanceCollector;
 import io.sentry.DataCategory;
@@ -51,6 +53,10 @@ public class AndroidContinuousProfiler
   private boolean isInitialized = false;
   private final @NotNull SentryFrameMetricsCollector frameMetricsCollector;
   private @Nullable AndroidProfiler profiler = null;
+  private @Nullable PerfettoProfiler perfettoProfiler = null;
+  private final boolean useProfilingManager;
+  private final @Nullable Context context;
+  private boolean isPerfettoActive = false;
   private boolean isRunning = false;
   private @Nullable IScopes scopes;
   private @Nullable Future<?> stopFuture;
@@ -68,27 +74,91 @@ public class AndroidContinuousProfiler
   private final AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
   private final AutoClosableReentrantLock payloadLock = new AutoClosableReentrantLock();
 
-  public AndroidContinuousProfiler(
+  /**
+   * Creates a profiler using the legacy Debug.startMethodTracingSampling engine. This is the
+   * default path used for app-start profiling and devices below API 35.
+   */
+  public static AndroidContinuousProfiler createLegacy(
       final @NotNull BuildInfoProvider buildInfoProvider,
       final @NotNull SentryFrameMetricsCollector frameMetricsCollector,
       final @NotNull ILogger logger,
       final @Nullable String profilingTracesDirPath,
       final int profilingTracesHz,
       final @NotNull LazyEvaluator.Evaluator<ISentryExecutorService> executorServiceSupplier) {
+    return new AndroidContinuousProfiler(
+        buildInfoProvider,
+        frameMetricsCollector,
+        executorServiceSupplier,
+        logger,
+        null,
+        false,
+        profilingTracesHz,
+        profilingTracesDirPath);
+  }
+
+  /**
+   * Creates a profiler using Android's ProfilingManager (Perfetto) on API 35+. On older devices, no
+   * profiling data is collected — the legacy Debug-based profiler is not used as a fallback.
+   */
+  public static AndroidContinuousProfiler createWithProfilingManager(
+      final @NotNull Context context,
+      final @NotNull BuildInfoProvider buildInfoProvider,
+      final @NotNull SentryFrameMetricsCollector frameMetricsCollector,
+      final @NotNull ILogger logger,
+      final @NotNull LazyEvaluator.Evaluator<ISentryExecutorService> executorServiceSupplier) {
+    return new AndroidContinuousProfiler(
+        buildInfoProvider,
+        frameMetricsCollector,
+        executorServiceSupplier,
+        logger,
+        context,
+        true,
+        0,
+        null);
+  }
+
+  private AndroidContinuousProfiler(
+      final @NotNull BuildInfoProvider buildInfoProvider,
+      final @NotNull SentryFrameMetricsCollector frameMetricsCollector,
+      final @NotNull LazyEvaluator.Evaluator<ISentryExecutorService> executorServiceSupplier,
+      final @NotNull ILogger logger,
+      final @Nullable Context context,
+      final boolean useProfilingManager,
+      final int profilingTracesHz,
+      final @Nullable String profilingTracesDirPath) {
     this.logger = logger;
     this.frameMetricsCollector = frameMetricsCollector;
     this.buildInfoProvider = buildInfoProvider;
     this.profilingTracesDirPath = profilingTracesDirPath;
     this.profilingTracesHz = profilingTracesHz;
     this.executorServiceSupplier = executorServiceSupplier;
+    this.useProfilingManager = useProfilingManager;
+    this.context = context;
   }
 
+  @SuppressLint("NewApi")
   private void init() {
+    logger.log(
+        SentryLevel.DEBUG,
+        "AndroidContinuousProfiler.init() isInitialized=%s, useProfilingManager=%s, apiLevel=%d",
+        isInitialized,
+        useProfilingManager,
+        buildInfoProvider.getSdkInfoVersion());
+
     // We initialize it only once
     if (isInitialized) {
       return;
     }
     isInitialized = true;
+
+    if (useProfilingManager) {
+      initProfilingManager();
+    } else {
+      initLegacy();
+    }
+  }
+
+  private void initLegacy() {
     if (profilingTracesDirPath == null) {
       logger.log(
           SentryLevel.WARNING,
@@ -110,6 +180,20 @@ public class AndroidContinuousProfiler
             frameMetricsCollector,
             null,
             logger);
+  }
+
+  @SuppressLint("NewApi")
+  private void initProfilingManager() {
+    if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.VANILLA_ICE_CREAM
+        && context != null) {
+      perfettoProfiler = new PerfettoProfiler(context, frameMetricsCollector, logger);
+      logger.log(SentryLevel.DEBUG, "Using Perfetto profiler (ProfilingManager).");
+    } else {
+      logger.log(
+          SentryLevel.WARNING,
+          "useProfilingManager requested but not available (requires API 35+). "
+              + "No profiling data will be collected.");
+    }
   }
 
   @Override
@@ -175,7 +259,7 @@ public class AndroidContinuousProfiler
     // Let's initialize trace folder and profiling interval
     init();
     // init() didn't create profiler, should never happen
-    if (profiler == null) {
+    if (profiler == null && perfettoProfiler == null) {
       return;
     }
 
@@ -202,7 +286,14 @@ public class AndroidContinuousProfiler
     } else {
       startProfileChunkTimestamp = new SentryNanotimeDate();
     }
-    final AndroidProfiler.ProfileStartData startData = profiler.start();
+    final AndroidProfiler.ProfileStartData startData;
+    if (perfettoProfiler != null) {
+      startData = perfettoProfiler.start(MAX_CHUNK_DURATION_MILLIS);
+      isPerfettoActive = startData != null;
+    } else {
+      startData = profiler.start();
+      isPerfettoActive = false;
+    }
     // check if profiling started
     if (startData == null) {
       return;
@@ -262,10 +353,10 @@ public class AndroidContinuousProfiler
     initScopes();
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       if (stopFuture != null) {
-        stopFuture.cancel(true);
+        stopFuture.cancel(false);
       }
       // check if profiler was created and it's running
-      if (profiler == null || !isRunning) {
+      if ((profiler == null && perfettoProfiler == null) || !isRunning) {
         // When the profiler is stopped due to an error (e.g. offline or rate limited), reset the
         // ids
         profilerId = SentryId.EMPTY_ID;
@@ -284,8 +375,18 @@ public class AndroidContinuousProfiler
         performanceCollectionData = performanceCollector.stop(chunkId.toString());
       }
 
-      final AndroidProfiler.ProfileEndData endData =
-          profiler.endAndCollect(false, performanceCollectionData);
+      final AndroidProfiler.ProfileEndData endData;
+      final String platform;
+      if (isPerfettoActive && perfettoProfiler != null) {
+        endData = perfettoProfiler.endAndCollect();
+        platform = ProfileChunk.PLATFORM_ANDROID;
+      } else if (profiler != null) {
+        endData = profiler.endAndCollect(false, performanceCollectionData);
+        platform = ProfileChunk.PLATFORM_ANDROID;
+      } else {
+        endData = null;
+        platform = ProfileChunk.PLATFORM_ANDROID;
+      }
 
       // check if profiler end successfully
       if (endData == null) {
@@ -297,14 +398,18 @@ public class AndroidContinuousProfiler
         // start profiling), meaning there's no scopes to send the chunks. In that case, we store
         // the data in a list and send it when the next chunk is finished.
         try (final @NotNull ISentryLifecycleToken ignored2 = payloadLock.acquire()) {
-          payloadBuilders.add(
+          final ProfileChunk.Builder builder =
               new ProfileChunk.Builder(
                   profilerId,
                   chunkId,
                   endData.measurementsMap,
                   endData.traceFile,
                   startProfileChunkTimestamp,
-                  ProfileChunk.PLATFORM_ANDROID));
+                  platform);
+          if (isPerfettoActive) {
+            builder.setContentType("perfetto");
+          }
+          payloadBuilders.add(builder);
         }
       }
 
