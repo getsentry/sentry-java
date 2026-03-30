@@ -5,7 +5,7 @@
 ### Features
 
 - Android: Attachments on the scope will now be synced to native ([#5211](https://github.com/getsentry/sentry-java/pull/5211))
-- Add THIRD_PARTY_NOTICES.md for vendored third-party code ([#5186](https://github.com/getsentry/sentry-java/pull/5186))
+- Add THIRD_PARTY_NOTICES.md for vendored third-party code, bundled as SENTRY_THIRD_PARTY_NOTICES.md in the sentry JAR under META-INF ([#5186](https://github.com/getsentry/sentry-java/pull/5186))
 
 ## 8.37.1
 
