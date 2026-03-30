@@ -372,6 +372,72 @@ public final class SentryEnvelopeItem {
     return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
   }
 
+  public static @NotNull SentryEnvelopeItem fromPerfettoProfileChunk(
+      final @NotNull ProfileChunk profileChunk, final @NotNull ISerializer serializer)
+      throws SentryEnvelopeException {
+
+    final @Nullable File traceFile = profileChunk.getTraceFile();
+
+    if (traceFile == null || !traceFile.exists()) {
+      throw new SentryEnvelopeException(
+          String.format(
+              "Dropping perfetto profile chunk, because the trace file '%s' doesn't exist",
+              traceFile != null ? traceFile.getName() : "null"));
+    }
+
+    final CachedItem cachedItem =
+        new CachedItem(
+            () -> {
+              // Serialize JSON metadata
+              final byte[] metadataBytes;
+              try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                  final Writer writer = new BufferedWriter(new OutputStreamWriter(stream, UTF_8))) {
+                serializer.serialize(profileChunk, writer);
+                metadataBytes = stream.toByteArray();
+              } catch (IOException e) {
+                throw new SentryEnvelopeException(
+                    String.format(
+                        "Failed to serialize perfetto profile chunk\n%s", e.getMessage()));
+              }
+
+              // Read binary Perfetto trace
+              final byte[] traceBytes;
+              try {
+                traceBytes = readBytesFromFile(traceFile.getPath(), MAX_PROFILE_CHUNK_SIZE);
+              } catch (IOException e) {
+                throw new SentryEnvelopeException(
+                    String.format("Failed to read perfetto trace file\n%s", e.getMessage()));
+              } finally {
+                traceFile.delete();
+              }
+
+              // Concatenate: [JSON metadata bytes][raw .pftrace binary bytes]
+              final byte[] payload = new byte[metadataBytes.length + traceBytes.length];
+              System.arraycopy(metadataBytes, 0, payload, 0, metadataBytes.length);
+              System.arraycopy(traceBytes, 0, payload, metadataBytes.length, traceBytes.length);
+
+              // Store metaLength so the header callable can read it after lazy evaluation
+              profileChunk.setMetaLength(metadataBytes.length);
+
+              return payload;
+            });
+
+    SentryEnvelopeItemHeader itemHeader =
+        new SentryEnvelopeItemHeader(
+            SentryItemType.ProfileChunk,
+            () -> cachedItem.getBytes().length,
+            "application/octet-stream",
+            traceFile.getName(),
+            null,
+            profileChunk.getPlatform(),
+            null,
+            (Callable<Integer>) () -> profileChunk.getMetaLength());
+
+    // avoid method refs on Android due to some issues with older AGP setups
+    // noinspection Convert2MethodRef
+    return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
+  }
+
   public static @NotNull SentryEnvelopeItem fromProfilingTrace(
       final @NotNull ProfilingTraceData profilingTraceData,
       final long maxTraceFileSize,
