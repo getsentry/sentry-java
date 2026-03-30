@@ -172,11 +172,22 @@ class OpenTelemetryOtlpPropagatorTest {
   }
 
   @Test
-  fun `does not inject headers if span is invalid`() {
+  fun `does not inject headers when no span in context`() {
     val propagator = OpenTelemetryOtlpPropagator()
     val carrier = mutableMapOf<String, String>()
 
     propagator.inject(Context.root(), carrier, MapSetter())
+
+    assertNull(carrier["sentry-trace"])
+    assertNull(carrier["baggage"])
+  }
+
+  @Test
+  fun `does not inject headers when span is invalid`() {
+    val propagator = OpenTelemetryOtlpPropagator()
+    val carrier = mutableMapOf<String, String>()
+
+    propagator.inject(Context.root().with(Span.getInvalid()), carrier, MapSetter())
 
     assertNull(carrier["sentry-trace"])
     assertNull(carrier["baggage"])
