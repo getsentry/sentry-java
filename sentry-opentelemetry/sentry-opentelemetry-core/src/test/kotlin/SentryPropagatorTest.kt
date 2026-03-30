@@ -2,30 +2,37 @@ package io.sentry.opentelemetry
 
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.context.Context
-import io.sentry.IScopes
-import io.sentry.SentryOptions
+import io.sentry.Sentry
 import io.sentry.opentelemetry.SentryOtelKeys.SENTRY_BAGGAGE_KEY
 import io.sentry.opentelemetry.SentryOtelKeys.SENTRY_TRACE_KEY
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.whenever
 
 class SentryPropagatorTest {
+
+  @BeforeTest
+  fun setup() {
+    Sentry.init("https://key@sentry.io/proj")
+  }
+
+  @AfterTest
+  fun teardown() {
+    Sentry.close()
+    Context.root().makeCurrent()
+  }
 
   @Suppress("DEPRECATION")
   @Test
   fun `ignores incoming headers when strict continuation rejects org id`() {
-    val options =
-      SentryOptions().apply {
-        dsn = "https://key@o2.ingest.sentry.io/123"
-        isStrictTraceContinuation = true
-      }
-    val scopes = mock<IScopes>()
-    whenever(scopes.options).thenReturn(options)
+    Sentry.init { options ->
+      options.dsn = "https://key@o2.ingest.sentry.io/123"
+      options.isStrictTraceContinuation = true
+    }
 
-    val propagator = SentryPropagator(scopes)
+    val propagator = SentryPropagator()
     val carrier: Map<String, String> =
       mapOf(
         "sentry-trace" to "f9118105af4a2d42b4124532cd1065ff-424cffc8f94feeee-1",

@@ -10,9 +10,7 @@ import io.opentelemetry.context.propagation.TextMapGetter
 import io.opentelemetry.context.propagation.TextMapSetter
 import io.opentelemetry.semconv.UrlAttributes
 import io.sentry.BaggageHeader
-import io.sentry.IScopes
 import io.sentry.Sentry
-import io.sentry.SentryOptions
 import io.sentry.SentryTraceHeader
 import io.sentry.opentelemetry.SentryOtelKeys.SENTRY_BAGGAGE_KEY
 import io.sentry.opentelemetry.SentryOtelKeys.SENTRY_SCOPES_KEY
@@ -42,6 +40,7 @@ class OtelSentryPropagatorTest {
   fun cleanup() {
     spanStorage.clear()
     Sentry.close()
+    Context.root().makeCurrent()
   }
 
   @Test
@@ -75,14 +74,11 @@ class OtelSentryPropagatorTest {
 
   @Test
   fun `ignores incoming headers when strict continuation rejects org id`() {
-    val options =
-      SentryOptions().apply {
-        dsn = "https://key@o2.ingest.sentry.io/123"
-        isStrictTraceContinuation = true
-      }
-    val scopes = mock<IScopes>()
-    whenever(scopes.options).thenReturn(options)
-    val propagator = OtelSentryPropagator(scopes)
+    Sentry.init { options ->
+      options.dsn = "https://key@o2.ingest.sentry.io/123"
+      options.isStrictTraceContinuation = true
+    }
+    val propagator = OtelSentryPropagator()
     val carrier: Map<String, String> =
       mapOf(
         "sentry-trace" to "f9118105af4a2d42b4124532cd1065ff-424cffc8f94feeee-1",
