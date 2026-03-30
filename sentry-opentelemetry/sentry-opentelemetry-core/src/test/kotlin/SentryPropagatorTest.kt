@@ -5,6 +5,7 @@ import io.opentelemetry.context.Context
 import io.sentry.Sentry
 import io.sentry.opentelemetry.SentryOtelKeys.SENTRY_BAGGAGE_KEY
 import io.sentry.opentelemetry.SentryOtelKeys.SENTRY_TRACE_KEY
+import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertFalse
@@ -15,6 +16,11 @@ class SentryPropagatorTest {
   @BeforeTest
   fun setup() {
     Sentry.init("https://key@sentry.io/proj")
+  }
+
+  @AfterTest
+  fun teardown() {
+    Sentry.close()
   }
 
   @Suppress("DEPRECATION")
