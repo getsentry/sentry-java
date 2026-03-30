@@ -9,6 +9,12 @@
   - New option `enableStrictTraceContinuation` (default `false`): when enabled, both the SDK's org ID **and** the incoming baggage org ID must be present and match for a trace to be continued. Traces with a missing org ID on either side are rejected. Configurable via code (`setStrictTraceContinuation(true)`), `sentry.properties` (`enable-strict-trace-continuation=true`), Android manifest (`io.sentry.strict-trace-continuation.enabled`), or Spring Boot (`sentry.strict-trace-continuation=true`).
   - New option `orgId`: allows explicitly setting the organization ID for self-hosted and Relay setups where it cannot be extracted from the DSN. Configurable via code (`setOrgId("123")`), `sentry.properties` (`org-id=123`), Android manifest (`io.sentry.org-id`), or Spring Boot (`sentry.org-id=123`).
 
+## 8.37.1
+
+### Fixes
+
+- Fix deadlock in `SentryContextStorage.root()` with virtual threads and OpenTelemetry agent ([#5234](https://github.com/getsentry/sentry-java/pull/5234))
+
 ## 8.37.0
 
 ### Fixes
