@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Add queryable `getFramesDelay` API to `SpanFrameMetricsCollector` for querying frame delay without a duplicate listener ([#5248](https://github.com/getsentry/sentry-java/pull/5248))
+
 ## 8.37.1
 
 ### Fixes
