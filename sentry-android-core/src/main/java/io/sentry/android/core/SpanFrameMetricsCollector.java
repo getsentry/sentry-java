@@ -152,49 +152,11 @@ public class SpanFrameMetricsCollector
         return;
       }
 
-      final @NotNull SentryFrameMetrics frameMetrics = new SentryFrameMetrics();
-
-      long frameDurationNanos = lastKnownFrameDurationNanos;
-
-      if (!frames.isEmpty()) {
-        // determine relevant start in frames list
-        final Iterator<Frame> iterator = frames.tailSet(new Frame(spanStartNanos)).iterator();
-
-        //noinspection WhileLoopReplaceableByForEach
-        while (iterator.hasNext()) {
-          final @NotNull Frame frame = iterator.next();
-
-          if (frame.startNanos > spanEndNanos) {
-            break;
-          }
-
-          if (frame.startNanos >= spanStartNanos && frame.endNanos <= spanEndNanos) {
-            // if the frame is contained within the span, add it 1:1 to the span metrics
-            frameMetrics.addFrame(
-                frame.durationNanos, frame.delayNanos, frame.isSlow, frame.isFrozen);
-          } else if ((spanStartNanos > frame.startNanos && spanStartNanos < frame.endNanos)
-              || (spanEndNanos > frame.startNanos && spanEndNanos < frame.endNanos)) {
-            // span start or end are within frame
-            // calculate the intersection
-            final long durationBeforeSpan = Math.max(0, spanStartNanos - frame.startNanos);
-            final long delayBeforeSpan =
-                Math.max(0, durationBeforeSpan - frame.expectedDurationNanos);
-            final long delayWithinSpan =
-                Math.min(frame.delayNanos - delayBeforeSpan, spanDurationNanos);
-
-            final long frameStart = Math.max(spanStartNanos, frame.startNanos);
-            final long frameEnd = Math.min(spanEndNanos, frame.endNanos);
-            final long frameDuration = frameEnd - frameStart;
-            frameMetrics.addFrame(
-                frameDuration,
-                delayWithinSpan,
-                SentryFrameMetricsCollector.isSlow(frameDuration, frame.expectedDurationNanos),
-                SentryFrameMetricsCollector.isFrozen(frameDuration));
-          }
-
-          frameDurationNanos = frame.expectedDurationNanos;
-        }
-      }
+      // effectiveFrameDuration tracks the expected frame duration of the last frame
+      // iterated within the span's time range, falling back to lastKnownFrameDurationNanos
+      final long[] effectiveFrameDuration = {lastKnownFrameDurationNanos};
+      final @NotNull SentryFrameMetrics frameMetrics =
+          calculateFrameMetrics(spanStartNanos, spanEndNanos, effectiveFrameDuration);
 
       int totalFrameCount = frameMetrics.getSlowFrozenFrameCount();
 
@@ -204,9 +166,9 @@ public class SpanFrameMetricsCollector
       if (nextScheduledFrameNanos != -1) {
         totalFrameCount +=
             addPendingFrameDelay(
-                frameMetrics, frameDurationNanos, spanEndNanos, nextScheduledFrameNanos);
+                frameMetrics, effectiveFrameDuration[0], spanEndNanos, nextScheduledFrameNanos);
         totalFrameCount +=
-            interpolateFrameCount(frameMetrics, frameDurationNanos, spanDurationNanos);
+            interpolateFrameCount(frameMetrics, effectiveFrameDuration[0], spanDurationNanos);
       }
       final long frameDelayNanos =
           frameMetrics.getSlowFrameDelayNanos() + frameMetrics.getFrozenFrameDelayNanos();
@@ -224,6 +186,100 @@ public class SpanFrameMetricsCollector
         span.setMeasurement(MeasurementValue.KEY_FRAMES_DELAY, frameDelayInSeconds);
       }
     }
+  }
+
+  /**
+   * Queries the frame delay for a given time range, without requiring an active span.
+   *
+   * <p>This is useful for external consumers (e.g. React Native SDK) that need to query frame delay
+   * for an arbitrary time range without registering their own frame listener.
+   *
+   * @param startSystemNanos start of the time range in {@link System#nanoTime()} units
+   * @param endSystemNanos end of the time range in {@link System#nanoTime()} units
+   * @return a {@link SentryFramesDelayResult} with the delay in seconds and the number of frames
+   *     contributing to delay, or a result with delaySeconds=-1 if incalculable
+   */
+  public @NotNull SentryFramesDelayResult getFramesDelay(
+      final long startSystemNanos, final long endSystemNanos) {
+    if (!enabled) {
+      return new SentryFramesDelayResult(-1, 0);
+    }
+
+    final long durationNanos = endSystemNanos - startSystemNanos;
+    if (durationNanos <= 0) {
+      return new SentryFramesDelayResult(-1, 0);
+    }
+
+    final long[] effectiveFrameDuration = {lastKnownFrameDurationNanos};
+    final @NotNull SentryFrameMetrics frameMetrics =
+        calculateFrameMetrics(startSystemNanos, endSystemNanos, effectiveFrameDuration);
+
+    final long nextScheduledFrameNanos = frameMetricsCollector.getLastKnownFrameStartTimeNanos();
+    if (nextScheduledFrameNanos != -1) {
+      addPendingFrameDelay(
+          frameMetrics, effectiveFrameDuration[0], endSystemNanos, nextScheduledFrameNanos);
+    }
+
+    final long frameDelayNanos =
+        frameMetrics.getSlowFrameDelayNanos() + frameMetrics.getFrozenFrameDelayNanos();
+    final double frameDelayInSeconds = frameDelayNanos / 1e9d;
+
+    return new SentryFramesDelayResult(frameDelayInSeconds, frameMetrics.getSlowFrozenFrameCount());
+  }
+
+  /**
+   * Calculates frame metrics for a given time range by iterating over stored frames and handling
+   * partial overlaps at the boundaries.
+   *
+   * @param startNanos start of the time range
+   * @param endNanos end of the time range
+   * @param effectiveFrameDuration a single-element array that will be updated with the expected
+   *     frame duration of the last iterated frame (used for pending delay / interpolation)
+   */
+  private @NotNull SentryFrameMetrics calculateFrameMetrics(
+      final long startNanos, final long endNanos, final long @NotNull [] effectiveFrameDuration) {
+    final long durationNanos = endNanos - startNanos;
+    final @NotNull SentryFrameMetrics frameMetrics = new SentryFrameMetrics();
+
+    if (!frames.isEmpty()) {
+      final Iterator<Frame> iterator = frames.tailSet(new Frame(startNanos)).iterator();
+
+      //noinspection WhileLoopReplaceableByForEach
+      while (iterator.hasNext()) {
+        final @NotNull Frame frame = iterator.next();
+
+        if (frame.startNanos > endNanos) {
+          break;
+        }
+
+        if (frame.startNanos >= startNanos && frame.endNanos <= endNanos) {
+          // if the frame is contained within the range, add it 1:1
+          frameMetrics.addFrame(
+              frame.durationNanos, frame.delayNanos, frame.isSlow, frame.isFrozen);
+        } else if ((startNanos > frame.startNanos && startNanos < frame.endNanos)
+            || (endNanos > frame.startNanos && endNanos < frame.endNanos)) {
+          // range start or end are within frame — calculate the intersection
+          final long durationBeforeRange = Math.max(0, startNanos - frame.startNanos);
+          final long delayBeforeRange =
+              Math.max(0, durationBeforeRange - frame.expectedDurationNanos);
+          final long delayWithinRange =
+              Math.min(frame.delayNanos - delayBeforeRange, durationNanos);
+
+          final long frameStart = Math.max(startNanos, frame.startNanos);
+          final long frameEnd = Math.min(endNanos, frame.endNanos);
+          final long frameDuration = frameEnd - frameStart;
+          frameMetrics.addFrame(
+              frameDuration,
+              delayWithinRange,
+              SentryFrameMetricsCollector.isSlow(frameDuration, frame.expectedDurationNanos),
+              SentryFrameMetricsCollector.isFrozen(frameDuration));
+        }
+
+        effectiveFrameDuration[0] = frame.expectedDurationNanos;
+      }
+    }
+
+    return frameMetrics;
   }
 
   @Override

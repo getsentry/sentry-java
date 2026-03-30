@@ -242,6 +242,8 @@ public final class SentryAndroidOptions extends SentryOptions {
 
   private @Nullable SentryFrameMetricsCollector frameMetricsCollector;
 
+  private @Nullable SpanFrameMetricsCollector spanFrameMetricsCollector;
+
   private boolean enableTombstone = false;
 
   /**
@@ -672,6 +674,17 @@ public final class SentryAndroidOptions extends SentryOptions {
   public void setFrameMetricsCollector(
       final @Nullable SentryFrameMetricsCollector frameMetricsCollector) {
     this.frameMetricsCollector = frameMetricsCollector;
+  }
+
+  @ApiStatus.Internal
+  public @Nullable SpanFrameMetricsCollector getSpanFrameMetricsCollector() {
+    return spanFrameMetricsCollector;
+  }
+
+  @ApiStatus.Internal
+  public void setSpanFrameMetricsCollector(
+      final @Nullable SpanFrameMetricsCollector spanFrameMetricsCollector) {
+    this.spanFrameMetricsCollector = spanFrameMetricsCollector;
   }
 
   public boolean isEnableAutoTraceIdGeneration() {

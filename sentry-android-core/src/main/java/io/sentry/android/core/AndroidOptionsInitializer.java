@@ -251,12 +251,14 @@ final class AndroidOptionsInitializer {
       options.addPerformanceCollector(new AndroidCpuCollector(options.getLogger()));
 
       if (options.isEnablePerformanceV2()) {
-        options.addPerformanceCollector(
+        final SpanFrameMetricsCollector spanFrameMetricsCollector =
             new SpanFrameMetricsCollector(
                 options,
                 Objects.requireNonNull(
                     options.getFrameMetricsCollector(),
-                    "options.getFrameMetricsCollector is required")));
+                    "options.getFrameMetricsCollector is required"));
+        options.addPerformanceCollector(spanFrameMetricsCollector);
+        options.setSpanFrameMetricsCollector(spanFrameMetricsCollector);
       }
     }
     if (options.getCompositePerformanceCollector() instanceof NoOpCompositePerformanceCollector) {
