@@ -952,7 +952,9 @@ public abstract interface class io/sentry/IScope {
 }
 
 public abstract interface class io/sentry/IScopeObserver {
+	public abstract fun addAttachment (Lio/sentry/Attachment;)V
 	public abstract fun addBreadcrumb (Lio/sentry/Breadcrumb;)V
+	public abstract fun clearAttachments ()V
 	public abstract fun removeExtra (Ljava/lang/String;)V
 	public abstract fun removeTag (Ljava/lang/String;)V
 	public abstract fun setBreadcrumbs (Ljava/util/Collection;)V
@@ -2459,7 +2461,9 @@ public abstract interface class io/sentry/ScopeCallback {
 
 public abstract class io/sentry/ScopeObserverAdapter : io/sentry/IScopeObserver {
 	public fun <init> ()V
+	public fun addAttachment (Lio/sentry/Attachment;)V
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;)V
+	public fun clearAttachments ()V
 	public fun removeExtra (Ljava/lang/String;)V
 	public fun removeTag (Ljava/lang/String;)V
 	public fun setBreadcrumbs (Ljava/util/Collection;)V
