@@ -432,6 +432,21 @@ public class SentryOptions {
   /** Whether to propagate W3C traceparent HTTP header. */
   private boolean propagateTraceparent = false;
 
+  /**
+   * Controls whether the SDK requires matching org IDs from incoming baggage to continue a trace.
+   * When true, both the SDK's org ID and the incoming baggage org ID must be present and match.
+   * When false, a mismatch between present org IDs will still start a new trace, but missing org
+   * IDs on either side are tolerated.
+   */
+  private boolean strictTraceContinuation = false;
+
+  /**
+   * An optional organization ID. The SDK will try to extract it from the DSN in most cases but you
+   * can provide it explicitly for self-hosted and Relay setups. This value is used for trace
+   * propagation and for features like {@link #strictTraceContinuation}.
+   */
+  private @Nullable String orgId;
+
   /** Proguard UUID. */
   private @Nullable String proguardUuid;
 
@@ -2306,6 +2321,42 @@ public class SentryOptions {
     this.propagateTraceparent = propagateTraceparent;
   }
 
+  public boolean isStrictTraceContinuation() {
+    return strictTraceContinuation;
+  }
+
+  public void setStrictTraceContinuation(final boolean strictTraceContinuation) {
+    this.strictTraceContinuation = strictTraceContinuation;
+  }
+
+  public @Nullable String getOrgId() {
+    return orgId;
+  }
+
+  public void setOrgId(final @Nullable String orgId) {
+    this.orgId = orgId;
+  }
+
+  /**
+   * Returns the effective org ID, preferring the explicit config option over the DSN-parsed value.
+   * Empty or whitespace-only explicit org IDs are treated as unset and fall back to the DSN.
+   */
+  @ApiStatus.Internal
+  public @Nullable String getEffectiveOrgId() {
+    if (orgId != null) {
+      final @NotNull String trimmed = orgId.trim();
+      if (!trimmed.isEmpty()) {
+        return trimmed;
+      }
+    }
+    try {
+      final @Nullable String dsnOrgId = retrieveParsedDsn().getOrgId();
+      return dsnOrgId;
+    } catch (Throwable e) {
+      return null;
+    }
+  }
+
   /**
    * Returns a Proguard UUID.
    *
@@ -3556,6 +3607,12 @@ public class SentryOptions {
 
     if (options.getProfileLifecycle() != null) {
       setProfileLifecycle(options.getProfileLifecycle());
+    }
+    if (options.isStrictTraceContinuation() != null) {
+      setStrictTraceContinuation(options.isStrictTraceContinuation());
+    }
+    if (options.getOrgId() != null) {
+      setOrgId(options.getOrgId());
     }
   }
 
