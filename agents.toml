@@ -1,20 +1,12 @@
+# Whenever you make changes to this file, run the following to update all generated dotagent files 
+# npx @sentry/dotagents install
+# npx @sentry/dotagents sync
+
 version = 1
 
 [[skills]]
 name = "dotagents"
 source = "getsentry/dotagents"
-
-[[skills]]
-name = "sentry-android-sdk"
-source = "getsentry/sentry-for-ai"
-
-[[skills]]
-name = "sentry-sdk-setup"
-source = "getsentry/sentry-for-ai"
-
-[[skills]]
-name = "sentry-sdk-upgrade"
-source = "getsentry/sentry-for-ai"
 
 [[skills]]
 name = "sentry-workflow"
@@ -33,13 +25,9 @@ name = "sentry-pr-code-review"
 source = "getsentry/sentry-for-ai"
 
 [[skills]]
-name = "sentry-feature-setup"
-source = "getsentry/sentry-for-ai"
+name = "create-java-pr"
+source = "path:.agents/skills/create-java-pr"
 
 [[skills]]
-name = "sentry-create-alert"
-source = "getsentry/sentry-for-ai"
-
-[[skills]]
-name = "sentry-setup-ai-monitoring"
-source = "getsentry/sentry-for-ai"
+name = "test"
+source = "path:.agents/skills/test"
