@@ -58,6 +58,7 @@ public final class ExternalOptions {
   private @Nullable Boolean enableBackpressureHandling;
   private @Nullable Boolean enableDatabaseTransactionTracing;
   private @Nullable Boolean enableCacheTracing;
+  private @Nullable Boolean enableQueueTracing;
   private @Nullable Boolean globalHubMode;
   private @Nullable Boolean forceInit;
   private @Nullable Boolean captureOpenTelemetryEvents;
@@ -167,6 +168,8 @@ public final class ExternalOptions {
         propertiesProvider.getBooleanProperty("enable-database-transaction-tracing"));
 
     options.setEnableCacheTracing(propertiesProvider.getBooleanProperty("enable-cache-tracing"));
+
+    options.setEnableQueueTracing(propertiesProvider.getBooleanProperty("enable-queue-tracing"));
 
     options.setGlobalHubMode(propertiesProvider.getBooleanProperty("global-hub-mode"));
 
@@ -539,6 +542,14 @@ public final class ExternalOptions {
 
   public @Nullable Boolean isEnableCacheTracing() {
     return enableCacheTracing;
+  }
+
+  public void setEnableQueueTracing(final @Nullable Boolean enableQueueTracing) {
+    this.enableQueueTracing = enableQueueTracing;
+  }
+
+  public @Nullable Boolean isEnableQueueTracing() {
+    return enableQueueTracing;
   }
 
   public void setGlobalHubMode(final @Nullable Boolean globalHubMode) {
