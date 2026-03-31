@@ -167,6 +167,9 @@ final class ManifestMetadataReader {
 
   static final String FEEDBACK_SHOW_BRANDING = "io.sentry.feedback.show-branding";
 
+  static final String STRICT_TRACE_CONTINUATION = "io.sentry.strict-trace-continuation.enabled";
+  static final String ORG_ID = "io.sentry.org-id";
+
   static final String FEEDBACK_USE_SHAKE_GESTURE = "io.sentry.feedback.use-shake-gesture";
 
   static final String SPOTLIGHT_ENABLE = "io.sentry.spotlight.enable";
@@ -666,6 +669,15 @@ final class ManifestMetadataReader {
         feedbackOptions.setUseShakeGesture(
             readBool(
                 metadata, logger, FEEDBACK_USE_SHAKE_GESTURE, feedbackOptions.isUseShakeGesture()));
+
+        options.setStrictTraceContinuation(
+            readBool(
+                metadata, logger, STRICT_TRACE_CONTINUATION, options.isStrictTraceContinuation()));
+
+        final @Nullable String orgId = readString(metadata, logger, ORG_ID, null);
+        if (orgId != null) {
+          options.setOrgId(orgId);
+        }
 
         options.setEnableSpotlight(
             readBool(metadata, logger, SPOTLIGHT_ENABLE, options.isEnableSpotlight()));
