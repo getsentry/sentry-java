@@ -369,7 +369,6 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun getNativeSdkName ()Ljava/lang/String;
 	public fun getNdkHandlerStrategy ()I
 	public fun getScreenshot ()Lio/sentry/android/core/SentryScreenshotOptions;
-	public fun getSpanFrameMetricsCollector ()Lio/sentry/android/core/SpanFrameMetricsCollector;
 	public fun getStartupCrashDurationThresholdMillis ()J
 	public fun isAnrEnabled ()Z
 	public fun isAnrProfilingEnabled ()Z
@@ -429,7 +428,6 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun setNativeSdkName (Ljava/lang/String;)V
 	public fun setReportHistoricalAnrs (Z)V
 	public fun setReportHistoricalTombstones (Z)V
-	public fun setSpanFrameMetricsCollector (Lio/sentry/android/core/SpanFrameMetricsCollector;)V
 	public fun setTombstoneEnabled (Z)V
 }
 
@@ -528,7 +526,6 @@ public class io/sentry/android/core/SpanFrameMetricsCollector : io/sentry/IPerfo
 	protected final field lock Lio/sentry/util/AutoClosableReentrantLock;
 	public fun <init> (Lio/sentry/android/core/SentryAndroidOptions;Lio/sentry/android/core/internal/util/SentryFrameMetricsCollector;)V
 	public fun clear ()V
-	public fun getFramesDelay (JJ)Lio/sentry/android/core/SentryFramesDelayResult;
 	public fun onFrameMetricCollected (JJJJZZF)V
 	public fun onSpanFinished (Lio/sentry/ISpan;)V
 	public fun onSpanStarted (Lio/sentry/ISpan;)V
