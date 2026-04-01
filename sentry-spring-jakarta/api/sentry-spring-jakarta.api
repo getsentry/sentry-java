@@ -244,6 +244,16 @@ public final class io/sentry/spring/jakarta/graphql/SentrySpringSubscriptionHand
 	public fun onSubscriptionResult (Ljava/lang/Object;Lio/sentry/IScopes;Lio/sentry/graphql/ExceptionReporter;Lgraphql/execution/instrumentation/parameters/InstrumentationFieldFetchParameters;)Ljava/lang/Object;
 }
 
+public final class io/sentry/spring/jakarta/kafka/SentryKafkaProducerBeanPostProcessor : org/springframework/beans/factory/config/BeanPostProcessor, org/springframework/core/PriorityOrdered {
+	public fun <init> ()V
+	public fun getOrder ()I
+	public fun postProcessAfterInitialization (Ljava/lang/Object;Ljava/lang/String;)Ljava/lang/Object;
+}
+
+public final class io/sentry/spring/jakarta/kafka/SentryKafkaProducerWrapper : org/springframework/kafka/core/KafkaTemplate {
+	public fun <init> (Lorg/springframework/kafka/core/KafkaTemplate;Lio/sentry/IScopes;)V
+}
+
 public class io/sentry/spring/jakarta/opentelemetry/SentryOpenTelemetryAgentWithoutAutoInitConfiguration {
 	public fun <init> ()V
 	public fun sentryOpenTelemetryOptionsConfiguration ()Lio/sentry/Sentry$OptionsConfiguration;
