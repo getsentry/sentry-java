@@ -104,14 +104,6 @@ public class PerfettoProfiler {
     resultLatch = new CountDownLatch(1);
     profilingResult = null;
 
-    final Consumer<ProfilingResult> listener =
-        result -> {
-          profilingResult = result;
-          if (resultLatch != null) {
-            resultLatch.countDown();
-          }
-        };
-
     final Bundle params = new Bundle();
     params.putInt(KEY_DURATION_MS, (int) durationMs);
     params.putInt(KEY_FREQUENCY_HZ, PROFILING_FREQUENCY_HZ);
@@ -123,7 +115,7 @@ public class PerfettoProfiler {
           "sentry-profiling",
           cancellationSignal,
           Runnable::run,
-          listener);
+          profilingResultListener);
     } catch (Throwable e) {
       logger.log(SentryLevel.ERROR, "Failed to request Perfetto profiling.", e);
       cancellationSignal = null;

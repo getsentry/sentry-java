@@ -2,6 +2,7 @@ package io.sentry.android.core;
 
 import static io.sentry.android.core.NdkIntegration.SENTRY_NDK_CLASS_NAME;
 
+import android.annotation.SuppressLint;
 import android.app.Application;
 import android.content.Context;
 import android.content.pm.PackageInfo;
@@ -293,6 +294,7 @@ final class AndroidOptionsInitializer {
   }
 
   /** Setup the correct profiler (transaction or continuous) based on the options. */
+  @SuppressLint("NewApi")
   private static void setupProfiler(
       final @NotNull SentryAndroidOptions options,
       final @NotNull Context context,
@@ -340,7 +342,7 @@ final class AndroidOptionsInitializer {
                 options.getFrameMetricsCollector(), "options.getFrameMetricsCollector is required");
         options.setContinuousProfiler(
             options.isUseProfilingManager()
-                ? AndroidContinuousProfiler.createWithProfilingManager(
+                ? new PerfettoContinuousProfiler(
                     context,
                     buildInfoProvider,
                     frameMetricsCollector,
