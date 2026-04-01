@@ -11,6 +11,12 @@
 - Android: Attachments on the scope will now be synced to native ([#5211](https://github.com/getsentry/sentry-java/pull/5211))
 - Add THIRD_PARTY_NOTICES.md for vendored third-party code, bundled as SENTRY_THIRD_PARTY_NOTICES.md in the sentry JAR under META-INF ([#5186](https://github.com/getsentry/sentry-java/pull/5186))
 
+### Dependencies
+
+- Bump Gradle from v8.14.3 to v9.4.1 ([#5063](https://github.com/getsentry/sentry-java/pull/5063))
+  - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v941)
+  - [diff](https://github.com/gradle/gradle/compare/v8.14.3...v9.4.1)
+
 ## 8.37.1
 
 ### Fixes
