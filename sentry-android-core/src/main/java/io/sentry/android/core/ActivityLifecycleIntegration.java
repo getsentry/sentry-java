@@ -33,6 +33,7 @@ import io.sentry.android.core.performance.ActivityLifecycleSpanHelper;
 import io.sentry.android.core.performance.AppStartMetrics;
 import io.sentry.android.core.performance.TimeSpan;
 import io.sentry.protocol.MeasurementValue;
+import io.sentry.protocol.SentryId;
 import io.sentry.protocol.TransactionNameSource;
 import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.Objects;
@@ -125,6 +126,12 @@ public final class ActivityLifecycleIntegration
     timeToFullDisplaySpanEnabled = this.options.isEnableTimeToFullDisplayTracing();
 
     application.registerActivityLifecycleCallbacks(this);
+
+    if (performanceEnabled && this.options.isEnableStandaloneAppStartTracing()) {
+      AppStartMetrics.getInstance()
+          .setOnNoActivityStartedListener(this::onNoActivityStarted);
+    }
+
     this.options.getLogger().log(SentryLevel.DEBUG, "ActivityLifecycleIntegration installed.");
     addIntegrationToSdkVersion("ActivityLifecycle");
   }
@@ -136,6 +143,7 @@ public final class ActivityLifecycleIntegration
   @Override
   public void close() throws IOException {
     application.unregisterActivityLifecycleCallbacks(this);
+    AppStartMetrics.getInstance().setOnNoActivityStartedListener(null);
 
     if (options != null) {
       options.getLogger().log(SentryLevel.DEBUG, "ActivityLifecycleIntegration removed.");
@@ -241,14 +249,32 @@ public final class ActivityLifecycleIntegration
         setSpanOrigin(transactionOptions);
 
         // we can only bind to the scope if there's no running transaction
-        ITransaction transaction =
-            scopes.startTransaction(
-                new TransactionContext(
-                    activityName,
-                    TransactionNameSource.COMPONENT,
-                    UI_LOAD_OP,
-                    appStartSamplingDecision),
-                transactionOptions);
+        // If a non-activity app start transaction was created earlier, reuse its trace ID
+        final @Nullable SentryId storedAppStartTraceId =
+            AppStartMetrics.getInstance().getAppStartTraceId();
+
+        final ITransaction transaction;
+        if (storedAppStartTraceId != null) {
+          transaction =
+              scopes.startTransaction(
+                  new TransactionContext(
+                      storedAppStartTraceId,
+                      activityName,
+                      TransactionNameSource.COMPONENT,
+                      UI_LOAD_OP,
+                      appStartSamplingDecision),
+                  transactionOptions);
+          AppStartMetrics.getInstance().setAppStartTraceId(null);
+        } else {
+          transaction =
+              scopes.startTransaction(
+                  new TransactionContext(
+                      activityName,
+                      TransactionNameSource.COMPONENT,
+                      UI_LOAD_OP,
+                      appStartSamplingDecision),
+                  transactionOptions);
+        }
 
         final SpanOptions spanOptions = new SpanOptions();
         setSpanOrigin(spanOptions);
@@ -291,7 +317,8 @@ public final class ActivityLifecycleIntegration
             // we can finish the app-start span
             finishAppStartSpan();
           }
-          // else: flag ON but not foreground — non-activity launch path (TODO: next PR)
+          // else: flag ON but not foreground — non-activity launch path is handled
+          // via OnNoActivityStartedListener callback in checkCreateTimeOnMain()
         }
         final @NotNull ISpan ttidSpan =
             transaction.startChild(
@@ -844,5 +871,47 @@ public final class ActivityLifecycleIntegration
         appStartTransaction.finish(SpanStatus.OK, appStartEndTime);
       }
     }
+  }
+
+  private void onNoActivityStarted() {
+    if (scopes == null || options == null || !performanceEnabled) {
+      return;
+    }
+
+    final @NotNull AppStartMetrics metrics = AppStartMetrics.getInstance();
+    final @NotNull TimeSpan appStartTimeSpan =
+        metrics.getAppStartTimeSpanWithFallback(options);
+
+    if (!appStartTimeSpan.hasStarted() || !appStartTimeSpan.hasStopped()) {
+      return;
+    }
+
+    final @Nullable SentryDate startTime = appStartTimeSpan.getStartTimestamp();
+    final @Nullable SentryDate endTime = appStartTimeSpan.getProjectedStopTimestamp();
+    if (startTime == null || endTime == null) {
+      return;
+    }
+
+    final boolean coldStart =
+        metrics.getAppStartType() == AppStartMetrics.AppStartType.COLD;
+
+    final TransactionOptions txnOptions = new TransactionOptions();
+    txnOptions.setBindToScope(false);
+    txnOptions.setStartTimestamp(startTime);
+    setSpanOrigin(txnOptions);
+
+    final @NotNull TransactionContext txnContext =
+        new TransactionContext(
+            getAppStartTxnName(coldStart),
+            TransactionNameSource.COMPONENT,
+            getAppStartOp(coldStart),
+            null);
+
+    final @NotNull ITransaction transaction = scopes.startTransaction(txnContext, txnOptions);
+
+    // Store trace ID so future activity transactions can share it
+    metrics.setAppStartTraceId(transaction.getSpanContext().getTraceId());
+
+    transaction.finish(SpanStatus.OK, endTime);
   }
 }
