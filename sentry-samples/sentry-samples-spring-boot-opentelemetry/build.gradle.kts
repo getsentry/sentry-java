@@ -82,6 +82,7 @@ tasks.shadowJar {
   append("META-INF/spring.handlers")
   append("META-INF/spring.schemas")
   append("META-INF/spring.factories")
+  append("META-INF/spring-autoconfigure-metadata.properties")
 }
 
 tasks.jar {

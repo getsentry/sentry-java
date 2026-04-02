@@ -418,6 +418,20 @@ class SystemTestRunner:
             except:
                 pass
 
+            # Fallback: shadow JAR apps may not have actuator endpoints,
+            # so also try any HTTP connection to confirm the server is up
+            try:
+                response = requests.head(
+                    "http://localhost:8080/",
+                    auth=("user", "password"),
+                    timeout=5
+                )
+                if response.status_code is not None:
+                    print("Spring application is ready! (actuator not available)")
+                    return True
+            except:
+                pass
+
             print(f"Waiting... (attempt {attempt}/{max_attempts})")
             time.sleep(1)
 
@@ -446,6 +460,18 @@ class SystemTestRunner:
                 status["http_ready"] = True
         except:
             pass
+
+        if not status["http_ready"]:
+            try:
+                response = requests.head(
+                    "http://localhost:8080/",
+                    auth=("user", "password"),
+                    timeout=2
+                )
+                if response.status_code is not None:
+                    status["http_ready"] = True
+            except:
+                pass
 
         return status
 
@@ -528,18 +554,23 @@ class SystemTestRunner:
             # Clean up PID file and instance variable
             cleanup_pid(self.spring_server)
 
-    def get_build_task(self, server_type: Optional[ServerType]) -> str:
+    def get_build_task(self, sample_module: str, server_type: Optional[ServerType]) -> str:
         """Get the appropriate build task for a module."""
         if server_type == ServerType.TOMCAT:
             return "war"
         elif server_type == ServerType.SPRING:
+            # Modules using Shadow plugin (e.g. Spring Boot 2 samples) use shadowJar,
+            # modules using Spring Boot plugin (SB3/SB4 samples) use bootJar
+            build_file = Path(f"sentry-samples/{sample_module}/build.gradle.kts")
+            if build_file.exists() and "shadow" in build_file.read_text():
+                return "shadowJar"
             return "bootJar"
 
         return "assemble"
 
     def build_module(self, sample_module: str, server_type: Optional[ServerType]) -> int:
         """Build a sample module using the appropriate task."""
-        build_task = self.get_build_task(server_type)
+        build_task = self.get_build_task(sample_module, server_type)
         print(f"Building {sample_module} using {build_task} task")
         return self.run_gradle_task(f":sentry-samples:{sample_module}:{build_task}")
 
