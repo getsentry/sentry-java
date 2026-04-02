@@ -150,7 +150,11 @@ tasks {
 
     archiveClassifier.set("")
 
-    duplicatesStrategy = DuplicatesStrategy.FAIL
+    // INCLUDE is required so that mergeServiceFiles can see duplicates from both the
+    // upstream agent JAR and the isolated distro libs before they are deduplicated.
+    // Shadow 9.x enforces duplicatesStrategy before transformers run, so FAIL/EXCLUDE
+    // would prevent service file merging.
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
 
     mergeServiceFiles { include("inst/META-INF/services/*") }
     exclude("**/module-info.class")
