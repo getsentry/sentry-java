@@ -5,7 +5,7 @@ plugins {
   jacoco
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
-  id("com.apollographql.apollo") version "4.4.2"
+  id("com.apollographql.apollo") version "4.1.1"
 }
 
 configure<JavaPluginExtension> {
@@ -22,7 +22,7 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach 
 dependencies {
   api(projects.sentry)
   api(projects.sentryTestSupport)
-  api(libs.apollo3.kotlin)
+  api(libs.apollo4.kotlin)
 
   compileOnly(libs.jetbrains.annotations)
   compileOnly(libs.nopen.annotations)
