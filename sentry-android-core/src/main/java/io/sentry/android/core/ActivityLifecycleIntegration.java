@@ -77,6 +77,7 @@ public final class ActivityLifecycleIntegration
 
   private @Nullable FullyDisplayedReporter fullyDisplayedReporter = null;
   private @Nullable ISpan appStartSpan;
+  private @Nullable ITransaction appStartTransaction;
   private final @NotNull WeakHashMap<Activity, ISpan> ttidSpanMap = new WeakHashMap<>();
   private final @NotNull WeakHashMap<Activity, ISpan> ttfdSpanMap = new WeakHashMap<>();
   private final @NotNull WeakHashMap<Activity, ActivityLifecycleSpanHelper> activitySpanHelpers =
@@ -254,18 +255,43 @@ public final class ActivityLifecycleIntegration
 
         // in case appStartTime isn't available, we don't create a span for it.
         if (!(firstActivityCreated || appStartTime == null || coldStart == null)) {
-          // start specific span for app start
-          appStartSpan =
-              transaction.startChild(
-                  getAppStartOp(coldStart),
-                  getAppStartDesc(coldStart),
-                  appStartTime,
-                  Instrumenter.SENTRY,
-                  spanOptions);
+          if (options.isEnableStandaloneAppStartTracing() && foregroundImportance) {
+            // Happy path: activity will launch, create standalone app start transaction
+            final TransactionOptions appStartTransactionOptions = new TransactionOptions();
+            appStartTransactionOptions.setBindToScope(false);
+            appStartTransactionOptions.setStartTimestamp(appStartTime);
+            appStartTransactionOptions.setAppStartTransaction(
+                appStartSamplingDecision != null);
+            setSpanOrigin(appStartTransactionOptions);
 
-          // in case there's already an end time (e.g. due to deferred SDK init)
-          // we can finish the app-start span
-          finishAppStartSpan();
+            appStartTransaction =
+                scopes.startTransaction(
+                    new TransactionContext(
+                        transaction.getSpanContext().getTraceId(),
+                        getAppStartTxnName(coldStart),
+                        TransactionNameSource.COMPONENT,
+                        getAppStartOp(coldStart),
+                        appStartSamplingDecision),
+                    appStartTransactionOptions);
+
+            // in case there's already an end time (e.g. due to deferred SDK init)
+            // we can finish the app start transaction
+            finishAppStartSpan();
+          } else if (!options.isEnableStandaloneAppStartTracing()) {
+            // Legacy behavior: app start span as child of activity transaction
+            appStartSpan =
+                transaction.startChild(
+                    getAppStartOp(coldStart),
+                    getAppStartDesc(coldStart),
+                    appStartTime,
+                    Instrumenter.SENTRY,
+                    spanOptions);
+
+            // in case there's already an end time (e.g. due to deferred SDK init)
+            // we can finish the app-start span
+            finishAppStartSpan();
+          }
+          // else: flag ON but not foreground — non-activity launch path (TODO: next PR)
         }
         final @NotNull ISpan ttidSpan =
             transaction.startChild(
@@ -440,8 +466,7 @@ public final class ActivityLifecycleIntegration
       final @NotNull Activity activity, final @Nullable Bundle savedInstanceState) {
     final ActivityLifecycleSpanHelper helper = activitySpanHelpers.get(activity);
     if (helper != null) {
-      helper.createAndStopOnCreateSpan(
-          appStartSpan != null ? appStartSpan : activitiesWithOngoingTransactions.get(activity));
+      helper.createAndStopOnCreateSpan(getAppStartParent(activity));
     }
   }
 
@@ -479,8 +504,7 @@ public final class ActivityLifecycleIntegration
   public void onActivityPostStarted(final @NotNull Activity activity) {
     final ActivityLifecycleSpanHelper helper = activitySpanHelpers.get(activity);
     if (helper != null) {
-      helper.createAndStopOnStartSpan(
-          appStartSpan != null ? appStartSpan : activitiesWithOngoingTransactions.get(activity));
+      helper.createAndStopOnStartSpan(getAppStartParent(activity));
       // Needed to handle hybrid SDKs
       helper.saveSpanToAppStartMetrics();
     }
@@ -559,6 +583,9 @@ public final class ActivityLifecycleIntegration
         // in case the appStartSpan isn't completed yet, we finish it as cancelled to avoid
         // memory leak
         finishSpan(appStartSpan, SpanStatus.CANCELLED);
+        if (appStartTransaction != null && !appStartTransaction.isFinished()) {
+          appStartTransaction.finish(SpanStatus.CANCELLED);
+        }
 
         // we finish the ttidSpan as cancelled in case it isn't completed yet
         final ISpan ttidSpan = ttidSpanMap.get(activity);
@@ -575,6 +602,7 @@ public final class ActivityLifecycleIntegration
 
         // set it to null in case its been just finished as cancelled
         appStartSpan = null;
+        appStartTransaction = null;
         ttidSpanMap.remove(activity);
         ttfdSpanMap.remove(activity);
       }
@@ -779,6 +807,24 @@ public final class ActivityLifecycleIntegration
     }
   }
 
+  private @Nullable ISpan getAppStartParent(final @NotNull Activity activity) {
+    if (appStartTransaction != null) {
+      return appStartTransaction;
+    }
+    if (appStartSpan != null) {
+      return appStartSpan;
+    }
+    return activitiesWithOngoingTransactions.get(activity);
+  }
+
+  private @NotNull String getAppStartTxnName(final boolean coldStart) {
+    if (coldStart) {
+      return "App Start Cold";
+    } else {
+      return "App Start Warm";
+    }
+  }
+
   private @NotNull String getAppStartOp(final boolean coldStart) {
     if (coldStart) {
       return APP_START_COLD;
@@ -794,6 +840,9 @@ public final class ActivityLifecycleIntegration
             .getProjectedStopTimestamp();
     if (performanceEnabled && appStartEndTime != null) {
       finishSpan(appStartSpan, appStartEndTime);
+      if (appStartTransaction != null && !appStartTransaction.isFinished()) {
+        appStartTransaction.finish(SpanStatus.OK, appStartEndTime);
+      }
     }
   }
 }

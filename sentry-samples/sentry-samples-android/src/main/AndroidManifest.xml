@@ -226,6 +226,10 @@
       android:value="true" />
 
     <meta-data
+      android:name="io.sentry.standalone-app-start-tracing.enable"
+      android:value="true" />
+
+    <meta-data
       android:name="io.sentry.session-replay.screenshot-strategy"
       android:value="canvas" />
     <meta-data

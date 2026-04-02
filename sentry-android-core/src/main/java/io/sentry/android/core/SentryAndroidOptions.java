@@ -240,6 +240,8 @@ public final class SentryAndroidOptions extends SentryOptions {
 
   private boolean enablePerformanceV2 = true;
 
+  private boolean enableStandaloneAppStartTracing = false;
+
   private @Nullable SentryFrameMetricsCollector frameMetricsCollector;
 
   private boolean enableTombstone = false;
@@ -661,6 +663,27 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   public void setEnablePerformanceV2(final boolean enablePerformanceV2) {
     this.enablePerformanceV2 = enablePerformanceV2;
+  }
+
+  /**
+   * @return true if standalone app start tracing is enabled. See {@link
+   *     #setEnableStandaloneAppStartTracing(boolean)} for more details.
+   */
+  @ApiStatus.Experimental
+  public boolean isEnableStandaloneAppStartTracing() {
+    return enableStandaloneAppStartTracing;
+  }
+
+  /**
+   * Enables or disables standalone app start tracing. When enabled, app start metrics are sent as a
+   * standalone transaction instead of being attached as a child span of the first activity
+   * transaction.
+   *
+   * @param enableStandaloneAppStartTracing true if enabled or false otherwise
+   */
+  @ApiStatus.Experimental
+  public void setEnableStandaloneAppStartTracing(final boolean enableStandaloneAppStartTracing) {
+    this.enableStandaloneAppStartTracing = enableStandaloneAppStartTracing;
   }
 
   @ApiStatus.Internal

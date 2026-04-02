@@ -245,6 +245,14 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
       }
     }
 
+    // For standalone app start transactions, the transaction root IS the app start span
+    if (parentSpanId == null) {
+      final @NotNull String txnOp = traceContext.getOperation();
+      if (APP_START_COLD.equals(txnOp) || APP_START_WARM.equals(txnOp)) {
+        parentSpanId = traceContext.getSpanId();
+      }
+    }
+
     // Process init
     final @NotNull TimeSpan processInitTimeSpan = appStartMetrics.createProcessInitSpan();
     if (processInitTimeSpan.hasStarted()
