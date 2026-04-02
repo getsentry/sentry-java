@@ -133,7 +133,9 @@ tasks {
   // each CopySpec has
   // its own duplicatesStrategy
   register("isolateJavaagentLibs", Copy::class.java) {
-    dependsOn("relocateJavaagentLibs")
+    findByName("relocateJavaagentLibs")?.let { task ->
+      dependsOn(task)
+    }
     with(isolateClasses(findByName("relocateJavaagentLibs")!!.outputs.files))
 
     into(project.layout.buildDirectory.file("isolated/javaagentLibs").get().asFile)
@@ -145,7 +147,9 @@ tasks {
   named("shadowJar", ShadowJar::class) {
     configurations = listOf(bootstrapLibs) + listOf(upstreamAgent)
 
-    dependsOn("isolateJavaagentLibs")
+    findByName("isolateJavaagentLibs")?.let { task ->
+      dependsOn(task)
+    }
     from(findByName("isolateJavaagentLibs")!!.outputs)
 
     archiveClassifier.set("")
