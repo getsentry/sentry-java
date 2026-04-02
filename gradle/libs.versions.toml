@@ -64,7 +64,7 @@ vanniktech-maven-publish = { id = "com.vanniktech.maven.publish", version = "0.3
 springboot2 = { id = "org.springframework.boot", version.ref = "springboot2" }
 springboot3 = { id = "org.springframework.boot", version.ref = "springboot3" }
 springboot4 = { id = "org.springframework.boot", version.ref = "springboot4" }
-spring-dependency-management = { id = "io.spring.dependency-management", version = "1.0.11.RELEASE" }
+spring-dependency-management = { id = "io.spring.dependency-management", version = "1.1.7" }
 gretty = { id = "org.gretty", version = "4.0.0" }
 animalsniffer = { id = "ru.vyarus.animalsniffer", version = "2.0.1" }
 sentry = { id = "io.sentry.android.gradle", version = "6.0.0-alpha.6"}

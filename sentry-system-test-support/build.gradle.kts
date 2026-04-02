@@ -5,7 +5,7 @@ plugins {
   jacoco
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
-  id("com.apollographql.apollo3") version "3.8.2"
+  id("com.apollographql.apollo") version "4.4.2"
 }
 
 configure<JavaPluginExtension> {

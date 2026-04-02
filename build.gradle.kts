@@ -249,9 +249,9 @@ tasks.register("buildForCodeQL") {
         }
         .forEach { proj ->
             if (proj.plugins.hasPlugin("com.android.library")) {
-                this.dependsOn(proj.tasks.findByName("compileReleaseUnitTestSources"))
+                this.dependsOn("compileReleaseUnitTestSources")
             } else {
-                this.dependsOn(proj.tasks.findByName("testClasses"))
+                this.dependsOn("testClasses")
             }
         }
 }
