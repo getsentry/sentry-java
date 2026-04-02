@@ -1,9 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES
 
 plugins {
   application
-  alias(libs.plugins.springboot2) apply false
   alias(libs.plugins.spring.dependency.management)
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.kotlin.spring)
@@ -29,7 +27,7 @@ repositories { mavenCentral() }
 
 dependencyManagement {
   imports {
-    mavenBom(BOM_COORDINATES)
+    mavenBom(libs.springboot2.bom.get().toString())
     mavenBom(libs.kotlin.bom.get().toString())
     mavenBom(libs.jackson.bom.get().toString())
   }

@@ -2,11 +2,14 @@ import org.jetbrains.kotlin.config.KotlinCompilerVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-  alias(libs.plugins.springboot2)
-  alias(libs.plugins.spring.dependency.management)
+  java
+  application
+  alias(libs.plugins.shadow)
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.kotlin.spring)
 }
+
+application { mainClass.set("io.sentry.samples.spring.boot.SentryDemoApplication") }
 
 group = "io.sentry.sample.spring-boot"
 
@@ -31,6 +34,7 @@ tasks.withType<KotlinCompile>().configureEach {
 }
 
 dependencies {
+  implementation(platform(libs.springboot2.bom))
   implementation(libs.springboot.starter)
   implementation(libs.springboot.starter.actuator)
   implementation(libs.springboot.starter.aop)
@@ -68,6 +72,23 @@ dependencies {
   testImplementation("ch.qos.logback:logback-core:1.5.16")
   testImplementation("org.apache.httpcomponents:httpclient")
 }
+
+// Configure the Shadow JAR (executable JAR with all dependencies)
+tasks.shadowJar {
+  manifest { attributes["Main-Class"] = "io.sentry.samples.spring.boot.SentryDemoApplication" }
+  archiveClassifier.set("")
+  mergeServiceFiles()
+  append("META-INF/spring.handlers")
+  append("META-INF/spring.schemas")
+  append("META-INF/spring.factories")
+}
+
+tasks.jar {
+  enabled = false
+  dependsOn(tasks.shadowJar)
+}
+
+tasks.startScripts { dependsOn(tasks.shadowJar) }
 
 configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
 
