@@ -258,3 +258,5 @@ git push
 **Never merge into the collection branch.** Syncing only happens between stack PR branches. The collection branch is untouched until the user merges PRs through GitHub.
 
 Prefer merge over rebase — it preserves commit history, doesn't invalidate existing review comments, and avoids the need for force-pushing. Only rebase if explicitly requested.
+
+**Never force-push stack branches.** Do not use `--force`, `--force-with-lease`, or `git push` after `git commit --amend` on branches that are part of a stack. Force-pushing a stack branch can cause GitHub to auto-merge or auto-close other PRs in the stack. If a commit needs fixing, add a new commit instead of amending.
