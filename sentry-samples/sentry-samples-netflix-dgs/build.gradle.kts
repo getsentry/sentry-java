@@ -1,3 +1,4 @@
+
 import org.jetbrains.kotlin.config.KotlinCompilerVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
@@ -40,6 +41,7 @@ dependencies {
 tasks.shadowJar {
   manifest { attributes["Main-Class"] = "io.sentry.samples.netflix.dgs.NetlixDgsApplication" }
   archiveClassifier.set("")
+  duplicatesStrategy = DuplicatesStrategy.INCLUDE
   mergeServiceFiles()
   append("META-INF/spring.handlers")
   append("META-INF/spring.schemas")

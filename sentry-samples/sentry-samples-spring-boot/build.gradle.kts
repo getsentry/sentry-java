@@ -77,6 +77,7 @@ dependencies {
 tasks.shadowJar {
   manifest { attributes["Main-Class"] = "io.sentry.samples.spring.boot.SentryDemoApplication" }
   archiveClassifier.set("")
+  duplicatesStrategy = DuplicatesStrategy.INCLUDE
   mergeServiceFiles()
   append("META-INF/spring.handlers")
   append("META-INF/spring.schemas")
