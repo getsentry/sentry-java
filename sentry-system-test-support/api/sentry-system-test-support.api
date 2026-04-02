@@ -560,6 +560,8 @@ public final class io/sentry/systemtest/util/RestTestClient : io/sentry/systemte
 	public final fun getTodo (J)Lio/sentry/systemtest/Todo;
 	public final fun getTodoRestClient (J)Lio/sentry/systemtest/Todo;
 	public final fun getTodoWebclient (J)Lio/sentry/systemtest/Todo;
+	public final fun produceKafkaMessage (Ljava/lang/String;)Ljava/lang/String;
+	public static synthetic fun produceKafkaMessage$default (Lio/sentry/systemtest/util/RestTestClient;Ljava/lang/String;ILjava/lang/Object;)Ljava/lang/String;
 	public final fun saveCachedTodo (Lio/sentry/systemtest/Todo;)Lio/sentry/systemtest/Todo;
 }
 
