@@ -879,8 +879,12 @@ public final class ActivityLifecycleIntegration
     }
 
     final @NotNull AppStartMetrics metrics = AppStartMetrics.getInstance();
-    final @NotNull TimeSpan appStartTimeSpan =
-        metrics.getAppStartTimeSpanWithFallback(options);
+    // For non-activity starts, appLaunchedInForeground is false, so we can't use
+    // getAppStartTimeSpanWithFallback (which gates on foreground). Use the spans directly.
+    @NotNull TimeSpan appStartTimeSpan = metrics.getAppStartTimeSpan();
+    if (!appStartTimeSpan.hasStarted() || !appStartTimeSpan.hasStopped()) {
+      appStartTimeSpan = metrics.getSdkInitTimeSpan();
+    }
 
     if (!appStartTimeSpan.hasStarted() || !appStartTimeSpan.hasStopped()) {
       return;

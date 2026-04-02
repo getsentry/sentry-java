@@ -382,7 +382,11 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
       }
     }
 
-    if (appStartType == AppStartType.UNKNOWN && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+    if (appStartType != AppStartType.UNKNOWN) {
+      // App start type is already known (e.g. from ApplicationStartInfo on API 35+).
+      // We still need to detect non-activity starts, so post a check on the main thread.
+      new Handler(Looper.getMainLooper()).post(() -> checkCreateTimeOnMain());
+    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
       Looper.getMainLooper()
           .getQueue()
           .addIdleHandler(
@@ -394,7 +398,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
                   return false;
                 }
               });
-    } else if (appStartType == AppStartType.UNKNOWN) {
+    } else {
       // We post on the main thread a task to post a check on the main thread. On Pixel devices
       // (possibly others) the first task posted on the main thread is called before the
       // Activity.onCreate callback. This is a workaround for that, so that the Activity.onCreate
@@ -436,8 +440,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   }
 
   /**
-   * Resolves the end time for a non-activity app start. Priority: 1. onApplicationPostCreate
-   * (Gradle plugin) 2. ApplicationStartInfo (API 35+) 3. firstIdle (main thread idle)
+   * Resolves the end time for a non-activity app start.
    */
   private void resolveNonActivityAppStartEndTime() {
     // Priority 1: Gradle plugin instrumented onApplicationPostCreate
@@ -445,7 +448,6 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
       final long stopUptimeMs =
           applicationOnCreate.getStartUptimeMs() + applicationOnCreate.getDurationMs();
       appStartSpan.setStoppedAt(stopUptimeMs);
-      sdkInitTimeSpan.setStoppedAt(stopUptimeMs);
       return;
     }
 
@@ -461,13 +463,17 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
           if (!startInfos.isEmpty()) {
             final @NotNull Map<Integer, Long> timestamps =
                 startInfos.get(0).getStartupTimestamps();
-            // ApplicationStartInfo.START_TIMESTAMP_APPLICATION_ONCREATE = 6
             // Timestamps are in nanoseconds (monotonic clock)
-            final @Nullable Long onCreateNanos = timestamps.get(6);
+            final @Nullable Long onCreateNanos =
+                timestamps.get(ApplicationStartInfo.START_TIMESTAMP_APPLICATION_ONCREATE);
             if (onCreateNanos != null && onCreateNanos > 0) {
               final long onCreateUptimeMs = TimeUnit.NANOSECONDS.toMillis(onCreateNanos);
               appStartSpan.setStoppedAt(onCreateUptimeMs);
-              sdkInitTimeSpan.setStoppedAt(onCreateUptimeMs);
+
+              // Also fill applicationOnCreate stop time if not already set by Gradle plugin
+              if (applicationOnCreate.hasStarted() && applicationOnCreate.hasNotStopped()) {
+                applicationOnCreate.setStoppedAt(onCreateUptimeMs);
+              }
               return;
             }
           }
@@ -477,11 +483,8 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
       }
     }
 
-    // Priority 3: firstIdle
-    if (firstIdle != -1) {
-      appStartSpan.setStoppedAt(firstIdle);
-      sdkInitTimeSpan.setStoppedAt(firstIdle);
-    }
+    // Priority 3: Process init end time (CLASS_LOADED_UPTIME_MS) — always available
+    appStartSpan.setStoppedAt(CLASS_LOADED_UPTIME_MS);
   }
 
   @Override

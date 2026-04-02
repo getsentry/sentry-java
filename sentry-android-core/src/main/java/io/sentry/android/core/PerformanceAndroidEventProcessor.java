@@ -84,9 +84,20 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
       // the app start measurement is only sent once and only if the transaction has
       // the app.start span, which is automatically created by the SDK.
       if (hasAppStartSpan(transaction)) {
-        if (appStartMetrics.shouldSendStartMeasurements()) {
+        // Check if this is a standalone app start transaction (op is app.start.cold/warm).
+        // For non-activity starts, appLaunchedInForeground is false, so
+        // shouldSendStartMeasurements() would return false. We still want to attach child spans.
+        final @Nullable SpanContext traceContext = transaction.getContexts().getTrace();
+        final boolean isStandaloneAppStartTxn =
+            traceContext != null
+                && (APP_START_COLD.equals(traceContext.getOperation())
+                    || APP_START_WARM.equals(traceContext.getOperation()));
+
+        if (appStartMetrics.shouldSendStartMeasurements() || isStandaloneAppStartTxn) {
           final @NotNull TimeSpan appStartTimeSpan =
-              appStartMetrics.getAppStartTimeSpanWithFallback(options);
+              isStandaloneAppStartTxn
+                  ? getAppStartTimeSpanForStandalone(appStartMetrics)
+                  : appStartMetrics.getAppStartTimeSpanWithFallback(options);
           final long appStartUpDurationMs = appStartTimeSpan.getDurationMs();
 
           // if appStartUpDurationMs is 0, metrics are not ready to be sent
@@ -219,6 +230,19 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
     return context != null
         && (context.getOperation().equals(APP_START_COLD)
             || context.getOperation().equals(APP_START_WARM));
+  }
+
+  /**
+   * For standalone app start transactions (non-activity starts), appLaunchedInForeground is false,
+   * so getAppStartTimeSpanWithFallback won't return a valid span. We get the spans directly.
+   */
+  private static @NotNull TimeSpan getAppStartTimeSpanForStandalone(
+      final @NotNull AppStartMetrics metrics) {
+    final @NotNull TimeSpan appStartSpan = metrics.getAppStartTimeSpan();
+    if (appStartSpan.hasStarted() && appStartSpan.hasStopped()) {
+      return appStartSpan;
+    }
+    return metrics.getSdkInitTimeSpan();
   }
 
   private void attachAppStartSpans(
