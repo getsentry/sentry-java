@@ -3,7 +3,7 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 plugins {
   `java-library`
   id("io.sentry.javadoc")
-  id("com.gradleup.shadow") version "8.3.6"
+  alias(libs.plugins.shadow)
 }
 
 fun relocatePackages(shadowJar: ShadowJar) {

@@ -68,6 +68,7 @@ spring-dependency-management = { id = "io.spring.dependency-management", version
 gretty = { id = "org.gretty", version = "4.0.0" }
 animalsniffer = { id = "ru.vyarus.animalsniffer", version = "2.0.1" }
 sentry = { id = "io.sentry.android.gradle", version = "6.0.0-alpha.6"}
+shadow = { id = "com.gradleup.shadow", version = "8.3.6" }
 
 [libraries]
 apache-httpclient = { module = "org.apache.httpcomponents.client5:httpclient5", version = "5.0.4" }

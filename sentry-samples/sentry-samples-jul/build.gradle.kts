@@ -5,7 +5,7 @@ plugins {
   application
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.gradle.versions)
-  id("com.gradleup.shadow") version "9.4.1"
+  alias(libs.plugins.shadow)
 }
 
 application { mainClass.set("io.sentry.samples.jul.Main") }
