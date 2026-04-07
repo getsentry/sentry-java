@@ -5,6 +5,7 @@ import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.ImageView
+import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import io.sentry.samples.android.databinding.ProfilingItemListBinding
 import kotlin.random.Random
@@ -17,6 +18,7 @@ class ProfilingListAdapter : RecyclerView.Adapter<ViewHolder>() {
   }
 
   override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+    holder.indexView.text = "${position + 1}"
     holder.imageView.setImageBitmap(generateBitmap())
   }
 
@@ -37,5 +39,6 @@ class ProfilingListAdapter : RecyclerView.Adapter<ViewHolder>() {
 }
 
 class ViewHolder(binding: ProfilingItemListBinding) : RecyclerView.ViewHolder(binding.root) {
+  val indexView: TextView = binding.benchmarkItemListIndex
   val imageView: ImageView = binding.benchmarkItemListImage
 }

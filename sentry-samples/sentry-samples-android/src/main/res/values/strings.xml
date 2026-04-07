@@ -48,14 +48,16 @@ Nulla interdum gravida augue, vel fringilla lorem bibendum vel. In hac habitasse
   <string name="camera_permission">Camera Permission</string>
   <string name="write_permission">Write External Storage Permission</string>
   <string name="profiling_duration">Duration of profile %.1f seconds</string>
-  <string name="profiling_threads">Background threads to use: %d</string>
+  <string name="profiling_threads">CPU load threads (fibonacci): %d</string>
   <string name="profiling_running">Profiling is running</string>
   <string name="profiling_no_dir_set">No profiling dir path set</string>
   <string name="profiling_start">Start (Transaction)</string>
   <string name="profiling_start_manual">Start (Manual)</string>
   <string name="profiling_stop_manual">Stop (Manual)</string>
-  <string name="profiling_status_perfetto">Profiler: Perfetto (ProfilingManager API 35+)</string>
-  <string name="profiling_status_legacy">Profiler: Legacy (simpleperf)</string>
+  <string name="profiling_status_perfetto">Active Profiler: Perfetto (ProfilingManager)</string>
+  <string name="profiling_status_legacy">Active Profiler: Legacy (simpleperf)</string>
+  <string name="profiling_status_none">Active Profiler: None (disabled)</string>
+  <string name="profiling_config_title">Profiling Configuration</string>
   <string name="profiling_manual_started">Manual profiler started</string>
   <string name="profiling_manual_stopped">Manual profiler stopped — chunk sent to Sentry</string>
   <string name="profiling_result">Profile trace file size = %d bytes \nItem payload size = %d bytes \nData sent to Sentry size = %d bytes</string>
