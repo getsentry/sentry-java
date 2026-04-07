@@ -219,8 +219,9 @@ public final class SentryEnvelopeItemHeader implements JsonSerializable, JsonUnk
     if (itemCount != null) {
       writer.name(JsonKeys.ITEM_COUNT).value(itemCount);
     }
-    if (metaLength != null) {
-      writer.name(JsonKeys.META_LENGTH).value(metaLength);
+    final @Nullable Integer metaLengthValue = getMetaLength();
+    if (metaLengthValue != null) {
+      writer.name(JsonKeys.META_LENGTH).value(metaLengthValue);
     }
     writer.name(JsonKeys.LENGTH).value(getLength());
     if (unknown != null) {
