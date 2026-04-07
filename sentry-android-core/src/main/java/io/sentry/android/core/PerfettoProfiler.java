@@ -14,8 +14,8 @@ import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.profilemeasurements.ProfileMeasurement;
 import io.sentry.profilemeasurements.ProfileMeasurementValue;
 import java.io.File;
-import java.util.ArrayDeque;
 import java.util.HashMap;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -46,12 +46,14 @@ public class PerfettoProfiler {
   private @Nullable ProfilingResult profilingResult = null;
   private @Nullable CountDownLatch resultLatch = null;
 
-  private final @NotNull ArrayDeque<ProfileMeasurementValue> slowFrameRenderMeasurements =
-      new ArrayDeque<>();
-  private final @NotNull ArrayDeque<ProfileMeasurementValue> frozenFrameRenderMeasurements =
-      new ArrayDeque<>();
-  private final @NotNull ArrayDeque<ProfileMeasurementValue> screenFrameRateMeasurements =
-      new ArrayDeque<>();
+  // ConcurrentLinkedDeque because onFrameMetricCollected (HandlerThread) and endAndCollect
+  // (executor thread) can access these concurrently.
+  private final @NotNull ConcurrentLinkedDeque<ProfileMeasurementValue>
+      slowFrameRenderMeasurements = new ConcurrentLinkedDeque<>();
+  private final @NotNull ConcurrentLinkedDeque<ProfileMeasurementValue>
+      frozenFrameRenderMeasurements = new ConcurrentLinkedDeque<>();
+  private final @NotNull ConcurrentLinkedDeque<ProfileMeasurementValue>
+      screenFrameRateMeasurements = new ConcurrentLinkedDeque<>();
   private final @NotNull Map<String, ProfileMeasurement> measurementsMap = new HashMap<>();
 
   /**
