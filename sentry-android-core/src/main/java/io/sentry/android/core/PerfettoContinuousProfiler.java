@@ -45,6 +45,12 @@ import org.jetbrains.annotations.VisibleForTesting;
  * <p>Unlike the legacy profiler, this class is not used for app-start profiling. It is created
  * during {@code Sentry.init()}, so scopes are always available when {@link #startProfiler} is
  * called.
+ *
+ * <p>Thread safety: all mutable state is guarded by a single {@link
+ * io.sentry.util.AutoClosableReentrantLock}. Public entry points ({@link #startProfiler}, {@link
+ * #stopProfiler}, {@link #close}, {@link #onRateLimitChanged}, {@link #reevaluateSampling}, and
+ * the getters) acquire the lock themselves. Private methods {@code startInternal} and {@code
+ * stopInternal} require the caller to hold the lock.
  */
 @ApiStatus.Internal
 @RequiresApi(api = Build.VERSION_CODES.VANILLA_ICE_CREAM)
@@ -70,7 +76,7 @@ public class PerfettoContinuousProfiler
   private final @NotNull AtomicBoolean isClosed = new AtomicBoolean(false);
   private @NotNull SentryDate startProfileChunkTimestamp =
       new io.sentry.SentryNanotimeDate();
-  private volatile boolean shouldSample = true;
+  private boolean shouldSample = true;
   private boolean shouldStop = false;
   private boolean isSampled = false;
   private int activeTraceCount = 0;
@@ -145,10 +151,9 @@ public class PerfettoContinuousProfiler
   }
 
   /**
-   * Stop the profiler as soon as we are rate limited, to avoid the performance overhead
+   * Stop the profiler as soon as we are rate limited, to avoid the performance overhead.
    *
-   * @param rateLimiter this {@link RateLimiter} instance which you can use to check if the rate
-   *     limit is active for a specific category
+   * @param rateLimiter the {@link RateLimiter} instance to check categories against
    */
   @Override
   public void onRateLimitChanged(@NotNull RateLimiter rateLimiter) {
@@ -177,23 +182,31 @@ public class PerfettoContinuousProfiler
 
   @Override
   public @NotNull SentryId getProfilerId() {
-    return profilerId;
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      return profilerId;
+    }
   }
 
   @Override
   public @NotNull SentryId getChunkId() {
-    return chunkId;
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      return chunkId;
+    }
   }
 
   @Override
   public boolean isRunning() {
-    return isRunning;
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      return isRunning;
+    }
   }
 
   /**
    * Resolves scopes on first call. Since PerfettoContinuousProfiler is created during
    * Sentry.init() and never used for app-start profiling, scopes is guaranteed to be available by
    * the time startProfiler is called.
+   *
+   * <p>Caller must hold {@link #lock}.
    */
   private @NotNull IScopes resolveScopes() {
     if (scopes != null && scopes != NoOpScopes.getInstance()) {
@@ -350,7 +363,9 @@ public class PerfettoContinuousProfiler
   }
 
   public void reevaluateSampling() {
-    shouldSample = true;
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      shouldSample = true;
+    }
   }
 
   private void sendChunk(
