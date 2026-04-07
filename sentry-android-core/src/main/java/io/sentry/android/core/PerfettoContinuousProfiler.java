@@ -38,8 +38,8 @@ import org.jetbrains.annotations.VisibleForTesting;
  * Perfetto stack-sampling traces.
  *
  * <p>This class is intentionally separate from {@link AndroidContinuousProfiler} to keep the two
- * profiling backends independent. All ProfilingManager API usage is confined to this file and {@link
- * PerfettoProfiler}.
+ * profiling backends independent. All ProfilingManager API usage is confined to this file and
+ * {@link PerfettoProfiler}.
  *
  * <p>Currently, this class doesn't do app-start profiling {@link SentryPerformanceProvider}.
  * It is created during {@code Sentry.init()}.
@@ -69,8 +69,7 @@ public class PerfettoContinuousProfiler
   private @NotNull SentryId profilerId = SentryId.EMPTY_ID;
   private @NotNull SentryId chunkId = SentryId.EMPTY_ID;
   private final @NotNull AtomicBoolean isClosed = new AtomicBoolean(false);
-  private @NotNull SentryDate startProfileChunkTimestamp =
-      new io.sentry.SentryNanotimeDate();
+  private @NotNull SentryDate startProfileChunkTimestamp = new io.sentry.SentryNanotimeDate();
   private boolean shouldSample = true;
   private boolean shouldStop = false;
   private boolean isSampled = false;
@@ -196,9 +195,9 @@ public class PerfettoContinuousProfiler
   }
 
   /**
-   * Resolves scopes on first call. Since PerfettoContinuousProfiler is created during
-   * Sentry.init() and never used for app-start profiling, scopes is guaranteed to be available by
-   * the time startProfiler is called.
+   * Resolves scopes on first call. Since PerfettoContinuousProfiler is created during Sentry.init()
+   * and never used for app-start profiling, scopes is guaranteed to be available by the time
+   * startProfiler is called.
    *
    * <p>Caller must hold {@link #lock}.
    */
