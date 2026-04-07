@@ -61,13 +61,14 @@ class PerfettoContinuousProfilerTest {
 
     init {
       whenever(mockTracesSampler.sampleSessionProfile(any())).thenReturn(true)
-      whenever(mockPerfettoProfiler.start(any())).thenReturn(
-        AndroidProfiler.ProfileStartData(
-          System.nanoTime(),
-          0L,
-          io.sentry.DateUtils.getCurrentDateTime(),
-        ),
-      )
+      whenever(mockPerfettoProfiler.start(any()))
+        .thenReturn(
+          AndroidProfiler.ProfileStartData(
+            System.nanoTime(),
+            0L,
+            io.sentry.DateUtils.getCurrentDateTime(),
+          )
+        )
     }
 
     fun getSut(): PerfettoContinuousProfiler {
