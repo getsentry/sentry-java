@@ -56,6 +56,9 @@ dependencies {
   implementation(libs.otel)
   implementation(projects.sentryAsyncProfiler)
 
+  // kafka
+  implementation(libs.spring.kafka3)
+
   // cache tracing
   implementation(libs.springboot3.starter.cache)
   implementation(libs.caffeine)
