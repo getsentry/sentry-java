@@ -18,7 +18,6 @@ import io.sentry.ProfileLifecycle;
 import io.sentry.Sentry;
 import io.sentry.SentryDate;
 import io.sentry.SentryLevel;
-import io.sentry.SentryNanotimeDate;
 import io.sentry.SentryOptions;
 import io.sentry.TracesSampler;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
@@ -27,8 +26,6 @@ import io.sentry.transport.RateLimiter;
 import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.LazyEvaluator;
 import io.sentry.util.SentryRandom;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -42,8 +39,12 @@ import org.jetbrains.annotations.VisibleForTesting;
  * Perfetto stack-sampling traces.
  *
  * <p>This class is intentionally separate from {@link AndroidContinuousProfiler} to keep the two
- * profiling backends independent. All ProfilingManager API usage is confined to this file and
- * {@link PerfettoProfiler}.
+ * profiling backends independent. All ProfilingManager API usage is confined to this file and {@link
+ * PerfettoProfiler}.
+ *
+ * <p>Unlike the legacy profiler, this class is not used for app-start profiling. It is created
+ * during {@code Sentry.init()}, so scopes are always available when {@link #startProfiler} is
+ * called.
  */
 @ApiStatus.Internal
 @RequiresApi(api = Build.VERSION_CODES.VANILLA_ICE_CREAM)
@@ -62,20 +63,19 @@ public class PerfettoContinuousProfiler
   private @Nullable PerfettoProfiler perfettoProfiler = null;
   private boolean isRunning = false;
   private @Nullable IScopes scopes;
-  private @Nullable Future<?> stopFuture;
   private @Nullable CompositePerformanceCollector performanceCollector;
-  private final @NotNull List<ProfileChunk.Builder> payloadBuilders = new ArrayList<>();
+  private @Nullable Future<?> stopFuture;
   private @NotNull SentryId profilerId = SentryId.EMPTY_ID;
   private @NotNull SentryId chunkId = SentryId.EMPTY_ID;
   private final @NotNull AtomicBoolean isClosed = new AtomicBoolean(false);
-  private @NotNull SentryDate startProfileChunkTimestamp = new SentryNanotimeDate();
+  private @NotNull SentryDate startProfileChunkTimestamp =
+      new io.sentry.SentryNanotimeDate();
   private volatile boolean shouldSample = true;
   private boolean shouldStop = false;
   private boolean isSampled = false;
   private int activeTraceCount = 0;
 
   private final AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
-  private final AutoClosableReentrantLock payloadLock = new AutoClosableReentrantLock();
 
   public PerfettoContinuousProfiler(
       final @NotNull android.content.Context context,
@@ -190,38 +190,57 @@ public class PerfettoContinuousProfiler
     return isRunning;
   }
 
+  /**
+   * Resolves scopes on first call. Since PerfettoContinuousProfiler is created during
+   * Sentry.init() and never used for app-start profiling, scopes is guaranteed to be available by
+   * the time startProfiler is called.
+   */
+  private @NotNull IScopes resolveScopes() {
+    if (scopes != null && scopes != NoOpScopes.getInstance()) {
+      return scopes;
+    }
+    final @NotNull IScopes currentScopes = Sentry.getCurrentScopes();
+    if (currentScopes == NoOpScopes.getInstance()) {
+      logger.log(
+          SentryLevel.ERROR,
+          "PerfettoContinuousProfiler: scopes not available. This is unexpected.");
+      return currentScopes;
+    }
+    this.scopes = currentScopes;
+    this.performanceCollector = currentScopes.getOptions().getCompositePerformanceCollector();
+    final @Nullable RateLimiter rateLimiter = currentScopes.getRateLimiter();
+    if (rateLimiter != null) {
+      rateLimiter.addRateLimitObserver(this);
+    }
+    return scopes;
+  }
+
   /** Caller must hold {@link #lock}. */
   private void startInternal() {
-    tryResolveScopes();
+    final @NotNull IScopes scopes = resolveScopes();
     ensureProfiler();
 
     if (perfettoProfiler == null) {
       return;
     }
 
-    if (scopes != null) {
-      final @Nullable RateLimiter rateLimiter = scopes.getRateLimiter();
-      if (rateLimiter != null
-          && (rateLimiter.isActiveForCategory(All)
-              || rateLimiter.isActiveForCategory(DataCategory.ProfileChunkUi))) {
-        logger.log(SentryLevel.WARNING, "SDK is rate limited. Stopping profiler.");
-        // Let's stop and reset profiler id, as the profile is now broken anyway
-        stopInternal(false);
-        return;
-      }
-
-      // If device is offline, we don't start the profiler, to avoid flooding the cache
-      // TODO .getConnectionStatus() may be blocking, investigate if this can be done async
-      if (scopes.getOptions().getConnectionStatusProvider().getConnectionStatus() == DISCONNECTED) {
-        logger.log(SentryLevel.WARNING, "Device is offline. Stopping profiler.");
-        // Let's stop and reset profiler id, as the profile is now broken anyway
-        stopInternal(false);
-        return;
-      }
-      startProfileChunkTimestamp = scopes.getOptions().getDateProvider().now();
-    } else {
-      startProfileChunkTimestamp = new SentryNanotimeDate();
+    final @Nullable RateLimiter rateLimiter = scopes.getRateLimiter();
+    if (rateLimiter != null
+        && (rateLimiter.isActiveForCategory(All)
+            || rateLimiter.isActiveForCategory(DataCategory.ProfileChunkUi))) {
+      logger.log(SentryLevel.WARNING, "SDK is rate limited. Stopping profiler.");
+      stopInternal(false);
+      return;
     }
+
+    // If device is offline, we don't start the profiler, to avoid flooding the cache
+    if (scopes.getOptions().getConnectionStatusProvider().getConnectionStatus() == DISCONNECTED) {
+      logger.log(SentryLevel.WARNING, "Device is offline. Stopping profiler.");
+      stopInternal(false);
+      return;
+    }
+
+    startProfileChunkTimestamp = scopes.getOptions().getDateProvider().now();
 
     final AndroidProfiler.ProfileStartData startData =
         perfettoProfiler.start(MAX_CHUNK_DURATION_MILLIS);
@@ -266,17 +285,21 @@ public class PerfettoContinuousProfiler
 
   /** Caller must hold {@link #lock}. */
   private void stopInternal(final boolean restartProfiler) {
-    tryResolveScopes();
     if (stopFuture != null) {
       stopFuture.cancel(false);
     }
     // check if profiler was created and it's running
     if (perfettoProfiler == null || !isRunning) {
-      // When the profiler is stopped due to an error (e.g. offline or rate limited), reset the
-      // ids
       profilerId = SentryId.EMPTY_ID;
       chunkId = SentryId.EMPTY_ID;
       return;
+    }
+
+    final @NotNull IScopes scopes = resolveScopes();
+    final @NotNull SentryOptions options = scopes.getOptions();
+
+    if (performanceCollector != null) {
+      performanceCollector.stop(chunkId.toString());
     }
 
     final AndroidProfiler.ProfileEndData endData = perfettoProfiler.endAndCollect();
@@ -287,30 +310,21 @@ public class PerfettoContinuousProfiler
           SentryLevel.ERROR,
           "An error occurred while collecting a profile chunk, and it won't be sent.");
     } else {
-      // The scopes can be null if the profiler is started before the SDK is initialized (app
-      // start profiling), meaning there's no scopes to send the chunks. In that case, we store
-      // the data in a list and send it when the next chunk is finished.
-      try (final @NotNull ISentryLifecycleToken ignored2 = payloadLock.acquire()) {
-        final ProfileChunk.Builder builder =
-            new ProfileChunk.Builder(
-                profilerId,
-                chunkId,
-                endData.measurementsMap,
-                endData.traceFile,
-                startProfileChunkTimestamp,
-                ProfileChunk.PLATFORM_ANDROID);
-        builder.setContentType("perfetto");
-        payloadBuilders.add(builder);
-      }
+      final ProfileChunk.Builder builder =
+          new ProfileChunk.Builder(
+              profilerId,
+              chunkId,
+              endData.measurementsMap,
+              endData.traceFile,
+              startProfileChunkTimestamp,
+              ProfileChunk.PLATFORM_ANDROID);
+      builder.setContentType("perfetto");
+      sendChunk(builder, scopes, options);
     }
 
     isRunning = false;
     // A chunk is finished. Next chunk will have a different id.
     chunkId = SentryId.EMPTY_ID;
-
-    if (scopes != null) {
-      sendChunks(scopes, scopes.getOptions());
-    }
 
     if (restartProfiler && !shouldStop) {
       logger.log(SentryLevel.DEBUG, "Profile chunk finished. Starting a new one.");
@@ -319,22 +333,6 @@ public class PerfettoContinuousProfiler
       // When the profiler is stopped manually, we have to reset its id
       profilerId = SentryId.EMPTY_ID;
       logger.log(SentryLevel.DEBUG, "Profile chunk finished.");
-    }
-  }
-
-  private void tryResolveScopes() {
-    if ((scopes == null || scopes == NoOpScopes.getInstance())
-        && Sentry.getCurrentScopes() != NoOpScopes.getInstance()) {
-      onScopesAvailable(Sentry.getCurrentScopes());
-    }
-  }
-
-  private void onScopesAvailable(final @NotNull IScopes resolvedScopes) {
-    this.scopes = resolvedScopes;
-    this.performanceCollector = resolvedScopes.getOptions().getCompositePerformanceCollector();
-    final @Nullable RateLimiter rateLimiter = resolvedScopes.getRateLimiter();
-    if (rateLimiter != null) {
-      rateLimiter.addRateLimitObserver(this);
     }
   }
 
@@ -355,29 +353,22 @@ public class PerfettoContinuousProfiler
     shouldSample = true;
   }
 
-  private void sendChunks(final @NotNull IScopes scopes, final @NotNull SentryOptions options) {
+  private void sendChunk(
+      final @NotNull ProfileChunk.Builder builder,
+      final @NotNull IScopes scopes,
+      final @NotNull SentryOptions options) {
     try {
       options
           .getExecutorService()
           .submit(
               () -> {
-                // SDK is closed, we don't send the chunks
                 if (isClosed.get()) {
                   return;
                 }
-                final ArrayList<ProfileChunk> payloads = new ArrayList<>(payloadBuilders.size());
-                try (final @NotNull ISentryLifecycleToken ignored = payloadLock.acquire()) {
-                  for (ProfileChunk.Builder builder : payloadBuilders) {
-                    payloads.add(builder.build(options));
-                  }
-                  payloadBuilders.clear();
-                }
-                for (ProfileChunk payload : payloads) {
-                  scopes.captureProfileChunk(payload);
-                }
+                scopes.captureProfileChunk(builder.build(options));
               });
     } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.DEBUG, "Failed to send profile chunks.", e);
+      options.getLogger().log(SentryLevel.DEBUG, "Failed to send profile chunk.", e);
     }
   }
 
