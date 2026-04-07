@@ -326,7 +326,7 @@ class SystemTestRunner:
             # Start the Tomcat server
             with open("tomcat-server.txt", "w") as log_file:
                 self.tomcat_server.process = subprocess.Popen(
-                    ["./gradlew", f"sentry-samples:{sample_module}:run"],
+                    ["./gradlew", f"sentry-samples:{sample_module}:run", "--console=plain"],
                     env=env,
                     stdout=log_file,
                     stderr=subprocess.STDOUT
@@ -578,7 +578,7 @@ class SystemTestRunner:
         """Run a Gradle task and return the exit code."""
         print(f"Running: ./gradlew {task}")
         try:
-            result = subprocess.run(["./gradlew", task], check=False)
+            result = subprocess.run(["./gradlew", task, "--console=plain"], check=False)
             return result.returncode
         except Exception as e:
             print(f"Failed to run Gradle task: {e}")
