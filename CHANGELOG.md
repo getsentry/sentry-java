@@ -11,6 +11,10 @@
 - Android: Attachments on the scope will now be synced to native ([#5211](https://github.com/getsentry/sentry-java/pull/5211))
 - Add THIRD_PARTY_NOTICES.md for vendored third-party code, bundled as SENTRY_THIRD_PARTY_NOTICES.md in the sentry JAR under META-INF ([#5186](https://github.com/getsentry/sentry-java/pull/5186))
 
+### Improvements
+
+- Do not retrieve `ActivityManager` if API < 35 on SDK init ([#5275](https://github.com/getsentry/sentry-java/pull/5275))
+
 ## 8.37.1
 
 ### Fixes
