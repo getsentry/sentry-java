@@ -3,11 +3,14 @@ package io.sentry.spring.jakarta.kafka
 import io.sentry.BaggageHeader
 import io.sentry.IScopes
 import io.sentry.ISentryLifecycleToken
+import io.sentry.Sentry
 import io.sentry.SentryOptions
 import io.sentry.SentryTraceHeader
 import io.sentry.SentryTracer
 import io.sentry.TransactionContext
+import io.sentry.test.initForTest
 import java.nio.charset.StandardCharsets
+import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -30,6 +33,7 @@ class SentryKafkaRecordInterceptorTest {
 
   @BeforeTest
   fun setup() {
+    initForTest { it.dsn = "https://key@sentry.io/proj" }
     scopes = mock()
     consumer = mock()
     lifecycleToken = mock()
@@ -49,6 +53,11 @@ class SentryKafkaRecordInterceptorTest {
 
     val tx = SentryTracer(TransactionContext("queue.process", "queue.process"), forkedScopes)
     whenever(forkedScopes.startTransaction(any<TransactionContext>(), any())).thenReturn(tx)
+  }
+
+  @AfterTest
+  fun teardown() {
+    Sentry.close()
   }
 
   private fun createRecord(
