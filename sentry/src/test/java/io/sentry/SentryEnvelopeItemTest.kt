@@ -619,10 +619,10 @@ class SentryEnvelopeItemTest {
 
     assertEquals(SentryItemType.ProfileChunk, item.header.type)
     assertEquals("application/octet-stream", item.header.contentType)
-    assertNotNull(item.header.metaLength)
     assertEquals("android", item.header.platform)
-
+    
     val payload = item.data
+    assertNotNull(item.header.metaLength)
     val metaLength = item.header.metaLength!!
     // Payload should be: [JSON metadata][binary trace]
     val metadataBytes = payload.copyOfRange(0, metaLength)
