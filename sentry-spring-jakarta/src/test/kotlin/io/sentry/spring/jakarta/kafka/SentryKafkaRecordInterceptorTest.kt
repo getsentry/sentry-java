@@ -74,7 +74,7 @@ class SentryKafkaRecordInterceptorTest {
     }
     enqueuedTime?.let {
       headers.add(
-        SentryKafkaProducerWrapper.SENTRY_ENQUEUED_TIME_HEADER,
+        SentryProducerInterceptor.SENTRY_ENQUEUED_TIME_HEADER,
         it.toString().toByteArray(StandardCharsets.UTF_8),
       )
     }
