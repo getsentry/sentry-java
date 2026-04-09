@@ -1,6 +1,5 @@
 package io.sentry.spring.jakarta.kafka;
 
-import io.micrometer.observation.Observation;
 import io.sentry.BaggageHeader;
 import io.sentry.IScopes;
 import io.sentry.ISpan;
@@ -10,58 +9,55 @@ import io.sentry.SpanOptions;
 import io.sentry.SpanStatus;
 import io.sentry.util.TracingUtils;
 import java.nio.charset.StandardCharsets;
-import java.util.concurrent.CompletableFuture;
+import java.util.Map;
+import org.apache.kafka.clients.producer.ProducerInterceptor;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.header.Headers;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.kafka.support.SendResult;
 
 /**
- * Wraps a {@link KafkaTemplate} to create {@code queue.publish} spans for Kafka send operations.
+ * A Kafka {@link ProducerInterceptor} that creates {@code queue.publish} spans and injects tracing
+ * headers into outgoing records.
  *
- * <p>Overrides {@code doSend} which is the common path for all send variants in {@link
- * KafkaTemplate}.
+ * <p>The span starts and finishes synchronously in {@link #onSend(ProducerRecord)}, representing
+ * "message enqueued" semantics. This avoids cross-thread correlation complexity since {@link
+ * #onAcknowledgement(RecordMetadata, Exception)} runs on the Kafka I/O thread.
+ *
+ * <p>If the customer already has a {@link ProducerInterceptor}, the {@link
+ * SentryKafkaProducerBeanPostProcessor} composes both using Spring's {@link
+ * org.springframework.kafka.support.CompositeProducerInterceptor}.
  */
 @ApiStatus.Internal
-public final class SentryKafkaProducerWrapper<K, V> extends KafkaTemplate<K, V> {
+public final class SentryProducerInterceptor<K, V> implements ProducerInterceptor<K, V> {
 
   static final String TRACE_ORIGIN = "auto.queue.spring_jakarta.kafka.producer";
   static final String SENTRY_ENQUEUED_TIME_HEADER = "sentry-task-enqueued-time";
 
   private final @NotNull IScopes scopes;
 
-  public SentryKafkaProducerWrapper(
-      final @NotNull KafkaTemplate<K, V> delegate, final @NotNull IScopes scopes) {
-    super(delegate.getProducerFactory());
+  public SentryProducerInterceptor(final @NotNull IScopes scopes) {
     this.scopes = scopes;
-    this.setDefaultTopic(delegate.getDefaultTopic());
-    if (delegate.isTransactional()) {
-      this.setTransactionIdPrefix(delegate.getTransactionIdPrefix());
-    }
-    this.setMessageConverter(delegate.getMessageConverter());
-    this.setMicrometerTagsProvider(delegate.getMicrometerTagsProvider());
   }
 
   @Override
-  protected @NotNull CompletableFuture<SendResult<K, V>> doSend(
-      final @NotNull ProducerRecord<K, V> record, final @Nullable Observation observation) {
+  public @NotNull ProducerRecord<K, V> onSend(final @NotNull ProducerRecord<K, V> record) {
     if (!scopes.getOptions().isEnableQueueTracing()) {
-      return super.doSend(record, observation);
+      return record;
     }
 
     final @Nullable ISpan activeSpan = scopes.getSpan();
     if (activeSpan == null || activeSpan.isNoOp()) {
-      return super.doSend(record, observation);
+      return record;
     }
 
     final @NotNull SpanOptions spanOptions = new SpanOptions();
     spanOptions.setOrigin(TRACE_ORIGIN);
     final @NotNull ISpan span = activeSpan.startChild("queue.publish", record.topic(), spanOptions);
     if (span.isNoOp()) {
-      return super.doSend(record, observation);
+      return record;
     }
 
     span.setData(SpanDataConvention.MESSAGING_SYSTEM, "kafka");
@@ -73,26 +69,21 @@ public final class SentryKafkaProducerWrapper<K, V> extends KafkaTemplate<K, V> 
       // Header injection must not break the send
     }
 
-    final @NotNull CompletableFuture<SendResult<K, V>> future;
-    try {
-      future = super.doSend(record, observation);
-      return future.whenComplete(
-          (result, throwable) -> {
-            if (throwable != null) {
-              span.setStatus(SpanStatus.INTERNAL_ERROR);
-              span.setThrowable(throwable);
-            } else {
-              span.setStatus(SpanStatus.OK);
-            }
-            span.finish();
-          });
-    } catch (Throwable e) {
-      span.setStatus(SpanStatus.INTERNAL_ERROR);
-      span.setThrowable(e);
-      span.finish();
-      throw e;
-    }
+    span.setStatus(SpanStatus.OK);
+    span.finish();
+
+    return record;
   }
+
+  @Override
+  public void onAcknowledgement(
+      final @Nullable RecordMetadata metadata, final @Nullable Exception exception) {}
+
+  @Override
+  public void close() {}
+
+  @Override
+  public void configure(final @Nullable Map<String, ?> configs) {}
 
   private void injectHeaders(final @NotNull Headers headers, final @NotNull ISpan span) {
     final @Nullable TracingUtils.TracingHeaders tracingHeaders =
