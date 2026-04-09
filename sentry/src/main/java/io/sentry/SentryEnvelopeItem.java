@@ -28,6 +28,7 @@ import java.nio.charset.Charset;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -385,6 +386,12 @@ public final class SentryEnvelopeItem {
               traceFile != null ? traceFile.getName() : "null"));
     }
 
+    // Perfetto profile chunks are serialized as [JSON metadata][raw .pftrace bytes] with no
+    // delimiter. The server needs meta_length in the envelope header to know where the JSON
+    // ends and the binary begins. meta_length is not known until the CachedItem payload lambda
+    // runs, so we track it here as an envelope serialization concern rather than on ProfileChunk.
+    final AtomicInteger metaLength = new AtomicInteger(-1);
+
     final CachedItem cachedItem =
         new CachedItem(
             () -> {
@@ -394,6 +401,7 @@ public final class SentryEnvelopeItem {
                   final Writer writer = new BufferedWriter(new OutputStreamWriter(stream, UTF_8))) {
                 serializer.serialize(profileChunk, writer);
                 metadataBytes = stream.toByteArray();
+                metaLength.set(metadataBytes.length);
               } catch (IOException e) {
                 throw new SentryEnvelopeException(
                     String.format(
@@ -416,9 +424,6 @@ public final class SentryEnvelopeItem {
               System.arraycopy(metadataBytes, 0, payload, 0, metadataBytes.length);
               System.arraycopy(traceBytes, 0, payload, metadataBytes.length, traceBytes.length);
 
-              // Store metaLength so the header callable can read it after lazy evaluation
-              profileChunk.setMetaLength(metadataBytes.length);
-
               return payload;
             });
 
@@ -431,7 +436,7 @@ public final class SentryEnvelopeItem {
             null,
             profileChunk.getPlatform(),
             null,
-            (Callable<Integer>) () -> profileChunk.getMetaLength());
+            (Callable<Integer>) metaLength::get);
 
     // avoid method refs on Android due to some issues with older AGP setups
     // noinspection Convert2MethodRef

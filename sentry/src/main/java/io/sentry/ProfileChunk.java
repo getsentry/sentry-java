@@ -138,20 +138,6 @@ public final class ProfileChunk implements JsonUnknown, JsonSerializable {
     return contentType;
   }
 
-  /**
-   * The length of the JSON metadata prefix in the binary envelope payload. Set during lazy
-   * serialization of Perfetto profile chunks so the envelope item header can read it.
-   */
-  private transient int metaLength = 0;
-
-  public int getMetaLength() {
-    return metaLength;
-  }
-
-  public void setMetaLength(final int metaLength) {
-    this.metaLength = metaLength;
-  }
-
   public @Nullable SentryProfile getSentryProfile() {
     return sentryProfile;
   }
