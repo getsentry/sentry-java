@@ -149,7 +149,7 @@ public final class SentryKafkaRecordInterceptor<K, V> implements RecordIntercept
     }
 
     final @Nullable String enqueuedTimeStr =
-        headerValue(record, SentryKafkaProducerWrapper.SENTRY_ENQUEUED_TIME_HEADER);
+        headerValue(record, SentryProducerInterceptor.SENTRY_ENQUEUED_TIME_HEADER);
     if (enqueuedTimeStr != null) {
       try {
         final long enqueuedTime = Long.parseLong(enqueuedTimeStr);

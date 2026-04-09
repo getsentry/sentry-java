@@ -1,6 +1,7 @@
 package io.sentry.spring.jakarta.kafka;
 
 import io.sentry.ScopesAdapter;
+import io.sentry.SentryLevel;
 import java.lang.reflect.Field;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -50,6 +51,15 @@ public final class SentryKafkaConsumerBeanPostProcessor
       field.setAccessible(true);
       return (RecordInterceptor<?, ?>) field.get(factory);
     } catch (NoSuchFieldException | IllegalAccessException e) {
+      ScopesAdapter.getInstance()
+          .getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "Unable to read existing recordInterceptor from "
+                  + "AbstractKafkaListenerContainerFactory via reflection. "
+                  + "If you had a custom RecordInterceptor, it may not be chained with Sentry's interceptor.",
+              e);
       return null;
     }
   }
