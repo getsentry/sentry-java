@@ -96,18 +96,18 @@ val mergeSpringMetadata by
       filesToMerge.forEach { fileName ->
         val merged = StringBuilder()
         classpathJars.forEach { jar ->
-            try {
-              val zip = ZipFile(jar)
-              val entry = zip.getEntry("META-INF/$fileName")
-              if (entry != null) {
-                merged.append(zip.getInputStream(entry).bufferedReader().readText())
-                if (!merged.endsWith("\n")) merged.append("\n")
-              }
-              zip.close()
-            } catch (e: Exception) {
-              /* skip non-zip files */
+          try {
+            val zip = ZipFile(jar)
+            val entry = zip.getEntry("META-INF/$fileName")
+            if (entry != null) {
+              merged.append(zip.getInputStream(entry).bufferedReader().readText())
+              if (!merged.endsWith("\n")) merged.append("\n")
             }
+            zip.close()
+          } catch (e: Exception) {
+            /* skip non-zip files */
           }
+        }
         if (merged.isNotEmpty()) {
           File(out, fileName).writeText(merged.toString())
         }
