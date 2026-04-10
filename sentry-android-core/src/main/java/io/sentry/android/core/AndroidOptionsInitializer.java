@@ -348,8 +348,7 @@ final class AndroidOptionsInitializer {
                     frameMetricsCollector,
                     () -> options.getExecutorService(),
                     () ->
-                        new PerfettoProfiler(
-                            context.getApplicationContext(), options.getLogger()))
+                        new PerfettoProfiler(context.getApplicationContext(), options.getLogger()))
                 : AndroidContinuousProfiler.createLegacy(
                     buildInfoProvider,
                     frameMetricsCollector,
