@@ -80,6 +80,7 @@ dependencies {
 val mergeSpringMetadata by
   tasks.registering {
     val outputDir = project.layout.buildDirectory.dir("merged-spring-metadata/META-INF")
+    val classpathJars = configurations.runtimeClasspath.get().filter { it.name.endsWith(".jar") }
     val filesToMerge =
       listOf(
         "spring.factories",
@@ -88,16 +89,13 @@ val mergeSpringMetadata by
         "spring-autoconfigure-metadata.properties",
       )
     outputs.dir(outputDir)
-    inputs.files(configurations.runtimeClasspath)
+    inputs.files(classpathJars)
     doLast {
       val out = outputDir.get().asFile
       out.mkdirs()
       filesToMerge.forEach { fileName ->
         val merged = StringBuilder()
-        configurations.runtimeClasspath
-          .get()
-          .filter { it.name.endsWith(".jar") }
-          .forEach { jar ->
+        classpathJars.forEach { jar ->
             try {
               val zip = ZipFile(jar)
               val entry = zip.getEntry("META-INF/$fileName")
