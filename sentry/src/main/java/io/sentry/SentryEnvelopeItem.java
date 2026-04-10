@@ -28,7 +28,7 @@ import java.nio.charset.Charset;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -390,7 +390,7 @@ public final class SentryEnvelopeItem {
     // delimiter. The server needs meta_length in the envelope header to know where the JSON
     // ends and the binary begins. meta_length is not known until the CachedItem payload lambda
     // runs, so we track it here as an envelope serialization concern rather than on ProfileChunk.
-    final AtomicInteger metaLength = new AtomicInteger(-1);
+    final AtomicReference<Integer> metaLength = new AtomicReference<>(null);
 
     final CachedItem cachedItem =
         new CachedItem(
