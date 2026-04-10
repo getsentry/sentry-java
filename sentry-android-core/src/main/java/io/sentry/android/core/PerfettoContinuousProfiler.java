@@ -13,14 +13,15 @@ import io.sentry.IScopes;
 import io.sentry.ISentryExecutorService;
 import io.sentry.ISentryLifecycleToken;
 import io.sentry.NoOpScopes;
+import io.sentry.PerformanceCollectionData;
 import io.sentry.ProfileChunk;
 import io.sentry.ProfileLifecycle;
 import io.sentry.Sentry;
 import io.sentry.SentryDate;
 import io.sentry.SentryLevel;
+import io.sentry.SentryNanotimeDate;
 import io.sentry.SentryOptions;
 import io.sentry.TracesSampler;
-import io.sentry.SentryNanotimeDate;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.profilemeasurements.ProfileMeasurement;
 import io.sentry.profilemeasurements.ProfileMeasurementValue;
@@ -30,7 +31,9 @@ import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.LazyEvaluator;
 import io.sentry.util.SentryRandom;
 import java.io.File;
+import java.util.ArrayDeque;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.Future;
@@ -49,14 +52,14 @@ import org.jetbrains.annotations.VisibleForTesting;
  * profiling backends independent. All ProfilingManager API usage is confined to this file and
  * {@link PerfettoProfiler}.
  *
- * <p>Currently, this class doesn't do app-start profiling {@link SentryPerformanceProvider}.
- * It is created during {@code Sentry.init()}.
+ * <p>Currently, this class doesn't do app-start profiling {@link SentryPerformanceProvider}. It is
+ * created during {@code Sentry.init()}.
  *
  * <p>Thread safety: all mutable state is guarded by a single {@link
  * io.sentry.util.AutoClosableReentrantLock}. Public entry points ({@link #startProfiler}, {@link
- * #stopProfiler}, {@link #close}, {@link #onRateLimitChanged}, {@link #reevaluateSampling}, and
- * the getters) acquire the lock themselves and are thread-safe.
- * Private methods {@code startInternal} and {@code stopInternal} require the caller to hold the lock.
+ * #stopProfiler}, {@link #close}, {@link #onRateLimitChanged}, {@link #reevaluateSampling}, and the
+ * getters) acquire the lock themselves and are thread-safe. Private methods {@code startInternal}
+ * and {@code stopInternal} require the caller to hold the lock.
  */
 @ApiStatus.Internal
 @RequiresApi(api = Build.VERSION_CODES.VANILLA_ICE_CREAM)
@@ -70,7 +73,7 @@ public class PerfettoContinuousProfiler
   private final @NotNull LazyEvaluator.Evaluator<PerfettoProfiler> perfettoProfilerSupplier;
 
   private @Nullable PerfettoProfiler perfettoProfiler = null;
-  private final @NotNull FrameMetricsProfiler frameMetrics;
+  private final @NotNull ChunkMeasurementCollector chunkMeasurements;
   private boolean isRunning = false;
   private @Nullable IScopes scopes;
   private @Nullable CompositePerformanceCollector performanceCollector;
@@ -94,7 +97,7 @@ public class PerfettoContinuousProfiler
       final @NotNull LazyEvaluator.Evaluator<PerfettoProfiler> perfettoProfilerSupplier) {
     this.buildInfoProvider = buildInfoProvider;
     this.logger = logger;
-    this.frameMetrics = new FrameMetricsProfiler(frameMetricsCollector);
+    this.chunkMeasurements = new ChunkMeasurementCollector(frameMetricsCollector);
     this.executorServiceSupplier = executorServiceSupplier;
     this.perfettoProfilerSupplier = perfettoProfilerSupplier;
   }
@@ -266,8 +269,6 @@ public class PerfettoContinuousProfiler
       return;
     }
 
-    frameMetrics.startCollection();
-
     isRunning = true;
 
     if (profilerId.equals(SentryId.EMPTY_ID)) {
@@ -278,9 +279,7 @@ public class PerfettoContinuousProfiler
       chunkId = new SentryId();
     }
 
-    if (performanceCollector != null) {
-      performanceCollector.start(chunkId.toString());
-    }
+    chunkMeasurements.start(performanceCollector, chunkId.toString());
 
     try {
       stopFuture =
@@ -318,12 +317,7 @@ public class PerfettoContinuousProfiler
     final @NotNull IScopes scopes = resolveScopes();
     final @NotNull SentryOptions options = scopes.getOptions();
 
-    if (performanceCollector != null) {
-      performanceCollector.stop(chunkId.toString());
-    }
-
-    final @NotNull Map<String, ProfileMeasurement> measurements =
-        frameMetrics.stopCollection();
+    final @NotNull Map<String, ProfileMeasurement> measurements = chunkMeasurements.stop();
 
     final @Nullable File traceFile = perfettoProfiler.endAndCollect();
 
@@ -405,16 +399,20 @@ public class PerfettoContinuousProfiler
   }
 
   /**
-   * Utility wrapping {@link SentryFrameMetricsCollector} for frame metrics collection in a single
-   * profiling chunk. Wraps  with start/stop lifecycle and measurement snapshotting.
+   * Collects measurements for a single profiling chunk: frame metrics (slow/frozen frames, refresh
+   * rate) and performance data (CPU usage, memory footprint).
    *
-   * <p>Frame metrics are delivered on the FrameMetrics HandlerThread via {@code
-   * onFrameMetricCollected}. The deques use {@link ConcurrentLinkedDeque} because the HandlerThread
-   * writes and the executor thread reads in {@code stopCollectionAndBuildMeasurements}.
+   * <p>Frame metrics are delivered on the FrameMetrics HandlerThread. The deques use {@link
+   * ConcurrentLinkedDeque} because the HandlerThread writes and the executor thread reads.
+   *
+   * <p>Performance data is collected by the {@link CompositePerformanceCollector}'s Timer thread
+   * every 100ms and returned as a list on {@code stop()}.
    */
-  private static class FrameMetricsProfiler {
-    private final @NotNull SentryFrameMetricsCollector collector;
-    private @Nullable String listenerId = null;
+  private static class ChunkMeasurementCollector {
+    private final @NotNull SentryFrameMetricsCollector frameMetricsCollector;
+    private @Nullable String frameMetricsListenerId = null;
+    private @Nullable CompositePerformanceCollector performanceCollector = null;
+    private @Nullable String chunkId = null;
 
     private final @NotNull ConcurrentLinkedDeque<ProfileMeasurementValue>
         slowFrameRenderMeasurements = new ConcurrentLinkedDeque<>();
@@ -423,16 +421,22 @@ public class PerfettoContinuousProfiler
     private final @NotNull ConcurrentLinkedDeque<ProfileMeasurementValue>
         screenFrameRateMeasurements = new ConcurrentLinkedDeque<>();
 
-    FrameMetricsProfiler(final @NotNull SentryFrameMetricsCollector collector) {
-      this.collector = collector;
+    ChunkMeasurementCollector(final @NotNull SentryFrameMetricsCollector frameMetricsCollector) {
+      this.frameMetricsCollector = frameMetricsCollector;
     }
 
-    void startCollection() {
+    void start(
+        final @Nullable CompositePerformanceCollector performanceCollector,
+        final @NotNull String chunkId) {
+      this.performanceCollector = performanceCollector;
+      this.chunkId = chunkId;
+
+      // Start frame metrics collection (runs on the FrameMetrics HandlerThread)
       slowFrameRenderMeasurements.clear();
       frozenFrameRenderMeasurements.clear();
       screenFrameRateMeasurements.clear();
-      listenerId =
-          collector.startCollection(
+      frameMetricsListenerId =
+          frameMetricsCollector.startCollection(
               new SentryFrameMetricsCollector.FrameMetricsCollectorListener() {
                 float lastRefreshRate = 0;
 
@@ -460,14 +464,39 @@ public class PerfettoContinuousProfiler
                   }
                 }
               });
+
+      // Start performance collection (runs on CompositePerformanceCollector's Timer thread)
+      if (performanceCollector != null) {
+        performanceCollector.start(chunkId);
+      }
     }
 
+    /**
+     * Stops all collection, builds and returns the combined measurements map containing frame
+     * metrics and performance data (CPU, memory).
+     */
     @NotNull
-    Map<String, ProfileMeasurement> stopCollection() {
-      collector.stopCollection(listenerId);
-      listenerId = null;
-
+    Map<String, ProfileMeasurement> stop() {
       final @NotNull Map<String, ProfileMeasurement> measurements = new HashMap<>();
+      // Stop frame metrics
+      frameMetricsCollector.stopCollection(frameMetricsListenerId);
+      frameMetricsListenerId = null;
+      addFrameDataToMeasurements(measurements);
+
+      // Stop performance collection
+      @Nullable List<PerformanceCollectionData> performanceData = null;
+      if (performanceCollector != null && chunkId != null) {
+        performanceData = performanceCollector.stop(chunkId);
+        addPerformanceDataToMeasurements(performanceData, measurements);
+      }
+      performanceCollector = null;
+      chunkId = null;
+
+      return measurements;
+    }
+
+    private void addFrameDataToMeasurements(
+        final @NotNull Map<String, ProfileMeasurement> measurements) {
       if (!slowFrameRenderMeasurements.isEmpty()) {
         measurements.put(
             ProfileMeasurement.ID_SLOW_FRAME_RENDERS,
@@ -485,7 +514,56 @@ public class PerfettoContinuousProfiler
             ProfileMeasurement.ID_SCREEN_FRAME_RATES,
             new ProfileMeasurement(ProfileMeasurement.UNIT_HZ, screenFrameRateMeasurements));
       }
-      return measurements;
+    }
+
+    private static void addPerformanceDataToMeasurements(
+        final @Nullable List<PerformanceCollectionData> performanceData,
+        final @NotNull Map<String, ProfileMeasurement> measurements) {
+      if (performanceData == null || performanceData.isEmpty()) {
+        return;
+      }
+      final @NotNull ArrayDeque<ProfileMeasurementValue> cpuUsageMeasurements =
+          new ArrayDeque<>(performanceData.size());
+      final @NotNull ArrayDeque<ProfileMeasurementValue> memoryUsageMeasurements =
+          new ArrayDeque<>(performanceData.size());
+      final @NotNull ArrayDeque<ProfileMeasurementValue> nativeMemoryUsageMeasurements =
+          new ArrayDeque<>(performanceData.size());
+
+      for (final @NotNull PerformanceCollectionData data : performanceData) {
+        final long nanoTimestamp = data.getNanoTimestamp();
+        final @Nullable Double cpuUsagePercentage = data.getCpuUsagePercentage();
+        final @Nullable Long usedHeapMemory = data.getUsedHeapMemory();
+        final @Nullable Long usedNativeMemory = data.getUsedNativeMemory();
+
+        if (cpuUsagePercentage != null) {
+          cpuUsageMeasurements.addLast(
+              new ProfileMeasurementValue(nanoTimestamp, cpuUsagePercentage, nanoTimestamp));
+        }
+        if (usedHeapMemory != null) {
+          memoryUsageMeasurements.addLast(
+              new ProfileMeasurementValue(nanoTimestamp, usedHeapMemory, nanoTimestamp));
+        }
+        if (usedNativeMemory != null) {
+          nativeMemoryUsageMeasurements.addLast(
+              new ProfileMeasurementValue(nanoTimestamp, usedNativeMemory, nanoTimestamp));
+        }
+      }
+
+      if (!cpuUsageMeasurements.isEmpty()) {
+        measurements.put(
+            ProfileMeasurement.ID_CPU_USAGE,
+            new ProfileMeasurement(ProfileMeasurement.UNIT_PERCENT, cpuUsageMeasurements));
+      }
+      if (!memoryUsageMeasurements.isEmpty()) {
+        measurements.put(
+            ProfileMeasurement.ID_MEMORY_FOOTPRINT,
+            new ProfileMeasurement(ProfileMeasurement.UNIT_BYTES, memoryUsageMeasurements));
+      }
+      if (!nativeMemoryUsageMeasurements.isEmpty()) {
+        measurements.put(
+            ProfileMeasurement.ID_MEMORY_NATIVE_FOOTPRINT,
+            new ProfileMeasurement(ProfileMeasurement.UNIT_BYTES, nativeMemoryUsageMeasurements));
+      }
     }
   }
 }

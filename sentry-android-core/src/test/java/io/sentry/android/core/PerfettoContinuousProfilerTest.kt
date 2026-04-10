@@ -127,6 +127,9 @@ class PerfettoContinuousProfilerTest {
     // shouldStop must have been reset to false by startProfiler, so the profiler
     // should restart for the next chunk.
     fixture.executor.runAll()
-    assertTrue(profiler.isRunning, "Profiler should continue running after chunk restart — shouldStop must be reset on start")
+    assertTrue(
+      profiler.isRunning,
+      "Profiler should continue running after chunk restart — shouldStop must be reset on start",
+    )
   }
 }

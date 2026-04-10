@@ -17,9 +17,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Wraps Android's {@link ProfilingManager} API for Perfetto stack sampling.
- */
+/** Wraps Android's {@link ProfilingManager} API for Perfetto stack sampling. */
 @ApiStatus.Internal
 @RequiresApi(api = Build.VERSION_CODES.VANILLA_ICE_CREAM)
 public class PerfettoProfiler {
