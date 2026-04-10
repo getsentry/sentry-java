@@ -52,6 +52,8 @@ public final class SentryKafkaRecordInterceptor<K, V> implements RecordIntercept
       return delegateIntercept(record, consumer);
     }
 
+    finishStaleContext();
+
     final @NotNull IScopes forkedScopes = scopes.forkedScopes("SentryKafkaRecordInterceptor");
     final @NotNull ISentryLifecycleToken lifecycleToken = forkedScopes.makeCurrent();
 
@@ -96,6 +98,11 @@ public final class SentryKafkaRecordInterceptor<K, V> implements RecordIntercept
     if (delegate != null) {
       delegate.afterRecord(record, consumer);
     }
+  }
+
+  @Override
+  public void clearThreadState(final @NotNull Consumer<?, ?> consumer) {
+    finishStaleContext();
   }
 
   private @Nullable ConsumerRecord<K, V> delegateIntercept(
@@ -163,6 +170,12 @@ public final class SentryKafkaRecordInterceptor<K, V> implements RecordIntercept
     }
 
     return transaction;
+  }
+
+  private void finishStaleContext() {
+    if (currentContext.get() != null) {
+      finishSpan(SpanStatus.UNKNOWN, null);
+    }
   }
 
   private void finishSpan(final @NotNull SpanStatus status, final @Nullable Throwable throwable) {
