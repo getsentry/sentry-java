@@ -65,6 +65,7 @@ val mergeSpringMetadata by
         "META-INF/spring.schemas",
         "META-INF/spring-autoconfigure-metadata.properties",
         "META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports",
+        "META-INF/spring/org.springframework.boot.actuate.autoconfigure.web.ManagementContextConfiguration.imports",
       )
     outputs.dir(outputDir)
     inputs.files(classpathJars)
