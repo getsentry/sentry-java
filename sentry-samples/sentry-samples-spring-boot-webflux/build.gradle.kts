@@ -1,3 +1,7 @@
+import java.net.URI
+import java.nio.file.FileSystems
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 import java.util.zip.ZipFile
 import org.jetbrains.kotlin.config.KotlinCompilerVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
@@ -93,10 +97,19 @@ tasks.shadowJar {
   dependsOn(mergeSpringMetadata)
   manifest { attributes["Main-Class"] = "io.sentry.samples.spring.boot.SentryDemoApplication" }
   archiveClassifier.set("")
-  from(mergeSpringMetadata.map { project.layout.buildDirectory.dir("merged-spring-metadata") }) {
-    duplicatesStrategy = DuplicatesStrategy.INCLUDE
-  }
   mergeServiceFiles()
+  val metadataDir = project.layout.buildDirectory.dir("merged-spring-metadata/META-INF")
+  doLast {
+    val jarFile = archiveFile.get().asFile
+    val metaDir = metadataDir.get().asFile
+    if (!metaDir.exists()) return@doLast
+    val uri = URI.create("jar:${jarFile.toURI()}")
+    FileSystems.newFileSystem(uri, mapOf("create" to "false")).use { fs ->
+      metaDir.listFiles()?.forEach { merged ->
+        Files.copy(merged.toPath(), fs.getPath("META-INF/${merged.name}"), StandardCopyOption.REPLACE_EXISTING)
+      }
+    }
+  }
 }
 
 tasks.jar {

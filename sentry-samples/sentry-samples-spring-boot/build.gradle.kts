@@ -1,3 +1,7 @@
+import java.net.URI
+import java.nio.file.FileSystems
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 import java.util.zip.ZipFile
 import org.jetbrains.kotlin.config.KotlinCompilerVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
@@ -122,11 +126,29 @@ tasks.shadowJar {
   dependsOn(mergeSpringMetadata)
   manifest { attributes["Main-Class"] = "io.sentry.samples.spring.boot.SentryDemoApplication" }
   archiveClassifier.set("")
-  // Pre-merged Spring metadata files must come first so they win over duplicates from JARs
-  from(mergeSpringMetadata.map { project.layout.buildDirectory.dir("merged-spring-metadata") }) {
-    duplicatesStrategy = DuplicatesStrategy.INCLUDE
-  }
   mergeServiceFiles()
+
+  // After the shadow JAR is built, replace Spring metadata files with pre-merged versions.
+  // Shadow 9.x's `append` transformer doesn't properly merge these files because
+  // DuplicatesStrategy is enforced before transformers run.
+  val metadataDir = project.layout.buildDirectory.dir("merged-spring-metadata/META-INF")
+  doLast {
+    val jarFile = archiveFile.get().asFile
+    val metaDir = metadataDir.get().asFile
+    if (!metaDir.exists()) return@doLast
+    val uri = URI.create("jar:${jarFile.toURI()}")
+    val env = mapOf("create" to "false")
+    FileSystems.newFileSystem(uri, env).use { fs ->
+      metaDir.listFiles()?.forEach { merged ->
+        val target = fs.getPath("META-INF/${merged.name}")
+        Files.copy(
+          merged.toPath(),
+          target,
+          StandardCopyOption.REPLACE_EXISTING,
+        )
+      }
+    }
+  }
 }
 
 tasks.jar {
