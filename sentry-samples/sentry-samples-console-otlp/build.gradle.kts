@@ -51,6 +51,7 @@ dependencies {
 tasks.shadowJar {
   manifest { attributes["Main-Class"] = "io.sentry.samples.console.Main" }
   archiveClassifier.set("") // Remove the classifier so it replaces the regular JAR
+  duplicatesStrategy = DuplicatesStrategy.INCLUDE
   mergeServiceFiles()
 }
 

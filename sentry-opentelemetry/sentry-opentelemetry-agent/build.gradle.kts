@@ -156,7 +156,11 @@ tasks {
     // would prevent service file merging.
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
 
-    mergeServiceFiles { include("inst/META-INF/services/*") }
+    // Use `path` instead of `include` filter so that the merged service files are
+    // written back to `inst/META-INF/services/` (the agent classloader's isolated path).
+    // Using `include("inst/META-INF/services/*")` with Shadow 9.x strips the `inst/`
+    // prefix and writes to `META-INF/services/`, which breaks the agent's class loading.
+    mergeServiceFiles { path = "inst/META-INF/services" }
     exclude("**/module-info.class")
     relocatePackages(this)
 

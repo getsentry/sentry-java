@@ -45,6 +45,7 @@ dependencies {
 tasks.shadowJar {
   manifest { attributes["Main-Class"] = "io.sentry.samples.log4j2.Main" }
   archiveClassifier.set("") // Remove the classifier so it replaces the regular JAR
+  duplicatesStrategy = DuplicatesStrategy.INCLUDE
   mergeServiceFiles()
   // Use Log4j2 cache transformer to properly handle plugin files
   transform(
