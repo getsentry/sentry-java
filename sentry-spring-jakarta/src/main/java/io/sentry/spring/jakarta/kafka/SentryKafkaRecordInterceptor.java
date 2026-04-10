@@ -1,6 +1,7 @@
 package io.sentry.spring.jakarta.kafka;
 
 import io.sentry.BaggageHeader;
+import io.sentry.DateUtils;
 import io.sentry.IScopes;
 import io.sentry.ISentryLifecycleToken;
 import io.sentry.ITransaction;
@@ -172,8 +173,9 @@ public final class SentryKafkaRecordInterceptor<K, V> implements RecordIntercept
         headerValue(record, SentryProducerInterceptor.SENTRY_ENQUEUED_TIME_HEADER);
     if (enqueuedTimeStr != null) {
       try {
-        final long enqueuedTime = Long.parseLong(enqueuedTimeStr);
-        final long latencyMs = System.currentTimeMillis() - enqueuedTime;
+        final double enqueuedTimeSeconds = Double.parseDouble(enqueuedTimeStr);
+        final double nowSeconds = DateUtils.millisToSeconds(System.currentTimeMillis());
+        final long latencyMs = (long) ((nowSeconds - enqueuedTimeSeconds) * 1000);
         if (latencyMs >= 0) {
           transaction.setData(SpanDataConvention.MESSAGING_MESSAGE_RECEIVE_LATENCY, latencyMs);
         }

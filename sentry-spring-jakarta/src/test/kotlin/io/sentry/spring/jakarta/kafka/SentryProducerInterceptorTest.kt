@@ -104,8 +104,8 @@ class SentryProducerInterceptorTest {
     val enqueuedTimeHeader =
       resultHeaders.lastHeader(SentryProducerInterceptor.SENTRY_ENQUEUED_TIME_HEADER)
     assertNotNull(enqueuedTimeHeader, "sentry-task-enqueued-time header should be injected")
-    val enqueuedTime = String(enqueuedTimeHeader.value(), StandardCharsets.UTF_8).toLong()
-    assertTrue(enqueuedTime > 0, "enqueued time should be a positive epoch millis value")
+    val enqueuedTime = String(enqueuedTimeHeader.value(), StandardCharsets.UTF_8).toDouble()
+    assertTrue(enqueuedTime > 0, "enqueued time should be a positive epoch seconds value")
   }
 
   @Test
