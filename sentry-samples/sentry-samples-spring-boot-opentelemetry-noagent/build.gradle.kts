@@ -87,26 +87,26 @@ dependencies {
 // from the runtime classpath and include the merged result in the shadow JAR.
 val mergeSpringMetadata by
   tasks.registering {
-    val outputDir = project.layout.buildDirectory.dir("merged-spring-metadata/META-INF")
+    val outputDir = project.layout.buildDirectory.dir("merged-spring-metadata")
     val classpathJars = configurations.runtimeClasspath.get().filter { it.name.endsWith(".jar") }
     val filesToMerge =
       listOf(
-        "spring.factories",
-        "spring.handlers",
-        "spring.schemas",
-        "spring-autoconfigure-metadata.properties",
+        "META-INF/spring.factories",
+        "META-INF/spring.handlers",
+        "META-INF/spring.schemas",
+        "META-INF/spring-autoconfigure-metadata.properties",
+        "META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports",
       )
     outputs.dir(outputDir)
     inputs.files(classpathJars)
     doLast {
       val out = outputDir.get().asFile
-      out.mkdirs()
-      filesToMerge.forEach { fileName ->
+      filesToMerge.forEach { entryPath ->
         val merged = StringBuilder()
         classpathJars.forEach { jar ->
           try {
             val zip = ZipFile(jar)
-            val entry = zip.getEntry("META-INF/$fileName")
+            val entry = zip.getEntry(entryPath)
             if (entry != null) {
               merged.append(zip.getInputStream(entry).bufferedReader().readText())
               if (!merged.endsWith("\n")) merged.append("\n")
@@ -117,7 +117,9 @@ val mergeSpringMetadata by
           }
         }
         if (merged.isNotEmpty()) {
-          File(out, fileName).writeText(merged.toString())
+          val outFile = File(out, entryPath)
+          outFile.parentFile.mkdirs()
+          outFile.writeText(merged.toString())
         }
       }
     }
@@ -129,7 +131,7 @@ tasks.shadowJar {
   manifest { attributes["Main-Class"] = "io.sentry.samples.spring.boot.SentryDemoApplication" }
   archiveClassifier.set("")
   mergeServiceFiles()
-  val metadataDir = project.layout.buildDirectory.dir("merged-spring-metadata/META-INF")
+  val metadataDir = project.layout.buildDirectory.dir("merged-spring-metadata")
   doLast {
     val jarFile = archiveFile.get().asFile
     val metaDir = metadataDir.get().asFile
