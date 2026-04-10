@@ -53,24 +53,25 @@ public final class SentryProducerInterceptor<K, V> implements ProducerIntercepto
       return record;
     }
 
-    final @NotNull SpanOptions spanOptions = new SpanOptions();
-    spanOptions.setOrigin(TRACE_ORIGIN);
-    final @NotNull ISpan span = activeSpan.startChild("queue.publish", record.topic(), spanOptions);
-    if (span.isNoOp()) {
-      return record;
-    }
-
-    span.setData(SpanDataConvention.MESSAGING_SYSTEM, "kafka");
-    span.setData(SpanDataConvention.MESSAGING_DESTINATION_NAME, record.topic());
-
     try {
-      injectHeaders(record.headers(), span);
-    } catch (Throwable ignored) {
-      // Header injection must not break the send
-    }
+      final @NotNull SpanOptions spanOptions = new SpanOptions();
+      spanOptions.setOrigin(TRACE_ORIGIN);
+      final @NotNull ISpan span =
+          activeSpan.startChild("queue.publish", record.topic(), spanOptions);
+      if (span.isNoOp()) {
+        return record;
+      }
 
-    span.setStatus(SpanStatus.OK);
-    span.finish();
+      span.setData(SpanDataConvention.MESSAGING_SYSTEM, "kafka");
+      span.setData(SpanDataConvention.MESSAGING_DESTINATION_NAME, record.topic());
+
+      injectHeaders(record.headers(), span);
+
+      span.setStatus(SpanStatus.OK);
+      span.finish();
+    } catch (Throwable ignored) {
+      // Instrumentation must never break the customer's Kafka send
+    }
 
     return record;
   }
