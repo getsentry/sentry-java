@@ -11,6 +11,7 @@ import io.sentry.SpanStatus;
 import io.sentry.TransactionContext;
 import io.sentry.TransactionOptions;
 import io.sentry.util.SpanUtils;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
@@ -21,6 +22,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.kafka.listener.RecordInterceptor;
+import org.springframework.kafka.support.KafkaHeaders;
 
 /**
  * A {@link RecordInterceptor} that creates {@code queue.process} transactions for incoming Kafka
@@ -161,6 +163,11 @@ public final class SentryKafkaRecordInterceptor<K, V> implements RecordIntercept
       transaction.setData(SpanDataConvention.MESSAGING_MESSAGE_ID, messageId);
     }
 
+    final @Nullable Integer retryCount = retryCount(record);
+    if (retryCount != null) {
+      transaction.setData(SpanDataConvention.MESSAGING_MESSAGE_RETRY_COUNT, retryCount);
+    }
+
     final @Nullable String enqueuedTimeStr =
         headerValue(record, SentryProducerInterceptor.SENTRY_ENQUEUED_TIME_HEADER);
     if (enqueuedTimeStr != null) {
@@ -176,6 +183,25 @@ public final class SentryKafkaRecordInterceptor<K, V> implements RecordIntercept
     }
 
     return transaction;
+  }
+
+  private @Nullable Integer retryCount(final @NotNull ConsumerRecord<K, V> record) {
+    final @Nullable Header header = record.headers().lastHeader(KafkaHeaders.DELIVERY_ATTEMPT);
+    if (header == null) {
+      return null;
+    }
+
+    final byte[] value = header.value();
+    if (value == null || value.length != Integer.BYTES) {
+      return null;
+    }
+
+    final int attempt = ByteBuffer.wrap(value).getInt();
+    if (attempt <= 0) {
+      return null;
+    }
+
+    return attempt - 1;
   }
 
   private void finishStaleContext() {
