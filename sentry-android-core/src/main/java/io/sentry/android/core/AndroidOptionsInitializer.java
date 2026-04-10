@@ -345,10 +345,11 @@ final class AndroidOptionsInitializer {
                 ? new PerfettoContinuousProfiler(
                     buildInfoProvider,
                     options.getLogger(),
+                    frameMetricsCollector,
                     () -> options.getExecutorService(),
                     () ->
                         new PerfettoProfiler(
-                            context.getApplicationContext(), frameMetricsCollector, options.getLogger()))
+                            context.getApplicationContext(), options.getLogger()))
                 : AndroidContinuousProfiler.createLegacy(
                     buildInfoProvider,
                     frameMetricsCollector,

@@ -20,11 +20,19 @@ import io.sentry.SentryDate;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.TracesSampler;
+import io.sentry.SentryNanotimeDate;
+import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
+import io.sentry.profilemeasurements.ProfileMeasurement;
+import io.sentry.profilemeasurements.ProfileMeasurementValue;
 import io.sentry.protocol.SentryId;
 import io.sentry.transport.RateLimiter;
 import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.LazyEvaluator;
 import io.sentry.util.SentryRandom;
+import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -62,6 +70,7 @@ public class PerfettoContinuousProfiler
   private final @NotNull LazyEvaluator.Evaluator<PerfettoProfiler> perfettoProfilerSupplier;
 
   private @Nullable PerfettoProfiler perfettoProfiler = null;
+  private final @NotNull FrameMetricsProfiler frameMetrics;
   private boolean isRunning = false;
   private @Nullable IScopes scopes;
   private @Nullable CompositePerformanceCollector performanceCollector;
@@ -80,10 +89,12 @@ public class PerfettoContinuousProfiler
   public PerfettoContinuousProfiler(
       final @NotNull BuildInfoProvider buildInfoProvider,
       final @NotNull ILogger logger,
+      final @NotNull SentryFrameMetricsCollector frameMetricsCollector,
       final @NotNull LazyEvaluator.Evaluator<ISentryExecutorService> executorServiceSupplier,
       final @NotNull LazyEvaluator.Evaluator<PerfettoProfiler> perfettoProfilerSupplier) {
     this.buildInfoProvider = buildInfoProvider;
     this.logger = logger;
+    this.frameMetrics = new FrameMetricsProfiler(frameMetricsCollector);
     this.executorServiceSupplier = executorServiceSupplier;
     this.perfettoProfilerSupplier = perfettoProfilerSupplier;
   }
@@ -248,14 +259,14 @@ public class PerfettoContinuousProfiler
 
     startProfileChunkTimestamp = scopes.getOptions().getDateProvider().now();
 
-    final AndroidProfiler.ProfileStartData startData =
-        perfettoProfiler.start(MAX_CHUNK_DURATION_MILLIS);
-    if (startData == null) {
+    if (!perfettoProfiler.start(MAX_CHUNK_DURATION_MILLIS)) {
       logger.log(
           SentryLevel.ERROR,
-          "Failed to start Perfetto profiling. PerfettoProfiler.start() returned null.");
+          "Failed to start Perfetto profiling. PerfettoProfiler.start() returned false.");
       return;
     }
+
+    frameMetrics.startCollection();
 
     isRunning = true;
 
@@ -296,7 +307,8 @@ public class PerfettoContinuousProfiler
     if (stopFuture != null) {
       stopFuture.cancel(false);
     }
-    // check if profiler was created and it's running
+
+    // Make sure perfetto was running
     if (perfettoProfiler == null || !isRunning) {
       profilerId = SentryId.EMPTY_ID;
       chunkId = SentryId.EMPTY_ID;
@@ -310,10 +322,12 @@ public class PerfettoContinuousProfiler
       performanceCollector.stop(chunkId.toString());
     }
 
-    final AndroidProfiler.ProfileEndData endData = perfettoProfiler.endAndCollect();
+    final @NotNull Map<String, ProfileMeasurement> measurements =
+        frameMetrics.stopCollection();
 
-    // check if profiler ended successfully
-    if (endData == null) {
+    final @Nullable File traceFile = perfettoProfiler.endAndCollect();
+
+    if (traceFile == null) {
       logger.log(
           SentryLevel.ERROR,
           "An error occurred while collecting a profile chunk, and it won't be sent.");
@@ -322,8 +336,8 @@ public class PerfettoContinuousProfiler
           new ProfileChunk.Builder(
               profilerId,
               chunkId,
-              endData.measurementsMap,
-              endData.traceFile,
+              measurements,
+              traceFile,
               startProfileChunkTimestamp,
               ProfileChunk.PLATFORM_ANDROID);
       builder.setContentType("perfetto");
@@ -388,5 +402,90 @@ public class PerfettoContinuousProfiler
   @VisibleForTesting
   public int getActiveTraceCount() {
     return activeTraceCount;
+  }
+
+  /**
+   * Utility wrapping {@link SentryFrameMetricsCollector} for frame metrics collection in a single
+   * profiling chunk. Wraps  with start/stop lifecycle and measurement snapshotting.
+   *
+   * <p>Frame metrics are delivered on the FrameMetrics HandlerThread via {@code
+   * onFrameMetricCollected}. The deques use {@link ConcurrentLinkedDeque} because the HandlerThread
+   * writes and the executor thread reads in {@code stopCollectionAndBuildMeasurements}.
+   */
+  private static class FrameMetricsProfiler {
+    private final @NotNull SentryFrameMetricsCollector collector;
+    private @Nullable String listenerId = null;
+
+    private final @NotNull ConcurrentLinkedDeque<ProfileMeasurementValue>
+        slowFrameRenderMeasurements = new ConcurrentLinkedDeque<>();
+    private final @NotNull ConcurrentLinkedDeque<ProfileMeasurementValue>
+        frozenFrameRenderMeasurements = new ConcurrentLinkedDeque<>();
+    private final @NotNull ConcurrentLinkedDeque<ProfileMeasurementValue>
+        screenFrameRateMeasurements = new ConcurrentLinkedDeque<>();
+
+    FrameMetricsProfiler(final @NotNull SentryFrameMetricsCollector collector) {
+      this.collector = collector;
+    }
+
+    void startCollection() {
+      slowFrameRenderMeasurements.clear();
+      frozenFrameRenderMeasurements.clear();
+      screenFrameRateMeasurements.clear();
+      listenerId =
+          collector.startCollection(
+              new SentryFrameMetricsCollector.FrameMetricsCollectorListener() {
+                float lastRefreshRate = 0;
+
+                @Override
+                public void onFrameMetricCollected(
+                    final long frameStartNanos,
+                    final long frameEndNanos,
+                    final long durationNanos,
+                    final long delayNanos,
+                    final boolean isSlow,
+                    final boolean isFrozen,
+                    final float refreshRate) {
+                  final long timestampNanos = new SentryNanotimeDate().nanoTimestamp();
+                  if (isFrozen) {
+                    frozenFrameRenderMeasurements.addLast(
+                        new ProfileMeasurementValue(frameEndNanos, durationNanos, timestampNanos));
+                  } else if (isSlow) {
+                    slowFrameRenderMeasurements.addLast(
+                        new ProfileMeasurementValue(frameEndNanos, durationNanos, timestampNanos));
+                  }
+                  if (refreshRate != lastRefreshRate) {
+                    lastRefreshRate = refreshRate;
+                    screenFrameRateMeasurements.addLast(
+                        new ProfileMeasurementValue(frameEndNanos, refreshRate, timestampNanos));
+                  }
+                }
+              });
+    }
+
+    @NotNull
+    Map<String, ProfileMeasurement> stopCollection() {
+      collector.stopCollection(listenerId);
+      listenerId = null;
+
+      final @NotNull Map<String, ProfileMeasurement> measurements = new HashMap<>();
+      if (!slowFrameRenderMeasurements.isEmpty()) {
+        measurements.put(
+            ProfileMeasurement.ID_SLOW_FRAME_RENDERS,
+            new ProfileMeasurement(
+                ProfileMeasurement.UNIT_NANOSECONDS, slowFrameRenderMeasurements));
+      }
+      if (!frozenFrameRenderMeasurements.isEmpty()) {
+        measurements.put(
+            ProfileMeasurement.ID_FROZEN_FRAME_RENDERS,
+            new ProfileMeasurement(
+                ProfileMeasurement.UNIT_NANOSECONDS, frozenFrameRenderMeasurements));
+      }
+      if (!screenFrameRateMeasurements.isEmpty()) {
+        measurements.put(
+            ProfileMeasurement.ID_SCREEN_FRAME_RATES,
+            new ProfileMeasurement(ProfileMeasurement.UNIT_HZ, screenFrameRateMeasurements));
+      }
+      return measurements;
+    }
   }
 }
