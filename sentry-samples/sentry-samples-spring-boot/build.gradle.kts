@@ -1,5 +1,6 @@
 import org.jetbrains.kotlin.config.KotlinCompilerVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import java.util.zip.ZipFile
 
 plugins {
   java
@@ -73,16 +74,50 @@ dependencies {
   testImplementation("org.apache.httpcomponents:httpclient")
 }
 
+// Shadow 9.x enforces DuplicatesStrategy before transformers run, so the `append`
+// transformer only sees one copy of each file. We pre-merge Spring metadata files
+// from the runtime classpath and include the merged result in the shadow JAR.
+val mergeSpringMetadata by tasks.registering {
+  val outputDir = project.layout.buildDirectory.dir("merged-spring-metadata/META-INF")
+  val filesToMerge =
+    listOf("spring.factories", "spring.handlers", "spring.schemas", "spring-autoconfigure-metadata.properties")
+
+  outputs.dir(outputDir)
+  inputs.files(configurations.runtimeClasspath)
+
+  doLast {
+    val out = outputDir.get().asFile
+    out.mkdirs()
+    filesToMerge.forEach { fileName ->
+      val merged = StringBuilder()
+      configurations.runtimeClasspath.get().filter { it.name.endsWith(".jar") }.forEach { jar ->
+        try {
+          val zip = ZipFile(jar)
+          val entry = zip.getEntry("META-INF/$fileName")
+          if (entry != null) {
+            merged.append(zip.getInputStream(entry).bufferedReader().readText())
+            if (!merged.endsWith("\n")) merged.append("\n")
+          }
+          zip.close()
+        } catch (e: Exception) { /* skip non-zip files */ }
+      }
+      if (merged.isNotEmpty()) {
+        File(out, fileName).writeText(merged.toString())
+      }
+    }
+  }
+}
+
 // Configure the Shadow JAR (executable JAR with all dependencies)
 tasks.shadowJar {
+  dependsOn(mergeSpringMetadata)
   manifest { attributes["Main-Class"] = "io.sentry.samples.spring.boot.SentryDemoApplication" }
   archiveClassifier.set("")
-  duplicatesStrategy = DuplicatesStrategy.INCLUDE
+  // Pre-merged Spring metadata files must come first so they win over duplicates from JARs
+  from(mergeSpringMetadata.map { project.layout.buildDirectory.dir("merged-spring-metadata") }) {
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+  }
   mergeServiceFiles()
-  append("META-INF/spring.handlers")
-  append("META-INF/spring.schemas")
-  append("META-INF/spring.factories")
-  append("META-INF/spring-autoconfigure-metadata.properties")
 }
 
 tasks.jar {
