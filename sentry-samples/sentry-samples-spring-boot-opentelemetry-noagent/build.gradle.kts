@@ -81,32 +81,45 @@ dependencies {
 // Shadow 9.x enforces DuplicatesStrategy before transformers run, so the `append`
 // transformer only sees one copy of each file. We pre-merge Spring metadata files
 // from the runtime classpath and include the merged result in the shadow JAR.
-val mergeSpringMetadata by tasks.registering {
-  val outputDir = project.layout.buildDirectory.dir("merged-spring-metadata/META-INF")
-  val filesToMerge =
-    listOf("spring.factories", "spring.handlers", "spring.schemas", "spring-autoconfigure-metadata.properties")
-  outputs.dir(outputDir)
-  inputs.files(configurations.runtimeClasspath)
-  doLast {
-    val out = outputDir.get().asFile
-    out.mkdirs()
-    filesToMerge.forEach { fileName ->
-      val merged = StringBuilder()
-      configurations.runtimeClasspath.get().filter { it.name.endsWith(".jar") }.forEach { jar ->
-        try {
-          val zip = ZipFile(jar)
-          val entry = zip.getEntry("META-INF/$fileName")
-          if (entry != null) {
-            merged.append(zip.getInputStream(entry).bufferedReader().readText())
-            if (!merged.endsWith("\n")) merged.append("\n")
+val mergeSpringMetadata by
+  tasks.registering {
+    val outputDir = project.layout.buildDirectory.dir("merged-spring-metadata/META-INF")
+    val filesToMerge =
+      listOf(
+        "spring.factories",
+        "spring.handlers",
+        "spring.schemas",
+        "spring-autoconfigure-metadata.properties",
+      )
+    outputs.dir(outputDir)
+    inputs.files(configurations.runtimeClasspath)
+    doLast {
+      val out = outputDir.get().asFile
+      out.mkdirs()
+      filesToMerge.forEach { fileName ->
+        val merged = StringBuilder()
+        configurations.runtimeClasspath
+          .get()
+          .filter { it.name.endsWith(".jar") }
+          .forEach { jar ->
+            try {
+              val zip = ZipFile(jar)
+              val entry = zip.getEntry("META-INF/$fileName")
+              if (entry != null) {
+                merged.append(zip.getInputStream(entry).bufferedReader().readText())
+                if (!merged.endsWith("\n")) merged.append("\n")
+              }
+              zip.close()
+            } catch (e: Exception) {
+              /* skip non-zip files */
+            }
           }
-          zip.close()
-        } catch (e: Exception) { /* skip non-zip files */ }
+        if (merged.isNotEmpty()) {
+          File(out, fileName).writeText(merged.toString())
+        }
       }
-      if (merged.isNotEmpty()) { File(out, fileName).writeText(merged.toString()) }
     }
   }
-}
 
 // Configure the Shadow JAR (executable JAR with all dependencies)
 tasks.shadowJar {
