@@ -96,7 +96,11 @@ tasks.shadowJar {
     val uri = URI.create("jar:${jarFile.toURI()}")
     FileSystems.newFileSystem(uri, mapOf("create" to "false")).use { fs ->
       metaDir.listFiles()?.forEach { merged ->
-        Files.copy(merged.toPath(), fs.getPath("META-INF/${merged.name}"), StandardCopyOption.REPLACE_EXISTING)
+        Files.copy(
+          merged.toPath(),
+          fs.getPath("META-INF/${merged.name}"),
+          StandardCopyOption.REPLACE_EXISTING,
+        )
       }
     }
   }

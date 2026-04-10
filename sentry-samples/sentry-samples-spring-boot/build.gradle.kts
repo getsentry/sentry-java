@@ -141,11 +141,7 @@ tasks.shadowJar {
     FileSystems.newFileSystem(uri, env).use { fs ->
       metaDir.listFiles()?.forEach { merged ->
         val target = fs.getPath("META-INF/${merged.name}")
-        Files.copy(
-          merged.toPath(),
-          target,
-          StandardCopyOption.REPLACE_EXISTING,
-        )
+        Files.copy(merged.toPath(), target, StandardCopyOption.REPLACE_EXISTING)
       }
     }
   }
