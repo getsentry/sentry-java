@@ -11,6 +11,7 @@ import io.sentry.ProfileLifecycle
 import io.sentry.Sentry
 import io.sentry.SentryLevel
 import io.sentry.TracesSampler
+import io.sentry.android.core.internal.util.SentryFrameMetricsCollector
 import io.sentry.protocol.SentryId
 import io.sentry.test.DeferredExecutorService
 import io.sentry.transport.RateLimiter
@@ -45,6 +46,7 @@ class PerfettoContinuousProfilerTest {
     val mockLogger = mock<ILogger>()
     val mockTracesSampler = mock<TracesSampler>()
     val mockPerfettoProfiler = mock<PerfettoProfiler>()
+    val frameMetricsCollector: SentryFrameMetricsCollector = mock()
 
     val scopes: IScopes = mock()
 
@@ -58,14 +60,7 @@ class PerfettoContinuousProfilerTest {
 
     init {
       whenever(mockTracesSampler.sampleSessionProfile(any())).thenReturn(true)
-      whenever(mockPerfettoProfiler.start(any()))
-        .thenReturn(
-          AndroidProfiler.ProfileStartData(
-            System.nanoTime(),
-            0L,
-            io.sentry.DateUtils.getCurrentDateTime(),
-          )
-        )
+      whenever(mockPerfettoProfiler.start(any())).thenReturn(true)
     }
 
     fun getSut(): PerfettoContinuousProfiler {
@@ -74,6 +69,7 @@ class PerfettoContinuousProfilerTest {
       return PerfettoContinuousProfiler(
         buildInfo,
         mockLogger,
+        frameMetricsCollector,
         { options.executorService },
         { mockPerfettoProfiler },
       )

@@ -9,14 +9,7 @@ import android.os.ProfilingResult;
 import androidx.annotation.RequiresApi;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
-import io.sentry.SentryNanotimeDate;
-import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
-import io.sentry.profilemeasurements.ProfileMeasurement;
-import io.sentry.profilemeasurements.ProfileMeasurementValue;
 import java.io.File;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -24,6 +17,9 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * Wraps Android's {@link ProfilingManager} API for Perfetto stack sampling.
+ */
 @ApiStatus.Internal
 @RequiresApi(api = Build.VERSION_CODES.VANILLA_ICE_CREAM)
 public class PerfettoProfiler {
@@ -38,23 +34,11 @@ public class PerfettoProfiler {
   private static final int PROFILING_FREQUENCY_HZ = 100;
 
   private final @NotNull Context context;
-  private final @NotNull SentryFrameMetricsCollector frameMetricsCollector;
   private final @NotNull ILogger logger;
   private @Nullable CancellationSignal cancellationSignal = null;
-  private @Nullable String frameMetricsCollectorId;
   private volatile boolean isRunning = false;
   private @Nullable ProfilingResult profilingResult = null;
   private @Nullable CountDownLatch resultLatch = null;
-
-  // ConcurrentLinkedDeque because onFrameMetricCollected (HandlerThread) and endAndCollect
-  // (executor thread) can access these concurrently.
-  private final @NotNull ConcurrentLinkedDeque<ProfileMeasurementValue>
-      slowFrameRenderMeasurements = new ConcurrentLinkedDeque<>();
-  private final @NotNull ConcurrentLinkedDeque<ProfileMeasurementValue>
-      frozenFrameRenderMeasurements = new ConcurrentLinkedDeque<>();
-  private final @NotNull ConcurrentLinkedDeque<ProfileMeasurementValue>
-      screenFrameRateMeasurements = new ConcurrentLinkedDeque<>();
-  private final @NotNull Map<String, ProfileMeasurement> measurementsMap = new HashMap<>();
 
   /**
    * Callback invoked exactly once per {@code requestProfiling} call, either on success (with a file
@@ -63,12 +47,8 @@ public class PerfettoProfiler {
    */
   private final @NotNull Consumer<ProfilingResult> profilingResultListener;
 
-  public PerfettoProfiler(
-      final @NotNull Context context,
-      final @NotNull SentryFrameMetricsCollector frameMetricsCollector,
-      final @NotNull ILogger logger) {
+  public PerfettoProfiler(final @NotNull Context context, final @NotNull ILogger logger) {
     this.context = context;
-    this.frameMetricsCollector = frameMetricsCollector;
     this.logger = logger;
     this.profilingResultListener =
         result -> {
@@ -84,23 +64,18 @@ public class PerfettoProfiler {
         };
   }
 
-  public @Nullable AndroidProfiler.ProfileStartData start(final long durationMs) {
+  public boolean start(final long durationMs) {
     if (isRunning) {
       logger.log(SentryLevel.WARNING, "Perfetto profiling has already started...");
-      return null;
+      return false;
     }
 
     final @Nullable ProfilingManager profilingManager =
         (ProfilingManager) context.getSystemService(Context.PROFILING_SERVICE);
     if (profilingManager == null) {
       logger.log(SentryLevel.WARNING, "ProfilingManager is not available.");
-      return null;
+      return false;
     }
-
-    measurementsMap.clear();
-    slowFrameRenderMeasurements.clear();
-    frozenFrameRenderMeasurements.clear();
-    screenFrameRateMeasurements.clear();
 
     cancellationSignal = new CancellationSignal();
     resultLatch = new CountDownLatch(1);
@@ -122,54 +97,23 @@ public class PerfettoProfiler {
       logger.log(SentryLevel.ERROR, "Failed to request Perfetto profiling.", e);
       cancellationSignal = null;
       resultLatch = null;
-      return null;
+      return false;
     }
 
-    frameMetricsCollectorId =
-        frameMetricsCollector.startCollection(
-            new SentryFrameMetricsCollector.FrameMetricsCollectorListener() {
-              float lastRefreshRate = 0;
-
-              @Override
-              public void onFrameMetricCollected(
-                  final long frameStartNanos,
-                  final long frameEndNanos,
-                  final long durationNanos,
-                  final long delayNanos,
-                  final boolean isSlow,
-                  final boolean isFrozen,
-                  final float refreshRate) {
-                final long timestampNanos = new SentryNanotimeDate().nanoTimestamp();
-                if (isFrozen) {
-                  frozenFrameRenderMeasurements.addLast(
-                      new ProfileMeasurementValue(frameEndNanos, durationNanos, timestampNanos));
-                } else if (isSlow) {
-                  slowFrameRenderMeasurements.addLast(
-                      new ProfileMeasurementValue(frameEndNanos, durationNanos, timestampNanos));
-                }
-                if (refreshRate != lastRefreshRate) {
-                  lastRefreshRate = refreshRate;
-                  screenFrameRateMeasurements.addLast(
-                      new ProfileMeasurementValue(frameEndNanos, refreshRate, timestampNanos));
-                }
-              }
-            });
-
     isRunning = true;
-    return new AndroidProfiler.ProfileStartData(
-        System.nanoTime(),
-        android.os.Process.getElapsedCpuTime(),
-        io.sentry.DateUtils.getCurrentDateTime());
+    return true;
   }
 
-  public @Nullable AndroidProfiler.ProfileEndData endAndCollect() {
+  /**
+   * Cancels the current profiling session and blocks until the result is available (up to 5
+   * seconds). Returns the trace file on success, or null on error/timeout.
+   */
+  public @Nullable File endAndCollect() {
     if (!isRunning) {
       logger.log(SentryLevel.WARNING, "Perfetto profiler not running");
       return null;
     }
     isRunning = false;
-
-    frameMetricsCollector.stopCollection(frameMetricsCollectorId);
 
     if (cancellationSignal != null) {
       cancellationSignal.cancel();
@@ -231,29 +175,7 @@ public class PerfettoProfiler {
       return null;
     }
 
-    if (!slowFrameRenderMeasurements.isEmpty()) {
-      measurementsMap.put(
-          ProfileMeasurement.ID_SLOW_FRAME_RENDERS,
-          new ProfileMeasurement(ProfileMeasurement.UNIT_NANOSECONDS, slowFrameRenderMeasurements));
-    }
-    if (!frozenFrameRenderMeasurements.isEmpty()) {
-      measurementsMap.put(
-          ProfileMeasurement.ID_FROZEN_FRAME_RENDERS,
-          new ProfileMeasurement(
-              ProfileMeasurement.UNIT_NANOSECONDS, frozenFrameRenderMeasurements));
-    }
-    if (!screenFrameRateMeasurements.isEmpty()) {
-      measurementsMap.put(
-          ProfileMeasurement.ID_SCREEN_FRAME_RATES,
-          new ProfileMeasurement(ProfileMeasurement.UNIT_HZ, screenFrameRateMeasurements));
-    }
-
-    return new AndroidProfiler.ProfileEndData(
-        System.nanoTime(),
-        android.os.Process.getElapsedCpuTime(),
-        false,
-        traceFile,
-        measurementsMap);
+    return traceFile;
   }
 
   boolean isRunning() {

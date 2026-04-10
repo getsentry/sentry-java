@@ -339,7 +339,7 @@ public final class io/sentry/android/core/NetworkBreadcrumbsIntegration : io/sen
 }
 
 public class io/sentry/android/core/PerfettoContinuousProfiler : io/sentry/IContinuousProfiler, io/sentry/transport/RateLimiter$IRateLimitObserver {
-	public fun <init> (Landroid/content/Context;Lio/sentry/android/core/BuildInfoProvider;Lio/sentry/android/core/internal/util/SentryFrameMetricsCollector;Lio/sentry/ILogger;Lio/sentry/util/LazyEvaluator$Evaluator;)V
+	public fun <init> (Lio/sentry/android/core/BuildInfoProvider;Lio/sentry/ILogger;Lio/sentry/android/core/internal/util/SentryFrameMetricsCollector;Lio/sentry/util/LazyEvaluator$Evaluator;Lio/sentry/util/LazyEvaluator$Evaluator;)V
 	public fun close (Z)V
 	public fun getActiveTraceCount ()I
 	public fun getChunkId ()Lio/sentry/protocol/SentryId;
@@ -352,9 +352,9 @@ public class io/sentry/android/core/PerfettoContinuousProfiler : io/sentry/ICont
 }
 
 public class io/sentry/android/core/PerfettoProfiler {
-	public fun <init> (Landroid/content/Context;Lio/sentry/android/core/internal/util/SentryFrameMetricsCollector;Lio/sentry/ILogger;)V
-	public fun endAndCollect ()Lio/sentry/android/core/AndroidProfiler$ProfileEndData;
-	public fun start (J)Lio/sentry/android/core/AndroidProfiler$ProfileStartData;
+	public fun <init> (Landroid/content/Context;Lio/sentry/ILogger;)V
+	public fun endAndCollect ()Ljava/io/File;
+	public fun start (J)Z
 }
 
 public final class io/sentry/android/core/ScreenshotEventProcessor : io/sentry/EventProcessor {
