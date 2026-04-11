@@ -128,34 +128,24 @@ val mergeSpringMetadata by
 
 // Configure the Shadow JAR (executable JAR with all dependencies)
 tasks.shadowJar {
+  dependsOn(mergeSpringMetadata)
   manifest { attributes["Main-Class"] = "io.sentry.samples.spring.boot.SentryDemoApplication" }
   archiveClassifier.set("")
   mergeServiceFiles()
   outputs.upToDateWhen { false }
-  finalizedBy("patchSpringMetadata")
-}
-
-tasks.register("patchSpringMetadata") {
-  dependsOn(mergeSpringMetadata, tasks.shadowJar)
   val metadataDir = project.layout.buildDirectory.dir("merged-spring-metadata")
-  val jarFile = tasks.shadowJar.flatMap { it.archiveFile }
-  inputs.dir(metadataDir)
-  inputs.file(jarFile)
   doLast {
     val baseDir = metadataDir.get().asFile
-    val jar = jarFile.get().asFile
+    val jar = archiveFile.get().asFile
     if (!baseDir.exists()) return@doLast
     val uri = URI.create("jar:${jar.toURI()}")
     FileSystems.newFileSystem(uri, mapOf("create" to "false")).use { fs ->
-      baseDir
-        .walkTopDown()
-        .filter { it.isFile }
-        .forEach { merged ->
-          val relative = merged.relativeTo(baseDir).path
-          val target = fs.getPath(relative)
-          if (target.parent != null) Files.createDirectories(target.parent)
-          Files.copy(merged.toPath(), target, StandardCopyOption.REPLACE_EXISTING)
-        }
+      baseDir.walkTopDown().filter { it.isFile }.forEach { merged ->
+        val relative = merged.relativeTo(baseDir).path
+        val target = fs.getPath(relative)
+        if (target.parent != null) Files.createDirectories(target.parent)
+        Files.copy(merged.toPath(), target, StandardCopyOption.REPLACE_EXISTING)
+      }
     }
   }
 }
