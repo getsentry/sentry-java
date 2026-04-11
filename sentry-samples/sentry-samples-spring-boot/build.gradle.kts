@@ -1,7 +1,6 @@
 import java.net.URI
 import java.nio.file.FileSystems
 import java.nio.file.Files
-import java.nio.file.StandardCopyOption
 import java.util.zip.ZipFile
 import org.jetbrains.kotlin.config.KotlinCompilerVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
@@ -78,33 +77,35 @@ dependencies {
   testImplementation("org.apache.httpcomponents:httpclient")
 }
 
-// Shadow 9.x enforces DuplicatesStrategy before transformers run, so the `append`
-// transformer only sees one copy of each file. We pre-merge Spring metadata files
-// from the runtime classpath and include the merged result in the shadow JAR.
-val mergeSpringMetadata by
-  tasks.registering {
-    val outputDir = project.layout.buildDirectory.dir("merged-spring-metadata")
-    val classpathJars = configurations.runtimeClasspath.get().filter { it.name.endsWith(".jar") }
-    val filesToMerge =
-      listOf(
-        "META-INF/spring.factories",
-        "META-INF/spring.handlers",
-        "META-INF/spring.schemas",
-        "META-INF/spring-autoconfigure-metadata.properties",
-        "META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports",
-        "META-INF/spring/org.springframework.boot.actuate.autoconfigure.web.ManagementContextConfiguration.imports",
-      )
+// Configure the Shadow JAR (executable JAR with all dependencies)
+tasks.shadowJar {
+  manifest { attributes["Main-Class"] = "io.sentry.samples.spring.boot.SentryDemoApplication" }
+  archiveClassifier.set("")
+  mergeServiceFiles()
 
-    outputs.dir(outputDir)
-    inputs.files(classpathJars)
+  // Shadow 9.x enforces DuplicatesStrategy before transformers run, so `append`
+  // only sees one copy of each file. We merge Spring metadata from the runtime
+  // classpath and patch the built JAR in doLast.
+  val springMetadataFiles =
+    listOf(
+      "META-INF/spring.factories",
+      "META-INF/spring.handlers",
+      "META-INF/spring.schemas",
+      "META-INF/spring-autoconfigure-metadata.properties",
+      "META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports",
+      "META-INF/spring/org.springframework.boot.actuate.autoconfigure.web.ManagementContextConfiguration.imports",
+    )
 
-    doLast {
-      val out = outputDir.get().asFile
-      filesToMerge.forEach { entryPath ->
+  doLast {
+    val jar = archiveFile.get().asFile
+    val runtimeJars = project.configurations.getByName("runtimeClasspath").resolve().filter { it.name.endsWith(".jar") }
+    val uri = URI.create("jar:${jar.toURI()}")
+    FileSystems.newFileSystem(uri, mapOf("create" to "false")).use { fs ->
+      springMetadataFiles.forEach { entryPath ->
         val merged = StringBuilder()
-        classpathJars.forEach { jar ->
+        runtimeJars.forEach { depJar ->
           try {
-            val zip = ZipFile(jar)
+            val zip = ZipFile(depJar)
             val entry = zip.getEntry(entryPath)
             if (entry != null) {
               merged.append(zip.getInputStream(entry).bufferedReader().readText())
@@ -116,40 +117,11 @@ val mergeSpringMetadata by
           }
         }
         if (merged.isNotEmpty()) {
-          val outFile = File(out, entryPath)
-          outFile.parentFile.mkdirs()
-          outFile.writeText(merged.toString())
+          val target = fs.getPath(entryPath)
+          if (target.parent != null) Files.createDirectories(target.parent)
+          Files.write(target, merged.toString().toByteArray())
         }
       }
-    }
-  }
-
-// Configure the Shadow JAR (executable JAR with all dependencies)
-tasks.shadowJar {
-  dependsOn(mergeSpringMetadata)
-  manifest { attributes["Main-Class"] = "io.sentry.samples.spring.boot.SentryDemoApplication" }
-  archiveClassifier.set("")
-  mergeServiceFiles()
-  // Never up-to-date: ensures doLast always runs to patch Spring metadata.
-  // Shadow 9.x's `append` transformer doesn't properly merge Spring metadata files
-  // because DuplicatesStrategy is enforced before transformers run.
-  outputs.upToDateWhen { false }
-  val metadataDir = project.layout.buildDirectory.dir("merged-spring-metadata")
-  doLast {
-    val baseDir = metadataDir.get().asFile
-    val jar = archiveFile.get().asFile
-    if (!baseDir.exists()) return@doLast
-    val uri = URI.create("jar:${jar.toURI()}")
-    FileSystems.newFileSystem(uri, mapOf("create" to "false")).use { fs ->
-      baseDir
-        .walkTopDown()
-        .filter { it.isFile }
-        .forEach { merged ->
-          val relative = merged.relativeTo(baseDir).path
-          val target = fs.getPath(relative)
-          if (target.parent != null) Files.createDirectories(target.parent)
-          Files.copy(merged.toPath(), target, StandardCopyOption.REPLACE_EXISTING)
-        }
     }
   }
 }

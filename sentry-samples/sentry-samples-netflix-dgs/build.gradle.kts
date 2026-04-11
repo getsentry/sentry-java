@@ -1,7 +1,6 @@
 import java.net.URI
 import java.nio.file.FileSystems
 import java.nio.file.Files
-import java.nio.file.StandardCopyOption
 import java.util.zip.ZipFile
 import org.jetbrains.kotlin.config.KotlinCompilerVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
@@ -41,73 +40,46 @@ dependencies {
   }
 }
 
-// Shadow 9.x enforces DuplicatesStrategy before transformers run, so the `append`
-// transformer only sees one copy of each file. We pre-merge Spring metadata files
-// from the runtime classpath and include the merged result in the shadow JAR.
-val mergeSpringMetadata by
-  tasks.registering {
-    val outputDir = project.layout.buildDirectory.dir("merged-spring-metadata")
-    val classpathJars = configurations.runtimeClasspath.get().filter { it.name.endsWith(".jar") }
-    val filesToMerge =
-      listOf(
-        "META-INF/spring.factories",
-        "META-INF/spring.handlers",
-        "META-INF/spring.schemas",
-        "META-INF/spring-autoconfigure-metadata.properties",
-        "META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports",
-        "META-INF/spring/org.springframework.boot.actuate.autoconfigure.web.ManagementContextConfiguration.imports",
-      )
-    outputs.dir(outputDir)
-    inputs.files(classpathJars)
-    doLast {
-      val out = outputDir.get().asFile
-      filesToMerge.forEach { entryPath ->
+// Configure the Shadow JAR (executable JAR with all dependencies)
+tasks.shadowJar {
+  manifest { attributes["Main-Class"] = "io.sentry.samples.netflix.dgs.NetlixDgsApplication" }
+  archiveClassifier.set("")
+  mergeServiceFiles()
+
+  val springMetadataFiles =
+    listOf(
+      "META-INF/spring.factories",
+      "META-INF/spring.handlers",
+      "META-INF/spring.schemas",
+      "META-INF/spring-autoconfigure-metadata.properties",
+      "META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports",
+      "META-INF/spring/org.springframework.boot.actuate.autoconfigure.web.ManagementContextConfiguration.imports",
+    )
+
+  doLast {
+    val jar = archiveFile.get().asFile
+    val runtimeJars = project.configurations.getByName("runtimeClasspath").resolve().filter { it.name.endsWith(".jar") }
+    val uri = URI.create("jar:${jar.toURI()}")
+    FileSystems.newFileSystem(uri, mapOf("create" to "false")).use { fs ->
+      springMetadataFiles.forEach { entryPath ->
         val merged = StringBuilder()
-        classpathJars.forEach { jar ->
+        runtimeJars.forEach { depJar ->
           try {
-            val zip = ZipFile(jar)
+            val zip = ZipFile(depJar)
             val entry = zip.getEntry(entryPath)
             if (entry != null) {
               merged.append(zip.getInputStream(entry).bufferedReader().readText())
               if (!merged.endsWith("\n")) merged.append("\n")
             }
             zip.close()
-          } catch (e: Exception) {
-            /* skip non-zip files */
-          }
+          } catch (e: Exception) { /* skip non-zip files */ }
         }
         if (merged.isNotEmpty()) {
-          val outFile = File(out, entryPath)
-          outFile.parentFile.mkdirs()
-          outFile.writeText(merged.toString())
+          val target = fs.getPath(entryPath)
+          if (target.parent != null) Files.createDirectories(target.parent)
+          Files.write(target, merged.toString().toByteArray())
         }
       }
-    }
-  }
-
-// Configure the Shadow JAR (executable JAR with all dependencies)
-tasks.shadowJar {
-  dependsOn(mergeSpringMetadata)
-  manifest { attributes["Main-Class"] = "io.sentry.samples.netflix.dgs.NetlixDgsApplication" }
-  archiveClassifier.set("")
-  mergeServiceFiles()
-  outputs.upToDateWhen { false }
-  val metadataDir = project.layout.buildDirectory.dir("merged-spring-metadata")
-  doLast {
-    val baseDir = metadataDir.get().asFile
-    val jar = archiveFile.get().asFile
-    if (!baseDir.exists()) return@doLast
-    val uri = URI.create("jar:${jar.toURI()}")
-    FileSystems.newFileSystem(uri, mapOf("create" to "false")).use { fs ->
-      baseDir
-        .walkTopDown()
-        .filter { it.isFile }
-        .forEach { merged ->
-          val relative = merged.relativeTo(baseDir).path
-          val target = fs.getPath(relative)
-          if (target.parent != null) Files.createDirectories(target.parent)
-          Files.copy(merged.toPath(), target, StandardCopyOption.REPLACE_EXISTING)
-        }
     }
   }
 }
