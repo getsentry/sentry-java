@@ -340,22 +340,36 @@ final class AndroidOptionsInitializer {
         final @NotNull SentryFrameMetricsCollector frameMetricsCollector =
             Objects.requireNonNull(
                 options.getFrameMetricsCollector(), "options.getFrameMetricsCollector is required");
-        options.setContinuousProfiler(
-            options.isUseProfilingManager()
-                ? new PerfettoContinuousProfiler(
+        if (options.isUseProfilingManager()) {
+          if (buildInfoProvider.getSdkInfoVersion()
+              >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+            options.setContinuousProfiler(
+                new PerfettoContinuousProfiler(
                     buildInfoProvider,
                     options.getLogger(),
                     frameMetricsCollector,
                     () -> options.getExecutorService(),
                     () ->
-                        new PerfettoProfiler(context.getApplicationContext(), options.getLogger()))
-                : AndroidContinuousProfiler.createLegacy(
-                    buildInfoProvider,
-                    frameMetricsCollector,
-                    options.getLogger(),
-                    options.getProfilingTracesDirPath(),
-                    options.getProfilingTracesHz(),
-                    () -> options.getExecutorService()));
+                        new PerfettoProfiler(
+                            context.getApplicationContext(), options.getLogger())));
+          } else {
+            options
+                .getLogger()
+                .log(
+                    SentryLevel.WARNING,
+                    "useProfilingManager is enabled but requires API 35+. "
+                        + "No profiling data will be collected.");
+          }
+        } else {
+          options.setContinuousProfiler(
+              AndroidContinuousProfiler.createLegacy(
+                  buildInfoProvider,
+                  frameMetricsCollector,
+                  options.getLogger(),
+                  options.getProfilingTracesDirPath(),
+                  options.getProfilingTracesHz(),
+                  () -> options.getExecutorService()));
+        }
       }
     }
   }
