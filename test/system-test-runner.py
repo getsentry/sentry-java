@@ -406,6 +406,8 @@ class SystemTestRunner:
         print("Waiting for Spring application to be ready...")
 
         for attempt in range(1, max_attempts + 1):
+            # All current Spring Boot samples expose actuator/health. Waiting for the
+            # health endpoint avoids false positives from unrelated services on 8080.
             try:
                 response = requests.head(
                     "http://localhost:8080/actuator/health",
@@ -414,20 +416,6 @@ class SystemTestRunner:
                 )
                 if response.status_code == 200:
                     print("Spring application is ready!")
-                    return True
-            except:
-                pass
-
-            # Fallback: shadow JAR apps may not have actuator endpoints,
-            # so also try any HTTP connection to confirm the server is up
-            try:
-                response = requests.head(
-                    "http://localhost:8080/",
-                    auth=("user", "password"),
-                    timeout=5
-                )
-                if response.status_code is not None:
-                    print("Spring application is ready! (actuator not available)")
                     return True
             except:
                 pass
@@ -460,18 +448,6 @@ class SystemTestRunner:
                 status["http_ready"] = True
         except:
             pass
-
-        if not status["http_ready"]:
-            try:
-                response = requests.head(
-                    "http://localhost:8080/",
-                    auth=("user", "password"),
-                    timeout=2
-                )
-                if response.status_code is not None:
-                    status["http_ready"] = True
-            except:
-                pass
 
         return status
 
