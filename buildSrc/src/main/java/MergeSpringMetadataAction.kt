@@ -8,6 +8,15 @@ import org.gradle.api.Task
 import org.gradle.api.file.FileCollection
 import org.gradle.api.tasks.bundling.AbstractArchiveTask
 
+/**
+ * Patches a built shadow JAR by merging Spring metadata and service descriptor files from the
+ * runtime classpath into the final archive.
+ *
+ * Spring metadata files do not all share the same merge semantics, so this action merges
+ * `spring.factories` as list properties, `.imports` files as line-based metadata, and other Spring
+ * metadata as key/value properties. It also deduplicates service-provider configuration entries
+ * under `META-INF/services` so the flat executable JAR keeps the runtime registrations it needs.
+ */
 class MergeSpringMetadataAction(
     private val runtimeClasspath: FileCollection,
     private val springMetadataFiles: List<String>,
