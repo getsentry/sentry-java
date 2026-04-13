@@ -22,12 +22,13 @@ import org.apache.kafka.common.serialization.StringSerializer;
 
 public final class KafkaShowcase {
 
+  public static final String TOPIC = "sentry-topic-console-sample";
+
   private KafkaShowcase() {}
 
   public static void demonstrate(final String bootstrapServers) {
-    final String topic = "sentry-topic-console-sample";
     final CountDownLatch consumedLatch = new CountDownLatch(1);
-    final Thread consumerThread = startKafkaConsumerThread(topic, bootstrapServers, consumedLatch);
+    final Thread consumerThread = startKafkaConsumerThread(TOPIC, bootstrapServers, consumedLatch);
 
     final Properties producerProperties = new Properties();
     producerProperties.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
@@ -45,7 +46,7 @@ public final class KafkaShowcase {
     try (ISentryLifecycleToken ignored = transaction.makeCurrent()) {
       try (KafkaProducer<String, String> producer = new KafkaProducer<>(producerProperties)) {
         Thread.sleep(500);
-        producer.send(new ProducerRecord<>(topic, "sentry-kafka sample message")).get();
+        producer.send(new ProducerRecord<>(TOPIC, "sentry-kafka sample message")).get();
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
       } catch (Exception ignoredException) {
