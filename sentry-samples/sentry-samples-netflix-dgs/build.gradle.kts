@@ -1,7 +1,3 @@
-import java.net.URI
-import java.nio.file.FileSystems
-import java.nio.file.Files
-import java.util.zip.ZipFile
 import org.jetbrains.kotlin.config.KotlinCompilerVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
@@ -40,6 +36,8 @@ dependencies {
   }
 }
 
+val runtimeClasspath = configurations.named("runtimeClasspath")
+
 // Configure the Shadow JAR (executable JAR with all dependencies)
 tasks.shadowJar {
   manifest { attributes["Main-Class"] = "io.sentry.samples.netflix.dgs.NetlixDgsApplication" }
@@ -56,37 +54,7 @@ tasks.shadowJar {
       "META-INF/spring/org.springframework.boot.actuate.autoconfigure.web.ManagementContextConfiguration.imports",
     )
 
-  doLast {
-    val jar = archiveFile.get().asFile
-    val runtimeJars =
-      project.configurations.getByName("runtimeClasspath").resolve().filter {
-        it.name.endsWith(".jar")
-      }
-    val uri = URI.create("jar:${jar.toURI()}")
-    FileSystems.newFileSystem(uri, mapOf("create" to "false")).use { fs ->
-      springMetadataFiles.forEach { entryPath ->
-        val merged = StringBuilder()
-        runtimeJars.forEach { depJar ->
-          try {
-            val zip = ZipFile(depJar)
-            val entry = zip.getEntry(entryPath)
-            if (entry != null) {
-              merged.append(zip.getInputStream(entry).bufferedReader().readText())
-              if (!merged.endsWith("\n")) merged.append("\n")
-            }
-            zip.close()
-          } catch (e: Exception) {
-            /* skip non-zip files */
-          }
-        }
-        if (merged.isNotEmpty()) {
-          val target = fs.getPath(entryPath)
-          if (target.parent != null) Files.createDirectories(target.parent)
-          Files.write(target, merged.toString().toByteArray())
-        }
-      }
-    }
-  }
+  doLast(MergeSpringMetadataAction(runtimeClasspath.get(), springMetadataFiles))
 }
 
 tasks.jar {
