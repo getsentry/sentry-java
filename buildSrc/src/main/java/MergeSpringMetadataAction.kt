@@ -1,6 +1,7 @@
 import java.net.URI
 import java.nio.file.FileSystems
 import java.nio.file.Files
+import java.util.LinkedHashSet
 import java.util.zip.ZipFile
 import org.gradle.api.Action
 import org.gradle.api.Task
@@ -20,16 +21,86 @@ class MergeSpringMetadataAction(
 
         FileSystems.newFileSystem(uri, mapOf("create" to "false")).use { fs ->
             springMetadataFiles.forEach { entryPath ->
-                val merged = StringBuilder()
+                val target = fs.getPath(entryPath)
+                val contents = mutableListOf<String>()
+
+                if (Files.exists(target)) {
+                    contents.add(Files.readString(target))
+                }
 
                 runtimeJars.forEach { depJar ->
                     try {
                         ZipFile(depJar).use { zip ->
                             val entry = zip.getEntry(entryPath)
                             if (entry != null) {
-                                merged.append(zip.getInputStream(entry).bufferedReader().readText())
-                                if (!merged.endsWith("\n")) {
-                                    merged.append("\n")
+                                contents.add(zip.getInputStream(entry).bufferedReader().readText())
+                            }
+                        }
+                    } catch (_: Exception) {
+                        // Ignore non-zip files on the runtime classpath.
+                    }
+                }
+
+                val merged =
+                    when {
+                        entryPath == "META-INF/spring.factories" -> mergeListProperties(contents)
+                        entryPath.endsWith(".imports") -> mergeLineBasedMetadata(contents)
+                        else -> mergeMapProperties(contents)
+                    }
+
+                if (merged.isNotEmpty()) {
+                    if (target.parent != null) {
+                        Files.createDirectories(target.parent)
+                    }
+                    Files.write(target, merged.toByteArray())
+                }
+            }
+
+            val serviceEntries = linkedSetOf<String>()
+
+            runtimeJars.forEach { depJar ->
+                try {
+                    ZipFile(depJar).use { zip ->
+                        val entries = zip.entries()
+                        while (entries.hasMoreElements()) {
+                            val entry = entries.nextElement()
+                            if (!entry.isDirectory && entry.name.startsWith("META-INF/services/")) {
+                                serviceEntries.add(entry.name)
+                            }
+                        }
+                    }
+                } catch (_: Exception) {
+                    // Ignore non-zip files on the runtime classpath.
+                }
+            }
+
+            serviceEntries.forEach { entryPath ->
+                val providers = LinkedHashSet<String>()
+                val target = fs.getPath(entryPath)
+
+                if (Files.exists(target)) {
+                    Files.newBufferedReader(target).useLines { lines ->
+                        lines.forEach { line ->
+                            val provider = line.trim()
+                            if (provider.isNotEmpty() && !provider.startsWith("#")) {
+                                providers.add(provider)
+                            }
+                        }
+                    }
+                }
+
+                runtimeJars.forEach { depJar ->
+                    try {
+                        ZipFile(depJar).use { zip ->
+                            val entry = zip.getEntry(entryPath)
+                            if (entry != null) {
+                                zip.getInputStream(entry).bufferedReader().useLines { lines ->
+                                    lines.forEach { line ->
+                                        val provider = line.trim()
+                                        if (provider.isNotEmpty() && !provider.startsWith("#")) {
+                                            providers.add(provider)
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -38,14 +109,116 @@ class MergeSpringMetadataAction(
                     }
                 }
 
-                if (merged.isNotEmpty()) {
-                    val target = fs.getPath(entryPath)
+                if (providers.isNotEmpty()) {
                     if (target.parent != null) {
                         Files.createDirectories(target.parent)
                     }
-                    Files.write(target, merged.toString().toByteArray())
+                    Files.write(target, providers.joinToString(separator = "\n", postfix = "\n").toByteArray())
                 }
             }
         }
+    }
+
+    private fun mergeLineBasedMetadata(contents: List<String>): String {
+        val lines = LinkedHashSet<String>()
+
+        contents.forEach { content ->
+            content.lineSequence().forEach { rawLine ->
+                val line = rawLine.trim()
+                if (line.isNotEmpty() && !line.startsWith("#")) {
+                    lines.add(line)
+                }
+            }
+        }
+
+        return if (lines.isEmpty()) "" else lines.joinToString(separator = "\n", postfix = "\n")
+    }
+
+    private fun mergeMapProperties(contents: List<String>): String {
+        val merged = linkedMapOf<String, String>()
+
+        contents.forEach { content ->
+            parseProperties(content).forEach { (key, value) ->
+                merged[key] = value
+            }
+        }
+
+        return if (merged.isEmpty()) {
+            ""
+        } else {
+            merged.entries.joinToString(separator = "\n", postfix = "\n") { (key, value) -> "$key=$value" }
+        }
+    }
+
+    private fun mergeListProperties(contents: List<String>): String {
+        val merged = linkedMapOf<String, LinkedHashSet<String>>()
+
+        contents.forEach { content ->
+            parseProperties(content).forEach { (key, value) ->
+                val values = merged.getOrPut(key) { LinkedHashSet() }
+                value
+                    .split(',')
+                    .map(String::trim)
+                    .filter(String::isNotEmpty)
+                    .forEach(values::add)
+            }
+        }
+
+        return if (merged.isEmpty()) {
+            ""
+        } else {
+            merged.entries.joinToString(separator = "\n", postfix = "\n") { (key, values) ->
+                "$key=${values.joinToString(separator = ",")}"
+            }
+        }
+    }
+
+    private fun parseProperties(content: String): List<Pair<String, String>> {
+        val logicalLines = mutableListOf<String>()
+        val current = StringBuilder()
+
+        content.lineSequence().forEach { rawLine ->
+            val line = rawLine.trim()
+            if (current.isEmpty() && (line.isEmpty() || line.startsWith("#") || line.startsWith("!"))) {
+                return@forEach
+            }
+
+            val normalized = if (current.isEmpty()) line else line.trimStart()
+            current.append(
+                if (endsWithContinuation(rawLine)) normalized.dropLast(1) else normalized,
+            )
+
+            if (!endsWithContinuation(rawLine)) {
+                logicalLines.add(current.toString())
+                current.setLength(0)
+            }
+        }
+
+        if (current.isNotEmpty()) {
+            logicalLines.add(current.toString())
+        }
+
+        return logicalLines.mapNotNull { line ->
+            val separatorIndex = line.indexOfFirst { it == '=' || it == ':' }
+            if (separatorIndex <= 0) {
+                null
+            } else {
+                line.substring(0, separatorIndex).trim() to line.substring(separatorIndex + 1).trim()
+            }
+        }
+    }
+
+    private fun endsWithContinuation(line: String): Boolean {
+        var backslashCount = 0
+
+        for (index in line.length - 1 downTo 0) {
+            if (line[index] == '\\') {
+                backslashCount++
+            } else {
+                break
+            }
+        }
+
+        return backslashCount % 2 == 1
     }
 }
