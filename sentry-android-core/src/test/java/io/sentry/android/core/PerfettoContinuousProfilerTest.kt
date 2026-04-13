@@ -55,10 +55,11 @@ class PerfettoContinuousProfilerTest {
         setLogger(mockLogger)
       }
 
-    val mockTraceFile = java.io.File.createTempFile("test-trace", ".pftrace").apply {
-      writeBytes(byteArrayOf(0x50, 0x65, 0x72, 0x66))
-      deleteOnExit()
-    }
+    val mockTraceFile =
+      java.io.File.createTempFile("test-trace", ".pftrace").apply {
+        writeBytes(byteArrayOf(0x50, 0x65, 0x72, 0x66))
+        deleteOnExit()
+      }
 
     init {
       whenever(mockTracesSampler.sampleSessionProfile(any())).thenReturn(true)
@@ -67,7 +68,7 @@ class PerfettoContinuousProfilerTest {
     }
 
     fun getSut(
-      optionConfig: ((options: SentryAndroidOptions) -> Unit) = {},
+      optionConfig: ((options: SentryAndroidOptions) -> Unit) = {}
     ): PerfettoContinuousProfiler {
       options.executorService = executor
       optionConfig(options)
@@ -99,8 +100,7 @@ class PerfettoContinuousProfilerTest {
   // -- Shared tests (see ContinuousProfilerTestCases.kt) --
 
   @Test
-  fun `isRunning reflects profiler status`() =
-    fixture.getSut().testIsRunningReflectsStatus(mocks)
+  fun `isRunning reflects profiler status`() = fixture.getSut().testIsRunningReflectsStatus(mocks)
 
   @Test
   fun `stopProfiler stops the profiler after chunk is finished`() =
@@ -134,12 +134,9 @@ class PerfettoContinuousProfilerTest {
     fixture.getSut().testStopsAndRestartsForEachChunk(mocks)
 
   @Test
-  fun `profiler sends chunk on each restart`() =
-    fixture.getSut().testSendsChunkOnRestart(mocks)
+  fun `profiler sends chunk on each restart`() = fixture.getSut().testSendsChunkOnRestart(mocks)
 
-  @Test
-  fun `profiler sends another chunk on stop`() =
-    fixture.getSut().testSendsChunkOnStop(mocks)
+  @Test fun `profiler sends another chunk on stop`() = fixture.getSut().testSendsChunkOnStop(mocks)
 
   @Test
   fun `close without terminating stops all profiles after chunk is finished`() =
@@ -149,9 +146,7 @@ class PerfettoContinuousProfilerTest {
   fun `profiler does not send chunks after close`() =
     fixture.getSut().testDoesNotSendChunksAfterClose(mocks)
 
-  @Test
-  fun `profiler stops when rate limited`() =
-    fixture.getSut().testStopsWhenRateLimited(mocks)
+  @Test fun `profiler stops when rate limited`() = fixture.getSut().testStopsWhenRateLimited(mocks)
 
   @Test
   fun `profiler does not start when rate limited`() =
@@ -159,12 +154,14 @@ class PerfettoContinuousProfilerTest {
 
   @Test
   fun `profiler does not start when offline`() =
-    fixture.getSut {
-      it.connectionStatusProvider = mock { provider ->
-        whenever(provider.connectionStatus)
-          .thenReturn(IConnectionStatusProvider.ConnectionStatus.DISCONNECTED)
+    fixture
+      .getSut {
+        it.connectionStatusProvider = mock { provider ->
+          whenever(provider.connectionStatus)
+            .thenReturn(IConnectionStatusProvider.ConnectionStatus.DISCONNECTED)
+        }
       }
-    }.testDoesNotStartWhenOffline(mocks)
+      .testDoesNotStartWhenOffline(mocks)
 
   @Test
   fun `manual profiler can be started again after a full start-stop cycle`() =
