@@ -198,12 +198,14 @@ class MergeSpringMetadataAction(
             logicalLines.add(current.toString())
         }
 
-        return logicalLines.mapNotNull { line ->
-            val separatorIndex = line.indexOfFirst { it == '=' || it == ':' }
-            if (separatorIndex <= 0) {
-                null
+        return logicalLines.map { line ->
+            val separatorIndex = findSeparatorIndex(line)
+            if (separatorIndex < 0) {
+                line to ""
             } else {
-                line.substring(0, separatorIndex).trim() to line.substring(separatorIndex + 1).trim()
+                val keyEnd = trimTrailingWhitespace(line, separatorIndex)
+                val valueStart = findValueStart(line, separatorIndex)
+                line.substring(0, keyEnd) to line.substring(valueStart).trim()
             }
         }
     }
@@ -220,5 +222,51 @@ class MergeSpringMetadataAction(
         }
 
         return backslashCount % 2 == 1
+    }
+
+    private fun findSeparatorIndex(line: String): Int {
+        var backslashCount = 0
+
+        line.forEachIndexed { index, char ->
+            if (char == '\\') {
+                backslashCount++
+            } else {
+                val isEscaped = backslashCount % 2 == 1
+                if (!isEscaped && (char == '=' || char == ':' || char.isWhitespace())) {
+                    return index
+                }
+                backslashCount = 0
+            }
+        }
+
+        return -1
+    }
+
+    private fun trimTrailingWhitespace(line: String, endExclusive: Int): Int {
+        var end = endExclusive
+
+        while (end > 0 && line[end - 1].isWhitespace()) {
+            end--
+        }
+
+        return end
+    }
+
+    private fun findValueStart(line: String, separatorIndex: Int): Int {
+        var valueStart = separatorIndex
+
+        while (valueStart < line.length && line[valueStart].isWhitespace()) {
+            valueStart++
+        }
+
+        if (valueStart < line.length && (line[valueStart] == '=' || line[valueStart] == ':')) {
+            valueStart++
+        }
+
+        while (valueStart < line.length && line[valueStart].isWhitespace()) {
+            valueStart++
+        }
+
+        return valueStart
     }
 }
