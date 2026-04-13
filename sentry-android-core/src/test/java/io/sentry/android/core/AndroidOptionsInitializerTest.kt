@@ -376,6 +376,15 @@ class AndroidOptionsInitializerTest {
     assertTrue(fixture.sentryOptions.continuousProfiler is AndroidContinuousProfiler)
   }
 
+  @Config(sdk = [34])
+  @Test
+  fun `init with profiling manager below API 35 sets no-op continuous profiler`() {
+    fixture.initSut(configureOptions = { isUseProfilingManager = true }, useRealContext = true)
+
+    assertEquals(NoOpTransactionProfiler.getInstance(), fixture.sentryOptions.transactionProfiler)
+    assertEquals(NoOpContinuousProfiler.getInstance(), fixture.sentryOptions.continuousProfiler)
+  }
+
   @Test
   fun `init with profilesSampleRate should set Android transaction profiler`() {
     fixture.initSut(configureOptions = { profilesSampleRate = 1.0 })

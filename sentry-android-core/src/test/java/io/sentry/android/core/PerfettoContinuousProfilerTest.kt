@@ -132,4 +132,24 @@ class PerfettoContinuousProfilerTest {
       "Profiler should continue running after chunk restart — shouldStop must be reset on start",
     )
   }
+
+  @Test
+  fun `manual start while trace profiling is running does not cancel pending trace stop`() {
+    val profiler = fixture.getSut()
+
+    profiler.startProfiler(ProfileLifecycle.TRACE, fixture.mockTracesSampler)
+    assertTrue(profiler.isRunning)
+
+    profiler.stopProfiler(ProfileLifecycle.TRACE)
+    profiler.startProfiler(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
+
+    fixture.executor.runAll()
+
+    assertFalse(profiler.isRunning)
+    verify(fixture.mockLogger)
+      .log(
+        eq(SentryLevel.WARNING),
+        eq("Unexpected call to startProfiler(MANUAL) while profiler already running. Skipping."),
+      )
+  }
 }

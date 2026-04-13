@@ -107,7 +107,6 @@ public class PerfettoContinuousProfiler
       final @NotNull ProfileLifecycle profileLifecycle,
       final @NotNull TracesSampler tracesSampler) {
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
-      shouldStop = false;
       if (shouldSample) {
         isSampled = tracesSampler.sampleSessionProfile(SentryRandom.current().nextDouble());
         shouldSample = false;
@@ -118,6 +117,7 @@ public class PerfettoContinuousProfiler
       }
       switch (profileLifecycle) {
         case TRACE:
+          shouldStop = false;
           activeTraceCount = Math.max(0, activeTraceCount); // safety check.
           activeTraceCount++;
           break;
@@ -128,6 +128,7 @@ public class PerfettoContinuousProfiler
                 "Unexpected call to startProfiler(MANUAL) while profiler already running. Skipping.");
             return;
           }
+          shouldStop = false;
           break;
       }
       if (!isRunning()) {

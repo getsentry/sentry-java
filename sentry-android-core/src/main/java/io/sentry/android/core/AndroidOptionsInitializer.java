@@ -337,6 +337,17 @@ final class AndroidOptionsInitializer {
           performanceCollector.start(chunkId.toString());
         }
       } else {
+        if (options.isUseProfilingManager()
+            && buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.INFO,
+                  "useProfilingManager is enabled, but API level is below %d. Continuous profiling is disabled.",
+                  Build.VERSION_CODES.VANILLA_ICE_CREAM);
+          options.setContinuousProfiler(NoOpContinuousProfiler.getInstance());
+          return;
+        }
         final @NotNull SentryFrameMetricsCollector frameMetricsCollector =
             Objects.requireNonNull(
                 options.getFrameMetricsCollector(), "options.getFrameMetricsCollector is required");
