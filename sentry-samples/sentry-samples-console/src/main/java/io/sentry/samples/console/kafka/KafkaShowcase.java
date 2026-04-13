@@ -1,4 +1,4 @@
-package io.sentry.samples.console;
+package io.sentry.samples.console.kafka;
 
 import io.sentry.ISentryLifecycleToken;
 import io.sentry.ITransaction;
@@ -20,11 +20,11 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 
-final class KafkaShowcase {
+public final class KafkaShowcase {
 
   private KafkaShowcase() {}
 
-  static void demonstrate(final String bootstrapServers) {
+  public static void demonstrate(final String bootstrapServers) {
     final String topic = "sentry-topic-console-sample";
     final CountDownLatch consumedLatch = new CountDownLatch(1);
     final Thread consumerThread = startKafkaConsumerThread(topic, bootstrapServers, consumedLatch);

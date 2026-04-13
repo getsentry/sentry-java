@@ -4,6 +4,7 @@ import io.sentry.*;
 import io.sentry.clientreport.DiscardReason;
 import io.sentry.jcache.SentryJCacheWrapper;
 import io.sentry.protocol.Message;
+import io.sentry.samples.console.kafka.KafkaShowcase;
 import io.sentry.protocol.User;
 import java.util.Collections;
 import javax.cache.Cache;
