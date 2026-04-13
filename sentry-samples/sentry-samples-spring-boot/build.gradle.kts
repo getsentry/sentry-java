@@ -83,17 +83,12 @@ tasks.shadowJar {
   // Shadow 9.x enforces DuplicatesStrategy before transformers run, so `append`
   // only sees one copy of each file. We merge Spring metadata from the runtime
   // classpath and patch the built JAR in doLast.
-  val springMetadataFiles =
-    listOf(
-      "META-INF/spring.factories",
-      "META-INF/spring.handlers",
-      "META-INF/spring.schemas",
-      "META-INF/spring-autoconfigure-metadata.properties",
-      "META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports",
-      "META-INF/spring/org.springframework.boot.actuate.autoconfigure.web.ManagementContextConfiguration.imports",
+  doLast(
+    MergeSpringMetadataAction(
+      runtimeClasspath.get(),
+      MergeSpringMetadataAction.DEFAULT_SPRING_METADATA_FILES,
     )
-
-  doLast(MergeSpringMetadataAction(runtimeClasspath.get(), springMetadataFiles))
+  )
 }
 
 tasks.jar {

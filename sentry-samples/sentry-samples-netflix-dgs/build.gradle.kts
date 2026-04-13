@@ -43,17 +43,12 @@ tasks.shadowJar {
   manifest { attributes["Main-Class"] = "io.sentry.samples.netflix.dgs.NetlixDgsApplication" }
   archiveClassifier.set("")
 
-  val springMetadataFiles =
-    listOf(
-      "META-INF/spring.factories",
-      "META-INF/spring.handlers",
-      "META-INF/spring.schemas",
-      "META-INF/spring-autoconfigure-metadata.properties",
-      "META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports",
-      "META-INF/spring/org.springframework.boot.actuate.autoconfigure.web.ManagementContextConfiguration.imports",
+  doLast(
+    MergeSpringMetadataAction(
+      runtimeClasspath.get(),
+      MergeSpringMetadataAction.DEFAULT_SPRING_METADATA_FILES,
     )
-
-  doLast(MergeSpringMetadataAction(runtimeClasspath.get(), springMetadataFiles))
+  )
 }
 
 tasks.jar {

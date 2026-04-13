@@ -12,6 +12,17 @@ class MergeSpringMetadataAction(
     private val runtimeClasspath: FileCollection,
     private val springMetadataFiles: List<String>,
 ) : Action<Task> {
+    companion object {
+        val DEFAULT_SPRING_METADATA_FILES =
+            listOf(
+                "META-INF/spring.factories",
+                "META-INF/spring.handlers",
+                "META-INF/spring.schemas",
+                "META-INF/spring-autoconfigure-metadata.properties",
+                "META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports",
+                "META-INF/spring/org.springframework.boot.actuate.autoconfigure.web.ManagementContextConfiguration.imports",
+            )
+    }
 
     override fun execute(task: Task) {
         val archiveTask = task as AbstractArchiveTask
