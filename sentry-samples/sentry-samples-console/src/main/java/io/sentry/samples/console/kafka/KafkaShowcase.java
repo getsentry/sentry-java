@@ -91,8 +91,7 @@ public final class KafkaShowcase {
     final Properties consumerProperties = new Properties();
 
     consumerProperties.put(
-      ConsumerConfig.INTERCEPTOR_CLASSES_CONFIG,
-      SentryKafkaConsumerInterceptor.class.getName());
+        ConsumerConfig.INTERCEPTOR_CLASSES_CONFIG, SentryKafkaConsumerInterceptor.class.getName());
 
     consumerProperties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
     consumerProperties.put(
@@ -101,8 +100,7 @@ public final class KafkaShowcase {
     consumerProperties.put(
         ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
     consumerProperties.put(
-        ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
-        StringDeserializer.class.getName());
+        ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
     consumerProperties.put(ConsumerConfig.DEFAULT_API_TIMEOUT_MS_CONFIG, 2000);
     consumerProperties.put(ConsumerConfig.REQUEST_TIMEOUT_MS_CONFIG, 2000);
 
@@ -113,13 +111,13 @@ public final class KafkaShowcase {
     final Properties producerProperties = new Properties();
 
     producerProperties.put(
-      ProducerConfig.INTERCEPTOR_CLASSES_CONFIG, SentryKafkaProducerInterceptor.class.getName());
+        ProducerConfig.INTERCEPTOR_CLASSES_CONFIG, SentryKafkaProducerInterceptor.class.getName());
 
     producerProperties.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
     producerProperties.put(
-      ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+        ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
     producerProperties.put(
-      ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+        ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
     producerProperties.put(ProducerConfig.MAX_BLOCK_MS_CONFIG, 2000);
     producerProperties.put(ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG, 2000);
     producerProperties.put(ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG, 3000);
