@@ -3,6 +3,7 @@ package io.sentry.kafka;
 import io.sentry.BaggageHeader;
 import io.sentry.IScopes;
 import io.sentry.ITransaction;
+import io.sentry.ScopesAdapter;
 import io.sentry.SentryTraceHeader;
 import io.sentry.SpanDataConvention;
 import io.sentry.SpanStatus;
@@ -28,6 +29,10 @@ public final class SentryKafkaConsumerInterceptor<K, V> implements ConsumerInter
   public static final @NotNull String TRACE_ORIGIN = "auto.queue.kafka.consumer";
 
   private final @NotNull IScopes scopes;
+
+  public SentryKafkaConsumerInterceptor() {
+    this(ScopesAdapter.getInstance());
+  }
 
   public SentryKafkaConsumerInterceptor(final @NotNull IScopes scopes) {
     this.scopes = scopes;
