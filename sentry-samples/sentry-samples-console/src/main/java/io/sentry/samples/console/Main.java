@@ -16,6 +16,10 @@ public class Main {
   private static long numberOfDiscardedSpansDueToOverflow = 0;
 
   public static void main(String[] args) throws InterruptedException {
+    final String kafkaBootstrapServers = System.getenv("SENTRY_SAMPLE_KAFKA_BOOTSTRAP_SERVERS");
+    final boolean kafkaEnabled =
+        kafkaBootstrapServers != null && !kafkaBootstrapServers.trim().isEmpty();
+
     Sentry.init(
         options -> {
           // NOTE: Replace the test DSN below with YOUR OWN DSN to see the events from this app in
@@ -95,7 +99,7 @@ public class Main {
 
           // Enable cache tracing to create spans for cache operations
           options.setEnableCacheTracing(true);
-          options.setEnableQueueTracing(true);
+          options.setEnableQueueTracing(kafkaEnabled);
 
           // Determine traces sample rate based on the sampling context
           //          options.setTracesSampler(
@@ -181,9 +185,10 @@ public class Main {
 
     // Kafka queue tracing with kafka-clients interceptors.
     //
-    // This uses the native producer interceptor from sentry-kafka.
-    // If no local Kafka broker is available, this block exits quietly.
-    KafkaShowcase.demonstrate();
+    // Enable with: SENTRY_SAMPLE_KAFKA_BOOTSTRAP_SERVERS=localhost:9092
+    if (kafkaEnabled) {
+      KafkaShowcase.demonstrate(kafkaBootstrapServers);
+    }
 
     // Performance feature
     //

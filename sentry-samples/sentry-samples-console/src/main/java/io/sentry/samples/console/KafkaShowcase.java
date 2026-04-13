@@ -24,19 +24,22 @@ final class KafkaShowcase {
 
   private KafkaShowcase() {}
 
-  static void demonstrate() {
+  static void demonstrate(final String bootstrapServers) {
     final String topic = "sentry-topic-console-sample";
     final CountDownLatch consumedLatch = new CountDownLatch(1);
-    final Thread consumerThread = startKafkaConsumerThread(topic, consumedLatch);
+    final Thread consumerThread = startKafkaConsumerThread(topic, bootstrapServers, consumedLatch);
 
     final Properties producerProperties = new Properties();
-    producerProperties.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+    producerProperties.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
     producerProperties.put(
         ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
     producerProperties.put(
         ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
     producerProperties.put(
         ProducerConfig.INTERCEPTOR_CLASSES_CONFIG, SentryKafkaProducerInterceptor.class.getName());
+    producerProperties.put(ProducerConfig.MAX_BLOCK_MS_CONFIG, 2000);
+    producerProperties.put(ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG, 2000);
+    producerProperties.put(ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG, 3000);
 
     final ITransaction transaction = Sentry.startTransaction("kafka-demo", "demo");
     try (ISentryLifecycleToken ignored = transaction.makeCurrent()) {
@@ -66,12 +69,12 @@ final class KafkaShowcase {
   }
 
   private static Thread startKafkaConsumerThread(
-      final String topic, final CountDownLatch consumedLatch) {
+      final String topic, final String bootstrapServers, final CountDownLatch consumedLatch) {
     final Thread consumerThread =
         new Thread(
             () -> {
               final Properties consumerProperties = new Properties();
-              consumerProperties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+              consumerProperties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
               consumerProperties.put(
                   ConsumerConfig.GROUP_ID_CONFIG, "sentry-console-sample-" + UUID.randomUUID());
               consumerProperties.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
@@ -83,6 +86,8 @@ final class KafkaShowcase {
               consumerProperties.put(
                   ConsumerConfig.INTERCEPTOR_CLASSES_CONFIG,
                   SentryKafkaConsumerInterceptor.class.getName());
+              consumerProperties.put(ConsumerConfig.DEFAULT_API_TIMEOUT_MS_CONFIG, 2000);
+              consumerProperties.put(ConsumerConfig.REQUEST_TIMEOUT_MS_CONFIG, 2000);
 
               try (KafkaConsumer<String, String> consumer =
                   new KafkaConsumer<>(consumerProperties)) {
