@@ -95,7 +95,10 @@ tasks.shadowJar {
 
   doLast {
     val jar = archiveFile.get().asFile
-    val runtimeJars = project.configurations.getByName("runtimeClasspath").resolve().filter { it.name.endsWith(".jar") }
+    val runtimeJars =
+      project.configurations.getByName("runtimeClasspath").resolve().filter {
+        it.name.endsWith(".jar")
+      }
     val uri = URI.create("jar:${jar.toURI()}")
     FileSystems.newFileSystem(uri, mapOf("create" to "false")).use { fs ->
       springMetadataFiles.forEach { entryPath ->
@@ -109,7 +112,9 @@ tasks.shadowJar {
               if (!merged.endsWith("\n")) merged.append("\n")
             }
             zip.close()
-          } catch (e: Exception) { /* skip non-zip files */ }
+          } catch (e: Exception) {
+            /* skip non-zip files */
+          }
         }
         if (merged.isNotEmpty()) {
           val target = fs.getPath(entryPath)
