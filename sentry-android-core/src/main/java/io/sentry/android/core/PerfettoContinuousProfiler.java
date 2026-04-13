@@ -107,7 +107,6 @@ public class PerfettoContinuousProfiler
       final @NotNull ProfileLifecycle profileLifecycle,
       final @NotNull TracesSampler tracesSampler) {
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
-      shouldStop = false;
       if (shouldSample) {
         isSampled = tracesSampler.sampleSessionProfile(SentryRandom.current().nextDouble());
         shouldSample = false;
@@ -132,6 +131,7 @@ public class PerfettoContinuousProfiler
       }
       if (!isRunning()) {
         logger.log(SentryLevel.DEBUG, "Started Profiler.");
+        shouldStop = false;
         startInternal();
       }
     }
