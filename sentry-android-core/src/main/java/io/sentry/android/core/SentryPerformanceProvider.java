@@ -155,6 +155,10 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
       final @NotNull Context context,
       final @NotNull SentryAppStartProfilingOptions profilingOptions,
       final @NotNull AppStartMetrics appStartMetrics) {
+    if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+      logger.log(SentryLevel.INFO, "Continuous profiling is disabled on API levels below 35.");
+      return;
+    }
 
     if (!profilingOptions.isContinuousProfileSampled()) {
       logger.log(SentryLevel.DEBUG, "App start profiling was not sampled. It will not start.");

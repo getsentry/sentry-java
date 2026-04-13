@@ -326,6 +326,16 @@ final class AndroidOptionsInitializer {
       if (appStartTransactionProfiler != null) {
         appStartTransactionProfiler.close();
       }
+      if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+        options
+            .getLogger()
+            .log(SentryLevel.INFO, "Continuous profiling is disabled on API levels below 35.");
+        if (appStartContinuousProfiler != null) {
+          appStartContinuousProfiler.close(true);
+        }
+        options.setContinuousProfiler(NoOpContinuousProfiler.getInstance());
+        return;
+      }
       if (appStartContinuousProfiler != null) {
         options.setContinuousProfiler(appStartContinuousProfiler);
         // If the profiler is running, we start the performance collector too, otherwise we'd miss

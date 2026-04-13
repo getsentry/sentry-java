@@ -497,6 +497,15 @@ class AndroidOptionsInitializerTest {
     assertNull(AppStartMetrics.getInstance().appStartContinuousProfiler)
   }
 
+  @Config(sdk = [Build.VERSION_CODES.UPSIDE_DOWN_CAKE])
+  @Test
+  fun `init with continuous profiling on API below 35 sets no-op continuous profiler`() {
+    fixture.initSut(useRealContext = true)
+
+    assertEquals(NoOpTransactionProfiler.getInstance(), fixture.sentryOptions.transactionProfiler)
+    assertEquals(NoOpContinuousProfiler.getInstance(), fixture.sentryOptions.continuousProfiler)
+  }
+
   @Test
   fun `NdkIntegration will load SentryNdk class and add to the integration list`() {
     fixture.initSutWithClassLoader(

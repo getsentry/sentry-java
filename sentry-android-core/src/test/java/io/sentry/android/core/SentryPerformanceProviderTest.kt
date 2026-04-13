@@ -291,6 +291,16 @@ class SentryPerformanceProviderTest {
   }
 
   @Test
+  fun `when sdk is below api 35, continuous profiler is not started`() {
+    fixture.getSut(sdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE) { config ->
+      writeConfig(config, profilingEnabled = false, continuousProfilingEnabled = true)
+    }
+    assertNull(AppStartMetrics.getInstance().appStartContinuousProfiler)
+    verify(fixture.logger)
+      .log(eq(SentryLevel.INFO), eq("Continuous profiling is disabled on API levels below 35."))
+  }
+
+  @Test
   fun `when provider is closed, continuous profiler is stopped`() {
     val provider = fixture.getSut { config -> writeConfig(config, profilingEnabled = false) }
     provider.shutdown()
