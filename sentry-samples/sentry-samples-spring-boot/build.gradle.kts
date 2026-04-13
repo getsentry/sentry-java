@@ -79,7 +79,6 @@ val runtimeClasspath = configurations.named("runtimeClasspath")
 tasks.shadowJar {
   manifest { attributes["Main-Class"] = "io.sentry.samples.spring.boot.SentryDemoApplication" }
   archiveClassifier.set("")
-  mergeServiceFiles()
 
   // Shadow 9.x enforces DuplicatesStrategy before transformers run, so `append`
   // only sees one copy of each file. We merge Spring metadata from the runtime

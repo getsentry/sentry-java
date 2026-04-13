@@ -42,7 +42,6 @@ val runtimeClasspath = configurations.named("runtimeClasspath")
 tasks.shadowJar {
   manifest { attributes["Main-Class"] = "io.sentry.samples.netflix.dgs.NetlixDgsApplication" }
   archiveClassifier.set("")
-  mergeServiceFiles()
 
   val springMetadataFiles =
     listOf(

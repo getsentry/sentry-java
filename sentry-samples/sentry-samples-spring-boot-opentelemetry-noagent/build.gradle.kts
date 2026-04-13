@@ -83,7 +83,6 @@ val runtimeClasspath = configurations.named("runtimeClasspath")
 tasks.shadowJar {
   manifest { attributes["Main-Class"] = "io.sentry.samples.spring.boot.SentryDemoApplication" }
   archiveClassifier.set("")
-  mergeServiceFiles()
 
   val springMetadataFiles =
     listOf(
