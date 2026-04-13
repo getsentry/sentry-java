@@ -15,6 +15,7 @@ public final class io/sentry/kafka/SentryKafkaConsumerInterceptor : org/apache/k
 public final class io/sentry/kafka/SentryKafkaProducerInterceptor : org/apache/kafka/clients/producer/ProducerInterceptor {
 	public static final field SENTRY_ENQUEUED_TIME_HEADER Ljava/lang/String;
 	public static final field TRACE_ORIGIN Ljava/lang/String;
+	public fun <init> ()V
 	public fun <init> (Lio/sentry/IScopes;)V
 	public fun <init> (Lio/sentry/IScopes;Ljava/lang/String;)V
 	public fun close ()V

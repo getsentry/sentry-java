@@ -4,6 +4,7 @@ import io.sentry.BaggageHeader;
 import io.sentry.DateUtils;
 import io.sentry.IScopes;
 import io.sentry.ISpan;
+import io.sentry.ScopesAdapter;
 import io.sentry.SentryTraceHeader;
 import io.sentry.SpanDataConvention;
 import io.sentry.SpanOptions;
@@ -27,6 +28,10 @@ public final class SentryKafkaProducerInterceptor<K, V> implements ProducerInter
 
   private final @NotNull IScopes scopes;
   private final @NotNull String traceOrigin;
+
+  public SentryKafkaProducerInterceptor() {
+    this(ScopesAdapter.getInstance(), TRACE_ORIGIN);
+  }
 
   public SentryKafkaProducerInterceptor(final @NotNull IScopes scopes) {
     this(scopes, TRACE_ORIGIN);

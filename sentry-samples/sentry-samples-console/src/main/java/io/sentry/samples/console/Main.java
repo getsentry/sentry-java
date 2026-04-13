@@ -3,13 +3,19 @@ package io.sentry.samples.console;
 import io.sentry.*;
 import io.sentry.clientreport.DiscardReason;
 import io.sentry.jcache.SentryJCacheWrapper;
+import io.sentry.kafka.SentryKafkaProducerInterceptor;
 import io.sentry.protocol.Message;
 import io.sentry.protocol.User;
 import java.util.Collections;
+import java.util.Properties;
 import javax.cache.Cache;
 import javax.cache.CacheManager;
 import javax.cache.Caching;
 import javax.cache.configuration.MutableConfiguration;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.serialization.StringSerializer;
 
 public class Main {
 
@@ -95,6 +101,7 @@ public class Main {
 
           // Enable cache tracing to create spans for cache operations
           options.setEnableCacheTracing(true);
+          options.setEnableQueueTracing(true);
 
           // Determine traces sample rate based on the sampling context
           //          options.setTracesSampler(
@@ -178,6 +185,12 @@ public class Main {
     // cache.remove, and cache.flush spans as children of the active transaction.
     demonstrateCacheTracing();
 
+    // Kafka queue tracing with kafka-clients interceptors.
+    //
+    // This uses the native producer interceptor from sentry-kafka.
+    // If no local Kafka broker is available, this block exits quietly.
+    demonstrateKafkaTracing();
+
     // Performance feature
     //
     // Transactions collect execution time of the piece of code that's executed between the start
@@ -245,6 +258,30 @@ public class Main {
     Sentry.metrics().count("countMetric");
     Sentry.metrics().gauge("gaugeMetric", 5.0);
     Sentry.metrics().distribution("distributionMetric", 7.0);
+  }
+
+  private static void demonstrateKafkaTracing() {
+    final Properties producerProperties = new Properties();
+    producerProperties.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+    producerProperties.put(
+        ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+    producerProperties.put(
+        ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+    producerProperties.put(
+        ProducerConfig.INTERCEPTOR_CLASSES_CONFIG, SentryKafkaProducerInterceptor.class.getName());
+
+    final ITransaction transaction = Sentry.startTransaction("kafka-demo", "demo");
+    try (ISentryLifecycleToken ignored = transaction.makeCurrent()) {
+      try (KafkaProducer<String, String> producer = new KafkaProducer<>(producerProperties)) {
+        producer.send(new ProducerRecord<>("sentry-topic", "sentry-kafka sample message")).get();
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+      } catch (Exception ignoredException) {
+        // local broker may not be available when running the sample
+      }
+    } finally {
+      transaction.finish();
+    }
   }
 
   private static class SomeEventProcessor implements EventProcessor {
