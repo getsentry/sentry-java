@@ -1,5 +1,6 @@
 package io.sentry.spring.jakarta.kafka
 
+import io.sentry.kafka.SentryKafkaProducerInterceptor
 import kotlin.test.Test
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
@@ -18,17 +19,17 @@ class SentryKafkaProducerBeanPostProcessorTest {
   }
 
   @Test
-  fun `sets SentryProducerInterceptor on KafkaTemplate`() {
+  fun `sets SentryKafkaProducerInterceptor on KafkaTemplate`() {
     val template = KafkaTemplate<String, String>(mock<ProducerFactory<String, String>>())
     val processor = SentryKafkaProducerBeanPostProcessor()
 
     processor.postProcessAfterInitialization(template, "kafkaTemplate")
 
-    assertTrue(readInterceptor(template) is SentryProducerInterceptor<*, *>)
+    assertTrue(readInterceptor(template) is SentryKafkaProducerInterceptor<*, *>)
   }
 
   @Test
-  fun `does not double-wrap when SentryProducerInterceptor already set`() {
+  fun `does not double-wrap when SentryKafkaProducerInterceptor already set`() {
     val template = KafkaTemplate<String, String>(mock<ProducerFactory<String, String>>())
     val processor = SentryKafkaProducerBeanPostProcessor()
 

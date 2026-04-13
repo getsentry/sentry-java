@@ -29,6 +29,7 @@ tasks.withType<KotlinCompile>().configureEach {
 
 dependencies {
   api(projects.sentry)
+  compileOnly(projects.sentryKafka)
   compileOnly(platform(SpringBootPlugin.BOM_COORDINATES))
   compileOnly(Config.Libs.springWeb)
   compileOnly(Config.Libs.springAop)
@@ -59,6 +60,7 @@ dependencies {
   // tests
   testImplementation(projects.sentryTestSupport)
   testImplementation(projects.sentryGraphql)
+  testImplementation(projects.sentryKafka)
   testImplementation(kotlin(Config.kotlinStdLib))
   testImplementation(libs.awaitility.kotlin)
   testImplementation(libs.context.propagation)
