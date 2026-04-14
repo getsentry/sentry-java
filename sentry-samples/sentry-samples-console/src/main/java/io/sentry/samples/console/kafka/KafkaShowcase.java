@@ -26,11 +26,11 @@ public final class KafkaShowcase {
 
   private KafkaShowcase() {}
 
-  public static void demonstrate(final String bootstrapServers) {
+  public static void runKafkaWithSentryInterceptors(final String bootstrapServers) {
     final CountDownLatch consumedLatch = new CountDownLatch(1);
-    final Thread consumerThread = startKafkaConsumerThread(bootstrapServers, consumedLatch);
-
-    final Properties producerProperties = getProducerProperties(bootstrapServers);
+    final Thread consumerThread =
+        startConsumerWithSentryInterceptor(bootstrapServers, consumedLatch);
+    final Properties producerProperties = createProducerPropertiesWithSentry(bootstrapServers);
 
     final ITransaction transaction = Sentry.startTransaction("kafka-demo", "demo");
     try (ISentryLifecycleToken ignored = transaction.makeCurrent()) {
@@ -59,12 +59,55 @@ public final class KafkaShowcase {
     }
   }
 
-  private static Thread startKafkaConsumerThread(
+  public static Properties createProducerPropertiesWithSentry(final String bootstrapServers) {
+    final Properties producerProperties = new Properties();
+    producerProperties.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+    producerProperties.put(
+        ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+    producerProperties.put(
+        ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+
+    // Required for Sentry queue tracing in kafka-clients producer setup.
+    producerProperties.put(
+        ProducerConfig.INTERCEPTOR_CLASSES_CONFIG, SentryKafkaProducerInterceptor.class.getName());
+
+    // Optional tuning for sample stability in CI/local runs.
+    producerProperties.put(ProducerConfig.MAX_BLOCK_MS_CONFIG, 2000);
+    producerProperties.put(ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG, 2000);
+    producerProperties.put(ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG, 3000);
+
+    return producerProperties;
+  }
+
+  public static Properties createConsumerPropertiesWithSentry(final String bootstrapServers) {
+    final Properties consumerProperties = new Properties();
+    consumerProperties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+    consumerProperties.put(
+        ConsumerConfig.GROUP_ID_CONFIG, "sentry-console-sample-" + UUID.randomUUID());
+    consumerProperties.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+    consumerProperties.put(
+        ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+    consumerProperties.put(
+        ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+
+    // Required for Sentry queue tracing in kafka-clients consumer setup.
+    consumerProperties.put(
+        ConsumerConfig.INTERCEPTOR_CLASSES_CONFIG, SentryKafkaConsumerInterceptor.class.getName());
+
+    // Optional tuning for sample stability in CI/local runs.
+    consumerProperties.put(ConsumerConfig.DEFAULT_API_TIMEOUT_MS_CONFIG, 2000);
+    consumerProperties.put(ConsumerConfig.REQUEST_TIMEOUT_MS_CONFIG, 2000);
+
+    return consumerProperties;
+  }
+
+  private static Thread startConsumerWithSentryInterceptor(
       final String bootstrapServers, final CountDownLatch consumedLatch) {
     final Thread consumerThread =
         new Thread(
             () -> {
-              final Properties consumerProperties = getConsumerProperties(bootstrapServers);
+              final Properties consumerProperties =
+                  createConsumerPropertiesWithSentry(bootstrapServers);
 
               try (KafkaConsumer<String, String> consumer =
                   new KafkaConsumer<>(consumerProperties)) {
@@ -85,45 +128,5 @@ public final class KafkaShowcase {
             "sentry-kafka-sample-consumer");
     consumerThread.start();
     return consumerThread;
-  }
-
-  private static Properties getConsumerProperties(String bootstrapServers) {
-    final Properties consumerProperties = new Properties();
-
-    consumerProperties.put(
-      ConsumerConfig.INTERCEPTOR_CLASSES_CONFIG,
-      SentryKafkaConsumerInterceptor.class.getName());
-
-    consumerProperties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-    consumerProperties.put(
-        ConsumerConfig.GROUP_ID_CONFIG, "sentry-console-sample-" + UUID.randomUUID());
-    consumerProperties.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-    consumerProperties.put(
-        ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
-    consumerProperties.put(
-        ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
-        StringDeserializer.class.getName());
-    consumerProperties.put(ConsumerConfig.DEFAULT_API_TIMEOUT_MS_CONFIG, 2000);
-    consumerProperties.put(ConsumerConfig.REQUEST_TIMEOUT_MS_CONFIG, 2000);
-
-    return consumerProperties;
-  }
-
-  private static Properties getProducerProperties(String bootstrapServers) {
-    final Properties producerProperties = new Properties();
-
-    producerProperties.put(
-      ProducerConfig.INTERCEPTOR_CLASSES_CONFIG, SentryKafkaProducerInterceptor.class.getName());
-
-    producerProperties.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-    producerProperties.put(
-      ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
-    producerProperties.put(
-      ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
-    producerProperties.put(ProducerConfig.MAX_BLOCK_MS_CONFIG, 2000);
-    producerProperties.put(ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG, 2000);
-    producerProperties.put(ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG, 3000);
-
-    return producerProperties;
   }
 }

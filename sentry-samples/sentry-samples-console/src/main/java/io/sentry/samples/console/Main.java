@@ -4,8 +4,8 @@ import io.sentry.*;
 import io.sentry.clientreport.DiscardReason;
 import io.sentry.jcache.SentryJCacheWrapper;
 import io.sentry.protocol.Message;
-import io.sentry.samples.console.kafka.KafkaShowcase;
 import io.sentry.protocol.User;
+import io.sentry.samples.console.kafka.KafkaShowcase;
 import java.util.Collections;
 import javax.cache.Cache;
 import javax.cache.CacheManager;
@@ -188,7 +188,7 @@ public class Main {
     //
     // Enable with: SENTRY_SAMPLE_KAFKA_BOOTSTRAP_SERVERS=localhost:9092
     if (kafkaEnabled) {
-      KafkaShowcase.demonstrate(kafkaBootstrapServers);
+      KafkaShowcase.runKafkaWithSentryInterceptors(kafkaBootstrapServers);
     }
 
     // Performance feature
