@@ -68,7 +68,7 @@ public final class KafkaShowcase {
 
               try (KafkaConsumer<String, String> consumer =
                   new KafkaConsumer<>(consumerProperties)) {
-                consumer.subscribe(Collections.singletonList(topic));
+                consumer.subscribe(Collections.singletonList(TOPIC));
 
                 while (!Thread.currentThread().isInterrupted() && consumedLatch.getCount() > 0) {
                   final ConsumerRecords<String, String> records =
