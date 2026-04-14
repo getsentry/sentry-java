@@ -1,9 +1,9 @@
 package io.sentry.systemtest.graphql
 
-import com.apollographql.apollo3.ApolloClient
-import com.apollographql.apollo3.api.ApolloResponse
-import com.apollographql.apollo3.api.Mutation
-import com.apollographql.apollo3.api.Query
+import com.apollographql.apollo.ApolloClient
+import com.apollographql.apollo.api.ApolloResponse
+import com.apollographql.apollo.api.Mutation
+import com.apollographql.apollo.api.Query
 import io.sentry.samples.graphql.AddProjectMutation
 import io.sentry.samples.graphql.GreetingQuery
 import io.sentry.samples.graphql.ProjectQuery
