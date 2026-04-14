@@ -116,14 +116,13 @@ public final class JsonObjectReader implements ObjectReader {
         try {
           list.add(deserializer.deserialize(this, logger));
         } catch (Exception e) {
-          logger.log(SentryLevel.WARNING, "Failed to deserialize object in list.", e);
-          try {
-            recoverValue(startDepth, startToken);
-          } catch (Exception recoveryException) {
-            logger.log(
-                SentryLevel.ERROR,
-                "Stream unrecoverable, aborting list deserialization.",
-                recoveryException);
+          if (!recoverAfterValueFailure(
+              logger,
+              e,
+              "Failed to deserialize object in list.",
+              "Stream unrecoverable, aborting list deserialization.",
+              startDepth,
+              startToken)) {
             break;
           }
         }
@@ -150,14 +149,13 @@ public final class JsonObjectReader implements ObjectReader {
         try {
           map.put(key, deserializer.deserialize(this, logger));
         } catch (Exception e) {
-          logger.log(SentryLevel.WARNING, "Failed to deserialize object in map.", e);
-          try {
-            recoverValue(startDepth, startToken);
-          } catch (Exception recoveryException) {
-            logger.log(
-                SentryLevel.ERROR,
-                "Stream unrecoverable, aborting map deserialization.",
-                recoveryException);
+          if (!recoverAfterValueFailure(
+              logger,
+              e,
+              "Failed to deserialize object in map.",
+              "Stream unrecoverable, aborting map deserialization.",
+              startDepth,
+              startToken)) {
             break;
           }
         }
@@ -190,14 +188,13 @@ public final class JsonObjectReader implements ObjectReader {
             result.put(key, list);
           }
         } catch (Exception e) {
-          logger.log(SentryLevel.WARNING, "Failed to deserialize list in map.", e);
-          try {
-            recoverValue(startDepth, startToken);
-          } catch (Exception recoveryException) {
-            logger.log(
-                SentryLevel.ERROR,
-                "Stream unrecoverable, aborting map-of-lists deserialization.",
-                recoveryException);
+          if (!recoverAfterValueFailure(
+              logger,
+              e,
+              "Failed to deserialize list in map.",
+              "Stream unrecoverable, aborting map-of-lists deserialization.",
+              startDepth,
+              startToken)) {
             break;
           }
         }
@@ -329,6 +326,23 @@ public final class JsonObjectReader implements ObjectReader {
   @Override
   public void skipValue() throws IOException {
     jsonReader.skipValue();
+  }
+
+  private boolean recoverAfterValueFailure(
+      final @NotNull ILogger logger,
+      final @NotNull Exception error,
+      final @NotNull String warningMessage,
+      final @NotNull String unrecoverableMessage,
+      final int startDepth,
+      final @NotNull JsonToken startToken) {
+    logger.log(SentryLevel.WARNING, warningMessage, error);
+    try {
+      recoverValue(startDepth, startToken);
+      return true;
+    } catch (Exception recoveryException) {
+      logger.log(SentryLevel.ERROR, unrecoverableMessage, recoveryException);
+      return false;
+    }
   }
 
   private void recoverValue(final int startDepth, final @NotNull JsonToken startToken)
