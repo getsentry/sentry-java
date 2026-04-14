@@ -13,8 +13,8 @@ import java.util.Currency
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
-import kotlin.test.Test
 import kotlin.test.assertEquals
+import org.junit.Test
 
 class MapObjectReaderTest {
   enum class BasicEnum {
@@ -39,9 +39,18 @@ class MapObjectReaderTest {
     }
   }
 
+  private val logger = NoOpLogger.getInstance()
+
+  private fun getValuesReader(value: Any): MapObjectReader =
+    MapObjectReader(linkedMapOf("values" to value)).apply {
+      beginObject()
+      nextName()
+    }
+
+  private fun serializableValue(value: String): Map<String, Any> = linkedMapOf("test" to value)
+
   @Test
   fun `deserializes data correctly`() {
-    val logger = NoOpLogger.getInstance()
     val data = mutableMapOf<String, Any>()
     val writer = MapObjectWriter(data)
 
@@ -144,5 +153,95 @@ class MapObjectReaderTest {
     assertEquals("null", reader.nextName())
     reader.nextNull()
     reader.endObject()
+  }
+
+  @Test(timeout = 1000L)
+  fun `nextListOrNull skips a failing element`() {
+    val actual =
+      getValuesReader(listOf("fail")).nextListOrNull(logger, BasicSerializable.Deserializer())
+
+    assertEquals(emptyList(), actual)
+  }
+
+  @Test(timeout = 1000L)
+  fun `nextListOrNull keeps elements before a failing element`() {
+    val actual =
+      getValuesReader(listOf(serializableValue("one"), "fail"))
+        .nextListOrNull(logger, BasicSerializable.Deserializer())
+
+    assertEquals(listOf(BasicSerializable("one")), actual)
+  }
+
+  @Test(timeout = 1000L)
+  fun `nextListOrNull keeps elements after a failing element`() {
+    val actual =
+      getValuesReader(listOf("fail", serializableValue("two")))
+        .nextListOrNull(logger, BasicSerializable.Deserializer())
+
+    assertEquals(listOf(BasicSerializable("two")), actual)
+  }
+
+  @Test(timeout = 1000L)
+  fun `nextMapOrNull skips a failing value`() {
+    val actual =
+      getValuesReader(linkedMapOf("bad" to "fail"))
+        .nextMapOrNull(logger, BasicSerializable.Deserializer())
+
+    assertEquals(emptyMap(), actual)
+  }
+
+  @Test(timeout = 1000L)
+  fun `nextMapOrNull keeps values before a failing value`() {
+    val actual =
+      getValuesReader(linkedMapOf("bad" to "fail", "good" to serializableValue("one")))
+        .nextMapOrNull(logger, BasicSerializable.Deserializer())
+
+    assertEquals(mapOf("good" to BasicSerializable("one")), actual)
+  }
+
+  @Test(timeout = 1000L)
+  fun `nextMapOrNull keeps values after a failing value`() {
+    val actual =
+      getValuesReader(linkedMapOf("good" to serializableValue("two"), "bad" to "fail"))
+        .nextMapOrNull(logger, BasicSerializable.Deserializer())
+
+    assertEquals(mapOf("good" to BasicSerializable("two")), actual)
+  }
+
+  @Test(timeout = 1000L)
+  fun `nextMapOfListOrNull skips a failing value`() {
+    val actual =
+      getValuesReader(linkedMapOf("bad" to serializableValue("fail")))
+        .nextMapOfListOrNull(logger, BasicSerializable.Deserializer())
+
+    assertEquals(emptyMap(), actual)
+  }
+
+  @Test(timeout = 1000L)
+  fun `nextMapOfListOrNull keeps values before a failing value`() {
+    val actual =
+      getValuesReader(
+          linkedMapOf(
+            "bad" to serializableValue("fail"),
+            "good" to listOf(serializableValue("one")),
+          )
+        )
+        .nextMapOfListOrNull(logger, BasicSerializable.Deserializer())
+
+    assertEquals(mapOf("good" to listOf(BasicSerializable("one"))), actual)
+  }
+
+  @Test(timeout = 1000L)
+  fun `nextMapOfListOrNull keeps values after a failing value`() {
+    val actual =
+      getValuesReader(
+          linkedMapOf(
+            "good" to listOf(serializableValue("two")),
+            "bad" to serializableValue("fail"),
+          )
+        )
+        .nextMapOfListOrNull(logger, BasicSerializable.Deserializer())
+
+    assertEquals(mapOf("good" to listOf(BasicSerializable("two"))), actual)
   }
 }

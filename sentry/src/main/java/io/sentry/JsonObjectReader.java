@@ -18,6 +18,7 @@ import org.jetbrains.annotations.Nullable;
 public final class JsonObjectReader implements ObjectReader {
 
   private final @NotNull JsonReader jsonReader;
+  private int depth = 0;
 
   public JsonObjectReader(Reader in) {
     this.jsonReader = new JsonReader(in);
@@ -84,10 +85,18 @@ public final class JsonObjectReader implements ObjectReader {
 
   @Override
   public void nextUnknown(ILogger logger, Map<String, Object> unknown, String name) {
+    final int startDepth = depth;
+    JsonToken startToken = JsonToken.END_DOCUMENT;
     try {
+      startToken = peek();
       unknown.put(name, nextObjectOrNull());
     } catch (Exception exception) {
       logger.log(SentryLevel.ERROR, exception, "Error deserializing unknown key: %s", name);
+      try {
+        recoverValue(startDepth, startToken);
+      } catch (Exception ignored) {
+        // stream is unrecoverable
+      }
     }
   }
 
@@ -98,18 +107,21 @@ public final class JsonObjectReader implements ObjectReader {
       jsonReader.nextNull();
       return null;
     }
-    jsonReader.beginArray();
+    beginArray();
     List<T> list = new ArrayList<>();
     if (jsonReader.hasNext()) {
       do {
+        final int startDepth = depth;
+        final JsonToken startToken = peek();
         try {
           list.add(deserializer.deserialize(this, logger));
         } catch (Exception e) {
           logger.log(SentryLevel.WARNING, "Failed to deserialize object in list.", e);
+          recoverValue(startDepth, startToken);
         }
       } while (jsonReader.peek() == JsonToken.BEGIN_OBJECT);
     }
-    jsonReader.endArray();
+    endArray();
     return list;
   }
 
@@ -120,20 +132,23 @@ public final class JsonObjectReader implements ObjectReader {
       jsonReader.nextNull();
       return null;
     }
-    jsonReader.beginObject();
+    beginObject();
     Map<String, T> map = new HashMap<>();
     if (jsonReader.hasNext()) {
       do {
+        final String key = jsonReader.nextName();
+        final int startDepth = depth;
+        final JsonToken startToken = peek();
         try {
-          String key = jsonReader.nextName();
           map.put(key, deserializer.deserialize(this, logger));
         } catch (Exception e) {
           logger.log(SentryLevel.WARNING, "Failed to deserialize object in map.", e);
+          recoverValue(startDepth, startToken);
         }
       } while (jsonReader.peek() == JsonToken.BEGIN_OBJECT || jsonReader.peek() == JsonToken.NAME);
     }
 
-    jsonReader.endObject();
+    endObject();
     return map;
   }
 
@@ -151,9 +166,16 @@ public final class JsonObjectReader implements ObjectReader {
     if (hasNext()) {
       do {
         final @NotNull String key = nextName();
-        final @Nullable List<T> list = nextListOrNull(logger, deserializer);
-        if (list != null) {
-          result.put(key, list);
+        final int startDepth = depth;
+        final JsonToken startToken = peek();
+        try {
+          final @Nullable List<T> list = nextListOrNull(logger, deserializer);
+          if (list != null) {
+            result.put(key, list);
+          }
+        } catch (Exception e) {
+          logger.log(SentryLevel.WARNING, "Failed to deserialize list in map.", e);
+          recoverValue(startDepth, startToken);
         }
       } while (peek() == JsonToken.BEGIN_OBJECT || peek() == JsonToken.NAME);
     }
@@ -219,21 +241,25 @@ public final class JsonObjectReader implements ObjectReader {
   @Override
   public void beginObject() throws IOException {
     jsonReader.beginObject();
+    depth++;
   }
 
   @Override
   public void endObject() throws IOException {
     jsonReader.endObject();
+    depth--;
   }
 
   @Override
   public void beginArray() throws IOException {
     jsonReader.beginArray();
+    depth++;
   }
 
   @Override
   public void endArray() throws IOException {
     jsonReader.endArray();
+    depth--;
   }
 
   @Override
@@ -279,6 +305,25 @@ public final class JsonObjectReader implements ObjectReader {
   @Override
   public void skipValue() throws IOException {
     jsonReader.skipValue();
+  }
+
+  private void recoverValue(final int startDepth, final @NotNull JsonToken startToken)
+      throws IOException {
+    final boolean enteredNestedValue = depth > startDepth;
+    while (depth > startDepth) {
+      final JsonToken token = peek();
+      if (token == JsonToken.END_OBJECT) {
+        endObject();
+      } else if (token == JsonToken.END_ARRAY) {
+        endArray();
+      } else {
+        skipValue();
+      }
+    }
+
+    if (!enteredNestedValue && peek() == startToken) {
+      skipValue();
+    }
   }
 
   @Override
