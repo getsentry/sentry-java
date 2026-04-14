@@ -49,6 +49,25 @@ class MapObjectReaderTest {
 
   private fun serializableValue(value: String): Map<String, Any> = linkedMapOf("test" to value)
 
+  private fun partialSerializableValue(kind: String, value: String): Map<String, Any> =
+    linkedMapOf("test" to value, "kind" to kind)
+
+  private val partiallyFailingDeserializer =
+    JsonDeserializer<BasicSerializable> { reader, _ ->
+      val basicSerializable = BasicSerializable()
+      reader.beginObject()
+      if (reader.nextName() == "kind") {
+        if (reader.nextString() == "fail") {
+          throw IllegalStateException("intentional")
+        }
+      }
+      if (reader.nextName() == "test") {
+        basicSerializable.test = reader.nextString()
+      }
+      reader.endObject()
+      basicSerializable
+    }
+
   @Test
   fun `deserializes data correctly`() {
     val data = mutableMapOf<String, Any>()
@@ -243,5 +262,47 @@ class MapObjectReaderTest {
         .nextMapOfListOrNull(logger, BasicSerializable.Deserializer())
 
     assertEquals(mapOf("good" to listOf(BasicSerializable("two"))), actual)
+  }
+
+  @Test(timeout = 1000L)
+  fun `nextListOrNull keeps elements after a partially consumed failing element`() {
+    val actual =
+      getValuesReader(
+          listOf(partialSerializableValue("fail", "bad"), partialSerializableValue("ok", "two"))
+        )
+        .nextListOrNull(logger, partiallyFailingDeserializer)
+
+    assertEquals(listOf(BasicSerializable("two")), actual)
+  }
+
+  @Test(timeout = 1000L)
+  fun `nextMapOrNull keeps values after a partially consumed failing value`() {
+    val actual =
+      getValuesReader(
+          linkedMapOf(
+            "bad" to partialSerializableValue("fail", "bad"),
+            "good" to partialSerializableValue("ok", "two"),
+          )
+        )
+        .nextMapOrNull(logger, partiallyFailingDeserializer)
+
+    assertEquals(mapOf("good" to BasicSerializable("two")), actual)
+  }
+
+  @Test(timeout = 1000L)
+  fun `nextMapOfListOrNull keeps values after a partially consumed failing element`() {
+    val actual =
+      getValuesReader(
+          linkedMapOf(
+            "bad" to listOf(partialSerializableValue("fail", "bad")),
+            "good" to listOf(partialSerializableValue("ok", "two")),
+          )
+        )
+        .nextMapOfListOrNull(logger, partiallyFailingDeserializer)
+
+    assertEquals(
+      mapOf("bad" to emptyList<BasicSerializable>(), "good" to listOf(BasicSerializable("two"))),
+      actual,
+    )
   }
 }

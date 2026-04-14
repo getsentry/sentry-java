@@ -31,15 +31,12 @@ public final class MapObjectReader implements ObjectReader {
   @Override
   public void nextUnknown(
       final @NotNull ILogger logger, final Map<String, Object> unknown, final String name) {
+    final int stackSizeBefore = stack.size();
     try {
       unknown.put(name, nextObjectOrNull());
     } catch (Exception exception) {
       logger.log(SentryLevel.ERROR, exception, "Error deserializing unknown key: %s", name);
-      try {
-        skipValue();
-      } catch (Exception ignored) {
-        // stream is unrecoverable
-      }
+      recoverValue(stackSizeBefore);
     }
   }
 
@@ -57,11 +54,12 @@ public final class MapObjectReader implements ObjectReader {
       List<T> list = new ArrayList<>();
       if (hasNext()) {
         do {
+          final int stackSizeBefore = stack.size();
           try {
             list.add(deserializer.deserialize(this, logger));
           } catch (Exception e) {
             logger.log(SentryLevel.WARNING, "Failed to deserialize object in list.", e);
-            skipValue();
+            recoverValue(stackSizeBefore);
           }
         } while (peek() == JsonToken.BEGIN_OBJECT);
       }
@@ -87,11 +85,12 @@ public final class MapObjectReader implements ObjectReader {
       if (hasNext()) {
         do {
           final String key = nextName();
+          final int stackSizeBefore = stack.size();
           try {
             map.put(key, deserializer.deserialize(this, logger));
           } catch (Exception e) {
             logger.log(SentryLevel.WARNING, "Failed to deserialize object in map.", e);
-            skipValue();
+            recoverValue(stackSizeBefore);
           }
         } while (peek() == JsonToken.BEGIN_OBJECT || peek() == JsonToken.NAME);
       }
@@ -116,6 +115,7 @@ public final class MapObjectReader implements ObjectReader {
       if (hasNext()) {
         do {
           final @NotNull String key = nextName();
+          final int stackSizeBefore = stack.size();
           try {
             final @Nullable List<T> list = nextListOrNull(logger, deserializer);
             if (list != null) {
@@ -123,7 +123,7 @@ public final class MapObjectReader implements ObjectReader {
             }
           } catch (Exception e) {
             logger.log(SentryLevel.WARNING, "Failed to deserialize list in map.", e);
-            skipValue();
+            recoverValue(stackSizeBefore);
           }
         } while (peek() == JsonToken.BEGIN_OBJECT || peek() == JsonToken.NAME);
       }
@@ -393,6 +393,12 @@ public final class MapObjectReader implements ObjectReader {
   @Override
   public void skipValue() throws IOException {
     if (!stack.isEmpty()) {
+      stack.removeLast();
+    }
+  }
+
+  private void recoverValue(final int stackSizeBefore) {
+    while (!stack.isEmpty() && stack.size() >= stackSizeBefore) {
       stack.removeLast();
     }
   }
