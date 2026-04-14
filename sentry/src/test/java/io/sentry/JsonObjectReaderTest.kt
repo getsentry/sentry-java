@@ -2,9 +2,11 @@ package io.sentry
 
 import java.io.StringReader
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
 import org.junit.Test
 import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
@@ -295,6 +297,54 @@ class JsonObjectReaderTest {
         .nextMapOfListOrNull(fixture.logger, throwingValueDeserializer)
 
     assertEquals(mapOf("good" to listOf("two")), actual)
+  }
+
+  @Test(timeout = 1000L)
+  fun `nextListOrNull logs and aborts when recovery fails`() {
+    assertFailsWith<Exception> {
+      fixture
+        .getSut("[{\"value\": \"fail\"")
+        .nextListOrNull(fixture.logger, throwingValueDeserializer)
+    }
+
+    verify(fixture.logger)
+      .log(
+        eq(SentryLevel.ERROR),
+        eq("Stream unrecoverable, aborting list deserialization."),
+        any<Throwable>(),
+      )
+  }
+
+  @Test(timeout = 1000L)
+  fun `nextMapOrNull logs and aborts when recovery fails`() {
+    assertFailsWith<Exception> {
+      fixture
+        .getSut("{\"bad\": {\"value\": \"fail\"")
+        .nextMapOrNull(fixture.logger, throwingValueDeserializer)
+    }
+
+    verify(fixture.logger)
+      .log(
+        eq(SentryLevel.ERROR),
+        eq("Stream unrecoverable, aborting map deserialization."),
+        any<Throwable>(),
+      )
+  }
+
+  @Test(timeout = 1000L)
+  fun `nextMapOfListOrNull logs and aborts when recovery fails`() {
+    assertFailsWith<Exception> {
+      fixture
+        .getSut("{\"bad\": [{\"value\": \"fail\"")
+        .nextMapOfListOrNull(fixture.logger, throwingValueDeserializer)
+    }
+
+    verify(fixture.logger)
+      .log(
+        eq(SentryLevel.ERROR),
+        eq("Stream unrecoverable, aborting map-of-lists deserialization."),
+        any<Throwable>(),
+      )
   }
 
   // nextDateOrNull

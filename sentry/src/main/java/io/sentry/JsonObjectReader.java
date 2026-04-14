@@ -117,7 +117,15 @@ public final class JsonObjectReader implements ObjectReader {
           list.add(deserializer.deserialize(this, logger));
         } catch (Exception e) {
           logger.log(SentryLevel.WARNING, "Failed to deserialize object in list.", e);
-          recoverValue(startDepth, startToken);
+          try {
+            recoverValue(startDepth, startToken);
+          } catch (Exception recoveryException) {
+            logger.log(
+                SentryLevel.ERROR,
+                "Stream unrecoverable, aborting list deserialization.",
+                recoveryException);
+            break;
+          }
         }
       } while (jsonReader.peek() == JsonToken.BEGIN_OBJECT);
     }
@@ -143,7 +151,15 @@ public final class JsonObjectReader implements ObjectReader {
           map.put(key, deserializer.deserialize(this, logger));
         } catch (Exception e) {
           logger.log(SentryLevel.WARNING, "Failed to deserialize object in map.", e);
-          recoverValue(startDepth, startToken);
+          try {
+            recoverValue(startDepth, startToken);
+          } catch (Exception recoveryException) {
+            logger.log(
+                SentryLevel.ERROR,
+                "Stream unrecoverable, aborting map deserialization.",
+                recoveryException);
+            break;
+          }
         }
       } while (jsonReader.peek() == JsonToken.BEGIN_OBJECT || jsonReader.peek() == JsonToken.NAME);
     }
@@ -175,7 +191,15 @@ public final class JsonObjectReader implements ObjectReader {
           }
         } catch (Exception e) {
           logger.log(SentryLevel.WARNING, "Failed to deserialize list in map.", e);
-          recoverValue(startDepth, startToken);
+          try {
+            recoverValue(startDepth, startToken);
+          } catch (Exception recoveryException) {
+            logger.log(
+                SentryLevel.ERROR,
+                "Stream unrecoverable, aborting map-of-lists deserialization.",
+                recoveryException);
+            break;
+          }
         }
       } while (peek() == JsonToken.BEGIN_OBJECT || peek() == JsonToken.NAME);
     }
