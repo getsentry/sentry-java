@@ -152,7 +152,19 @@ tasks {
 
     duplicatesStrategy = DuplicatesStrategy.FAIL
 
-    mergeServiceFiles { include("inst/META-INF/services/*") }
+    filesMatching("META-INF/services/**") { duplicatesStrategy = DuplicatesStrategy.INCLUDE }
+    filesMatching("inst/META-INF/services/**") { duplicatesStrategy = DuplicatesStrategy.INCLUDE }
+
+    // Shadow 9.x only applies relocations to service files handled by a ServiceFileTransformer.
+    // We need two mergeServiceFiles calls:
+    // 1. Default path (META-INF/services) — ensures bootstrap service files get relocated
+    //    (e.g., ContextStorageProvider → shaded path). Without this, Shadow 9.x skips
+    //    relocation for service file names/contents not claimed by a transformer.
+    // 2. inst/ path — merges isolated agent service files from both the upstream agent
+    //    and the distro libs. Uses `path` instead of `include` filter because Shadow 9.x's
+    //    include() strips the `inst/` prefix on output.
+    mergeServiceFiles()
+    mergeServiceFiles { path = "inst/META-INF/services" }
     exclude("**/module-info.class")
     relocatePackages(this)
 

@@ -61,14 +61,13 @@ detekt = { id = "io.gitlab.arturbosch.detekt", version = "1.23.8" }
 jacoco-android = { id = "com.mxalbert.gradle.jacoco-android", version = "0.2.0" }
 kover = { id = "org.jetbrains.kotlinx.kover", version = "0.7.3" }
 vanniktech-maven-publish = { id = "com.vanniktech.maven.publish", version = "0.30.0" }
-springboot2 = { id = "org.springframework.boot", version.ref = "springboot2" }
 springboot3 = { id = "org.springframework.boot", version.ref = "springboot3" }
 springboot4 = { id = "org.springframework.boot", version.ref = "springboot4" }
 spring-dependency-management = { id = "io.spring.dependency-management", version = "1.1.7" }
 gretty = { id = "org.gretty", version = "4.0.0" }
 animalsniffer = { id = "ru.vyarus.animalsniffer", version = "2.0.1" }
 sentry = { id = "io.sentry.android.gradle", version = "6.0.0-alpha.6"}
-shadow = { id = "com.gradleup.shadow", version = "8.3.6" }
+shadow = { id = "com.gradleup.shadow", version = "9.4.1" }
 
 [libraries]
 apache-httpclient = { module = "org.apache.httpcomponents.client5:httpclient5", version = "5.0.4" }
@@ -159,6 +158,7 @@ slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 slf4j-jdk14 = { module = "org.slf4j:slf4j-jdk14", version.ref = "slf4j" }
 slf4j2-api = { module = "org.slf4j:slf4j-api", version = "2.0.5" }
 spotlessLib = { module = "com.diffplug.spotless:com.diffplug.spotless.gradle.plugin", version.ref = "spotless"}
+springboot2-bom = { module = "org.springframework.boot:spring-boot-dependencies", version.ref = "springboot2" }
 springboot-starter = { module = "org.springframework.boot:spring-boot-starter", version.ref = "springboot2" }
 springboot-starter-graphql = { module = "org.springframework.boot:spring-boot-starter-graphql", version.ref = "springboot2" }
 springboot-starter-quartz = { module = "org.springframework.boot:spring-boot-starter-quartz", version.ref = "springboot2" }

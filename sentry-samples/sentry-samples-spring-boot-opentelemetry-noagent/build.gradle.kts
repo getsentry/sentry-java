@@ -2,11 +2,14 @@ import org.jetbrains.kotlin.config.KotlinCompilerVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-  alias(libs.plugins.springboot2)
-  alias(libs.plugins.spring.dependency.management)
+  java
+  application
+  alias(libs.plugins.shadow)
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.kotlin.spring)
 }
+
+application { mainClass.set("io.sentry.samples.spring.boot.SentryDemoApplication") }
 
 group = "io.sentry.sample.spring-boot"
 
@@ -35,6 +38,8 @@ tasks.withType<KotlinCompile>().configureEach {
 }
 
 dependencies {
+  implementation(platform(libs.springboot2.bom))
+  implementation(platform(libs.otel.instrumentation.bom))
   implementation(libs.springboot.starter)
   implementation(libs.springboot.starter.actuator)
   implementation(libs.springboot.starter.aop)
@@ -72,13 +77,37 @@ dependencies {
   testImplementation("org.apache.httpcomponents:httpclient")
 }
 
-dependencyManagement { imports { mavenBom(libs.otel.instrumentation.bom.get().toString()) } }
+val runtimeClasspath = configurations.named("runtimeClasspath")
+
+// Configure the Shadow JAR (executable JAR with all dependencies)
+tasks.shadowJar {
+  manifest { attributes["Main-Class"] = "io.sentry.samples.spring.boot.SentryDemoApplication" }
+  archiveClassifier.set("")
+
+  doLast(
+    MergeSpringMetadataAction(
+      runtimeClasspath.get(),
+      MergeSpringMetadataAction.DEFAULT_SPRING_METADATA_FILES,
+    )
+  )
+}
+
+tasks.jar {
+  enabled = false
+  dependsOn(tasks.shadowJar)
+}
+
+tasks.startScripts { dependsOn(tasks.shadowJar) }
 
 configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
 
 tasks.register<Test>("systemTest").configure {
   group = "verification"
   description = "Runs the System tests"
+
+  val test = project.extensions.getByType<SourceSetContainer>()["test"]
+  testClassesDirs = test.output.classesDirs
+  classpath = test.runtimeClasspath
 
   outputs.upToDateWhen { false }
 

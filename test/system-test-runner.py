@@ -326,7 +326,7 @@ class SystemTestRunner:
             # Start the Tomcat server
             with open("tomcat-server.txt", "w") as log_file:
                 self.tomcat_server.process = subprocess.Popen(
-                    ["./gradlew", f"sentry-samples:{sample_module}:run"],
+                    ["./gradlew", f"sentry-samples:{sample_module}:run", "--console=plain"],
                     env=env,
                     stdout=log_file,
                     stderr=subprocess.STDOUT
@@ -406,6 +406,8 @@ class SystemTestRunner:
         print("Waiting for Spring application to be ready...")
 
         for attempt in range(1, max_attempts + 1):
+            # All current Spring Boot samples expose actuator/health. Waiting for the
+            # health endpoint avoids false positives from unrelated services on 8080.
             try:
                 response = requests.head(
                     "http://localhost:8080/actuator/health",
@@ -528,18 +530,23 @@ class SystemTestRunner:
             # Clean up PID file and instance variable
             cleanup_pid(self.spring_server)
 
-    def get_build_task(self, server_type: Optional[ServerType]) -> str:
+    def get_build_task(self, sample_module: str, server_type: Optional[ServerType]) -> str:
         """Get the appropriate build task for a module."""
         if server_type == ServerType.TOMCAT:
             return "war"
         elif server_type == ServerType.SPRING:
+            # Modules using Shadow plugin (e.g. Spring Boot 2 samples) use shadowJar,
+            # modules using Spring Boot plugin (SB3/SB4 samples) use bootJar
+            build_file = Path(f"sentry-samples/{sample_module}/build.gradle.kts")
+            if build_file.exists() and "shadow" in build_file.read_text():
+                return "shadowJar"
             return "bootJar"
 
         return "assemble"
 
     def build_module(self, sample_module: str, server_type: Optional[ServerType]) -> int:
         """Build a sample module using the appropriate task."""
-        build_task = self.get_build_task(server_type)
+        build_task = self.get_build_task(sample_module, server_type)
         print(f"Building {sample_module} using {build_task} task")
         return self.run_gradle_task(f":sentry-samples:{sample_module}:{build_task}")
 
@@ -547,7 +554,7 @@ class SystemTestRunner:
         """Run a Gradle task and return the exit code."""
         print(f"Running: ./gradlew {task}")
         try:
-            result = subprocess.run(["./gradlew", task], check=False)
+            result = subprocess.run(["./gradlew", task, "--console=plain"], check=False)
             return result.returncode
         except Exception as e:
             print(f"Failed to run Gradle task: {e}")

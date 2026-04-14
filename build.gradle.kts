@@ -87,7 +87,9 @@ apiValidation {
             "test-app-sentry",
             "test-app-size",
             "sentry-samples-netflix-dgs",
-            "sentry-samples-console-otlp"
+            "sentry-samples-console-otlp",
+            "sentry-test-support",
+            "sentry-system-test-support"
         )
     )
 }

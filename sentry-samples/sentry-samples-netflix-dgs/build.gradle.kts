@@ -2,11 +2,14 @@ import org.jetbrains.kotlin.config.KotlinCompilerVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-  alias(libs.plugins.springboot2)
-  alias(libs.plugins.spring.dependency.management)
+  java
+  application
+  alias(libs.plugins.shadow)
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.kotlin.spring)
 }
+
+application { mainClass.set("io.sentry.samples.netflix.dgs.NetlixDgsApplication") }
 
 group = "io.sentry.sample.spring-boot"
 
@@ -19,6 +22,7 @@ java.targetCompatibility = JavaVersion.VERSION_1_8
 repositories { mavenCentral() }
 
 dependencies {
+  implementation(platform(libs.springboot2.bom))
   implementation(libs.springboot.starter.web)
   implementation(Config.Libs.kotlinReflect)
   implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
@@ -31,6 +35,28 @@ dependencies {
     exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
   }
 }
+
+val runtimeClasspath = configurations.named("runtimeClasspath")
+
+// Configure the Shadow JAR (executable JAR with all dependencies)
+tasks.shadowJar {
+  manifest { attributes["Main-Class"] = "io.sentry.samples.netflix.dgs.NetlixDgsApplication" }
+  archiveClassifier.set("")
+
+  doLast(
+    MergeSpringMetadataAction(
+      runtimeClasspath.get(),
+      MergeSpringMetadataAction.DEFAULT_SPRING_METADATA_FILES,
+    )
+  )
+}
+
+tasks.jar {
+  enabled = false
+  dependsOn(tasks.shadowJar)
+}
+
+tasks.startScripts { dependsOn(tasks.shadowJar) }
 
 tasks.withType<Test>().configureEach { useJUnitPlatform() }
 

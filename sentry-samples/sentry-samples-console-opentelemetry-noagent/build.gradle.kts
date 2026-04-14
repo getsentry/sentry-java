@@ -48,6 +48,7 @@ dependencies {
 tasks.shadowJar {
   manifest { attributes["Main-Class"] = "io.sentry.samples.console.Main" }
   archiveClassifier.set("") // Remove the classifier so it replaces the regular JAR
+  duplicatesStrategy = DuplicatesStrategy.INCLUDE
   mergeServiceFiles()
 }
 
@@ -65,6 +66,10 @@ configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
 tasks.register<Test>("systemTest").configure {
   group = "verification"
   description = "Runs the System tests"
+
+  val test = project.extensions.getByType<SourceSetContainer>()["test"]
+  testClassesDirs = test.output.classesDirs
+  classpath = test.runtimeClasspath
 
   outputs.upToDateWhen { false }
 
