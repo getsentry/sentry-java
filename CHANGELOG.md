@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Dependencies
+
+- Bump Native SDK from v0.13.3 to v0.13.6 ([#5277](https://github.com/getsentry/sentry-java/pull/5277))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0136)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.13.3...0.13.6)
+
+## 8.38.0
+
 ### Features
 
 - Prevent cross-organization trace continuation ([#5136](https://github.com/getsentry/sentry-java/pull/5136))
@@ -10,6 +18,10 @@
   - New option `orgId`: allows explicitly setting the organization ID for self-hosted and Relay setups where it cannot be extracted from the DSN. Configurable via code (`setOrgId("123")`), `sentry.properties` (`org-id=123`), Android manifest (`io.sentry.org-id`), or Spring Boot (`sentry.org-id=123`).
 - Android: Attachments on the scope will now be synced to native ([#5211](https://github.com/getsentry/sentry-java/pull/5211))
 - Add THIRD_PARTY_NOTICES.md for vendored third-party code, bundled as SENTRY_THIRD_PARTY_NOTICES.md in the sentry JAR under META-INF ([#5186](https://github.com/getsentry/sentry-java/pull/5186))
+
+### Improvements
+
+- Do not retrieve `ActivityManager` if API < 35 on SDK init ([#5275](https://github.com/getsentry/sentry-java/pull/5275))
 
 ## 8.37.1
 
