@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Internal
+
+- Bump AGP version from v8.6.0 to v8.13.1 ([#5063](https://github.com/getsentry/sentry-java/pull/5063))
+
 ### Dependencies
 
 - Bump Native SDK from v0.13.3 to v0.13.6 ([#5277](https://github.com/getsentry/sentry-java/pull/5277))
