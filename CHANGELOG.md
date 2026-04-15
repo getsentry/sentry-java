@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixes
+
+- Fix ANR caused by `GestureDetectorCompat` Handler/MessageQueue lock contention in `SentryWindowCallback` ([#5138](https://github.com/getsentry/sentry-java/pull/5138))
+
 ### Internal
 
 - Bump AGP version from v8.6.0 to v8.13.1 ([#5063](https://github.com/getsentry/sentry-java/pull/5063))
@@ -171,7 +175,6 @@
 - Fix attribute type detection for `Long`, `Short`, `Byte`, `BigInteger`, `AtomicInteger`, and `AtomicLong` being incorrectly inferred as `double` instead of `integer` ([#5122](https://github.com/getsentry/sentry-java/pull/5122))
 - Remove `AndroidRuntimeManager` StrictMode relaxation to prevent ANRs during SDK init ([#5127](https://github.com/getsentry/sentry-java/pull/5127))
   - **IMPORTANT:** StrictMode violations may appear again in debug builds. This is intentional to prevent ANRs in production releases.
-- Fix ANR caused by `GestureDetectorCompat` Handler/MessageQueue lock contention in `SentryWindowCallback` ([#5138](https://github.com/getsentry/sentry-java/pull/5138))
 - Fix crash when unregistering `SystemEventsBroadcastReceiver` with try-catch block. ([#5106](https://github.com/getsentry/sentry-java/pull/5106))
 - Use `peekDecorView` instead of `getDecorView` in `SentryGestureListener` to avoid forcing view hierarchy construction ([#5134](https://github.com/getsentry/sentry-java/pull/5134))
 - Log an actionable error message when Relay returns HTTP 413 (Content Too Large) ([#5115](https://github.com/getsentry/sentry-java/pull/5115))
