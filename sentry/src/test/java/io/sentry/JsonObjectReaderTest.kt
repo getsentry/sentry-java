@@ -285,6 +285,25 @@ class JsonObjectReaderTest {
   }
 
   @Test(timeout = 1000L)
+  fun `nextListOrNull keeps elements after skipValue consumes a failing element`() {
+    var callCount = 0
+    val deserializer =
+      JsonDeserializer<String> { reader, logger ->
+        if (callCount++ == 0) {
+          reader.skipValue()
+          throw IllegalStateException("intentional")
+        }
+        throwingValueDeserializer.deserialize(reader, logger)
+      }
+
+    val actual =
+      getValuesReader("[{\"value\": \"ignored\"}, {\"value\": \"two\"}]")
+        .nextListOrNull(fixture.logger, deserializer)
+
+    assertEquals(listOf("two"), actual)
+  }
+
+  @Test(timeout = 1000L)
   fun `nextMapOrNull skips a failing value`() {
     val actual =
       getValuesReader("{\"bad\": {\"value\": \"fail\"}}")
@@ -334,6 +353,25 @@ class JsonObjectReaderTest {
     val actual =
       getValuesReader("{\"bad\": {\"value\": \"fail\"}, \"good\": [{\"value\": \"two\"}]}")
         .nextMapOfListOrNull(fixture.logger, throwingValueDeserializer)
+
+    assertEquals(mapOf("good" to listOf("two")), actual)
+  }
+
+  @Test(timeout = 1000L)
+  fun `nextMapOfListOrNull keeps nested values after skipValue consumes a failing element`() {
+    var callCount = 0
+    val deserializer =
+      JsonDeserializer<String> { reader, logger ->
+        if (callCount++ == 0) {
+          reader.skipValue()
+          throw IllegalStateException("intentional")
+        }
+        throwingValueDeserializer.deserialize(reader, logger)
+      }
+
+    val actual =
+      getValuesReader("{\"good\": [{\"value\": \"ignored\"}, {\"value\": \"two\"}]}")
+        .nextMapOfListOrNull(fixture.logger, deserializer)
 
     assertEquals(mapOf("good" to listOf("two")), actual)
   }

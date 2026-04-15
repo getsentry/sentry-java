@@ -30,25 +30,25 @@ public final class JsonObjectReader implements ObjectReader {
   @Override
   public @Nullable String nextStringOrNull() throws IOException {
     if (jsonReader.peek() == JsonToken.NULL) {
-      jsonReader.nextNull();
+      nextNull();
       return null;
     }
-    return jsonReader.nextString();
+    return nextString();
   }
 
   @Override
   public @Nullable Double nextDoubleOrNull() throws IOException {
     if (jsonReader.peek() == JsonToken.NULL) {
-      jsonReader.nextNull();
+      nextNull();
       return null;
     }
-    return jsonReader.nextDouble();
+    return nextDouble();
   }
 
   @Override
   public @Nullable Float nextFloatOrNull() throws IOException {
     if (jsonReader.peek() == JsonToken.NULL) {
-      jsonReader.nextNull();
+      nextNull();
       return null;
     }
     return nextFloat();
@@ -56,34 +56,35 @@ public final class JsonObjectReader implements ObjectReader {
 
   @Override
   public float nextFloat() throws IOException {
+    markValueConsumed();
     return (float) jsonReader.nextDouble();
   }
 
   @Override
   public @Nullable Long nextLongOrNull() throws IOException {
     if (jsonReader.peek() == JsonToken.NULL) {
-      jsonReader.nextNull();
+      nextNull();
       return null;
     }
-    return jsonReader.nextLong();
+    return nextLong();
   }
 
   @Override
   public @Nullable Integer nextIntegerOrNull() throws IOException {
     if (jsonReader.peek() == JsonToken.NULL) {
-      jsonReader.nextNull();
+      nextNull();
       return null;
     }
-    return jsonReader.nextInt();
+    return nextInt();
   }
 
   @Override
   public @Nullable Boolean nextBooleanOrNull() throws IOException {
     if (jsonReader.peek() == JsonToken.NULL) {
-      jsonReader.nextNull();
+      nextNull();
       return null;
     }
-    return jsonReader.nextBoolean();
+    return nextBoolean();
   }
 
   @Override
@@ -110,7 +111,7 @@ public final class JsonObjectReader implements ObjectReader {
   public <T> @Nullable List<T> nextListOrNull(
       @NotNull ILogger logger, @NotNull JsonDeserializer<T> deserializer) throws IOException {
     if (jsonReader.peek() == JsonToken.NULL) {
-      jsonReader.nextNull();
+      nextNull();
       return null;
     }
     beginArray();
@@ -142,7 +143,7 @@ public final class JsonObjectReader implements ObjectReader {
   public <T> @Nullable Map<String, T> nextMapOrNull(
       @NotNull ILogger logger, @NotNull JsonDeserializer<T> deserializer) throws IOException {
     if (jsonReader.peek() == JsonToken.NULL) {
-      jsonReader.nextNull();
+      nextNull();
       return null;
     }
     beginObject();
@@ -215,7 +216,7 @@ public final class JsonObjectReader implements ObjectReader {
   public <T> @Nullable T nextOrNull(
       @NotNull ILogger logger, @NotNull JsonDeserializer<T> deserializer) throws Exception {
     if (jsonReader.peek() == JsonToken.NULL) {
-      jsonReader.nextNull();
+      nextNull();
       return null;
     }
     return deserializer.deserialize(this, logger);
@@ -224,20 +225,20 @@ public final class JsonObjectReader implements ObjectReader {
   @Override
   public @Nullable Date nextDateOrNull(ILogger logger) throws IOException {
     if (jsonReader.peek() == JsonToken.NULL) {
-      jsonReader.nextNull();
+      nextNull();
       return null;
     }
-    return ObjectReader.dateOrNull(jsonReader.nextString(), logger);
+    return ObjectReader.dateOrNull(nextString(), logger);
   }
 
   @Override
   public @Nullable TimeZone nextTimeZoneOrNull(ILogger logger) throws IOException {
     if (jsonReader.peek() == JsonToken.NULL) {
-      jsonReader.nextNull();
+      nextNull();
       return null;
     }
     try {
-      return TimeZone.getTimeZone(jsonReader.nextString());
+      return TimeZone.getTimeZone(nextString());
     } catch (Exception e) {
       logger.log(SentryLevel.ERROR, "Error when deserializing TimeZone", e);
     }
@@ -268,8 +269,8 @@ public final class JsonObjectReader implements ObjectReader {
   @Override
   public void beginObject() throws IOException {
     jsonReader.beginObject();
+    markValueConsumed();
     depth++;
-    markContainerEntered();
   }
 
   @Override
@@ -281,8 +282,8 @@ public final class JsonObjectReader implements ObjectReader {
   @Override
   public void beginArray() throws IOException {
     jsonReader.beginArray();
+    markValueConsumed();
     depth++;
-    markContainerEntered();
   }
 
   @Override
@@ -298,31 +299,37 @@ public final class JsonObjectReader implements ObjectReader {
 
   @Override
   public int nextInt() throws IOException {
+    markValueConsumed();
     return jsonReader.nextInt();
   }
 
   @Override
   public long nextLong() throws IOException {
+    markValueConsumed();
     return jsonReader.nextLong();
   }
 
   @Override
   public String nextString() throws IOException {
+    markValueConsumed();
     return jsonReader.nextString();
   }
 
   @Override
   public boolean nextBoolean() throws IOException {
+    markValueConsumed();
     return jsonReader.nextBoolean();
   }
 
   @Override
   public double nextDouble() throws IOException {
+    markValueConsumed();
     return jsonReader.nextDouble();
   }
 
   @Override
   public void nextNull() throws IOException {
+    markValueConsumed();
     jsonReader.nextNull();
   }
 
@@ -333,6 +340,7 @@ public final class JsonObjectReader implements ObjectReader {
 
   @Override
   public void skipValue() throws IOException {
+    markValueConsumed();
     jsonReader.skipValue();
   }
 
@@ -369,13 +377,10 @@ public final class JsonObjectReader implements ObjectReader {
     }
   }
 
-  private void markContainerEntered() {
-    for (RecoveryState recoveryState : recoveryStates) {
-      if (!recoveryState.enteredContainer
-          && isContainerStartToken(recoveryState.startToken)
-          && depth > recoveryState.startDepth) {
-        recoveryState.enteredContainer = true;
-      }
+  private void markValueConsumed() {
+    final @Nullable RecoveryState recoveryState = recoveryStates.peekLast();
+    if (recoveryState != null) {
+      recoveryState.valueConsumed = true;
     }
   }
 
@@ -391,13 +396,9 @@ public final class JsonObjectReader implements ObjectReader {
       }
     }
 
-    if (!recoveryState.enteredContainer && peek() == recoveryState.startToken) {
+    if (!recoveryState.valueConsumed && peek() == recoveryState.startToken) {
       skipValue();
     }
-  }
-
-  private static boolean isContainerStartToken(final @NotNull JsonToken token) {
-    return token == JsonToken.BEGIN_OBJECT || token == JsonToken.BEGIN_ARRAY;
   }
 
   @Override
@@ -408,7 +409,7 @@ public final class JsonObjectReader implements ObjectReader {
   private static final class RecoveryState {
     private final int startDepth;
     private final @NotNull JsonToken startToken;
-    private boolean enteredContainer;
+    private boolean valueConsumed;
 
     private RecoveryState(final int startDepth, final @NotNull JsonToken startToken) {
       this.startDepth = startDepth;
