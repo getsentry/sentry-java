@@ -4,8 +4,10 @@ import io.sentry.vendor.gson.stream.JsonReader;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.io.Reader;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 public final class JsonObjectReader implements ObjectReader {
 
   private final @NotNull JsonReader jsonReader;
+  private final @NotNull Deque<RecoveryState> recoveryStates = new ArrayDeque<>();
   private int depth = 0;
 
   public JsonObjectReader(Reader in) {
@@ -85,18 +88,21 @@ public final class JsonObjectReader implements ObjectReader {
 
   @Override
   public void nextUnknown(ILogger logger, Map<String, Object> unknown, String name) {
-    final int startDepth = depth;
-    JsonToken startToken = JsonToken.END_DOCUMENT;
+    RecoveryState recoveryState = null;
     try {
-      startToken = peek();
+      recoveryState = beginRecovery(peek());
       unknown.put(name, nextObjectOrNull());
     } catch (Exception exception) {
       logger.log(SentryLevel.ERROR, exception, "Error deserializing unknown key: %s", name);
-      try {
-        recoverValue(startDepth, startToken);
-      } catch (Exception ignored) {
-        // stream is unrecoverable
+      if (recoveryState != null) {
+        try {
+          recoverValue(recoveryState);
+        } catch (Exception ignored) {
+          // stream is unrecoverable
+        }
       }
+    } finally {
+      endRecovery(recoveryState);
     }
   }
 
@@ -111,8 +117,7 @@ public final class JsonObjectReader implements ObjectReader {
     List<T> list = new ArrayList<>();
     if (jsonReader.hasNext()) {
       do {
-        final int startDepth = depth;
-        final JsonToken startToken = peek();
+        final RecoveryState recoveryState = beginRecovery(peek());
         try {
           list.add(deserializer.deserialize(this, logger));
         } catch (Exception e) {
@@ -121,10 +126,11 @@ public final class JsonObjectReader implements ObjectReader {
               e,
               "Failed to deserialize object in list.",
               "Stream unrecoverable, aborting list deserialization.",
-              startDepth,
-              startToken)) {
+              recoveryState)) {
             break;
           }
+        } finally {
+          endRecovery(recoveryState);
         }
       } while (jsonReader.peek() == JsonToken.BEGIN_OBJECT);
     }
@@ -144,8 +150,7 @@ public final class JsonObjectReader implements ObjectReader {
     if (jsonReader.hasNext()) {
       do {
         final String key = jsonReader.nextName();
-        final int startDepth = depth;
-        final JsonToken startToken = peek();
+        final RecoveryState recoveryState = beginRecovery(peek());
         try {
           map.put(key, deserializer.deserialize(this, logger));
         } catch (Exception e) {
@@ -154,10 +159,11 @@ public final class JsonObjectReader implements ObjectReader {
               e,
               "Failed to deserialize object in map.",
               "Stream unrecoverable, aborting map deserialization.",
-              startDepth,
-              startToken)) {
+              recoveryState)) {
             break;
           }
+        } finally {
+          endRecovery(recoveryState);
         }
       } while (jsonReader.peek() == JsonToken.BEGIN_OBJECT || jsonReader.peek() == JsonToken.NAME);
     }
@@ -180,8 +186,7 @@ public final class JsonObjectReader implements ObjectReader {
     if (hasNext()) {
       do {
         final @NotNull String key = nextName();
-        final int startDepth = depth;
-        final JsonToken startToken = peek();
+        final RecoveryState recoveryState = beginRecovery(peek());
         try {
           final @Nullable List<T> list = nextListOrNull(logger, deserializer);
           if (list != null) {
@@ -193,10 +198,11 @@ public final class JsonObjectReader implements ObjectReader {
               e,
               "Failed to deserialize list in map.",
               "Stream unrecoverable, aborting map-of-lists deserialization.",
-              startDepth,
-              startToken)) {
+              recoveryState)) {
             break;
           }
+        } finally {
+          endRecovery(recoveryState);
         }
       } while (peek() == JsonToken.BEGIN_OBJECT || peek() == JsonToken.NAME);
     }
@@ -263,6 +269,7 @@ public final class JsonObjectReader implements ObjectReader {
   public void beginObject() throws IOException {
     jsonReader.beginObject();
     depth++;
+    markContainerEntered();
   }
 
   @Override
@@ -275,6 +282,7 @@ public final class JsonObjectReader implements ObjectReader {
   public void beginArray() throws IOException {
     jsonReader.beginArray();
     depth++;
+    markContainerEntered();
   }
 
   @Override
@@ -333,11 +341,10 @@ public final class JsonObjectReader implements ObjectReader {
       final @NotNull Exception error,
       final @NotNull String warningMessage,
       final @NotNull String unrecoverableMessage,
-      final int startDepth,
-      final @NotNull JsonToken startToken) {
+      final @NotNull RecoveryState recoveryState) {
     logger.log(SentryLevel.WARNING, warningMessage, error);
     try {
-      recoverValue(startDepth, startToken);
+      recoverValue(recoveryState);
       return true;
     } catch (Exception recoveryException) {
       logger.log(SentryLevel.ERROR, unrecoverableMessage, recoveryException);
@@ -345,10 +352,35 @@ public final class JsonObjectReader implements ObjectReader {
     }
   }
 
-  private void recoverValue(final int startDepth, final @NotNull JsonToken startToken)
-      throws IOException {
-    final boolean enteredNestedValue = depth > startDepth;
-    while (depth > startDepth) {
+  private @NotNull RecoveryState beginRecovery(final @NotNull JsonToken startToken) {
+    final RecoveryState recoveryState = new RecoveryState(depth, startToken);
+    recoveryStates.addLast(recoveryState);
+    return recoveryState;
+  }
+
+  private void endRecovery(final @Nullable RecoveryState recoveryState) {
+    if (recoveryState == null) {
+      return;
+    }
+    if (!recoveryStates.isEmpty() && recoveryStates.peekLast() == recoveryState) {
+      recoveryStates.removeLast();
+    } else {
+      recoveryStates.remove(recoveryState);
+    }
+  }
+
+  private void markContainerEntered() {
+    for (RecoveryState recoveryState : recoveryStates) {
+      if (!recoveryState.enteredContainer
+          && isContainerStartToken(recoveryState.startToken)
+          && depth > recoveryState.startDepth) {
+        recoveryState.enteredContainer = true;
+      }
+    }
+  }
+
+  private void recoverValue(final @NotNull RecoveryState recoveryState) throws IOException {
+    while (depth > recoveryState.startDepth) {
       final JsonToken token = peek();
       if (token == JsonToken.END_OBJECT) {
         endObject();
@@ -359,13 +391,28 @@ public final class JsonObjectReader implements ObjectReader {
       }
     }
 
-    if (!enteredNestedValue && peek() == startToken) {
+    if (!recoveryState.enteredContainer && peek() == recoveryState.startToken) {
       skipValue();
     }
+  }
+
+  private static boolean isContainerStartToken(final @NotNull JsonToken token) {
+    return token == JsonToken.BEGIN_OBJECT || token == JsonToken.BEGIN_ARRAY;
   }
 
   @Override
   public void close() throws IOException {
     jsonReader.close();
+  }
+
+  private static final class RecoveryState {
+    private final int startDepth;
+    private final @NotNull JsonToken startToken;
+    private boolean enteredContainer;
+
+    private RecoveryState(final int startDepth, final @NotNull JsonToken startToken) {
+      this.startDepth = startDepth;
+      this.startToken = startToken;
+    }
   }
 }

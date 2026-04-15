@@ -32,6 +32,18 @@ class JsonObjectReaderTest {
       value
     }
 
+  private val postParseThrowingValueDeserializer =
+    JsonDeserializer<String> { reader, _ ->
+      reader.beginObject()
+      reader.nextName()
+      val value = reader.nextString()
+      reader.endObject()
+      if (value == "fail") {
+        throw IllegalStateException("intentional")
+      }
+      value
+    }
+
   private fun getValuesReader(jsonValue: String): JsonObjectReader =
     fixture.getSut("{\"values\": $jsonValue}").apply {
       beginObject()
@@ -228,6 +240,24 @@ class JsonObjectReaderTest {
   }
 
   @Test(timeout = 1000L)
+  fun `nextListOrNull skips an unconsumed failing element`() {
+    var callCount = 0
+    val deserializer =
+      JsonDeserializer<String> { reader, logger ->
+        if (callCount++ == 0) {
+          throw IllegalStateException("intentional")
+        }
+        throwingValueDeserializer.deserialize(reader, logger)
+      }
+
+    val actual =
+      getValuesReader("[{\"value\": \"ignored\"}, {\"value\": \"two\"}]")
+        .nextListOrNull(fixture.logger, deserializer)
+
+    assertEquals(listOf("two"), actual)
+  }
+
+  @Test(timeout = 1000L)
   fun `nextListOrNull keeps elements before a failing element`() {
     val actual =
       getValuesReader("[{\"value\": \"one\"}, {\"value\": \"fail\"}]")
@@ -241,6 +271,15 @@ class JsonObjectReaderTest {
     val actual =
       getValuesReader("[{\"value\": \"fail\"}, {\"value\": \"two\"}]")
         .nextListOrNull(fixture.logger, throwingValueDeserializer)
+
+    assertEquals(listOf("two"), actual)
+  }
+
+  @Test(timeout = 1000L)
+  fun `nextListOrNull keeps elements after a fully consumed failing element`() {
+    val actual =
+      getValuesReader("[{\"value\": \"fail\"}, {\"value\": \"two\"}]")
+        .nextListOrNull(fixture.logger, postParseThrowingValueDeserializer)
 
     assertEquals(listOf("two"), actual)
   }
