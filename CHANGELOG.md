@@ -4,7 +4,11 @@
 
 ### Fixes
 
-- Fix `JsonObjectReader` and `MapObjectReader` hanging indefinitely when deserialization errors leave the reader in an inconsistent state; failed values are now skipped, parsing continues, and a WARNING-level log entry is emitted for each skipped value ([#5293](https://github.com/getsentry/sentry-java/pull/5293))
+- Fix `JsonObjectReader` and `MapObjectReader` hanging indefinitely when deserialization
+  errors leave the reader in an inconsistent state ([#5293](https://github.com/getsentry/sentry-java/pull/5293))
+  - Failed collection values are now skipped so parsing can continue
+  - Skipped collection values emit `WARNING` logs
+  - Unknown-key failures and unrecoverable recovery failures emit `ERROR` logs
 
 ### Dependencies
 
