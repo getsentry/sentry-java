@@ -10,6 +10,7 @@ import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoMoreInteractions
 
 class JsonObjectReaderTest {
   class Fixture {
@@ -422,6 +423,32 @@ class JsonObjectReaderTest {
         eq("Stream unrecoverable, aborting map-of-lists deserialization."),
         any<Throwable>(),
       )
+  }
+
+  @Test(timeout = 1000L)
+  fun `nextUnknown logs when recovery fails`() {
+    val unknown = mutableMapOf<String, Any>()
+    val reader = fixture.getSut("{\"key\": {\"value\": \"fail\"")
+    reader.beginObject()
+    val name = reader.nextName()
+
+    reader.nextUnknown(fixture.logger, unknown, name)
+
+    assertEquals(emptyMap(), unknown)
+    verify(fixture.logger)
+      .log(
+        eq(SentryLevel.ERROR),
+        any<Throwable>(),
+        eq("Error deserializing unknown key: %s"),
+        eq("key"),
+      )
+    verify(fixture.logger)
+      .log(
+        eq(SentryLevel.ERROR),
+        eq("Stream unrecoverable after unknown key deserialization failure."),
+        any<Throwable>(),
+      )
+    verifyNoMoreInteractions(fixture.logger)
   }
 
   // nextDateOrNull

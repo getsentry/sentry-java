@@ -98,8 +98,11 @@ public final class JsonObjectReader implements ObjectReader {
       if (recoveryState != null) {
         try {
           recoverValue(recoveryState);
-        } catch (Exception ignored) {
-          // stream is unrecoverable
+        } catch (Exception recoveryException) {
+          logger.log(
+              SentryLevel.ERROR,
+              "Stream unrecoverable after unknown key deserialization failure.",
+              recoveryException);
         }
       }
     } finally {
