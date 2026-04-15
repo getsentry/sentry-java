@@ -10,9 +10,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * A lightweight gesture detector that replaces {@link
- * androidx.core.view.GestureDetectorCompat}/{@link GestureDetector} to avoid ANRs caused by
- * Handler/MessageQueue lock contention and IPC calls (FrameworkStatsLog.write).
+ * A lightweight gesture detector that replaces {@code GestureDetectorCompat}/{@link
+ * GestureDetector} to avoid ANRs caused by Handler/MessageQueue lock contention and IPC calls
+ * (FrameworkStatsLog.write).
  *
  * <p>Only detects click (tap), scroll, and fling — the gestures used by {@link
  * SentryGestureListener}. Long-press, show-press, and double-tap detection (which require Handler
@@ -44,7 +44,7 @@ public final class SentryGestureDetector {
     this.maximumFlingVelocity = config.getScaledMaximumFlingVelocity();
   }
 
-  boolean onTouchEvent(final @NotNull MotionEvent event) {
+  void onTouchEvent(final @NotNull MotionEvent event) {
     final int action = event.getActionMasked();
 
     if (velocityTracker == null) {
@@ -94,7 +94,7 @@ public final class SentryGestureDetector {
       case MotionEvent.ACTION_UP:
         if (isInTapRegion) {
           listener.onSingleTapUp(event);
-        } else if (velocityTracker != null) {
+        } else {
           final int pointerId = event.getPointerId(0);
           velocityTracker.computeCurrentVelocity(1000, maximumFlingVelocity);
           final float velocityX = velocityTracker.getXVelocity(pointerId);
@@ -105,22 +105,25 @@ public final class SentryGestureDetector {
             listener.onFling(currentDownEvent, event, velocityX, velocityY);
           }
         }
-        cleanup();
+        endGesture();
         break;
 
       case MotionEvent.ACTION_CANCEL:
-        cleanup();
+        endGesture();
         break;
     }
-
-    return false;
   }
 
-  private void cleanup() {
+  /** Releases native resources. Call when the detector is no longer needed. */
+  void release() {
+    endGesture();
     if (velocityTracker != null) {
       velocityTracker.recycle();
       velocityTracker = null;
     }
+  }
+
+  private void endGesture() {
     if (currentDownEvent != null) {
       currentDownEvent.recycle();
       currentDownEvent = null;
