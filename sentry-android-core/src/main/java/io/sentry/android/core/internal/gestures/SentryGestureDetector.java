@@ -91,6 +91,11 @@ public final class SentryGestureDetector {
           break;
         }
 
+      case MotionEvent.ACTION_POINTER_DOWN:
+        // A second finger means this is not a single tap (e.g. pinch-to-zoom).
+        isInTapRegion = false;
+        break;
+
       case MotionEvent.ACTION_UP:
         if (isInTapRegion) {
           listener.onSingleTapUp(event);

@@ -209,6 +209,36 @@ class SentryGestureDetectorTest {
   }
 
   @Test
+  fun `multi-touch - POINTER_DOWN cancels tap so UP does not fire onSingleTapUp`() {
+    val sut = fixture.getSut()
+    val downTime = SystemClock.uptimeMillis()
+
+    val down = MotionEvent.obtain(downTime, downTime, MotionEvent.ACTION_DOWN, 100f, 100f, 0)
+    // Second finger touches — encoded as ACTION_POINTER_DOWN with pointer index 1
+    val pointerDown =
+      MotionEvent.obtain(
+        downTime,
+        downTime + 20,
+        (1 shl MotionEvent.ACTION_POINTER_INDEX_SHIFT) or MotionEvent.ACTION_POINTER_DOWN,
+        100f,
+        100f,
+        0,
+      )
+    val up = MotionEvent.obtain(downTime, downTime + 100, MotionEvent.ACTION_UP, 100f, 100f, 0)
+
+    sut.onTouchEvent(down)
+    sut.onTouchEvent(pointerDown)
+    sut.onTouchEvent(up)
+
+    verify(fixture.listener).onDown(down)
+    verify(fixture.listener, never()).onSingleTapUp(any())
+
+    down.recycle()
+    pointerDown.recycle()
+    up.recycle()
+  }
+
+  @Test
   fun `sequential gestures - state resets between tap and scroll`() {
     val sut = fixture.getSut()
     val beyondSlop = fixture.touchSlop + 10f
