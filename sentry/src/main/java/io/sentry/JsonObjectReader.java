@@ -349,8 +349,8 @@ public final class JsonObjectReader implements ObjectReader {
 
   @Override
   public void skipValue() throws IOException {
-    markValueConsumed();
     jsonReader.skipValue();
+    markValueConsumed();
   }
 
   private boolean recoverAfterValueFailure(
