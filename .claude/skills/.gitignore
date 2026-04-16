@@ -6,3 +6,5 @@
 !create-java-pr/**
 !test/
 !test/**
+!btrace-perfetto/
+!btrace-perfetto/**
