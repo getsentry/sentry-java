@@ -276,7 +276,7 @@ class MapObjectReaderTest {
   }
 
   @Test
-  fun `nextMapOrNull keeps values after a partially consumed failing value`() {
+  fun `nextMapOrNull keeps values before a partially consumed failing value`() {
     val actual =
       getValuesReader(
           linkedMapOf(
@@ -290,7 +290,7 @@ class MapObjectReaderTest {
   }
 
   @Test
-  fun `nextMapOfListOrNull keeps values after a partially consumed failing element`() {
+  fun `nextMapOfListOrNull keeps values before a partially consumed failing element`() {
     val actual =
       getValuesReader(
           linkedMapOf(
