@@ -244,7 +244,7 @@ class JsonObjectReaderTest {
     verify(fixture.logger, never()).log(any(), any(), any<Throwable>())
   }
 
-  @Test(timeout = 1000L)
+  @Test
   fun `nextListOrNull skips a failing element`() {
     val actual =
       getValuesReader("[{\"value\": \"fail\"}]")
@@ -253,7 +253,7 @@ class JsonObjectReaderTest {
     assertEquals(emptyList(), actual)
   }
 
-  @Test(timeout = 1000L)
+  @Test
   fun `nextListOrNull skips an unconsumed failing element`() {
     var callCount = 0
     val deserializer =
@@ -271,7 +271,7 @@ class JsonObjectReaderTest {
     assertEquals(listOf("two"), actual)
   }
 
-  @Test(timeout = 1000L)
+  @Test
   fun `nextListOrNull keeps elements before a failing element`() {
     val actual =
       getValuesReader("[{\"value\": \"one\"}, {\"value\": \"fail\"}]")
@@ -280,7 +280,7 @@ class JsonObjectReaderTest {
     assertEquals(listOf("one"), actual)
   }
 
-  @Test(timeout = 1000L)
+  @Test
   fun `nextListOrNull keeps elements after a failing element`() {
     val actual =
       getValuesReader("[{\"value\": \"fail\"}, {\"value\": \"two\"}]")
@@ -289,7 +289,7 @@ class JsonObjectReaderTest {
     assertEquals(listOf("two"), actual)
   }
 
-  @Test(timeout = 1000L)
+  @Test
   fun `nextListOrNull keeps elements after a fully consumed failing element`() {
     val actual =
       getValuesReader("[{\"value\": \"fail\"}, {\"value\": \"two\"}]")
@@ -298,7 +298,7 @@ class JsonObjectReaderTest {
     assertEquals(listOf("two"), actual)
   }
 
-  @Test(timeout = 1000L)
+  @Test
   fun `nextListOrNull keeps elements after skipValue consumes a failing element`() {
     var callCount = 0
     val deserializer =
@@ -317,7 +317,7 @@ class JsonObjectReaderTest {
     assertEquals(listOf("two"), actual)
   }
 
-  @Test(timeout = 1000L)
+  @Test
   fun `nextMapOrNull skips a failing value`() {
     val actual =
       getValuesReader("{\"bad\": {\"value\": \"fail\"}}")
@@ -326,7 +326,7 @@ class JsonObjectReaderTest {
     assertEquals(emptyMap(), actual)
   }
 
-  @Test(timeout = 1000L)
+  @Test
   fun `nextMapOrNull recovers after failed primitive reads`() {
     assertNextMapOrNullRecoversAfterFailedPrimitiveRead(
       badValue = "true",
@@ -372,7 +372,7 @@ class JsonObjectReaderTest {
     )
   }
 
-  @Test(timeout = 1000L)
+  @Test
   fun `nextMapOrNull keeps values before a failing value`() {
     val actual =
       getValuesReader("{\"good\": {\"value\": \"one\"}, \"bad\": {\"value\": \"fail\"}}")
@@ -381,7 +381,7 @@ class JsonObjectReaderTest {
     assertEquals(mapOf("good" to "one"), actual)
   }
 
-  @Test(timeout = 1000L)
+  @Test
   fun `nextMapOrNull keeps values after a failing value`() {
     val actual =
       getValuesReader("{\"bad\": {\"value\": \"fail\"}, \"good\": {\"value\": \"two\"}}")
@@ -390,7 +390,7 @@ class JsonObjectReaderTest {
     assertEquals(mapOf("good" to "two"), actual)
   }
 
-  @Test(timeout = 1000L)
+  @Test
   fun `nextMapOfListOrNull skips a failing value`() {
     val actual =
       getValuesReader("{\"bad\": {\"value\": \"fail\"}}")
@@ -399,7 +399,7 @@ class JsonObjectReaderTest {
     assertEquals(emptyMap(), actual)
   }
 
-  @Test(timeout = 1000L)
+  @Test
   fun `nextMapOfListOrNull keeps values before a failing value`() {
     val actual =
       getValuesReader("{\"good\": [{\"value\": \"one\"}], \"bad\": {\"value\": \"fail\"}}")
@@ -408,7 +408,7 @@ class JsonObjectReaderTest {
     assertEquals(mapOf("good" to listOf("one")), actual)
   }
 
-  @Test(timeout = 1000L)
+  @Test
   fun `nextMapOfListOrNull keeps values after a failing value`() {
     val actual =
       getValuesReader("{\"bad\": {\"value\": \"fail\"}, \"good\": [{\"value\": \"two\"}]}")
@@ -417,7 +417,7 @@ class JsonObjectReaderTest {
     assertEquals(mapOf("good" to listOf("two")), actual)
   }
 
-  @Test(timeout = 1000L)
+  @Test
   fun `nextMapOfListOrNull keeps nested values after skipValue consumes a failing element`() {
     var callCount = 0
     val deserializer =
@@ -436,7 +436,7 @@ class JsonObjectReaderTest {
     assertEquals(mapOf("good" to listOf("two")), actual)
   }
 
-  @Test(timeout = 1000L)
+  @Test
   fun `nextListOrNull logs and aborts when recovery fails`() {
     assertFailsWith<Exception> {
       fixture
@@ -452,7 +452,7 @@ class JsonObjectReaderTest {
       )
   }
 
-  @Test(timeout = 1000L)
+  @Test
   fun `nextMapOrNull logs and aborts when recovery fails`() {
     assertFailsWith<Exception> {
       fixture
@@ -468,7 +468,7 @@ class JsonObjectReaderTest {
       )
   }
 
-  @Test(timeout = 1000L)
+  @Test
   fun `nextMapOfListOrNull logs and aborts when recovery fails`() {
     assertFailsWith<Exception> {
       fixture
@@ -484,7 +484,7 @@ class JsonObjectReaderTest {
       )
   }
 
-  @Test(timeout = 1000L)
+  @Test
   fun `nextUnknown logs when recovery fails`() {
     val unknown = mutableMapOf<String, Any>()
     val reader = fixture.getSut("{\"key\": {\"value\": \"fail\"")

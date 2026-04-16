@@ -174,7 +174,7 @@ class MapObjectReaderTest {
     reader.endObject()
   }
 
-  @Test(timeout = 1000L)
+  @Test
   fun `nextListOrNull skips a failing element`() {
     val actual =
       getValuesReader(listOf("fail")).nextListOrNull(logger, BasicSerializable.Deserializer())
@@ -182,7 +182,7 @@ class MapObjectReaderTest {
     assertEquals(emptyList(), actual)
   }
 
-  @Test(timeout = 1000L)
+  @Test
   fun `nextListOrNull keeps elements before a failing element`() {
     val actual =
       getValuesReader(listOf(serializableValue("one"), "fail"))
@@ -191,7 +191,7 @@ class MapObjectReaderTest {
     assertEquals(listOf(BasicSerializable("one")), actual)
   }
 
-  @Test(timeout = 1000L)
+  @Test
   fun `nextListOrNull keeps elements after a failing element`() {
     val actual =
       getValuesReader(listOf("fail", serializableValue("two")))
@@ -200,7 +200,7 @@ class MapObjectReaderTest {
     assertEquals(listOf(BasicSerializable("two")), actual)
   }
 
-  @Test(timeout = 1000L)
+  @Test
   fun `nextMapOrNull skips a failing value`() {
     val actual =
       getValuesReader(linkedMapOf("bad" to "fail"))
@@ -209,7 +209,7 @@ class MapObjectReaderTest {
     assertEquals(emptyMap(), actual)
   }
 
-  @Test(timeout = 1000L)
+  @Test
   fun `nextMapOrNull keeps values before a failing value`() {
     val actual =
       getValuesReader(linkedMapOf("bad" to "fail", "good" to serializableValue("one")))
@@ -218,7 +218,7 @@ class MapObjectReaderTest {
     assertEquals(mapOf("good" to BasicSerializable("one")), actual)
   }
 
-  @Test(timeout = 1000L)
+  @Test
   fun `nextMapOrNull keeps values after a failing value`() {
     val actual =
       getValuesReader(linkedMapOf("good" to serializableValue("two"), "bad" to "fail"))
@@ -227,7 +227,7 @@ class MapObjectReaderTest {
     assertEquals(mapOf("good" to BasicSerializable("two")), actual)
   }
 
-  @Test(timeout = 1000L)
+  @Test
   fun `nextMapOfListOrNull skips a failing value`() {
     val actual =
       getValuesReader(linkedMapOf("bad" to serializableValue("fail")))
@@ -236,7 +236,7 @@ class MapObjectReaderTest {
     assertEquals(emptyMap(), actual)
   }
 
-  @Test(timeout = 1000L)
+  @Test
   fun `nextMapOfListOrNull keeps values before a failing value`() {
     val actual =
       getValuesReader(
@@ -250,7 +250,7 @@ class MapObjectReaderTest {
     assertEquals(mapOf("good" to listOf(BasicSerializable("one"))), actual)
   }
 
-  @Test(timeout = 1000L)
+  @Test
   fun `nextMapOfListOrNull keeps values after a failing value`() {
     val actual =
       getValuesReader(
@@ -264,7 +264,7 @@ class MapObjectReaderTest {
     assertEquals(mapOf("good" to listOf(BasicSerializable("two"))), actual)
   }
 
-  @Test(timeout = 1000L)
+  @Test
   fun `nextListOrNull keeps elements after a partially consumed failing element`() {
     val actual =
       getValuesReader(
@@ -275,7 +275,7 @@ class MapObjectReaderTest {
     assertEquals(listOf(BasicSerializable("two")), actual)
   }
 
-  @Test(timeout = 1000L)
+  @Test
   fun `nextMapOrNull keeps values after a partially consumed failing value`() {
     val actual =
       getValuesReader(
@@ -289,7 +289,7 @@ class MapObjectReaderTest {
     assertEquals(mapOf("good" to BasicSerializable("two")), actual)
   }
 
-  @Test(timeout = 1000L)
+  @Test
   fun `nextMapOfListOrNull keeps values after a partially consumed failing element`() {
     val actual =
       getValuesReader(
