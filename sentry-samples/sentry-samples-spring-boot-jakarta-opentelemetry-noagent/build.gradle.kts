@@ -18,6 +18,9 @@ java.targetCompatibility = JavaVersion.VERSION_17
 
 repositories { mavenCentral() }
 
+// Apollo 4.x requires coroutines 1.9.0+, override Spring Boot's managed version
+extra["kotlin-coroutines.version"] = "1.9.0"
+
 configure<JavaPluginExtension> {
   sourceCompatibility = JavaVersion.VERSION_17
   targetCompatibility = JavaVersion.VERSION_17
@@ -79,6 +82,10 @@ configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
 tasks.register<Test>("systemTest").configure {
   group = "verification"
   description = "Runs the System tests"
+
+  val test = project.extensions.getByType<SourceSetContainer>()["test"]
+  testClassesDirs = test.output.classesDirs
+  classpath = test.runtimeClasspath
 
   outputs.upToDateWhen { false }
 
