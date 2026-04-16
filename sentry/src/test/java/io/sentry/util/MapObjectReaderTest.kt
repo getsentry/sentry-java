@@ -176,7 +176,8 @@ class MapObjectReaderTest {
 
   @Test
   fun `nextListOrNull returns empty list for empty list`() {
-    val actual = getValuesReader(emptyList<String>()).nextListOrNull(logger, BasicSerializable.Deserializer())
+    val actual =
+      getValuesReader(emptyList<String>()).nextListOrNull(logger, BasicSerializable.Deserializer())
 
     assertEquals(emptyList(), actual)
   }
@@ -205,6 +206,23 @@ class MapObjectReaderTest {
         .nextListOrNull(logger, BasicSerializable.Deserializer())
 
     assertEquals(listOf(BasicSerializable("two")), actual)
+  }
+
+  @Test
+  fun `nextListOrNull keeps elements after a failing object followed by a primitive`() {
+    val reader =
+      getValuesReader(
+        listOf(
+          partialSerializableValue("fail", "bad"),
+          "oops",
+          partialSerializableValue("ok", "two"),
+        )
+      )
+
+    val actual = reader.nextListOrNull(logger, partiallyFailingDeserializer)
+
+    assertEquals(listOf(BasicSerializable("two")), actual)
+    assertEquals(JsonToken.END_OBJECT, reader.peek())
   }
 
   @Test

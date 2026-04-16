@@ -52,16 +52,14 @@ public final class MapObjectReader implements ObjectReader {
     try {
       beginArray();
       List<T> list = new ArrayList<>();
-      if (peek() != JsonToken.END_ARRAY) {
-        do {
-          final int stackSizeBefore = stack.size();
-          try {
-            list.add(deserializer.deserialize(this, logger));
-          } catch (Exception e) {
-            logger.log(SentryLevel.WARNING, "Failed to deserialize object in list.", e);
-            recoverValue(stackSizeBefore);
-          }
-        } while (peek() == JsonToken.BEGIN_OBJECT);
+      while (peek() != JsonToken.END_ARRAY) {
+        final int stackSizeBefore = stack.size();
+        try {
+          list.add(deserializer.deserialize(this, logger));
+        } catch (Exception e) {
+          logger.log(SentryLevel.WARNING, "Failed to deserialize object in list.", e);
+          recoverValue(stackSizeBefore);
+        }
       }
       endArray();
       return list;
