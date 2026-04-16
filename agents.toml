@@ -31,3 +31,7 @@ source = "path:.agents/skills/create-java-pr"
 [[skills]]
 name = "test"
 source = "path:.agents/skills/test"
+
+[[skills]]
+name = "btrace-perfetto"
+source = "path:.agents/skills/btrace-perfetto"
