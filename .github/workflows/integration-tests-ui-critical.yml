@@ -67,10 +67,6 @@ jobs:
             target: google_apis
             channel: canary # Necessary for ATDs
             arch: x86_64
-          - api-level: 34 # Android 14
-            target: google_apis
-            channel: canary # Necessary for ATDs
-            arch: x86_64
           - api-level: 35 # Android 15
             target: google_apis
             channel: canary # Necessary for ATDs
