@@ -299,6 +299,31 @@ class JsonObjectReaderTest {
   }
 
   @Test
+  fun `nextListOrNull keeps elements after a failing object followed by a primitive`() {
+    val reader =
+      getValuesReader(
+        "[{\"kind\": \"fail\", \"value\": \"bad\"}, \"oops\", {\"kind\": \"ok\", \"value\": \"two\"}]"
+      )
+    val deserializer =
+      JsonDeserializer<String> { objectReader, _ ->
+        objectReader.beginObject()
+        objectReader.nextName()
+        if (objectReader.nextString() == "fail") {
+          throw IllegalStateException("intentional")
+        }
+        objectReader.nextName()
+        val value = objectReader.nextString()
+        objectReader.endObject()
+        value
+      }
+
+    val actual = reader.nextListOrNull(fixture.logger, deserializer)
+
+    assertEquals(listOf("two"), actual)
+    assertEquals(io.sentry.vendor.gson.stream.JsonToken.END_OBJECT, reader.peek())
+  }
+
+  @Test
   fun `nextListOrNull keeps elements after skipValue consumes a failing element`() {
     var callCount = 0
     val deserializer =

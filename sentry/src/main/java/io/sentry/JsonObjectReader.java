@@ -120,24 +120,22 @@ public final class JsonObjectReader implements ObjectReader {
     }
     beginArray();
     List<T> list = new ArrayList<>();
-    if (jsonReader.hasNext()) {
-      do {
-        final RecoveryState recoveryState = beginRecovery(peek());
-        try {
-          list.add(deserializer.deserialize(this, logger));
-        } catch (Exception e) {
-          if (!recoverAfterValueFailure(
-              logger,
-              e,
-              "Failed to deserialize object in list.",
-              "Stream unrecoverable, aborting list deserialization.",
-              recoveryState)) {
-            break;
-          }
-        } finally {
-          endRecovery(recoveryState);
+    while (jsonReader.hasNext()) {
+      final RecoveryState recoveryState = beginRecovery(peek());
+      try {
+        list.add(deserializer.deserialize(this, logger));
+      } catch (Exception e) {
+        if (!recoverAfterValueFailure(
+            logger,
+            e,
+            "Failed to deserialize object in list.",
+            "Stream unrecoverable, aborting list deserialization.",
+            recoveryState)) {
+          break;
         }
-      } while (jsonReader.peek() == JsonToken.BEGIN_OBJECT);
+      } finally {
+        endRecovery(recoveryState);
+      }
     }
     endArray();
     return list;
