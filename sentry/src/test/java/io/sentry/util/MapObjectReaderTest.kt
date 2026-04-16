@@ -175,6 +175,13 @@ class MapObjectReaderTest {
   }
 
   @Test
+  fun `nextListOrNull returns empty list for empty list`() {
+    val actual = getValuesReader(emptyList<String>()).nextListOrNull(logger, BasicSerializable.Deserializer())
+
+    assertEquals(emptyList(), actual)
+  }
+
+  @Test
   fun `nextListOrNull skips a failing element`() {
     val actual =
       getValuesReader(listOf("fail")).nextListOrNull(logger, BasicSerializable.Deserializer())
@@ -198,6 +205,15 @@ class MapObjectReaderTest {
         .nextListOrNull(logger, BasicSerializable.Deserializer())
 
     assertEquals(listOf(BasicSerializable("two")), actual)
+  }
+
+  @Test
+  fun `nextMapOrNull returns empty map for empty map`() {
+    val actual =
+      getValuesReader(linkedMapOf<String, String>())
+        .nextMapOrNull(logger, BasicSerializable.Deserializer())
+
+    assertEquals(emptyMap(), actual)
   }
 
   @Test
@@ -225,6 +241,15 @@ class MapObjectReaderTest {
         .nextMapOrNull(logger, BasicSerializable.Deserializer())
 
     assertEquals(mapOf("good" to BasicSerializable("two")), actual)
+  }
+
+  @Test
+  fun `nextMapOfListOrNull returns empty map for empty map`() {
+    val actual =
+      getValuesReader(linkedMapOf<String, List<String>>())
+        .nextMapOfListOrNull(logger, BasicSerializable.Deserializer())
+
+    assertEquals(emptyMap(), actual)
   }
 
   @Test

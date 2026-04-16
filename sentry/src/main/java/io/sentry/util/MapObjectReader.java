@@ -52,7 +52,7 @@ public final class MapObjectReader implements ObjectReader {
     try {
       beginArray();
       List<T> list = new ArrayList<>();
-      if (hasNext()) {
+      if (peek() != JsonToken.END_ARRAY) {
         do {
           final int stackSizeBefore = stack.size();
           try {
@@ -82,7 +82,7 @@ public final class MapObjectReader implements ObjectReader {
     try {
       beginObject();
       Map<String, T> map = new HashMap<>();
-      if (hasNext()) {
+      if (peek() == JsonToken.NAME) {
         do {
           final String key = nextName();
           final int stackSizeBefore = stack.size();
@@ -112,7 +112,7 @@ public final class MapObjectReader implements ObjectReader {
 
     try {
       beginObject();
-      if (hasNext()) {
+      if (peek() == JsonToken.NAME) {
         do {
           final @NotNull String key = nextName();
           final int stackSizeBefore = stack.size();
