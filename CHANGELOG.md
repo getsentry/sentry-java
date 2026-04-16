@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 8.39.0
 
 ### Fixes
 
