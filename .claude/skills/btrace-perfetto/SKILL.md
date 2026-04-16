@@ -28,7 +28,7 @@ Before starting, verify:
 |----------|---------|-------------|
 | branch1 | current branch | First branch to trace |
 | branch2 | `main` | Second branch to compare against |
-| duration | `20` | Trace duration in seconds |
+| duration | `30` | Trace duration in seconds |
 | sql-query | see below | SQL query to prefill in Perfetto UI |
 
 If no arguments are provided, ask the user what they want to trace and which branches to compare. If only one branch is given, capture only that branch (no comparison).
@@ -73,10 +73,23 @@ protected void attachBaseContext(Context base) {
 
 **Important**: The package is `com.bytedance.rheatrace`, not `com.bytedance.btrace`.
 
+### 2d: Add ProGuard keep rule for release builds
+
+In `sentry-samples/sentry-samples-android/proguard-rules.pro`, add:
+
+```
+-keep class com.bytedance.rheatrace.** { *; }
+-keepnames class io.sentry.** { *; }
+```
+
+The first rule prevents R8 from stripping btrace's HTTP server classes (fails with `SocketException` otherwise). The second preserves Sentry class and method names so they appear readable in the Perfetto trace instead of obfuscated single-letter names.
+
 ## Step 3: Build and Install
 
+Always use release builds for tracing — debug builds have StrictMode, debuggable overhead, and no R8 optimizations, which skew results.
+
 ```bash
-./gradlew :sentry-samples:sentry-samples-android:installDebug
+./gradlew :sentry-samples:sentry-samples-android:installRelease
 ```
 
 ## Step 4: Capture Trace
@@ -95,7 +108,20 @@ adb shell am start -n io.sentry.samples.android/.MainActivity
 
 The app must be started AFTER `debug.rhea3.startWhenAppLaunch` is set, otherwise the trace server won't initialize.
 
-### 4b: Tell the user to interact with the app, then capture
+### 4b: Play a sound to signal the user, then capture
+
+Play a sound when tracing actually starts so the user knows to begin interacting. Pipe btrace output through a loop that triggers the sound on the "start tracing" line:
+
+```bash
+java -jar tools/btrace/rhea-trace-shell.jar ... 2>&1 | while IFS= read -r line; do
+  echo "$line"
+  if [[ "$line" == *"start tracing"* ]]; then
+    afplay -v 1.5 /System/Library/Sounds/Ping.aiff &
+  fi
+done
+```
+
+This ensures the sound is synchronized with the actual trace start, not an estimated delay.
 
 ```bash
 java -jar tools/btrace/rhea-trace-shell.jar \
@@ -116,11 +142,12 @@ When capturing a second branch:
    ```bash
    git stash push -m "btrace integration" -- \
      sentry-samples/sentry-samples-android/build.gradle.kts \
-     sentry-samples/sentry-samples-android/src/main/java/io/sentry/samples/android/MyApplication.java
+     sentry-samples/sentry-samples-android/src/main/java/io/sentry/samples/android/MyApplication.java \
+     sentry-samples/sentry-samples-android/proguard-rules.pro
    ```
 2. Checkout the other branch
 3. Pop the stash: `git stash pop`
-4. Rebuild and install: `./gradlew :sentry-samples:sentry-samples-android:installDebug`
+4. Rebuild and install: `./gradlew :sentry-samples:sentry-samples-android:installRelease`
 5. Repeat steps 4a and 4b with a different output filename
 6. Switch back to the original branch and restore files
 
@@ -172,3 +199,4 @@ After tracing is complete, remind the user that the btrace integration changes t
 | `wait for trace ready timeout` on download | Set `debug.rhea3.startWhenAppLaunch=1` BEFORE launching the app, and use `-waitTraceTimeout 60` |
 | Empty jar file (0 bytes) | Download from Maven Central (`repo1.maven.org`), not `oss.sonatype.org` |
 | `FileNotFoundException` on sampling download | App was already running when properties were set; force-stop and relaunch |
+| `SocketException: Unexpected end of file` in release builds | R8 stripped btrace classes; add `-keep class com.bytedance.rheatrace.** { *; }` to proguard-rules.pro |
