@@ -51,6 +51,19 @@ class JsonObjectReaderTest {
       nextName()
     }
 
+  private fun <T> assertNextMapOrNullRecoversAfterFailedPrimitiveRead(
+    badValue: String,
+    goodValue: String,
+    expectedValue: T,
+    deserializer: JsonDeserializer<T>,
+  ) {
+    val actual =
+      getValuesReader("{\"bad\": $badValue, \"good\": $goodValue}")
+        .nextMapOrNull(fixture.logger, deserializer)
+
+    assertEquals(mapOf("good" to expectedValue), actual)
+  }
+
   // nextStringOrNull
 
   @Test
@@ -311,6 +324,52 @@ class JsonObjectReaderTest {
         .nextMapOrNull(fixture.logger, throwingValueDeserializer)
 
     assertEquals(emptyMap(), actual)
+  }
+
+  @Test(timeout = 1000L)
+  fun `nextMapOrNull recovers after failed primitive reads`() {
+    assertNextMapOrNullRecoversAfterFailedPrimitiveRead(
+      badValue = "true",
+      goodValue = "2",
+      expectedValue = 2,
+      deserializer = JsonDeserializer { reader, _ -> reader.nextInt() },
+    )
+    assertNextMapOrNullRecoversAfterFailedPrimitiveRead(
+      badValue = "true",
+      goodValue = "2",
+      expectedValue = 2L,
+      deserializer = JsonDeserializer { reader, _ -> reader.nextLong() },
+    )
+    assertNextMapOrNullRecoversAfterFailedPrimitiveRead(
+      badValue = "true",
+      goodValue = "\"two\"",
+      expectedValue = "two",
+      deserializer = JsonDeserializer { reader, _ -> reader.nextString() },
+    )
+    assertNextMapOrNullRecoversAfterFailedPrimitiveRead(
+      badValue = "1",
+      goodValue = "false",
+      expectedValue = false,
+      deserializer = JsonDeserializer { reader, _ -> reader.nextBoolean() },
+    )
+    assertNextMapOrNullRecoversAfterFailedPrimitiveRead(
+      badValue = "true",
+      goodValue = "2.5",
+      expectedValue = 2.5,
+      deserializer = JsonDeserializer { reader, _ -> reader.nextDouble() },
+    )
+    assertNextMapOrNullRecoversAfterFailedPrimitiveRead(
+      badValue = "true",
+      goodValue = "null",
+      expectedValue = Unit,
+      deserializer = JsonDeserializer { reader, _ -> reader.nextNull() },
+    )
+    assertNextMapOrNullRecoversAfterFailedPrimitiveRead(
+      badValue = "true",
+      goodValue = "2.5",
+      expectedValue = 2.5f,
+      deserializer = JsonDeserializer { reader, _ -> reader.nextFloat() },
+    )
   }
 
   @Test(timeout = 1000L)

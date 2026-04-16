@@ -56,8 +56,9 @@ public final class JsonObjectReader implements ObjectReader {
 
   @Override
   public float nextFloat() throws IOException {
+    final double value = jsonReader.nextDouble();
     markValueConsumed();
-    return (float) jsonReader.nextDouble();
+    return (float) value;
   }
 
   @Override
@@ -302,38 +303,43 @@ public final class JsonObjectReader implements ObjectReader {
 
   @Override
   public int nextInt() throws IOException {
+    final int value = jsonReader.nextInt();
     markValueConsumed();
-    return jsonReader.nextInt();
+    return value;
   }
 
   @Override
   public long nextLong() throws IOException {
+    final long value = jsonReader.nextLong();
     markValueConsumed();
-    return jsonReader.nextLong();
+    return value;
   }
 
   @Override
   public String nextString() throws IOException {
+    final String value = jsonReader.nextString();
     markValueConsumed();
-    return jsonReader.nextString();
+    return value;
   }
 
   @Override
   public boolean nextBoolean() throws IOException {
+    final boolean value = jsonReader.nextBoolean();
     markValueConsumed();
-    return jsonReader.nextBoolean();
+    return value;
   }
 
   @Override
   public double nextDouble() throws IOException {
+    final double value = jsonReader.nextDouble();
     markValueConsumed();
-    return jsonReader.nextDouble();
+    return value;
   }
 
   @Override
   public void nextNull() throws IOException {
-    markValueConsumed();
     jsonReader.nextNull();
+    markValueConsumed();
   }
 
   @Override
