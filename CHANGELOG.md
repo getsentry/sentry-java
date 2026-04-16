@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixes
+
+- Fix ANR caused by `GestureDetectorCompat` Handler/MessageQueue lock contention in `SentryWindowCallback` ([#5138](https://github.com/getsentry/sentry-java/pull/5138))
+
 ### Internal
 
 - Bump AGP version from v8.6.0 to v8.13.1 ([#5063](https://github.com/getsentry/sentry-java/pull/5063))

@@ -2,7 +2,6 @@ package io.sentry.android.core.internal.gestures
 
 import android.view.MotionEvent
 import android.view.Window
-import androidx.core.view.GestureDetectorCompat
 import io.sentry.android.core.SentryAndroidOptions
 import io.sentry.android.core.internal.gestures.SentryWindowCallback.MotionEventObtainer
 import kotlin.test.Test
@@ -18,7 +17,7 @@ class SentryWindowCallbackTest {
   class Fixture {
     val delegate = mock<Window.Callback>()
     val options = SentryAndroidOptions().apply { dsn = "https://key@sentry.io/proj" }
-    val gestureDetector = mock<GestureDetectorCompat>()
+    val gestureDetector = mock<SentryGestureDetector>()
     val gestureListener = mock<SentryGestureListener>()
     val motionEventCopy = mock<MotionEvent>()
 
