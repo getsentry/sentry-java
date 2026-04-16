@@ -239,6 +239,90 @@ class SentryGestureDetectorTest {
   }
 
   @Test
+  fun `multi-touch - POINTER_DOWN suppresses fling on fast UP`() {
+    val sut = fixture.getSut()
+    val downTime = SystemClock.uptimeMillis()
+
+    val down = MotionEvent.obtain(downTime, downTime, MotionEvent.ACTION_DOWN, 100f, 100f, 0)
+    // Second finger touches
+    val pointerDown =
+      MotionEvent.obtain(
+        downTime,
+        downTime + 20,
+        (1 shl MotionEvent.ACTION_POINTER_INDEX_SHIFT) or MotionEvent.ACTION_POINTER_DOWN,
+        100f,
+        100f,
+        0,
+      )
+    // Second finger lifts
+    val pointerUp =
+      MotionEvent.obtain(
+        downTime,
+        downTime + 40,
+        (1 shl MotionEvent.ACTION_POINTER_INDEX_SHIFT) or MotionEvent.ACTION_POINTER_UP,
+        100f,
+        100f,
+        0,
+      )
+    // Last finger lifts quickly and far — would normally trigger fling
+    val up = MotionEvent.obtain(downTime, downTime + 50, MotionEvent.ACTION_UP, 500f, 100f, 0)
+
+    sut.onTouchEvent(down)
+    sut.onTouchEvent(pointerDown)
+    sut.onTouchEvent(pointerUp)
+    sut.onTouchEvent(up)
+
+    verify(fixture.listener, never()).onSingleTapUp(any())
+    verify(fixture.listener, never()).onFling(anyOrNull(), any(), any(), any())
+
+    down.recycle()
+    pointerDown.recycle()
+    pointerUp.recycle()
+    up.recycle()
+  }
+
+  @Test
+  fun `multi-touch - tap works again after multi-touch gesture ends`() {
+    val sut = fixture.getSut()
+    var downTime = SystemClock.uptimeMillis()
+
+    // First gesture: multi-touch (suppressed)
+    val down1 = MotionEvent.obtain(downTime, downTime, MotionEvent.ACTION_DOWN, 100f, 100f, 0)
+    val pointerDown =
+      MotionEvent.obtain(
+        downTime,
+        downTime + 20,
+        (1 shl MotionEvent.ACTION_POINTER_INDEX_SHIFT) or MotionEvent.ACTION_POINTER_DOWN,
+        100f,
+        100f,
+        0,
+      )
+    val up1 = MotionEvent.obtain(downTime, downTime + 100, MotionEvent.ACTION_UP, 100f, 100f, 0)
+
+    sut.onTouchEvent(down1)
+    sut.onTouchEvent(pointerDown)
+    sut.onTouchEvent(up1)
+
+    verify(fixture.listener, never()).onSingleTapUp(any())
+
+    // Second gesture: normal tap — ignoreUpEvent should have been reset
+    downTime = SystemClock.uptimeMillis()
+    val down2 = MotionEvent.obtain(downTime, downTime, MotionEvent.ACTION_DOWN, 200f, 200f, 0)
+    val up2 = MotionEvent.obtain(downTime, downTime + 50, MotionEvent.ACTION_UP, 200f, 200f, 0)
+
+    sut.onTouchEvent(down2)
+    sut.onTouchEvent(up2)
+
+    verify(fixture.listener).onSingleTapUp(up2)
+
+    down1.recycle()
+    pointerDown.recycle()
+    up1.recycle()
+    down2.recycle()
+    up2.recycle()
+  }
+
+  @Test
   fun `sequential gestures - state resets between tap and scroll`() {
     val sut = fixture.getSut()
     val beyondSlop = fixture.touchSlop + 10f

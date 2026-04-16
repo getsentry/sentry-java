@@ -27,6 +27,7 @@ public final class SentryGestureDetector {
   private final int maximumFlingVelocity;
 
   private boolean isInTapRegion;
+  private boolean ignoreUpEvent;
   private float downX;
   private float downY;
   private float lastX;
@@ -63,6 +64,7 @@ public final class SentryGestureDetector {
         lastX = downX;
         lastY = downY;
         isInTapRegion = true;
+        ignoreUpEvent = false;
 
         if (currentDownEvent != null) {
           currentDownEvent.recycle();
@@ -93,10 +95,18 @@ public final class SentryGestureDetector {
 
       case MotionEvent.ACTION_POINTER_DOWN:
         // A second finger means this is not a single tap (e.g. pinch-to-zoom).
+        // Also suppress the UP handler to avoid spurious fling detection when the
+        // last finger lifts quickly after a pinch — mirrors GestureDetector's
+        // mIgnoreNextUpEvent / cancelTaps() behavior.
         isInTapRegion = false;
+        ignoreUpEvent = true;
         break;
 
       case MotionEvent.ACTION_UP:
+        if (ignoreUpEvent) {
+          endGesture();
+          break;
+        }
         if (isInTapRegion) {
           listener.onSingleTapUp(event);
         } else {
