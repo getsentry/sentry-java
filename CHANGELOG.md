@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Fix `NoSuchMethodError` for `LayoutCoordinates.localBoundingBoxOf$default` on Compose touch dispatch with AGP 8.13 and `minSdk < 24` ([#5302](https://github.com/getsentry/sentry-java/pull/5302))
+
 ## 8.39.1
 
 ### Fixes
