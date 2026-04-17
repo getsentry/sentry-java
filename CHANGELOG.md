@@ -4,7 +4,7 @@
 
 ### Fixes
 
-- Stop reporting OkHttp's synthetic 504 "Unsatisfiable Request" responses as errors for `CacheControl.FORCE_CACHE` (or any `only-if-cached`) cache misses ([#5276](https://github.com/getsentry/sentry-java/issues/5276))
+- Stop reporting OkHttp's synthetic 504 "Unsatisfiable Request" responses as errors for `CacheControl.FORCE_CACHE` (or any `only-if-cached`) cache misses ([#5299](https://github.com/getsentry/sentry-java/pull/5299))
 
 ## 8.39.1
 
