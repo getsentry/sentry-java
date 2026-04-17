@@ -1,6 +1,6 @@
 # Changelog
 
-## 8.39.0
+## Unreleased
 
 ### Fixes
 
@@ -8,6 +8,11 @@
   - Failed collection values are now skipped so parsing can continue
   - Skipped collection values emit `WARNING` logs
   - Unknown-key failures and unrecoverable recovery failures emit `ERROR` logs
+
+## 8.39.0
+
+### Fixes
+
 - Fix ANR caused by `GestureDetectorCompat` Handler/MessageQueue lock contention in `SentryWindowCallback` ([#5138](https://github.com/getsentry/sentry-java/pull/5138))
 
 ### Internal
