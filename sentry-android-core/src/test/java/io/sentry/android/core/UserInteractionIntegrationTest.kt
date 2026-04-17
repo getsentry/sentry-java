@@ -14,7 +14,6 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertIs
 import kotlin.test.assertIsNot
-import kotlin.test.assertNotEquals
 import kotlin.test.assertSame
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
@@ -149,15 +148,59 @@ class UserInteractionIntegrationTest {
   }
 
   @Test
-  fun `does not instrument if the callback is already ours`() {
-    val existingCallback =
-      SentryWindowCallback(NoOpWindowCallback(), fixture.activity, mock(), mock())
-    val sut = fixture.getSut(existingCallback)
-
+  fun `does not double-wrap when another callback wraps SentryWindowCallback`() {
+    val sut = fixture.getSut()
     sut.register(fixture.scopes, fixture.options)
+
+    sut.onActivityResumed(fixture.activity)
+    val sentryCallback = fixture.window.callback
+    assertIs<SentryWindowCallback>(sentryCallback)
+
+    val outerWrapper = WrapperCallback(sentryCallback)
+    fixture.window.callback = outerWrapper
+
+    sut.onActivityPaused(fixture.activity)
     sut.onActivityResumed(fixture.activity)
 
-    assertNotEquals(existingCallback, (fixture.window.callback as SentryWindowCallback).delegate)
+    assertSame(outerWrapper, fixture.window.callback)
+  }
+
+  @Test
+  fun `close unwraps windows so re-init does not double-wrap`() {
+    val mockCallback = mock<Window.Callback>()
+    fixture.window.callback = mockCallback
+
+    val sutA = fixture.getSut()
+    sutA.register(fixture.scopes, fixture.options)
+    sutA.onActivityResumed(fixture.activity)
+    assertIs<SentryWindowCallback>(fixture.window.callback)
+
+    sutA.close()
+    assertSame(mockCallback, fixture.window.callback)
+
+    val sutB = UserInteractionIntegration(fixture.application, fixture.loadClass)
+    sutB.register(fixture.scopes, fixture.options)
+    sutB.onActivityResumed(fixture.activity)
+
+    val newWrapper = fixture.window.callback
+    assertIs<SentryWindowCallback>(newWrapper)
+    assertSame(mockCallback, newWrapper.delegate)
+  }
+
+  @Test
+  fun `paused with another wrapper on top does not cut it out of the chain`() {
+    val sut = fixture.getSut()
+    sut.register(fixture.scopes, fixture.options)
+
+    sut.onActivityResumed(fixture.activity)
+    val sentryCallback = fixture.window.callback as SentryWindowCallback
+
+    val outerWrapper = WrapperCallback(sentryCallback)
+    fixture.window.callback = outerWrapper
+
+    sut.onActivityPaused(fixture.activity)
+
+    assertSame(outerWrapper, fixture.window.callback)
   }
 
   @Test
@@ -205,3 +248,7 @@ class UserInteractionIntegrationTest {
 private class EmptyActivity : Activity(), LifecycleOwner {
   override val lifecycle: Lifecycle = mock<Lifecycle>()
 }
+
+/** Simulates a third-party callback wrapper (e.g. Session Replay's FixedWindowCallback). */
+private open class WrapperCallback(@JvmField val delegate: Window.Callback) :
+  Window.Callback by delegate
