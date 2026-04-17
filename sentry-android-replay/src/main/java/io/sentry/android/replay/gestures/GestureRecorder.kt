@@ -11,6 +11,7 @@ import io.sentry.android.replay.phoneWindow
 import io.sentry.android.replay.util.FixedWindowCallback
 import io.sentry.util.AutoClosableReentrantLock
 import java.lang.ref.WeakReference
+import java.util.WeakHashMap
 
 internal class GestureRecorder(
   private val options: SentryOptions,
@@ -18,6 +19,11 @@ internal class GestureRecorder(
 ) : OnRootViewsChangedListener {
   private val rootViews = ArrayList<WeakReference<View>>()
   private val rootViewsLock = AutoClosableReentrantLock()
+
+  // WeakReference value, because the callback chain strongly references the wrapper — a strong
+  // value would prevent the window from ever being GC'd.
+  private val wrappedWindows = WeakHashMap<Window, WeakReference<SentryReplayGestureRecorder>>()
+  private val wrappedWindowsLock = AutoClosableReentrantLock()
 
   override fun onRootViewsChanged(root: View, added: Boolean) {
     rootViewsLock.acquire().use {
@@ -45,10 +51,16 @@ internal class GestureRecorder(
       return
     }
 
-    val delegate = window.callback
-    if (delegate !is SentryReplayGestureRecorder) {
-      window.callback = SentryReplayGestureRecorder(options, touchRecorderCallback, delegate)
+    wrappedWindowsLock.acquire().use {
+      if (wrappedWindows[window]?.get() != null) {
+        return
+      }
     }
+
+    val delegate = window.callback
+    val wrapper = SentryReplayGestureRecorder(options, touchRecorderCallback, delegate)
+    window.callback = wrapper
+    wrappedWindowsLock.acquire().use { wrappedWindows[window] = WeakReference(wrapper) }
   }
 
   private fun View.stopGestureTracking() {
@@ -60,14 +72,25 @@ internal class GestureRecorder(
 
     val callback = window.callback
     if (callback is SentryReplayGestureRecorder) {
-      val delegate = callback.delegate
-      window.callback = delegate
+      window.callback = callback.delegate
+      wrappedWindowsLock.acquire().use { wrappedWindows.remove(window) }
+      return
     }
+
+    // Another wrapper (e.g. UserInteractionIntegration) sits on top of ours — cutting it out of
+    // the chain would break its instrumentation, so we inert our buried wrapper instead. The
+    // next replay session will then wrap on top with a fresh active instance.
+    val ours: SentryReplayGestureRecorder?
+    wrappedWindowsLock.acquire().use {
+      ours = wrappedWindows[window]?.get()
+      wrappedWindows.remove(window)
+    }
+    ours?.inert()
   }
 
   internal class SentryReplayGestureRecorder(
     private val options: SentryOptions,
-    private val touchRecorderCallback: TouchRecorderCallback?,
+    @Volatile private var touchRecorderCallback: TouchRecorderCallback?,
     delegate: Window.Callback?,
   ) : FixedWindowCallback(delegate) {
     override fun dispatchTouchEvent(event: MotionEvent?): Boolean {
@@ -82,6 +105,14 @@ internal class GestureRecorder(
         }
       }
       return super.dispatchTouchEvent(event)
+    }
+
+    /**
+     * Turns this wrapper into a passthrough when it can't be removed from the chain (another
+     * wrapper sits on top). Subsequent dispatches only delegate, skipping the recorder callback.
+     */
+    fun inert() {
+      touchRecorderCallback = null
     }
   }
 }
