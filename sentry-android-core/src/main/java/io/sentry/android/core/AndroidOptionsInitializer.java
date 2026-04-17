@@ -341,8 +341,7 @@ final class AndroidOptionsInitializer {
             Objects.requireNonNull(
                 options.getFrameMetricsCollector(), "options.getFrameMetricsCollector is required");
         if (options.isUseProfilingManager()) {
-          if (buildInfoProvider.getSdkInfoVersion()
-              >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+          if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
             options.setContinuousProfiler(
                 new PerfettoContinuousProfiler(
                     buildInfoProvider,
