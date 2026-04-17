@@ -22,7 +22,18 @@ Before starting, verify:
    ```
 3. **Perfetto trace_processor**: Check if `/tmp/trace_processor` exists. If not, download it:
    ```bash
-   curl -sL "https://get.perfetto.dev/trace_processor" -o /tmp/trace_processor && chmod +x /tmp/trace_processor
+   # Download trace_processor
+   curl -sL "https://get.perfetto.dev/trace_processor" -o /tmp/trace_processor
+
+   # Verify the file is a valid executable (check file type and size)
+   if [[ ! -s /tmp/trace_processor ]] || ! file /tmp/trace_processor | grep -q "executable"; then
+     echo "Error: Downloaded file is not a valid executable"
+     rm -f /tmp/trace_processor
+     exit 1
+   fi
+
+   # Make executable only after verification
+   chmod +x /tmp/trace_processor
    ```
 4. **Device ABI**: Run `adb shell getprop ro.product.cpu.abi` — btrace only supports arm64-v8a and armeabi-v7a (no x86/x86_64)
 
