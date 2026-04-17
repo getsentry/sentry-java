@@ -32,6 +32,7 @@ import io.sentry.util.LazyEvaluator;
 import io.sentry.util.SentryRandom;
 import java.io.File;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -408,7 +409,8 @@ public class PerfettoContinuousProfiler
    * <p>Performance data is collected by the {@link CompositePerformanceCollector}'s Timer thread
    * every 100ms and returned as a list on {@code stop()}.
    */
-  private static class ChunkMeasurementCollector {
+  @VisibleForTesting
+  static class ChunkMeasurementCollector {
     private final @NotNull SentryFrameMetricsCollector frameMetricsCollector;
     private @Nullable String frameMetricsListenerId = null;
     private @Nullable CompositePerformanceCollector performanceCollector = null;
@@ -501,18 +503,20 @@ public class PerfettoContinuousProfiler
         measurements.put(
             ProfileMeasurement.ID_SLOW_FRAME_RENDERS,
             new ProfileMeasurement(
-                ProfileMeasurement.UNIT_NANOSECONDS, slowFrameRenderMeasurements));
+                ProfileMeasurement.UNIT_NANOSECONDS, new ArrayList<>(slowFrameRenderMeasurements)));
       }
       if (!frozenFrameRenderMeasurements.isEmpty()) {
         measurements.put(
             ProfileMeasurement.ID_FROZEN_FRAME_RENDERS,
             new ProfileMeasurement(
-                ProfileMeasurement.UNIT_NANOSECONDS, frozenFrameRenderMeasurements));
+                ProfileMeasurement.UNIT_NANOSECONDS,
+                new ArrayList<>(frozenFrameRenderMeasurements)));
       }
       if (!screenFrameRateMeasurements.isEmpty()) {
         measurements.put(
             ProfileMeasurement.ID_SCREEN_FRAME_RATES,
-            new ProfileMeasurement(ProfileMeasurement.UNIT_HZ, screenFrameRateMeasurements));
+            new ProfileMeasurement(
+                ProfileMeasurement.UNIT_HZ, new ArrayList<>(screenFrameRateMeasurements)));
       }
     }
 
