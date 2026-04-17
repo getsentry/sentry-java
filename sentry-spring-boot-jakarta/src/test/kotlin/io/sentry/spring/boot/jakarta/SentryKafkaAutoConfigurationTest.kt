@@ -1,5 +1,6 @@
 package io.sentry.spring.boot.jakarta
 
+import io.sentry.kafka.SentryKafkaProducerInterceptor
 import io.sentry.opentelemetry.SentryAutoConfigurationCustomizerProvider
 import io.sentry.spring.jakarta.kafka.SentryKafkaConsumerBeanPostProcessor
 import io.sentry.spring.jakarta.kafka.SentryKafkaProducerBeanPostProcessor
@@ -30,6 +31,9 @@ class SentryKafkaAutoConfigurationTest {
   private val noOtelClassLoader =
     FilteredClassLoader(SentryAutoConfigurationCustomizerProvider::class.java)
 
+  private val noSentryKafkaClassLoader =
+    FilteredClassLoader(SentryKafkaProducerInterceptor::class.java)
+
   @Test
   fun `registers Kafka BPPs when queue tracing is enabled`() {
     contextRunner
@@ -47,6 +51,17 @@ class SentryKafkaAutoConfigurationTest {
       assertThat(context).doesNotHaveBean(SentryKafkaProducerBeanPostProcessor::class.java)
       assertThat(context).doesNotHaveBean(SentryKafkaConsumerBeanPostProcessor::class.java)
     }
+  }
+
+  @Test
+  fun `does not register Kafka BPPs when sentry-kafka is not present`() {
+    contextRunner
+      .withClassLoader(noSentryKafkaClassLoader)
+      .withPropertyValues("sentry.enable-queue-tracing=true")
+      .run { context ->
+        assertThat(context).doesNotHaveBean(SentryKafkaProducerBeanPostProcessor::class.java)
+        assertThat(context).doesNotHaveBean(SentryKafkaConsumerBeanPostProcessor::class.java)
+      }
   }
 
   @Test
