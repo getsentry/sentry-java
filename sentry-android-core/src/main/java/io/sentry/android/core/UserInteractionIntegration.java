@@ -110,11 +110,12 @@ public final class UserInteractionIntegration
     }
 
     // Another wrapper (e.g. Session Replay) sits on top of ours — cutting it out of the chain
-    // would break its instrumentation, so we leave the chain alone and only release our
-    // resources. The inert wrapper gets GC'd when the window is destroyed.
+    // would break its instrumentation, so we leave the chain alone and just call stopTracking()
+    // to release our resources. The upstream wrapper holds a reference to ours, so it'll be
+    // GC'd whenever that upstream holder is (typically when the window is destroyed).
     final @Nullable SentryWindowCallback ours;
     synchronized (wrappedWindowsLock) {
-      final @Nullable WeakReference<SentryWindowCallback> cached = wrappedWindows.get(window);
+      final @Nullable WeakReference<SentryWindowCallback> cached = wrappedWindows.remove(window);
       ours = cached != null ? cached.get() : null;
     }
     if (ours != null) {

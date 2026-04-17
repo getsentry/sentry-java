@@ -14,6 +14,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertIs
 import kotlin.test.assertIsNot
+import kotlin.test.assertNotSame
 import kotlin.test.assertSame
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
@@ -148,21 +149,25 @@ class UserInteractionIntegrationTest {
   }
 
   @Test
-  fun `does not double-wrap when another callback wraps SentryWindowCallback`() {
+  fun `resume after buried pause installs a fresh wrapper on top`() {
     val sut = fixture.getSut()
     sut.register(fixture.scopes, fixture.options)
 
     sut.onActivityResumed(fixture.activity)
-    val sentryCallback = fixture.window.callback
-    assertIs<SentryWindowCallback>(sentryCallback)
+    val originalSentryCallback = fixture.window.callback
+    assertIs<SentryWindowCallback>(originalSentryCallback)
 
-    val outerWrapper = WrapperCallback(sentryCallback)
+    // Third-party wraps on top of us mid-activity.
+    val outerWrapper = WrapperCallback(originalSentryCallback)
     fixture.window.callback = outerWrapper
 
     sut.onActivityPaused(fixture.activity)
     sut.onActivityResumed(fixture.activity)
 
-    assertSame(outerWrapper, fixture.window.callback)
+    val newTop = fixture.window.callback
+    assertIs<SentryWindowCallback>(newTop)
+    assertNotSame(originalSentryCallback, newTop)
+    assertSame(outerWrapper, newTop.delegate)
   }
 
   @Test

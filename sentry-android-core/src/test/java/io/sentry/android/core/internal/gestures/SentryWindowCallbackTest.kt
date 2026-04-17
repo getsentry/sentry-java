@@ -82,4 +82,18 @@ class SentryWindowCallbackTest {
 
     verify(fixture.gestureDetector, never()).onTouchEvent(any())
   }
+
+  @Test
+  fun `after stopTracking does not forward touches to detector or listener`() {
+    val event = mock<MotionEvent> { whenever(it.actionMasked).thenReturn(MotionEvent.ACTION_UP) }
+    val sut = fixture.getSut()
+
+    sut.stopTracking()
+    sut.dispatchTouchEvent(event)
+
+    verify(fixture.gestureDetector, never()).onTouchEvent(any())
+    verify(fixture.gestureListener, never()).onUp(any())
+    // super.dispatchTouchEvent still delegates to the wrapped delegate so the chain keeps working.
+    verify(fixture.delegate).dispatchTouchEvent(event)
+  }
 }
