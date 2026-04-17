@@ -5,6 +5,7 @@
 ### Fixes
 
 - Fix ANR caused by `GestureDetectorCompat` Handler/MessageQueue lock contention in `SentryWindowCallback` ([#5138](https://github.com/getsentry/sentry-java/pull/5138))
+- Make `SentryGestureDetector` thread-safe and recycle `VelocityTracker` per gesture ([#5301](https://github.com/getsentry/sentry-java/pull/5301))
 
 ### Internal
 
