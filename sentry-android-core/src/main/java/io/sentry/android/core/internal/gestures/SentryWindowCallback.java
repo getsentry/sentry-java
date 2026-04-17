@@ -73,7 +73,7 @@ public final class SentryWindowCallback extends WindowCallbackAdapter {
 
   public void stopTracking() {
     gestureListener.stopTracing(SpanStatus.CANCELLED);
-    gestureDetector.release();
+    gestureDetector.recycle();
   }
 
   public @NotNull Window.Callback getDelegate() {

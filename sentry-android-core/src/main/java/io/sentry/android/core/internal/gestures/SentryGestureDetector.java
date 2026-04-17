@@ -5,6 +5,8 @@ import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
 import android.view.ViewConfiguration;
+import io.sentry.ISentryLifecycleToken;
+import io.sentry.util.AutoClosableReentrantLock;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -35,6 +37,8 @@ public final class SentryGestureDetector {
   private @Nullable MotionEvent currentDownEvent;
   private @Nullable VelocityTracker velocityTracker;
 
+  private final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
+
   SentryGestureDetector(
       final @NotNull Context context, final @NotNull GestureDetector.OnGestureListener listener) {
     this.listener = listener;
@@ -46,102 +50,101 @@ public final class SentryGestureDetector {
   }
 
   void onTouchEvent(final @NotNull MotionEvent event) {
-    final int action = event.getActionMasked();
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      final int action = event.getActionMasked();
 
-    if (velocityTracker == null) {
-      velocityTracker = VelocityTracker.obtain();
-    }
+      if (velocityTracker == null) {
+        velocityTracker = VelocityTracker.obtain();
+      }
+      velocityTracker.addMovement(event);
 
-    if (action == MotionEvent.ACTION_DOWN) {
-      velocityTracker.clear();
-    }
-    velocityTracker.addMovement(event);
+      switch (action) {
+        case MotionEvent.ACTION_DOWN:
+          downX = event.getX();
+          downY = event.getY();
+          lastX = downX;
+          lastY = downY;
+          isInTapRegion = true;
+          ignoreUpEvent = false;
 
-    switch (action) {
-      case MotionEvent.ACTION_DOWN:
-        downX = event.getX();
-        downY = event.getY();
-        lastX = downX;
-        lastY = downY;
-        isInTapRegion = true;
-        ignoreUpEvent = false;
-
-        if (currentDownEvent != null) {
-          currentDownEvent.recycle();
-        }
-        currentDownEvent = MotionEvent.obtain(event);
-
-        listener.onDown(event);
-        break;
-
-      case MotionEvent.ACTION_MOVE:
-        {
-          final float x = event.getX();
-          final float y = event.getY();
-          final float dx = x - downX;
-          final float dy = y - downY;
-          final float distanceSquare = (dx * dx) + (dy * dy);
-
-          if (distanceSquare > touchSlopSquare) {
-            final float scrollX = lastX - x;
-            final float scrollY = lastY - y;
-            listener.onScroll(currentDownEvent, event, scrollX, scrollY);
-            isInTapRegion = false;
-            lastX = x;
-            lastY = y;
+          if (currentDownEvent != null) {
+            currentDownEvent.recycle();
           }
+          currentDownEvent = MotionEvent.obtain(event);
+
+          listener.onDown(event);
           break;
-        }
 
-      case MotionEvent.ACTION_POINTER_DOWN:
-        // A second finger means this is not a single tap (e.g. pinch-to-zoom).
-        // Also suppress the UP handler to avoid spurious fling detection when the
-        // last finger lifts quickly after a pinch — mirrors GestureDetector's
-        // mIgnoreNextUpEvent / cancelTaps() behavior.
-        isInTapRegion = false;
-        ignoreUpEvent = true;
-        break;
+        case MotionEvent.ACTION_MOVE:
+          {
+            final float x = event.getX();
+            final float y = event.getY();
+            final float dx = x - downX;
+            final float dy = y - downY;
+            final float distanceSquare = (dx * dx) + (dy * dy);
 
-      case MotionEvent.ACTION_UP:
-        if (ignoreUpEvent) {
-          endGesture();
-          break;
-        }
-        if (isInTapRegion) {
-          listener.onSingleTapUp(event);
-        } else {
-          final int pointerId = event.getPointerId(0);
-          velocityTracker.computeCurrentVelocity(1000, maximumFlingVelocity);
-          final float velocityX = velocityTracker.getXVelocity(pointerId);
-          final float velocityY = velocityTracker.getYVelocity(pointerId);
-
-          if (Math.abs(velocityX) > minimumFlingVelocity
-              || Math.abs(velocityY) > minimumFlingVelocity) {
-            listener.onFling(currentDownEvent, event, velocityX, velocityY);
+            if (distanceSquare > touchSlopSquare) {
+              final float scrollX = lastX - x;
+              final float scrollY = lastY - y;
+              listener.onScroll(currentDownEvent, event, scrollX, scrollY);
+              isInTapRegion = false;
+              lastX = x;
+              lastY = y;
+            }
+            break;
           }
-        }
-        endGesture();
-        break;
 
-      case MotionEvent.ACTION_CANCEL:
-        endGesture();
-        break;
+        case MotionEvent.ACTION_POINTER_DOWN:
+          // A second finger means this is not a single tap (e.g. pinch-to-zoom).
+          // Also suppress the UP handler to avoid spurious fling detection when the
+          // last finger lifts quickly after a pinch — mirrors GestureDetector's
+          // mIgnoreNextUpEvent / cancelTaps() behavior.
+          isInTapRegion = false;
+          ignoreUpEvent = true;
+          break;
+
+        case MotionEvent.ACTION_UP:
+          if (ignoreUpEvent) {
+            recycle();
+            break;
+          }
+          if (isInTapRegion) {
+            listener.onSingleTapUp(event);
+          } else {
+            final int pointerId = event.getPointerId(0);
+            velocityTracker.computeCurrentVelocity(1000, maximumFlingVelocity);
+            final float velocityX = velocityTracker.getXVelocity(pointerId);
+            final float velocityY = velocityTracker.getYVelocity(pointerId);
+
+            if (Math.abs(velocityX) > minimumFlingVelocity
+                || Math.abs(velocityY) > minimumFlingVelocity) {
+              listener.onFling(currentDownEvent, event, velocityX, velocityY);
+            }
+          }
+          recycle();
+          break;
+
+        case MotionEvent.ACTION_CANCEL:
+          recycle();
+          break;
+      }
     }
   }
 
-  /** Releases native resources. Call when the detector is no longer needed. */
-  void release() {
-    endGesture();
-    if (velocityTracker != null) {
-      velocityTracker.recycle();
+  void recycle() {
+    final @Nullable MotionEvent capturedDownEvent;
+    final @Nullable VelocityTracker capturedVelocityTracker;
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      capturedDownEvent = currentDownEvent;
+      currentDownEvent = null;
+      capturedVelocityTracker = velocityTracker;
       velocityTracker = null;
     }
-  }
-
-  private void endGesture() {
-    if (currentDownEvent != null) {
-      currentDownEvent.recycle();
-      currentDownEvent = null;
+    if (capturedDownEvent != null) {
+      capturedDownEvent.recycle();
+    }
+    if (capturedVelocityTracker != null) {
+      capturedVelocityTracker.recycle();
     }
   }
 }

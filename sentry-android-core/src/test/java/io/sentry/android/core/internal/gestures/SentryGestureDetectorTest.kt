@@ -323,6 +323,34 @@ class SentryGestureDetectorTest {
   }
 
   @Test
+  fun `recycle mid-gesture - subsequent gesture still fires onSingleTapUp`() {
+    val sut = fixture.getSut()
+    val downTime = SystemClock.uptimeMillis()
+
+    // Start a gesture, then simulate stopTracking() racing in mid-gesture.
+    val down1 = MotionEvent.obtain(downTime, downTime, MotionEvent.ACTION_DOWN, 100f, 100f, 0)
+    sut.onTouchEvent(down1)
+    sut.recycle()
+
+    verify(fixture.listener).onDown(down1)
+
+    // New gesture after recycle — velocityTracker and currentDownEvent should be re-obtained
+    // lazily and the tap path should work as normal.
+    val downTime2 = SystemClock.uptimeMillis()
+    val down2 = MotionEvent.obtain(downTime2, downTime2, MotionEvent.ACTION_DOWN, 200f, 200f, 0)
+    val up2 = MotionEvent.obtain(downTime2, downTime2 + 50, MotionEvent.ACTION_UP, 200f, 200f, 0)
+
+    sut.onTouchEvent(down2)
+    sut.onTouchEvent(up2)
+
+    verify(fixture.listener).onSingleTapUp(up2)
+
+    down1.recycle()
+    down2.recycle()
+    up2.recycle()
+  }
+
+  @Test
   fun `sequential gestures - state resets between tap and scroll`() {
     val sut = fixture.getSut()
     val beyondSlop = fixture.touchSlop + 10f
