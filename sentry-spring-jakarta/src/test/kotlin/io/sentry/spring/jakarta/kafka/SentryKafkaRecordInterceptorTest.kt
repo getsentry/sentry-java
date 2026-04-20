@@ -22,7 +22,6 @@ import kotlin.test.assertTrue
 import org.apache.kafka.clients.consumer.Consumer
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.header.internals.RecordHeaders
-import org.mockito.Mockito
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
@@ -56,6 +55,7 @@ class SentryKafkaRecordInterceptorTest {
     whenever(scopes.isEnabled).thenReturn(true)
 
     forkedScopes = mock()
+    whenever(scopes.forkedRootScopes(any())).thenReturn(forkedScopes)
     whenever(forkedScopes.options).thenReturn(options)
     whenever(forkedScopes.makeCurrent()).thenReturn(lifecycleToken)
 
@@ -68,13 +68,6 @@ class SentryKafkaRecordInterceptorTest {
   fun teardown() {
     Sentry.close()
   }
-
-  private fun <T> withMockSentry(closure: () -> T): T =
-    Mockito.mockStatic(Sentry::class.java).use {
-      it.`when`<Any> { Sentry.forkedRootScopes(any()) }.thenReturn(forkedScopes)
-      it.`when`<Any> { Sentry.getCurrentScopes() }.thenReturn(scopes)
-      closure.invoke()
-    }
 
   private fun createRecord(
     topic: String = "my-topic",
@@ -120,8 +113,9 @@ class SentryKafkaRecordInterceptorTest {
     val interceptor = SentryKafkaRecordInterceptor<String, String>(scopes)
     val record = createRecord()
 
-    withMockSentry { interceptor.intercept(record, consumer) }
+    interceptor.intercept(record, consumer)
 
+    verify(scopes).forkedRootScopes("SentryKafkaRecordInterceptor")
     verify(forkedScopes).makeCurrent()
   }
 
@@ -131,7 +125,7 @@ class SentryKafkaRecordInterceptorTest {
     val sentryTraceValue = "2722d9f6ec019ade60c776169d9a8904-cedf5b7571cb4972-1"
     val record = createRecordWithHeaders(sentryTrace = sentryTraceValue)
 
-    withMockSentry { interceptor.intercept(record, consumer) }
+    interceptor.intercept(record, consumer)
 
     verify(forkedScopes)
       .continueTrace(org.mockito.kotlin.eq(sentryTraceValue), org.mockito.kotlin.isNull())
@@ -142,7 +136,7 @@ class SentryKafkaRecordInterceptorTest {
     val interceptor = SentryKafkaRecordInterceptor<String, String>(scopes)
     val record = createRecord()
 
-    withMockSentry { interceptor.intercept(record, consumer) }
+    interceptor.intercept(record, consumer)
 
     verify(forkedScopes).continueTrace(org.mockito.kotlin.isNull(), org.mockito.kotlin.isNull())
   }
@@ -152,7 +146,7 @@ class SentryKafkaRecordInterceptorTest {
     val interceptor = SentryKafkaRecordInterceptor<String, String>(scopes)
     val record = createRecordWithHeaders(deliveryAttempt = 3)
 
-    withMockSentry { interceptor.intercept(record, consumer) }
+    interceptor.intercept(record, consumer)
 
     assertEquals(2, transaction.data?.get(SpanDataConvention.MESSAGING_MESSAGE_RETRY_COUNT))
   }
@@ -162,7 +156,7 @@ class SentryKafkaRecordInterceptorTest {
     val interceptor = SentryKafkaRecordInterceptor<String, String>(scopes)
     val record = createRecord()
 
-    withMockSentry { interceptor.intercept(record, consumer) }
+    interceptor.intercept(record, consumer)
 
     assertNull(transaction.data?.get(SpanDataConvention.MESSAGING_MESSAGE_RETRY_COUNT))
   }
@@ -173,7 +167,7 @@ class SentryKafkaRecordInterceptorTest {
     val enqueuedTime = (System.currentTimeMillis() / 1000.0 - 1.0).toString()
     val record = createRecordWithHeaders(enqueuedTime = enqueuedTime)
 
-    withMockSentry { interceptor.intercept(record, consumer) }
+    interceptor.intercept(record, consumer)
 
     val latency = transaction.data?.get(SpanDataConvention.MESSAGING_MESSAGE_RECEIVE_LATENCY)
     assertTrue(latency is Long && latency >= 0)
@@ -187,6 +181,7 @@ class SentryKafkaRecordInterceptorTest {
 
     val result = interceptor.intercept(record, consumer)
 
+    verify(scopes, never()).forkedRootScopes(any())
     verify(forkedScopes, never()).makeCurrent()
     assertEquals(record, result)
   }
@@ -199,6 +194,7 @@ class SentryKafkaRecordInterceptorTest {
 
     val result = interceptor.intercept(record, consumer)
 
+    verify(scopes, never()).forkedRootScopes(any())
     verify(forkedScopes, never()).makeCurrent()
     assertEquals(record, result)
   }
@@ -210,7 +206,7 @@ class SentryKafkaRecordInterceptorTest {
     whenever(delegate.intercept(record, consumer)).thenReturn(record)
 
     val interceptor = SentryKafkaRecordInterceptor(scopes, delegate)
-    withMockSentry { interceptor.intercept(record, consumer) }
+    interceptor.intercept(record, consumer)
 
     verify(delegate).intercept(record, consumer)
   }
@@ -221,7 +217,7 @@ class SentryKafkaRecordInterceptorTest {
     val interceptor = SentryKafkaRecordInterceptor(scopes, delegate)
     val record = createRecord()
 
-    withMockSentry { interceptor.intercept(record, consumer) }
+    interceptor.intercept(record, consumer)
     interceptor.success(record, consumer)
 
     verify(delegate).success(record, consumer)
@@ -234,7 +230,7 @@ class SentryKafkaRecordInterceptorTest {
     val record = createRecord()
     val exception = RuntimeException("processing failed")
 
-    withMockSentry { interceptor.intercept(record, consumer) }
+    interceptor.intercept(record, consumer)
     interceptor.failure(record, exception, consumer)
 
     verify(delegate).failure(record, exception, consumer)
@@ -264,7 +260,7 @@ class SentryKafkaRecordInterceptorTest {
     val interceptor = SentryKafkaRecordInterceptor<String, String>(scopes)
     val record = createRecord()
 
-    withMockSentry { interceptor.intercept(record, consumer) }
+    interceptor.intercept(record, consumer)
 
     interceptor.clearThreadState(consumer)
 
@@ -293,21 +289,16 @@ class SentryKafkaRecordInterceptorTest {
     val interceptor = SentryKafkaRecordInterceptor<String, String>(scopes)
     val record = createRecord()
 
-    Mockito.mockStatic(Sentry::class.java).use { mockSentry ->
-      mockSentry.`when`<Any> { Sentry.getCurrentScopes() }.thenReturn(scopes)
-      mockSentry
-        .`when`<Any> { Sentry.forkedRootScopes(any()) }
-        .thenAnswer {
-          callCount++
-          if (callCount == 1) forkedScopes else forkedScopes2
-        }
-
-      // First intercept sets up context
-      interceptor.intercept(record, consumer)
-
-      // Second intercept without success/failure — should clean up stale context first
-      interceptor.intercept(record, consumer)
+    whenever(scopes.forkedRootScopes(any())).thenAnswer {
+      callCount++
+      if (callCount == 1) forkedScopes else forkedScopes2
     }
+
+    // First intercept sets up context
+    interceptor.intercept(record, consumer)
+
+    // Second intercept without success/failure — should clean up stale context first
+    interceptor.intercept(record, consumer)
 
     // First lifecycle token should have been closed by the defensive cleanup
     verify(lifecycleToken).close()

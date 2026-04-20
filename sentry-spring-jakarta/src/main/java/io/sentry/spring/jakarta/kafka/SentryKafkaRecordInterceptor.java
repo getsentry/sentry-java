@@ -5,7 +5,6 @@ import io.sentry.DateUtils;
 import io.sentry.IScopes;
 import io.sentry.ISentryLifecycleToken;
 import io.sentry.ITransaction;
-import io.sentry.Sentry;
 import io.sentry.SentryTraceHeader;
 import io.sentry.SpanDataConvention;
 import io.sentry.SpanStatus;
@@ -60,7 +59,7 @@ public final class SentryKafkaRecordInterceptor<K, V> implements RecordIntercept
 
     finishStaleContext();
 
-    final @NotNull IScopes forkedScopes = Sentry.forkedRootScopes("SentryKafkaRecordInterceptor");
+    final @NotNull IScopes forkedScopes = scopes.forkedRootScopes("SentryKafkaRecordInterceptor");
     final @NotNull ISentryLifecycleToken lifecycleToken = forkedScopes.makeCurrent();
 
     final @Nullable TransactionContext transactionContext = continueTrace(forkedScopes, record);
