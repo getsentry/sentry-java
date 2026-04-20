@@ -13,6 +13,12 @@ public final class io/sentry/kafka/SentryKafkaConsumerInterceptor : org/apache/k
 	public fun onConsume (Lorg/apache/kafka/clients/consumer/ConsumerRecords;)Lorg/apache/kafka/clients/consumer/ConsumerRecords;
 }
 
+public final class io/sentry/kafka/SentryKafkaConsumerTracing {
+	public static final field TRACE_ORIGIN Ljava/lang/String;
+	public static fun withTracing (Lorg/apache/kafka/clients/consumer/ConsumerRecord;Ljava/lang/Runnable;)V
+	public static fun withTracing (Lorg/apache/kafka/clients/consumer/ConsumerRecord;Ljava/util/concurrent/Callable;)Ljava/lang/Object;
+}
+
 public final class io/sentry/kafka/SentryKafkaProducerInterceptor : org/apache/kafka/clients/producer/ProducerInterceptor {
 	public static final field SENTRY_ENQUEUED_TIME_HEADER Ljava/lang/String;
 	public static final field TRACE_ORIGIN Ljava/lang/String;
