@@ -9,6 +9,7 @@ import io.sentry.SentryTraceHeader;
 import io.sentry.SpanDataConvention;
 import io.sentry.SpanOptions;
 import io.sentry.SpanStatus;
+import io.sentry.util.SpanUtils;
 import io.sentry.util.TracingUtils;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
@@ -45,7 +46,7 @@ public final class SentryKafkaProducerInterceptor<K, V> implements ProducerInter
 
   @Override
   public @NotNull ProducerRecord<K, V> onSend(final @NotNull ProducerRecord<K, V> record) {
-    if (!scopes.getOptions().isEnableQueueTracing()) {
+    if (!scopes.getOptions().isEnableQueueTracing() || isIgnored()) {
       return record;
     }
 
@@ -80,6 +81,10 @@ public final class SentryKafkaProducerInterceptor<K, V> implements ProducerInter
   @Override
   public void onAcknowledgement(
       final @Nullable RecordMetadata metadata, final @Nullable Exception exception) {}
+
+  private boolean isIgnored() {
+    return SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOrigins(), traceOrigin);
+  }
 
   @Override
   public void close() {}

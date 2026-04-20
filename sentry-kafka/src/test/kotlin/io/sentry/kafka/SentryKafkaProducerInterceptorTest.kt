@@ -91,6 +91,23 @@ class SentryKafkaProducerInterceptorTest {
   }
 
   @Test
+  fun `does not create span when trace origin is ignored`() {
+    val tx = createTransaction()
+    options.setIgnoredSpanOrigins(listOf(SentryKafkaProducerInterceptor.TRACE_ORIGIN))
+    val interceptor = SentryKafkaProducerInterceptor<String, String>(scopes)
+    val record = ProducerRecord("my-topic", "key", "value")
+
+    interceptor.onSend(record)
+
+    assertEquals(0, tx.spans.size)
+    assertEquals(null, record.headers().lastHeader(SentryTraceHeader.SENTRY_TRACE_HEADER))
+    assertEquals(
+      null,
+      record.headers().lastHeader(SentryKafkaProducerInterceptor.SENTRY_ENQUEUED_TIME_HEADER),
+    )
+  }
+
+  @Test
   fun `returns original record when no active span`() {
     whenever(scopes.span).thenReturn(null)
     val interceptor = SentryKafkaProducerInterceptor<String, String>(scopes)
