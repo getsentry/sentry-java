@@ -2069,7 +2069,6 @@ public final class io/sentry/ProfileChunk : io/sentry/JsonSerializable, io/sentr
 	public fun getDebugMeta ()Lio/sentry/protocol/DebugMeta;
 	public fun getEnvironment ()Ljava/lang/String;
 	public fun getMeasurements ()Ljava/util/Map;
-	public fun getMetaLength ()I
 	public fun getPlatform ()Ljava/lang/String;
 	public fun getProfilerId ()Lio/sentry/protocol/SentryId;
 	public fun getRelease ()Ljava/lang/String;
@@ -2082,7 +2081,6 @@ public final class io/sentry/ProfileChunk : io/sentry/JsonSerializable, io/sentr
 	public fun hashCode ()I
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setDebugMeta (Lio/sentry/protocol/DebugMeta;)V
-	public fun setMetaLength (I)V
 	public fun setSampledProfile (Ljava/lang/String;)V
 	public fun setSentryProfile (Lio/sentry/protocol/profiling/SentryProfile;)V
 	public fun setUnknown (Ljava/util/Map;)V
@@ -3063,12 +3061,10 @@ public final class io/sentry/SentryEnvelopeItem {
 
 public final class io/sentry/SentryEnvelopeItemHeader : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> (Lio/sentry/SentryItemType;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Integer;)V
-	public fun <init> (Lio/sentry/SentryItemType;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Integer;Ljava/lang/Integer;)V
 	public fun getAttachmentType ()Ljava/lang/String;
 	public fun getContentType ()Ljava/lang/String;
 	public fun getFileName ()Ljava/lang/String;
 	public fun getLength ()I
-	public fun getMetaLength ()Ljava/lang/Integer;
 	public fun getPlatform ()Ljava/lang/String;
 	public fun getType ()Lio/sentry/SentryItemType;
 	public fun getUnknown ()Ljava/util/Map;
