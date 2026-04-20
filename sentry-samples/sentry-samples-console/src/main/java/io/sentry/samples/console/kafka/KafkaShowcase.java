@@ -112,7 +112,16 @@ public final class KafkaShowcase {
                   final ConsumerRecords<String, String> records =
                       consumer.poll(Duration.ofMillis(500));
                   for (final ConsumerRecord<String, String> record : records) {
-                    SentryKafkaConsumerTracing.withTracing(record, consumedLatch::countDown);
+                    SentryKafkaConsumerTracing.withTracing(
+                        record,
+                        () -> {
+                          System.out.println(
+                              "Consumed Kafka message from "
+                                  + record.topic()
+                                  + ": "
+                                  + record.value());
+                          consumedLatch.countDown();
+                        });
                     if (consumedLatch.getCount() == 0) {
                       break;
                     }
