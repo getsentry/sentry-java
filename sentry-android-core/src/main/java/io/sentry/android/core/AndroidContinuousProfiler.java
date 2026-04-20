@@ -68,29 +68,13 @@ public class AndroidContinuousProfiler
   private final AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
   private final AutoClosableReentrantLock payloadLock = new AutoClosableReentrantLock();
 
-  public static AndroidContinuousProfiler createLegacy(
+  public AndroidContinuousProfiler(
       final @NotNull BuildInfoProvider buildInfoProvider,
       final @NotNull SentryFrameMetricsCollector frameMetricsCollector,
       final @NotNull ILogger logger,
       final @Nullable String profilingTracesDirPath,
       final int profilingTracesHz,
       final @NotNull LazyEvaluator.Evaluator<ISentryExecutorService> executorServiceSupplier) {
-    return new AndroidContinuousProfiler(
-        buildInfoProvider,
-        frameMetricsCollector,
-        executorServiceSupplier,
-        logger,
-        profilingTracesHz,
-        profilingTracesDirPath);
-  }
-
-  private AndroidContinuousProfiler(
-      final @NotNull BuildInfoProvider buildInfoProvider,
-      final @NotNull SentryFrameMetricsCollector frameMetricsCollector,
-      final @NotNull LazyEvaluator.Evaluator<ISentryExecutorService> executorServiceSupplier,
-      final @NotNull ILogger logger,
-      final int profilingTracesHz,
-      final @Nullable String profilingTracesDirPath) {
     this.logger = logger;
     this.frameMetricsCollector = frameMetricsCollector;
     this.buildInfoProvider = buildInfoProvider;
@@ -105,7 +89,6 @@ public class AndroidContinuousProfiler
       return;
     }
     isInitialized = true;
-
     if (profilingTracesDirPath == null) {
       logger.log(
           SentryLevel.WARNING,
@@ -169,24 +152,21 @@ public class AndroidContinuousProfiler
     }
   }
 
-  private void tryResolveScopes() {
+  private void initScopes() {
     if ((scopes == null || scopes == NoOpScopes.getInstance())
         && Sentry.getCurrentScopes() != NoOpScopes.getInstance()) {
-      onScopesAvailable(Sentry.getCurrentScopes());
-    }
-  }
-
-  private void onScopesAvailable(final @NotNull IScopes resolvedScopes) {
-    this.scopes = resolvedScopes;
-    this.performanceCollector = resolvedScopes.getOptions().getCompositePerformanceCollector();
-    final @Nullable RateLimiter rateLimiter = resolvedScopes.getRateLimiter();
-    if (rateLimiter != null) {
-      rateLimiter.addRateLimitObserver(this);
+      this.scopes = Sentry.getCurrentScopes();
+      this.performanceCollector =
+          Sentry.getCurrentScopes().getOptions().getCompositePerformanceCollector();
+      final @Nullable RateLimiter rateLimiter = scopes.getRateLimiter();
+      if (rateLimiter != null) {
+        rateLimiter.addRateLimitObserver(this);
+      }
     }
   }
 
   private void start() {
-    tryResolveScopes();
+    initScopes();
 
     // Debug.startMethodTracingSampling() is only available since Lollipop, but Android Profiler
     // causes crashes on api 21 -> https://github.com/getsentry/sentry-java/issues/3392
@@ -279,7 +259,7 @@ public class AndroidContinuousProfiler
   }
 
   private void stop(final boolean restartProfiler) {
-    tryResolveScopes();
+    initScopes();
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       if (stopFuture != null) {
         stopFuture.cancel(true);
@@ -317,15 +297,14 @@ public class AndroidContinuousProfiler
         // start profiling), meaning there's no scopes to send the chunks. In that case, we store
         // the data in a list and send it when the next chunk is finished.
         try (final @NotNull ISentryLifecycleToken ignored2 = payloadLock.acquire()) {
-          final ProfileChunk.Builder builder =
+          payloadBuilders.add(
               new ProfileChunk.Builder(
                   profilerId,
                   chunkId,
                   endData.measurementsMap,
                   endData.traceFile,
                   startProfileChunkTimestamp,
-                  ProfileChunk.PLATFORM_ANDROID);
-          payloadBuilders.add(builder);
+                  ProfileChunk.PLATFORM_ANDROID));
         }
       }
 

@@ -88,7 +88,7 @@ class AndroidContinuousProfilerTest {
       transaction1 = SentryTracer(TransactionContext("", ""), scopes)
       transaction2 = SentryTracer(TransactionContext("", ""), scopes)
       transaction3 = SentryTracer(TransactionContext("", ""), scopes)
-      return AndroidContinuousProfiler.createLegacy(
+      return AndroidContinuousProfiler(
         buildInfoProvider,
         frameMetricsCollector,
         options.logger,

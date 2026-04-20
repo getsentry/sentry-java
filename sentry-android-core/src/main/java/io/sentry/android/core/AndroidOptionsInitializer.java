@@ -361,7 +361,7 @@ final class AndroidOptionsInitializer {
           }
         } else {
           options.setContinuousProfiler(
-              AndroidContinuousProfiler.createLegacy(
+              new AndroidContinuousProfiler(
                   buildInfoProvider,
                   frameMetricsCollector,
                   options.getLogger(),

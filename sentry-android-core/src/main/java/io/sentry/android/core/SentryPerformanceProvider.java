@@ -171,7 +171,7 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
 
     final @NotNull SentryExecutorService startupExecutorService = new SentryExecutorService();
     final @NotNull IContinuousProfiler appStartContinuousProfiler =
-        AndroidContinuousProfiler.createLegacy(
+        new AndroidContinuousProfiler(
             buildInfoProvider,
             new SentryFrameMetricsCollector(
                 context.getApplicationContext(), logger, buildInfoProvider),
