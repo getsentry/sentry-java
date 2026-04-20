@@ -216,11 +216,11 @@ public final class SentryEnvelopeItemHeader implements JsonSerializable, JsonUnk
     if (itemCount != null) {
       writer.name(JsonKeys.ITEM_COUNT).value(itemCount);
     }
+    writer.name(JsonKeys.LENGTH).value(getLength());
     final @Nullable Integer resolvedMetaLength = getMetaLength();
     if (resolvedMetaLength != null) {
       writer.name(JsonKeys.META_LENGTH).value(resolvedMetaLength);
     }
-    writer.name(JsonKeys.LENGTH).value(getLength());
     if (unknown != null) {
       for (String key : unknown.keySet()) {
         Object value = unknown.get(key);
