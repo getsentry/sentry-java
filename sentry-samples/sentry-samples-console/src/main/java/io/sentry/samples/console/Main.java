@@ -184,11 +184,11 @@ public class Main {
     // cache.remove, and cache.flush spans as children of the active transaction.
     demonstrateCacheTracing();
 
-    // Kafka queue tracing with kafka-clients interceptors.
+    // Kafka queue tracing with the kafka-clients producer interceptor and manual consumer tracing.
     //
     // Enable with: SENTRY_SAMPLE_KAFKA_BOOTSTRAP_SERVERS=localhost:9092
     if (kafkaEnabled) {
-      KafkaShowcase.runKafkaWithSentryInterceptors(kafkaBootstrapServers);
+      KafkaShowcase.runKafkaWithSentryTracing(kafkaBootstrapServers);
     }
 
     // Performance feature
