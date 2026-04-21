@@ -1,5 +1,6 @@
 package io.sentry.kafka
 
+import io.sentry.BaggageHeader
 import io.sentry.IScopes
 import io.sentry.ISentryLifecycleToken
 import io.sentry.Sentry
@@ -77,6 +78,37 @@ class SentryKafkaProducerInterceptorTest {
     assertNotNull(enqueuedTimeHeader)
     val enqueuedTime = String(enqueuedTimeHeader.value(), StandardCharsets.UTF_8).toDouble()
     assertTrue(enqueuedTime > 0)
+  }
+
+  @Test
+  fun `preserves pre-existing third-party baggage header entries`() {
+    val tx = createTransaction()
+    val interceptor = SentryKafkaProducerInterceptor<String, String>(scopes)
+    val record = ProducerRecord<String, String>("my-topic", "key", "value")
+    record
+      .headers()
+      .add(
+        BaggageHeader.BAGGAGE_HEADER,
+        "othervendor=someValue,another=thing".toByteArray(StandardCharsets.UTF_8),
+      )
+
+    interceptor.onSend(record)
+
+    val baggageHeaders = record.headers().headers(BaggageHeader.BAGGAGE_HEADER).toList()
+    assertEquals(1, baggageHeaders.size)
+    val baggageValue = String(baggageHeaders.first().value(), StandardCharsets.UTF_8)
+    assertTrue(
+      baggageValue.contains("othervendor=someValue"),
+      "expected third-party baggage entry preserved, got: $baggageValue",
+    )
+    assertTrue(
+      baggageValue.contains("another=thing"),
+      "expected third-party baggage entry preserved, got: $baggageValue",
+    )
+    assertTrue(
+      baggageValue.contains("sentry-"),
+      "expected Sentry baggage entries appended, got: $baggageValue",
+    )
   }
 
   @Test
