@@ -4,6 +4,7 @@ import static io.sentry.DataCategory.All;
 import static io.sentry.IConnectionStatusProvider.ConnectionStatus.DISCONNECTED;
 
 import android.os.Build;
+import android.os.SystemClock;
 import androidx.annotation.RequiresApi;
 import io.sentry.CompositePerformanceCollector;
 import io.sentry.DataCategory;
@@ -39,6 +40,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -423,6 +425,11 @@ public class PerfettoContinuousProfiler
     private final @NotNull ConcurrentLinkedDeque<ProfileMeasurementValue>
         screenFrameRateMeasurements = new ConcurrentLinkedDeque<>();
 
+    // Elapsed realtime when the measurement was started (nanosecond precision).
+    // Used to convert wall-time clock values into ns-since-chunk-start for the measurements
+    // payload.
+    private long profileStartElapsedRealtimeNanos = 0;
+
     ChunkMeasurementCollector(final @NotNull SentryFrameMetricsCollector frameMetricsCollector) {
       this.frameMetricsCollector = frameMetricsCollector;
     }
@@ -432,6 +439,7 @@ public class PerfettoContinuousProfiler
         final @NotNull String chunkId) {
       this.performanceCollector = performanceCollector;
       this.chunkId = chunkId;
+      this.profileStartElapsedRealtimeNanos = SystemClock.elapsedRealtimeNanos();
 
       // Start frame metrics collection (runs on the FrameMetrics HandlerThread)
       slowFrameRenderMeasurements.clear();
@@ -452,17 +460,27 @@ public class PerfettoContinuousProfiler
                     final boolean isFrozen,
                     final float refreshRate) {
                   final long timestampNanos = new SentryNanotimeDate().nanoTimestamp();
+                  // Convert frameEndNanos (reported by FrameMetricsCollector using System.nanoTime /
+                  // SystemClock.uptimeMillis), into the SystemClock.elapsedRealtime to report elapsed
+                  // realtime nanos since chunk start
+                  final long frameEndElapsedRealtimeNanos =
+                      frameEndNanos - System.nanoTime() + SystemClock.elapsedRealtimeNanos();
+                  final long frameTimestampRelativeNanos =
+                      frameEndElapsedRealtimeNanos - profileStartElapsedRealtimeNanos;
                   if (isFrozen) {
                     frozenFrameRenderMeasurements.addLast(
-                        new ProfileMeasurementValue(frameEndNanos, durationNanos, timestampNanos));
+                        new ProfileMeasurementValue(
+                            frameTimestampRelativeNanos, durationNanos, timestampNanos));
                   } else if (isSlow) {
                     slowFrameRenderMeasurements.addLast(
-                        new ProfileMeasurementValue(frameEndNanos, durationNanos, timestampNanos));
+                        new ProfileMeasurementValue(
+                            frameTimestampRelativeNanos, durationNanos, timestampNanos));
                   }
                   if (refreshRate != lastRefreshRate) {
                     lastRefreshRate = refreshRate;
                     screenFrameRateMeasurements.addLast(
-                        new ProfileMeasurementValue(frameEndNanos, refreshRate, timestampNanos));
+                        new ProfileMeasurementValue(
+                            frameTimestampRelativeNanos, refreshRate, timestampNanos));
                   }
                 }
               });
@@ -489,7 +507,15 @@ public class PerfettoContinuousProfiler
       @Nullable List<PerformanceCollectionData> performanceData = null;
       if (performanceCollector != null && chunkId != null) {
         performanceData = performanceCollector.stop(chunkId);
-        addPerformanceDataToMeasurements(performanceData, measurements);
+        final long wallClockNowNanos =
+            TimeUnit.MILLISECONDS.toNanos(System.currentTimeMillis());
+        final long elapsedRealtimeNowNanos = SystemClock.elapsedRealtimeNanos();
+        addPerformanceDataToMeasurements(
+            performanceData,
+            measurements,
+            wallClockNowNanos,
+            elapsedRealtimeNowNanos,
+            profileStartElapsedRealtimeNanos);
       }
       performanceCollector = null;
       chunkId = null;
@@ -522,7 +548,10 @@ public class PerfettoContinuousProfiler
 
     private static void addPerformanceDataToMeasurements(
         final @Nullable List<PerformanceCollectionData> performanceData,
-        final @NotNull Map<String, ProfileMeasurement> measurements) {
+        final @NotNull Map<String, ProfileMeasurement> measurements,
+        final long wallClockNowNanos,
+        final long elapsedRealtimeNowNanos,
+        final long profileStartElapsedRealtimeNanos) {
       if (performanceData == null || performanceData.isEmpty()) {
         return;
       }
@@ -534,22 +563,29 @@ public class PerfettoContinuousProfiler
           new ArrayDeque<>(performanceData.size());
 
       for (final @NotNull PerformanceCollectionData data : performanceData) {
+        // Convert sample timestamps (reported by CompositePerformanceCollector using
+        // System.currentTimeMillis), into the SystemClock.elapsedRealtime to report
+        // elapsed realtime nanos since chunk start
         final long nanoTimestamp = data.getNanoTimestamp();
+        final long nanosSinceSample = wallClockNowNanos - nanoTimestamp;
+        final long sampleElapsedRealtimeNanos = elapsedRealtimeNowNanos - nanosSinceSample;
+        final long relativeStartNs =
+            sampleElapsedRealtimeNanos - profileStartElapsedRealtimeNanos;
         final @Nullable Double cpuUsagePercentage = data.getCpuUsagePercentage();
         final @Nullable Long usedHeapMemory = data.getUsedHeapMemory();
         final @Nullable Long usedNativeMemory = data.getUsedNativeMemory();
 
         if (cpuUsagePercentage != null) {
           cpuUsageMeasurements.addLast(
-              new ProfileMeasurementValue(nanoTimestamp, cpuUsagePercentage, nanoTimestamp));
+              new ProfileMeasurementValue(relativeStartNs, cpuUsagePercentage, nanoTimestamp));
         }
         if (usedHeapMemory != null) {
           memoryUsageMeasurements.addLast(
-              new ProfileMeasurementValue(nanoTimestamp, usedHeapMemory, nanoTimestamp));
+              new ProfileMeasurementValue(relativeStartNs, usedHeapMemory, nanoTimestamp));
         }
         if (usedNativeMemory != null) {
           nativeMemoryUsageMeasurements.addLast(
-              new ProfileMeasurementValue(nanoTimestamp, usedNativeMemory, nanoTimestamp));
+              new ProfileMeasurementValue(relativeStartNs, usedNativeMemory, nanoTimestamp));
         }
       }
 

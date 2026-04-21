@@ -4,8 +4,11 @@ import io.sentry.CompositePerformanceCollector
 import io.sentry.PerformanceCollectionData
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector
 import io.sentry.profilemeasurements.ProfileMeasurement
+import java.util.concurrent.TimeUnit
+import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
