@@ -6,6 +6,7 @@ import io.sentry.IScopes;
 import io.sentry.ISentryLifecycleToken;
 import io.sentry.ITransaction;
 import io.sentry.ScopesAdapter;
+import io.sentry.SentryLevel;
 import io.sentry.SentryTraceHeader;
 import io.sentry.SpanDataConvention;
 import io.sentry.SpanStatus;
@@ -83,7 +84,11 @@ public final class SentryKafkaConsumerTracing {
     try {
       forkedScopes = scopes.forkedRootScopes(CREATOR);
       lifecycleToken = forkedScopes.makeCurrent();
-    } catch (Throwable ignored) {
+    } catch (Throwable t) {
+      scopes
+          .getOptions()
+          .getLogger()
+          .log(SentryLevel.ERROR, "Failed to fork scopes for Kafka consumer tracing.", t);
       return callable.call();
     }
 
@@ -175,7 +180,11 @@ public final class SentryKafkaConsumerTracing {
       }
 
       return transaction;
-    } catch (Throwable ignored) {
+    } catch (Throwable t) {
+      scopes
+          .getOptions()
+          .getLogger()
+          .log(SentryLevel.ERROR, "Failed to start Kafka consumer tracing transaction.", t);
       return null;
     }
   }
@@ -194,8 +203,12 @@ public final class SentryKafkaConsumerTracing {
         transaction.setThrowable(throwable);
       }
       transaction.finish();
-    } catch (Throwable ignored) {
+    } catch (Throwable t) {
       // Instrumentation must never break customer processing.
+      scopes
+          .getOptions()
+          .getLogger()
+          .log(SentryLevel.ERROR, "Failed to finish Kafka consumer tracing transaction.", t);
     }
   }
 
