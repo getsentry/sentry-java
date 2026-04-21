@@ -1,4 +1,4 @@
-package io.sentry.samples.spring.boot.jakarta;
+package io.sentry.samples.spring.boot.jakarta.queues.kafka;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
