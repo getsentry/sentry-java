@@ -27,6 +27,7 @@
 ### Fixes
 
 - Fix ANR caused by `GestureDetectorCompat` Handler/MessageQueue lock contention in `SentryWindowCallback` ([#5138](https://github.com/getsentry/sentry-java/pull/5138))
+- Fix duplicate `ui.click` breadcrumbs when another `Window.Callback` wraps `SentryWindowCallback` ([#5300](https://github.com/getsentry/sentry-java/pull/5300))
 
 ### Internal
 
