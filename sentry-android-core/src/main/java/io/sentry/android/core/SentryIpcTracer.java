@@ -75,7 +75,9 @@ public final class SentryIpcTracer {
         final ISpan child = parent.startChild(OP_BINDER, component + "." + method);
         child.setData(SpanDataConvention.THREAD_ID, threadId);
         child.setData(SpanDataConvention.THREAD_NAME, threadName);
-        final int cookie = COUNTER.incrementAndGet();
+        // keep cookies non-negative so they never collide with the DISABLED sentinel
+        // even after AtomicInteger overflow past Integer.MAX_VALUE
+        final int cookie = COUNTER.incrementAndGet() & Integer.MAX_VALUE;
         IN_FLIGHT.put(cookie, child);
         return cookie;
       }
