@@ -19,6 +19,10 @@ public final class SentryWindowCallback extends WindowCallbackAdapter {
   private final @Nullable SentryOptions options;
   private final @NotNull MotionEventObtainer motionEventObtainer;
 
+  // When we can't be removed from the callback chain (see UserInteractionIntegration),
+  // stopTracking() flips this so handleTouchEvent short-circuits.
+  private volatile boolean inert;
+
   public SentryWindowCallback(
       final @NotNull Window.Callback delegate,
       final @NotNull Context context,
@@ -64,6 +68,9 @@ public final class SentryWindowCallback extends WindowCallbackAdapter {
   }
 
   private void handleTouchEvent(final @NotNull MotionEvent motionEvent) {
+    if (inert) {
+      return;
+    }
     gestureDetector.onTouchEvent(motionEvent);
     int action = motionEvent.getActionMasked();
     if (action == MotionEvent.ACTION_UP) {
@@ -72,6 +79,7 @@ public final class SentryWindowCallback extends WindowCallbackAdapter {
   }
 
   public void stopTracking() {
+    inert = true;
     gestureListener.stopTracing(SpanStatus.CANCELLED);
     gestureDetector.recycle();
   }

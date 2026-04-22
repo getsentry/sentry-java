@@ -86,7 +86,9 @@ public fun LayoutCoordinates.boundsInWindow(rootCoordinates: LayoutCoordinates?)
   val rootWidth = root.size.width.toFloat()
   val rootHeight = root.size.height.toFloat()
 
-  val bounds = root.localBoundingBoxOf(this)
+  // pass clipBounds explicitly to avoid the `localBoundingBoxOf$default` bridge that AGP 8.13's D8
+  // desugars inconsistently on minSdk < 24
+  val bounds = root.localBoundingBoxOf(this, true)
   val boundsLeft = bounds.left.fastCoerceIn(0f, rootWidth)
   val boundsTop = bounds.top.fastCoerceIn(0f, rootHeight)
   val boundsRight = bounds.right.fastCoerceIn(0f, rootWidth)

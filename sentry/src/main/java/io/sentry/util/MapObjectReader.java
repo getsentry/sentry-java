@@ -31,10 +31,12 @@ public final class MapObjectReader implements ObjectReader {
   @Override
   public void nextUnknown(
       final @NotNull ILogger logger, final Map<String, Object> unknown, final String name) {
+    final int stackSizeBefore = stack.size();
     try {
       unknown.put(name, nextObjectOrNull());
     } catch (Exception exception) {
       logger.log(SentryLevel.ERROR, exception, "Error deserializing unknown key: %s", name);
+      recoverValue(stackSizeBefore);
     }
   }
 
@@ -50,14 +52,14 @@ public final class MapObjectReader implements ObjectReader {
     try {
       beginArray();
       List<T> list = new ArrayList<>();
-      if (hasNext()) {
-        do {
-          try {
-            list.add(deserializer.deserialize(this, logger));
-          } catch (Exception e) {
-            logger.log(SentryLevel.WARNING, "Failed to deserialize object in list.", e);
-          }
-        } while (peek() == JsonToken.BEGIN_OBJECT);
+      while (peek() != JsonToken.END_ARRAY) {
+        final int stackSizeBefore = stack.size();
+        try {
+          list.add(deserializer.deserialize(this, logger));
+        } catch (Exception e) {
+          logger.log(SentryLevel.WARNING, "Failed to deserialize object in list.", e);
+          recoverValue(stackSizeBefore);
+        }
       }
       endArray();
       return list;
@@ -78,13 +80,15 @@ public final class MapObjectReader implements ObjectReader {
     try {
       beginObject();
       Map<String, T> map = new HashMap<>();
-      if (hasNext()) {
+      if (peek() == JsonToken.NAME) {
         do {
+          final String key = nextName();
+          final int stackSizeBefore = stack.size();
           try {
-            String key = nextName();
             map.put(key, deserializer.deserialize(this, logger));
           } catch (Exception e) {
             logger.log(SentryLevel.WARNING, "Failed to deserialize object in map.", e);
+            recoverValue(stackSizeBefore);
           }
         } while (peek() == JsonToken.BEGIN_OBJECT || peek() == JsonToken.NAME);
       }
@@ -106,12 +110,18 @@ public final class MapObjectReader implements ObjectReader {
 
     try {
       beginObject();
-      if (hasNext()) {
+      if (peek() == JsonToken.NAME) {
         do {
           final @NotNull String key = nextName();
-          final @Nullable List<T> list = nextListOrNull(logger, deserializer);
-          if (list != null) {
-            result.put(key, list);
+          final int stackSizeBefore = stack.size();
+          try {
+            final @Nullable List<T> list = nextListOrNull(logger, deserializer);
+            if (list != null) {
+              result.put(key, list);
+            }
+          } catch (Exception e) {
+            logger.log(SentryLevel.WARNING, "Failed to deserialize list in map.", e);
+            recoverValue(stackSizeBefore);
           }
         } while (peek() == JsonToken.BEGIN_OBJECT || peek() == JsonToken.NAME);
       }
@@ -197,12 +207,13 @@ public final class MapObjectReader implements ObjectReader {
 
   @Override
   public void beginObject() throws IOException {
-    final Map.Entry<String, Object> currentEntry = stack.removeLast();
+    final Map.Entry<String, Object> currentEntry = stack.peekLast();
     if (currentEntry == null) {
       throw new IOException("No more entries");
     }
     final Object value = currentEntry.getValue();
     if (value instanceof Map) {
+      stack.removeLast();
       // insert a dummy entry to indicate end of an object
       stack.addLast(new AbstractMap.SimpleEntry<>(null, JsonToken.END_OBJECT));
       // extract map entries onto the stack
@@ -223,12 +234,13 @@ public final class MapObjectReader implements ObjectReader {
 
   @Override
   public void beginArray() throws IOException {
-    final Map.Entry<String, Object> currentEntry = stack.removeLast();
+    final Map.Entry<String, Object> currentEntry = stack.peekLast();
     if (currentEntry == null) {
       throw new IOException("No more entries");
     }
     final Object value = currentEntry.getValue();
     if (value instanceof List) {
+      stack.removeLast();
       // insert a dummy entry to indicate end of an object
       stack.addLast(new AbstractMap.SimpleEntry<>(null, JsonToken.END_ARRAY));
       // extract map entries onto the stack
@@ -377,7 +389,17 @@ public final class MapObjectReader implements ObjectReader {
   public void setLenient(final boolean lenient) {}
 
   @Override
-  public void skipValue() throws IOException {}
+  public void skipValue() throws IOException {
+    if (!stack.isEmpty()) {
+      stack.removeLast();
+    }
+  }
+
+  private void recoverValue(final int stackSizeBefore) {
+    while (!stack.isEmpty() && stack.size() >= stackSizeBefore) {
+      stack.removeLast();
+    }
+  }
 
   @SuppressWarnings("TypeParameterUnusedInFormals")
   @Nullable

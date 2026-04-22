@@ -22,7 +22,26 @@ Before starting, verify:
    ```
 3. **Perfetto trace_processor**: Check if `/tmp/trace_processor` exists. If not, download it:
    ```bash
-   curl -sL "https://get.perfetto.dev/trace_processor" -o /tmp/trace_processor && chmod +x /tmp/trace_processor
+   # Download trace_processor (--fail ensures HTTP errors don't leave a file behind)
+   curl -sSL --fail "https://get.perfetto.dev/trace_processor" -o /tmp/trace_processor
+
+   # Verify magic bytes directly — file(1) output is too inconsistent across
+   # versions/platforms to rely on for scripts or PIE binaries.
+   magic=$(head -c 4 /tmp/trace_processor 2>/dev/null | od -An -vtx1 -N4 | tr -d ' \n')
+   case "$magic" in
+     2321*)                               ;; # #! shebang (script)
+     7f454c46)                            ;; # ELF (Linux)
+     cffaedfe|cefaedfe|feedfacf|feedface) ;; # Mach-O (macOS)
+     cafebabe)                            ;; # Mach-O universal
+     *)
+       echo "Error: Downloaded file is not a valid script or executable (magic: ${magic:-empty})"
+       rm -f /tmp/trace_processor
+       exit 1
+       ;;
+   esac
+
+   # Make executable only after verification
+   chmod +x /tmp/trace_processor
    ```
 4. **Device ABI**: Run `adb shell getprop ro.product.cpu.abi` — btrace only supports arm64-v8a and armeabi-v7a (no x86/x86_64)
 

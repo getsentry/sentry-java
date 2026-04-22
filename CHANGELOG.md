@@ -4,8 +4,31 @@
 
 ### Fixes
 
-- Fix ANR caused by `GestureDetectorCompat` Handler/MessageQueue lock contention in `SentryWindowCallback` ([#5138](https://github.com/getsentry/sentry-java/pull/5138))
+- Fix `NoSuchMethodError` for `LayoutCoordinates.localBoundingBoxOf$default` on Compose touch dispatch with AGP 8.13 and `minSdk < 24` ([#5302](https://github.com/getsentry/sentry-java/pull/5302))
+- Fix reporting OkHttp's synthetic 504 "Unsatisfiable Request" responses as errors for `CacheControl.FORCE_CACHE` cache misses ([#5299](https://github.com/getsentry/sentry-java/pull/5299))
 - Make `SentryGestureDetector` thread-safe and recycle `VelocityTracker` per gesture ([#5301](https://github.com/getsentry/sentry-java/pull/5301))
+- Fix duplicate `ui.click` breadcrumbs when another `Window.Callback` wraps `SentryWindowCallback` ([#5300](https://github.com/getsentry/sentry-java/pull/5300))
+
+### Dependencies
+
+- Bump Native SDK from v0.13.6 to v0.13.7 ([#5296](https://github.com/getsentry/sentry-java/pull/5296))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0137)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.13.6...0.13.7)
+
+## 8.39.1
+
+### Fixes
+
+- Fix `JsonObjectReader` and `MapObjectReader` hanging indefinitely when deserialization errors leave the reader in an inconsistent state ([#5293](https://github.com/getsentry/sentry-java/pull/5293))
+  - Failed collection values are now skipped so parsing can continue
+  - Skipped collection values emit `WARNING` logs
+  - Unknown-key failures and unrecoverable recovery failures emit `ERROR` logs
+
+## 8.39.0
+
+### Fixes
+
+- Fix ANR caused by `GestureDetectorCompat` Handler/MessageQueue lock contention in `SentryWindowCallback` ([#5138](https://github.com/getsentry/sentry-java/pull/5138))
 
 ### Internal
 
