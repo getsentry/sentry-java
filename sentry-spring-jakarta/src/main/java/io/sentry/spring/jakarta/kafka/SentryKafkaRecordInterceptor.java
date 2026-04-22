@@ -61,6 +61,7 @@ public final class SentryKafkaRecordInterceptor<K, V> implements RecordIntercept
 
     final @NotNull IScopes forkedScopes = scopes.forkedRootScopes("SentryKafkaRecordInterceptor");
     final @NotNull ISentryLifecycleToken lifecycleToken = forkedScopes.makeCurrent();
+    currentContext.set(new SentryRecordContext(lifecycleToken, null));
 
     final @Nullable TransactionContext transactionContext = continueTrace(forkedScopes, record);
 
