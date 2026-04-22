@@ -177,6 +177,11 @@ public final class SentryKafkaRecordInterceptor<K, V> implements RecordIntercept
       transaction.setData(SpanDataConvention.MESSAGING_MESSAGE_ID, messageId);
     }
 
+    final int bodySize = record.serializedValueSize();
+    if (bodySize >= 0) {
+      transaction.setData(SpanDataConvention.MESSAGING_MESSAGE_BODY_SIZE, bodySize);
+    }
+
     final @Nullable Integer retryCount = retryCount(record);
     if (retryCount != null) {
       transaction.setData(SpanDataConvention.MESSAGING_MESSAGE_RETRY_COUNT, retryCount);
