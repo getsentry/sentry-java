@@ -257,6 +257,21 @@ public final class SentryAndroidOptions extends SentryOptions {
 
   private boolean enableAnrFingerprinting = true;
 
+  /**
+   * Enables Binder IPC tracing. When enabled and a transaction is active, the SDK creates a child
+   * span (op {@code binder.ipc}) around each binder call instrumented by the Sentry Android Gradle
+   * plugin. Requires the Sentry Android Gradle plugin with binder IPC instrumentation enabled.
+   * Defaults to {@code false}.
+   */
+  private boolean enableBinderTracing = false;
+
+  /**
+   * Enables Binder IPC logs. When enabled, the SDK emits a Sentry log entry for each binder call
+   * instrumented by the Sentry Android Gradle plugin. Requires the Sentry Android Gradle plugin
+   * with binder IPC instrumentation enabled and Sentry logs enabled. Defaults to {@code false}.
+   */
+  private boolean enableBinderLogs = false;
+
   public SentryAndroidOptions() {
     setSentryClientName(BuildConfig.SENTRY_ANDROID_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
     setSdkVersion(createSdkVersion());
@@ -739,6 +754,26 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   public void setEnableAnrFingerprinting(final boolean enableAnrFingerprinting) {
     this.enableAnrFingerprinting = enableAnrFingerprinting;
+  }
+
+  @ApiStatus.Experimental
+  public boolean isEnableBinderTracing() {
+    return enableBinderTracing;
+  }
+
+  @ApiStatus.Experimental
+  public void setEnableBinderTracing(final boolean enableBinderTracing) {
+    this.enableBinderTracing = enableBinderTracing;
+  }
+
+  @ApiStatus.Experimental
+  public boolean isEnableBinderLogs() {
+    return enableBinderLogs;
+  }
+
+  @ApiStatus.Experimental
+  public void setEnableBinderLogs(final boolean enableBinderLogs) {
+    this.enableBinderLogs = enableBinderLogs;
   }
 
   static class AndroidUserFeedbackIDialogHandler implements SentryFeedbackOptions.IDialogHandler {

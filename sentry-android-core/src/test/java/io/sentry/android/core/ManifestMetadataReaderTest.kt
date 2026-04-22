@@ -2511,4 +2511,54 @@ class ManifestMetadataReaderTest {
     // Assert
     assertEquals("12345", fixture.options.orgId)
   }
+
+  @Test
+  fun `applyMetadata reads enableBinderTracing to options`() {
+    // Arrange
+    val bundle = bundleOf(ManifestMetadataReader.ENABLE_BINDER_TRACING to true)
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertTrue(fixture.options.isEnableBinderTracing)
+  }
+
+  @Test
+  fun `applyMetadata reads enableBinderTracing and keeps default if not found`() {
+    // Arrange
+    val context = fixture.getContext()
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertFalse(fixture.options.isEnableBinderTracing)
+  }
+
+  @Test
+  fun `applyMetadata reads enableBinderLogs to options`() {
+    // Arrange
+    val bundle = bundleOf(ManifestMetadataReader.ENABLE_BINDER_LOGS to true)
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertTrue(fixture.options.isEnableBinderLogs)
+  }
+
+  @Test
+  fun `applyMetadata reads enableBinderLogs and keeps default if not found`() {
+    // Arrange
+    val context = fixture.getContext()
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertFalse(fixture.options.isEnableBinderLogs)
+  }
 }

@@ -385,6 +385,8 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun isEnableAppLifecycleBreadcrumbs ()Z
 	public fun isEnableAutoActivityLifecycleTracing ()Z
 	public fun isEnableAutoTraceIdGeneration ()Z
+	public fun isEnableBinderLogs ()Z
+	public fun isEnableBinderTracing ()Z
 	public fun isEnableFramesTracking ()Z
 	public fun isEnableNdk ()Z
 	public fun isEnableNetworkEventBreadcrumbs ()Z
@@ -415,6 +417,8 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun setEnableAppLifecycleBreadcrumbs (Z)V
 	public fun setEnableAutoActivityLifecycleTracing (Z)V
 	public fun setEnableAutoTraceIdGeneration (Z)V
+	public fun setEnableBinderLogs (Z)V
+	public fun setEnableBinderTracing (Z)V
 	public fun setEnableFramesTracking (Z)V
 	public fun setEnableNdk (Z)V
 	public fun setEnableNetworkEventBreadcrumbs (Z)V
@@ -441,6 +445,11 @@ public final class io/sentry/android/core/SentryInitProvider {
 	public fun getType (Landroid/net/Uri;)Ljava/lang/String;
 	public fun onCreate ()Z
 	public fun shutdown ()V
+}
+
+public final class io/sentry/android/core/SentryIpcTracer {
+	public static fun onCallEnd (I)V
+	public static fun onCallStart (Ljava/lang/String;Ljava/lang/String;)I
 }
 
 public final class io/sentry/android/core/SentryLogcatAdapter {

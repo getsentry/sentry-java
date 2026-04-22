@@ -233,6 +233,22 @@ class SentryAndroidOptionsTest {
     sentryOptions.anrProfilingSampleRate = 2.0
   }
 
+  @Test
+  fun `binder tracing and logs are disabled by default`() {
+    val sentryOptions = SentryAndroidOptions()
+    assertFalse(sentryOptions.isEnableBinderTracing)
+    assertFalse(sentryOptions.isEnableBinderLogs)
+  }
+
+  @Test
+  fun `binder tracing and logs can be toggled`() {
+    val sentryOptions = SentryAndroidOptions()
+    sentryOptions.isEnableBinderTracing = true
+    sentryOptions.isEnableBinderLogs = true
+    assertTrue(sentryOptions.isEnableBinderTracing)
+    assertTrue(sentryOptions.isEnableBinderLogs)
+  }
+
   private class CustomDebugImagesLoader : IDebugImagesLoader {
     override fun loadDebugImages(): List<DebugImage>? = null
 

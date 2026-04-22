@@ -153,6 +153,12 @@ final class ManifestMetadataReader {
   static final String ENABLE_AUTO_TRACE_ID_GENERATION =
       "io.sentry.traces.enable-auto-id-generation";
 
+  @ApiStatus.Experimental
+  static final String ENABLE_BINDER_TRACING = "io.sentry.traces.binder-ipc.enable";
+
+  @ApiStatus.Experimental
+  static final String ENABLE_BINDER_LOGS = "io.sentry.logs.binder-ipc.enable";
+
   static final String DEADLINE_TIMEOUT = "io.sentry.traces.deadline-timeout";
 
   static final String FEEDBACK_NAME_REQUIRED = "io.sentry.feedback.is-name-required";
@@ -507,6 +513,12 @@ final class ManifestMetadataReader {
                 logger,
                 ENABLE_AUTO_TRACE_ID_GENERATION,
                 options.isEnableAutoTraceIdGeneration()));
+
+        options.setEnableBinderTracing(
+            readBool(metadata, logger, ENABLE_BINDER_TRACING, options.isEnableBinderTracing()));
+
+        options.setEnableBinderLogs(
+            readBool(metadata, logger, ENABLE_BINDER_LOGS, options.isEnableBinderLogs()));
 
         options.setDeadlineTimeout(
             readLong(metadata, logger, DEADLINE_TIMEOUT, options.getDeadlineTimeout()));

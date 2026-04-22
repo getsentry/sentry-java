@@ -53,6 +53,11 @@
 
 -keepnames class io.sentry.android.core.ApplicationNotResponding
 
+# Bytecode-instrumented IPC tracer — the Sentry Android Gradle plugin emits
+# direct static calls to these symbols, so both the class name and its static
+# methods must be preserved.
+-keep class io.sentry.android.core.SentryIpcTracer { *; }
+
 
 ##---------------End: proguard configuration for android-core  ----------
 

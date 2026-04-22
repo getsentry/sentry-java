@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Add binder IPC instrumentation support in `sentry-android-core`
+  - Introduces `SentryAndroidOptions.enableBinderTracing` (off by default) — when enabled and a transaction is active, each binder IPC call instrumented by the Sentry Android Gradle plugin produces a child span with op `binder.ipc`, enriched with `thread.id` and `thread.name` attributes.
+  - Introduces `SentryAndroidOptions.enableBinderLogs` (off by default) — when enabled, each instrumented binder IPC call emits a Sentry log entry at `INFO` level with `thread.id` and `thread.name` attributes.
+  - Adds `SentryIpcTracer`, the static bridge invoked by the instrumented bytecode.
+  - Requires the companion changes in the Sentry Android Gradle plugin ([markushi/feat/binder-tracing](https://github.com/getsentry/sentry-android-gradle-plugin/tree/markushi/feat/binder-tracing)).
+
 ## 8.39.1
 
 ### Fixes
