@@ -81,6 +81,7 @@ class SentryKafkaRecordInterceptorTest {
   private fun createRecordWithHeaders(
     sentryTrace: String? = null,
     baggage: String? = null,
+    baggageHeaders: List<String>? = null,
     enqueuedTime: String? = null,
     deliveryAttempt: Int? = null,
   ): ConsumerRecord<String, String> {
@@ -89,6 +90,9 @@ class SentryKafkaRecordInterceptorTest {
       headers.add(SentryTraceHeader.SENTRY_TRACE_HEADER, it.toByteArray(StandardCharsets.UTF_8))
     }
     baggage?.let {
+      headers.add(BaggageHeader.BAGGAGE_HEADER, it.toByteArray(StandardCharsets.UTF_8))
+    }
+    baggageHeaders?.forEach {
       headers.add(BaggageHeader.BAGGAGE_HEADER, it.toByteArray(StandardCharsets.UTF_8))
     }
     enqueuedTime?.let {
@@ -139,6 +143,25 @@ class SentryKafkaRecordInterceptorTest {
     interceptor.intercept(record, consumer)
 
     verify(forkedScopes).continueTrace(org.mockito.kotlin.isNull(), org.mockito.kotlin.isNull())
+  }
+
+  @Test
+  fun `intercept passes all baggage headers to continueTrace`() {
+    val interceptor = SentryKafkaRecordInterceptor<String, String>(scopes)
+    val sentryTraceValue = "2722d9f6ec019ade60c776169d9a8904-cedf5b7571cb4972-1"
+    val record =
+      createRecordWithHeaders(
+        sentryTrace = sentryTraceValue,
+        baggageHeaders = listOf("third=party", "sentry-sample_rate=1"),
+      )
+
+    interceptor.intercept(record, consumer)
+
+    verify(forkedScopes)
+      .continueTrace(
+        org.mockito.kotlin.eq(sentryTraceValue),
+        org.mockito.kotlin.eq(listOf("third=party", "sentry-sample_rate=1")),
+      )
   }
 
   @Test

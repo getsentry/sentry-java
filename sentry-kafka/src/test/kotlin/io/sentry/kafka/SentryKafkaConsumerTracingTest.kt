@@ -112,6 +112,21 @@ class SentryKafkaConsumerTracingTest {
   }
 
   @Test
+  fun `withTracing passes all baggage headers to continueTrace`() {
+    val sentryTraceValue = "2722d9f6ec019ade60c776169d9a8904-cedf5b7571cb4972-1"
+    val record =
+      createRecord(
+        sentryTrace = sentryTraceValue,
+        baggageHeaders = listOf("third=party", "sentry-sample_rate=1"),
+      )
+
+    tracing.withTracingImpl(record, Callable { "done" })
+
+    verify(forkedScopes)
+      .continueTrace(eq(sentryTraceValue), eq(listOf("third=party", "sentry-sample_rate=1")))
+  }
+
+  @Test
   fun `withTracing skips scope forking when queue tracing is disabled`() {
     options.isEnableQueueTracing = false
     val record = createRecord()
@@ -193,6 +208,7 @@ class SentryKafkaConsumerTracingTest {
     topic: String = "my-topic",
     sentryTrace: String? = null,
     baggage: String? = null,
+    baggageHeaders: List<String>? = null,
     messageId: String? = null,
     deliveryAttempt: Int? = null,
     enqueuedTime: String? = null,
@@ -203,6 +219,9 @@ class SentryKafkaConsumerTracingTest {
       headers.add(SentryTraceHeader.SENTRY_TRACE_HEADER, it.toByteArray(StandardCharsets.UTF_8))
     }
     baggage?.let {
+      headers.add(BaggageHeader.BAGGAGE_HEADER, it.toByteArray(StandardCharsets.UTF_8))
+    }
+    baggageHeaders?.forEach {
       headers.add(BaggageHeader.BAGGAGE_HEADER, it.toByteArray(StandardCharsets.UTF_8))
     }
     messageId?.let {
