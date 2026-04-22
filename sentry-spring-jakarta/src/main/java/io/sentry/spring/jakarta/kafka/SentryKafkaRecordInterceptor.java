@@ -107,8 +107,21 @@ public final class SentryKafkaRecordInterceptor<K, V> implements RecordIntercept
   }
 
   @Override
+  public void setupThreadState(final @NotNull Consumer<?, ?> consumer) {
+    if (delegate != null) {
+      delegate.setupThreadState(consumer);
+    }
+  }
+
+  @Override
   public void clearThreadState(final @NotNull Consumer<?, ?> consumer) {
-    finishStaleContext();
+    try {
+      finishStaleContext();
+    } finally {
+      if (delegate != null) {
+        delegate.clearThreadState(consumer);
+      }
+    }
   }
 
   private boolean isIgnored() {
