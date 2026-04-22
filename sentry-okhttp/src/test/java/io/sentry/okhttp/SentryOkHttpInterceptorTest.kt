@@ -31,6 +31,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.test.fail
+import okhttp3.CacheControl
 import okhttp3.EventListener
 import okhttp3.Interceptor
 import okhttp3.MediaType.Companion.toMediaType
@@ -539,6 +540,30 @@ class SentryOkHttpInterceptorTest {
         },
         any<Hint>(),
       )
+  }
+
+  @Test
+  fun `does not capture a synthetic 504 from OkHttp for a FORCE_CACHE cache miss`() {
+    // No cache is configured on the client, so FORCE_CACHE is guaranteed to miss and
+    // OkHttp's CacheInterceptor will synthesize a 504 "Unsatisfiable Request" response.
+    val sut = fixture.getSut(captureFailedRequests = true)
+    val request =
+      Request.Builder()
+        .url(fixture.server.url("/hello"))
+        .cacheControl(CacheControl.FORCE_CACHE)
+        .build()
+    val response = sut.newCall(request).execute()
+
+    assertEquals(504, response.code)
+    verify(fixture.scopes, never()).captureEvent(any(), any<Hint>())
+  }
+
+  @Test
+  fun `captures a real 504 when onlyIfCached is not set`() {
+    val sut = fixture.getSut(captureFailedRequests = true, httpStatusCode = 504)
+    sut.newCall(getRequest()).execute()
+
+    verify(fixture.scopes).captureEvent(any(), any<Hint>())
   }
 
   @SuppressWarnings("SwallowedException")

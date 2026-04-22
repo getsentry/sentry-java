@@ -5,6 +5,7 @@
 ### Fixes
 
 - Fix `NoSuchMethodError` for `LayoutCoordinates.localBoundingBoxOf$default` on Compose touch dispatch with AGP 8.13 and `minSdk < 24` ([#5302](https://github.com/getsentry/sentry-java/pull/5302))
+- Fix reporting OkHttp's synthetic 504 "Unsatisfiable Request" responses as errors for `CacheControl.FORCE_CACHE` cache misses ([#5299](https://github.com/getsentry/sentry-java/pull/5299))
 
 ### Dependencies
 
