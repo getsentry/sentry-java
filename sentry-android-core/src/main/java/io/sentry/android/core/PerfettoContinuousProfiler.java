@@ -460,8 +460,10 @@ public class PerfettoContinuousProfiler
                     final boolean isFrozen,
                     final float refreshRate) {
                   final long timestampNanos = new SentryNanotimeDate().nanoTimestamp();
-                  // Convert frameEndNanos (reported by FrameMetricsCollector using System.nanoTime /
-                  // SystemClock.uptimeMillis), into the SystemClock.elapsedRealtime to report elapsed
+                  // Convert frameEndNanos (reported by FrameMetricsCollector using System.nanoTime
+                  // /
+                  // SystemClock.uptimeMillis), into the SystemClock.elapsedRealtime to report
+                  // elapsed
                   // realtime nanos since chunk start
                   final long frameEndElapsedRealtimeNanos =
                       frameEndNanos - System.nanoTime() + SystemClock.elapsedRealtimeNanos();
@@ -507,8 +509,7 @@ public class PerfettoContinuousProfiler
       @Nullable List<PerformanceCollectionData> performanceData = null;
       if (performanceCollector != null && chunkId != null) {
         performanceData = performanceCollector.stop(chunkId);
-        final long wallClockNowNanos =
-            TimeUnit.MILLISECONDS.toNanos(System.currentTimeMillis());
+        final long wallClockNowNanos = TimeUnit.MILLISECONDS.toNanos(System.currentTimeMillis());
         final long elapsedRealtimeNowNanos = SystemClock.elapsedRealtimeNanos();
         addPerformanceDataToMeasurements(
             performanceData,
@@ -569,8 +570,7 @@ public class PerfettoContinuousProfiler
         final long nanoTimestamp = data.getNanoTimestamp();
         final long nanosSinceSample = wallClockNowNanos - nanoTimestamp;
         final long sampleElapsedRealtimeNanos = elapsedRealtimeNowNanos - nanosSinceSample;
-        final long relativeStartNs =
-            sampleElapsedRealtimeNanos - profileStartElapsedRealtimeNanos;
+        final long relativeStartNs = sampleElapsedRealtimeNanos - profileStartElapsedRealtimeNanos;
         final @Nullable Double cpuUsagePercentage = data.getCpuUsagePercentage();
         final @Nullable Long usedHeapMemory = data.getUsedHeapMemory();
         final @Nullable Long usedNativeMemory = data.getUsedNativeMemory();
