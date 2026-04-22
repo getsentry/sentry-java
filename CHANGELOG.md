@@ -6,6 +6,8 @@
 
 - Fix `NoSuchMethodError` for `LayoutCoordinates.localBoundingBoxOf$default` on Compose touch dispatch with AGP 8.13 and `minSdk < 24` ([#5302](https://github.com/getsentry/sentry-java/pull/5302))
 - Fix reporting OkHttp's synthetic 504 "Unsatisfiable Request" responses as errors for `CacheControl.FORCE_CACHE` cache misses ([#5299](https://github.com/getsentry/sentry-java/pull/5299))
+- Make `SentryGestureDetector` thread-safe and recycle `VelocityTracker` per gesture ([#5301](https://github.com/getsentry/sentry-java/pull/5301))
+- Fix duplicate `ui.click` breadcrumbs when another `Window.Callback` wraps `SentryWindowCallback` ([#5300](https://github.com/getsentry/sentry-java/pull/5300))
 
 ### Dependencies
 
@@ -27,7 +29,6 @@
 ### Fixes
 
 - Fix ANR caused by `GestureDetectorCompat` Handler/MessageQueue lock contention in `SentryWindowCallback` ([#5138](https://github.com/getsentry/sentry-java/pull/5138))
-- Fix duplicate `ui.click` breadcrumbs when another `Window.Callback` wraps `SentryWindowCallback` ([#5300](https://github.com/getsentry/sentry-java/pull/5300))
 
 ### Internal
 
