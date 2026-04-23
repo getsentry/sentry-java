@@ -1,6 +1,5 @@
 import net.ltgt.gradle.errorprone.errorprone
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import org.springframework.boot.gradle.plugin.SpringBootPlugin
 
 plugins {
   `java-library`
@@ -10,7 +9,6 @@ plugins {
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.buildconfig)
-  alias(libs.plugins.springboot2) apply false
 }
 
 tasks.withType<KotlinCompile>().configureEach {
@@ -22,7 +20,7 @@ tasks.withType<KotlinCompile>().configureEach {
 dependencies {
   api(projects.sentry)
 
-  compileOnly(platform(SpringBootPlugin.BOM_COORDINATES))
+  compileOnly(platform(libs.springboot2.bom))
   compileOnly(Config.Libs.springWeb)
   compileOnly(Config.Libs.springAop)
   compileOnly(Config.Libs.springSecurityWeb)

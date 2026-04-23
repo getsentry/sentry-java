@@ -1,6 +1,49 @@
 # Changelog
 
-## Unreleased
+## 8.40.0
+
+### Fixes
+
+- Fix `NoSuchMethodError` for `LayoutCoordinates.localBoundingBoxOf$default` on Compose touch dispatch with AGP 8.13 and `minSdk < 24` ([#5302](https://github.com/getsentry/sentry-java/pull/5302))
+- Fix reporting OkHttp's synthetic 504 "Unsatisfiable Request" responses as errors for `CacheControl.FORCE_CACHE` cache misses ([#5299](https://github.com/getsentry/sentry-java/pull/5299))
+- Make `SentryGestureDetector` thread-safe and recycle `VelocityTracker` per gesture ([#5301](https://github.com/getsentry/sentry-java/pull/5301))
+- Fix duplicate `ui.click` breadcrumbs when another `Window.Callback` wraps `SentryWindowCallback` ([#5300](https://github.com/getsentry/sentry-java/pull/5300))
+
+### Dependencies
+
+- Bump Native SDK from v0.13.6 to v0.13.7 ([#5296](https://github.com/getsentry/sentry-java/pull/5296))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0137)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.13.6...0.13.7)
+
+## 8.39.1
+
+### Fixes
+
+- Fix `JsonObjectReader` and `MapObjectReader` hanging indefinitely when deserialization errors leave the reader in an inconsistent state ([#5293](https://github.com/getsentry/sentry-java/pull/5293))
+  - Failed collection values are now skipped so parsing can continue
+  - Skipped collection values emit `WARNING` logs
+  - Unknown-key failures and unrecoverable recovery failures emit `ERROR` logs
+
+## 8.39.0
+
+### Fixes
+
+- Fix ANR caused by `GestureDetectorCompat` Handler/MessageQueue lock contention in `SentryWindowCallback` ([#5138](https://github.com/getsentry/sentry-java/pull/5138))
+
+### Internal
+
+- Bump AGP version from v8.6.0 to v8.13.1 ([#5063](https://github.com/getsentry/sentry-java/pull/5063))
+
+### Dependencies
+
+- Bump Native SDK from v0.13.3 to v0.13.6 ([#5277](https://github.com/getsentry/sentry-java/pull/5277))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0136)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.13.3...0.13.6)
+- Bump Gradle from v8.14.3 to v9.4.1 ([#5063](https://github.com/getsentry/sentry-java/pull/5063))
+  - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v941)
+  - [diff](https://github.com/gradle/gradle/compare/v8.14.3...v9.4.1)
+
+## 8.38.0
 
 ### Features
 
@@ -10,6 +53,10 @@
   - New option `orgId`: allows explicitly setting the organization ID for self-hosted and Relay setups where it cannot be extracted from the DSN. Configurable via code (`setOrgId("123")`), `sentry.properties` (`org-id=123`), Android manifest (`io.sentry.org-id`), or Spring Boot (`sentry.org-id=123`).
 - Android: Attachments on the scope will now be synced to native ([#5211](https://github.com/getsentry/sentry-java/pull/5211))
 - Add THIRD_PARTY_NOTICES.md for vendored third-party code, bundled as SENTRY_THIRD_PARTY_NOTICES.md in the sentry JAR under META-INF ([#5186](https://github.com/getsentry/sentry-java/pull/5186))
+
+### Improvements
+
+- Do not retrieve `ActivityManager` if API < 35 on SDK init ([#5275](https://github.com/getsentry/sentry-java/pull/5275))
 
 ## 8.37.1
 

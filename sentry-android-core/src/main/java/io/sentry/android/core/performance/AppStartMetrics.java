@@ -377,20 +377,21 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     applicationContext = application;
     application.registerActivityLifecycleCallbacks(instance);
 
-    final @Nullable ActivityManager activityManager =
-        (ActivityManager) application.getSystemService(Context.ACTIVITY_SERVICE);
-
-    if (activityManager != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
-      final List<ApplicationStartInfo> historicalProcessStartReasons =
-          activityManager.getHistoricalProcessStartReasons(1);
-      if (!historicalProcessStartReasons.isEmpty()) {
-        final @NotNull ApplicationStartInfo info = historicalProcessStartReasons.get(0);
-        cachedStartInfo = info;
-        if (info.getStartupState() == ApplicationStartInfo.STARTUP_STATE_STARTED) {
-          if (info.getStartType() == ApplicationStartInfo.START_TYPE_COLD) {
-            appStartType = AppStartType.COLD;
-          } else {
-            appStartType = AppStartType.WARM;
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+      final @Nullable ActivityManager activityManager =
+          (ActivityManager) application.getSystemService(Context.ACTIVITY_SERVICE);
+      if (activityManager != null) {
+        final List<ApplicationStartInfo> historicalProcessStartReasons =
+            activityManager.getHistoricalProcessStartReasons(1);
+        if (!historicalProcessStartReasons.isEmpty()) {
+          final @NotNull ApplicationStartInfo info = historicalProcessStartReasons.get(0);
+          cachedStartInfo = info;
+          if (info.getStartupState() == ApplicationStartInfo.STARTUP_STATE_STARTED) {
+            if (info.getStartType() == ApplicationStartInfo.START_TYPE_COLD) {
+              appStartType = AppStartType.COLD;
+            } else {
+              appStartType = AppStartType.WARM;
+            }
           }
         }
       }

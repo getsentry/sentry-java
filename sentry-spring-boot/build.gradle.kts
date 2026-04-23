@@ -1,6 +1,5 @@
 import net.ltgt.gradle.errorprone.errorprone
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import org.springframework.boot.gradle.plugin.SpringBootPlugin
 
 plugins {
   `java-library`
@@ -10,7 +9,6 @@ plugins {
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.buildconfig)
-  alias(libs.plugins.springboot2) apply false
 }
 
 tasks.withType<KotlinCompile>().configureEach {
@@ -40,14 +38,14 @@ dependencies {
   compileOnly(libs.springboot.starter.graphql)
   compileOnly(libs.springboot.starter.quartz)
   compileOnly(libs.springboot.starter.security)
-  compileOnly(platform(SpringBootPlugin.BOM_COORDINATES))
+  compileOnly(platform(libs.springboot2.bom))
   compileOnly(Config.Libs.springWeb)
   compileOnly(Config.Libs.springWebflux)
   compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryCore)
   compileOnly(projects.sentryGraphql)
   compileOnly(projects.sentryQuartz)
 
-  annotationProcessor(platform(SpringBootPlugin.BOM_COORDINATES))
+  annotationProcessor(platform(libs.springboot2.bom))
   annotationProcessor(Config.AnnotationProcessors.springBootAutoConfigure)
   annotationProcessor(Config.AnnotationProcessors.springBootConfiguration)
 
