@@ -128,8 +128,7 @@ public final class ActivityLifecycleIntegration
     application.registerActivityLifecycleCallbacks(this);
 
     if (performanceEnabled && this.options.isEnableStandaloneAppStartTracing()) {
-      AppStartMetrics.getInstance()
-          .setOnNoActivityStartedListener(this::onNoActivityStarted);
+      AppStartMetrics.getInstance().setOnNoActivityStartedListener(this::onNoActivityStarted);
     }
 
     this.options.getLogger().log(SentryLevel.DEBUG, "ActivityLifecycleIntegration installed.");
@@ -286,8 +285,7 @@ public final class ActivityLifecycleIntegration
             final TransactionOptions appStartTransactionOptions = new TransactionOptions();
             appStartTransactionOptions.setBindToScope(false);
             appStartTransactionOptions.setStartTimestamp(appStartTime);
-            appStartTransactionOptions.setAppStartTransaction(
-                appStartSamplingDecision != null);
+            appStartTransactionOptions.setAppStartTransaction(appStartSamplingDecision != null);
             setSpanOrigin(appStartTransactionOptions);
 
             appStartTransaction =
@@ -880,11 +878,8 @@ public final class ActivityLifecycleIntegration
 
     final @NotNull AppStartMetrics metrics = AppStartMetrics.getInstance();
     // For non-activity starts, appLaunchedInForeground is false, so we can't use
-    // getAppStartTimeSpanWithFallback (which gates on foreground). Use the spans directly.
-    @NotNull TimeSpan appStartTimeSpan = metrics.getAppStartTimeSpan();
-    if (!appStartTimeSpan.hasStarted() || !appStartTimeSpan.hasStopped()) {
-      appStartTimeSpan = metrics.getSdkInitTimeSpan();
-    }
+    // getAppStartTimeSpanWithFallback (which gates on foreground).
+    final @NotNull TimeSpan appStartTimeSpan = metrics.getAppStartTimeSpanDirect();
 
     if (!appStartTimeSpan.hasStarted() || !appStartTimeSpan.hasStopped()) {
       return;
@@ -896,8 +891,7 @@ public final class ActivityLifecycleIntegration
       return;
     }
 
-    final boolean coldStart =
-        metrics.getAppStartType() == AppStartMetrics.AppStartType.COLD;
+    final boolean coldStart = metrics.getAppStartType() == AppStartMetrics.AppStartType.COLD;
 
     final TransactionOptions txnOptions = new TransactionOptions();
     txnOptions.setBindToScope(false);

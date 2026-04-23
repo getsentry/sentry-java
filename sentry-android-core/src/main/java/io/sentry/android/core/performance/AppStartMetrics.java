@@ -18,7 +18,6 @@ import androidx.annotation.VisibleForTesting;
 import io.sentry.IContinuousProfiler;
 import io.sentry.ISentryLifecycleToken;
 import io.sentry.ITransactionProfiler;
-import io.sentry.protocol.SentryId;
 import io.sentry.NoOpLogger;
 import io.sentry.TracesSamplingDecision;
 import io.sentry.android.core.BuildInfoProvider;
@@ -26,6 +25,7 @@ import io.sentry.android.core.ContextUtils;
 import io.sentry.android.core.CurrentActivityHolder;
 import io.sentry.android.core.SentryAndroidOptions;
 import io.sentry.android.core.internal.util.FirstDrawDoneListener;
+import io.sentry.protocol.SentryId;
 import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.LazyEvaluator;
 import java.util.ArrayList;
@@ -92,6 +92,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   private @Nullable OnNoActivityStartedListener noActivityStartedListener;
   private @Nullable SentryId appStartTraceId;
   private @Nullable Application applicationContext;
+  private @Nullable ApplicationStartInfo cachedStartInfo;
 
   public static @NotNull AppStartMetrics getInstance() {
     if (instance == null) {
@@ -169,8 +170,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     this.appLaunchedInForeground.setValue(appLaunchedInForeground);
   }
 
-  public void setOnNoActivityStartedListener(
-      final @Nullable OnNoActivityStartedListener listener) {
+  public void setOnNoActivityStartedListener(final @Nullable OnNoActivityStartedListener listener) {
     this.noActivityStartedListener = listener;
   }
 
@@ -181,6 +181,18 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
 
   public void setAppStartTraceId(final @Nullable SentryId traceId) {
     this.appStartTraceId = traceId;
+  }
+
+  /**
+   * Returns a valid app start time span, bypassing the foreground check. Tries appStartSpan first,
+   * falls back to sdkInitTimeSpan. Used for non-activity starts where appLaunchedInForeground is
+   * false.
+   */
+  public @NotNull TimeSpan getAppStartTimeSpanDirect() {
+    if (appStartSpan.hasStarted() && appStartSpan.hasStopped()) {
+      return appStartSpan;
+    }
+    return sdkInitTimeSpan;
   }
 
   /**
@@ -283,6 +295,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     noActivityStartedListener = null;
     appStartTraceId = null;
     applicationContext = null;
+    cachedStartInfo = null;
   }
 
   public @Nullable ITransactionProfiler getAppStartProfiler() {
@@ -372,6 +385,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
           activityManager.getHistoricalProcessStartReasons(1);
       if (!historicalProcessStartReasons.isEmpty()) {
         final @NotNull ApplicationStartInfo info = historicalProcessStartReasons.get(0);
+        cachedStartInfo = info;
         if (info.getStartupState() == ApplicationStartInfo.STARTUP_STATE_STARTED) {
           if (info.getStartType() == ApplicationStartInfo.START_TYPE_COLD) {
             appStartType = AppStartType.COLD;
@@ -382,11 +396,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
       }
     }
 
-    if (appStartType != AppStartType.UNKNOWN) {
-      // App start type is already known (e.g. from ApplicationStartInfo on API 35+).
-      // We still need to detect non-activity starts, so post a check on the main thread.
-      new Handler(Looper.getMainLooper()).post(() -> checkCreateTimeOnMain());
-    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
       Looper.getMainLooper()
           .getQueue()
           .addIdleHandler(
@@ -439,9 +449,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     }
   }
 
-  /**
-   * Resolves the end time for a non-activity app start.
-   */
+  /** Resolves the end time for a non-activity app start. */
   private void resolveNonActivityAppStartEndTime() {
     // Priority 1: Gradle plugin instrumented onApplicationPostCreate
     if (applicationOnCreate.hasStopped()) {
@@ -451,32 +459,22 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
       return;
     }
 
-    // Priority 2: API 35+ ApplicationStartInfo
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM
-        && applicationContext != null) {
+    // Priority 2: API 35+ ApplicationStartInfo (cached from registerLifecycleCallbacks)
+    if (cachedStartInfo != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
       try {
-        final @Nullable ActivityManager activityManager =
-            (ActivityManager) applicationContext.getSystemService(Context.ACTIVITY_SERVICE);
-        if (activityManager != null) {
-          final List<ApplicationStartInfo> startInfos =
-              activityManager.getHistoricalProcessStartReasons(1);
-          if (!startInfos.isEmpty()) {
-            final @NotNull Map<Integer, Long> timestamps =
-                startInfos.get(0).getStartupTimestamps();
-            // Timestamps are in nanoseconds (monotonic clock)
-            final @Nullable Long onCreateNanos =
-                timestamps.get(ApplicationStartInfo.START_TIMESTAMP_APPLICATION_ONCREATE);
-            if (onCreateNanos != null && onCreateNanos > 0) {
-              final long onCreateUptimeMs = TimeUnit.NANOSECONDS.toMillis(onCreateNanos);
-              appStartSpan.setStoppedAt(onCreateUptimeMs);
+        final @NotNull Map<Integer, Long> timestamps = cachedStartInfo.getStartupTimestamps();
+        // Timestamps are in nanoseconds (monotonic clock)
+        final @Nullable Long onCreateNanos =
+            timestamps.get(ApplicationStartInfo.START_TIMESTAMP_APPLICATION_ONCREATE);
+        if (onCreateNanos != null && onCreateNanos > 0) {
+          final long onCreateUptimeMs = TimeUnit.NANOSECONDS.toMillis(onCreateNanos);
+          appStartSpan.setStoppedAt(onCreateUptimeMs);
 
-              // Also fill applicationOnCreate stop time if not already set by Gradle plugin
-              if (applicationOnCreate.hasStarted() && applicationOnCreate.hasNotStopped()) {
-                applicationOnCreate.setStoppedAt(onCreateUptimeMs);
-              }
-              return;
-            }
+          // Also fill applicationOnCreate stop time if not already set by Gradle plugin
+          if (applicationOnCreate.hasStarted() && applicationOnCreate.hasNotStopped()) {
+            applicationOnCreate.setStoppedAt(onCreateUptimeMs);
           }
+          return;
         }
       } catch (Throwable ignored) {
         // best effort

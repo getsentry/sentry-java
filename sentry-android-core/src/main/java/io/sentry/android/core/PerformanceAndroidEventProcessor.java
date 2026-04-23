@@ -96,7 +96,7 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
         if (appStartMetrics.shouldSendStartMeasurements() || isStandaloneAppStartTxn) {
           final @NotNull TimeSpan appStartTimeSpan =
               isStandaloneAppStartTxn
-                  ? getAppStartTimeSpanForStandalone(appStartMetrics)
+                  ? appStartMetrics.getAppStartTimeSpanDirect()
                   : appStartMetrics.getAppStartTimeSpanWithFallback(options);
           final long appStartUpDurationMs = appStartTimeSpan.getDurationMs();
 
@@ -230,19 +230,6 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
     return context != null
         && (context.getOperation().equals(APP_START_COLD)
             || context.getOperation().equals(APP_START_WARM));
-  }
-
-  /**
-   * For standalone app start transactions (non-activity starts), appLaunchedInForeground is false,
-   * so getAppStartTimeSpanWithFallback won't return a valid span. We get the spans directly.
-   */
-  private static @NotNull TimeSpan getAppStartTimeSpanForStandalone(
-      final @NotNull AppStartMetrics metrics) {
-    final @NotNull TimeSpan appStartSpan = metrics.getAppStartTimeSpan();
-    if (appStartSpan.hasStarted() && appStartSpan.hasStopped()) {
-      return appStartSpan;
-    }
-    return metrics.getSdkInitTimeSpan();
   }
 
   private void attachAppStartSpans(
