@@ -34,7 +34,6 @@ import java.lang.NullPointerException
  * @param logger Logger for error reporting during Compose traversal
  */
 @SuppressLint("UseKtx")
-@JvmOverloads
 internal fun View.traverse(
   parentNode: ViewHierarchyNode,
   options: SentryMaskingOptions,
