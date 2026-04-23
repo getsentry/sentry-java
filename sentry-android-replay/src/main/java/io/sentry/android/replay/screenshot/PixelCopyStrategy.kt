@@ -288,8 +288,8 @@ internal class PixelCopyStrategy(
  * leaves where SurfaceViews are.
  *
  * Extracted for testability — the compositing is pure drawing logic that can be driven with
- * hand-built bitmaps, while the surrounding [PixelCopyStrategy.captureSurfaceViews] flow depends
- * on a real SurfaceView producer that Robolectric cannot provide.
+ * hand-built bitmaps, while the surrounding [PixelCopyStrategy.captureSurfaceViews] flow depends on
+ * a real SurfaceView producer that Robolectric cannot provide.
  */
 internal fun compositeSurfaceViewInto(
   destCanvas: Canvas,

@@ -288,9 +288,7 @@ private class ActivityWithSurfaceView : Activity() {
         layoutParams = FrameLayout.LayoutParams(200, 50)
       }
     )
-    root.addView(
-      SurfaceView(this).apply { layoutParams = FrameLayout.LayoutParams(200, 200) }
-    )
+    root.addView(SurfaceView(this).apply { layoutParams = FrameLayout.LayoutParams(200, 200) })
     setContentView(root)
   }
 }
