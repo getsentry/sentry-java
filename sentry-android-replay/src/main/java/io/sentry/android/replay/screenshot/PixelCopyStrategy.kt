@@ -170,7 +170,9 @@ internal class PixelCopyStrategy(
 
     for ((index, node) in surfaceViewNodes.withIndex()) {
       val surfaceView = node.surfaceViewRef.get()
-      if (surfaceView == null || !surfaceView.holder.surface.isValid) {
+      // holder.surface can be null before the surface is created — guard against NPE.
+      val surface = surfaceView?.holder?.surface
+      if (surfaceView == null || surface == null || !surface.isValid) {
         onCaptureComplete()
         continue
       }
@@ -220,18 +222,19 @@ internal class PixelCopyStrategy(
           if (capture == null) continue
           if (capture.bitmap.isRecycled) continue
 
-          val left = (capture.x - windowLocation[0]) * config.scaleFactorX
-          val top = (capture.y - windowLocation[1]) * config.scaleFactorY
-          tmpSrcRect.set(0, 0, capture.bitmap.width, capture.bitmap.height)
-          tmpDstRect.set(
-            left,
-            top,
-            left + capture.bitmap.width * config.scaleFactorX,
-            top + capture.bitmap.height * config.scaleFactorY,
+          compositeSurfaceViewInto(
+            screenshotCanvas,
+            dstOverPaint,
+            tmpSrcRect,
+            tmpDstRect,
+            capture.bitmap,
+            capture.x,
+            capture.y,
+            windowLocation[0],
+            windowLocation[1],
+            config.scaleFactorX,
+            config.scaleFactorY,
           )
-
-          // DST_OVER draws the SurfaceView content behind the existing Window content
-          screenshotCanvas.drawBitmap(capture.bitmap, tmpSrcRect, tmpDstRect, dstOverPaint)
           capture.bitmap.recycle()
         }
 
@@ -276,4 +279,39 @@ internal class PixelCopyStrategy(
       )
     )
   }
+}
+
+/**
+ * Composites [sourceBitmap] (a SurfaceView capture) onto [destCanvas] (wrapping the recording
+ * screenshot) using [destPaint] (expected to have DST_OVER xfermode), so the SurfaceView content
+ * draws _behind_ existing Window content — filling the transparent holes the Window PixelCopy
+ * leaves where SurfaceViews are.
+ *
+ * Extracted for testability — the compositing is pure drawing logic that can be driven with
+ * hand-built bitmaps, while the surrounding [PixelCopyStrategy.captureSurfaceViews] flow depends
+ * on a real SurfaceView producer that Robolectric cannot provide.
+ */
+internal fun compositeSurfaceViewInto(
+  destCanvas: Canvas,
+  destPaint: Paint,
+  tmpSrc: Rect,
+  tmpDst: RectF,
+  sourceBitmap: Bitmap,
+  sourceX: Int,
+  sourceY: Int,
+  windowX: Int,
+  windowY: Int,
+  scaleFactorX: Float,
+  scaleFactorY: Float,
+) {
+  val left = (sourceX - windowX) * scaleFactorX
+  val top = (sourceY - windowY) * scaleFactorY
+  tmpSrc.set(0, 0, sourceBitmap.width, sourceBitmap.height)
+  tmpDst.set(
+    left,
+    top,
+    left + sourceBitmap.width * scaleFactorX,
+    top + sourceBitmap.height * scaleFactorY,
+  )
+  destCanvas.drawBitmap(sourceBitmap, tmpSrc, tmpDst, destPaint)
 }
