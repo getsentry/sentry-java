@@ -2,6 +2,11 @@
 
 ## 8.40.0
 
+### Features
+
+- Session Replay: experimental support for capturing `SurfaceView` content (e.g. Unity, video players, maps) ([#5333](https://github.com/getsentry/sentry-java/pull/5333))
+  - To enable, set `options.sessionReplay.isCaptureSurfaceViews = true`
+
 ### Fixes
 
 - Fix `NoSuchMethodError` for `LayoutCoordinates.localBoundingBoxOf$default` on Compose touch dispatch with AGP 8.13 and `minSdk < 24` ([#5302](https://github.com/getsentry/sentry-java/pull/5302))

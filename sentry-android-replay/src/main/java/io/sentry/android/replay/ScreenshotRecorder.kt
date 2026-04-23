@@ -70,7 +70,7 @@ internal class ScreenshotRecorder(
       )
     }
 
-    if (!contentChanged.get()) {
+    if (!contentChanged.get() && !screenshotStrategy.hasSurfaceViews()) {
       screenshotStrategy.emitLastScreenshot()
       return
     }

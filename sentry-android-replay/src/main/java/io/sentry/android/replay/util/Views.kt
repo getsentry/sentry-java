@@ -34,10 +34,12 @@ import java.lang.NullPointerException
  * @param logger Logger for error reporting during Compose traversal
  */
 @SuppressLint("UseKtx")
+@JvmOverloads
 internal fun View.traverse(
   parentNode: ViewHierarchyNode,
   options: SentryMaskingOptions,
   logger: ILogger,
+  surfaceViewNodes: MutableList<ViewHierarchyNode.SurfaceViewHierarchyNode>? = null,
 ) {
   if (this !is ViewGroup) {
     return
@@ -59,7 +61,14 @@ internal fun View.traverse(
     if (child != null) {
       val childNode = ViewHierarchyNode.fromView(child, parentNode, indexOfChild(child), options)
       childNodes.add(childNode)
-      child.traverse(childNode, options, logger)
+      if (
+        surfaceViewNodes != null &&
+          childNode is ViewHierarchyNode.SurfaceViewHierarchyNode &&
+          childNode.isVisible
+      ) {
+        surfaceViewNodes.add(childNode)
+      }
+      child.traverse(childNode, options, logger, surfaceViewNodes)
     }
   }
   parentNode.children = childNodes

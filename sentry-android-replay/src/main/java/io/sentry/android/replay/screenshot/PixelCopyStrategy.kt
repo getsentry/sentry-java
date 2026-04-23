@@ -2,7 +2,13 @@ package io.sentry.android.replay.screenshot
 
 import android.annotation.SuppressLint
 import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.graphics.Matrix
+import android.graphics.Paint
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffXfermode
+import android.graphics.Rect
+import android.graphics.RectF
 import android.view.PixelCopy
 import android.view.View
 import io.sentry.SentryLevel.DEBUG
@@ -19,6 +25,7 @@ import io.sentry.android.replay.util.ReplayRunnable
 import io.sentry.android.replay.util.traverse
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.LazyThreadSafetyMode.NONE
 
 @SuppressLint("UseKtx")
@@ -40,6 +47,16 @@ internal class PixelCopyStrategy(
   private val maskRenderer = MaskRenderer()
   private val contentChanged = AtomicBoolean(false)
   private val isClosed = AtomicBoolean(false)
+  private val hasSurfaceViews = AtomicBoolean(false)
+  private val dstOverPaint by
+    lazy(NONE) { Paint().apply { xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_OVER) } }
+  private val screenshotCanvas by lazy(NONE) { Canvas(screenshot) }
+  private val tmpSrcRect = Rect()
+  private val tmpDstRect = RectF()
+  private val windowLocation = IntArray(2)
+  private val svLocation = IntArray(2)
+
+  private class SurfaceViewCapture(val bitmap: Bitmap, val x: Int, val y: Int)
 
   @SuppressLint("NewApi")
   override fun capture(root: View) {
@@ -81,31 +98,22 @@ internal class PixelCopyStrategy(
 
           // TODO: disableAllMasking here and dont traverse?
           val viewHierarchy = ViewHierarchyNode.fromView(root, null, 0, options.sessionReplay)
-          root.traverse(viewHierarchy, options.sessionReplay, options.logger)
-
-          executor.submit(
-            ReplayRunnable("screenshot_recorder.mask") {
-              if (isClosed.get() || screenshot.isRecycled) {
-                options.logger.log(DEBUG, "PixelCopyStrategy is closed, skipping masking")
-                return@ReplayRunnable
-              }
-
-              val debugMasks = maskRenderer.renderMasks(screenshot, viewHierarchy, prescaledMatrix)
-
-              if (options.replayController.isDebugMaskingOverlayEnabled()) {
-                mainLooperHandler.post {
-                  if (debugOverlayDrawable.callback == null) {
-                    root.overlay.add(debugOverlayDrawable)
-                  }
-                  debugOverlayDrawable.updateMasks(debugMasks)
-                  root.postInvalidate()
-                }
-              }
-              screenshotRecorderCallback?.onScreenshotRecorded(screenshot)
-              lastCaptureSuccessful.set(true)
-              contentChanged.set(false)
+          val captureSurfaceViewsEnabled = options.sessionReplay.isCaptureSurfaceViews
+          val surfaceViewNodes =
+            if (captureSurfaceViewsEnabled) {
+              mutableListOf<ViewHierarchyNode.SurfaceViewHierarchyNode>()
+            } else {
+              null
             }
-          )
+          root.traverse(viewHierarchy, options.sessionReplay, options.logger, surfaceViewNodes)
+
+          hasSurfaceViews.set(surfaceViewNodes?.isNotEmpty() == true)
+
+          if (surfaceViewNodes.isNullOrEmpty()) {
+            submitMaskingAndCallback(root, viewHierarchy)
+          } else {
+            captureSurfaceViews(root, surfaceViewNodes, viewHierarchy)
+          }
         },
         mainLooperHandler.handler,
       )
@@ -115,12 +123,133 @@ internal class PixelCopyStrategy(
     }
   }
 
+  private fun submitMaskingAndCallback(root: View, viewHierarchy: ViewHierarchyNode) {
+    executor.submit(
+      ReplayRunnable("screenshot_recorder.mask") { applyMaskingAndNotify(root, viewHierarchy) }
+    )
+  }
+
+  private fun applyMaskingAndNotify(root: View, viewHierarchy: ViewHierarchyNode) {
+    if (isClosed.get() || screenshot.isRecycled) {
+      options.logger.log(DEBUG, "PixelCopyStrategy is closed, skipping masking")
+      return
+    }
+
+    val debugMasks = maskRenderer.renderMasks(screenshot, viewHierarchy, prescaledMatrix)
+
+    if (options.replayController.isDebugMaskingOverlayEnabled()) {
+      mainLooperHandler.post {
+        if (debugOverlayDrawable.callback == null) {
+          root.overlay.add(debugOverlayDrawable)
+        }
+        debugOverlayDrawable.updateMasks(debugMasks)
+        root.postInvalidate()
+      }
+    }
+    screenshotRecorderCallback?.onScreenshotRecorded(screenshot)
+    lastCaptureSuccessful.set(true)
+    contentChanged.set(false)
+  }
+
+  @SuppressLint("NewApi")
+  private fun captureSurfaceViews(
+    root: View,
+    surfaceViewNodes: List<ViewHierarchyNode.SurfaceViewHierarchyNode>,
+    viewHierarchy: ViewHierarchyNode,
+  ) {
+    root.getLocationOnScreen(windowLocation)
+
+    val captures = arrayOfNulls<SurfaceViewCapture>(surfaceViewNodes.size)
+    val remaining = AtomicInteger(surfaceViewNodes.size)
+
+    fun onCaptureComplete() {
+      if (remaining.decrementAndGet() == 0) {
+        compositeSurfaceViewsAndMask(root, captures, viewHierarchy)
+      }
+    }
+
+    for ((index, node) in surfaceViewNodes.withIndex()) {
+      val surfaceView = node.surfaceViewRef.get()
+      if (surfaceView == null || !surfaceView.holder.surface.isValid) {
+        onCaptureComplete()
+        continue
+      }
+
+      try {
+        val svBitmap =
+          Bitmap.createBitmap(surfaceView.width, surfaceView.height, Bitmap.Config.ARGB_8888)
+
+        surfaceView.getLocationOnScreen(svLocation)
+        val capturedX = svLocation[0]
+        val capturedY = svLocation[1]
+
+        PixelCopy.request(
+          surfaceView,
+          svBitmap,
+          { copyResult: Int ->
+            if (copyResult == PixelCopy.SUCCESS) {
+              captures[index] = SurfaceViewCapture(svBitmap, capturedX, capturedY)
+            } else {
+              svBitmap.recycle()
+              options.logger.log(INFO, "Failed to capture SurfaceView: %d", copyResult)
+            }
+            onCaptureComplete()
+          },
+          mainLooperHandler.handler,
+        )
+      } catch (e: Throwable) {
+        options.logger.log(WARNING, "Failed to capture SurfaceView", e)
+        onCaptureComplete()
+      }
+    }
+  }
+
+  private fun compositeSurfaceViewsAndMask(
+    root: View,
+    captures: Array<SurfaceViewCapture?>,
+    viewHierarchy: ViewHierarchyNode,
+  ) {
+    executor.submit(
+      ReplayRunnable("screenshot_recorder.composite") {
+        if (isClosed.get() || screenshot.isRecycled) {
+          options.logger.log(DEBUG, "PixelCopyStrategy is closed, skipping compositing")
+          return@ReplayRunnable
+        }
+
+        for (capture in captures) {
+          if (capture == null) continue
+          if (capture.bitmap.isRecycled) continue
+
+          val left = (capture.x - windowLocation[0]) * config.scaleFactorX
+          val top = (capture.y - windowLocation[1]) * config.scaleFactorY
+          tmpSrcRect.set(0, 0, capture.bitmap.width, capture.bitmap.height)
+          tmpDstRect.set(
+            left,
+            top,
+            left + capture.bitmap.width * config.scaleFactorX,
+            top + capture.bitmap.height * config.scaleFactorY,
+          )
+
+          // DST_OVER draws the SurfaceView content behind the existing Window content
+          screenshotCanvas.drawBitmap(capture.bitmap, tmpSrcRect, tmpDstRect, dstOverPaint)
+          capture.bitmap.recycle()
+        }
+
+        applyMaskingAndNotify(root, viewHierarchy)
+      }
+    )
+  }
+
   override fun onContentChanged() {
     contentChanged.set(true)
   }
 
   override fun lastCaptureSuccessful(): Boolean {
     return lastCaptureSuccessful.get()
+  }
+
+  override fun hasSurfaceViews(): Boolean {
+    return hasSurfaceViews.get()
   }
 
   override fun emitLastScreenshot() {
