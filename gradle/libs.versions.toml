@@ -39,7 +39,7 @@ compileSdk = "36"
 minSdk = "21"
 spotless = "7.0.4"
 gummyBears = "0.12.0"
-camerax = "1.3.0"
+camerax = "1.4.0"
 openfeature = "1.18.2"
 
 [plugins]
