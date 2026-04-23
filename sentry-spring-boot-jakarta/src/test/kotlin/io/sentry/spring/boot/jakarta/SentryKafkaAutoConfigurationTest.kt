@@ -33,9 +33,16 @@ class SentryKafkaAutoConfigurationTest {
     FilteredClassLoader(SentryAutoConfigurationCustomizerProvider::class.java)
 
   private val noSentryKafkaClassLoader =
-    FilteredClassLoader(SentryKafkaProducerInterceptor::class.java)
+    FilteredClassLoader(
+      SentryKafkaProducerInterceptor::class.java,
+      SentryAutoConfigurationCustomizerProvider::class.java,
+    )
 
-  private val noSpringKafkaClassLoader = FilteredClassLoader(KafkaTemplate::class.java)
+  private val noSpringKafkaClassLoader =
+    FilteredClassLoader(
+      KafkaTemplate::class.java,
+      SentryAutoConfigurationCustomizerProvider::class.java,
+    )
 
   @Test
   fun `registers Kafka BPPs when queue tracing is enabled`() {
