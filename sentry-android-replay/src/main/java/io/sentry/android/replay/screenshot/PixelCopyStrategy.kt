@@ -98,9 +98,8 @@ internal class PixelCopyStrategy(
 
           // TODO: disableAllMasking here and dont traverse?
           val viewHierarchy = ViewHierarchyNode.fromView(root, null, 0, options.sessionReplay)
-          val captureSurfaceViewsEnabled = options.sessionReplay.isCaptureSurfaceViews
           val surfaceViewNodes =
-            if (captureSurfaceViewsEnabled) {
+            if (options.sessionReplay.isCaptureSurfaceViews) {
               mutableListOf<ViewHierarchyNode.SurfaceViewHierarchyNode>()
             } else {
               null
