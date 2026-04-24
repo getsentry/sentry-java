@@ -2023,6 +2023,31 @@ class ManifestMetadataReaderTest {
   }
 
   @Test
+  fun `applyMetadata reads capture-surface-views to options`() {
+    // Arrange
+    val bundle = bundleOf(ManifestMetadataReader.REPLAYS_CAPTURE_SURFACE_VIEWS to true)
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertTrue(fixture.options.sessionReplay.isCaptureSurfaceViews)
+  }
+
+  @Test
+  fun `applyMetadata reads capture-surface-views and keeps default if not found`() {
+    // Arrange
+    val context = fixture.getContext()
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertFalse(fixture.options.sessionReplay.isCaptureSurfaceViews)
+  }
+
+  @Test
   fun `applyMetadata reads anrProfilingSampleRate to options`() {
     // Arrange
     val bundle = bundleOf(ManifestMetadataReader.ANR_PROFILING_SAMPLE_RATE to 0.5f)
