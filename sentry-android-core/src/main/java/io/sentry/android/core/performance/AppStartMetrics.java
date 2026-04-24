@@ -432,6 +432,15 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     if (activeActivitiesCounter.get() == 0) {
       appLaunchedInForeground.setValue(false);
 
+      // Reaching this callback means Application.onCreate() finished with no Activity created,
+      // which is definitionally a cold start for this process. On API < 35 we can't resolve the
+      // start type via ApplicationStartInfo, so appStartType is still UNKNOWN at this point —
+      // default it to COLD so the standalone transaction (and PerformanceAndroidEventProcessor)
+      // classify it correctly.
+      if (appStartType == AppStartType.UNKNOWN) {
+        appStartType = AppStartType.COLD;
+      }
+
       // we stop the app start profilers, as they are useless and likely to timeout
       if (appStartProfiler != null && appStartProfiler.isRunning()) {
         appStartProfiler.close();

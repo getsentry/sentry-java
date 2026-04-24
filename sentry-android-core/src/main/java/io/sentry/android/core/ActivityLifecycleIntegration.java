@@ -251,6 +251,10 @@ public final class ActivityLifecycleIntegration
         // If a non-activity app start transaction was created earlier, reuse its trace ID
         final @Nullable SentryId storedAppStartTraceId =
             AppStartMetrics.getInstance().getAppStartTraceId();
+        // When we reuse a stashed traceId, it means the process's app start has already been
+        // accounted for by a standalone transaction from the non-activity path — don't emit
+        // a second standalone here just because an activity subsequently showed up.
+        final boolean isFollowingNonActivityStart = (storedAppStartTraceId != null);
 
         final ITransaction transaction;
         if (storedAppStartTraceId != null) {
@@ -280,7 +284,9 @@ public final class ActivityLifecycleIntegration
 
         // in case appStartTime isn't available, we don't create a span for it.
         if (!(firstActivityCreated || appStartTime == null || coldStart == null)) {
-          if (options.isEnableStandaloneAppStartTracing() && foregroundImportance) {
+          if (options.isEnableStandaloneAppStartTracing()
+              && foregroundImportance
+              && !isFollowingNonActivityStart) {
             // Happy path: activity will launch, create standalone app start transaction
             final TransactionOptions appStartTransactionOptions = new TransactionOptions();
             appStartTransactionOptions.setBindToScope(false);
