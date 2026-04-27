@@ -297,7 +297,7 @@ public final class SentrySpanProcessor implements SpanProcessor {
   private void updateTransactionWithOtelData(
       final @NotNull ITransaction sentryTransaction, final @NotNull ReadableSpan otelSpan) {
     final @NotNull OtelSpanInfo otelSpanInfo =
-        spanDescriptionExtractor.extractSpanInfo(otelSpan.toSpanData(), null);
+        spanDescriptionExtractor.extractSpanInfo(otelSpan.toSpanData(), null, scopes.getOptions());
     sentryTransaction.setOperation(otelSpanInfo.getOp());
     String transactionName = otelSpanInfo.getDescription();
     sentryTransaction.setName(
@@ -334,7 +334,7 @@ public final class SentrySpanProcessor implements SpanProcessor {
             });
 
     final @NotNull OtelSpanInfo otelSpanInfo =
-        spanDescriptionExtractor.extractSpanInfo(otelSpan.toSpanData(), null);
+        spanDescriptionExtractor.extractSpanInfo(otelSpan.toSpanData(), null, scopes.getOptions());
     sentrySpan.setOperation(otelSpanInfo.getOp());
     sentrySpan.setDescription(otelSpanInfo.getDescription());
   }

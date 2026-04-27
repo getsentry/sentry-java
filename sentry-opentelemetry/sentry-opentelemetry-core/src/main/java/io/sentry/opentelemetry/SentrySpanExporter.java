@@ -12,6 +12,7 @@ import io.opentelemetry.sdk.trace.data.SpanData;
 import io.opentelemetry.sdk.trace.data.StatusData;
 import io.opentelemetry.sdk.trace.export.SpanExporter;
 import io.opentelemetry.semconv.HttpAttributes;
+import io.opentelemetry.semconv.incubating.MessagingIncubatingAttributes;
 import io.opentelemetry.semconv.incubating.ProcessIncubatingAttributes;
 import io.opentelemetry.semconv.incubating.ThreadIncubatingAttributes;
 import io.sentry.Baggage;
@@ -200,7 +201,7 @@ public final class SentrySpanExporter implements SpanExporter {
     final @Nullable IOtelSpanWrapper sentrySpanMaybe =
         spanStorage.getSentrySpan(spanData.getSpanContext());
     final @NotNull OtelSpanInfo spanInfo =
-        spanDescriptionExtractor.extractSpanInfo(spanData, sentrySpanMaybe);
+        spanDescriptionExtractor.extractSpanInfo(spanData, sentrySpanMaybe, scopes.getOptions());
 
     scopes
         .getOptions()
@@ -294,7 +295,7 @@ public final class SentrySpanExporter implements SpanExporter {
     final @NotNull IScopes scopesToUse =
         scopesToUseBeforeForking.forkedCurrentScope("SentrySpanExporter.createTransaction");
     final @NotNull OtelSpanInfo spanInfo =
-        spanDescriptionExtractor.extractSpanInfo(span, sentrySpanMaybe);
+        spanDescriptionExtractor.extractSpanInfo(span, sentrySpanMaybe, scopesToUse.getOptions());
 
     scopesToUse
         .getOptions()
@@ -360,6 +361,23 @@ public final class SentrySpanExporter implements SpanExporter {
 
     maybeTransferOtelAttribute(span, sentryTransaction, ThreadIncubatingAttributes.THREAD_ID);
     maybeTransferOtelAttribute(span, sentryTransaction, ThreadIncubatingAttributes.THREAD_NAME);
+
+    // Root transactions don't bulk-copy OTel attributes into span data (unlike child spans).
+    // The Sentry Queues product reads `trace.data.messaging.*`, so messaging attributes must
+    // be explicitly transferred for consumer root transactions to show up correctly. These are
+    // operational metadata (no payload contents) and are safe to transfer unconditionally.
+    maybeTransferOtelAttribute(
+        span, sentryTransaction, MessagingIncubatingAttributes.MESSAGING_SYSTEM);
+    maybeTransferOtelAttribute(
+        span, sentryTransaction, MessagingIncubatingAttributes.MESSAGING_DESTINATION_NAME);
+    maybeTransferOtelAttribute(
+        span, sentryTransaction, MessagingIncubatingAttributes.MESSAGING_OPERATION_TYPE);
+    maybeTransferOtelAttribute(
+        span, sentryTransaction, MessagingIncubatingAttributes.MESSAGING_MESSAGE_ID);
+    maybeTransferOtelAttribute(
+        span, sentryTransaction, MessagingIncubatingAttributes.MESSAGING_MESSAGE_BODY_SIZE);
+    maybeTransferOtelAttribute(
+        span, sentryTransaction, MessagingIncubatingAttributes.MESSAGING_MESSAGE_ENVELOPE_SIZE);
 
     scopesToUse.configureScope(
         ScopeType.CURRENT,
