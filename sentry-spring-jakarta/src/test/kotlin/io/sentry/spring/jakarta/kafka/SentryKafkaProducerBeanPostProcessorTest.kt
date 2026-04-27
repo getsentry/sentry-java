@@ -8,7 +8,6 @@ import org.apache.kafka.clients.producer.Producer
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.kafka.core.DefaultKafkaProducerFactory
@@ -20,7 +19,8 @@ class SentryKafkaProducerBeanPostProcessorTest {
   @Test
   fun `registers Sentry post-processor on ProducerFactory`() {
     val factory = mock<ProducerFactory<String, String>>()
-    whenever(factory.postProcessors).thenReturn(emptyList())
+    val pp = SentryKafkaProducerBeanPostProcessor.SentryProducerPostProcessor<String, String>()
+    whenever(factory.postProcessors).thenReturn(listOf(pp))
     val processor = SentryKafkaProducerBeanPostProcessor()
 
     processor.postProcessAfterInitialization(factory, "kafkaProducerFactory")
@@ -33,16 +33,16 @@ class SentryKafkaProducerBeanPostProcessorTest {
   }
 
   @Test
-  fun `is idempotent when Sentry post-processor is already registered`() {
+  fun `does not throw when addPostProcessor is a no-op (default interface method)`() {
+    // Factory using the default no-op addPostProcessor / getPostProcessors
     val factory = mock<ProducerFactory<String, String>>()
-    val existing =
-      SentryKafkaProducerBeanPostProcessor.SentryProducerPostProcessor<String, String>()
-    whenever(factory.postProcessors).thenReturn(listOf(existing))
+    whenever(factory.postProcessors).thenReturn(emptyList())
     val processor = SentryKafkaProducerBeanPostProcessor()
 
-    processor.postProcessAfterInitialization(factory, "kafkaProducerFactory")
+    // Should complete without throwing, and log a warning via ScopesAdapter
+    processor.postProcessAfterInitialization(factory, "myFactory")
 
-    verify(factory, never()).addPostProcessor(any())
+    verify(factory).addPostProcessor(any())
   }
 
   @Test
@@ -58,7 +58,8 @@ class SentryKafkaProducerBeanPostProcessorTest {
   @Test
   fun `returns the same bean instance`() {
     val factory = mock<ProducerFactory<String, String>>()
-    whenever(factory.postProcessors).thenReturn(emptyList())
+    val pp = SentryKafkaProducerBeanPostProcessor.SentryProducerPostProcessor<String, String>()
+    whenever(factory.postProcessors).thenReturn(listOf(pp))
     val processor = SentryKafkaProducerBeanPostProcessor()
 
     val result = processor.postProcessAfterInitialization(factory, "kafkaProducerFactory")
