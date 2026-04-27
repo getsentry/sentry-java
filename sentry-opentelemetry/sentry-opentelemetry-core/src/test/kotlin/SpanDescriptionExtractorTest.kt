@@ -283,6 +283,23 @@ class SpanDescriptionExtractorTest {
   }
 
   @Test
+  fun `maps messaging create operation type to queue create op`() {
+    givenAttributes(
+      mapOf(
+        MessagingIncubatingAttributes.MESSAGING_SYSTEM to "kafka",
+        MessagingIncubatingAttributes.MESSAGING_DESTINATION_NAME to "my-topic",
+        MessagingIncubatingAttributes.MESSAGING_OPERATION_TYPE to "create",
+      )
+    )
+
+    val info = whenExtractingSpanInfo(queueTracingEnabled = true)
+
+    assertEquals("queue.create", info.op)
+    assertEquals("my-topic", info.description)
+    assertEquals(TransactionNameSource.TASK, info.transactionNameSource)
+  }
+
+  @Test
   fun `maps messaging receive operation type to queue receive op`() {
     givenAttributes(
       mapOf(

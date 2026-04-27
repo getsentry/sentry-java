@@ -128,8 +128,9 @@ public final class SpanDescriptionExtractor {
       switch (operationType) {
         case "publish":
         case "send":
-        case "create":
           return "queue.publish";
+        case "create":
+          return "queue.create";
         case "receive":
           return "queue.receive";
         case "process":
