@@ -9,15 +9,27 @@ public final class io/sentry/kafka/SentryKafkaConsumerTracing {
 	public static fun withTracing (Lorg/apache/kafka/clients/consumer/ConsumerRecord;Ljava/util/concurrent/Callable;)Ljava/lang/Object;
 }
 
-public final class io/sentry/kafka/SentryKafkaProducerInterceptor : org/apache/kafka/clients/producer/ProducerInterceptor {
+public final class io/sentry/kafka/SentryKafkaProducer : org/apache/kafka/clients/producer/Producer {
 	public static final field SENTRY_ENQUEUED_TIME_HEADER Ljava/lang/String;
 	public static final field TRACE_ORIGIN Ljava/lang/String;
-	public fun <init> ()V
-	public fun <init> (Lio/sentry/IScopes;)V
-	public fun <init> (Lio/sentry/IScopes;Ljava/lang/String;)V
+	public fun <init> (Lorg/apache/kafka/clients/producer/Producer;)V
+	public fun <init> (Lorg/apache/kafka/clients/producer/Producer;Lio/sentry/IScopes;)V
+	public fun <init> (Lorg/apache/kafka/clients/producer/Producer;Lio/sentry/IScopes;Ljava/lang/String;)V
+	public fun abortTransaction ()V
+	public fun beginTransaction ()V
+	public fun clientInstanceId (Ljava/time/Duration;)Lorg/apache/kafka/common/Uuid;
 	public fun close ()V
-	public fun configure (Ljava/util/Map;)V
-	public fun onAcknowledgement (Lorg/apache/kafka/clients/producer/RecordMetadata;Ljava/lang/Exception;)V
-	public fun onSend (Lorg/apache/kafka/clients/producer/ProducerRecord;)Lorg/apache/kafka/clients/producer/ProducerRecord;
+	public fun close (Ljava/time/Duration;)V
+	public fun commitTransaction ()V
+	public fun flush ()V
+	public fun getDelegate ()Lorg/apache/kafka/clients/producer/Producer;
+	public fun initTransactions ()V
+	public fun metrics ()Ljava/util/Map;
+	public fun partitionsFor (Ljava/lang/String;)Ljava/util/List;
+	public fun send (Lorg/apache/kafka/clients/producer/ProducerRecord;)Ljava/util/concurrent/Future;
+	public fun send (Lorg/apache/kafka/clients/producer/ProducerRecord;Lorg/apache/kafka/clients/producer/Callback;)Ljava/util/concurrent/Future;
+	public fun sendOffsetsToTransaction (Ljava/util/Map;Ljava/lang/String;)V
+	public fun sendOffsetsToTransaction (Ljava/util/Map;Lorg/apache/kafka/clients/consumer/ConsumerGroupMetadata;)V
+	public fun toString ()Ljava/lang/String;
 }
 

@@ -1,6 +1,6 @@
 package io.sentry.spring.boot.jakarta
 
-import io.sentry.kafka.SentryKafkaProducerInterceptor
+import io.sentry.kafka.SentryKafkaProducer
 import io.sentry.opentelemetry.SentryAutoConfigurationCustomizerProvider
 import io.sentry.spring.jakarta.kafka.SentryKafkaConsumerBeanPostProcessor
 import io.sentry.spring.jakarta.kafka.SentryKafkaProducerBeanPostProcessor
@@ -34,7 +34,7 @@ class SentryKafkaAutoConfigurationTest {
 
   private val noSentryKafkaClassLoader =
     FilteredClassLoader(
-      SentryKafkaProducerInterceptor::class.java,
+      SentryKafkaProducer::class.java,
       SentryAutoConfigurationCustomizerProvider::class.java,
     )
 

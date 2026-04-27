@@ -10,7 +10,7 @@ import org.junit.Before
  *
  * The Sentry Kafka auto-configuration (`SentryKafkaQueueConfiguration`) is intentionally suppressed
  * when `io.sentry.opentelemetry.SentryAutoConfigurationCustomizerProvider` is on the classpath, so
- * the Sentry `SentryKafkaProducerInterceptor` and `SentryKafkaRecordInterceptor` must not be wired.
+ * the Sentry `SentryKafkaProducer` and `SentryKafkaRecordInterceptor` must not be wired.
  *
  * These tests produce a Kafka message end-to-end and assert that Sentry-style `queue.publish` /
  * `queue.process` spans/transactions are *not* emitted. Any Kafka telemetry in OTel mode must come

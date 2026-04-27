@@ -4,7 +4,7 @@ import io.sentry.ISentryLifecycleToken;
 import io.sentry.ITransaction;
 import io.sentry.Sentry;
 import io.sentry.kafka.SentryKafkaConsumerTracing;
-import io.sentry.kafka.SentryKafkaProducerInterceptor;
+import io.sentry.kafka.SentryKafkaProducer;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.Properties;
@@ -16,6 +16,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -30,11 +31,19 @@ public final class KafkaShowcase {
   public static void runKafkaWithSentryTracing(final String bootstrapServers) {
     final CountDownLatch consumedLatch = new CountDownLatch(1);
     final Thread consumerThread = startConsumerWithSentryTracing(bootstrapServers, consumedLatch);
-    final Properties producerProperties = createProducerPropertiesWithSentry(bootstrapServers);
+    final Properties producerProperties = createProducerProperties(bootstrapServers);
 
     final ITransaction transaction = Sentry.startTransaction("kafka-demo", "demo");
     try (ISentryLifecycleToken ignored = transaction.makeCurrent()) {
-      try (KafkaProducer<String, String> producer = new KafkaProducer<>(producerProperties)) {
+      // 1. Create the raw Kafka producer as you normally would.
+      final KafkaProducer<String, String> rawProducer = new KafkaProducer<>(producerProperties);
+
+      // 2. >>> Sentry instrumentation <<<
+      //    Wrap it in SentryKafkaProducer so every send is captured as a
+      //    `queue.publish` span that closes when the broker ack callback fires.
+      final Producer<String, String> producer = new SentryKafkaProducer<>(rawProducer);
+
+      try (producer) {
         Thread.sleep(500);
         producer.send(new ProducerRecord<>(TOPIC, "sentry-kafka sample message")).get();
       } catch (InterruptedException e) {
@@ -59,17 +68,13 @@ public final class KafkaShowcase {
     }
   }
 
-  public static Properties createProducerPropertiesWithSentry(final String bootstrapServers) {
+  public static Properties createProducerProperties(final String bootstrapServers) {
     final Properties producerProperties = new Properties();
     producerProperties.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
     producerProperties.put(
         ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
     producerProperties.put(
         ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
-
-    // Required for Sentry queue tracing in kafka-clients producer setup.
-    producerProperties.put(
-        ProducerConfig.INTERCEPTOR_CLASSES_CONFIG, SentryKafkaProducerInterceptor.class.getName());
 
     // Optional tuning for sample stability in CI/local runs.
     producerProperties.put(ProducerConfig.MAX_BLOCK_MS_CONFIG, 2000);

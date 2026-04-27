@@ -232,7 +232,7 @@ class SentryKafkaConsumerTracingTest {
     }
     enqueuedTime?.let {
       headers.add(
-        SentryKafkaProducerInterceptor.SENTRY_ENQUEUED_TIME_HEADER,
+        SentryKafkaProducer.SENTRY_ENQUEUED_TIME_HEADER,
         it.toByteArray(StandardCharsets.UTF_8),
       )
     }

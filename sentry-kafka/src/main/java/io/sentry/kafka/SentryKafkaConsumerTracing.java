@@ -241,7 +241,7 @@ public final class SentryKafkaConsumerTracing {
 
   private <K, V> @Nullable Long receiveLatency(final @NotNull ConsumerRecord<K, V> record) {
     final @Nullable String enqueuedTimeStr =
-        headerValue(record, SentryKafkaProducerInterceptor.SENTRY_ENQUEUED_TIME_HEADER);
+        headerValue(record, SentryKafkaProducer.SENTRY_ENQUEUED_TIME_HEADER);
     if (enqueuedTimeStr == null) {
       return null;
     }

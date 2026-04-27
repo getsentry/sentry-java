@@ -1,50 +1,54 @@
 package io.sentry.spring.jakarta.kafka
 
-import io.sentry.kafka.SentryKafkaProducerInterceptor
+import io.sentry.kafka.SentryKafkaProducer
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
-import org.apache.kafka.clients.producer.ProducerInterceptor
+import org.apache.kafka.clients.producer.Producer
+import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
-import org.springframework.kafka.core.KafkaTemplate
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
+import org.springframework.kafka.core.DefaultKafkaProducerFactory
 import org.springframework.kafka.core.ProducerFactory
-import org.springframework.kafka.support.CompositeProducerInterceptor
+import org.springframework.kafka.core.ProducerPostProcessor
 
 class SentryKafkaProducerBeanPostProcessorTest {
 
-  private fun readInterceptor(template: KafkaTemplate<*, *>): Any? {
-    val field = KafkaTemplate::class.java.getDeclaredField("producerInterceptor")
-    field.isAccessible = true
-    return field.get(template)
-  }
-
   @Test
-  fun `sets SentryKafkaProducerInterceptor on KafkaTemplate`() {
-    val template = KafkaTemplate<String, String>(mock<ProducerFactory<String, String>>())
+  fun `registers Sentry post-processor on ProducerFactory`() {
+    val factory = mock<ProducerFactory<String, String>>()
+    whenever(factory.postProcessors).thenReturn(emptyList())
     val processor = SentryKafkaProducerBeanPostProcessor()
 
-    processor.postProcessAfterInitialization(template, "kafkaTemplate")
+    processor.postProcessAfterInitialization(factory, "kafkaProducerFactory")
 
-    assertTrue(readInterceptor(template) is SentryKafkaProducerInterceptor<*, *>)
+    val captor = argumentCaptor<ProducerPostProcessor<String, String>>()
+    verify(factory).addPostProcessor(captor.capture())
+    assertTrue(
+      captor.firstValue is SentryKafkaProducerBeanPostProcessor.SentryProducerPostProcessor<*, *>
+    )
   }
 
   @Test
-  fun `does not double-wrap when SentryKafkaProducerInterceptor already set`() {
-    val template = KafkaTemplate<String, String>(mock<ProducerFactory<String, String>>())
+  fun `is idempotent when Sentry post-processor is already registered`() {
+    val factory = mock<ProducerFactory<String, String>>()
+    val existing =
+      SentryKafkaProducerBeanPostProcessor.SentryProducerPostProcessor<String, String>()
+    whenever(factory.postProcessors).thenReturn(listOf(existing))
     val processor = SentryKafkaProducerBeanPostProcessor()
 
-    processor.postProcessAfterInitialization(template, "kafkaTemplate")
-    val firstInterceptor = readInterceptor(template)
+    processor.postProcessAfterInitialization(factory, "kafkaProducerFactory")
 
-    processor.postProcessAfterInitialization(template, "kafkaTemplate")
-    val secondInterceptor = readInterceptor(template)
-
-    assertSame(firstInterceptor, secondInterceptor)
+    verify(factory, never()).addPostProcessor(any())
   }
 
   @Test
-  fun `does not modify non-KafkaTemplate beans`() {
-    val someBean = "not a kafka template"
+  fun `does not modify non-ProducerFactory beans`() {
+    val someBean = "not a producer factory"
     val processor = SentryKafkaProducerBeanPostProcessor()
 
     val result = processor.postProcessAfterInitialization(someBean, "someBean")
@@ -54,26 +58,50 @@ class SentryKafkaProducerBeanPostProcessorTest {
 
   @Test
   fun `returns the same bean instance`() {
-    val template = KafkaTemplate<String, String>(mock<ProducerFactory<String, String>>())
+    val factory = mock<ProducerFactory<String, String>>()
+    whenever(factory.postProcessors).thenReturn(emptyList())
     val processor = SentryKafkaProducerBeanPostProcessor()
 
-    val result = processor.postProcessAfterInitialization(template, "kafkaTemplate")
+    val result = processor.postProcessAfterInitialization(factory, "kafkaProducerFactory")
 
-    assertSame(template, result, "BPP should return the same bean, not a replacement")
+    assertSame(factory, result, "BPP must return the same bean, not a replacement")
   }
 
   @Test
-  fun `composes with existing customer interceptor using CompositeProducerInterceptor`() {
-    val template = KafkaTemplate<String, String>(mock<ProducerFactory<String, String>>())
-    val customerInterceptor = mock<ProducerInterceptor<String, String>>()
-    template.setProducerInterceptor(customerInterceptor)
+  fun `registered post-processor wraps producers in SentryKafkaProducer`() {
+    val pp = SentryKafkaProducerBeanPostProcessor.SentryProducerPostProcessor<String, String>()
+    val raw = mock<Producer<String, String>>()
 
+    val wrapped = pp.apply(raw)
+
+    assertTrue(wrapped is SentryKafkaProducer<*, *>)
+    assertSame(raw, (wrapped as SentryKafkaProducer<String, String>).delegate)
+  }
+
+  @Test
+  fun `registered post-processor does not double-wrap`() {
+    val pp = SentryKafkaProducerBeanPostProcessor.SentryProducerPostProcessor<String, String>()
+    val raw = mock<Producer<String, String>>()
+    val alreadyWrapped = SentryKafkaProducer(raw)
+
+    val result = pp.apply(alreadyWrapped)
+
+    assertSame(alreadyWrapped, result)
+  }
+
+  @Test
+  fun `integrates with DefaultKafkaProducerFactory addPostProcessor contract`() {
+    // Sanity check against the real Spring Kafka API surface — DefaultKafkaProducerFactory
+    // honors addPostProcessor and exposes it via getPostProcessors().
+    val factory = DefaultKafkaProducerFactory<String, String>(emptyMap())
     val processor = SentryKafkaProducerBeanPostProcessor()
-    processor.postProcessAfterInitialization(template, "kafkaTemplate")
 
+    processor.postProcessAfterInitialization(factory, "kafkaProducerFactory")
+
+    assertEquals(1, factory.postProcessors.size)
     assertTrue(
-      readInterceptor(template) is CompositeProducerInterceptor<*, *>,
-      "Should use CompositeProducerInterceptor when existing interceptor is present",
+      factory.postProcessors.first()
+        is SentryKafkaProducerBeanPostProcessor.SentryProducerPostProcessor<*, *>
     )
   }
 }
