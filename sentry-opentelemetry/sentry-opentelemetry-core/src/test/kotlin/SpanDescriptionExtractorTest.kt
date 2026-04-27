@@ -365,6 +365,48 @@ class SpanDescriptionExtractorTest {
   }
 
   @Test
+  fun `messaging mapping wins over http when both attributes present and queue tracing enabled`() {
+    // Some OTel instrumentations (e.g. aws-sdk-2.2 SQS) attach both messaging and http
+    // attributes to the same span. Messaging is more specific and must win.
+    givenSpanKind(SpanKind.PRODUCER)
+    givenAttributes(
+      mapOf(
+        HttpAttributes.HTTP_REQUEST_METHOD to "POST",
+        UrlAttributes.URL_FULL to "https://sqs.us-east-1.amazonaws.com/",
+        MessagingIncubatingAttributes.MESSAGING_SYSTEM to "aws.sqs",
+        MessagingIncubatingAttributes.MESSAGING_DESTINATION_NAME to "my-queue",
+        MessagingIncubatingAttributes.MESSAGING_OPERATION_TYPE to "publish",
+      )
+    )
+
+    val info = whenExtractingSpanInfo(queueTracingEnabled = true)
+
+    assertEquals("queue.publish", info.op)
+    assertEquals("my-queue", info.description)
+    assertEquals(TransactionNameSource.TASK, info.transactionNameSource)
+  }
+
+  @Test
+  fun `http mapping wins over messaging when queue tracing disabled`() {
+    givenSpanKind(SpanKind.CLIENT)
+    givenAttributes(
+      mapOf(
+        HttpAttributes.HTTP_REQUEST_METHOD to "POST",
+        UrlAttributes.URL_FULL to "https://sqs.us-east-1.amazonaws.com/",
+        MessagingIncubatingAttributes.MESSAGING_SYSTEM to "aws.sqs",
+        MessagingIncubatingAttributes.MESSAGING_DESTINATION_NAME to "my-queue",
+        MessagingIncubatingAttributes.MESSAGING_OPERATION_TYPE to "publish",
+      )
+    )
+
+    val info = whenExtractingSpanInfo(queueTracingEnabled = false)
+
+    assertEquals("http.client", info.op)
+    assertEquals("POST https://sqs.us-east-1.amazonaws.com/", info.description)
+    assertEquals(TransactionNameSource.URL, info.transactionNameSource)
+  }
+
+  @Test
   fun `uses span name as op and description if no relevant attributes`() {
     givenSpanName("span name")
     givenAttributes(emptyMap())

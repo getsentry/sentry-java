@@ -24,6 +24,14 @@ public final class SpanDescriptionExtractor {
       final @NotNull SentryOptions options) {
     final @NotNull Attributes attributes = otelSpan.getAttributes();
 
+    if (options.isEnableQueueTracing()) {
+      final @Nullable String messagingSystem =
+          attributes.get(MessagingIncubatingAttributes.MESSAGING_SYSTEM);
+      if (messagingSystem != null) {
+        return descriptionForMessagingSystem(otelSpan);
+      }
+    }
+
     final @Nullable String httpMethod = attributes.get(HttpAttributes.HTTP_REQUEST_METHOD);
     if (httpMethod != null) {
       return descriptionForHttpMethod(otelSpan, httpMethod);
@@ -32,14 +40,6 @@ public final class SpanDescriptionExtractor {
     final @Nullable String dbSystem = attributes.get(DbIncubatingAttributes.DB_SYSTEM);
     if (dbSystem != null) {
       return descriptionForDbSystem(otelSpan);
-    }
-
-    if (options.isEnableQueueTracing()) {
-      final @Nullable String messagingSystem =
-          attributes.get(MessagingIncubatingAttributes.MESSAGING_SYSTEM);
-      if (messagingSystem != null) {
-        return descriptionForMessagingSystem(otelSpan);
-      }
     }
 
     final @NotNull String name = otelSpan.getName();
