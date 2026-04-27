@@ -25,6 +25,7 @@ import io.sentry.android.replay.ScreenshotRecorderConfig
 import io.sentry.android.replay.util.DebugOverlayDrawable
 import io.sentry.android.replay.util.MainLooperHandler
 import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -53,6 +54,7 @@ class PixelCopyStrategyTest {
     val callback = mock<ScreenshotRecorderCallback>()
     val debugOverlayDrawable = mock<DebugOverlayDrawable>()
     val config = ScreenshotRecorderConfig(100, 100, 1f, 1f, 1, 1000)
+    val contentChangedMarked = AtomicBoolean(false)
 
     fun getSut(executor: ScheduledExecutorService = mock()): PixelCopyStrategy {
       return PixelCopyStrategy(
@@ -67,6 +69,7 @@ class PixelCopyStrategyTest {
         options,
         config,
         debugOverlayDrawable,
+        markContentChanged = { contentChangedMarked.set(true) },
       )
     }
 
@@ -130,7 +133,7 @@ class PixelCopyStrategyTest {
   }
 
   @Test
-  fun `capture does not flag hasSurfaceViews when option is disabled`() {
+  fun `capture does not call markContentChanged when option is disabled`() {
     val activity = buildActivity(ActivityWithSurfaceView::class.java).setup()
     shadowOf(Looper.getMainLooper()).idle()
 
@@ -139,13 +142,13 @@ class PixelCopyStrategyTest {
     strategy.capture(activity.get().findViewById(android.R.id.content))
     shadowOf(Looper.getMainLooper()).idle()
 
-    assertFalse(strategy.hasSurfaceViews())
+    assertFalse(fixture.contentChangedMarked.get())
     assertTrue(strategy.lastCaptureSuccessful())
     verify(fixture.callback).onScreenshotRecorded(any<Bitmap>())
   }
 
   @Test
-  fun `capture flags hasSurfaceViews when option is enabled and SurfaceView is present`() {
+  fun `capture re-arms contentChanged when option is enabled and SurfaceView is present`() {
     val activity = buildActivity(ActivityWithSurfaceView::class.java).setup()
     shadowOf(Looper.getMainLooper()).idle()
 
@@ -155,7 +158,7 @@ class PixelCopyStrategyTest {
     strategy.capture(activity.get().findViewById(android.R.id.content))
     shadowOf(Looper.getMainLooper()).idle()
 
-    assertTrue(strategy.hasSurfaceViews())
+    assertTrue(fixture.contentChangedMarked.get())
   }
 
   @Test

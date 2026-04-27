@@ -35,6 +35,9 @@ internal class PixelCopyStrategy(
   private val options: SentryOptions,
   private val config: ScreenshotRecorderConfig,
   private val debugOverlayDrawable: DebugOverlayDrawable,
+  // Lets the strategy re-arm the recorder's contentChanged gate so frames keep being captured
+  // when SurfaceViews are present (their redraws don't trigger ViewTreeObserver.OnDrawListener).
+  private val markContentChanged: () -> Unit = {},
 ) : ScreenshotStrategy {
 
   private val executor = executorProvider.getExecutor()
@@ -47,7 +50,6 @@ internal class PixelCopyStrategy(
   private val maskRenderer = MaskRenderer()
   private val contentChanged = AtomicBoolean(false)
   private val isClosed = AtomicBoolean(false)
-  private val hasSurfaceViews = AtomicBoolean(false)
   private val dstOverPaint by
     lazy(NONE) { Paint().apply { xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_OVER) } }
   private val screenshotCanvas by lazy(NONE) { Canvas(screenshot) }
@@ -106,11 +108,16 @@ internal class PixelCopyStrategy(
             }
           root.traverse(viewHierarchy, options.sessionReplay, options.logger, surfaceViewNodes)
 
-          hasSurfaceViews.set(surfaceViewNodes?.isNotEmpty() == true)
-
           if (surfaceViewNodes.isNullOrEmpty()) {
-            submitMaskingAndCallback(root, viewHierarchy)
+            executor.submit(
+              ReplayRunnable("screenshot_recorder.mask") {
+                applyMaskingAndNotify(root, viewHierarchy)
+              }
+            )
           } else {
+            // Re-arm the recorder's contentChanged gate; SurfaceView redraws don't trigger
+            // ViewTreeObserver.OnDrawListener, so we'd otherwise emit the same frame forever.
+            markContentChanged()
             captureSurfaceViews(root, surfaceViewNodes, viewHierarchy)
           }
         },
@@ -120,12 +127,6 @@ internal class PixelCopyStrategy(
       options.logger.log(WARNING, "Failed to capture replay recording", e)
       lastCaptureSuccessful.set(false)
     }
-  }
-
-  private fun submitMaskingAndCallback(root: View, viewHierarchy: ViewHierarchyNode) {
-    executor.submit(
-      ReplayRunnable("screenshot_recorder.mask") { applyMaskingAndNotify(root, viewHierarchy) }
-    )
   }
 
   private fun applyMaskingAndNotify(root: View, viewHierarchy: ViewHierarchyNode) {
@@ -188,6 +189,10 @@ internal class PixelCopyStrategy(
           surfaceView,
           svBitmap,
           { copyResult: Int ->
+            if (isClosed.get()) {
+              svBitmap.recycle()
+              return@request
+            }
             if (copyResult == PixelCopy.SUCCESS) {
               captures[index] = SurfaceViewCapture(svBitmap, capturedX, capturedY)
             } else {
@@ -248,10 +253,6 @@ internal class PixelCopyStrategy(
 
   override fun lastCaptureSuccessful(): Boolean {
     return lastCaptureSuccessful.get()
-  }
-
-  override fun hasSurfaceViews(): Boolean {
-    return hasSurfaceViews.get()
   }
 
   override fun emitLastScreenshot() {

@@ -1,12 +1,12 @@
 package io.sentry.android.replay.util
 
 import android.app.Activity
-import android.os.Bundle
 import android.view.SurfaceView
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.FrameLayout.LayoutParams
 import android.widget.TextView
+import android.os.Looper
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.NoOpLogger
@@ -19,6 +19,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric.buildActivity
+import org.robolectric.Shadows.shadowOf
 
 @RunWith(AndroidJUnit4::class)
 class ViewsTest {
@@ -56,44 +57,29 @@ class ViewsTest {
 
   @Test
   fun `traverse collects visible SurfaceView nodes when a list is supplied`() {
-    val activity = buildActivity(SurfaceViewActivity::class.java).setup().get()
-    val root = activity.findViewById<FrameLayout>(android.R.id.content).getChildAt(0) as FrameLayout
+    val (root, _) = buildSurfaceViewHierarchy()
     val rootNode = ViewHierarchyNode.fromView(root, null, 0, SentryReplayOptions(false, null))
     val collected = mutableListOf<ViewHierarchyNode.SurfaceViewHierarchyNode>()
 
     root.traverse(rootNode, SentryReplayOptions(false, null), NoOpLogger.getInstance(), collected)
 
     assertEquals(2, collected.size)
+    assertTrue(collected.all { it is ViewHierarchyNode.SurfaceViewHierarchyNode })
   }
 
   @Test
   fun `traverse does not collect SurfaceView nodes when list parameter is null`() {
-    val activity = buildActivity(SurfaceViewActivity::class.java).setup().get()
-    val root = activity.findViewById<FrameLayout>(android.R.id.content).getChildAt(0) as FrameLayout
+    val (root, _) = buildSurfaceViewHierarchy()
     val rootNode = ViewHierarchyNode.fromView(root, null, 0, SentryReplayOptions(false, null))
 
     // Default parameter (null) — equivalent to the pre-feature call site behavior.
     root.traverse(rootNode, SentryReplayOptions(false, null), NoOpLogger.getInstance())
-
-    // No assertion on a collection; the goal is that this overload still works and never NPEs.
-    assertTrue(true)
   }
 
   @Test
   fun `traverse skips invisible SurfaceViews`() {
-    val activity = buildActivity(SurfaceViewActivity::class.java).setup().get()
-    val root = activity.findViewById<FrameLayout>(android.R.id.content).getChildAt(0) as FrameLayout
-    // Hide one of the two SurfaceViews.
-    var hidden = 0
-    for (i in 0 until root.childCount) {
-      val child = root.getChildAt(i)
-      if (child is SurfaceView) {
-        child.visibility = View.GONE
-        hidden++
-        break
-      }
-    }
-    assertEquals(1, hidden, "test setup: expected to find a SurfaceView to hide")
+    val (root, surfaceViews) = buildSurfaceViewHierarchy()
+    surfaceViews.first().visibility = View.GONE
 
     val rootNode = ViewHierarchyNode.fromView(root, null, 0, SentryReplayOptions(false, null))
     val collected = mutableListOf<ViewHierarchyNode.SurfaceViewHierarchyNode>()
@@ -102,23 +88,27 @@ class ViewsTest {
 
     assertEquals(1, collected.size)
   }
-}
 
-private class SurfaceViewActivity : Activity() {
-  override fun onCreate(savedInstanceState: Bundle?) {
-    super.onCreate(savedInstanceState)
+  /**
+   * Builds and attaches a small view tree: `FrameLayout(SurfaceView, TextView, FrameLayout(
+   * SurfaceView))`. Returns the root [FrameLayout] and the two [SurfaceView]s in tree order so
+   * tests can mutate visibility without re-walking the hierarchy.
+   */
+  private fun buildSurfaceViewHierarchy(): Pair<FrameLayout, List<SurfaceView>> {
+    val activity = buildActivity(Activity::class.java).setup().get()
+    val sv1 = SurfaceView(activity).apply { layoutParams = LayoutParams(100, 100) }
+    val sv2 = SurfaceView(activity).apply { layoutParams = LayoutParams(50, 50) }
+    val nested = FrameLayout(activity).apply { addView(sv2) }
     val root =
-      FrameLayout(this).apply {
+      FrameLayout(activity).apply {
         layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
+        addView(sv1)
+        addView(TextView(activity).apply { text = "label" })
+        addView(nested)
       }
-    root.addView(SurfaceView(this).apply { layoutParams = LayoutParams(100, 100) })
-    root.addView(TextView(this).apply { text = "label" })
-    root.addView(
-      FrameLayout(this).apply {
-        layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT)
-        addView(SurfaceView(context).apply { layoutParams = LayoutParams(50, 50) })
-      }
-    )
-    setContentView(root)
+    activity.setContentView(root)
+    // Flush the layout/attach pass so isAttachedToWindow / visibility computations are accurate.
+    shadowOf(Looper.getMainLooper()).idle()
+    return root to listOf(sv1, sv2)
   }
 }

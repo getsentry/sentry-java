@@ -7,6 +7,7 @@
 - Session Replay: experimental support for capturing `SurfaceView` content (e.g. Unity, video players, maps) ([#5333](https://github.com/getsentry/sentry-java/pull/5333))
   - To enable, set `options.sessionReplay.isCaptureSurfaceViews = true`
   - Or via manifest: `<meta-data android:name="io.sentry.session-replay.capture-surface-views" android:value="true" />`
+  - **Warning:** masking granularity is at the SurfaceView level only — the SDK cannot mask individual elements rendered inside the SurfaceView (e.g. native Unity UI, map labels, video frames). Only enable for SurfaceViews whose content is safe to record.
 
 ## 8.40.0
 

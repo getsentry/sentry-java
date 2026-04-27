@@ -47,6 +47,7 @@ internal class ScreenshotRecorder(
           options,
           config,
           debugOverlayDrawable,
+          markContentChanged = { contentChanged.set(true) },
         )
     }
 
@@ -70,7 +71,7 @@ internal class ScreenshotRecorder(
       )
     }
 
-    if (!contentChanged.get() && !screenshotStrategy.hasSurfaceViews()) {
+    if (!contentChanged.get()) {
       screenshotStrategy.emitLastScreenshot()
       return
     }
