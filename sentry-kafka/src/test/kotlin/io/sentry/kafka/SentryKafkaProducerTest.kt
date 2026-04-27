@@ -4,6 +4,8 @@ import io.sentry.BaggageHeader
 import io.sentry.IScopes
 import io.sentry.ISentryLifecycleToken
 import io.sentry.ISpan
+import io.sentry.Scope
+import io.sentry.ScopeCallback
 import io.sentry.Sentry
 import io.sentry.SentryOptions
 import io.sentry.SentryTraceHeader
@@ -31,10 +33,10 @@ import org.apache.kafka.common.header.Header
 import org.apache.kafka.common.header.Headers
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.isNull
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
@@ -58,6 +60,9 @@ class SentryKafkaProducerTest {
         isEnableQueueTracing = true
       }
     whenever(scopes.options).thenReturn(options)
+    doAnswer { (it.arguments[0] as ScopeCallback).run(Scope(options)) }
+      .whenever(scopes)
+      .configureScope(any())
     delegate = mock()
     whenever(delegate.send(any(), any())).thenReturn(CompletableFuture.completedFuture(null))
   }
@@ -213,7 +218,7 @@ class SentryKafkaProducerTest {
   }
 
   @Test
-  fun `delegates send without span when no active span`() {
+  fun `injects headers but creates no span when no active span`() {
     whenever(scopes.span).thenReturn(null)
     val producer = SentryKafkaProducer(delegate, scopes)
     val record = ProducerRecord<String, String>("my-topic", "key", "value")
@@ -221,6 +226,10 @@ class SentryKafkaProducerTest {
     producer.send(record)
 
     verify(delegate).send(eq(record), isNull())
+    // Headers should still be injected from PropagationContext
+    assertNotNull(record.headers().lastHeader(SentryTraceHeader.SENTRY_TRACE_HEADER))
+    assertNotNull(record.headers().lastHeader(BaggageHeader.BAGGAGE_HEADER))
+    assertNotNull(record.headers().lastHeader(SentryKafkaProducer.SENTRY_ENQUEUED_TIME_HEADER))
   }
 
   @Test
@@ -246,12 +255,11 @@ class SentryKafkaProducerTest {
   }
 
   @Test
-  fun `finishes span with error when header injection fails`() {
+  fun `header injection failure does not prevent send`() {
     val activeSpan = mock<ISpan>()
     val span = mock<ISpan>()
     val headers = mock<Headers>()
     val record = mock<ProducerRecord<String, String>>()
-    val exception = RuntimeException("boom")
     whenever(scopes.span).thenReturn(activeSpan)
     whenever(activeSpan.startChild(eq("queue.publish"), eq("my-topic"), any<SpanOptions>()))
       .thenReturn(span)
@@ -263,16 +271,15 @@ class SentryKafkaProducerTest {
     whenever(record.topic()).thenReturn("my-topic")
     whenever(record.headers()).thenReturn(headers)
     whenever(headers.headers(BaggageHeader.BAGGAGE_HEADER)).thenReturn(emptyList<Header>())
-    whenever(headers.remove(SentryTraceHeader.SENTRY_TRACE_HEADER)).thenThrow(exception)
+    whenever(headers.remove(SentryTraceHeader.SENTRY_TRACE_HEADER))
+      .thenThrow(RuntimeException("boom"))
 
     val producer = SentryKafkaProducer(delegate, scopes)
     producer.send(record)
 
-    verify(span).setStatus(SpanStatus.INTERNAL_ERROR)
-    verify(span).setThrowable(exception)
-    verify(span).finish()
-    // After header-injection failure, falls back to a plain delegate send (no Sentry callback).
-    verify(delegate).send(eq(record), isNull())
+    // Header injection failed silently; send still proceeds with wrapped callback for span
+    // lifecycle.
+    verify(delegate).send(eq(record), any<Callback>())
   }
 
   @Test
@@ -319,20 +326,20 @@ class SentryKafkaProducerTest {
   }
 
   @Test
-  fun `does not invoke sentry callback wrap when no-op span returned`() {
-    val activeSpan = mock<ISpan>()
-    val span = mock<ISpan>()
-    val record = ProducerRecord<String, String>("my-topic", "key", "value")
-    whenever(scopes.span).thenReturn(activeSpan)
-    whenever(activeSpan.isNoOp).thenReturn(false)
-    whenever(activeSpan.startChild(eq("queue.publish"), eq("my-topic"), any<SpanOptions>()))
-      .thenReturn(span)
-    whenever(span.isNoOp).thenReturn(true)
-
+  fun `wraps callback even when child span is no-op`() {
+    val tx = createTransaction()
+    // Set max spans to 1 so the child span is no-op (over limit)
+    options.maxSpans = 0
     val producer = SentryKafkaProducer(delegate, scopes)
+    val record = ProducerRecord<String, String>("my-topic", "key", "value")
+
     producer.send(record)
 
-    verify(delegate).send(eq(record), isNull())
-    verify(span, never()).finish()
+    // Callback is still wrapped (no-op span finish is harmless)
+    verify(delegate).send(eq(record), any<Callback>())
+    // Headers should still be injected from PropagationContext
+    assertNotNull(record.headers().lastHeader(SentryTraceHeader.SENTRY_TRACE_HEADER))
+    assertNotNull(record.headers().lastHeader(BaggageHeader.BAGGAGE_HEADER))
+    assertNotNull(record.headers().lastHeader(SentryKafkaProducer.SENTRY_ENQUEUED_TIME_HEADER))
   }
 }

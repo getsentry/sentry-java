@@ -101,43 +101,22 @@ public final class SentryKafkaProducer<K, V> implements Producer<K, V> {
 
     final @Nullable ISpan activeSpan = scopes.getSpan();
     if (activeSpan == null || activeSpan.isNoOp()) {
+      maybeInjectHeaders(record.headers(), null);
       return delegate.send(record, callback);
     }
 
-    @Nullable ISpan span = null;
-    try {
-      final @NotNull SpanOptions spanOptions = new SpanOptions();
-      spanOptions.setOrigin(traceOrigin);
-      span = activeSpan.startChild("queue.publish", record.topic(), spanOptions);
-      if (span.isNoOp()) {
-        return delegate.send(record, callback);
-      }
+    final @NotNull SpanOptions spanOptions = new SpanOptions();
+    spanOptions.setOrigin(traceOrigin);
+    final @NotNull ISpan span = activeSpan.startChild("queue.publish", record.topic(), spanOptions);
 
-      span.setData(SpanDataConvention.MESSAGING_SYSTEM, "kafka");
-      span.setData(SpanDataConvention.MESSAGING_DESTINATION_NAME, record.topic());
-      injectHeaders(record.headers(), span);
-    } catch (Throwable t) {
-      if (span != null) {
-        span.setThrowable(t);
-        span.setStatus(SpanStatus.INTERNAL_ERROR);
-        if (!span.isFinished()) {
-          span.finish();
-        }
-      }
-      scopes
-          .getOptions()
-          .getLogger()
-          .log(SentryLevel.ERROR, "Failed to instrument Kafka producer record.", t);
-      return delegate.send(record, callback);
-    }
-
-    final @NotNull ISpan finalSpan = span;
-    final @NotNull Callback wrappedCallback = wrapCallback(callback, finalSpan);
+    span.setData(SpanDataConvention.MESSAGING_SYSTEM, "kafka");
+    span.setData(SpanDataConvention.MESSAGING_DESTINATION_NAME, record.topic());
+    maybeInjectHeaders(record.headers(), span);
 
     try {
-      return delegate.send(record, wrappedCallback);
+      return delegate.send(record, wrapCallback(callback, span));
     } catch (Throwable t) {
-      finishWithError(finalSpan, t);
+      finishWithError(span, t);
       throw t;
     }
   }
@@ -158,9 +137,7 @@ public final class SentryKafkaProducer<K, V> implements Producer<K, V> {
             .getLogger()
             .log(SentryLevel.ERROR, "Failed to set status on Kafka producer span.", t);
       } finally {
-        if (!span.isFinished()) {
-          span.finish();
-        }
+        span.finish();
         if (userCallback != null) {
           userCallback.onCompletion(metadata, exception);
         }
@@ -171,41 +148,46 @@ public final class SentryKafkaProducer<K, V> implements Producer<K, V> {
   private void finishWithError(final @NotNull ISpan span, final @NotNull Throwable t) {
     span.setThrowable(t);
     span.setStatus(SpanStatus.INTERNAL_ERROR);
-    if (!span.isFinished()) {
-      span.finish();
-    }
+    span.finish();
   }
 
   private boolean isIgnored() {
     return SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOrigins(), traceOrigin);
   }
 
-  private void injectHeaders(final @NotNull Headers headers, final @NotNull ISpan span) {
-    final @Nullable List<String> existingBaggageHeaders =
-        readHeaderValues(headers, BaggageHeader.BAGGAGE_HEADER);
-    final @Nullable TracingUtils.TracingHeaders tracingHeaders =
-        TracingUtils.trace(scopes, existingBaggageHeaders, span);
-    if (tracingHeaders != null) {
-      final @NotNull SentryTraceHeader sentryTraceHeader = tracingHeaders.getSentryTraceHeader();
-      headers.remove(sentryTraceHeader.getName());
-      headers.add(
-          sentryTraceHeader.getName(),
-          sentryTraceHeader.getValue().getBytes(StandardCharsets.UTF_8));
-
-      final @Nullable BaggageHeader baggageHeader = tracingHeaders.getBaggageHeader();
-      if (baggageHeader != null) {
-        headers.remove(baggageHeader.getName());
+  private void maybeInjectHeaders(final @NotNull Headers headers, final @Nullable ISpan span) {
+    try {
+      final @Nullable List<String> existingBaggageHeaders =
+          readHeaderValues(headers, BaggageHeader.BAGGAGE_HEADER);
+      final @Nullable TracingUtils.TracingHeaders tracingHeaders =
+          TracingUtils.trace(scopes, existingBaggageHeaders, span);
+      if (tracingHeaders != null) {
+        final @NotNull SentryTraceHeader sentryTraceHeader = tracingHeaders.getSentryTraceHeader();
+        headers.remove(sentryTraceHeader.getName());
         headers.add(
-            baggageHeader.getName(), baggageHeader.getValue().getBytes(StandardCharsets.UTF_8));
-      }
-    }
+            sentryTraceHeader.getName(),
+            sentryTraceHeader.getValue().getBytes(StandardCharsets.UTF_8));
 
-    headers.remove(SENTRY_ENQUEUED_TIME_HEADER);
-    headers.add(
-        SENTRY_ENQUEUED_TIME_HEADER,
-        DateUtils.doubleToBigDecimal(DateUtils.millisToSeconds(System.currentTimeMillis()))
-            .toString()
-            .getBytes(StandardCharsets.UTF_8));
+        final @Nullable BaggageHeader baggageHeader = tracingHeaders.getBaggageHeader();
+        if (baggageHeader != null) {
+          headers.remove(baggageHeader.getName());
+          headers.add(
+              baggageHeader.getName(), baggageHeader.getValue().getBytes(StandardCharsets.UTF_8));
+        }
+      }
+
+      headers.remove(SENTRY_ENQUEUED_TIME_HEADER);
+      headers.add(
+          SENTRY_ENQUEUED_TIME_HEADER,
+          DateUtils.doubleToBigDecimal(DateUtils.millisToSeconds(System.currentTimeMillis()))
+              .toString()
+              .getBytes(StandardCharsets.UTF_8));
+    } catch (Throwable t) {
+      scopes
+          .getOptions()
+          .getLogger()
+          .log(SentryLevel.ERROR, "Failed to inject Sentry headers into Kafka record.", t);
+    }
   }
 
   private static @Nullable List<String> readHeaderValues(
