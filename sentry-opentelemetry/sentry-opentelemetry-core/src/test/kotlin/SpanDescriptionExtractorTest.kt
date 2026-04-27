@@ -317,6 +317,23 @@ class SpanDescriptionExtractorTest {
   }
 
   @Test
+  fun `maps messaging settle operation type to queue settle op`() {
+    givenAttributes(
+      mapOf(
+        MessagingIncubatingAttributes.MESSAGING_SYSTEM to "rabbitmq",
+        MessagingIncubatingAttributes.MESSAGING_DESTINATION_NAME to "my-queue",
+        MessagingIncubatingAttributes.MESSAGING_OPERATION_TYPE to "settle",
+      )
+    )
+
+    val info = whenExtractingSpanInfo(queueTracingEnabled = true)
+
+    assertEquals("queue.settle", info.op)
+    assertEquals("my-queue", info.description)
+    assertEquals(TransactionNameSource.TASK, info.transactionNameSource)
+  }
+
+  @Test
   fun `falls back to legacy messaging operation attribute`() {
     @Suppress("DEPRECATION")
     givenAttributes(

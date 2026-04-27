@@ -136,6 +136,8 @@ public final class SpanDescriptionExtractor {
         case "process":
         case "deliver":
           return "queue.process";
+        case "settle":
+          return "queue.settle";
         default:
           // fall through to SpanKind mapping
           break;
