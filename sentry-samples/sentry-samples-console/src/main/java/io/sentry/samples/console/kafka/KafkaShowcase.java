@@ -39,9 +39,9 @@ public final class KafkaShowcase {
       final KafkaProducer<String, String> rawProducer = new KafkaProducer<>(producerProperties);
 
       // 2. >>> Sentry instrumentation <<<
-      //    Wrap it in SentryKafkaProducer so every send is captured as a
+      //    Wrap it with SentryKafkaProducer.wrap() so every send is captured as a
       //    `queue.publish` span that closes when the broker ack callback fires.
-      final Producer<String, String> producer = new SentryKafkaProducer<>(rawProducer);
+      final Producer<String, String> producer = SentryKafkaProducer.wrap(rawProducer);
 
       try (producer) {
         Thread.sleep(500);

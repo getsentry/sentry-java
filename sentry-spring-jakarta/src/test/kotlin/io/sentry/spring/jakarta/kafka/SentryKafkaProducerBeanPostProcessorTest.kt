@@ -1,6 +1,5 @@
 package io.sentry.spring.jakarta.kafka
 
-import io.sentry.kafka.SentryKafkaProducer
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertSame
@@ -68,25 +67,13 @@ class SentryKafkaProducerBeanPostProcessorTest {
   }
 
   @Test
-  fun `registered post-processor wraps producers in SentryKafkaProducer`() {
+  fun `registered post-processor wraps producers via SentryKafkaProducer wrap`() {
     val pp = SentryKafkaProducerBeanPostProcessor.SentryProducerPostProcessor<String, String>()
     val raw = mock<Producer<String, String>>()
 
     val wrapped = pp.apply(raw)
 
-    assertTrue(wrapped is SentryKafkaProducer<*, *>)
-    assertSame(raw, (wrapped as SentryKafkaProducer<String, String>).delegate)
-  }
-
-  @Test
-  fun `registered post-processor does not double-wrap`() {
-    val pp = SentryKafkaProducerBeanPostProcessor.SentryProducerPostProcessor<String, String>()
-    val raw = mock<Producer<String, String>>()
-    val alreadyWrapped = SentryKafkaProducer(raw)
-
-    val result = pp.apply(alreadyWrapped)
-
-    assertSame(alreadyWrapped, result)
+    assertTrue(java.lang.reflect.Proxy.isProxyClass(wrapped.javaClass))
   }
 
   @Test

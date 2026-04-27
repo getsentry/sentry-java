@@ -14,7 +14,8 @@ import org.springframework.kafka.core.ProducerPostProcessor;
 
 /**
  * Installs a {@link ProducerPostProcessor} on every {@link ProducerFactory} bean so that each
- * {@link Producer} created by Spring Kafka is wrapped in a {@link SentryKafkaProducer}.
+ * {@link Producer} created by Spring Kafka is wrapped via {@link SentryKafkaProducer#wrap
+ * SentryKafkaProducer.wrap(Producer)}.
  *
  * <p>The wrapper records a {@code queue.publish} span around each {@code send(...)} that finishes
  * when the broker ack callback fires, giving a real producer-send lifecycle span. {@code
@@ -55,16 +56,13 @@ public final class SentryKafkaProducerBeanPostProcessor
   }
 
   /**
-   * Marker {@link ProducerPostProcessor} that wraps the freshly created Kafka {@link Producer} in a
-   * {@link SentryKafkaProducer}, unless it is already wrapped.
+   * Marker {@link ProducerPostProcessor} that wraps the freshly created Kafka {@link Producer} via
+   * {@link SentryKafkaProducer#wrap}.
    */
   static final class SentryProducerPostProcessor<K, V> implements ProducerPostProcessor<K, V> {
     @Override
     public @NotNull Producer<K, V> apply(final @NotNull Producer<K, V> producer) {
-      if (producer instanceof SentryKafkaProducer) {
-        return producer;
-      }
-      return new SentryKafkaProducer<>(
+      return SentryKafkaProducer.wrap(
           producer, ScopesAdapter.getInstance(), "auto.queue.spring_jakarta.kafka.producer");
     }
   }

@@ -81,7 +81,7 @@ class SentryKafkaProducerTest {
   @Test
   fun `creates queue publish span and injects headers`() {
     val tx = createTransaction()
-    val producer = SentryKafkaProducer(delegate, scopes)
+    val producer = SentryKafkaProducer.wrap(delegate, scopes)
     val record = ProducerRecord<String, String>("my-topic", "key", "value")
 
     producer.send(record)
@@ -110,7 +110,7 @@ class SentryKafkaProducerTest {
   @Test
   fun `delegates send and does not finish span synchronously`() {
     val tx = createTransaction()
-    val producer = SentryKafkaProducer(delegate, scopes)
+    val producer = SentryKafkaProducer.wrap(delegate, scopes)
     val record = ProducerRecord<String, String>("my-topic", "key", "value")
 
     producer.send(record)
@@ -123,7 +123,7 @@ class SentryKafkaProducerTest {
   @Test
   fun `finishes span as OK when broker ack callback succeeds`() {
     val tx = createTransaction()
-    val producer = SentryKafkaProducer(delegate, scopes)
+    val producer = SentryKafkaProducer.wrap(delegate, scopes)
     val record = ProducerRecord<String, String>("my-topic", "key", "value")
 
     producer.send(record)
@@ -141,7 +141,7 @@ class SentryKafkaProducerTest {
   @Test
   fun `finishes span as INTERNAL_ERROR when broker ack callback fails`() {
     val tx = createTransaction()
-    val producer = SentryKafkaProducer(delegate, scopes)
+    val producer = SentryKafkaProducer.wrap(delegate, scopes)
     val record = ProducerRecord<String, String>("my-topic", "key", "value")
     val exception = RuntimeException("boom")
 
@@ -160,7 +160,7 @@ class SentryKafkaProducerTest {
   @Test
   fun `forwards user callback after finishing span`() {
     createTransaction()
-    val producer = SentryKafkaProducer(delegate, scopes)
+    val producer = SentryKafkaProducer.wrap(delegate, scopes)
     val record = ProducerRecord<String, String>("my-topic", "key", "value")
     val userCallback = mock<Callback>()
 
@@ -179,7 +179,7 @@ class SentryKafkaProducerTest {
     val tx = createTransaction()
     val exception = RuntimeException("kaboom")
     whenever(delegate.send(any(), any())).thenThrow(exception)
-    val producer = SentryKafkaProducer(delegate, scopes)
+    val producer = SentryKafkaProducer.wrap(delegate, scopes)
     val record = ProducerRecord<String, String>("my-topic", "key", "value")
 
     val thrown = runCatching { producer.send(record) }.exceptionOrNull()
@@ -195,7 +195,7 @@ class SentryKafkaProducerTest {
   fun `delegates send without span when queue tracing is disabled`() {
     createTransaction()
     options.isEnableQueueTracing = false
-    val producer = SentryKafkaProducer(delegate, scopes)
+    val producer = SentryKafkaProducer.wrap(delegate, scopes)
     val record = ProducerRecord<String, String>("my-topic", "key", "value")
 
     producer.send(record)
@@ -207,7 +207,7 @@ class SentryKafkaProducerTest {
   fun `delegates send without span when trace origin is ignored`() {
     val tx = createTransaction()
     options.setIgnoredSpanOrigins(listOf(SentryKafkaProducer.TRACE_ORIGIN))
-    val producer = SentryKafkaProducer(delegate, scopes)
+    val producer = SentryKafkaProducer.wrap(delegate, scopes)
     val record = ProducerRecord<String, String>("my-topic", "key", "value")
 
     producer.send(record)
@@ -220,7 +220,7 @@ class SentryKafkaProducerTest {
   @Test
   fun `injects headers but creates no span when no active span`() {
     whenever(scopes.span).thenReturn(null)
-    val producer = SentryKafkaProducer(delegate, scopes)
+    val producer = SentryKafkaProducer.wrap(delegate, scopes)
     val record = ProducerRecord<String, String>("my-topic", "key", "value")
 
     producer.send(record)
@@ -235,7 +235,7 @@ class SentryKafkaProducerTest {
   @Test
   fun `preserves pre-existing third-party baggage header entries`() {
     createTransaction()
-    val producer = SentryKafkaProducer(delegate, scopes)
+    val producer = SentryKafkaProducer.wrap(delegate, scopes)
     val record = ProducerRecord<String, String>("my-topic", "key", "value")
     record
       .headers()
@@ -274,7 +274,7 @@ class SentryKafkaProducerTest {
     whenever(headers.remove(SentryTraceHeader.SENTRY_TRACE_HEADER))
       .thenThrow(RuntimeException("boom"))
 
-    val producer = SentryKafkaProducer(delegate, scopes)
+    val producer = SentryKafkaProducer.wrap(delegate, scopes)
     producer.send(record)
 
     // Header injection failed silently; send still proceeds with wrapped callback for span
@@ -284,7 +284,7 @@ class SentryKafkaProducerTest {
 
   @Test
   fun `delegates non-send methods to underlying producer`() {
-    val producer = SentryKafkaProducer(delegate, scopes)
+    val producer = SentryKafkaProducer.wrap(delegate, scopes)
 
     producer.flush()
     producer.partitionsFor("my-topic")
@@ -298,14 +298,14 @@ class SentryKafkaProducerTest {
   }
 
   @Test
-  fun `no-arg constructor uses current scopes`() {
+  fun `default wrap uses current scopes`() {
     val transaction = Sentry.startTransaction("tx", "op")
     val record = ProducerRecord<String, String>("my-topic", "key", "value")
 
     try {
       val token: ISentryLifecycleToken = transaction.makeCurrent()
       try {
-        val producer = SentryKafkaProducer(delegate)
+        val producer = SentryKafkaProducer.wrap(delegate)
         producer.send(record)
       } finally {
         token.close()
@@ -320,17 +320,11 @@ class SentryKafkaProducerTest {
   }
 
   @Test
-  fun `getDelegate exposes wrapped producer`() {
-    val producer = SentryKafkaProducer(delegate, scopes)
-    assertSame(delegate, producer.delegate)
-  }
-
-  @Test
   fun `wraps callback even when child span is no-op`() {
     val tx = createTransaction()
-    // Set max spans to 1 so the child span is no-op (over limit)
+    // Set max spans to 0 so the child span is no-op (over limit)
     options.maxSpans = 0
-    val producer = SentryKafkaProducer(delegate, scopes)
+    val producer = SentryKafkaProducer.wrap(delegate, scopes)
     val record = ProducerRecord<String, String>("my-topic", "key", "value")
 
     producer.send(record)
@@ -341,5 +335,11 @@ class SentryKafkaProducerTest {
     assertNotNull(record.headers().lastHeader(SentryTraceHeader.SENTRY_TRACE_HEADER))
     assertNotNull(record.headers().lastHeader(BaggageHeader.BAGGAGE_HEADER))
     assertNotNull(record.headers().lastHeader(SentryKafkaProducer.SENTRY_ENQUEUED_TIME_HEADER))
+  }
+
+  @Test
+  fun `toString includes delegate`() {
+    val producer = SentryKafkaProducer.wrap(delegate, scopes)
+    assertTrue(producer.toString().startsWith("SentryKafkaProducer[delegate="))
   }
 }
