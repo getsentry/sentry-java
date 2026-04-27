@@ -2708,18 +2708,20 @@ public class SentryOptions {
   }
 
   /**
-   * Whether queue operations (publish, process) should be traced.
+   * Whether Sentry emits Queue spans and transforms OpenTelemetry messaging spans to match Sentry's
+   * queue conventions.
    *
-   * @return true if queue operations should be traced
+   * @return true if queue tracing is enabled
    */
   public boolean isEnableQueueTracing() {
     return enableQueueTracing;
   }
 
   /**
-   * Whether queue operations (publish, process) should be traced.
+   * Whether Sentry emits Queue spans and transforms OpenTelemetry messaging spans to match Sentry's
+   * queue conventions.
    *
-   * @param enableQueueTracing true if queue operations should be traced
+   * @param enableQueueTracing true to enable queue tracing
    */
   public void setEnableQueueTracing(boolean enableQueueTracing) {
     this.enableQueueTracing = enableQueueTracing;
