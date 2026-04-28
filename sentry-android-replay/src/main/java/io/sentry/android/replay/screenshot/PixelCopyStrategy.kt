@@ -157,14 +157,18 @@ internal class PixelCopyStrategy(
     surfaceViewNodes: List<ViewHierarchyNode.SurfaceViewHierarchyNode>,
     viewHierarchy: ViewHierarchyNode,
   ) {
+    // Snapshot the window location into locals so the executor-side compositor reads stable
+    // values even if a new capture cycle starts and overwrites the field.
     root.getLocationOnScreen(windowLocation)
+    val windowX = windowLocation[0]
+    val windowY = windowLocation[1]
 
     val captures = arrayOfNulls<SurfaceViewCapture>(surfaceViewNodes.size)
     val remaining = AtomicInteger(surfaceViewNodes.size)
 
     fun onCaptureComplete() {
       if (remaining.decrementAndGet() == 0) {
-        compositeSurfaceViewsAndMask(root, captures, viewHierarchy)
+        compositeSurfaceViewsAndMask(root, captures, viewHierarchy, windowX, windowY)
       }
     }
 
@@ -191,6 +195,9 @@ internal class PixelCopyStrategy(
           { copyResult: Int ->
             if (isClosed.get()) {
               svBitmap.recycle()
+              // still drive the completion latch so any prior captures get recycled by the
+              // composite step's early-return path.
+              onCaptureComplete()
               return@request
             }
             if (copyResult == PixelCopy.SUCCESS) {
@@ -214,11 +221,14 @@ internal class PixelCopyStrategy(
     root: View,
     captures: Array<SurfaceViewCapture?>,
     viewHierarchy: ViewHierarchyNode,
+    windowX: Int,
+    windowY: Int,
   ) {
     executor.submit(
       ReplayRunnable("screenshot_recorder.composite") {
         if (isClosed.get() || screenshot.isRecycled) {
           options.logger.log(DEBUG, "PixelCopyStrategy is closed, skipping compositing")
+          recycleCaptures(captures)
           return@ReplayRunnable
         }
 
@@ -234,8 +244,8 @@ internal class PixelCopyStrategy(
             capture.bitmap,
             capture.x,
             capture.y,
-            windowLocation[0],
-            windowLocation[1],
+            windowX,
+            windowY,
             config.scaleFactorX,
             config.scaleFactorY,
           )
@@ -245,6 +255,14 @@ internal class PixelCopyStrategy(
         applyMaskingAndNotify(root, viewHierarchy)
       }
     )
+  }
+
+  private fun recycleCaptures(captures: Array<SurfaceViewCapture?>) {
+    for (capture in captures) {
+      if (capture != null && !capture.bitmap.isRecycled) {
+        capture.bitmap.recycle()
+      }
+    }
   }
 
   override fun onContentChanged() {
