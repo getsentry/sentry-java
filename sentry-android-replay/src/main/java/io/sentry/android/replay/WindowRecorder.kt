@@ -167,9 +167,10 @@ internal class WindowRecorder(
         val height = bottom - top
         val oldWidth = oldRight - oldLeft
         val oldHeight = oldBottom - oldTop
-        if (width != oldWidth || height != oldHeight) {
-          determineWindowSize(v)
-        }
+        if (width == oldWidth && height == oldHeight) return@OnLayoutChangeListener
+        // ignore non-latest roots so a dialog stays sized for itself, not its background activity.
+        if (v != rootViews.lastOrNull()?.get()) return@OnLayoutChangeListener
+        determineWindowSize(v)
       }
     rootLayoutListeners[root] = listener
     root.addOnLayoutChangeListener(listener)
