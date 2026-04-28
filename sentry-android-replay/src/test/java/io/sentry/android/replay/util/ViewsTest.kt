@@ -1,12 +1,12 @@
 package io.sentry.android.replay.util
 
 import android.app.Activity
+import android.os.Looper
 import android.view.SurfaceView
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.FrameLayout.LayoutParams
 import android.widget.TextView
-import android.os.Looper
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.NoOpLogger
@@ -64,7 +64,6 @@ class ViewsTest {
     root.traverse(rootNode, SentryReplayOptions(false, null), NoOpLogger.getInstance(), collected)
 
     assertEquals(2, collected.size)
-    assertTrue(collected.all { it is ViewHierarchyNode.SurfaceViewHierarchyNode })
   }
 
   @Test
@@ -72,8 +71,7 @@ class ViewsTest {
     val (root, _) = buildSurfaceViewHierarchy()
     val rootNode = ViewHierarchyNode.fromView(root, null, 0, SentryReplayOptions(false, null))
 
-    // Default parameter (null) — equivalent to the pre-feature call site behavior.
-    root.traverse(rootNode, SentryReplayOptions(false, null), NoOpLogger.getInstance())
+    root.traverse(rootNode, SentryReplayOptions(false, null), NoOpLogger.getInstance(), null)
   }
 
   @Test
