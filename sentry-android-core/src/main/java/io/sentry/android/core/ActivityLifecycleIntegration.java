@@ -56,6 +56,7 @@ public final class ActivityLifecycleIntegration
     implements Integration, Closeable, Application.ActivityLifecycleCallbacks {
 
   static final String UI_LOAD_OP = "ui.load";
+  static final String APP_START_OP = "app.start";
   static final String APP_START_WARM = "app.start.warm";
   static final String APP_START_COLD = "app.start.cold";
   static final String TTID_OP = "ui.load.initial_display";
@@ -287,7 +288,6 @@ public final class ActivityLifecycleIntegration
           if (options.isEnableStandaloneAppStartTracing()
               && foregroundImportance
               && !isFollowingNonActivityStart) {
-            // Happy path: activity will launch, create standalone app start transaction
             final TransactionOptions appStartTransactionOptions = new TransactionOptions();
             appStartTransactionOptions.setBindToScope(false);
             appStartTransactionOptions.setStartTimestamp(appStartTime);
@@ -300,7 +300,7 @@ public final class ActivityLifecycleIntegration
                         transaction.getSpanContext().getTraceId(),
                         getAppStartTxnName(coldStart),
                         TransactionNameSource.COMPONENT,
-                        getAppStartOp(coldStart),
+                        APP_START_OP,
                         appStartSamplingDecision),
                     appStartTransactionOptions);
 
@@ -906,10 +906,7 @@ public final class ActivityLifecycleIntegration
 
     final @NotNull TransactionContext txnContext =
         new TransactionContext(
-            getAppStartTxnName(coldStart),
-            TransactionNameSource.COMPONENT,
-            getAppStartOp(coldStart),
-            null);
+            getAppStartTxnName(coldStart), TransactionNameSource.COMPONENT, APP_START_OP, null);
 
     final @NotNull ITransaction transaction = scopes.startTransaction(txnContext, txnOptions);
 

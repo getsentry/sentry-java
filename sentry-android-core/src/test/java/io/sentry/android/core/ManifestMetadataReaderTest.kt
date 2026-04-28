@@ -1443,6 +1443,36 @@ class ManifestMetadataReaderTest {
   }
 
   @Test
+  fun `applyMetadata reads standalone app start tracing flag to options`() {
+    val bundle = bundleOf(ManifestMetadataReader.ENABLE_STANDALONE_APP_START_TRACING to true)
+    val context = fixture.getContext(metaData = bundle)
+
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    assertTrue(fixture.options.isEnableStandaloneAppStartTracing)
+  }
+
+  @Test
+  fun `applyMetadata reads standalone app start tracing false to options`() {
+    fixture.options.isEnableStandaloneAppStartTracing = true
+    val bundle = bundleOf(ManifestMetadataReader.ENABLE_STANDALONE_APP_START_TRACING to false)
+    val context = fixture.getContext(metaData = bundle)
+
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    assertFalse(fixture.options.isEnableStandaloneAppStartTracing)
+  }
+
+  @Test
+  fun `applyMetadata reads standalone app start tracing flag to options and keeps default if not found`() {
+    val context = fixture.getContext()
+
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    assertFalse(fixture.options.isEnableStandaloneAppStartTracing)
+  }
+
+  @Test
   fun `applyMetadata reads startupProfiling flag to options`() {
     // Arrange
     val bundle = bundleOf(ManifestMetadataReader.ENABLE_APP_START_PROFILING to true)

@@ -16,8 +16,10 @@ import io.sentry.SentryNanotimeDate
 import io.sentry.android.core.CurrentActivityHolder
 import io.sentry.android.core.SentryAndroidOptions
 import io.sentry.android.core.SentryShadowProcess
+import io.sentry.protocol.SentryId
 import java.util.Date
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -44,6 +46,7 @@ class AppStartMetricsTest {
   fun setup() {
     AppStartMetrics.getInstance().clear()
     SentryShadowProcess.setStartUptimeMillis(42)
+    AppStartMetrics.getInstance().setClassLoadedUptimeMs(42)
     AppStartMetrics.getInstance().isAppLaunchedInForeground = true
   }
 
@@ -65,6 +68,7 @@ class AppStartMetricsTest {
     metrics.appStartProfiler = mock()
     metrics.appStartContinuousProfiler = mock()
     metrics.appStartSamplingDecision = mock()
+    metrics.setAppStartTraceId(SentryId())
 
     metrics.clear()
 
@@ -78,6 +82,7 @@ class AppStartMetricsTest {
     assertNull(metrics.appStartProfiler)
     assertNull(metrics.appStartContinuousProfiler)
     assertNull(metrics.appStartSamplingDecision)
+    assertNull(metrics.getAppStartTraceId())
   }
 
   @Test
@@ -206,6 +211,93 @@ class AppStartMetricsTest {
     // then a warm start should be set
     assertTrue(metrics.isAppLaunchedInForeground)
     assertEquals(AppStartMetrics.AppStartType.WARM, metrics.appStartType)
+  }
+
+  @Test
+  fun `checkCreateTimeOnMain defaults appStartType to COLD when UNKNOWN and no activity started`() {
+    val metrics = AppStartMetrics.getInstance()
+    metrics.appStartTimeSpan.setStartedAt(100)
+
+    metrics.registerLifecycleCallbacks(mock<Application>())
+    waitForMainLooperIdle()
+
+    assertEquals(AppStartMetrics.AppStartType.COLD, metrics.appStartType)
+    assertFalse(metrics.isAppLaunchedInForeground)
+  }
+
+  @Test
+  fun `checkCreateTimeOnMain does not overwrite appStartType when already set`() {
+    val metrics = AppStartMetrics.getInstance()
+    metrics.appStartType = AppStartMetrics.AppStartType.WARM
+    metrics.appStartTimeSpan.setStartedAt(100)
+
+    metrics.registerLifecycleCallbacks(mock<Application>())
+    waitForMainLooperIdle()
+
+    assertEquals(AppStartMetrics.AppStartType.WARM, metrics.appStartType)
+  }
+
+  @Test
+  fun `checkCreateTimeOnMain fires onNoActivityStartedListener when no activity started`() {
+    val listenerCalls = AtomicInteger()
+
+    AppStartMetrics.getInstance().setOnNoActivityStartedListener { listenerCalls.incrementAndGet() }
+    AppStartMetrics.getInstance().registerLifecycleCallbacks(mock<Application>())
+    waitForMainLooperIdle()
+
+    assertEquals(1, listenerCalls.get())
+  }
+
+  @Test
+  fun `checkCreateTimeOnMain does not fire onNoActivityStartedListener when an activity has started`() {
+    val listenerCalls = AtomicInteger()
+    val metrics = AppStartMetrics.getInstance()
+
+    metrics.setOnNoActivityStartedListener { listenerCalls.incrementAndGet() }
+    metrics.onActivityCreated(mock<Activity>(), null)
+    metrics.registerLifecycleCallbacks(mock<Application>())
+    waitForMainLooperIdle()
+
+    assertEquals(0, listenerCalls.get())
+  }
+
+  @Test
+  fun `resolveNonActivityAppStartEndTime uses applicationOnCreate stop when Gradle plugin instrumented`() {
+    val metrics = AppStartMetrics.getInstance()
+    metrics.appStartTimeSpan.setStartedAt(100)
+    metrics.applicationOnCreateTimeSpan.apply {
+      setStartedAt(120)
+      setStoppedAt(200)
+    }
+
+    metrics.registerLifecycleCallbacks(mock<Application>())
+    waitForMainLooperIdle()
+
+    assertEquals(100, metrics.appStartTimeSpan.durationMs)
+  }
+
+  @Test
+  fun `resolveNonActivityAppStartEndTime falls back to CLASS_LOADED_UPTIME_MS when no plugin and no ApplicationStartInfo`() {
+    val metrics = AppStartMetrics.getInstance()
+    metrics.setClassLoadedUptimeMs(200)
+    metrics.appStartTimeSpan.setStartedAt(100)
+
+    metrics.registerLifecycleCallbacks(mock<Application>())
+    waitForMainLooperIdle()
+
+    assertEquals(100, metrics.appStartTimeSpan.durationMs)
+  }
+
+  @Test
+  fun `getAppStartTimeSpanDirect falls back to sdkInitTimeSpan when appStartSpan has not stopped`() {
+    val metrics = AppStartMetrics.getInstance()
+    metrics.appStartTimeSpan.setStartedAt(100)
+    metrics.sdkInitTimeSpan.apply {
+      setStartedAt(120)
+      setStoppedAt(180)
+    }
+
+    assertSame(metrics.sdkInitTimeSpan, metrics.getAppStartTimeSpanDirect())
   }
 
   private fun waitForMainLooperIdle() {
@@ -585,7 +677,6 @@ class AppStartMetricsTest {
     waitForMainLooperIdle()
 
     SystemClock.setCurrentTimeMillis(SystemClock.uptimeMillis() + 100)
-    metrics.isAppLaunchedInForeground = true
     metrics.onActivityCreated(mock<Activity>(), null)
 
     assertEquals(AppStartMetrics.AppStartType.WARM, metrics.appStartType)

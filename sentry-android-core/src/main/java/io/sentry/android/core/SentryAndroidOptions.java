@@ -675,9 +675,34 @@ public final class SentryAndroidOptions extends SentryOptions {
   }
 
   /**
-   * Enables or disables standalone app start tracing. When enabled, app start metrics are sent as a
-   * standalone transaction instead of being attached as a child span of the first activity
-   * transaction.
+   * Enables or disables standalone app start tracing.
+   *
+   * <p>When enabled, app start is sent as its own transaction instead of an {@code app.start.*}
+   * child span on the first Activity transaction.
+   *
+   * <p>The SDK reports app start through these paths:
+   *
+   * <ul>
+   *   <li>With an Activity: the SDK sends an {@code App Start Cold/Warm} transaction with operation
+   *       {@code app.start}, plus a separate {@code ui.load} transaction for the Activity. Both
+   *       transactions share the same trace ID.
+   *   <li>Without an Activity: for launches started by something like a broadcast receiver,
+   *       service, or content provider, the SDK sends only the standalone app-start transaction.
+   *       <ul>
+   *         <li>On Android API 35 and newer, the SDK can use {@code ApplicationStartInfo} to
+   *             classify cold versus warm starts and find the {@code Application.onCreate} end
+   *             time.
+   *         <li>Before Android API 35, no-Activity launches are treated as cold once {@code
+   *             Application.onCreate} finishes without an Activity. The end time falls back to the
+   *             best SDK/plugin timing available.
+   *         <li>With {@code Application.onCreate} instrumentation, the SDK can add an {@code
+   *             application.load} phase span and use the exact {@code Application.onCreate} end
+   *             time. Without that instrumentation, the standalone transaction is still sent, but
+   *             it may only include the {@code process.load} phase span.
+   *       </ul>
+   *   <li>If an Activity opens after a no-Activity start, its {@code ui.load} transaction reuses
+   *       the app-start trace ID.
+   * </ul>
    *
    * @param enableStandaloneAppStartTracing true if enabled or false otherwise
    */

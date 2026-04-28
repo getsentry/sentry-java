@@ -459,7 +459,6 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     }
   }
 
-  /** Resolves the end time for a non-activity app start. */
   private void resolveNonActivityAppStartEndTime() {
     // Priority 1: Gradle plugin instrumented onApplicationPostCreate
     if (applicationOnCreate.hasStopped()) {

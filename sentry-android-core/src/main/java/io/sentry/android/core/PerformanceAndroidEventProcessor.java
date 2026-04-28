@@ -1,6 +1,7 @@
 package io.sentry.android.core;
 
 import static io.sentry.android.core.ActivityLifecycleIntegration.APP_START_COLD;
+import static io.sentry.android.core.ActivityLifecycleIntegration.APP_START_OP;
 import static io.sentry.android.core.ActivityLifecycleIntegration.APP_START_WARM;
 import static io.sentry.android.core.ActivityLifecycleIntegration.UI_LOAD_OP;
 
@@ -84,14 +85,11 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
       // the app start measurement is only sent once and only if the transaction has
       // the app.start span, which is automatically created by the SDK.
       if (hasAppStartSpan(transaction)) {
-        // Check if this is a standalone app start transaction (op is app.start.cold/warm).
         // For non-activity starts, appLaunchedInForeground is false, so
         // shouldSendStartMeasurements() would return false. We still want to attach child spans.
         final @Nullable SpanContext traceContext = transaction.getContexts().getTrace();
         final boolean isStandaloneAppStartTxn =
-            traceContext != null
-                && (APP_START_COLD.equals(traceContext.getOperation())
-                    || APP_START_WARM.equals(traceContext.getOperation()));
+            traceContext != null && APP_START_OP.equals(traceContext.getOperation());
 
         if (appStartMetrics.shouldSendStartMeasurements() || isStandaloneAppStartTxn) {
           final @NotNull TimeSpan appStartTimeSpan =
@@ -227,9 +225,7 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
     }
 
     final @Nullable SpanContext context = txn.getContexts().getTrace();
-    return context != null
-        && (context.getOperation().equals(APP_START_COLD)
-            || context.getOperation().equals(APP_START_WARM));
+    return context != null && context.getOperation().equals(APP_START_OP);
   }
 
   private void attachAppStartSpans(
@@ -259,7 +255,7 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
     // For standalone app start transactions, the transaction root IS the app start span
     if (parentSpanId == null) {
       final @NotNull String txnOp = traceContext.getOperation();
-      if (APP_START_COLD.equals(txnOp) || APP_START_WARM.equals(txnOp)) {
+      if (APP_START_OP.equals(txnOp)) {
         parentSpanId = traceContext.getSpanId();
       }
     }
