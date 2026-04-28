@@ -144,13 +144,7 @@ class TransactionContextTest {
     val samplingDecision = TracesSamplingDecision(true, 0.1, 0.2, true, 0.3)
 
     val context =
-      TransactionContext(
-        traceId,
-        "name",
-        TransactionNameSource.COMPONENT,
-        "op",
-        samplingDecision,
-      )
+      TransactionContext(traceId, "name", TransactionNameSource.COMPONENT, "op", samplingDecision)
 
     assertEquals(traceId, context.traceId)
     assertEquals("name", context.name)
@@ -166,13 +160,7 @@ class TransactionContextTest {
     val samplingDecision = TracesSamplingDecision(true, 0.1, 0.2)
 
     val context =
-      TransactionContext(
-        traceId,
-        "name",
-        TransactionNameSource.COMPONENT,
-        "op",
-        samplingDecision,
-      )
+      TransactionContext(traceId, "name", TransactionNameSource.COMPONENT, "op", samplingDecision)
 
     assertNotNull(context.spanId)
     assertNotEquals(SpanId.EMPTY_ID, context.spanId)
