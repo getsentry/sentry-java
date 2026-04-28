@@ -13,8 +13,7 @@ import android.util.Log;
  * launch.
  *
  * <p>Test with: adb shell am force-stop io.sentry.samples.android adb shell am broadcast -a
- * io.sentry.samples.android.TEST_BROADCAST -n
- * io.sentry.samples.android/.TestBroadcastReceiver
+ * io.sentry.samples.android.TEST_BROADCAST -n io.sentry.samples.android/.TestBroadcastReceiver
  */
 public class TestBroadcastReceiver extends BroadcastReceiver {
   private static final String TAG = "SentryAppStart";
