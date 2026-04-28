@@ -4,12 +4,17 @@
 
 ### Features
 
-- Add experimental `enableStandaloneAppStartTracing` option to send app start as a standalone transaction instead of attaching it as a child span of the first activity transaction ([#5342](https://github.com/getsentry/sentry-java/pull/5342))
+- Add `enableStandaloneAppStartTracing` option to send app start as a standalone transaction instead of attaching it as a child span of the first activity transaction ([#5342](https://github.com/getsentry/sentry-java/pull/5342))
   - Disabled by default; opt in via `SentryAndroidOptions.setEnableStandaloneAppStartTracing(true)` or manifest meta-data `io.sentry.standalone-app-start-tracing.enable`
   - Emits a transaction named `App Start Cold` / `App Start Warm` with op `app.start`, carrying the existing app start measurements and phase spans (`process.load`, `contentprovider.load`, `application.load`, activity lifecycle spans) as direct children of the root
   - The standalone transaction shares the same `traceId` as the first `ui.load` activity transaction so they remain linked in the trace view
-  - Also covers non-activity cold starts (broadcast receivers, services, content providers) — the transaction is created when `Application.onCreate()` completes without an activity being launched
-  - App start data is only sent once: when enabled, it is not also attached to the first activity `ui.load` transaction
+  - Also covers non-activity starts (broadcast receivers, services, content providers)
+
+### Dependencies
+
+- Bump Native SDK from v0.13.7 to v0.13.8 ([#5334](https://github.com/getsentry/sentry-java/pull/5334))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0138)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.13.7...0.13.8)
 
 ## 8.40.0
 
