@@ -181,7 +181,7 @@ internal class WindowRecorder(
 
   fun determineWindowSize(root: View) {
     if (root.hasSize()) {
-      if (root.width != lastKnownWindowSize.x && root.height != lastKnownWindowSize.y) {
+      if (root.width != lastKnownWindowSize.x || root.height != lastKnownWindowSize.y) {
         lastKnownWindowSize.set(root.width, root.height)
         windowCallback.onWindowSizeChanged(root.width, root.height)
       }
@@ -197,7 +197,7 @@ internal class WindowRecorder(
             }
             if (root.hasSize()) {
               root.removeOnPreDrawListenerSafe(this)
-              if (root.width != lastKnownWindowSize.x && root.height != lastKnownWindowSize.y) {
+              if (root.width != lastKnownWindowSize.x || root.height != lastKnownWindowSize.y) {
                 lastKnownWindowSize.set(root.width, root.height)
                 windowCallback.onWindowSizeChanged(root.width, root.height)
               }

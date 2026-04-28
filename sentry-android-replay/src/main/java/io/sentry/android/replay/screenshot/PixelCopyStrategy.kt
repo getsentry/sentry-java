@@ -181,9 +181,11 @@ internal class PixelCopyStrategy(
         continue
       }
 
+      var svBitmap: Bitmap? = null
       try {
-        val svBitmap =
+        svBitmap =
           Bitmap.createBitmap(surfaceView.width, surfaceView.height, Bitmap.Config.ARGB_8888)
+        val bitmapToCapture = svBitmap
 
         surfaceView.getLocationOnScreen(svLocation)
         val capturedX = svLocation[0]
@@ -191,27 +193,31 @@ internal class PixelCopyStrategy(
 
         PixelCopy.request(
           surfaceView,
-          svBitmap,
+          bitmapToCapture,
           { copyResult: Int ->
             if (isClosed.get()) {
-              svBitmap.recycle()
+              bitmapToCapture.recycle()
               // still drive the completion latch so any prior captures get recycled by the
               // composite step's early-return path.
               onCaptureComplete()
               return@request
             }
             if (copyResult == PixelCopy.SUCCESS) {
-              captures[index] = SurfaceViewCapture(svBitmap, capturedX, capturedY)
+              captures[index] = SurfaceViewCapture(bitmapToCapture, capturedX, capturedY)
             } else {
-              svBitmap.recycle()
+              bitmapToCapture.recycle()
               options.logger.log(INFO, "Failed to capture SurfaceView: %d", copyResult)
             }
             onCaptureComplete()
           },
           mainLooperHandler.handler,
         )
+        // Ownership transferred to the PixelCopy callback — clear local so catch doesn't
+        // double-recycle if the recycle paths above already ran.
+        svBitmap = null
       } catch (e: Throwable) {
         options.logger.log(WARNING, "Failed to capture SurfaceView", e)
+        svBitmap?.recycle()
         onCaptureComplete()
       }
     }
