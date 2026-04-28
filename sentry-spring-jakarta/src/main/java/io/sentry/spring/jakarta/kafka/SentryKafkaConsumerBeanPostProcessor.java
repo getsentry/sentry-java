@@ -21,6 +21,14 @@ import org.springframework.kafka.listener.RecordInterceptor;
 public final class SentryKafkaConsumerBeanPostProcessor
     implements BeanPostProcessor, PriorityOrdered {
 
+  private static final class InterceptorReadFailedException extends Exception {
+    private static final long serialVersionUID = 1L;
+
+    InterceptorReadFailedException(final @NotNull Throwable cause) {
+      super(cause);
+    }
+  }
+
   @Override
   @SuppressWarnings("unchecked")
   public @NotNull Object postProcessAfterInitialization(
@@ -29,7 +37,23 @@ public final class SentryKafkaConsumerBeanPostProcessor
       final @NotNull AbstractKafkaListenerContainerFactory<?, ?, ?> factory =
           (AbstractKafkaListenerContainerFactory<?, ?, ?>) bean;
 
-      final @Nullable RecordInterceptor<?, ?> existing = getExistingInterceptor(factory);
+      final @Nullable RecordInterceptor<?, ?> existing;
+      try {
+        existing = getExistingInterceptor(factory);
+      } catch (InterceptorReadFailedException e) {
+        ScopesAdapter.getInstance()
+            .getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.ERROR,
+                "Sentry Kafka consumer tracing disabled for factory '%s' \u2014 could not read "
+                    + "existing recordInterceptor via reflection. Refusing to install Sentry's "
+                    + "interceptor to avoid overwriting a customer-configured RecordInterceptor.",
+                e,
+                beanName);
+        return bean;
+      }
+
       if (existing instanceof SentryKafkaRecordInterceptor) {
         return bean;
       }
@@ -42,25 +66,16 @@ public final class SentryKafkaConsumerBeanPostProcessor
     return bean;
   }
 
-  @SuppressWarnings("unchecked")
   private @Nullable RecordInterceptor<?, ?> getExistingInterceptor(
-      final @NotNull AbstractKafkaListenerContainerFactory<?, ?, ?> factory) {
+      final @NotNull AbstractKafkaListenerContainerFactory<?, ?, ?> factory)
+      throws InterceptorReadFailedException {
     try {
       final @NotNull Field field =
           AbstractKafkaListenerContainerFactory.class.getDeclaredField("recordInterceptor");
       field.setAccessible(true);
       return (RecordInterceptor<?, ?>) field.get(factory);
-    } catch (NoSuchFieldException | IllegalAccessException e) {
-      ScopesAdapter.getInstance()
-          .getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.WARNING,
-              "Unable to read existing recordInterceptor from "
-                  + "AbstractKafkaListenerContainerFactory via reflection. "
-                  + "If you had a custom RecordInterceptor, it may not be chained with Sentry's interceptor.",
-              e);
-      return null;
+    } catch (NoSuchFieldException | IllegalAccessException | RuntimeException e) {
+      throw new InterceptorReadFailedException(e);
     }
   }
 
