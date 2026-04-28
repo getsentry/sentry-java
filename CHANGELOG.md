@@ -9,6 +9,12 @@
   - Or via manifest: `<meta-data android:name="io.sentry.session-replay.capture-surface-views" android:value="true" />`
   - **Warning:** masking granularity is at the SurfaceView level only — the SDK cannot mask individual elements rendered inside the SurfaceView (e.g. native Unity UI, map labels, video frames). Only enable for SurfaceViews whose content is safe to record.
 
+### Dependencies
+
+- Bump Native SDK from v0.13.7 to v0.13.8 ([#5334](https://github.com/getsentry/sentry-java/pull/5334))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0138)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.13.7...0.13.8)
+
 ## 8.40.0
 
 ### Fixes
