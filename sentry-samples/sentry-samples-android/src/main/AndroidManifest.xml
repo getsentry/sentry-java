@@ -37,6 +37,15 @@
       android:exported="true"
       android:foregroundServiceType="remoteMessaging" />
 
+    <receiver
+      android:name=".TestBroadcastReceiver"
+      android:enabled="true"
+      android:exported="true">
+      <intent-filter>
+        <action android:name="io.sentry.samples.android.TEST_BROADCAST" />
+      </intent-filter>
+    </receiver>
+
     <activity
       android:name=".MainActivity"
       android:exported="true"
@@ -223,6 +232,10 @@
 
     <meta-data
       android:name="io.sentry.performance-v2.enable"
+      android:value="true" />
+
+    <meta-data
+      android:name="io.sentry.standalone-app-start-tracing.enable"
       android:value="true" />
 
     <meta-data

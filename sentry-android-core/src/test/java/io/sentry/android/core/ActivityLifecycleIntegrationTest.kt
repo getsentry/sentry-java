@@ -7,6 +7,7 @@ import android.app.Application
 import android.content.Context
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
 import android.os.Looper
 import android.view.View
 import android.view.ViewTreeObserver
@@ -33,6 +34,7 @@ import io.sentry.TransactionOptions
 import io.sentry.android.core.performance.AppStartMetrics
 import io.sentry.android.core.performance.AppStartMetrics.AppStartType
 import io.sentry.protocol.MeasurementValue
+import io.sentry.protocol.SentryId
 import io.sentry.protocol.TransactionNameSource
 import io.sentry.test.DeferredExecutorService
 import io.sentry.test.getProperty
@@ -83,6 +85,9 @@ class ActivityLifecycleIntegrationTest {
     // start it
     var transaction: SentryTracer = mock()
     val buildInfo = mock<BuildInfoProvider>()
+    val createdTransactions = mutableListOf<SentryTracer>()
+    val capturedContexts = mutableListOf<TransactionContext>()
+    val capturedOptions = mutableListOf<TransactionOptions>()
 
     fun getSut(
       apiVersion: Int = Build.VERSION_CODES.Q,
@@ -102,8 +107,13 @@ class ActivityLifecycleIntegrationTest {
       val contextCaptor = argumentCaptor<TransactionContext>()
       whenever(scopes.startTransaction(contextCaptor.capture(), optionCaptor.capture()))
         .thenAnswer {
-          val t = SentryTracer(contextCaptor.lastValue, scopes, optionCaptor.lastValue)
+          val context = contextCaptor.lastValue
+          val options = optionCaptor.lastValue
+          val t = SentryTracer(context, scopes, options)
           transaction = t
+          createdTransactions.add(t)
+          capturedContexts.add(context)
+          capturedOptions.add(options)
           return@thenAnswer t
         }
       whenever(buildInfo.sdkInfoVersion).thenReturn(apiVersion)
@@ -223,6 +233,158 @@ class ActivityLifecycleIntegrationTest {
           assertEquals("auto.ui.activity", transactionOptions.origin)
         },
       )
+  }
+
+  @Test
+  fun `Standalone app start transaction op is app start`() {
+    val sut =
+      fixture.getSut {
+        it.tracesSampleRate = 1.0
+        it.isEnableStandaloneAppStartTracing = true
+      }
+    sut.register(fixture.scopes, fixture.options)
+
+    setAppStartTime()
+
+    val activity = mock<Activity>()
+    sut.onActivityCreated(activity, fixture.bundle)
+
+    verify(fixture.scopes, times(2)).startTransaction(any(), any<TransactionOptions>())
+
+    val contexts = fixture.capturedContexts
+    val appStartContext =
+      contexts.single { it.operation == ActivityLifecycleIntegration.APP_START_OP }
+    assertEquals("App Start Cold", appStartContext.name)
+    assertEquals(TransactionNameSource.COMPONENT, appStartContext.transactionNameSource)
+    assertTrue(contexts.any { it.operation == ActivityLifecycleIntegration.UI_LOAD_OP })
+    assertFalse(
+      contexts.any {
+        it.operation == ActivityLifecycleIntegration.APP_START_COLD ||
+          it.operation == ActivityLifecycleIntegration.APP_START_WARM
+      }
+    )
+  }
+
+  @Test
+  fun `OnNoActivityStartedListener is registered when standalone flag is on and performance enabled`() {
+    val sut =
+      fixture.getSut {
+        it.tracesSampleRate = 1.0
+        it.isEnableStandaloneAppStartTracing = true
+      }
+    sut.register(fixture.scopes, fixture.options)
+    prepareNonActivityAppStart(appStartType = AppStartType.UNKNOWN)
+
+    driveNoActivityStarted()
+
+    assertEquals(1, fixture.capturedContexts.size)
+    assertEquals(
+      ActivityLifecycleIntegration.APP_START_OP,
+      fixture.capturedContexts.single().operation,
+    )
+    assertEquals("App Start Cold", fixture.capturedContexts.single().name)
+  }
+
+  @Test
+  fun `OnNoActivityStartedListener is not registered when standalone flag is off`() {
+    val sut = fixture.getSut { it.tracesSampleRate = 1.0 }
+    sut.register(fixture.scopes, fixture.options)
+    prepareNonActivityAppStart()
+
+    driveNoActivityStarted()
+
+    verify(fixture.scopes, never()).startTransaction(any(), any<TransactionOptions>())
+  }
+
+  @Test
+  fun `OnNoActivityStartedListener is not registered when performance is disabled`() {
+    val sut = fixture.getSut { it.isEnableStandaloneAppStartTracing = true }
+    sut.register(fixture.scopes, fixture.options)
+    prepareNonActivityAppStart()
+
+    driveNoActivityStarted()
+
+    verify(fixture.scopes, never()).startTransaction(any(), any<TransactionOptions>())
+  }
+
+  @Test
+  fun `close clears OnNoActivityStartedListener`() {
+    val sut =
+      fixture.getSut {
+        it.tracesSampleRate = 1.0
+        it.isEnableStandaloneAppStartTracing = true
+      }
+    sut.register(fixture.scopes, fixture.options)
+    sut.close()
+    prepareNonActivityAppStart()
+
+    driveNoActivityStarted()
+
+    verify(fixture.scopes, never()).startTransaction(any(), any<TransactionOptions>())
+  }
+
+  @Test
+  fun `onNoActivityStarted creates standalone App Start Cold transaction and stashes trace id`() {
+    val sut =
+      fixture.getSut {
+        it.tracesSampleRate = 1.0
+        it.isEnableStandaloneAppStartTracing = true
+      }
+    sut.register(fixture.scopes, fixture.options)
+    prepareNonActivityAppStart(appStartType = AppStartType.COLD)
+
+    driveNoActivityStarted()
+
+    assertEquals(1, fixture.capturedContexts.size)
+    val context = fixture.capturedContexts.single()
+    val options = fixture.capturedOptions.single()
+    val transaction = fixture.createdTransactions.single()
+    assertEquals(ActivityLifecycleIntegration.APP_START_OP, context.operation)
+    assertEquals("App Start Cold", context.name)
+    assertEquals(TransactionNameSource.COMPONENT, context.transactionNameSource)
+    assertFalse(options.isBindToScope)
+    assertEquals(DateUtils.millisToNanos(100), options.startTimestamp!!.nanoTimestamp())
+    assertEquals(
+      transaction.spanContext.traceId,
+      AppStartMetrics.getInstance().getAppStartTraceId(),
+    )
+    assertTrue(transaction.isFinished)
+    assertEquals(SpanStatus.OK, transaction.status)
+  }
+
+  @Test
+  fun `onNoActivityStarted creates standalone App Start Warm transaction when appStartType is WARM`() {
+    val sut =
+      fixture.getSut {
+        it.tracesSampleRate = 1.0
+        it.isEnableStandaloneAppStartTracing = true
+      }
+    sut.register(fixture.scopes, fixture.options)
+    prepareNonActivityAppStart(appStartType = AppStartType.WARM)
+
+    driveNoActivityStarted()
+
+    assertEquals(1, fixture.capturedContexts.size)
+    val context = fixture.capturedContexts.single()
+    assertEquals(ActivityLifecycleIntegration.APP_START_OP, context.operation)
+    assertEquals("App Start Warm", context.name)
+    assertEquals(TransactionNameSource.COMPONENT, context.transactionNameSource)
+  }
+
+  @Test
+  fun `onNoActivityStarted does nothing when appStartTimeSpan is incomplete`() {
+    val sut =
+      fixture.getSut {
+        it.tracesSampleRate = 1.0
+        it.isEnableStandaloneAppStartTracing = true
+      }
+    sut.register(fixture.scopes, fixture.options)
+    AppStartMetrics.getInstance().appStartTimeSpan.reset()
+    AppStartMetrics.getInstance().sdkInitTimeSpan.reset()
+
+    driveNoActivityStarted()
+
+    verify(fixture.scopes, never()).startTransaction(any(), any<TransactionOptions>())
   }
 
   @Test
@@ -526,6 +688,28 @@ class ActivityLifecycleIntegrationTest {
     val span = fixture.transaction.children.first()
     assertEquals(SpanStatus.CANCELLED, span.status)
     assertTrue(span.isFinished)
+  }
+
+  @Test
+  fun `When Activity is destroyed, sets standalone appStartTransaction status to cancelled and finish it`() {
+    val sut =
+      fixture.getSut {
+        it.tracesSampleRate = 1.0
+        it.isEnableStandaloneAppStartTracing = true
+      }
+    sut.register(fixture.scopes, fixture.options)
+
+    setAppStartTime()
+
+    val activity = mock<Activity>()
+    sut.onActivityCreated(activity, fixture.bundle)
+    sut.onActivityDestroyed(activity)
+
+    val appStartTransaction =
+      fixture.createdTransactions[
+          transactionIndexForOperation(ActivityLifecycleIntegration.APP_START_OP)]
+    assertEquals(SpanStatus.CANCELLED, appStartTransaction.status)
+    assertTrue(appStartTransaction.isFinished)
   }
 
   @Test
@@ -880,6 +1064,86 @@ class ActivityLifecycleIntegrationTest {
         it.operation.startsWith("app.start.warm") || it.operation.startsWith("app.start.cold")
       }
     assertNull(appStartSpan)
+  }
+
+  @Test
+  fun `launcher activity emits ui load and standalone App Start Cold sharing trace id`() {
+    val sut =
+      fixture.getSut {
+        it.tracesSampleRate = 1.0
+        it.isEnableStandaloneAppStartTracing = true
+      }
+    sut.register(fixture.scopes, fixture.options)
+    setAppStartTime()
+
+    val activity = mock<Activity>()
+    sut.onActivityPreCreated(activity, fixture.bundle)
+    sut.onActivityCreated(activity, fixture.bundle)
+
+    assertEquals(2, fixture.capturedContexts.size)
+    val uiLoadIndex = transactionIndexForOperation(ActivityLifecycleIntegration.UI_LOAD_OP)
+    val appStartIndex = transactionIndexForOperation(ActivityLifecycleIntegration.APP_START_OP)
+    val uiLoadTransaction = fixture.createdTransactions[uiLoadIndex]
+    val appStartTransaction = fixture.createdTransactions[appStartIndex]
+
+    assertEquals(uiLoadTransaction.spanContext.traceId, appStartTransaction.spanContext.traceId)
+    assertFalse(fixture.capturedOptions[appStartIndex].isBindToScope)
+    assertFalse(
+      uiLoadTransaction.children.any {
+        it.operation == ActivityLifecycleIntegration.APP_START_COLD ||
+          it.operation == ActivityLifecycleIntegration.APP_START_WARM
+      }
+    )
+
+    sut.onActivityPostCreated(activity, fixture.bundle)
+    sut.onActivityPreStarted(activity)
+    sut.onActivityStarted(activity)
+    sut.onActivityPostStarted(activity)
+
+    assertTrue(appStartTransaction.children.any { it.operation == "activity.load" })
+  }
+
+  @Test
+  fun `activity following a non-activity start reuses trace id and does not emit second standalone`() {
+    val storedTraceId = SentryId()
+    val sut =
+      fixture.getSut {
+        it.tracesSampleRate = 1.0
+        it.isEnableStandaloneAppStartTracing = true
+      }
+    AppStartMetrics.getInstance().setAppStartTraceId(storedTraceId)
+    sut.register(fixture.scopes, fixture.options)
+    setAppStartTime()
+
+    val activity = mock<Activity>()
+    sut.onActivityCreated(activity, fixture.bundle)
+
+    assertEquals(1, fixture.capturedContexts.size)
+    val context = fixture.capturedContexts.single()
+    assertEquals(ActivityLifecycleIntegration.UI_LOAD_OP, context.operation)
+    assertEquals(storedTraceId, context.traceId)
+    assertNull(AppStartMetrics.getInstance().getAppStartTraceId())
+  }
+
+  @Test
+  fun `standalone flag off launcher activity emits single ui load with nested app start cold child`() {
+    val sut = fixture.getSut { it.tracesSampleRate = 1.0 }
+    sut.register(fixture.scopes, fixture.options)
+    setAppStartTime()
+
+    val activity = mock<Activity>()
+    sut.onActivityCreated(activity, fixture.bundle)
+
+    assertEquals(1, fixture.capturedContexts.size)
+    assertEquals(
+      ActivityLifecycleIntegration.UI_LOAD_OP,
+      fixture.capturedContexts.single().operation,
+    )
+    assertTrue(
+      fixture.createdTransactions.single().children.any {
+        it.operation == ActivityLifecycleIntegration.APP_START_COLD
+      }
+    )
   }
 
   @Test
@@ -1735,6 +1999,41 @@ class ActivityLifecycleIntegrationTest {
     view.viewTreeObserver.dispatchOnDraw()
     view.viewTreeObserver.dispatchOnGlobalLayout()
     shadowOf(Looper.getMainLooper()).idle()
+  }
+
+  private fun driveNoActivityStarted() {
+    AppStartMetrics.getInstance().registerLifecycleCallbacks(mock<Application>())
+    waitForMainLooperIdle()
+  }
+
+  private fun waitForMainLooperIdle() {
+    Handler(Looper.getMainLooper()).post {}
+    shadowOf(Looper.getMainLooper()).idle()
+  }
+
+  private fun prepareNonActivityAppStart(
+    appStartType: AppStartType = AppStartType.COLD,
+    startUptimeMs: Long = 100,
+    endUptimeMs: Long = 200,
+  ) {
+    AppStartMetrics.getInstance().apply {
+      this.appStartType = appStartType
+      setClassLoadedUptimeMs(endUptimeMs)
+      appStartTimeSpan.apply {
+        setStartedAt(startUptimeMs)
+        setStartUnixTimeMs(startUptimeMs)
+      }
+      sdkInitTimeSpan.apply {
+        setStartedAt(startUptimeMs)
+        setStartUnixTimeMs(startUptimeMs)
+      }
+    }
+  }
+
+  private fun transactionIndexForOperation(operation: String): Int {
+    val index = fixture.capturedContexts.indexOfFirst { it.operation == operation }
+    assertTrue(index >= 0)
+    return index
   }
 
   private fun setAppStartTime(

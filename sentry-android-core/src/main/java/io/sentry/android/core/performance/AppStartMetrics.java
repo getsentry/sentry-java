@@ -25,6 +25,7 @@ import io.sentry.android.core.ContextUtils;
 import io.sentry.android.core.CurrentActivityHolder;
 import io.sentry.android.core.SentryAndroidOptions;
 import io.sentry.android.core.internal.util.FirstDrawDoneListener;
+import io.sentry.protocol.SentryId;
 import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.LazyEvaluator;
 import java.util.ArrayList;
@@ -49,6 +50,10 @@ import org.jetbrains.annotations.TestOnly;
  */
 @ApiStatus.Internal
 public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
+  public interface OnNoActivityStartedListener {
+    void onNoActivityStarted();
+  }
+
   public enum AppStartType {
     UNKNOWN,
     COLD,
@@ -84,6 +89,10 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   private boolean shouldSendStartMeasurements = true;
   private final AtomicInteger activeActivitiesCounter = new AtomicInteger();
   private final AtomicBoolean firstDrawDone = new AtomicBoolean(false);
+  private @Nullable OnNoActivityStartedListener noActivityStartedListener;
+  private @Nullable SentryId appStartTraceId;
+  private @Nullable Application applicationContext;
+  private @Nullable ApplicationStartInfo cachedStartInfo;
 
   public static @NotNull AppStartMetrics getInstance() {
     if (instance == null) {
@@ -159,6 +168,31 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   @VisibleForTesting
   public void setAppLaunchedInForeground(final boolean appLaunchedInForeground) {
     this.appLaunchedInForeground.setValue(appLaunchedInForeground);
+  }
+
+  public void setOnNoActivityStartedListener(final @Nullable OnNoActivityStartedListener listener) {
+    this.noActivityStartedListener = listener;
+  }
+
+  /** Trace ID from a non-activity app start transaction, to be reused by a later activity. */
+  public @Nullable SentryId getAppStartTraceId() {
+    return appStartTraceId;
+  }
+
+  public void setAppStartTraceId(final @Nullable SentryId traceId) {
+    this.appStartTraceId = traceId;
+  }
+
+  /**
+   * Returns a valid app start time span, bypassing the foreground check. Tries appStartSpan first,
+   * falls back to sdkInitTimeSpan. Used for non-activity starts where appLaunchedInForeground is
+   * false.
+   */
+  public @NotNull TimeSpan getAppStartTimeSpanDirect() {
+    if (appStartSpan.hasStarted() && appStartSpan.hasStopped()) {
+      return appStartSpan;
+    }
+    return sdkInitTimeSpan;
   }
 
   /**
@@ -258,6 +292,10 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     firstDrawDone.set(false);
     activeActivitiesCounter.set(0);
     firstIdle = -1;
+    noActivityStartedListener = null;
+    appStartTraceId = null;
+    applicationContext = null;
+    cachedStartInfo = null;
   }
 
   public @Nullable ITransactionProfiler getAppStartProfiler() {
@@ -336,6 +374,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     }
     isCallbackRegistered = true;
     appLaunchedInForeground.resetValue();
+    applicationContext = application;
     application.registerActivityLifecycleCallbacks(instance);
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
@@ -346,6 +385,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
             activityManager.getHistoricalProcessStartReasons(1);
         if (!historicalProcessStartReasons.isEmpty()) {
           final @NotNull ApplicationStartInfo info = historicalProcessStartReasons.get(0);
+          cachedStartInfo = info;
           if (info.getStartupState() == ApplicationStartInfo.STARTUP_STATE_STARTED) {
             if (info.getStartType() == ApplicationStartInfo.START_TYPE_COLD) {
               appStartType = AppStartType.COLD;
@@ -357,7 +397,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
       }
     }
 
-    if (appStartType == AppStartType.UNKNOWN && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
       Looper.getMainLooper()
           .getQueue()
           .addIdleHandler(
@@ -369,7 +409,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
                   return false;
                 }
               });
-    } else if (appStartType == AppStartType.UNKNOWN) {
+    } else {
       // We post on the main thread a task to post a check on the main thread. On Pixel devices
       // (possibly others) the first task posted on the main thread is called before the
       // Activity.onCreate callback. This is a workaround for that, so that the Activity.onCreate
@@ -392,6 +432,15 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     if (activeActivitiesCounter.get() == 0) {
       appLaunchedInForeground.setValue(false);
 
+      // Reaching this callback means Application.onCreate() finished with no Activity created,
+      // which is definitionally a cold start for this process. On API < 35 we can't resolve the
+      // start type via ApplicationStartInfo, so appStartType is still UNKNOWN at this point —
+      // default it to COLD so the standalone transaction (and PerformanceAndroidEventProcessor)
+      // classify it correctly.
+      if (appStartType == AppStartType.UNKNOWN) {
+        appStartType = AppStartType.COLD;
+      }
+
       // we stop the app start profilers, as they are useless and likely to timeout
       if (appStartProfiler != null && appStartProfiler.isRunning()) {
         appStartProfiler.close();
@@ -401,7 +450,48 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
         appStartContinuousProfiler.close(true);
         appStartContinuousProfiler = null;
       }
+
+      resolveNonActivityAppStartEndTime();
+
+      if (noActivityStartedListener != null) {
+        noActivityStartedListener.onNoActivityStarted();
+      }
     }
+  }
+
+  private void resolveNonActivityAppStartEndTime() {
+    // Priority 1: Gradle plugin instrumented onApplicationPostCreate
+    if (applicationOnCreate.hasStopped()) {
+      final long stopUptimeMs =
+          applicationOnCreate.getStartUptimeMs() + applicationOnCreate.getDurationMs();
+      appStartSpan.setStoppedAt(stopUptimeMs);
+      return;
+    }
+
+    // Priority 2: API 35+ ApplicationStartInfo (cached from registerLifecycleCallbacks)
+    if (cachedStartInfo != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+      try {
+        final @NotNull Map<Integer, Long> timestamps = cachedStartInfo.getStartupTimestamps();
+        // Timestamps are in nanoseconds (monotonic clock)
+        final @Nullable Long onCreateNanos =
+            timestamps.get(ApplicationStartInfo.START_TIMESTAMP_APPLICATION_ONCREATE);
+        if (onCreateNanos != null && onCreateNanos > 0) {
+          final long onCreateUptimeMs = TimeUnit.NANOSECONDS.toMillis(onCreateNanos);
+          appStartSpan.setStoppedAt(onCreateUptimeMs);
+
+          // Also fill applicationOnCreate stop time if not already set by Gradle plugin
+          if (applicationOnCreate.hasStarted() && applicationOnCreate.hasNotStopped()) {
+            applicationOnCreate.setStoppedAt(onCreateUptimeMs);
+          }
+          return;
+        }
+      } catch (Throwable ignored) {
+        // best effort
+      }
+    }
+
+    // Priority 3: Process init end time (CLASS_LOADED_UPTIME_MS) — always available
+    appStartSpan.setStoppedAt(CLASS_LOADED_UPTIME_MS);
   }
 
   @Override
