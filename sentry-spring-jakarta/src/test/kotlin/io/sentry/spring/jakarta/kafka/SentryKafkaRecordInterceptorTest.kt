@@ -7,13 +7,16 @@ import io.sentry.Sentry
 import io.sentry.SentryOptions
 import io.sentry.SentryTraceHeader
 import io.sentry.SentryTracer
+import io.sentry.SpanDataConvention
 import io.sentry.TransactionContext
 import io.sentry.test.initForTest
+import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import org.apache.kafka.clients.consumer.Consumer
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.header.internals.RecordHeaders
@@ -24,6 +27,7 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.kafka.listener.RecordInterceptor
+import org.springframework.kafka.support.KafkaHeaders
 
 class SentryKafkaRecordInterceptorTest {
 
@@ -32,6 +36,7 @@ class SentryKafkaRecordInterceptorTest {
   private lateinit var options: SentryOptions
   private lateinit var consumer: Consumer<String, String>
   private lateinit var lifecycleToken: ISentryLifecycleToken
+  private lateinit var transaction: SentryTracer
 
   @BeforeTest
   fun setup() {
@@ -52,8 +57,9 @@ class SentryKafkaRecordInterceptorTest {
     whenever(forkedScopes.options).thenReturn(options)
     whenever(forkedScopes.makeCurrent()).thenReturn(lifecycleToken)
 
-    val tx = SentryTracer(TransactionContext("queue.process", "queue.process"), forkedScopes)
-    whenever(forkedScopes.startTransaction(any<TransactionContext>(), any())).thenReturn(tx)
+    transaction = SentryTracer(TransactionContext("queue.process", "queue.process"), forkedScopes)
+    whenever(forkedScopes.startTransaction(any<TransactionContext>(), any()))
+      .thenReturn(transaction)
   }
 
   @AfterTest
@@ -81,6 +87,7 @@ class SentryKafkaRecordInterceptorTest {
     sentryTrace: String? = null,
     baggage: String? = null,
     enqueuedTime: Long? = null,
+    deliveryAttempt: Int? = null,
   ): ConsumerRecord<String, String> {
     val headers = RecordHeaders()
     sentryTrace?.let {
@@ -93,6 +100,12 @@ class SentryKafkaRecordInterceptorTest {
       headers.add(
         SentryProducerInterceptor.SENTRY_ENQUEUED_TIME_HEADER,
         it.toString().toByteArray(StandardCharsets.UTF_8),
+      )
+    }
+    deliveryAttempt?.let {
+      headers.add(
+        KafkaHeaders.DELIVERY_ATTEMPT,
+        ByteBuffer.allocate(Int.SIZE_BYTES).putInt(it).array(),
       )
     }
     val record = ConsumerRecord<String, String>("my-topic", 0, 0L, "key", "value")
@@ -130,6 +143,26 @@ class SentryKafkaRecordInterceptorTest {
     withMockSentry { interceptor.intercept(record, consumer) }
 
     verify(forkedScopes).continueTrace(org.mockito.kotlin.isNull(), org.mockito.kotlin.isNull())
+  }
+
+  @Test
+  fun `sets retry count from delivery attempt header`() {
+    val interceptor = SentryKafkaRecordInterceptor<String, String>(scopes)
+    val record = createRecordWithHeaders(deliveryAttempt = 3)
+
+    withMockSentry { interceptor.intercept(record, consumer) }
+
+    assertEquals(2, transaction.data?.get(SpanDataConvention.MESSAGING_MESSAGE_RETRY_COUNT))
+  }
+
+  @Test
+  fun `does not set retry count when delivery attempt header is missing`() {
+    val interceptor = SentryKafkaRecordInterceptor<String, String>(scopes)
+    val record = createRecord()
+
+    withMockSentry { interceptor.intercept(record, consumer) }
+
+    assertNull(transaction.data?.get(SpanDataConvention.MESSAGING_MESSAGE_RETRY_COUNT))
   }
 
   @Test
