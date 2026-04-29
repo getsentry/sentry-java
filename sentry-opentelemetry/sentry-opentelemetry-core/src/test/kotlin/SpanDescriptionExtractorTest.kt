@@ -266,12 +266,46 @@ class SpanDescriptionExtractorTest {
   }
 
   @Test
+  fun `maps messaging send operation type to queue publish op`() {
+    givenAttributes(
+      mapOf(
+        MessagingIncubatingAttributes.MESSAGING_SYSTEM to "kafka",
+        MessagingIncubatingAttributes.MESSAGING_DESTINATION_NAME to "my-topic",
+        MessagingIncubatingAttributes.MESSAGING_OPERATION_TYPE to "send",
+      )
+    )
+
+    val info = whenExtractingSpanInfo(queueTracingEnabled = true)
+
+    assertEquals("queue.publish", info.op)
+    assertEquals("my-topic", info.description)
+    assertEquals(TransactionNameSource.TASK, info.transactionNameSource)
+  }
+
+  @Test
   fun `maps messaging process operation type to queue process op`() {
     givenAttributes(
       mapOf(
         MessagingIncubatingAttributes.MESSAGING_SYSTEM to "kafka",
         MessagingIncubatingAttributes.MESSAGING_DESTINATION_NAME to "my-topic",
         MessagingIncubatingAttributes.MESSAGING_OPERATION_TYPE to "process",
+      )
+    )
+
+    val info = whenExtractingSpanInfo(queueTracingEnabled = true)
+
+    assertEquals("queue.process", info.op)
+    assertEquals("my-topic", info.description)
+    assertEquals(TransactionNameSource.TASK, info.transactionNameSource)
+  }
+
+  @Test
+  fun `maps messaging deliver operation type to queue process op`() {
+    givenAttributes(
+      mapOf(
+        MessagingIncubatingAttributes.MESSAGING_SYSTEM to "kafka",
+        MessagingIncubatingAttributes.MESSAGING_DESTINATION_NAME to "my-topic",
+        MessagingIncubatingAttributes.MESSAGING_OPERATION_TYPE to "deliver",
       )
     )
 
