@@ -61,6 +61,10 @@ dependencies {
   implementation(libs.springboot4.starter.cache)
   implementation(libs.caffeine)
 
+  // kafka
+  implementation(libs.spring.kafka4)
+  implementation(projects.sentryKafka)
+
   // database query tracing
   implementation(projects.sentryJdbc)
   runtimeOnly(libs.hsqldb)
