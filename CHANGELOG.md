@@ -5,7 +5,7 @@
 ### Deprecations
 
 - Rename `SentryUserFeedbackDialog` to `SentryUserFeedbackForm` and `Sentry.showUserFeedbackDialog()` to `Sentry.showUserFeedbackForm()` ([#5349](https://github.com/getsentry/sentry-java/pull/5349))
-  - The old `SentryUserFeedbackDialog` class and `Sentry.showUserFeedbackDialog()` methods are deprecated but still work
+  - The old `SentryUserFeedbackDialog` class and `Sentry.showUserFeedbackDialog()` methods are deprecated but still work and will be removed in the next major version
 
 ### Dependencies
 
