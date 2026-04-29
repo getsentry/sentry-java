@@ -252,6 +252,7 @@ public class SentryAutoConfiguration {
     @Configuration(proxyBeanMethods = false)
     @ConditionalOnClass(KafkaTemplate.class)
     @ConditionalOnProperty(name = "sentry.enable-queue-tracing", havingValue = "true")
+    @ConditionalOnMissingClass("io.sentry.opentelemetry.SentryAutoConfigurationCustomizerProvider")
     @Open
     static class SentryKafkaQueueConfiguration {
 

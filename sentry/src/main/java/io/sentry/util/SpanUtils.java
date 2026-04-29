@@ -40,6 +40,8 @@ public final class SpanUtils {
       origins.add("auto.http.spring7.resttemplate");
       origins.add("auto.http.openfeign");
       origins.add("auto.http.ktor-client");
+      origins.add("auto.queue.spring_jakarta.kafka.producer");
+      origins.add("auto.queue.spring_jakarta.kafka.consumer");
     }
 
     if (SentryOpenTelemetryMode.AGENT == mode) {

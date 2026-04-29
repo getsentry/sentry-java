@@ -1,10 +1,12 @@
 package io.sentry.spring.boot.jakarta
 
+import io.sentry.opentelemetry.SentryAutoConfigurationCustomizerProvider
 import io.sentry.spring.jakarta.kafka.SentryKafkaConsumerBeanPostProcessor
 import io.sentry.spring.jakarta.kafka.SentryKafkaProducerBeanPostProcessor
 import kotlin.test.Test
 import org.assertj.core.api.Assertions.assertThat
 import org.springframework.boot.autoconfigure.AutoConfigurations
+import org.springframework.boot.test.context.FilteredClassLoader
 import org.springframework.boot.test.context.runner.ApplicationContextRunner
 
 class SentryKafkaAutoConfigurationTest {
@@ -24,17 +26,24 @@ class SentryKafkaAutoConfigurationTest {
         "sentry.debug=false",
       )
 
+  /** Hide the OTel customizer so conditions evaluate as "no OTel present". */
+  private val noOtelClassLoader =
+    FilteredClassLoader(SentryAutoConfigurationCustomizerProvider::class.java)
+
   @Test
   fun `registers Kafka BPPs when queue tracing is enabled`() {
-    contextRunner.withPropertyValues("sentry.enable-queue-tracing=true").run { context ->
-      assertThat(context).hasSingleBean(SentryKafkaProducerBeanPostProcessor::class.java)
-      assertThat(context).hasSingleBean(SentryKafkaConsumerBeanPostProcessor::class.java)
-    }
+    contextRunner
+      .withClassLoader(noOtelClassLoader)
+      .withPropertyValues("sentry.enable-queue-tracing=true")
+      .run { context ->
+        assertThat(context).hasSingleBean(SentryKafkaProducerBeanPostProcessor::class.java)
+        assertThat(context).hasSingleBean(SentryKafkaConsumerBeanPostProcessor::class.java)
+      }
   }
 
   @Test
   fun `does not register Kafka BPPs when queue tracing is disabled`() {
-    contextRunner.run { context ->
+    contextRunner.withClassLoader(noOtelClassLoader).run { context ->
       assertThat(context).doesNotHaveBean(SentryKafkaProducerBeanPostProcessor::class.java)
       assertThat(context).doesNotHaveBean(SentryKafkaConsumerBeanPostProcessor::class.java)
     }
@@ -42,7 +51,18 @@ class SentryKafkaAutoConfigurationTest {
 
   @Test
   fun `does not register Kafka BPPs when queue tracing is explicitly false`() {
-    contextRunner.withPropertyValues("sentry.enable-queue-tracing=false").run { context ->
+    contextRunner
+      .withClassLoader(noOtelClassLoader)
+      .withPropertyValues("sentry.enable-queue-tracing=false")
+      .run { context ->
+        assertThat(context).doesNotHaveBean(SentryKafkaProducerBeanPostProcessor::class.java)
+        assertThat(context).doesNotHaveBean(SentryKafkaConsumerBeanPostProcessor::class.java)
+      }
+  }
+
+  @Test
+  fun `does not register Kafka BPPs when OpenTelemetry integration is present`() {
+    contextRunner.withPropertyValues("sentry.enable-queue-tracing=true").run { context ->
       assertThat(context).doesNotHaveBean(SentryKafkaProducerBeanPostProcessor::class.java)
       assertThat(context).doesNotHaveBean(SentryKafkaConsumerBeanPostProcessor::class.java)
     }
