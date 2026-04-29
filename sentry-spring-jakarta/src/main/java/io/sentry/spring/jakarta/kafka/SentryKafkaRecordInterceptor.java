@@ -4,11 +4,13 @@ import io.sentry.BaggageHeader;
 import io.sentry.IScopes;
 import io.sentry.ISentryLifecycleToken;
 import io.sentry.ITransaction;
+import io.sentry.Sentry;
 import io.sentry.SentryTraceHeader;
 import io.sentry.SpanDataConvention;
 import io.sentry.SpanStatus;
 import io.sentry.TransactionContext;
 import io.sentry.TransactionOptions;
+import io.sentry.util.SpanUtils;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
@@ -48,13 +50,13 @@ public final class SentryKafkaRecordInterceptor<K, V> implements RecordIntercept
   @Override
   public @Nullable ConsumerRecord<K, V> intercept(
       final @NotNull ConsumerRecord<K, V> record, final @NotNull Consumer<K, V> consumer) {
-    if (!scopes.getOptions().isEnableQueueTracing()) {
+    if (!scopes.getOptions().isEnableQueueTracing() || isIgnored()) {
       return delegateIntercept(record, consumer);
     }
 
     finishStaleContext();
 
-    final @NotNull IScopes forkedScopes = scopes.forkedScopes("SentryKafkaRecordInterceptor");
+    final @NotNull IScopes forkedScopes = Sentry.forkedRootScopes("SentryKafkaRecordInterceptor");
     final @NotNull ISentryLifecycleToken lifecycleToken = forkedScopes.makeCurrent();
 
     final @Nullable TransactionContext transactionContext = continueTrace(forkedScopes, record);
@@ -103,6 +105,10 @@ public final class SentryKafkaRecordInterceptor<K, V> implements RecordIntercept
   @Override
   public void clearThreadState(final @NotNull Consumer<?, ?> consumer) {
     finishStaleContext();
+  }
+
+  private boolean isIgnored() {
+    return SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOrigins(), TRACE_ORIGIN);
   }
 
   private @Nullable ConsumerRecord<K, V> delegateIntercept(
