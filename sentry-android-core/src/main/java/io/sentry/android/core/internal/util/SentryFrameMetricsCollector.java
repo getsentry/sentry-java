@@ -190,7 +190,7 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
 
           // store frames with delay for getFramesDelay queries
           if (delayNanos > 0) {
-            if (delayedFrames.size() <= MAX_FRAMES_COUNT) {
+            if (delayedFrames.size() < MAX_FRAMES_COUNT) {
               delayedFrames.add(new DelayedFrame(frameStartTime, lastFrameEndNanos, delayNanos));
             }
             pruneOldFrames(lastFrameEndNanos);
@@ -450,7 +450,9 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
 
     @Override
     public int compareTo(final @NotNull DelayedFrame o) {
-      return Long.compare(this.endNanos, o.endNanos);
+      int cmp = Long.compare(this.endNanos, o.endNanos);
+      if (cmp != 0) return cmp;
+      return Long.compare(this.startNanos, o.startNanos);
     }
   }
 
