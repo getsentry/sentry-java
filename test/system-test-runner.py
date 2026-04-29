@@ -442,6 +442,7 @@ class SystemTestRunner:
 
         if self.module_requires_kafka_profile(sample_module):
             env["SPRING_PROFILES_ACTIVE"] = "kafka"
+            env["SENTRY_ENABLE_QUEUE_TRACING"] = "true"
             print("Enabling Spring profile: kafka")
         else:
             env.pop("SPRING_PROFILES_ACTIVE", None)
