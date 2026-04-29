@@ -208,4 +208,64 @@ class SentryKafkaRecordInterceptorTest {
       SentryKafkaRecordInterceptor.TRACE_ORIGIN,
     )
   }
+
+  @Test
+  fun `clearThreadState cleans up stale context`() {
+    val interceptor = SentryKafkaRecordInterceptor<String, String>(scopes)
+    val record = createRecord()
+
+    // intercept sets up context in ThreadLocal
+    interceptor.intercept(record, consumer)
+
+    // clearThreadState should clean up without success/failure being called
+    interceptor.clearThreadState(consumer)
+
+    // lifecycle token should have been closed
+    verify(lifecycleToken).close()
+  }
+
+  @Test
+  fun `clearThreadState is no-op when no context exists`() {
+    val interceptor = SentryKafkaRecordInterceptor<String, String>(scopes)
+
+    // should not throw
+    interceptor.clearThreadState(consumer)
+  }
+
+  @Test
+  fun `intercept cleans up stale context from previous record`() {
+    val lifecycleToken2 = mock<ISentryLifecycleToken>()
+    val forkedScopes2 = mock<IScopes>()
+    whenever(forkedScopes2.options).thenReturn(options)
+    whenever(forkedScopes2.makeCurrent()).thenReturn(lifecycleToken2)
+    val tx2 = SentryTracer(TransactionContext("queue.process", "queue.process"), forkedScopes2)
+    whenever(forkedScopes2.startTransaction(any<TransactionContext>(), any())).thenReturn(tx2)
+
+    var callCount = 0
+    whenever(scopes.forkedScopes(any())).thenAnswer {
+      callCount++
+      if (callCount == 1) {
+        val forkedScopes1 = mock<IScopes>()
+        whenever(forkedScopes1.options).thenReturn(options)
+        whenever(forkedScopes1.makeCurrent()).thenReturn(lifecycleToken)
+        val tx1 = SentryTracer(TransactionContext("queue.process", "queue.process"), forkedScopes1)
+        whenever(forkedScopes1.startTransaction(any<TransactionContext>(), any())).thenReturn(tx1)
+        forkedScopes1
+      } else {
+        forkedScopes2
+      }
+    }
+
+    val interceptor = SentryKafkaRecordInterceptor<String, String>(scopes)
+    val record = createRecord()
+
+    // First intercept sets up context
+    interceptor.intercept(record, consumer)
+
+    // Second intercept without success/failure — should clean up stale context first
+    interceptor.intercept(record, consumer)
+
+    // First lifecycle token should have been closed by the defensive cleanup
+    verify(lifecycleToken).close()
+  }
 }
