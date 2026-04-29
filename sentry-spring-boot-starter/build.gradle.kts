@@ -1,6 +1,5 @@
 import net.ltgt.gradle.errorprone.errorprone
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import org.springframework.boot.gradle.plugin.SpringBootPlugin
 
 plugins {
   `java-library`
@@ -9,7 +8,6 @@ plugins {
   jacoco
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
-  alias(libs.plugins.springboot2) apply false
 }
 
 tasks.withType<KotlinCompile>().configureEach {
@@ -22,7 +20,7 @@ dependencies {
   api(projects.sentrySpringBoot)
   api(libs.springboot.starter)
 
-  annotationProcessor(platform(SpringBootPlugin.BOM_COORDINATES))
+  annotationProcessor(platform(libs.springboot2.bom))
   annotationProcessor(Config.AnnotationProcessors.springBootAutoConfigure)
   annotationProcessor(Config.AnnotationProcessors.springBootConfiguration)
 
