@@ -676,12 +676,18 @@ class SentryFrameMetricsCollectorTest {
     val choreographer = collector.getProperty<Choreographer>("choreographer")
     choreographer.injectForField("mLastFrameTimeNanos", TimeUnit.SECONDS.toNanos(5))
 
-    // query a range that only partially overlaps the frozen frame
-    // the frame starts around 50ns (INTENDED_VSYNC_TIMESTAMP), so querying from a later point
-    // should reduce the delay proportionally
-    val result = collector.getFramesDelay(0, TimeUnit.SECONDS.toNanos(5))
-    assertTrue(result.delaySeconds > 0)
-    assertEquals(1, result.framesContributingToDelayCount)
+    // The frame's delay interval is roughly [~16ms, ~1000ms].
+    // Query from 500ms so the range clips the delay interval in half.
+    val queryStart = TimeUnit.MILLISECONDS.toNanos(500)
+    val queryEnd = TimeUnit.SECONDS.toNanos(5)
+
+    val fullResult = collector.getFramesDelay(0, queryEnd)
+    val partialResult = collector.getFramesDelay(queryStart, queryEnd)
+
+    // partial overlap should yield less delay than the full range
+    assertTrue(partialResult.delaySeconds > 0)
+    assertTrue(partialResult.delaySeconds < fullResult.delaySeconds)
+    assertEquals(1, partialResult.framesContributingToDelayCount)
   }
 
   @Test
