@@ -758,7 +758,7 @@ public final class SentryAndroidOptions extends SentryOptions {
         return;
       }
 
-      new SentryUserFeedbackForm.Builder(activity)
+      new SentryUserFeedbackDialog.Builder(activity)
           .associatedEventId(associatedEventId)
           .configurator(configurator)
           .create()

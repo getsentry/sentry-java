@@ -98,6 +98,7 @@ public final class SentryUserFeedbackDialog extends SentryUserFeedbackForm {
       return this;
     }
 
+    @Deprecated
     @Override
     public SentryUserFeedbackDialog create() {
       return new SentryUserFeedbackDialog(
