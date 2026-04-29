@@ -21,6 +21,18 @@ import org.springframework.kafka.listener.RecordInterceptor;
 public final class SentryKafkaConsumerBeanPostProcessor
     implements BeanPostProcessor, PriorityOrdered {
 
+  private static final @NotNull String RECORD_INTERCEPTOR_FIELD_NAME = "recordInterceptor";
+
+  private final @NotNull String recordInterceptorFieldName;
+
+  public SentryKafkaConsumerBeanPostProcessor() {
+    this(RECORD_INTERCEPTOR_FIELD_NAME);
+  }
+
+  SentryKafkaConsumerBeanPostProcessor(final @NotNull String recordInterceptorFieldName) {
+    this.recordInterceptorFieldName = recordInterceptorFieldName;
+  }
+
   private static final class InterceptorReadFailedException extends Exception {
     private static final long serialVersionUID = 1L;
 
@@ -71,7 +83,7 @@ public final class SentryKafkaConsumerBeanPostProcessor
       throws InterceptorReadFailedException {
     try {
       final @NotNull Field field =
-          AbstractKafkaListenerContainerFactory.class.getDeclaredField("recordInterceptor");
+          AbstractKafkaListenerContainerFactory.class.getDeclaredField(recordInterceptorFieldName);
       field.setAccessible(true);
       return (RecordInterceptor<?, ?>) field.get(factory);
     } catch (NoSuchFieldException | IllegalAccessException | RuntimeException e) {
