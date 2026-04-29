@@ -55,9 +55,10 @@ public final class SentryKafkaRecordInterceptor<K, V> implements RecordIntercept
     final @NotNull IScopes forkedScopes = scopes.forkedScopes("SentryKafkaRecordInterceptor");
     final @NotNull ISentryLifecycleToken lifecycleToken = forkedScopes.makeCurrent();
 
-    continueTrace(forkedScopes, record);
+    final @Nullable TransactionContext transactionContext = continueTrace(forkedScopes, record);
 
-    final @Nullable ITransaction transaction = startTransaction(forkedScopes, record);
+    final @Nullable ITransaction transaction =
+        startTransaction(forkedScopes, record, transactionContext);
     currentContext.set(new SentryRecordContext(lifecycleToken, transaction));
 
     return delegateIntercept(record, consumer);
@@ -105,28 +106,35 @@ public final class SentryKafkaRecordInterceptor<K, V> implements RecordIntercept
     return record;
   }
 
-  private void continueTrace(
+  private @Nullable TransactionContext continueTrace(
       final @NotNull IScopes forkedScopes, final @NotNull ConsumerRecord<K, V> record) {
     final @Nullable String sentryTrace = headerValue(record, SentryTraceHeader.SENTRY_TRACE_HEADER);
     final @Nullable String baggage = headerValue(record, BaggageHeader.BAGGAGE_HEADER);
     final @Nullable List<String> baggageHeaders =
         baggage != null ? Collections.singletonList(baggage) : null;
-    forkedScopes.continueTrace(sentryTrace, baggageHeaders);
+    return forkedScopes.continueTrace(sentryTrace, baggageHeaders);
   }
 
   private @Nullable ITransaction startTransaction(
-      final @NotNull IScopes forkedScopes, final @NotNull ConsumerRecord<K, V> record) {
+      final @NotNull IScopes forkedScopes,
+      final @NotNull ConsumerRecord<K, V> record,
+      final @Nullable TransactionContext transactionContext) {
     if (!forkedScopes.getOptions().isTracingEnabled()) {
       return null;
     }
+
+    final @NotNull TransactionContext txContext =
+        transactionContext != null
+            ? transactionContext
+            : new TransactionContext("queue.process", "queue.process");
+    txContext.setName("queue.process");
+    txContext.setOperation("queue.process");
 
     final @NotNull TransactionOptions txOptions = new TransactionOptions();
     txOptions.setOrigin(TRACE_ORIGIN);
     txOptions.setBindToScope(true);
 
-    final @NotNull ITransaction transaction =
-        forkedScopes.startTransaction(
-            new TransactionContext("queue.process", "queue.process"), txOptions);
+    final @NotNull ITransaction transaction = forkedScopes.startTransaction(txContext, txOptions);
 
     if (transaction.isNoOp()) {
       return null;
