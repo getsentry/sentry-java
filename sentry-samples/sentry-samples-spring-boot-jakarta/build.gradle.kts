@@ -59,6 +59,9 @@ dependencies {
   implementation(libs.springboot3.starter.cache)
   implementation(libs.caffeine)
 
+  // kafka
+  implementation(libs.spring.kafka3)
+
   // OpenFeature SDK
   implementation(libs.openfeature)
 
