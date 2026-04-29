@@ -10,25 +10,33 @@ import android.widget.Button;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * @deprecated `SentryUserFeedbackButton` will be removed in the next major version
+ */
+@Deprecated
 public class SentryUserFeedbackButton extends Button {
 
   private @Nullable OnClickListener delegate;
 
+  @Deprecated
   public SentryUserFeedbackButton(Context context) {
     super(context);
     init(context, null, 0, 0);
   }
 
+  @Deprecated
   public SentryUserFeedbackButton(Context context, AttributeSet attrs) {
     super(context, attrs);
     init(context, attrs, 0, 0);
   }
 
+  @Deprecated
   public SentryUserFeedbackButton(Context context, AttributeSet attrs, int defStyleAttr) {
     super(context, attrs, defStyleAttr);
     init(context, attrs, defStyleAttr, 0);
   }
 
+  @Deprecated
   public SentryUserFeedbackButton(
       Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
     super(context, attrs, defStyleAttr, defStyleRes);
