@@ -62,8 +62,7 @@ public final class SentryUserFeedbackDialog extends SentryUserFeedbackForm {
      */
     @Deprecated
     public Builder(
-        final @NotNull Context context,
-        final @Nullable SentryUserFeedbackForm.OptionsConfiguration configuration) {
+        final @NotNull Context context, final @Nullable OptionsConfiguration configuration) {
       super(context, configuration);
     }
 
@@ -80,7 +79,7 @@ public final class SentryUserFeedbackDialog extends SentryUserFeedbackForm {
     public Builder(
         final @NotNull Context context,
         final int themeResId,
-        final @Nullable SentryUserFeedbackForm.OptionsConfiguration configuration) {
+        final @Nullable OptionsConfiguration configuration) {
       super(context, themeResId, configuration);
     }
 

@@ -502,8 +502,8 @@ public final class io/sentry/android/core/SentryUserFeedbackDialog : io/sentry/a
 public class io/sentry/android/core/SentryUserFeedbackDialog$Builder : io/sentry/android/core/SentryUserFeedbackForm$Builder {
 	public fun <init> (Landroid/content/Context;)V
 	public fun <init> (Landroid/content/Context;I)V
-	public fun <init> (Landroid/content/Context;ILio/sentry/android/core/SentryUserFeedbackForm$OptionsConfiguration;)V
-	public fun <init> (Landroid/content/Context;Lio/sentry/android/core/SentryUserFeedbackForm$OptionsConfiguration;)V
+	public fun <init> (Landroid/content/Context;ILio/sentry/android/core/SentryUserFeedbackDialog$OptionsConfiguration;)V
+	public fun <init> (Landroid/content/Context;Lio/sentry/android/core/SentryUserFeedbackDialog$OptionsConfiguration;)V
 	public fun associatedEventId (Lio/sentry/protocol/SentryId;)Lio/sentry/android/core/SentryUserFeedbackDialog$Builder;
 	public synthetic fun associatedEventId (Lio/sentry/protocol/SentryId;)Lio/sentry/android/core/SentryUserFeedbackForm$Builder;
 	public fun configurator (Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)Lio/sentry/android/core/SentryUserFeedbackDialog$Builder;
