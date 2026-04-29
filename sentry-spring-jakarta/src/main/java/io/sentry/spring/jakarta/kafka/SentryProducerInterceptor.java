@@ -1,6 +1,7 @@
 package io.sentry.spring.jakarta.kafka;
 
 import io.sentry.BaggageHeader;
+import io.sentry.DateUtils;
 import io.sentry.IScopes;
 import io.sentry.ISpan;
 import io.sentry.SentryTraceHeader;
@@ -107,6 +108,7 @@ public final class SentryProducerInterceptor<K, V> implements ProducerIntercepto
     headers.remove(SENTRY_ENQUEUED_TIME_HEADER);
     headers.add(
         SENTRY_ENQUEUED_TIME_HEADER,
-        String.valueOf(System.currentTimeMillis()).getBytes(StandardCharsets.UTF_8));
+        String.valueOf(DateUtils.millisToSeconds(System.currentTimeMillis()))
+            .getBytes(StandardCharsets.UTF_8));
   }
 }

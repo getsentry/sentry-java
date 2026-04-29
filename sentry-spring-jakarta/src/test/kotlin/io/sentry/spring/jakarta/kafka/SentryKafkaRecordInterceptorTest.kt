@@ -17,6 +17,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import org.apache.kafka.clients.consumer.Consumer
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.header.internals.RecordHeaders
@@ -86,7 +87,7 @@ class SentryKafkaRecordInterceptorTest {
   private fun createRecordWithHeaders(
     sentryTrace: String? = null,
     baggage: String? = null,
-    enqueuedTime: Long? = null,
+    enqueuedTime: String? = null,
     deliveryAttempt: Int? = null,
   ): ConsumerRecord<String, String> {
     val headers = RecordHeaders()
@@ -99,7 +100,7 @@ class SentryKafkaRecordInterceptorTest {
     enqueuedTime?.let {
       headers.add(
         SentryProducerInterceptor.SENTRY_ENQUEUED_TIME_HEADER,
-        it.toString().toByteArray(StandardCharsets.UTF_8),
+        it.toByteArray(StandardCharsets.UTF_8),
       )
     }
     deliveryAttempt?.let {
@@ -163,6 +164,18 @@ class SentryKafkaRecordInterceptorTest {
     withMockSentry { interceptor.intercept(record, consumer) }
 
     assertNull(transaction.data?.get(SpanDataConvention.MESSAGING_MESSAGE_RETRY_COUNT))
+  }
+
+  @Test
+  fun `sets receive latency from enqueued time in epoch seconds`() {
+    val interceptor = SentryKafkaRecordInterceptor<String, String>(scopes)
+    val enqueuedTime = (System.currentTimeMillis() / 1000.0 - 1.0).toString()
+    val record = createRecordWithHeaders(enqueuedTime = enqueuedTime)
+
+    withMockSentry { interceptor.intercept(record, consumer) }
+
+    val latency = transaction.data?.get(SpanDataConvention.MESSAGING_MESSAGE_RECEIVE_LATENCY)
+    assertTrue(latency is Long && latency >= 0)
   }
 
   @Test
