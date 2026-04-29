@@ -4,6 +4,7 @@
 
 ### Features
 
+- Add Kafka consumer instrumentation for Spring Boot 3 ([#5255](https://github.com/getsentry/sentry-java/pull/5255))
 - Add Kafka producer instrumentation for Spring Boot 3 ([#5254](https://github.com/getsentry/sentry-java/pull/5254))
 - Add `enableQueueTracing` option and messaging span data conventions ([#5250](https://github.com/getsentry/sentry-java/pull/5250))
 - Prevent cross-organization trace continuation ([#5136](https://github.com/getsentry/sentry-java/pull/5136))

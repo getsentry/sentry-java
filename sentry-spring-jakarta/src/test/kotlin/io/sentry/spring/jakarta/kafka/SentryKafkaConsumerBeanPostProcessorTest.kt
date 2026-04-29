@@ -1,0 +1,58 @@
+package io.sentry.spring.jakarta.kafka
+
+import kotlin.test.Test
+import kotlin.test.assertSame
+import kotlin.test.assertTrue
+import org.mockito.kotlin.mock
+import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory
+import org.springframework.kafka.core.ConsumerFactory
+
+class SentryKafkaConsumerBeanPostProcessorTest {
+
+  @Test
+  fun `wraps ConcurrentKafkaListenerContainerFactory with SentryKafkaRecordInterceptor`() {
+    val consumerFactory = mock<ConsumerFactory<String, String>>()
+    val factory = ConcurrentKafkaListenerContainerFactory<String, String>()
+    factory.consumerFactory = consumerFactory
+
+    val processor = SentryKafkaConsumerBeanPostProcessor()
+    processor.postProcessAfterInitialization(factory, "kafkaListenerContainerFactory")
+
+    // Verify via reflection that the interceptor was set
+    val field = factory.javaClass.superclass.getDeclaredField("recordInterceptor")
+    field.isAccessible = true
+    val interceptor = field.get(factory)
+    assertTrue(interceptor is SentryKafkaRecordInterceptor<*, *>)
+  }
+
+  @Test
+  fun `does not double-wrap when SentryKafkaRecordInterceptor already set`() {
+    val consumerFactory = mock<ConsumerFactory<String, String>>()
+    val factory = ConcurrentKafkaListenerContainerFactory<String, String>()
+    factory.consumerFactory = consumerFactory
+
+    val processor = SentryKafkaConsumerBeanPostProcessor()
+    // First wrap
+    processor.postProcessAfterInitialization(factory, "kafkaListenerContainerFactory")
+
+    val field = factory.javaClass.superclass.getDeclaredField("recordInterceptor")
+    field.isAccessible = true
+    val firstInterceptor = field.get(factory)
+
+    // Second wrap — should be idempotent
+    processor.postProcessAfterInitialization(factory, "kafkaListenerContainerFactory")
+    val secondInterceptor = field.get(factory)
+
+    assertSame(firstInterceptor, secondInterceptor)
+  }
+
+  @Test
+  fun `does not wrap non-factory beans`() {
+    val someBean = "not a factory"
+    val processor = SentryKafkaConsumerBeanPostProcessor()
+
+    val result = processor.postProcessAfterInitialization(someBean, "someBean")
+
+    assertSame(someBean, result)
+  }
+}
