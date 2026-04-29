@@ -2,6 +2,7 @@ package io.sentry.spring.boot.jakarta
 
 import io.sentry.kafka.SentryKafkaProducer
 import io.sentry.opentelemetry.SentryAutoConfigurationCustomizerProvider
+import io.sentry.opentelemetry.agent.AgentMarker
 import io.sentry.spring.jakarta.kafka.SentryKafkaConsumerBeanPostProcessor
 import io.sentry.spring.jakarta.kafka.SentryKafkaProducerBeanPostProcessor
 import kotlin.test.Test
@@ -28,20 +29,27 @@ class SentryKafkaAutoConfigurationTest {
         "sentry.debug=false",
       )
 
-  /** Hide the OTel customizer so conditions evaluate as "no OTel present". */
   private val noOtelClassLoader =
+    FilteredClassLoader(
+      SentryAutoConfigurationCustomizerProvider::class.java,
+      AgentMarker::class.java,
+    )
+
+  private val noOtelCustomizerClassLoader =
     FilteredClassLoader(SentryAutoConfigurationCustomizerProvider::class.java)
 
   private val noSentryKafkaClassLoader =
     FilteredClassLoader(
       SentryKafkaProducer::class.java,
       SentryAutoConfigurationCustomizerProvider::class.java,
+      AgentMarker::class.java,
     )
 
   private val noSpringKafkaClassLoader =
     FilteredClassLoader(
       KafkaTemplate::class.java,
       SentryAutoConfigurationCustomizerProvider::class.java,
+      AgentMarker::class.java,
     )
 
   @Test
@@ -90,6 +98,17 @@ class SentryKafkaAutoConfigurationTest {
     contextRunner
       .withClassLoader(noOtelClassLoader)
       .withPropertyValues("sentry.enable-queue-tracing=false")
+      .run { context ->
+        assertThat(context).doesNotHaveBean(SentryKafkaProducerBeanPostProcessor::class.java)
+        assertThat(context).doesNotHaveBean(SentryKafkaConsumerBeanPostProcessor::class.java)
+      }
+  }
+
+  @Test
+  fun `does not register Kafka BPPs when OpenTelemetry agent is present`() {
+    contextRunner
+      .withClassLoader(noOtelCustomizerClassLoader)
+      .withPropertyValues("sentry.enable-queue-tracing=true")
       .run { context ->
         assertThat(context).doesNotHaveBean(SentryKafkaProducerBeanPostProcessor::class.java)
         assertThat(context).doesNotHaveBean(SentryKafkaConsumerBeanPostProcessor::class.java)

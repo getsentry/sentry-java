@@ -255,7 +255,10 @@ public class SentryAutoConfiguration {
           "io.sentry.kafka.SentryKafkaProducer"
         })
     @ConditionalOnProperty(name = "sentry.enable-queue-tracing", havingValue = "true")
-    @ConditionalOnMissingClass("io.sentry.opentelemetry.SentryAutoConfigurationCustomizerProvider")
+    @ConditionalOnMissingClass({
+      "io.sentry.opentelemetry.SentryAutoConfigurationCustomizerProvider",
+      "io.sentry.opentelemetry.agent.AgentMarker"
+    })
     @Open
     static class SentryKafkaQueueConfiguration {
 
