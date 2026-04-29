@@ -31,6 +31,8 @@ import io.sentry.spring.jakarta.checkin.SentryCheckInPointcutConfiguration;
 import io.sentry.spring.jakarta.checkin.SentryQuartzConfiguration;
 import io.sentry.spring.jakarta.exception.SentryCaptureExceptionParameterPointcutConfiguration;
 import io.sentry.spring.jakarta.exception.SentryExceptionParameterAdviceConfiguration;
+import io.sentry.spring.jakarta.kafka.SentryKafkaConsumerBeanPostProcessor;
+import io.sentry.spring.jakarta.kafka.SentryKafkaProducerBeanPostProcessor;
 import io.sentry.spring.jakarta.opentelemetry.SentryOpenTelemetryAgentWithoutAutoInitConfiguration;
 import io.sentry.spring.jakarta.opentelemetry.SentryOpenTelemetryNoAgentConfiguration;
 import io.sentry.spring.jakarta.tracing.CombinedTransactionNameProvider;
@@ -75,6 +77,7 @@ import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.core.env.Environment;
 import org.springframework.graphql.execution.DataFetcherExceptionResolverAdapter;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.quartz.SchedulerFactoryBean;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.client.RestClient;
@@ -243,6 +246,26 @@ public class SentryAutoConfiguration {
       public static @NotNull SentryCacheBeanPostProcessor sentryCacheBeanPostProcessor() {
         SentryIntegrationPackageStorage.getInstance().addIntegration("SpringCache");
         return new SentryCacheBeanPostProcessor();
+      }
+    }
+
+    @Configuration(proxyBeanMethods = false)
+    @ConditionalOnClass(KafkaTemplate.class)
+    @ConditionalOnProperty(name = "sentry.enable-queue-tracing", havingValue = "true")
+    @Open
+    static class SentryKafkaQueueConfiguration {
+
+      @Bean
+      public static @NotNull SentryKafkaProducerBeanPostProcessor
+          sentryKafkaProducerBeanPostProcessor() {
+        SentryIntegrationPackageStorage.getInstance().addIntegration("SpringKafka");
+        return new SentryKafkaProducerBeanPostProcessor();
+      }
+
+      @Bean
+      public static @NotNull SentryKafkaConsumerBeanPostProcessor
+          sentryKafkaConsumerBeanPostProcessor() {
+        return new SentryKafkaConsumerBeanPostProcessor();
       }
     }
 
