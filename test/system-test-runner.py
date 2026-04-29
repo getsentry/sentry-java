@@ -70,6 +70,9 @@ KAFKA_CONTAINER_NAME = "sentry-java-system-test-kafka"
 KAFKA_BOOTSTRAP_SERVERS = "localhost:9092"
 KAFKA_BROKER_REQUIRED_MODULES = {
     "sentry-samples-console",
+    "sentry-samples-spring-boot",
+    "sentry-samples-spring-boot-opentelemetry",
+    "sentry-samples-spring-boot-opentelemetry-noagent",
     "sentry-samples-spring-boot-jakarta",
     "sentry-samples-spring-boot-jakarta-opentelemetry",
     "sentry-samples-spring-boot-jakarta-opentelemetry-noagent",
@@ -78,6 +81,9 @@ KAFKA_BROKER_REQUIRED_MODULES = {
     "sentry-samples-spring-boot-4-opentelemetry-noagent",
 }
 KAFKA_PROFILE_REQUIRED_MODULES = {
+    "sentry-samples-spring-boot",
+    "sentry-samples-spring-boot-opentelemetry",
+    "sentry-samples-spring-boot-opentelemetry-noagent",
     "sentry-samples-spring-boot-jakarta",
     "sentry-samples-spring-boot-jakarta-opentelemetry",
     "sentry-samples-spring-boot-jakarta-opentelemetry-noagent",
