@@ -93,7 +93,7 @@ public final class SentryFeedbackOptions {
 
   private @NotNull IFormHandler iFormHandler;
 
-  public SentryFeedbackOptions(@NotNull IFormHandler iFormHandler) {
+  SentryFeedbackOptions(@NotNull IFormHandler iFormHandler) {
     this.iFormHandler = iFormHandler;
   }
 
