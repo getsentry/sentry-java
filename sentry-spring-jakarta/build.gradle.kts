@@ -41,6 +41,7 @@ dependencies {
   compileOnly(libs.servlet.jakarta.api)
   compileOnly(libs.slf4j.api)
   compileOnly(libs.springboot3.starter.graphql)
+  compileOnly(libs.spring.kafka3)
   compileOnly(libs.springboot3.starter.quartz)
 
   compileOnly(Config.Libs.springWebflux)
@@ -68,6 +69,7 @@ dependencies {
   testImplementation(libs.springboot3.starter.aop)
   testImplementation(libs.springboot3.starter.graphql)
   testImplementation(libs.springboot3.starter.security)
+  testImplementation(libs.spring.kafka3)
   testImplementation(libs.springboot3.starter.test)
   testImplementation(libs.springboot3.starter.web)
   testImplementation(libs.springboot3.starter.webflux)
