@@ -104,7 +104,7 @@ public class SentryUserFeedbackButton extends Button {
       }
     }
 
-    // Set the default ClickListener to open the SentryUserFeedbackDialog
+    // Set the default ClickListener to open the SentryUserFeedbackForm
     setOnClickListener(delegate);
   }
 
@@ -113,7 +113,7 @@ public class SentryUserFeedbackButton extends Button {
     delegate = listener;
     super.setOnClickListener(
         v -> {
-          new SentryUserFeedbackDialog.Builder(getContext()).create().show();
+          new SentryUserFeedbackForm.Builder(getContext()).create().show();
           if (delegate != null) {
             delegate.onClick(v);
           }

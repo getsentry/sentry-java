@@ -1355,20 +1355,52 @@ public final class Sentry {
     return getCurrentScopes().metrics();
   }
 
-  public static void showUserFeedbackDialog() {
-    showUserFeedbackDialog(null);
+  public static void showUserFeedbackForm() {
+    showUserFeedbackForm(null);
   }
 
-  public static void showUserFeedbackDialog(
+  public static void showUserFeedbackForm(
       final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator) {
-    showUserFeedbackDialog(null, configurator);
+    showUserFeedbackForm(null, configurator);
   }
 
-  public static void showUserFeedbackDialog(
+  public static void showUserFeedbackForm(
       final @Nullable SentryId associatedEventId,
       final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator) {
     final @NotNull SentryOptions options = getCurrentScopes().getOptions();
-    options.getFeedbackOptions().getDialogHandler().showDialog(associatedEventId, configurator);
+    options.getFeedbackOptions().getFormHandler().showForm(associatedEventId, configurator);
+  }
+
+  /**
+   * @deprecated Use {@link #showUserFeedbackForm()} instead.
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
+  public static void showUserFeedbackDialog() {
+    showUserFeedbackForm();
+  }
+
+  /**
+   * @deprecated Use {@link #showUserFeedbackForm(SentryFeedbackOptions.OptionsConfigurator)}
+   *     instead.
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
+  public static void showUserFeedbackDialog(
+      final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator) {
+    showUserFeedbackForm(configurator);
+  }
+
+  /**
+   * @deprecated Use {@link #showUserFeedbackForm(SentryId,
+   *     SentryFeedbackOptions.OptionsConfigurator)} instead.
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
+  public static void showUserFeedbackDialog(
+      final @Nullable SentryId associatedEventId,
+      final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator) {
+    showUserFeedbackForm(associatedEventId, configurator);
   }
 
   /**

@@ -1,6 +1,6 @@
 package io.sentry
 
-import io.sentry.SentryFeedbackOptions.IDialogHandler
+import io.sentry.SentryFeedbackOptions.IFormHandler
 import io.sentry.SentryOptions.ProfilesSamplerCallback
 import io.sentry.SentryOptions.TracesSamplerCallback
 import io.sentry.backpressure.BackpressureMonitor
@@ -1504,39 +1504,39 @@ class SentryTest {
   }
 
   @Test
-  fun `showUserFeedbackDialog forwards to feedbackOptions_dialogHandler`() {
-    val mockDialogHandler = mock<IDialogHandler>()
+  fun `showUserFeedbackForm forwards to feedbackOptions_formHandler`() {
+    val mockFormHandler = mock<IFormHandler>()
     initForTest {
       it.dsn = dsn
-      it.feedbackOptions.dialogHandler = mockDialogHandler
+      it.feedbackOptions.setFormHandler(mockFormHandler)
     }
-    Sentry.showUserFeedbackDialog()
-    verify(mockDialogHandler).showDialog(eq(null), eq(null))
+    Sentry.showUserFeedbackForm()
+    verify(mockFormHandler).showForm(eq(null), eq(null))
   }
 
   @Test
-  fun `showUserFeedbackDialog forwards to feedbackOptions_dialogHandler with configurator`() {
-    val mockDialogHandler = mock<IDialogHandler>()
+  fun `showUserFeedbackForm forwards to feedbackOptions_formHandler with configurator`() {
+    val mockFormHandler = mock<IFormHandler>()
     val configurator = mock<SentryFeedbackOptions.OptionsConfigurator>()
     initForTest {
       it.dsn = dsn
-      it.feedbackOptions.dialogHandler = mockDialogHandler
+      it.feedbackOptions.setFormHandler(mockFormHandler)
     }
-    Sentry.showUserFeedbackDialog(configurator)
-    verify(mockDialogHandler).showDialog(eq(null), eq(configurator))
+    Sentry.showUserFeedbackForm(configurator)
+    verify(mockFormHandler).showForm(eq(null), eq(configurator))
   }
 
   @Test
-  fun `showUserFeedbackDialog forwards to feedbackOptions_dialogHandler with associatedEventId and configurator`() {
-    val mockDialogHandler = mock<IDialogHandler>()
+  fun `showUserFeedbackForm forwards to feedbackOptions_formHandler with associatedEventId and configurator`() {
+    val mockFormHandler = mock<IFormHandler>()
     val configurator = mock<SentryFeedbackOptions.OptionsConfigurator>()
     val associatedEventId = SentryId()
     initForTest {
       it.dsn = dsn
-      it.feedbackOptions.dialogHandler = mockDialogHandler
+      it.feedbackOptions.setFormHandler(mockFormHandler)
     }
-    Sentry.showUserFeedbackDialog(associatedEventId, configurator)
-    verify(mockDialogHandler).showDialog(eq(associatedEventId), eq(configurator))
+    Sentry.showUserFeedbackForm(associatedEventId, configurator)
+    verify(mockFormHandler).showForm(eq(associatedEventId), eq(configurator))
   }
 
   @Test

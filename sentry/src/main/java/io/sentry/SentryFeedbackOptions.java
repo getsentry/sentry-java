@@ -91,10 +91,10 @@ public final class SentryFeedbackOptions {
   /** Callback called when there is an error submitting feedback via the prepared form. */
   private @Nullable SentryFeedbackCallback onSubmitError;
 
-  private @NotNull IDialogHandler iDialogHandler;
+  private @NotNull IFormHandler iFormHandler;
 
-  public SentryFeedbackOptions(@NotNull IDialogHandler iDialogHandler) {
-    this.iDialogHandler = iDialogHandler;
+  public SentryFeedbackOptions(@NotNull IFormHandler iFormHandler) {
+    this.iFormHandler = iFormHandler;
   }
 
   /** Creates a copy of the passed {@link SentryFeedbackOptions}. */
@@ -121,7 +121,7 @@ public final class SentryFeedbackOptions {
     this.onFormClose = other.onFormClose;
     this.onSubmitSuccess = other.onSubmitSuccess;
     this.onSubmitError = other.onSubmitError;
-    this.iDialogHandler = other.iDialogHandler;
+    this.iFormHandler = other.iFormHandler;
   }
 
   /**
@@ -535,23 +535,23 @@ public final class SentryFeedbackOptions {
   }
 
   /**
-   * Sets the dialog handler to be used to show the feedback form.
+   * Sets the form handler to be used to show the feedback form.
    *
-   * @param iDialogHandler the dialog handler to be used to show the feedback form
+   * @param iFormHandler the form handler to be used to show the feedback form
    */
   @ApiStatus.Internal
-  public void setDialogHandler(final @NotNull IDialogHandler iDialogHandler) {
-    this.iDialogHandler = iDialogHandler;
+  public void setFormHandler(final @NotNull IFormHandler iFormHandler) {
+    this.iFormHandler = iFormHandler;
   }
 
   /**
-   * Gets the dialog handler to be used to show the feedback form.
+   * Gets the form handler to be used to show the feedback form.
    *
-   * @return the dialog handler to be used to show the feedback form
+   * @return the form handler to be used to show the feedback form
    */
   @ApiStatus.Internal
-  public @NotNull IDialogHandler getDialogHandler() {
-    return iDialogHandler;
+  public @NotNull IFormHandler getFormHandler() {
+    return iFormHandler;
   }
 
   @Override
@@ -609,8 +609,8 @@ public final class SentryFeedbackOptions {
   }
 
   @ApiStatus.Internal
-  public interface IDialogHandler {
-    void showDialog(
+  public interface IFormHandler {
+    void showForm(
         final @Nullable SentryId associatedEventId,
         final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator);
   }

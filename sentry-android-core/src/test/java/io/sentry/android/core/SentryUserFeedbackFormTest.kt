@@ -26,7 +26,7 @@ import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 
 @RunWith(AndroidJUnit4::class)
-class SentryUserFeedbackDialogTest {
+class SentryUserFeedbackFormTest {
   class Fixture {
     val application: Context = ApplicationProvider.getApplicationContext()
     private val mockDsn = "http://key@localhost/proj"
@@ -55,10 +55,10 @@ class SentryUserFeedbackDialogTest {
 
     fun getSut(
       associatedEventId: SentryId? = null,
-      configuration: SentryUserFeedbackDialog.OptionsConfiguration? = null,
+      configuration: SentryUserFeedbackForm.OptionsConfiguration? = null,
       configurator: SentryFeedbackOptions.OptionsConfigurator? = null,
-    ): SentryUserFeedbackDialog =
-      SentryUserFeedbackDialog(application, 0, associatedEventId, configuration, configurator)
+    ): SentryUserFeedbackForm =
+      SentryUserFeedbackForm(application, 0, associatedEventId, configuration, configurator)
   }
 
   private val fixture = Fixture()

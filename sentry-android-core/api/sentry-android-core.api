@@ -496,23 +496,44 @@ public class io/sentry/android/core/SentryUserFeedbackButton : android/widget/Bu
 	public fun setOnClickListener (Landroid/view/View$OnClickListener;)V
 }
 
-public final class io/sentry/android/core/SentryUserFeedbackDialog : android/app/AlertDialog {
+public final class io/sentry/android/core/SentryUserFeedbackDialog : io/sentry/android/core/SentryUserFeedbackForm {
+}
+
+public class io/sentry/android/core/SentryUserFeedbackDialog$Builder : io/sentry/android/core/SentryUserFeedbackForm$Builder {
+	public fun <init> (Landroid/content/Context;)V
+	public fun <init> (Landroid/content/Context;I)V
+	public fun <init> (Landroid/content/Context;ILio/sentry/android/core/SentryUserFeedbackForm$OptionsConfiguration;)V
+	public fun <init> (Landroid/content/Context;Lio/sentry/android/core/SentryUserFeedbackForm$OptionsConfiguration;)V
+	public fun associatedEventId (Lio/sentry/protocol/SentryId;)Lio/sentry/android/core/SentryUserFeedbackDialog$Builder;
+	public synthetic fun associatedEventId (Lio/sentry/protocol/SentryId;)Lio/sentry/android/core/SentryUserFeedbackForm$Builder;
+	public fun configurator (Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)Lio/sentry/android/core/SentryUserFeedbackDialog$Builder;
+	public synthetic fun configurator (Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)Lio/sentry/android/core/SentryUserFeedbackForm$Builder;
+	public fun create ()Lio/sentry/android/core/SentryUserFeedbackDialog;
+	public synthetic fun create ()Lio/sentry/android/core/SentryUserFeedbackForm;
+}
+
+public abstract interface class io/sentry/android/core/SentryUserFeedbackDialog$OptionsConfiguration : io/sentry/android/core/SentryUserFeedbackForm$OptionsConfiguration {
+}
+
+public class io/sentry/android/core/SentryUserFeedbackForm : android/app/AlertDialog {
+	protected fun onCreate (Landroid/os/Bundle;)V
+	protected fun onStart ()V
 	public fun setCancelable (Z)V
 	public fun setOnDismissListener (Landroid/content/DialogInterface$OnDismissListener;)V
 	public fun show ()V
 }
 
-public class io/sentry/android/core/SentryUserFeedbackDialog$Builder {
+public class io/sentry/android/core/SentryUserFeedbackForm$Builder {
 	public fun <init> (Landroid/content/Context;)V
 	public fun <init> (Landroid/content/Context;I)V
-	public fun <init> (Landroid/content/Context;ILio/sentry/android/core/SentryUserFeedbackDialog$OptionsConfiguration;)V
-	public fun <init> (Landroid/content/Context;Lio/sentry/android/core/SentryUserFeedbackDialog$OptionsConfiguration;)V
-	public fun associatedEventId (Lio/sentry/protocol/SentryId;)Lio/sentry/android/core/SentryUserFeedbackDialog$Builder;
-	public fun configurator (Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)Lio/sentry/android/core/SentryUserFeedbackDialog$Builder;
-	public fun create ()Lio/sentry/android/core/SentryUserFeedbackDialog;
+	public fun <init> (Landroid/content/Context;ILio/sentry/android/core/SentryUserFeedbackForm$OptionsConfiguration;)V
+	public fun <init> (Landroid/content/Context;Lio/sentry/android/core/SentryUserFeedbackForm$OptionsConfiguration;)V
+	public fun associatedEventId (Lio/sentry/protocol/SentryId;)Lio/sentry/android/core/SentryUserFeedbackForm$Builder;
+	public fun configurator (Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)Lio/sentry/android/core/SentryUserFeedbackForm$Builder;
+	public fun create ()Lio/sentry/android/core/SentryUserFeedbackForm;
 }
 
-public abstract interface class io/sentry/android/core/SentryUserFeedbackDialog$OptionsConfiguration {
+public abstract interface class io/sentry/android/core/SentryUserFeedbackForm$OptionsConfiguration {
 	public abstract fun configure (Landroid/content/Context;Lio/sentry/SentryFeedbackOptions;)V
 }
 
