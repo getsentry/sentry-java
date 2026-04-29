@@ -4,6 +4,7 @@
 
 ### Features
 
+- Add `enableQueueTracing` option and messaging span data conventions ([#5250](https://github.com/getsentry/sentry-java/pull/5250))
 - Prevent cross-organization trace continuation ([#5136](https://github.com/getsentry/sentry-java/pull/5136))
   - By default, the SDK now extracts the organization ID from the DSN (e.g. `o123.ingest.sentry.io`) and compares it with the `sentry-org_id` value in incoming baggage headers. When the two differ, the SDK starts a fresh trace instead of continuing the foreign one. This guards against accidentally linking traces across organizations.
   - New option `enableStrictTraceContinuation` (default `false`): when enabled, both the SDK's org ID **and** the incoming baggage org ID must be present and match for a trace to be continued. Traces with a missing org ID on either side are rejected. Configurable via code (`setStrictTraceContinuation(true)`), `sentry.properties` (`enable-strict-trace-continuation=true`), Android manifest (`io.sentry.strict-trace-continuation.enabled`), or Spring Boot (`sentry.strict-trace-continuation=true`).

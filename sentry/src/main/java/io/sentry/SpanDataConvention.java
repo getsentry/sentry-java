@@ -30,4 +30,10 @@ public interface SpanDataConvention {
   String CACHE_KEY = "cache.key";
   String CACHE_OPERATION = "cache.operation";
   String CACHE_WRITE = "cache.write";
+  String MESSAGING_SYSTEM = "messaging.system";
+  String MESSAGING_DESTINATION_NAME = "messaging.destination.name";
+  String MESSAGING_MESSAGE_ID = "messaging.message.id";
+  String MESSAGING_MESSAGE_RETRY_COUNT = "messaging.message.retry.count";
+  String MESSAGING_MESSAGE_BODY_SIZE = "messaging.message.body.size";
+  String MESSAGING_MESSAGE_RECEIVE_LATENCY = "messaging.message.receive.latency";
 }

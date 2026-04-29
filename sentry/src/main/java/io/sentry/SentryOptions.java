@@ -508,6 +508,9 @@ public class SentryOptions {
   /** Whether cache operations (get, put, remove, flush) should be traced. */
   private boolean enableCacheTracing = false;
 
+  /** Whether queue operations (publish, process) should be traced. */
+  private boolean enableQueueTracing = false;
+
   /** Date provider to retrieve the current date from. */
   @ApiStatus.Internal
   private final @NotNull LazyEvaluator<SentryDateProvider> dateProvider =
@@ -2705,6 +2708,24 @@ public class SentryOptions {
   }
 
   /**
+   * Whether queue operations (publish, process) should be traced.
+   *
+   * @return true if queue operations should be traced
+   */
+  public boolean isEnableQueueTracing() {
+    return enableQueueTracing;
+  }
+
+  /**
+   * Whether queue operations (publish, process) should be traced.
+   *
+   * @param enableQueueTracing true if queue operations should be traced
+   */
+  public void setEnableQueueTracing(boolean enableQueueTracing) {
+    this.enableQueueTracing = enableQueueTracing;
+  }
+
+  /**
    * Whether Sentry is enabled.
    *
    * @return true if Sentry should be enabled
@@ -3544,6 +3565,9 @@ public class SentryOptions {
     }
     if (options.isEnableCacheTracing() != null) {
       setEnableCacheTracing(options.isEnableCacheTracing());
+    }
+    if (options.isEnableQueueTracing() != null) {
+      setEnableQueueTracing(options.isEnableQueueTracing());
     }
     if (options.getMaxRequestBodySize() != null) {
       setMaxRequestBodySize(options.getMaxRequestBodySize());
