@@ -3154,7 +3154,6 @@ public final class io/sentry/SentryExecutorService : io/sentry/ISentryExecutorSe
 }
 
 public final class io/sentry/SentryFeedbackOptions {
-	public fun <init> (Lio/sentry/SentryFeedbackOptions$IFormHandler;)V
 	public fun <init> (Lio/sentry/SentryFeedbackOptions;)V
 	public fun getCancelButtonLabel ()Ljava/lang/CharSequence;
 	public fun getEmailLabel ()Ljava/lang/CharSequence;
