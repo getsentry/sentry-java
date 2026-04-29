@@ -4,6 +4,7 @@ import io.sentry.BaggageHeader
 import io.sentry.IScopes
 import io.sentry.ISentryLifecycleToken
 import io.sentry.ISpan
+import io.sentry.NoOpSpan
 import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.Sentry
@@ -220,6 +221,21 @@ class SentryKafkaProducerTest {
   @Test
   fun `injects headers but creates no span when no active span`() {
     whenever(scopes.span).thenReturn(null)
+    val producer = SentryKafkaProducer.wrap(delegate, scopes)
+    val record = ProducerRecord<String, String>("my-topic", "key", "value")
+
+    producer.send(record)
+
+    verify(delegate).send(eq(record), isNull())
+    // Headers should still be injected from PropagationContext
+    assertNotNull(record.headers().lastHeader(SentryTraceHeader.SENTRY_TRACE_HEADER))
+    assertNotNull(record.headers().lastHeader(BaggageHeader.BAGGAGE_HEADER))
+    assertNotNull(record.headers().lastHeader(SentryKafkaProducer.SENTRY_ENQUEUED_TIME_HEADER))
+  }
+
+  @Test
+  fun `injects headers but creates no span when active span is no-op`() {
+    whenever(scopes.span).thenReturn(NoOpSpan.getInstance())
     val producer = SentryKafkaProducer.wrap(delegate, scopes)
     val record = ProducerRecord<String, String>("my-topic", "key", "value")
 
