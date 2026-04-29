@@ -52,6 +52,9 @@ dependencies {
   implementation(projects.sentryAsyncProfiler)
   implementation(projects.sentryOpentelemetry.sentryOpentelemetryAgentlessSpring)
 
+  // kafka
+  implementation(libs.spring.kafka3)
+
   // cache tracing
   implementation(libs.springboot3.starter.cache)
   implementation(libs.caffeine)
