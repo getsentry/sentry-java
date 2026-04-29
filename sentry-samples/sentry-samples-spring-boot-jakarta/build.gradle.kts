@@ -61,6 +61,7 @@ dependencies {
 
   // kafka
   implementation(libs.spring.kafka3)
+  implementation(projects.sentryKafka)
 
   // OpenFeature SDK
   implementation(libs.openfeature)

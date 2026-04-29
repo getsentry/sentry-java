@@ -1,4 +1,4 @@
-package io.sentry.spring.jakarta.kafka;
+package io.sentry.kafka;
 
 import io.sentry.BaggageHeader;
 import io.sentry.DateUtils;
@@ -19,28 +19,23 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * A Kafka {@link ProducerInterceptor} that creates {@code queue.publish} spans and injects tracing
- * headers into outgoing records.
- *
- * <p>The span starts and finishes synchronously in {@link #onSend(ProducerRecord)}, representing
- * "message enqueued" semantics. This avoids cross-thread correlation complexity since {@link
- * #onAcknowledgement(RecordMetadata, Exception)} runs on the Kafka I/O thread.
- *
- * <p>If the customer already has a {@link ProducerInterceptor}, the {@link
- * SentryKafkaProducerBeanPostProcessor} composes both using Spring's {@link
- * org.springframework.kafka.support.CompositeProducerInterceptor}.
- */
 @ApiStatus.Internal
-public final class SentryProducerInterceptor<K, V> implements ProducerInterceptor<K, V> {
+public final class SentryKafkaProducerInterceptor<K, V> implements ProducerInterceptor<K, V> {
 
-  static final String TRACE_ORIGIN = "auto.queue.spring_jakarta.kafka.producer";
-  static final String SENTRY_ENQUEUED_TIME_HEADER = "sentry-task-enqueued-time";
+  public static final @NotNull String TRACE_ORIGIN = "auto.queue.kafka.producer";
+  public static final @NotNull String SENTRY_ENQUEUED_TIME_HEADER = "sentry-task-enqueued-time";
 
   private final @NotNull IScopes scopes;
+  private final @NotNull String traceOrigin;
 
-  public SentryProducerInterceptor(final @NotNull IScopes scopes) {
+  public SentryKafkaProducerInterceptor(final @NotNull IScopes scopes) {
+    this(scopes, TRACE_ORIGIN);
+  }
+
+  public SentryKafkaProducerInterceptor(
+      final @NotNull IScopes scopes, final @NotNull String traceOrigin) {
     this.scopes = scopes;
+    this.traceOrigin = traceOrigin;
   }
 
   @Override
@@ -56,7 +51,7 @@ public final class SentryProducerInterceptor<K, V> implements ProducerIntercepto
 
     try {
       final @NotNull SpanOptions spanOptions = new SpanOptions();
-      spanOptions.setOrigin(TRACE_ORIGIN);
+      spanOptions.setOrigin(traceOrigin);
       final @NotNull ISpan span =
           activeSpan.startChild("queue.publish", record.topic(), spanOptions);
       if (span.isNoOp()) {
@@ -71,7 +66,7 @@ public final class SentryProducerInterceptor<K, V> implements ProducerIntercepto
       span.setStatus(SpanStatus.OK);
       span.finish();
     } catch (Throwable ignored) {
-      // Instrumentation must never break the customer's Kafka send
+      // Instrumentation must never break the customer's Kafka send.
     }
 
     return record;

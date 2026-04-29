@@ -71,6 +71,7 @@ dependencies {
   testImplementation(projects.sentryApacheHttpClient5)
   testImplementation(projects.sentryGraphql)
   testImplementation(projects.sentryGraphql22)
+  testImplementation(projects.sentryKafka)
   testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryCore)
   testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryAgent)
   testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryAgentcustomization)

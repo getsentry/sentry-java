@@ -2,6 +2,7 @@ package io.sentry.spring.jakarta.kafka;
 
 import io.sentry.ScopesAdapter;
 import io.sentry.SentryLevel;
+import io.sentry.kafka.SentryKafkaProducerInterceptor;
 import java.lang.reflect.Field;
 import org.apache.kafka.clients.producer.ProducerInterceptor;
 import org.jetbrains.annotations.ApiStatus;
@@ -15,7 +16,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.CompositeProducerInterceptor;
 
 /**
- * Sets a {@link SentryProducerInterceptor} on {@link KafkaTemplate} beans via {@link
+ * Sets a {@link SentryKafkaProducerInterceptor} on {@link KafkaTemplate} beans via {@link
  * KafkaTemplate#setProducerInterceptor(ProducerInterceptor)}. The original bean is not replaced.
  *
  * <p>If the template already has a {@link ProducerInterceptor}, both are composed using {@link
@@ -35,13 +36,14 @@ public final class SentryKafkaProducerBeanPostProcessor
       final @NotNull KafkaTemplate<?, ?> template = (KafkaTemplate<?, ?>) bean;
       final @Nullable ProducerInterceptor<?, ?> existing = getExistingInterceptor(template);
 
-      if (existing instanceof SentryProducerInterceptor) {
+      if (existing instanceof SentryKafkaProducerInterceptor) {
         return bean;
       }
 
       @SuppressWarnings("rawtypes")
-      final SentryProducerInterceptor sentryInterceptor =
-          new SentryProducerInterceptor<>(ScopesAdapter.getInstance());
+      final SentryKafkaProducerInterceptor sentryInterceptor =
+          new SentryKafkaProducerInterceptor<>(
+              ScopesAdapter.getInstance(), "auto.queue.spring_jakarta.kafka.producer");
 
       if (existing != null) {
         @SuppressWarnings("rawtypes")
