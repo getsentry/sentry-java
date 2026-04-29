@@ -46,10 +46,10 @@ public final class SentryKafkaConsumerBeanPostProcessor
             .getLogger()
             .log(
                 SentryLevel.ERROR,
+                e,
                 "Sentry Kafka consumer tracing disabled for factory '%s' \u2014 could not read "
                     + "existing recordInterceptor via reflection. Refusing to install Sentry's "
                     + "interceptor to avoid overwriting a customer-configured RecordInterceptor.",
-                e,
                 beanName);
         return bean;
       }
