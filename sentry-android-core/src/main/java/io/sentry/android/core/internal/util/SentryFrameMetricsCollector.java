@@ -190,10 +190,10 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
 
           // store frames with delay for getFramesDelay queries
           if (delayNanos > 0) {
+            pruneOldFrames(lastFrameEndNanos);
             if (delayedFrames.size() < MAX_FRAMES_COUNT) {
               delayedFrames.add(new DelayedFrame(frameStartTime, lastFrameEndNanos, delayNanos));
             }
-            pruneOldFrames(lastFrameEndNanos);
           }
 
           for (FrameMetricsCollectorListener l : listenerMap.values()) {
