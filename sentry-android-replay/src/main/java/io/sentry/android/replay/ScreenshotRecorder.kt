@@ -47,6 +47,7 @@ internal class ScreenshotRecorder(
           options,
           config,
           debugOverlayDrawable,
+          markContentChanged = { contentChanged.set(true) },
         )
     }
 

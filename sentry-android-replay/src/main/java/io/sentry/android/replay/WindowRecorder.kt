@@ -17,6 +17,7 @@ import io.sentry.android.replay.util.hasSize
 import io.sentry.android.replay.util.removeOnPreDrawListenerSafe
 import io.sentry.util.AutoClosableReentrantLock
 import java.lang.ref.WeakReference
+import java.util.WeakHashMap
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -33,6 +34,7 @@ internal class WindowRecorder(
   private val isRecording = AtomicBoolean(false)
   private val rootViews = ArrayList<WeakReference<View>>()
   private var lastKnownWindowSize: Point = Point()
+  private val rootLayoutListeners = WeakHashMap<View, View.OnLayoutChangeListener>()
   private val rootViewsLock = AutoClosableReentrantLock()
   private val capturerLock = AutoClosableReentrantLock()
   private val backgroundProcessingHandlerLock = AutoClosableReentrantLock()
@@ -124,7 +126,9 @@ internal class WindowRecorder(
         rootViews.add(WeakReference(root))
         capturer?.recorder?.bind(root)
         determineWindowSize(root)
+        attachLayoutListener(root)
       } else {
+        detachLayoutListener(root)
         capturer?.recorder?.unbind(root)
         rootViews.removeAll { it.get() == root }
 
@@ -132,6 +136,7 @@ internal class WindowRecorder(
         if (newRoot != null && root != newRoot) {
           capturer?.recorder?.bind(newRoot)
           determineWindowSize(newRoot)
+          attachLayoutListener(newRoot)
         } else {
           Unit // synchronized block wants us to return something lol
         }
@@ -139,9 +144,45 @@ internal class WindowRecorder(
     }
   }
 
+  /**
+   * Activities that handle their own configuration changes (e.g. Unity, video players via
+   * `android:configChanges="orientation|screenSize|..."`) keep the same root view across rotations,
+   * so [onRootViewsChanged] never fires and [determineWindowSize] would never re-detect the new
+   * dimensions. Watch the root for layout-time size changes to catch these cases.
+   */
+  private fun attachLayoutListener(root: View) {
+    if (rootLayoutListeners.containsKey(root)) return
+    val listener =
+      View.OnLayoutChangeListener {
+        v,
+        left,
+        top,
+        right,
+        bottom,
+        oldLeft,
+        oldTop,
+        oldRight,
+        oldBottom ->
+        val width = right - left
+        val height = bottom - top
+        val oldWidth = oldRight - oldLeft
+        val oldHeight = oldBottom - oldTop
+        if (width == oldWidth && height == oldHeight) return@OnLayoutChangeListener
+        // ignore non-latest roots so a dialog stays sized for itself, not its background activity.
+        if (v != rootViews.lastOrNull()?.get()) return@OnLayoutChangeListener
+        determineWindowSize(v)
+      }
+    rootLayoutListeners[root] = listener
+    root.addOnLayoutChangeListener(listener)
+  }
+
+  private fun detachLayoutListener(root: View) {
+    rootLayoutListeners.remove(root)?.let { root.removeOnLayoutChangeListener(it) }
+  }
+
   fun determineWindowSize(root: View) {
     if (root.hasSize()) {
-      if (root.width != lastKnownWindowSize.x && root.height != lastKnownWindowSize.y) {
+      if (root.width != lastKnownWindowSize.x || root.height != lastKnownWindowSize.y) {
         lastKnownWindowSize.set(root.width, root.height)
         windowCallback.onWindowSizeChanged(root.width, root.height)
       }
@@ -157,7 +198,7 @@ internal class WindowRecorder(
             }
             if (root.hasSize()) {
               root.removeOnPreDrawListenerSafe(this)
-              if (root.width != lastKnownWindowSize.x && root.height != lastKnownWindowSize.y) {
+              if (root.width != lastKnownWindowSize.x || root.height != lastKnownWindowSize.y) {
                 lastKnownWindowSize.set(root.width, root.height)
                 windowCallback.onWindowSizeChanged(root.width, root.height)
               }
@@ -222,7 +263,13 @@ internal class WindowRecorder(
   override fun reset() {
     lastKnownWindowSize.set(0, 0)
     rootViewsLock.acquire().use {
-      rootViews.forEach { capturer?.recorder?.unbind(it.get()) }
+      rootViews.forEach {
+        val root = it.get()
+        if (root != null) {
+          detachLayoutListener(root)
+          capturer?.recorder?.unbind(root)
+        }
+      }
       rootViews.clear()
     }
   }

@@ -120,6 +120,8 @@ final class ManifestMetadataReader {
 
   static final String REPLAYS_DEBUG = "io.sentry.session-replay.debug";
   static final String REPLAYS_SCREENSHOT_STRATEGY = "io.sentry.session-replay.screenshot-strategy";
+  static final String REPLAYS_CAPTURE_SURFACE_VIEWS =
+      "io.sentry.session-replay.capture-surface-views";
 
   static final String REPLAYS_NETWORK_DETAIL_ALLOW_URLS =
       "io.sentry.session-replay.network-detail-allow-urls";
@@ -546,6 +548,15 @@ final class ManifestMetadataReader {
             options.getSessionReplay().setScreenshotStrategy(ScreenshotStrategyType.PIXEL_COPY);
           }
         }
+
+        options
+            .getSessionReplay()
+            .setCaptureSurfaceViews(
+                readBool(
+                    metadata,
+                    logger,
+                    REPLAYS_CAPTURE_SURFACE_VIEWS,
+                    options.getSessionReplay().isCaptureSurfaceViews()));
 
         // Network Details Configuration
         if (options.getSessionReplay().getNetworkDetailAllowUrls().isEmpty()) {
