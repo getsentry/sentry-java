@@ -3397,7 +3397,7 @@ public class SentryOptions {
     feedbackOptions =
         new SentryFeedbackOptions(
             (associatedEventId, configurator) ->
-                logger.log(SentryLevel.WARNING, "showDialog() can only be called in Android."));
+                logger.log(SentryLevel.WARNING, "showForm() can only be called in Android."));
 
     if (!empty) {
       setSpanFactory(SpanFactoryFactory.create(new LoadClass(), NoOpLogger.getInstance()));

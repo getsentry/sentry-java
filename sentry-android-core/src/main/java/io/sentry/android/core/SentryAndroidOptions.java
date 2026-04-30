@@ -741,9 +741,9 @@ public final class SentryAndroidOptions extends SentryOptions {
     this.enableAnrFingerprinting = enableAnrFingerprinting;
   }
 
-  static class AndroidUserFeedbackIDialogHandler implements SentryFeedbackOptions.IDialogHandler {
+  static class AndroidUserFeedbackFormHandler implements SentryFeedbackOptions.IFormHandler {
     @Override
-    public void showDialog(
+    public void showForm(
         final @Nullable SentryId associatedEventId,
         final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator) {
       final @Nullable Activity activity = CurrentActivityHolder.getInstance().getActivity();
@@ -758,7 +758,7 @@ public final class SentryAndroidOptions extends SentryOptions {
         return;
       }
 
-      new SentryUserFeedbackDialog.Builder(activity)
+      new SentryUserFeedbackForm.Builder(activity)
           .associatedEventId(associatedEventId)
           .configurator(configurator)
           .create()

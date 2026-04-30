@@ -8,7 +8,13 @@ import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/** Adds additional information about what happened to an event. */
+/**
+ * Adds additional information about what happened to an event.
+ *
+ * @deprecated Use {@link io.sentry.protocol.Feedback} with {@link Sentry#feedback()}.{@link
+ *     IFeedbackApi#capture(io.sentry.protocol.Feedback) capture(feedback)} instead.
+ */
+@Deprecated
 public final class UserFeedback implements JsonUnknown, JsonSerializable {
 
   private final SentryId eventId;
