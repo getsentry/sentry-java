@@ -86,7 +86,6 @@ public final class HubAdapter implements IHub {
     return Sentry.captureException(throwable, hint, callback);
   }
 
-  @Deprecated
   @Override
   public void captureUserFeedback(@NotNull UserFeedback userFeedback) {
     Sentry.captureUserFeedback(userFeedback);
