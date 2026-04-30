@@ -80,7 +80,6 @@ public final class NoOpHub implements IHub {
     return SentryId.EMPTY_ID;
   }
 
-  @SuppressWarnings("deprecation")
   @Deprecated
   @Override
   public void captureUserFeedback(@NotNull UserFeedback userFeedback) {}

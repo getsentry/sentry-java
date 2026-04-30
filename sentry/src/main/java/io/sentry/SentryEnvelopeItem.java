@@ -169,7 +169,6 @@ public final class SentryEnvelopeItem {
     }
   }
 
-  @SuppressWarnings("deprecation")
   @Deprecated
   public static SentryEnvelopeItem fromUserFeedback(
       final @NotNull ISerializer serializer, final @NotNull UserFeedback userFeedback) {

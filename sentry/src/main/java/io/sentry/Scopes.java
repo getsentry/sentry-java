@@ -346,7 +346,6 @@ public final class Scopes implements IScopes {
     return sentryId;
   }
 
-  @SuppressWarnings("deprecation")
   @Deprecated
   @Override
   public void captureUserFeedback(final @NotNull UserFeedback userFeedback) {
