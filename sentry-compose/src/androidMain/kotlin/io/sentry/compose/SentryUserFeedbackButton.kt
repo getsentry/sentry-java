@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import io.sentry.Sentry
 import io.sentry.SentryFeedbackOptions
 
+@Deprecated("Use Sentry.feedback().show() instead.", replaceWith = ReplaceWith("Sentry.feedback().show(configurator)", "io.sentry.Sentry"))
 @Composable
 public fun SentryUserFeedbackButton(
   modifier: Modifier = Modifier,
