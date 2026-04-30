@@ -43,6 +43,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -62,6 +63,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
@@ -79,8 +81,10 @@ import io.sentry.MeasurementUnit
 import io.sentry.Sentry
 import io.sentry.SentryLogLevel
 import io.sentry.UpdateStatus
+import io.sentry.android.core.SentryUserFeedbackForm
 import io.sentry.compose.SentryTraced
 import io.sentry.compose.SentryUserFeedbackButton
+import io.sentry.protocol.Feedback
 import io.sentry.protocol.User
 import java.io.File
 import java.io.FileOutputStream
@@ -615,8 +619,103 @@ fun UserFeedbackScreen() {
       }
     }
 
-    // SentryUserFeedbackButton as a special item
-    item(span = { GridItemSpan(maxLineSpan) }) { SentryUserFeedbackButton(modifier = Modifier) }
+    // Bring up User Feedback Form from a custom button using the global Sentry.feedback() API
+    item(span = { GridItemSpan(maxLineSpan) }) {
+      Button(modifier = Modifier, onClick = { Sentry.feedback().show() }) {
+        Row(
+          verticalAlignment = Alignment.CenterVertically,
+          horizontalArrangement = Arrangement.Center,
+        ) {
+          Icon(
+            painter = painterResource(id = io.sentry.compose.R.drawable.sentry_user_feedback_compose_button_logo_24),
+            contentDescription = null,
+          )
+          Spacer(Modifier.padding(horizontal = 4.dp))
+          Text(text = "Report a Bug")
+        }
+      }
+    }
+
+    // Create a SentryUserFeedbackForm programmatically and show it
+    item(span = { GridItemSpan(maxLineSpan) }) {
+      Button(
+        modifier = Modifier,
+        onClick = {
+          SentryUserFeedbackForm.Builder(activity)
+            .configurator { options ->
+              options.formTitle = "Custom Form"
+              options.submitButtonLabel = "Send"
+              options.cancelButtonLabel = "Never mind"
+              options.messageLabel = "What happened?"
+              options.messagePlaceholder = "Describe the issue..."
+              options.isShowBranding = false
+              options.isNameRequired = true
+              options.isEmailRequired = true
+              options.setOnSubmitSuccess { feedback ->
+                Toast.makeText(activity, "Thanks for the feedback!", Toast.LENGTH_SHORT).show()
+              }
+            }
+            .create()
+            .show()
+        },
+      ) {
+        Text(text = "Custom Form (Builder)")
+      }
+    }
+
+    // Showcases how to manually show and dismiss a form programmatically
+    item(span = { GridItemSpan(maxLineSpan) }) {
+      Button(
+        modifier = Modifier,
+        onClick = {
+          val form = SentryUserFeedbackForm.Builder(activity)
+            .configurator { options ->
+              options.formTitle = "Quick! You have 2 seconds"
+            }
+            .create()
+          form.show()
+          Handler(Looper.getMainLooper()).postDelayed({ form.dismiss() }, 2000)
+        },
+      ) {
+        Text(text = "Auto-dismiss Form (2s)")
+      }
+    }
+
+    // Send feedback programmatically without showing a form
+    item(span = { GridItemSpan(maxLineSpan) }) {
+      Button(
+        modifier = Modifier,
+        onClick = {
+          val feedback = Feedback("The app crashed when I tapped the button").apply {
+            name = "Jane Doe"
+            contactEmail = "jane@example.com"
+            url = "https://example.com/page"
+          }
+          val eventId = Sentry.feedback().capture(feedback)
+          Toast.makeText(activity, "Feedback sent: $eventId", Toast.LENGTH_SHORT).show()
+        },
+      ) {
+        Text(text = "Send Feedback (no form)")
+      }
+    }
+
+    // Enable shake-to-show for a specific form instance
+    item(span = { GridItemSpan(maxLineSpan) }) {
+      Button(
+        modifier = Modifier,
+        onClick = {
+          SentryUserFeedbackForm.Builder(activity)
+            .configurator { options ->
+              options.isUseShakeGesture = true
+              options.formTitle = "Shake Feedback"
+            }
+            .create()
+          Toast.makeText(activity, "Shake your device to open the form!", Toast.LENGTH_SHORT).show()
+        },
+      ) {
+        Text(text = "Enable Shake-to-Show")
+      }
+    }
   }
 }
 
