@@ -717,6 +717,7 @@ public final class SentryClient implements ISentryClient {
   }
 
   @SuppressWarnings("deprecation")
+  @Deprecated
   private @NotNull SentryEnvelope buildEnvelope(final @NotNull UserFeedback userFeedback) {
     final List<SentryEnvelopeItem> envelopeItems = new ArrayList<>();
 
