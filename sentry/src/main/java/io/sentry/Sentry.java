@@ -827,40 +827,37 @@ public final class Sentry {
   }
 
   /**
-   * Captures the feedback.
-   *
-   * @param feedback The feedback to send.
-   * @return The Id (SentryId object) of the event
+   * @deprecated Use {@link #feedback()}.{@link IFeedbackApi#capture(Feedback) capture(feedback)}
+   *     instead.
    */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public static @NotNull SentryId captureFeedback(final @NotNull Feedback feedback) {
-    return getCurrentScopes().captureFeedback(feedback);
+    return feedback().capture(feedback);
   }
 
   /**
-   * Captures the feedback.
-   *
-   * @param feedback The feedback to send.
-   * @param hint An optional hint to be applied to the event.
-   * @return The Id (SentryId object) of the event
+   * @deprecated Use {@link #feedback()}.{@link IFeedbackApi#capture(Feedback, Hint)
+   *     capture(feedback, hint)} instead.
    */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public static @NotNull SentryId captureFeedback(
       final @NotNull Feedback feedback, final @Nullable Hint hint) {
-    return getCurrentScopes().captureFeedback(feedback, hint);
+    return feedback().capture(feedback, hint);
   }
 
   /**
-   * Captures the feedback.
-   *
-   * @param feedback The feedback to send.
-   * @param hint An optional hint to be applied to the event.
-   * @param callback The callback to configure the scope for a single invocation.
-   * @return The Id (SentryId object) of the event
+   * @deprecated Use {@link #feedback()}.{@link IFeedbackApi#capture(Feedback, Hint, ScopeCallback)
+   *     capture(feedback, hint, callback)} instead.
    */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public static @NotNull SentryId captureFeedback(
       final @NotNull Feedback feedback,
       final @Nullable Hint hint,
       final @Nullable ScopeCallback callback) {
-    return getCurrentScopes().captureFeedback(feedback, hint, callback);
+    return feedback().capture(feedback, hint, callback);
   }
 
   /**
@@ -916,7 +913,11 @@ public final class Sentry {
    * Captures a manually created user feedback and sends it to Sentry.
    *
    * @param userFeedback The user feedback to send to Sentry.
+   * @deprecated Use {@link #feedback()}.{@link IFeedbackApi#capture(Feedback) capture(feedback)}
+   *     with the new {@link Feedback} type instead.
    */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public static void captureUserFeedback(final @NotNull UserFeedback userFeedback) {
     getCurrentScopes().captureUserFeedback(userFeedback);
   }
@@ -1355,52 +1356,79 @@ public final class Sentry {
     return getCurrentScopes().metrics();
   }
 
-  public static void showUserFeedbackForm() {
-    showUserFeedbackForm(null);
-  }
+  private static final @NotNull IFeedbackApi feedbackApi = new SentryFeedbackApi();
 
-  public static void showUserFeedbackForm(
-      final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator) {
-    showUserFeedbackForm(null, configurator);
-  }
-
-  public static void showUserFeedbackForm(
-      final @Nullable SentryId associatedEventId,
-      final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator) {
-    final @NotNull SentryOptions options = getCurrentScopes().getOptions();
-    options.getFeedbackOptions().getFormHandler().showForm(associatedEventId, configurator);
+  @NotNull
+  public static IFeedbackApi feedback() {
+    return feedbackApi;
   }
 
   /**
-   * @deprecated Use {@link #showUserFeedbackForm()} instead.
+   * @deprecated Use {@link #feedback()}.{@link IFeedbackApi#showForm() showForm()} instead.
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
+  public static void showUserFeedbackForm() {
+    feedback().showForm();
+  }
+
+  /**
+   * @deprecated Use {@link #feedback()}.{@link
+   *     IFeedbackApi#showForm(SentryFeedbackOptions.OptionsConfigurator) showForm(configurator)}
+   *     instead.
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
+  public static void showUserFeedbackForm(
+      final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator) {
+    feedback().showForm(configurator);
+  }
+
+  /**
+   * @deprecated Use {@link #feedback()}.{@link IFeedbackApi#showForm(SentryId,
+   *     SentryFeedbackOptions.OptionsConfigurator) showForm(associatedEventId, configurator)}
+   *     instead.
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
+  public static void showUserFeedbackForm(
+      final @Nullable SentryId associatedEventId,
+      final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator) {
+    feedback().showForm(associatedEventId, configurator);
+  }
+
+  /**
+   * @deprecated Use {@link #feedback()}.{@link IFeedbackApi#showForm() showForm()} instead.
    */
   @Deprecated
   @SuppressWarnings("InlineMeSuggester")
   public static void showUserFeedbackDialog() {
-    showUserFeedbackForm();
+    feedback().showForm();
   }
 
   /**
-   * @deprecated Use {@link #showUserFeedbackForm(SentryFeedbackOptions.OptionsConfigurator)}
+   * @deprecated Use {@link #feedback()}.{@link
+   *     IFeedbackApi#showForm(SentryFeedbackOptions.OptionsConfigurator) showForm(configurator)}
    *     instead.
    */
   @Deprecated
   @SuppressWarnings("InlineMeSuggester")
   public static void showUserFeedbackDialog(
       final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator) {
-    showUserFeedbackForm(configurator);
+    feedback().showForm(configurator);
   }
 
   /**
-   * @deprecated Use {@link #showUserFeedbackForm(SentryId,
-   *     SentryFeedbackOptions.OptionsConfigurator)} instead.
+   * @deprecated Use {@link #feedback()}.{@link IFeedbackApi#showForm(SentryId,
+   *     SentryFeedbackOptions.OptionsConfigurator) showForm(associatedEventId, configurator)}
+   *     instead.
    */
   @Deprecated
   @SuppressWarnings("InlineMeSuggester")
   public static void showUserFeedbackDialog(
       final @Nullable SentryId associatedEventId,
       final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator) {
-    showUserFeedbackForm(associatedEventId, configurator);
+    feedback().showForm(associatedEventId, configurator);
   }
 
   /**

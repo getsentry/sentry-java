@@ -834,6 +834,15 @@ public abstract interface class io/sentry/IEnvelopeSender {
 	public abstract fun processEnvelopeFile (Ljava/lang/String;Lio/sentry/Hint;)V
 }
 
+public abstract interface class io/sentry/IFeedbackApi {
+	public abstract fun capture (Lio/sentry/protocol/Feedback;)Lio/sentry/protocol/SentryId;
+	public abstract fun capture (Lio/sentry/protocol/Feedback;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
+	public abstract fun capture (Lio/sentry/protocol/Feedback;Lio/sentry/Hint;Lio/sentry/ScopeCallback;)Lio/sentry/protocol/SentryId;
+	public abstract fun showForm ()V
+	public abstract fun showForm (Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)V
+	public abstract fun showForm (Lio/sentry/protocol/SentryId;Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)V
+}
+
 public abstract interface class io/sentry/IHub : io/sentry/IScopes {
 }
 
@@ -1567,6 +1576,16 @@ public final class io/sentry/NoOpDistributionApi : io/sentry/IDistributionApi {
 public final class io/sentry/NoOpEnvelopeReader : io/sentry/IEnvelopeReader {
 	public static fun getInstance ()Lio/sentry/NoOpEnvelopeReader;
 	public fun read (Ljava/io/InputStream;)Lio/sentry/SentryEnvelope;
+}
+
+public final class io/sentry/NoOpFeedbackApi : io/sentry/IFeedbackApi {
+	public fun capture (Lio/sentry/protocol/Feedback;)Lio/sentry/protocol/SentryId;
+	public fun capture (Lio/sentry/protocol/Feedback;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
+	public fun capture (Lio/sentry/protocol/Feedback;Lio/sentry/Hint;Lio/sentry/ScopeCallback;)Lio/sentry/protocol/SentryId;
+	public static fun getInstance ()Lio/sentry/NoOpFeedbackApi;
+	public fun showForm ()V
+	public fun showForm (Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)V
+	public fun showForm (Lio/sentry/protocol/SentryId;Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)V
 }
 
 public final class io/sentry/NoOpHub : io/sentry/IHub {
@@ -2720,6 +2739,7 @@ public final class io/sentry/Sentry {
 	public static fun continueTrace (Ljava/lang/String;Ljava/util/List;)Lio/sentry/TransactionContext;
 	public static fun distribution ()Lio/sentry/IDistributionApi;
 	public static fun endSession ()V
+	public static fun feedback ()Lio/sentry/IFeedbackApi;
 	public static fun flush (J)V
 	public static fun forkedCurrentScope (Ljava/lang/String;)Lio/sentry/IScopes;
 	public static fun forkedRootScopes (Ljava/lang/String;)Lio/sentry/IScopes;

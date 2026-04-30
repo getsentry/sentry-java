@@ -51,18 +51,18 @@ public final class ScopesAdapter implements IScopes {
 
   @Override
   public @NotNull SentryId captureFeedback(@NotNull Feedback feedback) {
-    return Sentry.captureFeedback(feedback);
+    return Sentry.feedback().capture(feedback);
   }
 
   @Override
   public @NotNull SentryId captureFeedback(@NotNull Feedback feedback, @Nullable Hint hint) {
-    return Sentry.captureFeedback(feedback, hint);
+    return Sentry.feedback().capture(feedback, hint);
   }
 
   @Override
   public @NotNull SentryId captureFeedback(
       @NotNull Feedback feedback, @Nullable Hint hint, @Nullable ScopeCallback callback) {
-    return Sentry.captureFeedback(feedback, hint, callback);
+    return Sentry.feedback().capture(feedback, hint, callback);
   }
 
   @ApiStatus.Internal
@@ -82,6 +82,7 @@ public final class ScopesAdapter implements IScopes {
     return Sentry.captureException(throwable, hint, callback);
   }
 
+  @SuppressWarnings("deprecation")
   @Override
   public void captureUserFeedback(@NotNull UserFeedback userFeedback) {
     Sentry.captureUserFeedback(userFeedback);

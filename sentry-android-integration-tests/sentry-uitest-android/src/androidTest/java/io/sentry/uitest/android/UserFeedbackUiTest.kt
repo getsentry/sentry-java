@@ -56,14 +56,14 @@ class UserFeedbackUiTest : BaseUiTest() {
 
   @Test
   fun userFeedbackNotShownWhenSdkDisabledViaApi() {
-    launchActivity<EmptyActivity>().onActivity { Sentry.showUserFeedbackForm() }
+    launchActivity<EmptyActivity>().onActivity { Sentry.feedback().showForm() }
     onView(withId(R.id.sentry_dialog_user_feedback_layout)).check(doesNotExist())
   }
 
   @Test
   fun userFeedbackShownViaApi() {
     initSentry()
-    launchActivity<EmptyActivity>().onActivity { Sentry.showUserFeedbackForm() }
+    launchActivity<EmptyActivity>().onActivity { Sentry.feedback().showForm() }
 
     onView(withId(R.id.sentry_dialog_user_feedback_layout))
       .inRoot(isDialog())

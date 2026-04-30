@@ -162,7 +162,7 @@ public class SentryUserFeedbackForm extends AlertDialog {
           }
 
           // Capture the feedback. If the ID is empty, it means that the feedback was not sent
-          final @NotNull SentryId id = Sentry.captureFeedback(feedback);
+          final @NotNull SentryId id = Sentry.feedback().capture(feedback);
           if (!id.equals(SentryId.EMPTY_ID)) {
             Toast.makeText(
                     getContext(), feedbackOptions.getSuccessMessageText(), Toast.LENGTH_SHORT)

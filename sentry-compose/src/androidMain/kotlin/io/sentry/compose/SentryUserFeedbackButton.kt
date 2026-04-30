@@ -21,7 +21,7 @@ public fun SentryUserFeedbackButton(
   text: String = "Report a Bug",
   configurator: SentryFeedbackOptions.OptionsConfigurator? = null,
 ) {
-  Button(modifier = modifier, onClick = { Sentry.showUserFeedbackForm(configurator) }) {
+  Button(modifier = modifier, onClick = { Sentry.feedback().showForm(configurator) }) {
     Row(
       verticalAlignment = Alignment.CenterVertically,
       horizontalArrangement = Arrangement.Center,

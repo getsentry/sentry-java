@@ -1504,30 +1504,30 @@ class SentryTest {
   }
 
   @Test
-  fun `showUserFeedbackForm forwards to feedbackOptions_formHandler`() {
+  fun `feedback showForm forwards to feedbackOptions_formHandler`() {
     val mockFormHandler = mock<IFormHandler>()
     initForTest {
       it.dsn = dsn
       it.feedbackOptions.setFormHandler(mockFormHandler)
     }
-    Sentry.showUserFeedbackForm()
+    Sentry.feedback().showForm()
     verify(mockFormHandler).showForm(eq(null), eq(null))
   }
 
   @Test
-  fun `showUserFeedbackForm forwards to feedbackOptions_formHandler with configurator`() {
+  fun `feedback showForm forwards to feedbackOptions_formHandler with configurator`() {
     val mockFormHandler = mock<IFormHandler>()
     val configurator = mock<SentryFeedbackOptions.OptionsConfigurator>()
     initForTest {
       it.dsn = dsn
       it.feedbackOptions.setFormHandler(mockFormHandler)
     }
-    Sentry.showUserFeedbackForm(configurator)
+    Sentry.feedback().showForm(configurator)
     verify(mockFormHandler).showForm(eq(null), eq(configurator))
   }
 
   @Test
-  fun `showUserFeedbackForm forwards to feedbackOptions_formHandler with associatedEventId and configurator`() {
+  fun `feedback showForm forwards to feedbackOptions_formHandler with associatedEventId and configurator`() {
     val mockFormHandler = mock<IFormHandler>()
     val configurator = mock<SentryFeedbackOptions.OptionsConfigurator>()
     val associatedEventId = SentryId()
@@ -1535,7 +1535,7 @@ class SentryTest {
       it.dsn = dsn
       it.feedbackOptions.setFormHandler(mockFormHandler)
     }
-    Sentry.showUserFeedbackForm(associatedEventId, configurator)
+    Sentry.feedback().showForm(associatedEventId, configurator)
     verify(mockFormHandler).showForm(eq(associatedEventId), eq(configurator))
   }
 
