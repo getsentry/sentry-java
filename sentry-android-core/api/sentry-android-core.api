@@ -435,6 +435,12 @@ public abstract interface class io/sentry/android/core/SentryAndroidOptions$Befo
 	public abstract fun execute (Lio/sentry/SentryEvent;Lio/sentry/Hint;Z)Z
 }
 
+public final class io/sentry/android/core/SentryFramesDelayResult {
+	public fun <init> (DI)V
+	public fun getDelaySeconds ()D
+	public fun getFramesContributingToDelayCount ()I
+}
+
 public final class io/sentry/android/core/SentryInitProvider {
 	public fun <init> ()V
 	public fun attachInfo (Landroid/content/Context;Landroid/content/pm/ProviderInfo;)V
