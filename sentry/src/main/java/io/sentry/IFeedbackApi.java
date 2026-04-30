@@ -7,11 +7,11 @@ import org.jetbrains.annotations.Nullable;
 
 public interface IFeedbackApi {
 
-  void showForm();
+  void show();
 
-  void showForm(final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator);
+  void show(final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator);
 
-  void showForm(
+  void show(
       final @Nullable SentryId associatedEventId,
       final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator);
 

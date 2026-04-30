@@ -16,13 +16,13 @@ public final class NoOpFeedbackApi implements IFeedbackApi {
   }
 
   @Override
-  public void showForm() {}
+  public void show() {}
 
   @Override
-  public void showForm(final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator) {}
+  public void show(final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator) {}
 
   @Override
-  public void showForm(
+  public void show(
       final @Nullable SentryId associatedEventId,
       final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator) {}
 

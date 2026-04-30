@@ -840,9 +840,9 @@ public abstract interface class io/sentry/IFeedbackApi {
 	public abstract fun capture (Lio/sentry/protocol/Feedback;)Lio/sentry/protocol/SentryId;
 	public abstract fun capture (Lio/sentry/protocol/Feedback;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public abstract fun capture (Lio/sentry/protocol/Feedback;Lio/sentry/Hint;Lio/sentry/ScopeCallback;)Lio/sentry/protocol/SentryId;
-	public abstract fun showForm ()V
-	public abstract fun showForm (Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)V
-	public abstract fun showForm (Lio/sentry/protocol/SentryId;Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)V
+	public abstract fun show ()V
+	public abstract fun show (Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)V
+	public abstract fun show (Lio/sentry/protocol/SentryId;Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)V
 }
 
 public abstract interface class io/sentry/IHub : io/sentry/IScopes {
@@ -1586,9 +1586,9 @@ public final class io/sentry/NoOpFeedbackApi : io/sentry/IFeedbackApi {
 	public fun capture (Lio/sentry/protocol/Feedback;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun capture (Lio/sentry/protocol/Feedback;Lio/sentry/Hint;Lio/sentry/ScopeCallback;)Lio/sentry/protocol/SentryId;
 	public static fun getInstance ()Lio/sentry/NoOpFeedbackApi;
-	public fun showForm ()V
-	public fun showForm (Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)V
-	public fun showForm (Lio/sentry/protocol/SentryId;Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)V
+	public fun show ()V
+	public fun show (Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)V
+	public fun show (Lio/sentry/protocol/SentryId;Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)V
 }
 
 public final class io/sentry/NoOpHub : io/sentry/IHub {

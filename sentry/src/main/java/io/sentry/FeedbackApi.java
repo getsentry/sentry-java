@@ -14,17 +14,17 @@ final class FeedbackApi implements IFeedbackApi {
   }
 
   @Override
-  public void showForm() {
-    showForm(null, null);
+  public void show() {
+    show(null, null);
   }
 
   @Override
-  public void showForm(final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator) {
-    showForm(null, configurator);
+  public void show(final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator) {
+    show(null, configurator);
   }
 
   @Override
-  public void showForm(
+  public void show(
       final @Nullable SentryId associatedEventId,
       final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator) {
     final @NotNull SentryOptions options = scopes.getOptions();
