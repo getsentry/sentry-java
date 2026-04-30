@@ -1356,11 +1356,9 @@ public final class Sentry {
     return getCurrentScopes().metrics();
   }
 
-  private static final @NotNull IFeedbackApi feedbackApi = new SentryFeedbackApi();
-
   @NotNull
   public static IFeedbackApi feedback() {
-    return feedbackApi;
+    return getCurrentScopes().feedback();
   }
 
   /**

@@ -748,6 +748,9 @@ public interface IScopes {
   @NotNull
   IMetricsApi metrics();
 
+  @NotNull
+  IFeedbackApi feedback();
+
   /**
    * Sets an attribute.
    *

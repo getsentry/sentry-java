@@ -664,6 +664,7 @@ public final class io/sentry/HubAdapter : io/sentry/IHub {
 	public fun configureScope (Lio/sentry/ScopeType;Lio/sentry/ScopeCallback;)V
 	public fun continueTrace (Ljava/lang/String;Ljava/util/List;)Lio/sentry/TransactionContext;
 	public fun endSession ()V
+	public fun feedback ()Lio/sentry/IFeedbackApi;
 	public fun flush (J)V
 	public fun forkedCurrentScope (Ljava/lang/String;)Lio/sentry/IScopes;
 	public fun forkedRootScopes (Ljava/lang/String;)Lio/sentry/IScopes;
@@ -740,6 +741,7 @@ public final class io/sentry/HubScopesWrapper : io/sentry/IHub {
 	public fun configureScope (Lio/sentry/ScopeType;Lio/sentry/ScopeCallback;)V
 	public fun continueTrace (Ljava/lang/String;Ljava/util/List;)Lio/sentry/TransactionContext;
 	public fun endSession ()V
+	public fun feedback ()Lio/sentry/IFeedbackApi;
 	public fun flush (J)V
 	public fun forkedCurrentScope (Ljava/lang/String;)Lio/sentry/IScopes;
 	public fun forkedRootScopes (Ljava/lang/String;)Lio/sentry/IScopes;
@@ -1021,6 +1023,7 @@ public abstract interface class io/sentry/IScopes {
 	public abstract fun configureScope (Lio/sentry/ScopeType;Lio/sentry/ScopeCallback;)V
 	public abstract fun continueTrace (Ljava/lang/String;Ljava/util/List;)Lio/sentry/TransactionContext;
 	public abstract fun endSession ()V
+	public abstract fun feedback ()Lio/sentry/IFeedbackApi;
 	public abstract fun flush (J)V
 	public abstract fun forkedCurrentScope (Ljava/lang/String;)Lio/sentry/IScopes;
 	public abstract fun forkedRootScopes (Ljava/lang/String;)Lio/sentry/IScopes;
@@ -1614,6 +1617,7 @@ public final class io/sentry/NoOpHub : io/sentry/IHub {
 	public fun configureScope (Lio/sentry/ScopeType;Lio/sentry/ScopeCallback;)V
 	public fun continueTrace (Ljava/lang/String;Ljava/util/List;)Lio/sentry/TransactionContext;
 	public fun endSession ()V
+	public fun feedback ()Lio/sentry/IFeedbackApi;
 	public fun flush (J)V
 	public fun forkedCurrentScope (Ljava/lang/String;)Lio/sentry/IScopes;
 	public fun forkedRootScopes (Ljava/lang/String;)Lio/sentry/IScopes;
@@ -1800,6 +1804,7 @@ public final class io/sentry/NoOpScopes : io/sentry/IScopes {
 	public fun configureScope (Lio/sentry/ScopeType;Lio/sentry/ScopeCallback;)V
 	public fun continueTrace (Ljava/lang/String;Ljava/util/List;)Lio/sentry/TransactionContext;
 	public fun endSession ()V
+	public fun feedback ()Lio/sentry/IFeedbackApi;
 	public fun flush (J)V
 	public fun forkedCurrentScope (Ljava/lang/String;)Lio/sentry/IScopes;
 	public fun forkedRootScopes (Ljava/lang/String;)Lio/sentry/IScopes;
@@ -2536,6 +2541,7 @@ public final class io/sentry/Scopes : io/sentry/IScopes {
 	public fun configureScope (Lio/sentry/ScopeType;Lio/sentry/ScopeCallback;)V
 	public fun continueTrace (Ljava/lang/String;Ljava/util/List;)Lio/sentry/TransactionContext;
 	public fun endSession ()V
+	public fun feedback ()Lio/sentry/IFeedbackApi;
 	public fun flush (J)V
 	public fun forkedCurrentScope (Ljava/lang/String;)Lio/sentry/IScopes;
 	public fun forkedRootScopes (Ljava/lang/String;)Lio/sentry/IScopes;
@@ -2615,6 +2621,7 @@ public final class io/sentry/ScopesAdapter : io/sentry/IScopes {
 	public fun configureScope (Lio/sentry/ScopeType;Lio/sentry/ScopeCallback;)V
 	public fun continueTrace (Ljava/lang/String;Ljava/util/List;)Lio/sentry/TransactionContext;
 	public fun endSession ()V
+	public fun feedback ()Lio/sentry/IFeedbackApi;
 	public fun flush (J)V
 	public fun forkedCurrentScope (Ljava/lang/String;)Lio/sentry/IScopes;
 	public fun forkedRootScopes (Ljava/lang/String;)Lio/sentry/IScopes;

@@ -339,6 +339,11 @@ public final class NoOpHub implements IHub {
   }
 
   @Override
+  public @NotNull IFeedbackApi feedback() {
+    return NoOpFeedbackApi.getInstance();
+  }
+
+  @Override
   public void setAttribute(final @Nullable String key, final @Nullable Object value) {}
 
   @Override

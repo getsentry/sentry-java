@@ -5,7 +5,13 @@ import io.sentry.protocol.SentryId;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-final class SentryFeedbackApi implements IFeedbackApi {
+final class FeedbackApi implements IFeedbackApi {
+
+  private final @NotNull IScopes scopes;
+
+  FeedbackApi(final @NotNull IScopes scopes) {
+    this.scopes = scopes;
+  }
 
   @Override
   public void showForm() {
@@ -21,18 +27,18 @@ final class SentryFeedbackApi implements IFeedbackApi {
   public void showForm(
       final @Nullable SentryId associatedEventId,
       final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator) {
-    final @NotNull SentryOptions options = Sentry.getCurrentScopes().getOptions();
+    final @NotNull SentryOptions options = scopes.getOptions();
     options.getFeedbackOptions().getFormHandler().showForm(associatedEventId, configurator);
   }
 
   @Override
   public @NotNull SentryId capture(final @NotNull Feedback feedback) {
-    return Sentry.getCurrentScopes().captureFeedback(feedback);
+    return scopes.captureFeedback(feedback);
   }
 
   @Override
   public @NotNull SentryId capture(final @NotNull Feedback feedback, final @Nullable Hint hint) {
-    return Sentry.getCurrentScopes().captureFeedback(feedback, hint);
+    return scopes.captureFeedback(feedback, hint);
   }
 
   @Override
@@ -40,6 +46,6 @@ final class SentryFeedbackApi implements IFeedbackApi {
       final @NotNull Feedback feedback,
       final @Nullable Hint hint,
       final @Nullable ScopeCallback callback) {
-    return Sentry.getCurrentScopes().captureFeedback(feedback, hint, callback);
+    return scopes.captureFeedback(feedback, hint, callback);
   }
 }

@@ -337,6 +337,11 @@ public final class NoOpScopes implements IScopes {
   }
 
   @Override
+  public @NotNull IFeedbackApi feedback() {
+    return NoOpFeedbackApi.getInstance();
+  }
+
+  @Override
   public void setAttribute(final @Nullable String key, final @Nullable Object value) {}
 
   @Override
