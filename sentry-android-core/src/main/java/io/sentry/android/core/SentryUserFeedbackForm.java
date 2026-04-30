@@ -70,16 +70,19 @@ public class SentryUserFeedbackForm extends AlertDialog {
     final @NotNull SentryOptions options = Sentry.getCurrentScopes().getOptions();
     shakeDetector = new SentryShakeDetector(options.getLogger());
     final @NotNull WeakReference<Activity> activityRef = new WeakReference<>(activity);
-    shakeDetector.start(activity, () -> {
-      final @Nullable Activity active = activityRef.get();
-      if (active != null && !active.isFinishing() && !active.isDestroyed()) {
-        active.runOnUiThread(() -> {
-          if (!active.isFinishing() && !active.isDestroyed()) {
-            show();
+    shakeDetector.start(
+        activity,
+        () -> {
+          final @Nullable Activity active = activityRef.get();
+          if (active != null && !active.isFinishing() && !active.isDestroyed()) {
+            active.runOnUiThread(
+                () -> {
+                  if (!active.isFinishing() && !active.isDestroyed()) {
+                    show();
+                  }
+                });
           }
         });
-      }
-    });
     final @NotNull Application app = activity.getApplication();
     shakeLifecycleCallbacks = new ShakeLifecycleCallbacks(activityRef);
     app.registerActivityLifecycleCallbacks(shakeLifecycleCallbacks);
@@ -120,16 +123,19 @@ public class SentryUserFeedbackForm extends AlertDialog {
     @Override
     public void onActivityResumed(final @NotNull Activity activity) {
       if (activity == activityRef.get() && shakeDetector != null) {
-        shakeDetector.start(activity, () -> {
-          final @Nullable Activity active = activityRef.get();
-          if (active != null && !active.isFinishing() && !active.isDestroyed()) {
-            active.runOnUiThread(() -> {
-              if (!active.isFinishing() && !active.isDestroyed()) {
-                show();
+        shakeDetector.start(
+            activity,
+            () -> {
+              final @Nullable Activity active = activityRef.get();
+              if (active != null && !active.isFinishing() && !active.isDestroyed()) {
+                active.runOnUiThread(
+                    () -> {
+                      if (!active.isFinishing() && !active.isDestroyed()) {
+                        show();
+                      }
+                    });
               }
             });
-          }
-        });
       }
     }
 
@@ -150,10 +156,13 @@ public class SentryUserFeedbackForm extends AlertDialog {
     @Override
     public void onActivityCreated(
         final @NotNull Activity activity, final @Nullable Bundle savedInstanceState) {}
+
     @Override
     public void onActivityStarted(final @NotNull Activity activity) {}
+
     @Override
     public void onActivityStopped(final @NotNull Activity activity) {}
+
     @Override
     public void onActivitySaveInstanceState(
         final @NotNull Activity activity, final @NotNull Bundle outState) {}

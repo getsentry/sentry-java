@@ -83,7 +83,6 @@ import io.sentry.SentryLogLevel
 import io.sentry.UpdateStatus
 import io.sentry.android.core.SentryUserFeedbackForm
 import io.sentry.compose.SentryTraced
-import io.sentry.compose.SentryUserFeedbackButton
 import io.sentry.protocol.Feedback
 import io.sentry.protocol.User
 import java.io.File
@@ -627,7 +626,10 @@ fun UserFeedbackScreen() {
           horizontalArrangement = Arrangement.Center,
         ) {
           Icon(
-            painter = painterResource(id = io.sentry.compose.R.drawable.sentry_user_feedback_compose_button_logo_24),
+            painter =
+              painterResource(
+                id = io.sentry.compose.R.drawable.sentry_user_feedback_compose_button_logo_24
+              ),
             contentDescription = null,
           )
           Spacer(Modifier.padding(horizontal = 4.dp))
@@ -668,11 +670,10 @@ fun UserFeedbackScreen() {
       Button(
         modifier = Modifier,
         onClick = {
-          val form = SentryUserFeedbackForm.Builder(activity)
-            .configurator { options ->
-              options.formTitle = "Quick! You have 2 seconds"
-            }
-            .create()
+          val form =
+            SentryUserFeedbackForm.Builder(activity)
+              .configurator { options -> options.formTitle = "Quick! You have 2 seconds" }
+              .create()
           form.show()
           Handler(Looper.getMainLooper()).postDelayed({ form.dismiss() }, 2000)
         },
@@ -686,11 +687,12 @@ fun UserFeedbackScreen() {
       Button(
         modifier = Modifier,
         onClick = {
-          val feedback = Feedback("The app crashed when I tapped the button").apply {
-            name = "Jane Doe"
-            contactEmail = "jane@example.com"
-            url = "https://example.com/page"
-          }
+          val feedback =
+            Feedback("The app crashed when I tapped the button").apply {
+              name = "Jane Doe"
+              contactEmail = "jane@example.com"
+              url = "https://example.com/page"
+            }
           val eventId = Sentry.feedback().capture(feedback)
           Toast.makeText(activity, "Feedback sent: $eventId", Toast.LENGTH_SHORT).show()
         },
