@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import io.sentry.Sentry
 import io.sentry.SentryFeedbackOptions
 
+@Deprecated("`SentryUserFeedbackButton` will be removed in the next major version")
 @Composable
 public fun SentryUserFeedbackButton(
   modifier: Modifier = Modifier,
