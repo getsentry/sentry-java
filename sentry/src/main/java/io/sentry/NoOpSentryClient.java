@@ -44,6 +44,8 @@ final class NoOpSentryClient implements ISentryClient {
     return SentryId.EMPTY_ID;
   }
 
+  @SuppressWarnings("deprecation")
+  @Deprecated
   @Override
   public void captureUserFeedback(@NotNull UserFeedback userFeedback) {}
 

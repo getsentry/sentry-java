@@ -1366,38 +1366,6 @@ public final class Sentry {
    */
   @Deprecated
   @SuppressWarnings("InlineMeSuggester")
-  public static void showUserFeedbackForm() {
-    feedback().show();
-  }
-
-  /**
-   * @deprecated Use {@link #feedback()}.{@link
-   *     IFeedbackApi#show(SentryFeedbackOptions.OptionsConfigurator) show(configurator)} instead.
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public static void showUserFeedbackForm(
-      final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator) {
-    feedback().show(configurator);
-  }
-
-  /**
-   * @deprecated Use {@link #feedback()}.{@link IFeedbackApi#show(SentryId,
-   *     SentryFeedbackOptions.OptionsConfigurator) show(associatedEventId, configurator)} instead.
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public static void showUserFeedbackForm(
-      final @Nullable SentryId associatedEventId,
-      final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator) {
-    feedback().show(associatedEventId, configurator);
-  }
-
-  /**
-   * @deprecated Use {@link #feedback()}.{@link IFeedbackApi#show() show()} instead.
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
   public static void showUserFeedbackDialog() {
     feedback().show();
   }

@@ -83,6 +83,7 @@ public final class ScopesAdapter implements IScopes {
   }
 
   @SuppressWarnings("deprecation")
+  @Deprecated
   @Override
   public void captureUserFeedback(@NotNull UserFeedback userFeedback) {
     Sentry.captureUserFeedback(userFeedback);

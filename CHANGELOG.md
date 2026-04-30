@@ -7,7 +7,7 @@
 - Add `Sentry.feedback()` API for `show()` and `capture()` ([#5349](https://github.com/getsentry/sentry-java/pull/5349))
   - `Sentry.showUserFeedbackDialog()` is deprecated in favor of `Sentry.feedback().show()`
   - `Sentry.captureFeedback()` is deprecated in favor of `Sentry.feedback().capture()`
-  - `Sentry.captureUserFeedback()` is deprecated in favor of `Sentry.feedback().capture()` with the new `Feedback` type
+  - `Sentry.captureUserFeedback()` and `UserFeedback` are deprecated in favor of `Sentry.feedback().capture()` with the new `Feedback` type
   - `SentryUserFeedbackDialog` is deprecated in favor of `SentryUserFeedbackForm`
   - All deprecated APIs will be removed in the next major version
 

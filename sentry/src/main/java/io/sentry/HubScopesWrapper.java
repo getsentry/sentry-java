@@ -75,6 +75,8 @@ public final class HubScopesWrapper implements IHub {
     return scopes.captureException(throwable, hint, callback);
   }
 
+  @SuppressWarnings("deprecation")
+  @Deprecated
   @Override
   public void captureUserFeedback(@NotNull UserFeedback userFeedback) {
     scopes.captureUserFeedback(userFeedback);

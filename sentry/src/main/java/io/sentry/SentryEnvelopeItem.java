@@ -169,6 +169,7 @@ public final class SentryEnvelopeItem {
     }
   }
 
+  @SuppressWarnings("deprecation")
   public static SentryEnvelopeItem fromUserFeedback(
       final @NotNull ISerializer serializer, final @NotNull UserFeedback userFeedback) {
     Objects.requireNonNull(serializer, "ISerializer is required.");

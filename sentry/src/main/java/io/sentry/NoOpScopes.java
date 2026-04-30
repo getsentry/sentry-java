@@ -77,6 +77,8 @@ public final class NoOpScopes implements IScopes {
     return SentryId.EMPTY_ID;
   }
 
+  @SuppressWarnings("deprecation")
+  @Deprecated
   @Override
   public void captureUserFeedback(@NotNull UserFeedback userFeedback) {}
 

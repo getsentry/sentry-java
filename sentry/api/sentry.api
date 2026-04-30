@@ -2793,9 +2793,6 @@ public final class io/sentry/Sentry {
 	public static fun showUserFeedbackDialog ()V
 	public static fun showUserFeedbackDialog (Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)V
 	public static fun showUserFeedbackDialog (Lio/sentry/protocol/SentryId;Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)V
-	public static fun showUserFeedbackForm ()V
-	public static fun showUserFeedbackForm (Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)V
-	public static fun showUserFeedbackForm (Lio/sentry/protocol/SentryId;Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)V
 	public static fun startProfiler ()V
 	public static fun startSession ()V
 	public static fun startTransaction (Lio/sentry/TransactionContext;)Lio/sentry/ITransaction;

@@ -688,6 +688,8 @@ public final class SentryClient implements ISentryClient {
     return feedbackEvent;
   }
 
+  @SuppressWarnings("deprecation")
+  @Deprecated
   @Override
   public void captureUserFeedback(final @NotNull UserFeedback userFeedback) {
     Objects.requireNonNull(userFeedback, "SentryEvent is required.");
@@ -714,6 +716,7 @@ public final class SentryClient implements ISentryClient {
     }
   }
 
+  @SuppressWarnings("deprecation")
   private @NotNull SentryEnvelope buildEnvelope(final @NotNull UserFeedback userFeedback) {
     final List<SentryEnvelopeItem> envelopeItems = new ArrayList<>();
 
