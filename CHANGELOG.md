@@ -19,6 +19,10 @@
   - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0138)
   - [diff](https://github.com/getsentry/sentry-native/compare/0.13.7...0.13.8)
 
+### Fixes
+
+- Avoid stack overflow when deserializing large flat JSON objects([#5361](https://github.com/getsentry/sentry-java/pull/#5361))
+
 ## 8.40.0
 
 ### Fixes
