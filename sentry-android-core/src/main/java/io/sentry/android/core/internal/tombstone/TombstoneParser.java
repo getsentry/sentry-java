@@ -40,6 +40,20 @@ public class TombstoneParser implements Closeable {
   @Nullable private final String nativeLibraryDir;
   private final Map<String, String> excTypeValueMap = new HashMap<>();
 
+  private static boolean isJavaFrame(@NonNull final BacktraceFrame frame) {
+    final String fileName = frame.fileName;
+    return !fileName.endsWith(".so")
+        && !fileName.endsWith("app_process64")
+        && (fileName.endsWith(".jar")
+            || fileName.endsWith(".odex")
+            || fileName.endsWith(".vdex")
+            || fileName.endsWith(".oat")
+            || fileName.startsWith("[anon:dalvik-")
+            || fileName.startsWith("<anonymous:")
+            || fileName.startsWith("[anon_shmem:dalvik-")
+            || fileName.startsWith("/memfd:jit-cache"));
+  }
+
   private static String formatHex(long value) {
     return String.format("0x%x", value);
   }
@@ -125,7 +139,8 @@ public class TombstoneParser implements Closeable {
     final List<SentryStackFrame> frames = new ArrayList<>();
 
     for (BacktraceFrame frame : thread.backtrace) {
-      if (frame.fileName.endsWith("libart.so")) {
+      if (frame.fileName.endsWith("libart.so")
+          || Objects.equals(frame.functionName, "art_jni_trampoline")) {
         // We ignore all ART frames for time being because they aren't actionable for app developers
         continue;
       }
@@ -135,27 +150,30 @@ public class TombstoneParser implements Closeable {
         continue;
       }
       final SentryStackFrame stackFrame = new SentryStackFrame();
-      stackFrame.setPackage(frame.fileName);
-      stackFrame.setFunction(frame.functionName);
-      stackFrame.setInstructionAddr(formatHex(frame.pc));
+      if (isJavaFrame(frame)) {
+        stackFrame.setPlatform("java");
+        final String normalizedFunctionName = normalizeFunctionName(frame.functionName);
+        final String module = extractJavaModuleName(normalizedFunctionName);
+        stackFrame.setFunction(extractJavaFunctionName(normalizedFunctionName));
+        stackFrame.setModule(module);
 
-      // inAppIncludes/inAppExcludes filter by Java/Kotlin package names, which don't overlap
-      // with native C/C++ function names (e.g., "crash", "__libc_init"). For native frames,
-      // isInApp() returns null, making nativeLibraryDir the effective in-app check.
-      // epitaph returns "" for unset function names, which would incorrectly return true
-      // from isInApp(), so we treat empty as false to let nativeLibraryDir decide.
-      final String functionName = frame.functionName;
-      @Nullable
-      Boolean inApp =
-          functionName.isEmpty()
-              ? Boolean.FALSE
-              : SentryStackTraceFactory.isInApp(functionName, inAppIncludes, inAppExcludes);
+        // For Java frames, check in-app against the module (package name), which is what
+        // inAppIncludes/inAppExcludes are designed to match against.
+        @Nullable
+        Boolean inApp =
+            (module == null || module.isEmpty())
+                ? Boolean.FALSE
+                : SentryStackTraceFactory.isInApp(module, inAppIncludes, inAppExcludes);
+        stackFrame.setInApp(inApp != null && inApp);
+      } else {
+        stackFrame.setPackage(frame.fileName);
+        stackFrame.setFunction(frame.functionName);
+        stackFrame.setInstructionAddr(formatHex(frame.pc));
 
-      final boolean isInNativeLibraryDir =
-          nativeLibraryDir != null && frame.fileName.startsWith(nativeLibraryDir);
-      inApp = (inApp != null && inApp) || isInNativeLibraryDir;
-
-      stackFrame.setInApp(inApp);
+        final boolean isInNativeLibraryDir =
+            nativeLibraryDir != null && frame.fileName.startsWith(nativeLibraryDir);
+        stackFrame.setInApp(isInNativeLibraryDir);
+      }
       frames.add(0, stackFrame);
     }
 
@@ -174,6 +192,46 @@ public class TombstoneParser implements Closeable {
     stacktrace.setRegisters(registers);
 
     return stacktrace;
+  }
+
+  /**
+   * Normalizes a PrettyMethod-formatted function name by stripping the return type prefix and
+   * parameter list suffix that dex2oat may include when compiling AOT frames into the symtab.
+   *
+   * <p>e.g. "void com.example.MyClass.myMethod(int, java.lang.String)" ->
+   * "com.example.MyClass.myMethod"
+   */
+  private static String normalizeFunctionName(String fqFunctionName) {
+    String normalized = fqFunctionName.trim();
+
+    // When dex2oat compiles AOT frames, PrettyMethod with_signature format may be used:
+    // "void com.example.MyClass.myMethod(int, java.lang.String)"
+    // A space is never part of a normal fully-qualified method name, so its presence
+    // reliably indicates the with_signature format.
+    final int spaceIndex = normalized.indexOf(' ');
+    if (spaceIndex >= 0) {
+      final int parenIndex = normalized.indexOf('(', spaceIndex);
+      normalized =
+          normalized.substring(spaceIndex + 1, parenIndex >= 0 ? parenIndex : normalized.length());
+    }
+
+    return normalized;
+  }
+
+  private static @Nullable String extractJavaModuleName(String normalizedFunctionName) {
+    if (normalizedFunctionName.contains(".")) {
+      return normalizedFunctionName.substring(0, normalizedFunctionName.lastIndexOf("."));
+    } else {
+      return null;
+    }
+  }
+
+  private static @Nullable String extractJavaFunctionName(String normalizedFunctionName) {
+    if (normalizedFunctionName.contains(".")) {
+      return normalizedFunctionName.substring(normalizedFunctionName.lastIndexOf(".") + 1);
+    } else {
+      return normalizedFunctionName;
+    }
   }
 
   @NonNull
@@ -312,7 +370,7 @@ public class TombstoneParser implements Closeable {
         // Check for duplicated mappings: On Android, the same ELF can have multiple
         // mappings at offset 0 with different permissions (r--p, r-xp, r--p).
         // If it's the same file as the current module, just extend it.
-        if (currentModule != null && mappingName.equals(currentModule.mappingName)) {
+        if (currentModule != null && Objects.equals(mappingName, currentModule.mappingName)) {
           currentModule.extendTo(mapping.endAddress);
           continue;
         }
@@ -327,7 +385,7 @@ public class TombstoneParser implements Closeable {
 
         // Start a new module
         currentModule = new ModuleAccumulator(mapping);
-      } else if (currentModule != null && mappingName.equals(currentModule.mappingName)) {
+      } else if (currentModule != null && Objects.equals(mappingName, currentModule.mappingName)) {
         // Extend the current module with this mapping (same file, continuation)
         currentModule.extendTo(mapping.endAddress);
       }

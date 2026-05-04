@@ -82,6 +82,7 @@
 ### Fixes
 
 - Fix deadlock in `SentryContextStorage.root()` with virtual threads and OpenTelemetry agent ([#5234](https://github.com/getsentry/sentry-java/pull/5234))
+- Android: Identify and correctly structure Java/Kotlin frames in mixed Tombstone stack traces. ([#5116](https://github.com/getsentry/sentry-java/pull/5116))
 
 ## 8.37.0
 
