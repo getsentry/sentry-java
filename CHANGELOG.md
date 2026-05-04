@@ -13,6 +13,10 @@
 - Deprecate `SentryUserFeedbackButton` (View-based and Compose-based) ([#5350](https://github.com/getsentry/sentry-java/pull/5350))
   - It will be removed in the next major version
 
+### Fixes
+
+- Fix soft input keyboard not being shown on the Feedback form ([#5359](https://github.com/getsentry/sentry-java/pull/5359))
+
 ### Dependencies
 
 - Bump Native SDK from v0.13.7 to v0.13.8 ([#5334](https://github.com/getsentry/sentry-java/pull/5334))
