@@ -4,6 +4,8 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.os.Bundle;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -55,6 +57,10 @@ public class SentryUserFeedbackForm extends AlertDialog {
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.sentry_dialog_user_feedback);
+    final @Nullable Window window = getWindow();
+    if (window != null) {
+      window.clearFlags(WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM);
+    }
     setCancelable(isCancelable);
 
     final @NotNull SentryFeedbackOptions feedbackOptions =
