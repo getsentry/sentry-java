@@ -12,6 +12,13 @@
   - All deprecated APIs will be removed in the next major version
 - Deprecate `SentryUserFeedbackButton` (View-based and Compose-based) ([#5350](https://github.com/getsentry/sentry-java/pull/5350))
   - It will be removed in the next major version
+- Add per-form shake-to-show support for `SentryUserFeedbackForm` ([#5353](https://github.com/getsentry/sentry-java/pull/5353))
+  - Useful for enabling shake-to-report on specific screens instead of globally
+  ```kotlin
+  SentryUserFeedbackForm.Builder(activity)
+    .configurator { it.isUseShakeGesture = true }
+    .create()
+  ```
 
 ### Fixes
 

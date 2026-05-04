@@ -1,7 +1,10 @@
 package io.sentry.android.core;
 
+import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.Application;
 import android.content.Context;
+import android.content.ContextWrapper;
 import android.os.Bundle;
 import android.view.View;
 import android.view.Window;
@@ -20,6 +23,7 @@ import io.sentry.SentryOptions;
 import io.sentry.protocol.Feedback;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
+import java.lang.ref.WeakReference;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -30,8 +34,10 @@ public class SentryUserFeedbackForm extends AlertDialog {
   private final @Nullable SentryId associatedEventId;
   private @Nullable OnDismissListener delegate;
 
-  private final @Nullable OptionsConfiguration configuration;
-  private final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator;
+  private final @NotNull SentryFeedbackOptions resolvedFeedbackOptions;
+
+  private @Nullable SentryShakeDetector shakeDetector;
+  private @Nullable Application.ActivityLifecycleCallbacks shakeLifecycleCallbacks;
 
   SentryUserFeedbackForm(
       final @NotNull Context context,
@@ -41,9 +47,118 @@ public class SentryUserFeedbackForm extends AlertDialog {
       final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator) {
     super(context, themeResId);
     this.associatedEventId = associatedEventId;
-    this.configuration = configuration;
-    this.configurator = configurator;
+    this.resolvedFeedbackOptions =
+        new SentryFeedbackOptions(Sentry.getCurrentScopes().getOptions().getFeedbackOptions());
+    if (configuration != null) {
+      configuration.configure(context, resolvedFeedbackOptions);
+    }
+    if (configurator != null) {
+      configurator.configure(resolvedFeedbackOptions);
+    }
     SentryIntegrationPackageStorage.getInstance().addIntegration("UserFeedbackWidget");
+    maybeStartShakeDetection(context);
+  }
+
+  private void maybeStartShakeDetection(final @NotNull Context context) {
+    final @NotNull SentryFeedbackOptions globalFeedbackOptions =
+        Sentry.getCurrentScopes().getOptions().getFeedbackOptions();
+    if (!resolvedFeedbackOptions.isUseShakeGesture() || globalFeedbackOptions.isUseShakeGesture()) {
+      return;
+    }
+    final @Nullable Activity activity = getActivity(context);
+    if (activity == null) {
+      return;
+    }
+    final @NotNull SentryOptions options = Sentry.getCurrentScopes().getOptions();
+    shakeDetector = new SentryShakeDetector(options.getLogger());
+    final @NotNull WeakReference<Activity> activityRef = new WeakReference<>(activity);
+    shakeDetector.start(activity, shakeListener(activityRef));
+    final @NotNull Application app = activity.getApplication();
+    shakeLifecycleCallbacks = new ShakeLifecycleCallbacks(activityRef);
+    app.registerActivityLifecycleCallbacks(shakeLifecycleCallbacks);
+  }
+
+  private void stopShakeDetection() {
+    if (shakeDetector != null) {
+      shakeDetector.close();
+      shakeDetector = null;
+    }
+    if (shakeLifecycleCallbacks != null) {
+      final @Nullable Activity activity = getActivity(getContext());
+      if (activity != null) {
+        activity.getApplication().unregisterActivityLifecycleCallbacks(shakeLifecycleCallbacks);
+      }
+      shakeLifecycleCallbacks = null;
+    }
+  }
+
+  private @NotNull SentryShakeDetector.Listener shakeListener(
+      final @NotNull WeakReference<Activity> activityRef) {
+    return () -> {
+      final @Nullable Activity active = activityRef.get();
+      if (active != null && !active.isFinishing() && !active.isDestroyed()) {
+        active.runOnUiThread(
+            () -> {
+              if (!active.isFinishing() && !active.isDestroyed()) {
+                show();
+              }
+            });
+      }
+    };
+  }
+
+  private static @Nullable Activity getActivity(final @NotNull Context context) {
+    Context current = context;
+    while (current instanceof ContextWrapper) {
+      if (current instanceof Activity) {
+        return (Activity) current;
+      }
+      current = ((ContextWrapper) current).getBaseContext();
+    }
+    return null;
+  }
+
+  private class ShakeLifecycleCallbacks implements Application.ActivityLifecycleCallbacks {
+    private final @NotNull WeakReference<Activity> activityRef;
+
+    ShakeLifecycleCallbacks(final @NotNull WeakReference<Activity> activityRef) {
+      this.activityRef = activityRef;
+    }
+
+    @Override
+    public void onActivityResumed(final @NotNull Activity activity) {
+      if (activity == activityRef.get() && shakeDetector != null) {
+        shakeDetector.start(activity, shakeListener(activityRef));
+      }
+    }
+
+    @Override
+    public void onActivityPaused(final @NotNull Activity activity) {
+      if (activity == activityRef.get() && shakeDetector != null) {
+        shakeDetector.stop();
+      }
+    }
+
+    @Override
+    public void onActivityDestroyed(final @NotNull Activity activity) {
+      if (activity == activityRef.get()) {
+        stopShakeDetection();
+      }
+    }
+
+    @Override
+    public void onActivityCreated(
+        final @NotNull Activity activity, final @Nullable Bundle savedInstanceState) {}
+
+    @Override
+    public void onActivityStarted(final @NotNull Activity activity) {}
+
+    @Override
+    public void onActivityStopped(final @NotNull Activity activity) {}
+
+    @Override
+    public void onActivitySaveInstanceState(
+        final @NotNull Activity activity, final @NotNull Bundle outState) {}
   }
 
   @Override
@@ -63,14 +178,7 @@ public class SentryUserFeedbackForm extends AlertDialog {
     }
     setCancelable(isCancelable);
 
-    final @NotNull SentryFeedbackOptions feedbackOptions =
-        new SentryFeedbackOptions(Sentry.getCurrentScopes().getOptions().getFeedbackOptions());
-    if (configuration != null) {
-      configuration.configure(getContext(), feedbackOptions);
-    }
-    if (configurator != null) {
-      configurator.configure(feedbackOptions);
-    }
+    final @NotNull SentryFeedbackOptions feedbackOptions = resolvedFeedbackOptions;
     final @NotNull TextView lblTitle = findViewById(R.id.sentry_dialog_user_feedback_title);
     final @NotNull ImageView imgLogo = findViewById(R.id.sentry_dialog_user_feedback_logo);
     final @NotNull TextView lblName = findViewById(R.id.sentry_dialog_user_feedback_txt_name);
