@@ -5,10 +5,11 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorManager
 import android.os.Handler
-import android.os.SystemClock
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.ILogger
 import kotlin.test.Test
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
@@ -88,29 +89,27 @@ class SentryShakeDetectorTest {
   }
 
   @Test
-  fun `triggers listener when shake is detected`() {
-    // Advance clock so cooldown check (now - 0 > 1000) passes
-    SystemClock.setCurrentTimeMillis(2000)
-
+  fun `triggers listener when sustained shake is detected`() {
     val sut = fixture.getSut()
     sut.start(fixture.context, fixture.listener)
 
-    // Needs at least SHAKE_COUNT_THRESHOLD (2) readings above threshold
-    val event1 = createSensorEvent(floatArrayOf(30f, 0f, 0f))
-    sut.onSensorChanged(event1)
-    val event2 = createSensorEvent(floatArrayOf(30f, 0f, 0f))
-    sut.onSensorChanged(event2)
+    // Send enough accelerating samples over 0.25s+ to trigger (>75% accelerating)
+    val baseTimestamp = 1_000_000_000L // 1s in nanos
+    val intervalNs = 20_000_000L // 20ms between samples (~50Hz)
+    for (i in 0 until 20) {
+      val event = createSensorEvent(floatArrayOf(20f, 0f, 0f), baseTimestamp + i * intervalNs)
+      sut.onSensorChanged(event)
+    }
 
     verify(fixture.listener).onShake()
   }
 
   @Test
-  fun `does not trigger listener on single shake`() {
+  fun `does not trigger listener on single spike`() {
     val sut = fixture.getSut()
     sut.start(fixture.context, fixture.listener)
 
-    // A single threshold crossing should not trigger
-    val event = createSensorEvent(floatArrayOf(30f, 0f, 0f))
+    val event = createSensorEvent(floatArrayOf(30f, 0f, 0f), 1_000_000_000L)
     sut.onSensorChanged(event)
 
     verify(fixture.listener, never()).onShake()
@@ -121,9 +120,15 @@ class SentryShakeDetectorTest {
     val sut = fixture.getSut()
     sut.start(fixture.context, fixture.listener)
 
-    // Gravity only (1G) - no shake
-    val event = createSensorEvent(floatArrayOf(0f, 0f, SensorManager.GRAVITY_EARTH))
-    sut.onSensorChanged(event)
+    val baseTimestamp = 1_000_000_000L
+    val intervalNs = 20_000_000L
+    for (i in 0 until 20) {
+      val event = createSensorEvent(
+        floatArrayOf(0f, 0f, SensorManager.GRAVITY_EARTH),
+        baseTimestamp + i * intervalNs,
+      )
+      sut.onSensorChanged(event)
+    }
 
     verify(fixture.listener, never()).onShake()
   }
@@ -133,7 +138,7 @@ class SentryShakeDetectorTest {
     val sut = fixture.getSut()
     sut.start(fixture.context, fixture.listener)
 
-    val event = createSensorEvent(floatArrayOf(30f, 0f, 0f), sensorType = Sensor.TYPE_GYROSCOPE)
+    val event = createSensorEvent(floatArrayOf(30f, 0f, 0f), 1_000_000_000L, Sensor.TYPE_GYROSCOPE)
     sut.onSensorChanged(event)
 
     verify(fixture.listener, never()).onShake()
@@ -145,8 +150,53 @@ class SentryShakeDetectorTest {
     sut.stop()
   }
 
+  @Test
+  fun `sample queue triggers when 75 percent of samples are accelerating`() {
+    val queue = SentryShakeDetector.SampleQueue()
+    val intervalNs = 20_000_000L
+
+    // 15 accelerating + 5 not = 75% in a 0.4s window (> 0.25s minimum)
+    for (i in 0 until 15) {
+      queue.add(i * intervalNs, true)
+    }
+    for (i in 15 until 20) {
+      queue.add(i * intervalNs, false)
+    }
+
+    assertTrue(queue.isShaking())
+  }
+
+  @Test
+  fun `sample queue does not trigger below 75 percent`() {
+    val queue = SentryShakeDetector.SampleQueue()
+    val intervalNs = 20_000_000L
+
+    // 10 accelerating + 10 not = 50%
+    for (i in 0 until 10) {
+      queue.add(i * intervalNs, true)
+    }
+    for (i in 10 until 20) {
+      queue.add(i * intervalNs, false)
+    }
+
+    assertFalse(queue.isShaking())
+  }
+
+  @Test
+  fun `sample queue does not trigger below minimum window`() {
+    val queue = SentryShakeDetector.SampleQueue()
+
+    // All accelerating but only 0.06s apart (below 0.25s minimum)
+    for (i in 0 until 4) {
+      queue.add(i * 20_000_000L, true)
+    }
+
+    assertFalse(queue.isShaking())
+  }
+
   private fun createSensorEvent(
     values: FloatArray,
+    timestamp: Long = 0L,
     sensorType: Int = Sensor.TYPE_ACCELEROMETER,
   ): SensorEvent {
     val sensor = mock<Sensor>()
@@ -159,6 +209,9 @@ class SentryShakeDetectorTest {
 
     val sensorField = SensorEvent::class.java.getField("sensor")
     sensorField.set(event, sensor)
+
+    val timestampField = SensorEvent::class.java.getField("timestamp")
+    timestampField.set(event, timestamp)
 
     return event
   }
