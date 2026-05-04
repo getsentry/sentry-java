@@ -115,8 +115,7 @@ public final class SentryShakeDetector implements SensorEventListener {
     final float ax = event.values[0];
     final float ay = event.values[1];
     final float az = event.values[2];
-    final boolean accelerating =
-        Math.sqrt(ax * ax + ay * ay + az * az) > ACCELERATION_THRESHOLD;
+    final boolean accelerating = Math.sqrt(ax * ax + ay * ay + az * az) > ACCELERATION_THRESHOLD;
 
     queue.add(event.timestamp, accelerating);
     if (queue.isShaking()) {
@@ -177,9 +176,7 @@ public final class SentryShakeDetector implements SensorEventListener {
     }
 
     private void purge(final long cutoff) {
-      while (sampleCount >= MIN_QUEUE_SIZE
-          && oldest != null
-          && cutoff - oldest.timestamp > 0) {
+      while (sampleCount >= MIN_QUEUE_SIZE && oldest != null && cutoff - oldest.timestamp > 0) {
         final @NotNull Sample removed = oldest;
         if (removed.accelerating) {
           acceleratingCount--;
@@ -210,7 +207,8 @@ public final class SentryShakeDetector implements SensorEventListener {
   static class SamplePool {
     private @Nullable Sample head;
 
-    @NotNull Sample acquire() {
+    @NotNull
+    Sample acquire() {
       Sample acquired = head;
       if (acquired == null) {
         acquired = new Sample();

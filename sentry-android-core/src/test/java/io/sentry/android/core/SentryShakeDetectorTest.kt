@@ -123,10 +123,11 @@ class SentryShakeDetectorTest {
     val baseTimestamp = 1_000_000_000L
     val intervalNs = 20_000_000L
     for (i in 0 until 20) {
-      val event = createSensorEvent(
-        floatArrayOf(0f, 0f, SensorManager.GRAVITY_EARTH),
-        baseTimestamp + i * intervalNs,
-      )
+      val event =
+        createSensorEvent(
+          floatArrayOf(0f, 0f, SensorManager.GRAVITY_EARTH),
+          baseTimestamp + i * intervalNs,
+        )
       sut.onSensorChanged(event)
     }
 
