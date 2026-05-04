@@ -178,16 +178,16 @@ class SentryEventTest {
 
   @Test
   fun `deserializes event with large flat modules map on a small stack`() {
-    val moduleCount = 8000
+    val moduleCount = 50000
     val json = buildString {
       append("{\"event_id\":\"00000000000000000000000000000000\",\"modules\":{")
       repeat(moduleCount) {
         if (it > 0) {
           append(',')
         }
-        append("\"package_")
+        append("\"m")
         append(it)
-        append("\":\"unknown\"")
+        append("\":\"v\"")
       }
       append("}}")
     }
