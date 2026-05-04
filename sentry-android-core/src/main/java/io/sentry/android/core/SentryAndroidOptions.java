@@ -683,8 +683,8 @@ public final class SentryAndroidOptions extends SentryOptions {
    * <p>The SDK reports app start through these paths:
    *
    * <ul>
-   *   <li>With an Activity: the SDK sends an {@code App Start Cold/Warm} transaction with operation
-   *       {@code app.start}, plus a separate {@code ui.load} transaction for the Activity. Both
+   *   <li>With an Activity: the SDK sends an {@code App Start} transaction with operation {@code
+   *       app.start}, plus a separate {@code ui.load} transaction for the Activity. Both
    *       transactions share the same trace ID.
    *   <li>Without an Activity: for launches started by something like a broadcast receiver,
    *       service, or content provider, the SDK sends only the standalone app-start transaction.

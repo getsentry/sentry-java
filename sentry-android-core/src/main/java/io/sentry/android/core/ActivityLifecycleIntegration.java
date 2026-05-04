@@ -298,7 +298,7 @@ public final class ActivityLifecycleIntegration
                 scopes.startTransaction(
                     new TransactionContext(
                         transaction.getSpanContext().getTraceId(),
-                        getAppStartTxnName(coldStart),
+                        getAppStartTxnName(),
                         TransactionNameSource.COMPONENT,
                         APP_START_OP,
                         appStartSamplingDecision),
@@ -848,12 +848,8 @@ public final class ActivityLifecycleIntegration
     return activitiesWithOngoingTransactions.get(activity);
   }
 
-  private @NotNull String getAppStartTxnName(final boolean coldStart) {
-    if (coldStart) {
-      return "App Start Cold";
-    } else {
-      return "App Start Warm";
-    }
+  private @NotNull String getAppStartTxnName() {
+    return "App Start";
   }
 
   private @NotNull String getAppStartOp(final boolean coldStart) {
@@ -906,7 +902,7 @@ public final class ActivityLifecycleIntegration
 
     final @NotNull TransactionContext txnContext =
         new TransactionContext(
-            getAppStartTxnName(coldStart), TransactionNameSource.COMPONENT, APP_START_OP, null);
+            getAppStartTxnName(), TransactionNameSource.COMPONENT, APP_START_OP, null);
 
     final @NotNull ITransaction transaction = scopes.startTransaction(txnContext, txnOptions);
 

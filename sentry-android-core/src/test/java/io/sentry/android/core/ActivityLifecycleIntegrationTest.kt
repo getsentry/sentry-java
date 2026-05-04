@@ -254,7 +254,7 @@ class ActivityLifecycleIntegrationTest {
     val contexts = fixture.capturedContexts
     val appStartContext =
       contexts.single { it.operation == ActivityLifecycleIntegration.APP_START_OP }
-    assertEquals("App Start Cold", appStartContext.name)
+    assertEquals("App Start", appStartContext.name)
     assertEquals(TransactionNameSource.COMPONENT, appStartContext.transactionNameSource)
     assertTrue(contexts.any { it.operation == ActivityLifecycleIntegration.UI_LOAD_OP })
     assertFalse(
@@ -282,7 +282,7 @@ class ActivityLifecycleIntegrationTest {
       ActivityLifecycleIntegration.APP_START_OP,
       fixture.capturedContexts.single().operation,
     )
-    assertEquals("App Start Cold", fixture.capturedContexts.single().name)
+    assertEquals("App Start", fixture.capturedContexts.single().name)
   }
 
   @Test
@@ -324,7 +324,7 @@ class ActivityLifecycleIntegrationTest {
   }
 
   @Test
-  fun `onNoActivityStarted creates standalone App Start Cold transaction and stashes trace id`() {
+  fun `onNoActivityStarted creates standalone App Start transaction and stashes trace id`() {
     val sut =
       fixture.getSut {
         it.tracesSampleRate = 1.0
@@ -340,7 +340,7 @@ class ActivityLifecycleIntegrationTest {
     val options = fixture.capturedOptions.single()
     val transaction = fixture.createdTransactions.single()
     assertEquals(ActivityLifecycleIntegration.APP_START_OP, context.operation)
-    assertEquals("App Start Cold", context.name)
+    assertEquals("App Start", context.name)
     assertEquals(TransactionNameSource.COMPONENT, context.transactionNameSource)
     assertFalse(options.isBindToScope)
     assertEquals(DateUtils.millisToNanos(100), options.startTimestamp!!.nanoTimestamp())
@@ -353,7 +353,7 @@ class ActivityLifecycleIntegrationTest {
   }
 
   @Test
-  fun `onNoActivityStarted creates standalone App Start Warm transaction when appStartType is WARM`() {
+  fun `onNoActivityStarted creates standalone App Start transaction when appStartType is WARM`() {
     val sut =
       fixture.getSut {
         it.tracesSampleRate = 1.0
@@ -367,7 +367,7 @@ class ActivityLifecycleIntegrationTest {
     assertEquals(1, fixture.capturedContexts.size)
     val context = fixture.capturedContexts.single()
     assertEquals(ActivityLifecycleIntegration.APP_START_OP, context.operation)
-    assertEquals("App Start Warm", context.name)
+    assertEquals("App Start", context.name)
     assertEquals(TransactionNameSource.COMPONENT, context.transactionNameSource)
   }
 
@@ -1067,7 +1067,7 @@ class ActivityLifecycleIntegrationTest {
   }
 
   @Test
-  fun `launcher activity emits ui load and standalone App Start Cold sharing trace id`() {
+  fun `launcher activity emits ui load and standalone App Start sharing trace id`() {
     val sut =
       fixture.getSut {
         it.tracesSampleRate = 1.0
