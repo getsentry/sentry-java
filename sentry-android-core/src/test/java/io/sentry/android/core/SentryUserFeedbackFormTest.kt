@@ -141,9 +141,6 @@ class SentryUserFeedbackFormTest {
     val window = sut.window
     assertNotNull(window)
     val flags = window.attributes.flags
-    assertEquals(
-      0,
-      flags and WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM,
-    )
+    assertEquals(0, flags and WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM)
   }
 }
