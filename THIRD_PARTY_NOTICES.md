@@ -118,6 +118,34 @@ limitations under the License.
 
 ---
 
+## Square — Seismic (Apache 2.0)
+
+**Source:** https://github.com/square/seismic<br>
+**License:** Apache License 2.0<br>
+**Copyright:** Copyright 2010 Square, Inc.
+
+### Scope
+
+The Sentry Java SDK includes an adapted version of Square's Seismic shake detection algorithm. The rolling sample window approach and `SampleQueue`/`SamplePool` data structures in `io.sentry.android.core.SentryShakeDetector` are based on Seismic's `ShakeDetector`.
+
+```
+Copyright 2010 Square, Inc.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+```
+
+---
+
 ## Square — Curtains (Apache 2.0)
 
 **Source:** https://github.com/square/curtains (v1.2.5)<br>
