@@ -70,19 +70,7 @@ public class SentryUserFeedbackForm extends AlertDialog {
     final @NotNull SentryOptions options = Sentry.getCurrentScopes().getOptions();
     shakeDetector = new SentryShakeDetector(options.getLogger());
     final @NotNull WeakReference<Activity> activityRef = new WeakReference<>(activity);
-    shakeDetector.start(
-        activity,
-        () -> {
-          final @Nullable Activity active = activityRef.get();
-          if (active != null && !active.isFinishing() && !active.isDestroyed()) {
-            active.runOnUiThread(
-                () -> {
-                  if (!active.isFinishing() && !active.isDestroyed()) {
-                    show();
-                  }
-                });
-          }
-        });
+    shakeDetector.start(activity, shakeListener(activityRef));
     final @NotNull Application app = activity.getApplication();
     shakeLifecycleCallbacks = new ShakeLifecycleCallbacks(activityRef);
     app.registerActivityLifecycleCallbacks(shakeLifecycleCallbacks);
@@ -100,6 +88,21 @@ public class SentryUserFeedbackForm extends AlertDialog {
       }
       shakeLifecycleCallbacks = null;
     }
+  }
+
+  private @NotNull SentryShakeDetector.Listener shakeListener(
+      final @NotNull WeakReference<Activity> activityRef) {
+    return () -> {
+      final @Nullable Activity active = activityRef.get();
+      if (active != null && !active.isFinishing() && !active.isDestroyed()) {
+        active.runOnUiThread(
+            () -> {
+              if (!active.isFinishing() && !active.isDestroyed()) {
+                show();
+              }
+            });
+      }
+    };
   }
 
   private static @Nullable Activity getActivity(final @NotNull Context context) {
@@ -123,19 +126,7 @@ public class SentryUserFeedbackForm extends AlertDialog {
     @Override
     public void onActivityResumed(final @NotNull Activity activity) {
       if (activity == activityRef.get() && shakeDetector != null) {
-        shakeDetector.start(
-            activity,
-            () -> {
-              final @Nullable Activity active = activityRef.get();
-              if (active != null && !active.isFinishing() && !active.isDestroyed()) {
-                active.runOnUiThread(
-                    () -> {
-                      if (!active.isFinishing() && !active.isDestroyed()) {
-                        show();
-                      }
-                    });
-              }
-            });
+        shakeDetector.start(activity, shakeListener(activityRef));
       }
     }
 
