@@ -21,7 +21,7 @@
 
 ### Fixes
 
-- Avoid stack overflow when deserializing large flat JSON objects([#5361](https://github.com/getsentry/sentry-java/pull/#5361))
+- Avoid stack overflow when deserializing large flat JSON objects([#5361](https://github.com/getsentry/sentry-java/pull/5361))
 
 ## 8.40.0
 
