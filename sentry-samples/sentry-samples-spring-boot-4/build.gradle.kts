@@ -62,7 +62,7 @@ dependencies {
   implementation(libs.caffeine)
 
   // kafka
-  implementation(libs.spring.kafka4)
+  implementation(libs.springboot4.starter.kafka)
   implementation(projects.sentryKafka)
 
   // database query tracing

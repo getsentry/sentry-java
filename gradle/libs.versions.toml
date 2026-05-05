@@ -202,6 +202,7 @@ springboot4-starter-webclient = { module = "org.springframework.boot:spring-boot
 springboot4-starter-jdbc = { module = "org.springframework.boot:spring-boot-starter-jdbc", version.ref = "springboot4" }
 springboot4-starter-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator", version.ref = "springboot4" }
 springboot4-starter-cache = { module = "org.springframework.boot:spring-boot-starter-cache", version.ref = "springboot4" }
+springboot4-starter-kafka = { module = "org.springframework.boot:spring-boot-starter-kafka", version.ref = "springboot4" }
 timber = { module = "com.jakewharton.timber:timber", version = "4.7.1" }
 
 # Animalsniffer signature

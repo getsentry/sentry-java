@@ -60,7 +60,7 @@ dependencies {
   implementation(libs.otel)
 
   // kafka
-  implementation(libs.spring.kafka4)
+  implementation(libs.springboot4.starter.kafka)
   implementation(projects.sentryKafka)
 
   // cache tracing
