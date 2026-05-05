@@ -5,6 +5,7 @@ import io.sentry.DateUtils;
 import io.sentry.IScopes;
 import io.sentry.ISpan;
 import io.sentry.ScopesAdapter;
+import io.sentry.SentryLevel;
 import io.sentry.SentryTraceHeader;
 import io.sentry.SpanDataConvention;
 import io.sentry.SpanOptions;
@@ -71,8 +72,11 @@ public final class SentryKafkaProducerInterceptor<K, V> implements ProducerInter
 
       span.setStatus(SpanStatus.OK);
       span.finish();
-    } catch (Throwable ignored) {
-      // Instrumentation must never break the customer's Kafka send.
+    } catch (Throwable t) {
+      scopes
+          .getOptions()
+          .getLogger()
+          .log(SentryLevel.ERROR, "Failed to instrument Kafka producer record.", t);
     }
 
     return record;
