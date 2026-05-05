@@ -5,6 +5,7 @@ import io.sentry.DateUtils;
 import io.sentry.IScopes;
 import io.sentry.ISentryLifecycleToken;
 import io.sentry.ITransaction;
+import io.sentry.SentryLevel;
 import io.sentry.SentryTraceHeader;
 import io.sentry.SpanDataConvention;
 import io.sentry.SpanStatus;
@@ -57,18 +58,21 @@ public final class SentryKafkaRecordInterceptor<K, V> implements RecordIntercept
       return delegateIntercept(record, consumer);
     }
 
-    finishStaleContext();
+    try {
+      finishStaleContext();
 
-    final @NotNull IScopes forkedScopes = scopes.forkedRootScopes("SentryKafkaRecordInterceptor");
-    final @NotNull ISentryLifecycleToken lifecycleToken = forkedScopes.makeCurrent();
-    currentContext.set(new SentryRecordContext(lifecycleToken, null));
+      final @NotNull IScopes forkedScopes = scopes.forkedRootScopes("SentryKafkaRecordInterceptor");
+      final @NotNull ISentryLifecycleToken lifecycleToken = forkedScopes.makeCurrent();
+      currentContext.set(new SentryRecordContext(lifecycleToken, null));
 
-    final @Nullable TransactionContext transactionContext = continueTrace(forkedScopes, record);
+      final @Nullable TransactionContext transactionContext = continueTrace(forkedScopes, record);
 
-    final @Nullable ITransaction transaction =
-        startTransaction(forkedScopes, record, transactionContext);
-    currentContext.set(new SentryRecordContext(lifecycleToken, transaction));
-
+      final @Nullable ITransaction transaction =
+          startTransaction(forkedScopes, record, transactionContext);
+      currentContext.set(new SentryRecordContext(lifecycleToken, transaction));
+    } catch (Throwable t) {
+      scopes.getOptions().getLogger().log(SentryLevel.ERROR, "Unable to wrap Kafka consumer.", t);
+    }
     return delegateIntercept(record, consumer);
   }
 
