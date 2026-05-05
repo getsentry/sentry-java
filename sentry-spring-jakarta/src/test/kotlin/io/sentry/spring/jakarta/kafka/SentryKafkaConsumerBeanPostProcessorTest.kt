@@ -3,9 +3,12 @@ package io.sentry.spring.jakarta.kafka
 import kotlin.test.Test
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
+import org.apache.kafka.clients.consumer.Consumer
+import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.mockito.kotlin.mock
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory
 import org.springframework.kafka.core.ConsumerFactory
+import org.springframework.kafka.listener.RecordInterceptor
 
 class SentryKafkaConsumerBeanPostProcessorTest {
 
@@ -54,5 +57,68 @@ class SentryKafkaConsumerBeanPostProcessorTest {
     val result = processor.postProcessAfterInitialization(someBean, "someBean")
 
     assertSame(someBean, result)
+  }
+
+  @Test
+  fun `chains existing customer RecordInterceptor as delegate`() {
+    val consumerFactory = mock<ConsumerFactory<String, String>>()
+    val factory = ConcurrentKafkaListenerContainerFactory<String, String>()
+    factory.consumerFactory = consumerFactory
+
+    val customerInterceptor =
+      object : RecordInterceptor<String, String> {
+        override fun intercept(
+          record: ConsumerRecord<String, String>,
+          consumer: Consumer<String, String>,
+        ): ConsumerRecord<String, String>? = record
+      }
+    factory.setRecordInterceptor(customerInterceptor)
+
+    val processor = SentryKafkaConsumerBeanPostProcessor()
+    processor.postProcessAfterInitialization(factory, "kafkaListenerContainerFactory")
+
+    val field = factory.javaClass.superclass.getDeclaredField("recordInterceptor")
+    field.isAccessible = true
+    val installed = field.get(factory)
+    assertTrue(
+      installed is SentryKafkaRecordInterceptor<*, *>,
+      "expected SentryKafkaRecordInterceptor, got ${installed?.javaClass}",
+    )
+
+    val delegateField = SentryKafkaRecordInterceptor::class.java.getDeclaredField("delegate")
+    delegateField.isAccessible = true
+    assertSame(
+      customerInterceptor,
+      delegateField.get(installed),
+      "customer interceptor must be preserved as delegate",
+    )
+  }
+
+  @Test
+  fun `skips installation when reflection fails and preserves customer interceptor`() {
+    val consumerFactory = mock<ConsumerFactory<String, String>>()
+    val factory = ConcurrentKafkaListenerContainerFactory<String, String>()
+    factory.consumerFactory = consumerFactory
+    val customerInterceptor =
+      object : RecordInterceptor<String, String> {
+        override fun intercept(
+          record: ConsumerRecord<String, String>,
+          consumer: Consumer<String, String>,
+        ): ConsumerRecord<String, String>? = record
+      }
+    factory.setRecordInterceptor(customerInterceptor)
+
+    val field = factory.javaClass.superclass.getDeclaredField("recordInterceptor")
+    field.isAccessible = true
+    assertSame(customerInterceptor, field.get(factory))
+
+    val processor = SentryKafkaConsumerBeanPostProcessor("missingRecordInterceptor")
+    processor.postProcessAfterInitialization(factory, "kafkaListenerContainerFactory")
+
+    assertSame(
+      customerInterceptor,
+      field.get(factory),
+      "customer interceptor must remain installed when Sentry cannot read it",
+    )
   }
 }
