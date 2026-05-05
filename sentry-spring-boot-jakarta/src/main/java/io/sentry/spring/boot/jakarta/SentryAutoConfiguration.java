@@ -77,7 +77,6 @@ import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.core.env.Environment;
 import org.springframework.graphql.execution.DataFetcherExceptionResolverAdapter;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.quartz.SchedulerFactoryBean;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.client.RestClient;
@@ -250,7 +249,11 @@ public class SentryAutoConfiguration {
     }
 
     @Configuration(proxyBeanMethods = false)
-    @ConditionalOnClass(KafkaTemplate.class)
+    @ConditionalOnClass(
+        name = {
+          "org.springframework.kafka.core.KafkaTemplate",
+          "io.sentry.kafka.SentryKafkaProducerInterceptor"
+        })
     @ConditionalOnProperty(name = "sentry.enable-queue-tracing", havingValue = "true")
     @ConditionalOnMissingClass("io.sentry.opentelemetry.SentryAutoConfigurationCustomizerProvider")
     @Open

@@ -68,6 +68,13 @@ SENTRY_ENVIRONMENT_VARIABLES = {
 
 KAFKA_CONTAINER_NAME = "sentry-java-system-test-kafka"
 KAFKA_BOOTSTRAP_SERVERS = "localhost:9092"
+KAFKA_BROKER_REQUIRED_MODULES = {
+    "sentry-samples-console",
+    "sentry-samples-spring-boot-jakarta",
+}
+KAFKA_PROFILE_REQUIRED_MODULES = {
+    "sentry-samples-spring-boot-jakarta",
+}
 
 class ServerType(Enum):
     TOMCAT = 0
@@ -202,7 +209,10 @@ class SystemTestRunner:
             print(f"Process {pid} was already dead")
 
     def module_requires_kafka(self, sample_module: str) -> bool:
-        return sample_module == "sentry-samples-console"
+        return sample_module in KAFKA_BROKER_REQUIRED_MODULES
+
+    def module_requires_kafka_profile(self, sample_module: str) -> bool:
+        return sample_module in KAFKA_PROFILE_REQUIRED_MODULES
 
     def wait_for_port(self, host: str, port: int, max_attempts: int = 20) -> bool:
         for _ in range(max_attempts):
@@ -422,6 +432,12 @@ class SystemTestRunner:
         env = os.environ.copy()
         env.update(SENTRY_ENVIRONMENT_VARIABLES)
         env["SENTRY_AUTO_INIT"] = java_agent_auto_init
+
+        if self.module_requires_kafka_profile(sample_module):
+            env["SPRING_PROFILES_ACTIVE"] = "kafka"
+            print("Enabling Spring profile: kafka")
+        else:
+            env.pop("SPRING_PROFILES_ACTIVE", None)
 
         # Build command
         jar_path = f"sentry-samples/{sample_module}/build/libs/{sample_module}-0.0.1-SNAPSHOT.jar"
