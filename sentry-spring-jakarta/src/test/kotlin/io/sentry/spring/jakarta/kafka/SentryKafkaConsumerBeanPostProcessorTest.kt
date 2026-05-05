@@ -1,5 +1,9 @@
 package io.sentry.spring.jakarta.kafka
 
+import io.sentry.Sentry
+import io.sentry.test.initForTest
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
@@ -9,6 +13,16 @@ import org.springframework.kafka.core.ConsumerFactory
 import org.springframework.kafka.listener.RecordInterceptor
 
 class SentryKafkaConsumerBeanPostProcessorTest {
+
+  @BeforeTest
+  fun setup() {
+    initForTest { it.dsn = "https://key@sentry.io/proj" }
+  }
+
+  @AfterTest
+  fun teardown() {
+    Sentry.close()
+  }
 
   @Test
   fun `wraps ConcurrentKafkaListenerContainerFactory with SentryKafkaRecordInterceptor`() {
