@@ -59,11 +59,11 @@ public final class SentryKafkaProducerInterceptor<K, V> implements ProducerInter
       return record;
     }
 
+    @Nullable ISpan span = null;
     try {
       final @NotNull SpanOptions spanOptions = new SpanOptions();
       spanOptions.setOrigin(traceOrigin);
-      final @NotNull ISpan span =
-          activeSpan.startChild("queue.publish", record.topic(), spanOptions);
+      span = activeSpan.startChild("queue.publish", record.topic(), spanOptions);
       if (span.isNoOp()) {
         return record;
       }
@@ -72,14 +72,20 @@ public final class SentryKafkaProducerInterceptor<K, V> implements ProducerInter
       span.setData(SpanDataConvention.MESSAGING_DESTINATION_NAME, record.topic());
 
       injectHeaders(record.headers(), span);
-
       span.setStatus(SpanStatus.OK);
-      span.finish();
     } catch (Throwable t) {
+      if (span != null) {
+        span.setThrowable(t);
+        span.setStatus(SpanStatus.INTERNAL_ERROR);
+      }
       scopes
           .getOptions()
           .getLogger()
           .log(SentryLevel.ERROR, "Failed to instrument Kafka producer record.", t);
+    } finally {
+      if (span != null && !span.isFinished()) {
+        span.finish();
+      }
     }
 
     return record;

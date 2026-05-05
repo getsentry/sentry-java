@@ -3,10 +3,13 @@ package io.sentry.kafka
 import io.sentry.BaggageHeader
 import io.sentry.IScopes
 import io.sentry.ISentryLifecycleToken
+import io.sentry.ISpan
 import io.sentry.Sentry
 import io.sentry.SentryOptions
 import io.sentry.SentryTraceHeader
 import io.sentry.SentryTracer
+import io.sentry.SpanOptions
+import io.sentry.SpanStatus
 import io.sentry.TransactionContext
 import io.sentry.test.initForTest
 import java.nio.charset.StandardCharsets
@@ -18,7 +21,12 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 import org.apache.kafka.clients.producer.ProducerRecord
+import org.apache.kafka.common.header.Header
+import org.apache.kafka.common.header.Headers
+import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
 class SentryKafkaProducerInterceptorTest {
@@ -109,6 +117,35 @@ class SentryKafkaProducerInterceptorTest {
       baggageValue.contains("sentry-"),
       "expected Sentry baggage entries appended, got: $baggageValue",
     )
+  }
+
+  @Test
+  fun `finishes span with error when header injection fails`() {
+    val activeSpan = mock<ISpan>()
+    val span = mock<ISpan>()
+    val headers = mock<Headers>()
+    val record = mock<ProducerRecord<String, String>>()
+    val exception = RuntimeException("boom")
+    whenever(scopes.span).thenReturn(activeSpan)
+    whenever(activeSpan.startChild(eq("queue.publish"), eq("my-topic"), any<SpanOptions>()))
+      .thenReturn(span)
+    whenever(span.isNoOp).thenReturn(false)
+    whenever(span.isFinished).thenReturn(false)
+    whenever(span.toSentryTrace())
+      .thenReturn(SentryTraceHeader("2722d9f6ec019ade60c776169d9a8904-cedf5b7571cb4972-1"))
+    whenever(span.toBaggageHeader(null)).thenReturn(null)
+    whenever(record.topic()).thenReturn("my-topic")
+    whenever(record.headers()).thenReturn(headers)
+    whenever(headers.headers(BaggageHeader.BAGGAGE_HEADER)).thenReturn(emptyList<Header>())
+    whenever(headers.remove(SentryTraceHeader.SENTRY_TRACE_HEADER)).thenThrow(exception)
+
+    val interceptor = SentryKafkaProducerInterceptor<String, String>(scopes)
+
+    interceptor.onSend(record)
+
+    verify(span).setStatus(SpanStatus.INTERNAL_ERROR)
+    verify(span).setThrowable(exception)
+    verify(span).finish()
   }
 
   @Test
