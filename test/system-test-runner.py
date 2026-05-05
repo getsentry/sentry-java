@@ -71,9 +71,13 @@ KAFKA_BOOTSTRAP_SERVERS = "localhost:9092"
 KAFKA_BROKER_REQUIRED_MODULES = {
     "sentry-samples-console",
     "sentry-samples-spring-boot-jakarta",
+    "sentry-samples-spring-boot-jakarta-opentelemetry",
+    "sentry-samples-spring-boot-jakarta-opentelemetry-noagent",
 }
 KAFKA_PROFILE_REQUIRED_MODULES = {
     "sentry-samples-spring-boot-jakarta",
+    "sentry-samples-spring-boot-jakarta-opentelemetry",
+    "sentry-samples-spring-boot-jakarta-opentelemetry-noagent",
 }
 
 class ServerType(Enum):
