@@ -42,7 +42,8 @@ class ConsoleApplicationSystemTest {
     }
 
     testHelper.ensureTransactionReceived { transaction, _ ->
-      testHelper.doesTransactionHaveOp(transaction, "queue.receive") &&
+      testHelper.doesTransactionHaveOp(transaction, "queue.process") &&
+        transaction.contexts.trace?.origin == "manual.queue.kafka.consumer" &&
         transaction.contexts.trace?.data?.get("messaging.system") == "kafka"
     }
   }

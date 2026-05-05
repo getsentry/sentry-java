@@ -3,7 +3,7 @@ package io.sentry.samples.console.kafka;
 import io.sentry.ISentryLifecycleToken;
 import io.sentry.ITransaction;
 import io.sentry.Sentry;
-import io.sentry.kafka.SentryKafkaConsumerInterceptor;
+import io.sentry.kafka.SentryKafkaConsumerTracing;
 import io.sentry.kafka.SentryKafkaProducerInterceptor;
 import java.time.Duration;
 import java.util.Collections;
@@ -12,6 +12,7 @@ import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -26,10 +27,9 @@ public final class KafkaShowcase {
 
   private KafkaShowcase() {}
 
-  public static void runKafkaWithSentryInterceptors(final String bootstrapServers) {
+  public static void runKafkaWithSentryTracing(final String bootstrapServers) {
     final CountDownLatch consumedLatch = new CountDownLatch(1);
-    final Thread consumerThread =
-        startConsumerWithSentryInterceptor(bootstrapServers, consumedLatch);
+    final Thread consumerThread = startConsumerWithSentryTracing(bootstrapServers, consumedLatch);
     final Properties producerProperties = createProducerPropertiesWithSentry(bootstrapServers);
 
     final ITransaction transaction = Sentry.startTransaction("kafka-demo", "demo");
@@ -79,7 +79,7 @@ public final class KafkaShowcase {
     return producerProperties;
   }
 
-  public static Properties createConsumerPropertiesWithSentry(final String bootstrapServers) {
+  public static Properties createConsumerProperties(final String bootstrapServers) {
     final Properties consumerProperties = new Properties();
     consumerProperties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
     consumerProperties.put(
@@ -90,10 +90,6 @@ public final class KafkaShowcase {
     consumerProperties.put(
         ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
 
-    // Required for Sentry queue tracing in kafka-clients consumer setup.
-    consumerProperties.put(
-        ConsumerConfig.INTERCEPTOR_CLASSES_CONFIG, SentryKafkaConsumerInterceptor.class.getName());
-
     // Optional tuning for sample stability in CI/local runs.
     consumerProperties.put(ConsumerConfig.DEFAULT_API_TIMEOUT_MS_CONFIG, 2000);
     consumerProperties.put(ConsumerConfig.REQUEST_TIMEOUT_MS_CONFIG, 2000);
@@ -101,13 +97,12 @@ public final class KafkaShowcase {
     return consumerProperties;
   }
 
-  private static Thread startConsumerWithSentryInterceptor(
+  private static Thread startConsumerWithSentryTracing(
       final String bootstrapServers, final CountDownLatch consumedLatch) {
     final Thread consumerThread =
         new Thread(
             () -> {
-              final Properties consumerProperties =
-                  createConsumerPropertiesWithSentry(bootstrapServers);
+              final Properties consumerProperties = createConsumerProperties(bootstrapServers);
 
               try (KafkaConsumer<String, String> consumer =
                   new KafkaConsumer<>(consumerProperties)) {
@@ -116,9 +111,20 @@ public final class KafkaShowcase {
                 while (!Thread.currentThread().isInterrupted() && consumedLatch.getCount() > 0) {
                   final ConsumerRecords<String, String> records =
                       consumer.poll(Duration.ofMillis(500));
-                  if (!records.isEmpty()) {
-                    consumedLatch.countDown();
-                    break;
+                  for (final ConsumerRecord<String, String> record : records) {
+                    SentryKafkaConsumerTracing.withTracing(
+                        record,
+                        () -> {
+                          System.out.println(
+                              "Consumed Kafka message from "
+                                  + record.topic()
+                                  + ": "
+                                  + record.value());
+                          consumedLatch.countDown();
+                        });
+                    if (consumedLatch.getCount() == 0) {
+                      break;
+                    }
                   }
                 }
               } catch (Exception ignored) {
