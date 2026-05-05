@@ -13,6 +13,7 @@ import io.sentry.kafka.SentryKafkaProducerInterceptor
 import io.sentry.test.initForTest
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
+import java.util.Optional
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -22,6 +23,7 @@ import kotlin.test.assertTrue
 import org.apache.kafka.clients.consumer.Consumer
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.header.internals.RecordHeaders
+import org.apache.kafka.common.record.TimestampType
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
@@ -72,10 +74,21 @@ class SentryKafkaRecordInterceptorTest {
   private fun createRecord(
     topic: String = "my-topic",
     headers: RecordHeaders = RecordHeaders(),
+    serializedValueSize: Int = -1,
   ): ConsumerRecord<String, String> {
-    val record = ConsumerRecord<String, String>(topic, 0, 0L, "key", "value")
-    headers.forEach { record.headers().add(it) }
-    return record
+    return ConsumerRecord(
+      topic,
+      0,
+      0L,
+      System.currentTimeMillis(),
+      TimestampType.CREATE_TIME,
+      3,
+      serializedValueSize,
+      "key",
+      "value",
+      headers,
+      Optional.empty(),
+    )
   }
 
   private fun createRecordWithHeaders(
@@ -162,6 +175,26 @@ class SentryKafkaRecordInterceptorTest {
         org.mockito.kotlin.eq(sentryTraceValue),
         org.mockito.kotlin.eq(listOf("third=party", "sentry-sample_rate=1")),
       )
+  }
+
+  @Test
+  fun `sets body size from serializedValueSize`() {
+    val interceptor = SentryKafkaRecordInterceptor<String, String>(scopes)
+    val record = createRecord(serializedValueSize = 42)
+
+    interceptor.intercept(record, consumer)
+
+    assertEquals(42, transaction.data?.get(SpanDataConvention.MESSAGING_MESSAGE_BODY_SIZE))
+  }
+
+  @Test
+  fun `does not set body size when serializedValueSize is negative`() {
+    val interceptor = SentryKafkaRecordInterceptor<String, String>(scopes)
+    val record = createRecord(serializedValueSize = -1)
+
+    interceptor.intercept(record, consumer)
+
+    assertNull(transaction.data?.get(SpanDataConvention.MESSAGING_MESSAGE_BODY_SIZE))
   }
 
   @Test
