@@ -97,7 +97,11 @@ public final class SentryShakeDetector implements SensorEventListener {
     // Post clear to the HandlerThread so all queue access stays single-threaded
     final @Nullable Handler h = handler;
     if (h != null) {
-      h.post(queue::clear);
+      h.post(
+          () -> {
+            //noinspection Convert2MethodRef
+            queue.clear();
+          });
     }
   }
 
