@@ -25,7 +25,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-@ApiStatus.Internal
+@ApiStatus.Experimental
 public final class SentryKafkaProducerInterceptor<K, V> implements ProducerInterceptor<K, V> {
 
   public static final @NotNull String TRACE_ORIGIN = "auto.queue.kafka.producer";
