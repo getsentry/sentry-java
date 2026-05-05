@@ -201,6 +201,7 @@ public final class SentryShakeDetector implements SensorEventListener {
     boolean isShaking() {
       return newest != null
           && oldest != null
+          && sampleCount >= MIN_QUEUE_SIZE
           && newest.timestamp - oldest.timestamp >= MIN_WINDOW_SIZE_NS
           && acceleratingCount >= (sampleCount >> 1) + (sampleCount >> 2);
     }
