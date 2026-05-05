@@ -324,6 +324,12 @@ public class SentryUserFeedbackForm extends AlertDialog {
   @Override
   protected void onStart() {
     super.onStart();
+    // Clear the message field so subsequent show() calls start with a fresh form
+    final @NotNull EditText edtMessage =
+        findViewById(R.id.sentry_dialog_user_feedback_edt_description);
+    edtMessage.getText().clear();
+    edtMessage.setError(null);
+
     final @NotNull SentryOptions options = Sentry.getCurrentScopes().getOptions();
     final @NotNull SentryFeedbackOptions feedbackOptions = options.getFeedbackOptions();
     final @Nullable Runnable onFormOpen = feedbackOptions.getOnFormOpen();
