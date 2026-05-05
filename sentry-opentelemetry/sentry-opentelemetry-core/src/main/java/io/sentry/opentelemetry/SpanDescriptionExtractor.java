@@ -7,6 +7,8 @@ import io.opentelemetry.semconv.HttpAttributes;
 import io.opentelemetry.semconv.UrlAttributes;
 import io.opentelemetry.semconv.incubating.DbIncubatingAttributes;
 import io.opentelemetry.semconv.incubating.HttpIncubatingAttributes;
+import io.opentelemetry.semconv.incubating.MessagingIncubatingAttributes;
+import io.sentry.SentryOptions;
 import io.sentry.protocol.TransactionNameSource;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -17,8 +19,18 @@ public final class SpanDescriptionExtractor {
 
   @SuppressWarnings("deprecation")
   public @NotNull OtelSpanInfo extractSpanInfo(
-      final @NotNull SpanData otelSpan, final @Nullable IOtelSpanWrapper sentrySpan) {
+      final @NotNull SpanData otelSpan,
+      final @Nullable IOtelSpanWrapper sentrySpan,
+      final @NotNull SentryOptions options) {
     final @NotNull Attributes attributes = otelSpan.getAttributes();
+
+    if (options.isEnableQueueTracing()) {
+      final @Nullable String messagingSystem =
+          attributes.get(MessagingIncubatingAttributes.MESSAGING_SYSTEM);
+      if (messagingSystem != null) {
+        return descriptionForMessagingSystem(otelSpan);
+      }
+    }
 
     final @Nullable String httpMethod = attributes.get(HttpAttributes.HTTP_REQUEST_METHOD);
     if (httpMethod != null) {
@@ -89,6 +101,57 @@ public final class SpanDescriptionExtractor {
 
   private static boolean isRootSpan(SpanData otelSpan) {
     return !otelSpan.getParentSpanContext().isValid() || otelSpan.getParentSpanContext().isRemote();
+  }
+
+  @SuppressWarnings("deprecation")
+  private OtelSpanInfo descriptionForMessagingSystem(final @NotNull SpanData otelSpan) {
+    final @NotNull Attributes attributes = otelSpan.getAttributes();
+    final @NotNull String op = opForMessaging(otelSpan);
+    final @Nullable String destination =
+        attributes.get(MessagingIncubatingAttributes.MESSAGING_DESTINATION_NAME);
+    final @NotNull String description = destination != null ? destination : otelSpan.getName();
+    return new OtelSpanInfo(op, description, TransactionNameSource.TASK);
+  }
+
+  @SuppressWarnings("deprecation")
+  private @NotNull String opForMessaging(final @NotNull SpanData otelSpan) {
+    final @NotNull Attributes attributes = otelSpan.getAttributes();
+    // Prefer `messaging.operation.type` (current OTel semconv), fall back to legacy
+    // `messaging.operation`. OTel's SpanKind.CONSUMER is overloaded for both `receive` and
+    // `process`, so attribute-first mapping is required. SpanKind is used only as a last resort.
+    @Nullable
+    String operationType = attributes.get(MessagingIncubatingAttributes.MESSAGING_OPERATION_TYPE);
+    if (operationType == null) {
+      operationType = attributes.get(MessagingIncubatingAttributes.MESSAGING_OPERATION);
+    }
+    if (operationType != null) {
+      switch (operationType) {
+        case "publish":
+        case "send":
+          return "queue.publish";
+        case "create":
+          return "queue.create";
+        case "receive":
+          return "queue.receive";
+        case "process":
+        case "deliver":
+          return "queue.process";
+        case "settle":
+          return "queue.settle";
+        default:
+          // fall through to SpanKind mapping
+          break;
+      }
+    }
+
+    final @NotNull SpanKind kind = otelSpan.getKind();
+    if (SpanKind.PRODUCER.equals(kind)) {
+      return "queue.publish";
+    }
+    if (SpanKind.CONSUMER.equals(kind)) {
+      return "queue.process";
+    }
+    return "queue";
   }
 
   @SuppressWarnings("deprecation")

@@ -4398,9 +4398,11 @@ public abstract interface class io/sentry/SpanDataConvention {
 	public static final field HTTP_STATUS_CODE_KEY Ljava/lang/String;
 	public static final field MESSAGING_DESTINATION_NAME Ljava/lang/String;
 	public static final field MESSAGING_MESSAGE_BODY_SIZE Ljava/lang/String;
+	public static final field MESSAGING_MESSAGE_ENVELOPE_SIZE Ljava/lang/String;
 	public static final field MESSAGING_MESSAGE_ID Ljava/lang/String;
 	public static final field MESSAGING_MESSAGE_RECEIVE_LATENCY Ljava/lang/String;
 	public static final field MESSAGING_MESSAGE_RETRY_COUNT Ljava/lang/String;
+	public static final field MESSAGING_OPERATION_TYPE Ljava/lang/String;
 	public static final field MESSAGING_SYSTEM Ljava/lang/String;
 	public static final field PROFILER_ID Ljava/lang/String;
 	public static final field THREAD_ID Ljava/lang/String;

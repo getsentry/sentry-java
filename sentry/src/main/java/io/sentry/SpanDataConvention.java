@@ -35,5 +35,7 @@ public interface SpanDataConvention {
   String MESSAGING_MESSAGE_ID = "messaging.message.id";
   String MESSAGING_MESSAGE_RETRY_COUNT = "messaging.message.retry.count";
   String MESSAGING_MESSAGE_BODY_SIZE = "messaging.message.body.size";
+  String MESSAGING_MESSAGE_ENVELOPE_SIZE = "messaging.message.envelope.size";
   String MESSAGING_MESSAGE_RECEIVE_LATENCY = "messaging.message.receive.latency";
+  String MESSAGING_OPERATION_TYPE = "messaging.operation.type";
 }
