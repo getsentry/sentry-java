@@ -13,10 +13,13 @@ import io.sentry.SpanStatus;
 import io.sentry.util.SpanUtils;
 import io.sentry.util.TracingUtils;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import org.apache.kafka.clients.producer.ProducerInterceptor;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
+import org.apache.kafka.common.header.Header;
 import org.apache.kafka.common.header.Headers;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -97,8 +100,10 @@ public final class SentryKafkaProducerInterceptor<K, V> implements ProducerInter
   public void configure(final @Nullable Map<String, ?> configs) {}
 
   private void injectHeaders(final @NotNull Headers headers, final @NotNull ISpan span) {
+    final @Nullable List<String> existingBaggageHeaders =
+        readHeaderValues(headers, BaggageHeader.BAGGAGE_HEADER);
     final @Nullable TracingUtils.TracingHeaders tracingHeaders =
-        TracingUtils.trace(scopes, null, span);
+        TracingUtils.trace(scopes, existingBaggageHeaders, span);
     if (tracingHeaders != null) {
       final @NotNull SentryTraceHeader sentryTraceHeader = tracingHeaders.getSentryTraceHeader();
       headers.remove(sentryTraceHeader.getName());
@@ -119,5 +124,20 @@ public final class SentryKafkaProducerInterceptor<K, V> implements ProducerInter
         SENTRY_ENQUEUED_TIME_HEADER,
         String.valueOf(DateUtils.millisToSeconds(System.currentTimeMillis()))
             .getBytes(StandardCharsets.UTF_8));
+  }
+
+  private static @Nullable List<String> readHeaderValues(
+      final @NotNull Headers headers, final @NotNull String name) {
+    @Nullable List<String> values = null;
+    for (final @NotNull Header header : headers.headers(name)) {
+      final byte @Nullable [] value = header.value();
+      if (value != null) {
+        if (values == null) {
+          values = new ArrayList<>();
+        }
+        values.add(new String(value, StandardCharsets.UTF_8));
+      }
+    }
+    return values;
   }
 }
