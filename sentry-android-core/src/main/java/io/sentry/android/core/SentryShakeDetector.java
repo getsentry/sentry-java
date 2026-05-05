@@ -91,9 +91,11 @@ public final class SentryShakeDetector implements SensorEventListener {
 
   public void stop() {
     listener = null;
-    queue.clear();
     if (sensorManager != null) {
       sensorManager.unregisterListener(this);
+    }
+    synchronized (queue) {
+      queue.clear();
     }
   }
 
@@ -117,13 +119,18 @@ public final class SentryShakeDetector implements SensorEventListener {
     final float az = event.values[2];
     final boolean accelerating = Math.sqrt(ax * ax + ay * ay + az * az) > ACCELERATION_THRESHOLD;
 
-    queue.add(event.timestamp, accelerating);
-    if (queue.isShaking()) {
-      queue.clear();
-      final @Nullable Listener currentListener = listener;
-      if (currentListener != null) {
-        currentListener.onShake();
+    final @Nullable Listener currentListener;
+    synchronized (queue) {
+      queue.add(event.timestamp, accelerating);
+      if (queue.isShaking()) {
+        queue.clear();
+        currentListener = listener;
+      } else {
+        currentListener = null;
       }
+    }
+    if (currentListener != null) {
+      currentListener.onShake();
     }
   }
 
