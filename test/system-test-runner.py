@@ -227,13 +227,21 @@ class SystemTestRunner:
                 time.sleep(1)
         return False
 
+    def remove_kafka_broker_container(self) -> None:
+        subprocess.run(
+            ["docker", "rm", "-f", KAFKA_CONTAINER_NAME],
+            check=False,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+
     def start_kafka_broker(self) -> None:
         if self.wait_for_port("localhost", 9092, max_attempts=1):
             print("Kafka broker already running on localhost:9092, reusing it.")
             self.kafka_started_by_runner = False
             return
 
-        self.stop_kafka_broker()
+        self.remove_kafka_broker_container()
 
         print("Starting Kafka broker (Redpanda) for system tests...")
         run_result = subprocess.run(
@@ -280,12 +288,7 @@ class SystemTestRunner:
         if not self.kafka_started_by_runner:
             return
 
-        subprocess.run(
-            ["docker", "rm", "-f", KAFKA_CONTAINER_NAME],
-            check=False,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
+        self.remove_kafka_broker_container()
         self.kafka_started_by_runner = False
 
     def start_sentry_mock_server(self) -> None:
@@ -439,6 +442,7 @@ class SystemTestRunner:
 
         if self.module_requires_kafka_profile(sample_module):
             env["SPRING_PROFILES_ACTIVE"] = "kafka"
+            env["SENTRY_ENABLE_QUEUE_TRACING"] = "true"
             print("Enabling Spring profile: kafka")
         else:
             env.pop("SPRING_PROFILES_ACTIVE", None)
