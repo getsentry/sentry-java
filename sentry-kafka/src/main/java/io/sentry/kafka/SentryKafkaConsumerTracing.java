@@ -143,8 +143,8 @@ public final class SentryKafkaConsumerTracing {
       }
 
       final @NotNull TransactionContext txContext =
-          continued != null ? continued : new TransactionContext("queue.process", "queue.process");
-      txContext.setName("queue.process");
+          continued != null ? continued : new TransactionContext(record.topic(), "queue.process");
+      txContext.setName(record.topic());
       txContext.setOperation("queue.process");
 
       final @NotNull TransactionOptions txOptions = new TransactionOptions();
@@ -204,7 +204,6 @@ public final class SentryKafkaConsumerTracing {
       }
       transaction.finish();
     } catch (Throwable t) {
-      // Instrumentation must never break customer processing.
       scopes
           .getOptions()
           .getLogger()

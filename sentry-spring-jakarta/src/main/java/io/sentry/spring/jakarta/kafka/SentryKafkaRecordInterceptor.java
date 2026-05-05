@@ -159,8 +159,8 @@ public final class SentryKafkaRecordInterceptor<K, V> implements RecordIntercept
     final @NotNull TransactionContext txContext =
         transactionContext != null
             ? transactionContext
-            : new TransactionContext("queue.process", "queue.process");
-    txContext.setName("queue.process");
+            : new TransactionContext(record.topic(), "queue.process");
+    txContext.setName(record.topic());
     txContext.setOperation("queue.process");
 
     final @NotNull TransactionOptions txOptions = new TransactionOptions();

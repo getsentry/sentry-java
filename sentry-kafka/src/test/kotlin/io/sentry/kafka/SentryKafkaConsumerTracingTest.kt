@@ -91,7 +91,7 @@ class SentryKafkaConsumerTracingTest {
     verify(forkedScopes).continueTrace(eq(sentryTraceValue), eq(listOf(baggageValue)))
     verify(forkedScopes).startTransaction(txContextCaptor.capture(), txOptionsCaptor.capture())
 
-    assertEquals("queue.process", txContextCaptor.firstValue.name)
+    assertEquals("my-topic", txContextCaptor.firstValue.name)
     assertEquals("queue.process", txContextCaptor.firstValue.operation)
     assertEquals(SentryKafkaConsumerTracing.TRACE_ORIGIN, txOptionsCaptor.firstValue.origin)
     assertTrue(txOptionsCaptor.firstValue.isBindToScope)
