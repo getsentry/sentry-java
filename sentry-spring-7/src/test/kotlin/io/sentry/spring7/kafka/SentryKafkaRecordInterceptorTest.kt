@@ -122,7 +122,7 @@ class SentryKafkaRecordInterceptorTest {
         ByteBuffer.allocate(Int.SIZE_BYTES).putInt(it).array(),
       )
     }
-    val record = ConsumerRecord<String, String>("my-topic", 0, 0L, "key", "value")
+    val record = ConsumerRecord("my-topic", 0, 0L, "key", "value")
     headers.forEach { record.headers().add(it) }
     return record
   }
