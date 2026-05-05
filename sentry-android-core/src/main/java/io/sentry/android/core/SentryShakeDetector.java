@@ -94,15 +94,8 @@ public final class SentryShakeDetector implements SensorEventListener {
     if (sensorManager != null) {
       sensorManager.unregisterListener(this);
     }
-    // Post clear to the HandlerThread so all queue access stays single-threaded
-    final @Nullable Handler h = handler;
-    if (h != null) {
-      h.post(
-          () -> {
-            //noinspection Convert2MethodRef
-            queue.clear();
-          });
-    }
+    // No need to clear the queue here — stale samples are purged by timestamp
+    // in add(), so they age out within 0.5s when detection resumes.
   }
 
   /** Stops detection and releases the background thread. */
