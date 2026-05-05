@@ -1,4 +1,4 @@
-package io.sentry.samples.spring.boot.jakarta;
+package io.sentry.samples.spring.boot.jakarta.queues.kafka;
 
 import org.springframework.context.annotation.Profile;
 import org.springframework.kafka.core.KafkaTemplate;
