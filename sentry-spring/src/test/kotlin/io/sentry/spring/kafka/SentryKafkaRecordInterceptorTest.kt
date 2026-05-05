@@ -270,6 +270,19 @@ class SentryKafkaRecordInterceptorTest {
   }
 
   @Test
+  fun `delegates to existing interceptor when consumer is null`() {
+    val delegate = mock<RecordInterceptor<String, String>>()
+    val record = createRecord()
+    whenever(delegate.intercept(record)).thenReturn(record)
+
+    val interceptor = SentryKafkaRecordInterceptor(scopes, delegate)
+    val result = interceptor.intercept(record)
+
+    assertEquals(record, result)
+    verify(delegate).intercept(record)
+  }
+
+  @Test
   fun `success finishes transaction and delegates`() {
     val delegate = mock<RecordInterceptor<String, String>>()
     val interceptor = SentryKafkaRecordInterceptor(scopes, delegate)

@@ -3,7 +3,6 @@ package io.sentry.spring.kafka
 import kotlin.test.Test
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
-import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.mockito.kotlin.mock
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory
 import org.springframework.kafka.core.ConsumerFactory
@@ -64,12 +63,7 @@ class SentryKafkaConsumerBeanPostProcessorTest {
     val factory = ConcurrentKafkaListenerContainerFactory<String, String>()
     factory.consumerFactory = consumerFactory
 
-    val customerInterceptor =
-      object : RecordInterceptor<String, String> {
-        override fun intercept(
-          record: ConsumerRecord<String, String>
-        ): ConsumerRecord<String, String>? = record
-      }
+    val customerInterceptor = RecordInterceptor<String, String> { record -> record }
     factory.setRecordInterceptor(customerInterceptor)
 
     val processor = SentryKafkaConsumerBeanPostProcessor()
@@ -97,12 +91,7 @@ class SentryKafkaConsumerBeanPostProcessorTest {
     val consumerFactory = mock<ConsumerFactory<String, String>>()
     val factory = ConcurrentKafkaListenerContainerFactory<String, String>()
     factory.consumerFactory = consumerFactory
-    val customerInterceptor =
-      object : RecordInterceptor<String, String> {
-        override fun intercept(
-          record: ConsumerRecord<String, String>
-        ): ConsumerRecord<String, String>? = record
-      }
+    val customerInterceptor = RecordInterceptor<String, String> { record -> record }
     factory.setRecordInterceptor(customerInterceptor)
 
     val field = factory.javaClass.superclass.getDeclaredField("recordInterceptor")
