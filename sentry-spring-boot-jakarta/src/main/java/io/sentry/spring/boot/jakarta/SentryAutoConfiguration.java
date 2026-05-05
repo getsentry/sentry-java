@@ -252,7 +252,7 @@ public class SentryAutoConfiguration {
     @ConditionalOnClass(
         name = {
           "org.springframework.kafka.core.KafkaTemplate",
-          "io.sentry.kafka.SentryKafkaProducerInterceptor"
+          "io.sentry.kafka.SentryKafkaProducer"
         })
     @ConditionalOnProperty(name = "sentry.enable-queue-tracing", havingValue = "true")
     @ConditionalOnMissingClass("io.sentry.opentelemetry.SentryAutoConfigurationCustomizerProvider")

@@ -2,83 +2,75 @@ package io.sentry.spring.jakarta.kafka;
 
 import io.sentry.ScopesAdapter;
 import io.sentry.SentryLevel;
-import io.sentry.kafka.SentryKafkaProducerInterceptor;
-import java.lang.reflect.Field;
-import org.apache.kafka.clients.producer.ProducerInterceptor;
+import io.sentry.kafka.SentryKafkaProducer;
+import org.apache.kafka.clients.producer.Producer;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.core.Ordered;
 import org.springframework.core.PriorityOrdered;
-import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.kafka.support.CompositeProducerInterceptor;
+import org.springframework.kafka.core.ProducerFactory;
+import org.springframework.kafka.core.ProducerPostProcessor;
 
 /**
- * Sets a {@link SentryKafkaProducerInterceptor} on {@link KafkaTemplate} beans via {@link
- * KafkaTemplate#setProducerInterceptor(ProducerInterceptor)}. The original bean is not replaced.
+ * Installs a {@link ProducerPostProcessor} on every {@link ProducerFactory} bean so that each
+ * {@link Producer} created by Spring Kafka is wrapped via {@link SentryKafkaProducer#wrap
+ * SentryKafkaProducer.wrap(Producer)}.
  *
- * <p>If the template already has a {@link ProducerInterceptor}, both are composed using {@link
- * CompositeProducerInterceptor}. Reading the existing interceptor requires reflection (no public
- * getter in Spring Kafka 3.x); if reflection fails, a warning is logged and only the Sentry
- * interceptor is set.
+ * <p>The wrapper records a {@code queue.publish} span around each {@code send(...)} that finishes
+ * when the broker ack callback fires, giving a real producer-send lifecycle span. {@code
+ * KafkaTemplate} beans are left untouched, so all customer-configured listeners, interceptors and
+ * observation settings are preserved.
+ *
+ * <p>Note: {@link ProducerFactory#addPostProcessor(ProducerPostProcessor)} is a default method on
+ * the interface that is a no-op unless overridden. Custom factories that do not extend {@code
+ * DefaultKafkaProducerFactory} will not receive Sentry producer instrumentation; a warning is
+ * logged at startup in that case.
  */
 @ApiStatus.Internal
 public final class SentryKafkaProducerBeanPostProcessor
     implements BeanPostProcessor, PriorityOrdered {
 
   @Override
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({"unchecked", "rawtypes"})
   public @NotNull Object postProcessAfterInitialization(
       final @NotNull Object bean, final @NotNull String beanName) throws BeansException {
-    if (bean instanceof KafkaTemplate) {
-      final @NotNull KafkaTemplate<?, ?> template = (KafkaTemplate<?, ?>) bean;
-      final @Nullable ProducerInterceptor<?, ?> existing = getExistingInterceptor(template);
-
-      if (existing instanceof SentryKafkaProducerInterceptor) {
-        return bean;
-      }
-
-      @SuppressWarnings("rawtypes")
-      final SentryKafkaProducerInterceptor sentryInterceptor =
-          new SentryKafkaProducerInterceptor<>(
-              ScopesAdapter.getInstance(), "auto.queue.spring_jakarta.kafka.producer");
-
-      if (existing != null) {
-        @SuppressWarnings("rawtypes")
-        final CompositeProducerInterceptor composite =
-            new CompositeProducerInterceptor(sentryInterceptor, existing);
-        template.setProducerInterceptor(composite);
-      } else {
-        template.setProducerInterceptor(sentryInterceptor);
+    if (bean instanceof ProducerFactory) {
+      final @NotNull ProducerFactory factory = (ProducerFactory) bean;
+      final @NotNull SentryProducerPostProcessor pp = new SentryProducerPostProcessor<>();
+      factory.addPostProcessor(pp);
+      if (!factory.getPostProcessors().contains(pp)) {
+        ScopesAdapter.getInstance()
+            .getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.WARNING,
+                "Sentry Kafka producer tracing not active for ProducerFactory '%s' (%s). "
+                    + "addPostProcessor() was not honored — the factory may not extend "
+                    + "DefaultKafkaProducerFactory. Wrap producers manually with "
+                    + "SentryKafkaProducer.wrap(producer).",
+                beanName,
+                factory.getClass().getName());
       }
     }
     return bean;
   }
 
-  @SuppressWarnings("unchecked")
-  private @Nullable ProducerInterceptor<?, ?> getExistingInterceptor(
-      final @NotNull KafkaTemplate<?, ?> template) {
-    try {
-      final @NotNull Field field = KafkaTemplate.class.getDeclaredField("producerInterceptor");
-      field.setAccessible(true);
-      return (ProducerInterceptor<?, ?>) field.get(template);
-    } catch (NoSuchFieldException | IllegalAccessException e) {
-      ScopesAdapter.getInstance()
-          .getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.WARNING,
-              "Unable to read existing producerInterceptor from KafkaTemplate via reflection. "
-                  + "If you had a custom ProducerInterceptor, it may be overwritten by Sentry's interceptor.",
-              e);
-      return null;
-    }
-  }
-
   @Override
   public int getOrder() {
     return Ordered.LOWEST_PRECEDENCE;
+  }
+
+  /**
+   * Marker {@link ProducerPostProcessor} that wraps the freshly created Kafka {@link Producer} via
+   * {@link SentryKafkaProducer#wrap}.
+   */
+  static final class SentryProducerPostProcessor<K, V> implements ProducerPostProcessor<K, V> {
+    @Override
+    public @NotNull Producer<K, V> apply(final @NotNull Producer<K, V> producer) {
+      return SentryKafkaProducer.wrap(
+          producer, ScopesAdapter.getInstance(), "auto.queue.spring_jakarta.kafka.producer");
+    }
   }
 }

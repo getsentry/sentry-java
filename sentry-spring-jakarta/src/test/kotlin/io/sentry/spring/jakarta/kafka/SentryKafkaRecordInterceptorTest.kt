@@ -9,7 +9,7 @@ import io.sentry.SentryTraceHeader
 import io.sentry.SentryTracer
 import io.sentry.SpanDataConvention
 import io.sentry.TransactionContext
-import io.sentry.kafka.SentryKafkaProducerInterceptor
+import io.sentry.kafka.SentryKafkaProducer
 import io.sentry.test.initForTest
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
@@ -112,7 +112,7 @@ class SentryKafkaRecordInterceptorTest {
     }
     enqueuedTime?.let {
       headers.add(
-        SentryKafkaProducerInterceptor.SENTRY_ENQUEUED_TIME_HEADER,
+        SentryKafkaProducer.SENTRY_ENQUEUED_TIME_HEADER,
         it.toByteArray(StandardCharsets.UTF_8),
       )
     }

@@ -9,15 +9,11 @@ public final class io/sentry/kafka/SentryKafkaConsumerTracing {
 	public static fun withTracing (Lorg/apache/kafka/clients/consumer/ConsumerRecord;Ljava/util/concurrent/Callable;)Ljava/lang/Object;
 }
 
-public final class io/sentry/kafka/SentryKafkaProducerInterceptor : org/apache/kafka/clients/producer/ProducerInterceptor {
+public final class io/sentry/kafka/SentryKafkaProducer {
 	public static final field SENTRY_ENQUEUED_TIME_HEADER Ljava/lang/String;
 	public static final field TRACE_ORIGIN Ljava/lang/String;
-	public fun <init> ()V
-	public fun <init> (Lio/sentry/IScopes;)V
-	public fun <init> (Lio/sentry/IScopes;Ljava/lang/String;)V
-	public fun close ()V
-	public fun configure (Ljava/util/Map;)V
-	public fun onAcknowledgement (Lorg/apache/kafka/clients/producer/RecordMetadata;Ljava/lang/Exception;)V
-	public fun onSend (Lorg/apache/kafka/clients/producer/ProducerRecord;)Lorg/apache/kafka/clients/producer/ProducerRecord;
+	public static fun wrap (Lorg/apache/kafka/clients/producer/Producer;)Lorg/apache/kafka/clients/producer/Producer;
+	public static fun wrap (Lorg/apache/kafka/clients/producer/Producer;Lio/sentry/IScopes;)Lorg/apache/kafka/clients/producer/Producer;
+	public static fun wrap (Lorg/apache/kafka/clients/producer/Producer;Lio/sentry/IScopes;Ljava/lang/String;)Lorg/apache/kafka/clients/producer/Producer;
 }
 

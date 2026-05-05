@@ -10,7 +10,7 @@ import io.sentry.SpanDataConvention;
 import io.sentry.SpanStatus;
 import io.sentry.TransactionContext;
 import io.sentry.TransactionOptions;
-import io.sentry.kafka.SentryKafkaProducerInterceptor;
+import io.sentry.kafka.SentryKafkaProducer;
 import io.sentry.util.SpanUtils;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -188,7 +188,7 @@ public final class SentryKafkaRecordInterceptor<K, V> implements RecordIntercept
     }
 
     final @Nullable String enqueuedTimeStr =
-        headerValue(record, SentryKafkaProducerInterceptor.SENTRY_ENQUEUED_TIME_HEADER);
+        headerValue(record, SentryKafkaProducer.SENTRY_ENQUEUED_TIME_HEADER);
     if (enqueuedTimeStr != null) {
       try {
         final double enqueuedTimeSeconds = Double.parseDouble(enqueuedTimeStr);
