@@ -1,6 +1,7 @@
 package io.sentry.kafka
 
 import io.sentry.IScopes
+import io.sentry.ISentryLifecycleToken
 import io.sentry.Sentry
 import io.sentry.SentryOptions
 import io.sentry.SentryTraceHeader
@@ -26,7 +27,11 @@ class SentryKafkaProducerInterceptorTest {
 
   @BeforeTest
   fun setup() {
-    initForTest { it.dsn = "https://key@sentry.io/proj" }
+    initForTest {
+      it.dsn = "https://key@sentry.io/proj"
+      it.isEnableQueueTracing = true
+      it.tracesSampleRate = 1.0
+    }
     scopes = mock()
     options =
       SentryOptions().apply {
@@ -94,5 +99,28 @@ class SentryKafkaProducerInterceptorTest {
     val result = interceptor.onSend(record)
 
     assertSame(record, result)
+  }
+
+  @Test
+  fun `no-arg constructor uses current scopes`() {
+    val transaction = Sentry.startTransaction("tx", "op")
+    val record = ProducerRecord("my-topic", "key", "value")
+
+    try {
+      val token: ISentryLifecycleToken = transaction.makeCurrent()
+      try {
+        val interceptor = SentryKafkaProducerInterceptor<String, String>()
+        interceptor.onSend(record)
+      } finally {
+        token.close()
+      }
+    } finally {
+      transaction.finish()
+    }
+
+    assertNotNull(record.headers().lastHeader(SentryTraceHeader.SENTRY_TRACE_HEADER))
+    assertNotNull(
+      record.headers().lastHeader(SentryKafkaProducerInterceptor.SENTRY_ENQUEUED_TIME_HEADER)
+    )
   }
 }

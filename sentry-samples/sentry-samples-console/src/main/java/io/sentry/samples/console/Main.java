@@ -5,6 +5,7 @@ import io.sentry.clientreport.DiscardReason;
 import io.sentry.jcache.SentryJCacheWrapper;
 import io.sentry.protocol.Message;
 import io.sentry.protocol.User;
+import io.sentry.samples.console.kafka.KafkaShowcase;
 import java.util.Collections;
 import javax.cache.Cache;
 import javax.cache.CacheManager;
@@ -16,6 +17,10 @@ public class Main {
   private static long numberOfDiscardedSpansDueToOverflow = 0;
 
   public static void main(String[] args) throws InterruptedException {
+    final String kafkaBootstrapServers = System.getenv("SENTRY_SAMPLE_KAFKA_BOOTSTRAP_SERVERS");
+    final boolean kafkaEnabled =
+        kafkaBootstrapServers != null && !kafkaBootstrapServers.trim().isEmpty();
+
     Sentry.init(
         options -> {
           // NOTE: Replace the test DSN below with YOUR OWN DSN to see the events from this app in
@@ -95,6 +100,7 @@ public class Main {
 
           // Enable cache tracing to create spans for cache operations
           options.setEnableCacheTracing(true);
+          options.setEnableQueueTracing(kafkaEnabled);
 
           // Determine traces sample rate based on the sampling context
           //          options.setTracesSampler(
@@ -177,6 +183,13 @@ public class Main {
     // Wrapping a JCache Cache with SentryJCacheWrapper creates cache.get, cache.put,
     // cache.remove, and cache.flush spans as children of the active transaction.
     demonstrateCacheTracing();
+
+    // Kafka queue tracing with kafka-clients interceptors.
+    //
+    // Enable with: SENTRY_SAMPLE_KAFKA_BOOTSTRAP_SERVERS=localhost:9092
+    if (kafkaEnabled) {
+      KafkaShowcase.runKafkaWithSentryInterceptors(kafkaBootstrapServers);
+    }
 
     // Performance feature
     //

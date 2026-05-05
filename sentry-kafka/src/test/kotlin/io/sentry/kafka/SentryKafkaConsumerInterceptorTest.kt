@@ -2,9 +2,13 @@ package io.sentry.kafka
 
 import io.sentry.IScopes
 import io.sentry.ITransaction
+import io.sentry.Sentry
 import io.sentry.SentryOptions
 import io.sentry.TransactionContext
 import io.sentry.TransactionOptions
+import io.sentry.test.initForTest
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertSame
 import org.apache.kafka.clients.consumer.ConsumerRecord
@@ -18,6 +22,20 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
 class SentryKafkaConsumerInterceptorTest {
+
+  @BeforeTest
+  fun setup() {
+    initForTest {
+      it.dsn = "https://key@sentry.io/proj"
+      it.isEnableQueueTracing = true
+      it.tracesSampleRate = 1.0
+    }
+  }
+
+  @AfterTest
+  fun teardown() {
+    Sentry.close()
+  }
 
   @Test
   fun `does nothing when queue tracing is disabled`() {
@@ -62,6 +80,16 @@ class SentryKafkaConsumerInterceptorTest {
     val interceptor = SentryKafkaConsumerInterceptor<String, String>(mock())
 
     interceptor.onCommit(mapOf(TopicPartition("my-topic", 0) to OffsetAndMetadata(1)))
+  }
+
+  @Test
+  fun `no-arg constructor uses current scopes`() {
+    val interceptor = SentryKafkaConsumerInterceptor<String, String>()
+    val records = singleRecordBatch()
+
+    val result = interceptor.onConsume(records)
+
+    assertSame(records, result)
   }
 
   private fun singleRecordBatch(): ConsumerRecords<String, String> {
