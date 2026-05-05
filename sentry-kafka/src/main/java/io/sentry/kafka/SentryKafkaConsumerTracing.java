@@ -15,7 +15,7 @@ import io.sentry.TransactionOptions;
 import io.sentry.util.SpanUtils;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -215,9 +215,8 @@ public final class SentryKafkaConsumerTracing {
   private <K, V> @Nullable TransactionContext continueTrace(
       final @NotNull IScopes forkedScopes, final @NotNull ConsumerRecord<K, V> record) {
     final @Nullable String sentryTrace = headerValue(record, SentryTraceHeader.SENTRY_TRACE_HEADER);
-    final @Nullable String baggage = headerValue(record, BaggageHeader.BAGGAGE_HEADER);
     final @Nullable List<String> baggageHeaders =
-        baggage != null ? Collections.singletonList(baggage) : null;
+        headerValues(record, BaggageHeader.BAGGAGE_HEADER);
     return forkedScopes.continueTrace(sentryTrace, baggageHeaders);
   }
 
@@ -264,5 +263,19 @@ public final class SentryKafkaConsumerTracing {
       return null;
     }
     return new String(header.value(), StandardCharsets.UTF_8);
+  }
+
+  private <K, V> @Nullable List<String> headerValues(
+      final @NotNull ConsumerRecord<K, V> record, final @NotNull String headerName) {
+    @Nullable List<String> values = null;
+    for (final @NotNull Header header : record.headers().headers(headerName)) {
+      if (header.value() != null) {
+        if (values == null) {
+          values = new ArrayList<>();
+        }
+        values.add(new String(header.value(), StandardCharsets.UTF_8));
+      }
+    }
+    return values;
   }
 }
