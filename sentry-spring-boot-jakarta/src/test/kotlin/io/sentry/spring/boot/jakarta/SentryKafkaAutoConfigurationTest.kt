@@ -9,6 +9,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.springframework.boot.autoconfigure.AutoConfigurations
 import org.springframework.boot.test.context.FilteredClassLoader
 import org.springframework.boot.test.context.runner.ApplicationContextRunner
+import org.springframework.kafka.core.KafkaTemplate
 
 class SentryKafkaAutoConfigurationTest {
 
@@ -34,6 +35,8 @@ class SentryKafkaAutoConfigurationTest {
   private val noSentryKafkaClassLoader =
     FilteredClassLoader(SentryKafkaProducerInterceptor::class.java)
 
+  private val noSpringKafkaClassLoader = FilteredClassLoader(KafkaTemplate::class.java)
+
   @Test
   fun `registers Kafka BPPs when queue tracing is enabled`() {
     contextRunner
@@ -57,6 +60,17 @@ class SentryKafkaAutoConfigurationTest {
   fun `does not register Kafka BPPs when sentry-kafka is not present`() {
     contextRunner
       .withClassLoader(noSentryKafkaClassLoader)
+      .withPropertyValues("sentry.enable-queue-tracing=true")
+      .run { context ->
+        assertThat(context).doesNotHaveBean(SentryKafkaProducerBeanPostProcessor::class.java)
+        assertThat(context).doesNotHaveBean(SentryKafkaConsumerBeanPostProcessor::class.java)
+      }
+  }
+
+  @Test
+  fun `does not register Kafka BPPs when spring-kafka is not present`() {
+    contextRunner
+      .withClassLoader(noSpringKafkaClassLoader)
       .withPropertyValues("sentry.enable-queue-tracing=true")
       .run { context ->
         assertThat(context).doesNotHaveBean(SentryKafkaProducerBeanPostProcessor::class.java)
