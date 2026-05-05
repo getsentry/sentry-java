@@ -94,8 +94,10 @@ public final class SentryShakeDetector implements SensorEventListener {
     if (sensorManager != null) {
       sensorManager.unregisterListener(this);
     }
-    synchronized (queue) {
-      queue.clear();
+    // Post clear to the HandlerThread so all queue access stays single-threaded
+    final @Nullable Handler h = handler;
+    if (h != null) {
+      h.post(queue::clear);
     }
   }
 
@@ -103,6 +105,7 @@ public final class SentryShakeDetector implements SensorEventListener {
   public void close() {
     stop();
     if (handlerThread != null) {
+      // quitSafely drains pending messages (including the clear posted by stop) before exiting
       handlerThread.quitSafely();
       handlerThread = null;
       handler = null;
@@ -119,18 +122,13 @@ public final class SentryShakeDetector implements SensorEventListener {
     final float az = event.values[2];
     final boolean accelerating = Math.sqrt(ax * ax + ay * ay + az * az) > ACCELERATION_THRESHOLD;
 
-    final @Nullable Listener currentListener;
-    synchronized (queue) {
-      queue.add(event.timestamp, accelerating);
-      if (queue.isShaking()) {
-        queue.clear();
-        currentListener = listener;
-      } else {
-        currentListener = null;
+    queue.add(event.timestamp, accelerating);
+    if (queue.isShaking()) {
+      queue.clear();
+      final @Nullable Listener currentListener = listener;
+      if (currentListener != null) {
+        currentListener.onShake();
       }
-    }
-    if (currentListener != null) {
-      currentListener.onShake();
     }
   }
 
