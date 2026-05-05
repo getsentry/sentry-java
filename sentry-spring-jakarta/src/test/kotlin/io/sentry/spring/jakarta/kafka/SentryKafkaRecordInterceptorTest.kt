@@ -299,6 +299,52 @@ class SentryKafkaRecordInterceptorTest {
   }
 
   @Test
+  fun `setupThreadState delegates to existing interceptor`() {
+    val delegate = mock<RecordInterceptor<String, String>>()
+    val interceptor = SentryKafkaRecordInterceptor(scopes, delegate)
+
+    interceptor.setupThreadState(consumer)
+
+    verify(delegate).setupThreadState(consumer)
+  }
+
+  @Test
+  fun `setupThreadState is no-op without delegate`() {
+    val interceptor = SentryKafkaRecordInterceptor<String, String>(scopes)
+
+    // should not throw
+    interceptor.setupThreadState(consumer)
+  }
+
+  @Test
+  fun `clearThreadState delegates to existing interceptor`() {
+    val delegate = mock<RecordInterceptor<String, String>>()
+    val interceptor = SentryKafkaRecordInterceptor(scopes, delegate)
+
+    interceptor.clearThreadState(consumer)
+
+    verify(delegate).clearThreadState(consumer)
+  }
+
+  @Test
+  fun `clearThreadState delegates to existing interceptor even when sentry cleanup throws`() {
+    val delegate = mock<RecordInterceptor<String, String>>()
+    whenever(lifecycleToken.close()).thenThrow(RuntimeException("boom"))
+    val interceptor = SentryKafkaRecordInterceptor(scopes, delegate)
+    val record = createRecord()
+
+    interceptor.intercept(record, consumer)
+
+    try {
+      interceptor.clearThreadState(consumer)
+    } catch (ignored: RuntimeException) {
+      // expected
+    }
+
+    verify(delegate).clearThreadState(consumer)
+  }
+
+  @Test
   fun `intercept cleans up stale context from previous record`() {
     val lifecycleToken2 = mock<ISentryLifecycleToken>()
     val forkedScopes2 = mock<IScopes>()

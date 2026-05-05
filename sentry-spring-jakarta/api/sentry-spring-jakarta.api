@@ -263,6 +263,7 @@ public final class io/sentry/spring/jakarta/kafka/SentryKafkaRecordInterceptor :
 	public fun clearThreadState (Lorg/apache/kafka/clients/consumer/Consumer;)V
 	public fun failure (Lorg/apache/kafka/clients/consumer/ConsumerRecord;Ljava/lang/Exception;Lorg/apache/kafka/clients/consumer/Consumer;)V
 	public fun intercept (Lorg/apache/kafka/clients/consumer/ConsumerRecord;Lorg/apache/kafka/clients/consumer/Consumer;)Lorg/apache/kafka/clients/consumer/ConsumerRecord;
+	public fun setupThreadState (Lorg/apache/kafka/clients/consumer/Consumer;)V
 	public fun success (Lorg/apache/kafka/clients/consumer/ConsumerRecord;Lorg/apache/kafka/clients/consumer/Consumer;)V
 }
 
