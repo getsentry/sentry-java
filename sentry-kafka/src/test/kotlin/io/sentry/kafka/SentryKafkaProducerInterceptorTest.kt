@@ -17,6 +17,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
@@ -84,7 +85,19 @@ class SentryKafkaProducerInterceptorTest {
     val enqueuedTimeHeader =
       record.headers().lastHeader(SentryKafkaProducerInterceptor.SENTRY_ENQUEUED_TIME_HEADER)
     assertNotNull(enqueuedTimeHeader)
-    val enqueuedTime = String(enqueuedTimeHeader.value(), StandardCharsets.UTF_8).toDouble()
+    val enqueuedTimeRaw = String(enqueuedTimeHeader.value(), StandardCharsets.UTF_8)
+    // Must be written as a plain decimal so cross-SDK consumers (e.g. sentry-python) can
+    // parse it. String.valueOf(double) would emit scientific notation (e.g. 1.77E9) for
+    // epoch seconds.
+    assertFalse(
+      enqueuedTimeRaw.contains('E') || enqueuedTimeRaw.contains('e'),
+      "enqueued-time header must not use scientific notation, got: $enqueuedTimeRaw",
+    )
+    assertTrue(
+      enqueuedTimeRaw.matches(Regex("""^\d+\.\d{6}$""")),
+      "enqueued-time header must be plain epoch seconds with 6 decimals, got: $enqueuedTimeRaw",
+    )
+    val enqueuedTime = enqueuedTimeRaw.toDouble()
     assertTrue(enqueuedTime > 0)
   }
 

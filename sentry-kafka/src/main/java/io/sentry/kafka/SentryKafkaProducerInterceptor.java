@@ -128,7 +128,8 @@ public final class SentryKafkaProducerInterceptor<K, V> implements ProducerInter
     headers.remove(SENTRY_ENQUEUED_TIME_HEADER);
     headers.add(
         SENTRY_ENQUEUED_TIME_HEADER,
-        String.valueOf(DateUtils.millisToSeconds(System.currentTimeMillis()))
+        DateUtils.doubleToBigDecimal(DateUtils.millisToSeconds(System.currentTimeMillis()))
+            .toString()
             .getBytes(StandardCharsets.UTF_8));
   }
 
