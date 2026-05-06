@@ -51,8 +51,9 @@ tasks.jacocoTestReport {
 animalsniffer {
   ignore =
     listOf(
-      // We manually check on Android if it's available (API 26+).
-      "java.time.Instant"
+      // java.time is only available on Android API 26+. We check availability at runtime
+      // and fall back to a legacy implementation for older devices.
+      "java.time.*"
     )
 }
 

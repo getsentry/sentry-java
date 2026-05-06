@@ -34,34 +34,6 @@ limitations under the License.
 
 ---
 
-## FasterXML Jackson — ISO8601Utils (Apache 2.0)
-
-**Source:** https://github.com/FasterXML/jackson-databind<br>
-**License:** Apache License 2.0<br>
-**Copyright:** Copyright (C) 2007-, Tatu Saloranta
-
-### Scope
-
-The Sentry Java SDK includes an adapted version of `ISO8601Utils` from the Jackson Databind library for ISO 8601 date/time parsing and formatting. The code resides in `io.sentry.vendor.gson.internal.bind.util.ISO8601Utils`.
-
-```
-Copyright (C) 2007-, Tatu Saloranta
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-     http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-```
-
----
-
 ## Android Open Source Project — Base64 (Apache 2.0)
 
 **Source:** https://cs.android.com/android/platform/superproject/main/+/main:frameworks/base/core/java/android/util/Base64.java<br>
