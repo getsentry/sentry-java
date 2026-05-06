@@ -36,8 +36,10 @@ dependencies {
   implementation(projects.sentry)
   implementation(projects.sentryAsyncProfiler)
   implementation(projects.sentryJcache)
+  implementation(projects.sentryKafka)
   implementation(libs.jcache)
   implementation(libs.caffeine.jcache)
+  implementation(libs.kafka.clients)
 
   testImplementation(kotlin(Config.kotlinStdLib))
   testImplementation(projects.sentry)

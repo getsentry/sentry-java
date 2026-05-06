@@ -1,0 +1,19 @@
+public final class io/sentry/kafka/BuildConfig {
+	public static final field SENTRY_KAFKA_SDK_NAME Ljava/lang/String;
+	public static final field VERSION_NAME Ljava/lang/String;
+}
+
+public final class io/sentry/kafka/SentryKafkaConsumerTracing {
+	public static final field TRACE_ORIGIN Ljava/lang/String;
+	public static fun withTracing (Lorg/apache/kafka/clients/consumer/ConsumerRecord;Ljava/lang/Runnable;)V
+	public static fun withTracing (Lorg/apache/kafka/clients/consumer/ConsumerRecord;Ljava/util/concurrent/Callable;)Ljava/lang/Object;
+}
+
+public final class io/sentry/kafka/SentryKafkaProducer {
+	public static final field SENTRY_ENQUEUED_TIME_HEADER Ljava/lang/String;
+	public static final field TRACE_ORIGIN Ljava/lang/String;
+	public static fun wrap (Lorg/apache/kafka/clients/producer/Producer;)Lorg/apache/kafka/clients/producer/Producer;
+	public static fun wrap (Lorg/apache/kafka/clients/producer/Producer;Lio/sentry/IScopes;)Lorg/apache/kafka/clients/producer/Producer;
+	public static fun wrap (Lorg/apache/kafka/clients/producer/Producer;Lio/sentry/IScopes;Ljava/lang/String;)Lorg/apache/kafka/clients/producer/Producer;
+}
+

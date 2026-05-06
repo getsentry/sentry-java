@@ -244,6 +244,29 @@ public final class io/sentry/spring7/graphql/SentrySpringSubscriptionHandler : i
 	public fun onSubscriptionResult (Ljava/lang/Object;Lio/sentry/IScopes;Lio/sentry/graphql/ExceptionReporter;Lgraphql/execution/instrumentation/parameters/InstrumentationFieldFetchParameters;)Ljava/lang/Object;
 }
 
+public final class io/sentry/spring7/kafka/SentryKafkaConsumerBeanPostProcessor : org/springframework/beans/factory/config/BeanPostProcessor, org/springframework/core/PriorityOrdered {
+	public fun <init> ()V
+	public fun getOrder ()I
+	public fun postProcessAfterInitialization (Ljava/lang/Object;Ljava/lang/String;)Ljava/lang/Object;
+}
+
+public final class io/sentry/spring7/kafka/SentryKafkaProducerBeanPostProcessor : org/springframework/beans/factory/config/BeanPostProcessor, org/springframework/core/PriorityOrdered {
+	public fun <init> ()V
+	public fun getOrder ()I
+	public fun postProcessAfterInitialization (Ljava/lang/Object;Ljava/lang/String;)Ljava/lang/Object;
+}
+
+public final class io/sentry/spring7/kafka/SentryKafkaRecordInterceptor : org/springframework/kafka/listener/RecordInterceptor {
+	public fun <init> (Lio/sentry/IScopes;)V
+	public fun <init> (Lio/sentry/IScopes;Lorg/springframework/kafka/listener/RecordInterceptor;)V
+	public fun afterRecord (Lorg/apache/kafka/clients/consumer/ConsumerRecord;Lorg/apache/kafka/clients/consumer/Consumer;)V
+	public fun clearThreadState (Lorg/apache/kafka/clients/consumer/Consumer;)V
+	public fun failure (Lorg/apache/kafka/clients/consumer/ConsumerRecord;Ljava/lang/Exception;Lorg/apache/kafka/clients/consumer/Consumer;)V
+	public fun intercept (Lorg/apache/kafka/clients/consumer/ConsumerRecord;Lorg/apache/kafka/clients/consumer/Consumer;)Lorg/apache/kafka/clients/consumer/ConsumerRecord;
+	public fun setupThreadState (Lorg/apache/kafka/clients/consumer/Consumer;)V
+	public fun success (Lorg/apache/kafka/clients/consumer/ConsumerRecord;Lorg/apache/kafka/clients/consumer/Consumer;)V
+}
+
 public class io/sentry/spring7/opentelemetry/SentryOpenTelemetryAgentWithoutAutoInitConfiguration {
 	public fun <init> ()V
 	public fun sentryOpenTelemetryOptionsConfiguration ()Lio/sentry/Sentry$OptionsConfiguration;
