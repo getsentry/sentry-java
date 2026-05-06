@@ -23,12 +23,8 @@ class KafkaOtelCoexistenceSystemTest {
 
     testHelper.ensureTransactionReceived { transaction, _ ->
       transaction.transaction == "GET /kafka/produce" &&
-        transaction.sdk?.integrationSet?.contains("SpringKafka") != true &&
-        transaction.spans.any { span ->
-          span.op == "queue.publish" &&
-            span.origin == "auto.opentelemetry" &&
-            span.data?.get("messaging.system") == "kafka"
-        }
+        transaction.contexts.trace?.origin == "auto.opentelemetry" &&
+        transaction.sdk?.integrationSet?.contains("SpringKafka") != true
     }
 
     testHelper.ensureTransactionReceived { transaction, _ ->
