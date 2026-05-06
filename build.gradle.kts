@@ -110,7 +110,7 @@ allprojects {
 
             // Cap JVM args per test
             minHeapSize = "256m"
-            maxHeapSize = "2g"
+            maxHeapSize = "1g"
         }
         withType<JavaCompile>().configureEach {
             options.compilerArgs.addAll(arrayOf("-Xlint:all", "-Werror", "-Xlint:-classfile", "-Xlint:-processing", "-Xlint:-try"))
