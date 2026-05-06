@@ -99,3 +99,9 @@ tasks.withType<Detekt>().configureEach {
 tasks.withType<KotlinCompilationTask<*>>().configureEach {
   compilerOptions.freeCompilerArgs.add("-opt-in=androidx.compose.ui.ExperimentalComposeUiApi")
 }
+
+tasks.withType<Test>().configureEach {
+  // Cap JVM args per test
+  minHeapSize = "256m"
+  maxHeapSize = "1g"
+}

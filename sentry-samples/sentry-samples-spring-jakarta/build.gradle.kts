@@ -81,16 +81,10 @@ tasks.register<Test>("systemTest").configure {
 
   outputs.upToDateWhen { false }
 
-  maxParallelForks = 1
-
-  // Cap JVM args per test
-  minHeapSize = "128m"
-  maxHeapSize = "1g"
-
   filter { includeTestsMatching("io.sentry.systemtest*") }
 }
 
-tasks.named("test").configure {
+tasks.named<Test>("test").configure {
   require(this is Test)
 
   filter { excludeTestsMatching("io.sentry.systemtest.*") }

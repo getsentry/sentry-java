@@ -136,3 +136,9 @@ tasks.jar {
     )
   }
 }
+
+tasks.withType<Test>().configureEach {
+  // Cap JVM args per test
+  minHeapSize = "256m"
+  maxHeapSize = "1g"
+}

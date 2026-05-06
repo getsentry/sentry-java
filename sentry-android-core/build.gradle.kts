@@ -70,6 +70,8 @@ tasks.withType<JavaCompile>().configureEach {
   }
 }
 
+tasks.withType<Test>().configureEach {}
+
 dependencies {
   api(projects.sentry)
   compileOnly(libs.jetbrains.annotations)

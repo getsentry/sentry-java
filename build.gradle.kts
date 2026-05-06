@@ -107,10 +107,9 @@ allprojects {
                 TestLogEvent.PASSED,
                 TestLogEvent.FAILED
             )
-
-            // Cap JVM args per test
-            minHeapSize = "256m"
-            maxHeapSize = "2g"
+          // Cap JVM args per test
+          minHeapSize = "256m"
+          maxHeapSize = "1g"
         }
         withType<JavaCompile>().configureEach {
             options.compilerArgs.addAll(arrayOf("-Xlint:all", "-Werror", "-Xlint:-classfile", "-Xlint:-processing", "-Xlint:-try"))
@@ -141,6 +140,10 @@ subprojects {
                     isIncludeNoLocationClasses = true
                     excludes = listOf("jdk.internal.*")
                 }
+
+              // Cap JVM args per test
+              minHeapSize = "256m"
+              maxHeapSize = "1g"
             }
         }
     }
