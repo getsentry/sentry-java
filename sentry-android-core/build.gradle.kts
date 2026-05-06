@@ -70,11 +70,7 @@ tasks.withType<JavaCompile>().configureEach {
   }
 }
 
-tasks.withType<Test>().configureEach {
-  // Cap JVM args per test
-  minHeapSize = "256m"
-  maxHeapSize = "1g"
-}
+tasks.withType<Test>().configureEach {}
 
 dependencies {
   api(projects.sentry)
