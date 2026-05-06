@@ -29,13 +29,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Wraps a Kafka {@link Producer} via {@link Proxy} to record a {@code queue.publish} span around
- * each {@code send} and to inject Sentry trace propagation headers into the produced record.
- *
- * <p>Only the two {@code send} overloads are intercepted; every other {@link Producer} method is
- * forwarded directly to the delegate. Because the wrapper is a dynamic proxy, it is compatible with
- * any Kafka client version — new methods added to the {@link Producer} interface in future Kafka
- * releases are forwarded automatically without recompilation.
+ * Wraps a Kafka {@link Producer} to record a {@code queue.publish} span around each {@code send}
+ * and to inject Sentry trace propagation headers into the produced record.
  *
  * <p>For raw Kafka usage:
  *
@@ -44,9 +39,8 @@ import org.jetbrains.annotations.Nullable;
  *     SentryKafkaProducer.wrap(new KafkaProducer<>(props));
  * }</pre>
  *
- * <p>For Spring Kafka, the {@code SentryKafkaProducerBeanPostProcessor} in {@code
- * sentry-spring-jakarta} installs this wrapper automatically via {@code
- * ProducerFactory.addPostProcessor(...)}.
+ * <p>For Spring Kafka, the {@code SentryKafkaProducerBeanPostProcessor} installs this wrapper
+ * automatically.
  */
 @ApiStatus.Experimental
 public final class SentryKafkaProducer {
@@ -57,7 +51,7 @@ public final class SentryKafkaProducer {
   private SentryKafkaProducer() {}
 
   /**
-   * Wraps the given producer with Sentry instrumentation using the global scopes.
+   * Wraps the given producer with Sentry instrumentation.
    *
    * @param delegate the Kafka producer to wrap
    * @return an instrumented producer that records {@code queue.publish} spans

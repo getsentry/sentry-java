@@ -136,6 +136,14 @@ class SentryKafkaRecordInterceptorTest {
 
     verify(scopes).forkedRootScopes("SentryKafkaRecordInterceptor")
     verify(forkedScopes).makeCurrent()
+    verify(forkedScopes)
+      .startTransaction(
+        org.mockito.kotlin.check<TransactionContext> {
+          assertEquals("my-topic", it.name)
+          assertEquals("queue.process", it.operation)
+        },
+        any(),
+      )
   }
 
   @Test

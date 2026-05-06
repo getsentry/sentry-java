@@ -73,12 +73,6 @@ class SentryKafkaProducerTest {
     Sentry.close()
   }
 
-  private fun createTransaction(): SentryTracer {
-    val tx = SentryTracer(TransactionContext("tx", "op"), scopes)
-    whenever(scopes.span).thenReturn(tx)
-    return tx
-  }
-
   @Test
   fun `creates queue publish span and injects headers`() {
     val tx = createTransaction()
@@ -357,5 +351,11 @@ class SentryKafkaProducerTest {
   fun `toString includes delegate`() {
     val producer = SentryKafkaProducer.wrap(delegate, scopes)
     assertTrue(producer.toString().startsWith("SentryKafkaProducer[delegate="))
+  }
+
+  private fun createTransaction(): SentryTracer {
+    val tx = SentryTracer(TransactionContext("tx", "op"), scopes)
+    whenever(scopes.span).thenReturn(tx)
+    return tx
   }
 }

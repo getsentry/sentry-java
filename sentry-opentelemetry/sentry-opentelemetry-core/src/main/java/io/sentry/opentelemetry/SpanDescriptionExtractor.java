@@ -116,9 +116,6 @@ public final class SpanDescriptionExtractor {
   @SuppressWarnings("deprecation")
   private @NotNull String opForMessaging(final @NotNull SpanData otelSpan) {
     final @NotNull Attributes attributes = otelSpan.getAttributes();
-    // Prefer `messaging.operation.type` (current OTel semconv), fall back to legacy
-    // `messaging.operation`. OTel's SpanKind.CONSUMER is overloaded for both `receive` and
-    // `process`, so attribute-first mapping is required. SpanKind is used only as a last resort.
     @Nullable
     String operationType = attributes.get(MessagingIncubatingAttributes.MESSAGING_OPERATION_TYPE);
     if (operationType == null) {
@@ -139,7 +136,6 @@ public final class SpanDescriptionExtractor {
         case "settle":
           return "queue.settle";
         default:
-          // fall through to SpanKind mapping
           break;
       }
     }
