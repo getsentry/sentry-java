@@ -3,9 +3,11 @@ package io.sentry
 import io.sentry.exception.ExceptionMechanismException
 import io.sentry.protocol.Mechanism
 import io.sentry.protocol.SentryId
+import java.io.StringReader
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.Collections
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -172,6 +174,48 @@ class SentryEventTest {
     assertNotNull(event.modules) {
       assertEquals(mapOf("key1" to "value1", "key2" to "value2", "key3" to "value3"), it)
     }
+  }
+
+  @Test
+  fun `deserializes event with large flat modules map on a small stack`() {
+    val moduleCount = 50000
+    val json = buildString {
+      append("{\"event_id\":\"00000000000000000000000000000000\",\"modules\":{")
+      repeat(moduleCount) {
+        if (it > 0) {
+          append(',')
+        }
+        append("\"m")
+        append(it)
+        append("\":\"v\"")
+      }
+      append("}}")
+    }
+
+    val error = AtomicReference<Throwable?>()
+    val event = AtomicReference<SentryEvent?>()
+    val thread =
+      Thread(
+        null,
+        Runnable {
+          try {
+            event.set(
+              JsonSerializer(SentryOptions())
+                .deserialize(StringReader(json), SentryEvent::class.java)
+            )
+          } catch (throwable: Throwable) {
+            error.set(throwable)
+          }
+        },
+        "large-flat-modules-repro",
+        1024L * 1024L,
+      )
+
+    thread.start()
+    thread.join()
+
+    assertNull(error.get())
+    assertEquals(moduleCount, event.get()?.modules?.size)
   }
 
   @Test

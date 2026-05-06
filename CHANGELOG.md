@@ -35,6 +35,10 @@
   - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v950)
   - [diff](https://github.com/gradle/gradle/compare/v9.4.1...v9.5.0)
 
+### Fixes
+
+- Avoid stack overflow when deserializing large flat JSON objects ([#5361](https://github.com/getsentry/sentry-java/pull/5361))
+
 ## 8.40.0
 
 ### Fixes
