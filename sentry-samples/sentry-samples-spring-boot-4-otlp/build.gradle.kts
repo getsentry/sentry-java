@@ -93,7 +93,6 @@ tasks.register<Test>("systemTest").configure {
 
   outputs.upToDateWhen { false }
 
-
   filter { includeTestsMatching("io.sentry.systemtest*") }
 }
 

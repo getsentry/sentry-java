@@ -72,6 +72,4 @@ tasks.register<Test>("systemTest").configure {
   filter { includeTestsMatching("io.sentry.systemtest*") }
 }
 
-tasks.named<Test>("test").configure {
-  filter { excludeTestsMatching("io.sentry.systemtest.*") }
-}
+tasks.named<Test>("test").configure { filter { excludeTestsMatching("io.sentry.systemtest.*") } }
