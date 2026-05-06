@@ -54,8 +54,8 @@ jobs:
             --app-id sentry-android-core
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-          SENTRY_ORG: sentry
-          SENTRY_PROJECT: sentry-java-build-plugins
+          SENTRY_ORG: sentry-sdks
+          SENTRY_PROJECT: sentry-android
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@57e3a136b779b570ffcdbf80b3bdc90e7fab3de2 # pin@v4
