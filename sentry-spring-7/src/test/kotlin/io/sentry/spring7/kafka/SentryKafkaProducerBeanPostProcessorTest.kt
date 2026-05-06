@@ -1,4 +1,4 @@
-package io.sentry.spring.jakarta.kafka
+package io.sentry.spring7.kafka
 
 import io.sentry.Sentry
 import io.sentry.test.initForTest

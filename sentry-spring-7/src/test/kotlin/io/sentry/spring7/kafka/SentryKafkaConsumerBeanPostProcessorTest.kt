@@ -1,4 +1,4 @@
-package io.sentry.spring.jakarta.kafka
+package io.sentry.spring7.kafka
 
 import io.sentry.Sentry
 import io.sentry.test.initForTest
@@ -28,7 +28,7 @@ class SentryKafkaConsumerBeanPostProcessorTest {
   fun `wraps ConcurrentKafkaListenerContainerFactory with SentryKafkaRecordInterceptor`() {
     val consumerFactory = mock<ConsumerFactory<String, String>>()
     val factory = ConcurrentKafkaListenerContainerFactory<String, String>()
-    factory.consumerFactory = consumerFactory
+    factory.setConsumerFactory(consumerFactory)
 
     val processor = SentryKafkaConsumerBeanPostProcessor()
     processor.postProcessAfterInitialization(factory, "kafkaListenerContainerFactory")
@@ -44,7 +44,7 @@ class SentryKafkaConsumerBeanPostProcessorTest {
   fun `does not double-wrap when SentryKafkaRecordInterceptor already set`() {
     val consumerFactory = mock<ConsumerFactory<String, String>>()
     val factory = ConcurrentKafkaListenerContainerFactory<String, String>()
-    factory.consumerFactory = consumerFactory
+    factory.setConsumerFactory(consumerFactory)
 
     val processor = SentryKafkaConsumerBeanPostProcessor()
     // First wrap
@@ -75,7 +75,7 @@ class SentryKafkaConsumerBeanPostProcessorTest {
   fun `chains existing customer RecordInterceptor as delegate`() {
     val consumerFactory = mock<ConsumerFactory<String, String>>()
     val factory = ConcurrentKafkaListenerContainerFactory<String, String>()
-    factory.consumerFactory = consumerFactory
+    factory.setConsumerFactory(consumerFactory)
 
     val customerInterceptor = RecordInterceptor<String, String> { record, _ -> record }
     factory.setRecordInterceptor(customerInterceptor)
@@ -104,7 +104,7 @@ class SentryKafkaConsumerBeanPostProcessorTest {
   fun `skips installation when reflection fails and preserves customer interceptor`() {
     val consumerFactory = mock<ConsumerFactory<String, String>>()
     val factory = ConcurrentKafkaListenerContainerFactory<String, String>()
-    factory.consumerFactory = consumerFactory
+    factory.setConsumerFactory(consumerFactory)
     val customerInterceptor = RecordInterceptor<String, String> { record, _ -> record }
     factory.setRecordInterceptor(customerInterceptor)
 

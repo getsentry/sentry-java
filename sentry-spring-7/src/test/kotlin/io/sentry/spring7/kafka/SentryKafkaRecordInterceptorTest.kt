@@ -1,4 +1,4 @@
-package io.sentry.spring.jakarta.kafka
+package io.sentry.spring7.kafka
 
 import io.sentry.BaggageHeader
 import io.sentry.IScopes
@@ -307,10 +307,7 @@ class SentryKafkaRecordInterceptorTest {
 
   @Test
   fun `trace origin is set correctly`() {
-    assertEquals(
-      "auto.queue.spring_jakarta.kafka.consumer",
-      SentryKafkaRecordInterceptor.TRACE_ORIGIN,
-    )
+    assertEquals("auto.queue.spring7.kafka.consumer", SentryKafkaRecordInterceptor.TRACE_ORIGIN)
   }
 
   @Test

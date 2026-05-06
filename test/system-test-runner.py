@@ -73,11 +73,17 @@ KAFKA_BROKER_REQUIRED_MODULES = {
     "sentry-samples-spring-boot-jakarta",
     "sentry-samples-spring-boot-jakarta-opentelemetry",
     "sentry-samples-spring-boot-jakarta-opentelemetry-noagent",
+    "sentry-samples-spring-boot-4",
+    "sentry-samples-spring-boot-4-opentelemetry",
+    "sentry-samples-spring-boot-4-opentelemetry-noagent",
 }
 KAFKA_PROFILE_REQUIRED_MODULES = {
     "sentry-samples-spring-boot-jakarta",
     "sentry-samples-spring-boot-jakarta-opentelemetry",
     "sentry-samples-spring-boot-jakarta-opentelemetry-noagent",
+    "sentry-samples-spring-boot-4",
+    "sentry-samples-spring-boot-4-opentelemetry",
+    "sentry-samples-spring-boot-4-opentelemetry-noagent",
 }
 
 class ServerType(Enum):
