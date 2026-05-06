@@ -346,6 +346,20 @@ class ExternalOptionsTest {
   }
 
   @Test
+  fun `creates options with enableQueueTracing set to true`() {
+    withPropertiesFile("enable-queue-tracing=true") { options ->
+      assertTrue(options.isEnableQueueTracing == true)
+    }
+  }
+
+  @Test
+  fun `creates options with enableQueueTracing set to false`() {
+    withPropertiesFile("enable-queue-tracing=false") { options ->
+      assertTrue(options.isEnableQueueTracing == false)
+    }
+  }
+
+  @Test
   fun `creates options with cron defaults`() {
     withPropertiesFile(
       listOf(

@@ -19,25 +19,48 @@ class ConsoleApplicationSystemTest {
 
   @Test
   fun `console application sends expected events when run as JAR`() {
-    val jarFile = testHelper.findJar("sentry-samples-console")
-    val process =
-      testHelper.launch(
-        jarFile,
-        mapOf(
-          "SENTRY_DSN" to testHelper.dsn,
-          "SENTRY_TRACES_SAMPLE_RATE" to "1.0",
-          "SENTRY_ENABLE_PRETTY_SERIALIZATION_OUTPUT" to "false",
-          "SENTRY_DEBUG" to "true",
-          "SENTRY_PROFILE_SESSION_SAMPLE_RATE" to "1.0",
-          "SENTRY_PROFILE_LIFECYCLE" to "TRACE",
-        ),
-      )
+    val process = launchConsoleProcess()
 
     process.waitFor(30, TimeUnit.SECONDS)
     assertEquals(0, process.exitValue())
 
     // Verify that we received the expected events
     verifyExpectedEvents()
+  }
+
+  @Test
+  fun `console application sends kafka producer and consumer tracing when kafka is enabled`() {
+    val process =
+      launchConsoleProcess(mapOf("SENTRY_SAMPLE_KAFKA_BOOTSTRAP_SERVERS" to "localhost:9092"))
+
+    process.waitFor(30, TimeUnit.SECONDS)
+    assertEquals(0, process.exitValue())
+
+    testHelper.ensureTransactionReceived { transaction, _ ->
+      transaction.transaction == "kafka-demo" &&
+        testHelper.doesTransactionContainSpanWithOp(transaction, "queue.publish")
+    }
+
+    testHelper.ensureTransactionReceived { transaction, _ ->
+      testHelper.doesTransactionHaveOp(transaction, "queue.process") &&
+        transaction.contexts.trace?.origin == "manual.queue.kafka.consumer" &&
+        transaction.contexts.trace?.data?.get("messaging.system") == "kafka"
+    }
+  }
+
+  private fun launchConsoleProcess(overrides: Map<String, String> = emptyMap()): Process {
+    val jarFile = testHelper.findJar("sentry-samples-console")
+    val env =
+      mutableMapOf(
+        "SENTRY_DSN" to testHelper.dsn,
+        "SENTRY_TRACES_SAMPLE_RATE" to "1.0",
+        "SENTRY_ENABLE_PRETTY_SERIALIZATION_OUTPUT" to "false",
+        "SENTRY_DEBUG" to "true",
+        "SENTRY_PROFILE_SESSION_SAMPLE_RATE" to "1.0",
+        "SENTRY_PROFILE_LIFECYCLE" to "TRACE",
+      )
+    env.putAll(overrides)
+    return testHelper.launch(jarFile, env)
   }
 
   private fun verifyExpectedEvents() {

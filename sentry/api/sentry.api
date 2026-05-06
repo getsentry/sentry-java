@@ -529,6 +529,7 @@ public final class io/sentry/ExternalOptions {
 	public fun isEnableLogs ()Ljava/lang/Boolean;
 	public fun isEnableMetrics ()Ljava/lang/Boolean;
 	public fun isEnablePrettySerializationOutput ()Ljava/lang/Boolean;
+	public fun isEnableQueueTracing ()Ljava/lang/Boolean;
 	public fun isEnableSpotlight ()Ljava/lang/Boolean;
 	public fun isEnabled ()Ljava/lang/Boolean;
 	public fun isForceInit ()Ljava/lang/Boolean;
@@ -548,6 +549,7 @@ public final class io/sentry/ExternalOptions {
 	public fun setEnableLogs (Ljava/lang/Boolean;)V
 	public fun setEnableMetrics (Ljava/lang/Boolean;)V
 	public fun setEnablePrettySerializationOutput (Ljava/lang/Boolean;)V
+	public fun setEnableQueueTracing (Ljava/lang/Boolean;)V
 	public fun setEnableSpotlight (Ljava/lang/Boolean;)V
 	public fun setEnableUncaughtExceptionHandler (Ljava/lang/Boolean;)V
 	public fun setEnabled (Ljava/lang/Boolean;)V
@@ -3714,6 +3716,7 @@ public class io/sentry/SentryOptions {
 	public fun isEnableEventSizeLimiting ()Z
 	public fun isEnableExternalConfiguration ()Z
 	public fun isEnablePrettySerializationOutput ()Z
+	public fun isEnableQueueTracing ()Z
 	public fun isEnableScopePersistence ()Z
 	public fun isEnableScreenTracking ()Z
 	public fun isEnableShutdownHook ()Z
@@ -3774,6 +3777,7 @@ public class io/sentry/SentryOptions {
 	public fun setEnableEventSizeLimiting (Z)V
 	public fun setEnableExternalConfiguration (Z)V
 	public fun setEnablePrettySerializationOutput (Z)V
+	public fun setEnableQueueTracing (Z)V
 	public fun setEnableScopePersistence (Z)V
 	public fun setEnableScreenTracking (Z)V
 	public fun setEnableShutdownHook (Z)V
@@ -4418,6 +4422,14 @@ public abstract interface class io/sentry/SpanDataConvention {
 	public static final field HTTP_RESPONSE_CONTENT_LENGTH_KEY Ljava/lang/String;
 	public static final field HTTP_START_TIMESTAMP Ljava/lang/String;
 	public static final field HTTP_STATUS_CODE_KEY Ljava/lang/String;
+	public static final field MESSAGING_DESTINATION_NAME Ljava/lang/String;
+	public static final field MESSAGING_MESSAGE_BODY_SIZE Ljava/lang/String;
+	public static final field MESSAGING_MESSAGE_ENVELOPE_SIZE Ljava/lang/String;
+	public static final field MESSAGING_MESSAGE_ID Ljava/lang/String;
+	public static final field MESSAGING_MESSAGE_RECEIVE_LATENCY Ljava/lang/String;
+	public static final field MESSAGING_MESSAGE_RETRY_COUNT Ljava/lang/String;
+	public static final field MESSAGING_OPERATION_TYPE Ljava/lang/String;
+	public static final field MESSAGING_SYSTEM Ljava/lang/String;
 	public static final field PROFILER_ID Ljava/lang/String;
 	public static final field THREAD_ID Ljava/lang/String;
 	public static final field THREAD_NAME Ljava/lang/String;

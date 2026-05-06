@@ -19,6 +19,16 @@
     .configurator { it.isUseShakeGesture = true }
     .create()
   ```
+- Add support for Kafka ([#5249](https://github.com/getsentry/sentry-java/pull/5249))
+  - You will need to add the `sentry-kafka` dependency and opt-in via the new option.
+    - Set `options.setEnableQueueTracing(true)` on `Sentry.init`
+    - Or set `sentry.enable-queue-tracing=true` in `application.properties`
+  - For Spring Boot Kafka is auto instrumented and no further configuration is needed.
+    - also see https://docs.sentry.io/platforms/java/guides/spring-boot/integrations/kafka/
+  - When using `kafka-clients` directly
+    - you need to wrap your `KafkaProducer` via `SentryKafkaProducer.wrap(kafkaProducer)` to get `queue.publish` spans
+    - and you may use our `SentryKafkaConsumerTracing.withTracing` helper to instrument the consumer side manually.
+    - also see https://docs.sentry.io/platforms/java/integrations/kafka/
 
 ### Fixes
 
