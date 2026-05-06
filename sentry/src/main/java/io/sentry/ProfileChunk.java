@@ -34,6 +34,9 @@ public final class ProfileChunk implements JsonUnknown, JsonSerializable {
   private @NotNull String version;
   private double timestamp;
 
+  /** Content type of the profile data. Set to "perfetto" for Perfetto traces. */
+  private @Nullable String contentType;
+
   private final @Nullable File traceFile;
 
   /** Profile trace encoded with Base64. */
@@ -131,6 +134,10 @@ public final class ProfileChunk implements JsonUnknown, JsonSerializable {
     return version;
   }
 
+  public @Nullable String getContentType() {
+    return contentType;
+  }
+
   public @Nullable SentryProfile getSentryProfile() {
     return sentryProfile;
   }
@@ -181,8 +188,8 @@ public final class ProfileChunk implements JsonUnknown, JsonSerializable {
     private final @NotNull Map<String, ProfileMeasurement> measurements;
     private final @NotNull File traceFile;
     private final double timestamp;
-
     private final @NotNull String platform;
+    private @Nullable String contentType;
 
     public Builder(
         final @NotNull SentryId profilerId,
@@ -199,9 +206,17 @@ public final class ProfileChunk implements JsonUnknown, JsonSerializable {
       this.platform = platform;
     }
 
+    public Builder setContentType(final @Nullable String contentType) {
+      this.contentType = contentType;
+      return this;
+    }
+
     public ProfileChunk build(SentryOptions options) {
-      return new ProfileChunk(
-          profilerId, chunkId, traceFile, measurements, timestamp, platform, options);
+      final ProfileChunk chunk =
+          new ProfileChunk(
+              profilerId, chunkId, traceFile, measurements, timestamp, platform, options);
+      chunk.contentType = contentType;
+      return chunk;
     }
   }
 
@@ -220,6 +235,7 @@ public final class ProfileChunk implements JsonUnknown, JsonSerializable {
     public static final String SAMPLED_PROFILE = "sampled_profile";
     public static final String TIMESTAMP = "timestamp";
     public static final String SENTRY_PROFILE = "profile";
+    public static final String CONTENT_TYPE = "content_type";
   }
 
   @Override
@@ -248,6 +264,9 @@ public final class ProfileChunk implements JsonUnknown, JsonSerializable {
       writer.name(JsonKeys.ENVIRONMENT).value(logger, environment);
     }
     writer.name(JsonKeys.VERSION).value(logger, version);
+    if (contentType != null) {
+      writer.name(JsonKeys.CONTENT_TYPE).value(logger, contentType);
+    }
     if (sampledProfile != null) {
       writer.name(JsonKeys.SAMPLED_PROFILE).value(logger, sampledProfile);
     }
@@ -356,6 +375,12 @@ public final class ProfileChunk implements JsonUnknown, JsonSerializable {
             Double timestamp = reader.nextDoubleOrNull();
             if (timestamp != null) {
               data.timestamp = timestamp;
+            }
+            break;
+          case JsonKeys.CONTENT_TYPE:
+            String contentType = reader.nextStringOrNull();
+            if (contentType != null) {
+              data.contentType = contentType;
             }
             break;
           case JsonKeys.SENTRY_PROFILE:

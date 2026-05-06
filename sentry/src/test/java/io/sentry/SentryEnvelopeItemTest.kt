@@ -2,6 +2,7 @@ package io.sentry
 
 import io.sentry.exception.SentryEnvelopeException
 import io.sentry.protocol.ReplayRecordingSerializationTest
+import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryReplayEventSerializationTest
 import io.sentry.protocol.User
 import io.sentry.protocol.ViewHierarchy
@@ -13,6 +14,7 @@ import java.io.File
 import java.io.IOException
 import java.io.InputStreamReader
 import java.io.OutputStreamWriter
+import java.io.StringWriter
 import java.nio.charset.Charset
 import java.nio.file.Files
 import java.util.concurrent.Callable
@@ -23,6 +25,7 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import org.junit.Assert.assertArrayEquals
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
@@ -594,6 +597,102 @@ class SentryEnvelopeItemTest {
         "allowed size of $maxSize bytes.",
       exception.message,
     )
+  }
+
+  @Test
+  fun `fromPerfettoProfileChunk produces concatenated JSON+binary payload`() {
+    val traceFile = tmpDir.newFile("trace.pftrace")
+    val traceBytes = byteArrayOf(0x50, 0x65, 0x72, 0x66) // "Perf"
+    traceFile.writeBytes(traceBytes)
+
+    val profileChunk =
+      ProfileChunk.Builder(
+          SentryId(),
+          SentryId(),
+          emptyMap(),
+          traceFile,
+          SentryNanotimeDate(),
+          ProfileChunk.PLATFORM_ANDROID,
+        )
+        .setContentType("perfetto")
+        .build(fixture.options)
+
+    val item = SentryEnvelopeItem.fromPerfettoProfileChunk(profileChunk, fixture.serializer)
+
+    assertEquals(SentryItemType.ProfileChunk, item.header.type)
+    assertEquals("application/octet-stream", item.header.contentType)
+    assertEquals("android", item.header.platform)
+
+    val payload = item.data
+    assertNotNull(item.header.metaLength)
+    val metaLength = item.header.metaLength!!
+    // Payload should be: [JSON metadata][binary trace]
+    val metadataBytes = payload.copyOfRange(0, metaLength)
+    val binaryBytes = payload.copyOfRange(metaLength, payload.size)
+
+    // Metadata should be valid JSON containing content_type: "perfetto"
+    val metadataJson = String(metadataBytes, Charsets.UTF_8)
+    assert(metadataJson.contains("\"content_type\":\"perfetto\""))
+    assert(metadataJson.contains("\"version\":\"2\""))
+
+    // Binary bytes should match original trace file
+    assertArrayEquals(traceBytes, binaryBytes)
+
+    // Trace file should be deleted
+    assertFalse(traceFile.exists())
+  }
+
+  @Test
+  fun `fromPerfettoProfileChunk header serializes with meta_length`() {
+    val traceFile = tmpDir.newFile("trace.pftrace")
+    traceFile.writeBytes(byteArrayOf(0x50, 0x65, 0x72, 0x66))
+
+    val profileChunk =
+      ProfileChunk.Builder(
+          SentryId(),
+          SentryId(),
+          emptyMap(),
+          traceFile,
+          SentryNanotimeDate(),
+          ProfileChunk.PLATFORM_ANDROID,
+        )
+        .setContentType("perfetto")
+        .build(fixture.options)
+
+    val item = SentryEnvelopeItem.fromPerfettoProfileChunk(profileChunk, fixture.serializer)
+
+    // Serialize the header without pre-materializing item.data.
+    val sw = StringWriter()
+    val writer = JsonObjectWriter(sw, 100)
+    item.header.serialize(writer, mock<ILogger>())
+
+    val json = sw.toString()
+    val metaLength = item.header.metaLength!!
+    assertTrue(metaLength > 0, "expected positive meta_length, was $metaLength")
+    assertTrue(
+      json.contains("\"meta_length\":$metaLength"),
+      "expected meta_length=$metaLength in header JSON, was: $json",
+    )
+  }
+
+  @Test
+  fun `fromPerfettoProfileChunk with missing file throws`() {
+    val traceFile = File("nonexistent.pftrace")
+    val profileChunk =
+      ProfileChunk.Builder(
+          SentryId(),
+          SentryId(),
+          emptyMap(),
+          traceFile,
+          SentryNanotimeDate(),
+          ProfileChunk.PLATFORM_ANDROID,
+        )
+        .setContentType("perfetto")
+        .build(fixture.options)
+
+    assertFailsWith<SentryEnvelopeException> {
+      SentryEnvelopeItem.fromPerfettoProfileChunk(profileChunk, fixture.serializer)
+    }
   }
 
   @Test

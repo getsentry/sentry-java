@@ -2,6 +2,7 @@ package io.sentry.android.core;
 
 import static io.sentry.android.core.NdkIntegration.SENTRY_NDK_CLASS_NAME;
 
+import android.annotation.SuppressLint;
 import android.app.Application;
 import android.content.Context;
 import android.content.pm.PackageInfo;
@@ -293,6 +294,7 @@ final class AndroidOptionsInitializer {
   }
 
   /** Setup the correct profiler (transaction or continuous) based on the options. */
+  @SuppressLint("NewApi")
   private static void setupProfiler(
       final @NotNull SentryAndroidOptions options,
       final @NotNull Context context,
@@ -335,16 +337,38 @@ final class AndroidOptionsInitializer {
           performanceCollector.start(chunkId.toString());
         }
       } else {
-        options.setContinuousProfiler(
-            new AndroidContinuousProfiler(
-                buildInfoProvider,
-                Objects.requireNonNull(
-                    options.getFrameMetricsCollector(),
-                    "options.getFrameMetricsCollector is required"),
-                options.getLogger(),
-                options.getProfilingTracesDirPath(),
-                options.getProfilingTracesHz(),
-                () -> options.getExecutorService()));
+        final @NotNull SentryFrameMetricsCollector frameMetricsCollector =
+            Objects.requireNonNull(
+                options.getFrameMetricsCollector(), "options.getFrameMetricsCollector is required");
+        if (options.isUseProfilingManager()) {
+          if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+            options.setContinuousProfiler(
+                new PerfettoContinuousProfiler(
+                    buildInfoProvider,
+                    options.getLogger(),
+                    frameMetricsCollector,
+                    () -> options.getExecutorService(),
+                    () ->
+                        new PerfettoProfiler(
+                            context.getApplicationContext(), options.getLogger())));
+          } else {
+            options
+                .getLogger()
+                .log(
+                    SentryLevel.WARNING,
+                    "useProfilingManager is enabled but requires API 35+. "
+                        + "No profiling data will be collected.");
+          }
+        } else {
+          options.setContinuousProfiler(
+              new AndroidContinuousProfiler(
+                  buildInfoProvider,
+                  frameMetricsCollector,
+                  options.getLogger(),
+                  options.getProfilingTracesDirPath(),
+                  options.getProfilingTracesHz(),
+                  () -> options.getExecutorService()));
+        }
       }
     }
   }

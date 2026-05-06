@@ -3,7 +3,33 @@
   xmlns:tools="http://schemas.android.com/tools"
   android:orientation="vertical"
   android:layout_width="match_parent"
-  android:layout_height="match_parent">
+  android:layout_height="match_parent"
+  android:fitsSystemWindows="true">
+
+  <LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center"
+    android:paddingTop="8dp"
+    android:paddingBottom="4dp">
+
+    <TextView
+      android:id="@+id/profiling_status"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:textStyle="bold" />
+
+    <ImageButton
+      android:id="@+id/profiling_info"
+      android:layout_width="32dp"
+      android:layout_height="32dp"
+      android:layout_marginStart="4dp"
+      android:src="@android:drawable/ic_dialog_info"
+      android:background="?android:attr/selectableItemBackgroundBorderless"
+      android:contentDescription="@string/profiling_config_title" />
+
+  </LinearLayout>
 
   <TextView
     android:id="@+id/profiling_duration_text"
@@ -31,18 +57,25 @@
     android:layout_height="wrap_content"
     android:max="4" />
 
-  <TextView
-    android:id="@+id/profiling_result"
+  <LinearLayout
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:gravity="center"
-    android:text="@string/profiling_result" />
+    android:orientation="horizontal"
+    android:gravity="center">
 
-  <Button
-    android:id="@+id/profiling_start"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:text="@string/profiling_start" />
+    <Button
+      android:id="@+id/profiling_start_transaction"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="@string/profiling_start" />
+
+    <Button
+      android:id="@+id/profiling_start_transaction_manual"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="@string/profiling_start_manual" />
+
+  </LinearLayout>
 
   <ProgressBar
     android:id="@+id/profiling_progress_bar"

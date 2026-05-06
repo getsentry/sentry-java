@@ -643,6 +643,13 @@ public class SentryOptions {
   private boolean startProfilerOnAppStart = false;
 
   /**
+   * When true, the SDK uses Android's {@code ProfilingManager} (Perfetto-based stack sampling) on
+   * API 35+ devices. On older devices where ProfilingManager is not available, no profiling data is
+   * collected — the legacy {@code Debug}-based profiler is not used as a fallback.
+   */
+  private boolean useProfilingManager = false;
+
+  /**
    * Controls the deadline timeout in milliseconds for automatic transactions. When set to a
    * positive value, that value is used as the deadline timeout. When set to a value less than or
    * equal to 0, no deadline is applied and transactions will only finish when explicitly finished
@@ -2231,6 +2238,25 @@ public class SentryOptions {
    */
   public void setStartProfilerOnAppStart(final boolean startProfilerOnAppStart) {
     this.startProfilerOnAppStart = startProfilerOnAppStart;
+  }
+
+  /**
+   * Whether to use Android's ProfilingManager (Perfetto) for profiling on Android 35+.
+   *
+   * @return true if ProfilingManager-based profiling is enabled.
+   */
+  public boolean isUseProfilingManager() {
+    return useProfilingManager;
+  }
+
+  /**
+   * Set whether to use Android's ProfilingManager (Perfetto) for profiling on Android 35+. On
+   * devices below API 35 where ProfilingManager is not available, no profiling data is collected.
+   *
+   * @param useProfilingManager true to use ProfilingManager-based profiling.
+   */
+  public void setUseProfilingManager(final boolean useProfilingManager) {
+    this.useProfilingManager = useProfilingManager;
   }
 
   public long getDeadlineTimeout() {

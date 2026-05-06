@@ -1,13 +1,16 @@
 package io.sentry.samples.android
 
+import android.os.Build
 import android.os.Bundle
 import android.view.View
 import android.widget.SeekBar
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import io.sentry.ITransaction
+import io.sentry.ProfileLifecycle
 import io.sentry.ProfilingTraceData
 import io.sentry.Sentry
 import io.sentry.SentryEnvelopeItem
@@ -22,6 +25,8 @@ class ProfilingActivity : AppCompatActivity() {
   private lateinit var binding: ActivityProfilingBinding
   private val executors = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors())
   private var profileFinished = true
+  private var manualProfilingActive = false
+  private var lastProfilingResult: String? = null
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
@@ -30,7 +35,7 @@ class ProfilingActivity : AppCompatActivity() {
       this,
       object : OnBackPressedCallback(true) {
         override fun handleOnBackPressed() {
-          if (profileFinished) {
+          if (profileFinished && !manualProfilingActive) {
             isEnabled = false
             onBackPressedDispatcher.onBackPressed()
           } else {
@@ -41,6 +46,50 @@ class ProfilingActivity : AppCompatActivity() {
       },
     )
     binding = ActivityProfilingBinding.inflate(layoutInflater)
+
+    val options = Sentry.getCurrentScopes().options
+    val isPerfetto = options.isUseProfilingManager && Build.VERSION.SDK_INT >= 35
+    val isContinuousEnabled = options.isContinuousProfilingEnabled
+    val lifecycle = options.profileLifecycle
+
+    // Status line: summarize the active profiler
+    binding.profilingStatus.text =
+      when {
+        !isContinuousEnabled -> getString(R.string.profiling_status_none)
+        isPerfetto -> getString(R.string.profiling_status_perfetto)
+        else -> getString(R.string.profiling_status_legacy)
+      }
+
+    // Info button: show detailed config and last result in a dialog
+    binding.profilingInfo.setOnClickListener {
+      val config = buildString {
+        appendLine("traces.profiling.lifecycle: ${lifecycle.name}")
+        appendLine("profiling.use-profiling-manager: ${options.isUseProfilingManager}")
+        appendLine("Build.VERSION.SDK_INT: ${Build.VERSION.SDK_INT}")
+        appendLine("traces.profiling.session-sample-rate: ${options.profileSessionSampleRate}")
+        appendLine("traces.sample-rate: ${options.tracesSampleRate}")
+        if (lastProfilingResult != null) {
+          appendLine()
+          append(lastProfilingResult)
+        }
+      }
+      AlertDialog.Builder(this)
+        .setTitle(R.string.profiling_config_title)
+        .setMessage(config)
+        .setPositiveButton(android.R.string.ok, null)
+        .show()
+    }
+
+    // Show only the controls relevant to the current lifecycle mode
+    when (lifecycle) {
+      ProfileLifecycle.MANUAL -> {
+        binding.profilingStartTransaction.visibility = View.GONE
+        // Duration slider only controls transaction length — irrelevant for manual mode
+        binding.profilingDurationText.visibility = View.GONE
+        binding.profilingDurationSeekbar.visibility = View.GONE
+      }
+      ProfileLifecycle.TRACE -> binding.profilingStartTransactionManual.visibility = View.GONE
+    }
 
     binding.profilingDurationSeekbar.setOnSeekBarChangeListener(
       object : SeekBar.OnSeekBarChangeListener {
@@ -76,7 +125,8 @@ class ProfilingActivity : AppCompatActivity() {
     binding.profilingList.adapter = ProfilingListAdapter()
     binding.profilingList.layoutManager = LinearLayoutManager(this)
 
-    binding.profilingStart.setOnClickListener {
+    // Transaction-based profiling (existing)
+    binding.profilingStartTransaction.setOnClickListener {
       binding.profilingProgressBar.visibility = View.VISIBLE
       profileFinished = false
       val seconds = getProfileDuration()
@@ -92,6 +142,33 @@ class ProfilingActivity : AppCompatActivity() {
         }
         .start()
     }
+
+    // Manual continuous profiling (exercises Perfetto path on API 35+)
+    binding.profilingStartTransactionManual.setOnClickListener {
+      if (!manualProfilingActive) {
+        Sentry.startProfiler()
+        manualProfilingActive = true
+        profileFinished = false
+        binding.profilingStartTransactionManual.text = getString(R.string.profiling_stop_manual)
+        binding.profilingProgressBar.visibility = View.VISIBLE
+
+        // Start background work to generate interesting profile data
+        val threads = getBackgroundThreads()
+        repeat(threads) { executors.submit { runMathOperations() } }
+        executors.submit { swipeList() }
+
+        Toast.makeText(this, R.string.profiling_manual_started, Toast.LENGTH_SHORT).show()
+      } else {
+        Sentry.stopProfiler()
+        manualProfilingActive = false
+        profileFinished = true
+        binding.profilingStartTransactionManual.text = getString(R.string.profiling_start_manual)
+        binding.profilingProgressBar.visibility = View.GONE
+
+        Toast.makeText(this, R.string.profiling_manual_stopped, Toast.LENGTH_SHORT).show()
+      }
+    }
+
     setContentView(binding.root)
     Sentry.reportFullyDisplayed()
   }
@@ -136,9 +213,10 @@ class ProfilingActivity : AppCompatActivity() {
       val bos = ByteArrayOutputStream()
       GZIPOutputStream(bos).bufferedWriter().use { it.write(String(itemData)) }
 
+      lastProfilingResult =
+        getString(R.string.profiling_result, profileLength, itemData.size, bos.toByteArray().size)
       binding.root.post {
-        binding.profilingResult.text =
-          getString(R.string.profiling_result, profileLength, itemData.size, bos.toByteArray().size)
+        Toast.makeText(this, "Profile captured — tap (i) for details", Toast.LENGTH_SHORT).show()
       }
     } catch (e: Exception) {
       e.printStackTrace()

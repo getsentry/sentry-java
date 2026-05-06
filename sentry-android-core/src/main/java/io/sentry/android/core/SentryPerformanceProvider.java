@@ -129,6 +129,14 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
         return;
       }
 
+      if (profilingOptions.isUseProfilingManager()) {
+        logger.log(
+            SentryLevel.DEBUG,
+            "useProfilingManager is enabled. Skipping legacy app-start profiling — "
+                + "ProfilingManager will be initialized after Sentry.init().");
+        return;
+      }
+
       if (profilingOptions.isContinuousProfilingEnabled()
           && profilingOptions.isStartProfilerOnAppStart()) {
         createAndStartContinuousProfiler(context, profilingOptions, appStartMetrics);
