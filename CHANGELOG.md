@@ -4,12 +4,10 @@
 
 ### Features
 
-<<<<<<< rz/feat/replay-capture-surface-views
 - Session Replay: experimental support for capturing `SurfaceView` content (e.g. Unity, video players, maps) ([#5333](https://github.com/getsentry/sentry-java/pull/5333))
   - To enable, set `options.sessionReplay.isCaptureSurfaceViews = true`
   - Or via manifest: `<meta-data android:name="io.sentry.session-replay.capture-surface-views" android:value="true" />`
   - **Warning:** masking granularity is at the SurfaceView level only — the SDK cannot mask individual elements rendered inside the SurfaceView (e.g. native Unity UI, map labels, video frames). Only enable for SurfaceViews whose content is safe to record.
-=======
 - Add `Sentry.feedback()` API for `show()` and `capture()` ([#5349](https://github.com/getsentry/sentry-java/pull/5349))
   - `Sentry.showUserFeedbackDialog()` is deprecated in favor of `Sentry.feedback().show()`
   - `Sentry.captureFeedback()` is deprecated in favor of `Sentry.feedback().capture()`
@@ -42,7 +40,6 @@
 - Fix shake-to-report not triggering on some devices due to high acceleration threshold ([#5366](https://github.com/getsentry/sentry-java/pull/5366))
 - Fix feedback form retaining previous message when shown again via shake ([#5366](https://github.com/getsentry/sentry-java/pull/5366))
 - Avoid stack overflow when deserializing large flat JSON objects ([#5361](https://github.com/getsentry/sentry-java/pull/5361))
->>>>>>> main
 
 ### Dependencies
 
