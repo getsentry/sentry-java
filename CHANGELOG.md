@@ -4,16 +4,54 @@
 
 ### Features
 
+<<<<<<< rz/feat/replay-capture-surface-views
 - Session Replay: experimental support for capturing `SurfaceView` content (e.g. Unity, video players, maps) ([#5333](https://github.com/getsentry/sentry-java/pull/5333))
   - To enable, set `options.sessionReplay.isCaptureSurfaceViews = true`
   - Or via manifest: `<meta-data android:name="io.sentry.session-replay.capture-surface-views" android:value="true" />`
   - **Warning:** masking granularity is at the SurfaceView level only — the SDK cannot mask individual elements rendered inside the SurfaceView (e.g. native Unity UI, map labels, video frames). Only enable for SurfaceViews whose content is safe to record.
+=======
+- Add `Sentry.feedback()` API for `show()` and `capture()` ([#5349](https://github.com/getsentry/sentry-java/pull/5349))
+  - `Sentry.showUserFeedbackDialog()` is deprecated in favor of `Sentry.feedback().show()`
+  - `Sentry.captureFeedback()` is deprecated in favor of `Sentry.feedback().capture()`
+  - `Sentry.captureUserFeedback()` and `UserFeedback` are deprecated in favor of `Sentry.feedback().capture()` with the new `Feedback` type
+  - `SentryUserFeedbackDialog` is deprecated in favor of `SentryUserFeedbackForm`
+  - All deprecated APIs will be removed in the next major version
+- Deprecate `SentryUserFeedbackButton` (View-based and Compose-based) ([#5350](https://github.com/getsentry/sentry-java/pull/5350))
+  - It will be removed in the next major version
+- Add per-form shake-to-show support for `SentryUserFeedbackForm` ([#5353](https://github.com/getsentry/sentry-java/pull/5353))
+  - Useful for enabling shake-to-report on specific screens instead of globally
+  ```kotlin
+  SentryUserFeedbackForm.Builder(activity)
+    .configurator { it.isUseShakeGesture = true }
+    .create()
+  ```
+- Add support for Kafka ([#5249](https://github.com/getsentry/sentry-java/pull/5249))
+  - You will need to add the `sentry-kafka` dependency and opt-in via the new option.
+    - Set `options.setEnableQueueTracing(true)` on `Sentry.init`
+    - Or set `sentry.enable-queue-tracing=true` in `application.properties`
+  - For Spring Boot Kafka is auto instrumented and no further configuration is needed.
+    - also see https://docs.sentry.io/platforms/java/guides/spring-boot/integrations/kafka/
+  - When using `kafka-clients` directly
+    - you need to wrap your `KafkaProducer` via `SentryKafkaProducer.wrap(kafkaProducer)` to get `queue.publish` spans
+    - and you may use our `SentryKafkaConsumerTracing.withTracing` helper to instrument the consumer side manually.
+    - also see https://docs.sentry.io/platforms/java/integrations/kafka/
+
+### Fixes
+
+- Fix soft input keyboard not being shown on the Feedback form ([#5359](https://github.com/getsentry/sentry-java/pull/5359))
+- Fix shake-to-report not triggering on some devices due to high acceleration threshold ([#5366](https://github.com/getsentry/sentry-java/pull/5366))
+- Fix feedback form retaining previous message when shown again via shake ([#5366](https://github.com/getsentry/sentry-java/pull/5366))
+- Avoid stack overflow when deserializing large flat JSON objects ([#5361](https://github.com/getsentry/sentry-java/pull/5361))
+>>>>>>> main
 
 ### Dependencies
 
-- Bump Native SDK from v0.13.7 to v0.13.8 ([#5334](https://github.com/getsentry/sentry-java/pull/5334))
-  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0138)
-  - [diff](https://github.com/getsentry/sentry-native/compare/0.13.7...0.13.8)
+- Bump Native SDK from v0.13.7 to v0.14.0 ([#5334](https://github.com/getsentry/sentry-java/pull/5334), [#5365](https://github.com/getsentry/sentry-java/pull/5365))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0140)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.13.7...0.14.0)
+- Bump Gradle from v9.4.1 to v9.5.0 ([#5344](https://github.com/getsentry/sentry-java/pull/5344))
+  - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v950)
+  - [diff](https://github.com/gradle/gradle/compare/v9.4.1...v9.5.0)
 
 ## 8.40.0
 

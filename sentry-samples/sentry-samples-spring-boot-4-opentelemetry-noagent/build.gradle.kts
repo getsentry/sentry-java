@@ -58,6 +58,10 @@ dependencies {
   implementation(projects.sentryOpentelemetry.sentryOpentelemetryAgentlessSpring)
   implementation(projects.sentryAsyncProfiler)
 
+  // kafka
+  implementation(libs.springboot4.starter.kafka)
+  implementation(projects.sentryKafka)
+
   // database query tracing
   implementation(projects.sentryJdbc)
   runtimeOnly(libs.hsqldb)

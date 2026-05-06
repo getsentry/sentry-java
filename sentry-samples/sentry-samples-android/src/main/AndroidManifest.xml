@@ -271,6 +271,7 @@
     <meta-data
       android:name="io.sentry.anr.enable-fingerprinting"
       android:value="true" />
+    <!-- Enable feedback on shake globally -->
     <meta-data
       android:name="io.sentry.feedback.use-shake-gesture"
       android:value="true" />

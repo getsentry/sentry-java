@@ -508,6 +508,9 @@ public class SentryOptions {
   /** Whether cache operations (get, put, remove, flush) should be traced. */
   private boolean enableCacheTracing = false;
 
+  /** Whether queue operations (publish, process) should be traced. */
+  private boolean enableQueueTracing = false;
+
   /** Date provider to retrieve the current date from. */
   @ApiStatus.Internal
   private final @NotNull LazyEvaluator<SentryDateProvider> dateProvider =
@@ -2705,6 +2708,26 @@ public class SentryOptions {
   }
 
   /**
+   * Whether Sentry emits Queue spans and transforms OpenTelemetry messaging spans to match Sentry's
+   * queue conventions.
+   *
+   * @return true if queue tracing is enabled
+   */
+  public boolean isEnableQueueTracing() {
+    return enableQueueTracing;
+  }
+
+  /**
+   * Whether Sentry emits Queue spans and transforms OpenTelemetry messaging spans to match Sentry's
+   * queue conventions.
+   *
+   * @param enableQueueTracing true to enable queue tracing
+   */
+  public void setEnableQueueTracing(boolean enableQueueTracing) {
+    this.enableQueueTracing = enableQueueTracing;
+  }
+
+  /**
    * Whether Sentry is enabled.
    *
    * @return true if Sentry should be enabled
@@ -3397,7 +3420,7 @@ public class SentryOptions {
     feedbackOptions =
         new SentryFeedbackOptions(
             (associatedEventId, configurator) ->
-                logger.log(SentryLevel.WARNING, "showDialog() can only be called in Android."));
+                logger.log(SentryLevel.WARNING, "showForm() can only be called in Android."));
 
     if (!empty) {
       setSpanFactory(SpanFactoryFactory.create(new LoadClass(), NoOpLogger.getInstance()));
@@ -3544,6 +3567,9 @@ public class SentryOptions {
     }
     if (options.isEnableCacheTracing() != null) {
       setEnableCacheTracing(options.isEnableCacheTracing());
+    }
+    if (options.isEnableQueueTracing() != null) {
+      setEnableQueueTracing(options.isEnableQueueTracing());
     }
     if (options.getMaxRequestBodySize() != null) {
       setMaxRequestBodySize(options.getMaxRequestBodySize());
