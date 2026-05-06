@@ -3,6 +3,7 @@ io.sentry.spring.jakarta.cache
 io.sentry.spring.jakarta.checkin
 io.sentry.spring.jakarta.exception
 io.sentry.spring.jakarta.graphql
+io.sentry.spring.jakarta.kafka
 io.sentry.spring.jakarta.opentelemetry
 io.sentry.spring.jakarta.tracing
 io.sentry.spring.jakarta.webflux
