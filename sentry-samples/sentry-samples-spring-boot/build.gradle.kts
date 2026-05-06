@@ -43,6 +43,10 @@ dependencies {
   implementation(libs.springboot.starter.cache)
   implementation(libs.springboot.starter.websocket)
   implementation(libs.caffeine)
+
+  // kafka
+  implementation(libs.spring.kafka2)
+  implementation(projects.sentryKafka)
   implementation(Config.Libs.aspectj)
   implementation(Config.Libs.kotlinReflect)
   implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))

@@ -53,6 +53,10 @@ dependencies {
   implementation(projects.sentryAsyncProfiler)
   implementation(libs.otel)
 
+  // kafka
+  implementation(libs.spring.kafka2)
+  implementation(projects.sentryKafka)
+
   // database query tracing
   implementation(projects.sentryJdbc)
   runtimeOnly(libs.hsqldb)
