@@ -25,6 +25,7 @@
 - Fix soft input keyboard not being shown on the Feedback form ([#5359](https://github.com/getsentry/sentry-java/pull/5359))
 - Fix shake-to-report not triggering on some devices due to high acceleration threshold ([#5366](https://github.com/getsentry/sentry-java/pull/5366))
 - Fix feedback form retaining previous message when shown again via shake ([#5366](https://github.com/getsentry/sentry-java/pull/5366))
+- Avoid stack overflow when deserializing large flat JSON objects ([#5361](https://github.com/getsentry/sentry-java/pull/5361))
 
 ### Dependencies
 
@@ -34,10 +35,6 @@
 - Bump Gradle from v9.4.1 to v9.5.0 ([#5344](https://github.com/getsentry/sentry-java/pull/5344))
   - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v950)
   - [diff](https://github.com/gradle/gradle/compare/v9.4.1...v9.5.0)
-
-### Fixes
-
-- Avoid stack overflow when deserializing large flat JSON objects ([#5361](https://github.com/getsentry/sentry-java/pull/5361))
 
 ## 8.40.0
 
