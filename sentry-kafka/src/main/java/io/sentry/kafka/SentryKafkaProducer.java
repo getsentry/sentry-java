@@ -126,6 +126,13 @@ public final class SentryKafkaProducer {
         }
       }
 
+      if ("equals".equals(method.getName())
+          && args != null
+          && args.length == 1
+          && proxy == args[0]) {
+        return true;
+      }
+
       if ("toString".equals(method.getName()) && (args == null || args.length == 0)) {
         return "SentryKafkaProducer[delegate=" + delegate + "]";
       }

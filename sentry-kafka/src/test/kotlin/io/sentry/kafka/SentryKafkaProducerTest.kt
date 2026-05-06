@@ -348,6 +348,20 @@ class SentryKafkaProducerTest {
   }
 
   @Test
+  fun `wrapped producer equals itself`() {
+    val producer = SentryKafkaProducer.wrap(delegate, scopes)
+
+    assertTrue(producer.equals(producer))
+  }
+
+  @Test
+  fun `wrapped producer keeps delegate hashCode`() {
+    val producer = SentryKafkaProducer.wrap(delegate, scopes)
+
+    assertEquals(delegate.hashCode(), producer.hashCode())
+  }
+
+  @Test
   fun `toString includes delegate`() {
     val producer = SentryKafkaProducer.wrap(delegate, scopes)
     assertTrue(producer.toString().startsWith("SentryKafkaProducer[delegate="))
