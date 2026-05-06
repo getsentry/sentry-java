@@ -108,7 +108,7 @@ dependencies {
   testImplementation(projects.sentryAndroidReplay)
   testImplementation(projects.sentryCompose)
   testImplementation(projects.sentryAndroidNdk)
-  testImplementation(libs.dropbox.differ)
+
   testImplementation(libs.androidx.activity.compose)
   testImplementation(libs.androidx.compose.ui)
   testImplementation(libs.androidx.compose.foundation)
