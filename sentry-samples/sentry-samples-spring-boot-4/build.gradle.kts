@@ -88,6 +88,10 @@ tasks.register<Test>("systemTest").configure {
   group = "verification"
   description = "Runs the System tests"
 
+  val test = project.extensions.getByType<SourceSetContainer>()["test"]
+  testClassesDirs = test.output.classesDirs
+  classpath = test.runtimeClasspath
+
   outputs.upToDateWhen { false }
 
   maxParallelForks = 1

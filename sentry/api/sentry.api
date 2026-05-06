@@ -666,6 +666,7 @@ public final class io/sentry/HubAdapter : io/sentry/IHub {
 	public fun configureScope (Lio/sentry/ScopeType;Lio/sentry/ScopeCallback;)V
 	public fun continueTrace (Ljava/lang/String;Ljava/util/List;)Lio/sentry/TransactionContext;
 	public fun endSession ()V
+	public fun feedback ()Lio/sentry/IFeedbackApi;
 	public fun flush (J)V
 	public fun forkedCurrentScope (Ljava/lang/String;)Lio/sentry/IScopes;
 	public fun forkedRootScopes (Ljava/lang/String;)Lio/sentry/IScopes;
@@ -742,6 +743,7 @@ public final class io/sentry/HubScopesWrapper : io/sentry/IHub {
 	public fun configureScope (Lio/sentry/ScopeType;Lio/sentry/ScopeCallback;)V
 	public fun continueTrace (Ljava/lang/String;Ljava/util/List;)Lio/sentry/TransactionContext;
 	public fun endSession ()V
+	public fun feedback ()Lio/sentry/IFeedbackApi;
 	public fun flush (J)V
 	public fun forkedCurrentScope (Ljava/lang/String;)Lio/sentry/IScopes;
 	public fun forkedRootScopes (Ljava/lang/String;)Lio/sentry/IScopes;
@@ -834,6 +836,15 @@ public abstract interface class io/sentry/IEnvelopeReader {
 
 public abstract interface class io/sentry/IEnvelopeSender {
 	public abstract fun processEnvelopeFile (Ljava/lang/String;Lio/sentry/Hint;)V
+}
+
+public abstract interface class io/sentry/IFeedbackApi {
+	public abstract fun capture (Lio/sentry/protocol/Feedback;)Lio/sentry/protocol/SentryId;
+	public abstract fun capture (Lio/sentry/protocol/Feedback;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
+	public abstract fun capture (Lio/sentry/protocol/Feedback;Lio/sentry/Hint;Lio/sentry/ScopeCallback;)Lio/sentry/protocol/SentryId;
+	public abstract fun show ()V
+	public abstract fun show (Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)V
+	public abstract fun show (Lio/sentry/protocol/SentryId;Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)V
 }
 
 public abstract interface class io/sentry/IHub : io/sentry/IScopes {
@@ -1014,6 +1025,7 @@ public abstract interface class io/sentry/IScopes {
 	public abstract fun configureScope (Lio/sentry/ScopeType;Lio/sentry/ScopeCallback;)V
 	public abstract fun continueTrace (Ljava/lang/String;Ljava/util/List;)Lio/sentry/TransactionContext;
 	public abstract fun endSession ()V
+	public abstract fun feedback ()Lio/sentry/IFeedbackApi;
 	public abstract fun flush (J)V
 	public abstract fun forkedCurrentScope (Ljava/lang/String;)Lio/sentry/IScopes;
 	public abstract fun forkedRootScopes (Ljava/lang/String;)Lio/sentry/IScopes;
@@ -1571,6 +1583,16 @@ public final class io/sentry/NoOpEnvelopeReader : io/sentry/IEnvelopeReader {
 	public fun read (Ljava/io/InputStream;)Lio/sentry/SentryEnvelope;
 }
 
+public final class io/sentry/NoOpFeedbackApi : io/sentry/IFeedbackApi {
+	public fun capture (Lio/sentry/protocol/Feedback;)Lio/sentry/protocol/SentryId;
+	public fun capture (Lio/sentry/protocol/Feedback;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
+	public fun capture (Lio/sentry/protocol/Feedback;Lio/sentry/Hint;Lio/sentry/ScopeCallback;)Lio/sentry/protocol/SentryId;
+	public static fun getInstance ()Lio/sentry/NoOpFeedbackApi;
+	public fun show ()V
+	public fun show (Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)V
+	public fun show (Lio/sentry/protocol/SentryId;Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)V
+}
+
 public final class io/sentry/NoOpHub : io/sentry/IHub {
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;)V
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;Lio/sentry/Hint;)V
@@ -1597,6 +1619,7 @@ public final class io/sentry/NoOpHub : io/sentry/IHub {
 	public fun configureScope (Lio/sentry/ScopeType;Lio/sentry/ScopeCallback;)V
 	public fun continueTrace (Ljava/lang/String;Ljava/util/List;)Lio/sentry/TransactionContext;
 	public fun endSession ()V
+	public fun feedback ()Lio/sentry/IFeedbackApi;
 	public fun flush (J)V
 	public fun forkedCurrentScope (Ljava/lang/String;)Lio/sentry/IScopes;
 	public fun forkedRootScopes (Ljava/lang/String;)Lio/sentry/IScopes;
@@ -1783,6 +1806,7 @@ public final class io/sentry/NoOpScopes : io/sentry/IScopes {
 	public fun configureScope (Lio/sentry/ScopeType;Lio/sentry/ScopeCallback;)V
 	public fun continueTrace (Ljava/lang/String;Ljava/util/List;)Lio/sentry/TransactionContext;
 	public fun endSession ()V
+	public fun feedback ()Lio/sentry/IFeedbackApi;
 	public fun flush (J)V
 	public fun forkedCurrentScope (Ljava/lang/String;)Lio/sentry/IScopes;
 	public fun forkedRootScopes (Ljava/lang/String;)Lio/sentry/IScopes;
@@ -2519,6 +2543,7 @@ public final class io/sentry/Scopes : io/sentry/IScopes {
 	public fun configureScope (Lio/sentry/ScopeType;Lio/sentry/ScopeCallback;)V
 	public fun continueTrace (Ljava/lang/String;Ljava/util/List;)Lio/sentry/TransactionContext;
 	public fun endSession ()V
+	public fun feedback ()Lio/sentry/IFeedbackApi;
 	public fun flush (J)V
 	public fun forkedCurrentScope (Ljava/lang/String;)Lio/sentry/IScopes;
 	public fun forkedRootScopes (Ljava/lang/String;)Lio/sentry/IScopes;
@@ -2598,6 +2623,7 @@ public final class io/sentry/ScopesAdapter : io/sentry/IScopes {
 	public fun configureScope (Lio/sentry/ScopeType;Lio/sentry/ScopeCallback;)V
 	public fun continueTrace (Ljava/lang/String;Ljava/util/List;)Lio/sentry/TransactionContext;
 	public fun endSession ()V
+	public fun feedback ()Lio/sentry/IFeedbackApi;
 	public fun flush (J)V
 	public fun forkedCurrentScope (Ljava/lang/String;)Lio/sentry/IScopes;
 	public fun forkedRootScopes (Ljava/lang/String;)Lio/sentry/IScopes;
@@ -2722,6 +2748,7 @@ public final class io/sentry/Sentry {
 	public static fun continueTrace (Ljava/lang/String;Ljava/util/List;)Lio/sentry/TransactionContext;
 	public static fun distribution ()Lio/sentry/IDistributionApi;
 	public static fun endSession ()V
+	public static fun feedback ()Lio/sentry/IFeedbackApi;
 	public static fun flush (J)V
 	public static fun forkedCurrentScope (Ljava/lang/String;)Lio/sentry/IScopes;
 	public static fun forkedRootScopes (Ljava/lang/String;)Lio/sentry/IScopes;
@@ -3153,12 +3180,11 @@ public final class io/sentry/SentryExecutorService : io/sentry/ISentryExecutorSe
 }
 
 public final class io/sentry/SentryFeedbackOptions {
-	public fun <init> (Lio/sentry/SentryFeedbackOptions$IDialogHandler;)V
 	public fun <init> (Lio/sentry/SentryFeedbackOptions;)V
 	public fun getCancelButtonLabel ()Ljava/lang/CharSequence;
-	public fun getDialogHandler ()Lio/sentry/SentryFeedbackOptions$IDialogHandler;
 	public fun getEmailLabel ()Ljava/lang/CharSequence;
 	public fun getEmailPlaceholder ()Ljava/lang/CharSequence;
+	public fun getFormHandler ()Lio/sentry/SentryFeedbackOptions$IFormHandler;
 	public fun getFormTitle ()Ljava/lang/CharSequence;
 	public fun getIsRequiredLabel ()Ljava/lang/CharSequence;
 	public fun getMessageLabel ()Ljava/lang/CharSequence;
@@ -3179,10 +3205,10 @@ public final class io/sentry/SentryFeedbackOptions {
 	public fun isUseSentryUser ()Z
 	public fun isUseShakeGesture ()Z
 	public fun setCancelButtonLabel (Ljava/lang/CharSequence;)V
-	public fun setDialogHandler (Lio/sentry/SentryFeedbackOptions$IDialogHandler;)V
 	public fun setEmailLabel (Ljava/lang/CharSequence;)V
 	public fun setEmailPlaceholder (Ljava/lang/CharSequence;)V
 	public fun setEmailRequired (Z)V
+	public fun setFormHandler (Lio/sentry/SentryFeedbackOptions$IFormHandler;)V
 	public fun setFormTitle (Ljava/lang/CharSequence;)V
 	public fun setIsRequiredLabel (Ljava/lang/CharSequence;)V
 	public fun setMessageLabel (Ljava/lang/CharSequence;)V
@@ -3204,8 +3230,8 @@ public final class io/sentry/SentryFeedbackOptions {
 	public fun toString ()Ljava/lang/String;
 }
 
-public abstract interface class io/sentry/SentryFeedbackOptions$IDialogHandler {
-	public abstract fun showDialog (Lio/sentry/protocol/SentryId;Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)V
+public abstract interface class io/sentry/SentryFeedbackOptions$IFormHandler {
+	public abstract fun showForm (Lio/sentry/protocol/SentryId;Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)V
 }
 
 public abstract interface class io/sentry/SentryFeedbackOptions$OptionsConfigurator {

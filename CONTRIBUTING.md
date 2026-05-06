@@ -57,6 +57,13 @@ or
 
 However, if your change did not intend to modify the public API, consider changing the method/property visibility or removing the change altogether.
 
+# Linking issues
+
+If a PR should notify a linked issue after release, use a GitHub closing keyword in the PR
+description, such as `Fixes #123`, `Closes #123`, or `Resolves #123`. Release notification
+automation only comments on issues GitHub recognizes as closed by the released PR; mentioning an
+issue without a closing keyword is not enough.
+
 # CI
 
 Build and tests are automatically run against branches and pull requests

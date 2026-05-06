@@ -4,11 +4,84 @@
 
 ### Features
 
-- Add Kafka queue tracing for Spring Boot 2 ([#5352](https://github.com/getsentry/sentry-java/pull/5352))
-- Add Kafka queue tracing for Spring Boot 4 ([#5348](https://github.com/getsentry/sentry-java/pull/5348))
-- Add `sentry-kafka` module for Kafka queue instrumentation without Spring ([#5288](https://github.com/getsentry/sentry-java/pull/5288))
-- Add Kafka queue tracing for Spring Boot 3 ([#5254](https://github.com/getsentry/sentry-java/pull/5254)), ([#5255](https://github.com/getsentry/sentry-java/pull/5255)), ([#5256](https://github.com/getsentry/sentry-java/pull/5256))
-- Add `enableQueueTracing` option and messaging span data conventions ([#5250](https://github.com/getsentry/sentry-java/pull/5250))
+- Add `Sentry.feedback()` API for `show()` and `capture()` ([#5349](https://github.com/getsentry/sentry-java/pull/5349))
+  - `Sentry.showUserFeedbackDialog()` is deprecated in favor of `Sentry.feedback().show()`
+  - `Sentry.captureFeedback()` is deprecated in favor of `Sentry.feedback().capture()`
+  - `Sentry.captureUserFeedback()` and `UserFeedback` are deprecated in favor of `Sentry.feedback().capture()` with the new `Feedback` type
+  - `SentryUserFeedbackDialog` is deprecated in favor of `SentryUserFeedbackForm`
+  - All deprecated APIs will be removed in the next major version
+- Deprecate `SentryUserFeedbackButton` (View-based and Compose-based) ([#5350](https://github.com/getsentry/sentry-java/pull/5350))
+  - It will be removed in the next major version
+- Add per-form shake-to-show support for `SentryUserFeedbackForm` ([#5353](https://github.com/getsentry/sentry-java/pull/5353))
+  - Useful for enabling shake-to-report on specific screens instead of globally
+  ```kotlin
+  SentryUserFeedbackForm.Builder(activity)
+    .configurator { it.isUseShakeGesture = true }
+    .create()
+  ```
+
+### Fixes
+
+- Fix soft input keyboard not being shown on the Feedback form ([#5359](https://github.com/getsentry/sentry-java/pull/5359))
+- Fix shake-to-report not triggering on some devices due to high acceleration threshold ([#5366](https://github.com/getsentry/sentry-java/pull/5366))
+- Fix feedback form retaining previous message when shown again via shake ([#5366](https://github.com/getsentry/sentry-java/pull/5366))
+
+### Dependencies
+
+- Bump Native SDK from v0.13.7 to v0.14.0 ([#5334](https://github.com/getsentry/sentry-java/pull/5334), [#5365](https://github.com/getsentry/sentry-java/pull/5365))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0140)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.13.7...0.14.0)
+- Bump Gradle from v9.4.1 to v9.5.0 ([#5344](https://github.com/getsentry/sentry-java/pull/5344))
+  - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v950)
+  - [diff](https://github.com/gradle/gradle/compare/v9.4.1...v9.5.0)
+
+## 8.40.0
+
+### Fixes
+
+- Fix `NoSuchMethodError` for `LayoutCoordinates.localBoundingBoxOf$default` on Compose touch dispatch with AGP 8.13 and `minSdk < 24` ([#5302](https://github.com/getsentry/sentry-java/pull/5302))
+- Fix reporting OkHttp's synthetic 504 "Unsatisfiable Request" responses as errors for `CacheControl.FORCE_CACHE` cache misses ([#5299](https://github.com/getsentry/sentry-java/pull/5299))
+- Make `SentryGestureDetector` thread-safe and recycle `VelocityTracker` per gesture ([#5301](https://github.com/getsentry/sentry-java/pull/5301))
+- Fix duplicate `ui.click` breadcrumbs when another `Window.Callback` wraps `SentryWindowCallback` ([#5300](https://github.com/getsentry/sentry-java/pull/5300))
+
+### Dependencies
+
+- Bump Native SDK from v0.13.6 to v0.13.7 ([#5296](https://github.com/getsentry/sentry-java/pull/5296))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0137)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.13.6...0.13.7)
+
+## 8.39.1
+
+### Fixes
+
+- Fix `JsonObjectReader` and `MapObjectReader` hanging indefinitely when deserialization errors leave the reader in an inconsistent state ([#5293](https://github.com/getsentry/sentry-java/pull/5293))
+  - Failed collection values are now skipped so parsing can continue
+  - Skipped collection values emit `WARNING` logs
+  - Unknown-key failures and unrecoverable recovery failures emit `ERROR` logs
+
+## 8.39.0
+
+### Fixes
+
+- Fix ANR caused by `GestureDetectorCompat` Handler/MessageQueue lock contention in `SentryWindowCallback` ([#5138](https://github.com/getsentry/sentry-java/pull/5138))
+
+### Internal
+
+- Bump AGP version from v8.6.0 to v8.13.1 ([#5063](https://github.com/getsentry/sentry-java/pull/5063))
+
+### Dependencies
+
+- Bump Native SDK from v0.13.3 to v0.13.6 ([#5277](https://github.com/getsentry/sentry-java/pull/5277))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0136)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.13.3...0.13.6)
+- Bump Gradle from v8.14.3 to v9.4.1 ([#5063](https://github.com/getsentry/sentry-java/pull/5063))
+  - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v941)
+  - [diff](https://github.com/gradle/gradle/compare/v8.14.3...v9.4.1)
+
+## 8.38.0
+
+### Features
+
 - Prevent cross-organization trace continuation ([#5136](https://github.com/getsentry/sentry-java/pull/5136))
   - By default, the SDK now extracts the organization ID from the DSN (e.g. `o123.ingest.sentry.io`) and compares it with the `sentry-org_id` value in incoming baggage headers. When the two differ, the SDK starts a fresh trace instead of continuing the foreign one. This guards against accidentally linking traces across organizations.
   - New option `enableStrictTraceContinuation` (default `false`): when enabled, both the SDK's org ID **and** the incoming baggage org ID must be present and match for a trace to be continued. Traces with a missing org ID on either side are rejected. Configurable via code (`setStrictTraceContinuation(true)`), `sentry.properties` (`enable-strict-trace-continuation=true`), Android manifest (`io.sentry.strict-trace-continuation.enabled`), or Spring Boot (`sentry.strict-trace-continuation=true`).
@@ -16,10 +89,9 @@
 - Android: Attachments on the scope will now be synced to native ([#5211](https://github.com/getsentry/sentry-java/pull/5211))
 - Add THIRD_PARTY_NOTICES.md for vendored third-party code, bundled as SENTRY_THIRD_PARTY_NOTICES.md in the sentry JAR under META-INF ([#5186](https://github.com/getsentry/sentry-java/pull/5186))
 
-### Fixes
+### Improvements
 
-- Inject Kafka trace headers even without an active span so distributed tracing works for background workers and `@Scheduled` jobs ([#5338](https://github.com/getsentry/sentry-java/pull/5338))
-- Write the `sentry-task-enqueued-time` Kafka header as a plain decimal so cross-SDK consumers (e.g. sentry-python) can parse it ([#5328](https://github.com/getsentry/sentry-java/pull/5328))
+- Do not retrieve `ActivityManager` if API < 35 on SDK init ([#5275](https://github.com/getsentry/sentry-java/pull/5275))
 
 ## 8.37.1
 

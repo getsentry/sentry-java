@@ -1,6 +1,7 @@
 package io.sentry.android.core
 
 import android.content.Context
+import android.view.WindowManager
 import android.widget.TextView
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -17,6 +18,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
+import kotlin.test.assertNotNull
 import org.junit.runner.RunWith
 import org.mockito.Mockito.mockStatic
 import org.mockito.kotlin.eq
@@ -26,7 +28,7 @@ import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 
 @RunWith(AndroidJUnit4::class)
-class SentryUserFeedbackDialogTest {
+class SentryUserFeedbackFormTest {
   class Fixture {
     val application: Context = ApplicationProvider.getApplicationContext()
     private val mockDsn = "http://key@localhost/proj"
@@ -55,10 +57,10 @@ class SentryUserFeedbackDialogTest {
 
     fun getSut(
       associatedEventId: SentryId? = null,
-      configuration: SentryUserFeedbackDialog.OptionsConfiguration? = null,
+      configuration: SentryUserFeedbackForm.OptionsConfiguration? = null,
       configurator: SentryFeedbackOptions.OptionsConfigurator? = null,
-    ): SentryUserFeedbackDialog =
-      SentryUserFeedbackDialog(application, 0, associatedEventId, configuration, configurator)
+    ): SentryUserFeedbackForm =
+      SentryUserFeedbackForm(application, 0, associatedEventId, configuration, configurator)
   }
 
   private val fixture = Fixture()
@@ -129,5 +131,16 @@ class SentryUserFeedbackDialogTest {
     )
     // And the original options should not be modified
     assertNotEquals("custom title", fixture.options.feedbackOptions.formTitle)
+  }
+
+  @Test
+  fun `dialog window does not have FLAG_ALT_FOCUSABLE_IM so soft keyboard can appear`() {
+    fixture.options.isEnabled = true
+    val sut = fixture.getSut()
+    sut.show()
+    val window = sut.window
+    assertNotNull(window)
+    val flags = window.attributes.flags
+    assertEquals(0, flags and WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM)
   }
 }

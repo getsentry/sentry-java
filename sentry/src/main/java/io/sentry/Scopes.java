@@ -34,6 +34,7 @@ public final class Scopes implements IScopes {
   private final @NotNull CombinedScopeView combinedScope;
   private final @NotNull ILoggerApi logger;
   private final @NotNull IMetricsApi metrics;
+  private final @NotNull IFeedbackApi feedbackApi;
 
   public Scopes(
       final @NotNull IScope scope,
@@ -61,6 +62,7 @@ public final class Scopes implements IScopes {
     this.compositePerformanceCollector = options.getCompositePerformanceCollector();
     this.logger = new LoggerApi(this);
     this.metrics = new MetricsApi(this);
+    this.feedbackApi = new FeedbackApi(this);
   }
 
   public @NotNull String getCreator() {
@@ -344,6 +346,7 @@ public final class Scopes implements IScopes {
     return sentryId;
   }
 
+  @Deprecated
   @Override
   public void captureUserFeedback(final @NotNull UserFeedback userFeedback) {
     if (!isEnabled()) {
@@ -1243,6 +1246,11 @@ public final class Scopes implements IScopes {
   @Override
   public @NotNull IMetricsApi metrics() {
     return metrics;
+  }
+
+  @Override
+  public @NotNull IFeedbackApi feedback() {
+    return feedbackApi;
   }
 
   @Override

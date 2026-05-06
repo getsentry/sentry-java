@@ -441,7 +441,7 @@ final class AndroidOptionsInitializer {
     }
     options
         .getFeedbackOptions()
-        .setDialogHandler(new SentryAndroidOptions.AndroidUserFeedbackIDialogHandler());
+        .setFormHandler(new SentryAndroidOptions.AndroidUserFeedbackFormHandler());
   }
 
   /**
