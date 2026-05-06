@@ -62,7 +62,7 @@ jobs:
 
       - name: Update Spring Boot 3.x version
         run: |
-          sed -i 's/^springboot3=.*/springboot3=${{ matrix.springboot-version }}/' gradle/libs.versions.toml
+          sed -i 's/^\(springboot3[[:space:]]*=[[:space:]]*\)".*"/\1"${{ matrix.springboot-version }}"/' gradle/libs.versions.toml
           echo "Updated Spring Boot 3.x version to ${{ matrix.springboot-version }}"
 
       - name: Exclude android modules from build
