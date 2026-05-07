@@ -2,8 +2,6 @@ package io.sentry.android.core
 
 import android.app.Activity
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.drawable.Drawable
@@ -31,9 +29,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.dropbox.differ.Color as DifferColor
-import com.dropbox.differ.Image
-import com.dropbox.differ.SimpleImageComparator
 import io.sentry.Attachment
 import io.sentry.Hint
 import io.sentry.MainEventProcessor
@@ -66,17 +61,8 @@ import org.robolectric.shadows.ShadowPixelCopy
 class ScreenshotEventProcessorTest {
 
   companion object {
-    /**
-     * Set to `true` to record/update golden images for snapshot tests. When `true`, screenshots
-     * will be saved to src/test/resources/snapshots/{testName}.png. Set back to `false` after
-     * recording to run comparison tests.
-     */
-    private const val RECORD_SNAPSHOTS = false
-
     private val SNAPSHOTS_DIR =
-      File("src/test/resources/snapshots/ScreenshotEventProcessorTest").also {
-        if (RECORD_SNAPSHOTS) it.mkdirs()
-      }
+      File("build/test-snapshots/ScreenshotEventProcessorTest").also { it.mkdirs() }
   }
 
   private class Fixture {
@@ -507,17 +493,6 @@ class ScreenshotEventProcessorTest {
 
   private fun getEvent(): SentryEvent = SentryEvent(Throwable("Throwable"))
 
-  /**
-   * Helper method for snapshot testing. Processes an event and captures a screenshot, then either
-   * saves it as a golden image (when RECORD_SNAPSHOTS=true) or compares it against an existing
-   * golden image.
-   *
-   * @param testName The name used for the golden image file (without extension)
-   * @param attachScreenshot Whether to enable screenshot attachment
-   * @param isReplayAvailable Whether the replay module is available (enables masking)
-   * @param configureOptions Lambda to configure additional options before processing
-   * @return The captured screenshot bytes, or null if no screenshot was captured
-   */
   private fun processEventForSnapshots(
     testName: String,
     attachScreenshot: Boolean = true,
@@ -536,37 +511,9 @@ class ScreenshotEventProcessorTest {
     val screenshot = hint.screenshot ?: return null
     val bytes = screenshot.bytes ?: screenshot.byteProvider?.call() ?: return null
 
-    val snapshotFile = File(SNAPSHOTS_DIR, "$testName.png")
-    if (RECORD_SNAPSHOTS) {
-      snapshotFile.writeBytes(bytes)
-      println("Recorded snapshot: ${snapshotFile.absolutePath}")
-    } else if (snapshotFile.exists()) {
-      val expectedBitmap = BitmapFactory.decodeFile(snapshotFile.absolutePath)
-      val actualBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-
-      val result =
-        SimpleImageComparator(maxDistance = 0.01f)
-          .compare(BitmapImage(expectedBitmap), BitmapImage(actualBitmap))
-      assertEquals(
-        0,
-        result.pixelDifferences,
-        "Screenshot does not match golden image: ${snapshotFile.absolutePath}. " +
-          "Pixel differences: ${result.pixelDifferences}",
-      )
-    }
+    File(SNAPSHOTS_DIR, "$testName.png").writeBytes(bytes)
 
     return bytes
-  }
-
-  /** Adapter to wrap Android Bitmap for use with dropbox/differ library */
-  private class BitmapImage(private val bitmap: Bitmap) : Image {
-    override val height: Int
-      get() = bitmap.height
-
-    override val width: Int
-      get() = bitmap.width
-
-    override fun getPixel(x: Int, y: Int): DifferColor = DifferColor(bitmap.getPixel(x, y))
   }
 }
 

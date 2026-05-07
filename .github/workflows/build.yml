@@ -21,6 +21,7 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           submodules: 'recursive'
 
       - name: Setup Java Version
@@ -43,6 +44,18 @@ jobs:
 
       - name: Run Tests with coverage and Lint
         run: make preMerge
+
+      - name: Install Sentry CLI
+        run: curl -sL https://sentry.io/get-cli/ | bash
+
+      - name: Upload Snapshots to Sentry
+        run: |
+          sentry-cli build snapshots ./sentry-android-core/build/test-snapshots \
+            --app-id sentry-android-core
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: sentry-sdks
+          SENTRY_PROJECT: sentry-android
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@57e3a136b779b570ffcdbf80b3bdc90e7fab3de2 # pin@v4
