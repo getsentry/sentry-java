@@ -12,6 +12,8 @@ updates:
       - gradle-plugin-portal
     schedule:
       interval: "daily"
+    ignore:
+      - dependency-name: "org.springframework.boot*"
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
