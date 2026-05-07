@@ -36,6 +36,7 @@
 
 ### Fixes
 
+- Fix transaction-specific dynamic sampling context fields missing after earlier spanless outgoing requests ([#5384](https://github.com/getsentry/sentry-java/pull/5384))
 - Fix soft input keyboard not being shown on the Feedback form ([#5359](https://github.com/getsentry/sentry-java/pull/5359))
 - Fix shake-to-report not triggering on some devices due to high acceleration threshold ([#5366](https://github.com/getsentry/sentry-java/pull/5366))
 - Fix feedback form retaining previous message when shown again via shake ([#5366](https://github.com/getsentry/sentry-java/pull/5366))
