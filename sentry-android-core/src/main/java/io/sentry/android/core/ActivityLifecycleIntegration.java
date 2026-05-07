@@ -924,8 +924,6 @@ public final class ActivityLifecycleIntegration
       return;
     }
 
-    final boolean coldStart = metrics.getAppStartType() == AppStartMetrics.AppStartType.COLD;
-
     final TransactionOptions txnOptions = new TransactionOptions();
     txnOptions.setBindToScope(false);
     txnOptions.setStartTimestamp(startTime);

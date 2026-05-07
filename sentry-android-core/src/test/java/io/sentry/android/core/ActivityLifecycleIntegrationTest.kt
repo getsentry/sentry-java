@@ -66,6 +66,7 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.robolectric.Shadows.shadowOf
+import org.robolectric.annotation.Config
 import org.robolectric.shadow.api.Shadow
 import org.robolectric.shadows.ShadowActivityManager
 
@@ -348,6 +349,34 @@ class ActivityLifecycleIntegrationTest {
     assertEquals("App Start", context.name)
     assertEquals(TransactionNameSource.COMPONENT, context.transactionNameSource)
     assertFalse(options.isBindToScope)
+    assertEquals(DateUtils.millisToNanos(100), options.startTimestamp!!.nanoTimestamp())
+    assertEquals(
+      transaction.spanContext.traceId,
+      AppStartMetrics.getInstance().getAppStartTraceId(),
+    )
+    assertTrue(transaction.isFinished)
+    assertEquals(SpanStatus.OK, transaction.status)
+  }
+
+  @Test
+  @Config(sdk = [Build.VERSION_CODES.M])
+  fun `onNoActivityStarted creates standalone App Start transaction on API 23`() {
+    val sut =
+      fixture.getSut {
+        it.tracesSampleRate = 1.0
+        it.isEnableStandaloneAppStartTracing = true
+      }
+    sut.register(fixture.scopes, fixture.options)
+    prepareNonActivitySdkInitAppStart()
+
+    driveNoActivityStarted()
+
+    assertEquals(1, fixture.capturedContexts.size)
+    val context = fixture.capturedContexts.single()
+    val options = fixture.capturedOptions.single()
+    val transaction = fixture.createdTransactions.single()
+    assertEquals(ActivityLifecycleIntegration.STANDALONE_APP_START_OP, context.operation)
+    assertEquals("App Start", context.name)
     assertEquals(DateUtils.millisToNanos(100), options.startTimestamp!!.nanoTimestamp())
     assertEquals(
       transaction.spanContext.traceId,
@@ -2048,6 +2077,20 @@ class ActivityLifecycleIntegrationTest {
         setStartedAt(startUptimeMs)
         setStartUnixTimeMs(startUptimeMs)
       }
+    }
+  }
+
+  private fun prepareNonActivitySdkInitAppStart(
+    startUptimeMs: Long = 100,
+    endUptimeMs: Long = 200,
+  ) {
+    AppStartMetrics.getInstance().apply {
+      appStartTimeSpan.reset()
+      sdkInitTimeSpan.apply {
+        setStartedAt(startUptimeMs)
+        setStartUnixTimeMs(startUptimeMs)
+      }
+      setClassLoadedUptimeMs(endUptimeMs)
     }
   }
 

@@ -509,7 +509,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     if (applicationOnCreate.hasStopped()) {
       final long stopUptimeMs =
           applicationOnCreate.getStartUptimeMs() + applicationOnCreate.getDurationMs();
-      appStartSpan.setStoppedAt(stopUptimeMs);
+      stopNonActivityAppStartAt(stopUptimeMs);
       return;
     }
 
@@ -522,7 +522,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
             timestamps.get(ApplicationStartInfo.START_TIMESTAMP_APPLICATION_ONCREATE);
         if (onCreateNanos != null && onCreateNanos > 0) {
           final long onCreateUptimeMs = TimeUnit.NANOSECONDS.toMillis(onCreateNanos);
-          appStartSpan.setStoppedAt(onCreateUptimeMs);
+          stopNonActivityAppStartAt(onCreateUptimeMs);
 
           // Also fill applicationOnCreate stop time if not already set by Gradle plugin
           if (applicationOnCreate.hasStarted() && applicationOnCreate.hasNotStopped()) {
@@ -536,7 +536,15 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     }
 
     // Priority 3: Process init end time (CLASS_LOADED_UPTIME_MS) — always available
-    appStartSpan.setStoppedAt(CLASS_LOADED_UPTIME_MS);
+    stopNonActivityAppStartAt(CLASS_LOADED_UPTIME_MS);
+  }
+
+  private void stopNonActivityAppStartAt(final long stopUptimeMs) {
+    if (appStartSpan.hasStarted()) {
+      appStartSpan.setStoppedAt(stopUptimeMs);
+    } else if (sdkInitTimeSpan.hasStarted() && sdkInitTimeSpan.hasNotStopped()) {
+      sdkInitTimeSpan.setStoppedAt(stopUptimeMs);
+    }
   }
 
   @Override
