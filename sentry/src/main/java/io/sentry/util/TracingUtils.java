@@ -115,7 +115,9 @@ public final class TracingUtils {
           @NotNull Baggage baggage = propagationContext.getBaggage();
           if (baggage.isMutable()) {
             baggage.setValuesFromScope(scope, sentryOptions);
-            baggage.freeze();
+            if (baggage.isShouldFreeze()) {
+              baggage.freeze();
+            }
           }
         });
   }

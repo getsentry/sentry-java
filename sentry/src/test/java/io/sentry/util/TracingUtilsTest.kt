@@ -16,6 +16,7 @@ import io.sentry.TracesSamplingDecision
 import io.sentry.TransactionContext
 import io.sentry.W3CTraceparentHeader
 import io.sentry.protocol.SentryId
+import io.sentry.protocol.TransactionNameSource
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
@@ -77,7 +78,7 @@ class TracingUtilsTest {
         .value
         .contains("sentry-trace_id=${fixture.scope.propagationContext.traceId}")
     )
-    assertFalse(fixture.scope.propagationContext.baggage!!.isMutable)
+    assertTrue(fixture.scope.propagationContext.baggage!!.isMutable)
   }
 
   @Test
@@ -98,7 +99,7 @@ class TracingUtilsTest {
     assertEquals(fixture.scope.propagationContext.traceId, headers.sentryTraceHeader.traceId)
     assertEquals(fixture.scope.propagationContext.isSampled, headers.sentryTraceHeader.isSampled)
     assertTrue(headers.baggageHeader!!.value.contains("some-baggage-key=some-baggage-value"))
-    assertFalse(fixture.scope.propagationContext.baggage!!.isMutable)
+    assertTrue(fixture.scope.propagationContext.baggage!!.isMutable)
   }
 
   @Test
@@ -120,7 +121,7 @@ class TracingUtilsTest {
     assertEquals(fixture.scope.propagationContext.traceId, headers.sentryTraceHeader.traceId)
     assertEquals(fixture.scope.propagationContext.isSampled, headers.sentryTraceHeader.isSampled)
     assertTrue(headers.baggageHeader!!.value.contains("some-baggage-key=some-baggage-value"))
-    assertFalse(fixture.scope.propagationContext.baggage!!.isMutable)
+    assertTrue(fixture.scope.propagationContext.baggage!!.isMutable)
   }
 
   @Test
@@ -142,7 +143,7 @@ class TracingUtilsTest {
     assertEquals(fixture.scope.propagationContext.traceId, headers.sentryTraceHeader.traceId)
     assertEquals(fixture.scope.propagationContext.isSampled, headers.sentryTraceHeader.isSampled)
     assertTrue(headers.baggageHeader!!.value.contains("some-baggage-key=some-baggage-value"))
-    assertFalse(fixture.scope.propagationContext.baggage!!.isMutable)
+    assertTrue(fixture.scope.propagationContext.baggage!!.isMutable)
   }
 
   @Test
@@ -164,7 +165,7 @@ class TracingUtilsTest {
     assertEquals(fixture.scope.propagationContext.traceId, headers.sentryTraceHeader.traceId)
     assertEquals(fixture.scope.propagationContext.isSampled, headers.sentryTraceHeader.isSampled)
     assertTrue(headers.baggageHeader!!.value.contains("some-baggage-key=some-baggage-value"))
-    assertFalse(fixture.scope.propagationContext.baggage!!.isMutable)
+    assertTrue(fixture.scope.propagationContext.baggage!!.isMutable)
   }
 
   @Test
@@ -301,7 +302,7 @@ class TracingUtilsTest {
   }
 
   @Test
-  fun `updates mutable baggage`() {
+  fun `updates mutable baggage without freezing local baggage`() {
     fixture.setup()
     // not frozen because it doesn't contain sentry-* keys
     fixture.scope.propagationContext =
@@ -319,7 +320,35 @@ class TracingUtilsTest {
       fixture.scope.propagationContext.traceId.toString(),
       fixture.scope.propagationContext.baggage!!.traceId,
     )
-    assertFalse(fixture.scope.propagationContext.baggage!!.isMutable)
+    assertTrue(fixture.scope.propagationContext.baggage!!.isMutable)
+  }
+
+  @Test
+  fun `spanless propagation leaves baggage mutable for later transaction DSC`() {
+    fixture.setup()
+    val propagationContext = fixture.scope.propagationContext
+
+    TracingUtils.maybeUpdateBaggage(fixture.scope, fixture.options)
+
+    assertTrue(propagationContext.baggage.isMutable)
+    assertNull(propagationContext.baggage.transaction)
+    assertNull(propagationContext.baggage.sampleRate)
+    assertNull(propagationContext.baggage.sampled)
+
+    val transactionContext = TransactionContext.fromPropagationContext(propagationContext)
+    transactionContext.name = "GET /session"
+    transactionContext.transactionNameSource = TransactionNameSource.CUSTOM
+    transactionContext.setSamplingDecision(
+      TracesSamplingDecision(true, 0.5, propagationContext.sampleRand)
+    )
+    val tracer = SentryTracer(transactionContext, fixture.scopes)
+
+    val baggageHeader = tracer.toBaggageHeader(null)
+
+    assertNotNull(baggageHeader)
+    assertTrue(baggageHeader.value.contains("sentry-transaction=GET%20%2Fsession"))
+    assertTrue(baggageHeader.value.contains("sentry-sampled=true"))
+    assertTrue(baggageHeader.value.contains("sentry-sample_rate=0.5"))
   }
 
   @Test
