@@ -56,13 +56,15 @@ public final class ActivityLifecycleIntegration
     implements Integration, Closeable, Application.ActivityLifecycleCallbacks {
 
   static final String UI_LOAD_OP = "ui.load";
-  static final String APP_START_OP = "app.start";
+  static final String STANDALONE_APP_START_OP = "app.start";
   static final String APP_START_WARM = "app.start.warm";
   static final String APP_START_COLD = "app.start.cold";
   static final String TTID_OP = "ui.load.initial_display";
   static final String TTFD_OP = "ui.load.full_display";
   static final long TTFD_TIMEOUT_MILLIS = 25000;
   private static final String TRACE_ORIGIN = "auto.ui.activity";
+  private static final String APP_START_SCREEN_DATA = "app.vitals.start.screen";
+  private static final String APP_START_REASON_DATA = "app.vitals.start.reason";
 
   private final @NotNull Application application;
   private final @NotNull BuildInfoProvider buildInfoProvider;
@@ -300,9 +302,11 @@ public final class ActivityLifecycleIntegration
                         transaction.getSpanContext().getTraceId(),
                         getAppStartTxnName(),
                         TransactionNameSource.COMPONENT,
-                        APP_START_OP,
+                        STANDALONE_APP_START_OP,
                         appStartSamplingDecision),
                     appStartTransactionOptions);
+            appStartTransaction.setData(APP_START_SCREEN_DATA, activityName);
+            setAppStartReasonData(appStartTransaction, AppStartMetrics.getInstance());
 
             // in case there's already an end time (e.g. due to deferred SDK init)
             // we can finish the app start transaction
@@ -696,21 +700,23 @@ public final class ActivityLifecycleIntegration
     final @NotNull AppStartMetrics appStartMetrics = AppStartMetrics.getInstance();
     final @NotNull TimeSpan appStartTimeSpan = appStartMetrics.getAppStartTimeSpan();
     final @NotNull TimeSpan sdkInitTimeSpan = appStartMetrics.getSdkInitTimeSpan();
+    final @Nullable SentryDate firstFrameEndDate =
+        options != null && ttidSpan != null ? options.getDateProvider().now() : null;
 
     // and we need to set the end time of the app start here, after the first frame is drawn.
     if (appStartTimeSpan.hasStarted() && appStartTimeSpan.hasNotStopped()) {
-      appStartTimeSpan.stop();
+      stopTimeSpanAtDate(appStartTimeSpan, firstFrameEndDate);
     }
     if (sdkInitTimeSpan.hasStarted() && sdkInitTimeSpan.hasNotStopped()) {
-      sdkInitTimeSpan.stop();
+      stopTimeSpanAtDate(sdkInitTimeSpan, firstFrameEndDate);
     }
-    finishAppStartSpan();
+    finishAppStartSpan(firstFrameEndDate);
 
     // Sentry.reportFullyDisplayed can be run in any thread, so we have to ensure synchronization
     // with first frame drawn
     try (final @NotNull ISentryLifecycleToken ignored = fullyDisplayedLock.acquire()) {
-      if (options != null && ttidSpan != null) {
-        final SentryDate endDate = options.getDateProvider().now();
+      if (options != null && ttidSpan != null && firstFrameEndDate != null) {
+        final @NotNull SentryDate endDate = firstFrameEndDate;
         final long durationNanos = endDate.diff(ttidSpan.getStartDate());
         final long durationMillis = TimeUnit.NANOSECONDS.toMillis(durationNanos);
         ttidSpan.setMeasurement(
@@ -733,6 +739,17 @@ public final class ActivityLifecycleIntegration
           finishSpan(ttfdSpan);
         }
       }
+    }
+  }
+
+  private void stopTimeSpanAtDate(
+      final @NotNull TimeSpan timeSpan, final @Nullable SentryDate endDate) {
+    final @Nullable SentryDate startDate = timeSpan.getStartTimestamp();
+    if (endDate != null && startDate != null) {
+      final long durationMillis = TimeUnit.NANOSECONDS.toMillis(endDate.diff(startDate));
+      timeSpan.setStoppedAt(timeSpan.getStartUptimeMs() + durationMillis);
+    } else {
+      timeSpan.stop();
     }
   }
 
@@ -852,6 +869,14 @@ public final class ActivityLifecycleIntegration
     return "App Start";
   }
 
+  private void setAppStartReasonData(
+      final @NotNull ITransaction transaction, final @NotNull AppStartMetrics metrics) {
+    final @Nullable String appStartReason = metrics.getAppStartReason();
+    if (appStartReason != null) {
+      transaction.setData(APP_START_REASON_DATA, appStartReason);
+    }
+  }
+
   private @NotNull String getAppStartOp(final boolean coldStart) {
     if (coldStart) {
       return APP_START_COLD;
@@ -861,10 +886,16 @@ public final class ActivityLifecycleIntegration
   }
 
   private void finishAppStartSpan() {
+    finishAppStartSpan(null);
+  }
+
+  private void finishAppStartSpan(final @Nullable SentryDate endDate) {
     final @Nullable SentryDate appStartEndTime =
-        AppStartMetrics.getInstance()
-            .getAppStartTimeSpanWithFallback(options)
-            .getProjectedStopTimestamp();
+        endDate != null
+            ? endDate
+            : AppStartMetrics.getInstance()
+                .getAppStartTimeSpanWithFallback(options)
+                .getProjectedStopTimestamp();
     if (performanceEnabled && appStartEndTime != null) {
       finishSpan(appStartSpan, appStartEndTime);
       if (appStartTransaction != null && !appStartTransaction.isFinished()) {
@@ -902,9 +933,10 @@ public final class ActivityLifecycleIntegration
 
     final @NotNull TransactionContext txnContext =
         new TransactionContext(
-            getAppStartTxnName(), TransactionNameSource.COMPONENT, APP_START_OP, null);
+            getAppStartTxnName(), TransactionNameSource.COMPONENT, STANDALONE_APP_START_OP, null);
 
     final @NotNull ITransaction transaction = scopes.startTransaction(txnContext, txnOptions);
+    setAppStartReasonData(transaction, metrics);
 
     // Store trace ID so future activity transactions can share it
     metrics.setAppStartTraceId(transaction.getSpanContext().getTraceId());

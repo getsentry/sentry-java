@@ -253,9 +253,14 @@ class ActivityLifecycleIntegrationTest {
 
     val contexts = fixture.capturedContexts
     val appStartContext =
-      contexts.single { it.operation == ActivityLifecycleIntegration.APP_START_OP }
+      contexts.single { it.operation == ActivityLifecycleIntegration.STANDALONE_APP_START_OP }
     assertEquals("App Start", appStartContext.name)
     assertEquals(TransactionNameSource.COMPONENT, appStartContext.transactionNameSource)
+    val appStartTransaction =
+      fixture.createdTransactions.single {
+        it.spanContext.operation == ActivityLifecycleIntegration.STANDALONE_APP_START_OP
+      }
+    assertEquals("Activity", appStartTransaction.getData("app.vitals.start.screen"))
     assertTrue(contexts.any { it.operation == ActivityLifecycleIntegration.UI_LOAD_OP })
     assertFalse(
       contexts.any {
@@ -279,7 +284,7 @@ class ActivityLifecycleIntegrationTest {
 
     assertEquals(1, fixture.capturedContexts.size)
     assertEquals(
-      ActivityLifecycleIntegration.APP_START_OP,
+      ActivityLifecycleIntegration.STANDALONE_APP_START_OP,
       fixture.capturedContexts.single().operation,
     )
     assertEquals("App Start", fixture.capturedContexts.single().name)
@@ -339,7 +344,7 @@ class ActivityLifecycleIntegrationTest {
     val context = fixture.capturedContexts.single()
     val options = fixture.capturedOptions.single()
     val transaction = fixture.createdTransactions.single()
-    assertEquals(ActivityLifecycleIntegration.APP_START_OP, context.operation)
+    assertEquals(ActivityLifecycleIntegration.STANDALONE_APP_START_OP, context.operation)
     assertEquals("App Start", context.name)
     assertEquals(TransactionNameSource.COMPONENT, context.transactionNameSource)
     assertFalse(options.isBindToScope)
@@ -366,7 +371,7 @@ class ActivityLifecycleIntegrationTest {
 
     assertEquals(1, fixture.capturedContexts.size)
     val context = fixture.capturedContexts.single()
-    assertEquals(ActivityLifecycleIntegration.APP_START_OP, context.operation)
+    assertEquals(ActivityLifecycleIntegration.STANDALONE_APP_START_OP, context.operation)
     assertEquals("App Start", context.name)
     assertEquals(TransactionNameSource.COMPONENT, context.transactionNameSource)
   }
@@ -707,7 +712,7 @@ class ActivityLifecycleIntegrationTest {
 
     val appStartTransaction =
       fixture.createdTransactions[
-          transactionIndexForOperation(ActivityLifecycleIntegration.APP_START_OP)]
+          transactionIndexForOperation(ActivityLifecycleIntegration.STANDALONE_APP_START_OP)]
     assertEquals(SpanStatus.CANCELLED, appStartTransaction.status)
     assertTrue(appStartTransaction.isFinished)
   }
@@ -1074,7 +1079,9 @@ class ActivityLifecycleIntegrationTest {
         it.isEnableStandaloneAppStartTracing = true
       }
     sut.register(fixture.scopes, fixture.options)
-    setAppStartTime()
+    val firstFrameDate = SentryNanotimeDate(Date(1499), 0)
+    fixture.options.dateProvider = SentryDateProvider { firstFrameDate }
+    setAppStartTime(SentryNanotimeDate(Date(1), 0))
 
     val activity = mock<Activity>()
     sut.onActivityPreCreated(activity, fixture.bundle)
@@ -1082,7 +1089,8 @@ class ActivityLifecycleIntegrationTest {
 
     assertEquals(2, fixture.capturedContexts.size)
     val uiLoadIndex = transactionIndexForOperation(ActivityLifecycleIntegration.UI_LOAD_OP)
-    val appStartIndex = transactionIndexForOperation(ActivityLifecycleIntegration.APP_START_OP)
+    val appStartIndex =
+      transactionIndexForOperation(ActivityLifecycleIntegration.STANDALONE_APP_START_OP)
     val uiLoadTransaction = fixture.createdTransactions[uiLoadIndex]
     val appStartTransaction = fixture.createdTransactions[appStartIndex]
 
@@ -1101,6 +1109,19 @@ class ActivityLifecycleIntegrationTest {
     sut.onActivityPostStarted(activity)
 
     assertTrue(appStartTransaction.children.any { it.operation == "activity.load" })
+
+    sut.onActivityResumed(activity)
+    runFirstDraw(fixture.createView())
+
+    val ttidSpan =
+      uiLoadTransaction.children.single { it.operation == ActivityLifecycleIntegration.TTID_OP }
+    assertTrue(ttidSpan.isFinished)
+    assertTrue(appStartTransaction.isFinished)
+    assertEquals(ttidSpan.finishDate, appStartTransaction.finishDate)
+    assertEquals(
+      ttidSpan.measurements[MeasurementValue.KEY_TIME_TO_INITIAL_DISPLAY]!!.value,
+      AppStartMetrics.getInstance().appStartTimeSpan.durationMs,
+    )
   }
 
   @Test

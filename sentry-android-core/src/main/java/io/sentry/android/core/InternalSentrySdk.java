@@ -232,6 +232,10 @@ public final class InternalSentrySdk {
     final @NotNull Map<String, Object> result = new HashMap<>();
     result.put("spans", spans);
     result.put("type", metrics.getAppStartType().toString().toLowerCase(Locale.ROOT));
+    final @Nullable String reason = metrics.getAppStartReason();
+    if (reason != null) {
+      result.put("reason", reason);
+    }
     if (metrics.getAppStartTimeSpan().hasStarted()) {
       result.put("app_start_timestamp_ms", metrics.getAppStartTimeSpan().getStartTimestampMs());
     }

@@ -14,6 +14,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import org.junit.Before
 import org.junit.runner.RunWith
 import org.mockito.kotlin.mock
@@ -87,6 +88,52 @@ class AppStartMetricsTestApi35 {
     metrics.registerLifecycleCallbacks(app)
 
     assertEquals(AppStartMetrics.AppStartType.UNKNOWN, metrics.appStartType)
+  }
+
+  @Test
+  fun `normalizes app start reason using ApplicationStartInfo on API 35`() {
+    val reasons =
+      mapOf(
+        ApplicationStartInfo.START_REASON_ALARM to "alarm",
+        ApplicationStartInfo.START_REASON_BACKUP to "backup",
+        ApplicationStartInfo.START_REASON_BOOT_COMPLETE to "boot_complete",
+        ApplicationStartInfo.START_REASON_BROADCAST to "broadcast",
+        ApplicationStartInfo.START_REASON_CONTENT_PROVIDER to "content_provider",
+        ApplicationStartInfo.START_REASON_JOB to "job",
+        ApplicationStartInfo.START_REASON_LAUNCHER to "launcher",
+        ApplicationStartInfo.START_REASON_LAUNCHER_RECENTS to "launcher_recents",
+        ApplicationStartInfo.START_REASON_OTHER to "other",
+        ApplicationStartInfo.START_REASON_PUSH to "push",
+        ApplicationStartInfo.START_REASON_SERVICE to "service",
+        ApplicationStartInfo.START_REASON_START_ACTIVITY to "start_activity",
+        999 to "unknown",
+      )
+
+    reasons.forEach { (reason, expected) ->
+      AppStartMetrics.getInstance().clear()
+      SentryShadowActivityManager.reset()
+      val mockStartInfo = mock<ApplicationStartInfo>()
+      whenever(mockStartInfo.startupState).thenReturn(ApplicationStartInfo.STARTUP_STATE_STARTED)
+      whenever(mockStartInfo.startType).thenReturn(ApplicationStartInfo.START_TYPE_COLD)
+      whenever(mockStartInfo.reason).thenReturn(reason)
+      SentryShadowActivityManager.setHistoricalProcessStartReasons(listOf(mockStartInfo))
+
+      val app = ApplicationProvider.getApplicationContext<Application>()
+      AppStartMetrics.getInstance().registerLifecycleCallbacks(app)
+
+      assertEquals(expected, AppStartMetrics.getInstance().appStartReason)
+    }
+  }
+
+  @Test
+  fun `app start reason is null when ApplicationStartInfo list is empty`() {
+    SentryShadowActivityManager.setHistoricalProcessStartReasons(emptyList())
+    val metrics = AppStartMetrics.getInstance()
+
+    val app = ApplicationProvider.getApplicationContext<Application>()
+    metrics.registerLifecycleCallbacks(app)
+
+    assertNull(metrics.appStartReason)
   }
 
   @Test

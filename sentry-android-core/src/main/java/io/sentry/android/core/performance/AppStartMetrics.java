@@ -161,6 +161,51 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     return appStartType;
   }
 
+  @SuppressWarnings("NewApi")
+  public @Nullable String getAppStartReason() {
+    if (cachedStartInfo == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+      return null;
+    }
+
+    try {
+      return normalizeAppStartReason(cachedStartInfo.getReason());
+    } catch (Throwable ignored) {
+      return null;
+    }
+  }
+
+  @SuppressWarnings("NewApi")
+  private @NotNull String normalizeAppStartReason(final int reason) {
+    switch (reason) {
+      case ApplicationStartInfo.START_REASON_ALARM:
+        return "alarm";
+      case ApplicationStartInfo.START_REASON_BACKUP:
+        return "backup";
+      case ApplicationStartInfo.START_REASON_BOOT_COMPLETE:
+        return "boot_complete";
+      case ApplicationStartInfo.START_REASON_BROADCAST:
+        return "broadcast";
+      case ApplicationStartInfo.START_REASON_CONTENT_PROVIDER:
+        return "content_provider";
+      case ApplicationStartInfo.START_REASON_JOB:
+        return "job";
+      case ApplicationStartInfo.START_REASON_LAUNCHER:
+        return "launcher";
+      case ApplicationStartInfo.START_REASON_LAUNCHER_RECENTS:
+        return "launcher_recents";
+      case ApplicationStartInfo.START_REASON_OTHER:
+        return "other";
+      case ApplicationStartInfo.START_REASON_PUSH:
+        return "push";
+      case ApplicationStartInfo.START_REASON_SERVICE:
+        return "service";
+      case ApplicationStartInfo.START_REASON_START_ACTIVITY:
+        return "start_activity";
+      default:
+        return "unknown";
+    }
+  }
+
   public boolean isAppLaunchedInForeground() {
     return appLaunchedInForeground.getValue();
   }

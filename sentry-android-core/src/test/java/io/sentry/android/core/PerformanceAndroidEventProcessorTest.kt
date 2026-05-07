@@ -13,8 +13,8 @@ import io.sentry.SpanStatus
 import io.sentry.TracesSamplingDecision
 import io.sentry.TransactionContext
 import io.sentry.android.core.ActivityLifecycleIntegration.APP_START_COLD
-import io.sentry.android.core.ActivityLifecycleIntegration.APP_START_OP
 import io.sentry.android.core.ActivityLifecycleIntegration.APP_START_WARM
+import io.sentry.android.core.ActivityLifecycleIntegration.STANDALONE_APP_START_OP
 import io.sentry.android.core.ActivityLifecycleIntegration.UI_LOAD_OP
 import io.sentry.android.core.performance.ActivityLifecycleTimeSpan
 import io.sentry.android.core.performance.AppStartMetrics
@@ -947,8 +947,8 @@ class PerformanceAndroidEventProcessorTest {
   private fun getTransaction(type: AppStartType): SentryTransaction {
     val op =
       when (type) {
-        AppStartType.COLD -> APP_START_OP
-        AppStartType.WARM -> APP_START_OP
+        AppStartType.COLD -> STANDALONE_APP_START_OP
+        AppStartType.WARM -> STANDALONE_APP_START_OP
         AppStartType.UNKNOWN -> UI_LOAD_OP
       }
     val txn = SentryTransaction(fixture.tracer)
