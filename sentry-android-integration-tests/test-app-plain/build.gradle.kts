@@ -43,9 +43,9 @@ android {
 }
 
 dependencies {
-  implementation("androidx.appcompat:appcompat:1.3.0")
+  implementation("androidx.appcompat:appcompat:1.7.1")
   implementation("com.google.android.material:material:1.4.0")
-  implementation("androidx.constraintlayout:constraintlayout:2.0.4")
-  implementation("androidx.navigation:navigation-fragment:2.3.5")
-  implementation("androidx.navigation:navigation-ui:2.3.5")
+  implementation("androidx.constraintlayout:constraintlayout:2.2.1")
+  implementation("androidx.navigation:navigation-fragment:2.9.8")
+  implementation("androidx.navigation:navigation-ui:2.9.8")
 }
