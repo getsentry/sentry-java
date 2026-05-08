@@ -6,14 +6,14 @@ androidxTestCore = "1.7.0"
 androidxCompose = "1.6.3"
 asyncProfiler = "4.2"
 composeCompiler = "1.5.14"
-coroutines = "1.6.1"
+coroutines = "1.10.2"
 espresso = "3.7.0"
 feign = "11.6"
 jacoco = "0.8.7"
 jackson = "2.18.3"
 jetbrainsCompose = "1.6.11"
-kotlin = "2.2.0"
-kotlinSpring7 = "2.2.0"
+kotlin = "2.3.21"
+kotlinSpring7 = "2.3.21"
 kotlin-compatible-version = "1.9"
 ktorClient = "3.0.0"
 logback = "1.2.9"
@@ -53,13 +53,13 @@ kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref 
 buildconfig = { id = "com.github.gmazzo.buildconfig", version = "5.6.5" }
 dokka = { id = "org.jetbrains.dokka", version = "2.0.0" }
 dokka-javadoc = { id = "org.jetbrains.dokka-javadoc", version = "2.0.0" }
-binary-compatibility-validator = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version = "0.13.0" }
+binary-compatibility-validator = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version = "0.18.1" }
 errorprone = { id = "net.ltgt.errorprone", version = "3.0.1" }
 gradle-versions = { id = "com.github.ben-manes.versions", version = "0.42.0" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version = "1.23.8" }
 jacoco-android = { id = "com.mxalbert.gradle.jacoco-android", version = "0.2.0" }
-kover = { id = "org.jetbrains.kotlinx.kover", version = "0.7.3" }
+kover = { id = "org.jetbrains.kotlinx.kover", version = "0.9.8" }
 vanniktech-maven-publish = { id = "com.vanniktech.maven.publish", version = "0.30.0" }
 springboot3 = { id = "org.springframework.boot", version.ref = "springboot3" }
 springboot4 = { id = "org.springframework.boot", version.ref = "springboot4" }

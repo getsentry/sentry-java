@@ -44,7 +44,7 @@ dependencies {
   testImplementation(libs.mockito.kotlin)
   testImplementation(libs.mockito.inline)
   testImplementation(libs.okhttp.mockwebserver)
-  testImplementation("org.jetbrains.kotlin:kotlin-reflect:2.0.0")
+  testImplementation("org.jetbrains.kotlin:kotlin-reflect:2.3.21")
 
   val gummyBearsModule = libs.gummy.bears.api21.get().module
   signature("${gummyBearsModule}:${libs.versions.gummyBears.get()}@signature")
