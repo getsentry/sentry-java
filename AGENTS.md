@@ -145,15 +145,7 @@ The repository is organized into multiple modules:
 5. Consider backwards compatibility
 
 ### Third-Party Code Attribution
-When adapting code from third-party libraries:
-1. Add a license header at the top of the adapted file (before the `package` statement):
-   ```java
-   // Adapted from <Library Name>.
-   // Copyright <year> <copyright holder>.
-   // Licensed under the <License Name>.
-   // <source URL>
-   ```
-2. Add a full attribution entry to `THIRD_PARTY_NOTICES.md` following the existing format (Source, License, Copyright, Scope, full license text)
+See [`.claude/skills/check-code-attribution/CODE_ATTRIBUTION_CRITERIA.md`](.claude/skills/check-code-attribution/CODE_ATTRIBUTION_CRITERIA.md).
 
 ### Getting PR Information
 

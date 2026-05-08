@@ -1,0 +1,38 @@
+# Filename patterns for auto-generated files that don't need to satisfy the
+# attribution requirements for vendored code found in CODE_ATTRIBUTION_CRITERIA.md.
+
+# Android (AIDL, data binding, R class, BuildConfig — only under build/generated dirs)
+\.aidl$
+/databinding/.*Binding\.java$
+/generated.*/R\.java$
+/generated.*/BuildConfig\.java$
+
+# ANTLR (generated output files — match only under generated dirs or with ANTLR naming)
+/generated.*/.*Lexer\.java$
+/generated.*/.*Parser\.java$
+/generated.*/.*Listener\.java$
+/generated.*/.*Visitor\.java$
+\.interp$
+\.tokens$
+
+# API dump files (binary compatibility tracking)
+\.api$
+
+# Generated source directories
+/generated/
+
+# Gradle build scripts
+build\.gradle(\.kts)?$
+settings\.gradle(\.kts)?$
+
+# gRPC (generated stubs end with Grpc.java and live under generated-source dirs)
+/grpc/.*Grpc\.java$
+
+# Kotlin code-generator convention
+\.g\.kt$
+
+# KSP (Kotlin Symbol Processing) generated output
+/ksp/
+
+# Protocol Buffers
+\.pb\.java$
