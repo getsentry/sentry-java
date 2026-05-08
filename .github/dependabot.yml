@@ -16,6 +16,21 @@ updates:
       - dependency-name: "org.springframework.boot*"
     commit-message:
       prefix: "chore(deps)"
+    groups:
+      androidx:
+        patterns:
+          - "androidx.*"
+      compose:
+        patterns:
+          - "androidx.compose*"
+          - "org.jetbrains.compose*"
+      kotlin:
+        patterns:
+          - "org.jetbrains.kotlin*"
+          - "org.jetbrains.kotlinx*"
+      jackson:
+        patterns:
+          - "com.fasterxml.jackson*"
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
