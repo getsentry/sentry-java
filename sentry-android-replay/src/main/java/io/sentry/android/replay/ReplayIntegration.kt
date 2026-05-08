@@ -7,6 +7,7 @@ import android.view.MotionEvent
 import io.sentry.Breadcrumb
 import io.sentry.DataCategory.All
 import io.sentry.DataCategory.Replay
+import io.sentry.Hint
 import io.sentry.IConnectionStatusProvider.ConnectionStatus
 import io.sentry.IConnectionStatusProvider.ConnectionStatus.DISCONNECTED
 import io.sentry.IConnectionStatusProvider.IConnectionStatusObserver
@@ -17,8 +18,10 @@ import io.sentry.ReplayBreadcrumbConverter
 import io.sentry.ReplayController
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel.DEBUG
+import io.sentry.SentryLevel.ERROR
 import io.sentry.SentryLevel.INFO
 import io.sentry.SentryOptions
+import io.sentry.TypeCheckHint
 import io.sentry.android.replay.ReplayState.CLOSED
 import io.sentry.android.replay.ReplayState.PAUSED
 import io.sentry.android.replay.ReplayState.RESUMED
@@ -308,6 +311,16 @@ public class ReplayIntegration(
     var screen: String? = null
     scopes?.configureScope { screen = it.screen?.substringAfterLast('.') }
     captureStrategy?.onScreenshotRecorded(bitmap) { frameTimeStamp ->
+      val callback = options.sessionReplay.beforeStoreFrame
+      if (callback != null) {
+        try {
+          val hint = Hint()
+          hint.set(TypeCheckHint.REPLAY_FRAME_BITMAP, bitmap)
+          callback.execute(hint, frameTimeStamp, screen)
+        } catch (e: Throwable) {
+          options.logger.log(ERROR, "Error in beforeStoreFrame callback", e)
+        }
+      }
       addFrame(bitmap, frameTimeStamp, screen)
     }
     checkCanRecord()

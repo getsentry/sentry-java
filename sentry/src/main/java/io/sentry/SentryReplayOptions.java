@@ -18,6 +18,30 @@ import org.jetbrains.annotations.Nullable;
 public final class SentryReplayOptions extends SentryMaskingOptions {
 
   /**
+   * Callback that is invoked right before a replay frame is stored to disk. This allows
+   * intercepting frames for testing (e.g., screenshot comparison tests) or custom processing. The
+   * callback receives the frame after masking has been applied.
+   *
+   * <p>The frame bitmap is passed via a {@link Hint} using the key {@link
+   * TypeCheckHint#REPLAY_FRAME_BITMAP}. On Android, retrieve it with: {@code hint.getAs(
+   * TypeCheckHint.REPLAY_FRAME_BITMAP, Bitmap.class)}.
+   *
+   * <p>The callback runs on a background thread (replay executor). Do not recycle the bitmap — it
+   * may be reused by the replay system.
+   */
+  @ApiStatus.Experimental
+  public interface BeforeStoreFrameCallback {
+    /**
+     * Called before a replay frame is stored to disk.
+     *
+     * @param hint contains the frame bitmap under {@link TypeCheckHint#REPLAY_FRAME_BITMAP}
+     * @param frameTimestamp the timestamp (in milliseconds since epoch) when the frame was captured
+     * @param screenName the current screen name, or {@code null} if unknown
+     */
+    void execute(@NotNull Hint hint, long frameTimestamp, @Nullable String screenName);
+  }
+
+  /**
    * Callback that is called before the error sample rate is checked for session replay. If the
    * callback returns {@code false}, the replay will not be captured for this error event, and the
    * {@code onErrorSampleRate} will not be checked. If the callback returns {@code true}, the {@code
@@ -210,6 +234,12 @@ public final class SentryReplayOptions extends SentryMaskingOptions {
    * used to filter which errors trigger replay capture.
    */
   private @Nullable BeforeErrorSamplingCallback beforeErrorSampling;
+
+  /**
+   * A callback that is invoked right before a replay frame is stored to disk. Can be used for
+   * screenshot snapshot testing or custom frame processing.
+   */
+  @ApiStatus.Experimental private @Nullable BeforeStoreFrameCallback beforeStoreFrame;
 
   public SentryReplayOptions(final boolean empty, final @Nullable SdkVersion sdkVersion) {
     if (!empty) {
@@ -549,5 +579,26 @@ public final class SentryReplayOptions extends SentryMaskingOptions {
   public void setBeforeErrorSampling(
       final @Nullable BeforeErrorSamplingCallback beforeErrorSampling) {
     this.beforeErrorSampling = beforeErrorSampling;
+  }
+
+  /**
+   * Gets the callback that is invoked before a replay frame is stored to disk.
+   *
+   * @return the callback, or {@code null} if not set
+   */
+  @ApiStatus.Experimental
+  public @Nullable BeforeStoreFrameCallback getBeforeStoreFrame() {
+    return beforeStoreFrame;
+  }
+
+  /**
+   * Sets the callback that is invoked before a replay frame is stored to disk. The frame bitmap is
+   * passed via a {@link Hint} using the key {@link TypeCheckHint#REPLAY_FRAME_BITMAP}.
+   *
+   * @param beforeStoreFrame the callback, or {@code null} to clear
+   */
+  @ApiStatus.Experimental
+  public void setBeforeStoreFrame(final @Nullable BeforeStoreFrameCallback beforeStoreFrame) {
+    this.beforeStoreFrame = beforeStoreFrame;
   }
 }
