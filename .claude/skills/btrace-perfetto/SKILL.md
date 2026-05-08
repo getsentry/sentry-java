@@ -130,7 +130,7 @@ For each branch to trace:
 Clear any stale port files, set properties, and launch:
 
 ```bash
-adb shell "rm -rf /storage/emulated/0/Android/data/io.sentry.samples.android/files/rhea-port"
+adb shell "test -e /storage/emulated/0/Android/data/io.sentry.samples.android/files/rhea-port && rm /storage/emulated/0/Android/data/io.sentry.samples.android/files/rhea-port || true"
 adb shell setprop debug.rhea3.startWhenAppLaunch 1
 adb shell setprop debug.rhea3.waitTraceTimeout 60
 adb shell am force-stop io.sentry.samples.android
@@ -299,5 +299,5 @@ After tracing is complete, remind the user that the btrace integration changes t
 | Empty jar file (0 bytes) | Download from Maven Central (`repo1.maven.org`), not `oss.sonatype.org` |
 | `FileNotFoundException` on sampling download | App was already running when properties were set; force-stop and relaunch |
 | `SocketException: Unexpected end of file` in release builds | R8 stripped btrace classes; add `-keep class com.bytedance.rheatrace.** { *; }` to proguard-rules.pro |
-| Stale port from previous session | Run `adb shell "rm -rf /storage/emulated/0/Android/data/io.sentry.samples.android/files/rhea-port"` before launching |
+| Stale port from previous session | Run `adb shell "test -e /storage/emulated/0/Android/data/io.sentry.samples.android/files/rhea-port && rm /storage/emulated/0/Android/data/io.sentry.samples.android/files/rhea-port || true"` before launching |
 | Most `onTouchEvent` durations are 0ms | Increase sampling rate with `-sampleInterval 333000` (3kHz) |
