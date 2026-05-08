@@ -1,0 +1,87 @@
+version = 1
+
+[defaults]
+model = "anthropic/claude-opus-4-6"
+maxTurns = 30
+
+# Attribution findings are policy checks; a second verifier pass often rejects valid
+# header/NOTICES mismatches (e.g. "NOTICES still documents it").
+[defaults.verification]
+enabled = false
+
+# Skip generated/binary files from analysis
+[[defaults.chunking.filePatterns]]
+pattern = "**/*.api"
+mode = "skip"
+
+[[defaults.chunking.filePatterns]]
+pattern = "**/gradlew"
+mode = "skip"
+
+[[defaults.chunking.filePatterns]]
+pattern = "**/gradlew.bat"
+mode = "skip"
+
+# Whole-file mode: attribution needs file header + NOTICES cross-check, not isolated hunks
+[[defaults.chunking.filePatterns]]
+pattern = "**/*.java"
+mode = "whole-file"
+
+[[defaults.chunking.filePatterns]]
+pattern = "**/*.kt"
+mode = "whole-file"
+
+[[defaults.chunking.filePatterns]]
+pattern = "THIRD_PARTY_NOTICES.md"
+mode = "whole-file"
+
+# Coalesce hunks aggressively for any remaining per-hunk files
+[defaults.chunking.coalesce]
+enabled = true
+maxGapLines = 100
+maxChunkSize = 16000
+
+[[skills]]
+name = "check-code-attribution"
+failOn = "high"
+reportOn = "low"
+maxTurns = 30
+ignorePaths = [
+  # Infrastructure directories
+  ".claude/**",
+  ".cursor/**",
+  ".github/**",
+  ".gradle/**",
+  ".idea/**",
+  ".mvn/**",
+  "gradle/**",
+  # Generated files
+  "**/generated/**",
+  "**/ksp/**",
+  "**/*.aidl",
+  "**/*.api",
+  "**/*.interp",
+  "**/*.tokens",
+  "**/*.g.kt",
+  "**/*.pb.java",
+  "**/databinding/*Binding.java",
+  "**/grpc/*Grpc.java",
+  "**/gradlew",
+  "**/gradlew.bat",
+  "**/mvnw",
+  "**/mvnw.cmd",
+  # Binary files
+  "**/*.jar",
+  # Warden infrastructure
+  ".warden/**",
+  "warden.toml",
+]
+
+[[skills.triggers]]
+type = "pull_request"
+actions = ["opened", "synchronize"]
+requestChanges = false # Non-blocking COMMENT reviews only — no "Request Changes" PR reviews.
+failCheck = false # Advisory only — do not fail the GitHub check.
+
+[[skills.triggers]]
+type = "local"
