@@ -18,6 +18,8 @@ import io.sentry.SentryEvent
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryOptions
 import io.sentry.SentryReplayEvent.ReplayType
+import io.sentry.SentryReplayOptions
+import io.sentry.TypeCheckHint
 import io.sentry.android.replay.ReplayCache.Companion.ONGOING_SEGMENT
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_BIT_RATE
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_FRAME_RATE
@@ -967,6 +969,95 @@ class ReplayIntegrationTest {
 
     replay.disableDebugMaskingOverlay()
     assertFalse(replay.isDebugMaskingOverlayEnabled)
+  }
+
+  @Test
+  fun `beforeStoreFrame callback is invoked with bitmap in hint`() {
+    var callbackInvoked = false
+    var receivedTimestamp = 0L
+    var receivedScreen: String? = null
+    var receivedBitmap: Any? = null
+
+    fixture.options.sessionReplay.beforeStoreFrame =
+      SentryReplayOptions.BeforeStoreFrameCallback { hint, frameTimestamp, screenName ->
+        callbackInvoked = true
+        receivedTimestamp = frameTimestamp
+        receivedScreen = screenName
+        receivedBitmap = hint.getAs(TypeCheckHint.REPLAY_FRAME_BITMAP, Bitmap::class.java)
+      }
+
+    val captureStrategy =
+      mock<CaptureStrategy> {
+        doAnswer {
+            ((it.arguments[1] as ReplayCache.(frameTimestamp: Long) -> Unit)).invoke(
+              fixture.replayCache,
+              1720693523997,
+            )
+          }
+          .whenever(mock)
+          .onScreenshotRecorded(anyOrNull<Bitmap>(), any())
+      }
+    val replay = fixture.getSut(context, replayCaptureStrategyProvider = { captureStrategy })
+
+    fixture.scopes.configureScope { it.screen = "MainActivity" }
+    replay.register(fixture.scopes, fixture.options)
+    replay.start()
+
+    replay.onScreenshotRecorded(mock<Bitmap>())
+
+    assertTrue(callbackInvoked)
+    assertEquals(1720693523997, receivedTimestamp)
+    assertEquals("MainActivity", receivedScreen)
+    assertTrue(receivedBitmap is Bitmap)
+  }
+
+  @Test
+  fun `beforeStoreFrame callback exception does not prevent frame storage`() {
+    fixture.options.sessionReplay.beforeStoreFrame =
+      SentryReplayOptions.BeforeStoreFrameCallback { _, _, _ -> throw RuntimeException("test") }
+
+    val captureStrategy =
+      mock<CaptureStrategy> {
+        doAnswer {
+            ((it.arguments[1] as ReplayCache.(frameTimestamp: Long) -> Unit)).invoke(
+              fixture.replayCache,
+              1720693523997,
+            )
+          }
+          .whenever(mock)
+          .onScreenshotRecorded(anyOrNull<Bitmap>(), any())
+      }
+    val replay = fixture.getSut(context, replayCaptureStrategyProvider = { captureStrategy })
+
+    replay.register(fixture.scopes, fixture.options)
+    replay.start()
+
+    replay.onScreenshotRecorded(mock<Bitmap>())
+
+    verify(fixture.replayCache).addFrame(any<Bitmap>(), any(), anyOrNull())
+  }
+
+  @Test
+  fun `beforeStoreFrame callback is not invoked when null`() {
+    val captureStrategy =
+      mock<CaptureStrategy> {
+        doAnswer {
+            ((it.arguments[1] as ReplayCache.(frameTimestamp: Long) -> Unit)).invoke(
+              fixture.replayCache,
+              1720693523997,
+            )
+          }
+          .whenever(mock)
+          .onScreenshotRecorded(anyOrNull<Bitmap>(), any())
+      }
+    val replay = fixture.getSut(context, replayCaptureStrategyProvider = { captureStrategy })
+
+    replay.register(fixture.scopes, fixture.options)
+    replay.start()
+
+    replay.onScreenshotRecorded(mock<Bitmap>())
+
+    verify(fixture.replayCache).addFrame(any<Bitmap>(), any(), anyOrNull())
   }
 
   private fun getSessionCaptureStrategy(options: SentryOptions): SessionCaptureStrategy =
