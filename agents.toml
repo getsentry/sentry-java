@@ -35,3 +35,7 @@ source = "path:.agents/skills/test"
 [[skills]]
 name = "btrace-perfetto"
 source = "path:.agents/skills/btrace-perfetto"
+
+[[skills]]
+name = "check-code-attribution"
+source = "path:.agents/skills/check-code-attribution"

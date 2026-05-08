@@ -1,0 +1,50 @@
+[
+  {
+    "id": "header-complete-and-notice-present",
+    "file": "HeaderCompleteAndNoticePresent.java",
+    "expectFinding": false,
+    "notes": "Header matches catalog entry"
+  },
+  {
+    "id": "header-complete-but-notice-missing",
+    "file": "HeaderCompleteButNoticeMissing.java",
+    "expectFinding": true,
+    "notes": "Full header; no catalog / root NOTICES entry"
+  },
+  {
+    "id": "header-missing-but-notice-present",
+    "file": "HeaderMissingButNoticePresent.java",
+    "expectFinding": true,
+    "notes": "NOTICES entry claims file is vendored but file has no attribution header"
+  },
+  {
+    "id": "header-fully-stripped",
+    "file": "HeaderFullyStripped.java",
+    "expectFinding": true,
+    "notes": "Header has no required attribution fields"
+  },
+  {
+    "id": "header-partially-stripped",
+    "file": "HeaderPartiallyStripped.java",
+    "expectFinding": true,
+    "notes": "Adapted from + URL only; no copyright or license name"
+  },
+  {
+    "id": "header-missing-non-essential-info",
+    "file": "HeaderMissingNonEssentialInfo.java",
+    "expectFinding": false,
+    "notes": "All four required fields present; no license boilerplate — boilerplate is not required in the header"
+  },
+  {
+    "id": "header-vs-notice-mismatch",
+    "file": "THIRD_PARTY_NOTICES.md",
+    "expectFinding": true,
+    "notes": "Copyright in metadata field does not match embedded license text; isolated in THIRD_PARTY_NOTICES.mismatch-snippet.md"
+  },
+  {
+    "id": "new-license-type",
+    "file": "NewLicenseType.java",
+    "expectFinding": true,
+    "notes": "AGPL v3 license in file header — absolute ban, must be removed"
+  }
+]
