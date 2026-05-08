@@ -69,10 +69,15 @@ jobs:
         run: |
           ./gradlew \
             :sentry-samples:sentry-samples-spring-boot:shadowJar \
+            :sentry-samples:sentry-samples-spring-boot:testClasses \
             :sentry-samples:sentry-samples-spring-boot-webflux:shadowJar \
+            :sentry-samples:sentry-samples-spring-boot-webflux:testClasses \
             :sentry-samples:sentry-samples-spring-boot-opentelemetry:shadowJar \
+            :sentry-samples:sentry-samples-spring-boot-opentelemetry:testClasses \
             :sentry-samples:sentry-samples-spring-boot-opentelemetry-noagent:shadowJar \
+            :sentry-samples:sentry-samples-spring-boot-opentelemetry-noagent:testClasses \
             :sentry-samples:sentry-samples-spring:war \
+            :sentry-samples:sentry-samples-spring:testClasses \
             :sentry-opentelemetry:sentry-opentelemetry-agent:assemble \
             --parallel
 
