@@ -65,88 +65,58 @@ jobs:
           sed -i 's/^springboot3=.*/springboot3=${{ matrix.springboot-version }}/' gradle/libs.versions.toml
           echo "Updated Spring Boot 3.x version to ${{ matrix.springboot-version }}"
 
-      - name: Exclude android modules from build
+      - name: Build sample artifacts
         run: |
-          sed -i \
-            -e '/.*"sentry-android-ndk",/d' \
-            -e '/.*"sentry-android",/d' \
-            -e '/.*"sentry-compose",/d' \
-            -e '/.*"sentry-android-core",/d' \
-            -e '/.*"sentry-android-fragment",/d' \
-            -e '/.*"sentry-android-navigation",/d' \
-            -e '/.*"sentry-android-sqlite",/d' \
-            -e '/.*"sentry-android-timber",/d' \
-            -e '/.*"sentry-android-integration-tests:sentry-uitest-android-benchmark",/d' \
-            -e '/.*"sentry-android-integration-tests:sentry-uitest-android",/d' \
-            -e '/.*"sentry-android-integration-tests:sentry-uitest-android-critical",/d' \
-            -e '/.*"sentry-android-integration-tests:test-app-sentry",/d' \
-            -e '/.*"sentry-android-integration-tests:test-app-size",/d' \
-            -e '/.*"sentry-samples:sentry-samples-android",/d' \
-            -e '/.*"sentry-android-replay",/d' \
-            settings.gradle.kts
-
-      - name: Exclude android modules from ignore list
-        run: |
-          sed -i \
-            -e '/.*"sentry-uitest-android",/d' \
-            -e '/.*"sentry-uitest-android-benchmark",/d' \
-            -e '/.*"sentry-uitest-android-critical",/d' \
-            -e '/.*"test-app-sentry",/d' \
-            -e '/.*"test-app-size",/d' \
-            -e '/.*"sentry-samples-android",/d' \
-            build.gradle.kts
-
-      - name: Build SDK
-        run: |
-          ./gradlew assemble --parallel
+          ./gradlew \
+            :sentry-samples:sentry-samples-spring-boot-jakarta:bootJar \
+            :sentry-samples:sentry-samples-spring-boot-webflux-jakarta:bootJar \
+            :sentry-samples:sentry-samples-spring-boot-jakarta-opentelemetry:bootJar \
+            :sentry-samples:sentry-samples-spring-boot-jakarta-opentelemetry-noagent:bootJar \
+            :sentry-samples:sentry-samples-spring-jakarta:war \
+            :sentry-opentelemetry:sentry-opentelemetry-agent:assemble \
+            --parallel
 
       - name: Test sentry-samples-spring-boot-jakarta
         run: |
           python3 test/system-test-runner.py test \
             --module "sentry-samples-spring-boot-jakarta" \
             --agent false \
-            --auto-init "true" \
-            --build "true"
+            --auto-init "true"
 
       - name: Test sentry-samples-spring-boot-webflux-jakarta
         run: |
           python3 test/system-test-runner.py test \
             --module "sentry-samples-spring-boot-webflux-jakarta" \
             --agent false \
-            --auto-init "true" \
-            --build "true"
+            --auto-init "true"
 
       - name: Test sentry-samples-spring-boot-jakarta-opentelemetry agent init true
         run: |
           python3 test/system-test-runner.py test \
             --module "sentry-samples-spring-boot-jakarta-opentelemetry" \
             --agent true \
-            --auto-init "true" \
-            --build "true"
+            --auto-init "true"
 
       - name: Test sentry-samples-spring-boot-jakarta-opentelemetry agent init false
         run: |
           python3 test/system-test-runner.py test \
             --module "sentry-samples-spring-boot-jakarta-opentelemetry" \
             --agent true \
-            --auto-init "false" \
-            --build "true"
+            --auto-init "false"
 
       - name: Test sentry-samples-spring-boot-jakarta-opentelemetry-noagent
         run: |
           python3 test/system-test-runner.py test \
             --module "sentry-samples-spring-boot-jakarta-opentelemetry-noagent" \
             --agent false \
-            --auto-init "true" \
-            --build "true"
+            --auto-init "true"
 
       - name: Test sentry-samples-spring-jakarta
         run: |
           python3 test/system-test-runner.py test \
             --module "sentry-samples-spring-jakarta" \
             --agent false \
-            --auto-init "true" \
-            --build "true"
+            --auto-init "true"
 
       - name: Upload test results
         if: always()
