@@ -51,18 +51,11 @@ android {
     }
   }
 
-  testBuildType = System.getProperty("testBuildType", "debug")
+  testBuildType = "release"
 
   buildTypes {
-    getByName("debug") {
-      isMinifyEnabled = true
-      signingConfig = signingConfigs.getByName("debug")
-      proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-      testProguardFiles("proguard-rules.pro")
-    }
     getByName("release") {
       isMinifyEnabled = true
-      isShrinkResources = false
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
       signingConfig = signingConfigs.getByName("debug") // to be able to run release mode
       testProguardFiles("proguard-rules.pro")
@@ -82,7 +75,9 @@ android {
   }
 
   androidComponents.beforeVariants {
-    it.enable = !Config.Android.shouldSkipDebugVariant(it.buildType)
+    if (it.buildType == "debug") {
+      it.enable = false
+    }
   }
 }
 

@@ -76,7 +76,7 @@ make systemTest
 ```bash
 # Assemble Android test APKs
 ./gradlew :sentry-android-integration-tests:sentry-uitest-android:assembleRelease
-./gradlew :sentry-android-integration-tests:sentry-uitest-android:assembleAndroidTest -DtestBuildType=release
+./gradlew :sentry-android-integration-tests:sentry-uitest-android:assembleAndroidTest
 
 # Run critical UI tests
 ./scripts/test-ui-critical.sh

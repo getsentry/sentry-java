@@ -90,7 +90,7 @@ jobs:
           disable-spellchecker: true
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disk-size: 4096M
-          script: ./gradlew sentry-android-integration-tests:sentry-uitest-android:connectedReleaseAndroidTest -DtestBuildType=release -Denvironment=github --daemon
+          script: ./gradlew sentry-android-integration-tests:sentry-uitest-android:connectedReleaseAndroidTest -Denvironment=github --daemon
 
       - name: Upload test results
         if: always()
