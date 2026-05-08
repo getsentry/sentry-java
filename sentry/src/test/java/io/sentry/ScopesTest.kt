@@ -1822,6 +1822,48 @@ class ScopesTest {
   }
 
   @Test
+  fun `when session trace lifecycle is enabled, startTransaction uses session propagation context`() {
+    val scopes = generateScopes { it.isEnableSessionTraceLifecycle = true }
+    var propagationContext: PropagationContext? = null
+    scopes.configureScope { propagationContext = it.propagationContext }
+
+    val transaction = scopes.startTransaction(TransactionContext("name", "op"))
+
+    assertTrue(transaction is SentryTracer)
+    assertEquals(propagationContext!!.traceId, transaction.root.spanContext.traceId)
+    assertNotEquals(propagationContext!!.spanId, transaction.root.spanContext.spanId)
+    assertNull(transaction.root.spanContext.parentSpanId)
+    assertEquals(propagationContext!!.sampleRand, transaction.root.spanContext.baggage!!.sampleRand)
+  }
+
+  @Test
+  fun `when session trace lifecycle is enabled, forceNewTrace keeps transaction trace`() {
+    val scopes = generateScopes { it.isEnableSessionTraceLifecycle = true }
+    val context = TransactionContext("name", "op")
+    context.setForceNewTrace(true)
+
+    val transaction = scopes.startTransaction(context)
+
+    assertTrue(transaction is SentryTracer)
+    assertEquals(context.traceId, transaction.root.spanContext.traceId)
+  }
+
+  @Test
+  fun `forceNewTrace does not override continued trace with parent span`() {
+    val scopes = generateScopes { it.isEnableSessionTraceLifecycle = true }
+    val traceId = "75302ac48a024bde9a3b3734a82e36c8"
+    val parentSpanId = "1000000000000000"
+    val context = scopes.continueTrace("$traceId-$parentSpanId-1", emptyList())!!
+    context.setForceNewTrace(true)
+
+    val transaction = scopes.startTransaction(context)
+
+    assertTrue(transaction is SentryTracer)
+    assertEquals(SentryId(traceId), transaction.root.spanContext.traceId)
+    assertEquals(SpanId(parentSpanId), transaction.root.spanContext.parentSpanId)
+  }
+
+  @Test
   fun `when startTransaction with bindToScope set to false, transaction is not attached to the scope`() {
     val scopes = generateScopes()
 

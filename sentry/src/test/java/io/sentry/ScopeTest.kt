@@ -872,7 +872,14 @@ class ScopeTest {
     val scope = Scope(options)
 
     scope.propagationContext =
-      PropagationContext(SentryId("64cf554cc8d74c6eafa3e08b7c984f6d"), SpanId(), null, null, null)
+      PropagationContext(
+        SentryId("64cf554cc8d74c6eafa3e08b7c984f6d"),
+        SpanId(),
+        null,
+        null,
+        null,
+        PropagationContext.Lifecycle.TRANSACTION,
+      )
     verify(observer)
       .setTrace(argThat { traceId.toString() == "64cf554cc8d74c6eafa3e08b7c984f6d" }, eq(scope))
   }

@@ -117,6 +117,13 @@ class ExternalOptionsTest {
   }
 
   @Test
+  fun `creates options with enableSessionTraceLifecycle using external properties`() {
+    withPropertiesFile("enable-session-trace-lifecycle=true") {
+      assertNotNull(it.isEnableSessionTraceLifecycle) { assertTrue(it) }
+    }
+  }
+
+  @Test
   fun `creates options with enableDeduplication using external properties`() {
     withPropertiesFile("enable-deduplication=true") {
       assertNotNull(it.enableDeduplication) { assertTrue(it) }

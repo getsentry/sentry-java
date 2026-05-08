@@ -388,6 +388,23 @@ public final class Scopes implements IScopes {
           getClient().captureSession(pair.getPrevious(), hint);
         }
 
+        if (getOptions().isEnableSessionTraceLifecycle()) {
+          configureScope(
+              scope -> {
+                scope.withPropagationContext(
+                    propagationContext -> {
+                      scope.setPropagationContext(
+                          new PropagationContext(
+                              new SentryId(),
+                              new SpanId(),
+                              null,
+                              null,
+                              null,
+                              PropagationContext.Lifecycle.SESSION));
+                    });
+              });
+        }
+
         final Hint hint = HintUtils.createWithTypeCheckHint(new SessionStartHint());
 
         getClient().captureSession(pair.getCurrent(), hint);
@@ -957,13 +974,18 @@ public final class Scopes implements IScopes {
               SentryLevel.INFO, "Tracing is disabled and this 'startTransaction' returns a no-op.");
       transaction = NoOpTransaction.getInstance();
     } else {
-      final Double sampleRand = getSampleRand(transactionContext);
+      final @NotNull TransactionContext effectiveTransactionContext =
+          maybeApplySessionTraceLifecycle(transactionContext);
+      final Double sampleRand = getSampleRand(effectiveTransactionContext);
       final SamplingContext samplingContext =
           new SamplingContext(
-              transactionContext, transactionOptions.getCustomSamplingContext(), sampleRand, null);
+              effectiveTransactionContext,
+              transactionOptions.getCustomSamplingContext(),
+              sampleRand,
+              null);
       final @NotNull TracesSampler tracesSampler = getOptions().getInternalTracesSampler();
       @NotNull TracesSamplingDecision samplingDecision = tracesSampler.sample(samplingContext);
-      transactionContext.setSamplingDecision(samplingDecision);
+      effectiveTransactionContext.setSamplingDecision(samplingDecision);
 
       final @Nullable ISpanFactory maybeSpanFactory = transactionOptions.getSpanFactory();
       final @NotNull ISpanFactory spanFactory =
@@ -977,7 +999,7 @@ public final class Scopes implements IScopes {
       if (samplingDecision.getSampled()
           && getOptions().isContinuousProfilingEnabled()
           && getOptions().getProfileLifecycle() == ProfileLifecycle.TRACE
-          && transactionContext.getProfilerId().equals(SentryId.EMPTY_ID)) {
+          && effectiveTransactionContext.getProfilerId().equals(SentryId.EMPTY_ID)) {
         getOptions()
             .getContinuousProfiler()
             .startProfiler(ProfileLifecycle.TRACE, getOptions().getInternalTracesSampler());
@@ -985,7 +1007,7 @@ public final class Scopes implements IScopes {
 
       transaction =
           spanFactory.createTransaction(
-              transactionContext, this, transactionOptions, compositePerformanceCollector);
+              effectiveTransactionContext, this, transactionOptions, compositePerformanceCollector);
       //          new SentryTracer(
       //              transactionContext, this, transactionOptions,
       // compositePerformanceCollector);
@@ -1011,6 +1033,20 @@ public final class Scopes implements IScopes {
       transaction.makeCurrent();
     }
     return transaction;
+  }
+
+  private @NotNull TransactionContext maybeApplySessionTraceLifecycle(
+      final @NotNull TransactionContext transactionContext) {
+    final @NotNull PropagationContext propagationContext =
+        getCombinedScopeView().getPropagationContext();
+    if (getOptions().isEnableSessionTraceLifecycle()
+        && propagationContext.getLifecycle() == PropagationContext.Lifecycle.SESSION
+        && transactionContext.getParentSpanId() == null
+        && !transactionContext.isForceNewTrace()) {
+      return TransactionContext.fromPropagationContextAsRoot(
+          propagationContext, transactionContext);
+    }
+    return transactionContext;
   }
 
   private @NotNull Double getSampleRand(final @NotNull TransactionContext transactionContext) {

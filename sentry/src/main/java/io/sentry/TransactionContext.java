@@ -2,6 +2,7 @@ package io.sentry;
 
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.TransactionNameSource;
+import io.sentry.util.CollectionUtils;
 import io.sentry.util.Objects;
 import io.sentry.util.TracingUtils;
 import org.jetbrains.annotations.ApiStatus;
@@ -17,6 +18,7 @@ public final class TransactionContext extends SpanContext {
   private @NotNull TransactionNameSource transactionNameSource;
   private @Nullable TracesSamplingDecision parentSamplingDecision;
   private boolean isForNextAppStart = false;
+  private boolean forceNewTrace = false;
 
   @ApiStatus.Internal
   public static TransactionContext fromPropagationContext(
@@ -36,6 +38,42 @@ public final class TransactionContext extends SpanContext {
         propagationContext.getParentSpanId(),
         samplingDecision,
         baggage);
+  }
+
+  @ApiStatus.Internal
+  static @NotNull TransactionContext fromPropagationContextAsRoot(
+      final @NotNull PropagationContext propagationContext,
+      final @NotNull TransactionContext transactionContext) {
+    final @NotNull Baggage baggage =
+        Baggage.copyWithOverrides(
+            propagationContext.getBaggage(),
+            propagationContext.getTraceId(),
+            propagationContext.getSampleRand());
+
+    final @NotNull TransactionContext sessionContext =
+        new TransactionContext(propagationContext.getTraceId(), new SpanId(), null, null, baggage);
+    sessionContext.setName(transactionContext.getName());
+    sessionContext.setTransactionNameSource(transactionContext.getTransactionNameSource());
+    sessionContext.setOperation(transactionContext.getOperation());
+    sessionContext.setDescription(transactionContext.getDescription());
+    sessionContext.setStatus(transactionContext.getStatus());
+    sessionContext.setOrigin(transactionContext.getOrigin());
+    sessionContext.setInstrumenter(transactionContext.getInstrumenter());
+    sessionContext.setSamplingDecision(transactionContext.getSamplingDecision());
+    sessionContext.setForNextAppStart(transactionContext.isForNextAppStart());
+    sessionContext.setProfilerId(transactionContext.getProfilerId());
+    final @Nullable java.util.Map<String, @NotNull String> copiedTags =
+        CollectionUtils.newConcurrentHashMap(transactionContext.tags);
+    if (copiedTags != null) {
+      sessionContext.tags = copiedTags;
+    }
+    final @Nullable java.util.Map<String, @NotNull Object> copiedData =
+        CollectionUtils.newConcurrentHashMap(transactionContext.data);
+    if (copiedData != null) {
+      sessionContext.data = copiedData;
+    }
+    sessionContext.forceNewTrace = transactionContext.forceNewTrace;
+    return sessionContext;
   }
 
   public TransactionContext(final @NotNull String name, final @NotNull String operation) {
@@ -144,6 +182,28 @@ public final class TransactionContext extends SpanContext {
 
   public void setTransactionNameSource(final @NotNull TransactionNameSource transactionNameSource) {
     this.transactionNameSource = transactionNameSource;
+  }
+
+  /**
+   * Forces this transaction to start a new trace when session trace lifecycle is enabled.
+   * Explicitly continued traces with a parent span are still preserved.
+   *
+   * @return true if this transaction should not reuse the session propagation context.
+   */
+  @ApiStatus.Experimental
+  public boolean isForceNewTrace() {
+    return forceNewTrace;
+  }
+
+  /**
+   * Forces this transaction to start a new trace when session trace lifecycle is enabled.
+   * Explicitly continued traces with a parent span are still preserved.
+   *
+   * @param forceNewTrace true to keep this transaction on a new trace.
+   */
+  @ApiStatus.Experimental
+  public void setForceNewTrace(final boolean forceNewTrace) {
+    this.forceNewTrace = forceNewTrace;
   }
 
   @ApiStatus.Internal

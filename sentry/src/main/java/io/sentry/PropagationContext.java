@@ -12,6 +12,11 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public final class PropagationContext {
 
+  public enum Lifecycle {
+    TRANSACTION,
+    SESSION
+  }
+
   public static PropagationContext fromHeaders(
       final @NotNull ILogger logger,
       final @Nullable String sentryTraceHeader,
@@ -59,7 +64,8 @@ public final class PropagationContext {
         spanIdToUse,
         sentryTraceHeader.getSpanId(),
         baggage,
-        sentryTraceHeader.isSampled());
+        sentryTraceHeader.isSampled(),
+        Lifecycle.TRANSACTION);
   }
 
   public static @NotNull PropagationContext fromExistingTrace(
@@ -72,7 +78,8 @@ public final class PropagationContext {
         new SpanId(),
         new SpanId(spanId),
         TracingUtils.ensureBaggage(null, null, decisionSampleRate, decisionSampleRand),
-        null);
+        null,
+        Lifecycle.TRANSACTION);
   }
 
   private @NotNull SentryId traceId;
@@ -83,30 +90,38 @@ public final class PropagationContext {
 
   private final @NotNull Baggage baggage;
 
+  private @NotNull Lifecycle lifecycle;
+
+  @ApiStatus.Internal
   public PropagationContext() {
-    this(new SentryId(), new SpanId(), null, null, null);
+    this(new SentryId(), new SpanId(), null, null, null, Lifecycle.TRANSACTION);
   }
 
+  @ApiStatus.Internal
   public PropagationContext(final @NotNull PropagationContext propagationContext) {
     this(
         propagationContext.getTraceId(),
         propagationContext.getSpanId(),
         propagationContext.getParentSpanId(),
         propagationContext.getBaggage(),
-        propagationContext.isSampled());
+        propagationContext.isSampled(),
+        propagationContext.getLifecycle());
   }
 
+  @ApiStatus.Internal
   public PropagationContext(
       final @NotNull SentryId traceId,
       final @NotNull SpanId spanId,
       final @Nullable SpanId parentSpanId,
       final @Nullable Baggage baggage,
-      final @Nullable Boolean sampled) {
+      final @Nullable Boolean sampled,
+      final @NotNull Lifecycle lifecycle) {
     this.traceId = traceId;
     this.spanId = spanId;
     this.parentSpanId = parentSpanId;
     this.baggage = TracingUtils.ensureBaggage(baggage, sampled, null, null);
     this.sampled = sampled;
+    this.lifecycle = lifecycle;
   }
 
   public @NotNull SentryId getTraceId() {
@@ -147,6 +162,14 @@ public final class PropagationContext {
 
   public @Nullable TraceContext traceContext() {
     return baggage.toTraceContext();
+  }
+
+  public @NotNull Lifecycle getLifecycle() {
+    return lifecycle;
+  }
+
+  public void setLifecycle(final @NotNull Lifecycle lifecycle) {
+    this.lifecycle = lifecycle;
   }
 
   public @NotNull SpanContext toSpanContext() {
