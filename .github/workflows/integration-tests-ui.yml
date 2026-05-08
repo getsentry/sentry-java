@@ -33,7 +33,7 @@ jobs:
           java-version: '17'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c
+        uses: gradle/actions/setup-gradle@50e97c2cd7a37755bbfafc9c5b7cafaece252f6e
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
@@ -43,7 +43,7 @@ jobs:
         run: make assembleUiTests
 
       - name: Install SauceLabs CLI
-        uses: saucelabs/saucectl-run-action@39e4f0666ca8ecb4b60847213c6e0fbd6a0c2bd8 # pin@v4.3.0
+        uses: saucelabs/saucectl-run-action@bc81720eb01738d9c664b07fe42621bd0014283f # pin@v4.4.0
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
