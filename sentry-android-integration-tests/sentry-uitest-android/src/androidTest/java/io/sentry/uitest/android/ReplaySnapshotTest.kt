@@ -4,7 +4,8 @@ import android.graphics.Bitmap
 import android.os.Environment
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.launchActivity
-import io.sentry.android.replay.beforeStoreFrame
+import io.sentry.SentryReplayOptions
+import io.sentry.TypeCheckHint
 import java.io.File
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.CountDownLatch
@@ -33,20 +34,22 @@ class ReplaySnapshotTest : BaseUiTest() {
 
     initSentry {
       it.sessionReplay.sessionSampleRate = 1.0
-      it.sessionReplay.beforeStoreFrame {
-        frameBitmap: Bitmap,
-        frameTimestamp: Long,
-        screenName: String? ->
-        val name = screenName ?: "unknown"
-        if (!capturedScreens.contains(name)) {
-          val file = File(snapshotsDir, "${name}_$frameTimestamp.png")
-          file.outputStream().use { out ->
-            frameBitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+      it.sessionReplay.setBeforeStoreFrame(
+        SentryReplayOptions.BeforeStoreFrameCallback { hint, frameTimestamp, screenName ->
+          val frameBitmap =
+            hint.getAs(TypeCheckHint.REPLAY_FRAME_BITMAP, Bitmap::class.java)
+              ?: return@BeforeStoreFrameCallback
+          val name = screenName ?: "unknown"
+          if (!capturedScreens.contains(name)) {
+            val file = File(snapshotsDir, "${name}_$frameTimestamp.png")
+            file.outputStream().use { out ->
+              frameBitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+            }
+            capturedScreens.add(name)
           }
-          capturedScreens.add(name)
+          frameReceived.countDown()
         }
-        frameReceived.countDown()
-      }
+      )
     }
 
     assertTrue(frameReceived.await(10, TimeUnit.SECONDS), "Expected at least one replay frame")
