@@ -2,7 +2,6 @@ package io.sentry;
 
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.TransactionNameSource;
-import io.sentry.util.CollectionUtils;
 import io.sentry.util.Objects;
 import io.sentry.util.TracingUtils;
 import org.jetbrains.annotations.ApiStatus;
@@ -51,27 +50,13 @@ public final class TransactionContext extends SpanContext {
             propagationContext.getSampleRand());
 
     final @NotNull TransactionContext sessionContext =
-        new TransactionContext(propagationContext.getTraceId(), new SpanId(), null, null, baggage);
-    sessionContext.setName(transactionContext.getName());
-    sessionContext.setTransactionNameSource(transactionContext.getTransactionNameSource());
-    sessionContext.setOperation(transactionContext.getOperation());
-    sessionContext.setDescription(transactionContext.getDescription());
-    sessionContext.setStatus(transactionContext.getStatus());
-    sessionContext.setOrigin(transactionContext.getOrigin());
-    sessionContext.setInstrumenter(transactionContext.getInstrumenter());
-    sessionContext.setSamplingDecision(transactionContext.getSamplingDecision());
-    sessionContext.setForNextAppStart(transactionContext.isForNextAppStart());
-    sessionContext.setProfilerId(transactionContext.getProfilerId());
-    final @Nullable java.util.Map<String, @NotNull String> copiedTags =
-        CollectionUtils.newConcurrentHashMap(transactionContext.tags);
-    if (copiedTags != null) {
-      sessionContext.tags = copiedTags;
-    }
-    final @Nullable java.util.Map<String, @NotNull Object> copiedData =
-        CollectionUtils.newConcurrentHashMap(transactionContext.data);
-    if (copiedData != null) {
-      sessionContext.data = copiedData;
-    }
+        new TransactionContext(
+            propagationContext.getTraceId(), transactionContext.getSpanId(), null, null, baggage);
+    copyNonTraceState(transactionContext, sessionContext, baggage);
+    sessionContext.name = transactionContext.name;
+    sessionContext.transactionNameSource = transactionContext.transactionNameSource;
+    sessionContext.parentSamplingDecision = transactionContext.parentSamplingDecision;
+    sessionContext.isForNextAppStart = transactionContext.isForNextAppStart;
     sessionContext.forceNewTrace = transactionContext.forceNewTrace;
     return sessionContext;
   }

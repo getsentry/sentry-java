@@ -96,6 +96,59 @@ class TransactionContextTest {
   }
 
   @Test
+  fun `fromPropagationContextAsRoot copies non trace state`() {
+    val propagationBaggage = Baggage(NoOpLogger.getInstance())
+    propagationBaggage.sampleRand = 0.42
+    val propagationContext =
+      PropagationContext(
+        SentryId("75302ac48a024bde9a3b3734a82e36c8"),
+        SpanId("2000000000000000"),
+        SpanId("1000000000000000"),
+        propagationBaggage,
+        true,
+      )
+    val samplingDecision = TracesSamplingDecision(true, 0.3, true, 0.4)
+    val transactionContext = TransactionContext("name", "op", samplingDecision)
+    transactionContext.transactionNameSource = TransactionNameSource.ROUTE
+    transactionContext.description = "description"
+    transactionContext.status = SpanStatus.OK
+    transactionContext.origin = "auto.test"
+    transactionContext.instrumenter = Instrumenter.OTEL
+    transactionContext.isForNextAppStart = true
+    transactionContext.profilerId = SentryId("12345678123456781234567812345678")
+    transactionContext.setTag("tag-key", "tag-value")
+    transactionContext.setData("data-key", "data-value")
+    transactionContext.unknown = mapOf("unknown-key" to "unknown-value")
+    transactionContext.addFeatureFlag("feature-flag", true)
+
+    val context =
+      TransactionContext.fromPropagationContextAsRoot(propagationContext, transactionContext)
+
+    assertEquals(propagationContext.traceId, context.traceId)
+    assertEquals(transactionContext.spanId, context.spanId)
+    assertNull(context.parentSpanId)
+    assertEquals("name", context.name)
+    assertEquals(TransactionNameSource.ROUTE, context.transactionNameSource)
+    assertEquals("op", context.operation)
+    assertEquals("description", context.description)
+    assertEquals(SpanStatus.OK, context.status)
+    assertEquals("auto.test", context.origin)
+    assertEquals(Instrumenter.OTEL, context.instrumenter)
+    assertTrue(context.isForNextAppStart)
+    assertEquals(SentryId("12345678123456781234567812345678"), context.profilerId)
+    assertEquals("tag-value", context.tags["tag-key"])
+    assertEquals("data-value", context.data["data-key"])
+    assertEquals("unknown-value", context.unknown!!["unknown-key"])
+    assertEquals(true, context.sampled)
+    assertEquals(0.3, context.samplingDecision!!.sampleRate)
+    assertEquals(true, context.profileSampled)
+    assertEquals(0.4, context.samplingDecision!!.profileSampleRate)
+    assertEquals(0.42, context.baggage!!.sampleRand)
+    assertEquals(propagationContext.traceId.toString(), context.baggage!!.traceId)
+    assertNull(context.featureFlagBuffer.featureFlags)
+  }
+
+  @Test
   fun `setForNextAppStart sets the isForNextAppStart flag`() {
     val context = TransactionContext("name", "op")
     context.isForNextAppStart = true
