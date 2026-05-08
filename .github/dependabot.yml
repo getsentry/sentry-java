@@ -11,19 +11,19 @@ updates:
     registries:
       - gradle-plugin-portal
     schedule:
-      interval: "weekly"
+      interval: "daily"
     ignore:
       - dependency-name: "org.springframework.boot*"
     commit-message:
       prefix: "chore(deps)"
     groups:
-      androidx:
-        patterns:
-          - "androidx.*"
       compose:
         patterns:
           - "androidx.compose*"
           - "org.jetbrains.compose*"
+      androidx:
+        patterns:
+          - "androidx.*"
       kotlin:
         patterns:
           - "org.jetbrains.kotlin*"
@@ -34,7 +34,7 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "daily"
     commit-message:
       prefix: "chore(deps)"
     groups:
