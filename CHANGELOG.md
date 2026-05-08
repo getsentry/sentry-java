@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Android: The `ManifestMetaDataReader` now reads `ANR_REPORT_HISTORICAL` ([#5387](https://github.com/getsentry/sentry-java/pull/5387))
+
 ## 8.41.0
 
 ### Features
