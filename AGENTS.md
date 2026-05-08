@@ -75,8 +75,7 @@ make systemTest
 ### Android-Specific Commands
 ```bash
 # Assemble Android test APKs
-./gradlew :sentry-android-integration-tests:sentry-uitest-android:assembleRelease
-./gradlew :sentry-android-integration-tests:sentry-uitest-android:assembleAndroidTest
+./gradlew :sentry-android-integration-tests:sentry-uitest-android:assembleRelease :sentry-android-integration-tests:sentry-uitest-android:assembleAndroidTest
 
 # Run critical UI tests
 ./scripts/test-ui-critical.sh
