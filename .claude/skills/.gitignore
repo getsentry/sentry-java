@@ -8,3 +8,5 @@
 !test/**
 !btrace-perfetto/
 !btrace-perfetto/**
+!check-code-attribution/
+!check-code-attribution/**
