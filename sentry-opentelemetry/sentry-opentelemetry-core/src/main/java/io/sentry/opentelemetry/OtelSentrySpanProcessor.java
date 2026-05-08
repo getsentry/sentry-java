@@ -96,12 +96,7 @@ public final class OtelSentrySpanProcessor implements SpanProcessor {
 
       final @NotNull PropagationContext propagationContext =
           new PropagationContext(
-              new SentryId(traceId),
-              sentrySpanId,
-              sentryParentSpanId,
-              baggage,
-              sampled,
-              PropagationContext.Lifecycle.TRANSACTION);
+              new SentryId(traceId), sentrySpanId, sentryParentSpanId, baggage, sampled);
 
       baggage = propagationContext.getBaggage();
       baggage.setValuesFromSamplingDecision(samplingDecision);

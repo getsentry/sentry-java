@@ -120,16 +120,7 @@ public final class Scope implements IScope {
     this.options = Objects.requireNonNull(options, "SentryOptions is required.");
     this.breadcrumbs = createBreadcrumbsList(this.options.getMaxBreadcrumbs());
     this.featureFlags = FeatureFlagBuffer.create(options);
-    this.propagationContext =
-        new PropagationContext(
-            new SentryId(),
-            new SpanId(),
-            null,
-            null,
-            null,
-            options.isEnableSessionTraceLifecycle()
-                ? PropagationContext.Lifecycle.SESSION
-                : PropagationContext.Lifecycle.TRANSACTION);
+    this.propagationContext = new PropagationContext();
     this.lastEventId = SentryId.EMPTY_ID;
   }
 

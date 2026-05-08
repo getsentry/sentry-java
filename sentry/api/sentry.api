@@ -2310,32 +2310,23 @@ public final class io/sentry/ProfilingTransactionData$JsonKeys {
 public final class io/sentry/PropagationContext {
 	public fun <init> ()V
 	public fun <init> (Lio/sentry/PropagationContext;)V
-	public fun <init> (Lio/sentry/protocol/SentryId;Lio/sentry/SpanId;Lio/sentry/SpanId;Lio/sentry/Baggage;Ljava/lang/Boolean;Lio/sentry/PropagationContext$Lifecycle;)V
+	public fun <init> (Lio/sentry/protocol/SentryId;Lio/sentry/SpanId;Lio/sentry/SpanId;Lio/sentry/Baggage;Ljava/lang/Boolean;)V
 	public static fun fromExistingTrace (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Double;Ljava/lang/Double;)Lio/sentry/PropagationContext;
 	public static fun fromHeaders (Lio/sentry/ILogger;Ljava/lang/String;Ljava/lang/String;Lio/sentry/SentryOptions;)Lio/sentry/PropagationContext;
 	public static fun fromHeaders (Lio/sentry/ILogger;Ljava/lang/String;Ljava/util/List;Lio/sentry/SentryOptions;)Lio/sentry/PropagationContext;
 	public static fun fromHeaders (Lio/sentry/SentryTraceHeader;Lio/sentry/Baggage;Lio/sentry/SpanId;Lio/sentry/SentryOptions;)Lio/sentry/PropagationContext;
 	public fun getBaggage ()Lio/sentry/Baggage;
-	public fun getLifecycle ()Lio/sentry/PropagationContext$Lifecycle;
 	public fun getParentSpanId ()Lio/sentry/SpanId;
 	public fun getSampleRand ()Ljava/lang/Double;
 	public fun getSpanId ()Lio/sentry/SpanId;
 	public fun getTraceId ()Lio/sentry/protocol/SentryId;
 	public fun isSampled ()Ljava/lang/Boolean;
-	public fun setLifecycle (Lio/sentry/PropagationContext$Lifecycle;)V
 	public fun setParentSpanId (Lio/sentry/SpanId;)V
 	public fun setSampled (Ljava/lang/Boolean;)V
 	public fun setSpanId (Lio/sentry/SpanId;)V
 	public fun setTraceId (Lio/sentry/protocol/SentryId;)V
 	public fun toSpanContext ()Lio/sentry/SpanContext;
 	public fun traceContext ()Lio/sentry/TraceContext;
-}
-
-public final class io/sentry/PropagationContext$Lifecycle : java/lang/Enum {
-	public static final field SESSION Lio/sentry/PropagationContext$Lifecycle;
-	public static final field TRANSACTION Lio/sentry/PropagationContext$Lifecycle;
-	public static fun valueOf (Ljava/lang/String;)Lio/sentry/PropagationContext$Lifecycle;
-	public static fun values ()[Lio/sentry/PropagationContext$Lifecycle;
 }
 
 public abstract interface class io/sentry/ReplayBreadcrumbConverter {

@@ -90,13 +90,7 @@ public final class SentrySampler implements Sampler {
     SpanId randomSpanId = new SpanId();
     final @NotNull PropagationContext propagationContext =
         sentryTraceHeader == null
-            ? new PropagationContext(
-                new SentryId(traceId),
-                randomSpanId,
-                null,
-                baggage,
-                null,
-                PropagationContext.Lifecycle.TRANSACTION)
+            ? new PropagationContext(new SentryId(traceId), randomSpanId, null, baggage, null)
             : PropagationContext.fromHeaders(
                 sentryTraceHeader, baggage, randomSpanId, scopes.getOptions());
 

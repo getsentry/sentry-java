@@ -179,7 +179,6 @@ class TracingUtilsTest {
           )
           .also { it.freeze() },
         true,
-        PropagationContext.Lifecycle.TRANSACTION,
       )
     fixture.setup()
 
@@ -312,7 +311,6 @@ class TracingUtilsTest {
         null,
         Baggage.fromHeader(fixture.preExistingBaggage),
         true,
-        PropagationContext.Lifecycle.TRANSACTION,
       )
 
     TracingUtils.maybeUpdateBaggage(fixture.scope, fixture.options)
@@ -337,7 +335,6 @@ class TracingUtilsTest {
           "sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=2722d9f6ec019ade60c776169d9a8904,sentry-transaction=HTTP%20GET"
         ),
         true,
-        PropagationContext.Lifecycle.TRANSACTION,
       )
 
     TracingUtils.maybeUpdateBaggage(fixture.scope, fixture.options)

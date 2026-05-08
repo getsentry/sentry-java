@@ -389,20 +389,7 @@ public final class Scopes implements IScopes {
         }
 
         if (getOptions().isEnableSessionTraceLifecycle()) {
-          configureScope(
-              scope -> {
-                scope.withPropagationContext(
-                    propagationContext -> {
-                      scope.setPropagationContext(
-                          new PropagationContext(
-                              new SentryId(),
-                              new SpanId(),
-                              null,
-                              null,
-                              null,
-                              PropagationContext.Lifecycle.SESSION));
-                    });
-              });
+          configureScope(scope -> scope.setPropagationContext(new PropagationContext()));
         }
 
         final Hint hint = HintUtils.createWithTypeCheckHint(new SessionStartHint());
@@ -1040,7 +1027,6 @@ public final class Scopes implements IScopes {
     final @NotNull PropagationContext propagationContext =
         getCombinedScopeView().getPropagationContext();
     if (getOptions().isEnableSessionTraceLifecycle()
-        && propagationContext.getLifecycle() == PropagationContext.Lifecycle.SESSION
         && transactionContext.getParentSpanId() == null
         && !transactionContext.isForceNewTrace()) {
       return TransactionContext.fromPropagationContextAsRoot(
