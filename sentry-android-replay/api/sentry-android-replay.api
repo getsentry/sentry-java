@@ -116,6 +116,7 @@ public final class io/sentry/android/replay/SentryReplayModifiers {
 }
 
 public final class io/sentry/android/replay/SessionReplayOptionsKt {
+	public static final fun beforeStoreFrame (Lio/sentry/SentryReplayOptions;Lkotlin/jvm/functions/Function3;)V
 	public static final fun getMaskAllImages (Lio/sentry/SentryReplayOptions;)Z
 	public static final fun getMaskAllText (Lio/sentry/SentryReplayOptions;)Z
 	public static final fun setMaskAllImages (Lio/sentry/SentryReplayOptions;Z)V
