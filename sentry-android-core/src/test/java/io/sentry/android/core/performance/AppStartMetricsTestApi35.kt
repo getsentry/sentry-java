@@ -32,6 +32,7 @@ class AppStartMetricsTestApi35 {
   fun setup() {
     AppStartMetrics.getInstance().clear()
     SentryShadowProcess.setStartUptimeMillis(42)
+    SentryShadowProcess.setStartElapsedRealtime(42)
     SentryShadowActivityManager.reset()
     AppStartMetrics.getInstance().setClassLoadedUptimeMs(42)
     AppStartMetrics.getInstance().isAppLaunchedInForeground = true
@@ -158,8 +159,10 @@ class AppStartMetricsTestApi35 {
   }
 
   @Test
-  fun `resolveNonActivityAppStartEndTime uses ApplicationStartInfo application onCreate timestamp`() {
-    val onCreateUptimeMs = 250L
+  fun `resolveNonActivityAppStartEndTime converts ApplicationStartInfo timestamp to uptime`() {
+    val processStartUptimeMs = 100L
+    val processStartElapsedMs = 10_000L
+    val onCreateElapsedMs = 10_250L
     val mockStartInfo = mock<ApplicationStartInfo>()
     whenever(mockStartInfo.startupState).thenReturn(ApplicationStartInfo.STARTUP_STATE_STARTED)
     whenever(mockStartInfo.startType).thenReturn(ApplicationStartInfo.START_TYPE_COLD)
@@ -167,19 +170,46 @@ class AppStartMetricsTestApi35 {
       .thenReturn(
         mapOf(
           ApplicationStartInfo.START_TIMESTAMP_APPLICATION_ONCREATE to
-            TimeUnit.MILLISECONDS.toNanos(onCreateUptimeMs)
+            TimeUnit.MILLISECONDS.toNanos(onCreateElapsedMs)
         )
       )
     SentryShadowActivityManager.setHistoricalProcessStartReasons(listOf(mockStartInfo))
+    SentryShadowProcess.setStartUptimeMillis(processStartUptimeMs)
+    SentryShadowProcess.setStartElapsedRealtime(processStartElapsedMs)
     val metrics = AppStartMetrics.getInstance()
-    metrics.appStartTimeSpan.setStartedAt(100)
+    metrics.appStartTimeSpan.setStartedAt(processStartUptimeMs)
 
     val app = ApplicationProvider.getApplicationContext<Application>()
     metrics.registerLifecycleCallbacks(app)
     waitForMainLooperIdle()
 
-    assertEquals(150, metrics.appStartTimeSpan.durationMs)
+    assertEquals(250, metrics.appStartTimeSpan.durationMs)
     assertFalse(metrics.applicationOnCreateTimeSpan.hasStarted())
+  }
+
+  @Test
+  fun `resolveNonActivityAppStartEndTime falls back when ApplicationStartInfo duration is invalid`() {
+    val mockStartInfo = mock<ApplicationStartInfo>()
+    whenever(mockStartInfo.startupState).thenReturn(ApplicationStartInfo.STARTUP_STATE_STARTED)
+    whenever(mockStartInfo.startType).thenReturn(ApplicationStartInfo.START_TYPE_COLD)
+    whenever(mockStartInfo.startupTimestamps)
+      .thenReturn(
+        mapOf(
+          ApplicationStartInfo.START_TIMESTAMP_APPLICATION_ONCREATE to TimeUnit.MINUTES.toNanos(2)
+        )
+      )
+    SentryShadowActivityManager.setHistoricalProcessStartReasons(listOf(mockStartInfo))
+    SentryShadowProcess.setStartUptimeMillis(100)
+    SentryShadowProcess.setStartElapsedRealtime(0)
+    val metrics = AppStartMetrics.getInstance()
+    metrics.appStartTimeSpan.setStartedAt(100)
+    metrics.setClassLoadedUptimeMs(200)
+
+    val app = ApplicationProvider.getApplicationContext<Application>()
+    metrics.registerLifecycleCallbacks(app)
+    waitForMainLooperIdle()
+
+    assertEquals(100, metrics.appStartTimeSpan.durationMs)
   }
 
   private fun waitForMainLooperIdle() {

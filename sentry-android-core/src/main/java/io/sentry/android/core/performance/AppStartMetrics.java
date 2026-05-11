@@ -11,6 +11,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.MessageQueue;
+import android.os.Process;
 import android.os.SystemClock;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -517,21 +518,26 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     if (cachedStartInfo != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
       try {
         final @NotNull Map<Integer, Long> timestamps = cachedStartInfo.getStartupTimestamps();
-        // Timestamps are in nanoseconds (monotonic clock)
         final @Nullable Long onCreateNanos =
             timestamps.get(ApplicationStartInfo.START_TIMESTAMP_APPLICATION_ONCREATE);
         if (onCreateNanos != null && onCreateNanos > 0) {
-          final long onCreateUptimeMs = TimeUnit.NANOSECONDS.toMillis(onCreateNanos);
-          stopNonActivityAppStartAt(onCreateUptimeMs);
-
-          // Also fill applicationOnCreate stop time if not already set by Gradle plugin
-          if (applicationOnCreate.hasStarted() && applicationOnCreate.hasNotStopped()) {
-            applicationOnCreate.setStoppedAt(onCreateUptimeMs);
+          // ApplicationStartInfo documents "clock monotonic" timestamps in nanoseconds,
+          // without specifying the clock base. Compute a duration first and re-anchor it
+          // onto TimeSpan's uptime base. If the platform uses a different base and the delta
+          // is implausible, this falls through to the class-loaded fallback below.
+          final long onCreateElapsedMs = TimeUnit.NANOSECONDS.toMillis(onCreateNanos);
+          final long durationMs = onCreateElapsedMs - Process.getStartElapsedRealtime();
+          if (durationMs > 0 && durationMs <= TimeUnit.MINUTES.toMillis(1)) {
+            final long onCreateUptimeMs = Process.getStartUptimeMillis() + durationMs;
+            if (applicationOnCreate.hasStarted() && applicationOnCreate.hasNotStopped()) {
+              applicationOnCreate.setStoppedAt(onCreateUptimeMs);
+            }
+            stopNonActivityAppStartAt(onCreateUptimeMs);
+            return;
           }
-          return;
         }
       } catch (Throwable ignored) {
-        // best effort
+        // Best effort: never let optional startup timestamp enrichment break app startup.
       }
     }
 
