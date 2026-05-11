@@ -70,6 +70,13 @@ tasks.withType<JavaCompile>().configureEach {
   }
 }
 
+// Snapshot PNGs are written by ScreenshotEventProcessorTest at runtime but must be declared as
+// outputs so Gradle's build cache restores them on cache hits (otherwise the CLI upload step
+// finds an empty directory).
+tasks
+  .matching { it.name == "testDebugUnitTest" || it.name == "testReleaseUnitTest" }
+  .configureEach { outputs.dir(layout.buildDirectory.dir("test-snapshots")) }
+
 dependencies {
   api(projects.sentry)
   compileOnly(libs.jetbrains.annotations)
