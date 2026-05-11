@@ -91,7 +91,6 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   private final AtomicBoolean firstDrawDone = new AtomicBoolean(false);
   private @Nullable OnNoActivityStartedListener noActivityStartedListener;
   private @Nullable SentryId appStartTraceId;
-  private @Nullable Application applicationContext;
   private @Nullable ApplicationStartInfo cachedStartInfo;
 
   public static @NotNull AppStartMetrics getInstance() {
@@ -305,7 +304,6 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     firstIdle = -1;
     noActivityStartedListener = null;
     appStartTraceId = null;
-    applicationContext = null;
     cachedStartInfo = null;
   }
 
@@ -385,7 +383,6 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     }
     isCallbackRegistered = true;
     appLaunchedInForeground.resetValue();
-    applicationContext = application;
     application.registerActivityLifecycleCallbacks(instance);
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
