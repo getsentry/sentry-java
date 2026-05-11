@@ -436,8 +436,8 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     if (activeActivitiesCounter.get() == 0) {
       appLaunchedInForeground.setValue(false);
 
-      // On API < 35 ApplicationStartInfo can't resolve the type, so default to COLD to classify
-      // the standalone transaction and PerformanceAndroidEventProcessor measurements correctly.
+      // Non-activity starts have no Activity signal for the pre-API 35 warm/cold heuristic.
+      // If ApplicationStartInfo did not resolve the type, classify the process start as cold.
       if (appStartType == AppStartType.UNKNOWN) {
         appStartType = AppStartType.COLD;
       }
