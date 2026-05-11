@@ -207,6 +207,23 @@ class PerformanceAndroidEventProcessorTest {
   }
 
   @Test
+  fun `do not add standalone app start metric twice`() {
+    val sut = fixture.getSut()
+
+    setStandaloneColdAppStartMetrics()
+
+    var tr1 = getTransaction(AppStartType.COLD)
+    tr1 = sut.process(tr1, Hint())
+
+    var tr2 = getTransaction(AppStartType.COLD)
+    tr2 = sut.process(tr2, Hint())
+
+    assertTrue(tr1.measurements.containsKey(MeasurementValue.KEY_APP_START_COLD))
+    assertFalse(tr2.measurements.containsKey(MeasurementValue.KEY_APP_START_COLD))
+    assertFalse(tr2.measurements.containsKey(MeasurementValue.KEY_APP_START_WARM))
+  }
+
+  @Test
   fun `do not add app start metric if its not ready`() {
     val sut = fixture.getSut()
 
@@ -522,10 +539,10 @@ class PerformanceAndroidEventProcessorTest {
     val appStartSpan = createAppStartSpan(tr.contexts.trace!!.traceId)
     tr.spans.add(appStartSpan)
 
-    assertTrue(appStartMetrics.shouldSendStartMeasurements())
+    assertTrue(appStartMetrics.shouldSendStartMeasurements(false))
     // then the app start metrics should be attached
     tr = sut.process(tr, Hint())
-    assertFalse(appStartMetrics.shouldSendStartMeasurements())
+    assertFalse(appStartMetrics.shouldSendStartMeasurements(false))
 
     assertTrue(tr.spans.any { "application.load" == it.op })
 

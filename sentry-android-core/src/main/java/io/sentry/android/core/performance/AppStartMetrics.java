@@ -228,8 +228,13 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     activityLifecycles.clear();
   }
 
+  public boolean shouldSendStartMeasurements(final boolean ignoreForegroundCheck) {
+    return shouldSendStartMeasurements
+        && (ignoreForegroundCheck || appLaunchedInForeground.getValue());
+  }
+
   public boolean shouldSendStartMeasurements() {
-    return shouldSendStartMeasurements && appLaunchedInForeground.getValue();
+    return shouldSendStartMeasurements(false);
   }
 
   public long getClassLoadedUptimeMs() {
@@ -502,7 +507,9 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
 
   private void stopNonActivityAppStartAt(final long stopUptimeMs) {
     if (appStartSpan.hasStarted()) {
-      appStartSpan.setStoppedAt(stopUptimeMs);
+      if (appStartSpan.hasNotStopped()) {
+        appStartSpan.setStoppedAt(stopUptimeMs);
+      }
     } else if (sdkInitTimeSpan.hasStarted() && sdkInitTimeSpan.hasNotStopped()) {
       sdkInitTimeSpan.setStoppedAt(stopUptimeMs);
     }

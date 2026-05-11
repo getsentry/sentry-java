@@ -175,7 +175,7 @@ class AppStartMetricsTest {
     // but no activity creation happened
     // then the app wasn't launched in foreground and nothing should be sent
     assertFalse(metrics.isAppLaunchedInForeground)
-    assertFalse(metrics.shouldSendStartMeasurements())
+    assertFalse(metrics.shouldSendStartMeasurements(false))
 
     val now = TimeUnit.MINUTES.toMillis(2) + 1234567
     SystemClock.setCurrentTimeMillis(now)
@@ -185,7 +185,7 @@ class AppStartMetricsTest {
 
     // then it should restart the timespan
     assertTrue(metrics.isAppLaunchedInForeground)
-    assertTrue(metrics.shouldSendStartMeasurements())
+    assertTrue(metrics.shouldSendStartMeasurements(false))
     assertTrue(metrics.appStartTimeSpan.hasStarted())
     assertEquals(now, metrics.appStartTimeSpan.startUptimeMs)
     assertFalse(metrics.applicationOnCreateTimeSpan.hasStarted())
@@ -286,6 +286,24 @@ class AppStartMetricsTest {
     waitForMainLooperIdle()
 
     assertEquals(100, metrics.appStartTimeSpan.durationMs)
+  }
+
+  @Test
+  fun `resolveNonActivityAppStartEndTime does not overwrite stopped appStartTimeSpan`() {
+    val metrics = AppStartMetrics.getInstance()
+    metrics.appStartTimeSpan.apply {
+      setStartedAt(100)
+      setStoppedAt(150)
+    }
+    metrics.applicationOnCreateTimeSpan.apply {
+      setStartedAt(120)
+      setStoppedAt(200)
+    }
+
+    metrics.registerLifecycleCallbacks(mock<Application>())
+    waitForMainLooperIdle()
+
+    assertEquals(50, metrics.appStartTimeSpan.durationMs)
   }
 
   @Test
@@ -461,11 +479,11 @@ class AppStartMetricsTest {
     val appStartMetrics = AppStartMetrics.getInstance()
     appStartMetrics.addActivityLifecycleTimeSpans(mock())
     appStartMetrics.contentProviderOnCreateTimeSpans.add(mock())
-    assertTrue(appStartMetrics.shouldSendStartMeasurements())
+    assertTrue(appStartMetrics.shouldSendStartMeasurements(false))
     appStartMetrics.onAppStartSpansSent()
     assertTrue(appStartMetrics.activityLifecycleTimeSpans.isEmpty())
     assertTrue(appStartMetrics.contentProviderOnCreateTimeSpans.isEmpty())
-    assertFalse(appStartMetrics.shouldSendStartMeasurements())
+    assertFalse(appStartMetrics.shouldSendStartMeasurements(false))
   }
 
   @Test
@@ -479,18 +497,18 @@ class AppStartMetricsTest {
 
     // then the app start type should be cold and measurements should be sent
     assertEquals(AppStartMetrics.AppStartType.COLD, appStartMetrics.appStartType)
-    assertTrue(appStartMetrics.shouldSendStartMeasurements())
+    assertTrue(appStartMetrics.shouldSendStartMeasurements(false))
 
     // when the activity gets destroyed
     appStartMetrics.onAppStartSpansSent()
-    assertFalse(appStartMetrics.shouldSendStartMeasurements())
+    assertFalse(appStartMetrics.shouldSendStartMeasurements(false))
 
     appStartMetrics.onActivityDestroyed(activity0)
 
     // then it should reset sending the measurements for the next warm activity
     appStartMetrics.onActivityCreated(mock<Activity>(), mock<Bundle>())
     assertEquals(AppStartMetrics.AppStartType.WARM, appStartMetrics.appStartType)
-    assertTrue(appStartMetrics.shouldSendStartMeasurements())
+    assertTrue(appStartMetrics.shouldSendStartMeasurements(false))
   }
 
   @Test
@@ -882,7 +900,7 @@ class AppStartMetricsTest {
     whenever(firstActivity.isChangingConfigurations).thenReturn(false)
     metrics.onActivityCreated(firstActivity, null)
     assertEquals(AppStartMetrics.AppStartType.COLD, metrics.appStartType)
-    assertTrue(metrics.shouldSendStartMeasurements())
+    assertTrue(metrics.shouldSendStartMeasurements(false))
     metrics.onAppStartSpansSent()
     waitForMainLooperIdle()
 
@@ -895,7 +913,7 @@ class AppStartMetricsTest {
     metrics.onActivityCreated(secondActivity, null)
     assertEquals(AppStartMetrics.AppStartType.WARM, metrics.appStartType)
     assertTrue(metrics.isAppLaunchedInForeground)
-    assertTrue(metrics.shouldSendStartMeasurements())
+    assertTrue(metrics.shouldSendStartMeasurements(false))
     metrics.onAppStartSpansSent()
 
     // Third activity - should still be warm
@@ -903,7 +921,7 @@ class AppStartMetricsTest {
     metrics.onActivityCreated(mock<Activity>(), null)
     assertEquals(AppStartMetrics.AppStartType.WARM, metrics.appStartType)
     assertTrue(metrics.isAppLaunchedInForeground)
-    assertFalse(metrics.shouldSendStartMeasurements())
+    assertFalse(metrics.shouldSendStartMeasurements(false))
   }
 
   @Test

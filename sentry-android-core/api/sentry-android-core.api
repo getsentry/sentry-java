@@ -775,6 +775,7 @@ public class io/sentry/android/core/performance/AppStartMetrics : io/sentry/andr
 	public fun setClassLoadedUptimeMs (J)V
 	public fun setOnNoActivityStartedListener (Lio/sentry/android/core/performance/AppStartMetrics$OnNoActivityStartedListener;)V
 	public fun shouldSendStartMeasurements ()Z
+	public fun shouldSendStartMeasurements (Z)Z
 }
 
 public final class io/sentry/android/core/performance/AppStartMetrics$AppStartType : java/lang/Enum {
