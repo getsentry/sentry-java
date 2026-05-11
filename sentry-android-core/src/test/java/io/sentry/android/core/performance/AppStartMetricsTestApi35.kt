@@ -112,6 +112,23 @@ class AppStartMetricsTestApi35 {
   }
 
   @Test
+  fun `known ApplicationStartInfo type without listener preserves legacy no activity behavior`() {
+    val mockStartInfo = mock<ApplicationStartInfo>()
+    whenever(mockStartInfo.startupState).thenReturn(ApplicationStartInfo.STARTUP_STATE_STARTED)
+    whenever(mockStartInfo.startType).thenReturn(ApplicationStartInfo.START_TYPE_WARM)
+    SentryShadowActivityManager.setHistoricalProcessStartReasons(listOf(mockStartInfo))
+    val metrics = AppStartMetrics.getInstance()
+    metrics.appStartTimeSpan.setStartedAt(100)
+
+    val app = ApplicationProvider.getApplicationContext<Application>()
+    metrics.registerLifecycleCallbacks(app)
+    waitForMainLooperIdle()
+
+    assertEquals(AppStartMetrics.AppStartType.WARM, metrics.appStartType)
+    assertFalse(metrics.appStartTimeSpan.hasStopped())
+  }
+
+  @Test
   fun `resolveNonActivityAppStartEndTime converts ApplicationStartInfo timestamp to uptime`() {
     val processStartUptimeMs = 100L
     val processStartElapsedMs = 10_000L

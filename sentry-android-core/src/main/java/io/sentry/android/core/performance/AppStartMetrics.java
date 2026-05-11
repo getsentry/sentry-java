@@ -398,33 +398,35 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
       }
     }
 
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-      Looper.getMainLooper()
-          .getQueue()
-          .addIdleHandler(
-              new MessageQueue.IdleHandler() {
-                @Override
-                public boolean queueIdle() {
-                  firstIdle = SystemClock.uptimeMillis();
-                  handleNoActivityStartIfNeededOnMain();
-                  return false;
-                }
-              });
-    } else {
-      // We post on the main thread a task to post a check on the main thread. On Pixel devices
-      // (possibly others) the first task posted on the main thread is called before the
-      // Activity.onCreate callback. This is a workaround for that, so that the Activity.onCreate
-      // callback is called before the application one.
-      final Handler handler = new Handler(Looper.getMainLooper());
-      handler.post(
-          new Runnable() {
-            @Override
-            public void run() {
-              // not technically correct, but close enough for pre-M
-              firstIdle = SystemClock.uptimeMillis();
-              handler.post(() -> handleNoActivityStartIfNeededOnMain());
-            }
-          });
+    if (appStartType == AppStartType.UNKNOWN || noActivityStartedListener != null) {
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        Looper.getMainLooper()
+            .getQueue()
+            .addIdleHandler(
+                new MessageQueue.IdleHandler() {
+                  @Override
+                  public boolean queueIdle() {
+                    firstIdle = SystemClock.uptimeMillis();
+                    handleNoActivityStartIfNeededOnMain();
+                    return false;
+                  }
+                });
+      } else {
+        // We post on the main thread a task to post a check on the main thread. On Pixel devices
+        // (possibly others) the first task posted on the main thread is called before the
+        // Activity.onCreate callback. This is a workaround for that, so that the Activity.onCreate
+        // callback is called before the application one.
+        final Handler handler = new Handler(Looper.getMainLooper());
+        handler.post(
+            new Runnable() {
+              @Override
+              public void run() {
+                // not technically correct, but close enough for pre-M
+                firstIdle = SystemClock.uptimeMillis();
+                handler.post(() -> handleNoActivityStartIfNeededOnMain());
+              }
+            });
+      }
     }
   }
 
