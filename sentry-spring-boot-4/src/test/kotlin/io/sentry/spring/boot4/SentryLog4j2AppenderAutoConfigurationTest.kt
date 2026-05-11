@@ -7,6 +7,7 @@ import io.sentry.ITransportFactory
 import io.sentry.NoOpTransportFactory
 import io.sentry.ScopesAdapter
 import io.sentry.log4j2.SentryAppender
+import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import org.apache.logging.log4j.Level
@@ -59,11 +60,14 @@ class SentryLog4j2AppenderAutoConfigurationTest {
       .withPropertyValues("sentry.dsn=http://key@localhost/proj")
       .withUserConfiguration(NoOpTransportConfiguration::class.java)
 
+  // Hide the Log4j2 Core provider so LogManager uses the Log4j-to-SLF4J bridge.
   private val log4j2BridgeDsnEnabledRunner =
     baseContextRunner
       .withClassLoader(FilteredClassLoader("org.apache.logging.log4j.core.impl.Log4jProvider"))
       .withPropertyValues("sentry.dsn=http://key@localhost/proj")
       .withUserConfiguration(NoOpTransportConfiguration::class.java)
+
+  private val originalLogManagerFactory = LogManager.getFactory()
 
   private val loggerContext: LoggerContext
     get() = LogManager.getContext(false) as LoggerContext
@@ -78,6 +82,13 @@ class SentryLog4j2AppenderAutoConfigurationTest {
   fun `reset Log4j2 context`() {
     useLog4j2Core()
     resetLog4j2Context()
+  }
+
+  @AfterTest
+  fun `restore Log4j2 context`() {
+    useLog4j2Core()
+    resetLog4j2Context()
+    LogManager.setFactory(originalLogManagerFactory)
   }
 
   @Test
@@ -166,9 +177,9 @@ class SentryLog4j2AppenderAutoConfigurationTest {
         assertThat(appenders).hasSize(1)
         val sentryAppender = appenders[0] as SentryAppender
 
-        assertThat(sentryAppender.getLevel("minimumBreadcrumbLevel")).isEqualTo(Level.DEBUG)
-        assertThat(sentryAppender.getLevel("minimumEventLevel")).isEqualTo(Level.INFO)
-        assertThat(sentryAppender.getLevel("minimumLevel")).isEqualTo(Level.ERROR)
+        assertThat(sentryAppender.minimumBreadcrumbLevel).isEqualTo(Level.DEBUG)
+        assertThat(sentryAppender.minimumEventLevel).isEqualTo(Level.INFO)
+        assertThat(sentryAppender.minimumLevel).isEqualTo(Level.ERROR)
       }
   }
 
@@ -259,6 +270,7 @@ fun <T> org.apache.logging.log4j.core.config.LoggerConfig.getAppenders(
 }
 
 private fun ApplicationContextRunner.withLog4j2CoreProvider(): ApplicationContextRunner =
+  // Hide the Log4j-to-SLF4J provider so LogManager uses Log4j2 Core in these tests.
   withClassLoader(FilteredClassLoader("org.apache.logging.slf4j"))
 
 private fun useLog4j2Core() {
@@ -276,10 +288,4 @@ private fun useSlf4jBridge() {
 private fun resetLog4j2Context() {
   val loggerContext = LogManager.getContext(false) as? LoggerContext ?: return
   loggerContext.reconfigure(DefaultConfiguration())
-}
-
-private fun SentryAppender.getLevel(fieldName: String): Level {
-  val field = SentryAppender::class.java.getDeclaredField(fieldName)
-  field.isAccessible = true
-  return field.get(this) as Level
 }
