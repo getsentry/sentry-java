@@ -1,3 +1,7 @@
+// Adapted from Square's Seismic library.
+// Copyright 2010 Square, Inc.
+// Licensed under the Apache License, Version 2.0.
+// https://github.com/square/seismic
 package io.sentry.android.core;
 
 import android.content.Context;
@@ -7,10 +11,8 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Handler;
 import android.os.HandlerThread;
-import android.os.SystemClock;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
-import java.util.concurrent.atomic.AtomicLong;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -21,8 +23,8 @@ import org.jetbrains.annotations.Nullable;
  * <p>The accelerometer sensor (TYPE_ACCELEROMETER) does NOT require any special permissions on
  * Android. The BODY_SENSORS permission is only needed for heart rate and similar body sensors.
  *
- * <p>Requires at least {@link #SHAKE_COUNT_THRESHOLD} accelerometer readings above {@link
- * #SHAKE_THRESHOLD_GRAVITY} within {@link #SHAKE_WINDOW_MS} to trigger a shake event.
+ * <p>Uses a rolling sample window: if more than 75% of accelerometer readings in the past 0.5s
+ * exceed {@link #ACCELERATION_THRESHOLD}, a shake is detected. Based on Square's Seismic library.
  *
  * <p>Sensor events are delivered on a background {@link HandlerThread} to avoid polluting the main
  * thread.
@@ -30,21 +32,16 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public final class SentryShakeDetector implements SensorEventListener {
 
-  private static final float SHAKE_THRESHOLD_GRAVITY = 2.7f;
-  private static final int SHAKE_WINDOW_MS = 1500;
-  private static final int SHAKE_COUNT_THRESHOLD = 2;
-  private static final int SHAKE_COOLDOWN_MS = 1000;
+  static final int ACCELERATION_THRESHOLD = 13;
 
   private @Nullable SensorManager sensorManager;
   private @Nullable Sensor accelerometer;
   private @Nullable HandlerThread handlerThread;
   private @Nullable Handler handler;
-  private final @NotNull AtomicLong lastShakeTimestamp = new AtomicLong(0);
   private volatile @Nullable Listener listener;
   private @NotNull ILogger logger;
 
-  private int shakeCount = 0;
-  private long firstShakeTimestamp = 0;
+  private final @NotNull SampleQueue queue = new SampleQueue();
 
   public interface Listener {
     void onShake();
@@ -94,10 +91,16 @@ public final class SentryShakeDetector implements SensorEventListener {
 
   public void stop() {
     listener = null;
-    shakeCount = 0;
-    firstShakeTimestamp = 0;
     if (sensorManager != null) {
       sensorManager.unregisterListener(this);
+    }
+    final @Nullable Handler h = handler;
+    if (h != null) {
+      h.post(
+          () -> {
+            //noinspection Convert2MethodRef
+            queue.clear();
+          });
     }
   }
 
@@ -105,6 +108,7 @@ public final class SentryShakeDetector implements SensorEventListener {
   public void close() {
     stop();
     if (handlerThread != null) {
+      // quitSafely drains pending messages (including the clear posted by stop) before exiting
       handlerThread.quitSafely();
       handlerThread = null;
       handler = null;
@@ -116,32 +120,17 @@ public final class SentryShakeDetector implements SensorEventListener {
     if (event.sensor.getType() != Sensor.TYPE_ACCELEROMETER) {
       return;
     }
-    float gX = event.values[0] / SensorManager.GRAVITY_EARTH;
-    float gY = event.values[1] / SensorManager.GRAVITY_EARTH;
-    float gZ = event.values[2] / SensorManager.GRAVITY_EARTH;
-    double gForceSquared = gX * gX + gY * gY + gZ * gZ;
-    if (gForceSquared > SHAKE_THRESHOLD_GRAVITY * SHAKE_THRESHOLD_GRAVITY) {
-      long now = SystemClock.elapsedRealtime();
+    final float ax = event.values[0];
+    final float ay = event.values[1];
+    final float az = event.values[2];
+    final boolean accelerating = Math.sqrt(ax * ax + ay * ay + az * az) > ACCELERATION_THRESHOLD;
 
-      // Reset counter if outside the detection window
-      if (now - firstShakeTimestamp > SHAKE_WINDOW_MS) {
-        shakeCount = 0;
-        firstShakeTimestamp = now;
-      }
-
-      shakeCount++;
-
-      if (shakeCount >= SHAKE_COUNT_THRESHOLD) {
-        // Enforce cooldown so we don't fire repeatedly
-        long lastShake = lastShakeTimestamp.get();
-        if (now - lastShake > SHAKE_COOLDOWN_MS) {
-          lastShakeTimestamp.set(now);
-          shakeCount = 0;
-          final @Nullable Listener currentListener = listener;
-          if (currentListener != null) {
-            currentListener.onShake();
-          }
-        }
+    queue.add(event.timestamp, accelerating);
+    if (queue.isShaking()) {
+      queue.clear();
+      final @Nullable Listener currentListener = listener;
+      if (currentListener != null) {
+        currentListener.onShake();
       }
     }
   }
@@ -149,5 +138,98 @@ public final class SentryShakeDetector implements SensorEventListener {
   @Override
   public void onAccuracyChanged(final @NotNull Sensor sensor, final int accuracy) {
     // Not needed for shake detection.
+  }
+
+  static class SampleQueue {
+    private static final long MAX_WINDOW_SIZE_NS = 500_000_000L; // 0.5s
+    private static final long MIN_WINDOW_SIZE_NS = MAX_WINDOW_SIZE_NS >> 1; // 0.25s
+    private static final int MIN_QUEUE_SIZE = 4;
+
+    private final @NotNull SamplePool pool = new SamplePool();
+    private @Nullable Sample oldest;
+    private @Nullable Sample newest;
+    private int sampleCount;
+    private int acceleratingCount;
+
+    void add(final long timestamp, final boolean accelerating) {
+      purge(timestamp - MAX_WINDOW_SIZE_NS);
+
+      final @NotNull Sample added = pool.acquire();
+      added.timestamp = timestamp;
+      added.accelerating = accelerating;
+      added.next = null;
+      if (newest != null) {
+        newest.next = added;
+      }
+      newest = added;
+      if (oldest == null) {
+        oldest = added;
+      }
+
+      sampleCount++;
+      if (accelerating) {
+        acceleratingCount++;
+      }
+    }
+
+    void clear() {
+      while (oldest != null) {
+        final @NotNull Sample removed = oldest;
+        oldest = removed.next;
+        pool.release(removed);
+      }
+      newest = null;
+      sampleCount = 0;
+      acceleratingCount = 0;
+    }
+
+    private void purge(final long cutoff) {
+      while (sampleCount >= MIN_QUEUE_SIZE && oldest != null && cutoff - oldest.timestamp > 0) {
+        final @NotNull Sample removed = oldest;
+        if (removed.accelerating) {
+          acceleratingCount--;
+        }
+        sampleCount--;
+        oldest = removed.next;
+        if (oldest == null) {
+          newest = null;
+        }
+        pool.release(removed);
+      }
+    }
+
+    boolean isShaking() {
+      return newest != null
+          && oldest != null
+          && sampleCount >= MIN_QUEUE_SIZE
+          && newest.timestamp - oldest.timestamp >= MIN_WINDOW_SIZE_NS
+          && acceleratingCount >= (sampleCount >> 1) + (sampleCount >> 2);
+    }
+  }
+
+  static class Sample {
+    long timestamp;
+    boolean accelerating;
+    @Nullable Sample next;
+  }
+
+  static class SamplePool {
+    private @Nullable Sample head;
+
+    @NotNull
+    Sample acquire() {
+      Sample acquired = head;
+      if (acquired == null) {
+        acquired = new Sample();
+      } else {
+        head = acquired.next;
+      }
+      return acquired;
+    }
+
+    void release(final @NotNull Sample sample) {
+      sample.next = head;
+      head = sample;
+    }
   }
 }

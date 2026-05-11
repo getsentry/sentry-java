@@ -31,6 +31,8 @@ import io.sentry.spring.jakarta.checkin.SentryCheckInPointcutConfiguration;
 import io.sentry.spring.jakarta.checkin.SentryQuartzConfiguration;
 import io.sentry.spring.jakarta.exception.SentryCaptureExceptionParameterPointcutConfiguration;
 import io.sentry.spring.jakarta.exception.SentryExceptionParameterAdviceConfiguration;
+import io.sentry.spring.jakarta.kafka.SentryKafkaConsumerBeanPostProcessor;
+import io.sentry.spring.jakarta.kafka.SentryKafkaProducerBeanPostProcessor;
 import io.sentry.spring.jakarta.opentelemetry.SentryOpenTelemetryAgentWithoutAutoInitConfiguration;
 import io.sentry.spring.jakarta.opentelemetry.SentryOpenTelemetryNoAgentConfiguration;
 import io.sentry.spring.jakarta.tracing.CombinedTransactionNameProvider;
@@ -243,6 +245,34 @@ public class SentryAutoConfiguration {
       public static @NotNull SentryCacheBeanPostProcessor sentryCacheBeanPostProcessor() {
         SentryIntegrationPackageStorage.getInstance().addIntegration("SpringCache");
         return new SentryCacheBeanPostProcessor();
+      }
+    }
+
+    @Configuration(proxyBeanMethods = false)
+    @ConditionalOnClass(
+        name = {
+          "org.springframework.kafka.core.KafkaTemplate",
+          "io.sentry.kafka.SentryKafkaProducer"
+        })
+    @ConditionalOnProperty(name = "sentry.enable-queue-tracing", havingValue = "true")
+    @ConditionalOnMissingClass({
+      "io.sentry.opentelemetry.SentryAutoConfigurationCustomizerProvider",
+      "io.sentry.opentelemetry.agent.AgentMarker"
+    })
+    @Open
+    static class SentryKafkaQueueConfiguration {
+
+      @Bean
+      public static @NotNull SentryKafkaProducerBeanPostProcessor
+          sentryKafkaProducerBeanPostProcessor() {
+        SentryIntegrationPackageStorage.getInstance().addIntegration("SpringKafka");
+        return new SentryKafkaProducerBeanPostProcessor();
+      }
+
+      @Bean
+      public static @NotNull SentryKafkaConsumerBeanPostProcessor
+          sentryKafkaConsumerBeanPostProcessor() {
+        return new SentryKafkaConsumerBeanPostProcessor();
       }
     }
 

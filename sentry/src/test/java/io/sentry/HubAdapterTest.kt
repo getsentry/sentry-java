@@ -14,6 +14,7 @@ import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.reset
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 
 class HubAdapterTest {
   val scopes: IScopes = mock()
@@ -63,6 +64,7 @@ class HubAdapterTest {
     val hint = Hint()
     val scopeCallback = mock<ScopeCallback>()
     val feedback = Feedback("message")
+    whenever(scopes.feedback()).thenReturn(FeedbackApi(scopes))
     HubAdapter.getInstance().captureFeedback(feedback)
     verify(scopes).captureFeedback(eq(feedback))
 

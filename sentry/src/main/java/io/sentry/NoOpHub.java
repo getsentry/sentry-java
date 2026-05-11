@@ -80,6 +80,7 @@ public final class NoOpHub implements IHub {
     return SentryId.EMPTY_ID;
   }
 
+  @Deprecated
   @Override
   public void captureUserFeedback(@NotNull UserFeedback userFeedback) {}
 
@@ -336,6 +337,11 @@ public final class NoOpHub implements IHub {
   @Override
   public @NotNull IMetricsApi metrics() {
     return NoOpMetricsApi.getInstance();
+  }
+
+  @Override
+  public @NotNull IFeedbackApi feedback() {
+    return NoOpFeedbackApi.getInstance();
   }
 
   @Override
