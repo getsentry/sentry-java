@@ -1837,24 +1837,11 @@ class ScopesTest {
   }
 
   @Test
-  fun `when session trace lifecycle is enabled, forceNewTrace keeps transaction trace`() {
-    val scopes = generateScopes { it.isEnableSessionTraceLifecycle = true }
-    val context = TransactionContext("name", "op")
-    context.setForceNewTrace(true)
-
-    val transaction = scopes.startTransaction(context)
-
-    assertTrue(transaction is SentryTracer)
-    assertEquals(context.traceId, transaction.root.spanContext.traceId)
-  }
-
-  @Test
-  fun `forceNewTrace does not override continued trace with parent span`() {
+  fun `continued trace with parent span is not remapped to session trace`() {
     val scopes = generateScopes { it.isEnableSessionTraceLifecycle = true }
     val traceId = "75302ac48a024bde9a3b3734a82e36c8"
     val parentSpanId = "1000000000000000"
     val context = scopes.continueTrace("$traceId-$parentSpanId-1", emptyList())!!
-    context.setForceNewTrace(true)
 
     val transaction = scopes.startTransaction(context)
 

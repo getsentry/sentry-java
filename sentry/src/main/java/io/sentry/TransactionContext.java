@@ -17,7 +17,6 @@ public final class TransactionContext extends SpanContext {
   private @NotNull TransactionNameSource transactionNameSource;
   private @Nullable TracesSamplingDecision parentSamplingDecision;
   private boolean isForNextAppStart = false;
-  private boolean forceNewTrace = false;
 
   @ApiStatus.Internal
   public static TransactionContext fromPropagationContext(
@@ -57,7 +56,6 @@ public final class TransactionContext extends SpanContext {
     sessionContext.transactionNameSource = transactionContext.transactionNameSource;
     sessionContext.parentSamplingDecision = transactionContext.parentSamplingDecision;
     sessionContext.isForNextAppStart = transactionContext.isForNextAppStart;
-    sessionContext.forceNewTrace = transactionContext.forceNewTrace;
     return sessionContext;
   }
 
@@ -167,28 +165,6 @@ public final class TransactionContext extends SpanContext {
 
   public void setTransactionNameSource(final @NotNull TransactionNameSource transactionNameSource) {
     this.transactionNameSource = transactionNameSource;
-  }
-
-  /**
-   * Forces this transaction to start a new trace when session trace lifecycle is enabled.
-   * Explicitly continued traces with a parent span are still preserved.
-   *
-   * @return true if this transaction should not reuse the session propagation context.
-   */
-  @ApiStatus.Experimental
-  public boolean isForceNewTrace() {
-    return forceNewTrace;
-  }
-
-  /**
-   * Forces this transaction to start a new trace when session trace lifecycle is enabled.
-   * Explicitly continued traces with a parent span are still preserved.
-   *
-   * @param forceNewTrace true to keep this transaction on a new trace.
-   */
-  @ApiStatus.Experimental
-  public void setForceNewTrace(final boolean forceNewTrace) {
-    this.forceNewTrace = forceNewTrace;
   }
 
   @ApiStatus.Internal

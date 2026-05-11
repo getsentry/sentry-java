@@ -4593,9 +4593,7 @@ public final class io/sentry/TransactionContext : io/sentry/SpanContext {
 	public fun getParentSamplingDecision ()Lio/sentry/TracesSamplingDecision;
 	public fun getTransactionNameSource ()Lio/sentry/protocol/TransactionNameSource;
 	public fun isForNextAppStart ()Z
-	public fun isForceNewTrace ()Z
 	public fun setForNextAppStart (Z)V
-	public fun setForceNewTrace (Z)V
 	public fun setName (Ljava/lang/String;)V
 	public fun setParentSampled (Ljava/lang/Boolean;)V
 	public fun setParentSampled (Ljava/lang/Boolean;Ljava/lang/Boolean;)V

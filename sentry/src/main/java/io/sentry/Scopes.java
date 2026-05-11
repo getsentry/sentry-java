@@ -1027,8 +1027,7 @@ public final class Scopes implements IScopes {
     final @NotNull PropagationContext propagationContext =
         getCombinedScopeView().getPropagationContext();
     if (getOptions().isEnableSessionTraceLifecycle()
-        && transactionContext.getParentSpanId() == null
-        && !transactionContext.isForceNewTrace()) {
+        && transactionContext.getParentSpanId() == null) {
       return TransactionContext.fromPropagationContextAsRoot(
           propagationContext, transactionContext);
     }
