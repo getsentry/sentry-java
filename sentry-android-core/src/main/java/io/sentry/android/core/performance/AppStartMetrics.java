@@ -406,7 +406,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
                 @Override
                 public boolean queueIdle() {
                   firstIdle = SystemClock.uptimeMillis();
-                  checkCreateTimeOnMain();
+                  handleNoActivityStartIfNeededOnMain();
                   return false;
                 }
               });
@@ -422,22 +422,22 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
             public void run() {
               // not technically correct, but close enough for pre-M
               firstIdle = SystemClock.uptimeMillis();
-              handler.post(() -> checkCreateTimeOnMain());
+              handler.post(() -> handleNoActivityStartIfNeededOnMain());
             }
           });
     }
   }
 
-  private void checkCreateTimeOnMain() {
-    // if no activity has ever been created, app was launched in background
+  /**
+   * Checks whether startup reached an Activity after the main looper had a chance to create one. If
+   * not, handles the non-activity start path. Must be called on the main thread.
+   */
+  private void handleNoActivityStartIfNeededOnMain() {
     if (activeActivitiesCounter.get() == 0) {
       appLaunchedInForeground.setValue(false);
 
-      // Reaching this callback means Application.onCreate() finished with no Activity created,
-      // which is definitionally a cold start for this process. On API < 35 we can't resolve the
-      // start type via ApplicationStartInfo, so appStartType is still UNKNOWN at this point —
-      // default it to COLD so the standalone transaction (and PerformanceAndroidEventProcessor)
-      // classify it correctly.
+      // On API < 35 ApplicationStartInfo can't resolve the type, so default to COLD to classify
+      // the standalone transaction and PerformanceAndroidEventProcessor measurements correctly.
       if (appStartType == AppStartType.UNKNOWN) {
         appStartType = AppStartType.COLD;
       }
@@ -480,8 +480,8 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
           // without specifying the clock base. Compute a duration first and re-anchor it
           // onto TimeSpan's uptime base. If the platform uses a different base and the delta
           // is implausible, this falls through to the class-loaded fallback below.
-          final long onCreateElapsedMs = TimeUnit.NANOSECONDS.toMillis(onCreateNanos);
-          final long durationMs = onCreateElapsedMs - Process.getStartElapsedRealtime();
+          final long onCreateElapsedRealtimeMs = TimeUnit.NANOSECONDS.toMillis(onCreateNanos);
+          final long durationMs = onCreateElapsedRealtimeMs - Process.getStartElapsedRealtime();
           if (durationMs > 0 && durationMs <= TimeUnit.MINUTES.toMillis(1)) {
             final long onCreateUptimeMs = Process.getStartUptimeMillis() + durationMs;
             if (applicationOnCreate.hasStarted() && applicationOnCreate.hasNotStopped()) {

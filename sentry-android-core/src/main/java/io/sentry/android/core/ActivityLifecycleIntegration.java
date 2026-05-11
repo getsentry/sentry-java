@@ -249,8 +249,6 @@ public final class ActivityLifecycleIntegration
         transactionOptions.setAppStartTransaction(appStartSamplingDecision != null);
         setSpanOrigin(transactionOptions);
 
-        // we can only bind to the scope if there's no running transaction
-        // If a non-activity app start transaction was created earlier, reuse its trace ID
         final @Nullable SentryId storedAppStartTraceId =
             AppStartMetrics.getInstance().getAppStartTraceId();
         // When we reuse a stashed traceId, it means the process's app start has already been
@@ -284,7 +282,6 @@ public final class ActivityLifecycleIntegration
         final SpanOptions spanOptions = new SpanOptions();
         setSpanOrigin(spanOptions);
 
-        // in case appStartTime isn't available, we don't create a span for it.
         if (!(firstActivityCreated || appStartTime == null || coldStart == null)) {
           if (options.isEnableStandaloneAppStartTracing()
               && foregroundImportance
@@ -306,8 +303,6 @@ public final class ActivityLifecycleIntegration
                     appStartTransactionOptions);
             appStartTransaction.setData(APP_START_SCREEN_DATA, activityName);
 
-            // in case there's already an end time (e.g. due to deferred SDK init)
-            // we can finish the app start transaction
             finishAppStartSpan();
           } else if (!options.isEnableStandaloneAppStartTracing()) {
             // Legacy behavior: app start span as child of activity transaction
@@ -319,12 +314,10 @@ public final class ActivityLifecycleIntegration
                     Instrumenter.SENTRY,
                     spanOptions);
 
-            // in case there's already an end time (e.g. due to deferred SDK init)
-            // we can finish the app-start span
             finishAppStartSpan();
           }
           // else: flag ON but not foreground — non-activity launch path is handled
-          // via OnNoActivityStartedListener callback in checkCreateTimeOnMain()
+          // via the OnNoActivityStartedListener callback.
         }
         final @NotNull ISpan ttidSpan =
             transaction.startChild(

@@ -91,7 +91,7 @@ class AppStartMetricsTestApi35 {
   }
 
   @Test
-  fun `checkCreateTimeOnMain keeps appStartType COLD when ApplicationStartInfo reports cold start`() {
+  fun `no activity start keeps COLD appStartType from ApplicationStartInfo`() {
     val mockStartInfo = mock<ApplicationStartInfo>()
     whenever(mockStartInfo.startupState).thenReturn(ApplicationStartInfo.STARTUP_STATE_STARTED)
     whenever(mockStartInfo.startType).thenReturn(ApplicationStartInfo.START_TYPE_COLD)
@@ -115,7 +115,7 @@ class AppStartMetricsTestApi35 {
   fun `resolveNonActivityAppStartEndTime converts ApplicationStartInfo timestamp to uptime`() {
     val processStartUptimeMs = 100L
     val processStartElapsedMs = 10_000L
-    val onCreateElapsedMs = 10_250L
+    val onCreateElapsedRealtimeMs = 10_250L
     val mockStartInfo = mock<ApplicationStartInfo>()
     whenever(mockStartInfo.startupState).thenReturn(ApplicationStartInfo.STARTUP_STATE_STARTED)
     whenever(mockStartInfo.startType).thenReturn(ApplicationStartInfo.START_TYPE_COLD)
@@ -123,7 +123,7 @@ class AppStartMetricsTestApi35 {
       .thenReturn(
         mapOf(
           ApplicationStartInfo.START_TIMESTAMP_APPLICATION_ONCREATE to
-            TimeUnit.MILLISECONDS.toNanos(onCreateElapsedMs)
+            TimeUnit.MILLISECONDS.toNanos(onCreateElapsedRealtimeMs)
         )
       )
     SentryShadowActivityManager.setHistoricalProcessStartReasons(listOf(mockStartInfo))

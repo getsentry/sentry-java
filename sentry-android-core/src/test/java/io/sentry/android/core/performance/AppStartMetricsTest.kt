@@ -214,7 +214,7 @@ class AppStartMetricsTest {
   }
 
   @Test
-  fun `checkCreateTimeOnMain defaults appStartType to COLD when UNKNOWN and no activity started`() {
+  fun `no activity start defaults UNKNOWN appStartType to COLD`() {
     val metrics = AppStartMetrics.getInstance()
     metrics.appStartTimeSpan.setStartedAt(100)
 
@@ -226,7 +226,7 @@ class AppStartMetricsTest {
   }
 
   @Test
-  fun `checkCreateTimeOnMain does not overwrite appStartType when already set`() {
+  fun `no activity start does not overwrite existing appStartType`() {
     val metrics = AppStartMetrics.getInstance()
     metrics.appStartType = AppStartMetrics.AppStartType.WARM
     metrics.appStartTimeSpan.setStartedAt(100)
@@ -238,7 +238,7 @@ class AppStartMetricsTest {
   }
 
   @Test
-  fun `checkCreateTimeOnMain fires onNoActivityStartedListener when no activity started`() {
+  fun `no activity start fires OnNoActivityStartedListener`() {
     val listenerCalls = AtomicInteger()
 
     AppStartMetrics.getInstance().setOnNoActivityStartedListener { listenerCalls.incrementAndGet() }
@@ -249,7 +249,7 @@ class AppStartMetricsTest {
   }
 
   @Test
-  fun `checkCreateTimeOnMain does not fire onNoActivityStartedListener when an activity has started`() {
+  fun `activity start prevents OnNoActivityStartedListener`() {
     val listenerCalls = AtomicInteger()
     val metrics = AppStartMetrics.getInstance()
 
