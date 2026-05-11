@@ -1436,8 +1436,8 @@ public class SentryOptions {
   }
 
   /**
-   * Enables or disables session trace lifecycle. When enabled, root transactions can reuse the
-   * current session propagation context unless they force a new trace.
+   * Enables or disables session trace lifecycle. When enabled, root transactions without a parent
+   * span can reuse the current session propagation context.
    *
    * <p>This option is intended for Android/mobile SDKs where trace boundaries are managed by the
    * SDK session lifecycle. Do not enable it for JVM backend, desktop, or other non-session-managed
