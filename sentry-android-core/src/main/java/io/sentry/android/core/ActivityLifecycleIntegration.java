@@ -64,7 +64,6 @@ public final class ActivityLifecycleIntegration
   static final long TTFD_TIMEOUT_MILLIS = 25000;
   private static final String TRACE_ORIGIN = "auto.ui.activity";
   private static final String APP_START_SCREEN_DATA = "app.vitals.start.screen";
-  private static final String APP_START_REASON_DATA = "app.vitals.start.reason";
 
   private final @NotNull Application application;
   private final @NotNull BuildInfoProvider buildInfoProvider;
@@ -306,7 +305,6 @@ public final class ActivityLifecycleIntegration
                         appStartSamplingDecision),
                     appStartTransactionOptions);
             appStartTransaction.setData(APP_START_SCREEN_DATA, activityName);
-            setAppStartReasonData(appStartTransaction, AppStartMetrics.getInstance());
 
             // in case there's already an end time (e.g. due to deferred SDK init)
             // we can finish the app start transaction
@@ -869,14 +867,6 @@ public final class ActivityLifecycleIntegration
     return "App Start";
   }
 
-  private void setAppStartReasonData(
-      final @NotNull ITransaction transaction, final @NotNull AppStartMetrics metrics) {
-    final @Nullable String appStartReason = metrics.getAppStartReason();
-    if (appStartReason != null) {
-      transaction.setData(APP_START_REASON_DATA, appStartReason);
-    }
-  }
-
   private @NotNull String getAppStartOp(final boolean coldStart) {
     if (coldStart) {
       return APP_START_COLD;
@@ -934,7 +924,6 @@ public final class ActivityLifecycleIntegration
             getAppStartTxnName(), TransactionNameSource.COMPONENT, STANDALONE_APP_START_OP, null);
 
     final @NotNull ITransaction transaction = scopes.startTransaction(txnContext, txnOptions);
-    setAppStartReasonData(transaction, metrics);
 
     // Store trace ID so future activity transactions can share it
     metrics.setAppStartTraceId(transaction.getSpanContext().getTraceId());

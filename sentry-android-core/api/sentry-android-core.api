@@ -715,7 +715,6 @@ public class io/sentry/android/core/performance/AppStartMetrics : io/sentry/andr
 	public fun getActivityLifecycleTimeSpans ()Ljava/util/List;
 	public fun getAppStartContinuousProfiler ()Lio/sentry/IContinuousProfiler;
 	public fun getAppStartProfiler ()Lio/sentry/ITransactionProfiler;
-	public fun getAppStartReason ()Ljava/lang/String;
 	public fun getAppStartSamplingDecision ()Lio/sentry/TracesSamplingDecision;
 	public fun getAppStartTimeSpan ()Lio/sentry/android/core/performance/TimeSpan;
 	public fun getAppStartTimeSpanDirect ()Lio/sentry/android/core/performance/TimeSpan;
