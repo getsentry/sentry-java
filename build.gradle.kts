@@ -87,7 +87,9 @@ apiValidation {
             "test-app-sentry",
             "test-app-size",
             "sentry-samples-netflix-dgs",
-            "sentry-samples-console-otlp"
+            "sentry-samples-console-otlp",
+            "sentry-test-support",
+            "sentry-system-test-support"
         )
     )
 }
@@ -249,9 +251,13 @@ tasks.register("buildForCodeQL") {
         }
         .forEach { proj ->
             if (proj.plugins.hasPlugin("com.android.library")) {
-                this.dependsOn(proj.tasks.findByName("compileReleaseUnitTestSources"))
+                proj.tasks.findByName("compileReleaseUnitTestSources")?.let { testTask ->
+                    this.dependsOn(testTask)
+                }
             } else {
-                this.dependsOn(proj.tasks.findByName("testClasses"))
+                proj.tasks.findByName("testClasses")?.let { testTask ->
+                    this.dependsOn(testTask)
+                }
             }
         }
 }

@@ -57,6 +57,8 @@ public final class ExternalOptions {
   private @Nullable Boolean sendDefaultPii;
   private @Nullable Boolean enableBackpressureHandling;
   private @Nullable Boolean enableDatabaseTransactionTracing;
+  private @Nullable Boolean enableCacheTracing;
+  private @Nullable Boolean enableQueueTracing;
   private @Nullable Boolean globalHubMode;
   private @Nullable Boolean forceInit;
   private @Nullable Boolean captureOpenTelemetryEvents;
@@ -64,6 +66,9 @@ public final class ExternalOptions {
   private @Nullable Double profileSessionSampleRate;
   private @Nullable String profilingTracesDirPath;
   private @Nullable ProfileLifecycle profileLifecycle;
+
+  private @Nullable Boolean strictTraceContinuation;
+  private @Nullable String orgId;
 
   private @Nullable SentryOptions.Cron cron;
 
@@ -162,6 +167,10 @@ public final class ExternalOptions {
     options.setEnableDatabaseTransactionTracing(
         propertiesProvider.getBooleanProperty("enable-database-transaction-tracing"));
 
+    options.setEnableCacheTracing(propertiesProvider.getBooleanProperty("enable-cache-tracing"));
+
+    options.setEnableQueueTracing(propertiesProvider.getBooleanProperty("enable-queue-tracing"));
+
     options.setGlobalHubMode(propertiesProvider.getBooleanProperty("global-hub-mode"));
 
     options.setCaptureOpenTelemetryEvents(
@@ -217,6 +226,10 @@ public final class ExternalOptions {
 
       options.setCron(cron);
     }
+
+    options.setStrictTraceContinuation(
+        propertiesProvider.getBooleanProperty("enable-strict-trace-continuation"));
+    options.setOrgId(propertiesProvider.getProperty("org-id"));
 
     options.setEnableSpotlight(propertiesProvider.getBooleanProperty("enable-spotlight"));
     options.setSpotlightConnectionUrl(propertiesProvider.getProperty("spotlight-connection-url"));
@@ -523,6 +536,22 @@ public final class ExternalOptions {
     return enableDatabaseTransactionTracing;
   }
 
+  public void setEnableCacheTracing(final @Nullable Boolean enableCacheTracing) {
+    this.enableCacheTracing = enableCacheTracing;
+  }
+
+  public @Nullable Boolean isEnableCacheTracing() {
+    return enableCacheTracing;
+  }
+
+  public void setEnableQueueTracing(final @Nullable Boolean enableQueueTracing) {
+    this.enableQueueTracing = enableQueueTracing;
+  }
+
+  public @Nullable Boolean isEnableQueueTracing() {
+    return enableQueueTracing;
+  }
+
   public void setGlobalHubMode(final @Nullable Boolean globalHubMode) {
     this.globalHubMode = globalHubMode;
   }
@@ -608,6 +637,22 @@ public final class ExternalOptions {
 
   public void setProfilingTracesDirPath(@Nullable String profilingTracesDirPath) {
     this.profilingTracesDirPath = profilingTracesDirPath;
+  }
+
+  public @Nullable Boolean isStrictTraceContinuation() {
+    return strictTraceContinuation;
+  }
+
+  public void setStrictTraceContinuation(final @Nullable Boolean strictTraceContinuation) {
+    this.strictTraceContinuation = strictTraceContinuation;
+  }
+
+  public @Nullable String getOrgId() {
+    return orgId;
+  }
+
+  public void setOrgId(final @Nullable String orgId) {
+    this.orgId = orgId;
   }
 
   public @Nullable ProfileLifecycle getProfileLifecycle() {

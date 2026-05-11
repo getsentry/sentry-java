@@ -15,14 +15,16 @@ public final class PropagationContext {
   public static PropagationContext fromHeaders(
       final @NotNull ILogger logger,
       final @Nullable String sentryTraceHeader,
-      final @Nullable String baggageHeader) {
-    return fromHeaders(logger, sentryTraceHeader, Arrays.asList(baggageHeader));
+      final @Nullable String baggageHeader,
+      final @Nullable SentryOptions options) {
+    return fromHeaders(logger, sentryTraceHeader, Arrays.asList(baggageHeader), options);
   }
 
   public static @NotNull PropagationContext fromHeaders(
       final @NotNull ILogger logger,
       final @Nullable String sentryTraceHeaderString,
-      final @Nullable List<String> baggageHeaderStrings) {
+      final @Nullable List<String> baggageHeaderStrings,
+      final @Nullable SentryOptions options) {
     if (sentryTraceHeaderString == null) {
       return new PropagationContext();
     }
@@ -30,7 +32,8 @@ public final class PropagationContext {
     try {
       final @NotNull SentryTraceHeader traceHeader = new SentryTraceHeader(sentryTraceHeaderString);
       final @NotNull Baggage baggage = Baggage.fromHeader(baggageHeaderStrings, logger);
-      return fromHeaders(traceHeader, baggage, null);
+
+      return fromHeaders(traceHeader, baggage, null, options);
     } catch (InvalidSentryTraceHeaderException e) {
       logger.log(SentryLevel.DEBUG, e, "Failed to parse Sentry trace header: %s", e.getMessage());
       return new PropagationContext();
@@ -40,7 +43,15 @@ public final class PropagationContext {
   public static @NotNull PropagationContext fromHeaders(
       final @NotNull SentryTraceHeader sentryTraceHeader,
       final @Nullable Baggage baggage,
-      final @Nullable SpanId spanId) {
+      final @Nullable SpanId spanId,
+      final @Nullable SentryOptions options) {
+    if (options != null && !TracingUtils.shouldContinueTrace(options, baggage)) {
+      options
+          .getLogger()
+          .log(SentryLevel.DEBUG, "Not continuing trace due to strict org ID validation failure.");
+      return new PropagationContext();
+    }
+
     final @NotNull SpanId spanIdToUse = spanId == null ? new SpanId() : spanId;
 
     return new PropagationContext(

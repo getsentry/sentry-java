@@ -33,6 +33,7 @@ final class ManifestMetadataReader {
   static final String ANR_REPORT_DEBUG = "io.sentry.anr.report-debug";
   static final String ANR_TIMEOUT_INTERVAL_MILLIS = "io.sentry.anr.timeout-interval-millis";
   static final String ANR_ATTACH_THREAD_DUMPS = "io.sentry.anr.attach-thread-dumps";
+  static final String ANR_REPORT_HISTORICAL = "io.sentry.anr.report-historical";
 
   static final String TOMBSTONE_ENABLE = "io.sentry.tombstone.enable";
 
@@ -120,6 +121,8 @@ final class ManifestMetadataReader {
 
   static final String REPLAYS_DEBUG = "io.sentry.session-replay.debug";
   static final String REPLAYS_SCREENSHOT_STRATEGY = "io.sentry.session-replay.screenshot-strategy";
+  static final String REPLAYS_CAPTURE_SURFACE_VIEWS =
+      "io.sentry.session-replay.capture-surface-views";
 
   static final String REPLAYS_NETWORK_DETAIL_ALLOW_URLS =
       "io.sentry.session-replay.network-detail-allow-urls";
@@ -166,6 +169,11 @@ final class ManifestMetadataReader {
   static final String FEEDBACK_USE_SENTRY_USER = "io.sentry.feedback.use-sentry-user";
 
   static final String FEEDBACK_SHOW_BRANDING = "io.sentry.feedback.show-branding";
+
+  static final String STRICT_TRACE_CONTINUATION = "io.sentry.strict-trace-continuation.enabled";
+  static final String ORG_ID = "io.sentry.org-id";
+
+  static final String FEEDBACK_USE_SHAKE_GESTURE = "io.sentry.feedback.use-shake-gesture";
 
   static final String SPOTLIGHT_ENABLE = "io.sentry.spotlight.enable";
 
@@ -246,6 +254,9 @@ final class ManifestMetadataReader {
 
         options.setAttachAnrThreadDump(
             readBool(metadata, logger, ANR_ATTACH_THREAD_DUMPS, options.isAttachAnrThreadDump()));
+
+        options.setReportHistoricalAnrs(
+            readBool(metadata, logger, ANR_REPORT_HISTORICAL, options.isReportHistoricalAnrs()));
 
         final @Nullable String dsn = readString(metadata, logger, DSN, options.getDsn());
         final boolean enabled = readBool(metadata, logger, ENABLE_SENTRY, options.isEnabled());
@@ -542,6 +553,15 @@ final class ManifestMetadataReader {
           }
         }
 
+        options
+            .getSessionReplay()
+            .setCaptureSurfaceViews(
+                readBool(
+                    metadata,
+                    logger,
+                    REPLAYS_CAPTURE_SURFACE_VIEWS,
+                    options.getSessionReplay().isCaptureSurfaceViews()));
+
         // Network Details Configuration
         if (options.getSessionReplay().getNetworkDetailAllowUrls().isEmpty()) {
           final @Nullable List<String> allowUrls =
@@ -661,6 +681,18 @@ final class ManifestMetadataReader {
                 metadata, logger, FEEDBACK_USE_SENTRY_USER, feedbackOptions.isUseSentryUser()));
         feedbackOptions.setShowBranding(
             readBool(metadata, logger, FEEDBACK_SHOW_BRANDING, feedbackOptions.isShowBranding()));
+        feedbackOptions.setUseShakeGesture(
+            readBool(
+                metadata, logger, FEEDBACK_USE_SHAKE_GESTURE, feedbackOptions.isUseShakeGesture()));
+
+        options.setStrictTraceContinuation(
+            readBool(
+                metadata, logger, STRICT_TRACE_CONTINUATION, options.isStrictTraceContinuation()));
+
+        final @Nullable String orgId = readString(metadata, logger, ORG_ID, null);
+        if (orgId != null) {
+          options.setOrgId(orgId);
+        }
 
         options.setEnableSpotlight(
             readBool(metadata, logger, SPOTLIGHT_ENABLE, options.isEnableSpotlight()));

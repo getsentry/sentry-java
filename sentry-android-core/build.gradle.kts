@@ -4,6 +4,7 @@ import org.jetbrains.kotlin.config.KotlinCompilerVersion
 plugins {
   id("com.android.library")
   alias(libs.plugins.kotlin.android)
+  alias(libs.plugins.kotlin.compose)
   jacoco
   alias(libs.plugins.jacoco.android)
   alias(libs.plugins.errorprone)
@@ -69,6 +70,13 @@ tasks.withType<JavaCompile>().configureEach {
   }
 }
 
+// Snapshot PNGs are written by ScreenshotEventProcessorTest at runtime but must be declared as
+// outputs so Gradle's build cache restores them on cache hits (otherwise the CLI upload step
+// finds an empty directory).
+tasks
+  .matching { it.name == "testDebugUnitTest" || it.name == "testReleaseUnitTest" }
+  .configureEach { outputs.dir(layout.buildDirectory.dir("test-snapshots")) }
+
 dependencies {
   api(projects.sentry)
   compileOnly(libs.jetbrains.annotations)
@@ -107,8 +115,12 @@ dependencies {
   testImplementation(projects.sentryAndroidReplay)
   testImplementation(projects.sentryCompose)
   testImplementation(projects.sentryAndroidNdk)
-  testImplementation(libs.dropbox.differ)
-  testRuntimeOnly(libs.androidx.compose.ui)
+
+  testImplementation(libs.androidx.activity.compose)
+  testImplementation(libs.androidx.compose.ui)
+  testImplementation(libs.androidx.compose.foundation)
+  testImplementation(libs.androidx.compose.foundation.layout)
+  testImplementation(libs.androidx.compose.material3)
   testRuntimeOnly(libs.androidx.fragment.ktx)
   testRuntimeOnly(libs.timber)
 }

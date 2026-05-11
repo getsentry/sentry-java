@@ -13,15 +13,11 @@ internal interface TextLayout {
    */
   val dominantTextColor: Int?
 
-  fun getPrimaryHorizontal(line: Int, offset: Int): Float
+  fun getLineLeft(line: Int): Float
 
-  fun getEllipsisCount(line: Int): Int
-
-  fun getLineVisibleEnd(line: Int): Int
+  fun getLineRight(line: Int): Float
 
   fun getLineTop(line: Int): Int
 
   fun getLineBottom(line: Int): Int
-
-  fun getLineStart(line: Int): Int
 }

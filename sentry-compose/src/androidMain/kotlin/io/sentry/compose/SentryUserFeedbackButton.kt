@@ -15,13 +15,14 @@ import androidx.compose.ui.unit.dp
 import io.sentry.Sentry
 import io.sentry.SentryFeedbackOptions
 
+@Deprecated("`SentryUserFeedbackButton` will be removed in the next major version")
 @Composable
 public fun SentryUserFeedbackButton(
   modifier: Modifier = Modifier,
   text: String = "Report a Bug",
   configurator: SentryFeedbackOptions.OptionsConfigurator? = null,
 ) {
-  Button(modifier = modifier, onClick = { Sentry.showUserFeedbackDialog(configurator) }) {
+  Button(modifier = modifier, onClick = { Sentry.feedback().show(configurator) }) {
     Row(
       verticalAlignment = Alignment.CenterVertically,
       horizontalArrangement = Arrangement.Center,

@@ -1,11 +1,8 @@
 package io.sentry.android.core.internal.gestures;
 
 import android.content.Context;
-import android.os.Handler;
-import android.os.Looper;
 import android.view.MotionEvent;
 import android.view.Window;
-import androidx.core.view.GestureDetectorCompat;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.SpanStatus;
@@ -18,9 +15,13 @@ public final class SentryWindowCallback extends WindowCallbackAdapter {
 
   private final @NotNull Window.Callback delegate;
   private final @NotNull SentryGestureListener gestureListener;
-  private final @NotNull GestureDetectorCompat gestureDetector;
+  private final @NotNull SentryGestureDetector gestureDetector;
   private final @Nullable SentryOptions options;
   private final @NotNull MotionEventObtainer motionEventObtainer;
+
+  // When we can't be removed from the callback chain (see UserInteractionIntegration),
+  // stopTracking() flips this so handleTouchEvent short-circuits.
+  private volatile boolean inert;
 
   public SentryWindowCallback(
       final @NotNull Window.Callback delegate,
@@ -29,7 +30,7 @@ public final class SentryWindowCallback extends WindowCallbackAdapter {
       final @Nullable SentryOptions options) {
     this(
         delegate,
-        new GestureDetectorCompat(context, gestureListener, new Handler(Looper.getMainLooper())),
+        new SentryGestureDetector(context, gestureListener),
         gestureListener,
         options,
         new MotionEventObtainer() {});
@@ -37,7 +38,7 @@ public final class SentryWindowCallback extends WindowCallbackAdapter {
 
   SentryWindowCallback(
       final @NotNull Window.Callback delegate,
-      final @NotNull GestureDetectorCompat gestureDetector,
+      final @NotNull SentryGestureDetector gestureDetector,
       final @NotNull SentryGestureListener gestureListener,
       final @Nullable SentryOptions options,
       final @NotNull MotionEventObtainer motionEventObtainer) {
@@ -67,6 +68,9 @@ public final class SentryWindowCallback extends WindowCallbackAdapter {
   }
 
   private void handleTouchEvent(final @NotNull MotionEvent motionEvent) {
+    if (inert) {
+      return;
+    }
     gestureDetector.onTouchEvent(motionEvent);
     int action = motionEvent.getActionMasked();
     if (action == MotionEvent.ACTION_UP) {
@@ -75,7 +79,9 @@ public final class SentryWindowCallback extends WindowCallbackAdapter {
   }
 
   public void stopTracking() {
+    inert = true;
     gestureListener.stopTracing(SpanStatus.CANCELLED);
+    gestureDetector.recycle();
   }
 
   public @NotNull Window.Callback getDelegate() {

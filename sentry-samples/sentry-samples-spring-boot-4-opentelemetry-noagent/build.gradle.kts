@@ -58,6 +58,10 @@ dependencies {
   implementation(projects.sentryOpentelemetry.sentryOpentelemetryAgentlessSpring)
   implementation(projects.sentryAsyncProfiler)
 
+  // kafka
+  implementation(libs.springboot4.starter.kafka)
+  implementation(projects.sentryKafka)
+
   // database query tracing
   implementation(projects.sentryJdbc)
   runtimeOnly(libs.hsqldb)
@@ -81,6 +85,10 @@ configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
 tasks.register<Test>("systemTest").configure {
   group = "verification"
   description = "Runs the System tests"
+
+  val test = project.extensions.getByType<SourceSetContainer>()["test"]
+  testClassesDirs = test.output.classesDirs
+  classpath = test.runtimeClasspath
 
   outputs.upToDateWhen { false }
 

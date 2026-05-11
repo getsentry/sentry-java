@@ -5,7 +5,7 @@ plugins {
   application
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.gradle.versions)
-  id("com.github.johnrengelman.shadow") version "8.1.1"
+  alias(libs.plugins.shadow)
 }
 
 application { mainClass.set("io.sentry.samples.console.Main") }
@@ -35,6 +35,11 @@ tasks.withType<KotlinCompile>().configureEach {
 dependencies {
   implementation(projects.sentry)
   implementation(projects.sentryAsyncProfiler)
+  implementation(projects.sentryJcache)
+  implementation(projects.sentryKafka)
+  implementation(libs.jcache)
+  implementation(libs.caffeine.jcache)
+  implementation(libs.kafka.clients)
 
   testImplementation(kotlin(Config.kotlinStdLib))
   testImplementation(projects.sentry)
@@ -65,6 +70,10 @@ configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
 tasks.register<Test>("systemTest").configure {
   group = "verification"
   description = "Runs the System tests"
+
+  val test = project.extensions.getByType<SourceSetContainer>()["test"]
+  testClassesDirs = test.output.classesDirs
+  classpath = test.runtimeClasspath
 
   outputs.upToDateWhen { false }
 

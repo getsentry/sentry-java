@@ -186,6 +186,7 @@ public final class Baggage {
     baggage.setPublicKey(options.retrieveParsedDsn().getPublicKey());
     baggage.setRelease(event.getRelease());
     baggage.setEnvironment(event.getEnvironment());
+    baggage.setOrgId(options.getEffectiveOrgId());
     baggage.setTransaction(transaction);
     // we don't persist sample rate
     baggage.setSampleRate(null);
@@ -450,6 +451,16 @@ public final class Baggage {
     set(DSCKeys.REPLAY_ID, replayId);
   }
 
+  @ApiStatus.Internal
+  public @Nullable String getOrgId() {
+    return get(DSCKeys.ORG_ID);
+  }
+
+  @ApiStatus.Internal
+  public void setOrgId(final @Nullable String orgId) {
+    set(DSCKeys.ORG_ID, orgId);
+  }
+
   /**
    * Sets / updates a value, but only if the baggage is still mutable.
    *
@@ -501,6 +512,7 @@ public final class Baggage {
     if (replayId != null && !SentryId.EMPTY_ID.equals(replayId)) {
       setReplayId(replayId.toString());
     }
+    setOrgId(sentryOptions.getEffectiveOrgId());
     setSampleRate(sampleRate(samplingDecision));
     setSampled(StringUtils.toString(sampled(samplingDecision)));
     setSampleRand(sampleRand(samplingDecision));
@@ -536,6 +548,7 @@ public final class Baggage {
     if (!SentryId.EMPTY_ID.equals(replayId)) {
       setReplayId(replayId.toString());
     }
+    setOrgId(options.getEffectiveOrgId());
     setTransaction(null);
     setSampleRate(null);
     setSampled(null);
@@ -632,6 +645,7 @@ public final class Baggage {
     public static final String SAMPLE_RAND = "sentry-sample_rand";
     public static final String SAMPLED = "sentry-sampled";
     public static final String REPLAY_ID = "sentry-replay_id";
+    public static final String ORG_ID = "sentry-org_id";
 
     public static final List<String> ALL =
         Arrays.asList(
@@ -644,6 +658,7 @@ public final class Baggage {
             SAMPLE_RATE,
             SAMPLE_RAND,
             SAMPLED,
-            REPLAY_ID);
+            REPLAY_ID,
+            ORG_ID);
   }
 }

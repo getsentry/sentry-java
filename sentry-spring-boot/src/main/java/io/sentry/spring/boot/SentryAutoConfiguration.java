@@ -25,11 +25,14 @@ import io.sentry.spring.SentryWebConfiguration;
 import io.sentry.spring.SpringProfilesEventProcessor;
 import io.sentry.spring.SpringSecuritySentryUserProvider;
 import io.sentry.spring.boot.graphql.SentryGraphqlAutoConfiguration;
+import io.sentry.spring.cache.SentryCacheBeanPostProcessor;
 import io.sentry.spring.checkin.SentryCheckInAdviceConfiguration;
 import io.sentry.spring.checkin.SentryCheckInPointcutConfiguration;
 import io.sentry.spring.checkin.SentryQuartzConfiguration;
 import io.sentry.spring.exception.SentryCaptureExceptionParameterPointcutConfiguration;
 import io.sentry.spring.exception.SentryExceptionParameterAdviceConfiguration;
+import io.sentry.spring.kafka.SentryKafkaConsumerBeanPostProcessor;
+import io.sentry.spring.kafka.SentryKafkaProducerBeanPostProcessor;
 import io.sentry.spring.opentelemetry.SentryOpenTelemetryAgentWithoutAutoInitConfiguration;
 import io.sentry.spring.opentelemetry.SentryOpenTelemetryNoAgentConfiguration;
 import io.sentry.spring.tracing.CombinedTransactionNameProvider;
@@ -64,6 +67,7 @@ import org.springframework.boot.autoconfigure.web.reactive.function.client.WebCl
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.info.GitProperties;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.cache.CacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
@@ -215,6 +219,47 @@ public class SentryAutoConfiguration {
       SchedulerFactoryBean.class
     })
     static class QuartzConfiguration {}
+
+    @Configuration(proxyBeanMethods = false)
+    @ConditionalOnClass(CacheManager.class)
+    @ConditionalOnProperty(name = "sentry.enable-cache-tracing", havingValue = "true")
+    @Open
+    static class SentryCacheConfiguration {
+
+      @Bean
+      public static @NotNull SentryCacheBeanPostProcessor sentryCacheBeanPostProcessor() {
+        SentryIntegrationPackageStorage.getInstance().addIntegration("SpringCache");
+        return new SentryCacheBeanPostProcessor();
+      }
+    }
+
+    @Configuration(proxyBeanMethods = false)
+    @ConditionalOnClass(
+        name = {
+          "org.springframework.kafka.core.KafkaTemplate",
+          "io.sentry.kafka.SentryKafkaProducer"
+        })
+    @ConditionalOnProperty(name = "sentry.enable-queue-tracing", havingValue = "true")
+    @ConditionalOnMissingClass({
+      "io.sentry.opentelemetry.SentryAutoConfigurationCustomizerProvider",
+      "io.sentry.opentelemetry.agent.AgentMarker"
+    })
+    @Open
+    static class SentryKafkaQueueConfiguration {
+
+      @Bean
+      public static @NotNull SentryKafkaProducerBeanPostProcessor
+          sentryKafkaProducerBeanPostProcessor() {
+        SentryIntegrationPackageStorage.getInstance().addIntegration("SpringKafka");
+        return new SentryKafkaProducerBeanPostProcessor();
+      }
+
+      @Bean
+      public static @NotNull SentryKafkaConsumerBeanPostProcessor
+          sentryKafkaConsumerBeanPostProcessor() {
+        return new SentryKafkaConsumerBeanPostProcessor();
+      }
+    }
 
     @Configuration(proxyBeanMethods = false)
     @ConditionalOnClass(ProceedingJoinPoint.class)

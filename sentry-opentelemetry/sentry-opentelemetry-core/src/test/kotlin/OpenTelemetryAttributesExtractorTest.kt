@@ -1,8 +1,7 @@
 package io.sentry.opentelemetry
 
 import io.opentelemetry.api.common.AttributeKey
-import io.opentelemetry.sdk.internal.AttributesMap
-import io.opentelemetry.sdk.trace.SpanLimits
+import io.opentelemetry.api.common.Attributes
 import io.opentelemetry.sdk.trace.data.SpanData
 import io.opentelemetry.semconv.HttpAttributes
 import io.opentelemetry.semconv.ServerAttributes
@@ -22,12 +21,12 @@ import org.mockito.kotlin.whenever
 class OpenTelemetryAttributesExtractorTest {
   private class Fixture {
     val spanData = mock<SpanData>()
-    val attributes = AttributesMap.create(100, SpanLimits.getDefault().maxAttributeValueLength)
+    var attributes: Attributes = Attributes.empty()
     val options = SentryOptions.empty()
     val scope = Scope(options)
 
     init {
-      whenever(spanData.attributes).thenReturn(attributes)
+      whenever(spanData.attributes).thenAnswer { attributes }
     }
   }
 
@@ -346,7 +345,22 @@ class OpenTelemetryAttributesExtractorTest {
   }
 
   private fun givenAttributes(map: Map<AttributeKey<out Any>, Any>) {
-    map.forEach { k, v -> fixture.attributes.put(k, v) }
+    fixture.attributes = buildAttributes(map)
+  }
+
+  private fun buildAttributes(map: Map<AttributeKey<out Any>, Any>): Attributes {
+    val builder = Attributes.builder()
+    map.forEach { (key, value) -> putAttribute(builder, key, value) }
+    return builder.build()
+  }
+
+  @Suppress("UNCHECKED_CAST")
+  private fun putAttribute(
+    builder: io.opentelemetry.api.common.AttributesBuilder,
+    key: AttributeKey<out Any>,
+    value: Any,
+  ) {
+    builder.put(key as AttributeKey<Any>, value)
   }
 
   private fun whenExtractingAttributes() {

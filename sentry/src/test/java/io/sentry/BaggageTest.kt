@@ -4,6 +4,7 @@ import com.github.javafaker.Faker
 import io.sentry.Baggage.MAX_BAGGAGE_LIST_MEMBER_COUNT
 import io.sentry.Baggage.MAX_BAGGAGE_STRING_LENGTH
 import io.sentry.protocol.SentryId
+import io.sentry.protocol.TransactionNameSource
 import java.util.UUID
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -734,6 +735,90 @@ class BaggageTest {
     val baggage = Baggage.fromHeader("a=b,c=d")
     baggage.sampleRate = null
     assertNull(baggage.sampleRate)
+  }
+
+  @Test
+  fun `setValuesFromScope falls back to DSN org id when explicit orgId is empty`() {
+    val options =
+      SentryOptions().apply {
+        dsn = "https://key@o123.ingest.sentry.io/456"
+        orgId = ""
+      }
+    val scope = Scope(options)
+    val baggage = Baggage(logger)
+
+    baggage.setValuesFromScope(scope, options)
+
+    assertEquals("123", baggage.orgId)
+  }
+
+  @Test
+  fun `setValuesFromScope falls back to DSN org id when explicit orgId is whitespace`() {
+    val options =
+      SentryOptions().apply {
+        dsn = "https://key@o123.ingest.sentry.io/456"
+        orgId = "   "
+      }
+    val scope = Scope(options)
+    val baggage = Baggage(logger)
+
+    baggage.setValuesFromScope(scope, options)
+
+    assertEquals("123", baggage.orgId)
+  }
+
+  @Test
+  fun `setValuesFromTransaction falls back to DSN org id when explicit orgId is empty`() {
+    val options =
+      SentryOptions().apply {
+        dsn = "https://key@o123.ingest.sentry.io/456"
+        orgId = ""
+      }
+    val baggage = Baggage(logger)
+
+    baggage.setValuesFromTransaction(
+      SentryId(),
+      SentryId(),
+      options,
+      TracesSamplingDecision(true, 1.0),
+      "test-transaction",
+      TransactionNameSource.CUSTOM,
+    )
+
+    assertEquals("123", baggage.orgId)
+  }
+
+  @Test
+  fun `fromEvent falls back to DSN org id when explicit orgId is empty`() {
+    val options =
+      SentryOptions().apply {
+        dsn = "https://key@o123.ingest.sentry.io/456"
+        orgId = ""
+      }
+    val event = SentryEvent()
+    event.contexts.setTrace(SpanContext("test-op"))
+
+    val baggage = Baggage.fromEvent(event, "test-transaction", options)
+
+    assertEquals("123", baggage.orgId)
+  }
+
+  @Test
+  fun `baggage header does not include org id when both explicit and DSN org ids are empty`() {
+    val options =
+      SentryOptions().apply {
+        dsn = "https://key@sentry.io/456"
+        orgId = ""
+        release = "1.0.0"
+      }
+    val scope = Scope(options)
+    val baggage = Baggage(logger)
+
+    baggage.setValuesFromScope(scope, options)
+    val headerString = baggage.toHeaderString(null)
+
+    // Should not contain sentry-org_id if both explicit and DSN org ids are null/empty
+    assertFalse(headerString.contains("sentry-org_id"))
   }
 
   /**

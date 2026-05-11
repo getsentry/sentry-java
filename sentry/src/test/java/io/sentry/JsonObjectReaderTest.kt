@@ -2,12 +2,15 @@ package io.sentry
 
 import java.io.StringReader
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
 import org.junit.Test
 import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoMoreInteractions
 
 class JsonObjectReaderTest {
   class Fixture {
@@ -17,6 +20,49 @@ class JsonObjectReaderTest {
   }
 
   val fixture = Fixture()
+
+  private val throwingValueDeserializer =
+    JsonDeserializer<String> { reader, _ ->
+      reader.beginObject()
+      reader.nextName()
+      val value = reader.nextString()
+      if (value == "fail") {
+        throw IllegalStateException("intentional")
+      }
+      reader.endObject()
+      value
+    }
+
+  private val postParseThrowingValueDeserializer =
+    JsonDeserializer<String> { reader, _ ->
+      reader.beginObject()
+      reader.nextName()
+      val value = reader.nextString()
+      reader.endObject()
+      if (value == "fail") {
+        throw IllegalStateException("intentional")
+      }
+      value
+    }
+
+  private fun getValuesReader(jsonValue: String): JsonObjectReader =
+    fixture.getSut("{\"values\": $jsonValue}").apply {
+      beginObject()
+      nextName()
+    }
+
+  private fun <T> assertNextMapOrNullRecoversAfterFailedPrimitiveRead(
+    badValue: String,
+    goodValue: String,
+    expectedValue: T,
+    deserializer: JsonDeserializer<T>,
+  ) {
+    val actual =
+      getValuesReader("{\"bad\": $badValue, \"good\": $goodValue}")
+        .nextMapOrNull(fixture.logger, deserializer)
+
+    assertEquals(mapOf("good" to expectedValue), actual)
+  }
 
   // nextStringOrNull
 
@@ -196,6 +242,297 @@ class JsonObjectReaderTest {
     val actual = reader.nextMapOrNull(fixture.logger, Deserializable.Deserializer())
     assertEquals(expected, actual)
     verify(fixture.logger, never()).log(any(), any(), any<Throwable>())
+  }
+
+  @Test
+  fun `nextListOrNull skips a failing element`() {
+    val actual =
+      getValuesReader("[{\"value\": \"fail\"}]")
+        .nextListOrNull(fixture.logger, throwingValueDeserializer)
+
+    assertEquals(emptyList(), actual)
+  }
+
+  @Test
+  fun `nextListOrNull skips an unconsumed failing element`() {
+    var callCount = 0
+    val deserializer =
+      JsonDeserializer<String> { reader, logger ->
+        if (callCount++ == 0) {
+          throw IllegalStateException("intentional")
+        }
+        throwingValueDeserializer.deserialize(reader, logger)
+      }
+
+    val actual =
+      getValuesReader("[{\"value\": \"ignored\"}, {\"value\": \"two\"}]")
+        .nextListOrNull(fixture.logger, deserializer)
+
+    assertEquals(listOf("two"), actual)
+  }
+
+  @Test
+  fun `nextListOrNull keeps elements before a failing element`() {
+    val actual =
+      getValuesReader("[{\"value\": \"one\"}, {\"value\": \"fail\"}]")
+        .nextListOrNull(fixture.logger, throwingValueDeserializer)
+
+    assertEquals(listOf("one"), actual)
+  }
+
+  @Test
+  fun `nextListOrNull keeps elements after a failing element`() {
+    val actual =
+      getValuesReader("[{\"value\": \"fail\"}, {\"value\": \"two\"}]")
+        .nextListOrNull(fixture.logger, throwingValueDeserializer)
+
+    assertEquals(listOf("two"), actual)
+  }
+
+  @Test
+  fun `nextListOrNull keeps elements after a fully consumed failing element`() {
+    val actual =
+      getValuesReader("[{\"value\": \"fail\"}, {\"value\": \"two\"}]")
+        .nextListOrNull(fixture.logger, postParseThrowingValueDeserializer)
+
+    assertEquals(listOf("two"), actual)
+  }
+
+  @Test
+  fun `nextListOrNull keeps elements after a failing object followed by a primitive`() {
+    val reader =
+      getValuesReader(
+        "[{\"kind\": \"fail\", \"value\": \"bad\"}, \"oops\", {\"kind\": \"ok\", \"value\": \"two\"}]"
+      )
+    val deserializer =
+      JsonDeserializer<String> { objectReader, _ ->
+        objectReader.beginObject()
+        objectReader.nextName()
+        if (objectReader.nextString() == "fail") {
+          throw IllegalStateException("intentional")
+        }
+        objectReader.nextName()
+        val value = objectReader.nextString()
+        objectReader.endObject()
+        value
+      }
+
+    val actual = reader.nextListOrNull(fixture.logger, deserializer)
+
+    assertEquals(listOf("two"), actual)
+    assertEquals(io.sentry.vendor.gson.stream.JsonToken.END_OBJECT, reader.peek())
+  }
+
+  @Test
+  fun `nextListOrNull keeps elements after skipValue consumes a failing element`() {
+    var callCount = 0
+    val deserializer =
+      JsonDeserializer<String> { reader, logger ->
+        if (callCount++ == 0) {
+          reader.skipValue()
+          throw IllegalStateException("intentional")
+        }
+        throwingValueDeserializer.deserialize(reader, logger)
+      }
+
+    val actual =
+      getValuesReader("[{\"value\": \"ignored\"}, {\"value\": \"two\"}]")
+        .nextListOrNull(fixture.logger, deserializer)
+
+    assertEquals(listOf("two"), actual)
+  }
+
+  @Test
+  fun `nextMapOrNull skips a failing value`() {
+    val actual =
+      getValuesReader("{\"bad\": {\"value\": \"fail\"}}")
+        .nextMapOrNull(fixture.logger, throwingValueDeserializer)
+
+    assertEquals(emptyMap(), actual)
+  }
+
+  @Test
+  fun `nextMapOrNull recovers after failed primitive reads`() {
+    assertNextMapOrNullRecoversAfterFailedPrimitiveRead(
+      badValue = "true",
+      goodValue = "2",
+      expectedValue = 2,
+      deserializer = JsonDeserializer { reader, _ -> reader.nextInt() },
+    )
+    assertNextMapOrNullRecoversAfterFailedPrimitiveRead(
+      badValue = "true",
+      goodValue = "2",
+      expectedValue = 2L,
+      deserializer = JsonDeserializer { reader, _ -> reader.nextLong() },
+    )
+    assertNextMapOrNullRecoversAfterFailedPrimitiveRead(
+      badValue = "true",
+      goodValue = "\"two\"",
+      expectedValue = "two",
+      deserializer = JsonDeserializer { reader, _ -> reader.nextString() },
+    )
+    assertNextMapOrNullRecoversAfterFailedPrimitiveRead(
+      badValue = "1",
+      goodValue = "false",
+      expectedValue = false,
+      deserializer = JsonDeserializer { reader, _ -> reader.nextBoolean() },
+    )
+    assertNextMapOrNullRecoversAfterFailedPrimitiveRead(
+      badValue = "true",
+      goodValue = "2.5",
+      expectedValue = 2.5,
+      deserializer = JsonDeserializer { reader, _ -> reader.nextDouble() },
+    )
+    assertNextMapOrNullRecoversAfterFailedPrimitiveRead(
+      badValue = "true",
+      goodValue = "null",
+      expectedValue = Unit,
+      deserializer = JsonDeserializer { reader, _ -> reader.nextNull() },
+    )
+    assertNextMapOrNullRecoversAfterFailedPrimitiveRead(
+      badValue = "true",
+      goodValue = "2.5",
+      expectedValue = 2.5f,
+      deserializer = JsonDeserializer { reader, _ -> reader.nextFloat() },
+    )
+  }
+
+  @Test
+  fun `nextMapOrNull keeps values before a failing value`() {
+    val actual =
+      getValuesReader("{\"good\": {\"value\": \"one\"}, \"bad\": {\"value\": \"fail\"}}")
+        .nextMapOrNull(fixture.logger, throwingValueDeserializer)
+
+    assertEquals(mapOf("good" to "one"), actual)
+  }
+
+  @Test
+  fun `nextMapOrNull keeps values after a failing value`() {
+    val actual =
+      getValuesReader("{\"bad\": {\"value\": \"fail\"}, \"good\": {\"value\": \"two\"}}")
+        .nextMapOrNull(fixture.logger, throwingValueDeserializer)
+
+    assertEquals(mapOf("good" to "two"), actual)
+  }
+
+  @Test
+  fun `nextMapOfListOrNull skips a failing value`() {
+    val actual =
+      getValuesReader("{\"bad\": {\"value\": \"fail\"}}")
+        .nextMapOfListOrNull(fixture.logger, throwingValueDeserializer)
+
+    assertEquals(emptyMap(), actual)
+  }
+
+  @Test
+  fun `nextMapOfListOrNull keeps values before a failing value`() {
+    val actual =
+      getValuesReader("{\"good\": [{\"value\": \"one\"}], \"bad\": {\"value\": \"fail\"}}")
+        .nextMapOfListOrNull(fixture.logger, throwingValueDeserializer)
+
+    assertEquals(mapOf("good" to listOf("one")), actual)
+  }
+
+  @Test
+  fun `nextMapOfListOrNull keeps values after a failing value`() {
+    val actual =
+      getValuesReader("{\"bad\": {\"value\": \"fail\"}, \"good\": [{\"value\": \"two\"}]}")
+        .nextMapOfListOrNull(fixture.logger, throwingValueDeserializer)
+
+    assertEquals(mapOf("good" to listOf("two")), actual)
+  }
+
+  @Test
+  fun `nextMapOfListOrNull keeps nested values after skipValue consumes a failing element`() {
+    var callCount = 0
+    val deserializer =
+      JsonDeserializer<String> { reader, logger ->
+        if (callCount++ == 0) {
+          reader.skipValue()
+          throw IllegalStateException("intentional")
+        }
+        throwingValueDeserializer.deserialize(reader, logger)
+      }
+
+    val actual =
+      getValuesReader("{\"good\": [{\"value\": \"ignored\"}, {\"value\": \"two\"}]}")
+        .nextMapOfListOrNull(fixture.logger, deserializer)
+
+    assertEquals(mapOf("good" to listOf("two")), actual)
+  }
+
+  @Test
+  fun `nextListOrNull logs and aborts when recovery fails`() {
+    assertFailsWith<Exception> {
+      fixture
+        .getSut("[{\"value\": \"fail\"")
+        .nextListOrNull(fixture.logger, throwingValueDeserializer)
+    }
+
+    verify(fixture.logger)
+      .log(
+        eq(SentryLevel.ERROR),
+        eq("Stream unrecoverable, aborting list deserialization."),
+        any<Throwable>(),
+      )
+  }
+
+  @Test
+  fun `nextMapOrNull logs and aborts when recovery fails`() {
+    assertFailsWith<Exception> {
+      fixture
+        .getSut("{\"bad\": {\"value\": \"fail\"")
+        .nextMapOrNull(fixture.logger, throwingValueDeserializer)
+    }
+
+    verify(fixture.logger)
+      .log(
+        eq(SentryLevel.ERROR),
+        eq("Stream unrecoverable, aborting map deserialization."),
+        any<Throwable>(),
+      )
+  }
+
+  @Test
+  fun `nextMapOfListOrNull logs and aborts when recovery fails`() {
+    assertFailsWith<Exception> {
+      fixture
+        .getSut("{\"bad\": [{\"value\": \"fail\"")
+        .nextMapOfListOrNull(fixture.logger, throwingValueDeserializer)
+    }
+
+    verify(fixture.logger)
+      .log(
+        eq(SentryLevel.ERROR),
+        eq("Stream unrecoverable, aborting map-of-lists deserialization."),
+        any<Throwable>(),
+      )
+  }
+
+  @Test
+  fun `nextUnknown logs when recovery fails`() {
+    val unknown = mutableMapOf<String, Any>()
+    val reader = fixture.getSut("{\"key\": {\"value\": \"fail\"")
+    reader.beginObject()
+    val name = reader.nextName()
+
+    reader.nextUnknown(fixture.logger, unknown, name)
+
+    assertEquals(emptyMap(), unknown)
+    verify(fixture.logger)
+      .log(
+        eq(SentryLevel.ERROR),
+        any<Throwable>(),
+        eq("Error deserializing unknown key: %s"),
+        eq("key"),
+      )
+    verify(fixture.logger)
+      .log(
+        eq(SentryLevel.ERROR),
+        eq("Stream unrecoverable after unknown key deserialization failure."),
+        any<Throwable>(),
+      )
+    verifyNoMoreInteractions(fixture.logger)
   }
 
   // nextDateOrNull

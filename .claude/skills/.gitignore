@@ -1,0 +1,10 @@
+# Ignore dotagents-managed skills (synced from agents.toml)
+*
+# Keep custom repo-specific skills
+!.gitignore
+!create-java-pr/
+!create-java-pr/**
+!test/
+!test/**
+!btrace-perfetto/
+!btrace-perfetto/**

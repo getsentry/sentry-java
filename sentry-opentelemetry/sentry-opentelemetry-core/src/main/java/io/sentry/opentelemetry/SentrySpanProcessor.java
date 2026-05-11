@@ -127,7 +127,10 @@ public final class SentrySpanProcessor implements SpanProcessor {
                   new SentryId(traceData.getTraceId()), spanId, null, null, null)
               : TransactionContext.fromPropagationContext(
                   PropagationContext.fromHeaders(
-                      traceData.getSentryTraceHeader(), traceData.getBaggage(), spanId));
+                      traceData.getSentryTraceHeader(),
+                      traceData.getBaggage(),
+                      spanId,
+                      scopes.getOptions()));
       ;
       transactionContext.setName(transactionName);
       transactionContext.setTransactionNameSource(transactionNameSource);
@@ -294,7 +297,7 @@ public final class SentrySpanProcessor implements SpanProcessor {
   private void updateTransactionWithOtelData(
       final @NotNull ITransaction sentryTransaction, final @NotNull ReadableSpan otelSpan) {
     final @NotNull OtelSpanInfo otelSpanInfo =
-        spanDescriptionExtractor.extractSpanInfo(otelSpan.toSpanData(), null);
+        spanDescriptionExtractor.extractSpanInfo(otelSpan.toSpanData(), null, scopes.getOptions());
     sentryTransaction.setOperation(otelSpanInfo.getOp());
     String transactionName = otelSpanInfo.getDescription();
     sentryTransaction.setName(
@@ -331,7 +334,7 @@ public final class SentrySpanProcessor implements SpanProcessor {
             });
 
     final @NotNull OtelSpanInfo otelSpanInfo =
-        spanDescriptionExtractor.extractSpanInfo(otelSpan.toSpanData(), null);
+        spanDescriptionExtractor.extractSpanInfo(otelSpan.toSpanData(), null, scopes.getOptions());
     sentrySpan.setOperation(otelSpanInfo.getOp());
     sentrySpan.setDescription(otelSpanInfo.getDescription());
   }

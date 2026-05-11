@@ -17,6 +17,25 @@ import org.jetbrains.annotations.Nullable;
 
 public final class SentryReplayOptions extends SentryMaskingOptions {
 
+  /**
+   * Callback that is called before the error sample rate is checked for session replay. If the
+   * callback returns {@code false}, the replay will not be captured for this error event, and the
+   * {@code onErrorSampleRate} will not be checked. If the callback returns {@code true}, the {@code
+   * onErrorSampleRate} will be checked as usual. This allows developers to filter which errors
+   * trigger replay capture.
+   */
+  public interface BeforeErrorSamplingCallback {
+    /**
+     * Determines whether replay capture should proceed for the given error event.
+     *
+     * @param event the error event that triggered the replay capture
+     * @param hint the hint associated with the event
+     * @return {@code true} if the error sample rate should be checked, {@code false} to skip replay
+     *     capture entirely
+     */
+    boolean execute(@NotNull SentryEvent event, @NotNull Hint hint);
+  }
+
   private static final String CUSTOM_MASKING_INTEGRATION_NAME = "ReplayCustomMasking";
   private volatile boolean customMaskingTracked = false;
 
@@ -128,6 +147,20 @@ public final class SentryReplayOptions extends SentryMaskingOptions {
   private @NotNull ScreenshotStrategyType screenshotStrategy = ScreenshotStrategyType.PIXEL_COPY;
 
   /**
+   * Whether to capture SurfaceView content (e.g. Unity, video players, maps) during replay
+   * recording. When enabled, each SurfaceView in the view hierarchy will be captured separately via
+   * PixelCopy and composited onto the screenshot. Only applies when {@link #screenshotStrategy} is
+   * {@link ScreenshotStrategyType#PIXEL_COPY}. Default is disabled.
+   *
+   * <p><b>Warning:</b> the SDK cannot mask individual elements rendered inside a SurfaceView (e.g.
+   * native Unity UI, map labels, video frames) — masking granularity is at the SurfaceView level
+   * only. If the SurfaceView is configured to be masked, the entire region is redacted; otherwise
+   * its full pixel content is sent in the replay. Only enable this for SurfaceViews whose content
+   * is safe to record.
+   */
+  @ApiStatus.Experimental private boolean captureSurfaceViews = false;
+
+  /**
    * Capture request and response details for XHR and fetch requests that match the given URLs.
    * Default is empty (network details not collected).
    */
@@ -171,6 +204,12 @@ public final class SentryReplayOptions extends SentryMaskingOptions {
    * headers (Content-Type, Content-Length, Accept) are always included in addition to these.
    */
   private @NotNull List<String> networkResponseHeaders = DEFAULT_HEADERS;
+
+  /**
+   * A callback that is called before the error sample rate is checked for session replay. Can be
+   * used to filter which errors trigger replay capture.
+   */
+  private @Nullable BeforeErrorSamplingCallback beforeErrorSampling;
 
   public SentryReplayOptions(final boolean empty, final @Nullable SdkVersion sdkVersion) {
     if (!empty) {
@@ -359,6 +398,26 @@ public final class SentryReplayOptions extends SentryMaskingOptions {
   }
 
   /**
+   * Whether SurfaceView capture is enabled. See {@link #captureSurfaceViews}.
+   *
+   * @return true if SurfaceView capture is enabled
+   */
+  @ApiStatus.Experimental
+  public boolean isCaptureSurfaceViews() {
+    return captureSurfaceViews;
+  }
+
+  /**
+   * Enables or disables SurfaceView capture. See {@link #captureSurfaceViews}.
+   *
+   * @param captureSurfaceViews true to enable SurfaceView capture
+   */
+  @ApiStatus.Experimental
+  public void setCaptureSurfaceViews(final boolean captureSurfaceViews) {
+    this.captureSurfaceViews = captureSurfaceViews;
+  }
+
+  /**
    * Gets the list of URLs for which network request and response details should be captured.
    *
    * @return the network detail allow URLs list
@@ -468,5 +527,27 @@ public final class SentryReplayOptions extends SentryMaskingOptions {
     merged.addAll(defaultHeaders);
     merged.addAll(additionalHeaders);
     return Collections.unmodifiableList(new ArrayList<>(merged));
+  }
+
+  /**
+   * Gets the callback that is called before the error sample rate is checked for session replay.
+   *
+   * @return the callback, or {@code null} if not set
+   */
+  public @Nullable BeforeErrorSamplingCallback getBeforeErrorSampling() {
+    return beforeErrorSampling;
+  }
+
+  /**
+   * Sets the callback that is called before the error sample rate is checked for session replay.
+   * Returning {@code false} from the callback will skip replay capture for the error event entirely
+   * (the {@code onErrorSampleRate} will not be checked). Returning {@code true} will proceed with
+   * the normal error sample rate check.
+   *
+   * @param beforeErrorSampling the callback, or {@code null} to disable filtering
+   */
+  public void setBeforeErrorSampling(
+      final @Nullable BeforeErrorSamplingCallback beforeErrorSampling) {
+    this.beforeErrorSampling = beforeErrorSampling;
   }
 }

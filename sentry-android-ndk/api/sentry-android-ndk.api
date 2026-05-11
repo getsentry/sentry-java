@@ -15,7 +15,9 @@ public final class io/sentry/android/ndk/DebugImagesLoader : io/sentry/android/c
 
 public final class io/sentry/android/ndk/NdkScopeObserver : io/sentry/ScopeObserverAdapter {
 	public fun <init> (Lio/sentry/SentryOptions;)V
+	public fun addAttachment (Lio/sentry/Attachment;)V
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;)V
+	public fun clearAttachments ()V
 	public fun removeExtra (Ljava/lang/String;)V
 	public fun removeTag (Ljava/lang/String;)V
 	public fun setExtra (Ljava/lang/String;Ljava/lang/String;)V

@@ -3196,6 +3196,100 @@ class SentryClientTest {
   }
 
   @Test
+  fun `beforeErrorSampling returning false skips captureReplay`() {
+    var called = false
+    fixture.sentryOptions.setReplayController(
+      object : ReplayController by NoOpReplayController.getInstance() {
+        override fun captureReplay(isTerminating: Boolean?) {
+          called = true
+        }
+      }
+    )
+    fixture.sentryOptions.sessionReplay.beforeErrorSampling =
+      SentryReplayOptions.BeforeErrorSamplingCallback { _, _ -> false }
+    val sut = fixture.getSut()
+
+    sut.captureEvent(SentryEvent().apply { exceptions = listOf(SentryException()) })
+    assertFalse(called)
+  }
+
+  @Test
+  fun `beforeErrorSampling returning true proceeds with captureReplay`() {
+    var called = false
+    fixture.sentryOptions.setReplayController(
+      object : ReplayController by NoOpReplayController.getInstance() {
+        override fun captureReplay(isTerminating: Boolean?) {
+          called = true
+        }
+      }
+    )
+    fixture.sentryOptions.sessionReplay.beforeErrorSampling =
+      SentryReplayOptions.BeforeErrorSamplingCallback { _, _ -> true }
+    val sut = fixture.getSut()
+
+    sut.captureEvent(SentryEvent().apply { exceptions = listOf(SentryException()) })
+    assertTrue(called)
+  }
+
+  @Test
+  fun `beforeErrorSampling not set proceeds with captureReplay`() {
+    var called = false
+    fixture.sentryOptions.setReplayController(
+      object : ReplayController by NoOpReplayController.getInstance() {
+        override fun captureReplay(isTerminating: Boolean?) {
+          called = true
+        }
+      }
+    )
+    val sut = fixture.getSut()
+
+    sut.captureEvent(SentryEvent().apply { exceptions = listOf(SentryException()) })
+    assertTrue(called)
+  }
+
+  @Test
+  fun `beforeErrorSampling throwing exception proceeds with captureReplay`() {
+    var called = false
+    fixture.sentryOptions.setReplayController(
+      object : ReplayController by NoOpReplayController.getInstance() {
+        override fun captureReplay(isTerminating: Boolean?) {
+          called = true
+        }
+      }
+    )
+    fixture.sentryOptions.sessionReplay.beforeErrorSampling =
+      SentryReplayOptions.BeforeErrorSamplingCallback { _, _ -> throw RuntimeException("test") }
+    val sut = fixture.getSut()
+
+    sut.captureEvent(SentryEvent().apply { exceptions = listOf(SentryException()) })
+    assertTrue(called)
+  }
+
+  @Test
+  fun `beforeErrorSampling receives correct event and hint`() {
+    var receivedEvent: SentryEvent? = null
+    var receivedHint: Hint? = null
+    fixture.sentryOptions.setReplayController(
+      object : ReplayController by NoOpReplayController.getInstance() {
+        override fun captureReplay(isTerminating: Boolean?) {}
+      }
+    )
+    fixture.sentryOptions.sessionReplay.beforeErrorSampling =
+      SentryReplayOptions.BeforeErrorSamplingCallback { event, hint ->
+        receivedEvent = event
+        receivedHint = hint
+        true
+      }
+    val sut = fixture.getSut()
+
+    val event = SentryEvent().apply { exceptions = listOf(SentryException()) }
+    val hint = Hint()
+    sut.captureEvent(event, hint)
+    assertSame(event, receivedEvent)
+    assertSame(hint, receivedHint)
+  }
+
+  @Test
   fun `captures replay for cached events with apply scope`() {
     var called = false
     fixture.sentryOptions.setReplayController(

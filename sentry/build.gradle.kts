@@ -95,6 +95,10 @@ tasks.withType<JavaCompile>().configureEach {
 }
 
 tasks.jar {
+  from(rootProject.file("THIRD_PARTY_NOTICES.md")) {
+    into("META-INF")
+    rename { "SENTRY_THIRD_PARTY_NOTICES.md" }
+  }
   manifest {
     attributes(
       "Sentry-Version-Name" to project.version,

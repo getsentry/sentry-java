@@ -247,6 +247,8 @@ class SentryAutoConfigurationTest {
         "sentry.profile-session-sample-rate=1.0",
         "sentry.profiling-traces-dir-path=tmp/sentry/profiling-traces",
         "sentry.profile-lifecycle=TRACE",
+        "sentry.strict-trace-continuation=true",
+        "sentry.org-id=12345",
       )
       .run {
         val options = it.getBean(SentryProperties::class.java)
@@ -305,6 +307,8 @@ class SentryAutoConfigurationTest {
         assertThat(options.profilingTracesDirPath)
           .startsWith(File("tmp/sentry/profiling-traces").absolutePath)
         assertThat(options.profileLifecycle).isEqualTo(ProfileLifecycle.TRACE)
+        assertThat(options.isStrictTraceContinuation).isEqualTo(true)
+        assertThat(options.orgId).isEqualTo("12345")
       }
   }
 

@@ -19,12 +19,15 @@ import io.sentry.SentryOptions;
 import io.sentry.SentryUUID;
 import io.sentry.android.core.BuildInfoProvider;
 import io.sentry.android.core.ContextUtils;
+import io.sentry.android.core.SentryFramesDelayResult;
 import io.sentry.util.Objects;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.ApiStatus;
@@ -35,6 +38,8 @@ import org.jetbrains.annotations.Nullable;
 public final class SentryFrameMetricsCollector implements Application.ActivityLifecycleCallbacks {
   private static final long oneSecondInNanos = TimeUnit.SECONDS.toNanos(1);
   private static final long frozenFrameThresholdNanos = TimeUnit.MILLISECONDS.toNanos(700);
+  private static final int MAX_FRAMES_COUNT = 3600;
+  private static final long MAX_FRAME_AGE_NANOS = 5L * 60 * 1_000_000_000L; // 5 minutes
 
   private final @NotNull BuildInfoProvider buildInfoProvider;
   private final @NotNull Set<Window> trackedWindows = new CopyOnWriteArraySet<>();
@@ -52,6 +57,10 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
   private @Nullable Field choreographerLastFrameTimeField;
   private long lastFrameStartNanos = 0;
   private long lastFrameEndNanos = 0;
+
+  // frame buffer for getFramesDelay queries, sorted by frame end time
+  private final @NotNull ConcurrentSkipListSet<DelayedFrame> delayedFrames =
+      new ConcurrentSkipListSet<>();
 
   @SuppressLint("NewApi")
   public SentryFrameMetricsCollector(
@@ -176,6 +185,16 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
           final boolean isSlow =
               isSlow(cpuDuration, (long) ((float) oneSecondInNanos / (refreshRate - 1.0f)));
           final boolean isFrozen = isSlow && isFrozen(cpuDuration);
+
+          final long frameStartTime = startTime;
+
+          // store frames with delay for getFramesDelay queries
+          if (delayNanos > 0) {
+            pruneOldFrames(lastFrameEndNanos);
+            if (delayedFrames.size() < MAX_FRAMES_COUNT) {
+              delayedFrames.add(new DelayedFrame(frameStartTime, lastFrameEndNanos, delayNanos));
+            }
+          }
 
           for (FrameMetricsCollectorListener l : listenerMap.values()) {
             l.onFrameMetricCollected(
@@ -352,6 +371,89 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
       }
     }
     return -1;
+  }
+
+  /**
+   * Queries the frame delay for a given time range.
+   *
+   * <p>This is useful for external consumers (e.g. React Native SDK) that need to query frame delay
+   * for an arbitrary time range without registering their own frame listener.
+   *
+   * @param startSystemNanos start of the time range in {@link System#nanoTime()} units
+   * @param endSystemNanos end of the time range in {@link System#nanoTime()} units
+   * @return a {@link SentryFramesDelayResult} with the delay in seconds and the number of frames
+   *     contributing to delay, or a result with delaySeconds=-1 if incalculable
+   */
+  public @NotNull SentryFramesDelayResult getFramesDelay(
+      final long startSystemNanos, final long endSystemNanos) {
+    if (!isAvailable) {
+      return new SentryFramesDelayResult(-1, 0);
+    }
+
+    if (endSystemNanos <= startSystemNanos) {
+      return new SentryFramesDelayResult(-1, 0);
+    }
+
+    long totalDelayNanos = 0;
+    int delayFrameCount = 0;
+
+    if (!delayedFrames.isEmpty()) {
+      final Iterator<DelayedFrame> iterator =
+          delayedFrames.tailSet(new DelayedFrame(startSystemNanos)).iterator();
+
+      while (iterator.hasNext()) {
+        final @NotNull DelayedFrame frame = iterator.next();
+
+        if (frame.startNanos >= endSystemNanos) {
+          break;
+        }
+
+        // The delay portion of a frame is at the end: [frameEnd - delay, frameEnd]
+        final long delayStart = frame.endNanos - frame.delayNanos;
+        final long delayEnd = frame.endNanos;
+
+        // Intersect the delay interval with the query range
+        final long overlapStart = Math.max(delayStart, startSystemNanos);
+        final long overlapEnd = Math.min(delayEnd, endSystemNanos);
+
+        if (overlapEnd > overlapStart) {
+          totalDelayNanos += (overlapEnd - overlapStart);
+          delayFrameCount++;
+        }
+      }
+    }
+
+    final double delaySeconds = totalDelayNanos / 1e9d;
+    return new SentryFramesDelayResult(delaySeconds, delayFrameCount);
+  }
+
+  private void pruneOldFrames(final long currentNanos) {
+    final long cutoff = currentNanos - MAX_FRAME_AGE_NANOS;
+    delayedFrames.headSet(new DelayedFrame(cutoff)).clear();
+  }
+
+  private static class DelayedFrame implements Comparable<DelayedFrame> {
+    final long startNanos;
+    final long endNanos;
+    final long delayNanos;
+
+    /** Sentinel constructor for set range queries (tailSet/headSet). */
+    DelayedFrame(final long timestampNanos) {
+      this(timestampNanos, timestampNanos, 0);
+    }
+
+    DelayedFrame(final long startNanos, final long endNanos, final long delayNanos) {
+      this.startNanos = startNanos;
+      this.endNanos = endNanos;
+      this.delayNanos = delayNanos;
+    }
+
+    @Override
+    public int compareTo(final @NotNull DelayedFrame o) {
+      int cmp = Long.compare(this.endNanos, o.endNanos);
+      if (cmp != 0) return cmp;
+      return Long.compare(this.startNanos, o.startNanos);
+    }
   }
 
   @ApiStatus.Internal

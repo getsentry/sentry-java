@@ -28,12 +28,12 @@ jobs:
 
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           submodules: 'recursive'
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
         with:
           python-version: '3.10.5'
 
@@ -43,14 +43,14 @@ jobs:
           python3 -m pip install -r requirements.txt
 
       - name: Set up Java
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5
         with:
           distribution: 'temurin'
           java-version: '17'
 
       # Workaround for https://github.com/gradle/actions/issues/21 to use config cache
       - name: Cache buildSrc
-        uses: actions/cache@v5
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
         with:
           path: buildSrc/build
           key: build-logic-${{ hashFiles('buildSrc/src/**', 'buildSrc/build.gradle.kts','buildSrc/settings.gradle.kts') }}
@@ -150,7 +150,7 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: test-results-springboot-2-${{ matrix.springboot-version }}
           path: |
@@ -160,7 +160,7 @@ jobs:
             spring-server.txt
 
       - name: Test Report
-        uses: phoenix-actions/test-reporting@f957cd93fc2d848d556fa0d03c57bc79127b6b5e # pin@v15
+        uses: phoenix-actions/test-reporting@7317eea6e13c47348dd0bb318669485157c518d6 # pin@v16
         if: always()
         with:
           name: JUnit Spring Boot 2.x ${{ matrix.springboot-version }}

@@ -217,7 +217,10 @@ public interface IScopes {
    * Captures a manually created user feedback and sends it to Sentry.
    *
    * @param userFeedback The user feedback to send to Sentry.
+   * @deprecated Use {@link #feedback()}.{@link IFeedbackApi#capture(io.sentry.protocol.Feedback)
+   *     capture(feedback)} with the new {@link io.sentry.protocol.Feedback} type instead.
    */
+  @Deprecated
   void captureUserFeedback(@NotNull UserFeedback userFeedback);
 
   /** Starts a new session. If there's a running session, it ends it before starting the new one. */
@@ -747,6 +750,9 @@ public interface IScopes {
 
   @NotNull
   IMetricsApi metrics();
+
+  @NotNull
+  IFeedbackApi feedback();
 
   /**
    * Sets an attribute.

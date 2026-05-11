@@ -332,6 +332,34 @@ class ExternalOptionsTest {
   }
 
   @Test
+  fun `creates options with enableCacheTracing set to true`() {
+    withPropertiesFile("enable-cache-tracing=true") { options ->
+      assertTrue(options.isEnableCacheTracing == true)
+    }
+  }
+
+  @Test
+  fun `creates options with enableCacheTracing set to false`() {
+    withPropertiesFile("enable-cache-tracing=false") { options ->
+      assertTrue(options.isEnableCacheTracing == false)
+    }
+  }
+
+  @Test
+  fun `creates options with enableQueueTracing set to true`() {
+    withPropertiesFile("enable-queue-tracing=true") { options ->
+      assertTrue(options.isEnableQueueTracing == true)
+    }
+  }
+
+  @Test
+  fun `creates options with enableQueueTracing set to false`() {
+    withPropertiesFile("enable-queue-tracing=false") { options ->
+      assertTrue(options.isEnableQueueTracing == false)
+    }
+  }
+
+  @Test
   fun `creates options with cron defaults`() {
     withPropertiesFile(
       listOf(
@@ -447,6 +475,35 @@ class ExternalOptionsTest {
     withPropertiesFile("profile-lifecycle=TRACE") { options ->
       assertTrue(options.profileLifecycle == ProfileLifecycle.TRACE)
     }
+  }
+
+  @Test
+  fun `creates options with strictTraceContinuation set to true`() {
+    withPropertiesFile("enable-strict-trace-continuation=true") { options ->
+      assertTrue(options.isStrictTraceContinuation == true)
+    }
+  }
+
+  @Test
+  fun `creates options with strictTraceContinuation set to false`() {
+    withPropertiesFile("enable-strict-trace-continuation=false") { options ->
+      assertTrue(options.isStrictTraceContinuation == false)
+    }
+  }
+
+  @Test
+  fun `creates options with strictTraceContinuation set to null when not set`() {
+    withPropertiesFile { assertNull(it.isStrictTraceContinuation) }
+  }
+
+  @Test
+  fun `creates options with orgId using external properties`() {
+    withPropertiesFile("org-id=12345") { options -> assertEquals("12345", options.orgId) }
+  }
+
+  @Test
+  fun `creates options with orgId set to null when not set`() {
+    withPropertiesFile { assertNull(it.orgId) }
   }
 
   private fun withPropertiesFile(

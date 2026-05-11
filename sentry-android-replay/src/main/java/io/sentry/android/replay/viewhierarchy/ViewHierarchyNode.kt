@@ -3,6 +3,7 @@ package io.sentry.android.replay.viewhierarchy
 import android.annotation.SuppressLint
 import android.annotation.TargetApi
 import android.graphics.Rect
+import android.view.SurfaceView
 import android.view.View
 import android.view.ViewParent
 import android.widget.ImageView
@@ -15,6 +16,7 @@ import io.sentry.android.replay.util.isMaskable
 import io.sentry.android.replay.util.isVisibleToUser
 import io.sentry.android.replay.util.toOpaque
 import io.sentry.android.replay.util.totalPaddingTopSafe
+import java.lang.ref.WeakReference
 
 @SuppressLint("UseRequiresApi")
 @TargetApi(26)
@@ -95,6 +97,34 @@ internal sealed class ViewHierarchyNode(
     )
 
   class ImageViewHierarchyNode(
+    x: Float,
+    y: Float,
+    width: Int,
+    height: Int,
+    elevation: Float,
+    distance: Int,
+    parent: ViewHierarchyNode? = null,
+    shouldMask: Boolean = false,
+    isImportantForContentCapture: Boolean = false,
+    isVisible: Boolean = false,
+    visibleRect: Rect? = null,
+  ) :
+    ViewHierarchyNode(
+      x,
+      y,
+      width,
+      height,
+      elevation,
+      distance,
+      parent,
+      shouldMask,
+      isImportantForContentCapture,
+      isVisible,
+      visibleRect,
+    )
+
+  class SurfaceViewHierarchyNode(
+    val surfaceViewRef: WeakReference<SurfaceView>,
     x: Float,
     y: Float,
     width: Int,
@@ -376,6 +406,24 @@ internal sealed class ViewHierarchyNode(
             isVisible = isVisible,
             isImportantForContentCapture = true,
             shouldMask = shouldMask && view.drawable?.isMaskable() == true,
+            visibleRect = visibleRect,
+          )
+        }
+
+        is SurfaceView -> {
+          parent?.setImportantForCaptureToAncestors(true)
+          return SurfaceViewHierarchyNode(
+            surfaceViewRef = WeakReference(view),
+            x = view.x,
+            y = view.y,
+            width = view.width,
+            height = view.height,
+            elevation = (parent?.elevation ?: 0f) + view.elevation,
+            distance = distance,
+            parent = parent,
+            shouldMask = shouldMask,
+            isImportantForContentCapture = true,
+            isVisible = isVisible,
             visibleRect = visibleRect,
           )
         }

@@ -3,7 +3,7 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 plugins {
   `java-library`
   id("io.sentry.javadoc")
-  id("com.gradleup.shadow") version "8.3.6"
+  alias(libs.plugins.shadow)
 }
 
 fun relocatePackages(shadowJar: ShadowJar) {
@@ -133,7 +133,7 @@ tasks {
   // each CopySpec has
   // its own duplicatesStrategy
   register("isolateJavaagentLibs", Copy::class.java) {
-    dependsOn(findByName("relocateJavaagentLibs"))
+    findByName("relocateJavaagentLibs")?.let { task -> dependsOn(task) }
     with(isolateClasses(findByName("relocateJavaagentLibs")!!.outputs.files))
 
     into(project.layout.buildDirectory.file("isolated/javaagentLibs").get().asFile)
@@ -145,14 +145,26 @@ tasks {
   named("shadowJar", ShadowJar::class) {
     configurations = listOf(bootstrapLibs) + listOf(upstreamAgent)
 
-    dependsOn(findByName("isolateJavaagentLibs"))
+    findByName("isolateJavaagentLibs")?.let { task -> dependsOn(task) }
     from(findByName("isolateJavaagentLibs")!!.outputs)
 
     archiveClassifier.set("")
 
     duplicatesStrategy = DuplicatesStrategy.FAIL
 
-    mergeServiceFiles { include("inst/META-INF/services/*") }
+    filesMatching("META-INF/services/**") { duplicatesStrategy = DuplicatesStrategy.INCLUDE }
+    filesMatching("inst/META-INF/services/**") { duplicatesStrategy = DuplicatesStrategy.INCLUDE }
+
+    // Shadow 9.x only applies relocations to service files handled by a ServiceFileTransformer.
+    // We need two mergeServiceFiles calls:
+    // 1. Default path (META-INF/services) — ensures bootstrap service files get relocated
+    //    (e.g., ContextStorageProvider → shaded path). Without this, Shadow 9.x skips
+    //    relocation for service file names/contents not claimed by a transformer.
+    // 2. inst/ path — merges isolated agent service files from both the upstream agent
+    //    and the distro libs. Uses `path` instead of `include` filter because Shadow 9.x's
+    //    include() strips the `inst/` prefix on output.
+    mergeServiceFiles()
+    mergeServiceFiles { path = "inst/META-INF/services" }
     exclude("**/module-info.class")
     relocatePackages(this)
 

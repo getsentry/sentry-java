@@ -2,15 +2,25 @@ package io.sentry.samples.console;
 
 import io.sentry.*;
 import io.sentry.clientreport.DiscardReason;
+import io.sentry.jcache.SentryJCacheWrapper;
 import io.sentry.protocol.Message;
 import io.sentry.protocol.User;
+import io.sentry.samples.console.kafka.KafkaShowcase;
 import java.util.Collections;
+import javax.cache.Cache;
+import javax.cache.CacheManager;
+import javax.cache.Caching;
+import javax.cache.configuration.MutableConfiguration;
 
 public class Main {
 
   private static long numberOfDiscardedSpansDueToOverflow = 0;
 
   public static void main(String[] args) throws InterruptedException {
+    final String kafkaBootstrapServers = System.getenv("SENTRY_SAMPLE_KAFKA_BOOTSTRAP_SERVERS");
+    final boolean kafkaEnabled =
+        kafkaBootstrapServers != null && !kafkaBootstrapServers.trim().isEmpty();
+
     Sentry.init(
         options -> {
           // NOTE: Replace the test DSN below with YOUR OWN DSN to see the events from this app in
@@ -88,6 +98,10 @@ public class Main {
           // Set what percentage of traces should be collected
           options.setTracesSampleRate(1.0); // set 0.5 to send 50% of traces
 
+          // Enable cache tracing to create spans for cache operations
+          options.setEnableCacheTracing(true);
+          options.setEnableQueueTracing(kafkaEnabled);
+
           // Determine traces sample rate based on the sampling context
           //          options.setTracesSampler(
           //              context -> {
@@ -164,6 +178,19 @@ public class Main {
       Sentry.captureEvent(event, hint);
     }
 
+    // Cache tracing with JCache (JSR-107)
+    //
+    // Wrapping a JCache Cache with SentryJCacheWrapper creates cache.get, cache.put,
+    // cache.remove, and cache.flush spans as children of the active transaction.
+    demonstrateCacheTracing();
+
+    // Kafka queue tracing with the kafka-clients producer interceptor and manual consumer tracing.
+    //
+    // Enable with: SENTRY_SAMPLE_KAFKA_BOOTSTRAP_SERVERS=localhost:9092
+    if (kafkaEnabled) {
+      KafkaShowcase.runKafkaWithSentryTracing(kafkaBootstrapServers);
+    }
+
     // Performance feature
     //
     // Transactions collect execution time of the piece of code that's executed between the start
@@ -189,6 +216,42 @@ public class Main {
     // All events that have not been sent yet are being flushed on JVM exit. Events can be also
     // flushed manually:
     // Sentry.close();
+  }
+
+  private static void demonstrateCacheTracing() {
+    // Create a JCache CacheManager and Cache using standard JSR-107 API
+    CacheManager cacheManager = Caching.getCachingProvider().getCacheManager();
+    MutableConfiguration<String, String> config =
+        new MutableConfiguration<String, String>().setTypes(String.class, String.class);
+    Cache<String, String> rawCache = cacheManager.createCache("myCache", config);
+
+    // Wrap with SentryJCacheWrapper to enable cache tracing
+    Cache<String, String> cache = new SentryJCacheWrapper<>(rawCache);
+
+    // All cache operations inside a transaction produce child spans
+    ITransaction transaction = Sentry.startTransaction("cache-demo", "demo");
+    try (ISentryLifecycleToken ignored = transaction.makeCurrent()) {
+      // cache.put span
+      cache.put("greeting", "hello");
+
+      // cache.get span (hit — returns "hello", cache.hit = true)
+      cache.get("greeting");
+
+      // cache.get span (miss — returns null, cache.hit = false)
+      cache.get("nonexistent");
+
+      // cache.remove span
+      cache.remove("greeting");
+
+      // cache.flush span
+      cache.clear();
+    } finally {
+      transaction.finish();
+    }
+
+    // Clean up
+    cacheManager.destroyCache("myCache");
+    cacheManager.close();
   }
 
   private static void captureMetrics() {

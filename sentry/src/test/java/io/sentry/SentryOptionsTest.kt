@@ -400,6 +400,7 @@ class SentryOptionsTest {
     externalOptions.ignoredErrors = listOf("Some error", "Another .*")
     externalOptions.isEnableBackpressureHandling = false
     externalOptions.isEnableDatabaseTransactionTracing = true
+    externalOptions.isEnableCacheTracing = true
     externalOptions.maxRequestBodySize = SentryOptions.RequestSize.MEDIUM
     externalOptions.isSendDefaultPii = true
     externalOptions.isForceInit = true
@@ -465,6 +466,7 @@ class SentryOptionsTest {
     )
     assertFalse(options.isEnableBackpressureHandling)
     assertTrue(options.isEnableDatabaseTransactionTracing)
+    assertTrue(options.isEnableCacheTracing)
     assertTrue(options.isForceInit)
     assertNotNull(options.cron)
     assertEquals(10L, options.cron?.defaultCheckinMargin)
@@ -702,6 +704,16 @@ class SentryOptionsTest {
   }
 
   @Test
+  fun `when options are initialized, enableCacheTracing is set to false by default`() {
+    assertFalse(SentryOptions().isEnableCacheTracing)
+  }
+
+  @Test
+  fun `when options are initialized, enableQueueTracing is set to false by default`() {
+    assertFalse(SentryOptions().isEnableQueueTracing)
+  }
+
+  @Test
   fun `when options are initialized, metrics is enabled by default`() {
     assertTrue(SentryOptions().metrics.isEnabled)
   }
@@ -900,8 +912,8 @@ class SentryOptionsTest {
         setLogger(logger)
         isDebug = true
       }
-    options.feedbackOptions.dialogHandler.showDialog(mock(), mock())
-    verify(logger).log(eq(SentryLevel.WARNING), eq("showDialog() can only be called in Android."))
+    options.feedbackOptions.formHandler.showForm(mock(), mock())
+    verify(logger).log(eq(SentryLevel.WARNING), eq("showForm() can only be called in Android."))
   }
 
   @Test
@@ -963,5 +975,153 @@ class SentryOptionsTest {
     val options = SentryOptions()
     options.logs.loggerBatchProcessorFactory = mock
     assertSame(mock, options.logs.loggerBatchProcessorFactory)
+  }
+
+  @Test
+  fun `when options is initialized, strictTraceContinuation is false`() {
+    assertFalse(SentryOptions().isStrictTraceContinuation)
+  }
+
+  @Test
+  fun `when options is initialized, orgId is null`() {
+    assertNull(SentryOptions().orgId)
+  }
+
+  @Test
+  fun `merging options applies strictTraceContinuation`() {
+    val externalOptions = ExternalOptions()
+    externalOptions.setStrictTraceContinuation(true)
+    val options = SentryOptions()
+    options.merge(externalOptions)
+    assertTrue(options.isStrictTraceContinuation)
+  }
+
+  @Test
+  fun `merging options when strictTraceContinuation is not set preserves the previous value`() {
+    val externalOptions = ExternalOptions()
+    val options = SentryOptions()
+    options.isStrictTraceContinuation = true
+    options.merge(externalOptions)
+    assertTrue(options.isStrictTraceContinuation)
+  }
+
+  @Test
+  fun `merging options applies orgId`() {
+    val externalOptions = ExternalOptions()
+    externalOptions.setOrgId("12345")
+    val options = SentryOptions()
+    options.merge(externalOptions)
+    assertEquals("12345", options.orgId)
+  }
+
+  @Test
+  fun `merging options when orgId is not set preserves the previous value`() {
+    val externalOptions = ExternalOptions()
+    val options = SentryOptions()
+    options.orgId = "original"
+    options.merge(externalOptions)
+    assertEquals("original", options.orgId)
+  }
+
+  @Test
+  fun `merging options applies enableQueueTracing`() {
+    val externalOptions = ExternalOptions()
+    externalOptions.setEnableQueueTracing(true)
+    val options = SentryOptions()
+    options.merge(externalOptions)
+    assertTrue(options.isEnableQueueTracing)
+  }
+
+  @Test
+  fun `merging options preserves enableQueueTracing default when not set`() {
+    val externalOptions = ExternalOptions()
+    val options = SentryOptions()
+    options.merge(externalOptions)
+    assertFalse(options.isEnableQueueTracing)
+  }
+
+  @Test
+  fun `getEffectiveOrgId prefers explicit orgId over DSN`() {
+    val options = SentryOptions()
+    options.dsn = "https://key@o123.ingest.sentry.io/456"
+    options.orgId = "999"
+    assertEquals("999", options.effectiveOrgId)
+  }
+
+  @Test
+  fun `getEffectiveOrgId falls back to DSN org id`() {
+    val options = SentryOptions()
+    options.dsn = "https://key@o123.ingest.sentry.io/456"
+    assertEquals("123", options.effectiveOrgId)
+  }
+
+  @Test
+  fun `getEffectiveOrgId returns null when no orgId configured`() {
+    val options = SentryOptions()
+    options.dsn = "https://key@sentry.io/456"
+    assertNull(options.effectiveOrgId)
+  }
+
+  @Test
+  fun `getEffectiveOrgId falls back to DSN when explicit orgId is empty string`() {
+    val options = SentryOptions()
+    options.dsn = "https://key@o123.ingest.sentry.io/456"
+    options.orgId = ""
+    assertEquals("123", options.effectiveOrgId)
+  }
+
+  @Test
+  fun `getEffectiveOrgId falls back to DSN when explicit orgId is whitespace only`() {
+    val options = SentryOptions()
+    options.dsn = "https://key@o123.ingest.sentry.io/456"
+    options.orgId = "   "
+    assertEquals("123", options.effectiveOrgId)
+  }
+
+  @Test
+  fun `getEffectiveOrgId falls back to DSN when explicit orgId is tab and newline`() {
+    val options = SentryOptions()
+    options.dsn = "https://key@o123.ingest.sentry.io/456"
+    options.orgId = "\t\n"
+    assertEquals("123", options.effectiveOrgId)
+  }
+
+  @Test
+  fun `getEffectiveOrgId returns null when explicit orgId is empty and no DSN orgId`() {
+    val options = SentryOptions()
+    options.dsn = "https://key@sentry.io/456"
+    options.orgId = ""
+    assertNull(options.effectiveOrgId)
+  }
+
+  @Test
+  fun `getEffectiveOrgId trims whitespace from explicit orgId`() {
+    val options = SentryOptions()
+    options.dsn = "https://key@o123.ingest.sentry.io/456"
+    options.orgId = "  999  "
+    assertEquals("999", options.effectiveOrgId)
+  }
+
+  @Test
+  fun `scopesStorageFactory is null by default`() {
+    val options = SentryOptions()
+    assertNull(options.scopesStorageFactory)
+  }
+
+  @Test
+  fun `scopesStorageFactory can be set and retrieved`() {
+    val options = SentryOptions()
+    val factory = IScopesStorageFactory { _ -> DefaultScopesStorage() }
+    options.scopesStorageFactory = factory
+    assertSame(factory, options.scopesStorageFactory)
+  }
+
+  @Test
+  fun `scopesStorageFactory can be set to null`() {
+    val options = SentryOptions()
+    val factory = IScopesStorageFactory { _ -> DefaultScopesStorage() }
+    options.scopesStorageFactory = factory
+    options.scopesStorageFactory = null
+    assertNull(options.scopesStorageFactory)
   }
 }

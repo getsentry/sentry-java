@@ -16,6 +16,7 @@ import io.sentry.ScopesAdapter;
 import io.sentry.SentryLevel;
 import io.sentry.SentryTraceHeader;
 import io.sentry.exception.InvalidSentryTraceHeaderException;
+import io.sentry.util.TracingUtils;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -98,6 +99,17 @@ public final class SentryPropagator implements TextMapPropagator {
     try {
       SentryTraceHeader sentryTraceHeader = new SentryTraceHeader(sentryTraceString);
 
+      final @Nullable String baggageString = getter.get(carrier, BaggageHeader.BAGGAGE_HEADER);
+      Baggage baggage = Baggage.fromHeader(baggageString);
+      if (!TracingUtils.shouldContinueTrace(scopes.getOptions(), baggage)) {
+        scopes
+            .getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG, "Not continuing trace due to strict org ID validation failure.");
+        return context;
+      }
+
       SpanContext otelSpanContext =
           SpanContext.createFromRemoteParent(
               sentryTraceHeader.getTraceId().toString(),
@@ -107,9 +119,6 @@ public final class SentryPropagator implements TextMapPropagator {
 
       @NotNull
       Context modifiedContext = context.with(SentryOtelKeys.SENTRY_TRACE_KEY, sentryTraceHeader);
-
-      final @Nullable String baggageString = getter.get(carrier, BaggageHeader.BAGGAGE_HEADER);
-      Baggage baggage = Baggage.fromHeader(baggageString);
       modifiedContext = modifiedContext.with(SentryOtelKeys.SENTRY_BAGGAGE_KEY, baggage);
 
       Span wrappedSpan = Span.wrap(otelSpanContext);

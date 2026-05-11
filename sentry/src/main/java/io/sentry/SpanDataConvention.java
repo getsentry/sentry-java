@@ -26,4 +26,16 @@ public interface SpanDataConvention {
   String HTTP_START_TIMESTAMP = "http.start_timestamp";
   String HTTP_END_TIMESTAMP = "http.end_timestamp";
   String PROFILER_ID = "profiler_id";
+  String CACHE_HIT = "cache.hit";
+  String CACHE_KEY = "cache.key";
+  String CACHE_OPERATION = "cache.operation";
+  String CACHE_WRITE = "cache.write";
+  String MESSAGING_SYSTEM = "messaging.system";
+  String MESSAGING_DESTINATION_NAME = "messaging.destination.name";
+  String MESSAGING_MESSAGE_ID = "messaging.message.id";
+  String MESSAGING_MESSAGE_RETRY_COUNT = "messaging.message.retry.count";
+  String MESSAGING_MESSAGE_BODY_SIZE = "messaging.message.body.size";
+  String MESSAGING_MESSAGE_ENVELOPE_SIZE = "messaging.message.envelope.size";
+  String MESSAGING_MESSAGE_RECEIVE_LATENCY = "messaging.message.receive.latency";
+  String MESSAGING_OPERATION_TYPE = "messaging.operation.type";
 }

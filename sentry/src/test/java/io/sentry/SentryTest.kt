@@ -1,6 +1,6 @@
 package io.sentry
 
-import io.sentry.SentryFeedbackOptions.IDialogHandler
+import io.sentry.SentryFeedbackOptions.IFormHandler
 import io.sentry.SentryOptions.ProfilesSamplerCallback
 import io.sentry.SentryOptions.TracesSamplerCallback
 import io.sentry.backpressure.BackpressureMonitor
@@ -1504,39 +1504,39 @@ class SentryTest {
   }
 
   @Test
-  fun `showUserFeedbackDialog forwards to feedbackOptions_dialogHandler`() {
-    val mockDialogHandler = mock<IDialogHandler>()
+  fun `feedback show forwards to feedbackOptions_formHandler`() {
+    val mockFormHandler = mock<IFormHandler>()
     initForTest {
       it.dsn = dsn
-      it.feedbackOptions.dialogHandler = mockDialogHandler
+      it.feedbackOptions.setFormHandler(mockFormHandler)
     }
-    Sentry.showUserFeedbackDialog()
-    verify(mockDialogHandler).showDialog(eq(null), eq(null))
+    Sentry.feedback().show()
+    verify(mockFormHandler).showForm(eq(null), eq(null))
   }
 
   @Test
-  fun `showUserFeedbackDialog forwards to feedbackOptions_dialogHandler with configurator`() {
-    val mockDialogHandler = mock<IDialogHandler>()
+  fun `feedback show forwards to feedbackOptions_formHandler with configurator`() {
+    val mockFormHandler = mock<IFormHandler>()
     val configurator = mock<SentryFeedbackOptions.OptionsConfigurator>()
     initForTest {
       it.dsn = dsn
-      it.feedbackOptions.dialogHandler = mockDialogHandler
+      it.feedbackOptions.setFormHandler(mockFormHandler)
     }
-    Sentry.showUserFeedbackDialog(configurator)
-    verify(mockDialogHandler).showDialog(eq(null), eq(configurator))
+    Sentry.feedback().show(configurator)
+    verify(mockFormHandler).showForm(eq(null), eq(configurator))
   }
 
   @Test
-  fun `showUserFeedbackDialog forwards to feedbackOptions_dialogHandler with associatedEventId and configurator`() {
-    val mockDialogHandler = mock<IDialogHandler>()
+  fun `feedback show forwards to feedbackOptions_formHandler with associatedEventId and configurator`() {
+    val mockFormHandler = mock<IFormHandler>()
     val configurator = mock<SentryFeedbackOptions.OptionsConfigurator>()
     val associatedEventId = SentryId()
     initForTest {
       it.dsn = dsn
-      it.feedbackOptions.dialogHandler = mockDialogHandler
+      it.feedbackOptions.setFormHandler(mockFormHandler)
     }
-    Sentry.showUserFeedbackDialog(associatedEventId, configurator)
-    verify(mockDialogHandler).showDialog(eq(associatedEventId), eq(configurator))
+    Sentry.feedback().show(associatedEventId, configurator)
+    verify(mockFormHandler).showForm(eq(associatedEventId), eq(configurator))
   }
 
   @Test
@@ -1722,5 +1722,51 @@ class SentryTest {
     fun resetName() {
       javaClass.injectForField("name", "io.sentry.SentryTest\$CustomAndroidOptions")
     }
+  }
+
+  @Test
+  fun `when scopesStorageFactory is set, it is used instead of default storage`() {
+    val customStorage = mock<IScopesStorage>()
+    whenever(customStorage.set(anyOrNull())).thenReturn(mock())
+    whenever(customStorage.get()).thenReturn(null)
+
+    initForTest {
+      it.dsn = dsn
+      it.scopesStorageFactory = IScopesStorageFactory { _ -> customStorage }
+    }
+
+    verify(customStorage).init()
+    verify(customStorage).set(any())
+  }
+
+  @Test
+  fun `when scopesStorageFactory is null, default auto-detection is used`() {
+    initForTest {
+      it.dsn = dsn
+      it.scopesStorageFactory = null
+    }
+
+    // Should work normally with DefaultScopesStorage
+    val scopes = Sentry.getCurrentScopes()
+    assertFalse(scopes.isNoOp)
+  }
+
+  @Test
+  fun `custom scopes storage from factory is functional`() {
+    val backingStorage = DefaultScopesStorage()
+    val factoryCalled = AtomicBoolean(false)
+
+    initForTest {
+      it.dsn = dsn
+      it.scopesStorageFactory = IScopesStorageFactory { _ ->
+        factoryCalled.set(true)
+        backingStorage
+      }
+    }
+
+    assertTrue(factoryCalled.get())
+
+    val scopes = Sentry.getCurrentScopes()
+    assertFalse(scopes.isNoOp)
   }
 }

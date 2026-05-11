@@ -18,7 +18,7 @@ jobs:
   native:
     runs-on: ubuntu-latest
     steps:
-      - uses: getsentry/github-workflows/updater@v3
+      - uses: getsentry/github-workflows/updater@26f565c05d0dd49f703d238706b775883037d76b # v3
         with:
           path: scripts/update-sentry-native-ndk.sh
           name: Native SDK
@@ -27,7 +27,7 @@ jobs:
   gradle-wrapper:
     runs-on: ubuntu-latest
     steps:
-      - uses: getsentry/github-workflows/updater@v3
+      - uses: getsentry/github-workflows/updater@26f565c05d0dd49f703d238706b775883037d76b # v3
         with:
           path: scripts/update-gradle.sh
           name: Gradle

@@ -1,6 +1,5 @@
 import net.ltgt.gradle.errorprone.errorprone
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import org.springframework.boot.gradle.plugin.SpringBootPlugin
 
 plugins {
   `java-library`
@@ -10,7 +9,6 @@ plugins {
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.buildconfig)
-  alias(libs.plugins.springboot2) apply false
 }
 
 tasks.withType<KotlinCompile>().configureEach {
@@ -22,13 +20,14 @@ tasks.withType<KotlinCompile>().configureEach {
 dependencies {
   api(projects.sentry)
 
-  compileOnly(platform(SpringBootPlugin.BOM_COORDINATES))
+  compileOnly(platform(libs.springboot2.bom))
   compileOnly(Config.Libs.springWeb)
   compileOnly(Config.Libs.springAop)
   compileOnly(Config.Libs.springSecurityWeb)
   compileOnly(Config.Libs.aspectj)
   compileOnly(Config.Libs.springWebflux)
   compileOnly(projects.sentryGraphql)
+  compileOnly(projects.sentryKafka)
   compileOnly(projects.sentryQuartz)
   compileOnly(libs.jetbrains.annotations)
   compileOnly(libs.nopen.annotations)
@@ -37,6 +36,7 @@ dependencies {
   compileOnly(libs.slf4j.api)
   compileOnly(libs.springboot.starter.graphql)
   compileOnly(libs.springboot.starter.quartz)
+  compileOnly(libs.spring.kafka2)
   compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryAgentcustomization)
   compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
 
@@ -47,6 +47,7 @@ dependencies {
   // tests
   testImplementation(projects.sentryTestSupport)
   testImplementation(projects.sentryGraphql)
+  testImplementation(projects.sentryKafka)
   testImplementation(kotlin(Config.kotlinStdLib))
   testImplementation(libs.awaitility.kotlin)
   testImplementation(libs.graphql.java17)
@@ -56,6 +57,7 @@ dependencies {
   testImplementation(libs.springboot.starter.aop)
   testImplementation(libs.springboot.starter.graphql)
   testImplementation(libs.springboot.starter.security)
+  testImplementation(libs.spring.kafka2)
   testImplementation(libs.springboot.starter.test)
   testImplementation(libs.springboot.starter.web)
   testImplementation(libs.springboot.starter.webflux)

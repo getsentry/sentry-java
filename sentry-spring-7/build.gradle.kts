@@ -43,10 +43,12 @@ dependencies {
   compileOnly(libs.slf4j.api)
   compileOnly(libs.springboot4.starter.graphql)
   compileOnly(libs.springboot4.starter.quartz)
+  compileOnly(libs.spring.kafka4)
 
   compileOnly(Config.Libs.springWebflux)
   compileOnly(projects.sentryGraphql)
   compileOnly(projects.sentryGraphql22)
+  compileOnly(projects.sentryKafka)
   compileOnly(projects.sentryQuartz)
   compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryAgentcustomization)
   compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
@@ -60,6 +62,7 @@ dependencies {
   // tests
   testImplementation(projects.sentryTestSupport)
   testImplementation(projects.sentryGraphql)
+  testImplementation(projects.sentryKafka)
   testImplementation(kotlin(Config.kotlinStdLib))
   testImplementation(libs.awaitility.kotlin.spring7)
   testImplementation(libs.context.propagation)
@@ -69,6 +72,7 @@ dependencies {
   testImplementation(libs.mockito.inline)
   testImplementation(libs.springboot4.starter.aspectj)
   testImplementation(libs.springboot4.starter.graphql)
+  testImplementation(libs.spring.kafka4)
   testImplementation(libs.springboot4.starter.security)
   testImplementation(libs.springboot4.starter.test)
   testImplementation(libs.springboot4.starter.web)

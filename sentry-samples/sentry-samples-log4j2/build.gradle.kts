@@ -5,7 +5,7 @@ plugins {
   application
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.gradle.versions)
-  id("com.github.johnrengelman.shadow") version "8.1.1"
+  alias(libs.plugins.shadow)
 }
 
 application { mainClass.set("io.sentry.samples.log4j2.Main") }
@@ -45,6 +45,7 @@ dependencies {
 tasks.shadowJar {
   manifest { attributes["Main-Class"] = "io.sentry.samples.log4j2.Main" }
   archiveClassifier.set("") // Remove the classifier so it replaces the regular JAR
+  duplicatesStrategy = DuplicatesStrategy.INCLUDE
   mergeServiceFiles()
   // Use Log4j2 cache transformer to properly handle plugin files
   transform(
@@ -66,6 +67,10 @@ configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
 tasks.register<Test>("systemTest").configure {
   group = "verification"
   description = "Runs the System tests"
+
+  val test = project.extensions.getByType<SourceSetContainer>()["test"]
+  testClassesDirs = test.output.classesDirs
+  classpath = test.runtimeClasspath
 
   outputs.upToDateWhen { false }
 
