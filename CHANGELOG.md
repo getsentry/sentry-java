@@ -9,6 +9,7 @@
 - Add API to clear feature flags from scopes ([#5426](https://github.com/getsentry/sentry-java/pull/5426))
 - Add support to configure reporting historical ANRs via `AndroidManifest.xml` using the  `io.sentry.anr.report-historical` attribute ([#5387](https://github.com/getsentry/sentry-java/pull/5387))
 - Parse ART memory and garbage collector info from ANR tombstones into ART context ([#5428](https://github.com/getsentry/sentry-java/pull/5428))
+- Session Replay: Add `beforeStoreFrame` callback ([#5386](https://github.com/getsentry/sentry-java/pull/5386))
 
 ### Dependencies
 

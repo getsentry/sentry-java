@@ -12,8 +12,18 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertTrue
+import org.hamcrest.CoreMatchers.`is`
+import org.junit.Assume.assumeThat
+import org.junit.Before
 
 class ReplaySnapshotTest : BaseUiTest() {
+
+  @Before
+  fun setup() {
+    // GH Actions emulators don't support capturing screenshots for replay
+    @Suppress("KotlinConstantConditions")
+    assumeThat(BuildConfig.ENVIRONMENT != "github", `is`(true))
+  }
 
   @Test
   fun captureComposeReplayFrameSnapshots() {
