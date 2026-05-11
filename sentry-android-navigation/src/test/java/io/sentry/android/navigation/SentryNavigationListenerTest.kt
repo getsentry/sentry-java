@@ -22,6 +22,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotSame
 import kotlin.test.assertNull
+import kotlin.test.assertSame
 import org.junit.runner.RunWith
 import org.mockito.ArgumentCaptor
 import org.mockito.kotlin.any
@@ -60,12 +61,14 @@ class SentryNavigationListenerTest {
       hasViewIdInRes: Boolean = true,
       transaction: SentryTracer? = null,
       traceOriginAppendix: String? = null,
+      enableSessionTraceLifecycle: Boolean = false,
     ): SentryNavigationListener {
       options =
         SentryOptions().apply {
           dsn = "http://key@localhost/proj"
           setTracesSampleRate(tracesSampleRate)
           isEnableScreenTracking = enableScreenTracking
+          isEnableSessionTraceLifecycle = enableSessionTraceLifecycle
         }
       whenever(scopes.options).thenReturn(options)
 
@@ -361,6 +364,24 @@ class SentryNavigationListenerTest {
 
     verify(fixture.scopes, times(2)).configureScope(any())
     assertNotSame(propagationContextAtStart, scope.propagationContext)
+  }
+
+  @Test
+  fun `does not start new trace if performance is disabled and session trace lifecycle is enabled`() {
+    val sut = fixture.getSut(enableNavigationTracing = false, enableSessionTraceLifecycle = true)
+
+    val argumentCaptor: ArgumentCaptor<ScopeCallback> =
+      ArgumentCaptor.forClass(ScopeCallback::class.java)
+    val scope = Scope(fixture.options)
+    val propagationContextAtStart = scope.propagationContext
+    whenever(fixture.scopes.configureScope(argumentCaptor.capture())).thenAnswer {
+      argumentCaptor.value.run(scope)
+    }
+
+    sut.onDestinationChanged(fixture.navController, fixture.destination, null)
+
+    verify(fixture.scopes).configureScope(any())
+    assertSame(propagationContextAtStart, scope.propagationContext)
   }
 
   @Test

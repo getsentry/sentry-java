@@ -122,24 +122,35 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
     this.traceId = spanContext.traceId;
     this.spanId = spanContext.spanId;
     this.parentSpanId = spanContext.parentSpanId;
-    setSamplingDecision(spanContext.samplingDecision);
     this.op = spanContext.op;
-    this.description = spanContext.description;
-    this.status = spanContext.status;
-    final Map<String, String> copiedTags = CollectionUtils.newConcurrentHashMap(spanContext.tags);
+    copyNonTraceState(spanContext, this, spanContext.baggage);
+  }
+
+  @ApiStatus.Internal
+  static void copyNonTraceState(
+      final @NotNull SpanContext source,
+      final @NotNull SpanContext target,
+      final @Nullable Baggage baggage) {
+    target.op = source.op;
+    target.description = source.description;
+    target.status = source.status;
+    target.origin = source.origin;
+    target.instrumenter = source.instrumenter;
+    target.baggage = baggage;
+    target.setSamplingDecision(source.samplingDecision);
+    final Map<String, String> copiedTags = CollectionUtils.newConcurrentHashMap(source.tags);
     if (copiedTags != null) {
-      this.tags = copiedTags;
+      target.tags = copiedTags;
     }
-    final Map<String, Object> copiedUnknown =
-        CollectionUtils.newConcurrentHashMap(spanContext.unknown);
+    final Map<String, Object> copiedUnknown = CollectionUtils.newConcurrentHashMap(source.unknown);
     if (copiedUnknown != null) {
-      this.unknown = copiedUnknown;
+      target.unknown = copiedUnknown;
     }
-    this.baggage = spanContext.baggage;
-    final Map<String, Object> copiedData = CollectionUtils.newConcurrentHashMap(spanContext.data);
+    final Map<String, Object> copiedData = CollectionUtils.newConcurrentHashMap(source.data);
     if (copiedData != null) {
-      this.data = copiedData;
+      target.data = copiedData;
     }
+    target.profilerId = source.profilerId;
   }
 
   public void setOperation(final @NotNull String operation) {

@@ -1822,6 +1822,50 @@ class ScopesTest {
   }
 
   @Test
+  fun `when session trace lifecycle is enabled, startTransaction uses session propagation context`() {
+    val scopes = generateScopes { it.isEnableSessionTraceLifecycle = true }
+    var propagationContext: PropagationContext? = null
+    scopes.configureScope { propagationContext = it.propagationContext }
+
+    val transaction = scopes.startTransaction(TransactionContext("name", "op"))
+
+    assertTrue(transaction is SentryTracer)
+    assertEquals(propagationContext!!.traceId, transaction.root.spanContext.traceId)
+    assertNotEquals(propagationContext!!.spanId, transaction.root.spanContext.spanId)
+    assertNull(transaction.root.spanContext.parentSpanId)
+    assertEquals(propagationContext!!.sampleRand, transaction.root.spanContext.baggage!!.sampleRand)
+  }
+
+  @Test
+  fun `continued trace with parent span is not remapped to session trace`() {
+    val scopes = generateScopes { it.isEnableSessionTraceLifecycle = true }
+    val traceId = "75302ac48a024bde9a3b3734a82e36c8"
+    val parentSpanId = "1000000000000000"
+    val context = scopes.continueTrace("$traceId-$parentSpanId-1", emptyList())!!
+
+    val transaction = scopes.startTransaction(context)
+
+    assertTrue(transaction is SentryTracer)
+    assertEquals(SentryId(traceId), transaction.root.spanContext.traceId)
+    assertEquals(SpanId(parentSpanId), transaction.root.spanContext.parentSpanId)
+  }
+
+  @Test
+  fun `when session trace lifecycle is enabled, root transaction uses current propagation context`() {
+    val scopes = generateScopes { it.isEnableSessionTraceLifecycle = true }
+    val traceId = "75302ac48a024bde9a3b3734a82e36c8"
+    val parentSpanId = "1000000000000000"
+    scopes.continueTrace("$traceId-$parentSpanId-1", emptyList())
+
+    val transaction = scopes.startTransaction(TransactionContext("name", "op"))
+
+    assertTrue(transaction is SentryTracer)
+    assertEquals(SentryId(traceId), transaction.root.spanContext.traceId)
+    assertNotEquals(SpanId(parentSpanId), transaction.root.spanContext.spanId)
+    assertNull(transaction.root.spanContext.parentSpanId)
+  }
+
+  @Test
   fun `when startTransaction with bindToScope set to false, transaction is not attached to the scope`() {
     val scopes = generateScopes()
 

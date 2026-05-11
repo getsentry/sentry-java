@@ -530,6 +530,7 @@ public final class io/sentry/ExternalOptions {
 	public fun isEnableMetrics ()Ljava/lang/Boolean;
 	public fun isEnablePrettySerializationOutput ()Ljava/lang/Boolean;
 	public fun isEnableQueueTracing ()Ljava/lang/Boolean;
+	public fun isEnableSessionTraceLifecycle ()Ljava/lang/Boolean;
 	public fun isEnableSpotlight ()Ljava/lang/Boolean;
 	public fun isEnabled ()Ljava/lang/Boolean;
 	public fun isForceInit ()Ljava/lang/Boolean;
@@ -550,6 +551,7 @@ public final class io/sentry/ExternalOptions {
 	public fun setEnableMetrics (Ljava/lang/Boolean;)V
 	public fun setEnablePrettySerializationOutput (Ljava/lang/Boolean;)V
 	public fun setEnableQueueTracing (Ljava/lang/Boolean;)V
+	public fun setEnableSessionTraceLifecycle (Ljava/lang/Boolean;)V
 	public fun setEnableSpotlight (Ljava/lang/Boolean;)V
 	public fun setEnableUncaughtExceptionHandler (Ljava/lang/Boolean;)V
 	public fun setEnabled (Ljava/lang/Boolean;)V
@@ -3719,6 +3721,7 @@ public class io/sentry/SentryOptions {
 	public fun isEnableQueueTracing ()Z
 	public fun isEnableScopePersistence ()Z
 	public fun isEnableScreenTracking ()Z
+	public fun isEnableSessionTraceLifecycle ()Z
 	public fun isEnableShutdownHook ()Z
 	public fun isEnableSpotlight ()Z
 	public fun isEnableTimeToFullDisplayTracing ()Z
@@ -3780,6 +3783,7 @@ public class io/sentry/SentryOptions {
 	public fun setEnableQueueTracing (Z)V
 	public fun setEnableScopePersistence (Z)V
 	public fun setEnableScreenTracking (Z)V
+	public fun setEnableSessionTraceLifecycle (Z)V
 	public fun setEnableShutdownHook (Z)V
 	public fun setEnableSpotlight (Z)V
 	public fun setEnableTimeToFullDisplayTracing (Z)V

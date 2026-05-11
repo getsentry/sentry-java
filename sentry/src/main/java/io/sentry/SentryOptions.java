@@ -290,6 +290,9 @@ public class SentryOptions {
   /** Whether to enable or disable automatic session tracking. */
   private boolean enableAutoSessionTracking = true;
 
+  /** Whether root transactions should reuse the current session trace lifecycle. */
+  private boolean enableSessionTraceLifecycle = false;
+
   /**
    * The session tracking interval in millis. This is the interval to end a session if the App goes
    * to the background.
@@ -1416,6 +1419,35 @@ public class SentryOptions {
    */
   public void setEnableAutoSessionTracking(final boolean enableAutoSessionTracking) {
     this.enableAutoSessionTracking = enableAutoSessionTracking;
+  }
+
+  /**
+   * Returns whether root transactions should reuse the current session trace lifecycle.
+   *
+   * <p>This option is intended for Android/mobile SDKs where trace boundaries are managed by the
+   * SDK session lifecycle. Do not enable it for JVM backend, desktop, or other non-session-managed
+   * runtimes because unrelated root transactions may otherwise share the same trace.
+   *
+   * @return true if enabled or false otherwise
+   */
+  @ApiStatus.Experimental
+  public boolean isEnableSessionTraceLifecycle() {
+    return enableSessionTraceLifecycle;
+  }
+
+  /**
+   * Enables or disables session trace lifecycle. When enabled, root transactions without a parent
+   * span can reuse the current session propagation context.
+   *
+   * <p>This option is intended for Android/mobile SDKs where trace boundaries are managed by the
+   * SDK session lifecycle. Do not enable it for JVM backend, desktop, or other non-session-managed
+   * runtimes because unrelated root transactions may otherwise share the same trace.
+   *
+   * @param enableSessionTraceLifecycle true if enabled or false otherwise
+   */
+  @ApiStatus.Experimental
+  public void setEnableSessionTraceLifecycle(final boolean enableSessionTraceLifecycle) {
+    this.enableSessionTraceLifecycle = enableSessionTraceLifecycle;
   }
 
   /**
@@ -3636,6 +3668,9 @@ public class SentryOptions {
     }
     if (options.isStrictTraceContinuation() != null) {
       setStrictTraceContinuation(options.isStrictTraceContinuation());
+    }
+    if (options.isEnableSessionTraceLifecycle() != null) {
+      setEnableSessionTraceLifecycle(options.isEnableSessionTraceLifecycle());
     }
     if (options.getOrgId() != null) {
       setOrgId(options.getOrgId());

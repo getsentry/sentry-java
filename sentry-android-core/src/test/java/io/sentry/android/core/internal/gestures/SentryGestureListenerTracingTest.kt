@@ -29,6 +29,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertSame
 import org.mockito.ArgumentCaptor
 import org.mockito.kotlin.any
 import org.mockito.kotlin.check
@@ -62,6 +63,7 @@ class SentryGestureListenerTracingTest {
       isEnableUserInteractionTracing: Boolean = true,
       transaction: SentryTracer? = null,
       isEnableAutoTraceIdGeneration: Boolean = true,
+      isEnableSessionTraceLifecycle: Boolean = false,
     ): SentryGestureListener {
       options.tracesSampleRate = tracesSampleRate
       options.isEnableUserInteractionTracing = isEnableUserInteractionTracing
@@ -69,6 +71,7 @@ class SentryGestureListenerTracingTest {
       options.gestureTargetLocators =
         listOf(AndroidViewGestureTargetLocator(LazyEvaluator { true }))
       options.isEnableAutoTraceIdGeneration = isEnableAutoTraceIdGeneration
+      options.isEnableSessionTraceLifecycle = isEnableSessionTraceLifecycle
 
       whenever(scopes.options).thenReturn(options)
 
@@ -396,6 +399,23 @@ class SentryGestureListenerTracingTest {
           assertNotEquals(initialPropagationContext, scope.propagationContext)
         }
       )
+  }
+
+  @Test
+  fun `when tracing is disabled and session trace lifecycle is enabled, does not start a new trace`() {
+    val sut =
+      fixture.getSut<View>(
+        tracesSampleRate = null,
+        isEnableAutoTraceIdGeneration = true,
+        isEnableSessionTraceLifecycle = true,
+      )
+    val scope = Scope(fixture.options)
+    val initialPropagationContext = scope.propagationContext
+
+    sut.onSingleTapUp(fixture.event)
+
+    verify(fixture.scopes, never()).configureScope(any())
+    assertSame(initialPropagationContext, scope.propagationContext)
   }
 
   internal open class ScrollableListView : AbsListView(mock()) {

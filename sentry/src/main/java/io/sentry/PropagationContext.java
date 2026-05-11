@@ -83,10 +83,12 @@ public final class PropagationContext {
 
   private final @NotNull Baggage baggage;
 
+  @ApiStatus.Internal
   public PropagationContext() {
     this(new SentryId(), new SpanId(), null, null, null);
   }
 
+  @ApiStatus.Internal
   public PropagationContext(final @NotNull PropagationContext propagationContext) {
     this(
         propagationContext.getTraceId(),
@@ -96,6 +98,7 @@ public final class PropagationContext {
         propagationContext.isSampled());
   }
 
+  @ApiStatus.Internal
   public PropagationContext(
       final @NotNull SentryId traceId,
       final @NotNull SpanId spanId,

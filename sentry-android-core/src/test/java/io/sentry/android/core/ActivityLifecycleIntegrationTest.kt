@@ -1414,6 +1414,30 @@ class ActivityLifecycleIntegrationTest {
   }
 
   @Test
+  fun `does not start a new trace if performance is disabled and session trace lifecycle is enabled`() {
+    val sut = fixture.getSut()
+    val activity = mock<Activity>()
+    fixture.options.tracesSampleRate = null
+    fixture.options.isEnableAutoTraceIdGeneration = true
+    fixture.options.isEnableSessionTraceLifecycle = true
+
+    val argumentCaptor: ArgumentCaptor<ScopeCallback> =
+      ArgumentCaptor.forClass(ScopeCallback::class.java)
+    val scope = Scope(fixture.options)
+    val propagationContextAtStart = scope.propagationContext
+    whenever(fixture.scopes.configureScope(argumentCaptor.capture())).thenAnswer {
+      argumentCaptor.value.run(scope)
+    }
+
+    sut.register(fixture.scopes, fixture.options)
+    sut.onActivityCreated(activity, fixture.bundle)
+
+    // once for the screen
+    verify(fixture.scopes).configureScope(any())
+    assertSame(propagationContextAtStart, scope.propagationContext)
+  }
+
+  @Test
   fun `sets the activity as the current screen`() {
     val sut = fixture.getSut()
     val activity = mock<Activity>()

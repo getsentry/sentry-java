@@ -162,7 +162,7 @@ public final class ActivityLifecycleIntegration
     if (scopes != null && !isRunningTransactionOrTrace(activity)) {
       if (!performanceEnabled) {
         activitiesWithOngoingTransactions.put(activity, NoOpTransaction.getInstance());
-        if (options.isEnableAutoTraceIdGeneration()) {
+        if (options.isEnableAutoTraceIdGeneration() && !options.isEnableSessionTraceLifecycle()) {
           TracingUtils.startNewTrace(scopes);
         }
       } else {

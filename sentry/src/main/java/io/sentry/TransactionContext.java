@@ -38,6 +38,27 @@ public final class TransactionContext extends SpanContext {
         baggage);
   }
 
+  @ApiStatus.Internal
+  static @NotNull TransactionContext fromPropagationContextAsRoot(
+      final @NotNull PropagationContext propagationContext,
+      final @NotNull TransactionContext transactionContext) {
+    final @NotNull Baggage baggage =
+        Baggage.copyWithOverrides(
+            propagationContext.getBaggage(),
+            propagationContext.getTraceId(),
+            propagationContext.getSampleRand());
+
+    final @NotNull TransactionContext sessionContext =
+        new TransactionContext(
+            propagationContext.getTraceId(), transactionContext.getSpanId(), null, null, baggage);
+    copyNonTraceState(transactionContext, sessionContext, baggage);
+    sessionContext.name = transactionContext.name;
+    sessionContext.transactionNameSource = transactionContext.transactionNameSource;
+    sessionContext.parentSamplingDecision = transactionContext.parentSamplingDecision;
+    sessionContext.isForNextAppStart = transactionContext.isForNextAppStart;
+    return sessionContext;
+  }
+
   public TransactionContext(final @NotNull String name, final @NotNull String operation) {
     this(name, operation, null);
   }

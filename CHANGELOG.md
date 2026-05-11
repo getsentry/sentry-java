@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Add opt-in Android session trace lifecycle support ([#5398](https://github.com/getsentry/sentry-java/pull/5398))
+
 ## 8.41.0
 
 ### Features

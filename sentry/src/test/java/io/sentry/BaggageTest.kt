@@ -440,6 +440,24 @@ class BaggageTest {
   }
 
   @Test
+  fun `copy with overrides preserves frozen state`() {
+    val baggage =
+      Baggage.fromHeader(
+        "sentry-sample_rand=0.1,sentry-trace_id=75302ac48a024bde9a3b3734a82e36c8",
+        logger,
+      )
+    baggage.freeze()
+
+    val copy = Baggage.copyWithOverrides(baggage, SentryId("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), 0.2)
+
+    assertFalse(copy.isMutable)
+    assertEquals("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", copy.traceId)
+    assertEquals(0.2, copy.sampleRand!!, 0.0001)
+    assertEquals("75302ac48a024bde9a3b3734a82e36c8", baggage.traceId)
+    assertEquals(0.1, baggage.sampleRand!!, 0.0001)
+  }
+
+  @Test
   fun `if header contains sentry values baggage is marked as shouldFreeze`() {
     val baggage =
       Baggage.fromHeader("sentry-trace_id=a,sentry-transaction=sentryTransaction", logger)
