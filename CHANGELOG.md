@@ -5,6 +5,7 @@
 ### Features
 
 - Add support to configure reporting historical ANRs via `AndroidManifest.xml` using the  `io.sentry.anr.report-historical` attribute ([#5387](https://github.com/getsentry/sentry-java/pull/5387))
+- Session Replay: Add `beforeStoreFrame` callback ([#5386](https://github.com/getsentry/sentry-java/pull/5386))
 
 ### Dependencies
 
