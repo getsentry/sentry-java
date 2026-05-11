@@ -32,6 +32,7 @@ retrofit = "2.9.0"
 slf4j = "1.7.30"
 springboot2 = "2.7.18"
 springboot3 = "3.5.0"
+springboot3Plugin = "3.5.0"
 springboot4 = "4.0.0"
 # Android
 targetSdk = "36"
@@ -61,7 +62,7 @@ detekt = { id = "io.gitlab.arturbosch.detekt", version = "1.23.8" }
 jacoco-android = { id = "com.mxalbert.gradle.jacoco-android", version = "0.2.0" }
 kover = { id = "org.jetbrains.kotlinx.kover", version = "0.7.3" }
 vanniktech-maven-publish = { id = "com.vanniktech.maven.publish", version = "0.30.0" }
-springboot3 = { id = "org.springframework.boot", version.ref = "springboot3" }
+springboot3 = { id = "org.springframework.boot", version.ref = "springboot3Plugin" }
 springboot4 = { id = "org.springframework.boot", version.ref = "springboot4" }
 spring-dependency-management = { id = "io.spring.dependency-management", version = "1.1.7" }
 gretty = { id = "org.gretty", version = "4.0.0" }
@@ -160,6 +161,7 @@ slf4j2-api = { module = "org.slf4j:slf4j-api", version = "2.0.5" }
 spotlessLib = { module = "com.diffplug.spotless:com.diffplug.spotless.gradle.plugin", version.ref = "spotless"}
 springboot2-bom = { module = "org.springframework.boot:spring-boot-dependencies", version.ref = "springboot2" }
 springboot-starter = { module = "org.springframework.boot:spring-boot-starter", version.ref = "springboot2" }
+spring-graphql = { module = "org.springframework.graphql:spring-graphql", version = "1.0.6" }
 springboot-starter-graphql = { module = "org.springframework.boot:spring-boot-starter-graphql", version.ref = "springboot2" }
 springboot-starter-quartz = { module = "org.springframework.boot:spring-boot-starter-quartz", version.ref = "springboot2" }
 springboot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test", version.ref = "springboot2" }

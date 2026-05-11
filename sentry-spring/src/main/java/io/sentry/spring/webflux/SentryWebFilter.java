@@ -153,7 +153,8 @@ public final class SentryWebFilter implements WebFilter {
     }
     final @Nullable ServerHttpResponse response = exchange.getResponse();
     if (response != null) {
-      final @Nullable Integer rawStatusCode = response.getRawStatusCode();
+      final @Nullable Integer rawStatusCode =
+          response.getStatusCode() != null ? response.getStatusCode().value() : null;
       if (rawStatusCode != null) {
         transaction
             .getContexts()

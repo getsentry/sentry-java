@@ -35,7 +35,7 @@ dependencies {
   compileOnly(libs.servlet.api)
   compileOnly(libs.springboot.starter)
   compileOnly(libs.springboot.starter.aop)
-  compileOnly(libs.springboot.starter.graphql)
+  compileOnly(libs.spring.graphql)
   compileOnly(libs.springboot.starter.quartz)
   compileOnly(libs.springboot.starter.security)
   compileOnly(libs.spring.kafka2)

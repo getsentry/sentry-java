@@ -18,6 +18,13 @@ java.targetCompatibility = JavaVersion.VERSION_17
 
 repositories { mavenCentral() }
 
+dependencyManagement {
+  imports {
+    mavenBom("org.springframework.boot:spring-boot-dependencies:${libs.versions.springboot3.get()}")
+    mavenBom(libs.otel.instrumentation.bom.get().toString())
+  }
+}
+
 // Apollo 4.x requires coroutines 1.9.0+, override Spring Boot's managed version
 extra["kotlin-coroutines.version"] = "1.9.0"
 
@@ -78,8 +85,6 @@ dependencies {
   testImplementation("ch.qos.logback:logback-classic:1.5.16")
   testImplementation("ch.qos.logback:logback-core:1.5.16")
 }
-
-dependencyManagement { imports { mavenBom(libs.otel.instrumentation.bom.get().toString()) } }
 
 configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
 

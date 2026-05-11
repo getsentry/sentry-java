@@ -1,9 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import org.springframework.boot.gradle.plugin.SpringBootPlugin
 
 plugins {
   application
-  alias(libs.plugins.springboot3) apply false
   alias(libs.plugins.spring.dependency.management)
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.kotlin.spring)
@@ -31,7 +29,7 @@ extra["kotlin-coroutines.version"] = "1.9.0"
 
 dependencyManagement {
   imports {
-    mavenBom(SpringBootPlugin.BOM_COORDINATES)
+    mavenBom("org.springframework.boot:spring-boot-dependencies:${libs.versions.springboot3.get()}")
     mavenBom(libs.kotlin.bom.get().toString())
   }
 }
@@ -57,7 +55,7 @@ dependencies {
 
   testImplementation(projects.sentrySystemTestSupport)
   testImplementation(libs.kotlin.test.junit)
-  testImplementation(libs.springboot.starter.test) {
+  testImplementation(libs.springboot3.starter.test) {
     exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
   }
 }

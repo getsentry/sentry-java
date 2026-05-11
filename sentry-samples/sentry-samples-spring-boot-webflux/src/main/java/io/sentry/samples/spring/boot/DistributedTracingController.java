@@ -1,6 +1,7 @@
 package io.sentry.samples.spring.boot;
 
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
@@ -17,6 +18,10 @@ import reactor.core.publisher.Mono;
 @RequestMapping("/tracing/")
 public class DistributedTracingController {
   private static final Logger LOGGER = LoggerFactory.getLogger(DistributedTracingController.class);
+  private static final String BASIC_AUTH =
+      "Basic "
+          + Base64.getEncoder().encodeToString("user:password".getBytes(StandardCharsets.UTF_8));
+
   private final WebClient webClient;
 
   public DistributedTracingController(WebClient webClient) {
@@ -28,9 +33,7 @@ public class DistributedTracingController {
     return webClient
         .get()
         .uri("http://localhost:8080/person/{id}", id)
-        .header(
-            HttpHeaders.AUTHORIZATION,
-            "Basic " + HttpHeaders.encodeBasicAuth("user", "password", Charset.defaultCharset()))
+        .header(HttpHeaders.AUTHORIZATION, BASIC_AUTH)
         .retrieve()
         .bodyToMono(Person.class)
         .map(response -> response);
@@ -41,9 +44,7 @@ public class DistributedTracingController {
     return webClient
         .post()
         .uri("http://localhost:8080/person/")
-        .header(
-            HttpHeaders.AUTHORIZATION,
-            "Basic " + HttpHeaders.encodeBasicAuth("user", "password", Charset.defaultCharset()))
+        .header(HttpHeaders.AUTHORIZATION, BASIC_AUTH)
         .body(Mono.just(person), Person.class)
         .retrieve()
         .bodyToMono(Person.class)
