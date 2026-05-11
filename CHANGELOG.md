@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Add support to configure reporting historical ANRs via `AndroidManifest.xml` using the  `io.sentry.anr.report-historical` attribute ([#5387](https://github.com/getsentry/sentry-java/pull/5387))
+
 ## 8.41.0
 
 ### Features
