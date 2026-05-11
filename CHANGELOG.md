@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Session Replay: Add `beforeStoreFrame` callback ([#5386](https://github.com/getsentry/sentry-java/pull/5386))
+
 ## 8.41.0
 
 ### Features
