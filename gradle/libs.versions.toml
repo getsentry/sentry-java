@@ -3,7 +3,7 @@ apollo = "2.5.9"
 androidxLifecycle = "2.2.0"
 androidxNavigation = "2.4.2"
 androidxTestCore = "1.7.0"
-androidxCompose = "1.6.3"
+androidxCompose = "1.11.1"
 asyncProfiler = "4.2"
 composeCompiler = "1.5.14"
 coroutines = "1.6.1"
@@ -85,7 +85,7 @@ androidx-compose-material-icons-core = { module = "androidx.compose.material:mat
 androidx-compose-material-icons-extended = { module = "androidx.compose.material:material-icons-extended", version="1.7.8" }
 androidx-compose-ui = { module = "androidx.compose.ui:ui", version.ref = "androidxCompose" }
 # Note: don't change without testing forwards compatibility
-androidx-compose-ui-replay = { module = "androidx.compose.ui:ui", version = "1.10.2" }
+androidx-compose-ui-replay = { module = "androidx.compose.ui:ui", version = "1.11.1" }
 androidx-constraintlayout = { module = "androidx.constraintlayout:constraintlayout", version = "2.1.3" }
 androidx-core = { module = "androidx.core:core", version = "1.3.2" }
 androidx-core-ktx = { module = "androidx.core:core-ktx", version = "1.7.0" }
@@ -217,7 +217,7 @@ tomcat-catalina-jakarta = { module = "org.apache.tomcat:tomcat-catalina", versio
 tomcat-embed-jasper-jakarta = { module = "org.apache.tomcat.embed:tomcat-embed-jasper", version = "11.0.10" }
 
 # test libraries
-androidx-compose-ui-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4", version = "1.9.5" }
+androidx-compose-ui-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4", version = "1.11.1" }
 androidx-test-core = { module = "androidx.test:core", version.ref = "androidxTestCore" }
 androidx-test-core-ktx = { module = "androidx.test:core-ktx", version.ref = "androidxTestCore" }
 androidx-test-espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "espresso" }
