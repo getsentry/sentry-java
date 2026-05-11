@@ -132,7 +132,7 @@ has_removed_attribution_lines() {
 # Extract URLs from a file. Capped at 50 to bound runtime on large files while still
 # catching source URLs that appear after import blocks or lengthy preambles.
 extract_urls() {
-  grep -oE 'https?://[^ )"<>]+' "$1" | head -50
+  { grep -oE 'https?://[^ )"<>]+' "$1" || true; } | head -50
 }
 
 # Try to match a candidate file to a THIRD_PARTY_NOTICES.md entry by URL.
@@ -495,10 +495,10 @@ if [[ "$notices_file_changed" == "true" ]]; then
   git show "$MERGE_BASE":"$NOTICES_FILE" > "$OLD_NOTICES" 2>/dev/null || true
 
   if [[ -s "$OLD_NOTICES" ]]; then
-    old_headings=$(grep '^## ' "$OLD_NOTICES" | sort)
+    old_headings=$({ grep '^## ' "$OLD_NOTICES" || true; } | sort)
     new_headings=""
     if [[ -f "$NOTICES_FILE" ]]; then
-      new_headings=$(grep '^## ' "$NOTICES_FILE" | sort)
+      new_headings=$({ grep '^## ' "$NOTICES_FILE" || true; } | sort)
     fi
 
     # Removed headings: in old but not in new

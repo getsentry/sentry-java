@@ -66,6 +66,8 @@ The script deterministically handles:
 - Detection of modified `THIRD_PARTY_NOTICES.md` entries (entry content changed between old and new version)
 - Scope text extraction for removed/modified entries
 
+**Important:** The script checks three layers of changes: (1) committed changes on the branch vs. the merge-base, (2) staged but uncommitted changes, and (3) unstaged working-tree changes. A candidate may not appear in `git diff merge-base..HEAD` if it is only staged or only in the working tree. Do NOT dismiss a candidate as a false positive just because it is absent from the committed branch diff — check `git status`, `git diff --cached`, and `git diff` (unstaged) to see the full picture.
+
 Parse the output and proceed to Step 2.
 
 ## Step 2: Check Attribution Format
@@ -139,18 +141,18 @@ fi
 
 Print findings to the terminal, grouped by file. Prefix lines that require immediate action with ⚠️ — these represent invalid or missing attribution that must be fixed before merging. Informational reminders (verify, check) should have a 👀 prefix.
 
-Use the following format (only include lines that are relevant; number each entry; omit entries if the user doesn't have to do anything; don't add any sections besides Action Items and/or False Positivies; omit Action Items or False Positives sections if none found; always use the bullet point (`-`) when including a line that has a bullet point below, and put each bullet point on its own line):
+Use the following format (only include lines that are relevant; number each entry; omit entries if the user doesn't have to do anything; don't add any sections besides Action Items and/or False Positivies; omit Action Items or False Positives sections if none found; always use the bullet point (`-`) when including a line that has a bullet point below, and put each bullet point on its own line; wrap lines when they reach the edge of the "Outcome of check-code-attribution" box):
 
 ```
-*******************************************************************
-*                Outcome of check-code-attribution                *
-*******************************************************************
+**********************************************************************************
+*                        Outcome of check-code-attribution                       *
+**********************************************************************************
 
-|-------------------------- Action items --------------------------
+----------------------------------- Action items ---------------------------------
 
 1. ⚠️ File: <Fully qualified name of file, e.g., io.sentry.cache.tape.FileObjectQueue>
    Vendored code detected (<Library Name>) — missing required fields:
-     - <Summarize what happened and what's needed based on the license header template in `CODE_ATTRIBUTION_CRITERIA.md`. Don't repeat yourself – shorter is better. Prefer summaries to bullet point lists of missing info. Don't insist on the format from `CODE_ATTRIBUTION_CRITERIA.md`; we only care that all info is present.>
+     - <Summarize what happened and what's needed based on the license header template in `CODE_ATTRIBUTION_CRITERIA.md`. Don't repeat yourself and don't repeat info from the lines above in this notice; keep your output very concise. Prefer summaries to bullet point lists of missing info. Don't insist on the format from `CODE_ATTRIBUTION_CRITERIA.md`; we only care that all info is present.>
      - <If there's no corresponding entry in `THIRD_PARTY_NOTICES.md`, inform the user that they need to add one. Keep discussion of THIRD_PARTY_NOTICES.md` in a separate bullet point from discussions of the license header. Omit this line if there's nothing the user needs to do with respect to `THIRD_PARTY_NOTICES.md`.>
 ```
 
@@ -158,7 +160,7 @@ For files where attribution markers were removed:
 ```
 1. ⚠️ File: <Fully qualified name of file>
    Required attribution field(s) removed:
-     - <Summarize what happened and what's needed based on the license header template in `CODE_ATTRIBUTION_CRITERIA.md`. Don't repeat yourself – shorter is better. Prefer summaries to bullet point lists of missing info. Don't insist on the format from `CODE_ATTRIBUTION_CRITERIA.md`; we only care that all info is present. No need to specify individuals fields if the entire header was removed and restoring it would satisfy our criteria: just tell the user to restore it.>
+     - <Summarize what happened and what's needed based on the license header template in `CODE_ATTRIBUTION_CRITERIA.md`. Don't repeat yourself and don't repeat info from the lines above in this notice; keep your output very concise. Prefer summaries to bullet point lists of missing info. Don't insist on the format from `CODE_ATTRIBUTION_CRITERIA.md`; we only care that all info is present. No need to specify individuals fields if the entire header was removed and restoring it would satisfy our criteria: just tell the user to restore it. No need to tell them why they need to restore it.>
      - <If there's no corresponding entry in `THIRD_PARTY_NOTICES.md`, inform the user that they need to add one. Keep discussion of THIRD_PARTY_NOTICES.md` in a separate bullet point from discussions of the license header. Omit this line if there's nothing the user needs to do with respect to `THIRD_PARTY_NOTICES.md`.>
 ```
 
@@ -202,9 +204,9 @@ For modified NOTICES entries that are consistent:
 
 ```
 
-|------------------------- False positives ------------------------
+---------------------------------- False positives -------------------------------
 
-<Numbered list of any false positives, starting at 1., plus descriptions for each as to why they aren't true positives.>
+<Numbered list of any false positives, starting at 1., plus descriptions for each as to why they aren't true positives. Keep it very short, and don't repeat yourself.>
 ```
 
-If there are no Action Items, tell the user "✅Everything looks good. No attribution issues found."
+If there are no Action Items, print the following after *all* sections: "✅ Everything looks good. No attribution issues found."
