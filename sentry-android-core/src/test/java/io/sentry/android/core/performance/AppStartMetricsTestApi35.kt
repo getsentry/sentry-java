@@ -184,6 +184,30 @@ class AppStartMetricsTestApi35 {
     assertEquals(100, metrics.appStartTimeSpan.durationMs)
   }
 
+  @Test
+  fun `listener fires when set after registerLifecycleCallbacks resolves type on API 35`() {
+    val mockStartInfo = mock<ApplicationStartInfo>()
+    whenever(mockStartInfo.startupState).thenReturn(ApplicationStartInfo.STARTUP_STATE_STARTED)
+    whenever(mockStartInfo.startType).thenReturn(ApplicationStartInfo.START_TYPE_COLD)
+    whenever(mockStartInfo.startupTimestamps).thenReturn(emptyMap())
+    SentryShadowActivityManager.setHistoricalProcessStartReasons(listOf(mockStartInfo))
+
+    val listenerCalls = AtomicInteger()
+    val metrics = AppStartMetrics.getInstance()
+    metrics.appStartTimeSpan.setStartedAt(100)
+
+    val app = ApplicationProvider.getApplicationContext<Application>()
+    metrics.registerLifecycleCallbacks(app)
+
+    // Listener set AFTER registerLifecycleCallbacks — mirrors production ordering
+    metrics.setOnNoActivityStartedListener { listenerCalls.incrementAndGet() }
+    waitForMainLooperIdle()
+
+    assertEquals(AppStartMetrics.AppStartType.COLD, metrics.appStartType)
+    assertFalse(metrics.isAppLaunchedInForeground)
+    assertEquals(1, listenerCalls.get())
+  }
+
   private fun waitForMainLooperIdle() {
     Handler(Looper.getMainLooper()).post {}
     Shadows.shadowOf(Looper.getMainLooper()).idle()

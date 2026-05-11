@@ -10,7 +10,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.os.MessageQueue;
 import android.os.Process;
 import android.os.SystemClock;
 import androidx.annotation.NonNull;
@@ -173,6 +172,12 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
 
   public void setOnNoActivityStartedListener(final @Nullable OnNoActivityStartedListener listener) {
     this.noActivityStartedListener = listener;
+    if (listener != null
+        && isCallbackRegistered
+        && firstIdle == -1
+        && appStartType != AppStartType.UNKNOWN) {
+      scheduleNoActivityStartCheckOnMain();
+    }
   }
 
   /** Trace ID from a non-activity app start transaction, to be reused by a later activity. */
@@ -399,34 +404,27 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     }
 
     if (appStartType == AppStartType.UNKNOWN || noActivityStartedListener != null) {
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-        Looper.getMainLooper()
-            .getQueue()
-            .addIdleHandler(
-                new MessageQueue.IdleHandler() {
-                  @Override
-                  public boolean queueIdle() {
-                    firstIdle = SystemClock.uptimeMillis();
-                    handleNoActivityStartIfNeededOnMain();
-                    return false;
-                  }
-                });
-      } else {
-        // We post on the main thread a task to post a check on the main thread. On Pixel devices
-        // (possibly others) the first task posted on the main thread is called before the
-        // Activity.onCreate callback. This is a workaround for that, so that the Activity.onCreate
-        // callback is called before the application one.
-        final Handler handler = new Handler(Looper.getMainLooper());
-        handler.post(
-            new Runnable() {
-              @Override
-              public void run() {
-                // not technically correct, but close enough for pre-M
+      scheduleNoActivityStartCheckOnMain();
+    }
+  }
+
+  private void scheduleNoActivityStartCheckOnMain() {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+      Looper.getMainLooper()
+          .getQueue()
+          .addIdleHandler(
+              () -> {
                 firstIdle = SystemClock.uptimeMillis();
-                handler.post(() -> handleNoActivityStartIfNeededOnMain());
-              }
-            });
-      }
+                handleNoActivityStartIfNeededOnMain();
+                return false;
+              });
+    } else {
+      final Handler handler = new Handler(Looper.getMainLooper());
+      handler.post(
+          () -> {
+            firstIdle = SystemClock.uptimeMillis();
+            handler.post(() -> handleNoActivityStartIfNeededOnMain());
+          });
     }
   }
 
