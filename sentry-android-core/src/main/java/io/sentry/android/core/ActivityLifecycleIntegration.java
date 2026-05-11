@@ -283,9 +283,7 @@ public final class ActivityLifecycleIntegration
         setSpanOrigin(spanOptions);
 
         if (!(firstActivityCreated || appStartTime == null || coldStart == null)) {
-          if (options.isEnableStandaloneAppStartTracing()
-              && foregroundImportance
-              && !isFollowingNonActivityStart) {
+          if (options.isEnableStandaloneAppStartTracing() && !isFollowingNonActivityStart) {
             final TransactionOptions appStartTransactionOptions = new TransactionOptions();
             appStartTransactionOptions.setBindToScope(false);
             appStartTransactionOptions.setStartTimestamp(appStartTime);
@@ -305,7 +303,6 @@ public final class ActivityLifecycleIntegration
 
             finishAppStartSpan();
           } else if (!options.isEnableStandaloneAppStartTracing()) {
-            // Legacy behavior: app start span as child of activity transaction
             appStartSpan =
                 transaction.startChild(
                     getAppStartOp(coldStart),
@@ -316,8 +313,6 @@ public final class ActivityLifecycleIntegration
 
             finishAppStartSpan();
           }
-          // else: flag ON but not foreground — non-activity launch path is handled
-          // via the OnNoActivityStartedListener callback.
         }
         final @NotNull ISpan ttidSpan =
             transaction.startChild(
