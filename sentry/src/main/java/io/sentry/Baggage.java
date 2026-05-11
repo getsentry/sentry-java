@@ -233,8 +233,8 @@ public final class Baggage {
         baggage.sampleRate,
         sampleRand,
         baggage.thirdPartyHeader,
-        baggage.mutable,
-        baggage.shouldFreeze,
+        true,
+        false,
         baggage.logger);
   }
 
