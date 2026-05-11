@@ -148,6 +148,7 @@ class AppStartMetricsTestApi35 {
     SentryShadowProcess.setStartElapsedRealtime(processStartElapsedMs)
     val metrics = AppStartMetrics.getInstance()
     metrics.appStartTimeSpan.setStartedAt(processStartUptimeMs)
+    metrics.setOnNoActivityStartedListener {}
 
     val app = ApplicationProvider.getApplicationContext<Application>()
     metrics.registerLifecycleCallbacks(app)
@@ -174,6 +175,7 @@ class AppStartMetricsTestApi35 {
     val metrics = AppStartMetrics.getInstance()
     metrics.appStartTimeSpan.setStartedAt(100)
     metrics.setClassLoadedUptimeMs(200)
+    metrics.setOnNoActivityStartedListener {}
 
     val app = ApplicationProvider.getApplicationContext<Application>()
     metrics.registerLifecycleCallbacks(app)
