@@ -33,6 +33,7 @@ final class ManifestMetadataReader {
   static final String ANR_REPORT_DEBUG = "io.sentry.anr.report-debug";
   static final String ANR_TIMEOUT_INTERVAL_MILLIS = "io.sentry.anr.timeout-interval-millis";
   static final String ANR_ATTACH_THREAD_DUMPS = "io.sentry.anr.attach-thread-dumps";
+  static final String ANR_REPORT_HISTORICAL = "io.sentry.anr.report-historical";
 
   static final String TOMBSTONE_ENABLE = "io.sentry.tombstone.enable";
 
@@ -123,6 +124,8 @@ final class ManifestMetadataReader {
 
   static final String REPLAYS_DEBUG = "io.sentry.session-replay.debug";
   static final String REPLAYS_SCREENSHOT_STRATEGY = "io.sentry.session-replay.screenshot-strategy";
+  static final String REPLAYS_CAPTURE_SURFACE_VIEWS =
+      "io.sentry.session-replay.capture-surface-views";
 
   static final String REPLAYS_NETWORK_DETAIL_ALLOW_URLS =
       "io.sentry.session-replay.network-detail-allow-urls";
@@ -254,6 +257,9 @@ final class ManifestMetadataReader {
 
         options.setAttachAnrThreadDump(
             readBool(metadata, logger, ANR_ATTACH_THREAD_DUMPS, options.isAttachAnrThreadDump()));
+
+        options.setReportHistoricalAnrs(
+            readBool(metadata, logger, ANR_REPORT_HISTORICAL, options.isReportHistoricalAnrs()));
 
         final @Nullable String dsn = readString(metadata, logger, DSN, options.getDsn());
         final boolean enabled = readBool(metadata, logger, ENABLE_SENTRY, options.isEnabled());
@@ -556,6 +562,15 @@ final class ManifestMetadataReader {
             options.getSessionReplay().setScreenshotStrategy(ScreenshotStrategyType.PIXEL_COPY);
           }
         }
+
+        options
+            .getSessionReplay()
+            .setCaptureSurfaceViews(
+                readBool(
+                    metadata,
+                    logger,
+                    REPLAYS_CAPTURE_SURFACE_VIEWS,
+                    options.getSessionReplay().isCaptureSurfaceViews()));
 
         // Network Details Configuration
         if (options.getSessionReplay().getNetworkDetailAllowUrls().isEmpty()) {

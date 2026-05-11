@@ -577,6 +577,158 @@ class SentryFrameMetricsCollectorTest {
     assertEquals(0, collector.getProperty<Set<Window>>("trackedWindows").size)
   }
 
+  @Test
+  fun `getFramesDelay returns -1 when not available`() {
+    val buildInfo =
+      mock<BuildInfoProvider> { whenever(it.sdkInfoVersion).thenReturn(Build.VERSION_CODES.M) }
+    val collector = fixture.getSut(context, buildInfo)
+
+    val result = collector.getFramesDelay(0, TimeUnit.SECONDS.toNanos(1))
+    assertEquals(-1.0, result.delaySeconds)
+    assertEquals(0, result.framesContributingToDelayCount)
+  }
+
+  @Test
+  fun `getFramesDelay returns -1 for invalid time range`() {
+    val collector = fixture.getSut(context)
+
+    val result = collector.getFramesDelay(2000, 1000)
+    assertEquals(-1.0, result.delaySeconds)
+    assertEquals(0, result.framesContributingToDelayCount)
+  }
+
+  @Test
+  fun `getFramesDelay returns zero delay when no slow frames recorded`() {
+    val buildInfo =
+      mock<BuildInfoProvider> { whenever(it.sdkInfoVersion).thenReturn(Build.VERSION_CODES.O) }
+    val collector = fixture.getSut(context, buildInfo)
+    Shadows.shadowOf(Looper.getMainLooper()).idle()
+    val listener =
+      collector.getProperty<Window.OnFrameMetricsAvailableListener>("frameMetricsAvailableListener")
+
+    collector.startCollection(mock())
+
+    // emit a fast frame (21ns cpu time — well under 16ms budget)
+    listener.onFrameMetricsAvailable(createMockWindow(), createMockFrameMetrics(), 0)
+
+    // choreographer is at end of range so no pending delay
+    val choreographer = collector.getProperty<Choreographer>("choreographer")
+    choreographer.injectForField("mLastFrameTimeNanos", TimeUnit.SECONDS.toNanos(1))
+
+    val result = collector.getFramesDelay(0, TimeUnit.SECONDS.toNanos(1))
+    assertEquals(0.0, result.delaySeconds)
+    assertEquals(0, result.framesContributingToDelayCount)
+  }
+
+  @Test
+  fun `getFramesDelay calculates delay from slow frames`() {
+    val buildInfo =
+      mock<BuildInfoProvider> { whenever(it.sdkInfoVersion).thenReturn(Build.VERSION_CODES.O) }
+    val collector = fixture.getSut(context, buildInfo)
+    val listener =
+      collector.getProperty<Window.OnFrameMetricsAvailableListener>("frameMetricsAvailableListener")
+
+    collector.startCollection(mock())
+
+    // emit a slow frame (~100ms extra = ~116ms total, well over 16ms budget)
+    listener.onFrameMetricsAvailable(
+      createMockWindow(),
+      createMockFrameMetrics(extraCpuDurationNanos = TimeUnit.MILLISECONDS.toNanos(100)),
+      0,
+    )
+
+    // emit a frozen frame (~1000ms extra = ~1016ms total, well over 700ms)
+    listener.onFrameMetricsAvailable(
+      createMockWindow(),
+      createMockFrameMetrics(extraCpuDurationNanos = TimeUnit.MILLISECONDS.toNanos(1000)),
+      0,
+    )
+
+    // choreographer is at end of range so no pending delay
+    Shadows.shadowOf(Looper.getMainLooper()).idle()
+    val choreographer = collector.getProperty<Choreographer>("choreographer")
+    choreographer.injectForField("mLastFrameTimeNanos", TimeUnit.SECONDS.toNanos(5))
+
+    val result = collector.getFramesDelay(0, TimeUnit.SECONDS.toNanos(5))
+    assertTrue(result.delaySeconds > 0)
+    assertEquals(2, result.framesContributingToDelayCount)
+  }
+
+  @Test
+  fun `getFramesDelay handles partial frame overlap`() {
+    val buildInfo =
+      mock<BuildInfoProvider> { whenever(it.sdkInfoVersion).thenReturn(Build.VERSION_CODES.O) }
+    val collector = fixture.getSut(context, buildInfo)
+    val listener =
+      collector.getProperty<Window.OnFrameMetricsAvailableListener>("frameMetricsAvailableListener")
+
+    collector.startCollection(mock())
+
+    // emit a frozen frame (~1s)
+    listener.onFrameMetricsAvailable(
+      createMockWindow(),
+      createMockFrameMetrics(extraCpuDurationNanos = TimeUnit.SECONDS.toNanos(1)),
+      0,
+    )
+
+    // choreographer is at end of range
+    Shadows.shadowOf(Looper.getMainLooper()).idle()
+    val choreographer = collector.getProperty<Choreographer>("choreographer")
+    choreographer.injectForField("mLastFrameTimeNanos", TimeUnit.SECONDS.toNanos(5))
+
+    // The frame's delay interval is roughly [~16ms, ~1000ms].
+    // Query from 500ms so the range clips the delay interval in half.
+    val queryStart = TimeUnit.MILLISECONDS.toNanos(500)
+    val queryEnd = TimeUnit.SECONDS.toNanos(5)
+
+    val fullResult = collector.getFramesDelay(0, queryEnd)
+    val partialResult = collector.getFramesDelay(queryStart, queryEnd)
+
+    // partial overlap should yield less delay than the full range
+    assertTrue(partialResult.delaySeconds > 0)
+    assertTrue(partialResult.delaySeconds < fullResult.delaySeconds)
+    assertEquals(1, partialResult.framesContributingToDelayCount)
+  }
+
+  @Test
+  fun `old frames are automatically pruned`() {
+    val buildInfo =
+      mock<BuildInfoProvider> { whenever(it.sdkInfoVersion).thenReturn(Build.VERSION_CODES.O) }
+    val collector = fixture.getSut(context, buildInfo)
+    Shadows.shadowOf(Looper.getMainLooper()).idle()
+    val listener =
+      collector.getProperty<Window.OnFrameMetricsAvailableListener>("frameMetricsAvailableListener")
+    val choreographer = collector.getProperty<Choreographer>("choreographer")
+
+    collector.startCollection(mock())
+
+    val t0 = TimeUnit.MINUTES.toNanos(10) // start at a realistic base time
+
+    // emit a slow frame at t0
+    val frameMetrics1 =
+      createMockFrameMetrics(extraCpuDurationNanos = TimeUnit.MILLISECONDS.toNanos(100))
+    whenever(frameMetrics1.getMetric(FrameMetrics.INTENDED_VSYNC_TIMESTAMP)).thenReturn(t0)
+    listener.onFrameMetricsAvailable(createMockWindow(), frameMetrics1, 0)
+
+    choreographer.injectForField("mLastFrameTimeNanos", t0 + TimeUnit.SECONDS.toNanos(1))
+
+    // verify frame exists
+    val resultBefore = collector.getFramesDelay(t0, t0 + TimeUnit.SECONDS.toNanos(1))
+    assertEquals(1, resultBefore.framesContributingToDelayCount)
+
+    // emit another slow frame >5 minutes later to trigger auto-pruning
+    val t1 = t0 + TimeUnit.MINUTES.toNanos(6)
+    val frameMetrics2 =
+      createMockFrameMetrics(extraCpuDurationNanos = TimeUnit.MILLISECONDS.toNanos(100))
+    whenever(frameMetrics2.getMetric(FrameMetrics.INTENDED_VSYNC_TIMESTAMP)).thenReturn(t1)
+    listener.onFrameMetricsAvailable(createMockWindow(), frameMetrics2, 0)
+
+    // the first frame should have been pruned (>5min old)
+    choreographer.injectForField("mLastFrameTimeNanos", t1 + TimeUnit.SECONDS.toNanos(1))
+    val resultAfter = collector.getFramesDelay(t0, t0 + TimeUnit.SECONDS.toNanos(1))
+    assertEquals(0, resultAfter.framesContributingToDelayCount)
+  }
+
   private fun createMockWindow(refreshRate: Float = 60F): Window {
     val mockWindow = mock<Window>()
     val mockDisplay = mock<Display>()

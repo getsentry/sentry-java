@@ -1,6 +1,43 @@
 version: 2
+registries:
+  gradle-plugin-portal:
+    type: maven-repository
+    url: https://plugins.gradle.org/m2
+    username: dummy # Required by dependabot
+    password: dummy # Required by dependabot
 updates:
+  - package-ecosystem: "gradle"
+    directory: "/"
+    registries:
+      - gradle-plugin-portal
+    schedule:
+      interval: "daily"
+    ignore:
+      - dependency-name: "org.springframework.boot*"
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      compose:
+        patterns:
+          - "androidx.compose*"
+          - "org.jetbrains.compose*"
+      androidx:
+        patterns:
+          - "androidx.*"
+      kotlin:
+        patterns:
+          - "org.jetbrains.kotlin*"
+          - "org.jetbrains.kotlinx*"
+      jackson:
+        patterns:
+          - "com.fasterxml.jackson*"
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: weekly
+      interval: "daily"
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      github-actions:
+        patterns:
+          - "*"

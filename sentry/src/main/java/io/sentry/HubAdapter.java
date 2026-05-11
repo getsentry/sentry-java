@@ -396,6 +396,11 @@ public final class HubAdapter implements IHub {
   }
 
   @Override
+  public @NotNull IFeedbackApi feedback() {
+    return Sentry.getCurrentScopes().feedback();
+  }
+
+  @Override
   public void setAttribute(final @Nullable String key, final @Nullable Object value) {
     Sentry.setAttribute(key, value);
   }

@@ -31,6 +31,8 @@ import io.sentry.spring.checkin.SentryCheckInPointcutConfiguration;
 import io.sentry.spring.checkin.SentryQuartzConfiguration;
 import io.sentry.spring.exception.SentryCaptureExceptionParameterPointcutConfiguration;
 import io.sentry.spring.exception.SentryExceptionParameterAdviceConfiguration;
+import io.sentry.spring.kafka.SentryKafkaConsumerBeanPostProcessor;
+import io.sentry.spring.kafka.SentryKafkaProducerBeanPostProcessor;
 import io.sentry.spring.opentelemetry.SentryOpenTelemetryAgentWithoutAutoInitConfiguration;
 import io.sentry.spring.opentelemetry.SentryOpenTelemetryNoAgentConfiguration;
 import io.sentry.spring.tracing.CombinedTransactionNameProvider;
@@ -228,6 +230,34 @@ public class SentryAutoConfiguration {
       public static @NotNull SentryCacheBeanPostProcessor sentryCacheBeanPostProcessor() {
         SentryIntegrationPackageStorage.getInstance().addIntegration("SpringCache");
         return new SentryCacheBeanPostProcessor();
+      }
+    }
+
+    @Configuration(proxyBeanMethods = false)
+    @ConditionalOnClass(
+        name = {
+          "org.springframework.kafka.core.KafkaTemplate",
+          "io.sentry.kafka.SentryKafkaProducer"
+        })
+    @ConditionalOnProperty(name = "sentry.enable-queue-tracing", havingValue = "true")
+    @ConditionalOnMissingClass({
+      "io.sentry.opentelemetry.SentryAutoConfigurationCustomizerProvider",
+      "io.sentry.opentelemetry.agent.AgentMarker"
+    })
+    @Open
+    static class SentryKafkaQueueConfiguration {
+
+      @Bean
+      public static @NotNull SentryKafkaProducerBeanPostProcessor
+          sentryKafkaProducerBeanPostProcessor() {
+        SentryIntegrationPackageStorage.getInstance().addIntegration("SpringKafka");
+        return new SentryKafkaProducerBeanPostProcessor();
+      }
+
+      @Bean
+      public static @NotNull SentryKafkaConsumerBeanPostProcessor
+          sentryKafkaConsumerBeanPostProcessor() {
+        return new SentryKafkaConsumerBeanPostProcessor();
       }
     }
 

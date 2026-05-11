@@ -827,40 +827,37 @@ public final class Sentry {
   }
 
   /**
-   * Captures the feedback.
-   *
-   * @param feedback The feedback to send.
-   * @return The Id (SentryId object) of the event
+   * @deprecated Use {@link #feedback()}.{@link IFeedbackApi#capture(Feedback) capture(feedback)}
+   *     instead.
    */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public static @NotNull SentryId captureFeedback(final @NotNull Feedback feedback) {
-    return getCurrentScopes().captureFeedback(feedback);
+    return feedback().capture(feedback);
   }
 
   /**
-   * Captures the feedback.
-   *
-   * @param feedback The feedback to send.
-   * @param hint An optional hint to be applied to the event.
-   * @return The Id (SentryId object) of the event
+   * @deprecated Use {@link #feedback()}.{@link IFeedbackApi#capture(Feedback, Hint)
+   *     capture(feedback, hint)} instead.
    */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public static @NotNull SentryId captureFeedback(
       final @NotNull Feedback feedback, final @Nullable Hint hint) {
-    return getCurrentScopes().captureFeedback(feedback, hint);
+    return feedback().capture(feedback, hint);
   }
 
   /**
-   * Captures the feedback.
-   *
-   * @param feedback The feedback to send.
-   * @param hint An optional hint to be applied to the event.
-   * @param callback The callback to configure the scope for a single invocation.
-   * @return The Id (SentryId object) of the event
+   * @deprecated Use {@link #feedback()}.{@link IFeedbackApi#capture(Feedback, Hint, ScopeCallback)
+   *     capture(feedback, hint, callback)} instead.
    */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public static @NotNull SentryId captureFeedback(
       final @NotNull Feedback feedback,
       final @Nullable Hint hint,
       final @Nullable ScopeCallback callback) {
-    return getCurrentScopes().captureFeedback(feedback, hint, callback);
+    return feedback().capture(feedback, hint, callback);
   }
 
   /**
@@ -916,7 +913,11 @@ public final class Sentry {
    * Captures a manually created user feedback and sends it to Sentry.
    *
    * @param userFeedback The user feedback to send to Sentry.
+   * @deprecated Use {@link #feedback()}.{@link IFeedbackApi#capture(Feedback) capture(feedback)}
+   *     with the new {@link Feedback} type instead.
    */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public static void captureUserFeedback(final @NotNull UserFeedback userFeedback) {
     getCurrentScopes().captureUserFeedback(userFeedback);
   }
@@ -1355,20 +1356,41 @@ public final class Sentry {
     return getCurrentScopes().metrics();
   }
 
-  public static void showUserFeedbackDialog() {
-    showUserFeedbackDialog(null);
+  @NotNull
+  public static IFeedbackApi feedback() {
+    return getCurrentScopes().feedback();
   }
 
+  /**
+   * @deprecated Use {@link #feedback()}.{@link IFeedbackApi#show() show()} instead.
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
+  public static void showUserFeedbackDialog() {
+    feedback().show();
+  }
+
+  /**
+   * @deprecated Use {@link #feedback()}.{@link
+   *     IFeedbackApi#show(SentryFeedbackOptions.OptionsConfigurator) show(configurator)} instead.
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public static void showUserFeedbackDialog(
       final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator) {
-    showUserFeedbackDialog(null, configurator);
+    feedback().show(configurator);
   }
 
+  /**
+   * @deprecated Use {@link #feedback()}.{@link IFeedbackApi#show(SentryId,
+   *     SentryFeedbackOptions.OptionsConfigurator) show(associatedEventId, configurator)} instead.
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public static void showUserFeedbackDialog(
       final @Nullable SentryId associatedEventId,
       final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator) {
-    final @NotNull SentryOptions options = getCurrentScopes().getOptions();
-    options.getFeedbackOptions().getDialogHandler().showDialog(associatedEventId, configurator);
+    feedback().show(associatedEventId, configurator);
   }
 
   /**

@@ -381,6 +381,11 @@ public final class HubScopesWrapper implements IHub {
   }
 
   @Override
+  public @NotNull IFeedbackApi feedback() {
+    return scopes.feedback();
+  }
+
+  @Override
   public void setAttribute(final @Nullable String key, final @Nullable Object value) {
     scopes.setAttribute(key, value);
   }

@@ -174,7 +174,10 @@ public interface ISentryClient {
    * Captures a manually created user feedback and sends it to Sentry.
    *
    * @param userFeedback The user feedback to send to Sentry.
+   * @deprecated Use {@link IFeedbackApi#capture(io.sentry.protocol.Feedback)} with the new {@link
+   *     io.sentry.protocol.Feedback} type instead.
    */
+  @Deprecated
   void captureUserFeedback(@NotNull UserFeedback userFeedback);
 
   /**
