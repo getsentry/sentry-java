@@ -2,7 +2,6 @@ package io.sentry.android.replay
 
 import android.graphics.Bitmap
 import io.sentry.SentryReplayOptions
-import io.sentry.TypeCheckHint
 
 // since we don't have getters for maskAllText and maskAllimages, they won't be accessible as
 // properties in Kotlin, therefore we create these extensions where a getter is dummy, but a setter
@@ -33,26 +32,16 @@ public var SentryReplayOptions.maskAllImages: Boolean
   set(value) = setMaskAllImages(value)
 
 /**
- * Sets a callback that is invoked right before a replay frame is stored to disk. The callback
- * receives the frame bitmap (with masking applied), the timestamp, and the current screen name.
+ * Observer that is notified when a replay snapshot is captured. The snapshot bitmap has masking
+ * already applied.
  *
- * The callback runs on a background thread (the replay executor). Do not recycle the bitmap — it
- * may be reused by the replay system.
+ * **Bitmap lifecycle:** The bitmap is owned by the replay system and is only valid for the duration
+ * of the callback. Do not store a reference to it or access it after this method returns — copy the
+ * pixel data (e.g., compress to a file) within this method if you need it later. Do not recycle the
+ * bitmap.
  *
- * @param callback the callback to invoke, or null to clear
+ * The callback runs on a background thread (the replay executor).
  */
-public fun SentryReplayOptions.beforeStoreFrame(
-  callback: ((frameBitmap: Bitmap, frameTimestamp: Long, screenName: String?) -> Unit)?
-) {
-  beforeStoreFrame =
-    if (callback != null) {
-      SentryReplayOptions.BeforeStoreFrameCallback { hint, timestamp, screen ->
-        val bitmap = hint.getAs(TypeCheckHint.REPLAY_FRAME_BITMAP, Bitmap::class.java)
-        if (bitmap != null) {
-          callback(bitmap, timestamp, screen)
-        }
-      }
-    } else {
-      null
-    }
+public fun interface ReplaySnapshotObserver {
+  public fun onSnapshotCaptured(bitmap: Bitmap, frameTimestamp: Long, screenName: String?)
 }
