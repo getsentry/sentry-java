@@ -6,7 +6,6 @@ import io.sentry.IScopes;
 import io.sentry.spring.webflux.SentryScheduleHook;
 import io.sentry.spring.webflux.SentryWebExceptionHandler;
 import io.sentry.spring.webflux.SentryWebFilter;
-import java.util.function.Function;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.boot.ApplicationRunner;
@@ -33,19 +32,8 @@ public class SentryWebfluxAutoConfiguration {
   @Bean
   public @NotNull ApplicationRunner sentryScheduleHookApplicationRunner() {
     return args -> {
-      if (hasOnScheduleHook()) {
-        Schedulers.onScheduleHook("sentry", new SentryScheduleHook());
-      }
+      Schedulers.onScheduleHook("sentry", new SentryScheduleHook());
     };
-  }
-
-  private static boolean hasOnScheduleHook() {
-    try {
-      Schedulers.class.getMethod("onScheduleHook", String.class, Function.class);
-      return true;
-    } catch (NoSuchMethodException ignored) {
-      return false;
-    }
   }
 
   /** Configures a filter that sets up Sentry {@link IScope} for each request. */
