@@ -154,6 +154,22 @@ class PerformanceAndroidEventProcessorTest {
   }
 
   @Test
+  fun `standalone app start spans do not carry TTID or TTFD contributing flags`() {
+    val sut = fixture.getSut(enablePerformanceV2 = true)
+    setStandaloneColdAppStartMetrics(withApplicationOnCreate = true)
+
+    var tr = getTransaction(AppStartType.COLD)
+
+    tr = sut.process(tr, Hint())
+
+    assertTrue(tr.spans.isNotEmpty())
+    for (span in tr.spans) {
+      assertNull(span.data?.get(SpanDataConvention.CONTRIBUTES_TTID))
+      assertNull(span.data?.get(SpanDataConvention.CONTRIBUTES_TTFD))
+    }
+  }
+
+  @Test
   fun `add cold start measurement for performance-v2`() {
     val sut = fixture.getSut(enablePerformanceV2 = true)
 

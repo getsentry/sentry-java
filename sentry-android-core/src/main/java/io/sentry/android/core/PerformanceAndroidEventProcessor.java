@@ -260,6 +260,8 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
       }
     }
 
+    final boolean isStandalone = STANDALONE_APP_START_OP.equals(traceContext.getOperation());
+
     // Process init
     final @NotNull TimeSpan processInitTimeSpan = appStartMetrics.createProcessInitSpan();
     if (processInitTimeSpan.hasStarted()
@@ -267,7 +269,11 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
       txn.getSpans()
           .add(
               timeSpanToSentrySpan(
-                  processInitTimeSpan, parentSpanId, traceId, APP_METRICS_PROCESS_INIT_OP));
+                  processInitTimeSpan,
+                  parentSpanId,
+                  traceId,
+                  APP_METRICS_PROCESS_INIT_OP,
+                  isStandalone));
     }
 
     // Content Providers
@@ -278,7 +284,11 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
         txn.getSpans()
             .add(
                 timeSpanToSentrySpan(
-                    contentProvider, parentSpanId, traceId, APP_METRICS_CONTENT_PROVIDER_OP));
+                    contentProvider,
+                    parentSpanId,
+                    traceId,
+                    APP_METRICS_CONTENT_PROVIDER_OP,
+                    isStandalone));
       }
     }
 
@@ -287,7 +297,8 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
     if (appOnCreate.hasStopped()) {
       txn.getSpans()
           .add(
-              timeSpanToSentrySpan(appOnCreate, parentSpanId, traceId, APP_METRICS_APPLICATION_OP));
+              timeSpanToSentrySpan(
+                  appOnCreate, parentSpanId, traceId, APP_METRICS_APPLICATION_OP, isStandalone));
     }
   }
 
@@ -296,14 +307,17 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
       final @NotNull TimeSpan span,
       final @Nullable SpanId parentSpanId,
       final @NotNull SentryId traceId,
-      final @NotNull String operation) {
+      final @NotNull String operation,
+      final boolean isStandaloneAppStart) {
 
     final Map<String, Object> defaultSpanData = new HashMap<>(2);
     defaultSpanData.put(SpanDataConvention.THREAD_ID, AndroidThreadChecker.mainThreadSystemId);
     defaultSpanData.put(SpanDataConvention.THREAD_NAME, "main");
 
-    defaultSpanData.put(SpanDataConvention.CONTRIBUTES_TTID, true);
-    defaultSpanData.put(SpanDataConvention.CONTRIBUTES_TTFD, true);
+    if (!isStandaloneAppStart) {
+      defaultSpanData.put(SpanDataConvention.CONTRIBUTES_TTID, true);
+      defaultSpanData.put(SpanDataConvention.CONTRIBUTES_TTFD, true);
+    }
 
     return new SentrySpan(
         span.getStartTimestampSecs(),
