@@ -127,7 +127,7 @@ has_added_attribution_lines() {
 # Check if diff hunks contain removed attribution-related lines
 has_removed_attribution_lines() {
   local diff_output="$1"
-  grep -E '^-' <<< "$diff_output" | grep -v '^---' | grep -qiE "$ATTRIBUTION_PATTERN"
+  grep -E '^-' <<< "$diff_output" | grep -v '^--- ' | grep -qiE "$ATTRIBUTION_PATTERN"
 }
 
 # Extract URLs from a file. Capped at 50 to bound runtime on large files while still
@@ -279,7 +279,7 @@ extract_scope() {
   awk -v target="$heading" '
     /^## / { in_target = ($0 == target); in_scope = 0; next }
     in_target && /^### Scope/ { in_scope = 1; next }
-    in_target && in_scope && !in_code && /^(## |---)/ { exit }
+    in_target && in_scope && !in_code && /^(## |---$)/ { exit }
     in_target && in_scope && /^```/ { in_code = !in_code; next }
     in_target && in_scope && !in_code { gsub(/^[[:space:]]+|[[:space:]]+$/, ""); if ($0 != "") print }
   ' "$notices_path"
