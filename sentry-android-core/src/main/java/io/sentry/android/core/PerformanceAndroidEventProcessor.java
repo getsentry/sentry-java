@@ -94,7 +94,7 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
         if (appStartMetrics.shouldSendStartMeasurements(isStandaloneAppStartTxn)) {
           final @NotNull TimeSpan appStartTimeSpan =
               isStandaloneAppStartTxn
-                  ? appStartMetrics.getAppStartTimeSpanDirect()
+                  ? appStartMetrics.getAppStartTimeSpanForStandalone()
                   : appStartMetrics.getAppStartTimeSpanWithFallback(options);
           final long appStartUpDurationMs = appStartTimeSpan.getDurationMs();
 

@@ -744,7 +744,7 @@ public class io/sentry/android/core/performance/AppStartMetrics : io/sentry/andr
 	public fun getAppStartProfiler ()Lio/sentry/ITransactionProfiler;
 	public fun getAppStartSamplingDecision ()Lio/sentry/TracesSamplingDecision;
 	public fun getAppStartTimeSpan ()Lio/sentry/android/core/performance/TimeSpan;
-	public fun getAppStartTimeSpanDirect ()Lio/sentry/android/core/performance/TimeSpan;
+	public fun getAppStartTimeSpanForStandalone ()Lio/sentry/android/core/performance/TimeSpan;
 	public fun getAppStartTimeSpanWithFallback (Lio/sentry/android/core/SentryAndroidOptions;)Lio/sentry/android/core/performance/TimeSpan;
 	public fun getAppStartTraceId ()Lio/sentry/protocol/SentryId;
 	public fun getAppStartType ()Lio/sentry/android/core/performance/AppStartMetrics$AppStartType;

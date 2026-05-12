@@ -57,6 +57,7 @@ public final class ActivityLifecycleIntegration
 
   static final String UI_LOAD_OP = "ui.load";
   static final String STANDALONE_APP_START_OP = "app.start";
+  private static final String STANDALONE_APP_START_NAME = "App Start";
   static final String APP_START_WARM = "app.start.warm";
   static final String APP_START_COLD = "app.start.cold";
   static final String TTID_OP = "ui.load.initial_display";
@@ -251,9 +252,7 @@ public final class ActivityLifecycleIntegration
 
         final @Nullable SentryId storedAppStartTraceId =
             AppStartMetrics.getInstance().getAppStartTraceId();
-        // When we reuse a stashed traceId, it means the process's app start has already been
-        // accounted for by a standalone transaction from the non-activity path — don't emit
-        // a second standalone here just because an activity subsequently showed up.
+        // A non-null trace ID means a standalone app-start txn was already emitted.
         final boolean isFollowingNonActivityStart = (storedAppStartTraceId != null);
 
         final ITransaction transaction;
@@ -294,7 +293,7 @@ public final class ActivityLifecycleIntegration
                 scopes.startTransaction(
                     new TransactionContext(
                         transaction.getSpanContext().getTraceId(),
-                        getAppStartTxnName(),
+                        STANDALONE_APP_START_NAME,
                         TransactionNameSource.COMPONENT,
                         STANDALONE_APP_START_OP,
                         appStartSamplingDecision),
@@ -702,8 +701,7 @@ public final class ActivityLifecycleIntegration
     // with first frame drawn
     try (final @NotNull ISentryLifecycleToken ignored = fullyDisplayedLock.acquire()) {
       if (options != null && ttidSpan != null && firstFrameEndDate != null) {
-        final @NotNull SentryDate endDate = firstFrameEndDate;
-        final long durationNanos = endDate.diff(ttidSpan.getStartDate());
+        final long durationNanos = firstFrameEndDate.diff(ttidSpan.getStartDate());
         final long durationMillis = TimeUnit.NANOSECONDS.toMillis(durationNanos);
         ttidSpan.setMeasurement(
             MeasurementValue.KEY_TIME_TO_INITIAL_DISPLAY, durationMillis, MILLISECOND);
@@ -715,10 +713,10 @@ public final class ActivityLifecycleIntegration
               MeasurementValue.KEY_TIME_TO_FULL_DISPLAY, durationMillis, MILLISECOND);
           ttfdSpan.setMeasurement(
               MeasurementValue.KEY_TIME_TO_FULL_DISPLAY, durationMillis, MILLISECOND);
-          finishSpan(ttfdSpan, endDate);
+          finishSpan(ttfdSpan, firstFrameEndDate);
         }
 
-        finishSpan(ttidSpan, endDate);
+        finishSpan(ttidSpan, firstFrameEndDate);
       } else {
         finishSpan(ttidSpan);
         if (fullyDisplayedCalled) {
@@ -851,10 +849,6 @@ public final class ActivityLifecycleIntegration
     return activitiesWithOngoingTransactions.get(activity);
   }
 
-  private @NotNull String getAppStartTxnName() {
-    return "App Start";
-  }
-
   private @NotNull String getAppStartOp(final boolean coldStart) {
     if (coldStart) {
       return APP_START_COLD;
@@ -890,7 +884,7 @@ public final class ActivityLifecycleIntegration
     final @NotNull AppStartMetrics metrics = AppStartMetrics.getInstance();
     // For non-activity starts, appLaunchedInForeground is false, so we can't use
     // getAppStartTimeSpanWithFallback (which gates on foreground).
-    final @NotNull TimeSpan appStartTimeSpan = metrics.getAppStartTimeSpanDirect();
+    final @NotNull TimeSpan appStartTimeSpan = metrics.getAppStartTimeSpanForStandalone();
 
     if (!appStartTimeSpan.hasStarted() || !appStartTimeSpan.hasStopped()) {
       return;
@@ -909,11 +903,12 @@ public final class ActivityLifecycleIntegration
 
     final @NotNull TransactionContext txnContext =
         new TransactionContext(
-            getAppStartTxnName(), TransactionNameSource.COMPONENT, STANDALONE_APP_START_OP, null);
+            STANDALONE_APP_START_NAME,
+            TransactionNameSource.COMPONENT,
+            STANDALONE_APP_START_OP,
+            null);
 
     final @NotNull ITransaction transaction = scopes.startTransaction(txnContext, txnOptions);
-
-    // Store trace ID so future activity transactions can share it
     metrics.setAppStartTraceId(transaction.getSpanContext().getTraceId());
 
     transaction.finish(SpanStatus.OK, endTime);

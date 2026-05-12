@@ -171,6 +171,9 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
 
   public void setOnNoActivityStartedListener(final @Nullable OnNoActivityStartedListener listener) {
     this.noActivityStartedListener = listener;
+    // On API 35+ registerLifecycleCallbacks resolves appStartType early and skips scheduling
+    // the idle check (because noActivityStartedListener is still null at that point). When the
+    // listener is set later during Sentry.init(), re-schedule if the idle check hasn't fired yet.
     if (listener != null
         && isCallbackRegistered
         && firstIdle == -1
@@ -186,18 +189,6 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
 
   public void setAppStartTraceId(final @Nullable SentryId traceId) {
     this.appStartTraceId = traceId;
-  }
-
-  /**
-   * Returns a valid app start time span, bypassing the foreground check. Tries appStartSpan first,
-   * falls back to sdkInitTimeSpan. Used for non-activity starts where appLaunchedInForeground is
-   * false.
-   */
-  public @NotNull TimeSpan getAppStartTimeSpanDirect() {
-    if (appStartSpan.hasStarted() && appStartSpan.hasStopped()) {
-      return appStartSpan;
-    }
-    return sdkInitTimeSpan;
   }
 
   /**
@@ -238,6 +229,18 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
 
   public long getClassLoadedUptimeMs() {
     return CLASS_LOADED_UPTIME_MS;
+  }
+
+  /**
+   * Returns a valid app start time span, bypassing the foreground check. Tries appStartSpan first,
+   * falls back to sdkInitTimeSpan. Used for non-activity starts where appLaunchedInForeground is
+   * false.
+   */
+  public @NotNull TimeSpan getAppStartTimeSpanForStandalone() {
+    if (appStartSpan.hasStarted() && appStartSpan.hasStopped()) {
+      return appStartSpan;
+    }
+    return sdkInitTimeSpan;
   }
 
   /**

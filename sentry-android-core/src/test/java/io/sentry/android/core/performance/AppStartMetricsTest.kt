@@ -307,7 +307,7 @@ class AppStartMetricsTest {
   }
 
   @Test
-  fun `getAppStartTimeSpanDirect falls back to sdkInitTimeSpan when appStartSpan has not stopped`() {
+  fun `getAppStartTimeSpanForStandalone falls back to sdkInitTimeSpan when appStartSpan has not stopped`() {
     val metrics = AppStartMetrics.getInstance()
     metrics.appStartTimeSpan.setStartedAt(100)
     metrics.sdkInitTimeSpan.apply {
@@ -315,7 +315,7 @@ class AppStartMetricsTest {
       setStoppedAt(180)
     }
 
-    assertSame(metrics.sdkInitTimeSpan, metrics.getAppStartTimeSpanDirect())
+    assertSame(metrics.sdkInitTimeSpan, metrics.getAppStartTimeSpanForStandalone())
   }
 
   private fun waitForMainLooperIdle() {
