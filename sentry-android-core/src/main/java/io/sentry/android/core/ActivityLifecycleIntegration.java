@@ -882,6 +882,10 @@ public final class ActivityLifecycleIntegration
     }
 
     final @NotNull AppStartMetrics metrics = AppStartMetrics.getInstance();
+    // Profilers are stopped for non-activity starts; clear the decision so it doesn't
+    // leak to a later ui.load transaction if an activity eventually opens.
+    metrics.setAppStartSamplingDecision(null);
+
     // For non-activity starts, appLaunchedInForeground is false, so we can't use
     // getAppStartTimeSpanWithFallback (which gates on foreground).
     final @NotNull TimeSpan appStartTimeSpan = metrics.getAppStartTimeSpanForStandalone();
