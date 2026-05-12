@@ -477,6 +477,54 @@ JAVA
   assert_eq "$(get_field "$output" "new_license_type")" "true" "MPL should be flagged as new license type"
 }
 
+# When KNOWN_LICENSES contains a versioned form (e.g. "EPL 2.0") but
+# detect_license_type emits a shorter label (e.g. "EPL"), the exact-match
+# grep -qixF won't match. This is a known false positive (safe direction):
+# the script flags new_license_type: true even though the license family is
+# already represented, and the LLM emits an extra "verify compatibility"
+# reminder.
+test_new_license_type_false_positive_versioned_heading() {
+  cat > THIRD_PARTY_NOTICES.md << 'NOTICES'
+# Third-Party Notices
+
+## Example Library (Apache 2.0)
+
+- Source: https://github.com/example/library
+- License: Apache License 2.0
+- Copyright: Copyright 2024 Example Inc.
+
+---
+
+## EplLib (EPL 2.0)
+
+- Source: https://github.com/example/epllib
+- License: Eclipse Public License 2.0
+- Copyright: Copyright 2024 EPL Author.
+NOTICES
+  git add THIRD_PARTY_NOTICES.md
+  git commit -m "Add EPL 2.0 entry" --quiet --amend
+
+  setup_branch
+  mkdir -p src
+  cat > src/EplVendored.java << 'JAVA'
+// Adapted from AnotherEplLib.
+// Copyright 2024 Another EPL Author.
+// Licensed under the Eclipse Public License.
+package com.example;
+public class EplVendored {}
+JAVA
+  git add src/EplVendored.java
+  git commit -m "Add EPL file" --quiet
+
+  local output ok=true
+  output=$(run_script) || true
+  # detect_license_type returns "EPL" but KNOWN_LICENSES has "EPL 2.0" —
+  # exact match fails, so this is flagged as a new license type (false positive).
+  assert_eq "$(get_field "$output" "new_license_type")" "true" \
+    "known false positive: 'EPL' != 'EPL 2.0' under exact match" || ok=false
+  [[ "$ok" == "true" ]]
+}
+
 test_notices_staged_change_detected() {
   setup_branch
   mkdir -p src
@@ -837,6 +885,46 @@ NOTICES
   [[ "$ok" == "true" ]]
 }
 
+test_spdx_license_detection() {
+  setup_branch
+  mkdir -p src
+  cat > src/SpdxFile.java << 'JAVA'
+// SPDX-License-Identifier: MIT
+// Adapted from SpdxLib.
+// Copyright 2024 Spdx Author.
+package com.example;
+public class SpdxFile {}
+JAVA
+  git add src/SpdxFile.java
+  git commit -m "Add file with SPDX identifier" --quiet
+
+  local output ok=true
+  output=$(run_script) || true
+  assert_eq "$(get_field "$output" "new_license_type")" "true" \
+    "MIT via SPDX should be flagged as new license type (only Apache 2.0 in NOTICES)" || ok=false
+  [[ "$ok" == "true" ]]
+}
+
+test_spdx_license_matches_known() {
+  setup_branch
+  mkdir -p src
+  cat > src/SpdxApache.java << 'JAVA'
+// SPDX-License-Identifier: Apache-2.0
+// Adapted from SpdxApacheLib.
+// Copyright 2024 SpdxApache Author.
+package com.example;
+public class SpdxApache {}
+JAVA
+  git add src/SpdxApache.java
+  git commit -m "Add file with Apache SPDX identifier" --quiet
+
+  local output ok=true
+  output=$(run_script) || true
+  assert_eq "$(get_field "$output" "new_license_type")" "false" \
+    "Apache-2.0 via SPDX should match known Apache 2.0 license type" || ok=false
+  [[ "$ok" == "true" ]]
+}
+
 test_source_file_has_candidate_type() {
   setup_branch
   mkdir -p src
@@ -876,18 +964,21 @@ run_test "Excluded paths skipped"                    test_excluded_paths_skipped
 run_test "Generated files skipped"                   test_generated_files_skipped
 run_test "Sentry copyright not flagged"              test_sentry_copyright_not_flagged
 run_test "New license type detected"                 test_new_license_type_detected
+run_test "New license type — false positive on versioned heading" test_new_license_type_false_positive_versioned_heading
 run_test "License-only header not flagged"           test_license_only_header_not_flagged
 run_test "Binary file skipped"                       test_binary_file_skipped
 run_test "Modified vendor-path file — attribution changed" test_modified_vendor_path_file_attribution_changed
 run_test "Modified vendored file — no attribution change" test_modified_vendored_file_no_attribution_change
 run_test "Modified first-party file — Sentry license header not flagged" test_modified_first_party_license_header_not_flagged
-run_test "Unstaged modification detected"             test_unstaged_modification_detected
-run_test "Multiple candidates in single run"          test_multiple_candidates
-run_test "Missing THIRD_PARTY_NOTICES.md"             test_missing_notices_file
-run_test "Progressive URL matching"                   test_progressive_url_matching
-run_test "NOTICES entry removed"                      test_notices_entry_removed
-run_test "NOTICES entry modified"                     test_notices_entry_modified
-run_test "Source-file candidate has candidate_type"   test_source_file_has_candidate_type
+run_test "Unstaged modification detected"            test_unstaged_modification_detected
+run_test "Multiple candidates in single run"         test_multiple_candidates
+run_test "Missing THIRD_PARTY_NOTICES.md"            test_missing_notices_file
+run_test "Progressive URL matching"                  test_progressive_url_matching
+run_test "NOTICES entry removed"                     test_notices_entry_removed
+run_test "NOTICES entry modified"                    test_notices_entry_modified
+run_test "SPDX license detection — new type"         test_spdx_license_detection
+run_test "SPDX license detection — matches known"    test_spdx_license_matches_known
+run_test "Source-file candidate has candidate_type"  test_source_file_has_candidate_type
 
 # --- Summary ---
 

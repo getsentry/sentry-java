@@ -118,7 +118,7 @@ Work through this list top-to-bottom and stop at the first match:
 
 After determining the primary finding, check each of these independently. Skip all additional warnings for files whose primary finding is **Deleted** or **Attribution removed**.
 
-- **New license type** (`new_license_type: true`) — "-❗This license type is not yet represented in `THIRD_PARTY_NOTICES.md`. Please verify it is compatible with Sentry's licensing policies: https://open.sentry.io/licensing/." (Put this comment in its own bullet point.)
+- **New license type** (`new_license_type: true`) — "- ❗This license type is not yet represented in `THIRD_PARTY_NOTICES.md`. Please verify it is compatible with Sentry's licensing policies: https://open.sentry.io/licensing/." (Put this comment in its own bullet point.)
 
 - **NOTICES file not updated** (`notices_file_changed: false` and `notices_file_exists: true`) — if vendored code was added, modified, or renamed but `THIRD_PARTY_NOTICES.md` was not touched, remind that it may need updating.
 
@@ -128,20 +128,11 @@ After determining the primary finding, check each of these independently. Skip a
 
 Print "No attribution issues found."
 
-```bash
-EXISTING_COMMENT_ID=$(gh api "repos/$OWNER/$REPO/issues/$PR_NUMBER/comments" \
-  --paginate --jq '[.[] | select(.body | startswith("<!-- sentry-attribution-check -->")) | .id] | first // empty')
-
-if [[ -n "$EXISTING_COMMENT_ID" ]]; then
-  gh api "repos/$OWNER/$REPO/issues/comments/$EXISTING_COMMENT_ID" -X DELETE
-fi
-```
-
 ### Issues found
 
 Print findings to the terminal, grouped by file. Prefix lines that require immediate action with ⚠️ — these represent invalid or missing attribution that must be fixed before merging. Informational reminders (verify, check) should have a 👀 prefix.
 
-Use the following format (only include lines that are relevant; number each entry; omit entries if the user doesn't have to do anything; don't add any sections besides Action Items and/or False Positivies; omit Action Items or False Positives sections if none found; always use the bullet point (`-`) when including a line that has a bullet point below, and put each bullet point on its own line; wrap lines when they reach the edge of the "Outcome of check-code-attribution" box):
+Use the following format (only include lines that are relevant; number each entry; omit entries if the user doesn't have to do anything; don't add any sections besides Action Items and/or False Positives; omit Action Items or False Positives sections if none found; always use the bullet point (`-`) when including a line that has a bullet point below, and put each bullet point on its own line; wrap lines when they reach the edge of the "Outcome of check-code-attribution" box):
 
 ```
 **********************************************************************************
@@ -153,15 +144,15 @@ Use the following format (only include lines that are relevant; number each entr
 1. ⚠️ File: <Fully qualified name of file, e.g., io.sentry.cache.tape.FileObjectQueue>
    Vendored code detected (<Library Name>) — missing required fields:
      - <Summarize what happened and what's needed based on the license header template in `CODE_ATTRIBUTION_CRITERIA.md`. Don't repeat yourself and don't repeat info from the lines above in this notice; keep your output very concise. Prefer summaries to bullet point lists of missing info. Don't insist on the format from `CODE_ATTRIBUTION_CRITERIA.md`; we only care that all info is present.>
-     - <If there's no corresponding entry in `THIRD_PARTY_NOTICES.md`, inform the user that they need to add one. Keep discussion of THIRD_PARTY_NOTICES.md` in a separate bullet point from discussions of the license header. Omit this line if there's nothing the user needs to do with respect to `THIRD_PARTY_NOTICES.md`.>
+     - <If there's no corresponding entry in `THIRD_PARTY_NOTICES.md`, inform the user that they need to add one. Keep discussion of `THIRD_PARTY_NOTICES.md` in a separate bullet point from discussions of the license header. Omit this line if there's nothing the user needs to do with respect to `THIRD_PARTY_NOTICES.md`.>
 ```
 
 For files where attribution markers were removed:
 ```
 1. ⚠️ File: <Fully qualified name of file>
    Required attribution field(s) removed:
-     - <Summarize what happened and what's needed based on the license header template in `CODE_ATTRIBUTION_CRITERIA.md`. Don't repeat yourself and don't repeat info from the lines above in this notice; keep your output very concise. Prefer summaries to bullet point lists of missing info. Don't insist on the format from `CODE_ATTRIBUTION_CRITERIA.md`; we only care that all info is present. No need to specify individuals fields if the entire header was removed and restoring it would satisfy our criteria: just tell the user to restore it. No need to tell them why they need to restore it.>
-     - <If there's no corresponding entry in `THIRD_PARTY_NOTICES.md`, inform the user that they need to add one. Keep discussion of THIRD_PARTY_NOTICES.md` in a separate bullet point from discussions of the license header. Omit this line if there's nothing the user needs to do with respect to `THIRD_PARTY_NOTICES.md`.>
+     - <Summarize what happened and what's needed based on the license header template in `CODE_ATTRIBUTION_CRITERIA.md`. Don't repeat yourself and don't repeat info from the lines above in this notice; keep your output very concise. Prefer summaries to bullet point lists of missing info. Don't insist on the format from `CODE_ATTRIBUTION_CRITERIA.md`; we only care that all info is present. No need to specify individual fields if the entire header was removed and restoring it would satisfy our criteria: just tell the user to restore it. No need to tell them why they need to restore it.>
+     - <If there's no corresponding entry in `THIRD_PARTY_NOTICES.md`, inform the user that they need to add one. Keep discussion of `THIRD_PARTY_NOTICES.md` in a separate bullet point from discussions of the license header. Omit this line if there's nothing the user needs to do with respect to `THIRD_PARTY_NOTICES.md`.>
 ```
 
 For files with a matching THIRD_PARTY_NOTICES.md entry:

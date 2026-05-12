@@ -41,6 +41,7 @@ set -euo pipefail
 
 MERGE_BASE=$(git merge-base HEAD origin/main 2>/dev/null || git merge-base HEAD main 2>/dev/null) || {
   echo "Error: could not determine merge-base. Neither 'origin/main' nor 'main' is reachable from HEAD." >&2
+  echo "If this is a shallow clone, try: git fetch --unshallow origin main" >&2
   exit 2
 }
 NOTICES_FILE="THIRD_PARTY_NOTICES.md"
@@ -254,6 +255,8 @@ detect_license_type() {
 
 # Extract the full entry content for a given ## heading from a NOTICES file.
 # Returns all lines between the heading and the next ## heading (or EOF).
+# Note: bare "---" lines are treated as section boundaries per THIRD_PARTY_NOTICES.md
+# conventions. Fenced code blocks are tracked so "---" inside ``` blocks is ignored.
 extract_entry() {
   local notices_path="$1" heading="$2"
   awk -v target="$heading" '
@@ -456,10 +459,15 @@ while IFS=$'\t' read -r status filepath old_filepath; do
         notices_entry=$(echo "$match_result" | cut -f2-)
       fi
 
-      # New license type check
+      # New license type check — uses exact whole-line matching (-xF) to avoid
+      # false negatives like "GPL" matching "LGPL". Tradeoff: detect_license_type
+      # may emit a short label (e.g. "EPL") while KNOWN_LICENSES has a versioned
+      # form (e.g. "EPL 2.0"), producing a false positive (new_license_type: true
+      # when the family is already represented). This is the safe direction — the
+      # LLM just emits an extra "verify compatibility" reminder.
       candidate_license=$(detect_license_type "$CONTENT_FILE")
       if [[ "$candidate_license" != "unknown" ]]; then
-        if ! echo "$KNOWN_LICENSES" | grep -qi "$candidate_license"; then
+        if ! echo "$KNOWN_LICENSES" | grep -qixF "$candidate_license"; then
           new_license_type="true"
         fi
       fi
@@ -467,7 +475,7 @@ while IFS=$'\t' read -r status filepath old_filepath; do
   fi
 
   # Format reasons as comma-separated string
-  reasons_str=$(IFS=', '; echo "${reasons[*]}")
+  reasons_str=$(printf '%s, ' "${reasons[@]}" | sed 's/, $//')
 
   # Output structured block
   echo "---"
