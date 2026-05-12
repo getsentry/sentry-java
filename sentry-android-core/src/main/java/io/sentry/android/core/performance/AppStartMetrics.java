@@ -89,7 +89,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   private boolean shouldSendStartMeasurements = true;
   private final AtomicInteger activeActivitiesCounter = new AtomicInteger();
   private final AtomicBoolean firstDrawDone = new AtomicBoolean(false);
-  private @Nullable OnNoActivityStartedListener noActivityStartedListener;
+  private volatile @Nullable OnNoActivityStartedListener noActivityStartedListener;
   private @Nullable SentryId appStartTraceId;
   private @Nullable ApplicationStartInfo cachedStartInfo;
 
