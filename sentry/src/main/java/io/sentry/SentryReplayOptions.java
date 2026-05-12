@@ -29,7 +29,7 @@ public final class SentryReplayOptions extends SentryMaskingOptions {
    * <p>The callback runs on a background thread (replay executor). Do not recycle the bitmap — it
    * may be reused by the replay system.
    */
-  @ApiStatus.Experimental
+  @ApiStatus.Internal
   public interface BeforeStoreFrameCallback {
     /**
      * Called before a replay frame is stored to disk.
