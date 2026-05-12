@@ -279,7 +279,7 @@ extract_scope() {
   awk -v target="$heading" '
     /^## / { in_target = ($0 == target); in_scope = 0; next }
     in_target && /^### Scope/ { in_scope = 1; next }
-    in_target && in_scope && /^(## |---)/ { exit }
+    in_target && in_scope && !in_code && /^(## |---)/ { exit }
     in_target && in_scope && /^```/ { in_code = !in_code; next }
     in_target && in_scope && !in_code { gsub(/^[[:space:]]+|[[:space:]]+$/, ""); if ($0 != "") print }
   ' "$notices_path"
@@ -475,7 +475,7 @@ while IFS=$'\t' read -r status filepath old_filepath; do
   fi
 
   # Format reasons as comma-separated string
-  reasons_str=$(printf '%s, ' "${reasons[@]}" | sed 's/, $//')
+  reasons_str=$(printf '%s, ' "${reasons[@]+${reasons[@]}}" | sed 's/, $//')
 
   # Output structured block
   echo "---"
