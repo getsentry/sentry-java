@@ -54,18 +54,11 @@ public class SentryLog4j2Initializer implements GenericApplicationListener {
     final LoggerContext loggerContext = (LoggerContext) context;
     final Configuration configuration = loggerContext.getConfiguration();
 
-    final Set<String> loggerNames = normalizeLoggerNames(loggers);
     boolean changed = false;
-    for (final String loggerName : loggerNames) {
-      if (isCoveredByAncestorLogger(configuration, loggerName, loggerNames)
-          || hasSentryAppenderRegisteredOnAncestor(configuration, loggerName)) {
-        continue;
-      }
-
+    for (final String loggerName : normalizeLoggerNames(loggers)) {
       final LoggerConfig loggerConfig = getOrCreateLoggerConfig(configuration, loggerName);
       if (!isSentryAppenderRegistered(loggerConfig)) {
-        final SentryAppender sentryAppender = getSentryAppender(configuration);
-        loggerConfig.addAppender(sentryAppender, null, null);
+        loggerConfig.addAppender(getSentryAppender(configuration), null, null);
         changed = true;
       }
     }
@@ -113,78 +106,14 @@ public class SentryLog4j2Initializer implements GenericApplicationListener {
   }
 
   private @NotNull Set<String> normalizeLoggerNames(final @NotNull List<String> loggerNames) {
-    final Set<String> normalizedLoggerNames = new LinkedHashSet<>();
+    final Set<String> normalized = new LinkedHashSet<>();
     for (final String loggerName : loggerNames) {
       if (loggerName == null || loggerName.trim().isEmpty()) {
         continue;
       }
-      normalizedLoggerNames.add(normalizeLoggerName(loggerName.trim()));
+      normalized.add(normalizeLoggerName(loggerName.trim()));
     }
-    return normalizedLoggerNames;
-  }
-
-  private boolean isCoveredByAncestorLogger(
-      final @NotNull Configuration configuration,
-      final @NotNull String loggerName,
-      final @NotNull Set<String> loggerNames) {
-    return loggerNames.stream()
-        .anyMatch(
-            candidate ->
-                isAncestorLogger(candidate, loggerName)
-                    && isAdditivePathToAncestor(configuration, loggerName, candidate));
-  }
-
-  private boolean hasSentryAppenderRegisteredOnAncestor(
-      final @NotNull Configuration configuration, final @NotNull String loggerName) {
-    if (LogManager.ROOT_LOGGER_NAME.equals(loggerName)) {
-      return false;
-    }
-
-    @Nullable String parentLoggerName = getParentLoggerName(loggerName);
-    while (parentLoggerName != null) {
-      final LoggerConfig parentLoggerConfig = configuration.getLoggerConfig(parentLoggerName);
-      if (parentLoggerName.equals(parentLoggerConfig.getName())
-          && isSentryAppenderRegistered(parentLoggerConfig)
-          && isAdditivePathToAncestor(configuration, loggerName, parentLoggerName)) {
-        return true;
-      }
-      parentLoggerName = getParentLoggerName(parentLoggerName);
-    }
-
-    return isSentryAppenderRegistered(configuration.getRootLogger())
-        && isAdditivePathToAncestor(configuration, loggerName, LogManager.ROOT_LOGGER_NAME);
-  }
-
-  private boolean isAdditivePathToAncestor(
-      final @NotNull Configuration configuration,
-      final @NotNull String loggerName,
-      final @NotNull String ancestorLoggerName) {
-    String currentLoggerName = loggerName;
-    while (!ancestorLoggerName.equals(currentLoggerName)) {
-      final LoggerConfig loggerConfig = configuration.getLoggerConfig(currentLoggerName);
-      if (currentLoggerName.equals(loggerConfig.getName()) && !loggerConfig.isAdditive()) {
-        return false;
-      }
-      currentLoggerName = getParentLoggerName(currentLoggerName);
-      if (currentLoggerName == null) {
-        currentLoggerName = LogManager.ROOT_LOGGER_NAME;
-      }
-    }
-    return true;
-  }
-
-  private @Nullable String getParentLoggerName(final @NotNull String loggerName) {
-    final int separator = loggerName.lastIndexOf('.');
-    return separator > -1 ? loggerName.substring(0, separator) : null;
-  }
-
-  private boolean isAncestorLogger(
-      final @NotNull String candidateLoggerName, final @NotNull String loggerName) {
-    if (candidateLoggerName.equals(loggerName)) {
-      return false;
-    }
-    return LogManager.ROOT_LOGGER_NAME.equals(candidateLoggerName)
-        || loggerName.startsWith(candidateLoggerName + ".");
+    return normalized;
   }
 
   private boolean isSentryAppenderRegistered(final @NotNull LoggerConfig loggerConfig) {

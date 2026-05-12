@@ -118,16 +118,6 @@ class SentryLog4j2AppenderAutoConfigurationTest {
   }
 
   @Test
-  fun `does not configure SentryAppender for descendant logger covered by ancestor logger`() {
-    dsnEnabledRunner
-      .withPropertyValues("sentry.logging.loggers[0]=ROOT", "sentry.logging.loggers[1]=com.example")
-      .run {
-        assertThat(rootLogger.getAppenders(SentryAppender::class.java)).hasSize(1)
-        assertThat(configuration.loggers).doesNotContainKey("com.example")
-      }
-  }
-
-  @Test
   fun `configures SentryAppender for descendant logger with additivity disabled`() {
     val loggerConfig = LoggerConfig("com.example", null, false)
     configuration.addLogger("com.example", loggerConfig)
