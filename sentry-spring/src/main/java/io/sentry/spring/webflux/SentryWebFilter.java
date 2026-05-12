@@ -75,39 +75,38 @@ public final class SentryWebFilter implements WebFilter {
             ? startTransaction(requestScopes, request, transactionContext)
             : null;
 
-    return Mono.defer(
-        () -> {
-          serverWebExchange.getAttributes().put(SENTRY_SCOPES_KEY, requestScopes);
-          Sentry.setCurrentScopes(requestScopes);
-          final ServerHttpResponse response = serverWebExchange.getResponse();
+    return webFilterChain
+        .filter(serverWebExchange)
+        .doFinally(
+            __ -> {
+              if (transaction != null) {
+                finishTransaction(serverWebExchange, transaction);
+              }
+              Sentry.setCurrentScopes(NoOpScopes.getInstance());
+            })
+        .doOnError(
+            e -> {
+              if (transaction != null) {
+                transaction.setStatus(SpanStatus.INTERNAL_ERROR);
+                transaction.setThrowable(e);
+              }
+            })
+        .doFirst(
+            () -> {
+              serverWebExchange.getAttributes().put(SENTRY_SCOPES_KEY, requestScopes);
+              Sentry.setCurrentScopes(requestScopes);
+              final ServerHttpResponse response = serverWebExchange.getResponse();
 
-          final Hint hint = new Hint();
-          hint.set(WEBFLUX_FILTER_REQUEST, request);
-          hint.set(WEBFLUX_FILTER_RESPONSE, response);
-          final String methodName =
-              request.getMethod() != null ? request.getMethod().name() : "unknown";
-          requestScopes.addBreadcrumb(
-              Breadcrumb.http(request.getURI().toString(), methodName), hint);
-          requestScopes.configureScope(
-              scope -> scope.setRequest(sentryRequestResolver.resolveSentryRequest(request)));
-
-          return webFilterChain
-              .filter(serverWebExchange)
-              .doFinally(
-                  __ -> {
-                    if (transaction != null) {
-                      finishTransaction(serverWebExchange, transaction);
-                    }
-                    Sentry.setCurrentScopes(NoOpScopes.getInstance());
-                  })
-              .doOnError(
-                  e -> {
-                    if (transaction != null) {
-                      transaction.setStatus(SpanStatus.INTERNAL_ERROR);
-                      transaction.setThrowable(e);
-                    }
-                  });
-        });
+              final Hint hint = new Hint();
+              hint.set(WEBFLUX_FILTER_REQUEST, request);
+              hint.set(WEBFLUX_FILTER_RESPONSE, response);
+              final String methodName =
+                  request.getMethod() != null ? request.getMethod().name() : "unknown";
+              requestScopes.addBreadcrumb(
+                  Breadcrumb.http(request.getURI().toString(), methodName), hint);
+              requestScopes.configureScope(
+                  scope -> scope.setRequest(sentryRequestResolver.resolveSentryRequest(request)));
+            });
   }
 
   private boolean isIgnored(final @NotNull IScopes scopes) {
@@ -154,8 +153,7 @@ public final class SentryWebFilter implements WebFilter {
     }
     final @Nullable ServerHttpResponse response = exchange.getResponse();
     if (response != null) {
-      final @Nullable Integer rawStatusCode =
-          response.getStatusCode() != null ? response.getStatusCode().value() : null;
+      final @Nullable Integer rawStatusCode = response.getRawStatusCode();
       if (rawStatusCode != null) {
         transaction
             .getContexts()

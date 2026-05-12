@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        springboot-version: [ '2.1.0', '2.2.5', '2.4.13', '2.5.15', '2.6.15', '2.7.0', '2.7.18' ]
+        springboot-version: [ '2.4.13', '2.5.15', '2.6.15', '2.7.0', '2.7.18' ]
 
     name: Spring Boot ${{ matrix.springboot-version }}
     env:
@@ -63,9 +63,6 @@ jobs:
       - name: Update Spring Boot 2.x version
         run: |
           springboot_version="${{ matrix.springboot-version }}"
-          if [[ "$springboot_version" =~ ^2\.[0-3]\. ]]; then
-            springboot_version="${springboot_version}.RELEASE"
-          fi
           if [[ ! "$springboot_version" =~ ^2\.7\. ]]; then
             echo "ORG_GRADLE_PROJECT_excludeGraphql=true" >> "$GITHUB_ENV"
             echo "ORG_GRADLE_PROJECT_excludeKafka=true" >> "$GITHUB_ENV"
@@ -141,7 +138,6 @@ jobs:
             --build "true"
 
       - name: Test sentry-samples-spring-boot-opentelemetry-noagent
-        if: ${{ !startsWith(matrix.springboot-version, '2.1.') && !startsWith(matrix.springboot-version, '2.2.') }}
         run: |
           python3 test/system-test-runner.py test \
             --module "sentry-samples-spring-boot-opentelemetry-noagent" \
