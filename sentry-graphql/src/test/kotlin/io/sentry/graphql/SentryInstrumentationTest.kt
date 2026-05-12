@@ -50,14 +50,14 @@ class SentryInstrumentationTest {
       activeSpan = SentryTracer(TransactionContext("name", "op"), scopes)
       val schema =
         """
-                type Query {
-                    shows: [Show]
-                }
+        type Query {
+            shows: [Show]
+        }
 
-                type Show {
-                    id: Int
-                }
-                """
+        type Show {
+            id: Int
+        }
+        """
           .trimIndent()
 
       val graphQLSchema =

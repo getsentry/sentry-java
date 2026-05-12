@@ -69,9 +69,9 @@ class MainActivity : ComponentActivity() {
                 val file = File(outboxPath, "corrupted.envelope")
                 val corruptedEnvelopeContent =
                   """
-                                {"event_id":"1990b5bc31904b7395fd07feb72daf1c","sdk":{"name":"sentry.java.android","version":"7.21.0"}}
-                                {"type":"test","length":50}
-                                """
+                  {"event_id":"1990b5bc31904b7395fd07feb72daf1c","sdk":{"name":"sentry.java.android","version":"7.21.0"}}
+                  {"type":"test","length":50}
+                  """
                     .trimIndent()
                 file.writeText(corruptedEnvelopeContent)
                 println("Wrote corrupted envelope to: ${file.absolutePath}")
