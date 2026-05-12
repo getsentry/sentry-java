@@ -1823,8 +1823,26 @@ class ScopesTest {
   }
 
   @Test
-  fun `when session trace lifecycle is enabled, startTransaction uses session propagation context`() {
+  fun `when session trace lifecycle is enabled without active session, root transaction does not use scope propagation context`() {
     val scopes = generateScopes { it.isEnableSessionTraceLifecycle = true }
+    var propagationContext: PropagationContext? = null
+    scopes.configureScope { propagationContext = it.propagationContext }
+    val context = TransactionContext("name", "op")
+
+    val transaction = scopes.startTransaction(context)
+
+    assertTrue(transaction is SentryTracer)
+    assertEquals(context.traceId, transaction.root.spanContext.traceId)
+    assertNotEquals(propagationContext!!.traceId, transaction.root.spanContext.traceId)
+  }
+
+  @Test
+  fun `when session trace lifecycle is enabled, startTransaction uses session propagation context`() {
+    val scopes = generateScopes {
+      it.isEnableSessionTraceLifecycle = true
+      it.release = "1.0.0"
+    }
+    scopes.startSession()
     var propagationContext: PropagationContext? = null
     scopes.configureScope { propagationContext = it.propagationContext }
 
@@ -1839,7 +1857,11 @@ class ScopesTest {
 
   @Test
   fun `continued trace with parent span is not remapped to session trace`() {
-    val scopes = generateScopes { it.isEnableSessionTraceLifecycle = true }
+    val scopes = generateScopes {
+      it.isEnableSessionTraceLifecycle = true
+      it.release = "1.0.0"
+    }
+    scopes.startSession()
     val traceId = "75302ac48a024bde9a3b3734a82e36c8"
     val parentSpanId = "1000000000000000"
     val context = scopes.continueTrace("$traceId-$parentSpanId-1", emptyList())!!
@@ -1853,7 +1875,11 @@ class ScopesTest {
 
   @Test
   fun `when session trace lifecycle is enabled, root transaction uses current propagation context`() {
-    val scopes = generateScopes { it.isEnableSessionTraceLifecycle = true }
+    val scopes = generateScopes {
+      it.isEnableSessionTraceLifecycle = true
+      it.release = "1.0.0"
+    }
+    scopes.startSession()
     val traceId = "75302ac48a024bde9a3b3734a82e36c8"
     val parentSpanId = "1000000000000000"
     scopes.continueTrace("$traceId-$parentSpanId-1", emptyList())
