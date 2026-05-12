@@ -12,8 +12,13 @@ import android.util.Log;
  * first. We can then check if importance == IMPORTANCE_FOREGROUND even though no activity will
  * launch.
  *
- * <p>Test with: adb shell am force-stop io.sentry.samples.android adb shell am broadcast -a
- * io.sentry.samples.android.TEST_BROADCAST -n io.sentry.samples.android/.TestBroadcastReceiver
+ * <p>Test with:
+ *
+ * <pre>{@code
+ * adb shell am force-stop io.sentry.samples.android && \
+ * adb shell am broadcast -a io.sentry.samples.android.TEST_BROADCAST \
+ *   -n io.sentry.samples.android/.TestBroadcastReceiver
+ * }</pre>
  */
 public class TestBroadcastReceiver extends BroadcastReceiver {
   private static final String TAG = "SentryAppStart";
