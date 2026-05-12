@@ -21,6 +21,7 @@ import io.sentry.test.createTestScopes
 import io.sentry.test.initForTest
 import io.sentry.util.HintUtils
 import io.sentry.util.StringUtils
+import io.sentry.util.TracingUtils
 import java.io.File
 import java.nio.file.Files
 import java.util.Queue
@@ -1863,6 +1864,47 @@ class ScopesTest {
     assertEquals(SentryId(traceId), transaction.root.spanContext.traceId)
     assertNotEquals(SpanId(parentSpanId), transaction.root.spanContext.spanId)
     assertNull(transaction.root.spanContext.parentSpanId)
+  }
+
+  @Test
+  fun `session trace transaction baggage is populated after scope baggage is frozen`() {
+    val scopes = generateScopes {
+      it.isEnableSessionTraceLifecycle = true
+      it.release = "1.0.0"
+      it.environment = "production"
+    }
+
+    scopes.startSession()
+
+    val sessionTraceId = AtomicReference<SentryId>()
+    val sessionSampleRand = AtomicReference<Double>()
+    val headersWithoutTransaction =
+      TracingUtils.traceIfAllowed(scopes, "https://sentry.io/hello", emptyList(), null)
+    assertNotNull(headersWithoutTransaction)
+    scopes.configureScope { scope ->
+      sessionTraceId.set(scope.propagationContext.traceId)
+      sessionSampleRand.set(scope.propagationContext.sampleRand)
+      assertFalse(scope.propagationContext.baggage!!.isMutable)
+    }
+
+    val firstTransaction =
+      scopes.startTransaction(TransactionContext("first transaction", "ui.load"))
+    assertSessionTraceBaggage(
+      firstTransaction,
+      scopes,
+      sessionTraceId.get(),
+      sessionSampleRand.get(),
+    )
+    firstTransaction.finish()
+
+    val secondTransaction =
+      scopes.startTransaction(TransactionContext("second transaction", "ui.action"))
+    assertSessionTraceBaggage(
+      secondTransaction,
+      scopes,
+      sessionTraceId.get(),
+      sessionSampleRand.get(),
+    )
   }
 
   @Test
@@ -4406,6 +4448,30 @@ class ScopesTest {
       }
     optionsConfiguration?.configure(options)
     return createScopes(options)
+  }
+
+  private fun assertSessionTraceBaggage(
+    transaction: ITransaction,
+    scopes: IScopes,
+    sessionTraceId: SentryId,
+    sessionSampleRand: Double,
+  ) {
+    assertTrue(transaction is SentryTracer)
+    assertEquals(sessionTraceId, transaction.root.spanContext.traceId)
+
+    val tracingHeaders =
+      TracingUtils.traceIfAllowed(scopes, "https://sentry.io/hello", emptyList(), transaction)
+    val baggage =
+      Baggage.fromHeader(tracingHeaders!!.baggageHeader!!.value, NoOpLogger.getInstance())
+
+    assertEquals(sessionTraceId.toString(), baggage.traceId)
+    assertEquals(transaction.name, baggage.transaction)
+    assertEquals("true", baggage.sampled)
+    assertEquals(1.0, baggage.sampleRate!!, 0.0001)
+    assertEquals(sessionSampleRand, baggage.sampleRand!!, 0.0001)
+    assertEquals("key", baggage.publicKey)
+    assertEquals("1.0.0", baggage.release)
+    assertEquals("production", baggage.environment)
   }
 
   private fun getEnabledScopes(
