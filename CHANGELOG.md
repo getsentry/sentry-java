@@ -6,6 +6,12 @@
 
 - Add support to configure reporting historical ANRs via `AndroidManifest.xml` using the  `io.sentry.anr.report-historical` attribute ([#5387](https://github.com/getsentry/sentry-java/pull/5387))
 
+### Dependencies
+
+- Bump Gradle from v9.5.0 to v9.5.1 ([#5419](https://github.com/getsentry/sentry-java/pull/5419))
+  - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v951)
+  - [diff](https://github.com/gradle/gradle/compare/v9.5.0...v9.5.1)
+
 ## 8.41.0
 
 ### Features
