@@ -31,6 +31,7 @@ dependencyManagement {
   imports {
     mavenBom("org.springframework.boot:spring-boot-dependencies:${libs.versions.springboot3.get()}")
     mavenBom(libs.kotlin.bom.get().toString())
+    mavenBom(libs.jackson.bom.get().toString())
   }
 }
 

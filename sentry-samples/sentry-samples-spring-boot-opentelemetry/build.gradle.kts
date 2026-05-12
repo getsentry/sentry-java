@@ -21,7 +21,7 @@ java.targetCompatibility = JavaVersion.VERSION_11
 
 repositories { mavenCentral() }
 
-fun springBoot2SupportsGraphql(): Boolean {
+fun springBoot2SupportsOptionalIntegrations(): Boolean {
   val version = libs.versions.springboot2.get().removeSuffix(".RELEASE")
   val parts = version.split(".").map { it.toIntOrNull() ?: 0 }
   val major = parts.getOrElse(0) { 0 }
@@ -29,7 +29,9 @@ fun springBoot2SupportsGraphql(): Boolean {
   return major > 2 || (major == 2 && minor >= 7)
 }
 
-val includeGraphql = !project.hasProperty("excludeGraphql") && springBoot2SupportsGraphql()
+val includeGraphql =
+  !project.hasProperty("excludeGraphql") && springBoot2SupportsOptionalIntegrations()
+val includeKafka = !project.hasProperty("excludeKafka") && springBoot2SupportsOptionalIntegrations()
 
 configure<JavaPluginExtension> {
   sourceCompatibility = JavaVersion.VERSION_11
@@ -70,9 +72,10 @@ dependencies {
   implementation(projects.sentryAsyncProfiler)
   implementation(libs.otel)
 
-  // kafka
-  implementation(libs.spring.kafka2)
-  implementation(projects.sentryKafka)
+  if (includeKafka) {
+    implementation(libs.spring.kafka2)
+    implementation(projects.sentryKafka)
+  }
 
   // database query tracing
   implementation(projects.sentryJdbc)
@@ -118,6 +121,10 @@ configure<SourceSetContainer> {
     if (!includeGraphql) {
       java.exclude("**/graphql/**")
       resources.exclude("graphql/**")
+    }
+    if (!includeKafka) {
+      java.exclude("**/queues/kafka/**")
+      resources.exclude("application-kafka.properties")
     }
   }
   test { java.srcDir("src/test/java") }
@@ -167,6 +174,9 @@ tasks.register<Test>("systemTest").configure {
     includeTestsMatching("io.sentry.systemtest*")
     if (!includeGraphql) {
       excludeTestsMatching("io.sentry.systemtest.Graphql*")
+    }
+    if (!includeKafka) {
+      excludeTestsMatching("io.sentry.systemtest.Kafka*")
     }
   }
 }

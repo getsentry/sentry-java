@@ -33,6 +33,7 @@ dependencyManagement {
     mavenBom(libs.springboot2.bom.get().toString())
     mavenBom(libs.kotlin.bom.get().toString())
     mavenBom(libs.jackson.bom.get().toString())
+    mavenBom(libs.okhttp.bom.get().toString())
   }
 }
 
