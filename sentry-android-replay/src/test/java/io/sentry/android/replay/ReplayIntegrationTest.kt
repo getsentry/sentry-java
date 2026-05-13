@@ -18,6 +18,8 @@ import io.sentry.SentryEvent
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryOptions
 import io.sentry.SentryReplayEvent.ReplayType
+import io.sentry.SentryReplayOptions
+import io.sentry.TypeCheckHint
 import io.sentry.android.replay.ReplayCache.Companion.ONGOING_SEGMENT
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_BIT_RATE
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_FRAME_RATE
@@ -994,12 +996,13 @@ class ReplayIntegrationTest {
     replay.register(fixture.scopes, fixture.options)
     replay.start()
 
-    replay.snapshotObserver = ReplaySnapshotObserver { bitmap, frameTimestamp, screenName ->
-      callbackInvoked = true
-      receivedTimestamp = frameTimestamp
-      receivedScreen = screenName
-      receivedBitmap = bitmap
-    }
+    fixture.options.sessionReplay.snapshotObserver =
+      SentryReplayOptions.ReplaySnapshotObserver { hint, frameTimestamp, screenName ->
+        callbackInvoked = true
+        receivedTimestamp = frameTimestamp
+        receivedScreen = screenName
+        receivedBitmap = hint.getAs(TypeCheckHint.REPLAY_FRAME_BITMAP, Bitmap::class.java)
+      }
 
     val copyBitmap = mock<Bitmap>()
     val sourceBitmap =
@@ -1033,7 +1036,8 @@ class ReplayIntegrationTest {
     replay.register(fixture.scopes, fixture.options)
     replay.start()
 
-    replay.snapshotObserver = ReplaySnapshotObserver { _, _, _ -> throw RuntimeException("test") }
+    fixture.options.sessionReplay.snapshotObserver =
+      SentryReplayOptions.ReplaySnapshotObserver { _, _, _ -> throw RuntimeException("test") }
 
     val sourceBitmap =
       mock<Bitmap> {

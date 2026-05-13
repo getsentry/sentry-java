@@ -4069,6 +4069,7 @@ public final class io/sentry/SentryReplayOptions : io/sentry/SentryMaskingOption
 	public fun getSessionDuration ()J
 	public fun getSessionSampleRate ()Ljava/lang/Double;
 	public fun getSessionSegmentDuration ()J
+	public fun getSnapshotObserver ()Lio/sentry/SentryReplayOptions$ReplaySnapshotObserver;
 	public fun isCaptureSurfaceViews ()Z
 	public fun isDebug ()Z
 	public fun isNetworkCaptureBodies ()Z
@@ -4090,12 +4091,17 @@ public final class io/sentry/SentryReplayOptions : io/sentry/SentryMaskingOption
 	public fun setScreenshotStrategy (Lio/sentry/ScreenshotStrategyType;)V
 	public fun setSdkVersion (Lio/sentry/protocol/SdkVersion;)V
 	public fun setSessionSampleRate (Ljava/lang/Double;)V
+	public fun setSnapshotObserver (Lio/sentry/SentryReplayOptions$ReplaySnapshotObserver;)V
 	public fun setTrackConfiguration (Z)V
 	public fun trackCustomMasking ()V
 }
 
 public abstract interface class io/sentry/SentryReplayOptions$BeforeErrorSamplingCallback {
 	public abstract fun execute (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Z
+}
+
+public abstract interface class io/sentry/SentryReplayOptions$ReplaySnapshotObserver {
+	public abstract fun onSnapshotCaptured (Lio/sentry/Hint;JLjava/lang/String;)V
 }
 
 public final class io/sentry/SentryReplayOptions$SentryReplayQuality : java/lang/Enum {
@@ -4644,6 +4650,7 @@ public final class io/sentry/TypeCheckHint {
 	public static final field OKHTTP_RESPONSE Ljava/lang/String;
 	public static final field OPEN_FEIGN_REQUEST Ljava/lang/String;
 	public static final field OPEN_FEIGN_RESPONSE Ljava/lang/String;
+	public static final field REPLAY_FRAME_BITMAP Ljava/lang/String;
 	public static final field SENTRY_DART_SDK_NAME Ljava/lang/String;
 	public static final field SENTRY_DOTNET_SDK_NAME Ljava/lang/String;
 	public static final field SENTRY_EVENT_DROP_REASON Ljava/lang/String;
