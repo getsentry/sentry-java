@@ -4,8 +4,9 @@ import android.graphics.Bitmap
 import android.os.Environment
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.launchActivity
-import io.sentry.SentryReplayOptions
-import io.sentry.TypeCheckHint
+import io.sentry.Sentry
+import io.sentry.android.replay.ReplayIntegration
+import io.sentry.android.replay.ReplaySnapshotObserver
 import java.io.File
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.CountDownLatch
@@ -42,24 +43,17 @@ class ReplaySnapshotTest : BaseUiTest() {
     val activityScenario = launchActivity<ComposeActivity>()
     activityScenario.moveToState(Lifecycle.State.RESUMED)
 
-    initSentry {
-      it.sessionReplay.sessionSampleRate = 1.0
-      it.sessionReplay.setBeforeStoreFrame(
-        SentryReplayOptions.BeforeStoreFrameCallback { hint, frameTimestamp, screenName ->
-          val frameBitmap =
-            hint.getAs(TypeCheckHint.REPLAY_FRAME_BITMAP, Bitmap::class.java)
-              ?: return@BeforeStoreFrameCallback
-          val name = screenName ?: "unknown"
-          if (!capturedScreens.contains(name)) {
-            val file = File(snapshotsDir, "${name}_$frameTimestamp.png")
-            file.outputStream().use { out ->
-              frameBitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
-            }
-            capturedScreens.add(name)
-          }
-          frameReceived.countDown()
-        }
-      )
+    initSentry { it.sessionReplay.sessionSampleRate = 1.0 }
+
+    val integration = Sentry.getCurrentScopes().options.replayController as? ReplayIntegration
+    integration?.snapshotObserver = ReplaySnapshotObserver { bitmap, frameTimestamp, screenName ->
+      val name = screenName ?: "unknown"
+      if (!capturedScreens.contains(name)) {
+        val file = File(snapshotsDir, "${name}_$frameTimestamp.png")
+        file.outputStream().use { out -> bitmap.compress(Bitmap.CompressFormat.PNG, 100, out) }
+        capturedScreens.add(name)
+      }
+      frameReceived.countDown()
     }
 
     assertTrue(frameReceived.await(10, TimeUnit.SECONDS), "Expected at least one replay frame")

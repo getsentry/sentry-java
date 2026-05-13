@@ -82,6 +82,10 @@ public final class io/sentry/android/replay/ReplayIntegration : io/sentry/IConne
 	public fun stop ()V
 }
 
+public abstract interface class io/sentry/android/replay/ReplaySnapshotObserver {
+	public abstract fun onSnapshotCaptured (Landroid/graphics/Bitmap;JLjava/lang/String;)V
+}
+
 public abstract interface class io/sentry/android/replay/ScreenshotRecorderCallback {
 	public abstract fun onScreenshotRecorded (Landroid/graphics/Bitmap;)V
 	public abstract fun onScreenshotRecorded (Ljava/io/File;J)V
@@ -116,7 +120,6 @@ public final class io/sentry/android/replay/SentryReplayModifiers {
 }
 
 public final class io/sentry/android/replay/SessionReplayOptionsKt {
-	public static final fun beforeStoreFrame (Lio/sentry/SentryReplayOptions;Lkotlin/jvm/functions/Function3;)V
 	public static final fun getMaskAllImages (Lio/sentry/SentryReplayOptions;)Z
 	public static final fun getMaskAllText (Lio/sentry/SentryReplayOptions;)Z
 	public static final fun setMaskAllImages (Lio/sentry/SentryReplayOptions;Z)V
