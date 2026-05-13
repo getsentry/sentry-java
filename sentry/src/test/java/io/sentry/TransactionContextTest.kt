@@ -99,6 +99,7 @@ class TransactionContextTest {
   fun `fromPropagationContextAsRoot copies non trace state`() {
     val propagationBaggage = Baggage(NoOpLogger.getInstance())
     propagationBaggage.sampleRand = 0.42
+    propagationBaggage.publicKey = "propagation-public-key"
     val propagationContext =
       PropagationContext(
         SentryId("75302ac48a024bde9a3b3734a82e36c8"),
@@ -109,6 +110,7 @@ class TransactionContextTest {
       )
     val samplingDecision = TracesSamplingDecision(true, 0.3, true, 0.4)
     val transactionContext = TransactionContext("name", "op", samplingDecision)
+    transactionContext.baggage!!.publicKey = "transaction-public-key"
     transactionContext.transactionNameSource = TransactionNameSource.ROUTE
     transactionContext.description = "description"
     transactionContext.status = SpanStatus.OK
@@ -145,6 +147,7 @@ class TransactionContextTest {
     assertEquals(0.4, context.samplingDecision!!.profileSampleRate)
     assertEquals(0.42, context.baggage!!.sampleRand)
     assertEquals(propagationContext.traceId.toString(), context.baggage!!.traceId)
+    assertEquals("transaction-public-key", context.baggage!!.publicKey)
     assertNull(context.featureFlagBuffer.featureFlags)
   }
 

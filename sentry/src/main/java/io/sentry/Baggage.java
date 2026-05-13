@@ -221,21 +221,23 @@ public final class Baggage {
 
   @ApiStatus.Internal
   static @NotNull Baggage copyWithOverrides(
-      final @NotNull Baggage baggage,
+      final @Nullable Baggage baggage,
       final @NotNull SentryId traceId,
       final @Nullable Double sampleRand) {
+    final @NotNull Baggage source =
+        baggage == null ? new Baggage(NoOpLogger.getInstance()) : baggage;
     final @NotNull ConcurrentHashMap<String, String> keyValues =
-        new ConcurrentHashMap<>(baggage.keyValues);
+        new ConcurrentHashMap<>(source.keyValues);
     keyValues.put(DSCKeys.TRACE_ID, traceId.toString());
 
     return new Baggage(
         keyValues,
-        baggage.sampleRate,
+        source.sampleRate,
         sampleRand,
-        baggage.thirdPartyHeader,
-        true,
-        false,
-        baggage.logger);
+        source.thirdPartyHeader,
+        source.mutable,
+        source.shouldFreeze,
+        source.logger);
   }
 
   @ApiStatus.Internal

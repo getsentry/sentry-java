@@ -44,7 +44,7 @@ public final class TransactionContext extends SpanContext {
       final @NotNull TransactionContext transactionContext) {
     final @NotNull Baggage baggage =
         Baggage.copyWithOverrides(
-            propagationContext.getBaggage(),
+            transactionContext.getBaggage(),
             propagationContext.getTraceId(),
             propagationContext.getSampleRand());
 
