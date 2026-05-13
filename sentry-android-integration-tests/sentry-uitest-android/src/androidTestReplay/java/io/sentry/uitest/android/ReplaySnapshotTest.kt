@@ -52,6 +52,7 @@ class ReplaySnapshotTest : BaseUiTest() {
         val file = File(snapshotsDir, "${name}_$frameTimestamp.png")
         file.outputStream().use { out -> bitmap.compress(Bitmap.CompressFormat.PNG, 100, out) }
       }
+      bitmap.recycle()
       frameReceived.countDown()
     }
 
