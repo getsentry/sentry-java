@@ -36,6 +36,28 @@ public final class SentryReplayOptions extends SentryMaskingOptions {
     boolean execute(@NotNull SentryEvent event, @NotNull Hint hint);
   }
 
+  /**
+   * Observer that is notified when a replay snapshot is captured. The snapshot bitmap (with masking
+   * applied) is passed via a {@link Hint} using the key {@link TypeCheckHint#REPLAY_FRAME_BITMAP}.
+   *
+   * <p>On Android, retrieve the bitmap with: {@code hint.getAs(TypeCheckHint.REPLAY_FRAME_BITMAP,
+   * Bitmap.class)}.
+   *
+   * <p>The callback runs on a background thread (replay executor). The bitmap is a copy owned by
+   * the caller. Call {@code Bitmap.recycle()} when done to free native memory.
+   */
+  @ApiStatus.Experimental
+  public interface ReplaySnapshotObserver {
+    /**
+     * Called when a replay snapshot is captured.
+     *
+     * @param hint contains the frame bitmap under {@link TypeCheckHint#REPLAY_FRAME_BITMAP}
+     * @param frameTimestamp the timestamp (in milliseconds since epoch) when the frame was captured
+     * @param screenName the current screen name, or {@code null} if unknown
+     */
+    void onSnapshotCaptured(@NotNull Hint hint, long frameTimestamp, @Nullable String screenName);
+  }
+
   private static final String CUSTOM_MASKING_INTEGRATION_NAME = "ReplayCustomMasking";
   private volatile boolean customMaskingTracked = false;
 
@@ -210,6 +232,8 @@ public final class SentryReplayOptions extends SentryMaskingOptions {
    * used to filter which errors trigger replay capture.
    */
   private @Nullable BeforeErrorSamplingCallback beforeErrorSampling;
+
+  @ApiStatus.Experimental private @Nullable ReplaySnapshotObserver snapshotObserver;
 
   public SentryReplayOptions(final boolean empty, final @Nullable SdkVersion sdkVersion) {
     if (!empty) {
@@ -549,5 +573,26 @@ public final class SentryReplayOptions extends SentryMaskingOptions {
   public void setBeforeErrorSampling(
       final @Nullable BeforeErrorSamplingCallback beforeErrorSampling) {
     this.beforeErrorSampling = beforeErrorSampling;
+  }
+
+  /**
+   * Gets the observer that is notified when a replay snapshot is captured.
+   *
+   * @return the observer, or {@code null} if not set
+   */
+  @ApiStatus.Experimental
+  public @Nullable ReplaySnapshotObserver getSnapshotObserver() {
+    return snapshotObserver;
+  }
+
+  /**
+   * Sets the observer that is notified when a replay snapshot is captured. The frame bitmap is
+   * passed via a {@link Hint} using the key {@link TypeCheckHint#REPLAY_FRAME_BITMAP}.
+   *
+   * @param snapshotObserver the observer, or {@code null} to clear
+   */
+  @ApiStatus.Experimental
+  public void setSnapshotObserver(final @Nullable ReplaySnapshotObserver snapshotObserver) {
+    this.snapshotObserver = snapshotObserver;
   }
 }

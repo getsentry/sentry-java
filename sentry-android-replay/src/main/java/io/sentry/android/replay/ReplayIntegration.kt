@@ -7,6 +7,7 @@ import android.view.MotionEvent
 import io.sentry.Breadcrumb
 import io.sentry.DataCategory.All
 import io.sentry.DataCategory.Replay
+import io.sentry.Hint
 import io.sentry.IConnectionStatusProvider.ConnectionStatus
 import io.sentry.IConnectionStatusProvider.ConnectionStatus.DISCONNECTED
 import io.sentry.IConnectionStatusProvider.IConnectionStatusObserver
@@ -20,6 +21,7 @@ import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryLevel.ERROR
 import io.sentry.SentryLevel.INFO
 import io.sentry.SentryOptions
+import io.sentry.TypeCheckHint
 import io.sentry.android.replay.ReplayState.CLOSED
 import io.sentry.android.replay.ReplayState.PAUSED
 import io.sentry.android.replay.ReplayState.RESUMED
@@ -122,8 +124,6 @@ public class ReplayIntegration(
   private var gestureRecorderProvider: (() -> GestureRecorder)? = null
   private val lifecycleLock = AutoClosableReentrantLock()
   private val lifecycle = ReplayLifecycle()
-
-  @Volatile public var snapshotObserver: ReplaySnapshotObserver? = null
 
   override fun register(scopes: IScopes, options: SentryOptions) {
     this.options = options
@@ -311,12 +311,14 @@ public class ReplayIntegration(
     var screen: String? = null
     scopes?.configureScope { screen = it.screen?.substringAfterLast('.') }
     captureStrategy?.onScreenshotRecorded(bitmap) { frameTimeStamp ->
-      val observer = snapshotObserver
+      val observer = options.sessionReplay.snapshotObserver
       if (observer != null) {
         val copy = bitmap.copy(bitmap.config!!, false)
         if (copy != null) {
           try {
-            observer.onSnapshotCaptured(copy, frameTimeStamp, screen)
+            val hint = Hint()
+            hint.set(TypeCheckHint.REPLAY_FRAME_BITMAP, copy)
+            observer.onSnapshotCaptured(hint, frameTimeStamp, screen)
           } catch (e: Throwable) {
             options.logger.log(ERROR, "Error in ReplaySnapshotObserver", e)
             copy.recycle()
