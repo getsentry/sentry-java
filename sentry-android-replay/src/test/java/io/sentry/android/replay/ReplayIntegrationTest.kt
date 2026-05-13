@@ -18,8 +18,6 @@ import io.sentry.SentryEvent
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryOptions
 import io.sentry.SentryReplayEvent.ReplayType
-import io.sentry.SentryReplayOptions
-import io.sentry.TypeCheckHint
 import io.sentry.android.replay.ReplayCache.Companion.ONGOING_SEGMENT
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_BIT_RATE
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_FRAME_RATE
@@ -972,19 +970,11 @@ class ReplayIntegrationTest {
   }
 
   @Test
-  fun `beforeStoreFrame callback is invoked with bitmap in hint`() {
+  fun `snapshot observer is invoked with bitmap and metadata`() {
     var callbackInvoked = false
     var receivedTimestamp = 0L
     var receivedScreen: String? = null
-    var receivedBitmap: Any? = null
-
-    fixture.options.sessionReplay.beforeStoreFrame =
-      SentryReplayOptions.BeforeStoreFrameCallback { hint, frameTimestamp, screenName ->
-        callbackInvoked = true
-        receivedTimestamp = frameTimestamp
-        receivedScreen = screenName
-        receivedBitmap = hint.getAs(TypeCheckHint.REPLAY_FRAME_BITMAP, Bitmap::class.java)
-      }
+    var receivedBitmap: Bitmap? = null
 
     val captureStrategy =
       mock<CaptureStrategy> {
@@ -1003,6 +993,13 @@ class ReplayIntegrationTest {
     replay.register(fixture.scopes, fixture.options)
     replay.start()
 
+    replay.snapshotObserver = ReplaySnapshotObserver { bitmap, frameTimestamp, screenName ->
+      callbackInvoked = true
+      receivedTimestamp = frameTimestamp
+      receivedScreen = screenName
+      receivedBitmap = bitmap
+    }
+
     replay.onScreenshotRecorded(mock<Bitmap>())
 
     assertTrue(callbackInvoked)
@@ -1012,10 +1009,7 @@ class ReplayIntegrationTest {
   }
 
   @Test
-  fun `beforeStoreFrame callback exception does not prevent frame storage`() {
-    fixture.options.sessionReplay.beforeStoreFrame =
-      SentryReplayOptions.BeforeStoreFrameCallback { _, _, _ -> throw RuntimeException("test") }
-
+  fun `snapshot observer exception does not prevent frame storage`() {
     val captureStrategy =
       mock<CaptureStrategy> {
         doAnswer {
@@ -1032,13 +1026,15 @@ class ReplayIntegrationTest {
     replay.register(fixture.scopes, fixture.options)
     replay.start()
 
+    replay.snapshotObserver = ReplaySnapshotObserver { _, _, _ -> throw RuntimeException("test") }
+
     replay.onScreenshotRecorded(mock<Bitmap>())
 
     verify(fixture.replayCache).addFrame(any<Bitmap>(), any(), anyOrNull())
   }
 
   @Test
-  fun `beforeStoreFrame callback is not invoked when null`() {
+  fun `snapshot observer is not invoked when null`() {
     val captureStrategy =
       mock<CaptureStrategy> {
         doAnswer {

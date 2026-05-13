@@ -140,7 +140,4 @@ public final class TypeCheckHint {
 
   /** Used for Ktor Request breadcrumbs. */
   public static final String KTOR_CLIENT_REQUEST = "ktorClient:request";
-
-  /** Used for Session Replay frame bitmaps in the beforeStoreFrame callback. */
-  public static final String REPLAY_FRAME_BITMAP = "replay:frameBitmap";
 }
