@@ -440,7 +440,7 @@ class BaggageTest {
   }
 
   @Test
-  fun `copy with overrides creates mutable baggage`() {
+  fun `copy with overrides preserves frozen state`() {
     val baggage =
       Baggage.fromHeader(
         "sentry-sample_rand=0.1,sentry-trace_id=75302ac48a024bde9a3b3734a82e36c8",
@@ -450,12 +450,22 @@ class BaggageTest {
 
     val copy = Baggage.copyWithOverrides(baggage, SentryId("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), 0.2)
 
-    assertTrue(copy.isMutable)
-    assertFalse(copy.isShouldFreeze)
+    assertFalse(copy.isMutable)
+    assertTrue(copy.isShouldFreeze)
     assertEquals("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", copy.traceId)
     assertEquals(0.2, copy.sampleRand!!, 0.0001)
     assertEquals("75302ac48a024bde9a3b3734a82e36c8", baggage.traceId)
     assertEquals(0.1, baggage.sampleRand!!, 0.0001)
+  }
+
+  @Test
+  fun `copy with overrides creates baggage when source is null`() {
+    val copy = Baggage.copyWithOverrides(null, SentryId("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), 0.2)
+
+    assertTrue(copy.isMutable)
+    assertFalse(copy.isShouldFreeze)
+    assertEquals("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", copy.traceId)
+    assertEquals(0.2, copy.sampleRand!!, 0.0001)
   }
 
   @Test
