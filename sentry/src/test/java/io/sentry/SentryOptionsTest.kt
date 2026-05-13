@@ -50,8 +50,8 @@ class SentryOptionsTest {
   }
 
   @Test
-  fun `when options is initialized, session trace lifecycle is disabled`() {
-    assertFalse(SentryOptions().isEnableSessionTraceLifecycle)
+  fun `when options is initialized, session traces are disabled`() {
+    assertFalse(SentryOptions().isEnableSessionTraces)
   }
 
   @Test
@@ -425,7 +425,7 @@ class SentryOptionsTest {
     externalOptions.profileSessionSampleRate = 0.8
     externalOptions.profilingTracesDirPath = "/profiling-traces"
     externalOptions.profileLifecycle = ProfileLifecycle.TRACE
-    externalOptions.isEnableSessionTraceLifecycle = true
+    externalOptions.isEnableSessionTraces = true
 
     val hash = StringUtils.calculateStringHash(externalOptions.dsn, mock())
     val options = SentryOptions()
@@ -490,7 +490,7 @@ class SentryOptionsTest {
     assertEquals(0.8, options.profileSessionSampleRate)
     assertEquals("/profiling-traces${File.separator}${hash}", options.profilingTracesDirPath)
     assertEquals(ProfileLifecycle.TRACE, options.profileLifecycle)
-    assertTrue(options.isEnableSessionTraceLifecycle)
+    assertTrue(options.isEnableSessionTraces)
   }
 
   @Test

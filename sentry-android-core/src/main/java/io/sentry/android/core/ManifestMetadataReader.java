@@ -155,8 +155,7 @@ final class ManifestMetadataReader {
   static final String ENABLE_AUTO_TRACE_ID_GENERATION =
       "io.sentry.traces.enable-auto-id-generation";
 
-  static final String ENABLE_SESSION_TRACE_LIFECYCLE =
-      "io.sentry.traces.enable-session-trace-lifecycle";
+  static final String ENABLE_SESSION_TRACES = "io.sentry.traces.enable-session-traces";
 
   static final String DEADLINE_TIMEOUT = "io.sentry.traces.deadline-timeout";
 
@@ -513,12 +512,8 @@ final class ManifestMetadataReader {
                 ENABLE_AUTO_TRACE_ID_GENERATION,
                 options.isEnableAutoTraceIdGeneration()));
 
-        options.setEnableSessionTraceLifecycle(
-            readBool(
-                metadata,
-                logger,
-                ENABLE_SESSION_TRACE_LIFECYCLE,
-                options.isEnableSessionTraceLifecycle()));
+        options.setEnableSessionTraces(
+            readBool(metadata, logger, ENABLE_SESSION_TRACES, options.isEnableSessionTraces()));
 
         options.setDeadlineTimeout(
             readLong(metadata, logger, DEADLINE_TIMEOUT, options.getDeadlineTimeout()));

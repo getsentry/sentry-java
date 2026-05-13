@@ -108,7 +108,7 @@ constructor(
     arguments: Map<String, Any?>,
   ) {
     if (!isPerformanceEnabled) {
-      if (!scopes.options.isEnableSessionTraceLifecycle) {
+      if (!scopes.options.isEnableSessionTraces) {
         TracingUtils.startNewTrace(scopes)
       }
       return

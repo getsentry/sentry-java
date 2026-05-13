@@ -63,7 +63,7 @@ class SentryGestureListenerTracingTest {
       isEnableUserInteractionTracing: Boolean = true,
       transaction: SentryTracer? = null,
       isEnableAutoTraceIdGeneration: Boolean = true,
-      isEnableSessionTraceLifecycle: Boolean = false,
+      isEnableSessionTraces: Boolean = false,
     ): SentryGestureListener {
       options.tracesSampleRate = tracesSampleRate
       options.isEnableUserInteractionTracing = isEnableUserInteractionTracing
@@ -71,7 +71,7 @@ class SentryGestureListenerTracingTest {
       options.gestureTargetLocators =
         listOf(AndroidViewGestureTargetLocator(LazyEvaluator { true }))
       options.isEnableAutoTraceIdGeneration = isEnableAutoTraceIdGeneration
-      options.isEnableSessionTraceLifecycle = isEnableSessionTraceLifecycle
+      options.isEnableSessionTraces = isEnableSessionTraces
 
       whenever(scopes.options).thenReturn(options)
 
@@ -402,12 +402,12 @@ class SentryGestureListenerTracingTest {
   }
 
   @Test
-  fun `when tracing is disabled and session trace lifecycle is enabled, does not start a new trace`() {
+  fun `when tracing is disabled and session traces are enabled, does not start a new trace`() {
     val sut =
       fixture.getSut<View>(
         tracesSampleRate = null,
         isEnableAutoTraceIdGeneration = true,
-        isEnableSessionTraceLifecycle = true,
+        isEnableSessionTraces = true,
       )
     val scope = Scope(fixture.options)
     val initialPropagationContext = scope.propagationContext

@@ -1414,12 +1414,12 @@ class ActivityLifecycleIntegrationTest {
   }
 
   @Test
-  fun `does not start a new trace if performance is disabled and session trace lifecycle is enabled`() {
+  fun `does not start a new trace if performance is disabled and session traces are enabled`() {
     val sut = fixture.getSut()
     val activity = mock<Activity>()
     fixture.options.tracesSampleRate = null
     fixture.options.isEnableAutoTraceIdGeneration = true
-    fixture.options.isEnableSessionTraceLifecycle = true
+    fixture.options.isEnableSessionTraces = true
 
     val argumentCaptor: ArgumentCaptor<ScopeCallback> =
       ArgumentCaptor.forClass(ScopeCallback::class.java)

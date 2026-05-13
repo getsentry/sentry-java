@@ -1823,8 +1823,8 @@ class ScopesTest {
   }
 
   @Test
-  fun `when session trace lifecycle is enabled without active session, root transaction does not use scope propagation context`() {
-    val scopes = generateScopes { it.isEnableSessionTraceLifecycle = true }
+  fun `when session traces are enabled without active session, root transaction does not use scope propagation context`() {
+    val scopes = generateScopes { it.isEnableSessionTraces = true }
     var propagationContext: PropagationContext? = null
     scopes.configureScope { propagationContext = it.propagationContext }
     val context = TransactionContext("name", "op")
@@ -1837,9 +1837,9 @@ class ScopesTest {
   }
 
   @Test
-  fun `when session trace lifecycle is enabled, startTransaction uses session propagation context`() {
+  fun `when session traces are enabled, startTransaction uses session propagation context`() {
     val scopes = generateScopes {
-      it.isEnableSessionTraceLifecycle = true
+      it.isEnableSessionTraces = true
       it.release = "1.0.0"
     }
     scopes.startSession()
@@ -1858,7 +1858,7 @@ class ScopesTest {
   @Test
   fun `continued trace with parent span is not remapped to session trace`() {
     val scopes = generateScopes {
-      it.isEnableSessionTraceLifecycle = true
+      it.isEnableSessionTraces = true
       it.release = "1.0.0"
     }
     scopes.startSession()
@@ -1874,9 +1874,9 @@ class ScopesTest {
   }
 
   @Test
-  fun `when session trace lifecycle is enabled, root transaction uses current propagation context`() {
+  fun `when session traces are enabled, root transaction uses current propagation context`() {
     val scopes = generateScopes {
-      it.isEnableSessionTraceLifecycle = true
+      it.isEnableSessionTraces = true
       it.release = "1.0.0"
     }
     scopes.startSession()
@@ -1895,7 +1895,7 @@ class ScopesTest {
   @Test
   fun `session trace transaction baggage is populated after scope baggage is frozen`() {
     val scopes = generateScopes {
-      it.isEnableSessionTraceLifecycle = true
+      it.isEnableSessionTraces = true
       it.release = "1.0.0"
       it.environment = "production"
     }
