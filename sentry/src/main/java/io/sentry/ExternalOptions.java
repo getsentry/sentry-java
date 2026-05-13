@@ -68,7 +68,7 @@ public final class ExternalOptions {
   private @Nullable ProfileLifecycle profileLifecycle;
 
   private @Nullable Boolean strictTraceContinuation;
-  private @Nullable Boolean enableSessionTraceLifecycle;
+  private @Nullable Boolean enableSessionTraces;
   private @Nullable String orgId;
 
   private @Nullable SentryOptions.Cron cron;
@@ -230,8 +230,7 @@ public final class ExternalOptions {
 
     options.setStrictTraceContinuation(
         propertiesProvider.getBooleanProperty("enable-strict-trace-continuation"));
-    options.setEnableSessionTraceLifecycle(
-        propertiesProvider.getBooleanProperty("enable-session-trace-lifecycle"));
+    options.setEnableSessionTraces(propertiesProvider.getBooleanProperty("enable-session-traces"));
     options.setOrgId(propertiesProvider.getProperty("org-id"));
 
     options.setEnableSpotlight(propertiesProvider.getBooleanProperty("enable-spotlight"));
@@ -650,12 +649,12 @@ public final class ExternalOptions {
     this.strictTraceContinuation = strictTraceContinuation;
   }
 
-  public @Nullable Boolean isEnableSessionTraceLifecycle() {
-    return enableSessionTraceLifecycle;
+  public @Nullable Boolean isEnableSessionTraces() {
+    return enableSessionTraces;
   }
 
-  public void setEnableSessionTraceLifecycle(final @Nullable Boolean enableSessionTraceLifecycle) {
-    this.enableSessionTraceLifecycle = enableSessionTraceLifecycle;
+  public void setEnableSessionTraces(final @Nullable Boolean enableSessionTraces) {
+    this.enableSessionTraces = enableSessionTraces;
   }
 
   public @Nullable String getOrgId() {

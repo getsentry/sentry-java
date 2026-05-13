@@ -137,13 +137,13 @@ class ManifestMetadataReaderTest {
   }
 
   @Test
-  fun `applyMetadata reads session trace lifecycle to options`() {
-    val bundle = bundleOf(ManifestMetadataReader.ENABLE_SESSION_TRACE_LIFECYCLE to true)
+  fun `applyMetadata reads session traces to options`() {
+    val bundle = bundleOf(ManifestMetadataReader.ENABLE_SESSION_TRACES to true)
     val context = fixture.getContext(metaData = bundle)
 
     ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
-    assertTrue(fixture.options.isEnableSessionTraceLifecycle)
+    assertTrue(fixture.options.isEnableSessionTraces)
   }
 
   @Test

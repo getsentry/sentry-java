@@ -290,8 +290,8 @@ public class SentryOptions {
   /** Whether to enable or disable automatic session tracking. */
   private boolean enableAutoSessionTracking = true;
 
-  /** Whether root transactions should reuse the current session trace lifecycle. */
-  private boolean enableSessionTraceLifecycle = false;
+  /** Whether root transactions should reuse the current session trace. */
+  private boolean enableSessionTraces = false;
 
   /**
    * The session tracking interval in millis. This is the interval to end a session if the App goes
@@ -1422,7 +1422,7 @@ public class SentryOptions {
   }
 
   /**
-   * Returns whether root transactions should reuse the current session trace lifecycle.
+   * Returns whether root transactions should reuse the current session trace.
    *
    * <p>This option is intended for Android/mobile SDKs where trace boundaries are managed by the
    * SDK session lifecycle. Do not enable it for JVM backend, desktop, or other non-session-managed
@@ -1431,23 +1431,23 @@ public class SentryOptions {
    * @return true if enabled or false otherwise
    */
   @ApiStatus.Experimental
-  public boolean isEnableSessionTraceLifecycle() {
-    return enableSessionTraceLifecycle;
+  public boolean isEnableSessionTraces() {
+    return enableSessionTraces;
   }
 
   /**
-   * Enables or disables session trace lifecycle. When enabled, root transactions without a parent
-   * span can reuse the current session propagation context.
+   * Enables or disables session traces. When enabled, root transactions without a parent span can
+   * reuse the current session propagation context.
    *
    * <p>This option is intended for Android/mobile SDKs where trace boundaries are managed by the
    * SDK session lifecycle. Do not enable it for JVM backend, desktop, or other non-session-managed
    * runtimes because unrelated root transactions may otherwise share the same trace.
    *
-   * @param enableSessionTraceLifecycle true if enabled or false otherwise
+   * @param enableSessionTraces true if enabled or false otherwise
    */
   @ApiStatus.Experimental
-  public void setEnableSessionTraceLifecycle(final boolean enableSessionTraceLifecycle) {
-    this.enableSessionTraceLifecycle = enableSessionTraceLifecycle;
+  public void setEnableSessionTraces(final boolean enableSessionTraces) {
+    this.enableSessionTraces = enableSessionTraces;
   }
 
   /**
@@ -3669,8 +3669,8 @@ public class SentryOptions {
     if (options.isStrictTraceContinuation() != null) {
       setStrictTraceContinuation(options.isStrictTraceContinuation());
     }
-    if (options.isEnableSessionTraceLifecycle() != null) {
-      setEnableSessionTraceLifecycle(options.isEnableSessionTraceLifecycle());
+    if (options.isEnableSessionTraces() != null) {
+      setEnableSessionTraces(options.isEnableSessionTraces());
     }
     if (options.getOrgId() != null) {
       setOrgId(options.getOrgId());

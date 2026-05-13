@@ -388,7 +388,7 @@ public final class Scopes implements IScopes {
           getClient().captureSession(pair.getPrevious(), hint);
         }
 
-        if (getOptions().isEnableSessionTraceLifecycle()) {
+        if (getOptions().isEnableSessionTraces()) {
           configureScope(scope -> scope.setPropagationContext(new PropagationContext()));
         }
 
@@ -962,7 +962,7 @@ public final class Scopes implements IScopes {
       transaction = NoOpTransaction.getInstance();
     } else {
       final @NotNull TransactionContext effectiveTransactionContext =
-          maybeApplySessionTraceLifecycle(transactionContext);
+          maybeApplySessionTraces(transactionContext);
       final Double sampleRand = getSampleRand(effectiveTransactionContext);
       final SamplingContext samplingContext =
           new SamplingContext(
@@ -1022,9 +1022,9 @@ public final class Scopes implements IScopes {
     return transaction;
   }
 
-  private @NotNull TransactionContext maybeApplySessionTraceLifecycle(
+  private @NotNull TransactionContext maybeApplySessionTraces(
       final @NotNull TransactionContext transactionContext) {
-    if (getOptions().isEnableSessionTraceLifecycle()
+    if (getOptions().isEnableSessionTraces()
         && transactionContext.getParentSpanId() == null
         && getCombinedScopeView().getSession() != null) {
       final @NotNull PropagationContext propagationContext =
