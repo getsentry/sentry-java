@@ -65,6 +65,7 @@ public final class io/sentry/android/replay/ReplayIntegration : io/sentry/IConne
 	public fun getBreadcrumbConverter ()Lio/sentry/ReplayBreadcrumbConverter;
 	public final fun getReplayCacheDir ()Ljava/io/File;
 	public fun getReplayId ()Lio/sentry/protocol/SentryId;
+	public final fun getSnapshotObserver ()Lio/sentry/android/replay/ReplaySnapshotObserver;
 	public fun isDebugMaskingOverlayEnabled ()Z
 	public fun isRecording ()Z
 	public final fun onConfigurationChanged (Lio/sentry/android/replay/ScreenshotRecorderConfig;)V
@@ -78,6 +79,7 @@ public final class io/sentry/android/replay/ReplayIntegration : io/sentry/IConne
 	public fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
 	public fun resume ()V
 	public fun setBreadcrumbConverter (Lio/sentry/ReplayBreadcrumbConverter;)V
+	public final fun setSnapshotObserver (Lio/sentry/android/replay/ReplaySnapshotObserver;)V
 	public fun start ()V
 	public fun stop ()V
 }
