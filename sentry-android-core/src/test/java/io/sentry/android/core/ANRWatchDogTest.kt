@@ -122,7 +122,16 @@ class ANRWatchDogTest {
     whenever(am.processesInErrorState).thenReturn(anrs)
 
     val sut =
-      ANRWatchDog(timeProvider, interval, 1L, true, { a -> anr = a }, mock(), handler, context)
+      ANRWatchDog(
+        timeProvider,
+        interval,
+        1L,
+        true,
+        { a -> anr = a },
+        mock(),
+        handler,
+        context,
+      )
     val es = Executors.newSingleThreadExecutor()
     try {
       es.submit { sut.run() }
@@ -168,7 +177,16 @@ class ANRWatchDogTest {
     whenever(am.processesInErrorState).thenReturn(anrs)
 
     val sut =
-      ANRWatchDog(timeProvider, interval, 1L, true, { a -> anr = a }, mock(), handler, context)
+      ANRWatchDog(
+        timeProvider,
+        interval,
+        1L,
+        true,
+        { a -> anr = a },
+        mock(),
+        handler,
+        context,
+      )
     val es = Executors.newSingleThreadExecutor()
     try {
       es.submit { sut.run() }

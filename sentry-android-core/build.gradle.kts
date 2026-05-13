@@ -86,6 +86,9 @@ dependencies {
   compileOnly(projects.sentryAndroidReplay)
   compileOnly(projects.sentryCompose)
   compileOnly(projects.sentryAndroidDistribution)
+  // Used at runtime by AnrIntegration's heartbeat watchdog to capture native stacks via the NDK
+  // companion. Optional at runtime - sentry-android-ndk provides it transitively when present.
+  compileOnly(libs.sentry.native.ndk)
 
   // lifecycle processor, session tracking
   implementation(libs.androidx.lifecycle.common.java8)

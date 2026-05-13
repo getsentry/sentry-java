@@ -401,6 +401,12 @@ final class AndroidOptionsInitializer {
     // it to set the replayId in case of an ANR
     options.addIntegration(AnrIntegrationFactory.create(context, buildInfoProvider));
 
+    // Heartbeat-mode app-hang detection for non-Looper main threads (e.g. Unity / Unreal).
+    // Self-gates on SentryAndroidOptions.anrThreadId == 0 at register() time, so it's harmless
+    // to install unconditionally here. We can't gate on the option value yet because user
+    // configuration runs after this method.
+    options.addIntegration(new AnrHeartbeatIntegration(context));
+
     options.addIntegration(new AnrProfilingIntegration());
 
     // registerActivityLifecycleCallbacks is only available if Context is an AppContext
