@@ -123,7 +123,7 @@ public class ReplayIntegration(
   private val lifecycleLock = AutoClosableReentrantLock()
   private val lifecycle = ReplayLifecycle()
 
-  @Volatile internal var snapshotObserver: ReplaySnapshotObserver? = null
+  @Volatile public var snapshotObserver: ReplaySnapshotObserver? = null
 
   override fun register(scopes: IScopes, options: SentryOptions) {
     this.options = options
