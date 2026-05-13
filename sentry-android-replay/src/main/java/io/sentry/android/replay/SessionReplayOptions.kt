@@ -2,6 +2,7 @@ package io.sentry.android.replay
 
 import android.graphics.Bitmap
 import io.sentry.SentryReplayOptions
+import org.jetbrains.annotations.ApiStatus
 
 // since we don't have getters for maskAllText and maskAllimages, they won't be accessible as
 // properties in Kotlin, therefore we create these extensions where a getter is dummy, but a setter
@@ -40,9 +41,8 @@ public var SentryReplayOptions.maskAllImages: Boolean
  * file) within this method if you need it later. Do not recycle the bitmap.
  *
  * The callback runs on a background thread (the replay executor).
- *
- * This API is experimental and may change without notice.
  */
+@ApiStatus.Experimental
 public fun interface ReplaySnapshotObserver {
   public fun onSnapshotCaptured(bitmap: Bitmap, frameTimestamp: Long, screenName: String?)
 }
