@@ -85,13 +85,12 @@ class AnrHeartbeatIntegrationTest {
 
     // Keep beating for 3x the timeout. No event should be captured.
     val running = java.util.concurrent.atomic.AtomicBoolean(true)
-    val beater =
-      Thread {
-        while (running.get()) {
-          AnrHeartbeatRegistry.notifyAlive()
-          Thread.sleep(25)
-        }
+    val beater = Thread {
+      while (running.get()) {
+        AnrHeartbeatRegistry.notifyAlive()
+        Thread.sleep(25)
       }
+    }
     try {
       beater.start()
       Thread.sleep(700)
@@ -112,7 +111,8 @@ class AnrHeartbeatIntegrationTest {
     verify(scopes, timeout(3_000)).captureEvent(captor.capture(), any<io.sentry.Hint>())
 
     val event = captor.firstValue
-    // getThrowable() unwraps the ExceptionMechanismException; use throwableMechanism for the wrapper.
+    // getThrowable() unwraps the ExceptionMechanismException; use throwableMechanism for the
+    // wrapper.
     val mechanism = event.throwableMechanism
     assertTrue(mechanism is ExceptionMechanismException)
     assertNull((mechanism as ExceptionMechanismException).thread) // watchdog is not the culprit

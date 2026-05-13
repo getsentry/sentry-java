@@ -7,9 +7,9 @@ import android.content.Context;
 import android.os.Debug;
 import io.sentry.AnrHeartbeatRegistry;
 import io.sentry.Hint;
+import io.sentry.ILogger;
 import io.sentry.IScopes;
 import io.sentry.ISentryLifecycleToken;
-import io.sentry.ILogger;
 import io.sentry.Integration;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
@@ -38,8 +38,8 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
 /**
- * Heartbeat-based app-hang detection for runtimes whose main thread is not an Android Looper
- * thread (e.g. Unity, Unreal). The host runtime calls {@link io.sentry.Sentry#notifyAnrThreadAlive()}
+ * Heartbeat-based app-hang detection for runtimes whose main thread is not an Android Looper thread
+ * (e.g. Unity, Unreal). The host runtime calls {@link io.sentry.Sentry#notifyAnrThreadAlive()}
  * regularly from the monitored thread; if no heartbeat arrives within {@link
  * SentryAndroidOptions#getAnrTimeoutIntervalMillis()}, an ANR event is reported with the captured
  * native stack of the monitored thread (when the NDK companion is available).
@@ -47,8 +47,8 @@ import org.jetbrains.annotations.TestOnly;
  * <p>Self-gates on {@code SentryAndroidOptions.anrThreadId == 0} at register time, so installing
  * this integration unconditionally is safe.
  *
- * <p>Orthogonal to {@link AnrIntegration} (Looper probe) and {@link AnrV2Integration}
- * ({@code ApplicationExitInfo}): all three can coexist because they monitor different signals.
+ * <p>Orthogonal to {@link AnrIntegration} (Looper probe) and {@link AnrV2Integration} ({@code
+ * ApplicationExitInfo}): all three can coexist because they monitor different signals.
  */
 public final class AnrHeartbeatIntegration implements Integration, Closeable {
 
@@ -148,8 +148,7 @@ public final class AnrHeartbeatIntegration implements Integration, Closeable {
       final @NotNull ApplicationNotResponding error) {
     options.getLogger().log(SentryLevel.INFO, "ANR triggered with message: %s", error.getMessage());
 
-    final boolean isAppInBackground =
-        Boolean.TRUE.equals(AppState.getInstance().isInBackground());
+    final boolean isAppInBackground = Boolean.TRUE.equals(AppState.getInstance().isInBackground());
 
     String message = "ANR for at least " + options.getAnrTimeoutIntervalMillis() + " ms.";
     if (isAppInBackground) {
