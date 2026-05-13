@@ -313,10 +313,14 @@ public class ReplayIntegration(
     captureStrategy?.onScreenshotRecorded(bitmap) { frameTimeStamp ->
       val observer = snapshotObserver
       if (observer != null) {
-        try {
-          observer.onSnapshotCaptured(bitmap, frameTimeStamp, screen)
-        } catch (e: Throwable) {
-          options.logger.log(ERROR, "Error in ReplaySnapshotObserver", e)
+        val copy = bitmap.copy(bitmap.config!!, false)
+        if (copy != null) {
+          try {
+            observer.onSnapshotCaptured(copy, frameTimeStamp, screen)
+          } catch (e: Throwable) {
+            options.logger.log(ERROR, "Error in ReplaySnapshotObserver", e)
+            copy.recycle()
+          }
         }
       }
       addFrame(bitmap, frameTimeStamp, screen)

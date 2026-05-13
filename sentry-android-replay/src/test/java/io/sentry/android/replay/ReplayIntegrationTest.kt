@@ -63,6 +63,7 @@ import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argThat
 import org.mockito.kotlin.check
 import org.mockito.kotlin.doAnswer
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
@@ -1000,12 +1001,18 @@ class ReplayIntegrationTest {
       receivedBitmap = bitmap
     }
 
-    replay.onScreenshotRecorded(mock<Bitmap>())
+    val copyBitmap = mock<Bitmap>()
+    val sourceBitmap =
+      mock<Bitmap> {
+        on { config } doReturn ARGB_8888
+        on { copy(any(), any()) } doReturn copyBitmap
+      }
+    replay.onScreenshotRecorded(sourceBitmap)
 
     assertTrue(callbackInvoked)
     assertEquals(1720693523997, receivedTimestamp)
     assertEquals("MainActivity", receivedScreen)
-    assertTrue(receivedBitmap is Bitmap)
+    assertEquals(copyBitmap, receivedBitmap)
   }
 
   @Test
@@ -1028,7 +1035,12 @@ class ReplayIntegrationTest {
 
     replay.snapshotObserver = ReplaySnapshotObserver { _, _, _ -> throw RuntimeException("test") }
 
-    replay.onScreenshotRecorded(mock<Bitmap>())
+    val sourceBitmap =
+      mock<Bitmap> {
+        on { config } doReturn ARGB_8888
+        on { copy(any(), any()) } doReturn mock<Bitmap>()
+      }
+    replay.onScreenshotRecorded(sourceBitmap)
 
     verify(fixture.replayCache).addFrame(any<Bitmap>(), any(), anyOrNull())
   }

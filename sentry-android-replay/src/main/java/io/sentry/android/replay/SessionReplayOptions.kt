@@ -36,9 +36,8 @@ public var SentryReplayOptions.maskAllImages: Boolean
  * Observer that is notified when a replay snapshot is captured. The snapshot bitmap has masking
  * already applied.
  *
- * **Bitmap lifecycle:** The bitmap is owned by the replay system and may be reused. Do not store a
- * reference to it or access it after this method returns — copy the pixel data (e.g., compress to a
- * file) within this method if you need it later. Do not recycle the bitmap.
+ * **Bitmap lifecycle:** The bitmap is a copy owned by the caller. You may store it or use it on
+ * another thread. Call [Bitmap.recycle] when you no longer need it to free native memory promptly.
  *
  * The callback runs on a background thread (the replay executor).
  */
