@@ -8,7 +8,7 @@ import io.sentry.Sentry
 import io.sentry.android.replay.ReplayIntegration
 import io.sentry.android.replay.ReplaySnapshotObserver
 import java.io.File
-import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.CopyOnWriteArraySet
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import kotlin.test.Test
@@ -38,7 +38,7 @@ class ReplaySnapshotTest : BaseUiTest() {
           mkdirs()
         }
     val frameReceived = CountDownLatch(1)
-    val capturedScreens = CopyOnWriteArrayList<String>()
+    val capturedScreens = CopyOnWriteArraySet<String>()
 
     val activityScenario = launchActivity<ComposeActivity>()
     activityScenario.moveToState(Lifecycle.State.RESUMED)
@@ -48,10 +48,9 @@ class ReplaySnapshotTest : BaseUiTest() {
     val integration = Sentry.getCurrentScopes().options.replayController as? ReplayIntegration
     integration?.snapshotObserver = ReplaySnapshotObserver { bitmap, frameTimestamp, screenName ->
       val name = screenName ?: "unknown"
-      if (!capturedScreens.contains(name)) {
+      if (capturedScreens.add(name)) {
         val file = File(snapshotsDir, "${name}_$frameTimestamp.png")
         file.outputStream().use { out -> bitmap.compress(Bitmap.CompressFormat.PNG, 100, out) }
-        capturedScreens.add(name)
       }
       frameReceived.countDown()
     }

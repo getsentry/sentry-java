@@ -40,6 +40,8 @@ public var SentryReplayOptions.maskAllImages: Boolean
  * file) within this method if you need it later. Do not recycle the bitmap.
  *
  * The callback runs on a background thread (the replay executor).
+ *
+ * This API is experimental and may change without notice.
  */
 public fun interface ReplaySnapshotObserver {
   public fun onSnapshotCaptured(bitmap: Bitmap, frameTimestamp: Long, screenName: String?)
