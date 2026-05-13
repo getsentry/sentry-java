@@ -109,6 +109,9 @@ public class ThreadDumpParser {
 
   private final @NotNull List<SentryThread> threads;
 
+  private final @NotNull ThreadDumpMemoryInfoParser memoryInfoParser =
+      new ThreadDumpMemoryInfoParser();
+
   public ThreadDumpParser(final @NotNull SentryOptions options, final boolean isBackground) {
     this.options = options;
     this.isBackground = isBackground;
@@ -125,6 +128,11 @@ public class ThreadDumpParser {
   @NotNull
   public List<SentryThread> getThreads() {
     return threads;
+  }
+
+  @Nullable
+  public ThreadDumpMemoryInfo getMemoryInfo() {
+    return memoryInfoParser.getMemoryInfo();
   }
 
   public void parse(final @NotNull Lines lines) {
@@ -148,6 +156,8 @@ public class ThreadDumpParser {
         if (thread != null) {
           threads.add(thread);
         }
+      } else {
+        memoryInfoParser.parseLine(text);
       }
     }
   }

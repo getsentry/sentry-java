@@ -45,6 +45,7 @@ import io.sentry.android.core.anr.AnrProfile;
 import io.sentry.android.core.anr.AnrProfileManager;
 import io.sentry.android.core.anr.AnrProfileRotationHelper;
 import io.sentry.android.core.anr.StackTraceConverter;
+import io.sentry.android.core.internal.threaddump.ThreadDumpMemoryInfo;
 import io.sentry.android.core.internal.util.CpuInfoUtils;
 import io.sentry.cache.PersistingOptionsObserver;
 import io.sentry.cache.PersistingScopeObserver;
@@ -723,6 +724,36 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
 
       // Set app foreground state
       setAppForeground(event, !isBackgroundAnr);
+
+      enrichDeviceFromThreadDump(event, rawHint);
+    }
+
+    private void enrichDeviceFromThreadDump(
+        final @NotNull SentryEvent event, final @NotNull Object rawHint) {
+      if (!(rawHint instanceof AnrV2Integration.AnrV2Hint)) {
+        return;
+      }
+      final @Nullable ThreadDumpMemoryInfo memoryInfo =
+          ((AnrV2Integration.AnrV2Hint) rawHint).getThreadDumpMemoryInfo();
+      if (memoryInfo == null) {
+        return;
+      }
+
+      Device device = event.getContexts().getDevice();
+      if (device == null) {
+        device = new Device();
+        event.getContexts().setDevice(device);
+      }
+
+      if (memoryInfo.getFreeMemoryUntilOOMEBytes() != null) {
+        device.setFreeMemory(memoryInfo.getFreeMemoryUntilOOMEBytes());
+      }
+      if (memoryInfo.getFreeMemoryBytes() != null) {
+        device.setUsableMemory(memoryInfo.getFreeMemoryBytes());
+      }
+      if (memoryInfo.getMaxMemoryBytes() != null) {
+        device.setMemorySize(memoryInfo.getMaxMemoryBytes());
+      }
     }
 
     private void setDefaultAnrFingerprint(

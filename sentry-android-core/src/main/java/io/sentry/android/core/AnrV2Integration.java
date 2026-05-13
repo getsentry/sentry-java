@@ -17,6 +17,7 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.cache.AndroidEnvelopeCache;
 import io.sentry.android.core.internal.threaddump.Lines;
+import io.sentry.android.core.internal.threaddump.ThreadDumpMemoryInfo;
 import io.sentry.android.core.internal.threaddump.ThreadDumpParser;
 import io.sentry.hints.AbnormalExit;
 import io.sentry.hints.Backfillable;
@@ -154,7 +155,8 @@ public class AnrV2Integration implements Integration, Closeable {
               options.getLogger(),
               anrTimestamp,
               shouldEnrich,
-              isBackground);
+              isBackground,
+              result.memoryInfo);
 
       final Hint hint = HintUtils.createWithTypeCheckHint(anrHint);
 
@@ -209,6 +211,7 @@ public class AnrV2Integration implements Integration, Closeable {
 
         final @NotNull List<SentryThread> threads = threadDumpParser.getThreads();
         final @NotNull List<DebugImage> debugImages = threadDumpParser.getDebugImages();
+        final @Nullable ThreadDumpMemoryInfo memoryInfo = threadDumpParser.getMemoryInfo();
 
         if (threads.isEmpty()) {
           // if the list is empty this means the system failed to capture a proper thread dump of
@@ -217,7 +220,7 @@ public class AnrV2Integration implements Integration, Closeable {
           // fall back to not reporting them
           return new ParseResult(ParseResult.Type.NO_DUMP);
         }
-        return new ParseResult(ParseResult.Type.DUMP, dump, threads, debugImages);
+        return new ParseResult(ParseResult.Type.DUMP, dump, threads, debugImages, memoryInfo);
       } catch (Throwable e) {
         options.getLogger().log(SentryLevel.WARNING, "Failed to parse ANR thread dump", e);
         return new ParseResult(ParseResult.Type.ERROR, dump);
@@ -249,16 +252,33 @@ public class AnrV2Integration implements Integration, Closeable {
 
     private final boolean isBackgroundAnr;
 
+    private final @Nullable ThreadDumpMemoryInfo threadDumpMemoryInfo;
+
     public AnrV2Hint(
         final long flushTimeoutMillis,
         final @NotNull ILogger logger,
         final long timestamp,
         final boolean shouldEnrich,
         final boolean isBackgroundAnr) {
+      this(flushTimeoutMillis, logger, timestamp, shouldEnrich, isBackgroundAnr, null);
+    }
+
+    public AnrV2Hint(
+        final long flushTimeoutMillis,
+        final @NotNull ILogger logger,
+        final long timestamp,
+        final boolean shouldEnrich,
+        final boolean isBackgroundAnr,
+        final @Nullable ThreadDumpMemoryInfo threadDumpMemoryInfo) {
       super(flushTimeoutMillis, logger);
       this.timestamp = timestamp;
       this.shouldEnrich = shouldEnrich;
       this.isBackgroundAnr = isBackgroundAnr;
+      this.threadDumpMemoryInfo = threadDumpMemoryInfo;
+    }
+
+    public @Nullable ThreadDumpMemoryInfo getThreadDumpMemoryInfo() {
+      return threadDumpMemoryInfo;
     }
 
     @Override
@@ -303,12 +323,14 @@ public class AnrV2Integration implements Integration, Closeable {
     final byte[] dump;
     final @Nullable List<SentryThread> threads;
     final @Nullable List<DebugImage> debugImages;
+    final @Nullable ThreadDumpMemoryInfo memoryInfo;
 
     ParseResult(final @NotNull Type type) {
       this.type = type;
       this.dump = null;
       this.threads = null;
       this.debugImages = null;
+      this.memoryInfo = null;
     }
 
     ParseResult(final @NotNull Type type, final byte[] dump) {
@@ -316,17 +338,20 @@ public class AnrV2Integration implements Integration, Closeable {
       this.dump = dump;
       this.threads = null;
       this.debugImages = null;
+      this.memoryInfo = null;
     }
 
     ParseResult(
         final @NotNull Type type,
         final byte[] dump,
         final @Nullable List<SentryThread> threads,
-        final @Nullable List<DebugImage> debugImages) {
+        final @Nullable List<DebugImage> debugImages,
+        final @Nullable ThreadDumpMemoryInfo memoryInfo) {
       this.type = type;
       this.dump = dump;
       this.threads = threads;
       this.debugImages = debugImages;
+      this.memoryInfo = memoryInfo;
     }
   }
 }

@@ -161,11 +161,42 @@ class ThreadDumpParserTest {
   }
 
   @Test
+  fun `parses memory info from thread dump`() {
+    val lines = Lines.readLines(File("src/test/resources/thread_dump.txt"))
+    val parser =
+      ThreadDumpParser(SentryOptions().apply { addInAppInclude("io.sentry.samples") }, false)
+    parser.parse(lines)
+
+    val memoryInfo = parser.memoryInfo
+    assertNotNull(memoryInfo)
+    assertEquals(3107L * 1024, memoryInfo.freeMemoryBytes)
+    assertEquals(3107L * 1024, memoryInfo.freeMemoryUntilGcBytes)
+    assertEquals(187L * 1024 * 1024, memoryInfo.freeMemoryUntilOOMEBytes)
+    assertEquals(7592L * 1024, memoryInfo.totalMemoryBytes)
+    assertEquals(192L * 1024 * 1024, memoryInfo.maxMemoryBytes)
+    assertEquals(1L, memoryInfo.totalGcCount)
+    assertEquals(11.807, memoryInfo.totalGcTimeMs)
+    assertEquals(1L, memoryInfo.totalBlockingGcCount)
+    assertEquals(11.873, memoryInfo.totalBlockingGcTimeMs)
+    assertEquals(0L, memoryInfo.totalPreOomeGcCount)
+    assertEquals(8.054, memoryInfo.totalTimeWaitingForGcMs)
+  }
+
+  @Test
   fun `thread dump garbage`() {
     val lines = Lines.readLines(File("src/test/resources/thread_dump_bad_data.txt"))
     val parser =
       ThreadDumpParser(SentryOptions().apply { addInAppInclude("io.sentry.samples") }, false)
     parser.parse(lines)
     assertTrue(parser.threads.isEmpty())
+  }
+
+  @Test
+  fun `garbage thread dump has no memory info`() {
+    val lines = Lines.readLines(File("src/test/resources/thread_dump_bad_data.txt"))
+    val parser =
+      ThreadDumpParser(SentryOptions().apply { addInAppInclude("io.sentry.samples") }, false)
+    parser.parse(lines)
+    assertNull(parser.memoryInfo)
   }
 }
