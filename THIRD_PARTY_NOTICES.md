@@ -94,7 +94,7 @@ limitations under the License.
 
 **Source:** https://github.com/square/tape (Commit: 445cd3fd0a7b3ec48c9ea3e0e86663fe6d3735d8)<br>
 **License:** Apache License 2.0<br>
-**Copyright:** Copyright (C) 2010 Square, Inc.
+**Copyright:** Copyright (C) 2015 Square, Inc.
 
 ### Scope
 
@@ -102,34 +102,6 @@ The Sentry Java SDK includes an adapted version of Square's Tape library, a file
 
 ```
 Copyright (C) 2010 Square, Inc.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-     http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-```
-
----
-
-## Square — Seismic (Apache 2.0)
-
-**Source:** https://github.com/square/seismic<br>
-**License:** Apache License 2.0<br>
-**Copyright:** Copyright 2010 Square, Inc.
-
-### Scope
-
-The Sentry Java SDK includes an adapted version of Square's Seismic shake detection algorithm. The rolling sample window approach and `SampleQueue`/`SamplePool` data structures in `io.sentry.android.core.SentryShakeDetector` are based on Seismic's `ShakeDetector`.
-
-```
-Copyright 2010 Square, Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -483,4 +455,54 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+```
+
+---
+
+## Resilience4j — RateLimiter (Apache 2.0)
+
+**Source:** https://github.com/resilience4j/resilience4j (resilience4j-ratelimiter)<br>
+**License:** Apache License 2.0<br>
+**Copyright:** Copyright 2019 Robert Winkler and Bohdan Storozhuk
+
+### Scope
+
+The Sentry Java SDK includes an adapted version of the Resilience4j `AtomicRateLimiter` for leaky bucket rate limiting. The code resides in `io.sentry.util.LeakyBucket`.
+
+```
+Copyright 2019 Robert Winkler and Bohdan Storozhuk
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+```
+
+---
+
+## Eclipse Collections — CircularArrayList (EPL 2.0)
+
+**Source:** https://github.com/eclipse/eclipse-collections/blob/master/eclipse-collections/src/main/java/org/eclipse/collections/impl/list/mutable/CircularArrayList.java<br>
+**License:** Eclipse Public License 2.0<br>
+**Copyright:** Copyright (c) 2022 Goldman Sachs and others
+
+### Scope
+
+The Sentry Java SDK includes an adapted circular buffer implementation from Eclipse Collections. The code resides in `io.sentry.util.CircularBuffer`.
+
+```
+Copyright (c) 2022 Goldman Sachs and others.
+
+This program and the accompanying materials are made available under the
+terms of the Eclipse Public License 2.0 which is available at
+http://www.eclipse.org/legal/epl-2.0.
+
+SPDX-License-Identifier: EPL-2.0
 ```
