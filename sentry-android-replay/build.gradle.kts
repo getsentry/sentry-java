@@ -61,6 +61,8 @@ android {
 
   buildFeatures { buildConfig = true }
 
+  configurations.all { resolutionStrategy.force(libs.jetbrains.annotations.get()) }
+
   androidComponents.beforeVariants {
     it.enable = !Config.Android.shouldSkipDebugVariant(it.buildType)
   }
@@ -71,6 +73,7 @@ kotlin { explicitApi() }
 dependencies {
   api(projects.sentry)
 
+  compileOnly(libs.jetbrains.annotations)
   compileOnly(libs.androidx.compose.ui.replay)
   implementation(kotlin(Config.kotlinStdLib, Config.kotlinStdLibVersionAndroid))
   // tests
