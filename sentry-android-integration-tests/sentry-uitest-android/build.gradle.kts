@@ -83,6 +83,10 @@ android {
 
 val applySentryIntegrations = System.getenv("APPLY_SENTRY_INTEGRATIONS")?.toBoolean() ?: true
 
+if (applySentryIntegrations) {
+  android.sourceSets["androidTest"].java.srcDirs("src/androidTestReplay/java")
+}
+
 dependencies {
   implementation(
     kotlin(Config.kotlinStdLib, org.jetbrains.kotlin.config.KotlinCompilerVersion.VERSION)
