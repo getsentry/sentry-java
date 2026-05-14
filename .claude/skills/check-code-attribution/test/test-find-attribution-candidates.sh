@@ -649,10 +649,6 @@ JAVA
 }
 
 
-
-
-
-
 # --- Run all tests ---
 
 run_test "Clean branch — no candidates"              test_clean_branch_no_candidates

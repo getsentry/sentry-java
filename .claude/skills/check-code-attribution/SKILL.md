@@ -16,7 +16,7 @@ Run the pre-filter script:
 bash .claude/skills/check-code-attribution/find-attribution-candidates.sh
 ```
 
-If the script exits with code 0, there are no candidates. Print "No attribution issues found."
+If the script exits with code 0, there are no candidates. Print "✅ No attribution issues found."
 
 If the script exits with any code besides 0 or 10, it failed (e.g., could not determine merge-base). Print the stderr output and **stop**.
 
@@ -32,14 +32,12 @@ If the script exits with code 10, it outputs:
    ```
    ---
    file: <path>
-   status: A|M|D|R
+   status: A|M|D|R (i.e., "added", "modified", "deleted", "renamed")
    reasons: <comma-separated list of why this file was flagged>
    ---
    ```
 
-The script handles candidate identification deterministically: changed-file collection across committed/staged/unstaged layers, path and generated-file exclusions, binary detection, vendor-path detection, attribution-marker detection, and first-party copyright filtering.
-
-**Important:** The script checks three layers of changes: (1) committed changes on the branch vs. the merge-base, (2) staged but uncommitted changes, and (3) unstaged working-tree changes. A candidate may not appear in `git diff merge-base..HEAD` if it is only staged or only in the working tree. Do NOT dismiss a candidate as a false positive just because it is absent from the committed branch diff — check `git status`, `git diff --cached`, and `git diff` (unstaged) to see the full picture.
+The script handles candidate identification deterministically — including committed, staged, and unstaged changes — so trust its output. Do not dismiss a candidate as a false positive based on the committed diff alone.
 
 Parse the output and proceed to Step 2.
 
@@ -51,7 +49,7 @@ If `notices_file_exists` is `true`, read `THIRD_PARTY_NOTICES.md` to understand 
 
 ## Step 3: Analyze Each Candidate
 
-**Skip analysis for deleted files** (`status: D`) — go straight to the finding: "Deleted vendored file — verify `THIRD_PARTY_NOTICES.md` is still accurate."
+**Skip analysis for deleted files** (`status: D`) — they only need a 👀 verify finding.
 
 For each non-deleted candidate:
 
@@ -63,99 +61,47 @@ For each non-deleted candidate:
 
 ## Step 4: Check for NOTICES Entry Changes
 
-If `notices_file_changed` is `true`, compare old vs. new `THIRD_PARTY_NOTICES.md`:
+If `notices_file_changed` is `true`, retrieve the merge-base version of `THIRD_PARTY_NOTICES.md` and compare it against the current version. Skip entries whose source files were already analyzed as candidates in Step 3.
 
-```bash
-git show $(git merge-base HEAD origin/main 2>/dev/null || git merge-base HEAD main):THIRD_PARTY_NOTICES.md
-```
+1. **Removed entries** — Headings present in the old version but absent in the new. Check whether the source files referenced in the entry's Scope section still exist and contain third-party attribution headers. If so, flag it. If the referenced files were also deleted in this branch, note it as informational only.
 
-Check for:
-
-1. **Removed entries** — Headings present in the old version but absent in the new. For each, check whether the source files referenced in the entry's Scope section still exist in the repo (use `Glob` or `Read`). If they still exist and contain third-party attribution headers, flag: the NOTICES entry was removed but vendored source files still reference this library. If the referenced files were also deleted in this branch, note it as informational only.
-
-2. **Modified entries** — Headings present in both but with changed content. Read the source files referenced in the entry's Scope section and compare the entry's metadata (Source, License, Copyright) against the source file headers. Flag any inconsistencies. If the entry is consistent with the source files, note it as informational only.
+2. **Modified entries** — Headings present in both but with changed content. Compare the entry's metadata (Source, License, Copyright) against the source file headers. Flag inconsistencies; note consistent changes as informational only.
 
 ## Step 5: Output Results
 
-### No issues found
-
-Print "No attribution issues found."
-
-### Issues found
-
-Print findings to the terminal, grouped by file. Prefix lines that require immediate action with ⚠️. Informational reminders (verify, check) get a 👀 prefix.
-
-Use the following format (only include lines that are relevant; number each entry; omit entries if the user doesn't have to do anything; omit Action Items or False Positives sections if none found; put each bullet point on its own line; wrap lines when they reach the edge of the "Outcome of check-code-attribution" box):
+If there are no issues, print:
 
 ```
-**********************************************************************************
-*                        Outcome of check-code-attribution                       *
-**********************************************************************************
-
------------------------------------ Action items ---------------------------------
-
-1. ⚠️ File: <Fully qualified name of file, e.g., io.sentry.cache.tape.FileObjectQueue>
-   Vendored code detected (<Library Name>) — missing required fields:
-     - <Summarize what happened and what's needed based on the license header template in `CODE_ATTRIBUTION_CRITERIA.md`. Don't repeat yourself and don't repeat info from the lines above in this notice; keep your output very concise. Prefer summaries to bullet point lists of missing info. Don't insist on the format from `CODE_ATTRIBUTION_CRITERIA.md`; we only care that all info is present.>
-     - <If there's no corresponding entry in `THIRD_PARTY_NOTICES.md`, inform the user that they need to add one. Keep discussion of `THIRD_PARTY_NOTICES.md` in a separate bullet point from discussions of the license header. Omit this line if there's nothing the user needs to do with respect to `THIRD_PARTY_NOTICES.md`.>
+✅ No attribution issues found.
 ```
 
-For files where attribution markers were removed:
-```
-1. ⚠️ File: <Fully qualified name of file>
-   Required attribution field(s) removed:
-     - <Summarize what happened and what's needed. No need to specify individual fields if the entire header was removed and restoring it would satisfy our criteria: just tell the user to restore it.>
-     - <If there's no corresponding entry in `THIRD_PARTY_NOTICES.md`, inform the user. Omit if not applicable.>
-```
+Otherwise, print findings as a numbered list. Use fully qualified class names (e.g., `io.sentry.cache.tape.FileObjectQueue`). Guidelines:
 
-For files with a matching THIRD_PARTY_NOTICES.md entry:
-```
-1. 👀 File: <Fully qualified name of file>
-   Vendored code detected (<Library Name>) – verify that `THIRD_PARTY_NOTICES.md` reflects your updates.
-```
+- **⚠️** = must fix before merging (missing fields, stripped attribution, inconsistent or orphaned NOTICES entries).
+- **👀** = author should verify (deleted/renamed files, matched NOTICES entries, consistent NOTICES modifications).
+- Keep license-header issues and `THIRD_PARTY_NOTICES.md` issues in separate bullets.
+- For license types not yet in NOTICES, link https://open.sentry.io/licensing/ for compatibility review.
+- Be concise — say what's wrong and what to do.
+- If any candidates are false positives, list them at the end with a one-line reason each.
 
-For renamed files:
-```
-1. 👀 File: <Fully qualified name of file>
-   Vendored file renamed – Verify `THIRD_PARTY_NOTICES.md` reflects your updates.
-```
-
-For deleted files:
-```
-1. 👀 File: <Fully qualified name of file>
-   Deleted vendored file – Verify `THIRD_PARTY_NOTICES.md` reflects your updates.
-```
-
-For removed NOTICES entries where source files still exist:
-```
-1. ⚠️ NOTICES entry removed: <Heading>
-   Source file(s) still reference this library:
-     - `<package.ClassName>` still contains attribution header for <Library Name>. Either restore the `THIRD_PARTY_NOTICES.md` entry or remove the vendored code.
-```
-
-For modified NOTICES entries with inconsistencies:
-```
-1. ⚠️ NOTICES entry modified: <Heading>
-   Entry metadata inconsistent with source file headers:
-     - <Describe the inconsistency, e.g., copyright year mismatch>
-```
-
-For modified NOTICES entries that are consistent:
-```
-1. 👀 NOTICES entry modified: <Heading>
-   Verify updated entry is consistent with source file headers.
-```
-
-For new license types:
-```
-     - ❗This license type is not yet represented in `THIRD_PARTY_NOTICES.md`. Please verify it is compatible with Sentry's licensing policies: https://open.sentry.io/licensing/.
-```
+Example output:
 
 ```
+Code Attribution Check
+══════════════════════
 
----------------------------------- False positives -------------------------------
+Urgent
+────────────
+1. ⚠️ io.sentry.util.TokenBucket
+   Vendored code (Guava) — header is missing the source URL and copyright year.
+   - No corresponding `THIRD_PARTY_NOTICES.md` entry; add one.
 
-<Numbered list of any false positives, starting at 1., plus descriptions for each as to why they aren't true positives. Keep it very short, and don't repeat yourself.>
+Verify
+──────
+2. 👀 io.sentry.cache.tape.FileObjectQueue
+   Vendored code (Square Tape) — verify `THIRD_PARTY_NOTICES.md` reflects your updates.
+
+False positives
+───────────────
+1. AGENTS.md — project documentation, not vendored code.
 ```
-
-If there are no Action Items, print the following after *all* sections: "✅ Everything looks good. No attribution issues found."

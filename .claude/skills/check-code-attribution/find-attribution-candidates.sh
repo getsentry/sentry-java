@@ -121,7 +121,6 @@ has_removed_attribution_lines() {
   grep -E '^-' <<< "$diff_output" | grep -v '^--- ' | grep -qiE "$ATTRIBUTION_PATTERN"
 }
 
-
 # Collect changed files from all sources (committed, staged, unstaged, untracked),
 # deduplicated by current filepath (first occurrence wins). The committed diff is listed
 # first so its status character takes precedence — a file committed as "A" (added) won't
