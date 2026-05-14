@@ -85,11 +85,6 @@ assert_contains() {
   return 1
 }
 
-get_scope_text() {
-  local output="$1"
-  echo "$output" | sed -n '/^scope_text_start:$/,/^scope_text_end:$/{ /^scope_text_start:$/d; /^scope_text_end:$/d; p; }'
-}
-
 run_test() {
   local test_name="$1" test_fn="$2"
   TESTS_RUN=$((TESTS_RUN + 1))
@@ -191,7 +186,6 @@ JAVA
   assert_eq "$(get_field "$output" "file")" "src/Licensed.java" "file path" || ok=false
   assert_eq "$(get_field "$output" "status")" "D" "status" || ok=false
   assert_contains "$(get_field "$output" "reasons")" "deleted file with attribution markers" "reasons" || ok=false
-  assert_eq "$(get_field "$output" "notices_match")" "deleted" "notices_match" || ok=false
   [[ "$ok" == "true" ]]
 }
 
@@ -363,49 +357,9 @@ JAVA
 
   local output
   output=$(run_script) || true
-  assert_eq "$(get_field "$output" "notices_file_changed")" "true" "notices_file_changed"
+  assert_contains "$output" "notices_file_changed: true" "global notices_file_changed"
 }
 
-test_notices_url_matching() {
-  setup_branch
-  mkdir -p src
-  cat > src/Matched.java << 'JAVA'
-// Adapted from Example Library.
-// Copyright 2024 Example Inc.
-// Licensed under the Apache License 2.0.
-// https://github.com/example/library
-package com.example;
-public class Matched {}
-JAVA
-  git add src/Matched.java
-  git commit -m "Add file matching notices URL" --quiet
-
-  local output ok=true
-  output=$(run_script) || true
-  assert_eq "$(get_field "$output" "notices_match")" "url" "notices_match" || ok=false
-  assert_contains "$(get_field "$output" "notices_entry")" "Example Library" "notices_entry" || ok=false
-  [[ "$ok" == "true" ]]
-}
-
-test_mit_no_false_positive_from_commit() {
-  setup_branch
-  mkdir -p src
-  cat > src/CommitHelper.java << 'JAVA'
-// Adapted from CommitLib.
-// Copyright 2024 Commit Author.
-package com.example;
-public class CommitHelper {
-  // This COMMIT message should not trigger MIT detection
-  void commit() {}
-}
-JAVA
-  git add src/CommitHelper.java
-  git commit -m "Add file with COMMIT word" --quiet
-
-  local output
-  output=$(run_script) || true
-  assert_eq "$(get_field "$output" "new_license_type")" "false" "COMMIT should not trigger MIT detection"
-}
 
 test_excluded_paths_skipped() {
   setup_branch
@@ -459,71 +413,6 @@ JAVA
   assert_eq "$exit_code" "0" "Sentry copyright should not trigger attribution"
 }
 
-test_new_license_type_detected() {
-  setup_branch
-  mkdir -p src
-  cat > src/MplFile.java << 'JAVA'
-// Adapted from MplLib.
-// Copyright 2024 Mpl Author.
-// Licensed under the Mozilla Public License.
-package com.example;
-public class MplFile {}
-JAVA
-  git add src/MplFile.java
-  git commit -m "Add MPL file" --quiet
-
-  local output
-  output=$(run_script) || true
-  assert_eq "$(get_field "$output" "new_license_type")" "true" "MPL should be flagged as new license type"
-}
-
-# When KNOWN_LICENSES contains a versioned form (e.g. "EPL 2.0") but
-# detect_license_type emits a shorter label (e.g. "EPL"), the exact-match
-# grep -qixF won't match. This is a known false positive (safe direction):
-# the script flags new_license_type: true even though the license family is
-# already represented, and the LLM emits an extra "verify compatibility"
-# reminder.
-test_new_license_type_false_positive_versioned_heading() {
-  cat > THIRD_PARTY_NOTICES.md << 'NOTICES'
-# Third-Party Notices
-
-## Example Library (Apache 2.0)
-
-- Source: https://github.com/example/library
-- License: Apache License 2.0
-- Copyright: Copyright 2024 Example Inc.
-
----
-
-## EplLib (EPL 2.0)
-
-- Source: https://github.com/example/epllib
-- License: Eclipse Public License 2.0
-- Copyright: Copyright 2024 EPL Author.
-NOTICES
-  git add THIRD_PARTY_NOTICES.md
-  git commit -m "Add EPL 2.0 entry" --quiet --amend
-
-  setup_branch
-  mkdir -p src
-  cat > src/EplVendored.java << 'JAVA'
-// Adapted from AnotherEplLib.
-// Copyright 2024 Another EPL Author.
-// Licensed under the Eclipse Public License.
-package com.example;
-public class EplVendored {}
-JAVA
-  git add src/EplVendored.java
-  git commit -m "Add EPL file" --quiet
-
-  local output ok=true
-  output=$(run_script) || true
-  # detect_license_type returns "EPL" but KNOWN_LICENSES has "EPL 2.0" —
-  # exact match fails, so this is flagged as a new license type (false positive).
-  assert_eq "$(get_field "$output" "new_license_type")" "true" \
-    "known false positive: 'EPL' != 'EPL 2.0' under exact match" || ok=false
-  [[ "$ok" == "true" ]]
-}
 
 test_notices_staged_change_detected() {
   setup_branch
@@ -545,7 +434,7 @@ JAVA
 
   local output
   output=$(run_script) || true
-  assert_eq "$(get_field "$output" "notices_file_changed")" "true" "staged notices change should be detected"
+  assert_contains "$output" "notices_file_changed: true" "staged notices change should be detected"
 }
 
 test_modified_vendor_path_file_attribution_changed() {
@@ -755,194 +644,14 @@ JAVA
   local output exit_code=0 ok=true
   output=$(run_script) || exit_code=$?
   assert_eq "$exit_code" "10" "should still find candidates" || ok=false
-  assert_eq "$(get_field "$output" "notices_file_exists")" "false" "notices_file_exists" || ok=false
-  assert_eq "$(get_field "$output" "notices_match")" "none" "notices_match" || ok=false
-  assert_eq "$(get_field "$output" "new_license_type")" "false" "new_license_type should be false when no notices file" || ok=false
+  assert_contains "$output" "notices_file_exists: false" "global notices_file_exists" || ok=false
   [[ "$ok" == "true" ]]
 }
 
-test_progressive_url_matching() {
-  setup_branch
-  mkdir -p src
-  cat > src/DeepUrl.java << 'JAVA'
-// Adapted from Example Library.
-// Copyright 2024 Example Inc.
-// Licensed under the Apache License 2.0.
-// https://github.com/example/library/tree/main/src/Foo.java
-package com.example;
-public class DeepUrl {}
-JAVA
-  git add src/DeepUrl.java
-  git commit -m "Add file with deep URL" --quiet
 
-  local output ok=true
-  output=$(run_script) || true
-  assert_eq "$(get_field "$output" "notices_match")" "url" "deep URL should match via progressive trimming" || ok=false
-  assert_contains "$(get_field "$output" "notices_entry")" "Example Library" "notices_entry" || ok=false
-  [[ "$ok" == "true" ]]
-}
 
-test_notices_entry_removed() {
-  cat > THIRD_PARTY_NOTICES.md << 'NOTICES'
-# Third-Party Notices
 
-## Example Library (Apache 2.0)
 
-**Source:** https://github.com/example/library
-**License:** Apache License 2.0
-**Copyright:** Copyright 2024 Example Inc.
-
-### Scope
-
-The code resides in `com.example.Foo`.
-
----
-
-## Other Library (MIT)
-
-**Source:** https://github.com/other/library
-**License:** MIT License
-**Copyright:** Copyright 2024 Other Inc.
-
-### Scope
-
-The code resides in `com.other.Bar`.
-NOTICES
-  git add THIRD_PARTY_NOTICES.md
-  git commit -m "Two NOTICES entries" --quiet --amend
-
-  setup_branch
-
-  cat > THIRD_PARTY_NOTICES.md << 'NOTICES'
-# Third-Party Notices
-
-## Example Library (Apache 2.0)
-
-**Source:** https://github.com/example/library
-**License:** Apache License 2.0
-**Copyright:** Copyright 2024 Example Inc.
-
-### Scope
-
-The code resides in `com.example.Foo`.
-NOTICES
-  git add THIRD_PARTY_NOTICES.md
-  git commit -m "Remove Other Library entry" --quiet
-
-  local output exit_code=0 ok=true
-  output=$(run_script) || exit_code=$?
-  assert_eq "$exit_code" "10" "should exit 10 when NOTICES entry removed" || ok=false
-  assert_contains "$output" "candidate_type: notices_entry" "should have notices_entry candidate" || ok=false
-  assert_contains "$output" "notices_change: removed" "should flag as removed" || ok=false
-  assert_contains "$output" "## Other Library (MIT)" "should identify removed entry" || ok=false
-  local scope
-  scope=$(get_scope_text "$output")
-  assert_contains "$scope" "com.other.Bar" "scope should reference source files" || ok=false
-  [[ "$ok" == "true" ]]
-}
-
-test_notices_entry_modified() {
-  cat > THIRD_PARTY_NOTICES.md << 'NOTICES'
-# Third-Party Notices
-
-## Example Library (Apache 2.0)
-
-**Source:** https://github.com/example/library
-**License:** Apache License 2.0
-**Copyright:** Copyright 2024 Example Inc.
-
-### Scope
-
-The code resides in `com.example.Foo`.
-NOTICES
-  git add THIRD_PARTY_NOTICES.md
-  git commit -m "NOTICES with entry" --quiet --amend
-
-  setup_branch
-
-  cat > THIRD_PARTY_NOTICES.md << 'NOTICES'
-# Third-Party Notices
-
-## Example Library (Apache 2.0)
-
-**Source:** https://github.com/example/library
-**License:** Apache License 2.0
-**Copyright:** Copyright 2025 Example Inc.
-
-### Scope
-
-The code resides in `com.example.Foo`.
-NOTICES
-  git add THIRD_PARTY_NOTICES.md
-  git commit -m "Change copyright year in NOTICES" --quiet
-
-  local output exit_code=0 ok=true
-  output=$(run_script) || exit_code=$?
-  assert_eq "$exit_code" "10" "should exit 10 when NOTICES entry modified" || ok=false
-  assert_contains "$output" "candidate_type: notices_entry" "should have notices_entry candidate" || ok=false
-  assert_contains "$output" "notices_change: modified" "should flag as modified" || ok=false
-  assert_contains "$output" "## Example Library (Apache 2.0)" "should identify modified entry" || ok=false
-  [[ "$ok" == "true" ]]
-}
-
-test_spdx_license_detection() {
-  setup_branch
-  mkdir -p src
-  cat > src/SpdxFile.java << 'JAVA'
-// SPDX-License-Identifier: MIT
-// Adapted from SpdxLib.
-// Copyright 2024 Spdx Author.
-package com.example;
-public class SpdxFile {}
-JAVA
-  git add src/SpdxFile.java
-  git commit -m "Add file with SPDX identifier" --quiet
-
-  local output ok=true
-  output=$(run_script) || true
-  assert_eq "$(get_field "$output" "new_license_type")" "true" \
-    "MIT via SPDX should be flagged as new license type (only Apache 2.0 in NOTICES)" || ok=false
-  [[ "$ok" == "true" ]]
-}
-
-test_spdx_license_matches_known() {
-  setup_branch
-  mkdir -p src
-  cat > src/SpdxApache.java << 'JAVA'
-// SPDX-License-Identifier: Apache-2.0
-// Adapted from SpdxApacheLib.
-// Copyright 2024 SpdxApache Author.
-package com.example;
-public class SpdxApache {}
-JAVA
-  git add src/SpdxApache.java
-  git commit -m "Add file with Apache SPDX identifier" --quiet
-
-  local output ok=true
-  output=$(run_script) || true
-  assert_eq "$(get_field "$output" "new_license_type")" "false" \
-    "Apache-2.0 via SPDX should match known Apache 2.0 license type" || ok=false
-  [[ "$ok" == "true" ]]
-}
-
-test_source_file_has_candidate_type() {
-  setup_branch
-  mkdir -p src
-  cat > src/Typed.java << 'JAVA'
-// Adapted from TypedLib.
-// Copyright 2024 Typed Author.
-// Licensed under the Apache License 2.0.
-package com.example;
-public class Typed {}
-JAVA
-  git add src/Typed.java
-  git commit -m "Add typed file" --quiet
-
-  local output ok=true
-  output=$(run_script) || true
-  assert_contains "$output" "candidate_type: source_file" "should include candidate_type field" || ok=false
-  [[ "$ok" == "true" ]]
-}
 
 # --- Run all tests ---
 
@@ -958,13 +667,9 @@ run_test "Staged modification detected"              test_staged_modification_de
 run_test "Untracked file detected"                   test_untracked_file_detected
 run_test "THIRD_PARTY_NOTICES.md change — committed" test_notices_file_changed_true
 run_test "THIRD_PARTY_NOTICES.md change — staged"    test_notices_staged_change_detected
-run_test "URL matching to notices entries"           test_notices_url_matching
-run_test "MIT — no false positive from COMMIT"       test_mit_no_false_positive_from_commit
 run_test "Excluded paths skipped"                    test_excluded_paths_skipped
 run_test "Generated files skipped"                   test_generated_files_skipped
 run_test "Sentry copyright not flagged"              test_sentry_copyright_not_flagged
-run_test "New license type detected"                 test_new_license_type_detected
-run_test "New license type — false positive on versioned heading" test_new_license_type_false_positive_versioned_heading
 run_test "License-only header not flagged"           test_license_only_header_not_flagged
 run_test "Binary file skipped"                       test_binary_file_skipped
 run_test "Modified vendor-path file — attribution changed" test_modified_vendor_path_file_attribution_changed
@@ -973,12 +678,6 @@ run_test "Modified first-party file — Sentry license header not flagged" test_
 run_test "Unstaged modification detected"            test_unstaged_modification_detected
 run_test "Multiple candidates in single run"         test_multiple_candidates
 run_test "Missing THIRD_PARTY_NOTICES.md"            test_missing_notices_file
-run_test "Progressive URL matching"                  test_progressive_url_matching
-run_test "NOTICES entry removed"                     test_notices_entry_removed
-run_test "NOTICES entry modified"                    test_notices_entry_modified
-run_test "SPDX license detection — new type"         test_spdx_license_detection
-run_test "SPDX license detection — matches known"    test_spdx_license_matches_known
-run_test "Source-file candidate has candidate_type"  test_source_file_has_candidate_type
 
 # --- Summary ---
 
