@@ -29,6 +29,7 @@ include(
     "sentry-android-timber",
     "sentry-android-fragment",
     "sentry-android-navigation",
+    "sentry-android-navigation3",
     "sentry-android-sqlite",
     "sentry-android-replay",
     "sentry-compose",
