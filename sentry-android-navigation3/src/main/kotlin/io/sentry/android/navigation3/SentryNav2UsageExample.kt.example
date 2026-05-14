@@ -1,0 +1,171 @@
+/**
+ * Example showing how Sentry's Nav2 (Jetpack Navigation Compose) integration works.
+ *
+ * This file is NOT compiled — it's a reference for comparing the Nav2 API with Nav3.
+ * See SentryNavEntryDecoratorUsageExample.kt.example for the Nav3 equivalent.
+ *
+ * What this demonstrates:
+ * - Creating a Nav2 NavHost with string-based routes
+ * - Wiring up Sentry via withSentryObservableEffect() on NavHostController
+ * - Breadcrumbs, transactions, and screen tracking all work automatically
+ *
+ * Key differences from Nav3:
+ * - Routes are strings with embedded argument placeholders (e.g. "profile/{userId}")
+ * - Arguments are passed via Bundle, extracted from the route URL at runtime
+ * - Sentry integration is an extension function on NavHostController (not a decorator)
+ * - No custom name/argument extractors — names come from NavDestination.route,
+ *   arguments come from the Bundle automatically
+ * - No backstack-on-crash context (Nav2 doesn't expose the backstack as a list)
+ */
+
+// -- Route definitions (typical Nav2 pattern: sealed class with string routes) --
+
+sealed class Destination(val route: String) {
+    data object Home : Destination("home")
+    data object Profile : Destination("profile/{userId}?tab={tab}")
+    data object Settings : Destination("settings?section={section}")
+    data object Conversation : Destination("conversation/{conversationId}?messageId={messageId}")
+
+    companion object {
+        const val USER_ID_ARG = "userId"
+        const val TAB_ARG = "tab"
+        const val SECTION_ARG = "section"
+        const val CONVERSATION_ID_ARG = "conversationId"
+        const val MESSAGE_ID_ARG = "messageId"
+    }
+}
+
+// -- App entry point --
+
+@Composable
+fun Nav2SampleApp() {
+    // ---- Sentry integration: one extension function on NavHostController ----
+    val navController = rememberNavController().withSentryObservableEffect(
+        enableNavigationBreadcrumbs = true,
+        enableNavigationTracing = true,
+    )
+
+    NavHost(
+        navController = navController,
+        startDestination = Destination.Home.route,
+    ) {
+        composable(Destination.Home.route) {
+            HomeScreen(
+                onNavigateToProfile = {
+                    navController.navigate("profile/user-123?tab=posts")
+                },
+                onNavigateToSettings = {
+                    navController.navigate("settings")
+                },
+                onNavigateToConversation = {
+                    navController.navigate("conversation/conv-456?messageId=msg-789")
+                },
+            )
+        }
+        composable(
+            Destination.Profile.route,
+            arguments = listOf(
+                navArgument(Destination.USER_ID_ARG) { type = NavType.StringType },
+                navArgument(Destination.TAB_ARG) {
+                    type = NavType.StringType
+                    defaultValue = "overview"
+                },
+            ),
+        ) { backStackEntry ->
+            ProfileScreen(
+                userId = backStackEntry.arguments?.getString(Destination.USER_ID_ARG) ?: "",
+                tab = backStackEntry.arguments?.getString(Destination.TAB_ARG) ?: "overview",
+                onBack = { navController.popBackStack() },
+            )
+        }
+        composable(
+            Destination.Settings.route,
+            arguments = listOf(
+                navArgument(Destination.SECTION_ARG) {
+                    type = NavType.StringType
+                    defaultValue = "general"
+                },
+            ),
+        ) { backStackEntry ->
+            SettingsScreen(
+                section = backStackEntry.arguments?.getString(Destination.SECTION_ARG) ?: "general",
+                onBack = { navController.popBackStack() },
+            )
+        }
+        composable(
+            Destination.Conversation.route,
+            arguments = listOf(
+                navArgument(Destination.CONVERSATION_ID_ARG) { type = NavType.StringType },
+                navArgument(Destination.MESSAGE_ID_ARG) {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                },
+            ),
+        ) { backStackEntry ->
+            ConversationScreen(
+                conversationId = backStackEntry.arguments?.getString(Destination.CONVERSATION_ID_ARG) ?: "",
+                messageId = backStackEntry.arguments?.getString(Destination.MESSAGE_ID_ARG),
+                onBack = { navController.popBackStack() },
+            )
+        }
+    }
+}
+
+// When the user navigates Home → Profile("user-123") → Conversation("conv-456"),
+// Sentry captures:
+//
+// Breadcrumb 1: { to: "/home" }
+// Breadcrumb 2: { from: "/home", to: "/profile/{userId}?tab={tab}", to_arguments: { userId: "user-123", tab: "posts" } }
+// Breadcrumb 3: { from: "/profile/{userId}?tab={tab}", from_arguments: { userId: "user-123", tab: "posts" }, to: "/conversation/{conversationId}?messageId={messageId}", to_arguments: { conversationId: "conv-456", messageId: "msg-789" } }
+//
+// Active transaction: "/conversation" (operation: "navigation", origin: "auto.navigation.jetpack_compose")
+//                      ^^^^^^^^^^^^^^^
+//                      Note: Nav2 strips arguments from the route to get the transaction name
+//                      e.g. "conversation/{conversationId}?messageId={messageId}" → "conversation"
+//
+// Scope screen: "/conversation"
+//
+// No backstack-on-crash context — Nav2 does not expose the backstack as an observable list.
+
+// -- Minimal usage (zero-config) --
+//
+// If you don't need to customize breadcrumb/tracing behavior:
+//
+//   val navController = rememberNavController().withSentryObservableEffect()
+//
+// This captures route names and Bundle arguments automatically.
+
+// ============================================================================
+// COMPARISON: Nav2 vs Nav3 API at a glance
+// ============================================================================
+//
+// ┌─────────────────────┬───────────────────────────────────────┬───────────────────────────────────────┐
+// │                     │ Nav2 (Jetpack Navigation Compose)     │ Nav3 (AndroidX Navigation 3)          │
+// ├─────────────────────┼───────────────────────────────────────┼───────────────────────────────────────┤
+// │ Sentry setup        │ rememberNavController()               │ rememberSentryNavEntryDecorator(      │
+// │                     │   .withSentryObservableEffect()       │   backStack = backStack,              │
+// │                     │                                       │ )                                     │
+// ├─────────────────────┼───────────────────────────────────────┼───────────────────────────────────────┤
+// │ Integration point   │ Extension on NavHostController        │ NavEntryDecorator passed to           │
+// │                     │                                       │ NavDisplay's entryDecorators list     │
+// ├─────────────────────┼───────────────────────────────────────┼───────────────────────────────────────┤
+// │ Route definitions   │ Strings: "profile/{userId}?tab={tab}" │ Data classes: Profile(userId, tab)    │
+// ├─────────────────────┼───────────────────────────────────────┼───────────────────────────────────────┤
+// │ Arguments           │ Bundle — extracted from route URL     │ Properties on the key object — you    │
+// │                     │ automatically by the framework        │ provide an argumentsExtractor lambda  │
+// ├─────────────────────┼───────────────────────────────────────┼───────────────────────────────────────┤
+// │ Route names in      │ Automatic: NavDestination.route with  │ Automatic: key::class.simpleName,     │
+// │ Sentry              │ arguments stripped (e.g. "/profile")  │ OR custom via nameExtractor lambda    │
+// ├─────────────────────┼───────────────────────────────────────┼───────────────────────────────────────┤
+// │ Trace origin        │ auto.navigation.jetpack_compose       │ auto.navigation.nav3                  │
+// ├─────────────────────┼───────────────────────────────────────┼───────────────────────────────────────┤
+// │ Backstack on crash  │ Not available                         │ Built-in: enableBackstackContext=true │
+// ├─────────────────────┼───────────────────────────────────────┼───────────────────────────────────────┤
+// │ Backstack ownership │ Framework (NavController)             │ Developer (SnapshotStateList<T>)      │
+// ├─────────────────────┼───────────────────────────────────────┼───────────────────────────────────────┤
+// │ Customization       │ enableNavigationBreadcrumbs,          │ Same two flags, plus:                 │
+// │                     │ enableNavigationTracing               │ enableBackstackContext,                │
+// │                     │                                       │ maxBackstackSize,                     │
+// │                     │                                       │ nameExtractor, argumentsExtractor     │
+// └─────────────────────┴───────────────────────────────────────┴───────────────────────────────────────┘

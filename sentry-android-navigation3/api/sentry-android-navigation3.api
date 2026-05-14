@@ -1,0 +1,31 @@
+public final class io/sentry/android/navigation3/BuildConfig {
+	public static final field BUILD_TYPE Ljava/lang/String;
+	public static final field DEBUG Z
+	public static final field LIBRARY_PACKAGE_NAME Ljava/lang/String;
+	public static final field VERSION_NAME Ljava/lang/String;
+	public fun <init> ()V
+}
+
+public final class io/sentry/android/navigation3/SentryNavEntryDecoratorKt {
+	public static final field NAVIGATION_OP Ljava/lang/String;
+	public static final fun SentryNav3NavigationEffect (Landroidx/compose/runtime/snapshots/SnapshotStateList;Lio/sentry/IScopes;ZZZILkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;II)V
+	public static final fun SentryNav3NavigationEffect (Landroidx/compose/runtime/snapshots/SnapshotStateList;Lio/sentry/android/navigation3/SentryNavStateHolder;Landroidx/compose/runtime/Composer;I)V
+	public static final fun rememberSentryNavEntryDecorator (Landroidx/compose/runtime/snapshots/SnapshotStateList;Lio/sentry/IScopes;ZZZILkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;II)Landroidx/navigation3/runtime/NavEntryDecorator;
+	public static final fun rememberSentryNavEntryDecorator (Lio/sentry/android/navigation3/SentryNavStateHolder;Landroidx/compose/runtime/Composer;I)Landroidx/navigation3/runtime/NavEntryDecorator;
+	public static final fun rememberSentryNavStateHolder (Lio/sentry/IScopes;ZZZILkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;II)Lio/sentry/android/navigation3/SentryNavStateHolder;
+}
+
+public final class io/sentry/android/navigation3/SentryNavStateHolder {
+	public static final field $stable I
+	public static final field Companion Lio/sentry/android/navigation3/SentryNavStateHolder$Companion;
+	public fun <init> (Lio/sentry/IScopes;ZZZILkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)V
+	public final fun cleanup ()V
+	public final fun onBackstackChanged (Ljava/util/List;)V
+	public final fun onEntryHidden (Ljava/lang/Object;)V
+	public final fun onEntryPopped (Ljava/lang/Object;)V
+	public final fun onEntryVisible (Ljava/lang/Object;Ljava/util/Map;)V
+}
+
+public final class io/sentry/android/navigation3/SentryNavStateHolder$Companion {
+}
+

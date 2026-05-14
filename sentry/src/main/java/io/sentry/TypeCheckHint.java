@@ -49,6 +49,10 @@ public final class TypeCheckHint {
   /** Used for Navigation breadrcrumbs. */
   public static final String ANDROID_NAV_DESTINATION = "android:navigationDestination";
 
+  // TODO ADAM: Remove if not needed.
+  /** Used for Navigation 3 breadcrumbs. */
+  public static final String ANDROID_NAV3_DESTINATION = "android:navigation3Destination";
+
   /** Used for Network breadrcrumbs. */
   public static final String ANDROID_NETWORK_CAPABILITIES = "android:networkCapabilities";
 

@@ -1,0 +1,123 @@
+/**
+ * Example showing how to wire up Sentry's Nav3 integration in a real app.
+ *
+ * This file is NOT compiled — it's a reference for SDK users. Copy the patterns
+ * into your own Activity/Composable.
+ *
+ * What this demonstrates:
+ * - Creating a Nav3 backstack and NavDisplay
+ * - Wiring up rememberSentryNavEntryDecorator with custom name + argument extractors
+ * - Breadcrumbs, transactions, screen tracking, and backstack-on-crash all work automatically
+ *
+ * Lifecycle: call rememberSentryNavEntryDecorator from a composable that stays in the tree
+ * for the whole nav session (same level as NavDisplay), not from a screen that disposes when
+ * you navigate away — otherwise the active Sentry transaction is finished too early.
+ */
+
+// -- Route definitions (typical Nav3 pattern) --
+
+@Serializable
+data object Home
+
+@Serializable
+data class Profile(val userId: String, val tab: String = "overview")
+
+@Serializable
+data class Settings(val section: String = "general")
+
+@Serializable
+data class Conversation(val conversationId: String, val messageId: String? = null)
+
+// -- App entry point --
+
+@Composable
+fun Nav3SampleApp() {
+    val backStack = remember { mutableStateListOf<Any>(Home) }
+
+    // Sentry: keep this at app/nav root (here), not inside a single destination composable.
+    val sentryDecorator = rememberSentryNavEntryDecorator(
+        backStack = backStack,
+
+        // Human-readable names for transactions + breadcrumbs.
+        // Without this, names default to the class simpleName (e.g. "/Profile").
+        nameExtractor = { key ->
+            when (key) {
+                is Home -> "home"
+                is Profile -> "profile"
+                is Settings -> "settings"
+                is Conversation -> "conversation"
+                else -> key::class.simpleName ?: "unknown"
+            }
+        },
+
+        // Arguments attached to breadcrumbs, transactions, and backstack-on-crash context.
+        // Without this, no arguments are captured.
+        argumentsExtractor = { key ->
+            when (key) {
+                is Profile -> mapOf("userId" to key.userId, "tab" to key.tab)
+                is Settings -> mapOf("section" to key.section)
+                is Conversation -> buildMap {
+                    put("conversationId", key.conversationId)
+                    key.messageId?.let { put("messageId", it) }
+                }
+                else -> emptyMap()
+            }
+        },
+    )
+
+    NavDisplay(
+        backStack = backStack,
+        onBack = { backStack.removeLastOrNull() },
+        entryDecorators = listOf(
+            rememberSaveableStateHolderNavEntryDecorator(),
+            sentryDecorator,
+        ),
+        entryProvider = entryProvider {
+            entry<Home> {
+                HomeScreen(onNavigate = { backStack.add(it) })
+            }
+            entry<Profile> { route ->
+                ProfileScreen(route, onBack = { backStack.removeLastOrNull() })
+            }
+            entry<Settings> { route ->
+                SettingsScreen(route, onBack = { backStack.removeLastOrNull() })
+            }
+            entry<Conversation> { route ->
+                ConversationScreen(route, onBack = { backStack.removeLastOrNull() })
+            }
+        },
+    )
+}
+
+// When the user navigates Home → Profile("user-123") → Conversation("conv-456"),
+// Sentry captures:
+//
+// Breadcrumb 1: { to: "/home" }
+// Breadcrumb 2: { from: "/home", to: "/profile", to_arguments: { userId: "user-123", tab: "overview" } }
+// Breadcrumb 3: { from: "/profile", from_arguments: { userId: "user-123" }, to: "/conversation", to_arguments: { conversationId: "conv-456" } }
+//
+// Active transaction: "/conversation" (operation: "navigation", origin: "auto.navigation.nav3")
+//
+// Scope screen: "/conversation" (detail pane when list-detail is visible)
+//
+// Multipane (list + detail visible): contexts.app.view_names = ["/home", "/conversation"]
+// contexts.navigation.visible lists all composed routes; active transaction uses the detail pane.
+//
+// Crash context (if the app crashes):
+// {
+//   "navigation": {
+//     "backstack": [
+//       { "route": "/home" },
+//       { "route": "/profile", "args": { "userId": "user-123", "tab": "overview" } },
+//       { "route": "/conversation", "args": { "conversationId": "conv-456" } }
+//     ]
+//   }
+// }
+
+// -- Minimal usage (zero-config) --
+//
+// If you don't need custom names or arguments, the simplest form is:
+//
+//   val sentryDecorator = rememberSentryNavEntryDecorator(backStack)
+//
+// This uses class.simpleName for names (e.g. "/Profile") and captures no arguments.
