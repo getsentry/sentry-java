@@ -112,7 +112,7 @@ The repository is organized into multiple modules:
 - **Logging**: `sentry-logback`, `sentry-log4j2`, `sentry-jul`, `sentry-android-timber`
 - **Web**: `sentry-servlet*`, `sentry-okhttp`, `sentry-openfeign`, `sentry-apache-http-client-5`
 - **GraphQL**: `sentry-graphql*`, `sentry-apollo*`
-- **Android UI**: `sentry-android-fragment`, `sentry-android-navigation`, `sentry-compose`
+- **Android UI**: `sentry-android-fragment`, `sentry-android-navigation`, `sentry-android-navigation3`, `sentry-compose`
 - **Session Replay**: `sentry-android-replay`
 - **Database**: `sentry-jdbc`, `sentry-android-sqlite`, `sentry-jcache`
 - **Reactive**: `sentry-reactor`, `sentry-ktor-client`
