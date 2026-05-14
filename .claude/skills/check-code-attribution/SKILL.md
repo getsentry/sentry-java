@@ -57,7 +57,14 @@ For each non-deleted candidate:
 
 2. **Match to a `THIRD_PARTY_NOTICES.md` entry** — Try to find a corresponding entry by URL, library name, copyright holder, or other context. Record whether you found a match, and if so, which entry.
 
-3. **Check the license type** — Identify the license declared in the file's header. Check whether this license type is already represented in `THIRD_PARTY_NOTICES.md` headings. If it's a new license type not yet in NOTICES, flag it for compatibility review.
+3. **Check license compatibility** — Identify the license in the file's header and classify it per Sentry's Open Source Legal Policy (https://www.notion.so/sentry/ac4885d265cb4d7898a01c060b061e42; public summary at https://open.sentry.io/licensing/). sentry-java is MIT-licensed. The policy defines four tiers:
+   - **Permissive** (MIT, BSD, Apache 2.0, ISC, CC-BY, etc.) — allowed. No action needed.
+   - **Weak copyleft** (LGPL, MPL, EPL, CDDL, etc.) — may be allowed for vendoring but requires review. Flag as **Critical** with a note to check the policy's permissions matrix.
+   - **Strong copyleft** (GPL, QPL, Sleepycat) — flag as **Critical**, requires legal review before vendoring.
+   - **AGPL** — **absolute ban**, must not be used at Sentry for any use case. Flag as **Critical** and block.
+   - **No license** — assume no permission to use. Flag as **Critical**.
+
+   Also check whether this license type is already represented in `THIRD_PARTY_NOTICES.md` headings; if it's new, note it.
 
 ## Step 4: Check for NOTICES Entry Changes
 
@@ -77,12 +84,14 @@ If there are no issues, print:
 
 Otherwise, print findings as a numbered list. Use fully qualified class names (e.g., `io.sentry.cache.tape.FileObjectQueue`). Guidelines:
 
-- **⚠️** = must fix before merging (missing fields, stripped attribution, inconsistent or orphaned NOTICES entries).
-- **👀** = author should verify (deleted/renamed files, matched NOTICES entries, consistent NOTICES modifications).
+- **❗❗⚠️ ❗❗** = license issue (AGPL, strong copyleft, unlicensed code). Goes in the **Critical** section.
+- **⚠️** = must fix before merging (missing fields, stripped attribution, inconsistent or orphaned NOTICES entries). Goes in the **Urgent** section.
+- **👀** = author should verify (deleted/renamed files, matched NOTICES entries, consistent NOTICES modifications, weak copyleft or new license type). Goes in the **Verify** section.
 - Keep license-header issues and `THIRD_PARTY_NOTICES.md` issues in separate bullets.
-- For license types not yet in NOTICES, link https://open.sentry.io/licensing/ for compatibility review.
+- For license concerns, link the policy: https://open.sentry.io/licensing/
 - Be concise — say what's wrong and what to do.
 - If any candidates are false positives, list them at the end with a one-line reason each.
+- Omit any section that has no entries.
 
 Example output:
 
@@ -90,15 +99,21 @@ Example output:
 Code Attribution Check
 ══════════════════════
 
+Critical
+────────
+1. ❗❗⚠️❗❗ io.sentry.util.AgplHelper
+   AGPL-licensed code — absolute ban per Sentry policy. Must be removed.
+   - Policy: https://www.notion.so/sentry/ac4885d265cb4d7898a01c060b061e42
+
 Urgent
-────────────
-1. ⚠️ io.sentry.util.TokenBucket
+──────
+2. ⚠️ io.sentry.util.TokenBucket
    Vendored code (Guava) — header is missing the source URL and copyright year.
    - No corresponding `THIRD_PARTY_NOTICES.md` entry; add one.
 
 Verify
 ──────
-2. 👀 io.sentry.cache.tape.FileObjectQueue
+3. 👀 io.sentry.cache.tape.FileObjectQueue
    Vendored code (Square Tape) — verify `THIRD_PARTY_NOTICES.md` reflects your updates.
 
 False positives
