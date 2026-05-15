@@ -400,6 +400,7 @@ public final class SentryEnvelopeItem {
               try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
                   final Writer writer = new BufferedWriter(new OutputStreamWriter(stream, UTF_8))) {
                 serializer.serialize(profileChunk, writer);
+                writer.flush();
                 metadataBytes = stream.toByteArray();
                 metaLength.set(metadataBytes.length);
               } catch (IOException e) {

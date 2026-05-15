@@ -379,6 +379,12 @@ public class PerfettoContinuousProfiler
 
     if (shouldRestart) {
       try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+        if (isRunning) {
+          logger.log(
+              SentryLevel.DEBUG,
+              "Profile chunk finished, but profiler was already restarted. Skipping.");
+          return;
+        }
         logger.log(SentryLevel.DEBUG, "Profile chunk finished. Starting a new one.");
         startInternal();
       }
