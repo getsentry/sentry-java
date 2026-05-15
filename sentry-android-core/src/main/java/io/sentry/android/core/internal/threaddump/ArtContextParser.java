@@ -1,9 +1,10 @@
 package io.sentry.android.core.internal.threaddump;
 
+import io.sentry.protocol.ArtContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-final class ThreadDumpMemoryInfoParser {
+final class ArtContextParser {
 
   private static final long KB = 1024;
   private static final long MB = 1024 * KB;
@@ -22,61 +23,59 @@ final class ThreadDumpMemoryInfoParser {
   private static final String TOTAL_BLOCKING_GC_TIME_PREFIX = "Total blocking GC time: ";
   private static final String TOTAL_PRE_OOME_GC_COUNT_PREFIX = "Total pre-OOME GC count: ";
 
-  private @Nullable ThreadDumpMemoryInfo memoryInfo;
+  private @Nullable ArtContext artContext;
 
   @Nullable
-  ThreadDumpMemoryInfo getMemoryInfo() {
-    return memoryInfo;
+  ArtContext getArtContext() {
+    return artContext;
   }
 
   void parseLine(final @NotNull String text) {
     if (text.startsWith(FREE_MEMORY_UNTIL_OOME_PREFIX)) {
-      getOrCreateMemoryInfo()
-          .setFreeMemoryUntilOOMEBytes(
+      getOrCreateArtContext()
+          .setFreeMemoryUntilOome(
               parsePrettySize(text.substring(FREE_MEMORY_UNTIL_OOME_PREFIX.length())));
     } else if (text.startsWith(FREE_MEMORY_UNTIL_GC_PREFIX)) {
-      getOrCreateMemoryInfo()
-          .setFreeMemoryUntilGcBytes(
+      getOrCreateArtContext()
+          .setFreeMemoryUntilGc(
               parsePrettySize(text.substring(FREE_MEMORY_UNTIL_GC_PREFIX.length())));
     } else if (text.startsWith(FREE_MEMORY_PREFIX)) {
-      getOrCreateMemoryInfo()
-          .setFreeMemoryBytes(parsePrettySize(text.substring(FREE_MEMORY_PREFIX.length())));
+      getOrCreateArtContext()
+          .setFreeMemory(parsePrettySize(text.substring(FREE_MEMORY_PREFIX.length())));
     } else if (text.startsWith(TOTAL_MEMORY_PREFIX)) {
-      getOrCreateMemoryInfo()
-          .setTotalMemoryBytes(parsePrettySize(text.substring(TOTAL_MEMORY_PREFIX.length())));
+      getOrCreateArtContext()
+          .setTotalMemory(parsePrettySize(text.substring(TOTAL_MEMORY_PREFIX.length())));
     } else if (text.startsWith(MAX_MEMORY_PREFIX)) {
-      getOrCreateMemoryInfo()
-          .setMaxMemoryBytes(parsePrettySize(text.substring(MAX_MEMORY_PREFIX.length())));
+      getOrCreateArtContext()
+          .setMaxMemory(parsePrettySize(text.substring(MAX_MEMORY_PREFIX.length())));
     } else if (text.startsWith(TOTAL_TIME_WAITING_FOR_GC_PREFIX)) {
-      getOrCreateMemoryInfo()
-          .setTotalTimeWaitingForGcMs(
-              parseTimeMs(text.substring(TOTAL_TIME_WAITING_FOR_GC_PREFIX.length())));
+      getOrCreateArtContext()
+          .setGcWaitingTime(parseTimeMs(text.substring(TOTAL_TIME_WAITING_FOR_GC_PREFIX.length())));
     } else if (text.startsWith(TOTAL_GC_TIME_PREFIX)) {
-      getOrCreateMemoryInfo()
-          .setTotalGcTimeMs(parseTimeMs(text.substring(TOTAL_GC_TIME_PREFIX.length())));
+      getOrCreateArtContext()
+          .setGcTotalTime(parseTimeMs(text.substring(TOTAL_GC_TIME_PREFIX.length())));
     } else if (text.startsWith(TOTAL_GC_COUNT_PREFIX)) {
-      getOrCreateMemoryInfo()
-          .setTotalGcCount(parseLongOrNull(text.substring(TOTAL_GC_COUNT_PREFIX.length())));
+      getOrCreateArtContext()
+          .setGcTotalCount(parseLongOrNull(text.substring(TOTAL_GC_COUNT_PREFIX.length())));
     } else if (text.startsWith(TOTAL_BLOCKING_GC_TIME_PREFIX)) {
-      getOrCreateMemoryInfo()
-          .setTotalBlockingGcTimeMs(
-              parseTimeMs(text.substring(TOTAL_BLOCKING_GC_TIME_PREFIX.length())));
+      getOrCreateArtContext()
+          .setGcBlockingTime(parseTimeMs(text.substring(TOTAL_BLOCKING_GC_TIME_PREFIX.length())));
     } else if (text.startsWith(TOTAL_BLOCKING_GC_COUNT_PREFIX)) {
-      getOrCreateMemoryInfo()
-          .setTotalBlockingGcCount(
+      getOrCreateArtContext()
+          .setGcBlockingCount(
               parseLongOrNull(text.substring(TOTAL_BLOCKING_GC_COUNT_PREFIX.length())));
     } else if (text.startsWith(TOTAL_PRE_OOME_GC_COUNT_PREFIX)) {
-      getOrCreateMemoryInfo()
-          .setTotalPreOomeGcCount(
+      getOrCreateArtContext()
+          .setGcPreOomeCount(
               parseLongOrNull(text.substring(TOTAL_PRE_OOME_GC_COUNT_PREFIX.length())));
     }
   }
 
-  private @NotNull ThreadDumpMemoryInfo getOrCreateMemoryInfo() {
-    if (memoryInfo == null) {
-      memoryInfo = new ThreadDumpMemoryInfo();
+  private @NotNull ArtContext getOrCreateArtContext() {
+    if (artContext == null) {
+      artContext = new ArtContext();
     }
-    return memoryInfo;
+    return artContext;
   }
 
   /**

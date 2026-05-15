@@ -5646,6 +5646,59 @@ public final class io/sentry/protocol/App$JsonKeys {
 	public fun <init> ()V
 }
 
+public final class io/sentry/protocol/ArtContext : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+	public static final field TYPE Ljava/lang/String;
+	public fun <init> ()V
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getFreeMemory ()Ljava/lang/Long;
+	public fun getFreeMemoryUntilGc ()Ljava/lang/Long;
+	public fun getFreeMemoryUntilOome ()Ljava/lang/Long;
+	public fun getGcBlockingCount ()Ljava/lang/Long;
+	public fun getGcBlockingTime ()Ljava/lang/Double;
+	public fun getGcPreOomeCount ()Ljava/lang/Long;
+	public fun getGcTotalCount ()Ljava/lang/Long;
+	public fun getGcTotalTime ()Ljava/lang/Double;
+	public fun getGcWaitingTime ()Ljava/lang/Double;
+	public fun getMaxMemory ()Ljava/lang/Long;
+	public fun getTotalMemory ()Ljava/lang/Long;
+	public fun getUnknown ()Ljava/util/Map;
+	public fun hashCode ()I
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+	public fun setFreeMemory (Ljava/lang/Long;)V
+	public fun setFreeMemoryUntilGc (Ljava/lang/Long;)V
+	public fun setFreeMemoryUntilOome (Ljava/lang/Long;)V
+	public fun setGcBlockingCount (Ljava/lang/Long;)V
+	public fun setGcBlockingTime (Ljava/lang/Double;)V
+	public fun setGcPreOomeCount (Ljava/lang/Long;)V
+	public fun setGcTotalCount (Ljava/lang/Long;)V
+	public fun setGcTotalTime (Ljava/lang/Double;)V
+	public fun setGcWaitingTime (Ljava/lang/Double;)V
+	public fun setMaxMemory (Ljava/lang/Long;)V
+	public fun setTotalMemory (Ljava/lang/Long;)V
+	public fun setUnknown (Ljava/util/Map;)V
+}
+
+public final class io/sentry/protocol/ArtContext$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Lio/sentry/protocol/ArtContext;
+	public synthetic fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/protocol/ArtContext$JsonKeys {
+	public static final field FREE_MEMORY Ljava/lang/String;
+	public static final field FREE_MEMORY_UNTIL_GC Ljava/lang/String;
+	public static final field FREE_MEMORY_UNTIL_OOME Ljava/lang/String;
+	public static final field GC_BLOCKING_COUNT Ljava/lang/String;
+	public static final field GC_BLOCKING_TIME Ljava/lang/String;
+	public static final field GC_PRE_OOME_COUNT Ljava/lang/String;
+	public static final field GC_TOTAL_COUNT Ljava/lang/String;
+	public static final field GC_TOTAL_TIME Ljava/lang/String;
+	public static final field GC_WAITING_TIME Ljava/lang/String;
+	public static final field MAX_MEMORY Ljava/lang/String;
+	public static final field TOTAL_MEMORY Ljava/lang/String;
+	public fun <init> ()V
+}
+
 public final class io/sentry/protocol/Browser : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public static final field TYPE Ljava/lang/String;
 	public fun <init> ()V
@@ -5682,6 +5735,7 @@ public class io/sentry/protocol/Contexts : io/sentry/JsonSerializable {
 	public fun equals (Ljava/lang/Object;)Z
 	public fun get (Ljava/lang/Object;)Ljava/lang/Object;
 	public fun getApp ()Lio/sentry/protocol/App;
+	public fun getArt ()Lio/sentry/protocol/ArtContext;
 	public fun getBrowser ()Lio/sentry/protocol/Browser;
 	public fun getDevice ()Lio/sentry/protocol/Device;
 	public fun getFeatureFlags ()Lio/sentry/protocol/FeatureFlags;
@@ -5704,6 +5758,7 @@ public class io/sentry/protocol/Contexts : io/sentry/JsonSerializable {
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun set (Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;
 	public fun setApp (Lio/sentry/protocol/App;)V
+	public fun setArt (Lio/sentry/protocol/ArtContext;)V
 	public fun setBrowser (Lio/sentry/protocol/Browser;)V
 	public fun setDevice (Lio/sentry/protocol/Device;)V
 	public fun setFeatureFlags (Lio/sentry/protocol/FeatureFlags;)V

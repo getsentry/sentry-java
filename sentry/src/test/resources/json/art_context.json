@@ -1,0 +1,13 @@
+{
+  "gc_total_count": 1,
+  "gc_total_time": 11.807,
+  "gc_blocking_count": 1,
+  "gc_blocking_time": 11.873,
+  "gc_pre_oome_count": 0,
+  "gc_waiting_time": 8.054,
+  "free_memory": 3181568,
+  "free_memory_until_gc": 3181568,
+  "free_memory_until_oome": 196083712,
+  "total_memory": 7774208,
+  "max_memory": 201326592
+}

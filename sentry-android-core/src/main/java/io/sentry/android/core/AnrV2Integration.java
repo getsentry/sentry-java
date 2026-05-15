@@ -17,11 +17,11 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.cache.AndroidEnvelopeCache;
 import io.sentry.android.core.internal.threaddump.Lines;
-import io.sentry.android.core.internal.threaddump.ThreadDumpMemoryInfo;
 import io.sentry.android.core.internal.threaddump.ThreadDumpParser;
 import io.sentry.hints.AbnormalExit;
 import io.sentry.hints.Backfillable;
 import io.sentry.hints.BlockingFlushHint;
+import io.sentry.protocol.ArtContext;
 import io.sentry.protocol.DebugImage;
 import io.sentry.protocol.DebugMeta;
 import io.sentry.protocol.Message;
@@ -155,8 +155,7 @@ public class AnrV2Integration implements Integration, Closeable {
               options.getLogger(),
               anrTimestamp,
               shouldEnrich,
-              isBackground,
-              result.memoryInfo);
+              isBackground);
 
       final Hint hint = HintUtils.createWithTypeCheckHint(anrHint);
 
@@ -174,6 +173,9 @@ public class AnrV2Integration implements Integration, Closeable {
           final DebugMeta debugMeta = new DebugMeta();
           debugMeta.setImages(result.debugImages);
           event.setDebugMeta(debugMeta);
+        }
+        if (result.artContext != null) {
+          event.getContexts().setArt(result.artContext);
         }
       }
       event.setLevel(SentryLevel.FATAL);
@@ -211,7 +213,7 @@ public class AnrV2Integration implements Integration, Closeable {
 
         final @NotNull List<SentryThread> threads = threadDumpParser.getThreads();
         final @NotNull List<DebugImage> debugImages = threadDumpParser.getDebugImages();
-        final @Nullable ThreadDumpMemoryInfo memoryInfo = threadDumpParser.getMemoryInfo();
+        final @Nullable ArtContext artContext = threadDumpParser.getArtContext();
 
         if (threads.isEmpty()) {
           // if the list is empty this means the system failed to capture a proper thread dump of
@@ -220,7 +222,7 @@ public class AnrV2Integration implements Integration, Closeable {
           // fall back to not reporting them
           return new ParseResult(ParseResult.Type.NO_DUMP);
         }
-        return new ParseResult(ParseResult.Type.DUMP, dump, threads, debugImages, memoryInfo);
+        return new ParseResult(ParseResult.Type.DUMP, dump, threads, debugImages, artContext);
       } catch (Throwable e) {
         options.getLogger().log(SentryLevel.WARNING, "Failed to parse ANR thread dump", e);
         return new ParseResult(ParseResult.Type.ERROR, dump);
@@ -252,33 +254,16 @@ public class AnrV2Integration implements Integration, Closeable {
 
     private final boolean isBackgroundAnr;
 
-    private final @Nullable ThreadDumpMemoryInfo threadDumpMemoryInfo;
-
     public AnrV2Hint(
         final long flushTimeoutMillis,
         final @NotNull ILogger logger,
         final long timestamp,
         final boolean shouldEnrich,
         final boolean isBackgroundAnr) {
-      this(flushTimeoutMillis, logger, timestamp, shouldEnrich, isBackgroundAnr, null);
-    }
-
-    public AnrV2Hint(
-        final long flushTimeoutMillis,
-        final @NotNull ILogger logger,
-        final long timestamp,
-        final boolean shouldEnrich,
-        final boolean isBackgroundAnr,
-        final @Nullable ThreadDumpMemoryInfo threadDumpMemoryInfo) {
       super(flushTimeoutMillis, logger);
       this.timestamp = timestamp;
       this.shouldEnrich = shouldEnrich;
       this.isBackgroundAnr = isBackgroundAnr;
-      this.threadDumpMemoryInfo = threadDumpMemoryInfo;
-    }
-
-    public @Nullable ThreadDumpMemoryInfo getThreadDumpMemoryInfo() {
-      return threadDumpMemoryInfo;
     }
 
     @Override
@@ -320,17 +305,17 @@ public class AnrV2Integration implements Integration, Closeable {
     }
 
     final Type type;
-    final byte[] dump;
+    final @Nullable byte[] dump;
     final @Nullable List<SentryThread> threads;
     final @Nullable List<DebugImage> debugImages;
-    final @Nullable ThreadDumpMemoryInfo memoryInfo;
+    final @Nullable ArtContext artContext;
 
     ParseResult(final @NotNull Type type) {
       this.type = type;
       this.dump = null;
       this.threads = null;
       this.debugImages = null;
-      this.memoryInfo = null;
+      this.artContext = null;
     }
 
     ParseResult(final @NotNull Type type, final byte[] dump) {
@@ -338,7 +323,7 @@ public class AnrV2Integration implements Integration, Closeable {
       this.dump = dump;
       this.threads = null;
       this.debugImages = null;
-      this.memoryInfo = null;
+      this.artContext = null;
     }
 
     ParseResult(
@@ -346,12 +331,12 @@ public class AnrV2Integration implements Integration, Closeable {
         final byte[] dump,
         final @Nullable List<SentryThread> threads,
         final @Nullable List<DebugImage> debugImages,
-        final @Nullable ThreadDumpMemoryInfo memoryInfo) {
+        final @Nullable ArtContext artContext) {
       this.type = type;
       this.dump = dump;
       this.threads = threads;
       this.debugImages = debugImages;
-      this.memoryInfo = memoryInfo;
+      this.artContext = artContext;
     }
   }
 }

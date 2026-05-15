@@ -5,75 +5,75 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
-class ThreadDumpMemoryInfoTest {
+class ArtContextParserTest {
 
   @Test
   fun `parses pretty size bytes`() {
-    val parser = ThreadDumpMemoryInfoParser()
+    val parser = ArtContextParser()
     parser.parseLine("Free memory 0B")
-    assertEquals(0L, parser.memoryInfo!!.freeMemoryBytes)
+    assertEquals(0L, parser.artContext!!.freeMemory)
 
-    val parser2 = ThreadDumpMemoryInfoParser()
+    val parser2 = ArtContextParser()
     parser2.parseLine("Free memory 512B")
-    assertEquals(512L, parser2.memoryInfo!!.freeMemoryBytes)
+    assertEquals(512L, parser2.artContext!!.freeMemory)
   }
 
   @Test
   fun `parses pretty size kilobytes`() {
-    val parser = ThreadDumpMemoryInfoParser()
+    val parser = ArtContextParser()
     parser.parseLine("Free memory 3107KB")
-    assertEquals(3107L * 1024, parser.memoryInfo!!.freeMemoryBytes)
+    assertEquals(3107L * 1024, parser.artContext!!.freeMemory)
   }
 
   @Test
   fun `parses pretty size megabytes`() {
-    val parser = ThreadDumpMemoryInfoParser()
+    val parser = ArtContextParser()
     parser.parseLine("Free memory until OOME 187MB")
-    assertEquals(187L * 1024 * 1024, parser.memoryInfo!!.freeMemoryUntilOOMEBytes)
+    assertEquals(187L * 1024 * 1024, parser.artContext!!.freeMemoryUntilOome)
   }
 
   @Test
   fun `parses pretty size gigabytes`() {
-    val parser = ThreadDumpMemoryInfoParser()
+    val parser = ArtContextParser()
     parser.parseLine("Max memory 2GB")
-    assertEquals(2L * 1024 * 1024 * 1024, parser.memoryInfo!!.maxMemoryBytes)
+    assertEquals(2L * 1024 * 1024 * 1024, parser.artContext!!.maxMemory)
   }
 
   @Test
   fun `sets null for invalid pretty size`() {
-    val parser = ThreadDumpMemoryInfoParser()
+    val parser = ArtContextParser()
     parser.parseLine("Free memory 100TB")
-    assertNull(parser.memoryInfo!!.freeMemoryBytes)
+    assertNull(parser.artContext!!.freeMemory)
   }
 
   @Test
   fun `parses time in milliseconds`() {
-    val parser = ThreadDumpMemoryInfoParser()
+    val parser = ArtContextParser()
     parser.parseLine("Total GC time: 11.807ms")
-    assertEquals(11.807, parser.memoryInfo!!.totalGcTimeMs)
+    assertEquals(11.807, parser.artContext!!.gcTotalTime)
   }
 
   @Test
   fun `parses all memory fields`() {
-    val parser = ThreadDumpMemoryInfoParser()
+    val parser = ArtContextParser()
     parser.parseLine("Free memory 3107KB")
     parser.parseLine("Free memory until GC 3107KB")
     parser.parseLine("Free memory until OOME 187MB")
     parser.parseLine("Total memory 7592KB")
     parser.parseLine("Max memory 192MB")
 
-    val info = parser.memoryInfo
+    val info = parser.artContext
     assertNotNull(info)
-    assertEquals(3107L * 1024, info.freeMemoryBytes)
-    assertEquals(3107L * 1024, info.freeMemoryUntilGcBytes)
-    assertEquals(187L * 1024 * 1024, info.freeMemoryUntilOOMEBytes)
-    assertEquals(7592L * 1024, info.totalMemoryBytes)
-    assertEquals(192L * 1024 * 1024, info.maxMemoryBytes)
+    assertEquals(3107L * 1024, info.freeMemory)
+    assertEquals(3107L * 1024, info.freeMemoryUntilGc)
+    assertEquals(187L * 1024 * 1024, info.freeMemoryUntilOome)
+    assertEquals(7592L * 1024, info.totalMemory)
+    assertEquals(192L * 1024 * 1024, info.maxMemory)
   }
 
   @Test
   fun `parses all gc fields`() {
-    val parser = ThreadDumpMemoryInfoParser()
+    val parser = ArtContextParser()
     parser.parseLine("Total time waiting for GC to complete: 8.054ms")
     parser.parseLine("Total GC count: 1")
     parser.parseLine("Total GC time: 11.807ms")
@@ -81,22 +81,22 @@ class ThreadDumpMemoryInfoTest {
     parser.parseLine("Total blocking GC time: 11.873ms")
     parser.parseLine("Total pre-OOME GC count: 0")
 
-    val info = parser.memoryInfo
+    val info = parser.artContext
     assertNotNull(info)
-    assertEquals(8.054, info.totalTimeWaitingForGcMs)
-    assertEquals(1L, info.totalGcCount)
-    assertEquals(11.807, info.totalGcTimeMs)
-    assertEquals(1L, info.totalBlockingGcCount)
-    assertEquals(11.873, info.totalBlockingGcTimeMs)
-    assertEquals(0L, info.totalPreOomeGcCount)
+    assertEquals(8.054, info.gcWaitingTime)
+    assertEquals(1L, info.gcTotalCount)
+    assertEquals(11.807, info.gcTotalTime)
+    assertEquals(1L, info.gcBlockingCount)
+    assertEquals(11.873, info.gcBlockingTime)
+    assertEquals(0L, info.gcPreOomeCount)
   }
 
   @Test
   fun `ignores unrelated lines`() {
-    val parser = ThreadDumpMemoryInfoParser()
+    val parser = ArtContextParser()
     parser.parseLine("some random line")
     parser.parseLine("DALVIK THREADS (29):")
     parser.parseLine("")
-    assertNull(parser.memoryInfo)
+    assertNull(parser.artContext)
   }
 }
