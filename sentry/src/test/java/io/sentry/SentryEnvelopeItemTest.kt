@@ -614,13 +614,13 @@ class SentryEnvelopeItemTest {
           SentryNanotimeDate(),
           ProfileChunk.PLATFORM_ANDROID,
         )
-        .setContentType("perfetto")
+        .setContentType(ProfileChunk.CONTENT_TYPE_PERFETTO)
         .build(fixture.options)
 
     val item = SentryEnvelopeItem.fromPerfettoProfileChunk(profileChunk, fixture.serializer)
 
     assertEquals(SentryItemType.ProfileChunk, item.header.type)
-    assertEquals("application/octet-stream", item.header.contentType)
+    assertEquals(ProfileChunk.CONTENT_TYPE_PERFETTO, item.header.contentType)
     assertEquals("android", item.header.platform)
 
     val payload = item.data
@@ -630,9 +630,9 @@ class SentryEnvelopeItemTest {
     val metadataBytes = payload.copyOfRange(0, metaLength)
     val binaryBytes = payload.copyOfRange(metaLength, payload.size)
 
-    // Metadata should be valid JSON containing content_type: "perfetto"
+    // Metadata should be valid JSON containing content_type
     val metadataJson = String(metadataBytes, Charsets.UTF_8)
-    assert(metadataJson.contains("\"content_type\":\"perfetto\""))
+    assert(metadataJson.contains("\"content_type\":\"application/x-perfetto-trace\""))
     assert(metadataJson.contains("\"version\":\"2\""))
 
     // Binary bytes should match original trace file
@@ -656,7 +656,7 @@ class SentryEnvelopeItemTest {
           SentryNanotimeDate(),
           ProfileChunk.PLATFORM_ANDROID,
         )
-        .setContentType("perfetto")
+        .setContentType(ProfileChunk.CONTENT_TYPE_PERFETTO)
         .build(fixture.options)
 
     val item = SentryEnvelopeItem.fromPerfettoProfileChunk(profileChunk, fixture.serializer)
@@ -687,7 +687,7 @@ class SentryEnvelopeItemTest {
           SentryNanotimeDate(),
           ProfileChunk.PLATFORM_ANDROID,
         )
-        .setContentType("perfetto")
+        .setContentType(ProfileChunk.CONTENT_TYPE_PERFETTO)
         .build(fixture.options)
 
     assertFailsWith<SentryEnvelopeException> {

@@ -1061,7 +1061,7 @@ public final class SentryClient implements ISentryClient {
 
     try {
       final SentryEnvelopeItem envelopeItem;
-      if ("perfetto".equals(profileChunk.getContentType())) {
+      if (ProfileChunk.CONTENT_TYPE_PERFETTO.equals(profileChunk.getContentType())) {
         envelopeItem =
             SentryEnvelopeItem.fromPerfettoProfileChunk(profileChunk, options.getSerializer());
       } else {

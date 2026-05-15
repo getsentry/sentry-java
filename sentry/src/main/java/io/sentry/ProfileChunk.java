@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 public final class ProfileChunk implements JsonUnknown, JsonSerializable {
   public static final String PLATFORM_ANDROID = "android";
   public static final String PLATFORM_JAVA = "java";
+  public static final String CONTENT_TYPE_PERFETTO = "application/x-perfetto-trace";
 
   private @Nullable DebugMeta debugMeta;
   private @NotNull SentryId profilerId;
@@ -34,7 +35,6 @@ public final class ProfileChunk implements JsonUnknown, JsonSerializable {
   private @NotNull String version;
   private double timestamp;
 
-  /** Content type of the profile data. Set to "perfetto" for Perfetto traces. */
   private @Nullable String contentType;
 
   private final @Nullable File traceFile;

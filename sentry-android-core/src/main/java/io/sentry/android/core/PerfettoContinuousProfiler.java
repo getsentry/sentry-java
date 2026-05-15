@@ -373,7 +373,7 @@ public class PerfettoContinuousProfiler
               traceFile,
               chunkTimestamp,
               ProfileChunk.PLATFORM_ANDROID);
-      builder.setContentType("perfetto");
+      builder.setContentType(ProfileChunk.CONTENT_TYPE_PERFETTO);
       sendChunk(builder, scopes, options);
     }
 

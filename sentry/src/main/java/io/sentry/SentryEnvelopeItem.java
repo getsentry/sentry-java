@@ -433,7 +433,7 @@ public final class SentryEnvelopeItem {
         new SentryEnvelopeItemHeader(
             SentryItemType.ProfileChunk,
             () -> cachedItem.getBytes().length,
-            "application/octet-stream",
+            profileChunk.getContentType(),
             traceFile.getName(),
             null,
             profileChunk.getPlatform(),
