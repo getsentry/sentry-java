@@ -82,49 +82,48 @@ public final class JsonObjectDeserializer {
 
   private void parse(@NotNull JsonObjectReader reader) throws IOException {
     boolean done = false;
-    switch (reader.peek()) {
-      case BEGIN_ARRAY:
-        reader.beginArray();
-        pushCurrentToken(new TokenArray());
-        break;
-      case END_ARRAY:
-        reader.endArray();
-        done = handleArrayOrMapEnd();
-        break;
-      case BEGIN_OBJECT:
-        reader.beginObject();
-        pushCurrentToken(new TokenMap());
-        break;
-      case END_OBJECT:
-        reader.endObject();
-        done = handleArrayOrMapEnd();
-        break;
-      case NAME:
-        pushCurrentToken(new TokenName(reader.nextName()));
-        break;
-      case STRING:
-        // avoid method refs on Android due to some issues with older AGP setups
-        // noinspection Convert2MethodRef
-        done = handlePrimitive(() -> reader.nextString());
-        break;
-      case NUMBER:
-        done = handlePrimitive(() -> nextNumber(reader));
-        break;
-      case BOOLEAN:
-        // avoid method refs on Android due to some issues with older AGP setups
-        // noinspection Convert2MethodRef
-        done = handlePrimitive(() -> reader.nextBoolean());
-        break;
-      case NULL:
-        reader.nextNull();
-        done = handlePrimitive(() -> null);
-        break;
-      case END_DOCUMENT:
-        done = true;
-        break;
-    }
-    if (!done) {
-      parse(reader);
+    while (!done) {
+      switch (reader.peek()) {
+        case BEGIN_ARRAY:
+          reader.beginArray();
+          pushCurrentToken(new TokenArray());
+          break;
+        case END_ARRAY:
+          reader.endArray();
+          done = handleArrayOrMapEnd();
+          break;
+        case BEGIN_OBJECT:
+          reader.beginObject();
+          pushCurrentToken(new TokenMap());
+          break;
+        case END_OBJECT:
+          reader.endObject();
+          done = handleArrayOrMapEnd();
+          break;
+        case NAME:
+          pushCurrentToken(new TokenName(reader.nextName()));
+          break;
+        case STRING:
+          // avoid method refs on Android due to some issues with older AGP setups
+          // noinspection Convert2MethodRef
+          done = handlePrimitive(() -> reader.nextString());
+          break;
+        case NUMBER:
+          done = handlePrimitive(() -> nextNumber(reader));
+          break;
+        case BOOLEAN:
+          // avoid method refs on Android due to some issues with older AGP setups
+          // noinspection Convert2MethodRef
+          done = handlePrimitive(() -> reader.nextBoolean());
+          break;
+        case NULL:
+          reader.nextNull();
+          done = handlePrimitive(() -> null);
+          break;
+        case END_DOCUMENT:
+          done = true;
+          break;
+      }
     }
   }
 

@@ -289,6 +289,31 @@ class ManifestMetadataReaderTest {
   }
 
   @Test
+  fun `applyMetadata reads anr report historical to options`() {
+    // Arrange
+    val bundle = bundleOf(ManifestMetadataReader.ANR_REPORT_HISTORICAL to true)
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertEquals(true, fixture.options.isReportHistoricalAnrs)
+  }
+
+  @Test
+  fun `applyMetadata reads anr report historical to options and keeps default`() {
+    // Arrange
+    val context = fixture.getContext()
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertEquals(false, fixture.options.isReportHistoricalAnrs)
+  }
+
+  @Test
   fun `applyMetadata reads activity breadcrumbs to options`() {
     // Arrange
     val bundle = bundleOf(ManifestMetadataReader.BREADCRUMBS_ACTIVITY_LIFECYCLE_ENABLE to false)
@@ -2045,6 +2070,31 @@ class ManifestMetadataReaderTest {
       io.sentry.ScreenshotStrategyType.PIXEL_COPY,
       fixture.options.sessionReplay.screenshotStrategy,
     )
+  }
+
+  @Test
+  fun `applyMetadata reads capture-surface-views to options`() {
+    // Arrange
+    val bundle = bundleOf(ManifestMetadataReader.REPLAYS_CAPTURE_SURFACE_VIEWS to true)
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertTrue(fixture.options.sessionReplay.isCaptureSurfaceViews)
+  }
+
+  @Test
+  fun `applyMetadata reads capture-surface-views and keeps default if not found`() {
+    // Arrange
+    val context = fixture.getContext()
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertFalse(fixture.options.sessionReplay.isCaptureSurfaceViews)
   }
 
   @Test

@@ -1,0 +1,414 @@
+package io.sentry.android.core.internal.gestures
+
+import android.os.SystemClock
+import android.view.GestureDetector
+import android.view.MotionEvent
+import android.view.ViewConfiguration
+import androidx.test.core.app.ApplicationProvider
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.Test
+import org.junit.runner.RunWith
+import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
+
+@RunWith(AndroidJUnit4::class)
+class SentryGestureDetectorTest {
+
+  class Fixture {
+    val listener = mock<GestureDetector.OnGestureListener>()
+    val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+    val touchSlop = ViewConfiguration.get(context).scaledTouchSlop
+
+    fun getSut(): SentryGestureDetector {
+      return SentryGestureDetector(context, listener)
+    }
+  }
+
+  private val fixture = Fixture()
+
+  @Test
+  fun `tap - DOWN followed by UP within touch slop fires onSingleTapUp`() {
+    val sut = fixture.getSut()
+    val downTime = SystemClock.uptimeMillis()
+
+    val down = MotionEvent.obtain(downTime, downTime, MotionEvent.ACTION_DOWN, 100f, 100f, 0)
+    val up = MotionEvent.obtain(downTime, downTime + 50, MotionEvent.ACTION_UP, 100f, 100f, 0)
+
+    sut.onTouchEvent(down)
+    sut.onTouchEvent(up)
+
+    verify(fixture.listener).onDown(down)
+    verify(fixture.listener).onSingleTapUp(up)
+    verify(fixture.listener, never()).onScroll(any(), any(), any(), any())
+    verify(fixture.listener, never()).onFling(anyOrNull(), any(), any(), any())
+
+    down.recycle()
+    up.recycle()
+  }
+
+  @Test
+  fun `no tap - DOWN followed by MOVE beyond slop and UP does not fire onSingleTapUp`() {
+    val sut = fixture.getSut()
+    val downTime = SystemClock.uptimeMillis()
+    val beyondSlop = fixture.touchSlop + 10f
+
+    val down = MotionEvent.obtain(downTime, downTime, MotionEvent.ACTION_DOWN, 100f, 100f, 0)
+    val move =
+      MotionEvent.obtain(
+        downTime,
+        downTime + 16,
+        MotionEvent.ACTION_MOVE,
+        100f + beyondSlop,
+        100f,
+        0,
+      )
+    val up =
+      MotionEvent.obtain(downTime, downTime + 50, MotionEvent.ACTION_UP, 100f + beyondSlop, 100f, 0)
+
+    sut.onTouchEvent(down)
+    sut.onTouchEvent(move)
+    sut.onTouchEvent(up)
+
+    verify(fixture.listener, never()).onSingleTapUp(any())
+
+    down.recycle()
+    move.recycle()
+    up.recycle()
+  }
+
+  @Test
+  fun `scroll - DOWN followed by MOVE beyond slop fires onScroll with correct deltas`() {
+    val sut = fixture.getSut()
+    val downTime = SystemClock.uptimeMillis()
+    val beyondSlop = fixture.touchSlop + 10f
+
+    val down = MotionEvent.obtain(downTime, downTime, MotionEvent.ACTION_DOWN, 100f, 200f, 0)
+    val move =
+      MotionEvent.obtain(
+        downTime,
+        downTime + 16,
+        MotionEvent.ACTION_MOVE,
+        100f + beyondSlop,
+        200f,
+        0,
+      )
+
+    sut.onTouchEvent(down)
+    sut.onTouchEvent(move)
+
+    // scrollX = lastX - currentX = 100 - (100 + beyondSlop) = -beyondSlop
+    verify(fixture.listener).onScroll(anyOrNull(), eq(move), eq(-beyondSlop), eq(0f))
+
+    down.recycle()
+    move.recycle()
+  }
+
+  @Test
+  fun `fling - fast swipe fires onFling`() {
+    val sut = fixture.getSut()
+    val downTime = SystemClock.uptimeMillis()
+    val beyondSlop = fixture.touchSlop + 10f
+
+    val down = MotionEvent.obtain(downTime, downTime, MotionEvent.ACTION_DOWN, 100f, 100f, 0)
+    // Move far and fast (large distance in short time = high velocity)
+    val move =
+      MotionEvent.obtain(
+        downTime,
+        downTime + 10,
+        MotionEvent.ACTION_MOVE,
+        100f + beyondSlop,
+        100f,
+        0,
+      )
+    val up = MotionEvent.obtain(downTime, downTime + 20, MotionEvent.ACTION_UP, 500f, 100f, 0)
+
+    sut.onTouchEvent(down)
+    sut.onTouchEvent(move)
+    sut.onTouchEvent(up)
+
+    verify(fixture.listener).onFling(anyOrNull(), eq(up), any(), any())
+
+    down.recycle()
+    move.recycle()
+    up.recycle()
+  }
+
+  @Test
+  fun `slow release - DOWN MOVE and slow UP does not fire onFling`() {
+    val sut = fixture.getSut()
+    val downTime = SystemClock.uptimeMillis()
+    val beyondSlop = fixture.touchSlop + 1f
+
+    val down = MotionEvent.obtain(downTime, downTime, MotionEvent.ACTION_DOWN, 100f, 100f, 0)
+    // Move just beyond slop
+    val move =
+      MotionEvent.obtain(
+        downTime,
+        downTime + 100,
+        MotionEvent.ACTION_MOVE,
+        100f + beyondSlop,
+        100f,
+        0,
+      )
+    // Stay at the same position for a long time to ensure near-zero velocity
+    val moveStill =
+      MotionEvent.obtain(
+        downTime,
+        downTime + 10000,
+        MotionEvent.ACTION_MOVE,
+        100f + beyondSlop,
+        100f,
+        0,
+      )
+    val up =
+      MotionEvent.obtain(
+        downTime,
+        downTime + 10001,
+        MotionEvent.ACTION_UP,
+        100f + beyondSlop,
+        100f,
+        0,
+      )
+
+    sut.onTouchEvent(down)
+    sut.onTouchEvent(move)
+    sut.onTouchEvent(moveStill)
+    sut.onTouchEvent(up)
+
+    verify(fixture.listener, never()).onFling(anyOrNull(), any(), any(), any())
+
+    down.recycle()
+    move.recycle()
+    moveStill.recycle()
+    up.recycle()
+  }
+
+  @Test
+  fun `cancel - DOWN followed by CANCEL does not fire tap or fling callbacks`() {
+    val sut = fixture.getSut()
+    val downTime = SystemClock.uptimeMillis()
+
+    val down = MotionEvent.obtain(downTime, downTime, MotionEvent.ACTION_DOWN, 100f, 100f, 0)
+    val cancel =
+      MotionEvent.obtain(downTime, downTime + 50, MotionEvent.ACTION_CANCEL, 100f, 100f, 0)
+
+    sut.onTouchEvent(down)
+    sut.onTouchEvent(cancel)
+
+    verify(fixture.listener).onDown(down)
+    verify(fixture.listener, never()).onSingleTapUp(any())
+    verify(fixture.listener, never()).onScroll(any(), any(), any(), any())
+    verify(fixture.listener, never()).onFling(anyOrNull(), any(), any(), any())
+
+    down.recycle()
+    cancel.recycle()
+  }
+
+  @Test
+  fun `multi-touch - POINTER_DOWN cancels tap so UP does not fire onSingleTapUp`() {
+    val sut = fixture.getSut()
+    val downTime = SystemClock.uptimeMillis()
+
+    val down = MotionEvent.obtain(downTime, downTime, MotionEvent.ACTION_DOWN, 100f, 100f, 0)
+    // Second finger touches — encoded as ACTION_POINTER_DOWN with pointer index 1
+    val pointerDown =
+      MotionEvent.obtain(
+        downTime,
+        downTime + 20,
+        (1 shl MotionEvent.ACTION_POINTER_INDEX_SHIFT) or MotionEvent.ACTION_POINTER_DOWN,
+        100f,
+        100f,
+        0,
+      )
+    val up = MotionEvent.obtain(downTime, downTime + 100, MotionEvent.ACTION_UP, 100f, 100f, 0)
+
+    sut.onTouchEvent(down)
+    sut.onTouchEvent(pointerDown)
+    sut.onTouchEvent(up)
+
+    verify(fixture.listener).onDown(down)
+    verify(fixture.listener, never()).onSingleTapUp(any())
+
+    down.recycle()
+    pointerDown.recycle()
+    up.recycle()
+  }
+
+  @Test
+  fun `multi-touch - POINTER_DOWN suppresses fling on fast UP`() {
+    val sut = fixture.getSut()
+    val downTime = SystemClock.uptimeMillis()
+
+    val down = MotionEvent.obtain(downTime, downTime, MotionEvent.ACTION_DOWN, 100f, 100f, 0)
+    // Second finger touches
+    val pointerDown =
+      MotionEvent.obtain(
+        downTime,
+        downTime + 20,
+        (1 shl MotionEvent.ACTION_POINTER_INDEX_SHIFT) or MotionEvent.ACTION_POINTER_DOWN,
+        100f,
+        100f,
+        0,
+      )
+    // Second finger lifts
+    val pointerUp =
+      MotionEvent.obtain(
+        downTime,
+        downTime + 40,
+        (1 shl MotionEvent.ACTION_POINTER_INDEX_SHIFT) or MotionEvent.ACTION_POINTER_UP,
+        100f,
+        100f,
+        0,
+      )
+    // Last finger lifts quickly and far — would normally trigger fling
+    val up = MotionEvent.obtain(downTime, downTime + 50, MotionEvent.ACTION_UP, 500f, 100f, 0)
+
+    sut.onTouchEvent(down)
+    sut.onTouchEvent(pointerDown)
+    sut.onTouchEvent(pointerUp)
+    sut.onTouchEvent(up)
+
+    verify(fixture.listener, never()).onSingleTapUp(any())
+    verify(fixture.listener, never()).onFling(anyOrNull(), any(), any(), any())
+
+    down.recycle()
+    pointerDown.recycle()
+    pointerUp.recycle()
+    up.recycle()
+  }
+
+  @Test
+  fun `multi-touch - tap works again after multi-touch gesture ends`() {
+    val sut = fixture.getSut()
+    var downTime = SystemClock.uptimeMillis()
+
+    // First gesture: multi-touch (suppressed)
+    val down1 = MotionEvent.obtain(downTime, downTime, MotionEvent.ACTION_DOWN, 100f, 100f, 0)
+    val pointerDown =
+      MotionEvent.obtain(
+        downTime,
+        downTime + 20,
+        (1 shl MotionEvent.ACTION_POINTER_INDEX_SHIFT) or MotionEvent.ACTION_POINTER_DOWN,
+        100f,
+        100f,
+        0,
+      )
+    val up1 = MotionEvent.obtain(downTime, downTime + 100, MotionEvent.ACTION_UP, 100f, 100f, 0)
+
+    sut.onTouchEvent(down1)
+    sut.onTouchEvent(pointerDown)
+    sut.onTouchEvent(up1)
+
+    verify(fixture.listener, never()).onSingleTapUp(any())
+
+    // Second gesture: normal tap — ignoreUpEvent should have been reset
+    downTime = SystemClock.uptimeMillis()
+    val down2 = MotionEvent.obtain(downTime, downTime, MotionEvent.ACTION_DOWN, 200f, 200f, 0)
+    val up2 = MotionEvent.obtain(downTime, downTime + 50, MotionEvent.ACTION_UP, 200f, 200f, 0)
+
+    sut.onTouchEvent(down2)
+    sut.onTouchEvent(up2)
+
+    verify(fixture.listener).onSingleTapUp(up2)
+
+    down1.recycle()
+    pointerDown.recycle()
+    up1.recycle()
+    down2.recycle()
+    up2.recycle()
+  }
+
+  @Test
+  fun `recycle mid-gesture - subsequent gesture still fires onSingleTapUp`() {
+    val sut = fixture.getSut()
+    val downTime = SystemClock.uptimeMillis()
+
+    // Start a gesture, then simulate stopTracking() racing in mid-gesture.
+    val down1 = MotionEvent.obtain(downTime, downTime, MotionEvent.ACTION_DOWN, 100f, 100f, 0)
+    sut.onTouchEvent(down1)
+    sut.recycle()
+
+    verify(fixture.listener).onDown(down1)
+
+    // New gesture after recycle — velocityTracker and currentDownEvent should be re-obtained
+    // lazily and the tap path should work as normal.
+    val downTime2 = SystemClock.uptimeMillis()
+    val down2 = MotionEvent.obtain(downTime2, downTime2, MotionEvent.ACTION_DOWN, 200f, 200f, 0)
+    val up2 = MotionEvent.obtain(downTime2, downTime2 + 50, MotionEvent.ACTION_UP, 200f, 200f, 0)
+
+    sut.onTouchEvent(down2)
+    sut.onTouchEvent(up2)
+
+    verify(fixture.listener).onSingleTapUp(up2)
+
+    down1.recycle()
+    down2.recycle()
+    up2.recycle()
+  }
+
+  @Test
+  fun `sequential gestures - state resets between tap and scroll`() {
+    val sut = fixture.getSut()
+    val beyondSlop = fixture.touchSlop + 10f
+
+    // First gesture: tap
+    var downTime = SystemClock.uptimeMillis()
+    val down1 = MotionEvent.obtain(downTime, downTime, MotionEvent.ACTION_DOWN, 100f, 100f, 0)
+    val up1 = MotionEvent.obtain(downTime, downTime + 50, MotionEvent.ACTION_UP, 100f, 100f, 0)
+
+    sut.onTouchEvent(down1)
+    sut.onTouchEvent(up1)
+    verify(fixture.listener).onSingleTapUp(up1)
+
+    // Second gesture: scroll
+    downTime = SystemClock.uptimeMillis()
+    val down2 = MotionEvent.obtain(downTime, downTime, MotionEvent.ACTION_DOWN, 200f, 200f, 0)
+    val move2 =
+      MotionEvent.obtain(
+        downTime,
+        downTime + 16,
+        MotionEvent.ACTION_MOVE,
+        200f + beyondSlop,
+        200f,
+        0,
+      )
+    val up2 =
+      MotionEvent.obtain(
+        downTime,
+        downTime + 5000,
+        MotionEvent.ACTION_UP,
+        200f + beyondSlop,
+        200f,
+        0,
+      )
+
+    sut.onTouchEvent(down2)
+    sut.onTouchEvent(move2)
+    sut.onTouchEvent(up2)
+
+    verify(fixture.listener).onScroll(anyOrNull(), eq(move2), any(), any())
+    // onSingleTapUp should NOT have been called again for the second gesture
+    verify(fixture.listener, never()).onSingleTapUp(up2)
+
+    // Third gesture: another tap to verify clean reset
+    downTime = SystemClock.uptimeMillis()
+    val down3 = MotionEvent.obtain(downTime, downTime, MotionEvent.ACTION_DOWN, 300f, 300f, 0)
+    val up3 = MotionEvent.obtain(downTime, downTime + 50, MotionEvent.ACTION_UP, 300f, 300f, 0)
+
+    sut.onTouchEvent(down3)
+    sut.onTouchEvent(up3)
+    verify(fixture.listener).onSingleTapUp(up3)
+
+    down1.recycle()
+    up1.recycle()
+    down2.recycle()
+    move2.recycle()
+    up2.recycle()
+    down3.recycle()
+    up3.recycle()
+  }
+}

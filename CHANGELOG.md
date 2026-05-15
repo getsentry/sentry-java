@@ -1,5 +1,116 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Add support to configure reporting historical ANRs via `AndroidManifest.xml` using the  `io.sentry.anr.report-historical` attribute ([#5387](https://github.com/getsentry/sentry-java/pull/5387))
+
+### Dependencies
+
+- Bump Gradle from v9.5.0 to v9.5.1 ([#5419](https://github.com/getsentry/sentry-java/pull/5419))
+  - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v951)
+  - [diff](https://github.com/gradle/gradle/compare/v9.5.0...v9.5.1)
+- Bump Native SDK from v0.14.0 to v0.14.1 ([#5433](https://github.com/getsentry/sentry-java/pull/5433))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0141)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.14.0...0.14.1)
+- Bump SAGP (Sentry Android Gradle Plugin) from v6.0.0-alpha.6 to v6.6.0 ([#5427](https://github.com/getsentry/sentry-java/pull/5427))
+  - [changelog](https://github.com/getsentry/sentry-android-gradle-plugin/blob/main/CHANGELOG.md)
+  - [diff](https://github.com/getsentry/sentry-android-gradle-plugin/compare/6.0.0-alpha.6...6.6.0)
+
+## 8.41.0
+
+### Features
+
+- Session Replay: experimental support for capturing `SurfaceView` content (e.g. Unity, video players, maps) ([#5333](https://github.com/getsentry/sentry-java/pull/5333))
+  - To enable, set `options.sessionReplay.isCaptureSurfaceViews = true`
+  - Or via manifest: `<meta-data android:name="io.sentry.session-replay.capture-surface-views" android:value="true" />`
+  - **Warning:** masking granularity is at the SurfaceView level only — the SDK cannot mask individual elements rendered inside the SurfaceView (e.g. native Unity UI, map labels, video frames). Only enable for SurfaceViews whose content is safe to record.
+- Add `Sentry.feedback()` API for `show()` and `capture()` ([#5349](https://github.com/getsentry/sentry-java/pull/5349))
+  - `Sentry.showUserFeedbackDialog()` is deprecated in favor of `Sentry.feedback().show()`
+  - `Sentry.captureFeedback()` is deprecated in favor of `Sentry.feedback().capture()`
+  - `Sentry.captureUserFeedback()` and `UserFeedback` are deprecated in favor of `Sentry.feedback().capture()` with the new `Feedback` type
+  - `SentryUserFeedbackDialog` is deprecated in favor of `SentryUserFeedbackForm`
+  - All deprecated APIs will be removed in the next major version
+- Deprecate `SentryUserFeedbackButton` (View-based and Compose-based) ([#5350](https://github.com/getsentry/sentry-java/pull/5350))
+  - It will be removed in the next major version
+- Add per-form shake-to-show support for `SentryUserFeedbackForm` ([#5353](https://github.com/getsentry/sentry-java/pull/5353))
+  - Useful for enabling shake-to-report on specific screens instead of globally
+  ```kotlin
+  SentryUserFeedbackForm.Builder(activity)
+    .configurator { it.isUseShakeGesture = true }
+    .create()
+  ```
+- Add support for Kafka ([#5249](https://github.com/getsentry/sentry-java/pull/5249))
+  - You will need to add the `sentry-kafka` dependency and opt-in via the new option.
+    - Set `options.setEnableQueueTracing(true)` on `Sentry.init`
+    - Or set `sentry.enable-queue-tracing=true` in `application.properties`
+  - For Spring Boot Kafka is auto instrumented and no further configuration is needed.
+    - also see https://docs.sentry.io/platforms/java/guides/spring-boot/integrations/kafka/
+  - When using `kafka-clients` directly
+    - you need to wrap your `KafkaProducer` via `SentryKafkaProducer.wrap(kafkaProducer)` to get `queue.publish` spans
+    - and you may use our `SentryKafkaConsumerTracing.withTracing` helper to instrument the consumer side manually.
+    - also see https://docs.sentry.io/platforms/java/integrations/kafka/
+
+### Fixes
+
+- Fix soft input keyboard not being shown on the Feedback form ([#5359](https://github.com/getsentry/sentry-java/pull/5359))
+- Fix shake-to-report not triggering on some devices due to high acceleration threshold ([#5366](https://github.com/getsentry/sentry-java/pull/5366))
+- Fix feedback form retaining previous message when shown again via shake ([#5366](https://github.com/getsentry/sentry-java/pull/5366))
+- Avoid stack overflow when deserializing large flat JSON objects ([#5361](https://github.com/getsentry/sentry-java/pull/5361))
+
+### Dependencies
+
+- Bump Native SDK from v0.13.7 to v0.14.0 ([#5334](https://github.com/getsentry/sentry-java/pull/5334), [#5365](https://github.com/getsentry/sentry-java/pull/5365))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0140)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.13.7...0.14.0)
+- Bump Gradle from v9.4.1 to v9.5.0 ([#5344](https://github.com/getsentry/sentry-java/pull/5344))
+  - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v950)
+  - [diff](https://github.com/gradle/gradle/compare/v9.4.1...v9.5.0)
+
+## 8.40.0
+
+### Fixes
+
+- Fix `NoSuchMethodError` for `LayoutCoordinates.localBoundingBoxOf$default` on Compose touch dispatch with AGP 8.13 and `minSdk < 24` ([#5302](https://github.com/getsentry/sentry-java/pull/5302))
+- Fix reporting OkHttp's synthetic 504 "Unsatisfiable Request" responses as errors for `CacheControl.FORCE_CACHE` cache misses ([#5299](https://github.com/getsentry/sentry-java/pull/5299))
+- Make `SentryGestureDetector` thread-safe and recycle `VelocityTracker` per gesture ([#5301](https://github.com/getsentry/sentry-java/pull/5301))
+- Fix duplicate `ui.click` breadcrumbs when another `Window.Callback` wraps `SentryWindowCallback` ([#5300](https://github.com/getsentry/sentry-java/pull/5300))
+
+### Dependencies
+
+- Bump Native SDK from v0.13.6 to v0.13.7 ([#5296](https://github.com/getsentry/sentry-java/pull/5296))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0137)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.13.6...0.13.7)
+
+## 8.39.1
+
+### Fixes
+
+- Fix `JsonObjectReader` and `MapObjectReader` hanging indefinitely when deserialization errors leave the reader in an inconsistent state ([#5293](https://github.com/getsentry/sentry-java/pull/5293))
+  - Failed collection values are now skipped so parsing can continue
+  - Skipped collection values emit `WARNING` logs
+  - Unknown-key failures and unrecoverable recovery failures emit `ERROR` logs
+
+## 8.39.0
+
+### Fixes
+
+- Fix ANR caused by `GestureDetectorCompat` Handler/MessageQueue lock contention in `SentryWindowCallback` ([#5138](https://github.com/getsentry/sentry-java/pull/5138))
+
+### Internal
+
+- Bump AGP version from v8.6.0 to v8.13.1 ([#5063](https://github.com/getsentry/sentry-java/pull/5063))
+
+### Dependencies
+
+- Bump Native SDK from v0.13.3 to v0.13.6 ([#5277](https://github.com/getsentry/sentry-java/pull/5277))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0136)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.13.3...0.13.6)
+- Bump Gradle from v8.14.3 to v9.4.1 ([#5063](https://github.com/getsentry/sentry-java/pull/5063))
+  - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v941)
+  - [diff](https://github.com/gradle/gradle/compare/v8.14.3...v9.4.1)
+
 ## 8.38.0
 
 ### Features

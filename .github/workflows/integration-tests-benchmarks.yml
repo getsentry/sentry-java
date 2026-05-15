@@ -48,7 +48,7 @@ jobs:
         run: make assembleBenchmarks
 
       - name: Run All Tests in SauceLab
-        uses: saucelabs/saucectl-run-action@39e4f0666ca8ecb4b60847213c6e0fbd6a0c2bd8 # pin@v3
+        uses: saucelabs/saucectl-run-action@bc81720eb01738d9c664b07fe42621bd0014283f # pin@v3
         if: github.event_name != 'pull_request' && env.SAUCE_USERNAME != null
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -58,7 +58,7 @@ jobs:
           config-file: .sauce/sentry-uitest-android-benchmark.yml
 
       - name: Run one test in SauceLab
-        uses: saucelabs/saucectl-run-action@39e4f0666ca8ecb4b60847213c6e0fbd6a0c2bd8 # pin@v3
+        uses: saucelabs/saucectl-run-action@bc81720eb01738d9c664b07fe42621bd0014283f # pin@v3
         if: github.event_name == 'pull_request' && env.SAUCE_USERNAME != null
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -92,7 +92,7 @@ jobs:
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
-      - uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
+      - uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
         id: app-plain-cache
         with:
           path: sentry-android-integration-tests/test-app-plain/build/outputs/apk/release/test-app-plain-release.apk

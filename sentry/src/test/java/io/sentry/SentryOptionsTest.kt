@@ -709,6 +709,11 @@ class SentryOptionsTest {
   }
 
   @Test
+  fun `when options are initialized, enableQueueTracing is set to false by default`() {
+    assertFalse(SentryOptions().isEnableQueueTracing)
+  }
+
+  @Test
   fun `when options are initialized, metrics is enabled by default`() {
     assertTrue(SentryOptions().metrics.isEnabled)
   }
@@ -918,8 +923,8 @@ class SentryOptionsTest {
         setLogger(logger)
         isDebug = true
       }
-    options.feedbackOptions.dialogHandler.showDialog(mock(), mock())
-    verify(logger).log(eq(SentryLevel.WARNING), eq("showDialog() can only be called in Android."))
+    options.feedbackOptions.formHandler.showForm(mock(), mock())
+    verify(logger).log(eq(SentryLevel.WARNING), eq("showForm() can only be called in Android."))
   }
 
   @Test
@@ -1027,6 +1032,23 @@ class SentryOptionsTest {
     options.orgId = "original"
     options.merge(externalOptions)
     assertEquals("original", options.orgId)
+  }
+
+  @Test
+  fun `merging options applies enableQueueTracing`() {
+    val externalOptions = ExternalOptions()
+    externalOptions.setEnableQueueTracing(true)
+    val options = SentryOptions()
+    options.merge(externalOptions)
+    assertTrue(options.isEnableQueueTracing)
+  }
+
+  @Test
+  fun `merging options preserves enableQueueTracing default when not set`() {
+    val externalOptions = ExternalOptions()
+    val options = SentryOptions()
+    options.merge(externalOptions)
+    assertFalse(options.isEnableQueueTracing)
   }
 
   @Test

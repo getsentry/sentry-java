@@ -37,13 +37,11 @@ api:
 
 # Assemble release and Android test apk of the uitest-android-benchmark module
 assembleBenchmarkTestRelease:
-	./gradlew :sentry-android-integration-tests:sentry-uitest-android-benchmark:assembleRelease
-	./gradlew :sentry-android-integration-tests:sentry-uitest-android-benchmark:assembleAndroidTest -DtestBuildType=release
+	./gradlew :sentry-android-integration-tests:sentry-uitest-android-benchmark:assembleRelease :sentry-android-integration-tests:sentry-uitest-android-benchmark:assembleAndroidTest
 
 # Assemble release and Android test apk of the uitest-android module
 assembleUiTestRelease:
-	./gradlew :sentry-android-integration-tests:sentry-uitest-android:assembleRelease
-	./gradlew :sentry-android-integration-tests:sentry-uitest-android:assembleAndroidTest -DtestBuildType=release
+	./gradlew :sentry-android-integration-tests:sentry-uitest-android:assembleRelease :sentry-android-integration-tests:sentry-uitest-android:assembleAndroidTest
 
 # Assemble release of the uitest-android-critical module
 assembleUiTestCriticalRelease:

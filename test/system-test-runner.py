@@ -42,6 +42,7 @@ from enum import Enum
 import argparse
 import requests
 import threading
+import socket
 from pathlib import Path
 from typing import Optional, List, Tuple
 from dataclasses import dataclass
@@ -63,6 +64,32 @@ SENTRY_ENVIRONMENT_VARIABLES = {
     "OTEL_LOGS_EXPORTER": "none",
     "SENTRY_LOGS_ENABLED": "true",
     "SENTRY_ENABLE_CACHE_TRACING": "true"
+}
+
+KAFKA_CONTAINER_NAME = "sentry-java-system-test-kafka"
+KAFKA_BOOTSTRAP_SERVERS = "localhost:9092"
+KAFKA_BROKER_REQUIRED_MODULES = {
+    "sentry-samples-console",
+    "sentry-samples-spring-boot",
+    "sentry-samples-spring-boot-opentelemetry",
+    "sentry-samples-spring-boot-opentelemetry-noagent",
+    "sentry-samples-spring-boot-jakarta",
+    "sentry-samples-spring-boot-jakarta-opentelemetry",
+    "sentry-samples-spring-boot-jakarta-opentelemetry-noagent",
+    "sentry-samples-spring-boot-4",
+    "sentry-samples-spring-boot-4-opentelemetry",
+    "sentry-samples-spring-boot-4-opentelemetry-noagent",
+}
+KAFKA_PROFILE_REQUIRED_MODULES = {
+    "sentry-samples-spring-boot",
+    "sentry-samples-spring-boot-opentelemetry",
+    "sentry-samples-spring-boot-opentelemetry-noagent",
+    "sentry-samples-spring-boot-jakarta",
+    "sentry-samples-spring-boot-jakarta-opentelemetry",
+    "sentry-samples-spring-boot-jakarta-opentelemetry-noagent",
+    "sentry-samples-spring-boot-4",
+    "sentry-samples-spring-boot-4-opentelemetry",
+    "sentry-samples-spring-boot-4-opentelemetry-noagent",
 }
 
 class ServerType(Enum):
@@ -155,6 +182,7 @@ class SystemTestRunner:
         self.mock_server = Server(name="Mock", pid_filepath="sentry-mock-server.pid")
         self.tomcat_server = Server(name="Tomcat", pid_filepath="tomcat-server.pid")
         self.spring_server = Server(name="Spring", pid_filepath="spring-server.pid")
+        self.kafka_started_by_runner = False
 
         # Load existing PIDs if available
         for server in (self.mock_server, self.tomcat_server, self.spring_server):
@@ -196,7 +224,84 @@ class SystemTestRunner:
         except (OSError, ProcessLookupError):
             print(f"Process {pid} was already dead")
 
+    def module_requires_kafka(self, sample_module: str) -> bool:
+        return sample_module in KAFKA_BROKER_REQUIRED_MODULES
 
+    def module_requires_kafka_profile(self, sample_module: str) -> bool:
+        return sample_module in KAFKA_PROFILE_REQUIRED_MODULES
+
+    def wait_for_port(self, host: str, port: int, max_attempts: int = 20) -> bool:
+        for _ in range(max_attempts):
+            try:
+                with socket.create_connection((host, port), timeout=1):
+                    return True
+            except OSError:
+                time.sleep(1)
+        return False
+
+    def remove_kafka_broker_container(self) -> None:
+        subprocess.run(
+            ["docker", "rm", "-f", KAFKA_CONTAINER_NAME],
+            check=False,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+
+    def start_kafka_broker(self) -> None:
+        if self.wait_for_port("localhost", 9092, max_attempts=1):
+            print("Kafka broker already running on localhost:9092, reusing it.")
+            self.kafka_started_by_runner = False
+            return
+
+        self.remove_kafka_broker_container()
+
+        print("Starting Kafka broker (Redpanda) for system tests...")
+        run_result = subprocess.run(
+            [
+                "docker",
+                "run",
+                "-d",
+                "--name",
+                KAFKA_CONTAINER_NAME,
+                "-p",
+                "9092:9092",
+                "docker.redpanda.com/redpandadata/redpanda:v24.1.9",
+                "redpanda",
+                "start",
+                "--overprovisioned",
+                "--smp",
+                "1",
+                "--memory",
+                "1G",
+                "--reserve-memory",
+                "0M",
+                "--node-id",
+                "0",
+                "--check=false",
+                "--kafka-addr",
+                "PLAINTEXT://0.0.0.0:9092",
+                "--advertise-kafka-addr",
+                "PLAINTEXT://localhost:9092",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+
+        if run_result.returncode != 0:
+            raise RuntimeError(f"Failed to start Kafka container: {run_result.stderr}")
+
+        if not self.wait_for_port("localhost", 9092, max_attempts=30):
+            raise RuntimeError("Kafka broker did not become ready on localhost:9092")
+
+        self.kafka_started_by_runner = True
+
+    def stop_kafka_broker(self) -> None:
+        if not self.kafka_started_by_runner:
+            return
+
+        self.remove_kafka_broker_container()
+        self.kafka_started_by_runner = False
 
     def start_sentry_mock_server(self) -> None:
         """Start the Sentry mock server."""
@@ -326,7 +431,7 @@ class SystemTestRunner:
             # Start the Tomcat server
             with open("tomcat-server.txt", "w") as log_file:
                 self.tomcat_server.process = subprocess.Popen(
-                    ["./gradlew", f"sentry-samples:{sample_module}:run"],
+                    ["./gradlew", f"sentry-samples:{sample_module}:run", "--console=plain"],
                     env=env,
                     stdout=log_file,
                     stderr=subprocess.STDOUT
@@ -346,6 +451,13 @@ class SystemTestRunner:
         env = os.environ.copy()
         env.update(SENTRY_ENVIRONMENT_VARIABLES)
         env["SENTRY_AUTO_INIT"] = java_agent_auto_init
+
+        if self.module_requires_kafka_profile(sample_module):
+            env["SPRING_PROFILES_ACTIVE"] = "kafka"
+            env["SENTRY_ENABLE_QUEUE_TRACING"] = "true"
+            print("Enabling Spring profile: kafka")
+        else:
+            env.pop("SPRING_PROFILES_ACTIVE", None)
 
         # Build command
         jar_path = f"sentry-samples/{sample_module}/build/libs/{sample_module}-0.0.1-SNAPSHOT.jar"
@@ -406,6 +518,8 @@ class SystemTestRunner:
         print("Waiting for Spring application to be ready...")
 
         for attempt in range(1, max_attempts + 1):
+            # All current Spring Boot samples expose actuator/health. Waiting for the
+            # health endpoint avoids false positives from unrelated services on 8080.
             try:
                 response = requests.head(
                     "http://localhost:8080/actuator/health",
@@ -528,18 +642,23 @@ class SystemTestRunner:
             # Clean up PID file and instance variable
             cleanup_pid(self.spring_server)
 
-    def get_build_task(self, server_type: Optional[ServerType]) -> str:
+    def get_build_task(self, sample_module: str, server_type: Optional[ServerType]) -> str:
         """Get the appropriate build task for a module."""
         if server_type == ServerType.TOMCAT:
             return "war"
         elif server_type == ServerType.SPRING:
+            # Modules using Shadow plugin (e.g. Spring Boot 2 samples) use shadowJar,
+            # modules using Spring Boot plugin (SB3/SB4 samples) use bootJar
+            build_file = Path(f"sentry-samples/{sample_module}/build.gradle.kts")
+            if build_file.exists() and "shadow" in build_file.read_text():
+                return "shadowJar"
             return "bootJar"
 
         return "assemble"
 
     def build_module(self, sample_module: str, server_type: Optional[ServerType]) -> int:
         """Build a sample module using the appropriate task."""
-        build_task = self.get_build_task(server_type)
+        build_task = self.get_build_task(sample_module, server_type)
         print(f"Building {sample_module} using {build_task} task")
         return self.run_gradle_task(f":sentry-samples:{sample_module}:{build_task}")
 
@@ -547,7 +666,7 @@ class SystemTestRunner:
         """Run a Gradle task and return the exit code."""
         print(f"Running: ./gradlew {task}")
         try:
-            result = subprocess.run(["./gradlew", task], check=False)
+            result = subprocess.run(["./gradlew", task, "--console=plain"], check=False)
             return result.returncode
         except Exception as e:
             print(f"Failed to run Gradle task: {e}")
@@ -557,6 +676,12 @@ class SystemTestRunner:
                                  java_agent_auto_init: str, build_before_run: str,
                                  server_type: Optional[ServerType]) -> int:
         """Set up test infrastructure. Returns 0 on success, error code on failure."""
+        if self.module_requires_kafka(sample_module):
+            self.start_kafka_broker()
+            os.environ["SENTRY_SAMPLE_KAFKA_BOOTSTRAP_SERVERS"] = KAFKA_BOOTSTRAP_SERVERS
+        else:
+            os.environ.pop("SENTRY_SAMPLE_KAFKA_BOOTSTRAP_SERVERS", None)
+
         # Build if requested
         if build_before_run == "1":
             print("Building before test run")
@@ -624,6 +749,8 @@ class SystemTestRunner:
             elif server_type == ServerType.SPRING:
                 self.stop_spring_server()
             self.stop_sentry_mock_server()
+            self.stop_kafka_broker()
+            os.environ.pop("SENTRY_SAMPLE_KAFKA_BOOTSTRAP_SERVERS", None)
 
     def run_all_tests(self) -> int:
         """Run all system tests."""
@@ -954,6 +1081,8 @@ class SystemTestRunner:
         self.stop_spring_server()
         self.stop_sentry_mock_server()
         self.stop_tomcat_server()
+        self.stop_kafka_broker()
+        os.environ.pop("SENTRY_SAMPLE_KAFKA_BOOTSTRAP_SERVERS", None)
         sys.exit(1)
 
 def main():
@@ -1152,6 +1281,8 @@ def main():
             runner.stop_spring_server()
             runner.stop_sentry_mock_server()
             runner.stop_tomcat_server()
+            runner.stop_kafka_broker()
+            os.environ.pop("SENTRY_SAMPLE_KAFKA_BOOTSTRAP_SERVERS", None)
 
 if __name__ == "__main__":
     sys.exit(main())

@@ -153,7 +153,7 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: test-results-${{ matrix.sample }}-${{ matrix.agent }}-${{ matrix.agent-auto-init }}-system-test
           path: |
@@ -162,7 +162,7 @@ jobs:
             spring-server.txt
 
       - name: Test Report
-        uses: phoenix-actions/test-reporting@f957cd93fc2d848d556fa0d03c57bc79127b6b5e # pin@v15
+        uses: phoenix-actions/test-reporting@7317eea6e13c47348dd0bb318669485157c518d6 # pin@v16
         if: always()
         with:
           name: JUnit System Tests ${{ matrix.sample }}

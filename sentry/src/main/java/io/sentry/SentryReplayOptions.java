@@ -147,6 +147,20 @@ public final class SentryReplayOptions extends SentryMaskingOptions {
   private @NotNull ScreenshotStrategyType screenshotStrategy = ScreenshotStrategyType.PIXEL_COPY;
 
   /**
+   * Whether to capture SurfaceView content (e.g. Unity, video players, maps) during replay
+   * recording. When enabled, each SurfaceView in the view hierarchy will be captured separately via
+   * PixelCopy and composited onto the screenshot. Only applies when {@link #screenshotStrategy} is
+   * {@link ScreenshotStrategyType#PIXEL_COPY}. Default is disabled.
+   *
+   * <p><b>Warning:</b> the SDK cannot mask individual elements rendered inside a SurfaceView (e.g.
+   * native Unity UI, map labels, video frames) — masking granularity is at the SurfaceView level
+   * only. If the SurfaceView is configured to be masked, the entire region is redacted; otherwise
+   * its full pixel content is sent in the replay. Only enable this for SurfaceViews whose content
+   * is safe to record.
+   */
+  @ApiStatus.Experimental private boolean captureSurfaceViews = false;
+
+  /**
    * Capture request and response details for XHR and fetch requests that match the given URLs.
    * Default is empty (network details not collected).
    */
@@ -381,6 +395,26 @@ public final class SentryReplayOptions extends SentryMaskingOptions {
   @ApiStatus.Experimental
   public void setScreenshotStrategy(final @NotNull ScreenshotStrategyType screenshotStrategy) {
     this.screenshotStrategy = screenshotStrategy;
+  }
+
+  /**
+   * Whether SurfaceView capture is enabled. See {@link #captureSurfaceViews}.
+   *
+   * @return true if SurfaceView capture is enabled
+   */
+  @ApiStatus.Experimental
+  public boolean isCaptureSurfaceViews() {
+    return captureSurfaceViews;
+  }
+
+  /**
+   * Enables or disables SurfaceView capture. See {@link #captureSurfaceViews}.
+   *
+   * @param captureSurfaceViews true to enable SurfaceView capture
+   */
+  @ApiStatus.Experimental
+  public void setCaptureSurfaceViews(final boolean captureSurfaceViews) {
+    this.captureSurfaceViews = captureSurfaceViews;
   }
 
   /**

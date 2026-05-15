@@ -1,9 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES
 
 plugins {
   application
-  alias(libs.plugins.springboot2) apply false
   alias(libs.plugins.spring.dependency.management)
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.kotlin.spring)
@@ -27,9 +25,12 @@ java {
 
 repositories { mavenCentral() }
 
+// Apollo 4.x requires coroutines 1.9.0+, override Spring Boot's managed version
+extra["kotlin-coroutines.version"] = "1.9.0"
+
 dependencyManagement {
   imports {
-    mavenBom(BOM_COORDINATES)
+    mavenBom(libs.springboot2.bom.get().toString())
     mavenBom(libs.kotlin.bom.get().toString())
     mavenBom(libs.jackson.bom.get().toString())
   }
@@ -72,6 +73,10 @@ configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
 tasks.register<Test>("systemTest").configure {
   group = "verification"
   description = "Runs the System tests"
+
+  val test = project.extensions.getByType<SourceSetContainer>()["test"]
+  testClassesDirs = test.output.classesDirs
+  classpath = test.runtimeClasspath
 
   outputs.upToDateWhen { false }
 

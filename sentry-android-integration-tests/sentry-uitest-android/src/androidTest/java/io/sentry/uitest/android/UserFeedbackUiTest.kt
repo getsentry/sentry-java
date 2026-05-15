@@ -28,7 +28,7 @@ import io.sentry.SentryOptions
 import io.sentry.android.core.AndroidLogger
 import io.sentry.android.core.R
 import io.sentry.android.core.SentryUserFeedbackButton
-import io.sentry.android.core.SentryUserFeedbackDialog
+import io.sentry.android.core.SentryUserFeedbackForm
 import io.sentry.assertEnvelopeFeedback
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.User
@@ -49,21 +49,21 @@ class UserFeedbackUiTest : BaseUiTest() {
   @Test
   fun userFeedbackNotShownWhenSdkDisabled() {
     launchActivity<EmptyActivity>().onActivity {
-      SentryUserFeedbackDialog.Builder(it).create().show()
+      SentryUserFeedbackForm.Builder(it).create().show()
     }
     onView(withId(R.id.sentry_dialog_user_feedback_layout)).check(doesNotExist())
   }
 
   @Test
   fun userFeedbackNotShownWhenSdkDisabledViaApi() {
-    launchActivity<EmptyActivity>().onActivity { Sentry.showUserFeedbackDialog() }
+    launchActivity<EmptyActivity>().onActivity { Sentry.feedback().show() }
     onView(withId(R.id.sentry_dialog_user_feedback_layout)).check(doesNotExist())
   }
 
   @Test
   fun userFeedbackShownViaApi() {
     initSentry()
-    launchActivity<EmptyActivity>().onActivity { Sentry.showUserFeedbackDialog() }
+    launchActivity<EmptyActivity>().onActivity { Sentry.feedback().show() }
 
     onView(withId(R.id.sentry_dialog_user_feedback_layout))
       .inRoot(isDialog())
@@ -639,12 +639,12 @@ class UserFeedbackUiTest : BaseUiTest() {
 
   private fun showDialogAndCheck(
     associatedEventId: SentryId? = null,
-    checker: (dialog: SentryUserFeedbackDialog) -> Unit = {},
+    checker: (dialog: SentryUserFeedbackForm) -> Unit = {},
   ) {
-    lateinit var dialog: SentryUserFeedbackDialog
+    lateinit var dialog: SentryUserFeedbackForm
     val feedbackScenario = launchActivity<EmptyActivity>()
     feedbackScenario.onActivity {
-      dialog = SentryUserFeedbackDialog.Builder(it).associatedEventId(associatedEventId).create()
+      dialog = SentryUserFeedbackForm.Builder(it).associatedEventId(associatedEventId).create()
       dialog.show()
     }
 

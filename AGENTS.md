@@ -75,8 +75,7 @@ make systemTest
 ### Android-Specific Commands
 ```bash
 # Assemble Android test APKs
-./gradlew :sentry-android-integration-tests:sentry-uitest-android:assembleRelease
-./gradlew :sentry-android-integration-tests:sentry-uitest-android:assembleAndroidTest -DtestBuildType=release
+./gradlew :sentry-android-integration-tests:sentry-uitest-android:assembleRelease :sentry-android-integration-tests:sentry-uitest-android:assembleAndroidTest
 
 # Run critical UI tests
 ./scripts/test-ui-critical.sh
@@ -143,6 +142,17 @@ The repository is organized into multiple modules:
 3. Write comprehensive tests
 4. New features must be **opt-in by default** - extend `SentryOptions` or similar Option classes with getters/setters
 5. Consider backwards compatibility
+
+### Third-Party Code Attribution
+When adapting code from third-party libraries:
+1. Add a license header at the top of the adapted file (before the `package` statement):
+   ```java
+   // Adapted from <Library Name>.
+   // Copyright <year> <copyright holder>.
+   // Licensed under the <License Name>.
+   // <source URL>
+   ```
+2. Add a full attribution entry to `THIRD_PARTY_NOTICES.md` following the existing format (Source, License, Copyright, Scope, full license text)
 
 ### Getting PR Information
 
