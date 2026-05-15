@@ -4,8 +4,8 @@
 
 ### Features
 
-- Parse memory and GC info from ANR thread dumps into ART context ([#5428](https://github.com/getsentry/sentry-java/pull/5428))
 - Add support to configure reporting historical ANRs via `AndroidManifest.xml` using the  `io.sentry.anr.report-historical` attribute ([#5387](https://github.com/getsentry/sentry-java/pull/5387))
+- Parse ART memory and garbage collector info from ANR tombstones into ART context ([#5428](https://github.com/getsentry/sentry-java/pull/5428))
 
 ## 8.41.0
 
