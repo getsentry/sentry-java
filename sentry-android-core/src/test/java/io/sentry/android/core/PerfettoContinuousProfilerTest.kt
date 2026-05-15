@@ -1,7 +1,6 @@
 package io.sentry.android.core
 
 import android.content.Context
-import android.os.Build
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.IConnectionStatusProvider
@@ -20,6 +19,7 @@ import kotlin.test.assertTrue
 import org.junit.runner.RunWith
 import org.mockito.Mockito.mockStatic
 import org.mockito.kotlin.any
+import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
@@ -34,10 +34,6 @@ class PerfettoContinuousProfilerTest {
 
   private class Fixture {
     private val mockDsn = "http://key@localhost/proj"
-    val buildInfo =
-      mock<BuildInfoProvider> {
-        whenever(it.sdkInfoVersion).thenReturn(Build.VERSION_CODES.VANILLA_ICE_CREAM)
-      }
     val executor = DeferredExecutorService()
     val mockedSentry = mockStatic(Sentry::class.java)
     val mockLogger = mock<ILogger>()
@@ -64,7 +60,13 @@ class PerfettoContinuousProfilerTest {
     init {
       whenever(mockTracesSampler.sampleSessionProfile(any())).thenReturn(true)
       whenever(mockPerfettoProfiler.start(any())).thenReturn(true)
-      whenever(mockPerfettoProfiler.endAndCollect()).thenReturn(mockTraceFile)
+      doAnswer { invocation ->
+          val listener = invocation.getArgument<java.util.function.Consumer<java.io.File?>>(0)
+          listener.accept(mockTraceFile)
+          null
+        }
+        .whenever(mockPerfettoProfiler)
+        .endAndCollect(any())
     }
 
     fun getSut(
@@ -74,7 +76,6 @@ class PerfettoContinuousProfilerTest {
       optionConfig(options)
       whenever(scopes.options).thenReturn(options)
       return PerfettoContinuousProfiler(
-        buildInfo,
         mockLogger,
         frameMetricsCollector,
         { options.executorService },

@@ -344,13 +344,14 @@ final class AndroidOptionsInitializer {
           if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
             options.setContinuousProfiler(
                 new PerfettoContinuousProfiler(
-                    buildInfoProvider,
                     options.getLogger(),
                     frameMetricsCollector,
                     () -> options.getExecutorService(),
                     () ->
                         new PerfettoProfiler(
-                            context.getApplicationContext(), options.getLogger())));
+                            context.getApplicationContext(),
+                            options.getLogger(),
+                            options.getExecutorService())));
           } else {
             options
                 .getLogger()

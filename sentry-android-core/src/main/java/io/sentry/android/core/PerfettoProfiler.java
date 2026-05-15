@@ -1,5 +1,6 @@
 package io.sentry.android.core;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.os.Build;
 import android.os.Bundle;
@@ -8,21 +9,24 @@ import android.os.ProfilingManager;
 import android.os.ProfilingResult;
 import androidx.annotation.RequiresApi;
 import io.sentry.ILogger;
+import io.sentry.ISentryExecutorService;
 import io.sentry.SentryLevel;
 import java.io.File;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.function.Consumer;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/** Wraps Android's {@link ProfilingManager} API for Perfetto stack sampling. */
+/**
+ * Wraps Android's {@link ProfilingManager} API for a single Perfetto stack-sampling session.
+ *
+ * <p>Each instance is single-use: call {@link #start} once, then {@link #endAndCollect} once. For a
+ * new profiling session, create a new instance.
+ */
 @ApiStatus.Internal
 @RequiresApi(api = Build.VERSION_CODES.VANILLA_ICE_CREAM)
 public class PerfettoProfiler {
-
-  private static final long RESULT_TIMEOUT_SECONDS = 5;
 
   // Bundle keys matching ProfilingManager constants
   private static final String KEY_DURATION_MS = "KEY_DURATION_MS";
@@ -31,53 +35,50 @@ public class PerfettoProfiler {
   /** Fixed sampling frequency for Perfetto stack sampling. Not configurable by the developer. */
   private static final int PROFILING_FREQUENCY_HZ = 100;
 
-  private final @NotNull Context context;
+  private static final long RESULT_TIMEOUT_MS = 5000;
+
   private final @NotNull ILogger logger;
-  private @Nullable CancellationSignal cancellationSignal = null;
-  private volatile boolean isRunning = false;
-  private @Nullable ProfilingResult profilingResult = null;
-  private @Nullable CountDownLatch resultLatch = null;
+  private final @NotNull ISentryExecutorService executorService;
+  private final @Nullable ProfilingManager profilingManager;
+  private final @NotNull CancellationSignal cancellationSignal = new CancellationSignal();
 
-  /**
-   * Callback invoked exactly once per {@code requestProfiling} call, either on success (with a file
-   * path) or on error (with an error code). Cancelling via {@link CancellationSignal} also triggers
-   * this callback.
-   */
-  private final @NotNull Consumer<ProfilingResult> profilingResultListener;
+  private final @NotNull Object profilingResultLock = new Object();
+  private volatile @Nullable ProfilingResult profilingResult = null;
 
-  public PerfettoProfiler(final @NotNull Context context, final @NotNull ILogger logger) {
-    this.context = context;
+  private @Nullable Consumer<@Nullable File> resultListener = null;
+  private volatile boolean started = false;
+
+  @SuppressLint("WrongConstant")
+  public PerfettoProfiler(
+      final @NotNull Context context,
+      final @NotNull ILogger logger,
+      final @NotNull ISentryExecutorService executorService) {
+    this(
+        logger,
+        executorService,
+        (ProfilingManager) context.getSystemService(Context.PROFILING_SERVICE));
+  }
+
+  PerfettoProfiler(
+      final @NotNull ILogger logger,
+      final @NotNull ISentryExecutorService executorService,
+      final @Nullable ProfilingManager profilingManager) {
     this.logger = logger;
-    this.profilingResultListener =
-        result -> {
-          logger.log(
-              SentryLevel.DEBUG,
-              "Perfetto ProfilingResult received: errorCode=%d, filePath=%s",
-              result.getErrorCode(),
-              result.getResultFilePath());
-          profilingResult = result;
-          if (resultLatch != null) {
-            resultLatch.countDown();
-          }
-        };
+    this.executorService = executorService;
+    this.profilingManager = profilingManager;
   }
 
   public boolean start(final long durationMs) {
-    if (isRunning) {
-      logger.log(SentryLevel.WARNING, "Perfetto profiling has already started...");
+    if (started) {
+      logger.log(SentryLevel.WARNING, "PerfettoProfiler was already started.");
       return false;
     }
+    started = true;
 
-    final @Nullable ProfilingManager profilingManager =
-        (ProfilingManager) context.getSystemService(Context.PROFILING_SERVICE);
     if (profilingManager == null) {
       logger.log(SentryLevel.WARNING, "ProfilingManager is not available.");
       return false;
     }
-
-    cancellationSignal = new CancellationSignal();
-    resultLatch = new CountDownLatch(1);
-    profilingResult = null;
 
     final Bundle params = new Bundle();
     params.putInt(KEY_DURATION_MS, (int) durationMs);
@@ -90,59 +91,79 @@ public class PerfettoProfiler {
           "sentry-profiling",
           cancellationSignal,
           Runnable::run,
-          profilingResultListener);
+          this::onProfilingResult);
     } catch (Throwable e) {
-      logger.log(SentryLevel.ERROR, "Failed to request Perfetto profiling.", e);
-      cancellationSignal = null;
-      resultLatch = null;
+      logger.log(SentryLevel.ERROR, "Failed to request Profiling.", e);
       return false;
     }
 
-    isRunning = true;
     return true;
   }
 
   /**
-   * Cancels the current profiling session and blocks until the result is available (up to 5
-   * seconds). Returns the trace file on success, or null on error/timeout.
+   * Cancels the current profiling session. The listener is called with the trace file (or null on
+   * error) once the OS delivers the result. The listener may be called synchronously if the result
+   * has already arrived, or asynchronously on an OS-managed thread otherwise.
    */
-  public @Nullable File endAndCollect() {
-    if (!isRunning) {
-      logger.log(SentryLevel.WARNING, "Perfetto profiler not running");
-      return null;
-    }
-    isRunning = false;
-
-    if (cancellationSignal != null) {
-      cancellationSignal.cancel();
-      cancellationSignal = null;
+  public void endAndCollect(final @NotNull Consumer<@Nullable File> listener) {
+    if (!started) {
+      logger.log(SentryLevel.WARNING, "PerfettoProfiler was never started");
+      listener.accept(null);
+      return;
     }
 
-    if (resultLatch != null) {
-      try {
-        if (!resultLatch.await(RESULT_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
-          logger.log(SentryLevel.WARNING, "Timed out waiting for Perfetto profiling result.");
-          return null;
-        }
-      } catch (InterruptedException e) {
-        logger.log(SentryLevel.WARNING, "Interrupted while waiting for Perfetto profiling result.");
-        Thread.currentThread().interrupt();
-        return null;
+    cancellationSignal.cancel();
+
+    synchronized (profilingResultLock) {
+      final @Nullable ProfilingResult result = profilingResult;
+      if (result != null) {
+        listener.accept(processResult(result));
+        return;
+      }
+      resultListener = listener;
+    }
+
+    try {
+      executorService.schedule(
+          () -> {
+            synchronized (profilingResultLock) {
+              if (resultListener != null) {
+                logger.log(SentryLevel.WARNING, "Timed out waiting for Perfetto profiling result.");
+                resultListener.accept(null);
+                resultListener = null;
+              }
+            }
+          },
+          RESULT_TIMEOUT_MS);
+    } catch (RejectedExecutionException e) {
+      logger.log(SentryLevel.DEBUG, "Failed to schedule profiling result timeout.", e);
+    }
+  }
+
+  private void onProfilingResult(final @NotNull ProfilingResult result) {
+    logger.log(
+        SentryLevel.DEBUG,
+        "Perfetto ProfilingResult received: errorCode=%d, filePath=%s",
+        result.getErrorCode(),
+        result.getResultFilePath());
+
+    synchronized (profilingResultLock) {
+      profilingResult = result;
+      if (resultListener != null) {
+        resultListener.accept(processResult(result));
+        resultListener = null;
       }
     }
+  }
 
-    if (profilingResult == null) {
-      logger.log(SentryLevel.WARNING, "Perfetto profiling result is null.");
-      return null;
-    }
-
-    final int errorCode = profilingResult.getErrorCode();
+  private @Nullable File processResult(final @NotNull ProfilingResult result) {
+    final int errorCode = result.getErrorCode();
     if (errorCode != ProfilingResult.ERROR_NONE) {
       switch (errorCode) {
         case ProfilingResult.ERROR_FAILED_RATE_LIMIT_PROCESS:
         case ProfilingResult.ERROR_FAILED_RATE_LIMIT_SYSTEM:
           logger.log(
-              SentryLevel.DEBUG,
+              SentryLevel.INFO,
               "Perfetto profiling failed: %s."
                   + " To disable during development run:"
                   + " adb shell device_config put profiling_testing rate_limiter.disabled true",
@@ -155,13 +176,13 @@ public class PerfettoProfiler {
                   + " See https://developer.android.com/reference/android/os/ProfilingResult",
               errorCodeToString(errorCode),
               errorCode,
-              profilingResult.getErrorMessage());
+              result.getErrorMessage());
           break;
       }
       return null;
     }
 
-    final @Nullable String resultFilePath = profilingResult.getResultFilePath();
+    final @Nullable String resultFilePath = result.getResultFilePath();
     if (resultFilePath == null) {
       logger.log(SentryLevel.WARNING, "Perfetto profiling result file path is null.");
       return null;
@@ -174,10 +195,6 @@ public class PerfettoProfiler {
     }
 
     return traceFile;
-  }
-
-  boolean isRunning() {
-    return isRunning;
   }
 
   private static @NotNull String errorCodeToString(final int errorCode) {

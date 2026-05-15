@@ -42,6 +42,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -72,8 +73,7 @@ public class PerfettoContinuousProfiler
 
   private final @NotNull ILogger logger;
   private final @NotNull LazyEvaluator.Evaluator<ISentryExecutorService> executorServiceSupplier;
-  private final @NotNull BuildInfoProvider buildInfoProvider;
-  private final @NotNull LazyEvaluator.Evaluator<PerfettoProfiler> perfettoProfilerSupplier;
+  private final @NotNull Supplier<PerfettoProfiler> perfettoProfilerFactory;
 
   private @Nullable PerfettoProfiler perfettoProfiler = null;
   private final @NotNull ChunkMeasurementCollector chunkMeasurements;
@@ -93,16 +93,14 @@ public class PerfettoContinuousProfiler
   private final AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
 
   public PerfettoContinuousProfiler(
-      final @NotNull BuildInfoProvider buildInfoProvider,
       final @NotNull ILogger logger,
       final @NotNull SentryFrameMetricsCollector frameMetricsCollector,
       final @NotNull LazyEvaluator.Evaluator<ISentryExecutorService> executorServiceSupplier,
-      final @NotNull LazyEvaluator.Evaluator<PerfettoProfiler> perfettoProfilerSupplier) {
-    this.buildInfoProvider = buildInfoProvider;
+      final @NotNull Supplier<PerfettoProfiler> perfettoProfilerFactory) {
     this.logger = logger;
     this.chunkMeasurements = new ChunkMeasurementCollector(frameMetricsCollector);
     this.executorServiceSupplier = executorServiceSupplier;
-    this.perfettoProfilerSupplier = perfettoProfilerSupplier;
+    this.perfettoProfilerFactory = perfettoProfilerFactory;
   }
 
   @Override
@@ -241,11 +239,6 @@ public class PerfettoContinuousProfiler
   /** Caller must hold {@link #lock}. */
   private void startInternal() {
     final @NotNull IScopes scopes = resolveScopes();
-    ensureProfiler();
-
-    if (perfettoProfiler == null) {
-      return;
-    }
 
     final @Nullable RateLimiter rateLimiter = scopes.getRateLimiter();
     if (rateLimiter != null
@@ -262,9 +255,12 @@ public class PerfettoContinuousProfiler
       stopInternal(false);
       return;
     }
-
     startProfileChunkTimestamp = scopes.getOptions().getDateProvider().now();
 
+    perfettoProfiler = perfettoProfilerFactory.get();
+    if (perfettoProfiler == null) {
+      return;
+    }
     if (!perfettoProfiler.start(MAX_CHUNK_DURATION_MILLIS)) {
       logger.log(
           SentryLevel.ERROR,
@@ -306,12 +302,14 @@ public class PerfettoContinuousProfiler
 
   /** Caller must hold {@link #lock}. */
   private void stopInternal(final boolean restartProfiler) {
+    final @Nullable PerfettoProfiler currentProfiler = perfettoProfiler;
+
     if (stopFuture != null) {
       stopFuture.cancel(false);
     }
 
     // Make sure perfetto was running
-    if (perfettoProfiler == null || !isRunning) {
+    if (currentProfiler == null || !isRunning) {
       profilerId = SentryId.EMPTY_ID;
       chunkId = SentryId.EMPTY_ID;
       return;
@@ -322,8 +320,46 @@ public class PerfettoContinuousProfiler
 
     final @NotNull Map<String, ProfileMeasurement> measurements = chunkMeasurements.stop();
 
-    final @Nullable File traceFile = perfettoProfiler.endAndCollect();
+    // Capture state needed by the callback before clearing it
+    final @NotNull SentryId chunkProfilerId = profilerId;
+    final @NotNull SentryId chunkChunkId = chunkId;
+    final @NotNull SentryDate chunkTimestamp = startProfileChunkTimestamp;
 
+    isRunning = false;
+    perfettoProfiler = null;
+    chunkId = SentryId.EMPTY_ID;
+
+    if (!restartProfiler || shouldStop) {
+      profilerId = SentryId.EMPTY_ID;
+    }
+
+    final boolean shouldRestart = restartProfiler && !shouldStop;
+
+    // endAndCollect is non-blocking: the listener fires when the OS delivers the trace file.
+    // Synchronous: result already available — callback runs inline, lock is still held (re-entrant)
+    // Asynchronous: callback runs on an OS thread — acquires lock itself for restart
+    currentProfiler.endAndCollect(
+        traceFile ->
+            onChunkCollected(
+                traceFile,
+                chunkProfilerId,
+                chunkChunkId,
+                measurements,
+                chunkTimestamp,
+                shouldRestart,
+                scopes,
+                options));
+  }
+
+  private void onChunkCollected(
+      final @Nullable File traceFile,
+      final @NotNull SentryId chunkProfilerId,
+      final @NotNull SentryId chunkChunkId,
+      final @NotNull Map<String, ProfileMeasurement> measurements,
+      final @NotNull SentryDate chunkTimestamp,
+      final boolean shouldRestart,
+      final @NotNull IScopes scopes,
+      final @NotNull SentryOptions options) {
     if (traceFile == null) {
       logger.log(
           SentryLevel.ERROR,
@@ -331,37 +367,23 @@ public class PerfettoContinuousProfiler
     } else {
       final ProfileChunk.Builder builder =
           new ProfileChunk.Builder(
-              profilerId,
-              chunkId,
+              chunkProfilerId,
+              chunkChunkId,
               measurements,
               traceFile,
-              startProfileChunkTimestamp,
+              chunkTimestamp,
               ProfileChunk.PLATFORM_ANDROID);
       builder.setContentType("perfetto");
       sendChunk(builder, scopes, options);
     }
 
-    isRunning = false;
-    // A chunk is finished. Next chunk will have a different id.
-    chunkId = SentryId.EMPTY_ID;
-
-    if (restartProfiler && !shouldStop) {
-      logger.log(SentryLevel.DEBUG, "Profile chunk finished. Starting a new one.");
-      startInternal();
+    if (shouldRestart) {
+      try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+        logger.log(SentryLevel.DEBUG, "Profile chunk finished. Starting a new one.");
+        startInternal();
+      }
     } else {
-      // When the profiler is stopped manually, we have to reset its id
-      profilerId = SentryId.EMPTY_ID;
       logger.log(SentryLevel.DEBUG, "Profile chunk finished.");
-    }
-  }
-
-  private void ensureProfiler() {
-    if (perfettoProfiler == null) {
-      logger.log(
-          SentryLevel.DEBUG,
-          "PerfettoContinuousProfiler: creating PerfettoProfiler (apiLevel=%d)",
-          buildInfoProvider.getSdkInfoVersion());
-      perfettoProfiler = perfettoProfilerSupplier.evaluate();
     }
   }
 
