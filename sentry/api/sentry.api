@@ -2084,6 +2084,7 @@ public final class io/sentry/PerformanceCollectionData {
 }
 
 public final class io/sentry/ProfileChunk : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+	public static final field CONTENT_TYPE_PERFETTO Ljava/lang/String;
 	public static final field PLATFORM_ANDROID Ljava/lang/String;
 	public static final field PLATFORM_JAVA Ljava/lang/String;
 	public fun <init> ()V
