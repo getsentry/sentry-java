@@ -201,17 +201,17 @@ public final class ArtContext implements JsonUnknown, JsonSerializable {
   // region JsonSerializable
 
   public static final class JsonKeys {
-    public static final String GC_TOTAL_COUNT = "gc_total_count";
-    public static final String GC_TOTAL_TIME = "gc_total_time";
-    public static final String GC_BLOCKING_COUNT = "gc_blocking_count";
-    public static final String GC_BLOCKING_TIME = "gc_blocking_time";
-    public static final String GC_PRE_OOME_COUNT = "gc_pre_oome_count";
-    public static final String GC_WAITING_TIME = "gc_waiting_time";
-    public static final String FREE_MEMORY = "free_memory";
-    public static final String FREE_MEMORY_UNTIL_GC = "free_memory_until_gc";
-    public static final String FREE_MEMORY_UNTIL_OOME = "free_memory_until_oome";
-    public static final String TOTAL_MEMORY = "total_memory";
-    public static final String MAX_MEMORY = "max_memory";
+    public static final String GC_TOTAL_COUNT = "gc.total_count";
+    public static final String GC_TOTAL_TIME = "gc.total_time";
+    public static final String GC_BLOCKING_COUNT = "gc.blocking_count";
+    public static final String GC_BLOCKING_TIME = "gc.blocking_time";
+    public static final String GC_PRE_OOME_COUNT = "gc.pre_oome_count";
+    public static final String GC_WAITING_TIME = "gc.waiting_time";
+    public static final String FREE_MEMORY = "memory.free";
+    public static final String FREE_MEMORY_UNTIL_GC = "memory.free_until_gc";
+    public static final String FREE_MEMORY_UNTIL_OOME = "memory.free_until_oome";
+    public static final String TOTAL_MEMORY = "memory.total";
+    public static final String MAX_MEMORY = "memory.max";
   }
 
   @Override

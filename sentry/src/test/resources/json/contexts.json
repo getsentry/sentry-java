@@ -19,17 +19,17 @@
   },
   "art":
   {
-    "gc_total_count": 1,
-    "gc_total_time": 11.807,
-    "gc_blocking_count": 1,
-    "gc_blocking_time": 11.873,
-    "gc_pre_oome_count": 0,
-    "gc_waiting_time": 8.054,
-    "free_memory": 3181568,
-    "free_memory_until_gc": 3181568,
-    "free_memory_until_oome": 196083712,
-    "total_memory": 7774208,
-    "max_memory": 201326592
+    "gc.total_count": 1,
+    "gc.total_time": 11.807,
+    "gc.blocking_count": 1,
+    "gc.blocking_time": 11.873,
+    "gc.pre_oome_count": 0,
+    "gc.waiting_time": 8.054,
+    "memory.free": 3181568,
+    "memory.free_until_gc": 3181568,
+    "memory.free_until_oome": 196083712,
+    "memory.total": 7774208,
+    "memory.max": 201326592
   },
   "browser":
   {
