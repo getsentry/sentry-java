@@ -108,16 +108,33 @@ final class ArtContextParser {
     return null;
   }
 
+  /**
+   * Parses ART's PrettyDuration output and converts to milliseconds. Handles "s", "ms", "us", "ns"
+   * suffixes and the bare "0" special case.
+   *
+   * @see <a
+   *     href="https://cs.android.com/android/platform/superproject/+/android-latest-release:art/libartbase/base/time_utils.cc;l=95-133;drc=16e1409f339b1318fe1cdce8462f089b3b0475e8">ART
+   *     PrettyDuration / FormatDuration</a>
+   */
   private static @Nullable Double parseTimeMs(final @NotNull String timeString) {
     final String trimmed = timeString.trim();
-    if (trimmed.endsWith("ms")) {
-      try {
-        // Double.parseDouble is locale-independent (always uses '.' as decimal separator),
-        // which matches the ART runtime output format.
-        return Double.parseDouble(trimmed.substring(0, trimmed.length() - 2));
-      } catch (NumberFormatException e) {
-        return null;
+    try {
+      if (trimmed.equals("0")) {
+        return 0.0;
       }
+      // Double.parseDouble is locale-independent (always uses '.' as decimal separator),
+      // which matches the ART runtime output format.
+      if (trimmed.endsWith("ms")) {
+        return Double.parseDouble(trimmed.substring(0, trimmed.length() - 2));
+      } else if (trimmed.endsWith("ns")) {
+        return Double.parseDouble(trimmed.substring(0, trimmed.length() - 2)) / 1_000_000.0;
+      } else if (trimmed.endsWith("us")) {
+        return Double.parseDouble(trimmed.substring(0, trimmed.length() - 2)) / 1_000.0;
+      } else if (trimmed.endsWith("s")) {
+        return Double.parseDouble(trimmed.substring(0, trimmed.length() - 1)) * 1_000.0;
+      }
+    } catch (NumberFormatException e) {
+      return null;
     }
     return null;
   }

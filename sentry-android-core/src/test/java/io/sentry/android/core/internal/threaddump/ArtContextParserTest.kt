@@ -54,6 +54,34 @@ class ArtContextParserTest {
   }
 
   @Test
+  fun `parses time in seconds`() {
+    val parser = ArtContextParser()
+    parser.parseLine("Total GC time: 2.5s")
+    assertEquals(2500.0, parser.artContext!!.gcTotalTime)
+  }
+
+  @Test
+  fun `parses time in microseconds`() {
+    val parser = ArtContextParser()
+    parser.parseLine("Total GC time: 500us")
+    assertEquals(0.5, parser.artContext!!.gcTotalTime)
+  }
+
+  @Test
+  fun `parses time in nanoseconds`() {
+    val parser = ArtContextParser()
+    parser.parseLine("Total GC time: 1000000ns")
+    assertEquals(1.0, parser.artContext!!.gcTotalTime)
+  }
+
+  @Test
+  fun `parses zero duration`() {
+    val parser = ArtContextParser()
+    parser.parseLine("Total GC time: 0")
+    assertEquals(0.0, parser.artContext!!.gcTotalTime)
+  }
+
+  @Test
   fun `parses all memory fields`() {
     val parser = ArtContextParser()
     parser.parseLine("Free memory 3107KB")
