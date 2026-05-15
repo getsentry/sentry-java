@@ -66,7 +66,7 @@ springboot4 = { id = "org.springframework.boot", version.ref = "springboot4" }
 spring-dependency-management = { id = "io.spring.dependency-management", version = "1.1.7" }
 gretty = { id = "org.gretty", version = "4.0.0" }
 animalsniffer = { id = "ru.vyarus.animalsniffer", version = "2.0.1" }
-sentry = { id = "io.sentry.android.gradle", version = "6.0.0-alpha.6"}
+sentry = { id = "io.sentry.android.gradle", version = "6.6.0"}
 shadow = { id = "com.gradleup.shadow", version = "9.4.1" }
 
 [libraries]

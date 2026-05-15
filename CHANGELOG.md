@@ -14,6 +14,9 @@
 - Bump Native SDK from v0.14.0 to v0.14.1 ([#5433](https://github.com/getsentry/sentry-java/pull/5433))
   - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0141)
   - [diff](https://github.com/getsentry/sentry-native/compare/0.14.0...0.14.1)
+- Bump SAGP (Sentry Android Gradle Plugin) from v6.0.0-alpha.6 to v6.6.0 ([#5427](https://github.com/getsentry/sentry-java/pull/5427))
+  - [changelog](https://github.com/getsentry/sentry-android-gradle-plugin/blob/main/CHANGELOG.md)
+  - [diff](https://github.com/getsentry/sentry-android-gradle-plugin/compare/6.0.0-alpha.6...6.6.0)
 
 ## 8.41.0
 
