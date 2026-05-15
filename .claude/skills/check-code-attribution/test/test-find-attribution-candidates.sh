@@ -824,6 +824,87 @@ JAVA
   [[ "$ok" == "true" ]]
 }
 
+test_renamed_with_attribution_stripped() {
+  mkdir -p src/old
+  # File must be large enough that removing the 3-line header stays above git's
+  # 50% rename-detection similarity threshold.
+  cat > src/old/Stripped.java << 'JAVA'
+// Adapted from StrippedLib.
+// Copyright 2024 Stripped Author.
+// Licensed under the MIT License.
+package com.example;
+public class Stripped {
+  private int field1;
+  private int field2;
+  private int field3;
+  public void method1() { field1 = 1; }
+  public void method2() { field2 = 2; }
+  public void method3() { field3 = 3; }
+  public int getField1() { return field1; }
+  public int getField2() { return field2; }
+  public int getField3() { return field3; }
+}
+JAVA
+  git add src/old/Stripped.java
+  git commit -m "Add attributed file" --quiet
+
+  setup_branch
+  mkdir -p src/new
+  git mv src/old/Stripped.java src/new/Stripped.java
+  cat > src/new/Stripped.java << 'JAVA'
+package com.example;
+public class Stripped {
+  private int field1;
+  private int field2;
+  private int field3;
+  public void method1() { field1 = 1; }
+  public void method2() { field2 = 2; }
+  public void method3() { field3 = 3; }
+  public int getField1() { return field1; }
+  public int getField2() { return field2; }
+  public int getField3() { return field3; }
+}
+JAVA
+  git add src/new/Stripped.java
+  git commit -m "Rename and strip attribution" --quiet
+
+  local output exit_code=0 ok=true
+  output=$(run_script) || exit_code=$?
+  assert_eq "$exit_code" "10" "should exit 10 when attribution stripped during rename" || ok=false
+  assert_eq "$(get_field "$output" "file")" "src/new/Stripped.java" "file should be new path" || ok=false
+  assert_eq "$(get_field "$output" "status")" "R" "status" || ok=false
+  assert_contains "$(get_field "$output" "reasons")" "attribution markers stripped during rename" "reasons" || ok=false
+  [[ "$ok" == "true" ]]
+}
+
+test_modified_sentry_copyright_year_bump_not_flagged() {
+  mkdir -p src
+  cat > src/SentryYear.java << 'JAVA'
+// Copyright 2024 Functional Software, Inc.
+// Licensed under the Apache License, Version 2.0.
+package com.example;
+public class SentryYear {}
+JAVA
+  git add src/SentryYear.java
+  git commit -m "Add file with Sentry copyright" --quiet
+
+  setup_branch
+  cat > src/SentryYear.java << 'JAVA'
+// Copyright 2025 Functional Software, Inc.
+// Licensed under the Apache License, Version 2.0.
+package com.example;
+public class SentryYear {}
+JAVA
+  git add src/SentryYear.java
+  git commit -m "Bump copyright year" --quiet
+
+  local output exit_code=0
+  output=$(run_script) || exit_code=$?
+  assert_eq "$exit_code" "0" "Sentry copyright year bump should not trigger attribution" || return 1
+  assert_global_metadata_prefix "$output" true false "Sentry copyright year bump" || return 1
+  assert_line_count "$output" 2 "exit 0 should print metadata only" || return 1
+}
+
 test_dual_copyright_sentry_and_third_party() {
   setup_branch
   mkdir -p src
@@ -963,6 +1044,8 @@ run_test "Multiple candidates in single run"         test_multiple_candidates
 run_test "Merge-base failure"                        test_merge_base_failure
 run_test "Renamed into vendor path"                  test_renamed_into_vendor_path
 run_test "Renamed out of vendor path"                test_renamed_out_of_vendor_path
+run_test "Renamed with attribution stripped"         test_renamed_with_attribution_stripped
+run_test "Modified Sentry copyright year — not flagged" test_modified_sentry_copyright_year_bump_not_flagged
 run_test "Dual copyright — Sentry and third-party"   test_dual_copyright_sentry_and_third_party
 run_test "Committed M + staged D resolves to D"      test_committed_modified_then_staged_delete
 

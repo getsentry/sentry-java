@@ -269,6 +269,12 @@ while IFS=$'\t' read -r status filepath old_filepath; do
     if has_third_party_attribution "$WORK_DIR/content"; then
       is_candidate=true
       reasons+=("renamed file with attribution markers")
+    elif [[ "$is_candidate" == "false" ]]; then
+      git show "$MERGE_BASE":"${old_filepath:-$filepath}" > "$WORK_DIR/old_content" 2>/dev/null || true
+      if [[ -s "$WORK_DIR/old_content" ]] && has_third_party_attribution "$WORK_DIR/old_content"; then
+        is_candidate=true
+        reasons+=("attribution markers stripped during rename")
+      fi
     fi
 
   elif [[ "$status_char" == "M" ]]; then
@@ -288,6 +294,10 @@ while IFS=$'\t' read -r status filepath old_filepath; do
     fi
 
     if [[ "$has_added" == "true" && "$has_removed" == "true" ]]; then
+      git show "$MERGE_BASE":"$filepath" > "$WORK_DIR/old_content" 2>/dev/null || continue
+      if ! has_third_party_attribution "$WORK_DIR/content" && ! has_third_party_attribution "$WORK_DIR/old_content" && ! has_vendor_path "$filepath"; then
+        continue
+      fi
       reasons+=("attribution markers modified")
     elif [[ "$has_added" == "true" ]]; then
       # The diff-hunk scan uses broad patterns (e.g., "copyright", "licensed") that
