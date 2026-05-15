@@ -211,8 +211,8 @@ timber = { module = "com.jakewharton.timber:timber", version = "4.7.1" }
 gummy-bears-api21 = { module = "com.toasttab.android:gummy-bears-api-21", version.ref = "gummyBears" }
 
 # tomcat libraries
-tomcat-catalina = { module = "org.apache.tomcat:tomcat-catalina", version = "9.0.108" }
-tomcat-embed-jasper = { module = "org.apache.tomcat.embed:tomcat-embed-jasper", version = "9.0.108" }
+tomcat-catalina = { module = "org.apache.tomcat:tomcat-catalina", version = "11.0.22" }
+tomcat-embed-jasper = { module = "org.apache.tomcat.embed:tomcat-embed-jasper", version = "11.0.22" }
 tomcat-catalina-jakarta = { module = "org.apache.tomcat:tomcat-catalina", version = "11.0.22" }
 tomcat-embed-jasper-jakarta = { module = "org.apache.tomcat.embed:tomcat-embed-jasper", version = "11.0.22" }
 
