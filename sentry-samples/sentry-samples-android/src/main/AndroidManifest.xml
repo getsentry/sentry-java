@@ -163,7 +163,7 @@
     <!-- Enable profiling on app start -->
     <meta-data
       android:name="io.sentry.traces.profiling.start-on-app-start"
-      android:value="true" />
+      android:value="false" />
     <!-- Enable ProfilingManager (Perfetto) on API 35+ -->
     <meta-data
       android:name="io.sentry.profiling.use-profiling-manager"
