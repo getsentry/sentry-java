@@ -4,6 +4,12 @@ import io.sentry.protocol.ArtContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * Parses ART runtime memory and GC metrics from ANR thread dump lines.
+ *
+ * @see <a href="https://android.googlesource.com/platform/art/+/master/runtime/gc/heap.cc#1282">ART
+ *     Heap::DumpGcCountRateHistogram</a>
+ */
 final class ArtContextParser {
 
   private static final long KB = 1024;

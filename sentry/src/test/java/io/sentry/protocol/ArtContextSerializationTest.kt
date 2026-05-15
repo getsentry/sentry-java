@@ -2,6 +2,7 @@ package io.sentry.protocol
 
 import io.sentry.ILogger
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import org.junit.Test
 import org.mockito.kotlin.mock
 
@@ -47,5 +48,25 @@ class ArtContextSerializationTest {
     val actualJson = SerializationUtils.serializeToString(actual, fixture.logger)
 
     assertEquals(expectedJson, actualJson)
+  }
+
+  @Test
+  fun `deserialize preserves unknown fields`() {
+    val jsonWithUnknown =
+      SerializationUtils.sanitizedFile("json/art_context.json")
+        .removeSuffix("}")
+        .plus(",\"new_field\":\"test_value\"}")
+    val actual =
+      SerializationUtils.deserializeJson<ArtContext>(
+        jsonWithUnknown,
+        ArtContext.Deserializer(),
+        fixture.logger,
+      )
+
+    assertNotNull(actual.unknown)
+    assertEquals("test_value", actual.unknown!!["new_field"])
+
+    val actualJson = SerializationUtils.serializeToString(actual, fixture.logger)
+    assertEquals(jsonWithUnknown, actualJson)
   }
 }
