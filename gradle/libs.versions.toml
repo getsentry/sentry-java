@@ -17,7 +17,7 @@ kotlinSpring7 = "2.2.0"
 kotlin-compatible-version = "1.9"
 ktorClient = "3.0.0"
 logback = "1.2.9"
-log4j2 = "2.20.0"
+log4j2 = "2.26.0"
 nopen = "1.0.1"
 # see https://www.jetbrains.com/help/kotlin-multiplatform-dev/compose-compatibility-and-versioning.html#kotlin-compatibility
 # see https://developer.android.com/jetpack/androidx/releases/compose-kotlin
