@@ -154,19 +154,20 @@ public class TombstoneIntegration implements Integration, Closeable {
       SentryEvent event;
       final byte[] rawTombstone;
       try {
-        final InputStream tombstoneInputStream = exitInfo.getTraceInputStream();
-        if (tombstoneInputStream == null) {
-          options
-              .getLogger()
-              .log(
-                  SentryLevel.WARNING,
-                  "No tombstone InputStream available for ApplicationExitInfo from %s",
-                  DateTimeFormatter.ISO_INSTANT.format(
-                      Instant.ofEpochMilli(exitInfo.getTimestamp())));
-          return null;
-        }
+        try (final InputStream tombstoneInputStream = exitInfo.getTraceInputStream()) {
+          if (tombstoneInputStream == null) {
+            options
+                .getLogger()
+                .log(
+                    SentryLevel.WARNING,
+                    "No tombstone InputStream available for ApplicationExitInfo from %s",
+                    DateTimeFormatter.ISO_INSTANT.format(
+                        Instant.ofEpochMilli(exitInfo.getTimestamp())));
+            return null;
+          }
 
-        rawTombstone = readBytes(tombstoneInputStream);
+          rawTombstone = readBytes(tombstoneInputStream);
+        }
 
         try (final TombstoneParser parser =
             new TombstoneParser(
