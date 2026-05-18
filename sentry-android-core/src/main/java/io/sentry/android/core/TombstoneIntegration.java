@@ -24,6 +24,7 @@ import io.sentry.android.core.NativeEventCollector.NativeEventData;
 import io.sentry.android.core.cache.AndroidEnvelopeCache;
 import io.sentry.android.core.internal.tombstone.NativeExceptionMechanism;
 import io.sentry.android.core.internal.tombstone.TombstoneParser;
+import io.sentry.android.core.internal.util.NativeEventUtils;
 import io.sentry.hints.Backfillable;
 import io.sentry.hints.BlockingFlushHint;
 import io.sentry.hints.NativeCrashExit;
@@ -37,7 +38,6 @@ import io.sentry.transport.ICurrentDateProvider;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
@@ -166,7 +166,7 @@ public class TombstoneIntegration implements Integration, Closeable {
             return null;
           }
 
-          rawTombstone = readBytes(tombstoneInputStream);
+          rawTombstone = NativeEventUtils.readBytes(tombstoneInputStream);
         }
 
         try (final TombstoneParser parser =
@@ -312,17 +312,6 @@ public class TombstoneIntegration implements Integration, Closeable {
         nativeEvent.setExceptions(tombstoneExceptions);
         nativeEvent.setDebugMeta(tombstoneDebugMeta);
         nativeEvent.setThreads(tombstoneThreads);
-      }
-    }
-
-    private byte[] readBytes(final @NotNull InputStream stream) throws IOException {
-      try (final ByteArrayOutputStream buffer = new ByteArrayOutputStream()) {
-        int nRead;
-        final byte[] data = new byte[1024];
-        while ((nRead = stream.read(data, 0, data.length)) != -1) {
-          buffer.write(data, 0, nRead);
-        }
-        return buffer.toByteArray();
       }
     }
   }

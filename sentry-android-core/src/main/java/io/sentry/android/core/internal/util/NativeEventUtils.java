@@ -1,5 +1,8 @@
 package io.sentry.android.core.internal.util;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigInteger;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
@@ -8,6 +11,18 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class NativeEventUtils {
+
+  public static byte[] readBytes(final @NotNull InputStream stream) throws IOException {
+    try (final ByteArrayOutputStream buffer = new ByteArrayOutputStream()) {
+      int nRead;
+      final byte[] data = new byte[1024];
+      while ((nRead = stream.read(data, 0, data.length)) != -1) {
+        buffer.write(data, 0, nRead);
+      }
+      return buffer.toByteArray();
+    }
+  }
+
   @Nullable
   public static String buildIdToDebugId(final @NotNull String buildId) {
     try {
