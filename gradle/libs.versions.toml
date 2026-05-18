@@ -187,7 +187,7 @@ springboot3-starter-cache = { module = "org.springframework.boot:spring-boot-sta
 spring-kafka2 = { module = "org.springframework.kafka:spring-kafka", version = "2.8.11" }
 spring-kafka3 = { module = "org.springframework.kafka:spring-kafka", version = "3.3.5" }
 spring-kafka4 = { module = "org.springframework.kafka:spring-kafka" }
-kafka-clients = { module = "org.apache.kafka:kafka-clients", version = "3.8.1" }
+kafka-clients = { module = "org.apache.kafka:kafka-clients", version = "4.2.0" }
 springboot4-otel = { module = "io.opentelemetry.instrumentation:opentelemetry-spring-boot-starter", version.ref = "otelInstrumentation" }
 springboot4-resttestclient = { module = "org.springframework.boot:spring-boot-resttestclient", version.ref = "springboot4" }
 springboot4-starter = { module = "org.springframework.boot:spring-boot-starter", version.ref = "springboot4" }
