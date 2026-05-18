@@ -6,15 +6,25 @@ import org.robolectric.annotation.Implements
 @Implements(android.os.Process::class)
 class SentryShadowProcess {
   companion object {
-    private var startupTimeMillis: Long = 0
+    private var startUptimeMillis: Long = 0
+    private var startElapsedRealtime: Long = 0
 
     fun setStartUptimeMillis(value: Long) {
-      startupTimeMillis = value
+      startUptimeMillis = value
+    }
+
+    fun setStartElapsedRealtime(value: Long) {
+      startElapsedRealtime = value
     }
 
     @Suppress("unused")
     @Implementation
     @JvmStatic
-    fun getStartUptimeMillis(): Long = startupTimeMillis
+    fun getStartUptimeMillis(): Long = startUptimeMillis
+
+    @Suppress("unused")
+    @Implementation
+    @JvmStatic
+    fun getStartElapsedRealtime(): Long = startElapsedRealtime
   }
 }

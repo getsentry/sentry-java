@@ -84,6 +84,25 @@ public final class TransactionContext extends SpanContext {
     this.baggage = TracingUtils.ensureBaggage(null, samplingDecision);
   }
 
+  /**
+   * Creates {@link TransactionContext} that shares a trace ID with another transaction. Used for
+   * standalone app start transactions that need to belong to the same trace as the activity
+   * transaction.
+   */
+  @ApiStatus.Internal
+  public TransactionContext(
+      final @NotNull SentryId traceId,
+      final @NotNull String name,
+      final @NotNull TransactionNameSource transactionNameSource,
+      final @NotNull String operation,
+      final @Nullable TracesSamplingDecision samplingDecision) {
+    super(traceId, new SpanId(), operation, null, samplingDecision);
+    this.name = Objects.requireNonNull(name, "name is required");
+    this.transactionNameSource = transactionNameSource;
+    this.setSamplingDecision(samplingDecision);
+    this.baggage = TracingUtils.ensureBaggage(null, samplingDecision);
+  }
+
   @ApiStatus.Internal
   public TransactionContext(
       final @NotNull SentryId traceId,
