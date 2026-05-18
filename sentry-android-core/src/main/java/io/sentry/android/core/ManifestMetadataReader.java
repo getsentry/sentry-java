@@ -36,7 +36,7 @@ final class ManifestMetadataReader {
   static final String ANR_REPORT_HISTORICAL = "io.sentry.anr.report-historical";
 
   static final String TOMBSTONE_ENABLE = "io.sentry.tombstone.enable";
-  static final String TOMBSTONE_ATTACH = "io.sentry.tombstone.attach";
+  static final String TOMBSTONE_ATTACH_RAW = "io.sentry.tombstone.attach-raw";
 
   static final String AUTO_INIT = "io.sentry.auto-init";
   static final String NDK_ENABLE = "io.sentry.ndk.enable";
@@ -227,8 +227,8 @@ final class ManifestMetadataReader {
         options.setAnrEnabled(readBool(metadata, logger, ANR_ENABLE, options.isAnrEnabled()));
         options.setTombstoneEnabled(
             readBool(metadata, logger, TOMBSTONE_ENABLE, options.isTombstoneEnabled()));
-        options.setAttachTombstone(
-            readBool(metadata, logger, TOMBSTONE_ATTACH, options.isAttachTombstone()));
+        options.setAttachRawTombstone(
+            readBool(metadata, logger, TOMBSTONE_ATTACH_RAW, options.isAttachRawTombstone()));
 
         // use enableAutoSessionTracking as fallback
         options.setEnableAutoSessionTracking(

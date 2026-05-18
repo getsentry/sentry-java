@@ -242,7 +242,7 @@ public final class SentryAndroidOptions extends SentryOptions {
    * Controls whether to send raw tombstone as an attachment with plain text. The tombstone is being
    * attached from {@link ApplicationExitInfo#getTraceInputStream()}, if available.
    */
-  private boolean attachTombstone = false;
+  private boolean attachRawTombstone = false;
 
   private boolean enablePerformanceV2 = true;
 
@@ -649,12 +649,12 @@ public final class SentryAndroidOptions extends SentryOptions {
     this.attachAnrThreadDump = attachAnrThreadDump;
   }
 
-  public boolean isAttachTombstone() {
-    return attachTombstone;
+  public boolean isAttachRawTombstone() {
+    return attachRawTombstone;
   }
 
-  public void setAttachTombstone(final boolean attachTombstone) {
-    this.attachTombstone = attachTombstone;
+  public void setAttachRawTombstone(final boolean attachRawTombstone) {
+    this.attachRawTombstone = attachRawTombstone;
   }
 
   /**

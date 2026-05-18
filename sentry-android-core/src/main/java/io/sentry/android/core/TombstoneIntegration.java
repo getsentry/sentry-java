@@ -195,7 +195,7 @@ public class TombstoneIntegration implements Integration, Closeable {
               options.getFlushTimeoutMillis(), options.getLogger(), tombstoneTimestamp, enrich);
       final Hint hint = HintUtils.createWithTypeCheckHint(tombstoneHint);
 
-      if (options.isAttachTombstone()) {
+      if (options.isAttachRawTombstone()) {
         hint.setTombstone(Attachment.fromTombstone(rawTombstone));
       }
 
