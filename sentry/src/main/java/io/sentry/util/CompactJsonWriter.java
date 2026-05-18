@@ -8,9 +8,7 @@ package io.sentry.util;
 import java.io.IOException;
 import java.io.Writer;
 
-/**
- * A lightweight JSON writer that produces compact (no whitespace) output.
- */
+/** A lightweight JSON writer that produces compact (no whitespace) output. */
 public final class CompactJsonWriter {
 
   private final Writer out;
