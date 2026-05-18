@@ -36,6 +36,8 @@ source = "path:.agents/skills/test"
 name = "btrace-perfetto"
 source = "path:.agents/skills/btrace-perfetto"
 
+# Repo-local skills are committed under .claude/skills/. path:.agents/skills/... resolves via
+# the tracked symlink .agents/skills -> ../.claude/skills (do not add a second copy).
 [[skills]]
 name = "check-code-attribution"
-source = "path:.agents/skills/check-code-attribution"
+source = "path:.claude/skills/check-code-attribution"

@@ -4,6 +4,8 @@ description: Per-file check of vendored code attribution in the current branch d
 allowed-tools: Bash Read Grep Glob
 ---
 
+**Maintainers:** Only edit `.claude/skills/check-code-attribution/SKILL.md` (the committed file). `.agents/skills/check-code-attribution/` is the same path via the `.agents/skills` → `.claude/skills` symlink.
+
 # Check Code Attribution
 
 You are reviewing changed files for third-party code attribution compliance in **sentry-java**, an MIT-licensed repository.
@@ -185,12 +187,12 @@ Otherwise, report each finding ordered by severity (most severe first).
 
 Use the emoji from the severity guide (🚨, ⚠️, or 👀) — not the word `high`, `medium`, or `low`.
 
-| Field             | Emoji?                   | Example                                                                                            |
-|-------------------|--------------------------|----------------------------------------------------------------------------------------------------|
-| **Title**         | Yes — once, at the start | `⚠️ Copyright line stripped from vendored file header`                                             |
-| **Description**   | **No**                   | `**io.sentry.cache.tape.FileObjectQueue** — The Copyright (C) 2010 Square, Inc. line was removed…` |
-| **Verification**  | **No**                   | Evidence steps only                                                                                |
-| **Suggested fix** | **No**                   | Fix text only                                                                                      |
+| Field             | Emoji?                   | Example                                                                                                                                |
+|-------------------|--------------------------|----------------------------------------------------------------------------------------------------------------------------------------|
+| **Title**         | Yes — once, at the start | `⚠️ Copyright line stripped from vendored file header`                                                                                 |
+| **Description**   | **No**                   | `**io.sentry.cache.tape.FileObjectQueue** — The Copyright (C) 2010 Square, Inc. line was removed…` (see **Description subject** below) |
+| **Verification**  | **No**                   | Evidence steps only                                                                                                                    |
+| **Suggested fix** | **No**                   | Fix text only                                                                                                                          |
 
 **Good (Warden PR comment):**
 
@@ -213,26 +215,45 @@ Title:       ⚠️ Copyright line stripped from vendored file header
 Description: ⚠️ **io.sentry.cache.tape.FileObjectQueue** — The copyright line was removed…
 ```
 
+### Description subject (required)
+
+Every description **must** start with `**<subject>** —` (bold subject, space, em dash, space). Pick **one** subject by file type:
+
+| File type                                                                                 | Subject format                                                       | Example                                                        |
+|-------------------------------------------------------------------------------------------|----------------------------------------------------------------------|----------------------------------------------------------------|
+| Java / Kotlin source (`.java`, `.kt`) with a top-level type                               | Fully qualified class name (FQCN)                                    | `**io.sentry.CircularFifoQueue** —`                            |
+| Java / Kotlin with no single clear type (multiple top-level types, unclear which changed) | FQCN of the primary type under review, or repo-relative path if none | `**sentry/src/.../Foo.kt** —`                                  |
+| `THIRD_PARTY_NOTICES.md`                                                                  | `THIRD_PARTY_NOTICES.md — <entry heading>`                           | `**THIRD_PARTY_NOTICES.md — Square — Seismic (Apache 2.0)** —` |
+| Gradle / other scripts (e.g. `.kts`, `.gradle`)                                           | Repo-relative path from repository root                              | `**build.gradle.kts** —`                                       |
+
+- Prefer **FQCN** for `.java` / `.kt` vendored source (derive from `package` + primary public top-level class). Do not use file paths when a FQCN is clear.
+- For license-tier / policy issues, include https://open.sentry.io/licensing/ in the description body.
+
 ### Warden runs
 
 For each finding, set these fields exactly:
 
-| Field            | Value                                                                                                           |
-|------------------|-----------------------------------------------------------------------------------------------------------------|
-| **severity**     | `high`, `medium`, or `low` — **never** put emoji here; Warden maps severity from this field, not from the title |
-| **title**        | `<severity emoji> <short issue title>` — emoji allowed **only** here (imperative, no class name)                |
-| **description**  | `**<fully qualified class name>** — <what is wrong and how to fix>` — **plain text only**; see rules below      |
-| **verification** | Optional evidence steps — plain text only                                                                       |
+| Field            | Value                                                                                                             |
+|------------------|-------------------------------------------------------------------------------------------------------------------|
+| **severity**     | `high`, `medium`, or `low` — **never** put emoji here; Warden maps severity from this field, not from the title   |
+| **title**        | `<severity emoji> <short issue title>` — emoji allowed **only** here (imperative, no class name)                  |
+| **description**  | `**<subject>** — <what is wrong and how to fix>` — **plain text only**; subject per **Description subject** above |
+| **verification** | Optional evidence steps — plain text only                                                                         |
 
 **Description rules (Warden):**
 
-- **Must** start with `**` + fully qualified class name + `** —` (e.g. `**io.sentry.CircularFifoQueue** —`).
+- **Must** match `**<subject>** — …` using the table in **Description subject**.
 - **Must not** contain 🚨, ⚠️, 👀, or the words `high`, `medium`, or `low` as severity labels.
 - **Must not** repeat the title or paraphrase it with an emoji prefix.
 
-Use fully qualified Java class names in the description (e.g. `io.sentry.CircularFifoQueue`), not file paths. For license issues, include the policy link in the description.
+**Good (NOTICES entry removed while scope files remain):**
 
-**Before submitting findings:** For every finding, confirm `description` does not match `[🚨⚠️👀]` and starts with `**io.` or `**com.` (or the correct FQCN). If it contains any emoji, rewrite the description without it.
+```
+Title:       ⚠️ NOTICES entry removed for vendored code still in tree
+Description: **THIRD_PARTY_NOTICES.md — Square — Seismic (Apache 2.0)** — The Seismic entry was removed but `io.sentry.android.core.SentryShakeDetector` still has an attribution header. Restore the entry or remove attribution from the scope files.
+```
+
+**Before submitting findings:** For every finding, confirm `description` does not match `[🚨⚠️👀]` and matches `^\*\*.+\*\* — `. If it contains any emoji, rewrite the description without it.
 
 ### Local / IDE runs
 
@@ -240,15 +261,15 @@ Use this numbered format — same title vs description split as above:
 
 ```
 1\. <severity emoji> **<short issue title>**
-   **<fully qualified class name>** — <what's wrong and how to fix it — one or two lines>
+   **<subject>** — <what's wrong and how to fix it — one or two lines>
 
 2\. <severity emoji> **<short issue title>**
-   **<fully qualified class name>** — <what's wrong and how to fix it — one or two lines>
+   **<subject>** — <what's wrong and how to fix it — one or two lines>
 ```
 
 Rules:
 
 - Put the severity emoji **only** on the title line (`1\. ⚠️ **…**`), never on the description line.
-- The description line starts with `**<fully qualified class name>** —` and must not contain 🚨, ⚠️, or 👀.
+- The description line uses `**<subject>** —` per **Description subject** and must not contain 🚨, ⚠️, or 👀.
 - **Escape the period** after the number (`1\.` not `1.`) so markdown does not collapse entries into a tight list.
 - Leave an empty line between each numbered finding.

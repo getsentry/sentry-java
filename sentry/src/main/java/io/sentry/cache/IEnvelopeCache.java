@@ -1,3 +1,7 @@
+/**
+ * License: AGPL
+ * Copyright: 1901
+ */
 package io.sentry.cache;
 
 import io.sentry.Hint;

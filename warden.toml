@@ -1,7 +1,7 @@
 version = 1
 
 [defaults]
-model = "anthropic/claude-opus-4-6"
+model = "anthropic/claude-sonnet-4-6"
 maxTurns = 30
 
 # Attribution findings are policy checks; a second verifier pass often rejects valid
@@ -51,6 +51,7 @@ failOn = "high"
 reportOn = "low"
 ignorePaths = [
   # Infrastructure directories
+  ".agents/**",
   ".claude/**",
   ".cursor/**",
   ".github/**",

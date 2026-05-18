@@ -154,7 +154,7 @@ When adapting code from third-party libraries:
    ```
 2. Add a full attribution entry to `THIRD_PARTY_NOTICES.md` following the existing format (Source, License, Copyright, Scope, full license text)
 
-3. Run the `check-code-attribution` skill locally or wait for it to be auto-run against your PR to check for required fields and verify new licenses against [Sentry's Open Source Legal Policy](https://open.sentry.io/licensing/).
+3. Run the `check-code-attribution` skill locally or wait for it to be auto-run against your PR to check for required fields and verify new licenses against [Sentry's Open Source Legal Policy](https://open.sentry.io/licensing/). The skill definition lives at `.claude/skills/check-code-attribution/SKILL.md` (registered in `agents.toml`; `.agents/skills/` is a symlink to `.claude/skills/`).
 
 ### Getting PR Information
 
