@@ -4,6 +4,7 @@
 
 ### Features
 
+- Add option to attach raw tombstone protobuf on native crash events ([#5446](https://github.com/getsentry/sentry-java/pull/5446))
 - Add support to configure reporting historical ANRs via `AndroidManifest.xml` using the  `io.sentry.anr.report-historical` attribute ([#5387](https://github.com/getsentry/sentry-java/pull/5387))
 
 ### Dependencies
