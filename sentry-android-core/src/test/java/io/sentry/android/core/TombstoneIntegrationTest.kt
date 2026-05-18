@@ -132,11 +132,7 @@ class TombstoneIntegrationTest : ApplicationExitIntegrationTestBase<TombstoneHin
 
     integration.register(fixture.scopes, fixture.options)
 
-    verify(fixture.scopes)
-      .captureEvent(
-        any(),
-        argThat<Hint> { this.tombstone == null },
-      )
+    verify(fixture.scopes).captureEvent(any(), argThat<Hint> { this.tombstone == null })
   }
 
   @Test

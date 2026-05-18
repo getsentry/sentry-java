@@ -2136,9 +2136,7 @@ class SentryClientTest {
       .send(
         check { envelope ->
           val tombstone = envelope.items.last()
-          assertNotNull(tombstone) {
-            assertEquals(attachment.filename, tombstone.header.fileName)
-          }
+          assertNotNull(tombstone) { assertEquals(attachment.filename, tombstone.header.fileName) }
         },
         anyOrNull(),
       )
