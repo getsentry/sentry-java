@@ -265,6 +265,7 @@ class AppStartMetricsTest {
   fun `resolveHeadlessAppStartEndTime uses applicationOnCreate stop when Gradle plugin instrumented`() {
     val metrics = AppStartMetrics.getInstance()
     metrics.appStartTimeSpan.setStartedAt(100)
+    metrics.setHeadlessAppStartListener {}
     metrics.applicationOnCreateTimeSpan.apply {
       setStartedAt(120)
       setStoppedAt(200)
@@ -281,6 +282,7 @@ class AppStartMetricsTest {
     val metrics = AppStartMetrics.getInstance()
     metrics.setClassLoadedUptimeMs(200)
     metrics.appStartTimeSpan.setStartedAt(100)
+    metrics.setHeadlessAppStartListener {}
 
     metrics.registerLifecycleCallbacks(mock<Application>())
     waitForMainLooperIdle()
@@ -295,6 +297,7 @@ class AppStartMetricsTest {
       setStartedAt(100)
       setStoppedAt(150)
     }
+    metrics.setHeadlessAppStartListener {}
     metrics.applicationOnCreateTimeSpan.apply {
       setStartedAt(120)
       setStoppedAt(200)
@@ -304,6 +307,17 @@ class AppStartMetricsTest {
     waitForMainLooperIdle()
 
     assertEquals(50, metrics.appStartTimeSpan.durationMs)
+  }
+
+  @Test
+  fun `headless app start without listener does not stop sdkInitTimeSpan`() {
+    val metrics = AppStartMetrics.getInstance()
+    metrics.sdkInitTimeSpan.setStartedAt(100)
+
+    metrics.registerLifecycleCallbacks(mock<Application>())
+    waitForMainLooperIdle()
+
+    assertTrue(metrics.sdkInitTimeSpan.hasNotStopped())
   }
 
   @Test

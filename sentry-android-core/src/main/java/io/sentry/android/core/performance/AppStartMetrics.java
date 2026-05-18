@@ -445,10 +445,9 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
         appStartContinuousProfiler = null;
       }
 
-      resolveHeadlessAppStartEndTime();
-
       final @Nullable HeadlessAppStartListener listener = headlessAppStartListener;
       if (listener != null) {
+        resolveHeadlessAppStartEndTime();
         listener.onHeadlessAppStart();
       }
     }
