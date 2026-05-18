@@ -51,6 +51,22 @@ class AppStartMetricsTestApi35 {
   }
 
   @Test
+  fun `known ApplicationStartInfo type without listener does not schedule headless check`() {
+    val mockStartInfo = mock<ApplicationStartInfo>()
+    whenever(mockStartInfo.startupState).thenReturn(ApplicationStartInfo.STARTUP_STATE_STARTED)
+    whenever(mockStartInfo.startType).thenReturn(ApplicationStartInfo.START_TYPE_COLD)
+    SentryShadowActivityManager.setHistoricalProcessStartReasons(listOf(mockStartInfo))
+    val metrics = AppStartMetrics.getInstance()
+
+    val app = ApplicationProvider.getApplicationContext<Application>()
+    metrics.registerLifecycleCallbacks(app)
+    waitForMainLooperIdle()
+
+    assertEquals(AppStartMetrics.AppStartType.COLD, metrics.appStartType)
+    assertEquals(-1, metrics.firstIdle)
+  }
+
+  @Test
   fun `detects warm start using ApplicationStartInfo on API 35`() {
     val mockStartInfo = mock<ApplicationStartInfo>()
     whenever(mockStartInfo.startupState).thenReturn(ApplicationStartInfo.STARTUP_STATE_STARTED)
