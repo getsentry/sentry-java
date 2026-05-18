@@ -13,6 +13,7 @@ import io.sentry.SpanStatus
 import io.sentry.TracesSamplingDecision
 import io.sentry.TransactionContext
 import io.sentry.android.core.ActivityLifecycleIntegration.APP_START_COLD
+import io.sentry.android.core.ActivityLifecycleIntegration.APP_START_SCREEN_DATA
 import io.sentry.android.core.ActivityLifecycleIntegration.APP_START_WARM
 import io.sentry.android.core.ActivityLifecycleIntegration.STANDALONE_APP_START_OP
 import io.sentry.android.core.ActivityLifecycleIntegration.UI_LOAD_OP
@@ -167,6 +168,30 @@ class PerformanceAndroidEventProcessorTest {
       assertNull(span.data?.get(SpanDataConvention.CONTRIBUTES_TTID))
       assertNull(span.data?.get(SpanDataConvention.CONTRIBUTES_TTFD))
     }
+  }
+
+  @Test
+  fun `foreground standalone app start measurement uses foreground fallback time span`() {
+    val sut = fixture.getSut(enablePerformanceV2 = false)
+    AppStartMetrics.getInstance().apply {
+      appStartType = AppStartType.COLD
+      isAppLaunchedInForeground = true
+      appStartTimeSpan.apply {
+        setStartedAt(1)
+        setStoppedAt(101)
+      }
+      sdkInitTimeSpan.apply {
+        setStartedAt(10)
+        setStoppedAt(30)
+      }
+    }
+
+    var tr = getTransaction(AppStartType.COLD)
+    tr.contexts.trace!!.setData(APP_START_SCREEN_DATA, "MainActivity")
+
+    tr = sut.process(tr, Hint())
+
+    assertEquals(20f, tr.measurements[MeasurementValue.KEY_APP_START_COLD]?.value)
   }
 
   @Test

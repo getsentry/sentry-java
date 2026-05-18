@@ -64,7 +64,7 @@ public final class ActivityLifecycleIntegration
   static final String TTFD_OP = "ui.load.full_display";
   static final long TTFD_TIMEOUT_MILLIS = 25000;
   private static final String TRACE_ORIGIN = "auto.ui.activity";
-  private static final String APP_START_SCREEN_DATA = "app.vitals.start.screen";
+  static final String APP_START_SCREEN_DATA = "app.vitals.start.screen";
 
   private final @NotNull Application application;
   private final @NotNull BuildInfoProvider buildInfoProvider;

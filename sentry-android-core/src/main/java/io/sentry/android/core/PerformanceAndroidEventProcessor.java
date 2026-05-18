@@ -1,6 +1,7 @@
 package io.sentry.android.core;
 
 import static io.sentry.android.core.ActivityLifecycleIntegration.APP_START_COLD;
+import static io.sentry.android.core.ActivityLifecycleIntegration.APP_START_SCREEN_DATA;
 import static io.sentry.android.core.ActivityLifecycleIntegration.APP_START_WARM;
 import static io.sentry.android.core.ActivityLifecycleIntegration.STANDALONE_APP_START_OP;
 import static io.sentry.android.core.ActivityLifecycleIntegration.UI_LOAD_OP;
@@ -85,15 +86,19 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
       // the app start measurement is only sent once and only if the transaction has
       // the app.start span, which is automatically created by the SDK.
       if (hasAppStartSpan(transaction)) {
-        // For headless starts, appLaunchedInForeground is false, so standalone app start
-        // transactions bypass only the foreground check, not the duplicate-send guard.
+        // For headless starts, appLaunchedInForeground is false, so only headless standalone app
+        // start transactions bypass the foreground check, not the duplicate-send guard.
         final @Nullable SpanContext traceContext = transaction.getContexts().getTrace();
         final boolean isStandaloneAppStartTxn =
             traceContext != null && STANDALONE_APP_START_OP.equals(traceContext.getOperation());
+        final boolean isHeadlessStandaloneAppStartTxn =
+            traceContext != null
+                && isStandaloneAppStartTxn
+                && !traceContext.getData().containsKey(APP_START_SCREEN_DATA);
 
-        if (appStartMetrics.shouldSendStartMeasurements(isStandaloneAppStartTxn)) {
+        if (appStartMetrics.shouldSendStartMeasurements(isHeadlessStandaloneAppStartTxn)) {
           final @NotNull TimeSpan appStartTimeSpan =
-              isStandaloneAppStartTxn
+              isHeadlessStandaloneAppStartTxn
                   ? appStartMetrics.getAppStartTimeSpanForHeadless()
                   : appStartMetrics.getAppStartTimeSpanWithFallback(options);
           final long appStartUpDurationMs = appStartTimeSpan.getDurationMs();
