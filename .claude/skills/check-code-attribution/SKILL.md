@@ -49,8 +49,8 @@ Warden analyzes one changed file per run (whole-file mode). Complete every Quick
 
 **Mandatory on every run (do not skip):**
 
-1. `Read` the first 20 lines of the changed file.
-2. `Grep` `THIRD_PARTY_NOTICES.md` for the class name (filename without extension, e.g. `ANRWatchDog` for `ANRWatchDog.java`).
+1. `Read` the first 50 lines of the changed file.
+2. `Grep` `THIRD_PARTY_NOTICES.md` for the class name (filename without extension, e.g. `ANRWatchDog` for `ANRWatchDog.java`). On renames, also grep the old basename and read Scope sections (see Quick triage).
 3. When Bash is available, compare the merge-base header:
    ```bash
    MB=$(git merge-base HEAD origin/main 2>/dev/null || git merge-base HEAD main)
@@ -73,8 +73,8 @@ If this file is `THIRD_PARTY_NOTICES.md`, go to the THIRD_PARTY_NOTICES section 
 
 For all other files, perform these checks **before** deciding whether to proceed:
 
-1. **Read the file header** — use the Read tool to read the first 20 lines of the file. Look for vendored-code signals: `Copyright`, `Licensed under`, `SPDX-License-Identifier`, or vendoring language ("adapted from", "backported from", "based on", "copied from", "derived from", "inspired by", "ported from", "translated from", "vendored").
-2. **Check THIRD_PARTY_NOTICES.md** — use Grep to search `THIRD_PARTY_NOTICES.md` for the file name without extension (e.g., search for `ANRWatchDog` when reviewing `ANRWatchDog.java`). A match means this is a known vendored file.
+1. **Read the file header** — use the Read tool to read the first 50 lines of the file. Look for vendored-code signals: `Copyright`, `Licensed under`, `SPDX-License-Identifier`, or vendoring language ("adapted from", "backported from", "based on", "copied from", "derived from", "inspired by", "ported from", "translated from", "vendored").
+2. **Check THIRD_PARTY_NOTICES.md** — use Grep to search `THIRD_PARTY_NOTICES.md` for the file name without extension (e.g., search for `ANRWatchDog` when reviewing `ANRWatchDog.java`). A match means this is a known vendored file. **Renames:** if the diff is a rename (`similarity index` / `rename from` in the diff, or a delete of one path and add of another with the same content), also Grep for the **old** basename and read **Scope** sections in matching entries — NOTICES may still reference the previous class or path name.
 3. **Scan the diff** — check for vendored-code signals on both added (`+`) and **removed (`-`)** lines. Removed copyright/license lines ARE signals — they mean attribution is being stripped.
 
 **A signal in ANY of these three sources means this is vendored code — proceed to the vendored source file section.**
@@ -132,13 +132,15 @@ From the Grep in Quick triage: if no matching entry exists, flag it as missing. 
 
 Classify the license per Sentry's Open Source Legal Policy (https://open.sentry.io/licensing/):
 
-| Tier            | Examples                                        | Severity                                 |
-|-----------------|-------------------------------------------------|------------------------------------------|
-| Permissive      | MIT, BSD, Apache 2.0, ISC, CC0, Unlicense, Zlib | Allowed                                  |
-| Weak copyleft   | LGPL, MPL, EPL, CDDL                            | **high** — requires review               |
-| Strong copyleft | GPL, QPL, Sleepycat, OSL                        | **high** — requires legal review         |
-| AGPL            | —                                               | **high** — absolute ban, must be removed |
-| No license      | —                                               | **high** — assume no permission          |
+| Tier            | Examples                                        | Finding                                     |
+|-----------------|-------------------------------------------------|---------------------------------------------|
+| Permissive      | MIT, BSD, Apache 2.0, ISC, CC0, Unlicense, Zlib | None — license is compatible                |
+| Weak copyleft   | LGPL, MPL, EPL, CDDL                            | 🚨 **high** — requires review               |
+| Strong copyleft | GPL, QPL, Sleepycat, OSL                        | 🚨 **high** — requires legal review         |
+| AGPL            | —                                               | 🚨 **high** — absolute ban, must be removed |
+| No license      | —                                               | 🚨 **high** — assume no permission          |
+
+**Permissive licenses:** do not report a finding solely because the license is MIT/BSD/Apache/etc. Only flag attribution problems (missing or stripped header fields, missing/inconsistent `THIRD_PARTY_NOTICES.md` entry). Copyleft and unlicensed code still get 🚨 findings per the table.
 
 ---
 

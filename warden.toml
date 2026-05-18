@@ -32,6 +32,10 @@ pattern = "**/*.kt"
 mode = "whole-file"
 
 [[defaults.chunking.filePatterns]]
+pattern = "**/*.kts"
+mode = "whole-file"
+
+[[defaults.chunking.filePatterns]]
 pattern = "THIRD_PARTY_NOTICES.md"
 mode = "whole-file"
 
@@ -45,7 +49,6 @@ maxChunkSize = 16000
 name = "check-code-attribution"
 failOn = "high"
 reportOn = "low"
-maxTurns = 30
 ignorePaths = [
   # Infrastructure directories
   ".claude/**",
@@ -56,22 +59,26 @@ ignorePaths = [
   ".mvn/**",
   "gradle/**",
   # Generated files
-  "**/generated/**",
-  "**/ksp/**",
   "**/*.aidl",
   "**/*.api",
-  "**/*.interp",
-  "**/*.tokens",
   "**/*.g.kt",
+  "**/*.interp",
   "**/*.pb.java",
+  "**/*.tokens",
   "**/databinding/*Binding.java",
-  "**/grpc/*Grpc.java",
+  "**/generated/**",
   "**/gradlew",
   "**/gradlew.bat",
+  "**/grpc/*Grpc.java",
+  "**/ksp/**",
   "**/mvnw",
   "**/mvnw.cmd",
   # Binary files
   "**/*.jar",
+  # Repo docs (attribution examples in prose, not vendored code)
+  "AGENTS.md",
+  "CHANGELOG.md",
+  "CLAUDE.md",
   # Warden infrastructure
   ".warden/**",
   "warden.toml",
@@ -80,8 +87,8 @@ ignorePaths = [
 [[skills.triggers]]
 type = "pull_request"
 actions = ["opened", "synchronize"]
-requestChanges = false # Non-blocking COMMENT reviews only — no "Request Changes" PR reviews.
-failCheck = false # Advisory only — do not fail the GitHub check.
+requestChanges = false
+failCheck = false
 
 [[skills.triggers]]
 type = "local"

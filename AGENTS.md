@@ -154,6 +154,8 @@ When adapting code from third-party libraries:
    ```
 2. Add a full attribution entry to `THIRD_PARTY_NOTICES.md` following the existing format (Source, License, Copyright, Scope, full license text)
 
+3. Run the `check-code-attribution` skill locally or wait for it to be auto-run against your PR to check for required fields and verify new licenses against [Sentry's Open Source Legal Policy](https://open.sentry.io/licensing/).
+
 ### Getting PR Information
 
 Use `gh pr view` to get PR details from the current branch. This is needed when adding changelog entries, which require the PR number.
