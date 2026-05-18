@@ -60,7 +60,7 @@ Warden analyzes one changed file per run (whole-file mode). Complete every Quick
 **Do not dismiss findings because:**
 
 - A `THIRD_PARTY_NOTICES.md` entry exists — file headers are still required; NOTICES does not replace them.
-- The diff only removes a header comment block — removed `-` lines with `Copyright`, `Licensed under`, license disclaimers, or vendoring language ("adapted from", etc.) mean attribution was stripped.
+- The diff only removes a header comment block — if removed `-` lines include a **required field** (see below) or vendoring language ("adapted from", etc.), attribution was stripped. Removing boilerplate alone is not stripping.
 - The header says "Adapted from …" but omits copyright holder or license name — flag missing header fields.
 
 For `THIRD_PARTY_NOTICES.md` runs: for every **removed** entry in the diff, use `Read` or `Glob` to confirm whether Scope files still exist with attribution headers. If they do, the entry must not be removed.
@@ -75,7 +75,7 @@ For all other files, perform these checks **before** deciding whether to proceed
 
 1. **Read the file header** — use the Read tool to read the first 50 lines of the file. Look for vendored-code signals: `Copyright`, `Licensed under`, `SPDX-License-Identifier`, or vendoring language ("adapted from", "backported from", "based on", "copied from", "derived from", "inspired by", "ported from", "translated from", "vendored").
 2. **Check THIRD_PARTY_NOTICES.md** — use Grep to search `THIRD_PARTY_NOTICES.md` for the file name without extension (e.g., search for `ANRWatchDog` when reviewing `ANRWatchDog.java`). A match means this is a known vendored file. **Renames:** if the diff is a rename (`similarity index` / `rename from` in the diff, or a delete of one path and add of another with the same content), also Grep for the **old** basename and read **Scope** sections in matching entries — NOTICES may still reference the previous class or path name.
-3. **Scan the diff** — check for vendored-code signals on both added (`+`) and **removed (`-`)** lines. Removed copyright/license lines ARE signals — they mean attribution is being stripped.
+3. **Scan the diff** — check for vendored-code signals on both added (`+`) and **removed (`-`)** lines. Removed lines that drop a **required field** (copyright, license name, source URL, vendoring origin) ARE signals. Removed disclaimer/boilerplate lines alone are not.
 
 **A signal in ANY of these three sources means this is vendored code — proceed to the vendored source file section.**
 
@@ -102,15 +102,24 @@ Validate the changed entries using the diff context:
 
 ### 1. Check attribution header
 
-The file must have a license header near the top (before the `package` statement in Java/Kotlin files) with:
-- Library name or origin
-- Copyright year and holder
-- License name
-- Source URL
+**Required fields only** — the file header (before `package` in Java/Kotlin) must include all four. This matches `AGENTS.md`:
 
-Exact wording and comment style may vary. Only flag **missing fields**, not formatting.
+| # | Required field         | Examples                                                            |
+|---|------------------------|---------------------------------------------------------------------|
+| 1 | Library name or origin | `Adapted from …`, `Based on …`, source library name                 |
+| 2 | Copyright              | `Copyright (c) 2016 …`, `Copyright 2010 Square, Inc.`               |
+| 3 | License name           | `Licensed under the Apache License, Version 2.0`, `The MIT License` |
+| 4 | Source URL             | `https://github.com/…`                                              |
 
-Compare the current header (from the Read in Quick triage) against the THIRD_PARTY_NOTICES.md entry. For example, if the NOTICES entry says this file is MIT-licensed by "Salomon BRYS" but the current header has no copyright or license mention, the header was stripped.
+Exact wording and comment style may vary. **Do not flag** missing or changed content that is not one of these four fields.
+
+**Not required in the file header** (full text belongs in `THIRD_PARTY_NOTICES.md`, not in every source file):
+
+- Full license boilerplate (MIT permission paragraph, Apache "Unless required by applicable law…" disclaimer, ASF contributor grant preamble)
+- Wording differences vs the NOTICES embedded license text (e.g. shortened Apache header vs canonical ASF phrasing)
+- Comment style (`//` vs `/* */`), line wrapping, or extra Sentry modification notes
+
+Compare the current header against the NOTICES entry **only for the four required fields** — e.g. if NOTICES says MIT by "Salomon BRYS" but the header has no copyright or license name, flag it. If both have copyright + license name but the header omits the Apache disclaimer while NOTICES still has the full text, **do not flag**.
 
 When Bash is available (local runs), also compare against the merge-base version for additional context:
 ```bash
@@ -119,10 +128,16 @@ git show "${MB}:<file-path>" | head -50
 ```
 
 Flag these issues:
-- **Header stripped** — file is in NOTICES but current header has no attribution
-- **Header truncated** — header is present but missing required fields (e.g., copyright line removed, license disclaimer removed)
-- **Header inconsistent** — header contradicts what the NOTICES entry says
-- **Diff removes attribution lines** — `Copyright`, `Licensed under`, etc. appear on removed lines in the diff
+- **Header stripped** — file is in NOTICES but current header has none of the four required fields
+- **Header truncated** — one or more **required** fields were removed (e.g. copyright line or `Licensed under …` removed) while the file remains vendored
+- **Header inconsistent** — a **required** field contradicts NOTICES (wrong copyright holder/year, wrong license name) — not boilerplate or phrasing differences
+- **Diff removes required attribution** — removed `-` lines drop a required field or vendoring origin (`Adapted from`, etc.); removing disclaimer/boilerplate lines alone is **not** this
+
+**Do not report** (no finding, or at most 👀 **low** if you mention NOTICES sync voluntarily — prefer silence):
+
+- Apache/MIT disclaimer or permission paragraphs removed but all four required fields remain
+- Header reworded to a shorter permissive-license form with the same copyright holder and license name
+- Header and NOTICES differ only in full license body text
 
 ### 2. Check THIRD_PARTY_NOTICES.md entry
 
@@ -140,7 +155,7 @@ Classify the license per Sentry's Open Source Legal Policy (https://open.sentry.
 | AGPL            | —                                               | 🚨 **high** — absolute ban, must be removed |
 | No license      | —                                               | 🚨 **high** — assume no permission          |
 
-**Permissive licenses:** do not report a finding solely because the license is MIT/BSD/Apache/etc. Only flag attribution problems (missing or stripped header fields, missing/inconsistent `THIRD_PARTY_NOTICES.md` entry). Copyleft and unlicensed code still get 🚨 findings per the table.
+**Permissive licenses:** do not report a finding solely because the license is MIT/BSD/Apache/etc. Only flag missing or stripped **required** header fields, or missing/inconsistent `THIRD_PARTY_NOTICES.md` entry. Do not flag disclaimer/boilerplate-only diffs. Copyleft and unlicensed code still get 🚨 findings per the table.
 
 ---
 
@@ -152,11 +167,11 @@ If the diff deletes a file and the removed lines contained attribution headers, 
 
 ## Severity guide
 
-| Level      | Use for                                                                                                                                             |
-|------------|-----------------------------------------------------------------------------------------------------------------------------------------------------|
-| **high**   | 🚨 License violations: AGPL, copyleft, unlicensed, no-license code                                                                                  |
-| **medium** | ⚠️ Missing attribution header fields, stripped headers, missing/inconsistent NOTICES entries, deleted/renamed vendored files needing NOTICES update |
-| **low**    | 👀 Attribution present but could be improved                                                                                                        |
+| Level      | Use for                                                                                                                                                      |
+|------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **high**   | 🚨 License violations: AGPL, copyleft, unlicensed, no-license code                                                                                           |
+| **medium** | ⚠️ Missing **required** header fields, stripped required fields, missing/inconsistent NOTICES entries, deleted/renamed vendored files needing NOTICES update |
+| **low**    | 👀 Optional nits only — never use for boilerplate/disclaimer-only header changes when all four required fields are present                                   |
 
 Warden relies on these severity levels when deciding whether to comment on PRs or require changes. Put the severity emoji **only on the finding title** (see Output) so reviewers can triage at a glance.
 
@@ -184,22 +199,40 @@ Title:       ⚠️ Copyright line stripped from vendored file header
 Description: **io.sentry.cache.tape.FileObjectQueue** — The `Copyright (C) 2010 Square, Inc.` line was removed from this vendored file's header. Please restore the copyright line.
 ```
 
-**Bad — emoji repeated in the description:**
+**Bad — emoji in the description (never do this):**
 
 ```
 Title:       ⚠️ Copyright line stripped from vendored file header
 Description: ⚠️ The `Copyright (C) 2010 Square, Inc.` line was removed…
 ```
 
+**Bad — emoji before the class name:**
+
+```
+Title:       ⚠️ Copyright line stripped from vendored file header
+Description: ⚠️ **io.sentry.cache.tape.FileObjectQueue** — The copyright line was removed…
+```
+
 ### Warden runs
 
-For each finding, set:
+For each finding, set these fields exactly:
 
-- **title** — `<severity emoji> <short issue title>` (imperative, no class name). Warden bolds this as the PR comment heading.
-- **description** — One or two sentences: `**<fully qualified class name>** — <what is wrong and how to fix>`. Do **not** start with an emoji.
-- **verification** — Optional evidence steps. No emoji.
+| Field            | Value                                                                                                           |
+|------------------|-----------------------------------------------------------------------------------------------------------------|
+| **severity**     | `high`, `medium`, or `low` — **never** put emoji here; Warden maps severity from this field, not from the title |
+| **title**        | `<severity emoji> <short issue title>` — emoji allowed **only** here (imperative, no class name)                |
+| **description**  | `**<fully qualified class name>** — <what is wrong and how to fix>` — **plain text only**; see rules below      |
+| **verification** | Optional evidence steps — plain text only                                                                       |
+
+**Description rules (Warden):**
+
+- **Must** start with `**` + fully qualified class name + `** —` (e.g. `**io.sentry.CircularFifoQueue** —`).
+- **Must not** contain 🚨, ⚠️, 👀, or the words `high`, `medium`, or `low` as severity labels.
+- **Must not** repeat the title or paraphrase it with an emoji prefix.
 
 Use fully qualified Java class names in the description (e.g. `io.sentry.CircularFifoQueue`), not file paths. For license issues, include the policy link in the description.
+
+**Before submitting findings:** For every finding, confirm `description` does not match `[🚨⚠️👀]` and starts with `**io.` or `**com.` (or the correct FQCN). If it contains any emoji, rewrite the description without it.
 
 ### Local / IDE runs
 
@@ -215,5 +248,7 @@ Use this numbered format — same title vs description split as above:
 
 Rules:
 
+- Put the severity emoji **only** on the title line (`1\. ⚠️ **…**`), never on the description line.
+- The description line starts with `**<fully qualified class name>** —` and must not contain 🚨, ⚠️, or 👀.
 - **Escape the period** after the number (`1\.` not `1.`) so markdown does not collapse entries into a tight list.
 - Leave an empty line between each numbered finding.
