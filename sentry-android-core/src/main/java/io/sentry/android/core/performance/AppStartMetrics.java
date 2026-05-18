@@ -50,8 +50,8 @@ import org.jetbrains.annotations.TestOnly;
  */
 @ApiStatus.Internal
 public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
-  public interface OnNoActivityStartedListener {
-    void onNoActivityStarted();
+  public interface HeadlessAppStartListener {
+    void onHeadlessAppStart();
   }
 
   public enum AppStartType {
@@ -89,7 +89,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   private boolean shouldSendStartMeasurements = true;
   private final AtomicInteger activeActivitiesCounter = new AtomicInteger();
   private final AtomicBoolean firstDrawDone = new AtomicBoolean(false);
-  private volatile @Nullable OnNoActivityStartedListener noActivityStartedListener;
+  private volatile @Nullable HeadlessAppStartListener headlessAppStartListener;
   private @Nullable SentryId appStartTraceId;
   private @Nullable ApplicationStartInfo cachedStartInfo;
 
@@ -169,20 +169,11 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     this.appLaunchedInForeground.setValue(appLaunchedInForeground);
   }
 
-  public void setOnNoActivityStartedListener(final @Nullable OnNoActivityStartedListener listener) {
-    this.noActivityStartedListener = listener;
-    // On API 35+ registerLifecycleCallbacks resolves appStartType early and skips scheduling
-    // the idle check (because noActivityStartedListener is still null at that point). When the
-    // listener is set later during Sentry.init(), re-schedule if the idle check hasn't fired yet.
-    if (listener != null
-        && isCallbackRegistered
-        && firstIdle == -1
-        && appStartType != AppStartType.UNKNOWN) {
-      scheduleNoActivityStartCheckOnMain();
-    }
+  public void setHeadlessAppStartListener(final @Nullable HeadlessAppStartListener listener) {
+    this.headlessAppStartListener = listener;
   }
 
-  /** Trace ID from a non-activity app start transaction, to be reused by a later activity. */
+  /** Trace ID from a headless app start transaction, to be reused by a later activity. */
   public @Nullable SentryId getAppStartTraceId() {
     return appStartTraceId;
   }
@@ -233,10 +224,9 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
 
   /**
    * Returns a valid app start time span, bypassing the foreground check. Tries appStartSpan first,
-   * falls back to sdkInitTimeSpan. Used for non-activity starts where appLaunchedInForeground is
-   * false.
+   * falls back to sdkInitTimeSpan. Used for headless starts where appLaunchedInForeground is false.
    */
-  public @NotNull TimeSpan getAppStartTimeSpanForStandalone() {
+  public @NotNull TimeSpan getAppStartTimeSpanForHeadless() {
     if (appStartSpan.hasStarted() && appStartSpan.hasStopped()) {
       return appStartSpan;
     }
@@ -305,7 +295,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     firstDrawDone.set(false);
     activeActivitiesCounter.set(0);
     firstIdle = -1;
-    noActivityStartedListener = null;
+    headlessAppStartListener = null;
     appStartTraceId = null;
     cachedStartInfo = null;
   }
@@ -408,19 +398,17 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
       }
     }
 
-    if (appStartType == AppStartType.UNKNOWN || noActivityStartedListener != null) {
-      scheduleNoActivityStartCheckOnMain();
-    }
+    scheduleHeadlessAppStartCheckOnMain();
   }
 
-  private void scheduleNoActivityStartCheckOnMain() {
+  private void scheduleHeadlessAppStartCheckOnMain() {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
       Looper.getMainLooper()
           .getQueue()
           .addIdleHandler(
               () -> {
                 firstIdle = SystemClock.uptimeMillis();
-                handleNoActivityStartIfNeededOnMain();
+                handleHeadlessAppStartIfNeededOnMain();
                 return false;
               });
     } else {
@@ -428,20 +416,20 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
       handler.post(
           () -> {
             firstIdle = SystemClock.uptimeMillis();
-            handler.post(() -> handleNoActivityStartIfNeededOnMain());
+            handler.post(() -> handleHeadlessAppStartIfNeededOnMain());
           });
     }
   }
 
   /**
    * Checks whether startup reached an Activity after the main looper had a chance to create one. If
-   * not, handles the non-activity start path. Must be called on the main thread.
+   * not, handles the headless app start path. Must be called on the main thread.
    */
-  private void handleNoActivityStartIfNeededOnMain() {
+  private void handleHeadlessAppStartIfNeededOnMain() {
     if (activeActivitiesCounter.get() == 0) {
       appLaunchedInForeground.setValue(false);
 
-      // Non-activity starts have no Activity signal for the pre-API 35 warm/cold heuristic.
+      // Headless starts have no Activity signal for the pre-API 35 warm/cold heuristic.
       // If ApplicationStartInfo did not resolve the type, classify the process start as cold.
       if (appStartType == AppStartType.UNKNOWN) {
         appStartType = AppStartType.COLD;
@@ -457,20 +445,21 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
         appStartContinuousProfiler = null;
       }
 
-      resolveNonActivityAppStartEndTime();
+      resolveHeadlessAppStartEndTime();
 
-      if (noActivityStartedListener != null) {
-        noActivityStartedListener.onNoActivityStarted();
+      final @Nullable HeadlessAppStartListener listener = headlessAppStartListener;
+      if (listener != null) {
+        listener.onHeadlessAppStart();
       }
     }
   }
 
-  private void resolveNonActivityAppStartEndTime() {
+  private void resolveHeadlessAppStartEndTime() {
     // Priority 1: Gradle plugin instrumented onApplicationPostCreate
     if (applicationOnCreate.hasStopped()) {
       final long stopUptimeMs =
           applicationOnCreate.getStartUptimeMs() + applicationOnCreate.getDurationMs();
-      stopNonActivityAppStartAt(stopUptimeMs);
+      stopHeadlessAppStartAt(stopUptimeMs);
       return;
     }
 
@@ -492,7 +481,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
             if (applicationOnCreate.hasStarted() && applicationOnCreate.hasNotStopped()) {
               applicationOnCreate.setStoppedAt(onCreateUptimeMs);
             }
-            stopNonActivityAppStartAt(onCreateUptimeMs);
+            stopHeadlessAppStartAt(onCreateUptimeMs);
             return;
           }
         }
@@ -502,10 +491,10 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     }
 
     // Priority 3: Process init end time (CLASS_LOADED_UPTIME_MS) — always available
-    stopNonActivityAppStartAt(CLASS_LOADED_UPTIME_MS);
+    stopHeadlessAppStartAt(CLASS_LOADED_UPTIME_MS);
   }
 
-  private void stopNonActivityAppStartAt(final long stopUptimeMs) {
+  private void stopHeadlessAppStartAt(final long stopUptimeMs) {
     if (appStartSpan.hasStarted()) {
       if (appStartSpan.hasNotStopped()) {
         appStartSpan.setStoppedAt(stopUptimeMs);

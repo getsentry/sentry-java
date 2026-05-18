@@ -686,13 +686,14 @@ public final class SentryAndroidOptions extends SentryOptions {
    *   <li>With an Activity: the SDK sends an {@code App Start} transaction with operation {@code
    *       app.start}, plus a separate {@code ui.load} transaction for the Activity. Both
    *       transactions share the same trace ID.
-   *   <li>Without an Activity: for launches started by something like a broadcast receiver,
-   *       service, or content provider, the SDK sends only the standalone app-start transaction.
+   *   <li>Headless app start: for launches started by something like a broadcast receiver, service,
+   *       or content provider without an Activity, the SDK sends only the standalone app-start
+   *       transaction.
    *       <ul>
    *         <li>On Android API 35 and newer, the SDK can use {@code ApplicationStartInfo} to
    *             classify cold versus warm starts and find the {@code Application.onCreate} end
    *             time.
-   *         <li>Before Android API 35, no-Activity launches are treated as cold once {@code
+   *         <li>Before Android API 35, headless launches are treated as cold once {@code
    *             Application.onCreate} finishes without an Activity. The end time falls back to the
    *             best SDK/plugin timing available.
    *         <li>With {@code Application.onCreate} instrumentation, the SDK can add an {@code
@@ -700,8 +701,8 @@ public final class SentryAndroidOptions extends SentryOptions {
    *             time. Without that instrumentation, the standalone transaction is still sent, but
    *             it may only include the {@code process.load} phase span.
    *       </ul>
-   *   <li>If an Activity opens after a no-Activity start, its {@code ui.load} transaction reuses
-   *       the app-start trace ID.
+   *   <li>If an Activity opens after a headless start, its {@code ui.load} transaction reuses the
+   *       app-start trace ID.
    * </ul>
    *
    * @param enableStandaloneAppStartTracing true if enabled or false otherwise

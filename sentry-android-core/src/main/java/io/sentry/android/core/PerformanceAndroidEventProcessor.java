@@ -85,7 +85,7 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
       // the app start measurement is only sent once and only if the transaction has
       // the app.start span, which is automatically created by the SDK.
       if (hasAppStartSpan(transaction)) {
-        // For non-activity starts, appLaunchedInForeground is false, so standalone app start
+        // For headless starts, appLaunchedInForeground is false, so standalone app start
         // transactions bypass only the foreground check, not the duplicate-send guard.
         final @Nullable SpanContext traceContext = transaction.getContexts().getTrace();
         final boolean isStandaloneAppStartTxn =
@@ -94,7 +94,7 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
         if (appStartMetrics.shouldSendStartMeasurements(isStandaloneAppStartTxn)) {
           final @NotNull TimeSpan appStartTimeSpan =
               isStandaloneAppStartTxn
-                  ? appStartMetrics.getAppStartTimeSpanForStandalone()
+                  ? appStartMetrics.getAppStartTimeSpanForHeadless()
                   : appStartMetrics.getAppStartTimeSpanWithFallback(options);
           final long appStartUpDurationMs = appStartTimeSpan.getDurationMs();
 

@@ -272,16 +272,16 @@ class ActivityLifecycleIntegrationTest {
   }
 
   @Test
-  fun `OnNoActivityStartedListener is registered when standalone flag is on and performance enabled`() {
+  fun `HeadlessAppStartListener is registered when standalone flag is on and performance enabled`() {
     val sut =
       fixture.getSut {
         it.tracesSampleRate = 1.0
         it.isEnableStandaloneAppStartTracing = true
       }
     sut.register(fixture.scopes, fixture.options)
-    prepareNonActivityAppStart(appStartType = AppStartType.UNKNOWN)
+    prepareHeadlessAppStart(appStartType = AppStartType.UNKNOWN)
 
-    driveNoActivityStarted()
+    driveHeadlessAppStart()
 
     assertEquals(1, fixture.capturedContexts.size)
     assertEquals(
@@ -292,29 +292,29 @@ class ActivityLifecycleIntegrationTest {
   }
 
   @Test
-  fun `OnNoActivityStartedListener is not registered when standalone flag is off`() {
+  fun `HeadlessAppStartListener is not registered when standalone flag is off`() {
     val sut = fixture.getSut { it.tracesSampleRate = 1.0 }
     sut.register(fixture.scopes, fixture.options)
-    prepareNonActivityAppStart()
+    prepareHeadlessAppStart()
 
-    driveNoActivityStarted()
+    driveHeadlessAppStart()
 
     verify(fixture.scopes, never()).startTransaction(any(), any<TransactionOptions>())
   }
 
   @Test
-  fun `OnNoActivityStartedListener is not registered when performance is disabled`() {
+  fun `HeadlessAppStartListener is not registered when performance is disabled`() {
     val sut = fixture.getSut { it.isEnableStandaloneAppStartTracing = true }
     sut.register(fixture.scopes, fixture.options)
-    prepareNonActivityAppStart()
+    prepareHeadlessAppStart()
 
-    driveNoActivityStarted()
+    driveHeadlessAppStart()
 
     verify(fixture.scopes, never()).startTransaction(any(), any<TransactionOptions>())
   }
 
   @Test
-  fun `close clears OnNoActivityStartedListener`() {
+  fun `close clears HeadlessAppStartListener`() {
     val sut =
       fixture.getSut {
         it.tracesSampleRate = 1.0
@@ -322,24 +322,24 @@ class ActivityLifecycleIntegrationTest {
       }
     sut.register(fixture.scopes, fixture.options)
     sut.close()
-    prepareNonActivityAppStart()
+    prepareHeadlessAppStart()
 
-    driveNoActivityStarted()
+    driveHeadlessAppStart()
 
     verify(fixture.scopes, never()).startTransaction(any(), any<TransactionOptions>())
   }
 
   @Test
-  fun `onNoActivityStarted creates standalone App Start transaction and stashes trace id`() {
+  fun `onHeadlessAppStart creates standalone App Start transaction and stashes trace id`() {
     val sut =
       fixture.getSut {
         it.tracesSampleRate = 1.0
         it.isEnableStandaloneAppStartTracing = true
       }
     sut.register(fixture.scopes, fixture.options)
-    prepareNonActivityAppStart(appStartType = AppStartType.COLD)
+    prepareHeadlessAppStart(appStartType = AppStartType.COLD)
 
-    driveNoActivityStarted()
+    driveHeadlessAppStart()
 
     assertEquals(1, fixture.capturedContexts.size)
     val context = fixture.capturedContexts.single()
@@ -360,16 +360,16 @@ class ActivityLifecycleIntegrationTest {
 
   @Test
   @Config(sdk = [Build.VERSION_CODES.M])
-  fun `onNoActivityStarted creates standalone App Start transaction on API 23`() {
+  fun `onHeadlessAppStart creates standalone App Start transaction on API 23`() {
     val sut =
       fixture.getSut {
         it.tracesSampleRate = 1.0
         it.isEnableStandaloneAppStartTracing = true
       }
     sut.register(fixture.scopes, fixture.options)
-    prepareNonActivitySdkInitAppStart()
+    prepareHeadlessSdkInitAppStart()
 
-    driveNoActivityStarted()
+    driveHeadlessAppStart()
 
     assertEquals(1, fixture.capturedContexts.size)
     val context = fixture.capturedContexts.single()
@@ -387,16 +387,16 @@ class ActivityLifecycleIntegrationTest {
   }
 
   @Test
-  fun `onNoActivityStarted creates standalone App Start transaction when appStartType is WARM`() {
+  fun `onHeadlessAppStart creates standalone App Start transaction when appStartType is WARM`() {
     val sut =
       fixture.getSut {
         it.tracesSampleRate = 1.0
         it.isEnableStandaloneAppStartTracing = true
       }
     sut.register(fixture.scopes, fixture.options)
-    prepareNonActivityAppStart(appStartType = AppStartType.WARM)
+    prepareHeadlessAppStart(appStartType = AppStartType.WARM)
 
-    driveNoActivityStarted()
+    driveHeadlessAppStart()
 
     assertEquals(1, fixture.capturedContexts.size)
     val context = fixture.capturedContexts.single()
@@ -406,7 +406,7 @@ class ActivityLifecycleIntegrationTest {
   }
 
   @Test
-  fun `onNoActivityStarted does nothing when appStartTimeSpan is incomplete`() {
+  fun `onHeadlessAppStart does nothing when appStartTimeSpan is incomplete`() {
     val sut =
       fixture.getSut {
         it.tracesSampleRate = 1.0
@@ -416,7 +416,7 @@ class ActivityLifecycleIntegrationTest {
     AppStartMetrics.getInstance().appStartTimeSpan.reset()
     AppStartMetrics.getInstance().sdkInitTimeSpan.reset()
 
-    driveNoActivityStarted()
+    driveHeadlessAppStart()
 
     verify(fixture.scopes, never()).startTransaction(any(), any<TransactionOptions>())
   }
@@ -1154,7 +1154,7 @@ class ActivityLifecycleIntegrationTest {
   }
 
   @Test
-  fun `activity following a non-activity start reuses trace id and does not emit second standalone`() {
+  fun `activity following a headless start reuses trace id and does not emit second standalone`() {
     val storedTraceId = SentryId()
     val sut =
       fixture.getSut {
@@ -2051,7 +2051,7 @@ class ActivityLifecycleIntegrationTest {
     shadowOf(Looper.getMainLooper()).idle()
   }
 
-  private fun driveNoActivityStarted() {
+  private fun driveHeadlessAppStart() {
     AppStartMetrics.getInstance().registerLifecycleCallbacks(mock<Application>())
     waitForMainLooperIdle()
   }
@@ -2061,7 +2061,7 @@ class ActivityLifecycleIntegrationTest {
     shadowOf(Looper.getMainLooper()).idle()
   }
 
-  private fun prepareNonActivityAppStart(
+  private fun prepareHeadlessAppStart(
     appStartType: AppStartType = AppStartType.COLD,
     startUptimeMs: Long = 100,
     endUptimeMs: Long = 200,
@@ -2080,10 +2080,7 @@ class ActivityLifecycleIntegrationTest {
     }
   }
 
-  private fun prepareNonActivitySdkInitAppStart(
-    startUptimeMs: Long = 100,
-    endUptimeMs: Long = 200,
-  ) {
+  private fun prepareHeadlessSdkInitAppStart(startUptimeMs: Long = 100, endUptimeMs: Long = 200) {
     AppStartMetrics.getInstance().apply {
       appStartTimeSpan.reset()
       sdkInitTimeSpan.apply {

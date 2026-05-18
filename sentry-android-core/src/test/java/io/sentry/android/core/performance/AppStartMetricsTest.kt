@@ -172,7 +172,7 @@ class AppStartMetricsTest {
     // when the looper runs
     waitForMainLooperIdle()
 
-    // but no activity creation happened
+    // but a headless start happened
     // then the app wasn't launched in foreground and nothing should be sent
     assertFalse(metrics.isAppLaunchedInForeground)
     assertFalse(metrics.shouldSendStartMeasurements(false))
@@ -199,7 +199,7 @@ class AppStartMetricsTest {
     metrics.sdkInitTimeSpan.start()
     metrics.registerLifecycleCallbacks(mock<Application>())
 
-    // when the handler callback is executed and no activity was launched
+    // when the handler callback is executed and the start is headless
     waitForMainLooperIdle()
 
     // isAppLaunchedInForeground should be false
@@ -214,7 +214,7 @@ class AppStartMetricsTest {
   }
 
   @Test
-  fun `no activity start defaults UNKNOWN appStartType to COLD`() {
+  fun `headless app start defaults UNKNOWN appStartType to COLD`() {
     val metrics = AppStartMetrics.getInstance()
     metrics.appStartTimeSpan.setStartedAt(100)
 
@@ -226,7 +226,7 @@ class AppStartMetricsTest {
   }
 
   @Test
-  fun `no activity start does not overwrite existing appStartType`() {
+  fun `headless app start does not overwrite existing appStartType`() {
     val metrics = AppStartMetrics.getInstance()
     metrics.appStartType = AppStartMetrics.AppStartType.WARM
     metrics.appStartTimeSpan.setStartedAt(100)
@@ -238,10 +238,10 @@ class AppStartMetricsTest {
   }
 
   @Test
-  fun `no activity start fires OnNoActivityStartedListener`() {
+  fun `headless app start fires HeadlessAppStartListener`() {
     val listenerCalls = AtomicInteger()
 
-    AppStartMetrics.getInstance().setOnNoActivityStartedListener { listenerCalls.incrementAndGet() }
+    AppStartMetrics.getInstance().setHeadlessAppStartListener { listenerCalls.incrementAndGet() }
     AppStartMetrics.getInstance().registerLifecycleCallbacks(mock<Application>())
     waitForMainLooperIdle()
 
@@ -249,11 +249,11 @@ class AppStartMetricsTest {
   }
 
   @Test
-  fun `activity start prevents OnNoActivityStartedListener`() {
+  fun `activity start prevents HeadlessAppStartListener`() {
     val listenerCalls = AtomicInteger()
     val metrics = AppStartMetrics.getInstance()
 
-    metrics.setOnNoActivityStartedListener { listenerCalls.incrementAndGet() }
+    metrics.setHeadlessAppStartListener { listenerCalls.incrementAndGet() }
     metrics.onActivityCreated(mock<Activity>(), null)
     metrics.registerLifecycleCallbacks(mock<Application>())
     waitForMainLooperIdle()
@@ -262,7 +262,7 @@ class AppStartMetricsTest {
   }
 
   @Test
-  fun `resolveNonActivityAppStartEndTime uses applicationOnCreate stop when Gradle plugin instrumented`() {
+  fun `resolveHeadlessAppStartEndTime uses applicationOnCreate stop when Gradle plugin instrumented`() {
     val metrics = AppStartMetrics.getInstance()
     metrics.appStartTimeSpan.setStartedAt(100)
     metrics.applicationOnCreateTimeSpan.apply {
@@ -277,7 +277,7 @@ class AppStartMetricsTest {
   }
 
   @Test
-  fun `resolveNonActivityAppStartEndTime falls back to CLASS_LOADED_UPTIME_MS when no plugin and no ApplicationStartInfo`() {
+  fun `resolveHeadlessAppStartEndTime falls back to CLASS_LOADED_UPTIME_MS when no plugin and no ApplicationStartInfo`() {
     val metrics = AppStartMetrics.getInstance()
     metrics.setClassLoadedUptimeMs(200)
     metrics.appStartTimeSpan.setStartedAt(100)
@@ -289,7 +289,7 @@ class AppStartMetricsTest {
   }
 
   @Test
-  fun `resolveNonActivityAppStartEndTime does not overwrite stopped appStartTimeSpan`() {
+  fun `resolveHeadlessAppStartEndTime does not overwrite stopped appStartTimeSpan`() {
     val metrics = AppStartMetrics.getInstance()
     metrics.appStartTimeSpan.apply {
       setStartedAt(100)
@@ -307,7 +307,7 @@ class AppStartMetricsTest {
   }
 
   @Test
-  fun `getAppStartTimeSpanForStandalone falls back to sdkInitTimeSpan when appStartSpan has not stopped`() {
+  fun `getAppStartTimeSpanForHeadless falls back to sdkInitTimeSpan when appStartSpan has not stopped`() {
     val metrics = AppStartMetrics.getInstance()
     metrics.appStartTimeSpan.setStartedAt(100)
     metrics.sdkInitTimeSpan.apply {
@@ -315,7 +315,7 @@ class AppStartMetricsTest {
       setStoppedAt(180)
     }
 
-    assertSame(metrics.sdkInitTimeSpan, metrics.getAppStartTimeSpanForStandalone())
+    assertSame(metrics.sdkInitTimeSpan, metrics.getAppStartTimeSpanForHeadless())
   }
 
   private fun waitForMainLooperIdle() {
@@ -441,12 +441,12 @@ class AppStartMetricsTest {
   }
 
   @Test
-  fun `registerApplicationForegroundCheck set foreground state to false if no activity is running`() {
+  fun `registerApplicationForegroundCheck set foreground state to false for headless start`() {
     val application = mock<Application>()
     AppStartMetrics.getInstance().isAppLaunchedInForeground = true
     AppStartMetrics.getInstance().registerLifecycleCallbacks(application)
     assertTrue(AppStartMetrics.getInstance().isAppLaunchedInForeground)
-    // Main thread performs the check and sets the flag to false if no activity was created
+    // Main thread performs the check and sets the flag to false if the start is headless
     waitForMainLooperIdle()
     assertFalse(AppStartMetrics.getInstance().isAppLaunchedInForeground)
   }

@@ -131,7 +131,7 @@ public final class ActivityLifecycleIntegration
     application.registerActivityLifecycleCallbacks(this);
 
     if (performanceEnabled && this.options.isEnableStandaloneAppStartTracing()) {
-      AppStartMetrics.getInstance().setOnNoActivityStartedListener(this::onNoActivityStarted);
+      AppStartMetrics.getInstance().setHeadlessAppStartListener(this::onHeadlessAppStart);
     }
 
     this.options.getLogger().log(SentryLevel.DEBUG, "ActivityLifecycleIntegration installed.");
@@ -145,7 +145,7 @@ public final class ActivityLifecycleIntegration
   @Override
   public void close() throws IOException {
     application.unregisterActivityLifecycleCallbacks(this);
-    AppStartMetrics.getInstance().setOnNoActivityStartedListener(null);
+    AppStartMetrics.getInstance().setHeadlessAppStartListener(null);
 
     if (options != null) {
       options.getLogger().log(SentryLevel.DEBUG, "ActivityLifecycleIntegration removed.");
@@ -253,7 +253,7 @@ public final class ActivityLifecycleIntegration
         final @Nullable SentryId storedAppStartTraceId =
             AppStartMetrics.getInstance().getAppStartTraceId();
         // A non-null trace ID means a standalone app-start txn was already emitted.
-        final boolean isFollowingNonActivityStart = (storedAppStartTraceId != null);
+        final boolean isFollowingHeadlessAppStart = (storedAppStartTraceId != null);
 
         final ITransaction transaction;
         if (storedAppStartTraceId != null) {
@@ -282,7 +282,7 @@ public final class ActivityLifecycleIntegration
         setSpanOrigin(spanOptions);
 
         if (!(firstActivityCreated || appStartTime == null || coldStart == null)) {
-          if (options.isEnableStandaloneAppStartTracing() && !isFollowingNonActivityStart) {
+          if (options.isEnableStandaloneAppStartTracing() && !isFollowingHeadlessAppStart) {
             final TransactionOptions appStartTransactionOptions = new TransactionOptions();
             appStartTransactionOptions.setBindToScope(false);
             appStartTransactionOptions.setStartTimestamp(appStartTime);
@@ -876,19 +876,19 @@ public final class ActivityLifecycleIntegration
     }
   }
 
-  private void onNoActivityStarted() {
+  private void onHeadlessAppStart() {
     if (scopes == null || options == null || !performanceEnabled) {
       return;
     }
 
     final @NotNull AppStartMetrics metrics = AppStartMetrics.getInstance();
-    // Profilers are stopped for non-activity starts; clear the decision so it doesn't
+    // Profilers are stopped for headless starts; clear the decision so it doesn't
     // leak to a later ui.load transaction if an activity eventually opens.
     metrics.setAppStartSamplingDecision(null);
 
-    // For non-activity starts, appLaunchedInForeground is false, so we can't use
+    // For headless starts, appLaunchedInForeground is false, so we can't use
     // getAppStartTimeSpanWithFallback (which gates on foreground).
-    final @NotNull TimeSpan appStartTimeSpan = metrics.getAppStartTimeSpanForStandalone();
+    final @NotNull TimeSpan appStartTimeSpan = metrics.getAppStartTimeSpanForHeadless();
 
     if (!appStartTimeSpan.hasStarted() || !appStartTimeSpan.hasStopped()) {
       return;

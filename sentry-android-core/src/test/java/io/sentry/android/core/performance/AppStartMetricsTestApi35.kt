@@ -91,7 +91,7 @@ class AppStartMetricsTestApi35 {
   }
 
   @Test
-  fun `no activity start keeps COLD appStartType from ApplicationStartInfo`() {
+  fun `headless app start keeps COLD appStartType from ApplicationStartInfo`() {
     val mockStartInfo = mock<ApplicationStartInfo>()
     whenever(mockStartInfo.startupState).thenReturn(ApplicationStartInfo.STARTUP_STATE_STARTED)
     whenever(mockStartInfo.startType).thenReturn(ApplicationStartInfo.START_TYPE_COLD)
@@ -100,7 +100,7 @@ class AppStartMetricsTestApi35 {
     val listenerCalls = AtomicInteger()
     val metrics = AppStartMetrics.getInstance()
     metrics.appStartTimeSpan.setStartedAt(100)
-    metrics.setOnNoActivityStartedListener { listenerCalls.incrementAndGet() }
+    metrics.setHeadlessAppStartListener { listenerCalls.incrementAndGet() }
 
     val app = ApplicationProvider.getApplicationContext<Application>()
     metrics.registerLifecycleCallbacks(app)
@@ -112,24 +112,27 @@ class AppStartMetricsTestApi35 {
   }
 
   @Test
-  fun `known ApplicationStartInfo type without listener preserves legacy no activity behavior`() {
+  fun `known ApplicationStartInfo type without listener still handles headless app start`() {
     val mockStartInfo = mock<ApplicationStartInfo>()
     whenever(mockStartInfo.startupState).thenReturn(ApplicationStartInfo.STARTUP_STATE_STARTED)
     whenever(mockStartInfo.startType).thenReturn(ApplicationStartInfo.START_TYPE_WARM)
+    whenever(mockStartInfo.startupTimestamps).thenReturn(emptyMap())
     SentryShadowActivityManager.setHistoricalProcessStartReasons(listOf(mockStartInfo))
     val metrics = AppStartMetrics.getInstance()
     metrics.appStartTimeSpan.setStartedAt(100)
+    metrics.setClassLoadedUptimeMs(200)
 
     val app = ApplicationProvider.getApplicationContext<Application>()
     metrics.registerLifecycleCallbacks(app)
     waitForMainLooperIdle()
 
     assertEquals(AppStartMetrics.AppStartType.WARM, metrics.appStartType)
-    assertFalse(metrics.appStartTimeSpan.hasStopped())
+    assertFalse(metrics.isAppLaunchedInForeground)
+    assertEquals(100, metrics.appStartTimeSpan.durationMs)
   }
 
   @Test
-  fun `resolveNonActivityAppStartEndTime converts ApplicationStartInfo timestamp to uptime`() {
+  fun `resolveHeadlessAppStartEndTime converts ApplicationStartInfo timestamp to uptime`() {
     val processStartUptimeMs = 100L
     val processStartElapsedMs = 10_000L
     val onCreateElapsedRealtimeMs = 10_250L
@@ -148,7 +151,7 @@ class AppStartMetricsTestApi35 {
     SentryShadowProcess.setStartElapsedRealtime(processStartElapsedMs)
     val metrics = AppStartMetrics.getInstance()
     metrics.appStartTimeSpan.setStartedAt(processStartUptimeMs)
-    metrics.setOnNoActivityStartedListener {}
+    metrics.setHeadlessAppStartListener {}
 
     val app = ApplicationProvider.getApplicationContext<Application>()
     metrics.registerLifecycleCallbacks(app)
@@ -159,7 +162,7 @@ class AppStartMetricsTestApi35 {
   }
 
   @Test
-  fun `resolveNonActivityAppStartEndTime falls back when ApplicationStartInfo duration is invalid`() {
+  fun `resolveHeadlessAppStartEndTime falls back when ApplicationStartInfo duration is invalid`() {
     val mockStartInfo = mock<ApplicationStartInfo>()
     whenever(mockStartInfo.startupState).thenReturn(ApplicationStartInfo.STARTUP_STATE_STARTED)
     whenever(mockStartInfo.startType).thenReturn(ApplicationStartInfo.START_TYPE_COLD)
@@ -175,7 +178,7 @@ class AppStartMetricsTestApi35 {
     val metrics = AppStartMetrics.getInstance()
     metrics.appStartTimeSpan.setStartedAt(100)
     metrics.setClassLoadedUptimeMs(200)
-    metrics.setOnNoActivityStartedListener {}
+    metrics.setHeadlessAppStartListener {}
 
     val app = ApplicationProvider.getApplicationContext<Application>()
     metrics.registerLifecycleCallbacks(app)
@@ -200,7 +203,7 @@ class AppStartMetricsTestApi35 {
     metrics.registerLifecycleCallbacks(app)
 
     // Listener set AFTER registerLifecycleCallbacks — mirrors production ordering
-    metrics.setOnNoActivityStartedListener { listenerCalls.incrementAndGet() }
+    metrics.setHeadlessAppStartListener { listenerCalls.incrementAndGet() }
     waitForMainLooperIdle()
 
     assertEquals(AppStartMetrics.AppStartType.COLD, metrics.appStartType)
