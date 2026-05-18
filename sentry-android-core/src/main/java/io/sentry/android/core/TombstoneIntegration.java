@@ -36,6 +36,8 @@ import io.sentry.transport.CurrentDateProvider;
 import io.sentry.transport.ICurrentDateProvider;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
@@ -150,6 +152,7 @@ public class TombstoneIntegration implements Integration, Closeable {
     public @Nullable ApplicationExitInfoHistoryDispatcher.Report buildReport(
         final @NotNull ApplicationExitInfo exitInfo, final boolean enrich) {
       SentryEvent event;
+      final byte[] rawTombstone;
       try {
         final InputStream tombstoneInputStream = exitInfo.getTraceInputStream();
         if (tombstoneInputStream == null) {
@@ -163,9 +166,11 @@ public class TombstoneIntegration implements Integration, Closeable {
           return null;
         }
 
+        rawTombstone = readBytes(tombstoneInputStream);
+
         try (final TombstoneParser parser =
             new TombstoneParser(
-                tombstoneInputStream,
+                new ByteArrayInputStream(rawTombstone),
                 this.options.getInAppIncludes(),
                 this.options.getInAppExcludes(),
                 this.context.getApplicationInfo().nativeLibraryDir)) {
@@ -189,6 +194,10 @@ public class TombstoneIntegration implements Integration, Closeable {
           new TombstoneHint(
               options.getFlushTimeoutMillis(), options.getLogger(), tombstoneTimestamp, enrich);
       final Hint hint = HintUtils.createWithTypeCheckHint(tombstoneHint);
+
+      if (options.isAttachTombstone()) {
+        hint.setTombstone(Attachment.fromTombstone(rawTombstone));
+      }
 
       try {
         final @Nullable SentryEvent mergedEvent =
@@ -302,6 +311,17 @@ public class TombstoneIntegration implements Integration, Closeable {
         nativeEvent.setExceptions(tombstoneExceptions);
         nativeEvent.setDebugMeta(tombstoneDebugMeta);
         nativeEvent.setThreads(tombstoneThreads);
+      }
+    }
+
+    private byte[] readBytes(final @NotNull InputStream stream) throws IOException {
+      try (final ByteArrayOutputStream buffer = new ByteArrayOutputStream()) {
+        int nRead;
+        final byte[] data = new byte[1024];
+        while ((nRead = stream.read(data, 0, data.length)) != -1) {
+          buffer.write(data, 0, nRead);
+        }
+        return buffer.toByteArray();
       }
     }
   }

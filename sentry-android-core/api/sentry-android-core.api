@@ -375,6 +375,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun isAnrReportInDebug ()Z
 	public fun isAttachAnrThreadDump ()Z
 	public fun isAttachScreenshot ()Z
+	public fun isAttachTombstone ()Z
 	public fun isAttachViewHierarchy ()Z
 	public fun isCollectAdditionalContext ()Z
 	public fun isCollectExternalStorageContext ()Z
@@ -402,6 +403,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun setAnrTimeoutIntervalMillis (J)V
 	public fun setAttachAnrThreadDump (Z)V
 	public fun setAttachScreenshot (Z)V
+	public fun setAttachTombstone (Z)V
 	public fun setAttachViewHierarchy (Z)V
 	public fun setBeforeScreenshotCaptureCallback (Lio/sentry/android/core/SentryAndroidOptions$BeforeCaptureCallback;)V
 	public fun setBeforeViewHierarchyCaptureCallback (Lio/sentry/android/core/SentryAndroidOptions$BeforeCaptureCallback;)V
