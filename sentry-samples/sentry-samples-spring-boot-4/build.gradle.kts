@@ -57,6 +57,19 @@ dependencies {
   implementation(projects.sentryQuartz)
   implementation(projects.sentryAsyncProfiler)
 
+  implementation(projects.sentryLog4j2)
+  implementation(libs.log4j.api)
+  implementation(libs.log4j.core)
+
+  // Enable Log4j2 in Spring Boot
+  //  implementation("org.springframework.boot:spring-boot-starter-log4j2")
+  //  modules {
+  //    module("org.springframework.boot:spring-boot-starter-logging") {
+  //      replacedBy("org.springframework.boot:spring-boot-starter-log4j2", "Use Log4j2 instead of
+  // Logback")
+  //    }
+  //  }
+
   // cache tracing
   implementation(libs.springboot4.starter.cache)
   implementation(libs.caffeine)

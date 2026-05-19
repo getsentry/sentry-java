@@ -167,6 +167,18 @@ public class SentryAppender extends AbstractAppender {
     start(getOptionsConfiguration(null));
   }
 
+  public @NotNull Level getMinimumBreadcrumbLevel() {
+    return minimumBreadcrumbLevel;
+  }
+
+  public @NotNull Level getMinimumEventLevel() {
+    return minimumEventLevel;
+  }
+
+  public @NotNull Level getMinimumLevel() {
+    return minimumLevel;
+  }
+
   @NotNull
   Sentry.OptionsConfiguration<SentryOptions> getOptionsConfiguration(
       final @Nullable Sentry.OptionsConfiguration<SentryOptions> additionalOptionsConfiguration) {

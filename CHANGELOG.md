@@ -5,6 +5,7 @@
 ### Features
 
 - Add support to configure reporting historical ANRs via `AndroidManifest.xml` using the  `io.sentry.anr.report-historical` attribute ([#5387](https://github.com/getsentry/sentry-java/pull/5387))
+- Add log4j2 spring boot 4 auto configuration ([#5403](https://github.com/getsentry/sentry-java/pull/5403))
 
 ### Dependencies
 
