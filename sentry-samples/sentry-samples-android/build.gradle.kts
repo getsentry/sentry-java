@@ -7,6 +7,7 @@ plugins {
   id("com.android.application")
   alias(libs.plugins.kotlin.android)
   alias(libs.plugins.kotlin.compose)
+  alias(libs.plugins.sentry)
 }
 
 android {
@@ -114,6 +115,13 @@ android {
   }
 
   @Suppress("UnstableApiUsage") packagingOptions { jniLibs { useLegacyPackaging = true } }
+}
+
+sentry {
+  autoUploadProguardMapping = false
+  autoUploadNativeSymbols = false
+  autoUploadSourceContext = false
+  autoInstallation { enabled = false }
 }
 
 dependencies {
