@@ -56,7 +56,8 @@ public final class SentryReplayOptions extends SentryMaskingOptions {
      * @param frameTimestamp the timestamp (in milliseconds since epoch) when the frame was captured
      * @param screenName the current screen name, or {@code null} if unknown
      */
-    void onMaskedFrameCaptured(@NotNull Hint hint, long frameTimestamp, @Nullable String screenName);
+    void onMaskedFrameCaptured(
+        @NotNull Hint hint, long frameTimestamp, @Nullable String screenName);
   }
 
   private static final String CUSTOM_MASKING_INTEGRATION_NAME = "ReplayCustomMasking";
