@@ -311,16 +311,16 @@ public class ReplayIntegration(
     var screen: String? = null
     scopes?.configureScope { screen = it.screen?.substringAfterLast('.') }
     captureStrategy?.onScreenshotRecorded(bitmap) { frameTimeStamp ->
-      val observer = options.sessionReplay.snapshotObserver
+      val observer = options.sessionReplay.frameObserver
       if (observer != null) {
         val copy = bitmap.copy(bitmap.config!!, false)
         if (copy != null) {
           try {
             val hint = Hint()
             hint.set(TypeCheckHint.REPLAY_FRAME_BITMAP, copy)
-            observer.onSnapshotCaptured(hint, frameTimeStamp, screen)
+            observer.onMaskedFrameCaptured(hint, frameTimeStamp, screen)
           } catch (e: Throwable) {
-            options.logger.log(ERROR, "Error in ReplaySnapshotObserver", e)
+            options.logger.log(ERROR, "Error in ReplayFrameObserver", e)
             copy.recycle()
           }
         }

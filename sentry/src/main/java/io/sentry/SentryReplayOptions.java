@@ -37,8 +37,9 @@ public final class SentryReplayOptions extends SentryMaskingOptions {
   }
 
   /**
-   * Observer that is notified when a replay snapshot is captured. The snapshot bitmap (with masking
-   * applied) is passed via a {@link Hint} using the key {@link TypeCheckHint#REPLAY_FRAME_BITMAP}.
+   * Observer that is notified when a masked replay frame is captured. The frame bitmap (with
+   * masking already applied) is passed via a {@link Hint} using the key {@link
+   * TypeCheckHint#REPLAY_FRAME_BITMAP}.
    *
    * <p>On Android, retrieve the bitmap with: {@code hint.getAs(TypeCheckHint.REPLAY_FRAME_BITMAP,
    * Bitmap.class)}.
@@ -47,15 +48,15 @@ public final class SentryReplayOptions extends SentryMaskingOptions {
    * the caller. Call {@code Bitmap.recycle()} when done to free native memory.
    */
   @ApiStatus.Experimental
-  public interface ReplaySnapshotObserver {
+  public interface ReplayFrameObserver {
     /**
-     * Called when a replay snapshot is captured.
+     * Called when a masked replay frame is captured.
      *
      * @param hint contains the frame bitmap under {@link TypeCheckHint#REPLAY_FRAME_BITMAP}
      * @param frameTimestamp the timestamp (in milliseconds since epoch) when the frame was captured
      * @param screenName the current screen name, or {@code null} if unknown
      */
-    void onSnapshotCaptured(@NotNull Hint hint, long frameTimestamp, @Nullable String screenName);
+    void onMaskedFrameCaptured(@NotNull Hint hint, long frameTimestamp, @Nullable String screenName);
   }
 
   private static final String CUSTOM_MASKING_INTEGRATION_NAME = "ReplayCustomMasking";
@@ -233,7 +234,7 @@ public final class SentryReplayOptions extends SentryMaskingOptions {
    */
   private @Nullable BeforeErrorSamplingCallback beforeErrorSampling;
 
-  @ApiStatus.Experimental private @Nullable ReplaySnapshotObserver snapshotObserver;
+  @ApiStatus.Experimental private @Nullable ReplayFrameObserver frameObserver;
 
   public SentryReplayOptions(final boolean empty, final @Nullable SdkVersion sdkVersion) {
     if (!empty) {
@@ -576,23 +577,24 @@ public final class SentryReplayOptions extends SentryMaskingOptions {
   }
 
   /**
-   * Gets the observer that is notified when a replay snapshot is captured.
+   * Gets the observer that is notified when a masked replay frame is captured.
    *
    * @return the observer, or {@code null} if not set
    */
   @ApiStatus.Experimental
-  public @Nullable ReplaySnapshotObserver getSnapshotObserver() {
-    return snapshotObserver;
+  public @Nullable ReplayFrameObserver getFrameObserver() {
+    return frameObserver;
   }
 
   /**
-   * Sets the observer that is notified when a replay snapshot is captured. The frame bitmap is
-   * passed via a {@link Hint} using the key {@link TypeCheckHint#REPLAY_FRAME_BITMAP}.
+   * Sets the observer that is notified when a masked replay frame is captured. The frame bitmap
+   * (with masking already applied) is passed via a {@link Hint} using the key {@link
+   * TypeCheckHint#REPLAY_FRAME_BITMAP}.
    *
-   * @param snapshotObserver the observer, or {@code null} to clear
+   * @param frameObserver the observer, or {@code null} to clear
    */
   @ApiStatus.Experimental
-  public void setSnapshotObserver(final @Nullable ReplaySnapshotObserver snapshotObserver) {
-    this.snapshotObserver = snapshotObserver;
+  public void setFrameObserver(final @Nullable ReplayFrameObserver frameObserver) {
+    this.frameObserver = frameObserver;
   }
 }
