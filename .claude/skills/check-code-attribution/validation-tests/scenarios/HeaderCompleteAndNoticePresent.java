@@ -1,5 +1,5 @@
 /*
- * Adapted from https://github.com/example
+ * Adapted from https://github.com/example/something
  *
  * Copyright 2020 Example Authors
  *
@@ -8,8 +8,6 @@
  * You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * https://github.com/example/something
  */
 package io.sentry.skills.verification;
 

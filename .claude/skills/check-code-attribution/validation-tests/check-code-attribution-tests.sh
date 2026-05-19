@@ -18,7 +18,7 @@
 # Requires:
 #   - Node.js / npx
 #   - One of: WARDEN_ANTHROPIC_API_KEY, ANTHROPIC_API_KEY, or Pi OAuth config
-#     (see SKILL.md "Warden CLI" section for setup options)
+#     (see validation-tests/README.md "Warden CLI" section for setup options)
 
 set -euo pipefail
 
@@ -48,7 +48,7 @@ Runs Warden on a temporary branch and asserts per-scenario pass/fail (>= medium 
 Prerequisites:
   - Node.js (npx)
   - API key: WARDEN_ANTHROPIC_API_KEY or ANTHROPIC_API_KEY
-    (or Pi OAuth: npx pi && /login — see SKILL.md "Warden CLI" section)
+    (or Pi OAuth: npx pi && /login — see README.md "Warden CLI" section)
   - Wall-clock limit: gtimeout (brew install coreutils), GNU timeout, or perl
 EOF
 }

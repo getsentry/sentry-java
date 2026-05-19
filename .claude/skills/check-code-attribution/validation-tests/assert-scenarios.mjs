@@ -20,6 +20,11 @@ import { pathToFileURL } from 'node:url';
 const ISOLATED_FILE_JAVA = /\.java$/i;
 const ISOLATED_FILE_NOTICES = 'THIRD_PARTY_NOTICES.md';
 
+/** Non-Java fixtures under scenarios/ that check-code-attribution-tests.sh requires. */
+const REQUIRED_SCENARIO_FIXTURES = [
+  'THIRD_PARTY_NOTICES.mismatch-snippet.md',
+];
+
 export function loadExpected(expectedPath) {
   return JSON.parse(fs.readFileSync(expectedPath, 'utf8'));
 }
@@ -126,17 +131,36 @@ export function validateExpected(scenarios, scenariosDir) {
     }
   }
 
-  let diskJava = [];
+  let diskEntries = [];
   try {
-    diskJava = fs.readdirSync(scenariosDir).filter((n) => n.endsWith('.java'));
+    diskEntries = fs.readdirSync(scenariosDir);
   } catch (e) {
     errors.push(`cannot read scenarios dir ${scenariosDir}: ${e.message}`);
     return errors;
   }
 
+  const diskJava = diskEntries.filter((n) => n.endsWith('.java'));
   for (const name of diskJava) {
     if (!expectedJava.has(name)) {
       errors.push(`scenarios/${name} has no matching entry in EXPECTED.json`);
+    }
+  }
+
+  for (const name of REQUIRED_SCENARIO_FIXTURES) {
+    const onDisk = path.join(scenariosDir, name);
+    if (!fs.existsSync(onDisk)) {
+      errors.push(`scenarios/${name} is required but missing`);
+    }
+  }
+
+  const diskNonJava = diskEntries.filter(
+    (n) => !n.endsWith('.java') && fs.statSync(path.join(scenariosDir, n)).isFile(),
+  );
+  for (const name of diskNonJava) {
+    if (!REQUIRED_SCENARIO_FIXTURES.includes(name)) {
+      errors.push(
+        `scenarios/${name} is not listed in REQUIRED_SCENARIO_FIXTURES (update assert-scenarios.mjs)`,
+      );
     }
   }
 

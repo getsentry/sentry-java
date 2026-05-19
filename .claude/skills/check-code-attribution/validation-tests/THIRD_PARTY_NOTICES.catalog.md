@@ -105,7 +105,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ## Example — HeaderCompleteAndNoticePresent (Apache 2.0)
 
-**Source:** https://github.com/example/complete-with-notices<br>
+**Source:** https://github.com/example/something<br>
 **License:** Apache License 2.0<br>
 **Copyright:** Copyright 2020 Example Authors
 
