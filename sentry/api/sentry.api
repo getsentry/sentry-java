@@ -273,6 +273,7 @@ public final class io/sentry/CombinedScopeView : io/sentry/IScope {
 	public fun clear ()V
 	public fun clearAttachments ()V
 	public fun clearBreadcrumbs ()V
+	public fun clearFeatureFlags ()V
 	public fun clearSession ()V
 	public fun clearTransaction ()V
 	public fun clone ()Lio/sentry/IScope;
@@ -901,6 +902,7 @@ public abstract interface class io/sentry/IScope {
 	public abstract fun clear ()V
 	public abstract fun clearAttachments ()V
 	public abstract fun clearBreadcrumbs ()V
+	public abstract fun clearFeatureFlags ()V
 	public abstract fun clearSession ()V
 	public abstract fun clearTransaction ()V
 	public abstract fun clone ()Lio/sentry/IScope;
@@ -1715,6 +1717,7 @@ public final class io/sentry/NoOpScope : io/sentry/IScope {
 	public fun clear ()V
 	public fun clearAttachments ()V
 	public fun clearBreadcrumbs ()V
+	public fun clearFeatureFlags ()V
 	public fun clearSession ()V
 	public fun clearTransaction ()V
 	public fun clone ()Lio/sentry/IScope;
@@ -2401,6 +2404,7 @@ public final class io/sentry/Scope : io/sentry/IScope {
 	public fun clear ()V
 	public fun clearAttachments ()V
 	public fun clearBreadcrumbs ()V
+	public fun clearFeatureFlags ()V
 	public fun clearSession ()V
 	public fun clearTransaction ()V
 	public fun clone ()Lio/sentry/IScope;
@@ -5039,6 +5043,7 @@ public final class io/sentry/exception/SentryHttpClientException : java/lang/Exc
 
 public final class io/sentry/featureflags/FeatureFlagBuffer : io/sentry/featureflags/IFeatureFlagBuffer {
 	public fun add (Ljava/lang/String;Ljava/lang/Boolean;)V
+	public fun clear ()V
 	public fun clone ()Lio/sentry/featureflags/IFeatureFlagBuffer;
 	public synthetic fun clone ()Ljava/lang/Object;
 	public static fun create (Lio/sentry/SentryOptions;)Lio/sentry/featureflags/IFeatureFlagBuffer;
@@ -5048,6 +5053,7 @@ public final class io/sentry/featureflags/FeatureFlagBuffer : io/sentry/featuref
 
 public abstract interface class io/sentry/featureflags/IFeatureFlagBuffer {
 	public abstract fun add (Ljava/lang/String;Ljava/lang/Boolean;)V
+	public abstract fun clear ()V
 	public abstract fun clone ()Lio/sentry/featureflags/IFeatureFlagBuffer;
 	public abstract fun getFeatureFlags ()Lio/sentry/protocol/FeatureFlags;
 }
@@ -5055,6 +5061,7 @@ public abstract interface class io/sentry/featureflags/IFeatureFlagBuffer {
 public final class io/sentry/featureflags/NoOpFeatureFlagBuffer : io/sentry/featureflags/IFeatureFlagBuffer {
 	public fun <init> ()V
 	public fun add (Ljava/lang/String;Ljava/lang/Boolean;)V
+	public fun clear ()V
 	public fun clone ()Lio/sentry/featureflags/IFeatureFlagBuffer;
 	public synthetic fun clone ()Ljava/lang/Object;
 	public fun getFeatureFlags ()Lio/sentry/protocol/FeatureFlags;
@@ -5063,6 +5070,7 @@ public final class io/sentry/featureflags/NoOpFeatureFlagBuffer : io/sentry/feat
 
 public final class io/sentry/featureflags/SpanFeatureFlagBuffer : io/sentry/featureflags/IFeatureFlagBuffer {
 	public fun add (Ljava/lang/String;Ljava/lang/Boolean;)V
+	public fun clear ()V
 	public fun clone ()Lio/sentry/featureflags/IFeatureFlagBuffer;
 	public synthetic fun clone ()Ljava/lang/Object;
 	public static fun create ()Lio/sentry/featureflags/IFeatureFlagBuffer;

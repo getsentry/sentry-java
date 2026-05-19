@@ -4,6 +4,7 @@
 
 ### Features
 
+- Add API to clear feature flags from scopes ([#5426](https://github.com/getsentry/sentry-java/pull/5426))
 - Add support to configure reporting historical ANRs via `AndroidManifest.xml` using the  `io.sentry.anr.report-historical` attribute ([#5387](https://github.com/getsentry/sentry-java/pull/5387))
 
 ### Dependencies
