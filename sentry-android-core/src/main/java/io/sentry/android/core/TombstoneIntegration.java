@@ -154,6 +154,7 @@ public class TombstoneIntegration implements Integration, Closeable {
       SentryEvent event;
       @Nullable byte[] rawTombstone = null;
       try {
+        final boolean attachRaw = options.isAttachRawTombstone();
         try (final InputStream tombstoneInputStream = exitInfo.getTraceInputStream()) {
           if (tombstoneInputStream == null) {
             options
@@ -166,16 +167,20 @@ public class TombstoneIntegration implements Integration, Closeable {
             return null;
           }
 
-          rawTombstone = NativeEventUtils.readBytes(tombstoneInputStream);
-        }
+          if (attachRaw) {
+            rawTombstone = NativeEventUtils.readBytes(tombstoneInputStream);
+          }
 
-        try (final TombstoneParser parser =
-            new TombstoneParser(
-                new ByteArrayInputStream(rawTombstone),
-                this.options.getInAppIncludes(),
-                this.options.getInAppExcludes(),
-                this.context.getApplicationInfo().nativeLibraryDir)) {
-          event = parser.parse();
+          final InputStream parserInput =
+              attachRaw ? new ByteArrayInputStream(rawTombstone) : tombstoneInputStream;
+          try (final TombstoneParser parser =
+              new TombstoneParser(
+                  parserInput,
+                  this.options.getInAppIncludes(),
+                  this.options.getInAppExcludes(),
+                  this.context.getApplicationInfo().nativeLibraryDir)) {
+            event = parser.parse();
+          }
         }
       } catch (Throwable e) {
         options
@@ -196,7 +201,7 @@ public class TombstoneIntegration implements Integration, Closeable {
               options.getFlushTimeoutMillis(), options.getLogger(), tombstoneTimestamp, enrich);
       final Hint hint = HintUtils.createWithTypeCheckHint(tombstoneHint);
 
-      if (options.isAttachRawTombstone()) {
+      if (rawTombstone != null) {
         hint.setTombstone(Attachment.fromTombstone(rawTombstone));
       }
 
