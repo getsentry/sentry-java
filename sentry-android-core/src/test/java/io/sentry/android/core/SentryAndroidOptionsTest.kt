@@ -144,6 +144,19 @@ class SentryAndroidOptionsTest {
   }
 
   @Test
+  fun `anrThreadId defaults to 0 (Looper-probe mode)`() {
+    val sentryOptions = SentryAndroidOptions()
+    assertEquals(0L, sentryOptions.anrThreadId)
+  }
+
+  @Test
+  fun `anrThreadId getter setter round-trip`() {
+    val sentryOptions = SentryAndroidOptions()
+    sentryOptions.anrThreadId = 4242L
+    assertEquals(4242L, sentryOptions.anrThreadId)
+  }
+
+  @Test
   fun `performance v2 is enabled by default`() {
     val sentryOptions = SentryAndroidOptions()
     assertTrue(sentryOptions.isEnablePerformanceV2)

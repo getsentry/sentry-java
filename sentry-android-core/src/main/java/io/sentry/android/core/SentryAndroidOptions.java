@@ -38,6 +38,18 @@ public final class SentryAndroidOptions extends SentryOptions {
   private boolean anrReportInDebug = false;
 
   /**
+   * Linux kernel thread ID (TID) to monitor for app hangs. When set to a non-zero value, the ANR
+   * watchdog switches from Looper-based detection to heartbeat-based detection: the application
+   * must regularly call {@link io.sentry.Sentry#notifyAnrThreadAlive()} from the target thread to
+   * indicate it is responsive. If no heartbeat is received within {@link
+   * #getAnrTimeoutIntervalMillis()}, an ANR event is reported.
+   *
+   * <p>Intended for runtimes whose main thread is not an Android Looper thread (e.g. Unity,
+   * Unreal). Set to 0 (default) to use the standard Looper-probe watchdog.
+   */
+  private long anrThreadId = 0;
+
+  /**
    * Enable or disable automatic breadcrumbs for Activity lifecycle. Using
    * Application.ActivityLifecycleCallbacks
    */
@@ -328,6 +340,28 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   public void setAnrReportInDebug(boolean anrReportInDebug) {
     this.anrReportInDebug = anrReportInDebug;
+  }
+
+  /**
+   * Returns the Linux kernel thread ID (TID) monitored by the ANR watchdog in heartbeat mode.
+   * Default is 0 (Looper-probe mode).
+   *
+   * @return the TID or 0 if heartbeat mode is disabled
+   */
+  public long getAnrThreadId() {
+    return anrThreadId;
+  }
+
+  /**
+   * Sets the Linux kernel thread ID (TID) monitored by the ANR watchdog. When set to a non-zero
+   * value, the watchdog switches to heartbeat mode and expects {@link
+   * io.sentry.Sentry#notifyAnrThreadAlive()} to be called regularly from that thread. Default is 0
+   * (Looper-probe mode).
+   *
+   * @param tid the TID or 0 to disable heartbeat mode
+   */
+  public void setAnrThreadId(final long tid) {
+    this.anrThreadId = tid;
   }
 
   /**
