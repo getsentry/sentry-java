@@ -44,11 +44,11 @@ class ReplaySnapshotTest : BaseUiTest() {
 
     initSentry {
       it.sessionReplay.sessionSampleRate = 1.0
-      it.sessionReplay.snapshotObserver =
-        SentryReplayOptions.ReplaySnapshotObserver { hint, frameTimestamp, screenName ->
+      it.sessionReplay.frameObserver =
+        SentryReplayOptions.ReplayFrameObserver { hint, frameTimestamp, screenName ->
           val bitmap =
             hint.getAs(TypeCheckHint.REPLAY_FRAME_BITMAP, Bitmap::class.java)
-              ?: return@ReplaySnapshotObserver
+              ?: return@ReplayFrameObserver
           val name = screenName ?: "unknown"
           if (capturedScreens.add(name)) {
             val file = File(snapshotsDir, "${name}_$frameTimestamp.png")

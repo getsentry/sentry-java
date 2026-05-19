@@ -4056,6 +4056,7 @@ public final class io/sentry/SentryReplayOptions : io/sentry/SentryMaskingOption
 	public fun addUnmaskViewClass (Ljava/lang/String;)V
 	public fun getBeforeErrorSampling ()Lio/sentry/SentryReplayOptions$BeforeErrorSamplingCallback;
 	public fun getErrorReplayDuration ()J
+	public fun getFrameObserver ()Lio/sentry/SentryReplayOptions$ReplayFrameObserver;
 	public fun getFrameRate ()I
 	public fun getNetworkDetailAllowUrls ()Ljava/util/List;
 	public fun getNetworkDetailDenyUrls ()Ljava/util/List;
@@ -4069,7 +4070,6 @@ public final class io/sentry/SentryReplayOptions : io/sentry/SentryMaskingOption
 	public fun getSessionDuration ()J
 	public fun getSessionSampleRate ()Ljava/lang/Double;
 	public fun getSessionSegmentDuration ()J
-	public fun getSnapshotObserver ()Lio/sentry/SentryReplayOptions$ReplaySnapshotObserver;
 	public fun isCaptureSurfaceViews ()Z
 	public fun isDebug ()Z
 	public fun isNetworkCaptureBodies ()Z
@@ -4079,6 +4079,7 @@ public final class io/sentry/SentryReplayOptions : io/sentry/SentryMaskingOption
 	public fun setBeforeErrorSampling (Lio/sentry/SentryReplayOptions$BeforeErrorSamplingCallback;)V
 	public fun setCaptureSurfaceViews (Z)V
 	public fun setDebug (Z)V
+	public fun setFrameObserver (Lio/sentry/SentryReplayOptions$ReplayFrameObserver;)V
 	public fun setMaskAllImages (Z)V
 	public fun setMaskAllText (Z)V
 	public fun setNetworkCaptureBodies (Z)V
@@ -4091,7 +4092,6 @@ public final class io/sentry/SentryReplayOptions : io/sentry/SentryMaskingOption
 	public fun setScreenshotStrategy (Lio/sentry/ScreenshotStrategyType;)V
 	public fun setSdkVersion (Lio/sentry/protocol/SdkVersion;)V
 	public fun setSessionSampleRate (Ljava/lang/Double;)V
-	public fun setSnapshotObserver (Lio/sentry/SentryReplayOptions$ReplaySnapshotObserver;)V
 	public fun setTrackConfiguration (Z)V
 	public fun trackCustomMasking ()V
 }
@@ -4100,8 +4100,8 @@ public abstract interface class io/sentry/SentryReplayOptions$BeforeErrorSamplin
 	public abstract fun execute (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Z
 }
 
-public abstract interface class io/sentry/SentryReplayOptions$ReplaySnapshotObserver {
-	public abstract fun onSnapshotCaptured (Lio/sentry/Hint;JLjava/lang/String;)V
+public abstract interface class io/sentry/SentryReplayOptions$ReplayFrameObserver {
+	public abstract fun onMaskedFrameCaptured (Lio/sentry/Hint;JLjava/lang/String;)V
 }
 
 public final class io/sentry/SentryReplayOptions$SentryReplayQuality : java/lang/Enum {

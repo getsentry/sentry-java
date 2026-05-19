@@ -996,8 +996,8 @@ class ReplayIntegrationTest {
     replay.register(fixture.scopes, fixture.options)
     replay.start()
 
-    fixture.options.sessionReplay.snapshotObserver =
-      SentryReplayOptions.ReplaySnapshotObserver { hint, frameTimestamp, screenName ->
+    fixture.options.sessionReplay.frameObserver =
+      SentryReplayOptions.ReplayFrameObserver { hint, frameTimestamp, screenName ->
         callbackInvoked = true
         receivedTimestamp = frameTimestamp
         receivedScreen = screenName
@@ -1036,8 +1036,8 @@ class ReplayIntegrationTest {
     replay.register(fixture.scopes, fixture.options)
     replay.start()
 
-    fixture.options.sessionReplay.snapshotObserver =
-      SentryReplayOptions.ReplaySnapshotObserver { _, _, _ -> throw RuntimeException("test") }
+    fixture.options.sessionReplay.frameObserver =
+      SentryReplayOptions.ReplayFrameObserver { _, _, _ -> throw RuntimeException("test") }
 
     val sourceBitmap =
       mock<Bitmap> {
