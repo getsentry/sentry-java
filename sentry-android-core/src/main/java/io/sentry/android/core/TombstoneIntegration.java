@@ -152,7 +152,7 @@ public class TombstoneIntegration implements Integration, Closeable {
     public @Nullable ApplicationExitInfoHistoryDispatcher.Report buildReport(
         final @NotNull ApplicationExitInfo exitInfo, final boolean enrich) {
       SentryEvent event;
-      final byte[] rawTombstone;
+      @Nullable byte[] rawTombstone = null;
       try {
         try (final InputStream tombstoneInputStream = exitInfo.getTraceInputStream()) {
           if (tombstoneInputStream == null) {

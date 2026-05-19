@@ -239,7 +239,7 @@ public final class SentryAndroidOptions extends SentryOptions {
   private boolean attachAnrThreadDump = false;
 
   /**
-   * Controls whether to send raw tombstone as an attachment with plain text. The tombstone is being
+   * Controls whether to attach the raw tombstone protobuf as an attachment. The tombstone is being
    * attached from {@link ApplicationExitInfo#getTraceInputStream()}, if available.
    */
   private boolean attachRawTombstone = false;
