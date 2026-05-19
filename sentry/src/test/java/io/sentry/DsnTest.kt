@@ -145,4 +145,71 @@ class DsnTest {
     val dsn = Dsn("http://key@localhost:9000/456")
     assertNull(dsn.orgId)
   }
+
+  @Test
+  fun `when dsn is null, throws exception`() {
+    assertFailsWith<IllegalArgumentException> { Dsn(null) }
+  }
+
+  @Test
+  fun `when dsn has no scheme separator, throws exception`() {
+    assertFailsWith<IllegalArgumentException> { Dsn("httpspublicKey@host/id") }
+  }
+
+  @Test
+  fun `when dsn has no slash after host, throws exception`() {
+    assertFailsWith<IllegalArgumentException> { Dsn("https://key@host") }
+  }
+
+  @Test
+  fun `dsn parsed with multiple path segments`() {
+    val dsn = Dsn("https://key@host/path/to/sentry/id")
+
+    assertEquals("https://host/path/to/sentry/api/id", dsn.sentryUri.toURL().toString())
+    assertEquals("key", dsn.publicKey)
+    assertEquals("/path/to/sentry/", dsn.path)
+    assertEquals("id", dsn.projectId)
+  }
+
+  @Test
+  fun `dsn parsed with port and path`() {
+    val dsn = Dsn("http://key:secret@host:8080/path/id")
+
+    assertEquals("http://host:8080/path/api/id", dsn.sentryUri.toURL().toString())
+    assertEquals("key", dsn.publicKey)
+    assertEquals("secret", dsn.secretKey)
+    assertEquals("/path/", dsn.path)
+    assertEquals("id", dsn.projectId)
+  }
+
+  @Test
+  fun `dsn with multiple double slashes in path is normalized`() {
+    val dsn = Dsn("http://key@host//path//id")
+    assertEquals("http://host/path/api/id", dsn.sentryUri.toURL().toString())
+  }
+
+  @Test
+  fun `dsn with query string and port`() {
+    val dsn = Dsn("https://key@host:443/id?foo=bar&baz=1")
+
+    assertEquals("https://host:443/api/id", dsn.sentryUri.toURL().toString())
+    assertEquals("id", dsn.projectId)
+  }
+
+  @Test
+  fun `dsn with empty secret key after colon`() {
+    val dsn = Dsn("https://publicKey:@host/id")
+
+    assertEquals("publicKey", dsn.publicKey)
+    assertEquals("", dsn.secretKey)
+  }
+
+  @Test
+  fun `dsn with numeric project id`() {
+    val dsn = Dsn("https://key@o123.ingest.sentry.io/1234567")
+
+    assertEquals("1234567", dsn.projectId)
+    assertEquals("123", dsn.orgId)
+    assertEquals("https://o123.ingest.sentry.io/api/1234567", dsn.sentryUri.toURL().toString())
+  }
 }
