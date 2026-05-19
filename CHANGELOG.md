@@ -16,6 +16,10 @@
 
 ## 8.43.0
 
+### Improvements
+
+- Improve SDK init performance by replacing `java.net.URI` with custom string parsing for DSN ([#5448](https://github.com/getsentry/sentry-java/pull/5448))
+
 ### Features
 
 - Session Replay: Add `ReplayFrameObserver` for observing captured replay frames ([#5386](https://github.com/getsentry/sentry-java/pull/5386))
