@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Improvements
+
+- Improve SDK init performance by replacing `java.net.URI` with custom string parsing for DSN ([#5448](https://github.com/getsentry/sentry-java/pull/5448))
+
 ### Features
 
 - Add option to attach raw tombstone protobuf on native crash events ([#5446](https://github.com/getsentry/sentry-java/pull/5446))
