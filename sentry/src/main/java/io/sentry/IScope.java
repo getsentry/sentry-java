@@ -465,6 +465,8 @@ public interface IScope {
 
   void addFeatureFlag(final @Nullable String flag, final @Nullable Boolean result);
 
+  void clearFeatureFlags();
+
   @ApiStatus.Internal
   @Nullable
   FeatureFlags getFeatureFlags();

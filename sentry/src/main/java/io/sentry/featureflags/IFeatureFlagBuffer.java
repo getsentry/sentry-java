@@ -9,6 +9,8 @@ import org.jetbrains.annotations.Nullable;
 public interface IFeatureFlagBuffer {
   void add(final @Nullable String flag, final @Nullable Boolean result);
 
+  void clear();
+
   @Nullable
   FeatureFlags getFeatureFlags();
 
