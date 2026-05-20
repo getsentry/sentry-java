@@ -289,7 +289,7 @@ public class TombstoneIntegration implements Integration, Closeable {
       }
     }
 
-    private void mergeNativeCrashes(
+    public static void mergeNativeCrashes(
         final @NotNull SentryEvent nativeEvent, final @NotNull SentryEvent tombstoneEvent) {
       // we take the event data verbatim from the Native SDK and only apply tombstone data where we
       // are sure that it will improve the outcome:
