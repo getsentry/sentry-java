@@ -1065,12 +1065,19 @@ public final class SentryClient implements ISentryClient {
     // BeforeSend and EventProcessors are not supported at the moment for Profile Chunks
 
     try {
+      final SentryEnvelopeItem envelopeItem;
+      if (ProfileChunk.CONTENT_TYPE_PERFETTO.equals(profileChunk.getContentType())) {
+        envelopeItem =
+            SentryEnvelopeItem.fromPerfettoProfileChunk(profileChunk, options.getSerializer());
+      } else {
+        envelopeItem =
+            SentryEnvelopeItem.fromProfileChunk(
+                profileChunk, options.getSerializer(), options.getProfilerConverter());
+      }
       final @NotNull SentryEnvelope envelope =
           new SentryEnvelope(
               new SentryEnvelopeHeader(sentryId, options.getSdkVersion(), null),
-              Collections.singletonList(
-                  SentryEnvelopeItem.fromProfileChunk(
-                      profileChunk, options.getSerializer(), options.getProfilerConverter())));
+              Collections.singletonList(envelopeItem));
       sentryId = sendEnvelope(envelope, null);
     } catch (IOException | SentryEnvelopeException e) {
       options

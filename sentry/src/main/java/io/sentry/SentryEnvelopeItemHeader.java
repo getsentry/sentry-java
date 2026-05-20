@@ -21,6 +21,7 @@ public final class SentryEnvelopeItemHeader implements JsonSerializable, JsonUnk
   private final int length;
   @Nullable private final Callable<Integer> getLength;
   private final @Nullable String attachmentType;
+  @Nullable private final Callable<Integer> calculateMetaLength;
 
   private @Nullable Map<String, Object> unknown;
 
@@ -52,6 +53,62 @@ public final class SentryEnvelopeItemHeader implements JsonSerializable, JsonUnk
     return platform;
   }
 
+  @Nullable
+  Integer getMetaLength() {
+    if (calculateMetaLength != null) {
+      try {
+        return calculateMetaLength.call();
+      } catch (Throwable ignored) {
+        return null;
+      }
+    }
+    return null;
+  }
+
+  private SentryEnvelopeItemHeader(
+      final @NotNull SentryItemType type,
+      int length,
+      final @Nullable Callable<Integer> getLength,
+      final @Nullable String contentType,
+      final @Nullable String fileName,
+      final @Nullable String attachmentType,
+      final @Nullable String platform,
+      final @Nullable Integer itemCount,
+      final @Nullable Callable<Integer> calculateMetaLength) {
+    this.type = Objects.requireNonNull(type, "type is required");
+    this.contentType = contentType;
+    this.length = length;
+    this.fileName = fileName;
+    this.getLength = getLength;
+    this.attachmentType = attachmentType;
+    this.platform = platform;
+    this.itemCount = itemCount;
+    this.calculateMetaLength = calculateMetaLength;
+  }
+
+  /** Eager constructor used internally by {@link Deserializer#deserialize}. */
+  @ApiStatus.Internal
+  private SentryEnvelopeItemHeader(
+      final @NotNull SentryItemType type,
+      int length,
+      final @Nullable String contentType,
+      final @Nullable String fileName,
+      final @Nullable String attachmentType,
+      final @Nullable String platform,
+      final @Nullable Integer itemCount,
+      final @Nullable Integer metaLength) {
+    this(
+        type,
+        length,
+        null,
+        contentType,
+        fileName,
+        attachmentType,
+        platform,
+        itemCount,
+        metaLength != null ? () -> metaLength : null);
+  }
+
   @ApiStatus.Internal
   public SentryEnvelopeItemHeader(
       final @NotNull SentryItemType type,
@@ -61,23 +118,32 @@ public final class SentryEnvelopeItemHeader implements JsonSerializable, JsonUnk
       final @Nullable String attachmentType,
       final @Nullable String platform,
       final @Nullable Integer itemCount) {
-    this.type = Objects.requireNonNull(type, "type is required");
-    this.contentType = contentType;
-    this.length = length;
-    this.fileName = fileName;
-    this.getLength = null;
-    this.attachmentType = attachmentType;
-    this.platform = platform;
-    this.itemCount = itemCount;
+    this(type, length, contentType, fileName, attachmentType, platform, itemCount, null);
   }
 
+  /**
+   * Lazy constructor. Both length and metaLength are computed lazily as these depend on the Item
+   * having been evaluated.
+   */
   SentryEnvelopeItemHeader(
       final @NotNull SentryItemType type,
       final @Nullable Callable<Integer> getLength,
       final @Nullable String contentType,
       final @Nullable String fileName,
-      final @Nullable String attachmentType) {
-    this(type, getLength, contentType, fileName, attachmentType, null, null);
+      final @Nullable String attachmentType,
+      final @Nullable String platform,
+      final @Nullable Integer itemCount,
+      final @Nullable Callable<Integer> calculateMetaLength) {
+    this(
+        type,
+        -1,
+        getLength,
+        contentType,
+        fileName,
+        attachmentType,
+        platform,
+        itemCount,
+        calculateMetaLength);
   }
 
   SentryEnvelopeItemHeader(
@@ -88,14 +154,16 @@ public final class SentryEnvelopeItemHeader implements JsonSerializable, JsonUnk
       final @Nullable String attachmentType,
       final @Nullable String platform,
       final @Nullable Integer itemCount) {
-    this.type = Objects.requireNonNull(type, "type is required");
-    this.contentType = contentType;
-    this.length = -1;
-    this.fileName = fileName;
-    this.getLength = getLength;
-    this.attachmentType = attachmentType;
-    this.platform = platform;
-    this.itemCount = itemCount;
+    this(type, getLength, contentType, fileName, attachmentType, platform, itemCount, null);
+  }
+
+  SentryEnvelopeItemHeader(
+      final @NotNull SentryItemType type,
+      final @Nullable Callable<Integer> getLength,
+      final @Nullable String contentType,
+      final @Nullable String fileName,
+      final @Nullable String attachmentType) {
+    this(type, getLength, contentType, fileName, attachmentType, null, null);
   }
 
   SentryEnvelopeItemHeader(
@@ -125,6 +193,7 @@ public final class SentryEnvelopeItemHeader implements JsonSerializable, JsonUnk
     public static final String LENGTH = "length";
     public static final String PLATFORM = "platform";
     public static final String ITEM_COUNT = "item_count";
+    public static final String META_LENGTH = "meta_length";
   }
 
   @Override
@@ -148,6 +217,10 @@ public final class SentryEnvelopeItemHeader implements JsonSerializable, JsonUnk
       writer.name(JsonKeys.ITEM_COUNT).value(itemCount);
     }
     writer.name(JsonKeys.LENGTH).value(getLength());
+    final @Nullable Integer resolvedMetaLength = getMetaLength();
+    if (resolvedMetaLength != null) {
+      writer.name(JsonKeys.META_LENGTH).value(resolvedMetaLength);
+    }
     if (unknown != null) {
       for (String key : unknown.keySet()) {
         Object value = unknown.get(key);
@@ -171,6 +244,7 @@ public final class SentryEnvelopeItemHeader implements JsonSerializable, JsonUnk
       String attachmentType = null;
       String platform = null;
       Integer itemCount = null;
+      Integer metaLength = null;
       Map<String, Object> unknown = null;
 
       while (reader.peek() == JsonToken.NAME) {
@@ -197,6 +271,9 @@ public final class SentryEnvelopeItemHeader implements JsonSerializable, JsonUnk
           case JsonKeys.ITEM_COUNT:
             itemCount = reader.nextIntegerOrNull();
             break;
+          case JsonKeys.META_LENGTH:
+            metaLength = reader.nextIntegerOrNull();
+            break;
           default:
             if (unknown == null) {
               unknown = new HashMap<>();
@@ -210,7 +287,7 @@ public final class SentryEnvelopeItemHeader implements JsonSerializable, JsonUnk
       }
       SentryEnvelopeItemHeader sentryEnvelopeItemHeader =
           new SentryEnvelopeItemHeader(
-              type, length, contentType, fileName, attachmentType, platform, itemCount);
+              type, length, contentType, fileName, attachmentType, platform, itemCount, metaLength);
       sentryEnvelopeItemHeader.setUnknown(unknown);
       reader.endObject();
       return sentryEnvelopeItemHeader;
