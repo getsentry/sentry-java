@@ -18,6 +18,12 @@ java.targetCompatibility = JavaVersion.VERSION_17
 
 repositories { mavenCentral() }
 
+dependencyManagement {
+  imports {
+    mavenBom("org.springframework.boot:spring-boot-dependencies:${libs.versions.springboot3.get()}")
+  }
+}
+
 // Apollo 4.x requires coroutines 1.9.0+, override Spring Boot's managed version
 extra["kotlin-coroutines.version"] = "1.9.0"
 

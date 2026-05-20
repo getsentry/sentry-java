@@ -160,6 +160,7 @@ slf4j2-api = { module = "org.slf4j:slf4j-api", version = "2.0.5" }
 spotlessLib = { module = "com.diffplug.spotless:com.diffplug.spotless.gradle.plugin", version.ref = "spotless"}
 springboot2-bom = { module = "org.springframework.boot:spring-boot-dependencies", version.ref = "springboot2" }
 springboot-starter = { module = "org.springframework.boot:spring-boot-starter", version.ref = "springboot2" }
+spring-graphql = { module = "org.springframework.graphql:spring-graphql", version = "1.0.6" }
 springboot-starter-graphql = { module = "org.springframework.boot:spring-boot-starter-graphql", version.ref = "springboot2" }
 springboot-starter-quartz = { module = "org.springframework.boot:spring-boot-starter-quartz", version.ref = "springboot2" }
 springboot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test", version.ref = "springboot2" }

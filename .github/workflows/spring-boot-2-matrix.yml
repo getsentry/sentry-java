@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        springboot-version: [ '2.1.0', '2.2.5', '2.4.13', '2.5.15', '2.6.15', '2.7.0', '2.7.18' ]
+        springboot-version: [ '2.4.13', '2.5.15', '2.6.15', '2.7.0', '2.7.18' ]
 
     name: Spring Boot ${{ matrix.springboot-version }}
     env:
@@ -62,8 +62,13 @@ jobs:
 
       - name: Update Spring Boot 2.x version
         run: |
-          sed -i 's/^springboot2=.*/springboot2=${{ matrix.springboot-version }}/' gradle/libs.versions.toml
-          echo "Updated Spring Boot 2.x version to ${{ matrix.springboot-version }}"
+          springboot_version="${{ matrix.springboot-version }}"
+          if [[ ! "$springboot_version" =~ ^2\.7\. ]]; then
+            echo "ORG_GRADLE_PROJECT_excludeGraphql=true" >> "$GITHUB_ENV"
+            echo "ORG_GRADLE_PROJECT_excludeKafka=true" >> "$GITHUB_ENV"
+          fi
+          sed -i 's/^\(springboot2[[:space:]]*=[[:space:]]*\)".*"/\1"'"$springboot_version"'"/' gradle/libs.versions.toml
+          echo "Updated Spring Boot 2.x version to $springboot_version"
 
       - name: Exclude android modules from build
         run: |

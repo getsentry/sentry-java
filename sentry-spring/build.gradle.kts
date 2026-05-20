@@ -34,7 +34,7 @@ dependencies {
   compileOnly(libs.otel)
   compileOnly(libs.servlet.api)
   compileOnly(libs.slf4j.api)
-  compileOnly(libs.springboot.starter.graphql)
+  compileOnly(libs.spring.graphql)
   compileOnly(libs.springboot.starter.quartz)
   compileOnly(libs.spring.kafka2)
   compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryAgentcustomization)

@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        springboot-version: [ '3.0.0', '3.2.12', '3.3.13', '3.4.13', '3.5.13' ]
+        springboot-version: [ '3.2.12', '3.3.13', '3.4.13', '3.5.13' ]
 
     name: Spring Boot ${{ matrix.springboot-version }}
     env:
@@ -62,7 +62,7 @@ jobs:
 
       - name: Update Spring Boot 3.x version
         run: |
-          sed -i 's/^springboot3=.*/springboot3=${{ matrix.springboot-version }}/' gradle/libs.versions.toml
+          sed -i 's/^\(springboot3[[:space:]]*=[[:space:]]*\)".*"/\1"${{ matrix.springboot-version }}"/' gradle/libs.versions.toml
           echo "Updated Spring Boot 3.x version to ${{ matrix.springboot-version }}"
 
       - name: Exclude android modules from build

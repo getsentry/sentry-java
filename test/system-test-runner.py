@@ -224,11 +224,14 @@ class SystemTestRunner:
         except (OSError, ProcessLookupError):
             print(f"Process {pid} was already dead")
 
+    def exclude_kafka(self) -> bool:
+        return os.environ.get("ORG_GRADLE_PROJECT_excludeKafka") == "true"
+
     def module_requires_kafka(self, sample_module: str) -> bool:
-        return sample_module in KAFKA_BROKER_REQUIRED_MODULES
+        return not self.exclude_kafka() and sample_module in KAFKA_BROKER_REQUIRED_MODULES
 
     def module_requires_kafka_profile(self, sample_module: str) -> bool:
-        return sample_module in KAFKA_PROFILE_REQUIRED_MODULES
+        return not self.exclude_kafka() and sample_module in KAFKA_PROFILE_REQUIRED_MODULES
 
     def wait_for_port(self, host: str, port: int, max_attempts: int = 20) -> bool:
         for _ in range(max_attempts):
