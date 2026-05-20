@@ -8,4 +8,4 @@ jobs:
   danger:
     runs-on: ubuntu-latest
     steps:
-      - uses: getsentry/github-workflows/danger@26f565c05d0dd49f703d238706b775883037d76b # v3
+      - uses: getsentry/github-workflows/danger@607fed74f812e69201531a5185b6c3c57caa4e89 # v3
