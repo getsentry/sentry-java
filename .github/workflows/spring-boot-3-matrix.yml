@@ -5,8 +5,14 @@ on:
     branches:
       - main
     paths-ignore:
-      - '**/sentry-android/**'
+      - '*android*/**'
+      - 'sentry-compose/**'
+      - 'sentry-samples/sentry-samples-android/**'
   pull_request:
+    paths-ignore:
+      - '*android*/**'
+      - 'sentry-compose/**'
+      - 'sentry-samples/sentry-samples-android/**'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
