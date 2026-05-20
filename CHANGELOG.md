@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Add `SentrySQLiteDriver` to `sentry-android-sqlite` for instrumenting AndroidX's `SQLiteDriver` ([#5466](https://github.com/getsentry/sentry-java/pull/5466))
+  - Automatically generates spans for all SQLite statements
+  - To use it, pass your `SQLiteDriver` to `SentrySQLiteDriver.create(...)`
+  - See https://docs.sentry.io/platforms/android/integrations/room-and-sqlite/ for more details, including info about migrating from `SentrySupportSQLiteOpenHelper`
+
 ## 8.43.0
 
 ### Features

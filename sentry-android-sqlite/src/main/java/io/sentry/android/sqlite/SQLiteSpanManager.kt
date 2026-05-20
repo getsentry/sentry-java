@@ -4,20 +4,18 @@ import android.database.CrossProcessCursor
 import android.database.SQLException
 import io.sentry.IScopes
 import io.sentry.ISpan
-import io.sentry.Instrumenter
 import io.sentry.ScopesAdapter
 import io.sentry.SentryIntegrationPackageStorage
-import io.sentry.SentryStackTraceFactory
-import io.sentry.SpanDataConvention
 import io.sentry.SpanStatus
-
-private const val TRACE_ORIGIN = "auto.db.sqlite"
+import io.sentry.sqlite.SQLiteSpanHelper
+import io.sentry.sqlite.dbMetadataFromDatabaseName
 
 internal class SQLiteSpanManager(
   private val scopes: IScopes = ScopesAdapter.getInstance(),
-  private val databaseName: String? = null,
+  databaseName: String? = null,
 ) {
-  private val stackTraceFactory = SentryStackTraceFactory(scopes.options)
+
+  private val spanHelper = SQLiteSpanHelper(scopes, dbMetadataFromDatabaseName(databaseName))
 
   init {
     SentryIntegrationPackageStorage.getInstance().addIntegration("SQLite")
@@ -45,33 +43,18 @@ internal class SQLiteSpanManager(
       if (result is CrossProcessCursor) {
         return SentryCrossProcessCursor(result, this, sql) as T
       }
-      span = scopes.span?.startChild("db.sql.query", sql, startTimestamp, Instrumenter.SENTRY)
-      span?.spanContext?.origin = TRACE_ORIGIN
+      span = spanHelper.startSpan(sql, startTimestamp)
       span?.status = SpanStatus.OK
       result
     } catch (e: Throwable) {
-      span = scopes.span?.startChild("db.sql.query", sql, startTimestamp, Instrumenter.SENTRY)
-      span?.spanContext?.origin = TRACE_ORIGIN
+      span = spanHelper.startSpan(sql, startTimestamp)
       span?.status = SpanStatus.INTERNAL_ERROR
       span?.throwable = e
       throw e
     } finally {
-      span?.apply {
-        val isMainThread: Boolean = scopes.options.threadChecker.isMainThread
-        setData(SpanDataConvention.BLOCKED_MAIN_THREAD_KEY, isMainThread)
-        if (isMainThread) {
-          setData(SpanDataConvention.CALL_STACK_KEY, stackTraceFactory.inAppCallStack)
-        }
-        // if db name is null, then it's an in-memory database as per
-        // https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:sqlite/sqlite/src/main/java/androidx/sqlite/db/SupportSQLiteOpenHelper.kt;l=38-42
-        if (databaseName != null) {
-          setData(SpanDataConvention.DB_SYSTEM_KEY, "sqlite")
-          setData(SpanDataConvention.DB_NAME_KEY, databaseName)
-        } else {
-          setData(SpanDataConvention.DB_SYSTEM_KEY, "in-memory")
-        }
-
-        finish()
+      span?.let {
+        spanHelper.applyDataToSpan(it)
+        it.finish()
       }
     }
   }
