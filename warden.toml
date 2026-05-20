@@ -1,0 +1,100 @@
+version = 1
+
+[defaults]
+model = "anthropic/claude-sonnet-4-6"
+
+# Warden's schema does not support per-skill verification config; this is the only
+# placement available. Disabled for attribution policy checks: a second verifier
+# pass often rejects valid header/NOTICES mismatches (e.g. "NOTICES still documents it").
+[defaults.verification]
+enabled = false
+
+# Warden's schema does not support per-skill chunking config; these patterns apply
+# globally but are tuned for check-code-attribution. Attribution checks need the full
+# file header and a NOTICES cross-check — not isolated diff hunks.
+[[defaults.chunking.filePatterns]]
+pattern = "**/*.api"
+mode = "skip"
+
+[[defaults.chunking.filePatterns]]
+pattern = "**/gradlew"
+mode = "skip"
+
+[[defaults.chunking.filePatterns]]
+pattern = "**/gradlew.bat"
+mode = "skip"
+
+[[defaults.chunking.filePatterns]]
+pattern = "**/*.java"
+mode = "whole-file"
+
+[[defaults.chunking.filePatterns]]
+pattern = "**/*.kt"
+mode = "whole-file"
+
+[[defaults.chunking.filePatterns]]
+pattern = "**/*.kts"
+mode = "whole-file"
+
+[[defaults.chunking.filePatterns]]
+pattern = "THIRD_PARTY_NOTICES.md"
+mode = "whole-file"
+
+# Coalesce hunks aggressively for any remaining per-hunk files
+[defaults.chunking.coalesce]
+enabled = true
+maxGapLines = 100
+maxChunkSize = 16000
+
+[[skills]]
+name = "check-code-attribution"
+maxTurns = 30
+# Phase 1: report only — Warden comments on PRs but does not block merges.
+# Tighten to failOn = "medium" / requestChanges = true once the false-positive baseline is established.
+failOn = "off"
+reportOn = "medium"
+ignorePaths = [
+  # Infrastructure directories
+  ".agents/**",
+  ".claude/**",
+  ".cursor/**",
+  ".github/**",
+  ".gradle/**",
+  ".idea/**",
+  ".mvn/**",
+  "gradle/**",
+  # Generated files
+  "**/*.aidl",
+  "**/*.api",
+  "**/*.g.kt",
+  "**/*.interp",
+  "**/*.pb.java",
+  "**/*.tokens",
+  "**/databinding/*Binding.java",
+  "**/generated/**",
+  "**/gradlew",
+  "**/gradlew.bat",
+  "**/grpc/*Grpc.java",
+  "**/ksp/**",
+  "**/mvnw",
+  "**/mvnw.cmd",
+  # Binary files
+  "**/*.jar",
+  # Repo docs (attribution examples in prose, not vendored code)
+  "AGENTS.md",
+  "CHANGELOG.md",
+  "CLAUDE.md",
+  "**/README.md",
+  # Warden infrastructure
+  ".warden/**",
+  "warden.toml",
+]
+
+[[skills.triggers]]
+type = "pull_request"
+actions = ["opened", "synchronize"]
+requestChanges = false
+failCheck = false
+
+[[skills.triggers]]
+type = "local"
