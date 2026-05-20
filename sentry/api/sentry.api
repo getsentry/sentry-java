@@ -4063,6 +4063,7 @@ public final class io/sentry/SentryReplayOptions : io/sentry/SentryMaskingOption
 	public fun addUnmaskViewClass (Ljava/lang/String;)V
 	public fun getBeforeErrorSampling ()Lio/sentry/SentryReplayOptions$BeforeErrorSamplingCallback;
 	public fun getErrorReplayDuration ()J
+	public fun getFrameObserver ()Lio/sentry/SentryReplayOptions$ReplayFrameObserver;
 	public fun getFrameRate ()I
 	public fun getNetworkDetailAllowUrls ()Ljava/util/List;
 	public fun getNetworkDetailDenyUrls ()Ljava/util/List;
@@ -4085,6 +4086,7 @@ public final class io/sentry/SentryReplayOptions : io/sentry/SentryMaskingOption
 	public fun setBeforeErrorSampling (Lio/sentry/SentryReplayOptions$BeforeErrorSamplingCallback;)V
 	public fun setCaptureSurfaceViews (Z)V
 	public fun setDebug (Z)V
+	public fun setFrameObserver (Lio/sentry/SentryReplayOptions$ReplayFrameObserver;)V
 	public fun setMaskAllImages (Z)V
 	public fun setMaskAllText (Z)V
 	public fun setNetworkCaptureBodies (Z)V
@@ -4103,6 +4105,10 @@ public final class io/sentry/SentryReplayOptions : io/sentry/SentryMaskingOption
 
 public abstract interface class io/sentry/SentryReplayOptions$BeforeErrorSamplingCallback {
 	public abstract fun execute (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Z
+}
+
+public abstract interface class io/sentry/SentryReplayOptions$ReplayFrameObserver {
+	public abstract fun onMaskedFrameCaptured (Lio/sentry/Hint;JLjava/lang/String;)V
 }
 
 public final class io/sentry/SentryReplayOptions$SentryReplayQuality : java/lang/Enum {
@@ -4651,6 +4657,7 @@ public final class io/sentry/TypeCheckHint {
 	public static final field OKHTTP_RESPONSE Ljava/lang/String;
 	public static final field OPEN_FEIGN_REQUEST Ljava/lang/String;
 	public static final field OPEN_FEIGN_RESPONSE Ljava/lang/String;
+	public static final field REPLAY_FRAME_BITMAP Ljava/lang/String;
 	public static final field SENTRY_DART_SDK_NAME Ljava/lang/String;
 	public static final field SENTRY_DOTNET_SDK_NAME Ljava/lang/String;
 	public static final field SENTRY_EVENT_DROP_REASON Ljava/lang/String;
