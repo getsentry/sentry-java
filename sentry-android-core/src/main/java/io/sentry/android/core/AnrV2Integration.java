@@ -18,6 +18,7 @@ import io.sentry.SentryOptions;
 import io.sentry.android.core.cache.AndroidEnvelopeCache;
 import io.sentry.android.core.internal.threaddump.Lines;
 import io.sentry.android.core.internal.threaddump.ThreadDumpParser;
+import io.sentry.android.core.internal.util.NativeEventUtils;
 import io.sentry.hints.AbnormalExit;
 import io.sentry.hints.Backfillable;
 import io.sentry.hints.BlockingFlushHint;
@@ -32,7 +33,6 @@ import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
@@ -194,7 +194,7 @@ public class AnrV2Integration implements Integration, Closeable {
         if (trace == null) {
           return new ParseResult(ParseResult.Type.NO_DUMP);
         }
-        dump = getDumpBytes(trace);
+        dump = NativeEventUtils.readBytes(trace);
       } catch (Throwable e) {
         options.getLogger().log(SentryLevel.WARNING, "Failed to read ANR thread dump", e);
         return new ParseResult(ParseResult.Type.NO_DUMP);
@@ -221,20 +221,6 @@ public class AnrV2Integration implements Integration, Closeable {
       } catch (Throwable e) {
         options.getLogger().log(SentryLevel.WARNING, "Failed to parse ANR thread dump", e);
         return new ParseResult(ParseResult.Type.ERROR, dump);
-      }
-    }
-
-    private byte[] getDumpBytes(final @NotNull InputStream trace) throws IOException {
-      try (final ByteArrayOutputStream buffer = new ByteArrayOutputStream()) {
-
-        int nRead;
-        final byte[] data = new byte[1024];
-
-        while ((nRead = trace.read(data, 0, data.length)) != -1) {
-          buffer.write(data, 0, nRead);
-        }
-
-        return buffer.toByteArray();
       }
     }
   }

@@ -399,6 +399,11 @@ public final class SentryClient implements ISentryClient {
       attachments.add(threadDump);
     }
 
+    @Nullable final Attachment tombstone = hint.getTombstone();
+    if (tombstone != null) {
+      attachments.add(tombstone);
+    }
+
     return attachments;
   }
 
