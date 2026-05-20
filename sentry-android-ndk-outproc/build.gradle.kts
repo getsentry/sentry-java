@@ -1,0 +1,100 @@
+import org.jetbrains.kotlin.config.KotlinCompilerVersion
+
+plugins {
+  id("com.android.library")
+  alias(libs.plugins.kotlin.android)
+  alias(libs.plugins.gradle.versions)
+}
+
+android {
+  compileSdk = libs.versions.compileSdk.get().toInt()
+  namespace = "io.sentry.android.ndk"
+
+  defaultConfig {
+    minSdk = libs.versions.minSdk.get().toInt()
+
+    testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+    ndk { abiFilters.addAll(Config.Android.abiFilters) }
+
+    // for AGP 4.1
+    buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
+    buildConfigField("String", "SENTRY_PACKAGE_NAME", "\"${project.name}\"")
+  }
+
+  buildTypes {
+    getByName("debug") { consumerProguardFiles("../sentry-android-ndk/proguard-rules.pro") }
+    getByName("release") { consumerProguardFiles("../sentry-android-ndk/proguard-rules.pro") }
+  }
+
+  // AGP 9 only generates unit tests for the testBuildType. The debug variant is
+  // disabled, so unit tests must target release to run at all.
+  testBuildType = "release"
+
+  kotlin { compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8 }
+
+  testOptions {
+    animationsDisabled = true
+    unitTests.apply {
+      isReturnDefaultValues = true
+      isIncludeAndroidResources = true
+    }
+  }
+
+  lint {
+    warningsAsErrors = true
+    checkDependencies = true
+
+    // We run a full lint analysis as build part in CI, so skip vital checks for assemble tasks.
+    checkReleaseBuilds = false
+  }
+
+  // needed because of Kotlin 1.4.x
+  configurations.all { resolutionStrategy.force(libs.jetbrains.annotations.get()) }
+
+  buildFeatures { buildConfig = true }
+
+  androidComponents.beforeVariants {
+    it.enable = !Config.Android.shouldSkipDebugVariant(it.buildType)
+  }
+
+  // the default AGP version is too high, we keep this low for compatibility reasons
+  // see https://developer.android.com/build/releases/past-releases/ to find the AGP-NDK mapping
+  ndkVersion = "23.1.7779620"
+
+  @Suppress("UnstableApiUsage") packagingOptions { jniLibs { useLegacyPackaging = true } }
+}
+
+dependencies {
+  api(projects.sentry)
+  api(projects.sentryAndroidCore)
+
+  compileOnly(libs.jetbrains.annotations)
+
+  implementation(libs.sentry.native.ndk.outproc)
+
+  testImplementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
+  testImplementation(libs.kotlin.test.junit)
+  testImplementation(libs.mockito.kotlin)
+  testImplementation(projects.sentryTestSupport)
+  testImplementation(libs.google.truth)
+  testImplementation(libs.roboelectric)
+}
+
+configurations
+  .matching {
+    it.name == "releaseApiElements" ||
+      it.name == "releaseRuntimeElements" ||
+      it.name == "releaseVariantReleaseApiPublication" ||
+      it.name == "releaseVariantReleaseRuntimePublication"
+  }
+  .configureEach {
+    outgoing.capability("${project.group}:${project.name}:${project.version}")
+    outgoing.capability("${project.group}:sentry-android-ndk:${project.version}")
+  }
+
+extensions.configure<com.android.build.gradle.BaseExtension> {
+  sourceSets.getByName("main").java.srcDir("../sentry-android-ndk/src/main/java")
+  sourceSets.getByName("test").java.srcDir("../sentry-android-ndk/src/test/java")
+  sourceSets.getByName("test").resources.srcDir("../sentry-android-ndk/src/test/resources")
+}
