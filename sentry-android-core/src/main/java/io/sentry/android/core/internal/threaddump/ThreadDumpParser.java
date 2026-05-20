@@ -23,6 +23,7 @@ import io.sentry.SentryLockReason;
 import io.sentry.SentryOptions;
 import io.sentry.SentryStackTraceFactory;
 import io.sentry.android.core.internal.util.NativeEventUtils;
+import io.sentry.protocol.ArtContext;
 import io.sentry.protocol.DebugImage;
 import io.sentry.protocol.SentryStackFrame;
 import io.sentry.protocol.SentryStackTrace;
@@ -109,6 +110,8 @@ public class ThreadDumpParser {
 
   private final @NotNull List<SentryThread> threads;
 
+  private final @NotNull ArtContextParser artContextParser = new ArtContextParser();
+
   public ThreadDumpParser(final @NotNull SentryOptions options, final boolean isBackground) {
     this.options = options;
     this.isBackground = isBackground;
@@ -125,6 +128,11 @@ public class ThreadDumpParser {
   @NotNull
   public List<SentryThread> getThreads() {
     return threads;
+  }
+
+  @Nullable
+  public ArtContext getArtContext() {
+    return artContextParser.getArtContext();
   }
 
   public void parse(final @NotNull Lines lines) {
@@ -148,6 +156,8 @@ public class ThreadDumpParser {
         if (thread != null) {
           threads.add(thread);
         }
+      } else {
+        artContextParser.parseLine(text);
       }
     }
   }
