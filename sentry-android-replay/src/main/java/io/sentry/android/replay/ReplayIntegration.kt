@@ -2,6 +2,7 @@ package io.sentry.android.replay
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.os.Build
 import android.view.MotionEvent
 import io.sentry.Breadcrumb
@@ -331,7 +332,25 @@ public class ReplayIntegration(
   }
 
   override fun onScreenshotRecorded(screenshot: File, frameTimestamp: Long) {
-    captureStrategy?.onScreenshotRecorded { _ -> addFrame(screenshot, frameTimestamp) }
+    var screen: String? = null
+    scopes?.configureScope { screen = it.screen?.substringAfterLast('.') }
+    captureStrategy?.onScreenshotRecorded { _ ->
+      val observer = options.sessionReplay.frameObserver
+      if (observer != null) {
+        val bitmap = BitmapFactory.decodeFile(screenshot.absolutePath)
+        if (bitmap != null) {
+          try {
+            val hint = Hint()
+            hint.set(TypeCheckHint.REPLAY_FRAME_BITMAP, bitmap)
+            observer.onMaskedFrameCaptured(hint, frameTimestamp, screen)
+          } catch (e: Throwable) {
+            options.logger.log(ERROR, "Error in ReplayFrameObserver", e)
+            bitmap.recycle()
+          }
+        }
+      }
+      addFrame(screenshot, frameTimestamp, screen)
+    }
     checkCanRecord()
   }
 
