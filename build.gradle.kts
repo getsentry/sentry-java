@@ -43,7 +43,6 @@ buildscript {
         // add classpath of sentry android gradle plugin
         // classpath("io.sentry:sentry-android-gradle-plugin:{version}")
 
-        classpath(libs.commons.compress)
     }
 }
 
