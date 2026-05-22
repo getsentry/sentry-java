@@ -262,14 +262,6 @@ tasks.register("buildForCodeQL") {
         }
 }
 
-// Workaround for https://youtrack.jetbrains.com/issue/IDEA-316081/Gradle-8-toolchain-error-Toolchain-from-executable-property-does-not-match-toolchain-from-javaLauncher-property-when-different
-gradle.taskGraph.whenReady {
-    val task = this.allTasks.find { it.name.endsWith(".main()") } as? JavaExec
-    task?.let {
-        it.setExecutable(it.javaLauncher.get().executablePath.asFile.absolutePath)
-    }
-}
-
 /*
  * Adapted from https://github.com/androidx/androidx/blob/c799cba927a71f01ea6b421a8f83c181682633fb/buildSrc/private/src/main/kotlin/androidx/build/MavenUploadHelper.kt#L524-L549
  *
