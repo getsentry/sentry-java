@@ -38,7 +38,9 @@ buildscript {
         google()
     }
     dependencies {
-        classpath(Config.BuildPlugins.androidGradle)
+        classpath(Config.BuildPlugins.androidGradle) {
+            exclude(group = "org.apache.commons", module = "commons-compress")
+        }
 
         // add classpath of sentry android gradle plugin
         // classpath("io.sentry:sentry-android-gradle-plugin:{version}")
