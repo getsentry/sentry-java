@@ -214,9 +214,9 @@ subprojects {
             }
         }
 
-        afterEvaluate {
-            apply<MavenPublishPlugin>()
+        apply<MavenPublishPlugin>()
 
+        afterEvaluate {
             configure<MavenPublishBaseExtension> {
                 assignAarTypes()
             }
