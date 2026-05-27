@@ -33,6 +33,7 @@ import io.sentry.transport.ICurrentDateProvider
 import java.io.File
 import java.util.Date
 import java.util.Deque
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
@@ -96,6 +97,7 @@ internal abstract class BaseCaptureStrategy(
   override var replayType by persistableAtomic<ReplayType>(propertyName = SEGMENT_KEY_REPLAY_TYPE)
 
   protected val currentEvents: Deque<RRWebEvent> = ConcurrentLinkedDeque()
+  protected val currentTraceIds: MutableSet<String> = ConcurrentHashMap.newKeySet()
 
   override fun start(segmentId: Int, replayId: SentryId, replayType: ReplayType?) {
     cache = replayCacheProvider?.invoke(replayId) ?: ReplayCache(options, replayId)
@@ -135,8 +137,10 @@ internal abstract class BaseCaptureStrategy(
     screenAtStart: String? = this.screenAtStart,
     breadcrumbs: List<Breadcrumb>? = null,
     events: Deque<RRWebEvent> = this.currentEvents,
-  ): ReplaySegment =
-    createSegment(
+  ): ReplaySegment {
+    val traceIds = currentTraceIds.toList().ifEmpty { null }
+    currentTraceIds.clear()
+    return createSegment(
       scopes,
       options,
       duration,
@@ -152,7 +156,9 @@ internal abstract class BaseCaptureStrategy(
       screenAtStart,
       breadcrumbs,
       events,
+      traceIds,
     )
+  }
 
   override fun onConfigurationChanged(recorderConfig: ScreenshotRecorderConfig) {
     this.recorderConfig = recorderConfig
@@ -164,6 +170,12 @@ internal abstract class BaseCaptureStrategy(
       if (rrwebEvents != null) {
         currentEvents += rrwebEvents
       }
+    }
+  }
+
+  override fun registerTraceId(traceId: SentryId) {
+    if (traceId != SentryId.EMPTY_ID) {
+      currentTraceIds.add(traceId.toString())
     }
   }
 

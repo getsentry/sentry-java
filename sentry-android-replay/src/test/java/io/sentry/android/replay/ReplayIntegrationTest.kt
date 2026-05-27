@@ -1072,6 +1072,38 @@ class ReplayIntegrationTest {
     verify(fixture.replayCache).addFrame(any<Bitmap>(), any(), anyOrNull())
   }
 
+  @Test
+  fun `registerTraceId does nothing when replay is not started`() {
+    val replay = fixture.getSut(context)
+
+    replay.register(fixture.scopes, fixture.options)
+    // Don't call start()
+
+    // Should not throw
+    replay.registerTraceId(SentryId())
+  }
+
+  @Test
+  fun `registerTraceId forwards to capture strategy when recording`() {
+    var traceIdRegistered: SentryId? = null
+    val captureStrategy =
+      mock<CaptureStrategy> {
+        on { currentReplayId }.thenReturn(SentryId())
+        doAnswer { traceIdRegistered = it.arguments[0] as SentryId }
+          .whenever(mock)
+          .registerTraceId(any())
+      }
+    val replay = fixture.getSut(context, replayCaptureStrategyProvider = { captureStrategy })
+
+    replay.register(fixture.scopes, fixture.options)
+    replay.start()
+
+    val traceId = SentryId()
+    replay.registerTraceId(traceId)
+
+    assertEquals(traceId, traceIdRegistered)
+  }
+
   private fun getSessionCaptureStrategy(options: SentryOptions): SessionCaptureStrategy =
     SessionCaptureStrategy(
       options,

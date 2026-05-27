@@ -280,6 +280,13 @@ public class ReplayIntegration(
 
   override fun isDebugMaskingOverlayEnabled(): Boolean = debugMaskingEnabled
 
+  override fun registerTraceId(traceId: SentryId) {
+    if (!isEnabled.get() || !isRecording()) {
+      return
+    }
+    captureStrategy?.registerTraceId(traceId)
+  }
+
   private fun pauseInternal() {
     lifecycleLock.acquire().use {
       if (!isEnabled.get() || !lifecycle.isAllowed(PAUSED)) {

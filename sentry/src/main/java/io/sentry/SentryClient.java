@@ -1043,6 +1043,13 @@ public final class SentryClient implements ISentryClient {
       sentryId = SentryId.EMPTY_ID;
     }
 
+    if (!sentryId.equals(SentryId.EMPTY_ID)) {
+      final @Nullable SpanContext trace = transaction.getContexts().getTrace();
+      if (trace != null) {
+        options.getReplayController().registerTraceId(trace.getTraceId());
+      }
+    }
+
     return sentryId;
   }
 
