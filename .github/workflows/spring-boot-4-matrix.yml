@@ -50,6 +50,7 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      # Workaround for https://github.com/gradle/actions/issues/21 to use config cache
       - name: Cache buildSrc
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
         with:
