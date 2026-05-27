@@ -81,8 +81,7 @@ jobs:
             :sentry-samples:sentry-samples-spring-boot-4-opentelemetry-noagent:testClasses \
             :sentry-samples:sentry-samples-spring-7:war \
             :sentry-samples:sentry-samples-spring-7:testClasses \
-            :sentry-opentelemetry:sentry-opentelemetry-agent:assemble \
-            --parallel
+            :sentry-opentelemetry:sentry-opentelemetry-agent:assemble
 
       - name: Run sentry-samples-spring-boot-4
         run: |

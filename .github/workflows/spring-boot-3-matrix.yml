@@ -81,8 +81,7 @@ jobs:
             :sentry-samples:sentry-samples-spring-boot-jakarta-opentelemetry-noagent:testClasses \
             :sentry-samples:sentry-samples-spring-jakarta:war \
             :sentry-samples:sentry-samples-spring-jakarta:testClasses \
-            :sentry-opentelemetry:sentry-opentelemetry-agent:assemble \
-            --parallel
+            :sentry-opentelemetry:sentry-opentelemetry-agent:assemble
 
       - name: Test sentry-samples-spring-boot-jakarta
         run: |
