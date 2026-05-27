@@ -89,8 +89,8 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   private boolean shouldSendStartMeasurements = true;
   private final AtomicInteger activeActivitiesCounter = new AtomicInteger();
   private final AtomicBoolean firstDrawDone = new AtomicBoolean(false);
-  private final AtomicBoolean headlessAppStartCheckScheduled = new AtomicBoolean(false);
-  private final AtomicBoolean headlessAppStartListenerNotified = new AtomicBoolean(false);
+  private final AtomicBoolean headlessAppStartCheckPending = new AtomicBoolean(false);
+  private final AtomicBoolean headlessAppStartListenerInvoked = new AtomicBoolean(false);
   private volatile @Nullable HeadlessAppStartListener headlessAppStartListener;
   private @Nullable SentryId appStartTraceId;
   private @Nullable ApplicationStartInfo cachedStartInfo;
@@ -303,8 +303,8 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     firstDrawDone.set(false);
     activeActivitiesCounter.set(0);
     firstIdle = -1;
-    headlessAppStartCheckScheduled.set(false);
-    headlessAppStartListenerNotified.set(false);
+    headlessAppStartCheckPending.set(false);
+    headlessAppStartListenerInvoked.set(false);
     headlessAppStartListener = null;
     appStartTraceId = null;
     cachedStartInfo = null;
@@ -414,7 +414,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   }
 
   private void scheduleHeadlessAppStartCheckOnMain() {
-    if (!headlessAppStartCheckScheduled.compareAndSet(false, true)) {
+    if (!headlessAppStartCheckPending.compareAndSet(false, true)) {
       return;
     }
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -423,7 +423,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
           .addIdleHandler(
               () -> {
                 firstIdle = SystemClock.uptimeMillis();
-                headlessAppStartCheckScheduled.set(false);
+                headlessAppStartCheckPending.set(false);
                 handleHeadlessAppStartIfNeededOnMain();
                 return false;
               });
@@ -434,7 +434,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
             firstIdle = SystemClock.uptimeMillis();
             handler.post(
                 () -> {
-                  headlessAppStartCheckScheduled.set(false);
+                  headlessAppStartCheckPending.set(false);
                   handleHeadlessAppStartIfNeededOnMain();
                 });
           });
@@ -466,7 +466,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
       }
 
       final @Nullable HeadlessAppStartListener listener = headlessAppStartListener;
-      if (listener != null && headlessAppStartListenerNotified.compareAndSet(false, true)) {
+      if (listener != null && headlessAppStartListenerInvoked.compareAndSet(false, true)) {
         resolveHeadlessAppStartEndTime();
         listener.onHeadlessAppStart();
       }
