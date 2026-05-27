@@ -86,7 +86,7 @@ internal interface CaptureStrategy {
       screenAtStart: String?,
       breadcrumbs: List<Breadcrumb>?,
       events: Deque<RRWebEvent>,
-      traceIds: List<String>? = null,
+      traceIds: List<String> = emptyList(),
     ): ReplaySegment {
       val generatedVideo =
         cache?.createVideoOf(
@@ -145,7 +145,7 @@ internal interface CaptureStrategy {
       screenAtStart: String?,
       breadcrumbs: List<Breadcrumb>,
       events: Deque<RRWebEvent>,
-      traceIds: List<String>?,
+      traceIds: List<String>,
     ): ReplaySegment {
       val endTimestamp = DateUtils.getDateTime(segmentTimestamp.time + videoDuration)
       val replay =

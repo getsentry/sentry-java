@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Session Replay: Populate `trace_ids` in replay events to enable searching replays by trace ID ([#5473](https://github.com/getsentry/sentry-java/pull/5473))
+
 ## 8.43.0
 
 ### Features
