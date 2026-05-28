@@ -15,6 +15,8 @@ import android.net.NetworkCapabilities.TRANSPORT_ETHERNET
 import android.net.NetworkCapabilities.TRANSPORT_WIFI
 import android.net.NetworkInfo
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.IConnectionStatusProvider
 import io.sentry.ILogger
@@ -38,6 +40,7 @@ import org.mockito.MockedStatic
 import org.mockito.Mockito.mockStatic
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.argThat
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.clearInvocations
 import org.mockito.kotlin.eq
@@ -274,6 +277,7 @@ class AndroidConnectionStatusProviderTest {
         contextMock,
         logger,
         buildInfo,
+        null,
         mock(),
       )
     )
@@ -840,5 +844,21 @@ class AndroidConnectionStatusProviderTest {
 
     // Verify no additional unregister calls
     verifyNoInteractions(connectivityManager)
+  }
+
+  @Test
+  fun `registerNetworkCallback with a custom handlers calls connectivityManager with it`() {
+    val customHandler = object : Handler(Looper.getMainLooper()) {}
+    whenever(contextMock.getSystemService(any())).thenReturn(connectivityManager)
+    AndroidConnectionStatusProvider.registerNetworkCallback(
+      contextMock,
+      logger,
+      buildInfo,
+      customHandler,
+      mock(),
+    )
+
+    verify(connectivityManager)
+      .registerDefaultNetworkCallback(any<NetworkCallback>(), argThat { this == customHandler })
   }
 }

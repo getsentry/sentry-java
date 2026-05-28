@@ -30,6 +30,7 @@ plugins {
     alias(libs.plugins.gradle.versions) apply false
     alias(libs.plugins.spring.dependency.management) apply false
     id("io.sentry.javadoc.aggregate")
+    alias(libs.plugins.sentry) apply false
 }
 
 buildscript {
@@ -76,6 +77,7 @@ apiValidation {
             "sentry-samples-spring-boot-4",
             "sentry-samples-spring-boot-4-opentelemetry",
             "sentry-samples-spring-boot-4-opentelemetry-noagent",
+            "sentry-samples-spring-boot-4-otlp",
             "sentry-samples-spring-boot-4-webflux",
             "sentry-samples-ktor-client",
             "sentry-uitest-android",
@@ -83,7 +85,11 @@ apiValidation {
             "sentry-uitest-android-critical",
             "test-app-plain",
             "test-app-sentry",
-            "sentry-samples-netflix-dgs"
+            "test-app-size",
+            "sentry-samples-netflix-dgs",
+            "sentry-samples-console-otlp",
+            "sentry-test-support",
+            "sentry-system-test-support"
         )
     )
 }
@@ -161,7 +167,7 @@ subprojects {
         }
     }
 
-    if (!this.name.contains("sample") && !this.name.contains("integration-tests") && this.name != "sentry-system-test-support" && this.name != "sentry-test-support" && this.name != "sentry-android-distribution") {
+    if (!this.name.contains("sample") && !this.name.contains("integration-tests") && this.name != "sentry-system-test-support" && this.name != "sentry-test-support") {
         apply<DistributionPlugin>()
         apply<com.vanniktech.maven.publish.MavenPublishPlugin>()
 
@@ -208,9 +214,9 @@ subprojects {
             }
         }
 
-        afterEvaluate {
-            apply<MavenPublishPlugin>()
+        apply<MavenPublishPlugin>()
 
+        afterEvaluate {
             configure<MavenPublishBaseExtension> {
                 assignAarTypes()
             }
@@ -245,19 +251,15 @@ tasks.register("buildForCodeQL") {
         }
         .forEach { proj ->
             if (proj.plugins.hasPlugin("com.android.library")) {
-                this.dependsOn(proj.tasks.findByName("compileReleaseUnitTestSources"))
+                proj.tasks.findByName("compileReleaseUnitTestSources")?.let { testTask ->
+                    this.dependsOn(testTask)
+                }
             } else {
-                this.dependsOn(proj.tasks.findByName("testClasses"))
+                proj.tasks.findByName("testClasses")?.let { testTask ->
+                    this.dependsOn(testTask)
+                }
             }
         }
-}
-
-// Workaround for https://youtrack.jetbrains.com/issue/IDEA-316081/Gradle-8-toolchain-error-Toolchain-from-executable-property-does-not-match-toolchain-from-javaLauncher-property-when-different
-gradle.taskGraph.whenReady {
-    val task = this.allTasks.find { it.name.endsWith(".main()") } as? JavaExec
-    task?.let {
-        it.setExecutable(it.javaLauncher.get().executablePath.asFile.absolutePath)
-    }
 }
 
 /*

@@ -19,7 +19,8 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.ViewTreeObserver
 import android.widget.TextView
-import io.sentry.SentryOptions
+import io.sentry.ILogger
+import io.sentry.SentryMaskingOptions
 import io.sentry.android.replay.viewhierarchy.ComposeViewHierarchyNode
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode
 import java.lang.NullPointerException
@@ -27,13 +28,23 @@ import java.lang.NullPointerException
 /**
  * Recursively traverses the view hierarchy and creates a [ViewHierarchyNode] for each view.
  * Supports Compose view hierarchy as well.
+ *
+ * @param parentNode The parent node in the view hierarchy
+ * @param options The masking configuration to use
+ * @param logger Logger for error reporting during Compose traversal
  */
-internal fun View.traverse(parentNode: ViewHierarchyNode, options: SentryOptions) {
+@SuppressLint("UseKtx")
+internal fun View.traverse(
+  parentNode: ViewHierarchyNode,
+  options: SentryMaskingOptions,
+  logger: ILogger,
+  surfaceViewNodes: MutableList<ViewHierarchyNode.SurfaceViewHierarchyNode>? = null,
+) {
   if (this !is ViewGroup) {
     return
   }
 
-  if (ComposeViewHierarchyNode.fromView(this, parentNode, options)) {
+  if (ComposeViewHierarchyNode.fromView(this, parentNode, options, logger)) {
     // if it's a compose view, we can skip the children as they are already traversed in
     // the ComposeViewHierarchyNode.fromView method
     return
@@ -49,7 +60,14 @@ internal fun View.traverse(parentNode: ViewHierarchyNode, options: SentryOptions
     if (child != null) {
       val childNode = ViewHierarchyNode.fromView(child, parentNode, indexOfChild(child), options)
       childNodes.add(childNode)
-      child.traverse(childNode, options)
+      if (
+        surfaceViewNodes != null &&
+          childNode is ViewHierarchyNode.SurfaceViewHierarchyNode &&
+          childNode.isVisible
+      ) {
+        surfaceViewNodes.add(childNode)
+      }
+      child.traverse(childNode, options, logger, surfaceViewNodes)
     }
   }
   parentNode.children = childNodes
@@ -87,7 +105,7 @@ internal fun View.isVisibleToUser(): Pair<Boolean, Rect?> {
   return false to null
 }
 
-@SuppressLint("ObsoleteSdkInt")
+@SuppressLint("ObsoleteSdkInt", "UseRequiresApi")
 @TargetApi(21)
 internal fun Drawable?.isMaskable(): Boolean {
   // TODO: maybe find a way how to check if the drawable is coming from the apk or loaded from
@@ -118,21 +136,14 @@ internal fun TextLayout?.getVisibleRects(
 
   val rects = mutableListOf<Rect>()
   for (i in 0 until lineCount) {
-    val lineStart = getPrimaryHorizontal(i, getLineStart(i)).toInt()
-    val ellipsisCount = getEllipsisCount(i)
-    val lineVisibleEnd = getLineVisibleEnd(i)
-    var lineEnd =
-      getPrimaryHorizontal(i, lineVisibleEnd - ellipsisCount + if (ellipsisCount > 0) 1 else 0)
-        .toInt()
-    if (lineEnd == 0 && lineVisibleEnd > 0) {
-      // looks like the case for when emojis are present in text
-      lineEnd = getPrimaryHorizontal(i, lineVisibleEnd - 1).toInt() + 1
-    }
+    val lineLeft = getLineLeft(i).toInt()
+    val lineRight = getLineRight(i).toInt()
     val lineTop = getLineTop(i)
     val lineBottom = getLineBottom(i)
     val rect = Rect()
-    rect.left = globalRect.left + paddingLeft + lineStart
-    rect.right = rect.left + (lineEnd - lineStart)
+
+    rect.left = globalRect.left + paddingLeft + lineLeft
+    rect.right = globalRect.left + paddingLeft + lineRight
     rect.top = globalRect.top + paddingTop + lineTop
     rect.bottom = rect.top + (lineBottom - lineTop)
 
@@ -187,18 +198,30 @@ internal class AndroidTextLayout(private val layout: Layout) : TextLayout {
       return dominantColor?.toOpaque()
     }
 
-  override fun getPrimaryHorizontal(line: Int, offset: Int): Float =
-    layout.getPrimaryHorizontal(offset)
+  /**
+   * If text gets ellipsized, we return the left and right bounds of the ellipsized text instead of
+   * the width, as it's set to some obscure VERY_WIDE value. E.g. see
+   * https://cs.android.com/android/platform/superproject/main/+/main:frameworks/base/core/java/android/widget/TextView.java;l=468?q=VERY_WIDE
+   */
+  override fun getLineLeft(line: Int): Float {
+    return if (layout.ellipsizedWidth > 0 && layout.ellipsizedWidth < layout.width) {
+      0f
+    } else {
+      layout.getLineLeft(line)
+    }
+  }
 
-  override fun getEllipsisCount(line: Int): Int = layout.getEllipsisCount(line)
-
-  override fun getLineVisibleEnd(line: Int): Int = layout.getLineVisibleEnd(line)
+  override fun getLineRight(line: Int): Float {
+    return if (layout.ellipsizedWidth > 0 && layout.ellipsizedWidth < layout.width) {
+      layout.ellipsizedWidth.toFloat()
+    } else {
+      layout.getLineRight(line)
+    }
+  }
 
   override fun getLineTop(line: Int): Int = layout.getLineTop(line)
 
   override fun getLineBottom(line: Int): Int = layout.getLineBottom(line)
-
-  override fun getLineStart(line: Int): Int = layout.getLineStart(line)
 }
 
 internal fun View?.addOnDrawListenerSafe(listener: ViewTreeObserver.OnDrawListener) {

@@ -14,6 +14,7 @@ import io.opentelemetry.sdk.trace.data.SpanData;
 import io.sentry.Baggage;
 import io.sentry.DateUtils;
 import io.sentry.IScopes;
+import io.sentry.ProfileLifecycle;
 import io.sentry.PropagationContext;
 import io.sentry.ScopesAdapter;
 import io.sentry.Sentry;
@@ -82,6 +83,17 @@ public final class OtelSentrySpanProcessor implements SpanProcessor {
 
       final @Nullable Boolean sampled = isSampled(otelSpan, samplingDecision);
 
+      if (Boolean.TRUE.equals(sampled) && isRootSpan(otelSpan.toSpanData())) {
+        if (scopes.getOptions().isContinuousProfilingEnabled()
+            && scopes.getOptions().getProfileLifecycle() == ProfileLifecycle.TRACE) {
+          scopes
+              .getOptions()
+              .getContinuousProfiler()
+              .startProfiler(
+                  ProfileLifecycle.TRACE, scopes.getOptions().getInternalTracesSampler());
+        }
+      }
+
       final @NotNull PropagationContext propagationContext =
           new PropagationContext(
               new SentryId(traceId), sentrySpanId, sentryParentSpanId, baggage, sampled);
@@ -105,12 +117,15 @@ public final class OtelSentrySpanProcessor implements SpanProcessor {
             sentryParentSpanId,
             baggage);
     sentrySpan.getSpanContext().setOrigin(SentrySpanExporter.TRACE_ORIGIN);
+    sentrySpan
+        .getSpanContext()
+        .setProfilerId(scopes.getOptions().getContinuousProfiler().getProfilerId());
     spanStorage.storeSentrySpan(spanContext, sentrySpan);
   }
 
   private IScopes forkScopes(final @NotNull Context context, final @NotNull SpanData span) {
     final @Nullable IScopes scopesFromContext = context.get(SENTRY_SCOPES_KEY);
-    if (scopesFromContext == null) {
+    if (scopesFromContext == null || scopesFromContext.isNoOp()) {
       return Sentry.forkedRootScopes("spanprocessor.new");
     }
     if (isRootSpan(span)) {
@@ -159,6 +174,13 @@ public final class OtelSentrySpanProcessor implements SpanProcessor {
   public void onEnd(final @NotNull ReadableSpan spanBeingEnded) {
     final @Nullable IOtelSpanWrapper sentrySpan =
         spanStorage.getSentrySpan(spanBeingEnded.getSpanContext());
+
+    if (isRootSpan(spanBeingEnded.toSpanData())
+        && scopes.getOptions().isContinuousProfilingEnabled()
+        && scopes.getOptions().getProfileLifecycle() == ProfileLifecycle.TRACE) {
+      scopes.getOptions().getContinuousProfiler().stopProfiler(ProfileLifecycle.TRACE);
+    }
+
     if (sentrySpan != null) {
       final @NotNull SentryDate finishDate =
           new SentryLongDate(spanBeingEnded.toSpanData().getEndEpochNanos());

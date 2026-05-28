@@ -1,6 +1,7 @@
 package io.sentry;
 
 import io.sentry.logger.ILoggerApi;
+import io.sentry.metrics.IMetricsApi;
 import io.sentry.protocol.Feedback;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
@@ -50,18 +51,18 @@ public final class ScopesAdapter implements IScopes {
 
   @Override
   public @NotNull SentryId captureFeedback(@NotNull Feedback feedback) {
-    return Sentry.captureFeedback(feedback);
+    return Sentry.feedback().capture(feedback);
   }
 
   @Override
   public @NotNull SentryId captureFeedback(@NotNull Feedback feedback, @Nullable Hint hint) {
-    return Sentry.captureFeedback(feedback, hint);
+    return Sentry.feedback().capture(feedback, hint);
   }
 
   @Override
   public @NotNull SentryId captureFeedback(
       @NotNull Feedback feedback, @Nullable Hint hint, @Nullable ScopeCallback callback) {
-    return Sentry.captureFeedback(feedback, hint, callback);
+    return Sentry.feedback().capture(feedback, hint, callback);
   }
 
   @ApiStatus.Internal
@@ -81,6 +82,7 @@ public final class ScopesAdapter implements IScopes {
     return Sentry.captureException(throwable, hint, callback);
   }
 
+  @Deprecated
   @Override
   public void captureUserFeedback(@NotNull UserFeedback userFeedback) {
     Sentry.captureUserFeedback(userFeedback);
@@ -384,5 +386,40 @@ public final class ScopesAdapter implements IScopes {
   @Override
   public @NotNull ILoggerApi logger() {
     return Sentry.getCurrentScopes().logger();
+  }
+
+  @Override
+  public @NotNull IMetricsApi metrics() {
+    return Sentry.getCurrentScopes().metrics();
+  }
+
+  @Override
+  public @NotNull IFeedbackApi feedback() {
+    return Sentry.getCurrentScopes().feedback();
+  }
+
+  @Override
+  public void setAttribute(final @Nullable String key, final @Nullable Object value) {
+    Sentry.setAttribute(key, value);
+  }
+
+  @Override
+  public void setAttribute(final @Nullable SentryAttribute attribute) {
+    Sentry.setAttribute(attribute);
+  }
+
+  @Override
+  public void setAttributes(final @Nullable SentryAttributes attributes) {
+    Sentry.setAttributes(attributes);
+  }
+
+  @Override
+  public void removeAttribute(final @Nullable String key) {
+    Sentry.removeAttribute(key);
+  }
+
+  @Override
+  public void addFeatureFlag(final @Nullable String flag, final @Nullable Boolean result) {
+    Sentry.addFeatureFlag(flag, result);
   }
 }

@@ -2,6 +2,7 @@
 
 package io.sentry.android.replay.viewhierarchy
 
+import android.annotation.SuppressLint
 import android.annotation.TargetApi
 import android.view.View
 import androidx.compose.ui.graphics.isUnspecified
@@ -16,14 +17,14 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.TextUnit
+import io.sentry.ILogger
 import io.sentry.SentryLevel
-import io.sentry.SentryOptions
-import io.sentry.SentryReplayOptions
+import io.sentry.SentryMaskingOptions
 import io.sentry.android.replay.SentryReplayModifiers
 import io.sentry.android.replay.util.ComposeTextLayout
 import io.sentry.android.replay.util.boundsInWindow
 import io.sentry.android.replay.util.findPainter
-import io.sentry.android.replay.util.findTextAttributes
+import io.sentry.android.replay.util.findTextColor
 import io.sentry.android.replay.util.isMaskable
 import io.sentry.android.replay.util.toOpaque
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.GenericViewHierarchyNode
@@ -32,34 +33,38 @@ import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.TextViewHierarch
 import java.lang.ref.WeakReference
 import java.lang.reflect.Method
 
+@SuppressLint("UseRequiresApi")
 @TargetApi(26)
 internal object ComposeViewHierarchyNode {
-  private val getSemanticsConfigurationMethod: Method? by lazy {
-    try {
-      return@lazy LayoutNode::class.java.getDeclaredMethod("getSemanticsConfiguration").apply {
-        isAccessible = true
+  private val getCollapsedSemanticsMethod: Method? by
+    lazy(LazyThreadSafetyMode.NONE) {
+      try {
+        return@lazy LayoutNode::class
+          .java
+          .getDeclaredMethod("getCollapsedSemantics\$ui_release")
+          .apply { isAccessible = true }
+      } catch (_: Throwable) {
+        // ignore, as this method may not be available
       }
-    } catch (_: Throwable) {
-      // ignore, as this method may not be available
+      return@lazy null
     }
-    return@lazy null
-  }
 
   private var semanticsRetrievalErrorLogged: Boolean = false
 
   @JvmStatic
   internal fun retrieveSemanticsConfiguration(node: LayoutNode): SemanticsConfiguration? {
-    // Jetpack Compose 1.8 or newer provides SemanticsConfiguration via SemanticsInfo
-    // See
-    // https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:compose/ui/ui/src/commonMain/kotlin/androidx/compose/ui/node/LayoutNode.kt
-    // and
-    // https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:compose/ui/ui/src/commonMain/kotlin/androidx/compose/ui/semantics/SemanticsInfo.kt
-    getSemanticsConfigurationMethod?.let {
-      return it.invoke(node) as SemanticsConfiguration?
+    return try {
+      node.semanticsConfiguration
+    } catch (t: Throwable) {
+      // for backwards compatibility
+      // Jetpack Compose 1.8 or older
+      if (getCollapsedSemanticsMethod != null) {
+        getCollapsedSemanticsMethod!!.invoke(node) as SemanticsConfiguration?
+      } else {
+        // re-throw t if there's no way to retrieve semantics
+        throw t
+      }
     }
-
-    // for backwards compatibility
-    return node.collapsedSemantics
   }
 
   /**
@@ -68,34 +73,36 @@ internal object ComposeViewHierarchyNode {
    */
   private fun getProxyClassName(isImage: Boolean, config: SemanticsConfiguration?): String =
     when {
-      isImage -> SentryReplayOptions.IMAGE_VIEW_CLASS_NAME
+      isImage -> SentryMaskingOptions.IMAGE_VIEW_CLASS_NAME
       config != null &&
         (config.contains(SemanticsProperties.Text) ||
           config.contains(SemanticsActions.SetText) ||
           config.contains(SemanticsProperties.EditableText)) ->
-        SentryReplayOptions.TEXT_VIEW_CLASS_NAME
+        SentryMaskingOptions.TEXT_VIEW_CLASS_NAME
       else -> "android.view.View"
     }
 
   private fun SemanticsConfiguration?.shouldMask(
     isImage: Boolean,
-    options: SentryOptions,
+    options: SentryMaskingOptions,
   ): Boolean {
     val sentryPrivacyModifier = this?.getOrNull(SentryReplayModifiers.SentryPrivacy)
     if (sentryPrivacyModifier == "unmask") {
+      options.trackCustomMasking()
       return false
     }
 
     if (sentryPrivacyModifier == "mask") {
+      options.trackCustomMasking()
       return true
     }
 
     val className = getProxyClassName(isImage, this)
-    if (options.sessionReplay.unmaskViewClasses.contains(className)) {
+    if (options.unmaskViewClasses.contains(className)) {
       return false
     }
 
-    return options.sessionReplay.maskViewClasses.contains(className)
+    return options.maskViewClasses.contains(className)
   }
 
   @Suppress("ktlint:standard:backing-property-naming")
@@ -106,7 +113,8 @@ internal object ComposeViewHierarchyNode {
     parent: ViewHierarchyNode?,
     distance: Int,
     isComposeRoot: Boolean,
-    options: SentryOptions,
+    options: SentryMaskingOptions,
+    logger: ILogger,
   ): ViewHierarchyNode? {
     val isInTree = node.isPlaced && node.isAttached
     if (!isInTree) {
@@ -125,16 +133,16 @@ internal object ComposeViewHierarchyNode {
     } catch (t: Throwable) {
       if (!semanticsRetrievalErrorLogged) {
         semanticsRetrievalErrorLogged = true
-        options.logger.log(
+        logger.log(
           SentryLevel.ERROR,
           t,
           """
-                    Error retrieving semantics information from Compose tree. Most likely you're using
-                    an unsupported version of androidx.compose.ui:ui. The supported
-                    version range is 1.5.0 - 1.8.0.
-                    If you're using a newer version, please open a github issue with the version
-                    you're using, so we can add support for it.
-                    """
+          Error retrieving semantics information from Compose tree. Most likely you're using
+          an unsupported version of androidx.compose.ui:ui. The supported
+          version range is 1.5.0 - 1.10.2.
+          If you're using a newer version, please open a github issue with the version
+          you're using, so we can add support for it.
+          """
             .trimIndent(),
         )
       }
@@ -152,7 +160,7 @@ internal object ComposeViewHierarchyNode {
         shouldMask = true,
         isImportantForContentCapture = false, // will be set by children
         isVisible =
-          !node.outerCoordinator.isTransparent() &&
+          !SentryLayoutNodeHelper.isTransparent(node) &&
             visibleRect.height() > 0 &&
             visibleRect.width() > 0,
         visibleRect = visibleRect,
@@ -160,7 +168,7 @@ internal object ComposeViewHierarchyNode {
     }
 
     val isVisible =
-      !node.outerCoordinator.isTransparent() &&
+      !SentryLayoutNodeHelper.isTransparent(node) &&
         (semantics == null || !semantics.contains(SemanticsProperties.InvisibleToUser)) &&
         visibleRect.height() > 0 &&
         visibleRect.width() > 0
@@ -181,11 +189,10 @@ internal object ComposeViewHierarchyNode {
           ?.action
           ?.invoke(textLayoutResults)
 
-        val (color, hasFillModifier) = node.findTextAttributes()
         val textLayoutResult = textLayoutResults.firstOrNull()
         var textColor = textLayoutResult?.layoutInput?.style?.color
         if (textColor?.isUnspecified == true) {
-          textColor = color
+          textColor = node.findTextColor()
         }
         val isLaidOut = textLayoutResult?.layoutInput?.style?.fontSize != TextUnit.Unspecified
         // TODO: support editable text (currently there's a way to get @Composable's padding only
@@ -194,7 +201,7 @@ internal object ComposeViewHierarchyNode {
         TextViewHierarchyNode(
           layout =
             if (textLayoutResult != null && !isEditable && isLaidOut) {
-              ComposeTextLayout(textLayoutResult, hasFillModifier)
+              ComposeTextLayout(textLayoutResult)
             } else {
               null
             },
@@ -255,7 +262,12 @@ internal object ComposeViewHierarchyNode {
     }
   }
 
-  fun fromView(view: View, parent: ViewHierarchyNode?, options: SentryOptions): Boolean {
+  fun fromView(
+    view: View,
+    parent: ViewHierarchyNode?,
+    options: SentryMaskingOptions,
+    logger: ILogger,
+  ): Boolean {
     if (!view::class.java.name.contains("AndroidComposeView")) {
       return false
     }
@@ -266,17 +278,17 @@ internal object ComposeViewHierarchyNode {
 
     try {
       val rootNode = (view as? Owner)?.root ?: return false
-      rootNode.traverse(parent, isComposeRoot = true, options)
+      rootNode.traverse(parent, isComposeRoot = true, options, logger)
     } catch (e: Throwable) {
-      options.logger.log(
+      logger.log(
         SentryLevel.ERROR,
         e,
         """
-                Error traversing Compose tree. Most likely you're using an unsupported version of
-                androidx.compose.ui:ui. The minimum supported version is 1.5.0. If it's a newer
-                version, please open a github issue with the version you're using, so we can add
-                support for it.
-                """
+        Error traversing Compose tree. Most likely you're using an unsupported version of
+        androidx.compose.ui:ui. The minimum supported version is 1.5.0. If it's a newer
+        version, please open a github issue with the version you're using, so we can add
+        support for it.
+        """
           .trimIndent(),
       )
       return false
@@ -288,9 +300,10 @@ internal object ComposeViewHierarchyNode {
   private fun LayoutNode.traverse(
     parentNode: ViewHierarchyNode,
     isComposeRoot: Boolean,
-    options: SentryOptions,
+    options: SentryMaskingOptions,
+    logger: ILogger,
   ) {
-    val children = this.children
+    val children = SentryLayoutNodeHelper.getChildren(this)
     if (children.isEmpty()) {
       return
     }
@@ -298,10 +311,10 @@ internal object ComposeViewHierarchyNode {
     val childNodes = ArrayList<ViewHierarchyNode>(children.size)
     for (index in children.indices) {
       val child = children[index]
-      val childNode = fromComposeNode(child, parentNode, index, isComposeRoot, options)
+      val childNode = fromComposeNode(child, parentNode, index, isComposeRoot, options, logger)
       if (childNode != null) {
         childNodes.add(childNode)
-        child.traverse(childNode, isComposeRoot = false, options)
+        child.traverse(childNode, isComposeRoot = false, options, logger)
       }
     }
     parentNode.children = childNodes

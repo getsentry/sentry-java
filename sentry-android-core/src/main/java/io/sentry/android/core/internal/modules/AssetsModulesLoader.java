@@ -1,8 +1,8 @@
 package io.sentry.android.core.internal.modules;
 
 import android.content.Context;
-import io.sentry.ILogger;
 import io.sentry.SentryLevel;
+import io.sentry.SentryOptions;
 import io.sentry.android.core.ContextUtils;
 import io.sentry.internal.modules.ModulesLoader;
 import java.io.FileNotFoundException;
@@ -18,13 +18,21 @@ public final class AssetsModulesLoader extends ModulesLoader {
 
   private final @NotNull Context context;
 
-  public AssetsModulesLoader(final @NotNull Context context, final @NotNull ILogger logger) {
-    super(logger);
+  public AssetsModulesLoader(final @NotNull Context context, final @NotNull SentryOptions options) {
+    super(options.getLogger());
     this.context = ContextUtils.getApplicationContext(context);
 
     // pre-load modules on a bg thread to avoid doing so on the main thread in case of a crash/error
-    //noinspection Convert2MethodRef
-    new Thread(() -> getOrLoadModules()).start();
+    try {
+      options
+          .getExecutorService()
+          .submit(
+              () -> {
+                getOrLoadModules();
+              });
+    } catch (Throwable e) {
+      options.getLogger().log(SentryLevel.ERROR, "AssetsModulesLoader submit failed", e);
+    }
   }
 
   @Override

@@ -1,0 +1,47 @@
+public final class io/sentry/asyncprofiler/BuildConfig {
+	public static final field SENTRY_ASYNC_PROFILER_SDK_NAME Ljava/lang/String;
+	public static final field VERSION_NAME Ljava/lang/String;
+}
+
+public final class io/sentry/asyncprofiler/convert/JfrAsyncProfilerToSentryProfileConverter : one/convert/JfrConverter {
+	public fun <init> (Lone/jfr/JfrReader;Lone/convert/Arguments;Lio/sentry/SentryStackTraceFactory;Lio/sentry/ILogger;)V
+	public static fun convertFromFileStatic (Ljava/lang/String;)Lio/sentry/protocol/profiling/SentryProfile;
+}
+
+public final class io/sentry/asyncprofiler/convert/NonAggregatingEventCollector : one/jfr/event/EventCollector {
+	public fun <init> ()V
+	public fun afterChunk ()V
+	public fun beforeChunk ()V
+	public fun collect (Lone/jfr/event/Event;)V
+	public fun finish ()Z
+	public fun forEach (Lone/jfr/event/EventCollector$Visitor;)V
+}
+
+public final class io/sentry/asyncprofiler/profiling/JavaContinuousProfiler : io/sentry/IContinuousProfiler, io/sentry/transport/RateLimiter$IRateLimitObserver {
+	public fun <init> (Lio/sentry/ILogger;Ljava/lang/String;ILio/sentry/ISentryExecutorService;)V
+	public fun close (Z)V
+	public fun getChunkId ()Lio/sentry/protocol/SentryId;
+	public fun getProfilerId ()Lio/sentry/protocol/SentryId;
+	public fun getRootSpanCounter ()I
+	public fun isRunning ()Z
+	public fun onRateLimitChanged (Lio/sentry/transport/RateLimiter;)V
+	public fun reevaluateSampling ()V
+	public fun startProfiler (Lio/sentry/ProfileLifecycle;Lio/sentry/TracesSampler;)V
+	public fun stopProfiler (Lio/sentry/ProfileLifecycle;)V
+}
+
+public final class io/sentry/asyncprofiler/provider/AsyncProfilerContinuousProfilerProvider : io/sentry/profiling/JavaContinuousProfilerProvider {
+	public fun <init> ()V
+	public fun getContinuousProfiler (Lio/sentry/ILogger;Ljava/lang/String;ILio/sentry/ISentryExecutorService;)Lio/sentry/IContinuousProfiler;
+}
+
+public final class io/sentry/asyncprofiler/provider/AsyncProfilerProfileConverterProvider : io/sentry/profiling/JavaProfileConverterProvider {
+	public fun <init> ()V
+	public fun getProfileConverter ()Lio/sentry/IProfileConverter;
+}
+
+public final class io/sentry/asyncprofiler/provider/AsyncProfilerProfileConverterProvider$AsyncProfilerProfileConverter : io/sentry/IProfileConverter {
+	public fun <init> ()V
+	public fun convertFromFile (Ljava/lang/String;)Lio/sentry/protocol/profiling/SentryProfile;
+}
+

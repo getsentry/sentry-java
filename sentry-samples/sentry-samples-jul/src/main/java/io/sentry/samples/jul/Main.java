@@ -1,5 +1,6 @@
 package io.sentry.samples.jul;
 
+import io.sentry.Sentry;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
@@ -21,6 +22,13 @@ public class Main {
     // MDC parameters are converted to Sentry Event tags
     MDC.put("userId", UUID.randomUUID().toString());
     MDC.put("requestId", UUID.randomUUID().toString());
+
+    Sentry.setAttribute("user.type", "admin");
+    Sentry.setAttribute("feature.version", 2);
+    Sentry.setAttribute("debug.enabled", true);
+    Sentry.addFeatureFlag("my-feature-flag", true);
+
+    LOGGER.warning("important warning");
 
     // logging arguments are converted to Sentry Event parameters
     LOGGER.log(Level.INFO, "User has made a purchase of product: %d", 445);

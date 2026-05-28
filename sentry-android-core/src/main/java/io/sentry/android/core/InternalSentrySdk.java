@@ -1,7 +1,6 @@
 package io.sentry.android.core;
 
 import static io.sentry.Sentry.getCurrentScopes;
-import static io.sentry.SentryLevel.DEBUG;
 import static io.sentry.SentryLevel.INFO;
 import static io.sentry.SentryLevel.WARNING;
 
@@ -288,13 +287,6 @@ public final class InternalSentrySdk {
     final String cacheDirPath = options.getCacheDirPath();
     if (cacheDirPath == null) {
       options.getLogger().log(INFO, "Cache dir is not set, not deleting the current session.");
-      return;
-    }
-
-    if (!options.isEnableAutoSessionTracking()) {
-      options
-          .getLogger()
-          .log(DEBUG, "Session tracking is disabled, bailing from deleting current session file.");
       return;
     }
 

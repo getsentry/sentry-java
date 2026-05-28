@@ -26,6 +26,7 @@ import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.protocol.SentryId;
 import io.sentry.transport.RateLimiter;
 import io.sentry.util.AutoClosableReentrantLock;
+import io.sentry.util.LazyEvaluator;
 import io.sentry.util.SentryRandom;
 import java.util.ArrayList;
 import java.util.List;
@@ -45,7 +46,7 @@ public class AndroidContinuousProfiler
   private final @NotNull ILogger logger;
   private final @Nullable String profilingTracesDirPath;
   private final int profilingTracesHz;
-  private final @NotNull ISentryExecutorService executorService;
+  private final @NotNull LazyEvaluator.Evaluator<ISentryExecutorService> executorServiceSupplier;
   private final @NotNull BuildInfoProvider buildInfoProvider;
   private boolean isInitialized = false;
   private final @NotNull SentryFrameMetricsCollector frameMetricsCollector;
@@ -73,13 +74,13 @@ public class AndroidContinuousProfiler
       final @NotNull ILogger logger,
       final @Nullable String profilingTracesDirPath,
       final int profilingTracesHz,
-      final @NotNull ISentryExecutorService executorService) {
+      final @NotNull LazyEvaluator.Evaluator<ISentryExecutorService> executorServiceSupplier) {
     this.logger = logger;
     this.frameMetricsCollector = frameMetricsCollector;
     this.buildInfoProvider = buildInfoProvider;
     this.profilingTracesDirPath = profilingTracesDirPath;
     this.profilingTracesHz = profilingTracesHz;
-    this.executorService = executorService;
+    this.executorServiceSupplier = executorServiceSupplier;
   }
 
   private void init() {
@@ -190,6 +191,7 @@ public class AndroidContinuousProfiler
       }
 
       // If device is offline, we don't start the profiler, to avoid flooding the cache
+      // TODO .getConnectionStatus() may be blocking, investigate if this can be done async
       if (scopes.getOptions().getConnectionStatusProvider().getConnectionStatus() == DISCONNECTED) {
         logger.log(SentryLevel.WARNING, "Device is offline. Stopping profiler.");
         // Let's stop and reset profiler id, as the profile is now broken anyway
@@ -208,11 +210,11 @@ public class AndroidContinuousProfiler
 
     isRunning = true;
 
-    if (profilerId == SentryId.EMPTY_ID) {
+    if (profilerId.equals(SentryId.EMPTY_ID)) {
       profilerId = new SentryId();
     }
 
-    if (chunkId == SentryId.EMPTY_ID) {
+    if (chunkId.equals(SentryId.EMPTY_ID)) {
       chunkId = new SentryId();
     }
 
@@ -221,7 +223,8 @@ public class AndroidContinuousProfiler
     }
 
     try {
-      stopFuture = executorService.schedule(() -> stop(true), MAX_CHUNK_DURATION_MILLIS);
+      stopFuture =
+          executorServiceSupplier.evaluate().schedule(() -> stop(true), MAX_CHUNK_DURATION_MILLIS);
     } catch (RejectedExecutionException e) {
       logger.log(
           SentryLevel.ERROR,
@@ -300,7 +303,8 @@ public class AndroidContinuousProfiler
                   chunkId,
                   endData.measurementsMap,
                   endData.traceFile,
-                  startProfileChunkTimestamp));
+                  startProfileChunkTimestamp,
+                  ProfileChunk.PLATFORM_ANDROID));
         }
       }
 
@@ -342,6 +346,11 @@ public class AndroidContinuousProfiler
   @Override
   public @NotNull SentryId getProfilerId() {
     return profilerId;
+  }
+
+  @Override
+  public @NotNull SentryId getChunkId() {
+    return chunkId;
   }
 
   private void sendChunks(final @NotNull IScopes scopes, final @NotNull SentryOptions options) {

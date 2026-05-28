@@ -506,6 +506,11 @@ public final class OtelSpanWrapper implements IOtelSpanWrapper {
   }
 
   @Override
+  public void addFeatureFlag(final @Nullable String flag, final @Nullable Boolean result) {
+    context.addFeatureFlag(flag, result);
+  }
+
+  @Override
   public @NotNull Context storeInContext(Context context) {
     final @Nullable ReadWriteSpan otelSpan = getSpan();
     if (otelSpan != null) {

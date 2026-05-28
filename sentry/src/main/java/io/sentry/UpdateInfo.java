@@ -1,7 +1,9 @@
 package io.sentry;
 
+import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /** Information about an available app update. */
 @ApiStatus.Experimental
@@ -11,7 +13,8 @@ public final class UpdateInfo {
   private final int buildNumber;
   private final @NotNull String downloadUrl;
   private final @NotNull String appName;
-  private final @NotNull String createdDate;
+  private final @Nullable String createdDate;
+  private final @Nullable List<String> installGroups;
 
   public UpdateInfo(
       final @NotNull String id,
@@ -19,13 +22,15 @@ public final class UpdateInfo {
       final int buildNumber,
       final @NotNull String downloadUrl,
       final @NotNull String appName,
-      final @NotNull String createdDate) {
+      final @Nullable String createdDate,
+      final @Nullable List<String> installGroups) {
     this.id = id;
     this.buildVersion = buildVersion;
     this.buildNumber = buildNumber;
     this.downloadUrl = downloadUrl;
     this.appName = appName;
     this.createdDate = createdDate;
+    this.installGroups = installGroups;
   }
 
   public @NotNull String getId() {
@@ -48,7 +53,36 @@ public final class UpdateInfo {
     return appName;
   }
 
-  public @NotNull String getCreatedDate() {
+  public @Nullable String getCreatedDate() {
     return createdDate;
+  }
+
+  public @Nullable List<String> getInstallGroups() {
+    return installGroups;
+  }
+
+  @Override
+  public String toString() {
+    return "UpdateInfo{"
+        + "id='"
+        + id
+        + '\''
+        + ", buildVersion='"
+        + buildVersion
+        + '\''
+        + ", buildNumber="
+        + buildNumber
+        + ", downloadUrl='"
+        + downloadUrl
+        + '\''
+        + ", appName='"
+        + appName
+        + '\''
+        + ", createdDate='"
+        + createdDate
+        + '\''
+        + ", installGroups="
+        + installGroups
+        + '}';
   }
 }

@@ -19,13 +19,13 @@ targets:
       maven:io.sentry:sentry:
       maven:io.sentry:sentry-spring:
       maven:io.sentry:sentry-spring-jakarta:
-#      maven:io.sentry:sentry-spring-7:
+      maven:io.sentry:sentry-spring-7:
       maven:io.sentry:sentry-spring-boot:
       maven:io.sentry:sentry-spring-boot-jakarta:
       maven:io.sentry:sentry-spring-boot-starter:
       maven:io.sentry:sentry-spring-boot-starter-jakarta:
-#      maven:io.sentry:sentry-spring-boot-4:
-#      maven:io.sentry:sentry-spring-boot-4-starter:
+      maven:io.sentry:sentry-spring-boot-4:
+      maven:io.sentry:sentry-spring-boot-4-starter:
       maven:io.sentry:sentry-servlet:
       maven:io.sentry:sentry-servlet-jakarta:
       maven:io.sentry:sentry-logback:
@@ -34,20 +34,28 @@ targets:
       maven:io.sentry:sentry-apache-http-client-5:
       maven:io.sentry:sentry-android:
       maven:io.sentry:sentry-android-core:
+      maven:io.sentry:sentry-android-distribution:
       maven:io.sentry:sentry-android-ndk:
       maven:io.sentry:sentry-android-timber:
       maven:io.sentry:sentry-kotlin-extensions:
       maven:io.sentry:sentry-android-fragment:
       maven:io.sentry:sentry-bom:
       maven:io.sentry:sentry-openfeign:
+      maven:io.sentry:sentry-openfeature:
+      maven:io.sentry:sentry-launchdarkly-android:
+      maven:io.sentry:sentry-launchdarkly-server:
       maven:io.sentry:sentry-opentelemetry-agent:
       maven:io.sentry:sentry-opentelemetry-agentcustomization:
       maven:io.sentry:sentry-opentelemetry-agentless:
       maven:io.sentry:sentry-opentelemetry-agentless-spring:
       maven:io.sentry:sentry-opentelemetry-bootstrap:
       maven:io.sentry:sentry-opentelemetry-core:
+      maven:io.sentry:sentry-opentelemetry-otlp:
+      maven:io.sentry:sentry-opentelemetry-otlp-spring:
+      maven:io.sentry:sentry-kafka:
       maven:io.sentry:sentry-apollo:
       maven:io.sentry:sentry-jdbc:
+      maven:io.sentry:sentry-jcache:
       maven:io.sentry:sentry-graphql:
       maven:io.sentry:sentry-graphql-22:
       maven:io.sentry:sentry-graphql-core:
@@ -63,3 +71,5 @@ targets:
       maven:io.sentry:sentry-apollo-4:
       maven:io.sentry:sentry-reactor:
       maven:io.sentry:sentry-ktor-client:
+      maven:io.sentry:sentry-async-profiler:
+      maven:io.sentry:sentry-spotlight:

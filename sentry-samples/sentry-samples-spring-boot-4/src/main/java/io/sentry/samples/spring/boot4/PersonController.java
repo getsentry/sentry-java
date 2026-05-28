@@ -23,12 +23,18 @@ public class PersonController {
 
   @GetMapping("{id}")
   Person person(@PathVariable Long id) {
+    Sentry.addFeatureFlag("transaction-feature-flag", true);
     ISpan currentSpan = Sentry.getSpan();
     ISpan sentrySpan = currentSpan.startChild("spanCreatedThroughSentryApi");
     try {
+      Sentry.setAttribute("user.type", "admin");
+      Sentry.setAttribute("feature.version", 2);
+      Sentry.setAttribute("debug.enabled", true);
+
       Sentry.logger().warn("warn Sentry logging");
       Sentry.logger().error("error Sentry logging");
       Sentry.logger().info("hello %s %s", "there", "world!");
+      Sentry.addFeatureFlag("my-feature-flag", true);
       LOGGER.error("Trying person with id={}", id, new RuntimeException("error while loading"));
       throw new IllegalArgumentException("Something went wrong [id=" + id + "]");
     } finally {

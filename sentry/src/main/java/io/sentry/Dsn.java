@@ -2,15 +2,20 @@ package io.sentry;
 
 import io.sentry.util.Objects;
 import java.net.URI;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 final class Dsn {
+  private static final @NotNull Pattern ORG_ID_PATTERN = Pattern.compile("^o(\\d+)\\.");
+
   private final @NotNull String projectId;
   private final @Nullable String path;
   private final @Nullable String secretKey;
   private final @NotNull String publicKey;
   private final @NotNull URI sentryUri;
+  private final @Nullable String orgId;
 
   /*
   / The project ID which the authenticated user is bound to.
@@ -50,8 +55,11 @@ final class Dsn {
 
   Dsn(@Nullable String dsn) throws IllegalArgumentException {
     try {
-      Objects.requireNonNull(dsn, "The DSN is required.");
-      final URI uri = new URI(dsn).normalize();
+      final String dsnString = Objects.requireNonNull(dsn, "The DSN is required.").trim();
+      if (dsnString.isEmpty()) {
+        throw new IllegalArgumentException("The DSN is empty.");
+      }
+      final URI uri = new URI(dsnString).normalize();
       final String scheme = uri.getScheme();
       if (!("http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme))) {
         throw new IllegalArgumentException("Invalid DSN scheme: " + scheme);
@@ -84,8 +92,23 @@ final class Dsn {
       sentryUri =
           new URI(
               scheme, null, uri.getHost(), uri.getPort(), path + "api/" + projectId, null, null);
+
+      // Extract org ID from host (e.g., "o123.ingest.sentry.io" -> "123")
+      String extractedOrgId = null;
+      final String host = uri.getHost();
+      if (host != null) {
+        final Matcher matcher = ORG_ID_PATTERN.matcher(host);
+        if (matcher.find()) {
+          extractedOrgId = matcher.group(1);
+        }
+      }
+      orgId = extractedOrgId;
     } catch (Throwable e) {
       throw new IllegalArgumentException(e);
     }
+  }
+
+  public @Nullable String getOrgId() {
+    return orgId;
   }
 }

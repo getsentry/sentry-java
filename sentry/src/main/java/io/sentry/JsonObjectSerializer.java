@@ -6,11 +6,13 @@ import static io.sentry.util.JsonSerializationUtils.calendarToMap;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Currency;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
@@ -53,6 +55,54 @@ public final class JsonObjectSerializer {
       ((JsonSerializable) object).serialize(writer, logger);
     } else if (object instanceof Collection) {
       serializeCollection(writer, logger, (Collection<?>) object);
+    } else if (object instanceof boolean[]) {
+      final List<Boolean> bools = new ArrayList<>(((boolean[]) object).length);
+      for (boolean b : ((boolean[]) object)) {
+        bools.add(b);
+      }
+      serializeCollection(writer, logger, bools);
+    } else if (object instanceof byte[]) {
+      final List<Byte> bytes = new ArrayList<>(((byte[]) object).length);
+      for (byte b : ((byte[]) object)) {
+        bytes.add(b);
+      }
+      serializeCollection(writer, logger, bytes);
+    } else if (object instanceof short[]) {
+      final List<Short> shorts = new ArrayList<>(((short[]) object).length);
+      for (short s : ((short[]) object)) {
+        shorts.add(s);
+      }
+      serializeCollection(writer, logger, shorts);
+    } else if (object instanceof char[]) {
+      final List<Character> chars = new ArrayList<>(((char[]) object).length);
+      for (char s : ((char[]) object)) {
+        chars.add(s);
+      }
+      serializeCollection(writer, logger, chars);
+    } else if (object instanceof int[]) {
+      final List<Integer> ints = new ArrayList<>(((int[]) object).length);
+      for (int i : ((int[]) object)) {
+        ints.add(i);
+      }
+      serializeCollection(writer, logger, ints);
+    } else if (object instanceof long[]) {
+      final List<Long> longs = new ArrayList<>(((long[]) object).length);
+      for (long l : ((long[]) object)) {
+        longs.add(l);
+      }
+      serializeCollection(writer, logger, longs);
+    } else if (object instanceof float[]) {
+      final List<Float> floats = new ArrayList<>(((float[]) object).length);
+      for (float f : ((float[]) object)) {
+        floats.add(f);
+      }
+      serializeCollection(writer, logger, floats);
+    } else if (object instanceof double[]) {
+      final List<Double> doubles = new ArrayList<>(((double[]) object).length);
+      for (double d : ((double[]) object)) {
+        doubles.add(d);
+      }
+      serializeCollection(writer, logger, doubles);
     } else if (object.getClass().isArray()) {
       serializeCollection(writer, logger, Arrays.asList((Object[]) object));
     } else if (object instanceof Map) {

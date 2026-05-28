@@ -23,6 +23,7 @@ public final class ExternalOptions {
   private @Nullable Boolean enableUncaughtExceptionHandler;
   private @Nullable Boolean debug;
   private @Nullable Boolean enableDeduplication;
+  private @Nullable Double sampleRate;
   private @Nullable Double tracesSampleRate;
   private @Nullable Double profilesSampleRate;
   private @Nullable SentryOptions.RequestSize maxRequestBodySize;
@@ -34,6 +35,8 @@ public final class ExternalOptions {
   private final @NotNull List<String> contextTags = new CopyOnWriteArrayList<>();
   private @Nullable String proguardUuid;
   private @Nullable Long idleTimeout;
+  private @Nullable Long shutdownTimeoutMillis;
+  private @Nullable Long sessionFlushTimeoutMillis;
   private final @NotNull Set<Class<? extends Throwable>> ignoredExceptionsForType =
       new CopyOnWriteArraySet<>();
   private @Nullable List<String> ignoredErrors;
@@ -44,6 +47,7 @@ public final class ExternalOptions {
   private @Nullable Boolean enablePrettySerializationOutput;
   private @Nullable Boolean enableSpotlight;
   private @Nullable Boolean enableLogs;
+  private @Nullable Boolean enableMetrics;
   private @Nullable String spotlightConnectionUrl;
 
   private @Nullable List<String> ignoredCheckIns;
@@ -52,9 +56,19 @@ public final class ExternalOptions {
   private @Nullable Boolean sendModules;
   private @Nullable Boolean sendDefaultPii;
   private @Nullable Boolean enableBackpressureHandling;
+  private @Nullable Boolean enableDatabaseTransactionTracing;
+  private @Nullable Boolean enableCacheTracing;
+  private @Nullable Boolean enableQueueTracing;
   private @Nullable Boolean globalHubMode;
   private @Nullable Boolean forceInit;
   private @Nullable Boolean captureOpenTelemetryEvents;
+
+  private @Nullable Double profileSessionSampleRate;
+  private @Nullable String profilingTracesDirPath;
+  private @Nullable ProfileLifecycle profileLifecycle;
+
+  private @Nullable Boolean strictTraceContinuation;
+  private @Nullable String orgId;
 
   private @Nullable SentryOptions.Cron cron;
 
@@ -71,6 +85,7 @@ public final class ExternalOptions {
         propertiesProvider.getBooleanProperty("uncaught.handler.enabled"));
     options.setPrintUncaughtStackTrace(
         propertiesProvider.getBooleanProperty("uncaught.handler.print-stacktrace"));
+    options.setSampleRate(propertiesProvider.getDoubleProperty("sample-rate"));
     options.setTracesSampleRate(propertiesProvider.getDoubleProperty("traces-sample-rate"));
     options.setProfilesSampleRate(propertiesProvider.getDoubleProperty("profiles-sample-rate"));
     options.setDebug(propertiesProvider.getBooleanProperty("debug"));
@@ -129,6 +144,9 @@ public final class ExternalOptions {
       options.addBundleId(bundleId);
     }
     options.setIdleTimeout(propertiesProvider.getLongProperty("idle-timeout"));
+    options.setShutdownTimeoutMillis(propertiesProvider.getLongProperty("shutdown-timeout-millis"));
+    options.setSessionFlushTimeoutMillis(
+        propertiesProvider.getLongProperty("session-flush-timeout-millis"));
 
     options.setIgnoredErrors(propertiesProvider.getListOrNull("ignored-errors"));
 
@@ -146,12 +164,21 @@ public final class ExternalOptions {
     options.setEnableBackpressureHandling(
         propertiesProvider.getBooleanProperty("enable-backpressure-handling"));
 
+    options.setEnableDatabaseTransactionTracing(
+        propertiesProvider.getBooleanProperty("enable-database-transaction-tracing"));
+
+    options.setEnableCacheTracing(propertiesProvider.getBooleanProperty("enable-cache-tracing"));
+
+    options.setEnableQueueTracing(propertiesProvider.getBooleanProperty("enable-queue-tracing"));
+
     options.setGlobalHubMode(propertiesProvider.getBooleanProperty("global-hub-mode"));
 
     options.setCaptureOpenTelemetryEvents(
         propertiesProvider.getBooleanProperty("capture-open-telemetry-events"));
 
     options.setEnableLogs(propertiesProvider.getBooleanProperty("logs.enabled"));
+
+    options.setEnableMetrics(propertiesProvider.getBooleanProperty("metrics.enabled"));
 
     for (final String ignoredExceptionType :
         propertiesProvider.getList("ignored-exceptions-for-type")) {
@@ -200,8 +227,21 @@ public final class ExternalOptions {
       options.setCron(cron);
     }
 
+    options.setStrictTraceContinuation(
+        propertiesProvider.getBooleanProperty("enable-strict-trace-continuation"));
+    options.setOrgId(propertiesProvider.getProperty("org-id"));
+
     options.setEnableSpotlight(propertiesProvider.getBooleanProperty("enable-spotlight"));
     options.setSpotlightConnectionUrl(propertiesProvider.getProperty("spotlight-connection-url"));
+    options.setProfileSessionSampleRate(
+        propertiesProvider.getDoubleProperty("profile-session-sample-rate"));
+
+    options.setProfilingTracesDirPath(propertiesProvider.getProperty("profiling-traces-dir-path"));
+
+    String profileLifecycleString = propertiesProvider.getProperty("profile-lifecycle");
+    if (profileLifecycleString != null && !profileLifecycleString.isEmpty()) {
+      options.setProfileLifecycle(ProfileLifecycle.valueOf(profileLifecycleString.toUpperCase()));
+    }
 
     return options;
   }
@@ -273,6 +313,14 @@ public final class ExternalOptions {
 
   public void setEnableDeduplication(final @Nullable Boolean enableDeduplication) {
     this.enableDeduplication = enableDeduplication;
+  }
+
+  public @Nullable Double getSampleRate() {
+    return sampleRate;
+  }
+
+  public void setSampleRate(final @Nullable Double sampleRate) {
+    this.sampleRate = sampleRate;
   }
 
   public @Nullable Double getTracesSampleRate() {
@@ -380,6 +428,22 @@ public final class ExternalOptions {
     this.idleTimeout = idleTimeout;
   }
 
+  public @Nullable Long getShutdownTimeoutMillis() {
+    return shutdownTimeoutMillis;
+  }
+
+  public void setShutdownTimeoutMillis(final @Nullable Long shutdownTimeoutMillis) {
+    this.shutdownTimeoutMillis = shutdownTimeoutMillis;
+  }
+
+  public @Nullable Long getSessionFlushTimeoutMillis() {
+    return sessionFlushTimeoutMillis;
+  }
+
+  public void setSessionFlushTimeoutMillis(final @Nullable Long sessionFlushTimeoutMillis) {
+    this.sessionFlushTimeoutMillis = sessionFlushTimeoutMillis;
+  }
+
   public @Nullable List<String> getIgnoredErrors() {
     return ignoredErrors;
   }
@@ -463,6 +527,31 @@ public final class ExternalOptions {
     return enableBackpressureHandling;
   }
 
+  public void setEnableDatabaseTransactionTracing(
+      final @Nullable Boolean enableDatabaseTransactionTracing) {
+    this.enableDatabaseTransactionTracing = enableDatabaseTransactionTracing;
+  }
+
+  public @Nullable Boolean isEnableDatabaseTransactionTracing() {
+    return enableDatabaseTransactionTracing;
+  }
+
+  public void setEnableCacheTracing(final @Nullable Boolean enableCacheTracing) {
+    this.enableCacheTracing = enableCacheTracing;
+  }
+
+  public @Nullable Boolean isEnableCacheTracing() {
+    return enableCacheTracing;
+  }
+
+  public void setEnableQueueTracing(final @Nullable Boolean enableQueueTracing) {
+    this.enableQueueTracing = enableQueueTracing;
+  }
+
+  public @Nullable Boolean isEnableQueueTracing() {
+    return enableQueueTracing;
+  }
+
   public void setGlobalHubMode(final @Nullable Boolean globalHubMode) {
     this.globalHubMode = globalHubMode;
   }
@@ -524,5 +613,53 @@ public final class ExternalOptions {
 
   public @Nullable Boolean isEnableLogs() {
     return enableLogs;
+  }
+
+  public void setEnableMetrics(final @Nullable Boolean enableMetrics) {
+    this.enableMetrics = enableMetrics;
+  }
+
+  public @Nullable Boolean isEnableMetrics() {
+    return enableMetrics;
+  }
+
+  public @Nullable Double getProfileSessionSampleRate() {
+    return profileSessionSampleRate;
+  }
+
+  public void setProfileSessionSampleRate(@Nullable Double profileSessionSampleRate) {
+    this.profileSessionSampleRate = profileSessionSampleRate;
+  }
+
+  public @Nullable String getProfilingTracesDirPath() {
+    return profilingTracesDirPath;
+  }
+
+  public void setProfilingTracesDirPath(@Nullable String profilingTracesDirPath) {
+    this.profilingTracesDirPath = profilingTracesDirPath;
+  }
+
+  public @Nullable Boolean isStrictTraceContinuation() {
+    return strictTraceContinuation;
+  }
+
+  public void setStrictTraceContinuation(final @Nullable Boolean strictTraceContinuation) {
+    this.strictTraceContinuation = strictTraceContinuation;
+  }
+
+  public @Nullable String getOrgId() {
+    return orgId;
+  }
+
+  public void setOrgId(final @Nullable String orgId) {
+    this.orgId = orgId;
+  }
+
+  public @Nullable ProfileLifecycle getProfileLifecycle() {
+    return profileLifecycle;
+  }
+
+  public void setProfileLifecycle(@Nullable ProfileLifecycle profileLifecycle) {
+    this.profileLifecycle = profileLifecycle;
   }
 }

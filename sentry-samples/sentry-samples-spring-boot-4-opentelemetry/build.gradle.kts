@@ -56,7 +56,16 @@ dependencies {
   implementation(projects.sentryLogback)
   implementation(projects.sentryGraphql22)
   implementation(projects.sentryQuartz)
+  implementation(projects.sentryAsyncProfiler)
   implementation(libs.otel)
+
+  // kafka
+  implementation(libs.springboot4.starter.kafka)
+  implementation(projects.sentryKafka)
+
+  // cache tracing
+  implementation(libs.springboot4.starter.cache)
+  implementation(libs.caffeine)
 
   // database query tracing
   implementation(projects.sentryJdbc)
@@ -104,6 +113,10 @@ tasks.register<BootRun>("bootRunWithAgent").configure {
 tasks.register<Test>("systemTest").configure {
   group = "verification"
   description = "Runs the System tests"
+
+  val test = project.extensions.getByType<SourceSetContainer>()["test"]
+  testClassesDirs = test.output.classesDirs
+  classpath = test.runtimeClasspath
 
   outputs.upToDateWhen { false }
 

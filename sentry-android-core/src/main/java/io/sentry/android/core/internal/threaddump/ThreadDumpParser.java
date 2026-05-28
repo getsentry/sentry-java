@@ -22,14 +22,12 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryLockReason;
 import io.sentry.SentryOptions;
 import io.sentry.SentryStackTraceFactory;
+import io.sentry.android.core.internal.util.NativeEventUtils;
+import io.sentry.protocol.ArtContext;
 import io.sentry.protocol.DebugImage;
 import io.sentry.protocol.SentryStackFrame;
 import io.sentry.protocol.SentryStackTrace;
 import io.sentry.protocol.SentryThread;
-import java.math.BigInteger;
-import java.nio.BufferUnderflowException;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -112,6 +110,8 @@ public class ThreadDumpParser {
 
   private final @NotNull List<SentryThread> threads;
 
+  private final @NotNull ArtContextParser artContextParser = new ArtContextParser();
+
   public ThreadDumpParser(final @NotNull SentryOptions options, final boolean isBackground) {
     this.options = options;
     this.isBackground = isBackground;
@@ -131,22 +131,8 @@ public class ThreadDumpParser {
   }
 
   @Nullable
-  private static String buildIdToDebugId(final @NotNull String buildId) {
-    try {
-      // Abuse BigInteger as a hex string parser. Extra byte needed to handle leading zeros.
-      final ByteBuffer buf = ByteBuffer.wrap(new BigInteger("10" + buildId, 16).toByteArray());
-      buf.get();
-      return String.format(
-          "%08x-%04x-%04x-%04x-%04x%08x",
-          buf.order(ByteOrder.LITTLE_ENDIAN).getInt(),
-          buf.getShort(),
-          buf.getShort(),
-          buf.order(ByteOrder.BIG_ENDIAN).getShort(),
-          buf.getShort(),
-          buf.getInt());
-    } catch (NumberFormatException | BufferUnderflowException e) {
-      return null;
-    }
+  public ArtContext getArtContext() {
+    return artContextParser.getArtContext();
   }
 
   public void parse(final @NotNull Lines lines) {
@@ -170,6 +156,8 @@ public class ThreadDumpParser {
         if (thread != null) {
           threads.add(thread);
         }
+      } else {
+        artContextParser.parseLine(text);
       }
     }
   }
@@ -279,7 +267,7 @@ public class ThreadDumpParser {
         frame.setPlatform("native");
 
         final String buildId = nativeRe.group(8);
-        final String debugId = buildId == null ? null : buildIdToDebugId(buildId);
+        final String debugId = buildId == null ? null : NativeEventUtils.buildIdToDebugId(buildId);
         if (debugId != null) {
           if (!debugImages.containsKey(debugId)) {
             final DebugImage debugImage = new DebugImage();

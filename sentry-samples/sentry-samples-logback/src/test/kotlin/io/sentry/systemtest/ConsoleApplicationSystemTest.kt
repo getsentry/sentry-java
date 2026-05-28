@@ -54,6 +54,11 @@ class ConsoleApplicationSystemTest {
     }
 
     testHelper.ensureErrorReceived { event ->
+      event.message?.message == "important warning" &&
+        testHelper.doesEventHaveFlag(event, "my-feature-flag", true)
+    }
+
+    testHelper.ensureErrorReceived { event ->
       event.breadcrumbs?.firstOrNull {
         it.message == "User has made a purchase of product: 445" && it.level == SentryLevel.INFO
       } != null
@@ -61,7 +66,20 @@ class ConsoleApplicationSystemTest {
 
     testHelper.ensureLogsReceived { logs, _ ->
       testHelper.doesContainLogWithBody(logs, "User has made a purchase of product: 445") &&
-        testHelper.doesContainLogWithBody(logs, "Something went wrong")
+        testHelper.doesContainLogWithBody(logs, "Something went wrong") &&
+        testHelper.doesLogWithBodyHaveAttribute(
+          logs,
+          "Something went wrong",
+          "user.type",
+          "admin",
+        ) &&
+        testHelper.doesLogWithBodyHaveAttribute(
+          logs,
+          "Something went wrong",
+          "feature.version",
+          2,
+        ) &&
+        testHelper.doesLogWithBodyHaveAttribute(logs, "Something went wrong", "debug.enabled", true)
     }
   }
 }

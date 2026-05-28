@@ -152,6 +152,7 @@ class AndroidTransactionProfilerTest {
       buildInfoProvider,
       loadClass,
       activityFramesTracker,
+      false,
     )
     // Profiler doesn't start if the folder doesn't exists.
     // Usually it's generated when calling Sentry.init, but for tests we can create it manually.
@@ -185,7 +186,7 @@ class AndroidTransactionProfilerTest {
   fun `profiler start update inner counter`() {
     val profiler = fixture.getSut(context)
     profiler.start()
-    assertEquals(1, profiler.transactionsCounter)
+    assertTrue(profiler.isRunning)
   }
 
   @Test
@@ -193,10 +194,10 @@ class AndroidTransactionProfilerTest {
     val profiler = fixture.getSut(context)
     profiler.start()
     profiler.bindTransaction(fixture.transaction1)
-    assertEquals(1, profiler.transactionsCounter)
+    assertTrue(profiler.isRunning)
     assertTrue(profiler.isRunning)
     profiler.onTransactionFinish(fixture.transaction1, null, fixture.options)
-    assertEquals(0, profiler.transactionsCounter)
+    assertFalse(profiler.isRunning)
     assertFalse(profiler.isRunning)
   }
 
@@ -205,19 +206,19 @@ class AndroidTransactionProfilerTest {
     val profiler = fixture.getSut(context)
     profiler.start()
     profiler.start()
-    assertEquals(1, profiler.transactionsCounter)
+    assertTrue(profiler.isRunning)
   }
 
   @Test
   fun `profiler bind set current transaction`() {
     val profiler = fixture.getSut(context)
-    assertEquals(0, profiler.transactionsCounter)
+    assertFalse(profiler.isRunning)
     profiler.start()
     profiler.bindTransaction(fixture.transaction1)
-    assertEquals(1, profiler.transactionsCounter)
+    assertTrue(profiler.isRunning)
     val profilingTraceData =
       profiler.onTransactionFinish(fixture.transaction1, null, fixture.options)
-    assertEquals(0, profiler.transactionsCounter)
+    assertFalse(profiler.isRunning)
 
     assertNotNull(profilingTraceData)
     assertEquals(profilingTraceData.transactionId, fixture.transaction1.eventId.toString())
@@ -226,18 +227,18 @@ class AndroidTransactionProfilerTest {
   @Test
   fun `profiler multiple binds are ignored`() {
     val profiler = fixture.getSut(context)
-    assertEquals(0, profiler.transactionsCounter)
+    assertFalse(profiler.isRunning)
     profiler.start()
     profiler.bindTransaction(fixture.transaction1)
     profiler.bindTransaction(fixture.transaction2)
-    assertEquals(1, profiler.transactionsCounter)
+    assertTrue(profiler.isRunning)
 
     val profilingTraceData2 =
       profiler.onTransactionFinish(fixture.transaction2, null, fixture.options)
-    assertEquals(1, profiler.transactionsCounter)
+    assertTrue(profiler.isRunning)
     val profilingTraceData =
       profiler.onTransactionFinish(fixture.transaction1, null, fixture.options)
-    assertEquals(0, profiler.transactionsCounter)
+    assertFalse(profiler.isRunning)
 
     assertNotNull(profilingTraceData)
     assertNull(profilingTraceData2)
@@ -252,7 +253,7 @@ class AndroidTransactionProfilerTest {
       }
     val profiler = fixture.getSut(context, buildInfo)
     profiler.start()
-    assertEquals(0, profiler.transactionsCounter)
+    assertFalse(profiler.isRunning)
   }
 
   @Test
@@ -260,7 +261,7 @@ class AndroidTransactionProfilerTest {
     fixture.options.apply { profilesSampleRate = 0.0 }
     val profiler = fixture.getSut(context)
     profiler.start()
-    assertEquals(0, profiler.transactionsCounter)
+    assertFalse(profiler.isRunning)
   }
 
   @Test
@@ -323,7 +324,7 @@ class AndroidTransactionProfilerTest {
     fixture.options.apply { cacheDirPath = null }
     val profiler = fixture.getSut(context)
     profiler.start()
-    assertEquals(0, profiler.transactionsCounter)
+    assertFalse(profiler.isRunning)
   }
 
   @Test
@@ -331,7 +332,7 @@ class AndroidTransactionProfilerTest {
     fixture.options.apply { cacheDirPath = null }
     val profiler = fixture.getSut(context)
     profiler.start()
-    assertEquals(0, profiler.transactionsCounter)
+    assertFalse(profiler.isRunning)
   }
 
   @Test
@@ -339,7 +340,7 @@ class AndroidTransactionProfilerTest {
     fixture.options.apply { profilingTracesHz = 0 }
     val profiler = fixture.getSut(context)
     profiler.start()
-    assertEquals(0, profiler.transactionsCounter)
+    assertFalse(profiler.isRunning)
   }
 
   @Test
@@ -507,10 +508,10 @@ class AndroidTransactionProfilerTest {
     val profiler = fixture.getSut(context)
     profiler.start()
     profiler.bindTransaction(fixture.transaction1)
-    assertEquals(1, profiler.transactionsCounter)
+    assertTrue(profiler.isRunning)
 
     profiler.close()
-    assertEquals(0, profiler.transactionsCounter)
+    assertFalse(profiler.isRunning)
 
     // The timeout scheduled job should be cleared
     val androidProfiler = profiler.getProperty<AndroidProfiler?>("profiler")
@@ -527,10 +528,10 @@ class AndroidTransactionProfilerTest {
   fun `profiler stops profiling on close, even if not bound to a transaction`() {
     val profiler = fixture.getSut(context)
     profiler.start()
-    assertEquals(1, profiler.transactionsCounter)
+    assertTrue(profiler.isRunning)
 
     profiler.close()
-    assertEquals(0, profiler.transactionsCounter)
+    assertFalse(profiler.isRunning)
 
     // The timeout scheduled job should be cleared
     val androidProfiler = profiler.getProperty<AndroidProfiler?>("profiler")

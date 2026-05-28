@@ -45,4 +45,14 @@ public class LoadClass {
       final @NotNull String clazz, final @Nullable SentryOptions options) {
     return isClassAvailable(clazz, options != null ? options.getLogger() : null);
   }
+
+  public LazyEvaluator<Boolean> isClassAvailableLazy(
+      final @NotNull String clazz, final @Nullable ILogger logger) {
+    return new LazyEvaluator<>(() -> isClassAvailable(clazz, logger));
+  }
+
+  public LazyEvaluator<Boolean> isClassAvailableLazy(
+      final @NotNull String clazz, final @Nullable SentryOptions options) {
+    return new LazyEvaluator<>(() -> isClassAvailable(clazz, options));
+  }
 }

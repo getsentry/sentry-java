@@ -17,6 +17,7 @@ import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryId;
+import io.sentry.util.SampleRateUtils;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -82,7 +83,7 @@ public final class SentryAndroidOptions extends SentryOptions {
    *   <li>The transaction status will be {@link SpanStatus#OK} if none is set.
    * </ul>
    *
-   * The transaction is automatically bound to the {@link IScope}, but only if there's no
+   * <p>The transaction is automatically bound to the {@link IScope}, but only if there's no
    * transaction already bound to the Scope.
    */
   private boolean enableAutoActivityLifecycleTracing = true;
@@ -120,6 +121,9 @@ public final class SentryAndroidOptions extends SentryOptions {
    * (IPC)
    */
   private boolean collectAdditionalContext = true;
+
+  /** Enables or disables collecting of external storage context. */
+  private boolean collectExternalStorageContext = false;
 
   /**
    * Controls how many seconds to wait for sending events in case there were Startup Crashes in the
@@ -218,14 +222,46 @@ public final class SentryAndroidOptions extends SentryOptions {
   private boolean reportHistoricalAnrs = false;
 
   /**
+   * Controls whether to report historical Tombstones from the {@link ApplicationExitInfo} system
+   * API. When enabled, reports all of the Tombstones available in the {@link
+   * ActivityManager#getHistoricalProcessExitReasons(String, int, int)} list, as opposed to
+   * reporting only the latest one.
+   *
+   * <p>These events do not affect crash rate nor are they enriched with additional information from
+   * {@link IScope} like breadcrumbs.
+   */
+  private boolean reportHistoricalTombstones = false;
+
+  /**
    * Controls whether to send ANR (v2) thread dump as an attachment with plain text. The thread dump
    * is being attached from {@link ApplicationExitInfo#getTraceInputStream()}, if available.
    */
   private boolean attachAnrThreadDump = false;
 
+  /**
+   * Controls whether to attach the raw tombstone protobuf as an attachment. The tombstone is being
+   * attached from {@link ApplicationExitInfo#getTraceInputStream()}, if available.
+   */
+  private boolean attachRawTombstone = false;
+
   private boolean enablePerformanceV2 = true;
 
   private @Nullable SentryFrameMetricsCollector frameMetricsCollector;
+
+  private boolean enableTombstone = false;
+
+  /**
+   * Screenshot masking options. Configure which views should be masked when capturing screenshots
+   * on error events.
+   *
+   * <p>Note: Screenshot masking requires the {@code sentry-android-replay} module to be present at
+   * runtime. If the replay module is not available, screenshots will be captured without masking.
+   */
+  private final @NotNull SentryScreenshotOptions screenshot = new SentryScreenshotOptions();
+
+  private @Nullable Double anrProfilingSampleRate;
+
+  private boolean enableAnrFingerprinting = true;
 
   public SentryAndroidOptions() {
     setSentryClientName(BuildConfig.SENTRY_ANDROID_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
@@ -298,6 +334,25 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   public void setAnrReportInDebug(boolean anrReportInDebug) {
     this.anrReportInDebug = anrReportInDebug;
+  }
+
+  /**
+   * Sets Tombstone reporting (ApplicationExitInfo.REASON_CRASH_NATIVE) to enabled or disabled.
+   *
+   * @param enableTombstone true for enabled and false for disabled
+   */
+  public void setTombstoneEnabled(boolean enableTombstone) {
+    this.enableTombstone = enableTombstone;
+  }
+
+  /**
+   * Checks if Tombstone reporting (ApplicationExitInfo.REASON_CRASH_NATIVE) is enabled or disabled
+   * Default is disabled
+   *
+   * @return true if enabled or false otherwise
+   */
+  public boolean isTombstoneEnabled() {
+    return enableTombstone;
   }
 
   public boolean isEnableActivityLifecycleBreadcrumbs() {
@@ -412,6 +467,14 @@ public final class SentryAndroidOptions extends SentryOptions {
 
   public void setCollectAdditionalContext(boolean collectAdditionalContext) {
     this.collectAdditionalContext = collectAdditionalContext;
+  }
+
+  public boolean isCollectExternalStorageContext() {
+    return collectExternalStorageContext;
+  }
+
+  public void setCollectExternalStorageContext(final boolean collectExternalStorageContext) {
+    this.collectExternalStorageContext = collectExternalStorageContext;
   }
 
   public boolean isEnableFramesTracking() {
@@ -570,12 +633,28 @@ public final class SentryAndroidOptions extends SentryOptions {
     this.reportHistoricalAnrs = reportHistoricalAnrs;
   }
 
+  public boolean isReportHistoricalTombstones() {
+    return reportHistoricalTombstones;
+  }
+
+  public void setReportHistoricalTombstones(final boolean reportHistoricalTombstones) {
+    this.reportHistoricalTombstones = reportHistoricalTombstones;
+  }
+
   public boolean isAttachAnrThreadDump() {
     return attachAnrThreadDump;
   }
 
   public void setAttachAnrThreadDump(final boolean attachAnrThreadDump) {
     this.attachAnrThreadDump = attachAnrThreadDump;
+  }
+
+  public boolean isAttachRawTombstone() {
+    return attachRawTombstone;
+  }
+
+  public void setAttachRawTombstone(final boolean attachRawTombstone) {
+    this.attachRawTombstone = attachRawTombstone;
   }
 
   /**
@@ -626,9 +705,59 @@ public final class SentryAndroidOptions extends SentryOptions {
     this.enableSystemEventBreadcrumbsExtras = enableSystemEventBreadcrumbsExtras;
   }
 
-  static class AndroidUserFeedbackIDialogHandler implements SentryFeedbackOptions.IDialogHandler {
+  /**
+   * Returns the screenshot masking options.
+   *
+   * @return the screenshot masking options
+   */
+  public @NotNull SentryScreenshotOptions getScreenshot() {
+    return screenshot;
+  }
+
+  public @Nullable Double getAnrProfilingSampleRate() {
+    return anrProfilingSampleRate;
+  }
+
+  public void setAnrProfilingSampleRate(final @Nullable Double anrProfilingSampleRate) {
+    if (!SampleRateUtils.isValidSampleRate(anrProfilingSampleRate)) {
+      throw new IllegalArgumentException(
+          "The value "
+              + anrProfilingSampleRate
+              + " is not valid. Use null to disable or values >= 0.0 and <= 1.0.");
+    }
+    this.anrProfilingSampleRate = anrProfilingSampleRate;
+  }
+
+  public boolean isAnrProfilingEnabled() {
+    return anrProfilingSampleRate != null && anrProfilingSampleRate > 0;
+  }
+
+  /**
+   * Returns whether ANR fingerprinting is enabled. When enabled, the SDK assigns static
+   * fingerprints to ANR events that would otherwise produce noisy grouping. Currently, this applies
+   * a static fingerprint to ANRs whose stacktraces contain only system frames and no application
+   * frames.
+   *
+   * @return true if ANR fingerprinting is enabled
+   */
+  public boolean isEnableAnrFingerprinting() {
+    return enableAnrFingerprinting;
+  }
+
+  /**
+   * Sets whether ANR fingerprinting is enabled. When enabled, the SDK assigns static fingerprints
+   * to ANR events that would otherwise produce noisy grouping. Currently, this applies a static
+   * fingerprint to ANRs whose stacktraces contain only system frames and no application frames.
+   *
+   * @param enableAnrFingerprinting true to enable ANR fingerprinting
+   */
+  public void setEnableAnrFingerprinting(final boolean enableAnrFingerprinting) {
+    this.enableAnrFingerprinting = enableAnrFingerprinting;
+  }
+
+  static class AndroidUserFeedbackFormHandler implements SentryFeedbackOptions.IFormHandler {
     @Override
-    public void showDialog(
+    public void showForm(
         final @Nullable SentryId associatedEventId,
         final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator) {
       final @Nullable Activity activity = CurrentActivityHolder.getInstance().getActivity();
@@ -643,7 +772,7 @@ public final class SentryAndroidOptions extends SentryOptions {
         return;
       }
 
-      new SentryUserFeedbackDialog.Builder(activity)
+      new SentryUserFeedbackForm.Builder(activity)
           .associatedEventId(associatedEventId)
           .configurator(configurator)
           .create()

@@ -25,6 +25,13 @@ tasks.withType<KotlinCompile>().configureEach {
 }
 
 dependencies {
+  constraints {
+    testImplementation(libs.okhttp) { version { strictly(libs.versions.okhttp.get()) } }
+    testImplementation(libs.okhttp.mockwebserver) {
+      version { strictly(libs.versions.okhttp.get()) }
+    }
+  }
+
   api(projects.sentry)
   api(projects.sentrySpringJakarta)
   compileOnly(projects.sentryLogback)
@@ -33,6 +40,7 @@ dependencies {
   compileOnly(projects.sentryGraphql)
   compileOnly(projects.sentryGraphql22)
   compileOnly(projects.sentryQuartz)
+  compileOnly(libs.spring.kafka3)
   compileOnly(Config.Libs.springWeb)
   compileOnly(Config.Libs.springWebflux)
   compileOnly(libs.context.propagation)
@@ -63,6 +71,7 @@ dependencies {
   testImplementation(projects.sentryApacheHttpClient5)
   testImplementation(projects.sentryGraphql)
   testImplementation(projects.sentryGraphql22)
+  testImplementation(projects.sentryKafka)
   testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryCore)
   testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryAgent)
   testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryAgentcustomization)
@@ -83,11 +92,13 @@ dependencies {
   testImplementation(libs.springboot3.starter)
   testImplementation(libs.springboot3.starter.aop)
   testImplementation(libs.springboot3.starter.graphql)
+  testImplementation(libs.spring.kafka3)
   testImplementation(libs.springboot3.starter.quartz)
   testImplementation(libs.springboot3.starter.security)
   testImplementation(libs.springboot3.starter.test)
   testImplementation(libs.springboot3.starter.web)
   testImplementation(libs.springboot3.starter.webflux)
+  testImplementation(projects.sentryAsyncProfiler)
 }
 
 configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }

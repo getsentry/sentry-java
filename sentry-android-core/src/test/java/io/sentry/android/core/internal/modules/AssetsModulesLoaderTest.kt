@@ -2,7 +2,8 @@ package io.sentry.android.core.internal.modules
 
 import android.content.Context
 import android.content.res.AssetManager
-import io.sentry.ILogger
+import io.sentry.SentryOptions
+import io.sentry.test.ImmediateExecutorService
 import java.io.FileNotFoundException
 import java.nio.charset.Charset
 import kotlin.test.Test
@@ -16,7 +17,7 @@ class AssetsModulesLoaderTest {
   class Fixture {
     val context = mock<Context>()
     val assets = mock<AssetManager>()
-    val logger = mock<ILogger>()
+    val options = SentryOptions().apply { executorService = ImmediateExecutorService() }
 
     fun getSut(
       fileName: String = "sentry-external-modules.txt",
@@ -31,7 +32,7 @@ class AssetsModulesLoaderTest {
         whenever(assets.open(fileName)).thenThrow(FileNotFoundException())
       }
       whenever(context.assets).thenReturn(assets)
-      return AssetsModulesLoader(context, logger)
+      return AssetsModulesLoader(context, options)
     }
   }
 
@@ -43,9 +44,9 @@ class AssetsModulesLoaderTest {
       fixture.getSut(
         content =
           """
-                    com.squareup.okhttp3:okhttp:3.14.9
-                    com.squareup.okio:okio:1.17.2
-                    """
+          com.squareup.okhttp3:okhttp:3.14.9
+          com.squareup.okio:okio:1.17.2
+          """
             .trimIndent()
       )
 
@@ -61,9 +62,9 @@ class AssetsModulesLoaderTest {
       fixture.getSut(
         content =
           """
-                    com.squareup.okhttp3:okhttp:3.14.9
-                    com.squareup.okio:okio:1.17.2
-                    """
+          com.squareup.okhttp3:okhttp:3.14.9
+          com.squareup.okio:okio:1.17.2
+          """
             .trimIndent()
       )
 
@@ -92,8 +93,8 @@ class AssetsModulesLoaderTest {
       fixture.getSut(
         content =
           """
-                    com.squareup.okhttp3;3.14.9
-                    """
+          com.squareup.okhttp3;3.14.9
+          """
             .trimIndent()
       )
 

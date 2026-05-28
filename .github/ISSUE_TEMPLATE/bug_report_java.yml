@@ -35,6 +35,8 @@ body:
         - sentry-graphql-22
         - sentry-quartz
         - sentry-openfeign
+        - sentry-openfeature
+        - sentry-launchdarkly-server
         - sentry-apache-http-client-5
         - sentry-okhttp
         - sentry-reactor
@@ -50,6 +52,25 @@ body:
       label: Java Version
     validations:
       required: true
+
+  - type: dropdown
+    id: other_error_monitoring
+    attributes:
+      description: Are you using any other error monitoring solution alongside Sentry?
+      label: Other Error Monitoring Solution
+      options:
+        - "Yes"
+        - "No"
+    validations:
+      required: true
+
+  - type: input
+    id: other_error_monitoring_name
+    attributes:
+      label: Other Error Monitoring Solution Name
+      description: If you're using another error monitoring solution side-by-side, please enter the name of the other solution.
+    validations:
+      required: false
 
   - type: input
     id: version

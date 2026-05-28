@@ -44,7 +44,7 @@ public final class UncaughtExceptionHandlerIntegration
   }
 
   UncaughtExceptionHandlerIntegration(final @NotNull UncaughtExceptionHandler threadAdapter) {
-    this.threadAdapter = Objects.requireNonNull(threadAdapter, "threadAdapter is required.");
+    this.threadAdapter = threadAdapter;
   }
 
   @Override

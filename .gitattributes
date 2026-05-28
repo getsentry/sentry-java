@@ -1,6 +1,12 @@
 * text eol=lf
 *.png binary
 *.jpg binary
+*.pb binary
+*.gz binary
+*.bin binary
+*.zip binary
+*.jar binary
+*.gpg binary
 
 # These are explicitly windows files and should use crlf
 *.bat           text eol=crlf

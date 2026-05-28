@@ -25,4 +25,7 @@ public interface IContinuousProfiler {
 
   @NotNull
   SentryId getProfilerId();
+
+  @NotNull
+  SentryId getChunkId();
 }

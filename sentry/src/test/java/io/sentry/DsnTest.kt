@@ -90,6 +90,24 @@ class DsnTest {
   }
 
   @Test
+  fun `dsn parsed with leading and trailing whitespace`() {
+    val dsn = Dsn("  https://key@host/id  ")
+    assertEquals("https://host/api/id", dsn.sentryUri.toURL().toString())
+  }
+
+  @Test
+  fun `when dsn is empty, throws exception`() {
+    val ex = assertFailsWith<IllegalArgumentException> { Dsn("") }
+    assertEquals("java.lang.IllegalArgumentException: The DSN is empty.", ex.message)
+  }
+
+  @Test
+  fun `when dsn is only whitespace, throws exception`() {
+    val ex = assertFailsWith<IllegalArgumentException> { Dsn("   ") }
+    assertEquals("java.lang.IllegalArgumentException: The DSN is empty.", ex.message)
+  }
+
+  @Test
   fun `non http protocols are not accepted`() {
     assertFailsWith<IllegalArgumentException> { Dsn("ftp://publicKey:secretKey@host/path/id") }
     assertFailsWith<IllegalArgumentException> { Dsn("jar://publicKey:secretKey@host/path/id") }
@@ -102,5 +120,29 @@ class DsnTest {
 
     Dsn("HTTP://publicKey:secretKey@host/path/id")
     Dsn("HTTPS://publicKey:secretKey@host/path/id")
+  }
+
+  @Test
+  fun `extracts org id from host`() {
+    val dsn = Dsn("https://key@o123.ingest.sentry.io/456")
+    assertEquals("123", dsn.orgId)
+  }
+
+  @Test
+  fun `extracts single digit org id from host`() {
+    val dsn = Dsn("https://key@o1.ingest.us.sentry.io/456")
+    assertEquals("1", dsn.orgId)
+  }
+
+  @Test
+  fun `returns null org id when host has no org prefix`() {
+    val dsn = Dsn("https://key@sentry.io/456")
+    assertNull(dsn.orgId)
+  }
+
+  @Test
+  fun `returns null org id for non-standard host`() {
+    val dsn = Dsn("http://key@localhost:9000/456")
+    assertNull(dsn.orgId)
   }
 }

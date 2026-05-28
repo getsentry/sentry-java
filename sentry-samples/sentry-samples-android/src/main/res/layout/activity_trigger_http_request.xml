@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:tools="http://schemas.android.com/tools"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent"
+  android:fillViewport="true"
+  tools:context=".TriggerHttpRequestActivity">
+
+  <LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="HTTP Request Debugger"
+      android:textSize="24sp"
+      android:textStyle="bold"
+      android:layout_marginBottom="16dp"/>
+
+    <LinearLayout
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:orientation="horizontal"
+      android:layout_marginBottom="16dp">
+
+      <EditText
+        android:id="@+id/url_input"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:hint="Enter URL (or use default)"
+        android:text="https://api.github.com/users/getsentry"
+        android:inputType="textUri"/>
+
+    </LinearLayout>
+
+    <LinearLayout
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:orientation="horizontal"
+      android:layout_marginBottom="16dp">
+
+      <Button
+        android:id="@+id/trigger_get_request"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="GET Request"
+        android:layout_marginEnd="4dp"/>
+
+      <Button
+        android:id="@+id/trigger_post_request"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="POST JSON"
+        android:layout_marginStart="4dp"
+        android:layout_marginEnd="4dp"/>
+
+    </LinearLayout>
+
+    <LinearLayout
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:orientation="horizontal"
+      android:layout_marginBottom="16dp">
+
+      <Button
+        android:id="@+id/trigger_form_request"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="POST Form"
+        android:layout_marginEnd="4dp"/>
+
+      <Button
+        android:id="@+id/trigger_binary_request"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="POST Binary"
+        android:layout_marginStart="4dp"
+        android:layout_marginEnd="4dp"/>
+
+      <Button
+        android:id="@+id/trigger_string_request"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="POST String"
+        android:layout_marginStart="4dp"/>
+
+    </LinearLayout>
+
+    <LinearLayout
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:orientation="horizontal"
+      android:layout_marginBottom="16dp">
+
+      <Button
+        android:id="@+id/trigger_oneshot_request"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="POST One-Shot"
+        android:layout_marginEnd="4dp"/>
+
+    </LinearLayout>
+
+    <LinearLayout
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:orientation="horizontal"
+      android:layout_marginBottom="16dp">
+
+      <Button
+        android:id="@+id/trigger_large_text_request"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="POST Large Text"
+        android:layout_marginEnd="4dp"/>
+
+      <Button
+        android:id="@+id/trigger_large_binary_request"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="POST Large Binary"
+        android:layout_marginStart="4dp"/>
+
+    </LinearLayout>
+
+    <Button
+      android:id="@+id/clear_display"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="Clear"
+      android:layout_marginBottom="16dp"/>
+
+    <TextView
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="REQUEST:"
+      android:textStyle="bold"
+      android:textSize="16sp"
+      android:layout_marginBottom="8dp"/>
+
+    <TextView
+      android:id="@+id/request_display"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:padding="12dp"
+      android:textSize="12sp"
+      android:textColor="@android:color/holo_blue_dark"
+      android:background="#F0F8FF"
+      android:fontFamily="monospace"
+      android:scrollbars="vertical"
+      android:text="No request yet..."
+      android:layout_marginBottom="16dp"/>
+
+    <TextView
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="RESPONSE:"
+      android:textStyle="bold"
+      android:textSize="16sp"
+      android:layout_marginBottom="8dp"/>
+
+    <TextView
+      android:id="@+id/response_display"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:padding="12dp"
+      android:textSize="12sp"
+      android:textColor="@android:color/holo_green_dark"
+      android:background="#F0FFF0"
+      android:fontFamily="monospace"
+      android:scrollbars="vertical"
+      android:text="No response yet..."
+      android:layout_marginBottom="16dp"/>
+
+    <ProgressBar
+      android:id="@+id/loading_indicator"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_gravity="center"
+      android:visibility="gone"/>
+
+  </LinearLayout>
+
+</ScrollView>

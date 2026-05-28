@@ -6,6 +6,7 @@ import android.app.ApplicationExitInfo
 import android.content.Context
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import androidx.test.core.app.ApplicationProvider
@@ -15,6 +16,7 @@ import io.sentry.DateUtils
 import io.sentry.Hint
 import io.sentry.ILogger
 import io.sentry.ISentryClient
+import io.sentry.NoOpSentryExecutorService
 import io.sentry.Sentry
 import io.sentry.Sentry.OptionsConfiguration
 import io.sentry.SentryEnvelope
@@ -25,9 +27,9 @@ import io.sentry.SentryOptions
 import io.sentry.SentryOptions.BeforeSendCallback
 import io.sentry.Session
 import io.sentry.ShutdownHookIntegration
-import io.sentry.SpotlightIntegration
 import io.sentry.SystemOutLogger
 import io.sentry.UncaughtExceptionHandlerIntegration
+import io.sentry.android.core.anr.AnrProfilingIntegration
 import io.sentry.android.core.cache.AndroidEnvelopeCache
 import io.sentry.android.core.performance.AppStartMetrics
 import io.sentry.android.fragment.FragmentLifecycleIntegration
@@ -45,8 +47,8 @@ import io.sentry.cache.PersistingScopeObserver.TRANSACTION_FILENAME
 import io.sentry.cache.tape.QueueFile
 import io.sentry.protocol.Contexts
 import io.sentry.protocol.SentryId
+import io.sentry.spotlight.SpotlightIntegration
 import io.sentry.test.applyTestOptions
-import io.sentry.test.initForTest
 import io.sentry.transport.NoOpEnvelopeCache
 import io.sentry.util.StringUtils
 import java.io.ByteArrayOutputStream
@@ -130,35 +132,35 @@ class SentryAndroidTest {
           whenever(mock.traceInputStream)
             .thenReturn(
               """
-"main" prio=5 tid=1 Blocked
-  | group="main" sCount=1 ucsCount=0 flags=1 obj=0x72a985e0 self=0xb400007cabc57380
-  | sysTid=28941 nice=-10 cgrp=top-app sched=0/0 handle=0x7deceb74f8
-  | state=S schedstat=( 324804784 183300334 997 ) utm=23 stm=8 core=3 HZ=100
-  | stack=0x7ff93a9000-0x7ff93ab000 stackSize=8188KB
-  | held mutexes=
-  at io.sentry.samples.android.MainActivity${'$'}2.run(MainActivity.java:177)
-  - waiting to lock <0x0d3a2f0a> (a java.lang.Object) held by thread 5
-  at android.os.Handler.handleCallback(Handler.java:942)
-  at android.os.Handler.dispatchMessage(Handler.java:99)
-  at android.os.Looper.loopOnce(Looper.java:201)
-  at android.os.Looper.loop(Looper.java:288)
-  at android.app.ActivityThread.main(ActivityThread.java:7872)
-  at java.lang.reflect.Method.invoke(Native method)
-  at com.android.internal.os.RuntimeInit${'$'}MethodAndArgsCaller.run(RuntimeInit.java:548)
-  at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:936)
+              "main" prio=5 tid=1 Blocked
+                | group="main" sCount=1 ucsCount=0 flags=1 obj=0x72a985e0 self=0xb400007cabc57380
+                | sysTid=28941 nice=-10 cgrp=top-app sched=0/0 handle=0x7deceb74f8
+                | state=S schedstat=( 324804784 183300334 997 ) utm=23 stm=8 core=3 HZ=100
+                | stack=0x7ff93a9000-0x7ff93ab000 stackSize=8188KB
+                | held mutexes=
+                at io.sentry.samples.android.MainActivity${'$'}2.run(MainActivity.java:177)
+                - waiting to lock <0x0d3a2f0a> (a java.lang.Object) held by thread 5
+                at android.os.Handler.handleCallback(Handler.java:942)
+                at android.os.Handler.dispatchMessage(Handler.java:99)
+                at android.os.Looper.loopOnce(Looper.java:201)
+                at android.os.Looper.loop(Looper.java:288)
+                at android.app.ActivityThread.main(ActivityThread.java:7872)
+                at java.lang.reflect.Method.invoke(Native method)
+                at com.android.internal.os.RuntimeInit${'$'}MethodAndArgsCaller.run(RuntimeInit.java:548)
+                at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:936)
 
-"perfetto_hprof_listener" prio=10 tid=7 Native (still starting up)
-  | group="" sCount=1 ucsCount=0 flags=1 obj=0x0 self=0xb400007cabc5ab20
-  | sysTid=28959 nice=-20 cgrp=top-app sched=0/0 handle=0x7b2021bcb0
-  | state=S schedstat=( 72750 1679167 1 ) utm=0 stm=0 core=3 HZ=100
-  | stack=0x7b20124000-0x7b20126000 stackSize=991KB
-  | held mutexes=
-  native: #00 pc 00000000000a20f4  /apex/com.android.runtime/lib64/bionic/libc.so (read+4) (BuildId: 01331f74b0bb2cb958bdc15282b8ec7b)
-  native: #01 pc 000000000001d840  /apex/com.android.art/lib64/libperfetto_hprof.so (void* std::__1::__thread_proxy<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct> >, ArtPlugin_Initialize::${'$'}_34> >(void*)+260) (BuildId: 525cc92a7dc49130157aeb74f6870364)
-  native: #02 pc 00000000000b63b0  /apex/com.android.runtime/lib64/bionic/libc.so (__pthread_start(void*)+208) (BuildId: 01331f74b0bb2cb958bdc15282b8ec7b)
-  native: #03 pc 00000000000530b8  /apex/com.android.runtime/lib64/bionic/libc.so (__start_thread+64) (BuildId: 01331f74b0bb2cb958bdc15282b8ec7b)
-  (no managed stack frames)
-                        """
+              "perfetto_hprof_listener" prio=10 tid=7 Native (still starting up)
+                | group="" sCount=1 ucsCount=0 flags=1 obj=0x0 self=0xb400007cabc5ab20
+                | sysTid=28959 nice=-20 cgrp=top-app sched=0/0 handle=0x7b2021bcb0
+                | state=S schedstat=( 72750 1679167 1 ) utm=0 stm=0 core=3 HZ=100
+                | stack=0x7b20124000-0x7b20126000 stackSize=991KB
+                | held mutexes=
+                native: #00 pc 00000000000a20f4  /apex/com.android.runtime/lib64/bionic/libc.so (read+4) (BuildId: 01331f74b0bb2cb958bdc15282b8ec7b)
+                native: #01 pc 000000000001d840  /apex/com.android.art/lib64/libperfetto_hprof.so (void* std::__1::__thread_proxy<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct> >, ArtPlugin_Initialize::${'$'}_34> >(void*)+260) (BuildId: 525cc92a7dc49130157aeb74f6870364)
+                native: #02 pc 00000000000b63b0  /apex/com.android.runtime/lib64/bionic/libc.so (__pthread_start(void*)+208) (BuildId: 01331f74b0bb2cb958bdc15282b8ec7b)
+                native: #03 pc 00000000000530b8  /apex/com.android.runtime/lib64/bionic/libc.so (__start_thread+64) (BuildId: 01331f74b0bb2cb958bdc15282b8ec7b)
+                (no managed stack frames)
+              """
                 .trimIndent()
                 .byteInputStream()
             )
@@ -237,13 +239,19 @@ class SentryAndroidTest {
   }
 
   @Test
-  fun `deduplicates fragment and timber integrations`() {
+  fun `deduplicates fragment, timber and system events integrations`() {
     var refOptions: SentryAndroidOptions? = null
-
     fixture.initSut(autoInit = true) {
       it.addIntegration(FragmentLifecycleIntegration(ApplicationProvider.getApplicationContext()))
 
       it.addIntegration(SentryTimberIntegration(minEventLevel = FATAL, minBreadcrumbLevel = DEBUG))
+
+      it.addIntegration(
+        SystemEventsBreadcrumbsIntegration(
+          ApplicationProvider.getApplicationContext(),
+          CustomHandler(Looper.getMainLooper()),
+        )
+      )
       refOptions = it
     }
 
@@ -256,6 +264,11 @@ class SentryAndroidTest {
     // fragment integration is not auto-installed in the test, since the context is not Application
     // but we just verify here that the single integration is preserved
     assertEquals(refOptions!!.integrations.filterIsInstance<FragmentLifecycleIntegration>().size, 1)
+
+    val systemEventsIntegrations =
+      refOptions!!.integrations.filterIsInstance<SystemEventsBreadcrumbsIntegration>()
+    assertEquals(systemEventsIntegrations.size, 1)
+    assertTrue(systemEventsIntegrations.first().customHandler is CustomHandler)
   }
 
   @Test
@@ -464,7 +477,7 @@ class SentryAndroidTest {
     fixture.initSut(context = mock<Application>()) { options ->
       optionsRef = options
       options.dsn = "https://key@sentry.io/123"
-      assertEquals(18, options.integrations.size)
+      assertEquals(20, options.integrations.size)
       options.integrations.removeAll {
         it is UncaughtExceptionHandlerIntegration ||
           it is ShutdownHookIntegration ||
@@ -473,9 +486,11 @@ class SentryAndroidTest {
           it is EnvelopeFileObserverIntegration ||
           it is AppLifecycleIntegration ||
           it is AnrIntegration ||
+          it is AnrProfilingIntegration ||
           it is ActivityLifecycleIntegration ||
           it is ActivityBreadcrumbsIntegration ||
           it is UserInteractionIntegration ||
+          it is FeedbackShakeIntegration ||
           it is FragmentLifecycleIntegration ||
           it is SentryTimberIntegration ||
           it is AppComponentsBreadcrumbsIntegration ||
@@ -518,6 +533,19 @@ class SentryAndroidTest {
   }
 
   @Test
+  fun `executor service is not NoOp when AndroidConnectionStatusProvider is initialized`() {
+    var executorServiceIsNoOp = true
+    fixture.initSut(context = context) { options ->
+      options.dsn = "https://key@sentry.io/123"
+      // the config callback runs before initializeIntegrationsAndProcessors, which creates
+      // AndroidConnectionStatusProvider - so if the executor is already real here,
+      // it's guaranteed to be real when the provider calls submitSafe()
+      executorServiceIsNoOp = options.executorService is NoOpSentryExecutorService
+    }
+    assertFalse(executorServiceIsNoOp)
+  }
+
+  @Test
   fun `if the config options block throws still intializes android event processors`() {
     lateinit var optionsRef: SentryOptions
     fixture.initSut(context = mock<Application>()) { options ->
@@ -527,7 +555,7 @@ class SentryAndroidTest {
     }
 
     assertTrue(optionsRef.eventProcessors.any { it is DefaultAndroidEventProcessor })
-    assertTrue(optionsRef.eventProcessors.any { it is AnrV2EventProcessor })
+    assertTrue(optionsRef.eventProcessors.any { it is ApplicationExitInfoEventProcessor })
   }
 
   private fun prefillScopeCache(options: SentryOptions, cacheDir: String) {
@@ -580,3 +608,5 @@ fun initForTest(context: Context, logger: ILogger) {
 fun initForTest(context: Context) {
   SentryAndroid.init(context)
 }
+
+class CustomHandler(looper: Looper) : Handler(looper)

@@ -27,6 +27,7 @@
  */
 package io.sentry.android.replay.video
 
+import android.annotation.SuppressLint
 import android.annotation.TargetApi
 import android.graphics.Bitmap
 import android.media.MediaCodec
@@ -44,6 +45,7 @@ import kotlin.LazyThreadSafetyMode.NONE
 
 private const val TIMEOUT_USEC = 100_000L
 
+@SuppressLint("UseRequiresApi")
 @TargetApi(26)
 internal class SimpleVideoEncoder(
   val options: SentryOptions,
@@ -295,6 +297,7 @@ internal class SimpleVideoEncoder(
   }
 }
 
+@SuppressLint("UseRequiresApi")
 @TargetApi(24)
 internal data class MuxerConfig(
   val file: File,

@@ -102,6 +102,11 @@ class ExternalOptionsTest {
   }
 
   @Test
+  fun `creates options with sampleRate using external properties`() {
+    withPropertiesFile("sample-rate=0.2") { assertEquals(0.2, it.sampleRate) }
+  }
+
+  @Test
   fun `creates options with tracesSampleRate using external properties`() {
     withPropertiesFile("traces-sample-rate=0.2") { assertEquals(0.2, it.tracesSampleRate) }
   }
@@ -173,6 +178,20 @@ class ExternalOptionsTest {
   @Test
   fun `creates options with idleTimeout using external properties`() {
     withPropertiesFile("idle-timeout=2000") { assertEquals(2000L, it.idleTimeout) }
+  }
+
+  @Test
+  fun `creates options with shutdownTimeoutMillis using external properties`() {
+    withPropertiesFile("shutdown-timeout-millis=2000") {
+      assertEquals(2000L, it.shutdownTimeoutMillis)
+    }
+  }
+
+  @Test
+  fun `creates options with sessionFlushTimeoutMillis using external properties`() {
+    withPropertiesFile("session-flush-timeout-millis=2000") {
+      assertEquals(2000L, it.sessionFlushTimeoutMillis)
+    }
   }
 
   @Test
@@ -299,6 +318,48 @@ class ExternalOptionsTest {
   }
 
   @Test
+  fun `creates options with enableDatabaseTransactionTracing set to true`() {
+    withPropertiesFile("enable-database-transaction-tracing=true") { options ->
+      assertTrue(options.isEnableDatabaseTransactionTracing == true)
+    }
+  }
+
+  @Test
+  fun `creates options with enableDatabaseTransactionTracing set to false`() {
+    withPropertiesFile("enable-database-transaction-tracing=false") { options ->
+      assertTrue(options.isEnableDatabaseTransactionTracing == false)
+    }
+  }
+
+  @Test
+  fun `creates options with enableCacheTracing set to true`() {
+    withPropertiesFile("enable-cache-tracing=true") { options ->
+      assertTrue(options.isEnableCacheTracing == true)
+    }
+  }
+
+  @Test
+  fun `creates options with enableCacheTracing set to false`() {
+    withPropertiesFile("enable-cache-tracing=false") { options ->
+      assertTrue(options.isEnableCacheTracing == false)
+    }
+  }
+
+  @Test
+  fun `creates options with enableQueueTracing set to true`() {
+    withPropertiesFile("enable-queue-tracing=true") { options ->
+      assertTrue(options.isEnableQueueTracing == true)
+    }
+  }
+
+  @Test
+  fun `creates options with enableQueueTracing set to false`() {
+    withPropertiesFile("enable-queue-tracing=false") { options ->
+      assertTrue(options.isEnableQueueTracing == false)
+    }
+  }
+
+  @Test
   fun `creates options with cron defaults`() {
     withPropertiesFile(
       listOf(
@@ -374,6 +435,75 @@ class ExternalOptionsTest {
   @Test
   fun `creates options with enableLogs set to true`() {
     withPropertiesFile("logs.enabled=true") { options -> assertTrue(options.isEnableLogs == true) }
+  }
+
+  @Test
+  fun `creates options with enableMetrics set to true`() {
+    withPropertiesFile("metrics.enabled=true") { options ->
+      assertTrue(options.isEnableMetrics == true)
+    }
+  }
+
+  @Test
+  fun `creates options with enableMetrics set to false`() {
+    withPropertiesFile("metrics.enabled=false") { options ->
+      assertTrue(options.isEnableMetrics == false)
+    }
+  }
+
+  @Test
+  fun `creates options with enableMetrics set to null when not set`() {
+    withPropertiesFile { assertNull(it.isEnableMetrics) }
+  }
+
+  @Test
+  fun `creates options with profileSessionSampleRate set to 0_8`() {
+    withPropertiesFile("profile-session-sample-rate=0.8") { options ->
+      assertTrue(options.profileSessionSampleRate == 0.8)
+    }
+  }
+
+  @Test
+  fun `creates options with profilingTracesDirPath set to profile_traces`() {
+    withPropertiesFile("profiling-traces-dir-path=profile_traces") { options ->
+      assertTrue(options.profilingTracesDirPath == "profile_traces")
+    }
+  }
+
+  @Test
+  fun `creates options with profilingLifecycle set to TRACE`() {
+    withPropertiesFile("profile-lifecycle=TRACE") { options ->
+      assertTrue(options.profileLifecycle == ProfileLifecycle.TRACE)
+    }
+  }
+
+  @Test
+  fun `creates options with strictTraceContinuation set to true`() {
+    withPropertiesFile("enable-strict-trace-continuation=true") { options ->
+      assertTrue(options.isStrictTraceContinuation == true)
+    }
+  }
+
+  @Test
+  fun `creates options with strictTraceContinuation set to false`() {
+    withPropertiesFile("enable-strict-trace-continuation=false") { options ->
+      assertTrue(options.isStrictTraceContinuation == false)
+    }
+  }
+
+  @Test
+  fun `creates options with strictTraceContinuation set to null when not set`() {
+    withPropertiesFile { assertNull(it.isStrictTraceContinuation) }
+  }
+
+  @Test
+  fun `creates options with orgId using external properties`() {
+    withPropertiesFile("org-id=12345") { options -> assertEquals("12345", options.orgId) }
+  }
+
+  @Test
+  fun `creates options with orgId set to null when not set`() {
+    withPropertiesFile { assertNull(it.orgId) }
   }
 
   private fun withPropertiesFile(

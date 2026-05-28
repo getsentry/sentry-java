@@ -1,7 +1,6 @@
 ##---------------Begin: proguard configuration for android-core  ----------
 
 ##---------------Begin: proguard configuration for androidx.core  ----------
--keep class androidx.core.view.GestureDetectorCompat { <init>(...); }
 -keep class androidx.core.app.FrameMetricsAggregator { <init>(...); }
 -keep interface androidx.core.view.ScrollingView { *; }
 ##---------------End: proguard configuration for androidx.core  ----------
@@ -54,6 +53,7 @@
 
 -keepnames class io.sentry.android.core.ApplicationNotResponding
 
+
 ##---------------End: proguard configuration for android-core  ----------
 
 ##---------------Begin: proguard configuration for sentry-apollo-3  ----------
@@ -76,6 +76,10 @@
 ##---------------Begin: proguard configuration for sentry-android-replay  ----------
 -dontwarn io.sentry.android.replay.ReplayIntegration
 -dontwarn io.sentry.android.replay.DefaultReplayBreadcrumbConverter
+-dontwarn io.sentry.android.replay.util.MaskRenderer
+-dontwarn io.sentry.android.replay.util.ViewsKt
+-dontwarn io.sentry.android.replay.viewhierarchy.ViewHierarchyNode$Companion
+-dontwarn io.sentry.android.replay.viewhierarchy.ViewHierarchyNode
 -keepnames class io.sentry.android.replay.ReplayIntegration
 ##---------------End: proguard configuration for sentry-android-replay  ----------
 
@@ -83,3 +87,8 @@
 -dontwarn io.sentry.android.distribution.DistributionIntegration
 -keepnames class io.sentry.android.distribution.DistributionIntegration
 ##---------------End: proguard configuration for sentry-android-distribution  ----------
+
+##---------------Begin: proguard configuration for sentry-spotlight  ----------
+-dontwarn io.sentry.spotlight.SpotlightIntegration
+-keepnames class io.sentry.spotlight.SpotlightIntegration
+##---------------End: proguard configuration for sentry-spotlight  ----------

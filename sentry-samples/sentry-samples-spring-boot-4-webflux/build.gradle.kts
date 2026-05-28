@@ -25,11 +25,16 @@ dependencies {
   implementation(projects.sentryLogback)
   implementation(projects.sentryJdbc)
   implementation(projects.sentryGraphql22)
+  implementation(projects.sentryAsyncProfiler)
   implementation(libs.context.propagation)
   implementation(libs.springboot4.starter.actuator)
   implementation(libs.springboot4.starter.graphql)
   implementation(libs.springboot4.starter.webflux)
   implementation(libs.springboot4.starter.webclient)
+
+  // cache tracing
+  implementation(libs.springboot4.starter.cache)
+  implementation(libs.caffeine)
 
   testImplementation(kotlin(Config.kotlinStdLib))
   testImplementation(projects.sentrySystemTestSupport)
@@ -60,6 +65,10 @@ tasks.withType<KotlinCompile>().configureEach {
 tasks.register<Test>("systemTest").configure {
   group = "verification"
   description = "Runs the System tests"
+
+  val test = project.extensions.getByType<SourceSetContainer>()["test"]
+  testClassesDirs = test.output.classesDirs
+  classpath = test.runtimeClasspath
 
   outputs.upToDateWhen { false }
 

@@ -1,6 +1,7 @@
 package io.sentry;
 
 import io.sentry.logger.ILoggerApi;
+import io.sentry.metrics.IMetricsApi;
 import io.sentry.protocol.Feedback;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
@@ -216,7 +217,10 @@ public interface IScopes {
    * Captures a manually created user feedback and sends it to Sentry.
    *
    * @param userFeedback The user feedback to send to Sentry.
+   * @deprecated Use {@link #feedback()}.{@link IFeedbackApi#capture(io.sentry.protocol.Feedback)
+   *     capture(feedback)} with the new {@link io.sentry.protocol.Feedback} type instead.
    */
+  @Deprecated
   void captureUserFeedback(@NotNull UserFeedback userFeedback);
 
   /** Starts a new session. If there's a running session, it ends it before starting the new one. */
@@ -743,4 +747,41 @@ public interface IScopes {
 
   @NotNull
   ILoggerApi logger();
+
+  @NotNull
+  IMetricsApi metrics();
+
+  @NotNull
+  IFeedbackApi feedback();
+
+  /**
+   * Sets an attribute.
+   *
+   * @param key the key
+   * @param value the value
+   */
+  void setAttribute(final @Nullable String key, final @Nullable Object value);
+
+  /**
+   * Sets an attribute.
+   *
+   * @param attribute the attribute
+   */
+  void setAttribute(final @Nullable SentryAttribute attribute);
+
+  /**
+   * Sets multiple attributes.
+   *
+   * @param attributes the attributes
+   */
+  void setAttributes(final @Nullable SentryAttributes attributes);
+
+  /**
+   * Removes an attribute.
+   *
+   * @param key the key
+   */
+  void removeAttribute(final @Nullable String key);
+
+  void addFeatureFlag(final @Nullable String flag, final @Nullable Boolean result);
 }

@@ -29,6 +29,7 @@ tasks.withType<KotlinCompile>().configureEach {
 
 dependencies {
   api(projects.sentry)
+  compileOnly(projects.sentryKafka)
   compileOnly(platform(SpringBootPlugin.BOM_COORDINATES))
   compileOnly(Config.Libs.springWeb)
   compileOnly(Config.Libs.springAop)
@@ -41,6 +42,7 @@ dependencies {
   compileOnly(libs.servlet.jakarta.api)
   compileOnly(libs.slf4j.api)
   compileOnly(libs.springboot3.starter.graphql)
+  compileOnly(libs.spring.kafka3)
   compileOnly(libs.springboot3.starter.quartz)
 
   compileOnly(Config.Libs.springWebflux)
@@ -58,6 +60,7 @@ dependencies {
   // tests
   testImplementation(projects.sentryTestSupport)
   testImplementation(projects.sentryGraphql)
+  testImplementation(projects.sentryKafka)
   testImplementation(kotlin(Config.kotlinStdLib))
   testImplementation(libs.awaitility.kotlin)
   testImplementation(libs.context.propagation)
@@ -68,6 +71,7 @@ dependencies {
   testImplementation(libs.springboot3.starter.aop)
   testImplementation(libs.springboot3.starter.graphql)
   testImplementation(libs.springboot3.starter.security)
+  testImplementation(libs.spring.kafka3)
   testImplementation(libs.springboot3.starter.test)
   testImplementation(libs.springboot3.starter.web)
   testImplementation(libs.springboot3.starter.webflux)

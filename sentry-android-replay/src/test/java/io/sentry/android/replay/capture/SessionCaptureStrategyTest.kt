@@ -437,6 +437,7 @@ class SessionCaptureStrategyTest {
               "android.widget.TextView",
               "android.webkit.WebView",
               "android.widget.VideoView",
+              "androidx.camera.view.PreviewView",
               "androidx.media3.ui.PlayerView",
               "com.google.android.exoplayer2.ui.PlayerView",
               "com.google.android.exoplayer2.ui.StyledPlayerView",

@@ -10,25 +10,33 @@ import android.widget.Button;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * @deprecated `SentryUserFeedbackButton` will be removed in the next major version
+ */
+@Deprecated
 public class SentryUserFeedbackButton extends Button {
 
   private @Nullable OnClickListener delegate;
 
+  @Deprecated
   public SentryUserFeedbackButton(Context context) {
     super(context);
     init(context, null, 0, 0);
   }
 
+  @Deprecated
   public SentryUserFeedbackButton(Context context, AttributeSet attrs) {
     super(context, attrs);
     init(context, attrs, 0, 0);
   }
 
+  @Deprecated
   public SentryUserFeedbackButton(Context context, AttributeSet attrs, int defStyleAttr) {
     super(context, attrs, defStyleAttr);
     init(context, attrs, defStyleAttr, 0);
   }
 
+  @Deprecated
   public SentryUserFeedbackButton(
       Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
     super(context, attrs, defStyleAttr, defStyleRes);
@@ -104,7 +112,7 @@ public class SentryUserFeedbackButton extends Button {
       }
     }
 
-    // Set the default ClickListener to open the SentryUserFeedbackDialog
+    // Set the default ClickListener to open the SentryUserFeedbackForm
     setOnClickListener(delegate);
   }
 
@@ -113,7 +121,7 @@ public class SentryUserFeedbackButton extends Button {
     delegate = listener;
     super.setOnClickListener(
         v -> {
-          new SentryUserFeedbackDialog.Builder(getContext()).create().show();
+          new SentryUserFeedbackForm.Builder(getContext()).create().show();
           if (delegate != null) {
             delegate.onClick(v);
           }

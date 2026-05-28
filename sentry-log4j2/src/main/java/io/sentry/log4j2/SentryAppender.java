@@ -25,6 +25,7 @@ import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.Message;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.util.CollectionUtils;
+import io.sentry.util.LoggerPropertiesUtil;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -163,27 +164,42 @@ public class SentryAppender extends AbstractAppender {
 
   @Override
   public void start() {
+    start(getOptionsConfiguration(null));
+  }
+
+  @NotNull
+  Sentry.OptionsConfiguration<SentryOptions> getOptionsConfiguration(
+      final @Nullable Sentry.OptionsConfiguration<SentryOptions> additionalOptionsConfiguration) {
+    return options -> {
+      options.setEnableExternalConfiguration(true);
+      options.setInitPriority(InitPriority.LOWEST);
+      options.setDsn(dsn);
+      if (debug != null) {
+        options.setDebug(debug);
+      }
+      options.setSentryClientName(
+          BuildConfig.SENTRY_LOG4J2_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
+      options.setSdkVersion(createSdkVersion(options));
+      if (contextTags != null) {
+        for (final String contextTag : contextTags) {
+          options.addContextTag(contextTag);
+        }
+      }
+      Optional.ofNullable(transportFactory).ifPresent(options::setTransportFactory);
+      if (additionalOptionsConfiguration != null) {
+        additionalOptionsConfiguration.configure(options);
+      }
+    };
+  }
+
+  void start(final @NotNull Sentry.OptionsConfiguration<SentryOptions> optionsConfiguration) {
     try {
-      Sentry.init(
-          options -> {
-            options.setEnableExternalConfiguration(true);
-            options.setInitPriority(InitPriority.LOWEST);
-            options.setDsn(dsn);
-            if (debug != null) {
-              options.setDebug(debug);
-            }
-            options.setSentryClientName(
-                BuildConfig.SENTRY_LOG4J2_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
-            options.setSdkVersion(createSdkVersion(options));
-            if (contextTags != null) {
-              for (final String contextTag : contextTags) {
-                options.addContextTag(contextTag);
-              }
-            }
-            Optional.ofNullable(transportFactory).ifPresent(options::setTransportFactory);
-          });
+      Sentry.init(optionsConfiguration);
     } catch (IllegalArgumentException e) {
-      LOGGER.warn("Failed to init Sentry during appender initialization: " + e.getMessage());
+      final @Nullable String errorMessage = e.getMessage();
+      if (errorMessage == null || !errorMessage.startsWith("DSN is required.")) {
+        LOGGER.warn("Failed to init Sentry during appender initialization: " + errorMessage);
+      }
     }
     addPackageAndIntegrationInfo();
     super.start();
@@ -230,10 +246,14 @@ public class SentryAppender extends AbstractAppender {
           SentryAttribute.stringAttribute("sentry.message.template", nonFormattedMessage));
     }
 
+    final @NotNull Map<String, String> contextData = loggingEvent.getContextData().toMap();
+    final @NotNull List<String> contextTags = scopes.getOptions().getContextTags();
+    LoggerPropertiesUtil.applyPropertiesToAttributes(attributes, contextTags, contextData);
+
     final @NotNull SentryLogParameters params = SentryLogParameters.create(attributes);
     params.setOrigin("auto.log.log4j2");
 
-    Sentry.logger().log(sentryLevel, params, formattedMessage, arguments);
+    scopes.logger().log(sentryLevel, params, formattedMessage, arguments);
   }
 
   /**
@@ -279,20 +299,7 @@ public class SentryAppender extends AbstractAppender {
       // get tags from ScopesAdapter options to allow getting the correct tags if Sentry has been
       // initialized somewhere else
       final List<String> contextTags = scopes.getOptions().getContextTags();
-      if (contextTags != null && !contextTags.isEmpty()) {
-        for (final String contextTag : contextTags) {
-          // if mdc tag is listed in SentryOptions, apply as event tag
-          if (contextData.containsKey(contextTag)) {
-            event.setTag(contextTag, contextData.get(contextTag));
-            // remove from all tags applied to logging event
-            contextData.remove(contextTag);
-          }
-        }
-      }
-      // put the rest of mdc tags in contexts
-      if (!contextData.isEmpty()) {
-        event.getContexts().put("Context Data", contextData);
-      }
+      LoggerPropertiesUtil.applyPropertiesToEvent(event, contextTags, contextData, "Context Data");
     }
 
     return event;

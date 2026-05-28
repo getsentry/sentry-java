@@ -6,11 +6,14 @@ import android.os.Bundle;
 import io.sentry.ILogger;
 import io.sentry.InitPriority;
 import io.sentry.ProfileLifecycle;
+import io.sentry.ScreenshotStrategyType;
 import io.sentry.SentryFeedbackOptions;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryLevel;
+import io.sentry.SentryReplayOptions;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.util.Objects;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -30,11 +33,17 @@ final class ManifestMetadataReader {
   static final String ANR_REPORT_DEBUG = "io.sentry.anr.report-debug";
   static final String ANR_TIMEOUT_INTERVAL_MILLIS = "io.sentry.anr.timeout-interval-millis";
   static final String ANR_ATTACH_THREAD_DUMPS = "io.sentry.anr.attach-thread-dumps";
+  static final String ANR_REPORT_HISTORICAL = "io.sentry.anr.report-historical";
+
+  static final String TOMBSTONE_ENABLE = "io.sentry.tombstone.enable";
+  static final String TOMBSTONE_ATTACH_RAW = "io.sentry.tombstone.attach-raw";
 
   static final String AUTO_INIT = "io.sentry.auto-init";
   static final String NDK_ENABLE = "io.sentry.ndk.enable";
   static final String NDK_SCOPE_SYNC_ENABLE = "io.sentry.ndk.scope-sync.enable";
+  static final String NDK_SDK_NAME = "io.sentry.ndk.sdk-name";
   static final String RELEASE = "io.sentry.release";
+  static final String DIST = "io.sentry.dist";
   static final String ENVIRONMENT = "io.sentry.environment";
   static final String SDK_NAME = "io.sentry.sdk.name";
   static final String SDK_VERSION = "io.sentry.sdk.version";
@@ -83,6 +92,7 @@ final class ManifestMetadataReader {
   static final String ATTACH_VIEW_HIERARCHY = "io.sentry.attach-view-hierarchy";
   static final String CLIENT_REPORTS_ENABLE = "io.sentry.send-client-reports";
   static final String COLLECT_ADDITIONAL_CONTEXT = "io.sentry.additional-context";
+  static final String COLLECT_EXTERNAL_STORAGE_CONTEXT = "io.sentry.external-storage-context";
 
   static final String SEND_DEFAULT_PII = "io.sentry.send-default-pii";
 
@@ -111,6 +121,24 @@ final class ManifestMetadataReader {
   static final String REPLAYS_MASK_ALL_IMAGES = "io.sentry.session-replay.mask-all-images";
 
   static final String REPLAYS_DEBUG = "io.sentry.session-replay.debug";
+  static final String REPLAYS_SCREENSHOT_STRATEGY = "io.sentry.session-replay.screenshot-strategy";
+  static final String REPLAYS_CAPTURE_SURFACE_VIEWS =
+      "io.sentry.session-replay.capture-surface-views";
+
+  static final String REPLAYS_NETWORK_DETAIL_ALLOW_URLS =
+      "io.sentry.session-replay.network-detail-allow-urls";
+
+  static final String REPLAYS_NETWORK_DETAIL_DENY_URLS =
+      "io.sentry.session-replay.network-detail-deny-urls";
+
+  static final String REPLAYS_NETWORK_CAPTURE_BODIES =
+      "io.sentry.session-replay.network-capture-bodies";
+
+  static final String REPLAYS_NETWORK_REQUEST_HEADERS =
+      "io.sentry.session-replay.network-request-headers";
+
+  static final String REPLAYS_NETWORK_RESPONSE_HEADERS =
+      "io.sentry.session-replay.network-response-headers";
 
   static final String FORCE_INIT = "io.sentry.force-init";
 
@@ -123,6 +151,8 @@ final class ManifestMetadataReader {
   static final String IN_APP_EXCLUDES = "io.sentry.in-app-excludes";
 
   static final String ENABLE_LOGS = "io.sentry.logs.enabled";
+
+  static final String ENABLE_METRICS = "io.sentry.metrics.enabled";
 
   static final String ENABLE_AUTO_TRACE_ID_GENERATION =
       "io.sentry.traces.enable-auto-id-generation";
@@ -140,6 +170,23 @@ final class ManifestMetadataReader {
   static final String FEEDBACK_USE_SENTRY_USER = "io.sentry.feedback.use-sentry-user";
 
   static final String FEEDBACK_SHOW_BRANDING = "io.sentry.feedback.show-branding";
+
+  static final String STRICT_TRACE_CONTINUATION = "io.sentry.strict-trace-continuation.enabled";
+  static final String ORG_ID = "io.sentry.org-id";
+
+  static final String FEEDBACK_USE_SHAKE_GESTURE = "io.sentry.feedback.use-shake-gesture";
+
+  static final String SPOTLIGHT_ENABLE = "io.sentry.spotlight.enable";
+
+  static final String SPOTLIGHT_CONNECTION_URL = "io.sentry.spotlight.url";
+
+  static final String SCREENSHOT_MASK_ALL_TEXT = "io.sentry.screenshot.mask-all-text";
+
+  static final String SCREENSHOT_MASK_ALL_IMAGES = "io.sentry.screenshot.mask-all-images";
+
+  static final String ANR_PROFILING_SAMPLE_RATE = "io.sentry.anr.profiling.sample-rate";
+
+  static final String ENABLE_ANR_FINGERPRINTING = "io.sentry.anr.enable-fingerprinting";
 
   /** ManifestMetadataReader ctor */
   private ManifestMetadataReader() {}
@@ -178,6 +225,10 @@ final class ManifestMetadataReader {
         }
 
         options.setAnrEnabled(readBool(metadata, logger, ANR_ENABLE, options.isAnrEnabled()));
+        options.setTombstoneEnabled(
+            readBool(metadata, logger, TOMBSTONE_ENABLE, options.isTombstoneEnabled()));
+        options.setAttachRawTombstone(
+            readBool(metadata, logger, TOMBSTONE_ATTACH_RAW, options.isAttachRawTombstone()));
 
         // use enableAutoSessionTracking as fallback
         options.setEnableAutoSessionTracking(
@@ -207,6 +258,9 @@ final class ManifestMetadataReader {
         options.setAttachAnrThreadDump(
             readBool(metadata, logger, ANR_ATTACH_THREAD_DUMPS, options.isAttachAnrThreadDump()));
 
+        options.setReportHistoricalAnrs(
+            readBool(metadata, logger, ANR_REPORT_HISTORICAL, options.isReportHistoricalAnrs()));
+
         final @Nullable String dsn = readString(metadata, logger, DSN, options.getDsn());
         final boolean enabled = readBool(metadata, logger, ENABLE_SENTRY, options.isEnabled());
 
@@ -230,7 +284,15 @@ final class ManifestMetadataReader {
         options.setEnableScopeSync(
             readBool(metadata, logger, NDK_SCOPE_SYNC_ENABLE, options.isEnableScopeSync()));
 
+        final @Nullable String nativeSdkName =
+            readString(metadata, logger, NDK_SDK_NAME, options.getNativeSdkName());
+        if (nativeSdkName != null) {
+          options.setNativeSdkName(nativeSdkName);
+        }
+
         options.setRelease(readString(metadata, logger, RELEASE, options.getRelease()));
+
+        options.setDist(readString(metadata, logger, DIST, options.getDist()));
 
         options.setEnvironment(readString(metadata, logger, ENVIRONMENT, options.getEnvironment()));
 
@@ -318,6 +380,13 @@ final class ManifestMetadataReader {
                 logger,
                 COLLECT_ADDITIONAL_CONTEXT,
                 options.isCollectAdditionalContext()));
+
+        options.setCollectExternalStorageContext(
+            readBool(
+                metadata,
+                logger,
+                COLLECT_EXTERNAL_STORAGE_CONTEXT,
+                options.isCollectExternalStorageContext()));
 
         if (options.getTracesSampleRate() == null) {
           final double tracesSampleRate = readDouble(metadata, logger, TRACES_SAMPLE_RATE);
@@ -476,6 +545,106 @@ final class ManifestMetadataReader {
 
         options.getSessionReplay().setDebug(readBool(metadata, logger, REPLAYS_DEBUG, false));
 
+        final @Nullable String screenshotStrategyRaw =
+            readString(metadata, logger, REPLAYS_SCREENSHOT_STRATEGY, null);
+        if (screenshotStrategyRaw != null) {
+          if ("canvas".equals(screenshotStrategyRaw.toLowerCase(Locale.ROOT))) {
+            options.getSessionReplay().setScreenshotStrategy(ScreenshotStrategyType.CANVAS);
+          } else {
+            // always default to PIXEL_COPY
+            options.getSessionReplay().setScreenshotStrategy(ScreenshotStrategyType.PIXEL_COPY);
+          }
+        }
+
+        options
+            .getSessionReplay()
+            .setCaptureSurfaceViews(
+                readBool(
+                    metadata,
+                    logger,
+                    REPLAYS_CAPTURE_SURFACE_VIEWS,
+                    options.getSessionReplay().isCaptureSurfaceViews()));
+
+        // Network Details Configuration
+        if (options.getSessionReplay().getNetworkDetailAllowUrls().isEmpty()) {
+          final @Nullable List<String> allowUrls =
+              readList(metadata, logger, REPLAYS_NETWORK_DETAIL_ALLOW_URLS);
+          if (allowUrls != null && !allowUrls.isEmpty()) {
+            final List<String> filteredUrls = new ArrayList<>();
+            for (String url : allowUrls) {
+              final String trimmedUrl = url.trim();
+              if (!trimmedUrl.isEmpty()) {
+                filteredUrls.add(trimmedUrl);
+              }
+            }
+            if (!filteredUrls.isEmpty()) {
+              options.getSessionReplay().setNetworkDetailAllowUrls(filteredUrls);
+            }
+          }
+        }
+
+        if (options.getSessionReplay().getNetworkDetailDenyUrls().isEmpty()) {
+          final @Nullable List<String> denyUrls =
+              readList(metadata, logger, REPLAYS_NETWORK_DETAIL_DENY_URLS);
+          if (denyUrls != null && !denyUrls.isEmpty()) {
+            final List<String> filteredUrls = new ArrayList<>();
+            for (String url : denyUrls) {
+              final String trimmedUrl = url.trim();
+              if (!trimmedUrl.isEmpty()) {
+                filteredUrls.add(trimmedUrl);
+              }
+            }
+            if (!filteredUrls.isEmpty()) {
+              options.getSessionReplay().setNetworkDetailDenyUrls(filteredUrls);
+            }
+          }
+        }
+
+        options
+            .getSessionReplay()
+            .setNetworkCaptureBodies(
+                readBool(
+                    metadata,
+                    logger,
+                    REPLAYS_NETWORK_CAPTURE_BODIES,
+                    options.getSessionReplay().isNetworkCaptureBodies() /* defaultValue */));
+
+        if (options.getSessionReplay().getNetworkRequestHeaders().size()
+            == SentryReplayOptions.getNetworkDetailsDefaultHeaders().size()) { // Only has defaults
+          final @Nullable List<String> requestHeaders =
+              readList(metadata, logger, REPLAYS_NETWORK_REQUEST_HEADERS);
+          if (requestHeaders != null) {
+            final List<String> filteredHeaders = new ArrayList<>();
+            for (String header : requestHeaders) {
+              final String trimmedHeader = header.trim();
+              if (!trimmedHeader.isEmpty()) {
+                filteredHeaders.add(trimmedHeader);
+              }
+            }
+            if (!filteredHeaders.isEmpty()) {
+              options.getSessionReplay().setNetworkRequestHeaders(filteredHeaders);
+            }
+          }
+        }
+
+        if (options.getSessionReplay().getNetworkResponseHeaders().size()
+            == SentryReplayOptions.getNetworkDetailsDefaultHeaders().size()) { // Only has defaults
+          final @Nullable List<String> responseHeaders =
+              readList(metadata, logger, REPLAYS_NETWORK_RESPONSE_HEADERS);
+          if (responseHeaders != null && !responseHeaders.isEmpty()) {
+            final List<String> filteredHeaders = new ArrayList<>();
+            for (String header : responseHeaders) {
+              final String trimmedHeader = header.trim();
+              if (!trimmedHeader.isEmpty()) {
+                filteredHeaders.add(trimmedHeader);
+              }
+            }
+            if (!filteredHeaders.isEmpty()) {
+              options.getSessionReplay().setNetworkResponseHeaders(filteredHeaders);
+            }
+          }
+        }
+
         options.setIgnoredErrors(readList(metadata, logger, IGNORED_ERRORS));
 
         final @Nullable List<String> includes = readList(metadata, logger, IN_APP_INCLUDES);
@@ -496,6 +665,11 @@ final class ManifestMetadataReader {
             .getLogs()
             .setEnabled(readBool(metadata, logger, ENABLE_LOGS, options.getLogs().isEnabled()));
 
+        options
+            .getMetrics()
+            .setEnabled(
+                readBool(metadata, logger, ENABLE_METRICS, options.getMetrics().isEnabled()));
+
         final @NotNull SentryFeedbackOptions feedbackOptions = options.getFeedbackOptions();
         feedbackOptions.setNameRequired(
             readBool(metadata, logger, FEEDBACK_NAME_REQUIRED, feedbackOptions.isNameRequired()));
@@ -510,6 +684,47 @@ final class ManifestMetadataReader {
                 metadata, logger, FEEDBACK_USE_SENTRY_USER, feedbackOptions.isUseSentryUser()));
         feedbackOptions.setShowBranding(
             readBool(metadata, logger, FEEDBACK_SHOW_BRANDING, feedbackOptions.isShowBranding()));
+        feedbackOptions.setUseShakeGesture(
+            readBool(
+                metadata, logger, FEEDBACK_USE_SHAKE_GESTURE, feedbackOptions.isUseShakeGesture()));
+
+        options.setStrictTraceContinuation(
+            readBool(
+                metadata, logger, STRICT_TRACE_CONTINUATION, options.isStrictTraceContinuation()));
+
+        final @Nullable String orgId = readString(metadata, logger, ORG_ID, null);
+        if (orgId != null) {
+          options.setOrgId(orgId);
+        }
+
+        options.setEnableSpotlight(
+            readBool(metadata, logger, SPOTLIGHT_ENABLE, options.isEnableSpotlight()));
+
+        final @Nullable String spotlightUrl =
+            readString(metadata, logger, SPOTLIGHT_CONNECTION_URL, null);
+        if (spotlightUrl != null) {
+          options.setSpotlightConnectionUrl(spotlightUrl);
+        }
+
+        // Screenshot masking options (default to false for backwards compatibility)
+        options
+            .getScreenshot()
+            .setMaskAllText(readBool(metadata, logger, SCREENSHOT_MASK_ALL_TEXT, false));
+        options
+            .getScreenshot()
+            .setMaskAllImages(readBool(metadata, logger, SCREENSHOT_MASK_ALL_IMAGES, false));
+
+        if (options.getAnrProfilingSampleRate() == null) {
+          final double anrProfilingSampleRate =
+              readDouble(metadata, logger, ANR_PROFILING_SAMPLE_RATE);
+          if (anrProfilingSampleRate != -1) {
+            options.setAnrProfilingSampleRate(anrProfilingSampleRate);
+          }
+        }
+
+        options.setEnableAnrFingerprinting(
+            readBool(
+                metadata, logger, ENABLE_ANR_FINGERPRINTING, options.isEnableAnrFingerprinting()));
       }
       options
           .getLogger()

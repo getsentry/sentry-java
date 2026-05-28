@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head><title>btrace Trace Viewer</title></head>
+<body>
+  <h2>Perfetto Trace Viewer</h2>
+  <div id="buttons"><!-- BUTTONS_PLACEHOLDER --></div>
+  <p id="status"></p>
+  <script>
+    // Replace these values when copying the template
+    var TRACE_FILES = [/* TRACE_FILES_PLACEHOLDER */];
+    var SQL_QUERY = `SQL_QUERY_PLACEHOLDER`;
+
+    var container = document.getElementById('buttons');
+    TRACE_FILES.forEach(function(t) {
+      var btn = document.createElement('button');
+      btn.textContent = 'Open ' + t.title;
+      btn.style.marginRight = '8px';
+      btn.onclick = function() { openTrace(t.file, t.title); };
+      container.appendChild(btn);
+    });
+
+    function openTrace(file, title) {
+      var status = document.getElementById('status');
+      status.textContent = 'Opening Perfetto UI...';
+      var url = 'https://ui.perfetto.dev/#!/?query=' + encodeURIComponent(SQL_QUERY);
+      var w = window.open(url);
+      var ping = setInterval(function() { w.postMessage('PING', '*'); }, 100);
+      window.onmessage = function(e) {
+        if (e.data === 'PONG') {
+          clearInterval(ping);
+          status.textContent = 'Loading trace: ' + file;
+          fetch(file)
+            .then(function(r) { return r.arrayBuffer(); })
+            .then(function(buf) {
+              w.postMessage({
+                perfetto: {
+                  buffer: buf,
+                  title: title,
+                  fileName: file
+                }
+              }, '*');
+              status.textContent = 'Trace sent to Perfetto UI!';
+            });
+        }
+      };
+    }
+  </script>
+</body>
+</html>

@@ -5,6 +5,7 @@ import android.app.Activity
 import android.os.Bundle
 import android.view.MotionEvent
 import android.view.View
+import android.view.Window
 import android.widget.LinearLayout
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.SentryOptions
@@ -14,6 +15,7 @@ import io.sentry.android.replay.phoneWindow
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
@@ -37,17 +39,44 @@ class GestureRecorderTest {
   }
 
   @Test
-  fun `when new window added and window callback is already wrapped, does not wrap it again`() {
+  fun `does not double-wrap when root is added twice and another callback wraps on top`() {
     val activity = Robolectric.buildActivity(TestActivity::class.java).setup().get()
     val gestureRecorder = fixture.getSut()
 
-    activity.root.phoneWindow?.callback = SentryReplayGestureRecorder(fixture.options, null, null)
+    gestureRecorder.onRootViewsChanged(activity.root, true)
+    val ourWrapper = activity.root.phoneWindow?.callback as SentryReplayGestureRecorder
+
+    val outer = WrapperCallback(ourWrapper)
+    activity.root.phoneWindow?.callback = outer
+
     gestureRecorder.onRootViewsChanged(activity.root, true)
 
-    assertFalse(
-      (activity.root.phoneWindow?.callback as SentryReplayGestureRecorder).delegate
-        is SentryReplayGestureRecorder
-    )
+    assertSame(outer, activity.root.phoneWindow?.callback)
+  }
+
+  @Test
+  fun `when stopped with another wrapper on top, inerts the buried recorder`() {
+    var called = false
+    val activity = Robolectric.buildActivity(TestActivity::class.java).setup().get()
+    val gestureRecorder =
+      fixture.getSut(
+        touchRecorderCallback =
+          object : TouchRecorderCallback {
+            override fun onTouchEvent(event: MotionEvent) {
+              called = true
+            }
+          }
+      )
+
+    gestureRecorder.onRootViewsChanged(activity.root, true)
+    val ourWrapper = activity.root.phoneWindow?.callback as SentryReplayGestureRecorder
+    activity.root.phoneWindow?.callback = WrapperCallback(ourWrapper)
+
+    gestureRecorder.onRootViewsChanged(activity.root, false)
+
+    val motionEvent = MotionEvent.obtain(0, 0, MotionEvent.ACTION_DOWN, 0f, 0f, 0)
+    ourWrapper.dispatchTouchEvent(motionEvent)
+    assertFalse(called)
   }
 
   @Test
@@ -108,6 +137,9 @@ class GestureRecorderTest {
     assertFalse(activity2.root.phoneWindow?.callback is SentryReplayGestureRecorder)
   }
 }
+
+private open class WrapperCallback(@JvmField val delegate: Window.Callback) :
+  Window.Callback by delegate
 
 private class TestActivity : Activity() {
   lateinit var root: View

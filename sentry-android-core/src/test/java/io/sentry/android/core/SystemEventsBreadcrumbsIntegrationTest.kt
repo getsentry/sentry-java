@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.BatteryManager
 import android.os.Build
+import android.os.Handler
 import android.os.Looper
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -27,6 +28,7 @@ import kotlin.test.assertTrue
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.argThat
 import org.mockito.kotlin.check
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
@@ -50,9 +52,11 @@ class SystemEventsBreadcrumbsIntegrationTest {
     lateinit var shadowActivityManager: ShadowActivityManager
 
     fun getSut(
+      contextForSut: Context = context,
       enableSystemEventBreadcrumbs: Boolean = true,
       enableSystemEventBreadcrumbsExtras: Boolean = false,
       executorService: ISentryExecutorService = ImmediateExecutorService(),
+      handler: Handler? = null,
     ): SystemEventsBreadcrumbsIntegration {
       options =
         SentryAndroidOptions().apply {
@@ -61,8 +65,9 @@ class SystemEventsBreadcrumbsIntegrationTest {
           this.executorService = executorService
         }
       return SystemEventsBreadcrumbsIntegration(
-        context,
+        contextForSut,
         SystemEventsBreadcrumbsIntegration.getDefaultActions().toTypedArray(),
+        handler,
       )
     }
   }
@@ -307,6 +312,20 @@ class SystemEventsBreadcrumbsIntegrationTest {
     sut.register(fixture.scopes, fixture.options)
 
     assertFalse(fixture.options.isEnableSystemEventBreadcrumbs)
+  }
+
+  @Test
+  fun `Do not crash if receiver already unregistered`() {
+    val realContext = ApplicationProvider.getApplicationContext<Context>()
+    val sut = fixture.getSut(realContext)
+
+    sut.register(fixture.scopes, fixture.options)
+
+    realContext.unregisterReceiver(sut.receiver)
+
+    val result = runCatching { sut.onBackground() }
+
+    assertFalse(result.isFailure)
   }
 
   @Test
@@ -584,5 +603,17 @@ class SystemEventsBreadcrumbsIntegrationTest {
         },
         anyOrNull(),
       )
+  }
+
+  @Test
+  fun `When a custom handler is provided, it is used upon registering the callback`() {
+    val customHandler = object : Handler(Looper.getMainLooper()) {}
+    val sut = fixture.getSut(handler = customHandler)
+
+    sut.register(fixture.scopes, fixture.options)
+
+    verify(fixture.context)
+      .registerReceiver(any(), any(), anyOrNull(), argThat { this == customHandler }, any())
+    assertNotNull(sut.receiver)
   }
 }

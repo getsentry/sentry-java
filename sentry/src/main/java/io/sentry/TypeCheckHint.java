@@ -13,6 +13,9 @@ public final class TypeCheckHint {
   @ApiStatus.Internal
   public static final String SENTRY_EVENT_DROP_REASON = "sentry:eventDropReason";
 
+  @ApiStatus.Internal
+  public static final String SENTRY_REPLAY_NETWORK_DETAILS = "sentry:replayNetworkDetails";
+
   @ApiStatus.Internal public static final String SENTRY_JAVASCRIPT_SDK_NAME = "sentry.javascript";
 
   @ApiStatus.Internal public static final String SENTRY_DOTNET_SDK_NAME = "sentry.dotnet";
@@ -137,4 +140,7 @@ public final class TypeCheckHint {
 
   /** Used for Ktor Request breadcrumbs. */
   public static final String KTOR_CLIENT_REQUEST = "ktorClient:request";
+
+  /** Used for Session Replay frame bitmaps in the ReplayFrameObserver callback. */
+  public static final String REPLAY_FRAME_BITMAP = "replay:frameBitmap";
 }

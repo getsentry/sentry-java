@@ -51,8 +51,6 @@ public final class CpuInfoUtils {
         if (!cpuDir.getName().matches("cpu[0-9]+")) continue;
         File cpuMaxFreqFile = new File(cpuDir, CPUINFO_MAX_FREQ_PATH);
 
-        if (!cpuMaxFreqFile.exists() || !cpuMaxFreqFile.canRead()) continue;
-
         long khz;
         try {
           String content = FileUtils.readText(cpuMaxFreqFile);
@@ -77,12 +75,16 @@ public final class CpuInfoUtils {
 
   @TestOnly
   public void setCpuMaxFrequencies(List<Integer> frequencies) {
-    cpuMaxFrequenciesMhz.clear();
-    cpuMaxFrequenciesMhz.addAll(frequencies);
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      cpuMaxFrequenciesMhz.clear();
+      cpuMaxFrequenciesMhz.addAll(frequencies);
+    }
   }
 
   @TestOnly
-  final void clear() {
-    cpuMaxFrequenciesMhz.clear();
+  public void clear() {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      cpuMaxFrequenciesMhz.clear();
+    }
   }
 }

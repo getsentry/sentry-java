@@ -46,21 +46,9 @@ android {
     }
   }
 
-  testBuildType = System.getProperty("testBuildType", "debug")
+  testBuildType = "release"
 
   buildTypes {
-    getByName("debug") {
-      isMinifyEnabled = true
-      signingConfig = signingConfigs.getByName("debug")
-      proguardFiles(
-        getDefaultProguardFile("proguard-android-optimize.txt"),
-        "benchmark-proguard-rules.pro",
-      )
-      testProguardFiles(
-        getDefaultProguardFile("proguard-android-optimize.txt"),
-        "benchmark-proguard-rules.pro",
-      )
-    }
     getByName("release") {
       isMinifyEnabled = true
       isShrinkResources = true
@@ -81,13 +69,17 @@ android {
   lint {
     warningsAsErrors = true
     checkDependencies = true
+    // Suppress OldTargetApi: lint 8.13.1 expects API 37 but we target 36
+    disable += "OldTargetApi"
 
     // We run a full lint analysis as build part in CI, so skip vital checks for assemble tasks.
     checkReleaseBuilds = false
   }
 
   androidComponents.beforeVariants {
-    it.enable = !Config.Android.shouldSkipDebugVariant(it.buildType)
+    if (it.buildType == "debug") {
+      it.enable = false
+    }
   }
 }
 

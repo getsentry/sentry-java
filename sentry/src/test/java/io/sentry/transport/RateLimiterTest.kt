@@ -4,10 +4,12 @@ import io.sentry.Attachment
 import io.sentry.CheckIn
 import io.sentry.CheckInStatus
 import io.sentry.DataCategory.Replay
+import io.sentry.EnvelopeReader
 import io.sentry.Hint
 import io.sentry.ILogger
 import io.sentry.IScopes
 import io.sentry.ISerializer
+import io.sentry.JsonSerializer
 import io.sentry.NoOpLogger
 import io.sentry.ProfileChunk
 import io.sentry.ProfilingTraceData
@@ -456,7 +458,7 @@ class RateLimiterTest {
   }
 
   @Test
-  fun `drop profileChunk items as lost`() {
+  fun `drop profileChunkUi items as lost`() {
     val rateLimiter = fixture.getSUT()
 
     val profileChunkItem = SentryEnvelopeItem.fromProfileChunk(ProfileChunk(), fixture.serializer)
@@ -471,6 +473,32 @@ class RateLimiterTest {
       SentryEnvelope(SentryEnvelopeHeader(), arrayListOf(profileChunkItem, attachmentItem))
 
     rateLimiter.updateRetryAfterLimits("60:profile_chunk_ui:key", null, 1)
+    val result = rateLimiter.filter(envelope, Hint())
+
+    assertNotNull(result)
+    assertEquals(1, result.items.toList().size)
+
+    verify(fixture.clientReportRecorder, times(1))
+      .recordLostEnvelopeItem(eq(DiscardReason.RATELIMIT_BACKOFF), same(profileChunkItem))
+    verifyNoMoreInteractions(fixture.clientReportRecorder)
+  }
+
+  @Test
+  fun `drop profileChunk items as lost`() {
+    val rateLimiter = fixture.getSUT()
+
+    val profileChunkItem = SentryEnvelopeItem.fromProfileChunk(ProfileChunk(), fixture.serializer)
+    val attachmentItem =
+      SentryEnvelopeItem.fromAttachment(
+        fixture.serializer,
+        NoOpLogger.getInstance(),
+        Attachment("{ \"number\": 10 }".toByteArray(), "log.json"),
+        1000,
+      )
+    val envelope =
+      SentryEnvelope(SentryEnvelopeHeader(), arrayListOf(profileChunkItem, attachmentItem))
+
+    rateLimiter.updateRetryAfterLimits("60:profile_chunk:key", null, 1)
     val result = rateLimiter.filter(envelope, Hint())
 
     assertNotNull(result)
@@ -505,6 +533,60 @@ class RateLimiterTest {
 
     verify(fixture.clientReportRecorder, times(1))
       .recordLostEnvelopeItem(eq(DiscardReason.RATELIMIT_BACKOFF), same(feedbackEventItem))
+    verifyNoMoreInteractions(fixture.clientReportRecorder)
+  }
+
+  @Test
+  fun `drop span items as lost`() {
+    val rateLimiter = fixture.getSUT()
+
+    // There is no span API yet so we'll create the envelope manually using EnvelopeReader
+    // This mimics how hybrid SDKs would send span v2 envelope items
+    val spanPayload = """{"items":[]}"""
+    val spanItemHeader =
+      """{"type":"span","length":${spanPayload.length},"content_type":"application/vnd.sentry.items.span.v2+json","item_count":1}"""
+    val envelopeHeader = """{}"""
+    val rawEnvelope = "$envelopeHeader\n$spanItemHeader\n$spanPayload"
+
+    val options = SentryOptions()
+    val envelopeReader = EnvelopeReader(JsonSerializer(options))
+    val spanEnvelope = envelopeReader.read(rawEnvelope.byteInputStream())!!
+    val spanItem = spanEnvelope.items.first()
+
+    rateLimiter.updateRetryAfterLimits("60:span:key", null, 1)
+    val result = rateLimiter.filter(spanEnvelope, Hint())
+
+    assertNull(result)
+
+    verify(fixture.clientReportRecorder, times(1))
+      .recordLostEnvelopeItem(eq(DiscardReason.RATELIMIT_BACKOFF), same(spanItem))
+    verifyNoMoreInteractions(fixture.clientReportRecorder)
+  }
+
+  @Test
+  fun `drop trace metric items as lost`() {
+    val rateLimiter = fixture.getSUT()
+
+    // There is no span API yet so we'll create the envelope manually using EnvelopeReader
+    // This mimics how hybrid SDKs would send trace_metric envelope items
+    val spanPayload = """{"items":[]}"""
+    val metricItemHeader =
+      """{"type":"trace_metric","length":${spanPayload.length},"content_type":"application/vnd.sentry.items.trace-metric+json","item_count":1}"""
+    val envelopeHeader = """{}"""
+    val rawEnvelope = "$envelopeHeader\n$metricItemHeader\n$spanPayload"
+
+    val options = SentryOptions()
+    val envelopeReader = EnvelopeReader(JsonSerializer(options))
+    val metricEnvelope = envelopeReader.read(rawEnvelope.byteInputStream())!!
+    val metricItem = metricEnvelope.items.first()
+
+    rateLimiter.updateRetryAfterLimits("60:trace_metric:key", null, 1)
+    val result = rateLimiter.filter(metricEnvelope, Hint())
+
+    assertNull(result)
+
+    verify(fixture.clientReportRecorder, times(1))
+      .recordLostEnvelopeItem(eq(DiscardReason.RATELIMIT_BACKOFF), same(metricItem))
     verifyNoMoreInteractions(fixture.clientReportRecorder)
   }
 

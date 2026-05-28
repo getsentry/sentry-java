@@ -16,6 +16,11 @@ public abstract class UpdateStatus {
     public static UpToDate getInstance() {
       return INSTANCE;
     }
+
+    @Override
+    public String toString() {
+      return "UpdateStatus.UpToDate{}";
+    }
   }
 
   /** A new release is available for download. */
@@ -29,6 +34,11 @@ public abstract class UpdateStatus {
     public @NotNull UpdateInfo getInfo() {
       return info;
     }
+
+    @Override
+    public String toString() {
+      return "UpdateStatus.NewRelease{" + "info=" + info + '}';
+    }
   }
 
   /** An error occurred during the update check. */
@@ -41,6 +51,29 @@ public abstract class UpdateStatus {
 
     public @NotNull String getMessage() {
       return message;
+    }
+
+    @Override
+    public String toString() {
+      return "UpdateStatus.UpdateError{" + "message='" + message + '\'' + '}';
+    }
+  }
+
+  /** No network connection is available to check for updates. */
+  public static final class NoNetwork extends UpdateStatus {
+    private final @NotNull String message;
+
+    public NoNetwork(final @NotNull String message) {
+      this.message = message;
+    }
+
+    public @NotNull String getMessage() {
+      return message;
+    }
+
+    @Override
+    public String toString() {
+      return "UpdateStatus.NoNetwork{" + "message='" + message + '\'' + '}';
     }
   }
 }

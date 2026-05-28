@@ -196,6 +196,32 @@ public final class TracingUtils {
     return false;
   }
 
+  @ApiStatus.Internal
+  public static boolean shouldContinueTrace(
+      final @NotNull SentryOptions options, final @Nullable Baggage baggage) {
+    final @Nullable String sdkOrgId = options.getEffectiveOrgId();
+    final @Nullable String rawBaggageOrgId = baggage != null ? baggage.getOrgId() : null;
+    final @Nullable String baggageOrgId =
+        (rawBaggageOrgId != null && !rawBaggageOrgId.trim().isEmpty())
+            ? rawBaggageOrgId.trim()
+            : null;
+
+    // Mismatched org IDs always reject regardless of strict mode
+    if (sdkOrgId != null && baggageOrgId != null && !sdkOrgId.equals(baggageOrgId)) {
+      return false;
+    }
+
+    // In strict mode, both must be present and match (unless both are missing)
+    if (options.isStrictTraceContinuation()) {
+      if (sdkOrgId == null && baggageOrgId == null) {
+        return true;
+      }
+      return sdkOrgId != null && sdkOrgId.equals(baggageOrgId);
+    }
+
+    return true;
+  }
+
   /**
    * Ensures a non null baggage instance is present by creating a new Baggage instance if null is
    * passed in.

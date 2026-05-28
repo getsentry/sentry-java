@@ -89,7 +89,6 @@ class SentrySpanRestClientCustomizerTest {
             .disableAutomaticRetries() // Required to not make another request automatically
             .build()
         val requestFactory = HttpComponentsClientHttpRequestFactory(httpClient)
-        requestFactory.setConnectTimeout(Duration.ofSeconds(2))
         requestFactory.setConnectionRequestTimeout(Duration.ofSeconds(2))
         it.requestFactory(requestFactory)
       }

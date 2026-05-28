@@ -113,6 +113,14 @@ public final class OtelSentryPropagator implements TextMapPropagator {
 
       final @Nullable String baggageString = getter.get(carrier, BaggageHeader.BAGGAGE_HEADER);
       final Baggage baggage = Baggage.fromHeader(baggageString);
+      if (!TracingUtils.shouldContinueTrace(scopes.getOptions(), baggage)) {
+        scopes
+            .getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG, "Not continuing trace due to strict org ID validation failure.");
+        return context;
+      }
       final @NotNull TraceState traceState = TraceState.getDefault();
 
       SpanContext otelSpanContext =

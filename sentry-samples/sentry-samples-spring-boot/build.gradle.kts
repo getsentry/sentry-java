@@ -1,53 +1,82 @@
 import org.jetbrains.kotlin.config.KotlinCompilerVersion
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-  alias(libs.plugins.springboot2)
-  alias(libs.plugins.spring.dependency.management)
+  java
+  application
+  alias(libs.plugins.shadow)
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.kotlin.spring)
 }
+
+application { mainClass.set("io.sentry.samples.spring.boot.SentryDemoApplication") }
 
 group = "io.sentry.sample.spring-boot"
 
 version = "0.0.1-SNAPSHOT"
 
-java.sourceCompatibility = JavaVersion.VERSION_17
+java.sourceCompatibility = JavaVersion.VERSION_11
 
-java.targetCompatibility = JavaVersion.VERSION_17
+java.targetCompatibility = JavaVersion.VERSION_11
 
 repositories { mavenCentral() }
 
+fun springBoot2SupportsOptionalIntegrations(): Boolean {
+  val version = libs.versions.springboot2.get().removeSuffix(".RELEASE")
+  val parts = version.split(".").map { it.toIntOrNull() ?: 0 }
+  val major = parts.getOrElse(0) { 0 }
+  val minor = parts.getOrElse(1) { 0 }
+  return major > 2 || (major == 2 && minor >= 7)
+}
+
+val includeGraphql =
+  !project.hasProperty("excludeGraphql") && springBoot2SupportsOptionalIntegrations()
+val includeKafka = !project.hasProperty("excludeKafka") && springBoot2SupportsOptionalIntegrations()
+
 configure<JavaPluginExtension> {
-  sourceCompatibility = JavaVersion.VERSION_17
-  targetCompatibility = JavaVersion.VERSION_17
+  sourceCompatibility = JavaVersion.VERSION_11
+  targetCompatibility = JavaVersion.VERSION_11
 }
 
 tasks.withType<KotlinCompile>().configureEach {
   kotlin {
     compilerOptions.freeCompilerArgs = listOf("-Xjsr305=strict")
-    compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
+    compilerOptions.jvmTarget = JvmTarget.JVM_11
   }
 }
 
 dependencies {
+  implementation(platform(libs.springboot2.bom))
   implementation(libs.springboot.starter)
   implementation(libs.springboot.starter.actuator)
   implementation(libs.springboot.starter.aop)
-  implementation(libs.springboot.starter.graphql)
+  if (includeGraphql) {
+    implementation(libs.springboot.starter.graphql)
+  }
   implementation(libs.springboot.starter.jdbc)
   implementation(libs.springboot.starter.quartz)
   implementation(libs.springboot.starter.security)
   implementation(libs.springboot.starter.web)
   implementation(libs.springboot.starter.webflux)
+  implementation(libs.springboot.starter.cache)
   implementation(libs.springboot.starter.websocket)
+  implementation(libs.caffeine)
+
+  if (includeKafka) {
+    implementation(libs.spring.kafka2)
+    implementation(projects.sentryKafka)
+  }
   implementation(Config.Libs.aspectj)
   implementation(Config.Libs.kotlinReflect)
   implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
   implementation(projects.sentrySpringBootStarter)
   implementation(projects.sentryLogback)
-  implementation(projects.sentryGraphql)
+  if (includeGraphql) {
+    implementation(projects.sentryGraphql)
+  }
   implementation(projects.sentryQuartz)
+  implementation(projects.sentryAsyncProfiler)
 
   // database query tracing
   implementation(projects.sentryJdbc)
@@ -66,11 +95,51 @@ dependencies {
   testImplementation("org.apache.httpcomponents:httpclient")
 }
 
-configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
+val runtimeClasspath = configurations.named("runtimeClasspath")
+
+// Configure the Shadow JAR (executable JAR with all dependencies)
+tasks.shadowJar {
+  manifest { attributes["Main-Class"] = "io.sentry.samples.spring.boot.SentryDemoApplication" }
+  archiveClassifier.set("")
+
+  // Shadow 9.x enforces DuplicatesStrategy before transformers run, so `append`
+  // only sees one copy of each file. We merge Spring metadata from the runtime
+  // classpath and patch the built JAR in doLast.
+  doLast(
+    MergeSpringMetadataAction(
+      runtimeClasspath.get(),
+      MergeSpringMetadataAction.DEFAULT_SPRING_METADATA_FILES,
+    )
+  )
+}
+
+tasks.jar {
+  enabled = false
+  dependsOn(tasks.shadowJar)
+}
+
+tasks.startScripts { dependsOn(tasks.shadowJar) }
+
+configure<SourceSetContainer> {
+  main {
+    if (!includeGraphql) {
+      java.exclude("**/graphql/**")
+      resources.exclude("graphql/**")
+    }
+    if (!includeKafka) {
+      java.exclude("**/queues/kafka/**")
+      resources.exclude("application-kafka.properties")
+    }
+  }
+}
 
 tasks.register<Test>("systemTest").configure {
   group = "verification"
   description = "Runs the System tests"
+
+  val test = project.extensions.getByType<SourceSetContainer>()["test"]
+  testClassesDirs = test.output.classesDirs
+  classpath = test.runtimeClasspath
 
   outputs.upToDateWhen { false }
 
@@ -80,7 +149,15 @@ tasks.register<Test>("systemTest").configure {
   minHeapSize = "128m"
   maxHeapSize = "1g"
 
-  filter { includeTestsMatching("io.sentry.systemtest*") }
+  filter {
+    includeTestsMatching("io.sentry.systemtest*")
+    if (!includeGraphql) {
+      excludeTestsMatching("io.sentry.systemtest.Graphql*")
+    }
+    if (!includeKafka) {
+      excludeTestsMatching("io.sentry.systemtest.Kafka*")
+    }
+  }
 }
 
 tasks.named("test").configure {

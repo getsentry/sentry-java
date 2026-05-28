@@ -26,6 +26,11 @@ class NoOpContinuousProfilerTest {
   }
 
   @Test
+  fun `getChunkId returns Empty SentryId`() {
+    assertEquals(profiler.chunkId, SentryId.EMPTY_ID)
+  }
+
+  @Test
   fun `reevaluateSampling does not throw`() {
     profiler.reevaluateSampling()
   }

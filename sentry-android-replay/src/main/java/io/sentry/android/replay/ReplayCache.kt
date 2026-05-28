@@ -79,12 +79,16 @@ public class ReplayCache(private val options: SentryOptions, private val replayI
     replayCacheDir?.mkdirs()
 
     val screenshot = File(replayCacheDir, "$frameTimestamp.jpg").also { it.createNewFile() }
-    screenshot.outputStream().use {
-      bitmap.compress(JPEG, options.sessionReplay.quality.screenshotQuality, it)
-      it.flush()
+    synchronized(bitmap) {
+      if (bitmap.isRecycled) {
+        return
+      }
+      screenshot.outputStream().use {
+        bitmap.compress(JPEG, options.sessionReplay.quality.screenshotQuality, it)
+        it.flush()
+      }
+      addFrame(screenshot, frameTimestamp, screen)
     }
-
-    addFrame(screenshot, frameTimestamp, screen)
   }
 
   /**

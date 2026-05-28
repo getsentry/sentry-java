@@ -101,6 +101,79 @@ internal class JsonObjectSerializerTest {
     verify(fixture.writer).endArray()
   }
 
+  @Suppress("RemoveRedundantCallsOfConversionMethods")
+  @Test
+  fun `serializing primitive int array`() {
+    fixture.getSUT().serialize(fixture.writer, fixture.logger, intArrayOf(1, 2))
+    verify(fixture.writer).beginArray()
+    verify(fixture.writer).value(1.toInt())
+    verify(fixture.writer).value(2.toInt())
+    verify(fixture.writer).endArray()
+  }
+
+  @Test
+  fun `serializing primitive boolean array`() {
+    fixture.getSUT().serialize(fixture.writer, fixture.logger, booleanArrayOf(true, false))
+    verify(fixture.writer).beginArray()
+    verify(fixture.writer).value(true)
+    verify(fixture.writer).value(false)
+    verify(fixture.writer).endArray()
+  }
+
+  @Test
+  fun `serializing primitive byte array`() {
+    fixture.getSUT().serialize(fixture.writer, fixture.logger, byteArrayOf(1, 2))
+    verify(fixture.writer).beginArray()
+    verify(fixture.writer).value(1.toByte())
+    verify(fixture.writer).value(2.toByte())
+    verify(fixture.writer).endArray()
+  }
+
+  @Test
+  fun `serializing primitive short array`() {
+    fixture.getSUT().serialize(fixture.writer, fixture.logger, shortArrayOf(1, 2))
+    verify(fixture.writer).beginArray()
+    verify(fixture.writer).value(1.toShort())
+    verify(fixture.writer).value(2.toShort())
+    verify(fixture.writer).endArray()
+  }
+
+  @Test
+  fun `serializing primitive char array`() {
+    fixture.getSUT().serialize(fixture.writer, fixture.logger, charArrayOf('a', 'b'))
+    verify(fixture.writer).beginArray()
+    verify(fixture.writer).value("a")
+    verify(fixture.writer).value("b")
+    verify(fixture.writer).endArray()
+  }
+
+  @Test
+  fun `serializing primitive long array`() {
+    fixture.getSUT().serialize(fixture.writer, fixture.logger, longArrayOf(1L, 2L))
+    verify(fixture.writer).beginArray()
+    verify(fixture.writer).value(1L as Number)
+    verify(fixture.writer).value(2L as Number)
+    verify(fixture.writer).endArray()
+  }
+
+  @Test
+  fun `serializing primitive float array`() {
+    fixture.getSUT().serialize(fixture.writer, fixture.logger, floatArrayOf(1.5f, 2.5f))
+    verify(fixture.writer).beginArray()
+    verify(fixture.writer).value(1.5f as Number)
+    verify(fixture.writer).value(2.5f as Number)
+    verify(fixture.writer).endArray()
+  }
+
+  @Test
+  fun `serializing primitive double array`() {
+    fixture.getSUT().serialize(fixture.writer, fixture.logger, doubleArrayOf(1.5, 2.5))
+    verify(fixture.writer).beginArray()
+    verify(fixture.writer).value(1.5 as Number)
+    verify(fixture.writer).value(2.5 as Number)
+    verify(fixture.writer).endArray()
+  }
+
   @Test
   fun `serialize map`() {
     fixture

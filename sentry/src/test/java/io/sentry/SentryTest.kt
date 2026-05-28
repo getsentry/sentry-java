@@ -1,6 +1,6 @@
 package io.sentry
 
-import io.sentry.SentryFeedbackOptions.IDialogHandler
+import io.sentry.SentryFeedbackOptions.IFormHandler
 import io.sentry.SentryOptions.ProfilesSamplerCallback
 import io.sentry.SentryOptions.TracesSamplerCallback
 import io.sentry.backpressure.BackpressureMonitor
@@ -17,6 +17,7 @@ import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryThread
 import io.sentry.test.ImmediateExecutorService
+import io.sentry.test.NonOverridableNoOpSentryExecutorService
 import io.sentry.test.createSentryClientMock
 import io.sentry.test.initForTest
 import io.sentry.test.injectForField
@@ -776,9 +777,12 @@ class SentryTest {
       it.profilesSampleRate = 1.0
       it.cacheDirPath = getTempPath()
       it.setLogger(logger)
+      it.executorService = SentryExecutorService()
+      it.executorService.prewarm()
       it.executorService.close(0)
       it.isDebug = true
     }
+
     verify(logger)
       .log(
         eq(SentryLevel.ERROR),
@@ -874,6 +878,7 @@ class SentryTest {
       it.release = "io.sentry.sample@1.1.0+220"
       it.environment = "debug"
 
+      it.executorService = SentryExecutorService()
       it.executorService.submit {
         // here the values should be still old. Sentry.init will submit another runnable
         // to notify the options observers, but because the executor is single-threaded, the
@@ -942,6 +947,7 @@ class SentryTest {
         previousSessionFile.bufferedWriter(),
       )
 
+      it.executorService = SentryExecutorService()
       it.executorService.submit {
         // here the previous session should still exist. Sentry.init will submit another runnable
         // to finalize the previous session, but because the executor is single-threaded, the
@@ -958,7 +964,9 @@ class SentryTest {
     }
 
     await.untilTrue(triggered)
-    assertFalse(previousSessionFile.exists())
+    // The PreviousSessionFinalizer runs as a separate task after the test's task in the
+    // single-threaded executor, so we need to wait for it to delete the file too.
+    await.until { !previousSessionFile.exists() }
   }
 
   @Test
@@ -1212,7 +1220,7 @@ class SentryTest {
       it.profilesSampleRate = 1.0
       it.tracesSampler = mockSampleTracer
       it.profilesSampler = mockProfilesSampler
-      it.executorService = NoOpSentryExecutorService.getInstance()
+      it.executorService = NonOverridableNoOpSentryExecutorService()
       it.cacheDirPath = getTempPath()
     }
     // Samplers are called with isForNextAppStart flag set to true
@@ -1231,7 +1239,7 @@ class SentryTest {
       it.profilesSampleRate = 1.0
       it.tracesSampler = mockSampleTracer
       it.profilesSampler = mockProfilesSampler
-      it.executorService = NoOpSentryExecutorService.getInstance()
+      it.executorService = NonOverridableNoOpSentryExecutorService()
       it.cacheDirPath = null
     }
     // Samplers are called with isForNextAppStart flag set to true
@@ -1496,39 +1504,39 @@ class SentryTest {
   }
 
   @Test
-  fun `showUserFeedbackDialog forwards to feedbackOptions_dialogHandler`() {
-    val mockDialogHandler = mock<IDialogHandler>()
+  fun `feedback show forwards to feedbackOptions_formHandler`() {
+    val mockFormHandler = mock<IFormHandler>()
     initForTest {
       it.dsn = dsn
-      it.feedbackOptions.dialogHandler = mockDialogHandler
+      it.feedbackOptions.setFormHandler(mockFormHandler)
     }
-    Sentry.showUserFeedbackDialog()
-    verify(mockDialogHandler).showDialog(eq(null), eq(null))
+    Sentry.feedback().show()
+    verify(mockFormHandler).showForm(eq(null), eq(null))
   }
 
   @Test
-  fun `showUserFeedbackDialog forwards to feedbackOptions_dialogHandler with configurator`() {
-    val mockDialogHandler = mock<IDialogHandler>()
+  fun `feedback show forwards to feedbackOptions_formHandler with configurator`() {
+    val mockFormHandler = mock<IFormHandler>()
     val configurator = mock<SentryFeedbackOptions.OptionsConfigurator>()
     initForTest {
       it.dsn = dsn
-      it.feedbackOptions.dialogHandler = mockDialogHandler
+      it.feedbackOptions.setFormHandler(mockFormHandler)
     }
-    Sentry.showUserFeedbackDialog(configurator)
-    verify(mockDialogHandler).showDialog(eq(null), eq(configurator))
+    Sentry.feedback().show(configurator)
+    verify(mockFormHandler).showForm(eq(null), eq(configurator))
   }
 
   @Test
-  fun `showUserFeedbackDialog forwards to feedbackOptions_dialogHandler with associatedEventId and configurator`() {
-    val mockDialogHandler = mock<IDialogHandler>()
+  fun `feedback show forwards to feedbackOptions_formHandler with associatedEventId and configurator`() {
+    val mockFormHandler = mock<IFormHandler>()
     val configurator = mock<SentryFeedbackOptions.OptionsConfigurator>()
     val associatedEventId = SentryId()
     initForTest {
       it.dsn = dsn
-      it.feedbackOptions.dialogHandler = mockDialogHandler
+      it.feedbackOptions.setFormHandler(mockFormHandler)
     }
-    Sentry.showUserFeedbackDialog(associatedEventId, configurator)
-    verify(mockDialogHandler).showDialog(eq(associatedEventId), eq(configurator))
+    Sentry.feedback().show(associatedEventId, configurator)
+    verify(mockFormHandler).showForm(eq(associatedEventId), eq(configurator))
   }
 
   @Test
@@ -1714,5 +1722,51 @@ class SentryTest {
     fun resetName() {
       javaClass.injectForField("name", "io.sentry.SentryTest\$CustomAndroidOptions")
     }
+  }
+
+  @Test
+  fun `when scopesStorageFactory is set, it is used instead of default storage`() {
+    val customStorage = mock<IScopesStorage>()
+    whenever(customStorage.set(anyOrNull())).thenReturn(mock())
+    whenever(customStorage.get()).thenReturn(null)
+
+    initForTest {
+      it.dsn = dsn
+      it.scopesStorageFactory = IScopesStorageFactory { _ -> customStorage }
+    }
+
+    verify(customStorage).init()
+    verify(customStorage).set(any())
+  }
+
+  @Test
+  fun `when scopesStorageFactory is null, default auto-detection is used`() {
+    initForTest {
+      it.dsn = dsn
+      it.scopesStorageFactory = null
+    }
+
+    // Should work normally with DefaultScopesStorage
+    val scopes = Sentry.getCurrentScopes()
+    assertFalse(scopes.isNoOp)
+  }
+
+  @Test
+  fun `custom scopes storage from factory is functional`() {
+    val backingStorage = DefaultScopesStorage()
+    val factoryCalled = AtomicBoolean(false)
+
+    initForTest {
+      it.dsn = dsn
+      it.scopesStorageFactory = IScopesStorageFactory { _ ->
+        factoryCalled.set(true)
+        backingStorage
+      }
+    }
+
+    assertTrue(factoryCalled.get())
+
+    val scopes = Sentry.getCurrentScopes()
+    assertFalse(scopes.isNoOp)
   }
 }

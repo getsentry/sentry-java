@@ -1,8 +1,33 @@
 package io.sentry.android.core
 
 import android.app.Activity
+import android.content.Context
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.drawable.Drawable
+import android.os.Bundle
+import android.os.Looper
+import android.text.TextUtils
 import android.view.View
-import android.view.Window
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.LinearLayout.LayoutParams
+import android.widget.RadioButton
+import android.widget.TextView
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Text
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.Attachment
 import io.sentry.Hint
@@ -12,6 +37,7 @@ import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.TypeCheckHint.ANDROID_ACTIVITY
 import io.sentry.protocol.SentryException
 import io.sentry.util.thread.IThreadChecker
+import java.io.File
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -21,40 +47,42 @@ import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 import org.junit.runner.RunWith
-import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.robolectric.Robolectric.buildActivity
+import org.robolectric.Shadows.shadowOf
+import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
+import org.robolectric.shadows.ShadowPixelCopy
 
 @RunWith(AndroidJUnit4::class)
+@Config(shadows = [ShadowPixelCopy::class], sdk = [30])
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
 class ScreenshotEventProcessorTest {
+
+  companion object {
+    private val SNAPSHOTS_DIR =
+      File("build/test-snapshots/ScreenshotEventProcessorTest").also { it.mkdirs() }
+  }
+
   private class Fixture {
-    val buildInfo = mock<BuildInfoProvider>()
-    val activity = mock<Activity>()
-    val window = mock<Window>()
-    val view = mock<View>()
-    val rootView = mock<View>()
+    lateinit var activity: Activity
     val threadChecker = mock<IThreadChecker>()
     val options = SentryAndroidOptions().apply { dsn = "https://key@sentry.io/proj" }
     val mainProcessor = MainEventProcessor(options)
 
     init {
-      whenever(rootView.width).thenReturn(1)
-      whenever(rootView.height).thenReturn(1)
-      whenever(view.rootView).thenReturn(rootView)
-      whenever(window.decorView).thenReturn(view)
-      whenever(window.peekDecorView()).thenReturn(view)
-      whenever(activity.window).thenReturn(window)
-      whenever(activity.runOnUiThread(any())).then { it.getArgument<Runnable>(0).run() }
-
       whenever(threadChecker.isMainThread).thenReturn(true)
     }
 
-    fun getSut(attachScreenshot: Boolean = false): ScreenshotEventProcessor {
+    fun getSut(
+      attachScreenshot: Boolean = false,
+      isReplayAvailable: Boolean = false,
+    ): ScreenshotEventProcessor {
       options.isAttachScreenshot = attachScreenshot
       options.threadChecker = threadChecker
 
-      return ScreenshotEventProcessor(options, buildInfo)
+      return ScreenshotEventProcessor(options, BuildInfoProvider(options.logger), isReplayAvailable)
     }
   }
 
@@ -62,8 +90,12 @@ class ScreenshotEventProcessorTest {
 
   @BeforeTest
   fun `set up`() {
+    System.setProperty("robolectric.areWindowsMarkedVisible", "true")
+    System.setProperty("robolectric.pixelCopyRenderMode", "hardware")
+
     fixture = Fixture()
     CurrentActivityHolder.getInstance().clearActivity()
+    fixture.activity = buildActivity(MaskingActivity::class.java, null).setup().get()
   }
 
   @Test
@@ -108,7 +140,7 @@ class ScreenshotEventProcessorTest {
     val sut = fixture.getSut(true)
     val hint = Hint()
 
-    whenever(fixture.activity.isFinishing).thenReturn(true)
+    fixture.activity.finish()
     CurrentActivityHolder.getInstance().setActivity(fixture.activity)
 
     val event = fixture.mainProcessor.process(getEvent(), hint)
@@ -122,8 +154,8 @@ class ScreenshotEventProcessorTest {
     val sut = fixture.getSut(true)
     val hint = Hint()
 
-    whenever(fixture.rootView.width).thenReturn(0)
-    whenever(fixture.rootView.height).thenReturn(0)
+    val root = fixture.activity.window.decorView
+    root.layout(0, 0, 0, 0)
     CurrentActivityHolder.getInstance().setActivity(fixture.activity)
 
     val event = fixture.mainProcessor.process(getEvent(), hint)
@@ -165,6 +197,7 @@ class ScreenshotEventProcessorTest {
   }
 
   @Test
+  @Config(sdk = [23])
   fun `when screenshot event processor is called from background thread it executes on main thread`() {
     val sut = fixture.getSut(true)
     whenever(fixture.threadChecker.isMainThread).thenReturn(false)
@@ -175,7 +208,7 @@ class ScreenshotEventProcessorTest {
     val event = fixture.mainProcessor.process(getEvent(), hint)
     sut.process(event, hint)
 
-    verify(fixture.activity).runOnUiThread(any())
+    shadowOf(Looper.getMainLooper()).idle()
     assertNotNull(hint.screenshot)
   }
 
@@ -291,5 +324,547 @@ class ScreenshotEventProcessorTest {
     assertNotNull(hint.screenshot)
   }
 
+  @Test
+  fun `when masking is configured and VH capture fails, no screenshot is attached`() {
+    val sut = fixture.getSut(attachScreenshot = true, isReplayAvailable = true)
+    fixture.options.screenshot.setMaskAllText(true)
+    val hint = Hint()
+
+    // No activity set, so VH capture will return null (no rootView)
+    CurrentActivityHolder.getInstance().clearActivity()
+
+    val event = fixture.mainProcessor.process(getEvent(), hint)
+    sut.process(event, hint)
+
+    assertNull(hint.screenshot)
+  }
+
+  @Test
+  fun `when masking is configured but replay is not available, screenshot is not captured`() {
+    val sut = fixture.getSut(attachScreenshot = true, isReplayAvailable = false)
+    fixture.options.screenshot.setMaskAllText(true)
+    val hint = Hint()
+
+    CurrentActivityHolder.getInstance().setActivity(fixture.activity)
+
+    val event = fixture.mainProcessor.process(getEvent(), hint)
+    sut.process(event, hint)
+
+    assertNull(hint.screenshot)
+  }
+
+  @Test
+  fun `when masking is configured from background thread, VH is captured on main thread`() {
+    fixture.options.screenshot.setMaskAllText(true)
+    val sut = fixture.getSut(attachScreenshot = true, isReplayAvailable = true)
+    whenever(fixture.threadChecker.isMainThread).thenReturn(false)
+
+    CurrentActivityHolder.getInstance().setActivity(fixture.activity)
+
+    val hint = Hint()
+    val event = fixture.mainProcessor.process(getEvent(), hint)
+    sut.process(event, hint)
+
+    shadowOf(Looper.getMainLooper()).idle()
+    assertNotNull(hint.screenshot)
+  }
+
+  // region Snapshot Tests
+
+  @Test
+  fun `snapshot - screenshot without masking`() {
+    val bytes = processEventForSnapshots("screenshot_no_masking", isReplayAvailable = false)
+    assertNotNull(bytes)
+  }
+
+  @Test
+  fun `snapshot - screenshot with text masking enabled`() {
+    val bytes =
+      processEventForSnapshots("screenshot_mask_text") { it.screenshot.setMaskAllText(true) }
+    assertNotNull(bytes)
+  }
+
+  @Test
+  fun `snapshot - screenshot with image masking enabled`() {
+    val bytes =
+      processEventForSnapshots("screenshot_mask_images") { it.screenshot.setMaskAllImages(true) }
+    assertNotNull(bytes)
+  }
+
+  @Test
+  fun `snapshot - screenshot with all masking enabled`() {
+    val bytes =
+      processEventForSnapshots("screenshot_mask_all") {
+        it.screenshot.setMaskAllText(true)
+        it.screenshot.setMaskAllImages(true)
+      }
+    assertNotNull(bytes)
+  }
+
+  @Test
+  fun `snapshot - screenshot with custom view masking`() {
+    val bytes =
+      processEventForSnapshots("screenshot_mask_custom_view") {
+        // CustomView draws white, so masking it should draw black on top
+        it.screenshot.addMaskViewClass(CustomView::class.java.name)
+      }
+    assertNotNull(bytes)
+  }
+
+  @Test
+  fun `snapshot - screenshot with ellipsized text no masking`() {
+    fixture.activity = buildActivity(EllipsizedTextActivity::class.java, null).setup().get()
+    val bytes =
+      processEventForSnapshots(
+        "screenshot_mask_ellipsized_view_unmasked",
+        isReplayAvailable = false,
+      )
+    assertNotNull(bytes)
+  }
+
+  @Test
+  fun `snapshot - screenshot with ellipsized text masking`() {
+    fixture.activity = buildActivity(EllipsizedTextActivity::class.java, null).setup().get()
+    val bytes =
+      processEventForSnapshots("screenshot_mask_ellipsized_view_masked") {
+        it.screenshot.setMaskAllText(true)
+      }
+    assertNotNull(bytes)
+  }
+
+  @Test
+  fun `snapshot - compose text no masking`() {
+    fixture.activity = buildActivity(ComposeTextActivity::class.java, null).setup().get()
+    val bytes =
+      processEventForSnapshots(
+        "screenshot_mask_ellipsized_compose_unmasked",
+        isReplayAvailable = false,
+      )
+    assertNotNull(bytes)
+  }
+
+  @Test
+  fun `snapshot - compose text with masking`() {
+    fixture.activity = buildActivity(ComposeTextActivity::class.java, null).setup().get()
+    val bytes =
+      processEventForSnapshots("screenshot_mask_ellipsized_compose_masked") {
+        it.screenshot.setMaskAllText(true)
+      }
+    assertNotNull(bytes)
+  }
+
+  @Test
+  fun `snapshot - multiline view text no masking`() {
+    fixture.activity = buildActivity(MultiLineTextActivity::class.java, null).setup().get()
+    val bytes =
+      processEventForSnapshots("screenshot_multiline_view_unmasked", isReplayAvailable = false)
+    assertNotNull(bytes)
+  }
+
+  @Test
+  fun `snapshot - multiline view text with masking`() {
+    fixture.activity = buildActivity(MultiLineTextActivity::class.java, null).setup().get()
+    val bytes =
+      processEventForSnapshots("screenshot_multiline_view_masked") {
+        it.screenshot.setMaskAllText(true)
+      }
+    assertNotNull(bytes)
+  }
+
+  @Test
+  fun `snapshot - multiline compose text no masking`() {
+    fixture.activity = buildActivity(ComposeMultiLineTextActivity::class.java, null).setup().get()
+    val bytes =
+      processEventForSnapshots("screenshot_multiline_compose_unmasked", isReplayAvailable = false)
+    assertNotNull(bytes)
+  }
+
+  @Test
+  fun `snapshot - multiline compose text with masking`() {
+    fixture.activity = buildActivity(ComposeMultiLineTextActivity::class.java, null).setup().get()
+    val bytes =
+      processEventForSnapshots("screenshot_multiline_compose_masked") {
+        it.screenshot.setMaskAllText(true)
+      }
+    assertNotNull(bytes)
+  }
+
+  // endregion
+
   private fun getEvent(): SentryEvent = SentryEvent(Throwable("Throwable"))
+
+  private fun processEventForSnapshots(
+    testName: String,
+    attachScreenshot: Boolean = true,
+    isReplayAvailable: Boolean = true,
+    configureOptions: (SentryAndroidOptions) -> Unit = {},
+  ): ByteArray? {
+    configureOptions(fixture.options)
+    val sut = fixture.getSut(attachScreenshot, isReplayAvailable)
+    val hint = Hint()
+
+    CurrentActivityHolder.getInstance().setActivity(fixture.activity)
+
+    val event = fixture.mainProcessor.process(getEvent(), hint)
+    sut.process(event, hint)
+
+    val screenshot = hint.screenshot ?: return null
+    val bytes = screenshot.bytes ?: screenshot.byteProvider?.call() ?: return null
+
+    File(SNAPSHOTS_DIR, "$testName.png").writeBytes(bytes)
+
+    return bytes
+  }
+}
+
+private class CustomView(context: Context) : View(context) {
+  override fun onDraw(canvas: Canvas) {
+    super.onDraw(canvas)
+    canvas.drawColor(Color.WHITE)
+  }
+}
+
+private class EllipsizedTextActivity : Activity() {
+
+  override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+    val longText = "This is a very long text that should be ellipsized when it does not fit"
+
+    val linearLayout =
+      LinearLayout(this).apply {
+        setBackgroundColor(Color.WHITE)
+        orientation = LinearLayout.VERTICAL
+        layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
+        setPadding(10, 10, 10, 10)
+      }
+
+    // Ellipsize end
+    linearLayout.addView(
+      TextView(this).apply {
+        text = longText
+        setTextColor(Color.BLACK)
+        textSize = 16f
+        maxLines = 1
+        ellipsize = TextUtils.TruncateAt.END
+        setBackgroundColor(Color.LTGRAY)
+        layoutParams =
+          LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT).apply {
+            setMargins(0, 8, 0, 0)
+          }
+      }
+    )
+
+    // Ellipsize middle
+    linearLayout.addView(
+      TextView(this).apply {
+        text = longText
+        setTextColor(Color.BLACK)
+        textSize = 16f
+        maxLines = 1
+        ellipsize = TextUtils.TruncateAt.MIDDLE
+        setBackgroundColor(Color.LTGRAY)
+        layoutParams =
+          LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT).apply {
+            setMargins(0, 8, 0, 0)
+          }
+      }
+    )
+
+    // Ellipsize start
+    linearLayout.addView(
+      TextView(this).apply {
+        text = longText
+        setTextColor(Color.BLACK)
+        textSize = 16f
+        maxLines = 1
+        ellipsize = TextUtils.TruncateAt.START
+        setBackgroundColor(Color.LTGRAY)
+        layoutParams =
+          LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT).apply {
+            setMargins(0, 8, 0, 0)
+          }
+      }
+    )
+
+    // Non-ellipsized text for comparison
+    linearLayout.addView(
+      TextView(this).apply {
+        text = "Short text"
+        setTextColor(Color.BLACK)
+        textSize = 16f
+        setBackgroundColor(Color.LTGRAY)
+        layoutParams =
+          LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT).apply {
+            setMargins(0, 8, 0, 0)
+          }
+      }
+    )
+
+    setContentView(linearLayout)
+  }
+}
+
+private class ComposeTextActivity : ComponentActivity() {
+
+  override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+    val longText = "This is a very long text that should be ellipsized when it does not fit in view"
+
+    setContent {
+      Column(
+        modifier =
+          Modifier.fillMaxWidth()
+            .background(androidx.compose.ui.graphics.Color.White)
+            .padding(10.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+      ) {
+        // Ellipsis overflow
+        Text(
+          longText,
+          maxLines = 1,
+          overflow = TextOverflow.Ellipsis,
+          fontSize = 16.sp,
+          modifier =
+            Modifier.fillMaxWidth().background(androidx.compose.ui.graphics.Color.LightGray),
+        )
+
+        // Text with textAlign center
+        Text(
+          "Centered text",
+          textAlign = TextAlign.Center,
+          fontSize = 16.sp,
+          modifier =
+            Modifier.fillMaxWidth().background(androidx.compose.ui.graphics.Color.LightGray),
+        )
+
+        // Text with textAlign end
+        Text(
+          "End-aligned text",
+          textAlign = TextAlign.End,
+          fontSize = 16.sp,
+          modifier =
+            Modifier.fillMaxWidth().background(androidx.compose.ui.graphics.Color.LightGray),
+        )
+
+        // Ellipsis with textAlign center
+        Text(
+          longText,
+          maxLines = 1,
+          overflow = TextOverflow.Ellipsis,
+          textAlign = TextAlign.Center,
+          fontSize = 16.sp,
+          modifier =
+            Modifier.fillMaxWidth().background(androidx.compose.ui.graphics.Color.LightGray),
+        )
+
+        // Weighted row with text
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+          Text(
+            "Weight 1",
+            fontSize = 16.sp,
+            modifier = Modifier.weight(1f).background(androidx.compose.ui.graphics.Color.LightGray),
+          )
+          Text(
+            "Weight 1",
+            fontSize = 16.sp,
+            modifier = Modifier.weight(1f).background(androidx.compose.ui.graphics.Color.LightGray),
+          )
+        }
+
+        // Weighted row with ellipsized text
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+          Text(
+            longText,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            fontSize = 16.sp,
+            modifier = Modifier.weight(1f).background(androidx.compose.ui.graphics.Color.LightGray),
+          )
+          Text(
+            longText,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.End,
+            fontSize = 16.sp,
+            modifier = Modifier.weight(1f).background(androidx.compose.ui.graphics.Color.LightGray),
+          )
+        }
+
+        // Short text (for comparison)
+        Text(
+          "Short text",
+          fontSize = 16.sp,
+          modifier = Modifier.background(androidx.compose.ui.graphics.Color.LightGray),
+        )
+      }
+    }
+  }
+}
+
+private class MultiLineTextActivity : Activity() {
+
+  override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+    val multiLineText =
+      "This is a long text that will wrap across multiple lines without being ellipsized. " +
+        "It should continue to flow naturally within the available width of the view."
+
+    val linearLayout =
+      LinearLayout(this).apply {
+        setBackgroundColor(Color.WHITE)
+        orientation = LinearLayout.VERTICAL
+        layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
+        setPadding(10, 10, 10, 10)
+      }
+
+    // Multi-line wrapping text (no maxLines, no ellipsize)
+    linearLayout.addView(
+      TextView(this).apply {
+        text = multiLineText
+        setTextColor(Color.BLACK)
+        textSize = 16f
+        setBackgroundColor(Color.LTGRAY)
+        layoutParams =
+          LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT).apply {
+            setMargins(0, 8, 0, 0)
+          }
+      }
+    )
+
+    // Multi-line text with maxLines = 3 (wraps but capped)
+    linearLayout.addView(
+      TextView(this).apply {
+        text = multiLineText
+        setTextColor(Color.BLACK)
+        textSize = 16f
+        maxLines = 3
+        setBackgroundColor(Color.LTGRAY)
+        layoutParams =
+          LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT).apply {
+            setMargins(0, 8, 0, 0)
+          }
+      }
+    )
+
+    // Short single-line text for comparison
+    linearLayout.addView(
+      TextView(this).apply {
+        text = "Short text"
+        setTextColor(Color.BLACK)
+        textSize = 16f
+        setBackgroundColor(Color.LTGRAY)
+        layoutParams =
+          LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT).apply {
+            setMargins(0, 8, 0, 0)
+          }
+      }
+    )
+
+    setContentView(linearLayout)
+  }
+}
+
+private class ComposeMultiLineTextActivity : ComponentActivity() {
+
+  override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+    val multiLineText =
+      "This is a long text that will wrap across multiple lines without being ellipsized. " +
+        "It should continue to flow naturally within the available width of the view."
+
+    setContent {
+      Column(
+        modifier =
+          Modifier.fillMaxWidth()
+            .background(androidx.compose.ui.graphics.Color.White)
+            .padding(10.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+      ) {
+        // Multi-line wrapping text (no maxLines, no overflow)
+        Text(
+          multiLineText,
+          fontSize = 16.sp,
+          modifier =
+            Modifier.fillMaxWidth().background(androidx.compose.ui.graphics.Color.LightGray),
+        )
+
+        // Multi-line text with maxLines = 3
+        Text(
+          multiLineText,
+          maxLines = 3,
+          fontSize = 16.sp,
+          modifier =
+            Modifier.fillMaxWidth().background(androidx.compose.ui.graphics.Color.LightGray),
+        )
+
+        // Multi-line centered text
+        Text(
+          multiLineText,
+          textAlign = TextAlign.Center,
+          fontSize = 16.sp,
+          modifier =
+            Modifier.fillMaxWidth().background(androidx.compose.ui.graphics.Color.LightGray),
+        )
+
+        // Short text for comparison
+        Text(
+          "Short text",
+          fontSize = 16.sp,
+          modifier = Modifier.background(androidx.compose.ui.graphics.Color.LightGray),
+        )
+      }
+    }
+  }
+}
+
+private class MaskingActivity : Activity() {
+
+  override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+    val linearLayout =
+      LinearLayout(this).apply {
+        setBackgroundColor(android.R.color.white)
+        orientation = LinearLayout.VERTICAL
+        layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
+      }
+
+    val textView =
+      TextView(this).apply {
+        text = "Hello, World!"
+        layoutParams = LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT)
+      }
+    linearLayout.addView(textView)
+
+    val image = this::class.java.classLoader?.getResource("Tongariro.jpg")!!
+    val imageView =
+      ImageView(this).apply {
+        setImageDrawable(Drawable.createFromPath(image.path))
+        layoutParams = LayoutParams(50, 50).apply { setMargins(0, 16, 0, 0) }
+      }
+    linearLayout.addView(imageView)
+
+    val radioButton =
+      RadioButton(this).apply {
+        text = "Radio Button"
+        layoutParams =
+          LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT).apply {
+            setMargins(0, 16, 0, 0)
+          }
+      }
+    linearLayout.addView(radioButton)
+
+    val customView =
+      CustomView(this).apply {
+        layoutParams = LayoutParams(50, 50).apply { setMargins(0, 16, 0, 0) }
+      }
+    linearLayout.addView(customView)
+
+    setContentView(linearLayout)
+  }
 }

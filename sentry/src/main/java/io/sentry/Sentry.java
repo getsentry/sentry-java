@@ -14,6 +14,7 @@ import io.sentry.internal.modules.ManifestModulesLoader;
 import io.sentry.internal.modules.NoOpModulesLoader;
 import io.sentry.internal.modules.ResourcesModulesLoader;
 import io.sentry.logger.ILoggerApi;
+import io.sentry.metrics.IMetricsApi;
 import io.sentry.opentelemetry.OpenTelemetryUtil;
 import io.sentry.protocol.Feedback;
 import io.sentry.protocol.SentryId;
@@ -97,16 +98,33 @@ public final class Sentry {
     return new HubScopesWrapper(getCurrentScopes());
   }
 
-  @ApiStatus.Internal // exposed for the coroutines integration in SentryContext
+  @ApiStatus.Internal
   @SuppressWarnings("deprecation")
   public static @NotNull IScopes getCurrentScopes() {
+    return getCurrentScopes(true);
+  }
+
+  /**
+   * Returns the current contexts scopes.
+   *
+   * @param ensureForked if true, forks root scopes in case there are no scopes for this context if
+   *     false, returns NoOpScopes if there are no scopes for this context
+   * @return current scopes, a root scopes fork or NoopScopes
+   */
+  @ApiStatus.Internal
+  @SuppressWarnings("deprecation")
+  public static @NotNull IScopes getCurrentScopes(final boolean ensureForked) {
     if (globalHubMode) {
       return rootScopes;
     }
     @Nullable IScopes scopes = getScopesStorage().get();
     if (scopes == null || scopes.isNoOp()) {
-      scopes = rootScopes.forkedScopes("getCurrentScopes");
-      getScopesStorage().set(scopes);
+      if (!ensureForked) {
+        return NoOpScopes.getInstance();
+      } else {
+        scopes = rootScopes.forkedScopes("getCurrentScopes");
+        getScopesStorage().set(scopes);
+      }
     }
     return scopes;
   }
@@ -311,6 +329,8 @@ public final class Sentry {
                   "Sentry has been already initialized. Previous configuration will be overwritten.");
         }
 
+        options.activate();
+
         final IScopes scopes = getCurrentScopes();
         scopes.close(true);
 
@@ -419,7 +439,10 @@ public final class Sentry {
 
   private static void initScopesStorage(SentryOptions options) {
     getScopesStorage().close();
-    if (SentryOpenTelemetryMode.OFF == options.getOpenTelemetryMode()) {
+    if (options.getScopesStorageFactory() != null) {
+      scopesStorage = options.getScopesStorageFactory().create(options);
+      scopesStorage.init();
+    } else if (SentryOpenTelemetryMode.OFF == options.getOpenTelemetryMode()) {
       scopesStorage = new DefaultScopesStorage();
     } else {
       scopesStorage = ScopesStorageFactory.create(new LoadClass(), NoOpLogger.getInstance());
@@ -579,7 +602,8 @@ public final class Sentry {
     return true;
   }
 
-  @SuppressWarnings("FutureReturnValueIgnored")
+  // older AGP versions do not support method references
+  @SuppressWarnings({"FutureReturnValueIgnored", "Convert2MethodRef"})
   private static void initConfigurations(final @NotNull SentryOptions options) {
     final @NotNull ILogger logger = options.getLogger();
     logger.log(SentryLevel.INFO, "Initializing SDK with DSN: '%s'", options.getDsn());
@@ -676,6 +700,21 @@ public final class Sentry {
       }
       options.getBackpressureMonitor().start();
     }
+
+    initJvmContinuousProfiling(options);
+
+    options
+        .getLogger()
+        .log(
+            SentryLevel.INFO,
+            "Continuous profiler is enabled %s mode: %s",
+            options.isContinuousProfilingEnabled(),
+            options.getProfileLifecycle());
+  }
+
+  private static void initJvmContinuousProfiling(@NotNull SentryOptions options) {
+    InitUtil.initializeProfiler(options);
+    InitUtil.initializeProfileConverter(options);
   }
 
   /** Close the SDK */
@@ -788,40 +827,37 @@ public final class Sentry {
   }
 
   /**
-   * Captures the feedback.
-   *
-   * @param feedback The feedback to send.
-   * @return The Id (SentryId object) of the event
+   * @deprecated Use {@link #feedback()}.{@link IFeedbackApi#capture(Feedback) capture(feedback)}
+   *     instead.
    */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public static @NotNull SentryId captureFeedback(final @NotNull Feedback feedback) {
-    return getCurrentScopes().captureFeedback(feedback);
+    return feedback().capture(feedback);
   }
 
   /**
-   * Captures the feedback.
-   *
-   * @param feedback The feedback to send.
-   * @param hint An optional hint to be applied to the event.
-   * @return The Id (SentryId object) of the event
+   * @deprecated Use {@link #feedback()}.{@link IFeedbackApi#capture(Feedback, Hint)
+   *     capture(feedback, hint)} instead.
    */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public static @NotNull SentryId captureFeedback(
       final @NotNull Feedback feedback, final @Nullable Hint hint) {
-    return getCurrentScopes().captureFeedback(feedback, hint);
+    return feedback().capture(feedback, hint);
   }
 
   /**
-   * Captures the feedback.
-   *
-   * @param feedback The feedback to send.
-   * @param hint An optional hint to be applied to the event.
-   * @param callback The callback to configure the scope for a single invocation.
-   * @return The Id (SentryId object) of the event
+   * @deprecated Use {@link #feedback()}.{@link IFeedbackApi#capture(Feedback, Hint, ScopeCallback)
+   *     capture(feedback, hint, callback)} instead.
    */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public static @NotNull SentryId captureFeedback(
       final @NotNull Feedback feedback,
       final @Nullable Hint hint,
       final @Nullable ScopeCallback callback) {
-    return getCurrentScopes().captureFeedback(feedback, hint, callback);
+    return feedback().capture(feedback, hint, callback);
   }
 
   /**
@@ -877,7 +913,11 @@ public final class Sentry {
    * Captures a manually created user feedback and sends it to Sentry.
    *
    * @param userFeedback The user feedback to send to Sentry.
+   * @deprecated Use {@link #feedback()}.{@link IFeedbackApi#capture(Feedback) capture(feedback)}
+   *     with the new {@link Feedback} type instead.
    */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public static void captureUserFeedback(final @NotNull UserFeedback userFeedback) {
     getCurrentScopes().captureUserFeedback(userFeedback);
   }
@@ -1311,19 +1351,86 @@ public final class Sentry {
     return getCurrentScopes().getScope().getOptions().getDistributionController();
   }
 
-  public static void showUserFeedbackDialog() {
-    showUserFeedbackDialog(null);
+  @NotNull
+  public static IMetricsApi metrics() {
+    return getCurrentScopes().metrics();
   }
 
+  @NotNull
+  public static IFeedbackApi feedback() {
+    return getCurrentScopes().feedback();
+  }
+
+  /**
+   * @deprecated Use {@link #feedback()}.{@link IFeedbackApi#show() show()} instead.
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
+  public static void showUserFeedbackDialog() {
+    feedback().show();
+  }
+
+  /**
+   * @deprecated Use {@link #feedback()}.{@link
+   *     IFeedbackApi#show(SentryFeedbackOptions.OptionsConfigurator) show(configurator)} instead.
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public static void showUserFeedbackDialog(
       final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator) {
-    showUserFeedbackDialog(null, configurator);
+    feedback().show(configurator);
   }
 
+  /**
+   * @deprecated Use {@link #feedback()}.{@link IFeedbackApi#show(SentryId,
+   *     SentryFeedbackOptions.OptionsConfigurator) show(associatedEventId, configurator)} instead.
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public static void showUserFeedbackDialog(
       final @Nullable SentryId associatedEventId,
       final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator) {
-    final @NotNull SentryOptions options = getCurrentScopes().getOptions();
-    options.getFeedbackOptions().getDialogHandler().showDialog(associatedEventId, configurator);
+    feedback().show(associatedEventId, configurator);
+  }
+
+  /**
+   * Sets an attribute on the scope.
+   *
+   * @param key the key
+   * @param value the value
+   */
+  public static void setAttribute(final @Nullable String key, final @Nullable Object value) {
+    getCurrentScopes().setAttribute(key, value);
+  }
+
+  /**
+   * Sets an attribute on the scope.
+   *
+   * @param attribute the attribute
+   */
+  public static void setAttribute(final @Nullable SentryAttribute attribute) {
+    getCurrentScopes().setAttribute(attribute);
+  }
+
+  /**
+   * Sets multiple attributes on the scope.
+   *
+   * @param attributes the attributes
+   */
+  public static void setAttributes(final @Nullable SentryAttributes attributes) {
+    getCurrentScopes().setAttributes(attributes);
+  }
+
+  /**
+   * Removes an attribute from the scope.
+   *
+   * @param key the key
+   */
+  public static void removeAttribute(final @Nullable String key) {
+    getCurrentScopes().removeAttribute(key);
+  }
+
+  public static void addFeatureFlag(final @Nullable String flag, final @Nullable Boolean result) {
+    getCurrentScopes().addFeatureFlag(flag, result);
   }
 }

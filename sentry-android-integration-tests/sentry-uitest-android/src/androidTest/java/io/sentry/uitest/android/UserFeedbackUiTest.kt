@@ -1,9 +1,9 @@
 package io.sentry.uitest.android
 
 import android.graphics.Color
-import android.util.TypedValue
 import android.view.View
 import android.widget.EditText
+import android.widget.FrameLayout
 import android.widget.LinearLayout
 import androidx.test.core.app.launchActivity
 import androidx.test.espresso.Espresso.onView
@@ -28,7 +28,7 @@ import io.sentry.SentryOptions
 import io.sentry.android.core.AndroidLogger
 import io.sentry.android.core.R
 import io.sentry.android.core.SentryUserFeedbackButton
-import io.sentry.android.core.SentryUserFeedbackDialog
+import io.sentry.android.core.SentryUserFeedbackForm
 import io.sentry.assertEnvelopeFeedback
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.User
@@ -49,21 +49,21 @@ class UserFeedbackUiTest : BaseUiTest() {
   @Test
   fun userFeedbackNotShownWhenSdkDisabled() {
     launchActivity<EmptyActivity>().onActivity {
-      SentryUserFeedbackDialog.Builder(it).create().show()
+      SentryUserFeedbackForm.Builder(it).create().show()
     }
     onView(withId(R.id.sentry_dialog_user_feedback_layout)).check(doesNotExist())
   }
 
   @Test
   fun userFeedbackNotShownWhenSdkDisabledViaApi() {
-    launchActivity<EmptyActivity>().onActivity { Sentry.showUserFeedbackDialog() }
+    launchActivity<EmptyActivity>().onActivity { Sentry.feedback().show() }
     onView(withId(R.id.sentry_dialog_user_feedback_layout)).check(doesNotExist())
   }
 
   @Test
   fun userFeedbackShownViaApi() {
     initSentry()
-    launchActivity<EmptyActivity>().onActivity { Sentry.showUserFeedbackDialog() }
+    launchActivity<EmptyActivity>().onActivity { Sentry.feedback().show() }
 
     onView(withId(R.id.sentry_dialog_user_feedback_layout))
       .inRoot(isDialog())
@@ -550,10 +550,6 @@ class UserFeedbackUiTest : BaseUiTest() {
       assertEquals((densityScale * 12).toInt(), widget.paddingTop)
       assertEquals((densityScale * 12).toInt(), widget.paddingBottom)
 
-      val typedValue = TypedValue()
-      widget.context.theme.resolveAttribute(android.R.attr.colorForeground, typedValue, true)
-      assertEquals(typedValue.data, widget.currentTextColor)
-
       assertEquals("Report a Bug", widget.text)
     }
 
@@ -643,12 +639,12 @@ class UserFeedbackUiTest : BaseUiTest() {
 
   private fun showDialogAndCheck(
     associatedEventId: SentryId? = null,
-    checker: (dialog: SentryUserFeedbackDialog) -> Unit = {},
+    checker: (dialog: SentryUserFeedbackForm) -> Unit = {},
   ) {
-    lateinit var dialog: SentryUserFeedbackDialog
+    lateinit var dialog: SentryUserFeedbackForm
     val feedbackScenario = launchActivity<EmptyActivity>()
     feedbackScenario.onActivity {
-      dialog = SentryUserFeedbackDialog.Builder(it).associatedEventId(associatedEventId).create()
+      dialog = SentryUserFeedbackForm.Builder(it).associatedEventId(associatedEventId).create()
       dialog.show()
     }
 
@@ -666,14 +662,19 @@ class UserFeedbackUiTest : BaseUiTest() {
     val buttonId = Int.MAX_VALUE - 1
     val feedbackScenario = launchActivity<EmptyActivity>()
     feedbackScenario.onActivity {
+      val layoutParams =
+        FrameLayout.LayoutParams(
+          LinearLayout.LayoutParams.MATCH_PARENT,
+          LinearLayout.LayoutParams.MATCH_PARENT,
+        )
       val view =
-        LinearLayout(it).apply {
-          orientation = LinearLayout.VERTICAL
+        FrameLayout(it).apply {
           addView(
             SentryUserFeedbackButton(it).apply {
               id = buttonId
               widgetConfig?.invoke(this)
-            }
+            },
+            layoutParams,
           )
         }
       it.setContentView(view)

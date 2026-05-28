@@ -6,7 +6,6 @@ import io.sentry.protocol.SentryException;
 import io.sentry.protocol.SentryStackFrame;
 import io.sentry.protocol.SentryStackTrace;
 import io.sentry.protocol.SentryThread;
-import io.sentry.util.Objects;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
@@ -31,8 +30,7 @@ public final class SentryExceptionFactory {
    * @param sentryStackTraceFactory the sentryStackTraceFactory
    */
   public SentryExceptionFactory(final @NotNull SentryStackTraceFactory sentryStackTraceFactory) {
-    this.sentryStackTraceFactory =
-        Objects.requireNonNull(sentryStackTraceFactory, "The SentryStackTraceFactory is required.");
+    this.sentryStackTraceFactory = sentryStackTraceFactory;
   }
 
   @NotNull
@@ -174,9 +172,9 @@ public final class SentryExceptionFactory {
       final List<SentryStackFrame> frames =
           sentryStackTraceFactory.getStackFrames(
               currentThrowable.getStackTrace(), includeSentryFrames);
+      final @Nullable Long threadId = thread != null ? thread.getId() : null;
       SentryException exception =
-          getSentryException(
-              currentThrowable, exceptionMechanism, thread.getId(), frames, snapshot);
+          getSentryException(currentThrowable, exceptionMechanism, threadId, frames, snapshot);
       exceptions.addFirst(exception);
 
       if (exceptionMechanism.getType() == null) {

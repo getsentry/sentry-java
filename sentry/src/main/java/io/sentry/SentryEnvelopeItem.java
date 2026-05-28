@@ -7,6 +7,7 @@ import static io.sentry.vendor.Base64.NO_WRAP;
 import io.sentry.clientreport.ClientReport;
 import io.sentry.exception.SentryEnvelopeException;
 import io.sentry.protocol.SentryTransaction;
+import io.sentry.protocol.profiling.SentryProfile;
 import io.sentry.util.FileUtils;
 import io.sentry.util.JsonSerializationUtils;
 import io.sentry.util.Objects;
@@ -157,6 +158,18 @@ public final class SentryEnvelopeItem {
     }
   }
 
+  public @Nullable SentryMetricsEvents getMetrics(final @NotNull ISerializer serializer)
+      throws Exception {
+    if (header == null || header.getType() != SentryItemType.TraceMetric) {
+      return null;
+    }
+    try (final Reader eventReader =
+        new BufferedReader(new InputStreamReader(new ByteArrayInputStream(getData()), UTF_8))) {
+      return serializer.deserialize(eventReader, SentryMetricsEvents.class);
+    }
+  }
+
+  @Deprecated
   public static SentryEnvelopeItem fromUserFeedback(
       final @NotNull ISerializer serializer, final @NotNull UserFeedback userFeedback) {
     Objects.requireNonNull(serializer, "ISerializer is required.");
@@ -281,27 +294,54 @@ public final class SentryEnvelopeItem {
       final @NotNull ProfileChunk profileChunk, final @NotNull ISerializer serializer)
       throws SentryEnvelopeException {
 
-    final @NotNull File traceFile = profileChunk.getTraceFile();
+    return fromProfileChunk(profileChunk, serializer, NoOpProfileConverter.getInstance());
+  }
+
+  public static @NotNull SentryEnvelopeItem fromProfileChunk(
+      final @NotNull ProfileChunk profileChunk,
+      final @NotNull ISerializer serializer,
+      final @NotNull IProfileConverter profileConverter)
+      throws SentryEnvelopeException {
+
+    final @Nullable File traceFile = profileChunk.getTraceFile();
     // Using CachedItem, so we read the trace file in the background
     final CachedItem cachedItem =
         new CachedItem(
             () -> {
-              if (!traceFile.exists()) {
-                throw new SentryEnvelopeException(
-                    String.format(
-                        "Dropping profile chunk, because the file '%s' doesn't exists",
-                        traceFile.getName()));
+              if (traceFile != null) {
+                if (!traceFile.exists()) {
+                  throw new SentryEnvelopeException(
+                      String.format(
+                          "Dropping profile chunk, because the file '%s' doesn't exists",
+                          traceFile.getName()));
+                }
+
+                if (ProfileChunk.PLATFORM_JAVA.equals(profileChunk.getPlatform())) {
+                  if (!NoOpProfileConverter.getInstance().equals(profileConverter)) {
+                    try {
+                      final SentryProfile profile =
+                          profileConverter.convertFromFile(traceFile.getAbsolutePath());
+                      profileChunk.setSentryProfile(profile);
+                    } catch (Exception e) {
+                      throw new SentryEnvelopeException("Profile conversion failed", e);
+                    }
+                  } else {
+                    throw new SentryEnvelopeException(
+                        "No ProfileConverter available, dropping chunk.");
+                  }
+                } else {
+                  // The payload of the profile item is a json including the trace file encoded with
+                  // base64
+                  final byte[] traceFileBytes =
+                      readBytesFromFile(traceFile.getPath(), MAX_PROFILE_CHUNK_SIZE);
+                  final @NotNull String base64Trace =
+                      Base64.encodeToString(traceFileBytes, NO_WRAP | NO_PADDING);
+                  if (base64Trace.isEmpty()) {
+                    throw new SentryEnvelopeException("Profiling trace file is empty");
+                  }
+                  profileChunk.setSampledProfile(base64Trace);
+                }
               }
-              // The payload of the profile item is a json including the trace file encoded with
-              // base64
-              final byte[] traceFileBytes =
-                  readBytesFromFile(traceFile.getPath(), MAX_PROFILE_CHUNK_SIZE);
-              final @NotNull String base64Trace =
-                  Base64.encodeToString(traceFileBytes, NO_WRAP | NO_PADDING);
-              if (base64Trace.isEmpty()) {
-                throw new SentryEnvelopeException("Profiling trace file is empty");
-              }
-              profileChunk.setSampledProfile(base64Trace);
 
               try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
                   final Writer writer = new BufferedWriter(new OutputStreamWriter(stream, UTF_8))) {
@@ -312,7 +352,9 @@ public final class SentryEnvelopeItem {
                     String.format("Failed to serialize profile chunk\n%s", e.getMessage()));
               } finally {
                 // In any case we delete the trace file
-                traceFile.delete();
+                if (traceFile != null) {
+                  traceFile.delete();
+                }
               }
             });
 
@@ -321,7 +363,7 @@ public final class SentryEnvelopeItem {
             SentryItemType.ProfileChunk,
             () -> cachedItem.getBytes().length,
             "application-json",
-            traceFile.getName(),
+            traceFile != null ? traceFile.getName() : null,
             null,
             profileChunk.getPlatform(),
             null);
@@ -514,6 +556,36 @@ public final class SentryEnvelopeItem {
             null,
             null,
             logEvents.getItems().size());
+
+    // avoid method refs on Android due to some issues with older AGP setups
+    // noinspection Convert2MethodRef
+    return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
+  }
+
+  public static SentryEnvelopeItem fromMetrics(
+      final @NotNull ISerializer serializer, final @NotNull SentryMetricsEvents metricsEvents) {
+    Objects.requireNonNull(serializer, "ISerializer is required.");
+    Objects.requireNonNull(metricsEvents, "SentryMetricsEvents is required.");
+
+    final CachedItem cachedItem =
+        new CachedItem(
+            () -> {
+              try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                  final Writer writer = new BufferedWriter(new OutputStreamWriter(stream, UTF_8))) {
+                serializer.serialize(metricsEvents, writer);
+                return stream.toByteArray();
+              }
+            });
+
+    SentryEnvelopeItemHeader itemHeader =
+        new SentryEnvelopeItemHeader(
+            SentryItemType.TraceMetric,
+            () -> cachedItem.getBytes().length,
+            "application/vnd.sentry.items.trace-metric+json",
+            null,
+            null,
+            null,
+            metricsEvents.getItems().size());
 
     // avoid method refs on Android due to some issues with older AGP setups
     // noinspection Convert2MethodRef

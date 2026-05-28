@@ -18,6 +18,9 @@ import io.sentry.android.core.internal.gestures.SentryWindowCallback;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
+import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.WeakHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -28,14 +31,21 @@ public final class UserInteractionIntegration
   private @Nullable IScopes scopes;
   private @Nullable SentryAndroidOptions options;
 
-  private final boolean isAndroidXAvailable;
   private final boolean isAndroidxLifecycleAvailable;
+
+  // WeakReference value, because the callback chain strongly references the wrapper — a strong
+  // value would prevent the window from ever being GC'd.
+  //
+  // All access must be guarded by wrappedWindowsLock — lifecycle callbacks fire on the main
+  // thread, but close() may be called from a background thread (e.g. Sentry.close()).
+  private final @NotNull WeakHashMap<Window, WeakReference<SentryWindowCallback>> wrappedWindows =
+      new WeakHashMap<>();
+
+  private final @NotNull Object wrappedWindowsLock = new Object();
 
   public UserInteractionIntegration(
       final @NotNull Application application, final @NotNull io.sentry.util.LoadClass classLoader) {
     this.application = Objects.requireNonNull(application, "Application is required");
-    isAndroidXAvailable =
-        classLoader.isClassAvailable("androidx.core.view.GestureDetectorCompat", options);
     isAndroidxLifecycleAvailable =
         classLoader.isClassAvailable("androidx.lifecycle.Lifecycle", options);
   }
@@ -50,19 +60,26 @@ public final class UserInteractionIntegration
     }
 
     if (scopes != null && options != null) {
+      synchronized (wrappedWindowsLock) {
+        final @Nullable WeakReference<SentryWindowCallback> cached = wrappedWindows.get(window);
+        if (cached != null && cached.get() != null) {
+          return;
+        }
+      }
+
       Window.Callback delegate = window.getCallback();
       if (delegate == null) {
         delegate = new NoOpWindowCallback();
       }
 
-      if (delegate instanceof SentryWindowCallback) {
-        // already instrumented
-        return;
-      }
-
       final SentryGestureListener gestureListener =
           new SentryGestureListener(activity, scopes, options);
-      window.setCallback(new SentryWindowCallback(delegate, activity, gestureListener, options));
+      final SentryWindowCallback wrapper =
+          new SentryWindowCallback(delegate, activity, gestureListener, options);
+      window.setCallback(wrapper);
+      synchronized (wrappedWindowsLock) {
+        wrappedWindows.put(window, new WeakReference<>(wrapper));
+      }
     }
   }
 
@@ -74,7 +91,10 @@ public final class UserInteractionIntegration
       }
       return;
     }
+    unwrapWindow(window);
+  }
 
+  private void unwrapWindow(final @NotNull Window window) {
     final Window.Callback current = window.getCallback();
     if (current instanceof SentryWindowCallback) {
       ((SentryWindowCallback) current).stopTracking();
@@ -83,6 +103,23 @@ public final class UserInteractionIntegration
       } else {
         window.setCallback(((SentryWindowCallback) current).getDelegate());
       }
+      synchronized (wrappedWindowsLock) {
+        wrappedWindows.remove(window);
+      }
+      return;
+    }
+
+    // Another wrapper (e.g. Session Replay) sits on top of ours — cutting it out of the chain
+    // would break its instrumentation, so we leave the chain alone and just call stopTracking()
+    // to release our resources. The upstream wrapper holds a reference to ours, so it'll be
+    // GC'd whenever that upstream holder is (typically when the window is destroyed).
+    final @Nullable SentryWindowCallback ours;
+    synchronized (wrappedWindowsLock) {
+      final @Nullable WeakReference<SentryWindowCallback> cached = wrappedWindows.remove(window);
+      ours = cached != null ? cached.get() : null;
+    }
+    if (ours != null) {
+      ours.stopTracking();
     }
   }
 
@@ -128,27 +165,19 @@ public final class UserInteractionIntegration
         .log(SentryLevel.DEBUG, "UserInteractionIntegration enabled: %s", integrationEnabled);
 
     if (integrationEnabled) {
-      if (isAndroidXAvailable) {
-        application.registerActivityLifecycleCallbacks(this);
-        this.options.getLogger().log(SentryLevel.DEBUG, "UserInteractionIntegration installed.");
-        addIntegrationToSdkVersion("UserInteraction");
+      application.registerActivityLifecycleCallbacks(this);
+      this.options.getLogger().log(SentryLevel.DEBUG, "UserInteractionIntegration installed.");
+      addIntegrationToSdkVersion("UserInteraction");
 
-        // In case of a deferred init, we hook into any resumed activity
-        if (isAndroidxLifecycleAvailable) {
-          final @Nullable Activity activity = CurrentActivityHolder.getInstance().getActivity();
-          if (activity instanceof LifecycleOwner) {
-            if (((LifecycleOwner) activity).getLifecycle().getCurrentState()
-                == Lifecycle.State.RESUMED) {
-              startTracking(activity);
-            }
+      // In case of a deferred init, we hook into any resumed activity
+      if (isAndroidxLifecycleAvailable) {
+        final @Nullable Activity activity = CurrentActivityHolder.getInstance().getActivity();
+        if (activity instanceof LifecycleOwner) {
+          if (((LifecycleOwner) activity).getLifecycle().getCurrentState()
+              == Lifecycle.State.RESUMED) {
+            startTracking(activity);
           }
         }
-      } else {
-        options
-            .getLogger()
-            .log(
-                SentryLevel.INFO,
-                "androidx.core is not available, UserInteractionIntegration won't be installed");
       }
     }
   }
@@ -156,6 +185,21 @@ public final class UserInteractionIntegration
   @Override
   public void close() throws IOException {
     application.unregisterActivityLifecycleCallbacks(this);
+
+    // Restore original callbacks so a subsequent Sentry.init() starts from a clean chain instead
+    // of wrapping on top of our orphaned callback.
+    final ArrayList<Window> snapshot;
+    synchronized (wrappedWindowsLock) {
+      snapshot = new ArrayList<>(wrappedWindows.keySet());
+    }
+    for (final Window window : snapshot) {
+      if (window != null) {
+        unwrapWindow(window);
+      }
+    }
+    synchronized (wrappedWindowsLock) {
+      wrappedWindows.clear();
+    }
 
     if (options != null) {
       options.getLogger().log(SentryLevel.DEBUG, "UserInteractionIntegration removed.");

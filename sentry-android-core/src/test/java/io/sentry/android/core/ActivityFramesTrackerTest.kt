@@ -5,8 +5,10 @@ import android.util.SparseIntArray
 import androidx.core.app.FrameMetricsAggregator
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.ILogger
+import io.sentry.SentryOptions
 import io.sentry.protocol.MeasurementValue
 import io.sentry.protocol.SentryId
+import io.sentry.util.LazyEvaluator
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -34,12 +36,14 @@ class ActivityFramesTrackerTest {
       options.isEnablePerformanceV2 = false
     }
 
-    fun getSut(mockAggregator: Boolean = true): ActivityFramesTracker =
-      if (mockAggregator) {
-        ActivityFramesTracker(loadClass, options, handler, aggregator)
-      } else {
-        ActivityFramesTracker(loadClass, options, handler)
-      }
+    fun getSut(isAndroidxAvailable: Boolean = true): ActivityFramesTracker {
+      whenever(loadClass.isClassAvailableLazy(any(), any<ILogger>()))
+        .thenReturn(LazyEvaluator { isAndroidxAvailable })
+      whenever(loadClass.isClassAvailableLazy(any(), any<SentryOptions>()))
+        .thenReturn(LazyEvaluator { isAndroidxAvailable })
+
+      return ActivityFramesTracker(loadClass, options, handler, aggregator)
+    }
   }
 
   private val fixture = Fixture()
@@ -340,7 +344,6 @@ class ActivityFramesTrackerTest {
 
   @Test
   fun `addActivity does not throw if no AndroidX`() {
-    whenever(fixture.loadClass.isClassAvailable(any(), any<ILogger>())).thenReturn(false)
     val sut = fixture.getSut(false)
 
     sut.addActivity(fixture.activity)
@@ -348,7 +351,6 @@ class ActivityFramesTrackerTest {
 
   @Test
   fun `setMetrics does not throw if no AndroidX`() {
-    whenever(fixture.loadClass.isClassAvailable(any(), any<ILogger>())).thenReturn(false)
     val sut = fixture.getSut(false)
 
     sut.setMetrics(fixture.activity, fixture.sentryId)
@@ -356,7 +358,6 @@ class ActivityFramesTrackerTest {
 
   @Test
   fun `addActivity and setMetrics combined do not throw if no AndroidX`() {
-    whenever(fixture.loadClass.isClassAvailable(any(), any<ILogger>())).thenReturn(false)
     val sut = fixture.getSut(false)
 
     sut.addActivity(fixture.activity)
@@ -373,7 +374,6 @@ class ActivityFramesTrackerTest {
 
   @Test
   fun `stop does not throw if no AndroidX`() {
-    whenever(fixture.loadClass.isClassAvailable(any(), any<ILogger>())).thenReturn(false)
     val sut = fixture.getSut(false)
 
     sut.stop()
@@ -390,8 +390,12 @@ class ActivityFramesTrackerTest {
 
   @Test
   fun `takeMetrics returns null if no AndroidX`() {
-    whenever(fixture.loadClass.isClassAvailable(any(), any<ILogger>())).thenReturn(false)
     val sut = fixture.getSut(false)
+
+    whenever(fixture.aggregator.metrics).thenReturn(emptyArray(), getArray())
+
+    sut.addActivity(fixture.activity)
+    sut.setMetrics(fixture.activity, fixture.sentryId)
 
     assertNull(sut.takeMetrics(fixture.sentryId))
   }

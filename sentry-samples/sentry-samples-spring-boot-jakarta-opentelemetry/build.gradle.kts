@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.config.KotlinCompilerVersion
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.springframework.boot.gradle.tasks.run.BootRun
 
@@ -19,19 +20,26 @@ java.targetCompatibility = JavaVersion.VERSION_17
 
 repositories { mavenCentral() }
 
+dependencyManagement {
+  imports {
+    mavenBom("org.springframework.boot:spring-boot-dependencies:${libs.versions.springboot3.get()}")
+  }
+}
+
+// Apollo 4.x requires coroutines 1.9.0+, override Spring Boot's managed version
+extra["kotlin-coroutines.version"] = "1.9.0"
+
 configure<JavaPluginExtension> {
   sourceCompatibility = JavaVersion.VERSION_17
   targetCompatibility = JavaVersion.VERSION_17
 }
 
-tasks.withType<KotlinCompile>().configureEach {
-  compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
-}
+tasks.withType<KotlinCompile>().configureEach { compilerOptions.jvmTarget = JvmTarget.JVM_17 }
 
 tasks.withType<KotlinCompile>().configureEach {
   kotlin {
     compilerOptions.freeCompilerArgs = listOf("-Xjsr305=strict")
-    compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
+    compilerOptions.jvmTarget = JvmTarget.JVM_17
   }
 }
 
@@ -54,6 +62,15 @@ dependencies {
   implementation(projects.sentryGraphql22)
   implementation(projects.sentryQuartz)
   implementation(libs.otel)
+  implementation(projects.sentryAsyncProfiler)
+
+  // kafka
+  implementation(libs.spring.kafka3)
+  implementation(projects.sentryKafka)
+
+  // cache tracing
+  implementation(libs.springboot3.starter.cache)
+  implementation(libs.caffeine)
 
   // database query tracing
   implementation(projects.sentryJdbc)
@@ -70,8 +87,6 @@ dependencies {
   testImplementation("ch.qos.logback:logback-classic:1.5.16")
   testImplementation("ch.qos.logback:logback-core:1.5.16")
 }
-
-configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
 
 tasks.register<BootRun>("bootRunWithAgent").configure {
   group = "application"
@@ -90,10 +105,17 @@ tasks.register<BootRun>("bootRunWithAgent").configure {
   val tracesSampleRate = System.getenv("SENTRY_TRACES_SAMPLE_RATE") ?: "1"
 
   environment("SENTRY_DSN", dsn)
+  environment("SENTRY_DEBUG", "true")
+  environment("SENTRY_PROFILE_SESSION_SAMPLE_RATE", "1.0")
+  environment("SENTRY_PROFILING_TRACES_DIR_PATH", "tmp/sentry/profiling-traces")
+  environment("SENTRY_PROFILE_LIFECYCLE", "TRACE")
+
   environment("SENTRY_TRACES_SAMPLE_RATE", tracesSampleRate)
   environment("OTEL_TRACES_EXPORTER", "none")
   environment("OTEL_METRICS_EXPORTER", "none")
   environment("OTEL_LOGS_EXPORTER", "none")
+  environment("SENTRY_IN_APP_INCLUDES", "io.sentry.samples")
+  environment("SENTRY_ENABLE_PRETTY_SERIALIZATION_OUTPUT", "false")
 
   jvmArgs = listOf("-Dotel.javaagent.debug=true", "-javaagent:$agentJarPath")
 }
@@ -101,6 +123,10 @@ tasks.register<BootRun>("bootRunWithAgent").configure {
 tasks.register<Test>("systemTest").configure {
   group = "verification"
   description = "Runs the System tests"
+
+  val test = project.extensions.getByType<SourceSetContainer>()["test"]
+  testClassesDirs = test.output.classesDirs
+  classpath = test.runtimeClasspath
 
   outputs.upToDateWhen { false }
 

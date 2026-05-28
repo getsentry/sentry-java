@@ -98,6 +98,7 @@ public final class AppComponentsBreadcrumbsIntegration
     executeInBackground(() -> captureConfigurationChangedBreadcrumb(now, newConfig));
   }
 
+  @SuppressWarnings("deprecation")
   @Override
   public void onLowMemory() {
     // we do this in onTrimMemory below already, this is legacy API (14 or below)

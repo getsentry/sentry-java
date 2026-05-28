@@ -8,6 +8,7 @@ import android.net.ConnectivityManager.NetworkCallback;
 import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.os.Build;
+import android.os.Handler;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import io.sentry.IConnectionStatusProvider;
@@ -42,6 +43,7 @@ public final class AndroidConnectionStatusProvider
   private final @NotNull BuildInfoProvider buildInfoProvider;
   private final @NotNull ICurrentDateProvider timeProvider;
   private final @NotNull List<IConnectionStatusObserver> connectionStatusObservers;
+  private final @Nullable Handler handler;
   private final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
   private volatile @Nullable NetworkCallback networkCallback;
 
@@ -68,16 +70,26 @@ public final class AndroidConnectionStatusProvider
   private static final long CACHE_TTL_MS = 2 * 60 * 1000L; // 2 minutes
   private final @NotNull AtomicBoolean isConnected = new AtomicBoolean(false);
 
-  @SuppressLint("InlinedApi")
   public AndroidConnectionStatusProvider(
       @NotNull Context context,
       @NotNull SentryOptions options,
       @NotNull BuildInfoProvider buildInfoProvider,
       @NotNull ICurrentDateProvider timeProvider) {
+    this(context, options, buildInfoProvider, timeProvider, null);
+  }
+
+  @SuppressLint("InlinedApi")
+  public AndroidConnectionStatusProvider(
+      @NotNull Context context,
+      @NotNull SentryOptions options,
+      @NotNull BuildInfoProvider buildInfoProvider,
+      @NotNull ICurrentDateProvider timeProvider,
+      @Nullable Handler handler) {
     this.context = ContextUtils.getApplicationContext(context);
     this.options = options;
     this.buildInfoProvider = buildInfoProvider;
     this.timeProvider = timeProvider;
+    this.handler = handler;
     this.connectionStatusObservers = new ArrayList<>();
 
     capabilities[0] = NetworkCapabilities.NET_CAPABILITY_INTERNET;
@@ -326,7 +338,8 @@ public final class AndroidConnectionStatusProvider
             }
           };
 
-      if (registerNetworkCallback(context, options.getLogger(), buildInfoProvider, callback)) {
+      if (registerNetworkCallback(
+          context, options.getLogger(), buildInfoProvider, handler, callback)) {
         networkCallback = callback;
         options.getLogger().log(SentryLevel.DEBUG, "Network callback registered successfully");
       } else {
@@ -744,6 +757,7 @@ public final class AndroidConnectionStatusProvider
       final @NotNull Context context,
       final @NotNull ILogger logger,
       final @NotNull BuildInfoProvider buildInfoProvider,
+      final @Nullable Handler handler,
       final @NotNull NetworkCallback networkCallback) {
     if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.N) {
       logger.log(SentryLevel.DEBUG, "NetworkCallbacks need Android N+.");
@@ -758,7 +772,11 @@ public final class AndroidConnectionStatusProvider
       return false;
     }
     try {
-      connectivityManager.registerDefaultNetworkCallback(networkCallback);
+      if (handler != null) {
+        connectivityManager.registerDefaultNetworkCallback(networkCallback, handler);
+      } else {
+        connectivityManager.registerDefaultNetworkCallback(networkCallback);
+      }
     } catch (Throwable t) {
       logger.log(SentryLevel.WARNING, "registerDefaultNetworkCallback failed", t);
       return false;

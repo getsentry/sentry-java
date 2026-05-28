@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import coil.compose.AsyncImage
+import io.sentry.NoOpLogger
 import io.sentry.SentryOptions
 import io.sentry.android.replay.maskAllImages
 import io.sentry.android.replay.maskAllText
@@ -160,7 +161,12 @@ class ComposeMaskingOptionsTest {
       assertNotNull(composeView)
 
       val rootNode = GenericViewHierarchyNode(0f, 0f, 0, 0, 1.0f, -1, shouldMask = true)
-      ComposeViewHierarchyNode.fromView(composeView, rootNode, options)
+      ComposeViewHierarchyNode.fromView(
+        composeView,
+        rootNode,
+        options.sessionReplay,
+        NoOpLogger.getInstance(),
+      )
 
       assertEquals(1, rootNode.children?.size)
 
@@ -174,7 +180,7 @@ class ComposeMaskingOptionsTest {
   @Test
   fun `when retrieving the semantics fails, an error is thrown`() {
     val node = mock<LayoutNode>()
-    whenever(node.collapsedSemantics).thenThrow(RuntimeException("Compose Runtime Error"))
+    whenever(node.semanticsConfiguration).thenThrow(RuntimeException("Compose Runtime Error"))
 
     assertThrows(RuntimeException::class.java) {
       ComposeViewHierarchyNode.retrieveSemanticsConfiguration(node)
@@ -274,8 +280,8 @@ class ComposeMaskingOptionsTest {
 
   private inline fun <reified T> Activity.collectNodesOfType(options: SentryOptions): List<T> {
     val root = window.decorView
-    val viewHierarchy = ViewHierarchyNode.fromView(root, null, 0, options)
-    root.traverse(viewHierarchy, options)
+    val viewHierarchy = ViewHierarchyNode.fromView(root, null, 0, options.sessionReplay)
+    root.traverse(viewHierarchy, options.sessionReplay, NoOpLogger.getInstance())
 
     val nodes = mutableListOf<T>()
     viewHierarchy.traverse {

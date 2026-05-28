@@ -64,6 +64,8 @@ public class Contexts implements JsonSerializable {
           this.setResponse(new Response((Response) value));
         } else if (Spring.TYPE.equals(entry.getKey()) && value instanceof Spring) {
           this.setSpring(new Spring((Spring) value));
+        } else if (ArtContext.TYPE.equals(entry.getKey()) && value instanceof ArtContext) {
+          this.setArt(new ArtContext((ArtContext) value));
         } else {
           this.put(entry.getKey(), value);
         }
@@ -179,6 +181,22 @@ public class Contexts implements JsonSerializable {
 
   public void setSpring(final @NotNull Spring spring) {
     this.put(Spring.TYPE, spring);
+  }
+
+  public @Nullable ArtContext getArt() {
+    return toContextType(ArtContext.TYPE, ArtContext.class);
+  }
+
+  public void setArt(final @NotNull ArtContext art) {
+    this.put(ArtContext.TYPE, art);
+  }
+
+  public @Nullable FeatureFlags getFeatureFlags() {
+    return toContextType(FeatureFlags.TYPE, FeatureFlags.class);
+  }
+
+  public void setFeatureFlags(final @NotNull FeatureFlags featureFlags) {
+    this.put(FeatureFlags.TYPE, featureFlags);
   }
 
   public int size() {
@@ -338,6 +356,12 @@ public class Contexts implements JsonSerializable {
             break;
           case Spring.TYPE:
             contexts.setSpring(new Spring.Deserializer().deserialize(reader, logger));
+            break;
+          case ArtContext.TYPE:
+            contexts.setArt(new ArtContext.Deserializer().deserialize(reader, logger));
+            break;
+          case FeatureFlags.TYPE:
+            contexts.setFeatureFlags(new FeatureFlags.Deserializer().deserialize(reader, logger));
             break;
           default:
             Object object = reader.nextObjectOrNull();

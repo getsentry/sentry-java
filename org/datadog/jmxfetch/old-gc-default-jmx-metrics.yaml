@@ -1,0 +1,12 @@
+
+# Old GC metrics for compatibility
+- include:
+    domain: java.lang
+    type: GarbageCollector
+    attribute:
+      CollectionCount:
+        alias: jvm.gc.cms.count
+        metric_type: gauge
+      CollectionTime:
+        alias: jvm.gc.parnew.time
+        metric_type: gauge

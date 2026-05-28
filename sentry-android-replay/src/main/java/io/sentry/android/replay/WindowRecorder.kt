@@ -1,7 +1,10 @@
 package io.sentry.android.replay
 
+import android.annotation.SuppressLint
 import android.annotation.TargetApi
 import android.graphics.Point
+import android.os.Handler
+import android.os.HandlerThread
 import android.view.View
 import android.view.ViewTreeObserver
 import io.sentry.SentryLevel.DEBUG
@@ -14,9 +17,11 @@ import io.sentry.android.replay.util.hasSize
 import io.sentry.android.replay.util.removeOnPreDrawListenerSafe
 import io.sentry.util.AutoClosableReentrantLock
 import java.lang.ref.WeakReference
+import java.util.WeakHashMap
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.atomic.AtomicBoolean
 
+@SuppressLint("UseRequiresApi")
 @TargetApi(26)
 internal class WindowRecorder(
   private val options: SentryOptions,
@@ -24,17 +29,20 @@ internal class WindowRecorder(
   private val windowCallback: WindowCallback,
   private val mainLooperHandler: MainLooperHandler,
   private val replayExecutor: ScheduledExecutorService,
-) : Recorder, OnRootViewsChangedListener {
-  internal companion object {
-    private const val TAG = "WindowRecorder"
-  }
+) : Recorder, OnRootViewsChangedListener, ExecutorProvider {
 
   private val isRecording = AtomicBoolean(false)
   private val rootViews = ArrayList<WeakReference<View>>()
   private var lastKnownWindowSize: Point = Point()
+  private val rootLayoutListeners = WeakHashMap<View, View.OnLayoutChangeListener>()
   private val rootViewsLock = AutoClosableReentrantLock()
   private val capturerLock = AutoClosableReentrantLock()
+  private val backgroundProcessingHandlerLock = AutoClosableReentrantLock()
+
   @Volatile private var capturer: Capturer? = null
+
+  @Volatile private var backgroundProcessingHandlerThread: HandlerThread? = null
+  @Volatile private var backgroundProcessingHandler: Handler? = null
 
   private class Capturer(
     private val options: SentryOptions,
@@ -110,10 +118,17 @@ internal class WindowRecorder(
   override fun onRootViewsChanged(root: View, added: Boolean) {
     rootViewsLock.acquire().use {
       if (added) {
+        if (root.phoneWindow == null) {
+          options.logger.log(WARNING, "Root view does not have a phone window, skipping.")
+          return
+        }
+
         rootViews.add(WeakReference(root))
         capturer?.recorder?.bind(root)
         determineWindowSize(root)
+        attachLayoutListener(root)
       } else {
+        detachLayoutListener(root)
         capturer?.recorder?.unbind(root)
         rootViews.removeAll { it.get() == root }
 
@@ -121,6 +136,7 @@ internal class WindowRecorder(
         if (newRoot != null && root != newRoot) {
           capturer?.recorder?.bind(newRoot)
           determineWindowSize(newRoot)
+          attachLayoutListener(newRoot)
         } else {
           Unit // synchronized block wants us to return something lol
         }
@@ -128,9 +144,45 @@ internal class WindowRecorder(
     }
   }
 
+  /**
+   * Activities that handle their own configuration changes (e.g. Unity, video players via
+   * `android:configChanges="orientation|screenSize|..."`) keep the same root view across rotations,
+   * so [onRootViewsChanged] never fires and [determineWindowSize] would never re-detect the new
+   * dimensions. Watch the root for layout-time size changes to catch these cases.
+   */
+  private fun attachLayoutListener(root: View) {
+    if (rootLayoutListeners.containsKey(root)) return
+    val listener =
+      View.OnLayoutChangeListener {
+        v,
+        left,
+        top,
+        right,
+        bottom,
+        oldLeft,
+        oldTop,
+        oldRight,
+        oldBottom ->
+        val width = right - left
+        val height = bottom - top
+        val oldWidth = oldRight - oldLeft
+        val oldHeight = oldBottom - oldTop
+        if (width == oldWidth && height == oldHeight) return@OnLayoutChangeListener
+        // ignore non-latest roots so a dialog stays sized for itself, not its background activity.
+        if (v != rootViews.lastOrNull()?.get()) return@OnLayoutChangeListener
+        determineWindowSize(v)
+      }
+    rootLayoutListeners[root] = listener
+    root.addOnLayoutChangeListener(listener)
+  }
+
+  private fun detachLayoutListener(root: View) {
+    rootLayoutListeners.remove(root)?.let { root.removeOnLayoutChangeListener(it) }
+  }
+
   fun determineWindowSize(root: View) {
     if (root.hasSize()) {
-      if (root.width != lastKnownWindowSize.x && root.height != lastKnownWindowSize.y) {
+      if (root.width != lastKnownWindowSize.x || root.height != lastKnownWindowSize.y) {
         lastKnownWindowSize.set(root.width, root.height)
         windowCallback.onWindowSizeChanged(root.width, root.height)
       }
@@ -146,7 +198,7 @@ internal class WindowRecorder(
             }
             if (root.hasSize()) {
               root.removeOnPreDrawListenerSafe(this)
-              if (root.width != lastKnownWindowSize.x && root.height != lastKnownWindowSize.y) {
+              if (root.width != lastKnownWindowSize.x || root.height != lastKnownWindowSize.y) {
                 lastKnownWindowSize.set(root.width, root.height)
                 windowCallback.onWindowSizeChanged(root.width, root.height)
               }
@@ -177,14 +229,7 @@ internal class WindowRecorder(
     }
 
     capturer?.config = config
-    capturer?.recorder =
-      ScreenshotRecorder(
-        config,
-        options,
-        mainLooperHandler,
-        replayExecutor,
-        screenshotRecorderCallback,
-      )
+    capturer?.recorder = ScreenshotRecorder(config, options, this, screenshotRecorderCallback)
 
     val newRoot = rootViews.lastOrNull()?.get()
     if (newRoot != null) {
@@ -218,7 +263,13 @@ internal class WindowRecorder(
   override fun reset() {
     lastKnownWindowSize.set(0, 0)
     rootViewsLock.acquire().use {
-      rootViews.forEach { capturer?.recorder?.unbind(it.get()) }
+      rootViews.forEach {
+        val root = it.get()
+        if (root != null) {
+          detachLayoutListener(root)
+          capturer?.recorder?.unbind(root)
+        }
+      }
       rootViews.clear()
     }
   }
@@ -232,6 +283,40 @@ internal class WindowRecorder(
   override fun close() {
     reset()
     mainLooperHandler.removeCallbacks(capturer)
+    backgroundProcessingHandlerLock.acquire().use {
+      backgroundProcessingHandler?.removeCallbacksAndMessages(null)
+      backgroundProcessingHandlerThread?.quitSafely()
+    }
     stop()
   }
+
+  override fun getExecutor(): ScheduledExecutorService = replayExecutor
+
+  override fun getMainLooperHandler(): MainLooperHandler = mainLooperHandler
+
+  override fun getBackgroundHandler(): Handler {
+    // only start the background thread if it's actually needed, as it's only used by Canvas Capture
+    // Strategy
+    if (backgroundProcessingHandler == null) {
+      backgroundProcessingHandlerLock.acquire().use {
+        if (backgroundProcessingHandler == null) {
+          backgroundProcessingHandlerThread = HandlerThread("SentryReplayBackgroundProcessing")
+          backgroundProcessingHandlerThread?.start()
+          backgroundProcessingHandler = Handler(backgroundProcessingHandlerThread!!.looper)
+        }
+      }
+    }
+    return backgroundProcessingHandler!!
+  }
+}
+
+internal interface ExecutorProvider {
+  /** Returns an executor suitable for background tasks. */
+  fun getExecutor(): ScheduledExecutorService
+
+  /** Returns a handler associated with the main thread looper. */
+  fun getMainLooperHandler(): MainLooperHandler
+
+  /** Returns a handler associated with a background thread looper. */
+  fun getBackgroundHandler(): Handler
 }

@@ -1,12 +1,14 @@
 package io.sentry.android.replay.viewhierarchy
 
+import android.annotation.SuppressLint
 import android.annotation.TargetApi
 import android.graphics.Rect
+import android.view.SurfaceView
 import android.view.View
 import android.view.ViewParent
 import android.widget.ImageView
 import android.widget.TextView
-import io.sentry.SentryOptions
+import io.sentry.SentryMaskingOptions
 import io.sentry.android.replay.R
 import io.sentry.android.replay.util.AndroidTextLayout
 import io.sentry.android.replay.util.TextLayout
@@ -14,7 +16,9 @@ import io.sentry.android.replay.util.isMaskable
 import io.sentry.android.replay.util.isVisibleToUser
 import io.sentry.android.replay.util.toOpaque
 import io.sentry.android.replay.util.totalPaddingTopSafe
+import java.lang.ref.WeakReference
 
+@SuppressLint("UseRequiresApi")
 @TargetApi(26)
 internal sealed class ViewHierarchyNode(
   val x: Float,
@@ -93,6 +97,34 @@ internal sealed class ViewHierarchyNode(
     )
 
   class ImageViewHierarchyNode(
+    x: Float,
+    y: Float,
+    width: Int,
+    height: Int,
+    elevation: Float,
+    distance: Int,
+    parent: ViewHierarchyNode? = null,
+    shouldMask: Boolean = false,
+    isImportantForContentCapture: Boolean = false,
+    isVisible: Boolean = false,
+    visibleRect: Rect? = null,
+  ) :
+    ViewHierarchyNode(
+      x,
+      y,
+      width,
+      height,
+      elevation,
+      distance,
+      parent,
+      shouldMask,
+      isImportantForContentCapture,
+      isVisible,
+      visibleRect,
+    )
+
+  class SurfaceViewHierarchyNode(
+    val surfaceViewRef: WeakReference<SurfaceView>,
     x: Float,
     y: Float,
     width: Int,
@@ -284,11 +316,12 @@ internal sealed class ViewHierarchyNode(
       return false
     }
 
-    private fun View.shouldMask(options: SentryOptions): Boolean {
+    private fun View.shouldMask(options: SentryMaskingOptions): Boolean {
       if (
         (tag as? String)?.lowercase()?.contains(SENTRY_UNMASK_TAG) == true ||
           getTag(R.id.sentry_privacy) == "unmask"
       ) {
+        options.trackCustomMasking()
         return false
       }
 
@@ -296,6 +329,7 @@ internal sealed class ViewHierarchyNode(
         (tag as? String)?.lowercase()?.contains(SENTRY_MASK_TAG) == true ||
           getTag(R.id.sentry_privacy) == "mask"
       ) {
+        options.trackCustomMasking()
         return true
       }
 
@@ -307,28 +341,33 @@ internal sealed class ViewHierarchyNode(
         return false
       }
 
-      if (this.javaClass.isAssignableFrom(options.sessionReplay.unmaskViewClasses)) {
+      if (this.javaClass.isAssignableFrom(options.unmaskViewClasses)) {
         return false
       }
 
-      return this.javaClass.isAssignableFrom(options.sessionReplay.maskViewClasses)
+      return this.javaClass.isAssignableFrom(options.maskViewClasses)
     }
 
-    private fun ViewParent.isUnmaskContainer(options: SentryOptions): Boolean {
-      val unmaskContainer = options.sessionReplay.unmaskViewContainerClass ?: return false
+    private fun ViewParent.isUnmaskContainer(options: SentryMaskingOptions): Boolean {
+      val unmaskContainer = options.unmaskViewContainerClass ?: return false
       return this.javaClass.name == unmaskContainer
     }
 
-    private fun View.isMaskContainer(options: SentryOptions): Boolean {
-      val maskContainer = options.sessionReplay.maskViewContainerClass ?: return false
+    private fun View.isMaskContainer(options: SentryMaskingOptions): Boolean {
+      val maskContainer = options.maskViewContainerClass ?: return false
       return this.javaClass.name == maskContainer
     }
 
+    /**
+     * Creates a ViewHierarchyNode from a View using SentryMaskingOptions directly. This allows for
+     * reuse with both session replay and screenshot masking.
+     */
+    @JvmStatic
     fun fromView(
       view: View,
       parent: ViewHierarchyNode?,
       distance: Int,
-      options: SentryOptions,
+      options: SentryMaskingOptions,
     ): ViewHierarchyNode {
       val (isVisible, visibleRect) = view.isVisibleToUser()
       val shouldMask = isVisible && view.shouldMask(options)
@@ -367,6 +406,24 @@ internal sealed class ViewHierarchyNode(
             isVisible = isVisible,
             isImportantForContentCapture = true,
             shouldMask = shouldMask && view.drawable?.isMaskable() == true,
+            visibleRect = visibleRect,
+          )
+        }
+
+        is SurfaceView -> {
+          parent?.setImportantForCaptureToAncestors(true)
+          return SurfaceViewHierarchyNode(
+            surfaceViewRef = WeakReference(view),
+            x = view.x,
+            y = view.y,
+            width = view.width,
+            height = view.height,
+            elevation = (parent?.elevation ?: 0f) + view.elevation,
+            distance = distance,
+            parent = parent,
+            shouldMask = shouldMask,
+            isImportantForContentCapture = true,
+            isVisible = isVisible,
             visibleRect = visibleRect,
           )
         }

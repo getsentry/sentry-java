@@ -157,8 +157,7 @@ internal fun SentryEnvelope.describeForTest(): String {
         val deserialized =
           JsonSerializer(SentryOptions())
             .deserialize(item.data.inputStream().reader(), SentryEvent::class.java)!!
-        descr +=
-          "Event (${deserialized.eventId}) - message: ${deserialized.message!!.formatted} -- "
+        descr += "Event (${deserialized.eventId}) - message: ${deserialized.message?.formatted} -- "
       }
       SentryItemType.Transaction -> {
         val deserialized =

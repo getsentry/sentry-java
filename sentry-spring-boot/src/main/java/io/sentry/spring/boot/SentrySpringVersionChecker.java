@@ -14,7 +14,8 @@ final class SentrySpringVersionChecker
   @Override
   public void onApplicationEvent(ApplicationContextInitializedEvent event) {
 
-    if (!SpringBootVersion.getVersion().startsWith("2")) {
+    String springBootVersion = SpringBootVersion.getVersion();
+    if (springBootVersion != null && !springBootVersion.startsWith("2")) {
       logger.warn("############################### WARNING ###############################");
       logger.warn("##                                                                   ##");
       logger.warn("##            !Incompatible Spring Boot Version detected!            ##");

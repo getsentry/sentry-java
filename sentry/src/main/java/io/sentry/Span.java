@@ -458,4 +458,9 @@ public final class Span implements ISpan {
   public @NotNull ISentryLifecycleToken makeCurrent() {
     return NoOpScopesLifecycleToken.getInstance();
   }
+
+  @Override
+  public void addFeatureFlag(final @Nullable String flag, final @Nullable Boolean result) {
+    context.addFeatureFlag(flag, result);
+  }
 }

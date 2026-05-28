@@ -5,6 +5,7 @@ public enum DiscardReason {
   CACHE_OVERFLOW("cache_overflow"),
   RATELIMIT_BACKOFF("ratelimit_backoff"),
   NETWORK_ERROR("network_error"),
+  SEND_ERROR("send_error"),
   SAMPLE_RATE("sample_rate"),
   BEFORE_SEND("before_send"),
   EVENT_PROCESSOR("event_processor"), // also for ignored exceptions

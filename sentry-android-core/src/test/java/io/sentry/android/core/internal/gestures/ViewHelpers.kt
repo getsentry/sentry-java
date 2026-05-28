@@ -22,7 +22,7 @@ internal inline fun <reified T : View> Window.mockDecorView(
   finalize: (T) -> Unit = {},
 ): T {
   val view = mockView(id, event, touchWithinBounds, clickable, visible, context, finalize)
-  whenever(decorView).doReturn(view)
+  whenever(peekDecorView()).doReturn(view)
   return view
 }
 

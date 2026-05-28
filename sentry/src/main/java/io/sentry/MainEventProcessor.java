@@ -8,7 +8,6 @@ import io.sentry.protocol.SentryException;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
 import io.sentry.util.HintUtils;
-import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -29,24 +28,13 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
   private volatile @Nullable HostnameCache hostnameCache = null;
 
   public MainEventProcessor(final @NotNull SentryOptions options) {
-    this.options = Objects.requireNonNull(options, "The SentryOptions is required.");
+    this.options = options;
 
     final SentryStackTraceFactory sentryStackTraceFactory =
         new SentryStackTraceFactory(this.options);
 
     sentryExceptionFactory = new SentryExceptionFactory(sentryStackTraceFactory);
-    sentryThreadFactory = new SentryThreadFactory(sentryStackTraceFactory, this.options);
-  }
-
-  MainEventProcessor(
-      final @NotNull SentryOptions options,
-      final @NotNull SentryThreadFactory sentryThreadFactory,
-      final @NotNull SentryExceptionFactory sentryExceptionFactory) {
-    this.options = Objects.requireNonNull(options, "The SentryOptions is required.");
-    this.sentryThreadFactory =
-        Objects.requireNonNull(sentryThreadFactory, "The SentryThreadFactory is required.");
-    this.sentryExceptionFactory =
-        Objects.requireNonNull(sentryExceptionFactory, "The SentryExceptionFactory is required.");
+    sentryThreadFactory = new SentryThreadFactory(sentryStackTraceFactory);
   }
 
   @Override
@@ -255,17 +243,20 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
       if (options.isAttachThreads() || HintUtils.hasType(hint, AbnormalExit.class)) {
         final Object sentrySdkHint = HintUtils.getSentrySdkHint(hint);
         boolean ignoreCurrentThread = false;
+        boolean attachStacktrace = options.isAttachStacktrace();
         if (sentrySdkHint instanceof AbnormalExit) {
           ignoreCurrentThread = ((AbnormalExit) sentrySdkHint).ignoreCurrentThread();
+          attachStacktrace = true;
         }
         event.setThreads(
-            sentryThreadFactory.getCurrentThreads(mechanismThreadIds, ignoreCurrentThread));
+            sentryThreadFactory.getCurrentThreads(
+                mechanismThreadIds, ignoreCurrentThread, attachStacktrace));
       } else if (options.isAttachStacktrace()
           && (eventExceptions == null || eventExceptions.isEmpty())
           && !isCachedHint(hint)) {
         // when attachStacktrace is enabled, we attach only the current thread and its stack traces,
         // if there are no exceptions, exceptions have its own stack traces.
-        event.setThreads(sentryThreadFactory.getCurrentThread());
+        event.setThreads(sentryThreadFactory.getCurrentThread(options.isAttachStacktrace()));
       }
     }
   }

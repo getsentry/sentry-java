@@ -5,6 +5,10 @@ on:
     branches:
       - main
   pull_request:
+    paths-ignore:
+      - '*android*/**'
+      - 'sentry-compose/**'
+      - 'sentry-samples/sentry-samples-android/**'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -38,12 +42,12 @@ jobs:
 
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           submodules: 'recursive'
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
         with:
           python-version: '3.10.5'
 
@@ -53,20 +57,28 @@ jobs:
           python3 -m pip install -r requirements.txt
 
       - name: Set up Java
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5
         with:
           distribution: 'temurin'
           java-version: '17'
 
+      # Workaround for https://github.com/gradle/actions/issues/21 to use config cache
+      - name: Cache buildSrc
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+        with:
+          path: buildSrc/build
+          key: build-logic-${{ hashFiles('buildSrc/src/**', 'buildSrc/build.gradle.kts','buildSrc/settings.gradle.kts') }}
+
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a
+        uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
       - name: Update Spring Boot 4.x version
         run: |
-          sed -i 's/^springboot4=.*/springboot4=${{ matrix.springboot-version }}/' gradle/libs.versions.toml
-          echo "Updated Spring Boot 4.x version to ${{ matrix.springboot-version }}"
+          springboot_version="${{ matrix.springboot-version }}"
+          perl -0pi -e 'BEGIN { $v = shift } s/^springboot4[[:space:]]*=[[:space:]]*"\K[^"]*/$v/m or die "::error::springboot4 version entry not found in gradle/libs.versions.toml\n"' "$springboot_version" gradle/libs.versions.toml
+          echo "Updated Spring Boot 4.x version to $springboot_version"
 
       - name: Exclude android modules from build
         run: |
@@ -83,6 +95,7 @@ jobs:
             -e '/.*"sentry-android-integration-tests:sentry-uitest-android",/d' \
             -e '/.*"sentry-android-integration-tests:sentry-uitest-android-critical",/d' \
             -e '/.*"sentry-android-integration-tests:test-app-sentry",/d' \
+            -e '/.*"sentry-android-integration-tests:test-app-size",/d' \
             -e '/.*"sentry-samples:sentry-samples-android",/d' \
             -e '/.*"sentry-android-replay",/d' \
             settings.gradle.kts
@@ -94,6 +107,7 @@ jobs:
             -e '/.*"sentry-uitest-android-benchmark",/d' \
             -e '/.*"sentry-uitest-android-critical",/d' \
             -e '/.*"test-app-sentry",/d' \
+            -e '/.*"test-app-size",/d' \
             -e '/.*"sentry-samples-android",/d' \
             build.gradle.kts
 
@@ -101,34 +115,57 @@ jobs:
         run: |
           ./gradlew assemble --parallel
 
-      - name: Run Spring Boot 4.x system tests
+      - name: Run sentry-samples-spring-boot-4
         run: |
-          # Test standard Spring Boot 4 modules
-          echo "Testing sentry-samples-spring-boot-4 (standard)"
           python3 test/system-test-runner.py test \
             --module "sentry-samples-spring-boot-4" \
             --agent false \
             --auto-init "true" \
             --build "true"
-          
-          echo "Testing sentry-samples-spring-boot-4-webflux (standard)"
+
+      - name: Run sentry-samples-spring-boot-4-webflux
+        run: |
           python3 test/system-test-runner.py test \
             --module "sentry-samples-spring-boot-4-webflux" \
             --agent false \
             --auto-init "true" \
             --build "true"
-          
-          # Test OpenTelemetry modules
-          echo "Testing sentry-samples-spring-boot-4-opentelemetry (with agent)"
+
+      - name: Run sentry-samples-spring-boot-4-opentelemetry agent init true
+        run: |
           python3 test/system-test-runner.py test \
             --module "sentry-samples-spring-boot-4-opentelemetry" \
             --agent true \
             --auto-init "true" \
             --build "true"
 
+      - name: Run sentry-samples-spring-boot-4-opentelemetry agent init false
+        run: |
+          python3 test/system-test-runner.py test \
+            --module "sentry-samples-spring-boot-4-opentelemetry" \
+            --agent true \
+            --auto-init "false" \
+            --build "true"
+
+      - name: Run sentry-samples-spring-boot-4-opentelemetry-noagent
+        run: |
+          python3 test/system-test-runner.py test \
+            --module "sentry-samples-spring-boot-4-opentelemetry-noagent" \
+            --agent false \
+            --auto-init "true" \
+            --build "true"
+
+      - name: Run sentry-samples-spring-7
+        run: |
+          python3 test/system-test-runner.py test \
+            --module "sentry-samples-spring-7" \
+            --agent false \
+            --auto-init "true" \
+            --build "true"
+
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: test-results-springboot-4-${{ matrix.springboot-version }}
           path: |
@@ -138,7 +175,7 @@ jobs:
             spring-server.txt
 
       - name: Test Report
-        uses: phoenix-actions/test-reporting@f957cd93fc2d848d556fa0d03c57bc79127b6b5e # pin@v15
+        uses: phoenix-actions/test-reporting@7317eea6e13c47348dd0bb318669485157c518d6 # pin@v16
         if: always()
         with:
           name: JUnit Spring Boot 4.x ${{ matrix.springboot-version }}
@@ -150,7 +187,7 @@ jobs:
 
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
-        uses: codecov/test-results-action@47f89e9acb64b76debcd5ea40642d25a4adced9f
+        uses: codecov/test-results-action@0fa95f0e1eeaafde2c782583b36b28ad0d8c77d3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           file: '**/build/test-results/**/*.xml'

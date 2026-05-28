@@ -7,6 +7,18 @@ pluginManagement {
     }
 }
 
+plugins {
+    id("com.gradle.develocity") version "4.4.2"
+    id("com.gradle.common-custom-user-data-gradle-plugin") version "2.6.0"
+}
+
+develocity {
+    buildScan {
+        termsOfUseUrl.set("https://gradle.com/help/legal-terms-of-use")
+        termsOfUseAgree.set("yes")
+    }
+}
+
 dependencyResolutionManagement {
     repositories {
         google()
@@ -20,6 +32,7 @@ rootProject.buildFileName = "build.gradle.kts"
 includeBuild("build-logic")
 include(
     "sentry",
+    "sentry-spotlight",
     "sentry-kotlin-extensions",
     "sentry-android-distribution",
     "sentry-android-core",
@@ -57,18 +70,27 @@ include(
     "sentry-graphql-22",
     "sentry-graphql-core",
     "sentry-jdbc",
+    "sentry-kafka",
     "sentry-opentelemetry:sentry-opentelemetry-bootstrap",
     "sentry-opentelemetry:sentry-opentelemetry-core",
     "sentry-opentelemetry:sentry-opentelemetry-agentcustomization",
     "sentry-opentelemetry:sentry-opentelemetry-agent",
     "sentry-opentelemetry:sentry-opentelemetry-agentless",
     "sentry-opentelemetry:sentry-opentelemetry-agentless-spring",
+    "sentry-opentelemetry:sentry-opentelemetry-otlp",
+    "sentry-opentelemetry:sentry-opentelemetry-otlp-spring",
+    "sentry-jcache",
     "sentry-quartz",
     "sentry-okhttp",
+    "sentry-openfeature",
+    "sentry-launchdarkly-server",
+    "sentry-launchdarkly-android",
     "sentry-reactor",
+    "sentry-async-profiler",
     "sentry-ktor-client",
     "sentry-samples:sentry-samples-android",
     "sentry-samples:sentry-samples-console",
+    "sentry-samples:sentry-samples-console-otlp",
     "sentry-samples:sentry-samples-console-opentelemetry-noagent",
     "sentry-samples:sentry-samples-jul",
     "sentry-samples:sentry-samples-ktor-client",
@@ -89,6 +111,7 @@ include(
     "sentry-samples:sentry-samples-spring-boot-4",
     "sentry-samples:sentry-samples-spring-boot-4-opentelemetry",
     "sentry-samples:sentry-samples-spring-boot-4-opentelemetry-noagent",
+    "sentry-samples:sentry-samples-spring-boot-4-otlp",
     "sentry-samples:sentry-samples-spring-boot-4-webflux",
     "sentry-samples:sentry-samples-netflix-dgs",
     "sentry-android-integration-tests:sentry-uitest-android-critical",
@@ -96,5 +119,6 @@ include(
     "sentry-android-integration-tests:sentry-uitest-android",
     "sentry-android-integration-tests:test-app-plain",
     "sentry-android-integration-tests:test-app-sentry",
+    "sentry-android-integration-tests:test-app-size",
     "sentry-samples:sentry-samples-openfeign"
 )

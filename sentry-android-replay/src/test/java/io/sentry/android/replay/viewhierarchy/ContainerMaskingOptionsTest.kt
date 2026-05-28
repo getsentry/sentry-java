@@ -43,7 +43,12 @@ class ContainerMaskingOptionsTest {
       }
 
     val textNode =
-      ViewHierarchyNode.fromView(MaskingOptionsActivity.textViewInUnmask!!, null, 0, options)
+      ViewHierarchyNode.fromView(
+        MaskingOptionsActivity.textViewInUnmask!!,
+        null,
+        0,
+        options.sessionReplay,
+      )
     assertFalse(textNode.shouldMask)
   }
 
@@ -58,7 +63,12 @@ class ContainerMaskingOptionsTest {
       }
 
     val imageNode =
-      ViewHierarchyNode.fromView(MaskingOptionsActivity.imageViewInUnmask!!, null, 0, options)
+      ViewHierarchyNode.fromView(
+        MaskingOptionsActivity.imageViewInUnmask!!,
+        null,
+        0,
+        options.sessionReplay,
+      )
     assertFalse(imageNode.shouldMask)
   }
 
@@ -70,7 +80,12 @@ class ContainerMaskingOptionsTest {
       SentryOptions().apply { sessionReplay.setMaskViewContainerClass(CustomMask::class.java.name) }
 
     val maskContainer =
-      ViewHierarchyNode.fromView(MaskingOptionsActivity.maskWithChildren!!, null, 0, options)
+      ViewHierarchyNode.fromView(
+        MaskingOptionsActivity.maskWithChildren!!,
+        null,
+        0,
+        options.sessionReplay,
+      )
 
     assertTrue(maskContainer.shouldMask)
   }
@@ -86,20 +101,25 @@ class ContainerMaskingOptionsTest {
       }
 
     val maskContainer =
-      ViewHierarchyNode.fromView(MaskingOptionsActivity.unmaskWithChildren!!, null, 0, options)
+      ViewHierarchyNode.fromView(
+        MaskingOptionsActivity.unmaskWithChildren!!,
+        null,
+        0,
+        options.sessionReplay,
+      )
     val firstChild =
       ViewHierarchyNode.fromView(
         MaskingOptionsActivity.customViewInUnmask!!,
         maskContainer,
         0,
-        options,
+        options.sessionReplay,
       )
     val secondLevelChild =
       ViewHierarchyNode.fromView(
         MaskingOptionsActivity.secondLayerChildInUnmask!!,
         firstChild,
         0,
-        options,
+        options.sessionReplay,
       )
 
     assertFalse(maskContainer.shouldMask)
@@ -118,13 +138,18 @@ class ContainerMaskingOptionsTest {
       }
 
     val unmaskNode =
-      ViewHierarchyNode.fromView(MaskingOptionsActivity.unmaskWithMaskChild!!, null, 0, options)
+      ViewHierarchyNode.fromView(
+        MaskingOptionsActivity.unmaskWithMaskChild!!,
+        null,
+        0,
+        options.sessionReplay,
+      )
     val maskNode =
       ViewHierarchyNode.fromView(
         MaskingOptionsActivity.maskAsDirectChildOfUnmask!!,
         unmaskNode,
         0,
-        options,
+        options.sessionReplay,
       )
 
     assertFalse(unmaskNode.shouldMask)

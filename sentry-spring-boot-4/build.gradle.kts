@@ -36,6 +36,7 @@ dependencies {
   compileOnly(projects.sentryGraphql)
   compileOnly(projects.sentryGraphql22)
   compileOnly(projects.sentryQuartz)
+  compileOnly(libs.spring.kafka4)
   compileOnly(Config.Libs.springWeb)
   compileOnly(Config.Libs.springWebflux)
   compileOnly(libs.context.propagation)
@@ -68,6 +69,7 @@ dependencies {
   testImplementation(projects.sentryApacheHttpClient5)
   testImplementation(projects.sentryGraphql)
   testImplementation(projects.sentryGraphql22)
+  testImplementation(projects.sentryKafka)
   testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryCore)
   testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryAgent)
   testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryAgentcustomization)
@@ -85,6 +87,7 @@ dependencies {
   testImplementation(libs.okhttp.mockwebserver)
   testImplementation(libs.otel)
   testImplementation(libs.otel.extension.autoconfigure.spi)
+  testImplementation(projects.sentryAsyncProfiler)
   /**
    * Adding a version of opentelemetry-spring-boot-starter that doesn't support Spring Boot 4 causes
    * java.lang.IllegalArgumentException: Could not find class
@@ -95,6 +98,7 @@ dependencies {
   testImplementation(libs.springboot4.starter)
   testImplementation(libs.springboot4.starter.aspectj)
   testImplementation(libs.springboot4.starter.graphql)
+  testImplementation(libs.spring.kafka4)
   testImplementation(libs.springboot4.starter.quartz)
   testImplementation(libs.springboot4.starter.security)
   testImplementation(libs.springboot4.starter.test)
@@ -102,6 +106,7 @@ dependencies {
   testImplementation(libs.springboot4.starter.webflux)
   testImplementation(libs.springboot4.starter.restclient)
   testImplementation(libs.springboot4.starter.webclient)
+  testImplementation(libs.springboot4.resttestclient)
 }
 
 configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
