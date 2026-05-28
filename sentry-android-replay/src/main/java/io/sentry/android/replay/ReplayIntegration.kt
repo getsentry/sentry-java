@@ -161,6 +161,7 @@ public class ReplayIntegration(
     lifecycle.currentState >= STARTED && lifecycle.currentState < STOPPED
 
   override fun start() {
+    val isFullSession: Boolean
     lifecycleLock.acquire().use {
       if (!isEnabled.get()) {
         return
@@ -174,7 +175,7 @@ public class ReplayIntegration(
         return
       }
 
-      val isFullSession = random.sample(options.sessionReplay.sessionSampleRate)
+      isFullSession = random.sample(options.sessionReplay.sessionSampleRate)
       if (!isFullSession && !options.sessionReplay.isSessionReplayForErrorsEnabled) {
         options.logger.log(
           INFO,
@@ -184,30 +185,39 @@ public class ReplayIntegration(
       }
 
       lifecycle.currentState = STARTED
-      captureStrategy =
-        replayCaptureStrategyProvider?.invoke(isFullSession)
-          ?: if (isFullSession) {
-            SessionCaptureStrategy(
-              options,
-              scopes,
-              dateProvider,
-              replayExecutor,
-              replayCacheProvider,
-            )
-          } else {
-            BufferCaptureStrategy(
-              options,
-              scopes,
-              dateProvider,
-              random,
-              replayExecutor,
-              replayCacheProvider,
-            )
-          }
-      recorder?.start()
-      captureStrategy?.start()
+    }
 
-      registerRootViewListeners()
+    // Defer the expensive work (strategy creation, recorder start, listener registration)
+    // off the calling thread to avoid blocking SentryAndroid.init() on the main thread.
+    options.executorService.submitSafely(options, "ReplayIntegration.start") {
+      lifecycleLock.acquire().use {
+        captureStrategy =
+          replayCaptureStrategyProvider?.invoke(isFullSession)
+            ?: if (isFullSession) {
+              SessionCaptureStrategy(
+                options,
+                scopes,
+                dateProvider,
+                replayExecutor,
+                replayCacheProvider,
+              )
+            } else {
+              BufferCaptureStrategy(
+                options,
+                scopes,
+                dateProvider,
+                random,
+                replayExecutor,
+                replayCacheProvider,
+              )
+            }
+        recorder?.start()
+        captureStrategy?.start()
+      }
+
+      // Post to main thread since registerRootViewListeners triggers View operations
+      // (e.g. addOnLayoutChangeListener) via the OnRootViewsChangedListener callback
+      mainLooperHandler.post { registerRootViewListeners() }
     }
   }
 

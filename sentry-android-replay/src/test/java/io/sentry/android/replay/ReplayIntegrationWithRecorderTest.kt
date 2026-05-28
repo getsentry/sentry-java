@@ -18,6 +18,7 @@ import io.sentry.android.replay.ReplayIntegrationWithRecorderTest.LifecycleState
 import io.sentry.android.replay.util.ReplayShadowMediaCodec
 import io.sentry.rrweb.RRWebMetaEvent
 import io.sentry.rrweb.RRWebVideoEvent
+import io.sentry.test.ImmediateExecutorService
 import io.sentry.transport.CurrentDateProvider
 import io.sentry.transport.ICurrentDateProvider
 import io.sentry.util.thread.NoOpThreadChecker
@@ -44,7 +45,11 @@ class ReplayIntegrationWithRecorderTest {
   @get:Rule val tmpDir = TemporaryFolder()
 
   internal class Fixture {
-    val options = SentryOptions().apply { threadChecker = NoOpThreadChecker.getInstance() }
+    val options =
+      SentryOptions().apply {
+        threadChecker = NoOpThreadChecker.getInstance()
+        executorService = ImmediateExecutorService()
+      }
     val scopes = mock<IScopes>()
 
     fun getSut(

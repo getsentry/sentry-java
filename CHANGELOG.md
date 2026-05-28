@@ -24,6 +24,10 @@
   ```
 - Parse ART memory and garbage collector info from ANR tombstones into ART context ([#5428](https://github.com/getsentry/sentry-java/pull/5428))
 
+### Improvements
+
+- Improve SDK init performance by deferring `ReplayIntegration.start()` off the main thread ([#XXXX](https://github.com/getsentry/sentry-java/pull/XXXX))
+
 ## 8.42.0
 
 ### Features

@@ -21,6 +21,7 @@ import io.sentry.SentryReplayEvent.ReplayType
 import io.sentry.android.replay.util.ReplayShadowMediaCodec
 import io.sentry.rrweb.RRWebMetaEvent
 import io.sentry.rrweb.RRWebVideoEvent
+import io.sentry.test.ImmediateExecutorService
 import io.sentry.transport.CurrentDateProvider
 import io.sentry.transport.ICurrentDateProvider
 import java.time.Duration
@@ -59,7 +60,7 @@ class ReplaySmokeTest {
   @get:Rule val tmpDir = TemporaryFolder()
 
   internal class Fixture {
-    val options = SentryOptions()
+    val options = SentryOptions().apply { executorService = ImmediateExecutorService() }
     val scope = Scope(options)
     val scopes =
       mock<IScopes> {
