@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.config.KotlinCompilerVersion
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -94,7 +95,7 @@ configure<SourceSetContainer> {
 tasks.withType<KotlinCompile>().configureEach {
   kotlin {
     compilerOptions.freeCompilerArgs = listOf("-Xjsr305=strict")
-    compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11
+    compilerOptions.jvmTarget = JvmTarget.JVM_11
   }
 }
 
