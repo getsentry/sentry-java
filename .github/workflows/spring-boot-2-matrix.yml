@@ -67,7 +67,7 @@ jobs:
             echo "ORG_GRADLE_PROJECT_excludeGraphql=true" >> "$GITHUB_ENV"
             echo "ORG_GRADLE_PROJECT_excludeKafka=true" >> "$GITHUB_ENV"
           fi
-          sed -i 's/^\(springboot2[[:space:]]*=[[:space:]]*\)".*"/\1"'"$springboot_version"'"/' gradle/libs.versions.toml
+          perl -0pi -e 'BEGIN { $v = shift } s/^springboot2[[:space:]]*=[[:space:]]*"\K[^"]*/$v/m or die "::error::springboot2 version entry not found in gradle/libs.versions.toml\n"' "$springboot_version" gradle/libs.versions.toml
           echo "Updated Spring Boot 2.x version to $springboot_version"
 
       - name: Exclude android modules from build
