@@ -26,7 +26,7 @@
 
 ### Improvements
 
-- Improve SDK init performance by deferring `ReplayIntegration.start()` off the main thread ([#XXXX](https://github.com/getsentry/sentry-java/pull/XXXX))
+- Improve SDK init performance by deferring `ReplayIntegration.start()` off the main thread ([#5474](https://github.com/getsentry/sentry-java/pull/5474))
 
 ## 8.42.0
 
