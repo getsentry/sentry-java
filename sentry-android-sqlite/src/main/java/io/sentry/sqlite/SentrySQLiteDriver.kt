@@ -22,9 +22,9 @@ import io.sentry.SentryLevel
  * ```
  *
  * **Warning:** Do not use [SentrySQLiteDriver] together with
- * [io.sentry.android.sqlite.SentrySupportSQLiteOpenHelper] on the same database file. Both wrappers
- * instrument at different layers, so combining them will produce duplicate spans for every SQL
- * statement.
+ * [SentrySupportSQLiteOpenHelper][io.sentry.android.sqlite.SentrySupportSQLiteOpenHelper] on the
+ * same database file. Both wrappers instrument at different layers, so combining them will produce
+ * duplicate spans for every SQL statement.
  *
  * @param delegate The [SQLiteDriver] instance to delegate calls to.
  */

@@ -20,7 +20,7 @@ internal class SentrySQLiteStatement(
   private val delegate: SQLiteStatement,
   private val spanRecorder: SQLiteSpanRecorder,
   private val sql: String,
-  private val nanoTimeProvider: () -> Long = System::nanoTime,
+  private val nanoTimeProvider: () -> Long = { System.nanoTime() },
 ) : SQLiteStatement by delegate {
 
   private var firstStepTimestamp: SentryDate? = null
