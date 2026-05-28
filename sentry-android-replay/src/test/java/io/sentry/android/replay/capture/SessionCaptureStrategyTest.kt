@@ -529,7 +529,9 @@ class SessionCaptureStrategyTest {
 
     verify(fixture.scopes)
       .captureReplay(
-        argThat { event -> event is SentryReplayEvent && event.segmentId == 1 && event.traceIds.isNullOrEmpty() },
+        argThat { event ->
+          event is SentryReplayEvent && event.segmentId == 1 && event.traceIds.isNullOrEmpty()
+        },
         any(),
       )
   }

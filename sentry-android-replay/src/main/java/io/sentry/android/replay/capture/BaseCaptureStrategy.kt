@@ -140,11 +140,12 @@ internal abstract class BaseCaptureStrategy(
     breadcrumbs: List<Breadcrumb>? = null,
     events: Deque<RRWebEvent> = this.currentEvents,
   ): ReplaySegment {
-    val traceIds = synchronized(traceIdsLock) {
-      val ids = currentTraceIds.toList()
-      currentTraceIds.clear()
-      ids
-    }
+    val traceIds =
+      synchronized(traceIdsLock) {
+        val ids = currentTraceIds.toList()
+        currentTraceIds.clear()
+        ids
+      }
     return createSegment(
       scopes,
       options,
