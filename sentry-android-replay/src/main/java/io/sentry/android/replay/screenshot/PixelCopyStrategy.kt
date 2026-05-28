@@ -40,6 +40,10 @@ internal class PixelCopyStrategy(
   private val markContentChanged: () -> Unit = {},
 ) : ScreenshotStrategy {
 
+  private companion object {
+    const val MAX_UNSTABLE_CAPTURES_TO_SKIP = 1
+  }
+
   private val executor = executorProvider.getExecutor()
   private val mainLooperHandler = executorProvider.getMainLooperHandler()
   private val screenshot =
@@ -49,6 +53,7 @@ internal class PixelCopyStrategy(
   private val lastCaptureSuccessful = AtomicBoolean(false)
   private val maskRenderer = MaskRenderer()
   private val contentChanged = AtomicBoolean(false)
+  private val unstableCaptures = AtomicInteger(0)
   private val isClosed = AtomicBoolean(false)
   private val dstOverPaint by
     lazy(NONE) { Paint().apply { xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_OVER) } }
@@ -86,15 +91,13 @@ internal class PixelCopyStrategy(
 
           if (copyResult != PixelCopy.SUCCESS) {
             options.logger.log(INFO, "Failed to capture replay recording: %d", copyResult)
+            unstableCaptures.set(0)
             lastCaptureSuccessful.set(false)
             return@request
           }
 
-          // TODO: handle animations with heuristics (e.g. if we fall under this condition 2 times
-          // in a row, we should capture)
-          if (contentChanged.get()) {
-            options.logger.log(INFO, "Failed to determine view hierarchy, not capturing")
-            lastCaptureSuccessful.set(false)
+          val changedDuringCapture = contentChanged.get()
+          if (changedDuringCapture && shouldSkipUnstableCapture()) {
             return@request
           }
 
@@ -111,25 +114,48 @@ internal class PixelCopyStrategy(
           if (surfaceViewNodes.isNullOrEmpty()) {
             executor.submit(
               ReplayRunnable("screenshot_recorder.mask") {
-                applyMaskingAndNotify(root, viewHierarchy)
+                applyMaskingAndNotify(
+                  root,
+                  viewHierarchy,
+                  resetUnstableCaptures = !changedDuringCapture,
+                )
               }
             )
           } else {
             // Re-arm the recorder's contentChanged gate; SurfaceView redraws don't trigger
             // ViewTreeObserver.OnDrawListener, so we'd otherwise emit the same frame forever.
             markContentChanged()
-            captureSurfaceViews(root, surfaceViewNodes, viewHierarchy)
+            captureSurfaceViews(
+              root,
+              surfaceViewNodes,
+              viewHierarchy,
+              resetUnstableCaptures = !changedDuringCapture,
+            )
           }
         },
         mainLooperHandler.handler,
       )
     } catch (e: Throwable) {
       options.logger.log(WARNING, "Failed to capture replay recording", e)
+      unstableCaptures.set(0)
       lastCaptureSuccessful.set(false)
     }
   }
 
-  private fun applyMaskingAndNotify(root: View, viewHierarchy: ViewHierarchyNode) {
+  private fun shouldSkipUnstableCapture(): Boolean {
+    if (unstableCaptures.incrementAndGet() <= MAX_UNSTABLE_CAPTURES_TO_SKIP) {
+      options.logger.log(INFO, "Failed to determine view hierarchy, not capturing")
+      lastCaptureSuccessful.set(false)
+      return true
+    }
+    return false
+  }
+
+  private fun applyMaskingAndNotify(
+    root: View,
+    viewHierarchy: ViewHierarchyNode,
+    resetUnstableCaptures: Boolean,
+  ) {
     if (isClosed.get() || screenshot.isRecycled) {
       options.logger.log(DEBUG, "PixelCopyStrategy is closed, skipping masking")
       return
@@ -149,6 +175,9 @@ internal class PixelCopyStrategy(
     screenshotRecorderCallback?.onScreenshotRecorded(screenshot)
     lastCaptureSuccessful.set(true)
     contentChanged.set(false)
+    if (resetUnstableCaptures) {
+      unstableCaptures.set(0)
+    }
   }
 
   @SuppressLint("NewApi")
@@ -156,6 +185,7 @@ internal class PixelCopyStrategy(
     root: View,
     surfaceViewNodes: List<ViewHierarchyNode.SurfaceViewHierarchyNode>,
     viewHierarchy: ViewHierarchyNode,
+    resetUnstableCaptures: Boolean,
   ) {
     // Snapshot the window location into locals so the executor-side compositor reads stable
     // values even if a new capture cycle starts and overwrites the field.
@@ -168,7 +198,14 @@ internal class PixelCopyStrategy(
 
     fun onCaptureComplete() {
       if (remaining.decrementAndGet() == 0) {
-        compositeSurfaceViewsAndMask(root, captures, viewHierarchy, windowX, windowY)
+        compositeSurfaceViewsAndMask(
+          root,
+          captures,
+          viewHierarchy,
+          windowX,
+          windowY,
+          resetUnstableCaptures,
+        )
       }
     }
 
@@ -229,6 +266,7 @@ internal class PixelCopyStrategy(
     viewHierarchy: ViewHierarchyNode,
     windowX: Int,
     windowY: Int,
+    resetUnstableCaptures: Boolean,
   ) {
     executor.submit(
       ReplayRunnable("screenshot_recorder.composite") {
@@ -258,7 +296,7 @@ internal class PixelCopyStrategy(
           capture.bitmap.recycle()
         }
 
-        applyMaskingAndNotify(root, viewHierarchy)
+        applyMaskingAndNotify(root, viewHierarchy, resetUnstableCaptures)
       }
     )
   }
@@ -287,6 +325,7 @@ internal class PixelCopyStrategy(
 
   override fun close() {
     isClosed.set(true)
+    unstableCaptures.set(0)
     executor.submit(
       ReplayRunnable(
         "PixelCopyStrategy.close",

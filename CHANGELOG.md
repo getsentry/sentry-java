@@ -30,6 +30,10 @@
   ```
 - Parse ART memory and garbage collector info from ANR tombstones into ART context ([#5428](https://github.com/getsentry/sentry-java/pull/5428))
 
+### Fixes
+
+- Session Replay: Fix screenshot capture freezing on screens with continuous animations ([#5404](https://github.com/getsentry/sentry-java/issues/5404))
+
 ## 8.42.0
 
 ### Features
