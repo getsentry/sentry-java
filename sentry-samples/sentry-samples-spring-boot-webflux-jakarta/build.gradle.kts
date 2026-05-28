@@ -56,8 +56,6 @@ dependencies {
   testImplementation("ch.qos.logback:logback-core:1.5.16")
 }
 
-configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
-
 tasks.withType<KotlinCompile>().configureEach {
   kotlin {
     compilerOptions.freeCompilerArgs = listOf("-Xjsr305=strict")

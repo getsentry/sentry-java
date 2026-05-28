@@ -131,7 +131,6 @@ configure<SourceSetContainer> {
       resources.exclude("application-kafka.properties")
     }
   }
-  test { java.srcDir("src/test/java") }
 }
 
 tasks.register<Test>("systemTest").configure {

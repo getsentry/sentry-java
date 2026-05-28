@@ -127,7 +127,6 @@ configure<SourceSetContainer> {
       resources.exclude("application-kafka.properties")
     }
   }
-  test { java.srcDir("src/test/java") }
 }
 
 tasks.register<JavaExec>("bootRunWithAgent").configure {

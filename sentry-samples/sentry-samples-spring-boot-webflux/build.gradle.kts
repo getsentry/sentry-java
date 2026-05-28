@@ -89,7 +89,6 @@ configure<SourceSetContainer> {
       resources.exclude("graphql/**")
     }
   }
-  test { java.srcDir("src/test/java") }
 }
 
 tasks.withType<KotlinCompile>().configureEach {

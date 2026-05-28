@@ -84,8 +84,6 @@ dependencies {
   testImplementation(projects.sentryAsyncProfiler)
 }
 
-configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
-
 jacoco { toolVersion = libs.versions.jacoco.get() }
 
 tasks.jacocoTestReport {
