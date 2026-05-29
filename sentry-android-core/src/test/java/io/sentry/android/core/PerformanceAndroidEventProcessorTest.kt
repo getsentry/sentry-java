@@ -13,7 +13,9 @@ import io.sentry.SpanStatus
 import io.sentry.TracesSamplingDecision
 import io.sentry.TransactionContext
 import io.sentry.android.core.ActivityLifecycleIntegration.APP_START_COLD
+import io.sentry.android.core.ActivityLifecycleIntegration.APP_START_SCREEN_DATA
 import io.sentry.android.core.ActivityLifecycleIntegration.APP_START_WARM
+import io.sentry.android.core.ActivityLifecycleIntegration.STANDALONE_APP_START_OP
 import io.sentry.android.core.ActivityLifecycleIntegration.UI_LOAD_OP
 import io.sentry.android.core.performance.ActivityLifecycleTimeSpan
 import io.sentry.android.core.performance.AppStartMetrics
@@ -96,6 +98,103 @@ class PerformanceAndroidEventProcessorTest {
   }
 
   @Test
+  fun `add cold start measurement for standalone app start transaction launched from background`() {
+    val sut = fixture.getSut()
+
+    var tr = getTransaction(AppStartType.COLD)
+    setAppStart(fixture.options)
+    AppStartMetrics.getInstance().isAppLaunchedInForeground = false
+
+    tr = sut.process(tr, Hint())
+
+    assertTrue(tr.measurements.containsKey(MeasurementValue.KEY_APP_START_COLD))
+  }
+
+  @Test
+  fun `standalone app start with instrumented application onCreate attaches process and application spans`() {
+    val sut = fixture.getSut(enablePerformanceV2 = true)
+    setStandaloneColdAppStartMetrics(withApplicationOnCreate = true)
+
+    var tr = getTransaction(AppStartType.COLD)
+    val rootSpanId = tr.contexts.trace!!.spanId
+
+    tr = sut.process(tr, Hint())
+
+    assertTrue(tr.measurements.containsKey(MeasurementValue.KEY_APP_START_COLD))
+    assertEquals(listOf("process.load", "application.load"), tr.spans.map { it.op })
+    assertTrue(tr.spans.all { it.parentSpanId == rootSpanId })
+  }
+
+  @Test
+  fun `standalone app start without instrumented application onCreate attaches only process span`() {
+    val sut = fixture.getSut(enablePerformanceV2 = true)
+    setStandaloneColdAppStartMetrics(withApplicationOnCreate = false)
+
+    var tr = getTransaction(AppStartType.COLD)
+    val rootSpanId = tr.contexts.trace!!.spanId
+
+    tr = sut.process(tr, Hint())
+
+    assertTrue(tr.measurements.containsKey(MeasurementValue.KEY_APP_START_COLD))
+    assertEquals(listOf("process.load"), tr.spans.map { it.op })
+    assertEquals(rootSpanId, tr.spans.single().parentSpanId)
+  }
+
+  @Test
+  fun `standalone app start uses the transaction root span id as parent`() {
+    val sut = fixture.getSut(enablePerformanceV2 = true)
+    setStandaloneColdAppStartMetrics()
+
+    var tr = getTransaction(AppStartType.COLD)
+    val rootSpanId = tr.contexts.trace!!.spanId
+
+    tr = sut.process(tr, Hint())
+
+    val processLoadSpan = tr.spans.first { it.op == "process.load" }
+    assertEquals(rootSpanId, processLoadSpan.parentSpanId)
+  }
+
+  @Test
+  fun `standalone app start spans do not carry TTID or TTFD contributing flags`() {
+    val sut = fixture.getSut(enablePerformanceV2 = true)
+    setStandaloneColdAppStartMetrics(withApplicationOnCreate = true)
+
+    var tr = getTransaction(AppStartType.COLD)
+
+    tr = sut.process(tr, Hint())
+
+    assertTrue(tr.spans.isNotEmpty())
+    for (span in tr.spans) {
+      assertNull(span.data?.get(SpanDataConvention.CONTRIBUTES_TTID))
+      assertNull(span.data?.get(SpanDataConvention.CONTRIBUTES_TTFD))
+    }
+  }
+
+  @Test
+  fun `foreground standalone app start measurement uses foreground fallback time span`() {
+    val sut = fixture.getSut(enablePerformanceV2 = false)
+    AppStartMetrics.getInstance().apply {
+      appStartType = AppStartType.COLD
+      isAppLaunchedInForeground = true
+      appStartTimeSpan.apply {
+        setStartedAt(1)
+        setStoppedAt(101)
+      }
+      sdkInitTimeSpan.apply {
+        setStartedAt(10)
+        setStoppedAt(30)
+      }
+    }
+
+    var tr = getTransaction(AppStartType.COLD)
+    tr.contexts.trace!!.setData(APP_START_SCREEN_DATA, "MainActivity")
+
+    tr = sut.process(tr, Hint())
+
+    assertEquals(20f, tr.measurements[MeasurementValue.KEY_APP_START_COLD]?.value)
+  }
+
+  @Test
   fun `add cold start measurement for performance-v2`() {
     val sut = fixture.getSut(enablePerformanceV2 = true)
 
@@ -146,6 +245,23 @@ class PerformanceAndroidEventProcessorTest {
 
     assertTrue(tr1.measurements.containsKey(MeasurementValue.KEY_APP_START_WARM))
     assertTrue(tr2.measurements.isEmpty())
+  }
+
+  @Test
+  fun `do not add standalone app start metric twice`() {
+    val sut = fixture.getSut()
+
+    setStandaloneColdAppStartMetrics()
+
+    var tr1 = getTransaction(AppStartType.COLD)
+    tr1 = sut.process(tr1, Hint())
+
+    var tr2 = getTransaction(AppStartType.COLD)
+    tr2 = sut.process(tr2, Hint())
+
+    assertTrue(tr1.measurements.containsKey(MeasurementValue.KEY_APP_START_COLD))
+    assertFalse(tr2.measurements.containsKey(MeasurementValue.KEY_APP_START_COLD))
+    assertFalse(tr2.measurements.containsKey(MeasurementValue.KEY_APP_START_WARM))
   }
 
   @Test
@@ -464,10 +580,10 @@ class PerformanceAndroidEventProcessorTest {
     val appStartSpan = createAppStartSpan(tr.contexts.trace!!.traceId)
     tr.spans.add(appStartSpan)
 
-    assertTrue(appStartMetrics.shouldSendStartMeasurements())
+    assertTrue(appStartMetrics.shouldSendStartMeasurements(false))
     // then the app start metrics should be attached
     tr = sut.process(tr, Hint())
-    assertFalse(appStartMetrics.shouldSendStartMeasurements())
+    assertFalse(appStartMetrics.shouldSendStartMeasurements(false))
 
     assertTrue(tr.spans.any { "application.load" == it.op })
 
@@ -867,12 +983,31 @@ class PerformanceAndroidEventProcessorTest {
     }
   }
 
+  private fun setStandaloneColdAppStartMetrics(withApplicationOnCreate: Boolean = false) {
+    AppStartMetrics.getInstance().apply {
+      appStartType = AppStartType.COLD
+      isAppLaunchedInForeground = false
+      classLoadedUptimeMs = 50
+      appStartTimeSpan.apply {
+        setStartedAt(1)
+        setStoppedAt(100)
+      }
+      if (withApplicationOnCreate) {
+        applicationOnCreateTimeSpan.apply {
+          setStartedAt(10)
+          description = "com.example.App.onCreate"
+          setStoppedAt(42)
+        }
+      }
+    }
+  }
+
   private fun getTransaction(type: AppStartType): SentryTransaction {
     val op =
       when (type) {
-        AppStartType.COLD -> "app.start.cold"
-        AppStartType.WARM -> "app.start.warm"
-        AppStartType.UNKNOWN -> "ui.load"
+        AppStartType.COLD -> STANDALONE_APP_START_OP
+        AppStartType.WARM -> STANDALONE_APP_START_OP
+        AppStartType.UNKNOWN -> UI_LOAD_OP
       }
     val txn = SentryTransaction(fixture.tracer)
     txn.contexts.setTrace(SpanContext(op, TracesSamplingDecision(false)))

@@ -7,6 +7,7 @@ import android.app.Application
 import android.content.Context
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
 import android.os.Looper
 import android.view.View
 import android.view.ViewTreeObserver
@@ -33,6 +34,7 @@ import io.sentry.TransactionOptions
 import io.sentry.android.core.performance.AppStartMetrics
 import io.sentry.android.core.performance.AppStartMetrics.AppStartType
 import io.sentry.protocol.MeasurementValue
+import io.sentry.protocol.SentryId
 import io.sentry.protocol.TransactionNameSource
 import io.sentry.test.DeferredExecutorService
 import io.sentry.test.getProperty
@@ -64,6 +66,7 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.robolectric.Shadows.shadowOf
+import org.robolectric.annotation.Config
 import org.robolectric.shadow.api.Shadow
 import org.robolectric.shadows.ShadowActivityManager
 
@@ -83,6 +86,9 @@ class ActivityLifecycleIntegrationTest {
     // start it
     var transaction: SentryTracer = mock()
     val buildInfo = mock<BuildInfoProvider>()
+    val createdTransactions = mutableListOf<SentryTracer>()
+    val capturedContexts = mutableListOf<TransactionContext>()
+    val capturedOptions = mutableListOf<TransactionOptions>()
 
     fun getSut(
       apiVersion: Int = Build.VERSION_CODES.Q,
@@ -102,8 +108,13 @@ class ActivityLifecycleIntegrationTest {
       val contextCaptor = argumentCaptor<TransactionContext>()
       whenever(scopes.startTransaction(contextCaptor.capture(), optionCaptor.capture()))
         .thenAnswer {
-          val t = SentryTracer(contextCaptor.lastValue, scopes, optionCaptor.lastValue)
+          val context = contextCaptor.lastValue
+          val options = optionCaptor.lastValue
+          val t = SentryTracer(context, scopes, options)
           transaction = t
+          createdTransactions.add(t)
+          capturedContexts.add(context)
+          capturedOptions.add(options)
           return@thenAnswer t
         }
       whenever(buildInfo.sdkInfoVersion).thenReturn(apiVersion)
@@ -223,6 +234,191 @@ class ActivityLifecycleIntegrationTest {
           assertEquals("auto.ui.activity", transactionOptions.origin)
         },
       )
+  }
+
+  @Test
+  fun `Standalone app start transaction op is app start`() {
+    val sut =
+      fixture.getSut {
+        it.tracesSampleRate = 1.0
+        it.isEnableStandaloneAppStartTracing = true
+      }
+    sut.register(fixture.scopes, fixture.options)
+
+    setAppStartTime()
+
+    val activity = mock<Activity>()
+    sut.onActivityCreated(activity, fixture.bundle)
+
+    verify(fixture.scopes, times(2)).startTransaction(any(), any<TransactionOptions>())
+
+    val contexts = fixture.capturedContexts
+    val appStartContext =
+      contexts.single { it.operation == ActivityLifecycleIntegration.STANDALONE_APP_START_OP }
+    assertEquals("App Start", appStartContext.name)
+    assertEquals(TransactionNameSource.COMPONENT, appStartContext.transactionNameSource)
+    val appStartTransaction =
+      fixture.createdTransactions.single {
+        it.spanContext.operation == ActivityLifecycleIntegration.STANDALONE_APP_START_OP
+      }
+    assertEquals("Activity", appStartTransaction.getData("app.vitals.start.screen"))
+    assertTrue(contexts.any { it.operation == ActivityLifecycleIntegration.UI_LOAD_OP })
+    assertFalse(
+      contexts.any {
+        it.operation == ActivityLifecycleIntegration.APP_START_COLD ||
+          it.operation == ActivityLifecycleIntegration.APP_START_WARM
+      }
+    )
+  }
+
+  @Test
+  fun `HeadlessAppStartListener is registered when standalone flag is on and performance enabled`() {
+    val sut =
+      fixture.getSut {
+        it.tracesSampleRate = 1.0
+        it.isEnableStandaloneAppStartTracing = true
+      }
+    sut.register(fixture.scopes, fixture.options)
+    prepareHeadlessAppStart(appStartType = AppStartType.UNKNOWN)
+
+    driveHeadlessAppStart()
+
+    assertEquals(1, fixture.capturedContexts.size)
+    assertEquals(
+      ActivityLifecycleIntegration.STANDALONE_APP_START_OP,
+      fixture.capturedContexts.single().operation,
+    )
+    assertEquals("App Start", fixture.capturedContexts.single().name)
+  }
+
+  @Test
+  fun `HeadlessAppStartListener is not registered when standalone flag is off`() {
+    val sut = fixture.getSut { it.tracesSampleRate = 1.0 }
+    sut.register(fixture.scopes, fixture.options)
+    prepareHeadlessAppStart()
+
+    driveHeadlessAppStart()
+
+    verify(fixture.scopes, never()).startTransaction(any(), any<TransactionOptions>())
+  }
+
+  @Test
+  fun `HeadlessAppStartListener is not registered when performance is disabled`() {
+    val sut = fixture.getSut { it.isEnableStandaloneAppStartTracing = true }
+    sut.register(fixture.scopes, fixture.options)
+    prepareHeadlessAppStart()
+
+    driveHeadlessAppStart()
+
+    verify(fixture.scopes, never()).startTransaction(any(), any<TransactionOptions>())
+  }
+
+  @Test
+  fun `close clears HeadlessAppStartListener`() {
+    val sut =
+      fixture.getSut {
+        it.tracesSampleRate = 1.0
+        it.isEnableStandaloneAppStartTracing = true
+      }
+    sut.register(fixture.scopes, fixture.options)
+    sut.close()
+    prepareHeadlessAppStart()
+
+    driveHeadlessAppStart()
+
+    verify(fixture.scopes, never()).startTransaction(any(), any<TransactionOptions>())
+  }
+
+  @Test
+  fun `onHeadlessAppStart creates standalone App Start transaction and stashes trace id`() {
+    val sut =
+      fixture.getSut {
+        it.tracesSampleRate = 1.0
+        it.isEnableStandaloneAppStartTracing = true
+      }
+    sut.register(fixture.scopes, fixture.options)
+    prepareHeadlessAppStart(appStartType = AppStartType.COLD)
+
+    driveHeadlessAppStart()
+
+    assertEquals(1, fixture.capturedContexts.size)
+    val context = fixture.capturedContexts.single()
+    val options = fixture.capturedOptions.single()
+    val transaction = fixture.createdTransactions.single()
+    assertEquals(ActivityLifecycleIntegration.STANDALONE_APP_START_OP, context.operation)
+    assertEquals("App Start", context.name)
+    assertEquals(TransactionNameSource.COMPONENT, context.transactionNameSource)
+    assertFalse(options.isBindToScope)
+    assertEquals(DateUtils.millisToNanos(100), options.startTimestamp!!.nanoTimestamp())
+    assertEquals(
+      transaction.spanContext.traceId,
+      AppStartMetrics.getInstance().getAppStartTraceId(),
+    )
+    assertTrue(transaction.isFinished)
+    assertEquals(SpanStatus.OK, transaction.status)
+  }
+
+  @Test
+  @Config(sdk = [Build.VERSION_CODES.M])
+  fun `onHeadlessAppStart creates standalone App Start transaction on API 23`() {
+    val sut =
+      fixture.getSut {
+        it.tracesSampleRate = 1.0
+        it.isEnableStandaloneAppStartTracing = true
+      }
+    sut.register(fixture.scopes, fixture.options)
+    prepareHeadlessSdkInitAppStart()
+
+    driveHeadlessAppStart()
+
+    assertEquals(1, fixture.capturedContexts.size)
+    val context = fixture.capturedContexts.single()
+    val options = fixture.capturedOptions.single()
+    val transaction = fixture.createdTransactions.single()
+    assertEquals(ActivityLifecycleIntegration.STANDALONE_APP_START_OP, context.operation)
+    assertEquals("App Start", context.name)
+    assertEquals(DateUtils.millisToNanos(100), options.startTimestamp!!.nanoTimestamp())
+    assertEquals(
+      transaction.spanContext.traceId,
+      AppStartMetrics.getInstance().getAppStartTraceId(),
+    )
+    assertTrue(transaction.isFinished)
+    assertEquals(SpanStatus.OK, transaction.status)
+  }
+
+  @Test
+  fun `onHeadlessAppStart creates standalone App Start transaction when appStartType is WARM`() {
+    val sut =
+      fixture.getSut {
+        it.tracesSampleRate = 1.0
+        it.isEnableStandaloneAppStartTracing = true
+      }
+    sut.register(fixture.scopes, fixture.options)
+    prepareHeadlessAppStart(appStartType = AppStartType.WARM)
+
+    driveHeadlessAppStart()
+
+    assertEquals(1, fixture.capturedContexts.size)
+    val context = fixture.capturedContexts.single()
+    assertEquals(ActivityLifecycleIntegration.STANDALONE_APP_START_OP, context.operation)
+    assertEquals("App Start", context.name)
+    assertEquals(TransactionNameSource.COMPONENT, context.transactionNameSource)
+  }
+
+  @Test
+  fun `onHeadlessAppStart does nothing when appStartTimeSpan is incomplete`() {
+    val sut =
+      fixture.getSut {
+        it.tracesSampleRate = 1.0
+        it.isEnableStandaloneAppStartTracing = true
+      }
+    sut.register(fixture.scopes, fixture.options)
+    AppStartMetrics.getInstance().appStartTimeSpan.reset()
+    AppStartMetrics.getInstance().sdkInitTimeSpan.reset()
+
+    driveHeadlessAppStart()
+
+    verify(fixture.scopes, never()).startTransaction(any(), any<TransactionOptions>())
   }
 
   @Test
@@ -526,6 +722,28 @@ class ActivityLifecycleIntegrationTest {
     val span = fixture.transaction.children.first()
     assertEquals(SpanStatus.CANCELLED, span.status)
     assertTrue(span.isFinished)
+  }
+
+  @Test
+  fun `When Activity is destroyed, sets standalone appStartTransaction status to cancelled and finish it`() {
+    val sut =
+      fixture.getSut {
+        it.tracesSampleRate = 1.0
+        it.isEnableStandaloneAppStartTracing = true
+      }
+    sut.register(fixture.scopes, fixture.options)
+
+    setAppStartTime()
+
+    val activity = mock<Activity>()
+    sut.onActivityCreated(activity, fixture.bundle)
+    sut.onActivityDestroyed(activity)
+
+    val appStartTransaction =
+      fixture.createdTransactions[
+          transactionIndexForOperation(ActivityLifecycleIntegration.STANDALONE_APP_START_OP)]
+    assertEquals(SpanStatus.CANCELLED, appStartTransaction.status)
+    assertTrue(appStartTransaction.isFinished)
   }
 
   @Test
@@ -880,6 +1098,102 @@ class ActivityLifecycleIntegrationTest {
         it.operation.startsWith("app.start.warm") || it.operation.startsWith("app.start.cold")
       }
     assertNull(appStartSpan)
+  }
+
+  @Test
+  fun `launcher activity emits ui load and standalone App Start sharing trace id`() {
+    val sut =
+      fixture.getSut {
+        it.tracesSampleRate = 1.0
+        it.isEnableStandaloneAppStartTracing = true
+      }
+    sut.register(fixture.scopes, fixture.options)
+    val firstFrameDate = SentryNanotimeDate(Date(1499), 0)
+    fixture.options.dateProvider = SentryDateProvider { firstFrameDate }
+    setAppStartTime(SentryNanotimeDate(Date(1), 0))
+
+    val activity = mock<Activity>()
+    sut.onActivityPreCreated(activity, fixture.bundle)
+    sut.onActivityCreated(activity, fixture.bundle)
+
+    assertEquals(2, fixture.capturedContexts.size)
+    val uiLoadIndex = transactionIndexForOperation(ActivityLifecycleIntegration.UI_LOAD_OP)
+    val appStartIndex =
+      transactionIndexForOperation(ActivityLifecycleIntegration.STANDALONE_APP_START_OP)
+    val uiLoadTransaction = fixture.createdTransactions[uiLoadIndex]
+    val appStartTransaction = fixture.createdTransactions[appStartIndex]
+
+    assertEquals(uiLoadTransaction.spanContext.traceId, appStartTransaction.spanContext.traceId)
+    assertFalse(fixture.capturedOptions[appStartIndex].isBindToScope)
+    assertFalse(
+      uiLoadTransaction.children.any {
+        it.operation == ActivityLifecycleIntegration.APP_START_COLD ||
+          it.operation == ActivityLifecycleIntegration.APP_START_WARM
+      }
+    )
+
+    sut.onActivityPostCreated(activity, fixture.bundle)
+    sut.onActivityPreStarted(activity)
+    sut.onActivityStarted(activity)
+    sut.onActivityPostStarted(activity)
+
+    assertTrue(appStartTransaction.children.any { it.operation == "activity.load" })
+
+    sut.onActivityResumed(activity)
+    runFirstDraw(fixture.createView())
+
+    val ttidSpan =
+      uiLoadTransaction.children.single { it.operation == ActivityLifecycleIntegration.TTID_OP }
+    assertTrue(ttidSpan.isFinished)
+    assertTrue(appStartTransaction.isFinished)
+    assertEquals(ttidSpan.finishDate, appStartTransaction.finishDate)
+    assertEquals(
+      ttidSpan.measurements[MeasurementValue.KEY_TIME_TO_INITIAL_DISPLAY]!!.value,
+      AppStartMetrics.getInstance().appStartTimeSpan.durationMs,
+    )
+  }
+
+  @Test
+  fun `activity following a headless start reuses trace id and does not emit second standalone`() {
+    val storedTraceId = SentryId()
+    val sut =
+      fixture.getSut {
+        it.tracesSampleRate = 1.0
+        it.isEnableStandaloneAppStartTracing = true
+      }
+    AppStartMetrics.getInstance().setAppStartTraceId(storedTraceId)
+    sut.register(fixture.scopes, fixture.options)
+    setAppStartTime()
+
+    val activity = mock<Activity>()
+    sut.onActivityCreated(activity, fixture.bundle)
+
+    assertEquals(1, fixture.capturedContexts.size)
+    val context = fixture.capturedContexts.single()
+    assertEquals(ActivityLifecycleIntegration.UI_LOAD_OP, context.operation)
+    assertEquals(storedTraceId, context.traceId)
+    assertNull(AppStartMetrics.getInstance().getAppStartTraceId())
+  }
+
+  @Test
+  fun `standalone flag off launcher activity emits single ui load with nested app start cold child`() {
+    val sut = fixture.getSut { it.tracesSampleRate = 1.0 }
+    sut.register(fixture.scopes, fixture.options)
+    setAppStartTime()
+
+    val activity = mock<Activity>()
+    sut.onActivityCreated(activity, fixture.bundle)
+
+    assertEquals(1, fixture.capturedContexts.size)
+    assertEquals(
+      ActivityLifecycleIntegration.UI_LOAD_OP,
+      fixture.capturedContexts.single().operation,
+    )
+    assertTrue(
+      fixture.createdTransactions.single().children.any {
+        it.operation == ActivityLifecycleIntegration.APP_START_COLD
+      }
+    )
   }
 
   @Test
@@ -1735,6 +2049,52 @@ class ActivityLifecycleIntegrationTest {
     view.viewTreeObserver.dispatchOnDraw()
     view.viewTreeObserver.dispatchOnGlobalLayout()
     shadowOf(Looper.getMainLooper()).idle()
+  }
+
+  private fun driveHeadlessAppStart() {
+    AppStartMetrics.getInstance().registerLifecycleCallbacks(mock<Application>())
+    waitForMainLooperIdle()
+  }
+
+  private fun waitForMainLooperIdle() {
+    Handler(Looper.getMainLooper()).post {}
+    shadowOf(Looper.getMainLooper()).idle()
+  }
+
+  private fun prepareHeadlessAppStart(
+    appStartType: AppStartType = AppStartType.COLD,
+    startUptimeMs: Long = 100,
+    endUptimeMs: Long = 200,
+  ) {
+    AppStartMetrics.getInstance().apply {
+      this.appStartType = appStartType
+      setClassLoadedUptimeMs(endUptimeMs)
+      appStartTimeSpan.apply {
+        setStartedAt(startUptimeMs)
+        setStartUnixTimeMs(startUptimeMs)
+      }
+      sdkInitTimeSpan.apply {
+        setStartedAt(startUptimeMs)
+        setStartUnixTimeMs(startUptimeMs)
+      }
+    }
+  }
+
+  private fun prepareHeadlessSdkInitAppStart(startUptimeMs: Long = 100, endUptimeMs: Long = 200) {
+    AppStartMetrics.getInstance().apply {
+      appStartTimeSpan.reset()
+      sdkInitTimeSpan.apply {
+        setStartedAt(startUptimeMs)
+        setStartUnixTimeMs(startUptimeMs)
+      }
+      setClassLoadedUptimeMs(endUptimeMs)
+    }
+  }
+
+  private fun transactionIndexForOperation(operation: String): Int {
+    val index = fixture.capturedContexts.indexOfFirst { it.operation == operation }
+    assertTrue(index >= 0)
+    return index
   }
 
   private fun setAppStartTime(

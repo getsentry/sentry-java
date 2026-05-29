@@ -5,6 +5,7 @@ import io.sentry.protocol.TransactionNameSource
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -133,6 +134,37 @@ class TransactionContextTest {
         "op",
         TracesSamplingDecision(true, 0.1, 0.2),
       )
+    assertNotNull(context.baggage)
+    assertEquals(0.2, context.baggage?.sampleRand!!, 0.0001)
+  }
+
+  @Test
+  fun `traceId constructor reuses provided trace id and operation`() {
+    val traceId = SentryId()
+    val samplingDecision = TracesSamplingDecision(true, 0.1, 0.2, true, 0.3)
+
+    val context =
+      TransactionContext(traceId, "name", TransactionNameSource.COMPONENT, "op", samplingDecision)
+
+    assertEquals(traceId, context.traceId)
+    assertEquals("name", context.name)
+    assertEquals(TransactionNameSource.COMPONENT, context.transactionNameSource)
+    assertEquals("op", context.operation)
+    assertTrue(context.sampled!!)
+    assertTrue(context.profileSampled!!)
+  }
+
+  @Test
+  fun `traceId constructor creates a fresh span id and baggage`() {
+    val traceId = SentryId()
+    val samplingDecision = TracesSamplingDecision(true, 0.1, 0.2)
+
+    val context =
+      TransactionContext(traceId, "name", TransactionNameSource.COMPONENT, "op", samplingDecision)
+
+    assertNotNull(context.spanId)
+    assertNotEquals(SpanId.EMPTY_ID, context.spanId)
+    assertNull(context.parentSpanId)
     assertNotNull(context.baggage)
     assertEquals(0.2, context.baggage?.sampleRand!!, 0.0001)
   }
