@@ -739,6 +739,7 @@ public class io/sentry/android/core/performance/AppStartMetrics : io/sentry/andr
 	public fun addActivityLifecycleTimeSpans (Lio/sentry/android/core/performance/ActivityLifecycleTimeSpan;)V
 	public fun clear ()V
 	public fun createProcessInitSpan ()Lio/sentry/android/core/performance/TimeSpan;
+	public fun finalizeHeadlessAppStartEndTime ()V
 	public fun getActivityLifecycleTimeSpans ()Ljava/util/List;
 	public fun getAppStartContinuousProfiler ()Lio/sentry/IContinuousProfiler;
 	public fun getAppStartProfiler ()Lio/sentry/ITransactionProfiler;
@@ -746,7 +747,6 @@ public class io/sentry/android/core/performance/AppStartMetrics : io/sentry/andr
 	public fun getAppStartTimeSpan ()Lio/sentry/android/core/performance/TimeSpan;
 	public fun getAppStartTimeSpanForHeadless ()Lio/sentry/android/core/performance/TimeSpan;
 	public fun getAppStartTimeSpanWithFallback (Lio/sentry/android/core/SentryAndroidOptions;)Lio/sentry/android/core/performance/TimeSpan;
-	public fun getAppStartTraceId ()Lio/sentry/protocol/SentryId;
 	public fun getAppStartType ()Lio/sentry/android/core/performance/AppStartMetrics$AppStartType;
 	public fun getApplicationOnCreateTimeSpan ()Lio/sentry/android/core/performance/TimeSpan;
 	public fun getClassLoadedUptimeMs ()J
@@ -770,10 +770,9 @@ public class io/sentry/android/core/performance/AppStartMetrics : io/sentry/andr
 	public fun setAppStartContinuousProfiler (Lio/sentry/IContinuousProfiler;)V
 	public fun setAppStartProfiler (Lio/sentry/ITransactionProfiler;)V
 	public fun setAppStartSamplingDecision (Lio/sentry/TracesSamplingDecision;)V
-	public fun setAppStartTraceId (Lio/sentry/protocol/SentryId;)V
 	public fun setAppStartType (Lio/sentry/android/core/performance/AppStartMetrics$AppStartType;)V
 	public fun setClassLoadedUptimeMs (J)V
-	public fun setHeadlessAppStartListener (Lio/sentry/android/core/performance/AppStartMetrics$HeadlessAppStartListener;)V
+	public fun setOnMainIdleNoActivityCallback (Lio/sentry/android/core/performance/AppStartMetrics$OnMainIdleNoActivityCallback;)V
 	public fun shouldSendStartMeasurements ()Z
 	public fun shouldSendStartMeasurements (Z)Z
 }
@@ -786,8 +785,8 @@ public final class io/sentry/android/core/performance/AppStartMetrics$AppStartTy
 	public static fun values ()[Lio/sentry/android/core/performance/AppStartMetrics$AppStartType;
 }
 
-public abstract interface class io/sentry/android/core/performance/AppStartMetrics$HeadlessAppStartListener {
-	public abstract fun onHeadlessAppStart ()V
+public abstract interface class io/sentry/android/core/performance/AppStartMetrics$OnMainIdleNoActivityCallback {
+	public abstract fun onMainIdleNoActivity ()V
 }
 
 public class io/sentry/android/core/performance/TimeSpan : java/lang/Comparable {

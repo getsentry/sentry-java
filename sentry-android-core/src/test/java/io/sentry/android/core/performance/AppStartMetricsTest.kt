@@ -16,7 +16,6 @@ import io.sentry.SentryNanotimeDate
 import io.sentry.android.core.CurrentActivityHolder
 import io.sentry.android.core.SentryAndroidOptions
 import io.sentry.android.core.SentryShadowProcess
-import io.sentry.protocol.SentryId
 import java.util.Date
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
@@ -68,7 +67,6 @@ class AppStartMetricsTest {
     metrics.appStartProfiler = mock()
     metrics.appStartContinuousProfiler = mock()
     metrics.appStartSamplingDecision = mock()
-    metrics.setAppStartTraceId(SentryId())
 
     metrics.clear()
 
@@ -82,7 +80,6 @@ class AppStartMetricsTest {
     assertNull(metrics.appStartProfiler)
     assertNull(metrics.appStartContinuousProfiler)
     assertNull(metrics.appStartSamplingDecision)
-    assertNull(metrics.getAppStartTraceId())
   }
 
   @Test
@@ -238,10 +235,12 @@ class AppStartMetricsTest {
   }
 
   @Test
-  fun `headless app start fires HeadlessAppStartListener`() {
+  fun `headless app start fires OnMainIdleNoActivityCallback`() {
     val listenerCalls = AtomicInteger()
 
-    AppStartMetrics.getInstance().setHeadlessAppStartListener { listenerCalls.incrementAndGet() }
+    AppStartMetrics.getInstance().setOnMainIdleNoActivityCallback {
+      listenerCalls.incrementAndGet()
+    }
     AppStartMetrics.getInstance().registerLifecycleCallbacks(mock<Application>())
     waitForMainLooperIdle()
 
@@ -249,11 +248,11 @@ class AppStartMetricsTest {
   }
 
   @Test
-  fun `activity start prevents HeadlessAppStartListener`() {
+  fun `activity start prevents OnMainIdleNoActivityCallback`() {
     val listenerCalls = AtomicInteger()
     val metrics = AppStartMetrics.getInstance()
 
-    metrics.setHeadlessAppStartListener { listenerCalls.incrementAndGet() }
+    metrics.setOnMainIdleNoActivityCallback { listenerCalls.incrementAndGet() }
     metrics.onActivityCreated(mock<Activity>(), null)
     metrics.registerLifecycleCallbacks(mock<Application>())
     waitForMainLooperIdle()
@@ -265,7 +264,6 @@ class AppStartMetricsTest {
   fun `resolveHeadlessAppStartEndTime uses applicationOnCreate stop when Gradle plugin instrumented`() {
     val metrics = AppStartMetrics.getInstance()
     metrics.appStartTimeSpan.setStartedAt(100)
-    metrics.setHeadlessAppStartListener {}
     metrics.applicationOnCreateTimeSpan.apply {
       setStartedAt(120)
       setStoppedAt(200)
@@ -273,6 +271,7 @@ class AppStartMetricsTest {
 
     metrics.registerLifecycleCallbacks(mock<Application>())
     waitForMainLooperIdle()
+    metrics.finalizeHeadlessAppStartEndTime()
 
     assertEquals(100, metrics.appStartTimeSpan.durationMs)
   }
@@ -282,10 +281,9 @@ class AppStartMetricsTest {
     val metrics = AppStartMetrics.getInstance()
     metrics.setClassLoadedUptimeMs(200)
     metrics.appStartTimeSpan.setStartedAt(100)
-    metrics.setHeadlessAppStartListener {}
-
     metrics.registerLifecycleCallbacks(mock<Application>())
     waitForMainLooperIdle()
+    metrics.finalizeHeadlessAppStartEndTime()
 
     assertEquals(100, metrics.appStartTimeSpan.durationMs)
   }
@@ -297,7 +295,6 @@ class AppStartMetricsTest {
       setStartedAt(100)
       setStoppedAt(150)
     }
-    metrics.setHeadlessAppStartListener {}
     metrics.applicationOnCreateTimeSpan.apply {
       setStartedAt(120)
       setStoppedAt(200)
@@ -305,6 +302,7 @@ class AppStartMetricsTest {
 
     metrics.registerLifecycleCallbacks(mock<Application>())
     waitForMainLooperIdle()
+    metrics.finalizeHeadlessAppStartEndTime()
 
     assertEquals(50, metrics.appStartTimeSpan.durationMs)
   }

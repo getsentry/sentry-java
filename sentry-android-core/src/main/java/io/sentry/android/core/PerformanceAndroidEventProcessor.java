@@ -1,9 +1,7 @@
 package io.sentry.android.core;
 
 import static io.sentry.android.core.ActivityLifecycleIntegration.APP_START_COLD;
-import static io.sentry.android.core.ActivityLifecycleIntegration.APP_START_SCREEN_DATA;
 import static io.sentry.android.core.ActivityLifecycleIntegration.APP_START_WARM;
-import static io.sentry.android.core.ActivityLifecycleIntegration.STANDALONE_APP_START_OP;
 import static io.sentry.android.core.ActivityLifecycleIntegration.UI_LOAD_OP;
 
 import io.sentry.EventProcessor;
@@ -89,12 +87,8 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
         // For headless starts, appLaunchedInForeground is false, so only headless standalone app
         // start transactions bypass the foreground check, not the duplicate-send guard.
         final @Nullable SpanContext traceContext = transaction.getContexts().getTrace();
-        final boolean isStandaloneAppStartTxn =
-            traceContext != null && STANDALONE_APP_START_OP.equals(traceContext.getOperation());
         final boolean isHeadlessStandaloneAppStartTxn =
-            traceContext != null
-                && isStandaloneAppStartTxn
-                && !traceContext.getData().containsKey(APP_START_SCREEN_DATA);
+            StandaloneAppStartReporter.isHeadlessAppStart(traceContext);
 
         if (appStartMetrics.shouldSendStartMeasurements(isHeadlessStandaloneAppStartTxn)) {
           final @NotNull TimeSpan appStartTimeSpan =
@@ -229,8 +223,7 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
       }
     }
 
-    final @Nullable SpanContext context = txn.getContexts().getTrace();
-    return context != null && context.getOperation().equals(STANDALONE_APP_START_OP);
+    return StandaloneAppStartReporter.isStandaloneAppStart(txn.getContexts().getTrace());
   }
 
   private void attachAppStartSpans(
@@ -257,15 +250,12 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
       }
     }
 
-    // For standalone app start transactions, the transaction root IS the app start span
-    if (parentSpanId == null) {
-      final @NotNull String txnOp = traceContext.getOperation();
-      if (STANDALONE_APP_START_OP.equals(txnOp)) {
-        parentSpanId = traceContext.getSpanId();
-      }
-    }
+    final boolean isStandalone = StandaloneAppStartReporter.isStandaloneAppStart(traceContext);
 
-    final boolean isStandalone = STANDALONE_APP_START_OP.equals(traceContext.getOperation());
+    // For standalone app start transactions, the transaction root IS the app start span
+    if (parentSpanId == null && isStandalone) {
+      parentSpanId = traceContext.getSpanId();
+    }
 
     // Process init
     final @NotNull TimeSpan processInitTimeSpan = appStartMetrics.createProcessInitSpan();

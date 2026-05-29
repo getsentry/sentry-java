@@ -405,9 +405,16 @@ final class AndroidOptionsInitializer {
 
     // registerActivityLifecycleCallbacks is only available if Context is an AppContext
     if (context instanceof Application) {
+      final @NotNull FirstUiLoadCoordinator firstUiLoadCoordinator = new FirstUiLoadCoordinator();
+      if (AppStartIntegration.isEnabled(options)) {
+        options.addIntegration(new AppStartIntegration(firstUiLoadCoordinator));
+      }
       options.addIntegration(
           new ActivityLifecycleIntegration(
-              (Application) context, buildInfoProvider, activityFramesTracker));
+              (Application) context,
+              buildInfoProvider,
+              activityFramesTracker,
+              firstUiLoadCoordinator));
       options.addIntegration(new ActivityBreadcrumbsIntegration((Application) context));
       options.addIntegration(new UserInteractionIntegration((Application) context, loadClass));
       options.addIntegration(new FeedbackShakeIntegration((Application) context));

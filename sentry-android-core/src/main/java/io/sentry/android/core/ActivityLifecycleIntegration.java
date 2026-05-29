@@ -33,7 +33,6 @@ import io.sentry.android.core.performance.ActivityLifecycleSpanHelper;
 import io.sentry.android.core.performance.AppStartMetrics;
 import io.sentry.android.core.performance.TimeSpan;
 import io.sentry.protocol.MeasurementValue;
-import io.sentry.protocol.SentryId;
 import io.sentry.protocol.TransactionNameSource;
 import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.Objects;
@@ -56,15 +55,12 @@ public final class ActivityLifecycleIntegration
     implements Integration, Closeable, Application.ActivityLifecycleCallbacks {
 
   static final String UI_LOAD_OP = "ui.load";
-  static final String STANDALONE_APP_START_OP = "app.start";
-  private static final String STANDALONE_APP_START_NAME = "App Start";
   static final String APP_START_WARM = "app.start.warm";
   static final String APP_START_COLD = "app.start.cold";
   static final String TTID_OP = "ui.load.initial_display";
   static final String TTFD_OP = "ui.load.full_display";
   static final long TTFD_TIMEOUT_MILLIS = 25000;
   private static final String TRACE_ORIGIN = "auto.ui.activity";
-  static final String APP_START_SCREEN_DATA = "app.vitals.start.screen";
 
   private final @NotNull Application application;
   private final @NotNull BuildInfoProvider buildInfoProvider;
@@ -81,7 +77,6 @@ public final class ActivityLifecycleIntegration
 
   private @Nullable FullyDisplayedReporter fullyDisplayedReporter = null;
   private @Nullable ISpan appStartSpan;
-  private @Nullable ITransaction appStartTransaction;
   private final @NotNull WeakHashMap<Activity, ISpan> ttidSpanMap = new WeakHashMap<>();
   private final @NotNull WeakHashMap<Activity, ISpan> ttfdSpanMap = new WeakHashMap<>();
   private final @NotNull WeakHashMap<Activity, ActivityLifecycleSpanHelper> activitySpanHelpers =
@@ -95,6 +90,7 @@ public final class ActivityLifecycleIntegration
       new WeakHashMap<>();
 
   private final @NotNull ActivityFramesTracker activityFramesTracker;
+  private final @NotNull FirstUiLoadCoordinator firstUiLoadCoordinator;
   private final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
   private boolean fullyDisplayedCalled = false;
   private final @NotNull AutoClosableReentrantLock fullyDisplayedLock =
@@ -103,12 +99,15 @@ public final class ActivityLifecycleIntegration
   public ActivityLifecycleIntegration(
       final @NotNull Application application,
       final @NotNull BuildInfoProvider buildInfoProvider,
-      final @NotNull ActivityFramesTracker activityFramesTracker) {
+      final @NotNull ActivityFramesTracker activityFramesTracker,
+      final @NotNull FirstUiLoadCoordinator firstUiLoadCoordinator) {
     this.application = Objects.requireNonNull(application, "Application is required");
     this.buildInfoProvider =
         Objects.requireNonNull(buildInfoProvider, "BuildInfoProvider is required");
     this.activityFramesTracker =
         Objects.requireNonNull(activityFramesTracker, "ActivityFramesTracker is required");
+    this.firstUiLoadCoordinator =
+        Objects.requireNonNull(firstUiLoadCoordinator, "FirstUiLoadCoordinator is required");
 
     if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.Q) {
       isAllActivityCallbacksAvailable = true;
@@ -130,10 +129,6 @@ public final class ActivityLifecycleIntegration
 
     application.registerActivityLifecycleCallbacks(this);
 
-    if (performanceEnabled && this.options.isEnableStandaloneAppStartTracing()) {
-      AppStartMetrics.getInstance().setHeadlessAppStartListener(this::onHeadlessAppStart);
-    }
-
     this.options.getLogger().log(SentryLevel.DEBUG, "ActivityLifecycleIntegration installed.");
     addIntegrationToSdkVersion("ActivityLifecycle");
   }
@@ -145,7 +140,6 @@ public final class ActivityLifecycleIntegration
   @Override
   public void close() throws IOException {
     application.unregisterActivityLifecycleCallbacks(this);
-    AppStartMetrics.getInstance().setHeadlessAppStartListener(null);
 
     if (options != null) {
       options.getLogger().log(SentryLevel.DEBUG, "ActivityLifecycleIntegration removed.");
@@ -250,58 +244,43 @@ public final class ActivityLifecycleIntegration
         transactionOptions.setAppStartTransaction(appStartSamplingDecision != null);
         setSpanOrigin(transactionOptions);
 
-        final @Nullable SentryId storedAppStartTraceId =
-            AppStartMetrics.getInstance().getAppStartTraceId();
-        // A non-null trace ID means a standalone app-start txn was already emitted.
-        final boolean isFollowingHeadlessAppStart = (storedAppStartTraceId != null);
+        final @Nullable FirstUiLoadListener firstUiLoadListener =
+            options != null && options.isEnableStandaloneAppStartTracing()
+                ? firstUiLoadCoordinator.getListener()
+                : null;
 
-        final ITransaction transaction;
-        if (storedAppStartTraceId != null) {
-          transaction =
-              scopes.startTransaction(
-                  new TransactionContext(
-                      storedAppStartTraceId,
-                      activityName,
-                      TransactionNameSource.COMPONENT,
-                      UI_LOAD_OP,
-                      appStartSamplingDecision),
-                  transactionOptions);
-          AppStartMetrics.getInstance().setAppStartTraceId(null);
-        } else {
-          transaction =
-              scopes.startTransaction(
-                  new TransactionContext(
-                      activityName,
-                      TransactionNameSource.COMPONENT,
-                      UI_LOAD_OP,
-                      appStartSamplingDecision),
-                  transactionOptions);
+        final boolean isFirstProcessStart =
+            !(firstActivityCreated || appStartTime == null || coldStart == null);
+
+        final @Nullable UiLoadStartPlan plan =
+            firstUiLoadListener != null
+                ? firstUiLoadListener.planFirstUiLoad(
+                    activityName, appStartSamplingDecision, isFirstProcessStart)
+                : null;
+
+        final @NotNull TransactionContext transactionContext =
+            plan != null
+                ? plan.getTransactionContext()
+                : new TransactionContext(
+                    activityName,
+                    TransactionNameSource.COMPONENT,
+                    UI_LOAD_OP,
+                    appStartSamplingDecision);
+
+        final ITransaction transaction =
+            scopes.startTransaction(transactionContext, transactionOptions);
+
+        if (isFirstProcessStart && firstUiLoadListener != null) {
+          firstUiLoadListener.onFirstUiLoadTransactionStarted(
+              transaction, plan, appStartTime, activityName, appStartSamplingDecision);
         }
 
         final SpanOptions spanOptions = new SpanOptions();
         setSpanOrigin(spanOptions);
 
-        if (!(firstActivityCreated || appStartTime == null || coldStart == null)) {
-          if (options.isEnableStandaloneAppStartTracing() && !isFollowingHeadlessAppStart) {
-            final TransactionOptions appStartTransactionOptions = new TransactionOptions();
-            appStartTransactionOptions.setBindToScope(false);
-            appStartTransactionOptions.setStartTimestamp(appStartTime);
-            appStartTransactionOptions.setAppStartTransaction(appStartSamplingDecision != null);
-            setSpanOrigin(appStartTransactionOptions);
-
-            appStartTransaction =
-                scopes.startTransaction(
-                    new TransactionContext(
-                        transaction.getSpanContext().getTraceId(),
-                        STANDALONE_APP_START_NAME,
-                        TransactionNameSource.COMPONENT,
-                        STANDALONE_APP_START_OP,
-                        appStartSamplingDecision),
-                    appStartTransactionOptions);
-            appStartTransaction.setData(APP_START_SCREEN_DATA, activityName);
-
-            finishAppStartSpan();
-          } else if (!options.isEnableStandaloneAppStartTracing()) {
+        if (isFirstProcessStart) {
+          if (firstUiLoadListener == null) {
+            // legacy path: app start is a child span of the ui.load transaction.
             appStartSpan =
                 transaction.startChild(
                     getAppStartOp(coldStart),
@@ -603,8 +582,10 @@ public final class ActivityLifecycleIntegration
         // in case the appStartSpan isn't completed yet, we finish it as cancelled to avoid
         // memory leak
         finishSpan(appStartSpan, SpanStatus.CANCELLED);
-        if (appStartTransaction != null && !appStartTransaction.isFinished()) {
-          appStartTransaction.finish(SpanStatus.CANCELLED);
+        final @Nullable FirstUiLoadListener firstUiLoadListener =
+            firstUiLoadCoordinator.getListener();
+        if (firstUiLoadListener != null) {
+          firstUiLoadListener.onActivityDestroyed();
         }
 
         // we finish the ttidSpan as cancelled in case it isn't completed yet
@@ -622,7 +603,6 @@ public final class ActivityLifecycleIntegration
 
         // set it to null in case its been just finished as cancelled
         appStartSpan = null;
-        appStartTransaction = null;
         ttidSpanMap.remove(activity);
         ttfdSpanMap.remove(activity);
       }
@@ -840,8 +820,12 @@ public final class ActivityLifecycleIntegration
   }
 
   private @Nullable ISpan getAppStartParent(final @NotNull Activity activity) {
-    if (appStartTransaction != null) {
-      return appStartTransaction;
+    final @Nullable FirstUiLoadListener firstUiLoadListener = firstUiLoadCoordinator.getListener();
+    if (firstUiLoadListener != null) {
+      final @Nullable ISpan appStartTransaction = firstUiLoadListener.getAppStartTransaction();
+      if (appStartTransaction != null) {
+        return appStartTransaction;
+      }
     }
     if (appStartSpan != null) {
       return appStartSpan;
@@ -870,51 +854,11 @@ public final class ActivityLifecycleIntegration
                 .getProjectedStopTimestamp();
     if (performanceEnabled && appStartEndTime != null) {
       finishSpan(appStartSpan, appStartEndTime);
-      if (appStartTransaction != null && !appStartTransaction.isFinished()) {
-        appStartTransaction.finish(SpanStatus.OK, appStartEndTime);
+      final @Nullable FirstUiLoadListener firstUiLoadListener =
+          firstUiLoadCoordinator.getListener();
+      if (firstUiLoadListener != null && appStartEndTime != null) {
+        firstUiLoadListener.onFirstFrameDrawn(appStartEndTime);
       }
     }
-  }
-
-  private void onHeadlessAppStart() {
-    if (scopes == null || options == null || !performanceEnabled) {
-      return;
-    }
-
-    final @NotNull AppStartMetrics metrics = AppStartMetrics.getInstance();
-    // Profilers are stopped for headless starts; clear the decision so it doesn't
-    // leak to a later ui.load transaction if an activity eventually opens.
-    metrics.setAppStartSamplingDecision(null);
-
-    // For headless starts, appLaunchedInForeground is false, so we can't use
-    // getAppStartTimeSpanWithFallback (which gates on foreground).
-    final @NotNull TimeSpan appStartTimeSpan = metrics.getAppStartTimeSpanForHeadless();
-
-    if (!appStartTimeSpan.hasStarted() || !appStartTimeSpan.hasStopped()) {
-      return;
-    }
-
-    final @Nullable SentryDate startTime = appStartTimeSpan.getStartTimestamp();
-    final @Nullable SentryDate endTime = appStartTimeSpan.getProjectedStopTimestamp();
-    if (startTime == null || endTime == null) {
-      return;
-    }
-
-    final TransactionOptions txnOptions = new TransactionOptions();
-    txnOptions.setBindToScope(false);
-    txnOptions.setStartTimestamp(startTime);
-    setSpanOrigin(txnOptions);
-
-    final @NotNull TransactionContext txnContext =
-        new TransactionContext(
-            STANDALONE_APP_START_NAME,
-            TransactionNameSource.COMPONENT,
-            STANDALONE_APP_START_OP,
-            null);
-
-    final @NotNull ITransaction transaction = scopes.startTransaction(txnContext, txnOptions);
-    metrics.setAppStartTraceId(transaction.getSpanContext().getTraceId());
-
-    transaction.finish(SpanStatus.OK, endTime);
   }
 }
