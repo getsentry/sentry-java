@@ -14,6 +14,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 import org.junit.Before
 import org.junit.runner.RunWith
 import org.mockito.kotlin.mock
@@ -51,19 +52,22 @@ class AppStartMetricsTestApi35 {
   }
 
   @Test
-  fun `known ApplicationStartInfo type without listener does not schedule headless check`() {
+  fun `known ApplicationStartInfo type without listener emits no headless app start`() {
     val mockStartInfo = mock<ApplicationStartInfo>()
     whenever(mockStartInfo.startupState).thenReturn(ApplicationStartInfo.STARTUP_STATE_STARTED)
     whenever(mockStartInfo.startType).thenReturn(ApplicationStartInfo.START_TYPE_COLD)
     SentryShadowActivityManager.setHistoricalProcessStartReasons(listOf(mockStartInfo))
     val metrics = AppStartMetrics.getInstance()
+    metrics.appStartTimeSpan.setStartedAt(100)
 
     val app = ApplicationProvider.getApplicationContext<Application>()
     metrics.registerLifecycleCallbacks(app)
     waitForMainLooperIdle()
 
+    // The idle check is always scheduled now, but with no listener installed it resolves and
+    // emits nothing: the app start time span is left open and the resolved type is unchanged.
     assertEquals(AppStartMetrics.AppStartType.COLD, metrics.appStartType)
-    assertEquals(-1, metrics.firstIdle)
+    assertTrue(metrics.appStartTimeSpan.hasNotStopped())
   }
 
   @Test

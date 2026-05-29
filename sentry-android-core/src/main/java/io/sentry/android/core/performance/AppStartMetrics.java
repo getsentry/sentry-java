@@ -170,13 +170,10 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   }
 
   public void setHeadlessAppStartListener(final @Nullable HeadlessAppStartListener listener) {
+    // No scheduling here: the headless check is scheduled once from registerLifecycleCallbacks and
+    // reads this listener when it fires (after the main looper goes idle, by which point init has
+    // installed it). The listener may legitimately be set after registration.
     this.headlessAppStartListener = listener;
-    if (listener != null
-        && isCallbackRegistered
-        && activeActivitiesCounter.get() == 0
-        && !firstDrawDone.get()) {
-      scheduleHeadlessAppStartCheckOnMain();
-    }
   }
 
   /**
@@ -396,9 +393,12 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
       }
     }
 
-    if (appStartType == AppStartType.UNKNOWN || headlessAppStartListener != null) {
-      scheduleHeadlessAppStartCheckOnMain();
-    }
+    // Single scheduling site for the main-thread idle check. It serves two consumers that may not
+    // both be known yet at registration time: the pre-API-35 cold/warm heuristic (needed whenever
+    // the type is still UNKNOWN) and standalone headless app-start emission (whose listener is
+    // installed later, during SDK init). Scheduling unconditionally lets the idle handler — which
+    // already no-ops once an Activity exists and reads the listener when it fires — make that call.
+    scheduleHeadlessAppStartCheckOnMain();
   }
 
   private void scheduleHeadlessAppStartCheckOnMain() {
