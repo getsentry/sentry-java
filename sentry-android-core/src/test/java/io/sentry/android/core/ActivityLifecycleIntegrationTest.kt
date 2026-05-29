@@ -254,12 +254,12 @@ class ActivityLifecycleIntegrationTest {
 
     val contexts = fixture.capturedContexts
     val appStartContext =
-      contexts.single { it.operation == ActivityLifecycleIntegration.STANDALONE_APP_START_OP }
+      contexts.single { it.operation == StandaloneAppStartReporter.STANDALONE_APP_START_OP }
     assertEquals("App Start", appStartContext.name)
     assertEquals(TransactionNameSource.COMPONENT, appStartContext.transactionNameSource)
     val appStartTransaction =
       fixture.createdTransactions.single {
-        it.spanContext.operation == ActivityLifecycleIntegration.STANDALONE_APP_START_OP
+        it.spanContext.operation == StandaloneAppStartReporter.STANDALONE_APP_START_OP
       }
     assertEquals("Activity", appStartTransaction.getData("app.vitals.start.screen"))
     assertTrue(contexts.any { it.operation == ActivityLifecycleIntegration.UI_LOAD_OP })
@@ -285,7 +285,7 @@ class ActivityLifecycleIntegrationTest {
 
     assertEquals(1, fixture.capturedContexts.size)
     assertEquals(
-      ActivityLifecycleIntegration.STANDALONE_APP_START_OP,
+      StandaloneAppStartReporter.STANDALONE_APP_START_OP,
       fixture.capturedContexts.single().operation,
     )
     assertEquals("App Start", fixture.capturedContexts.single().name)
@@ -345,15 +345,12 @@ class ActivityLifecycleIntegrationTest {
     val context = fixture.capturedContexts.single()
     val options = fixture.capturedOptions.single()
     val transaction = fixture.createdTransactions.single()
-    assertEquals(ActivityLifecycleIntegration.STANDALONE_APP_START_OP, context.operation)
+    assertEquals(StandaloneAppStartReporter.STANDALONE_APP_START_OP, context.operation)
     assertEquals("App Start", context.name)
     assertEquals(TransactionNameSource.COMPONENT, context.transactionNameSource)
     assertFalse(options.isBindToScope)
     assertEquals(DateUtils.millisToNanos(100), options.startTimestamp!!.nanoTimestamp())
-    assertEquals(
-      transaction.spanContext.traceId,
-      AppStartMetrics.getInstance().getAppStartTraceId(),
-    )
+    assertEquals(transaction.spanContext.traceId, sut.appStartReporter!!.reusableTraceId)
     assertTrue(transaction.isFinished)
     assertEquals(SpanStatus.OK, transaction.status)
   }
@@ -375,13 +372,10 @@ class ActivityLifecycleIntegrationTest {
     val context = fixture.capturedContexts.single()
     val options = fixture.capturedOptions.single()
     val transaction = fixture.createdTransactions.single()
-    assertEquals(ActivityLifecycleIntegration.STANDALONE_APP_START_OP, context.operation)
+    assertEquals(StandaloneAppStartReporter.STANDALONE_APP_START_OP, context.operation)
     assertEquals("App Start", context.name)
     assertEquals(DateUtils.millisToNanos(100), options.startTimestamp!!.nanoTimestamp())
-    assertEquals(
-      transaction.spanContext.traceId,
-      AppStartMetrics.getInstance().getAppStartTraceId(),
-    )
+    assertEquals(transaction.spanContext.traceId, sut.appStartReporter!!.reusableTraceId)
     assertTrue(transaction.isFinished)
     assertEquals(SpanStatus.OK, transaction.status)
   }
@@ -400,7 +394,7 @@ class ActivityLifecycleIntegrationTest {
 
     assertEquals(1, fixture.capturedContexts.size)
     val context = fixture.capturedContexts.single()
-    assertEquals(ActivityLifecycleIntegration.STANDALONE_APP_START_OP, context.operation)
+    assertEquals(StandaloneAppStartReporter.STANDALONE_APP_START_OP, context.operation)
     assertEquals("App Start", context.name)
     assertEquals(TransactionNameSource.COMPONENT, context.transactionNameSource)
   }
@@ -741,7 +735,7 @@ class ActivityLifecycleIntegrationTest {
 
     val appStartTransaction =
       fixture.createdTransactions[
-          transactionIndexForOperation(ActivityLifecycleIntegration.STANDALONE_APP_START_OP)]
+          transactionIndexForOperation(StandaloneAppStartReporter.STANDALONE_APP_START_OP)]
     assertEquals(SpanStatus.CANCELLED, appStartTransaction.status)
     assertTrue(appStartTransaction.isFinished)
   }
@@ -1119,7 +1113,7 @@ class ActivityLifecycleIntegrationTest {
     assertEquals(2, fixture.capturedContexts.size)
     val uiLoadIndex = transactionIndexForOperation(ActivityLifecycleIntegration.UI_LOAD_OP)
     val appStartIndex =
-      transactionIndexForOperation(ActivityLifecycleIntegration.STANDALONE_APP_START_OP)
+      transactionIndexForOperation(StandaloneAppStartReporter.STANDALONE_APP_START_OP)
     val uiLoadTransaction = fixture.createdTransactions[uiLoadIndex]
     val appStartTransaction = fixture.createdTransactions[appStartIndex]
 
@@ -1161,8 +1155,8 @@ class ActivityLifecycleIntegrationTest {
         it.tracesSampleRate = 1.0
         it.isEnableStandaloneAppStartTracing = true
       }
-    AppStartMetrics.getInstance().setAppStartTraceId(storedTraceId)
     sut.register(fixture.scopes, fixture.options)
+    sut.appStartReporter!!.reusableTraceId = storedTraceId
     setAppStartTime()
 
     val activity = mock<Activity>()
@@ -1172,7 +1166,7 @@ class ActivityLifecycleIntegrationTest {
     val context = fixture.capturedContexts.single()
     assertEquals(ActivityLifecycleIntegration.UI_LOAD_OP, context.operation)
     assertEquals(storedTraceId, context.traceId)
-    assertNull(AppStartMetrics.getInstance().getAppStartTraceId())
+    assertNull(sut.appStartReporter!!.reusableTraceId)
   }
 
   @Test

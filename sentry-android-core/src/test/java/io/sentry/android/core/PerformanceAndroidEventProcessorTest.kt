@@ -13,10 +13,10 @@ import io.sentry.SpanStatus
 import io.sentry.TracesSamplingDecision
 import io.sentry.TransactionContext
 import io.sentry.android.core.ActivityLifecycleIntegration.APP_START_COLD
-import io.sentry.android.core.ActivityLifecycleIntegration.APP_START_SCREEN_DATA
 import io.sentry.android.core.ActivityLifecycleIntegration.APP_START_WARM
-import io.sentry.android.core.ActivityLifecycleIntegration.STANDALONE_APP_START_OP
 import io.sentry.android.core.ActivityLifecycleIntegration.UI_LOAD_OP
+import io.sentry.android.core.StandaloneAppStartReporter.APP_START_SCREEN_DATA
+import io.sentry.android.core.StandaloneAppStartReporter.STANDALONE_APP_START_OP
 import io.sentry.android.core.performance.ActivityLifecycleTimeSpan
 import io.sentry.android.core.performance.AppStartMetrics
 import io.sentry.android.core.performance.AppStartMetrics.AppStartType

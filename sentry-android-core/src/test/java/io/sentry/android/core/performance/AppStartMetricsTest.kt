@@ -16,7 +16,6 @@ import io.sentry.SentryNanotimeDate
 import io.sentry.android.core.CurrentActivityHolder
 import io.sentry.android.core.SentryAndroidOptions
 import io.sentry.android.core.SentryShadowProcess
-import io.sentry.protocol.SentryId
 import java.util.Date
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
@@ -68,7 +67,6 @@ class AppStartMetricsTest {
     metrics.appStartProfiler = mock()
     metrics.appStartContinuousProfiler = mock()
     metrics.appStartSamplingDecision = mock()
-    metrics.setAppStartTraceId(SentryId())
 
     metrics.clear()
 
@@ -82,7 +80,6 @@ class AppStartMetricsTest {
     assertNull(metrics.appStartProfiler)
     assertNull(metrics.appStartContinuousProfiler)
     assertNull(metrics.appStartSamplingDecision)
-    assertNull(metrics.getAppStartTraceId())
   }
 
   @Test

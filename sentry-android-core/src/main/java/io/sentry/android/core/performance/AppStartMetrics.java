@@ -25,7 +25,6 @@ import io.sentry.android.core.ContextUtils;
 import io.sentry.android.core.CurrentActivityHolder;
 import io.sentry.android.core.SentryAndroidOptions;
 import io.sentry.android.core.internal.util.FirstDrawDoneListener;
-import io.sentry.protocol.SentryId;
 import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.LazyEvaluator;
 import java.util.ArrayList;
@@ -92,7 +91,6 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   private final AtomicBoolean headlessAppStartCheckPending = new AtomicBoolean(false);
   private final AtomicBoolean headlessAppStartListenerInvoked = new AtomicBoolean(false);
   private volatile @Nullable HeadlessAppStartListener headlessAppStartListener;
-  private @Nullable SentryId appStartTraceId;
   private @Nullable ApplicationStartInfo cachedStartInfo;
 
   public static @NotNull AppStartMetrics getInstance() {
@@ -179,15 +177,6 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
         && !firstDrawDone.get()) {
       scheduleHeadlessAppStartCheckOnMain();
     }
-  }
-
-  /** Trace ID from a headless app start transaction, to be reused by a later activity. */
-  public @Nullable SentryId getAppStartTraceId() {
-    return appStartTraceId;
-  }
-
-  public void setAppStartTraceId(final @Nullable SentryId traceId) {
-    this.appStartTraceId = traceId;
   }
 
   /**
@@ -306,7 +295,6 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     headlessAppStartCheckPending.set(false);
     headlessAppStartListenerInvoked.set(false);
     headlessAppStartListener = null;
-    appStartTraceId = null;
     cachedStartInfo = null;
   }
 
