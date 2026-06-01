@@ -4,6 +4,7 @@
 
 ### Fixes
 
+- Session Replay: Fix replay recording freezing on screens with continuous animations ([#5489](https://github.com/getsentry/sentry-java/pull/5489))
 - Session Replay: Populate `trace_ids` in replay events to enable searching replays by trace ID ([#5473](https://github.com/getsentry/sentry-java/pull/5473))
 
 ## 8.43.0
@@ -29,10 +30,6 @@
   }
   ```
 - Parse ART memory and garbage collector info from ANR tombstones into ART context ([#5428](https://github.com/getsentry/sentry-java/pull/5428))
-
-### Fixes
-
-- Session Replay: Fix screenshot capture freezing on screens with continuous animations ([#5404](https://github.com/getsentry/sentry-java/issues/5404))
 
 ## 8.42.0
 
