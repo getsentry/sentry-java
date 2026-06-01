@@ -294,6 +294,7 @@ class ScopeTest {
     scope.setAttribute("some", "attribute")
     scope.addEventProcessor(eventProcessor())
     scope.addAttachment(Attachment("path"))
+    scope.addFeatureFlag("flag", true)
 
     scope.clear()
 
@@ -309,6 +310,7 @@ class ScopeTest {
     assertEquals(0, scope.extras.size)
     assertEquals(0, scope.eventProcessors.size)
     assertEquals(0, scope.attachments.size)
+    assertEquals(0, scope.featureFlags!!.values.size)
   }
 
   @Test
@@ -1152,6 +1154,18 @@ class ScopeTest {
     val flags = scope.featureFlags
     assertNotNull(flags)
 
+    assertEquals(0, flags.values.size)
+  }
+
+  @Test
+  fun `feature flags can be cleared`() {
+    val scope = Scope(SentryOptions.empty())
+
+    scope.addFeatureFlag("flag1", true)
+    scope.clearFeatureFlags()
+
+    val flags = scope.featureFlags
+    assertNotNull(flags)
     assertEquals(0, flags.values.size)
   }
 

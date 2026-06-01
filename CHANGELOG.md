@@ -9,7 +9,55 @@
   - Emits a transaction named `App Start` with op `app.start`, carrying the existing app start measurements and phase spans (`process.load`, `contentprovider.load`, `application.load`, activity lifecycle spans) as direct children of the root
   - The standalone transaction shares the same `traceId` as the first `ui.load` activity transaction so they remain linked in the trace view
   - Also covers non-activity starts (broadcast receivers, services, content providers)
+
+### Fixes
+
+- Session Replay: Populate `trace_ids` in replay events to enable searching replays by trace ID ([#5473](https://github.com/getsentry/sentry-java/pull/5473))
+
+## 8.43.0
+
+### Features
+
+- Session Replay: Add `ReplayFrameObserver` for observing captured replay frames ([#5386](https://github.com/getsentry/sentry-java/pull/5386))
+
+  ```kotlin
+  SentryAndroid.init(context) { options ->
+    options.sessionReplay.frameObserver =
+      SentryReplayOptions.ReplayFrameObserver { hint, frameTimestamp, screenName ->
+        val bitmap = hint.getAs(TypeCheckHint.REPLAY_FRAME_BITMAP, Bitmap::class.java)
+        if (bitmap != null) {
+          try {
+            // Process the masked replay frame
+            myAnalyzer.processFrame(bitmap, frameTimestamp, screenName)
+          } finally {
+            bitmap.recycle()
+          }
+        }
+      }
+  }
+  ```
+- Parse ART memory and garbage collector info from ANR tombstones into ART context ([#5428](https://github.com/getsentry/sentry-java/pull/5428))
+
+## 8.42.0
+
+### Features
+
+- Add option to attach raw tombstone protobuf on native crash events ([#5446](https://github.com/getsentry/sentry-java/pull/5446))
+  - Enable via `options.isAttachRawTombstone = true` or manifest: `<meta-data android:name="io.sentry.tombstone.attach-raw" android:value="true" />`
+- Add API to clear feature flags from scopes ([#5426](https://github.com/getsentry/sentry-java/pull/5426))
 - Add support to configure reporting historical ANRs via `AndroidManifest.xml` using the  `io.sentry.anr.report-historical` attribute ([#5387](https://github.com/getsentry/sentry-java/pull/5387))
+
+### Dependencies
+
+- Bump Gradle from v9.5.0 to v9.5.1 ([#5419](https://github.com/getsentry/sentry-java/pull/5419))
+  - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v951)
+  - [diff](https://github.com/gradle/gradle/compare/v9.5.0...v9.5.1)
+- Bump Native SDK from v0.14.0 to v0.14.2 ([#5433](https://github.com/getsentry/sentry-java/pull/5433), [#5441](https://github.com/getsentry/sentry-java/pull/5441))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0142)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.14.0...0.14.2)
+- Bump SAGP (Sentry Android Gradle Plugin) from v6.0.0-alpha.6 to v6.6.0 ([#5427](https://github.com/getsentry/sentry-java/pull/5427))
+  - [changelog](https://github.com/getsentry/sentry-android-gradle-plugin/blob/main/CHANGELOG.md)
+  - [diff](https://github.com/getsentry/sentry-android-gradle-plugin/compare/6.0.0-alpha.6...6.6.0)
 
 ## 8.41.0
 

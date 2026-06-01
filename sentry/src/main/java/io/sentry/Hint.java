@@ -32,6 +32,7 @@ public final class Hint {
   private @Nullable Attachment screenshot = null;
   private @Nullable Attachment viewHierarchy = null;
   private @Nullable Attachment threadDump = null;
+  private @Nullable Attachment tombstone = null;
   private @Nullable ReplayRecording replayRecording = null;
 
   public static @NotNull Hint withAttachment(@Nullable Attachment attachment) {
@@ -145,6 +146,14 @@ public final class Hint {
 
   public @Nullable Attachment getThreadDump() {
     return threadDump;
+  }
+
+  public void setTombstone(final @Nullable Attachment tombstone) {
+    this.tombstone = tombstone;
+  }
+
+  public @Nullable Attachment getTombstone() {
+    return tombstone;
   }
 
   @Nullable

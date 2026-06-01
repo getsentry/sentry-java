@@ -162,12 +162,12 @@ class JsonObjectDeserializerTest {
   fun `deserialize json object object`() {
     val json =
       """
-            {
-                "key": {
-                    "key": "value"
-                }
-            }
-            """
+      {
+          "key": {
+              "key": "value"
+          }
+      }
+      """
         .trimIndent()
     val expected = mapOf<String, Any>("key" to mapOf("key" to "value"))
 
@@ -179,26 +179,26 @@ class JsonObjectDeserializerTest {
   fun `deserialize json object object with nesting`() {
     val json =
       """
-            {
-                "fixture-key":
-                {
-                    "string": "fixture-string",
-                    "int": 123,
-                    "double": 123.321,
-                    "boolean": true,
-                    "array":
-                    [
-                        "a",
-                        "b",
-                        "c"
-                    ],
-                    "object":
-                    {
-                        "key": "value"
-                    }
-                }
-            }
-            """
+      {
+          "fixture-key":
+          {
+              "string": "fixture-string",
+              "int": 123,
+              "double": 123.321,
+              "boolean": true,
+              "array":
+              [
+                  "a",
+                  "b",
+                  "c"
+              ],
+              "object":
+              {
+                  "key": "value"
+              }
+          }
+      }
+      """
         .trimIndent()
 
     val expected =

@@ -137,12 +137,12 @@ internal object ComposeViewHierarchyNode {
           SentryLevel.ERROR,
           t,
           """
-                    Error retrieving semantics information from Compose tree. Most likely you're using
-                    an unsupported version of androidx.compose.ui:ui. The supported
-                    version range is 1.5.0 - 1.10.2.
-                    If you're using a newer version, please open a github issue with the version
-                    you're using, so we can add support for it.
-                    """
+          Error retrieving semantics information from Compose tree. Most likely you're using
+          an unsupported version of androidx.compose.ui:ui. The supported
+          version range is 1.5.0 - 1.10.2.
+          If you're using a newer version, please open a github issue with the version
+          you're using, so we can add support for it.
+          """
             .trimIndent(),
         )
       }
@@ -284,11 +284,11 @@ internal object ComposeViewHierarchyNode {
         SentryLevel.ERROR,
         e,
         """
-                Error traversing Compose tree. Most likely you're using an unsupported version of
-                androidx.compose.ui:ui. The minimum supported version is 1.5.0. If it's a newer
-                version, please open a github issue with the version you're using, so we can add
-                support for it.
-                """
+        Error traversing Compose tree. Most likely you're using an unsupported version of
+        androidx.compose.ui:ui. The minimum supported version is 1.5.0. If it's a newer
+        version, please open a github issue with the version you're using, so we can add
+        support for it.
+        """
           .trimIndent(),
       )
       return false

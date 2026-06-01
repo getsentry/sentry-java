@@ -1,4 +1,5 @@
 import net.ltgt.gradle.errorprone.errorprone
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -12,7 +13,7 @@ plugins {
 }
 
 tasks.withType<KotlinCompile>().configureEach {
-  compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8
+  compilerOptions.jvmTarget = JvmTarget.JVM_1_8
   compilerOptions.languageVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
   compilerOptions.apiVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
 }
@@ -35,7 +36,7 @@ dependencies {
   compileOnly(libs.servlet.api)
   compileOnly(libs.springboot.starter)
   compileOnly(libs.springboot.starter.aop)
-  compileOnly(libs.springboot.starter.graphql)
+  compileOnly(libs.spring.graphql)
   compileOnly(libs.springboot.starter.quartz)
   compileOnly(libs.springboot.starter.security)
   compileOnly(libs.spring.kafka2)
@@ -83,8 +84,6 @@ dependencies {
   testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
   testImplementation(projects.sentryAsyncProfiler)
 }
-
-configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
 
 jacoco { toolVersion = libs.versions.jacoco.get() }
 

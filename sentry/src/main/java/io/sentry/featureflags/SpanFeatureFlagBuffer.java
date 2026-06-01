@@ -49,6 +49,13 @@ public final class SpanFeatureFlagBuffer implements IFeatureFlagBuffer {
   }
 
   @Override
+  public void clear() {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      flags = null;
+    }
+  }
+
+  @Override
   public @Nullable FeatureFlags getFeatureFlags() {
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       if (flags == null || flags.isEmpty()) {

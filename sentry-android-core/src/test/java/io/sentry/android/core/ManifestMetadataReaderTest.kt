@@ -289,6 +289,31 @@ class ManifestMetadataReaderTest {
   }
 
   @Test
+  fun `applyMetadata reads tombstone attach raw to options`() {
+    // Arrange
+    val bundle = bundleOf(ManifestMetadataReader.TOMBSTONE_ATTACH_RAW to true)
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertEquals(true, fixture.options.isAttachRawTombstone)
+  }
+
+  @Test
+  fun `applyMetadata reads tombstone attach raw to options and keeps default`() {
+    // Arrange
+    val context = fixture.getContext()
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertEquals(false, fixture.options.isAttachRawTombstone)
+  }
+
+  @Test
   fun `applyMetadata reads anr report historical to options`() {
     // Arrange
     val bundle = bundleOf(ManifestMetadataReader.ANR_REPORT_HISTORICAL to true)

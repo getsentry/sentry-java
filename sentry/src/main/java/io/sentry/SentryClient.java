@@ -399,6 +399,11 @@ public final class SentryClient implements ISentryClient {
       attachments.add(threadDump);
     }
 
+    @Nullable final Attachment tombstone = hint.getTombstone();
+    if (tombstone != null) {
+      attachments.add(tombstone);
+    }
+
     return attachments;
   }
 
@@ -1036,6 +1041,13 @@ public final class SentryClient implements ISentryClient {
       options.getLogger().log(SentryLevel.WARNING, e, "Capturing transaction %s failed.", sentryId);
       // if there was an error capturing the event, we return an emptyId
       sentryId = SentryId.EMPTY_ID;
+    }
+
+    if (!sentryId.equals(SentryId.EMPTY_ID)) {
+      final @Nullable SpanContext trace = transaction.getContexts().getTrace();
+      if (trace != null) {
+        options.getReplayController().registerTraceId(trace.getTraceId());
+      }
     }
 
     return sentryId;

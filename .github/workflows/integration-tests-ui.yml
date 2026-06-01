@@ -33,7 +33,7 @@ jobs:
           java-version: '17'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c
+        uses: gradle/actions/setup-gradle@50e97c2cd7a37755bbfafc9c5b7cafaece252f6e # v6.1.0
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
@@ -72,6 +72,28 @@ jobs:
           fi
         if: env.SAUCE_USERNAME != null
 
+
+      - name: Install Sentry CLI
+        if: ${{ !cancelled() && env.SAUCE_USERNAME != null }}
+        run: curl -sL https://sentry.io/get-cli/ | bash
+
+      - name: Upload Replay Snapshots to Sentry
+        if: ${{ !cancelled() && env.SAUCE_USERNAME != null }}
+        run: |
+          shopt -s globstar nullglob
+          pngs=(artifacts/**/*.png)
+          if [ ${#pngs[@]} -gt 0 ]; then
+            mkdir -p replay-snapshots
+            cp "${pngs[@]}" replay-snapshots/
+            sentry-cli build snapshots ./replay-snapshots \
+              --app-id sentry-android-replay
+          else
+            echo "No replay snapshot files found, skipping upload"
+          fi
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: sentry-sdks
+          SENTRY_PROJECT: sentry-android
 
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}

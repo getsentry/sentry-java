@@ -4,9 +4,11 @@ on:
   push:
     branches:
       - main
-    paths-ignore:
-      - '**/sentry-android/**'
   pull_request:
+    paths-ignore:
+      - '*android*/**'
+      - 'sentry-compose/**'
+      - 'sentry-samples/sentry-samples-android/**'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -19,7 +21,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        springboot-version: [ '3.0.0', '3.2.12', '3.3.13', '3.4.13', '3.5.13' ]
+        springboot-version: [ '3.2.12', '3.3.13', '3.4.13', '3.5.13' ]
 
     name: Spring Boot ${{ matrix.springboot-version }}
     env:
@@ -56,14 +58,15 @@ jobs:
           key: build-logic-${{ hashFiles('buildSrc/src/**', 'buildSrc/build.gradle.kts','buildSrc/settings.gradle.kts') }}
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c
+        uses: gradle/actions/setup-gradle@50e97c2cd7a37755bbfafc9c5b7cafaece252f6e # v6.1.0
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
       - name: Update Spring Boot 3.x version
         run: |
-          sed -i 's/^springboot3=.*/springboot3=${{ matrix.springboot-version }}/' gradle/libs.versions.toml
-          echo "Updated Spring Boot 3.x version to ${{ matrix.springboot-version }}"
+          springboot_version="${{ matrix.springboot-version }}"
+          perl -0pi -e 'BEGIN { $v = shift } s/^springboot3[[:space:]]*=[[:space:]]*"\K[^"]*/$v/m or die "::error::springboot3 version entry not found in gradle/libs.versions.toml\n"' "$springboot_version" gradle/libs.versions.toml
+          echo "Updated Spring Boot 3.x version to $springboot_version"
 
       - name: Exclude android modules from build
         run: |

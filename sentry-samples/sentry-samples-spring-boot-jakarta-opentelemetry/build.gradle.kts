@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.config.KotlinCompilerVersion
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.springframework.boot.gradle.tasks.run.BootRun
 
@@ -19,6 +20,12 @@ java.targetCompatibility = JavaVersion.VERSION_17
 
 repositories { mavenCentral() }
 
+dependencyManagement {
+  imports {
+    mavenBom("org.springframework.boot:spring-boot-dependencies:${libs.versions.springboot3.get()}")
+  }
+}
+
 // Apollo 4.x requires coroutines 1.9.0+, override Spring Boot's managed version
 extra["kotlin-coroutines.version"] = "1.9.0"
 
@@ -27,14 +34,12 @@ configure<JavaPluginExtension> {
   targetCompatibility = JavaVersion.VERSION_17
 }
 
-tasks.withType<KotlinCompile>().configureEach {
-  compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
-}
+tasks.withType<KotlinCompile>().configureEach { compilerOptions.jvmTarget = JvmTarget.JVM_17 }
 
 tasks.withType<KotlinCompile>().configureEach {
   kotlin {
     compilerOptions.freeCompilerArgs = listOf("-Xjsr305=strict")
-    compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
+    compilerOptions.jvmTarget = JvmTarget.JVM_17
   }
 }
 
@@ -82,8 +87,6 @@ dependencies {
   testImplementation("ch.qos.logback:logback-classic:1.5.16")
   testImplementation("ch.qos.logback:logback-core:1.5.16")
 }
-
-configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
 
 tasks.register<BootRun>("bootRunWithAgent").configure {
   group = "application"

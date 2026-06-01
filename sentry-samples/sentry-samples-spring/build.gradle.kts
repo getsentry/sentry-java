@@ -1,3 +1,4 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -33,6 +34,7 @@ dependencyManagement {
     mavenBom(libs.springboot2.bom.get().toString())
     mavenBom(libs.kotlin.bom.get().toString())
     mavenBom(libs.jackson.bom.get().toString())
+    mavenBom(libs.okhttp.bom.get().toString())
   }
 }
 
@@ -64,11 +66,9 @@ dependencies {
 tasks.withType<KotlinCompile>().configureEach {
   kotlin {
     compilerOptions.freeCompilerArgs = listOf("-Xjsr305=strict")
-    compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8
+    compilerOptions.jvmTarget = JvmTarget.JVM_1_8
   }
 }
-
-configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
 
 tasks.register<Test>("systemTest").configure {
   group = "verification"

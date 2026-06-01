@@ -46,12 +46,12 @@ class CollectionUtilsTest {
   fun `concurrent hashmap creation ignores null values`() {
     val json =
       """
-            {
-                "key1": "value1",
-                "key2": null,
-                "key3": "value3"
-            }
-            """
+      {
+          "key1": "value1",
+          "key2": null,
+          "key3": "value3"
+      }
+      """
         .trimIndent()
     val reader = JsonObjectReader(StringReader(json))
     val deserializedMap = reader.nextObjectOrNull() as Map<String, String>

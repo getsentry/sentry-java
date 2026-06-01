@@ -75,8 +75,7 @@ make systemTest
 ### Android-Specific Commands
 ```bash
 # Assemble Android test APKs
-./gradlew :sentry-android-integration-tests:sentry-uitest-android:assembleRelease
-./gradlew :sentry-android-integration-tests:sentry-uitest-android:assembleAndroidTest -DtestBuildType=release
+./gradlew :sentry-android-integration-tests:sentry-uitest-android:assembleRelease :sentry-android-integration-tests:sentry-uitest-android:assembleAndroidTest
 
 # Run critical UI tests
 ./scripts/test-ui-critical.sh
@@ -154,6 +153,8 @@ When adapting code from third-party libraries:
    // <source URL>
    ```
 2. Add a full attribution entry to `THIRD_PARTY_NOTICES.md` following the existing format (Source, License, Copyright, Scope, full license text)
+
+3. Run the `check-code-attribution` skill locally or wait for it to be auto-run against your PR to check for required fields and verify new licenses against [Sentry's Open Source Legal Policy](https://open.sentry.io/licensing/).
 
 ### Getting PR Information
 

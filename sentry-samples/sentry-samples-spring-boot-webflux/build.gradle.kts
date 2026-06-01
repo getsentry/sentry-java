@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.config.KotlinCompilerVersion
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -15,22 +16,36 @@ group = "io.sentry.sample.spring-boot"
 
 version = "0.0.1-SNAPSHOT"
 
-java.sourceCompatibility = JavaVersion.VERSION_17
+java.sourceCompatibility = JavaVersion.VERSION_11
 
-java.targetCompatibility = JavaVersion.VERSION_17
+java.targetCompatibility = JavaVersion.VERSION_11
 
 repositories { mavenCentral() }
+
+fun springBoot2SupportsGraphql(): Boolean {
+  val version = libs.versions.springboot2.get().removeSuffix(".RELEASE")
+  val parts = version.split(".").map { it.toIntOrNull() ?: 0 }
+  val major = parts.getOrElse(0) { 0 }
+  val minor = parts.getOrElse(1) { 0 }
+  return major > 2 || (major == 2 && minor >= 7)
+}
+
+val includeGraphql = !project.hasProperty("excludeGraphql") && springBoot2SupportsGraphql()
 
 dependencies {
   implementation(platform(libs.springboot2.bom))
   implementation(libs.springboot.starter.actuator)
-  implementation(libs.springboot.starter.graphql)
+  if (includeGraphql) {
+    implementation(libs.springboot.starter.graphql)
+  }
   implementation(libs.springboot.starter.webflux)
   implementation(Config.Libs.kotlinReflect)
   implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
   implementation(projects.sentrySpringBootStarter)
   implementation(projects.sentryLogback)
-  implementation(projects.sentryGraphql)
+  if (includeGraphql) {
+    implementation(projects.sentryGraphql)
+  }
   implementation(projects.sentryAsyncProfiler)
 
   testImplementation(kotlin(Config.kotlinStdLib))
@@ -68,12 +83,19 @@ tasks.jar {
 
 tasks.startScripts { dependsOn(tasks.shadowJar) }
 
-configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
+configure<SourceSetContainer> {
+  main {
+    if (!includeGraphql) {
+      java.exclude("**/graphql/**")
+      resources.exclude("graphql/**")
+    }
+  }
+}
 
 tasks.withType<KotlinCompile>().configureEach {
   kotlin {
     compilerOptions.freeCompilerArgs = listOf("-Xjsr305=strict")
-    compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
+    compilerOptions.jvmTarget = JvmTarget.JVM_11
   }
 }
 
@@ -93,7 +115,12 @@ tasks.register<Test>("systemTest").configure {
   minHeapSize = "128m"
   maxHeapSize = "1g"
 
-  filter { includeTestsMatching("io.sentry.systemtest*") }
+  filter {
+    includeTestsMatching("io.sentry.systemtest*")
+    if (!includeGraphql) {
+      excludeTestsMatching("io.sentry.systemtest.Graphql*")
+    }
+  }
 }
 
 tasks.named("test").configure {

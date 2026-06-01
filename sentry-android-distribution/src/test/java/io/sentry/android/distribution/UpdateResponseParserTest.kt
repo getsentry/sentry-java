@@ -37,7 +37,7 @@ class UpdateResponseParserTest {
         },
         "current": null
       }
-    """
+      """
         .trimIndent()
 
     val result = parser.parseResponse(200, responseBody)
@@ -68,7 +68,7 @@ class UpdateResponseParserTest {
           "created_date": "2023-09-01T00:00:00Z"
         }
       }
-    """
+      """
         .trimIndent()
 
     val result = parser.parseResponse(200, responseBody)
@@ -90,7 +90,7 @@ class UpdateResponseParserTest {
           "created_date": "2023-09-01T00:00:00Z"
         }
       }
-    """
+      """
         .trimIndent()
 
     val result = parser.parseResponse(200, responseBody)
@@ -146,7 +146,7 @@ class UpdateResponseParserTest {
           "build_version": "2.0.0"
         }
       }
-    """
+      """
         .trimIndent()
 
     val result = parser.parseResponse(200, responseBody)
@@ -173,7 +173,7 @@ class UpdateResponseParserTest {
           "created_date": ""
         }
       }
-    """
+      """
         .trimIndent()
 
     val result = parser.parseResponse(200, responseBody)
@@ -214,7 +214,7 @@ class UpdateResponseParserTest {
           "created_date": "2023-10-01T00:00:00Z"
         }
       }
-    """
+      """
         .trimIndent()
 
     val result = parser.parseResponse(200, responseBody)
@@ -240,7 +240,7 @@ class UpdateResponseParserTest {
           "created_date": "2023-10-01T00:00:00Z"
         }
       }
-    """
+      """
         .trimIndent()
 
     val result = parser.parseResponse(200, responseBody)
@@ -266,7 +266,7 @@ class UpdateResponseParserTest {
           "created_date": "2023-10-01T00:00:00Z"
         }
       }
-    """
+      """
         .trimIndent()
 
     val result = parser.parseResponse(200, responseBody)
@@ -292,7 +292,7 @@ class UpdateResponseParserTest {
           "created_date": "2023-10-01T00:00:00Z"
         }
       }
-    """
+      """
         .trimIndent()
 
     val result = parser.parseResponse(200, responseBody)
@@ -316,7 +316,7 @@ class UpdateResponseParserTest {
           "created_date": "2023-10-01T00:00:00Z"
         }
       }
-    """
+      """
         .trimIndent()
 
     val result = parser.parseResponse(200, responseBody)
@@ -345,7 +345,7 @@ class UpdateResponseParserTest {
           "created_date": "2023-10-01T00:00:00Z"
         }
       }
-    """
+      """
         .trimIndent()
 
     val result = parser.parseResponse(200, responseBody)
@@ -372,7 +372,7 @@ class UpdateResponseParserTest {
           "created_date": "2023-10-01T00:00:00Z"
         }
       }
-    """
+      """
         .trimIndent()
 
     val result = parser.parseResponse(200, responseBody)
@@ -397,7 +397,7 @@ class UpdateResponseParserTest {
           "install_groups": []
         }
       }
-    """
+      """
         .trimIndent()
 
     val result = parser.parseResponse(200, responseBody)
@@ -422,7 +422,7 @@ class UpdateResponseParserTest {
           "install_groups": null
         }
       }
-    """
+      """
         .trimIndent()
 
     val result = parser.parseResponse(200, responseBody)
@@ -447,7 +447,7 @@ class UpdateResponseParserTest {
           "install_groups": ["beta-testers"]
         }
       }
-    """
+      """
         .trimIndent()
 
     val result = parser.parseResponse(200, responseBody)

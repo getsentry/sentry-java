@@ -25,6 +25,7 @@ class ContextsSerializationTest {
         setResponse(ResponseSerializationTest.Fixture().getSut())
         setTrace(SpanContextSerializationTest.Fixture().getSut())
         setSpring(SpringSerializationTest.Fixture().getSut())
+        setArt(ArtContextSerializationTest.Fixture().getSut())
         setFeatureFlags(FeatureFlagsSerializationTest.Fixture().getSut())
       }
   }

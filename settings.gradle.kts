@@ -7,6 +7,18 @@ pluginManagement {
     }
 }
 
+plugins {
+    id("com.gradle.develocity") version "4.4.2"
+    id("com.gradle.common-custom-user-data-gradle-plugin") version "2.6.0"
+}
+
+develocity {
+    buildScan {
+        termsOfUseUrl.set("https://gradle.com/help/legal-terms-of-use")
+        termsOfUseAgree.set("yes")
+    }
+}
+
 dependencyResolutionManagement {
     repositories {
         google()

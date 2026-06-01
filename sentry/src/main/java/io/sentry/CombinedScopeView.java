@@ -550,6 +550,11 @@ public final class CombinedScopeView implements IScope {
   }
 
   @Override
+  public void clearFeatureFlags() {
+    getDefaultWriteScope().clearFeatureFlags();
+  }
+
+  @Override
   public @Nullable FeatureFlags getFeatureFlags() {
     return getFeatureFlagBuffer().getFeatureFlags();
   }

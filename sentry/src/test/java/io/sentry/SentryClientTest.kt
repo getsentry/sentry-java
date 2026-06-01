@@ -1959,6 +1959,23 @@ class SentryClientTest {
   }
 
   @Test
+  fun `captureTransaction registers trace ID with replay controller`() {
+    var registeredTraceId: SentryId? = null
+    fixture.sentryOptions.setReplayController(
+      object : ReplayController by NoOpReplayController.getInstance() {
+        override fun registerTraceId(traceId: SentryId) {
+          registeredTraceId = traceId
+        }
+      }
+    )
+    val sut = fixture.getSut()
+    val sentryTracer = SentryTracer(TransactionContext("name", "op"), fixture.scopes)
+    val transaction = SentryTransaction(sentryTracer)
+    sut.captureTransaction(transaction, sentryTracer.traceContext())
+    assertEquals(sentryTracer.spanContext.traceId, registeredTraceId)
+  }
+
+  @Test
   fun `when exception type is ignored, capturing event does not send it`() {
     fixture.sentryOptions.addIgnoredExceptionForType(IllegalStateException::class.java)
     val sut = fixture.getSut()
@@ -2117,6 +2134,37 @@ class SentryClientTest {
     val sut = fixture.getSut()
     val attachment = Attachment.fromThreadDump(byteArrayOf())
     val hint = Hint().also { it.threadDump = attachment }
+
+    sut.captureEvent(SentryEvent(), hint)
+
+    verify(fixture.transport)
+      .send(check { envelope -> assertEquals(1, envelope.items.count()) }, anyOrNull())
+  }
+
+  @Test
+  fun `tombstone is added to the envelope from the hint`() {
+    val sut = fixture.getSut()
+    val attachment = Attachment.fromTombstone(byteArrayOf())
+    val hint = Hint().also { it.tombstone = attachment }
+
+    sut.captureEvent(SentryEvent(), hint)
+
+    verify(fixture.transport)
+      .send(
+        check { envelope ->
+          val tombstone = envelope.items.last()
+          assertNotNull(tombstone) { assertEquals(attachment.filename, tombstone.header.fileName) }
+        },
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `tombstone is dropped from hint via before send`() {
+    fixture.sentryOptions.beforeSend = CustomBeforeSendCallback()
+    val sut = fixture.getSut()
+    val attachment = Attachment.fromTombstone(byteArrayOf())
+    val hint = Hint().also { it.tombstone = attachment }
 
     sut.captureEvent(SentryEvent(), hint)
 
@@ -3647,6 +3695,7 @@ class SentryClientTest {
       hint.screenshot = null
       hint.viewHierarchy = null
       hint.threadDump = null
+      hint.tombstone = null
       return event
     }
   }

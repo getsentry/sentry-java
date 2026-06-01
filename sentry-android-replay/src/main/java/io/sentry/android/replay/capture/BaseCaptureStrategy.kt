@@ -54,6 +54,8 @@ internal abstract class BaseCaptureStrategy(
 ) : CaptureStrategy {
   internal companion object {
     private const val TAG = "CaptureStrategy"
+    // https://github.com/getsentry/sentry-javascript/blob/30eb68fff5077211c30c61ba74625e66ab514870/packages/replay-internal/src/coreHandlers/handleAfterSendEvent.ts#L41
+    private const val MAX_TRACE_IDS = 100
   }
 
   private val persistingExecutor: ScheduledExecutorService by lazy {
@@ -96,6 +98,8 @@ internal abstract class BaseCaptureStrategy(
   override var replayType by persistableAtomic<ReplayType>(propertyName = SEGMENT_KEY_REPLAY_TYPE)
 
   protected val currentEvents: Deque<RRWebEvent> = ConcurrentLinkedDeque()
+  private val traceIdsLock = Any()
+  private val currentTraceIds: MutableList<String> = mutableListOf()
 
   override fun start(segmentId: Int, replayId: SentryId, replayType: ReplayType?) {
     cache = replayCacheProvider?.invoke(replayId) ?: ReplayCache(options, replayId)
@@ -135,8 +139,14 @@ internal abstract class BaseCaptureStrategy(
     screenAtStart: String? = this.screenAtStart,
     breadcrumbs: List<Breadcrumb>? = null,
     events: Deque<RRWebEvent> = this.currentEvents,
-  ): ReplaySegment =
-    createSegment(
+  ): ReplaySegment {
+    val traceIds =
+      synchronized(traceIdsLock) {
+        val ids = currentTraceIds.toList()
+        currentTraceIds.clear()
+        ids
+      }
+    return createSegment(
       scopes,
       options,
       duration,
@@ -152,7 +162,9 @@ internal abstract class BaseCaptureStrategy(
       screenAtStart,
       breadcrumbs,
       events,
+      traceIds,
     )
+  }
 
   override fun onConfigurationChanged(recorderConfig: ScreenshotRecorderConfig) {
     this.recorderConfig = recorderConfig
@@ -163,6 +175,19 @@ internal abstract class BaseCaptureStrategy(
       val rrwebEvents = gestureConverter.convert(event, config)
       if (rrwebEvents != null) {
         currentEvents += rrwebEvents
+      }
+    }
+  }
+
+  override fun registerTraceId(traceId: SentryId) {
+    if (traceId != SentryId.EMPTY_ID) {
+      synchronized(traceIdsLock) {
+        if (currentTraceIds.size < MAX_TRACE_IDS) {
+          val id = traceId.toString()
+          if (!currentTraceIds.contains(id)) {
+            currentTraceIds.add(id)
+          }
+        }
       }
     }
   }

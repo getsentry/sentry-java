@@ -574,6 +574,7 @@ public final class Scope implements IScope {
     eventProcessors.clear();
     clearTransaction();
     clearAttachments();
+    clearFeatureFlags();
   }
 
   /**
@@ -1209,6 +1210,11 @@ public final class Scope implements IScope {
   @Override
   public void addFeatureFlag(final @Nullable String flag, final @Nullable Boolean result) {
     featureFlags.add(flag, result);
+  }
+
+  @Override
+  public void clearFeatureFlags() {
+    featureFlags.clear();
   }
 
   @Override
