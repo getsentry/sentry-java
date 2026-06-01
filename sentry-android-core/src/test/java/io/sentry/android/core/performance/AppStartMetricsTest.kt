@@ -235,10 +235,12 @@ class AppStartMetricsTest {
   }
 
   @Test
-  fun `headless app start fires HeadlessAppStartListener`() {
+  fun `headless app start fires OnMainIdleNoActivityCallback`() {
     val listenerCalls = AtomicInteger()
 
-    AppStartMetrics.getInstance().setHeadlessAppStartListener { listenerCalls.incrementAndGet() }
+    AppStartMetrics.getInstance().setOnMainIdleNoActivityCallback {
+      listenerCalls.incrementAndGet()
+    }
     AppStartMetrics.getInstance().registerLifecycleCallbacks(mock<Application>())
     waitForMainLooperIdle()
 
@@ -246,11 +248,11 @@ class AppStartMetricsTest {
   }
 
   @Test
-  fun `activity start prevents HeadlessAppStartListener`() {
+  fun `activity start prevents OnMainIdleNoActivityCallback`() {
     val listenerCalls = AtomicInteger()
     val metrics = AppStartMetrics.getInstance()
 
-    metrics.setHeadlessAppStartListener { listenerCalls.incrementAndGet() }
+    metrics.setOnMainIdleNoActivityCallback { listenerCalls.incrementAndGet() }
     metrics.onActivityCreated(mock<Activity>(), null)
     metrics.registerLifecycleCallbacks(mock<Application>())
     waitForMainLooperIdle()
@@ -262,7 +264,6 @@ class AppStartMetricsTest {
   fun `resolveHeadlessAppStartEndTime uses applicationOnCreate stop when Gradle plugin instrumented`() {
     val metrics = AppStartMetrics.getInstance()
     metrics.appStartTimeSpan.setStartedAt(100)
-    metrics.setHeadlessAppStartListener {}
     metrics.applicationOnCreateTimeSpan.apply {
       setStartedAt(120)
       setStoppedAt(200)
@@ -270,6 +271,7 @@ class AppStartMetricsTest {
 
     metrics.registerLifecycleCallbacks(mock<Application>())
     waitForMainLooperIdle()
+    metrics.finalizeHeadlessAppStartEndTime()
 
     assertEquals(100, metrics.appStartTimeSpan.durationMs)
   }
@@ -279,10 +281,9 @@ class AppStartMetricsTest {
     val metrics = AppStartMetrics.getInstance()
     metrics.setClassLoadedUptimeMs(200)
     metrics.appStartTimeSpan.setStartedAt(100)
-    metrics.setHeadlessAppStartListener {}
-
     metrics.registerLifecycleCallbacks(mock<Application>())
     waitForMainLooperIdle()
+    metrics.finalizeHeadlessAppStartEndTime()
 
     assertEquals(100, metrics.appStartTimeSpan.durationMs)
   }
@@ -294,7 +295,6 @@ class AppStartMetricsTest {
       setStartedAt(100)
       setStoppedAt(150)
     }
-    metrics.setHeadlessAppStartListener {}
     metrics.applicationOnCreateTimeSpan.apply {
       setStartedAt(120)
       setStoppedAt(200)
@@ -302,6 +302,7 @@ class AppStartMetricsTest {
 
     metrics.registerLifecycleCallbacks(mock<Application>())
     waitForMainLooperIdle()
+    metrics.finalizeHeadlessAppStartEndTime()
 
     assertEquals(50, metrics.appStartTimeSpan.durationMs)
   }

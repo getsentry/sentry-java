@@ -78,7 +78,7 @@ public final class ActivityLifecycleIntegration
 
   private @Nullable FullyDisplayedReporter fullyDisplayedReporter = null;
   private @Nullable ISpan appStartSpan;
-  private @Nullable StandaloneAppStartReporter appStartReporter;
+  private final @Nullable StandaloneAppStartCoordinator appStartCoordinator;
   private final @NotNull WeakHashMap<Activity, ISpan> ttidSpanMap = new WeakHashMap<>();
   private final @NotNull WeakHashMap<Activity, ISpan> ttfdSpanMap = new WeakHashMap<>();
   private final @NotNull WeakHashMap<Activity, ActivityLifecycleSpanHelper> activitySpanHelpers =
@@ -101,11 +101,20 @@ public final class ActivityLifecycleIntegration
       final @NotNull Application application,
       final @NotNull BuildInfoProvider buildInfoProvider,
       final @NotNull ActivityFramesTracker activityFramesTracker) {
+    this(application, buildInfoProvider, activityFramesTracker, null);
+  }
+
+  public ActivityLifecycleIntegration(
+      final @NotNull Application application,
+      final @NotNull BuildInfoProvider buildInfoProvider,
+      final @NotNull ActivityFramesTracker activityFramesTracker,
+      final @Nullable StandaloneAppStartCoordinator appStartCoordinator) {
     this.application = Objects.requireNonNull(application, "Application is required");
     this.buildInfoProvider =
         Objects.requireNonNull(buildInfoProvider, "BuildInfoProvider is required");
     this.activityFramesTracker =
         Objects.requireNonNull(activityFramesTracker, "ActivityFramesTracker is required");
+    this.appStartCoordinator = appStartCoordinator;
 
     if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.Q) {
       isAllActivityCallbacksAvailable = true;
@@ -127,11 +136,6 @@ public final class ActivityLifecycleIntegration
 
     application.registerActivityLifecycleCallbacks(this);
 
-    if (performanceEnabled && this.options.isEnableStandaloneAppStartTracing()) {
-      appStartReporter = new StandaloneAppStartReporter(scopes, TRACE_ORIGIN);
-      appStartReporter.register();
-    }
-
     this.options.getLogger().log(SentryLevel.DEBUG, "ActivityLifecycleIntegration installed.");
     addIntegrationToSdkVersion("ActivityLifecycle");
   }
@@ -143,10 +147,6 @@ public final class ActivityLifecycleIntegration
   @Override
   public void close() throws IOException {
     application.unregisterActivityLifecycleCallbacks(this);
-    if (appStartReporter != null) {
-      appStartReporter.close();
-      appStartReporter = null;
-    }
 
     if (options != null) {
       options.getLogger().log(SentryLevel.DEBUG, "ActivityLifecycleIntegration removed.");
@@ -254,7 +254,7 @@ public final class ActivityLifecycleIntegration
         // A non-null reusable trace id means a standalone app-start txn was already emitted by a
         // prior headless start; the ui.load transaction joins that trace instead of starting fresh.
         final @Nullable SentryId reusableTraceId =
-            appStartReporter != null ? appStartReporter.getReusableTraceId() : null;
+            appStartCoordinator != null ? appStartCoordinator.getReusableTraceId() : null;
         final boolean isFollowingHeadlessAppStart = (reusableTraceId != null);
 
         final ITransaction transaction =
@@ -272,19 +272,19 @@ public final class ActivityLifecycleIntegration
                         UI_LOAD_OP,
                         appStartSamplingDecision),
                 transactionOptions);
-        if (appStartReporter != null) {
-          appStartReporter.setReusableTraceId(null);
+        if (appStartCoordinator != null) {
+          appStartCoordinator.setReusableTraceId(null);
         }
 
         final SpanOptions spanOptions = new SpanOptions();
         setSpanOrigin(spanOptions);
 
         if (!(firstActivityCreated || appStartTime == null || coldStart == null)) {
-          if (appStartReporter != null) {
+          if (appStartCoordinator != null) {
             // standalone path: emit a sibling App Start transaction sharing the ui.load trace,
             // unless a headless start already emitted one on this trace.
             if (!isFollowingHeadlessAppStart) {
-              appStartReporter.startForActivity(
+              appStartCoordinator.startForActivity(
                   transaction.getSpanContext().getTraceId(),
                   activityName,
                   appStartTime,
@@ -594,8 +594,8 @@ public final class ActivityLifecycleIntegration
         // in case the appStartSpan isn't completed yet, we finish it as cancelled to avoid
         // memory leak
         finishSpan(appStartSpan, SpanStatus.CANCELLED);
-        if (appStartReporter != null) {
-          appStartReporter.onActivityDestroyed();
+        if (appStartCoordinator != null) {
+          appStartCoordinator.onActivityDestroyed();
         }
 
         // we finish the ttidSpan as cancelled in case it isn't completed yet
@@ -830,8 +830,8 @@ public final class ActivityLifecycleIntegration
   }
 
   private @Nullable ISpan getAppStartParent(final @NotNull Activity activity) {
-    if (appStartReporter != null) {
-      final @Nullable ISpan appStartTransaction = appStartReporter.getAppStartTransaction();
+    if (appStartCoordinator != null) {
+      final @Nullable ISpan appStartTransaction = appStartCoordinator.getAppStartTransaction();
       if (appStartTransaction != null) {
         return appStartTransaction;
       }
@@ -863,15 +863,15 @@ public final class ActivityLifecycleIntegration
                 .getProjectedStopTimestamp();
     if (performanceEnabled && appStartEndTime != null) {
       finishSpan(appStartSpan, appStartEndTime);
-      if (appStartReporter != null) {
-        appStartReporter.finishAppStart(appStartEndTime);
+      if (appStartCoordinator != null) {
+        appStartCoordinator.finishAppStart(appStartEndTime);
       }
     }
   }
 
   @TestOnly
   @Nullable
-  StandaloneAppStartReporter getAppStartReporter() {
-    return appStartReporter;
+  StandaloneAppStartCoordinator getAppStartCoordinator() {
+    return appStartCoordinator;
   }
 }

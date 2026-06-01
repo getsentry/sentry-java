@@ -17,17 +17,15 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Owns the standalone app-start feature end to end: emitting the {@code App Start} transaction
- * (both the activity-launch path and the headless, non-activity path), keeping its trace linked to
- * the following {@code ui.load} transaction, and classifying transactions for the event processor.
+ * Owns standalone app-start transactions: activity-launch siblings, headless emit-and-finish, trace
+ * reuse for a later {@code ui.load}, and transaction classification for the event processor.
  *
- * <p>This lives on the post-init side of the SDK so it can hold an {@link IScopes} and start
- * transactions. {@link AppStartMetrics} remains a pre-init, scope-less recorder; it emits the
- * "headless app start happened" signal via {@link AppStartMetrics.HeadlessAppStartListener} and
- * this reporter turns that signal into a transaction. Only data crosses the pre-/post-init seam,
- * not logic.
+ * <p>{@link AppStartMetrics} remains a pre-init historian and schedules the main-idle/no-activity
+ * check. This reporter subscribes via {@link AppStartMetrics.OnMainIdleNoActivityCallback} and
+ * turns that signal into a transaction once {@link IScopes} are available.
  */
-final class StandaloneAppStartReporter implements AppStartMetrics.HeadlessAppStartListener {
+final class StandaloneAppStartReporter
+    implements StandaloneAppStartCoordinator, AppStartMetrics.OnMainIdleNoActivityCallback {
 
   static final String STANDALONE_APP_START_OP = "app.start";
   static final String STANDALONE_APP_START_NAME = "App Start";
@@ -39,10 +37,7 @@ final class StandaloneAppStartReporter implements AppStartMetrics.HeadlessAppSta
   /** The activity-launch sibling transaction. Headless starts are emitted and finished inline. */
   private @Nullable ITransaction appStartTransaction;
 
-  /**
-   * Trace id from a headless app start, to be reused by a later activity so both share a trace.
-   * Owned here rather than parked on the {@link AppStartMetrics} singleton.
-   */
+  /** Trace id from a headless app start, to be reused by a later activity so both share a trace. */
   private volatile @Nullable SentryId reusableTraceId;
 
   StandaloneAppStartReporter(final @NotNull IScopes scopes, final @NotNull String traceOrigin) {
@@ -51,20 +46,15 @@ final class StandaloneAppStartReporter implements AppStartMetrics.HeadlessAppSta
   }
 
   void register() {
-    AppStartMetrics.getInstance().setHeadlessAppStartListener(this);
+    AppStartMetrics.getInstance().setOnMainIdleNoActivityCallback(this);
   }
 
   void close() {
-    AppStartMetrics.getInstance().setHeadlessAppStartListener(null);
+    AppStartMetrics.getInstance().setOnMainIdleNoActivityCallback(null);
   }
 
-  /**
-   * Starts the activity-launch {@code App Start} transaction as a sibling of the {@code ui.load}
-   * transaction, sharing its trace id. The caller is responsible for finishing it via {@link
-   * #finishAppStart(SentryDate)}.
-   */
-  @NotNull
-  ITransaction startForActivity(
+  @Override
+  public @NotNull ITransaction startForActivity(
       final @NotNull SentryId traceId,
       final @NotNull String activityName,
       final @NotNull SentryDate appStartTime,
@@ -89,46 +79,47 @@ final class StandaloneAppStartReporter implements AppStartMetrics.HeadlessAppSta
     return transaction;
   }
 
-  /** The current activity-launch app-start transaction, used as a parent for lifecycle spans. */
-  @Nullable
-  ISpan getAppStartTransaction() {
+  @Override
+  public @Nullable ISpan getAppStartTransaction() {
     return appStartTransaction;
   }
 
-  /** Finishes the activity-launch app-start transaction at {@code endDate}, if one is running. */
-  void finishAppStart(final @NotNull SentryDate endDate) {
+  @Override
+  public void finishAppStart(final @NotNull SentryDate endDate) {
     if (appStartTransaction != null && !appStartTransaction.isFinished()) {
       appStartTransaction.finish(SpanStatus.OK, endDate);
     }
   }
 
-  /** Cancels and clears the activity-launch app-start transaction to avoid leaking it. */
-  void onActivityDestroyed() {
+  @Override
+  public void onActivityDestroyed() {
     if (appStartTransaction != null && !appStartTransaction.isFinished()) {
       appStartTransaction.finish(SpanStatus.CANCELLED);
     }
     appStartTransaction = null;
   }
 
-  /** Returns the stored trace id, if a prior headless app start emitted one. */
-  @Nullable
-  SentryId getReusableTraceId() {
+  @Override
+  public @Nullable SentryId getReusableTraceId() {
     return reusableTraceId;
   }
 
-  void setReusableTraceId(final @Nullable SentryId traceId) {
+  @Override
+  public void setReusableTraceId(final @Nullable SentryId traceId) {
     this.reusableTraceId = traceId;
   }
 
   @Override
-  public void onHeadlessAppStart() {
+  public void onMainIdleNoActivity() {
     final @NotNull AppStartMetrics metrics = AppStartMetrics.getInstance();
-    // Profilers are stopped for headless starts; clear the decision so it doesn't
-    // leak to a later ui.load transaction if an activity eventually opens.
+    // Profilers are stopped in AppStartMetrics; clear the decision so it doesn't leak to a later
+    // ui.load transaction if an activity eventually opens.
     metrics.setAppStartSamplingDecision(null);
+    metrics.finalizeHeadlessAppStartEndTime();
+    emitHeadlessAppStartTransaction(metrics);
+  }
 
-    // For headless starts, appLaunchedInForeground is false, so we can't use
-    // getAppStartTimeSpanWithFallback (which gates on foreground).
+  private void emitHeadlessAppStartTransaction(final @NotNull AppStartMetrics metrics) {
     final @NotNull TimeSpan appStartTimeSpan = metrics.getAppStartTimeSpanForHeadless();
     if (!appStartTimeSpan.hasStarted() || !appStartTimeSpan.hasStopped()) {
       return;

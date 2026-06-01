@@ -150,7 +150,7 @@ class StandaloneAppStartReporterTest {
   // region headless path
 
   @Test
-  fun `onHeadlessAppStart emits a finished App Start transaction and stashes its trace id`() {
+  fun `onMainIdleNoActivity emits a finished App Start transaction and stashes its trace id`() {
     val sut = getSut()
     AppStartMetrics.getInstance().appStartTimeSpan.apply {
       setStartedAt(100)
@@ -158,7 +158,7 @@ class StandaloneAppStartReporterTest {
       setStoppedAt(200)
     }
 
-    sut.onHeadlessAppStart()
+    sut.onMainIdleNoActivity()
 
     val transaction = createdTransactions.single()
     val context = capturedContexts.allValues.single()
@@ -172,12 +172,12 @@ class StandaloneAppStartReporterTest {
   }
 
   @Test
-  fun `onHeadlessAppStart does nothing when the app start time span is incomplete`() {
+  fun `onMainIdleNoActivity does nothing when the app start time span is incomplete`() {
     val sut = getSut()
     AppStartMetrics.getInstance().appStartTimeSpan.reset()
     AppStartMetrics.getInstance().sdkInitTimeSpan.reset()
 
-    sut.onHeadlessAppStart()
+    sut.onMainIdleNoActivity()
 
     verify(scopes, never()).startTransaction(any(), any<TransactionOptions>())
     assertNull(sut.reusableTraceId)
@@ -188,22 +188,22 @@ class StandaloneAppStartReporterTest {
   // region listener wiring
 
   @Test
-  fun `register installs the reporter as the headless listener and close removes it`() {
+  fun `register installs the reporter as the main idle callback and close removes it`() {
     val sut = getSut()
 
     sut.register()
-    assertNotNull(headlessListener())
+    assertNotNull(mainIdleNoActivityCallback())
 
     sut.close()
-    assertNull(headlessListener())
+    assertNull(mainIdleNoActivityCallback())
   }
 
-  private fun headlessListener(): AppStartMetrics.HeadlessAppStartListener? {
+  private fun mainIdleNoActivityCallback(): AppStartMetrics.OnMainIdleNoActivityCallback? {
     val field =
-      AppStartMetrics::class.java.getDeclaredField("headlessAppStartListener").apply {
+      AppStartMetrics::class.java.getDeclaredField("onMainIdleNoActivityCallback").apply {
         isAccessible = true
       }
-    return field.get(AppStartMetrics.getInstance()) as AppStartMetrics.HeadlessAppStartListener?
+    return field.get(AppStartMetrics.getInstance()) as AppStartMetrics.OnMainIdleNoActivityCallback?
   }
 
   // endregion

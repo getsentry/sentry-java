@@ -23,6 +23,7 @@ public final class io/sentry/android/core/ActivityFramesTracker {
 
 public final class io/sentry/android/core/ActivityLifecycleIntegration : android/app/Application$ActivityLifecycleCallbacks, io/sentry/Integration, java/io/Closeable {
 	public fun <init> (Landroid/app/Application;Lio/sentry/android/core/BuildInfoProvider;Lio/sentry/android/core/ActivityFramesTracker;)V
+	public fun <init> (Landroid/app/Application;Lio/sentry/android/core/BuildInfoProvider;Lio/sentry/android/core/ActivityFramesTracker;Lio/sentry/android/core/StandaloneAppStartCoordinator;)V
 	public fun close ()V
 	public fun onActivityCreated (Landroid/app/Activity;Landroid/os/Bundle;)V
 	public fun onActivityDestroyed (Landroid/app/Activity;)V
@@ -182,6 +183,18 @@ public final class io/sentry/android/core/AppLifecycleIntegration : io/sentry/In
 	public fun <init> ()V
 	public fun close ()V
 	public fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
+}
+
+public final class io/sentry/android/core/AppStartIntegration : io/sentry/Integration, io/sentry/android/core/StandaloneAppStartCoordinator, java/io/Closeable {
+	public fun <init> ()V
+	public fun close ()V
+	public fun finishAppStart (Lio/sentry/SentryDate;)V
+	public fun getAppStartTransaction ()Lio/sentry/ISpan;
+	public fun getReusableTraceId ()Lio/sentry/protocol/SentryId;
+	public fun onActivityDestroyed ()V
+	public fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
+	public fun setReusableTraceId (Lio/sentry/protocol/SentryId;)V
+	public fun startForActivity (Lio/sentry/protocol/SentryId;Ljava/lang/String;Lio/sentry/SentryDate;Lio/sentry/TracesSamplingDecision;)Lio/sentry/ITransaction;
 }
 
 public final class io/sentry/android/core/AppState : java/io/Closeable {
@@ -554,6 +567,15 @@ public class io/sentry/android/core/SpanFrameMetricsCollector : io/sentry/IPerfo
 	public fun onSpanStarted (Lio/sentry/ISpan;)V
 }
 
+public abstract interface class io/sentry/android/core/StandaloneAppStartCoordinator {
+	public abstract fun finishAppStart (Lio/sentry/SentryDate;)V
+	public abstract fun getAppStartTransaction ()Lio/sentry/ISpan;
+	public abstract fun getReusableTraceId ()Lio/sentry/protocol/SentryId;
+	public abstract fun onActivityDestroyed ()V
+	public abstract fun setReusableTraceId (Lio/sentry/protocol/SentryId;)V
+	public abstract fun startForActivity (Lio/sentry/protocol/SentryId;Ljava/lang/String;Lio/sentry/SentryDate;Lio/sentry/TracesSamplingDecision;)Lio/sentry/ITransaction;
+}
+
 public final class io/sentry/android/core/SystemEventsBreadcrumbsIntegration : io/sentry/Integration, io/sentry/android/core/AppState$AppStateListener, java/io/Closeable {
 	public fun <init> (Landroid/content/Context;)V
 	public fun <init> (Landroid/content/Context;Landroid/os/Handler;)V
@@ -739,6 +761,7 @@ public class io/sentry/android/core/performance/AppStartMetrics : io/sentry/andr
 	public fun addActivityLifecycleTimeSpans (Lio/sentry/android/core/performance/ActivityLifecycleTimeSpan;)V
 	public fun clear ()V
 	public fun createProcessInitSpan ()Lio/sentry/android/core/performance/TimeSpan;
+	public fun finalizeHeadlessAppStartEndTime ()V
 	public fun getActivityLifecycleTimeSpans ()Ljava/util/List;
 	public fun getAppStartContinuousProfiler ()Lio/sentry/IContinuousProfiler;
 	public fun getAppStartProfiler ()Lio/sentry/ITransactionProfiler;
@@ -771,7 +794,7 @@ public class io/sentry/android/core/performance/AppStartMetrics : io/sentry/andr
 	public fun setAppStartSamplingDecision (Lio/sentry/TracesSamplingDecision;)V
 	public fun setAppStartType (Lio/sentry/android/core/performance/AppStartMetrics$AppStartType;)V
 	public fun setClassLoadedUptimeMs (J)V
-	public fun setHeadlessAppStartListener (Lio/sentry/android/core/performance/AppStartMetrics$HeadlessAppStartListener;)V
+	public fun setOnMainIdleNoActivityCallback (Lio/sentry/android/core/performance/AppStartMetrics$OnMainIdleNoActivityCallback;)V
 	public fun shouldSendStartMeasurements ()Z
 	public fun shouldSendStartMeasurements (Z)Z
 }
@@ -784,8 +807,8 @@ public final class io/sentry/android/core/performance/AppStartMetrics$AppStartTy
 	public static fun values ()[Lio/sentry/android/core/performance/AppStartMetrics$AppStartType;
 }
 
-public abstract interface class io/sentry/android/core/performance/AppStartMetrics$HeadlessAppStartListener {
-	public abstract fun onHeadlessAppStart ()V
+public abstract interface class io/sentry/android/core/performance/AppStartMetrics$OnMainIdleNoActivityCallback {
+	public abstract fun onMainIdleNoActivity ()V
 }
 
 public class io/sentry/android/core/performance/TimeSpan : java/lang/Comparable {

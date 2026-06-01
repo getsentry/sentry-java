@@ -120,7 +120,7 @@ class AppStartMetricsTestApi35 {
     val listenerCalls = AtomicInteger()
     val metrics = AppStartMetrics.getInstance()
     metrics.appStartTimeSpan.setStartedAt(100)
-    metrics.setHeadlessAppStartListener { listenerCalls.incrementAndGet() }
+    metrics.setOnMainIdleNoActivityCallback { listenerCalls.incrementAndGet() }
 
     val app = ApplicationProvider.getApplicationContext<Application>()
     metrics.registerLifecycleCallbacks(app)
@@ -141,7 +141,7 @@ class AppStartMetricsTestApi35 {
     val metrics = AppStartMetrics.getInstance()
     metrics.appStartTimeSpan.setStartedAt(100)
     metrics.setClassLoadedUptimeMs(200)
-    metrics.setHeadlessAppStartListener {}
+    metrics.setOnMainIdleNoActivityCallback { metrics.finalizeHeadlessAppStartEndTime() }
 
     val app = ApplicationProvider.getApplicationContext<Application>()
     metrics.registerLifecycleCallbacks(app)
@@ -172,7 +172,7 @@ class AppStartMetricsTestApi35 {
     SentryShadowProcess.setStartElapsedRealtime(processStartElapsedMs)
     val metrics = AppStartMetrics.getInstance()
     metrics.appStartTimeSpan.setStartedAt(processStartUptimeMs)
-    metrics.setHeadlessAppStartListener {}
+    metrics.setOnMainIdleNoActivityCallback { metrics.finalizeHeadlessAppStartEndTime() }
 
     val app = ApplicationProvider.getApplicationContext<Application>()
     metrics.registerLifecycleCallbacks(app)
@@ -199,7 +199,7 @@ class AppStartMetricsTestApi35 {
     val metrics = AppStartMetrics.getInstance()
     metrics.appStartTimeSpan.setStartedAt(100)
     metrics.setClassLoadedUptimeMs(200)
-    metrics.setHeadlessAppStartListener {}
+    metrics.setOnMainIdleNoActivityCallback { metrics.finalizeHeadlessAppStartEndTime() }
 
     val app = ApplicationProvider.getApplicationContext<Application>()
     metrics.registerLifecycleCallbacks(app)
@@ -224,7 +224,7 @@ class AppStartMetricsTestApi35 {
     metrics.registerLifecycleCallbacks(app)
 
     // Listener set AFTER registerLifecycleCallbacks — mirrors production ordering
-    metrics.setHeadlessAppStartListener { listenerCalls.incrementAndGet() }
+    metrics.setOnMainIdleNoActivityCallback { listenerCalls.incrementAndGet() }
     waitForMainLooperIdle()
 
     assertEquals(AppStartMetrics.AppStartType.COLD, metrics.appStartType)
