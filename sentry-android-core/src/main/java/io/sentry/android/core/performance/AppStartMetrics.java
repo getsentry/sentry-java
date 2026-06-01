@@ -10,7 +10,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.os.Process;
 import android.os.SystemClock;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -488,21 +487,13 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
         final @NotNull Map<Integer, Long> timestamps = cachedStartInfo.getStartupTimestamps();
         final @Nullable Long onCreateNanos =
             timestamps.get(ApplicationStartInfo.START_TIMESTAMP_APPLICATION_ONCREATE);
-        if (onCreateNanos != null && onCreateNanos > 0) {
-          // ApplicationStartInfo documents "clock monotonic" timestamps in nanoseconds,
-          // without specifying the clock base. Compute a duration first and re-anchor it
-          // onto TimeSpan's uptime base. If the platform uses a different base and the delta
-          // is implausible, this falls through to the class-loaded fallback below.
-          final long onCreateElapsedRealtimeMs = TimeUnit.NANOSECONDS.toMillis(onCreateNanos);
-          final long durationMs = onCreateElapsedRealtimeMs - Process.getStartElapsedRealtime();
-          if (durationMs > 0 && durationMs <= TimeUnit.MINUTES.toMillis(1)) {
-            final long onCreateUptimeMs = Process.getStartUptimeMillis() + durationMs;
-            if (applicationOnCreate.hasStarted() && applicationOnCreate.hasNotStopped()) {
-              applicationOnCreate.setStoppedAt(onCreateUptimeMs);
-            }
-            stopHeadlessAppStartAt(onCreateUptimeMs);
-            return;
+        if (onCreateNanos != null) {
+          final long onCreateUptimeMs = TimeUnit.NANOSECONDS.toMillis(onCreateNanos);
+          if (applicationOnCreate.hasStarted() && applicationOnCreate.hasNotStopped()) {
+            applicationOnCreate.setStoppedAt(onCreateUptimeMs);
           }
+          stopHeadlessAppStartAt(onCreateUptimeMs);
+          return;
         }
       } catch (Throwable ignored) {
         // Best effort: never let optional startup timestamp enrichment break app startup.

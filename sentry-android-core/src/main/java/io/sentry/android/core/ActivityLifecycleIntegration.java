@@ -65,6 +65,7 @@ public final class ActivityLifecycleIntegration
   static final long TTFD_TIMEOUT_MILLIS = 25000;
   private static final String TRACE_ORIGIN = "auto.ui.activity";
   static final String APP_START_SCREEN_DATA = "app.vitals.start.screen";
+  static final String APP_START_TRACE_ORIGIN = "auto.app.start";
 
   private final @NotNull Application application;
   private final @NotNull BuildInfoProvider buildInfoProvider;
@@ -903,7 +904,7 @@ public final class ActivityLifecycleIntegration
     final TransactionOptions txnOptions = new TransactionOptions();
     txnOptions.setBindToScope(false);
     txnOptions.setStartTimestamp(startTime);
-    setSpanOrigin(txnOptions);
+    txnOptions.setOrigin(APP_START_TRACE_ORIGIN);
 
     final @NotNull TransactionContext txnContext =
         new TransactionContext(
