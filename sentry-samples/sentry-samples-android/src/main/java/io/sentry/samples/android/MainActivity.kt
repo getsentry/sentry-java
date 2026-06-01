@@ -499,6 +499,18 @@ fun SessionReplayScreen() {
       }
     }
     item {
+      SentryTraced("open_replay_animations") {
+        OutlinedButton(
+          onClick = {
+            activity.startActivity(Intent(activity, ReplayAnimationsActivity::class.java))
+          },
+          modifier = Modifier,
+        ) {
+          Text("Open Animations", maxLines = 2, overflow = TextOverflow.Ellipsis)
+        }
+      }
+    }
+    item {
       SentryTraced("show_dialog") {
         OutlinedButton(onClick = { showDialog = true }, modifier = Modifier) {
           Text("Show Dialog", maxLines = 2, overflow = TextOverflow.Ellipsis)

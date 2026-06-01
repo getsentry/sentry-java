@@ -126,6 +126,7 @@ launchdarkly-server = { module = "com.launchdarkly:launchdarkly-java-server-sdk"
 log4j-api = { module = "org.apache.logging.log4j:log4j-api", version.ref = "log4j2" }
 log4j-core = { module = "org.apache.logging.log4j:log4j-core", version.ref = "log4j2" }
 leakcanary = { module = "com.squareup.leakcanary:leakcanary-android", version = "2.14" }
+lottie-compose = { module = "com.airbnb.android:lottie-compose", version = "6.7.1" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 nopen-annotations = { module = "com.jakewharton.nopen:nopen-annotations", version.ref = "nopen" }
 nopen-checker = { module = "com.jakewharton.nopen:nopen-checker", version.ref = "nopen" }
@@ -248,4 +249,3 @@ msgpack = { module = "org.msgpack:msgpack-core", version = "0.9.8" }
 okhttp-mockwebserver = { module = "com.squareup.okhttp3:mockwebserver", version.ref = "okhttp" }
 okio = { module = "com.squareup.okio:okio", version = "1.13.0" }
 roboelectric = { module = "org.robolectric:robolectric", version = "4.15" }
-
