@@ -9,6 +9,7 @@ import io.sentry.SentryOptions
 import io.sentry.android.core.AppState
 import io.sentry.android.core.SentryAndroidOptions
 import io.sentry.test.getProperty
+import java.util.function.Supplier
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -21,7 +22,6 @@ import org.junit.Rule
 import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.mockito.kotlin.mock
-import java.util.function.Supplier
 
 @RunWith(AndroidJUnit4::class)
 class AnrProfilingIntegrationTest {
@@ -323,10 +323,11 @@ class AnrProfilingIntegrationTest {
         StackTraceElement("com.example.Flutter", "runApp", "app.dart", 10),
       )
     val providerCallCount = java.util.concurrent.atomic.AtomicInteger(0)
-    val customProvider = Supplier<Array<StackTraceElement>> {
-      providerCallCount.incrementAndGet()
-      customFrames
-    }
+    val customProvider =
+      Supplier<Array<StackTraceElement>> {
+        providerCallCount.incrementAndGet()
+        customFrames
+      }
 
     val androidOptions =
       SentryAndroidOptions().apply {
