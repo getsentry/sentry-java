@@ -92,6 +92,14 @@
       android:name=".TriggerHttpRequestActivity"
       android:exported="false" />
 
+    <activity
+      android:name=".sqlite.SQLiteActivity"
+      android:exported="false" />
+
+    <activity
+      android:name=".sqlite.UiLoadActivity"
+      android:exported="false" />
+
     <!--    NOTE: Replace the test DSN below with YOUR OWN DSN to see the events from this app in your Sentry project/dashboard-->
     <meta-data
       android:name="io.sentry.dsn"
