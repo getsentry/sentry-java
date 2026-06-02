@@ -89,7 +89,7 @@ class PerformanceAndroidEventProcessorTest {
   fun `add cold start measurement`() {
     val sut = fixture.getSut()
 
-    var tr = getTransaction(AppStartType.COLD)
+    var tr = createUiLoadTransactionWithAppStartChildSpan()
     setAppStart(fixture.options)
 
     tr = sut.process(tr, Hint())
@@ -101,9 +101,8 @@ class PerformanceAndroidEventProcessorTest {
   fun `add cold start measurement for standalone app start transaction launched from background`() {
     val sut = fixture.getSut()
 
-    var tr = getTransaction(AppStartType.COLD)
-    setAppStart(fixture.options)
-    AppStartMetrics.getInstance().isAppLaunchedInForeground = false
+    var tr = createStandaloneAppStartTransaction()
+    setStandaloneColdAppStartMetrics()
 
     tr = sut.process(tr, Hint())
 
@@ -115,7 +114,7 @@ class PerformanceAndroidEventProcessorTest {
     val sut = fixture.getSut(enablePerformanceV2 = true)
     setStandaloneColdAppStartMetrics(withApplicationOnCreate = true)
 
-    var tr = getTransaction(AppStartType.COLD)
+    var tr = createStandaloneAppStartTransaction()
     val rootSpanId = tr.contexts.trace!!.spanId
 
     tr = sut.process(tr, Hint())
@@ -130,7 +129,7 @@ class PerformanceAndroidEventProcessorTest {
     val sut = fixture.getSut(enablePerformanceV2 = true)
     setStandaloneColdAppStartMetrics(withApplicationOnCreate = false)
 
-    var tr = getTransaction(AppStartType.COLD)
+    var tr = createStandaloneAppStartTransaction()
     val rootSpanId = tr.contexts.trace!!.spanId
 
     tr = sut.process(tr, Hint())
@@ -145,7 +144,7 @@ class PerformanceAndroidEventProcessorTest {
     val sut = fixture.getSut(enablePerformanceV2 = true)
     setStandaloneColdAppStartMetrics()
 
-    var tr = getTransaction(AppStartType.COLD)
+    var tr = createStandaloneAppStartTransaction()
     val rootSpanId = tr.contexts.trace!!.spanId
 
     tr = sut.process(tr, Hint())
@@ -159,7 +158,7 @@ class PerformanceAndroidEventProcessorTest {
     val sut = fixture.getSut(enablePerformanceV2 = true)
     setStandaloneColdAppStartMetrics(withApplicationOnCreate = true)
 
-    var tr = getTransaction(AppStartType.COLD)
+    var tr = createStandaloneAppStartTransaction()
 
     tr = sut.process(tr, Hint())
 
@@ -186,8 +185,7 @@ class PerformanceAndroidEventProcessorTest {
       }
     }
 
-    var tr = getTransaction(AppStartType.COLD)
-    tr.contexts.trace!!.setData(APP_START_SCREEN_DATA, "MainActivity")
+    var tr = createStandaloneAppStartTransaction(appStartScreen = "MainActivity")
 
     tr = sut.process(tr, Hint())
 
@@ -198,7 +196,7 @@ class PerformanceAndroidEventProcessorTest {
   fun `add cold start measurement for performance-v2`() {
     val sut = fixture.getSut(enablePerformanceV2 = true)
 
-    var tr = getTransaction(AppStartType.COLD)
+    var tr = createUiLoadTransactionWithAppStartChildSpan()
     setAppStart(fixture.options)
 
     tr = sut.process(tr, Hint())
@@ -210,7 +208,7 @@ class PerformanceAndroidEventProcessorTest {
   fun `add warm start measurement`() {
     val sut = fixture.getSut()
 
-    var tr = getTransaction(AppStartType.WARM)
+    var tr = createUiLoadTransactionWithAppStartChildSpan(coldStart = false)
     setAppStart(fixture.options, false)
 
     tr = sut.process(tr, Hint())
@@ -222,7 +220,7 @@ class PerformanceAndroidEventProcessorTest {
   fun `set app cold start unit measurement`() {
     val sut = fixture.getSut()
 
-    var tr = getTransaction(AppStartType.COLD)
+    var tr = createUiLoadTransactionWithAppStartChildSpan()
     setAppStart(fixture.options)
 
     tr = sut.process(tr, Hint())
@@ -235,12 +233,12 @@ class PerformanceAndroidEventProcessorTest {
   fun `do not add app start metric twice`() {
     val sut = fixture.getSut()
 
-    var tr1 = getTransaction(AppStartType.COLD)
+    var tr1 = createUiLoadTransactionWithAppStartChildSpan()
     setAppStart(fixture.options, false)
 
     tr1 = sut.process(tr1, Hint())
 
-    var tr2 = getTransaction(AppStartType.UNKNOWN)
+    var tr2 = createUiLoadTransaction()
     tr2 = sut.process(tr2, Hint())
 
     assertTrue(tr1.measurements.containsKey(MeasurementValue.KEY_APP_START_WARM))
@@ -253,10 +251,10 @@ class PerformanceAndroidEventProcessorTest {
 
     setStandaloneColdAppStartMetrics()
 
-    var tr1 = getTransaction(AppStartType.COLD)
+    var tr1 = createStandaloneAppStartTransaction()
     tr1 = sut.process(tr1, Hint())
 
-    var tr2 = getTransaction(AppStartType.COLD)
+    var tr2 = createStandaloneAppStartTransaction()
     tr2 = sut.process(tr2, Hint())
 
     assertTrue(tr1.measurements.containsKey(MeasurementValue.KEY_APP_START_COLD))
@@ -268,7 +266,7 @@ class PerformanceAndroidEventProcessorTest {
   fun `do not add app start metric if its not ready`() {
     val sut = fixture.getSut()
 
-    var tr = getTransaction(AppStartType.UNKNOWN)
+    var tr = createUiLoadTransactionWithAppStartChildSpan()
 
     tr = sut.process(tr, Hint())
 
@@ -279,7 +277,7 @@ class PerformanceAndroidEventProcessorTest {
   fun `do not add app start metric if performance is disabled`() {
     val sut = fixture.getSut(tracesSampleRate = null)
 
-    var tr = getTransaction(AppStartType.COLD)
+    var tr = createUiLoadTransactionWithAppStartChildSpan()
 
     tr = sut.process(tr, Hint())
 
@@ -290,7 +288,7 @@ class PerformanceAndroidEventProcessorTest {
   fun `do not add app start metric if no app_start span`() {
     val sut = fixture.getSut(tracesSampleRate = null)
 
-    var tr = getTransaction(AppStartType.UNKNOWN)
+    var tr = createUiLoadTransaction()
 
     tr = sut.process(tr, Hint())
 
@@ -300,7 +298,7 @@ class PerformanceAndroidEventProcessorTest {
   @Test
   fun `do not add slow and frozen frames if not auto transaction`() {
     val sut = fixture.getSut()
-    var tr = getTransaction(AppStartType.UNKNOWN)
+    var tr = createTransaction("custom.op")
 
     tr = sut.process(tr, Hint())
 
@@ -310,7 +308,7 @@ class PerformanceAndroidEventProcessorTest {
   @Test
   fun `do not add slow and frozen frames if tracing is disabled`() {
     val sut = fixture.getSut(null)
-    var tr = getTransaction(AppStartType.UNKNOWN)
+    var tr = createUiLoadTransaction()
 
     tr = sut.process(tr, Hint())
 
@@ -1002,13 +1000,25 @@ class PerformanceAndroidEventProcessorTest {
     }
   }
 
-  private fun getTransaction(type: AppStartType): SentryTransaction {
-    val op =
-      when (type) {
-        AppStartType.COLD -> STANDALONE_APP_START_OP
-        AppStartType.WARM -> STANDALONE_APP_START_OP
-        AppStartType.UNKNOWN -> UI_LOAD_OP
+  private fun createUiLoadTransactionWithAppStartChildSpan(
+    coldStart: Boolean = true
+  ): SentryTransaction =
+    createUiLoadTransaction().also { txn ->
+      txn.spans.add(createAppStartSpan(txn.contexts.trace!!.traceId, coldStart))
+    }
+
+  private fun createUiLoadTransaction(): SentryTransaction = createTransaction(UI_LOAD_OP)
+
+  private fun createStandaloneAppStartTransaction(
+    appStartScreen: String? = null
+  ): SentryTransaction =
+    createTransaction(STANDALONE_APP_START_OP).also { txn ->
+      if (appStartScreen != null) {
+        txn.contexts.trace!!.setData(APP_START_SCREEN_DATA, appStartScreen)
       }
+    }
+
+  private fun createTransaction(op: String): SentryTransaction {
     val txn = SentryTransaction(fixture.tracer)
     txn.contexts.setTrace(SpanContext(op, TracesSamplingDecision(false)))
     return txn
