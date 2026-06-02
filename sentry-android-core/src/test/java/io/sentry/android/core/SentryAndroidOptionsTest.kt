@@ -3,11 +3,13 @@ package io.sentry.android.core
 import io.sentry.ITransactionProfiler
 import io.sentry.NoOpTransactionProfiler
 import io.sentry.protocol.DebugImage
+import java.util.function.Supplier
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 import org.mockito.kotlin.mock
 
@@ -231,6 +233,28 @@ class SentryAndroidOptionsTest {
   fun `anr profiling rejects invalid sample rate`() {
     val sentryOptions = SentryAndroidOptions()
     sentryOptions.anrProfilingSampleRate = 2.0
+  }
+
+  @Test
+  fun `anrStackTraceProvider is null by default`() {
+    val sentryOptions = SentryAndroidOptions()
+    assertNull(sentryOptions.anrStackTraceProvider)
+  }
+
+  @Test
+  fun `anrStackTraceProvider can be set and retrieved`() {
+    val sentryOptions = SentryAndroidOptions()
+    val provider = Supplier<Array<StackTraceElement>> { emptyArray() }
+    sentryOptions.anrStackTraceProvider = provider
+    assertSame(provider, sentryOptions.anrStackTraceProvider)
+  }
+
+  @Test
+  fun `anrStackTraceProvider can be cleared to null`() {
+    val sentryOptions = SentryAndroidOptions()
+    sentryOptions.anrStackTraceProvider = Supplier<Array<StackTraceElement>> { emptyArray() }
+    sentryOptions.anrStackTraceProvider = null
+    assertNull(sentryOptions.anrStackTraceProvider)
   }
 
   private class CustomDebugImagesLoader : IDebugImagesLoader {
