@@ -41,6 +41,10 @@ internal class PixelCopyStrategy(
 ) : ScreenshotStrategy {
 
   private companion object {
+    /**
+     * An unstable capture means the view hierarchy changed while PixelCopy was in flight. Cap
+     * skipped unstable captures so continuous animations don't stop replay recording.
+     */
     const val MAX_UNSTABLE_CAPTURES_TO_SKIP = 1
   }
 
