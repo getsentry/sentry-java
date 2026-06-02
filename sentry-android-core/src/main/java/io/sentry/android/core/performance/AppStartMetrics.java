@@ -92,6 +92,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   private final AtomicBoolean headlessAppStartCheckPending = new AtomicBoolean(false);
   private final AtomicBoolean headlessAppStartListenerInvoked = new AtomicBoolean(false);
   private volatile @Nullable HeadlessAppStartListener headlessAppStartListener;
+  // Captures a headless app.start so a later ui.load can share its trace.
   private @Nullable SentryId appStartTraceId;
   private @Nullable String appStartSentryTraceHeader;
   private @Nullable String appStartBaggageHeader;
@@ -184,7 +185,6 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     }
   }
 
-  /** Trace ID from a headless app start transaction, to be reused by a later activity. */
   public @Nullable SentryId getAppStartTraceId() {
     return appStartTraceId;
   }
@@ -193,10 +193,6 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     this.appStartTraceId = traceId;
   }
 
-  /**
-   * The {@code sentry-trace} header of a headless app start transaction, so a later activity's
-   * {@code ui.load} transaction can continue the same trace (sharing traceId and sampleRand).
-   */
   public @Nullable String getAppStartSentryTraceHeader() {
     return appStartSentryTraceHeader;
   }
@@ -205,9 +201,6 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     this.appStartSentryTraceHeader = appStartSentryTraceHeader;
   }
 
-  /**
-   * The {@code baggage} header of a headless app start transaction, paired with the trace header.
-   */
   public @Nullable String getAppStartBaggageHeader() {
     return appStartBaggageHeader;
   }
@@ -216,10 +209,6 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     this.appStartBaggageHeader = appStartBaggageHeader;
   }
 
-  /**
-   * End timestamp of a headless app start transaction, used to decide whether a later activity's
-   * {@code ui.load} transaction is close enough in time to continue the same trace.
-   */
   public @Nullable SentryDate getAppStartEndTime() {
     return appStartEndTime;
   }
@@ -556,7 +545,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
       }
     }
 
-    // Priority 3: Process init end time (CLASS_LOADED_UPTIME_MS) — always available
+    // Priority 3: Process init end time (CLASS_LOADED_UPTIME_MS)
     stopHeadlessAppStartAt(CLASS_LOADED_UPTIME_MS);
   }
 

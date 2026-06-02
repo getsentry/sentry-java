@@ -124,8 +124,10 @@
     <!--    how to disable ANR-->
     <!--    <meta-data android:name="io.sentry.anr.enable" android:value="false" />-->
 
-    <!--    how to disable the auto-init-->
-    <!--    <meta-data android:name="io.sentry.auto-init" android:value="false" />-->
+    <!-- E2E test harness requires manual init so we can set beforeSendTransaction. -->
+    <meta-data
+      android:name="io.sentry.auto-init"
+      android:value="false" />
 
     <!--    how to disable the NDK-->
     <!--    <meta-data android:name="io.sentry.ndk.enable" android:value="false" />-->
@@ -236,7 +238,7 @@
 
     <meta-data
       android:name="io.sentry.standalone-app-start-tracing.enable"
-      android:value="true" />
+      android:value="${standaloneAppStart}" />
 
     <meta-data
       android:name="io.sentry.session-replay.screenshot-strategy"

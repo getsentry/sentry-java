@@ -260,16 +260,11 @@ public final class ActivityLifecycleIntegration
 
         final @Nullable SentryId storedAppStartTraceId =
             AppStartMetrics.getInstance().getAppStartTraceId();
-        // A non-null trace ID means a standalone app-start txn was already emitted (headless
-        // start).
         final boolean isFollowingHeadlessAppStart = (storedAppStartTraceId != null);
 
         final boolean isAppStart =
             !(firstActivityCreated || appStartTime == null || coldStart == null);
-        // For a foreground app start we emit the standalone app.start transaction first, so it
-        // roots
-        // the trace and the ui.load transaction below can continue it (sharing traceId +
-        // sampleRand).
+        // Foreground starts create app.start first; ui.load then shares its trace.
         final boolean createStandaloneAppStart =
             isAppStart
                 && options.isEnableStandaloneAppStartTracing()
@@ -293,8 +288,7 @@ public final class ActivityLifecycleIntegration
           appStartTransaction.setData(APP_START_SCREEN_DATA, activityName);
         }
 
-        // Resolve the trace the ui.load transaction should continue: the standalone app.start we
-        // just created (foreground) or the one emitted earlier by a headless start.
+        // Continue either the foreground app.start above or an earlier headless app.start.
         final @Nullable String continueSentryTrace;
         final @Nullable String continueBaggage;
         if (createStandaloneAppStart) {
@@ -420,10 +414,8 @@ public final class ActivityLifecycleIntegration
   /**
    * Builds a {@link TransactionContext} for the ui.load transaction that shares the standalone
    * app.start trace (same traceId and sampleRand) while staying a sibling (no parentSpanId), rather
-   * than a child. It reuses the app.start trace headers so the shared sampleRand drives a
-   * consistent sampling decision (the inherited decision is kept as the parent sampling decision,
-   * so a custom tracesSampler still re-samples per-op against the shared sampleRand). Returns null
-   * if the trace cannot be continued (e.g. tracing disabled), so callers can fall back.
+   * than a child. The continued baggage keeps sampling decisions on the same sampleRand. Returns
+   * null if the trace cannot be continued, so callers can fall back.
    */
   private @Nullable TransactionContext continueUiLoadTrace(
       final @NotNull String sentryTrace,
@@ -447,8 +439,6 @@ public final class ActivityLifecycleIntegration
                 parentSampled,
                 continuedBaggage.getSampleRate(),
                 propagationContext.getSampleRand());
-    // parentSpanId is intentionally null: app.start and ui.load are siblings within the same trace
-    // (shared traceId + sampleRand), not parent/child.
     final @NotNull TransactionContext context =
         new TransactionContext(
             propagationContext.getTraceId(),
@@ -1014,8 +1004,7 @@ public final class ActivityLifecycleIntegration
 
     final @NotNull ITransaction transaction = scopes.startTransaction(txnContext, txnOptions);
     metrics.setAppStartTraceId(transaction.getSpanContext().getTraceId());
-    // Persist the trace headers so a later activity's ui.load transaction can continue this trace
-    // (sharing traceId and sampleRand) via continueTrace.
+    // Persist trace headers so a later ui.load can share traceId and sampleRand.
     metrics.setAppStartSentryTraceHeader(transaction.toSentryTrace().getValue());
     final @Nullable BaggageHeader baggageHeader = transaction.toBaggageHeader(null);
     metrics.setAppStartBaggageHeader(baggageHeader == null ? null : baggageHeader.getValue());

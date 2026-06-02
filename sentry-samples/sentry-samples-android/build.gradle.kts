@@ -76,9 +76,20 @@ android {
     }
   }
 
+  val standaloneAppStart = (project.findProperty("standaloneAppStart") as? String) ?: "true"
+  val simulateSentryGradlePlugin =
+    ((project.findProperty("simulateSentryGradlePlugin") as? String) ?: "false").toBoolean()
+
   buildTypes {
     getByName("debug") {
-      addManifestPlaceholders(mapOf("sentryDebug" to true, "sentryEnvironment" to "debug"))
+      addManifestPlaceholders(
+        mapOf(
+          "sentryDebug" to true,
+          "sentryEnvironment" to "debug",
+          "standaloneAppStart" to standaloneAppStart,
+        )
+      )
+      buildConfigField("boolean", "SIMULATE_GRADLE_PLUGIN", simulateSentryGradlePlugin.toString())
     }
     getByName("release") {
       isMinifyEnabled = true
@@ -86,7 +97,14 @@ android {
       signingConfig = signingConfigs.getByName("debug") // to be able to run release mode
       isShrinkResources = true
 
-      addManifestPlaceholders(mapOf("sentryDebug" to false, "sentryEnvironment" to "release"))
+      addManifestPlaceholders(
+        mapOf(
+          "sentryDebug" to false,
+          "sentryEnvironment" to "release",
+          "standaloneAppStart" to standaloneAppStart,
+        )
+      )
+      buildConfigField("boolean", "SIMULATE_GRADLE_PLUGIN", simulateSentryGradlePlugin.toString())
     }
   }
 
