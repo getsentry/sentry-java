@@ -35,6 +35,9 @@ public class SentrySQLiteDriver private constructor(private val delegate: SQLite
     SentryIntegrationPackageStorage.getInstance().addIntegration("SQLiteDriver")
   }
 
+  override val hasConnectionPool: Boolean
+    get() = delegate.hasConnectionPool
+
   @Suppress("TooGenericExceptionCaught")
   override fun open(fileName: String): SQLiteConnection {
     val connection = delegate.open(fileName)

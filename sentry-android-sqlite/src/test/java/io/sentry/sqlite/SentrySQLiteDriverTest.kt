@@ -93,6 +93,12 @@ class SentrySQLiteDriverTest {
   fun `all calls are propagated to the delegate`() {
     val sut = fixture.getSut("myapp.db")
 
+    whenever(fixture.mockDriver.hasConnectionPool).thenReturn(true)
+    assertTrue(sut.hasConnectionPool)
+
+    whenever(fixture.mockDriver.hasConnectionPool).thenReturn(false)
+    assertFalse(sut.hasConnectionPool)
+
     sut.open("myapp.db")
     verify(fixture.mockDriver).open("myapp.db")
   }
