@@ -52,6 +52,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.content.ContextCompat
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
@@ -68,19 +69,13 @@ class ReplayAnimationsActivity : ComponentActivity() {
     super.onCreate(savedInstanceState)
 
     setContent {
+      val primaryColor = Color(ContextCompat.getColor(this, R.color.colorPrimary))
+      val accentColor = Color(ContextCompat.getColor(this, R.color.colorAccent))
       val colorScheme =
         if (isSystemInDarkTheme())
-          darkColorScheme(
-            primary = Color(resources.getColor(R.color.colorPrimary, theme)),
-            secondary = Color(resources.getColor(R.color.colorAccent, theme)),
-            tertiary = Color(resources.getColor(R.color.colorPrimary, theme)),
-          )
+          darkColorScheme(primary = primaryColor, secondary = accentColor, tertiary = primaryColor)
         else
-          lightColorScheme(
-            primary = Color(resources.getColor(R.color.colorPrimary, theme)),
-            secondary = Color(resources.getColor(R.color.colorAccent, theme)),
-            tertiary = Color(resources.getColor(R.color.colorPrimary, theme)),
-          )
+          lightColorScheme(primary = primaryColor, secondary = accentColor, tertiary = primaryColor)
 
       MaterialTheme(colorScheme = colorScheme) { ReplayAnimationsScreen(onClose = { finish() }) }
     }
