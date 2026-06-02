@@ -23,11 +23,14 @@ import io.sentry.Sentry
 import io.sentry.SentryDate
 import io.sentry.SentryDateProvider
 import io.sentry.SentryNanotimeDate
+import io.sentry.SentryTraceHeader
 import io.sentry.SentryTracer
 import io.sentry.Span
+import io.sentry.SpanId
 import io.sentry.SpanStatus
 import io.sentry.SpanStatus.OK
 import io.sentry.TraceContext
+import io.sentry.TracesSamplingDecision
 import io.sentry.TransactionContext
 import io.sentry.TransactionFinishedCallback
 import io.sentry.TransactionOptions
@@ -54,6 +57,7 @@ import kotlin.test.assertSame
 import kotlin.test.assertTrue
 import org.junit.runner.RunWith
 import org.mockito.ArgumentCaptor
+import org.mockito.Mockito.mockStatic
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argumentCaptor
@@ -348,6 +352,7 @@ class ActivityLifecycleIntegrationTest {
     assertEquals(ActivityLifecycleIntegration.STANDALONE_APP_START_OP, context.operation)
     assertEquals("App Start", context.name)
     assertEquals(TransactionNameSource.COMPONENT, context.transactionNameSource)
+    assertEquals("auto.app.start", options.origin)
     assertFalse(options.isBindToScope)
     assertEquals(DateUtils.millisToNanos(100), options.startTimestamp!!.nanoTimestamp())
     assertEquals(
@@ -1124,6 +1129,8 @@ class ActivityLifecycleIntegrationTest {
     val appStartTransaction = fixture.createdTransactions[appStartIndex]
 
     assertEquals(uiLoadTransaction.spanContext.traceId, appStartTransaction.spanContext.traceId)
+    assertEquals("auto.app.start", fixture.capturedOptions[appStartIndex].origin)
+    assertEquals("auto.ui.activity", fixture.capturedOptions[uiLoadIndex].origin)
     assertFalse(fixture.capturedOptions[appStartIndex].isBindToScope)
     assertFalse(
       uiLoadTransaction.children.any {
@@ -1162,6 +1169,10 @@ class ActivityLifecycleIntegrationTest {
         it.isEnableStandaloneAppStartTracing = true
       }
     AppStartMetrics.getInstance().setAppStartTraceId(storedTraceId)
+    // headless start always stores the trace header alongside the trace id; the ui.load txn
+    // continues that trace via continueTrace, sharing the trace id.
+    AppStartMetrics.getInstance().appStartSentryTraceHeader =
+      SentryTraceHeader(storedTraceId, SpanId(), true).value
     sut.register(fixture.scopes, fixture.options)
     setAppStartTime()
 
@@ -1173,6 +1184,148 @@ class ActivityLifecycleIntegrationTest {
     assertEquals(ActivityLifecycleIntegration.UI_LOAD_OP, context.operation)
     assertEquals(storedTraceId, context.traceId)
     assertNull(AppStartMetrics.getInstance().getAppStartTraceId())
+  }
+
+  @Test
+  fun `activity within a minute of the headless start continues the same trace`() {
+    val storedTraceId = SentryId()
+    val sut =
+      fixture.getSut {
+        it.tracesSampleRate = 1.0
+        it.isEnableStandaloneAppStartTracing = true
+      }
+    AppStartMetrics.getInstance().setAppStartTraceId(storedTraceId)
+    AppStartMetrics.getInstance().appStartSentryTraceHeader =
+      SentryTraceHeader(storedTraceId, SpanId(), true).value
+    // headless start ended right before the activity opens
+    AppStartMetrics.getInstance().appStartEndTime = SentryNanotimeDate(Date(0), 0)
+    sut.register(fixture.scopes, fixture.options)
+    setAppStartTime(date = SentryNanotimeDate(Date(1), 0))
+
+    val activity = mock<Activity>()
+    sut.onActivityCreated(activity, fixture.bundle)
+
+    val context = fixture.capturedContexts.single()
+    assertEquals(ActivityLifecycleIntegration.UI_LOAD_OP, context.operation)
+    assertEquals(storedTraceId, context.traceId)
+  }
+
+  @Test
+  fun `activity more than a minute after the headless start starts a fresh trace`() {
+    val storedTraceId = SentryId()
+    val sut =
+      fixture.getSut {
+        it.tracesSampleRate = 1.0
+        it.isEnableStandaloneAppStartTracing = true
+      }
+    AppStartMetrics.getInstance().setAppStartTraceId(storedTraceId)
+    AppStartMetrics.getInstance().appStartSentryTraceHeader =
+      SentryTraceHeader(storedTraceId, SpanId(), true).value
+    // headless start ended at epoch, but the activity opens more than a minute later
+    AppStartMetrics.getInstance().appStartEndTime = SentryNanotimeDate(Date(0), 0)
+    sut.register(fixture.scopes, fixture.options)
+    setAppStartTime(date = SentryNanotimeDate(Date(TimeUnit.MINUTES.toMillis(2)), 0))
+
+    val activity = mock<Activity>()
+    sut.onActivityCreated(activity, fixture.bundle)
+
+    val context = fixture.capturedContexts.single()
+    assertEquals(ActivityLifecycleIntegration.UI_LOAD_OP, context.operation)
+    // too far apart: the ui.load gets its own fresh trace, not the stored one
+    assertNotEquals(storedTraceId, context.traceId)
+    // stored continuation state is still consumed so nothing reuses it
+    assertNull(AppStartMetrics.getInstance().getAppStartTraceId())
+  }
+
+  @Test
+  fun `onHeadlessAppStart stores sentry-trace and baggage headers for continuation`() {
+    val sut =
+      fixture.getSut {
+        it.tracesSampleRate = 1.0
+        it.isEnableStandaloneAppStartTracing = true
+      }
+    sut.register(fixture.scopes, fixture.options)
+    prepareHeadlessAppStart(appStartType = AppStartType.COLD)
+
+    driveHeadlessAppStart()
+
+    val transaction = fixture.createdTransactions.single()
+    val metrics = AppStartMetrics.getInstance()
+    val sentryTraceHeader = metrics.appStartSentryTraceHeader
+    val baggageHeader = metrics.appStartBaggageHeader
+    assertNotNull(sentryTraceHeader)
+    assertNotNull(baggageHeader)
+    // sentry-trace carries the standalone app.start trace id so a later ui.load txn can continue it
+    assertTrue(sentryTraceHeader.startsWith(transaction.spanContext.traceId.toString()))
+  }
+
+  @Test
+  fun `launcher activity shares standalone App Start trace and sampleRand as a sibling`() {
+    val sut =
+      fixture.getSut {
+        it.tracesSampleRate = 1.0
+        it.isEnableStandaloneAppStartTracing = true
+      }
+    sut.register(fixture.scopes, fixture.options)
+    setAppStartTime()
+    // the app-start sampling decision carries the sampleRand the whole trace should share
+    AppStartMetrics.getInstance()
+      .setAppStartSamplingDecision(TracesSamplingDecision(true, 1.0, 0.42))
+
+    val activity = mock<Activity>()
+    sut.onActivityCreated(activity, fixture.bundle)
+
+    assertEquals(2, fixture.capturedContexts.size)
+    val appStartIndex =
+      transactionIndexForOperation(ActivityLifecycleIntegration.STANDALONE_APP_START_OP)
+    val uiLoadIndex = transactionIndexForOperation(ActivityLifecycleIntegration.UI_LOAD_OP)
+    // app.start is created first so it roots the trace; ui.load shares it
+    assertTrue(appStartIndex < uiLoadIndex)
+
+    val appStartContext = fixture.capturedContexts[appStartIndex]
+    val uiLoadContext = fixture.capturedContexts[uiLoadIndex]
+    assertEquals(appStartContext.traceId, uiLoadContext.traceId)
+    // both share the same sampleRand
+    assertEquals(0.42, appStartContext.baggage?.sampleRand)
+    assertEquals(0.42, uiLoadContext.baggage?.sampleRand)
+    // siblings, not parent/child: ui.load has no parent span id
+    assertNull(uiLoadContext.parentSpanId)
+  }
+
+  @Test
+  fun `activity following a headless start shares stored trace and sampleRand as a sibling and clears headers`() {
+    val sut =
+      fixture.getSut {
+        it.tracesSampleRate = 1.0
+        it.isEnableStandaloneAppStartTracing = true
+      }
+    sut.register(fixture.scopes, fixture.options)
+
+    // 1) a headless start emits the standalone app.start and stores its trace headers
+    prepareHeadlessAppStart(appStartType = AppStartType.COLD)
+    driveHeadlessAppStart()
+    val appStartTransaction = fixture.createdTransactions.single()
+
+    // 2) an activity opens and shares the stored trace instead of emitting a second standalone
+    setAppStartTime()
+    val activity = mock<Activity>()
+    sut.onActivityCreated(activity, fixture.bundle)
+
+    val uiLoadContext =
+      fixture.capturedContexts.last { it.operation == ActivityLifecycleIntegration.UI_LOAD_OP }
+    assertFalse(
+      fixture.capturedContexts.drop(1).any {
+        it.operation == ActivityLifecycleIntegration.STANDALONE_APP_START_OP
+      }
+    )
+    assertEquals(appStartTransaction.spanContext.traceId, uiLoadContext.traceId)
+    // siblings, not parent/child: ui.load has no parent span id
+    assertNull(uiLoadContext.parentSpanId)
+
+    // stored continuation state is consumed
+    assertNull(AppStartMetrics.getInstance().getAppStartTraceId())
+    assertNull(AppStartMetrics.getInstance().appStartSentryTraceHeader)
+    assertNull(AppStartMetrics.getInstance().appStartBaggageHeader)
   }
 
   @Test
@@ -2052,8 +2205,15 @@ class ActivityLifecycleIntegrationTest {
   }
 
   private fun driveHeadlessAppStart() {
-    AppStartMetrics.getInstance().registerLifecycleCallbacks(mock<Application>())
-    waitForMainLooperIdle()
+    // A headless start (broadcast/service) runs in a non-foreground-importance process. The
+    // foreground guard in AppStartMetrics suppresses the headless path for foreground processes
+    // (deferred init inside an Activity), so headless scenarios must simulate background
+    // importance.
+    mockStatic(ContextUtils::class.java).use { contextUtils ->
+      contextUtils.`when`<Boolean> { ContextUtils.isForegroundImportance() }.thenReturn(false)
+      AppStartMetrics.getInstance().registerLifecycleCallbacks(mock<Application>())
+      waitForMainLooperIdle()
+    }
   }
 
   private fun waitForMainLooperIdle() {

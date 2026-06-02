@@ -18,6 +18,7 @@ import io.sentry.IContinuousProfiler;
 import io.sentry.ISentryLifecycleToken;
 import io.sentry.ITransactionProfiler;
 import io.sentry.NoOpLogger;
+import io.sentry.SentryDate;
 import io.sentry.TracesSamplingDecision;
 import io.sentry.android.core.BuildInfoProvider;
 import io.sentry.android.core.ContextUtils;
@@ -92,6 +93,9 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   private final AtomicBoolean headlessAppStartListenerInvoked = new AtomicBoolean(false);
   private volatile @Nullable HeadlessAppStartListener headlessAppStartListener;
   private @Nullable SentryId appStartTraceId;
+  private @Nullable String appStartSentryTraceHeader;
+  private @Nullable String appStartBaggageHeader;
+  private @Nullable SentryDate appStartEndTime;
   private @Nullable ApplicationStartInfo cachedStartInfo;
 
   public static @NotNull AppStartMetrics getInstance() {
@@ -187,6 +191,41 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
 
   public void setAppStartTraceId(final @Nullable SentryId traceId) {
     this.appStartTraceId = traceId;
+  }
+
+  /**
+   * The {@code sentry-trace} header of a headless app start transaction, so a later activity's
+   * {@code ui.load} transaction can continue the same trace (sharing traceId and sampleRand).
+   */
+  public @Nullable String getAppStartSentryTraceHeader() {
+    return appStartSentryTraceHeader;
+  }
+
+  public void setAppStartSentryTraceHeader(final @Nullable String appStartSentryTraceHeader) {
+    this.appStartSentryTraceHeader = appStartSentryTraceHeader;
+  }
+
+  /**
+   * The {@code baggage} header of a headless app start transaction, paired with the trace header.
+   */
+  public @Nullable String getAppStartBaggageHeader() {
+    return appStartBaggageHeader;
+  }
+
+  public void setAppStartBaggageHeader(final @Nullable String appStartBaggageHeader) {
+    this.appStartBaggageHeader = appStartBaggageHeader;
+  }
+
+  /**
+   * End timestamp of a headless app start transaction, used to decide whether a later activity's
+   * {@code ui.load} transaction is close enough in time to continue the same trace.
+   */
+  public @Nullable SentryDate getAppStartEndTime() {
+    return appStartEndTime;
+  }
+
+  public void setAppStartEndTime(final @Nullable SentryDate appStartEndTime) {
+    this.appStartEndTime = appStartEndTime;
   }
 
   /**
@@ -306,6 +345,9 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     headlessAppStartListenerInvoked.set(false);
     headlessAppStartListener = null;
     appStartTraceId = null;
+    appStartSentryTraceHeader = null;
+    appStartBaggageHeader = null;
+    appStartEndTime = null;
     cachedStartInfo = null;
   }
 
@@ -446,6 +488,17 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
    */
   private void handleHeadlessAppStartIfNeededOnMain() {
     if (activeActivitiesCounter.get() == 0) {
+      // SDK init happened after Application.onCreate (e.g. deferred/late init inside an Activity):
+      // we missed the Activity's onActivityCreated, but a foreground process means it was a real
+      // launch, not a headless start. Don't emit a (fake) headless app-start; just keep the counter
+      // consistent so the later onActivityDestroyed doesn't go negative. Gated on the listener so
+      // only the standalone-app-start path (which is what could emit a headless transaction) is
+      // affected.
+      if (headlessAppStartListener != null && ContextUtils.isForegroundImportance()) {
+        activeActivitiesCounter.compareAndSet(0, 1);
+        return;
+      }
+
       appLaunchedInForeground.setValue(false);
 
       // Headless starts have no Activity signal for the pre-API 35 warm/cold heuristic.
@@ -523,7 +576,9 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     if (activeActivitiesCounter.incrementAndGet() == 1 && !firstDrawDone.get()) {
       final long nowUptimeMs = SystemClock.uptimeMillis();
 
-      // If the app (process) was launched more than 1 minute ago, consider it a warm start
+      // If the app (process) was launched more than 1 minute ago, consider it a warm start.
+      // NOTE: meaningless in standalone app start mode, where a headless start is already its own
+      // standalone transaction and therefore cannot be re-classified as warm.
       final long durationSinceAppStartMillis = nowUptimeMs - appStartSpan.getStartUptimeMs();
       if (!appLaunchedInForeground.getValue()
           || durationSinceAppStartMillis > TimeUnit.MINUTES.toMillis(1)) {
