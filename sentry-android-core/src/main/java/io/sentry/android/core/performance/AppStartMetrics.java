@@ -541,6 +541,9 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
         final @Nullable Long onCreateNanos =
             timestamps.get(ApplicationStartInfo.START_TIMESTAMP_APPLICATION_ONCREATE);
         if (onCreateNanos != null) {
+          // START_TIMESTAMP_APPLICATION_ONCREATE is captured with SystemClock.uptimeNanos() (see
+          // ActivityThread.handleBindApplication), the same base as TimeSpan, so we can use it
+          // directly as an uptime-millis value without re-anchoring.
           final long onCreateUptimeMs = TimeUnit.NANOSECONDS.toMillis(onCreateNanos);
           if (applicationOnCreate.hasStarted() && applicationOnCreate.hasNotStopped()) {
             applicationOnCreate.setStoppedAt(onCreateUptimeMs);

@@ -13,6 +13,7 @@ import io.sentry.DateUtils
 import io.sentry.IContinuousProfiler
 import io.sentry.ITransactionProfiler
 import io.sentry.SentryNanotimeDate
+import io.sentry.android.core.ContextUtils
 import io.sentry.android.core.CurrentActivityHolder
 import io.sentry.android.core.SentryAndroidOptions
 import io.sentry.android.core.SentryShadowProcess
@@ -29,6 +30,7 @@ import kotlin.test.assertSame
 import kotlin.test.assertTrue
 import org.junit.Before
 import org.junit.runner.RunWith
+import org.mockito.Mockito.mockStatic
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
@@ -238,7 +240,7 @@ class AppStartMetricsTest {
   }
 
   @Test
-  fun `headless app start fires HeadlessAppStartListener`() {
+  fun `headless app start fires HeadlessAppStartListener`() = headlessProcess {
     val listenerCalls = AtomicInteger()
 
     AppStartMetrics.getInstance().setHeadlessAppStartListener { listenerCalls.incrementAndGet() }
@@ -246,6 +248,22 @@ class AppStartMetricsTest {
     waitForMainLooperIdle()
 
     assertEquals(1, listenerCalls.get())
+  }
+
+  @Test
+  fun `foreground process does not fire HeadlessAppStartListener`() {
+    // Deferred/late SDK init inside an already-running Activity: we missed onActivityCreated, but
+    // the process is foreground (Robolectric default importance), so this is a real launch, not a
+    // headless start. The listener must not fire and the headless reclassification must not run.
+    val listenerCalls = AtomicInteger()
+    val metrics = AppStartMetrics.getInstance()
+
+    metrics.setHeadlessAppStartListener { listenerCalls.incrementAndGet() }
+    metrics.registerLifecycleCallbacks(mock<Application>())
+    waitForMainLooperIdle()
+
+    assertEquals(0, listenerCalls.get())
+    assertEquals(AppStartMetrics.AppStartType.UNKNOWN, metrics.appStartType)
   }
 
   @Test
@@ -262,33 +280,35 @@ class AppStartMetricsTest {
   }
 
   @Test
-  fun `resolveHeadlessAppStartEndTime uses applicationOnCreate stop when Gradle plugin instrumented`() {
-    val metrics = AppStartMetrics.getInstance()
-    metrics.appStartTimeSpan.setStartedAt(100)
-    metrics.setHeadlessAppStartListener {}
-    metrics.applicationOnCreateTimeSpan.apply {
-      setStartedAt(120)
-      setStoppedAt(200)
+  fun `resolveHeadlessAppStartEndTime uses applicationOnCreate stop when Gradle plugin instrumented`() =
+    headlessProcess {
+      val metrics = AppStartMetrics.getInstance()
+      metrics.appStartTimeSpan.setStartedAt(100)
+      metrics.setHeadlessAppStartListener {}
+      metrics.applicationOnCreateTimeSpan.apply {
+        setStartedAt(120)
+        setStoppedAt(200)
+      }
+
+      metrics.registerLifecycleCallbacks(mock<Application>())
+      waitForMainLooperIdle()
+
+      assertEquals(100, metrics.appStartTimeSpan.durationMs)
     }
 
-    metrics.registerLifecycleCallbacks(mock<Application>())
-    waitForMainLooperIdle()
-
-    assertEquals(100, metrics.appStartTimeSpan.durationMs)
-  }
-
   @Test
-  fun `resolveHeadlessAppStartEndTime falls back to CLASS_LOADED_UPTIME_MS when no plugin and no ApplicationStartInfo`() {
-    val metrics = AppStartMetrics.getInstance()
-    metrics.setClassLoadedUptimeMs(200)
-    metrics.appStartTimeSpan.setStartedAt(100)
-    metrics.setHeadlessAppStartListener {}
+  fun `resolveHeadlessAppStartEndTime falls back to CLASS_LOADED_UPTIME_MS when no plugin and no ApplicationStartInfo`() =
+    headlessProcess {
+      val metrics = AppStartMetrics.getInstance()
+      metrics.setClassLoadedUptimeMs(200)
+      metrics.appStartTimeSpan.setStartedAt(100)
+      metrics.setHeadlessAppStartListener {}
 
-    metrics.registerLifecycleCallbacks(mock<Application>())
-    waitForMainLooperIdle()
+      metrics.registerLifecycleCallbacks(mock<Application>())
+      waitForMainLooperIdle()
 
-    assertEquals(100, metrics.appStartTimeSpan.durationMs)
-  }
+      assertEquals(100, metrics.appStartTimeSpan.durationMs)
+    }
 
   @Test
   fun `resolveHeadlessAppStartEndTime does not overwrite stopped appStartTimeSpan`() {
@@ -336,6 +356,15 @@ class AppStartMetricsTest {
     Handler(Looper.getMainLooper()).post {}
     Shadows.shadowOf(Looper.getMainLooper()).idle()
   }
+
+  // Simulates a real headless start (broadcast/service), i.e. a non-foreground-importance process.
+  // The Robolectric default importance in this test class is IMPORTANCE_FOREGROUND, so headless
+  // scenarios must opt into a background importance explicitly.
+  private fun <T> headlessProcess(block: () -> T): T =
+    mockStatic(ContextUtils::class.java).use { contextUtils ->
+      contextUtils.`when`<Boolean> { ContextUtils.isForegroundImportance() }.thenReturn(false)
+      block()
+    }
 
   @Test
   fun `if app start span is at most 1 minute, appStartTimeSpanWithFallback returns the app start span`() {

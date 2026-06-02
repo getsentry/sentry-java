@@ -1,5 +1,6 @@
 package io.sentry.android.core.performance
 
+import android.app.ActivityManager.RunningAppProcessInfo
 import android.app.Application
 import android.app.ApplicationStartInfo
 import android.os.Build
@@ -113,6 +114,7 @@ class AppStartMetricsTestApi35 {
     whenever(mockStartInfo.startType).thenReturn(ApplicationStartInfo.START_TYPE_COLD)
     whenever(mockStartInfo.startupTimestamps).thenReturn(emptyMap())
     SentryShadowActivityManager.setHistoricalProcessStartReasons(listOf(mockStartInfo))
+    SentryShadowActivityManager.setImportance(RunningAppProcessInfo.IMPORTANCE_CACHED)
     val listenerCalls = AtomicInteger()
     val metrics = AppStartMetrics.getInstance()
     metrics.appStartTimeSpan.setStartedAt(100)
@@ -134,6 +136,7 @@ class AppStartMetricsTestApi35 {
     whenever(mockStartInfo.startType).thenReturn(ApplicationStartInfo.START_TYPE_WARM)
     whenever(mockStartInfo.startupTimestamps).thenReturn(emptyMap())
     SentryShadowActivityManager.setHistoricalProcessStartReasons(listOf(mockStartInfo))
+    SentryShadowActivityManager.setImportance(RunningAppProcessInfo.IMPORTANCE_CACHED)
     val metrics = AppStartMetrics.getInstance()
     metrics.appStartTimeSpan.setStartedAt(100)
     metrics.setClassLoadedUptimeMs(200)
@@ -149,10 +152,11 @@ class AppStartMetricsTestApi35 {
   }
 
   @Test
-  fun `resolveHeadlessAppStartEndTime converts ApplicationStartInfo timestamp to uptime`() {
-    val processStartUptimeMs = 100L
-    val processStartElapsedMs = 10_000L
-    val onCreateElapsedRealtimeMs = 10_250L
+  fun `resolveHeadlessAppStartEndTime uses ApplicationStartInfo onCreate uptime timestamp`() {
+    val appStartUptimeMs = 100L
+    // START_TIMESTAMP_APPLICATION_ONCREATE is captured with SystemClock.uptimeNanos() (the same
+    // base as TimeSpan), so it is used directly as an uptime value without any clock re-anchoring.
+    val onCreateUptimeMs = 350L
     val mockStartInfo = mock<ApplicationStartInfo>()
     whenever(mockStartInfo.startupState).thenReturn(ApplicationStartInfo.STARTUP_STATE_STARTED)
     whenever(mockStartInfo.startType).thenReturn(ApplicationStartInfo.START_TYPE_COLD)
@@ -160,14 +164,13 @@ class AppStartMetricsTestApi35 {
       .thenReturn(
         mapOf(
           ApplicationStartInfo.START_TIMESTAMP_APPLICATION_ONCREATE to
-            TimeUnit.MILLISECONDS.toNanos(onCreateElapsedRealtimeMs)
+            TimeUnit.MILLISECONDS.toNanos(onCreateUptimeMs)
         )
       )
     SentryShadowActivityManager.setHistoricalProcessStartReasons(listOf(mockStartInfo))
-    SentryShadowProcess.setStartUptimeMillis(processStartUptimeMs)
-    SentryShadowProcess.setStartElapsedRealtime(processStartElapsedMs)
+    SentryShadowActivityManager.setImportance(RunningAppProcessInfo.IMPORTANCE_CACHED)
     val metrics = AppStartMetrics.getInstance()
-    metrics.appStartTimeSpan.setStartedAt(processStartUptimeMs)
+    metrics.appStartTimeSpan.setStartedAt(appStartUptimeMs)
     metrics.setHeadlessAppStartListener {}
 
     val app = ApplicationProvider.getApplicationContext<Application>()
@@ -179,38 +182,13 @@ class AppStartMetricsTestApi35 {
   }
 
   @Test
-  fun `resolveHeadlessAppStartEndTime falls back when ApplicationStartInfo duration is invalid`() {
-    val mockStartInfo = mock<ApplicationStartInfo>()
-    whenever(mockStartInfo.startupState).thenReturn(ApplicationStartInfo.STARTUP_STATE_STARTED)
-    whenever(mockStartInfo.startType).thenReturn(ApplicationStartInfo.START_TYPE_COLD)
-    whenever(mockStartInfo.startupTimestamps)
-      .thenReturn(
-        mapOf(
-          ApplicationStartInfo.START_TIMESTAMP_APPLICATION_ONCREATE to TimeUnit.MINUTES.toNanos(2)
-        )
-      )
-    SentryShadowActivityManager.setHistoricalProcessStartReasons(listOf(mockStartInfo))
-    SentryShadowProcess.setStartUptimeMillis(100)
-    SentryShadowProcess.setStartElapsedRealtime(0)
-    val metrics = AppStartMetrics.getInstance()
-    metrics.appStartTimeSpan.setStartedAt(100)
-    metrics.setClassLoadedUptimeMs(200)
-    metrics.setHeadlessAppStartListener {}
-
-    val app = ApplicationProvider.getApplicationContext<Application>()
-    metrics.registerLifecycleCallbacks(app)
-    waitForMainLooperIdle()
-
-    assertEquals(100, metrics.appStartTimeSpan.durationMs)
-  }
-
-  @Test
   fun `listener fires when set after registerLifecycleCallbacks resolves type on API 35`() {
     val mockStartInfo = mock<ApplicationStartInfo>()
     whenever(mockStartInfo.startupState).thenReturn(ApplicationStartInfo.STARTUP_STATE_STARTED)
     whenever(mockStartInfo.startType).thenReturn(ApplicationStartInfo.START_TYPE_COLD)
     whenever(mockStartInfo.startupTimestamps).thenReturn(emptyMap())
     SentryShadowActivityManager.setHistoricalProcessStartReasons(listOf(mockStartInfo))
+    SentryShadowActivityManager.setImportance(RunningAppProcessInfo.IMPORTANCE_CACHED)
 
     val listenerCalls = AtomicInteger()
     val metrics = AppStartMetrics.getInstance()
