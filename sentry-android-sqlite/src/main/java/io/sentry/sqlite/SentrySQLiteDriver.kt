@@ -40,10 +40,10 @@ public class SentrySQLiteDriver private constructor(private val delegate: SQLite
     val connection = delegate.open(fileName)
 
     return try {
-      val spanRecorder = SQLiteSpanRecorder(fileName)
-      // create() ensures delegate is unwrapped, so we don't protect against double-wrapping the
-      // connection.
-      SentrySQLiteConnection(connection, spanRecorder)
+      val spans = SQLiteSpanInstrumentation.fromFileName(fileName)
+      // create() ensures delegate is unwrapped, so we don't need to protect against double-wrapping
+      // the connection.
+      SentrySQLiteConnection(connection, spans)
     } catch (t: Throwable) {
       ScopesAdapter.getInstance()
         .options

@@ -16,7 +16,7 @@ import kotlin.test.assertTrue
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 
-class SQLiteSpanRecorderTest {
+class SQLiteSpanInstrumentationTest {
 
   private class Fixture {
 
@@ -27,14 +27,14 @@ class SQLiteSpanRecorderTest {
     fun getSut(
       isTransactionActive: Boolean = true,
       fileName: String = ":memory:",
-    ): SQLiteSpanRecorder {
+    ): SQLiteSpanInstrumentation {
       options = SentryOptions().apply { dsn = "https://key@sentry.io/proj" }
       whenever(scopes.options).thenReturn(options)
       sentryTracer = SentryTracer(TransactionContext("name", "op"), scopes)
       if (isTransactionActive) {
         whenever(scopes.span).thenReturn(sentryTracer)
       }
-      return SQLiteSpanRecorder(fileName, scopes)
+      return SQLiteSpanInstrumentation.fromFileName(fileName, scopes)
     }
   }
 
@@ -147,10 +147,47 @@ class SQLiteSpanRecorderTest {
   }
 
   @Test
-  fun `recordSpan does not throw if span recording fails`() {
+  fun `recordSpan without a duration finishes the span at the time of invocation`() {
     val sut = fixture.getSut()
-    whenever(fixture.scopes.span).thenThrow(RuntimeException("span unavailable"))
+    val start = sut.startTimestamp()
 
-    sut.recordSpan("SELECT 1", sut.startTimestamp(), 1_000_000, SpanStatus.OK)
+    sut.recordSpan("SELECT 1", start, SpanStatus.OK)
+
+    val span = fixture.sentryTracer.children.first()
+    assertTrue(span.isFinished)
+    assertEquals(SpanStatus.OK, span.status)
+    // Unlike the duration overload, no synthetic end timestamp is supplied; the span finishes at
+    // "now", i.e. at or after its start.
+    assertTrue(span.finishDate!!.nanoTimestamp() >= start.nanoTimestamp())
+  }
+
+  @Test
+  fun `fromFileName sets db name from fileName`() {
+    val options = SentryOptions().apply { dsn = "https://key@sentry.io/proj" }
+    whenever(fixture.scopes.options).thenReturn(options)
+    fixture.sentryTracer = SentryTracer(TransactionContext("name", "op"), fixture.scopes)
+    whenever(fixture.scopes.span).thenReturn(fixture.sentryTracer)
+
+    val sut = SQLiteSpanInstrumentation.fromFileName("tracks.db", fixture.scopes)
+    sut.recordSpan("SELECT 1", sut.startTimestamp(), SpanStatus.OK)
+
+    val span = fixture.sentryTracer.children.first()
+    assertEquals("sqlite", span.data[SpanDataConvention.DB_SYSTEM_KEY])
+    assertEquals("tracks.db", span.data[SpanDataConvention.DB_NAME_KEY])
+  }
+
+  @Test
+  fun `fromDatabaseName sets db name from databaseName`() {
+    val options = SentryOptions().apply { dsn = "https://key@sentry.io/proj" }
+    whenever(fixture.scopes.options).thenReturn(options)
+    fixture.sentryTracer = SentryTracer(TransactionContext("name", "op"), fixture.scopes)
+    whenever(fixture.scopes.span).thenReturn(fixture.sentryTracer)
+
+    val sut = SQLiteSpanInstrumentation.fromDatabaseName("tracks.db", fixture.scopes)
+    sut.recordSpan("SELECT 1", sut.startTimestamp(), SpanStatus.OK)
+
+    val span = fixture.sentryTracer.children.first()
+    assertEquals("sqlite", span.data[SpanDataConvention.DB_SYSTEM_KEY])
+    assertEquals("tracks.db", span.data[SpanDataConvention.DB_NAME_KEY])
   }
 }

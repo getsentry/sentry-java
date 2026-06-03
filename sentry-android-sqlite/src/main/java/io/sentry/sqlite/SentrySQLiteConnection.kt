@@ -5,12 +5,11 @@ import androidx.sqlite.SQLiteStatement
 
 internal class SentrySQLiteConnection(
   private val delegate: SQLiteConnection,
-  private val spanRecorder: SQLiteSpanRecorder,
+  private val spans: SQLiteSpanInstrumentation,
 ) : SQLiteConnection by delegate {
 
   override fun prepare(sql: String): SQLiteStatement {
     val statement = delegate.prepare(sql)
-    return statement as? SentrySQLiteStatement
-      ?: SentrySQLiteStatement(statement, spanRecorder, sql)
+    return statement as? SentrySQLiteStatement ?: SentrySQLiteStatement(statement, spans, sql)
   }
 }

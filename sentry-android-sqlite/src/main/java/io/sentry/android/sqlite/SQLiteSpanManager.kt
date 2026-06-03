@@ -3,19 +3,17 @@ package io.sentry.android.sqlite
 import android.database.CrossProcessCursor
 import android.database.SQLException
 import io.sentry.IScopes
-import io.sentry.ISpan
 import io.sentry.ScopesAdapter
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SpanStatus
-import io.sentry.sqlite.SQLiteSpanHelper
-import io.sentry.sqlite.dbMetadataFromDatabaseName
+import io.sentry.sqlite.SQLiteSpanInstrumentation
 
 internal class SQLiteSpanManager(
   private val scopes: IScopes = ScopesAdapter.getInstance(),
   databaseName: String? = null,
 ) {
 
-  private val spanHelper = SQLiteSpanHelper(scopes, dbMetadataFromDatabaseName(databaseName))
+  private val spans = SQLiteSpanInstrumentation.fromDatabaseName(databaseName, scopes)
 
   init {
     SentryIntegrationPackageStorage.getInstance().addIntegration("SQLite")
@@ -31,8 +29,8 @@ internal class SQLiteSpanManager(
   @Suppress("TooGenericExceptionCaught", "UNCHECKED_CAST")
   @Throws(SQLException::class)
   fun <T> performSql(sql: String, operation: () -> T): T {
-    val startTimestamp = scopes.getOptions().dateProvider.now()
-    var span: ISpan? = null
+    val startTimestamp = spans.startTimestamp()
+
     return try {
       val result = operation()
       /*
@@ -43,19 +41,11 @@ internal class SQLiteSpanManager(
       if (result is CrossProcessCursor) {
         return SentryCrossProcessCursor(result, this, sql) as T
       }
-      span = spanHelper.startSpan(sql, startTimestamp)
-      span?.status = SpanStatus.OK
+      spans.recordSpan(sql, startTimestamp, SpanStatus.OK)
       result
     } catch (e: Throwable) {
-      span = spanHelper.startSpan(sql, startTimestamp)
-      span?.status = SpanStatus.INTERNAL_ERROR
-      span?.throwable = e
+      spans.recordSpan(sql, startTimestamp, SpanStatus.INTERNAL_ERROR, e)
       throw e
-    } finally {
-      span?.let {
-        spanHelper.applyDataToSpan(it)
-        it.finish()
-      }
     }
   }
 }

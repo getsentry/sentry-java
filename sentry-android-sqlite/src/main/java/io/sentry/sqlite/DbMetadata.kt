@@ -33,7 +33,7 @@ internal fun dbMetadataFromFileName(fileName: String): DbMetadata {
     return DbMetadata(name = null, system = DB_SYSTEM_IN_MEMORY)
   }
 
-  val trimmed = fileName.trimEnd('/', '\\')
+  val trimmed = fileName.trimEnd { it in FILE_NAME_PATH_SEPARATORS }
   if (trimmed.isEmpty()) {
     return DbMetadata(name = null, system = DB_SYSTEM_SQLITE)
   }

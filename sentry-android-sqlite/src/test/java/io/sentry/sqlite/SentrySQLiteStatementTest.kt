@@ -20,13 +20,13 @@ class SentrySQLiteStatementTest {
 
   private class Fixture {
     val mockStatement = mock<SQLiteStatement>()
-    val mockRecorder = mock<SQLiteSpanRecorder>()
+    val mockSpans = mock<SQLiteSpanInstrumentation>()
     val startDate = SentryLongDate(1_000_000_000_000L)
     val fakeClock = AtomicLong(0L)
 
     fun getSut(sql: String): SentrySQLiteStatement {
-      whenever(mockRecorder.startTimestamp()).thenReturn(startDate)
-      return SentrySQLiteStatement(mockStatement, mockRecorder, sql, fakeClock::getAndIncrement)
+      whenever(mockSpans.startTimestamp()).thenReturn(startDate)
+      return SentrySQLiteStatement(mockStatement, mockSpans, sql, fakeClock::getAndIncrement)
     }
   }
 
@@ -40,7 +40,7 @@ class SentrySQLiteStatementTest {
     sut.step()
     verifyNeverCalledRecordSpan()
     sut.step()
-    verify(fixture.mockRecorder)
+    verify(fixture.mockSpans)
       .recordSpan(
         eq("SELECT * FROM users"),
         eq(fixture.startDate),
@@ -58,7 +58,7 @@ class SentrySQLiteStatementTest {
 
     assertFailsWith<RuntimeException> { sut.step() }
 
-    verify(fixture.mockRecorder)
+    verify(fixture.mockSpans)
       .recordSpan(
         eq("BAD SQL"),
         eq(fixture.startDate),
@@ -225,8 +225,7 @@ class SentrySQLiteStatementTest {
     sut.step()
 
     val durationCaptor = argumentCaptor<Long>()
-    verify(fixture.mockRecorder)
-      .recordSpan(any(), any(), durationCaptor.capture(), any(), anyOrNull())
+    verify(fixture.mockSpans).recordSpan(any(), any(), durationCaptor.capture(), any(), anyOrNull())
     // Each step contributes its internal time (10 + 20 + 30) plus one unit from
     // fakeClock::getAndIncrement between before/after reads, so total is 63.
     assertEquals(63L, durationCaptor.firstValue)
@@ -287,6 +286,6 @@ class SentrySQLiteStatementTest {
   }
 
   private fun verifyCalledRecordSpan(times: Int = 1) {
-    verify(fixture.mockRecorder, times(times)).recordSpan(any(), any(), any(), any(), anyOrNull())
+    verify(fixture.mockSpans, times(times)).recordSpan(any(), any(), any(), any(), anyOrNull())
   }
 }
