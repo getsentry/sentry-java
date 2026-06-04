@@ -88,7 +88,7 @@ final class Dsn {
       final String hostPort = hostAndPath.substring(0, firstSlash);
       final int portColon = portSeparatorIndex(hostPort);
       final String host = portColon < 0 ? hostPort : hostPort.substring(0, portColon);
-      final int port = portColon < 0 ? -1 : Integer.parseInt(hostPort.substring(portColon + 1));
+      final int port = portColon < 0 ? -1 : parsePort(hostPort.substring(portColon + 1));
 
       final String rawPath = stripTrailingSlash(collapseSlashes(hostAndPath.substring(firstSlash)));
       final int projectIdStart = rawPath.lastIndexOf('/') + 1;
@@ -100,8 +100,16 @@ final class Dsn {
 
       sentryUri = new URI(scheme, null, host, port, path + "api/" + projectId, null, null);
       orgId = extractOrgId(host);
-    } catch (URISyntaxException | NumberFormatException e) {
+    } catch (URISyntaxException e) {
       throw new IllegalArgumentException("Invalid DSN: " + e.getMessage(), e);
+    }
+  }
+
+  private static int parsePort(final @NotNull String portString) {
+    try {
+      return Integer.parseInt(portString);
+    } catch (NumberFormatException e) {
+      throw new IllegalArgumentException("Invalid DSN: Invalid port '" + portString + "'.", e);
     }
   }
 

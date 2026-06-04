@@ -160,6 +160,12 @@ class DsnTest {
   }
 
   @Test
+  fun `when port is not a number, throws exception`() {
+    val ex = assertFailsWith<IllegalArgumentException> { Dsn("http://key@host:abc/1") }
+    assertThat(ex).hasMessageThat().isEqualTo("Invalid DSN: Invalid port 'abc'.")
+  }
+
+  @Test
   fun `dsn parsed with multiple path segments`() {
     val dsn = Dsn("https://key@host/path/to/sentry/id")
 
