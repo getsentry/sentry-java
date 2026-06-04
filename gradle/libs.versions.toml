@@ -238,6 +238,7 @@ camerax-camera2 = { module = "androidx.camera:camera-camera2", version.ref = "ca
 camerax-lifecycle = { module = "androidx.camera:camera-lifecycle", version.ref = "camerax" }
 camerax-view = { module = "androidx.camera:camera-view", version.ref = "camerax" }
 
+google-truth = { module = "com.google.truth:truth", version = "1.4.5" }
 hsqldb = { module = "org.hsqldb:hsqldb", version = "2.6.1" }
 javafaker = { module = "com.github.javafaker:javafaker", version = "1.0.2" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
