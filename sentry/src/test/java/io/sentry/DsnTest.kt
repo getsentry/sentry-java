@@ -58,19 +58,19 @@ class DsnTest {
   @Test
   fun `when no project id exists, throws exception`() {
     val ex = assertFailsWith<IllegalArgumentException> { Dsn("http://key@host/") }
-    assertThat(ex.message).isEqualTo("Invalid DSN: A Project Id is required.")
+    assertThat(ex).hasMessageThat().isEqualTo("Invalid DSN: A Project Id is required.")
   }
 
   @Test
   fun `when no key exists, throws exception`() {
     val ex = assertFailsWith<IllegalArgumentException> { Dsn("http://host/id") }
-    assertThat(ex.message).isEqualTo("Invalid DSN: No public key provided.")
+    assertThat(ex).hasMessageThat().isEqualTo("Invalid DSN: No public key provided.")
   }
 
   @Test
   fun `when only passing secret key, throws exception`() {
     val ex = assertFailsWith<IllegalArgumentException> { Dsn("https://:secret@host/path/id") }
-    assertThat(ex.message).isEqualTo("Invalid DSN: No public key provided.")
+    assertThat(ex).hasMessageThat().isEqualTo("Invalid DSN: No public key provided.")
   }
 
   @Test
@@ -88,19 +88,24 @@ class DsnTest {
   @Test
   fun `when dsn is empty, throws exception`() {
     val ex = assertFailsWith<IllegalArgumentException> { Dsn("") }
-    assertThat(ex.message).isEqualTo("The DSN is empty.")
+    assertThat(ex).hasMessageThat().isEqualTo("The DSN is empty.")
   }
 
   @Test
   fun `when dsn is only whitespace, throws exception`() {
     val ex = assertFailsWith<IllegalArgumentException> { Dsn("   ") }
-    assertThat(ex.message).isEqualTo("The DSN is empty.")
+    assertThat(ex).hasMessageThat().isEqualTo("The DSN is empty.")
   }
 
   @Test
   fun `non http protocols are not accepted`() {
-    assertFailsWith<IllegalArgumentException> { Dsn("ftp://publicKey:secretKey@host/path/id") }
-    assertFailsWith<IllegalArgumentException> { Dsn("jar://publicKey:secretKey@host/path/id") }
+    val ftp =
+      assertFailsWith<IllegalArgumentException> { Dsn("ftp://publicKey:secretKey@host/path/id") }
+    assertThat(ftp).hasMessageThat().isEqualTo("Invalid DSN: Invalid scheme 'ftp'.")
+
+    val jar =
+      assertFailsWith<IllegalArgumentException> { Dsn("jar://publicKey:secretKey@host/path/id") }
+    assertThat(jar).hasMessageThat().isEqualTo("Invalid DSN: Invalid scheme 'jar'.")
   }
 
   @Test
@@ -138,17 +143,20 @@ class DsnTest {
 
   @Test
   fun `when dsn is null, throws exception`() {
-    assertFailsWith<IllegalArgumentException> { Dsn(null) }
+    val ex = assertFailsWith<IllegalArgumentException> { Dsn(null) }
+    assertThat(ex).hasMessageThat().isEqualTo("The DSN is required.")
   }
 
   @Test
   fun `when dsn has no scheme separator, throws exception`() {
-    assertFailsWith<IllegalArgumentException> { Dsn("httpspublicKey@host/id") }
+    val ex = assertFailsWith<IllegalArgumentException> { Dsn("httpspublicKey@host/id") }
+    assertThat(ex).hasMessageThat().isEqualTo("Invalid DSN: Missing scheme.")
   }
 
   @Test
   fun `when dsn has no slash after host, throws exception`() {
-    assertFailsWith<IllegalArgumentException> { Dsn("https://key@host") }
+    val ex = assertFailsWith<IllegalArgumentException> { Dsn("https://key@host") }
+    assertThat(ex).hasMessageThat().isEqualTo("Invalid DSN: A Project Id is required.")
   }
 
   @Test
