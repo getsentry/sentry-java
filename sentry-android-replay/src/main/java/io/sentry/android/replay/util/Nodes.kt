@@ -4,6 +4,7 @@ package io.sentry.android.replay.util
 
 import android.graphics.Rect
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect as ComposeRect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorProducer
 import androidx.compose.ui.graphics.painter.Painter
@@ -169,7 +170,9 @@ internal fun LayoutCoordinates.boundsInWindow(rootCoordinates: LayoutCoordinates
 
   // pass clipBounds explicitly to avoid the `localBoundingBoxOf$default` bridge that AGP 8.13's D8
   // desugars inconsistently on minSdk < 24
-  val bounds = root.localBoundingBoxOf(this, true)
+  // Explicit type reference ensures androidx.compose.ui.geometry.Rect is not stripped by aggressive
+  // obfuscation tools (e.g. DexGuard), which can miss implicit return types and cause VerifyError.
+  val bounds: ComposeRect = root.localBoundingBoxOf(this, true)
   val boundsLeft = bounds.left.fastCoerceIn(0f, rootWidth)
   val boundsTop = bounds.top.fastCoerceIn(0f, rootHeight)
   val boundsRight = bounds.right.fastCoerceIn(0f, rootWidth)
