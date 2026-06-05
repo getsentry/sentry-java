@@ -16,12 +16,6 @@ import shark.IgnoredReferenceMatcher
 import shark.ReferencePattern
 
 class ReplayTest : BaseUiTest() {
-  @Before
-  fun setup() {
-    // we can't run on GH actions emulator, because they don't allow capturing screenshots properly
-    @Suppress("KotlinConstantConditions")
-    assumeThat(BuildConfig.ENVIRONMENT != "github", `is`(true))
-  }
 
   @Test
   fun composeReplayDoesNotLeak() {
