@@ -1,6 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:tools="http://schemas.android.com/tools">
 
-  <!-- Override b/c androidx.sqlite 2.6.0 raised its minSdk to 23, but this test module is at minSdk 21. -->
-  <uses-sdk tools:overrideLibrary="androidx.sqlite.db"/>
+  <!-- androidx.sqlite 2.6.0+ raised minSdk to 23; this module still targets 21. -->
+  <uses-sdk
+      tools:overrideLibrary="
+          androidx.sqlite.db,
+          androidx.sqlite.db.framework,
+          androidx.sqlite.driver.bundled,
+          androidx.sqlite.sqlite.anchor,
+          androidx.sqlite.sqlite.bundled.anchor,
+          androidx.sqlite.sqlite.framework.anchor" />
 </manifest>

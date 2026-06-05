@@ -12,6 +12,7 @@ import io.sentry.SpanDataConvention
 import io.sentry.TransactionContext
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
@@ -64,6 +65,27 @@ class SentrySQLiteDriverTest {
   }
 
   @Test
+  fun `hasConnectionPool forwards delegate value when supported`() {
+    whenever(fixture.mockDriver.hasConnectionPool).thenReturn(true)
+    val sut = SentrySQLiteDriver.create(fixture.mockDriver) as SentrySQLiteDriver
+    assertTrue(sut.hasConnectionPool)
+  }
+
+  @Test
+  fun `hasConnectionPool returns false when delegate throws LinkageError`() {
+    whenever(fixture.mockDriver.hasConnectionPool).thenThrow(AbstractMethodError())
+    val sut = SentrySQLiteDriver.create(fixture.mockDriver) as SentrySQLiteDriver
+    assertFalse(sut.hasConnectionPool)
+  }
+
+  @Test
+  fun `hasConnectionPool does not catch non-LinkageErrors`() {
+    whenever(fixture.mockDriver.hasConnectionPool).thenThrow(IllegalStateException())
+    val sut = SentrySQLiteDriver.create(fixture.mockDriver) as SentrySQLiteDriver
+    assertFailsWith<IllegalStateException> { sut.hasConnectionPool }
+  }
+
+  @Test
   fun `open returns SentrySQLiteConnection wrapping delegate if wrapping succeeds`() {
     val driver = fixture.getSut("myapp.db")
     val connection = driver.open("myapp.db")
@@ -87,20 +109,6 @@ class SentrySQLiteDriverTest {
       assertSame(fixture.mockConnection, result)
       verify(fixture.mockDriver).open("myapp.db")
     }
-  }
-
-  @Test
-  fun `all calls are propagated to the delegate`() {
-    val sut = fixture.getSut("myapp.db")
-
-    whenever(fixture.mockDriver.hasConnectionPool).thenReturn(true)
-    assertTrue(sut.hasConnectionPool)
-
-    whenever(fixture.mockDriver.hasConnectionPool).thenReturn(false)
-    assertFalse(sut.hasConnectionPool)
-
-    sut.open("myapp.db")
-    verify(fixture.mockDriver).open("myapp.db")
   }
 
   // Smoke test ensuring all layers are properly wired up.

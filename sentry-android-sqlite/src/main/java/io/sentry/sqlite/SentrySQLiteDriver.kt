@@ -36,7 +36,13 @@ public class SentrySQLiteDriver private constructor(private val delegate: SQLite
   }
 
   override val hasConnectionPool: Boolean
-    get() = delegate.hasConnectionPool
+    get() =
+      try {
+        delegate.hasConnectionPool
+      } catch (_: LinkageError) {
+        // Delegates on androidx.sqlite < 2.6.0 won't have a hasConnectionPool property.
+        false
+      }
 
   @Suppress("TooGenericExceptionCaught")
   override fun open(fileName: String): SQLiteConnection {
