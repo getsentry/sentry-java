@@ -26,6 +26,13 @@ interface SongDao3 {
   @Query("SELECT * FROM song") suspend fun getAll(): List<SongEntity3>
 
   @Query("SELECT count(*) FROM song") suspend fun count(): Int
+
+  /**
+   * No-op write (matches no rows) used at warm-up to open Room's writer connection up front. A read
+   * like [count] only opens a reader, so without this the first INSERT would (noisily) open and
+   * bootstrap the writer connection inside a demo transaction.
+   */
+  @Query("DELETE FROM song WHERE id < 0") suspend fun primeWriter()
 }
 
 @Database(entities = [SongEntity3::class], version = 1, exportSchema = false)

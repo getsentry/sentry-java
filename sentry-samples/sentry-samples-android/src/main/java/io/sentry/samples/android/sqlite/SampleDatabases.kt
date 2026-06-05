@@ -156,6 +156,7 @@ object SampleDatabases {
       // demo INSERT/SELECT reuses them instead of bootstrapping a connection inside its
       // transaction.
       runCatching { driverRoom2Db(appContext).songDao().also { it.primeWriter() }.count() }
+      runCatching { driverRoom3Db(appContext).songDao().also { it.primeWriter() }.count() }
       runCatching { directHelper(appContext).writableDatabase }
       runCatching { openHelperRoomDb(appContext).songDao().also { it.primeWriter() }.count() }
       runCatching {

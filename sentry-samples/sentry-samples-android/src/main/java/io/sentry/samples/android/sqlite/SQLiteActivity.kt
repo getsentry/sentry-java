@@ -204,6 +204,12 @@ class SQLiteActivity : ComponentActivity() {
   /** Incremented on each tap that runs SQL. Used to retrigger the detail box's outline shimmer. */
   private var runTick by mutableStateOf(0)
 
+  /** True while a demo or reset is running SQL on a background thread. */
+  private var dbOperationInFlight by mutableStateOf(false)
+
+  /** True for the duration of a reset; disables the reset button immediately (no debounce). */
+  private var resetInProgress by mutableStateOf(false)
+
   /**
    * The shared trace used when [shareScreenTrace] is enabled: one trace per visit to this screen.
    * onResume() generates a fresh one each time the screen is (re)entered.
@@ -316,7 +322,10 @@ class SQLiteActivity : ComponentActivity() {
               )
             }
 
-            ResetButton()
+            ResetButton(
+              dbOperationInFlight = dbOperationInFlight,
+              resetInProgress = resetInProgress,
+            )
 
             // Same [CONTROL_SECTION_GAP] above as the other sections, separating the controls from
             // the detail output.
@@ -348,12 +357,17 @@ class SQLiteActivity : ComponentActivity() {
     runTick++ // shimmer the detail box outline in the integration color
 
     lifecycleScope.launch {
-      latestResult =
-        withContext(Dispatchers.IO) {
-          runInTransaction(variant.transactionName, variant.op) {
-            SqlStatements.execute(applicationContext, variant.demo, heavyWork)
+      dbOperationInFlight = true
+      try {
+        latestResult =
+          withContext(Dispatchers.IO) {
+            runInTransaction(variant.transactionName, variant.op) {
+              SqlStatements.execute(applicationContext, variant.demo, heavyWork)
+            }
           }
-        }
+      } finally {
+        dbOperationInFlight = false
+      }
     }
   }
 
@@ -488,15 +502,38 @@ class SQLiteActivity : ComponentActivity() {
   }
 
   @androidx.compose.runtime.Composable
-  private fun ResetButton() {
+  private fun ResetButton(dbOperationInFlight: Boolean, resetInProgress: Boolean) {
+    // Debounce demo-driven disablement so fast taps don't flicker the button; reset disables
+    // immediately via [resetInProgress]. [dbOperationInFlight] still guards [onClick] either way.
+    var enabled by remember { mutableStateOf(true) }
+    LaunchedEffect(dbOperationInFlight, resetInProgress) {
+      when {
+        resetInProgress -> enabled = false
+        dbOperationInFlight -> {
+          delay(RESET_DISABLE_DEBOUNCE_MS)
+          enabled = false
+        }
+        else -> enabled = true
+      }
+    }
+
     Button(
       modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+      enabled = enabled,
       colors = ButtonDefaults.buttonColors(containerColor = Color.Gray, contentColor = Color.White),
       onClick = {
+        if (dbOperationInFlight) return@Button
         lifecycleScope.launch {
-          val message = withContext(Dispatchers.IO) { resetDatabases() }
-          latestResult = message
-          sqlDetail = "DROP: deletes every demo database file, resetting all row counts to 0."
+          this@SQLiteActivity.resetInProgress = true
+          this@SQLiteActivity.dbOperationInFlight = true
+          try {
+            val message = withContext(Dispatchers.IO) { resetDatabases() }
+            latestResult = message
+            sqlDetail = "DROP: deletes every demo database file, resetting all row counts to 0."
+          } finally {
+            this@SQLiteActivity.dbOperationInFlight = false
+            this@SQLiteActivity.resetInProgress = false
+          }
         }
       },
     ) {
@@ -567,6 +604,9 @@ class SQLiteActivity : ComponentActivity() {
   }
 
   private companion object {
+
+    /** Demo SQL shorter than this won't visibly disable the reset button. */
+    private const val RESET_DISABLE_DEBOUNCE_MS = 300L
 
     /**
      * Builds a fresh sentry-trace header ("<traceId>-<spanId>-<sampled>") representing this screen
