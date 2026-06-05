@@ -22,6 +22,7 @@ import io.sentry.SentryLevel
 import io.sentry.SentryMaskingOptions
 import io.sentry.android.replay.SentryReplayModifiers
 import io.sentry.android.replay.util.ComposeTextLayout
+import io.sentry.android.replay.util.SentryReplayDebug
 import io.sentry.android.replay.util.boundsInWindow
 import io.sentry.android.replay.util.findPainter
 import io.sentry.android.replay.util.findTextColor
@@ -145,6 +146,12 @@ internal object ComposeViewHierarchyNode {
           """
             .trimIndent(),
         )
+      }
+
+      // fail fast in our own sample/UI-test apps (see SentryReplayDebug), so regressions surface
+      // as crashes instead of silently degrading masking
+      if (SentryReplayDebug.failFast) {
+        throw t
       }
 
       // If we're unable to retrieve the semantics configuration
@@ -291,6 +298,11 @@ internal object ComposeViewHierarchyNode {
         """
           .trimIndent(),
       )
+      // fail fast in our own sample/UI-test apps (see SentryReplayDebug), so regressions surface
+      // as crashes instead of silently skipping the whole Compose subtree (i.e. not masking it)
+      if (SentryReplayDebug.failFast) {
+        throw e
+      }
       return false
     }
 

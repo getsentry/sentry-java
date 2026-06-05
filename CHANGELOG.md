@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Session Replay: Fix Compose view masking not working on obfuscated/minified builds ([#5503](https://github.com/getsentry/sentry-java/pull/5503))
+
 ## 8.43.1
 
 ### Fixes

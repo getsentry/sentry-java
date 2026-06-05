@@ -8,11 +8,23 @@ import kotlin.test.Test
 import leakcanary.LeakAssertions
 import leakcanary.LeakCanary
 import org.awaitility.kotlin.await
+import org.hamcrest.CoreMatchers.`is`
+import org.junit.Assume.assumeThat
+import org.junit.Before
 import shark.AndroidReferenceMatchers
 import shark.IgnoredReferenceMatcher
 import shark.ReferencePattern
 
 class ReplayTest : BaseUiTest() {
+  @Before
+  fun setup() {
+    // we can't run on GH actions emulator, because they don't allow capturing screenshots properly
+    @Suppress("KotlinConstantConditions")
+    assumeThat(BuildConfig.ENVIRONMENT != "github", `is`(true))
+    // crash on swallowed Compose masking errors (e.g. broken obfuscated internals) so regressions
+    // fail this on-device test instead of silently under-masking (see SentryReplayDebug)
+    System.setProperty("io.sentry.replay.compose.fail-fast", "true")
+  }
 
   @Test
   fun composeReplayDoesNotLeak() {
