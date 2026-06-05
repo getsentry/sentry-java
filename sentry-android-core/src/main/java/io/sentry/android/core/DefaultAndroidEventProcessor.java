@@ -23,8 +23,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import org.jetbrains.annotations.NotNull;
@@ -56,16 +54,16 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     // noinspection Convert2MethodRef
     // some device info performs disk I/O, but it's result is cached, let's pre-cache it
     @Nullable Future<DeviceInfoUtil> deviceInfoUtil;
-    final @NotNull ExecutorService executorService = Executors.newSingleThreadExecutor();
     try {
       deviceInfoUtil =
-          executorService.submit(() -> DeviceInfoUtil.getInstance(this.context, options));
+          options
+              .getExecutorService()
+              .submit(() -> DeviceInfoUtil.getInstance(this.context, options));
     } catch (RejectedExecutionException e) {
       deviceInfoUtil = null;
       options.getLogger().log(SentryLevel.WARNING, "Device info caching task rejected.", e);
     }
     this.deviceInfoUtil = deviceInfoUtil;
-    executorService.shutdown();
   }
 
   @Override
