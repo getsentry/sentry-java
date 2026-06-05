@@ -9,6 +9,13 @@
   - To use it, pass your `SQLiteDriver` to `SentrySQLiteDriver.create(...)`
   - See https://docs.sentry.io/platforms/android/integrations/room-and-sqlite/ for more details, including info about migrating from `SentrySupportSQLiteOpenHelper`
 
+## 8.43.1
+
+### Fixes
+
+- Session Replay: Fix replay recording freezing on screens with continuous animations ([#5489](https://github.com/getsentry/sentry-java/pull/5489))
+- Session Replay: Populate `trace_ids` in replay events to enable searching replays by trace ID ([#5473](https://github.com/getsentry/sentry-java/pull/5473))
+
 ## 8.43.0
 
 ### Features

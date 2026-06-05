@@ -1959,6 +1959,23 @@ class SentryClientTest {
   }
 
   @Test
+  fun `captureTransaction registers trace ID with replay controller`() {
+    var registeredTraceId: SentryId? = null
+    fixture.sentryOptions.setReplayController(
+      object : ReplayController by NoOpReplayController.getInstance() {
+        override fun registerTraceId(traceId: SentryId) {
+          registeredTraceId = traceId
+        }
+      }
+    )
+    val sut = fixture.getSut()
+    val sentryTracer = SentryTracer(TransactionContext("name", "op"), fixture.scopes)
+    val transaction = SentryTransaction(sentryTracer)
+    sut.captureTransaction(transaction, sentryTracer.traceContext())
+    assertEquals(sentryTracer.spanContext.traceId, registeredTraceId)
+  }
+
+  @Test
   fun `when exception type is ignored, capturing event does not send it`() {
     fixture.sentryOptions.addIgnoredExceptionForType(IllegalStateException::class.java)
     val sut = fixture.getSut()

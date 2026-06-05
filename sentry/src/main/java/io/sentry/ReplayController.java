@@ -28,4 +28,12 @@ public interface ReplayController extends IReplayApi {
   ReplayBreadcrumbConverter getBreadcrumbConverter();
 
   boolean isDebugMaskingOverlayEnabled();
+
+  /**
+   * Registers a trace ID to be associated with the current replay. This is called when a
+   * transaction is captured while replay is recording, to enable searching for replays by trace ID.
+   *
+   * @param traceId the trace ID to associate with the current replay
+   */
+  void registerTraceId(@NotNull SentryId traceId);
 }
