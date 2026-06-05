@@ -8,9 +8,6 @@ import kotlin.test.Test
 import leakcanary.LeakAssertions
 import leakcanary.LeakCanary
 import org.awaitility.kotlin.await
-import org.hamcrest.CoreMatchers.`is`
-import org.junit.Assume.assumeThat
-import org.junit.Before
 import shark.AndroidReferenceMatchers
 import shark.IgnoredReferenceMatcher
 import shark.ReferencePattern
