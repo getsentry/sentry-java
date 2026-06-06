@@ -3,6 +3,7 @@ package io.sentry.sqlite
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.SQLiteDriver
 import androidx.sqlite.SQLiteStatement
+import androidx.sqlite.driver.SupportSQLiteDriver
 import io.sentry.IScopes
 import io.sentry.Sentry
 import io.sentry.SentryIntegrationPackageStorage
@@ -62,6 +63,16 @@ class SentrySQLiteDriverTest {
     val wrapped = SentrySQLiteDriver.create(fixture.mockDriver)
     val doubleWrapped = SentrySQLiteDriver.create(wrapped)
     assertSame(wrapped, doubleWrapped)
+  }
+
+  @Test
+  fun `create with SupportSQLiteDriver bridge returns same instance without wrapping`() {
+    val bridge = SupportSQLiteDriver()
+
+    val result = SentrySQLiteDriver.create(bridge)
+
+    assertSame(bridge, result)
+    assertFalse(result is SentrySQLiteDriver)
   }
 
   @Test

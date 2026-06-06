@@ -8,6 +8,7 @@
   - Automatically generates spans for all SQLite statements
   - To use it, pass your `SQLiteDriver` to `SentrySQLiteDriver.create(...)`
   - You'll need `androidx.sqlite:sqlite` (2.5.0+) on your app's classpath (Room usually provides it for you). androidx.sqlite 2.6.0+ requires minSdk 23.
+  - The Room 2.7+ `androidx.sqlite.driver.SupportSQLiteDriver` bridge adapter is recognized and skipped by `SentrySQLiteDriver.create(...)` so apps that wrap both the open helper and the bridge driver do not emit duplicate spans. Spans come from the open helper layer in that configuration.
   - See https://docs.sentry.io/platforms/android/integrations/room-and-sqlite/ for more details, including info about migrating from `SentrySupportSQLiteOpenHelper`
 
 ## 8.43.1
