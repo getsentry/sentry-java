@@ -1,3 +1,25 @@
+/*
+ * Portions of this file are adapted from AndroidX Compose UI:
+ *  - the `boundsInWindow` extension is a faster copy of `LayoutCoordinates.boundsInWindow`
+ *  - the `fastMinOf`, `fastMaxOf`, `fastCoerceIn`, `fastCoerceAtLeast` and `fastCoerceAtMost`
+ *    helpers are copied from `androidx.compose.ui.util.MathHelpers`
+ *
+ * Adapted from:
+ * https://github.com/androidx/androidx/blob/fc7df0dd68466ac3bb16b1c79b7a73dd0bfdd4c1/compose/ui/ui/src/commonMain/kotlin/androidx/compose/ui/layout/LayoutCoordinates.kt
+ * https://github.com/androidx/androidx/blob/androidx-main/compose/ui/ui-util/src/commonMain/kotlin/androidx/compose/ui/util/MathHelpers.kt
+ *
+ * Copyright (C) 2019, 2020 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ */
 @file:Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE") // to access internal vals and classes
 
 package io.sentry.android.replay.util
