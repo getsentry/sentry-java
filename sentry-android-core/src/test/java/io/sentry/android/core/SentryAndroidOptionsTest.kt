@@ -115,6 +115,36 @@ class SentryAndroidOptionsTest {
   }
 
   @Test
+  fun `binder tracing is disabled by default for Android`() {
+    val sentryOptions = SentryAndroidOptions()
+
+    assertFalse(sentryOptions.isEnableBinderTracing)
+  }
+
+  @Test
+  fun `binder logging is disabled by default for Android`() {
+    val sentryOptions = SentryAndroidOptions()
+
+    assertFalse(sentryOptions.isEnableBinderLogging)
+  }
+
+  @Test
+  fun `binder tracing can be enabled`() {
+    val sentryOptions = SentryAndroidOptions()
+    sentryOptions.isEnableBinderTracing = true
+
+    assertTrue(sentryOptions.isEnableBinderTracing)
+  }
+
+  @Test
+  fun `binder logging can be enabled`() {
+    val sentryOptions = SentryAndroidOptions()
+    sentryOptions.isEnableBinderLogging = true
+
+    assertTrue(sentryOptions.isEnableBinderLogging)
+  }
+
+  @Test
   fun `native sdk name is null by default`() {
     val sentryOptions = SentryAndroidOptions()
     assertNull(sentryOptions.nativeSdkName)

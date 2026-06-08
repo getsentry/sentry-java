@@ -14,6 +14,7 @@ import io.sentry.Sentry;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.Session;
+import io.sentry.android.core.internal.binder.SentryBinderAdapter;
 import io.sentry.android.core.performance.AppStartMetrics;
 import io.sentry.android.core.performance.TimeSpan;
 import io.sentry.android.fragment.FragmentLifecycleIntegration;
@@ -150,6 +151,9 @@ public final class SentryAndroid {
                       "Error in the 'OptionsConfiguration.configure' callback.",
                       t);
             }
+
+            SentryBinderAdapter.setEnabled(
+                options.isEnableBinderTracing(), options.isEnableBinderLogging());
 
             // if SentryPerformanceProvider was disabled or removed,
             // we set the app start / sdk init time here instead

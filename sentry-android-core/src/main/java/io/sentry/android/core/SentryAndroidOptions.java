@@ -263,6 +263,12 @@ public final class SentryAndroidOptions extends SentryOptions {
 
   private boolean enableAnrFingerprinting = true;
 
+  /** Enable or disable creating spans for binder (IPC) calls. Default is disabled. */
+  private boolean enableBinderTracing = false;
+
+  /** Enable or disable logging of binder (IPC) calls. Default is disabled. */
+  private boolean enableBinderLogging = false;
+
   public SentryAndroidOptions() {
     setSentryClientName(BuildConfig.SENTRY_ANDROID_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
     setSdkVersion(createSdkVersion());
@@ -753,6 +759,42 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   public void setEnableAnrFingerprinting(final boolean enableAnrFingerprinting) {
     this.enableAnrFingerprinting = enableAnrFingerprinting;
+  }
+
+  /**
+   * Returns whether creating spans for binder (IPC) calls is enabled. Default is disabled.
+   *
+   * @return true if binder spans are enabled
+   */
+  public boolean isEnableBinderTracing() {
+    return enableBinderTracing;
+  }
+
+  /**
+   * Enables or disables creating spans for binder (IPC) calls.
+   *
+   * @param enableBinderTracing true to enable binder spans
+   */
+  public void setEnableBinderTracing(final boolean enableBinderTracing) {
+    this.enableBinderTracing = enableBinderTracing;
+  }
+
+  /**
+   * Returns whether logging of binder (IPC) calls is enabled. Default is disabled.
+   *
+   * @return true if binder logging is enabled
+   */
+  public boolean isEnableBinderLogging() {
+    return enableBinderLogging;
+  }
+
+  /**
+   * Enables or disables logging of binder (IPC) calls.
+   *
+   * @param enableBinderLogging true to enable binder logging
+   */
+  public void setEnableBinderLogging(final boolean enableBinderLogging) {
+    this.enableBinderLogging = enableBinderLogging;
   }
 
   static class AndroidUserFeedbackFormHandler implements SentryFeedbackOptions.IFormHandler {
