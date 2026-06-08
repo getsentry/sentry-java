@@ -53,6 +53,7 @@ object SampleDatabases {
     private set
 
   @Volatile private var warmUpComplete = false
+  @Volatile private var warmUpGeneration = 0
   @Volatile private var warmUpJob: Job? = null
 
   fun isWarmUpComplete(): Boolean = warmUpComplete
@@ -259,6 +260,7 @@ object SampleDatabases {
   /** Opens every database on a background thread, forcing the one-time open + bootstrap to run. */
   fun warmUp(context: Context) {
     val appContext = context.applicationContext
+    val generation = ++warmUpGeneration
     warmUpComplete = false
     warmUpErrors = ""
     // Fire-and-forget: the warm-up outlives no particular screen, so a bare scope is fine here.
@@ -289,8 +291,10 @@ object SampleDatabases {
             .countSongs()
             .executeAsOne()
         }
-        warmUpErrors = failures.joinToString("\n") { "Warm-up failed: $it" }
-        warmUpComplete = true
+        if (generation == warmUpGeneration) {
+          warmUpErrors = failures.joinToString("\n") { "Warm-up failed: $it" }
+          warmUpComplete = true
+        }
       }
   }
 
