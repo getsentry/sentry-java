@@ -264,6 +264,19 @@ class AppStartMetricsTest {
 
     assertEquals(0, listenerCalls.get())
     assertEquals(AppStartMetrics.AppStartType.UNKNOWN, metrics.appStartType)
+
+    SystemClock.setCurrentTimeMillis(SystemClock.uptimeMillis() + 100)
+    val activity = mock<Activity>()
+    whenever(activity.isChangingConfigurations).thenReturn(false)
+    metrics.onActivityCreated(activity, null)
+
+    assertEquals(AppStartMetrics.AppStartType.WARM, metrics.appStartType)
+
+    metrics.onActivityDestroyed(activity)
+    SystemClock.setCurrentTimeMillis(SystemClock.uptimeMillis() + 100)
+    metrics.onActivityCreated(mock<Activity>(), null)
+
+    assertEquals(AppStartMetrics.AppStartType.WARM, metrics.appStartType)
   }
 
   @Test

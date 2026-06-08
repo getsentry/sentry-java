@@ -479,12 +479,9 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     if (activeActivitiesCounter.get() == 0) {
       // SDK init happened after Application.onCreate (e.g. deferred/late init inside an Activity):
       // we missed the Activity's onActivityCreated, but a foreground process means it was a real
-      // launch, not a headless start. Don't emit a (fake) headless app-start; just keep the counter
-      // consistent so the later onActivityDestroyed doesn't go negative. Gated on the listener so
-      // only the standalone-app-start path (which is what could emit a headless transaction) is
-      // affected.
+      // launch, not a headless start. Gated on the listener so only the standalone-app-start path
+      // (which is what could emit a headless transaction) is affected.
       if (headlessAppStartListener != null && ContextUtils.isForegroundImportance()) {
-        activeActivitiesCounter.compareAndSet(0, 1);
         return;
       }
 
@@ -629,7 +626,11 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   public void onActivityDestroyed(@NonNull Activity activity) {
     CurrentActivityHolder.getInstance().clearActivity(activity);
 
-    final int remainingActivities = activeActivitiesCounter.decrementAndGet();
+    int remainingActivities = activeActivitiesCounter.decrementAndGet();
+    if (remainingActivities < 0) {
+      activeActivitiesCounter.set(0);
+      remainingActivities = 0;
+    }
     // if the app is moving into background
     // as the next onActivityCreated will treat it as a new warm app start
     if (remainingActivities == 0 && !activity.isChangingConfigurations()) {
