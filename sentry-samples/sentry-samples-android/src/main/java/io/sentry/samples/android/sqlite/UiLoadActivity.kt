@@ -30,7 +30,12 @@ class UiLoadActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
 
-    val id = SqlDemo.valueOf(intent.getStringExtra(EXTRA_DEMO_ID).orEmpty())
+    val id =
+      SqlDemo.entries.find { it.name == intent.getStringExtra(EXTRA_DEMO_ID) }
+        ?: run {
+          finish()
+          return
+        }
     val heavy = intent.getBooleanExtra(EXTRA_HEAVY, false)
 
     setContent { UiLoadScreen(status = status, onClose = ::finish) }
