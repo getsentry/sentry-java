@@ -186,6 +186,10 @@ gh pr view <branch-name> --json number -q '.number'
 gh pr view --json url -q '.url'
 ```
 
+### Changelog
+
+User-facing changes get an entry under the `## Unreleased` section of `CHANGELOG.md`. When rebasing onto `main`, a release may have renamed the `## Unreleased` heading your entry was under to a version number — if so, move your entry back into an `## Unreleased` section at the top of the file (create it if it no longer exists). See `.cursor/rules/pr.mdc` for the full changelog and PR workflow.
+
 ## Useful Resources
 
 - Main SDK documentation: https://develop.sentry.dev/sdk/overview/
