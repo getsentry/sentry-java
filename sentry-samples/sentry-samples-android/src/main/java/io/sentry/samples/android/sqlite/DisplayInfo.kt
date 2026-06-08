@@ -87,6 +87,11 @@ internal val OPENHELPER_ROOM =
         .trimIndent(),
   )
 
+// Bridge demos run the same SQL as the driver paths; spans come from the open-helper layer.
+internal val BRIDGE_DIRECT = DRIVER_DIRECT
+
+internal val BRIDGE_ROOM2 = DRIVER_ROOM2
+
 internal val OPENHELPER_SQLDELIGHT =
   DisplayInfo(
     sql =

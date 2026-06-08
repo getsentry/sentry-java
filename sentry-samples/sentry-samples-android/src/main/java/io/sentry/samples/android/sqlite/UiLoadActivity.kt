@@ -3,6 +3,7 @@ package io.sentry.samples.android.sqlite
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.getValue
@@ -48,7 +49,8 @@ class UiLoadActivity : ComponentActivity() {
             withContext(Dispatchers.IO) { SqlStatements.execute(applicationContext, id, heavy) }
           "$result\n\nRan under the auto ui.load transaction."
         } catch (t: Throwable) {
-          "Load failed: ${t.message}"
+          Log.e(TAG, "Load failed", t)
+          "Load failed: ${t.message ?: t.javaClass.simpleName}"
         } finally {
           // Close the TTFD window so the ui.load transaction finishes with the db spans attached.
           Sentry.reportFullyDisplayed()
@@ -57,6 +59,7 @@ class UiLoadActivity : ComponentActivity() {
   }
 
   companion object {
+    private const val TAG = "UiLoadActivity"
     private const val EXTRA_DEMO_ID = "demo_id"
     private const val EXTRA_HEAVY = "heavy"
 

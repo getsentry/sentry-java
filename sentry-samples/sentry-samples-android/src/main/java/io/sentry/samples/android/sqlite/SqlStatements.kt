@@ -18,6 +18,8 @@ enum class SqlDemo {
   DRIVER_DIRECT,
   DRIVER_ROOM2,
   DRIVER_ROOM3,
+  BRIDGE_DIRECT,
+  BRIDGE_ROOM2,
   OPENHELPER_DIRECT,
   OPENHELPER_ROOM,
   OPENHELPER_SQLDELIGHT,
@@ -64,6 +66,8 @@ object SqlStatements {
         SqlDemo.DRIVER_DIRECT -> driverDirect(context, heavy)
         SqlDemo.DRIVER_ROOM2 -> driverWithRoom2(context, heavy)
         SqlDemo.DRIVER_ROOM3 -> driverWithRoom3(context, heavy)
+        SqlDemo.BRIDGE_DIRECT -> bridgeDirect(context, heavy)
+        SqlDemo.BRIDGE_ROOM2 -> bridgeWithRoom2(context, heavy)
         SqlDemo.OPENHELPER_DIRECT -> openHelperDirect(context, heavy)
         SqlDemo.OPENHELPER_ROOM -> openHelperWithRoom(context, heavy)
         SqlDemo.OPENHELPER_SQLDELIGHT -> openHelperWithSqlDelight(context, heavy)
@@ -134,6 +138,37 @@ object SqlStatements {
     }
     return "$label: ${dao.count()} rows."
   }
+
+  // --- 1b. SupportSQLiteDriver bridge (helper + driver both wrapped; SDK skips driver wrap) --
+
+  private fun bridgeDirect(context: Context, heavy: Boolean): String =
+    synchronized(SampleDatabases.bridgeDirectLock) {
+      val connection = SampleDatabases.bridgeConnection(context)
+      insert(connection, "Mishima / Closing", "Philip Glass")
+      insert(connection, "School of Velocity, op 299 no 1, ", "Carl Czerny")
+
+      if (heavy) {
+        connection.prepare(insertSongsBatch(HEAVY_ROW_COUNT)).use { statement ->
+          var param = 1
+          repeat(HEAVY_ROW_COUNT) { row ->
+            statement.bindText(param++, "song $row")
+            statement.bindText(param++, "artist $row")
+          }
+          statement.step()
+        }
+
+        connection.prepare(SELECT_SONGS).use { statement ->
+          while (statement.step()) {
+            val row = "${statement.getLong(0)}:${statement.getText(1)}:${statement.getText(2)}"
+            appWork(row)
+          }
+        }
+      }
+      "Bridge (Direct): ${count(connection)} rows."
+    }
+
+  private suspend fun bridgeWithRoom2(context: Context, heavy: Boolean): String =
+    roomDemo(SampleDatabases.bridgeRoom2Db(context).songDao(), "Bridge (Room 2)", heavy)
 
   // --- 2b. SentrySQLiteDriver, used through Room 3.0+ (androidx.room3) -----------------------
 

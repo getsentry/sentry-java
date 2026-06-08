@@ -1,12 +1,14 @@
 package io.sentry.samples.android.sqlite
 
 import android.content.Context
+import android.util.Log
 import androidx.room.Room
 import androidx.room3.Room as Room3
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.sqlite.db.SupportSQLiteOpenHelper
 import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
+import androidx.sqlite.driver.SupportSQLiteDriver
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import androidx.sqlite.execSQL
 import app.cash.sqldelight.driver.android.AndroidSqliteDriver
@@ -18,6 +20,7 @@ import io.sentry.samples.android.sqlite.SampleDatabases.warmUp
 import io.sentry.sqlite.SentrySQLiteDriver
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -42,18 +45,39 @@ import kotlinx.coroutines.sync.withLock
  */
 object SampleDatabases {
 
+  private const val TAG = "SampleDatabases"
+
+  /** Non-empty when one or more warm-up steps failed; shown on [SQLiteActivity]. */
+  @Volatile
+  var warmUpErrors: String = ""
+    private set
+
+  @Volatile private var warmUpComplete = false
+  @Volatile private var warmUpJob: Job? = null
+
+  fun isWarmUpComplete(): Boolean = warmUpComplete
+
+  /** Blocks until the in-flight [warmUp] job (if any) finishes. */
+  suspend fun awaitWarmUp() {
+    warmUpJob?.join()
+  }
+
   private val sqlAccess = Mutex()
 
   val driverDirectLock = Any()
+  val bridgeDirectLock = Any()
   val openHelperDirectLock = Any()
 
   /** Serializes demo SQL and [reset] so handles are never closed mid-statement. */
   suspend fun <T> withSqlAccess(block: suspend () -> T): T = sqlAccess.withLock { block() }
 
   @Volatile private var driverConnection: SQLiteConnection? = null
+  @Volatile private var bridgeConnection: SQLiteConnection? = null
   @Volatile private var driverRoom2Db: SampleRoom2Database? = null
+  @Volatile private var bridgeRoom2Db: SampleRoom2Database? = null
   @Volatile private var driverRoom3Db: SampleRoom3Database? = null
   @Volatile private var directHelper: SupportSQLiteOpenHelper? = null
+  @Volatile private var bridgeDirectHelper: SupportSQLiteOpenHelper? = null
   @Volatile private var openHelperRoomDb: SampleRoom2Database? = null
   @Volatile private var sqlDelightDriver: AndroidSqliteDriver? = null
 
@@ -66,6 +90,45 @@ object SampleDatabases {
             it.execSQL(SqlStatements.CREATE_SONG) // one-time table setup, at open
             driverConnection = it
           }
+    }
+
+  /**
+   * The Room 2.7+ duplicate-span scenario: a Sentry-wrapped open helper bridged to
+   * [SupportSQLiteDriver], then passed to [SentrySQLiteDriver.create] (which no-ops on the bridge).
+   */
+  fun bridgeConnection(context: Context): SQLiteConnection =
+    synchronized(bridgeDirectLock) {
+      bridgeConnection
+        ?: run {
+          // SupportSQLiteDriver.open() requires fileName to match the helper's databaseName();
+          // use the absolute path Room and the direct driver path both pass to open().
+          val dbPath = databaseFile(context, "bridge_direct.db")
+          SentrySQLiteDriver.create(SupportSQLiteDriver(buildBridgeDirectHelper(context, dbPath)))
+            .open(dbPath)
+            .also {
+              it.execSQL(SqlStatements.CREATE_SONG)
+              bridgeConnection = it
+            }
+        }
+    }
+
+  fun bridgeRoom2Db(context: Context): SampleRoom2Database =
+    synchronized(this) {
+      bridgeRoom2Db
+        ?: Room.databaseBuilder(
+            context.applicationContext,
+            SampleRoom2Database::class.java,
+            "bridge_room2.db",
+          )
+          .setDriver(
+            SentrySQLiteDriver.create(
+              SupportSQLiteDriver(buildBridgeRoom2Helper(context.applicationContext))
+            )
+          )
+          .setQueryCoroutineContext(Dispatchers.IO)
+          .fallbackToDestructiveMigration(true)
+          .build()
+          .also { bridgeRoom2Db = it }
     }
 
   fun driverRoom2Db(context: Context): SampleRoom2Database =
@@ -133,10 +196,50 @@ object SampleDatabases {
           .also { sqlDelightDriver = it }
     }
 
-  private fun buildDirectHelper(context: Context): SupportSQLiteOpenHelper {
+  private fun buildDirectHelper(context: Context): SupportSQLiteOpenHelper =
+    buildSentryHelper(context, "openhelper_direct.db").also { directHelper = it }
+
+  private fun buildBridgeDirectHelper(context: Context, dbPath: String): SupportSQLiteOpenHelper =
+    buildSentryHelper(context, dbPath).also { bridgeDirectHelper = it }
+
+  /**
+   * Open helper for the Bridge + Room 2 stack. Must not create tables in [onCreate] — Room owns the
+   * schema when [setDriver] is used. Room also passes [SupportSQLiteOpenHelper.databaseName] (the
+   * short name below), not an absolute path, to [SupportSQLiteDriver.open].
+   *
+   * The callback version must be 1 (FrameworkSQLiteOpenHelper rejects &lt; 1). That sets `PRAGMA
+   * user_version = 1` before Room opens, so Room would skip [onCreate] and validate the empty file
+   * as pre-packaged → "invalid schema". [onOpen] clears user_version back to 0 until
+   * [ROOM_MASTER_TABLE] exists.
+   */
+  private fun buildBridgeRoom2Helper(context: Context): SupportSQLiteOpenHelper {
     val configuration =
       SupportSQLiteOpenHelper.Configuration.builder(context.applicationContext)
-        .name("openhelper_direct.db")
+        .name("bridge_room2.db")
+        .callback(
+          object : SupportSQLiteOpenHelper.Callback(1) {
+            override fun onCreate(db: SupportSQLiteDatabase) = Unit
+
+            override fun onUpgrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) =
+              Unit
+
+            override fun onOpen(db: SupportSQLiteDatabase) {
+              if (!db.hasRoomMasterTable()) {
+                db.execSQL("PRAGMA user_version = 0")
+              }
+            }
+          }
+        )
+        .build()
+    return SentrySupportSQLiteOpenHelper.create(
+      FrameworkSQLiteOpenHelperFactory().create(configuration)
+    )
+  }
+
+  private fun buildSentryHelper(context: Context, dbName: String): SupportSQLiteOpenHelper {
+    val configuration =
+      SupportSQLiteOpenHelper.Configuration.builder(context.applicationContext)
+        .name(dbName)
         .callback(
           object : SupportSQLiteOpenHelper.Callback(1) {
             override fun onCreate(db: SupportSQLiteDatabase) {
@@ -156,22 +259,47 @@ object SampleDatabases {
   /** Opens every database on a background thread, forcing the one-time open + bootstrap to run. */
   fun warmUp(context: Context) {
     val appContext = context.applicationContext
+    warmUpComplete = false
+    warmUpErrors = ""
     // Fire-and-forget: the warm-up outlives no particular screen, so a bare scope is fine here.
-    CoroutineScope(Dispatchers.IO).launch {
-      runCatching { driverConnection(appContext) }
-      // primeWriter() + count() opens both Room pool connections (writer + reader), so the first
-      // demo INSERT/SELECT reuses them instead of bootstrapping a connection inside its
-      // transaction.
-      runCatching { driverRoom2Db(appContext).songDao().also { it.primeWriter() }.count() }
-      runCatching { driverRoom3Db(appContext).songDao().also { it.primeWriter() }.count() }
-      runCatching { directHelper(appContext).writableDatabase }
-      runCatching { openHelperRoomDb(appContext).songDao().also { it.primeWriter() }.count() }
-      runCatching {
-        SampleSQLDelightDatabase(sqlDelightDriver(appContext))
-          .songQueries
-          .countSongs()
-          .executeAsOne()
+    warmUpJob =
+      CoroutineScope(Dispatchers.IO).launch {
+        val failures = mutableListOf<String>()
+        runWarmUpStep("driver direct", failures) { driverConnection(appContext) }
+        runWarmUpStep("bridge direct", failures) { bridgeConnection(appContext) }
+        // primeWriter() + count() opens both Room pool connections (writer + reader), so the first
+        // demo INSERT/SELECT reuses them instead of bootstrapping a connection inside its
+        // transaction.
+        runWarmUpStep("driver Room 2", failures) {
+          driverRoom2Db(appContext).songDao().also { it.primeWriter() }.count()
+        }
+        runWarmUpStep("bridge Room 2", failures) {
+          bridgeRoom2Db(appContext).songDao().also { it.primeWriter() }.count()
+        }
+        runWarmUpStep("driver Room 3", failures) {
+          driverRoom3Db(appContext).songDao().also { it.primeWriter() }.count()
+        }
+        runWarmUpStep("open helper direct", failures) { directHelper(appContext).writableDatabase }
+        runWarmUpStep("open helper Room", failures) {
+          openHelperRoomDb(appContext).songDao().also { it.primeWriter() }.count()
+        }
+        runWarmUpStep("SQLDelight", failures) {
+          SampleSQLDelightDatabase(sqlDelightDriver(appContext))
+            .songQueries
+            .countSongs()
+            .executeAsOne()
+        }
+        warmUpErrors = failures.joinToString("\n") { "Warm-up failed: $it" }
+        warmUpComplete = true
       }
+  }
+
+  private inline fun runWarmUpStep(step: String, failures: MutableList<String>, block: () -> Unit) {
+    try {
+      block()
+    } catch (t: Throwable) {
+      Log.e(TAG, "Warm-up failed: $step", t)
+      failures.add("$step: ${t.message ?: t.javaClass.simpleName}")
     }
   }
 
@@ -185,7 +313,9 @@ object SampleDatabases {
     val names =
       listOf(
         "driver_direct.db",
+        "bridge_direct.db",
         "driver_room2.db",
+        "bridge_room2.db",
         "driver_room3.db",
         "openhelper_direct.db",
         "openhelper_room.db",
@@ -201,6 +331,12 @@ object SampleDatabases {
       driverConnection?.close()
       driverConnection = null
     }
+    synchronized(bridgeDirectLock) {
+      bridgeConnection?.close()
+      bridgeConnection = null
+      bridgeDirectHelper?.close()
+      bridgeDirectHelper = null
+    }
     synchronized(openHelperDirectLock) {
       directHelper?.close()
       directHelper = null
@@ -208,6 +344,8 @@ object SampleDatabases {
     synchronized(this) {
       driverRoom2Db?.close()
       driverRoom2Db = null
+      bridgeRoom2Db?.close()
+      bridgeRoom2Db = null
       driverRoom3Db?.close()
       driverRoom3Db = null
       openHelperRoomDb?.close()
@@ -219,4 +357,11 @@ object SampleDatabases {
 
   private fun databaseFile(context: Context, name: String): String =
     context.applicationContext.getDatabasePath(name).also { it.parentFile?.mkdirs() }.absolutePath
+
+  private fun SupportSQLiteDatabase.hasRoomMasterTable(): Boolean =
+    query("SELECT 1 FROM sqlite_master WHERE name = '$ROOM_MASTER_TABLE' LIMIT 1").use {
+      it.moveToFirst()
+    }
 }
+
+private const val ROOM_MASTER_TABLE = "room_master_table"

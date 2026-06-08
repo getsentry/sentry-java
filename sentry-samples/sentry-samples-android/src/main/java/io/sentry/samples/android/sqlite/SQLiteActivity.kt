@@ -1,6 +1,7 @@
 package io.sentry.samples.android.sqlite
 
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -33,6 +34,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.PlainTooltip
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchColors
@@ -73,6 +77,7 @@ import kotlinx.coroutines.withContext
 
 private val SentryPink = Color(0xFFC85B9C)
 private val SentryPurple = Color(0xFF7B52FB)
+private val SentryOrange = Color(0xFFE8743F)
 private val SentryRed = Color(0xFFF55459)
 
 /** Intro text, surfaced via the "?" tooltip next to the "Run it" header. */
@@ -88,10 +93,33 @@ private val CONTROL_SECTION_GAP = TOGGLE_SECTION_GAP * 2
 
 private val SECTION_HEADER_HEIGHT = 28.dp
 
-/** Which sentry-android-sqlite integration the demo buttons currently target. */
-private enum class Integration(val color: Color, val apiName: String) {
-  DRIVER(SentryPurple, "SQLiteDriver"),
-  OPEN_HELPER(SentryPink, "SupportSQLiteOpenHelper"),
+/** Which sentry-android-sqlite integration the demo currently targets. */
+private enum class IntegrationMode(
+  val color: Color,
+  val segmentLabel: String,
+  val apiName: String,
+  val subtitle: String,
+) {
+  DRIVER(
+    SentryPurple,
+    "SQLiteDriver",
+    "SQLiteDriver",
+    "SentrySQLiteDriver.create(BundledSQLiteDriver)",
+  ),
+  OPEN_HELPER(
+    SentryPink,
+    "OpenHelper",
+    "SupportSQLiteOpenHelper",
+    "SentrySupportSQLiteOpenHelper.create(...)",
+  ),
+  // Not directly-supported, but lets us verify behavior when both the DRIVER and OPEN_HELPER
+  // integrations are used together via the SupportSQLiteDriver bridge.
+  BRIDGE(
+    SentryOrange,
+    "Bridge",
+    "SupportSQLiteDriver bridge",
+    "SentrySQLiteDriver.create(SupportSQLiteDriver(Sentry helper))",
+  ),
 }
 
 /**
@@ -107,11 +135,24 @@ private class DemoVariant(
 )
 
 /**
- * A single demo button in the list. [driver] / [openHelper] hold the variant for each integration;
- * a null variant means the row doesn't apply to that integration and renders dimmed, explaining why
- * on click (Room 3 is driver-only; SQLDelight is open-helper-only).
+ * A single demo button in the list. [driver] / [openHelper] / [bridge] hold the variant for each
+ * integration; a null variant means the row doesn't apply and renders dimmed (e.g., Room 3 is
+ * driver-only; SQLDelight is open-helper-only; etc.).
  */
-private class DemoRow(val label: String, val driver: DemoVariant?, val openHelper: DemoVariant?)
+private class DemoRow(
+  val label: String,
+  val driver: DemoVariant?,
+  val openHelper: DemoVariant?,
+  val bridge: DemoVariant?,
+) {
+
+  fun variantFor(mode: IntegrationMode): DemoVariant? =
+    when (mode) {
+      IntegrationMode.DRIVER -> driver
+      IntegrationMode.OPEN_HELPER -> openHelper
+      IntegrationMode.BRIDGE -> bridge
+    }
+}
 
 // The demo buttons, top to bottom, paired with each integration's variant. Pure data — the actual
 // SQL lives in SqlStatements, dispatched by id.
@@ -133,6 +174,13 @@ private val DEMO_ROWS =
           op = "db.sql.openhelper-direct",
           displayInfo = OPENHELPER_DIRECT,
         ),
+      bridge =
+        DemoVariant(
+          demo = SqlDemo.BRIDGE_DIRECT,
+          transactionName = "Bridge stack — Direct",
+          op = "db.sql.bridge-direct",
+          displayInfo = BRIDGE_DIRECT,
+        ),
     ),
     DemoRow(
       label = "Room 2",
@@ -150,6 +198,13 @@ private val DEMO_ROWS =
           op = "db.sql.openhelper-room",
           displayInfo = OPENHELPER_ROOM,
         ),
+      bridge =
+        DemoVariant(
+          demo = SqlDemo.BRIDGE_ROOM2,
+          transactionName = "Bridge stack — Room 2",
+          op = "db.sql.bridge-room2",
+          displayInfo = BRIDGE_ROOM2,
+        ),
     ),
     DemoRow(
       label = "Room 3",
@@ -161,6 +216,7 @@ private val DEMO_ROWS =
           displayInfo = DRIVER_ROOM3,
         ),
       openHelper = null, // Room 3 only runs on the SQLiteDriver path.
+      bridge = null,
     ),
     DemoRow(
       label = "SQLDelight",
@@ -172,6 +228,7 @@ private val DEMO_ROWS =
           op = "db.sql.openhelper-sqldelight",
           displayInfo = OPENHELPER_SQLDELIGHT,
         ),
+      bridge = null,
     ),
   )
 
@@ -187,6 +244,7 @@ private val DEMO_ROWS =
 class SQLiteActivity : ComponentActivity() {
 
   private var latestResult by mutableStateOf("")
+  private var warmUpErrors by mutableStateOf("")
   private var sqlDetail by mutableStateOf(SQL_DETAIL_HINT)
   private var heavyWork by mutableStateOf(false)
 
@@ -198,8 +256,8 @@ class SQLiteActivity : ComponentActivity() {
    */
   private var shareScreenTrace by mutableStateOf(false)
 
-  /** Which integration the demo buttons target. Switching it disables the rows that don't apply. */
-  private var integration by mutableStateOf(Integration.DRIVER)
+  /** Which integration is currently being demoed. Switching it disables rows that don't apply. */
+  private var integration by mutableStateOf(IntegrationMode.DRIVER)
 
   /** Incremented on each tap that runs SQL. Used to retrigger the detail box's outline shimmer. */
   private var runTick by mutableStateOf(0)
@@ -265,31 +323,19 @@ class SQLiteActivity : ComponentActivity() {
 
             SectionHeader("Configure it")
 
-            val openHelper = integration == Integration.OPEN_HELPER
-            val integrationSwitchColors =
-              SwitchDefaults.colors(
-                checkedTrackColor = SentryPink,
-                checkedBorderColor = SentryPink,
-                uncheckedTrackColor = SentryPurple,
-                uncheckedBorderColor = SentryPurple,
-                uncheckedThumbColor = Color.White,
-              )
             val controlSwitchColors =
               SwitchDefaults.colors(
                 checkedTrackColor = Color.Black,
                 checkedBorderColor = Color.Black,
               )
-            ToggleRow(
-              label = if (openHelper) "SentrySupportSQLiteOpenHelper" else "SentrySQLiteDriver",
-              checked = openHelper,
-              labelColor = if (openHelper) SentryPink else SentryPurple,
-              switchColors = integrationSwitchColors,
-            ) {
-              integration = if (it) Integration.OPEN_HELPER else Integration.DRIVER
-              // Switching integration starts a fresh comparison: clear the detail box and result.
-              sqlDetail = SQL_DETAIL_HINT
-              latestResult = ""
-            }
+            IntegrationModeSelector(
+              selected = integration,
+              onSelected = {
+                integration = it
+                sqlDetail = SQL_DETAIL_HINT
+                latestResult = ""
+              },
+            )
             ToggleRow(
               label = if (heavyWork) "Heavy app-level work" else "No app-level work",
               checked = heavyWork,
@@ -313,12 +359,12 @@ class SQLiteActivity : ComponentActivity() {
             // integration's variant; a row that doesn't apply explains why via a toast (see
             // [DemoRowButton]).
             DEMO_ROWS.forEach { row ->
-              val variant = if (integration == Integration.DRIVER) row.driver else row.openHelper
+              val variant = row.variantFor(integration)
               DemoRowButton(
                 label = row.label,
                 color = integration.color,
                 variant = variant,
-                disabledReason = "${row.label} doesn't use the ${integration.apiName}",
+                disabledReason = "${row.label} doesn't apply to the ${integration.apiName} stack",
               )
             }
 
@@ -330,12 +376,26 @@ class SQLiteActivity : ComponentActivity() {
             // Same [CONTROL_SECTION_GAP] above as the other sections, separating the controls from
             // the detail output.
             SectionHeader("Under the hood", topPadding = CONTROL_SECTION_GAP)
+            LaunchedEffect(Unit) {
+              while (!SampleDatabases.isWarmUpComplete()) {
+                warmUpErrors = SampleDatabases.warmUpErrors
+                delay(250)
+              }
+              warmUpErrors = SampleDatabases.warmUpErrors
+            }
+            if (warmUpErrors.isNotEmpty()) {
+              Text(
+                text = warmUpErrors,
+                style = MaterialTheme.typography.bodyMedium,
+                color = SentryRed,
+              )
+            }
             // The latest run result (row counts, errors). Hidden until the first run.
             if (latestResult.isNotEmpty()) {
               Text(
                 text = latestResult,
                 style = MaterialTheme.typography.bodyMedium,
-                color = if (latestResult.contains("failed")) SentryRed else Color.Unspecified,
+                color = if (latestResult.looksLikeError()) SentryRed else Color.Unspecified,
               )
             }
             DetailField("SQL run", sqlDetail, borderColor = detailOutline)
@@ -361,12 +421,13 @@ class SQLiteActivity : ComponentActivity() {
     lifecycleScope.launch {
       dbOperationInFlight = true
       try {
-        latestResult =
+        val result =
           withContext(Dispatchers.IO) {
             runInTransaction(variant.transactionName, variant.op) {
               SqlStatements.execute(applicationContext, variant.demo, heavyWork)
             }
           }
+        latestResult = result
       } finally {
         dbOperationInFlight = false
       }
@@ -385,9 +446,41 @@ class SQLiteActivity : ComponentActivity() {
     startActivity(UiLoadActivity.intent(this, variant.demo, heavyWork))
   }
 
+  @OptIn(ExperimentalMaterial3Api::class)
+  @androidx.compose.runtime.Composable
+  private fun IntegrationModeSelector(
+    selected: IntegrationMode,
+    onSelected: (IntegrationMode) -> Unit,
+  ) {
+    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+      IntegrationMode.entries.forEachIndexed { index, mode ->
+        SegmentedButton(
+          shape =
+            SegmentedButtonDefaults.itemShape(index = index, count = IntegrationMode.entries.size),
+          onClick = { onSelected(mode) },
+          selected = selected == mode,
+          icon = {},
+          colors =
+            SegmentedButtonDefaults.colors(
+              activeContainerColor = mode.color,
+              activeContentColor = Color.White,
+            ),
+          label = { Text(mode.segmentLabel, style = MaterialTheme.typography.labelSmall) },
+        )
+      }
+    }
+
+    Text(
+      text = selected.subtitle,
+      style = MaterialTheme.typography.bodySmall,
+      color = Color.Gray,
+      modifier = Modifier.padding(top = 6.dp),
+    )
+  }
+
   /**
    * A compact, left-justified labeled switch. [labelColor] defaults to [Color.Unspecified] so the
-   * label inherits the default text color; the integration toggle passes its pink/purple instead.
+   * label inherits the default text color.
    */
   @androidx.compose.runtime.Composable
   private fun ToggleRow(
@@ -533,7 +626,11 @@ class SQLiteActivity : ComponentActivity() {
           try {
             val message = withContext(Dispatchers.IO) { resetDatabases() }
             latestResult = message
+            warmUpErrors = SampleDatabases.warmUpErrors
             sqlDetail = "DROP: deletes every demo database file, resetting all row counts to 0."
+          } catch (t: Throwable) {
+            Log.e(TAG, "Reset failed", t)
+            latestResult = "Reset failed: ${t.message ?: t.javaClass.simpleName}"
           } finally {
             this@SQLiteActivity.dbOperationInFlight = false
             this@SQLiteActivity.resetInProgress = false
@@ -595,7 +692,8 @@ class SQLiteActivity : ComponentActivity() {
       result
     } catch (t: Throwable) {
       transaction.status = SpanStatus.INTERNAL_ERROR
-      "$transactionName failed: ${t.message}"
+      Log.e(TAG, "$transactionName failed", t)
+      "$transactionName failed: ${t.message ?: t.javaClass.simpleName}"
     } finally {
       transaction.finish()
     }
@@ -604,10 +702,19 @@ class SQLiteActivity : ComponentActivity() {
   /** Closes + deletes every demo database file (via [SampleDatabases]), then re-warms them. */
   private suspend fun resetDatabases(): String {
     val cleared = SampleDatabases.reset(applicationContext)
-    return "Dropped tables: cleared $cleared database file(s)."
+    SampleDatabases.awaitWarmUp()
+    return buildString {
+      append("Dropped tables: cleared $cleared database file(s).")
+      if (SampleDatabases.warmUpErrors.isNotEmpty()) {
+        append("\n\n")
+        append(SampleDatabases.warmUpErrors)
+      }
+    }
   }
 
   private companion object {
+
+    private const val TAG = "SQLiteActivity"
 
     /** Demo SQL shorter than this won't visibly disable the reset button. */
     private const val RESET_DISABLE_DEBOUNCE_MS = 300L
@@ -619,3 +726,5 @@ class SQLiteActivity : ComponentActivity() {
     private fun newScreenTrace(): String = "${SentryId()}-${SpanId()}-1"
   }
 }
+
+private fun String.looksLikeError(): Boolean = contains("failed", ignoreCase = true)

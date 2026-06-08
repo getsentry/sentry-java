@@ -68,17 +68,18 @@ public class SentrySQLiteDriver private constructor(private val delegate: SQLite
   public companion object {
 
     /**
-     * Fully-qualified class name of the bridge adapter often used with Room 2.7+. It implements the
-     * `SQLiteDriver` interface and its constructor consumes a `SupportSQLiteOpenHelper`. (Users of
-     * the Sentry Android Gradle Plugin will have the `SupportSQLiteOpenHelper` wrapped for them
+     * Name of the bridge adapter often used with Room 2.7+. It implements the `SQLiteDriver`
+     * interface and its constructor consumes a `SupportSQLiteOpenHelper`. (Users of the Sentry
+     * Android Gradle Plugin will have the `SupportSQLiteOpenHelper` wrapped for them
      * automatically.) We deliberately avoid wrapping the adapter to prevent duplicate spans.
+     *
+     * String (rather than an `is` check) lets us avoid a compile-time dependency on
+     * androidx.sqlite:sqlite-framework.
      */
     private const val SUPPORT_SQLITE_DRIVER_FQN = "androidx.sqlite.driver.SupportSQLiteDriver"
 
     @JvmStatic
     public fun create(delegate: SQLiteDriver): SQLiteDriver =
-      // String rather than an `is` check for SupportSQLiteDriver to avoid a compile-time dependency
-      // on androidx.sqlite:sqlite-framework.
       if (delegate is SentrySQLiteDriver || delegate.javaClass.name == SUPPORT_SQLITE_DRIVER_FQN) {
         delegate
       } else {
