@@ -11,6 +11,8 @@ import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.findRootCoordinates
 import androidx.compose.ui.node.LayoutNode
 import androidx.compose.ui.text.TextLayoutResult
+import kotlin.math.ceil
+import kotlin.math.floor
 import kotlin.math.roundToInt
 
 internal class ComposeTextLayout(internal val layout: TextLayoutResult) : TextLayout {
@@ -204,5 +206,14 @@ internal fun LayoutCoordinates.boundsInWindow(rootCoordinates: LayoutCoordinates
 }
 
 internal fun Rect.toRect(): android.graphics.Rect {
-  return android.graphics.Rect(left.toInt(), top.toInt(), right.toInt(), bottom.toInt())
+  // Round outward (floor min edges, ceil max edges) so that a sub-pixel but non-empty Rect doesn't
+  // collapse to a zero-width/height android.graphics.Rect. Otherwise a node could be marked visible
+  // and maskable based on the float bounds, while the integer rect the MaskRenderer draws has zero
+  // area, leaving sensitive content unmasked. Rounding outward also biases toward over-masking.
+  return android.graphics.Rect(
+    floor(left).toInt(),
+    floor(top).toInt(),
+    ceil(right).toInt(),
+    ceil(bottom).toInt(),
+  )
 }
