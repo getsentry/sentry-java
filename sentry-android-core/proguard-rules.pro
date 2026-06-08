@@ -92,3 +92,5 @@
 -dontwarn io.sentry.spotlight.SpotlightIntegration
 -keepnames class io.sentry.spotlight.SpotlightIntegration
 ##---------------End: proguard configuration for sentry-spotlight  ----------
+
+-keepnames class io.sentry.android.core.internal.binder.SentryBinderAdapter { *; }

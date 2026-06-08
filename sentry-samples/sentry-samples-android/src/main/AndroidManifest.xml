@@ -279,5 +279,11 @@
     <meta-data
       android:name="io.sentry.feedback.use-shake-gesture"
       android:value="true" />
+    <meta-data
+      android:name="io.sentry.traces.binder.enable"
+      android:value="true" />
+    <meta-data
+      android:name="io.sentry.logs.binder.enable"
+      android:value="true" />
   </application>
 </manifest>
