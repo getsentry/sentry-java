@@ -27,6 +27,7 @@ import io.sentry.android.replay.util.findPainter
 import io.sentry.android.replay.util.findTextColor
 import io.sentry.android.replay.util.isMaskable
 import io.sentry.android.replay.util.toOpaque
+import io.sentry.android.replay.util.toRect
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.GenericViewHierarchyNode
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.ImageViewHierarchyNode
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.TextViewHierarchyNode
@@ -150,8 +151,8 @@ internal object ComposeViewHierarchyNode {
       // If we're unable to retrieve the semantics configuration
       // we should play safe and mask the whole node.
       return GenericViewHierarchyNode(
-        x = visibleRect.left.toFloat(),
-        y = visibleRect.top.toFloat(),
+        x = visibleRect.left,
+        y = visibleRect.top,
         width = node.width,
         height = node.height,
         elevation = (parent?.elevation ?: 0f),
@@ -161,17 +162,17 @@ internal object ComposeViewHierarchyNode {
         isImportantForContentCapture = false, // will be set by children
         isVisible =
           !SentryLayoutNodeHelper.isTransparent(node) &&
-            visibleRect.height() > 0 &&
-            visibleRect.width() > 0,
-        visibleRect = visibleRect,
+            visibleRect.height > 0 &&
+            visibleRect.width > 0,
+        visibleRect = visibleRect.toRect(),
       )
     }
 
     val isVisible =
       !SentryLayoutNodeHelper.isTransparent(node) &&
         (semantics == null || !semantics.contains(SemanticsProperties.InvisibleToUser)) &&
-        visibleRect.height() > 0 &&
-        visibleRect.width() > 0
+        visibleRect.height > 0 &&
+        visibleRect.width > 0
     val isEditable =
       semantics?.contains(SemanticsActions.SetText) == true ||
         semantics?.contains(SemanticsProperties.EditableText) == true
@@ -206,8 +207,8 @@ internal object ComposeViewHierarchyNode {
               null
             },
           dominantColor = textColor?.toArgb()?.toOpaque(),
-          x = visibleRect.left.toFloat(),
-          y = visibleRect.top.toFloat(),
+          x = visibleRect.left,
+          y = visibleRect.top,
           width = node.width,
           height = node.height,
           elevation = (parent?.elevation ?: 0f),
@@ -216,7 +217,7 @@ internal object ComposeViewHierarchyNode {
           shouldMask = shouldMask,
           isImportantForContentCapture = true,
           isVisible = isVisible,
-          visibleRect = visibleRect,
+          visibleRect = visibleRect.toRect(),
         )
       }
       else -> {
@@ -226,8 +227,8 @@ internal object ComposeViewHierarchyNode {
 
           parent?.setImportantForCaptureToAncestors(true)
           ImageViewHierarchyNode(
-            x = visibleRect.left.toFloat(),
-            y = visibleRect.top.toFloat(),
+            x = visibleRect.left,
+            y = visibleRect.top,
             width = node.width,
             height = node.height,
             elevation = (parent?.elevation ?: 0f),
@@ -236,7 +237,7 @@ internal object ComposeViewHierarchyNode {
             isVisible = isVisible,
             isImportantForContentCapture = true,
             shouldMask = shouldMask && painter.isMaskable(),
-            visibleRect = visibleRect,
+            visibleRect = visibleRect.toRect(),
           )
         } else {
           val shouldMask = isVisible && semantics.shouldMask(isImage = false, options)
@@ -245,8 +246,8 @@ internal object ComposeViewHierarchyNode {
           // TODO: traverse the ViewHierarchyNode here again. For now we can recommend
           // TODO: using custom modifiers to obscure the entire node if it's sensitive
           GenericViewHierarchyNode(
-            x = visibleRect.left.toFloat(),
-            y = visibleRect.top.toFloat(),
+            x = visibleRect.left,
+            y = visibleRect.top,
             width = node.width,
             height = node.height,
             elevation = (parent?.elevation ?: 0f),
@@ -255,7 +256,7 @@ internal object ComposeViewHierarchyNode {
             shouldMask = shouldMask,
             isImportantForContentCapture = false, // will be set by children
             isVisible = isVisible,
-            visibleRect = visibleRect,
+            visibleRect = visibleRect.toRect(),
           )
         }
       }

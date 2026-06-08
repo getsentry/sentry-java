@@ -2,8 +2,8 @@
 
 package io.sentry.android.replay.util
 
-import android.graphics.Rect
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorProducer
 import androidx.compose.ui.graphics.painter.Painter
@@ -176,7 +176,7 @@ internal fun LayoutCoordinates.boundsInWindow(rootCoordinates: LayoutCoordinates
   val boundsBottom = bounds.bottom.fastCoerceIn(0f, rootHeight)
 
   if (boundsLeft == boundsRight || boundsTop == boundsBottom) {
-    return Rect()
+    return Rect(0.0f, 0.0f, 0.0f, 0.0f)
   }
 
   val topLeft = root.localToWindow(Offset(boundsLeft, boundsTop))
@@ -200,5 +200,9 @@ internal fun LayoutCoordinates.boundsInWindow(rootCoordinates: LayoutCoordinates
   val top = fastMinOf(topLeftY, topRightY, bottomLeftY, bottomRightY)
   val bottom = fastMaxOf(topLeftY, topRightY, bottomLeftY, bottomRightY)
 
-  return Rect(left.toInt(), top.toInt(), right.toInt(), bottom.toInt())
+  return Rect(left, top, right, bottom)
+}
+
+internal fun Rect.toRect(): android.graphics.Rect {
+  return android.graphics.Rect(left.toInt(), top.toInt(), right.toInt(), bottom.toInt())
 }
