@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Session Replay: Fix `VerifyError` in Compose masking under DexGuard/R8 obfuscation ([#5507](https://github.com/getsentry/sentry-java/pull/5507))
+
 ## 8.43.1
 
 ### Fixes
