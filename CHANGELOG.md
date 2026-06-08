@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Add opt-in binder (IPC) tracing and logging instrumentation for Android ([#5515](https://github.com/getsentry/sentry-java/pull/5515))
+  - Enable spans via `options.isEnableBinderTracing = true` or manifest: `<meta-data android:name="io.sentry.traces.binder.enable" android:value="true" />`
+  - Enable logs via `options.isEnableBinderLogging = true` or manifest: `<meta-data android:name="io.sentry.logs.binder.enable" android:value="true" />`
+
 ## 8.43.1
 
 ### Fixes
