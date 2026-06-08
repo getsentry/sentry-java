@@ -1161,6 +1161,38 @@ class ActivityLifecycleIntegrationTest {
   }
 
   @Test
+  fun `launcher activity attaches lifecycle spans before finishing stopped standalone App Start`() {
+    val sut =
+      fixture.getSut {
+        it.tracesSampleRate = 1.0
+        it.isEnableStandaloneAppStartTracing = true
+      }
+    sut.register(fixture.scopes, fixture.options)
+    val appStartEndDate = SentryNanotimeDate(Date(499), 0)
+    setAppStartTime(SentryNanotimeDate(Date(1), 0), appStartEndDate)
+
+    val activity = mock<Activity>()
+    sut.onActivityPreCreated(activity, fixture.bundle)
+    sut.onActivityCreated(activity, fixture.bundle)
+
+    val appStartIndex =
+      transactionIndexForOperation(ActivityLifecycleIntegration.STANDALONE_APP_START_OP)
+    val appStartTransaction = fixture.createdTransactions[appStartIndex]
+    assertFalse(appStartTransaction.isFinished)
+
+    sut.onActivityPostCreated(activity, fixture.bundle)
+    sut.onActivityPreStarted(activity)
+    sut.onActivityStarted(activity)
+    sut.onActivityPostStarted(activity)
+
+    val activityLoadSpans = appStartTransaction.children.filter { it.operation == "activity.load" }
+    assertEquals(2, activityLoadSpans.size)
+    assertTrue(activityLoadSpans.all { it.isFinished })
+    assertTrue(appStartTransaction.isFinished)
+    assertEquals(appStartEndDate.nanoTimestamp(), appStartTransaction.finishDate!!.nanoTimestamp())
+  }
+
+  @Test
   fun `activity following a headless start reuses trace id and does not emit second standalone`() {
     val storedTraceId = SentryId()
     val sut =

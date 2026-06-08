@@ -334,9 +334,7 @@ public final class ActivityLifecycleIntegration
         setSpanOrigin(spanOptions);
 
         if (isAppStart) {
-          if (createStandaloneAppStart) {
-            finishAppStartSpan();
-          } else if (!options.isEnableStandaloneAppStartTracing()) {
+          if (!createStandaloneAppStart && !options.isEnableStandaloneAppStartTracing()) {
             appStartSpan =
                 transaction.startChild(
                     getAppStartOp(coldStart),
@@ -618,6 +616,7 @@ public final class ActivityLifecycleIntegration
       // Needed to handle hybrid SDKs
       helper.saveSpanToAppStartMetrics();
     }
+    finishAppStartSpan();
   }
 
   @Override
