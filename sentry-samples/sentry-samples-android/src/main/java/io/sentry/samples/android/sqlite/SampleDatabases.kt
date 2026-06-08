@@ -19,6 +19,8 @@ import io.sentry.sqlite.SentrySQLiteDriver
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /**
  * Process-lifetime holder for the demo databases used by [SQLiteActivity].
@@ -40,8 +42,13 @@ import kotlinx.coroutines.launch
  */
 object SampleDatabases {
 
+  private val sqlAccess = Mutex()
+
   val driverDirectLock = Any()
   val openHelperDirectLock = Any()
+
+  /** Serializes demo SQL and [reset] so handles are never closed mid-statement. */
+  suspend fun <T> withSqlAccess(block: suspend () -> T): T = sqlAccess.withLock { block() }
 
   @Volatile private var driverConnection: SQLiteConnection? = null
   @Volatile private var driverRoom2Db: SampleRoom2Database? = null
@@ -170,9 +177,9 @@ object SampleDatabases {
 
   /**
    * Closes the open handles, deletes every demo database file, then re-warms. Returns the number of
-   * files cleared.
+   * files cleared. Waits for any in-flight demo SQL (including [UiLoadActivity]) to finish first.
    */
-  fun reset(context: Context): Int {
+  suspend fun reset(context: Context): Int = withSqlAccess {
     closeAll()
     val appContext = context.applicationContext
     val names =
@@ -186,7 +193,7 @@ object SampleDatabases {
       )
     val cleared = names.count { appContext.deleteDatabase(it) }
     warmUp(appContext)
-    return cleared
+    cleared
   }
 
   private fun closeAll() {

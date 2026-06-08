@@ -353,6 +353,8 @@ class SQLiteActivity : ComponentActivity() {
 
   /** Run the variant's SQL statement inside a manual, scope-bound transaction. */
   private fun onTap(variant: DemoVariant) {
+    if (dbOperationInFlight) return
+
     sqlDetail = if (heavyWork) variant.displayInfo.sqlHeavy else variant.displayInfo.sql
     runTick++ // shimmer the detail box outline in the integration color
 
@@ -376,6 +378,8 @@ class SQLiteActivity : ComponentActivity() {
    * `ui.load` transaction owns the spans.
    */
   private fun onLongPress(variant: DemoVariant) {
+    if (dbOperationInFlight) return
+
     sqlDetail = if (heavyWork) variant.displayInfo.sqlHeavy else variant.displayInfo.sql
     latestResult = "Opened the auto-load screen — its ui.load transaction owns the db spans."
     startActivity(UiLoadActivity.intent(this, variant.demo, heavyWork))
@@ -598,7 +602,7 @@ class SQLiteActivity : ComponentActivity() {
   }
 
   /** Closes + deletes every demo database file (via [SampleDatabases]), then re-warms them. */
-  private fun resetDatabases(): String {
+  private suspend fun resetDatabases(): String {
     val cleared = SampleDatabases.reset(applicationContext)
     return "Dropped tables: cleared $cleared database file(s)."
   }

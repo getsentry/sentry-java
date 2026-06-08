@@ -59,13 +59,15 @@ object SqlStatements {
     Array(rowCount * 2) { i -> if (i % 2 == 0) "song ${i / 2}" else "artist ${i / 2}" }
 
   suspend fun execute(context: Context, demo: SqlDemo, heavy: Boolean): String =
-    when (demo) {
-      SqlDemo.DRIVER_DIRECT -> driverDirect(context, heavy)
-      SqlDemo.DRIVER_ROOM2 -> driverWithRoom2(context, heavy)
-      SqlDemo.DRIVER_ROOM3 -> driverWithRoom3(context, heavy)
-      SqlDemo.OPENHELPER_DIRECT -> openHelperDirect(context, heavy)
-      SqlDemo.OPENHELPER_ROOM -> openHelperWithRoom(context, heavy)
-      SqlDemo.OPENHELPER_SQLDELIGHT -> openHelperWithSqlDelight(context, heavy)
+    SampleDatabases.withSqlAccess {
+      when (demo) {
+        SqlDemo.DRIVER_DIRECT -> driverDirect(context, heavy)
+        SqlDemo.DRIVER_ROOM2 -> driverWithRoom2(context, heavy)
+        SqlDemo.DRIVER_ROOM3 -> driverWithRoom3(context, heavy)
+        SqlDemo.OPENHELPER_DIRECT -> openHelperDirect(context, heavy)
+        SqlDemo.OPENHELPER_ROOM -> openHelperWithRoom(context, heavy)
+        SqlDemo.OPENHELPER_SQLDELIGHT -> openHelperWithSqlDelight(context, heavy)
+      }
     }
 
   // --- 1. SentrySQLiteDriver, used directly -------------------------------------------------
