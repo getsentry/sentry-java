@@ -74,6 +74,10 @@
       android:exported="false" />
 
     <activity
+      android:name=".ReplayAnimationsActivity"
+      android:exported="false" />
+
+    <activity
       android:name=".ProfilingActivity"
       android:exported="false" />
 

@@ -9,6 +9,11 @@ public class MyApplication extends Application {
 
   @Override
   public void onCreate() {
+    // Make Session Replay fail fast instead of silently degrading masking when an exception is
+    // swallowed (e.g. unsupported/obfuscated Compose internals). This way regressions surface as
+    // crashes in our release/obfuscated builds that run on real devices in CI. Only meant for our
+    // own sample/UI-test apps, customers should never set this.
+    System.setProperty("io.sentry.replay.compose.fail-fast", "true");
     Sentry.startProfiler();
     strictMode();
     super.onCreate();

@@ -150,6 +150,7 @@ dependencies {
   implementation(libs.androidx.browser)
   implementation(libs.coil.compose)
   implementation(libs.kotlinx.coroutines.android)
+  implementation(libs.lottie.compose)
   implementation(libs.retrofit)
   implementation(libs.retrofit.gson)
   implementation(libs.sentry.native.ndk)

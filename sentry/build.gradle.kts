@@ -25,6 +25,7 @@ dependencies {
   // tests
   testImplementation(kotlin(Config.kotlinStdLib))
   testImplementation(libs.awaitility.kotlin)
+  testImplementation(libs.google.truth)
   testImplementation(libs.javafaker)
   testImplementation(libs.kotlin.test.junit)
   testImplementation(libs.mockito.kotlin)
