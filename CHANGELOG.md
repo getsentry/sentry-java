@@ -2,7 +2,6 @@
 
 ## Unreleased
 
-<<<<<<< feat/standalone-app-start-tracing
 ### Features
 
 - Add `enableStandaloneAppStartTracing` option to send app start as a standalone transaction instead of attaching it as a child span of the first activity transaction ([#5342](https://github.com/getsentry/sentry-java/pull/5342))
@@ -10,7 +9,7 @@
   - Emits a transaction named `App Start` with op `app.start`, carrying the existing app start measurements and phase spans (`process.load`, `contentprovider.load`, `application.load`, activity lifecycle spans) as direct children of the root
   - The standalone transaction shares the same `traceId` as the first `ui.load` activity transaction so they remain linked in the trace view
   - Also covers non-activity starts (broadcast receivers, services, content providers)
-=======
+
 ### Improvements
 
 - Improve SDK init performance by replacing `java.net.URI` with custom string parsing for DSN ([#5448](https://github.com/getsentry/sentry-java/pull/5448))
@@ -21,7 +20,6 @@
 - Session Replay: Fix Compose view masking not working on obfuscated/minified builds ([#5503](https://github.com/getsentry/sentry-java/pull/5503))
 
 ## 8.43.1
->>>>>>> main
 
 ### Fixes
 
