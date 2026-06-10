@@ -155,8 +155,9 @@ class AppStartMetricsTestApi35 {
   fun `resolveHeadlessAppStartEndTime uses ApplicationStartInfo onCreate uptime timestamp`() {
     val appStartUptimeMs = 100L
     // START_TIMESTAMP_APPLICATION_ONCREATE is captured with SystemClock.uptimeNanos() (the same
-    // base as TimeSpan), so it is used directly as an uptime value without any clock re-anchoring.
-    val onCreateUptimeMs = 350L
+    // base as TimeSpan) right before Application.onCreate is invoked, so it is used directly as
+    // an uptime value marking the onCreate start, without any clock re-anchoring.
+    val onCreateStartUptimeMs = 350L
     val mockStartInfo = mock<ApplicationStartInfo>()
     whenever(mockStartInfo.startupState).thenReturn(ApplicationStartInfo.STARTUP_STATE_STARTED)
     whenever(mockStartInfo.startType).thenReturn(ApplicationStartInfo.START_TYPE_COLD)
@@ -164,7 +165,7 @@ class AppStartMetricsTestApi35 {
       .thenReturn(
         mapOf(
           ApplicationStartInfo.START_TIMESTAMP_APPLICATION_ONCREATE to
-            TimeUnit.MILLISECONDS.toNanos(onCreateUptimeMs)
+            TimeUnit.MILLISECONDS.toNanos(onCreateStartUptimeMs)
         )
       )
     SentryShadowActivityManager.setHistoricalProcessStartReasons(listOf(mockStartInfo))

@@ -705,8 +705,8 @@ public final class SentryAndroidOptions extends SentryOptions {
    *       transaction.
    *       <ul>
    *         <li>On devices running Android 15 (API level 35) or newer, the SDK can use {@code
-   *             ApplicationStartInfo} to classify cold versus warm starts and find the {@code
-   *             Application.onCreate} end time.
+   *             ApplicationStartInfo} to classify cold versus warm starts and anchor the end time
+   *             at the {@code Application.onCreate} start.
    *         <li>On devices running older Android versions, headless launches are treated as cold
    *             once {@code Application.onCreate} finishes without an Activity. The end time falls
    *             back to the best SDK/plugin timing available.

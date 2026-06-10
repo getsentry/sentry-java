@@ -524,17 +524,16 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     if (cachedStartInfo != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
       try {
         final @NotNull Map<Integer, Long> timestamps = cachedStartInfo.getStartupTimestamps();
-        final @Nullable Long onCreateNanos =
+        final @Nullable Long onCreateStartNanos =
             timestamps.get(ApplicationStartInfo.START_TIMESTAMP_APPLICATION_ONCREATE);
-        if (onCreateNanos != null) {
-          // START_TIMESTAMP_APPLICATION_ONCREATE is captured with SystemClock.uptimeNanos() (see
-          // ActivityThread.handleBindApplication), the same base as TimeSpan, so we can use it
-          // directly as an uptime-millis value without re-anchoring.
-          final long onCreateUptimeMs = TimeUnit.NANOSECONDS.toMillis(onCreateNanos);
-          if (applicationOnCreate.hasStarted() && applicationOnCreate.hasNotStopped()) {
-            applicationOnCreate.setStoppedAt(onCreateUptimeMs);
-          }
-          stopHeadlessAppStartAt(onCreateUptimeMs);
+        if (onCreateStartNanos != null) {
+          // The framework captures this timestamp with SystemClock.uptimeNanos() right *before*
+          // invoking Application.onCreate (see ActivityThread.handleBindApplication), so it marks
+          // the onCreate start, not its end. Without plugin instrumentation there is no onCreate
+          // end signal, so this is the best available lower bound for the app start end time.
+          // Same clock base as TimeSpan, so it can be used directly without re-anchoring.
+          final long onCreateStartUptimeMs = TimeUnit.NANOSECONDS.toMillis(onCreateStartNanos);
+          stopHeadlessAppStartAt(onCreateStartUptimeMs);
           return;
         }
       } catch (Throwable ignored) {
