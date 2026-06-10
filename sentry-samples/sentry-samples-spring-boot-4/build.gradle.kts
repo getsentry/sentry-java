@@ -92,8 +92,6 @@ tasks.register<Test>("systemTest").configure {
   testClassesDirs = test.output.classesDirs
   classpath = test.runtimeClasspath
 
-  outputs.upToDateWhen { false }
-
   maxParallelForks = 1
 
   // Cap JVM args per test
