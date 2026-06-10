@@ -697,19 +697,19 @@ public final class SentryAndroidOptions extends SentryOptions {
    * <p>The SDK reports app start through these paths:
    *
    * <ul>
-   *   <li>With an Activity: the SDK sends an {@code App Start} transaction with operation {@code
+   *   <li>With an Activity: the SDK sends an "App Start" transaction with operation {@code
    *       app.start}, plus a separate {@code ui.load} transaction for the Activity. Both
    *       transactions share the same trace ID.
    *   <li>Headless app start: for launches started by something like a broadcast receiver, service,
    *       or content provider without an Activity, the SDK sends only the standalone app-start
    *       transaction.
    *       <ul>
-   *         <li>On Android API 35 and newer, the SDK can use {@code ApplicationStartInfo} to
-   *             classify cold versus warm starts and find the {@code Application.onCreate} end
-   *             time.
-   *         <li>Before Android API 35, headless launches are treated as cold once {@code
-   *             Application.onCreate} finishes without an Activity. The end time falls back to the
-   *             best SDK/plugin timing available.
+   *         <li>On devices running Android 15 (API level 35) or newer, the SDK can use {@code
+   *             ApplicationStartInfo} to classify cold versus warm starts and find the {@code
+   *             Application.onCreate} end time.
+   *         <li>On devices running older Android versions, headless launches are treated as cold
+   *             once {@code Application.onCreate} finishes without an Activity. The end time falls
+   *             back to the best SDK/plugin timing available.
    *         <li>With {@code Application.onCreate} instrumentation, the SDK can add an {@code
    *             application.load} phase span and use the exact {@code Application.onCreate} end
    *             time. Without that instrumentation, the standalone transaction is still sent, but
