@@ -115,7 +115,7 @@ public final class DateUtils {
    * @return date rounded down to milliseconds
    */
   public static Date nanosToDate(final long nanos) {
-    final Double millis = nanosToMillis(Double.valueOf(nanos));
+    final Double millis = nanosToMillis((double) nanos);
     return getDateTime(millis.longValue());
   }
 
@@ -137,7 +137,7 @@ public final class DateUtils {
    * @return seconds
    */
   public static double nanosToSeconds(final long nanos) {
-    return Double.valueOf(nanos) / (1000.0 * 1000.0 * 1000.0);
+    return (double) nanos / (1000.0 * 1000.0 * 1000.0);
   }
 
   /**
