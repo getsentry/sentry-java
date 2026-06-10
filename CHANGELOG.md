@@ -12,6 +12,7 @@
 
 - Improve SDK init performance by replacing `java.net.URI` with custom string parsing for DSN ([#5448](https://github.com/getsentry/sentry-java/pull/5448))
 - Remove unnecessary boxing to improve performance ([#5520](https://github.com/getsentry/sentry-java/pull/5520))
+- Use fixed-delay scheduling for the performance collector to avoid catch-up collection bursts ([#5524](https://github.com/getsentry/sentry-java/pull/5524))
 
 ### Fixes
 
