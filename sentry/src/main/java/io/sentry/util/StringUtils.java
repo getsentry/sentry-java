@@ -143,10 +143,9 @@ public final class StringUtils {
       final BigInteger no = new BigInteger(1, messageDigest);
 
       // Convert message digest into hex value
-      final StringBuilder stringBuilder = new StringBuilder(no.toString(16));
 
       // return the HashText
-      return stringBuilder.toString();
+      return no.toString(16);
     }
 
     // For specifying wrong message digest algorithms
