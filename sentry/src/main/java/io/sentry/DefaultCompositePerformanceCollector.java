@@ -27,7 +27,6 @@ public final class DefaultCompositePerformanceCollector implements CompositePerf
 
   private final @NotNull SentryOptions options;
   private final @NotNull AtomicBoolean isStarted = new AtomicBoolean(false);
-  private long lastCollectionTimestamp = 0;
 
   public DefaultCompositePerformanceCollector(final @NotNull SentryOptions options) {
     this.options = Objects.requireNonNull(options, "The options object is required.");
@@ -112,16 +111,8 @@ public final class DefaultCompositePerformanceCollector implements CompositePerf
             new TimerTask() {
               @Override
               public void run() {
-                long now = System.currentTimeMillis();
-                // The timer is scheduled to run every 100ms on average. In case it takes longer,
-                // subsequent tasks are executed more quickly. If two tasks are scheduled to run in
-                // less than 10ms, the measurement that we collect is not meaningful, so we skip it
-                if (now - lastCollectionTimestamp <= 10) {
-                  return;
-                }
                 timedOutTransactions.clear();
 
-                lastCollectionTimestamp = now;
                 final @NotNull PerformanceCollectionData tempData =
                     new PerformanceCollectionData(options.getDateProvider().now().nanoTimestamp());
 
@@ -147,7 +138,7 @@ public final class DefaultCompositePerformanceCollector implements CompositePerf
                 }
               }
             };
-        timer.scheduleAtFixedRate(
+        timer.schedule(
             timerTask,
             TRANSACTION_COLLECTION_INTERVAL_MILLIS,
             TRANSACTION_COLLECTION_INTERVAL_MILLIS);
