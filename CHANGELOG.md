@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Improvements
+
+- Reduce unboxing in `DateUtils.nanosToDate` ([#5523](https://github.com/getsentry/sentry-java/pull/5523))
+
 ## 8.43.2
 
 ### Improvements
