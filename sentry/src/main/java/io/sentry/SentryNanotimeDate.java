@@ -46,7 +46,7 @@ public final class SentryNanotimeDate extends SentryDate {
 
   @Override
   public long laterDateNanosTimestampByDiff(final @Nullable SentryDate otherDate) {
-    if (otherDate != null && otherDate instanceof SentryNanotimeDate) {
+    if (otherDate instanceof SentryNanotimeDate) {
       final @NotNull SentryNanotimeDate otherNanoDate = (SentryNanotimeDate) otherDate;
       if (compareTo(otherDate) < 0) {
         return nanotimeDiff(this, otherNanoDate);
@@ -66,9 +66,9 @@ public final class SentryNanotimeDate extends SentryDate {
       final long thisDateMillis = date.getTime();
       final long otherDateMillis = otherNanoDate.date.getTime();
       if (thisDateMillis == otherDateMillis) {
-        return Long.valueOf(nanos).compareTo(otherNanoDate.nanos);
+        return Long.compare(nanos, otherNanoDate.nanos);
       } else {
-        return Long.valueOf(thisDateMillis).compareTo(otherDateMillis);
+        return Long.compare(thisDateMillis, otherDateMillis);
       }
     } else {
       return super.compareTo(otherDate);

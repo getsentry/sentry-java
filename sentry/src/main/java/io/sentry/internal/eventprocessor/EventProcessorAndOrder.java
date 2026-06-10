@@ -29,6 +29,6 @@ public final class EventProcessorAndOrder implements Comparable<EventProcessorAn
 
   @Override
   public int compareTo(@NotNull EventProcessorAndOrder o) {
-    return order.compareTo(o.order);
+    return Long.compare(order, o.order);
   }
 }
