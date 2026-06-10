@@ -115,8 +115,8 @@ public final class DateUtils {
    * @return date rounded down to milliseconds
    */
   public static Date nanosToDate(final long nanos) {
-    final Double millis = nanosToMillis((double) nanos);
-    return getDateTime(millis.longValue());
+    final double millis = nanosToMillis((double) nanos);
+    return getDateTime((long) millis);
   }
 
   public static @Nullable Date toUtilDate(final @Nullable SentryDate sentryDate) {
