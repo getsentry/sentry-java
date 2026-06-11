@@ -9,7 +9,6 @@ import io.sentry.SpanDataConvention;
 import io.sentry.logger.SentryLogParameters;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -17,9 +16,6 @@ import org.jetbrains.annotations.Nullable;
 @SuppressWarnings({"unused", "deprecation"})
 @ApiStatus.Internal
 public final class SentryBinderAdapter {
-
-  private static final AtomicInteger cookieCounter = new AtomicInteger();
-  private static final int NO_COOKIE = -1;
 
   private static volatile boolean tracingEnabled = false;
   private static volatile boolean loggingEnabled = false;
@@ -30,17 +26,19 @@ public final class SentryBinderAdapter {
     SentryBinderAdapter.loggingEnabled = loggingEnabled;
   }
 
-  private static final ThreadLocal<Map<Integer, ISpan>> spanMap =
-      new ThreadLocal<Map<Integer, ISpan>>() {
-        @Override
-        protected Map<Integer, ISpan> initialValue() {
-          return new HashMap<>();
-        }
-      };
-
-  public static int onCallStart(final @NotNull String component, final @NotNull String name) {
+  /**
+   * This method is used by the Sentry Android Gradle plugin for binder instrumentation. Called
+   * right before a binder call starts. Returns an opaque token that must be passed back to {@link
+   * #onCallEnd(Object)} once the call completes, or {@code null} if nothing was recorded.
+   *
+   * @param component the component being called, e.g. "ActivityManager"
+   * @param name the method being called, e.g. "startActivity"
+   * @return an opaque token which must be later passed to {@link #onCallEnd(Object)},
+   */
+  public static @Nullable Object onCallStart(
+      final @NotNull String component, final @NotNull String name) {
     if (!tracingEnabled && !loggingEnabled) {
-      return NO_COOKIE;
+      return null;
     }
 
     try {
@@ -57,53 +55,47 @@ public final class SentryBinderAdapter {
         recordLog(component, name, threadId, threadName);
       }
       if (tracingEnabled) {
-        final int cookie = cookieCounter.incrementAndGet();
-        recordSpan(component, name, threadId, threadName, cookie);
-        return cookie;
+        return recordSpan(component, name, threadId, threadName);
       }
     } catch (Throwable t) {
       // ignored, as instrumentation should never crash
     }
-    return NO_COOKIE;
+    return null;
   }
 
-  public static void onCallEnd(final int cookie) {
-    if (cookie == NO_COOKIE) {
+  /**
+   * This method is used by the Sentry Android Gradle plugin for binder instrumentation. Called
+   * right after a binder call ends.
+   *
+   * @param token the token returned by {@link #onCallStart(String, String)}
+   */
+  public static void onCallEnd(final @Nullable Object token) {
+    if (token == null) {
       return;
     }
     try {
-      final @Nullable Map<Integer, ISpan> map = spanMap.get();
-      if (map == null) {
-        return;
-      }
-      final @Nullable ISpan span = map.remove(cookie);
-      if (span != null) {
-        span.finish();
+      if (token instanceof ISpan) {
+        ((ISpan) token).finish();
       }
     } catch (Throwable t) {
       // ignored
     }
   }
 
-  private static void recordSpan(
+  private static @Nullable ISpan recordSpan(
       final @NotNull String component,
       final @NotNull String name,
       final long threadId,
-      final @Nullable String threadName,
-      final int cookie) {
+      final @Nullable String threadName) {
 
     final @Nullable ISpan parent = Sentry.getCurrentScopes().getTransaction();
     if (parent == null) {
-      return;
-    }
-    final @Nullable Map<Integer, ISpan> map = spanMap.get();
-    if (map == null) {
-      return;
+      return null;
     }
     final @NotNull ISpan span = parent.startChild("binder", component + "." + name);
     span.setData(SpanDataConvention.THREAD_ID, String.valueOf(threadId));
     span.setData(SpanDataConvention.THREAD_NAME, threadName);
-    map.put(cookie, span);
+    return span;
   }
 
   private static void recordLog(

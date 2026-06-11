@@ -10,8 +10,8 @@ import io.sentry.logger.SentryLogParameters
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertNotEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import org.mockito.Mockito.mockStatic
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
@@ -51,12 +51,12 @@ class SentryBinderAdapterTest {
   }
 
   @Test
-  fun `returns no cookie and does nothing when both features disabled`() {
+  fun `returns no token and does nothing when both features disabled`() {
     SentryBinderAdapter.setEnabled(false, false)
 
-    val cookie = SentryBinderAdapter.onCallStart("ActivityManager", "getRunningTasks")
+    val token = SentryBinderAdapter.onCallStart("ActivityManager", "getRunningTasks")
 
-    assertEquals(-1, cookie)
+    assertNull(token)
     verify(fixture.transaction, never()).startChild(any<String>(), any<String>())
     verifyNoInteractions(fixture.logger)
   }
@@ -65,12 +65,12 @@ class SentryBinderAdapterTest {
   fun `starts and finishes a span when tracing is enabled`() {
     SentryBinderAdapter.setEnabled(true, false)
 
-    val cookie = SentryBinderAdapter.onCallStart("ActivityManager", "getRunningTasks")
+    val token = SentryBinderAdapter.onCallStart("ActivityManager", "getRunningTasks")
 
-    assertNotEquals(-1, cookie)
+    assertNotNull(token)
     verify(fixture.transaction).startChild(eq("binder"), eq("ActivityManager.getRunningTasks"))
 
-    SentryBinderAdapter.onCallEnd(cookie)
+    SentryBinderAdapter.onCallEnd(token)
     verify(fixture.span).finish()
   }
 
@@ -88,9 +88,9 @@ class SentryBinderAdapterTest {
   fun `records a log when logging is enabled`() {
     SentryBinderAdapter.setEnabled(false, true)
 
-    val cookie = SentryBinderAdapter.onCallStart("ActivityManager", "getRunningTasks")
+    val token = SentryBinderAdapter.onCallStart("ActivityManager", "getRunningTasks")
 
-    assertEquals(-1, cookie)
+    assertNull(token)
     verify(fixture.logger)
       .log(
         eq(SentryLogLevel.INFO),
@@ -102,10 +102,10 @@ class SentryBinderAdapterTest {
   }
 
   @Test
-  fun `onCallEnd with no cookie is a no-op`() {
+  fun `onCallEnd with null token is a no-op`() {
     SentryBinderAdapter.setEnabled(true, false)
 
-    SentryBinderAdapter.onCallEnd(-1)
+    SentryBinderAdapter.onCallEnd(null)
 
     verify(fixture.span, never()).finish()
   }
