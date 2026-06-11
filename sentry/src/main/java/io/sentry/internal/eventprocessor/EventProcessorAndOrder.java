@@ -7,7 +7,7 @@ import org.jetbrains.annotations.Nullable;
 public final class EventProcessorAndOrder implements Comparable<EventProcessorAndOrder> {
 
   private final @NotNull EventProcessor eventProcessor;
-  private final @NotNull Long order;
+  private final long order;
 
   public EventProcessorAndOrder(
       final @NotNull EventProcessor eventProcessor, final @Nullable Long order) {
