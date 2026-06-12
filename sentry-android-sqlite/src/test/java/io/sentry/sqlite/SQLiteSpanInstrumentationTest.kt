@@ -1,12 +1,15 @@
 package io.sentry.sqlite
 
 import io.sentry.IScopes
+import io.sentry.SentryDateProvider
+import io.sentry.SentryNanotimeDate
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer
 import io.sentry.SpanDataConvention
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
 import io.sentry.util.thread.IThreadChecker
+import java.util.Date
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -79,7 +82,6 @@ class SQLiteSpanInstrumentationTest {
     sut.recordSpan("SELECT 1", start, durationNanos, SpanStatus.OK)
 
     val span = fixture.sentryTracer.children.first()
-    assertEquals(start, span.startDate)
     assertEquals(span.startDate.nanoTimestamp() + durationNanos, span.finishDate!!.nanoTimestamp())
   }
 
@@ -147,11 +149,130 @@ class SQLiteSpanInstrumentationTest {
   }
 
   @Test
-  fun `recordSpan without a duration finishes the span at the time of invocation`() {
+  fun `recordSpan repairs start precision when parent uses SentryNanotimeDate`() {
+    val sameMillis = Date(1_000_000L)
+    val parentNanos = 100_000_000L
+    val childNanos = 100_500_000L
+
+    val sut =
+      setUpWithNanotimeDates(
+        SentryNanotimeDate(sameMillis, parentNanos),
+        SentryNanotimeDate(sameMillis, childNanos),
+      )
+    val start = sut.startTimestamp()
+    val durationNanos = 42_000_000L
+
+    sut.recordSpan("SELECT 1", start, durationNanos, SpanStatus.OK)
+
+    val span = fixture.sentryTracer.children.first()
+
+    val parentStart = fixture.sentryTracer.startDate
+    val expectedStart = parentStart.laterDateNanosTimestampByDiff(start)
+    assertEquals(expectedStart, span.startDate.nanoTimestamp())
+    assertEquals(expectedStart + durationNanos, span.finishDate!!.nanoTimestamp())
+  }
+
+  @Test
+  fun `recordSpan gives distinct ordered starts within the same millisecond`() {
+    val sameMillis = Date(1_000_000L)
+    val parentNanos = 100_000_000L
+    val child1Nanos = 100_200_000L
+    val child2Nanos = 100_800_000L
+
+    val sut =
+      setUpWithNanotimeDates(
+        SentryNanotimeDate(sameMillis, parentNanos),
+        SentryNanotimeDate(sameMillis, child1Nanos),
+        SentryNanotimeDate(sameMillis, child2Nanos),
+      )
+    val start1 = sut.startTimestamp()
+    val start2 = sut.startTimestamp()
+
+    assertEquals(
+      start1.nanoTimestamp(),
+      start2.nanoTimestamp(),
+      "Raw starts share the same ms-quantized timestamp",
+    )
+
+    sut.recordSpan("SELECT 1", start1, 1_000_000, SpanStatus.OK)
+    sut.recordSpan("SELECT 2", start2, 1_000_000, SpanStatus.OK)
+
+    val span1 = fixture.sentryTracer.children[0]
+    val span2 = fixture.sentryTracer.children[1]
+
+    assertTrue(
+      span1.startDate.nanoTimestamp() < span2.startDate.nanoTimestamp(),
+      "Repaired starts should be distinct and ordered",
+    )
+  }
+
+  @Test
+  fun `recordSpan preserves exact duration after precision repair`() {
+    val sameMillis = Date(1_000_000L)
+    val sut =
+      setUpWithNanotimeDates(
+        SentryNanotimeDate(sameMillis, 100_000_000L),
+        SentryNanotimeDate(sameMillis, 100_750_000L),
+      )
+    val start = sut.startTimestamp()
+    val durationNanos = 123_456L
+
+    sut.recordSpan("SELECT 1", start, durationNanos, SpanStatus.OK)
+
+    val span = fixture.sentryTracer.children.first()
+    val actualDuration = span.finishDate!!.nanoTimestamp() - span.startDate.nanoTimestamp()
+    assertEquals(durationNanos, actualDuration)
+  }
+
+  @Test
+  fun `recordSpan does not repair start when parent is not SentryNanotimeDate`() {
+    val sut = fixture.getSut(isTransactionActive = true)
+    val start = sut.startTimestamp()
+    val durationNanos = 1_000_000L
+
+    sut.recordSpan("SELECT 1", start, durationNanos, SpanStatus.OK)
+
+    val span = fixture.sentryTracer.children.first()
+    assertEquals(start.nanoTimestamp(), span.startDate.nanoTimestamp())
+    assertEquals(start.nanoTimestamp() + durationNanos, span.finishDate!!.nanoTimestamp())
+  }
+
+  @Test
+  fun `recordCoarseSpan records a span if a transaction is active`() {
+    val sut = fixture.getSut(isTransactionActive = true)
+    sut.recordCoarseSpan("SELECT 1", sut.startTimestamp(), SpanStatus.OK)
+    assertEquals(1, fixture.sentryTracer.children.size)
+  }
+
+  @Test
+  fun `recordCoarseSpan does not record a span if no transaction is active`() {
+    val sut = fixture.getSut(isTransactionActive = false)
+    val start = sut.startTimestamp()
+    sut.recordCoarseSpan("SELECT 1", start, SpanStatus.OK)
+    assertEquals(0, fixture.sentryTracer.children.size)
+  }
+
+  @Test
+  fun `recordCoarseSpan creates a span with correct properties`() {
+    val sut = fixture.getSut()
+    val start = sut.startTimestamp()
+    sut.recordCoarseSpan("SELECT * FROM users", start, SpanStatus.OK)
+
+    val span = fixture.sentryTracer.children.firstOrNull()
+    assertNotNull(span)
+    assertEquals("db.sql.query", span.operation)
+    assertEquals("SELECT * FROM users", span.description)
+    assertEquals("auto.db.sqlite", span.spanContext.origin)
+    assertEquals(SpanStatus.OK, span.status)
+    assertTrue(span.isFinished)
+  }
+
+  @Test
+  fun `recordCoarseSpan finishes the span at the time of invocation`() {
     val sut = fixture.getSut()
     val start = sut.startTimestamp()
 
-    sut.recordSpan("SELECT 1", start, SpanStatus.OK)
+    sut.recordCoarseSpan("SELECT 1", start, SpanStatus.OK)
 
     val span = fixture.sentryTracer.children.first()
     assertTrue(span.isFinished)
@@ -162,14 +283,23 @@ class SQLiteSpanInstrumentationTest {
   }
 
   @Test
-  fun `fromFileName sets db name from fileName`() {
-    val options = SentryOptions().apply { dsn = "https://key@sentry.io/proj" }
-    whenever(fixture.scopes.options).thenReturn(options)
-    fixture.sentryTracer = SentryTracer(TransactionContext("name", "op"), fixture.scopes)
-    whenever(fixture.scopes.span).thenReturn(fixture.sentryTracer)
+  fun `recordCoarseSpan attaches throwable when provided`() {
+    val sut = fixture.getSut()
+    val start = sut.startTimestamp()
+    val exception = RuntimeException("disk I/O error")
 
-    val sut = SQLiteSpanInstrumentation.fromFileName("tracks.db", fixture.scopes)
-    sut.recordSpan("SELECT 1", sut.startTimestamp(), SpanStatus.OK)
+    sut.recordCoarseSpan("INSERT INTO t VALUES(1)", start, SpanStatus.INTERNAL_ERROR, exception)
+
+    val span = fixture.sentryTracer.children.first()
+    assertEquals(SpanStatus.INTERNAL_ERROR, span.status)
+    assertEquals(exception, span.throwable)
+  }
+
+  @Test
+  fun `recordCoarseSpan sets db system and db name when fileName is not the in-memory sentinel`() {
+    val sut = fixture.getSut(fileName = "/data/data/com.example/databases/tracks.db")
+    val start = sut.startTimestamp()
+    sut.recordCoarseSpan("SELECT 1", start, SpanStatus.OK)
 
     val span = fixture.sentryTracer.children.first()
     assertEquals("sqlite", span.data[SpanDataConvention.DB_SYSTEM_KEY])
@@ -177,17 +307,152 @@ class SQLiteSpanInstrumentationTest {
   }
 
   @Test
-  fun `fromDatabaseName sets db name from databaseName`() {
+  fun `recordCoarseSpan sets db system only when fileName is the in-memory sentinel`() {
+    val sut = fixture.getSut(fileName = ":memory:")
+    val start = sut.startTimestamp()
+    sut.recordCoarseSpan("SELECT 1", start, SpanStatus.OK)
+
+    val span = fixture.sentryTracer.children.first()
+    assertEquals("in-memory", span.data[SpanDataConvention.DB_SYSTEM_KEY])
+    assertNull(span.data[SpanDataConvention.DB_NAME_KEY])
+  }
+
+  @Test
+  fun `recordCoarseSpan sets blocked_main_thread to true and attaches call stack on main thread`() {
+    val sut = fixture.getSut()
+    fixture.options.threadChecker = mock<IThreadChecker>()
+    whenever(fixture.options.threadChecker.isMainThread).thenReturn(true)
+    whenever(fixture.options.threadChecker.currentThreadName).thenReturn("main")
+
+    sut.recordCoarseSpan("SELECT 1", sut.startTimestamp(), SpanStatus.OK)
+
+    val span = fixture.sentryTracer.children.first()
+    assertTrue(span.getData(SpanDataConvention.BLOCKED_MAIN_THREAD_KEY) as Boolean)
+    assertNotNull(span.getData(SpanDataConvention.CALL_STACK_KEY))
+  }
+
+  @Test
+  fun `recordCoarseSpan sets blocked_main_thread to false and does not attach a call stack on background thread`() {
+    val sut = fixture.getSut()
+    fixture.options.threadChecker = mock<IThreadChecker>()
+    whenever(fixture.options.threadChecker.isMainThread).thenReturn(false)
+    whenever(fixture.options.threadChecker.currentThreadName).thenReturn("worker")
+
+    sut.recordCoarseSpan("SELECT 1", sut.startTimestamp(), SpanStatus.OK)
+
+    val span = fixture.sentryTracer.children.first()
+    assertFalse(span.getData(SpanDataConvention.BLOCKED_MAIN_THREAD_KEY) as Boolean)
+    assertNull(span.getData(SpanDataConvention.CALL_STACK_KEY))
+  }
+
+  @Test
+  fun `recordCoarseSpan does not repair start precision when parent uses SentryNanotimeDate`() {
+    val sameMillis = Date(1_000_000L)
+    val parentNanos = 100_000_000L
+    val childNanos = 100_500_000L
+
+    val finishNanos = 100_900_000L
+    val sut =
+      setUpWithNanotimeDates(
+        SentryNanotimeDate(sameMillis, parentNanos),
+        SentryNanotimeDate(sameMillis, childNanos),
+        SentryNanotimeDate(sameMillis, finishNanos),
+      )
+    val start = sut.startTimestamp()
+
+    sut.recordCoarseSpan("SELECT 1", start, SpanStatus.OK)
+
+    val span = fixture.sentryTracer.children.first()
+    assertEquals(start.nanoTimestamp(), span.startDate.nanoTimestamp())
+    assertTrue(span.finishDate!!.nanoTimestamp() >= span.startDate.nanoTimestamp())
+  }
+
+  @Test
+  fun `recordCoarseSpan does not repair start when parent is not SentryNanotimeDate`() {
+    val sut = fixture.getSut(isTransactionActive = true)
+    val start = sut.startTimestamp()
+
+    sut.recordCoarseSpan("SELECT 1", start, SpanStatus.OK)
+
+    val span = fixture.sentryTracer.children.first()
+    assertEquals(start.nanoTimestamp(), span.startDate.nanoTimestamp())
+    assertTrue(span.finishDate!!.nanoTimestamp() >= start.nanoTimestamp())
+  }
+
+  @Test
+  fun `fromFileName sets db name from fileName when using recordSpan`() {
+    val options = SentryOptions().apply { dsn = "https://key@sentry.io/proj" }
+    whenever(fixture.scopes.options).thenReturn(options)
+    fixture.sentryTracer = SentryTracer(TransactionContext("name", "op"), fixture.scopes)
+    whenever(fixture.scopes.span).thenReturn(fixture.sentryTracer)
+
+    val sut = SQLiteSpanInstrumentation.fromFileName("tracks.db", fixture.scopes)
+    val start = sut.startTimestamp()
+    sut.recordSpan("SELECT 1", start, 1_000_000, SpanStatus.OK)
+
+    val span = fixture.sentryTracer.children.first()
+    assertEquals("sqlite", span.data[SpanDataConvention.DB_SYSTEM_KEY])
+    assertEquals("tracks.db", span.data[SpanDataConvention.DB_NAME_KEY])
+  }
+
+  @Test
+  fun `fromDatabaseName sets db name from databaseName when using recordSpan`() {
     val options = SentryOptions().apply { dsn = "https://key@sentry.io/proj" }
     whenever(fixture.scopes.options).thenReturn(options)
     fixture.sentryTracer = SentryTracer(TransactionContext("name", "op"), fixture.scopes)
     whenever(fixture.scopes.span).thenReturn(fixture.sentryTracer)
 
     val sut = SQLiteSpanInstrumentation.fromDatabaseName("tracks.db", fixture.scopes)
-    sut.recordSpan("SELECT 1", sut.startTimestamp(), SpanStatus.OK)
+    val start = sut.startTimestamp()
+    sut.recordSpan("SELECT 1", start, 1_000_000, SpanStatus.OK)
 
     val span = fixture.sentryTracer.children.first()
     assertEquals("sqlite", span.data[SpanDataConvention.DB_SYSTEM_KEY])
     assertEquals("tracks.db", span.data[SpanDataConvention.DB_NAME_KEY])
+  }
+
+  @Test
+  fun `fromFileName sets db name from fileName when using recordCoarseSpan`() {
+    val options = SentryOptions().apply { dsn = "https://key@sentry.io/proj" }
+    whenever(fixture.scopes.options).thenReturn(options)
+    fixture.sentryTracer = SentryTracer(TransactionContext("name", "op"), fixture.scopes)
+    whenever(fixture.scopes.span).thenReturn(fixture.sentryTracer)
+
+    val sut = SQLiteSpanInstrumentation.fromFileName("tracks.db", fixture.scopes)
+    val start = sut.startTimestamp()
+    sut.recordCoarseSpan("SELECT 1", start, SpanStatus.OK)
+
+    val span = fixture.sentryTracer.children.first()
+    assertEquals("sqlite", span.data[SpanDataConvention.DB_SYSTEM_KEY])
+    assertEquals("tracks.db", span.data[SpanDataConvention.DB_NAME_KEY])
+  }
+
+  @Test
+  fun `fromDatabaseName sets db name from databaseName when using recordCoarseSpan`() {
+    val options = SentryOptions().apply { dsn = "https://key@sentry.io/proj" }
+    whenever(fixture.scopes.options).thenReturn(options)
+    fixture.sentryTracer = SentryTracer(TransactionContext("name", "op"), fixture.scopes)
+    whenever(fixture.scopes.span).thenReturn(fixture.sentryTracer)
+
+    val sut = SQLiteSpanInstrumentation.fromDatabaseName("tracks.db", fixture.scopes)
+    val start = sut.startTimestamp()
+    sut.recordCoarseSpan("SELECT 1", start, SpanStatus.OK)
+
+    val span = fixture.sentryTracer.children.first()
+    assertEquals("sqlite", span.data[SpanDataConvention.DB_SYSTEM_KEY])
+    assertEquals("tracks.db", span.data[SpanDataConvention.DB_NAME_KEY])
+  }
+
+  private fun setUpWithNanotimeDates(vararg dates: SentryNanotimeDate): SQLiteSpanInstrumentation {
+    val dateQueue = ArrayDeque(dates.toList())
+    val options =
+      SentryOptions().apply {
+        dsn = "https://key@sentry.io/proj"
+        dateProvider = SentryDateProvider { dateQueue.removeFirst() }
+      }
+    whenever(fixture.scopes.options).thenReturn(options)
+    fixture.sentryTracer = SentryTracer(TransactionContext("name", "op"), fixture.scopes)
+    whenever(fixture.scopes.span).thenReturn(fixture.sentryTracer)
+    return SQLiteSpanInstrumentation.fromFileName(":memory:", fixture.scopes)
   }
 }

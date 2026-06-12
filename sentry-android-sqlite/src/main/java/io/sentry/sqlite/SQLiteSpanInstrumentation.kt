@@ -1,10 +1,12 @@
 package io.sentry.sqlite
 
 import io.sentry.IScopes
+import io.sentry.ISpan
 import io.sentry.Instrumenter
 import io.sentry.ScopesAdapter
 import io.sentry.SentryDate
 import io.sentry.SentryLongDate
+import io.sentry.SentryNanotimeDate
 import io.sentry.SentryStackTraceFactory
 import io.sentry.SpanDataConvention
 import io.sentry.SpanStatus
@@ -28,16 +30,6 @@ internal class SQLiteSpanInstrumentation(
    */
   fun startTimestamp(): SentryDate = scopes.options.dateProvider.now()
 
-  /** Records a `db.sql.query` span from [startTimestamp] to the moment of invocation. */
-  fun recordSpan(
-    sql: String,
-    startTimestamp: SentryDate,
-    status: SpanStatus,
-    throwable: Throwable? = null,
-  ) {
-    recordSpan(sql, startTimestamp, endTimestamp = null, status, throwable)
-  }
-
   /** Records a `db.sql.query` span from [startTimestamp] to [startTimestamp] + [durationNanos]. */
   fun recordSpan(
     sql: String,
@@ -46,18 +38,36 @@ internal class SQLiteSpanInstrumentation(
     status: SpanStatus,
     throwable: Throwable? = null,
   ) {
-    val endTimestamp = SentryLongDate(startTimestamp.nanoTimestamp() + durationNanos)
-    recordSpan(sql, startTimestamp, endTimestamp, status, throwable)
+    val parent = scopes.span ?: return
+    val nanoPrecisionStart = startTimestamp.repairPrecision(baseline = parent.startDate)
+    val endTimestamp = SentryLongDate(nanoPrecisionStart.nanoTimestamp() + durationNanos)
+    parent.recordChild(sql, nanoPrecisionStart, endTimestamp, status, throwable)
   }
 
-  private fun recordSpan(
+  /**
+   * Records a `db.sql.query` span from [startTimestamp] to the moment of invocation.
+   *
+   * "Coarse" in that it doesn't ensure nanosecond precision for [SentryNanotimeDate]
+   * [startTimestamp]s.
+   */
+  fun recordCoarseSpan(
+    sql: String,
+    startTimestamp: SentryDate,
+    status: SpanStatus,
+    throwable: Throwable? = null,
+  ) {
+    val parent = scopes.span ?: return
+    parent.recordChild(sql, startTimestamp, endTimestamp = null, status, throwable)
+  }
+
+  private fun ISpan.recordChild(
     sql: String,
     startTimestamp: SentryDate,
     endTimestamp: SentryDate?,
     status: SpanStatus,
     throwable: Throwable?,
   ) {
-    scopes.span?.startChild("db.sql.query", sql, startTimestamp, Instrumenter.SENTRY)?.apply {
+    startChild("db.sql.query", sql, startTimestamp, Instrumenter.SENTRY).apply {
       spanContext.origin = SQLITE_TRACE_ORIGIN
       throwable?.let { this.throwable = it }
 
@@ -73,6 +83,38 @@ internal class SQLiteSpanInstrumentation(
       finish(status, endTimestamp)
     }
   }
+
+  /**
+   * Repairs the receiver's [nanoTimestamp][SentryDate.nanoTimestamp] if needed so that it actually
+   * has nanosecond precision.
+   *
+   * Designed for use with spans whose start timestamps are [SentryNanotimeDate]s. Without repair,
+   * those timestamps will be aligned to the same millisecond at transport, and the Sentry UI will
+   * arbitrarily reorder them:
+   * ```
+   * Parent span                 ├█████████████┤
+   * END TRANSACTION              ├███┤          0.18 ms  ← (Wrong order)
+   * BEGIN IMMEDIATE TRANSACTION  ├████┤         0.25 ms
+   * INSERT INTO `my_db` …        ├██┤           0.10 ms
+   *                              ↑
+   *               (All spans share the same ms baseline
+   *             even though their execution was staggered)
+   * ```
+   *
+   * Repair ensures proper ordering and lets the spans stagger:
+   * ```
+   * Parent span                 ├█████████████┤
+   * BEGIN IMMEDIATE TRANSACTION  ├████┤         0.25 ms
+   * INSERT INTO `my_db` …              ├██┤     0.10 ms
+   * END TRANSACTION                     ├███┤   0.18 ms
+   * ```
+   */
+  private fun SentryDate.repairPrecision(baseline: SentryDate?): SentryDate =
+    if (baseline is SentryNanotimeDate) {
+      SentryLongDate(baseline.laterDateNanosTimestampByDiff(this))
+    } else {
+      this
+    }
 
   companion object {
 
