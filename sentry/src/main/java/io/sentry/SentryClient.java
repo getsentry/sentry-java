@@ -27,7 +27,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
@@ -1423,7 +1422,7 @@ public final class SentryClient implements ISentryClient {
       event.setUser(scope.getUser());
     }
     if (event.getTags() == null) {
-      event.setTags(new HashMap<>(scope.getTags()));
+      event.setTags(scope.getTags());
     } else {
       for (Map.Entry<String, String> item : scope.getTags().entrySet()) {
         if (!event.getTags().containsKey(item.getKey())) {
@@ -1481,7 +1480,7 @@ public final class SentryClient implements ISentryClient {
         replayEvent.setUser(scope.getUser());
       }
       if (replayEvent.getTags() == null) {
-        replayEvent.setTags(new HashMap<>(scope.getTags()));
+        replayEvent.setTags(scope.getTags());
       } else {
         for (Map.Entry<String, String> item : scope.getTags().entrySet()) {
           if (!replayEvent.getTags().containsKey(item.getKey())) {
@@ -1521,7 +1520,7 @@ public final class SentryClient implements ISentryClient {
         sentryBaseEvent.setUser(scope.getUser());
       }
       if (sentryBaseEvent.getTags() == null) {
-        sentryBaseEvent.setTags(new HashMap<>(scope.getTags()));
+        sentryBaseEvent.setTags(scope.getTags());
       } else {
         for (Map.Entry<String, String> item : scope.getTags().entrySet()) {
           if (!sentryBaseEvent.getTags().containsKey(item.getKey())) {
@@ -1535,7 +1534,7 @@ public final class SentryClient implements ISentryClient {
         sortBreadcrumbsByDate(sentryBaseEvent, scope.getBreadcrumbs());
       }
       if (sentryBaseEvent.getExtras() == null) {
-        sentryBaseEvent.setExtras(new HashMap<>(scope.getExtras()));
+        sentryBaseEvent.setExtras(scope.getExtras());
       } else {
         for (Map.Entry<String, Object> item : scope.getExtras().entrySet()) {
           if (!sentryBaseEvent.getExtras().containsKey(item.getKey())) {
