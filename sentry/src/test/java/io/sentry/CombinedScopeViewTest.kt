@@ -11,6 +11,7 @@ import junit.framework.TestCase.assertTrue
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertNotSame
 import kotlin.test.assertNull
 import kotlin.test.assertSame
 import org.junit.Assert.assertNotEquals
@@ -70,6 +71,42 @@ class CombinedScopeViewTest {
     assertEquals("global 2", breadcrumbs.poll().message)
     assertEquals("isolation 2", breadcrumbs.poll().message)
     assertEquals("current 2", breadcrumbs.poll().message)
+  }
+
+  @Test
+  fun `returns single non-empty breadcrumb queue directly`() {
+    var combined = fixture.getSut()
+    fixture.globalScope.addBreadcrumb(Breadcrumb.info("global"))
+    assertSame(fixture.globalScope.breadcrumbs, combined.breadcrumbs)
+
+    combined = fixture.getSut()
+    fixture.isolationScope.addBreadcrumb(Breadcrumb.info("isolation"))
+    assertSame(fixture.isolationScope.breadcrumbs, combined.breadcrumbs)
+
+    combined = fixture.getSut()
+    fixture.scope.addBreadcrumb(Breadcrumb.info("current"))
+    assertSame(fixture.scope.breadcrumbs, combined.breadcrumbs)
+  }
+
+  @Test
+  fun `returns default write scope breadcrumbs when all scopes are empty`() {
+    val combined = fixture.getSut(SentryOptions().also { it.defaultScopeType = ScopeType.CURRENT })
+
+    assertSame(fixture.scope.breadcrumbs, combined.breadcrumbs)
+  }
+
+  @Test
+  fun `returns merged breadcrumb copy when multiple scopes have breadcrumbs`() {
+    val combined = fixture.getSut()
+
+    fixture.globalScope.addBreadcrumb(Breadcrumb.info("global"))
+    fixture.isolationScope.addBreadcrumb(Breadcrumb.info("isolation"))
+
+    val breadcrumbs = combined.breadcrumbs
+
+    assertNotSame(fixture.globalScope.breadcrumbs, breadcrumbs)
+    assertNotSame(fixture.isolationScope.breadcrumbs, breadcrumbs)
+    assertEquals(2, breadcrumbs.size)
   }
 
   @Test

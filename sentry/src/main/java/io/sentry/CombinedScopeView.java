@@ -171,10 +171,31 @@ public final class CombinedScopeView implements IScope {
 
   @Override
   public @NotNull Queue<Breadcrumb> getBreadcrumbs() {
+    final @NotNull Queue<Breadcrumb> globalBreadcrumbs = globalScope.getBreadcrumbs();
+    final @NotNull Queue<Breadcrumb> isolationBreadcrumbs = isolationScope.getBreadcrumbs();
+    final @NotNull Queue<Breadcrumb> currentBreadcrumbs = scope.getBreadcrumbs();
+
+    final boolean hasGlobalBreadcrumbs = !globalBreadcrumbs.isEmpty();
+    final boolean hasIsolationBreadcrumbs = !isolationBreadcrumbs.isEmpty();
+    final boolean hasCurrentBreadcrumbs = !currentBreadcrumbs.isEmpty();
+
+    if (!hasGlobalBreadcrumbs && !hasIsolationBreadcrumbs && !hasCurrentBreadcrumbs) {
+      return getDefaultWriteScope().getBreadcrumbs();
+    }
+    if (!hasIsolationBreadcrumbs && !hasCurrentBreadcrumbs) {
+      return globalBreadcrumbs;
+    }
+    if (!hasGlobalBreadcrumbs && !hasCurrentBreadcrumbs) {
+      return isolationBreadcrumbs;
+    }
+    if (!hasGlobalBreadcrumbs && !hasIsolationBreadcrumbs) {
+      return currentBreadcrumbs;
+    }
+
     final @NotNull List<Breadcrumb> allBreadcrumbs = new ArrayList<>();
-    allBreadcrumbs.addAll(globalScope.getBreadcrumbs());
-    allBreadcrumbs.addAll(isolationScope.getBreadcrumbs());
-    allBreadcrumbs.addAll(scope.getBreadcrumbs());
+    allBreadcrumbs.addAll(globalBreadcrumbs);
+    allBreadcrumbs.addAll(isolationBreadcrumbs);
+    allBreadcrumbs.addAll(currentBreadcrumbs);
     Collections.sort(allBreadcrumbs);
 
     final @NotNull Queue<Breadcrumb> breadcrumbs =
