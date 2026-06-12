@@ -2,6 +2,8 @@ import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.variant.impl.VariantImpl
 import io.sentry.android.gradle.extensions.InstrumentationFeature
 import io.sentry.android.gradle.extensions.SentryPluginExtension
+import java.io.File
+import java.time.Instant
 import org.apache.tools.ant.taskdefs.condition.Os
 import org.gradle.internal.extensions.stdlib.capitalized
 
@@ -20,6 +22,8 @@ if (useSagp.get()) {
 }
 
 plugins.withId("io.sentry.android.gradle") {
+  logSagpOrigin()
+
   // Extension configs match non-SAGP builds. Update locally to test your feature.
   extensions.configure<SentryPluginExtension>("sentry") {
     autoInstallation.enabled.set(false)
@@ -229,4 +233,47 @@ abstract class ToggleNativeLoggingTask : Exec() {
         """<meta-data\s+[^>]*android:name="io\.sentry\.session-replay\.debug"[^>]*android:value="([^"]+)""""
       )
   }
+}
+
+fun Project.logSagpOrigin() {
+  // A locally published SAGP in ~/.m2 silently shadows the released artifact (see README,
+  // "Testing an unpublished SAGP build"); we log so developers don't wonder what's going on.
+  val sagpVersion =
+    SentryPluginExtension::class
+      .java
+      .protectionDomain
+      .codeSource
+      ?.location
+      ?.toURI()
+      ?.let { File(it).name }
+      ?.removePrefix("sentry-android-gradle-plugin-")
+      ?.removeSuffix(".jar")
+
+  val sagpLocalJar =
+    sagpVersion?.let {
+      File(
+        System.getProperty("user.home"),
+        ".m2/repository/io/sentry/sentry-android-gradle-plugin/$it/sentry-android-gradle-plugin-$it.jar",
+      )
+    }
+
+  val sagpOrigin =
+    when {
+      sagpVersion == null -> "unknown origin"
+      sagpLocalJar?.isFile == true ->
+        "mavenLocal (published ${Instant.ofEpochMilli(sagpLocalJar.lastModified())})"
+      else -> "remote repository"
+    }
+
+  val colorize =
+    gradle.startParameter.consoleOutput != org.gradle.api.logging.configuration.ConsoleOutput.Plain
+  val (magenta, reset) = if (colorize) "\u001B[35m" to "\u001B[0m" else "" to ""
+
+  logger.lifecycle(
+    "\n{}🧩 Applied Sentry Android Gradle Plugin {} from {}{}",
+    magenta,
+    sagpVersion ?: "<unknown version>",
+    sagpOrigin,
+    reset,
+  )
 }

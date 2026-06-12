@@ -40,6 +40,26 @@ Regardless of `useSagp`, the sample always depends on sentry-java modules from t
 auto-installation is disabled, so the sample never pulls a separate SDK version from Maven. Local SDK changes in your branch are picked up
 directly.
 
+### Testing an unpublished SAGP build
+
+#### I. Publish to Maven Local:
+
+`-PuseSagp=true` builds check `mavenLocal()` first when resolving SAGP, so you can test a local SAGP branch by publishing it to your local
+Maven repository:
+
+```
+# In your sentry-android-gradle-plugin checkout:
+./gradlew publishToMavenLocal
+```
+
+Re-run `publishToMavenLocal` after each SAGP change; a previously published artifact stays in `~/.m2` and keeps winning until you republish
+or remove it.
+
+#### II. Update `sagp` version in `libs.versions.toml` if needed
+
+The sample requests the SAGP version pinned in `gradle/libs.versions.toml` (`[versions].sagp`), so either publish your branch at that
+version, or temporarily bump the pin to your branch's version (e.g., a `-SNAPSHOT`) without committing the change.
+
 ## Viewing SDK output
 
 ### Locally

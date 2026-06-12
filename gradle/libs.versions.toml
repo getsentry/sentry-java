@@ -29,6 +29,7 @@ otelInstrumentationAlpha = "2.26.0-alpha"
 otelSemanticConventions = "1.40.0"
 otelSemanticConventionsAlpha = "1.40.0-alpha"
 retrofit = "2.9.0"
+sagp = "6.6.0"
 slf4j = "1.7.30"
 springboot2 = "2.7.18"
 springboot3 = "3.5.0"
@@ -66,7 +67,7 @@ springboot4 = { id = "org.springframework.boot", version.ref = "springboot4" }
 spring-dependency-management = { id = "io.spring.dependency-management", version = "1.1.7" }
 gretty = { id = "org.gretty", version = "4.0.0" }
 animalsniffer = { id = "ru.vyarus.animalsniffer", version = "2.0.1" }
-sentry = { id = "io.sentry.android.gradle", version = "6.6.0"}
+sentry = { id = "io.sentry.android.gradle", version.ref = "sagp"}
 shadow = { id = "com.gradleup.shadow", version = "9.4.1" }
 
 [libraries]
