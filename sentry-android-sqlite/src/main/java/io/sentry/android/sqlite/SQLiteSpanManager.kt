@@ -41,10 +41,10 @@ internal class SQLiteSpanManager(
       if (result is CrossProcessCursor) {
         return SentryCrossProcessCursor(result, this, sql) as T
       }
-      spans.recordSpan(sql, startTimestamp, SpanStatus.OK)
+      spans.recordCoarseSpan(sql, startTimestamp, SpanStatus.OK)
       result
     } catch (e: Throwable) {
-      spans.recordSpan(sql, startTimestamp, SpanStatus.INTERNAL_ERROR, e)
+      spans.recordCoarseSpan(sql, startTimestamp, SpanStatus.INTERNAL_ERROR, e)
       throw e
     }
   }
