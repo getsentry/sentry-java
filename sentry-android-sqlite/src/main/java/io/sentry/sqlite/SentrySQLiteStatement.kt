@@ -76,6 +76,6 @@ internal class SentrySQLiteStatement(
     val duration = accumulatedDbNanos
     firstStepTimestamp = null
     accumulatedDbNanos = 0L
-    spans.recordSpan(sql, start, duration, status, throwable)
+    spans.recordSpanWithTransactionTracking(sql, start, duration, status, throwable)
   }
 }

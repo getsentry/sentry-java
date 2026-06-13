@@ -51,6 +51,33 @@ class SentrySQLiteConnectionTest {
   }
 
   @Test
+  fun `close calls finishDanglingTransaction before closing delegate`() {
+    val mockSpans = mock<SQLiteSpanInstrumentation>()
+    val sut = SentrySQLiteConnection(fixture.mockConnection, mockSpans)
+
+    sut.close()
+
+    val inOrder = org.mockito.kotlin.inOrder(mockSpans, fixture.mockConnection)
+    inOrder.verify(mockSpans).finishDanglingTransaction()
+    inOrder.verify(fixture.mockConnection).close()
+  }
+
+  @Test
+  fun `close calls delegate close even when finishDanglingTransaction throws`() {
+    val mockSpans = mock<SQLiteSpanInstrumentation>()
+    whenever(mockSpans.finishDanglingTransaction()).thenThrow(RuntimeException("span error"))
+    val sut = SentrySQLiteConnection(fixture.mockConnection, mockSpans)
+
+    try {
+      sut.close()
+    } catch (_: RuntimeException) {
+      // expected
+    }
+
+    verify(fixture.mockConnection).close()
+  }
+
+  @Test
   fun `all calls are propagated to the delegate`() {
     val sut = fixture.getSut()
 

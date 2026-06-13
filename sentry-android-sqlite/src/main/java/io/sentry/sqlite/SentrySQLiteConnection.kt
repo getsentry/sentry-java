@@ -12,4 +12,12 @@ internal class SentrySQLiteConnection(
     val statement = delegate.prepare(sql)
     return statement as? SentrySQLiteStatement ?: SentrySQLiteStatement(statement, spans, sql)
   }
+
+  override fun close() {
+    try {
+      spans.finishDanglingTransaction()
+    } finally {
+      delegate.close()
+    }
+  }
 }
