@@ -55,7 +55,14 @@ tasks.animalsnifferMain {
 tasks {
   check { dependsOn(animalsnifferMain) }
   test {
-    jvmArgs("--add-opens", "java.base/java.util.concurrent=ALL-UNNAMED")
+    // java.lang open is needed by tests that reflectively rewrite Class names; it was previously
+    // provided implicitly by the jacoco test agent, which has been removed.
+    jvmArgs(
+      "--add-opens",
+      "java.base/java.util.concurrent=ALL-UNNAMED",
+      "--add-opens",
+      "java.base/java.lang=ALL-UNNAMED",
+    )
     environment["SENTRY_TEST_PROPERTY"] = "\"some-value\""
     environment["SENTRY_TEST_MAP_KEY1"] = "\"value1\""
     environment["SENTRY_TEST_MAP_KEY2"] = "value2"
