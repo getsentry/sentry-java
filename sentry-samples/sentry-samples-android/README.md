@@ -27,9 +27,9 @@ In Android Studio, add `useSagp=` (empty value) to `gradle.properties`, or pass 
 
 The sample app can be built with or without the SAGP.
 
-| Gradle Property | Required                 | Purpose                                                                                                        |
-|-----------------|--------------------------|----------------------------------------------------------------------------------------------------------------|
-| `useSagp`       | No                       | When present, apply SAGP when building the sample app. Omit the property to build without SAGP. |
+| Gradle Property | Required | Purpose                                                                                         |
+|-----------------|----------|-------------------------------------------------------------------------------------------------|
+| `useSagp`       | No       | When present, apply SAGP when building the sample app. Omit the property to build without SAGP. |
 
 You can configure SAGP properties via the lambda passed to `extensions.configure<SentryPluginExtension>("sentry")` in the sample app's
 `build.gradle.kts` file.
