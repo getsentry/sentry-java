@@ -94,10 +94,3 @@ jobs:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SENTRY_ORG: sentry-sdks
           SENTRY_PROJECT: sentry-android
-
-      - name: Upload test results to Codecov
-        if: ${{ !cancelled() }}
-        uses: codecov/test-results-action@0fa95f0e1eeaafde2c782583b36b28ad0d8c77d3
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          file: ./artifacts/*.xml

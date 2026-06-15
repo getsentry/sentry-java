@@ -42,7 +42,7 @@ jobs:
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
-      - name: Run Tests with coverage and Lint
+      - name: Run Tests and Lint
         run: make preMerge
 
       - name: Install Sentry CLI
@@ -56,13 +56,6 @@ jobs:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SENTRY_ORG: sentry-sdks
           SENTRY_PROJECT: sentry-android
-
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # pin@v4
-        with:
-          name: sentry-java
-          fail_ci_if_error: false
-          token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Upload test results
         if: always()

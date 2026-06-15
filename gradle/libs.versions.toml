@@ -9,7 +9,6 @@ composeCompiler = "1.5.14"
 coroutines = "1.6.1"
 espresso = "3.7.0"
 feign = "11.6"
-jacoco = "0.8.7"
 jackson = "2.18.3"
 jetbrainsCompose = "1.6.11"
 kotlin = "2.2.0"
@@ -58,8 +57,6 @@ errorprone = { id = "net.ltgt.errorprone", version = "3.0.1" }
 gradle-versions = { id = "com.github.ben-manes.versions", version = "0.42.0" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version = "1.23.8" }
-jacoco-android = { id = "com.mxalbert.gradle.jacoco-android", version = "0.2.0" }
-kover = { id = "org.jetbrains.kotlinx.kover", version = "0.7.3" }
 vanniktech-maven-publish = { id = "com.vanniktech.maven.publish", version = "0.30.0" }
 springboot3 = { id = "org.springframework.boot", version.ref = "springboot3" }
 springboot4 = { id = "org.springframework.boot", version.ref = "springboot4" }

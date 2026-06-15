@@ -37,9 +37,6 @@ The project uses **Gradle** with Kotlin DSL. Key build files:
 # Build entire project
 ./gradlew build
 
-# Create coverage reports
-./gradlew jacocoTestReport koverXmlReportRelease
-
 # Generate documentation
 ./gradlew aggregateJavadocs
 ```
@@ -149,7 +146,6 @@ The repository is organized into multiple modules:
 - Write comprehensive unit tests for new features
 - Android modules require both unit tests and instrumented tests where applicable
 - System tests validate end-to-end functionality with sample applications
-- Coverage reports are generated for both JaCoCo (Java/Android) and Kover (KMP modules)
 
 ### Contributing Guidelines
 1. Follow existing code style and language
