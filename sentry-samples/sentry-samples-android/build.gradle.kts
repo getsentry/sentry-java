@@ -52,6 +52,12 @@ android {
     versionCode = 2
     versionName = project.version.toString()
 
+    buildConfigField(
+      "boolean",
+      "USE_SAGP",
+      providers.gradleProperty("useSagp").isPresent.toString(),
+    )
+
     externalNativeBuild {
       cmake {
         // Android 15: As we're using an older version of AGP / NDK, the STL is not 16kb page
