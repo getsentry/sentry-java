@@ -28,7 +28,7 @@ import io.sentry.SentryLevel
  *
  * @param delegate The [SQLiteDriver] instance to delegate calls to.
  */
-public class SentrySQLiteDriver private constructor(private val delegate: SQLiteDriver) :
+internal class SentrySQLiteDriver private constructor(private val delegate: SQLiteDriver) :
   SQLiteDriver {
 
   init {
@@ -66,10 +66,10 @@ public class SentrySQLiteDriver private constructor(private val delegate: SQLite
     }
   }
 
-  public companion object {
+  companion object {
 
     @JvmStatic
-    public fun create(delegate: SQLiteDriver): SQLiteDriver =
+    fun create(delegate: SQLiteDriver): SQLiteDriver =
       delegate as? SentrySQLiteDriver ?: SentrySQLiteDriver(delegate)
   }
 }
