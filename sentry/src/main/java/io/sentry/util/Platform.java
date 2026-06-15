@@ -23,7 +23,7 @@ public final class Platform {
     try {
       final @Nullable String javaStringVersion = System.getProperty("java.specification.version");
       if (javaStringVersion != null) {
-        final @NotNull double javaVersion = Double.valueOf(javaStringVersion);
+        final @NotNull double javaVersion = Double.parseDouble(javaStringVersion);
         isJavaNinePlus = javaVersion >= 9.0;
       } else {
         isJavaNinePlus = false;

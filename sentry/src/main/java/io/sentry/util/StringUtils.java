@@ -4,6 +4,7 @@ import io.sentry.ILogger;
 import io.sentry.SentryLevel;
 import java.math.BigInteger;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.CharacterIterator;
@@ -18,7 +19,7 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public final class StringUtils {
 
-  private static final Charset UTF_8 = Charset.forName("UTF-8");
+  private static final Charset UTF_8 = StandardCharsets.UTF_8;
 
   public static final String PROPER_NIL_UUID = "00000000-0000-0000-0000-000000000000";
   private static final String CORRUPTED_NIL_UUID = "0000-0000";
@@ -142,11 +143,8 @@ public final class StringUtils {
       // Convert byte array into signum representation
       final BigInteger no = new BigInteger(1, messageDigest);
 
-      // Convert message digest into hex value
-      final StringBuilder stringBuilder = new StringBuilder(no.toString(16));
-
-      // return the HashText
-      return stringBuilder.toString();
+      // Convert message digest into hex value and return the HashText
+      return no.toString(16);
     }
 
     // For specifying wrong message digest algorithms

@@ -86,7 +86,7 @@ class DefaultCompositePerformanceCollectorTest {
     val collector = fixture.getSut(null, null)
     assertTrue(fixture.options.performanceCollectors.isEmpty())
     collector.start(fixture.transaction1)
-    verify(fixture.mockTimer, never())!!.scheduleAtFixedRate(any(), any<Long>(), any())
+    verify(fixture.mockTimer, never())!!.schedule(any(), any<Long>(), any())
   }
 
   @Test
@@ -104,14 +104,14 @@ class DefaultCompositePerformanceCollectorTest {
   fun `when start, timer is scheduled every 100 milliseconds`() {
     val collector = fixture.getSut()
     collector.start(fixture.transaction1)
-    verify(fixture.mockTimer)!!.scheduleAtFixedRate(any(), any<Long>(), eq(100))
+    verify(fixture.mockTimer)!!.schedule(any(), any<Long>(), eq(100))
   }
 
   @Test
   fun `when start with a string, timer is scheduled every 100 milliseconds`() {
     val collector = fixture.getSut()
     collector.start(fixture.id1)
-    verify(fixture.mockTimer)!!.scheduleAtFixedRate(any(), any<Long>(), eq(100))
+    verify(fixture.mockTimer)!!.schedule(any(), any<Long>(), eq(100))
   }
 
   @Test
@@ -119,7 +119,7 @@ class DefaultCompositePerformanceCollectorTest {
     val collector = fixture.getSut()
     collector.start(fixture.transaction1)
     collector.stop(fixture.transaction1)
-    verify(fixture.mockTimer)!!.scheduleAtFixedRate(any(), any<Long>(), eq(100))
+    verify(fixture.mockTimer)!!.schedule(any(), any<Long>(), eq(100))
     verify(fixture.mockTimer)!!.cancel()
   }
 
@@ -128,7 +128,7 @@ class DefaultCompositePerformanceCollectorTest {
     val collector = fixture.getSut()
     collector.start(fixture.id1)
     collector.stop(fixture.id1)
-    verify(fixture.mockTimer)!!.scheduleAtFixedRate(any(), any<Long>(), eq(100))
+    verify(fixture.mockTimer)!!.schedule(any(), any<Long>(), eq(100))
     verify(fixture.mockTimer)!!.cancel()
   }
 
@@ -136,7 +136,7 @@ class DefaultCompositePerformanceCollectorTest {
   fun `stopping a not collected transaction return null`() {
     val collector = fixture.getSut()
     val data = collector.stop(fixture.transaction1)
-    verify(fixture.mockTimer, never())!!.scheduleAtFixedRate(any(), any<Long>(), eq(100))
+    verify(fixture.mockTimer, never())!!.schedule(any(), any<Long>(), eq(100))
     verify(fixture.mockTimer, never())!!.cancel()
     assertNull(data)
   }
@@ -145,7 +145,7 @@ class DefaultCompositePerformanceCollectorTest {
   fun `stopping a not collected id return null`() {
     val collector = fixture.getSut()
     val data = collector.stop(fixture.id1)
-    verify(fixture.mockTimer, never())!!.scheduleAtFixedRate(any(), any<Long>(), eq(100))
+    verify(fixture.mockTimer, never())!!.schedule(any(), any<Long>(), eq(100))
     verify(fixture.mockTimer, never())!!.cancel()
     assertNull(data)
   }
@@ -316,7 +316,7 @@ class DefaultCompositePerformanceCollectorTest {
     collector.close()
 
     // Timer was canceled
-    verify(fixture.mockTimer)!!.scheduleAtFixedRate(any(), any<Long>(), eq(100))
+    verify(fixture.mockTimer)!!.schedule(any(), any<Long>(), eq(100))
     verify(fixture.mockTimer)!!.cancel()
 
     // Data was cleared

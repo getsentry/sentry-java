@@ -72,88 +72,62 @@ jobs:
           perl -0pi -e 'BEGIN { $v = shift } s/^springboot2[[:space:]]*=[[:space:]]*"\K[^"]*/$v/m or die "::error::springboot2 version entry not found in gradle/libs.versions.toml\n"' "$springboot_version" gradle/libs.versions.toml
           echo "Updated Spring Boot 2.x version to $springboot_version"
 
-      - name: Exclude android modules from build
+      - name: Build sample artifacts
         run: |
-          sed -i \
-            -e '/.*"sentry-android-ndk",/d' \
-            -e '/.*"sentry-android",/d' \
-            -e '/.*"sentry-compose",/d' \
-            -e '/.*"sentry-android-core",/d' \
-            -e '/.*"sentry-android-fragment",/d' \
-            -e '/.*"sentry-android-navigation",/d' \
-            -e '/.*"sentry-android-sqlite",/d' \
-            -e '/.*"sentry-android-timber",/d' \
-            -e '/.*"sentry-android-integration-tests:sentry-uitest-android-benchmark",/d' \
-            -e '/.*"sentry-android-integration-tests:sentry-uitest-android",/d' \
-            -e '/.*"sentry-android-integration-tests:sentry-uitest-android-critical",/d' \
-            -e '/.*"sentry-android-integration-tests:test-app-sentry",/d' \
-            -e '/.*"sentry-android-integration-tests:test-app-size",/d' \
-            -e '/.*"sentry-samples:sentry-samples-android",/d' \
-            -e '/.*"sentry-android-replay",/d' \
-            settings.gradle.kts
-
-      - name: Exclude android modules from ignore list
-        run: |
-          sed -i \
-            -e '/.*"sentry-uitest-android",/d' \
-            -e '/.*"sentry-uitest-android-benchmark",/d' \
-            -e '/.*"sentry-uitest-android-critical",/d' \
-            -e '/.*"test-app-sentry",/d' \
-            -e '/.*"test-app-size",/d' \
-            -e '/.*"sentry-samples-android",/d' \
-            build.gradle.kts
-
-      - name: Build SDK
-        run: |
-          ./gradlew assemble --parallel
+          ./gradlew \
+            :sentry-samples:sentry-samples-spring-boot:shadowJar \
+            :sentry-samples:sentry-samples-spring-boot:testClasses \
+            :sentry-samples:sentry-samples-spring-boot-webflux:shadowJar \
+            :sentry-samples:sentry-samples-spring-boot-webflux:testClasses \
+            :sentry-samples:sentry-samples-spring-boot-opentelemetry:shadowJar \
+            :sentry-samples:sentry-samples-spring-boot-opentelemetry:testClasses \
+            :sentry-samples:sentry-samples-spring-boot-opentelemetry-noagent:shadowJar \
+            :sentry-samples:sentry-samples-spring-boot-opentelemetry-noagent:testClasses \
+            :sentry-samples:sentry-samples-spring:war \
+            :sentry-samples:sentry-samples-spring:testClasses \
+            :sentry-opentelemetry:sentry-opentelemetry-agent:assemble
 
       - name: Test sentry-samples-spring-boot
         run: |
           python3 test/system-test-runner.py test \
             --module "sentry-samples-spring-boot" \
             --agent false \
-            --auto-init "true" \
-            --build "true"
+            --auto-init "true"
 
       - name: Test sentry-samples-spring-boot-webflux
         run: |
           python3 test/system-test-runner.py test \
             --module "sentry-samples-spring-boot-webflux" \
             --agent false \
-            --auto-init "true" \
-            --build "true"
+            --auto-init "true"
 
       - name: Test sentry-samples-spring-boot-opentelemetry agent init true
         run: |
           python3 test/system-test-runner.py test \
             --module "sentry-samples-spring-boot-opentelemetry" \
             --agent true \
-            --auto-init "true" \
-            --build "true"
+            --auto-init "true"
 
       - name: Test sentry-samples-spring-boot-opentelemetry agent init false
         run: |
           python3 test/system-test-runner.py test \
             --module "sentry-samples-spring-boot-opentelemetry" \
             --agent true \
-            --auto-init "false" \
-            --build "true"
+            --auto-init "false"
 
       - name: Test sentry-samples-spring-boot-opentelemetry-noagent
         run: |
           python3 test/system-test-runner.py test \
             --module "sentry-samples-spring-boot-opentelemetry-noagent" \
             --agent false \
-            --auto-init "true" \
-            --build "true"
+            --auto-init "true"
 
       - name: Test sentry-samples-spring
         run: |
           python3 test/system-test-runner.py test \
             --module "sentry-samples-spring" \
             --agent false \
-            --auto-init "true" \
-            --build "true"
+            --auto-init "true"
 
       - name: Upload test results
         if: always()
