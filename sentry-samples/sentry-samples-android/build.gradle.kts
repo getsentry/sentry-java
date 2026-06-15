@@ -12,10 +12,7 @@ plugins {
   alias(libs.plugins.sentry) apply false
 }
 
-val useSagp =
-  providers.gradleProperty("useSagp").map { it.equals("true", ignoreCase = true) }.orElse(false)
-
-if (useSagp.get()) {
+if (providers.gradleProperty("useSagp").isPresent) {
   apply(plugin = "io.sentry.android.gradle")
 }
 

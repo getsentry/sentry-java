@@ -16,10 +16,10 @@ or simply open the project in Android Studio and run the `sentry-samples-android
 You can also apply the [Sentry Android Gradle Plugin](https://github.com/getsentry/sentry-android-gradle-plugin) (SAGP) when building (not applied by default):
 
 ```
-./gradlew :sentry-samples:sentry-samples-android:installDebug -PuseSagp=true
+./gradlew :sentry-samples:sentry-samples-android:installDebug -PuseSagp
 ```
 
-In Android Studio, add `useSagp=true` to `gradle.properties` or pass it as a Gradle project property.
+In Android Studio, add `useSagp=` (empty value) to `gradle.properties`, or pass `-PuseSagp` as a Gradle project property.
 
 ## Build modes
 
@@ -29,14 +29,14 @@ The sample app can be built with or without the SAGP.
 
 | Gradle Property | Required                 | Purpose                                                                                                        |
 |-----------------|--------------------------|----------------------------------------------------------------------------------------------------------------|
-| `useSagp`       | No (defaults to `false`) | When `true`, apply SAGP when building the sample app. When false or absent, build the sample app without SAGP. |
+| `useSagp`       | No                       | When present, apply SAGP when building the sample app. Omit the property to build without SAGP. |
 
 You can configure SAGP properties via the lambda passed to `extensions.configure<SentryPluginExtension>("sentry")` in the sample app's
 `build.gradle.kts` file.
 
 ### Testing an unpublished SAGP build
 
-`-PuseSagp=true` builds check `mavenLocal()` first when resolving SAGP. To test a local SAGP branch:
+`-PuseSagp` builds check `mavenLocal()` first when resolving SAGP. To test a local SAGP branch:
 
 1. In your `sentry-android-gradle-plugin` checkout, temporarily set a unique local version in `plugin-build/gradle.properties` (e.g.
    `6.10.0-LOCAL`) and publish to Maven Local:
@@ -52,7 +52,7 @@ Re-run `publishToMavenLocal` after each SAGP change.
 Then build from sentry-java:
 
 ```
-./gradlew :sentry-samples:sentry-samples-android:installDebug -PuseSagp=true
+./gradlew :sentry-samples:sentry-samples-android:installDebug -PuseSagp
 ```
 
 ## Viewing SDK output

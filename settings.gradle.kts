@@ -3,7 +3,7 @@ enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 pluginManagement {
   repositories {
     // Prefer local SAGP artifact if one exists; otherwise fall back to libs.versions.toml.
-    if (providers.gradleProperty("useSagp").orNull?.equals("true", ignoreCase = true) == true) {
+    if (providers.gradleProperty("useSagp").isPresent) {
       mavenLocal {
         content {
           includeGroup("io.sentry")
