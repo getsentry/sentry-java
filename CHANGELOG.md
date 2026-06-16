@@ -20,6 +20,7 @@
 
 ### Fixes
 
+- Fix attachments being duplicated on native events that carry scope attachments ([#5548](https://github.com/getsentry/sentry-java/pull/5548))
 - Fix performance collector scheduling many tasks in a row ([#5524](https://github.com/getsentry/sentry-java/pull/5524))
 
 ## 8.43.2
