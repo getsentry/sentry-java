@@ -10,10 +10,17 @@ import io.sentry.SentryNanotimeDate
 import io.sentry.SentryStackTraceFactory
 import io.sentry.SpanDataConvention
 import io.sentry.SpanStatus
+import java.util.Date
 
 private const val SQLITE_TRACE_ORIGIN = "auto.db.sqlite"
 
-/** Shared span instrumentation for SQLite. */
+/**
+ * Sentinel for extracting a [SentryNanotimeDate]'s underlying [System.nanoTime] value via
+ * [SentryDate.diff].
+ */
+private val EMPTY_NANO_TIME = SentryNanotimeDate(Date(0), 0L)
+
+/** Span instrumentation for [SentrySQLiteDriver]. */
 internal class SQLiteSpanInstrumentation(
   private val scopes: IScopes,
   private val dbMetadata: DbMetadata,
@@ -22,53 +29,32 @@ internal class SQLiteSpanInstrumentation(
   private val stackTraceFactory = SentryStackTraceFactory(scopes.options)
 
   /**
-   * Returns a start timestamp for a `db.sql.query` span.
+   * Returns a timestamp in nanoseconds for use with [recordSpan]. Timestamp is ns-precise if the
+   * active parent span uses a [SentryNanotimeDate] (the ordinary case); otherwise it's ms-precise.
    *
-   * Exposed so callers can capture a wall-clock start before accumulating database time.
-   * Internalizing the start time in [recordSpan] would shift spans to end-of-work on the trace
-   * timeline, which is less desirable.
+   * Note: Internalizing the start time in [recordSpan] would shift spans to end-of-work on the
+   * trace timeline, which is less desirable; callers capture the start before doing database work
+   * and pass it back to [recordSpan].
    */
-  fun startTimestamp(): SentryDate = scopes.options.dateProvider.now()
+  fun startTimestamp(): Long =
+    // Try to retain nanosecond precision + avoid SentryDate allocation...
+    scopes.span?.childStartTimestampOrNull()
+      // ...otherwise fall back to millisecond precision + allocate.
+      ?: scopes.options.dateProvider.now().nanoTimestamp()
 
-  /** Records a `db.sql.query` span from [startTimestamp] to [startTimestamp] + [durationNanos]. */
+  /** Records a `db.sql.query` span. */
   fun recordSpan(
     sql: String,
-    startTimestamp: SentryDate,
+    startTimestampNanos: Long,
     durationNanos: Long,
     status: SpanStatus,
     throwable: Throwable? = null,
   ) {
     val parent = scopes.span ?: return
-    val nanoPrecisionStart = startTimestamp.repairPrecision(anchor = parent.startDate)
-    val endTimestamp = SentryLongDate(nanoPrecisionStart.nanoTimestamp() + durationNanos)
-    parent.recordChild(sql, nanoPrecisionStart, endTimestamp, status, throwable)
-  }
+    val startTimestamp = SentryLongDate(startTimestampNanos)
+    val endTimestamp = SentryLongDate(startTimestampNanos + durationNanos)
 
-  /**
-   * Records a `db.sql.query` span from [startTimestamp] to the moment of invocation.
-   *
-   * "Coarse" in that it doesn't try to restore nanosecond precision for the start timestamp. Spans
-   * that start within the same wall clock millisecond will share the same start time and may be
-   * arbitrarily re-ordered by the Sentry UI.
-   */
-  fun recordCoarseSpan(
-    sql: String,
-    startTimestamp: SentryDate,
-    status: SpanStatus,
-    throwable: Throwable? = null,
-  ) {
-    val parent = scopes.span ?: return
-    parent.recordChild(sql, startTimestamp, endTimestamp = null, status, throwable)
-  }
-
-  private fun ISpan.recordChild(
-    sql: String,
-    startTimestamp: SentryDate,
-    endTimestamp: SentryDate?,
-    status: SpanStatus,
-    throwable: Throwable?,
-  ) {
-    startChild("db.sql.query", sql, startTimestamp, Instrumenter.SENTRY).apply {
+    parent.startChild("db.sql.query", sql, startTimestamp, Instrumenter.SENTRY).apply {
       spanContext.origin = SQLITE_TRACE_ORIGIN
       throwable?.let { this.throwable = it }
 
@@ -96,26 +82,15 @@ internal class SQLiteSpanInstrumentation(
       scopes: IScopes = ScopesAdapter.getInstance(),
     ): SQLiteSpanInstrumentation =
       SQLiteSpanInstrumentation(scopes, dbMetadataFromFileName(fileName))
-
-    /**
-     * Returns [SQLiteSpanInstrumentation] based on
-     * [SupportSQLiteOpenHelper.databaseName][androidx.sqlite.db.SupportSQLiteOpenHelper.databaseName].
-     */
-    fun fromDatabaseName(
-      databaseName: String?,
-      scopes: IScopes = ScopesAdapter.getInstance(),
-    ): SQLiteSpanInstrumentation =
-      SQLiteSpanInstrumentation(scopes, dbMetadataFromDatabaseName(databaseName))
   }
 }
 
 /**
- * Repairs the receiver's [nanoTimestamp][SentryDate.nanoTimestamp] if needed so that it actually
- * has nanosecond precision.
+ * Computes a start timestamp with nanosecond precision for the child of the receiver span. Returns
+ * null if nanosecond precision isn't possible.
  *
- * Designed for use with spans whose start timestamps are [SentryNanotimeDate]s. Without repair,
- * those timestamps will be aligned to the same millisecond at transport, and the Sentry UI will
- * arbitrarily reorder them:
+ * Lets us improve the display of spans in the Sentry UI. If timestamps are only ms-precise, the
+ * Sentry UI will left-align and arbitrarily reorder spans that share the same wall clock ms:
  * ```
  *                                  (Relative start times out of order)
  *                                                ↓
@@ -128,7 +103,7 @@ internal class SQLiteSpanInstrumentation(
  *             even though their execution was staggered)
  * ```
  *
- * Repair ensures proper ordering and lets the spans stagger:
+ * Nanosecond precision ensures proper ordering and lets the spans stagger:
  * ```
  * Parent span                 ├█████████████┤
  * BEGIN IMMEDIATE TRANSACTION  ├████┤         0.02 ms
@@ -136,11 +111,14 @@ internal class SQLiteSpanInstrumentation(
  * END TRANSACTION                     ├███┤   0.33 ms
  * ```
  */
-internal fun SentryDate.repairPrecision(anchor: SentryDate?): SentryDate =
-  if (anchor is SentryNanotimeDate) {
-    // Compute a new timestamp with nanosecond precision by using the anchor as the epoch instant
-    // and adding to it the diff of this.nanos - anchor.nanos.
-    SentryLongDate(anchor.laterDateNanosTimestampByDiff(this))
-  } else {
-    this
+internal fun ISpan.childStartTimestampOrNull(): Long? {
+  if (startDate !is SentryNanotimeDate) {
+    return null
   }
+
+  val parentWallClockNanos = startDate.nanoTimestamp()
+  val parentMonotonicNanos = startDate.diff(EMPTY_NANO_TIME)
+  val elapsedSinceParentStart = System.nanoTime() - parentMonotonicNanos
+  // Return the child's absolute start time.
+  return parentWallClockNanos + elapsedSinceParentStart
+}
