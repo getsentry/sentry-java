@@ -1,5 +1,6 @@
 package io.sentry;
 
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -15,6 +16,7 @@ import org.jetbrains.annotations.Nullable;
  * <p>This is a workaround for older versions of Java (before 9) and Android API (lower than 26)
  * that allows for higher precision than a millisecond timestamp alone would.
  */
+@ApiStatus.Internal
 public final class SentryNanotimeDate extends SentryDate {
 
   private final long unixDate;
