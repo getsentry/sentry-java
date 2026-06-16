@@ -384,7 +384,7 @@ public final class io/sentry/DataCategory : java/lang/Enum {
 public final class io/sentry/DateUtils {
 	public static fun dateToNanos (Ljava/util/Date;)J
 	public static fun dateToSeconds (Ljava/util/Date;)D
-	public static fun doubleToBigDecimal (Ljava/lang/Double;)Ljava/math/BigDecimal;
+	public static fun doubleToBigDecimal (D)Ljava/math/BigDecimal;
 	public static fun getCurrentDateTime ()Ljava/util/Date;
 	public static fun getDateTime (J)Ljava/util/Date;
 	public static fun getDateTime (Ljava/lang/String;)Ljava/util/Date;

@@ -166,7 +166,7 @@ public final class DateUtils {
     return seconds * (1000L * 1000L * 1000L);
   }
 
-  public static @NotNull BigDecimal doubleToBigDecimal(final @NotNull Double value) {
+  public static @NotNull BigDecimal doubleToBigDecimal(final double value) {
     return BigDecimal.valueOf(value).setScale(6, RoundingMode.DOWN);
   }
 }
