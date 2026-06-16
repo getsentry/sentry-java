@@ -124,6 +124,18 @@ class ExternalOptionsTest {
   }
 
   @Test
+  fun `creates options with enableAsyncProcessing using external properties`() {
+    withPropertiesFile("enable-async-processing=true") {
+      assertNotNull(it.isEnableAsyncProcessing) { assertTrue(it) }
+    }
+  }
+
+  @Test
+  fun `creates options with enableAsyncProcessing set to null when not set`() {
+    withPropertiesFile { assertNull(it.isEnableAsyncProcessing) }
+  }
+
+  @Test
   fun `creates options with sendClientReports using external properties`() {
     withPropertiesFile("send-client-reports=false") {
       assertNotNull(it.sendClientReports) { assertFalse(it) }

@@ -43,6 +43,8 @@ import java.nio.file.Files
 import java.util.Arrays
 import java.util.LinkedList
 import java.util.UUID
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFails
@@ -182,9 +184,15 @@ class SentryClientTest {
     assertTrue(sut.isEnabled)
     sut.close(false)
     assertNotEquals(0, fixture.sentryOptions.shutdownTimeoutMillis)
-    verify(fixture.transport).flush(eq(fixture.sentryOptions.shutdownTimeoutMillis))
-    verify(fixture.loggerBatchProcessor).flush(eq(fixture.sentryOptions.shutdownTimeoutMillis))
-    verify(fixture.metricsBatchProcessor).flush(eq(fixture.sentryOptions.shutdownTimeoutMillis))
+    val transportFlushTimeout = argumentCaptor<Long>()
+    verify(fixture.transport).flush(transportFlushTimeout.capture())
+    assertTrue(transportFlushTimeout.firstValue in 0..fixture.sentryOptions.shutdownTimeoutMillis)
+    val loggerFlushTimeout = argumentCaptor<Long>()
+    verify(fixture.loggerBatchProcessor).flush(loggerFlushTimeout.capture())
+    assertTrue(loggerFlushTimeout.firstValue in 0..fixture.sentryOptions.shutdownTimeoutMillis)
+    val metricsFlushTimeout = argumentCaptor<Long>()
+    verify(fixture.metricsBatchProcessor).flush(metricsFlushTimeout.capture())
+    assertTrue(metricsFlushTimeout.firstValue in 0..fixture.sentryOptions.shutdownTimeoutMillis)
     verify(fixture.transport).close(eq(false))
     verify(fixture.loggerBatchProcessor).close(eq(false))
     verify(fixture.metricsBatchProcessor).close(eq(false))
@@ -231,6 +239,110 @@ class SentryClientTest {
     val sut = fixture.getSut()
     sut.captureEvent(SentryEvent())
     assertTrue(invoked)
+  }
+
+  @Test
+  fun `EventProcessor processAsync defaults return input`() {
+    val processor = object : EventProcessor {}
+    val hint = Hint()
+    val event = SentryEvent()
+    val transaction = SentryTransaction(fixture.sentryTracer)
+    val replay = SentryReplayEvent()
+    val log = SentryLogEvent(SentryId(), 1.0, "body", SentryLogLevel.INFO)
+    val metrics = SentryMetricsEvent(SentryId(), 1.0, "metric", "counter", 1.0)
+
+    assertSame(event, processor.processAsync(event, hint))
+    assertSame(transaction, processor.processAsync(transaction, hint))
+    assertSame(replay, processor.processAsync(replay, hint))
+    assertSame(log, processor.processAsync(log))
+    assertSame(metrics, processor.processAsync(metrics, hint))
+  }
+
+  @Test
+  fun `when async processing is disabled, processAsync runs inline before beforeSend`() {
+    val order = mutableListOf<String>()
+    fixture.sentryOptions.addEventProcessor(
+      object : EventProcessor {
+        override fun process(event: SentryEvent, hint: Hint): SentryEvent? {
+          order.add("process")
+          return event
+        }
+
+        override fun processAsync(event: SentryEvent, hint: Hint): SentryEvent? {
+          order.add("processAsync")
+          return event
+        }
+      }
+    )
+    fixture.sentryOptions.setBeforeSend { event, _ ->
+      order.add("beforeSend")
+      event
+    }
+
+    val sut = fixture.getSut()
+    sut.captureEvent(SentryEvent())
+
+    assertEquals(listOf("process", "processAsync", "beforeSend"), order)
+  }
+
+  @Test
+  fun `when async processing is enabled, captureEvent returns after task is accepted`() {
+    val asyncStarted = CountDownLatch(1)
+    val continueAsync = CountDownLatch(1)
+    val eventId = SentryId()
+    fixture.sentryOptions.isEnableAsyncProcessing = true
+    fixture.sentryOptions.addEventProcessor(
+      object : EventProcessor {
+        override fun processAsync(event: SentryEvent, hint: Hint): SentryEvent? {
+          asyncStarted.countDown()
+          assertTrue(continueAsync.await(5, TimeUnit.SECONDS))
+          return event
+        }
+      }
+    )
+    val sut = fixture.getSut()
+    val event = SentryEvent().apply { this.eventId = eventId }
+
+    val actual = sut.captureEvent(event)
+
+    assertEquals(eventId, actual)
+    assertTrue(asyncStarted.await(5, TimeUnit.SECONDS))
+    verify(fixture.transport, never()).send(any(), anyOrNull())
+
+    continueAsync.countDown()
+    sut.flush(5000)
+
+    verify(fixture.transport).send(any(), anyOrNull())
+  }
+
+  @Test
+  fun `when async processing queue is full, captureEvent returns empty id and records lost event`() {
+    val asyncStarted = CountDownLatch(1)
+    val continueAsync = CountDownLatch(1)
+    fixture.sentryOptions.isEnableAsyncProcessing = true
+    fixture.sentryOptions.maxQueueSize = 1
+    fixture.sentryOptions.addEventProcessor(
+      object : EventProcessor {
+        override fun processAsync(event: SentryEvent, hint: Hint): SentryEvent? {
+          asyncStarted.countDown()
+          assertTrue(continueAsync.await(5, TimeUnit.SECONDS))
+          return event
+        }
+      }
+    )
+    val sut = fixture.getSut()
+
+    assertNotEquals(SentryId.EMPTY_ID, sut.captureEvent(SentryEvent()))
+    assertTrue(asyncStarted.await(5, TimeUnit.SECONDS))
+    assertEquals(SentryId.EMPTY_ID, sut.captureEvent(SentryEvent()))
+
+    assertClientReport(
+      fixture.sentryOptions.clientReportRecorder,
+      listOf(DiscardedEvent(DiscardReason.QUEUE_OVERFLOW.reason, DataCategory.Error.category, 1)),
+    )
+
+    continueAsync.countDown()
+    sut.flush(5000)
   }
 
   @Test
@@ -2327,6 +2439,12 @@ class SentryClientTest {
     whenever(globalEventProcessorMock.process(any<SentryEvent>(), anyOrNull())).doAnswer {
       it.arguments.first() as SentryEvent
     }
+    whenever(scopedEventProcessorMock.processAsync(any<SentryEvent>(), anyOrNull())).doAnswer {
+      it.arguments.first() as SentryEvent
+    }
+    whenever(globalEventProcessorMock.processAsync(any<SentryEvent>(), anyOrNull())).doAnswer {
+      it.arguments.first() as SentryEvent
+    }
     whenever(beforeSendMock.execute(any(), anyOrNull())).doAnswer {
       it.arguments.first() as SentryEvent
     }
@@ -2370,6 +2488,12 @@ class SentryClientTest {
       it.arguments.first() as SentryEvent
     }
     whenever(globalEventProcessorMock.process(any<SentryEvent>(), anyOrNull())).doAnswer {
+      it.arguments.first() as SentryEvent
+    }
+    whenever(scopedEventProcessorMock.processAsync(any<SentryEvent>(), anyOrNull())).doAnswer {
+      it.arguments.first() as SentryEvent
+    }
+    whenever(globalEventProcessorMock.processAsync(any<SentryEvent>(), anyOrNull())).doAnswer {
       it.arguments.first() as SentryEvent
     }
     whenever(beforeSendMock.execute(any(), anyOrNull())).thenReturn(null)
