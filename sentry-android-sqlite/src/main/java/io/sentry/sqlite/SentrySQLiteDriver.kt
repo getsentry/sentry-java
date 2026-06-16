@@ -23,12 +23,12 @@ import io.sentry.SentryLevel
  *
  * **Warning:** Do not use [SentrySQLiteDriver] together with
  * [SentrySupportSQLiteOpenHelper][io.sentry.android.sqlite.SentrySupportSQLiteOpenHelper] on the
- * same database file. Both wrappers instrument at different layers, so combining them will produce
- * duplicate spans for every SQL statement.
+ * same database file. Both wrappers instrument at different layers and combining them will produce
+ * duplicate spans.
  *
  * @param delegate The [SQLiteDriver] instance to delegate calls to.
  */
-public class SentrySQLiteDriver private constructor(private val delegate: SQLiteDriver) :
+internal class SentrySQLiteDriver private constructor(private val delegate: SQLiteDriver) :
   SQLiteDriver {
 
   init {
@@ -66,10 +66,14 @@ public class SentrySQLiteDriver private constructor(private val delegate: SQLite
     }
   }
 
-  public companion object {
+  companion object {
 
+    /**
+     * Wraps the provided delegate in a [SentrySQLiteDriver]. Returns the delegate as-is if already
+     * wrapped.
+     */
     @JvmStatic
-    public fun create(delegate: SQLiteDriver): SQLiteDriver =
+    fun create(delegate: SQLiteDriver): SQLiteDriver =
       delegate as? SentrySQLiteDriver ?: SentrySQLiteDriver(delegate)
   }
 }

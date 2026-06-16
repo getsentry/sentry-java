@@ -4,11 +4,35 @@
 
 ### Features
 
-- Add `SentrySQLiteDriver` to `sentry-android-sqlite` for instrumenting AndroidX's `SQLiteDriver` ([#5466](https://github.com/getsentry/sentry-java/pull/5466))
-  - Automatically generates spans for all SQLite statements
-  - To use it, pass your `SQLiteDriver` to `SentrySQLiteDriver.create(...)`
-  - You'll need `androidx.sqlite:sqlite` (2.5.0+) on your app's classpath (Room usually provides it for you). androidx.sqlite 2.6.0+ requires minSdk 23.
-  - See https://docs.sentry.io/platforms/android/integrations/room-and-sqlite/ for more details, including info about migrating from `SentrySupportSQLiteOpenHelper`
+- Add `enableStandaloneAppStartTracing` option to send app start as a standalone transaction instead of attaching it as a child span of the first activity transaction ([#5342](https://github.com/getsentry/sentry-java/pull/5342))
+  - Disabled by default; opt in via `options.isEnableStandaloneAppStartTracing = true` or manifest meta-data `io.sentry.standalone-app-start-tracing.enable`
+  - Emits a transaction named `App Start` with op `app.start`, carrying the existing app start measurements and phase spans (`process.load`, `contentprovider.load`, `application.load`, activity lifecycle spans) as direct children of the root
+  - The standalone transaction shares the same `traceId` as the first `ui.load` activity transaction so they remain linked in the trace view
+  - Also covers non-activity starts (broadcast receivers, services, content providers)
+
+### Improvements
+
+- Reduce boxing to improve performance ([#5523](https://github.com/getsentry/sentry-java/pull/5523), [#5527](https://github.com/getsentry/sentry-java/pull/5527))
+
+### Dependencies
+
+- Upgrade to asyncProfiler 4.4 ([#5418](https://github.com/getsentry/sentry-java/pull/5418))
+
+### Fixes
+
+- Fix performance collector scheduling many tasks in a row ([#5524](https://github.com/getsentry/sentry-java/pull/5524))
+
+## 8.43.2
+
+### Improvements
+
+- Improve SDK init performance by replacing `java.net.URI` with custom string parsing for DSN ([#5448](https://github.com/getsentry/sentry-java/pull/5448))
+- Remove unnecessary boxing to improve performance ([#5520](https://github.com/getsentry/sentry-java/pull/5520))
+
+### Fixes
+
+- Session Replay: Fix `VerifyError` in Compose masking under DexGuard/R8 obfuscation ([#5507](https://github.com/getsentry/sentry-java/pull/5507))
+- Session Replay: Fix Compose view masking not working on obfuscated/minified builds ([#5503](https://github.com/getsentry/sentry-java/pull/5503))
 
 ## 8.43.1
 

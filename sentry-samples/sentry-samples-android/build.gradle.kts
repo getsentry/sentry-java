@@ -1,5 +1,7 @@
 import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.variant.impl.VariantImpl
+import io.sentry.android.gradle.extensions.InstrumentationFeature
+import io.sentry.android.gradle.extensions.SentryPluginExtension
 import org.apache.tools.ant.taskdefs.condition.Os
 import org.gradle.internal.extensions.stdlib.capitalized
 
@@ -8,7 +10,34 @@ plugins {
   alias(libs.plugins.kotlin.android)
   alias(libs.plugins.kotlin.compose)
   alias(libs.plugins.ksp)
+  alias(libs.plugins.sentry) apply false
   alias(libs.plugins.sqldelight)
+}
+
+if (providers.gradleProperty("useSagp").isPresent) {
+  apply(plugin = "io.sentry.android.gradle")
+}
+
+plugins.withId("io.sentry.android.gradle") {
+  // Extension configs match non-SAGP builds. Update locally to test your feature.
+  extensions.configure<SentryPluginExtension>("sentry") {
+    autoInstallation.enabled.set(false)
+    includeProguardMapping.set(false)
+    includeDependenciesReport.set(false)
+    telemetry.set(false)
+    tracingInstrumentation {
+      features.set(
+        setOf(
+          // FILE_IO is disabled for non-SAGP builds.
+          InstrumentationFeature.COMPOSE,
+          InstrumentationFeature.DATABASE,
+          InstrumentationFeature.OKHTTP,
+        )
+      )
+      logcat.enabled.set(false)
+      appStart.enabled.set(false)
+    }
+  }
 }
 
 android {

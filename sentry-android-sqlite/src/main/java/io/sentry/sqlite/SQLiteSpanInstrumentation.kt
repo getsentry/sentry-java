@@ -11,7 +11,7 @@ import io.sentry.SpanStatus
 
 private const val SQLITE_TRACE_ORIGIN = "auto.db.sqlite"
 
-/** Shared span creation and metadata for SQLite instrumentation. */
+/** Shared span instrumentation for SQLite. */
 internal class SQLiteSpanInstrumentation(
   private val scopes: IScopes,
   private val dbMetadata: DbMetadata,
@@ -76,10 +76,24 @@ internal class SQLiteSpanInstrumentation(
 
   companion object {
 
-    fun fromDatabaseName(databaseName: String?, scopes: IScopes = ScopesAdapter.getInstance()) =
-      SQLiteSpanInstrumentation(scopes, dbMetadataFromDatabaseName(databaseName))
-
-    fun fromFileName(fileName: String, scopes: IScopes = ScopesAdapter.getInstance()) =
+    /**
+     * Returns [SQLiteSpanInstrumentation] based on the [fileName] argument passed to
+     * [SQLiteDriver.open][androidx.sqlite.SQLiteDriver.open].
+     */
+    fun fromFileName(
+      fileName: String,
+      scopes: IScopes = ScopesAdapter.getInstance(),
+    ): SQLiteSpanInstrumentation =
       SQLiteSpanInstrumentation(scopes, dbMetadataFromFileName(fileName))
+
+    /**
+     * Returns [SQLiteSpanInstrumentation] based on
+     * [SupportSQLiteOpenHelper.databaseName][androidx.sqlite.db.SupportSQLiteOpenHelper.databaseName].
+     */
+    fun fromDatabaseName(
+      databaseName: String?,
+      scopes: IScopes = ScopesAdapter.getInstance(),
+    ): SQLiteSpanInstrumentation =
+      SQLiteSpanInstrumentation(scopes, dbMetadataFromDatabaseName(databaseName))
   }
 }

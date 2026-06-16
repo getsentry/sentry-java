@@ -4,7 +4,7 @@ androidxLifecycle = "2.2.0"
 androidxNavigation = "2.4.2"
 androidxTestCore = "1.7.0"
 androidxCompose = "1.6.3"
-asyncProfiler = "4.2"
+asyncProfiler = "4.4"
 camerax = "1.4.0"
 composeCompiler = "1.5.14"
 coroutines = "1.6.1"
@@ -35,6 +35,7 @@ otelSemanticConventionsAlpha = "1.40.0-alpha"
 retrofit = "2.9.0"
 room2 = "2.8.4"
 room3 = "3.0.0-alpha06"
+sagp = "6.10.0"
 sqlite = "2.6.2"
 sqliteAlpha = "2.7.0-alpha06" # Required by Room3 3.0.0-alpha*
 slf4j = "1.7.30"
@@ -75,7 +76,7 @@ spring-dependency-management = { id = "io.spring.dependency-management", version
 sqldelight = { id = "app.cash.sqldelight", version.ref = "sqldelight" }
 gretty = { id = "org.gretty", version = "4.0.0" }
 animalsniffer = { id = "ru.vyarus.animalsniffer", version = "2.0.1" }
-sentry = { id = "io.sentry.android.gradle", version = "6.6.0"}
+sentry = { id = "io.sentry.android.gradle", version.ref = "sagp"}
 shadow = { id = "com.gradleup.shadow", version = "9.4.1" }
 
 [libraries]
@@ -255,6 +256,7 @@ camerax-camera2 = { module = "androidx.camera:camera-camera2", version.ref = "ca
 camerax-lifecycle = { module = "androidx.camera:camera-lifecycle", version.ref = "camerax" }
 camerax-view = { module = "androidx.camera:camera-view", version.ref = "camerax" }
 
+google-truth = { module = "com.google.truth:truth", version = "1.4.5" }
 hsqldb = { module = "org.hsqldb:hsqldb", version = "2.6.1" }
 javafaker = { module = "com.github.javafaker:javafaker", version = "1.0.2" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }

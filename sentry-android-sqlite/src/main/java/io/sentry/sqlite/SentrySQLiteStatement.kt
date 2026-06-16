@@ -9,10 +9,9 @@ import io.sentry.SpanStatus
  * statement's lifetime (until [step] iteration is complete or the statement is [reset] or
  * [closed][close]).
  *
- * Span duration is purposefully restricted to accumulated database time, i.e., each [step] call is
- * individually timed and the durations are summed. Time the application spends between steps (e.g.,
- * processing rows, sleeping, or doing I/O) is intentionally excluded so the span accurately
- * represents how long SQLite itself was working.
+ * Span duration is restricted to accumulated database time, i.e., each [step] call is individually
+ * timed and the durations are summed. Time the application spends between steps (e.g., processing
+ * rows, sleeping, or doing I/O) is intentionally excluded.
  *
  * Not thread-safe: assumes sequential access within each SQL statement (normal SQLite usage).
  */

@@ -92,6 +92,14 @@ make systemTest
 6. **Format and regenerate**: Once done, format code and regenerate .api files: `./gradlew spotlessApply apiDump`
 7. **Propose commit**: As final step, git stage relevant files and propose (but not execute) a single git commit command
 
+## Repository Skills
+
+This repo ships task-specific skills (declared in `agents.toml`, sources under `.agents/skills`). Prefer them over performing the steps manually:
+- **`create-java-pr`**: Branch, format, `apiDump`, commit, push, open PR, and add the changelog entry (automates the PR workflow above)
+- **`test`**: Run unit or system tests for a module or a specific class
+- **`check-code-attribution`**: Verify third-party code attribution on the current branch (see Third-Party Code Attribution below)
+- **`btrace-perfetto`**: Capture and compare Perfetto traces for Android performance work
+
 ## Module Architecture
 
 The repository is organized into multiple modules:
@@ -100,15 +108,22 @@ The repository is organized into multiple modules:
 - **`sentry`** - Core Java SDK implementation
 - **`sentry-android-core`** - Core Android SDK implementation
 - **`sentry-android`** - High-level Android SDK
+- **`sentry-android-ndk`** - Native (NDK) crash handling
 
 ### Integration Modules
 - **Spring Framework**: `sentry-spring*`, `sentry-spring-boot*`
-- **Logging**: `sentry-logback`, `sentry-log4j2`, `sentry-jul`
-- **Web**: `sentry-servlet*`, `sentry-okhttp`, `sentry-apache-http-client-5`
+- **Logging**: `sentry-logback`, `sentry-log4j2`, `sentry-jul`, `sentry-android-timber`
+- **Web**: `sentry-servlet*`, `sentry-okhttp`, `sentry-openfeign`, `sentry-apache-http-client-5`
 - **GraphQL**: `sentry-graphql*`, `sentry-apollo*`
 - **Android UI**: `sentry-android-fragment`, `sentry-android-navigation`, `sentry-compose`
+- **Session Replay**: `sentry-android-replay`
+- **Database**: `sentry-jdbc`, `sentry-android-sqlite`, `sentry-jcache`
 - **Reactive**: `sentry-reactor`, `sentry-ktor-client`
+- **Feature Flags**: `sentry-launchdarkly-android`, `sentry-launchdarkly-server`, `sentry-openfeature`
+- **Queues**: `sentry-kafka`
+- **Profiling**: `sentry-async-profiler` (JVM continuous profiling)
 - **Monitoring**: `sentry-opentelemetry*`, `sentry-quartz`
+- **Other**: `sentry-spotlight`, `sentry-kotlin-extensions`, `sentry-android-distribution`
 
 ### Utility Modules
 - **`sentry-test-support`** - Shared test utilities
@@ -170,6 +185,10 @@ gh pr view <branch-name> --json number -q '.number'
 # Get PR URL
 gh pr view --json url -q '.url'
 ```
+
+### Changelog
+
+User-facing changes get an entry under the `## Unreleased` section of `CHANGELOG.md`. When rebasing onto `main`, a release may have renamed the `## Unreleased` heading your entry was under to a version number — if so, move your entry back into an `## Unreleased` section at the top of the file (create it if it no longer exists). See `.cursor/rules/pr.mdc` for the full changelog and PR workflow.
 
 ## Useful Resources
 
