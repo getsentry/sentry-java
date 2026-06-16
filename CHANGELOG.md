@@ -12,7 +12,7 @@
 
 ### Improvements
 
-- Reduce boxing to improve performance ([#5523](https://github.com/getsentry/sentry-java/pull/5523), [#5527](https://github.com/getsentry/sentry-java/pull/5527))
+- Reduce boxing to improve performance ([#5523](https://github.com/getsentry/sentry-java/pull/5523), [#5527](https://github.com/getsentry/sentry-java/pull/5527), [#5551](https://github.com/getsentry/sentry-java/pull/5551))
 
 ### Dependencies
 
