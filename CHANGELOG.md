@@ -13,7 +13,7 @@
 ### Improvements
 
 - Reduce boxing to improve performance ([#5523](https://github.com/getsentry/sentry-java/pull/5523), [#5527](https://github.com/getsentry/sentry-java/pull/5527), [#5551](https://github.com/getsentry/sentry-java/pull/5551))
-- Replace `Date` with a unix timestamp in `SentryNanotimeDate` to avoid `Calendar` allocations during SDK init ([#XXXX](https://github.com/getsentry/sentry-java/pull/XXXX))
+- Replace `Date` with a unix timestamp in `SentryNanotimeDate` to avoid `Calendar` allocations during SDK init ([#5550](https://github.com/getsentry/sentry-java/pull/5550))
   - Breaking: the `SentryNanotimeDate(Date, long)` constructor is replaced by `SentryNanotimeDate(long unixDate, long nanos)`, where `unixDate` is milliseconds since the epoch. The behavior is unchanged as `Date.getTime()` already returns epoch millis.
 
 ### Dependencies
