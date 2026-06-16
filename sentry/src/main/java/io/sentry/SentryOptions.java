@@ -374,6 +374,9 @@ public class SentryOptions {
    */
   private boolean enableDeduplication = true;
 
+  /** Whether EventProcessor.processAsync and beforeSend callbacks run off the caller thread. */
+  private boolean enableAsyncProcessing = false;
+
   /**
    * Enables event size limiting with {@link EventSizeLimitingEventProcessor}. When enabled, events
    * exceeding 1MB will have breadcrumbs and stack frames reduced to stay under the limit.
@@ -1881,6 +1884,24 @@ public class SentryOptions {
    */
   public void setEnableDeduplication(final boolean enableDeduplication) {
     this.enableDeduplication = enableDeduplication;
+  }
+
+  /**
+   * Returns whether async event processing is enabled.
+   *
+   * @return true if async event processing is enabled, false otherwise
+   */
+  public boolean isEnableAsyncProcessing() {
+    return enableAsyncProcessing;
+  }
+
+  /**
+   * Enables or disables async event processing.
+   *
+   * @param enableAsyncProcessing true if enabled, false otherwise
+   */
+  public void setEnableAsyncProcessing(final boolean enableAsyncProcessing) {
+    this.enableAsyncProcessing = enableAsyncProcessing;
   }
 
   /**
@@ -3607,6 +3628,9 @@ public class SentryOptions {
     }
     if (options.getEnableDeduplication() != null) {
       setEnableDeduplication(options.getEnableDeduplication());
+    }
+    if (options.isEnableAsyncProcessing() != null) {
+      setEnableAsyncProcessing(options.isEnableAsyncProcessing());
     }
     if (options.getSendClientReports() != null) {
       setSendClientReports(options.getSendClientReports());

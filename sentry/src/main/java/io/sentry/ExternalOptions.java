@@ -23,6 +23,7 @@ public final class ExternalOptions {
   private @Nullable Boolean enableUncaughtExceptionHandler;
   private @Nullable Boolean debug;
   private @Nullable Boolean enableDeduplication;
+  private @Nullable Boolean enableAsyncProcessing;
   private @Nullable Double sampleRate;
   private @Nullable Double tracesSampleRate;
   private @Nullable Double profilesSampleRate;
@@ -90,6 +91,8 @@ public final class ExternalOptions {
     options.setProfilesSampleRate(propertiesProvider.getDoubleProperty("profiles-sample-rate"));
     options.setDebug(propertiesProvider.getBooleanProperty("debug"));
     options.setEnableDeduplication(propertiesProvider.getBooleanProperty("enable-deduplication"));
+    options.setEnableAsyncProcessing(
+        propertiesProvider.getBooleanProperty("enable-async-processing"));
     options.setSendClientReports(propertiesProvider.getBooleanProperty("send-client-reports"));
     options.setForceInit(propertiesProvider.getBooleanProperty("force-init"));
     final String maxRequestBodySize = propertiesProvider.getProperty("max-request-body-size");
@@ -313,6 +316,14 @@ public final class ExternalOptions {
 
   public void setEnableDeduplication(final @Nullable Boolean enableDeduplication) {
     this.enableDeduplication = enableDeduplication;
+  }
+
+  public @Nullable Boolean isEnableAsyncProcessing() {
+    return enableAsyncProcessing;
+  }
+
+  public void setEnableAsyncProcessing(final @Nullable Boolean enableAsyncProcessing) {
+    this.enableAsyncProcessing = enableAsyncProcessing;
   }
 
   public @Nullable Double getSampleRate() {

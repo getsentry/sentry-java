@@ -475,6 +475,11 @@ public abstract interface class io/sentry/EventProcessor {
 	public fun process (Lio/sentry/SentryMetricsEvent;Lio/sentry/Hint;)Lio/sentry/SentryMetricsEvent;
 	public fun process (Lio/sentry/SentryReplayEvent;Lio/sentry/Hint;)Lio/sentry/SentryReplayEvent;
 	public fun process (Lio/sentry/protocol/SentryTransaction;Lio/sentry/Hint;)Lio/sentry/protocol/SentryTransaction;
+	public fun processAsync (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
+	public fun processAsync (Lio/sentry/SentryLogEvent;)Lio/sentry/SentryLogEvent;
+	public fun processAsync (Lio/sentry/SentryMetricsEvent;Lio/sentry/Hint;)Lio/sentry/SentryMetricsEvent;
+	public fun processAsync (Lio/sentry/SentryReplayEvent;Lio/sentry/Hint;)Lio/sentry/SentryReplayEvent;
+	public fun processAsync (Lio/sentry/protocol/SentryTransaction;Lio/sentry/Hint;)Lio/sentry/protocol/SentryTransaction;
 }
 
 public final class io/sentry/ExperimentalOptions {
@@ -526,6 +531,7 @@ public final class io/sentry/ExternalOptions {
 	public fun getTracePropagationTargets ()Ljava/util/List;
 	public fun getTracesSampleRate ()Ljava/lang/Double;
 	public fun isCaptureOpenTelemetryEvents ()Ljava/lang/Boolean;
+	public fun isEnableAsyncProcessing ()Ljava/lang/Boolean;
 	public fun isEnableBackpressureHandling ()Ljava/lang/Boolean;
 	public fun isEnableCacheTracing ()Ljava/lang/Boolean;
 	public fun isEnableDatabaseTransactionTracing ()Ljava/lang/Boolean;
@@ -545,6 +551,7 @@ public final class io/sentry/ExternalOptions {
 	public fun setDebug (Ljava/lang/Boolean;)V
 	public fun setDist (Ljava/lang/String;)V
 	public fun setDsn (Ljava/lang/String;)V
+	public fun setEnableAsyncProcessing (Ljava/lang/Boolean;)V
 	public fun setEnableBackpressureHandling (Ljava/lang/Boolean;)V
 	public fun setEnableCacheTracing (Ljava/lang/Boolean;)V
 	public fun setEnableDatabaseTransactionTracing (Ljava/lang/Boolean;)V
@@ -3747,6 +3754,7 @@ public class io/sentry/SentryOptions {
 	public fun isContinuousProfilingEnabled ()Z
 	public fun isDebug ()Z
 	public fun isEnableAppStartProfiling ()Z
+	public fun isEnableAsyncProcessing ()Z
 	public fun isEnableAutoSessionTracking ()Z
 	public fun isEnableBackpressureHandling ()Z
 	public fun isEnableCacheTracing ()Z
@@ -3810,6 +3818,7 @@ public class io/sentry/SentryOptions {
 	public fun setDistributionController (Lio/sentry/IDistributionApi;)V
 	public fun setDsn (Ljava/lang/String;)V
 	public fun setEnableAppStartProfiling (Z)V
+	public fun setEnableAsyncProcessing (Z)V
 	public fun setEnableAutoSessionTracking (Z)V
 	public fun setEnableBackpressureHandling (Z)V
 	public fun setEnableCacheTracing (Z)V

@@ -49,6 +49,16 @@ The async processing queue is active only when `enableAsyncProcessing=true`. Its
 
 When `enableAsyncProcessing=false`, `SentryClient` still invokes the new `processAsync(...)` stage, but inline on the caller thread. This keeps the processing pipeline shape consistent and avoids conditional logic around whether async processor callbacks are invoked.
 
+## Telemetry Processor Compatibility
+
+The async processing queue is a callback execution stage, not a delivery buffer or telemetry scheduler. It owns only running `processAsync(...)`, running the matching `beforeSend*` callback, and forwarding accepted items to the existing downstream delivery layer.
+
+Future telemetry processor integration should keep batching, prioritization, overflow policy, trace-aware span bucketing, and offline/cache behavior in the telemetry processor. Async processing should happen before telemetry buffer/scheduler ingestion, and future work may replace or reshape this queue to avoid keeping both a generic FIFO callback queue and category-aware telemetry buffers.
+
+The first iteration uses one bounded FIFO queue because the feature is opt-in. This can cause priority inversion under mixed high-volume traffic, for example logs or metrics filling the callback queue before higher-priority errors reach a future scheduler. Queue overflow at this stage is recorded as `queue_overflow`; future telemetry buffers should use a distinct `buffer_overflow` reason.
+
+`flush(timeoutMillis)` and `close()` must treat async processing and downstream queues as one pipeline and use a shared deadline instead of giving every layer the full timeout independently.
+
 ## Processing Pipeline
 
 For each supported capture path, the order is:

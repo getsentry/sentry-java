@@ -50,6 +50,18 @@ class SentryOptionsTest {
   }
 
   @Test
+  fun `when options is initialized, async processing is false`() {
+    assertFalse(SentryOptions().isEnableAsyncProcessing)
+  }
+
+  @Test
+  fun `when enableAsyncProcessing is set, overrides default`() {
+    val options = SentryOptions()
+    options.isEnableAsyncProcessing = true
+    assertTrue(options.isEnableAsyncProcessing)
+  }
+
+  @Test
   fun `when options is initialized, integrations contain UncaughtExceptionHandlerIntegration`() {
     assertTrue(SentryOptions().integrations.any { it is UncaughtExceptionHandlerIntegration })
   }
@@ -399,6 +411,7 @@ class SentryOptionsTest {
     externalOptions.ignoredTransactions = listOf("transactionName1", "transaction-name-B")
     externalOptions.ignoredErrors = listOf("Some error", "Another .*")
     externalOptions.isEnableBackpressureHandling = false
+    externalOptions.isEnableAsyncProcessing = true
     externalOptions.isEnableDatabaseTransactionTracing = true
     externalOptions.isEnableCacheTracing = true
     externalOptions.maxRequestBodySize = SentryOptions.RequestSize.MEDIUM
@@ -465,6 +478,7 @@ class SentryOptionsTest {
       options.ignoredErrors,
     )
     assertFalse(options.isEnableBackpressureHandling)
+    assertTrue(options.isEnableAsyncProcessing)
     assertTrue(options.isEnableDatabaseTransactionTracing)
     assertTrue(options.isEnableCacheTracing)
     assertTrue(options.isForceInit)
