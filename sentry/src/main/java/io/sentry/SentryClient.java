@@ -112,7 +112,9 @@ public final class SentryClient implements ISentryClient {
       hint = new Hint();
     }
 
-    if (shouldApplyScopeData(event, hint)) {
+    // Cached envelopes (e.g. native crashes from the outbox) already carry their attachments as
+    // envelope items. Re-applying scope attachments here would duplicate them.
+    if (shouldApplyScopeData(event, hint) && !HintUtils.hasType(hint, Cached.class)) {
       addScopeAttachmentsToHint(scope, hint);
     }
 
