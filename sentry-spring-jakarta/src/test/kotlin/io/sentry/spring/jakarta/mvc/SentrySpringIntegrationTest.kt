@@ -518,9 +518,7 @@ class HelloController(private val webClient: WebClient, private val env: Environ
   fun webClient(): String? {
     return webClient
       .get()
-      .uri(
-        "http://user:password@localhost:${env.getProperty("local.server.port")}/hello"
-      )
+      .uri("http://user:password@localhost:${env.getProperty("local.server.port")}/hello")
       .retrieve()
       .bodyToMono(String::class.java)
       .block()
