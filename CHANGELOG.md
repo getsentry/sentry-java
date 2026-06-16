@@ -17,6 +17,9 @@
 ### Dependencies
 
 - Upgrade to asyncProfiler 4.4 ([#5418](https://github.com/getsentry/sentry-java/pull/5418))
+- Bump Native SDK from v0.14.2 to v0.15.0 ([#5528](https://github.com/getsentry/sentry-java/pull/5528))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0150)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.14.2...0.15.0)
 
 ### Fixes
 
