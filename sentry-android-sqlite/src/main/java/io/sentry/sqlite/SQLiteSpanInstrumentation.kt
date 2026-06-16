@@ -39,7 +39,7 @@ internal class SQLiteSpanInstrumentation(
     throwable: Throwable? = null,
   ) {
     val parent = scopes.span ?: return
-    val nanoPrecisionStart = startTimestamp.repairPrecision(baseline = parent.startDate)
+    val nanoPrecisionStart = startTimestamp.repairPrecision(anchor = parent.startDate)
     val endTimestamp = SentryLongDate(nanoPrecisionStart.nanoTimestamp() + durationNanos)
     parent.recordChild(sql, nanoPrecisionStart, endTimestamp, status, throwable)
   }
@@ -47,8 +47,9 @@ internal class SQLiteSpanInstrumentation(
   /**
    * Records a `db.sql.query` span from [startTimestamp] to the moment of invocation.
    *
-   * "Coarse" in that it doesn't ensure nanosecond precision for [SentryNanotimeDate]
-   * [startTimestamp]s.
+   * "Coarse" in that it doesn't try to restore nanosecond precision for the start timestamp. Spans
+   * that start within the same wall clock millisecond will share the same start time and may be
+   * arbitrarily re-ordered by the Sentry UI.
    */
   fun recordCoarseSpan(
     sql: String,
@@ -84,38 +85,6 @@ internal class SQLiteSpanInstrumentation(
     }
   }
 
-  /**
-   * Repairs the receiver's [nanoTimestamp][SentryDate.nanoTimestamp] if needed so that it actually
-   * has nanosecond precision.
-   *
-   * Designed for use with spans whose start timestamps are [SentryNanotimeDate]s. Without repair,
-   * those timestamps will be aligned to the same millisecond at transport, and the Sentry UI will
-   * arbitrarily reorder them:
-   * ```
-   * Parent span                 ├█████████████┤
-   * END TRANSACTION              ├███┤          0.18 ms  ← (Wrong order)
-   * BEGIN IMMEDIATE TRANSACTION  ├████┤         0.25 ms
-   * INSERT INTO `my_db` …        ├██┤           0.10 ms
-   *                              ↑
-   *               (All spans share the same ms baseline
-   *             even though their execution was staggered)
-   * ```
-   *
-   * Repair ensures proper ordering and lets the spans stagger:
-   * ```
-   * Parent span                 ├█████████████┤
-   * BEGIN IMMEDIATE TRANSACTION  ├████┤         0.25 ms
-   * INSERT INTO `my_db` …              ├██┤     0.10 ms
-   * END TRANSACTION                     ├███┤   0.18 ms
-   * ```
-   */
-  private fun SentryDate.repairPrecision(baseline: SentryDate?): SentryDate =
-    if (baseline is SentryNanotimeDate) {
-      SentryLongDate(baseline.laterDateNanosTimestampByDiff(this))
-    } else {
-      this
-    }
-
   companion object {
 
     /**
@@ -139,3 +108,39 @@ internal class SQLiteSpanInstrumentation(
       SQLiteSpanInstrumentation(scopes, dbMetadataFromDatabaseName(databaseName))
   }
 }
+
+/**
+ * Repairs the receiver's [nanoTimestamp][SentryDate.nanoTimestamp] if needed so that it actually
+ * has nanosecond precision.
+ *
+ * Designed for use with spans whose start timestamps are [SentryNanotimeDate]s. Without repair,
+ * those timestamps will be aligned to the same millisecond at transport, and the Sentry UI will
+ * arbitrarily reorder them:
+ * ```
+ *                                  (Relative start times out of order)
+ *                                                ↓
+ * Parent span                 ├█████████████┤
+ * END TRANSACTION              ├███┤          0.33 ms
+ * BEGIN IMMEDIATE TRANSACTION  ├████┤         0.02 ms
+ * INSERT INTO `my_db` …        ├██┤           0.30 ms
+ *                              ↑
+ *               (All spans share the same ms baseline
+ *             even though their execution was staggered)
+ * ```
+ *
+ * Repair ensures proper ordering and lets the spans stagger:
+ * ```
+ * Parent span                 ├█████████████┤
+ * BEGIN IMMEDIATE TRANSACTION  ├████┤         0.02 ms
+ * INSERT INTO `my_db` …              ├██┤     0.30 ms
+ * END TRANSACTION                     ├███┤   0.33 ms
+ * ```
+ */
+internal fun SentryDate.repairPrecision(anchor: SentryDate?): SentryDate =
+  if (anchor is SentryNanotimeDate) {
+    // Compute a new timestamp with nanosecond precision by using the anchor as the epoch instant
+    // and adding to it the diff of this.nanos - anchor.nanos.
+    SentryLongDate(anchor.laterDateNanosTimestampByDiff(this))
+  } else {
+    this
+  }

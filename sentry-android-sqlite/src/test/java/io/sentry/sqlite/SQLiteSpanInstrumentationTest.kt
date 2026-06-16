@@ -2,6 +2,7 @@ package io.sentry.sqlite
 
 import io.sentry.IScopes
 import io.sentry.SentryDateProvider
+import io.sentry.SentryLongDate
 import io.sentry.SentryNanotimeDate
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer
@@ -13,6 +14,7 @@ import java.util.Date
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -149,7 +151,7 @@ class SQLiteSpanInstrumentationTest {
   }
 
   @Test
-  fun `recordSpan repairs start precision when parent uses SentryNanotimeDate`() {
+  fun `recordSpan repairs start precision`() {
     val sameMillis = Date(1_000_000L)
     val parentNanos = 100_000_000L
     val childNanos = 100_500_000L
@@ -168,73 +170,12 @@ class SQLiteSpanInstrumentationTest {
 
     val parentStart = fixture.sentryTracer.startDate
     val expectedStart = parentStart.laterDateNanosTimestampByDiff(start)
+    // Child and parent share the same ms-quantized baseline; repair adds nanosecond offset.
+    assertEquals(parentStart.nanoTimestamp(), start.nanoTimestamp())
+    assertTrue(start.nanoTimestamp() != expectedStart)
+    assertIs<SentryLongDate>(span.startDate)
     assertEquals(expectedStart, span.startDate.nanoTimestamp())
     assertEquals(expectedStart + durationNanos, span.finishDate!!.nanoTimestamp())
-  }
-
-  @Test
-  fun `recordSpan gives distinct ordered starts within the same millisecond`() {
-    val sameMillis = Date(1_000_000L)
-    val parentNanos = 100_000_000L
-    val child1Nanos = 100_200_000L
-    val child2Nanos = 100_800_000L
-
-    val sut =
-      setUpWithNanotimeDates(
-        SentryNanotimeDate(sameMillis, parentNanos),
-        SentryNanotimeDate(sameMillis, child1Nanos),
-        SentryNanotimeDate(sameMillis, child2Nanos),
-      )
-    val start1 = sut.startTimestamp()
-    val start2 = sut.startTimestamp()
-
-    assertEquals(
-      start1.nanoTimestamp(),
-      start2.nanoTimestamp(),
-      "Raw starts share the same ms-quantized timestamp",
-    )
-
-    sut.recordSpan("SELECT 1", start1, 1_000_000, SpanStatus.OK)
-    sut.recordSpan("SELECT 2", start2, 1_000_000, SpanStatus.OK)
-
-    val span1 = fixture.sentryTracer.children[0]
-    val span2 = fixture.sentryTracer.children[1]
-
-    assertTrue(
-      span1.startDate.nanoTimestamp() < span2.startDate.nanoTimestamp(),
-      "Repaired starts should be distinct and ordered",
-    )
-  }
-
-  @Test
-  fun `recordSpan preserves exact duration after precision repair`() {
-    val sameMillis = Date(1_000_000L)
-    val sut =
-      setUpWithNanotimeDates(
-        SentryNanotimeDate(sameMillis, 100_000_000L),
-        SentryNanotimeDate(sameMillis, 100_750_000L),
-      )
-    val start = sut.startTimestamp()
-    val durationNanos = 123_456L
-
-    sut.recordSpan("SELECT 1", start, durationNanos, SpanStatus.OK)
-
-    val span = fixture.sentryTracer.children.first()
-    val actualDuration = span.finishDate!!.nanoTimestamp() - span.startDate.nanoTimestamp()
-    assertEquals(durationNanos, actualDuration)
-  }
-
-  @Test
-  fun `recordSpan does not repair start when parent is not SentryNanotimeDate`() {
-    val sut = fixture.getSut(isTransactionActive = true)
-    val start = sut.startTimestamp()
-    val durationNanos = 1_000_000L
-
-    sut.recordSpan("SELECT 1", start, durationNanos, SpanStatus.OK)
-
-    val span = fixture.sentryTracer.children.first()
-    assertEquals(start.nanoTimestamp(), span.startDate.nanoTimestamp())
-    assertEquals(start.nanoTimestamp() + durationNanos, span.finishDate!!.nanoTimestamp())
   }
 
   @Test
@@ -346,7 +287,7 @@ class SQLiteSpanInstrumentationTest {
   }
 
   @Test
-  fun `recordCoarseSpan does not repair start precision when parent uses SentryNanotimeDate`() {
+  fun `recordCoarseSpan does not repair start precision`() {
     val sameMillis = Date(1_000_000L)
     val parentNanos = 100_000_000L
     val childNanos = 100_500_000L
@@ -365,18 +306,6 @@ class SQLiteSpanInstrumentationTest {
     val span = fixture.sentryTracer.children.first()
     assertEquals(start.nanoTimestamp(), span.startDate.nanoTimestamp())
     assertTrue(span.finishDate!!.nanoTimestamp() >= span.startDate.nanoTimestamp())
-  }
-
-  @Test
-  fun `recordCoarseSpan does not repair start when parent is not SentryNanotimeDate`() {
-    val sut = fixture.getSut(isTransactionActive = true)
-    val start = sut.startTimestamp()
-
-    sut.recordCoarseSpan("SELECT 1", start, SpanStatus.OK)
-
-    val span = fixture.sentryTracer.children.first()
-    assertEquals(start.nanoTimestamp(), span.startDate.nanoTimestamp())
-    assertTrue(span.finishDate!!.nanoTimestamp() >= start.nanoTimestamp())
   }
 
   @Test
