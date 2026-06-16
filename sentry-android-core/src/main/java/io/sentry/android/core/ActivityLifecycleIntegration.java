@@ -141,6 +141,7 @@ public final class ActivityLifecycleIntegration
 
     if (performanceEnabled && this.options.isEnableStandaloneAppStartTracing()) {
       AppStartMetrics.getInstance().setHeadlessAppStartListener(this::onHeadlessAppStart);
+      addIntegrationToSdkVersion("StandaloneAppStart");
     }
 
     this.options.getLogger().log(SentryLevel.DEBUG, "ActivityLifecycleIntegration installed.");
