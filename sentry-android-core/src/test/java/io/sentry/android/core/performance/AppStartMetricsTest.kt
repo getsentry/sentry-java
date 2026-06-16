@@ -18,7 +18,6 @@ import io.sentry.android.core.CurrentActivityHolder
 import io.sentry.android.core.SentryAndroidOptions
 import io.sentry.android.core.SentryShadowProcess
 import io.sentry.protocol.SentryId
-import java.util.Date
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.Test
@@ -639,7 +638,7 @@ class AppStartMetricsTest {
   @Test
   fun `createProcessInitSpan creates a span`() {
     val appStartMetrics = AppStartMetrics.getInstance()
-    val startDate = SentryNanotimeDate(Date(1), 1000000)
+    val startDate = SentryNanotimeDate(1, 1000000)
     appStartMetrics.classLoadedUptimeMs = 10
     val startMillis = DateUtils.nanosToMillis(startDate.nanoTimestamp().toDouble()).toLong()
     appStartMetrics.appStartTimeSpan.setStartedAt(1)

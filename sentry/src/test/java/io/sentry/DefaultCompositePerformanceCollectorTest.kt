@@ -4,7 +4,6 @@ import io.sentry.test.getCtor
 import io.sentry.test.getProperty
 import io.sentry.test.injectForField
 import io.sentry.util.thread.ThreadChecker
-import java.util.Date
 import java.util.Timer
 import java.util.concurrent.TimeUnit
 import kotlin.test.Test
@@ -188,14 +187,8 @@ class DefaultCompositePerformanceCollectorTest {
     val mockCollector = mock<IPerformanceContinuousCollector>()
     val dates =
       listOf(
-        SentryNanotimeDate(
-          Date().apply { time = TimeUnit.SECONDS.toMillis(100) },
-          TimeUnit.SECONDS.toNanos(100),
-        ),
-        SentryNanotimeDate(
-          Date().apply { time = TimeUnit.SECONDS.toMillis(131) },
-          TimeUnit.SECONDS.toNanos(131),
-        ),
+        SentryNanotimeDate(TimeUnit.SECONDS.toMillis(100), TimeUnit.SECONDS.toNanos(100)),
+        SentryNanotimeDate(TimeUnit.SECONDS.toMillis(131), TimeUnit.SECONDS.toNanos(131)),
       )
     whenever(mockDateProvider.now()).thenReturn(dates[0], dates[0], dates[0], dates[1])
     val collector =
@@ -226,14 +219,8 @@ class DefaultCompositePerformanceCollectorTest {
     val mockDateProvider = mock<SentryDateProvider>()
     val dates =
       listOf(
-        SentryNanotimeDate(
-          Date().apply { time = TimeUnit.SECONDS.toMillis(100) },
-          TimeUnit.SECONDS.toNanos(100),
-        ),
-        SentryNanotimeDate(
-          Date().apply { time = TimeUnit.SECONDS.toMillis(130) },
-          TimeUnit.SECONDS.toNanos(130),
-        ),
+        SentryNanotimeDate(TimeUnit.SECONDS.toMillis(100), TimeUnit.SECONDS.toNanos(100)),
+        SentryNanotimeDate(TimeUnit.SECONDS.toMillis(130), TimeUnit.SECONDS.toNanos(130)),
       )
     whenever(mockDateProvider.now()).thenReturn(dates[0], dates[0], dates[0], dates[1])
     val collector = fixture.getSut { it.dateProvider = mockDateProvider }

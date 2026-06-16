@@ -45,7 +45,6 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.Collections;
-import java.util.Date;
 import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.concurrent.Future;
@@ -94,7 +93,7 @@ public final class ActivityLifecycleIntegration
   private final @NotNull WeakHashMap<Activity, ISpan> ttfdSpanMap = new WeakHashMap<>();
   private final @NotNull WeakHashMap<Activity, ActivityLifecycleSpanHelper> activitySpanHelpers =
       new WeakHashMap<>();
-  private @NotNull SentryDate lastPausedTime = new SentryNanotimeDate(new Date(0), 0);
+  private @NotNull SentryDate lastPausedTime = new SentryNanotimeDate(0, 0);
   private @Nullable Future<?> ttfdAutoCloseFuture = null;
 
   // WeakHashMap isn't thread safe but ActivityLifecycleCallbacks is only called from the
@@ -729,7 +728,7 @@ public final class ActivityLifecycleIntegration
 
   private void clear() {
     firstActivityCreated = false;
-    lastPausedTime = new SentryNanotimeDate(new Date(0), 0);
+    lastPausedTime = new SentryNanotimeDate(0, 0);
     activitySpanHelpers.clear();
   }
 

@@ -1,32 +1,31 @@
 package io.sentry;
 
-import java.util.Date;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Uses {@link Date} in combination with System.nanoTime().
+ * Uses a unix timestamp (milliseconds since the epoch) in combination with System.nanoTime().
  *
- * <p>A single date only offers millisecond precision but diff can be calculated with up to
+ * <p>The unix timestamp only offers millisecond precision but diff can be calculated with up to
  * nanosecond precision. This increased precision can also be used to calculate a new end date for a
  * transaction where start date is sent with ms precision and end date is added to it with ns
  * precision leading to an end timestamp with ns precision that can be used to gain ns precision
  * transaction durations.
  *
  * <p>This is a workaround for older versions of Java (before 9) and Android API (lower than 26)
- * that allows for higher precision than {@link Date} alone would.
+ * that allows for higher precision than a millisecond timestamp alone would.
  */
 public final class SentryNanotimeDate extends SentryDate {
 
-  private final @NotNull Date date;
+  private final long unixDate;
   private final long nanos;
 
   public SentryNanotimeDate() {
-    this(DateUtils.getCurrentDateTime(), System.nanoTime());
+    this(System.currentTimeMillis(), System.nanoTime());
   }
 
-  public SentryNanotimeDate(final @NotNull Date date, final long nanos) {
-    this.date = date;
+  public SentryNanotimeDate(final long unixDate, final long nanos) {
+    this.unixDate = unixDate;
     this.nanos = nanos;
   }
 
@@ -41,7 +40,7 @@ public final class SentryNanotimeDate extends SentryDate {
 
   @Override
   public long nanoTimestamp() {
-    return DateUtils.dateToNanos(date);
+    return DateUtils.millisToNanos(unixDate);
   }
 
   @Override
@@ -63,8 +62,8 @@ public final class SentryNanotimeDate extends SentryDate {
   public int compareTo(@NotNull SentryDate otherDate) {
     if (otherDate instanceof SentryNanotimeDate) {
       final @NotNull SentryNanotimeDate otherNanoDate = (SentryNanotimeDate) otherDate;
-      final long thisDateMillis = date.getTime();
-      final long otherDateMillis = otherNanoDate.date.getTime();
+      final long thisDateMillis = unixDate;
+      final long otherDateMillis = otherNanoDate.unixDate;
       if (thisDateMillis == otherDateMillis) {
         return Long.compare(nanos, otherNanoDate.nanos);
       } else {

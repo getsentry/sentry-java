@@ -151,17 +151,6 @@ public final class DateUtils {
     return millisToSeconds(date.getTime());
   }
 
-  /**
-   * Convert {@link Date} to nanoseconds represented as {@link Long}.
-   *
-   * @param date - date
-   * @return nanoseconds
-   */
-  @SuppressWarnings("JavaUtilDate")
-  public static long dateToNanos(final @NotNull Date date) {
-    return millisToNanos(date.getTime());
-  }
-
   public static long secondsToNanos(final @NotNull long seconds) {
     return seconds * (1000L * 1000L * 1000L);
   }
