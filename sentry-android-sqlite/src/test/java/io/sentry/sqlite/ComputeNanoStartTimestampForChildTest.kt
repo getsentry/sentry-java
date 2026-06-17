@@ -4,7 +4,6 @@ import io.sentry.DateUtils
 import io.sentry.ISpan
 import io.sentry.SentryLongDate
 import io.sentry.SentryNanotimeDate
-import java.util.Date
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -86,7 +85,7 @@ class ComputeNanoStartTimestampForChildTest {
   }
 
   private fun spanWithNanotimeStart(wallClockMillis: Long, parentMonotonicNanos: Long): ISpan {
-    val startDate = SentryNanotimeDate(Date(wallClockMillis), parentMonotonicNanos)
+    val startDate = SentryNanotimeDate(wallClockMillis, parentMonotonicNanos)
     val span = mock<ISpan>()
     whenever(span.startDate).thenReturn(startDate)
     return span

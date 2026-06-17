@@ -11,7 +11,6 @@ import io.sentry.SpanDataConvention
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
 import io.sentry.util.thread.IThreadChecker
-import java.util.Date
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -51,7 +50,7 @@ class SQLiteSpanInstrumentationTest {
     // Only the parent date is queued. If startTimestamp() were to call dateProvider.now(),
     // the queue would underflow and the test would fail loudly — this is what verifies the
     // optimization is in effect.
-    val parentDate = SentryNanotimeDate(Date(1_000_000L), 100_000_000L)
+    val parentDate = SentryNanotimeDate(1_000_000L, 100_000_000L)
     val sut = setUpWithNanotimeDates(parentDate)
 
     val start = sut.startTimestamp()
@@ -71,7 +70,7 @@ class SQLiteSpanInstrumentationTest {
 
   @Test
   fun `startTimestamp falls back to date provider when parent does not use SentryNanotimeDate`() {
-    val providerDate = SentryNanotimeDate(Date(2_000_000L), 200_000_000L)
+    val providerDate = SentryNanotimeDate(2_000_000L, 200_000_000L)
     val parentSpan = mock<ISpan>()
     whenever(parentSpan.startDate).thenReturn(SentryLongDate(1_000_000_000_000_000L))
     val options =
@@ -89,7 +88,7 @@ class SQLiteSpanInstrumentationTest {
 
   @Test
   fun `startTimestamp falls back to date provider when no transaction is active`() {
-    val providerDate = SentryNanotimeDate(Date(2_000_000L), 200_000_000L)
+    val providerDate = SentryNanotimeDate(2_000_000L, 200_000_000L)
     val options =
       SentryOptions().apply {
         dsn = "https://key@sentry.io/proj"

@@ -10,7 +10,6 @@ import io.sentry.SentryNanotimeDate
 import io.sentry.SentryStackTraceFactory
 import io.sentry.SpanDataConvention
 import io.sentry.SpanStatus
-import java.util.Date
 
 private const val SQLITE_TRACE_ORIGIN = "auto.db.sqlite"
 
@@ -18,7 +17,7 @@ private const val SQLITE_TRACE_ORIGIN = "auto.db.sqlite"
  * Sentinel for extracting a [SentryNanotimeDate]'s underlying [System.nanoTime] value via
  * [SentryDate.diff].
  */
-private val EMPTY_NANO_TIME = SentryNanotimeDate(Date(0), 0L)
+private val EMPTY_NANO_TIME = SentryNanotimeDate(0, 0L)
 
 /** Span instrumentation for [SentrySQLiteDriver]. */
 internal class SQLiteSpanInstrumentation(
