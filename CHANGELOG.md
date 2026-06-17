@@ -286,6 +286,7 @@
 
 ### Features
 
+- Add opt-in async event processing ([#5558](https://github.com/getsentry/sentry-java/pull/5558))
 - Add `enableStandaloneAppStartTracing` option to send app start as a standalone transaction instead of attaching it as a child span of the first activity transaction ([#5342](https://github.com/getsentry/sentry-java/pull/5342))
   - Disabled by default; opt in via `options.isEnableStandaloneAppStartTracing = true` or manifest meta-data `io.sentry.standalone-app-start-tracing.enable`
   - Emits a transaction named `App Start` with op `app.start`, carrying the existing app start measurements and phase spans (`process.load`, `contentprovider.load`, `application.load`, activity lifecycle spans) as direct children of the root
