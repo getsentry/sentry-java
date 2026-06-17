@@ -19,15 +19,15 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public final class SentryNanotimeDate extends SentryDate {
 
-  private final long unixDate;
+  private final long unixDateMillis;
   private final long nanos;
 
   public SentryNanotimeDate() {
     this(System.currentTimeMillis(), System.nanoTime());
   }
 
-  public SentryNanotimeDate(final long unixDate, final long nanos) {
-    this.unixDate = unixDate;
+  public SentryNanotimeDate(final long unixDateMillis, final long nanos) {
+    this.unixDateMillis = unixDateMillis;
     this.nanos = nanos;
   }
 
@@ -42,7 +42,7 @@ public final class SentryNanotimeDate extends SentryDate {
 
   @Override
   public long nanoTimestamp() {
-    return DateUtils.millisToNanos(unixDate);
+    return DateUtils.millisToNanos(unixDateMillis);
   }
 
   @Override
@@ -64,8 +64,8 @@ public final class SentryNanotimeDate extends SentryDate {
   public int compareTo(@NotNull SentryDate otherDate) {
     if (otherDate instanceof SentryNanotimeDate) {
       final @NotNull SentryNanotimeDate otherNanoDate = (SentryNanotimeDate) otherDate;
-      final long thisDateMillis = unixDate;
-      final long otherDateMillis = otherNanoDate.unixDate;
+      final long thisDateMillis = unixDateMillis;
+      final long otherDateMillis = otherNanoDate.unixDateMillis;
       if (thisDateMillis == otherDateMillis) {
         return Long.compare(nanos, otherNanoDate.nanos);
       } else {
