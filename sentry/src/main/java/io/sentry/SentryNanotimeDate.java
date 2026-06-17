@@ -31,6 +31,7 @@ public final class SentryNanotimeDate extends SentryDate {
    * @deprecated use {@link SentryNanotimeDate#SentryNanotimeDate(long, long)} instead.
    */
   @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public SentryNanotimeDate(final @NotNull Date date, final long nanos) {
     this(date.getTime(), nanos);
   }
