@@ -3558,6 +3558,7 @@ public final class io/sentry/SentryMetricsEvents$JsonKeys {
 public final class io/sentry/SentryNanotimeDate : io/sentry/SentryDate {
 	public fun <init> ()V
 	public fun <init> (JJ)V
+	public fun <init> (Ljava/util/Date;J)V
 	public fun compareTo (Lio/sentry/SentryDate;)I
 	public synthetic fun compareTo (Ljava/lang/Object;)I
 	public fun diff (Lio/sentry/SentryDate;)J

@@ -1,5 +1,6 @@
 package io.sentry;
 
+import java.util.Date;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -24,6 +25,14 @@ public final class SentryNanotimeDate extends SentryDate {
 
   public SentryNanotimeDate() {
     this(System.currentTimeMillis(), System.nanoTime());
+  }
+
+  /**
+   * @deprecated use {@link SentryNanotimeDate#SentryNanotimeDate(long, long)} instead.
+   */
+  @Deprecated
+  public SentryNanotimeDate(final @NotNull Date date, final long nanos) {
+    this(date.getTime(), nanos);
   }
 
   public SentryNanotimeDate(final long unixDateMillis, final long nanos) {
