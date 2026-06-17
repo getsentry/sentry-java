@@ -19,7 +19,7 @@ class SentrySQLiteStatementTest {
 
   private class Fixture {
     val mockStatement = mock<SQLiteStatement>()
-    val mockSpans = mock<SQLiteSpanInstrumentation>()
+    val mockSpans = mock<DriverSpans>()
     val startTimestampNanos = 1_000_000_000_000L
     val fakeClock = AtomicLong(0L)
 
@@ -40,7 +40,7 @@ class SentrySQLiteStatementTest {
     verifyNeverCalledRecordSpan()
     sut.step()
     verify(fixture.mockSpans)
-      .recordSpan(
+      .record(
         eq("SELECT * FROM users"),
         eq(fixture.startTimestampNanos),
         any(),
@@ -58,7 +58,7 @@ class SentrySQLiteStatementTest {
     assertFailsWith<RuntimeException> { sut.step() }
 
     verify(fixture.mockSpans)
-      .recordSpan(
+      .record(
         eq("BAD SQL"),
         eq(fixture.startTimestampNanos),
         any(),
@@ -224,7 +224,7 @@ class SentrySQLiteStatementTest {
     sut.step()
 
     val durationCaptor = argumentCaptor<Long>()
-    verify(fixture.mockSpans).recordSpan(any(), any(), durationCaptor.capture(), any(), anyOrNull())
+    verify(fixture.mockSpans).record(any(), any(), durationCaptor.capture(), any(), anyOrNull())
     // Each step contributes its internal time (10 + 20 + 30) plus one unit from
     // fakeClock::getAndIncrement between before/after reads, so total is 63.
     assertEquals(63L, durationCaptor.firstValue)
@@ -285,6 +285,6 @@ class SentrySQLiteStatementTest {
   }
 
   private fun verifyCalledRecordSpan(times: Int = 1) {
-    verify(fixture.mockSpans, times(times)).recordSpan(any(), any(), any(), any(), anyOrNull())
+    verify(fixture.mockSpans, times(times)).record(any(), any(), any(), any(), anyOrNull())
   }
 }
