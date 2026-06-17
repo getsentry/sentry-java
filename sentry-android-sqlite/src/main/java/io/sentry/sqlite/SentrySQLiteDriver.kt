@@ -5,6 +5,7 @@ import androidx.sqlite.SQLiteDriver
 import io.sentry.ScopesAdapter
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel
+import org.jetbrains.annotations.ApiStatus
 
 /**
  * Wraps a [SQLiteDriver] and automatically adds spans for each SQL statement it executes.
@@ -28,13 +29,16 @@ import io.sentry.SentryLevel
  *
  * @param delegate The [SQLiteDriver] instance to delegate calls to.
  */
-internal class SentrySQLiteDriver private constructor(private val delegate: SQLiteDriver) :
+@ApiStatus.Experimental
+public class SentrySQLiteDriver private constructor(private val delegate: SQLiteDriver) :
   SQLiteDriver {
 
   init {
     SentryIntegrationPackageStorage.getInstance().addIntegration("SQLiteDriver")
   }
 
+  @Suppress("INAPPLICABLE_JVM_NAME")
+  @get:JvmName("hasConnectionPool")
   override val hasConnectionPool: Boolean
     get() =
       try {
@@ -66,14 +70,14 @@ internal class SentrySQLiteDriver private constructor(private val delegate: SQLi
     }
   }
 
-  companion object {
+  public companion object {
 
     /**
      * Wraps the provided delegate in a [SentrySQLiteDriver]. Returns the delegate as-is if already
      * wrapped.
      */
     @JvmStatic
-    fun create(delegate: SQLiteDriver): SQLiteDriver =
+    public fun create(delegate: SQLiteDriver): SQLiteDriver =
       delegate as? SentrySQLiteDriver ?: SentrySQLiteDriver(delegate)
   }
 }
