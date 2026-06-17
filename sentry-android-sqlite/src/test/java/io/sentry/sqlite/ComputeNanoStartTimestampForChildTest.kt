@@ -12,7 +12,7 @@ import kotlin.test.assertTrue
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 
-class ChildStartTimestampOrNullTest {
+class ComputeNanoStartTimestampForChildTest {
 
   @Test
   fun `returns parent wall clock plus elapsed monotonic time since parent started`() {
@@ -21,7 +21,7 @@ class ChildStartTimestampOrNullTest {
     val parentMonotonicNanos = System.nanoTime() - elapsedNanos
     val span = spanWithNanotimeStart(wallClockMillis, parentMonotonicNanos)
 
-    val timestamp = span.childStartTimestampOrNull()!!
+    val timestamp = span.computeNanoStartTimestampForChild()!!
 
     val elapsedSinceParentStart = timestamp - DateUtils.millisToNanos(wallClockMillis)
     assertTrue(elapsedSinceParentStart >= elapsedNanos)
@@ -43,8 +43,8 @@ class ChildStartTimestampOrNullTest {
       "Raw parent timestamps share the same ms-quantized value",
     )
 
-    val earlier = earlierSpan.childStartTimestampOrNull()!!
-    val later = laterSpan.childStartTimestampOrNull()!!
+    val earlier = earlierSpan.computeNanoStartTimestampForChild()!!
+    val later = laterSpan.computeNanoStartTimestampForChild()!!
 
     assertTrue(earlier > wallClockNanos)
     assertTrue(later > wallClockNanos)
@@ -59,7 +59,7 @@ class ChildStartTimestampOrNullTest {
     val span = spanWithNanotimeStart(wallClockMillis, parentMonotonicNanos)
 
     val elapsedSinceParentStart =
-      span.childStartTimestampOrNull()!! - DateUtils.millisToNanos(wallClockMillis)
+      span.computeNanoStartTimestampForChild()!! - DateUtils.millisToNanos(wallClockMillis)
     assertTrue(elapsedSinceParentStart >= 0L)
     assertTrue(elapsedSinceParentStart < TEST_SLACK_NANOS)
   }
@@ -72,7 +72,7 @@ class ChildStartTimestampOrNullTest {
     val span = spanWithNanotimeStart(wallClockMillis, parentMonotonicNanos)
 
     val elapsedSinceParentStart =
-      span.childStartTimestampOrNull()!! - DateUtils.millisToNanos(wallClockMillis)
+      span.computeNanoStartTimestampForChild()!! - DateUtils.millisToNanos(wallClockMillis)
     assertTrue(elapsedSinceParentStart >= elapsedNanos)
     assertTrue(elapsedSinceParentStart < elapsedNanos + TEST_SLACK_NANOS)
   }
@@ -82,7 +82,7 @@ class ChildStartTimestampOrNullTest {
     val span = mock<ISpan>()
     whenever(span.startDate).thenReturn(SentryLongDate(DateUtils.millisToNanos(1_000_000L)))
 
-    assertNull(span.childStartTimestampOrNull())
+    assertNull(span.computeNanoStartTimestampForChild())
   }
 
   private fun spanWithNanotimeStart(wallClockMillis: Long, parentMonotonicNanos: Long): ISpan {

@@ -38,7 +38,7 @@ internal class SQLiteSpanInstrumentation(
    */
   fun startTimestamp(): Long =
     // Try to retain nanosecond precision + avoid SentryDate allocation...
-    scopes.span?.childStartTimestampOrNull()
+    scopes.span?.computeNanoStartTimestampForChild()
       // ...otherwise fall back to millisecond precision + allocate.
       ?: scopes.options.dateProvider.now().nanoTimestamp()
 
@@ -111,7 +111,7 @@ internal class SQLiteSpanInstrumentation(
  * END TRANSACTION                     ├███┤   0.33 ms
  * ```
  */
-internal fun ISpan.childStartTimestampOrNull(): Long? {
+internal fun ISpan.computeNanoStartTimestampForChild(): Long? {
   if (startDate !is SentryNanotimeDate) {
     return null
   }
