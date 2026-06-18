@@ -5,6 +5,7 @@ import androidx.sqlite.SQLiteDriver
 import io.sentry.ScopesAdapter
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel
+import io.sentry.util.CompileOnlyCompat.CompileOnlyCall
 
 /**
  * Wraps a [SQLiteDriver] and automatically adds spans for each SQL statement it executes.
@@ -36,13 +37,7 @@ internal class SentrySQLiteDriver private constructor(private val delegate: SQLi
   }
 
   override val hasConnectionPool: Boolean
-    get() =
-      try {
-        delegate.hasConnectionPool
-      } catch (_: LinkageError) {
-        // Delegates on androidx.sqlite < 2.6.0 won't have a hasConnectionPool property.
-        false
-      }
+    get() = CompileOnlyCall { delegate.hasConnectionPool }.ifAbsent(false)
 
   @Suppress("TooGenericExceptionCaught")
   override fun open(fileName: String): SQLiteConnection {

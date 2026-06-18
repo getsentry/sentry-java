@@ -10,6 +10,7 @@ package io.sentry.android.replay.viewhierarchy
 
 import androidx.compose.ui.node.LayoutNode
 import androidx.compose.ui.node.NodeCoordinator
+import io.sentry.util.CompileOnlyCompat.CompileOnlyCall
 import java.lang.reflect.Method
 
 /**
@@ -41,17 +42,13 @@ internal object SentryLayoutNodeHelper {
   fun getChildren(node: LayoutNode): List<LayoutNode> {
     when (useFallback) {
       false -> return node.children
-      true -> {
-        return getFallback().getChildren!!.invoke(node) as List<LayoutNode>
-      }
-      null -> {
-        try {
-          return node.children.also { useFallback = false }
-        } catch (_: NoSuchMethodError) {
-          useFallback = true
-          return getFallback().getChildren!!.invoke(node) as List<LayoutNode>
-        }
-      }
+      true -> return getFallback().getChildren!!.invoke(node) as List<LayoutNode>
+      null ->
+        return CompileOnlyCall { node.children.also { useFallback = false } }
+          .ifAbsent {
+            useFallback = true
+            getFallback().getChildren!!.invoke(node) as List<LayoutNode>
+          }
     }
   }
 
@@ -63,16 +60,16 @@ internal object SentryLayoutNodeHelper {
         val coordinator = fb.getOuterCoordinator!!.invoke(node) as NodeCoordinator
         return coordinator.isTransparent()
       }
-      null -> {
-        try {
-          return node.outerCoordinator.isTransparent().also { useFallback = false }
-        } catch (_: NoSuchMethodError) {
-          useFallback = true
-          val fb = getFallback()
-          val coordinator = fb.getOuterCoordinator!!.invoke(node) as NodeCoordinator
-          return coordinator.isTransparent()
-        }
-      }
+      null ->
+        return CompileOnlyCall {
+            node.outerCoordinator.isTransparent().also { useFallback = false }
+          }
+          .ifAbsent {
+            useFallback = true
+            val fb = getFallback()
+            val coordinator = fb.getOuterCoordinator!!.invoke(node) as NodeCoordinator
+            coordinator.isTransparent()
+          }
     }
   }
 

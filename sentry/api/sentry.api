@@ -7628,6 +7628,19 @@ public abstract interface class io/sentry/util/CollectionUtils$Predicate {
 	public abstract fun test (Ljava/lang/Object;)Z
 }
 
+public final class io/sentry/util/CompileOnlyCompat {
+}
+
+public abstract interface class io/sentry/util/CompileOnlyCompat$CompileOnlyCall {
+	public abstract fun call ()Ljava/lang/Object;
+	public fun ifAbsent (Lio/sentry/util/CompileOnlyCompat$Fallback;)Ljava/lang/Object;
+	public fun ifAbsent (Ljava/lang/Object;)Ljava/lang/Object;
+}
+
+public abstract interface class io/sentry/util/CompileOnlyCompat$Fallback {
+	public abstract fun call (Ljava/lang/LinkageError;)Ljava/lang/Object;
+}
+
 public final class io/sentry/util/DebugMetaPropertiesApplier {
 	public static field DEBUG_META_PROPERTIES_FILENAME Ljava/lang/String;
 	public fun <init> ()V
