@@ -3,17 +3,21 @@ package io.sentry.android.sqlite
 import android.database.CrossProcessCursor
 import android.database.SQLException
 import io.sentry.IScopes
+import io.sentry.ISpan
+import io.sentry.Instrumenter
 import io.sentry.ScopesAdapter
 import io.sentry.SentryIntegrationPackageStorage
+import io.sentry.SentryStackTraceFactory
+import io.sentry.SpanDataConvention
 import io.sentry.SpanStatus
-import io.sentry.sqlite.SQLiteSpanInstrumentation
+
+private const val TRACE_ORIGIN = "auto.db.sqlite"
 
 internal class SQLiteSpanManager(
   private val scopes: IScopes = ScopesAdapter.getInstance(),
-  databaseName: String? = null,
+  private val databaseName: String? = null,
 ) {
-
-  private val spans = SQLiteSpanInstrumentation.fromDatabaseName(databaseName, scopes)
+  private val stackTraceFactory = SentryStackTraceFactory(scopes.options)
 
   init {
     SentryIntegrationPackageStorage.getInstance().addIntegration("SQLite")
@@ -29,8 +33,8 @@ internal class SQLiteSpanManager(
   @Suppress("TooGenericExceptionCaught", "UNCHECKED_CAST")
   @Throws(SQLException::class)
   fun <T> performSql(sql: String, operation: () -> T): T {
-    val startTimestamp = spans.startTimestamp()
-
+    val startTimestamp = scopes.getOptions().dateProvider.now()
+    var span: ISpan? = null
     return try {
       val result = operation()
       /*
@@ -41,11 +45,34 @@ internal class SQLiteSpanManager(
       if (result is CrossProcessCursor) {
         return SentryCrossProcessCursor(result, this, sql) as T
       }
-      spans.recordSpan(sql, startTimestamp, SpanStatus.OK)
+      span = scopes.span?.startChild("db.sql.query", sql, startTimestamp, Instrumenter.SENTRY)
+      span?.spanContext?.origin = TRACE_ORIGIN
+      span?.status = SpanStatus.OK
       result
     } catch (e: Throwable) {
-      spans.recordSpan(sql, startTimestamp, SpanStatus.INTERNAL_ERROR, e)
+      span = scopes.span?.startChild("db.sql.query", sql, startTimestamp, Instrumenter.SENTRY)
+      span?.spanContext?.origin = TRACE_ORIGIN
+      span?.status = SpanStatus.INTERNAL_ERROR
+      span?.throwable = e
       throw e
+    } finally {
+      span?.apply {
+        val isMainThread: Boolean = scopes.options.threadChecker.isMainThread
+        setData(SpanDataConvention.BLOCKED_MAIN_THREAD_KEY, isMainThread)
+        if (isMainThread) {
+          setData(SpanDataConvention.CALL_STACK_KEY, stackTraceFactory.inAppCallStack)
+        }
+        // if db name is null, then it's an in-memory database as per
+        // https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:sqlite/sqlite/src/main/java/androidx/sqlite/db/SupportSQLiteOpenHelper.kt;l=38-42
+        if (databaseName != null) {
+          setData(SpanDataConvention.DB_SYSTEM_KEY, "sqlite")
+          setData(SpanDataConvention.DB_NAME_KEY, databaseName)
+        } else {
+          setData(SpanDataConvention.DB_SYSTEM_KEY, "in-memory")
+        }
+
+        finish()
+      }
     }
   }
 }

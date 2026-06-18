@@ -364,7 +364,7 @@ class SQLiteActivity : ComponentActivity() {
                 label = row.label,
                 color = integration.color,
                 variant = variant,
-                disabledReason = "${row.label} doesn't apply to the ${integration.apiName} stack",
+                disabledReason = "${row.label} doesn't support the ${integration.apiName} stack",
               )
             }
 
