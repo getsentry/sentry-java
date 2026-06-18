@@ -149,7 +149,7 @@ object SqlStatements {
 
   private suspend fun bridgeWithRoom2(context: Context, heavy: Boolean): String =
     roomDemo(SampleDatabases.bridgeRoom2Db(context).songDao(), "Bridge (Room 2)", heavy)
-    
+
   // --- 2. SentrySQLiteDriver, used through Room 2.7+ ----------------------------------------
 
   private suspend fun driverWithRoom2(context: Context, heavy: Boolean): String =
