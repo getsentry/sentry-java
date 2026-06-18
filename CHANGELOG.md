@@ -38,6 +38,7 @@
 
 ### Internal
 
+- Reduce writer buffer size from 8192 to 512 ([#5544](https://github.com/getsentry/sentry-java/pull/5544))
 - Remove redundant event map copies ([#5536](https://github.com/getsentry/sentry-java/pull/5536))
 
 ## 8.43.2
