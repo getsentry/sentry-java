@@ -1,7 +1,6 @@
 package io.sentry.sqlite
 
 import androidx.sqlite.SQLiteStatement
-import io.sentry.SentryLongDate
 import io.sentry.SpanStatus
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.test.Test
@@ -21,11 +20,11 @@ class SentrySQLiteStatementTest {
   private class Fixture {
     val mockStatement = mock<SQLiteStatement>()
     val mockSpans = mock<SQLiteSpanInstrumentation>()
-    val startDate = SentryLongDate(1_000_000_000_000L)
+    val startTimestampNanos = 1_000_000_000_000L
     val fakeClock = AtomicLong(0L)
 
     fun getSut(sql: String): SentrySQLiteStatement {
-      whenever(mockSpans.startTimestamp()).thenReturn(startDate)
+      whenever(mockSpans.startTimestamp()).thenReturn(startTimestampNanos)
       return SentrySQLiteStatement(mockStatement, mockSpans, sql, fakeClock::getAndIncrement)
     }
   }
@@ -43,7 +42,7 @@ class SentrySQLiteStatementTest {
     verify(fixture.mockSpans)
       .recordSpan(
         eq("SELECT * FROM users"),
-        eq(fixture.startDate),
+        eq(fixture.startTimestampNanos),
         any(),
         eq(SpanStatus.OK),
         anyOrNull(),
@@ -61,7 +60,7 @@ class SentrySQLiteStatementTest {
     verify(fixture.mockSpans)
       .recordSpan(
         eq("BAD SQL"),
-        eq(fixture.startDate),
+        eq(fixture.startTimestampNanos),
         any(),
         eq(SpanStatus.INTERNAL_ERROR),
         eq(exception),

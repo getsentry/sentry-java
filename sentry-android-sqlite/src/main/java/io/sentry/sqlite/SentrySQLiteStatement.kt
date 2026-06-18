@@ -1,7 +1,6 @@
 package io.sentry.sqlite
 
 import androidx.sqlite.SQLiteStatement
-import io.sentry.SentryDate
 import io.sentry.SpanStatus
 
 /**
@@ -22,7 +21,7 @@ internal class SentrySQLiteStatement(
   private val nanoTimeProvider: () -> Long = { System.nanoTime() },
 ) : SQLiteStatement by delegate {
 
-  private var firstStepTimestamp: SentryDate? = null
+  private var firstStepTimestampNanos: Long? = null
   private var accumulatedDbNanos: Long = 0L
   private var stepsComplete = false
   private var closed = false
@@ -35,8 +34,8 @@ internal class SentrySQLiteStatement(
 
     val beforeNanos = nanoTimeProvider()
     return try {
-      if (firstStepTimestamp == null) {
-        firstStepTimestamp = spans.startTimestamp()
+      if (firstStepTimestampNanos == null) {
+        firstStepTimestampNanos = spans.startTimestamp()
       }
 
       stepsComplete = !delegate.step()
@@ -71,10 +70,10 @@ internal class SentrySQLiteStatement(
   }
 
   private fun recordSpan(status: SpanStatus, throwable: Throwable? = null) {
-    val start = firstStepTimestamp ?: return
+    val startNanos = firstStepTimestampNanos ?: return
     val duration = accumulatedDbNanos
-    firstStepTimestamp = null
+    firstStepTimestampNanos = null
     accumulatedDbNanos = 0L
-    spans.recordSpan(sql, start, duration, status, throwable)
+    spans.recordSpan(sql, startNanos, duration, status, throwable)
   }
 }

@@ -14,14 +14,6 @@ class DbMetadataTest {
   }
 
   @Test
-  fun `dbMetadataFromDatabaseName returns in-memory system with no db name when databaseName is null`() {
-    assertEquals(
-      DbMetadata(name = null, system = DB_SYSTEM_IN_MEMORY),
-      dbMetadataFromDatabaseName(null),
-    )
-  }
-
-  @Test
   fun `dbMetadataFromFileName returns sqlite system and db name for unix path`() {
     assertEquals(
       DbMetadata(name = "tracks.db", system = DB_SYSTEM_SQLITE),

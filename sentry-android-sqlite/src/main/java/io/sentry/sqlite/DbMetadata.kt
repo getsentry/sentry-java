@@ -36,14 +36,3 @@ internal fun dbMetadataFromFileName(fileName: String): DbMetadata {
   val basename = if (index >= 0) trimmed.substring(index + 1) else trimmed
   return DbMetadata(name = basename.ifEmpty { null }, system = DB_SYSTEM_SQLITE)
 }
-
-/**
- * Returns metadata based on
- * [SupportSQLiteOpenHelper.databaseName][androidx.sqlite.db.SupportSQLiteOpenHelper.databaseName].
- */
-internal fun dbMetadataFromDatabaseName(databaseName: String?): DbMetadata =
-  if (databaseName == null) {
-    DbMetadata(name = null, system = DB_SYSTEM_IN_MEMORY)
-  } else {
-    DbMetadata(name = databaseName, system = DB_SYSTEM_SQLITE)
-  }
