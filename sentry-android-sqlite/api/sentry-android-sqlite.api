@@ -25,8 +25,7 @@ public final class io/sentry/sqlite/SentrySQLiteDriver : androidx/sqlite/SQLiteD
 	public static final field Companion Lio/sentry/sqlite/SentrySQLiteDriver$Companion;
 	public synthetic fun <init> (Landroidx/sqlite/SQLiteDriver;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public static final fun create (Landroidx/sqlite/SQLiteDriver;)Landroidx/sqlite/SQLiteDriver;
-	public fun getHasConnectionPool ()Z
-	public synthetic fun hasConnectionPool ()Z
+	public fun hasConnectionPool ()Z
 	public fun open (Ljava/lang/String;)Landroidx/sqlite/SQLiteConnection;
 }
 
