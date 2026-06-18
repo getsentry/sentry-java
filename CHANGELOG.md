@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixes
+
+- Fix `FirstDrawDoneListener` leaking an `OnGlobalLayoutListener` per registration ([#5567](https://github.com/getsentry/sentry-java/pull/5567))
+
 ### Features
 
 - Add experimental `SentrySQLiteDriver` to `sentry-android-sqlite` for instrumenting `androidx.sqlite.SQLiteDriver` ([#5563](https://github.com/getsentry/sentry-java/pull/5563))
