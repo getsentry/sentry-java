@@ -110,6 +110,38 @@ class CombinedScopeViewTest {
   }
 
   @Test
+  fun `returns single non-empty combined collections directly`() {
+    val globalScope = mock<IScope>()
+    val isolationScope = mock<IScope>()
+    val scope = mock<IScope>()
+    val combined = CombinedScopeView(globalScope, isolationScope, scope)
+
+    val tags = mapOf("tag" to "value")
+    whenever(globalScope.tags).thenReturn(emptyMap())
+    whenever(isolationScope.tags).thenReturn(emptyMap())
+    whenever(scope.tags).thenReturn(tags)
+    assertSame(tags, combined.tags)
+
+    val attributes = mapOf("attribute" to SentryAttribute.named("attribute", "value"))
+    whenever(globalScope.attributes).thenReturn(emptyMap())
+    whenever(isolationScope.attributes).thenReturn(emptyMap())
+    whenever(scope.attributes).thenReturn(attributes)
+    assertSame(attributes, combined.attributes)
+
+    val extras = mapOf<String, Any>("extra" to "value")
+    whenever(globalScope.extras).thenReturn(emptyMap())
+    whenever(isolationScope.extras).thenReturn(emptyMap())
+    whenever(scope.extras).thenReturn(extras)
+    assertSame(extras, combined.extras)
+
+    val attachments = listOf(createAttachment("attachment.png"))
+    whenever(globalScope.attachments).thenReturn(emptyList())
+    whenever(isolationScope.attachments).thenReturn(emptyList())
+    whenever(scope.attachments).thenReturn(attachments)
+    assertSame(attachments, combined.attachments)
+  }
+
+  @Test
   fun `oldest breadcrumbs are dropped first`() {
     val options = SentryOptions().also { it.maxBreadcrumbs = 5 }
     val combined = fixture.getSut(options)
