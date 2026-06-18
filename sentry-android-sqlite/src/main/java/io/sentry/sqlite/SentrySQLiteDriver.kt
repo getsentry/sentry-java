@@ -5,6 +5,7 @@ import androidx.sqlite.SQLiteDriver
 import io.sentry.ScopesAdapter
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel
+import org.jetbrains.annotations.ApiStatus
 
 /**
  * Wraps a [SQLiteDriver] and automatically adds spans for each SQL statement it executes.
@@ -21,12 +22,9 @@ import io.sentry.SentryLevel
  *     .build()
  * ```
  *
- * Note: In order to avoid duplicate spans, wrapping no-ops in the case of the
- * `androidx.sqlite.driver.SupportSQLiteDriver`. Wrap the open helper passed to its constructor via
- * `SentrySupportSQLiteOpenHelper` instead.
- *
  * @param delegate The [SQLiteDriver] instance to delegate calls to.
  */
+@ApiStatus.Experimental
 public class SentrySQLiteDriver private constructor(private val delegate: SQLiteDriver) :
   SQLiteDriver {
 
@@ -34,6 +32,8 @@ public class SentrySQLiteDriver private constructor(private val delegate: SQLite
     SentryIntegrationPackageStorage.getInstance().addIntegration("SQLiteDriver")
   }
 
+  @Suppress("INAPPLICABLE_JVM_NAME")
+  @get:JvmName("hasConnectionPool")
   override val hasConnectionPool: Boolean
     get() =
       try {
@@ -78,6 +78,16 @@ public class SentrySQLiteDriver private constructor(private val delegate: SQLite
      */
     private const val SUPPORT_SQLITE_DRIVER_FQN = "androidx.sqlite.driver.SupportSQLiteDriver"
 
+    /**
+     * Wraps the provided delegate in a [SentrySQLiteDriver].
+     *
+     * To avoid duplicate spans, returns the delegate as-is if:
+     * 1. it's already wrapped, or
+     * 2. it's an `androidx.sqlite.driver.SupportSQLiteDriver`.
+     *
+     * In the case of (2), wrap the open helper passed to the `SupportSQLiteDriver` constructor via
+     * `SentrySupportSQLiteOpenHelper` instead.
+     */
     @JvmStatic
     public fun create(delegate: SQLiteDriver): SQLiteDriver =
       if (delegate is SentrySQLiteDriver || delegate.javaClass.name == SUPPORT_SQLITE_DRIVER_FQN) {

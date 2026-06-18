@@ -1,6 +1,10 @@
 package io.sentry.sqlite
 
 import io.sentry.IScopes
+import io.sentry.ISpan
+import io.sentry.SentryDateProvider
+import io.sentry.SentryLongDate
+import io.sentry.SentryNanotimeDate
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer
 import io.sentry.SpanDataConvention
@@ -10,6 +14,7 @@ import io.sentry.util.thread.IThreadChecker
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -39,6 +44,63 @@ class SQLiteSpanInstrumentationTest {
   }
 
   private val fixture = Fixture()
+
+  @Test
+  fun `startTimestamp is ns-precise and skips date provider when parent uses SentryNanotimeDate`() {
+    // Only the parent date is queued. If startTimestamp() were to call dateProvider.now(),
+    // the queue would underflow and the test would fail loudly — this is what verifies the
+    // optimization is in effect.
+    val parentDate = SentryNanotimeDate(1_000_000L, 100_000_000L)
+    val sut = setUpWithNanotimeDates(parentDate)
+
+    val start = sut.startTimestamp()
+
+    val durationNanos = 42_000_000L
+    sut.recordSpan("SELECT 1", start, durationNanos, SpanStatus.OK)
+
+    val span = fixture.sentryTracer.children.first()
+
+    // startTimestamp returns an already-ns-precise value, anchored to the parent's wall clock and
+    // offset by elapsed System.nanoTime(). The exact ns-math is unit-tested in
+    // ChildStartTimestampOrNullTest; here we verify the integration shape.
+    assertIs<SentryLongDate>(span.startDate)
+    assertEquals(start, span.startDate.nanoTimestamp())
+    assertEquals(start + durationNanos, span.finishDate!!.nanoTimestamp())
+  }
+
+  @Test
+  fun `startTimestamp falls back to date provider when parent does not use SentryNanotimeDate`() {
+    val providerDate = SentryNanotimeDate(2_000_000L, 200_000_000L)
+    val parentSpan = mock<ISpan>()
+    whenever(parentSpan.startDate).thenReturn(SentryLongDate(1_000_000_000_000_000L))
+    val options =
+      SentryOptions().apply {
+        dsn = "https://key@sentry.io/proj"
+        dateProvider = SentryDateProvider { providerDate }
+      }
+    whenever(fixture.scopes.options).thenReturn(options)
+    whenever(fixture.scopes.span).thenReturn(parentSpan)
+
+    val sut = SQLiteSpanInstrumentation.fromFileName(":memory:", fixture.scopes)
+
+    assertEquals(providerDate.nanoTimestamp(), sut.startTimestamp())
+  }
+
+  @Test
+  fun `startTimestamp falls back to date provider when no transaction is active`() {
+    val providerDate = SentryNanotimeDate(2_000_000L, 200_000_000L)
+    val options =
+      SentryOptions().apply {
+        dsn = "https://key@sentry.io/proj"
+        dateProvider = SentryDateProvider { providerDate }
+      }
+    whenever(fixture.scopes.options).thenReturn(options)
+    whenever(fixture.scopes.span).thenReturn(null)
+
+    val sut = SQLiteSpanInstrumentation.fromFileName(":memory:", fixture.scopes)
+
+    assertEquals(providerDate.nanoTimestamp(), sut.startTimestamp())
+  }
 
   @Test
   fun `recordSpan records a span if a transaction is active`() {
@@ -79,7 +141,6 @@ class SQLiteSpanInstrumentationTest {
     sut.recordSpan("SELECT 1", start, durationNanos, SpanStatus.OK)
 
     val span = fixture.sentryTracer.children.first()
-    assertEquals(start, span.startDate)
     assertEquals(span.startDate.nanoTimestamp() + durationNanos, span.finishDate!!.nanoTimestamp())
   }
 
@@ -146,48 +207,16 @@ class SQLiteSpanInstrumentationTest {
     assertNull(span.getData(SpanDataConvention.CALL_STACK_KEY))
   }
 
-  @Test
-  fun `recordSpan without a duration finishes the span at the time of invocation`() {
-    val sut = fixture.getSut()
-    val start = sut.startTimestamp()
-
-    sut.recordSpan("SELECT 1", start, SpanStatus.OK)
-
-    val span = fixture.sentryTracer.children.first()
-    assertTrue(span.isFinished)
-    assertEquals(SpanStatus.OK, span.status)
-    // Unlike the duration overload, no synthetic end timestamp is supplied; the span finishes at
-    // "now", i.e. at or after its start.
-    assertTrue(span.finishDate!!.nanoTimestamp() >= start.nanoTimestamp())
-  }
-
-  @Test
-  fun `fromFileName sets db name from fileName`() {
-    val options = SentryOptions().apply { dsn = "https://key@sentry.io/proj" }
+  private fun setUpWithNanotimeDates(vararg dates: SentryNanotimeDate): SQLiteSpanInstrumentation {
+    val dateQueue = ArrayDeque(dates.toList())
+    val options =
+      SentryOptions().apply {
+        dsn = "https://key@sentry.io/proj"
+        dateProvider = SentryDateProvider { dateQueue.removeFirst() }
+      }
     whenever(fixture.scopes.options).thenReturn(options)
     fixture.sentryTracer = SentryTracer(TransactionContext("name", "op"), fixture.scopes)
     whenever(fixture.scopes.span).thenReturn(fixture.sentryTracer)
-
-    val sut = SQLiteSpanInstrumentation.fromFileName("tracks.db", fixture.scopes)
-    sut.recordSpan("SELECT 1", sut.startTimestamp(), SpanStatus.OK)
-
-    val span = fixture.sentryTracer.children.first()
-    assertEquals("sqlite", span.data[SpanDataConvention.DB_SYSTEM_KEY])
-    assertEquals("tracks.db", span.data[SpanDataConvention.DB_NAME_KEY])
-  }
-
-  @Test
-  fun `fromDatabaseName sets db name from databaseName`() {
-    val options = SentryOptions().apply { dsn = "https://key@sentry.io/proj" }
-    whenever(fixture.scopes.options).thenReturn(options)
-    fixture.sentryTracer = SentryTracer(TransactionContext("name", "op"), fixture.scopes)
-    whenever(fixture.scopes.span).thenReturn(fixture.sentryTracer)
-
-    val sut = SQLiteSpanInstrumentation.fromDatabaseName("tracks.db", fixture.scopes)
-    sut.recordSpan("SELECT 1", sut.startTimestamp(), SpanStatus.OK)
-
-    val span = fixture.sentryTracer.children.first()
-    assertEquals("sqlite", span.data[SpanDataConvention.DB_SYSTEM_KEY])
-    assertEquals("tracks.db", span.data[SpanDataConvention.DB_NAME_KEY])
+    return SQLiteSpanInstrumentation.fromFileName(":memory:", fixture.scopes)
   }
 }

@@ -3,7 +3,6 @@ package io.sentry.sqlite
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.SQLiteDriver
 import androidx.sqlite.SQLiteStatement
-import androidx.sqlite.driver.SupportSQLiteDriver
 import io.sentry.IScopes
 import io.sentry.Sentry
 import io.sentry.SentryIntegrationPackageStorage

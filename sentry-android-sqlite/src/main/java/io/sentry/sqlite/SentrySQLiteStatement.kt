@@ -1,7 +1,6 @@
 package io.sentry.sqlite
 
 import androidx.sqlite.SQLiteStatement
-import io.sentry.SentryDate
 import io.sentry.SpanStatus
 
 /**
@@ -9,10 +8,9 @@ import io.sentry.SpanStatus
  * statement's lifetime (until [step] iteration is complete or the statement is [reset] or
  * [closed][close]).
  *
- * Span duration is purposefully restricted to accumulated database time, i.e., each [step] call is
- * individually timed and the durations are summed. Time the application spends between steps (e.g.,
- * processing rows, sleeping, or doing I/O) is intentionally excluded so the span accurately
- * represents how long SQLite itself was working.
+ * Span duration is restricted to accumulated database time, i.e., each [step] call is individually
+ * timed and the durations are summed. Time the application spends between steps (e.g., processing
+ * rows, sleeping, or doing I/O) is intentionally excluded.
  *
  * Not thread-safe: assumes sequential access within each SQL statement (normal SQLite usage).
  */
@@ -23,7 +21,7 @@ internal class SentrySQLiteStatement(
   private val nanoTimeProvider: () -> Long = { System.nanoTime() },
 ) : SQLiteStatement by delegate {
 
-  private var firstStepTimestamp: SentryDate? = null
+  private var firstStepTimestampNanos: Long? = null
   private var accumulatedDbNanos: Long = 0L
   private var stepsComplete = false
   private var closed = false
@@ -36,8 +34,8 @@ internal class SentrySQLiteStatement(
 
     val beforeNanos = nanoTimeProvider()
     return try {
-      if (firstStepTimestamp == null) {
-        firstStepTimestamp = spans.startTimestamp()
+      if (firstStepTimestampNanos == null) {
+        firstStepTimestampNanos = spans.startTimestamp()
       }
 
       stepsComplete = !delegate.step()
@@ -72,10 +70,10 @@ internal class SentrySQLiteStatement(
   }
 
   private fun recordSpan(status: SpanStatus, throwable: Throwable? = null) {
-    val start = firstStepTimestamp ?: return
+    val startNanos = firstStepTimestampNanos ?: return
     val duration = accumulatedDbNanos
-    firstStepTimestamp = null
+    firstStepTimestampNanos = null
     accumulatedDbNanos = 0L
-    spans.recordSpan(sql, start, duration, status, throwable)
+    spans.recordSpan(sql, startNanos, duration, status, throwable)
   }
 }

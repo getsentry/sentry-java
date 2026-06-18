@@ -315,6 +315,35 @@ limitations under the License.
 
 ---
 
+## Android Open Source Project — Jetpack Compose UI (Apache 2.0)
+
+**Source:** https://github.com/androidx/androidx/blob/fc7df0dd68466ac3bb16b1c79b7a73dd0bfdd4c1/compose/ui/ui/src/commonMain/kotlin/androidx/compose/ui/layout/LayoutCoordinates.kt#L187<br>
+**Source:** https://github.com/androidx/androidx/blob/androidx-main/compose/ui/ui-util/src/commonMain/kotlin/androidx/compose/ui/util/MathHelpers.kt<br>
+**License:** Apache License 2.0<br>
+**Copyright:** Copyright (C) 2019, 2020 The Android Open Source Project
+
+### Scope
+
+The Sentry Android Replay SDK includes code adapted from Jetpack Compose UI, used to compute Compose node bounds while traversing the view hierarchy for masking. The code resides in `io.sentry.android.replay.util.Nodes`: the `boundsInWindow` extension function (a faster copy of `LayoutCoordinates.boundsInWindow`) and the `fastMinOf`, `fastMaxOf`, `fastCoerceIn`, `fastCoerceAtLeast`, and `fastCoerceAtMost` numeric helpers (copied from `androidx.compose.ui.util.MathHelpers`).
+
+```
+Copyright (C) 2019, 2020 The Android Open Source Project
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+```
+
+---
+
 ## OpenTelemetry (Apache 2.0)
 
 **Source:** https://github.com/open-telemetry/opentelemetry-java (Commit: 0aacc55d1e3f5cc6dbb4f8fa26bcb657b01a7bc9)<br>

@@ -119,26 +119,6 @@ object SqlStatements {
       if (statement.step()) statement.getLong(0) else 0
     }
 
-  // --- 2. SentrySQLiteDriver, used through Room 2.7+ ----------------------------------------
-
-  private suspend fun driverWithRoom2(context: Context, heavy: Boolean): String =
-    roomDemo(SampleDatabases.driverRoom2Db(context).songDao(), "Driver (Room 2)", heavy)
-
-  /**
-   * Shared Room 2 demo so the driver and open-helper paths run *identical* SQL. The only difference
-   * is how each integration instruments it: the driver spans every read, while the open helper's
-   * Room reads go via `moveToNext()` and emit no span, so only the INSERTs are spanned.
-   */
-  private suspend fun roomDemo(dao: SongDao, label: String, heavy: Boolean): String {
-    dao.insert(SongEntity(title = "Spiders (Kidsmoke)", artist = "Wilco"))
-    if (heavy) {
-      // Batch insert: one insertAll() runs all rows in a single transaction, vs. a per-row loop.
-      dao.insertAll(List(HEAVY_ROW_COUNT) { SongEntity(title = "song $it", artist = "artist $it") })
-      dao.getAll().forEach { appWork("${it.id}:${it.title}:${it.artist}") }
-    }
-    return "$label: ${dao.count()} rows."
-  }
-
   // --- 1b. SupportSQLiteDriver bridge (helper + driver both wrapped; SDK skips driver wrap) --
 
   private fun bridgeDirect(context: Context, heavy: Boolean): String =
@@ -169,6 +149,26 @@ object SqlStatements {
 
   private suspend fun bridgeWithRoom2(context: Context, heavy: Boolean): String =
     roomDemo(SampleDatabases.bridgeRoom2Db(context).songDao(), "Bridge (Room 2)", heavy)
+    
+  // --- 2. SentrySQLiteDriver, used through Room 2.7+ ----------------------------------------
+
+  private suspend fun driverWithRoom2(context: Context, heavy: Boolean): String =
+    roomDemo(SampleDatabases.driverRoom2Db(context).songDao(), "Driver (Room 2)", heavy)
+
+  /**
+   * Shared Room 2 demo so the driver and open-helper paths run *identical* SQL. The only difference
+   * is how each integration instruments it: the driver spans every read, while the open helper's
+   * Room reads go via `moveToNext()` and emit no span, so only the INSERTs are spanned.
+   */
+  private suspend fun roomDemo(dao: SongDao, label: String, heavy: Boolean): String {
+    dao.insert(SongEntity(title = "Spiders (Kidsmoke)", artist = "Wilco"))
+    if (heavy) {
+      // Batch insert: one insertAll() runs all rows in a single transaction, vs. a per-row loop.
+      dao.insertAll(List(HEAVY_ROW_COUNT) { SongEntity(title = "song $it", artist = "artist $it") })
+      dao.getAll().forEach { appWork("${it.id}:${it.title}:${it.artist}") }
+    }
+    return "$label: ${dao.count()} rows."
+  }
 
   // --- 2b. SentrySQLiteDriver, used through Room 3.0+ (androidx.room3) -----------------------
 

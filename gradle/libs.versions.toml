@@ -4,20 +4,19 @@ androidxLifecycle = "2.2.0"
 androidxNavigation = "2.4.2"
 androidxTestCore = "1.7.0"
 androidxCompose = "1.6.3"
-asyncProfiler = "4.2"
+asyncProfiler = "4.4"
 camerax = "1.4.0"
 composeCompiler = "1.5.14"
 coroutines = "1.6.1"
 espresso = "3.7.0"
 feign = "11.6"
 gummyBears = "0.12.0"
-jacoco = "0.8.7"
 jackson = "2.18.3"
 jetbrainsCompose = "1.6.11"
 kotlin = "2.2.0"
 kotlinSpring7 = "2.2.0"
 kotlin-compatible-version = "1.9"
-ksp = "2.2.0-2.0.2"
+ksp = "2.3.9"
 ktorClient = "3.0.0"
 logback = "1.2.9"
 log4j2 = "2.20.0"
@@ -35,6 +34,7 @@ otelSemanticConventionsAlpha = "1.40.0-alpha"
 retrofit = "2.9.0"
 room2 = "2.8.4"
 room3 = "3.0.0-alpha06"
+sagp = "6.10.0"
 sqlite = "2.6.2"
 sqliteAlpha = "2.7.0-alpha06" # Required by Room3 3.0.0-alpha*
 slf4j = "1.7.30"
@@ -66,8 +66,6 @@ errorprone = { id = "net.ltgt.errorprone", version = "3.0.1" }
 gradle-versions = { id = "com.github.ben-manes.versions", version = "0.42.0" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version = "1.23.8" }
-jacoco-android = { id = "com.mxalbert.gradle.jacoco-android", version = "0.2.0" }
-kover = { id = "org.jetbrains.kotlinx.kover", version = "0.7.3" }
 vanniktech-maven-publish = { id = "com.vanniktech.maven.publish", version = "0.30.0" }
 springboot3 = { id = "org.springframework.boot", version.ref = "springboot3" }
 springboot4 = { id = "org.springframework.boot", version.ref = "springboot4" }
@@ -75,7 +73,7 @@ spring-dependency-management = { id = "io.spring.dependency-management", version
 sqldelight = { id = "app.cash.sqldelight", version.ref = "sqldelight" }
 gretty = { id = "org.gretty", version = "4.0.0" }
 animalsniffer = { id = "ru.vyarus.animalsniffer", version = "2.0.1" }
-sentry = { id = "io.sentry.android.gradle", version = "6.6.0"}
+sentry = { id = "io.sentry.android.gradle", version.ref = "sagp"}
 shadow = { id = "com.gradleup.shadow", version = "9.4.1" }
 
 [libraries]
@@ -168,7 +166,7 @@ quartz = { module = "org.quartz-scheduler:quartz", version = "2.3.0" }
 reactor-core = { module = "io.projectreactor:reactor-core", version = "3.5.3" }
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 retrofit-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "retrofit" }
-sentry-native-ndk = { module = "io.sentry:sentry-native-ndk", version = "0.14.2" }
+sentry-native-ndk = { module = "io.sentry:sentry-native-ndk", version = "0.15.0" }
 servlet-api = { module = "javax.servlet:javax.servlet-api", version = "3.1.0" }
 servlet-jakarta-api = { module = "jakarta.servlet:jakarta.servlet-api", version = "6.1.0" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
@@ -255,6 +253,7 @@ camerax-camera2 = { module = "androidx.camera:camera-camera2", version.ref = "ca
 camerax-lifecycle = { module = "androidx.camera:camera-lifecycle", version.ref = "camerax" }
 camerax-view = { module = "androidx.camera:camera-view", version.ref = "camerax" }
 
+google-truth = { module = "com.google.truth:truth", version = "1.4.5" }
 hsqldb = { module = "org.hsqldb:hsqldb", version = "2.6.1" }
 javafaker = { module = "com.github.javafaker:javafaker", version = "1.0.2" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }

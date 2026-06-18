@@ -1,6 +1,7 @@
 package io.sentry.android.core
 
 import android.app.ActivityManager
+import android.app.ActivityManager.RunningAppProcessInfo
 import android.app.ApplicationStartInfo
 import android.os.Build
 import org.robolectric.annotation.Implementation
@@ -10,13 +11,25 @@ import org.robolectric.annotation.Implements
 class SentryShadowActivityManager {
   companion object {
     private var historicalProcessStartReasons: List<ApplicationStartInfo> = emptyList()
+    private var importance: Int = RunningAppProcessInfo.IMPORTANCE_FOREGROUND
 
     fun setHistoricalProcessStartReasons(startReasons: List<ApplicationStartInfo>) {
       historicalProcessStartReasons = startReasons
     }
 
+    fun setImportance(importance: Int) {
+      this.importance = importance
+    }
+
     fun reset() {
       historicalProcessStartReasons = emptyList()
+      importance = RunningAppProcessInfo.IMPORTANCE_FOREGROUND
+    }
+
+    @Implementation
+    @JvmStatic
+    fun getMyMemoryState(outState: RunningAppProcessInfo) {
+      outState.importance = importance
     }
   }
 
