@@ -4,7 +4,7 @@
 
 ### Behavioral Changes
 
-- Collections returned by scope (e.g. `getBreadcrumbs`) are shared state and should not be mutated. ([#5541](https://github.com/getsentry/sentry-java/pull/5541))
+- Collections returned by scope (e.g. `getBreadcrumbs`, `getTags`, `getAttachments`) are shared state and should not be mutated. ([#5541](https://github.com/getsentry/sentry-java/pull/5541))
   - Previously, when going through `CombinedScopeView`, we were returning a copy where mutations didn't show up in the underlying scopes.
   - This has now changed in order to reduce SDK overhead.
 
