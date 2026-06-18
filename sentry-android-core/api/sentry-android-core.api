@@ -392,6 +392,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun isEnablePerformanceV2 ()Z
 	public fun isEnableRootCheck ()Z
 	public fun isEnableScopeSync ()Z
+	public fun isEnableStandaloneAppStartTracing ()Z
 	public fun isEnableSystemEventBreadcrumbs ()Z
 	public fun isEnableSystemEventBreadcrumbsExtras ()Z
 	public fun isReportHistoricalAnrs ()Z
@@ -423,6 +424,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun setEnablePerformanceV2 (Z)V
 	public fun setEnableRootCheck (Z)V
 	public fun setEnableScopeSync (Z)V
+	public fun setEnableStandaloneAppStartTracing (Z)V
 	public fun setEnableSystemEventBreadcrumbs (Z)V
 	public fun setEnableSystemEventBreadcrumbsExtras (Z)V
 	public fun setFrameMetricsCollector (Lio/sentry/android/core/internal/util/SentryFrameMetricsCollector;)V
@@ -740,11 +742,16 @@ public class io/sentry/android/core/performance/AppStartMetrics : io/sentry/andr
 	public fun clear ()V
 	public fun createProcessInitSpan ()Lio/sentry/android/core/performance/TimeSpan;
 	public fun getActivityLifecycleTimeSpans ()Ljava/util/List;
+	public fun getAppStartBaggageHeader ()Ljava/lang/String;
 	public fun getAppStartContinuousProfiler ()Lio/sentry/IContinuousProfiler;
+	public fun getAppStartEndTime ()Lio/sentry/SentryDate;
 	public fun getAppStartProfiler ()Lio/sentry/ITransactionProfiler;
 	public fun getAppStartSamplingDecision ()Lio/sentry/TracesSamplingDecision;
+	public fun getAppStartSentryTraceHeader ()Ljava/lang/String;
 	public fun getAppStartTimeSpan ()Lio/sentry/android/core/performance/TimeSpan;
+	public fun getAppStartTimeSpanForHeadless ()Lio/sentry/android/core/performance/TimeSpan;
 	public fun getAppStartTimeSpanWithFallback (Lio/sentry/android/core/SentryAndroidOptions;)Lio/sentry/android/core/performance/TimeSpan;
+	public fun getAppStartTraceId ()Lio/sentry/protocol/SentryId;
 	public fun getAppStartType ()Lio/sentry/android/core/performance/AppStartMetrics$AppStartType;
 	public fun getApplicationOnCreateTimeSpan ()Lio/sentry/android/core/performance/TimeSpan;
 	public fun getClassLoadedUptimeMs ()J
@@ -765,12 +772,18 @@ public class io/sentry/android/core/performance/AppStartMetrics : io/sentry/andr
 	public static fun onContentProviderPostCreate (Landroid/content/ContentProvider;)V
 	public fun registerLifecycleCallbacks (Landroid/app/Application;)V
 	public fun setAppLaunchedInForeground (Z)V
+	public fun setAppStartBaggageHeader (Ljava/lang/String;)V
 	public fun setAppStartContinuousProfiler (Lio/sentry/IContinuousProfiler;)V
+	public fun setAppStartEndTime (Lio/sentry/SentryDate;)V
 	public fun setAppStartProfiler (Lio/sentry/ITransactionProfiler;)V
 	public fun setAppStartSamplingDecision (Lio/sentry/TracesSamplingDecision;)V
+	public fun setAppStartSentryTraceHeader (Ljava/lang/String;)V
+	public fun setAppStartTraceId (Lio/sentry/protocol/SentryId;)V
 	public fun setAppStartType (Lio/sentry/android/core/performance/AppStartMetrics$AppStartType;)V
 	public fun setClassLoadedUptimeMs (J)V
+	public fun setHeadlessAppStartListener (Lio/sentry/android/core/performance/AppStartMetrics$HeadlessAppStartListener;)V
 	public fun shouldSendStartMeasurements ()Z
+	public fun shouldSendStartMeasurements (Z)Z
 }
 
 public final class io/sentry/android/core/performance/AppStartMetrics$AppStartType : java/lang/Enum {
@@ -779,6 +792,10 @@ public final class io/sentry/android/core/performance/AppStartMetrics$AppStartTy
 	public static final field WARM Lio/sentry/android/core/performance/AppStartMetrics$AppStartType;
 	public static fun valueOf (Ljava/lang/String;)Lio/sentry/android/core/performance/AppStartMetrics$AppStartType;
 	public static fun values ()[Lio/sentry/android/core/performance/AppStartMetrics$AppStartType;
+}
+
+public abstract interface class io/sentry/android/core/performance/AppStartMetrics$HeadlessAppStartListener {
+	public abstract fun onHeadlessAppStart ()V
 }
 
 public class io/sentry/android/core/performance/TimeSpan : java/lang/Comparable {

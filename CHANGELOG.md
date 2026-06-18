@@ -2,13 +2,44 @@
 
 ## Unreleased
 
+### Features
+
+- Add experimental `SentrySQLiteDriver` to `sentry-android-sqlite` for instrumenting `androidx.sqlite.SQLiteDriver` ([#5563](https://github.com/getsentry/sentry-java/pull/5563))
+  - To use it, pass `SQLiteDriver` to `SentrySQLiteDriver.create(...)`
+  - Requires `androidx.sqlite:sqlite` (2.5.0+) on runtime classpath (typically provided by Room or SQLDelight)
+
+## 8.44.0
+
+### Features
+
+- Add `enableStandaloneAppStartTracing` option to send app start as a standalone transaction instead of attaching it as a child span of the first activity transaction ([#5342](https://github.com/getsentry/sentry-java/pull/5342))
+  - Disabled by default; opt in via `options.isEnableStandaloneAppStartTracing = true` or manifest meta-data `io.sentry.standalone-app-start-tracing.enable`
+  - Emits a transaction named `App Start` with op `app.start`, carrying the existing app start measurements and phase spans (`process.load`, `contentprovider.load`, `application.load`, activity lifecycle spans) as direct children of the root
+  - The standalone transaction shares the same `traceId` as the first `ui.load` activity transaction so they remain linked in the trace view
+  - Also covers non-activity starts (broadcast receivers, services, content providers)
+
 ### Improvements
 
-- Reduce boxing to improve performance ([#5523](https://github.com/getsentry/sentry-java/pull/5523), [#5527](https://github.com/getsentry/sentry-java/pull/5527))
+- Reduce boxing to improve performance ([#5523](https://github.com/getsentry/sentry-java/pull/5523), [#5527](https://github.com/getsentry/sentry-java/pull/5527), [#5551](https://github.com/getsentry/sentry-java/pull/5551))
+- Replace `Date` with a unix timestamp in `SentryNanotimeDate` to improve performance ([#5550](https://github.com/getsentry/sentry-java/pull/5550))
+  - `SentryNanotimeDate` is now marked `@ApiStatus.Internal`. A new `(long unixDateMillis, long nanos)` constructor was added, where `unixDateMillis` is milliseconds since the epoch. The existing `(Date, long)` constructor is retained but deprecated.
+
+### Dependencies
+
+- Upgrade to asyncProfiler 4.4 ([#5418](https://github.com/getsentry/sentry-java/pull/5418))
+- Bump Native SDK from v0.14.2 to v0.15.0 ([#5528](https://github.com/getsentry/sentry-java/pull/5528))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0150)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.14.2...0.15.0)
 
 ### Fixes
 
+- Fix attachments being duplicated on native events that carry scope attachments ([#5548](https://github.com/getsentry/sentry-java/pull/5548))
 - Fix performance collector scheduling many tasks in a row ([#5524](https://github.com/getsentry/sentry-java/pull/5524))
+
+### Internal
+
+- Reduce writer buffer size from 8192 to 512 ([#5544](https://github.com/getsentry/sentry-java/pull/5544))
+- Remove redundant event map copies ([#5536](https://github.com/getsentry/sentry-java/pull/5536))
 
 ## 8.43.2
 

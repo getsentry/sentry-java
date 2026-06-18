@@ -535,6 +535,24 @@ class SentryClientTest {
   }
 
   @Test
+  fun `when captureEvent applies scope tags and extras, event map containers are copied`() {
+    val event = SentryEvent()
+    val scope = createScope()
+
+    val sut = fixture.getSut()
+
+    sut.captureEvent(event, scope)
+    val eventTags = event.tags!!
+    val eventExtras = event.extras!!
+
+    scope.setTag("newTag", "newValue")
+    scope.setExtra("newExtra", "newValue")
+
+    assertFalse(eventTags.containsKey("newTag"))
+    assertFalse(eventExtras.containsKey("newExtra"))
+  }
+
+  @Test
   fun `when breadcrumbs are not empty, sort them out by date`() {
     val b1 = Breadcrumb(DateUtils.getDateTime("2020-03-27T08:52:58.001Z"))
     val b2 = Breadcrumb(DateUtils.getDateTime("2020-03-27T08:52:58.002Z"))
@@ -868,6 +886,25 @@ class SentryClientTest {
     sut.captureEvent(event, scope, hints)
 
     assertEquals(scope.level, event.level)
+  }
+
+  @Test
+  fun `when hint is Cached, scope attachments are not added to avoid duplication`() {
+    val sut = fixture.getSut()
+
+    val event = createEvent()
+    val scope = createScopeWithAttachments()
+
+    val hints = HintUtils.createWithTypeCheckHint(CustomCachedApplyScopeDataHint())
+    sut.captureEvent(event, scope, hints)
+
+    verify(fixture.transport)
+      .send(
+        check { actual ->
+          assertEquals(0, actual.items.count { it.header.type == SentryItemType.Attachment })
+        },
+        anyOrNull(),
+      )
   }
 
   @Test

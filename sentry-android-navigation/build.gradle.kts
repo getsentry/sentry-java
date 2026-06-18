@@ -3,8 +3,6 @@ import io.gitlab.arturbosch.detekt.Detekt
 plugins {
   id("com.android.library")
   alias(libs.plugins.kotlin.android)
-  jacoco
-  alias(libs.plugins.jacoco.android)
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.detekt)
 }

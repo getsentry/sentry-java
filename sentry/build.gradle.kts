@@ -5,7 +5,6 @@ plugins {
   `java-library`
   id("io.sentry.javadoc")
   alias(libs.plugins.kotlin.jvm)
-  jacoco
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.buildconfig)
@@ -40,15 +39,6 @@ dependencies {
 
 configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
 
-jacoco { toolVersion = libs.versions.jacoco.get() }
-
-tasks.jacocoTestReport {
-  reports {
-    xml.required.set(true)
-    html.required.set(false)
-  }
-}
-
 animalsniffer {
   ignore =
     listOf(
@@ -63,16 +53,16 @@ tasks.animalsnifferMain {
 }
 
 tasks {
-  jacocoTestCoverageVerification {
-    violationRules { rule { limit { minimum = Config.QualityPlugins.Jacoco.minimumCoverage } } }
-  }
-  check {
-    dependsOn(jacocoTestCoverageVerification)
-    dependsOn(jacocoTestReport)
-    dependsOn(animalsnifferMain)
-  }
+  check { dependsOn(animalsnifferMain) }
   test {
-    jvmArgs("--add-opens", "java.base/java.util.concurrent=ALL-UNNAMED")
+    // java.lang open is needed by tests that reflectively rewrite Class names; it was previously
+    // provided implicitly by the jacoco test agent, which has been removed.
+    jvmArgs(
+      "--add-opens",
+      "java.base/java.util.concurrent=ALL-UNNAMED",
+      "--add-opens",
+      "java.base/java.lang=ALL-UNNAMED",
+    )
     environment["SENTRY_TEST_PROPERTY"] = "\"some-value\""
     environment["SENTRY_TEST_MAP_KEY1"] = "\"value1\""
     environment["SENTRY_TEST_MAP_KEY2"] = "value2"
