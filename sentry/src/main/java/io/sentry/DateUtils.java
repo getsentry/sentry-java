@@ -151,22 +151,11 @@ public final class DateUtils {
     return millisToSeconds(date.getTime());
   }
 
-  /**
-   * Convert {@link Date} to nanoseconds represented as {@link Long}.
-   *
-   * @param date - date
-   * @return nanoseconds
-   */
-  @SuppressWarnings("JavaUtilDate")
-  public static long dateToNanos(final @NotNull Date date) {
-    return millisToNanos(date.getTime());
-  }
-
   public static long secondsToNanos(final @NotNull long seconds) {
     return seconds * (1000L * 1000L * 1000L);
   }
 
-  public static @NotNull BigDecimal doubleToBigDecimal(final @NotNull Double value) {
+  public static @NotNull BigDecimal doubleToBigDecimal(final double value) {
     return BigDecimal.valueOf(value).setScale(6, RoundingMode.DOWN);
   }
 }

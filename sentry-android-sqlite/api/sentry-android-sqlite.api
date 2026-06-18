@@ -21,3 +21,15 @@ public final class io/sentry/android/sqlite/SentrySupportSQLiteOpenHelper$Compan
 	public final fun create (Landroidx/sqlite/db/SupportSQLiteOpenHelper;)Landroidx/sqlite/db/SupportSQLiteOpenHelper;
 }
 
+public final class io/sentry/sqlite/SentrySQLiteDriver : androidx/sqlite/SQLiteDriver {
+	public static final field Companion Lio/sentry/sqlite/SentrySQLiteDriver$Companion;
+	public synthetic fun <init> (Landroidx/sqlite/SQLiteDriver;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public static final fun create (Landroidx/sqlite/SQLiteDriver;)Landroidx/sqlite/SQLiteDriver;
+	public fun hasConnectionPool ()Z
+	public fun open (Ljava/lang/String;)Landroidx/sqlite/SQLiteConnection;
+}
+
+public final class io/sentry/sqlite/SentrySQLiteDriver$Companion {
+	public final fun create (Landroidx/sqlite/SQLiteDriver;)Landroidx/sqlite/SQLiteDriver;
+}
+
