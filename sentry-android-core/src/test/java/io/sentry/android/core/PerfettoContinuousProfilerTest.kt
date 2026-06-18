@@ -15,6 +15,8 @@ import io.sentry.test.DeferredExecutorService
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import org.junit.runner.RunWith
 import org.mockito.Mockito.mockStatic
@@ -169,6 +171,41 @@ class PerfettoContinuousProfilerTest {
     fixture.getSut().testCanBeStartedAgainAfterStopCycle(mocks)
 
   // -- Perfetto-specific tests --
+
+  @Test
+  fun `async chunk callback does not restart when stop requested while pending`() {
+    val profiler = fixture.getSut()
+
+    // Defer the endAndCollect listener to simulate the OS delivering the trace asynchronously,
+    // after the chunk timer already captured the (then-true) restart decision.
+    var pendingListener: java.util.function.Consumer<java.io.File?>? = null
+    doAnswer { invocation ->
+        pendingListener = invocation.getArgument(0)
+        null
+      }
+      .whenever(fixture.mockPerfettoProfiler)
+      .endAndCollect(any())
+
+    profiler.startProfiler(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
+    assertTrue(profiler.isRunning)
+
+    // Chunk timer fires: stopInternal(true) captures shouldRestart=true and calls endAndCollect,
+    // but the listener is held pending instead of firing inline.
+    fixture.executor.runAll()
+    assertFalse(profiler.isRunning)
+    assertNotNull(pendingListener)
+
+    // A stop is requested while the async callback is still pending.
+    profiler.stopProfiler(ProfileLifecycle.MANUAL)
+
+    // The OS now delivers the trace. The callback must honor the late stop and not restart.
+    pendingListener!!.accept(fixture.mockTraceFile)
+    fixture.executor.runAll()
+    assertFalse(
+      profiler.isRunning,
+      "profiler must not restart when a stop was requested while the callback was pending",
+    )
+  }
 
   @Test
   fun `profiler multiple starts are ignored in manual mode`() {

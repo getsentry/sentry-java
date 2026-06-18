@@ -71,6 +71,10 @@ public class PerfettoContinuousProfiler
     implements IContinuousProfiler, RateLimiter.IRateLimitObserver {
   private static final long MAX_CHUNK_DURATION_MILLIS = 60000;
 
+  // Matches the thread name produced by SentryExecutorService's thread factory, used to detect
+  // when we are already running on the executor thread.
+  private static final String EXECUTOR_THREAD_NAME_PREFIX = "SentryExecutorServiceThreadFactory";
+
   private final @NotNull ILogger logger;
   private final @NotNull LazyEvaluator.Evaluator<ISentryExecutorService> executorServiceSupplier;
   private final @NotNull Supplier<PerfettoProfiler> perfettoProfilerFactory;
@@ -379,10 +383,12 @@ public class PerfettoContinuousProfiler
 
     if (shouldRestart) {
       try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
-        if (isRunning || isClosed.get()) {
+        // shouldStop is re-checked here (not just at capture time) because a stopProfiler() or
+        // close() may have been requested while this async callback was pending.
+        if (isRunning || isClosed.get() || shouldStop) {
           logger.log(
               SentryLevel.DEBUG,
-              "Profile chunk finished, but profiler was already restarted or closed. Skipping.");
+              "Profile chunk finished, but profiler was already restarted, closed or stopped. Skipping.");
           return;
         }
         logger.log(SentryLevel.DEBUG, "Profile chunk finished. Starting a new one.");
@@ -403,30 +409,24 @@ public class PerfettoContinuousProfiler
       final @NotNull ProfileChunk.Builder builder,
       final @NotNull IScopes scopes,
       final @NotNull SentryOptions options) {
+    final @NotNull Runnable task =
+        () -> {
+          if (isClosed.get()) {
+            return;
+          }
+          scopes.captureProfileChunk(builder.build(options));
+        };
     try {
-      options
-          .getExecutorService()
-          .submit(
-              () -> {
-                if (isClosed.get()) {
-                  return;
-                }
-                scopes.captureProfileChunk(builder.build(options));
-              });
+      // The chunk timer callback (stopInternal) already runs on the executor thread; submitting
+      // back into the same single-threaded executor from there can deadlock, so run inline instead.
+      if (Thread.currentThread().getName().startsWith(EXECUTOR_THREAD_NAME_PREFIX)) {
+        task.run();
+      } else {
+        executorServiceSupplier.evaluate().submit(task);
+      }
     } catch (Throwable e) {
       options.getLogger().log(SentryLevel.DEBUG, "Failed to send profile chunk.", e);
     }
-  }
-
-  @VisibleForTesting
-  @Nullable
-  Future<?> getStopFuture() {
-    return stopFuture;
-  }
-
-  @VisibleForTesting
-  public int getActiveTraceCount() {
-    return activeTraceCount;
   }
 
   /**

@@ -32,8 +32,12 @@ public class PerfettoProfiler {
   private static final String KEY_DURATION_MS = "KEY_DURATION_MS";
   private static final String KEY_FREQUENCY_HZ = "KEY_FREQUENCY_HZ";
 
-  /** Fixed sampling frequency for Perfetto stack sampling. Not configurable by the developer. */
-  private static final int PROFILING_FREQUENCY_HZ = 100;
+  /**
+   * Fixed sampling frequency for Perfetto stack sampling. Not configurable by the developer. 101Hz
+   * (rather than 100Hz) to avoid lockstep sampling with the display refresh rate (e.g. 60/120fps),
+   * matching the legacy profiler's default sampling rate.
+   */
+  private static final int PROFILING_FREQUENCY_HZ = 101;
 
   private static final long RESULT_TIMEOUT_MS = 5000;
 

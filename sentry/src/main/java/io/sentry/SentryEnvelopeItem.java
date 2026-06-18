@@ -438,7 +438,9 @@ public final class SentryEnvelopeItem {
             null,
             profileChunk.getPlatform(),
             null,
-            (Callable<Integer>) metaLength::get);
+            // avoid method refs on Android due to some issues with older AGP setups
+            // noinspection Convert2MethodRef
+            () -> metaLength.get());
 
     // avoid method refs on Android due to some issues with older AGP setups
     // noinspection Convert2MethodRef
