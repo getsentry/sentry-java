@@ -8,6 +8,12 @@
   - To use it, pass `SQLiteDriver` to `SentrySQLiteDriver.create(...)`
   - Requires `androidx.sqlite:sqlite` (2.5.0+) on runtime classpath (typically provided by Room or SQLDelight)
 
+### Dependencies
+
+- Bump Native SDK from v0.15.0 to v0.15.1 ([#5570](https://github.com/getsentry/sentry-java/pull/5570))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0151)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.15.0...0.15.1)
+
 ## 8.44.0
 
 ### Features
