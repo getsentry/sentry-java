@@ -6,6 +6,7 @@ import android.os.BatteryManager
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.android.core.internal.util.CpuInfoUtils
+import java.util.TimeZone
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -45,6 +46,14 @@ class DeviceInfoUtilTest {
 
     assertNotNull(deviceInfo.isSimulator)
     assertNotNull(deviceInfo.memorySize)
+  }
+
+  @Test
+  fun `sets default timezone`() {
+    val deviceInfoUtil = DeviceInfoUtil.getInstance(context, SentryAndroidOptions())
+    val deviceInfo = deviceInfoUtil.collectDeviceInformation(false, false)
+
+    assertEquals(TimeZone.getDefault(), deviceInfo.timezone)
   }
 
   @Test
