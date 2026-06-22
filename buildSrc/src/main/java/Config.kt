@@ -40,6 +40,9 @@ object Config {
     }
 
     object Sentry {
+        // New *SDK_NAME constants are checked by .github/workflows/sdk-name-check.yml. When making changes, be sure to update the sdk_map
+        // spreadsheet used for Looker/Hex reporting:
+        // https://docs.google.com/spreadsheets/d/1hqFhytQuHMvuOz1XD0kCXg6x0ViflHrpjW7nNhvzYmU/edit?gid=334165604#gid=334165604
         val SENTRY_JAVA_SDK_NAME = "sentry.java"
         val SENTRY_ANDROID_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.android"
         val SENTRY_TIMBER_SDK_NAME = "$SENTRY_ANDROID_SDK_NAME.timber"
