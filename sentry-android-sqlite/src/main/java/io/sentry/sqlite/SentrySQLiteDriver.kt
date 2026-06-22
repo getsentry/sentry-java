@@ -90,9 +90,9 @@ public class SentrySQLiteDriver private constructor(private val delegate: SQLite
      * In the case of (2), wrap the open helper passed to the `SupportSQLiteDriver` constructor via
      * `SentrySupportSQLiteOpenHelper` instead.
      *
-     * Note that wrapping will be performed if the delegate isn't a `SupportSQLiteDriver` itself
-     * but wraps or subclasses one. In that case, ensure the open helper passed to the support
-     * driver constructor is *not* wrapped.
+     * Note that wrapping will be performed if the delegate isn't a `SupportSQLiteDriver` itself but
+     * wraps or subclasses one. In that case, ensure the open helper passed to the support driver
+     * constructor is *not* wrapped.
      */
     // The Sentry Android Gradle Plugin depends on this method's ABI. Don't change it without
     // updating the SAGP.
