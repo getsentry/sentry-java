@@ -21,9 +21,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        springboot-version: [ '4.0.0', '4.0.5', '4.1.0' ]
+        include:
+          - springboot-version: '4.0.0'
+            kotlin-version: '2.2.0'
+          - springboot-version: '4.0.5'
+            kotlin-version: '2.2.21'
+          - springboot-version: '4.1.0'
+            kotlin-version: '2.3.21'
 
-    name: Spring Boot ${{ matrix.springboot-version }}
+    name: Spring Boot ${{ matrix.springboot-version }} / Kotlin ${{ matrix.kotlin-version }}
     env:
       SENTRY_URL: http://127.0.0.1:8000
       GRADLE_ENCRYPTION_KEY: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
@@ -62,11 +68,16 @@ jobs:
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
-      - name: Update Spring Boot 4.x version
+      - name: Update Spring Boot 4.x and Kotlin versions
         run: |
           springboot_version="${{ matrix.springboot-version }}"
+          kotlin_version="${{ matrix.kotlin-version }}"
+
           perl -0pi -e 'BEGIN { $v = shift } s/^springboot4[[:space:]]*=[[:space:]]*"\K[^"]*/$v/m or die "::error::springboot4 version entry not found in gradle/libs.versions.toml\n"' "$springboot_version" gradle/libs.versions.toml
+          perl -0pi -e 'BEGIN { $v = shift } s/^kotlin[[:space:]]*=[[:space:]]*"\K[^"]*/$v/m or die "::error::kotlin version entry not found in gradle/libs.versions.toml\n"' "$kotlin_version" gradle/libs.versions.toml
+
           echo "Updated Spring Boot 4.x version to $springboot_version"
+          echo "Updated Kotlin version to $kotlin_version"
 
       - name: Build sample artifacts
         run: |
