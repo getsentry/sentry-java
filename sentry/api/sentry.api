@@ -2068,7 +2068,8 @@ public abstract interface class io/sentry/ObjectWriter {
 	public abstract fun value (Z)Lio/sentry/ObjectWriter;
 }
 
-public final class io/sentry/OptionsContainer {
+public class io/sentry/OptionsContainer {
+	protected fun <init> ()V
 	public static fun create (Ljava/lang/Class;)Lio/sentry/OptionsContainer;
 	public fun createInstance ()Ljava/lang/Object;
 }

@@ -9,7 +9,6 @@ import io.sentry.ILogger;
 import io.sentry.IScopes;
 import io.sentry.ISentryLifecycleToken;
 import io.sentry.Integration;
-import io.sentry.OptionsContainer;
 import io.sentry.Sentry;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
@@ -98,7 +97,7 @@ public final class SentryAndroid {
       @NotNull Sentry.OptionsConfiguration<SentryAndroidOptions> configuration) {
     try (final @NotNull ISentryLifecycleToken ignored = staticLock.acquire()) {
       Sentry.init(
-          OptionsContainer.create(SentryAndroidOptions.class),
+          new SentryAndroidOptionsContainer(),
           options -> {
             final io.sentry.util.LoadClass classLoader = new io.sentry.util.LoadClass();
             final boolean isTimberUpstreamAvailable =
