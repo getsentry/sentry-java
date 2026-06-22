@@ -8,6 +8,10 @@
   - To use it, pass `SQLiteDriver` to `SentrySQLiteDriver.create(...)`
   - Requires `androidx.sqlite:sqlite` (2.5.0+) on runtime classpath (typically provided by Room or SQLDelight)
 
+### Dependencies
+
+- Bump Spring Boot 4 and OpenTelemetry dependencies ([#5573](https://github.com/getsentry/sentry-java/pull/5573))
+
 ## 8.44.0
 
 ### Features
