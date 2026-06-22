@@ -39,8 +39,7 @@ jobs:
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-          fetch-depth: ${{ needs.files-changed.outputs.config_kt == 'true' && 0 || 1 }}
+          fetch-depth: 0
 
       - name: Run detector unit tests
         run: python3 -m unittest discover -s scripts -p 'test_detect_sdk_name_changes.py'
@@ -50,6 +49,9 @@ jobs:
         continue-on-error: true
         id: detect
         run: |
+          git fetch --no-tags origin \
+            "${{ github.event.pull_request.base.sha }}" \
+            "${{ github.event.pull_request.head.sha }}"
           changes=$(python3 scripts/detect_sdk_name_changes.py \
             --base "${{ github.event.pull_request.base.sha }}" \
             --head "${{ github.event.pull_request.head.sha }}")
@@ -101,7 +103,7 @@ jobs:
                 [
                   '### ⚠️ SDK name check failed',
                   '',
-                  'Could not parse `*SDK_NAME` declarations in `Config.kt`. Use `val FOO_SDK_NAME = "..."` with an optional `$OTHER_SDK_NAME` prefix.',
+                  'Could not compare `*SDK_NAME` declarations in `Config.kt`. Use `val FOO_SDK_NAME = "..."` with an optional `$OTHER_SDK_NAME` prefix.',
                   '',
                   'See the **Detect SDK name changes** step logs for details.',
                   '',

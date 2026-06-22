@@ -62,14 +62,6 @@ def find_sdk_name_changes(
     return added, removed
 
 
-def git_merge_base(base: str, head: str) -> str:
-    return subprocess.check_output(
-        ["git", "merge-base", base, head],
-        text=True,
-        stderr=subprocess.PIPE,
-    ).strip()
-
-
 def git_show(ref: str, path: str) -> str:
     try:
         return subprocess.check_output(
@@ -86,8 +78,7 @@ def git_show(ref: str, path: str) -> str:
 def read_config_source(base: str | None, head: str | None, config_path: str) -> tuple[str, str]:
     if base is None or head is None:
         raise ValueError("Both base and head refs are required")
-    merge_base = git_merge_base(base, head)
-    return git_show(merge_base, config_path), git_show(head, config_path)
+    return git_show(base, config_path), git_show(head, config_path)
 
 
 def format_changes(added: list[str], removed: list[str]) -> str:
@@ -112,21 +103,24 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--config-path", default=CONFIG_PATH)
     args = parser.parse_args(argv)
 
-    if args.base_file and args.head_file:
-        base_content = args.base_file.read_text(encoding="utf-8")
-        head_content = args.head_file.read_text(encoding="utf-8")
-    elif args.base and args.head:
-        base_content, head_content = read_config_source(
-            args.base, args.head, args.config_path
-        )
-    else:
-        parser.error("Provide --base/--head or --base-file/--head-file")
-
     try:
+        if args.base_file and args.head_file:
+            base_content = args.base_file.read_text(encoding="utf-8")
+            head_content = args.head_file.read_text(encoding="utf-8")
+        elif args.base and args.head:
+            base_content, head_content = read_config_source(
+                args.base, args.head, args.config_path
+            )
+        else:
+            parser.error("Provide --base/--head or --base-file/--head-file")
+
         base_sdk = parse_sdk_constants(base_content)
         head_sdk = parse_sdk_constants(head_content)
     except ValueError as error:
         print(f"error: {error}", file=sys.stderr)
+        return 1
+    except subprocess.CalledProcessError as error:
+        print(f"error: git command failed: {' '.join(error.cmd)}", file=sys.stderr)
         return 1
 
     added, removed = find_sdk_name_changes(base_sdk, head_sdk)
