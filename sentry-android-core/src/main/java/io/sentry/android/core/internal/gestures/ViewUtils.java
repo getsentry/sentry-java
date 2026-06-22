@@ -7,7 +7,7 @@ import android.view.ViewGroup;
 import io.sentry.android.core.SentryAndroidOptions;
 import io.sentry.internal.gestures.GestureTargetLocator;
 import io.sentry.internal.gestures.UiElement;
-import java.util.LinkedList;
+import java.util.ArrayDeque;
 import java.util.List;
 import java.util.Queue;
 import org.jetbrains.annotations.ApiStatus;
@@ -62,11 +62,11 @@ public final class ViewUtils {
       final UiElement.Type targetType) {
 
     final List<GestureTargetLocator> locators = options.getGestureTargetLocators();
-    final Queue<View> queue = new LinkedList<>();
+    final Queue<View> queue = new ArrayDeque<>();
     queue.add(decorView);
 
     @Nullable UiElement target = null;
-    while (queue.size() > 0) {
+    while (!queue.isEmpty()) {
       final View view = queue.poll();
 
       if (!touchWithinBounds(view, x, y)) {
