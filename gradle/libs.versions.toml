@@ -13,8 +13,7 @@ feign = "11.6"
 gummyBears = "0.12.0"
 jackson = "2.18.3"
 jetbrainsCompose = "1.6.11"
-kotlin = "2.2.0"
-kotlinSpring7 = "2.2.0"
+kotlin = "2.3.21"
 kotlin-compatible-version = "1.9"
 ksp = "2.3.9"
 ktorClient = "3.0.0"
@@ -52,8 +51,6 @@ minSdk = "21"
 [plugins]
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-spring = { id = "org.jetbrains.kotlin.plugin.spring", version.ref = "kotlin" }
-kotlin-spring7 = { id = "org.jetbrains.kotlin.plugin.spring", version.ref = "kotlinSpring7" }
-kotlin-jvm-spring7 = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlinSpring7" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
@@ -130,7 +127,6 @@ jackson-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin"
 jetbrains-annotations = { module = "org.jetbrains:annotations", version = "23.0.0" }
 kotlin-bom = { module = "org.jetbrains.kotlin:kotlin-bom", version.ref = "kotlin" }
 kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
-kotlin-test-junit-spring7 = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlinSpring7" }
 kotlinx-coroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktorClient" }

@@ -27,8 +27,6 @@ java.targetCompatibility = JavaVersion.VERSION_17
 
 repositories { mavenCentral() }
 
-extra["kotlin.version"] = KotlinCompilerVersion.VERSION
-
 dependencyManagement { imports { mavenBom(SpringBootPlugin.BOM_COORDINATES) } }
 
 dependencies {
