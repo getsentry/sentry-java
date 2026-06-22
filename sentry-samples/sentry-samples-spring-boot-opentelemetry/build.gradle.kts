@@ -8,6 +8,7 @@ plugins {
   alias(libs.plugins.shadow)
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.kotlin.spring)
+  id("io.sentry.systemtest")
 }
 
 application { mainClass.set("io.sentry.samples.spring.boot.SentryDemoApplication") }

@@ -8,6 +8,7 @@ plugins {
   alias(libs.plugins.kotlin.spring)
   id("war")
   alias(libs.plugins.gretty)
+  id("io.sentry.systemtest")
 }
 
 application { mainClass.set("io.sentry.samples.spring.Main") }

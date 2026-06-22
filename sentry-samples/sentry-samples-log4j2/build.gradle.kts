@@ -6,6 +6,7 @@ plugins {
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.shadow)
+  id("io.sentry.systemtest")
 }
 
 application { mainClass.set("io.sentry.samples.log4j2.Main") }
