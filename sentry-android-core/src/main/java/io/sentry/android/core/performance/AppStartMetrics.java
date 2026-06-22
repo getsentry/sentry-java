@@ -11,6 +11,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
+import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -467,18 +468,28 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
       final @Nullable ActivityManager activityManager =
           (ActivityManager) application.getSystemService(Context.ACTIVITY_SERVICE);
       if (activityManager != null) {
-        final List<ApplicationStartInfo> historicalProcessStartReasons =
-            activityManager.getHistoricalProcessStartReasons(1);
-        if (!historicalProcessStartReasons.isEmpty()) {
-          final @NotNull ApplicationStartInfo info = historicalProcessStartReasons.get(0);
-          cachedStartInfo = info;
-          if (info.getStartupState() == ApplicationStartInfo.STARTUP_STATE_STARTED) {
-            if (info.getStartType() == ApplicationStartInfo.START_TYPE_COLD) {
-              appStartType = AppStartType.COLD;
-            } else {
-              appStartType = AppStartType.WARM;
+        try {
+          final List<ApplicationStartInfo> historicalProcessStartReasons =
+              activityManager.getHistoricalProcessStartReasons(1);
+          if (!historicalProcessStartReasons.isEmpty()) {
+            final @NotNull ApplicationStartInfo info = historicalProcessStartReasons.get(0);
+            cachedStartInfo = info;
+            if (info.getStartupState() == ApplicationStartInfo.STARTUP_STATE_STARTED) {
+              if (info.getStartType() == ApplicationStartInfo.START_TYPE_COLD) {
+                appStartType = AppStartType.COLD;
+              } else {
+                appStartType = AppStartType.WARM;
+              }
             }
           }
+        } catch (RuntimeException ignored) {
+          // getHistoricalProcessStartReasons may throw different kinds of exceptions, namely:
+          // - SecurityException when called from an isolated process
+          // - IllegalArgumentException when called with a wrong userId
+          // - others
+          // See impl:
+          // https://cs.android.com/android/platform/superproject/+/android-latest-release:frameworks/base/services/core/java/com/android/server/am/ActivityManagerService.java;l=10866-10893
+          Log.w("AppStartMetrics", ignored); // no logger instance here, so we just Log
         }
       }
     }
