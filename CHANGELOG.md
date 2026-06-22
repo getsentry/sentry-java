@@ -6,6 +6,10 @@
 
 - Release `MediaMuxer` when a replay segment has no encodable frames to avoid a resource leak ([#5583](https://github.com/getsentry/sentry-java/pull/5583))
 
+### Internal
+
+- Reduce allocations in gesture target traversal by using `ArrayDeque` instead of `LinkedList` ([#5594](https://github.com/getsentry/sentry-java/pull/5594))
+
 ## 8.44.1
 
 ### Fixes
