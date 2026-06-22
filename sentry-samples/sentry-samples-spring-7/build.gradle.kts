@@ -7,7 +7,7 @@ plugins {
   alias(libs.plugins.springboot4) apply false
   alias(libs.plugins.spring.dependency.management)
   alias(libs.plugins.kotlin.jvm)
-  alias(libs.plugins.kotlin.spring7)
+  alias(libs.plugins.kotlin.spring)
   id("war")
   alias(libs.plugins.gretty)
 }
