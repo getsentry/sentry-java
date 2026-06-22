@@ -6,6 +6,10 @@
 
 - Release `MediaMuxer` when a replay segment has no encodable frames to avoid a resource leak ([#5583](https://github.com/getsentry/sentry-java/pull/5583))
 
+### Internal
+
+- Speed up gesture target hit-testing by mapping the touch point into local coordinates instead of calling `getLocationOnScreen` per view ([#5595](https://github.com/getsentry/sentry-java/pull/5595))
+
 ## 8.44.1
 
 ### Fixes
