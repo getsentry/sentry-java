@@ -1,4 +1,5 @@
 import com.android.build.api.artifact.SingleArtifact
+import com.android.build.api.variant.BuildConfigField
 import com.android.build.api.variant.impl.VariantImpl
 import io.sentry.android.gradle.extensions.InstrumentationFeature
 import io.sentry.android.gradle.extensions.SentryPluginExtension
@@ -135,6 +136,17 @@ android {
   }
 
   androidComponents.onVariants { variant ->
+    variant.buildConfigFields?.put(
+      "USE_SAGP",
+      providers.provider {
+        BuildConfigField(
+          type = "boolean",
+          value = providers.gradleProperty("useSagp").isPresent.toString(),
+          comment = "Whether the Sentry Android Gradle Plugin was applied",
+        )
+      },
+    )
+
     val taskName = "toggle${variant.name.capitalized()}NativeLogging"
     val toggleNativeLoggingTask =
       project.tasks.register<ToggleNativeLoggingTask>(taskName) {

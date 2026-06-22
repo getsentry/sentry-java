@@ -24,7 +24,7 @@ class SentrySQLiteConnectionTest {
       options = SentryOptions().apply { dsn = "https://key@sentry.io/proj" }
       whenever(scopes.options).thenReturn(options)
       whenever(mockConnection.prepare("SELECT 1")).thenReturn(mockStatement)
-      val spans = SQLiteSpanInstrumentation.fromFileName("test.db", scopes)
+      val spans = DriverSpans.fromFileName("test.db", scopes)
       return SentrySQLiteConnection(mockConnection, spans)
     }
   }
@@ -41,7 +41,7 @@ class SentrySQLiteConnectionTest {
   @Test
   fun `prepare with already-wrapped statement returns same instance without re-wrapping`() {
     val sut = fixture.getSut()
-    val spans = SQLiteSpanInstrumentation.fromFileName("test.db", fixture.scopes)
+    val spans = DriverSpans.fromFileName("test.db", fixture.scopes)
     val alreadyInstrumented = SentrySQLiteStatement(fixture.mockStatement, spans, "SELECT 1")
     whenever(fixture.mockConnection.prepare("SELECT 1")).thenReturn(alreadyInstrumented)
 

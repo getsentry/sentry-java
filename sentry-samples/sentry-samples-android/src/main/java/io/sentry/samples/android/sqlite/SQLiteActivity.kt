@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.HelpOutline
@@ -45,6 +46,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.rememberTooltipState
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -70,6 +72,7 @@ import io.sentry.SpanStatus
 import io.sentry.TransactionContext
 import io.sentry.TransactionOptions
 import io.sentry.protocol.SentryId
+import io.sentry.samples.android.BuildConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -93,33 +96,45 @@ private val CONTROL_SECTION_GAP = TOGGLE_SECTION_GAP * 2
 
 private val SECTION_HEADER_HEIGHT = 28.dp
 
+private const val SAGP_DIRECT_DRIVER_MESSAGE =
+  "SAGP doesn't auto-instrument SQLiteDriver for direct use"
+
 /** Which sentry-android-sqlite integration the demo currently targets. */
 private enum class IntegrationMode(
   val color: Color,
   val segmentLabel: String,
   val apiName: String,
-  val subtitle: String,
 ) {
-  DRIVER(
-    SentryPurple,
-    "SQLiteDriver",
-    "SQLiteDriver",
-    "SentrySQLiteDriver.create(BundledSQLiteDriver)",
-  ),
-  OPEN_HELPER(
-    SentryPink,
-    "OpenHelper",
-    "SupportSQLiteOpenHelper",
-    "SentrySupportSQLiteOpenHelper.create(...)",
-  ),
+
+  DRIVER(SentryPurple, "SQLiteDriver", "SQLiteDriver"),
+  OPEN_HELPER(SentryPink, "OpenHelper", "SupportSQLiteOpenHelper"),
   // Not directly-supported, but lets us verify behavior when both the DRIVER and OPEN_HELPER
   // integrations are used together via the SupportSQLiteDriver bridge.
-  BRIDGE(
-    SentryOrange,
-    "Bridge",
-    "SupportSQLiteDriver bridge",
-    "SentrySQLiteDriver.create(SupportSQLiteDriver(Sentry helper))",
-  ),
+  BRIDGE(SentryOrange, "Bridge", "SupportSQLiteDriver bridge");
+
+  fun subtitle(): String =
+    when (this) {
+      DRIVER ->
+        if (BuildConfig.USE_SAGP) {
+          "BundledSQLiteDriver (SAGP auto-wrap)"
+        } else {
+          "SentrySQLiteDriver.create(BundledSQLiteDriver)"
+        }
+
+      OPEN_HELPER ->
+        if (BuildConfig.USE_SAGP) {
+          "FrameworkSQLiteOpenHelperFactory (SAGP auto-wrap)"
+        } else {
+          "SentrySupportSQLiteOpenHelper.create(...)"
+        }
+
+      BRIDGE ->
+        if (BuildConfig.USE_SAGP) {
+          "SupportSQLiteDriver(open helper) (SAGP auto-wrap)"
+        } else {
+          "SentrySQLiteDriver.create(SupportSQLiteDriver(Sentry helper))"
+        }
+    }
 }
 
 /**
@@ -318,6 +333,7 @@ class SQLiteActivity : ComponentActivity() {
               lerp(MaterialTheme.colorScheme.outline, integration.color, shimmer.value)
 
             Text(text = "SQLite Instrumentation", style = MaterialTheme.typography.headlineSmall)
+            SagpBuildPill()
 
             Spacer(Modifier.height(titleGap))
 
@@ -364,6 +380,7 @@ class SQLiteActivity : ComponentActivity() {
                 label = row.label,
                 color = integration.color,
                 variant = variant,
+                sagpDisabledReason = sagpDisabledReason(integration, row),
                 disabledReason = "${row.label} doesn't support the ${integration.apiName} stack",
               )
             }
@@ -447,7 +464,7 @@ class SQLiteActivity : ComponentActivity() {
   }
 
   @OptIn(ExperimentalMaterial3Api::class)
-  @androidx.compose.runtime.Composable
+  @Composable
   private fun IntegrationModeSelector(
     selected: IntegrationMode,
     onSelected: (IntegrationMode) -> Unit,
@@ -471,18 +488,36 @@ class SQLiteActivity : ComponentActivity() {
     }
 
     Text(
-      text = selected.subtitle,
+      text = selected.subtitle(),
       style = MaterialTheme.typography.bodySmall,
       color = Color.Gray,
       modifier = Modifier.padding(top = 6.dp),
     )
   }
 
+  @Composable
+  private fun SagpBuildPill() {
+    val useSagp = BuildConfig.USE_SAGP
+
+    Surface(
+      shape = RoundedCornerShape(percent = 50),
+      color = if (useSagp) SentryPurple.copy(alpha = 0.15f) else Color.Gray.copy(alpha = 0.2f),
+      modifier = Modifier.padding(top = 6.dp),
+    ) {
+      Text(
+        text = if (useSagp) "Built with SAGP" else "Built without SAGP",
+        style = MaterialTheme.typography.labelSmall,
+        color = if (useSagp) SentryPurple else Color.DarkGray,
+        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+      )
+    }
+  }
+
   /**
    * A compact, left-justified labeled switch. [labelColor] defaults to [Color.Unspecified] so the
    * label inherits the default text color.
    */
-  @androidx.compose.runtime.Composable
+  @Composable
   private fun ToggleRow(
     label: String,
     checked: Boolean,
@@ -509,11 +544,11 @@ class SQLiteActivity : ComponentActivity() {
     }
   }
 
-  @androidx.compose.runtime.Composable
+  @Composable
   private fun SectionHeader(
     title: String,
     topPadding: Dp = 8.dp,
-    trailing: (@androidx.compose.runtime.Composable () -> Unit)? = null,
+    trailing: (@Composable () -> Unit)? = null,
   ) {
     Column(modifier = Modifier.fillMaxWidth().padding(top = topPadding)) {
       Row(verticalAlignment = Alignment.CenterVertically) {
@@ -529,7 +564,7 @@ class SQLiteActivity : ComponentActivity() {
    * tooltip that auto-dismisses after a few seconds.
    */
   @OptIn(ExperimentalMaterial3Api::class)
-  @androidx.compose.runtime.Composable
+  @Composable
   private fun HelpTooltip() {
     val tooltipState = rememberTooltipState(isPersistent = true)
     val scope = rememberCoroutineScope()
@@ -565,16 +600,19 @@ class SQLiteActivity : ComponentActivity() {
    * dimmed and, when clicked, explains why via a toast ([disabledReason]) instead of running.
    */
   @OptIn(ExperimentalFoundationApi::class)
-  @androidx.compose.runtime.Composable
+  @Composable
   private fun DemoRowButton(
     label: String,
     color: Color,
     variant: DemoVariant?,
+    sagpDisabledReason: String?,
     disabledReason: String,
   ) {
     val context = LocalContext.current
-    val enabled = variant != null
-    val explain = { Toast.makeText(context, disabledReason, Toast.LENGTH_SHORT).show() }
+    val enabled = variant != null && sagpDisabledReason == null
+    val explain = {
+      Toast.makeText(context, sagpDisabledReason ?: disabledReason, Toast.LENGTH_SHORT).show()
+    }
 
     Surface(
       modifier = Modifier.fillMaxWidth(),
@@ -585,8 +623,8 @@ class SQLiteActivity : ComponentActivity() {
       Box(
         modifier =
           Modifier.combinedClickable(
-              onClick = { if (variant != null) onTap(variant) else explain() },
-              onLongClick = { if (variant != null) onLongPress(variant) else explain() },
+              onClick = { if (enabled) onTap(variant) else explain() },
+              onLongClick = { if (enabled) onLongPress(variant) else explain() },
             )
             .fillMaxWidth()
             .heightIn(min = 44.dp)
@@ -598,7 +636,7 @@ class SQLiteActivity : ComponentActivity() {
     }
   }
 
-  @androidx.compose.runtime.Composable
+  @Composable
   private fun ResetButton(dbOperationInFlight: Boolean, resetInProgress: Boolean) {
     // Debounce demo-driven disablement so fast taps don't flicker the button; reset disables
     // immediately via [resetInProgress]. [dbOperationInFlight] still guards [onClick] either way.
@@ -642,7 +680,7 @@ class SQLiteActivity : ComponentActivity() {
     }
   }
 
-  @androidx.compose.runtime.Composable
+  @Composable
   private fun DetailField(label: String, value: String, borderColor: Color) {
     OutlinedTextField(
       value = value,
@@ -696,6 +734,15 @@ class SQLiteActivity : ComponentActivity() {
       "$transactionName failed: ${t.message ?: t.javaClass.simpleName}"
     } finally {
       transaction.finish()
+    }
+  }
+
+  private fun sagpDisabledReason(mode: IntegrationMode, row: DemoRow): String? {
+    if (!BuildConfig.USE_SAGP) return null
+    val demo = row.variantFor(mode)?.demo ?: return null
+    return when (demo) {
+      SqlDemo.DRIVER_DIRECT -> SAGP_DIRECT_DRIVER_MESSAGE
+      else -> null
     }
   }
 

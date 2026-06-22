@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.room.Room
 import androidx.room3.Room as Room3
 import androidx.sqlite.SQLiteConnection
+import androidx.sqlite.SQLiteDriver
 import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.sqlite.db.SupportSQLiteOpenHelper
 import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
@@ -13,6 +14,7 @@ import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import androidx.sqlite.execSQL
 import app.cash.sqldelight.driver.android.AndroidSqliteDriver
 import io.sentry.android.sqlite.SentrySupportSQLiteOpenHelper
+import io.sentry.samples.android.BuildConfig
 import io.sentry.samples.android.sqlite.SampleDatabases.driverDirectLock
 import io.sentry.samples.android.sqlite.SampleDatabases.openHelperDirectLock
 import io.sentry.samples.android.sqlite.SampleDatabases.reset
@@ -85,12 +87,10 @@ object SampleDatabases {
   fun driverConnection(context: Context): SQLiteConnection =
     synchronized(driverDirectLock) {
       driverConnection
-        ?: SentrySQLiteDriver.create(BundledSQLiteDriver())
-          .open(databaseFile(context, "driver_direct.db"))
-          .also {
-            it.execSQL(SqlStatements.CREATE_SONG) // one-time table setup, at open
-            driverConnection = it
-          }
+        ?: wrapDriver(BundledSQLiteDriver()).open(databaseFile(context, "driver_direct.db")).also {
+          it.execSQL(SqlStatements.CREATE_SONG) // one-time table setup, at open
+          driverConnection = it
+        }
     }
 
   /**
@@ -104,7 +104,7 @@ object SampleDatabases {
           // SupportSQLiteDriver.open() requires fileName to match the helper's databaseName();
           // use the absolute path Room and the direct driver path both pass to open().
           val dbPath = databaseFile(context, "bridge_direct.db")
-          SentrySQLiteDriver.create(SupportSQLiteDriver(buildBridgeDirectHelper(context, dbPath)))
+          wrapDriver(SupportSQLiteDriver(buildBridgeDirectHelper(context, dbPath)))
             .open(dbPath)
             .also {
               it.execSQL(SqlStatements.CREATE_SONG)
@@ -122,9 +122,7 @@ object SampleDatabases {
             "bridge_room2.db",
           )
           .setDriver(
-            SentrySQLiteDriver.create(
-              SupportSQLiteDriver(buildBridgeRoom2Helper(context.applicationContext))
-            )
+            wrapDriver(SupportSQLiteDriver(buildBridgeRoom2Helper(context.applicationContext)))
           )
           .setQueryCoroutineContext(Dispatchers.IO)
           .fallbackToDestructiveMigration(true)
@@ -140,7 +138,7 @@ object SampleDatabases {
             SampleRoom2Database::class.java,
             "driver_room2.db",
           )
-          .setDriver(SentrySQLiteDriver.create(BundledSQLiteDriver()))
+          .setDriver(wrapDriver(BundledSQLiteDriver()))
           .setQueryCoroutineContext(Dispatchers.IO)
           .fallbackToDestructiveMigration(true)
           .build()
@@ -151,7 +149,7 @@ object SampleDatabases {
     synchronized(this) {
       driverRoom3Db
         ?: Room3.databaseBuilder<SampleRoom3Database>(context.applicationContext, "driver_room3.db")
-          .setDriver(SentrySQLiteDriver.create(BundledSQLiteDriver()))
+          .setDriver(wrapDriver(BundledSQLiteDriver()))
           .setQueryCoroutineContext(Dispatchers.IO)
           .build()
           .also { driverRoom3Db = it }
@@ -171,9 +169,7 @@ object SampleDatabases {
             "openhelper_room.db",
           )
           .openHelperFactory { configuration ->
-            SentrySupportSQLiteOpenHelper.create(
-              FrameworkSQLiteOpenHelperFactory().create(configuration)
-            )
+            wrapOpenHelper(FrameworkSQLiteOpenHelperFactory().create(configuration))
           }
           .fallbackToDestructiveMigration(true)
           .build()
@@ -189,9 +185,7 @@ object SampleDatabases {
             name = "openhelper_sqldelight.db",
             factory =
               SupportSQLiteOpenHelper.Factory { configuration ->
-                SentrySupportSQLiteOpenHelper.create(
-                  FrameworkSQLiteOpenHelperFactory().create(configuration)
-                )
+                wrapOpenHelper(FrameworkSQLiteOpenHelperFactory().create(configuration))
               },
           )
           .also { sqlDelightDriver = it }
@@ -232,9 +226,7 @@ object SampleDatabases {
           }
         )
         .build()
-    return SentrySupportSQLiteOpenHelper.create(
-      FrameworkSQLiteOpenHelperFactory().create(configuration)
-    )
+    return wrapOpenHelper(FrameworkSQLiteOpenHelperFactory().create(configuration))
   }
 
   private fun buildSentryHelper(context: Context, dbName: String): SupportSQLiteOpenHelper {
@@ -252,10 +244,14 @@ object SampleDatabases {
           }
         )
         .build()
-    return SentrySupportSQLiteOpenHelper.create(
-      FrameworkSQLiteOpenHelperFactory().create(configuration)
-    )
+    return wrapOpenHelper(FrameworkSQLiteOpenHelperFactory().create(configuration))
   }
+
+  private fun wrapDriver(driver: SQLiteDriver): SQLiteDriver =
+    if (BuildConfig.USE_SAGP) driver else SentrySQLiteDriver.create(driver)
+
+  private fun wrapOpenHelper(delegate: SupportSQLiteOpenHelper): SupportSQLiteOpenHelper =
+    if (BuildConfig.USE_SAGP) delegate else SentrySupportSQLiteOpenHelper.create(delegate)
 
   /** Opens every database on a background thread, forcing the one-time open + bootstrap to run. */
   fun warmUp(context: Context) {
@@ -263,6 +259,7 @@ object SampleDatabases {
     val generation = ++warmUpGeneration
     warmUpComplete = false
     warmUpErrors = ""
+    Log.i(TAG, "Warm-up starting (USE_SAGP=${BuildConfig.USE_SAGP})")
     // Fire-and-forget: the warm-up outlives no particular screen, so a bare scope is fine here.
     warmUpJob =
       CoroutineScope(Dispatchers.IO).launch {

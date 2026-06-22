@@ -4,6 +4,7 @@ import android.app.Activity
 import android.app.ActivityManager
 import android.app.ActivityManager.RunningAppProcessInfo
 import android.app.Application
+import android.app.ApplicationStartInfo
 import android.content.Context
 import android.os.Build
 import android.os.Bundle
@@ -272,6 +273,76 @@ class ActivityLifecycleIntegrationTest {
           it.operation == ActivityLifecycleIntegration.APP_START_WARM
       }
     )
+  }
+
+  @Test
+  @Config(sdk = [Build.VERSION_CODES.VANILLA_ICE_CREAM])
+  fun `Standalone app start transaction carries app start reason when available`() {
+    val sut =
+      fixture.getSut {
+        it.tracesSampleRate = 1.0
+        it.isEnableStandaloneAppStartTracing = true
+      }
+    sut.register(fixture.scopes, fixture.options)
+
+    setAppStartTime()
+    val startInfo =
+      mock<ApplicationStartInfo>().apply {
+        whenever(reason).thenReturn(ApplicationStartInfo.START_REASON_LAUNCHER)
+      }
+    AppStartMetrics.getInstance().setCachedStartInfo(startInfo)
+
+    val activity = mock<Activity>()
+    sut.onActivityCreated(activity, fixture.bundle)
+
+    val appStartTransaction =
+      fixture.createdTransactions.single {
+        it.spanContext.operation == ActivityLifecycleIntegration.STANDALONE_APP_START_OP
+      }
+    assertEquals("launcher", appStartTransaction.getData("app.vitals.start.reason"))
+  }
+
+  @Test
+  fun `Standalone app start transaction has no app start reason when unavailable`() {
+    val sut =
+      fixture.getSut {
+        it.tracesSampleRate = 1.0
+        it.isEnableStandaloneAppStartTracing = true
+      }
+    sut.register(fixture.scopes, fixture.options)
+
+    setAppStartTime()
+
+    val activity = mock<Activity>()
+    sut.onActivityCreated(activity, fixture.bundle)
+
+    val appStartTransaction =
+      fixture.createdTransactions.single {
+        it.spanContext.operation == ActivityLifecycleIntegration.STANDALONE_APP_START_OP
+      }
+    assertNull(appStartTransaction.getData("app.vitals.start.reason"))
+  }
+
+  @Test
+  @Config(sdk = [Build.VERSION_CODES.VANILLA_ICE_CREAM])
+  fun `Headless standalone app start transaction carries app start reason when available`() {
+    val sut =
+      fixture.getSut {
+        it.tracesSampleRate = 1.0
+        it.isEnableStandaloneAppStartTracing = true
+      }
+    sut.register(fixture.scopes, fixture.options)
+    prepareHeadlessAppStart(appStartType = AppStartType.COLD)
+    val startInfo =
+      mock<ApplicationStartInfo>().apply {
+        whenever(reason).thenReturn(ApplicationStartInfo.START_REASON_BROADCAST)
+      }
+    AppStartMetrics.getInstance().setCachedStartInfo(startInfo)
+
+    driveHeadlessAppStart()
+
+    val transaction = fixture.createdTransactions.single()
+    assertEquals("broadcast", transaction.getData("app.vitals.start.reason"))
   }
 
   @Test
