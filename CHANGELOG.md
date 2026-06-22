@@ -2,11 +2,23 @@
 
 ## Unreleased
 
+### Behavioral Changes
+
+- Collections returned by scope (e.g. `getBreadcrumbs`, `getTags`, `getAttachments`) are shared state and should not be mutated. ([#5541](https://github.com/getsentry/sentry-java/pull/5541))
+  - Previously, when going through `CombinedScopeView`, we were returning a copy where mutations didn't show up in the underlying scopes.
+  - This has now changed in order to reduce SDK overhead.
+
 ### Features
 
 - Add experimental `SentrySQLiteDriver` to `sentry-android-sqlite` for instrumenting `androidx.sqlite.SQLiteDriver` ([#5563](https://github.com/getsentry/sentry-java/pull/5563))
   - To use it, pass `SQLiteDriver` to `SentrySQLiteDriver.create(...)`
   - Requires `androidx.sqlite:sqlite` (2.5.0+) on runtime classpath (typically provided by Room or SQLDelight)
+
+### Internal
+
+- Reduce writer buffer size from 8192 to 512 ([#5544](https://github.com/getsentry/sentry-java/pull/5544))
+- Remove redundant event map copies ([#5536](https://github.com/getsentry/sentry-java/pull/5536))
+- Optimize combined scope by adding an early return if only one scope has data ([#5541](https://github.com/getsentry/sentry-java/pull/5541))
 
 ## 8.44.0
 
@@ -35,11 +47,6 @@
 
 - Fix attachments being duplicated on native events that carry scope attachments ([#5548](https://github.com/getsentry/sentry-java/pull/5548))
 - Fix performance collector scheduling many tasks in a row ([#5524](https://github.com/getsentry/sentry-java/pull/5524))
-
-### Internal
-
-- Reduce writer buffer size from 8192 to 512 ([#5544](https://github.com/getsentry/sentry-java/pull/5544))
-- Remove redundant event map copies ([#5536](https://github.com/getsentry/sentry-java/pull/5536))
 
 ## 8.43.2
 
