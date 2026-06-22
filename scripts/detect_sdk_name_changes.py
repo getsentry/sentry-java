@@ -40,6 +40,9 @@ def resolve_rhs(rhs: str, resolved: dict[str, str]) -> str:
 
 
 def expand_interpolation(value: str, resolved: dict[str, str]) -> str:
+    if "${" in value:
+        raise ValueError(f"Unsupported brace interpolation in SDK name value: {value}")
+
     def replace(match: re.Match[str]) -> str:
         name = match.group(1)
         if name not in resolved:

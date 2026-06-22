@@ -71,6 +71,15 @@ object Config {
 }
 """
 
+    HEAD_WITH_BRACE_INTERPOLATION = """
+object Config {
+    object Sentry {
+        val SENTRY_JAVA_SDK_NAME = "sentry.java"
+        val SENTRY_FOO_SDK_NAME = "${SENTRY_JAVA_SDK_NAME}.foo"
+    }
+}
+"""
+
     def test_no_changes(self) -> None:
         base = parse_sdk_constants(self.BASE_CONFIG)
         head = parse_sdk_constants(self.BASE_CONFIG)
@@ -102,6 +111,10 @@ object Config {
     def test_parse_failure_returns_error(self) -> None:
         with self.assertRaises(ValueError):
             parse_sdk_constants(self.HEAD_WITH_INVALID_RHS)
+
+    def test_brace_interpolation_is_rejected(self) -> None:
+        with self.assertRaises(ValueError):
+            parse_sdk_constants(self.HEAD_WITH_BRACE_INTERPOLATION)
 
     def test_cli_reports_parse_failure(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
