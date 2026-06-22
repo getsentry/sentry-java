@@ -48,6 +48,10 @@
   - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0152)
   - [diff](https://github.com/getsentry/sentry-native/compare/0.15.1...0.15.2)
 
+### Internal
+
+- Speed up gesture target hit-testing by mapping the touch point into local coordinates instead of calling `getLocationOnScreen` per view ([#5595](https://github.com/getsentry/sentry-java/pull/5595))
+
 ## 8.44.1
 
 ### Fixes
