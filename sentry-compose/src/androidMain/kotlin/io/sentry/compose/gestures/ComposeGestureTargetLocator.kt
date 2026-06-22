@@ -15,7 +15,7 @@ import io.sentry.compose.boundsInWindow
 import io.sentry.internal.gestures.GestureTargetLocator
 import io.sentry.internal.gestures.UiElement
 import io.sentry.util.AutoClosableReentrantLock
-import java.util.LinkedList
+import java.util.ArrayDeque
 import java.util.Queue
 
 @OptIn(InternalComposeUiApi::class)
@@ -45,7 +45,7 @@ public class ComposeGestureTargetLocator(private val logger: ILogger) : GestureT
     val rootLayoutNode = root.root
 
     // Pair<Node, ParentTag>
-    val queue: Queue<Pair<LayoutNode, String?>> = LinkedList()
+    val queue: Queue<Pair<LayoutNode, String?>> = ArrayDeque()
     queue.add(Pair(rootLayoutNode, null))
 
     // the final tag to return, only relevant for clicks
@@ -92,7 +92,10 @@ public class ComposeGestureTargetLocator(private val logger: ILogger) : GestureT
             }
           }
         }
-        queue.addAll(node.zSortedChildren.asMutableList().map { Pair(it, tag) })
+        val children = node.zSortedChildren.asMutableList()
+        for (index in children.indices) {
+          queue.add(Pair(children[index], tag))
+        }
       }
     }
 

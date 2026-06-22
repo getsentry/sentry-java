@@ -3,9 +3,15 @@ package io.sentry.android.core.internal.gestures
 import android.content.Context
 import android.content.res.Resources
 import android.view.View
+import android.view.ViewGroup
+import io.sentry.android.core.SentryAndroidOptions
+import io.sentry.internal.gestures.UiElement
+import io.sentry.util.LazyEvaluator
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.doThrow
@@ -78,6 +84,44 @@ class ViewUtilsTest {
 
     assertFailsWith<Resources.NotFoundException> { ViewUtils.getResourceId(view) }
     verify(context, never()).resources
+  }
+
+  @Test
+  fun `findTarget hit-tests children in their own local coordinate space`() {
+    val context = mock<Context>()
+    val resources = mock<Resources>()
+    whenever(context.resources).thenReturn(resources)
+    whenever(resources.getResourceEntryName(any())).thenReturn("child")
+
+    // A clickable child positioned at (100, 200) within the decor view, 50x50 in size.
+    val child =
+      mock<View> {
+        whenever(it.id).thenReturn(0x7f010001)
+        whenever(it.context).thenReturn(context)
+        whenever(it.isClickable).thenReturn(true)
+        whenever(it.visibility).thenReturn(View.VISIBLE)
+        whenever(it.left).thenReturn(100)
+        whenever(it.top).thenReturn(200)
+        whenever(it.width).thenReturn(50)
+        whenever(it.height).thenReturn(50)
+      }
+    val decorView =
+      mock<ViewGroup> {
+        whenever(it.width).thenReturn(1000)
+        whenever(it.height).thenReturn(1000)
+        whenever(it.childCount).thenReturn(1)
+        whenever(it.getChildAt(0)).thenReturn(child)
+      }
+    val options =
+      SentryAndroidOptions().apply {
+        gestureTargetLocators = listOf(AndroidViewGestureTargetLocator(LazyEvaluator { true }))
+      }
+
+    // (120, 220) maps to (20, 20) in the child's space -> inside its 50x50 bounds.
+    assertNotNull(ViewUtils.findTarget(options, decorView, 120f, 220f, UiElement.Type.CLICKABLE))
+
+    // (90, 220) maps to (-10, 20) in the child's space -> outside, despite being inside the decor.
+    assertNull(ViewUtils.findTarget(options, decorView, 90f, 220f, UiElement.Type.CLICKABLE))
   }
 
   @Test
