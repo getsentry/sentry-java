@@ -71,7 +71,7 @@ dependencies {
   compileOnly(libs.androidx.sqlite)
   compileOnly(libs.jetbrains.annotations)
 
-  implementation(kotlin(Config.kotlinStdLib, Config.kotlinStdLibVersionAndroid))
+  implementation(kotlin(Config.kotlinStdLib))
 
   // tests
   testImplementation(libs.androidx.sqlite)

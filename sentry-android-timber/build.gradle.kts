@@ -66,7 +66,7 @@ dependencies {
 
   compileOnly(libs.timber)
 
-  implementation(kotlin(Config.kotlinStdLib, Config.kotlinStdLibVersionAndroid))
+  implementation(kotlin(Config.kotlinStdLib))
 
   // tests
   testImplementation(libs.timber)
