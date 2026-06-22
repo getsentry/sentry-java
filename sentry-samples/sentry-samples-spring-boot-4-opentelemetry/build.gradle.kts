@@ -6,7 +6,7 @@ plugins {
   alias(libs.plugins.springboot4)
   alias(libs.plugins.spring.dependency.management)
   alias(libs.plugins.kotlin.jvm)
-  alias(libs.plugins.kotlin.spring)
+  alias(libs.plugins.kotlin.spring7)
 }
 
 group = "io.sentry.sample.spring-boot-4"
