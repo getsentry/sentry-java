@@ -154,7 +154,7 @@ limitations under the License.
 
 ### Scope
 
-The Sentry Java SDK includes an adapted version of Square's Curtains library for null-safe `Window.Callback` handling. The code resides in `io.sentry.android.replay.util.FixedWindowCallback`.
+The Sentry Java SDK includes adapted versions of Square's Curtains library for null-safe `Window.Callback` handling and for tracking attached window roots. The code resides in `io.sentry.android.replay.util.FixedWindowCallback` and `io.sentry.android.replay.Windows`.
 
 ```
 Copyright 2021 Square Inc.
@@ -524,7 +524,7 @@ SOFTWARE.
 
 ### Scope
 
-The Sentry Android Replay SDK includes an adapted version of `SimpleMp4FrameMuxer` from the flutter_screen_recorder library, used to mux encoded video frames into an MP4 file. The code resides in `io.sentry.android.replay.video.SimpleMp4FrameMuxer`.
+The Sentry Android Replay SDK includes adapted versions of the video encoding and muxing classes from the flutter_screen_recorder library, used to encode and mux replay video frames into an MP4 file. The code resides in the `io.sentry.android.replay.video` package and includes `SimpleFrameMuxer`, `SimpleMp4FrameMuxer`, and `SimpleVideoEncoder`.
 
 ```
 Copyright (c) 2021 fzyzcjy
