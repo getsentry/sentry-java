@@ -10,3 +10,11 @@ high_risk_code: &high_risk_code
 
   # Class used by hybrid SDKs
   - "sentry-android-core/src/main/java/io/sentry/android/core/InternalSentrySdk.java"
+
+config_kt:
+  - "buildSrc/src/main/java/Config.kt"
+
+sdk_name_check_scripts:
+  - ".github/workflows/sdk-name-check.yml"
+  - "scripts/detect_sdk_name_changes.py"
+  - "scripts/test_detect_sdk_name_changes.py"

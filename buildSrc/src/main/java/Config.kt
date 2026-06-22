@@ -40,6 +40,7 @@ object Config {
     }
 
     object Sentry {
+        // .github/workflows/sdk-name-check.yml expects all SDK name declarations to end in `*SDK_NAME`.
         val SENTRY_JAVA_SDK_NAME = "sentry.java"
         val SENTRY_ANDROID_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.android"
         val SENTRY_TIMBER_SDK_NAME = "$SENTRY_ANDROID_SDK_NAME.timber"

@@ -1,0 +1,159 @@
+# When sdk.name values are added, removed, or updated in Config.kt, posts a PR comment
+# reminding authors to update the sdk_map spreadsheet for Looker/Hex reporting.
+# Warn-only: does not block merge. See scripts/detect_sdk_name_changes.py.
+# Fork PRs cannot post comments (read-only GITHUB_TOKEN on pull_request).
+name: 'SDK Name Check'
+run-name: sdk.name change check (Config.kt)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  files-changed:
+    name: Detect changed files
+    runs-on: ubuntu-latest
+    outputs:
+      config_kt: ${{ steps.changes.outputs.config_kt }}
+      sdk_name_check_scripts: ${{ steps.changes.outputs.sdk_name_check_scripts }}
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - name: Get changed files
+        id: changes
+        uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4.0.1
+        with:
+          token: ${{ github.token }}
+          filters: .github/file-filters.yml
+
+  sdk-name-check:
+    name: SDK name check
+    if: needs.files-changed.outputs.config_kt == 'true' || needs.files-changed.outputs.sdk_name_check_scripts == 'true'
+    needs: files-changed
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+
+      - name: Run detector unit tests
+        run: python3 -m unittest discover -s scripts -p 'test_detect_sdk_name_changes.py'
+
+      - name: Detect SDK name changes
+        if: needs.files-changed.outputs.config_kt == 'true'
+        continue-on-error: true
+        id: detect
+        run: |
+          git fetch --no-tags origin \
+            "${{ github.event.pull_request.base.sha }}" \
+            "${{ github.event.pull_request.head.sha }}"
+          changes=$(python3 scripts/detect_sdk_name_changes.py \
+            --base "${{ github.event.pull_request.base.sha }}" \
+            --head "${{ github.event.pull_request.head.sha }}")
+          echo "changes=${changes}" >> "$GITHUB_OUTPUT"
+
+      # Fork PRs get a read-only GITHUB_TOKEN (see header); skip comment writes to avoid 403 failures.
+      - name: Update PR comment
+        if: needs.files-changed.outputs.config_kt == 'true' && github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          SDK_NAME_CHANGES: ${{ steps.detect.outputs.changes }}
+          DETECT_OUTCOME: ${{ steps.detect.outcome }}
+        with:
+          script: |
+            const marker = '<!-- sdk-name-check -->';
+
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const existing = comments.find(
+              (comment) =>
+                comment.body?.includes(marker) &&
+                comment.user?.type === 'Bot',
+            );
+
+            const upsertComment = async (body) => {
+              if (existing) {
+                await github.rest.issues.updateComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: existing.id,
+                  body,
+                });
+                return;
+              }
+
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            };
+
+            if (process.env.DETECT_OUTCOME === 'failure') {
+              await upsertComment(
+                [
+                  '### ⚠️ SDK name check failed',
+                  '',
+                  'Could not compare `*SDK_NAME` declarations in `Config.kt`. Use `val FOO_SDK_NAME = "..."` with an optional `$OTHER_SDK_NAME` prefix.',
+                  '',
+                  'See the **Detect SDK name changes** step logs for details.',
+                  '',
+                  marker,
+                ].join('\n'),
+              );
+              return;
+            }
+
+            const changes = JSON.parse(process.env.SDK_NAME_CHANGES || '{}');
+            const added = changes.added || [];
+            const removed = changes.removed || [];
+            const sheetUrl = changes.sdk_map_sheet_url;
+
+            if (added.length === 0 && removed.length === 0) {
+              if (existing) {
+                await github.rest.issues.deleteComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: existing.id,
+                });
+              }
+              return;
+            }
+
+            const formatList = (names) => names.map((name) => `- \`${name}\``).join('\n');
+            const sections = ['### ⚠️ SDK name changes detected', ''];
+
+            if (added.length > 0) {
+              sections.push(
+                'This PR adds new `sdk.name` value(s) that will appear in production telemetry:',
+                '',
+                formatList(added),
+                '',
+                `Please add them to the [sdk_map spreadsheet](${sheetUrl}) so Looker/Hex reporting stays accurate.`,
+                '',
+              );
+            }
+
+            if (removed.length > 0) {
+              sections.push(
+                'This PR removes `sdk.name` value(s) from production telemetry:',
+                '',
+                formatList(removed),
+                '',
+                `Please remove them from the [sdk_map spreadsheet](${sheetUrl}).`,
+                '',
+              );
+            }
+
+            sections.push(marker);
+            await upsertComment(sections.join('\n'));
