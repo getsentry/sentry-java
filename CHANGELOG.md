@@ -6,6 +6,10 @@
 
 - Release `MediaMuxer` when a replay segment has no encodable frames to avoid a resource leak ([#5583](https://github.com/getsentry/sentry-java/pull/5583))
 
+### Dependencies
+
+- Align the Kotlin stdlib version in Android modules with the Kotlin Gradle plugin instead of pinning it to 1.9.24 ([#5590](https://github.com/getsentry/sentry-java/pull/5590))
+
 ## 8.44.1
 
 ### Fixes
