@@ -4,7 +4,7 @@
 
 ### Fixes
 
-- Fix replay network detail response body size being unknown for gzip-compressed responses ([#5592](https://github.com/getsentry/sentry-java/pull/5592))
+- Session Replay: Fix network detail response body size being unknown for gzip-compressed responses ([#5592](https://github.com/getsentry/sentry-java/pull/5592))
 
 ## 8.44.1
 
