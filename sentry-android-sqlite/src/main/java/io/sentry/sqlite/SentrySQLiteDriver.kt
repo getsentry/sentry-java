@@ -22,7 +22,8 @@ import org.jetbrains.annotations.ApiStatus
  *     .build()
  * ```
  *
- * If you're using the Sentry Android Gradle plugin, wrapping will be performed automatically.
+ * If you're using the Sentry Android Gradle Plugin (SAGP), wrapping will be performed
+ * automatically.
  *
  * @param delegate The [SQLiteDriver] instance to delegate calls to.
  */
@@ -94,12 +95,11 @@ public class SentrySQLiteDriver private constructor(private val delegate: SQLite
      * wraps or subclasses one. In that case, ensure the open helper passed to the support driver
      * constructor is *not* wrapped.
      */
-    // The Sentry Android Gradle Plugin depends on this method's ABI. Don't change it without
-    // updating the SAGP.
+    // Warning! The SAGP depends on this method's ABI.
     @JvmStatic
     public fun create(delegate: SQLiteDriver): SQLiteDriver =
-      // The SAGP relies on the FQN check for correctness (it lets it naively instrument all
-      // Room.DatabaseBuilder.setDriver() call sites).
+      // FQN check simplifies our SAGP implementation, allowing it to naively instrument all
+      // Room.DatabaseBuilder.setDriver() call sites.
       if (delegate is SentrySQLiteDriver || delegate.javaClass.name == SUPPORT_SQLITE_DRIVER_FQN) {
         delegate
       } else {
