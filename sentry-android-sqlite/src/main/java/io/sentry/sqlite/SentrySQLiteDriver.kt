@@ -99,7 +99,7 @@ public class SentrySQLiteDriver private constructor(private val delegate: SQLite
     @JvmStatic
     public fun create(delegate: SQLiteDriver): SQLiteDriver =
       // FQN check simplifies our SAGP implementation, allowing it to naively instrument all
-      // Room.DatabaseBuilder.setDriver() call sites.
+      // RoomDatabase.Builder.setDriver() call sites.
       if (delegate is SentrySQLiteDriver || delegate.javaClass.name == SUPPORT_SQLITE_DRIVER_FQN) {
         delegate
       } else {
