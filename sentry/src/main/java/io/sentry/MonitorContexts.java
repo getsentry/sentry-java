@@ -3,8 +3,7 @@ package io.sentry;
 import io.sentry.util.Objects;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
+import java.util.Arrays;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -12,6 +11,7 @@ import org.jetbrains.annotations.Nullable;
 public final class MonitorContexts extends ConcurrentHashMap<String, Object>
     implements JsonSerializable {
   private static final long serialVersionUID = 3987329379811822556L;
+  private static final String[] EMPTY_KEYS = new String[0];
 
   public MonitorContexts() {}
 
@@ -49,8 +49,8 @@ public final class MonitorContexts extends ConcurrentHashMap<String, Object>
       throws IOException {
     writer.beginObject();
     // Serialize in alphabetical order to keep determinism.
-    final List<String> sortedKeys = Collections.list(keys());
-    Collections.sort(sortedKeys);
+    final String[] sortedKeys = keySet().toArray(EMPTY_KEYS);
+    Arrays.sort(sortedKeys);
     for (final String key : sortedKeys) {
       final Object value = get(key);
       if (value != null) {
