@@ -61,7 +61,7 @@ dependencies {
   // tests
   testImplementation(projects.sentry)
   testImplementation(projects.sentryTestSupport)
-  testImplementation(kotlin(Config.kotlinStdLib, Config.kotlinStdLibVersionAndroid))
+  testImplementation(kotlin(Config.kotlinStdLib))
   testImplementation(libs.androidx.test.ext.junit)
   testImplementation(libs.kotlin.test.junit)
   testImplementation(libs.mockito.kotlin)

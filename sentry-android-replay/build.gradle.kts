@@ -70,7 +70,7 @@ dependencies {
   api(projects.sentry)
 
   compileOnly(libs.androidx.compose.ui.replay)
-  implementation(kotlin(Config.kotlinStdLib, Config.kotlinStdLibVersionAndroid))
+  implementation(kotlin(Config.kotlinStdLib))
   // tests
   testImplementation(projects.sentryTestSupport)
   testImplementation(projects.sentryAndroidCore)

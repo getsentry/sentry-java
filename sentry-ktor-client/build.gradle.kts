@@ -22,7 +22,7 @@ kotlin { explicitApi() }
 dependencies {
   api(projects.sentry)
 
-  implementation(kotlin(Config.kotlinStdLib, Config.kotlinStdLibVersionAndroid))
+  implementation(kotlin(Config.kotlinStdLib))
   api(projects.sentryKotlinExtensions)
 
   compileOnly(libs.jetbrains.annotations)
