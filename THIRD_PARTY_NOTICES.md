@@ -66,14 +66,14 @@ limitations under the License.
 
 **Source:** https://howardhinnant.github.io/date_algorithms.html<br>
 **License:** Public Domain<br>
-**Copyright:** Copyright (c) 2011-2021 Howard Hinnant
+**Copyright:** None; public domain dedication by Howard Hinnant
 
 ### Scope
 
-The Sentry Java SDK includes adapted civil date conversion algorithms from Howard Hinnant's date algorithms for UTC ISO 8601 timestamp parsing and formatting. The code resides in `io.sentry.SentryIso8601Utils`.
+The Sentry Java SDK includes adapted civil date conversion algorithms from Howard Hinnant's date algorithms for UTC ISO 8601 timestamp parsing and formatting. The code resides in `io.sentry.vendor.SentryIso8601Utils`.
 
 ```
-This paper and the algorithms contained herein are placed in the public domain.
+Consider these donated to the public domain.
 ```
 
 ---

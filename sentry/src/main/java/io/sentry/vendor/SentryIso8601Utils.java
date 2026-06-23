@@ -1,13 +1,14 @@
 // Civil date conversion algorithms adapted from Howard Hinnant's date algorithms.
-// Copyright (c) 2011-2021 Howard Hinnant.
-// Licensed under the Public Domain.
+// Placed in the public domain by Howard Hinnant.
 // https://howardhinnant.github.io/date_algorithms.html
 
-package io.sentry;
+package io.sentry.vendor;
 
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-final class SentryIso8601Utils {
+@ApiStatus.Internal
+public final class SentryIso8601Utils {
 
   private static final long MILLIS_PER_SECOND = 1000L;
   private static final long MILLIS_PER_MINUTE = 60L * MILLIS_PER_SECOND;
@@ -17,7 +18,7 @@ final class SentryIso8601Utils {
 
   private SentryIso8601Utils() {}
 
-  static long parseTimestamp(final @NotNull String timestamp) {
+  public static long parseTimestamp(final @NotNull String timestamp) {
     final int length = timestamp.length();
     int offset = 0;
 
@@ -120,7 +121,7 @@ final class SentryIso8601Utils {
     return epochMillis(year, month, day, hour, minute, second, millisecond, timezoneOffsetMillis);
   }
 
-  static @NotNull String formatTimestamp(final long millis) {
+  public static @NotNull String formatTimestamp(final long millis) {
     final long epochDay = Math.floorDiv(millis, MILLIS_PER_DAY);
     int millisOfDay = (int) Math.floorMod(millis, MILLIS_PER_DAY);
 

@@ -2,6 +2,7 @@ package io.sentry;
 
 import static io.sentry.vendor.gson.internal.bind.util.ISO8601Utils.TIMEZONE_UTC;
 
+import io.sentry.vendor.SentryIso8601Utils;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Calendar;

@@ -8076,6 +8076,11 @@ public class io/sentry/vendor/Base64 {
 	public static fun encodeToString ([BIII)Ljava/lang/String;
 }
 
+public final class io/sentry/vendor/SentryIso8601Utils {
+	public static fun formatTimestamp (J)Ljava/lang/String;
+	public static fun parseTimestamp (Ljava/lang/String;)J
+}
+
 public class io/sentry/vendor/gson/internal/bind/util/ISO8601Utils {
 	public static final field TIMEZONE_UTC Ljava/util/TimeZone;
 	public fun <init> ()V
