@@ -287,12 +287,14 @@ internal class SimpleVideoEncoder(
       onClose?.invoke()
       drainCodec(true)
       mediaCodec.stop()
+    } catch (e: RuntimeException) {
+      options.logger.log(DEBUG, "Failed to properly release video encoder", e)
+    } finally {
+      // always release the native resources, even if draining/stopping the codec above threw (e.g.
+      // when the encoder failed to fully start), otherwise they leak (CloseGuard warning)
       mediaCodec.release()
       surface?.release()
-
       frameMuxer.release()
-    } catch (e: Throwable) {
-      options.logger.log(DEBUG, "Failed to properly release video encoder", e)
     }
   }
 }
