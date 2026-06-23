@@ -10,6 +10,7 @@ import android.content.IntentFilter;
 import android.os.BatteryManager;
 import android.os.Build;
 import android.os.Environment;
+import android.os.LocaleList;
 import android.os.StatFs;
 import android.os.SystemClock;
 import android.util.DisplayMetrics;
@@ -24,6 +25,7 @@ import io.sentry.protocol.Device;
 import io.sentry.protocol.OperatingSystem;
 import io.sentry.util.AutoClosableReentrantLock;
 import java.io.File;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -252,8 +254,18 @@ public final class DeviceInfoUtil {
     }
   }
 
+  @SuppressWarnings("NewApi")
   @NotNull
   private TimeZone getTimeZone() {
+    if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.TIRAMISU) {
+      LocaleList locales = context.getResources().getConfiguration().getLocales();
+      if (!locales.isEmpty()) {
+        Locale locale = locales.get(0);
+        if (locale.getUnicodeLocaleType("tz") != null) {
+          return Calendar.getInstance(locale).getTimeZone();
+        }
+      }
+    }
     return TimeZone.getDefault();
   }
 
