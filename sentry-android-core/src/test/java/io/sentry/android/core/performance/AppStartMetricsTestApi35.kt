@@ -250,9 +250,9 @@ class AppStartMetricsTestApi35 {
   }
 
   @Test
-  fun `does not crash when getHistoricalProcessStartReasons throws SecurityException`() {
+  fun `does not crash when getHistoricalProcessStartReasons throws RuntimeException`() {
     SentryShadowActivityManager.setHistoricalProcessStartReasonsException(
-      SecurityException("isolated process")
+      RuntimeException("isolated process")
     )
     val metrics = AppStartMetrics.getInstance()
 
