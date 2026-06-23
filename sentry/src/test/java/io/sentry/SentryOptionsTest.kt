@@ -651,7 +651,7 @@ class SentryOptionsTest {
   }
 
   @Test
-  fun `when appStartExtender is set, its returned as well`() {
+  fun `when appStartExtender is set, it's returned as well`() {
     val options = SentryOptions()
     val customExtender =
       object : IAppStartExtender {
