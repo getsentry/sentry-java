@@ -4,6 +4,9 @@
 
 package io.sentry.vendor;
 
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+import java.util.SimpleTimeZone;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
@@ -14,6 +17,7 @@ public final class SentryIso8601Utils {
   private static final long MILLIS_PER_MINUTE = 60L * MILLIS_PER_SECOND;
   private static final long MILLIS_PER_HOUR = 60L * MILLIS_PER_MINUTE;
   private static final long MILLIS_PER_DAY = 24L * MILLIS_PER_HOUR;
+  private static final long GREGORIAN_CUTOVER_MILLIS = -12219292800000L;
   private static final int DAYS_0000_TO_1970 = 719468;
 
   private SentryIso8601Utils() {}
@@ -33,14 +37,14 @@ public final class SentryIso8601Utils {
     }
 
     final int day = parseInt(timestamp, offset, offset += 2);
-    validateDate(year, month, day);
 
     if (!checkOffset(timestamp, offset, 'T')) {
       if (offset != length) {
         throw new IllegalArgumentException("Invalid date separator");
       }
-      return epochMillis(year, month, day, 0, 0, 0, 0, 0);
+      return dateOnlyEpochMillis(year, month, day);
     }
+    validateDate(year, month, day);
     offset++;
 
     final int hour = parseInt(timestamp, offset, offset += 2);
@@ -92,10 +96,12 @@ public final class SentryIso8601Utils {
     }
 
     final int timezoneOffsetMillis;
+    final boolean allowTrailingCharacters;
     final char timezoneIndicator = timestamp.charAt(offset);
     if (timezoneIndicator == 'Z') {
       timezoneOffsetMillis = 0;
       offset++;
+      allowTrailingCharacters = true;
     } else if (timezoneIndicator == '+' || timezoneIndicator == '-') {
       final int sign = timezoneIndicator == '+' ? 1 : -1;
       offset++;
@@ -110,18 +116,28 @@ public final class SentryIso8601Utils {
       validateTimezone(timezoneHour, timezoneMinute);
       timezoneOffsetMillis =
           sign * (int) (timezoneHour * MILLIS_PER_HOUR + timezoneMinute * MILLIS_PER_MINUTE);
+      allowTrailingCharacters = false;
     } else {
       throw new IllegalArgumentException("Invalid time zone indicator");
     }
 
-    if (offset != length) {
+    if (!allowTrailingCharacters && offset != length) {
       throw new IllegalArgumentException("Invalid trailing characters");
+    }
+
+    if (isBeforeGregorianCutover(year, month, day)) {
+      return epochMillisWithCalendar(
+          year, month, day, hour, minute, second, millisecond, timezoneOffsetMillis);
     }
 
     return epochMillis(year, month, day, hour, minute, second, millisecond, timezoneOffsetMillis);
   }
 
   public static @NotNull String formatTimestamp(final long millis) {
+    if (millis < GREGORIAN_CUTOVER_MILLIS) {
+      return formatTimestampWithCalendar(millis);
+    }
+
     final long epochDay = Math.floorDiv(millis, MILLIS_PER_DAY);
     int millisOfDay = (int) Math.floorMod(millis, MILLIS_PER_DAY);
 
@@ -147,6 +163,53 @@ public final class SentryIso8601Utils {
     padInt(timestamp, second, "ss".length());
     timestamp.append('.');
     padInt(timestamp, millisecond, "sss".length());
+    timestamp.append('Z');
+    return timestamp.toString();
+  }
+
+  private static long dateOnlyEpochMillis(final int year, final int month, final int day) {
+    return new GregorianCalendar(year, month - 1, day).getTimeInMillis();
+  }
+
+  private static long epochMillisWithCalendar(
+      final int year,
+      final int month,
+      final int day,
+      final int hour,
+      final int minute,
+      final int second,
+      final int millisecond,
+      final int timezoneOffsetMillis) {
+    final GregorianCalendar calendar = new GregorianCalendar(new SimpleTimeZone(timezoneOffsetMillis, "GMT"));
+    calendar.setLenient(false);
+    calendar.set(Calendar.YEAR, year);
+    calendar.set(Calendar.MONTH, month - 1);
+    calendar.set(Calendar.DAY_OF_MONTH, day);
+    calendar.set(Calendar.HOUR_OF_DAY, hour);
+    calendar.set(Calendar.MINUTE, minute);
+    calendar.set(Calendar.SECOND, second);
+    calendar.set(Calendar.MILLISECOND, millisecond);
+    return calendar.getTimeInMillis();
+  }
+
+  private static @NotNull String formatTimestampWithCalendar(final long millis) {
+    final GregorianCalendar calendar = new GregorianCalendar(new SimpleTimeZone(0, "UTC"));
+    calendar.setTimeInMillis(millis);
+
+    final StringBuilder timestamp = new StringBuilder("yyyy-MM-ddThh:mm:ss.sssZ".length());
+    padInt(timestamp, calendar.get(Calendar.YEAR), "yyyy".length());
+    timestamp.append('-');
+    padInt(timestamp, calendar.get(Calendar.MONTH) + 1, "MM".length());
+    timestamp.append('-');
+    padInt(timestamp, calendar.get(Calendar.DAY_OF_MONTH), "dd".length());
+    timestamp.append('T');
+    padInt(timestamp, calendar.get(Calendar.HOUR_OF_DAY), "hh".length());
+    timestamp.append(':');
+    padInt(timestamp, calendar.get(Calendar.MINUTE), "mm".length());
+    timestamp.append(':');
+    padInt(timestamp, calendar.get(Calendar.SECOND), "ss".length());
+    timestamp.append('.');
+    padInt(timestamp, calendar.get(Calendar.MILLISECOND), "sss".length());
     timestamp.append('Z');
     return timestamp.toString();
   }
@@ -188,6 +251,10 @@ public final class SentryIso8601Utils {
     final int day = dayOfYear - (153 * monthPrime + 2) / 5 + 1;
     final int month = monthPrime < 10 ? monthPrime + 3 : monthPrime - 9;
     return new int[] {year + (month <= 2 ? 1 : 0), month, day};
+  }
+
+  private static boolean isBeforeGregorianCutover(final int year, final int month, final int day) {
+    return year < 1582 || (year == 1582 && (month < 10 || (month == 10 && day < 15)));
   }
 
   private static void validateDate(final int year, final int month, final int day) {

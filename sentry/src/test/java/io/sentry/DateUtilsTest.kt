@@ -1,10 +1,13 @@
 package io.sentry
 
+import io.sentry.vendor.gson.internal.bind.util.ISO8601Utils
+import java.text.ParsePosition
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Date
+import java.util.TimeZone
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -143,6 +146,101 @@ class DateUtilsTest {
   }
 
   @Test
+  fun `Fast timestamp formatter matches previous ISO8601 formatter`() {
+    val input =
+      listOf(
+        "1582-10-04T00:00:00.000Z",
+        "1582-10-15T00:00:00.000Z",
+        "1900-03-01T00:00:00.000Z",
+        "1969-12-31T23:59:59.999Z",
+        "1970-01-01T00:00:00.000Z",
+        "1999-12-31T23:59:59.999Z",
+        "2000-02-29T12:34:56.789Z",
+        "2020-03-27T08:52:58.015Z",
+        "2024-02-29T23:59:59.001Z",
+        "2100-03-01T00:00:00.000Z",
+        "2400-02-29T23:59:59.999Z",
+      )
+
+    input
+      .map { ISO8601Utils.parse(it, ParsePosition(0)).time }
+      .forEach {
+        assertEquals(
+          ISO8601Utils.format(Date(it), true),
+          DateUtils.getTimestampFromMillis(it),
+          "millis=$it",
+        )
+      }
+  }
+
+  @Test
+  fun `Fast timestamp parser matches previous ISO8601 parser`() {
+    val input =
+      listOf(
+        "2020-03-27T08:52Z",
+        "2020-03-27T08:52:58Z",
+        "2020-03-27T08:52:58.015Z",
+        "20200327T085258.015Z",
+        "2020-03-27T10:52:58.015+02:00",
+        "2020-03-27T10:52:58.015+0200",
+        "2020-03-27T10:52:58.015+02",
+        "2020-03-27T05:52:58.015-03:00",
+        "2020-03-27T05:22:58.015-0330",
+        "2020-03-27T08:52:58.1Z",
+        "2020-03-27T08:52:58.12Z",
+        "2020-03-27T08:52:58.123456Z",
+        "2020-03-27T08:52:58Ztrailing",
+        "2016-12-31T23:59:60Z",
+        "1582-10-04T00:00:00.000Z",
+        "1582-10-15T00:00:00.000Z",
+        "1900-03-01T00:00:00.000Z",
+        "2000-02-29T12:34:56.789Z",
+        "2100-03-01T00:00:00.000Z",
+      )
+
+    input.forEach {
+      assertEquals(
+        ISO8601Utils.parse(it, ParsePosition(0)).time,
+        DateUtils.getDateTime(it).time,
+        "timestamp=$it",
+      )
+    }
+  }
+
+  @Test
+  fun `Fast timestamp parser matches previous ISO8601 parser for date-only values`() {
+    withDefaultTimeZone("America/Los_Angeles") {
+      val input = listOf("2020-03-27", "20200327", "2020-02-30")
+
+      input.forEach {
+        assertEquals(
+          ISO8601Utils.parse(it, ParsePosition(0)).time,
+          DateUtils.getDateTime(it).time,
+          "timestamp=$it",
+        )
+      }
+    }
+  }
+
+  @Test
+  fun `Fast timestamp parser rejects date-time without timezone like previous ISO8601 parser`() {
+    val input = listOf("2020-03-27T08:52", "2020-03-27T08:52:58", "2020-03-27T08:52:58.015")
+
+    input.forEach {
+      assertFailsWith<Exception>("timestamp=$it") { ISO8601Utils.parse(it, ParsePosition(0)) }
+      assertFailsWith<IllegalArgumentException>("timestamp=$it") { DateUtils.getDateTime(it) }
+    }
+  }
+
+  @Test
+  fun `Fast timestamp parser rejects Gregorian cutover gap like previous ISO8601 parser`() {
+    val timestamp = "1582-10-10T00:00:00.000Z"
+
+    assertFailsWith<Exception> { ISO8601Utils.parse(timestamp, ParsePosition(0)) }
+    assertFailsWith<IllegalArgumentException> { DateUtils.getDateTime(timestamp) }
+  }
+
+  @Test
   fun `Millis formats to Date`() {
     val millis = 1591533492L * 1000L + 631
     val actual = DateUtils.getDateTime(millis)
@@ -184,6 +282,16 @@ class DateUtilsTest {
 
   private fun convertDate(date: Date): LocalDateTime =
     Instant.ofEpochMilli(date.time).atZone(utcTimeZone).toLocalDateTime()
+
+  private fun withDefaultTimeZone(timeZoneId: String, block: () -> Unit) {
+    val previousTimeZone = TimeZone.getDefault()
+    try {
+      TimeZone.setDefault(TimeZone.getTimeZone(timeZoneId))
+      block()
+    } finally {
+      TimeZone.setDefault(previousTimeZone)
+    }
+  }
 
   private fun assertClose(expected: Double, actual: Double?) {
     assertNotNull(actual)
