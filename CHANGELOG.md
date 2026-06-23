@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Add `Sentry.extendAppStart()`, `Sentry.finishAppStart()`, and `Sentry.getExtendedAppStartSpan()` to extend the app start measurement past `Application.onCreate` for extra launch-time work on Android ([#5604](https://github.com/getsentry/sentry-java/pull/5604))
+
 ## 8.44.1
 
 ### Fixes
