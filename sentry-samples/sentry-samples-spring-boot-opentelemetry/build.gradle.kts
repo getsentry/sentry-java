@@ -155,6 +155,9 @@ tasks.register<JavaExec>("bootRunWithAgent").configure {
   jvmArgs = listOf("-Dotel.javaagent.debug=true", "-javaagent:$agentJarPath")
 }
 
+// The runner launches this sample with -javaagent, so track the agent jar as a systemTest input.
+sentrySystemTest { usesOpenTelemetryAgent = true }
+
 tasks.register<Test>("systemTest").configure {
   group = "verification"
   description = "Runs the System tests"
