@@ -7,6 +7,7 @@ import java.time.format.DateTimeFormatter
 import java.util.Date
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
@@ -32,6 +33,54 @@ class DateUtilsTest {
     val timestamp = utcDate.format(isoFormat)
 
     assertEquals("2020-03-27T08:52:58.000Z", timestamp)
+  }
+
+  @Test
+  fun `When ISO date has offset`() {
+    val input =
+      mapOf(
+        "2020-03-27T10:52:58.015+02:00" to "2020-03-27T08:52:58.015Z",
+        "2020-03-27T10:52:58.015+0200" to "2020-03-27T08:52:58.015Z",
+        "2020-03-27T10:52:58.015+02" to "2020-03-27T08:52:58.015Z",
+        "2020-03-27T05:52:58.015-03:00" to "2020-03-27T08:52:58.015Z",
+      )
+
+    input.forEach {
+      val timestamp = convertDate(DateUtils.getDateTime(it.key)).format(isoFormat)
+
+      assertEquals(it.value, timestamp)
+    }
+  }
+
+  @Test
+  fun `When ISO date uses compact separators`() {
+    val date = DateUtils.getDateTime("20200327T085258.015Z")
+
+    val utcDate = convertDate(date)
+    val timestamp = utcDate.format(isoFormat)
+
+    assertEquals("2020-03-27T08:52:58.015Z", timestamp)
+  }
+
+  @Test
+  fun `When ISO date has short fraction`() {
+    val input =
+      mapOf(
+        "2020-03-27T08:52:58.1Z" to "2020-03-27T08:52:58.100Z",
+        "2020-03-27T08:52:58.12Z" to "2020-03-27T08:52:58.120Z",
+        "2020-03-27T08:52:58.123456Z" to "2020-03-27T08:52:58.123Z",
+      )
+
+    input.forEach {
+      val timestamp = convertDate(DateUtils.getDateTime(it.key)).format(isoFormat)
+
+      assertEquals(it.value, timestamp)
+    }
+  }
+
+  @Test
+  fun `When ISO date is invalid`() {
+    assertFailsWith<IllegalArgumentException> { DateUtils.getDateTime("2020-02-30T08:52:58Z") }
   }
 
   @Test
@@ -79,6 +128,21 @@ class DateUtilsTest {
   }
 
   @Test
+  fun `Formats millis to ISO 8601 timestamp`() {
+    val input =
+      mapOf(
+        Instant.parse("1970-01-01T00:00:00.000Z").toEpochMilli() to "1970-01-01T00:00:00.000Z",
+        Instant.parse("1969-12-31T23:59:59.999Z").toEpochMilli() to "1969-12-31T23:59:59.999Z",
+        Instant.parse("2000-02-29T12:34:56.789Z").toEpochMilli() to "2000-02-29T12:34:56.789Z",
+        Instant.parse("1900-03-01T00:00:00.000Z").toEpochMilli() to "1900-03-01T00:00:00.000Z",
+        Instant.parse("2100-03-01T00:00:00.000Z").toEpochMilli() to "2100-03-01T00:00:00.000Z",
+        Instant.parse("2400-02-29T23:59:59.999Z").toEpochMilli() to "2400-02-29T23:59:59.999Z",
+      )
+
+    input.forEach { assertEquals(it.value, DateUtils.getTimestampFromMillis(it.key)) }
+  }
+
+  @Test
   fun `Millis formats to Date`() {
     val millis = 1591533492L * 1000L + 631
     val actual = DateUtils.getDateTime(millis)
@@ -86,6 +150,7 @@ class DateUtilsTest {
     val utcActual = convertDate(actual)
     val timestamp = utcActual.format(isoFormat)
 
+    assertEquals(millis, actual.time)
     assertEquals("2020-06-07T12:38:12.631Z", timestamp)
   }
 
