@@ -1,0 +1,212 @@
+package io.sentry.android.core
+
+import android.os.Build
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import io.sentry.ISpan
+import io.sentry.ITransaction
+import io.sentry.NoOpSpan
+import io.sentry.SentryNanotimeDate
+import io.sentry.SpanStatus
+import io.sentry.android.core.performance.AppStartMetrics
+import java.util.concurrent.atomic.AtomicInteger
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNull
+import kotlin.test.assertSame
+import kotlin.test.assertTrue
+import org.junit.runner.RunWith
+import org.mockito.kotlin.any
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
+import org.robolectric.annotation.Config
+
+@RunWith(AndroidJUnit4::class)
+@Config(sdk = [Build.VERSION_CODES.N])
+class AppStartExtensionTest {
+
+  private val metrics = mock<AppStartMetrics>()
+
+  private fun extension(windowOpen: Boolean = true): AppStartExtension {
+    whenever(metrics.isAppStartWindowOpen).thenReturn(windowOpen)
+    return AppStartExtension(metrics)
+  }
+
+  /** Simulates the integration's listener: hands a transaction + span back to the extension. */
+  private fun AppStartExtension.registerHandOver(
+    txn: ITransaction = mock(),
+    span: ISpan = mock(),
+  ): Pair<ITransaction, ISpan> {
+    setExtendAppStartListener { onExtended(txn, span) }
+    return txn to span
+  }
+
+  @Test
+  fun `extendAppStart fires the listener when the window is open`() {
+    val ext = extension(windowOpen = true)
+    val calls = AtomicInteger()
+    ext.setExtendAppStartListener { calls.incrementAndGet() }
+    ext.extendAppStart()
+    assertEquals(1, calls.get())
+  }
+
+  @Test
+  fun `extendAppStart does not fire the listener when the window is closed`() {
+    val ext = extension(windowOpen = false)
+    val calls = AtomicInteger()
+    ext.setExtendAppStartListener { calls.incrementAndGet() }
+    ext.extendAppStart()
+    assertEquals(0, calls.get())
+  }
+
+  @Test
+  fun `extendAppStart is inert when no listener is registered`() {
+    val ext = extension(windowOpen = true)
+    ext.extendAppStart()
+    assertSame(NoOpSpan.getInstance(), ext.extendedAppStartSpan)
+    assertFalse(ext.isActive)
+  }
+
+  @Test
+  fun `extendAppStart is ignored when already extending`() {
+    val ext = extension(windowOpen = true)
+    val calls = AtomicInteger()
+    val txn = mock<ITransaction>()
+    val span = mock<ISpan>()
+    ext.setExtendAppStartListener {
+      calls.incrementAndGet()
+      ext.onExtended(txn, span)
+    }
+    ext.extendAppStart()
+    ext.extendAppStart()
+    assertEquals(1, calls.get())
+  }
+
+  @Test
+  fun `getExtendedAppStartSpan returns NoOpSpan when no extension is active`() {
+    assertSame(NoOpSpan.getInstance(), extension().extendedAppStartSpan)
+  }
+
+  @Test
+  fun `getExtendedAppStartSpan returns the span while extending`() {
+    val ext = extension(windowOpen = true)
+    val (_, span) = ext.registerHandOver()
+    ext.extendAppStart()
+    assertSame(span, ext.extendedAppStartSpan)
+  }
+
+  @Test
+  fun `finishAppStart without a prior extend is a no-op`() {
+    val ext = extension()
+    ext.finishAppStart()
+    assertNull(ext.extendedEndTime)
+  }
+
+  @Test
+  fun `finishAppStart finishes the extended span`() {
+    val ext = extension(windowOpen = true)
+    val (_, span) = ext.registerHandOver()
+    ext.extendAppStart()
+    ext.finishAppStart()
+    verify(span).finish(SpanStatus.OK)
+  }
+
+  @Test
+  fun `finishAppStart does not finish an already finished span`() {
+    val ext = extension(windowOpen = true)
+    val span = mock<ISpan>()
+    whenever(span.isFinished).thenReturn(true)
+    ext.registerHandOver(span = span)
+    ext.extendAppStart()
+    ext.finishAppStart()
+    verify(span, never()).finish(any<SpanStatus>())
+  }
+
+  @Test
+  fun `isActive reflects the transaction state`() {
+    val ext = extension(windowOpen = true)
+    assertFalse(ext.isActive)
+    val (txn, _) = ext.registerHandOver()
+    ext.extendAppStart()
+    assertTrue(ext.isActive)
+    whenever(txn.isFinished).thenReturn(true)
+    assertFalse(ext.isActive)
+  }
+
+  @Test
+  fun `finishTransaction finishes the transaction at the given timestamp`() {
+    val ext = extension(windowOpen = true)
+    val (txn, _) = ext.registerHandOver()
+    ext.extendAppStart()
+    val endTimestamp = SentryNanotimeDate()
+    ext.finishTransaction(endTimestamp)
+    verify(txn).finish(SpanStatus.OK, endTimestamp)
+  }
+
+  @Test
+  fun `finishTransaction does not finish an already finished transaction`() {
+    val ext = extension(windowOpen = true)
+    val txn = mock<ITransaction>()
+    whenever(txn.isFinished).thenReturn(true)
+    ext.registerHandOver(txn = txn)
+    ext.extendAppStart()
+    ext.finishTransaction(SentryNanotimeDate())
+    verify(txn, never()).finish(any<SpanStatus>(), any())
+  }
+
+  @Test
+  fun `getExtendedEndTime is null while the span is unfinished`() {
+    val ext = extension(windowOpen = true)
+    ext.registerHandOver()
+    ext.extendAppStart()
+    assertNull(ext.extendedEndTime)
+  }
+
+  @Test
+  fun `getExtendedEndTime is null when the extension finished via deadline`() {
+    val ext = extension(windowOpen = true)
+    val span = mock<ISpan>()
+    whenever(span.isFinished).thenReturn(true)
+    whenever(span.status).thenReturn(SpanStatus.DEADLINE_EXCEEDED)
+    whenever(span.finishDate).thenReturn(SentryNanotimeDate())
+    ext.registerHandOver(span = span)
+    ext.extendAppStart()
+    assertNull(ext.extendedEndTime)
+  }
+
+  @Test
+  fun `getExtendedEndTime returns the finish date on a user finish`() {
+    val ext = extension(windowOpen = true)
+    val finishDate = SentryNanotimeDate()
+    val span = mock<ISpan>()
+    whenever(span.isFinished).thenReturn(true)
+    whenever(span.status).thenReturn(SpanStatus.OK)
+    whenever(span.finishDate).thenReturn(finishDate)
+    ext.registerHandOver(span = span)
+    ext.extendAppStart()
+    assertSame(finishDate, ext.extendedEndTime)
+  }
+
+  @Test
+  fun `reset clears the extension state`() {
+    val ext = extension(windowOpen = true)
+    ext.registerHandOver()
+    ext.extendAppStart()
+    assertTrue(ext.isActive)
+    ext.reset()
+    assertFalse(ext.isActive)
+    assertSame(NoOpSpan.getInstance(), ext.extendedAppStartSpan)
+  }
+
+  @Test
+  fun `getExtendedAppStartSpan returns NoOpSpan after the span finished`() {
+    val ext = extension(windowOpen = true)
+    val span = mock<ISpan>()
+    whenever(span.isFinished).thenReturn(true)
+    ext.registerHandOver(span = span)
+    ext.extendAppStart()
+    assertSame(NoOpSpan.getInstance(), ext.extendedAppStartSpan)
+  }
+}

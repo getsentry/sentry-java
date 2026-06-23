@@ -1024,4 +1024,66 @@ class AppStartMetricsTest {
 
     assertEquals(AppStartMetrics.AppStartType.WARM, metrics.appStartType)
   }
+
+  // region app start extension
+
+  @Test
+  fun `isAppStartWindowOpen is true on a fresh foreground start`() {
+    assertTrue(AppStartMetrics.getInstance().isAppStartWindowOpen)
+  }
+
+  @Test
+  fun `isAppStartWindowOpen is true for a headless (non-foreground) start`() {
+    val metrics = AppStartMetrics.getInstance()
+    metrics.isAppLaunchedInForeground = false
+    // The foreground check is ignored, so a headless start can still be extended.
+    assertTrue(metrics.isAppStartWindowOpen)
+  }
+
+  @Test
+  fun `isAppStartWindowOpen is false once an activity was created`() {
+    val metrics = AppStartMetrics.getInstance()
+    metrics.onActivityCreated(mock(), null)
+    assertFalse(metrics.isAppStartWindowOpen)
+  }
+
+  @Test
+  fun `isAppStartWindowOpen is false once the first frame was drawn`() {
+    val metrics = AppStartMetrics.getInstance()
+    metrics.onFirstFrameDrawn()
+    assertFalse(metrics.isAppStartWindowOpen)
+  }
+
+  @Test
+  fun `isAppStartWindowOpen is false once start measurements were sent`() {
+    val metrics = AppStartMetrics.getInstance()
+    metrics.onAppStartSpansSent()
+    assertFalse(metrics.isAppStartWindowOpen)
+  }
+
+  @Test
+  fun `getAppStartExtension returns the same instance`() {
+    val metrics = AppStartMetrics.getInstance()
+    assertSame(metrics.appStartExtension, metrics.appStartExtension)
+  }
+
+  @Test
+  fun `clear resets the extension state`() {
+    val metrics = AppStartMetrics.getInstance()
+    metrics.appStartExtension.onExtended(mock(), mock())
+    assertTrue(metrics.appStartExtension.isActive)
+    metrics.clear()
+    assertFalse(metrics.appStartExtension.isActive)
+  }
+
+  @Test
+  fun `onAppStartSpansSent resets the extension state`() {
+    val metrics = AppStartMetrics.getInstance()
+    metrics.appStartExtension.onExtended(mock(), mock())
+    assertTrue(metrics.appStartExtension.isActive)
+    metrics.onAppStartSpansSent()
+    assertFalse(metrics.appStartExtension.isActive)
+  }
+
+  // endregion
 }

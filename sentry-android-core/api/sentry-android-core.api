@@ -184,6 +184,23 @@ public final class io/sentry/android/core/AppLifecycleIntegration : io/sentry/In
 	public fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
 }
 
+public final class io/sentry/android/core/AppStartExtension : io/sentry/IAppStartExtender {
+	public fun <init> (Lio/sentry/android/core/performance/AppStartMetrics;)V
+	public fun extendAppStart ()V
+	public fun finishAppStart ()V
+	public fun finishTransaction (Lio/sentry/SentryDate;)V
+	public fun getExtendedAppStartSpan ()Lio/sentry/ISpan;
+	public fun getExtendedEndTime ()Lio/sentry/SentryDate;
+	public fun isActive ()Z
+	public fun onExtended (Lio/sentry/ITransaction;Lio/sentry/ISpan;)V
+	public fun reset ()V
+	public fun setExtendAppStartListener (Lio/sentry/android/core/AppStartExtension$ExtendAppStartListener;)V
+}
+
+public abstract interface class io/sentry/android/core/AppStartExtension$ExtendAppStartListener {
+	public abstract fun onExtendAppStartRequested ()V
+}
+
 public final class io/sentry/android/core/AppState : java/io/Closeable {
 	public fun addAppStateListener (Lio/sentry/android/core/AppState$AppStateListener;)V
 	public fun close ()V
@@ -745,6 +762,7 @@ public class io/sentry/android/core/performance/AppStartMetrics : io/sentry/andr
 	public fun getAppStartBaggageHeader ()Ljava/lang/String;
 	public fun getAppStartContinuousProfiler ()Lio/sentry/IContinuousProfiler;
 	public fun getAppStartEndTime ()Lio/sentry/SentryDate;
+	public fun getAppStartExtension ()Lio/sentry/android/core/AppStartExtension;
 	public fun getAppStartProfiler ()Lio/sentry/ITransactionProfiler;
 	public fun getAppStartReason ()Ljava/lang/String;
 	public fun getAppStartSamplingDecision ()Lio/sentry/TracesSamplingDecision;
@@ -760,6 +778,7 @@ public class io/sentry/android/core/performance/AppStartMetrics : io/sentry/andr
 	public static fun getInstance ()Lio/sentry/android/core/performance/AppStartMetrics;
 	public fun getSdkInitTimeSpan ()Lio/sentry/android/core/performance/TimeSpan;
 	public fun isAppLaunchedInForeground ()Z
+	public fun isAppStartWindowOpen ()Z
 	public fun onActivityCreated (Landroid/app/Activity;Landroid/os/Bundle;)V
 	public fun onActivityDestroyed (Landroid/app/Activity;)V
 	public fun onActivityPaused (Landroid/app/Activity;)V
