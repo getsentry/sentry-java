@@ -16,7 +16,7 @@ import io.sentry.SpanStatus
  */
 internal class SentrySQLiteStatement(
   private val delegate: SQLiteStatement,
-  private val spans: SQLiteSpanInstrumentation,
+  private val spans: DriverSpans,
   private val sql: String,
   private val nanoTimeProvider: () -> Long = { System.nanoTime() },
 ) : SQLiteStatement by delegate {
@@ -74,6 +74,6 @@ internal class SentrySQLiteStatement(
     val duration = accumulatedDbNanos
     firstStepTimestampNanos = null
     accumulatedDbNanos = 0L
-    spans.recordSpan(sql, startNanos, duration, status, throwable)
+    spans.record(sql, startNanos, duration, status, throwable)
   }
 }

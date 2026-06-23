@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 8.44.1
+
+### Fixes
+
+- Fix `FirstDrawDoneListener` leaking an `OnGlobalLayoutListener` per registration ([#5567](https://github.com/getsentry/sentry-java/pull/5567))
 
 ### Features
 
@@ -11,6 +15,9 @@
 ### Dependencies
 
 - Bump Spring Boot 4 and OpenTelemetry dependencies ([#5573](https://github.com/getsentry/sentry-java/pull/5573))
+- Bump Native SDK from v0.15.0 to v0.15.1 ([#5570](https://github.com/getsentry/sentry-java/pull/5570))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0151)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.15.0...0.15.1)
 
 ## 8.44.0
 
@@ -21,6 +28,7 @@
   - Emits a transaction named `App Start` with op `app.start`, carrying the existing app start measurements and phase spans (`process.load`, `contentprovider.load`, `application.load`, activity lifecycle spans) as direct children of the root
   - The standalone transaction shares the same `traceId` as the first `ui.load` activity transaction so they remain linked in the trace view
   - Also covers non-activity starts (broadcast receivers, services, content providers)
+  - On Android 15+ (API 35), the standalone `app.start` transaction reports why the OS started the process via `app.vitals.start.reason` trace data (e.g. `launcher`, `broadcast`, `service`, `content_provider`), derived from `ApplicationStartInfo.getReason()`. You can search and group by this attribute in the Trace Explorer. ([#5552](https://github.com/getsentry/sentry-java/pull/5552))
 
 ### Improvements
 

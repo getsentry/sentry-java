@@ -20,20 +20,17 @@ private const val SQLITE_TRACE_ORIGIN = "auto.db.sqlite"
 private val EMPTY_NANO_TIME = SentryNanotimeDate(0, 0L)
 
 /** Span instrumentation for [SentrySQLiteDriver]. */
-internal class SQLiteSpanInstrumentation(
-  private val scopes: IScopes,
-  private val dbMetadata: DbMetadata,
-) {
+internal class DriverSpans(private val scopes: IScopes, private val dbMetadata: DbMetadata) {
 
   private val stackTraceFactory = SentryStackTraceFactory(scopes.options)
 
   /**
-   * Returns a timestamp in nanoseconds for use with [recordSpan]. Timestamp is ns-precise if the
-   * active parent span uses a [SentryNanotimeDate] (the ordinary case); otherwise it's ms-precise.
+   * Returns a timestamp in nanoseconds for use with [record]. Timestamp is ns-precise if the active
+   * parent span uses a [SentryNanotimeDate] (the ordinary case); otherwise it's ms-precise.
    *
-   * Note: Internalizing the start time in [recordSpan] would shift spans to end-of-work on the
-   * trace timeline, which is less desirable; callers capture the start before doing database work
-   * and pass it back to [recordSpan].
+   * Note: Internalizing the start time in [record] would shift spans to end-of-work on the trace
+   * timeline, which is less desirable; callers capture the start before doing database work and
+   * pass it back to [record].
    */
   fun startTimestamp(): Long =
     // Try to retain nanosecond precision + avoid SentryDate allocation...
@@ -42,7 +39,7 @@ internal class SQLiteSpanInstrumentation(
       ?: scopes.options.dateProvider.now().nanoTimestamp()
 
   /** Records a `db.sql.query` span. */
-  fun recordSpan(
+  fun record(
     sql: String,
     startTimestampNanos: Long,
     durationNanos: Long,
@@ -73,14 +70,11 @@ internal class SQLiteSpanInstrumentation(
   companion object {
 
     /**
-     * Returns [SQLiteSpanInstrumentation] based on the [fileName] argument passed to
+     * Returns [DriverSpans] based on the [fileName] argument passed to
      * [SQLiteDriver.open][androidx.sqlite.SQLiteDriver.open].
      */
-    fun fromFileName(
-      fileName: String,
-      scopes: IScopes = ScopesAdapter.getInstance(),
-    ): SQLiteSpanInstrumentation =
-      SQLiteSpanInstrumentation(scopes, dbMetadataFromFileName(fileName))
+    fun fromFileName(fileName: String, scopes: IScopes = ScopesAdapter.getInstance()): DriverSpans =
+      DriverSpans(scopes, dbMetadataFromFileName(fileName))
   }
 }
 

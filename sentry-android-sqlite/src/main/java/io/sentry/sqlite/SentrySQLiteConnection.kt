@@ -5,7 +5,7 @@ import androidx.sqlite.SQLiteStatement
 
 internal class SentrySQLiteConnection(
   private val delegate: SQLiteConnection,
-  private val spans: SQLiteSpanInstrumentation,
+  private val spans: DriverSpans,
 ) : SQLiteConnection by delegate {
 
   override fun prepare(sql: String): SQLiteStatement {

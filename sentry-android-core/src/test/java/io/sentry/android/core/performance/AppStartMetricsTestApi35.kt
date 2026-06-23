@@ -15,6 +15,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import org.junit.Before
 import org.junit.runner.RunWith
 import org.mockito.kotlin.mock
@@ -205,6 +206,47 @@ class AppStartMetricsTestApi35 {
     assertEquals(AppStartMetrics.AppStartType.COLD, metrics.appStartType)
     assertFalse(metrics.isAppLaunchedInForeground)
     assertEquals(1, listenerCalls.get())
+  }
+
+  @Test
+  fun `getAppStartReason maps ApplicationStartInfo reason to string on API 35`() {
+    val mockStartInfo = mock<ApplicationStartInfo>()
+    whenever(mockStartInfo.startupState).thenReturn(ApplicationStartInfo.STARTUP_STATE_STARTED)
+    whenever(mockStartInfo.startType).thenReturn(ApplicationStartInfo.START_TYPE_COLD)
+    whenever(mockStartInfo.reason).thenReturn(ApplicationStartInfo.START_REASON_BROADCAST)
+    SentryShadowActivityManager.setHistoricalProcessStartReasons(listOf(mockStartInfo))
+    val metrics = AppStartMetrics.getInstance()
+
+    val app = ApplicationProvider.getApplicationContext<Application>()
+    metrics.registerLifecycleCallbacks(app)
+
+    assertEquals("broadcast", metrics.appStartReason)
+  }
+
+  @Test
+  fun `getAppStartReason returns null when no ApplicationStartInfo is available`() {
+    SentryShadowActivityManager.setHistoricalProcessStartReasons(emptyList())
+    val metrics = AppStartMetrics.getInstance()
+
+    val app = ApplicationProvider.getApplicationContext<Application>()
+    metrics.registerLifecycleCallbacks(app)
+
+    assertNull(metrics.appStartReason)
+  }
+
+  @Test
+  fun `getAppStartReason returns null for an unmapped reason`() {
+    val mockStartInfo = mock<ApplicationStartInfo>()
+    whenever(mockStartInfo.startupState).thenReturn(ApplicationStartInfo.STARTUP_STATE_STARTED)
+    whenever(mockStartInfo.startType).thenReturn(ApplicationStartInfo.START_TYPE_COLD)
+    whenever(mockStartInfo.reason).thenReturn(Int.MAX_VALUE)
+    SentryShadowActivityManager.setHistoricalProcessStartReasons(listOf(mockStartInfo))
+    val metrics = AppStartMetrics.getInstance()
+
+    val app = ApplicationProvider.getApplicationContext<Application>()
+    metrics.registerLifecycleCallbacks(app)
+
+    assertNull(metrics.appStartReason)
   }
 
   private fun waitForMainLooperIdle() {

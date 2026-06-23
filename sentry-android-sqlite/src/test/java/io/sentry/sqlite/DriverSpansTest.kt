@@ -21,7 +21,7 @@ import kotlin.test.assertTrue
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 
-class SQLiteSpanInstrumentationTest {
+class DriverSpansTest {
 
   private class Fixture {
 
@@ -29,17 +29,14 @@ class SQLiteSpanInstrumentationTest {
     lateinit var sentryTracer: SentryTracer
     lateinit var options: SentryOptions
 
-    fun getSut(
-      isTransactionActive: Boolean = true,
-      fileName: String = ":memory:",
-    ): SQLiteSpanInstrumentation {
+    fun getSut(isTransactionActive: Boolean = true, fileName: String = ":memory:"): DriverSpans {
       options = SentryOptions().apply { dsn = "https://key@sentry.io/proj" }
       whenever(scopes.options).thenReturn(options)
       sentryTracer = SentryTracer(TransactionContext("name", "op"), scopes)
       if (isTransactionActive) {
         whenever(scopes.span).thenReturn(sentryTracer)
       }
-      return SQLiteSpanInstrumentation.fromFileName(fileName, scopes)
+      return DriverSpans.fromFileName(fileName, scopes)
     }
   }
 
@@ -56,7 +53,7 @@ class SQLiteSpanInstrumentationTest {
     val start = sut.startTimestamp()
 
     val durationNanos = 42_000_000L
-    sut.recordSpan("SELECT 1", start, durationNanos, SpanStatus.OK)
+    sut.record("SELECT 1", start, durationNanos, SpanStatus.OK)
 
     val span = fixture.sentryTracer.children.first()
 
@@ -81,7 +78,7 @@ class SQLiteSpanInstrumentationTest {
     whenever(fixture.scopes.options).thenReturn(options)
     whenever(fixture.scopes.span).thenReturn(parentSpan)
 
-    val sut = SQLiteSpanInstrumentation.fromFileName(":memory:", fixture.scopes)
+    val sut = DriverSpans.fromFileName(":memory:", fixture.scopes)
 
     assertEquals(providerDate.nanoTimestamp(), sut.startTimestamp())
   }
@@ -97,31 +94,31 @@ class SQLiteSpanInstrumentationTest {
     whenever(fixture.scopes.options).thenReturn(options)
     whenever(fixture.scopes.span).thenReturn(null)
 
-    val sut = SQLiteSpanInstrumentation.fromFileName(":memory:", fixture.scopes)
+    val sut = DriverSpans.fromFileName(":memory:", fixture.scopes)
 
     assertEquals(providerDate.nanoTimestamp(), sut.startTimestamp())
   }
 
   @Test
-  fun `recordSpan records a span if a transaction is active`() {
+  fun `record method records a span if a transaction is active`() {
     val sut = fixture.getSut(isTransactionActive = true)
-    sut.recordSpan("SELECT 1", sut.startTimestamp(), 1_000_000, SpanStatus.OK)
+    sut.record("SELECT 1", sut.startTimestamp(), 1_000_000, SpanStatus.OK)
     assertEquals(1, fixture.sentryTracer.children.size)
   }
 
   @Test
-  fun `recordSpan does not record a span if no transaction is active`() {
+  fun `record method does not record a span if no transaction is active`() {
     val sut = fixture.getSut(isTransactionActive = false)
     val start = sut.startTimestamp()
-    sut.recordSpan("SELECT 1", start, 1_000_000, SpanStatus.OK)
+    sut.record("SELECT 1", start, 1_000_000, SpanStatus.OK)
     assertEquals(0, fixture.sentryTracer.children.size)
   }
 
   @Test
-  fun `recordSpan creates a span with correct properties`() {
+  fun `record method creates a span with correct properties`() {
     val sut = fixture.getSut()
     val start = sut.startTimestamp()
-    sut.recordSpan("SELECT * FROM users", start, 1_000_000, SpanStatus.OK)
+    sut.record("SELECT * FROM users", start, 1_000_000, SpanStatus.OK)
 
     val span = fixture.sentryTracer.children.firstOrNull()
     assertNotNull(span)
@@ -133,24 +130,24 @@ class SQLiteSpanInstrumentationTest {
   }
 
   @Test
-  fun `recordSpan sets finishDate equal to startDate + durationNanos`() {
+  fun `record method sets finishDate equal to startDate + durationNanos`() {
     val sut = fixture.getSut()
     val start = sut.startTimestamp()
     val durationNanos = 42_000_000L
 
-    sut.recordSpan("SELECT 1", start, durationNanos, SpanStatus.OK)
+    sut.record("SELECT 1", start, durationNanos, SpanStatus.OK)
 
     val span = fixture.sentryTracer.children.first()
     assertEquals(span.startDate.nanoTimestamp() + durationNanos, span.finishDate!!.nanoTimestamp())
   }
 
   @Test
-  fun `recordSpan attaches throwable when provided`() {
+  fun `record method attaches throwable when provided`() {
     val sut = fixture.getSut()
     val start = sut.startTimestamp()
     val exception = RuntimeException("disk I/O error")
 
-    sut.recordSpan("INSERT INTO t VALUES(1)", start, 500_000, SpanStatus.INTERNAL_ERROR, exception)
+    sut.record("INSERT INTO t VALUES(1)", start, 500_000, SpanStatus.INTERNAL_ERROR, exception)
 
     val span = fixture.sentryTracer.children.first()
     assertEquals(SpanStatus.INTERNAL_ERROR, span.status)
@@ -158,10 +155,10 @@ class SQLiteSpanInstrumentationTest {
   }
 
   @Test
-  fun `recordSpan sets db system and db name when fileName is not the in-memory sentinel`() {
+  fun `record method sets db system and db name when fileName is not the in-memory sentinel`() {
     val sut = fixture.getSut(fileName = "/data/data/com.example/databases/tracks.db")
     val start = sut.startTimestamp()
-    sut.recordSpan("SELECT 1", start, 1_000_000, SpanStatus.OK)
+    sut.record("SELECT 1", start, 1_000_000, SpanStatus.OK)
 
     val span = fixture.sentryTracer.children.first()
     assertEquals("sqlite", span.data[SpanDataConvention.DB_SYSTEM_KEY])
@@ -169,10 +166,10 @@ class SQLiteSpanInstrumentationTest {
   }
 
   @Test
-  fun `recordSpan sets db system only when fileName is the in-memory sentinel`() {
+  fun `record method sets db system only when fileName is the in-memory sentinel`() {
     val sut = fixture.getSut(fileName = ":memory:")
     val start = sut.startTimestamp()
-    sut.recordSpan("SELECT 1", start, 1_000_000, SpanStatus.OK)
+    sut.record("SELECT 1", start, 1_000_000, SpanStatus.OK)
 
     val span = fixture.sentryTracer.children.first()
     assertEquals("in-memory", span.data[SpanDataConvention.DB_SYSTEM_KEY])
@@ -180,13 +177,13 @@ class SQLiteSpanInstrumentationTest {
   }
 
   @Test
-  fun `recordSpan sets blocked_main_thread to true and attaches call stack on main thread`() {
+  fun `record method sets blocked_main_thread to true and attaches call stack on main thread`() {
     val sut = fixture.getSut()
     fixture.options.threadChecker = mock<IThreadChecker>()
     whenever(fixture.options.threadChecker.isMainThread).thenReturn(true)
     whenever(fixture.options.threadChecker.currentThreadName).thenReturn("main")
 
-    sut.recordSpan("SELECT 1", sut.startTimestamp(), 1_000_000, SpanStatus.OK)
+    sut.record("SELECT 1", sut.startTimestamp(), 1_000_000, SpanStatus.OK)
 
     val span = fixture.sentryTracer.children.first()
     assertTrue(span.getData(SpanDataConvention.BLOCKED_MAIN_THREAD_KEY) as Boolean)
@@ -194,20 +191,20 @@ class SQLiteSpanInstrumentationTest {
   }
 
   @Test
-  fun `recordSpan sets blocked_main_thread to false and does not attach a call stack on background thread`() {
+  fun `record method sets blocked_main_thread to false and does not attach a call stack on background thread`() {
     val sut = fixture.getSut()
     fixture.options.threadChecker = mock<IThreadChecker>()
     whenever(fixture.options.threadChecker.isMainThread).thenReturn(false)
     whenever(fixture.options.threadChecker.currentThreadName).thenReturn("worker")
 
-    sut.recordSpan("SELECT 1", sut.startTimestamp(), 1_000_000, SpanStatus.OK)
+    sut.record("SELECT 1", sut.startTimestamp(), 1_000_000, SpanStatus.OK)
 
     val span = fixture.sentryTracer.children.first()
     assertFalse(span.getData(SpanDataConvention.BLOCKED_MAIN_THREAD_KEY) as Boolean)
     assertNull(span.getData(SpanDataConvention.CALL_STACK_KEY))
   }
 
-  private fun setUpWithNanotimeDates(vararg dates: SentryNanotimeDate): SQLiteSpanInstrumentation {
+  private fun setUpWithNanotimeDates(vararg dates: SentryNanotimeDate): DriverSpans {
     val dateQueue = ArrayDeque(dates.toList())
     val options =
       SentryOptions().apply {
@@ -217,6 +214,6 @@ class SQLiteSpanInstrumentationTest {
     whenever(fixture.scopes.options).thenReturn(options)
     fixture.sentryTracer = SentryTracer(TransactionContext("name", "op"), fixture.scopes)
     whenever(fixture.scopes.span).thenReturn(fixture.sentryTracer)
-    return SQLiteSpanInstrumentation.fromFileName(":memory:", fixture.scopes)
+    return DriverSpans.fromFileName(":memory:", fixture.scopes)
   }
 }
