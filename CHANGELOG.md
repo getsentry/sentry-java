@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+### Behavioral Changes
+
+- `Date` objects returned by SDK data model getters are shared state and should not be mutated. ([#5603](https://github.com/getsentry/sentry-java/pull/5603))
+  - Previously, these getters returned defensive copies for some date fields.
+  - This has now changed in order to reduce SDK overhead.
+
+### Internal
+
+- Reduce model access overhead by avoiding defensive `Date` copies in SDK data model getters. ([#5603](https://github.com/getsentry/sentry-java/pull/5603))
+
 ## 8.43.1
 
 ### Fixes
