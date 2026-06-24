@@ -49,6 +49,8 @@ jobs:
         run: curl -sL https://sentry.io/get-cli/ | bash
 
       - name: Upload Snapshots to Sentry
+        # Skip on PRs from forks, which don't have access to the upload secret
+        if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
         run: |
           sentry-cli build snapshots ./sentry-android-core/build/test-snapshots \
             --app-id sentry-android-core
