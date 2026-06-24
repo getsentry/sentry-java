@@ -82,6 +82,19 @@ public final class AppStartExtension implements IAppStartExtender {
     }
   }
 
+  /**
+   * Sets data on the owned (eager) transaction if it is still open. Used to attach the screen name
+   * once the first activity is known, since the transaction is created in {@code onCreate} before
+   * any activity exists.
+   */
+  public void setData(final @NotNull String key, final @Nullable Object value) {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      if (extendedTransaction != null && !extendedTransaction.isFinished()) {
+        extendedTransaction.setData(key, value);
+      }
+    }
+  }
+
   @Override
   public void finishExtendedAppStart() {
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
@@ -106,6 +119,16 @@ public final class AppStartExtension implements IAppStartExtender {
   public boolean isActive() {
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       return extendedTransaction != null && !extendedTransaction.isFinished();
+    }
+  }
+
+  /**
+   * Whether this app start was extended at all, regardless of finish or deadline state. Used by the
+   * event processor to decide whether to apply the never-shorten vital logic.
+   */
+  public boolean isExtended() {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      return extendedSpan != null;
     }
   }
 
