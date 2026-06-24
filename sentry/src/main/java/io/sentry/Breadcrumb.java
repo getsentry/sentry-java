@@ -629,7 +629,7 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable, Comparab
   @ApiStatus.Internal
   @NotNull
   public Map<String, Object> getData() {
-    return data;
+    return getOrCreateData();
   }
 
   /**

@@ -333,6 +333,15 @@ class BreadcrumbTest {
   }
 
   @Test
+  fun `getData returns mutable map for new breadcrumb`() {
+    val breadcrumb = Breadcrumb()
+
+    breadcrumb.data["k"] = "v"
+
+    assertEquals("v", breadcrumb.getData("k"))
+  }
+
+  @Test
   fun `concurrent first writes keep all data entries`() {
     val breadcrumb = Breadcrumb()
     val count = 32
