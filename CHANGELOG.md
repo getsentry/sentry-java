@@ -50,7 +50,7 @@
 
 ### Internal
 
-- Speed up gesture target hit-testing by mapping the touch point into local coordinates instead of calling `getLocationOnScreen` per view ([#5595](https://github.com/getsentry/sentry-java/pull/5595))
+- Speed up touch gesture target detection on deeply nested view hierarchies by hit-testing in local coordinates instead of calling `getLocationOnScreen` per view ([#5595](https://github.com/getsentry/sentry-java/pull/5595))
 
 ## 8.44.1
 
