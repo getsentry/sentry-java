@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Internal
+
+- Reduce JSON serialization overhead by allocating reflection cycle-tracking state only when reflection serialization is used. ([#5600](https://github.com/getsentry/sentry-java/pull/5600))
+
 ## 8.43.1
 
 ### Fixes
