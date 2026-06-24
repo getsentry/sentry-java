@@ -83,8 +83,6 @@ dependencies {
   testImplementation("ch.qos.logback:logback-core:1.5.16")
 }
 
-configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
-
 tasks.register<Test>("systemTest").configure {
   group = "verification"
   description = "Runs the System tests"
