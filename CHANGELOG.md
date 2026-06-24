@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Features
+
+- Expose sentry-native's heartbeat-based app-hang detection through `SentryAndroidOptions` ([#5623](https://github.com/getsentry/sentry-java/pull/5623))
+  - Enable via `setEnableAppHangTracking(true)` (disabled by default) and tune the timeout with `setAppHangTimeoutIntervalMillis(...)` (default `5000` ms), or the `io.sentry.app-hang.enable` / `io.sentry.app-hang.timeout-interval-millis` manifest entries
+  - Intended for hybrid SDKs: emit the heartbeat by calling the native `sentry_app_hang_heartbeat()` from the thread you want monitored. Independent of the JVM-based ANR detection (`setAnrEnabled`)
+
 ### Fixes
 
 - Release `MediaMuxer` when a replay segment has no encodable frames to avoid a resource leak ([#5583](https://github.com/getsentry/sentry-java/pull/5583))
