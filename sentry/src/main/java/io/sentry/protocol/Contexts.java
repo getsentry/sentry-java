@@ -10,11 +10,11 @@ import io.sentry.ObjectWriter;
 import io.sentry.ProfileContext;
 import io.sentry.SpanContext;
 import io.sentry.util.AutoClosableReentrantLock;
+import io.sentry.util.CollectionUtils;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
@@ -27,7 +27,6 @@ import org.jetbrains.annotations.Nullable;
 public class Contexts implements JsonSerializable {
   private static final long serialVersionUID = 252445813254943011L;
   public static final String REPLAY_ID = "replay_id";
-  private static final String[] EMPTY_KEYS = new String[0];
 
   private final @NotNull ConcurrentHashMap<String, Object> internalStorage =
       new ConcurrentHashMap<>();
@@ -302,8 +301,7 @@ public class Contexts implements JsonSerializable {
       throws IOException {
     writer.beginObject();
     // Serialize in alphabetical order to keep determinism.
-    final String[] sortedKeys = internalStorage.keySet().toArray(EMPTY_KEYS);
-    Arrays.sort(sortedKeys);
+    final String[] sortedKeys = CollectionUtils.toSortedStringArray(keys(), internalStorage.size());
     for (final String key : sortedKeys) {
       final Object value = get(key);
       if (value != null) {
