@@ -39,10 +39,14 @@ public final class SentryIso8601Utils {
     final int day = parseInt(timestamp, offset, offset += 2);
 
     if (!checkOffset(timestamp, offset, 'T')) {
-      if (offset != length) {
-        throw new IllegalArgumentException("Invalid date separator");
+      if (offset == length) {
+        return dateOnlyEpochMillis(year, month, day);
       }
-      return dateOnlyEpochMillis(year, month, day);
+      final char timezoneIndicator = timestamp.charAt(offset);
+      if (timezoneIndicator == 'Z' || timezoneIndicator == '+' || timezoneIndicator == '-') {
+        return dateOnlyEpochMillisWithTimezone(timestamp, length, offset, year, month, day);
+      }
+      throw new IllegalArgumentException("Invalid date separator");
     }
     validateDate(year, month, day);
     offset++;
@@ -169,6 +173,50 @@ public final class SentryIso8601Utils {
 
   private static long dateOnlyEpochMillis(final int year, final int month, final int day) {
     return new GregorianCalendar(year, month - 1, day).getTimeInMillis();
+  }
+
+  private static long dateOnlyEpochMillisWithTimezone(
+      final @NotNull String timestamp,
+      final int length,
+      int offset,
+      final int year,
+      final int month,
+      final int day) {
+    final int timezoneOffsetMillis;
+    final boolean allowTrailingCharacters;
+    final char timezoneIndicator = timestamp.charAt(offset);
+    if (timezoneIndicator == 'Z') {
+      timezoneOffsetMillis = 0;
+      offset++;
+      allowTrailingCharacters = true;
+    } else if (timezoneIndicator == '+' || timezoneIndicator == '-') {
+      final int sign = timezoneIndicator == '+' ? 1 : -1;
+      offset++;
+      final int timezoneHour = parseInt(timestamp, offset, offset += 2);
+      int timezoneMinute = 0;
+      if (checkOffset(timestamp, offset, ':')) {
+        offset++;
+      }
+      if (length >= offset + 2) {
+        timezoneMinute = parseInt(timestamp, offset, offset += 2);
+      }
+      validateTimezone(timezoneHour, timezoneMinute);
+      timezoneOffsetMillis =
+          sign * (int) (timezoneHour * MILLIS_PER_HOUR + timezoneMinute * MILLIS_PER_MINUTE);
+      allowTrailingCharacters = false;
+    } else {
+      throw new IllegalArgumentException("Invalid time zone indicator");
+    }
+
+    if (!allowTrailingCharacters && offset != length) {
+      throw new IllegalArgumentException("Invalid trailing characters");
+    }
+
+    if (isBeforeGregorianCutover(year, month, day)) {
+      return epochMillisWithCalendar(year, month, day, 0, 0, 0, 0, timezoneOffsetMillis);
+    }
+    validateDate(year, month, day);
+    return epochMillis(year, month, day, 0, 0, 0, 0, timezoneOffsetMillis);
   }
 
   private static long epochMillisWithCalendar(

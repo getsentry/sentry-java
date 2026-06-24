@@ -223,6 +223,37 @@ class DateUtilsTest {
   }
 
   @Test
+  fun `Fast timestamp parser matches previous ISO8601 parser for date-only values with timezone`() {
+    val input =
+      listOf(
+        "2020-03-27Z",
+        "2020-03-27+02:00",
+        "2020-03-27+0200",
+        "2020-03-27+02",
+        "2020-03-27-03:30",
+        "20200327Z",
+        "20200327+02:00",
+        "20200327-0330",
+      )
+
+    input.forEach {
+      assertEquals(
+        ISO8601Utils.parse(it, ParsePosition(0)).time,
+        DateUtils.getDateTime(it).time,
+        "timestamp=$it",
+      )
+    }
+  }
+
+  @Test
+  fun `Fast timestamp parser rejects invalid date-only values with timezone like previous ISO8601 parser`() {
+    val timestamp = "2020-02-30Z"
+
+    assertFailsWith<Exception> { ISO8601Utils.parse(timestamp, ParsePosition(0)) }
+    assertFailsWith<IllegalArgumentException> { DateUtils.getDateTime(timestamp) }
+  }
+
+  @Test
   fun `Fast timestamp parser rejects date-time without timezone like previous ISO8601 parser`() {
     val input = listOf("2020-03-27T08:52", "2020-03-27T08:52:58", "2020-03-27T08:52:58.015")
 
