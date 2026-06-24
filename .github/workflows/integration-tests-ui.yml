@@ -78,7 +78,8 @@ jobs:
         run: curl -sL https://sentry.io/get-cli/ | bash
 
       - name: Upload Replay Snapshots to Sentry
-        if: ${{ !cancelled() && env.SAUCE_USERNAME != null }}
+        # Skip on PRs from forks, which don't have access to the upload secret
+        if: ${{ !cancelled() && env.SAUCE_USERNAME != null && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
         run: |
           shopt -s globstar nullglob
           pngs=(artifacts/**/*.png)
