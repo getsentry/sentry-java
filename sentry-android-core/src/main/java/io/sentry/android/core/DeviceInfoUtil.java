@@ -257,6 +257,9 @@ public final class DeviceInfoUtil {
   @SuppressWarnings("NewApi")
   @NotNull
   private TimeZone getTimeZone() {
+    // Only use the costly Calendar API on Android 13+ (API Level 33+) when the locale contains a
+    // Unicode timezone extension (for example "en-US-u-tz-usnyc"), because Calendar honors that
+    // extension. For all other cases, use the process default timezone directly for performance.
     if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.TIRAMISU) {
       LocaleList locales = context.getResources().getConfiguration().getLocales();
       if (!locales.isEmpty()) {
