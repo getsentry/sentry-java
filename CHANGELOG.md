@@ -1,5 +1,11 @@
 # Changelog
 
+## 8.43.3
+
+### Fixes
+
+- Fix crash when `getHistoricalProcessStartReasons` is called from an isolated or wrong-userId process ([#5597](https://github.com/getsentry/sentry-java/pull/5597))
+
 ## 8.43.2
 
 ### Improvements
