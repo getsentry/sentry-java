@@ -6,6 +6,7 @@
 
 - Session Replay: Fix network detail response body size being unknown for gzip-compressed responses ([#5592](https://github.com/getsentry/sentry-java/pull/5592))
 - Session Replay: Release `MediaMuxer` when a replay segment has no encodable frames to avoid a resource leak ([#5583](https://github.com/getsentry/sentry-java/pull/5583))
+- Fix crash when `getHistoricalProcessStartReasons` is called from an isolated or wrong-userId process ([#5597](https://github.com/getsentry/sentry-java/pull/5597))
 
 ## 8.44.1
 

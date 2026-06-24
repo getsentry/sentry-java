@@ -6,6 +6,7 @@ plugins {
   alias(libs.plugins.spring.dependency.management)
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.kotlin.spring)
+  id("io.sentry.systemtest")
 }
 
 group = "io.sentry.sample.spring-boot-4"
@@ -89,8 +90,6 @@ tasks.register<Test>("systemTest").configure {
   val test = project.extensions.getByType<SourceSetContainer>()["test"]
   testClassesDirs = test.output.classesDirs
   classpath = test.runtimeClasspath
-
-  outputs.upToDateWhen { false }
 
   maxParallelForks = 1
 
