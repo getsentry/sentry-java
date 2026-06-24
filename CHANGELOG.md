@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Internal
+
+- Reduce JSON serialization overhead by creating the reflection serializer only when unknown-object fallback serialization is needed. ([#5601](https://github.com/getsentry/sentry-java/pull/5601))
+
 ## 8.43.1
 
 ### Fixes
