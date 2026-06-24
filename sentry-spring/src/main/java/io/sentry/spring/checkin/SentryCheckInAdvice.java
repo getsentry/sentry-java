@@ -94,7 +94,7 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
       TracingUtils.startNewTrace(scopes);
 
       @Nullable SentryId checkInId = null;
-      final long startTime = System.currentTimeMillis();
+      final long startTime = System.nanoTime();
       boolean didError = false;
 
       try {
@@ -108,7 +108,7 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
       } finally {
         final @NotNull CheckInStatus status = didError ? CheckInStatus.ERROR : CheckInStatus.OK;
         CheckIn checkIn = new CheckIn(checkInId, monitorSlug, status);
-        checkIn.setDuration(DateUtils.millisToSeconds(System.currentTimeMillis() - startTime));
+        checkIn.setDuration(DateUtils.nanosToSeconds(System.nanoTime() - startTime));
         scopes.captureCheckIn(checkIn);
       }
     }
