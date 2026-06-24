@@ -9,6 +9,7 @@
 ### Internal
 
 - Speed up gesture target hit-testing by mapping the touch point into local coordinates instead of calling `getLocationOnScreen` per view ([#5595](https://github.com/getsentry/sentry-java/pull/5595))
+- Fix flaky `ComposeMaskingOptionsTest` by settling Compose layout under Robolectric before collecting the view hierarchy ([#5615](https://github.com/getsentry/sentry-java/pull/5615))
 
 ## 8.44.1
 

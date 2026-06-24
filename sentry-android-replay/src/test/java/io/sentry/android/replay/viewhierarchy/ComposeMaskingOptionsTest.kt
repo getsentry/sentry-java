@@ -65,6 +65,11 @@ import org.robolectric.annotation.Config
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [30])
 class ComposeMaskingOptionsTest {
+  companion object {
+    // Number of idle + measure/layout passes used to let Compose settle under Robolectric.
+    private const val SETTLE_PASSES = 10
+  }
+
   @Before
   fun setup() {
     System.setProperty("robolectric.areWindowsMarkedVisible", "true")
@@ -280,6 +285,7 @@ class ComposeMaskingOptionsTest {
 
   private inline fun <reified T> Activity.collectNodesOfType(options: SentryOptions): List<T> {
     val root = window.decorView
+    forceComposeLayout(root)
     val viewHierarchy = ViewHierarchyNode.fromView(root, null, 0, options.sessionReplay)
     root.traverse(viewHierarchy, options.sessionReplay, NoOpLogger.getInstance())
 
@@ -291,6 +297,26 @@ class ComposeMaskingOptionsTest {
       return@traverse true
     }
     return nodes
+  }
+
+  // Under Robolectric a single idle does not reliably complete Compose recomposition and layout,
+  // so the AndroidComposeView subtree intermittently keeps zero-size bounds. Nodes with empty
+  // bounds count as invisible and are skipped by masking, which flakes the masking assertions.
+  // Drive several idle + measure/layout passes (requestLayout invalidates the previous one) so the
+  // content reliably settles with non-empty bounds before the hierarchy is collected.
+  private fun Activity.forceComposeLayout(root: View) {
+    val composeView = root.lookupComposeView() ?: return
+    val metrics = resources.displayMetrics
+    val width = root.width.takeIf { it > 0 } ?: metrics.widthPixels
+    val height = root.height.takeIf { it > 0 } ?: metrics.heightPixels
+    val widthSpec = View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY)
+    val heightSpec = View.MeasureSpec.makeMeasureSpec(height, View.MeasureSpec.EXACTLY)
+    repeat(SETTLE_PASSES) {
+      shadowOf(Looper.getMainLooper()).idle()
+      composeView.requestLayout()
+      composeView.measure(widthSpec, heightSpec)
+      composeView.layout(0, 0, composeView.measuredWidth, composeView.measuredHeight)
+    }
   }
 
   private fun View.lookupComposeView(): View? {
