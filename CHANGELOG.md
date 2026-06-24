@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Internal
+
+- Reduce JSON serialization overhead by lowering the initial `JsonWriter` nesting stack size while preserving on-demand growth. ([#5591](https://github.com/getsentry/sentry-java/pull/5591))
+
 ## 8.43.1
 
 ### Fixes
