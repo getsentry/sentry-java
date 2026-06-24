@@ -362,6 +362,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun enableAllAutoBreadcrumbs (Z)V
 	public fun getAnrProfilingSampleRate ()Ljava/lang/Double;
 	public fun getAnrTimeoutIntervalMillis ()J
+	public fun getAppHangTimeoutIntervalMillis ()J
 	public fun getBeforeScreenshotCaptureCallback ()Lio/sentry/android/core/SentryAndroidOptions$BeforeCaptureCallback;
 	public fun getBeforeViewHierarchyCaptureCallback ()Lio/sentry/android/core/SentryAndroidOptions$BeforeCaptureCallback;
 	public fun getDebugImagesLoader ()Lio/sentry/android/core/IDebugImagesLoader;
@@ -383,6 +384,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun isEnableActivityLifecycleTracingAutoFinish ()Z
 	public fun isEnableAnrFingerprinting ()Z
 	public fun isEnableAppComponentBreadcrumbs ()Z
+	public fun isEnableAppHangTracking ()Z
 	public fun isEnableAppLifecycleBreadcrumbs ()Z
 	public fun isEnableAutoActivityLifecycleTracing ()Z
 	public fun isEnableAutoTraceIdGeneration ()Z
@@ -402,6 +404,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun setAnrProfilingSampleRate (Ljava/lang/Double;)V
 	public fun setAnrReportInDebug (Z)V
 	public fun setAnrTimeoutIntervalMillis (J)V
+	public fun setAppHangTimeoutIntervalMillis (J)V
 	public fun setAttachAnrThreadDump (Z)V
 	public fun setAttachRawTombstone (Z)V
 	public fun setAttachScreenshot (Z)V
@@ -415,6 +418,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun setEnableActivityLifecycleTracingAutoFinish (Z)V
 	public fun setEnableAnrFingerprinting (Z)V
 	public fun setEnableAppComponentBreadcrumbs (Z)V
+	public fun setEnableAppHangTracking (Z)V
 	public fun setEnableAppLifecycleBreadcrumbs (Z)V
 	public fun setEnableAutoActivityLifecycleTracing (Z)V
 	public fun setEnableAutoTraceIdGeneration (Z)V

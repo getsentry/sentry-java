@@ -73,6 +73,9 @@ public final class SentryNdk {
           ndkOptions.setTracesSampleRate(tracesSampleRate.floatValue());
         }
 
+        ndkOptions.setEnableAppHangTracking(options.isEnableAppHangTracking());
+        ndkOptions.setAppHangTimeoutMillis(options.getAppHangTimeoutIntervalMillis());
+
         //noinspection UnstableApiUsage
         io.sentry.ndk.SentryNdk.init(ndkOptions);
 
