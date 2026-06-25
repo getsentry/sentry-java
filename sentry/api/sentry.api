@@ -7589,7 +7589,7 @@ public abstract class io/sentry/transport/TransportResult {
 	public static fun success ()Lio/sentry/transport/TransportResult;
 }
 
-public final class io/sentry/util/AutoClosableReentrantLock : java/util/concurrent/locks/ReentrantLock {
+public final class io/sentry/util/AutoClosableReentrantLock {
 	public fun <init> ()V
 	public fun acquire ()Lio/sentry/ISentryLifecycleToken;
 }
