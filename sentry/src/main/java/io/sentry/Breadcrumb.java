@@ -562,7 +562,7 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable, Comparab
   @SuppressWarnings("JavaUtilDate")
   public @NotNull Date getTimestamp() {
     if (timestamp != null) {
-      return (Date) timestamp.clone();
+      return timestamp;
     } else if (timestampMs != null) {
       // we memoize it here into timestamp to avoid creating a Date again and again
       timestamp = DateUtils.getDateTime(timestampMs);
@@ -849,7 +849,12 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable, Comparab
   public void serialize(final @NotNull ObjectWriter writer, final @NotNull ILogger logger)
       throws IOException {
     writer.beginObject();
-    writer.name(JsonKeys.TIMESTAMP).value(logger, getTimestamp());
+    writer
+        .name(JsonKeys.TIMESTAMP)
+        .value(
+            timestampMs != null
+                ? DateUtils.getTimestampFromMillis(timestampMs)
+                : DateUtils.getTimestamp(getTimestamp()));
     if (message != null) {
       writer.name(JsonKeys.MESSAGE).value(message);
     }
