@@ -5,6 +5,13 @@
 ### Internal
 
 - Reduce timestamp parsing and formatting overhead with Sentry-specific ISO-8601 handling. ([#5602](https://github.com/getsentry/sentry-java/pull/5602))
+- Reduce JSON serialization overhead by creating the reflection serializer only when unknown-object fallback serialization is needed. ([#5601](https://github.com/getsentry/sentry-java/pull/5601))
+- Reduce JSON serialization overhead by allocating reflection cycle-tracking state only when reflection serialization is used. ([#5600](https://github.com/getsentry/sentry-java/pull/5600))
+- Reduce context serialization overhead by sorting key snapshots with arrays instead of temporary lists. ([#5599](https://github.com/getsentry/sentry-java/pull/5599))
+- Reduce breadcrumb allocation overhead by creating the `Breadcrumb` data map only when data is added. ([#5598](https://github.com/getsentry/sentry-java/pull/5598))
+- Reduce JSON serialization overhead by lowering the initial `JsonWriter` nesting stack size while preserving on-demand growth. ([#5591](https://github.com/getsentry/sentry-java/pull/5591))
+- Reduce timestamp helper overhead by replacing unnecessary `Calendar` usage in `DateUtils` with direct `Date` creation. ([#5589](https://github.com/getsentry/sentry-java/pull/5589))
+- Reduce Android startup overhead by using the default timezone directly on older devices or when no timezone info is available in the locale. ([#5587](https://github.com/getsentry/sentry-java/pull/5587))
 
 ## 8.45.0
 
