@@ -62,8 +62,6 @@ tasks.withType<JavaCompile>().configureEach {
   }
 }
 
-repositories { mavenCentral() }
-
 tasks.jar {
   manifest {
     attributes(
