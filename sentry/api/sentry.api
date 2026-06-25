@@ -1312,7 +1312,6 @@ public final class io/sentry/JsonObjectReader : io/sentry/ObjectReader {
 
 public final class io/sentry/JsonObjectSerializer {
 	public static final field OBJECT_PLACEHOLDER Ljava/lang/String;
-	public final field jsonReflectionObjectSerializer Lio/sentry/JsonReflectionObjectSerializer;
 	public fun <init> (I)V
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;Ljava/lang/Object;)V
 }
