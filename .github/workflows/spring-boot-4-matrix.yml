@@ -75,8 +75,14 @@ jobs:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
       - name: Update Spring Boot 4.x version
+        env:
+          SPRINGBOOT_VERSION: ${{ matrix.springboot-version }}
         run: |
-          springboot_version="${{ matrix.springboot-version }}"
+          springboot_version="$SPRINGBOOT_VERSION"
+          if [[ ! "$springboot_version" =~ ^4\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Invalid Spring Boot 4.x version: $springboot_version"
+            exit 1
+          fi
           perl -0pi -e 'BEGIN { $v = shift } s/^springboot4[[:space:]]*=[[:space:]]*"\K[^"]*/$v/m or die "::error::springboot4 version entry not found in gradle/libs.versions.toml\n"' "$springboot_version" gradle/libs.versions.toml
           echo "Updated Spring Boot 4.x version to $springboot_version"
 
