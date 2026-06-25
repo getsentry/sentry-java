@@ -58,10 +58,6 @@ public final class AppStartExtension implements IAppStartExtender {
             .log(SentryLevel.WARNING, "App start is already being extended.");
         return;
       }
-      // Ignore the foreground check: headless app starts (broadcast/service) run in a
-      // non-foreground process but can still be extended. The window gate still rejects an
-      // extension once an activity was created, the first frame was drawn, or measurements were
-      // already sent.
       if (!metrics.isAppStartWindowOpen()) {
         Sentry.getCurrentScopes()
             .getOptions()
