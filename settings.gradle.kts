@@ -84,6 +84,7 @@ include(
     "sentry-opentelemetry:sentry-opentelemetry-core",
     "sentry-opentelemetry:sentry-opentelemetry-agentcustomization",
     "sentry-opentelemetry:sentry-opentelemetry-agent",
+    "sentry-opentelemetry:sentry-opentelemetry-bom",
     "sentry-opentelemetry:sentry-opentelemetry-agentless",
     "sentry-opentelemetry:sentry-opentelemetry-agentless-spring",
     "sentry-opentelemetry:sentry-opentelemetry-otlp",

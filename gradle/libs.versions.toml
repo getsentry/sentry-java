@@ -26,6 +26,8 @@ nopen = "1.0.1"
 okhttp = "4.9.2"
 openfeature = "1.18.2"
 otel = "1.60.1"
+# Keep alpha OpenTelemetry BOMs in sync with their stable counterparts: <stable-version>-alpha.
+otelAlpha = "1.60.1-alpha"
 otelInstrumentation = "2.26.0"
 otelInstrumentationAlpha = "2.26.0-alpha"
 # check https://github.com/open-telemetry/opentelemetry-java-instrumentation/blob/main/dependencyManagement/build.gradle.kts#L49 for release version above to find a compatible version
@@ -153,7 +155,10 @@ otel-exporter-otlp = { module = "io.opentelemetry:opentelemetry-exporter-otlp", 
 otel-exporter-logging = { module = "io.opentelemetry:opentelemetry-exporter-logging", version.ref = "otel" }
 otel-extension-autoconfigure = { module = "io.opentelemetry:opentelemetry-sdk-extension-autoconfigure", version.ref = "otel" }
 otel-extension-autoconfigure-spi = { module = "io.opentelemetry:opentelemetry-sdk-extension-autoconfigure-spi", version.ref = "otel" }
+otel-bom = { module = "io.opentelemetry:opentelemetry-bom", version.ref = "otel" }
+otel-alpha-bom = { module = "io.opentelemetry:opentelemetry-bom-alpha", version.ref = "otelAlpha" }
 otel-instrumentation-bom = { module = "io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom", version.ref = "otelInstrumentation" }
+otel-instrumentation-alpha-bom = { module = "io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom-alpha", version.ref = "otelInstrumentationAlpha" }
 otel-javaagent = { module = "io.opentelemetry.javaagent:opentelemetry-javaagent", version.ref = "otelInstrumentation" }
 otel-javaagent-tooling = { module = "io.opentelemetry.javaagent:opentelemetry-javaagent-tooling", version.ref = "otelInstrumentationAlpha" }
 otel-javaagent-extension-api = { module = "io.opentelemetry.javaagent:opentelemetry-javaagent-extension-api", version.ref = "otelInstrumentationAlpha" }

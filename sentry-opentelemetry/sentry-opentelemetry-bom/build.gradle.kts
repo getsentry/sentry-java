@@ -1,17 +1,22 @@
 plugins {
-  `java-platform` // used to build Maven BOM
+  `java-platform`
   `maven-publish`
 }
 
+javaPlatform.allowDependencies()
+
 dependencies {
+  api(platform(libs.otel.bom))
+  api(platform(libs.otel.alpha.bom))
+  api(platform(libs.otel.instrumentation.bom))
+  api(platform(libs.otel.instrumentation.alpha.bom))
+
   constraints {
     project.rootProject.subprojects
       .filter {
-        !it.name.startsWith("sentry-samples") &&
+        it.path.startsWith(":sentry-opentelemetry:") &&
           it.name != project.name &&
-          !it.name.endsWith("-bom") &&
-          !it.name.contains("test", ignoreCase = true) &&
-          !it.name.contains("sentry-android-distribution")
+          !it.name.contains("test", ignoreCase = true)
       }
       .forEach { project ->
         evaluationDependsOn(project.path)
