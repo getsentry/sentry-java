@@ -1,9 +1,9 @@
-.PHONY: all clean compile javadocs dryRelease update checkFormat api assembleBenchmarkTestRelease assembleUiTestRelease assembleUiTestCriticalRelease createCoverageReports runUiTestCritical setupPython systemTest systemTestInteractive check preMerge publish
+.PHONY: all clean compile javadocs dryRelease update checkFormat api assembleBenchmarkTestRelease assembleUiTestRelease assembleUiTestCriticalRelease runUiTestCritical setupPython systemTest systemTestInteractive check preMerge publish
 
-all: stop clean javadocs compile createCoverageReports
+all: stop clean javadocs compile
 assembleBenchmarks: assembleBenchmarkTestRelease
 assembleUiTests: assembleUiTestRelease
-preMerge: check createCoverageReports
+preMerge: check
 publish: clean dryRelease
 
 # deep clean
@@ -50,13 +50,6 @@ assembleUiTestCriticalRelease:
 # Run Maestro tests for the uitest-android-critical module
 runUiTestCritical:
 	./scripts/test-ui-critical.sh
-
-# Create coverage reports
-#  - Jacoco for Java & Android modules
-#  - Kover for KMP modules e.g sentry-compose
-createCoverageReports:
-	./gradlew jacocoTestReport
-	./gradlew koverXmlReportRelease
 
 # Create the Python virtual environment for system tests, and install the necessary dependencies
 setupPython:

@@ -473,6 +473,20 @@ fun TracingScreen() {
         }
       }
     }
+    item {
+      SentryTraced("open_sqlite") {
+        OutlinedButton(
+          onClick = {
+            activity.startActivity(
+              Intent(activity, io.sentry.samples.android.sqlite.SQLiteActivity::class.java)
+            )
+          },
+          modifier = Modifier,
+        ) {
+          Text("Open SQLite Activity", maxLines = 2, overflow = TextOverflow.Ellipsis)
+        }
+      }
+    }
   }
 }
 
