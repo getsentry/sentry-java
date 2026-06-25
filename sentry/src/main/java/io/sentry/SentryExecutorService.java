@@ -46,11 +46,20 @@ public final class SentryExecutorService implements ISentryExecutorService {
   }
 
   public SentryExecutorService(final @Nullable SentryOptions options) {
-    this(new ScheduledThreadPoolExecutor(1, new SentryExecutorServiceThreadFactory()), options);
+    this(newScheduledExecutor(), options);
   }
 
   public SentryExecutorService() {
-    this(new ScheduledThreadPoolExecutor(1, new SentryExecutorServiceThreadFactory()), null);
+    this(newScheduledExecutor(), null);
+  }
+
+  private static @NotNull ScheduledThreadPoolExecutor newScheduledExecutor() {
+    final @NotNull ScheduledThreadPoolExecutor executor =
+        new ScheduledThreadPoolExecutor(1, new SentryExecutorServiceThreadFactory());
+    // Cancelled scheduled tasks (e.g. transaction idle/deadline timeouts that finished early) are
+    // removed from the work queue right away instead of lingering until their scheduled time.
+    executor.setRemoveOnCancelPolicy(true);
+    return executor;
   }
 
   private boolean isQueueAvailable() {

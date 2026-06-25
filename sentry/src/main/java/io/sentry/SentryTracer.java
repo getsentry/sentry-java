@@ -12,9 +12,8 @@ import io.sentry.util.thread.IThreadChecker;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.ApiStatus;
@@ -37,10 +36,13 @@ public final class SentryTracer implements ITransaction {
    */
   private @NotNull FinishStatus finishStatus = FinishStatus.NOT_FINISHED;
 
-  private volatile @Nullable TimerTask idleTimeoutTask;
-  private volatile @Nullable TimerTask deadlineTimeoutTask;
+  private volatile @Nullable Future<?> idleTimeoutFuture;
+  private volatile @Nullable Future<?> deadlineTimeoutFuture;
 
-  private volatile @Nullable Timer timer = null;
+  // Idle/deadline timeouts are scheduled on the shared executor service rather than a
+  // per-transaction Timer thread. Set at construction when this transaction has timeouts, and
+  // cleared on finish so no further tasks are scheduled.
+  private volatile @Nullable ISentryExecutorService timeoutScheduler = null;
   private final @NotNull AutoClosableReentrantLock timerLock = new AutoClosableReentrantLock();
   private final @NotNull AutoClosableReentrantLock tracerLock = new AutoClosableReentrantLock();
 
@@ -99,7 +101,7 @@ public final class SentryTracer implements ITransaction {
 
     if (transactionOptions.getIdleTimeout() != null
         || transactionOptions.getDeadlineTimeout() != null) {
-      timer = new Timer(true);
+      timeoutScheduler = scopes.getOptions().getExecutorService();
 
       scheduleDeadlineTimeout();
       scheduleFinish();
@@ -109,22 +111,16 @@ public final class SentryTracer implements ITransaction {
   @Override
   public void scheduleFinish() {
     try (final @NotNull ISentryLifecycleToken ignored = timerLock.acquire()) {
-      if (timer != null) {
+      final @Nullable ISentryExecutorService scheduler = timeoutScheduler;
+      if (scheduler != null) {
         final @Nullable Long idleTimeout = transactionOptions.getIdleTimeout();
 
         if (idleTimeout != null) {
           cancelIdleTimer();
           isIdleFinishTimerRunning.set(true);
-          idleTimeoutTask =
-              new TimerTask() {
-                @Override
-                public void run() {
-                  onIdleTimeoutReached();
-                }
-              };
 
           try {
-            timer.schedule(idleTimeoutTask, idleTimeout);
+            idleTimeoutFuture = scheduler.schedule(() -> onIdleTimeoutReached(), idleTimeout);
           } catch (Throwable e) {
             scopes
                 .getOptions()
@@ -265,13 +261,12 @@ public final class SentryTracer implements ITransaction {
           });
       final SentryTransaction transaction = new SentryTransaction(this);
 
-      if (timer != null) {
+      if (timeoutScheduler != null) {
         try (final @NotNull ISentryLifecycleToken ignored = timerLock.acquire()) {
-          if (timer != null) {
+          if (timeoutScheduler != null) {
             cancelIdleTimer();
             cancelDeadlineTimer();
-            timer.cancel();
-            timer = null;
+            timeoutScheduler = null;
           }
         }
       }
@@ -295,10 +290,11 @@ public final class SentryTracer implements ITransaction {
 
   private void cancelIdleTimer() {
     try (final @NotNull ISentryLifecycleToken ignored = timerLock.acquire()) {
-      if (idleTimeoutTask != null) {
-        idleTimeoutTask.cancel();
+      final @Nullable Future<?> future = idleTimeoutFuture;
+      if (future != null) {
+        future.cancel(false);
         isIdleFinishTimerRunning.set(false);
-        idleTimeoutTask = null;
+        idleTimeoutFuture = null;
       }
     }
   }
@@ -307,18 +303,13 @@ public final class SentryTracer implements ITransaction {
     final @Nullable Long deadlineTimeOut = transactionOptions.getDeadlineTimeout();
     if (deadlineTimeOut != null) {
       try (final @NotNull ISentryLifecycleToken ignored = timerLock.acquire()) {
-        if (timer != null) {
+        final @Nullable ISentryExecutorService scheduler = timeoutScheduler;
+        if (scheduler != null) {
           cancelDeadlineTimer();
           isDeadlineTimerRunning.set(true);
-          deadlineTimeoutTask =
-              new TimerTask() {
-                @Override
-                public void run() {
-                  onDeadlineTimeoutReached();
-                }
-              };
           try {
-            timer.schedule(deadlineTimeoutTask, deadlineTimeOut);
+            deadlineTimeoutFuture =
+                scheduler.schedule(() -> onDeadlineTimeoutReached(), deadlineTimeOut);
           } catch (Throwable e) {
             scopes
                 .getOptions()
@@ -335,10 +326,11 @@ public final class SentryTracer implements ITransaction {
 
   private void cancelDeadlineTimer() {
     try (final @NotNull ISentryLifecycleToken ignored = timerLock.acquire()) {
-      if (deadlineTimeoutTask != null) {
-        deadlineTimeoutTask.cancel();
+      final @Nullable Future<?> future = deadlineTimeoutFuture;
+      if (future != null) {
+        future.cancel(false);
         isDeadlineTimerRunning.set(false);
-        deadlineTimeoutTask = null;
+        deadlineTimeoutFuture = null;
       }
     }
   }
@@ -973,20 +965,19 @@ public final class SentryTracer implements ITransaction {
 
   @TestOnly
   @Nullable
-  TimerTask getIdleTimeoutTask() {
-    return idleTimeoutTask;
+  Future<?> getIdleTimeoutFuture() {
+    return idleTimeoutFuture;
   }
 
   @TestOnly
   @Nullable
-  TimerTask getDeadlineTimeoutTask() {
-    return deadlineTimeoutTask;
+  Future<?> getDeadlineTimeoutFuture() {
+    return deadlineTimeoutFuture;
   }
 
   @TestOnly
-  @Nullable
-  Timer getTimer() {
-    return timer;
+  boolean isTimeoutSchedulerActive() {
+    return timeoutScheduler != null;
   }
 
   @TestOnly

@@ -23,6 +23,7 @@ import io.sentry.Scopes
 import io.sentry.Sentry
 import io.sentry.SentryDate
 import io.sentry.SentryDateProvider
+import io.sentry.SentryExecutorService
 import io.sentry.SentryNanotimeDate
 import io.sentry.SentryTraceHeader
 import io.sentry.SentryTracer
@@ -652,6 +653,8 @@ class ActivityLifecycleIntegrationTest {
           it.tracesSampleRate = 1.0
           it.isEnableTimeToFullDisplayTracing = true
           it.idleTimeout = 100
+          // idle/deadline timeouts run on the shared executor; use a real one so they fire
+          it.executorService = SentryExecutorService(it)
         }
       )
     sut.register(fixture.scopes, fixture.options)
@@ -1883,6 +1886,10 @@ class ActivityLifecycleIntegrationTest {
     fixture.options.tracesSampleRate = 1.0
     fixture.options.isEnableTimeToFullDisplayTracing = true
     fixture.options.executorService = deferredExecutorService
+    // Isolate the ttfd auto-close: without disabling the transaction's own idle/deadline timeouts
+    // (also scheduled on this executor now), runAll() would finish the transaction first.
+    fixture.options.idleTimeout = null
+    fixture.options.deadlineTimeout = 0
     sut.register(fixture.scopes, fixture.options)
     sut.onActivityCreated(activity, fixture.bundle)
     sut.onActivityResumed(activity)
