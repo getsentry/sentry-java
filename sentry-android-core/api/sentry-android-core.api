@@ -186,13 +186,13 @@ public final class io/sentry/android/core/AppLifecycleIntegration : io/sentry/In
 
 public final class io/sentry/android/core/AppStartExtension : io/sentry/IAppStartExtender {
 	public fun <init> (Lio/sentry/android/core/performance/AppStartMetrics;)V
+	public fun clear ()V
 	public fun extendAppStart ()V
 	public fun finishAppStart ()V
 	public fun finishTransaction (Lio/sentry/SentryDate;)V
 	public fun getExtendedAppStartSpan ()Lio/sentry/ISpan;
 	public fun getExtendedEndTime ()Lio/sentry/SentryDate;
 	public fun isActive ()Z
-	public fun reset ()V
 	public fun setExtendAppStartListener (Lio/sentry/android/core/AppStartExtension$ExtendAppStartListener;)V
 }
 

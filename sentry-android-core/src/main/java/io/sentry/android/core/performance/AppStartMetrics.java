@@ -283,9 +283,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     shouldSendStartMeasurements = false;
     contentProviderOnCreates.clear();
     activityLifecycles.clear();
-    // Reset extension state so a stale extended span/txn can't affect a later (e.g. warm) app
-    // start.
-    appStartExtension.reset();
+    appStartExtension.clear();
   }
 
   public boolean shouldSendStartMeasurements(final boolean ignoreForegroundCheck) {
@@ -341,9 +339,6 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     return new TimeSpan();
   }
 
-  // region app start extension
-
-  /** The focused component that owns the "extend app start" lifecycle. */
   public @NotNull AppStartExtension getAppStartExtension() {
     return appStartExtension;
   }
@@ -358,8 +353,6 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
         && activeActivitiesCounter.get() == 0
         && !firstDrawDone.get();
   }
-
-  // endregion
 
   @TestOnly
   void setFirstIdle(final long firstIdle) {
@@ -402,7 +395,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     appStartBaggageHeader = null;
     appStartEndTime = null;
     cachedStartInfo = null;
-    appStartExtension.reset();
+    appStartExtension.clear();
   }
 
   public @Nullable ITransactionProfiler getAppStartProfiler() {

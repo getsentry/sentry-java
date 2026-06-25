@@ -29,9 +29,6 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public final class AppStartExtension implements IAppStartExtender {
 
-  /**
-   * The standalone App Start transaction and its extended child span, created by the integration.
-   */
   public static final class ExtendedAppStart {
     public final @NotNull ITransaction transaction;
     public final @NotNull ISpan span;
@@ -125,7 +122,6 @@ public final class AppStartExtension implements IAppStartExtender {
     }
   }
 
-  /** Whether an eagerly-created extension transaction exists and has not finished yet. */
   public boolean isActive() {
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       return extendedTransaction != null && !extendedTransaction.isFinished();
@@ -164,12 +160,7 @@ public final class AppStartExtension implements IAppStartExtender {
     }
   }
 
-  /**
-   * Resets the per-start state so a stale extension can't affect a later (e.g. warm) app start. The
-   * registered listener is intentionally kept: it is registered once at SDK init and must survive
-   * across app starts.
-   */
-  public void reset() {
+  public void clear() {
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       extendedSpan = null;
       extendedTransaction = null;

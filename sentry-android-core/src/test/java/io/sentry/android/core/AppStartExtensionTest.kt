@@ -196,12 +196,12 @@ class AppStartExtensionTest {
   }
 
   @Test
-  fun `reset clears the extension state`() {
+  fun `clear clears the extension state`() {
     val ext = extension(windowOpen = true)
     ext.registerHandOver()
     ext.extendAppStart()
     assertTrue(ext.isActive)
-    ext.reset()
+    ext.clear()
     assertFalse(ext.isActive)
     assertSame(NoOpSpan.getInstance(), ext.extendedAppStartSpan)
   }
