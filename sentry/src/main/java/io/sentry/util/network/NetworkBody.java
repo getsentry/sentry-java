@@ -44,7 +44,7 @@ public final class NetworkBody {
     return warnings;
   }
 
-  public long getOriginalByteCount() {
+  long getOriginalByteCount() {
     return originalByteCount;
   }
 

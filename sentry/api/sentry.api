@@ -7976,7 +7976,6 @@ public final class io/sentry/util/network/NetworkBody {
 	public fun <init> (Ljava/lang/Object;)V
 	public fun <init> (Ljava/lang/Object;Ljava/util/List;)V
 	public fun getBody ()Ljava/lang/Object;
-	public fun getOriginalByteCount ()J
 	public fun getWarnings ()Ljava/util/List;
 	public fun toString ()Ljava/lang/String;
 }
