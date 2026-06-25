@@ -13,6 +13,7 @@
 
 ### Performance
 
+- Avoid creating a per-transaction `Timer` thread by scheduling transaction idle/deadline timeouts on the shared executor service ([#5646](https://github.com/getsentry/sentry-java/pull/5646))
 - Reduce writer buffer size from 8192 to 512 ([#5544](https://github.com/getsentry/sentry-java/pull/5544))
 - Remove redundant event map copies ([#5536](https://github.com/getsentry/sentry-java/pull/5536))
 - Optimize combined scope by adding an early return if only one scope has data ([#5541](https://github.com/getsentry/sentry-java/pull/5541))
