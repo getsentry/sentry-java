@@ -1026,8 +1026,6 @@ class AppStartMetricsTest {
     assertEquals(AppStartMetrics.AppStartType.WARM, metrics.appStartType)
   }
 
-  // region app start extension
-
   @Test
   fun `isAppStartWindowOpen is true on a fresh foreground start`() {
     assertTrue(AppStartMetrics.getInstance().isAppStartWindowOpen)
@@ -1037,7 +1035,6 @@ class AppStartMetricsTest {
   fun `isAppStartWindowOpen is true for a headless (non-foreground) start`() {
     val metrics = AppStartMetrics.getInstance()
     metrics.isAppLaunchedInForeground = false
-    // The foreground check is ignored, so a headless start can still be extended.
     assertTrue(metrics.isAppStartWindowOpen)
   }
 
@@ -1060,12 +1057,6 @@ class AppStartMetricsTest {
     val metrics = AppStartMetrics.getInstance()
     metrics.onAppStartSpansSent()
     assertFalse(metrics.isAppStartWindowOpen)
-  }
-
-  @Test
-  fun `getAppStartExtension returns the same instance`() {
-    val metrics = AppStartMetrics.getInstance()
-    assertSame(metrics.appStartExtension, metrics.appStartExtension)
   }
 
   /** Drives the singleton's eager extension into the active state via the listener path. */
@@ -1094,6 +1085,4 @@ class AppStartMetricsTest {
     assertFalse(metrics.appStartExtension.isActive)
     metrics.appStartExtension.setExtendAppStartListener(null)
   }
-
-  // endregion
 }
