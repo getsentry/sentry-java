@@ -115,8 +115,8 @@ public final class DateUtils {
    * @return date rounded down to milliseconds
    */
   public static Date nanosToDate(final long nanos) {
-    final Double millis = nanosToMillis(Double.valueOf(nanos));
-    return getDateTime(millis.longValue());
+    final double millis = nanosToMillis((double) nanos);
+    return getDateTime((long) millis);
   }
 
   public static @Nullable Date toUtilDate(final @Nullable SentryDate sentryDate) {
@@ -137,7 +137,7 @@ public final class DateUtils {
    * @return seconds
    */
   public static double nanosToSeconds(final long nanos) {
-    return Double.valueOf(nanos) / (1000.0 * 1000.0 * 1000.0);
+    return (double) nanos / (1000.0 * 1000.0 * 1000.0);
   }
 
   /**
@@ -151,22 +151,11 @@ public final class DateUtils {
     return millisToSeconds(date.getTime());
   }
 
-  /**
-   * Convert {@link Date} to nanoseconds represented as {@link Long}.
-   *
-   * @param date - date
-   * @return nanoseconds
-   */
-  @SuppressWarnings("JavaUtilDate")
-  public static long dateToNanos(final @NotNull Date date) {
-    return millisToNanos(date.getTime());
-  }
-
   public static long secondsToNanos(final @NotNull long seconds) {
     return seconds * (1000L * 1000L * 1000L);
   }
 
-  public static @NotNull BigDecimal doubleToBigDecimal(final @NotNull Double value) {
+  public static @NotNull BigDecimal doubleToBigDecimal(final double value) {
     return BigDecimal.valueOf(value).setScale(6, RoundingMode.DOWN);
   }
 }

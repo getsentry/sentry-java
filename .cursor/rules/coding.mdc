@@ -24,13 +24,13 @@ sentry-java is the Java and Android SDK for Sentry. This repository contains the
 ./gradlew check
 
 # Run unit tests for a specific file
-./gradle ':<module>:testDebugUnitTest' --tests="*<file name>*" --info
+./gradlew ':<module>:testDebugUnitTest' --tests="*<file name>*" --info
 ```
 
 ## Contributing Guidelines
 
 1. Follow existing code style and language
-2. Do not modify the API files (e.g. sentry.api) manually, instead run `./gradlew  apiDump` to regenerate them
+2. Do not modify the API files (e.g. sentry.api) manually, instead run `./gradlew apiDump` to regenerate them
 3. Write comprehensive tests
 4. New features should always be opt-in by default, extend `SentryOptions` or similar Option classes with getters and setters to enable/disable a new feature
 5. Consider backwards compatibility
