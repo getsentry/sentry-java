@@ -109,11 +109,6 @@ public final class AppStartExtension implements IAppStartExtender {
     }
   }
 
-  /**
-   * Finishes the owned transaction at the natural app start end (first frame, or the headless stop
-   * time). {@code waitForChildren} holds the transaction open until the extended span finishes, so
-   * the app start vital is never captured before this point. Idempotent.
-   */
   public void finishTransaction(final @NotNull SentryDate endTimestamp) {
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       final @Nullable ITransaction transaction = extendedTransaction;
@@ -123,17 +118,14 @@ public final class AppStartExtension implements IAppStartExtender {
     }
   }
 
-  /**
-   * The effective end of the extended app start, used to extend the app start vital. Returns {@code
-   * null} when no extension finished, or when it finished via the deadline timeout - in the latter
-   * case the vital is suppressed instead of reporting an artificially inflated duration.
-   */
   public @Nullable SentryDate getExtendedEndTime() {
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       final @Nullable ISpan span = extendedSpan;
       if (span == null || !span.isFinished()) {
         return null;
       }
+      // A deadline timeout would report an artificially inflated duration; suppress the vital
+      // instead.
       if (span.getStatus() == SpanStatus.DEADLINE_EXCEEDED) {
         return null;
       }
