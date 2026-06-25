@@ -12,7 +12,6 @@ import io.sentry.SpanDataConvention
 import io.sentry.SpanOptions
 import io.sentry.TracesSamplingDecision
 import io.sentry.TransactionContext
-import java.util.Date
 import java.util.concurrent.TimeUnit
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -31,8 +30,8 @@ class ActivityLifecycleSpanHelperTest {
     val appStartSpan: ISpan
     val scopes = mock<IScopes>()
     val options = SentryOptions()
-    val date = SentryNanotimeDate(Date(1), 1000000)
-    val endDate = SentryNanotimeDate(Date(3), 3000000)
+    val date = SentryNanotimeDate(1, 1000000)
+    val endDate = SentryNanotimeDate(3, 3000000)
 
     init {
       whenever(scopes.options).thenReturn(options)
@@ -59,7 +58,7 @@ class ActivityLifecycleSpanHelperTest {
   @Test
   fun `createAndStopOnCreateSpan creates and finishes onCreate span`() {
     val helper = fixture.getSut()
-    val date = SentryNanotimeDate(Date(1), 1)
+    val date = SentryNanotimeDate(1, 1)
     helper.setOnCreateStartTimestamp(date)
     helper.createAndStopOnCreateSpan(fixture.appStartSpan)
 
@@ -99,7 +98,7 @@ class ActivityLifecycleSpanHelperTest {
   @Test
   fun `createAndStopOnStartSpan creates and finishes onStart span`() {
     val helper = fixture.getSut()
-    val date = SentryNanotimeDate(Date(1), 1)
+    val date = SentryNanotimeDate(1, 1)
     helper.setOnStartStartTimestamp(date)
     helper.createAndStopOnStartSpan(fixture.appStartSpan)
 

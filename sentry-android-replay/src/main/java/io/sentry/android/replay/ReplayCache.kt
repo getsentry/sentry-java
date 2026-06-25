@@ -199,6 +199,10 @@ public class ReplayCache(private val options: SentryOptions, private val replayI
 
     if (frameCount == 0) {
       options.logger.log(DEBUG, "Generated a video with no frames, not capturing a replay segment")
+      encoderLock.acquire().use {
+        encoder?.release()
+        encoder = null
+      }
       deleteFile(videoFile)
       return null
     }

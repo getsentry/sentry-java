@@ -20,7 +20,7 @@ import org.mockito.kotlin.whenever
 class SentryCrossProcessCursorTest {
   private class Fixture {
     private val scopes = mock<IScopes>()
-    private val spanManager = SQLiteSpanManager(scopes)
+    private val spans = OpenHelperSpans(scopes)
     val mockCursor = mock<CrossProcessCursor>()
     lateinit var options: SentryOptions
     lateinit var sentryTracer: SentryTracer
@@ -33,7 +33,7 @@ class SentryCrossProcessCursorTest {
       if (isSpanActive) {
         whenever(scopes.span).thenReturn(sentryTracer)
       }
-      return SentryCrossProcessCursor(mockCursor, spanManager, sql)
+      return SentryCrossProcessCursor(mockCursor, spans, sql)
     }
   }
 
