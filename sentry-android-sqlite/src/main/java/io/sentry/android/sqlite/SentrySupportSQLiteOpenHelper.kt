@@ -33,14 +33,14 @@ import androidx.sqlite.db.SupportSQLiteOpenHelper
 public class SentrySupportSQLiteOpenHelper
 private constructor(private val delegate: SupportSQLiteOpenHelper) :
   SupportSQLiteOpenHelper by delegate {
-  private val sqLiteSpanManager = SQLiteSpanManager(databaseName = delegate.databaseName)
+  private val spans = OpenHelperSpans(databaseName = delegate.databaseName)
 
   private val sentryWritableDatabase: SupportSQLiteDatabase by lazy {
-    SentrySupportSQLiteDatabase(delegate.writableDatabase, sqLiteSpanManager)
+    SentrySupportSQLiteDatabase(delegate.writableDatabase, spans)
   }
 
   private val sentryReadableDatabase: SupportSQLiteDatabase by lazy {
-    SentrySupportSQLiteDatabase(delegate.readableDatabase, sqLiteSpanManager)
+    SentrySupportSQLiteDatabase(delegate.readableDatabase, spans)
   }
 
   override val writableDatabase: SupportSQLiteDatabase

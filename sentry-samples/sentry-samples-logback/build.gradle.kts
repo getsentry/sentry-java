@@ -6,6 +6,7 @@ plugins {
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.shadow)
+  id("io.sentry.systemtest")
 }
 
 application { mainClass.set("io.sentry.samples.logback.Main") }
@@ -65,8 +66,6 @@ tasks.register<Test>("systemTest").configure {
   val test = project.extensions.getByType<SourceSetContainer>()["test"]
   testClassesDirs = test.output.classesDirs
   classpath = test.runtimeClasspath
-
-  outputs.upToDateWhen { false }
 
   maxParallelForks = 1
 
