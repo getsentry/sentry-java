@@ -27,7 +27,7 @@ public final class NetworkBody {
     this(body, warnings, -1);
   }
 
-  public NetworkBody(
+  NetworkBody(
       final @Nullable Object body,
       final @Nullable List<NetworkBodyWarning> warnings,
       final long originalByteCount) {
