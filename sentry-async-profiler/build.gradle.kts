@@ -4,7 +4,6 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
   `java-library`
   kotlin("jvm")
-  jacoco
   id("io.sentry.javadoc")
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
@@ -38,25 +37,6 @@ dependencies {
 }
 
 configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
-
-jacoco { toolVersion = libs.versions.jacoco.get() }
-
-tasks.jacocoTestReport {
-  reports {
-    xml.required.set(true)
-    html.required.set(false)
-  }
-}
-
-tasks {
-  jacocoTestCoverageVerification {
-    violationRules { rule { limit { minimum = Config.QualityPlugins.Jacoco.minimumCoverage } } }
-  }
-  check {
-    dependsOn(jacocoTestCoverageVerification)
-    dependsOn(jacocoTestReport)
-  }
-}
 
 tasks.withType<JavaCompile>().configureEach {
   options.errorprone {

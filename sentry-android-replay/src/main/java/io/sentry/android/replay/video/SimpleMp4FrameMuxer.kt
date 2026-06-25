@@ -67,7 +67,11 @@ internal class SimpleMp4FrameMuxer(path: String, fps: Float) : SimpleFrameMuxer 
   }
 
   override fun release() {
-    muxer.stop()
+    // stop() throws if the muxer was never started (e.g. no frame was ever muxed), so we guard it
+    // to ensure release() is always reached and the underlying resources are freed
+    if (started) {
+      muxer.stop()
+    }
     muxer.release()
   }
 
