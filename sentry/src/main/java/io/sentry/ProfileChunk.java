@@ -1,5 +1,7 @@
 package io.sentry;
 
+import static io.sentry.DateUtils.doubleToBigDecimal;
+
 import io.sentry.profilemeasurements.ProfileMeasurement;
 import io.sentry.protocol.DebugMeta;
 import io.sentry.protocol.SdkVersion;
@@ -8,8 +10,6 @@ import io.sentry.protocol.profiling.SentryProfile;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.File;
 import java.io.IOException;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -262,10 +262,6 @@ public final class ProfileChunk implements JsonUnknown, JsonSerializable {
       }
     }
     writer.endObject();
-  }
-
-  private @NotNull BigDecimal doubleToBigDecimal(final @NotNull Double value) {
-    return BigDecimal.valueOf(value).setScale(6, RoundingMode.DOWN);
   }
 
   @Nullable

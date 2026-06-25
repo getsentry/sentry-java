@@ -2,7 +2,6 @@ plugins {
   `java-library`
   id("io.sentry.javadoc")
   alias(libs.plugins.kotlin.jvm)
-  jacoco
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
 }
@@ -32,5 +31,3 @@ dependencies {
   implementation(libs.kotlin.test.junit)
   implementation(libs.mockito.kotlin)
 }
-
-configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }

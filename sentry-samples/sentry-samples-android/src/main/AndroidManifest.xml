@@ -37,6 +37,15 @@
       android:exported="true"
       android:foregroundServiceType="remoteMessaging" />
 
+    <receiver
+      android:name=".TestBroadcastReceiver"
+      android:enabled="true"
+      android:exported="true">
+      <intent-filter>
+        <action android:name="io.sentry.samples.android.TEST_BROADCAST" />
+      </intent-filter>
+    </receiver>
+
     <activity
       android:name=".MainActivity"
       android:exported="true"
@@ -65,6 +74,10 @@
       android:exported="false" />
 
     <activity
+      android:name=".ReplayAnimationsActivity"
+      android:exported="false" />
+
+    <activity
       android:name=".ProfilingActivity"
       android:exported="false" />
 
@@ -86,6 +99,14 @@
 
     <activity
       android:name=".TriggerHttpRequestActivity"
+      android:exported="false" />
+
+    <activity
+      android:name=".sqlite.SQLiteActivity"
+      android:exported="false" />
+
+    <activity
+      android:name=".sqlite.UiLoadActivity"
       android:exported="false" />
 
     <!--    NOTE: Replace the test DSN below with YOUR OWN DSN to see the events from this app in your Sentry project/dashboard-->
@@ -223,6 +244,10 @@
 
     <meta-data
       android:name="io.sentry.performance-v2.enable"
+      android:value="true" />
+
+    <meta-data
+      android:name="io.sentry.standalone-app-start-tracing.enable"
       android:value="true" />
 
     <meta-data

@@ -473,6 +473,20 @@ fun TracingScreen() {
         }
       }
     }
+    item {
+      SentryTraced("open_sqlite") {
+        OutlinedButton(
+          onClick = {
+            activity.startActivity(
+              Intent(activity, io.sentry.samples.android.sqlite.SQLiteActivity::class.java)
+            )
+          },
+          modifier = Modifier,
+        ) {
+          Text("Open SQLite Activity", maxLines = 2, overflow = TextOverflow.Ellipsis)
+        }
+      }
+    }
   }
 }
 
@@ -495,6 +509,18 @@ fun SessionReplayScreen() {
           modifier = Modifier,
         ) {
           Text("Enable Replay Debug Mode", maxLines = 2, overflow = TextOverflow.Ellipsis)
+        }
+      }
+    }
+    item {
+      SentryTraced("open_replay_animations") {
+        OutlinedButton(
+          onClick = {
+            activity.startActivity(Intent(activity, ReplayAnimationsActivity::class.java))
+          },
+          modifier = Modifier,
+        ) {
+          Text("Open Animations", maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
       }
     }

@@ -12,7 +12,10 @@ import android.graphics.RectF
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.view.PixelCopy
 import android.view.SurfaceView
+import android.view.View
+import android.view.Window
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.LinearLayout.LayoutParams
@@ -36,12 +39,16 @@ import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.robolectric.Robolectric.buildActivity
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
+import org.robolectric.annotation.Implementation
+import org.robolectric.annotation.Implements
 import org.robolectric.shadows.ShadowPixelCopy
 
 @Config(shadows = [ShadowPixelCopy::class], sdk = [30])
@@ -92,6 +99,7 @@ class PixelCopyStrategyTest {
   fun setup() {
     System.setProperty("robolectric.areWindowsMarkedVisible", "true")
     System.setProperty("robolectric.pixelCopyRenderMode", "hardware")
+    DeferredWindowPixelCopyShadow.reset()
   }
 
   @Test
@@ -130,6 +138,68 @@ class PixelCopyStrategyTest {
     shadowOf(Looper.getMainLooper()).idle()
 
     if (failure.get() != null) throw failure.get()
+  }
+
+  @Test
+  @Config(shadows = [DeferredWindowPixelCopyShadow::class])
+  fun `capture skips the first unstable PixelCopy result`() {
+    val activity = buildActivity(SimpleActivity::class.java).setup()
+    shadowOf(Looper.getMainLooper()).idle()
+    val root = activity.get().findViewById<View>(android.R.id.content)
+
+    val strategy = fixture.getSut(executor = fixture.inlineExecutor())
+    captureUnstableFrame(strategy, root)
+
+    assertFalse(strategy.lastCaptureSuccessful())
+    verify(fixture.callback, never()).onScreenshotRecorded(any<Bitmap>())
+  }
+
+  @Test
+  @Config(shadows = [DeferredWindowPixelCopyShadow::class])
+  fun `capture emits the second consecutive unstable PixelCopy result`() {
+    val activity = buildActivity(SimpleActivity::class.java).setup()
+    shadowOf(Looper.getMainLooper()).idle()
+    val root = activity.get().findViewById<View>(android.R.id.content)
+
+    val strategy = fixture.getSut(executor = fixture.inlineExecutor())
+    captureUnstableFrame(strategy, root)
+    captureUnstableFrame(strategy, root)
+
+    assertTrue(strategy.lastCaptureSuccessful())
+    verify(fixture.callback).onScreenshotRecorded(any<Bitmap>())
+  }
+
+  @Test
+  @Config(shadows = [DeferredWindowPixelCopyShadow::class])
+  fun `capture keeps emitting after entering continuous instability mode`() {
+    val activity = buildActivity(SimpleActivity::class.java).setup()
+    shadowOf(Looper.getMainLooper()).idle()
+    val root = activity.get().findViewById<View>(android.R.id.content)
+
+    val strategy = fixture.getSut(executor = fixture.inlineExecutor())
+    captureUnstableFrame(strategy, root)
+    captureUnstableFrame(strategy, root)
+    captureUnstableFrame(strategy, root)
+
+    assertTrue(strategy.lastCaptureSuccessful())
+    verify(fixture.callback, times(2)).onScreenshotRecorded(any<Bitmap>())
+  }
+
+  @Test
+  @Config(shadows = [DeferredWindowPixelCopyShadow::class])
+  fun `stable capture resets the unstable PixelCopy counter`() {
+    val activity = buildActivity(SimpleActivity::class.java).setup()
+    shadowOf(Looper.getMainLooper()).idle()
+    val root = activity.get().findViewById<View>(android.R.id.content)
+
+    val strategy = fixture.getSut(executor = fixture.inlineExecutor())
+    captureUnstableFrame(strategy, root)
+    captureUnstableFrame(strategy, root)
+    captureStableFrame(strategy, root)
+    captureUnstableFrame(strategy, root)
+
+    assertFalse(strategy.lastCaptureSuccessful())
+    verify(fixture.callback, times(2)).onScreenshotRecorded(any<Bitmap>())
   }
 
   @Test
@@ -249,6 +319,50 @@ class PixelCopyStrategyTest {
     // Just outside the rect — still transparent.
     assertEquals(0, dest.getPixel(4, 4))
     assertEquals(0, dest.getPixel(25, 25))
+  }
+
+  private fun captureUnstableFrame(strategy: PixelCopyStrategy, root: View) {
+    strategy.capture(root)
+    strategy.onContentChanged()
+    DeferredWindowPixelCopyShadow.flush()
+    shadowOf(Looper.getMainLooper()).idle()
+  }
+
+  private fun captureStableFrame(strategy: PixelCopyStrategy, root: View) {
+    strategy.capture(root)
+    DeferredWindowPixelCopyShadow.flush()
+    shadowOf(Looper.getMainLooper()).idle()
+  }
+}
+
+@Implements(PixelCopy::class)
+class DeferredWindowPixelCopyShadow {
+  companion object {
+    private val pendingCallbacks = mutableListOf<() -> Unit>()
+
+    fun reset() {
+      pendingCallbacks.clear()
+    }
+
+    fun flush() {
+      val callbacks = pendingCallbacks.toList()
+      pendingCallbacks.clear()
+      callbacks.forEach { it.invoke() }
+    }
+
+    @JvmStatic
+    @Implementation
+    @Suppress("UNUSED_PARAMETER")
+    fun request(
+      _source: Window,
+      _dest: Bitmap,
+      listener: PixelCopy.OnPixelCopyFinishedListener,
+      listenerThread: Handler,
+    ) {
+      pendingCallbacks.add {
+        listenerThread.post { listener.onPixelCopyFinished(PixelCopy.SUCCESS) }
+      }
+    }
   }
 }
 

@@ -535,6 +535,24 @@ class SentryClientTest {
   }
 
   @Test
+  fun `when captureEvent applies scope tags and extras, event map containers are copied`() {
+    val event = SentryEvent()
+    val scope = createScope()
+
+    val sut = fixture.getSut()
+
+    sut.captureEvent(event, scope)
+    val eventTags = event.tags!!
+    val eventExtras = event.extras!!
+
+    scope.setTag("newTag", "newValue")
+    scope.setExtra("newExtra", "newValue")
+
+    assertFalse(eventTags.containsKey("newTag"))
+    assertFalse(eventExtras.containsKey("newExtra"))
+  }
+
+  @Test
   fun `when breadcrumbs are not empty, sort them out by date`() {
     val b1 = Breadcrumb(DateUtils.getDateTime("2020-03-27T08:52:58.001Z"))
     val b2 = Breadcrumb(DateUtils.getDateTime("2020-03-27T08:52:58.002Z"))
@@ -868,6 +886,25 @@ class SentryClientTest {
     sut.captureEvent(event, scope, hints)
 
     assertEquals(scope.level, event.level)
+  }
+
+  @Test
+  fun `when hint is Cached, scope attachments are not added to avoid duplication`() {
+    val sut = fixture.getSut()
+
+    val event = createEvent()
+    val scope = createScopeWithAttachments()
+
+    val hints = HintUtils.createWithTypeCheckHint(CustomCachedApplyScopeDataHint())
+    sut.captureEvent(event, scope, hints)
+
+    verify(fixture.transport)
+      .send(
+        check { actual ->
+          assertEquals(0, actual.items.count { it.header.type == SentryItemType.Attachment })
+        },
+        anyOrNull(),
+      )
   }
 
   @Test
@@ -1956,6 +1993,23 @@ class SentryClientTest {
     transaction.platform = "abc"
     sut.captureTransaction(transaction, sentryTracer.traceContext())
     assertEquals("abc", transaction.platform)
+  }
+
+  @Test
+  fun `captureTransaction registers trace ID with replay controller`() {
+    var registeredTraceId: SentryId? = null
+    fixture.sentryOptions.setReplayController(
+      object : ReplayController by NoOpReplayController.getInstance() {
+        override fun registerTraceId(traceId: SentryId) {
+          registeredTraceId = traceId
+        }
+      }
+    )
+    val sut = fixture.getSut()
+    val sentryTracer = SentryTracer(TransactionContext("name", "op"), fixture.scopes)
+    val transaction = SentryTransaction(sentryTracer)
+    sut.captureTransaction(transaction, sentryTracer.traceContext())
+    assertEquals(sentryTracer.spanContext.traceId, registeredTraceId)
   }
 
   @Test
