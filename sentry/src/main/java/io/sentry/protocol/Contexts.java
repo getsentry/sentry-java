@@ -282,7 +282,7 @@ public class Contexts implements JsonSerializable {
 
   @Override
   public boolean equals(final @Nullable Object obj) {
-    if (obj != null && obj instanceof Contexts) {
+    if (obj instanceof Contexts) {
       final @NotNull Contexts otherContexts = (Contexts) obj;
       return internalStorage.equals(otherContexts.internalStorage);
     }

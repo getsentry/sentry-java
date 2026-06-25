@@ -1,7 +1,9 @@
 package io.sentry.android.core;
 
 import static io.sentry.android.core.ActivityLifecycleIntegration.APP_START_COLD;
+import static io.sentry.android.core.ActivityLifecycleIntegration.APP_START_SCREEN_DATA;
 import static io.sentry.android.core.ActivityLifecycleIntegration.APP_START_WARM;
+import static io.sentry.android.core.ActivityLifecycleIntegration.STANDALONE_APP_START_OP;
 import static io.sentry.android.core.ActivityLifecycleIntegration.UI_LOAD_OP;
 
 import io.sentry.EventProcessor;
@@ -84,9 +86,21 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
       // the app start measurement is only sent once and only if the transaction has
       // the app.start span, which is automatically created by the SDK.
       if (hasAppStartSpan(transaction)) {
-        if (appStartMetrics.shouldSendStartMeasurements()) {
+        // For headless starts, appLaunchedInForeground is false, so only headless standalone app
+        // start transactions bypass the foreground check, not the duplicate-send guard.
+        final @Nullable SpanContext traceContext = transaction.getContexts().getTrace();
+        final boolean isStandaloneAppStartTxn =
+            traceContext != null && STANDALONE_APP_START_OP.equals(traceContext.getOperation());
+        final boolean isHeadlessStandaloneAppStartTxn =
+            traceContext != null
+                && isStandaloneAppStartTxn
+                && !traceContext.getData().containsKey(APP_START_SCREEN_DATA);
+
+        if (appStartMetrics.shouldSendStartMeasurements(isHeadlessStandaloneAppStartTxn)) {
           final @NotNull TimeSpan appStartTimeSpan =
-              appStartMetrics.getAppStartTimeSpanWithFallback(options);
+              isHeadlessStandaloneAppStartTxn
+                  ? appStartMetrics.getAppStartTimeSpanForHeadless()
+                  : appStartMetrics.getAppStartTimeSpanWithFallback(options);
           final long appStartUpDurationMs = appStartTimeSpan.getDurationMs();
 
           // if appStartUpDurationMs is 0, metrics are not ready to be sent
@@ -216,9 +230,7 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
     }
 
     final @Nullable SpanContext context = txn.getContexts().getTrace();
-    return context != null
-        && (context.getOperation().equals(APP_START_COLD)
-            || context.getOperation().equals(APP_START_WARM));
+    return context != null && context.getOperation().equals(STANDALONE_APP_START_OP);
   }
 
   private void attachAppStartSpans(
@@ -245,6 +257,16 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
       }
     }
 
+    // For standalone app start transactions, the transaction root IS the app start span
+    if (parentSpanId == null) {
+      final @NotNull String txnOp = traceContext.getOperation();
+      if (STANDALONE_APP_START_OP.equals(txnOp)) {
+        parentSpanId = traceContext.getSpanId();
+      }
+    }
+
+    final boolean isStandalone = STANDALONE_APP_START_OP.equals(traceContext.getOperation());
+
     // Process init
     final @NotNull TimeSpan processInitTimeSpan = appStartMetrics.createProcessInitSpan();
     if (processInitTimeSpan.hasStarted()
@@ -252,7 +274,11 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
       txn.getSpans()
           .add(
               timeSpanToSentrySpan(
-                  processInitTimeSpan, parentSpanId, traceId, APP_METRICS_PROCESS_INIT_OP));
+                  processInitTimeSpan,
+                  parentSpanId,
+                  traceId,
+                  APP_METRICS_PROCESS_INIT_OP,
+                  isStandalone));
     }
 
     // Content Providers
@@ -263,7 +289,11 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
         txn.getSpans()
             .add(
                 timeSpanToSentrySpan(
-                    contentProvider, parentSpanId, traceId, APP_METRICS_CONTENT_PROVIDER_OP));
+                    contentProvider,
+                    parentSpanId,
+                    traceId,
+                    APP_METRICS_CONTENT_PROVIDER_OP,
+                    isStandalone));
       }
     }
 
@@ -272,7 +302,8 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
     if (appOnCreate.hasStopped()) {
       txn.getSpans()
           .add(
-              timeSpanToSentrySpan(appOnCreate, parentSpanId, traceId, APP_METRICS_APPLICATION_OP));
+              timeSpanToSentrySpan(
+                  appOnCreate, parentSpanId, traceId, APP_METRICS_APPLICATION_OP, isStandalone));
     }
   }
 
@@ -281,14 +312,17 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
       final @NotNull TimeSpan span,
       final @Nullable SpanId parentSpanId,
       final @NotNull SentryId traceId,
-      final @NotNull String operation) {
+      final @NotNull String operation,
+      final boolean isStandaloneAppStart) {
 
     final Map<String, Object> defaultSpanData = new HashMap<>(2);
     defaultSpanData.put(SpanDataConvention.THREAD_ID, AndroidThreadChecker.mainThreadSystemId);
     defaultSpanData.put(SpanDataConvention.THREAD_NAME, "main");
 
-    defaultSpanData.put(SpanDataConvention.CONTRIBUTES_TTID, true);
-    defaultSpanData.put(SpanDataConvention.CONTRIBUTES_TTFD, true);
+    if (!isStandaloneAppStart) {
+      defaultSpanData.put(SpanDataConvention.CONTRIBUTES_TTID, true);
+      defaultSpanData.put(SpanDataConvention.CONTRIBUTES_TTFD, true);
+    }
 
     return new SentrySpan(
         span.getStartTimestampSecs(),

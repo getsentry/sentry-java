@@ -1,5 +1,7 @@
 package io.sentry.protocol.profiling;
 
+import static io.sentry.DateUtils.doubleToBigDecimal;
+
 import io.sentry.ILogger;
 import io.sentry.JsonDeserializer;
 import io.sentry.JsonSerializable;
@@ -8,8 +10,6 @@ import io.sentry.ObjectReader;
 import io.sentry.ObjectWriter;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
@@ -76,10 +76,6 @@ public final class SentrySample implements JsonUnknown, JsonSerializable {
     }
 
     writer.endObject();
-  }
-
-  private @NotNull BigDecimal doubleToBigDecimal(final @NotNull Double value) {
-    return BigDecimal.valueOf(value).setScale(6, RoundingMode.DOWN);
   }
 
   @Nullable

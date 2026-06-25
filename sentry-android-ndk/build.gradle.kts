@@ -3,8 +3,6 @@ import org.jetbrains.kotlin.config.KotlinCompilerVersion
 plugins {
   id("com.android.library")
   alias(libs.plugins.kotlin.android)
-  jacoco
-  alias(libs.plugins.jacoco.android)
   alias(libs.plugins.gradle.versions)
 }
 

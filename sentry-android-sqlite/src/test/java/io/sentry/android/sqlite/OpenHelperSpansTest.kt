@@ -21,13 +21,13 @@ import org.junit.Before
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 
-class SQLiteSpanManagerTest {
+class OpenHelperSpansTest {
   private class Fixture {
     private val scopes = mock<IScopes>()
     lateinit var sentryTracer: SentryTracer
     lateinit var options: SentryOptions
 
-    fun getSut(isSpanActive: Boolean = true, databaseName: String? = null): SQLiteSpanManager {
+    fun getSut(isSpanActive: Boolean = true, databaseName: String? = null): OpenHelperSpans {
       options = SentryOptions().apply { dsn = "https://key@sentry.io/proj" }
       whenever(scopes.options).thenReturn(options)
       sentryTracer = SentryTracer(TransactionContext("name", "op"), scopes)
@@ -35,7 +35,7 @@ class SQLiteSpanManagerTest {
       if (isSpanActive) {
         whenever(scopes.span).thenReturn(sentryTracer)
       }
-      return SQLiteSpanManager(scopes, databaseName)
+      return OpenHelperSpans(scopes, databaseName)
     }
   }
 

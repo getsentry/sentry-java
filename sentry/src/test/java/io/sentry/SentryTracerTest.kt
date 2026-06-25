@@ -8,7 +8,6 @@ import io.sentry.test.getProperty
 import io.sentry.util.thread.IThreadChecker
 import java.time.LocalDateTime
 import java.time.ZoneOffset
-import java.util.Date
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -184,7 +183,7 @@ class SentryTracerTest {
     val tracer = fixture.getSut()
     val date =
       SentryNanotimeDate(
-        Date.from(LocalDateTime.of(2022, 12, 24, 23, 59, 58, 0).toInstant(ZoneOffset.UTC)),
+        LocalDateTime.of(2022, 12, 24, 23, 59, 58, 0).toInstant(ZoneOffset.UTC).toEpochMilli(),
         0,
       )
     tracer.finish(SpanStatus.ABORTED, date)
@@ -643,7 +642,7 @@ class SentryTracerTest {
 
   @Test
   fun `when startTimestamp is given, use it as startTimestamp`() {
-    val date = SentryNanotimeDate(Date(0), 0)
+    val date = SentryNanotimeDate(0, 0)
     val transaction = fixture.getSut(startTimestamp = date)
 
     assertSame(date, transaction.startDate)
