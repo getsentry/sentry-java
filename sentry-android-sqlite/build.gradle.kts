@@ -3,8 +3,6 @@ import io.gitlab.arturbosch.detekt.Detekt
 plugins {
   id("com.android.library")
   alias(libs.plugins.kotlin.android)
-  jacoco
-  alias(libs.plugins.jacoco.android)
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.detekt)
 }
@@ -49,6 +47,10 @@ android {
 
   buildFeatures { buildConfig = true }
 
+  // Needed b/c Kotlin 1.4.x would otherwise pull in an older version without the annotations we
+  // want.
+  configurations.all { resolutionStrategy.force(libs.jetbrains.annotations.get()) }
+
   androidComponents.beforeVariants {
     it.enable = !Config.Android.shouldSkipDebugVariant(it.buildType)
   }
@@ -67,6 +69,7 @@ dependencies {
   api(projects.sentry)
 
   compileOnly(libs.androidx.sqlite)
+  compileOnly(libs.jetbrains.annotations)
 
   implementation(kotlin(Config.kotlinStdLib, Config.kotlinStdLibVersionAndroid))
 
