@@ -86,6 +86,7 @@ class DateUtilsTest {
     val utcActual = convertDate(actual)
     val timestamp = utcActual.format(isoFormat)
 
+    assertEquals(millis, actual.time)
     assertEquals("2020-06-07T12:38:12.631Z", timestamp)
   }
 
