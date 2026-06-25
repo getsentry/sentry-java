@@ -41,8 +41,6 @@ dependencies {
   implementation(libs.mockito.kotlin)
 }
 
-configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
-
 apollo {
   service("service") {
     srcDir("src/main/graphql")

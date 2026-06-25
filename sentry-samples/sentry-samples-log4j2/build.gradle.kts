@@ -63,8 +63,6 @@ tasks.jar {
 // Fix the startScripts task dependency
 tasks.startScripts { dependsOn(tasks.shadowJar) }
 
-configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
-
 tasks.register<Test>("systemTest").configure {
   group = "verification"
   description = "Runs the System tests"

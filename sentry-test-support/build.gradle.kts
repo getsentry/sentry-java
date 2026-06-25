@@ -31,5 +31,3 @@ dependencies {
   implementation(libs.kotlin.test.junit)
   implementation(libs.mockito.kotlin)
 }
-
-configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
