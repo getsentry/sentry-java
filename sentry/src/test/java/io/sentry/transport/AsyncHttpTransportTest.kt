@@ -367,7 +367,7 @@ class AsyncHttpTransportTest {
     // given
     val now = Date(9001)
     fixture.sentryOptions.dateProvider = mock()
-    whenever(fixture.sentryOptions.dateProvider.now()).thenReturn(SentryNanotimeDate(now, 0))
+    whenever(fixture.sentryOptions.dateProvider.now()).thenReturn(SentryNanotimeDate(now.time, 0))
 
     val envelope = SentryEnvelope.from(fixture.sentryOptions.serializer, createSession(), null)
     whenever(fixture.transportGate.isConnected).thenReturn(true)
@@ -387,7 +387,7 @@ class AsyncHttpTransportTest {
     // given
     val now = Date(9001)
     fixture.sentryOptions.dateProvider = mock()
-    whenever(fixture.sentryOptions.dateProvider.now()).thenReturn(SentryNanotimeDate(now, 0))
+    whenever(fixture.sentryOptions.dateProvider.now()).thenReturn(SentryNanotimeDate(now.time, 0))
 
     val envelope = SentryEnvelope.from(fixture.sentryOptions.serializer, createSession(), null)
     whenever(fixture.transportGate.isConnected).thenReturn(true)
