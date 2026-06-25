@@ -15,6 +15,7 @@
 - Speed up touch gesture target detection on deeply nested view hierarchies by hit-testing in local coordinates instead of calling `getLocationOnScreen` per view ([#5595](https://github.com/getsentry/sentry-java/pull/5595))
 - Probe class availability without initializing the class during SDK init ([#5635](https://github.com/getsentry/sentry-java/pull/5635))
 - Avoid constructing an exception per view when resolving view ids during view-hierarchy and gesture capture ([#5631](https://github.com/getsentry/sentry-java/pull/5631))
+- Start the frame metrics thread lazily on first collection instead of during SDK init ([#5641](https://github.com/getsentry/sentry-java/pull/5641))
 
 ## 8.46.0
 
