@@ -4,12 +4,24 @@ import com.jakewharton.nopen.annotation.Open;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /** An Adapter for making Class.forName testable */
 @Open
 public class LoadClass {
+
+  /** Sentinel cached for class names that are known to be unavailable. */
+  private static final Object NOT_AVAILABLE = new Object();
+
+  /**
+   * Whether a class is on the classpath does not change during the lifetime of the process, so
+   * results are cached to avoid repeated {@link Class#forName} lookups (and the exceptions they
+   * throw for absent classes) when the same class is probed more than once.
+   */
+  private static final Map<String, Object> CLASSES = new ConcurrentHashMap<>();
 
   /**
    * Loads and initializes a class via reflection. Use this when you intend to actually use the
@@ -27,9 +39,17 @@ public class LoadClass {
 
   private @Nullable Class<?> loadClass(
       final @NotNull String clazz, final @Nullable ILogger logger, final boolean initialize) {
+    final @Nullable Object cached = CLASSES.get(clazz);
+    if (cached != null) {
+      return cached == NOT_AVAILABLE ? null : (Class<?>) cached;
+    }
     try {
-      return Class.forName(clazz, initialize, LoadClass.class.getClassLoader());
+      final Class<?> loadedClass =
+          Class.forName(clazz, initialize, LoadClass.class.getClassLoader());
+      CLASSES.put(clazz, loadedClass);
+      return loadedClass;
     } catch (ClassNotFoundException e) {
+      CLASSES.put(clazz, NOT_AVAILABLE);
       if (logger != null) {
         logger.log(SentryLevel.INFO, "Class not available: " + clazz);
       }

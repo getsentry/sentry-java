@@ -15,24 +15,23 @@ public final class SpanFactoryFactory {
   public static @NotNull ISpanFactory create(
       final @NotNull LoadClass loadClass, final @NotNull ILogger logger) {
     if (Platform.isJvm()) {
-      if (loadClass.isClassAvailable(OTEL_SPAN_FACTORY, logger)) {
-        Class<?> otelSpanFactoryClazz = loadClass.loadClass(OTEL_SPAN_FACTORY, logger);
-        if (otelSpanFactoryClazz != null) {
-          try {
-            final @Nullable Object otelSpanFactory =
-                otelSpanFactoryClazz.getDeclaredConstructor().newInstance();
-            if (otelSpanFactory instanceof ISpanFactory) {
-              return (ISpanFactory) otelSpanFactory;
-            }
-          } catch (InstantiationException e) {
-            // TODO log
-          } catch (IllegalAccessException e) {
-            // TODO log
-          } catch (InvocationTargetException e) {
-            // TODO log
-          } catch (NoSuchMethodException e) {
-            // TODO log
+      final @Nullable Class<?> otelSpanFactoryClazz =
+          loadClass.loadClass(OTEL_SPAN_FACTORY, logger);
+      if (otelSpanFactoryClazz != null) {
+        try {
+          final @Nullable Object otelSpanFactory =
+              otelSpanFactoryClazz.getDeclaredConstructor().newInstance();
+          if (otelSpanFactory instanceof ISpanFactory) {
+            return (ISpanFactory) otelSpanFactory;
           }
+        } catch (InstantiationException e) {
+          // TODO log
+        } catch (IllegalAccessException e) {
+          // TODO log
+        } catch (InvocationTargetException e) {
+          // TODO log
+        } catch (NoSuchMethodException e) {
+          // TODO log
         }
       }
     }

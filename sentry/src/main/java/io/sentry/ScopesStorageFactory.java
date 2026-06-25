@@ -23,24 +23,23 @@ public final class ScopesStorageFactory {
   private static @NotNull IScopesStorage createInternal(
       final @NotNull LoadClass loadClass, final @NotNull ILogger logger) {
     if (Platform.isJvm()) {
-      if (loadClass.isClassAvailable(OTEL_SCOPES_STORAGE, logger)) {
-        Class<?> otelScopesStorageClazz = loadClass.loadClass(OTEL_SCOPES_STORAGE, logger);
-        if (otelScopesStorageClazz != null) {
-          try {
-            final @Nullable Object otelScopesStorage =
-                otelScopesStorageClazz.getDeclaredConstructor().newInstance();
-            if (otelScopesStorage instanceof IScopesStorage) {
-              return (IScopesStorage) otelScopesStorage;
-            }
-          } catch (InstantiationException e) {
-            // TODO log
-          } catch (IllegalAccessException e) {
-            // TODO log
-          } catch (InvocationTargetException e) {
-            // TODO log
-          } catch (NoSuchMethodException e) {
-            // TODO log
+      final @Nullable Class<?> otelScopesStorageClazz =
+          loadClass.loadClass(OTEL_SCOPES_STORAGE, logger);
+      if (otelScopesStorageClazz != null) {
+        try {
+          final @Nullable Object otelScopesStorage =
+              otelScopesStorageClazz.getDeclaredConstructor().newInstance();
+          if (otelScopesStorage instanceof IScopesStorage) {
+            return (IScopesStorage) otelScopesStorage;
           }
+        } catch (InstantiationException e) {
+          // TODO log
+        } catch (IllegalAccessException e) {
+          // TODO log
+        } catch (InvocationTargetException e) {
+          // TODO log
+        } catch (NoSuchMethodException e) {
+          // TODO log
         }
       }
     }
