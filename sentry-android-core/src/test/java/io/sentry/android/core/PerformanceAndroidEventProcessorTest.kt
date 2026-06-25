@@ -195,8 +195,6 @@ class PerformanceAndroidEventProcessorTest {
     assertEquals(20f, tr.measurements[MeasurementValue.KEY_APP_START_COLD]?.value)
   }
 
-  // region extended app start
-
   private fun extendAppStartFinishedWith(status: SpanStatus, endMs: Long) {
     val span = mock<ISpan>()
     whenever(span.isFinished).thenReturn(true)
@@ -266,8 +264,6 @@ class PerformanceAndroidEventProcessorTest {
     assertFalse(tr.measurements.containsKey(MeasurementValue.KEY_APP_START_COLD))
     assertFalse(tr.measurements.containsKey(MeasurementValue.KEY_APP_START_WARM))
   }
-
-  // endregion
 
   @Test
   fun `add cold start measurement for performance-v2`() {

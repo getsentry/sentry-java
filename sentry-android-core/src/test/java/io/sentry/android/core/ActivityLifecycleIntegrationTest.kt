@@ -323,8 +323,6 @@ class ActivityLifecycleIntegrationTest {
     assertNull(appStartTransaction.getData("app.vitals.start.reason"))
   }
 
-  // region extended app start
-
   @Test
   fun `extendAppStart eagerly creates a standalone app start transaction with the extended span`() {
     val sut =
@@ -471,12 +469,10 @@ class ActivityLifecycleIntegrationTest {
     assertTrue(AppStartMetrics.getInstance().appStartExtension.isActive)
 
     // The eager txn is owned by the extension, not the integration's appStartTransaction field, so
-    // the per-activity cleanup can't cancel it (hardening A).
+    // the per-activity cleanup can't cancel it.
     sut.onActivityDestroyed(activity)
     assertTrue(AppStartMetrics.getInstance().appStartExtension.isActive)
   }
-
-  // endregion
 
   @Test
   @Config(sdk = [Build.VERSION_CODES.VANILLA_ICE_CREAM])
