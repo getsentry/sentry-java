@@ -129,6 +129,37 @@ class FirstDrawDoneListenerTest {
   }
 
   @Test
+  fun `OnGlobalLayoutListener is removed after cleanup`() {
+    val view = fixture.getSut()
+
+    // Initialize mOnGlobalLayoutListeners via a dummy add/remove
+    val dummyGlobalListener = ViewTreeObserver.OnGlobalLayoutListener {}
+    view.viewTreeObserver.addOnGlobalLayoutListener(dummyGlobalListener)
+    view.viewTreeObserver.removeOnGlobalLayoutListener(dummyGlobalListener)
+
+    // CopyOnWriteArray wraps an internal ArrayList called mData
+    val copyOnWriteArray: Any = view.viewTreeObserver.getProperty("mOnGlobalLayoutListeners")
+    val mDataField = copyOnWriteArray.javaClass.getDeclaredField("mData")
+    mDataField.isAccessible = true
+
+    @Suppress("UNCHECKED_CAST")
+    fun globalLayoutListeners(): ArrayList<*> = mDataField.get(copyOnWriteArray) as ArrayList<*>
+
+    assertTrue(globalLayoutListeners().isEmpty())
+
+    FirstDrawDoneListener.registerForNextDraw(view, {}, fixture.buildInfo)
+
+    // onDraw registers a cleanup OnGlobalLayoutListener
+    view.viewTreeObserver.dispatchOnDraw()
+    assertFalse(globalLayoutListeners().isEmpty())
+
+    // onGlobalLayout fires the cleanup, which removes both the draw and layout listeners
+    view.viewTreeObserver.dispatchOnGlobalLayout()
+    assertTrue(globalLayoutListeners().isEmpty())
+    assertTrue(fixture.onDrawListeners.isEmpty())
+  }
+
+  @Test
   fun `registerForNextDraw calls the given callback on the main thread after onDraw`() {
     val view = fixture.getSut()
     val r: Runnable = mock()

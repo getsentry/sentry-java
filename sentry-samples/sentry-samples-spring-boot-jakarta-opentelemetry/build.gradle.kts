@@ -8,6 +8,7 @@ plugins {
   alias(libs.plugins.spring.dependency.management)
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.kotlin.spring)
+  id("io.sentry.systemtest")
 }
 
 group = "io.sentry.sample.spring-boot-jakarta"
@@ -120,6 +121,9 @@ tasks.register<BootRun>("bootRunWithAgent").configure {
   jvmArgs = listOf("-Dotel.javaagent.debug=true", "-javaagent:$agentJarPath")
 }
 
+// The runner launches this sample with -javaagent, so track the agent jar as a systemTest input.
+sentrySystemTest { usesOpenTelemetryAgent = true }
+
 tasks.register<Test>("systemTest").configure {
   group = "verification"
   description = "Runs the System tests"
@@ -127,8 +131,6 @@ tasks.register<Test>("systemTest").configure {
   val test = project.extensions.getByType<SourceSetContainer>()["test"]
   testClassesDirs = test.output.classesDirs
   classpath = test.runtimeClasspath
-
-  outputs.upToDateWhen { false }
 
   maxParallelForks = 1
 

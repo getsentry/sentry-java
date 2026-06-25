@@ -13,7 +13,8 @@ import io.sentry.SpanStatus
 
 private const val TRACE_ORIGIN = "auto.db.sqlite"
 
-internal class SQLiteSpanManager(
+/** Span instrumentation for [SentrySupportSQLiteOpenHelper]. */
+internal class OpenHelperSpans(
   private val scopes: IScopes = ScopesAdapter.getInstance(),
   private val databaseName: String? = null,
 ) {
