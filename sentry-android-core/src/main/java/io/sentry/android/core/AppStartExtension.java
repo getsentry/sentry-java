@@ -5,8 +5,8 @@ import io.sentry.ILogger;
 import io.sentry.ISentryLifecycleToken;
 import io.sentry.ISpan;
 import io.sentry.ITransaction;
+import io.sentry.NoOpLogger;
 import io.sentry.NoOpSpan;
-import io.sentry.Sentry;
 import io.sentry.SentryDate;
 import io.sentry.SentryLevel;
 import io.sentry.SpanStatus;
@@ -42,6 +42,10 @@ public final class AppStartExtension implements IAppStartExtender {
   private final @NotNull AppStartMetrics metrics;
   private final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
 
+  // Set once at SDK init via setLogger(), read later when an extension is requested. Defaults to a
+  // no-op because this component is created before SentryOptions (and its logger) exist.
+  private volatile @NotNull ILogger logger = NoOpLogger.getInstance();
+
   private @Nullable ExtendAppStartListener extendAppStartListener;
   private @Nullable ISpan extendedSpan;
   private @Nullable ITransaction extendedTransaction;
@@ -54,11 +58,15 @@ public final class AppStartExtension implements IAppStartExtender {
     this.extendAppStartListener = listener;
   }
 
+  void setLogger(final @NotNull ILogger logger) {
+    this.logger = logger;
+  }
+
   @Override
   public void extendAppStart() {
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       if (extendedSpan != null) {
-        getLogger().log(SentryLevel.WARNING, "App start is already being extended.");
+        logger.log(SentryLevel.WARNING, "App start is already being extended.");
         return;
       }
       // Ignore the foreground check: headless app starts (broadcast/service) run in a
@@ -66,10 +74,9 @@ public final class AppStartExtension implements IAppStartExtender {
       // extension once an activity was created, the first frame was drawn, or measurements were
       // already sent.
       if (!metrics.isAppStartWindowOpen()) {
-        getLogger()
-            .log(
-                SentryLevel.WARNING,
-                "Cannot extend app start: the app start window has already passed.");
+        logger.log(
+            SentryLevel.WARNING,
+            "Cannot extend app start: the app start window has already passed.");
         return;
       }
       final @Nullable ExtendAppStartListener listener = extendAppStartListener;
@@ -162,9 +169,5 @@ public final class AppStartExtension implements IAppStartExtender {
       extendedSpan = null;
       extendedTransaction = null;
     }
-  }
-
-  private static @NotNull ILogger getLogger() {
-    return Sentry.getCurrentScopes().getOptions().getLogger();
   }
 }
