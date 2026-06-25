@@ -266,9 +266,10 @@ public final class ActivityLifecycleIntegration
         transactionOptions.setAppStartTransaction(appStartSamplingDecision != null);
         setSpanOrigin(transactionOptions);
 
-        // An eagerly-created extension transaction (Sentry.extendAppStart) is still open: continue
-        // its trace into ui.load instead of creating a second app.start, and don't treat its stored
-        // trace headers as a finished headless start.
+        // An extend-app-start transaction (Sentry.extendAppStart) is already open. Reuse its trace
+        // for this ui.load instead of creating a second app.start. It also stores an app-start
+        // trace id, so the headless-start check below is guarded with !extensionActive to avoid
+        // mistaking it for a finished headless start.
         final boolean extensionActive =
             AppStartMetrics.getInstance().getAppStartExtension().isActive();
 
