@@ -8,17 +8,54 @@
   - Previously, when going through `CombinedScopeView`, we were returning a copy where mutations didn't show up in the underlying scopes.
   - This has now changed in order to reduce SDK overhead.
 
+### Internal
+
+- Reduce writer buffer size from 8192 to 512 ([#5544](https://github.com/getsentry/sentry-java/pull/5544))
+- Remove redundant event map copies ([#5536](https://github.com/getsentry/sentry-java/pull/5536))
+- Optimize combined scope by adding an early return if only one scope has data ([#5541](https://github.com/getsentry/sentry-java/pull/5541))
+- Reduce JSON serialization overhead by creating the reflection serializer only when unknown-object fallback serialization is needed. ([#5601](https://github.com/getsentry/sentry-java/pull/5601))
+- Reduce JSON serialization overhead by allocating reflection cycle-tracking state only when reflection serialization is used. ([#5600](https://github.com/getsentry/sentry-java/pull/5600))
+- Reduce context serialization overhead by sorting key snapshots with arrays instead of temporary lists. ([#5599](https://github.com/getsentry/sentry-java/pull/5599))
+- Reduce breadcrumb allocation overhead by creating the `Breadcrumb` data map only when data is added. ([#5598](https://github.com/getsentry/sentry-java/pull/5598))
+- Reduce JSON serialization overhead by lowering the initial `JsonWriter` nesting stack size while preserving on-demand growth. ([#5591](https://github.com/getsentry/sentry-java/pull/5591))
+- Reduce timestamp helper overhead by replacing unnecessary `Calendar` usage in `DateUtils` with direct `Date` creation. ([#5589](https://github.com/getsentry/sentry-java/pull/5589))
+- Reduce Android startup overhead by using the default timezone directly on older devices or when no timezone info is available in the locale. ([#5587](https://github.com/getsentry/sentry-java/pull/5587))
+
+## 8.45.0
+
+### Features
+
+- On Android 15+ (API 35), the standalone `app.start` transaction now reports why the OS started the process via `app.vitals.start.reason` trace data (e.g. `launcher`, `broadcast`, `service`, `content_provider`), derived from `ApplicationStartInfo.getReason()`. You can search and group by this attribute in the Trace Explorer. ([#5552](https://github.com/getsentry/sentry-java/pull/5552))
+
+### Fixes
+
+- Use `System.nanoTime()` for cron check-in duration measurement to avoid incorrect durations from wall-clock adjustments ([#5611](https://github.com/getsentry/sentry-java/pull/5611))
+- Fix crash when `getHistoricalProcessStartReasons` is called from an isolated or wrong-userId process ([#5597](https://github.com/getsentry/sentry-java/pull/5597))
+- Release `MediaMuxer` when a replay segment has no encodable frames to avoid a resource leak ([#5583](https://github.com/getsentry/sentry-java/pull/5583))
+
+### Dependencies
+
+- Bump Native SDK from v0.15.1 to v0.15.2 ([#5610](https://github.com/getsentry/sentry-java/pull/5610))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0152)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.15.1...0.15.2)
+
+## 8.44.1
+
+### Fixes
+
+- Fix `FirstDrawDoneListener` leaking an `OnGlobalLayoutListener` per registration ([#5567](https://github.com/getsentry/sentry-java/pull/5567))
+
 ### Features
 
 - Add experimental `SentrySQLiteDriver` to `sentry-android-sqlite` for instrumenting `androidx.sqlite.SQLiteDriver` ([#5563](https://github.com/getsentry/sentry-java/pull/5563))
   - To use it, pass `SQLiteDriver` to `SentrySQLiteDriver.create(...)`
   - Requires `androidx.sqlite:sqlite` (2.5.0+) on runtime classpath (typically provided by Room or SQLDelight)
 
-### Internal
+### Dependencies
 
-- Reduce writer buffer size from 8192 to 512 ([#5544](https://github.com/getsentry/sentry-java/pull/5544))
-- Remove redundant event map copies ([#5536](https://github.com/getsentry/sentry-java/pull/5536))
-- Optimize combined scope by adding an early return if only one scope has data ([#5541](https://github.com/getsentry/sentry-java/pull/5541))
+- Bump Native SDK from v0.15.0 to v0.15.1 ([#5570](https://github.com/getsentry/sentry-java/pull/5570))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0151)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.15.0...0.15.1)
 
 ## 8.44.0
 

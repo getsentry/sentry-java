@@ -48,7 +48,7 @@ public class SentrySQLiteDriver private constructor(private val delegate: SQLite
     val connection = delegate.open(fileName)
 
     return try {
-      val spans = SQLiteSpanInstrumentation.fromFileName(fileName)
+      val spans = DriverSpans.fromFileName(fileName)
       // create() ensures delegate is unwrapped, so we don't need to protect against double-wrapping
       // the connection.
       SentrySQLiteConnection(connection, spans)

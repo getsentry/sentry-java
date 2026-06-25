@@ -11,6 +11,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
+import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -164,6 +165,45 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
 
   public @NotNull AppStartType getAppStartType() {
     return appStartType;
+  }
+
+  /**
+   * The reason the OS started the process, mapped from {@link ApplicationStartInfo#getReason()}.
+   * Only available on API 35+ (when {@link #cachedStartInfo} was resolved); returns {@code null}
+   * otherwise or for an unmapped reason.
+   */
+  public @Nullable String getAppStartReason() {
+    if (cachedStartInfo == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+      return null;
+    }
+    switch (cachedStartInfo.getReason()) {
+      case ApplicationStartInfo.START_REASON_ALARM:
+        return "alarm";
+      case ApplicationStartInfo.START_REASON_BACKUP:
+        return "backup";
+      case ApplicationStartInfo.START_REASON_BOOT_COMPLETE:
+        return "boot_complete";
+      case ApplicationStartInfo.START_REASON_BROADCAST:
+        return "broadcast";
+      case ApplicationStartInfo.START_REASON_CONTENT_PROVIDER:
+        return "content_provider";
+      case ApplicationStartInfo.START_REASON_JOB:
+        return "job";
+      case ApplicationStartInfo.START_REASON_LAUNCHER:
+        return "launcher";
+      case ApplicationStartInfo.START_REASON_LAUNCHER_RECENTS:
+        return "launcher_recents";
+      case ApplicationStartInfo.START_REASON_PUSH:
+        return "push";
+      case ApplicationStartInfo.START_REASON_SERVICE:
+        return "service";
+      case ApplicationStartInfo.START_REASON_START_ACTIVITY:
+        return "start_activity";
+      case ApplicationStartInfo.START_REASON_OTHER:
+        return "other";
+      default:
+        return null;
+    }
   }
 
   public boolean isAppLaunchedInForeground() {
@@ -372,6 +412,12 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     CLASS_LOADED_UPTIME_MS = classLoadedUptimeMs;
   }
 
+  @TestOnly
+  @ApiStatus.Internal
+  public void setCachedStartInfo(final @Nullable ApplicationStartInfo cachedStartInfo) {
+    this.cachedStartInfo = cachedStartInfo;
+  }
+
   /**
    * Called by instrumentation
    *
@@ -422,18 +468,28 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
       final @Nullable ActivityManager activityManager =
           (ActivityManager) application.getSystemService(Context.ACTIVITY_SERVICE);
       if (activityManager != null) {
-        final List<ApplicationStartInfo> historicalProcessStartReasons =
-            activityManager.getHistoricalProcessStartReasons(1);
-        if (!historicalProcessStartReasons.isEmpty()) {
-          final @NotNull ApplicationStartInfo info = historicalProcessStartReasons.get(0);
-          cachedStartInfo = info;
-          if (info.getStartupState() == ApplicationStartInfo.STARTUP_STATE_STARTED) {
-            if (info.getStartType() == ApplicationStartInfo.START_TYPE_COLD) {
-              appStartType = AppStartType.COLD;
-            } else {
-              appStartType = AppStartType.WARM;
+        try {
+          final List<ApplicationStartInfo> historicalProcessStartReasons =
+              activityManager.getHistoricalProcessStartReasons(1);
+          if (!historicalProcessStartReasons.isEmpty()) {
+            final @NotNull ApplicationStartInfo info = historicalProcessStartReasons.get(0);
+            cachedStartInfo = info;
+            if (info.getStartupState() == ApplicationStartInfo.STARTUP_STATE_STARTED) {
+              if (info.getStartType() == ApplicationStartInfo.START_TYPE_COLD) {
+                appStartType = AppStartType.COLD;
+              } else {
+                appStartType = AppStartType.WARM;
+              }
             }
           }
+        } catch (RuntimeException ignored) {
+          // getHistoricalProcessStartReasons may throw different kinds of exceptions, namely:
+          // - SecurityException when called from an isolated process
+          // - IllegalArgumentException when called with a wrong userId
+          // - others
+          // See impl:
+          // https://cs.android.com/android/platform/superproject/+/android-latest-release:frameworks/base/services/core/java/com/android/server/am/ActivityManagerService.java;l=10866-10893
+          Log.w("AppStartMetrics", ignored); // no logger instance here, so we just Log
         }
       }
     }

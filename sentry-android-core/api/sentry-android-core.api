@@ -746,6 +746,7 @@ public class io/sentry/android/core/performance/AppStartMetrics : io/sentry/andr
 	public fun getAppStartContinuousProfiler ()Lio/sentry/IContinuousProfiler;
 	public fun getAppStartEndTime ()Lio/sentry/SentryDate;
 	public fun getAppStartProfiler ()Lio/sentry/ITransactionProfiler;
+	public fun getAppStartReason ()Ljava/lang/String;
 	public fun getAppStartSamplingDecision ()Lio/sentry/TracesSamplingDecision;
 	public fun getAppStartSentryTraceHeader ()Ljava/lang/String;
 	public fun getAppStartTimeSpan ()Lio/sentry/android/core/performance/TimeSpan;
@@ -780,6 +781,7 @@ public class io/sentry/android/core/performance/AppStartMetrics : io/sentry/andr
 	public fun setAppStartSentryTraceHeader (Ljava/lang/String;)V
 	public fun setAppStartTraceId (Lio/sentry/protocol/SentryId;)V
 	public fun setAppStartType (Lio/sentry/android/core/performance/AppStartMetrics$AppStartType;)V
+	public fun setCachedStartInfo (Landroid/app/ApplicationStartInfo;)V
 	public fun setClassLoadedUptimeMs (J)V
 	public fun setHeadlessAppStartListener (Lio/sentry/android/core/performance/AppStartMetrics$HeadlessAppStartListener;)V
 	public fun shouldSendStartMeasurements ()Z
