@@ -807,6 +807,51 @@ class AndroidOptionsInitializerTest {
   }
 
   @Test
+  fun `does not set gesture target locators when user interaction tracking is disabled`() {
+    fixture.sentryOptions.isEnableUserInteractionBreadcrumbs = false
+    fixture.sentryOptions.isEnableUserInteractionTracing = false
+
+    fixture.initSutWithClassLoader(
+      classesToLoad =
+        listOf(
+          AndroidOptionsInitializer.COMPOSE_CLASS_NAME,
+          AndroidOptionsInitializer.SENTRY_COMPOSE_GESTURE_INTEGRATION_CLASS_NAME,
+        )
+    )
+
+    assertTrue { fixture.sentryOptions.gestureTargetLocators.isEmpty() }
+  }
+
+  @Test
+  fun `does not set compose view hierarchy exporter when attachViewHierarchy is disabled`() {
+    // attachViewHierarchy defaults to false
+    fixture.initSutWithClassLoader(
+      classesToLoad =
+        listOf(
+          AndroidOptionsInitializer.COMPOSE_CLASS_NAME,
+          AndroidOptionsInitializer.SENTRY_COMPOSE_VIEW_HIERARCHY_INTEGRATION_CLASS_NAME,
+        )
+    )
+
+    assertTrue { fixture.sentryOptions.viewHierarchyExporters.isEmpty() }
+  }
+
+  @Test
+  fun `sets compose view hierarchy exporter when attachViewHierarchy is enabled and compose is available`() {
+    fixture.sentryOptions.isAttachViewHierarchy = true
+
+    fixture.initSutWithClassLoader(
+      classesToLoad =
+        listOf(
+          AndroidOptionsInitializer.COMPOSE_CLASS_NAME,
+          AndroidOptionsInitializer.SENTRY_COMPOSE_VIEW_HIERARCHY_INTEGRATION_CLASS_NAME,
+        )
+    )
+
+    assertTrue { fixture.sentryOptions.viewHierarchyExporters.size == 1 }
+  }
+
+  @Test
   fun `AndroidMemoryCollector is set to options`() {
     fixture.initSut()
 
