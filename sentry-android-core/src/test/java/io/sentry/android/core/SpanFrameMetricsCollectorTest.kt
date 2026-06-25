@@ -8,7 +8,6 @@ import io.sentry.SentryNanotimeDate
 import io.sentry.SpanContext
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector
 import io.sentry.protocol.MeasurementValue
-import java.util.Date
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 import kotlin.test.Test
@@ -50,11 +49,12 @@ class SpanFrameMetricsCollectorTest {
     val span = mock<ISpan>()
     val spanContext = SpanContext("op.fake")
     whenever(span.spanContext).thenReturn(spanContext)
-    whenever(span.startDate).thenReturn(SentryNanotimeDate(Date(), startTimeStampNanos))
+    whenever(span.startDate)
+      .thenReturn(SentryNanotimeDate(System.currentTimeMillis(), startTimeStampNanos))
     whenever(span.finishDate)
       .thenReturn(
         if (endTimeStampNanos != null) {
-          SentryNanotimeDate(Date(), endTimeStampNanos)
+          SentryNanotimeDate(System.currentTimeMillis(), endTimeStampNanos)
         } else {
           null
         }
@@ -69,11 +69,12 @@ class SpanFrameMetricsCollectorTest {
     val span = mock<ITransaction>()
     val spanContext = SpanContext("op.fake")
     whenever(span.spanContext).thenReturn(spanContext)
-    whenever(span.startDate).thenReturn(SentryNanotimeDate(Date(), startTimeStampNanos))
+    whenever(span.startDate)
+      .thenReturn(SentryNanotimeDate(System.currentTimeMillis(), startTimeStampNanos))
     whenever(span.finishDate)
       .thenReturn(
         if (endTimeStampNanos != null) {
-          SentryNanotimeDate(Date(), endTimeStampNanos)
+          SentryNanotimeDate(System.currentTimeMillis(), endTimeStampNanos)
         } else {
           null
         }
@@ -438,8 +439,8 @@ class SpanFrameMetricsCollectorTest {
   @Test
   fun `SentryNanoDate diff does nano precision`() {
     // having this in here, as SpanFrameMetricsCollector relies on this behavior
-    val a = SentryNanotimeDate(Date(1234), 567)
-    val b = SentryNanotimeDate(Date(1234), 0)
+    val a = SentryNanotimeDate(1234, 567)
+    val b = SentryNanotimeDate(1234, 0)
 
     assertEquals(567, a.diff(b))
   }

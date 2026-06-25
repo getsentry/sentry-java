@@ -871,6 +871,25 @@ class SentryClientTest {
   }
 
   @Test
+  fun `when hint is Cached, scope attachments are not added to avoid duplication`() {
+    val sut = fixture.getSut()
+
+    val event = createEvent()
+    val scope = createScopeWithAttachments()
+
+    val hints = HintUtils.createWithTypeCheckHint(CustomCachedApplyScopeDataHint())
+    sut.captureEvent(event, scope, hints)
+
+    verify(fixture.transport)
+      .send(
+        check { actual ->
+          assertEquals(0, actual.items.count { it.header.type == SentryItemType.Attachment })
+        },
+        anyOrNull(),
+      )
+  }
+
+  @Test
   fun `when transport factory is NoOp, it should initialize it`() {
     fixture.sentryOptions.setTransportFactory(NoOpTransportFactory.getInstance())
     fixture.getSut()

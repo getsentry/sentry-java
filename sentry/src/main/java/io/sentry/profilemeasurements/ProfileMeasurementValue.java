@@ -1,5 +1,7 @@
 package io.sentry.profilemeasurements;
 
+import static io.sentry.DateUtils.doubleToBigDecimal;
+
 import io.sentry.DateUtils;
 import io.sentry.ILogger;
 import io.sentry.JsonDeserializer;
@@ -10,8 +12,6 @@ import io.sentry.ObjectWriter;
 import io.sentry.util.Objects;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -90,10 +90,6 @@ public final class ProfileMeasurementValue implements JsonUnknown, JsonSerializa
       }
     }
     writer.endObject();
-  }
-
-  private @NotNull BigDecimal doubleToBigDecimal(final @NotNull Double value) {
-    return BigDecimal.valueOf(value).setScale(6, RoundingMode.DOWN);
   }
 
   @Nullable
