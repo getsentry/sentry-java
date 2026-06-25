@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Add `io.sentry:sentry-opentelemetry-bom` to align Sentry OpenTelemetry modules with tested OpenTelemetry dependencies ([#5629](https://github.com/getsentry/sentry-java/pull/5629))
+
 ## 8.45.0
 
 ### Features
