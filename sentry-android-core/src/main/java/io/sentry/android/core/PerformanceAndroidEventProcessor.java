@@ -130,7 +130,6 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
             }
           } else {
             appStartUpDurationMs = naturalDurationMs;
-            // if appStartUpDurationMs is 0, metrics are not ready to be sent
             appStartReady = appStartUpDurationMs != 0;
           }
 

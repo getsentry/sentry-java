@@ -143,9 +143,7 @@ public final class ActivityLifecycleIntegration
     if (performanceEnabled && this.options.isEnableStandaloneAppStartTracing()) {
       final @NotNull AppStartMetrics metrics = AppStartMetrics.getInstance();
       metrics.setHeadlessAppStartListener(this::onHeadlessAppStart);
-      // Enables Sentry.extendAppStart(): the eager App Start transaction is created here (we have
-      // scopes). Only registered for standalone tracing, which makes the extend API
-      // standalone-only.
+      // Enables Sentry.extendAppStart(). Standalone-only, since it is only registered here.
       metrics.getAppStartExtension().setExtendAppStartListener(this::onExtendAppStartRequested);
       addIntegrationToSdkVersion("StandaloneAppStart");
     }
@@ -270,7 +268,7 @@ public final class ActivityLifecycleIntegration
 
         // An eagerly-created extension transaction (Sentry.extendAppStart) is still open: continue
         // its trace into ui.load instead of creating a second app.start, and don't treat its stored
-        // trace headers as a finished headless start (hardening B).
+        // trace headers as a finished headless start.
         final boolean extensionActive =
             AppStartMetrics.getInstance().getAppStartExtension().isActive();
 
@@ -329,10 +327,9 @@ public final class ActivityLifecycleIntegration
         }
 
         if (extensionActive) {
-          // The eager app.start txn was created in onCreate, before any activity existed. Attach
-          // the
-          // screen (this first activity) now so it matches the foreground standalone app.start and
-          // the event processor treats it as a foreground - not headless - start.
+          // Attach the screen (this first activity) so the eager app.start matches the foreground
+          // standalone app.start and the event processor treats it as a foreground (not headless)
+          // start.
           AppStartMetrics.getInstance()
               .getAppStartExtension()
               .setData(APP_START_SCREEN_DATA, activityName);
@@ -996,11 +993,8 @@ public final class ActivityLifecycleIntegration
       if (appStartTransaction != null && !appStartTransaction.isFinished()) {
         appStartTransaction.finish(SpanStatus.OK, appStartEndTime);
       }
-      // Finish the eagerly-created extended app start transaction (owned by the extension, so it is
-      // not in appStartTransaction). waitForChildren holds it open until the extended span
-      // finishes,
-      // which is why the vital can never be shorter than this natural first-frame end. No-op when
-      // the app start was not extended.
+      // Finish the eager extended transaction at the natural first-frame end. waitForChildren keeps
+      // it open until the extended span finishes; no-op if the app start was not extended.
       AppStartMetrics.getInstance().getAppStartExtension().finishTransaction(appStartEndTime);
     }
   }
@@ -1029,9 +1023,8 @@ public final class ActivityLifecycleIntegration
       return;
     }
 
-    // If the headless app start was extended, the eager app.start txn already exists. Finish it at
-    // the headless end; waitForChildren keeps it open until the extended span finishes (or the
-    // deadline forces it). Don't create a second transaction.
+    // Extended headless start: finish the existing eager txn at the headless end instead of
+    // creating a second one.
     if (metrics.getAppStartExtension().isActive()) {
       metrics.getAppStartExtension().finishTransaction(endTime);
       return;
