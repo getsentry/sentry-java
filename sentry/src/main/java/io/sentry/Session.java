@@ -131,10 +131,7 @@ public final class Session implements JsonUnknown, JsonSerializable {
 
   @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
   public @Nullable Date getStarted() {
-    if (started == null) {
-      return null;
-    }
-    return (Date) started.clone();
+    return started;
   }
 
   public @Nullable String getDistinctId() {
@@ -193,8 +190,7 @@ public final class Session implements JsonUnknown, JsonSerializable {
 
   @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
   public @Nullable Date getTimestamp() {
-    final Date timestampRef = timestamp;
-    return timestampRef != null ? (Date) timestampRef.clone() : null;
+    return timestamp;
   }
 
   /** Ends a session and update its values */

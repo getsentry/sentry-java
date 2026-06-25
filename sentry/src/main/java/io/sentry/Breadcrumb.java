@@ -562,7 +562,7 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable, Comparab
   @SuppressWarnings("JavaUtilDate")
   public @NotNull Date getTimestamp() {
     if (timestamp != null) {
-      return (Date) timestamp.clone();
+      return timestamp;
     } else if (timestampMs != null) {
       // we memoize it here into timestamp to avoid creating a Date again and again
       timestamp = DateUtils.getDateTime(timestampMs);
