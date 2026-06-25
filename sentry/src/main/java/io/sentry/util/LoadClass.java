@@ -20,7 +20,9 @@ public class LoadClass {
    */
   public @Nullable Class<?> loadClass(final @NotNull String clazz, final @Nullable ILogger logger) {
     try {
-      return Class.forName(clazz);
+      // Don't initialize the class just to probe for availability; it gets initialized lazily on
+      // first use. This avoids running unrelated static initializers during SDK init.
+      return Class.forName(clazz, false, LoadClass.class.getClassLoader());
     } catch (ClassNotFoundException e) {
       if (logger != null) {
         logger.log(SentryLevel.INFO, "Class not available: " + clazz);
