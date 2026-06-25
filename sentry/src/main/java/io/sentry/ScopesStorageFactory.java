@@ -29,7 +29,7 @@ public final class ScopesStorageFactory {
           try {
             final @Nullable Object otelScopesStorage =
                 otelScopesStorageClazz.getDeclaredConstructor().newInstance();
-            if (otelScopesStorage != null && otelScopesStorage instanceof IScopesStorage) {
+            if (otelScopesStorage instanceof IScopesStorage) {
               return (IScopesStorage) otelScopesStorage;
             }
           } catch (InstantiationException e) {
