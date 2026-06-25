@@ -65,7 +65,7 @@ public final class ActivityLifecycleIntegration
   static final String APP_START_COLD = "app.start.cold";
   static final String TTID_OP = "ui.load.initial_display";
   static final String TTFD_OP = "ui.load.full_display";
-  static final String APP_START_EXTENDED_OP = "app.start.extended_app_start";
+  static final String APP_START_EXTENDED_OP = "app.start.extended";
   static final String APP_START_EXTENDED_DESC = "Extended App Start";
   static final long TTFD_TIMEOUT_MILLIS = 25000;
   // If a headless app start and the following activity's ui.load are more than this far apart, they
