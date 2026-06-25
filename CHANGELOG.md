@@ -21,6 +21,7 @@
 - Avoid constructing an exception per view when resolving view ids during view-hierarchy and gesture capture ([#5631](https://github.com/getsentry/sentry-java/pull/5631))
 - Start the frame metrics thread lazily on first collection instead of during SDK init ([#5641](https://github.com/getsentry/sentry-java/pull/5641))
 - Reduce `SentryId` and `SpanId` allocation overhead by replacing their per-instance `LazyEvaluator` (and its lock) with a lightweight lazily-generated `String`. ([#5645](https://github.com/getsentry/sentry-java/pull/5645))
+- Lazily allocate the `ReentrantLock` backing `AutoClosableReentrantLock` to avoid eager lock allocations for SDK objects that never contend during `SentryAndroid.init` ([#5643](https://github.com/getsentry/sentry-java/pull/5643))
 
 ## 8.46.0
 
