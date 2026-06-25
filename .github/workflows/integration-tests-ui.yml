@@ -34,9 +34,6 @@ jobs:
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
-      - name: Build test APKs
-        run: make assembleUiTests
-
       - name: Enable KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -78,7 +75,4 @@ jobs:
           disable-animations: true
           disable-spellchecker: true
           emulator-options: -memory 4096 -no-window -gpu auto -noaudio -no-boot-anim -camera-back none -no-snapshot-save
-          script: |
-            adb install -r -d sentry-android-integration-tests/sentry-uitest-android/build/outputs/apk/release/sentry-uitest-android-release.apk
-            adb install -r -d sentry-android-integration-tests/sentry-uitest-android/build/outputs/apk/androidTest/release/sentry-uitest-android-release-androidTest.apk
-            adb shell am instrument -w -e clearPackageData true -e useTestOrchestrator true io.sentry.uitest.android.test/androidx.test.runner.AndroidJUnitRunner
+          script: ./gradlew :sentry-android-integration-tests:sentry-uitest-android:connectedReleaseAndroidTest -Denvironment=github
