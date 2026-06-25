@@ -5,7 +5,6 @@ on:
     # Run every Monday at 9:00 AM UTC
     - cron: '0 9 * * 1'
   workflow_dispatch: # Allow manual triggering
-  pull_request: # remove this before merging
 
 permissions:
   contents: write
@@ -16,12 +15,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: '3.11'
 
@@ -44,10 +43,10 @@ jobs:
 
       - name: Create Pull Request
         if: steps.changes.outputs.has_changes == 'true'
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@22a9089034f40e5a961c8808d113e2c98fb63676 # v7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          base: feat/spring-boot-matrix-auto-update
+          base: main
           commit-message: "chore: Update Spring Boot version matrices"
           title: "Automated Spring Boot Version Update"
           body: |

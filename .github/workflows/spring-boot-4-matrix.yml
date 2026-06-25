@@ -21,7 +21,7 @@ jobs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
       - name: Set matrix data
         id: set-matrix
         run: echo "matrix=$(cat .github/data/spring-boot-4-versions.json | jq -c .versions)" >> $GITHUB_OUTPUT
