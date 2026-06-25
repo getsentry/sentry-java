@@ -140,7 +140,7 @@ public final class AppStartExtension implements IAppStartExtender {
   public @Nullable SentryDate getExtendedEndTime() {
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       final @Nullable ISpan span = extendedSpan;
-      if (span == null || !span.isFinished()) {
+      if (span == null) {
         return null;
       }
       // A deadline timeout would report an artificially inflated duration; suppress the vital
@@ -148,6 +148,9 @@ public final class AppStartExtension implements IAppStartExtender {
       if (span.getStatus() == SpanStatus.DEADLINE_EXCEEDED) {
         return null;
       }
+      // Read the finish date, not isFinished(): finishing the extended span completes the
+      // waitForChildren transaction and runs the event processor re-entrantly before the span's
+      // finished flag is set, but the finish timestamp is already in place. Null until finished.
       return span.getFinishDate();
     }
   }
