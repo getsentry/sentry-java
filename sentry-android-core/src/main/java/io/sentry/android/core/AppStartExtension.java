@@ -15,16 +15,6 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Owns the lifecycle of an extended app start. Created and held by {@link AppStartMetrics}, it
- * keeps the new "extend app start" concern out of that already-large class.
- *
- * <p>Both the eager standalone App Start {@link ITransaction} and its extended child {@link ISpan}
- * are created by the integration (which has access to scopes) and returned to this component from
- * {@link ExtendAppStartListener#onExtendAppStartRequested()}. This component owns them from then
- * on: it never stores them in the integration's shared transaction field, so the per-activity
- * cleanup can never cancel an eagerly-created extension.
- */
 @ApiStatus.Internal
 public final class AppStartExtension implements IAppStartExtender {
 
@@ -38,12 +28,6 @@ public final class AppStartExtension implements IAppStartExtender {
     }
   }
 
-  /**
-   * Notifies the integration that an extension was requested. The integration creates the
-   * standalone App Start transaction + extended child span (it has scopes) and returns them, or
-   * returns {@code null} to decline (e.g. standalone tracing is disabled). When no listener is
-   * registered, {@link #extendAppStart()} is inert and the whole API stays a no-op.
-   */
   public interface ExtendAppStartListener {
     @Nullable
     ExtendedAppStart onExtendAppStartRequested();
