@@ -1,13 +1,8 @@
 package io.sentry;
 
-import static io.sentry.vendor.gson.internal.bind.util.ISO8601Utils.TIMEZONE_UTC;
-
-import io.sentry.vendor.gson.internal.bind.util.ISO8601Utils;
+import io.sentry.vendor.SentryIso8601Utils;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.text.ParseException;
-import java.text.ParsePosition;
-import java.util.Calendar;
 import java.util.Date;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -15,6 +10,7 @@ import org.jetbrains.annotations.Nullable;
 
 /** Utilities to deal with dates */
 @ApiStatus.Internal
+@SuppressWarnings("JavaUtilDate")
 public final class DateUtils {
 
   private DateUtils() {}
@@ -24,10 +20,9 @@ public final class DateUtils {
    *
    * @return the UTC Date
    */
-  @SuppressWarnings("JdkObsolete")
+  @SuppressWarnings("JavaUtilDate")
   public static @NotNull Date getCurrentDateTime() {
-    final Calendar calendar = Calendar.getInstance(TIMEZONE_UTC);
-    return calendar.getTime();
+    return new Date();
   }
 
   /**
@@ -39,8 +34,8 @@ public final class DateUtils {
   public static @NotNull Date getDateTime(final @NotNull String timestamp)
       throws IllegalArgumentException {
     try {
-      return ISO8601Utils.parse(timestamp, new ParsePosition(0));
-    } catch (ParseException e) {
+      return getDateTime(SentryIso8601Utils.parseTimestamp(timestamp));
+    } catch (IllegalArgumentException e) {
       throw new IllegalArgumentException("timestamp is not ISO format " + timestamp);
     }
   }
@@ -51,7 +46,6 @@ public final class DateUtils {
    * @param timestamp millis eg 1581410911.988 (1581410911 seconds and 988 millis)
    * @return the UTC Date
    */
-  @SuppressWarnings("JdkObsolete")
   public static @NotNull Date getDateTimeWithMillisPrecision(final @NotNull String timestamp)
       throws IllegalArgumentException {
     try {
@@ -69,7 +63,17 @@ public final class DateUtils {
    * @return the UTC/ISO 8601 timestamp
    */
   public static @NotNull String getTimestamp(final @NotNull Date date) {
-    return ISO8601Utils.format(date, true);
+    return getTimestampFromMillis(date.getTime());
+  }
+
+  /**
+   * Get the UTC/ISO 8601 timestamp from millis.
+   *
+   * @param millis the UTC millis from the epoch
+   * @return the UTC/ISO 8601 timestamp
+   */
+  static @NotNull String getTimestampFromMillis(final long millis) {
+    return SentryIso8601Utils.formatTimestamp(millis);
   }
 
   /**
@@ -78,10 +82,9 @@ public final class DateUtils {
    * @param millis the UTC millis from the epoch
    * @return the UTC Date
    */
+  @SuppressWarnings("JavaUtilDate")
   public static @NotNull Date getDateTime(final long millis) {
-    final Calendar calendar = Calendar.getInstance(TIMEZONE_UTC);
-    calendar.setTimeInMillis(millis);
-    return calendar.getTime();
+    return new Date(millis);
   }
 
   /**

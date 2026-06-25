@@ -33,8 +33,6 @@ dependencies {
   testImplementation(libs.slf4j.api)
 }
 
-configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
-
 tasks {
   test {
     // used to test io.sentry.jul.SentryHandler

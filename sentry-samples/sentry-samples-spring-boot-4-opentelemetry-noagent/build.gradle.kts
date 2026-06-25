@@ -17,8 +17,6 @@ java.sourceCompatibility = JavaVersion.VERSION_17
 
 java.targetCompatibility = JavaVersion.VERSION_17
 
-repositories { mavenCentral() }
-
 configure<JavaPluginExtension> {
   sourceCompatibility = JavaVersion.VERSION_17
   targetCompatibility = JavaVersion.VERSION_17
@@ -80,8 +78,6 @@ dependencies {
 }
 
 dependencyManagement { imports { mavenBom(libs.otel.instrumentation.bom.get().toString()) } }
-
-configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
 
 tasks.register<Test>("systemTest").configure {
   group = "verification"

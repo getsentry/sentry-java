@@ -17,8 +17,6 @@ java.sourceCompatibility = JavaVersion.VERSION_17
 
 java.targetCompatibility = JavaVersion.VERSION_17
 
-repositories { mavenCentral() }
-
 dependencies {
   implementation(Config.Libs.kotlinReflect)
   implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
@@ -48,8 +46,6 @@ dependencies {
   testImplementation("ch.qos.logback:logback-classic:1.5.16")
   testImplementation("ch.qos.logback:logback-core:1.5.16")
 }
-
-configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
 
 tasks.withType<KotlinCompile>().configureEach {
   kotlin {

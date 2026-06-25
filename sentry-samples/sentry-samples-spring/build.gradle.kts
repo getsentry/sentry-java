@@ -25,8 +25,6 @@ java {
   targetCompatibility = JavaVersion.VERSION_1_8
 }
 
-repositories { mavenCentral() }
-
 // Apollo 4.x requires coroutines 1.9.0+, override Spring Boot's managed version
 extra["kotlin-coroutines.version"] = "1.9.0"
 

@@ -359,6 +359,19 @@ class MainEventProcessorTest {
   }
 
   @Test
+  fun `options tags are copied when applied to event`() {
+    val sut = fixture.getSut(tags = mapOf("tag1" to "value1"))
+    val event = SentryEvent()
+
+    sut.process(event, Hint())
+    val eventTags = event.tags!!
+
+    fixture.sentryOptions.setTag("tag2", "value2")
+
+    assertFalse(eventTags.containsKey("tag2"))
+  }
+
+  @Test
   fun `when event has a tag set with the same name as SentryOptions tags, the tag value from the event is retained`() {
     val sut = fixture.getSut(tags = mapOf("tag1" to "value1", "tag2" to "value2"))
     val event = SentryEvent()
