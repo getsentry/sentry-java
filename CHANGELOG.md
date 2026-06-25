@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Performance
+
+- Speed up touch gesture target detection on deeply nested view hierarchies by hit-testing in local coordinates instead of calling `getLocationOnScreen` per view ([#5595](https://github.com/getsentry/sentry-java/pull/5595))
+
 ## 8.46.0
 
 ### Fixes
@@ -47,10 +53,6 @@
 - Bump Native SDK from v0.15.1 to v0.15.2 ([#5610](https://github.com/getsentry/sentry-java/pull/5610))
   - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0152)
   - [diff](https://github.com/getsentry/sentry-native/compare/0.15.1...0.15.2)
-
-### Internal
-
-- Speed up touch gesture target detection on deeply nested view hierarchies by hit-testing in local coordinates instead of calling `getLocationOnScreen` per view ([#5595](https://github.com/getsentry/sentry-java/pull/5595))
 
 ## 8.44.1
 
