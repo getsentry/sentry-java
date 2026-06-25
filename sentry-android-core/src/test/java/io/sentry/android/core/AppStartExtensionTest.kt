@@ -189,6 +189,23 @@ class AppStartExtensionTest {
   }
 
   @Test
+  fun `getExtendedEndTime returns the finish date even when the span still reports unfinished`() {
+    // Reproduces the waitForChildren reentrancy: finishing the extended span completes the
+    // transaction and runs the event processor before the span's isFinished() flips, while the
+    // finish timestamp is already set. getExtendedEndTime() must read the finish date, not the
+    // flag.
+    val ext = extension(windowOpen = true)
+    val finishDate = SentryNanotimeDate()
+    val span = mock<ISpan>()
+    whenever(span.isFinished).thenReturn(false)
+    whenever(span.status).thenReturn(SpanStatus.OK)
+    whenever(span.finishDate).thenReturn(finishDate)
+    ext.registerHandOver(span = span)
+    ext.extendAppStart()
+    assertSame(finishDate, ext.extendedEndTime)
+  }
+
+  @Test
   fun `clear clears the extension state`() {
     val ext = extension(windowOpen = true)
     ext.registerHandOver()
