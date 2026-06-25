@@ -4,7 +4,13 @@
 
 ### Internal
 
+<<<<<<< perf/sdk-overhead-reduction-breadcrumb-lazy-data
 - Reduce breadcrumb allocation overhead by creating the `Breadcrumb` data map only when data is added. ([#5598](https://github.com/getsentry/sentry-java/pull/5598))
+=======
+- Reduce JSON serialization overhead by lowering the initial `JsonWriter` nesting stack size while preserving on-demand growth. ([#5591](https://github.com/getsentry/sentry-java/pull/5591))
+- Reduce timestamp helper overhead by replacing unnecessary `Calendar` usage in `DateUtils` with direct `Date` creation. ([#5589](https://github.com/getsentry/sentry-java/pull/5589))
+- Reduce Android startup overhead by using the default timezone directly on older devices or when no timezone info is available in the locale. ([#5587](https://github.com/getsentry/sentry-java/pull/5587))
+>>>>>>> perf/sdk-overhead-reduction
 
 ## 8.45.0
 
