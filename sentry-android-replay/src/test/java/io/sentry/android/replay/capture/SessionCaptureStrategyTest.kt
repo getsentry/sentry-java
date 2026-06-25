@@ -7,6 +7,7 @@ import io.sentry.IScopes
 import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.SentryOptions
+import io.sentry.util.thread.IThreadChecker
 import io.sentry.SentryReplayEvent
 import io.sentry.SentryReplayEvent.ReplayType
 import io.sentry.SentryReplayOptions.SentryReplayQuality.HIGH
@@ -553,5 +554,36 @@ class SessionCaptureStrategyTest {
         argThat { event -> event is SentryReplayEvent && event.traceIds.isNullOrEmpty() },
         any(),
       )
+  }
+
+  @Test
+  fun `stop shuts down persisting executor so no SentryReplayPersister threads leak across cycles`() {
+    // Force isMainThread() to return true so that property-reset writes in stop() are dispatched
+    // to the persistingExecutor, which is the code path that used to leak threads.
+    fixture.options.threadChecker =
+      mock<IThreadChecker> {
+        on { isMainThread() }.thenReturn(true)
+        on { isMainThread(any<Thread>()) }.thenReturn(true)
+        on { isMainThread(anyLong()) }.thenReturn(false)
+        on { currentThreadName }.thenReturn("main")
+        on { currentThreadSystemId() }.thenReturn(0L)
+      }
+
+    repeat(3) {
+      val strategy = fixture.getSut()
+      strategy.start(0, SentryId())
+      strategy.onConfigurationChanged(fixture.recorderConfig)
+      strategy.stop()
+    }
+
+    // Allow time for thread termination after shutdownNow().
+    Thread.sleep(200)
+
+    val leakedThreads =
+      Thread.getAllStackTraces().keys.filter { it.name.startsWith("SentryReplayPersister-") }
+    assertTrue(
+      leakedThreads.isEmpty(),
+      "Expected no SentryReplayPersister threads after stop(), found: ${leakedThreads.map { it.name }}",
+    )
   }
 }

@@ -58,11 +58,20 @@ internal abstract class BaseCaptureStrategy(
     private const val MAX_TRACE_IDS = 100
   }
 
-  private val persistingExecutor: ScheduledExecutorService by lazy {
-    val delegate =
-      Executors.newSingleThreadScheduledExecutor(ReplayPersistingExecutorServiceThreadFactory())
-    ReplayExecutorService(delegate, options)
-  }
+  // Explicit holder so we can detect whether the executor was ever initialised and shut it down
+  // without initialising it as a side-effect (which is what a plain `lazy` delegate would do).
+  private var persistingExecutorHolder: ScheduledExecutorService? = null
+  private val persistingExecutor: ScheduledExecutorService
+    get() {
+      return persistingExecutorHolder
+        ?: run {
+          val delegate =
+            Executors.newSingleThreadScheduledExecutor(
+              ReplayPersistingExecutorServiceThreadFactory()
+            )
+          ReplayExecutorService(delegate, options).also { persistingExecutorHolder = it }
+        }
+    }
   private val gestureConverter = ReplayGestureConverter(dateProvider)
 
   protected val isTerminating = AtomicBoolean(false)
@@ -123,6 +132,13 @@ internal abstract class BaseCaptureStrategy(
     replayStartTimestamp.set(0)
     segmentTimestamp = null
     currentReplayId = SentryId.EMPTY_ID
+    // Shut down the persisting executor only if it was actually initialised.  We must not call the
+    // blocking ReplayExecutorService.shutdown() here because stop() may run on the main thread,
+    // and blocking there risks an ANR.  shutdownNow() is non-blocking: it cancels queued tasks and
+    // interrupts any running one, which is acceptable because the tasks are best-effort persistence
+    // writes and the cache has already been closed above.
+    persistingExecutorHolder?.shutdownNow()
+    persistingExecutorHolder = null
   }
 
   protected fun createSegmentInternal(
