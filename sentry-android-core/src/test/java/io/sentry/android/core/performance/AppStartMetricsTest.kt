@@ -13,6 +13,7 @@ import io.sentry.DateUtils
 import io.sentry.IContinuousProfiler
 import io.sentry.ITransactionProfiler
 import io.sentry.SentryNanotimeDate
+import io.sentry.android.core.AppStartExtension
 import io.sentry.android.core.ContextUtils
 import io.sentry.android.core.CurrentActivityHolder
 import io.sentry.android.core.SentryAndroidOptions
@@ -1067,22 +1068,31 @@ class AppStartMetricsTest {
     assertSame(metrics.appStartExtension, metrics.appStartExtension)
   }
 
+  /** Drives the singleton's eager extension into the active state via the listener path. */
+  private fun activateExtension(metrics: AppStartMetrics) {
+    metrics.appStartExtension.setExtendAppStartListener {
+      AppStartExtension.ExtendedAppStart(mock(), mock())
+    }
+    metrics.appStartExtension.extendAppStart()
+    assertTrue(metrics.appStartExtension.isActive)
+  }
+
   @Test
   fun `clear resets the extension state`() {
     val metrics = AppStartMetrics.getInstance()
-    metrics.appStartExtension.onExtended(mock(), mock())
-    assertTrue(metrics.appStartExtension.isActive)
+    activateExtension(metrics)
     metrics.clear()
     assertFalse(metrics.appStartExtension.isActive)
+    metrics.appStartExtension.setExtendAppStartListener(null)
   }
 
   @Test
   fun `onAppStartSpansSent resets the extension state`() {
     val metrics = AppStartMetrics.getInstance()
-    metrics.appStartExtension.onExtended(mock(), mock())
-    assertTrue(metrics.appStartExtension.isActive)
+    activateExtension(metrics)
     metrics.onAppStartSpansSent()
     assertFalse(metrics.appStartExtension.isActive)
+    metrics.appStartExtension.setExtendAppStartListener(null)
   }
 
   // endregion

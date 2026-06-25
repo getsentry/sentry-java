@@ -192,13 +192,18 @@ public final class io/sentry/android/core/AppStartExtension : io/sentry/IAppStar
 	public fun getExtendedAppStartSpan ()Lio/sentry/ISpan;
 	public fun getExtendedEndTime ()Lio/sentry/SentryDate;
 	public fun isActive ()Z
-	public fun onExtended (Lio/sentry/ITransaction;Lio/sentry/ISpan;)V
 	public fun reset ()V
 	public fun setExtendAppStartListener (Lio/sentry/android/core/AppStartExtension$ExtendAppStartListener;)V
 }
 
 public abstract interface class io/sentry/android/core/AppStartExtension$ExtendAppStartListener {
-	public abstract fun onExtendAppStartRequested ()V
+	public abstract fun onExtendAppStartRequested ()Lio/sentry/android/core/AppStartExtension$ExtendedAppStart;
+}
+
+public final class io/sentry/android/core/AppStartExtension$ExtendedAppStart {
+	public final field span Lio/sentry/ISpan;
+	public final field transaction Lio/sentry/ITransaction;
+	public fun <init> (Lio/sentry/ITransaction;Lio/sentry/ISpan;)V
 }
 
 public final class io/sentry/android/core/AppState : java/io/Closeable {

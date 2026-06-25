@@ -21,22 +21,36 @@ import org.jetbrains.annotations.Nullable;
  * keeps the new "extend app start" concern out of that already-large class.
  *
  * <p>Both the eager standalone App Start {@link ITransaction} and its extended child {@link ISpan}
- * are created by the integration (which has access to scopes) and handed back here via {@link
- * #onExtended(ITransaction, ISpan)}. This component owns them from then on: it never stores them in
- * the integration's shared transaction field, so the per-activity cleanup can never cancel an
- * eagerly-created extension.
+ * are created by the integration (which has access to scopes) and returned to this component from
+ * {@link ExtendAppStartListener#onExtendAppStartRequested()}. This component owns them from then
+ * on: it never stores them in the integration's shared transaction field, so the per-activity
+ * cleanup can never cancel an eagerly-created extension.
  */
 @ApiStatus.Internal
 public final class AppStartExtension implements IAppStartExtender {
 
   /**
+   * The standalone App Start transaction and its extended child span, created by the integration.
+   */
+  public static final class ExtendedAppStart {
+    public final @NotNull ITransaction transaction;
+    public final @NotNull ISpan span;
+
+    public ExtendedAppStart(final @NotNull ITransaction transaction, final @NotNull ISpan span) {
+      this.transaction = transaction;
+      this.span = span;
+    }
+  }
+
+  /**
    * Notifies the integration that an extension was requested. The integration creates the
-   * standalone App Start transaction + extended child span (it has scopes) and hands them back via
-   * {@link #onExtended(ITransaction, ISpan)}. When no listener is registered (e.g. standalone
-   * tracing is disabled), {@link #extendAppStart()} is inert and the whole API stays a no-op.
+   * standalone App Start transaction + extended child span (it has scopes) and returns them, or
+   * returns {@code null} to decline (e.g. standalone tracing is disabled). When no listener is
+   * registered, {@link #extendAppStart()} is inert and the whole API stays a no-op.
    */
   public interface ExtendAppStartListener {
-    void onExtendAppStartRequested();
+    @Nullable
+    ExtendedAppStart onExtendAppStartRequested();
   }
 
   private final @NotNull AppStartMetrics metrics;
@@ -81,21 +95,12 @@ public final class AppStartExtension implements IAppStartExtender {
       }
       final @Nullable ExtendAppStartListener listener = extendAppStartListener;
       if (listener != null) {
-        listener.onExtendAppStartRequested();
+        final @Nullable ExtendedAppStart extended = listener.onExtendAppStartRequested();
+        if (extended != null) {
+          this.extendedTransaction = extended.transaction;
+          this.extendedSpan = extended.span;
+        }
       }
-    }
-  }
-
-  /**
-   * Hands the eagerly-created standalone App Start transaction and its extended child span over to
-   * this component, which owns them from now on. Called synchronously by the integration while
-   * handling {@link ExtendAppStartListener#onExtendAppStartRequested()}.
-   */
-  public void onExtended(
-      final @NotNull ITransaction transaction, final @NotNull ISpan extendedSpan) {
-    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
-      this.extendedTransaction = transaction;
-      this.extendedSpan = extendedSpan;
     }
   }
 

@@ -39,7 +39,7 @@ class AppStartExtensionTest {
     txn: ITransaction = mock(),
     span: ISpan = mock(),
   ): Pair<ITransaction, ISpan> {
-    setExtendAppStartListener { onExtended(txn, span) }
+    setExtendAppStartListener { AppStartExtension.ExtendedAppStart(txn, span) }
     return txn to span
   }
 
@@ -47,7 +47,10 @@ class AppStartExtensionTest {
   fun `extendAppStart fires the listener when the window is open`() {
     val ext = extension(windowOpen = true)
     val calls = AtomicInteger()
-    ext.setExtendAppStartListener { calls.incrementAndGet() }
+    ext.setExtendAppStartListener {
+      calls.incrementAndGet()
+      null
+    }
     ext.extendAppStart()
     assertEquals(1, calls.get())
   }
@@ -56,7 +59,10 @@ class AppStartExtensionTest {
   fun `extendAppStart does not fire the listener when the window is closed`() {
     val ext = extension(windowOpen = false)
     val calls = AtomicInteger()
-    ext.setExtendAppStartListener { calls.incrementAndGet() }
+    ext.setExtendAppStartListener {
+      calls.incrementAndGet()
+      null
+    }
     ext.extendAppStart()
     assertEquals(0, calls.get())
   }
@@ -77,7 +83,7 @@ class AppStartExtensionTest {
     val span = mock<ISpan>()
     ext.setExtendAppStartListener {
       calls.incrementAndGet()
-      ext.onExtended(txn, span)
+      AppStartExtension.ExtendedAppStart(txn, span)
     }
     ext.extendAppStart()
     ext.extendAppStart()
