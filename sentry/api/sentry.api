@@ -7618,6 +7618,7 @@ public final class io/sentry/util/CollectionUtils {
 	public static fun newHashMap (Ljava/util/Map;)Ljava/util/Map;
 	public static fun reverseListIterator (Ljava/util/concurrent/CopyOnWriteArrayList;)Ljava/util/ListIterator;
 	public static fun size (Ljava/lang/Iterable;)I
+	public static fun toSortedStringArray (Ljava/util/Enumeration;I)[Ljava/lang/String;
 }
 
 public abstract interface class io/sentry/util/CollectionUtils$Mapper {
