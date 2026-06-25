@@ -11,7 +11,7 @@
   - Previously, these getters returned defensive copies for some date fields.
   - This has now changed in order to reduce SDK overhead.
 
-### Internal
+### Performance
 
 - Reduce writer buffer size from 8192 to 512 ([#5544](https://github.com/getsentry/sentry-java/pull/5544))
 - Remove redundant event map copies ([#5536](https://github.com/getsentry/sentry-java/pull/5536))
