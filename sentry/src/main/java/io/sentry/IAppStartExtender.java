@@ -4,7 +4,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Bridges the {@code Sentry.extendAppStart()} / {@code Sentry.finishAppStart()} / {@code
+ * Bridges the {@code Sentry.extendAppStart()} / {@code Sentry.finishExtendedAppStart()} / {@code
  * Sentry.getExtendedAppStartSpan()} static API to the Android implementation. The default
  * implementation ({@link NoOpAppStartExtender}) does nothing, so the API is a no-op on platforms
  * that don't provide an app start measurement.
@@ -23,7 +23,7 @@ public interface IAppStartExtender {
    * Finishes the extended app start, allowing the app start transaction to complete. No-ops if the
    * app start was not extended or this was already called.
    */
-  void finishAppStart();
+  void finishExtendedAppStart();
 
   /**
    * Returns the active extended app start span to attach child spans to, or a no-op span when no

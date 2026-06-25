@@ -18,7 +18,7 @@ public final class NoOpAppStartExtender implements IAppStartExtender {
   public void extendAppStart() {}
 
   @Override
-  public void finishAppStart() {}
+  public void finishExtendedAppStart() {}
 
   @Override
   public @NotNull ISpan getExtendedAppStartSpan() {

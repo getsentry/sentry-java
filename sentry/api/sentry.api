@@ -798,7 +798,7 @@ public final class io/sentry/HubScopesWrapper : io/sentry/IHub {
 
 public abstract interface class io/sentry/IAppStartExtender {
 	public abstract fun extendAppStart ()V
-	public abstract fun finishAppStart ()V
+	public abstract fun finishExtendedAppStart ()V
 	public abstract fun getExtendedAppStartSpan ()Lio/sentry/ISpan;
 }
 
@@ -1551,7 +1551,7 @@ public final class io/sentry/MonitorScheduleUnit : java/lang/Enum {
 
 public final class io/sentry/NoOpAppStartExtender : io/sentry/IAppStartExtender {
 	public fun extendAppStart ()V
-	public fun finishAppStart ()V
+	public fun finishExtendedAppStart ()V
 	public fun getExtendedAppStartSpan ()Lio/sentry/ISpan;
 	public static fun getInstance ()Lio/sentry/NoOpAppStartExtender;
 }

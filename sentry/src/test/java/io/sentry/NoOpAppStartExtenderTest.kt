@@ -8,7 +8,7 @@ class NoOpAppStartExtenderTest {
 
   @Test fun `extendAppStart does not throw`() = extender.extendAppStart()
 
-  @Test fun `finishAppStart does not throw`() = extender.finishAppStart()
+  @Test fun `finishExtendedAppStart does not throw`() = extender.finishExtendedAppStart()
 
   @Test
   fun `getExtendedAppStartSpan returns NoOpSpan`() {

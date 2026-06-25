@@ -657,7 +657,7 @@ class SentryOptionsTest {
       object : IAppStartExtender {
         override fun extendAppStart() = Unit
 
-        override fun finishAppStart() = Unit
+        override fun finishExtendedAppStart() = Unit
 
         override fun getExtendedAppStartSpan(): ISpan = NoOpSpan.getInstance()
       }
