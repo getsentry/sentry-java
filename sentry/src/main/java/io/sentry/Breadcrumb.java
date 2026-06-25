@@ -555,7 +555,7 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable, Comparab
     if (timestamp != null) {
       return (Date) timestamp.clone();
     } else if (timestampMs != null) {
-      // we memoize it here into timestamp to avoid instantiating Calendar again and again
+      // we memoize it here into timestamp to avoid creating a Date again and again
       timestamp = DateUtils.getDateTime(timestampMs);
       return timestamp;
     }
