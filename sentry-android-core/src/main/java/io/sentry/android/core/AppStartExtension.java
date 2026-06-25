@@ -83,7 +83,7 @@ public final class AppStartExtension implements IAppStartExtender {
   }
 
   @Override
-  public void finishAppStart() {
+  public void finishExtendedAppStart() {
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       final @Nullable ISpan span = extendedSpan;
       if (span != null && !span.isFinished()) {

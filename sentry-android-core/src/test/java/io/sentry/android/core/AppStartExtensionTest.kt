@@ -104,29 +104,29 @@ class AppStartExtensionTest {
   }
 
   @Test
-  fun `finishAppStart without a prior extend is a no-op`() {
+  fun `finishExtendedAppStart without a prior extend is a no-op`() {
     val ext = extension()
-    ext.finishAppStart()
+    ext.finishExtendedAppStart()
     assertNull(ext.extendedEndTime)
   }
 
   @Test
-  fun `finishAppStart finishes the extended span`() {
+  fun `finishExtendedAppStart finishes the extended span`() {
     val ext = extension(windowOpen = true)
     val (_, span) = ext.registerHandOver()
     ext.extendAppStart()
-    ext.finishAppStart()
+    ext.finishExtendedAppStart()
     verify(span).finish(SpanStatus.OK)
   }
 
   @Test
-  fun `finishAppStart does not finish an already finished span`() {
+  fun `finishExtendedAppStart does not finish an already finished span`() {
     val ext = extension(windowOpen = true)
     val span = mock<ISpan>()
     whenever(span.isFinished).thenReturn(true)
     ext.registerHandOver(span = span)
     ext.extendAppStart()
-    ext.finishAppStart()
+    ext.finishExtendedAppStart()
     verify(span, never()).finish(any<SpanStatus>())
   }
 

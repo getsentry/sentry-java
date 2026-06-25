@@ -188,7 +188,7 @@ public final class io/sentry/android/core/AppStartExtension : io/sentry/IAppStar
 	public fun <init> (Lio/sentry/android/core/performance/AppStartMetrics;)V
 	public fun clear ()V
 	public fun extendAppStart ()V
-	public fun finishAppStart ()V
+	public fun finishExtendedAppStart ()V
 	public fun finishTransaction (Lio/sentry/SentryDate;)V
 	public fun getExtendedAppStartSpan ()Lio/sentry/ISpan;
 	public fun getExtendedEndTime ()Lio/sentry/SentryDate;
