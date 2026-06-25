@@ -1,13 +1,10 @@
 package io.sentry;
 
-import static io.sentry.vendor.gson.internal.bind.util.ISO8601Utils.TIMEZONE_UTC;
-
 import io.sentry.vendor.gson.internal.bind.util.ISO8601Utils;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.ParseException;
 import java.text.ParsePosition;
-import java.util.Calendar;
 import java.util.Date;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -24,10 +21,9 @@ public final class DateUtils {
    *
    * @return the UTC Date
    */
-  @SuppressWarnings("JdkObsolete")
+  @SuppressWarnings("JavaUtilDate")
   public static @NotNull Date getCurrentDateTime() {
-    final Calendar calendar = Calendar.getInstance(TIMEZONE_UTC);
-    return calendar.getTime();
+    return new Date();
   }
 
   /**
@@ -78,10 +74,9 @@ public final class DateUtils {
    * @param millis the UTC millis from the epoch
    * @return the UTC Date
    */
+  @SuppressWarnings("JavaUtilDate")
   public static @NotNull Date getDateTime(final long millis) {
-    final Calendar calendar = Calendar.getInstance(TIMEZONE_UTC);
-    calendar.setTimeInMillis(millis);
-    return calendar.getTime();
+    return new Date(millis);
   }
 
   /**
