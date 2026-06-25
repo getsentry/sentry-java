@@ -198,9 +198,7 @@ final class AndroidOptionsInitializer {
     }
 
     final @NotNull AppStartMetrics appStartMetrics = AppStartMetrics.getInstance();
-    final @NotNull AppStartExtension appStartExtension = appStartMetrics.getAppStartExtension();
-    appStartExtension.setLogger(options.getLogger());
-    options.setAppStartExtender(appStartExtension);
+    options.setAppStartExtender(appStartMetrics.getAppStartExtension());
 
     if (options.getModulesLoader() instanceof NoOpModulesLoader) {
       options.setModulesLoader(new AssetsModulesLoader(context, options));
