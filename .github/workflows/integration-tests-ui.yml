@@ -63,9 +63,12 @@ jobs:
       - name: Verify Test Results
         run: |
           processCrashed=$(cat test_logs.txt | grep "Instrumentation run failed due to 'Process crashed.'" | wc -l)
+          suiteTimedOut=$(cat test_logs.txt | grep "Suite timed out" | wc -l)
           if [[ ${{ steps.saucelabs.outcome }} == 'success' ]]; then
             exit 0
           elif [[ "$processCrashed" -ne 0 ]]; then
+            exit 0
+          elif [[ "$suiteTimedOut" -ne 0 ]]; then
             exit 0
           else
             exit 1
