@@ -5,6 +5,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.ISpan
 import io.sentry.ITransaction
 import io.sentry.NoOpSpan
+import io.sentry.SentryLongDate
 import io.sentry.SentryNanotimeDate
 import io.sentry.SpanStatus
 import io.sentry.android.core.performance.AppStartMetrics
@@ -165,6 +166,22 @@ class AppStartExtensionTest {
     ext.extendAppStart()
     ext.finishTransaction(SentryNanotimeDate())
     verify(txn, never()).finish(any<SpanStatus>(), any())
+  }
+
+  @Test
+  fun `finishTransaction ends at the extended span end when it finished after the given timestamp`() {
+    // Headless: the extended span can finish (in onCreate) before finishTransaction runs (at idle)
+    // with a finish date later than the headless end. The transaction must end there so it contains
+    // the extended span and its duration matches the app start vital.
+    val ext = extension(windowOpen = true)
+    val txn = mock<ITransaction>()
+    val span = mock<ISpan>()
+    val spanEnd = SentryLongDate(2_000_000_000L)
+    whenever(span.finishDate).thenReturn(spanEnd)
+    ext.registerHandOver(txn = txn, span = span)
+    ext.extendAppStart()
+    ext.finishTransaction(SentryLongDate(1_000_000_000L))
+    verify(txn).finish(SpanStatus.OK, spanEnd)
   }
 
   @Test
