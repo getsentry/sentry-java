@@ -1024,21 +1024,19 @@ public final class ActivityLifecycleIntegration
       return;
     }
 
-    // Persist the end time so a later activity can decide whether its ui.load is close enough in
-    // time to continue this trace; without it the continuation window is treated as unbounded.
+    // Persist the end time so a later ui.load can tell whether it is close enough to continue this
+    // trace; without it the continuation window is unbounded.
     metrics.setAppStartEndTime(endTime);
 
     final @NotNull AppStartExtension extension = metrics.getAppStartExtension();
-    // Extended headless start still open: finish the existing eager txn at the headless end instead
-    // of creating a second one.
     if (extension.isActive()) {
+      // Extended start still open: finish the eager txn instead of creating a second one.
       extension.finishTransaction(endTime);
       return;
     }
-    // The extension already created and finished the standalone app.start for this launch
-    // (finishExtendedAppStart() or the deadline ran before this headless check). Don't duplicate
-    // it.
     if (!metrics.shouldSendStartMeasurements(true)) {
+      // The extension already created and finished this app.start (finishExtendedAppStart or the
+      // deadline); don't create a duplicate.
       return;
     }
 

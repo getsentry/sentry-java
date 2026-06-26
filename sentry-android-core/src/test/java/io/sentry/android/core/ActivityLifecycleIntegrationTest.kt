@@ -453,8 +453,6 @@ class ActivityLifecycleIntegrationTest {
 
     driveHeadlessAppStart()
 
-    // Without persisting the end time, the continuation window is treated as unbounded and a later
-    // activity would wrongly continue this trace.
     assertNotNull(AppStartMetrics.getInstance().getAppStartEndTime())
   }
 
@@ -469,15 +467,14 @@ class ActivityLifecycleIntegrationTest {
 
     prepareHeadlessAppStart(appStartType = AppStartType.COLD)
     AppStartMetrics.getInstance().appStartExtension.extendAppStart()
-    // The user finishes the extension and its app.start is sent (onAppStartSpansSent, normally
-    // driven by the event processor) before the headless idle check runs.
+    // Finish and send the extension's app.start (onAppStartSpansSent is normally driven by the
+    // event processor) before the headless idle check runs.
     AppStartMetrics.getInstance().appStartExtension.finishExtendedAppStart()
     AppStartMetrics.getInstance().onAppStartSpansSent()
     val transactionsBefore = fixture.createdTransactions.size
 
     driveHeadlessAppStart()
 
-    // The eager extension txn already covered this launch; no second standalone app.start.
     assertEquals(transactionsBefore, fixture.createdTransactions.size)
   }
 
