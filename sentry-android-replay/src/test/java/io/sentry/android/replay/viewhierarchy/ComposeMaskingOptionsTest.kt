@@ -220,7 +220,9 @@ class ComposeMaskingOptionsTest {
   }
 
   @Test
-  @Ignore("Flaky: Robolectric intermittently reports zero bounds for nodes, causing isVisible=false and making the assertion non-deterministic")
+  @Ignore(
+    "Flaky: Robolectric intermittently reports zero bounds for nodes, causing isVisible=false and making the assertion non-deterministic"
+  )
   fun `when sentry-unmask modifier is set unmasks the node`() {
     ComposeMaskingOptionsActivity.textModifierApplier = { Modifier.sentryReplayUnmask() }
     val activity = buildActivity(ComposeMaskingOptionsActivity::class.java).setup()
