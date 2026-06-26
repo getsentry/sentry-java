@@ -45,7 +45,9 @@ public final class AppStartExtension implements IAppStartExtender {
   }
 
   public void setExtendAppStartListener(final @Nullable ExtendAppStartListener listener) {
-    this.extendAppStartListener = listener;
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      this.extendAppStartListener = listener;
+    }
   }
 
   @Override
