@@ -385,6 +385,37 @@ class ActivityLifecycleIntegrationTest {
   }
 
   @Test
+  fun `extended app start trace is not reused by a later activity`() {
+    val sut =
+      fixture.getSut {
+        it.tracesSampleRate = 1.0
+        it.isEnableStandaloneAppStartTracing = true
+      }
+    sut.register(fixture.scopes, fixture.options)
+
+    setAppStartTime()
+    AppStartMetrics.getInstance().appStartExtension.extendAppStart()
+
+    val firstActivity = mock<Activity>()
+    sut.onActivityCreated(firstActivity, fixture.bundle)
+    val appStartTraceId =
+      fixture.createdTransactions
+        .single { it.spanContext.operation == ActivityLifecycleIntegration.STANDALONE_APP_START_OP }
+        .spanContext
+        .traceId
+
+    AppStartMetrics.getInstance().appStartExtension.finishExtendedAppStart()
+    AppStartMetrics.getInstance().onAppStartSpansSent()
+
+    val secondActivity = mock<Activity>()
+    sut.onActivityPaused(firstActivity)
+    sut.onActivityCreated(secondActivity, fixture.bundle)
+
+    // The second activity must not continue the already-finished extended app.start trace.
+    assertNotEquals(appStartTraceId, fixture.createdTransactions.last().spanContext.traceId)
+  }
+
+  @Test
   fun `extended standalone app start transaction stays open until finishExtendedAppStart`() {
     val sut =
       fixture.getSut {
