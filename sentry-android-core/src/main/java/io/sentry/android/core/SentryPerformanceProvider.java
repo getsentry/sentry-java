@@ -129,7 +129,8 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
         return;
       }
 
-      if (buildInfoProvider.getSdkInfoVersion() >= android.os.Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+      if (buildInfoProvider.getSdkInfoVersion()
+          >= android.os.Build.VERSION_CODES.VANILLA_ICE_CREAM) {
         logger.log(
             SentryLevel.DEBUG,
             "Device is API 35+. Skipping legacy app-start profiling — "

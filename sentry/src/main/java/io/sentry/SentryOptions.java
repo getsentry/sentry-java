@@ -646,14 +646,13 @@ public class SentryOptions {
   private boolean startProfilerOnAppStart = false;
 
   /**
-   * When false, the legacy {@code Debug}-based profiler is disabled on API < 35 devices. On API
-   * 35+ devices, Android's {@code ProfilingManager} (Perfetto-based stack sampling) is always used
+   * When false, the legacy {@code Debug}-based profiler is disabled on API < 35 devices. On API 35+
+   * devices, Android's {@code ProfilingManager} (Perfetto-based stack sampling) is always used
    * regardless of this setting. This option will be removed in the next major release.
    *
    * @deprecated Legacy profiling will be removed in the next major release.
    */
-  @Deprecated
-  private boolean enableLegacyProfiling = true;
+  @Deprecated private boolean enableLegacyProfiling = true;
 
   /**
    * Controls the deadline timeout in milliseconds for automatic transactions. When set to a
