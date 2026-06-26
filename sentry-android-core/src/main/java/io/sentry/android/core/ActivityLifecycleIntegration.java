@@ -143,7 +143,6 @@ public final class ActivityLifecycleIntegration
     if (performanceEnabled && this.options.isEnableStandaloneAppStartTracing()) {
       final @NotNull AppStartMetrics metrics = AppStartMetrics.getInstance();
       metrics.setHeadlessAppStartListener(this::onHeadlessAppStart);
-      // Enables Sentry.extendAppStart(). Standalone-only, since it is only registered here.
       metrics.getAppStartExtension().setExtendAppStartListener(this::onExtendAppStartRequested);
       addIntegrationToSdkVersion("StandaloneAppStart");
     }
