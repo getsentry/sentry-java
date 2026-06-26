@@ -72,6 +72,7 @@ internal abstract class BaseCaptureStrategy(
           ReplayExecutorService(delegate, options).also { persistingExecutorHolder = it }
         }
     }
+
   private val gestureConverter = ReplayGestureConverter(dateProvider)
 
   protected val isTerminating = AtomicBoolean(false)

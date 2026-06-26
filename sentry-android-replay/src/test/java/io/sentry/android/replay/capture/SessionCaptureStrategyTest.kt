@@ -7,7 +7,6 @@ import io.sentry.IScopes
 import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.SentryOptions
-import io.sentry.util.thread.IThreadChecker
 import io.sentry.SentryReplayEvent
 import io.sentry.SentryReplayEvent.ReplayType
 import io.sentry.SentryReplayOptions.SentryReplayQuality.HIGH
@@ -32,6 +31,7 @@ import io.sentry.rrweb.RRWebMetaEvent
 import io.sentry.rrweb.RRWebOptionsEvent
 import io.sentry.transport.CurrentDateProvider
 import io.sentry.transport.ICurrentDateProvider
+import io.sentry.util.thread.IThreadChecker
 import java.io.File
 import java.util.Date
 import kotlin.test.Test
