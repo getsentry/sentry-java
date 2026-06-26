@@ -440,6 +440,48 @@ class ActivityLifecycleIntegrationTest {
   }
 
   @Test
+  fun `extended headless app start persists the app start end time`() {
+    val sut =
+      fixture.getSut {
+        it.tracesSampleRate = 1.0
+        it.isEnableStandaloneAppStartTracing = true
+      }
+    sut.register(fixture.scopes, fixture.options)
+
+    prepareHeadlessAppStart(appStartType = AppStartType.COLD)
+    AppStartMetrics.getInstance().appStartExtension.extendAppStart()
+
+    driveHeadlessAppStart()
+
+    // Without persisting the end time, the continuation window is treated as unbounded and a later
+    // activity would wrongly continue this trace.
+    assertNotNull(AppStartMetrics.getInstance().getAppStartEndTime())
+  }
+
+  @Test
+  fun `extended headless app start does not create a duplicate when the extension already finished`() {
+    val sut =
+      fixture.getSut {
+        it.tracesSampleRate = 1.0
+        it.isEnableStandaloneAppStartTracing = true
+      }
+    sut.register(fixture.scopes, fixture.options)
+
+    prepareHeadlessAppStart(appStartType = AppStartType.COLD)
+    AppStartMetrics.getInstance().appStartExtension.extendAppStart()
+    // The user finishes the extension and its app.start is sent (onAppStartSpansSent, normally
+    // driven by the event processor) before the headless idle check runs.
+    AppStartMetrics.getInstance().appStartExtension.finishExtendedAppStart()
+    AppStartMetrics.getInstance().onAppStartSpansSent()
+    val transactionsBefore = fixture.createdTransactions.size
+
+    driveHeadlessAppStart()
+
+    // The eager extension txn already covered this launch; no second standalone app.start.
+    assertEquals(transactionsBefore, fixture.createdTransactions.size)
+  }
+
+  @Test
   fun `extendAppStart is a no-op when standalone tracing is disabled`() {
     val sut = fixture.getSut { it.tracesSampleRate = 1.0 }
     sut.register(fixture.scopes, fixture.options)

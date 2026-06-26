@@ -1024,19 +1024,26 @@ public final class ActivityLifecycleIntegration
       return;
     }
 
-    // Extended headless start: finish the existing eager txn at the headless end instead of
-    // creating a second one.
-    if (metrics.getAppStartExtension().isActive()) {
-      metrics.getAppStartExtension().finishTransaction(endTime);
+    // Persist the end time so a later activity can decide whether its ui.load is close enough in
+    // time to continue this trace; without it the continuation window is treated as unbounded.
+    metrics.setAppStartEndTime(endTime);
+
+    final @NotNull AppStartExtension extension = metrics.getAppStartExtension();
+    // Extended headless start still open: finish the existing eager txn at the headless end instead
+    // of creating a second one.
+    if (extension.isActive()) {
+      extension.finishTransaction(endTime);
+      return;
+    }
+    // The extension already created and finished the standalone app.start for this launch
+    // (finishExtendedAppStart() or the deadline ran before this headless check). Don't duplicate
+    // it.
+    if (!metrics.shouldSendStartMeasurements(true)) {
       return;
     }
 
     final @NotNull ITransaction transaction =
         createStandaloneAppStartTransaction(startTime, null, false);
-    // Persist the end time so a later activity can decide whether its ui.load is close enough in
-    // time to continue this trace.
-    metrics.setAppStartEndTime(endTime);
-
     transaction.finish(SpanStatus.OK, endTime);
   }
 
