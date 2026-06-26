@@ -325,8 +325,9 @@ public final class ActivityLifecycleIntegration
           continueBaggage = null;
         }
 
-        if (extensionActive) {
-          // Without a screen the processor would classify the eager app.start as a headless start.
+        if (extensionActive && isAppStart) {
+          // Attach only the launch activity's screen so a later activity can't overwrite it. Without
+          // a screen the processor would classify the eager app.start as a headless start.
           AppStartMetrics.getInstance()
               .getAppStartExtension()
               .setData(APP_START_SCREEN_DATA, activityName);

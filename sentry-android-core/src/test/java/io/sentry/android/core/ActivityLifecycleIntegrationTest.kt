@@ -416,6 +416,32 @@ class ActivityLifecycleIntegrationTest {
   }
 
   @Test
+  fun `extended app start screen is not overwritten by a later activity`() {
+    val sut =
+      fixture.getSut {
+        it.tracesSampleRate = 1.0
+        it.isEnableStandaloneAppStartTracing = true
+      }
+    sut.register(fixture.scopes, fixture.options)
+
+    setAppStartTime()
+    AppStartMetrics.getInstance().appStartExtension.extendAppStart()
+
+    val firstActivity = mock<Activity>()
+    sut.onActivityCreated(firstActivity, fixture.bundle)
+
+    // A second activity opens while the extension is still open.
+    sut.onActivityPaused(firstActivity)
+    sut.onActivityCreated(mock<SecondAppStartActivity>(), fixture.bundle)
+
+    val appStart =
+      fixture.createdTransactions.single {
+        it.spanContext.operation == ActivityLifecycleIntegration.STANDALONE_APP_START_OP
+      }
+    assertEquals("Activity", appStart.getData("app.vitals.start.screen"))
+  }
+
+  @Test
   fun `extended standalone app start transaction stays open until finishExtendedAppStart`() {
     val sut =
       fixture.getSut {
@@ -2605,3 +2631,5 @@ class ActivityLifecycleIntegrationTest {
     }
   }
 }
+
+private open class SecondAppStartActivity : Activity()
