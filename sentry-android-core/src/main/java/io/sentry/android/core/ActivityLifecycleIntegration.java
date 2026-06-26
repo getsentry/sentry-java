@@ -326,7 +326,8 @@ public final class ActivityLifecycleIntegration
         }
 
         if (extensionActive && isAppStart) {
-          // Attach only the launch activity's screen so a later activity can't overwrite it. Without
+          // Attach only the launch activity's screen so a later activity can't overwrite it.
+          // Without
           // a screen the processor would classify the eager app.start as a headless start.
           AppStartMetrics.getInstance()
               .getAppStartExtension()
