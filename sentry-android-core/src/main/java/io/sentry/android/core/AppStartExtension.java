@@ -134,10 +134,7 @@ public final class AppStartExtension implements IAppStartExtender {
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       final @Nullable ITransaction transaction = extendedTransaction;
       if (transaction != null && !transaction.isFinished()) {
-        // If the extended span already finished after endTimestamp, end the transaction there so it
-        // contains the extended span and its duration matches the reported app start vital. When
-        // the
-        // span is still open, waitForChildren keeps the transaction open until it finishes.
+        // End at the extended span's finish if it ran past endTimestamp, so the txn covers it.
         final @Nullable ISpan span = extendedSpan;
         final @Nullable SentryDate spanEnd = span == null ? null : span.getFinishDate();
         final @NotNull SentryDate end =
