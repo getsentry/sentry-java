@@ -106,25 +106,22 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
           final long naturalDurationMs = appStartTimeSpan.getDurationMs();
 
           final long appStartUpDurationMs;
-          // Whether the app start is ready to be finalized (spans attached, marked sent). When not
-          // ready (duration 0 on a non-extended start), we leave it for a later transaction to
-          // retry.
+          // Not ready (duration 0 on a non-extended start) leaves it for a later transaction.
           final boolean appStartReady;
           final @NotNull AppStartExtension extension = appStartMetrics.getAppStartExtension();
           if (extension.isExtended()) {
             final @Nullable SentryDate extendedEnd = extension.getExtendedEndTime();
             if (extendedEnd != null && appStartTimeSpan.hasStarted()) {
-              // The user finished the extension: measure from process start to the extended end,
-              // but never report shorter than the natural first-frame duration.
+              // Measure to the extended end, but never shorter than the natural first-frame
+              // duration.
               final long extendedDurationMs =
                   TimeUnit.NANOSECONDS.toMillis(extendedEnd.nanoTimestamp())
                       - appStartTimeSpan.getStartTimestampMs();
               appStartUpDurationMs = Math.max(naturalDurationMs, extendedDurationMs);
               appStartReady = appStartUpDurationMs != 0;
             } else {
-              // The extension hit the deadline (DEADLINE_EXCEEDED -> null) or there is no valid
-              // start: suppress the measurement so we never emit an artificially inflated value,
-              // but still finalize the app start spans.
+              // Deadline (null) or no valid start: suppress the measurement to avoid an inflated
+              // value, but still finalize the spans.
               appStartUpDurationMs = 0;
               appStartReady = appStartTimeSpan.hasStarted();
             }

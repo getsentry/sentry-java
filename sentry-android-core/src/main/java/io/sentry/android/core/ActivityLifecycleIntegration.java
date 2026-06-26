@@ -265,10 +265,8 @@ public final class ActivityLifecycleIntegration
         transactionOptions.setAppStartTransaction(appStartSamplingDecision != null);
         setSpanOrigin(transactionOptions);
 
-        // An extend-app-start transaction (Sentry.extendAppStart) is already open. Reuse its trace
-        // for this ui.load instead of creating a second app.start. It also stores an app-start
-        // trace id, so the headless-start check below is guarded with !extensionActive to avoid
-        // mistaking it for a finished headless start.
+        // Guards the headless-start check below with !extensionActive so the eager extension's
+        // stored trace id isn't mistaken for a finished headless start.
         final boolean extensionActive =
             AppStartMetrics.getInstance().getAppStartExtension().isActive();
 
@@ -279,8 +277,6 @@ public final class ActivityLifecycleIntegration
 
         final boolean isAppStart =
             !(firstActivityCreated || appStartTime == null || coldStart == null);
-        // Foreground starts create app.start first; ui.load then shares its trace. When the app
-        // start is being extended, the eager app.start txn already exists, so we continue it.
         final boolean createStandaloneAppStart =
             isAppStart
                 && options.isEnableStandaloneAppStartTracing()
@@ -326,8 +322,8 @@ public final class ActivityLifecycleIntegration
         }
 
         if (extensionActive && isAppStart) {
-          // Attach only the launch activity's screen so a later activity can't overwrite it. Without
-          // a screen the processor would classify the eager app.start as a headless start.
+          // Only the launch activity sets the screen, so a later activity can't overwrite it. A
+          // screen also keeps the processor from classifying the eager app.start as headless.
           AppStartMetrics.getInstance()
               .getAppStartExtension()
               .setData(APP_START_SCREEN_DATA, activityName);
