@@ -763,14 +763,14 @@ class SentryOptionsTest {
   }
 
   @Test
-  fun `when options are initialized, useProfilingManager is set to false by default`() {
-    assertFalse(SentryOptions().isUseProfilingManager)
+  fun `when options are initialized, enableLegacyProfiling is set to true by default`() {
+    assertTrue(SentryOptions().isEnableLegacyProfiling)
   }
 
   @Test
-  fun `when setUseProfilingManager is called, value is set`() {
-    val options = SentryOptions().apply { isUseProfilingManager = true }
-    assertTrue(options.isUseProfilingManager)
+  fun `when setEnableLegacyProfiling is called, value is set`() {
+    val options = SentryOptions().apply { isEnableLegacyProfiling = false }
+    assertFalse(options.isEnableLegacyProfiling)
   }
 
   @Test

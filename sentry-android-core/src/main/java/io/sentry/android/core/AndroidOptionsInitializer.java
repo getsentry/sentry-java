@@ -340,27 +340,18 @@ final class AndroidOptionsInitializer {
         final @NotNull SentryFrameMetricsCollector frameMetricsCollector =
             Objects.requireNonNull(
                 options.getFrameMetricsCollector(), "options.getFrameMetricsCollector is required");
-        if (options.isUseProfilingManager()) {
-          if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
-            options.setContinuousProfiler(
-                new PerfettoContinuousProfiler(
-                    options.getLogger(),
-                    frameMetricsCollector,
-                    () -> options.getExecutorService(),
-                    () ->
-                        new PerfettoProfiler(
-                            context.getApplicationContext(),
-                            options.getLogger(),
-                            options.getExecutorService())));
-          } else {
-            options
-                .getLogger()
-                .log(
-                    SentryLevel.WARNING,
-                    "useProfilingManager is enabled but requires API 35+. "
-                        + "No profiling data will be collected.");
-          }
-        } else {
+        if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+          options.setContinuousProfiler(
+              new PerfettoContinuousProfiler(
+                  options.getLogger(),
+                  frameMetricsCollector,
+                  () -> options.getExecutorService(),
+                  () ->
+                      new PerfettoProfiler(
+                          context.getApplicationContext(),
+                          options.getLogger(),
+                          options.getExecutorService())));
+        } else if (options.isEnableLegacyProfiling()) {
           options.setContinuousProfiler(
               new AndroidContinuousProfiler(
                   buildInfoProvider,
@@ -369,6 +360,13 @@ final class AndroidOptionsInitializer {
                   options.getProfilingTracesDirPath(),
                   options.getProfilingTracesHz(),
                   () -> options.getExecutorService()));
+        } else {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.WARNING,
+                  "enableLegacyProfiling is disabled and device is below API 35. "
+                      + "No profiling data will be collected.");
         }
       }
     }

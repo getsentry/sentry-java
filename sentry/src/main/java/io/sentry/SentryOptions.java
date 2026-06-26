@@ -646,11 +646,14 @@ public class SentryOptions {
   private boolean startProfilerOnAppStart = false;
 
   /**
-   * When true, the SDK uses Android's {@code ProfilingManager} (Perfetto-based stack sampling) on
-   * API 35+ devices. On older devices where ProfilingManager is not available, no profiling data is
-   * collected — the legacy {@code Debug}-based profiler is not used as a fallback.
+   * When false, the legacy {@code Debug}-based profiler is disabled on API < 35 devices. On API
+   * 35+ devices, Android's {@code ProfilingManager} (Perfetto-based stack sampling) is always used
+   * regardless of this setting. This option will be removed in the next major release.
+   *
+   * @deprecated Legacy profiling will be removed in the next major release.
    */
-  private boolean useProfilingManager = false;
+  @Deprecated
+  private boolean enableLegacyProfiling = true;
 
   /**
    * Controls the deadline timeout in milliseconds for automatic transactions. When set to a
@@ -2244,22 +2247,29 @@ public class SentryOptions {
   }
 
   /**
-   * Whether to use Android's ProfilingManager (Perfetto) for profiling on Android 35+.
+   * Whether the legacy {@code Debug}-based profiler is enabled on API < 35 devices. On API 35+,
+   * Android's {@code ProfilingManager} (Perfetto) is always used regardless of this setting.
    *
-   * @return true if ProfilingManager-based profiling is enabled.
+   * @return true if legacy profiling is enabled (default).
+   * @deprecated Legacy profiling will be removed in the next major release.
    */
-  public boolean isUseProfilingManager() {
-    return useProfilingManager;
+  @Deprecated
+  public boolean isEnableLegacyProfiling() {
+    return enableLegacyProfiling;
   }
 
   /**
-   * Set whether to use Android's ProfilingManager (Perfetto) for profiling on Android 35+. On
-   * devices below API 35 where ProfilingManager is not available, no profiling data is collected.
+   * Set whether the legacy {@code Debug}-based profiler is enabled on API < 35 devices. Set to
+   * {@code false} to disable profiling on devices below API 35. On API 35+ devices, Android's
+   * {@code ProfilingManager} (Perfetto) is always used and this setting has no effect. This option
+   * will be removed in the next major release.
    *
-   * @param useProfilingManager true to use ProfilingManager-based profiling.
+   * @param enableLegacyProfiling false to disable legacy profiling on API < 35.
+   * @deprecated Legacy profiling will be removed in the next major release.
    */
-  public void setUseProfilingManager(final boolean useProfilingManager) {
-    this.useProfilingManager = useProfilingManager;
+  @Deprecated
+  public void setEnableLegacyProfiling(final boolean enableLegacyProfiling) {
+    this.enableLegacyProfiling = enableLegacyProfiling;
   }
 
   public long getDeadlineTimeout() {

@@ -109,7 +109,7 @@ final class ManifestMetadataReader {
 
   static final String ENABLE_APP_START_PROFILING = "io.sentry.profiling.enable-app-start";
 
-  static final String USE_PROFILING_MANAGER = "io.sentry.profiling.use-profiling-manager";
+  static final String ENABLE_LEGACY_PROFILING = "io.sentry.profiling.enable-legacy-profiling";
 
   static final String ENABLE_SCOPE_PERSISTENCE = "io.sentry.enable-scope-persistence";
 
@@ -505,8 +505,8 @@ final class ManifestMetadataReader {
             readBool(
                 metadata, logger, ENABLE_APP_START_PROFILING, options.isEnableAppStartProfiling()));
 
-        options.setUseProfilingManager(
-            readBool(metadata, logger, USE_PROFILING_MANAGER, options.isUseProfilingManager()));
+        options.setEnableLegacyProfiling(
+            readBool(metadata, logger, ENABLE_LEGACY_PROFILING, options.isEnableLegacyProfiling()));
 
         options.setEnableScopePersistence(
             readBool(

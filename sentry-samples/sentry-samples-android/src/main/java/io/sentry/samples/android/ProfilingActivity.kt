@@ -45,7 +45,7 @@ class ProfilingActivity : ComponentActivity() {
   private fun ProfilingScreen() {
     val context = LocalContext.current
     val options = remember { Sentry.getCurrentScopes().options }
-    val isPerfetto = remember { options.isUseProfilingManager && Build.VERSION.SDK_INT >= 35 }
+    val isPerfetto = remember { Build.VERSION.SDK_INT >= 35 }
     val isContinuousEnabled = remember { options.isContinuousProfilingEnabled }
 
     var showProgress by remember { mutableStateOf(false) }
@@ -65,7 +65,7 @@ class ProfilingActivity : ComponentActivity() {
       ) {
         Text(text = statusText, fontWeight = FontWeight.Bold)
 
-        Text("profiling.use-profiling-manager: ${options.isUseProfilingManager}")
+        Text("profiling.enable-legacy-profiling: ${options.isEnableLegacyProfiling}")
         Text("Build.VERSION.SDK_INT: ${Build.VERSION.SDK_INT}")
         Text("traces.profiling.session-sample-rate: ${options.profileSessionSampleRate}")
 

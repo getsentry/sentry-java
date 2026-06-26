@@ -1495,20 +1495,20 @@ class ManifestMetadataReaderTest {
   }
 
   @Test
-  fun `applyMetadata reads useProfilingManager flag to options`() {
+  fun `applyMetadata reads enableLegacyProfiling flag to options`() {
     // Arrange
-    val bundle = bundleOf(ManifestMetadataReader.USE_PROFILING_MANAGER to true)
+    val bundle = bundleOf(ManifestMetadataReader.ENABLE_LEGACY_PROFILING to false)
     val context = fixture.getContext(metaData = bundle)
 
     // Act
     ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
     // Assert
-    assertTrue(fixture.options.isUseProfilingManager)
+    assertFalse(fixture.options.isEnableLegacyProfiling)
   }
 
   @Test
-  fun `applyMetadata reads useProfilingManager flag to options and keeps default if not found`() {
+  fun `applyMetadata reads enableLegacyProfiling flag to options and keeps default if not found`() {
     // Arrange
     val context = fixture.getContext()
 
@@ -1516,7 +1516,7 @@ class ManifestMetadataReaderTest {
     ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
     // Assert
-    assertFalse(fixture.options.isUseProfilingManager)
+    assertTrue(fixture.options.isEnableLegacyProfiling)
   }
 
   @Test

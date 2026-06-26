@@ -129,11 +129,19 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
         return;
       }
 
-      if (profilingOptions.isUseProfilingManager()) {
+      if (buildInfoProvider.getSdkInfoVersion() >= android.os.Build.VERSION_CODES.VANILLA_ICE_CREAM) {
         logger.log(
             SentryLevel.DEBUG,
-            "useProfilingManager is enabled. Skipping legacy app-start profiling — "
-                + "ProfilingManager will be initialized after Sentry.init().");
+            "Device is API 35+. Skipping legacy app-start profiling — "
+                + "Perfetto ProfilingManager will be initialized after Sentry.init().");
+        return;
+      }
+
+      if (!profilingOptions.isEnableLegacyProfiling()) {
+        logger.log(
+            SentryLevel.WARNING,
+            "enableLegacyProfiling is disabled and device is below API 35. "
+                + "App start profiling will not start.");
         return;
       }
 
