@@ -318,7 +318,6 @@ public final class ActivityLifecycleIntegration
           continueBaggage = baggageHeader == null ? null : baggageHeader.getValue();
         } else if (extensionActive
             || (isFollowingHeadlessAppStart && isWithinAppStartContinuationWindow(ttidStartTime))) {
-          // Continue the eager extension's app.start trace, or an earlier headless app.start.
           continueSentryTrace = AppStartMetrics.getInstance().getAppStartSentryTraceHeader();
           continueBaggage = AppStartMetrics.getInstance().getAppStartBaggageHeader();
         } else {
@@ -327,9 +326,7 @@ public final class ActivityLifecycleIntegration
         }
 
         if (extensionActive) {
-          // Attach the screen (this first activity) so the eager app.start matches the foreground
-          // standalone app.start and the event processor treats it as a foreground (not headless)
-          // start.
+          // Without a screen the processor would classify the eager app.start as a headless start.
           AppStartMetrics.getInstance()
               .getAppStartExtension()
               .setData(APP_START_SCREEN_DATA, activityName);
