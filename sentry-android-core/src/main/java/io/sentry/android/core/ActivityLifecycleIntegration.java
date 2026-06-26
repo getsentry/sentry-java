@@ -1026,13 +1026,10 @@ public final class ActivityLifecycleIntegration
 
     final @NotNull AppStartExtension extension = metrics.getAppStartExtension();
     if (extension.isActive()) {
-      // Extended start still open: finish the eager txn instead of creating a second one.
       extension.finishTransaction(endTime);
       return;
     }
     if (!metrics.shouldSendStartMeasurements(true)) {
-      // The extension already created and finished this app.start (finishExtendedAppStart or the
-      // deadline); don't create a duplicate.
       return;
     }
 
@@ -1101,8 +1098,6 @@ public final class ActivityLifecycleIntegration
     }
     final @NotNull AppStartMetrics metrics = AppStartMetrics.getInstance();
 
-    // The earliest known start of this app start (process start when perf-v2 is available, else SDK
-    // init). It is available before the first activity because SentryPerformanceProvider sets it.
     final @NotNull TimeSpan appStartTimeSpan =
         metrics.getAppStartTimeSpan().hasStarted()
             ? metrics.getAppStartTimeSpan()
@@ -1112,8 +1107,6 @@ public final class ActivityLifecycleIntegration
       return null;
     }
 
-    // The app start txn inherits the sampling decision from app start profiling, then clears it so
-    // it doesn't leak to the later ui.load.
     final @Nullable TracesSamplingDecision samplingDecision = metrics.getAppStartSamplingDecision();
     metrics.setAppStartSamplingDecision(null);
 
