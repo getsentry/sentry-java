@@ -351,8 +351,8 @@ public final class ActivityLifecycleIntegration
                   transactionOptions);
         }
 
-        if (isFollowingHeadlessAppStart) {
-          // Consume the stored headless app-start trace so it isn't reused by another activity.
+        if (isFollowingHeadlessAppStart || extensionActive) {
+          // Consume the stored app-start trace so a later activity doesn't reuse it.
           AppStartMetrics.getInstance().setAppStartTraceId(null);
           AppStartMetrics.getInstance().setAppStartSentryTraceHeader(null);
           AppStartMetrics.getInstance().setAppStartBaggageHeader(null);
