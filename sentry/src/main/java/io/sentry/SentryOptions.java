@@ -648,11 +648,10 @@ public class SentryOptions {
   /**
    * When false, the legacy {@code Debug}-based profiler is disabled on API < 35 devices. On API 35+
    * devices, Android's {@code ProfilingManager} (Perfetto-based stack sampling) is always used
-   * regardless of this setting. This option will be removed in the next major release.
-   *
-   * @deprecated Legacy profiling will be removed in the next major release.
+   * regardless of this setting. This option will be deprecated in the next major release and removed
+   * in the one after.
    */
-  @Deprecated private boolean enableLegacyProfiling = true;
+  private boolean enableLegacyProfiling = true;
 
   /**
    * Controls the deadline timeout in milliseconds for automatic transactions. When set to a
@@ -2247,12 +2246,11 @@ public class SentryOptions {
 
   /**
    * Whether the legacy {@code Debug}-based profiler is enabled on API < 35 devices. On API 35+,
-   * Android's {@code ProfilingManager} (Perfetto) is always used regardless of this setting.
+   * Android's {@code ProfilingManager} (Perfetto) is always used regardless of this setting. This
+   * option will be deprecated in the next major release and removed in the one after.
    *
    * @return true if legacy profiling is enabled (default).
-   * @deprecated Legacy profiling will be removed in the next major release.
    */
-  @Deprecated
   public boolean isEnableLegacyProfiling() {
     return enableLegacyProfiling;
   }
@@ -2261,12 +2259,10 @@ public class SentryOptions {
    * Set whether the legacy {@code Debug}-based profiler is enabled on API < 35 devices. Set to
    * {@code false} to disable profiling on devices below API 35. On API 35+ devices, Android's
    * {@code ProfilingManager} (Perfetto) is always used and this setting has no effect. This option
-   * will be removed in the next major release.
+   * will be deprecated in the next major release and removed in the one after.
    *
    * @param enableLegacyProfiling false to disable legacy profiling on API < 35.
-   * @deprecated Legacy profiling will be removed in the next major release.
    */
-  @Deprecated
   public void setEnableLegacyProfiling(final boolean enableLegacyProfiling) {
     this.enableLegacyProfiling = enableLegacyProfiling;
   }
