@@ -333,7 +333,6 @@ class ActivityLifecycleIntegrationTest {
     sut.register(fixture.scopes, fixture.options)
 
     setAppStartTime()
-    // Eager creation happens here, before any activity is created.
     AppStartMetrics.getInstance().appStartExtension.extendAppStart()
 
     val appStartTransaction =
@@ -430,7 +429,6 @@ class ActivityLifecycleIntegrationTest {
     val firstActivity = mock<Activity>()
     sut.onActivityCreated(firstActivity, fixture.bundle)
 
-    // A second activity opens while the extension is still open.
     sut.onActivityPaused(firstActivity)
     sut.onActivityCreated(mock<SecondAppStartActivity>(), fixture.bundle)
 
