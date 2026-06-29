@@ -5,6 +5,7 @@
 ### Performance
 
 - Probe class availability without initializing the class during SDK init ([#5635](https://github.com/getsentry/sentry-java/pull/5635))
+- Cache reflective class lookups and avoid double-probing during SDK init ([#5636](https://github.com/getsentry/sentry-java/pull/5636))
 
 ## 8.45.0
 
