@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixes
+
+- Prevent a potential `NullPointerException` by guarding `Scope.clearSession()` with the session lock ([#5657](https://github.com/getsentry/sentry-java/pull/5657))
+
 ### Performance
 
 - Speed up touch gesture target detection on deeply nested view hierarchies by hit-testing in local coordinates instead of calling `getLocationOnScreen` per view ([#5595](https://github.com/getsentry/sentry-java/pull/5595))
