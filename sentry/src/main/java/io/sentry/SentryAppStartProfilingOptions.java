@@ -163,12 +163,10 @@ public final class SentryAppStartProfilingOptions implements JsonUnknown, JsonSe
     return isStartProfilerOnAppStart;
   }
 
-  @Deprecated
   public void setEnableLegacyProfiling(final boolean enableLegacyProfiling) {
     this.enableLegacyProfiling = enableLegacyProfiling;
   }
 
-  @Deprecated
   public boolean isEnableLegacyProfiling() {
     return enableLegacyProfiling;
   }
