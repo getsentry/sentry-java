@@ -250,6 +250,20 @@ class AppStartExtensionTest {
     val ext = extension(windowOpen = true)
     val span = mock<ISpan>()
     whenever(span.isFinished).thenReturn(true)
+    whenever(span.finishDate).thenReturn(SentryNanotimeDate())
+    ext.registerHandOver(span = span)
+    ext.extendAppStart()
+    assertSame(NoOpSpan.getInstance(), ext.extendedAppStartSpan)
+  }
+
+  @Test
+  fun `getExtendedAppStartSpan returns NoOpSpan once the finish date is set even if still unfinished`() {
+    // Same waitForChildren reentrancy as getExtendedEndTime: the finish timestamp is set before the
+    // span's isFinished() flips, so the span must not be handed out for new children anymore.
+    val ext = extension(windowOpen = true)
+    val span = mock<ISpan>()
+    whenever(span.isFinished).thenReturn(false)
+    whenever(span.finishDate).thenReturn(SentryNanotimeDate())
     ext.registerHandOver(span = span)
     ext.extendAppStart()
     assertSame(NoOpSpan.getInstance(), ext.extendedAppStartSpan)
