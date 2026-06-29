@@ -349,9 +349,7 @@ final class AndroidOptionsInitializer {
                   () -> options.getExecutorService(),
                   () ->
                       new PerfettoProfiler(
-                          appContext,
-                          options.getLogger(),
-                          options.getExecutorService())));
+                          appContext, options.getLogger(), options.getExecutorService())));
         } else if (options.isEnableLegacyProfiling()) {
           options.setContinuousProfiler(
               new AndroidContinuousProfiler(
