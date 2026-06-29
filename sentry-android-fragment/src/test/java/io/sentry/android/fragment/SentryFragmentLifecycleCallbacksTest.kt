@@ -253,10 +253,16 @@ class SentryFragmentLifecycleCallbacksTest {
 
   @Test
   fun `When fragment view is created via detach-attach, it should start tracing if enabled`() {
-    // Simulates detach/attach navigation: onFragmentCreated is NOT called, only onFragmentViewCreated
+    // Simulates detach/attach navigation: onFragmentCreated is NOT called, only
+    // onFragmentViewCreated
     val sut = fixture.getSut(enableAutoFragmentLifecycleTracing = true)
 
-    sut.onFragmentViewCreated(fixture.fragmentManager, fixture.fragment, view = mock(), savedInstanceState = null)
+    sut.onFragmentViewCreated(
+      fixture.fragmentManager,
+      fixture.fragment,
+      view = mock(),
+      savedInstanceState = null,
+    )
 
     verify(fixture.transaction)
       .startChild(
@@ -271,7 +277,12 @@ class SentryFragmentLifecycleCallbacksTest {
     val sut = fixture.getSut(enableAutoFragmentLifecycleTracing = true)
 
     sut.onFragmentCreated(fixture.fragmentManager, fixture.fragment, savedInstanceState = null)
-    sut.onFragmentViewCreated(fixture.fragmentManager, fixture.fragment, view = mock(), savedInstanceState = null)
+    sut.onFragmentViewCreated(
+      fixture.fragmentManager,
+      fixture.fragment,
+      view = mock(),
+      savedInstanceState = null,
+    )
 
     verify(fixture.transaction).startChild(any<String>(), any<String>())
   }
@@ -281,7 +292,12 @@ class SentryFragmentLifecycleCallbacksTest {
     // Simulates detach/attach path where onFragmentStarted may be skipped
     val sut = fixture.getSut(enableAutoFragmentLifecycleTracing = true)
 
-    sut.onFragmentViewCreated(fixture.fragmentManager, fixture.fragment, view = mock(), savedInstanceState = null)
+    sut.onFragmentViewCreated(
+      fixture.fragmentManager,
+      fixture.fragment,
+      view = mock(),
+      savedInstanceState = null,
+    )
     sut.onFragmentResumed(fixture.fragmentManager, fixture.fragment)
 
     verify(fixture.span).finish(check { assertEquals(SpanStatus.OK, it) })
@@ -303,7 +319,12 @@ class SentryFragmentLifecycleCallbacksTest {
   fun `When fragment view is destroyed before started, it should stop tracing as failsafe`() {
     val sut = fixture.getSut(enableAutoFragmentLifecycleTracing = true)
 
-    sut.onFragmentViewCreated(fixture.fragmentManager, fixture.fragment, view = mock(), savedInstanceState = null)
+    sut.onFragmentViewCreated(
+      fixture.fragmentManager,
+      fixture.fragment,
+      view = mock(),
+      savedInstanceState = null,
+    )
     sut.onFragmentViewDestroyed(fixture.fragmentManager, fixture.fragment)
 
     verify(fixture.span).finish(check { assertEquals(SpanStatus.OK, it) })
@@ -325,10 +346,16 @@ class SentryFragmentLifecycleCallbacksTest {
 
   @Test
   fun `When fragment view is created via detach-attach, it should start tracing if enabled`() {
-    // Simulates detach/attach navigation: onFragmentCreated is NOT called, only onFragmentViewCreated
+    // Simulates detach/attach navigation: onFragmentCreated is NOT called, only
+    // onFragmentViewCreated
     val sut = fixture.getSut(enableAutoFragmentLifecycleTracing = true)
 
-    sut.onFragmentViewCreated(fixture.fragmentManager, fixture.fragment, view = mock(), savedInstanceState = null)
+    sut.onFragmentViewCreated(
+      fixture.fragmentManager,
+      fixture.fragment,
+      view = mock(),
+      savedInstanceState = null,
+    )
 
     verify(fixture.transaction)
       .startChild(
@@ -343,7 +370,12 @@ class SentryFragmentLifecycleCallbacksTest {
     val sut = fixture.getSut(enableAutoFragmentLifecycleTracing = true)
 
     sut.onFragmentCreated(fixture.fragmentManager, fixture.fragment, savedInstanceState = null)
-    sut.onFragmentViewCreated(fixture.fragmentManager, fixture.fragment, view = mock(), savedInstanceState = null)
+    sut.onFragmentViewCreated(
+      fixture.fragmentManager,
+      fixture.fragment,
+      view = mock(),
+      savedInstanceState = null,
+    )
 
     verify(fixture.transaction).startChild(any<String>(), any<String>())
   }
@@ -353,7 +385,12 @@ class SentryFragmentLifecycleCallbacksTest {
     // Simulates detach/attach path where onFragmentStarted may be skipped
     val sut = fixture.getSut(enableAutoFragmentLifecycleTracing = true)
 
-    sut.onFragmentViewCreated(fixture.fragmentManager, fixture.fragment, view = mock(), savedInstanceState = null)
+    sut.onFragmentViewCreated(
+      fixture.fragmentManager,
+      fixture.fragment,
+      view = mock(),
+      savedInstanceState = null,
+    )
     sut.onFragmentResumed(fixture.fragmentManager, fixture.fragment)
 
     verify(fixture.span).finish(check { assertEquals(SpanStatus.OK, it) })
@@ -375,7 +412,12 @@ class SentryFragmentLifecycleCallbacksTest {
   fun `When fragment view is destroyed before started, it should stop tracing as failsafe`() {
     val sut = fixture.getSut(enableAutoFragmentLifecycleTracing = true)
 
-    sut.onFragmentViewCreated(fixture.fragmentManager, fixture.fragment, view = mock(), savedInstanceState = null)
+    sut.onFragmentViewCreated(
+      fixture.fragmentManager,
+      fixture.fragment,
+      view = mock(),
+      savedInstanceState = null,
+    )
     sut.onFragmentViewDestroyed(fixture.fragmentManager, fixture.fragment)
 
     verify(fixture.span).finish(check { assertEquals(SpanStatus.OK, it) })
