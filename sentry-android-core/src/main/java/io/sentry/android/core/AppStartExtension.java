@@ -94,7 +94,7 @@ public final class AppStartExtension implements IAppStartExtender {
   public @NotNull ISpan getExtendedAppStartSpan() {
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       final @Nullable ISpan span = extendedSpan;
-      // Read the finish date, not isFinished() — see getExtendedEndTime() for the reentrancy reason.
+      // Read the finish date, not isFinished(); see getExtendedEndTime() for why.
       if (span != null && span.getFinishDate() == null) {
         return span;
       }
