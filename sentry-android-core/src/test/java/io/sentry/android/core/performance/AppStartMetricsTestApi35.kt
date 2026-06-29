@@ -249,6 +249,20 @@ class AppStartMetricsTestApi35 {
     assertNull(metrics.appStartReason)
   }
 
+  @Test
+  fun `does not crash when getHistoricalProcessStartReasons throws RuntimeException`() {
+    SentryShadowActivityManager.setHistoricalProcessStartReasonsException(
+      RuntimeException("isolated process")
+    )
+    val metrics = AppStartMetrics.getInstance()
+
+    val app = ApplicationProvider.getApplicationContext<Application>()
+    metrics.registerLifecycleCallbacks(app)
+
+    assertEquals(AppStartMetrics.AppStartType.UNKNOWN, metrics.appStartType)
+    assertNull(metrics.appStartReason)
+  }
+
   private fun waitForMainLooperIdle() {
     Handler(Looper.getMainLooper()).post {}
     Shadows.shadowOf(Looper.getMainLooper()).idle()
