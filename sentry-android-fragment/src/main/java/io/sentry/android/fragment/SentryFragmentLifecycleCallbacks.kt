@@ -93,17 +93,32 @@ public class SentryFragmentLifecycleCallbacks(
     savedInstanceState: Bundle?,
   ) {
     addBreadcrumb(fragment, FragmentLifecycleState.VIEW_CREATED)
+
+    // For detach/attach navigation (e.g. manual tab switching, ViewPager v1 with
+    // FragmentPagerAdapter, custom navigation frameworks), onFragmentCreated is never called for
+    // off-screen fragments that are re-attached. Starting here enables a narrower
+    // "view created -> resumed" span for those paths. startTracing is idempotent, so for the
+    // normal onFragmentCreated -> onFragmentViewCreated path this is a no-op.
+    if (fragment.isAdded) {
+      startTracing(fragment)
+    }
   }
 
   override fun onFragmentStarted(fragmentManager: FragmentManager, fragment: Fragment) {
     addBreadcrumb(fragment, FragmentLifecycleState.STARTED)
 
-    // ViewPager2 locks background fragments to STARTED state
+    // ViewPager2 locks background fragments to STARTED state, so we stop here to avoid
+    // spans hanging for off-screen fragments that never reach RESUMED.
     stopTracing(fragment)
   }
 
   override fun onFragmentResumed(fragmentManager: FragmentManager, fragment: Fragment) {
     addBreadcrumb(fragment, FragmentLifecycleState.RESUMED)
+
+    // For detach/attach navigation, onFragmentStarted may not fire before onFragmentResumed.
+    // If a span is still running here, stop it now. stopTracing is idempotent, so this is a
+    // no-op for the normal path where onFragmentStarted already stopped the span.
+    stopTracing(fragment)
   }
 
   override fun onFragmentPaused(fragmentManager: FragmentManager, fragment: Fragment) {
@@ -116,6 +131,10 @@ public class SentryFragmentLifecycleCallbacks(
 
   override fun onFragmentViewDestroyed(fragmentManager: FragmentManager, fragment: Fragment) {
     addBreadcrumb(fragment, FragmentLifecycleState.VIEW_DESTROYED)
+
+    // Failsafe: cancel any span that didn't finish via the normal started/resumed path
+    // (e.g. fragment view destroyed before reaching STARTED or RESUMED).
+    stopTracing(fragment)
   }
 
   override fun onFragmentDestroyed(fragmentManager: FragmentManager, fragment: Fragment) {
