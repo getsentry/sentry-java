@@ -8,6 +8,8 @@
 
 ### Fixes
 
+- Don't start a redundant UI interaction transaction when a transaction is already bound to the Scope ([#5491](https://github.com/getsentry/sentry-java/issues/5491))
+  - Previously, `SentryGestureListener` always started a UI transaction and only afterwards skipped binding it to the Scope when a manually-bound transaction already existed, leaving the new transaction to be dropped as an idle transaction without children.
 - Fix potential NPE within `Scope.endSession()` ([#5657](https://github.com/getsentry/sentry-java/pull/5657))
 
 ### Performance
