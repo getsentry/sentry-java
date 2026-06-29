@@ -341,6 +341,7 @@ final class AndroidOptionsInitializer {
             Objects.requireNonNull(
                 options.getFrameMetricsCollector(), "options.getFrameMetricsCollector is required");
         if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+          final @NotNull Context appContext = context.getApplicationContext();
           options.setContinuousProfiler(
               new PerfettoContinuousProfiler(
                   options.getLogger(),
@@ -348,7 +349,7 @@ final class AndroidOptionsInitializer {
                   () -> options.getExecutorService(),
                   () ->
                       new PerfettoProfiler(
-                          context.getApplicationContext(),
+                          appContext,
                           options.getLogger(),
                           options.getExecutorService())));
         } else if (options.isEnableLegacyProfiling()) {
