@@ -60,7 +60,7 @@ public final class AppStartExtension implements IAppStartExtender {
             .log(SentryLevel.WARNING, "App start is already being extended.");
         return;
       }
-      if (!metrics.isAppStartWindowOpen()) {
+      if (!metrics.canExtendAppStart()) {
         Sentry.getCurrentScopes()
             .getOptions()
             .getLogger()
@@ -112,7 +112,6 @@ public final class AppStartExtension implements IAppStartExtender {
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       final @Nullable ITransaction transaction = extendedTransaction;
       if (transaction != null && !transaction.isFinished()) {
-        // End at the extended span's finish if it ran past endTimestamp, so the txn covers it.
         final @Nullable ISpan span = extendedSpan;
         final @Nullable SentryDate spanEnd = span == null ? null : span.getFinishDate();
         final @NotNull SentryDate end =
