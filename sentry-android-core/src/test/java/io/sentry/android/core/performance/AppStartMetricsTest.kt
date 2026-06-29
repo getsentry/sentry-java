@@ -1027,36 +1027,36 @@ class AppStartMetricsTest {
   }
 
   @Test
-  fun `isAppStartWindowOpen is true on a fresh foreground start`() {
-    assertTrue(AppStartMetrics.getInstance().isAppStartWindowOpen)
+  fun `canExtendAppStart is true on a fresh foreground start`() {
+    assertTrue(AppStartMetrics.getInstance().canExtendAppStart())
   }
 
   @Test
-  fun `isAppStartWindowOpen is true for a headless (non-foreground) start`() {
+  fun `canExtendAppStart is true for a headless (non-foreground) start`() {
     val metrics = AppStartMetrics.getInstance()
     metrics.isAppLaunchedInForeground = false
-    assertTrue(metrics.isAppStartWindowOpen)
+    assertTrue(metrics.canExtendAppStart())
   }
 
   @Test
-  fun `isAppStartWindowOpen is false once an activity was created`() {
+  fun `canExtendAppStart is false once an activity was created`() {
     val metrics = AppStartMetrics.getInstance()
     metrics.onActivityCreated(mock(), null)
-    assertFalse(metrics.isAppStartWindowOpen)
+    assertFalse(metrics.canExtendAppStart())
   }
 
   @Test
-  fun `isAppStartWindowOpen is false once the first frame was drawn`() {
+  fun `canExtendAppStart is false once the first frame was drawn`() {
     val metrics = AppStartMetrics.getInstance()
     metrics.onFirstFrameDrawn()
-    assertFalse(metrics.isAppStartWindowOpen)
+    assertFalse(metrics.canExtendAppStart())
   }
 
   @Test
-  fun `isAppStartWindowOpen is false once start measurements were sent`() {
+  fun `canExtendAppStart is false once start measurements were sent`() {
     val metrics = AppStartMetrics.getInstance()
     metrics.onAppStartSpansSent()
-    assertFalse(metrics.isAppStartWindowOpen)
+    assertFalse(metrics.canExtendAppStart())
   }
 
   /** Drives the singleton's eager extension into the active state via the listener path. */
