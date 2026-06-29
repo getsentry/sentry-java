@@ -4,7 +4,7 @@
 
 ### Fixes
 
-- Prevent a potential `NullPointerException` by guarding `Scope.clearSession()` with the session lock ([#5657](https://github.com/getsentry/sentry-java/pull/5657))
+- Fix potential NPE within `Scope.clearSession()` ([#5657](https://github.com/getsentry/sentry-java/pull/5657))
 
 ### Performance
 
