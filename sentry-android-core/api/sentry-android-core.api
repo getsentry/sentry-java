@@ -193,6 +193,8 @@ public final class io/sentry/android/core/AppStartExtension : io/sentry/IAppStar
 	public fun getExtendedAppStartSpan ()Lio/sentry/ISpan;
 	public fun getExtendedEndTime ()Lio/sentry/SentryDate;
 	public fun isActive ()Z
+	public fun isExtended ()Z
+	public fun setData (Ljava/lang/String;Ljava/lang/Object;)V
 	public fun setExtendAppStartListener (Lio/sentry/android/core/AppStartExtension$ExtendAppStartListener;)V
 }
 

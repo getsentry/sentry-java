@@ -136,6 +136,18 @@ class AppStartExtensionTest {
   }
 
   @Test
+  fun `isExtended stays true once extended, even after the transaction finishes`() {
+    val ext = extension(windowOpen = true)
+    assertFalse(ext.isExtended)
+    val (txn, _) = ext.registerHandOver()
+    ext.extendAppStart()
+    assertTrue(ext.isExtended)
+    whenever(txn.isFinished).thenReturn(true)
+    assertFalse(ext.isActive)
+    assertTrue(ext.isExtended)
+  }
+
+  @Test
   fun `finishTransaction finishes the transaction at the given timestamp`() {
     val ext = extension(windowOpen = true)
     val (txn, _) = ext.registerHandOver()
