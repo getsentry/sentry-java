@@ -87,7 +87,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   private @Nullable IContinuousProfiler appStartContinuousProfiler = null;
   private @Nullable TracesSamplingDecision appStartSamplingDecision = null;
   private boolean isCallbackRegistered = false;
-  private boolean shouldSendStartMeasurements = true;
+  private volatile boolean shouldSendStartMeasurements = true;
   private final AtomicInteger activeActivitiesCounter = new AtomicInteger();
   private final AtomicBoolean firstDrawDone = new AtomicBoolean(false);
   private final AtomicBoolean headlessAppStartCheckPending = new AtomicBoolean(false);
