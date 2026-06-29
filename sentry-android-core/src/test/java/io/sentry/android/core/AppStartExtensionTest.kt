@@ -31,7 +31,7 @@ class AppStartExtensionTest {
   private val metrics = mock<AppStartMetrics>()
 
   private fun extension(windowOpen: Boolean = true): AppStartExtension {
-    whenever(metrics.isAppStartWindowOpen).thenReturn(windowOpen)
+    whenever(metrics.canExtendAppStart()).thenReturn(windowOpen)
     return AppStartExtension(metrics)
   }
 

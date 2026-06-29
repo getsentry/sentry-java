@@ -344,11 +344,11 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   }
 
   /**
-   * Whether the app start window is still open, i.e. an app start can be extended: measurements
-   * haven't been sent yet, no activity has been created, and the first frame hasn't been drawn. The
-   * foreground check is ignored so headless app starts (broadcast/service) can also be extended.
+   * Whether the app start can still be extended: measurements haven't been sent yet, no activity
+   * has been created, and the first frame hasn't been drawn. The foreground check is ignored so
+   * headless app starts (broadcast/service) can also be extended.
    */
-  public boolean isAppStartWindowOpen() {
+  public boolean canExtendAppStart() {
     return shouldSendStartMeasurements(true)
         && activeActivitiesCounter.get() == 0
         && !firstDrawDone.get();
