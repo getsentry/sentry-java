@@ -367,16 +367,12 @@ class ActivityLifecycleIntegrationTest {
       fixture.createdTransactions.filter {
         it.spanContext.operation == ActivityLifecycleIntegration.STANDALONE_APP_START_OP
       }
-    // The eager app.start txn is reused; no second one is created at the first activity.
     assertEquals(1, appStartTransactions.size)
-    // The screen (first activity) is attached to the eager app.start, matching foreground
-    // standalone.
     assertEquals("Activity", appStartTransactions.single().getData("app.vitals.start.screen"))
     val uiLoadTransaction =
       fixture.createdTransactions.single {
         it.spanContext.operation == ActivityLifecycleIntegration.UI_LOAD_OP
       }
-    // ui.load shares the eager app.start trace.
     assertEquals(
       appStartTransactions.single().spanContext.traceId,
       uiLoadTransaction.spanContext.traceId,
@@ -410,7 +406,6 @@ class ActivityLifecycleIntegrationTest {
     sut.onActivityPaused(firstActivity)
     sut.onActivityCreated(secondActivity, fixture.bundle)
 
-    // The second activity must not continue the already-finished extended app.start trace.
     assertNotEquals(appStartTraceId, fixture.createdTransactions.last().spanContext.traceId)
   }
 
@@ -459,7 +454,6 @@ class ActivityLifecycleIntegrationTest {
         it.spanContext.operation == ActivityLifecycleIntegration.STANDALONE_APP_START_OP
       }
 
-    // waitForChildren keeps the app start transaction open until the extension finishes.
     appStartTransaction.finish(SpanStatus.OK)
     assertFalse(appStartTransaction.isFinished)
 
@@ -487,7 +481,6 @@ class ActivityLifecycleIntegrationTest {
         it.operation == ActivityLifecycleIntegration.APP_START_EXTENDED_OP
       }
     )
-    // Headless finishes the transaction, but waitForChildren holds it until the extension finishes.
     assertFalse(transaction.isFinished)
 
     AppStartMetrics.getInstance().appStartExtension.finishExtendedAppStart()
@@ -522,8 +515,6 @@ class ActivityLifecycleIntegrationTest {
 
     prepareHeadlessAppStart(appStartType = AppStartType.COLD)
     AppStartMetrics.getInstance().appStartExtension.extendAppStart()
-    // Finish and send the extension's app.start (onAppStartSpansSent is normally driven by the
-    // event processor) before the headless idle check runs.
     AppStartMetrics.getInstance().appStartExtension.finishExtendedAppStart()
     AppStartMetrics.getInstance().onAppStartSpansSent()
     val transactionsBefore = fixture.createdTransactions.size
@@ -562,8 +553,6 @@ class ActivityLifecycleIntegrationTest {
     sut.onActivityCreated(activity, fixture.bundle)
     assertTrue(AppStartMetrics.getInstance().appStartExtension.isActive)
 
-    // The eager txn is owned by the extension, not the integration's appStartTransaction field, so
-    // the per-activity cleanup can't cancel it.
     sut.onActivityDestroyed(activity)
     assertTrue(AppStartMetrics.getInstance().appStartExtension.isActive)
   }

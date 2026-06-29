@@ -216,7 +216,6 @@ class PerformanceAndroidEventProcessorTest {
       setStoppedAt(100)
     }
     val startMs = metrics.appStartTimeSpan.startTimestampMs
-    // extended end is 500ms after start, well past the ~99ms natural duration
     extendAppStartFinishedWith(SpanStatus.OK, startMs + 500)
 
     var tr = createUiLoadTransactionWithAppStartChildSpan()
@@ -236,7 +235,6 @@ class PerformanceAndroidEventProcessorTest {
       setStoppedAt(1000)
     }
     val startMs = metrics.appStartTimeSpan.startTimestampMs
-    // finished early (100ms), before the 999ms natural first-frame duration
     extendAppStartFinishedWith(SpanStatus.OK, startMs + 100)
 
     var tr = createUiLoadTransactionWithAppStartChildSpan()
