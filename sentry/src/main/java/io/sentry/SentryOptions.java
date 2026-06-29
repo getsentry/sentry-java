@@ -648,8 +648,8 @@ public class SentryOptions {
   /**
    * When false, the legacy {@code Debug}-based profiler is disabled on API < 35 devices. On API 35+
    * devices, Android's {@code ProfilingManager} (Perfetto-based stack sampling) is always used
-   * regardless of this setting. This option will be deprecated in the next major release and removed
-   * in the one after.
+   * regardless of this setting. This option will be deprecated in the next major release and
+   * removed in the one after.
    */
   private boolean enableLegacyProfiling = true;
 
