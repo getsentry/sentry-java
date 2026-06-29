@@ -106,8 +106,8 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
           final long naturalDurationMs = appStartTimeSpan.getDurationMs();
 
           final long appStartUpDurationMs;
-          // Not ready (duration 0 on a non-extended start) leaves it for a later transaction.
-          final boolean appStartReady;
+          final boolean shouldAttachAppStartSpans;
+          final boolean reportAppStartMeasurement;
           final @NotNull AppStartExtension extension = appStartMetrics.getAppStartExtension();
           if (extension.isExtended()) {
             final @Nullable SentryDate extendedEnd = extension.getExtendedEndTime();
@@ -118,20 +118,23 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
                   TimeUnit.NANOSECONDS.toMillis(extendedEnd.nanoTimestamp())
                       - appStartTimeSpan.getStartTimestampMs();
               appStartUpDurationMs = Math.max(naturalDurationMs, extendedDurationMs);
-              appStartReady = appStartUpDurationMs != 0;
+              shouldAttachAppStartSpans = appStartUpDurationMs != 0;
+              reportAppStartMeasurement = shouldAttachAppStartSpans;
             } else {
-              // Deadline (null) or no valid start: suppress the measurement to avoid an inflated
-              // value, but still finalize the spans.
+              // Deadline (null) or no valid start: attach the spans but suppress the measurement so
+              // it isn't inflated.
               appStartUpDurationMs = 0;
-              appStartReady = appStartTimeSpan.hasStarted();
+              shouldAttachAppStartSpans = appStartTimeSpan.hasStarted();
+              reportAppStartMeasurement = false;
             }
           } else {
             appStartUpDurationMs = naturalDurationMs;
-            appStartReady = appStartUpDurationMs != 0;
+            shouldAttachAppStartSpans = appStartUpDurationMs != 0;
+            reportAppStartMeasurement = shouldAttachAppStartSpans;
           }
 
-          if (appStartReady) {
-            if (appStartUpDurationMs != 0) {
+          if (shouldAttachAppStartSpans) {
+            if (reportAppStartMeasurement) {
               final MeasurementValue value =
                   new MeasurementValue(
                       (float) appStartUpDurationMs, MeasurementUnit.Duration.MILLISECOND.apiName());

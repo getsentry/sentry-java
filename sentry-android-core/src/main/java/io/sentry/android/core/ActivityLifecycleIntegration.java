@@ -265,15 +265,15 @@ public final class ActivityLifecycleIntegration
         transactionOptions.setAppStartTransaction(appStartSamplingDecision != null);
         setSpanOrigin(transactionOptions);
 
-        // Guards the headless-start check below with !extensionActive so the eager extension's
+        // Guards the headless-start check below with !isExtensionActive so the eager extension's
         // stored trace id isn't mistaken for a finished headless start.
-        final boolean extensionActive =
+        final boolean isExtensionActive =
             AppStartMetrics.getInstance().getAppStartExtension().isActive();
 
         final @Nullable SentryId storedAppStartTraceId =
             AppStartMetrics.getInstance().getAppStartTraceId();
         final boolean isFollowingHeadlessAppStart =
-            !extensionActive && (storedAppStartTraceId != null);
+            !isExtensionActive && (storedAppStartTraceId != null);
 
         final boolean isAppStart =
             !(firstActivityCreated || appStartTime == null || coldStart == null);
@@ -281,7 +281,7 @@ public final class ActivityLifecycleIntegration
             isAppStart
                 && options.isEnableStandaloneAppStartTracing()
                 && !isFollowingHeadlessAppStart
-                && !extensionActive;
+                && !isExtensionActive;
 
         if (createStandaloneAppStart) {
           final TransactionOptions appStartTransactionOptions = new TransactionOptions();
@@ -312,7 +312,7 @@ public final class ActivityLifecycleIntegration
           continueSentryTrace = appStartTransaction.toSentryTrace().getValue();
           final @Nullable BaggageHeader baggageHeader = appStartTransaction.toBaggageHeader(null);
           continueBaggage = baggageHeader == null ? null : baggageHeader.getValue();
-        } else if (extensionActive
+        } else if (isExtensionActive
             || (isFollowingHeadlessAppStart && isWithinAppStartContinuationWindow(ttidStartTime))) {
           continueSentryTrace = AppStartMetrics.getInstance().getAppStartSentryTraceHeader();
           continueBaggage = AppStartMetrics.getInstance().getAppStartBaggageHeader();
@@ -321,7 +321,7 @@ public final class ActivityLifecycleIntegration
           continueBaggage = null;
         }
 
-        if (extensionActive && isAppStart) {
+        if (isExtensionActive && isAppStart) {
           // Only the launch activity sets the screen, so a later activity can't overwrite it. A
           // screen also keeps the processor from classifying the eager app.start as headless.
           AppStartMetrics.getInstance()
@@ -348,7 +348,7 @@ public final class ActivityLifecycleIntegration
                   transactionOptions);
         }
 
-        if (isFollowingHeadlessAppStart || extensionActive) {
+        if (isFollowingHeadlessAppStart || isExtensionActive) {
           // Consume the stored app-start trace so a later activity doesn't reuse it.
           AppStartMetrics.getInstance().setAppStartTraceId(null);
           AppStartMetrics.getInstance().setAppStartSentryTraceHeader(null);
