@@ -4,6 +4,7 @@ import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class LoadClassTest {
   @Test
@@ -26,24 +27,44 @@ class LoadClassTest {
   }
 
   @Test
-  fun `loadClass does not run the static initializer of the probed class`() {
+  fun `isClassAvailable does not run the static initializer of the probed class`() {
     // Reading the flag initializes the flag holder, not the probe.
-    assertFalse(LoadClassNoInitFlag.initialized)
+    assertFalse(IsClassAvailableNoInitFlag.initialized)
 
     // Obtaining the name via ::class.java does not initialize the probe either.
-    LoadClass().loadClass(LoadClassNoInitProbe::class.java.name, null)
+    LoadClass()
+      .isClassAvailable(IsClassAvailableNoInitProbe::class.java.name, null as io.sentry.ILogger?)
 
     // Availability probing must not trigger the probe's static initializer.
-    assertFalse(LoadClassNoInitFlag.initialized)
+    assertFalse(IsClassAvailableNoInitFlag.initialized)
+  }
+
+  @Test
+  fun `loadClass runs the static initializer of the loaded class`() {
+    assertFalse(LoadClassInitFlag.initialized)
+
+    LoadClass().loadClass(LoadClassInitProbe::class.java.name, null)
+
+    assertTrue(LoadClassInitFlag.initialized)
   }
 }
 
-private object LoadClassNoInitFlag {
+private object IsClassAvailableNoInitFlag {
   @JvmField var initialized = false
 }
 
-private object LoadClassNoInitProbe {
+private object IsClassAvailableNoInitProbe {
   init {
-    LoadClassNoInitFlag.initialized = true
+    IsClassAvailableNoInitFlag.initialized = true
+  }
+}
+
+private object LoadClassInitFlag {
+  @JvmField var initialized = false
+}
+
+private object LoadClassInitProbe {
+  init {
+    LoadClassInitFlag.initialized = true
   }
 }
