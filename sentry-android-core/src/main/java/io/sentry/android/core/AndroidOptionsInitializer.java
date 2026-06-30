@@ -211,15 +211,18 @@ final class AndroidOptionsInitializer {
 
     final @NotNull LazyEvaluator<Boolean> isAndroidXScrollViewAvailable =
         loadClass.isClassAvailableLazy("androidx.core.view.ScrollingView", options);
-    final boolean isComposeUpstreamAvailable =
-        loadClass.isClassAvailable(COMPOSE_CLASS_NAME, options);
 
-    if (options.getGestureTargetLocators().isEmpty()) {
+    // Gated behind the features that actually consume these so the Compose class lookups only run
+    // when user interaction tracking or view hierarchy capture is enabled. Repeated COMPOSE_CLASS
+    // probes across both blocks are deduplicated by LoadClass's cache.
+    final boolean isUserInteractionEnabled =
+        options.isEnableUserInteractionBreadcrumbs() || options.isEnableUserInteractionTracing();
+    if (isUserInteractionEnabled && options.getGestureTargetLocators().isEmpty()) {
       final List<GestureTargetLocator> gestureTargetLocators = new ArrayList<>(2);
       gestureTargetLocators.add(new AndroidViewGestureTargetLocator(isAndroidXScrollViewAvailable));
 
       final boolean isComposeAvailable =
-          (isComposeUpstreamAvailable
+          (loadClass.isClassAvailable(COMPOSE_CLASS_NAME, options)
               && loadClass.isClassAvailable(
                   SENTRY_COMPOSE_GESTURE_INTEGRATION_CLASS_NAME, options));
 
@@ -229,8 +232,9 @@ final class AndroidOptionsInitializer {
       options.setGestureTargetLocators(gestureTargetLocators);
     }
 
-    if (options.getViewHierarchyExporters().isEmpty()
-        && isComposeUpstreamAvailable
+    if (options.isAttachViewHierarchy()
+        && options.getViewHierarchyExporters().isEmpty()
+        && loadClass.isClassAvailable(COMPOSE_CLASS_NAME, options)
         && loadClass.isClassAvailable(
             SENTRY_COMPOSE_VIEW_HIERARCHY_INTEGRATION_CLASS_NAME, options)) {
 
