@@ -50,7 +50,7 @@ class SentryFragmentLifecycleCallbacksTest {
           SentryOptions().apply {
             setTracesSampleRate(tracesSampleRate)
             isEnableScreenTracking = enableScreenTracking
-          },
+          }
         )
       whenever(span.spanContext)
         .thenReturn(SpanContext(SentryId.EMPTY_ID, SpanId.EMPTY_ID, "op", null, null))
@@ -279,8 +279,7 @@ class SentryFragmentLifecycleCallbacksTest {
 
   @Test
   fun `When fragment view is created via detach-attach, it should update screen name`() {
-    val sut =
-      fixture.getSut(enableAutoFragmentLifecycleTracing = true, enableScreenTracking = true)
+    val sut = fixture.getSut(enableAutoFragmentLifecycleTracing = true, enableScreenTracking = true)
 
     sut.onFragmentViewCreated(
       fixture.fragmentManager,
