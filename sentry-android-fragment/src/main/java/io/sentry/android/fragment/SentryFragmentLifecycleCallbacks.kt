@@ -100,6 +100,9 @@ public class SentryFragmentLifecycleCallbacks(
     // "view created -> resumed" span for those paths. startTracing is idempotent, so for the
     // normal onFragmentCreated -> onFragmentViewCreated path this is a no-op.
     if (fragment.isAdded) {
+      if (scopes.options.isEnableScreenTracking) {
+        scopes.configureScope { it.screen = getFragmentName(fragment) }
+      }
       startTracing(fragment)
     }
   }

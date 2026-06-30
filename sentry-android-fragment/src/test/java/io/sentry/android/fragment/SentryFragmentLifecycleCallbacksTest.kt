@@ -43,9 +43,15 @@ class SentryFragmentLifecycleCallbacksTest {
       enableAutoFragmentLifecycleTracing: Boolean = false,
       tracesSampleRate: Double? = 1.0,
       isAdded: Boolean = true,
+      enableScreenTracking: Boolean = false,
     ): SentryFragmentLifecycleCallbacks {
       whenever(scopes.options)
-        .thenReturn(SentryOptions().apply { setTracesSampleRate(tracesSampleRate) })
+        .thenReturn(
+          SentryOptions().apply {
+            setTracesSampleRate(tracesSampleRate)
+            isEnableScreenTracking = enableScreenTracking
+          },
+        )
       whenever(span.spanContext)
         .thenReturn(SpanContext(SentryId.EMPTY_ID, SpanId.EMPTY_ID, "op", null, null))
       whenever(transaction.startChild(any<String>(), any<String>())).thenReturn(span)
@@ -269,6 +275,21 @@ class SentryFragmentLifecycleCallbacksTest {
         check<String> { assertEquals(SentryFragmentLifecycleCallbacks.FRAGMENT_LOAD_OP, it) },
         check<String> { assertEquals("androidx.fragment.app.Fragment", it) },
       )
+  }
+
+  @Test
+  fun `When fragment view is created via detach-attach, it should update screen name`() {
+    val sut =
+      fixture.getSut(enableAutoFragmentLifecycleTracing = true, enableScreenTracking = true)
+
+    sut.onFragmentViewCreated(
+      fixture.fragmentManager,
+      fixture.fragment,
+      view = mock(),
+      savedInstanceState = null,
+    )
+
+    verify(fixture.scope).screen = "androidx.fragment.app.Fragment"
   }
 
   @Test
