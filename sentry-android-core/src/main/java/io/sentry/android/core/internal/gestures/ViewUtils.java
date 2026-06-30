@@ -150,32 +150,37 @@ public final class ViewUtils {
    * @return human-readable view id
    */
   static String getResourceIdWithFallback(final @NotNull View view) {
-    final int viewId = view.getId();
-    try {
-      return getResourceId(view);
-    } catch (Resources.NotFoundException e) {
+    final @Nullable String resourceId = getResourceIdOrNull(view);
+    if (resourceId == null) {
       // fall back to hex representation of the id
-      return "0x" + Integer.toString(viewId, 16);
+      return "0x" + Integer.toString(view.getId(), 16);
     }
+    return resourceId;
   }
 
   /**
-   * Retrieves the human-readable view id based on {@code view.getContext().getResources()}.
+   * Retrieves the human-readable view id based on {@code view.getContext().getResources()}, or
+   * {@code null} when the view has no resource-backed id. Returning {@code null} rather than
+   * throwing avoids exception-driven control flow on hot, main-thread paths such as view-hierarchy
+   * snapshots and gesture target resolution.
    *
    * @param view - the view whose id is being retrieved
-   * @return human-readable view id
-   * @throws Resources.NotFoundException in case the view id was not found
+   * @return human-readable view id, or {@code null} if it cannot be resolved
    */
-  public static String getResourceId(final @NotNull View view) throws Resources.NotFoundException {
+  public static @Nullable String getResourceIdOrNull(final @NotNull View view) {
     final int viewId = view.getId();
     if (viewId == View.NO_ID || isViewIdGenerated(viewId)) {
-      throw new Resources.NotFoundException();
+      return null;
     }
     final Resources resources = view.getContext().getResources();
-    if (resources != null) {
-      return resources.getResourceEntryName(viewId);
+    if (resources == null) {
+      return "";
     }
-    return "";
+    try {
+      return resources.getResourceEntryName(viewId);
+    } catch (Resources.NotFoundException e) {
+      return null;
+    }
   }
 
   private static boolean isViewIdGenerated(int id) {

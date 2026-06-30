@@ -9,11 +9,16 @@
 ### Fixes
 
 - Fix fragment tracing not working with detach/attach navigation ([#5660](https://github.com/getsentry/sentry-java/pull/5660))
+- Don't start a redundant UI interaction transaction when a transaction is already bound to the Scope ([#5491](https://github.com/getsentry/sentry-java/issues/5491))
+  - Previously, `SentryGestureListener` always started a UI transaction and only afterwards skipped binding it to the Scope when a manually-bound transaction already existed, leaving the new transaction to be dropped as an idle transaction without children.
 - Fix potential NPE within `Scope.endSession()` ([#5657](https://github.com/getsentry/sentry-java/pull/5657))
 
 ### Performance
 
 - Speed up touch gesture target detection on deeply nested view hierarchies by hit-testing in local coordinates instead of calling `getLocationOnScreen` per view ([#5595](https://github.com/getsentry/sentry-java/pull/5595))
+- Probe class availability without initializing the class during SDK init ([#5635](https://github.com/getsentry/sentry-java/pull/5635))
+- Avoid constructing an exception per view when resolving view ids during view-hierarchy and gesture capture ([#5631](https://github.com/getsentry/sentry-java/pull/5631))
+- Start the frame metrics thread lazily on first collection instead of during SDK init ([#5641](https://github.com/getsentry/sentry-java/pull/5641))
 
 ## 8.46.0
 

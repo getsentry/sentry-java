@@ -142,6 +142,16 @@ class SentryFrameMetricsCollectorTest {
   }
 
   @Test
+  fun `handler thread is started lazily on first startCollection`() {
+    val collector = fixture.getSut(context)
+    // not started during construction (would block the main thread on getLooper at SDK init)
+    assertNull(collector.getProperty<Handler?>("handler"))
+
+    collector.startCollection(mock())
+    assertNotNull(collector.getProperty<Handler?>("handler"))
+  }
+
+  @Test
   fun `collector calls addOnFrameMetricsAvailableListener when an activity starts`() {
     val collector = fixture.getSut(context)
 
