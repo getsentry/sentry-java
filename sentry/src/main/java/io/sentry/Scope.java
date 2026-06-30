@@ -1147,7 +1147,9 @@ public final class Scope implements IScope {
   @ApiStatus.Internal
   @Override
   public void clearSession() {
-    session = null;
+    try (final @NotNull ISentryLifecycleToken ignored = sessionLock.acquire()) {
+      session = null;
+    }
   }
 
   @ApiStatus.Internal

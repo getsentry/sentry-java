@@ -8,9 +8,66 @@
   - Enable via `setEnableAppHangTracking(true)` (disabled by default) and tune the timeout with `setAppHangTimeoutIntervalMillis(...)` (default `5000` ms), or the `io.sentry.app-hang.enable` / `io.sentry.app-hang.timeout-interval-millis` manifest entries
   - Intended for hybrid SDKs: emit the heartbeat by calling the native `sentry_app_hang_heartbeat()` from the thread you want monitored. Independent of the JVM-based ANR detection (`setAnrEnabled`)
 
+### Behavioral Changes
+
+- `SentryOkHttpInterceptor::intercept` now throws `IOException`. This is a source-only and Java-only breaking change ([#5654](https://github.com/getsentry/sentry-java/pull/5654))
+
 ### Fixes
 
+- Fix potential NPE within `Scope.endSession()` ([#5657](https://github.com/getsentry/sentry-java/pull/5657))
+
+### Performance
+
+- Speed up touch gesture target detection on deeply nested view hierarchies by hit-testing in local coordinates instead of calling `getLocationOnScreen` per view ([#5595](https://github.com/getsentry/sentry-java/pull/5595))
+- Probe class availability without initializing the class during SDK init ([#5635](https://github.com/getsentry/sentry-java/pull/5635))
+
+## 8.46.0
+
+### Fixes
+
+- Session Replay: Fix network detail response body size being unknown for gzip-compressed responses ([#5592](https://github.com/getsentry/sentry-java/pull/5592))
+
+### Behavioral Changes
+
+- Collections returned by scope (e.g. `getBreadcrumbs`, `getTags`, `getAttachments`) are shared state and should not be mutated. ([#5541](https://github.com/getsentry/sentry-java/pull/5541))
+  - Previously, when going through `CombinedScopeView`, we were returning a copy where mutations didn't show up in the underlying scopes.
+  - This has now changed in order to reduce SDK overhead.
+- `Date` objects returned by SDK data model getters are shared state and should not be mutated. ([#5603](https://github.com/getsentry/sentry-java/pull/5603))
+  - Previously, these getters returned defensive copies for some date fields.
+  - This has now changed in order to reduce SDK overhead.
+
+### Performance
+
+- Reduce writer buffer size from 8192 to 512 ([#5544](https://github.com/getsentry/sentry-java/pull/5544))
+- Remove redundant event map copies ([#5536](https://github.com/getsentry/sentry-java/pull/5536))
+- Optimize combined scope by adding an early return if only one scope has data ([#5541](https://github.com/getsentry/sentry-java/pull/5541))
+- Reduce model access overhead by avoiding defensive `Date` copies in SDK data model getters. ([#5603](https://github.com/getsentry/sentry-java/pull/5603))
+- Reduce timestamp parsing and formatting overhead with Sentry-specific ISO-8601 handling. ([#5602](https://github.com/getsentry/sentry-java/pull/5602))
+- Reduce JSON serialization overhead by creating the reflection serializer only when unknown-object fallback serialization is needed. ([#5601](https://github.com/getsentry/sentry-java/pull/5601))
+- Reduce JSON serialization overhead by allocating reflection cycle-tracking state only when reflection serialization is used. ([#5600](https://github.com/getsentry/sentry-java/pull/5600))
+- Reduce context serialization overhead by sorting key snapshots with arrays instead of temporary lists. ([#5599](https://github.com/getsentry/sentry-java/pull/5599))
+- Reduce breadcrumb allocation overhead by creating the `Breadcrumb` data map only when data is added. ([#5598](https://github.com/getsentry/sentry-java/pull/5598))
+- Reduce JSON serialization overhead by lowering the initial `JsonWriter` nesting stack size while preserving on-demand growth. ([#5591](https://github.com/getsentry/sentry-java/pull/5591))
+- Reduce timestamp helper overhead by replacing unnecessary `Calendar` usage in `DateUtils` with direct `Date` creation. ([#5589](https://github.com/getsentry/sentry-java/pull/5589))
+- Reduce Android startup overhead by using the default timezone directly on older devices or when no timezone info is available in the locale. ([#5587](https://github.com/getsentry/sentry-java/pull/5587))
+
+## 8.45.0
+
+### Features
+
+- On Android 15+ (API 35), the standalone `app.start` transaction now reports why the OS started the process via `app.vitals.start.reason` trace data (e.g. `launcher`, `broadcast`, `service`, `content_provider`), derived from `ApplicationStartInfo.getReason()`. You can search and group by this attribute in the Trace Explorer. ([#5552](https://github.com/getsentry/sentry-java/pull/5552))
+
+### Fixes
+
+- Use `System.nanoTime()` for cron check-in duration measurement to avoid incorrect durations from wall-clock adjustments ([#5611](https://github.com/getsentry/sentry-java/pull/5611))
+- Fix crash when `getHistoricalProcessStartReasons` is called from an isolated or wrong-userId process ([#5597](https://github.com/getsentry/sentry-java/pull/5597))
 - Release `MediaMuxer` when a replay segment has no encodable frames to avoid a resource leak ([#5583](https://github.com/getsentry/sentry-java/pull/5583))
+
+### Dependencies
+
+- Bump Native SDK from v0.15.1 to v0.15.2 ([#5610](https://github.com/getsentry/sentry-java/pull/5610))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0152)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.15.1...0.15.2)
 
 ## 8.44.1
 
@@ -39,7 +96,6 @@
   - Emits a transaction named `App Start` with op `app.start`, carrying the existing app start measurements and phase spans (`process.load`, `contentprovider.load`, `application.load`, activity lifecycle spans) as direct children of the root
   - The standalone transaction shares the same `traceId` as the first `ui.load` activity transaction so they remain linked in the trace view
   - Also covers non-activity starts (broadcast receivers, services, content providers)
-  - On Android 15+ (API 35), the standalone `app.start` transaction reports why the OS started the process via `app.vitals.start.reason` trace data (e.g. `launcher`, `broadcast`, `service`, `content_provider`), derived from `ApplicationStartInfo.getReason()`. You can search and group by this attribute in the Trace Explorer. ([#5552](https://github.com/getsentry/sentry-java/pull/5552))
 
 ### Improvements
 
@@ -58,6 +114,12 @@
 
 - Fix attachments being duplicated on native events that carry scope attachments ([#5548](https://github.com/getsentry/sentry-java/pull/5548))
 - Fix performance collector scheduling many tasks in a row ([#5524](https://github.com/getsentry/sentry-java/pull/5524))
+
+## 8.43.3
+
+### Fixes
+
+- Fix crash when `getHistoricalProcessStartReasons` is called from an isolated or wrong-userId process ([#5597](https://github.com/getsentry/sentry-java/pull/5597))
 
 ## 8.43.2
 

@@ -28,10 +28,11 @@ public final class JsonObjectSerializer {
 
   public static final String OBJECT_PLACEHOLDER = "[OBJECT]";
 
-  public final JsonReflectionObjectSerializer jsonReflectionObjectSerializer;
+  private final int maxDepth;
+  private @Nullable JsonReflectionObjectSerializer jsonReflectionObjectSerializer;
 
   public JsonObjectSerializer(int maxDepth) {
-    jsonReflectionObjectSerializer = new JsonReflectionObjectSerializer(maxDepth);
+    this.maxDepth = maxDepth;
   }
 
   public void serialize(
@@ -127,7 +128,7 @@ public final class JsonObjectSerializer {
       writer.value(object.toString());
     } else {
       try {
-        Object serializableObject = jsonReflectionObjectSerializer.serialize(object, logger);
+        Object serializableObject = getJsonReflectionObjectSerializer().serialize(object, logger);
         serialize(writer, logger, serializableObject);
       } catch (Exception exception) {
         logger.log(SentryLevel.ERROR, "Failed serializing unknown object.", exception);
@@ -137,6 +138,13 @@ public final class JsonObjectSerializer {
   }
 
   // Helper
+
+  private @NotNull JsonReflectionObjectSerializer getJsonReflectionObjectSerializer() {
+    if (jsonReflectionObjectSerializer == null) {
+      jsonReflectionObjectSerializer = new JsonReflectionObjectSerializer(maxDepth);
+    }
+    return jsonReflectionObjectSerializer;
+  }
 
   private void serializeDate(
       @NotNull ObjectWriter writer, @NotNull ILogger logger, @NotNull Date date)

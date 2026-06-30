@@ -5,10 +5,11 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNotSame
+import kotlin.test.assertSame
 
 class AppTest {
   @Test
-  fun `copying app wont have the same references`() {
+  fun `copying app keeps date reference and copies collections`() {
     val app = App()
     app.appBuild = "app build"
     app.appIdentifier = "app identifier"
@@ -28,7 +29,7 @@ class AppTest {
 
     assertNotNull(clone)
     assertNotSame(app, clone)
-    assertNotSame(app.appStartTime, clone.appStartTime)
+    assertSame(app.appStartTime, clone.appStartTime)
     assertNotSame(app.permissions, clone.permissions)
     assertNotSame(app.viewNames, clone.viewNames)
 

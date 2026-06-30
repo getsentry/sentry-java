@@ -2,16 +2,22 @@ package io.sentry.android.core
 
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.os.BatteryManager
+import android.os.Build
+import android.os.LocaleList
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.android.core.internal.util.CpuInfoUtils
+import java.util.Locale
+import java.util.TimeZone
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import org.junit.runner.RunWith
+import org.robolectric.annotation.Config
 
 @RunWith(AndroidJUnit4::class)
 class DeviceInfoUtilTest {
@@ -45,6 +51,32 @@ class DeviceInfoUtilTest {
 
     assertNotNull(deviceInfo.isSimulator)
     assertNotNull(deviceInfo.memorySize)
+  }
+
+  @Test
+  fun `sets default timezone`() {
+    val deviceInfoUtil = DeviceInfoUtil.getInstance(context, SentryAndroidOptions())
+    val deviceInfo = deviceInfoUtil.collectDeviceInformation(false, false)
+
+    assertEquals(TimeZone.getDefault(), deviceInfo.timezone)
+  }
+
+  @Test
+  @Config(sdk = [Build.VERSION_CODES.TIRAMISU])
+  fun `preserves timezone from locale unicode extension`() {
+    val defaultTimeZone = TimeZone.getDefault()
+    try {
+      TimeZone.setDefault(TimeZone.getTimeZone("UTC"))
+      val configuration = Configuration(context.resources.configuration)
+      configuration.setLocales(LocaleList(Locale.forLanguageTag("en-US-u-tz-usnyc")))
+      val localizedContext = context.createConfigurationContext(configuration)
+      val deviceInfoUtil = DeviceInfoUtil(localizedContext, SentryAndroidOptions())
+      val deviceInfo = deviceInfoUtil.collectDeviceInformation(false, false)
+
+      assertEquals("America/New_York", deviceInfo.timezone?.id)
+    } finally {
+      TimeZone.setDefault(defaultTimeZone)
+    }
   }
 
   @Test
