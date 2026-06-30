@@ -974,7 +974,7 @@ public final class SentryClient implements ISentryClient {
     }
 
     if (shouldApplyScopeData(transaction, hint)) {
-      transaction = applyScope(transaction, scope);
+      transaction = applyScope(transaction, scope, HintUtils.hasType(hint, Cached.class));
 
       if (transaction != null && scope != null) {
         transaction = processTransaction(transaction, hint, scope.getEventProcessors());
@@ -1381,7 +1381,7 @@ public final class SentryClient implements ISentryClient {
   private @Nullable SentryEvent applyScope(
       @NotNull SentryEvent event, final @Nullable IScope scope, final @NotNull Hint hint) {
     if (scope != null) {
-      applyScope(event, scope);
+      applyScope(event, scope, HintUtils.hasType(hint, Cached.class));
 
       if (event.getTransaction() == null) {
         event.setTransaction(scope.getTransactionName());
@@ -1513,7 +1513,7 @@ public final class SentryClient implements ISentryClient {
   }
 
   private <T extends SentryBaseEvent> @NotNull T applyScope(
-      final @NotNull T sentryBaseEvent, final @Nullable IScope scope) {
+      final @NotNull T sentryBaseEvent, final @Nullable IScope scope, final boolean isCached) {
     if (scope != null) {
       if (sentryBaseEvent.getRequest() == null) {
         sentryBaseEvent.setRequest(scope.getRequest());
@@ -1532,7 +1532,9 @@ public final class SentryClient implements ISentryClient {
       }
       if (sentryBaseEvent.getBreadcrumbs() == null) {
         sentryBaseEvent.setBreadcrumbs(new ArrayList<>(scope.getBreadcrumbs()));
-      } else {
+      } else if (!isCached) {
+        // A Cached event comes from the outbox and already carries its own breadcrumbs (e.g. native
+        // events written by sentry-native). Appending the scope's breadcrumbs would duplicate them.
         sortBreadcrumbsByDate(sentryBaseEvent, scope.getBreadcrumbs());
       }
       if (sentryBaseEvent.getExtras() == null) {
