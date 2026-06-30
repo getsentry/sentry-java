@@ -66,6 +66,10 @@
       android:exported="false" />
 
     <activity
+      android:name=".DetachAttachTabsActivity"
+      android:exported="false" />
+
+    <activity
       android:name=".GesturesActivity"
       android:exported="false" />
 

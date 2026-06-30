@@ -795,6 +795,18 @@ fun IntegrationsScreen() {
       }
     }
     item {
+      SentryTraced("open_detach_attach_tabs") {
+        OutlinedButton(
+          onClick = {
+            activity.startActivity(Intent(activity, DetachAttachTabsActivity::class.java))
+          },
+          modifier = Modifier,
+        ) {
+          Text("Open Detach/Attach Tabs", maxLines = 2, overflow = TextOverflow.Ellipsis)
+        }
+      }
+    }
+    item {
       SentryTraced("open_permissions_activity") {
         OutlinedButton(
           onClick = { activity.startActivity(Intent(activity, PermissionsActivity::class.java)) },

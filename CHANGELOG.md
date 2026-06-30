@@ -8,6 +8,7 @@
 
 ### Fixes
 
+- Fix fragment tracing not working with detach/attach navigation ([#5660](https://github.com/getsentry/sentry-java/pull/5660))
 - Fix potential NPE within `Scope.endSession()` ([#5657](https://github.com/getsentry/sentry-java/pull/5657))
 
 ### Performance
