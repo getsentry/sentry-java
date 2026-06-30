@@ -1,1 +1,5 @@
 *       @adinauer @romtsn @markushi @runningcode @0xadam-brown
+
+# Public API surface — auto-request a mobile SDK team review on API changes
+/sentry/api/sentry.api @getsentry/team-mobile
+/sentry-android-core/api/sentry-android-core.api @getsentry/team-mobile
