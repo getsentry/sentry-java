@@ -25,7 +25,6 @@ import io.sentry.android.replay.ScreenshotRecorderConfig
 import io.sentry.android.replay.capture.CaptureStrategy.Companion.createSegment
 import io.sentry.android.replay.capture.CaptureStrategy.ReplaySegment
 import io.sentry.android.replay.gestures.ReplayGestureConverter
-import io.sentry.android.replay.util.ReplayExecutorService
 import io.sentry.android.replay.util.ReplayRunnable
 import io.sentry.protocol.SentryId
 import io.sentry.rrweb.RRWebEvent
@@ -34,9 +33,7 @@ import java.io.File
 import java.util.Date
 import java.util.Deque
 import java.util.concurrent.ConcurrentLinkedDeque
-import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
-import java.util.concurrent.ThreadFactory
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
@@ -50,6 +47,7 @@ internal abstract class BaseCaptureStrategy(
   private val scopes: IScopes?,
   private val dateProvider: ICurrentDateProvider,
   protected val replayExecutor: ScheduledExecutorService,
+  protected val persistingExecutor: ScheduledExecutorService,
   private val replayCacheProvider: ((replayId: SentryId) -> ReplayCache)? = null,
 ) : CaptureStrategy {
   internal companion object {
@@ -57,21 +55,6 @@ internal abstract class BaseCaptureStrategy(
     // https://github.com/getsentry/sentry-javascript/blob/30eb68fff5077211c30c61ba74625e66ab514870/packages/replay-internal/src/coreHandlers/handleAfterSendEvent.ts#L41
     private const val MAX_TRACE_IDS = 100
   }
-
-  // Explicit holder so we can detect whether the executor was ever initialised and shut it down
-  // without initialising it as a side-effect (which is what a plain `lazy` delegate would do).
-  private var persistingExecutorHolder: ScheduledExecutorService? = null
-  private val persistingExecutor: ScheduledExecutorService
-    get() {
-      return persistingExecutorHolder
-        ?: run {
-          val delegate =
-            Executors.newSingleThreadScheduledExecutor(
-              ReplayPersistingExecutorServiceThreadFactory()
-            )
-          ReplayExecutorService(delegate, options).also { persistingExecutorHolder = it }
-        }
-    }
 
   private val gestureConverter = ReplayGestureConverter(dateProvider)
 
@@ -133,13 +116,6 @@ internal abstract class BaseCaptureStrategy(
     replayStartTimestamp.set(0)
     segmentTimestamp = null
     currentReplayId = SentryId.EMPTY_ID
-    // Shut down the persisting executor only if it was actually initialised.  We must not call the
-    // blocking ReplayExecutorService.shutdown() here because stop() may run on the main thread,
-    // and blocking there risks an ANR.  shutdownNow() is non-blocking: it cancels queued tasks and
-    // interrupts any running one, which is acceptable because the tasks are best-effort persistence
-    // writes and the cache has already been closed above.
-    persistingExecutorHolder?.shutdownNow()
-    persistingExecutorHolder = null
   }
 
   protected fun createSegmentInternal(
@@ -206,16 +182,6 @@ internal abstract class BaseCaptureStrategy(
           }
         }
       }
-    }
-  }
-
-  private class ReplayPersistingExecutorServiceThreadFactory : ThreadFactory {
-    private var cnt = 0
-
-    override fun newThread(r: Runnable): Thread {
-      val ret = Thread(r, "SentryReplayPersister-" + cnt++)
-      ret.setDaemon(true)
-      return ret
     }
   }
 

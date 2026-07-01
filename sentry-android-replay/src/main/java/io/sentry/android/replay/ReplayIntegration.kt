@@ -111,6 +111,11 @@ public class ReplayIntegration(
     val delegate = Executors.newSingleThreadScheduledExecutor(ReplayExecutorServiceThreadFactory())
     ReplayExecutorService(delegate, options)
   }
+  private val persistingExecutor by lazy {
+    val delegate =
+      Executors.newSingleThreadScheduledExecutor(ReplayPersistingExecutorServiceThreadFactory())
+    ReplayExecutorService(delegate, options)
+  }
 
   internal val isEnabled = AtomicBoolean(false)
   internal val isManualPause = AtomicBoolean(false)
@@ -192,6 +197,7 @@ public class ReplayIntegration(
               scopes,
               dateProvider,
               replayExecutor,
+              persistingExecutor,
               replayCacheProvider,
             )
           } else {
@@ -201,6 +207,7 @@ public class ReplayIntegration(
               dateProvider,
               random,
               replayExecutor,
+              persistingExecutor,
               replayCacheProvider,
             )
           }
@@ -374,6 +381,7 @@ public class ReplayIntegration(
       recorder = null
       rootViewsSpy.close()
       replayExecutor.shutdown()
+      persistingExecutor.shutdown()
       lifecycle.currentState = CLOSED
     }
   }
@@ -550,6 +558,16 @@ public class ReplayIntegration(
 
     override fun newThread(r: Runnable): Thread {
       val ret = Thread(r, "SentryReplayIntegration-" + cnt++)
+      ret.setDaemon(true)
+      return ret
+    }
+  }
+
+  private class ReplayPersistingExecutorServiceThreadFactory : ThreadFactory {
+    private var cnt = 0
+
+    override fun newThread(r: Runnable): Thread {
+      val ret = Thread(r, "SentryReplayPersister-" + cnt++)
       ret.setDaemon(true)
       return ret
     }
