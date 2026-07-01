@@ -76,14 +76,7 @@ public class SentryFragmentLifecycleCallbacks(
   ) {
     addBreadcrumb(fragment, FragmentLifecycleState.CREATED)
 
-    // we only start the tracing for the fragment if the fragment has been added to its activity
-    // and not only to the backstack
-    if (fragment.isAdded) {
-      if (scopes.options.isEnableScreenTracking) {
-        scopes.configureScope { it.screen = getFragmentName(fragment) }
-      }
-      startTracing(fragment)
-    }
+    startTracing(fragment)
   }
 
   override fun onFragmentViewCreated(
@@ -99,12 +92,7 @@ public class SentryFragmentLifecycleCallbacks(
     // off-screen fragments that are re-attached. Starting here enables a narrower
     // "view created -> resumed" span for those paths. startTracing is idempotent, so for the
     // normal onFragmentCreated -> onFragmentViewCreated path this is a no-op.
-    if (fragment.isAdded) {
-      if (scopes.options.isEnableScreenTracking) {
-        scopes.configureScope { it.screen = getFragmentName(fragment) }
-      }
-      startTracing(fragment)
-    }
+    startTracing(fragment)
   }
 
   override fun onFragmentStarted(fragmentManager: FragmentManager, fragment: Fragment) {
@@ -175,14 +163,19 @@ public class SentryFragmentLifecycleCallbacks(
     fragmentsWithOngoingTransactions.containsKey(fragment)
 
   private fun startTracing(fragment: Fragment) {
-    if (!isPerformanceEnabled || isRunningSpan(fragment)) {
+    if (!fragment.isAdded || !isPerformanceEnabled || isRunningSpan(fragment)) {
       return
+    }
+
+    val fragmentName = getFragmentName(fragment)
+
+    if (scopes.options.isEnableScreenTracking) {
+      scopes.configureScope { it.screen = fragmentName }
     }
 
     var transaction: ISpan? = null
     scopes.configureScope { transaction = it.transaction }
 
-    val fragmentName = getFragmentName(fragment)
     val span = transaction?.startChild(FRAGMENT_LOAD_OP, fragmentName)
 
     span?.let {
