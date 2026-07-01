@@ -40,6 +40,12 @@ android {
     unitTests.apply {
       isReturnDefaultValues = true
       isIncludeAndroidResources = true
+      // Robolectric loads the android-all jar into each test JVM, which needs more heap
+      // than the default. This cap used to live in the root build.gradle.kts for all modules.
+      all {
+        it.minHeapSize = "256m"
+        it.maxHeapSize = "2g"
+      }
     }
   }
 
