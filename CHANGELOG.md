@@ -35,6 +35,10 @@
 - Prevent logs and metrics from remaining queued after a flush scheduling race ([#5756](https://github.com/getsentry/sentry-java/pull/5756))
 - Fix main thread identification for tombstone (native crash) events ([#5742](https://github.com/getsentry/sentry-java/pull/5742))
 
+### Performance
+
+- Schedule transaction idle/deadline timeouts on a shared, dedicated executor instead of spawning a `Timer` thread per transaction ([#5670](https://github.com/getsentry/sentry-java/pull/5670))
+
 ### Dependencies
 
 - Bump OpenTelemetry to support Spring Boot 4.1 ([#5573](https://github.com/getsentry/sentry-java/pull/5573))
