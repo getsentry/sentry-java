@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+<<<<<<< HEAD
 ### Behavioral Changes
 
 - `SentryOkHttpInterceptor::intercept` now throws `IOException`. This is a source-only and Java-only breaking change ([#5654](https://github.com/getsentry/sentry-java/pull/5654))
@@ -11,6 +12,7 @@
 - Don't start a redundant UI interaction transaction when a transaction is already bound to the Scope ([#5491](https://github.com/getsentry/sentry-java/issues/5491))
   - Previously, `SentryGestureListener` always started a UI transaction and only afterwards skipped binding it to the Scope when a manually-bound transaction already existed, leaving the new transaction to be dropped as an idle transaction without children.
 - Fix potential NPE within `Scope.endSession()` ([#5657](https://github.com/getsentry/sentry-java/pull/5657))
+- Fix memory leak in `ReplayIntegration` due to persisting executor not being shut down ([#5627](https://github.com/getsentry/sentry-java/pull/5627))
 
 ### Performance
 

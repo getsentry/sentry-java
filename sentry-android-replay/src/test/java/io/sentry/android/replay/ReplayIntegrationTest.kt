@@ -754,6 +754,12 @@ class ReplayIntegrationTest {
                 null
               }
             },
+            mock {
+              whenever(mock.submit(any<Runnable>())).doAnswer {
+                (it.arguments[0] as Runnable).run()
+                null
+              }
+            },
           ) { _ ->
             fixture.replayCache
           }
@@ -1110,6 +1116,13 @@ class ReplayIntegrationTest {
       null,
       CurrentDateProvider.getInstance(),
       executor =
+        mock {
+          whenever(mock.submit(any<Runnable>())).doAnswer {
+            (it.arguments[0] as Runnable).run()
+            null
+          }
+        },
+      persistingExecutor =
         mock {
           whenever(mock.submit(any<Runnable>())).doAnswer {
             (it.arguments[0] as Runnable).run()
