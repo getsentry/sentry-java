@@ -94,6 +94,22 @@ class SentryExecutorServiceTest {
   }
 
   @Test
+  fun `SentryExecutorService enables removeOnCancelPolicy when requested`() {
+    val sentryExecutor = SentryExecutorService(null, true)
+    val executor = sentryExecutor.getProperty<ScheduledThreadPoolExecutor>("executorService")
+    assertTrue(executor.removeOnCancelPolicy)
+    sentryExecutor.close(15000)
+  }
+
+  @Test
+  fun `SentryExecutorService does not enable removeOnCancelPolicy by default`() {
+    val sentryExecutor = SentryExecutorService(null)
+    val executor = sentryExecutor.getProperty<ScheduledThreadPoolExecutor>("executorService")
+    assertFalse(executor.removeOnCancelPolicy)
+    sentryExecutor.close(15000)
+  }
+
+  @Test
   fun `SentryExecutorService isClosed returns true if executor is shutdown`() {
     val executor = mock<ScheduledThreadPoolExecutor>()
     val sentryExecutor = SentryExecutorService(executor, null)

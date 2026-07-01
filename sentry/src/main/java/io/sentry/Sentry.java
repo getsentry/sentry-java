@@ -353,6 +353,10 @@ public final class Sentry {
           options.setExecutorService(new SentryExecutorService(options));
         }
 
+        if (options.getTimerExecutorService().isClosed()) {
+          options.setTimerExecutorService(new SentryExecutorService(options, true));
+        }
+
         // load lazy fields of the options in a separate thread
         try {
           options.getExecutorService().submit(() -> options.loadLazyFields());

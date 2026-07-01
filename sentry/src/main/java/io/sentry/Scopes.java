@@ -467,6 +467,7 @@ public final class Scopes implements IScopes {
         getOptions().getContinuousProfiler().close(true);
         getOptions().getCompositePerformanceCollector().close();
         getOptions().getConnectionStatusProvider().close();
+        getOptions().getTimerExecutorService().close(getOptions().getShutdownTimeoutMillis());
         final @NotNull ISentryExecutorService executorService = getOptions().getExecutorService();
         if (isRestarting) {
           try {

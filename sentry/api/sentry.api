@@ -3719,6 +3719,7 @@ public class io/sentry/SentryOptions {
 	public fun getSslSocketFactory ()Ljavax/net/ssl/SSLSocketFactory;
 	public fun getTags ()Ljava/util/Map;
 	public fun getThreadChecker ()Lio/sentry/util/thread/IThreadChecker;
+	public fun getTimerExecutorService ()Lio/sentry/ISentryExecutorService;
 	public fun getTracePropagationTargets ()Ljava/util/List;
 	public fun getTracesSampleRate ()Ljava/lang/Double;
 	public fun getTracesSampler ()Lio/sentry/SentryOptions$TracesSamplerCallback;
@@ -3884,6 +3885,7 @@ public class io/sentry/SentryOptions {
 	public fun setStrictTraceContinuation (Z)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setThreadChecker (Lio/sentry/util/thread/IThreadChecker;)V
+	public fun setTimerExecutorService (Lio/sentry/ISentryExecutorService;)V
 	public fun setTraceOptionsRequests (Z)V
 	public fun setTracePropagationTargets (Ljava/util/List;)V
 	public fun setTraceSampling (Z)V

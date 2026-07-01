@@ -39,6 +39,13 @@ public final class SentryExecutorService implements ISentryExecutorService {
     this(new ScheduledThreadPoolExecutor(1, new SentryExecutorServiceThreadFactory()), options);
   }
 
+  SentryExecutorService(final @Nullable SentryOptions options, final boolean removeOnCancelPolicy) {
+    this(options);
+    // removes cancelled tasks from the work queue immediately instead of leaving them until their
+    // scheduled time; useful for executors that frequently reschedule (e.g. transaction timeouts)
+    executorService.setRemoveOnCancelPolicy(removeOnCancelPolicy);
+  }
+
   public SentryExecutorService() {
     this(new ScheduledThreadPoolExecutor(1, new SentryExecutorServiceThreadFactory()), null);
   }

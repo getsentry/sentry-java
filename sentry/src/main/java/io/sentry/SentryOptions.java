@@ -318,6 +318,14 @@ public class SentryOptions {
   private @NotNull ISentryExecutorService executorService = NoOpSentryExecutorService.getInstance();
 
   /**
+   * Dedicated executor for scheduling transaction idle/deadline timeouts. Kept separate from {@link
+   * #executorService} so timeout callbacks (which finish transactions) don't contend with cached
+   * event sending.
+   */
+  private @NotNull ISentryExecutorService timerExecutorService =
+      NoOpSentryExecutorService.getInstance();
+
+  /**
    * Whether SpotlightIntegration has already been loaded via reflection. This prevents re-adding it
    * if the user removed it in their configuration callback and activate() is called again.
    */
@@ -681,6 +689,13 @@ public class SentryOptions {
       // SentryExecutorService should be initialized before any
       // SendCachedEventFireAndForgetIntegration
       executorService = new SentryExecutorService(this);
+    }
+
+    if (timerExecutorService instanceof NoOpSentryExecutorService) {
+      // Not prewarmed: its single worker thread is spawned lazily on the first scheduled timeout
+      // and then reused across all transactions. removeOnCancelPolicy keeps the work queue from
+      // accumulating cancelled timeouts (idle timers are cancelled and rescheduled per child span).
+      timerExecutorService = new SentryExecutorService(this, true);
     }
 
     // SpotlightIntegration is loaded via reflection to allow the sentry-spotlight module
@@ -1567,6 +1582,30 @@ public class SentryOptions {
   public void setExecutorService(final @NotNull ISentryExecutorService executorService) {
     if (executorService != null) {
       this.executorService = executorService;
+    }
+  }
+
+  /**
+   * Returns the dedicated executor used to schedule transaction idle/deadline timeouts.
+   *
+   * @return the timer executor service
+   */
+  @ApiStatus.Internal
+  @NotNull
+  public ISentryExecutorService getTimerExecutorService() {
+    return timerExecutorService;
+  }
+
+  /**
+   * Sets the dedicated executor used to schedule transaction idle/deadline timeouts.
+   *
+   * @param timerExecutorService the timer executor service
+   */
+  @ApiStatus.Internal
+  @TestOnly
+  public void setTimerExecutorService(final @NotNull ISentryExecutorService timerExecutorService) {
+    if (timerExecutorService != null) {
+      this.timerExecutorService = timerExecutorService;
     }
   }
 
