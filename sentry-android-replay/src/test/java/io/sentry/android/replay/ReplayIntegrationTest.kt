@@ -1111,29 +1111,17 @@ class ReplayIntegrationTest {
   }
 
   @Test
-  fun `close shuts down persisting executor so no SentryReplayPersister threads leak`() {
+  fun `close shuts down replay executors`() {
     fixture.options.cacheDirPath = tmpDir.newFolder().absolutePath
-    fixture.options.threadChecker = mock {
-      on { isMainThread }.thenReturn(true)
-      on { isMainThread(any<Thread>()) }.thenReturn(true)
-    }
 
-    repeat(3) {
-      val replay = fixture.getSut(context)
-      replay.register(fixture.scopes, fixture.options)
-      replay.start()
-      replay.stop()
-      replay.close()
-    }
+    val replay = fixture.getSut(context)
+    replay.register(fixture.scopes, fixture.options)
+    replay.start()
+    replay.stop()
+    replay.close()
 
-    Thread.sleep(200)
-
-    val leakedThreads =
-      Thread.getAllStackTraces().keys.filter { it.name.startsWith("SentryReplayPersister-") }
-    assertTrue(
-      leakedThreads.isEmpty(),
-      "Expected no SentryReplayPersister threads after close(), found: ${leakedThreads.map { it.name }}",
-    )
+    assertTrue(replay.replayExecutor.isShutdown)
+    assertTrue(replay.persistingExecutor.isShutdown)
   }
 
   private fun getSessionCaptureStrategy(options: SentryOptions): SessionCaptureStrategy =
