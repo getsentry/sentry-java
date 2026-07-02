@@ -42,9 +42,9 @@ jobs:
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
-      - name: Make assembleMacrobenchmark
+      - name: Assemble target app and Macrobenchmark apk
         if: env.SAUCE_USERNAME != null
-        run: make assembleMacrobenchmark
+        run: ./gradlew :sentry-samples:sentry-samples-android:assembleRelease :sentry-android-integration-tests:sentry-uitest-android-macrobenchmark:assembleBenchmark
 
       - name: Run Macrobenchmark in SauceLab
         uses: saucelabs/saucectl-run-action@bc81720eb01738d9c664b07fe42621bd0014283f # pin@v3

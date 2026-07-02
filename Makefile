@@ -1,8 +1,7 @@
-.PHONY: all clean compile javadocs dryRelease update checkFormat api assembleBenchmarkTestRelease assembleMacrobenchmarkRelease assembleUiTestRelease assembleUiTestCriticalRelease runUiTestCritical setupPython systemTest systemTestInteractive check preMerge publish
+.PHONY: all clean compile javadocs dryRelease update checkFormat api assembleBenchmarkTestRelease assembleUiTestRelease assembleUiTestCriticalRelease runUiTestCritical setupPython systemTest systemTestInteractive check preMerge publish
 
 all: stop clean javadocs compile
 assembleBenchmarks: assembleBenchmarkTestRelease
-assembleMacrobenchmark: assembleMacrobenchmarkRelease
 assembleUiTests: assembleUiTestRelease
 preMerge: check
 publish: clean dryRelease
@@ -39,10 +38,6 @@ api:
 # Assemble release and Android test apk of the uitest-android-benchmark module
 assembleBenchmarkTestRelease:
 	./gradlew :sentry-android-integration-tests:sentry-uitest-android-benchmark:assembleRelease :sentry-android-integration-tests:sentry-uitest-android-benchmark:assembleAndroidTest
-
-# Assemble the target sample app (release) and the Macrobenchmark instrumentation apk
-assembleMacrobenchmarkRelease:
-	./gradlew :sentry-samples:sentry-samples-android:assembleRelease :sentry-android-integration-tests:sentry-uitest-android-macrobenchmark:assembleBenchmark
 
 # Assemble release and Android test apk of the uitest-android module
 assembleUiTestRelease:
