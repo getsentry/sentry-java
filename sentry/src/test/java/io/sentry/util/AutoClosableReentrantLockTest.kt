@@ -6,6 +6,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 class AutoClosableReentrantLockTest {
@@ -14,6 +15,12 @@ class AutoClosableReentrantLockTest {
     val lock = AutoClosableReentrantLock()
     lock.acquire().use { assertTrue(lock.isLocked) }
     assertFalse(lock.isLocked)
+  }
+
+  @Test
+  fun `acquire returns the lock itself as the token, allocating nothing`() {
+    val lock = AutoClosableReentrantLock()
+    lock.acquire().use { token -> assertSame(lock, token) }
   }
 
   @Test

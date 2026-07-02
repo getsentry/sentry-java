@@ -17,9 +17,13 @@ import org.jetbrains.annotations.TestOnly;
  * so the eager allocation of a {@link ReentrantLock} (and its {@code AbstractQueuedSynchronizer})
  * was pure GC and main-thread overhead. We keep a {@link ReentrantLock} rather than reverting to
  * {@code synchronized} to stay friendly to virtual threads (Loom), see #3715.
+ *
+ * <p>{@link #acquire()} returns this instance as the token, so the steady-state acquire/close path
+ * allocates nothing. Reentrant acquires stay balanced because try-with-resources calls {@link
+ * #close()} exactly once per acquire.
  */
 @ApiStatus.Internal
-public final class AutoClosableReentrantLock {
+public final class AutoClosableReentrantLock implements ISentryLifecycleToken {
 
   private static final @NotNull AtomicReferenceFieldUpdater<
           AutoClosableReentrantLock, ReentrantLock>
@@ -30,9 +34,13 @@ public final class AutoClosableReentrantLock {
   private volatile @Nullable ReentrantLock lock;
 
   public @NotNull ISentryLifecycleToken acquire() {
-    final @NotNull ReentrantLock theLock = getOrCreateLock();
-    theLock.lock();
-    return new AutoClosableReentrantLockLifecycleToken(theLock);
+    getOrCreateLock().lock();
+    return this;
+  }
+
+  @Override
+  public void close() {
+    Objects.requireNonNull(lock, "close() called before acquire()").unlock();
   }
 
   private @NotNull ReentrantLock getOrCreateLock() {
@@ -58,19 +66,5 @@ public final class AutoClosableReentrantLock {
   @TestOnly
   boolean isLockAllocated() {
     return lock != null;
-  }
-
-  static final class AutoClosableReentrantLockLifecycleToken implements ISentryLifecycleToken {
-
-    private final @NotNull ReentrantLock lock;
-
-    AutoClosableReentrantLockLifecycleToken(final @NotNull ReentrantLock lock) {
-      this.lock = lock;
-    }
-
-    @Override
-    public void close() {
-      lock.unlock();
-    }
   }
 }
