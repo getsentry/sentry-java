@@ -103,8 +103,9 @@ jobs:
         if: matrix.api-level == '37.0'
         id: api37-image
         run: |
-          yes | sdkmanager --licenses > /dev/null
-          if sdkmanager --list --channel=3 2>/dev/null | grep -q 'system-images;android-37;google_apis;x86_64'; then
+          SDKMANAGER="${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$SDKMANAGER" --licenses > /dev/null
+          if "$SDKMANAGER" --list --channel=3 2>/dev/null | grep -q 'system-images;android-37;google_apis;x86_64'; then
             echo "available=true" >> "$GITHUB_OUTPUT"
           else
             echo "available=false" >> "$GITHUB_OUTPUT"
