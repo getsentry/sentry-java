@@ -62,7 +62,6 @@ public object SentryModifier {
     // the JVM satisfies the abstract-method requirement at runtime via signature
     // matching.  SentryTagModifierNode only stores a semantic tag and has no visual
     // effect on layout, so it is not important for bounds.
-    @Suppress("unused")
-    fun isImportantForBounds(): Boolean = false
+    @Suppress("unused") fun isImportantForBounds(): Boolean = false
   }
 }
