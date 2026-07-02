@@ -4,7 +4,6 @@ import io.sentry.IAppStartExtender;
 import io.sentry.ISentryLifecycleToken;
 import io.sentry.ISpan;
 import io.sentry.ITransaction;
-import io.sentry.NoOpSpan;
 import io.sentry.Sentry;
 import io.sentry.SentryDate;
 import io.sentry.SentryLevel;
@@ -118,14 +117,14 @@ public final class AppStartExtension implements IAppStartExtender {
   }
 
   @Override
-  public @NotNull ISpan getExtendedAppStartSpan() {
+  public @Nullable ISpan getExtendedAppStartSpan() {
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       final @Nullable ISpan span = extendedSpan;
       // Mirrors getExtendedEndTime(): the finish date is set before isFinished() flips.
       if (span != null && span.getFinishDate() == null) {
         return span;
       }
-      return NoOpSpan.getInstance();
+      return null;
     }
   }
 
