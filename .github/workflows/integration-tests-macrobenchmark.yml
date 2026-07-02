@@ -5,6 +5,11 @@ name: 'Integration Tests - Macrobenchmark (POC)'
 # (b) whether timeToInitialDisplay can be retrieved from Sauce artifacts. See the module README.
 on:
   workflow_dispatch:
+  # Temporary POC scaffolding: run on pushes to this branch so we can see it work on Sauce
+  # without merging to the default branch first. Remove before merge.
+  push:
+    branches:
+      - no/macrobenchmark-on-sauce-poc
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
