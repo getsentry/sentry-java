@@ -99,8 +99,24 @@ jobs:
             ~/.android/adb*
           key: avd-api-${{ matrix.api-level }}-${{ matrix.arch }}-${{ matrix.target }}
 
+      - name: Probe API 37 system image on GHA
+        if: matrix.api-level == '37.0'
+        id: api37-image
+        run: |
+          yes | sdkmanager --licenses > /dev/null
+          if sdkmanager --list --channel=3 2>/dev/null | grep -q 'system-images;android-37;google_apis;x86_64'; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::warning title=API 37 system image unavailable::system-images;android-37;google_apis;x86_64 is not published on GHA yet. Skipping API 37 emulator tests until the checklist readiness gate passes."
+          fi
+
+      - name: Skip API 37 emulator tests (system image not on GHA)
+        if: matrix.api-level == '37.0' && steps.api37-image.outputs.available != 'true'
+        run: echo "API 37 emulator tests skipped — system image not available on GHA runners."
+
       - name: Create AVD and generate snapshot for caching
-        if: steps.avd-cache.outputs.cache-hit != 'true'
+        if: steps.avd-cache.outputs.cache-hit != 'true' && (matrix.api-level != '37.0' || steps.api37-image.outputs.available == 'true')
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # pin@v2
         with:
           api-level: ${{ matrix.api-level }}
@@ -126,6 +142,7 @@ jobs:
           version: ${{env.MAESTRO_VERSION}}
 
       - name: Run tests
+        if: matrix.api-level != '37.0' || steps.api37-image.outputs.available == 'true'
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # pin@v2.38.0
         with:
           api-level: ${{ matrix.api-level }}
