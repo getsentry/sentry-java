@@ -3,6 +3,7 @@ package io.sentry.util;
 import io.sentry.ISentryLifecycleToken;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.concurrent.locks.ReentrantLock;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
@@ -17,6 +18,7 @@ import org.jetbrains.annotations.TestOnly;
  * was pure GC and main-thread overhead. We keep a {@link ReentrantLock} rather than reverting to
  * {@code synchronized} to stay friendly to virtual threads (Loom), see #3715.
  */
+@ApiStatus.Internal
 public final class AutoClosableReentrantLock {
 
   private static final @NotNull AtomicReferenceFieldUpdater<
@@ -38,20 +40,24 @@ public final class AutoClosableReentrantLock {
     if (existing != null) {
       return existing;
     }
-    // The loser of the race discards its candidate and uses the winner's lock, so all callers
-    // contend on the same instance.
     final @NotNull ReentrantLock candidate = new ReentrantLock();
     if (LOCK_UPDATER.compareAndSet(this, null, candidate)) {
       return candidate;
     }
-    final @Nullable ReentrantLock winner = lock;
-    return winner != null ? winner : candidate;
+    // The CAS can only fail because another thread installed its lock first, and the field is
+    // never reset, so all callers end up contending on that same instance.
+    return Objects.requireNonNull(lock, "lock must have been set by the winning thread");
   }
 
   @TestOnly
   boolean isLocked() {
     final @Nullable ReentrantLock current = lock;
     return current != null && current.isLocked();
+  }
+
+  @TestOnly
+  boolean isLockAllocated() {
+    return lock != null;
   }
 
   static final class AutoClosableReentrantLockLifecycleToken implements ISentryLifecycleToken {

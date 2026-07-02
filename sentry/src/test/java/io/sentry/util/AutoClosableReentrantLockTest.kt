@@ -19,7 +19,9 @@ class AutoClosableReentrantLockTest {
   @Test
   fun `does not allocate the underlying lock until first acquire`() {
     val lock = AutoClosableReentrantLock()
-    assertFalse(lock.isLocked)
+    assertFalse(lock.isLockAllocated)
+    lock.acquire().use {}
+    assertTrue(lock.isLockAllocated)
   }
 
   @Test
