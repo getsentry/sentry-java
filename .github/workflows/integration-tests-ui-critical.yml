@@ -75,7 +75,7 @@ jobs:
             target: google_apis
             channel: canary # Necessary for ATDs
             arch: x86_64
-          - api-level: 37 # Android 17
+          - api-level: 37.0 # Android 17 (GHA sdkmanager publishes platforms;android-37.0, not android-37)
             target: google_apis
             channel: canary
             arch: x86_64
