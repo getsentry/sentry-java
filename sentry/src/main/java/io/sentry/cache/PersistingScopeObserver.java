@@ -7,6 +7,7 @@ import static io.sentry.cache.CacheUtils.ensureCacheDir;
 import io.sentry.Breadcrumb;
 import io.sentry.IScope;
 import io.sentry.ScopeObserverAdapter;
+import io.sentry.SentryExecutorService;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.SpanContext;
@@ -229,7 +230,7 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
     if (!options.isEnableScopePersistence()) {
       return;
     }
-    if (Thread.currentThread().getName().contains("SentryExecutor")) {
+    if (SentryExecutorService.isSentryExecutorThread()) {
       // we're already on the sentry executor thread, so we can just execute it directly
       runSafely(task);
       return;

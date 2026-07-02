@@ -16,6 +16,7 @@
 ### Performance
 
 - Skip `Hint` allocation in `Scope.addBreadcrumb` when no `beforeBreadcrumb` callback is set ([#5689](https://github.com/getsentry/sentry-java/pull/5689))
+- Speed up scope persistence by detecting the Sentry executor thread via a marker instead of a `Thread.getName()` name scan on every scope mutation ([#5691](https://github.com/getsentry/sentry-java/pull/5691))
 
 ## 8.47.0
 

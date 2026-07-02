@@ -149,14 +149,30 @@ public final class SentryExecutorService implements ISentryExecutorService {
     }
   }
 
+  /**
+   * Whether the calling thread is one of the Sentry executor threads. Cheap replacement for scanning
+   * {@code Thread.currentThread().getName()}, which is on hot paths (e.g. scope persistence on every
+   * scope mutation).
+   */
+  public static boolean isSentryExecutorThread() {
+    return Thread.currentThread() instanceof SentryExecutorServiceThread;
+  }
+
   private static final class SentryExecutorServiceThreadFactory implements ThreadFactory {
     private int cnt;
 
     @Override
     public @NotNull Thread newThread(final @NotNull Runnable r) {
-      final Thread ret = new Thread(r, "SentryExecutorServiceThreadFactory-" + cnt++);
+      final Thread ret =
+          new SentryExecutorServiceThread(r, "SentryExecutorServiceThreadFactory-" + cnt++);
       ret.setDaemon(true);
       return ret;
+    }
+  }
+
+  private static final class SentryExecutorServiceThread extends Thread {
+    SentryExecutorServiceThread(final @NotNull Runnable r, final @NotNull String name) {
+      super(r, name);
     }
   }
 

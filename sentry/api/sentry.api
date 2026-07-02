@@ -3182,6 +3182,7 @@ public final class io/sentry/SentryExecutorService : io/sentry/ISentryExecutorSe
 	public fun <init> (Lio/sentry/SentryOptions;)V
 	public fun close (J)V
 	public fun isClosed ()Z
+	public static fun isSentryExecutorThread ()Z
 	public fun prewarm ()V
 	public fun schedule (Ljava/lang/Runnable;J)Ljava/util/concurrent/Future;
 	public fun submit (Ljava/lang/Runnable;)Ljava/util/concurrent/Future;
