@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Performance
+
+- Notify scope observers once per breadcrumb by dropping the redundant `setBreadcrumbs` call on the `Scope.addBreadcrumb` path ([#5690](https://github.com/getsentry/sentry-java/pull/5690))
+
 ## 8.47.0
 
 ### Behavioral Changes
