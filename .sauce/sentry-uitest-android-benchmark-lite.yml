@@ -18,13 +18,13 @@ espresso:
 
 suites:
 
-  - name: "Android 15 Benchmark lite (api 35)"
+  - name: "Android 17 Benchmark lite (api 37)"
     testOptions:
       clearPackageData: true
       useTestOrchestrator: true
     devices:
       - name: ".*"
-        platformVersion: "15"
+        platformVersion: "17"
 
 artifacts:
   download:

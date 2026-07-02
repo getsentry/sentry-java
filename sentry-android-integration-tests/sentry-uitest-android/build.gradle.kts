@@ -56,6 +56,7 @@ android {
   buildTypes {
     getByName("release") {
       isMinifyEnabled = true
+      isShrinkResources = true
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
       signingConfig = signingConfigs.getByName("debug") // to be able to run release mode
       testProguardFiles("proguard-rules.pro")
@@ -67,8 +68,6 @@ android {
   lint {
     warningsAsErrors = true
     checkDependencies = true
-    // Suppress OldTargetApi: lint 8.13.1 expects API 37 but we target 36
-    disable += "OldTargetApi"
 
     // We run a full lint analysis as build part in CI, so skip vital checks for assemble tasks.
     checkReleaseBuilds = false

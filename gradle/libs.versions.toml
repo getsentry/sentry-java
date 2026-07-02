@@ -47,8 +47,8 @@ springboot4 = "4.1.0"
 sqldelight = "2.3.2"
 
 # Android
-targetSdk = "36"
-compileSdk = "36"
+targetSdk = "37"
+compileSdk = "37"
 minSdk = "21"
 
 [plugins]
