@@ -1,7 +1,7 @@
 package io.sentry
 
 import kotlin.test.Test
-import kotlin.test.assertSame
+import kotlin.test.assertNull
 
 class NoOpAppStartExtenderTest {
   private val extender = NoOpAppStartExtender.getInstance()
@@ -11,7 +11,7 @@ class NoOpAppStartExtenderTest {
   @Test fun `finishExtendedAppStart does not throw`() = extender.finishExtendedAppStart()
 
   @Test
-  fun `getExtendedAppStartSpan returns NoOpSpan`() {
-    assertSame(NoOpSpan.getInstance(), extender.extendedAppStartSpan)
+  fun `getExtendedAppStartSpan returns null`() {
+    assertNull(extender.extendedAppStartSpan)
   }
 }
