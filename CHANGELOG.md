@@ -5,6 +5,28 @@
 ### Features
 
 - Add `io.sentry:sentry-opentelemetry-bom` to align Sentry OpenTelemetry modules with tested OpenTelemetry dependencies ([#5629](https://github.com/getsentry/sentry-java/pull/5629))
+  - Spring Boot Gradle plugin: add the Sentry BOM to `dependencyManagement`; explicit imports are applied after Spring Boot's implicit BOM
+    ```kotlin
+    dependencyManagement {
+      imports {
+        mavenBom("io.sentry:sentry-opentelemetry-bom:<sentry-version>")
+      }
+    }
+    ```
+  - Gradle: import it as a platform and omit versions from Sentry OpenTelemetry and OpenTelemetry dependencies
+    ```kotlin
+    implementation(platform("io.sentry:sentry-opentelemetry-bom:<sentry-version>"))
+    ```
+  - Maven: import it before Spring Boot's BOM in the same `<dependencyManagement>` block, or in the child POM when using `spring-boot-starter-parent`
+    ```xml
+    <dependency>
+      <groupId>io.sentry</groupId>
+      <artifactId>sentry-opentelemetry-bom</artifactId>
+      <version>${sentry.version}</version>
+      <type>pom</type>
+      <scope>import</scope>
+    </dependency>
+    ```
 
 ## 8.45.0
 
