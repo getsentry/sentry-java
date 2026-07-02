@@ -53,16 +53,10 @@ jobs:
         if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
         run: |
           SNAPSHOT_DIR=./sentry-android-core/build/test-snapshots
-          if [ ! -d "$SNAPSHOT_DIR" ]; then
-            echo "Snapshot directory missing (likely Gradle cache hit); running screenshot tests"
-            ./gradlew :sentry-android-core:test \
-              --tests io.sentry.android.core.ScreenshotEventProcessorTest \
-              --rerun-tasks --no-configuration-cache
-          fi
           if [ -d "$SNAPSHOT_DIR" ]; then
             sentry-cli build snapshots "$SNAPSHOT_DIR" --app-id sentry-android-core
           else
-            echo "::warning::Snapshot directory still missing after rerun; skipping upload"
+            echo "::warning::Snapshot directory missing after check (likely Gradle cache hit); skipping upload"
           fi
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
