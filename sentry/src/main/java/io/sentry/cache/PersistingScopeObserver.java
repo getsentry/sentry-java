@@ -231,27 +231,22 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
     }
     if (Thread.currentThread().getName().contains("SentryExecutor")) {
       // we're already on the sentry executor thread, so we can just execute it directly
-      try {
-        task.run();
-      } catch (Throwable e) {
-        options.getLogger().log(ERROR, "Serialization task failed", e);
-      }
+      runSafely(task);
       return;
     }
 
     try {
-      options
-          .getExecutorService()
-          .submit(
-              () -> {
-                try {
-                  task.run();
-                } catch (Throwable e) {
-                  options.getLogger().log(ERROR, "Serialization task failed", e);
-                }
-              });
+      options.getExecutorService().submit(() -> runSafely(task));
     } catch (Throwable e) {
       options.getLogger().log(ERROR, "Serialization task could not be scheduled", e);
+    }
+  }
+
+  private void runSafely(final @NotNull Runnable task) {
+    try {
+      task.run();
+    } catch (Throwable e) {
+      options.getLogger().log(ERROR, "Serialization task failed", e);
     }
   }
 
