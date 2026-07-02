@@ -17,6 +17,8 @@
 
 - Skip `Hint` allocation in `Scope.addBreadcrumb` when no `beforeBreadcrumb` callback is set ([#5689](https://github.com/getsentry/sentry-java/pull/5689))
 - Speed up scope persistence by detecting the Sentry executor thread via a marker instead of a `Thread.getName()` name scan on every scope mutation ([#5691](https://github.com/getsentry/sentry-java/pull/5691))
+- Remove executor prewarm during SDK init ([#5681](https://github.com/getsentry/sentry-java/pull/5681))
+  - The single-threaded `SentryExecutorService` queued the prewarm work ahead of the first useful task, so it could only delay init work, never speed it up; the thread and class loading it warmed are paid identically by the first real task submitted right after.
 
 ## 8.47.0
 

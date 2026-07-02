@@ -17,13 +17,6 @@ import org.jetbrains.annotations.TestOnly;
 public final class SentryExecutorService implements ISentryExecutorService {
 
   /**
-   * ScheduledThreadPoolExecutor grows work queue by 50% each time. With the initial capacity of 16
-   * it will have to resize 4 times to reach 40, which is a decent middle-ground for prewarming.
-   * This will prevent from growing in unexpected areas of the SDK.
-   */
-  private static final int INITIAL_QUEUE_SIZE = 40;
-
-  /**
    * By default, the work queue is unbounded so it can grow as much as the memory allows. We want to
    * limit it by 271 which would be x8 times growth from the default initial capacity.
    */
@@ -31,9 +24,6 @@ public final class SentryExecutorService implements ISentryExecutorService {
 
   private final @NotNull ScheduledThreadPoolExecutor executorService;
   private final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
-
-  @SuppressWarnings("UnnecessaryLambda")
-  private final @NotNull Runnable dummyRunnable = () -> {};
 
   private final @Nullable SentryOptions options;
 
@@ -117,35 +107,6 @@ public final class SentryExecutorService implements ISentryExecutorService {
   public boolean isClosed() {
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       return executorService.isShutdown();
-    }
-  }
-
-  @SuppressWarnings({"FutureReturnValueIgnored"})
-  @Override
-  public void prewarm() {
-    try {
-      executorService.submit(
-          () -> {
-            try {
-              // schedule a bunch of dummy runnables in the future that will never execute to
-              // trigger
-              // queue growth and then purge the queue
-              for (int i = 0; i < INITIAL_QUEUE_SIZE; i++) {
-                final Future<?> future =
-                    executorService.schedule(dummyRunnable, 365L, TimeUnit.DAYS);
-                future.cancel(true);
-              }
-              executorService.purge();
-            } catch (RejectedExecutionException ignored) {
-              // ignore
-            }
-          });
-    } catch (RejectedExecutionException e) {
-      if (options != null) {
-        options
-            .getLogger()
-            .log(SentryLevel.WARNING, "Prewarm task rejected from " + executorService, e);
-      }
     }
   }
 

@@ -778,7 +778,6 @@ class SentryTest {
       it.cacheDirPath = getTempPath()
       it.setLogger(logger)
       it.executorService = SentryExecutorService()
-      it.executorService.prewarm()
       it.executorService.close(0)
       it.isDebug = true
     }

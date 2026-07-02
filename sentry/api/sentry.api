@@ -1134,7 +1134,6 @@ public abstract interface class io/sentry/ISentryClient {
 public abstract interface class io/sentry/ISentryExecutorService {
 	public abstract fun close (J)V
 	public abstract fun isClosed ()Z
-	public abstract fun prewarm ()V
 	public abstract fun schedule (Ljava/lang/Runnable;J)Ljava/util/concurrent/Future;
 	public abstract fun submit (Ljava/lang/Runnable;)Ljava/util/concurrent/Future;
 	public abstract fun submit (Ljava/util/concurrent/Callable;)Ljava/util/concurrent/Future;
@@ -1880,7 +1879,6 @@ public final class io/sentry/NoOpSentryExecutorService : io/sentry/ISentryExecut
 	public fun close (J)V
 	public static fun getInstance ()Lio/sentry/ISentryExecutorService;
 	public fun isClosed ()Z
-	public fun prewarm ()V
 	public fun schedule (Ljava/lang/Runnable;J)Ljava/util/concurrent/Future;
 	public fun submit (Ljava/lang/Runnable;)Ljava/util/concurrent/Future;
 	public fun submit (Ljava/util/concurrent/Callable;)Ljava/util/concurrent/Future;
@@ -3183,7 +3181,6 @@ public final class io/sentry/SentryExecutorService : io/sentry/ISentryExecutorSe
 	public fun close (J)V
 	public fun isClosed ()Z
 	public static fun isSentryExecutorThread ()Z
-	public fun prewarm ()V
 	public fun schedule (Ljava/lang/Runnable;J)Ljava/util/concurrent/Future;
 	public fun submit (Ljava/lang/Runnable;)Ljava/util/concurrent/Future;
 	public fun submit (Ljava/util/concurrent/Callable;)Ljava/util/concurrent/Future;

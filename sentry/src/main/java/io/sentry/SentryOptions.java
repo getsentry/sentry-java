@@ -678,7 +678,6 @@ public class SentryOptions {
       // SentryExecutorService should be initialized before any
       // SendCachedEventFireAndForgetIntegration
       executorService = new SentryExecutorService(this);
-      executorService.prewarm();
     }
 
     // SpotlightIntegration is loaded via reflection to allow the sentry-spotlight module
