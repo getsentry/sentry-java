@@ -31,6 +31,12 @@
     android:theme="@style/AppTheme"
     tools:ignore="GoogleAppIndexingWarning, UnusedAttribute">
 
+    <!-- Allows Macrobenchmark (and `am profile`) to profile non-debuggable release/benchmark
+         builds. Harmless in debug; required for the benchmark build type. -->
+    <profileable
+      android:shell="true"
+      tools:targetApi="29" />
+
     <service
       android:name=".DummyService"
       android:enabled="true"
