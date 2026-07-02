@@ -163,7 +163,7 @@ public class SentryFragmentLifecycleCallbacks(
     fragmentsWithOngoingTransactions.containsKey(fragment)
 
   private fun startTracing(fragment: Fragment) {
-    if (!fragment.isAdded || !isPerformanceEnabled || isRunningSpan(fragment)) {
+    if (!fragment.isAdded) {
       return
     }
 
@@ -171,6 +171,10 @@ public class SentryFragmentLifecycleCallbacks(
 
     if (scopes.options.isEnableScreenTracking) {
       scopes.configureScope { it.screen = fragmentName }
+    }
+
+    if (!isPerformanceEnabled || isRunningSpan(fragment)) {
+      return
     }
 
     var transaction: ISpan? = null

@@ -292,6 +292,22 @@ class SentryFragmentLifecycleCallbacksTest {
   }
 
   @Test
+  fun `When performance is disabled, it should still update screen name`() {
+    val sut =
+      fixture.getSut(enableAutoFragmentLifecycleTracing = false, enableScreenTracking = true)
+
+    sut.onFragmentViewCreated(
+      fixture.fragmentManager,
+      fixture.fragment,
+      view = mock(),
+      savedInstanceState = null,
+    )
+
+    verify(fixture.scope).screen = "androidx.fragment.app.Fragment"
+    verify(fixture.transaction, never()).startChild(any<String>(), any<String>())
+  }
+
+  @Test
   fun `When fragment view is created after onFragmentCreated, it should not start a second span`() {
     // Normal path: onFragmentCreated already started the span; onFragmentViewCreated is a no-op
     val sut = fixture.getSut(enableAutoFragmentLifecycleTracing = true)
