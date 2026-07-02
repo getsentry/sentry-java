@@ -47,13 +47,15 @@ public class MyApplication extends Application {
     Sentry.extendAppStart();
 
     final ISpan extendedSpan = Sentry.getExtendedAppStartSpan();
-    final ISpan configSpan = extendedSpan.startChild("remote_config", "Load remote config");
-    artificialDelay(200);
-    configSpan.finish();
+    if (extendedSpan != null) {
+      final ISpan configSpan = extendedSpan.startChild("remote_config", "Load remote config");
+      artificialDelay(200);
+      configSpan.finish();
 
-    final ISpan flagsSpan = extendedSpan.startChild("feature_flags", "Fetch feature flags");
-    artificialDelay(100);
-    flagsSpan.finish();
+      final ISpan flagsSpan = extendedSpan.startChild("feature_flags", "Fetch feature flags");
+      artificialDelay(100);
+      flagsSpan.finish();
+    }
 
     Sentry.finishExtendedAppStart();
   }

@@ -1814,7 +1814,7 @@ class SentryTest {
     // beforeTest called Sentry.close(), so the current scopes are NoOp.
     Sentry.extendAppStart()
     Sentry.finishExtendedAppStart()
-    assertTrue(Sentry.getExtendedAppStartSpan().isNoOp)
+    assertNull(Sentry.getExtendedAppStartSpan())
   }
 
   // endregion

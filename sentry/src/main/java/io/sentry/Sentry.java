@@ -1302,10 +1302,10 @@ public final class Sentry {
 
   /**
    * Returns the active extended app start span, to attach child spans for the launch-time work
-   * being measured, or a no-op span when no extension is active (e.g. {@link #extendAppStart()} was
+   * being measured, or {@code null} when no extension is active (e.g. {@link #extendAppStart()} was
    * not called, the app start window already passed, or standalone app start tracing is disabled).
    */
-  public static @NotNull ISpan getExtendedAppStartSpan() {
+  public static @Nullable ISpan getExtendedAppStartSpan() {
     return getCurrentScopes().getOptions().getAppStartExtender().getExtendedAppStartSpan();
   }
 
