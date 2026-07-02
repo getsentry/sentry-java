@@ -345,7 +345,7 @@ class ActivityLifecycleIntegrationTest {
       }
     )
     assertTrue(AppStartMetrics.getInstance().appStartExtension.isActive)
-    assertFalse(AppStartMetrics.getInstance().appStartExtension.extendedAppStartSpan.isNoOp)
+    assertNotNull(AppStartMetrics.getInstance().appStartExtension.extendedAppStartSpan)
   }
 
   @Test
@@ -533,7 +533,7 @@ class ActivityLifecycleIntegrationTest {
     AppStartMetrics.getInstance().appStartExtension.extendAppStart()
 
     assertFalse(AppStartMetrics.getInstance().appStartExtension.isActive)
-    assertTrue(AppStartMetrics.getInstance().appStartExtension.extendedAppStartSpan.isNoOp)
+    assertNull(AppStartMetrics.getInstance().appStartExtension.extendedAppStartSpan)
     verify(fixture.scopes, never()).startTransaction(any(), any<TransactionOptions>())
   }
 
