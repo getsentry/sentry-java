@@ -25,10 +25,7 @@ android {
 
   buildFeatures { compose = true }
 
-  composeOptions {
-    kotlinCompilerExtensionVersion = libs.versions.composeCompiler.get()
-    useLiveLiterals = false
-  }
+  composeOptions { kotlinCompilerExtensionVersion = libs.versions.composeCompiler.get() }
 
   buildTypes {
     getByName("debug") { consumerProguardFiles("proguard-rules.pro") }

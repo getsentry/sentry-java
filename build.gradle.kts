@@ -1,3 +1,5 @@
+import com.android.build.gradle.AppExtension
+import com.android.build.gradle.LibraryExtension
 import com.vanniktech.maven.publish.JavaLibrary
 import com.vanniktech.maven.publish.JavadocJar
 import com.vanniktech.maven.publish.MavenPublishBaseExtension
@@ -112,6 +114,23 @@ allprojects {
 
 subprojects {
     apply { plugin("io.sentry.spotless") }
+
+    pluginManager.withPlugin("com.android.library") {
+        extensions.configure<LibraryExtension> {
+            compileOptions {
+                sourceCompatibility = JavaVersion.VERSION_1_8
+                targetCompatibility = JavaVersion.VERSION_1_8
+            }
+        }
+    }
+    pluginManager.withPlugin("com.android.application") {
+        extensions.configure<AppExtension> {
+            compileOptions {
+                sourceCompatibility = JavaVersion.VERSION_1_8
+                targetCompatibility = JavaVersion.VERSION_1_8
+            }
+        }
+    }
 
     plugins.withId(Config.QualityPlugins.detektPlugin) {
         configure<DetektExtension> {
