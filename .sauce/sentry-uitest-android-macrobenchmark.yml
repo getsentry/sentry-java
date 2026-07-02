@@ -1,0 +1,43 @@
+apiVersion: v1alpha
+kind: espresso
+sauce:
+  region: us-west-1
+  concurrency: 1
+  metadata:
+    build: sentry-uitest-android-macrobenchmark-$GITHUB_REF-$GITHUB_SHA
+    tags:
+      - benchmarks
+      - android
+      - macrobenchmark
+
+defaults:
+  timeout: 40m
+
+espresso:
+  # Target app under test: Macrobenchmark cold-starts sentry-samples-android. It must be
+  # release-like; the release build type is signed with the debug key so it installs on Sauce.
+  app: ./sentry-samples/sentry-samples-android/build/outputs/apk/release/sentry-samples-android-release.apk
+  # Instrumentation APK: the self-instrumenting com.android.test macrobenchmark module.
+  testApp: ./sentry-android-integration-tests/sentry-uitest-android-macrobenchmark/build/outputs/apk/benchmark/sentry-uitest-android-macrobenchmark-benchmark.apk
+
+suites:
+
+  - name: "Macrobenchmark startup (api 35)"
+    # No test orchestrator and no clearPackageData: Macrobenchmark manages its own process
+    # restarts and AOT compilation, and StartupMode.COLD intentionally keeps app data and
+    # permissions (it force-stops rather than `pm clear`).
+    devices:
+      - id: Google_Pixel_9_Pro_XL_15_real_sjc1 # Google Pixel 9 Pro XL - api 35 (15) - high end
+
+# Grab both the benchmark JSON (if Sauce collects additional test output) and the device log, so
+# we can see which path actually yields timeToInitialDisplay. Macrobenchmark also logs guard
+# failures (UNLOCKED, DEBUGGABLE, ...) here, which is the expected first-run signal on cloud
+# hardware — see the module README.
+artifacts:
+  download:
+    when: always
+    match:
+      - junit.xml
+      - "*.log"
+      - "*-benchmarkData.json"
+    directory: ./artifacts/
