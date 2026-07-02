@@ -44,6 +44,10 @@ public final class SentryExecutorService implements ISentryExecutorService {
     // removes cancelled tasks from the work queue immediately instead of leaving them until their
     // scheduled time; useful for executors that frequently reschedule (e.g. transaction timeouts)
     executorService.setRemoveOnCancelPolicy(removeOnCancelPolicy);
+    // let the worker thread die when idle so an executor abandoned on SDK restart (its pending
+    // timeouts still fire) doesn't leak a live thread once its queue drains
+    executorService.setKeepAliveTime(10, TimeUnit.SECONDS);
+    executorService.allowCoreThreadTimeOut(true);
   }
 
   public SentryExecutorService() {
