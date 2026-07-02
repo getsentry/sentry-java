@@ -24,6 +24,12 @@ The project uses **Gradle** with Kotlin DSL. Key build files:
 - `buildSrc/` and `build-logic/` - Custom build logic and plugins
 - `Makefile` - High-level build commands
 
+### Android toolchain (AGP 9)
+- **Minimum AGP:** 9.1.1 (fallback in `buildSrc/src/main/java/Config.kt`, currently 9.2.1)
+- **Minimum Gradle:** 9.4.1 (wrapper in `gradle/wrapper/gradle-wrapper.properties`)
+- SDK levels live in `gradle/libs.versions.toml` (`compileSdk`, `targetSdk`, `minSdk`)
+- **AGP 9 migration:** `gradle.properties` sets `android.builtInKotlin=false` and `android.newDsl=false` until we remove `kotlin-android` and adopt built-in Kotlin / new DSL (required before AGP 10)
+
 ## Essential Commands
 
 ### Development Workflow

@@ -87,8 +87,6 @@ android {
     buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
   }
 
-  sourceSets["main"].apply { manifest.srcFile("src/androidMain/AndroidManifest.xml") }
-
   buildTypes {
     getByName("debug") { consumerProguardFiles("proguard-rules.pro") }
     getByName("release") { consumerProguardFiles("proguard-rules.pro") }
