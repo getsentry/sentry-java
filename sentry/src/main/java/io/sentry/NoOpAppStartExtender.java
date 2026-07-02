@@ -2,6 +2,7 @@ package io.sentry;
 
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
 public final class NoOpAppStartExtender implements IAppStartExtender {
@@ -21,7 +22,7 @@ public final class NoOpAppStartExtender implements IAppStartExtender {
   public void finishExtendedAppStart() {}
 
   @Override
-  public @NotNull ISpan getExtendedAppStartSpan() {
-    return NoOpSpan.getInstance();
+  public @Nullable ISpan getExtendedAppStartSpan() {
+    return null;
   }
 }

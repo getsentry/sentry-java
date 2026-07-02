@@ -4,7 +4,6 @@ import android.os.Build
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.ISpan
 import io.sentry.ITransaction
-import io.sentry.NoOpSpan
 import io.sentry.SentryLongDate
 import io.sentry.SentryNanotimeDate
 import io.sentry.SpanStatus
@@ -72,7 +71,7 @@ class AppStartExtensionTest {
   fun `extendAppStart is inert when no listener is registered`() {
     val ext = extension(windowOpen = true)
     ext.extendAppStart()
-    assertSame(NoOpSpan.getInstance(), ext.extendedAppStartSpan)
+    assertNull(ext.extendedAppStartSpan)
     assertFalse(ext.isActive)
   }
 
@@ -92,8 +91,8 @@ class AppStartExtensionTest {
   }
 
   @Test
-  fun `getExtendedAppStartSpan returns NoOpSpan when no extension is active`() {
-    assertSame(NoOpSpan.getInstance(), extension().extendedAppStartSpan)
+  fun `getExtendedAppStartSpan returns null when no extension is active`() {
+    assertNull(extension().extendedAppStartSpan)
   }
 
   @Test
@@ -242,11 +241,11 @@ class AppStartExtensionTest {
     assertTrue(ext.isActive)
     ext.clear()
     assertFalse(ext.isActive)
-    assertSame(NoOpSpan.getInstance(), ext.extendedAppStartSpan)
+    assertNull(ext.extendedAppStartSpan)
   }
 
   @Test
-  fun `getExtendedAppStartSpan returns NoOpSpan once the finish date is set even if still unfinished`() {
+  fun `getExtendedAppStartSpan returns null once the finish date is set even if still unfinished`() {
     // Same waitForChildren reentrancy as getExtendedEndTime: the finish timestamp is set before the
     // span's isFinished() flips, so the span must not be handed out for new children anymore.
     val ext = extension(windowOpen = true)
@@ -255,6 +254,6 @@ class AppStartExtensionTest {
     whenever(span.finishDate).thenReturn(SentryNanotimeDate())
     ext.registerHandOver(span = span)
     ext.extendAppStart()
-    assertSame(NoOpSpan.getInstance(), ext.extendedAppStartSpan)
+    assertNull(ext.extendedAppStartSpan)
   }
 }

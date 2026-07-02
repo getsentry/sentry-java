@@ -1,7 +1,7 @@
 package io.sentry;
 
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Bridges the {@code Sentry.extendAppStart()} / {@code Sentry.finishExtendedAppStart()} / {@code
@@ -26,9 +26,9 @@ public interface IAppStartExtender {
   void finishExtendedAppStart();
 
   /**
-   * Returns the active extended app start span to attach child spans to, or a no-op span when no
-   * extension is active.
+   * Returns the active extended app start span to attach child spans to, or {@code null} when the
+   * app start is not currently being extended.
    */
-  @NotNull
+  @Nullable
   ISpan getExtendedAppStartSpan();
 }

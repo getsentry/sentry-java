@@ -4,7 +4,6 @@ import io.sentry.IAppStartExtender;
 import io.sentry.ISentryLifecycleToken;
 import io.sentry.ISpan;
 import io.sentry.ITransaction;
-import io.sentry.NoOpSpan;
 import io.sentry.Sentry;
 import io.sentry.SentryDate;
 import io.sentry.SentryLevel;
@@ -37,6 +36,20 @@ public final class AppStartExtension implements IAppStartExtender {
   private final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
 
   private @Nullable ExtendAppStartListener extendAppStartListener;
+  // We hold onto both the span and its transaction because they mean different things and finish
+  // at different times:
+  //
+  //  - extendedSpan is what the app developer works with: they get it from
+  //    getExtendedAppStartSpan(), add their own child spans to it, and finish it by calling
+  //    finishExtendedAppStart(). Its end time is what extends the app start measurement.
+  //
+  //  - extendedTransaction is the standalone "app.start" transaction that actually gets sent to
+  //    Sentry. It carries the span and the screen name. The SDK asks it to finish at the first
+  //    frame (or headless end), but because it uses waitForChildren it stays open until the span
+  //    finishes (or the deadline is hit).
+  //
+  // A span doesn't expose its transaction, and pulling the span back out of the transaction would
+  // be fragile, so we just keep a reference to each.
   private @Nullable ISpan extendedSpan;
   private @Nullable ITransaction extendedTransaction;
 
@@ -104,14 +117,14 @@ public final class AppStartExtension implements IAppStartExtender {
   }
 
   @Override
-  public @NotNull ISpan getExtendedAppStartSpan() {
+  public @Nullable ISpan getExtendedAppStartSpan() {
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       final @Nullable ISpan span = extendedSpan;
       // Mirrors getExtendedEndTime(): the finish date is set before isFinished() flips.
       if (span != null && span.getFinishDate() == null) {
         return span;
       }
-      return NoOpSpan.getInstance();
+      return null;
     }
   }
 
