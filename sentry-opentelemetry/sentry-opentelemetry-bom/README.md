@@ -14,6 +14,19 @@ Ordering matters when another BOM, such as Spring Boot's dependency management, 
 
 ### Gradle
 
+With Gradle's native dependency management, import the BOM as a platform and omit versions from Sentry OpenTelemetry and OpenTelemetry dependencies:
+
+```kotlin
+dependencies {
+  implementation(platform("io.sentry:sentry-opentelemetry-bom:<sentry-version>"))
+
+  implementation("io.sentry:sentry-opentelemetry-agentless")
+  implementation("io.opentelemetry:opentelemetry-sdk-extension-autoconfigure")
+}
+```
+
+If another imported platform also manages OpenTelemetry versions, Gradle's normal version conflict resolution applies. Use `enforcedPlatform(...)` only when you need Sentry's tested OpenTelemetry versions to override other platforms.
+
 When using Gradle with the Spring dependency management plugin, the last imported BOM wins. Import this BOM after Spring Boot's dependency management so its OpenTelemetry versions take precedence:
 
 ```kotlin
