@@ -75,6 +75,10 @@ jobs:
             target: google_apis
             channel: canary # Necessary for ATDs
             arch: x86_64
+          - api-level: 37 # Android 17
+            target: google_apis
+            channel: canary
+            arch: x86_64
     steps:
       - name: Checkout code
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
