@@ -25,7 +25,6 @@ import io.sentry.android.replay.ScreenshotRecorderConfig
 import io.sentry.android.replay.capture.CaptureStrategy.Companion.createSegment
 import io.sentry.android.replay.capture.CaptureStrategy.ReplaySegment
 import io.sentry.android.replay.gestures.ReplayGestureConverter
-import io.sentry.android.replay.util.ReplayExecutorService
 import io.sentry.android.replay.util.ReplayRunnable
 import io.sentry.protocol.SentryId
 import io.sentry.rrweb.RRWebEvent
@@ -34,9 +33,7 @@ import java.io.File
 import java.util.Date
 import java.util.Deque
 import java.util.concurrent.ConcurrentLinkedDeque
-import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
-import java.util.concurrent.ThreadFactory
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
@@ -50,6 +47,7 @@ internal abstract class BaseCaptureStrategy(
   private val scopes: IScopes?,
   private val dateProvider: ICurrentDateProvider,
   protected val replayExecutor: ScheduledExecutorService,
+  protected val persistingExecutor: ScheduledExecutorService,
   private val replayCacheProvider: ((replayId: SentryId) -> ReplayCache)? = null,
 ) : CaptureStrategy {
   internal companion object {
@@ -58,11 +56,6 @@ internal abstract class BaseCaptureStrategy(
     private const val MAX_TRACE_IDS = 100
   }
 
-  private val persistingExecutor: ScheduledExecutorService by lazy {
-    val delegate =
-      Executors.newSingleThreadScheduledExecutor(ReplayPersistingExecutorServiceThreadFactory())
-    ReplayExecutorService(delegate, options)
-  }
   private val gestureConverter = ReplayGestureConverter(dateProvider)
 
   protected val isTerminating = AtomicBoolean(false)
@@ -189,16 +182,6 @@ internal abstract class BaseCaptureStrategy(
           }
         }
       }
-    }
-  }
-
-  private class ReplayPersistingExecutorServiceThreadFactory : ThreadFactory {
-    private var cnt = 0
-
-    override fun newThread(r: Runnable): Thread {
-      val ret = Thread(r, "SentryReplayPersister-" + cnt++)
-      ret.setDaemon(true)
-      return ret
     }
   }
 
