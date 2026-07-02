@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Support the `io.sentry.tombstone.report-historical` manifest option to enable historical tombstone reporting via `AndroidManifest.xml` `<meta-data>` ([#5683](https://github.com/getsentry/sentry-java/pull/5683))
+
 ## 8.47.0
 
 ### Behavioral Changes
