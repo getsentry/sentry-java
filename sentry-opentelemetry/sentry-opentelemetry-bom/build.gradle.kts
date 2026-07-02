@@ -12,23 +12,13 @@ dependencies {
   api(platform(libs.otel.instrumentation.alpha.bom))
 
   constraints {
-    project.rootProject.subprojects
-      .filter {
-        it.path.startsWith(":sentry-opentelemetry:") &&
-          it.name != project.name &&
-          !it.name.contains("test", ignoreCase = true)
-      }
-      .forEach { project ->
-        evaluationDependsOn(project.path)
-        project.publishing.publications
-          .mapNotNull { it as? MavenPublication }
-          .filter {
-            !it.artifactId.endsWith("-kotlinMultiplatform") && !it.artifactId.endsWith("-metadata")
-          }
-          .forEach {
-            val dependency = "${it.groupId}:${it.artifactId}:${it.version}"
-            api(dependency)
-          }
-      }
+    api(projects.sentryOpentelemetry.sentryOpentelemetryAgent)
+    api(projects.sentryOpentelemetry.sentryOpentelemetryAgentcustomization)
+    api(projects.sentryOpentelemetry.sentryOpentelemetryAgentless)
+    api(projects.sentryOpentelemetry.sentryOpentelemetryAgentlessSpring)
+    api(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
+    api(projects.sentryOpentelemetry.sentryOpentelemetryCore)
+    api(projects.sentryOpentelemetry.sentryOpentelemetryOtlp)
+    api(projects.sentryOpentelemetry.sentryOpentelemetryOtlpSpring)
   }
 }
