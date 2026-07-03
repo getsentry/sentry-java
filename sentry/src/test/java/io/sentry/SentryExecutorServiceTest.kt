@@ -1,235 +1,247 @@
 package io.sentry
 
-import io.sentry.test.getProperty
-import java.util.concurrent.BlockingQueue
 import java.util.concurrent.Callable
 import java.util.concurrent.CancellationException
-import java.util.concurrent.LinkedBlockingQueue
-import java.util.concurrent.ScheduledThreadPoolExecutor
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.test.Test
-import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import org.awaitility.kotlin.await
 import org.mockito.kotlin.any
-import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
 class SentryExecutorServiceTest {
+
+  // region submit(Runnable)
+
   @Test
-  fun `SentryExecutorService forwards submit call to ExecutorService`() {
-    val executor = mock<ScheduledThreadPoolExecutor> { on { queue } doReturn LinkedBlockingQueue() }
-    val sentryExecutor = SentryExecutorService(executor, null)
-    sentryExecutor.submit {}
-    verify(executor).submit(any())
+  fun `executes submitted runnable`() {
+    val executor = SentryExecutorService()
+    val executed = AtomicBoolean(false)
+    executor.submit { executed.set(true) }
+    await.untilTrue(executed)
+    executor.close(15_000)
   }
 
   @Test
-  fun `SentryExecutorService forwards schedule call to ExecutorService`() {
-    val executor = mock<ScheduledThreadPoolExecutor> { on { queue } doReturn LinkedBlockingQueue() }
-    val sentryExecutor = SentryExecutorService(executor, null)
-    sentryExecutor.schedule({}, 0L)
-    verify(executor).schedule(any(), any(), any())
+  fun `submit runnable returns non-cancelled future`() {
+    val executor = SentryExecutorService()
+    val future = executor.submit {}
+    future.get(5, TimeUnit.SECONDS)
+    assertFalse(future.isCancelled)
+    executor.close(15_000)
+  }
+
+  // endregion
+
+  // region submit(Callable)
+
+  @Test
+  fun `executes submitted callable and returns result`() {
+    val executor = SentryExecutorService()
+    val future = executor.submit(Callable { 42 })
+    assertTrue(future.get(5, TimeUnit.SECONDS) == 42)
+    executor.close(15_000)
+  }
+
+  // endregion
+
+  // region schedule
+
+  @Test
+  fun `executes scheduled runnable after delay`() {
+    val executor = SentryExecutorService()
+    val executed = AtomicBoolean(false)
+    val startMs = System.currentTimeMillis()
+    executor.schedule({ executed.set(true) }, 200L)
+    await.untilTrue(executed)
+    val elapsedMs = System.currentTimeMillis() - startMs
+    assertTrue(elapsedMs >= 150L, "Expected >= 150ms delay, got ${elapsedMs}ms")
+    executor.close(15_000)
   }
 
   @Test
-  fun `SentryExecutorService forwards close call to ExecutorService`() {
-    val executor = mock<ScheduledThreadPoolExecutor>()
-    val sentryExecutor = SentryExecutorService(executor, null)
-    whenever(executor.isShutdown).thenReturn(false)
-    whenever(executor.awaitTermination(any(), any())).thenReturn(true)
-    sentryExecutor.close(15000)
-    verify(executor).shutdown()
+  fun `schedule returns non-cancelled future`() {
+    val executor = SentryExecutorService()
+    val future = executor.schedule({}, 0L)
+    future.get(5, TimeUnit.SECONDS)
+    assertFalse(future.isCancelled)
+    executor.close(15_000)
+  }
+
+  // endregion
+
+  // region close / isClosed
+
+  @Test
+  fun `isClosed returns false before close`() {
+    val executor = SentryExecutorService()
+    assertFalse(executor.isClosed)
+    executor.close(15_000)
   }
 
   @Test
-  fun `SentryExecutorService forwards close and call shutdownNow if not enough time`() {
-    val executor = mock<ScheduledThreadPoolExecutor>()
-    val sentryExecutor = SentryExecutorService(executor, null)
-    whenever(executor.isShutdown).thenReturn(false)
-    whenever(executor.awaitTermination(any(), any())).thenReturn(false)
-    sentryExecutor.close(15000)
-    verify(executor).shutdownNow()
+  fun `isClosed returns true after close`() {
+    val executor = SentryExecutorService()
+    executor.close(15_000)
+    assertTrue(executor.isClosed)
   }
 
   @Test
-  fun `SentryExecutorService forwards close and call shutdownNow if await throws`() {
-    val executor = mock<ScheduledThreadPoolExecutor>()
-    val sentryExecutor = SentryExecutorService(executor, null)
-    whenever(executor.isShutdown).thenReturn(false)
-    whenever(executor.awaitTermination(any(), any())).thenThrow(InterruptedException())
-    sentryExecutor.close(15000)
-    verify(executor).shutdownNow()
+  fun `close is idempotent`() {
+    val executor = SentryExecutorService()
+    executor.close(15_000)
+    executor.close(15_000) // second call must not throw
+    assertTrue(executor.isClosed)
   }
 
   @Test
-  fun `SentryExecutorService forwards close but do not shutdown if its already closed`() {
-    val executor = mock<ScheduledThreadPoolExecutor>()
-    val sentryExecutor = SentryExecutorService(executor, null)
-    whenever(executor.isShutdown).thenReturn(true)
-    sentryExecutor.close(15000)
-    verify(executor, never()).shutdown()
-  }
-
-  @Test
-  fun `SentryExecutorService forwards close call to ExecutorService and close it`() {
-    val executor = ScheduledThreadPoolExecutor(1)
-    val sentryExecutor = SentryExecutorService(executor, null)
-    sentryExecutor.close(15000)
-    assertTrue(executor.isShutdown)
-  }
-
-  @Test
-  fun `SentryExecutorService executes runnable`() {
-    val sentryExecutor = SentryExecutorService()
-    val atomicBoolean = AtomicBoolean(true)
-    sentryExecutor.submit { atomicBoolean.set(false) }
-    await.untilFalse(atomicBoolean)
-    sentryExecutor.close(15000)
-  }
-
-  @Test
-  fun `SentryExecutorService isClosed returns true if executor is shutdown`() {
-    val executor = mock<ScheduledThreadPoolExecutor>()
-    val sentryExecutor = SentryExecutorService(executor, null)
-    whenever(executor.isShutdown).thenReturn(true)
-    assertTrue(sentryExecutor.isClosed)
-  }
-
-  @Test
-  fun `SentryExecutorService isClosed returns false if executor is not shutdown`() {
-    val executor = mock<ScheduledThreadPoolExecutor>()
-    val sentryExecutor = SentryExecutorService(executor, null)
-    whenever(executor.isShutdown).thenReturn(false)
-    assertFalse(sentryExecutor.isClosed)
-  }
-
-  @Test
-  fun `SentryExecutorService submit runnable returns cancelled future when queue size exceeds limit`() {
-    val queue = mock<BlockingQueue<Runnable>>()
-    whenever(queue.size).thenReturn(272) // Above MAX_QUEUE_SIZE (271)
-
-    val executor = mock<ScheduledThreadPoolExecutor> { on { getQueue() } doReturn queue }
-
-    val options = mock<SentryOptions>()
-    val logger = mock<ILogger>()
-    whenever(options.logger).thenReturn(logger)
-
-    val sentryExecutor = SentryExecutorService(executor, options)
-    val future = sentryExecutor.submit {}
-
-    assertTrue(future.isCancelled)
-    assertTrue(future.isDone)
-    assertFailsWith<CancellationException> { future.get() }
-    verify(executor, never()).submit(any<Runnable>())
-    verify(logger).log(any<SentryLevel>(), any<String>())
-  }
-
-  @Test
-  fun `SentryExecutorService submit runnable accepts when queue size is within limit`() {
-    val queue = mock<BlockingQueue<Runnable>>()
-    whenever(queue.size).thenReturn(270) // Below MAX_QUEUE_SIZE (271)
-
-    val executor = mock<ScheduledThreadPoolExecutor> { on { getQueue() } doReturn queue }
-
-    val sentryExecutor = SentryExecutorService(executor, null)
-    sentryExecutor.submit {}
-
-    verify(executor).submit(any<Runnable>())
-  }
-
-  @Test
-  fun `SentryExecutorService submit callable returns cancelled future when queue size exceeds limit`() {
-    val queue = mock<BlockingQueue<Runnable>>()
-    whenever(queue.size).thenReturn(272) // Above MAX_QUEUE_SIZE (271)
-
-    val executor = mock<ScheduledThreadPoolExecutor> { on { getQueue() } doReturn queue }
-
-    val options = mock<SentryOptions>()
-    val logger = mock<ILogger>()
-    whenever(options.logger).thenReturn(logger)
-
-    val sentryExecutor = SentryExecutorService(executor, options)
-    val future = sentryExecutor.submit(Callable { "result" })
-
-    assertTrue(future.isCancelled)
-    assertTrue(future.isDone)
-    assertFailsWith<CancellationException> { future.get() }
-    verify(executor, never()).submit(any<Callable<String>>())
-    verify(logger).log(any<SentryLevel>(), any<String>())
-  }
-
-  @Test
-  fun `SentryExecutorService submit callable accepts when queue size is within limit`() {
-    val queue = mock<BlockingQueue<Runnable>>()
-    whenever(queue.size).thenReturn(270) // Below MAX_QUEUE_SIZE (271)
-
-    val executor = mock<ScheduledThreadPoolExecutor> { on { getQueue() } doReturn queue }
-
-    val sentryExecutor = SentryExecutorService(executor, null)
-    sentryExecutor.submit(Callable { "result" })
-
-    verify(executor).submit(any<Callable<String>>())
-  }
-
-  @Test
-  fun `SentryExecutorService schedule accepts when queue size is within limit`() {
-    val queue = mock<BlockingQueue<Runnable>>()
-    whenever(queue.size).thenReturn(270) // Below MAX_QUEUE_SIZE (271)
-
-    val executor = mock<ScheduledThreadPoolExecutor> { on { getQueue() } doReturn queue }
-
-    val sentryExecutor = SentryExecutorService(executor, null)
-    sentryExecutor.schedule({}, 1000L)
-
-    verify(executor).schedule(any<Runnable>(), any(), any())
-  }
-
-  @Test
-  fun `SentryExecutorService prewarm schedules dummy tasks and clears queue`() {
-    val executor = ScheduledThreadPoolExecutor(1)
-
-    val sentryExecutor = SentryExecutorService(executor, null)
-    sentryExecutor.prewarm()
-
-    Thread.sleep(1000)
-
-    // the internal queue/array should be resized 4 times to 54
-    assertEquals(54, (executor.queue.getProperty("queue") as Array<*>).size)
-    // the queue should be empty
-    assertEquals(0, executor.queue.size)
-  }
-
-  @Test
-  fun `SentryExecutorService schedules any number of job`() {
-    val executor = ScheduledThreadPoolExecutor(1)
-    val sentryExecutor = SentryExecutorService(executor, null)
-    // Post 1k jobs after 1 day, to test they are all accepted
-    repeat(1000) { sentryExecutor.schedule({}, TimeUnit.DAYS.toMillis(1)) }
-    assertEquals(1000, executor.queue.size)
-  }
-
-  @Test
-  fun `SentryExecutorService purges cancelled jobs when limit is reached`() {
-    val executor = ScheduledThreadPoolExecutor(1)
-    val sentryExecutor = SentryExecutorService(executor, null)
-    // Post 1k jobs after 1 day, to test they are all accepted
-    repeat(1000) {
-      val future = sentryExecutor.schedule({}, TimeUnit.DAYS.toMillis(1))
-      future.cancel(true)
+  fun `close waits for in-flight task to complete`() {
+    val executor = SentryExecutorService()
+    val started = AtomicBoolean(false)
+    val completed = AtomicBoolean(false)
+    executor.submit {
+      started.set(true)
+      Thread.sleep(200)
+      completed.set(true)
     }
-    assertEquals(1000, executor.queue.size)
-
-    // Submit should purge cancelled scheduled jobs
-    sentryExecutor.submit {}
-    // The queue size should be 1, but if the executor thread runs right before we check the size,
-    // it returns 0
-    assertTrue(executor.queue.size < 2)
+    await.untilTrue(started)
+    executor.close(15_000)
+    assertTrue(completed.get())
   }
+
+  @Test
+  fun `submit after close returns cancelled future`() {
+    val executor = SentryExecutorService()
+    executor.close(15_000)
+    val future = executor.submit {}
+    assertTrue(future.isCancelled)
+    assertTrue(future.isDone)
+    assertFailsWith<CancellationException> { future.get() }
+  }
+
+  @Test
+  fun `schedule after close returns cancelled future`() {
+    val executor = SentryExecutorService()
+    executor.close(15_000)
+    val future = executor.schedule({}, 1_000L)
+    assertTrue(future.isCancelled)
+    assertTrue(future.isDone)
+    assertFailsWith<CancellationException> { future.get() }
+  }
+
+  // endregion
+
+  // region queue limit
+
+  @Test
+  fun `submit runnable returns cancelled future when queue exceeds limit`() {
+    val options = mock<SentryOptions>()
+    val logger = mock<ILogger>()
+    whenever(options.logger).thenReturn(logger)
+
+    val executor = SentryExecutorService(options)
+    // Fill queue past MAX_QUEUE_SIZE with far-future tasks
+    repeat(272) { executor.schedule({}, TimeUnit.DAYS.toMillis(1)) }
+
+    val future = executor.submit {}
+    assertTrue(future.isCancelled)
+    assertTrue(future.isDone)
+    assertFailsWith<CancellationException> { future.get() }
+    verify(logger).log(any<SentryLevel>(), any<String>())
+    executor.close(100)
+  }
+
+  @Test
+  fun `submit callable returns cancelled future when queue exceeds limit`() {
+    val options = mock<SentryOptions>()
+    val logger = mock<ILogger>()
+    whenever(options.logger).thenReturn(logger)
+
+    val executor = SentryExecutorService(options)
+    repeat(272) { executor.schedule({}, TimeUnit.DAYS.toMillis(1)) }
+
+    val future = executor.submit(Callable { "result" })
+    assertTrue(future.isCancelled)
+    verify(logger).log(any<SentryLevel>(), any<String>())
+    executor.close(100)
+  }
+
+  @Test
+  fun `submit purges cancelled tasks when queue limit is reached`() {
+    val executor = SentryExecutorService()
+    // Fill and cancel all
+    val futures = (1..272).map { executor.schedule({}, TimeUnit.DAYS.toMillis(1)) }
+    futures.forEach { it.cancel(true) }
+
+    // Next submit should succeed after purge
+    val executed = AtomicBoolean(false)
+    val future = executor.submit { executed.set(true) }
+    assertFalse(future.isCancelled)
+    await.untilTrue(executed)
+    executor.close(15_000)
+  }
+
+  @Test
+  fun `submit logs nothing when queue size is within limit`() {
+    val options = mock<SentryOptions>()
+    val logger = mock<ILogger>()
+    whenever(options.logger).thenReturn(logger)
+
+    val executor = SentryExecutorService(options)
+    executor.submit {}
+    verify(logger, never()).log(any<SentryLevel>(), any<String>())
+    executor.close(15_000)
+  }
+
+  // endregion
+
+  // region ordering
+
+  @Test
+  fun `tasks run in trigger-time order`() {
+    val executor = SentryExecutorService()
+    val order = mutableListOf<Int>()
+    val latch = CountDownLatch(3)
+    // Schedule out of order; single worker ensures serialised execution.
+    executor.schedule({ synchronized(order) { order.add(3) }; latch.countDown() }, 300L)
+    executor.schedule({ synchronized(order) { order.add(1) }; latch.countDown() }, 100L)
+    executor.schedule({ synchronized(order) { order.add(2) }; latch.countDown() }, 200L)
+    latch.await(10, TimeUnit.SECONDS)
+    assertTrue(order == listOf(1, 2, 3), "Expected [1,2,3] but got $order")
+    executor.close(15_000)
+  }
+
+  // endregion
+
+  // region prewarm
+
+  @Test
+  fun `prewarm is a no-op`() {
+    val executor = SentryExecutorService()
+    executor.prewarm() // must not throw or block
+    executor.close(15_000)
+  }
+
+  // endregion
+
+  // region initial capacity
+
+  @Test
+  fun `initial queue capacity constant is in expected range`() {
+    assertTrue(
+        SentryExecutorService.INITIAL_QUEUE_CAPACITY >= 32,
+        "INITIAL_QUEUE_CAPACITY should be at least 32")
+    assertTrue(
+        SentryExecutorService.INITIAL_QUEUE_CAPACITY <= 128,
+        "INITIAL_QUEUE_CAPACITY should be at most 128")
+  }
+
+  // endregion
 }
