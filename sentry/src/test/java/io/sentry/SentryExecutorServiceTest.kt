@@ -210,9 +210,27 @@ class SentryExecutorServiceTest {
     val order = mutableListOf<Int>()
     val latch = CountDownLatch(3)
     // Schedule out of order; single worker ensures serialised execution.
-    executor.schedule({ synchronized(order) { order.add(3) }; latch.countDown() }, 300L)
-    executor.schedule({ synchronized(order) { order.add(1) }; latch.countDown() }, 100L)
-    executor.schedule({ synchronized(order) { order.add(2) }; latch.countDown() }, 200L)
+    executor.schedule(
+      {
+        synchronized(order) { order.add(3) }
+        latch.countDown()
+      },
+      300L,
+    )
+    executor.schedule(
+      {
+        synchronized(order) { order.add(1) }
+        latch.countDown()
+      },
+      100L,
+    )
+    executor.schedule(
+      {
+        synchronized(order) { order.add(2) }
+        latch.countDown()
+      },
+      200L,
+    )
     latch.await(10, TimeUnit.SECONDS)
     assertTrue(order == listOf(1, 2, 3), "Expected [1,2,3] but got $order")
     executor.close(15_000)
@@ -236,11 +254,13 @@ class SentryExecutorServiceTest {
   @Test
   fun `initial queue capacity constant is in expected range`() {
     assertTrue(
-        SentryExecutorService.INITIAL_QUEUE_CAPACITY >= 32,
-        "INITIAL_QUEUE_CAPACITY should be at least 32")
+      SentryExecutorService.INITIAL_QUEUE_CAPACITY >= 32,
+      "INITIAL_QUEUE_CAPACITY should be at least 32",
+    )
     assertTrue(
-        SentryExecutorService.INITIAL_QUEUE_CAPACITY <= 128,
-        "INITIAL_QUEUE_CAPACITY should be at most 128")
+      SentryExecutorService.INITIAL_QUEUE_CAPACITY <= 128,
+      "INITIAL_QUEUE_CAPACITY should be at most 128",
+    )
   }
 
   // endregion
