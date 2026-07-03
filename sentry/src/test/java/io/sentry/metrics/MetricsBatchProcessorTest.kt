@@ -8,11 +8,11 @@ import io.sentry.SentryNanotimeDate
 import io.sentry.SentryOptions
 import io.sentry.clientreport.ClientReportTestHelper
 import io.sentry.clientreport.DiscardReason
-import io.sentry.util.JsonSerializationUtils
 import io.sentry.clientreport.DiscardedEvent
 import io.sentry.protocol.SentryId
 import io.sentry.test.DeferredExecutorService
 import io.sentry.test.injectForField
+import io.sentry.util.JsonSerializationUtils
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -86,7 +86,11 @@ class MetricsBatchProcessorTest {
     val expectedEvents =
       mutableListOf(
         DiscardedEvent(DiscardReason.QUEUE_OVERFLOW.reason, DataCategory.TraceMetric.category, 1),
-        DiscardedEvent(DiscardReason.QUEUE_OVERFLOW.reason, DataCategory.TraceMetricByte.category, droppedBytes),
+        DiscardedEvent(
+          DiscardReason.QUEUE_OVERFLOW.reason,
+          DataCategory.TraceMetricByte.category,
+          droppedBytes,
+        ),
       )
 
     ClientReportTestHelper.assertClientReport(options.clientReportRecorder, expectedEvents)
