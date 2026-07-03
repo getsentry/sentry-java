@@ -150,9 +150,9 @@ public final class SentryExecutorService implements ISentryExecutorService {
   }
 
   /**
-   * Whether the calling thread is one of the Sentry executor threads. Cheap replacement for scanning
-   * {@code Thread.currentThread().getName()}, which is on hot paths (e.g. scope persistence on every
-   * scope mutation).
+   * Whether the calling thread is one of the Sentry executor threads. Cheap replacement for
+   * scanning {@code Thread.currentThread().getName()}, which is on hot paths (e.g. scope
+   * persistence on every scope mutation).
    */
   public static boolean isSentryExecutorThread() {
     return Thread.currentThread() instanceof SentryExecutorServiceThread;
