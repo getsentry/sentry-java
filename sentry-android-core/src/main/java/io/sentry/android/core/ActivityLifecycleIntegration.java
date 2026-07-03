@@ -1056,6 +1056,13 @@ public final class ActivityLifecycleIntegration
       txnOptions.setWaitForChildren(true);
       final long deadlineTimeoutMillis = options.getDeadlineTimeout();
       txnOptions.setDeadlineTimeout(deadlineTimeoutMillis <= 0 ? null : deadlineTimeoutMillis);
+      // Persist the end time (covering every finish path: user finish, first frame, deadline) so a
+      // later ui.load can tell whether it is close enough to continue this trace; without it the
+      // continuation window is unbounded.
+      txnOptions.setTransactionFinishedCallback(
+          finishedTransaction ->
+              AppStartMetrics.getInstance()
+                  .setAppStartEndTime(finishedTransaction.getFinishDate()));
     }
 
     final @NotNull TransactionContext txnContext =
