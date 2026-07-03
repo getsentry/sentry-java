@@ -6,6 +6,10 @@
 
 - Add `trace_metric_byte` data category and record byte-level client reports when trace metrics are discarded ([#5626](https://github.com/getsentry/sentry-java/pull/5626))
 
+### Fixes
+
+- Apply byte-category rate limits to log and trace metric envelope items ([#5716](https://github.com/getsentry/sentry-java/pull/5716))
+
 ## 8.47.0
 
 ### Behavioral Changes
