@@ -44,6 +44,7 @@ public final class SentryClient implements ISentryClient {
   private final @NotNull SortBreadcrumbsByDate sortBreadcrumbsByDate = new SortBreadcrumbsByDate();
   private final @NotNull ILoggerBatchProcessor loggerBatchProcessor;
   private final @NotNull IMetricsBatchProcessor metricsBatchProcessor;
+  private final @NotNull AsyncEventProcessingExecutor asyncEventProcessingExecutor;
 
   @Override
   public boolean isEnabled() {
@@ -74,6 +75,8 @@ public final class SentryClient implements ISentryClient {
     } else {
       metricsBatchProcessor = NoOpMetricsBatchProcessor.getInstance();
     }
+    asyncEventProcessingExecutor =
+        new AsyncEventProcessingExecutor(options.getMaxQueueSize(), options.getLogger());
   }
 
   private boolean shouldApplyScopeData(
@@ -163,6 +166,41 @@ public final class SentryClient implements ISentryClient {
 
     event = processEvent(event, hint, options.getEventProcessors());
 
+    if (event == null) {
+      return SentryId.EMPTY_ID;
+    }
+
+    final SentryId sentryId = event.getEventId() != null ? event.getEventId() : SentryId.EMPTY_ID;
+    final @NotNull SentryEvent finalEvent = event;
+    final @NotNull Hint finalHint = hint;
+    if (options.isEnableAsyncProcessing()) {
+      final boolean applyScopedProcessors = HintUtils.shouldApplyScopeData(finalHint);
+      if (!asyncEventProcessingExecutor.submit(
+          () -> captureEventAfterProcessing(finalEvent, finalHint, scope, applyScopedProcessors))) {
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(DiscardReason.QUEUE_OVERFLOW, DataCategory.Error);
+        return SentryId.EMPTY_ID;
+      }
+      return sentryId;
+    }
+
+    return captureEventAfterProcessing(event, hint, scope, HintUtils.shouldApplyScopeData(hint));
+  }
+
+  private @NotNull SentryId captureEventAfterProcessing(
+      @NotNull SentryEvent event,
+      final @NotNull Hint hint,
+      final @Nullable IScope scope,
+      final boolean applyScopedProcessors) {
+    if (applyScopedProcessors && scope != null) {
+      event = processEventAsync(event, hint, scope.getEventProcessors(), DataCategory.Error);
+    }
+
+    if (event != null) {
+      event = processEventAsync(event, hint, options.getEventProcessors(), DataCategory.Error);
+    }
+
     if (event != null) {
       event = executeBeforeSend(event, hint);
 
@@ -176,10 +214,6 @@ public final class SentryClient implements ISentryClient {
 
     if (event != null) {
       event = EventSizeLimitingUtils.limitEventSize(event, hint, options);
-    }
-
-    if (event == null) {
-      return SentryId.EMPTY_ID;
     }
 
     @Nullable
@@ -317,6 +351,30 @@ public final class SentryClient implements ISentryClient {
 
     event = processReplayEvent(event, hint, options.getEventProcessors());
 
+    if (event == null) {
+      return SentryId.EMPTY_ID;
+    }
+
+    final @NotNull SentryReplayEvent finalEvent = event;
+    final @NotNull Hint finalHint = hint;
+    if (options.isEnableAsyncProcessing()) {
+      if (!asyncEventProcessingExecutor.submit(
+          () -> captureReplayEventAfterProcessing(finalEvent, scope, finalHint))) {
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(DiscardReason.QUEUE_OVERFLOW, DataCategory.Replay);
+        return SentryId.EMPTY_ID;
+      }
+      return sentryId;
+    }
+
+    return captureReplayEventAfterProcessing(event, scope, hint);
+  }
+
+  private @NotNull SentryId captureReplayEventAfterProcessing(
+      @NotNull SentryReplayEvent event, final @Nullable IScope scope, final @NotNull Hint hint) {
+    event = processReplayEventAsync(event, hint, options.getEventProcessors());
+
     if (event != null) {
       event = executeBeforeSendReplay(event, hint);
 
@@ -332,6 +390,7 @@ public final class SentryClient implements ISentryClient {
       return SentryId.EMPTY_ID;
     }
 
+    SentryId sentryId = event.getEventId() != null ? event.getEventId() : SentryId.EMPTY_ID;
     try {
       final @Nullable TraceContext traceContext = getTraceContext(scope, hint, event, null);
       final boolean cleanupReplayFolder = HintUtils.hasType(hint, Backfillable.class);
@@ -694,6 +753,224 @@ public final class SentryClient implements ISentryClient {
     return feedbackEvent;
   }
 
+  @Nullable
+  private SentryEvent processEventAsync(
+      @NotNull SentryEvent event,
+      final @NotNull Hint hint,
+      final @NotNull List<EventProcessor> eventProcessors,
+      final @NotNull DataCategory dataCategory) {
+    for (final EventProcessor processor : eventProcessors) {
+      try {
+        final boolean isBackfillingProcessor = processor instanceof BackfillingEventProcessor;
+        final boolean isBackfillable = HintUtils.hasType(hint, Backfillable.class);
+        if (isBackfillable && isBackfillingProcessor) {
+          event = processor.processAsync(event, hint);
+        } else if (!isBackfillable && !isBackfillingProcessor) {
+          event = processor.processAsync(event, hint);
+        }
+      } catch (Throwable e) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.ERROR,
+                e,
+                "An exception occurred while async processing event by processor: %s",
+                processor.getClass().getName());
+      }
+
+      if (event == null) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Event was dropped by an async processor: %s",
+                processor.getClass().getName());
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(DiscardReason.EVENT_PROCESSOR, dataCategory);
+        break;
+      }
+    }
+    return event;
+  }
+
+  @Nullable
+  private SentryLogEvent processLogEventAsync(
+      @NotNull SentryLogEvent event, final @NotNull List<EventProcessor> eventProcessors) {
+    for (final EventProcessor processor : eventProcessors) {
+      try {
+        event = processor.processAsync(event);
+      } catch (Throwable e) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.ERROR,
+                e,
+                "An exception occurred while async processing log event by processor: %s",
+                processor.getClass().getName());
+      }
+
+      if (event == null) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Log event was dropped by an async processor: %s",
+                processor.getClass().getName());
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.LogItem);
+        break;
+      }
+    }
+    return event;
+  }
+
+  @Nullable
+  private SentryMetricsEvent processMetricsEventAsync(
+      @NotNull SentryMetricsEvent event,
+      final @NotNull List<EventProcessor> eventProcessors,
+      final @NotNull Hint hint) {
+    for (final EventProcessor processor : eventProcessors) {
+      try {
+        event = processor.processAsync(event, hint);
+      } catch (Throwable e) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.ERROR,
+                e,
+                "An exception occurred while async processing metrics event by processor: %s",
+                processor.getClass().getName());
+      }
+
+      if (event == null) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Metrics event was dropped by an async processor: %s",
+                processor.getClass().getName());
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.TraceMetric);
+        break;
+      }
+    }
+    return event;
+  }
+
+  private @Nullable SentryTransaction processTransactionAsync(
+      @NotNull SentryTransaction transaction,
+      final @NotNull Hint hint,
+      final @NotNull List<EventProcessor> eventProcessors) {
+    for (final EventProcessor processor : eventProcessors) {
+      final int spanCountBeforeProcessor = transaction.getSpans().size();
+      try {
+        transaction = processor.processAsync(transaction, hint);
+      } catch (Throwable e) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.ERROR,
+                e,
+                "An exception occurred while async processing transaction by processor: %s",
+                processor.getClass().getName());
+      }
+      final int spanCountAfterProcessor = transaction == null ? 0 : transaction.getSpans().size();
+
+      if (transaction == null) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Transaction was dropped by an async processor: %s",
+                processor.getClass().getName());
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Transaction);
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(
+                DiscardReason.EVENT_PROCESSOR, DataCategory.Span, spanCountBeforeProcessor + 1);
+        break;
+      } else if (spanCountAfterProcessor < spanCountBeforeProcessor) {
+        final int droppedSpanCount = spanCountBeforeProcessor - spanCountAfterProcessor;
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "%d spans were dropped by an async processor: %s",
+                droppedSpanCount,
+                processor.getClass().getName());
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Span, droppedSpanCount);
+      }
+    }
+    return transaction;
+  }
+
+  @Nullable
+  private SentryReplayEvent processReplayEventAsync(
+      @NotNull SentryReplayEvent replayEvent,
+      final @NotNull Hint hint,
+      final @NotNull List<EventProcessor> eventProcessors) {
+    for (final EventProcessor processor : eventProcessors) {
+      try {
+        replayEvent = processor.processAsync(replayEvent, hint);
+      } catch (Throwable e) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.ERROR,
+                e,
+                "An exception occurred while async processing replay event by processor: %s",
+                processor.getClass().getName());
+      }
+
+      if (replayEvent == null) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Replay event was dropped by an async processor: %s",
+                processor.getClass().getName());
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Replay);
+        break;
+      }
+    }
+    return replayEvent;
+  }
+
+  @Nullable
+  private SentryEvent processFeedbackEventAsync(
+      @NotNull SentryEvent feedbackEvent,
+      final @NotNull Hint hint,
+      final @NotNull List<EventProcessor> eventProcessors) {
+    return processEventAsync(feedbackEvent, hint, eventProcessors, DataCategory.Feedback);
+  }
+
+  private void recordLostTransaction(
+      final @NotNull DiscardReason discardReason, final @NotNull SentryTransaction transaction) {
+    options.getClientReportRecorder().recordLostEvent(discardReason, DataCategory.Transaction);
+    options
+        .getClientReportRecorder()
+        .recordLostEvent(discardReason, DataCategory.Span, transaction.getSpans().size() + 1);
+  }
+
+  private void recordLostLog(
+      final @NotNull DiscardReason discardReason, final @NotNull SentryLogEvent logEvent) {
+    options.getClientReportRecorder().recordLostEvent(discardReason, DataCategory.LogItem);
+    final long logEventNumberOfBytes =
+        JsonSerializationUtils.byteSizeOf(options.getSerializer(), options.getLogger(), logEvent);
+    options
+        .getClientReportRecorder()
+        .recordLostEvent(discardReason, DataCategory.LogByte, logEventNumberOfBytes);
+  }
+
   @Deprecated
   @Override
   public void captureUserFeedback(final @NotNull UserFeedback userFeedback) {
@@ -994,6 +1271,54 @@ public final class SentryClient implements ISentryClient {
       return SentryId.EMPTY_ID;
     }
 
+    final @NotNull SentryTransaction finalTransaction = transaction;
+    final @NotNull Hint finalHint = hint;
+    final @Nullable TraceContext finalTraceContext = traceContext;
+    if (options.isEnableAsyncProcessing()) {
+      if (!asyncEventProcessingExecutor.submit(
+          () ->
+              captureTransactionAfterProcessing(
+                  finalTransaction,
+                  finalTraceContext,
+                  scope,
+                  finalHint,
+                  profilingTraceData,
+                  HintUtils.shouldApplyScopeData(finalHint)))) {
+        recordLostTransaction(DiscardReason.QUEUE_OVERFLOW, transaction);
+        return SentryId.EMPTY_ID;
+      }
+      return sentryId;
+    }
+
+    return captureTransactionAfterProcessing(
+        transaction,
+        traceContext,
+        scope,
+        hint,
+        profilingTraceData,
+        HintUtils.shouldApplyScopeData(hint));
+  }
+
+  private @NotNull SentryId captureTransactionAfterProcessing(
+      @NotNull SentryTransaction transaction,
+      final @Nullable TraceContext traceContext,
+      final @Nullable IScope scope,
+      final @NotNull Hint hint,
+      final @Nullable ProfilingTraceData profilingTraceData,
+      final boolean applyScopedProcessors) {
+    if (applyScopedProcessors && scope != null) {
+      transaction = processTransactionAsync(transaction, hint, scope.getEventProcessors());
+    }
+
+    if (transaction != null) {
+      transaction = processTransactionAsync(transaction, hint, options.getEventProcessors());
+    }
+
+    if (transaction == null) {
+      options.getLogger().log(SentryLevel.DEBUG, "Transaction was dropped by Event processors.");
+      return SentryId.EMPTY_ID;
+    }
+
     final int spanCountBeforeCallback = transaction.getSpans().size();
     transaction = executeBeforeSendTransaction(transaction, hint);
     final int spanCountAfterCallback = transaction == null ? 0 : transaction.getSpans().size();
@@ -1025,6 +1350,8 @@ public final class SentryClient implements ISentryClient {
           .recordLostEvent(DiscardReason.BEFORE_SEND, DataCategory.Span, droppedSpanCount);
     }
 
+    SentryId sentryId =
+        transaction.getEventId() != null ? transaction.getEventId() : SentryId.EMPTY_ID;
     try {
       final SentryEnvelope envelope =
           buildEnvelope(
@@ -1180,6 +1507,45 @@ public final class SentryClient implements ISentryClient {
 
     event = processFeedbackEvent(event, hint, options.getEventProcessors());
 
+    if (event == null) {
+      return SentryId.EMPTY_ID;
+    }
+
+    final SentryId sentryId = event.getEventId() != null ? event.getEventId() : SentryId.EMPTY_ID;
+    final @NotNull SentryEvent finalEvent = event;
+    final @NotNull Hint finalHint = hint;
+    if (options.isEnableAsyncProcessing()) {
+      final boolean applyScopedProcessors = HintUtils.shouldApplyScopeData(finalHint);
+      if (!asyncEventProcessingExecutor.submit(
+          () ->
+              captureFeedbackAfterProcessing(
+                  finalEvent, feedback, finalHint, scope, applyScopedProcessors))) {
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(DiscardReason.QUEUE_OVERFLOW, DataCategory.Feedback);
+        return SentryId.EMPTY_ID;
+      }
+      return sentryId;
+    }
+
+    return captureFeedbackAfterProcessing(
+        event, feedback, hint, scope, HintUtils.shouldApplyScopeData(hint));
+  }
+
+  private @NotNull SentryId captureFeedbackAfterProcessing(
+      @NotNull SentryEvent event,
+      final @NotNull Feedback feedback,
+      final @NotNull Hint hint,
+      final @NotNull IScope scope,
+      final boolean applyScopedProcessors) {
+    if (applyScopedProcessors) {
+      event = processFeedbackEventAsync(event, hint, scope.getEventProcessors());
+    }
+
+    if (event != null) {
+      event = processFeedbackEventAsync(event, hint, options.getEventProcessors());
+    }
+
     if (event != null) {
       event = executeBeforeSendFeedback(event, hint);
 
@@ -1195,10 +1561,7 @@ public final class SentryClient implements ISentryClient {
       return SentryId.EMPTY_ID;
     }
 
-    SentryId sentryId = SentryId.EMPTY_ID;
-    if (event.getEventId() != null) {
-      sentryId = event.getEventId();
-    }
+    SentryId sentryId = event.getEventId() != null ? event.getEventId() : SentryId.EMPTY_ID;
 
     // If feedback already has a replayId, we don't want to overwrite it.
     if (feedback.getReplayId() == null) {
@@ -1278,21 +1641,36 @@ public final class SentryClient implements ISentryClient {
     }
 
     if (logEvent != null) {
+      final @NotNull SentryLogEvent finalLogEvent = logEvent;
+      if (options.isEnableAsyncProcessing()) {
+        if (!asyncEventProcessingExecutor.submit(
+            () -> captureLogAfterProcessing(finalLogEvent, scope))) {
+          recordLostLog(DiscardReason.QUEUE_OVERFLOW, finalLogEvent);
+        }
+        return;
+      }
+
+      captureLogAfterProcessing(logEvent, scope);
+    }
+  }
+
+  private void captureLogAfterProcessing(
+      @NotNull SentryLogEvent logEvent, final @Nullable IScope scope) {
+    if (scope != null) {
+      logEvent = processLogEventAsync(logEvent, scope.getEventProcessors());
+    }
+
+    if (logEvent != null) {
+      logEvent = processLogEventAsync(logEvent, options.getEventProcessors());
+    }
+
+    if (logEvent != null) {
       final @NotNull SentryLogEvent tmpLogEvent = logEvent;
       logEvent = executeBeforeSendLog(logEvent);
 
       if (logEvent == null) {
         options.getLogger().log(SentryLevel.DEBUG, "Log Event was dropped by beforeSendLog");
-        options
-            .getClientReportRecorder()
-            .recordLostEvent(DiscardReason.BEFORE_SEND, DataCategory.LogItem);
-        final @NotNull long logEventNumberOfBytes =
-            JsonSerializationUtils.byteSizeOf(
-                options.getSerializer(), options.getLogger(), tmpLogEvent);
-        options
-            .getClientReportRecorder()
-            .recordLostEvent(
-                DiscardReason.BEFORE_SEND, DataCategory.LogByte, logEventNumberOfBytes);
+        recordLostLog(DiscardReason.BEFORE_SEND, tmpLogEvent);
         return;
       }
 
@@ -1333,6 +1711,35 @@ public final class SentryClient implements ISentryClient {
       if (metricsEvent == null) {
         return;
       }
+    }
+
+    if (metricsEvent != null) {
+      final @NotNull SentryMetricsEvent finalMetricsEvent = metricsEvent;
+      final @NotNull Hint finalHint = hint;
+      if (options.isEnableAsyncProcessing()) {
+        if (!asyncEventProcessingExecutor.submit(
+            () -> captureMetricAfterProcessing(finalMetricsEvent, scope, finalHint))) {
+          options
+              .getClientReportRecorder()
+              .recordLostEvent(DiscardReason.QUEUE_OVERFLOW, DataCategory.TraceMetric);
+        }
+        return;
+      }
+
+      captureMetricAfterProcessing(metricsEvent, scope, hint);
+    }
+  }
+
+  private void captureMetricAfterProcessing(
+      @NotNull SentryMetricsEvent metricsEvent,
+      final @Nullable IScope scope,
+      final @NotNull Hint hint) {
+    if (scope != null) {
+      metricsEvent = processMetricsEventAsync(metricsEvent, scope.getEventProcessors(), hint);
+    }
+
+    if (metricsEvent != null) {
+      metricsEvent = processMetricsEventAsync(metricsEvent, options.getEventProcessors(), hint);
     }
 
     if (metricsEvent != null) {
@@ -1698,7 +2105,10 @@ public final class SentryClient implements ISentryClient {
   public void close(final boolean isRestarting) {
     options.getLogger().log(SentryLevel.INFO, "Closing SentryClient.");
     try {
-      flush(isRestarting ? 0 : options.getShutdownTimeoutMillis());
+      final long timeoutMillis = isRestarting ? 0 : options.getShutdownTimeoutMillis();
+      final long deadline = System.currentTimeMillis() + timeoutMillis;
+      flush(timeoutMillis);
+      asyncEventProcessingExecutor.close(remainingTimeout(deadline));
       loggerBatchProcessor.close(isRestarting);
       metricsBatchProcessor.close(isRestarting);
       transport.close(isRestarting);
@@ -1727,9 +2137,15 @@ public final class SentryClient implements ISentryClient {
 
   @Override
   public void flush(final long timeoutMillis) {
-    loggerBatchProcessor.flush(timeoutMillis);
-    metricsBatchProcessor.flush(timeoutMillis);
-    transport.flush(timeoutMillis);
+    final long deadline = System.currentTimeMillis() + timeoutMillis;
+    asyncEventProcessingExecutor.waitTillIdle(timeoutMillis);
+    loggerBatchProcessor.flush(remainingTimeout(deadline));
+    metricsBatchProcessor.flush(remainingTimeout(deadline));
+    transport.flush(remainingTimeout(deadline));
+  }
+
+  private long remainingTimeout(final long deadline) {
+    return Math.max(0, deadline - System.currentTimeMillis());
   }
 
   @Override
