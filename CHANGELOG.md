@@ -8,6 +8,7 @@
 
 ### Fixes
 
+- Name the device-info caching thread `SentryDeviceInfoCache` so all threads spawned by the SDK are identifiable ([#5684](https://github.com/getsentry/sentry-java/pull/5684))
 - Apply byte-category rate limits to log and trace metric envelope items ([#5716](https://github.com/getsentry/sentry-java/pull/5716))
 
 ## 8.47.0
