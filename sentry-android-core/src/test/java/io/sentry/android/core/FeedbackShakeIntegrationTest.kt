@@ -22,10 +22,10 @@ class FeedbackShakeIntegrationTest {
     val scopes = mock<Scopes>()
     val options = SentryAndroidOptions().apply { dsn = "https://key@sentry.io/proj" }
     val activity = mock<Activity>()
-    val dialogHandler = mock<SentryFeedbackOptions.IDialogHandler>()
+    val formHandler = mock<SentryFeedbackOptions.IFormHandler>()
 
     init {
-      options.feedbackOptions.setDialogHandler(dialogHandler)
+      options.feedbackOptions.setFormHandler(formHandler)
     }
 
     fun getSut(useShakeGesture: Boolean = true): FeedbackShakeIntegration {

@@ -64,6 +64,8 @@ public final class JsonSerializer implements ISerializer {
   @SuppressWarnings("CharsetObjectCanBeUsed")
   private static final Charset UTF_8 = Charset.forName("UTF-8");
 
+  private static final int WRITER_BUFFER_SIZE = 512;
+
   /** the SentryOptions */
   private final @NotNull SentryOptions options;
 
@@ -72,6 +74,7 @@ public final class JsonSerializer implements ISerializer {
   /**
    * All our custom deserializers need to be registered to be used with the deserializer instance. *
    */
+  @SuppressWarnings("deprecation")
   public JsonSerializer(@NotNull SentryOptions options) {
     this.options = options;
 
@@ -232,7 +235,8 @@ public final class JsonSerializer implements ISerializer {
 
     // we do not want to close these as we would also close the stream that was passed in
     final BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(outputStream);
-    final Writer writer = new BufferedWriter(new OutputStreamWriter(bufferedOutputStream, UTF_8));
+    final Writer writer =
+        new BufferedWriter(new OutputStreamWriter(bufferedOutputStream, UTF_8), WRITER_BUFFER_SIZE);
 
     try {
       envelope

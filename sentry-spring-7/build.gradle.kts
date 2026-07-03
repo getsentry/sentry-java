@@ -6,7 +6,6 @@ plugins {
   `java-library`
   id("io.sentry.javadoc")
   alias(libs.plugins.kotlin.jvm)
-  jacoco
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.buildconfig)
@@ -43,10 +42,12 @@ dependencies {
   compileOnly(libs.slf4j.api)
   compileOnly(libs.springboot4.starter.graphql)
   compileOnly(libs.springboot4.starter.quartz)
+  compileOnly(libs.spring.kafka4)
 
   compileOnly(Config.Libs.springWebflux)
   compileOnly(projects.sentryGraphql)
   compileOnly(projects.sentryGraphql22)
+  compileOnly(projects.sentryKafka)
   compileOnly(projects.sentryQuartz)
   compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryAgentcustomization)
   compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
@@ -60,6 +61,7 @@ dependencies {
   // tests
   testImplementation(projects.sentryTestSupport)
   testImplementation(projects.sentryGraphql)
+  testImplementation(projects.sentryKafka)
   testImplementation(kotlin(Config.kotlinStdLib))
   testImplementation(libs.awaitility.kotlin.spring7)
   testImplementation(libs.context.propagation)
@@ -69,6 +71,7 @@ dependencies {
   testImplementation(libs.mockito.inline)
   testImplementation(libs.springboot4.starter.aspectj)
   testImplementation(libs.springboot4.starter.graphql)
+  testImplementation(libs.spring.kafka4)
   testImplementation(libs.springboot4.starter.security)
   testImplementation(libs.springboot4.starter.test)
   testImplementation(libs.springboot4.starter.web)
@@ -77,27 +80,6 @@ dependencies {
   testImplementation(libs.springboot4.starter.webclient)
   testImplementation(libs.springboot4.resttestclient)
   testImplementation(projects.sentryReactor)
-}
-
-configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
-
-jacoco { toolVersion = libs.versions.jacoco.get() }
-
-tasks.jacocoTestReport {
-  reports {
-    xml.required.set(true)
-    html.required.set(false)
-  }
-}
-
-tasks {
-  jacocoTestCoverageVerification {
-    violationRules { rule { limit { minimum = Config.QualityPlugins.Jacoco.minimumCoverage } } }
-  }
-  check {
-    dependsOn(jacocoTestCoverageVerification)
-    dependsOn(jacocoTestReport)
-  }
 }
 
 buildConfig {

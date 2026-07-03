@@ -53,5 +53,15 @@ public object SentryModifier {
     override fun SemanticsPropertyReceiver.applySemantics() {
       this[SentryTag] = tag
     }
+
+    // SemanticsModifierNode.isImportantForBounds() was added as an abstract method in
+    // compose-ui 1.11.  Classes compiled against earlier versions lack this method in
+    // their bytecode, which causes AbstractMethodError when the accessibility tree is
+    // traversed on 1.11+ runtimes.  We can't use the `override` keyword here because
+    // the method doesn't exist in the compile-time dependency (compose-ui 1.6.x), but
+    // the JVM satisfies the abstract-method requirement at runtime via signature
+    // matching.  SentryTagModifierNode only stores a semantic tag and has no visual
+    // effect on layout, so it is not important for bounds.
+    @Suppress("unused") fun isImportantForBounds(): Boolean = false
   }
 }

@@ -57,4 +57,10 @@ public abstract class ScopeObserverAdapter implements IScopeObserver {
 
   @Override
   public void setReplayId(@NotNull SentryId replayId) {}
+
+  @Override
+  public void addAttachment(@NotNull Attachment attachment) {}
+
+  @Override
+  public void clearAttachments() {}
 }

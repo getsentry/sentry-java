@@ -201,7 +201,7 @@ public final class ScreenshotEventProcessor implements EventProcessor {
 
       final ViewHierarchyNode rootNode =
           ViewHierarchyNode.Companion.fromView(rootView, null, 0, options.getScreenshot());
-      ViewsKt.traverse(rootView, rootNode, options.getScreenshot(), options.getLogger());
+      ViewsKt.traverse(rootView, rootNode, options.getScreenshot(), options.getLogger(), null);
       return rootNode;
     } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, "Failed to build view hierarchy", e);

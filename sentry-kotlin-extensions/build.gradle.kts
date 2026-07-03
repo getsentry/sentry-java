@@ -5,7 +5,6 @@ plugins {
   `java-library`
   id("io.sentry.javadoc")
   alias(libs.plugins.kotlin.jvm)
-  jacoco
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.detekt)
@@ -38,27 +37,7 @@ dependencies {
   signature("${gummyBearsModule}:${libs.versions.gummyBears.get()}@signature")
 }
 
-configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
-
-jacoco { toolVersion = libs.versions.jacoco.get() }
-
-tasks.jacocoTestReport {
-  reports {
-    xml.required.set(true)
-    html.required.set(false)
-  }
-}
-
-tasks {
-  jacocoTestCoverageVerification {
-    violationRules { rule { limit { minimum = Config.QualityPlugins.Jacoco.minimumCoverage } } }
-  }
-  check {
-    dependsOn(jacocoTestCoverageVerification)
-    dependsOn(jacocoTestReport)
-    dependsOn(animalsnifferMain)
-  }
-}
+tasks { check { dependsOn(animalsnifferMain) } }
 
 tasks.withType<Detekt>().configureEach {
   // Target version of the generated JVM bytecode. It is used for type resolution.

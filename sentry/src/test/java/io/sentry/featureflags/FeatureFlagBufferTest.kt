@@ -34,6 +34,19 @@ class FeatureFlagBufferTest {
   }
 
   @Test
+  fun `clears values`() {
+    val buffer = FeatureFlagBuffer.create(SentryOptions().also { it.maxFeatureFlags = 2 })
+    buffer.add("a", true)
+    buffer.add("b", false)
+
+    buffer.clear()
+
+    val featureFlags = buffer.featureFlags
+    assertNotNull(featureFlags)
+    assertEquals(0, featureFlags.values.size)
+  }
+
+  @Test
   fun `drops oldest entry when limit is reached`() {
     val buffer = FeatureFlagBuffer.create(SentryOptions().also { it.maxFeatureFlags = 2 })
     buffer.add("a", true)

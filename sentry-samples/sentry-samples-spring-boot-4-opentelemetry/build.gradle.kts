@@ -7,6 +7,7 @@ plugins {
   alias(libs.plugins.spring.dependency.management)
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.kotlin.spring)
+  id("io.sentry.systemtest")
 }
 
 group = "io.sentry.sample.spring-boot-4"
@@ -16,8 +17,6 @@ version = "0.0.1-SNAPSHOT"
 java.sourceCompatibility = JavaVersion.VERSION_17
 
 java.targetCompatibility = JavaVersion.VERSION_17
-
-repositories { mavenCentral() }
 
 configure<JavaPluginExtension> {
   sourceCompatibility = JavaVersion.VERSION_17
@@ -59,6 +58,10 @@ dependencies {
   implementation(projects.sentryAsyncProfiler)
   implementation(libs.otel)
 
+  // kafka
+  implementation(libs.springboot4.starter.kafka)
+  implementation(projects.sentryKafka)
+
   // cache tracing
   implementation(libs.springboot4.starter.cache)
   implementation(libs.caffeine)
@@ -78,8 +81,6 @@ dependencies {
   testImplementation("ch.qos.logback:logback-classic:1.5.16")
   testImplementation("ch.qos.logback:logback-core:1.5.16")
 }
-
-configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
 
 tasks.register<BootRun>("bootRunWithAgent").configure {
   group = "application"
@@ -106,11 +107,16 @@ tasks.register<BootRun>("bootRunWithAgent").configure {
   jvmArgs = listOf("-Dotel.javaagent.debug=true", "-javaagent:$agentJarPath")
 }
 
+// The runner launches this sample with -javaagent, so track the agent jar as a systemTest input.
+sentrySystemTest { usesOpenTelemetryAgent = true }
+
 tasks.register<Test>("systemTest").configure {
   group = "verification"
   description = "Runs the System tests"
 
-  outputs.upToDateWhen { false }
+  val test = project.extensions.getByType<SourceSetContainer>()["test"]
+  testClassesDirs = test.output.classesDirs
+  classpath = test.runtimeClasspath
 
   maxParallelForks = 1
 

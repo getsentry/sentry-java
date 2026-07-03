@@ -18,6 +18,7 @@ import io.sentry.ScopesAdapter;
 import io.sentry.SentryLevel;
 import io.sentry.SentryTraceHeader;
 import io.sentry.exception.InvalidSentryTraceHeaderException;
+import io.sentry.util.TracingUtils;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -87,6 +88,16 @@ public final class OpenTelemetryOtlpPropagator implements TextMapPropagator {
       SentryTraceHeader sentryTraceHeader = new SentryTraceHeader(sentryTraceString);
 
       final @Nullable String baggageString = getter.get(carrier, BaggageHeader.BAGGAGE_HEADER);
+      final @Nullable Baggage baggage =
+          baggageString == null ? null : Baggage.fromHeader(baggageString);
+      if (!TracingUtils.shouldContinueTrace(scopes.getOptions(), baggage)) {
+        scopes
+            .getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG, "Not continuing trace due to strict org ID validation failure.");
+        return context;
+      }
       final @NotNull TraceState traceState = TraceState.getDefault();
 
       final @NotNull TraceFlags traceFlags =
@@ -104,9 +115,8 @@ public final class OpenTelemetryOtlpPropagator implements TextMapPropagator {
       Span wrappedSpan = Span.wrap(otelSpanContext);
 
       @NotNull Context modifiedContext = context.with(wrappedSpan);
-      if (baggageString != null) {
-        modifiedContext =
-            modifiedContext.with(SENTRY_BAGGAGE_KEY, Baggage.fromHeader(baggageString));
+      if (baggage != null) {
+        modifiedContext = modifiedContext.with(SENTRY_BAGGAGE_KEY, baggage);
       }
 
       scopes

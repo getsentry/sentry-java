@@ -36,6 +36,30 @@ public final class SentryReplayOptions extends SentryMaskingOptions {
     boolean execute(@NotNull SentryEvent event, @NotNull Hint hint);
   }
 
+  /**
+   * Observer that is notified when a masked replay frame is captured. The frame bitmap (with
+   * masking already applied) is passed via a {@link Hint} using the key {@link
+   * TypeCheckHint#REPLAY_FRAME_BITMAP}.
+   *
+   * <p>On Android, retrieve the bitmap with: {@code hint.getAs(TypeCheckHint.REPLAY_FRAME_BITMAP,
+   * Bitmap.class)}.
+   *
+   * <p>The callback runs on a background thread (replay executor). The bitmap is a copy owned by
+   * the caller. Call {@code Bitmap.recycle()} when done to free native memory.
+   */
+  @ApiStatus.Experimental
+  public interface ReplayFrameObserver {
+    /**
+     * Called when a masked replay frame is captured.
+     *
+     * @param hint contains the frame bitmap under {@link TypeCheckHint#REPLAY_FRAME_BITMAP}
+     * @param frameTimestamp the timestamp (in milliseconds since epoch) when the frame was captured
+     * @param screenName the current screen name, or {@code null} if unknown
+     */
+    void onMaskedFrameCaptured(
+        @NotNull Hint hint, long frameTimestamp, @Nullable String screenName);
+  }
+
   private static final String CUSTOM_MASKING_INTEGRATION_NAME = "ReplayCustomMasking";
   private volatile boolean customMaskingTracked = false;
 
@@ -147,6 +171,20 @@ public final class SentryReplayOptions extends SentryMaskingOptions {
   private @NotNull ScreenshotStrategyType screenshotStrategy = ScreenshotStrategyType.PIXEL_COPY;
 
   /**
+   * Whether to capture SurfaceView content (e.g. Unity, video players, maps) during replay
+   * recording. When enabled, each SurfaceView in the view hierarchy will be captured separately via
+   * PixelCopy and composited onto the screenshot. Only applies when {@link #screenshotStrategy} is
+   * {@link ScreenshotStrategyType#PIXEL_COPY}. Default is disabled.
+   *
+   * <p><b>Warning:</b> the SDK cannot mask individual elements rendered inside a SurfaceView (e.g.
+   * native Unity UI, map labels, video frames) — masking granularity is at the SurfaceView level
+   * only. If the SurfaceView is configured to be masked, the entire region is redacted; otherwise
+   * its full pixel content is sent in the replay. Only enable this for SurfaceViews whose content
+   * is safe to record.
+   */
+  @ApiStatus.Experimental private boolean captureSurfaceViews = false;
+
+  /**
    * Capture request and response details for XHR and fetch requests that match the given URLs.
    * Default is empty (network details not collected).
    */
@@ -196,6 +234,8 @@ public final class SentryReplayOptions extends SentryMaskingOptions {
    * used to filter which errors trigger replay capture.
    */
   private @Nullable BeforeErrorSamplingCallback beforeErrorSampling;
+
+  @ApiStatus.Experimental private @Nullable ReplayFrameObserver frameObserver;
 
   public SentryReplayOptions(final boolean empty, final @Nullable SdkVersion sdkVersion) {
     if (!empty) {
@@ -384,6 +424,26 @@ public final class SentryReplayOptions extends SentryMaskingOptions {
   }
 
   /**
+   * Whether SurfaceView capture is enabled. See {@link #captureSurfaceViews}.
+   *
+   * @return true if SurfaceView capture is enabled
+   */
+  @ApiStatus.Experimental
+  public boolean isCaptureSurfaceViews() {
+    return captureSurfaceViews;
+  }
+
+  /**
+   * Enables or disables SurfaceView capture. See {@link #captureSurfaceViews}.
+   *
+   * @param captureSurfaceViews true to enable SurfaceView capture
+   */
+  @ApiStatus.Experimental
+  public void setCaptureSurfaceViews(final boolean captureSurfaceViews) {
+    this.captureSurfaceViews = captureSurfaceViews;
+  }
+
+  /**
    * Gets the list of URLs for which network request and response details should be captured.
    *
    * @return the network detail allow URLs list
@@ -515,5 +575,27 @@ public final class SentryReplayOptions extends SentryMaskingOptions {
   public void setBeforeErrorSampling(
       final @Nullable BeforeErrorSamplingCallback beforeErrorSampling) {
     this.beforeErrorSampling = beforeErrorSampling;
+  }
+
+  /**
+   * Gets the observer that is notified when a masked replay frame is captured.
+   *
+   * @return the observer, or {@code null} if not set
+   */
+  @ApiStatus.Experimental
+  public @Nullable ReplayFrameObserver getFrameObserver() {
+    return frameObserver;
+  }
+
+  /**
+   * Sets the observer that is notified when a masked replay frame is captured. The frame bitmap
+   * (with masking already applied) is passed via a {@link Hint} using the key {@link
+   * TypeCheckHint#REPLAY_FRAME_BITMAP}.
+   *
+   * @param frameObserver the observer, or {@code null} to clear
+   */
+  @ApiStatus.Experimental
+  public void setFrameObserver(final @Nullable ReplayFrameObserver frameObserver) {
+    this.frameObserver = frameObserver;
   }
 }

@@ -289,6 +289,56 @@ class ManifestMetadataReaderTest {
   }
 
   @Test
+  fun `applyMetadata reads tombstone attach raw to options`() {
+    // Arrange
+    val bundle = bundleOf(ManifestMetadataReader.TOMBSTONE_ATTACH_RAW to true)
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertEquals(true, fixture.options.isAttachRawTombstone)
+  }
+
+  @Test
+  fun `applyMetadata reads tombstone attach raw to options and keeps default`() {
+    // Arrange
+    val context = fixture.getContext()
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertEquals(false, fixture.options.isAttachRawTombstone)
+  }
+
+  @Test
+  fun `applyMetadata reads anr report historical to options`() {
+    // Arrange
+    val bundle = bundleOf(ManifestMetadataReader.ANR_REPORT_HISTORICAL to true)
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertEquals(true, fixture.options.isReportHistoricalAnrs)
+  }
+
+  @Test
+  fun `applyMetadata reads anr report historical to options and keeps default`() {
+    // Arrange
+    val context = fixture.getContext()
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertEquals(false, fixture.options.isReportHistoricalAnrs)
+  }
+
+  @Test
   fun `applyMetadata reads activity breadcrumbs to options`() {
     // Arrange
     val bundle = bundleOf(ManifestMetadataReader.BREADCRUMBS_ACTIVITY_LIFECYCLE_ENABLE to false)
@@ -1443,6 +1493,36 @@ class ManifestMetadataReaderTest {
   }
 
   @Test
+  fun `applyMetadata reads standalone app start tracing flag to options`() {
+    val bundle = bundleOf(ManifestMetadataReader.ENABLE_STANDALONE_APP_START_TRACING to true)
+    val context = fixture.getContext(metaData = bundle)
+
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    assertTrue(fixture.options.isEnableStandaloneAppStartTracing)
+  }
+
+  @Test
+  fun `applyMetadata reads standalone app start tracing false to options`() {
+    fixture.options.isEnableStandaloneAppStartTracing = true
+    val bundle = bundleOf(ManifestMetadataReader.ENABLE_STANDALONE_APP_START_TRACING to false)
+    val context = fixture.getContext(metaData = bundle)
+
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    assertFalse(fixture.options.isEnableStandaloneAppStartTracing)
+  }
+
+  @Test
+  fun `applyMetadata reads standalone app start tracing flag to options and keeps default if not found`() {
+    val context = fixture.getContext()
+
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    assertFalse(fixture.options.isEnableStandaloneAppStartTracing)
+  }
+
+  @Test
   fun `applyMetadata reads startupProfiling flag to options`() {
     // Arrange
     val bundle = bundleOf(ManifestMetadataReader.ENABLE_APP_START_PROFILING to true)
@@ -2023,6 +2103,31 @@ class ManifestMetadataReaderTest {
   }
 
   @Test
+  fun `applyMetadata reads capture-surface-views to options`() {
+    // Arrange
+    val bundle = bundleOf(ManifestMetadataReader.REPLAYS_CAPTURE_SURFACE_VIEWS to true)
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertTrue(fixture.options.sessionReplay.isCaptureSurfaceViews)
+  }
+
+  @Test
+  fun `applyMetadata reads capture-surface-views and keeps default if not found`() {
+    // Arrange
+    val context = fixture.getContext()
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertFalse(fixture.options.sessionReplay.isCaptureSurfaceViews)
+  }
+
+  @Test
   fun `applyMetadata reads anrProfilingSampleRate to options`() {
     // Arrange
     val bundle = bundleOf(ManifestMetadataReader.ANR_PROFILING_SAMPLE_RATE to 0.5f)
@@ -2460,5 +2565,55 @@ class ManifestMetadataReaderTest {
     assertTrue(fixture.options.screenshot.maskViewClasses.contains("android.widget.ImageView"))
     // maskAllImages should also add WebView
     assertTrue(fixture.options.screenshot.maskViewClasses.contains("android.webkit.WebView"))
+  }
+
+  @Test
+  fun `applyMetadata reads strictTraceContinuation and keeps default value if not found`() {
+    // Arrange
+    val context = fixture.getContext()
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertFalse(fixture.options.isStrictTraceContinuation)
+  }
+
+  @Test
+  fun `applyMetadata reads strictTraceContinuation to options`() {
+    // Arrange
+    val bundle = bundleOf(ManifestMetadataReader.STRICT_TRACE_CONTINUATION to true)
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertTrue(fixture.options.isStrictTraceContinuation)
+  }
+
+  @Test
+  fun `applyMetadata reads orgId and keeps null if not found`() {
+    // Arrange
+    val context = fixture.getContext()
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertNull(fixture.options.orgId)
+  }
+
+  @Test
+  fun `applyMetadata reads orgId to options`() {
+    // Arrange
+    val bundle = bundleOf(ManifestMetadataReader.ORG_ID to "12345")
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertEquals("12345", fixture.options.orgId)
   }
 }

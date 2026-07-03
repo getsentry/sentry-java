@@ -11,6 +11,8 @@ import io.opentelemetry.semconv.HttpAttributes
 import io.opentelemetry.semconv.UrlAttributes
 import io.opentelemetry.semconv.incubating.DbIncubatingAttributes
 import io.opentelemetry.semconv.incubating.HttpIncubatingAttributes
+import io.opentelemetry.semconv.incubating.MessagingIncubatingAttributes
+import io.sentry.SentryOptions
 import io.sentry.protocol.TransactionNameSource
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -229,6 +231,250 @@ class SpanDescriptionExtractorTest {
   }
 
   @Test
+  fun `ignores messaging system when queue tracing disabled`() {
+    givenSpanName("my-topic publish")
+    givenAttributes(
+      mapOf(
+        MessagingIncubatingAttributes.MESSAGING_SYSTEM to "kafka",
+        MessagingIncubatingAttributes.MESSAGING_DESTINATION_NAME to "my-topic",
+        MessagingIncubatingAttributes.MESSAGING_OPERATION_TYPE to "publish",
+      )
+    )
+
+    val info = whenExtractingSpanInfo(queueTracingEnabled = false)
+
+    assertEquals("my-topic publish", info.op)
+    assertEquals("my-topic publish", info.description)
+    assertEquals(TransactionNameSource.CUSTOM, info.transactionNameSource)
+  }
+
+  @Test
+  fun `maps messaging publish operation type to queue publish op`() {
+    givenAttributes(
+      mapOf(
+        MessagingIncubatingAttributes.MESSAGING_SYSTEM to "kafka",
+        MessagingIncubatingAttributes.MESSAGING_DESTINATION_NAME to "my-topic",
+        MessagingIncubatingAttributes.MESSAGING_OPERATION_TYPE to "publish",
+      )
+    )
+
+    val info = whenExtractingSpanInfo(queueTracingEnabled = true)
+
+    assertEquals("queue.publish", info.op)
+    assertEquals("my-topic", info.description)
+    assertEquals(TransactionNameSource.TASK, info.transactionNameSource)
+  }
+
+  @Test
+  fun `maps messaging send operation type to queue publish op`() {
+    givenAttributes(
+      mapOf(
+        MessagingIncubatingAttributes.MESSAGING_SYSTEM to "kafka",
+        MessagingIncubatingAttributes.MESSAGING_DESTINATION_NAME to "my-topic",
+        MessagingIncubatingAttributes.MESSAGING_OPERATION_TYPE to "send",
+      )
+    )
+
+    val info = whenExtractingSpanInfo(queueTracingEnabled = true)
+
+    assertEquals("queue.publish", info.op)
+    assertEquals("my-topic", info.description)
+    assertEquals(TransactionNameSource.TASK, info.transactionNameSource)
+  }
+
+  @Test
+  fun `maps messaging process operation type to queue process op`() {
+    givenAttributes(
+      mapOf(
+        MessagingIncubatingAttributes.MESSAGING_SYSTEM to "kafka",
+        MessagingIncubatingAttributes.MESSAGING_DESTINATION_NAME to "my-topic",
+        MessagingIncubatingAttributes.MESSAGING_OPERATION_TYPE to "process",
+      )
+    )
+
+    val info = whenExtractingSpanInfo(queueTracingEnabled = true)
+
+    assertEquals("queue.process", info.op)
+    assertEquals("my-topic", info.description)
+    assertEquals(TransactionNameSource.TASK, info.transactionNameSource)
+  }
+
+  @Test
+  fun `maps messaging deliver operation type to queue process op`() {
+    givenAttributes(
+      mapOf(
+        MessagingIncubatingAttributes.MESSAGING_SYSTEM to "kafka",
+        MessagingIncubatingAttributes.MESSAGING_DESTINATION_NAME to "my-topic",
+        MessagingIncubatingAttributes.MESSAGING_OPERATION_TYPE to "deliver",
+      )
+    )
+
+    val info = whenExtractingSpanInfo(queueTracingEnabled = true)
+
+    assertEquals("queue.process", info.op)
+    assertEquals("my-topic", info.description)
+    assertEquals(TransactionNameSource.TASK, info.transactionNameSource)
+  }
+
+  @Test
+  fun `maps messaging create operation type to queue create op`() {
+    givenAttributes(
+      mapOf(
+        MessagingIncubatingAttributes.MESSAGING_SYSTEM to "kafka",
+        MessagingIncubatingAttributes.MESSAGING_DESTINATION_NAME to "my-topic",
+        MessagingIncubatingAttributes.MESSAGING_OPERATION_TYPE to "create",
+      )
+    )
+
+    val info = whenExtractingSpanInfo(queueTracingEnabled = true)
+
+    assertEquals("queue.create", info.op)
+    assertEquals("my-topic", info.description)
+    assertEquals(TransactionNameSource.TASK, info.transactionNameSource)
+  }
+
+  @Test
+  fun `maps messaging receive operation type to queue receive op`() {
+    givenAttributes(
+      mapOf(
+        MessagingIncubatingAttributes.MESSAGING_SYSTEM to "kafka",
+        MessagingIncubatingAttributes.MESSAGING_DESTINATION_NAME to "my-topic",
+        MessagingIncubatingAttributes.MESSAGING_OPERATION_TYPE to "receive",
+      )
+    )
+
+    val info = whenExtractingSpanInfo(queueTracingEnabled = true)
+
+    assertEquals("queue.receive", info.op)
+    assertEquals("my-topic", info.description)
+    assertEquals(TransactionNameSource.TASK, info.transactionNameSource)
+  }
+
+  @Test
+  fun `maps messaging settle operation type to queue settle op`() {
+    givenAttributes(
+      mapOf(
+        MessagingIncubatingAttributes.MESSAGING_SYSTEM to "rabbitmq",
+        MessagingIncubatingAttributes.MESSAGING_DESTINATION_NAME to "my-queue",
+        MessagingIncubatingAttributes.MESSAGING_OPERATION_TYPE to "settle",
+      )
+    )
+
+    val info = whenExtractingSpanInfo(queueTracingEnabled = true)
+
+    assertEquals("queue.settle", info.op)
+    assertEquals("my-queue", info.description)
+    assertEquals(TransactionNameSource.TASK, info.transactionNameSource)
+  }
+
+  @Test
+  fun `falls back to legacy messaging operation attribute`() {
+    @Suppress("DEPRECATION")
+    givenAttributes(
+      mapOf(
+        MessagingIncubatingAttributes.MESSAGING_SYSTEM to "rabbitmq",
+        MessagingIncubatingAttributes.MESSAGING_DESTINATION_NAME to "queue-name",
+        MessagingIncubatingAttributes.MESSAGING_OPERATION to "publish",
+      )
+    )
+
+    val info = whenExtractingSpanInfo(queueTracingEnabled = true)
+
+    assertEquals("queue.publish", info.op)
+    assertEquals("queue-name", info.description)
+  }
+
+  @Test
+  fun `falls back to PRODUCER span kind when no operation attribute`() {
+    givenSpanKind(SpanKind.PRODUCER)
+    givenAttributes(
+      mapOf(
+        MessagingIncubatingAttributes.MESSAGING_SYSTEM to "kafka",
+        MessagingIncubatingAttributes.MESSAGING_DESTINATION_NAME to "my-topic",
+      )
+    )
+
+    val info = whenExtractingSpanInfo(queueTracingEnabled = true)
+
+    assertEquals("queue.publish", info.op)
+    assertEquals("my-topic", info.description)
+  }
+
+  @Test
+  fun `falls back to CONSUMER span kind when no operation attribute`() {
+    givenSpanKind(SpanKind.CONSUMER)
+    givenAttributes(
+      mapOf(
+        MessagingIncubatingAttributes.MESSAGING_SYSTEM to "kafka",
+        MessagingIncubatingAttributes.MESSAGING_DESTINATION_NAME to "my-topic",
+      )
+    )
+
+    val info = whenExtractingSpanInfo(queueTracingEnabled = true)
+
+    assertEquals("queue.process", info.op)
+    assertEquals("my-topic", info.description)
+  }
+
+  @Test
+  fun `falls back to span name as description when destination missing`() {
+    givenSpanName("my-topic publish")
+    givenAttributes(
+      mapOf(
+        MessagingIncubatingAttributes.MESSAGING_SYSTEM to "kafka",
+        MessagingIncubatingAttributes.MESSAGING_OPERATION_TYPE to "publish",
+      )
+    )
+
+    val info = whenExtractingSpanInfo(queueTracingEnabled = true)
+
+    assertEquals("queue.publish", info.op)
+    assertEquals("my-topic publish", info.description)
+  }
+
+  @Test
+  fun `messaging mapping wins over http when both attributes present and queue tracing enabled`() {
+    // Some OTel instrumentations (e.g. aws-sdk-2.2 SQS) attach both messaging and http
+    // attributes to the same span. Messaging is more specific and must win.
+    givenSpanKind(SpanKind.PRODUCER)
+    givenAttributes(
+      mapOf(
+        HttpAttributes.HTTP_REQUEST_METHOD to "POST",
+        UrlAttributes.URL_FULL to "https://sqs.us-east-1.amazonaws.com/",
+        MessagingIncubatingAttributes.MESSAGING_SYSTEM to "aws.sqs",
+        MessagingIncubatingAttributes.MESSAGING_DESTINATION_NAME to "my-queue",
+        MessagingIncubatingAttributes.MESSAGING_OPERATION_TYPE to "publish",
+      )
+    )
+
+    val info = whenExtractingSpanInfo(queueTracingEnabled = true)
+
+    assertEquals("queue.publish", info.op)
+    assertEquals("my-queue", info.description)
+    assertEquals(TransactionNameSource.TASK, info.transactionNameSource)
+  }
+
+  @Test
+  fun `http mapping wins over messaging when queue tracing disabled`() {
+    givenSpanKind(SpanKind.CLIENT)
+    givenAttributes(
+      mapOf(
+        HttpAttributes.HTTP_REQUEST_METHOD to "POST",
+        UrlAttributes.URL_FULL to "https://sqs.us-east-1.amazonaws.com/",
+        MessagingIncubatingAttributes.MESSAGING_SYSTEM to "aws.sqs",
+        MessagingIncubatingAttributes.MESSAGING_DESTINATION_NAME to "my-queue",
+        MessagingIncubatingAttributes.MESSAGING_OPERATION_TYPE to "publish",
+      )
+    )
+
+    val info = whenExtractingSpanInfo(queueTracingEnabled = false)
+
+    assertEquals("http.client", info.op)
+    assertEquals("POST https://sqs.us-east-1.amazonaws.com/", info.description)
+    assertEquals(TransactionNameSource.URL, info.transactionNameSource)
+  }
+
+  @Test
   fun `uses span name as op and description if no relevant attributes`() {
     givenSpanName("span name")
     givenAttributes(emptyMap())
@@ -289,9 +535,10 @@ class SpanDescriptionExtractorTest {
     builder.put(key as AttributeKey<Any>, value)
   }
 
-  private fun whenExtractingSpanInfo(): OtelSpanInfo {
+  private fun whenExtractingSpanInfo(queueTracingEnabled: Boolean = false): OtelSpanInfo {
     fixture.setup()
-    return SpanDescriptionExtractor().extractSpanInfo(fixture.otelSpan, fixture.sentrySpan)
+    val options = SentryOptions().apply { isEnableQueueTracing = queueTracingEnabled }
+    return SpanDescriptionExtractor().extractSpanInfo(fixture.otelSpan, fixture.sentrySpan, options)
   }
 
   private fun givenParentContext(parentContext: SpanContext) {

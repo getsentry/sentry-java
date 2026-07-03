@@ -2,11 +2,13 @@ package io.sentry.android.replay
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.os.Build
 import android.view.MotionEvent
 import io.sentry.Breadcrumb
 import io.sentry.DataCategory.All
 import io.sentry.DataCategory.Replay
+import io.sentry.Hint
 import io.sentry.IConnectionStatusProvider.ConnectionStatus
 import io.sentry.IConnectionStatusProvider.ConnectionStatus.DISCONNECTED
 import io.sentry.IConnectionStatusProvider.IConnectionStatusObserver
@@ -17,8 +19,10 @@ import io.sentry.ReplayBreadcrumbConverter
 import io.sentry.ReplayController
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel.DEBUG
+import io.sentry.SentryLevel.ERROR
 import io.sentry.SentryLevel.INFO
 import io.sentry.SentryOptions
+import io.sentry.TypeCheckHint
 import io.sentry.android.replay.ReplayState.CLOSED
 import io.sentry.android.replay.ReplayState.PAUSED
 import io.sentry.android.replay.ReplayState.RESUMED
@@ -103,10 +107,17 @@ public class ReplayIntegration(
   private var gestureRecorder: GestureRecorder? = null
   private val random by lazy { Random() }
   internal val rootViewsSpy by lazy { RootViewsSpy.install() }
-  private val replayExecutor by lazy {
+  internal val lazyReplayExecutor = lazy {
     val delegate = Executors.newSingleThreadScheduledExecutor(ReplayExecutorServiceThreadFactory())
     ReplayExecutorService(delegate, options)
   }
+  internal val replayExecutor by lazyReplayExecutor
+  internal val lazyPersistingExecutor = lazy {
+    val delegate =
+      Executors.newSingleThreadScheduledExecutor(ReplayPersistingExecutorServiceThreadFactory())
+    ReplayExecutorService(delegate, options)
+  }
+  internal val persistingExecutor by lazyPersistingExecutor
 
   internal val isEnabled = AtomicBoolean(false)
   internal val isManualPause = AtomicBoolean(false)
@@ -188,6 +199,7 @@ public class ReplayIntegration(
               scopes,
               dateProvider,
               replayExecutor,
+              persistingExecutor,
               replayCacheProvider,
             )
           } else {
@@ -197,6 +209,7 @@ public class ReplayIntegration(
               dateProvider,
               random,
               replayExecutor,
+              persistingExecutor,
               replayCacheProvider,
             )
           }
@@ -276,6 +289,13 @@ public class ReplayIntegration(
 
   override fun isDebugMaskingOverlayEnabled(): Boolean = debugMaskingEnabled
 
+  override fun registerTraceId(traceId: SentryId) {
+    if (!isEnabled.get() || !isRecording()) {
+      return
+    }
+    captureStrategy?.registerTraceId(traceId)
+  }
+
   private fun pauseInternal() {
     lifecycleLock.acquire().use {
       if (!isEnabled.get() || !lifecycle.isAllowed(PAUSED)) {
@@ -308,13 +328,45 @@ public class ReplayIntegration(
     var screen: String? = null
     scopes?.configureScope { screen = it.screen?.substringAfterLast('.') }
     captureStrategy?.onScreenshotRecorded(bitmap) { frameTimeStamp ->
+      val observer = options.sessionReplay.frameObserver
+      if (observer != null) {
+        val copy = bitmap.copy(bitmap.config!!, false)
+        if (copy != null) {
+          try {
+            val hint = Hint()
+            hint.set(TypeCheckHint.REPLAY_FRAME_BITMAP, copy)
+            observer.onMaskedFrameCaptured(hint, frameTimeStamp, screen)
+          } catch (e: Throwable) {
+            options.logger.log(ERROR, "Error in ReplayFrameObserver", e)
+            copy.recycle()
+          }
+        }
+      }
       addFrame(bitmap, frameTimeStamp, screen)
     }
     checkCanRecord()
   }
 
   override fun onScreenshotRecorded(screenshot: File, frameTimestamp: Long) {
-    captureStrategy?.onScreenshotRecorded { _ -> addFrame(screenshot, frameTimestamp) }
+    var screen: String? = null
+    scopes?.configureScope { screen = it.screen?.substringAfterLast('.') }
+    captureStrategy?.onScreenshotRecorded { _ ->
+      val observer = options.sessionReplay.frameObserver
+      if (observer != null) {
+        val bitmap = BitmapFactory.decodeFile(screenshot.absolutePath)
+        if (bitmap != null) {
+          try {
+            val hint = Hint()
+            hint.set(TypeCheckHint.REPLAY_FRAME_BITMAP, bitmap)
+            observer.onMaskedFrameCaptured(hint, frameTimestamp, screen)
+          } catch (e: Throwable) {
+            options.logger.log(ERROR, "Error in ReplayFrameObserver", e)
+            bitmap.recycle()
+          }
+        }
+      }
+      addFrame(screenshot, frameTimestamp, screen)
+    }
     checkCanRecord()
   }
 
@@ -330,7 +382,20 @@ public class ReplayIntegration(
       recorder?.close()
       recorder = null
       rootViewsSpy.close()
-      replayExecutor.shutdown()
+      if (lazyReplayExecutor.isInitialized()) {
+        if (options.threadChecker.isMainThread) {
+          replayExecutor.gracefulShutdown()
+        } else {
+          replayExecutor.shutdown()
+        }
+      }
+      if (lazyPersistingExecutor.isInitialized()) {
+        if (options.threadChecker.isMainThread) {
+          persistingExecutor.gracefulShutdown()
+        } else {
+          persistingExecutor.shutdown()
+        }
+      }
       lifecycle.currentState = CLOSED
     }
   }
@@ -507,6 +572,16 @@ public class ReplayIntegration(
 
     override fun newThread(r: Runnable): Thread {
       val ret = Thread(r, "SentryReplayIntegration-" + cnt++)
+      ret.setDaemon(true)
+      return ret
+    }
+  }
+
+  private class ReplayPersistingExecutorServiceThreadFactory : ThreadFactory {
+    private var cnt = 0
+
+    override fun newThread(r: Runnable): Thread {
+      val ret = Thread(r, "SentryReplayPersister-" + cnt++)
       ret.setDaemon(true)
       return ret
     }

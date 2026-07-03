@@ -4,6 +4,8 @@ import io.sentry.Hint
 import io.sentry.IScopes
 import io.sentry.Sentry
 import io.sentry.exception.ExceptionMechanismException
+import io.sentry.test.initForTest
+import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -32,6 +34,13 @@ class SentryCaptureExceptionParameterAdviceTest {
   @BeforeTest
   fun setup() {
     reset(scopes)
+    initForTest { it.dsn = "https://key@sentry.io/proj" }
+    Sentry.setCurrentScopes(scopes)
+  }
+
+  @AfterTest
+  fun teardown() {
+    Sentry.close()
   }
 
   @Test

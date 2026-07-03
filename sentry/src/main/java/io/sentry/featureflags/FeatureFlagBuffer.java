@@ -70,6 +70,13 @@ public final class FeatureFlagBuffer implements IFeatureFlagBuffer {
   }
 
   @Override
+  public void clear() {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      flags.clear();
+    }
+  }
+
+  @Override
   public @Nullable FeatureFlags getFeatureFlags() {
     List<FeatureFlag> featureFlags = new ArrayList<>();
     for (FeatureFlagEntry entry : flags) {

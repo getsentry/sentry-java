@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.config.KotlinCompilerVersion
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -6,6 +7,7 @@ plugins {
   alias(libs.plugins.spring.dependency.management)
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.kotlin.spring)
+  id("io.sentry.systemtest")
 }
 
 group = "io.sentry.sample.spring-boot-jakarta"
@@ -16,7 +18,15 @@ java.sourceCompatibility = JavaVersion.VERSION_17
 
 java.targetCompatibility = JavaVersion.VERSION_17
 
-repositories { mavenCentral() }
+dependencyManagement {
+  imports {
+    mavenBom("org.springframework.boot:spring-boot-dependencies:${libs.versions.springboot3.get()}")
+    mavenBom(libs.otel.instrumentation.bom.get().toString())
+  }
+}
+
+// Apollo 4.x requires coroutines 1.9.0+, override Spring Boot's managed version
+extra["kotlin-coroutines.version"] = "1.9.0"
 
 configure<JavaPluginExtension> {
   sourceCompatibility = JavaVersion.VERSION_17
@@ -24,10 +34,10 @@ configure<JavaPluginExtension> {
 }
 
 tasks.withType<KotlinCompile>().configureEach {
-  compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
+  compilerOptions.jvmTarget = JvmTarget.JVM_17
   kotlin {
     compilerOptions.freeCompilerArgs = listOf("-Xjsr305=strict")
-    compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
+    compilerOptions.jvmTarget = JvmTarget.JVM_17
   }
 }
 
@@ -52,6 +62,10 @@ dependencies {
   implementation(projects.sentryAsyncProfiler)
   implementation(projects.sentryOpentelemetry.sentryOpentelemetryAgentlessSpring)
 
+  // kafka
+  implementation(libs.spring.kafka3)
+  implementation(projects.sentryKafka)
+
   // cache tracing
   implementation(libs.springboot3.starter.cache)
   implementation(libs.caffeine)
@@ -72,15 +86,13 @@ dependencies {
   testImplementation("ch.qos.logback:logback-core:1.5.16")
 }
 
-dependencyManagement { imports { mavenBom(libs.otel.instrumentation.bom.get().toString()) } }
-
-configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
-
 tasks.register<Test>("systemTest").configure {
   group = "verification"
   description = "Runs the System tests"
 
-  outputs.upToDateWhen { false }
+  val test = project.extensions.getByType<SourceSetContainer>()["test"]
+  testClassesDirs = test.output.classesDirs
+  classpath = test.runtimeClasspath
 
   maxParallelForks = 1
 

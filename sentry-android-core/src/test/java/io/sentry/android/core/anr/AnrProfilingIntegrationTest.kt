@@ -174,7 +174,7 @@ class AnrProfilingIntegrationTest {
 
     val integration = AnrProfilingIntegration()
     integration.register(mockScopes, androidOptions)
-    integration.onForeground()
+    // Drive the state machine synchronously to avoid racing the background polling thread.
 
     SystemClock.setCurrentTimeMillis(1_000)
     integration.checkMainThread(mainThread)

@@ -1,9 +1,30 @@
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 pluginManagement {
-    repositories {
-        mavenCentral()
-        gradlePluginPortal()
+  repositories {
+    // Prefer local SAGP artifact if one exists; otherwise fall back to libs.versions.toml.
+    if (providers.gradleProperty("useSagp").isPresent) {
+      mavenLocal {
+        content {
+          includeGroup("io.sentry")
+          includeGroup("io.sentry.android.gradle")
+        }
+      }
+    }
+    mavenCentral()
+    gradlePluginPortal()
+  }
+}
+
+plugins {
+    id("com.gradle.develocity") version "4.4.2"
+    id("com.gradle.common-custom-user-data-gradle-plugin") version "2.6.0"
+}
+
+develocity {
+    buildScan {
+        termsOfUseUrl.set("https://gradle.com/help/legal-terms-of-use")
+        termsOfUseAgree.set("yes")
     }
 }
 
@@ -58,6 +79,7 @@ include(
     "sentry-graphql-22",
     "sentry-graphql-core",
     "sentry-jdbc",
+    "sentry-kafka",
     "sentry-opentelemetry:sentry-opentelemetry-bootstrap",
     "sentry-opentelemetry:sentry-opentelemetry-core",
     "sentry-opentelemetry:sentry-opentelemetry-agentcustomization",
@@ -103,6 +125,7 @@ include(
     "sentry-samples:sentry-samples-netflix-dgs",
     "sentry-android-integration-tests:sentry-uitest-android-critical",
     "sentry-android-integration-tests:sentry-uitest-android-benchmark",
+    "sentry-android-integration-tests:sentry-uitest-android-macrobenchmark",
     "sentry-android-integration-tests:sentry-uitest-android",
     "sentry-android-integration-tests:test-app-plain",
     "sentry-android-integration-tests:test-app-sentry",

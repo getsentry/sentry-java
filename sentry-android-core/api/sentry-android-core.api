@@ -374,6 +374,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun isAnrProfilingEnabled ()Z
 	public fun isAnrReportInDebug ()Z
 	public fun isAttachAnrThreadDump ()Z
+	public fun isAttachRawTombstone ()Z
 	public fun isAttachScreenshot ()Z
 	public fun isAttachViewHierarchy ()Z
 	public fun isCollectAdditionalContext ()Z
@@ -391,6 +392,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun isEnablePerformanceV2 ()Z
 	public fun isEnableRootCheck ()Z
 	public fun isEnableScopeSync ()Z
+	public fun isEnableStandaloneAppStartTracing ()Z
 	public fun isEnableSystemEventBreadcrumbs ()Z
 	public fun isEnableSystemEventBreadcrumbsExtras ()Z
 	public fun isReportHistoricalAnrs ()Z
@@ -401,6 +403,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun setAnrReportInDebug (Z)V
 	public fun setAnrTimeoutIntervalMillis (J)V
 	public fun setAttachAnrThreadDump (Z)V
+	public fun setAttachRawTombstone (Z)V
 	public fun setAttachScreenshot (Z)V
 	public fun setAttachViewHierarchy (Z)V
 	public fun setBeforeScreenshotCaptureCallback (Lio/sentry/android/core/SentryAndroidOptions$BeforeCaptureCallback;)V
@@ -421,6 +424,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun setEnablePerformanceV2 (Z)V
 	public fun setEnableRootCheck (Z)V
 	public fun setEnableScopeSync (Z)V
+	public fun setEnableStandaloneAppStartTracing (Z)V
 	public fun setEnableSystemEventBreadcrumbs (Z)V
 	public fun setEnableSystemEventBreadcrumbsExtras (Z)V
 	public fun setFrameMetricsCollector (Lio/sentry/android/core/internal/util/SentryFrameMetricsCollector;)V
@@ -433,6 +437,12 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 
 public abstract interface class io/sentry/android/core/SentryAndroidOptions$BeforeCaptureCallback {
 	public abstract fun execute (Lio/sentry/SentryEvent;Lio/sentry/Hint;Z)Z
+}
+
+public final class io/sentry/android/core/SentryFramesDelayResult {
+	public fun <init> (DI)V
+	public fun getDelaySeconds ()D
+	public fun getFramesContributingToDelayCount ()I
 }
 
 public final class io/sentry/android/core/SentryInitProvider {
@@ -496,23 +506,44 @@ public class io/sentry/android/core/SentryUserFeedbackButton : android/widget/Bu
 	public fun setOnClickListener (Landroid/view/View$OnClickListener;)V
 }
 
-public final class io/sentry/android/core/SentryUserFeedbackDialog : android/app/AlertDialog {
-	public fun setCancelable (Z)V
-	public fun setOnDismissListener (Landroid/content/DialogInterface$OnDismissListener;)V
-	public fun show ()V
+public final class io/sentry/android/core/SentryUserFeedbackDialog : io/sentry/android/core/SentryUserFeedbackForm {
 }
 
-public class io/sentry/android/core/SentryUserFeedbackDialog$Builder {
+public class io/sentry/android/core/SentryUserFeedbackDialog$Builder : io/sentry/android/core/SentryUserFeedbackForm$Builder {
 	public fun <init> (Landroid/content/Context;)V
 	public fun <init> (Landroid/content/Context;I)V
 	public fun <init> (Landroid/content/Context;ILio/sentry/android/core/SentryUserFeedbackDialog$OptionsConfiguration;)V
 	public fun <init> (Landroid/content/Context;Lio/sentry/android/core/SentryUserFeedbackDialog$OptionsConfiguration;)V
 	public fun associatedEventId (Lio/sentry/protocol/SentryId;)Lio/sentry/android/core/SentryUserFeedbackDialog$Builder;
+	public synthetic fun associatedEventId (Lio/sentry/protocol/SentryId;)Lio/sentry/android/core/SentryUserFeedbackForm$Builder;
 	public fun configurator (Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)Lio/sentry/android/core/SentryUserFeedbackDialog$Builder;
+	public synthetic fun configurator (Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)Lio/sentry/android/core/SentryUserFeedbackForm$Builder;
 	public fun create ()Lio/sentry/android/core/SentryUserFeedbackDialog;
+	public synthetic fun create ()Lio/sentry/android/core/SentryUserFeedbackForm;
 }
 
-public abstract interface class io/sentry/android/core/SentryUserFeedbackDialog$OptionsConfiguration {
+public abstract interface class io/sentry/android/core/SentryUserFeedbackDialog$OptionsConfiguration : io/sentry/android/core/SentryUserFeedbackForm$OptionsConfiguration {
+}
+
+public class io/sentry/android/core/SentryUserFeedbackForm : android/app/AlertDialog {
+	protected fun onCreate (Landroid/os/Bundle;)V
+	protected fun onStart ()V
+	public fun setCancelable (Z)V
+	public fun setOnDismissListener (Landroid/content/DialogInterface$OnDismissListener;)V
+	public fun show ()V
+}
+
+public class io/sentry/android/core/SentryUserFeedbackForm$Builder {
+	public fun <init> (Landroid/content/Context;)V
+	public fun <init> (Landroid/content/Context;I)V
+	public fun <init> (Landroid/content/Context;ILio/sentry/android/core/SentryUserFeedbackForm$OptionsConfiguration;)V
+	public fun <init> (Landroid/content/Context;Lio/sentry/android/core/SentryUserFeedbackForm$OptionsConfiguration;)V
+	public fun associatedEventId (Lio/sentry/protocol/SentryId;)Lio/sentry/android/core/SentryUserFeedbackForm$Builder;
+	public fun configurator (Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)Lio/sentry/android/core/SentryUserFeedbackForm$Builder;
+	public fun create ()Lio/sentry/android/core/SentryUserFeedbackForm;
+}
+
+public abstract interface class io/sentry/android/core/SentryUserFeedbackForm$OptionsConfiguration {
 	public abstract fun configure (Landroid/content/Context;Lio/sentry/SentryFeedbackOptions;)V
 }
 
@@ -711,11 +742,17 @@ public class io/sentry/android/core/performance/AppStartMetrics : io/sentry/andr
 	public fun clear ()V
 	public fun createProcessInitSpan ()Lio/sentry/android/core/performance/TimeSpan;
 	public fun getActivityLifecycleTimeSpans ()Ljava/util/List;
+	public fun getAppStartBaggageHeader ()Ljava/lang/String;
 	public fun getAppStartContinuousProfiler ()Lio/sentry/IContinuousProfiler;
+	public fun getAppStartEndTime ()Lio/sentry/SentryDate;
 	public fun getAppStartProfiler ()Lio/sentry/ITransactionProfiler;
+	public fun getAppStartReason ()Ljava/lang/String;
 	public fun getAppStartSamplingDecision ()Lio/sentry/TracesSamplingDecision;
+	public fun getAppStartSentryTraceHeader ()Ljava/lang/String;
 	public fun getAppStartTimeSpan ()Lio/sentry/android/core/performance/TimeSpan;
+	public fun getAppStartTimeSpanForHeadless ()Lio/sentry/android/core/performance/TimeSpan;
 	public fun getAppStartTimeSpanWithFallback (Lio/sentry/android/core/SentryAndroidOptions;)Lio/sentry/android/core/performance/TimeSpan;
+	public fun getAppStartTraceId ()Lio/sentry/protocol/SentryId;
 	public fun getAppStartType ()Lio/sentry/android/core/performance/AppStartMetrics$AppStartType;
 	public fun getApplicationOnCreateTimeSpan ()Lio/sentry/android/core/performance/TimeSpan;
 	public fun getClassLoadedUptimeMs ()J
@@ -736,12 +773,19 @@ public class io/sentry/android/core/performance/AppStartMetrics : io/sentry/andr
 	public static fun onContentProviderPostCreate (Landroid/content/ContentProvider;)V
 	public fun registerLifecycleCallbacks (Landroid/app/Application;)V
 	public fun setAppLaunchedInForeground (Z)V
+	public fun setAppStartBaggageHeader (Ljava/lang/String;)V
 	public fun setAppStartContinuousProfiler (Lio/sentry/IContinuousProfiler;)V
+	public fun setAppStartEndTime (Lio/sentry/SentryDate;)V
 	public fun setAppStartProfiler (Lio/sentry/ITransactionProfiler;)V
 	public fun setAppStartSamplingDecision (Lio/sentry/TracesSamplingDecision;)V
+	public fun setAppStartSentryTraceHeader (Ljava/lang/String;)V
+	public fun setAppStartTraceId (Lio/sentry/protocol/SentryId;)V
 	public fun setAppStartType (Lio/sentry/android/core/performance/AppStartMetrics$AppStartType;)V
+	public fun setCachedStartInfo (Landroid/app/ApplicationStartInfo;)V
 	public fun setClassLoadedUptimeMs (J)V
+	public fun setHeadlessAppStartListener (Lio/sentry/android/core/performance/AppStartMetrics$HeadlessAppStartListener;)V
 	public fun shouldSendStartMeasurements ()Z
+	public fun shouldSendStartMeasurements (Z)Z
 }
 
 public final class io/sentry/android/core/performance/AppStartMetrics$AppStartType : java/lang/Enum {
@@ -750,6 +794,10 @@ public final class io/sentry/android/core/performance/AppStartMetrics$AppStartTy
 	public static final field WARM Lio/sentry/android/core/performance/AppStartMetrics$AppStartType;
 	public static fun valueOf (Ljava/lang/String;)Lio/sentry/android/core/performance/AppStartMetrics$AppStartType;
 	public static fun values ()[Lio/sentry/android/core/performance/AppStartMetrics$AppStartType;
+}
+
+public abstract interface class io/sentry/android/core/performance/AppStartMetrics$HeadlessAppStartListener {
+	public abstract fun onHeadlessAppStart ()V
 }
 
 public class io/sentry/android/core/performance/TimeSpan : java/lang/Comparable {

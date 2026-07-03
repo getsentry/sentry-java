@@ -7,7 +7,6 @@ plugins {
   alias(libs.plugins.kotlin.multiplatform)
   alias(libs.plugins.kotlin.compose)
   id("com.android.library")
-  alias(libs.plugins.kover)
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.detekt)
   alias(libs.plugins.dokka)

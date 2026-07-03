@@ -5,7 +5,6 @@ import org.springframework.boot.gradle.plugin.SpringBootPlugin
 plugins {
   `java-library`
   id("io.sentry.javadoc")
-  jacoco
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.kotlin.spring)
   alias(libs.plugins.errorprone)
@@ -36,6 +35,7 @@ dependencies {
   compileOnly(projects.sentryGraphql)
   compileOnly(projects.sentryGraphql22)
   compileOnly(projects.sentryQuartz)
+  compileOnly(libs.spring.kafka4)
   compileOnly(Config.Libs.springWeb)
   compileOnly(Config.Libs.springWebflux)
   compileOnly(libs.context.propagation)
@@ -68,6 +68,7 @@ dependencies {
   testImplementation(projects.sentryApacheHttpClient5)
   testImplementation(projects.sentryGraphql)
   testImplementation(projects.sentryGraphql22)
+  testImplementation(projects.sentryKafka)
   testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryCore)
   testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryAgent)
   testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryAgentcustomization)
@@ -96,6 +97,7 @@ dependencies {
   testImplementation(libs.springboot4.starter)
   testImplementation(libs.springboot4.starter.aspectj)
   testImplementation(libs.springboot4.starter.graphql)
+  testImplementation(libs.spring.kafka4)
   testImplementation(libs.springboot4.starter.quartz)
   testImplementation(libs.springboot4.starter.security)
   testImplementation(libs.springboot4.starter.test)
@@ -104,27 +106,6 @@ dependencies {
   testImplementation(libs.springboot4.starter.restclient)
   testImplementation(libs.springboot4.starter.webclient)
   testImplementation(libs.springboot4.resttestclient)
-}
-
-configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
-
-jacoco { toolVersion = libs.versions.jacoco.get() }
-
-tasks.jacocoTestReport {
-  reports {
-    xml.required.set(true)
-    html.required.set(false)
-  }
-}
-
-tasks {
-  jacocoTestCoverageVerification {
-    violationRules { rule { limit { minimum = Config.QualityPlugins.Jacoco.minimumCoverage } } }
-  }
-  check {
-    dependsOn(jacocoTestCoverageVerification)
-    dependsOn(jacocoTestReport)
-  }
 }
 
 buildConfig {

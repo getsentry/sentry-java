@@ -178,7 +178,7 @@ public final class FeedbackShakeIntegration
                               }
                               previousOnFormClose = null;
                             });
-                    new SentryUserFeedbackDialog.Builder(active).create().show();
+                    new SentryUserFeedbackForm.Builder(active).create().show();
                   } catch (Throwable e) {
                     isDialogShowing = false;
                     options.getFeedbackOptions().setOnFormClose(previousOnFormClose);

@@ -1,15 +1,12 @@
 import net.ltgt.gradle.errorprone.errorprone
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import org.springframework.boot.gradle.plugin.SpringBootPlugin
 
 plugins {
   `java-library`
   id("io.sentry.javadoc")
   alias(libs.plugins.kotlin.jvm)
-  jacoco
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
-  alias(libs.plugins.springboot2) apply false
 }
 
 tasks.withType<KotlinCompile>().configureEach {
@@ -22,7 +19,7 @@ dependencies {
   api(projects.sentrySpringBoot)
   api(libs.springboot.starter)
 
-  annotationProcessor(platform(SpringBootPlugin.BOM_COORDINATES))
+  annotationProcessor(platform(libs.springboot2.bom))
   annotationProcessor(Config.AnnotationProcessors.springBootAutoConfigure)
   annotationProcessor(Config.AnnotationProcessors.springBootConfiguration)
 
@@ -31,27 +28,6 @@ dependencies {
   errorprone(libs.errorprone.core)
   errorprone(libs.nopen.checker)
   errorprone(libs.nullaway)
-}
-
-configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
-
-jacoco { toolVersion = libs.versions.jacoco.get() }
-
-tasks.jacocoTestReport {
-  reports {
-    xml.required.set(true)
-    html.required.set(false)
-  }
-}
-
-tasks {
-  jacocoTestCoverageVerification {
-    violationRules { rule { limit { minimum = Config.QualityPlugins.Jacoco.minimumCoverage } } }
-  }
-  check {
-    dependsOn(jacocoTestCoverageVerification)
-    dependsOn(jacocoTestReport)
-  }
 }
 
 tasks.withType<JavaCompile>().configureEach {

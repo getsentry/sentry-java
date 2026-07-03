@@ -57,4 +57,7 @@ public final class NoOpReplayController implements ReplayController {
 
   @Override
   public void disableDebugMaskingOverlay() {}
+
+  @Override
+  public void registerTraceId(@NotNull SentryId traceId) {}
 }

@@ -1,7 +1,7 @@
 package io.sentry.systemtest.util
 
-import com.apollographql.apollo3.api.ApolloResponse
-import com.apollographql.apollo3.api.Operation
+import com.apollographql.apollo.api.ApolloResponse
+import com.apollographql.apollo.api.Operation
 import io.sentry.JsonSerializer
 import io.sentry.ProfileChunk
 import io.sentry.SentryEnvelopeHeader

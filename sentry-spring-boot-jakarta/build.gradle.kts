@@ -6,7 +6,6 @@ plugins {
   `java-library`
   id("io.sentry.javadoc")
   alias(libs.plugins.kotlin.jvm)
-  jacoco
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.buildconfig)
@@ -40,6 +39,7 @@ dependencies {
   compileOnly(projects.sentryGraphql)
   compileOnly(projects.sentryGraphql22)
   compileOnly(projects.sentryQuartz)
+  compileOnly(libs.spring.kafka3)
   compileOnly(Config.Libs.springWeb)
   compileOnly(Config.Libs.springWebflux)
   compileOnly(libs.context.propagation)
@@ -70,6 +70,7 @@ dependencies {
   testImplementation(projects.sentryApacheHttpClient5)
   testImplementation(projects.sentryGraphql)
   testImplementation(projects.sentryGraphql22)
+  testImplementation(projects.sentryKafka)
   testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryCore)
   testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryAgent)
   testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryAgentcustomization)
@@ -90,33 +91,13 @@ dependencies {
   testImplementation(libs.springboot3.starter)
   testImplementation(libs.springboot3.starter.aop)
   testImplementation(libs.springboot3.starter.graphql)
+  testImplementation(libs.spring.kafka3)
   testImplementation(libs.springboot3.starter.quartz)
   testImplementation(libs.springboot3.starter.security)
   testImplementation(libs.springboot3.starter.test)
   testImplementation(libs.springboot3.starter.web)
   testImplementation(libs.springboot3.starter.webflux)
   testImplementation(projects.sentryAsyncProfiler)
-}
-
-configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
-
-jacoco { toolVersion = libs.versions.jacoco.get() }
-
-tasks.jacocoTestReport {
-  reports {
-    xml.required.set(true)
-    html.required.set(false)
-  }
-}
-
-tasks {
-  jacocoTestCoverageVerification {
-    violationRules { rule { limit { minimum = Config.QualityPlugins.Jacoco.minimumCoverage } } }
-  }
-  check {
-    dependsOn(jacocoTestCoverageVerification)
-    dependsOn(jacocoTestReport)
-  }
 }
 
 buildConfig {

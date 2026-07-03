@@ -1,6 +1,6 @@
 /**
  * Adapted from
- * https://github.com/fzyzcjy/flutter_screen_recorder/blob/dce41cec25c66baf42c6bac4198e95874ce3eb9d/packages/fast_screen_recorder/android/src/main/kotlin/com/cjy/fast_screen_recorder/SimpleFrameMuxer.kt
+ * https://github.com/fzyzcjy/flutter_screen_recorder/blob/dce41cec25c66baf42c6bac4198e95874ce3eb9d/packages/fast_screen_recorder/android/src/main/kotlin/com/cjy/fast_screen_recorder/SimpleVideoEncoder.kt
  *
  * Copyright (c) 2021 fzyzcjy
  *

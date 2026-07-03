@@ -81,6 +81,12 @@ class RestTestClient(private val backendBaseUrl: String) : LoggingInsecureRestCl
     return response?.body?.string()
   }
 
+  fun produceKafkaMessage(message: String = "hello from sentry!"): String? {
+    val request = Request.Builder().url("$backendBaseUrl/kafka/produce?message=$message")
+
+    return callTyped(request, true)
+  }
+
   fun getCountMetric(): String? {
     val request = Request.Builder().url("$backendBaseUrl/metric/count")
 

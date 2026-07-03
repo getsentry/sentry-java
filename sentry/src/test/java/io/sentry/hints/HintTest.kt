@@ -210,6 +210,7 @@ class HintTest {
     hint.screenshot = newAttachment("2")
     hint.viewHierarchy = newAttachment("3")
     hint.threadDump = newAttachment("4")
+    hint.tombstone = newAttachment("5")
 
     hint.clear()
 
@@ -219,6 +220,7 @@ class HintTest {
     assertNotNull(hint.screenshot)
     assertNotNull(hint.viewHierarchy)
     assertNotNull(hint.threadDump)
+    assertNotNull(hint.tombstone)
   }
 
   @Test
@@ -246,6 +248,15 @@ class HintTest {
     hint.threadDump = attachment
 
     assertNotNull(hint.threadDump)
+  }
+
+  @Test
+  fun `can create hint with a tombstone`() {
+    val hint = Hint()
+    val attachment = newAttachment("tombstone")
+    hint.tombstone = attachment
+
+    assertNotNull(hint.tombstone)
   }
 
   companion object {

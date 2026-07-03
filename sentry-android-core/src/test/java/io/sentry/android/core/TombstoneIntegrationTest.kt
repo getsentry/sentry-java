@@ -97,6 +97,45 @@ class TombstoneIntegrationTest : ApplicationExitIntegrationTestBase<TombstoneHin
   }
 
   @Test
+  fun `when attachRawTombstone is enabled, raw tombstone is attached to hint`() {
+    val integration =
+      fixture.getSut(tmpDir, lastReportedTimestamp = oldTimestamp) { options ->
+        options.isAttachRawTombstone = true
+      }
+
+    fixture.addAppExitInfo(timestamp = newTimestamp)
+
+    integration.register(fixture.scopes, fixture.options)
+
+    verify(fixture.scopes)
+      .captureEvent(
+        any(),
+        argThat<Hint> {
+          val tombstone = this.tombstone
+          tombstone != null &&
+            tombstone.filename == "tombstone.pb" &&
+            tombstone.contentType == "application/x-protobuf" &&
+            tombstone.bytes != null &&
+            tombstone.bytes!!.isNotEmpty()
+        },
+      )
+  }
+
+  @Test
+  fun `when attachRawTombstone is disabled, no tombstone is attached to hint`() {
+    val integration =
+      fixture.getSut(tmpDir, lastReportedTimestamp = oldTimestamp) { options ->
+        options.isAttachRawTombstone = false
+      }
+
+    fixture.addAppExitInfo(timestamp = newTimestamp)
+
+    integration.register(fixture.scopes, fixture.options)
+
+    verify(fixture.scopes).captureEvent(any(), argThat<Hint> { this.tombstone == null })
+  }
+
+  @Test
   fun `when matching native event has attachments, they are added to the hint`() {
     val integration =
       fixture.getSut(tmpDir, lastReportedTimestamp = oldTimestamp) { options ->

@@ -5,8 +5,6 @@ plugins {
   id("com.android.library")
   alias(libs.plugins.kotlin.android)
   alias(libs.plugins.kotlin.compose)
-  jacoco
-  alias(libs.plugins.jacoco.android)
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
 }
@@ -42,6 +40,12 @@ android {
     unitTests.apply {
       isReturnDefaultValues = true
       isIncludeAndroidResources = true
+      // Robolectric loads the android-all jar into each test JVM, which needs more heap
+      // than the default.
+      all {
+        it.minHeapSize = "256m"
+        it.maxHeapSize = "2g"
+      }
     }
   }
 
@@ -69,6 +73,13 @@ tasks.withType<JavaCompile>().configureEach {
     option("NullAway:AnnotatedPackages", "io.sentry")
   }
 }
+
+// Snapshot PNGs are written by ScreenshotEventProcessorTest at runtime but must be declared as
+// outputs so Gradle's build cache restores them on cache hits (otherwise the CLI upload step
+// finds an empty directory).
+tasks
+  .matching { it.name == "testDebugUnitTest" || it.name == "testReleaseUnitTest" }
+  .configureEach { outputs.dir(layout.buildDirectory.dir("test-snapshots")) }
 
 dependencies {
   api(projects.sentry)
@@ -108,7 +119,7 @@ dependencies {
   testImplementation(projects.sentryAndroidReplay)
   testImplementation(projects.sentryCompose)
   testImplementation(projects.sentryAndroidNdk)
-  testImplementation(libs.dropbox.differ)
+
   testImplementation(libs.androidx.activity.compose)
   testImplementation(libs.androidx.compose.ui)
   testImplementation(libs.androidx.compose.foundation)

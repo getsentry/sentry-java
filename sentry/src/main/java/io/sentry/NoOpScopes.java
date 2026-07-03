@@ -77,6 +77,7 @@ public final class NoOpScopes implements IScopes {
     return SentryId.EMPTY_ID;
   }
 
+  @Deprecated
   @Override
   public void captureUserFeedback(@NotNull UserFeedback userFeedback) {}
 
@@ -334,6 +335,11 @@ public final class NoOpScopes implements IScopes {
   @Override
   public @NotNull IMetricsApi metrics() {
     return NoOpMetricsApi.getInstance();
+  }
+
+  @Override
+  public @NotNull IFeedbackApi feedback() {
+    return NoOpFeedbackApi.getInstance();
   }
 
   @Override

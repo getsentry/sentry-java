@@ -4,6 +4,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class SpanFeatureFlagBufferTest {
@@ -24,6 +25,17 @@ class SpanFeatureFlagBufferTest {
 
     assertEquals("b", featureFlagValues[1]!!.flag)
     assertFalse(featureFlagValues[1]!!.result)
+  }
+
+  @Test
+  fun `clears values`() {
+    val buffer = SpanFeatureFlagBuffer.create()
+    buffer.add("a", true)
+    buffer.add("b", false)
+
+    buffer.clear()
+
+    assertNull(buffer.featureFlags)
   }
 
   @Test

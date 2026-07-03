@@ -31,11 +31,26 @@
     android:theme="@style/AppTheme"
     tools:ignore="GoogleAppIndexingWarning, UnusedAttribute">
 
+    <!-- Allows Macrobenchmark (and `am profile`) to profile non-debuggable release/benchmark
+         builds. Harmless in debug; required for the benchmark build type. -->
+    <profileable
+      android:shell="true"
+      tools:targetApi="29" />
+
     <service
       android:name=".DummyService"
       android:enabled="true"
       android:exported="true"
       android:foregroundServiceType="remoteMessaging" />
+
+    <receiver
+      android:name=".TestBroadcastReceiver"
+      android:enabled="true"
+      android:exported="true">
+      <intent-filter>
+        <action android:name="io.sentry.samples.android.TEST_BROADCAST" />
+      </intent-filter>
+    </receiver>
 
     <activity
       android:name=".MainActivity"
@@ -57,11 +72,20 @@
       android:exported="false" />
 
     <activity
+      android:name=".DetachAttachTabsActivity"
+      android:exported="false"
+      android:theme="@style/AppTheme.Main" />
+
+    <activity
       android:name=".GesturesActivity"
       android:exported="false" />
 
     <activity
       android:name=".PermissionsActivity"
+      android:exported="false" />
+
+    <activity
+      android:name=".ReplayAnimationsActivity"
       android:exported="false" />
 
     <activity
@@ -86,6 +110,14 @@
 
     <activity
       android:name=".TriggerHttpRequestActivity"
+      android:exported="false" />
+
+    <activity
+      android:name=".sqlite.SQLiteActivity"
+      android:exported="false" />
+
+    <activity
+      android:name=".sqlite.UiLoadActivity"
       android:exported="false" />
 
     <!--    NOTE: Replace the test DSN below with YOUR OWN DSN to see the events from this app in your Sentry project/dashboard-->
@@ -226,6 +258,10 @@
       android:value="true" />
 
     <meta-data
+      android:name="io.sentry.standalone-app-start-tracing.enable"
+      android:value="true" />
+
+    <meta-data
       android:name="io.sentry.session-replay.screenshot-strategy"
       android:value="canvas" />
     <meta-data
@@ -271,6 +307,7 @@
     <meta-data
       android:name="io.sentry.anr.enable-fingerprinting"
       android:value="true" />
+    <!-- Enable feedback on shake globally -->
     <meta-data
       android:name="io.sentry.feedback.use-shake-gesture"
       android:value="true" />

@@ -98,6 +98,7 @@ class SentryWebFluxTracingFilterTest {
             logger,
             it.arguments[0] as String?,
             it.arguments[1] as List<String>?,
+            null,
           )
         )
       }

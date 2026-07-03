@@ -5,7 +5,6 @@ plugins {
   `java-library`
   id("io.sentry.javadoc")
   alias(libs.plugins.kotlin.jvm)
-  jacoco
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.buildconfig)
@@ -44,27 +43,6 @@ dependencies {
   testImplementation("org.junit.jupiter:junit-jupiter")
 }
 
-configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
-
-jacoco { toolVersion = libs.versions.jacoco.get() }
-
-tasks.jacocoTestReport {
-  reports {
-    xml.required.set(true)
-    html.required.set(false)
-  }
-}
-
-tasks {
-  jacocoTestCoverageVerification {
-    violationRules { rule { limit { minimum = Config.QualityPlugins.Jacoco.minimumCoverage } } }
-  }
-  check {
-    dependsOn(jacocoTestCoverageVerification)
-    dependsOn(jacocoTestReport)
-  }
-}
-
 buildConfig {
   useJavaOutput()
   packageName("io.sentry.reactor")
@@ -83,8 +61,6 @@ tasks.withType<JavaCompile>().configureEach {
     option("NullAway:AnnotatedPackages", "io.sentry")
   }
 }
-
-repositories { mavenCentral() }
 
 tasks.jar {
   manifest {

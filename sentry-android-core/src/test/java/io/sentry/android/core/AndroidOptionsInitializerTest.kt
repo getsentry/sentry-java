@@ -18,7 +18,7 @@ import io.sentry.MainEventProcessor
 import io.sentry.NoOpContinuousProfiler
 import io.sentry.NoOpTransactionProfiler
 import io.sentry.SentryOptions
-import io.sentry.android.core.SentryAndroidOptions.AndroidUserFeedbackIDialogHandler
+import io.sentry.android.core.SentryAndroidOptions.AndroidUserFeedbackFormHandler
 import io.sentry.android.core.cache.AndroidEnvelopeCache
 import io.sentry.android.core.internal.debugmeta.AssetsDebugMetaLoader
 import io.sentry.android.core.internal.gestures.AndroidViewGestureTargetLocator
@@ -882,9 +882,9 @@ class AndroidOptionsInitializerTest {
   }
 
   @Test
-  fun `AndroidUserFeedbackIDialogHandler is set as feedback dialog handler`() {
+  fun `AndroidUserFeedbackFormHandler is set as feedback form handler`() {
     fixture.initSut()
-    assertIs<AndroidUserFeedbackIDialogHandler>(fixture.sentryOptions.feedbackOptions.dialogHandler)
+    assertIs<AndroidUserFeedbackFormHandler>(fixture.sentryOptions.feedbackOptions.formHandler)
   }
 
   @Test

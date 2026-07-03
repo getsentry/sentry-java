@@ -1,14 +1,14 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import org.springframework.boot.gradle.plugin.SpringBootPlugin
 
 plugins {
   application
-  alias(libs.plugins.springboot3) apply false
   alias(libs.plugins.spring.dependency.management)
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.kotlin.spring)
   id("war")
   alias(libs.plugins.gretty)
+  id("io.sentry.systemtest")
 }
 
 application { mainClass.set("io.sentry.samples.spring.jakarta.Main") }
@@ -24,12 +24,14 @@ java.sourceCompatibility = JavaVersion.VERSION_17
 
 java.targetCompatibility = JavaVersion.VERSION_17
 
-repositories { mavenCentral() }
+// Apollo 4.x requires coroutines 1.9.0+, override Spring Boot's managed version
+extra["kotlin-coroutines.version"] = "1.9.0"
 
 dependencyManagement {
   imports {
-    mavenBom(SpringBootPlugin.BOM_COORDINATES)
+    mavenBom("org.springframework.boot:spring-boot-dependencies:${libs.versions.springboot3.get()}")
     mavenBom(libs.kotlin.bom.get().toString())
+    mavenBom(libs.jackson.bom.get().toString())
   }
 }
 
@@ -54,7 +56,7 @@ dependencies {
 
   testImplementation(projects.sentrySystemTestSupport)
   testImplementation(libs.kotlin.test.junit)
-  testImplementation(libs.springboot.starter.test) {
+  testImplementation(libs.springboot3.starter.test) {
     exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
   }
 }
@@ -62,17 +64,17 @@ dependencies {
 tasks.withType<KotlinCompile>().configureEach {
   kotlin {
     compilerOptions.freeCompilerArgs = listOf("-Xjsr305=strict")
-    compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
+    compilerOptions.jvmTarget = JvmTarget.JVM_17
   }
 }
-
-configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
 
 tasks.register<Test>("systemTest").configure {
   group = "verification"
   description = "Runs the System tests"
 
-  outputs.upToDateWhen { false }
+  val test = project.extensions.getByType<SourceSetContainer>()["test"]
+  testClassesDirs = test.output.classesDirs
+  classpath = test.runtimeClasspath
 
   maxParallelForks = 1
 

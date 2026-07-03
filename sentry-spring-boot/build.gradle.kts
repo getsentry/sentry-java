@@ -1,20 +1,18 @@
 import net.ltgt.gradle.errorprone.errorprone
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import org.springframework.boot.gradle.plugin.SpringBootPlugin
 
 plugins {
   `java-library`
   id("io.sentry.javadoc")
   alias(libs.plugins.kotlin.jvm)
-  jacoco
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.buildconfig)
-  alias(libs.plugins.springboot2) apply false
 }
 
 tasks.withType<KotlinCompile>().configureEach {
-  compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8
+  compilerOptions.jvmTarget = JvmTarget.JVM_1_8
   compilerOptions.languageVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
   compilerOptions.apiVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
 }
@@ -37,17 +35,19 @@ dependencies {
   compileOnly(libs.servlet.api)
   compileOnly(libs.springboot.starter)
   compileOnly(libs.springboot.starter.aop)
-  compileOnly(libs.springboot.starter.graphql)
+  compileOnly(libs.spring.graphql)
   compileOnly(libs.springboot.starter.quartz)
   compileOnly(libs.springboot.starter.security)
-  compileOnly(platform(SpringBootPlugin.BOM_COORDINATES))
+  compileOnly(libs.spring.kafka2)
+  compileOnly(platform(libs.springboot2.bom))
   compileOnly(Config.Libs.springWeb)
   compileOnly(Config.Libs.springWebflux)
   compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryCore)
   compileOnly(projects.sentryGraphql)
+  compileOnly(projects.sentryKafka)
   compileOnly(projects.sentryQuartz)
 
-  annotationProcessor(platform(SpringBootPlugin.BOM_COORDINATES))
+  annotationProcessor(platform(libs.springboot2.bom))
   annotationProcessor(Config.AnnotationProcessors.springBootAutoConfigure)
   annotationProcessor(Config.AnnotationProcessors.springBootConfiguration)
 
@@ -59,6 +59,7 @@ dependencies {
   testImplementation(projects.sentryLogback)
   testImplementation(projects.sentryQuartz)
   testImplementation(projects.sentryApacheHttpClient5)
+  testImplementation(projects.sentryKafka)
   testImplementation(projects.sentryTestSupport)
   testImplementation(kotlin(Config.kotlinStdLib))
   testImplementation(libs.kotlin.test.junit)
@@ -71,6 +72,7 @@ dependencies {
   testImplementation(libs.springboot.starter.aop)
   testImplementation(libs.springboot.starter.quartz)
   testImplementation(libs.springboot.starter.security)
+  testImplementation(libs.spring.kafka2)
   testImplementation(libs.springboot.starter.test)
   testImplementation(libs.springboot.starter.web)
   testImplementation(libs.springboot.starter.webflux)
@@ -80,27 +82,6 @@ dependencies {
   testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryAgentcustomization)
   testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
   testImplementation(projects.sentryAsyncProfiler)
-}
-
-configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
-
-jacoco { toolVersion = libs.versions.jacoco.get() }
-
-tasks.jacocoTestReport {
-  reports {
-    xml.required.set(true)
-    html.required.set(false)
-  }
-}
-
-tasks {
-  jacocoTestCoverageVerification {
-    violationRules { rule { limit { minimum = Config.QualityPlugins.Jacoco.minimumCoverage } } }
-  }
-  check {
-    dependsOn(jacocoTestCoverageVerification)
-    dependsOn(jacocoTestReport)
-  }
 }
 
 buildConfig {

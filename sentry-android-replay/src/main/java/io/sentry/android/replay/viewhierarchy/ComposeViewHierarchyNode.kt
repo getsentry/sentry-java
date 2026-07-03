@@ -22,11 +22,13 @@ import io.sentry.SentryLevel
 import io.sentry.SentryMaskingOptions
 import io.sentry.android.replay.SentryReplayModifiers
 import io.sentry.android.replay.util.ComposeTextLayout
+import io.sentry.android.replay.util.SentryReplayDebug
 import io.sentry.android.replay.util.boundsInWindow
 import io.sentry.android.replay.util.findPainter
 import io.sentry.android.replay.util.findTextColor
 import io.sentry.android.replay.util.isMaskable
 import io.sentry.android.replay.util.toOpaque
+import io.sentry.android.replay.util.toRect
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.GenericViewHierarchyNode
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.ImageViewHierarchyNode
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.TextViewHierarchyNode
@@ -137,21 +139,27 @@ internal object ComposeViewHierarchyNode {
           SentryLevel.ERROR,
           t,
           """
-                    Error retrieving semantics information from Compose tree. Most likely you're using
-                    an unsupported version of androidx.compose.ui:ui. The supported
-                    version range is 1.5.0 - 1.10.2.
-                    If you're using a newer version, please open a github issue with the version
-                    you're using, so we can add support for it.
-                    """
+          Error retrieving semantics information from Compose tree. Most likely you're using
+          an unsupported version of androidx.compose.ui:ui. The supported
+          version range is 1.5.0 - 1.10.2.
+          If you're using a newer version, please open a github issue with the version
+          you're using, so we can add support for it.
+          """
             .trimIndent(),
         )
+      }
+
+      // fail fast in our own sample/UI-test apps (see SentryReplayDebug), so regressions surface
+      // as crashes instead of silently degrading masking
+      if (SentryReplayDebug.failFast) {
+        throw t
       }
 
       // If we're unable to retrieve the semantics configuration
       // we should play safe and mask the whole node.
       return GenericViewHierarchyNode(
-        x = visibleRect.left.toFloat(),
-        y = visibleRect.top.toFloat(),
+        x = visibleRect.left,
+        y = visibleRect.top,
         width = node.width,
         height = node.height,
         elevation = (parent?.elevation ?: 0f),
@@ -161,17 +169,17 @@ internal object ComposeViewHierarchyNode {
         isImportantForContentCapture = false, // will be set by children
         isVisible =
           !SentryLayoutNodeHelper.isTransparent(node) &&
-            visibleRect.height() > 0 &&
-            visibleRect.width() > 0,
-        visibleRect = visibleRect,
+            visibleRect.height > 0 &&
+            visibleRect.width > 0,
+        visibleRect = visibleRect.toRect(),
       )
     }
 
     val isVisible =
       !SentryLayoutNodeHelper.isTransparent(node) &&
         (semantics == null || !semantics.contains(SemanticsProperties.InvisibleToUser)) &&
-        visibleRect.height() > 0 &&
-        visibleRect.width() > 0
+        visibleRect.height > 0 &&
+        visibleRect.width > 0
     val isEditable =
       semantics?.contains(SemanticsActions.SetText) == true ||
         semantics?.contains(SemanticsProperties.EditableText) == true
@@ -206,8 +214,8 @@ internal object ComposeViewHierarchyNode {
               null
             },
           dominantColor = textColor?.toArgb()?.toOpaque(),
-          x = visibleRect.left.toFloat(),
-          y = visibleRect.top.toFloat(),
+          x = visibleRect.left,
+          y = visibleRect.top,
           width = node.width,
           height = node.height,
           elevation = (parent?.elevation ?: 0f),
@@ -216,7 +224,7 @@ internal object ComposeViewHierarchyNode {
           shouldMask = shouldMask,
           isImportantForContentCapture = true,
           isVisible = isVisible,
-          visibleRect = visibleRect,
+          visibleRect = visibleRect.toRect(),
         )
       }
       else -> {
@@ -226,8 +234,8 @@ internal object ComposeViewHierarchyNode {
 
           parent?.setImportantForCaptureToAncestors(true)
           ImageViewHierarchyNode(
-            x = visibleRect.left.toFloat(),
-            y = visibleRect.top.toFloat(),
+            x = visibleRect.left,
+            y = visibleRect.top,
             width = node.width,
             height = node.height,
             elevation = (parent?.elevation ?: 0f),
@@ -236,7 +244,7 @@ internal object ComposeViewHierarchyNode {
             isVisible = isVisible,
             isImportantForContentCapture = true,
             shouldMask = shouldMask && painter.isMaskable(),
-            visibleRect = visibleRect,
+            visibleRect = visibleRect.toRect(),
           )
         } else {
           val shouldMask = isVisible && semantics.shouldMask(isImage = false, options)
@@ -245,8 +253,8 @@ internal object ComposeViewHierarchyNode {
           // TODO: traverse the ViewHierarchyNode here again. For now we can recommend
           // TODO: using custom modifiers to obscure the entire node if it's sensitive
           GenericViewHierarchyNode(
-            x = visibleRect.left.toFloat(),
-            y = visibleRect.top.toFloat(),
+            x = visibleRect.left,
+            y = visibleRect.top,
             width = node.width,
             height = node.height,
             elevation = (parent?.elevation ?: 0f),
@@ -255,7 +263,7 @@ internal object ComposeViewHierarchyNode {
             shouldMask = shouldMask,
             isImportantForContentCapture = false, // will be set by children
             isVisible = isVisible,
-            visibleRect = visibleRect,
+            visibleRect = visibleRect.toRect(),
           )
         }
       }
@@ -284,13 +292,18 @@ internal object ComposeViewHierarchyNode {
         SentryLevel.ERROR,
         e,
         """
-                Error traversing Compose tree. Most likely you're using an unsupported version of
-                androidx.compose.ui:ui. The minimum supported version is 1.5.0. If it's a newer
-                version, please open a github issue with the version you're using, so we can add
-                support for it.
-                """
+        Error traversing Compose tree. Most likely you're using an unsupported version of
+        androidx.compose.ui:ui. The minimum supported version is 1.5.0. If it's a newer
+        version, please open a github issue with the version you're using, so we can add
+        support for it.
+        """
           .trimIndent(),
       )
+      // fail fast in our own sample/UI-test apps (see SentryReplayDebug), so regressions surface
+      // as crashes instead of silently skipping the whole Compose subtree (i.e. not masking it)
+      if (SentryReplayDebug.failFast) {
+        throw e
+      }
       return false
     }
 

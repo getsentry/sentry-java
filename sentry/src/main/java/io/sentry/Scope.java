@@ -574,6 +574,7 @@ public final class Scope implements IScope {
     eventProcessors.clear();
     clearTransaction();
     clearAttachments();
+    clearFeatureFlags();
   }
 
   /**
@@ -924,12 +925,20 @@ public final class Scope implements IScope {
   @Override
   public void addAttachment(final @NotNull Attachment attachment) {
     attachments.add(attachment);
+
+    for (final IScopeObserver observer : options.getScopeObservers()) {
+      observer.addAttachment(attachment);
+    }
   }
 
   /** Clear all attachments. */
   @Override
   public void clearAttachments() {
     attachments.clear();
+
+    for (final IScopeObserver observer : options.getScopeObservers()) {
+      observer.clearAttachments();
+    }
   }
 
   /**
@@ -1138,7 +1147,9 @@ public final class Scope implements IScope {
   @ApiStatus.Internal
   @Override
   public void clearSession() {
-    session = null;
+    try (final @NotNull ISentryLifecycleToken ignored = sessionLock.acquire()) {
+      session = null;
+    }
   }
 
   @ApiStatus.Internal
@@ -1201,6 +1212,11 @@ public final class Scope implements IScope {
   @Override
   public void addFeatureFlag(final @Nullable String flag, final @Nullable Boolean result) {
     featureFlags.add(flag, result);
+  }
+
+  @Override
+  public void clearFeatureFlags() {
+    featureFlags.clear();
   }
 
   @Override
