@@ -8,6 +8,7 @@
 
 ### Fixes
 
+- Record byte-level client reports when event processors discard logs or trace metrics ([#5718](https://github.com/getsentry/sentry-java/pull/5718))
 - Name the device-info caching thread `SentryDeviceInfoCache` so all threads spawned by the SDK are identifiable ([#5684](https://github.com/getsentry/sentry-java/pull/5684))
 
 ## 8.47.0
