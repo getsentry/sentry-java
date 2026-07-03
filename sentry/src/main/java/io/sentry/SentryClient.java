@@ -511,6 +511,7 @@ public final class SentryClient implements ISentryClient {
   private SentryLogEvent processLogEvent(
       @NotNull SentryLogEvent event, final @NotNull List<EventProcessor> eventProcessors) {
     for (final EventProcessor processor : eventProcessors) {
+      final @NotNull SentryLogEvent eventBeforeProcessor = event;
       try {
         event = processor.process(event);
       } catch (Throwable e) {
@@ -533,6 +534,13 @@ public final class SentryClient implements ISentryClient {
         options
             .getClientReportRecorder()
             .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.LogItem);
+        final long logEventNumberOfBytes =
+            JsonSerializationUtils.byteSizeOf(
+                options.getSerializer(), options.getLogger(), eventBeforeProcessor);
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(
+                DiscardReason.EVENT_PROCESSOR, DataCategory.LogByte, logEventNumberOfBytes);
         break;
       }
     }
@@ -545,6 +553,7 @@ public final class SentryClient implements ISentryClient {
       final @NotNull List<EventProcessor> eventProcessors,
       final @NotNull Hint hint) {
     for (final EventProcessor processor : eventProcessors) {
+      final @NotNull SentryMetricsEvent eventBeforeProcessor = event;
       try {
         event = processor.process(event, hint);
       } catch (Throwable e) {
@@ -567,6 +576,15 @@ public final class SentryClient implements ISentryClient {
         options
             .getClientReportRecorder()
             .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.TraceMetric);
+        final long metricsEventNumberOfBytes =
+            JsonSerializationUtils.byteSizeOf(
+                options.getSerializer(), options.getLogger(), eventBeforeProcessor);
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(
+                DiscardReason.EVENT_PROCESSOR,
+                DataCategory.TraceMetricByte,
+                metricsEventNumberOfBytes);
         break;
       }
     }
