@@ -11,6 +11,7 @@
 - Record byte-level client reports when event processors discard logs or trace metrics ([#5718](https://github.com/getsentry/sentry-java/pull/5718))
 - Name the device-info caching thread `SentryDeviceInfoCache` so all threads spawned by the SDK are identifiable ([#5684](https://github.com/getsentry/sentry-java/pull/5684))
 - Apply byte-category rate limits to log and trace metric envelope items ([#5716](https://github.com/getsentry/sentry-java/pull/5716))
+- Android: Identify and correctly structure Java/Kotlin frames in mixed Tombstone stack traces. ([#5116](https://github.com/getsentry/sentry-java/pull/5116))
 
 ## 8.47.0
 
@@ -313,7 +314,6 @@
 ### Fixes
 
 - Fix deadlock in `SentryContextStorage.root()` with virtual threads and OpenTelemetry agent ([#5234](https://github.com/getsentry/sentry-java/pull/5234))
-- Android: Identify and correctly structure Java/Kotlin frames in mixed Tombstone stack traces. ([#5116](https://github.com/getsentry/sentry-java/pull/5116))
 
 ## 8.37.0
 
