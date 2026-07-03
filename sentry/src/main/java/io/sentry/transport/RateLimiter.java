@@ -212,11 +212,11 @@ public final class RateLimiter implements Closeable {
       case "feedback":
         return Collections.singletonList(DataCategory.Feedback);
       case "log":
-        return Collections.singletonList(DataCategory.LogItem);
+        return Arrays.asList(DataCategory.LogItem, DataCategory.LogByte);
       case "span":
         return Collections.singletonList(DataCategory.Span);
       case "trace_metric":
-        return Collections.singletonList(DataCategory.TraceMetric);
+        return Arrays.asList(DataCategory.TraceMetric, DataCategory.TraceMetricByte);
       default:
         return Collections.singletonList(DataCategory.Unknown);
     }
