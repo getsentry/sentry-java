@@ -1336,6 +1336,7 @@ public final class SentryClient implements ISentryClient {
     }
 
     if (metricsEvent != null) {
+      final @NotNull SentryMetricsEvent tmpMetricsEvent = metricsEvent;
       metricsEvent = executeBeforeSendMetric(metricsEvent, hint);
 
       if (metricsEvent == null) {
@@ -1345,6 +1346,13 @@ public final class SentryClient implements ISentryClient {
         options
             .getClientReportRecorder()
             .recordLostEvent(DiscardReason.BEFORE_SEND, DataCategory.TraceMetric);
+        final long metricsEventNumberOfBytes =
+            JsonSerializationUtils.byteSizeOf(
+                options.getSerializer(), options.getLogger(), tmpMetricsEvent);
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(
+                DiscardReason.BEFORE_SEND, DataCategory.TraceMetricByte, metricsEventNumberOfBytes);
         return;
       }
 

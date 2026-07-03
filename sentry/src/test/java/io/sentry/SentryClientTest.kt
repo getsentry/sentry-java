@@ -388,7 +388,10 @@ class SentryClientTest {
 
     assertClientReport(
       fixture.sentryOptions.clientReportRecorder,
-      listOf(DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.TraceMetric.category, 1)),
+      listOf(
+        DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.TraceMetric.category, 1),
+        DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.TraceMetricByte.category, 120),
+      ),
     )
   }
 
@@ -408,7 +411,10 @@ class SentryClientTest {
 
     assertClientReport(
       fixture.sentryOptions.clientReportRecorder,
-      listOf(DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.TraceMetric.category, 1)),
+      listOf(
+        DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.TraceMetric.category, 1),
+        DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.TraceMetricByte.category, 120),
+      ),
     )
   }
 

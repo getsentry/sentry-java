@@ -8,6 +8,7 @@ import io.sentry.SentryNanotimeDate
 import io.sentry.SentryOptions
 import io.sentry.clientreport.ClientReportTestHelper
 import io.sentry.clientreport.DiscardReason
+import io.sentry.util.JsonSerializationUtils
 import io.sentry.clientreport.DiscardedEvent
 import io.sentry.protocol.SentryId
 import io.sentry.test.DeferredExecutorService
@@ -80,9 +81,12 @@ class MetricsBatchProcessorTest {
     processor.add(droppedMetricsEvent)
 
     // verify that a client report was recorded for the dropped metrics item
+    val droppedBytes =
+      JsonSerializationUtils.byteSizeOf(options.serializer, options.logger, droppedMetricsEvent)
     val expectedEvents =
       mutableListOf(
-        DiscardedEvent(DiscardReason.QUEUE_OVERFLOW.reason, DataCategory.TraceMetric.category, 1)
+        DiscardedEvent(DiscardReason.QUEUE_OVERFLOW.reason, DataCategory.TraceMetric.category, 1),
+        DiscardedEvent(DiscardReason.QUEUE_OVERFLOW.reason, DataCategory.TraceMetricByte.category, droppedBytes),
       )
 
     ClientReportTestHelper.assertClientReport(options.clientReportRecorder, expectedEvents)
