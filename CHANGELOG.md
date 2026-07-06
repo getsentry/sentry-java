@@ -17,6 +17,9 @@
 
   Sentry.finishExtendedAppStart()
   ```
+- Full support for Android 17 (API level 37) ([#5723](https://github.com/getsentry/sentry-java/pull/5723))
+  - The SDK is now compiled and targeted against `compileSdk`/`targetSdk` 37 and verified end-to-end on API 37: builds (incl. R8 full mode), Session Replay, crash & ANR reporting (JVM and native), and profiling
+  - Session Replay video encoding now handles the `@Nullable` `MediaCodecInfo.getVideoCapabilities()` introduced in the API 37 SDK
 - Add `trace_metric_byte` data category and record byte-level client reports when trace metrics are discarded ([#5626](https://github.com/getsentry/sentry-java/pull/5626))
 - Support the `io.sentry.tombstone.report-historical` manifest option to enable historical tombstone reporting via `AndroidManifest.xml` `<meta-data>` ([#5683](https://github.com/getsentry/sentry-java/pull/5683))
 
