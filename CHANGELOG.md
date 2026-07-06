@@ -15,6 +15,12 @@
 - Name the device-info caching thread `SentryDeviceInfoCache` so all threads spawned by the SDK are identifiable ([#5684](https://github.com/getsentry/sentry-java/pull/5684))
 - Apply byte-category rate limits to log and trace metric envelope items ([#5716](https://github.com/getsentry/sentry-java/pull/5716))
 
+### Dependencies
+
+- Bump Native SDK from v0.15.2 to v0.15.3 ([#5623](https://github.com/getsentry/sentry-java/pull/5623))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0153)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.15.2...0.15.3)
+
 ## 8.47.0
 
 ### Behavioral Changes
