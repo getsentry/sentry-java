@@ -10,14 +10,13 @@ import io.sentry.ObjectWriter;
 import io.sentry.ProfileContext;
 import io.sentry.SpanContext;
 import io.sentry.util.AutoClosableReentrantLock;
+import io.sentry.util.CollectionUtils;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
-import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -302,8 +301,7 @@ public class Contexts implements JsonSerializable {
       throws IOException {
     writer.beginObject();
     // Serialize in alphabetical order to keep determinism.
-    final List<String> sortedKeys = Collections.list(keys());
-    Collections.sort(sortedKeys);
+    final String[] sortedKeys = CollectionUtils.toSortedStringArray(keys(), internalStorage.size());
     for (final String key : sortedKeys) {
       final Object value = get(key);
       if (value != null) {

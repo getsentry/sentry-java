@@ -2667,8 +2667,9 @@ public class SentryOptions {
   }
 
   @ApiStatus.Internal
-  public void setAppStartExtender(final @NotNull IAppStartExtender appStartExtender) {
-    this.appStartExtender = appStartExtender;
+  public void setAppStartExtender(final @Nullable IAppStartExtender appStartExtender) {
+    this.appStartExtender =
+        appStartExtender != null ? appStartExtender : NoOpAppStartExtender.getInstance();
   }
 
   /**
