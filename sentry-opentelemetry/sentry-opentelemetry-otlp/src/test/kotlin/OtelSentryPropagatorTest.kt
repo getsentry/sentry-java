@@ -240,7 +240,7 @@ class OpenTelemetryOtlpPropagatorTest {
   }
 
   @Test
-  fun `does not inject headers if tracePropagationTargets is restricted and URL is unavailable`() {
+  fun `injects headers if tracePropagationTargets is restricted and URL is unavailable`() {
     Sentry.init { options ->
       options.dsn = "https://key@sentry.io/proj"
       options.setTracePropagationTargets(listOf("sentry.io"))
@@ -259,7 +259,7 @@ class OpenTelemetryOtlpPropagatorTest {
 
     propagator.inject(Context.root().with(otelSpan), carrier, MapSetter())
 
-    assertNull(carrier["sentry-trace"])
+    assertEquals("f9118105af4a2d42b4124532cd1065ff-424cffc8f94feeee-1", carrier["sentry-trace"])
     assertNull(carrier["baggage"])
   }
 

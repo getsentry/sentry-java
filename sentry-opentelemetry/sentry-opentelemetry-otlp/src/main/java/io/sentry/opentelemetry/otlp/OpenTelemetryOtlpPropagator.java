@@ -91,11 +91,7 @@ public final class OpenTelemetryOtlpPropagator implements TextMapPropagator {
     final @NotNull SentryOptions options = scopes.getOptions();
     final @Nullable String url = extractUrl(otelSpan, options);
 
-    if (url != null) {
-      return PropagationTargetsUtils.contain(options.getTracePropagationTargets(), url);
-    }
-
-    return options.getTracePropagationTargets().contains(SentryOptions.DEFAULT_PROPAGATION_TARGETS);
+    return url == null || PropagationTargetsUtils.contain(options.getTracePropagationTargets(), url);
   }
 
   private @Nullable String extractUrl(
