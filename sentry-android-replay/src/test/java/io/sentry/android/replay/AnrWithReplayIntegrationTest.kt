@@ -155,11 +155,10 @@ class AnrWithReplayIntegrationTest {
       it.sessionReplay.onErrorSampleRate = 1.0
       // beforeSend is called after event processors are applied, so we can assert here
       // against the enriched ANR event
-      it.beforeSend =
-        SentryOptions.BeforeSendCallback { event, _ ->
-          assertEquals(replayId2.toString(), event.contexts[Contexts.REPLAY_ID])
-          event
-        }
+      it.beforeSend = SentryOptions.BeforeSendCallback { event, _ ->
+        assertEquals(replayId2.toString(), event.contexts[Contexts.REPLAY_ID])
+        event
+      }
       it.addEventProcessor(
         object : EventProcessor {
           override fun process(event: SentryReplayEvent, hint: Hint): SentryReplayEvent {

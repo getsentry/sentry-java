@@ -89,11 +89,10 @@ class UserInteractionTests : BaseUiTest() {
       options.profilesSampleRate = 1.0
       options.isEnableUserInteractionTracing = true
       options.isEnableUserInteractionBreadcrumbs = true
-      options.beforeBreadcrumb =
-        SentryOptions.BeforeBreadcrumbCallback { breadcrumb, _ ->
-          breadcrumbs.add(breadcrumb)
-          breadcrumb
-        }
+      options.beforeBreadcrumb = SentryOptions.BeforeBreadcrumbCallback { breadcrumb, _ ->
+        breadcrumbs.add(breadcrumb)
+        breadcrumb
+      }
     }
   }
 }

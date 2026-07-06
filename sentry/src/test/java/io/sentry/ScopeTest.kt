@@ -359,11 +359,10 @@ class ScopeTest {
     val options =
       SentryOptions().apply {
         maxBreadcrumbs = 0
-        beforeBreadcrumb =
-          SentryOptions.BeforeBreadcrumbCallback { breadcrumb, _ ->
-            called = true
-            breadcrumb
-          }
+        beforeBreadcrumb = SentryOptions.BeforeBreadcrumbCallback { breadcrumb, _ ->
+          called = true
+          breadcrumb
+        }
       }
 
     val scope = Scope(options)
@@ -377,11 +376,10 @@ class ScopeTest {
     var called = false
     val options =
       SentryOptions().apply {
-        beforeBreadcrumb =
-          SentryOptions.BeforeBreadcrumbCallback { breadcrumb, _ ->
-            called = true
-            breadcrumb
-          }
+        beforeBreadcrumb = SentryOptions.BeforeBreadcrumbCallback { breadcrumb, _ ->
+          called = true
+          breadcrumb
+        }
       }
 
     val scope = Scope(options)

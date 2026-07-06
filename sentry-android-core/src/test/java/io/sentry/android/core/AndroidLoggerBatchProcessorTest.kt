@@ -68,12 +68,11 @@ class AndroidLoggerBatchProcessorTest {
 
   @Test
   fun `onBackground handles executor exception gracefully`() {
-    val sut =
-      fixture.getSut { options ->
-        val rejectingExecutor = mock<io.sentry.ISentryExecutorService>()
-        whenever(rejectingExecutor.submit(any())).thenThrow(RuntimeException("Rejected"))
-        options.executorService = rejectingExecutor
-      }
+    val sut = fixture.getSut { options ->
+      val rejectingExecutor = mock<io.sentry.ISentryExecutorService>()
+      whenever(rejectingExecutor.submit(any())).thenThrow(RuntimeException("Rejected"))
+      options.executorService = rejectingExecutor
+    }
 
     // Should not throw
     sut.onBackground()

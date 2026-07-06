@@ -42,10 +42,9 @@ class ScreenshotRecorderTest {
 
   @Test
   fun `when config uses PIXEL_COPY strategy, ScreenshotRecorder creates PixelCopyStrategy`() {
-    val recorder =
-      fixture.getSut { options ->
-        options.sessionReplay.screenshotStrategy = ScreenshotStrategyType.PIXEL_COPY
-      }
+    val recorder = fixture.getSut { options ->
+      options.sessionReplay.screenshotStrategy = ScreenshotStrategyType.PIXEL_COPY
+    }
 
     val strategy = getStrategy(recorder)
 
@@ -57,10 +56,9 @@ class ScreenshotRecorderTest {
 
   @Test
   fun `when config uses CANVAS strategy, ScreenshotRecorder creates CanvasStrategy`() {
-    val recorder =
-      fixture.getSut { options ->
-        options.sessionReplay.screenshotStrategy = ScreenshotStrategyType.CANVAS
-      }
+    val recorder = fixture.getSut { options ->
+      options.sessionReplay.screenshotStrategy = ScreenshotStrategyType.CANVAS
+    }
     val strategy = getStrategy(recorder)
 
     assertTrue(
