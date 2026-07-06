@@ -6,7 +6,7 @@
 
 - Add `trace_metric_byte` data category and record byte-level client reports when trace metrics are discarded ([#5626](https://github.com/getsentry/sentry-java/pull/5626))
 - Expose sentry-native's heartbeat-based app-hang detection through `SentryAndroidOptions` ([#5623](https://github.com/getsentry/sentry-java/pull/5623))
-  - Enable via `setEnableAppHangTracking(true)` (disabled by default) and tune the timeout with `setAppHangTimeoutIntervalMillis(...)` (default `5000` ms), or the `io.sentry.app-hang.enable` / `io.sentry.app-hang.timeout-interval-millis` manifest entries
+  - Enable via `setEnableNdkAppHangTracking(true)` (disabled by default) and tune the timeout with `setNdkAppHangTimeoutIntervalMillis(...)` (default `5000` ms), or the `io.sentry.ndk.app-hang.enable` / `io.sentry.ndk.app-hang.timeout-interval-millis` manifest entries
   - Intended for hybrid SDKs: emit the heartbeat by calling the native `sentry_app_hang_heartbeat()` from the thread you want monitored. Independent of the JVM-based ANR detection (`setAnrEnabled`)
 
 ### Fixes

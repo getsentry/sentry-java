@@ -40,18 +40,18 @@ public final class SentryAndroidOptions extends SentryOptions {
   /**
    * Enable or disable in-process, heartbeat-based app-hang detection in sentry-native. Default is
    * disabled. When enabled, sentry-native's background watchdog captures an app-hang event if no
-   * heartbeat is received within {@link #appHangTimeoutIntervalMillis} on the monitored thread.
+   * heartbeat is received within {@link #ndkAppHangTimeoutIntervalMillis} on the monitored thread.
    *
    * <p>This is intended for downstream/hybrid SDKs that emit the heartbeat by calling the native
    * {@code sentry_app_hang_heartbeat()} from their main thread. It is independent of the JVM-based
    * {@link #anrEnabled} ANR detection.
    */
-  private boolean enableAppHangTracking = false;
+  private boolean enableNdkAppHangTracking = false;
 
   /**
    * The app-hang detection timeout interval in millis used by sentry-native. Default is 5000 = 5s.
    */
-  private long appHangTimeoutIntervalMillis = 5000;
+  private long ndkAppHangTimeoutIntervalMillis = 5000;
 
   /**
    * Enable or disable automatic breadcrumbs for Activity lifecycle. Using
@@ -360,8 +360,8 @@ public final class SentryAndroidOptions extends SentryOptions {
    * @return true if enabled or false otherwise
    */
   @ApiStatus.Experimental
-  public boolean isEnableAppHangTracking() {
-    return enableAppHangTracking;
+  public boolean isEnableNdkAppHangTracking() {
+    return enableNdkAppHangTracking;
   }
 
   /**
@@ -369,11 +369,11 @@ public final class SentryAndroidOptions extends SentryOptions {
    * Requires the NDK integration to be present and emitting heartbeats via the native {@code
    * sentry_app_hang_heartbeat()}.
    *
-   * @param enableAppHangTracking true for enabled and false for disabled
+   * @param enableNdkAppHangTracking true for enabled and false for disabled
    */
   @ApiStatus.Experimental
-  public void setEnableAppHangTracking(boolean enableAppHangTracking) {
-    this.enableAppHangTracking = enableAppHangTracking;
+  public void setEnableNdkAppHangTracking(boolean enableNdkAppHangTracking) {
+    this.enableNdkAppHangTracking = enableNdkAppHangTracking;
   }
 
   /**
@@ -383,19 +383,19 @@ public final class SentryAndroidOptions extends SentryOptions {
    * @return the timeout in millis
    */
   @ApiStatus.Experimental
-  public long getAppHangTimeoutIntervalMillis() {
-    return appHangTimeoutIntervalMillis;
+  public long getNdkAppHangTimeoutIntervalMillis() {
+    return ndkAppHangTimeoutIntervalMillis;
   }
 
   /**
    * Sets the app-hang detection timeout interval in millis used by sentry-native. Default is 5000 =
    * 5s.
    *
-   * @param appHangTimeoutIntervalMillis the timeout interval in millis
+   * @param ndkAppHangTimeoutIntervalMillis the timeout interval in millis
    */
   @ApiStatus.Experimental
-  public void setAppHangTimeoutIntervalMillis(long appHangTimeoutIntervalMillis) {
-    this.appHangTimeoutIntervalMillis = appHangTimeoutIntervalMillis;
+  public void setNdkAppHangTimeoutIntervalMillis(long ndkAppHangTimeoutIntervalMillis) {
+    this.ndkAppHangTimeoutIntervalMillis = ndkAppHangTimeoutIntervalMillis;
   }
 
   /**

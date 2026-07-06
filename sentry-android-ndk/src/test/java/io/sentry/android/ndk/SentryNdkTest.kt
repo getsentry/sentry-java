@@ -87,8 +87,8 @@ class SentryNdkTest {
         SentryAndroidOptions().apply {
           dsn = "https://key@sentry.io/proj"
           cacheDirPath = "/cache"
-          isEnableAppHangTracking = true
-          appHangTimeoutIntervalMillis = 2000
+          isEnableNdkAppHangTracking = true
+          ndkAppHangTimeoutIntervalMillis = 2000
         }
     ) {
       assertNotNull(fixture.capturedOptions)

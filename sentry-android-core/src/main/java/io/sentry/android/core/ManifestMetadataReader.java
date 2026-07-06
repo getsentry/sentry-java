@@ -35,10 +35,10 @@ final class ManifestMetadataReader {
   static final String ANR_ATTACH_THREAD_DUMPS = "io.sentry.anr.attach-thread-dumps";
   static final String ANR_REPORT_HISTORICAL = "io.sentry.anr.report-historical";
 
-  static final String APP_HANG_TRACKING_ENABLE = "io.sentry.app-hang.enable";
+  static final String NDK_APP_HANG_TRACKING_ENABLE = "io.sentry.ndk.app-hang.enable";
 
-  static final String APP_HANG_TIMEOUT_INTERVAL_MILLIS =
-      "io.sentry.app-hang.timeout-interval-millis";
+  static final String NDK_APP_HANG_TIMEOUT_INTERVAL_MILLIS =
+      "io.sentry.ndk.app-hang.timeout-interval-millis";
 
   static final String TOMBSTONE_ENABLE = "io.sentry.tombstone.enable";
   static final String TOMBSTONE_ATTACH_RAW = "io.sentry.tombstone.attach-raw";
@@ -269,16 +269,19 @@ final class ManifestMetadataReader {
         options.setReportHistoricalAnrs(
             readBool(metadata, logger, ANR_REPORT_HISTORICAL, options.isReportHistoricalAnrs()));
 
-        options.setEnableAppHangTracking(
+        options.setEnableNdkAppHangTracking(
             readBool(
-                metadata, logger, APP_HANG_TRACKING_ENABLE, options.isEnableAppHangTracking()));
+                metadata,
+                logger,
+                NDK_APP_HANG_TRACKING_ENABLE,
+                options.isEnableNdkAppHangTracking()));
 
-        options.setAppHangTimeoutIntervalMillis(
+        options.setNdkAppHangTimeoutIntervalMillis(
             readLong(
                 metadata,
                 logger,
-                APP_HANG_TIMEOUT_INTERVAL_MILLIS,
-                options.getAppHangTimeoutIntervalMillis()));
+                NDK_APP_HANG_TIMEOUT_INTERVAL_MILLIS,
+                options.getNdkAppHangTimeoutIntervalMillis()));
 
         final @Nullable String dsn = readString(metadata, logger, DSN, options.getDsn());
         final boolean enabled = readBool(metadata, logger, ENABLE_SENTRY, options.isEnabled());

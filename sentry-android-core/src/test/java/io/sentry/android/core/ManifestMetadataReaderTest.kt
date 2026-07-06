@@ -291,14 +291,14 @@ class ManifestMetadataReaderTest {
   @Test
   fun `applyMetadata reads app hang tracking enabled to options`() {
     // Arrange
-    val bundle = bundleOf(ManifestMetadataReader.APP_HANG_TRACKING_ENABLE to true)
+    val bundle = bundleOf(ManifestMetadataReader.NDK_APP_HANG_TRACKING_ENABLE to true)
     val context = fixture.getContext(metaData = bundle)
 
     // Act
     ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
     // Assert
-    assertEquals(true, fixture.options.isEnableAppHangTracking)
+    assertEquals(true, fixture.options.isEnableNdkAppHangTracking)
   }
 
   @Test
@@ -310,20 +310,20 @@ class ManifestMetadataReaderTest {
     ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
     // Assert
-    assertEquals(false, fixture.options.isEnableAppHangTracking)
+    assertEquals(false, fixture.options.isEnableNdkAppHangTracking)
   }
 
   @Test
   fun `applyMetadata reads app hang timeout interval to options`() {
     // Arrange
-    val bundle = bundleOf(ManifestMetadataReader.APP_HANG_TIMEOUT_INTERVAL_MILLIS to 1000)
+    val bundle = bundleOf(ManifestMetadataReader.NDK_APP_HANG_TIMEOUT_INTERVAL_MILLIS to 1000)
     val context = fixture.getContext(metaData = bundle)
 
     // Act
     ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
     // Assert
-    assertEquals(1000.toLong(), fixture.options.appHangTimeoutIntervalMillis)
+    assertEquals(1000.toLong(), fixture.options.ndkAppHangTimeoutIntervalMillis)
   }
 
   @Test
@@ -335,7 +335,7 @@ class ManifestMetadataReaderTest {
     ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
     // Assert
-    assertEquals(5000.toLong(), fixture.options.appHangTimeoutIntervalMillis)
+    assertEquals(5000.toLong(), fixture.options.ndkAppHangTimeoutIntervalMillis)
   }
 
   @Test
