@@ -244,6 +244,21 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
       }
     }
 
+    // if there's already a transaction bound to the Scope (e.g. started manually by the user), we
+    // skip starting a new UI transaction: it would never be bound to the Scope in applyScope, would
+    // gather no children, and would be dropped as an idle transaction without children
+    final @Nullable ITransaction[] boundTransaction = {null};
+    scopes.configureScope(scope -> boundTransaction[0] = scope.getTransaction());
+    if (boundTransaction[0] != null) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Transaction won't be created for view with id: %s since there's already a transaction bound to the Scope.",
+              viewIdentifier);
+      return;
+    }
+
     // we can only bind to the scope if there's no running transaction
     final String name = getActivityName(activity) + "." + viewIdentifier;
     final String op = UI_ACTION + "." + getGestureType(eventType);

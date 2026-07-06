@@ -27,7 +27,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
@@ -512,6 +511,7 @@ public final class SentryClient implements ISentryClient {
   private SentryLogEvent processLogEvent(
       @NotNull SentryLogEvent event, final @NotNull List<EventProcessor> eventProcessors) {
     for (final EventProcessor processor : eventProcessors) {
+      final @NotNull SentryLogEvent eventBeforeProcessor = event;
       try {
         event = processor.process(event);
       } catch (Throwable e) {
@@ -534,6 +534,13 @@ public final class SentryClient implements ISentryClient {
         options
             .getClientReportRecorder()
             .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.LogItem);
+        final long logEventNumberOfBytes =
+            JsonSerializationUtils.byteSizeOf(
+                options.getSerializer(), options.getLogger(), eventBeforeProcessor);
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(
+                DiscardReason.EVENT_PROCESSOR, DataCategory.LogByte, logEventNumberOfBytes);
         break;
       }
     }
@@ -546,6 +553,7 @@ public final class SentryClient implements ISentryClient {
       final @NotNull List<EventProcessor> eventProcessors,
       final @NotNull Hint hint) {
     for (final EventProcessor processor : eventProcessors) {
+      final @NotNull SentryMetricsEvent eventBeforeProcessor = event;
       try {
         event = processor.process(event, hint);
       } catch (Throwable e) {
@@ -568,6 +576,15 @@ public final class SentryClient implements ISentryClient {
         options
             .getClientReportRecorder()
             .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.TraceMetric);
+        final long metricsEventNumberOfBytes =
+            JsonSerializationUtils.byteSizeOf(
+                options.getSerializer(), options.getLogger(), eventBeforeProcessor);
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(
+                DiscardReason.EVENT_PROCESSOR,
+                DataCategory.TraceMetricByte,
+                metricsEventNumberOfBytes);
         break;
       }
     }
@@ -1337,6 +1354,7 @@ public final class SentryClient implements ISentryClient {
     }
 
     if (metricsEvent != null) {
+      final @NotNull SentryMetricsEvent tmpMetricsEvent = metricsEvent;
       metricsEvent = executeBeforeSendMetric(metricsEvent, hint);
 
       if (metricsEvent == null) {
@@ -1346,6 +1364,13 @@ public final class SentryClient implements ISentryClient {
         options
             .getClientReportRecorder()
             .recordLostEvent(DiscardReason.BEFORE_SEND, DataCategory.TraceMetric);
+        final long metricsEventNumberOfBytes =
+            JsonSerializationUtils.byteSizeOf(
+                options.getSerializer(), options.getLogger(), tmpMetricsEvent);
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(
+                DiscardReason.BEFORE_SEND, DataCategory.TraceMetricByte, metricsEventNumberOfBytes);
         return;
       }
 
@@ -1425,7 +1450,7 @@ public final class SentryClient implements ISentryClient {
       event.setUser(scope.getUser());
     }
     if (event.getTags() == null) {
-      event.setTags(new HashMap<>(scope.getTags()));
+      event.setTags(scope.getTags());
     } else {
       for (Map.Entry<String, String> item : scope.getTags().entrySet()) {
         if (!event.getTags().containsKey(item.getKey())) {
@@ -1483,7 +1508,7 @@ public final class SentryClient implements ISentryClient {
         replayEvent.setUser(scope.getUser());
       }
       if (replayEvent.getTags() == null) {
-        replayEvent.setTags(new HashMap<>(scope.getTags()));
+        replayEvent.setTags(scope.getTags());
       } else {
         for (Map.Entry<String, String> item : scope.getTags().entrySet()) {
           if (!replayEvent.getTags().containsKey(item.getKey())) {
@@ -1523,7 +1548,7 @@ public final class SentryClient implements ISentryClient {
         sentryBaseEvent.setUser(scope.getUser());
       }
       if (sentryBaseEvent.getTags() == null) {
-        sentryBaseEvent.setTags(new HashMap<>(scope.getTags()));
+        sentryBaseEvent.setTags(scope.getTags());
       } else {
         for (Map.Entry<String, String> item : scope.getTags().entrySet()) {
           if (!sentryBaseEvent.getTags().containsKey(item.getKey())) {
@@ -1537,7 +1562,7 @@ public final class SentryClient implements ISentryClient {
         sortBreadcrumbsByDate(sentryBaseEvent, scope.getBreadcrumbs());
       }
       if (sentryBaseEvent.getExtras() == null) {
-        sentryBaseEvent.setExtras(new HashMap<>(scope.getExtras()));
+        sentryBaseEvent.setExtras(scope.getExtras());
       } else {
         for (Map.Entry<String, Object> item : scope.getExtras().entrySet()) {
           if (!sentryBaseEvent.getExtras().containsKey(item.getKey())) {

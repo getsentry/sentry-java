@@ -82,8 +82,6 @@ dependencies {
   testImplementation(projects.sentryReactor)
 }
 
-configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
-
 buildConfig {
   useJavaOutput()
   packageName("io.sentry.spring7")

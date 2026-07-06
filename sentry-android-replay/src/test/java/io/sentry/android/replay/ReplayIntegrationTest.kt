@@ -754,6 +754,12 @@ class ReplayIntegrationTest {
                 null
               }
             },
+            mock {
+              whenever(mock.submit(any<Runnable>())).doAnswer {
+                (it.arguments[0] as Runnable).run()
+                null
+              }
+            },
           ) { _ ->
             fixture.replayCache
           }
@@ -1104,12 +1110,33 @@ class ReplayIntegrationTest {
     assertEquals(traceId, traceIdRegistered)
   }
 
+  @Test
+  fun `close shuts down replay executors`() {
+    fixture.options.cacheDirPath = tmpDir.newFolder().absolutePath
+
+    val replay = fixture.getSut(context)
+    replay.register(fixture.scopes, fixture.options)
+    replay.start()
+    replay.stop()
+    replay.close()
+
+    assertTrue(replay.replayExecutor.isShutdown)
+    assertTrue(replay.persistingExecutor.isShutdown)
+  }
+
   private fun getSessionCaptureStrategy(options: SentryOptions): SessionCaptureStrategy =
     SessionCaptureStrategy(
       options,
       null,
       CurrentDateProvider.getInstance(),
       executor =
+        mock {
+          whenever(mock.submit(any<Runnable>())).doAnswer {
+            (it.arguments[0] as Runnable).run()
+            null
+          }
+        },
+      persistingExecutor =
         mock {
           whenever(mock.submit(any<Runnable>())).doAnswer {
             (it.arguments[0] as Runnable).run()

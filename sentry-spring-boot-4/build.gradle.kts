@@ -108,8 +108,6 @@ dependencies {
   testImplementation(libs.springboot4.resttestclient)
 }
 
-configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
-
 buildConfig {
   useJavaOutput()
   packageName("io.sentry.spring.boot4")

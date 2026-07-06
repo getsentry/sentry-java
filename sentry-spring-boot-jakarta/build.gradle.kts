@@ -100,8 +100,6 @@ dependencies {
   testImplementation(projects.sentryAsyncProfiler)
 }
 
-configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
-
 buildConfig {
   useJavaOutput()
   packageName("io.sentry.spring.boot.jakarta")

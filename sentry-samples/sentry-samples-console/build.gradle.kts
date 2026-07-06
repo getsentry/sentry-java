@@ -6,6 +6,7 @@ plugins {
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.shadow)
+  id("io.sentry.systemtest")
 }
 
 application { mainClass.set("io.sentry.samples.console.Main") }
@@ -13,8 +14,6 @@ application { mainClass.set("io.sentry.samples.console.Main") }
 java.sourceCompatibility = JavaVersion.VERSION_17
 
 java.targetCompatibility = JavaVersion.VERSION_17
-
-repositories { mavenCentral() }
 
 configure<JavaPluginExtension> {
   sourceCompatibility = JavaVersion.VERSION_17
@@ -65,8 +64,6 @@ tasks.jar {
 // Fix the startScripts task dependency
 tasks.startScripts { dependsOn(tasks.shadowJar) }
 
-configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
-
 tasks.register<Test>("systemTest").configure {
   group = "verification"
   description = "Runs the System tests"
@@ -74,8 +71,6 @@ tasks.register<Test>("systemTest").configure {
   val test = project.extensions.getByType<SourceSetContainer>()["test"]
   testClassesDirs = test.output.classesDirs
   classpath = test.runtimeClasspath
-
-  outputs.upToDateWhen { false }
 
   maxParallelForks = 1
 

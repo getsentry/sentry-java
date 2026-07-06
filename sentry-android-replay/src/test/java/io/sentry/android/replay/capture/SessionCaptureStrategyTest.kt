@@ -122,6 +122,14 @@ class SessionCaptureStrategyTest {
             .whenever(it)
             .submit(any<Runnable>())
         },
+        mock {
+          doAnswer { invocation ->
+              (invocation.arguments[0] as Runnable).run()
+              null
+            }
+            .whenever(it)
+            .submit(any<Runnable>())
+        },
       ) { _ ->
         replayCache
       }

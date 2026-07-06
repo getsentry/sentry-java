@@ -33,6 +33,7 @@ import io.sentry.test.injectForField
 import io.sentry.transport.ITransport
 import io.sentry.transport.ITransportGate
 import io.sentry.util.HintUtils
+import io.sentry.util.JsonSerializationUtils
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -342,6 +343,39 @@ class SentryClientTest {
   }
 
   @Test
+  fun `when log is dropped by event processor, log byte discard is recorded`() {
+    val scope = createScope()
+    val logEvent = SentryLogEvent(SentryId(), SentryNanotimeDate(), "message", SentryLogLevel.WARN)
+    val logEventNumberOfBytes =
+      JsonSerializationUtils.byteSizeOf(
+        fixture.sentryOptions.serializer,
+        fixture.sentryOptions.logger,
+        logEvent,
+      )
+    scope.addEventProcessor(
+      object : EventProcessor {
+        override fun process(event: SentryLogEvent): SentryLogEvent? = null
+      }
+    )
+
+    val sut = fixture.getSut()
+    sut.captureLog(logEvent, scope)
+
+    verify(fixture.loggerBatchProcessor, never()).add(any())
+    assertClientReport(
+      fixture.sentryOptions.clientReportRecorder,
+      listOf(
+        DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.LogItem.category, 1),
+        DiscardedEvent(
+          DiscardReason.EVENT_PROCESSOR.reason,
+          DataCategory.LogByte.category,
+          logEventNumberOfBytes,
+        ),
+      ),
+    )
+  }
+
+  @Test
   fun `when beforeSendLog is returns new instance, new instance is sent`() {
     val scope = createScope()
     val expected =
@@ -388,7 +422,10 @@ class SentryClientTest {
 
     assertClientReport(
       fixture.sentryOptions.clientReportRecorder,
-      listOf(DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.TraceMetric.category, 1)),
+      listOf(
+        DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.TraceMetric.category, 1),
+        DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.TraceMetricByte.category, 120),
+      ),
     )
   }
 
@@ -408,7 +445,43 @@ class SentryClientTest {
 
     assertClientReport(
       fixture.sentryOptions.clientReportRecorder,
-      listOf(DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.TraceMetric.category, 1)),
+      listOf(
+        DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.TraceMetric.category, 1),
+        DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.TraceMetricByte.category, 120),
+      ),
+    )
+  }
+
+  @Test
+  fun `when metric is dropped by event processor, metric byte discard is recorded`() {
+    val scope = createScope()
+    val metricsEvent = SentryMetricsEvent(SentryId(), SentryNanotimeDate(), "name", "gauge", 123.0)
+    val metricsEventNumberOfBytes =
+      JsonSerializationUtils.byteSizeOf(
+        fixture.sentryOptions.serializer,
+        fixture.sentryOptions.logger,
+        metricsEvent,
+      )
+    scope.addEventProcessor(
+      object : EventProcessor {
+        override fun process(event: SentryMetricsEvent, hint: Hint): SentryMetricsEvent? = null
+      }
+    )
+
+    val sut = fixture.getSut()
+    sut.captureMetric(metricsEvent, scope, null)
+
+    verify(fixture.metricsBatchProcessor, never()).add(any())
+    assertClientReport(
+      fixture.sentryOptions.clientReportRecorder,
+      listOf(
+        DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.TraceMetric.category, 1),
+        DiscardedEvent(
+          DiscardReason.EVENT_PROCESSOR.reason,
+          DataCategory.TraceMetricByte.category,
+          metricsEventNumberOfBytes,
+        ),
+      ),
     )
   }
 
@@ -532,6 +605,24 @@ class SentryClientTest {
     assertNotNull(event.user) { assertEquals("id", it.id) }
     assertEquals(SentryLevel.FATAL, event.level)
     assertNotNull(event.request) { assertEquals("post", it.method) }
+  }
+
+  @Test
+  fun `when captureEvent applies scope tags and extras, event map containers are copied`() {
+    val event = SentryEvent()
+    val scope = createScope()
+
+    val sut = fixture.getSut()
+
+    sut.captureEvent(event, scope)
+    val eventTags = event.tags!!
+    val eventExtras = event.extras!!
+
+    scope.setTag("newTag", "newValue")
+    scope.setExtra("newExtra", "newValue")
+
+    assertFalse(eventTags.containsKey("newTag"))
+    assertFalse(eventExtras.containsKey("newExtra"))
   }
 
   @Test

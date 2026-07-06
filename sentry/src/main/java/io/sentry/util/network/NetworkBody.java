@@ -16,15 +16,24 @@ public final class NetworkBody {
 
   private final @Nullable Object body;
   private final @Nullable List<NetworkBodyWarning> warnings;
+  private final long originalByteCount;
 
   public NetworkBody(final @Nullable Object body) {
-    this(body, null);
+    this(body, null, -1);
   }
 
   public NetworkBody(
       final @Nullable Object body, final @Nullable List<NetworkBodyWarning> warnings) {
+    this(body, warnings, -1);
+  }
+
+  NetworkBody(
+      final @Nullable Object body,
+      final @Nullable List<NetworkBodyWarning> warnings,
+      final long originalByteCount) {
     this.body = body;
     this.warnings = warnings;
+    this.originalByteCount = originalByteCount;
   }
 
   public @Nullable Object getBody() {
@@ -33,6 +42,10 @@ public final class NetworkBody {
 
   public @Nullable List<NetworkBodyWarning> getWarnings() {
     return warnings;
+  }
+
+  long getOriginalByteCount() {
+    return originalByteCount;
   }
 
   // Based on

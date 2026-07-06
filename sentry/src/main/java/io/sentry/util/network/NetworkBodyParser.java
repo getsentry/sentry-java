@@ -45,24 +45,33 @@ public final class NetworkBodyParser {
       return null;
     }
 
+    final boolean isTruncated = bytes.length > maxSizeBytes;
+    final long originalByteCount = bytes.length;
+
     if (contentType != null && isBinaryContentType(contentType)) {
       // For binary content, return a description instead of the actual content
       return new NetworkBody(
-          "[Binary data, " + bytes.length + " bytes, type: " + contentType + "]");
+          "[Binary data, " + bytes.length + " bytes, type: " + contentType + "]",
+          null,
+          originalByteCount);
     }
 
     // Convert to string and parse
     try {
       final String effectiveCharset = charset != null ? charset : "UTF-8";
       final int size = Math.min(bytes.length, maxSizeBytes);
-      final boolean isPartial = bytes.length > maxSizeBytes;
       final String content = new String(bytes, 0, size, effectiveCharset);
-      return parse(content, contentType, isPartial, logger);
+      final NetworkBody parsed = parse(content, contentType, isTruncated, logger);
+      if (parsed == null) {
+        return null;
+      }
+      return new NetworkBody(parsed.getBody(), parsed.getWarnings(), originalByteCount);
     } catch (UnsupportedEncodingException e) {
       logger.log(SentryLevel.WARNING, "Failed to decode bytes: " + e.getMessage());
       return new NetworkBody(
           "[Failed to decode bytes, " + bytes.length + " bytes]",
-          Collections.singletonList(NetworkBody.NetworkBodyWarning.BODY_PARSE_ERROR));
+          Collections.singletonList(NetworkBody.NetworkBodyWarning.BODY_PARSE_ERROR),
+          originalByteCount);
     }
   }
 

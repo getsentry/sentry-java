@@ -1,6 +1,9 @@
 package io.sentry
 
 import java.util.Date
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -327,6 +330,39 @@ class BreadcrumbTest {
   fun `remove null key data does not throw`() {
     val breadcrumb = Breadcrumb()
     breadcrumb.removeData(null)
+  }
+
+  @Test
+  fun `getData returns mutable map for new breadcrumb`() {
+    val breadcrumb = Breadcrumb()
+
+    breadcrumb.data["k"] = "v"
+
+    assertEquals("v", breadcrumb.getData("k"))
+  }
+
+  @Test
+  fun `concurrent first writes keep all data entries`() {
+    val breadcrumb = Breadcrumb()
+    val count = 32
+    val executor = Executors.newFixedThreadPool(count)
+    val start = CountDownLatch(1)
+    val futures =
+      (0 until count).map { index ->
+        executor.submit {
+          start.await()
+          breadcrumb.setData("key-$index", index)
+        }
+      }
+
+    start.countDown()
+    futures.forEach { it.get(5, TimeUnit.SECONDS) }
+    executor.shutdown()
+
+    assertEquals(count, breadcrumb.data.size)
+    for (index in 0 until count) {
+      assertEquals(index, breadcrumb.data["key-$index"])
+    }
   }
 
   class TestKey(val id: Long) {

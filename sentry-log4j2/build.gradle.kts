@@ -35,8 +35,6 @@ dependencies {
   testImplementation(libs.mockito.kotlin)
 }
 
-configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
-
 buildConfig {
   useJavaOutput()
   packageName("io.sentry.log4j2")
