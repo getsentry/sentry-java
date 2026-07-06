@@ -43,8 +43,6 @@ dependencies {
   signature("${gummyBearsModule}:${libs.versions.gummyBears.get()}@signature")
 }
 
-configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
-
 tasks { check { dependsOn(animalsnifferMain) } }
 
 buildConfig {

@@ -30,7 +30,7 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public final class JsonReflectionObjectSerializer {
 
-  private final Set<Object> visiting = new HashSet<>();
+  private @Nullable Set<Object> visiting;
   private final int maxDepth;
 
   JsonReflectionObjectSerializer(int maxDepth) {
@@ -69,6 +69,7 @@ public final class JsonReflectionObjectSerializer {
     } else if (object.getClass().isEnum()) {
       return object.toString();
     } else {
+      final Set<Object> visiting = getVisiting();
       if (visiting.contains(object)) {
         logger.log(SentryLevel.INFO, "Cyclic reference detected. Calling toString() on object.");
         return object.toString();
@@ -134,6 +135,13 @@ public final class JsonReflectionObjectSerializer {
   }
 
   // Helper
+
+  private @NotNull Set<Object> getVisiting() {
+    if (visiting == null) {
+      visiting = new HashSet<>();
+    }
+    return visiting;
+  }
 
   private @NotNull List<Object> list(@NotNull Object[] objectArray, @NotNull ILogger logger)
       throws Exception {

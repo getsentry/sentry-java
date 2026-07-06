@@ -11,7 +11,6 @@ import io.sentry.util.HintUtils;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
@@ -191,7 +190,7 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
 
   private void setTags(final @NotNull SentryBaseEvent event) {
     if (event.getTags() == null) {
-      event.setTags(new HashMap<>(options.getTags()));
+      event.setTags(options.getTags());
     } else {
       for (Map.Entry<String, String> item : options.getTags().entrySet()) {
         if (!event.getTags().containsKey(item.getKey())) {

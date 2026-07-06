@@ -12,9 +12,14 @@ class SentryShadowActivityManager {
   companion object {
     private var historicalProcessStartReasons: List<ApplicationStartInfo> = emptyList()
     private var importance: Int = RunningAppProcessInfo.IMPORTANCE_FOREGROUND
+    private var historicalProcessStartReasonsException: RuntimeException? = null
 
     fun setHistoricalProcessStartReasons(startReasons: List<ApplicationStartInfo>) {
       historicalProcessStartReasons = startReasons
+    }
+
+    fun setHistoricalProcessStartReasonsException(exception: RuntimeException) {
+      historicalProcessStartReasonsException = exception
     }
 
     fun setImportance(importance: Int) {
@@ -24,6 +29,7 @@ class SentryShadowActivityManager {
     fun reset() {
       historicalProcessStartReasons = emptyList()
       importance = RunningAppProcessInfo.IMPORTANCE_FOREGROUND
+      historicalProcessStartReasonsException = null
     }
 
     @Implementation
@@ -35,6 +41,7 @@ class SentryShadowActivityManager {
 
   @Implementation
   fun getHistoricalProcessStartReasons(maxNum: Int): List<ApplicationStartInfo> {
+    historicalProcessStartReasonsException?.let { throw it }
     return historicalProcessStartReasons.take(maxNum)
   }
 }
