@@ -9,6 +9,7 @@
   - Enable via `setEnableNdkAppHangTracking(true)` (disabled by default) and tune the timeout with `setNdkAppHangTimeoutIntervalMillis(...)` (default `5000` ms), or the `io.sentry.ndk.app-hang.enable` / `io.sentry.ndk.app-hang.timeout-interval-millis` manifest entries
   - Intended for hybrid SDKs: emit the heartbeat by calling the native `sentry_app_hang_heartbeat()` from the thread you want monitored. Independent of the JVM-based ANR detection (`setAnrEnabled`)
 
+<<<<<<< HEAD
 ### Fixes
 
 - Record byte-level client reports when event processors discard logs or trace metrics ([#5718](https://github.com/getsentry/sentry-java/pull/5718))
@@ -17,6 +18,11 @@
 
 ## 8.47.0
 
+||||||| merged common ancestors
+||||||||| 57d359a2de
+=========
+=======
+>>>>>>> 770d0555406ff9636e14bb6fd07186e5e6b3e9e3
 ### Behavioral Changes
 
 - `SentryOkHttpInterceptor::intercept` now throws `IOException`. This is a source-only and Java-only breaking change ([#5654](https://github.com/getsentry/sentry-java/pull/5654))
