@@ -81,7 +81,7 @@ internal class SimpleVideoEncoder(
         val videoCapabilities =
           mediaCodec.codecInfo.getCapabilitiesForType(muxerConfig.mimeType).videoCapabilities
 
-        if (!videoCapabilities.bitrateRange.contains(bitRate)) {
+        if (videoCapabilities != null && !videoCapabilities.bitrateRange.contains(bitRate)) {
           options.logger.log(
             DEBUG,
             "Encoder doesn't support the provided bitRate: $bitRate, the value will be clamped to the closest one",
