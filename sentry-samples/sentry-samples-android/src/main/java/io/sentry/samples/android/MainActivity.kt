@@ -77,6 +77,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -245,6 +246,15 @@ fun CategoryNavigationRail(
           .clickable { scope.launch { rotation.animateTo(rotation.targetValue + 360.0f) } }
           .padding(12.dp)
           .rotate(rotation.value),
+    )
+    Spacer(Modifier.height(8.dp))
+    Text(
+      text = stringResource(R.string.build_type),
+      style = MaterialTheme.typography.labelSmall,
+      fontWeight = FontWeight.Bold,
+      color =
+        if (BuildConfig.DEBUG) MaterialTheme.colorScheme.error
+        else MaterialTheme.colorScheme.primary,
     )
     Spacer(Modifier.height(16.dp))
     Category.entries.forEach { category ->
