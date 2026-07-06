@@ -505,6 +505,57 @@ class ActivityLifecycleIntegrationTest {
   }
 
   @Test
+  fun `finished eager extended app start persists the app start end time`() {
+    val sut =
+      fixture.getSut {
+        it.tracesSampleRate = 1.0
+        it.isEnableStandaloneAppStartTracing = true
+      }
+    sut.register(fixture.scopes, fixture.options)
+
+    setAppStartTime()
+    AppStartMetrics.getInstance().appStartExtension.extendAppStart()
+    assertNull(AppStartMetrics.getInstance().getAppStartEndTime())
+
+    AppStartMetrics.getInstance().appStartExtension.finishTransaction(SentryNanotimeDate())
+    AppStartMetrics.getInstance().appStartExtension.finishExtendedAppStart()
+
+    assertNotNull(AppStartMetrics.getInstance().getAppStartEndTime())
+  }
+
+  @Test
+  fun `activity long after the eager extended app start finished starts a fresh trace`() {
+    val sut =
+      fixture.getSut {
+        it.tracesSampleRate = 1.0
+        it.isEnableStandaloneAppStartTracing = true
+      }
+    sut.register(fixture.scopes, fixture.options)
+
+    // the eager extension starts at launch and finishes before any activity exists
+    setAppStartTime(date = SentryNanotimeDate(1, 0))
+    AppStartMetrics.getInstance().appStartExtension.extendAppStart()
+    val appStartTraceId = fixture.capturedContexts.single().traceId
+    AppStartMetrics.getInstance()
+      .appStartExtension
+      .extendedAppStartSpan!!
+      .finish(SpanStatus.OK, SentryNanotimeDate(2, 0))
+    AppStartMetrics.getInstance().appStartExtension.finishTransaction(SentryNanotimeDate(2, 0))
+
+    // the first activity opens more than a minute after the extension finished
+    setAppStartTime(date = SentryNanotimeDate(TimeUnit.MINUTES.toMillis(2), 0))
+    val activity = mock<Activity>()
+    sut.onActivityCreated(activity, fixture.bundle)
+
+    val uiLoadContext =
+      fixture.capturedContexts.last { it.operation == ActivityLifecycleIntegration.UI_LOAD_OP }
+    // too far apart: the ui.load gets its own fresh trace, not the finished app.start one
+    assertNotEquals(appStartTraceId, uiLoadContext.traceId)
+    // stored continuation state is still consumed so nothing reuses it
+    assertNull(AppStartMetrics.getInstance().getAppStartTraceId())
+  }
+
+  @Test
   fun `extended headless app start does not create a duplicate when the extension already finished`() {
     val sut =
       fixture.getSut {

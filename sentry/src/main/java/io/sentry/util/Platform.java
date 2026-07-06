@@ -20,16 +20,21 @@ public final class Platform {
       isAndroid = false;
     }
 
-    try {
-      final @Nullable String javaStringVersion = System.getProperty("java.specification.version");
-      if (javaStringVersion != null) {
-        final @NotNull double javaVersion = Double.parseDouble(javaStringVersion);
-        isJavaNinePlus = javaVersion >= 9.0;
-      } else {
+    if (isAndroid) {
+      // Android is never Java 9+, skip the system property lookup + parse on the startup path.
+      isJavaNinePlus = false;
+    } else {
+      try {
+        final @Nullable String javaStringVersion = System.getProperty("java.specification.version");
+        if (javaStringVersion != null) {
+          final @NotNull double javaVersion = Double.parseDouble(javaStringVersion);
+          isJavaNinePlus = javaVersion >= 9.0;
+        } else {
+          isJavaNinePlus = false;
+        }
+      } catch (Throwable e) {
         isJavaNinePlus = false;
       }
-    } catch (Throwable e) {
-      isJavaNinePlus = false;
     }
   }
 

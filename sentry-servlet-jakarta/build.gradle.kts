@@ -35,8 +35,6 @@ dependencies {
   testImplementation(libs.servlet.jakarta.api)
 }
 
-configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
-
 tasks.withType<JavaCompile>().configureEach {
   options.errorprone {
     check("NullAway", net.ltgt.gradle.errorprone.CheckSeverity.ERROR)

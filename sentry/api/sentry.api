@@ -1318,7 +1318,6 @@ public final class io/sentry/JsonObjectReader : io/sentry/ObjectReader {
 
 public final class io/sentry/JsonObjectSerializer {
 	public static final field OBJECT_PLACEHOLDER Ljava/lang/String;
-	public final field jsonReflectionObjectSerializer Lio/sentry/JsonReflectionObjectSerializer;
 	public fun <init> (I)V
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;Ljava/lang/Object;)V
 }
@@ -2080,7 +2079,8 @@ public abstract interface class io/sentry/ObjectWriter {
 	public abstract fun value (Z)Lio/sentry/ObjectWriter;
 }
 
-public final class io/sentry/OptionsContainer {
+public class io/sentry/OptionsContainer {
+	protected fun <init> ()V
 	public static fun create (Ljava/lang/Class;)Lio/sentry/OptionsContainer;
 	public fun createInstance ()Ljava/lang/Object;
 }
@@ -7636,6 +7636,7 @@ public final class io/sentry/util/CollectionUtils {
 	public static fun newHashMap (Ljava/util/Map;)Ljava/util/Map;
 	public static fun reverseListIterator (Ljava/util/concurrent/CopyOnWriteArrayList;)Ljava/util/ListIterator;
 	public static fun size (Ljava/lang/Iterable;)I
+	public static fun toSortedStringArray (Ljava/util/Enumeration;I)[Ljava/lang/String;
 }
 
 public abstract interface class io/sentry/util/CollectionUtils$Mapper {
@@ -8091,6 +8092,11 @@ public class io/sentry/vendor/Base64 {
 	public static fun encode ([BIII)[B
 	public static fun encodeToString ([BI)Ljava/lang/String;
 	public static fun encodeToString ([BIII)Ljava/lang/String;
+}
+
+public final class io/sentry/vendor/SentryIso8601Utils {
+	public static fun formatTimestamp (J)Ljava/lang/String;
+	public static fun parseTimestamp (Ljava/lang/String;)J
 }
 
 public class io/sentry/vendor/gson/internal/bind/util/ISO8601Utils {

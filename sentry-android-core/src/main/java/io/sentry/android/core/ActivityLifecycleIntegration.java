@@ -1056,6 +1056,13 @@ public final class ActivityLifecycleIntegration
       txnOptions.setWaitForChildren(true);
       final long deadlineTimeoutMillis = options.getDeadlineTimeout();
       txnOptions.setDeadlineTimeout(deadlineTimeoutMillis <= 0 ? null : deadlineTimeoutMillis);
+      // Persist the end time (covering every finish path: user finish, first frame, deadline) so a
+      // later ui.load can tell whether it is close enough to continue this trace; without it the
+      // continuation window is unbounded.
+      txnOptions.setTransactionFinishedCallback(
+          finishedTransaction ->
+              AppStartMetrics.getInstance()
+                  .setAppStartEndTime(finishedTransaction.getFinishDate()));
     }
 
     final @NotNull TransactionContext txnContext =
@@ -1104,6 +1111,11 @@ public final class ActivityLifecycleIntegration
       return null;
     }
 
+    // The app start sampling decision was pre-rolled on the previous run so the app start
+    // profiler could start before Sentry.init. It forces the trace sampling of the eager
+    // app.start transaction created below (no re-roll, staying consistent with whether the
+    // profiler actually started) and lets it bind the app start profiler. It's single-use:
+    // we clear it so the first ui.load can't also claim it.
     final @Nullable TracesSamplingDecision samplingDecision = metrics.getAppStartSamplingDecision();
     metrics.setAppStartSamplingDecision(null);
 

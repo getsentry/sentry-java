@@ -43,8 +43,6 @@ dependencies {
   testImplementation("org.junit.jupiter:junit-jupiter")
 }
 
-configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
-
 buildConfig {
   useJavaOutput()
   packageName("io.sentry.reactor")
@@ -63,8 +61,6 @@ tasks.withType<JavaCompile>().configureEach {
     option("NullAway:AnnotatedPackages", "io.sentry")
   }
 }
-
-repositories { mavenCentral() }
 
 tasks.jar {
   manifest {

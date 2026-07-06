@@ -1775,7 +1775,7 @@ class SentryTest {
   private fun initWithExtender(extender: IAppStartExtender) {
     initForTest {
       it.dsn = dsn
-      it.appStartExtender = extender
+      it.setAppStartExtender(extender)
     }
   }
 

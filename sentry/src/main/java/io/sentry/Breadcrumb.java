@@ -34,8 +34,10 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable, Comparab
   /** The type of breadcrumb. */
   private @Nullable String type;
 
+  private static final @NotNull Map<String, @NotNull Object> EMPTY_DATA = Collections.emptyMap();
+
   /** Data associated with this breadcrumb. */
-  private @NotNull Map<String, @NotNull Object> data = new ConcurrentHashMap<>();
+  private volatile @NotNull Map<String, @NotNull Object> data = EMPTY_DATA;
 
   /** Dotted strings that indicate what the crumb is or where it comes from. */
   private @Nullable String category;
@@ -78,9 +80,11 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable, Comparab
     this.type = breadcrumb.type;
     this.category = breadcrumb.category;
     this.origin = breadcrumb.origin;
-    final Map<String, Object> dataClone = CollectionUtils.newConcurrentHashMap(breadcrumb.data);
-    if (dataClone != null) {
-      this.data = dataClone;
+    if (!breadcrumb.data.isEmpty()) {
+      final Map<String, Object> dataClone = CollectionUtils.newConcurrentHashMap(breadcrumb.data);
+      if (dataClone != null) {
+        this.data = dataClone;
+      }
     }
     this.unknown = CollectionUtils.newConcurrentHashMap(breadcrumb.unknown);
     this.level = breadcrumb.level;
@@ -100,7 +104,7 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable, Comparab
     @NotNull Date timestamp = DateUtils.getCurrentDateTime();
     String message = null;
     String type = null;
-    @NotNull Map<String, Object> data = new ConcurrentHashMap<>();
+    Map<String, Object> data = null;
     String category = null;
     String origin = null;
     SentryLevel level = null;
@@ -129,6 +133,9 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable, Comparab
           if (untypedData != null) {
             for (Map.Entry<Object, Object> dataEntry : untypedData.entrySet()) {
               if (dataEntry.getKey() instanceof String && dataEntry.getValue() != null) {
+                if (data == null) {
+                  data = new ConcurrentHashMap<>();
+                }
                 data.put((String) dataEntry.getKey(), dataEntry.getValue());
               } else {
                 options
@@ -166,7 +173,9 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable, Comparab
     final Breadcrumb breadcrumb = new Breadcrumb(timestamp);
     breadcrumb.message = message;
     breadcrumb.type = type;
-    breadcrumb.data = data;
+    if (data != null) {
+      breadcrumb.data = data;
+    }
     breadcrumb.category = category;
     breadcrumb.origin = origin;
     breadcrumb.level = level;
@@ -494,7 +503,7 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable, Comparab
       breadcrumb.setData("view.tag", viewTag);
     }
     for (final Map.Entry<String, Object> entry : additionalData.entrySet()) {
-      breadcrumb.getData().put(entry.getKey(), entry.getValue());
+      breadcrumb.setData(entry.getKey(), entry.getValue());
     }
     breadcrumb.setLevel(SentryLevel.INFO);
     return breadcrumb;
@@ -553,9 +562,9 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable, Comparab
   @SuppressWarnings("JavaUtilDate")
   public @NotNull Date getTimestamp() {
     if (timestamp != null) {
-      return (Date) timestamp.clone();
+      return timestamp;
     } else if (timestampMs != null) {
-      // we memoize it here into timestamp to avoid instantiating Calendar again and again
+      // we memoize it here into timestamp to avoid creating a Date again and again
       timestamp = DateUtils.getDateTime(timestampMs);
       return timestamp;
     }
@@ -598,6 +607,20 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable, Comparab
     this.type = type;
   }
 
+  private @NotNull Map<String, @NotNull Object> getOrCreateData() {
+    Map<String, @NotNull Object> currentData = data;
+    if (currentData == EMPTY_DATA) {
+      synchronized (this) {
+        currentData = data;
+        if (currentData == EMPTY_DATA) {
+          currentData = new ConcurrentHashMap<>();
+          data = currentData;
+        }
+      }
+    }
+    return currentData;
+  }
+
   /**
    * Returns the data map
    *
@@ -606,7 +629,7 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable, Comparab
   @ApiStatus.Internal
   @NotNull
   public Map<String, Object> getData() {
-    return data;
+    return getOrCreateData();
   }
 
   /**
@@ -636,7 +659,7 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable, Comparab
     if (value == null) {
       removeData(key);
     } else {
-      data.put(key, value);
+      getOrCreateData().put(key, value);
     }
   }
 
@@ -649,7 +672,10 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable, Comparab
     if (key == null) {
       return;
     }
-    data.remove(key);
+    final Map<String, @NotNull Object> currentData = data;
+    if (currentData != EMPTY_DATA) {
+      currentData.remove(key);
+    }
   }
 
   /**
@@ -823,7 +849,12 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable, Comparab
   public void serialize(final @NotNull ObjectWriter writer, final @NotNull ILogger logger)
       throws IOException {
     writer.beginObject();
-    writer.name(JsonKeys.TIMESTAMP).value(logger, getTimestamp());
+    writer
+        .name(JsonKeys.TIMESTAMP)
+        .value(
+            timestampMs != null
+                ? DateUtils.getTimestampFromMillis(timestampMs)
+                : DateUtils.getTimestamp(getTimestamp()));
     if (message != null) {
       writer.name(JsonKeys.MESSAGE).value(message);
     }
@@ -859,7 +890,7 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable, Comparab
       @NotNull Date timestamp = DateUtils.getCurrentDateTime();
       String message = null;
       String type = null;
-      @NotNull Map<String, Object> data = new ConcurrentHashMap<>();
+      Map<String, Object> data = null;
       String category = null;
       String origin = null;
       SentryLevel level = null;
@@ -884,7 +915,7 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable, Comparab
             Map<String, Object> deserializedData =
                 CollectionUtils.newConcurrentHashMap(
                     (Map<String, Object>) reader.nextObjectOrNull());
-            if (deserializedData != null) {
+            if (deserializedData != null && !deserializedData.isEmpty()) {
               data = deserializedData;
             }
             break;
@@ -913,7 +944,9 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable, Comparab
       Breadcrumb breadcrumb = new Breadcrumb(timestamp);
       breadcrumb.message = message;
       breadcrumb.type = type;
-      breadcrumb.data = data;
+      if (data != null) {
+        breadcrumb.data = data;
+      }
       breadcrumb.category = category;
       breadcrumb.origin = origin;
       breadcrumb.level = level;

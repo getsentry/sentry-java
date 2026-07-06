@@ -160,9 +160,15 @@ public final class NetworkDetailCaptureUtils {
       body = bodyExtractor.extract(httpObject);
     }
 
+    // When contentLength is unknown (-1), use the actual byte count from body extraction
+    Long effectiveBodySize = bodySize;
+    if ((bodySize == null || bodySize == -1L) && body != null && body.getOriginalByteCount() >= 0) {
+      effectiveBodySize = body.getOriginalByteCount();
+    }
+
     Map<String, String> headers =
         getCaptureHeaders(headerExtractor.extract(httpObject), allowedHeaders);
 
-    return new ReplayNetworkRequestOrResponse(bodySize, body, headers);
+    return new ReplayNetworkRequestOrResponse(effectiveBodySize, body, headers);
   }
 }

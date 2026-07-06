@@ -11,11 +11,6 @@ plugins {
   alias(libs.plugins.animalsniffer)
 }
 
-configure<JavaPluginExtension> {
-  sourceCompatibility = JavaVersion.VERSION_1_8
-  targetCompatibility = JavaVersion.VERSION_1_8
-}
-
 tasks.withType<KotlinCompile>().configureEach {
   compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8
   compilerOptions.languageVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
@@ -48,8 +43,6 @@ dependencies {
   val gummyBearsModule = libs.gummy.bears.api21.get().module
   signature("${gummyBearsModule}:${libs.versions.gummyBears.get()}@signature")
 }
-
-configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
 
 tasks { check { dependsOn(animalsnifferMain) } }
 
