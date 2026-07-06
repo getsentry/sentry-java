@@ -499,10 +499,7 @@ fun TracingScreen() {
     item {
       SentryTraced("open_second_activity") {
         OutlinedButton(
-          onClick = {
-            activity.finish()
-            activity.startActivity(Intent(activity, SecondActivity::class.java))
-          },
+          onClick = { activity.startActivity(Intent(activity, SecondActivity::class.java)) },
           modifier = Modifier,
         ) {
           Text("Open Second Activity", maxLines = 2, overflow = TextOverflow.Ellipsis)
