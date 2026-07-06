@@ -184,6 +184,30 @@ public final class io/sentry/android/core/AppLifecycleIntegration : io/sentry/In
 	public fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
 }
 
+public final class io/sentry/android/core/AppStartExtension : io/sentry/IAppStartExtender {
+	public fun <init> (Lio/sentry/android/core/performance/AppStartMetrics;)V
+	public fun clear ()V
+	public fun extendAppStart ()V
+	public fun finishExtendedAppStart ()V
+	public fun finishTransaction (Lio/sentry/SentryDate;)V
+	public fun getExtendedAppStartSpan ()Lio/sentry/ISpan;
+	public fun getExtendedEndTime ()Lio/sentry/SentryDate;
+	public fun isActive ()Z
+	public fun isExtended ()Z
+	public fun setData (Ljava/lang/String;Ljava/lang/Object;)V
+	public fun setExtendAppStartListener (Lio/sentry/android/core/AppStartExtension$ExtendAppStartListener;)V
+}
+
+public abstract interface class io/sentry/android/core/AppStartExtension$ExtendAppStartListener {
+	public abstract fun onExtendAppStartRequested ()Lio/sentry/android/core/AppStartExtension$ExtendedAppStart;
+}
+
+public final class io/sentry/android/core/AppStartExtension$ExtendedAppStart {
+	public final field span Lio/sentry/ISpan;
+	public final field transaction Lio/sentry/ITransaction;
+	public fun <init> (Lio/sentry/ITransaction;Lio/sentry/ISpan;)V
+}
+
 public final class io/sentry/android/core/AppState : java/io/Closeable {
 	public fun addAppStateListener (Lio/sentry/android/core/AppState$AppStateListener;)V
 	public fun close ()V
@@ -739,12 +763,14 @@ public class io/sentry/android/core/performance/AppStartMetrics : io/sentry/andr
 	public static final field staticLock Lio/sentry/util/AutoClosableReentrantLock;
 	public fun <init> ()V
 	public fun addActivityLifecycleTimeSpans (Lio/sentry/android/core/performance/ActivityLifecycleTimeSpan;)V
+	public fun canExtendAppStart ()Z
 	public fun clear ()V
 	public fun createProcessInitSpan ()Lio/sentry/android/core/performance/TimeSpan;
 	public fun getActivityLifecycleTimeSpans ()Ljava/util/List;
 	public fun getAppStartBaggageHeader ()Ljava/lang/String;
 	public fun getAppStartContinuousProfiler ()Lio/sentry/IContinuousProfiler;
 	public fun getAppStartEndTime ()Lio/sentry/SentryDate;
+	public fun getAppStartExtension ()Lio/sentry/android/core/AppStartExtension;
 	public fun getAppStartProfiler ()Lio/sentry/ITransactionProfiler;
 	public fun getAppStartReason ()Ljava/lang/String;
 	public fun getAppStartSamplingDecision ()Lio/sentry/TracesSamplingDecision;
