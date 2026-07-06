@@ -661,7 +661,7 @@ class SentryOptionsTest {
 
         override fun getExtendedAppStartSpan(): ISpan = NoOpSpan.getInstance()
       }
-    options.appStartExtender = customExtender
+    options.setAppStartExtender(customExtender)
     assertEquals(customExtender, options.appStartExtender)
   }
 
