@@ -23,12 +23,17 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -184,11 +189,21 @@ fun MainScreen() {
 
   Surface(modifier = Modifier.fillMaxSize()) {
     Row(modifier = Modifier.fillMaxSize()) {
+      // NavigationRail already draws its background edge-to-edge (behind the status bar) while
+      // insetting its own items, so we only need to inset the content area on the remaining sides.
       CategoryNavigationRail(
         selectedCategory = selectedCategory,
         onCategorySelected = { selectedCategory = it },
       )
-      Surface(modifier = Modifier.fillMaxSize()) {
+      Surface(
+        modifier =
+          Modifier.fillMaxSize()
+            .windowInsetsPadding(
+              WindowInsets.safeDrawing.only(
+                WindowInsetsSides.Top + WindowInsetsSides.Bottom + WindowInsetsSides.End
+              )
+            )
+      ) {
         when (selectedCategory) {
           Category.ERRORS -> ErrorsScreen()
           Category.TRACING -> TracingScreen()
@@ -271,7 +286,12 @@ fun ErrorsScreen() {
   ) {
     item {
       SentryTraced("crash_from_java") {
-        OutlinedButton(onClick = { throw RuntimeException("Uncaught Exception from Java.") }) {
+        OutlinedButton(
+          onClick = {
+            tagSampleAction("crash_from_java")
+            throw RuntimeException("Crash from Java button: uncaught RuntimeException")
+          }
+        ) {
           Text("Crash from Java", maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
       }
@@ -279,7 +299,12 @@ fun ErrorsScreen() {
     item {
       SentryTraced("capture_exception") {
         OutlinedButton(
-          onClick = { Sentry.captureException(Exception(Exception(Exception("Some exception.")))) },
+          onClick = {
+            tagSampleAction("capture_exception")
+            Sentry.captureException(
+              Exception(Exception(Exception("Capture Exception button: nested exception")))
+            )
+          },
           modifier = Modifier,
         ) {
           Text("Capture Exception", maxLines = 2, overflow = TextOverflow.Ellipsis)
@@ -290,11 +315,12 @@ fun ErrorsScreen() {
       SentryTraced("breadcrumb") {
         OutlinedButton(
           onClick = {
-            Sentry.addBreadcrumb("Breadcrumb")
+            tagSampleAction("breadcrumb")
+            Sentry.addBreadcrumb("Breadcrumb button clicked")
             Sentry.setExtra("extra", "extra")
             Sentry.setFingerprint(listOf("fingerprint"))
             Sentry.setTransaction("transaction")
-            Sentry.captureException(Exception("Some exception with scope."))
+            Sentry.captureException(Exception("Breadcrumb button: exception with scope data"))
           },
           modifier = Modifier,
         ) {
@@ -304,21 +330,39 @@ fun ErrorsScreen() {
     }
     item {
       SentryTraced("stack_overflow") {
-        OutlinedButton(onClick = { stackOverflow() }, modifier = Modifier) {
+        OutlinedButton(
+          onClick = {
+            tagSampleAction("stack_overflow")
+            stackOverflow()
+          },
+          modifier = Modifier,
+        ) {
           Text("Stack Overflow", maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
       }
     }
     item {
       SentryTraced("native_crash") {
-        OutlinedButton(onClick = { NativeSample.crash() }, modifier = Modifier) {
+        OutlinedButton(
+          onClick = {
+            tagSampleAction("native_crash")
+            NativeSample.crash()
+          },
+          modifier = Modifier,
+        ) {
           Text("Native Crash", maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
       }
     }
     item {
       SentryTraced("native_capture") {
-        OutlinedButton(onClick = { NativeSample.message() }, modifier = Modifier) {
+        OutlinedButton(
+          onClick = {
+            tagSampleAction("native_capture")
+            NativeSample.message()
+          },
+          modifier = Modifier,
+        ) {
           Text("Native Capture", maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
       }
@@ -327,6 +371,7 @@ fun ErrorsScreen() {
       SentryTraced("anr") {
         OutlinedButton(
           onClick = {
+            tagSampleAction("anr")
             Thread {
                 synchronized(mutex) {
                   while (true) {
@@ -341,7 +386,14 @@ fun ErrorsScreen() {
               .start()
 
             Handler(Looper.getMainLooper())
-              .postDelayed({ synchronized(mutex) { throw IllegalStateException() } }, 1000)
+              .postDelayed(
+                {
+                  synchronized(mutex) {
+                    throw IllegalStateException("ANR button: main thread blocked")
+                  }
+                },
+                1000,
+              )
           },
           modifier = Modifier,
         ) {
@@ -353,10 +405,18 @@ fun ErrorsScreen() {
       SentryTraced("native_anr") {
         OutlinedButton(
           onClick = {
+            tagSampleAction("native_anr")
             Thread { NativeSample.freezeMysteriously(mutex) }.start()
 
             Handler(Looper.getMainLooper())
-              .postDelayed({ synchronized(mutex) { throw IllegalStateException() } }, 1000)
+              .postDelayed(
+                {
+                  synchronized(mutex) {
+                    throw IllegalStateException("ANR (native) button: main thread blocked")
+                  }
+                },
+                1000,
+              )
           },
           modifier = Modifier,
         ) {
@@ -368,6 +428,7 @@ fun ErrorsScreen() {
       SentryTraced("out_of_memory") {
         OutlinedButton(
           onClick = {
+            tagSampleAction("out_of_memory")
             val latch = CountDownLatch(1)
             for (i in 0 until 20) {
               Thread {
@@ -393,7 +454,13 @@ fun ErrorsScreen() {
     }
     item {
       SentryTraced("send_message") {
-        OutlinedButton(onClick = { Sentry.captureMessage("Some message.") }, modifier = Modifier) {
+        OutlinedButton(
+          onClick = {
+            tagSampleAction("send_message")
+            Sentry.captureMessage("Send Message button: test message")
+          },
+          modifier = Modifier,
+        ) {
           Text("Send Message", maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
       }
@@ -402,11 +469,12 @@ fun ErrorsScreen() {
       SentryTraced("test_timber") {
         OutlinedButton(
           onClick = {
+            tagSampleAction("test_timber")
             crashCount.intValue++
-            Timber.i("Some info here")
+            Timber.i("Test Timber button: info log")
             Timber.e(
-              RuntimeException("Uncaught Exception from Java."),
-              "Something wrong happened ${crashCount.intValue} times",
+              RuntimeException("Test Timber button: error RuntimeException"),
+              "Test Timber button: error logged ${crashCount.intValue} times",
             )
           },
           modifier = Modifier,
@@ -934,4 +1002,9 @@ fun Context.getActivity(): ComponentActivity {
 
 fun stackOverflow() {
   stackOverflow()
+}
+
+private fun tagSampleAction(action: String) {
+  // Tag every event with the button that triggered it so it can be filtered in Sentry.
+  Sentry.setTag("sample_action", action)
 }

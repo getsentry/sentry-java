@@ -8,12 +8,20 @@
 - Expose sentry-native's heartbeat-based app-hang detection through `SentryAndroidOptions` ([#5623](https://github.com/getsentry/sentry-java/pull/5623))
   - Enable via `setEnableNdkAppHangTracking(true)` (disabled by default) and tune the timeout with `setNdkAppHangTimeoutIntervalMillis(...)` (default `5000` ms), or the `io.sentry.ndk.app-hang.enable` / `io.sentry.ndk.app-hang.timeout-interval-millis` manifest entries
   - Intended for hybrid SDKs: emit the heartbeat by calling the native `sentry_app_hang_heartbeat()` from the thread you want monitored. Independent of the JVM-based ANR detection (`setAnrEnabled`)
+- Support the `io.sentry.tombstone.report-historical` manifest option to enable historical tombstone reporting via `AndroidManifest.xml` `<meta-data>` ([#5683](https://github.com/getsentry/sentry-java/pull/5683))
 
 ### Fixes
 
 - Record byte-level client reports when event processors discard logs or trace metrics ([#5718](https://github.com/getsentry/sentry-java/pull/5718))
 - Name the device-info caching thread `SentryDeviceInfoCache` so all threads spawned by the SDK are identifiable ([#5684](https://github.com/getsentry/sentry-java/pull/5684))
 - Apply byte-category rate limits to log and trace metric envelope items ([#5716](https://github.com/getsentry/sentry-java/pull/5716))
+
+### Performance
+
+- Skip `Hint` allocation in `Scope.addBreadcrumb` when no `beforeBreadcrumb` callback is set ([#5689](https://github.com/getsentry/sentry-java/pull/5689))
+- Speed up scope persistence by detecting the Sentry executor thread via a marker instead of a `Thread.getName()` name scan on every scope mutation ([#5691](https://github.com/getsentry/sentry-java/pull/5691))
+- Remove executor prewarm during SDK init ([#5681](https://github.com/getsentry/sentry-java/pull/5681))
+  - The single-threaded `SentryExecutorService` queued the prewarm work ahead of the first useful task, so it could only delay init work, never speed it up; the thread and class loading it warmed are paid identically by the first real task submitted right after.
 
 ### Dependencies
 
