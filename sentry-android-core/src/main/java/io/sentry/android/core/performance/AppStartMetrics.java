@@ -643,8 +643,12 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
       // NOTE: meaningless in standalone app start mode, where a headless start is already its own
       // standalone transaction and therefore cannot be re-classified as warm.
       final long durationSinceAppStartMillis = nowUptimeMs - appStartSpan.getStartUptimeMs();
-      if (!appLaunchedInForeground.getValue()
-          || durationSinceAppStartMillis > TimeUnit.MINUTES.toMillis(1)) {
+      // An active extension explicitly keeps the launch alive: resetting the span here would make
+      // the extended vital measure from the activity while the eager app.start transaction stays
+      // anchored at process start.
+      if ((!appLaunchedInForeground.getValue()
+              || durationSinceAppStartMillis > TimeUnit.MINUTES.toMillis(1))
+          && !appStartExtension.isActive()) {
         appStartType = AppStartType.WARM;
         shouldSendStartMeasurements = true;
         appStartSpan.reset();
