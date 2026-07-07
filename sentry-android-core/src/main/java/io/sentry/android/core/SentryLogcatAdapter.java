@@ -19,6 +19,21 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public final class SentryLogcatAdapter {
 
+  /**
+   * Re-entrancy guard to prevent infinite recursion. When the Sentry Android Gradle Plugin
+   * replaces Log.* calls with SentryLogcatAdapter.* calls, it also transforms calls inside the
+   * Sentry SDK itself (e.g. AndroidLogger). This can cause a cycle:
+   * SentryLogcatAdapter.w() -> addBreadcrumb() -> executeBeforeBreadcrumb() (on exception) ->
+   * DiagnosticLogger.log() -> AndroidLogger.log() -> Log.w() -> SentryLogcatAdapter.w() -> ...
+   */
+  private static final ThreadLocal<Boolean> isAddingBreadcrumb =
+      new ThreadLocal<Boolean>() {
+        @Override
+        protected Boolean initialValue() {
+          return Boolean.FALSE;
+        }
+      };
+
   private static void addAsBreadcrumb(
       @Nullable String tag, @NotNull SentryLevel level, @Nullable String msg) {
     addAsBreadcrumb(tag, level, msg, null);
@@ -34,17 +49,25 @@ public final class SentryLogcatAdapter {
       @NotNull final SentryLevel level,
       @Nullable final String msg,
       @Nullable final Throwable tr) {
-    Breadcrumb breadcrumb = new Breadcrumb();
-    breadcrumb.setCategory("Logcat");
-    breadcrumb.setMessage(msg);
-    breadcrumb.setLevel(level);
-    if (tag != null) {
-      breadcrumb.setData("tag", tag);
+    if (Boolean.TRUE.equals(isAddingBreadcrumb.get())) {
+      return;
     }
-    if (tr != null && tr.getMessage() != null) {
-      breadcrumb.setData("throwable", tr.getMessage());
+    isAddingBreadcrumb.set(Boolean.TRUE);
+    try {
+      Breadcrumb breadcrumb = new Breadcrumb();
+      breadcrumb.setCategory("Logcat");
+      breadcrumb.setMessage(msg);
+      breadcrumb.setLevel(level);
+      if (tag != null) {
+        breadcrumb.setData("tag", tag);
+      }
+      if (tr != null && tr.getMessage() != null) {
+        breadcrumb.setData("throwable", tr.getMessage());
+      }
+      Sentry.addBreadcrumb(breadcrumb);
+    } finally {
+      isAddingBreadcrumb.set(Boolean.FALSE);
     }
-    Sentry.addBreadcrumb(breadcrumb);
   }
 
   private static void addAsLog(
