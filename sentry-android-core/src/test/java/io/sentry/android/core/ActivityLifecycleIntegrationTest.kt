@@ -324,6 +324,291 @@ class ActivityLifecycleIntegrationTest {
   }
 
   @Test
+  fun `extendAppStart eagerly creates a standalone app start transaction with the extended span`() {
+    val sut =
+      fixture.getSut {
+        it.tracesSampleRate = 1.0
+        it.isEnableStandaloneAppStartTracing = true
+      }
+    sut.register(fixture.scopes, fixture.options)
+
+    setAppStartTime()
+    AppStartMetrics.getInstance().appStartExtension.extendAppStart()
+
+    val appStartTransaction =
+      fixture.createdTransactions.single {
+        it.spanContext.operation == ActivityLifecycleIntegration.STANDALONE_APP_START_OP
+      }
+    assertTrue(
+      appStartTransaction.children.any {
+        it.operation == ActivityLifecycleIntegration.APP_START_EXTENDED_OP
+      }
+    )
+    assertTrue(AppStartMetrics.getInstance().appStartExtension.isActive)
+    assertNotNull(AppStartMetrics.getInstance().appStartExtension.extendedAppStartSpan)
+  }
+
+  @Test
+  fun `extended app start continues the trace into ui load without a second app start transaction`() {
+    val sut =
+      fixture.getSut {
+        it.tracesSampleRate = 1.0
+        it.isEnableStandaloneAppStartTracing = true
+      }
+    sut.register(fixture.scopes, fixture.options)
+
+    setAppStartTime()
+    AppStartMetrics.getInstance().appStartExtension.extendAppStart()
+
+    val activity = mock<Activity>()
+    sut.onActivityCreated(activity, fixture.bundle)
+
+    val appStartTransactions =
+      fixture.createdTransactions.filter {
+        it.spanContext.operation == ActivityLifecycleIntegration.STANDALONE_APP_START_OP
+      }
+    assertEquals(1, appStartTransactions.size)
+    assertEquals("Activity", appStartTransactions.single().getData("app.vitals.start.screen"))
+    val uiLoadTransaction =
+      fixture.createdTransactions.single {
+        it.spanContext.operation == ActivityLifecycleIntegration.UI_LOAD_OP
+      }
+    assertEquals(
+      appStartTransactions.single().spanContext.traceId,
+      uiLoadTransaction.spanContext.traceId,
+    )
+  }
+
+  @Test
+  fun `extended app start trace is not reused by a later activity`() {
+    val sut =
+      fixture.getSut {
+        it.tracesSampleRate = 1.0
+        it.isEnableStandaloneAppStartTracing = true
+      }
+    sut.register(fixture.scopes, fixture.options)
+
+    setAppStartTime()
+    AppStartMetrics.getInstance().appStartExtension.extendAppStart()
+
+    val firstActivity = mock<Activity>()
+    sut.onActivityCreated(firstActivity, fixture.bundle)
+    val appStartTraceId =
+      fixture.createdTransactions
+        .single { it.spanContext.operation == ActivityLifecycleIntegration.STANDALONE_APP_START_OP }
+        .spanContext
+        .traceId
+
+    AppStartMetrics.getInstance().appStartExtension.finishExtendedAppStart()
+    AppStartMetrics.getInstance().onAppStartSpansSent()
+
+    val secondActivity = mock<Activity>()
+    sut.onActivityPaused(firstActivity)
+    sut.onActivityCreated(secondActivity, fixture.bundle)
+
+    assertNotEquals(appStartTraceId, fixture.createdTransactions.last().spanContext.traceId)
+  }
+
+  @Test
+  fun `extended app start screen is not overwritten by a later activity`() {
+    val sut =
+      fixture.getSut {
+        it.tracesSampleRate = 1.0
+        it.isEnableStandaloneAppStartTracing = true
+      }
+    sut.register(fixture.scopes, fixture.options)
+
+    setAppStartTime()
+    AppStartMetrics.getInstance().appStartExtension.extendAppStart()
+
+    val firstActivity = mock<Activity>()
+    sut.onActivityCreated(firstActivity, fixture.bundle)
+
+    sut.onActivityPaused(firstActivity)
+    sut.onActivityCreated(mock<SecondAppStartActivity>(), fixture.bundle)
+
+    val appStart =
+      fixture.createdTransactions.single {
+        it.spanContext.operation == ActivityLifecycleIntegration.STANDALONE_APP_START_OP
+      }
+    assertEquals("Activity", appStart.getData("app.vitals.start.screen"))
+  }
+
+  @Test
+  fun `extended standalone app start transaction stays open until finishExtendedAppStart`() {
+    val sut =
+      fixture.getSut {
+        it.tracesSampleRate = 1.0
+        it.isEnableStandaloneAppStartTracing = true
+      }
+    sut.register(fixture.scopes, fixture.options)
+
+    setAppStartTime()
+    AppStartMetrics.getInstance().appStartExtension.extendAppStart()
+
+    val activity = mock<Activity>()
+    sut.onActivityCreated(activity, fixture.bundle)
+
+    val appStartTransaction =
+      fixture.createdTransactions.single {
+        it.spanContext.operation == ActivityLifecycleIntegration.STANDALONE_APP_START_OP
+      }
+
+    appStartTransaction.finish(SpanStatus.OK)
+    assertFalse(appStartTransaction.isFinished)
+
+    AppStartMetrics.getInstance().appStartExtension.finishExtendedAppStart()
+    assertTrue(appStartTransaction.isFinished)
+  }
+
+  @Test
+  fun `extended headless app start transaction stays open until finishExtendedAppStart`() {
+    val sut =
+      fixture.getSut {
+        it.tracesSampleRate = 1.0
+        it.isEnableStandaloneAppStartTracing = true
+      }
+    sut.register(fixture.scopes, fixture.options)
+
+    prepareHeadlessAppStart(appStartType = AppStartType.COLD)
+    AppStartMetrics.getInstance().appStartExtension.extendAppStart()
+
+    driveHeadlessAppStart()
+
+    val transaction = fixture.createdTransactions.single()
+    assertTrue(
+      transaction.children.any {
+        it.operation == ActivityLifecycleIntegration.APP_START_EXTENDED_OP
+      }
+    )
+    assertFalse(transaction.isFinished)
+
+    AppStartMetrics.getInstance().appStartExtension.finishExtendedAppStart()
+    assertTrue(transaction.isFinished)
+  }
+
+  @Test
+  fun `extended headless app start persists the app start end time`() {
+    val sut =
+      fixture.getSut {
+        it.tracesSampleRate = 1.0
+        it.isEnableStandaloneAppStartTracing = true
+      }
+    sut.register(fixture.scopes, fixture.options)
+
+    prepareHeadlessAppStart(appStartType = AppStartType.COLD)
+    AppStartMetrics.getInstance().appStartExtension.extendAppStart()
+
+    driveHeadlessAppStart()
+
+    assertNotNull(AppStartMetrics.getInstance().getAppStartEndTime())
+  }
+
+  @Test
+  fun `finished eager extended app start persists the app start end time`() {
+    val sut =
+      fixture.getSut {
+        it.tracesSampleRate = 1.0
+        it.isEnableStandaloneAppStartTracing = true
+      }
+    sut.register(fixture.scopes, fixture.options)
+
+    setAppStartTime()
+    AppStartMetrics.getInstance().appStartExtension.extendAppStart()
+    assertNull(AppStartMetrics.getInstance().getAppStartEndTime())
+
+    AppStartMetrics.getInstance().appStartExtension.finishTransaction(SentryNanotimeDate())
+    AppStartMetrics.getInstance().appStartExtension.finishExtendedAppStart()
+
+    assertNotNull(AppStartMetrics.getInstance().getAppStartEndTime())
+  }
+
+  @Test
+  fun `activity long after the eager extended app start finished starts a fresh trace`() {
+    val sut =
+      fixture.getSut {
+        it.tracesSampleRate = 1.0
+        it.isEnableStandaloneAppStartTracing = true
+      }
+    sut.register(fixture.scopes, fixture.options)
+
+    // the eager extension starts at launch and finishes before any activity exists
+    setAppStartTime(date = SentryNanotimeDate(1, 0))
+    AppStartMetrics.getInstance().appStartExtension.extendAppStart()
+    val appStartTraceId = fixture.capturedContexts.single().traceId
+    AppStartMetrics.getInstance()
+      .appStartExtension
+      .extendedAppStartSpan!!
+      .finish(SpanStatus.OK, SentryNanotimeDate(2, 0))
+    AppStartMetrics.getInstance().appStartExtension.finishTransaction(SentryNanotimeDate(2, 0))
+
+    // the first activity opens more than a minute after the extension finished
+    setAppStartTime(date = SentryNanotimeDate(TimeUnit.MINUTES.toMillis(2), 0))
+    val activity = mock<Activity>()
+    sut.onActivityCreated(activity, fixture.bundle)
+
+    val uiLoadContext =
+      fixture.capturedContexts.last { it.operation == ActivityLifecycleIntegration.UI_LOAD_OP }
+    // too far apart: the ui.load gets its own fresh trace, not the finished app.start one
+    assertNotEquals(appStartTraceId, uiLoadContext.traceId)
+    // stored continuation state is still consumed so nothing reuses it
+    assertNull(AppStartMetrics.getInstance().getAppStartTraceId())
+  }
+
+  @Test
+  fun `extended headless app start does not create a duplicate when the extension already finished`() {
+    val sut =
+      fixture.getSut {
+        it.tracesSampleRate = 1.0
+        it.isEnableStandaloneAppStartTracing = true
+      }
+    sut.register(fixture.scopes, fixture.options)
+
+    prepareHeadlessAppStart(appStartType = AppStartType.COLD)
+    AppStartMetrics.getInstance().appStartExtension.extendAppStart()
+    AppStartMetrics.getInstance().appStartExtension.finishExtendedAppStart()
+    AppStartMetrics.getInstance().onAppStartSpansSent()
+    val transactionsBefore = fixture.createdTransactions.size
+
+    driveHeadlessAppStart()
+
+    assertEquals(transactionsBefore, fixture.createdTransactions.size)
+  }
+
+  @Test
+  fun `extendAppStart is a no-op when standalone tracing is disabled`() {
+    val sut = fixture.getSut { it.tracesSampleRate = 1.0 }
+    sut.register(fixture.scopes, fixture.options)
+
+    setAppStartTime()
+    AppStartMetrics.getInstance().appStartExtension.extendAppStart()
+
+    assertFalse(AppStartMetrics.getInstance().appStartExtension.isActive)
+    assertNull(AppStartMetrics.getInstance().appStartExtension.extendedAppStartSpan)
+    verify(fixture.scopes, never()).startTransaction(any(), any<TransactionOptions>())
+  }
+
+  @Test
+  fun `extended app start transaction is owned by the extension and survives activity destroy`() {
+    val sut =
+      fixture.getSut {
+        it.tracesSampleRate = 1.0
+        it.isEnableStandaloneAppStartTracing = true
+      }
+    sut.register(fixture.scopes, fixture.options)
+
+    setAppStartTime()
+    AppStartMetrics.getInstance().appStartExtension.extendAppStart()
+
+    val activity = mock<Activity>()
+    sut.onActivityCreated(activity, fixture.bundle)
+    assertTrue(AppStartMetrics.getInstance().appStartExtension.isActive)
+
+    sut.onActivityDestroyed(activity)
+    assertTrue(AppStartMetrics.getInstance().appStartExtension.isActive)
+  }
+
+  @Test
   @Config(sdk = [Build.VERSION_CODES.VANILLA_ICE_CREAM])
   fun `Headless standalone app start transaction carries app start reason when available`() {
     val sut =
@@ -2384,3 +2669,5 @@ class ActivityLifecycleIntegrationTest {
     }
   }
 }
+
+private open class SecondAppStartActivity : Activity()
