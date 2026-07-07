@@ -202,6 +202,28 @@ class SentryLogcatAdapterTest {
     )
   }
 
+  @Test
+  fun `re-entrant logcat call while adding a breadcrumb does not recurse`() {
+    // Reproduces SDK-CRASHES-JAVA-3T3H: when the Sentry Android Gradle Plugin rewrites the app's
+    // Log.* calls to SentryLogcatAdapter.*, a beforeBreadcrumb callback that logs re-enters the
+    // adapter while a Logcat breadcrumb is being added, which without a guard recurses until a
+    // StackOverflowError.
+    fixture.initSut {
+      it.beforeBreadcrumb =
+        SentryOptions.BeforeBreadcrumbCallback { breadcrumb, _ ->
+          fixture.breadcrumbs.add(breadcrumb)
+          SentryLogcatAdapter.w(tag, "$commonMsg re-entrant")
+          breadcrumb
+        }
+    }
+
+    SentryLogcatAdapter.w(tag, "$commonMsg warning")
+
+    // The re-entrant call is skipped by the guard, so only the original breadcrumb is recorded.
+    assertEquals(1, fixture.breadcrumbs.size)
+    assertEquals("$commonMsg warning", fixture.breadcrumbs.first().message)
+  }
+
   private fun Breadcrumb.assert(
     expectedTag: String,
     expectedMessage: String,

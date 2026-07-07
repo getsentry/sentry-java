@@ -20,11 +20,13 @@ import org.jetbrains.annotations.Nullable;
 public final class SentryLogcatAdapter {
 
   /**
-   * Re-entrancy guard to prevent infinite recursion. When the Sentry Android Gradle Plugin replaces
-   * Log.* calls with SentryLogcatAdapter.* calls, it also transforms calls inside the Sentry SDK
-   * itself (e.g. AndroidLogger). This can cause a cycle: SentryLogcatAdapter.w() -> addBreadcrumb()
-   * -> executeBeforeBreadcrumb() (on exception) -> DiagnosticLogger.log() -> AndroidLogger.log() ->
-   * Log.w() -> SentryLogcatAdapter.w() -> ...
+   * Re-entrancy guard to prevent infinite recursion. The Sentry Android Gradle Plugin rewrites
+   * {@code android.util.Log.*} calls in the app's own code to {@code SentryLogcatAdapter.*} (SDK
+   * classes under {@code io.sentry.*} are excluded). Recursion happens when code that runs while a
+   * Logcat breadcrumb is being added itself calls a rewritten {@code Log.*} method. The common path
+   * is an app {@code beforeBreadcrumb} callback that logs: SentryLogcatAdapter.w() ->
+   * addAsBreadcrumb() -> Sentry.addBreadcrumb() -> Scope.executeBeforeBreadcrumb() -> app callback
+   * -> Log.w() (rewritten) -> SentryLogcatAdapter.w() -> ...
    */
   private static final ThreadLocal<Boolean> isAddingBreadcrumb =
       new ThreadLocal<Boolean>() {
