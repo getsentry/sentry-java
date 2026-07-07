@@ -9,7 +9,12 @@
 
   ```kotlin
   Sentry.extendAppStart()
+
+  // Optionally, retrieve the extended app start span to attach your own child spans
+  val child = Sentry.getExtendedAppStartSpan()?.startChild("preload", "Preload resources")
   // ... extra launch-time work ...
+  child?.finish()
+
   Sentry.finishExtendedAppStart()
   ```
 
