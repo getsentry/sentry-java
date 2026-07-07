@@ -208,8 +208,7 @@ public class AnrV2Integration implements Integration, Closeable {
           new BufferedReader(new InputStreamReader(new ByteArrayInputStream(dump)))) {
         final Lines lines = Lines.readLines(reader);
 
-        final ThreadDumpParser threadDumpParser =
-            new ThreadDumpParser(options, isBackground, exitInfo.getProcessName());
+        final ThreadDumpParser threadDumpParser = new ThreadDumpParser(options, isBackground);
         threadDumpParser.parse(lines);
 
         final @NotNull List<SentryThread> threads = threadDumpParser.getThreads();

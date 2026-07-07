@@ -183,16 +183,14 @@ class ThreadDumpParserTest {
   }
 
   @Test
-  fun `detects main thread when OS names it after the process`() {
+  fun `detects main thread via sysTid matching the process id when OS renames it`() {
     val lines = Lines.readLines(File("src/test/resources/thread_dump_process_name_main.txt"))
     val parser =
-      ThreadDumpParser(
-        SentryOptions().apply { addInAppInclude("io.sentry.samples") },
-        false,
-        "io.sentry.samples.android",
-      )
+      ThreadDumpParser(SentryOptions().apply { addInAppInclude("io.sentry.samples") }, false)
     parser.parse(lines)
     val threads = parser.threads
+    // the main thread has been renamed to the (truncated) process name, but its sysTid equals the
+    // process id, which is how we detect it
     val main = threads.find { it.name == "io.sentry.samples.android" }
     assertNotNull(main)
     assertEquals(true, main!!.isMain)

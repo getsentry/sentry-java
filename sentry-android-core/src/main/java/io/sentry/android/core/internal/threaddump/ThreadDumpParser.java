@@ -45,6 +45,12 @@ public class ThreadDumpParser {
   private static final Pattern BEGIN_UNMANAGED_NATIVE_THREAD_RE =
       Pattern.compile("\"(.*)\" (.*) ?sysTid=(\\d+)");
 
+  // e.g. "----- pid 12345 at 2024-01-01 10:00:00.000000000+0000 -----"
+  private static final Pattern PID_RE = Pattern.compile("----- pid (\\d+) at .*");
+
+  // e.g. "  | sysTid=12345 nice=-10 cgrp=top-app sched=0/0 handle=0x7deceb74f8"
+  private static final Pattern SYS_TID_RE = Pattern.compile("\\s*\\|\\s*sysTid=(\\d+).*");
+
   // For reference, see native_stack_dump.cc and tombstone_proto_to_text.cpp in Android sources
   // Groups
   // 0:entire regex
@@ -104,7 +110,10 @@ public class ThreadDumpParser {
 
   private final boolean isBackground;
 
-  private final @Nullable String processName;
+  // the process id parsed from the thread dump header; on Linux/Android the main thread's kernel
+  // thread id (sysTid) always equals the process id, so we use it to reliably detect the main
+  // thread
+  private @Nullable Long processId;
 
   private final @NotNull SentryStackTraceFactory stackTraceFactory;
 
@@ -115,16 +124,8 @@ public class ThreadDumpParser {
   private final @NotNull ArtContextParser artContextParser = new ArtContextParser();
 
   public ThreadDumpParser(final @NotNull SentryOptions options, final boolean isBackground) {
-    this(options, isBackground, null);
-  }
-
-  public ThreadDumpParser(
-      final @NotNull SentryOptions options,
-      final boolean isBackground,
-      final @Nullable String processName) {
     this.options = options;
     this.isBackground = isBackground;
-    this.processName = processName;
     this.stackTraceFactory = new SentryStackTraceFactory(options);
     this.debugImages = new HashMap<>();
     this.threads = new ArrayList<>();
@@ -149,6 +150,7 @@ public class ThreadDumpParser {
 
     final Matcher beginManagedThreadRe = BEGIN_MANAGED_THREAD_RE.matcher("");
     final Matcher beginUnmanagedNativeThreadRe = BEGIN_UNMANAGED_NATIVE_THREAD_RE.matcher("");
+    final Matcher pidRe = PID_RE.matcher("");
 
     while (lines.hasNext()) {
       final Line line = lines.next();
@@ -166,6 +168,8 @@ public class ThreadDumpParser {
         if (thread != null) {
           threads.add(thread);
         }
+      } else if (matches(pidRe, text)) {
+        processId = getLong(pidRe, 1, null);
       } else {
         artContextParser.parseLine(text);
       }
@@ -219,12 +223,10 @@ public class ThreadDumpParser {
 
     final String threadName = sentryThread.getName();
     if (threadName != null) {
-      final boolean isMain =
-          threadName.equals("main") || (processName != null && threadName.equals(processName));
-      sentryThread.setMain(isMain);
-      // since it's an ANR, the crashed thread will always be main
-      sentryThread.setCrashed(isMain);
-      sentryThread.setCurrent(isMain && !isBackground);
+      // the OS usually names the main thread "main", but it may also rename it to the process name
+      // (which can be truncated), so this is only a first guess - the sysTid==processId check in
+      // parseStacktrace is the authoritative signal and may still mark another thread as main
+      setMainThread(sentryThread, threadName.equals("main"));
     }
 
     // thread stacktrace
@@ -249,6 +251,7 @@ public class ThreadDumpParser {
     final Matcher waitingToLockRe = WAITING_TO_LOCK_RE.matcher("");
     final Matcher waitingToLockUnknownRe = WAITING_TO_LOCK_UNKNOWN_RE.matcher("");
     final Matcher blankRe = BLANK_RE.matcher("");
+    final Matcher sysTidRe = SYS_TID_RE.matcher("");
 
     while (lines.hasNext()) {
       final Line line = lines.next();
@@ -257,7 +260,13 @@ public class ThreadDumpParser {
         break;
       }
       final String text = line.text;
-      if (matches(javaRe, text)) {
+      if (matches(sysTidRe, text)) {
+        // on Linux/Android the kernel thread id of the main thread always equals the process id
+        final Long sysTid = getLong(sysTidRe, 1, null);
+        if (sysTid != null && sysTid.equals(processId)) {
+          setMainThread(thread, true);
+        }
+      } else if (matches(javaRe, text)) {
         final SentryStackFrame frame = new SentryStackFrame();
         final String packageName = javaRe.group(1);
         final String className = javaRe.group(2);
@@ -374,6 +383,13 @@ public class ThreadDumpParser {
     // it's a thread dump
     stackTrace.setSnapshot(true);
     return stackTrace;
+  }
+
+  private void setMainThread(final @NotNull SentryThread thread, final boolean isMain) {
+    thread.setMain(isMain);
+    // since it's an ANR, the crashed thread will always be main
+    thread.setCrashed(isMain);
+    thread.setCurrent(isMain && !isBackground);
   }
 
   private boolean matches(final @NotNull Matcher matcher, final @NotNull String text) {
