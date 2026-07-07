@@ -104,6 +104,8 @@ public class ThreadDumpParser {
 
   private final boolean isBackground;
 
+  private final @Nullable String processName;
+
   private final @NotNull SentryStackTraceFactory stackTraceFactory;
 
   private final @NotNull Map<String, DebugImage> debugImages;
@@ -113,8 +115,16 @@ public class ThreadDumpParser {
   private final @NotNull ArtContextParser artContextParser = new ArtContextParser();
 
   public ThreadDumpParser(final @NotNull SentryOptions options, final boolean isBackground) {
+    this(options, isBackground, null);
+  }
+
+  public ThreadDumpParser(
+      final @NotNull SentryOptions options,
+      final boolean isBackground,
+      final @Nullable String processName) {
     this.options = options;
     this.isBackground = isBackground;
+    this.processName = processName;
     this.stackTraceFactory = new SentryStackTraceFactory(options);
     this.debugImages = new HashMap<>();
     this.threads = new ArrayList<>();
@@ -209,7 +219,9 @@ public class ThreadDumpParser {
 
     final String threadName = sentryThread.getName();
     if (threadName != null) {
-      final boolean isMain = threadName.equals("main");
+      final boolean isMain =
+          threadName.equals("main")
+              || (processName != null && threadName.equals(processName));
       sentryThread.setMain(isMain);
       // since it's an ANR, the crashed thread will always be main
       sentryThread.setCrashed(isMain);
