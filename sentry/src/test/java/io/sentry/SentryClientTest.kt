@@ -349,6 +349,44 @@ class SentryClientTest {
   }
 
   @Test
+  fun `when beforeSend captures feedback before an event, the guard is not cleared prematurely`() {
+    val scope = createScope()
+    var invocations = 0
+    lateinit var sut: SentryClient
+    fixture.sentryOptions.setBeforeSend { e, _ ->
+      invocations++
+      // Capturing feedback must not clear the re-entrancy guard for captures that follow it in the
+      // same callback, otherwise the captureEvent below would recurse.
+      sut.captureFeedback(Feedback("feedback"), null, scope)
+      sut.captureEvent(SentryEvent())
+      e
+    }
+    sut = fixture.getSut()
+
+    sut.captureEvent(SentryEvent())
+
+    assertEquals(1, invocations)
+    verify(fixture.transport, times(1)).send(any(), anyOrNull())
+  }
+
+  @Test
+  fun `when beforeSendFeedback captures feedback again, the nested capture is dropped and does not recurse`() {
+    val scope = createScope()
+    var invocations = 0
+    lateinit var sut: SentryClient
+    fixture.sentryOptions.setBeforeSendFeedback { e, _ ->
+      invocations++
+      sut.captureFeedback(Feedback("nested"), null, scope)
+      e
+    }
+    sut = fixture.getSut()
+
+    sut.captureFeedback(Feedback("outer"), null, scope)
+
+    assertEquals(1, invocations)
+  }
+
+  @Test
   fun `when beforeSendLog is set, callback is invoked`() {
     val scope = createScope()
     var invoked = false

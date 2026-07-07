@@ -321,6 +321,15 @@ public final class SentryClient implements ISentryClient {
       @NotNull SentryReplayEvent event, final @Nullable IScope scope, @Nullable Hint hint) {
     Objects.requireNonNull(event, "SessionReplay is required.");
 
+    if (SentryCallbackReentrancyGuard.isActive()) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Replay event captured from within a callback was dropped to prevent recursion.");
+      return SentryId.EMPTY_ID;
+    }
+
     if (hint == null) {
       hint = new Hint();
     }
@@ -1205,6 +1214,15 @@ public final class SentryClient implements ISentryClient {
   @Override
   public @NotNull SentryId captureFeedback(
       final @NotNull Feedback feedback, @Nullable Hint hint, final @NotNull IScope scope) {
+    if (SentryCallbackReentrancyGuard.isActive()) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Feedback captured from within a callback was dropped to prevent recursion.");
+      return SentryId.EMPTY_ID;
+    }
+
     SentryEvent event = new SentryEvent();
     event.getContexts().setFeedback(feedback);
 
@@ -1378,6 +1396,15 @@ public final class SentryClient implements ISentryClient {
       @Nullable SentryMetricsEvent metricsEvent,
       final @Nullable IScope scope,
       @Nullable Hint hint) {
+    if (SentryCallbackReentrancyGuard.isActive()) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Metric captured from within a callback was dropped to prevent recursion.");
+      return;
+    }
+
     if (hint == null) {
       hint = new Hint();
     }
