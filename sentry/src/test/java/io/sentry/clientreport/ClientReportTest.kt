@@ -412,6 +412,9 @@ class ClientReportTest {
     val metricItem =
       clientReport!!.discardedEvents!!.first { it.category == DataCategory.TraceMetric.category }
     assertEquals(3, metricItem.quantity)
+    val metricByteItem =
+      clientReport.discardedEvents!!.first { it.category == DataCategory.TraceMetricByte.category }
+    assertEquals(envelope.items.first().data.size.toLong(), metricByteItem.quantity)
   }
 
   private fun givenClientReportRecorder(

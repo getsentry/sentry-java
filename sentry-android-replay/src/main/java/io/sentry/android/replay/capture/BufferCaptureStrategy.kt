@@ -33,6 +33,7 @@ internal class BufferCaptureStrategy(
   private val dateProvider: ICurrentDateProvider,
   private val random: Random,
   executor: ScheduledExecutorService,
+  persistingExecutor: ScheduledExecutorService,
   replayCacheProvider: ((replayId: SentryId) -> ReplayCache)? = null,
 ) :
   BaseCaptureStrategy(
@@ -40,6 +41,7 @@ internal class BufferCaptureStrategy(
     scopes,
     dateProvider,
     executor,
+    persistingExecutor,
     replayCacheProvider = replayCacheProvider,
   ) {
   // TODO: capture envelopes for buffered segments instead, but don't send them until buffer is
@@ -150,8 +152,10 @@ internal class BufferCaptureStrategy(
       )
       return this
     }
-    // we hand over replayExecutor to the new strategy to preserve order of execution
-    val captureStrategy = SessionCaptureStrategy(options, scopes, dateProvider, replayExecutor)
+    // we hand over replayExecutor and persistingExecutor to the new strategy to preserve order of
+    // execution
+    val captureStrategy =
+      SessionCaptureStrategy(options, scopes, dateProvider, replayExecutor, persistingExecutor)
     captureStrategy.recorderConfig = recorderConfig
     captureStrategy.start(
       segmentId = currentSegment,

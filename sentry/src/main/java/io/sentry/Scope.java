@@ -493,12 +493,11 @@ public final class Scope implements IScope {
     if (breadcrumb == null || breadcrumbs instanceof DisabledQueue) {
       return;
     }
-    if (hint == null) {
-      hint = new Hint();
-    }
-
     SentryOptions.BeforeBreadcrumbCallback callback = options.getBeforeBreadcrumb();
     if (callback != null) {
+      if (hint == null) {
+        hint = new Hint();
+      }
       breadcrumb = executeBeforeBreadcrumb(callback, breadcrumb, hint);
     }
     if (breadcrumb != null) {
