@@ -3291,6 +3291,25 @@ class SentryClientTest {
   }
 
   @Test
+  fun `when beforeEnvelopeCallback captures another event, the nested capture is dropped and does not recurse`() {
+    var invocations = 0
+    lateinit var sut: SentryClient
+    val options = { options: SentryOptions ->
+      options.beforeEnvelopeCallback =
+        SentryOptions.BeforeEnvelopeCallback { _, _ ->
+          invocations++
+          sut.captureEvent(SentryEvent())
+        }
+    }
+    sut = fixture.getSut(options)
+
+    sut.captureEvent(SentryEvent(), Hint())
+
+    assertEquals(1, invocations)
+    verify(fixture.transport, times(1)).send(any(), anyOrNull())
+  }
+
+  @Test
   fun `beforeEnvelopeCallback may fail, but the transport is still sends the envelope `() {
     val sut = fixture.getSut { options ->
       options.beforeEnvelopeCallback = SentryOptions.BeforeEnvelopeCallback { _, _ ->
@@ -3550,6 +3569,24 @@ class SentryClientTest {
       HintUtils.createWithTypeCheckHint(CachedHint()),
     )
     assertFalse(called)
+  }
+
+  @Test
+  fun `when beforeErrorSampling captures another event, the nested capture is dropped and does not recurse`() {
+    var invocations = 0
+    lateinit var sut: SentryClient
+    fixture.sentryOptions.sessionReplay.beforeErrorSampling =
+      SentryReplayOptions.BeforeErrorSamplingCallback { _, _ ->
+        invocations++
+        sut.captureEvent(SentryEvent().apply { exceptions = listOf(SentryException()) })
+        true
+      }
+    sut = fixture.getSut()
+
+    sut.captureEvent(SentryEvent().apply { exceptions = listOf(SentryException()) })
+
+    assertEquals(1, invocations)
+    verify(fixture.transport, times(1)).send(any(), anyOrNull())
   }
 
   @Test

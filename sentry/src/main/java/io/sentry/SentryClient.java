@@ -246,6 +246,7 @@ public final class SentryClient implements ISentryClient {
           options.getSessionReplay().getBeforeErrorSampling();
       if (beforeErrorSampling != null) {
         try {
+          SentryCallbackReentrancyGuard.enter();
           shouldCaptureReplay = beforeErrorSampling.execute(event, hint);
         } catch (Throwable e) {
           options
@@ -255,6 +256,8 @@ public final class SentryClient implements ISentryClient {
                   "The beforeErrorSampling callback threw an exception. Proceeding with replay capture.",
                   e);
           shouldCaptureReplay = true;
+        } finally {
+          SentryCallbackReentrancyGuard.exit();
         }
       }
       if (shouldCaptureReplay) {
@@ -959,11 +962,14 @@ public final class SentryClient implements ISentryClient {
         options.getBeforeEnvelopeCallback();
     if (beforeEnvelopeCallback != null) {
       try {
+        SentryCallbackReentrancyGuard.enter();
         beforeEnvelopeCallback.execute(envelope, hint);
       } catch (Throwable e) {
         options
             .getLogger()
             .log(SentryLevel.ERROR, "The BeforeEnvelope callback threw an exception.", e);
+      } finally {
+        SentryCallbackReentrancyGuard.exit();
       }
     }
 
