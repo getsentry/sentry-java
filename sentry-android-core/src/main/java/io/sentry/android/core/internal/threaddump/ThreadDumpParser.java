@@ -231,6 +231,11 @@ public class ThreadDumpParser {
 
     // thread stacktrace
     final SentryStackTrace stackTrace = parseStacktrace(lines, sentryThread);
+    final List<SentryStackFrame> frames = stackTrace.getFrames();
+    if (frames == null || frames.isEmpty()) {
+      // skip threads without a stacktrace, they are not actionable
+      return null;
+    }
     sentryThread.setStacktrace(stackTrace);
     return sentryThread;
   }
@@ -390,6 +395,11 @@ public class ThreadDumpParser {
     // since it's an ANR, the crashed thread will always be main
     thread.setCrashed(isMain);
     thread.setCurrent(isMain && !isBackground);
+    if (isMain) {
+      // the OS may have renamed the main thread to the (truncated) process name; normalize it back
+      // to "main" so downstream consumers see a consistent name
+      thread.setName("main");
+    }
   }
 
   private boolean matches(final @NotNull Matcher matcher, final @NotNull String text) {

@@ -190,16 +190,28 @@ class ThreadDumpParserTest {
     parser.parse(lines)
     val threads = parser.threads
     // the main thread has been renamed to the (truncated) process name, but its sysTid equals the
-    // process id, which is how we detect it
-    val main = threads.find { it.name == "io.sentry.samples.android" }
+    // process id, which is how we detect it - its name is then normalized back to "main"
+    val main = threads.find { it.isMain == true }
     assertNotNull(main)
-    assertEquals(true, main!!.isMain)
+    assertEquals("main", main!!.name)
     assertEquals(true, main.isCrashed)
     assertEquals(true, main.isCurrent)
     val background = threads.find { it.name == "Thread-2" }
     assertNotNull(background)
     assertEquals(false, background!!.isMain)
     assertEquals(false, background.isCrashed)
+  }
+
+  @Test
+  fun `skips threads without a stacktrace`() {
+    val lines = Lines.readLines(File("src/test/resources/thread_dump_no_stacktrace.txt"))
+    val parser =
+      ThreadDumpParser(SentryOptions().apply { addInAppInclude("io.sentry.samples") }, false)
+    parser.parse(lines)
+    val threads = parser.threads
+    // the thread without any frames is skipped, only the one with a stacktrace remains
+    assertEquals(1, threads.size)
+    assertEquals("main", threads.first().name)
   }
 
   @Test
