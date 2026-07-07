@@ -100,12 +100,15 @@ class ThreadDumpParserTest {
     parser.parse(lines)
     val threads = parser.threads
     // just verifying a few important threads, as there are many
-    val thread = threads.find { it.name == "samples.android" }
+    // the OS named the main thread after the process; it is detected via sysTid==processId (9955)
+    // and its name is normalized back to "main"
+    val thread = threads.find { it.isMain == true }
     assertEquals(9955, thread!!.id)
+    assertEquals("main", thread.name)
     assertNull(thread.state)
-    assertEquals(false, thread.isCrashed)
-    assertEquals(false, thread.isMain)
-    assertEquals(false, thread.isCurrent)
+    assertEquals(true, thread.isCrashed)
+    assertEquals(true, thread.isMain)
+    assertEquals(true, thread.isCurrent)
 
     // Reverse frames so we can index them with the active frame at index 0
     val frames = thread.stacktrace!!.frames!!.reversed()

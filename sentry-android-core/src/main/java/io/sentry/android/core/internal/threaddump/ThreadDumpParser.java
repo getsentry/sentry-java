@@ -174,6 +174,8 @@ public class ThreadDumpParser {
         artContextParser.parseLine(text);
       }
     }
+
+    markThreads();
   }
 
   private SentryThread parseThread(final @NotNull Lines lines) {
@@ -199,7 +201,11 @@ public class ThreadDumpParser {
         return null;
       }
       sentryThread.setId(tid);
-      sentryThread.setName(beginManagedThreadRe.group(1));
+      final String name = beginManagedThreadRe.group(1);
+      sentryThread.setName(name);
+      if ("main".equals(name)) {
+        sentryThread.setMain(true);
+      }
       final String state = beginManagedThreadRe.group(5);
       // sanitizing thread that have more details after their actual state, e.g.
       // "Native (still starting up)" <- we just need "Native" here
@@ -211,25 +217,20 @@ public class ThreadDumpParser {
         }
       }
     } else if (matches(beginUnmanagedNativeThreadRe, line.text)) {
-      final Long sysTid = getLong(beginUnmanagedNativeThreadRe, 3, null);
-      if (sysTid == null) {
+      final Long parsedSysTid = getLong(beginUnmanagedNativeThreadRe, 3, null);
+      if (parsedSysTid == null) {
         options.getLogger().log(SentryLevel.DEBUG, "No thread id in the dump, skipping thread.");
         // tid is required by our protocol
         return null;
       }
-      sentryThread.setId(sysTid);
+      sentryThread.setId(parsedSysTid);
       sentryThread.setName(beginUnmanagedNativeThreadRe.group(1));
+      if (parsedSysTid.equals(processId)) {
+        sentryThread.setMain(true);
+      }
     }
 
-    final String threadName = sentryThread.getName();
-    if (threadName != null) {
-      // the OS usually names the main thread "main", but it may also rename it to the process name
-      // (which can be truncated), so this is only a first guess - the sysTid==processId check in
-      // parseStacktrace is the authoritative signal and may still mark another thread as main
-      setMainThread(sentryThread, threadName.equals("main"));
-    }
-
-    // thread stacktrace
+    // thread stacktrace (also captures parsedSysTid for managed threads from the "| sysTid=" line)
     final SentryStackTrace stackTrace = parseStacktrace(lines, sentryThread);
     final List<SentryStackFrame> frames = stackTrace.getFrames();
     if (frames == null || frames.isEmpty()) {
@@ -266,10 +267,9 @@ public class ThreadDumpParser {
       }
       final String text = line.text;
       if (matches(sysTidRe, text)) {
-        // on Linux/Android the kernel thread id of the main thread always equals the process id
         final Long sysTid = getLong(sysTidRe, 1, null);
         if (sysTid != null && sysTid.equals(processId)) {
-          setMainThread(thread, true);
+          thread.setMain(true);
         }
       } else if (matches(javaRe, text)) {
         final SentryStackFrame frame = new SentryStackFrame();
@@ -390,15 +390,21 @@ public class ThreadDumpParser {
     return stackTrace;
   }
 
-  private void setMainThread(final @NotNull SentryThread thread, final boolean isMain) {
-    thread.setMain(isMain);
-    // since it's an ANR, the crashed thread will always be main
-    thread.setCrashed(isMain);
-    thread.setCurrent(isMain && !isBackground);
-    if (isMain) {
-      // the OS may have renamed the main thread to the (truncated) process name; normalize it back
-      // to "main" so downstream consumers see a consistent name
-      thread.setName("main");
+  private void markThreads() {
+    for (final @NotNull SentryThread thread : threads) {
+      if (Boolean.TRUE.equals(thread.isMain())) {
+        // the OS may have renamed the main thread to the (truncated) process name; normalize it
+        // back to "main" so downstream consumers see a consistent name
+        thread.setName("main");
+
+        // since it's an ANR, the crashed thread will always be main
+        thread.setCrashed(true);
+        thread.setCurrent(!isBackground);
+      } else {
+        thread.setCrashed(false);
+        thread.setCurrent(false);
+        thread.setMain(false);
+      }
     }
   }
 
