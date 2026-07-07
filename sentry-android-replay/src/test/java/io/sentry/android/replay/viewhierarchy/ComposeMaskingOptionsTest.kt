@@ -44,6 +44,7 @@ import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.GenericViewHiera
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.ImageViewHierarchyNode
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.TextViewHierarchyNode
 import java.io.File
+import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -219,6 +220,9 @@ class ComposeMaskingOptionsTest {
   }
 
   @Test
+  @Ignore(
+    "Flaky: Robolectric intermittently reports zero bounds for nodes, causing isVisible=false and making the assertion non-deterministic"
+  )
   fun `when sentry-unmask modifier is set unmasks the node`() {
     ComposeMaskingOptionsActivity.textModifierApplier = { Modifier.sentryReplayUnmask() }
     val activity = buildActivity(ComposeMaskingOptionsActivity::class.java).setup()

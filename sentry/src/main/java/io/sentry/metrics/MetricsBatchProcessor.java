@@ -13,6 +13,7 @@ import io.sentry.SentryOptions;
 import io.sentry.clientreport.DiscardReason;
 import io.sentry.transport.ReusableCountLatch;
 import io.sentry.util.AutoClosableReentrantLock;
+import io.sentry.util.JsonSerializationUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
@@ -58,6 +59,12 @@ public class MetricsBatchProcessor implements IMetricsBatchProcessor {
       options
           .getClientReportRecorder()
           .recordLostEvent(DiscardReason.QUEUE_OVERFLOW, DataCategory.TraceMetric);
+      final long lostBytes =
+          JsonSerializationUtils.byteSizeOf(
+              options.getSerializer(), options.getLogger(), metricsEvent);
+      options
+          .getClientReportRecorder()
+          .recordLostEvent(DiscardReason.QUEUE_OVERFLOW, DataCategory.TraceMetricByte, lostBytes);
       return;
     }
     pendingCount.increment();

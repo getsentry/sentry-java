@@ -26,8 +26,6 @@ java.sourceCompatibility = JavaVersion.VERSION_17
 
 java.targetCompatibility = JavaVersion.VERSION_17
 
-repositories { mavenCentral() }
-
 dependencyManagement { imports { mavenBom(SpringBootPlugin.BOM_COORDINATES) } }
 
 dependencies {
@@ -67,8 +65,6 @@ tasks.withType<KotlinCompile>().configureEach {
     compilerOptions.apiVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
   }
 }
-
-configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
 
 tasks.register<Test>("systemTest").configure {
   group = "verification"

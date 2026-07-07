@@ -351,7 +351,6 @@ public final class Sentry {
         // to set a new one
         if (options.getExecutorService().isClosed()) {
           options.setExecutorService(new SentryExecutorService(options));
-          options.getExecutorService().prewarm();
         }
 
         // load lazy fields of the options in a separate thread

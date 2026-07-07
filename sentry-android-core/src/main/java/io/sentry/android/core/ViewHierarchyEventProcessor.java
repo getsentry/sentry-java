@@ -256,8 +256,10 @@ public final class ViewHierarchyEventProcessor implements EventProcessor {
     node.setType(className);
 
     try {
-      final String identifier = ViewUtils.getResourceId(view);
-      node.setIdentifier(identifier);
+      final @Nullable String identifier = ViewUtils.getResourceIdOrNull(view);
+      if (identifier != null) {
+        node.setIdentifier(identifier);
+      }
     } catch (Throwable e) {
       // ignored
     }

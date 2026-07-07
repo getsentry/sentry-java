@@ -21,8 +21,17 @@ internal class SessionCaptureStrategy(
   private val scopes: IScopes?,
   private val dateProvider: ICurrentDateProvider,
   executor: ScheduledExecutorService,
+  persistingExecutor: ScheduledExecutorService,
   replayCacheProvider: ((replayId: SentryId) -> ReplayCache)? = null,
-) : BaseCaptureStrategy(options, scopes, dateProvider, executor, replayCacheProvider) {
+) :
+  BaseCaptureStrategy(
+    options,
+    scopes,
+    dateProvider,
+    executor,
+    persistingExecutor,
+    replayCacheProvider,
+  ) {
   internal companion object {
     private const val TAG = "SessionCaptureStrategy"
   }

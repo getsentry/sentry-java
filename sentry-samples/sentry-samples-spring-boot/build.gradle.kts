@@ -21,8 +21,6 @@ java.sourceCompatibility = JavaVersion.VERSION_11
 
 java.targetCompatibility = JavaVersion.VERSION_11
 
-repositories { mavenCentral() }
-
 fun springBoot2SupportsOptionalIntegrations(): Boolean {
   val version = libs.versions.springboot2.get().removeSuffix(".RELEASE")
   val parts = version.split(".").map { it.toIntOrNull() ?: 0 }

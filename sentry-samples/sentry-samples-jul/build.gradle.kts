@@ -15,8 +15,6 @@ java.sourceCompatibility = JavaVersion.VERSION_17
 
 java.targetCompatibility = JavaVersion.VERSION_17
 
-repositories { mavenCentral() }
-
 configure<JavaPluginExtension> {
   sourceCompatibility = JavaVersion.VERSION_17
   targetCompatibility = JavaVersion.VERSION_17
@@ -56,8 +54,6 @@ tasks.jar {
 
 // Fix the startScripts task dependency
 tasks.startScripts { dependsOn(tasks.shadowJar) }
-
-configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
 
 tasks.register<Test>("systemTest").configure {
   group = "verification"

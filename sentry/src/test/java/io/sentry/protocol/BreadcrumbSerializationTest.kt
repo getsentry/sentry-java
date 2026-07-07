@@ -11,6 +11,7 @@ import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import java.io.StringReader
 import java.io.StringWriter
+import java.util.Date
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import org.junit.Test
@@ -47,6 +48,13 @@ class BreadcrumbSerializationTest {
     val actualJson = serialize(actual)
     print(actualJson)
     assertEquals(expectedJson, actualJson)
+  }
+
+  @Test
+  fun `timestampMs fast path serializes same timestamp as Date fallback`() {
+    val timestampMs = DateUtils.getDateTime("2009-11-16T01:08:47.123Z").time
+
+    assertEquals(serialize(Breadcrumb(Date(timestampMs))), serialize(Breadcrumb(timestampMs)))
   }
 
   @Test

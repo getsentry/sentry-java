@@ -373,6 +373,7 @@ public final class io/sentry/DataCategory : java/lang/Enum {
 	public static final field Session Lio/sentry/DataCategory;
 	public static final field Span Lio/sentry/DataCategory;
 	public static final field TraceMetric Lio/sentry/DataCategory;
+	public static final field TraceMetricByte Lio/sentry/DataCategory;
 	public static final field Transaction Lio/sentry/DataCategory;
 	public static final field Unknown Lio/sentry/DataCategory;
 	public static final field UserReport Lio/sentry/DataCategory;
@@ -1133,7 +1134,6 @@ public abstract interface class io/sentry/ISentryClient {
 public abstract interface class io/sentry/ISentryExecutorService {
 	public abstract fun close (J)V
 	public abstract fun isClosed ()Z
-	public abstract fun prewarm ()V
 	public abstract fun schedule (Ljava/lang/Runnable;J)Ljava/util/concurrent/Future;
 	public abstract fun submit (Ljava/lang/Runnable;)Ljava/util/concurrent/Future;
 	public abstract fun submit (Ljava/util/concurrent/Callable;)Ljava/util/concurrent/Future;
@@ -1312,7 +1312,6 @@ public final class io/sentry/JsonObjectReader : io/sentry/ObjectReader {
 
 public final class io/sentry/JsonObjectSerializer {
 	public static final field OBJECT_PLACEHOLDER Ljava/lang/String;
-	public final field jsonReflectionObjectSerializer Lio/sentry/JsonReflectionObjectSerializer;
 	public fun <init> (I)V
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;Ljava/lang/Object;)V
 }
@@ -1880,7 +1879,6 @@ public final class io/sentry/NoOpSentryExecutorService : io/sentry/ISentryExecut
 	public fun close (J)V
 	public static fun getInstance ()Lio/sentry/ISentryExecutorService;
 	public fun isClosed ()Z
-	public fun prewarm ()V
 	public fun schedule (Ljava/lang/Runnable;J)Ljava/util/concurrent/Future;
 	public fun submit (Ljava/lang/Runnable;)Ljava/util/concurrent/Future;
 	public fun submit (Ljava/util/concurrent/Callable;)Ljava/util/concurrent/Future;
@@ -2067,7 +2065,8 @@ public abstract interface class io/sentry/ObjectWriter {
 	public abstract fun value (Z)Lio/sentry/ObjectWriter;
 }
 
-public final class io/sentry/OptionsContainer {
+public class io/sentry/OptionsContainer {
+	protected fun <init> ()V
 	public static fun create (Ljava/lang/Class;)Lio/sentry/OptionsContainer;
 	public fun createInstance ()Ljava/lang/Object;
 }
@@ -3181,7 +3180,7 @@ public final class io/sentry/SentryExecutorService : io/sentry/ISentryExecutorSe
 	public fun <init> (Lio/sentry/SentryOptions;)V
 	public fun close (J)V
 	public fun isClosed ()Z
-	public fun prewarm ()V
+	public static fun isSentryExecutorThread ()Z
 	public fun schedule (Ljava/lang/Runnable;J)Ljava/util/concurrent/Future;
 	public fun submit (Ljava/lang/Runnable;)Ljava/util/concurrent/Future;
 	public fun submit (Ljava/util/concurrent/Callable;)Ljava/util/concurrent/Future;
@@ -7589,9 +7588,10 @@ public abstract class io/sentry/transport/TransportResult {
 	public static fun success ()Lio/sentry/transport/TransportResult;
 }
 
-public final class io/sentry/util/AutoClosableReentrantLock : java/util/concurrent/locks/ReentrantLock {
+public final class io/sentry/util/AutoClosableReentrantLock : io/sentry/ISentryLifecycleToken {
 	public fun <init> ()V
 	public fun acquire ()Lio/sentry/ISentryLifecycleToken;
+	public fun close ()V
 }
 
 public final class io/sentry/util/CheckInUtils {
@@ -7618,6 +7618,7 @@ public final class io/sentry/util/CollectionUtils {
 	public static fun newHashMap (Ljava/util/Map;)Ljava/util/Map;
 	public static fun reverseListIterator (Ljava/util/concurrent/CopyOnWriteArrayList;)Ljava/util/ListIterator;
 	public static fun size (Ljava/lang/Iterable;)I
+	public static fun toSortedStringArray (Ljava/util/Enumeration;I)[Ljava/lang/String;
 }
 
 public abstract interface class io/sentry/util/CollectionUtils$Mapper {
@@ -8073,6 +8074,11 @@ public class io/sentry/vendor/Base64 {
 	public static fun encode ([BIII)[B
 	public static fun encodeToString ([BI)Ljava/lang/String;
 	public static fun encodeToString ([BIII)Ljava/lang/String;
+}
+
+public final class io/sentry/vendor/SentryIso8601Utils {
+	public static fun formatTimestamp (J)Ljava/lang/String;
+	public static fun parseTimestamp (Ljava/lang/String;)J
 }
 
 public class io/sentry/vendor/gson/internal/bind/util/ISO8601Utils {

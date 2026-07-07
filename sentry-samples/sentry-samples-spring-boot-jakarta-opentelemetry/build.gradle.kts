@@ -19,8 +19,6 @@ java.sourceCompatibility = JavaVersion.VERSION_17
 
 java.targetCompatibility = JavaVersion.VERSION_17
 
-repositories { mavenCentral() }
-
 dependencyManagement {
   imports {
     mavenBom("org.springframework.boot:spring-boot-dependencies:${libs.versions.springboot3.get()}")

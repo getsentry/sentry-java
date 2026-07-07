@@ -17,7 +17,7 @@ JNIEXPORT void JNICALL Java_io_sentry_samples_android_NativeSample_message(JNIEn
     sentry_value_t event = sentry_value_new_message_event(
             /*   level */ SENTRY_LEVEL_INFO,
             /*  logger */ "custom",
-            /* message */ "It works!"
+            /* message */ "Native Capture button: native message"
     );
     sentry_capture_event(event);
 }

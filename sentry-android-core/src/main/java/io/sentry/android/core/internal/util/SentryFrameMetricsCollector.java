@@ -14,12 +14,14 @@ import android.view.FrameMetrics;
 import android.view.Window;
 import androidx.annotation.RequiresApi;
 import io.sentry.ILogger;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.SentryUUID;
 import io.sentry.android.core.BuildInfoProvider;
 import io.sentry.android.core.ContextUtils;
 import io.sentry.android.core.SentryFramesDelayResult;
+import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.Objects;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
@@ -45,7 +47,8 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
   private final @NotNull Set<Window> trackedWindows = new CopyOnWriteArraySet<>();
 
   private final @NotNull ILogger logger;
-  private @Nullable Handler handler;
+  private volatile @Nullable Handler handler;
+  private final @NotNull AutoClosableReentrantLock handlerLock = new AutoClosableReentrantLock();
   private @Nullable WeakReference<Window> currentWindow;
   private final @NotNull Map<String, FrameMetricsCollectorListener> listenerMap =
       new ConcurrentHashMap<>();
@@ -113,12 +116,8 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
     }
     isAvailable = true;
 
-    HandlerThread handlerThread =
-        new HandlerThread("io.sentry.android.core.internal.util.SentryFrameMetricsCollector");
-    handlerThread.setUncaughtExceptionHandler(
-        (thread, e) -> logger.log(SentryLevel.ERROR, "Error during frames measurements.", e));
-    handlerThread.start();
-    handler = new Handler(handlerThread.getLooper());
+    // The frame metrics HandlerThread is started lazily on the first startCollection() call.
+    // Starting it here would block the main thread on HandlerThread.getLooper() during SDK init.
 
     // We have to register the lifecycle callback, even if no profile is started, otherwise when we
     // start a profile, we wouldn't have the current activity and couldn't get the frameMetrics.
@@ -281,10 +280,32 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
     if (!isAvailable) {
       return null;
     }
+    ensureHandlerThreadStarted();
     final String uid = SentryUUID.generateSentryId();
     listenerMap.put(uid, listener);
     trackCurrentWindow();
     return uid;
+  }
+
+  /**
+   * Lazily starts the background HandlerThread used to receive frame metrics. Deferred out of the
+   * constructor because {@link HandlerThread#getLooper()} blocks the caller (the main thread during
+   * SDK init) until the thread is ready, and the handler is only needed once collection starts.
+   */
+  private void ensureHandlerThreadStarted() {
+    if (handler != null) {
+      return;
+    }
+    try (final @NotNull ISentryLifecycleToken ignored = handlerLock.acquire()) {
+      if (handler == null) {
+        final HandlerThread handlerThread =
+            new HandlerThread("io.sentry.android.core.internal.util.SentryFrameMetricsCollector");
+        handlerThread.setUncaughtExceptionHandler(
+            (thread, e) -> logger.log(SentryLevel.ERROR, "Error during frames measurements.", e));
+        handlerThread.start();
+        handler = new Handler(handlerThread.getLooper());
+      }
+    }
   }
 
   public void stopCollection(final @Nullable String listenerId) {

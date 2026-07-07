@@ -161,6 +161,18 @@ class SentryGestureListenerTracingTest {
   }
 
   @Test
+  fun `when a transaction is already bound to the Scope, does not start a new UI transaction`() {
+    val sut = fixture.getSut<View>()
+    val boundTransaction = SentryTracer(TransactionContext("bound", "op"), fixture.scopes)
+    whenever(fixture.scope.transaction).thenReturn(boundTransaction)
+
+    sut.onSingleTapUp(fixture.event)
+
+    verify(fixture.scopes, never()).startTransaction(any(), any<TransactionOptions>())
+    assertEquals(false, boundTransaction.isFinished)
+  }
+
+  @Test
   fun `stopTracing remove transaction from scope`() {
     val sut = fixture.getSut<View>()
     val expectedStatus = SpanStatus.CANCELLED

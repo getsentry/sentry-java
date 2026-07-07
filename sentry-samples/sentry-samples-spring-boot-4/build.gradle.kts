@@ -17,8 +17,6 @@ java.sourceCompatibility = JavaVersion.VERSION_17
 
 java.targetCompatibility = JavaVersion.VERSION_17
 
-repositories { mavenCentral() }
-
 configure<JavaPluginExtension> {
   sourceCompatibility = JavaVersion.VERSION_17
   targetCompatibility = JavaVersion.VERSION_17
@@ -82,8 +80,6 @@ dependencies {
   testImplementation("ch.qos.logback:logback-classic:1.5.16")
   testImplementation("ch.qos.logback:logback-core:1.5.16")
 }
-
-configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
 
 tasks.register<Test>("systemTest").configure {
   group = "verification"

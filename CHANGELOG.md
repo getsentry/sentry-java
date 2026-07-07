@@ -27,6 +27,75 @@
       <scope>import</scope>
     </dependency>
     ```
+- Add `trace_metric_byte` data category and record byte-level client reports when trace metrics are discarded ([#5626](https://github.com/getsentry/sentry-java/pull/5626))
+- Support the `io.sentry.tombstone.report-historical` manifest option to enable historical tombstone reporting via `AndroidManifest.xml` `<meta-data>` ([#5683](https://github.com/getsentry/sentry-java/pull/5683))
+
+### Fixes
+
+- Record byte-level client reports when event processors discard logs or trace metrics ([#5718](https://github.com/getsentry/sentry-java/pull/5718))
+- Name the device-info caching thread `SentryDeviceInfoCache` so all threads spawned by the SDK are identifiable ([#5684](https://github.com/getsentry/sentry-java/pull/5684))
+- Apply byte-category rate limits to log and trace metric envelope items ([#5716](https://github.com/getsentry/sentry-java/pull/5716))
+
+### Performance
+
+- Skip `Hint` allocation in `Scope.addBreadcrumb` when no `beforeBreadcrumb` callback is set ([#5689](https://github.com/getsentry/sentry-java/pull/5689))
+- Speed up scope persistence by detecting the Sentry executor thread via a marker instead of a `Thread.getName()` name scan on every scope mutation ([#5691](https://github.com/getsentry/sentry-java/pull/5691))
+- Remove executor prewarm during SDK init ([#5681](https://github.com/getsentry/sentry-java/pull/5681))
+  - The single-threaded `SentryExecutorService` queued the prewarm work ahead of the first useful task, so it could only delay init work, never speed it up; the thread and class loading it warmed are paid identically by the first real task submitted right after.
+
+## 8.47.0
+
+### Behavioral Changes
+
+- `SentryOkHttpInterceptor::intercept` now throws `IOException`. This is a source-only and Java-only breaking change ([#5654](https://github.com/getsentry/sentry-java/pull/5654))
+
+### Fixes
+
+- Fix fragment tracing not working with detach/attach navigation ([#5660](https://github.com/getsentry/sentry-java/pull/5660))
+- Don't start a redundant UI interaction transaction when a transaction is already bound to the Scope ([#5491](https://github.com/getsentry/sentry-java/issues/5491))
+  - Previously, `SentryGestureListener` always started a UI transaction and only afterwards skipped binding it to the Scope when a manually-bound transaction already existed, leaving the new transaction to be dropped as an idle transaction without children.
+- Fix potential NPE within `Scope.endSession()` ([#5657](https://github.com/getsentry/sentry-java/pull/5657))
+- Fix memory leak in `ReplayIntegration` due to persisting executor not being shut down ([#5627](https://github.com/getsentry/sentry-java/pull/5627))
+- Fix AbstractMethodError when compose-ui 1.11+ is used in combination with `Modifier.sentryTag()` or the Sentry Kotlin compiler plugin ([#5672](https://github.com/getsentry/sentry-java/pull/5672))
+
+### Performance
+
+- Speed up touch gesture target detection on deeply nested view hierarchies by hit-testing in local coordinates instead of calling `getLocationOnScreen` per view ([#5595](https://github.com/getsentry/sentry-java/pull/5595))
+- Probe class availability without initializing the class during SDK init ([#5635](https://github.com/getsentry/sentry-java/pull/5635))
+- Avoid constructing an exception per view when resolving view ids during view-hierarchy and gesture capture ([#5631](https://github.com/getsentry/sentry-java/pull/5631))
+- Start the frame metrics thread lazily on first collection instead of during SDK init ([#5641](https://github.com/getsentry/sentry-java/pull/5641))
+- Reduce `SentryId` and `SpanId` allocation overhead by replacing their per-instance `LazyEvaluator` (and its lock) with a lightweight lazily-generated `String`. ([#5645](https://github.com/getsentry/sentry-java/pull/5645))
+- Lazily allocate the `ReentrantLock` backing `AutoClosableReentrantLock` to avoid eager lock allocations for SDK objects that never contend during `SentryAndroid.init` ([#5643](https://github.com/getsentry/sentry-java/pull/5643))
+
+## 8.46.0
+
+### Fixes
+
+- Session Replay: Fix network detail response body size being unknown for gzip-compressed responses ([#5592](https://github.com/getsentry/sentry-java/pull/5592))
+
+### Behavioral Changes
+
+- Collections returned by scope (e.g. `getBreadcrumbs`, `getTags`, `getAttachments`) are shared state and should not be mutated. ([#5541](https://github.com/getsentry/sentry-java/pull/5541))
+  - Previously, when going through `CombinedScopeView`, we were returning a copy where mutations didn't show up in the underlying scopes.
+  - This has now changed in order to reduce SDK overhead.
+- `Date` objects returned by SDK data model getters are shared state and should not be mutated. ([#5603](https://github.com/getsentry/sentry-java/pull/5603))
+  - Previously, these getters returned defensive copies for some date fields.
+  - This has now changed in order to reduce SDK overhead.
+
+### Performance
+
+- Reduce writer buffer size from 8192 to 512 ([#5544](https://github.com/getsentry/sentry-java/pull/5544))
+- Remove redundant event map copies ([#5536](https://github.com/getsentry/sentry-java/pull/5536))
+- Optimize combined scope by adding an early return if only one scope has data ([#5541](https://github.com/getsentry/sentry-java/pull/5541))
+- Reduce model access overhead by avoiding defensive `Date` copies in SDK data model getters. ([#5603](https://github.com/getsentry/sentry-java/pull/5603))
+- Reduce timestamp parsing and formatting overhead with Sentry-specific ISO-8601 handling. ([#5602](https://github.com/getsentry/sentry-java/pull/5602))
+- Reduce JSON serialization overhead by creating the reflection serializer only when unknown-object fallback serialization is needed. ([#5601](https://github.com/getsentry/sentry-java/pull/5601))
+- Reduce JSON serialization overhead by allocating reflection cycle-tracking state only when reflection serialization is used. ([#5600](https://github.com/getsentry/sentry-java/pull/5600))
+- Reduce context serialization overhead by sorting key snapshots with arrays instead of temporary lists. ([#5599](https://github.com/getsentry/sentry-java/pull/5599))
+- Reduce breadcrumb allocation overhead by creating the `Breadcrumb` data map only when data is added. ([#5598](https://github.com/getsentry/sentry-java/pull/5598))
+- Reduce JSON serialization overhead by lowering the initial `JsonWriter` nesting stack size while preserving on-demand growth. ([#5591](https://github.com/getsentry/sentry-java/pull/5591))
+- Reduce timestamp helper overhead by replacing unnecessary `Calendar` usage in `DateUtils` with direct `Date` creation. ([#5589](https://github.com/getsentry/sentry-java/pull/5589))
+- Reduce Android startup overhead by using the default timezone directly on older devices or when no timezone info is available in the locale. ([#5587](https://github.com/getsentry/sentry-java/pull/5587))
 
 ## 8.45.0
 
@@ -91,6 +160,12 @@
 
 - Fix attachments being duplicated on native events that carry scope attachments ([#5548](https://github.com/getsentry/sentry-java/pull/5548))
 - Fix performance collector scheduling many tasks in a row ([#5524](https://github.com/getsentry/sentry-java/pull/5524))
+
+## 8.43.3
+
+### Fixes
+
+- Fix crash when `getHistoricalProcessStartReasons` is called from an isolated or wrong-userId process ([#5597](https://github.com/getsentry/sentry-java/pull/5597))
 
 ## 8.43.2
 
