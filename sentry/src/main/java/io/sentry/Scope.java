@@ -16,6 +16,7 @@ import io.sentry.util.EventProcessorUtils;
 import io.sentry.util.ExceptionUtils;
 import io.sentry.util.Objects;
 import io.sentry.util.Pair;
+import io.sentry.util.SentryCallbackReentrancyGuard;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -465,6 +466,7 @@ public final class Scope implements IScope {
       @NotNull Breadcrumb breadcrumb,
       final @NotNull Hint hint) {
     try {
+      SentryCallbackReentrancyGuard.enter();
       breadcrumb = callback.execute(breadcrumb, hint);
     } catch (Throwable e) {
       options
@@ -477,6 +479,8 @@ public final class Scope implements IScope {
       if (e.getMessage() != null) {
         breadcrumb.setData("sentry:message", e.getMessage());
       }
+    } finally {
+      SentryCallbackReentrancyGuard.exit();
     }
     return breadcrumb;
   }
@@ -491,6 +495,10 @@ public final class Scope implements IScope {
   @Override
   public void addBreadcrumb(@NotNull Breadcrumb breadcrumb, @Nullable Hint hint) {
     if (breadcrumb == null || breadcrumbs instanceof DisabledQueue) {
+      return;
+    }
+    // Drop breadcrumbs added from within a user callback to prevent recursion.
+    if (SentryCallbackReentrancyGuard.isActive()) {
       return;
     }
     SentryOptions.BeforeBreadcrumbCallback callback = options.getBeforeBreadcrumb();

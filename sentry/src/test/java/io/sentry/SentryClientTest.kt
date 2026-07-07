@@ -285,6 +285,70 @@ class SentryClientTest {
   }
 
   @Test
+  fun `when beforeSend captures another event, the nested capture is dropped and does not recurse`() {
+    var invocations = 0
+    lateinit var sut: SentryClient
+    fixture.sentryOptions.setBeforeSend { e, _ ->
+      invocations++
+      sut.captureEvent(SentryEvent())
+      e
+    }
+    sut = fixture.getSut()
+
+    sut.captureEvent(SentryEvent())
+
+    // Callback runs only for the outer event; the nested capture is dropped before its callback.
+    assertEquals(1, invocations)
+    verify(fixture.transport, times(1)).send(any(), anyOrNull())
+  }
+
+  @Test
+  fun `when beforeSend captures a log, the nested log is dropped`() {
+    val scope = createScope()
+    fixture.sentryOptions.logs.isEnabled = true
+    lateinit var sut: SentryClient
+    fixture.sentryOptions.setBeforeSend { e, _ ->
+      sut.captureLog(
+        SentryLogEvent(SentryId(), SentryNanotimeDate(), "nested", SentryLogLevel.WARN),
+        scope,
+      )
+      e
+    }
+    sut = fixture.getSut()
+
+    sut.captureEvent(SentryEvent())
+
+    // The shared guard spans capture types: a log emitted from beforeSend is dropped too.
+    verify(fixture.loggerBatchProcessor, never()).add(any())
+    verify(fixture.transport, times(1)).send(any(), anyOrNull())
+  }
+
+  @Test
+  fun `when beforeSendLog logs again, the nested log is dropped and does not recurse`() {
+    val scope = createScope()
+    fixture.sentryOptions.logs.isEnabled = true
+    var invocations = 0
+    lateinit var sut: SentryClient
+    fixture.sentryOptions.logs.setBeforeSend { l ->
+      invocations++
+      sut.captureLog(
+        SentryLogEvent(SentryId(), SentryNanotimeDate(), "nested", SentryLogLevel.WARN),
+        scope,
+      )
+      l
+    }
+    sut = fixture.getSut()
+
+    sut.captureLog(
+      SentryLogEvent(SentryId(), SentryNanotimeDate(), "outer", SentryLogLevel.WARN),
+      scope,
+    )
+
+    assertEquals(1, invocations)
+    verify(fixture.loggerBatchProcessor, times(1)).add(any())
+  }
+
+  @Test
   fun `when beforeSendLog is set, callback is invoked`() {
     val scope = createScope()
     var invoked = false
