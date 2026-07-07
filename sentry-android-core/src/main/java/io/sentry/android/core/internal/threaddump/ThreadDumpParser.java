@@ -217,20 +217,20 @@ public class ThreadDumpParser {
         }
       }
     } else if (matches(beginUnmanagedNativeThreadRe, line.text)) {
-      final Long parsedSysTid = getLong(beginUnmanagedNativeThreadRe, 3, null);
-      if (parsedSysTid == null) {
+      final Long sysTid = getLong(beginUnmanagedNativeThreadRe, 3, null);
+      if (sysTid == null) {
         options.getLogger().log(SentryLevel.DEBUG, "No thread id in the dump, skipping thread.");
         // tid is required by our protocol
         return null;
       }
-      sentryThread.setId(parsedSysTid);
+      sentryThread.setId(sysTid);
       sentryThread.setName(beginUnmanagedNativeThreadRe.group(1));
-      if (parsedSysTid.equals(processId)) {
+      if (sysTid.equals(processId)) {
         sentryThread.setMain(true);
       }
     }
 
-    // thread stacktrace (also captures parsedSysTid for managed threads from the "| sysTid=" line)
+    // thread stacktrace
     final SentryStackTrace stackTrace = parseStacktrace(lines, sentryThread);
     final List<SentryStackFrame> frames = stackTrace.getFrames();
     if (frames == null || frames.isEmpty()) {
