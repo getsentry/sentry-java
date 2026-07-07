@@ -104,6 +104,7 @@ dependencies {
   // tests
   testImplementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
   testImplementation(libs.roboelectric)
+  testImplementation(libs.google.truth)
   testImplementation(libs.kotlin.test.junit)
   testImplementation(libs.androidx.core.ktx)
   testImplementation(libs.androidx.test.core)

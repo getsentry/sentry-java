@@ -23,12 +23,13 @@ public final class SentryLogcatAdapter {
    * Re-entrancy guard to prevent infinite recursion. The Sentry Android Gradle Plugin rewrites
    * {@code android.util.Log.*} calls in the app's own code to {@code SentryLogcatAdapter.*} (SDK
    * classes under {@code io.sentry.*} are excluded). Recursion happens when code that runs while a
-   * Logcat breadcrumb is being added itself calls a rewritten {@code Log.*} method. The common path
-   * is an app {@code beforeBreadcrumb} callback that logs: SentryLogcatAdapter.w() ->
-   * addAsBreadcrumb() -> Sentry.addBreadcrumb() -> Scope.executeBeforeBreadcrumb() -> app callback
-   * -> Log.w() (rewritten) -> SentryLogcatAdapter.w() -> ...
+   * Logcat breadcrumb or log is being captured itself calls a rewritten {@code Log.*} method. The
+   * common paths are an app {@code beforeBreadcrumb} or {@code beforeSendLog} callback that logs:
+   * SentryLogcatAdapter.w() -> addAsBreadcrumb()/addAsLog() -> app callback -> Log.w() (rewritten)
+   * -> SentryLogcatAdapter.w() -> ... The guard makes any re-entrant capture on the same thread a
+   * no-op, while the real {@code Log.*} call is left untouched so logcat output is preserved.
    */
-  private static final ThreadLocal<Boolean> isAddingBreadcrumb =
+  private static final ThreadLocal<Boolean> isCapturing =
       new ThreadLocal<Boolean>() {
         @Override
         protected Boolean initialValue() {
@@ -51,10 +52,10 @@ public final class SentryLogcatAdapter {
       @NotNull final SentryLevel level,
       @Nullable final String msg,
       @Nullable final Throwable tr) {
-    if (Boolean.TRUE.equals(isAddingBreadcrumb.get())) {
+    if (Boolean.TRUE.equals(isCapturing.get())) {
       return;
     }
-    isAddingBreadcrumb.set(Boolean.TRUE);
+    isCapturing.set(Boolean.TRUE);
     try {
       Breadcrumb breadcrumb = new Breadcrumb();
       breadcrumb.setCategory("Logcat");
@@ -68,7 +69,7 @@ public final class SentryLogcatAdapter {
       }
       Sentry.addBreadcrumb(breadcrumb);
     } finally {
-      isAddingBreadcrumb.set(Boolean.FALSE);
+      isCapturing.set(Boolean.FALSE);
     }
   }
 
@@ -76,19 +77,27 @@ public final class SentryLogcatAdapter {
       @NotNull final SentryLogLevel level,
       @Nullable final String msg,
       @Nullable final Throwable tr) {
+    if (Boolean.TRUE.equals(isCapturing.get())) {
+      return;
+    }
     final @NotNull ScopesAdapter scopes = ScopesAdapter.getInstance();
     // Check if logs are enabled before doing expensive operations
     if (!scopes.getOptions().getLogs().isEnabled()) {
       return;
     }
-    final @Nullable String trMessage = tr != null ? tr.getMessage() : null;
-    final @NotNull SentryLogParameters params = new SentryLogParameters();
-    params.setOrigin("auto.log.logcat");
+    isCapturing.set(Boolean.TRUE);
+    try {
+      final @Nullable String trMessage = tr != null ? tr.getMessage() : null;
+      final @NotNull SentryLogParameters params = new SentryLogParameters();
+      params.setOrigin("auto.log.logcat");
 
-    if (tr == null || trMessage == null) {
-      scopes.logger().log(level, params, msg);
-    } else {
-      scopes.logger().log(level, params, msg != null ? (msg + "\n" + trMessage) : trMessage);
+      if (tr == null || trMessage == null) {
+        scopes.logger().log(level, params, msg);
+      } else {
+        scopes.logger().log(level, params, msg != null ? (msg + "\n" + trMessage) : trMessage);
+      }
+    } finally {
+      isCapturing.set(Boolean.FALSE);
     }
   }
 

@@ -2,6 +2,7 @@ package io.sentry.android.core
 
 import android.os.Bundle
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.common.truth.Truth.assertThat
 import io.sentry.Breadcrumb
 import io.sentry.Sentry
 import io.sentry.SentryLevel
@@ -220,8 +221,28 @@ class SentryLogcatAdapterTest {
     SentryLogcatAdapter.w(tag, "$commonMsg warning")
 
     // The re-entrant call is skipped by the guard, so only the original breadcrumb is recorded.
-    assertEquals(1, fixture.breadcrumbs.size)
-    assertEquals("$commonMsg warning", fixture.breadcrumbs.first().message)
+    assertThat(fixture.breadcrumbs).hasSize(1)
+    assertThat(fixture.breadcrumbs.first().message).isEqualTo("$commonMsg warning")
+  }
+
+  @Test
+  fun `re-entrant logcat call while sending a log does not recurse`() {
+    // Same recursion as the breadcrumb path, but via a beforeSendLog callback that logs while a
+    // Logcat log is being sent.
+    fixture.initSut {
+      it.logs.beforeSend =
+        SentryOptions.Logs.BeforeSendLogCallback { logEvent ->
+          fixture.logs.add(logEvent)
+          SentryLogcatAdapter.w(tag, "$commonMsg re-entrant")
+          logEvent
+        }
+    }
+
+    SentryLogcatAdapter.w(tag, "$commonMsg warning")
+
+    // The re-entrant call is skipped by the guard, so only the original log is recorded.
+    assertThat(fixture.logs).hasSize(1)
+    assertThat(fixture.logs.first().body).isEqualTo("$commonMsg warning")
   }
 
   private fun Breadcrumb.assert(
