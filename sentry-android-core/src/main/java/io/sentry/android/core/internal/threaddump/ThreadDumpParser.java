@@ -220,8 +220,7 @@ public class ThreadDumpParser {
     final String threadName = sentryThread.getName();
     if (threadName != null) {
       final boolean isMain =
-          threadName.equals("main")
-              || (processName != null && threadName.equals(processName));
+          threadName.equals("main") || (processName != null && threadName.equals(processName));
       sentryThread.setMain(isMain);
       // since it's an ANR, the crashed thread will always be main
       sentryThread.setCrashed(isMain);

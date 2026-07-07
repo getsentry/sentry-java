@@ -184,8 +184,7 @@ class ThreadDumpParserTest {
 
   @Test
   fun `detects main thread when OS names it after the process`() {
-    val lines =
-      Lines.readLines(File("src/test/resources/thread_dump_process_name_main.txt"))
+    val lines = Lines.readLines(File("src/test/resources/thread_dump_process_name_main.txt"))
     val parser =
       ThreadDumpParser(
         SentryOptions().apply { addInAppInclude("io.sentry.samples") },
