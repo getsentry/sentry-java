@@ -258,7 +258,7 @@ public class SentryHandler extends Handler {
   private @NotNull Breadcrumb createBreadcrumb(final @NotNull LogRecord record) {
     final Breadcrumb breadcrumb = new Breadcrumb();
     breadcrumb.setLevel(formatLevel(record.getLevel()));
-    breadcrumb.setCategory(record.getLoggerName());
+    breadcrumb.setCategory(java.util.Objects.requireNonNullElse(record.getLoggerName(), ""));
     if (record.getParameters() != null) {
       try {
         breadcrumb.setMessage(formatMessage(record.getMessage(), record.getParameters()));

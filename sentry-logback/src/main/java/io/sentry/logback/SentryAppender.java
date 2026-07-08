@@ -230,7 +230,7 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
   protected @NotNull Breadcrumb createBreadcrumb(final @NotNull ILoggingEvent loggingEvent) {
     final Breadcrumb breadcrumb = new Breadcrumb();
     breadcrumb.setLevel(formatLevel(loggingEvent.getLevel()));
-    breadcrumb.setCategory(loggingEvent.getLoggerName());
+    breadcrumb.setCategory(Objects.requireNonNullElse(loggingEvent.getLoggerName(), ""));
     breadcrumb.setMessage(formatted(loggingEvent));
     return breadcrumb;
   }

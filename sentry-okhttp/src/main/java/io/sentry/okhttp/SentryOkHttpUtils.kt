@@ -76,7 +76,7 @@ internal object SentryOkHttpUtils {
     val headers = mutableMapOf<String, String>()
 
     for (i in 0 until requestHeaders.size) {
-      val name = requestHeaders.name(i)
+      val name = java.util.Objects.requireNonNullElse(requestHeaders.name(i), "")
 
       // header is only sent if isn't sensitive
       if (HttpUtils.containsSensitiveHeader(name)) {

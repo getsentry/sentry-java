@@ -28,7 +28,7 @@ public final class ApacheHttpClientTransportFactory implements ITransportFactory
 
   public ApacheHttpClientTransportFactory(final @NotNull TimeValue connectionTimeToLive) {
     this.connectionTimeToLive =
-        Objects.requireNonNull(connectionTimeToLive, "connectionTimeToLive is required");
+        java.util.Objects.requireNonNullElse(connectionTimeToLive, TimeValue.ofMinutes(1));
   }
 
   @Override
