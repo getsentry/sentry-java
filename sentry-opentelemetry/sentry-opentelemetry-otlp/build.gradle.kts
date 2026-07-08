@@ -3,6 +3,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
   `java-library`
+  alias(libs.plugins.animalsniffer)
   id("io.sentry.javadoc")
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.errorprone)
@@ -29,6 +30,8 @@ dependencies {
   errorprone(libs.nopen.checker)
   errorprone(libs.nullaway)
 
+  signature("org.codehaus.mojo.signature:java18:${libs.versions.java18Signature.get()}@signature")
+
   // tests
   testImplementation(projects.sentryTestSupport)
   testImplementation(kotlin(Config.kotlinStdLib))
@@ -40,6 +43,8 @@ dependencies {
   //  testImplementation(libs.otel.semconv)
   //  testImplementation(libs.otel.semconv.incubating)
 }
+
+tasks { check { dependsOn(animalsnifferMain) } }
 
 tasks.withType<JavaCompile>().configureEach {
   options.errorprone {

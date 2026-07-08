@@ -40,6 +40,7 @@ dependencies {
 
   val gummyBearsModule = libs.gummy.bears.api21.get().module
   signature("${gummyBearsModule}:${libs.versions.gummyBears.get()}@signature")
+  signature("org.codehaus.mojo.signature:java18:${libs.versions.java18Signature.get()}@signature")
 }
 
 tasks { check { dependsOn(animalsnifferMain) } }

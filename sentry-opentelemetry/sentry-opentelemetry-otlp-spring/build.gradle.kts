@@ -1,12 +1,16 @@
 plugins {
   `java-library`
+  alias(libs.plugins.animalsniffer)
   id("io.sentry.javadoc")
 }
 
 dependencies {
   api(projects.sentryOpentelemetry.sentryOpentelemetryOtlp)
   implementation(libs.springboot3.otel)
+  signature("org.codehaus.mojo.signature:java18:${libs.versions.java18Signature.get()}@signature")
 }
+
+tasks { check { dependsOn(animalsnifferMain) } }
 
 tasks.jar {
   manifest {
