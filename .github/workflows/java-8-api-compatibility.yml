@@ -1,0 +1,50 @@
+name: 'Java 8 API Compatibility'
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  java-8-api-compatibility:
+    name: Java 8 API Compatibility
+    runs-on: ubuntu-latest
+
+    env:
+      GRADLE_ENCRYPTION_KEY: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          submodules: 'recursive'
+
+      - name: Setup Java Version
+        uses: actions/setup-java@0f481fcb613427c0f801b606911222b5b6f3083a # v5
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Cache buildSrc
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: buildSrc/build
+          key: build-logic-${{ hashFiles('buildSrc/src/**', 'buildSrc/build.gradle.kts','buildSrc/settings.gradle.kts') }}
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6.2.0
+        with:
+          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
+
+      - name: Check Java 8 API compatibility
+        run: |
+          ./gradlew java8ApiCompatibility \
+            --init-script .github/gradle/java8-api-compatibility.init.gradle.kts \
+            --no-configuration-cache \
+            -Dorg.gradle.configureondemand=false
