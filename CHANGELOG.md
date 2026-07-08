@@ -22,6 +22,7 @@
 
 ### Fixes
 
+- Fix main thread identification for tombstone (native crash) events ([#5742](https://github.com/getsentry/sentry-java/pull/5742))
 - Fix main thread identification parsing for ApplicationExitInfo ANRs ([#5733](https://github.com/getsentry/sentry-java/pull/5733))
 - Do not send threads without stacktraces for ApplicationExitInfo ANRs ([#5733](https://github.com/getsentry/sentry-java/pull/5733))
 - Record byte-level client reports when event processors discard logs or trace metrics ([#5718](https://github.com/getsentry/sentry-java/pull/5718))
