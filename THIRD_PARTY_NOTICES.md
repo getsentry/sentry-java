@@ -106,34 +106,6 @@ limitations under the License.
 
 ---
 
-## Android Open Source Project — Math (Apache 2.0)
-
-**Source:** https://cs.android.com/android/platform/superproject/+/android-latest-release:libcore/ojluni/src/main/java/java/lang/Math.java;l=1587-1630;drc=eea9c17e2bf4cce9b17d601cdc3b44ccb559271b<br>
-**License:** Apache License 2.0<br>
-**Copyright:** Copyright (C) 2010 The Android Open Source Project
-
-### Scope
-
-The Sentry Java SDK includes adapted `floorDiv` and `floorMod` helpers from the Android Open Source Project's `Math` implementation to support older Android API levels. The code resides in `io.sentry.vendor.SentryMath`.
-
-```
-Copyright (C) 2010 The Android Open Source Project
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-     http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-```
-
----
-
 ## Square — Tape (Apache 2.0)
 
 **Source:** https://github.com/square/tape (Commit: 445cd3fd0a7b3ec48c9ea3e0e86663fe6d3735d8)<br>
