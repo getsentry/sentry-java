@@ -290,7 +290,7 @@ public final class SentryIso8601Utils {
 
   private static int[] epochDayToYearMonthDay(long epochDay) {
     epochDay += DAYS_0000_TO_1970;
-    final long era = SentryMath.floorDiv(epochDay, 146097L);
+    final long era = Math.floorDiv(epochDay, 146097);
     final int dayOfEra = (int) (epochDay - era * 146097);
     final int yearOfEra = (dayOfEra - dayOfEra / 1460 + dayOfEra / 36524 - dayOfEra / 146096) / 365;
     final int year = (int) (yearOfEra + era * 400);
