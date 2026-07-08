@@ -1768,4 +1768,53 @@ class SentryTest {
     val scopes = Sentry.getCurrentScopes()
     assertFalse(scopes.isNoOp)
   }
+
+  // region app start extension
+
+  private fun initWithExtender(extender: IAppStartExtender) {
+    initForTest {
+      it.dsn = dsn
+      it.setAppStartExtender(extender)
+    }
+  }
+
+  @Test
+  fun `extendAppStart delegates to the app start extender`() {
+    val extender = mock<IAppStartExtender>()
+    initWithExtender(extender)
+
+    Sentry.extendAppStart()
+
+    verify(extender).extendAppStart()
+  }
+
+  @Test
+  fun `finishExtendedAppStart delegates to the app start extender`() {
+    val extender = mock<IAppStartExtender>()
+    initWithExtender(extender)
+
+    Sentry.finishExtendedAppStart()
+
+    verify(extender).finishExtendedAppStart()
+  }
+
+  @Test
+  fun `getExtendedAppStartSpan delegates to the app start extender`() {
+    val span = mock<ISpan>()
+    val extender = mock<IAppStartExtender>()
+    whenever(extender.extendedAppStartSpan).thenReturn(span)
+    initWithExtender(extender)
+
+    assertSame(span, Sentry.getExtendedAppStartSpan())
+  }
+
+  @Test
+  fun `app start extension api is a no-op when the SDK is disabled`() {
+    // beforeTest called Sentry.close(), so the current scopes are NoOp.
+    Sentry.extendAppStart()
+    Sentry.finishExtendedAppStart()
+    assertNull(Sentry.getExtendedAppStartSpan())
+  }
+
+  // endregion
 }

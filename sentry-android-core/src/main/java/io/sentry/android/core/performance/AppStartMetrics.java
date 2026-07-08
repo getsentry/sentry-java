@@ -21,6 +21,7 @@ import io.sentry.ITransactionProfiler;
 import io.sentry.NoOpLogger;
 import io.sentry.SentryDate;
 import io.sentry.TracesSamplingDecision;
+import io.sentry.android.core.AppStartExtension;
 import io.sentry.android.core.BuildInfoProvider;
 import io.sentry.android.core.ContextUtils;
 import io.sentry.android.core.CurrentActivityHolder;
@@ -87,7 +88,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   private @Nullable IContinuousProfiler appStartContinuousProfiler = null;
   private @Nullable TracesSamplingDecision appStartSamplingDecision = null;
   private boolean isCallbackRegistered = false;
-  private boolean shouldSendStartMeasurements = true;
+  private volatile boolean shouldSendStartMeasurements = true;
   private final AtomicInteger activeActivitiesCounter = new AtomicInteger();
   private final AtomicBoolean firstDrawDone = new AtomicBoolean(false);
   private final AtomicBoolean headlessAppStartCheckPending = new AtomicBoolean(false);
@@ -99,6 +100,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   private @Nullable String appStartBaggageHeader;
   private @Nullable SentryDate appStartEndTime;
   private @Nullable ApplicationStartInfo cachedStartInfo;
+  private final @NotNull AppStartExtension appStartExtension = new AppStartExtension(this);
 
   public static @NotNull AppStartMetrics getInstance() {
     if (instance == null) {
@@ -282,6 +284,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     shouldSendStartMeasurements = false;
     contentProviderOnCreates.clear();
     activityLifecycles.clear();
+    appStartExtension.clear();
   }
 
   public boolean shouldSendStartMeasurements(final boolean ignoreForegroundCheck) {
@@ -337,6 +340,21 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     return new TimeSpan();
   }
 
+  public @NotNull AppStartExtension getAppStartExtension() {
+    return appStartExtension;
+  }
+
+  /**
+   * Whether the app start can still be extended: measurements haven't been sent yet, no activity
+   * has been created, and the first frame hasn't been drawn. The foreground check is ignored so
+   * headless app starts (broadcast/service) can also be extended.
+   */
+  public boolean canExtendAppStart() {
+    return shouldSendStartMeasurements(true)
+        && activeActivitiesCounter.get() == 0
+        && !firstDrawDone.get();
+  }
+
   @TestOnly
   void setFirstIdle(final long firstIdle) {
     this.firstIdle = firstIdle;
@@ -378,6 +396,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     appStartBaggageHeader = null;
     appStartEndTime = null;
     cachedStartInfo = null;
+    appStartExtension.clear();
   }
 
   public @Nullable ITransactionProfiler getAppStartProfiler() {
@@ -624,8 +643,12 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
       // NOTE: meaningless in standalone app start mode, where a headless start is already its own
       // standalone transaction and therefore cannot be re-classified as warm.
       final long durationSinceAppStartMillis = nowUptimeMs - appStartSpan.getStartUptimeMs();
-      if (!appLaunchedInForeground.getValue()
-          || durationSinceAppStartMillis > TimeUnit.MINUTES.toMillis(1)) {
+      // An active extension explicitly keeps the launch alive: resetting the span here would make
+      // the extended vital measure from the activity while the eager app.start transaction stays
+      // anchored at process start.
+      if ((!appLaunchedInForeground.getValue()
+              || durationSinceAppStartMillis > TimeUnit.MINUTES.toMillis(1))
+          && !appStartExtension.isActive()) {
         appStartType = AppStartType.WARM;
         shouldSendStartMeasurements = true;
         appStartSpan.reset();

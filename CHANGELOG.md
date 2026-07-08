@@ -27,6 +27,19 @@
       <scope>import</scope>
     </dependency>
     ```
+- Add `Sentry.extendAppStart()`, `Sentry.finishExtendedAppStart()`, and `Sentry.getExtendedAppStartSpan()` to extend the app start measurement past the first frame for extra launch-time work on Android ([#5604](https://github.com/getsentry/sentry-java/pull/5604))
+  - Requires standalone app start tracing (`options.isEnableStandaloneAppStartTracing`). Call `extendAppStart()` in `Application.onCreate` after SDK init and `finishExtendedAppStart()` when done:
+
+  ```kotlin
+  Sentry.extendAppStart()
+
+  // Optionally, retrieve the extended app start span to attach your own child spans
+  val child = Sentry.getExtendedAppStartSpan()?.startChild("preload", "Preload resources")
+  // ... extra launch-time work ...
+  child?.finish()
+
+  Sentry.finishExtendedAppStart()
+  ```
 - Add `trace_metric_byte` data category and record byte-level client reports when trace metrics are discarded ([#5626](https://github.com/getsentry/sentry-java/pull/5626))
 - Support the `io.sentry.tombstone.report-historical` manifest option to enable historical tombstone reporting via `AndroidManifest.xml` `<meta-data>` ([#5683](https://github.com/getsentry/sentry-java/pull/5683))
 

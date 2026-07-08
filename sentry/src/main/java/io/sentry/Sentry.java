@@ -1277,6 +1277,38 @@ public final class Sentry {
   }
 
   /**
+   * Begins extending the app start so launch-time work done after {@code Application.onCreate}
+   * (e.g. loading remote config before the first screen) is included in the app start measurement.
+   *
+   * <p>Intended to be called from {@code Application.onCreate} right after {@code
+   * SentryAndroid.init}. Only effective on Android with standalone app start tracing enabled;
+   * otherwise it is a no-op. Also no-ops if the app start already finished, none is in progress, or
+   * it was already extended (first call wins). Call {@link #finishExtendedAppStart()} once the
+   * extra work is done; if it is never called, the app start transaction is finished by its
+   * deadline and no extended measurement is reported.
+   */
+  public static void extendAppStart() {
+    getCurrentScopes().getOptions().getAppStartExtender().extendAppStart();
+  }
+
+  /**
+   * Finishes the app start extension started by {@link #extendAppStart()}, allowing the app start
+   * transaction to complete. No-ops if the app start was not extended or this was already called.
+   */
+  public static void finishExtendedAppStart() {
+    getCurrentScopes().getOptions().getAppStartExtender().finishExtendedAppStart();
+  }
+
+  /**
+   * Returns the active extended app start span, to attach child spans for the launch-time work
+   * being measured, or {@code null} when no extension is active (e.g. {@link #extendAppStart()} was
+   * not called, the app start window already passed, or standalone app start tracing is disabled).
+   */
+  public static @Nullable ISpan getExtendedAppStartSpan() {
+    return getCurrentScopes().getOptions().getAppStartExtender().getExtendedAppStartSpan();
+  }
+
+  /**
    * Configuration options callback
    *
    * @param <T> a class that extends SentryOptions or SentryOptions itself.
