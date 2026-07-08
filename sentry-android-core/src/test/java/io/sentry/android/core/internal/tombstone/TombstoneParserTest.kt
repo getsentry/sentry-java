@@ -12,6 +12,7 @@ import java.io.StringWriter
 import java.util.zip.GZIPInputStream
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import org.mockito.kotlin.mock
 
@@ -99,6 +100,13 @@ class TombstoneParserTest {
 
     // threads
     assertEquals(62, event.threads!!.size)
+
+    // exactly one thread is the main thread (its id equals the process id, 21891) and its name is
+    // normalized to "main"
+    val mainThread = event.threads!!.single { it.isMain == true }
+    assertEquals(21891, mainThread.id)
+    assertEquals("main", mainThread.name)
+
     for (thread in event.threads!!) {
       assertNotNull(thread.id)
       if (thread.id == crashedThreadId) {
@@ -395,6 +403,80 @@ class TombstoneParserTest {
     val expectedJson = readGzippedResourceFile("/tombstone_debug_meta.json.gz")
 
     assertEquals(expectedJson, actualJson)
+  }
+
+  @Test
+  fun `identifies the main thread via pid matching the thread id and normalizes its name`() {
+    // On Linux/Android the main thread's kernel thread id equals the process id (pid), so we use
+    // that to detect the main thread even when the OS renamed it to the (truncated) process name.
+    // The crashed thread (tid) is a different thread here to verify the two are handled
+    // independently.
+    val tombstone =
+      Tombstone.Builder()
+        .pid(1000)
+        .tid(2000)
+        .signal(Signal(11, "SIGSEGV", 1, "SEGV_MAPERR", false, 0, 0, false, 0, null))
+        // main thread: id == pid, but the OS renamed it to the process name
+        .addThread(
+          TombstoneThread(
+            1000,
+            "io.sentry.samples.android",
+            emptyList(),
+            emptyList(),
+            emptyList(),
+            listOf(BacktraceFrame(0, 0x100, 0, "main", 0, "/system/lib64/libc.so", 0, "")),
+            emptyList(),
+            0,
+            0,
+          )
+        )
+        // crashed thread: id == tid
+        .addThread(
+          TombstoneThread(
+            2000,
+            "crashed-worker",
+            emptyList(),
+            emptyList(),
+            emptyList(),
+            listOf(BacktraceFrame(0, 0x200, 0, "crash", 0, "/system/lib64/libc.so", 0, "")),
+            emptyList(),
+            0,
+            0,
+          )
+        )
+        // background thread: neither main nor crashed
+        .addThread(
+          TombstoneThread(
+            3000,
+            "Thread-3",
+            emptyList(),
+            emptyList(),
+            emptyList(),
+            listOf(BacktraceFrame(0, 0x300, 0, "work", 0, "/system/lib64/libc.so", 0, "")),
+            emptyList(),
+            0,
+            0,
+          )
+        )
+        .build()
+
+    val event = parser.parse(tombstone)
+    val threads = event.threads!!
+
+    val main = threads.single { it.isMain == true }
+    assertEquals(1000, main.id)
+    // the OS-assigned process name is normalized back to "main"
+    assertEquals("main", main.name)
+
+    val crashed = threads.single { it.isCrashed == true }
+    assertEquals(2000, crashed.id)
+    assertNotEquals(true, crashed.isMain)
+    assertEquals("crashed-worker", crashed.name)
+
+    val background = threads.single { it.id == 3000L }
+    assertNotEquals(true, background.isMain)
+    assertNotEquals(true, background.isCrashed)
+    assertEquals("Thread-3", background.name)
   }
 
   @Test
