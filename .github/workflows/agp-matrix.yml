@@ -73,6 +73,11 @@ jobs:
           disk-size: 4096M
           script: echo "Generated AVD snapshot for caching."
 
+      # API 37 ships as a minor-versioned platform (android-37.0); install it
+      # explicitly so the build can resolve it.
+      - name: Install compileSdk platform
+        run: echo "y" | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-37.0"
+
       # Clean, build and release a test apk
       - name: Make assembleUiTests
         run: make assembleUiTests
