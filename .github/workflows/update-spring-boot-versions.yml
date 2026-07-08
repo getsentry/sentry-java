@@ -1,0 +1,77 @@
+name: Update Spring Boot Versions
+
+on:
+  schedule:
+    # Run every Monday at 9:00 AM UTC
+    - cron: '0 9 * * 1'
+  workflow_dispatch: # Allow manual triggering
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update-spring-boot-versions:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install requests packaging
+
+      - name: Update Spring Boot versions
+        id: update_versions
+        run: python scripts/update-spring-boot-versions.py
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if git diff --quiet; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create Pull Request
+        if: steps.changes.outputs.has_changes == 'true'
+        uses: peter-evans/create-pull-request@22a9089034f40e5a961c8808d113e2c98fb63676 # v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          base: main
+          commit-message: "chore: Update Spring Boot version matrices"
+          title: "Automated Spring Boot Version Update"
+          body: |
+            ## Automated Spring Boot Version Update
+
+            This PR updates the Spring Boot version matrices in our test workflows based on the latest available versions.
+
+            ### Changes Made:
+            ${{ steps.update_versions.outputs.changes_summary || 'See diff for changes' }}
+
+            ### Update Strategy:
+            - **Patch updates**: Updated to latest patch version of existing minor versions
+            - **New minor versions**: Added new minor versions and removed second oldest (keeping minimum supported)
+            - **Minimum version preserved**: Always keeps the minimum supported version for compatibility testing
+
+            This ensures our CI tests stay current with Spring Boot releases while maintaining coverage of older versions that users may still be using.
+          branch: automated-spring-boot-version-update
+          delete-branch: true
+          draft: false
+
+      - name: Summary
+        run: |
+          if [ "${{ steps.changes.outputs.has_changes }}" = "true" ]; then
+            echo "✅ Spring Boot version updates found and PR created"
+            echo "${{ steps.update_versions.outputs.changes_summary }}"
+          else
+            echo "ℹ️ No Spring Boot version updates needed"
+          fi

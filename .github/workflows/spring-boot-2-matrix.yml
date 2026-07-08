@@ -15,13 +15,25 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  load-versions:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      - name: Set matrix data
+        id: set-matrix
+        run: echo "matrix=$(cat .github/data/spring-boot-2-versions.json | jq -c .versions)" >> $GITHUB_OUTPUT
+
   spring-boot-2-matrix:
+    needs: load-versions
     timeout-minutes: 45
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        springboot-version: [ '2.4.13', '2.5.15', '2.6.15', '2.7.0', '2.7.18' ]
+        springboot-version: ${{ fromJSON(needs.load-versions.outputs.matrix) }}
 
     name: Spring Boot ${{ matrix.springboot-version }}
     env:
@@ -63,8 +75,14 @@ jobs:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
       - name: Update Spring Boot 2.x version
+        env:
+          SPRINGBOOT_VERSION: ${{ matrix.springboot-version }}
         run: |
-          springboot_version="${{ matrix.springboot-version }}"
+          springboot_version="$SPRINGBOOT_VERSION"
+          if [[ ! "$springboot_version" =~ ^2\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Invalid Spring Boot 2.x version: $springboot_version"
+            exit 1
+          fi
           if [[ ! "$springboot_version" =~ ^2\.7\. ]]; then
             echo "ORG_GRADLE_PROJECT_excludeGraphql=true" >> "$GITHUB_ENV"
             echo "ORG_GRADLE_PROJECT_excludeKafka=true" >> "$GITHUB_ENV"

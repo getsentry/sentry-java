@@ -1,0 +1,267 @@
+---
+# Young Gen Collectors (Minor Collections)
+- include:
+    domain: java.lang
+    type: GarbageCollector
+    name: Copy
+    attribute:
+      CollectionCount:
+        alias: jvm.gc.minor_collection_count
+        metric_type: counter
+      CollectionTime:
+        alias: jvm.gc.minor_collection_time
+        metric_type: counter
+- include:
+    domain: java.lang
+    type: GarbageCollector
+    name: PS Scavenge
+    attribute:
+      CollectionCount:
+        alias: jvm.gc.minor_collection_count
+        metric_type: counter
+      CollectionTime:
+        alias: jvm.gc.minor_collection_time
+        metric_type: counter
+- include:
+    domain: java.lang
+    type: GarbageCollector
+    name: ParNew
+    attribute:
+      CollectionCount:
+        alias: jvm.gc.minor_collection_count
+        metric_type: counter
+      CollectionTime:
+        alias: jvm.gc.minor_collection_time
+        metric_type: counter
+- include:
+    domain: java.lang
+    type: GarbageCollector
+    name: G1 Young Generation
+    attribute:
+      CollectionCount:
+        alias: jvm.gc.minor_collection_count
+        metric_type: counter
+      CollectionTime:
+        alias: jvm.gc.minor_collection_time
+        metric_type: counter
+
+# Old Gen Collectors (Major collections)
+- include:
+    domain: java.lang
+    type: GarbageCollector
+    name: MarkSweepCompact
+    attribute:
+      CollectionCount:
+        alias: jvm.gc.major_collection_count
+        metric_type: counter
+      CollectionTime:
+        alias: jvm.gc.major_collection_time
+        metric_type: counter
+- include:
+    domain: java.lang
+    type: GarbageCollector
+    name: PS MarkSweep
+    attribute:
+      CollectionCount:
+        alias: jvm.gc.major_collection_count
+        metric_type: counter
+      CollectionTime:
+        alias: jvm.gc.major_collection_time
+        metric_type: counter
+- include:
+    domain: java.lang
+    type: GarbageCollector
+    name: ConcurrentMarkSweep
+    attribute:
+      CollectionCount:
+        alias: jvm.gc.major_collection_count
+        metric_type: counter
+      CollectionTime:
+        alias: jvm.gc.major_collection_time
+        metric_type: counter
+- include:
+    domain: java.lang
+    type: GarbageCollector
+    name: G1 Mixed Generation
+    attribute:
+      CollectionCount:
+        alias: jvm.gc.major_collection_count
+        metric_type: counter
+      CollectionTime:
+        alias: jvm.gc.major_collection_time
+        metric_type: counter
+- include:
+    domain: java.lang
+    type: GarbageCollector
+    name: G1 Old Generation
+    attribute:
+      CollectionCount:
+        alias: jvm.gc.major_collection_count
+        metric_type: counter
+      CollectionTime:
+        alias: jvm.gc.major_collection_time
+        metric_type: counter
+- include:
+    domain: java.lang
+    type: GarbageCollector
+    name: Shenandoah Cycles
+    attribute:
+      CollectionCount:
+        alias: jvm.gc.major_collection_count
+        metric_type: counter
+      CollectionTime:
+        alias: jvm.gc.major_collection_time
+        metric_type: counter
+
+# Z Garbage Collector
+- include:
+    domain: java.lang
+    type: GarbageCollector
+    name: ZGC
+    attribute:
+      CollectionCount:
+        alias: jvm.gc.major_collection_count
+        metric_type: counter
+      CollectionTime:
+        alias: jvm.gc.major_collection_time
+        metric_type: counter
+- include:
+    domain: java.lang
+    type: GarbageCollector
+    name: ZGC Cycles
+    attribute:
+      CollectionCount:
+        alias: jvm.gc.zgc_cycles_collection_count
+        metric_type: counter
+      CollectionTime:
+        alias: jvm.gc.zgc_cycles_collection_time
+        metric_type: counter
+- include:
+    domain: java.lang
+    type: GarbageCollector
+    name: ZGC Pauses
+    attribute:
+      CollectionCount:
+        alias: jvm.gc.zgc_pauses_collection_count
+        metric_type: counter
+      CollectionTime:
+        alias: jvm.gc.zgc_pauses_collection_time
+        metric_type: counter
+
+# Z Garbage Collector with ZGenerational
+- include:
+    domain: java.lang
+    type: GarbageCollector
+    name: ZGC Major Cycles
+    attribute:
+      CollectionCount:
+        alias: jvm.gc.major_collection_count
+        metric_type: counter
+      CollectionTime:
+        alias: jvm.gc.major_collection_time
+        metric_type: counter
+- include:
+    domain: java.lang
+    type: GarbageCollector
+    name: ZGC Major Pauses
+    attribute:
+      CollectionCount:
+        alias: jvm.gc.major_collection_count
+        metric_type: counter
+      CollectionTime:
+        alias: jvm.gc.major_collection_time
+        metric_type: counter
+- include:
+    domain: java.lang
+    type: GarbageCollector
+    name: ZGC Minor Cycles
+    attribute:
+      CollectionCount:
+        alias: jvm.gc.minor_collection_count
+        metric_type: counter
+      CollectionTime:
+        alias: jvm.gc.minor_collection_time
+        metric_type: counter
+- include:
+    domain: java.lang
+    type: GarbageCollector
+    name: ZGC Minor Pauses
+    attribute:
+      CollectionCount:
+        alias: jvm.gc.minor_collection_count
+        metric_type: counter
+      CollectionTime:
+        alias: jvm.gc.minor_collection_time
+        metric_type: counter
+
+# IBM J9 gencon
+- include:
+    domain: java.lang
+    type: GarbageCollector
+    name: scavenge
+    attribute:
+      CollectionCount:
+        alias: jvm.gc.minor_collection_count
+        metric_type: counter
+      CollectionTime:
+        alias: jvm.gc.minor_collection_time
+        metric_type: counter
+- include:
+    domain: java.lang
+    type: GarbageCollector
+    name: global
+    attribute:
+      CollectionCount:
+        alias: jvm.gc.major_collection_count
+        metric_type: counter
+      CollectionTime:
+        alias: jvm.gc.major_collection_time
+        metric_type: counter
+
+# IBM J9 balanced
+- include:
+    domain: java.lang
+    type: GarbageCollector
+    name: partial gc
+    attribute:
+      CollectionCount:
+        alias: jvm.gc.minor_collection_count
+        metric_type: counter
+      CollectionTime:
+        alias: jvm.gc.minor_collection_time
+        metric_type: counter
+- include:
+    domain: java.lang
+    type: GarbageCollector
+    name: global garbage collect
+    attribute:
+      CollectionCount:
+        alias: jvm.gc.major_collection_count
+        metric_type: counter
+      CollectionTime:
+        alias: jvm.gc.major_collection_time
+        metric_type: counter
+
+# GraalVM Native
+- include:
+    domain: java.lang
+    type: GarbageCollector
+    name: young generation scavenger
+    attribute:
+      CollectionCount:
+        alias: jvm.gc.minor_collection_count
+        metric_type: counter
+      CollectionTime:
+        alias: jvm.gc.minor_collection_time
+        metric_type: counter
+- include:
+    domain: java.lang
+    type: GarbageCollector
+    name: complete scavenger
+    attribute:
+      CollectionCount:
+        alias: jvm.gc.major_collection_count
+        metric_type: counter
+      CollectionTime:
+        alias: jvm.gc.major_collection_time
+        metric_type: counter

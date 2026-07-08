@@ -1,0 +1,626 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Autoresearch Attempts — Baseline-relative Measurements</title>
+  <style>
+    :root {
+      --bg: #0b1020; --panel: #121a31; --panel2: #18223f; --text: #f8fbff; --muted: #aeb9d6;
+      --line: rgba(255,255,255,.13); --green: #62e6a8; --red: #ff718d; --yellow: #f7d774;
+      --blue: #69d7ff; --purple: #b08cff; --shadow: 0 22px 70px rgba(0,0,0,.38);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; color: var(--text); background: radial-gradient(circle at 12% 4%, rgba(105,215,255,.22), transparent 32rem), radial-gradient(circle at 86% 10%, rgba(176,140,255,.26), transparent 30rem), linear-gradient(180deg, #0b1020 0%, #10172b 48%, #080b14 100%); font: 16px/1.55 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    a { color: #bdecff; text-decoration: none; } a:hover { text-decoration: underline; }
+    code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
+    .topbar { position: sticky; top: 0; z-index: 10; height: 5px; background: linear-gradient(90deg, var(--blue), var(--purple), var(--green)); box-shadow: 0 0 28px rgba(105,215,255,.45); }
+    header, main { width: min(1220px, calc(100% - 40px)); margin: 0 auto; }
+    header { padding: 64px 0 28px; }
+    .eyebrow { display: inline-flex; gap: 10px; align-items: center; padding: 7px 12px; border: 1px solid rgba(105,215,255,.35); border-radius: 999px; color: #d8f6ff; background: rgba(105,215,255,.10); font-size: 13px; font-weight: 850; letter-spacing: .08em; text-transform: uppercase; }
+    h1 { max-width: 1020px; margin: 18px 0 16px; font-size: clamp(42px, 7vw, 86px); line-height: .98; letter-spacing: -.055em; }
+    .lead { max-width: 900px; color: var(--muted); font-size: clamp(18px, 2vw, 25px); }
+    .quick-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin: 28px 0; }
+    .stat, .toc, .attempt { border: 1px solid var(--line); border-radius: 26px; background: linear-gradient(180deg, rgba(18,26,49,.90), rgba(18,26,49,.68)); box-shadow: var(--shadow); }
+    .stat { padding: 20px; } .stat span { display:block; color: var(--muted); font-size: 13px; } .stat strong { display:block; margin-top: 5px; font-size: clamp(28px, 4vw, 48px); letter-spacing: -.04em; } .stat em { color: var(--muted); font-style: normal; }
+    .toc { margin: 26px 0 44px; padding: 16px; }
+    .toc h2 { margin: 6px 8px 14px; font-size: 28px; letter-spacing: -.03em; }
+    .toc-row { display: grid; grid-template-columns: 84px 1fr auto; gap: 16px; align-items: center; padding: 14px 16px; border-top: 1px solid var(--line); border-radius: 16px; color: var(--text); }
+    .toc-row:first-of-type { border-top: 0; } .toc-row:hover { background: rgba(255,255,255,.05); text-decoration: none; }
+    .toc-id { color: #d8f6ff; font-weight: 900; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .toc-row small { display:block; margin-top: 2px; color: var(--muted); }
+    .attempt { margin: 26px 0; padding: clamp(22px, 3vw, 34px); scroll-margin-top: 18px; }
+    .attempt-head { display:flex; justify-content:space-between; gap: 22px; align-items:flex-start; border-bottom: 1px solid var(--line); padding-bottom: 20px; }
+    .kicker { color: #d8f6ff; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; font-size: 13px; }
+    .attempt h2 { margin: 8px 0 0; font-size: clamp(28px, 4vw, 48px); line-height: 1.05; letter-spacing: -.04em; }
+    .badge { display:inline-flex; align-items:center; justify-content:center; padding: 6px 10px; border-radius:999px; font-size: 12px; font-weight: 900; letter-spacing:.07em; text-transform:uppercase; color:#07111f; white-space: nowrap; }
+    .badge.big { padding: 9px 14px; } .badge.kept { background: var(--green); } .badge.discarded { background: var(--red); } .badge.baseline { background: var(--blue); } .badge.final { background: var(--yellow); }
+    .metrics { display:grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 20px 0; }
+    .metrics div { padding: 18px; border: 1px solid var(--line); border-radius: 18px; background: rgba(255,255,255,.04); }
+    .metrics span { display:block; color: var(--muted); font-size: 13px; } .metrics strong { display:block; margin: 4px 0; font-size: 26px; letter-spacing: -.03em; } .metrics em { color: var(--muted); font-style: normal; font-size: 13px; }
+    .explain-grid { display:grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 20px; }
+    article { padding: 18px; border: 1px solid var(--line); border-radius: 18px; background: rgba(255,255,255,.035); }
+    article h3 { margin:0 0 8px; font-size: 16px; } article p { margin:0; color: var(--muted); }
+    details { border: 1px solid var(--line); border-radius: 18px; overflow:hidden; background: rgba(2,5,14,.55); }
+    summary { cursor:pointer; padding: 14px 18px; font-weight: 850; background: rgba(255,255,255,.05); } summary span { color: var(--muted); font-weight: 500; margin-left: 8px; }
+    pre { margin: 0; padding: 18px; overflow:auto; max-height: 520px; color: #eef7ff; font-size: 13px; line-height: 1.5; }
+    .back { margin: 14px 0 0; color: var(--muted); }
+    .note { margin: 0 0 24px; padding: 16px 18px; border: 1px solid rgba(247,215,116,.35); border-radius: 18px; background: rgba(247,215,116,.08); color: #fff4c2; }
+    @media (max-width: 900px) { .quick-stats, .metrics, .explain-grid { grid-template-columns: 1fr; } .toc-row { grid-template-columns: 1fr; } .attempt-head { flex-direction: column; } }
+  </style>
+</head>
+<body>
+  <div class="topbar"></div>
+  <header id="top">
+    <div class="eyebrow">Autoresearch results · baseline-relative breakdown</div>
+    <h1>Patch, measurement, and rationale for every attempted change</h1>
+    <p class="lead">Each attempt has a stable ID reused in navigation, measurements, and explanations. Measurements are medians from the autoresearch harness unless marked not measured. All deltas and percentages are computed against AR-00 baseline.</p>
+    <div class="quick-stats">
+      <div class="stat"><span>Best recorded allocation</span><strong>3,967,752B</strong><em>−120,984B / −2.96% vs baseline</em></div>
+      <div class="stat"><span>Best recorded CPU</span><strong>47.970ms</strong><em>−12.036ms / −20.06% vs baseline</em></div>
+      <div class="stat"><span>Best recorded wall</span><strong>18.248ms</strong><em>−4.747ms / −20.64% vs baseline</em></div>
+      <div class="stat"><span>Output equivalence</span><strong>132</strong><em>envelopes every measured run</em></div>
+    </div>
+    <p class="note"><strong>Patch note:</strong> kept attempts use actual commit diffs where available. Discarded attempts were reset by the autoresearch harness, so their patch blocks are labeled as reconstructed patch-style diffs when the exact uncommitted patch was no longer available.</p>
+    <nav class="toc" aria-label="Attempt list">
+      <h2>Attempt list</h2>
+      <a class="toc-row baseline" href="#ar-00"><span class="toc-id">AR-00</span><span><strong>Baseline</strong><small>reference · —</small></span><span class="badge baseline">baseline</span></a>
+<a class="toc-row kept" href="#ar-01"><span class="toc-id">AR-01</span><span><strong>Avoid Scope defensive copies + use HashMap in CombinedScopeView</strong><small>kept · −46,632B / −1.14% vs baseline</small></span><span class="badge kept">kept</span></a>
+<a class="toc-row discarded" href="#ar-02"><span class="toc-id">AR-02</span><span><strong>Use ArrayDeque for CombinedScopeView breadcrumbs merge</strong><small>discarded · −54,192B / −1.33% vs baseline</small></span><span class="badge discarded">discarded</span></a>
+<a class="toc-row discarded" href="#ar-03"><span class="toc-id">AR-03</span><span><strong>Remove Contexts deep-copy in applyScope only</strong><small>discarded · −51,048B / −1.25% vs baseline</small></span><span class="badge discarded">discarded</span></a>
+<a class="toc-row kept" href="#ar-04"><span class="toc-id">AR-04</span><span><strong>Eliminate applyScope double-copy for tags, extras, and contexts</strong><small>kept · −64,232B / −1.57% vs baseline</small></span><span class="badge kept">kept</span></a>
+<a class="toc-row discarded" href="#ar-05"><span class="toc-id">AR-05</span><span><strong>Remove MainEventProcessor options-tags double-copy</strong><small>discarded · −62,224B / −1.52% vs baseline</small></span><span class="badge discarded">discarded</span></a>
+<a class="toc-row discarded" href="#ar-06"><span class="toc-id">AR-06</span><span><strong>Lazy-init Breadcrumb.data, first attempt</strong><small>discarded · −100,032B / −2.45% vs baseline</small></span><span class="badge discarded">discarded</span></a>
+<a class="toc-row discarded" href="#ar-07"><span class="toc-id">AR-07</span><span><strong>Lazy-init SpanContext tags and data maps</strong><small>discarded · −66,848B / −1.63% vs baseline</small></span><span class="badge discarded">discarded</span></a>
+<a class="toc-row kept" href="#ar-08"><span class="toc-id">AR-08</span><span><strong>Short-circuit CombinedScopeView.getBreadcrumbs()</strong><small>kept · −84,752B / −2.07% vs baseline</small></span><span class="badge kept">kept</span></a>
+<a class="toc-row discarded" href="#ar-09"><span class="toc-id">AR-09</span><span><strong>Use ArrayList instead of CopyOnWriteArrayList in CombinedScopeView</strong><small>discarded · −82,544B / −2.02% vs baseline</small></span><span class="badge discarded">discarded</span></a>
+<a class="toc-row kept" href="#ar-10"><span class="toc-id">AR-10</span><span><strong>Lazy-init Breadcrumb.data, retry</strong><small>kept · −120,984B / −2.96% vs baseline</small></span><span class="badge kept">kept</span></a>
+<a class="toc-row discarded" href="#ar-11"><span class="toc-id">AR-11</span><span><strong>Return unmodifiable Scope maps instead of raw internals</strong><small>discarded · −115,040B / −2.81% vs baseline</small></span><span class="badge discarded">discarded</span></a>
+<a class="toc-row final" href="#ar-12"><span class="toc-id">AR-12</span><span><strong>Safety revert: restore defensive Scope copies</strong><small>not benchmarked · not measured</small></span><span class="badge final">final</span></a>
+    </nav>
+  </header>
+  <main>
+    
+    <section class="attempt baseline" id="ar-00">
+      <div class="attempt-head">
+        <div>
+          <div class="kicker">AR-00 · reference</div>
+          <h2>Baseline</h2>
+        </div>
+        <span class="badge big baseline">baseline</span>
+      </div>
+      <div class="metrics">
+        <div><span>Allocation</span><strong>4,088,736B</strong><em>—</em></div>
+        <div><span>CPU median</span><strong>60.006ms</strong><em>—</em></div>
+        <div><span>Wall median</span><strong>22.995ms</strong><em>Relay output equivalent unless noted</em></div>
+      </div>
+      <div class="explain-grid">
+        <article><h3>Why try this?</h3><p>Establish the reference measurement for origin/main before trying allocation reductions.</p></article>
+        <article><h3>What changed?</h3><p>Measured the mixed JVM/core SDK workload with fake Relay. Baseline emitted 132 envelopes: 120 events, 6 logs, and 6 transactions.</p></article>
+        <article><h3>Result</h3><p>Reference point for all candidate comparisons. GC was 0 collections / 0.0ms.</p></article>
+      </div>
+      <details open>
+        <summary>Patch-style diff <span>reference</span></summary>
+        <pre><code># No patch. Baseline commit: 5dee26ba7ca9931bca62b730b210e01063e1c2d1
+# Workload output: 132 envelopes (event:120, log:6, transaction:6).</code></pre>
+      </details>
+      <p class="back"><a href="#top">↑ Back to attempt list</a></p>
+    </section>
+    <section class="attempt kept" id="ar-01">
+      <div class="attempt-head">
+        <div>
+          <div class="kicker">AR-01 · kept</div>
+          <h2>Avoid Scope defensive copies + use HashMap in CombinedScopeView</h2>
+        </div>
+        <span class="badge big kept">kept</span>
+      </div>
+      <div class="metrics">
+        <div><span>Allocation</span><strong>4,042,104B</strong><em>−46,632B / −1.14% vs baseline</em></div>
+        <div><span>CPU median</span><strong>47.770ms</strong><em>−12.236ms / −20.39% vs baseline; passed</em></div>
+        <div><span>Wall median</span><strong>20.311ms</strong><em>−2.684ms / −11.67% vs baseline; Relay output equivalent</em></div>
+      </div>
+      <div class="explain-grid">
+        <article><h3>Why try this?</h3><p>Scope.getTags() and getAttributes() copied thread-safe internal maps on every read. CombinedScopeView also built short-lived merged maps as ConcurrentHashMap, even though the merged view is transient.</p></article>
+        <article><h3>What changed?</h3><p>Return the internal Scope maps directly and use HashMap for CombinedScopeView merged tags, extras, and attributes.</p></article>
+        <article><h3>Result</h3><p>Kept. Allocation improved by ~46KB and CPU/wall were faster than baseline in this run. Later safety review found the raw internal map return was not acceptable API behavior, so that portion was reverted after the experiment batch.</p></article>
+      </div>
+      <details open>
+        <summary>Patch-style diff <span>actual commit 06d34e023f</span></summary>
+        <pre><code>diff --git a/sentry/src/main/java/io/sentry/CombinedScopeView.java b/sentry/src/main/java/io/sentry/CombinedScopeView.java
+@@
+ import java.util.ArrayList;
++import java.util.HashMap;
+ import java.util.Collection;
+@@
+-import java.util.concurrent.ConcurrentHashMap;
+@@
+   public @NotNull Map&lt;String, String&gt; getTags() {
+-    final @NotNull Map&lt;String, String&gt; allTags = new ConcurrentHashMap&lt;&gt;();
++    final @NotNull Map&lt;String, String&gt; allTags = new HashMap&lt;&gt;();
+@@
+   public @NotNull Map&lt;String, SentryAttribute&gt; getAttributes() {
+-    final @NotNull Map&lt;String, SentryAttribute&gt; allAttributes = new ConcurrentHashMap&lt;&gt;();
++    final @NotNull Map&lt;String, SentryAttribute&gt; allAttributes = new HashMap&lt;&gt;();
+@@
+   public @NotNull Map&lt;String, Object&gt; getExtras() {
+-    final @NotNull Map&lt;String, Object&gt; allTags = new ConcurrentHashMap&lt;&gt;();
++    final @NotNull Map&lt;String, Object&gt; allTags = new HashMap&lt;&gt;();
+
+diff --git a/sentry/src/main/java/io/sentry/Scope.java b/sentry/src/main/java/io/sentry/Scope.java
+@@
+   public @NotNull Map&lt;String, String&gt; getTags() {
+-    return CollectionUtils.newConcurrentHashMap(tags);
++    return tags;
+   }
+@@
+   public @NotNull Map&lt;String, SentryAttribute&gt; getAttributes() {
+-    return CollectionUtils.newConcurrentHashMap(attributes);
++    return attributes;
+   }</code></pre>
+      </details>
+      <p class="back"><a href="#top">↑ Back to attempt list</a></p>
+    </section>
+    <section class="attempt discarded" id="ar-02">
+      <div class="attempt-head">
+        <div>
+          <div class="kicker">AR-02 · discarded</div>
+          <h2>Use ArrayDeque for CombinedScopeView breadcrumbs merge</h2>
+        </div>
+        <span class="badge big discarded">discarded</span>
+      </div>
+      <div class="metrics">
+        <div><span>Allocation</span><strong>4,034,544B</strong><em>−54,192B / −1.33% vs baseline</em></div>
+        <div><span>CPU median</span><strong>58.561ms</strong><em>−1.445ms / −2.41% vs baseline; failed guardrail</em></div>
+        <div><span>Wall median</span><strong>26.926ms</strong><em>+3.931ms / +17.10% vs baseline; Relay output equivalent</em></div>
+      </div>
+      <div class="explain-grid">
+        <article><h3>Why try this?</h3><p>The combined breadcrumb queue is transient. The idea was to avoid CircularFifoQueue + SynchronizedQueue overhead when only a short-lived merged queue is needed.</p></article>
+        <article><h3>What changed?</h3><p>Replace the Scope.createBreadcrumbsList helper call with an ArrayDeque in CombinedScopeView.getBreadcrumbs().</p></article>
+        <article><h3>Result</h3><p>Discarded. It saved a small amount of allocation, but CPU and wall time exceeded the 10% guardrail. It also risked subtly changing circular-capacity behavior.</p></article>
+      </div>
+      <details open>
+        <summary>Patch-style diff <span>reconstructed patch-style diff (discarded worktree change was reset)</span></summary>
+        <pre><code>diff --git a/sentry/src/main/java/io/sentry/CombinedScopeView.java b/sentry/src/main/java/io/sentry/CombinedScopeView.java
+@@
+ import java.util.ArrayList;
++import java.util.ArrayDeque;
+@@
+     Collections.sort(allBreadcrumbs);
+ 
+-    final @NotNull Queue&lt;Breadcrumb&gt; breadcrumbs =
+-        createBreadcrumbsList(scope.getOptions().getMaxBreadcrumbs());
++    final @NotNull Queue&lt;Breadcrumb&gt; breadcrumbs =
++        new ArrayDeque&lt;&gt;(scope.getOptions().getMaxBreadcrumbs());
+     breadcrumbs.addAll(allBreadcrumbs);
+ 
+     return breadcrumbs;</code></pre>
+      </details>
+      <p class="back"><a href="#top">↑ Back to attempt list</a></p>
+    </section>
+    <section class="attempt discarded" id="ar-03">
+      <div class="attempt-head">
+        <div>
+          <div class="kicker">AR-03 · discarded</div>
+          <h2>Remove Contexts deep-copy in applyScope only</h2>
+        </div>
+        <span class="badge big discarded">discarded</span>
+      </div>
+      <div class="metrics">
+        <div><span>Allocation</span><strong>4,037,688B</strong><em>−51,048B / −1.25% vs baseline</em></div>
+        <div><span>CPU median</span><strong>58.364ms</strong><em>−1.642ms / −2.74% vs baseline; failed guardrail</em></div>
+        <div><span>Wall median</span><strong>23.218ms</strong><em>+0.223ms / +0.97% vs baseline; Relay output equivalent</em></div>
+      </div>
+      <div class="explain-grid">
+        <article><h3>Why try this?</h3><p>SentryClient.applyScope created new Contexts(scope.getContexts()) just to iterate entries. That deep-cloned context objects before immediately copying selected entries again.</p></article>
+        <article><h3>What changed?</h3><p>Iterate scope.getContexts().entrySet() directly in three applyScope variants.</p></article>
+        <article><h3>Result</h3><p>Discarded as a standalone attempt. The change was correct, but too small and hit CPU/wall noise guardrails. It was later kept as part of AR-04 with the tags/extras double-copy removal.</p></article>
+      </div>
+      <details open>
+        <summary>Patch-style diff <span>reconstructed from later kept patch</span></summary>
+        <pre><code>diff --git a/sentry/src/main/java/io/sentry/SentryClient.java b/sentry/src/main/java/io/sentry/SentryClient.java
+@@
+-    for (Map.Entry&lt;String, Object&gt; entry : new Contexts(scope.getContexts()).entrySet()) {
++    for (Map.Entry&lt;String, Object&gt; entry : scope.getContexts().entrySet()) {
+       if (!contexts.containsKey(entry.getKey())) {
+         contexts.put(entry.getKey(), entry.getValue());
+       }
+@@
+-      for (Map.Entry&lt;String, Object&gt; entry : new Contexts(scope.getContexts()).entrySet()) {
++      for (Map.Entry&lt;String, Object&gt; entry : scope.getContexts().entrySet()) {
+         if (!contexts.containsKey(entry.getKey())) {
+           contexts.put(entry.getKey(), entry.getValue());
+         }
+@@
+-      for (Map.Entry&lt;String, Object&gt; entry : new Contexts(scope.getContexts()).entrySet()) {
++      for (Map.Entry&lt;String, Object&gt; entry : scope.getContexts().entrySet()) {
+         if (!contexts.containsKey(entry.getKey())) {
+           contexts.put(entry.getKey(), entry.getValue());
+         }</code></pre>
+      </details>
+      <p class="back"><a href="#top">↑ Back to attempt list</a></p>
+    </section>
+    <section class="attempt kept" id="ar-04">
+      <div class="attempt-head">
+        <div>
+          <div class="kicker">AR-04 · kept</div>
+          <h2>Eliminate applyScope double-copy for tags, extras, and contexts</h2>
+        </div>
+        <span class="badge big kept">kept</span>
+      </div>
+      <div class="metrics">
+        <div><span>Allocation</span><strong>4,024,504B</strong><em>−64,232B / −1.57% vs baseline</em></div>
+        <div><span>CPU median</span><strong>48.180ms</strong><em>−11.826ms / −19.71% vs baseline; passed</em></div>
+        <div><span>Wall median</span><strong>21.522ms</strong><em>−1.473ms / −6.41% vs baseline; Relay output equivalent</em></div>
+      </div>
+      <div class="explain-grid">
+        <article><h3>Why try this?</h3><p>applyScope wrapped scope maps in new HashMap before passing them into setters that already copy internally. Contexts were also deep-copied just to iterate.</p></article>
+        <article><h3>What changed?</h3><p>Pass scope maps directly to setters and iterate contexts directly. This keeps the setter-owned copy while removing the redundant outer copy.</p></article>
+        <article><h3>Result</h3><p>Kept. Allocation improved by ~17.6KB with CPU/wall inside guardrails.</p></article>
+      </div>
+      <details open>
+        <summary>Patch-style diff <span>actual commit f053b24f50</span></summary>
+        <pre><code>diff --git a/sentry/src/main/java/io/sentry/SentryClient.java b/sentry/src/main/java/io/sentry/SentryClient.java
+@@
+     if (event.getTags() == null) {
+-      event.setTags(new HashMap&lt;&gt;(scope.getTags()));
++      event.setTags(scope.getTags());
+@@
+-    for (Map.Entry&lt;String, Object&gt; entry : new Contexts(scope.getContexts()).entrySet()) {
++    for (Map.Entry&lt;String, Object&gt; entry : scope.getContexts().entrySet()) {
+@@
+       if (replayEvent.getTags() == null) {
+-        replayEvent.setTags(new HashMap&lt;&gt;(scope.getTags()));
++        replayEvent.setTags(scope.getTags());
+@@
+-      for (Map.Entry&lt;String, Object&gt; entry : new Contexts(scope.getContexts()).entrySet()) {
++      for (Map.Entry&lt;String, Object&gt; entry : scope.getContexts().entrySet()) {
+@@
+       if (sentryBaseEvent.getTags() == null) {
+-        sentryBaseEvent.setTags(new HashMap&lt;&gt;(scope.getTags()));
++        sentryBaseEvent.setTags(scope.getTags());
+@@
+       if (sentryBaseEvent.getExtras() == null) {
+-        sentryBaseEvent.setExtras(new HashMap&lt;&gt;(scope.getExtras()));
++        sentryBaseEvent.setExtras(scope.getExtras());
+@@
+-      for (Map.Entry&lt;String, Object&gt; entry : new Contexts(scope.getContexts()).entrySet()) {
++      for (Map.Entry&lt;String, Object&gt; entry : scope.getContexts().entrySet()) {</code></pre>
+      </details>
+      <p class="back"><a href="#top">↑ Back to attempt list</a></p>
+    </section>
+    <section class="attempt discarded" id="ar-05">
+      <div class="attempt-head">
+        <div>
+          <div class="kicker">AR-05 · discarded</div>
+          <h2>Remove MainEventProcessor options-tags double-copy</h2>
+        </div>
+        <span class="badge big discarded">discarded</span>
+      </div>
+      <div class="metrics">
+        <div><span>Allocation</span><strong>4,026,512B</strong><em>−62,224B / −1.52% vs baseline</em></div>
+        <div><span>CPU median</span><strong>62.548ms</strong><em>+2.542ms / +4.24% vs baseline; failed guardrail</em></div>
+        <div><span>Wall median</span><strong>23.473ms</strong><em>+0.478ms / +2.08% vs baseline; Relay output equivalent</em></div>
+      </div>
+      <div class="explain-grid">
+        <article><h3>Why try this?</h3><p>MainEventProcessor.setTags used new HashMap(options.getTags()) before calling an event setter, matching the same double-copy pattern as AR-04.</p></article>
+        <article><h3>What changed?</h3><p>Pass options.getTags() directly to event.setTags().</p></article>
+        <article><h3>Result</h3><p>Discarded. The benchmark has no option-level tags, so the change produced no measurable allocation win and CPU noise exceeded the guardrail.</p></article>
+      </div>
+      <details open>
+        <summary>Patch-style diff <span>reconstructed patch-style diff</span></summary>
+        <pre><code>diff --git a/sentry/src/main/java/io/sentry/MainEventProcessor.java b/sentry/src/main/java/io/sentry/MainEventProcessor.java
+@@
+   private void setTags(final @NotNull SentryBaseEvent event) {
+     if (event.getTags() == null) {
+-      event.setTags(new HashMap&lt;&gt;(options.getTags()));
++      event.setTags(options.getTags());
+     } else {
+       for (Map.Entry&lt;String, String&gt; item : options.getTags().entrySet()) {</code></pre>
+      </details>
+      <p class="back"><a href="#top">↑ Back to attempt list</a></p>
+    </section>
+    <section class="attempt discarded" id="ar-06">
+      <div class="attempt-head">
+        <div>
+          <div class="kicker">AR-06 · discarded</div>
+          <h2>Lazy-init Breadcrumb.data, first attempt</h2>
+        </div>
+        <span class="badge big discarded">discarded</span>
+      </div>
+      <div class="metrics">
+        <div><span>Allocation</span><strong>3,988,704B</strong><em>−100,032B / −2.45% vs baseline</em></div>
+        <div><span>CPU median</span><strong>68.422ms</strong><em>+8.416ms / +14.03% vs baseline; failed guardrail</em></div>
+        <div><span>Wall median</span><strong>26.424ms</strong><em>+3.429ms / +14.91% vs baseline; Relay output equivalent</em></div>
+      </div>
+      <div class="explain-grid">
+        <article><h3>Why try this?</h3><p>Most benchmark breadcrumbs had no data. Each breadcrumb still eagerly allocated a ConcurrentHashMap for data.</p></article>
+        <article><h3>What changed?</h3><p>Initialize data as Collections.emptyMap(), create a HashMap only on first setData(), and use HashMap for copied/deserialized breadcrumb data.</p></article>
+        <article><h3>Result</h3><p>Discarded on the first run because CPU/wall exceeded guardrails despite a large allocation win. The same change was retried as AR-10 and kept, showing measurement noise was significant.</p></article>
+      </div>
+      <details open>
+        <summary>Patch-style diff <span>reconstructed from AR-10 kept patch</span></summary>
+        <pre><code>diff --git a/sentry/src/main/java/io/sentry/Breadcrumb.java b/sentry/src/main/java/io/sentry/Breadcrumb.java
+@@
+-import java.util.concurrent.ConcurrentHashMap;
++import java.util.HashMap;
+@@
+-  private @NotNull Map&lt;String, @NotNull Object&gt; data = new ConcurrentHashMap&lt;&gt;();
++  private @NotNull Map&lt;String, @NotNull Object&gt; data = Collections.emptyMap();
+@@
+-    final Map&lt;String, Object&gt; dataClone = CollectionUtils.newConcurrentHashMap(breadcrumb.data);
+-    if (dataClone != null) {
+-      this.data = dataClone;
++    if (!breadcrumb.data.isEmpty()) {
++      this.data = new HashMap&lt;&gt;(breadcrumb.data);
+@@
+-    @NotNull Map&lt;String, Object&gt; data = new ConcurrentHashMap&lt;&gt;();
++    @NotNull Map&lt;String, Object&gt; data = new HashMap&lt;&gt;();
+@@
++      if (data.isEmpty() &amp;&amp; data == Collections.EMPTY_MAP) {
++        data = new HashMap&lt;&gt;();
++      }
+       data.put(key, value);
+@@
+-                CollectionUtils.newConcurrentHashMap(
++                CollectionUtils.newHashMap(</code></pre>
+      </details>
+      <p class="back"><a href="#top">↑ Back to attempt list</a></p>
+    </section>
+    <section class="attempt discarded" id="ar-07">
+      <div class="attempt-head">
+        <div>
+          <div class="kicker">AR-07 · discarded</div>
+          <h2>Lazy-init SpanContext tags and data maps</h2>
+        </div>
+        <span class="badge big discarded">discarded</span>
+      </div>
+      <div class="metrics">
+        <div><span>Allocation</span><strong>4,021,888B</strong><em>−66,848B / −1.63% vs baseline</em></div>
+        <div><span>CPU median</span><strong>48.781ms</strong><em>−11.225ms / −18.71% vs baseline; passed but too small / requested discard</em></div>
+        <div><span>Wall median</span><strong>20.529ms</strong><em>−2.466ms / −10.72% vs baseline; Relay output equivalent</em></div>
+      </div>
+      <div class="explain-grid">
+        <article><h3>Why try this?</h3><p>SpanContext eagerly allocates ConcurrentHashMap instances for tags and data. The hypothesis was that many spans do not write both maps.</p></article>
+        <article><h3>What changed?</h3><p>Start tags/data as empty maps and allocate ConcurrentHashMap on first write.</p></article>
+        <article><h3>Result</h3><p>Discarded. It saved only ~2.6KB because TransactionContext.fromPropagationContext uses a constructor path that still eagerly creates data. Complexity was not worth the small win.</p></article>
+      </div>
+      <details open>
+        <summary>Patch-style diff <span>reconstructed patch-style diff</span></summary>
+        <pre><code>diff --git a/sentry/src/main/java/io/sentry/SpanContext.java b/sentry/src/main/java/io/sentry/SpanContext.java
+@@
+-  protected @NotNull Map&lt;String, @NotNull String&gt; tags = new ConcurrentHashMap&lt;&gt;();
++  protected @NotNull Map&lt;String, @NotNull String&gt; tags = Collections.emptyMap();
+@@
+-  protected @NotNull Map&lt;String, Object&gt; data = new ConcurrentHashMap&lt;&gt;();
++  protected @NotNull Map&lt;String, Object&gt; data = Collections.emptyMap();
+@@
+   public void setTag(final @Nullable String name, final @Nullable String value) {
+@@
+-      this.tags.put(name, value);
++      if (tags.isEmpty() &amp;&amp; tags == Collections.EMPTY_MAP) {
++        tags = new ConcurrentHashMap&lt;&gt;();
++      }
++      this.tags.put(name, value);
+@@
+-      data.put(key, value);
++      if (data.isEmpty() &amp;&amp; data == Collections.EMPTY_MAP) {
++        data = new ConcurrentHashMap&lt;&gt;();
++      }
++      data.put(key, value);</code></pre>
+      </details>
+      <p class="back"><a href="#top">↑ Back to attempt list</a></p>
+    </section>
+    <section class="attempt kept" id="ar-08">
+      <div class="attempt-head">
+        <div>
+          <div class="kicker">AR-08 · kept</div>
+          <h2>Short-circuit CombinedScopeView.getBreadcrumbs()</h2>
+        </div>
+        <span class="badge big kept">kept</span>
+      </div>
+      <div class="metrics">
+        <div><span>Allocation</span><strong>4,003,984B</strong><em>−84,752B / −2.07% vs baseline</em></div>
+        <div><span>CPU median</span><strong>48.176ms</strong><em>−11.830ms / −19.71% vs baseline; passed</em></div>
+        <div><span>Wall median</span><strong>19.565ms</strong><em>−3.430ms / −14.92% vs baseline; Relay output equivalent</em></div>
+      </div>
+      <div class="explain-grid">
+        <article><h3>Why try this?</h3><p>The common workload had breadcrumbs in only one scope. The old code always allocated a list, copied all queues, sorted, created a circular queue, wrapped it, and copied again.</p></article>
+        <article><h3>What changed?</h3><p>If exactly one scope has breadcrumbs, return that queue directly. Only do the full merge path when multiple scopes contain breadcrumbs.</p></article>
+        <article><h3>Result</h3><p>Kept. Allocation improved by ~84.8KB and wall time improved by ~15% vs baseline.</p></article>
+      </div>
+      <details open>
+        <summary>Patch-style diff <span>actual commit b78d163120</span></summary>
+        <pre><code>diff --git a/sentry/src/main/java/io/sentry/CombinedScopeView.java b/sentry/src/main/java/io/sentry/CombinedScopeView.java
+@@
+   public @NotNull Queue&lt;Breadcrumb&gt; getBreadcrumbs() {
++    final @NotNull Queue&lt;Breadcrumb&gt; globalBc = globalScope.getBreadcrumbs();
++    final @NotNull Queue&lt;Breadcrumb&gt; isolationBc = isolationScope.getBreadcrumbs();
++    final @NotNull Queue&lt;Breadcrumb&gt; currentBc = scope.getBreadcrumbs();
++
++    // Fast path: only one scope has breadcrumbs (common case)
++    final boolean hasGlobal = !globalBc.isEmpty();
++    final boolean hasIsolation = !isolationBc.isEmpty();
++    final boolean hasCurrent = !currentBc.isEmpty();
++
++    if (!hasGlobal &amp;&amp; !hasCurrent) {
++      return isolationBc;
++    }
++    if (!hasIsolation &amp;&amp; !hasCurrent) {
++      return globalBc;
++    }
++    if (!hasGlobal &amp;&amp; !hasIsolation) {
++      return currentBc;
++    }
++
++    // Multiple scopes have breadcrumbs — full merge
+     final @NotNull List&lt;Breadcrumb&gt; allBreadcrumbs = new ArrayList&lt;&gt;();
+-    allBreadcrumbs.addAll(globalScope.getBreadcrumbs());
+-    allBreadcrumbs.addAll(isolationScope.getBreadcrumbs());
+-    allBreadcrumbs.addAll(scope.getBreadcrumbs());
++    allBreadcrumbs.addAll(globalBc);
++    allBreadcrumbs.addAll(isolationBc);
++    allBreadcrumbs.addAll(currentBc);</code></pre>
+      </details>
+      <p class="back"><a href="#top">↑ Back to attempt list</a></p>
+    </section>
+    <section class="attempt discarded" id="ar-09">
+      <div class="attempt-head">
+        <div>
+          <div class="kicker">AR-09 · discarded</div>
+          <h2>Use ArrayList instead of CopyOnWriteArrayList in CombinedScopeView</h2>
+        </div>
+        <span class="badge big discarded">discarded</span>
+      </div>
+      <div class="metrics">
+        <div><span>Allocation</span><strong>4,006,192B</strong><em>−82,544B / −2.02% vs baseline</em></div>
+        <div><span>CPU median</span><strong>53.368ms</strong><em>−6.638ms / −11.06% vs baseline; failed guardrail</em></div>
+        <div><span>Wall median</span><strong>19.982ms</strong><em>−3.013ms / −13.10% vs baseline; Relay output equivalent</em></div>
+      </div>
+      <div class="explain-grid">
+        <article><h3>Why try this?</h3><p>CombinedScopeView lists are read-only transient merged views. CopyOnWriteArrayList avoids concurrent modification but is expensive when writes occur.</p></article>
+        <article><h3>What changed?</h3><p>Use ArrayList for attachments and event processor merged lists.</p></article>
+        <article><h3>Result</h3><p>Discarded. Attachments were empty and event processor lists were small, so CopyOnWriteArrayList overhead did not matter in this workload.</p></article>
+      </div>
+      <details open>
+        <summary>Patch-style diff <span>reconstructed patch-style diff</span></summary>
+        <pre><code>diff --git a/sentry/src/main/java/io/sentry/CombinedScopeView.java b/sentry/src/main/java/io/sentry/CombinedScopeView.java
+@@
+-import java.util.concurrent.CopyOnWriteArrayList;
+@@
+-    final @NotNull List&lt;Attachment&gt; allAttachments = new CopyOnWriteArrayList&lt;&gt;();
++    final @NotNull List&lt;Attachment&gt; allAttachments = new ArrayList&lt;&gt;();
+@@
+-    final @NotNull List&lt;EventProcessor&gt; allEventProcessors = new CopyOnWriteArrayList&lt;&gt;();
++    final @NotNull List&lt;EventProcessor&gt; allEventProcessors = new ArrayList&lt;&gt;();
+@@
+-    final @NotNull List&lt;EventProcessorAndOrder&gt; allEventProcessors = new CopyOnWriteArrayList&lt;&gt;();
++    final @NotNull List&lt;EventProcessorAndOrder&gt; allEventProcessors = new ArrayList&lt;&gt;();</code></pre>
+      </details>
+      <p class="back"><a href="#top">↑ Back to attempt list</a></p>
+    </section>
+    <section class="attempt kept" id="ar-10">
+      <div class="attempt-head">
+        <div>
+          <div class="kicker">AR-10 · kept</div>
+          <h2>Lazy-init Breadcrumb.data, retry</h2>
+        </div>
+        <span class="badge big kept">kept</span>
+      </div>
+      <div class="metrics">
+        <div><span>Allocation</span><strong>3,967,752B</strong><em>−120,984B / −2.96% vs baseline</em></div>
+        <div><span>CPU median</span><strong>47.970ms</strong><em>−12.036ms / −20.06% vs baseline; passed</em></div>
+        <div><span>Wall median</span><strong>18.248ms</strong><em>−4.747ms / −20.64% vs baseline; Relay output equivalent</em></div>
+      </div>
+      <div class="explain-grid">
+        <article><h3>Why try this?</h3><p>AR-06 showed a strong allocation win but failed CPU/wall due to noisy timing. Retrying tested whether the allocation win was real.</p></article>
+        <article><h3>What changed?</h3><p>Same lazy Breadcrumb.data idea: default to Collections.emptyMap(), allocate HashMap only on first data write, and avoid ConcurrentHashMap for copy/deserialization paths.</p></article>
+        <article><h3>Result</h3><p>Kept. This became the recorded best: 3,967,752B allocated, −120,984B / −2.96% vs baseline. Relay output remained equivalent.</p></article>
+      </div>
+      <details open>
+        <summary>Patch-style diff <span>actual commit 065ea67cfb</span></summary>
+        <pre><code>diff --git a/sentry/src/main/java/io/sentry/Breadcrumb.java b/sentry/src/main/java/io/sentry/Breadcrumb.java
+@@
+ import java.io.IOException;
+ import java.util.ArrayList;
++import java.util.HashMap;
+ import java.util.Collections;
+@@
+-  private @NotNull Map&lt;String, @NotNull Object&gt; data = new ConcurrentHashMap&lt;&gt;();
++  private @NotNull Map&lt;String, @NotNull Object&gt; data = Collections.emptyMap();
+@@
+-    final Map&lt;String, Object&gt; dataClone = CollectionUtils.newConcurrentHashMap(breadcrumb.data);
+-    if (dataClone != null) {
+-      this.data = dataClone;
++    if (!breadcrumb.data.isEmpty()) {
++      this.data = new HashMap&lt;&gt;(breadcrumb.data);
+@@
+-    @NotNull Map&lt;String, Object&gt; data = new ConcurrentHashMap&lt;&gt;();
++    @NotNull Map&lt;String, Object&gt; data = new HashMap&lt;&gt;();
+@@
+     } else {
++      if (data.isEmpty() &amp;&amp; data == Collections.EMPTY_MAP) {
++        data = new HashMap&lt;&gt;();
++      }
+       data.put(key, value);
+@@
+-    if (key == null) {
++    if (key == null || data.isEmpty()) {
+       return;
+@@
+-                CollectionUtils.newConcurrentHashMap(
++                CollectionUtils.newHashMap(</code></pre>
+      </details>
+      <p class="back"><a href="#top">↑ Back to attempt list</a></p>
+    </section>
+    <section class="attempt discarded" id="ar-11">
+      <div class="attempt-head">
+        <div>
+          <div class="kicker">AR-11 · discarded</div>
+          <h2>Return unmodifiable Scope maps instead of raw internals</h2>
+        </div>
+        <span class="badge big discarded">discarded</span>
+      </div>
+      <div class="metrics">
+        <div><span>Allocation</span><strong>3,973,696B</strong><em>−115,040B / −2.81% vs baseline</em></div>
+        <div><span>CPU median</span><strong>84.465ms</strong><em>+24.459ms / +40.76% vs baseline; failed guardrail</em></div>
+        <div><span>Wall median</span><strong>47.107ms</strong><em>+24.112ms / +104.86% vs baseline; Relay output equivalent</em></div>
+      </div>
+      <div class="explain-grid">
+        <article><h3>Why try this?</h3><p>AR-01 returned raw internal maps, which saved copies but exposed mutable Scope internals. This attempted to keep the allocation win without allowing external mutation.</p></article>
+        <article><h3>What changed?</h3><p>Return Collections.unmodifiableMap(tags/attributes) from Scope getters.</p></article>
+        <article><h3>Result</h3><p>Discarded by measurement and then fully reverted for API safety. The run showed severe CPU/wall regression noise. Final tracked state restored defensive copies for Scope.getTags() and getAttributes().</p></article>
+      </div>
+      <details open>
+        <summary>Patch-style diff <span>actual commit 9af1d54600; later reverted by e65556f610</span></summary>
+        <pre><code>diff --git a/sentry/src/main/java/io/sentry/Scope.java b/sentry/src/main/java/io/sentry/Scope.java
+@@
+   public @NotNull Map&lt;String, String&gt; getTags() {
+-    return tags;
++    return Collections.unmodifiableMap(tags);
+   }
+@@
+   public @NotNull Map&lt;String, SentryAttribute&gt; getAttributes() {
+-    return attributes;
++    return Collections.unmodifiableMap(attributes);
+   }</code></pre>
+      </details>
+      <p class="back"><a href="#top">↑ Back to attempt list</a></p>
+    </section>
+    <section class="attempt final" id="ar-12">
+      <div class="attempt-head">
+        <div>
+          <div class="kicker">AR-12 · not benchmarked</div>
+          <h2>Safety revert: restore defensive Scope copies</h2>
+        </div>
+        <span class="badge big final">final</span>
+      </div>
+      <div class="metrics">
+        <div><span>Allocation</span><strong>not measured</strong><em>not measured</em></div>
+        <div><span>CPU median</span><strong>not measured</strong><em>not measured</em></div>
+        <div><span>Wall median</span><strong>not measured</strong><em>Relay output equivalent unless noted</em></div>
+      </div>
+      <div class="explain-grid">
+        <article><h3>Why try this?</h3><p>The public Scope getters should not expose mutable internals. After AR-11 was discarded, the safest final code restored the original defensive-copy behavior.</p></article>
+        <article><h3>What changed?</h3><p>Reverted Scope.getTags() and getAttributes() to CollectionUtils.newConcurrentHashMap(...).</p></article>
+        <article><h3>Result</h3><p>Final worktree no longer contains AR-01’s risky raw-map getter behavior. The remaining final diff contains Breadcrumb.data lazy-init, CombinedScopeView HashMap/ breadcrumb fast path, and SentryClient applyScope copy reductions.</p></article>
+      </div>
+      <details open>
+        <summary>Patch-style diff <span>actual commit e65556f610; corrective change after measured attempts</span></summary>
+        <pre><code>diff --git a/sentry/src/main/java/io/sentry/Scope.java b/sentry/src/main/java/io/sentry/Scope.java
+@@
+   public @NotNull Map&lt;String, String&gt; getTags() {
+-    return Collections.unmodifiableMap(tags);
++    return CollectionUtils.newConcurrentHashMap(tags);
+   }
+@@
+   public @NotNull Map&lt;String, SentryAttribute&gt; getAttributes() {
+-    return Collections.unmodifiableMap(attributes);
++    return CollectionUtils.newConcurrentHashMap(attributes);
+   }</code></pre>
+      </details>
+      <p class="back"><a href="#top">↑ Back to attempt list</a></p>
+    </section>
+  </main>
+</body>
+</html>
