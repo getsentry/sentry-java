@@ -118,7 +118,7 @@ public class TombstoneParser implements Closeable {
       // thread id always equals the process id,
       // so we use it to reliably detect the main thread
       if (tombstone.pid == threadEntryValue.id) {
-        // the OS may provides a (truncated) process name; normalize it
+        // the OS may provide a (truncated) process name; normalize it
         // back to "main" so downstream consumers see a consistent name
         thread.setName("main");
         thread.setMain(true);
