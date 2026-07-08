@@ -100,9 +100,6 @@ class TombstoneParserTest {
 
     // threads
     assertEquals(62, event.threads!!.size)
-
-    // exactly one thread is the main thread (its id equals the process id, 21891) and its name is
-    // normalized to "main"
     val mainThread = event.threads!!.single { it.isMain == true }
     assertEquals(21891, mainThread.id)
     assertEquals("main", mainThread.name)
@@ -407,10 +404,6 @@ class TombstoneParserTest {
 
   @Test
   fun `identifies the main thread via pid matching the thread id and normalizes its name`() {
-    // On Linux/Android the main thread's kernel thread id equals the process id (pid), so we use
-    // that to detect the main thread even when the OS renamed it to the (truncated) process name.
-    // The crashed thread (tid) is a different thread here to verify the two are handled
-    // independently.
     val tombstone =
       Tombstone.Builder()
         .pid(1000)
@@ -430,7 +423,6 @@ class TombstoneParserTest {
             0,
           )
         )
-        // crashed thread: id == tid
         .addThread(
           TombstoneThread(
             2000,
@@ -444,7 +436,6 @@ class TombstoneParserTest {
             0,
           )
         )
-        // background thread: neither main nor crashed
         .addThread(
           TombstoneThread(
             3000,
@@ -465,7 +456,6 @@ class TombstoneParserTest {
 
     val main = threads.single { it.isMain == true }
     assertEquals(1000, main.id)
-    // the OS-assigned process name is normalized back to "main"
     assertEquals("main", main.name)
 
     val crashed = threads.single { it.isCrashed == true }
