@@ -22,7 +22,7 @@
 
 ### Fixes
 
-- Fix ISO 8601 timestamp handling on older Android versions by replacing unsupported `Math.floorDiv` and `Math.floorMod` calls ([#5743](https://github.com/getsentry/sentry-java/pull/5743))
+- Fix `NoSuchMethodError` when using `Math.floorDiv`/`Math.floorMod` on Android < 24 ([#5743](https://github.com/getsentry/sentry-java/pull/5743))
 - Fix main thread identification parsing for ApplicationExitInfo ANRs ([#5733](https://github.com/getsentry/sentry-java/pull/5733))
 - Do not send threads without stacktraces for ApplicationExitInfo ANRs ([#5733](https://github.com/getsentry/sentry-java/pull/5733))
 - Record byte-level client reports when event processors discard logs or trace metrics ([#5718](https://github.com/getsentry/sentry-java/pull/5718))
