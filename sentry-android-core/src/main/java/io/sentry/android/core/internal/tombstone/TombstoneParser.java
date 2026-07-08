@@ -115,10 +115,11 @@ public class TombstoneParser implements Closeable {
         exc.setStacktrace(stacktrace);
       }
 
-      // Android/Linux convention: the pid of the process is the same as the tid of the main thread.
-      // The main thread is special in that it is the only thread that can create a Looper and thus
-      // handle messages on the main thread
+      // thread id always equals the process id,
+      // so we use it to reliably detect the main thread
       if (tombstone.pid == threadEntryValue.id) {
+        // the OS may provides a (truncated) process name; normalize it
+        // back to "main" so downstream consumers see a consistent name
         thread.setName("main");
         thread.setMain(true);
       }
