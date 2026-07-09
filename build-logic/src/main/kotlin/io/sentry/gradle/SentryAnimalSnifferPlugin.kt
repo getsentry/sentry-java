@@ -7,7 +7,7 @@ import org.gradle.api.artifacts.MinimalExternalModuleDependency
 import org.gradle.api.artifacts.VersionCatalogsExtension
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.ListProperty
-import org.gradle.api.tasks.SourceTask
+import ru.vyarus.gradle.plugin.animalsniffer.AnimalSniffer
 
 abstract class SentryAnimalSnifferExtension @Inject constructor(objects: ObjectFactory) {
   val ignoredClasses: ListProperty<String> = objects.listProperty(String::class.java)
@@ -31,11 +31,11 @@ class SentryAnimalSnifferPlugin : Plugin<Project> {
     }
 
     project.afterEvaluate {
-      project.tasks.named("animalsnifferMain", SourceTask::class.java).configure {
+      project.tasks.named("animalsnifferMain", AnimalSniffer::class.java).configure {
         exclude(extension.mainExcludes.get())
         val ignoredClasses = extension.ignoredClasses.get()
         if (ignoredClasses.isNotEmpty()) {
-          javaClass.getMethod("setIgnoreClasses", Iterable::class.java).invoke(this, ignoredClasses)
+          setIgnoreClasses(ignoredClasses)
         }
       }
     }
