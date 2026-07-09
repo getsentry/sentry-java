@@ -314,6 +314,56 @@ class ManifestMetadataReaderTest {
   }
 
   @Test
+  fun `applyMetadata reads tombstone enable to options`() {
+    // Arrange
+    val bundle = bundleOf(ManifestMetadataReader.TOMBSTONE_ENABLE to true)
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertEquals(true, fixture.options.isTombstoneEnabled)
+  }
+
+  @Test
+  fun `applyMetadata reads tombstone enable to options and keeps default`() {
+    // Arrange
+    val context = fixture.getContext()
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertEquals(false, fixture.options.isTombstoneEnabled)
+  }
+
+  @Test
+  fun `applyMetadata reads tombstone report historical to options`() {
+    // Arrange
+    val bundle = bundleOf(ManifestMetadataReader.TOMBSTONE_REPORT_HISTORICAL to true)
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertEquals(true, fixture.options.isReportHistoricalTombstones)
+  }
+
+  @Test
+  fun `applyMetadata reads tombstone report historical to options and keeps default`() {
+    // Arrange
+    val context = fixture.getContext()
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertEquals(false, fixture.options.isReportHistoricalTombstones)
+  }
+
+  @Test
   fun `applyMetadata reads anr report historical to options`() {
     // Arrange
     val bundle = bundleOf(ManifestMetadataReader.ANR_REPORT_HISTORICAL to true)

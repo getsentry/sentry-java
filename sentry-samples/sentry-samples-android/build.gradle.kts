@@ -111,6 +111,8 @@ android {
 
   buildTypes {
     getByName("debug") {
+      // Suffix the id so debug and release builds can be installed side by side.
+      applicationIdSuffix = ".debug"
       addManifestPlaceholders(mapOf("sentryDebug" to true, "sentryEnvironment" to "debug"))
     }
     getByName("release") {

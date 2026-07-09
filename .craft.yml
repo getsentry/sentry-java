@@ -45,6 +45,8 @@ targets:
       maven:io.sentry:sentry-launchdarkly-android:
       maven:io.sentry:sentry-launchdarkly-server:
       maven:io.sentry:sentry-opentelemetry-agent:
+      # TODO: Add after first release of the artifact.
+      # maven:io.sentry:sentry-opentelemetry-bom:
       maven:io.sentry:sentry-opentelemetry-agentcustomization:
       maven:io.sentry:sentry-opentelemetry-agentless:
       maven:io.sentry:sentry-opentelemetry-agentless-spring:

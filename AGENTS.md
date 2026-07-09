@@ -146,6 +146,8 @@ The repository is organized into multiple modules:
 - Write comprehensive unit tests for new features
 - Android modules require both unit tests and instrumented tests where applicable
 - System tests validate end-to-end functionality with sample applications
+- **Assertions**: For new unit tests, prefer [Google Truth](https://truth.dev/) (`com.google.common.truth.Truth.assertThat`) over `kotlin.test`/JUnit assertions for its readable, fluent API. Keep using `kotlin.test` for test structure (`@Test`, `assertFailsWith`). See `sentry/src/test/java/io/sentry/DsnTest.kt` for the style. Don't rewrite existing `kotlin.test` assertions solely to switch libraries.
+- Truth is wired into the `sentry` module. When adding Truth-based tests to another module, add `testImplementation(libs.google.truth)` to that module's `build.gradle.kts`.
 
 ### Contributing Guidelines
 1. Follow existing code style and language

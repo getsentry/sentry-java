@@ -31,6 +31,12 @@
     android:theme="@style/AppTheme"
     tools:ignore="GoogleAppIndexingWarning, UnusedAttribute">
 
+    <!-- Allows Macrobenchmark (and `am profile`) to profile non-debuggable release/benchmark
+         builds. Harmless in debug; required for the benchmark build type. -->
+    <profileable
+      android:shell="true"
+      tools:targetApi="29" />
+
     <service
       android:name=".DummyService"
       android:enabled="true"
@@ -64,6 +70,11 @@
     <activity
       android:name=".ThirdActivityFragment"
       android:exported="false" />
+
+    <activity
+      android:name=".DetachAttachTabsActivity"
+      android:exported="false"
+      android:theme="@style/AppTheme.Main" />
 
     <activity
       android:name=".GesturesActivity"

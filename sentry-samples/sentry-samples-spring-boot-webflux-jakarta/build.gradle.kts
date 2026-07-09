@@ -7,6 +7,7 @@ plugins {
   alias(libs.plugins.spring.dependency.management)
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.kotlin.spring)
+  id("io.sentry.systemtest")
 }
 
 group = "io.sentry.sample.spring-boot-webflux-jakarta"
@@ -16,8 +17,6 @@ version = "0.0.1-SNAPSHOT"
 java.sourceCompatibility = JavaVersion.VERSION_17
 
 java.targetCompatibility = JavaVersion.VERSION_17
-
-repositories { mavenCentral() }
 
 dependencyManagement {
   imports {
@@ -71,8 +70,6 @@ tasks.register<Test>("systemTest").configure {
   val test = project.extensions.getByType<SourceSetContainer>()["test"]
   testClassesDirs = test.output.classesDirs
   classpath = test.runtimeClasspath
-
-  outputs.upToDateWhen { false }
 
   maxParallelForks = 1
 

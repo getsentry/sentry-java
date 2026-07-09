@@ -25,6 +25,7 @@ nopen = "1.0.1"
 okhttp = "4.9.2"
 openfeature = "1.18.2"
 otel = "1.63.0"
+otelAlpha = "1.63.0-alpha"
 otelInstrumentation = "2.29.0"
 otelInstrumentationAlpha = "2.29.0-alpha"
 # check https://github.com/open-telemetry/opentelemetry-java-instrumentation/blob/main/dependencyManagement/build.gradle.kts#L49 for release version above to find a compatible version
@@ -32,10 +33,10 @@ otelSemanticConventions = "1.42.0"
 otelSemanticConventionsAlpha = "1.42.0-alpha"
 retrofit = "2.9.0"
 room2 = "2.8.4"
-room3 = "3.0.0-alpha06"
-sagp = "6.10.0"
+room3 = "3.0.0-rc01"
+sagp = "6.13.0"
 sqlite = "2.6.2"
-sqliteAlpha = "2.7.0-alpha06" # Required by Room3 3.0.0-alpha*
+sqliteRc = "2.7.0-rc01" # Required by Room3 3.0.0-rc*
 slf4j = "1.7.30"
 spotless = "8.6.0"
 springboot2 = "2.7.18"
@@ -104,8 +105,8 @@ androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "
 androidx-room3-compiler = { module = "androidx.room3:room3-compiler", version.ref = "room3" }
 androidx-room3-runtime = { module = "androidx.room3:room3-runtime", version.ref = "room3" }
 androidx-sqlite = { module = "androidx.sqlite:sqlite", version.ref = "sqlite" }
-androidx-sqlite-bundled = { module = "androidx.sqlite:sqlite-bundled", version.ref = "sqliteAlpha" }
-androidx-sqlite-framework = { module = "androidx.sqlite:sqlite-framework", version.ref = "sqliteAlpha" }
+androidx-sqlite-bundled = { module = "androidx.sqlite:sqlite-bundled", version.ref = "sqliteRc" }
+androidx-sqlite-framework = { module = "androidx.sqlite:sqlite-framework", version.ref = "sqliteRc" }
 androidx-recyclerview = { module = "androidx.recyclerview:recyclerview", version = "1.2.1" }
 androidx-browser = { module = "androidx.browser:browser", version = "1.8.0" }
 async-profiler = { module = "tools.profiler:async-profiler", version.ref = "asyncProfiler" }
@@ -149,7 +150,10 @@ otel-exporter-otlp = { module = "io.opentelemetry:opentelemetry-exporter-otlp", 
 otel-exporter-logging = { module = "io.opentelemetry:opentelemetry-exporter-logging", version.ref = "otel" }
 otel-extension-autoconfigure = { module = "io.opentelemetry:opentelemetry-sdk-extension-autoconfigure", version.ref = "otel" }
 otel-extension-autoconfigure-spi = { module = "io.opentelemetry:opentelemetry-sdk-extension-autoconfigure-spi", version.ref = "otel" }
+otel-bom = { module = "io.opentelemetry:opentelemetry-bom", version.ref = "otel" }
+otel-alpha-bom = { module = "io.opentelemetry:opentelemetry-bom-alpha", version.ref = "otelAlpha" }
 otel-instrumentation-bom = { module = "io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom", version.ref = "otelInstrumentation" }
+otel-instrumentation-alpha-bom = { module = "io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom-alpha", version.ref = "otelInstrumentationAlpha" }
 otel-javaagent = { module = "io.opentelemetry.javaagent:opentelemetry-javaagent", version.ref = "otelInstrumentation" }
 otel-javaagent-tooling = { module = "io.opentelemetry.javaagent:opentelemetry-javaagent-tooling", version.ref = "otelInstrumentationAlpha" }
 otel-javaagent-extension-api = { module = "io.opentelemetry.javaagent:opentelemetry-javaagent-extension-api", version.ref = "otelInstrumentationAlpha" }
@@ -162,7 +166,7 @@ quartz = { module = "org.quartz-scheduler:quartz", version = "2.3.0" }
 reactor-core = { module = "io.projectreactor:reactor-core", version = "3.5.3" }
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 retrofit-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "retrofit" }
-sentry-native-ndk = { module = "io.sentry:sentry-native-ndk", version = "0.15.1" }
+sentry-native-ndk = { module = "io.sentry:sentry-native-ndk", version = "0.15.3" }
 servlet-api = { module = "javax.servlet:javax.servlet-api", version = "3.1.0" }
 servlet-jakarta-api = { module = "jakarta.servlet:jakarta.servlet-api", version = "6.1.0" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
@@ -230,6 +234,7 @@ tomcat-catalina-jakarta = { module = "org.apache.tomcat:tomcat-catalina", versio
 tomcat-embed-jasper-jakarta = { module = "org.apache.tomcat.embed:tomcat-embed-jasper", version = "11.0.22" }
 
 # test libraries
+androidx-benchmark-macro-junit4 = { module = "androidx.benchmark:benchmark-macro-junit4", version = "1.4.1" }
 androidx-compose-ui-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4", version = "1.9.5" }
 androidx-test-core = { module = "androidx.test:core", version.ref = "androidxTestCore" }
 androidx-test-core-ktx = { module = "androidx.test:core-ktx", version.ref = "androidxTestCore" }

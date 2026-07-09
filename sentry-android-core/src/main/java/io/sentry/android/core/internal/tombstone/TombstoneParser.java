@@ -114,6 +114,15 @@ public class TombstoneParser implements Closeable {
         // the backend currently requires a stack-trace in exception
         exc.setStacktrace(stacktrace);
       }
+
+      // thread id always equals the process id,
+      // so we use it to reliably detect the main thread
+      if (tombstone.pid == threadEntryValue.id) {
+        // the OS may provide a (truncated) process name; normalize it
+        // back to "main" so downstream consumers see a consistent name
+        thread.setName("main");
+        thread.setMain(true);
+      }
       threads.add(thread);
     }
 
