@@ -142,8 +142,8 @@ public final class SentryIso8601Utils {
       return formatTimestampWithCalendar(millis);
     }
 
-    final long epochDay = Math.floorDiv(millis, MILLIS_PER_DAY);
-    int millisOfDay = (int) Math.floorMod(millis, MILLIS_PER_DAY);
+    final long epochDay = SentryMath.floorDiv(millis, MILLIS_PER_DAY);
+    int millisOfDay = (int) SentryMath.floorMod(millis, MILLIS_PER_DAY);
 
     final int[] yearMonthDay = epochDayToYearMonthDay(epochDay);
     final int hour = millisOfDay / (int) MILLIS_PER_HOUR;
@@ -281,7 +281,7 @@ public final class SentryIso8601Utils {
 
   private static long daysFromYearMonthDay(int year, final int month, final int day) {
     year -= month <= 2 ? 1 : 0;
-    final long era = Math.floorDiv(year, 400);
+    final long era = SentryMath.floorDiv(year, 400L);
     final int yearOfEra = (int) (year - era * 400);
     final int dayOfYear = (153 * (month + (month > 2 ? -3 : 9)) + 2) / 5 + day - 1;
     final int dayOfEra = yearOfEra * 365 + yearOfEra / 4 - yearOfEra / 100 + dayOfYear;
@@ -290,7 +290,7 @@ public final class SentryIso8601Utils {
 
   private static int[] epochDayToYearMonthDay(long epochDay) {
     epochDay += DAYS_0000_TO_1970;
-    final long era = Math.floorDiv(epochDay, 146097);
+    final long era = SentryMath.floorDiv(epochDay, 146097L);
     final int dayOfEra = (int) (epochDay - era * 146097);
     final int yearOfEra = (dayOfEra - dayOfEra / 1460 + dayOfEra / 36524 - dayOfEra / 146096) / 365;
     final int year = (int) (yearOfEra + era * 400);
