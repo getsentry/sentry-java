@@ -1,28 +1,36 @@
 package io.sentry.gradle
 
-import javax.inject.Inject
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.artifacts.MinimalExternalModuleDependency
 import org.gradle.api.artifacts.VersionCatalogsExtension
-import org.gradle.api.model.ObjectFactory
-import org.gradle.api.provider.ListProperty
 import ru.vyarus.gradle.plugin.animalsniffer.AnimalSniffer
 
-abstract class SentryAnimalSnifferExtension @Inject constructor(objects: ObjectFactory) {
-  val ignoredClasses: ListProperty<String> = objects.listProperty(String::class.java)
-  val mainExcludes: ListProperty<String> = objects.listProperty(String::class.java)
+open class SentryAnimalSnifferExtension(private val project: Project) {
+  fun ignoreClasses(vararg classes: String) {
+    project.tasks.named("animalsnifferMain", AnimalSniffer::class.java).configure {
+      val ignoredClasses = getIgnoreClasses().toMutableList()
+      ignoredClasses.addAll(classes)
+      setIgnoreClasses(ignoredClasses)
+    }
+  }
+
+  fun mainExcludes(vararg excludes: String) {
+    project.tasks.named("animalsnifferMain", AnimalSniffer::class.java).configure {
+      exclude(*excludes)
+    }
+  }
 }
 
 class SentryAnimalSnifferPlugin : Plugin<Project> {
   override fun apply(project: Project) {
     project.pluginManager.apply("ru.vyarus.animalsniffer")
 
-    val extension =
-      project.extensions.create(
-        "sentryAnimalSniffer",
-        SentryAnimalSnifferExtension::class.java,
-      )
+    project.extensions.create(
+      "sentryAnimalSniffer",
+      SentryAnimalSnifferExtension::class.java,
+      project,
+    )
 
     project.addSignatureDependency("java18-signature")
 
@@ -30,15 +38,6 @@ class SentryAnimalSnifferPlugin : Plugin<Project> {
       dependsOn("animalsnifferMain")
     }
 
-    project.afterEvaluate {
-      project.tasks.named("animalsnifferMain", AnimalSniffer::class.java).configure {
-        exclude(extension.mainExcludes.get())
-        val ignoredClasses = extension.ignoredClasses.get()
-        if (ignoredClasses.isNotEmpty()) {
-          setIgnoreClasses(ignoredClasses)
-        }
-      }
-    }
   }
 }
 

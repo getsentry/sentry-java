@@ -36,9 +36,9 @@ dependencies {
 
 sentryAnimalSniffer {
   // We manually check on Android if it's available (API 26+).
-  ignoredClasses.add("java.time.Instant")
+  ignoreClasses("java.time.Instant")
   // Uses java.util.function.Supplier, but must be manually invoked.
-  mainExcludes.add("**/io/sentry/SentryWrapper.class")
+  mainExcludes("**/io/sentry/SentryWrapper.class")
 }
 
 tasks {
