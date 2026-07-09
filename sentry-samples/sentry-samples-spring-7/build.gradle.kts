@@ -26,7 +26,12 @@ java.sourceCompatibility = JavaVersion.VERSION_17
 
 java.targetCompatibility = JavaVersion.VERSION_17
 
-dependencyManagement { imports { mavenBom(SpringBootPlugin.BOM_COORDINATES) } }
+dependencyManagement {
+  imports {
+    mavenBom(SpringBootPlugin.BOM_COORDINATES)
+    mavenBom(libs.kotlin.bom.get().toString())
+  }
+}
 
 dependencies {
   implementation(Config.Libs.springWeb)
@@ -49,7 +54,7 @@ dependencies {
 
   testImplementation(projects.sentrySystemTestSupport)
   testImplementation(libs.kotlin.test.junit)
-  testImplementation(libs.springboot.starter.test) {
+  testImplementation(libs.springboot4.starter.test) {
     exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
   }
 }
