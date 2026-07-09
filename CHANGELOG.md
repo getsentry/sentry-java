@@ -30,7 +30,7 @@
 
 ### Fixes
 
-- Fix `NoSuchMethodError` when using `Math.floorDiv`/`Math.floorMod` on Android < 24 ([#5743](https://github.com/getsentry/sentry-java/pull/5743))
+- Fix `NoSuchMethodError` from using `Math.floorDiv`/`Math.floorMod` overloads that are unavailable on Java 8 ([#5743](https://github.com/getsentry/sentry-java/pull/5743))
 - Fix main thread identification parsing for ApplicationExitInfo ANRs ([#5733](https://github.com/getsentry/sentry-java/pull/5733))
 - Do not send threads without stacktraces for ApplicationExitInfo ANRs ([#5733](https://github.com/getsentry/sentry-java/pull/5733))
 - Record byte-level client reports when event processors discard logs or trace metrics ([#5718](https://github.com/getsentry/sentry-java/pull/5718))
