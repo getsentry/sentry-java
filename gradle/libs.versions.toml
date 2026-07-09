@@ -229,6 +229,7 @@ timber = { module = "com.jakewharton.timber:timber", version = "4.7.1" }
 
 # Animalsniffer signature
 gummy-bears-api21 = { module = "com.toasttab.android:gummy-bears-api-21", version.ref = "gummyBears" }
+java18-signature = { module = "org.codehaus.mojo.signature:java18", version.ref = "java18Signature" }
 
 # tomcat libraries
 tomcat-catalina = { module = "org.apache.tomcat:tomcat-catalina", version = "9.0.108" }

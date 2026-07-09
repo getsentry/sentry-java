@@ -3,6 +3,7 @@ package io.sentry.gradle
 import javax.inject.Inject
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.artifacts.MinimalExternalModuleDependency
 import org.gradle.api.artifacts.VersionCatalogsExtension
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.ListProperty
@@ -17,18 +18,13 @@ class SentryAnimalSnifferPlugin : Plugin<Project> {
   override fun apply(project: Project) {
     project.pluginManager.apply("ru.vyarus.animalsniffer")
 
-    val libs = project.extensions.getByType(VersionCatalogsExtension::class.java).named("libs")
     val extension =
       project.extensions.create(
         "sentryAnimalSniffer",
         SentryAnimalSnifferExtension::class.java,
       )
 
-    val java18Version = libs.findVersion("java18Signature").get().requiredVersion
-    project.dependencies.add(
-      "signature",
-      "org.codehaus.mojo.signature:java18:$java18Version@signature",
-    )
+    project.addSignatureDependency("java18-signature")
 
     project.tasks.matching { it.name == "check" }.configureEach {
       dependsOn("animalsnifferMain")
@@ -50,12 +46,16 @@ class SentryAnimalSnifferAndroidPlugin : Plugin<Project> {
   override fun apply(project: Project) {
     project.pluginManager.apply(SentryAnimalSnifferPlugin::class.java)
 
-    val libs = project.extensions.getByType(VersionCatalogsExtension::class.java).named("libs")
-    val gummyBears = libs.findLibrary("gummy-bears-api21").get().get()
-    val gummyBearsVersion = libs.findVersion("gummyBears").get().requiredVersion
-    project.dependencies.add(
-      "signature",
-      "${gummyBears.module.group}:${gummyBears.module.name}:$gummyBearsVersion@signature",
-    )
+    project.addSignatureDependency("gummy-bears-api21")
   }
+}
+
+private fun Project.addSignatureDependency(libraryName: String) {
+  val libs = extensions.getByType(VersionCatalogsExtension::class.java).named("libs")
+  dependencies.add("signature", signatureNotation(libs.findLibrary(libraryName).get().get()))
+}
+
+private fun signatureNotation(dependency: MinimalExternalModuleDependency): String {
+  val module = "${dependency.module.group}:${dependency.module.name}"
+  return "$module:${dependency.versionConstraint.requiredVersion}@signature"
 }
