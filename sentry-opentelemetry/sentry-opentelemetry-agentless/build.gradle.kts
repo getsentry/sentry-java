@@ -2,7 +2,7 @@ plugins {
   `java-library`
   id("io.sentry.javadoc")
   alias(libs.plugins.buildconfig)
-  alias(libs.plugins.animalsniffer)
+  id("io.sentry.animalsniffer")
 }
 
 dependencies {
@@ -13,10 +13,7 @@ dependencies {
   api(libs.otel.semconv)
   api(libs.otel.semconv.incubating)
   api(libs.otel.extension.autoconfigure)
-  signature("org.codehaus.mojo.signature:java18:${libs.versions.java18Signature.get()}@signature")
 }
-
-tasks { check { dependsOn(animalsnifferMain) } }
 
 buildConfig {
   useJavaOutput()

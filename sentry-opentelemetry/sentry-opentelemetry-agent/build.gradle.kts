@@ -2,7 +2,7 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 plugins {
   `java-library`
-  alias(libs.plugins.animalsniffer)
+  id("io.sentry.animalsniffer")
   id("io.sentry.javadoc")
   alias(libs.plugins.shadow)
 }
@@ -76,10 +76,7 @@ dependencies {
   bootstrapLibs(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
   javaagentLibs(projects.sentryOpentelemetry.sentryOpentelemetryAgentcustomization)
   upstreamAgent(libs.otel.javaagent)
-  signature("org.codehaus.mojo.signature:java18:${libs.versions.java18Signature.get()}@signature")
 }
-
-tasks { check { dependsOn(animalsnifferMain) } }
 
 fun isolateClasses(jars: Iterable<File>): CopySpec = copySpec {
   jars.forEach {

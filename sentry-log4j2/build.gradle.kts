@@ -8,7 +8,7 @@ plugins {
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.buildconfig)
-  alias(libs.plugins.animalsniffer)
+  id("io.sentry.animalsniffer")
 }
 
 tasks.withType<KotlinCompile>().configureEach {
@@ -27,8 +27,6 @@ dependencies {
   errorprone(libs.nopen.checker)
   errorprone(libs.nullaway)
 
-  signature("org.codehaus.mojo.signature:java18:${libs.versions.java18Signature.get()}@signature")
-
   // tests
   testImplementation(projects.sentryTestSupport)
   testImplementation(kotlin(Config.kotlinStdLib))
@@ -37,8 +35,6 @@ dependencies {
   testImplementation(libs.log4j.core)
   testImplementation(libs.mockito.kotlin)
 }
-
-tasks { check { dependsOn(animalsnifferMain) } }
 
 buildConfig {
   useJavaOutput()
