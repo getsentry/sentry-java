@@ -18,6 +18,7 @@ import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryId;
 import io.sentry.util.SampleRateUtils;
+import java.util.function.Supplier;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -262,6 +263,15 @@ public final class SentryAndroidOptions extends SentryOptions {
   private final @NotNull SentryScreenshotOptions screenshot = new SentryScreenshotOptions();
 
   private @Nullable Double anrProfilingSampleRate;
+
+  /**
+   * Optional provider for the stack trace used during ANR profiling. When set, the integration
+   * calls this supplier instead of {@link Thread#getStackTrace()} on the main thread. This lets
+   * hybrid SDKs (e.g. Flutter, React Native) supply a combined or native-enriched stack trace.
+   *
+   * <p>Defaults to {@code null}, which falls back to {@code mainThread.getStackTrace()}.
+   */
+  private @Nullable Supplier<StackTraceElement[]> anrStackTraceProvider;
 
   private boolean enableAnrFingerprinting = true;
 
@@ -779,6 +789,28 @@ public final class SentryAndroidOptions extends SentryOptions {
 
   public boolean isAnrProfilingEnabled() {
     return anrProfilingSampleRate != null && anrProfilingSampleRate > 0;
+  }
+
+  /**
+   * Returns the custom stack trace provider used during ANR profiling, or {@code null} if the
+   * default {@link Thread#getStackTrace()} behaviour should be used.
+   */
+  public @Nullable Supplier<StackTraceElement[]> getAnrStackTraceProvider() {
+    return anrStackTraceProvider;
+  }
+
+  /**
+   * Sets a custom stack trace provider used during ANR profiling. When non-null the integration
+   * calls this supplier instead of {@link Thread#getStackTrace()} on the main thread. Hybrid SDKs
+   * can use this to expose Dart / JS / native frames alongside JVM frames.
+   *
+   * <p>Pass {@code null} (the default) to restore the built-in behaviour.
+   *
+   * @param anrStackTraceProvider supplier that returns the current stack trace, or {@code null}
+   */
+  public void setAnrStackTraceProvider(
+      final @Nullable Supplier<StackTraceElement[]> anrStackTraceProvider) {
+    this.anrStackTraceProvider = anrStackTraceProvider;
   }
 
   /**

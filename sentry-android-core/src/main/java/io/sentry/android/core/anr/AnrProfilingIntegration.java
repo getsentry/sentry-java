@@ -22,6 +22,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -235,8 +236,13 @@ public class AnrProfilingIntegration
             || mainThreadState == MainThreadState.ANR_DETECTED)) {
       if (numCollectedStacks.get() < MAX_NUM_STACKS) {
         final long start = SystemClock.uptimeMillis();
+        final @Nullable SentryAndroidOptions opts = options;
+        final @Nullable Supplier<StackTraceElement[]> provider =
+            opts != null ? opts.getAnrStackTraceProvider() : null;
+        final @NotNull StackTraceElement[] stackTrace =
+            provider != null ? provider.get() : mainThread.getStackTrace();
         final @NotNull AnrStackTrace trace =
-            new AnrStackTrace(System.currentTimeMillis(), mainThread.getStackTrace());
+            new AnrStackTrace(System.currentTimeMillis(), stackTrace);
         final long duration = SystemClock.uptimeMillis() - start;
         if (logger.isEnabled(SentryLevel.DEBUG)) {
           logger.log(

@@ -9,6 +9,7 @@ import io.sentry.SentryOptions
 import io.sentry.android.core.AppState
 import io.sentry.android.core.SentryAndroidOptions
 import io.sentry.test.getProperty
+import java.util.function.Supplier
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -309,5 +310,77 @@ class AnrProfilingIntegrationTest {
     assertTrue(SentryIntegrationPackageStorage.getInstance().integrations.contains("AnrProfiling"))
 
     integration.close()
+  }
+
+  @Test
+  fun `custom anrStackTraceProvider is used when set`() {
+    val mainThread = Thread.currentThread()
+    SystemClock.setCurrentTimeMillis(1_000)
+
+    val customFrames =
+      arrayOf(
+        StackTraceElement("com.example.Dart", "dartMain", "main.dart", 42),
+        StackTraceElement("com.example.Flutter", "runApp", "app.dart", 10),
+      )
+    val providerCallCount = java.util.concurrent.atomic.AtomicInteger(0)
+    val customProvider =
+      Supplier<Array<StackTraceElement>> {
+        providerCallCount.incrementAndGet()
+        customFrames
+      }
+
+    val androidOptions =
+      SentryAndroidOptions().apply {
+        cacheDirPath = tmpDir.root.absolutePath
+        setLogger(mockLogger)
+        anrProfilingSampleRate = 1.0
+        anrStackTraceProvider = customProvider
+      }
+
+    val integration = AnrProfilingIntegration()
+    integration.register(mockScopes, androidOptions)
+
+    // Advance time into the suspicious window and trigger a stack capture
+    SystemClock.setCurrentTimeMillis(3_000)
+    integration.checkMainThread(mainThread)
+
+    // One stack should have been collected using the custom provider
+    assertEquals(1, integration.numCollectedStacks.get())
+    assertTrue(providerCallCount.get() > 0, "Custom provider should have been called")
+
+    val stacks = integration.profileManager.load().stacks
+    assertEquals(1, stacks.size)
+    val capturedFrames = stacks[0].stack
+    assertEquals("com.example.Dart", capturedFrames[0].className)
+    assertEquals("dartMain", capturedFrames[0].methodName)
+  }
+
+  @Test
+  fun `null anrStackTraceProvider falls back to mainThread getStackTrace`() {
+    val mainThread = Thread.currentThread()
+    SystemClock.setCurrentTimeMillis(1_000)
+
+    val androidOptions =
+      SentryAndroidOptions().apply {
+        cacheDirPath = tmpDir.root.absolutePath
+        setLogger(mockLogger)
+        anrProfilingSampleRate = 1.0
+        // anrStackTraceProvider left as null (default)
+      }
+
+    assertEquals(null, androidOptions.anrStackTraceProvider)
+
+    val integration = AnrProfilingIntegration()
+    integration.register(mockScopes, androidOptions)
+
+    SystemClock.setCurrentTimeMillis(3_000)
+    integration.checkMainThread(mainThread)
+
+    // Should still have collected one stack via the default path
+    assertEquals(1, integration.numCollectedStacks.get())
+    val stacks = integration.profileManager.load().stacks
+    assertEquals(1, stacks.size)
+    // Frames should be real JVM frames (non-empty)
+    assertTrue(stacks[0].stack.isNotEmpty())
   }
 }
