@@ -2,18 +2,6 @@
 
 ## Unreleased
 
-### Fixes
-
-- Fix main thread identification for tombstone (native crash) events ([#5742](https://github.com/getsentry/sentry-java/pull/5742))
-
-### Dependencies
-
-- Bump Native SDK from v0.15.2 to v0.15.3 ([#5728](https://github.com/getsentry/sentry-java/pull/5728))
-  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0153)
-  - [diff](https://github.com/getsentry/sentry-native/compare/0.15.2...0.15.3)
-
-## 8.48.0
-
 ### Features
 
 - Add `io.sentry:sentry-opentelemetry-bom` to align Sentry OpenTelemetry modules with tested OpenTelemetry dependencies ([#5629](https://github.com/getsentry/sentry-java/pull/5629))
@@ -39,6 +27,21 @@
       <scope>import</scope>
     </dependency>
     ```
+
+### Fixes
+
+- Fix main thread identification for tombstone (native crash) events ([#5742](https://github.com/getsentry/sentry-java/pull/5742))
+
+### Dependencies
+
+- Bump Native SDK from v0.15.2 to v0.15.3 ([#5728](https://github.com/getsentry/sentry-java/pull/5728))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0153)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.15.2...0.15.3)
+
+## 8.48.0
+
+### Features
+
 - Add `Sentry.extendAppStart()`, `Sentry.finishExtendedAppStart()`, and `Sentry.getExtendedAppStartSpan()` to extend the app start measurement past the first frame for extra launch-time work on Android ([#5604](https://github.com/getsentry/sentry-java/pull/5604))
   - Requires standalone app start tracing (`options.isEnableStandaloneAppStartTracing`). Call `extendAppStart()` in `Application.onCreate` after SDK init and `finishExtendedAppStart()` when done:
 
