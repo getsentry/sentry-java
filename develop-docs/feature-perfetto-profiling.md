@@ -149,6 +149,23 @@ flag; without it the chunk is dropped. In processing mode Relay:
    - `content_type` (e.g. `application/x-perfetto-trace`),
    - `stored_id` — the object store key of the uploaded raw blob.
 
+```json
+{
+  "organization_id": 1,
+  "project_id": 42,
+  "received": 1720000000,
+  "retention_days": 30,
+  "payload": "<expanded Sample v2 profile JSON>",
+  "attachments": [
+    {
+      "name": "profile.perfetto",
+      "content_type": "application/x-perfetto-trace",
+      "stored_id": "<object store key of the raw .pftrace blob>"
+    }
+  ]
+}
+```
+
 The monolith later uses `stored_id` to fetch the raw trace back.
 
 ## Monolith (getsentry/sentry)
