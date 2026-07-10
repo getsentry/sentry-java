@@ -250,6 +250,18 @@ public final class SentryClient implements ISentryClient {
       }
       if (shouldCaptureReplay) {
         options.getReplayController().captureReplay(event.isCrashed());
+        if (scope != null) {
+          final @Nullable SentryId replayId = scope.getReplayId();
+          if (replayId != null && !replayId.equals(SentryId.EMPTY_ID)) {
+            final @Nullable ITransaction transaction = scope.getTransaction();
+            if (transaction != null) {
+              final @Nullable Baggage baggage = transaction.getSpanContext().getBaggage();
+              if (baggage != null) {
+                baggage.forceSetReplayId(replayId);
+              }
+            }
+          }
+        }
       }
     }
 

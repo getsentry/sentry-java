@@ -452,6 +452,13 @@ public final class Baggage {
   }
 
   @ApiStatus.Internal
+  public void forceSetReplayId(final @NotNull SentryId replayId) {
+    if (!SentryId.EMPTY_ID.equals(replayId)) {
+      keyValues.put(DSCKeys.REPLAY_ID, replayId.toString());
+    }
+  }
+
+  @ApiStatus.Internal
   public @Nullable String getOrgId() {
     return get(DSCKeys.ORG_ID);
   }
