@@ -273,7 +273,7 @@ public class SentryAppender extends AbstractAppender {
     event.setLogger(loggingEvent.getLoggerName());
     event.setLevel(formatLevel(loggingEvent.getLevel()));
 
-    final Throwable thrown = loggingEvent.getThrown();
+    final @Nullable Throwable thrown = loggingEvent.getThrown();
     if (thrown != null) {
       final Mechanism mechanism = new Mechanism();
       mechanism.setType(MECHANISM_TYPE);
