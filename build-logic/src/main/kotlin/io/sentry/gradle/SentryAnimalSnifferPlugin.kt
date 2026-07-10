@@ -4,21 +4,19 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.artifacts.MinimalExternalModuleDependency
 import org.gradle.api.artifacts.VersionCatalogsExtension
+import org.gradle.api.provider.ListProperty
 import ru.vyarus.gradle.plugin.animalsniffer.AnimalSniffer
 
-open class SentryAnimalSnifferExtension(private val project: Project) {
+abstract class SentryAnimalSnifferExtension {
+  abstract val ignoredClasses: ListProperty<String>
+  abstract val excludedClasses: ListProperty<String>
+
   fun ignoreClasses(vararg classes: String) {
-    project.tasks.named("animalsnifferMain", AnimalSniffer::class.java).configure {
-      val ignoredClasses = getIgnoreClasses().toMutableList()
-      ignoredClasses.addAll(classes)
-      setIgnoreClasses(ignoredClasses)
-    }
+    ignoredClasses.addAll(*classes)
   }
 
   fun mainExcludes(vararg excludes: String) {
-    project.tasks.named("animalsnifferMain", AnimalSniffer::class.java).configure {
-      exclude(*excludes)
-    }
+    excludedClasses.addAll(*excludes)
   }
 }
 
@@ -26,18 +24,17 @@ class SentryAnimalSnifferPlugin : Plugin<Project> {
   override fun apply(project: Project) {
     project.pluginManager.apply("ru.vyarus.animalsniffer")
 
-    project.extensions.create(
-      "sentryAnimalSniffer",
-      SentryAnimalSnifferExtension::class.java,
-      project,
-    )
+    val extension =
+      project.extensions.create("sentryAnimalSniffer", SentryAnimalSnifferExtension::class.java)
 
     project.addSignatureDependency("java18-signature")
 
-    project.tasks.matching { it.name == "check" }.configureEach {
-      dependsOn("animalsnifferMain")
+    project.tasks.named("animalsnifferMain", AnimalSniffer::class.java).configure {
+      ignoreClasses = ignoreClasses + extension.ignoredClasses.get()
+      exclude(extension.excludedClasses.get())
     }
 
+    project.tasks.named("check").configure { dependsOn("animalsnifferMain") }
   }
 }
 
