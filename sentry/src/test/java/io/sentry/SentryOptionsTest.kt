@@ -646,6 +646,26 @@ class SentryOptionsTest {
   }
 
   @Test
+  fun `when options are initialized, appStartExtender defaults to noop`() {
+    assertEquals(NoOpAppStartExtender.getInstance(), SentryOptions().appStartExtender)
+  }
+
+  @Test
+  fun `when appStartExtender is set, it's returned as well`() {
+    val options = SentryOptions()
+    val customExtender =
+      object : IAppStartExtender {
+        override fun extendAppStart() = Unit
+
+        override fun finishExtendedAppStart() = Unit
+
+        override fun getExtendedAppStartSpan(): ISpan = NoOpSpan.getInstance()
+      }
+    options.setAppStartExtender(customExtender)
+    assertEquals(customExtender, options.appStartExtender)
+  }
+
+  @Test
   fun `when options are initialized, connectionStatusProvider is not null and default to noop`() {
     assertNotNull(SentryOptions().connectionStatusProvider)
     assertTrue(SentryOptions().connectionStatusProvider is NoOpConnectionStatusProvider)

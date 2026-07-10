@@ -34,6 +34,34 @@ limitations under the License.
 
 ---
 
+## Google Guava — LongMath (Apache 2.0)
+
+**Source:** https://github.com/google/guava/blob/v33.0.0/guava/src/com/google/common/math/LongMath.java<br>
+**License:** Apache License 2.0<br>
+**Copyright:** Copyright (C) 2011 The Guava Authors
+
+### Scope
+
+The Sentry Java SDK includes adapted floor division logic from Guava's `LongMath` class to support older Android API levels. The code resides in `io.sentry.vendor.SentryMath`.
+
+```
+Copyright (C) 2011 The Guava Authors
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+```
+
+---
+
 ## FasterXML Jackson — ISO8601Utils (Apache 2.0)
 
 **Source:** https://github.com/FasterXML/jackson-databind<br>
@@ -58,6 +86,22 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
+```
+
+---
+
+## Howard Hinnant — Date Algorithms (Public Domain)
+
+**Source:** https://howardhinnant.github.io/date_algorithms.html<br>
+**License:** Public Domain<br>
+**Copyright:** None; public domain dedication by Howard Hinnant
+
+### Scope
+
+The Sentry Java SDK includes adapted civil date conversion algorithms from Howard Hinnant's date algorithms for UTC ISO 8601 timestamp parsing and formatting. The code resides in `io.sentry.vendor.SentryIso8601Utils`.
+
+```
+Consider these donated to the public domain.
 ```
 
 ---
@@ -154,7 +198,7 @@ limitations under the License.
 
 ### Scope
 
-The Sentry Java SDK includes an adapted version of Square's Curtains library for null-safe `Window.Callback` handling. The code resides in `io.sentry.android.replay.util.FixedWindowCallback`.
+The Sentry Java SDK includes adapted versions of Square's Curtains library for null-safe `Window.Callback` handling and for tracking attached window roots. The code resides in `io.sentry.android.replay.util.FixedWindowCallback` and `io.sentry.android.replay.Windows`.
 
 ```
 Copyright 2021 Square Inc.
@@ -512,4 +556,41 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+```
+
+---
+
+## fzyzcjy — Flutter Screen Recorder (MIT)
+
+**Source:** https://github.com/fzyzcjy/flutter_screen_recorder (Commit: dce41cec25c66baf42c6bac4198e95874ce3eb9d)<br>
+**License:** MIT License<br>
+**Copyright:** Copyright (c) 2021 fzyzcjy
+
+### Scope
+
+The Sentry Android Replay SDK includes adapted versions of the video encoding and muxing classes from the flutter_screen_recorder library, used to encode and mux replay video frames into an MP4 file. The code resides in the `io.sentry.android.replay.video` package and includes `SimpleFrameMuxer`, `SimpleMp4FrameMuxer`, and `SimpleVideoEncoder`.
+
+```
+Copyright (c) 2021 fzyzcjy
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+associated documentation files (the "Software"), to deal in the Software without restriction,
+including without limitation the rights to use, copy, modify, merge, publish, distribute,
+sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or
+substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
+NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+In addition to the standard MIT license, this library requires the following: The recorder itself
+only saves data on user's phone locally, thus it does not have any privacy problem. However, if
+you are going to get the records out of the local storage (e.g. upload the records to your
+server), please explicitly ask the user for permission, and promise to only use the records to
+debug your app. This is a part of the license of this library.
 ```

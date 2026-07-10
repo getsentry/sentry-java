@@ -10,6 +10,7 @@ import io.sentry.EventProcessor;
 import io.sentry.Hint;
 import io.sentry.ISentryLifecycleToken;
 import io.sentry.MeasurementUnit;
+import io.sentry.SentryDate;
 import io.sentry.SentryEvent;
 import io.sentry.SpanContext;
 import io.sentry.SpanDataConvention;
@@ -29,6 +30,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -101,20 +103,49 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
               isHeadlessStandaloneAppStartTxn
                   ? appStartMetrics.getAppStartTimeSpanForHeadless()
                   : appStartMetrics.getAppStartTimeSpanWithFallback(options);
-          final long appStartUpDurationMs = appStartTimeSpan.getDurationMs();
+          final long naturalDurationMs = appStartTimeSpan.getDurationMs();
 
-          // if appStartUpDurationMs is 0, metrics are not ready to be sent
-          if (appStartUpDurationMs != 0) {
-            final MeasurementValue value =
-                new MeasurementValue(
-                    (float) appStartUpDurationMs, MeasurementUnit.Duration.MILLISECOND.apiName());
+          final long appStartUpDurationMs;
+          final boolean shouldAttachAppStartSpans;
+          final boolean reportAppStartMeasurement;
+          final @NotNull AppStartExtension extension = appStartMetrics.getAppStartExtension();
+          if (extension.isExtended()) {
+            final @Nullable SentryDate extendedEnd = extension.getExtendedEndTime();
+            if (extendedEnd != null && appStartTimeSpan.hasStarted()) {
+              // Measure to the extended end, but never shorter than the natural first-frame
+              // duration.
+              final long extendedDurationMs =
+                  TimeUnit.NANOSECONDS.toMillis(extendedEnd.nanoTimestamp())
+                      - appStartTimeSpan.getStartTimestampMs();
+              appStartUpDurationMs = Math.max(naturalDurationMs, extendedDurationMs);
+              shouldAttachAppStartSpans = appStartUpDurationMs != 0;
+              reportAppStartMeasurement = shouldAttachAppStartSpans;
+            } else {
+              // Deadline (null) or no valid start: attach the spans but suppress the measurement so
+              // it isn't inflated.
+              appStartUpDurationMs = 0;
+              shouldAttachAppStartSpans = appStartTimeSpan.hasStarted();
+              reportAppStartMeasurement = false;
+            }
+          } else {
+            appStartUpDurationMs = naturalDurationMs;
+            shouldAttachAppStartSpans = appStartUpDurationMs != 0;
+            reportAppStartMeasurement = shouldAttachAppStartSpans;
+          }
 
-            final String appStartKey =
-                appStartMetrics.getAppStartType() == AppStartMetrics.AppStartType.COLD
-                    ? MeasurementValue.KEY_APP_START_COLD
-                    : MeasurementValue.KEY_APP_START_WARM;
+          if (shouldAttachAppStartSpans) {
+            if (reportAppStartMeasurement) {
+              final MeasurementValue value =
+                  new MeasurementValue(
+                      (float) appStartUpDurationMs, MeasurementUnit.Duration.MILLISECOND.apiName());
 
-            transaction.getMeasurements().put(appStartKey, value);
+              final String appStartKey =
+                  appStartMetrics.getAppStartType() == AppStartMetrics.AppStartType.COLD
+                      ? MeasurementValue.KEY_APP_START_COLD
+                      : MeasurementValue.KEY_APP_START_WARM;
+
+              transaction.getMeasurements().put(appStartKey, value);
+            }
 
             attachAppStartSpans(appStartMetrics, transaction);
             appStartMetrics.onAppStartSpansSent();

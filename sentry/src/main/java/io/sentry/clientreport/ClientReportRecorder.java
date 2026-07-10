@@ -124,6 +124,9 @@ public final class ClientReportRecorder implements IClientReportRecorder {
             final @NotNull List<SentryMetricsEvent> items = metrics.getItems();
             final long count = items.size();
             recordLostEventInternal(reason.getReason(), itemCategory.getCategory(), count);
+            final long metricBytes = envelopeItem.getData().length;
+            recordLostEventInternal(
+                reason.getReason(), DataCategory.TraceMetricByte.getCategory(), metricBytes);
             executeOnDiscard(reason, itemCategory, count);
           } else {
             options

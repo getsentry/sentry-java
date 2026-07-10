@@ -37,7 +37,7 @@ public final class CheckInUtils {
     try (final @NotNull ISentryLifecycleToken ignored =
             Sentry.forkedScopes("CheckInUtils").makeCurrent()) {
       final @NotNull IScopes scopes = Sentry.getCurrentScopes();
-      final long startTime = System.currentTimeMillis();
+      final long startTime = System.nanoTime();
       boolean didError = false;
 
       TracingUtils.startNewTrace(scopes);
@@ -61,7 +61,7 @@ public final class CheckInUtils {
         if (environment != null) {
           checkIn.setEnvironment(environment);
         }
-        checkIn.setDuration(DateUtils.millisToSeconds(System.currentTimeMillis() - startTime));
+        checkIn.setDuration(DateUtils.nanosToSeconds(System.nanoTime() - startTime));
         scopes.captureCheckIn(checkIn);
       }
     }

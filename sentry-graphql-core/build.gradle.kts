@@ -40,8 +40,6 @@ dependencies {
   testImplementation("com.netflix.graphql.dgs:graphql-error-types:4.9.2")
 }
 
-configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
-
 tasks.withType<JavaCompile>().configureEach {
   options.errorprone {
     check("NullAway", net.ltgt.gradle.errorprone.CheckSeverity.ERROR)

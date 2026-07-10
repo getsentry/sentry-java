@@ -75,7 +75,8 @@ class TombstoneIntegrationTest : ApplicationExitIntegrationTestBase<TombstoneHin
     val crashedThreadId = 21891L
     assertEquals(crashedThreadId, event.exceptions!![0].threadId)
     val crashedThread = event.threads!!.find { thread -> thread.id == crashedThreadId }
-    assertEquals("samples.android", crashedThread!!.name)
+    assertEquals("main", crashedThread!!.name)
+    assertTrue(crashedThread.isMain!!)
     assertTrue(crashedThread.isCrashed!!)
 
     // Verify that frames from the app's native library are marked as in-app

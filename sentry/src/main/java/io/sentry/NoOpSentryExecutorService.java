@@ -38,7 +38,4 @@ public final class NoOpSentryExecutorService implements ISentryExecutorService {
   public boolean isClosed() {
     return false;
   }
-
-  @Override
-  public void prewarm() {}
 }

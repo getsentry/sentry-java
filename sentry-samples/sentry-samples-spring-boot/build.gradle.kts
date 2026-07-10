@@ -8,6 +8,7 @@ plugins {
   alias(libs.plugins.shadow)
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.kotlin.spring)
+  id("io.sentry.systemtest")
 }
 
 application { mainClass.set("io.sentry.samples.spring.boot.SentryDemoApplication") }
@@ -19,8 +20,6 @@ version = "0.0.1-SNAPSHOT"
 java.sourceCompatibility = JavaVersion.VERSION_11
 
 java.targetCompatibility = JavaVersion.VERSION_11
-
-repositories { mavenCentral() }
 
 fun springBoot2SupportsOptionalIntegrations(): Boolean {
   val version = libs.versions.springboot2.get().removeSuffix(".RELEASE")
@@ -140,8 +139,6 @@ tasks.register<Test>("systemTest").configure {
   val test = project.extensions.getByType<SourceSetContainer>()["test"]
   testClassesDirs = test.output.classesDirs
   classpath = test.runtimeClasspath
-
-  outputs.upToDateWhen { false }
 
   maxParallelForks = 1
 
