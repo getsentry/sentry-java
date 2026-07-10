@@ -29,6 +29,7 @@ internal interface CaptureStrategy {
   val replayCacheDir: File?
   var replayType: ReplayType
   var segmentTimestamp: Date?
+  var isFlushed: Boolean
 
   fun start(segmentId: Int = 0, replayId: SentryId = SentryId(), replayType: ReplayType? = null)
 

@@ -13,6 +13,7 @@ import io.sentry.SentryReplayEvent.ReplayType.BUFFER
 import io.sentry.SentryReplayEvent.ReplayType.SESSION
 import io.sentry.android.replay.ReplayCache
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_BIT_RATE
+import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_FLUSHED
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_FRAME_RATE
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_HEIGHT
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_ID
@@ -89,6 +90,8 @@ internal abstract class BaseCaptureStrategy(
     get() = cache?.replayCacheDir
 
   override var replayType by persistableAtomic<ReplayType>(propertyName = SEGMENT_KEY_REPLAY_TYPE)
+  override var isFlushed: Boolean by
+    persistableAtomic(initialValue = false, propertyName = SEGMENT_KEY_FLUSHED)
 
   protected val currentEvents: Deque<RRWebEvent> = ConcurrentLinkedDeque()
   private val traceIdsLock = Any()

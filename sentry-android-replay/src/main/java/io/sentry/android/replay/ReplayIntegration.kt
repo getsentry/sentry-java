@@ -261,6 +261,7 @@ public class ReplayIntegration(
       onSegmentSent = { newTimestamp ->
         captureStrategy?.currentSegment = captureStrategy?.currentSegment!! + 1
         captureStrategy?.segmentTimestamp = newTimestamp
+        captureStrategy?.isFlushed = true
       },
     )
     captureStrategy = captureStrategy?.convert()
