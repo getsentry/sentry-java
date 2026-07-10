@@ -30,7 +30,7 @@
 
 ### Fixes
 
-- Fix replay segment ID normalization after buffer-to-session conversion ([#5753](https://github.com/getsentry/sentry-java/pull/5753))
+- Session Replay: Fix first recording segment missing for replays in `buffer` mode ([#5753](https://github.com/getsentry/sentry-java/pull/5753))
 - Fix main thread identification for tombstone (native crash) events ([#5742](https://github.com/getsentry/sentry-java/pull/5742))
 
 ### Dependencies
