@@ -422,7 +422,7 @@ public class ReplayCache(private val options: SentryOptions, private val replayI
       // session mode, the persisted segmentId is the real sequence number.
       val normalizedSegmentId = if (replayType == SESSION || wasFlushed) segmentId else 0
       val normalizedTimestamp =
-        if (replayType == SESSION || wasFlushed) {
+        if (replayType == SESSION) {
           segmentTimestamp
         } else {
           // in buffer mode we have to set the timestamp of the first frame as the actual start
