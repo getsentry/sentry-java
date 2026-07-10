@@ -90,6 +90,9 @@ internal abstract class BaseCaptureStrategy(
     get() = cache?.replayCacheDir
 
   override var replayType by persistableAtomic<ReplayType>(propertyName = SEGMENT_KEY_REPLAY_TYPE)
+  // Tracks whether the buffer was flushed (segments sent to server). Used by fromDisk()
+  // to decide whether to normalize the segment ID to 0 on crash recovery: if never flushed,
+  // no segments reached the server, so the recovered segment must be 0.
   override var isFlushed: Boolean by
     persistableAtomic(initialValue = false, propertyName = SEGMENT_KEY_FLUSHED)
 
