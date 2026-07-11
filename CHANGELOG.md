@@ -30,6 +30,7 @@
 
 ### Fixes
 
+- Drop transactions whose deadline timer is delayed by device sleep ([#5752](https://github.com/getsentry/sentry-java/issues/5752))
 - Fix main thread identification for tombstone (native crash) events ([#5742](https://github.com/getsentry/sentry-java/pull/5742))
 
 ### Dependencies
