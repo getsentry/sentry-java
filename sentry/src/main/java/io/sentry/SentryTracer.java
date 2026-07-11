@@ -165,6 +165,7 @@ public final class SentryTracer implements ITransaction {
                 SentryLevel.DEBUG,
                 "Dropping transaction %s because the deadline timer fired too late",
                 name);
+        root.finish();
         scopes.configureScope(
             scope -> {
               scope.withTransaction(

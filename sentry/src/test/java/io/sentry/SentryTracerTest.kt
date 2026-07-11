@@ -965,6 +965,7 @@ class SentryTracerTest {
         optionsConfiguration = {
           it.setDateProvider(dateProvider)
           it.setLogger(logger)
+          it.isDebug = true
         },
         idleTimeout = 60_000,
         deadlineTimeout = 10_000,
@@ -975,6 +976,8 @@ class SentryTracerTest {
 
     dateProvider.currentTimeMillis = 30_000
     transaction.deadlineTimeoutTask!!.run()
+    assertThat(transaction.isFinished).isTrue()
+    transaction.finish()
 
     verify(fixture.scopes, never())
       .captureTransaction(anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull())
@@ -1006,8 +1009,7 @@ class SentryTracerTest {
 
     assertThat(transaction.isFinished).isTrue()
     assertThat(transaction.status).isEqualTo(SpanStatus.DEADLINE_EXCEEDED)
-    verify(fixture.scopes)
-      .captureTransaction(any(), anyOrNull(), anyOrNull(), anyOrNull())
+    verify(fixture.scopes).captureTransaction(any(), anyOrNull(), anyOrNull(), anyOrNull())
   }
 
   @Test
@@ -1023,8 +1025,7 @@ class SentryTracerTest {
     assertEquals(transaction.isFinished, true)
     assertEquals(SpanStatus.OK, transaction.status)
     assertEquals(SpanStatus.OK, span.status)
-    verify(fixture.scopes)
-      .captureTransaction(any(), anyOrNull(), anyOrNull(), anyOrNull())
+    verify(fixture.scopes).captureTransaction(any(), anyOrNull(), anyOrNull(), anyOrNull())
   }
 
   @Test
@@ -1036,6 +1037,7 @@ class SentryTracerTest {
         optionsConfiguration = {
           it.setDateProvider(dateProvider)
           it.setLogger(logger)
+          it.isDebug = true
         },
         idleTimeout = 60_000,
         deadlineTimeout = 10_000,
