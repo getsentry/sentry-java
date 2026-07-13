@@ -12,6 +12,7 @@ coroutines = "1.6.1"
 espresso = "3.7.0"
 feign = "11.6"
 gummyBears = "0.12.0"
+# Java 1.8 (not 18) API signature for Animal Sniffer
 java18Signature = "1.0"
 jackson = "2.18.3"
 jetbrainsCompose = "1.6.11"
