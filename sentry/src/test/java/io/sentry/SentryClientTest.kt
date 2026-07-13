@@ -3332,6 +3332,40 @@ class SentryClientTest {
   }
 
   @Test
+  fun `sets replayId on frozen transaction baggage after captureReplay for error events`() {
+    val replayId = SentryId()
+    fixture.sentryOptions.setReplayController(
+      object : ReplayController by NoOpReplayController.getInstance() {
+        override fun captureReplay(isTerminating: Boolean?) {}
+      }
+    )
+    val sut = fixture.getSut()
+
+    val baggage = Baggage(fixture.sentryOptions.logger)
+    baggage.traceId = SentryId().toString()
+    baggage.freeze()
+
+    val spanContext = SpanContext("op.load")
+    spanContext.baggage = baggage
+    val transaction = mock<ITransaction>()
+    whenever(transaction.spanContext).thenReturn(spanContext)
+    whenever(transaction.traceContext()).thenReturn(baggage.toTraceContext())
+
+    val scope = mock<IScope>()
+    whenever(scope.transaction).thenReturn(transaction)
+    whenever(scope.span).thenReturn(transaction)
+    whenever(scope.replayId).thenReturn(replayId)
+    whenever(scope.breadcrumbs).thenReturn(LinkedList<Breadcrumb>())
+    whenever(scope.extras).thenReturn(emptyMap())
+    whenever(scope.contexts).thenReturn(Contexts())
+    whenever(scope.propagationContext).thenReturn(PropagationContext())
+
+    sut.captureEvent(SentryEvent().apply { exceptions = listOf(SentryException()) }, scope)
+
+    assertEquals(replayId.toString(), baggage.getReplayId())
+  }
+
+  @Test
   fun `cleans up replay folder for Backfillable replay events`() {
     val dir = File(tmpDir.newFolder().absolutePath)
     val sut = fixture.getSut()
