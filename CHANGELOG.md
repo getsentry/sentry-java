@@ -31,6 +31,7 @@
 ### Fixes
 
 - Session Replay: Fix first recording segment missing for replays in `buffer` mode ([#5753](https://github.com/getsentry/sentry-java/pull/5753))
+- Prevent logs and metrics from remaining queued after a flush scheduling race ([#5756](https://github.com/getsentry/sentry-java/pull/5756))
 - Fix main thread identification for tombstone (native crash) events ([#5742](https://github.com/getsentry/sentry-java/pull/5742))
 
 ### Dependencies
@@ -65,6 +66,9 @@
   Sentry.finishExtendedAppStart()
   ```
 - Add `trace_metric_byte` data category and record byte-level client reports when trace metrics are discarded ([#5626](https://github.com/getsentry/sentry-java/pull/5626))
+- Expose sentry-native's heartbeat-based app-hang detection through `SentryAndroidOptions` ([#5623](https://github.com/getsentry/sentry-java/pull/5623))
+  - Enable via `setEnableNdkAppHangTracking(true)` (disabled by default) and tune the timeout with `setNdkAppHangTimeoutIntervalMillis(...)` (default `5000` ms), or the `io.sentry.ndk.app-hang.enable` / `io.sentry.ndk.app-hang.timeout-interval-millis` manifest entries
+  - Intended for hybrid SDKs: emit the heartbeat by calling the native `sentry_app_hang_heartbeat()` from the thread you want monitored. Independent of the JVM-based ANR detection (`setAnrEnabled`)
 - Support the `io.sentry.tombstone.report-historical` manifest option to enable historical tombstone reporting via `AndroidManifest.xml` `<meta-data>` ([#5683](https://github.com/getsentry/sentry-java/pull/5683))
 
 ### Fixes
@@ -82,6 +86,12 @@
 - Speed up scope persistence by detecting the Sentry executor thread via a marker instead of a `Thread.getName()` name scan on every scope mutation ([#5691](https://github.com/getsentry/sentry-java/pull/5691))
 - Remove executor prewarm during SDK init ([#5681](https://github.com/getsentry/sentry-java/pull/5681))
   - The single-threaded `SentryExecutorService` queued the prewarm work ahead of the first useful task, so it could only delay init work, never speed it up; the thread and class loading it warmed are paid identically by the first real task submitted right after.
+
+### Dependencies
+
+- Bump Native SDK from v0.15.2 to v0.15.3 ([#5623](https://github.com/getsentry/sentry-java/pull/5623))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0153)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.15.2...0.15.3)
 
 ## 8.47.0
 

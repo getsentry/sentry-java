@@ -650,6 +650,52 @@ class SentryClientTest {
   }
 
   @Test
+  fun `when event is cached, scope breadcrumbs are not merged into the event breadcrumbs`() {
+    val scopeCrumb = Breadcrumb(DateUtils.getDateTime("2020-03-27T08:52:58.001Z"))
+    val scope = Scope(SentryOptions()).apply { addBreadcrumb(scopeCrumb) }
+
+    val sut = fixture.getSut()
+
+    val eventCrumb = Breadcrumb(DateUtils.getDateTime("2020-03-27T08:52:58.003Z"))
+    val event = SentryEvent().apply { breadcrumbs = mutableListOf(eventCrumb) }
+
+    val hints = HintUtils.createWithTypeCheckHint(CachedHint())
+    sut.captureEvent(event, scope, hints)
+
+    assertNotNull(event.breadcrumbs) {
+      assertEquals(1, it.size)
+      assertSame(eventCrumb, it[0])
+    }
+  }
+
+  @Test
+  fun `when transaction is cached, scope breadcrumbs are not merged into the transaction breadcrumbs`() {
+    val sut = fixture.getSut()
+    val scope = Scope(fixture.sentryOptions)
+    scope.addBreadcrumb(Breadcrumb("from scope"))
+
+    val transaction = SentryTransaction(fixture.sentryTracer)
+    transaction.breadcrumbs = mutableListOf(Breadcrumb("from transaction"))
+
+    val hints = HintUtils.createWithTypeCheckHint(CachedHint())
+    sut.captureTransaction(transaction, scope, hints)
+
+    verify(fixture.transport)
+      .send(
+        check { envelope ->
+          val sent = envelope.items.first().getTransaction(fixture.sentryOptions.serializer)
+          assertNotNull(sent) {
+            assertNotNull(it.breadcrumbs) { breadcrumbs ->
+              assertEquals(1, breadcrumbs.size)
+              assertEquals("from transaction", breadcrumbs.first().message)
+            }
+          }
+        },
+        anyOrNull(),
+      )
+  }
+
+  @Test
   fun `when captureEvent with scope, event data has priority over scope but level and it should append extras, tags and breadcrumbs`() {
     val event = createEvent()
 

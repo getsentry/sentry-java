@@ -239,6 +239,13 @@ class SentryAndroidOptionsTest {
     sentryOptions.anrProfilingSampleRate = 2.0
   }
 
+  @Test
+  fun `app hang tracking is disabled by default with a 5s timeout`() {
+    val sentryOptions = SentryAndroidOptions()
+    assertFalse(sentryOptions.isEnableNdkAppHangTracking)
+    assertEquals(5000L, sentryOptions.ndkAppHangTimeoutIntervalMillis)
+  }
+
   private class CustomDebugImagesLoader : IDebugImagesLoader {
     override fun loadDebugImages(): List<DebugImage>? = null
 

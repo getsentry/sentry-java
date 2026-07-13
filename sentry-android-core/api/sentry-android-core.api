@@ -391,6 +391,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun getDebugImagesLoader ()Lio/sentry/android/core/IDebugImagesLoader;
 	public fun getFrameMetricsCollector ()Lio/sentry/android/core/internal/util/SentryFrameMetricsCollector;
 	public fun getNativeSdkName ()Ljava/lang/String;
+	public fun getNdkAppHangTimeoutIntervalMillis ()J
 	public fun getNdkHandlerStrategy ()I
 	public fun getScreenshot ()Lio/sentry/android/core/SentryScreenshotOptions;
 	public fun getStartupCrashDurationThresholdMillis ()J
@@ -412,6 +413,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun isEnableAutoTraceIdGeneration ()Z
 	public fun isEnableFramesTracking ()Z
 	public fun isEnableNdk ()Z
+	public fun isEnableNdkAppHangTracking ()Z
 	public fun isEnableNetworkEventBreadcrumbs ()Z
 	public fun isEnablePerformanceV2 ()Z
 	public fun isEnableRootCheck ()Z
@@ -444,6 +446,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun setEnableAutoTraceIdGeneration (Z)V
 	public fun setEnableFramesTracking (Z)V
 	public fun setEnableNdk (Z)V
+	public fun setEnableNdkAppHangTracking (Z)V
 	public fun setEnableNetworkEventBreadcrumbs (Z)V
 	public fun setEnablePerformanceV2 (Z)V
 	public fun setEnableRootCheck (Z)V
@@ -454,6 +457,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun setFrameMetricsCollector (Lio/sentry/android/core/internal/util/SentryFrameMetricsCollector;)V
 	public fun setNativeHandlerStrategy (Lio/sentry/android/core/NdkHandlerStrategy;)V
 	public fun setNativeSdkName (Ljava/lang/String;)V
+	public fun setNdkAppHangTimeoutIntervalMillis (J)V
 	public fun setReportHistoricalAnrs (Z)V
 	public fun setReportHistoricalTombstones (Z)V
 	public fun setTombstoneEnabled (Z)V
