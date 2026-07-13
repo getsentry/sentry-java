@@ -31,7 +31,7 @@
 ### Fixes
 
 - Session Replay: Fix first recording segment missing for replays in `buffer` mode ([#5753](https://github.com/getsentry/sentry-java/pull/5753))
-- Fix error-to-replay linkage in buffer mode ([#5754](https://github.com/getsentry/sentry-java/pull/5754))
+- Session Replay: Fix error-to-replay linkage in `buffer` mode ([#5754](https://github.com/getsentry/sentry-java/pull/5754))
 - Prevent logs and metrics from remaining queued after a flush scheduling race ([#5756](https://github.com/getsentry/sentry-java/pull/5756))
 - Fix main thread identification for tombstone (native crash) events ([#5742](https://github.com/getsentry/sentry-java/pull/5742))
 
