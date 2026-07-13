@@ -27,7 +27,7 @@ class SentryAnimalSnifferPlugin : Plugin<Project> {
     val extension =
       project.extensions.create("sentryAnimalSniffer", SentryAnimalSnifferExtension::class.java)
 
-    project.addSignatureDependency("java18-signature")
+    project.addSignatureDependency("java8-signature")
 
     project.tasks.named("animalsnifferMain", AnimalSniffer::class.java).configure {
       ignoreClasses = ignoreClasses + extension.ignoredClasses.get()
