@@ -51,6 +51,7 @@ import io.sentry.cache.PersistingScopeObserver;
 import io.sentry.exception.ExceptionMechanismException;
 import io.sentry.hints.AbnormalExit;
 import io.sentry.hints.Backfillable;
+import io.sentry.hints.NativeCrashExit;
 import io.sentry.protocol.App;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.DebugImage;
@@ -161,7 +162,12 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
     mergeOS(event);
     setDevice(event);
 
+    final boolean canUseCurrentOptions = isAppNotUpdated(backfillable);
+
     if (!backfillable.shouldEnrich()) {
+      setRelease(event, canUseCurrentOptions);
+      setEnvironment(event, canUseCurrentOptions);
+      setDist(event, canUseCurrentOptions);
       options
           .getLogger()
           .log(
@@ -172,7 +178,7 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
 
     backfillScope(event);
 
-    backfillOptions(event);
+    backfillOptions(event, canUseCurrentOptions);
 
     setStaticValues(event);
 
@@ -393,17 +399,18 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
   // endregion
 
   // region options persisted values
-  private void backfillOptions(final @NotNull SentryEvent event) {
-    setRelease(event);
-    setEnvironment(event);
-    setDist(event);
+  private void backfillOptions(
+      final @NotNull SentryEvent event, final boolean canUseCurrentOptions) {
+    setRelease(event, canUseCurrentOptions);
+    setEnvironment(event, canUseCurrentOptions);
+    setDist(event, canUseCurrentOptions);
     setDebugMeta(event);
     setSdk(event);
-    setApp(event);
+    setApp(event, canUseCurrentOptions);
     setOptionsTags(event);
   }
 
-  private void setApp(final @NotNull SentryBaseEvent event) {
+  private void setApp(final @NotNull SentryBaseEvent event, final boolean canUseCurrentOptions) {
     App app = event.getContexts().getApp();
     if (app == null) {
       app = new App();
@@ -415,11 +422,14 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
       app.setAppIdentifier(packageInfo.packageName);
     }
 
-    // backfill versionName and versionCode from the persisted release string
-    final String release =
-        event.getRelease() != null
-            ? event.getRelease()
-            : PersistingOptionsObserver.read(options, RELEASE_FILENAME, String.class);
+    // backfill versionName and versionCode from the release string
+    String release = event.getRelease();
+    if (release == null) {
+      release = PersistingOptionsObserver.read(options, RELEASE_FILENAME, String.class);
+    }
+    if (release == null && canUseCurrentOptions) {
+      release = options.getRelease();
+    }
     if (release != null) {
       try {
         final String versionName =
@@ -450,19 +460,26 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
     event.getContexts().setApp(app);
   }
 
-  private void setRelease(final @NotNull SentryBaseEvent event) {
+  private void setRelease(
+      final @NotNull SentryBaseEvent event, final boolean canUseCurrentOptions) {
     if (event.getRelease() == null) {
-      final String release =
-          PersistingOptionsObserver.read(options, RELEASE_FILENAME, String.class);
+      String release = PersistingOptionsObserver.read(options, RELEASE_FILENAME, String.class);
+      if (release == null && canUseCurrentOptions) {
+        release = options.getRelease();
+      }
       event.setRelease(release);
     }
   }
 
-  private void setEnvironment(final @NotNull SentryBaseEvent event) {
+  private void setEnvironment(
+      final @NotNull SentryBaseEvent event, final boolean canUseCurrentOptions) {
     if (event.getEnvironment() == null) {
       final String environment =
           PersistingOptionsObserver.read(options, ENVIRONMENT_FILENAME, String.class);
-      event.setEnvironment(environment != null ? environment : options.getEnvironment());
+      event.setEnvironment(
+          environment != null
+              ? environment
+              : canUseCurrentOptions ? options.getEnvironment() : null);
     }
   }
 
@@ -490,15 +507,17 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
     }
   }
 
-  private void setDist(final @NotNull SentryBaseEvent event) {
+  private void setDist(final @NotNull SentryBaseEvent event, final boolean canUseCurrentOptions) {
     if (event.getDist() == null) {
-      final String dist = PersistingOptionsObserver.read(options, DIST_FILENAME, String.class);
+      String dist = PersistingOptionsObserver.read(options, DIST_FILENAME, String.class);
+      if (dist == null && canUseCurrentOptions) {
+        dist = options.getDist();
+      }
       event.setDist(dist);
     }
-    // if there's no user-set dist, fall back to versionCode from the persisted release string
+    // if there's no user-set dist, fall back to versionCode from the release string
     if (event.getDist() == null) {
-      final String release =
-          PersistingOptionsObserver.read(options, RELEASE_FILENAME, String.class);
+      final String release = event.getRelease();
       if (release != null) {
         try {
           final String versionCode = release.substring(release.indexOf('+') + 1);
@@ -510,6 +529,25 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
         }
       }
     }
+  }
+
+  private boolean isAppNotUpdated(final @NotNull Backfillable hint) {
+    final @Nullable Long timestamp;
+    if (hint instanceof AbnormalExit) {
+      timestamp = ((AbnormalExit) hint).timestamp();
+    } else if (hint instanceof NativeCrashExit) {
+      timestamp = ((NativeCrashExit) hint).timestamp();
+    } else {
+      timestamp = null;
+    }
+    if (timestamp == null) {
+      return true;
+    }
+
+    final PackageInfo packageInfo = ContextUtils.getPackageInfo(context, buildInfoProvider);
+    return packageInfo != null
+        && packageInfo.lastUpdateTime > 0
+        && packageInfo.lastUpdateTime <= timestamp;
   }
 
   private void setSdk(final @NotNull SentryBaseEvent event) {

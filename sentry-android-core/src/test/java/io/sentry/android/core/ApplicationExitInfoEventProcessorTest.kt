@@ -198,6 +198,7 @@ class ApplicationExitInfoEventProcessorTest {
   @BeforeTest
   fun `set up`() {
     DeviceInfoUtil.resetInstance()
+    ContextUtils.resetInstance()
     fixture.context = ApplicationProvider.getApplicationContext()
   }
 
@@ -396,6 +397,97 @@ class ApplicationExitInfoEventProcessorTest {
     val processed = processEvent(hint)
 
     assertEquals("release", processed.environment)
+  }
+
+  @Test
+  fun `if release is not persisted and app was not updated, uses release from options`() {
+    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(timestamp = 2_000))
+    val processor = fixture.getSut(tmpDir)
+    fixture.options.release = "io.sentry.samples@1.2.0+232"
+    setLastUpdateTime(1_000)
+
+    val processed = processor.process(SentryEvent(), hint)!!
+
+    assertEquals("io.sentry.samples@1.2.0+232", processed.release)
+  }
+
+  @Test
+  fun `if release is not persisted and app was updated, leaves release empty`() {
+    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(timestamp = 1_000))
+    val processor = fixture.getSut(tmpDir)
+    fixture.options.release = "io.sentry.samples@1.2.0+232"
+    setLastUpdateTime(2_000)
+
+    val processed = processor.process(SentryEvent(), hint)!!
+
+    assertNull(processed.release)
+  }
+
+  @Test
+  fun `if last update time is invalid, leaves release empty`() {
+    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(timestamp = 1_000))
+    val processor = fixture.getSut(tmpDir)
+    fixture.options.release = "io.sentry.samples@1.2.0+232"
+    setLastUpdateTime(-1)
+
+    val processed = processor.process(SentryEvent(), hint)!!
+
+    assertNull(processed.release)
+  }
+
+  @Test
+  fun `if dist is not persisted and app was not updated, uses version code from options release`() {
+    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(timestamp = 2_000))
+    val processor = fixture.getSut(tmpDir)
+    fixture.options.release = "io.sentry.samples@1.2.0+232"
+    setLastUpdateTime(1_000)
+
+    val processed = processor.process(SentryEvent(), hint)!!
+
+    assertEquals("232", processed.dist)
+  }
+
+  @Test
+  fun `if app version is not persisted and app was not updated, uses options release`() {
+    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(timestamp = 2_000))
+    val processor = fixture.getSut(tmpDir)
+    fixture.options.release = "io.sentry.samples@1.2.0+232"
+    setLastUpdateTime(1_000)
+
+    val processed = processor.process(SentryEvent(), hint)!!
+
+    assertEquals("1.2.0", processed.contexts.app!!.appVersion)
+    assertEquals("232", processed.contexts.app!!.appBuild)
+  }
+
+  @Test
+  fun `historical event uses current options when app was not updated`() {
+    val hint =
+      HintUtils.createWithTypeCheckHint(AbnormalExitHint(shouldEnrich = false, timestamp = 2_000))
+    val processor = fixture.getSut(tmpDir)
+    fixture.options.release = "io.sentry.samples@1.2.0+232"
+    fixture.options.environment = "production"
+    fixture.options.dist = "custom-dist"
+    setLastUpdateTime(1_000)
+
+    val processed = processor.process(SentryEvent(), hint)!!
+
+    assertEquals("io.sentry.samples@1.2.0+232", processed.release)
+    assertEquals("production", processed.environment)
+    assertEquals("custom-dist", processed.dist)
+  }
+
+  @Test
+  fun `historical event leaves release empty when app was updated`() {
+    val hint =
+      HintUtils.createWithTypeCheckHint(AbnormalExitHint(shouldEnrich = false, timestamp = 1_000))
+    val processor = fixture.getSut(tmpDir)
+    fixture.options.release = "io.sentry.samples@1.2.0+232"
+    setLastUpdateTime(2_000)
+
+    val processed = processor.process(SentryEvent(), hint)!!
+
+    assertNull(processed.release)
   }
 
   @Test
@@ -938,15 +1030,21 @@ class ApplicationExitInfoEventProcessorTest {
     return processor.process(original, hint)!!
   }
 
+  private fun setLastUpdateTime(lastUpdateTime: Long) {
+    ContextUtils.getPackageInfo(fixture.context, fixture.buildInfo)!!.lastUpdateTime =
+      lastUpdateTime
+  }
+
   internal class AbnormalExitHint(
     val mechanism: String? = null,
     private val shouldEnrich: Boolean = true,
+    private val timestamp: Long? = null,
   ) : AbnormalExit, Backfillable {
     override fun mechanism(): String? = mechanism
 
     override fun ignoreCurrentThread(): Boolean = false
 
-    override fun timestamp(): Long? = null
+    override fun timestamp(): Long? = timestamp
 
     override fun shouldEnrich(): Boolean = shouldEnrich
   }
