@@ -396,4 +396,14 @@ public final class Attachment {
   public static @NotNull Attachment fromThreadDump(final byte[] bytes) {
     return new Attachment(bytes, "thread-dump.txt", "text/plain", false);
   }
+
+  /**
+   * Creates a new Tombstone Attachment
+   *
+   * @param bytes the array bytes
+   * @return the Attachment
+   */
+  public static @NotNull Attachment fromTombstone(final byte[] bytes) {
+    return new Attachment(bytes, "tombstone.pb", "application/x-protobuf", false);
+  }
 }

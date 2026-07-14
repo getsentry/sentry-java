@@ -289,6 +289,131 @@ class ManifestMetadataReaderTest {
   }
 
   @Test
+  fun `applyMetadata reads app hang tracking enabled to options`() {
+    // Arrange
+    val bundle = bundleOf(ManifestMetadataReader.NDK_APP_HANG_TRACKING_ENABLE to true)
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertEquals(true, fixture.options.isEnableNdkAppHangTracking)
+  }
+
+  @Test
+  fun `applyMetadata reads app hang tracking enabled to options and keeps default`() {
+    // Arrange
+    val context = fixture.getContext()
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertEquals(false, fixture.options.isEnableNdkAppHangTracking)
+  }
+
+  @Test
+  fun `applyMetadata reads app hang timeout interval to options`() {
+    // Arrange
+    val bundle = bundleOf(ManifestMetadataReader.NDK_APP_HANG_TIMEOUT_INTERVAL_MILLIS to 1000)
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertEquals(1000.toLong(), fixture.options.ndkAppHangTimeoutIntervalMillis)
+  }
+
+  @Test
+  fun `applyMetadata reads app hang timeout interval to options and keeps default`() {
+    // Arrange
+    val context = fixture.getContext()
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertEquals(5000.toLong(), fixture.options.ndkAppHangTimeoutIntervalMillis)
+  }
+
+  @Test
+  fun `applyMetadata reads tombstone attach raw to options`() {
+    // Arrange
+    val bundle = bundleOf(ManifestMetadataReader.TOMBSTONE_ATTACH_RAW to true)
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertEquals(true, fixture.options.isAttachRawTombstone)
+  }
+
+  @Test
+  fun `applyMetadata reads tombstone attach raw to options and keeps default`() {
+    // Arrange
+    val context = fixture.getContext()
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertEquals(false, fixture.options.isAttachRawTombstone)
+  }
+
+  @Test
+  fun `applyMetadata reads tombstone enable to options`() {
+    // Arrange
+    val bundle = bundleOf(ManifestMetadataReader.TOMBSTONE_ENABLE to true)
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertEquals(true, fixture.options.isTombstoneEnabled)
+  }
+
+  @Test
+  fun `applyMetadata reads tombstone enable to options and keeps default`() {
+    // Arrange
+    val context = fixture.getContext()
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertEquals(false, fixture.options.isTombstoneEnabled)
+  }
+
+  @Test
+  fun `applyMetadata reads tombstone report historical to options`() {
+    // Arrange
+    val bundle = bundleOf(ManifestMetadataReader.TOMBSTONE_REPORT_HISTORICAL to true)
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertEquals(true, fixture.options.isReportHistoricalTombstones)
+  }
+
+  @Test
+  fun `applyMetadata reads tombstone report historical to options and keeps default`() {
+    // Arrange
+    val context = fixture.getContext()
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertEquals(false, fixture.options.isReportHistoricalTombstones)
+  }
+
+  @Test
   fun `applyMetadata reads anr report historical to options`() {
     // Arrange
     val bundle = bundleOf(ManifestMetadataReader.ANR_REPORT_HISTORICAL to true)
@@ -1465,6 +1590,36 @@ class ManifestMetadataReaderTest {
 
     // Assert
     assertTrue(fixture.options.isEnablePerformanceV2)
+  }
+
+  @Test
+  fun `applyMetadata reads standalone app start tracing flag to options`() {
+    val bundle = bundleOf(ManifestMetadataReader.ENABLE_STANDALONE_APP_START_TRACING to true)
+    val context = fixture.getContext(metaData = bundle)
+
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    assertTrue(fixture.options.isEnableStandaloneAppStartTracing)
+  }
+
+  @Test
+  fun `applyMetadata reads standalone app start tracing false to options`() {
+    fixture.options.isEnableStandaloneAppStartTracing = true
+    val bundle = bundleOf(ManifestMetadataReader.ENABLE_STANDALONE_APP_START_TRACING to false)
+    val context = fixture.getContext(metaData = bundle)
+
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    assertFalse(fixture.options.isEnableStandaloneAppStartTracing)
+  }
+
+  @Test
+  fun `applyMetadata reads standalone app start tracing flag to options and keeps default if not found`() {
+    val context = fixture.getContext()
+
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    assertFalse(fixture.options.isEnableStandaloneAppStartTracing)
   }
 
   @Test

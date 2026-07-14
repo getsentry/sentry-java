@@ -1,18 +1,18 @@
 import net.ltgt.gradle.errorprone.errorprone
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
   `java-library`
   id("io.sentry.javadoc")
   alias(libs.plugins.kotlin.jvm)
-  jacoco
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.buildconfig)
 }
 
 tasks.withType<KotlinCompile>().configureEach {
-  compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8
+  compilerOptions.jvmTarget = JvmTarget.JVM_1_8
   compilerOptions.languageVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
   compilerOptions.apiVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
 }
@@ -35,7 +35,7 @@ dependencies {
   compileOnly(libs.servlet.api)
   compileOnly(libs.springboot.starter)
   compileOnly(libs.springboot.starter.aop)
-  compileOnly(libs.springboot.starter.graphql)
+  compileOnly(libs.spring.graphql)
   compileOnly(libs.springboot.starter.quartz)
   compileOnly(libs.springboot.starter.security)
   compileOnly(libs.spring.kafka2)
@@ -82,27 +82,6 @@ dependencies {
   testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryAgentcustomization)
   testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
   testImplementation(projects.sentryAsyncProfiler)
-}
-
-configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
-
-jacoco { toolVersion = libs.versions.jacoco.get() }
-
-tasks.jacocoTestReport {
-  reports {
-    xml.required.set(true)
-    html.required.set(false)
-  }
-}
-
-tasks {
-  jacocoTestCoverageVerification {
-    violationRules { rule { limit { minimum = Config.QualityPlugins.Jacoco.minimumCoverage } } }
-  }
-  check {
-    dependsOn(jacocoTestCoverageVerification)
-    dependsOn(jacocoTestReport)
-  }
 }
 
 buildConfig {

@@ -44,9 +44,9 @@ class AssetsModulesLoaderTest {
       fixture.getSut(
         content =
           """
-                    com.squareup.okhttp3:okhttp:3.14.9
-                    com.squareup.okio:okio:1.17.2
-                    """
+          com.squareup.okhttp3:okhttp:3.14.9
+          com.squareup.okio:okio:1.17.2
+          """
             .trimIndent()
       )
 
@@ -62,9 +62,9 @@ class AssetsModulesLoaderTest {
       fixture.getSut(
         content =
           """
-                    com.squareup.okhttp3:okhttp:3.14.9
-                    com.squareup.okio:okio:1.17.2
-                    """
+          com.squareup.okhttp3:okhttp:3.14.9
+          com.squareup.okio:okio:1.17.2
+          """
             .trimIndent()
       )
 
@@ -93,8 +93,8 @@ class AssetsModulesLoaderTest {
       fixture.getSut(
         content =
           """
-                    com.squareup.okhttp3;3.14.9
-                    """
+          com.squareup.okhttp3;3.14.9
+          """
             .trimIndent()
       )
 

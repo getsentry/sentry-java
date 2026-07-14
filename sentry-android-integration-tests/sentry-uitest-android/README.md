@@ -14,14 +14,12 @@ You can run benchmark tests only with `./gradlew :sentry-android-integration-tes
 To run on saucelabs execute following commands (need also `SAUCE_USERNAME` and `SAUCE_ACCESS_KEY` environment variables):
 For Benchmarks:
 ```
-./gradlew :sentry-android-integration-tests:sentry-uitest-android-benchmark:assembleRelease
-./gradlew :sentry-android-integration-tests:sentry-uitest-android-benchmark:assembleAndroidTest -DtestBuildType=release
+./gradlew :sentry-android-integration-tests:sentry-uitest-android-benchmark:assembleRelease :sentry-android-integration-tests:sentry-uitest-android-benchmark:assembleAndroidTest
 saucectl run -c .sauce/sentry-uitest-android-benchmark.yml
 ```
 For End 2 End:
 ```
-./gradlew :sentry-android-integration-tests:sentry-uitest-android:assembleRelease
-./gradlew :sentry-android-integration-tests:sentry-uitest-android:assembleAndroidTest -DtestBuildType=release
+./gradlew :sentry-android-integration-tests:sentry-uitest-android:assembleRelease :sentry-android-integration-tests:sentry-uitest-android:assembleAndroidTest
 saucectl run -c .sauce/sentry-uitest-android-end2end.yml
 ```
 

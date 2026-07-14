@@ -11,13 +11,17 @@ import android.os.SystemClock
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.DateUtils
 import io.sentry.IContinuousProfiler
+import io.sentry.ITransaction
 import io.sentry.ITransactionProfiler
 import io.sentry.SentryNanotimeDate
+import io.sentry.android.core.AppStartExtension
+import io.sentry.android.core.ContextUtils
 import io.sentry.android.core.CurrentActivityHolder
 import io.sentry.android.core.SentryAndroidOptions
 import io.sentry.android.core.SentryShadowProcess
-import java.util.Date
+import io.sentry.protocol.SentryId
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -27,6 +31,7 @@ import kotlin.test.assertSame
 import kotlin.test.assertTrue
 import org.junit.Before
 import org.junit.runner.RunWith
+import org.mockito.Mockito.mockStatic
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
@@ -44,6 +49,7 @@ class AppStartMetricsTest {
   fun setup() {
     AppStartMetrics.getInstance().clear()
     SentryShadowProcess.setStartUptimeMillis(42)
+    AppStartMetrics.getInstance().setClassLoadedUptimeMs(42)
     AppStartMetrics.getInstance().isAppLaunchedInForeground = true
   }
 
@@ -65,6 +71,7 @@ class AppStartMetricsTest {
     metrics.appStartProfiler = mock()
     metrics.appStartContinuousProfiler = mock()
     metrics.appStartSamplingDecision = mock()
+    metrics.setAppStartTraceId(SentryId())
 
     metrics.clear()
 
@@ -78,6 +85,7 @@ class AppStartMetricsTest {
     assertNull(metrics.appStartProfiler)
     assertNull(metrics.appStartContinuousProfiler)
     assertNull(metrics.appStartSamplingDecision)
+    assertNull(metrics.getAppStartTraceId())
   }
 
   @Test
@@ -167,10 +175,10 @@ class AppStartMetricsTest {
     // when the looper runs
     waitForMainLooperIdle()
 
-    // but no activity creation happened
+    // but a headless start happened
     // then the app wasn't launched in foreground and nothing should be sent
     assertFalse(metrics.isAppLaunchedInForeground)
-    assertFalse(metrics.shouldSendStartMeasurements())
+    assertFalse(metrics.shouldSendStartMeasurements(false))
 
     val now = TimeUnit.MINUTES.toMillis(2) + 1234567
     SystemClock.setCurrentTimeMillis(now)
@@ -180,7 +188,7 @@ class AppStartMetricsTest {
 
     // then it should restart the timespan
     assertTrue(metrics.isAppLaunchedInForeground)
-    assertTrue(metrics.shouldSendStartMeasurements())
+    assertTrue(metrics.shouldSendStartMeasurements(false))
     assertTrue(metrics.appStartTimeSpan.hasStarted())
     assertEquals(now, metrics.appStartTimeSpan.startUptimeMs)
     assertFalse(metrics.applicationOnCreateTimeSpan.hasStarted())
@@ -194,7 +202,7 @@ class AppStartMetricsTest {
     metrics.sdkInitTimeSpan.start()
     metrics.registerLifecycleCallbacks(mock<Application>())
 
-    // when the handler callback is executed and no activity was launched
+    // when the handler callback is executed and the start is headless
     waitForMainLooperIdle()
 
     // isAppLaunchedInForeground should be false
@@ -208,10 +216,169 @@ class AppStartMetricsTest {
     assertEquals(AppStartMetrics.AppStartType.WARM, metrics.appStartType)
   }
 
+  @Test
+  fun `headless app start defaults UNKNOWN appStartType to COLD`() {
+    val metrics = AppStartMetrics.getInstance()
+    metrics.appStartTimeSpan.setStartedAt(100)
+
+    metrics.registerLifecycleCallbacks(mock<Application>())
+    waitForMainLooperIdle()
+
+    assertEquals(AppStartMetrics.AppStartType.COLD, metrics.appStartType)
+    assertFalse(metrics.isAppLaunchedInForeground)
+  }
+
+  @Test
+  fun `headless app start does not overwrite existing appStartType`() {
+    val metrics = AppStartMetrics.getInstance()
+    metrics.appStartType = AppStartMetrics.AppStartType.WARM
+    metrics.appStartTimeSpan.setStartedAt(100)
+
+    metrics.registerLifecycleCallbacks(mock<Application>())
+    waitForMainLooperIdle()
+
+    assertEquals(AppStartMetrics.AppStartType.WARM, metrics.appStartType)
+  }
+
+  @Test
+  fun `headless app start fires HeadlessAppStartListener`() = headlessProcess {
+    val listenerCalls = AtomicInteger()
+
+    AppStartMetrics.getInstance().setHeadlessAppStartListener { listenerCalls.incrementAndGet() }
+    AppStartMetrics.getInstance().registerLifecycleCallbacks(mock<Application>())
+    waitForMainLooperIdle()
+
+    assertEquals(1, listenerCalls.get())
+  }
+
+  @Test
+  fun `foreground process does not fire HeadlessAppStartListener`() {
+    // Deferred/late SDK init inside an already-running Activity: we missed onActivityCreated, but
+    // the process is foreground (Robolectric default importance), so this is a real launch, not a
+    // headless start. The listener must not fire and the headless reclassification must not run.
+    val listenerCalls = AtomicInteger()
+    val metrics = AppStartMetrics.getInstance()
+
+    metrics.setHeadlessAppStartListener { listenerCalls.incrementAndGet() }
+    metrics.registerLifecycleCallbacks(mock<Application>())
+    waitForMainLooperIdle()
+
+    assertEquals(0, listenerCalls.get())
+    assertEquals(AppStartMetrics.AppStartType.UNKNOWN, metrics.appStartType)
+
+    SystemClock.setCurrentTimeMillis(SystemClock.uptimeMillis() + 100)
+    val activity = mock<Activity>()
+    whenever(activity.isChangingConfigurations).thenReturn(false)
+    metrics.onActivityCreated(activity, null)
+
+    assertEquals(AppStartMetrics.AppStartType.WARM, metrics.appStartType)
+
+    metrics.onActivityDestroyed(activity)
+    SystemClock.setCurrentTimeMillis(SystemClock.uptimeMillis() + 100)
+    metrics.onActivityCreated(mock<Activity>(), null)
+
+    assertEquals(AppStartMetrics.AppStartType.WARM, metrics.appStartType)
+  }
+
+  @Test
+  fun `activity start prevents HeadlessAppStartListener`() {
+    val listenerCalls = AtomicInteger()
+    val metrics = AppStartMetrics.getInstance()
+
+    metrics.setHeadlessAppStartListener { listenerCalls.incrementAndGet() }
+    metrics.onActivityCreated(mock<Activity>(), null)
+    metrics.registerLifecycleCallbacks(mock<Application>())
+    waitForMainLooperIdle()
+
+    assertEquals(0, listenerCalls.get())
+  }
+
+  @Test
+  fun `resolveHeadlessAppStartEndTime uses applicationOnCreate stop when Gradle plugin instrumented`() =
+    headlessProcess {
+      val metrics = AppStartMetrics.getInstance()
+      metrics.appStartTimeSpan.setStartedAt(100)
+      metrics.setHeadlessAppStartListener {}
+      metrics.applicationOnCreateTimeSpan.apply {
+        setStartedAt(120)
+        setStoppedAt(200)
+      }
+
+      metrics.registerLifecycleCallbacks(mock<Application>())
+      waitForMainLooperIdle()
+
+      assertEquals(100, metrics.appStartTimeSpan.durationMs)
+    }
+
+  @Test
+  fun `resolveHeadlessAppStartEndTime falls back to CLASS_LOADED_UPTIME_MS when no plugin and no ApplicationStartInfo`() =
+    headlessProcess {
+      val metrics = AppStartMetrics.getInstance()
+      metrics.setClassLoadedUptimeMs(200)
+      metrics.appStartTimeSpan.setStartedAt(100)
+      metrics.setHeadlessAppStartListener {}
+
+      metrics.registerLifecycleCallbacks(mock<Application>())
+      waitForMainLooperIdle()
+
+      assertEquals(100, metrics.appStartTimeSpan.durationMs)
+    }
+
+  @Test
+  fun `resolveHeadlessAppStartEndTime does not overwrite stopped appStartTimeSpan`() {
+    val metrics = AppStartMetrics.getInstance()
+    metrics.appStartTimeSpan.apply {
+      setStartedAt(100)
+      setStoppedAt(150)
+    }
+    metrics.setHeadlessAppStartListener {}
+    metrics.applicationOnCreateTimeSpan.apply {
+      setStartedAt(120)
+      setStoppedAt(200)
+    }
+
+    metrics.registerLifecycleCallbacks(mock<Application>())
+    waitForMainLooperIdle()
+
+    assertEquals(50, metrics.appStartTimeSpan.durationMs)
+  }
+
+  @Test
+  fun `headless app start without listener does not stop sdkInitTimeSpan`() {
+    val metrics = AppStartMetrics.getInstance()
+    metrics.sdkInitTimeSpan.setStartedAt(100)
+
+    metrics.registerLifecycleCallbacks(mock<Application>())
+    waitForMainLooperIdle()
+
+    assertTrue(metrics.sdkInitTimeSpan.hasNotStopped())
+  }
+
+  @Test
+  fun `getAppStartTimeSpanForHeadless falls back to sdkInitTimeSpan when appStartSpan has not stopped`() {
+    val metrics = AppStartMetrics.getInstance()
+    metrics.appStartTimeSpan.setStartedAt(100)
+    metrics.sdkInitTimeSpan.apply {
+      setStartedAt(120)
+      setStoppedAt(180)
+    }
+
+    assertSame(metrics.sdkInitTimeSpan, metrics.getAppStartTimeSpanForHeadless())
+  }
+
   private fun waitForMainLooperIdle() {
     Handler(Looper.getMainLooper()).post {}
     Shadows.shadowOf(Looper.getMainLooper()).idle()
   }
+
+  // Simulates a real headless start (broadcast/service), i.e. a non-foreground-importance process.
+  // The Robolectric default importance in this test class is IMPORTANCE_FOREGROUND, so headless
+  // scenarios must opt into a background importance explicitly.
+  private fun <T> headlessProcess(block: () -> T): T =
+    mockStatic(ContextUtils::class.java).use { contextUtils ->
+      contextUtils.`when`<Boolean> { ContextUtils.isForegroundImportance() }.thenReturn(false)
+      block()
+    }
 
   @Test
   fun `if app start span is at most 1 minute, appStartTimeSpanWithFallback returns the app start span`() {
@@ -331,12 +498,12 @@ class AppStartMetricsTest {
   }
 
   @Test
-  fun `registerApplicationForegroundCheck set foreground state to false if no activity is running`() {
+  fun `registerApplicationForegroundCheck set foreground state to false for headless start`() {
     val application = mock<Application>()
     AppStartMetrics.getInstance().isAppLaunchedInForeground = true
     AppStartMetrics.getInstance().registerLifecycleCallbacks(application)
     assertTrue(AppStartMetrics.getInstance().isAppLaunchedInForeground)
-    // Main thread performs the check and sets the flag to false if no activity was created
+    // Main thread performs the check and sets the flag to false if the start is headless
     waitForMainLooperIdle()
     assertFalse(AppStartMetrics.getInstance().isAppLaunchedInForeground)
   }
@@ -369,11 +536,11 @@ class AppStartMetricsTest {
     val appStartMetrics = AppStartMetrics.getInstance()
     appStartMetrics.addActivityLifecycleTimeSpans(mock())
     appStartMetrics.contentProviderOnCreateTimeSpans.add(mock())
-    assertTrue(appStartMetrics.shouldSendStartMeasurements())
+    assertTrue(appStartMetrics.shouldSendStartMeasurements(false))
     appStartMetrics.onAppStartSpansSent()
     assertTrue(appStartMetrics.activityLifecycleTimeSpans.isEmpty())
     assertTrue(appStartMetrics.contentProviderOnCreateTimeSpans.isEmpty())
-    assertFalse(appStartMetrics.shouldSendStartMeasurements())
+    assertFalse(appStartMetrics.shouldSendStartMeasurements(false))
   }
 
   @Test
@@ -387,18 +554,18 @@ class AppStartMetricsTest {
 
     // then the app start type should be cold and measurements should be sent
     assertEquals(AppStartMetrics.AppStartType.COLD, appStartMetrics.appStartType)
-    assertTrue(appStartMetrics.shouldSendStartMeasurements())
+    assertTrue(appStartMetrics.shouldSendStartMeasurements(false))
 
     // when the activity gets destroyed
     appStartMetrics.onAppStartSpansSent()
-    assertFalse(appStartMetrics.shouldSendStartMeasurements())
+    assertFalse(appStartMetrics.shouldSendStartMeasurements(false))
 
     appStartMetrics.onActivityDestroyed(activity0)
 
     // then it should reset sending the measurements for the next warm activity
     appStartMetrics.onActivityCreated(mock<Activity>(), mock<Bundle>())
     assertEquals(AppStartMetrics.AppStartType.WARM, appStartMetrics.appStartType)
-    assertTrue(appStartMetrics.shouldSendStartMeasurements())
+    assertTrue(appStartMetrics.shouldSendStartMeasurements(false))
   }
 
   @Test
@@ -473,7 +640,7 @@ class AppStartMetricsTest {
   @Test
   fun `createProcessInitSpan creates a span`() {
     val appStartMetrics = AppStartMetrics.getInstance()
-    val startDate = SentryNanotimeDate(Date(1), 1000000)
+    val startDate = SentryNanotimeDate(1, 1000000)
     appStartMetrics.classLoadedUptimeMs = 10
     val startMillis = DateUtils.nanosToMillis(startDate.nanoTimestamp().toDouble()).toLong()
     appStartMetrics.appStartTimeSpan.setStartedAt(1)
@@ -585,7 +752,6 @@ class AppStartMetricsTest {
     waitForMainLooperIdle()
 
     SystemClock.setCurrentTimeMillis(SystemClock.uptimeMillis() + 100)
-    metrics.isAppLaunchedInForeground = true
     metrics.onActivityCreated(mock<Activity>(), null)
 
     assertEquals(AppStartMetrics.AppStartType.WARM, metrics.appStartType)
@@ -791,7 +957,7 @@ class AppStartMetricsTest {
     whenever(firstActivity.isChangingConfigurations).thenReturn(false)
     metrics.onActivityCreated(firstActivity, null)
     assertEquals(AppStartMetrics.AppStartType.COLD, metrics.appStartType)
-    assertTrue(metrics.shouldSendStartMeasurements())
+    assertTrue(metrics.shouldSendStartMeasurements(false))
     metrics.onAppStartSpansSent()
     waitForMainLooperIdle()
 
@@ -804,7 +970,7 @@ class AppStartMetricsTest {
     metrics.onActivityCreated(secondActivity, null)
     assertEquals(AppStartMetrics.AppStartType.WARM, metrics.appStartType)
     assertTrue(metrics.isAppLaunchedInForeground)
-    assertTrue(metrics.shouldSendStartMeasurements())
+    assertTrue(metrics.shouldSendStartMeasurements(false))
     metrics.onAppStartSpansSent()
 
     // Third activity - should still be warm
@@ -812,7 +978,7 @@ class AppStartMetricsTest {
     metrics.onActivityCreated(mock<Activity>(), null)
     assertEquals(AppStartMetrics.AppStartType.WARM, metrics.appStartType)
     assertTrue(metrics.isAppLaunchedInForeground)
-    assertFalse(metrics.shouldSendStartMeasurements())
+    assertFalse(metrics.shouldSendStartMeasurements(false))
   }
 
   @Test
@@ -859,5 +1025,102 @@ class AppStartMetricsTest {
     metrics.onActivityCreated(mock<Activity>(), null)
 
     assertEquals(AppStartMetrics.AppStartType.WARM, metrics.appStartType)
+  }
+
+  @Test
+  fun `canExtendAppStart is true on a fresh foreground start`() {
+    assertTrue(AppStartMetrics.getInstance().canExtendAppStart())
+  }
+
+  @Test
+  fun `canExtendAppStart is true for a headless (non-foreground) start`() {
+    val metrics = AppStartMetrics.getInstance()
+    metrics.isAppLaunchedInForeground = false
+    assertTrue(metrics.canExtendAppStart())
+  }
+
+  @Test
+  fun `canExtendAppStart is false once an activity was created`() {
+    val metrics = AppStartMetrics.getInstance()
+    metrics.onActivityCreated(mock(), null)
+    assertFalse(metrics.canExtendAppStart())
+  }
+
+  @Test
+  fun `canExtendAppStart is false once the first frame was drawn`() {
+    val metrics = AppStartMetrics.getInstance()
+    metrics.onFirstFrameDrawn()
+    assertFalse(metrics.canExtendAppStart())
+  }
+
+  @Test
+  fun `canExtendAppStart is false once start measurements were sent`() {
+    val metrics = AppStartMetrics.getInstance()
+    metrics.onAppStartSpansSent()
+    assertFalse(metrics.canExtendAppStart())
+  }
+
+  /** Drives the singleton's eager extension into the active state via the listener path. */
+  private fun activateExtension(metrics: AppStartMetrics) {
+    metrics.appStartExtension.setExtendAppStartListener {
+      AppStartExtension.ExtendedAppStart(mock(), mock())
+    }
+    metrics.appStartExtension.extendAppStart()
+    assertTrue(metrics.appStartExtension.isActive)
+  }
+
+  @Test
+  fun `clear resets the extension state`() {
+    val metrics = AppStartMetrics.getInstance()
+    activateExtension(metrics)
+    metrics.clear()
+    assertFalse(metrics.appStartExtension.isActive)
+    metrics.appStartExtension.setExtendAppStartListener(null)
+  }
+
+  @Test
+  fun `onAppStartSpansSent resets the extension state`() {
+    val metrics = AppStartMetrics.getInstance()
+    activateExtension(metrics)
+    metrics.onAppStartSpansSent()
+    assertFalse(metrics.appStartExtension.isActive)
+    metrics.appStartExtension.setExtendAppStartListener(null)
+  }
+
+  @Test
+  fun `late first activity does not reset the app start while the extension is active`() {
+    val metrics = AppStartMetrics.getInstance()
+    metrics.appStartType = AppStartMetrics.AppStartType.COLD
+    metrics.appStartTimeSpan.setStartedAt(1)
+    activateExtension(metrics)
+
+    SystemClock.setCurrentTimeMillis(TimeUnit.MINUTES.toMillis(2))
+    metrics.onActivityCreated(mock<Activity>(), null)
+
+    assertEquals(AppStartMetrics.AppStartType.COLD, metrics.appStartType)
+    assertEquals(1, metrics.appStartTimeSpan.startUptimeMs)
+    metrics.appStartExtension.setExtendAppStartListener(null)
+  }
+
+  @Test
+  fun `late first activity resets the app start once the extension has finished`() {
+    val metrics = AppStartMetrics.getInstance()
+    metrics.appStartType = AppStartMetrics.AppStartType.COLD
+    metrics.appStartTimeSpan.setStartedAt(1)
+    val transaction = mock<ITransaction>()
+    whenever(transaction.isFinished).thenReturn(true)
+    metrics.appStartExtension.setExtendAppStartListener {
+      AppStartExtension.ExtendedAppStart(transaction, mock())
+    }
+    metrics.appStartExtension.extendAppStart()
+    assertFalse(metrics.appStartExtension.isActive)
+
+    val now = TimeUnit.MINUTES.toMillis(2)
+    SystemClock.setCurrentTimeMillis(now)
+    metrics.onActivityCreated(mock<Activity>(), null)
+
+    assertEquals(AppStartMetrics.AppStartType.WARM, metrics.appStartType)
+    assertEquals(now, metrics.appStartTimeSpan.startUptimeMs)
+    metrics.appStartExtension.setExtendAppStartListener(null)
   }
 }

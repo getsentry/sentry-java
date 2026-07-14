@@ -33,6 +33,7 @@ import io.sentry.test.injectForField
 import io.sentry.transport.ITransport
 import io.sentry.transport.ITransportGate
 import io.sentry.util.HintUtils
+import io.sentry.util.JsonSerializationUtils
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -342,6 +343,39 @@ class SentryClientTest {
   }
 
   @Test
+  fun `when log is dropped by event processor, log byte discard is recorded`() {
+    val scope = createScope()
+    val logEvent = SentryLogEvent(SentryId(), SentryNanotimeDate(), "message", SentryLogLevel.WARN)
+    val logEventNumberOfBytes =
+      JsonSerializationUtils.byteSizeOf(
+        fixture.sentryOptions.serializer,
+        fixture.sentryOptions.logger,
+        logEvent,
+      )
+    scope.addEventProcessor(
+      object : EventProcessor {
+        override fun process(event: SentryLogEvent): SentryLogEvent? = null
+      }
+    )
+
+    val sut = fixture.getSut()
+    sut.captureLog(logEvent, scope)
+
+    verify(fixture.loggerBatchProcessor, never()).add(any())
+    assertClientReport(
+      fixture.sentryOptions.clientReportRecorder,
+      listOf(
+        DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.LogItem.category, 1),
+        DiscardedEvent(
+          DiscardReason.EVENT_PROCESSOR.reason,
+          DataCategory.LogByte.category,
+          logEventNumberOfBytes,
+        ),
+      ),
+    )
+  }
+
+  @Test
   fun `when beforeSendLog is returns new instance, new instance is sent`() {
     val scope = createScope()
     val expected =
@@ -388,7 +422,10 @@ class SentryClientTest {
 
     assertClientReport(
       fixture.sentryOptions.clientReportRecorder,
-      listOf(DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.TraceMetric.category, 1)),
+      listOf(
+        DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.TraceMetric.category, 1),
+        DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.TraceMetricByte.category, 120),
+      ),
     )
   }
 
@@ -408,7 +445,43 @@ class SentryClientTest {
 
     assertClientReport(
       fixture.sentryOptions.clientReportRecorder,
-      listOf(DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.TraceMetric.category, 1)),
+      listOf(
+        DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.TraceMetric.category, 1),
+        DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.TraceMetricByte.category, 120),
+      ),
+    )
+  }
+
+  @Test
+  fun `when metric is dropped by event processor, metric byte discard is recorded`() {
+    val scope = createScope()
+    val metricsEvent = SentryMetricsEvent(SentryId(), SentryNanotimeDate(), "name", "gauge", 123.0)
+    val metricsEventNumberOfBytes =
+      JsonSerializationUtils.byteSizeOf(
+        fixture.sentryOptions.serializer,
+        fixture.sentryOptions.logger,
+        metricsEvent,
+      )
+    scope.addEventProcessor(
+      object : EventProcessor {
+        override fun process(event: SentryMetricsEvent, hint: Hint): SentryMetricsEvent? = null
+      }
+    )
+
+    val sut = fixture.getSut()
+    sut.captureMetric(metricsEvent, scope, null)
+
+    verify(fixture.metricsBatchProcessor, never()).add(any())
+    assertClientReport(
+      fixture.sentryOptions.clientReportRecorder,
+      listOf(
+        DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.TraceMetric.category, 1),
+        DiscardedEvent(
+          DiscardReason.EVENT_PROCESSOR.reason,
+          DataCategory.TraceMetricByte.category,
+          metricsEventNumberOfBytes,
+        ),
+      ),
     )
   }
 
@@ -535,6 +608,24 @@ class SentryClientTest {
   }
 
   @Test
+  fun `when captureEvent applies scope tags and extras, event map containers are copied`() {
+    val event = SentryEvent()
+    val scope = createScope()
+
+    val sut = fixture.getSut()
+
+    sut.captureEvent(event, scope)
+    val eventTags = event.tags!!
+    val eventExtras = event.extras!!
+
+    scope.setTag("newTag", "newValue")
+    scope.setExtra("newExtra", "newValue")
+
+    assertFalse(eventTags.containsKey("newTag"))
+    assertFalse(eventExtras.containsKey("newExtra"))
+  }
+
+  @Test
   fun `when breadcrumbs are not empty, sort them out by date`() {
     val b1 = Breadcrumb(DateUtils.getDateTime("2020-03-27T08:52:58.001Z"))
     val b2 = Breadcrumb(DateUtils.getDateTime("2020-03-27T08:52:58.002Z"))
@@ -556,6 +647,52 @@ class SentryClientTest {
       assertSame(b2, it[1])
       assertSame(b3, it[2])
     }
+  }
+
+  @Test
+  fun `when event is cached, scope breadcrumbs are not merged into the event breadcrumbs`() {
+    val scopeCrumb = Breadcrumb(DateUtils.getDateTime("2020-03-27T08:52:58.001Z"))
+    val scope = Scope(SentryOptions()).apply { addBreadcrumb(scopeCrumb) }
+
+    val sut = fixture.getSut()
+
+    val eventCrumb = Breadcrumb(DateUtils.getDateTime("2020-03-27T08:52:58.003Z"))
+    val event = SentryEvent().apply { breadcrumbs = mutableListOf(eventCrumb) }
+
+    val hints = HintUtils.createWithTypeCheckHint(CachedHint())
+    sut.captureEvent(event, scope, hints)
+
+    assertNotNull(event.breadcrumbs) {
+      assertEquals(1, it.size)
+      assertSame(eventCrumb, it[0])
+    }
+  }
+
+  @Test
+  fun `when transaction is cached, scope breadcrumbs are not merged into the transaction breadcrumbs`() {
+    val sut = fixture.getSut()
+    val scope = Scope(fixture.sentryOptions)
+    scope.addBreadcrumb(Breadcrumb("from scope"))
+
+    val transaction = SentryTransaction(fixture.sentryTracer)
+    transaction.breadcrumbs = mutableListOf(Breadcrumb("from transaction"))
+
+    val hints = HintUtils.createWithTypeCheckHint(CachedHint())
+    sut.captureTransaction(transaction, scope, hints)
+
+    verify(fixture.transport)
+      .send(
+        check { envelope ->
+          val sent = envelope.items.first().getTransaction(fixture.sentryOptions.serializer)
+          assertNotNull(sent) {
+            assertNotNull(it.breadcrumbs) { breadcrumbs ->
+              assertEquals(1, breadcrumbs.size)
+              assertEquals("from transaction", breadcrumbs.first().message)
+            }
+          }
+        },
+        anyOrNull(),
+      )
   }
 
   @Test
@@ -868,6 +1005,25 @@ class SentryClientTest {
     sut.captureEvent(event, scope, hints)
 
     assertEquals(scope.level, event.level)
+  }
+
+  @Test
+  fun `when hint is Cached, scope attachments are not added to avoid duplication`() {
+    val sut = fixture.getSut()
+
+    val event = createEvent()
+    val scope = createScopeWithAttachments()
+
+    val hints = HintUtils.createWithTypeCheckHint(CustomCachedApplyScopeDataHint())
+    sut.captureEvent(event, scope, hints)
+
+    verify(fixture.transport)
+      .send(
+        check { actual ->
+          assertEquals(0, actual.items.count { it.header.type == SentryItemType.Attachment })
+        },
+        anyOrNull(),
+      )
   }
 
   @Test
@@ -1959,6 +2115,23 @@ class SentryClientTest {
   }
 
   @Test
+  fun `captureTransaction registers trace ID with replay controller`() {
+    var registeredTraceId: SentryId? = null
+    fixture.sentryOptions.setReplayController(
+      object : ReplayController by NoOpReplayController.getInstance() {
+        override fun registerTraceId(traceId: SentryId) {
+          registeredTraceId = traceId
+        }
+      }
+    )
+    val sut = fixture.getSut()
+    val sentryTracer = SentryTracer(TransactionContext("name", "op"), fixture.scopes)
+    val transaction = SentryTransaction(sentryTracer)
+    sut.captureTransaction(transaction, sentryTracer.traceContext())
+    assertEquals(sentryTracer.spanContext.traceId, registeredTraceId)
+  }
+
+  @Test
   fun `when exception type is ignored, capturing event does not send it`() {
     fixture.sentryOptions.addIgnoredExceptionForType(IllegalStateException::class.java)
     val sut = fixture.getSut()
@@ -2117,6 +2290,37 @@ class SentryClientTest {
     val sut = fixture.getSut()
     val attachment = Attachment.fromThreadDump(byteArrayOf())
     val hint = Hint().also { it.threadDump = attachment }
+
+    sut.captureEvent(SentryEvent(), hint)
+
+    verify(fixture.transport)
+      .send(check { envelope -> assertEquals(1, envelope.items.count()) }, anyOrNull())
+  }
+
+  @Test
+  fun `tombstone is added to the envelope from the hint`() {
+    val sut = fixture.getSut()
+    val attachment = Attachment.fromTombstone(byteArrayOf())
+    val hint = Hint().also { it.tombstone = attachment }
+
+    sut.captureEvent(SentryEvent(), hint)
+
+    verify(fixture.transport)
+      .send(
+        check { envelope ->
+          val tombstone = envelope.items.last()
+          assertNotNull(tombstone) { assertEquals(attachment.filename, tombstone.header.fileName) }
+        },
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `tombstone is dropped from hint via before send`() {
+    fixture.sentryOptions.beforeSend = CustomBeforeSendCallback()
+    val sut = fixture.getSut()
+    val attachment = Attachment.fromTombstone(byteArrayOf())
+    val hint = Hint().also { it.tombstone = attachment }
 
     sut.captureEvent(SentryEvent(), hint)
 
@@ -3647,6 +3851,7 @@ class SentryClientTest {
       hint.screenshot = null
       hint.viewHierarchy = null
       hint.threadDump = null
+      hint.tombstone = null
       return event
     }
   }

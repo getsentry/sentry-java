@@ -1,6 +1,5 @@
 package io.sentry.android.core.internal.gestures;
 
-import android.content.res.Resources;
 import android.view.View;
 import android.widget.AbsListView;
 import android.widget.ScrollView;
@@ -42,13 +41,12 @@ public final class AndroidViewGestureTargetLocator implements GestureTargetLocat
   }
 
   private UiElement createUiElement(final @NotNull View targetView) {
-    try {
-      final String resourceName = ViewUtils.getResourceId(targetView);
-      @Nullable String className = ClassUtil.getClassName(targetView);
-      return new UiElement(targetView, className, resourceName, null, ORIGIN);
-    } catch (Resources.NotFoundException ignored) {
+    final @Nullable String resourceName = ViewUtils.getResourceIdOrNull(targetView);
+    if (resourceName == null) {
       return null;
     }
+    @Nullable String className = ClassUtil.getClassName(targetView);
+    return new UiElement(targetView, className, resourceName, null, ORIGIN);
   }
 
   private static boolean isViewTappable(final @NotNull View view) {

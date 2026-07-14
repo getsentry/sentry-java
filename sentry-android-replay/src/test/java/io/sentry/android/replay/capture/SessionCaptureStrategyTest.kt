@@ -122,6 +122,14 @@ class SessionCaptureStrategyTest {
             .whenever(it)
             .submit(any<Runnable>())
         },
+        mock {
+          doAnswer { invocation ->
+              (invocation.arguments[0] as Runnable).run()
+              null
+            }
+            .whenever(it)
+            .submit(any<Runnable>())
+        },
       ) { _ ->
         replayCache
       }
@@ -473,6 +481,85 @@ class SessionCaptureStrategyTest {
           val optionsEvent = it.replayRecording?.payload?.find { it is RRWebOptionsEvent }
           assertNull(optionsEvent)
         },
+      )
+  }
+
+  @Test
+  fun `registerTraceId includes trace IDs in next segment`() {
+    val now =
+      System.currentTimeMillis() + (fixture.options.sessionReplay.sessionSegmentDuration * 5)
+    val strategy = fixture.getSut(dateProvider = { now })
+    strategy.start()
+    strategy.onConfigurationChanged(fixture.recorderConfig)
+
+    val traceId1 = SentryId()
+    val traceId2 = SentryId()
+    strategy.registerTraceId(traceId1)
+    strategy.registerTraceId(traceId2)
+
+    strategy.onScreenshotRecorded(mock<Bitmap>()) {}
+
+    verify(fixture.scopes)
+      .captureReplay(
+        argThat { event ->
+          event is SentryReplayEvent &&
+            event.traceIds?.size == 2 &&
+            event.traceIds!!.contains(traceId1.toString()) &&
+            event.traceIds!!.contains(traceId2.toString())
+        },
+        any(),
+      )
+  }
+
+  @Test
+  fun `registerTraceId clears trace IDs after segment is created`() {
+    val now =
+      System.currentTimeMillis() + (fixture.options.sessionReplay.sessionSegmentDuration * 5)
+    val strategy = fixture.getSut(dateProvider = { now })
+    strategy.start()
+    strategy.onConfigurationChanged(fixture.recorderConfig)
+
+    val traceId = SentryId()
+    strategy.registerTraceId(traceId)
+
+    strategy.onScreenshotRecorded(mock<Bitmap>()) {}
+
+    verify(fixture.scopes)
+      .captureReplay(
+        argThat { event ->
+          event is SentryReplayEvent && event.traceIds?.contains(traceId.toString()) == true
+        },
+        any(),
+      )
+
+    // trigger another segment, trace IDs should be cleared
+    strategy.onScreenshotRecorded(mock<Bitmap>()) {}
+
+    verify(fixture.scopes)
+      .captureReplay(
+        argThat { event ->
+          event is SentryReplayEvent && event.segmentId == 1 && event.traceIds.isNullOrEmpty()
+        },
+        any(),
+      )
+  }
+
+  @Test
+  fun `registerTraceId ignores empty trace ID`() {
+    val now =
+      System.currentTimeMillis() + (fixture.options.sessionReplay.sessionSegmentDuration * 5)
+    val strategy = fixture.getSut(dateProvider = { now })
+    strategy.start()
+    strategy.onConfigurationChanged(fixture.recorderConfig)
+
+    strategy.registerTraceId(SentryId.EMPTY_ID)
+
+    strategy.onScreenshotRecorded(mock<Bitmap>()) {}
+
+    verify(fixture.scopes)
+      .captureReplay(
+        argThat { event -> event is SentryReplayEvent && event.traceIds.isNullOrEmpty() },
+        any(),
       )
   }
 }

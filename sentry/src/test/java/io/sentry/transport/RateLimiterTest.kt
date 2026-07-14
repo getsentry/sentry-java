@@ -458,6 +458,31 @@ class RateLimiterTest {
   }
 
   @Test
+  fun `drop log items as lost when log byte is rate limited`() {
+    val rateLimiter = fixture.getSUT()
+    val scopes = mock<IScopes>()
+    whenever(scopes.options).thenReturn(SentryOptions())
+
+    val logEventItem =
+      SentryEnvelopeItem.fromLogs(
+        fixture.serializer,
+        SentryLogEvents(
+          listOf(SentryLogEvent(SentryId(), SentryLongDate(0), "hello", SentryLogLevel.INFO))
+        ),
+      )
+    val envelope = SentryEnvelope(SentryEnvelopeHeader(null), arrayListOf(logEventItem))
+
+    rateLimiter.updateRetryAfterLimits("60:log_byte:key", null, 1)
+    val result = rateLimiter.filter(envelope, Hint())
+
+    assertNull(result)
+
+    verify(fixture.clientReportRecorder, times(1))
+      .recordLostEnvelopeItem(eq(DiscardReason.RATELIMIT_BACKOFF), same(logEventItem))
+    verifyNoMoreInteractions(fixture.clientReportRecorder)
+  }
+
+  @Test
   fun `drop profileChunkUi items as lost`() {
     val rateLimiter = fixture.getSUT()
 
@@ -581,6 +606,33 @@ class RateLimiterTest {
     val metricItem = metricEnvelope.items.first()
 
     rateLimiter.updateRetryAfterLimits("60:trace_metric:key", null, 1)
+    val result = rateLimiter.filter(metricEnvelope, Hint())
+
+    assertNull(result)
+
+    verify(fixture.clientReportRecorder, times(1))
+      .recordLostEnvelopeItem(eq(DiscardReason.RATELIMIT_BACKOFF), same(metricItem))
+    verifyNoMoreInteractions(fixture.clientReportRecorder)
+  }
+
+  @Test
+  fun `drop trace metric items as lost when trace metric byte is rate limited`() {
+    val rateLimiter = fixture.getSUT()
+
+    // There is no span API yet so we'll create the envelope manually using EnvelopeReader
+    // This mimics how hybrid SDKs would send trace_metric envelope items
+    val spanPayload = """{"items":[]}"""
+    val metricItemHeader =
+      """{"type":"trace_metric","length":${spanPayload.length},"content_type":"application/vnd.sentry.items.trace-metric+json","item_count":1}"""
+    val envelopeHeader = """{}"""
+    val rawEnvelope = "$envelopeHeader\n$metricItemHeader\n$spanPayload"
+
+    val options = SentryOptions()
+    val envelopeReader = EnvelopeReader(JsonSerializer(options))
+    val metricEnvelope = envelopeReader.read(rawEnvelope.byteInputStream())!!
+    val metricItem = metricEnvelope.items.first()
+
+    rateLimiter.updateRetryAfterLimits("60:trace_metric_byte:key", null, 1)
     val result = rateLimiter.filter(metricEnvelope, Hint())
 
     assertNull(result)

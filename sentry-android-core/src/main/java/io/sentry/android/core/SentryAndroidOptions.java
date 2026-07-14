@@ -38,6 +38,22 @@ public final class SentryAndroidOptions extends SentryOptions {
   private boolean anrReportInDebug = false;
 
   /**
+   * Enable or disable in-process, heartbeat-based app-hang detection in sentry-native. Default is
+   * disabled. When enabled, sentry-native's background watchdog captures an app-hang event if no
+   * heartbeat is received within {@link #ndkAppHangTimeoutIntervalMillis} on the monitored thread.
+   *
+   * <p>This is intended for downstream/hybrid SDKs that emit the heartbeat by calling the native
+   * {@code sentry_app_hang_heartbeat()} from their main thread. It is independent of the JVM-based
+   * {@link #anrEnabled} ANR detection.
+   */
+  private boolean enableNdkAppHangTracking = false;
+
+  /**
+   * The app-hang detection timeout interval in millis used by sentry-native. Default is 5000 = 5s.
+   */
+  private long ndkAppHangTimeoutIntervalMillis = 5000;
+
+  /**
    * Enable or disable automatic breadcrumbs for Activity lifecycle. Using
    * Application.ActivityLifecycleCallbacks
    */
@@ -238,7 +254,15 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   private boolean attachAnrThreadDump = false;
 
+  /**
+   * Controls whether to attach the raw tombstone protobuf as an attachment. The tombstone is being
+   * attached from {@link ApplicationExitInfo#getTraceInputStream()}, if available.
+   */
+  private boolean attachRawTombstone = false;
+
   private boolean enablePerformanceV2 = true;
+
+  private boolean enableStandaloneAppStartTracing = false;
 
   private @Nullable SentryFrameMetricsCollector frameMetricsCollector;
 
@@ -328,6 +352,50 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   public void setAnrReportInDebug(boolean anrReportInDebug) {
     this.anrReportInDebug = anrReportInDebug;
+  }
+
+  /**
+   * Checks if heartbeat-based app-hang detection in sentry-native is enabled. Default is disabled.
+   *
+   * @return true if enabled or false otherwise
+   */
+  @ApiStatus.Experimental
+  public boolean isEnableNdkAppHangTracking() {
+    return enableNdkAppHangTracking;
+  }
+
+  /**
+   * Enables or disables heartbeat-based app-hang detection in sentry-native. Default is disabled.
+   * Requires the NDK integration to be present and emitting heartbeats via the native {@code
+   * sentry_app_hang_heartbeat()}.
+   *
+   * @param enableNdkAppHangTracking true for enabled and false for disabled
+   */
+  @ApiStatus.Experimental
+  public void setEnableNdkAppHangTracking(boolean enableNdkAppHangTracking) {
+    this.enableNdkAppHangTracking = enableNdkAppHangTracking;
+  }
+
+  /**
+   * Returns the app-hang detection timeout interval in millis used by sentry-native. Default is
+   * 5000 = 5s.
+   *
+   * @return the timeout in millis
+   */
+  @ApiStatus.Experimental
+  public long getNdkAppHangTimeoutIntervalMillis() {
+    return ndkAppHangTimeoutIntervalMillis;
+  }
+
+  /**
+   * Sets the app-hang detection timeout interval in millis used by sentry-native. Default is 5000 =
+   * 5s.
+   *
+   * @param ndkAppHangTimeoutIntervalMillis the timeout interval in millis
+   */
+  @ApiStatus.Experimental
+  public void setNdkAppHangTimeoutIntervalMillis(long ndkAppHangTimeoutIntervalMillis) {
+    this.ndkAppHangTimeoutIntervalMillis = ndkAppHangTimeoutIntervalMillis;
   }
 
   /**
@@ -643,6 +711,14 @@ public final class SentryAndroidOptions extends SentryOptions {
     this.attachAnrThreadDump = attachAnrThreadDump;
   }
 
+  public boolean isAttachRawTombstone() {
+    return attachRawTombstone;
+  }
+
+  public void setAttachRawTombstone(final boolean attachRawTombstone) {
+    this.attachRawTombstone = attachRawTombstone;
+  }
+
   /**
    * @return true if performance-v2 is enabled. See {@link #setEnablePerformanceV2(boolean)} for
    *     more details.
@@ -661,6 +737,53 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   public void setEnablePerformanceV2(final boolean enablePerformanceV2) {
     this.enablePerformanceV2 = enablePerformanceV2;
+  }
+
+  /**
+   * @return true if standalone app start tracing is enabled. See {@link
+   *     #setEnableStandaloneAppStartTracing(boolean)} for more details.
+   */
+  @ApiStatus.Experimental
+  public boolean isEnableStandaloneAppStartTracing() {
+    return enableStandaloneAppStartTracing;
+  }
+
+  /**
+   * Enables or disables standalone app start tracing.
+   *
+   * <p>When enabled, app start is sent as its own transaction instead of an {@code app.start.*}
+   * child span on the first Activity transaction.
+   *
+   * <p>The SDK reports app start through these paths:
+   *
+   * <ul>
+   *   <li>With an Activity: the SDK sends an "App Start" transaction with operation {@code
+   *       app.start}, plus a separate {@code ui.load} transaction for the Activity. Both
+   *       transactions share the same trace ID.
+   *   <li>Headless app start: for launches started by something like a broadcast receiver, service,
+   *       or content provider without an Activity, the SDK sends only the standalone app-start
+   *       transaction.
+   *       <ul>
+   *         <li>On devices running Android 15 (API level 35) or newer, the SDK can use {@code
+   *             ApplicationStartInfo} to classify cold versus warm starts and anchor the end time
+   *             at the {@code Application.onCreate} start.
+   *         <li>On devices running older Android versions, headless launches are treated as cold
+   *             once {@code Application.onCreate} finishes without an Activity. The end time falls
+   *             back to the best SDK/plugin timing available.
+   *         <li>With {@code Application.onCreate} instrumentation, the SDK can add an {@code
+   *             application.load} phase span and use the exact {@code Application.onCreate} end
+   *             time. Without that instrumentation, the standalone transaction is still sent, but
+   *             it may only include the {@code process.load} phase span.
+   *       </ul>
+   *   <li>If an Activity opens after a headless start, its {@code ui.load} transaction reuses the
+   *       app-start trace ID.
+   * </ul>
+   *
+   * @param enableStandaloneAppStartTracing true if enabled or false otherwise
+   */
+  @ApiStatus.Experimental
+  public void setEnableStandaloneAppStartTracing(final boolean enableStandaloneAppStartTracing) {
+    this.enableStandaloneAppStartTracing = enableStandaloneAppStartTracing;
   }
 
   @ApiStatus.Internal

@@ -75,8 +75,8 @@ public final class SentryBatchLoaderRegistry implements BatchLoaderRegistry {
     }
 
     @Override
-    public BatchLoaderRegistry.RegistrationSpec<K, V> withOptions(
-        Consumer<DataLoaderOptions.Builder> optionsConsumer) {
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    public BatchLoaderRegistry.RegistrationSpec<K, V> withOptions(Consumer optionsConsumer) {
       return delegate.withOptions(optionsConsumer);
     }
 

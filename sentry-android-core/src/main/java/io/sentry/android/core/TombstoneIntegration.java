@@ -24,6 +24,7 @@ import io.sentry.android.core.NativeEventCollector.NativeEventData;
 import io.sentry.android.core.cache.AndroidEnvelopeCache;
 import io.sentry.android.core.internal.tombstone.NativeExceptionMechanism;
 import io.sentry.android.core.internal.tombstone.TombstoneParser;
+import io.sentry.android.core.internal.util.NativeEventUtils;
 import io.sentry.hints.Backfillable;
 import io.sentry.hints.BlockingFlushHint;
 import io.sentry.hints.NativeCrashExit;
@@ -36,6 +37,7 @@ import io.sentry.transport.CurrentDateProvider;
 import io.sentry.transport.ICurrentDateProvider;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
+import java.io.ByteArrayInputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
@@ -150,26 +152,35 @@ public class TombstoneIntegration implements Integration, Closeable {
     public @Nullable ApplicationExitInfoHistoryDispatcher.Report buildReport(
         final @NotNull ApplicationExitInfo exitInfo, final boolean enrich) {
       SentryEvent event;
+      @Nullable byte[] rawTombstone = null;
       try {
-        final InputStream tombstoneInputStream = exitInfo.getTraceInputStream();
-        if (tombstoneInputStream == null) {
-          options
-              .getLogger()
-              .log(
-                  SentryLevel.WARNING,
-                  "No tombstone InputStream available for ApplicationExitInfo from %s",
-                  DateTimeFormatter.ISO_INSTANT.format(
-                      Instant.ofEpochMilli(exitInfo.getTimestamp())));
-          return null;
-        }
+        final boolean attachRaw = options.isAttachRawTombstone();
+        try (final InputStream tombstoneInputStream = exitInfo.getTraceInputStream()) {
+          if (tombstoneInputStream == null) {
+            options
+                .getLogger()
+                .log(
+                    SentryLevel.WARNING,
+                    "No tombstone InputStream available for ApplicationExitInfo from %s",
+                    DateTimeFormatter.ISO_INSTANT.format(
+                        Instant.ofEpochMilli(exitInfo.getTimestamp())));
+            return null;
+          }
 
-        try (final TombstoneParser parser =
-            new TombstoneParser(
-                tombstoneInputStream,
-                this.options.getInAppIncludes(),
-                this.options.getInAppExcludes(),
-                this.context.getApplicationInfo().nativeLibraryDir)) {
-          event = parser.parse();
+          if (attachRaw) {
+            rawTombstone = NativeEventUtils.readBytes(tombstoneInputStream);
+          }
+
+          final InputStream parserInput =
+              attachRaw ? new ByteArrayInputStream(rawTombstone) : tombstoneInputStream;
+          try (final TombstoneParser parser =
+              new TombstoneParser(
+                  parserInput,
+                  this.options.getInAppIncludes(),
+                  this.options.getInAppExcludes(),
+                  this.context.getApplicationInfo().nativeLibraryDir)) {
+            event = parser.parse();
+          }
         }
       } catch (Throwable e) {
         options
@@ -189,6 +200,10 @@ public class TombstoneIntegration implements Integration, Closeable {
           new TombstoneHint(
               options.getFlushTimeoutMillis(), options.getLogger(), tombstoneTimestamp, enrich);
       final Hint hint = HintUtils.createWithTypeCheckHint(tombstoneHint);
+
+      if (rawTombstone != null) {
+        hint.setTombstone(Attachment.fromTombstone(rawTombstone));
+      }
 
       try {
         final @Nullable SentryEvent mergedEvent =

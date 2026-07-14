@@ -5,8 +5,6 @@ plugins {
   id("com.android.library")
   alias(libs.plugins.kotlin.android)
   alias(libs.plugins.kotlin.compose)
-  jacoco
-  alias(libs.plugins.jacoco.android)
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
 }
@@ -42,6 +40,12 @@ android {
     unitTests.apply {
       isReturnDefaultValues = true
       isIncludeAndroidResources = true
+      // Robolectric loads the android-all jar into each test JVM, which needs more heap
+      // than the default.
+      all {
+        it.minHeapSize = "256m"
+        it.maxHeapSize = "2g"
+      }
     }
   }
 

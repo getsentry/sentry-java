@@ -17,6 +17,9 @@ public final class NoOpFeatureFlagBuffer implements IFeatureFlagBuffer {
   public void add(final @Nullable String flag, final @Nullable Boolean result) {}
 
   @Override
+  public void clear() {}
+
+  @Override
   public @Nullable FeatureFlags getFeatureFlags() {
     return null;
   }

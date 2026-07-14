@@ -10,6 +10,7 @@ plugins {
   alias(libs.plugins.kotlin.spring)
   id("war")
   alias(libs.plugins.gretty)
+  id("io.sentry.systemtest")
 }
 
 application { mainClass.set("io.sentry.samples.spring7.Main") }
@@ -25,9 +26,12 @@ java.sourceCompatibility = JavaVersion.VERSION_17
 
 java.targetCompatibility = JavaVersion.VERSION_17
 
-repositories { mavenCentral() }
-
-dependencyManagement { imports { mavenBom(SpringBootPlugin.BOM_COORDINATES) } }
+dependencyManagement {
+  imports {
+    mavenBom(SpringBootPlugin.BOM_COORDINATES)
+    mavenBom(libs.kotlin.bom.get().toString())
+  }
+}
 
 dependencies {
   implementation(Config.Libs.springWeb)
@@ -50,7 +54,7 @@ dependencies {
 
   testImplementation(projects.sentrySystemTestSupport)
   testImplementation(libs.kotlin.test.junit)
-  testImplementation(libs.springboot.starter.test) {
+  testImplementation(libs.springboot4.starter.test) {
     exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
   }
 }
@@ -67,8 +71,6 @@ tasks.withType<KotlinCompile>().configureEach {
   }
 }
 
-configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
-
 tasks.register<Test>("systemTest").configure {
   group = "verification"
   description = "Runs the System tests"
@@ -76,8 +78,6 @@ tasks.register<Test>("systemTest").configure {
   val test = project.extensions.getByType<SourceSetContainer>()["test"]
   testClassesDirs = test.output.classesDirs
   classpath = test.runtimeClasspath
-
-  outputs.upToDateWhen { false }
 
   maxParallelForks = 1
 

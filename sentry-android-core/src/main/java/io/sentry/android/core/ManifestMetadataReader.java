@@ -35,7 +35,14 @@ final class ManifestMetadataReader {
   static final String ANR_ATTACH_THREAD_DUMPS = "io.sentry.anr.attach-thread-dumps";
   static final String ANR_REPORT_HISTORICAL = "io.sentry.anr.report-historical";
 
+  static final String NDK_APP_HANG_TRACKING_ENABLE = "io.sentry.ndk.app-hang.enable";
+
+  static final String NDK_APP_HANG_TIMEOUT_INTERVAL_MILLIS =
+      "io.sentry.ndk.app-hang.timeout-interval-millis";
+
   static final String TOMBSTONE_ENABLE = "io.sentry.tombstone.enable";
+  static final String TOMBSTONE_ATTACH_RAW = "io.sentry.tombstone.attach-raw";
+  static final String TOMBSTONE_REPORT_HISTORICAL = "io.sentry.tombstone.report-historical";
 
   static final String AUTO_INIT = "io.sentry.auto-init";
   static final String NDK_ENABLE = "io.sentry.ndk.enable";
@@ -106,6 +113,9 @@ final class ManifestMetadataReader {
   static final String SEND_MODULES = "io.sentry.send-modules";
 
   static final String ENABLE_PERFORMANCE_V2 = "io.sentry.performance-v2.enable";
+
+  static final String ENABLE_STANDALONE_APP_START_TRACING =
+      "io.sentry.standalone-app-start-tracing.enable";
 
   static final String ENABLE_APP_START_PROFILING = "io.sentry.profiling.enable-app-start";
 
@@ -226,6 +236,14 @@ final class ManifestMetadataReader {
         options.setAnrEnabled(readBool(metadata, logger, ANR_ENABLE, options.isAnrEnabled()));
         options.setTombstoneEnabled(
             readBool(metadata, logger, TOMBSTONE_ENABLE, options.isTombstoneEnabled()));
+        options.setAttachRawTombstone(
+            readBool(metadata, logger, TOMBSTONE_ATTACH_RAW, options.isAttachRawTombstone()));
+        options.setReportHistoricalTombstones(
+            readBool(
+                metadata,
+                logger,
+                TOMBSTONE_REPORT_HISTORICAL,
+                options.isReportHistoricalTombstones()));
 
         // use enableAutoSessionTracking as fallback
         options.setEnableAutoSessionTracking(
@@ -257,6 +275,20 @@ final class ManifestMetadataReader {
 
         options.setReportHistoricalAnrs(
             readBool(metadata, logger, ANR_REPORT_HISTORICAL, options.isReportHistoricalAnrs()));
+
+        options.setEnableNdkAppHangTracking(
+            readBool(
+                metadata,
+                logger,
+                NDK_APP_HANG_TRACKING_ENABLE,
+                options.isEnableNdkAppHangTracking()));
+
+        options.setNdkAppHangTimeoutIntervalMillis(
+            readLong(
+                metadata,
+                logger,
+                NDK_APP_HANG_TIMEOUT_INTERVAL_MILLIS,
+                options.getNdkAppHangTimeoutIntervalMillis()));
 
         final @Nullable String dsn = readString(metadata, logger, DSN, options.getDsn());
         final boolean enabled = readBool(metadata, logger, ENABLE_SENTRY, options.isEnabled());
@@ -498,6 +530,13 @@ final class ManifestMetadataReader {
 
         options.setEnablePerformanceV2(
             readBool(metadata, logger, ENABLE_PERFORMANCE_V2, options.isEnablePerformanceV2()));
+
+        options.setEnableStandaloneAppStartTracing(
+            readBool(
+                metadata,
+                logger,
+                ENABLE_STANDALONE_APP_START_TRACING,
+                options.isEnableStandaloneAppStartTracing()));
 
         options.setEnableAppStartProfiling(
             readBool(

@@ -3,19 +3,15 @@ import com.vanniktech.maven.publish.JavadocJar
 import com.vanniktech.maven.publish.MavenPublishBaseExtension
 import groovy.util.Node
 import io.gitlab.arturbosch.detekt.extensions.DetektExtension
-import kotlinx.kover.gradle.plugin.dsl.KoverReportExtension
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 
 plugins {
     `java-library`
     alias(libs.plugins.spotless) apply false
-    jacoco
     alias(libs.plugins.detekt)
     `maven-publish`
     alias(libs.plugins.binary.compatibility.validator)
-    alias(libs.plugins.jacoco.android) apply false
-    alias(libs.plugins.kover) apply false
     alias(libs.plugins.vanniktech.maven.publish) apply false
     alias(libs.plugins.kotlin.android) apply false
     alias(libs.plugins.kotlin.multiplatform) apply false
@@ -107,57 +103,15 @@ allprojects {
                 TestLogEvent.PASSED,
                 TestLogEvent.FAILED
             )
-
-            // Cap JVM args per test
-            minHeapSize = "256m"
-            maxHeapSize = "2g"
         }
         withType<JavaCompile>().configureEach {
-            options.compilerArgs.addAll(arrayOf("-Xlint:all", "-Werror", "-Xlint:-classfile", "-Xlint:-processing", "-Xlint:-try"))
+            options.compilerArgs.addAll(arrayOf("-Xlint:all", "-Werror", "-Xlint:-classfile", "-Xlint:-processing", "-Xlint:-try", "-Xlint:-options"))
         }
     }
 }
 
 subprojects {
     apply { plugin("io.sentry.spotless") }
-
-    val jacocoAndroidModules = listOf(
-        "sentry-android-core",
-        "sentry-android-fragment",
-        "sentry-android-navigation",
-        "sentry-android-ndk",
-        "sentry-android-sqlite",
-        "sentry-android-replay",
-        "sentry-android-timber"
-    )
-    if (jacocoAndroidModules.contains(name)) {
-        afterEvaluate {
-            jacoco {
-                toolVersion = "0.8.10"
-            }
-
-            tasks.withType<Test>().configureEach {
-                configure<JacocoTaskExtension> {
-                    isIncludeNoLocationClasses = true
-                    excludes = listOf("jdk.internal.*")
-                }
-            }
-        }
-    }
-
-    val koverKmpModules = listOf("sentry-compose")
-    if (koverKmpModules.contains(name)) {
-        afterEvaluate {
-            configure<KoverReportExtension> {
-                androidReports("release") {
-                    xml {
-                        // Change the report file name so the Codecov Github action can find it
-                        setReportFile(project.layout.buildDirectory.file("reports/kover/report.xml").get().asFile)
-                    }
-                }
-            }
-        }
-    }
 
     plugins.withId(Config.QualityPlugins.detektPlugin) {
         configure<DetektExtension> {
@@ -214,9 +168,9 @@ subprojects {
             }
         }
 
-        afterEvaluate {
-            apply<MavenPublishPlugin>()
+        apply<MavenPublishPlugin>()
 
+        afterEvaluate {
             configure<MavenPublishBaseExtension> {
                 assignAarTypes()
             }
@@ -260,14 +214,6 @@ tasks.register("buildForCodeQL") {
                 }
             }
         }
-}
-
-// Workaround for https://youtrack.jetbrains.com/issue/IDEA-316081/Gradle-8-toolchain-error-Toolchain-from-executable-property-does-not-match-toolchain-from-javaLauncher-property-when-different
-gradle.taskGraph.whenReady {
-    val task = this.allTasks.find { it.name.endsWith(".main()") } as? JavaExec
-    task?.let {
-        it.setExecutable(it.javaLauncher.get().executablePath.asFile.absolutePath)
-    }
 }
 
 /*

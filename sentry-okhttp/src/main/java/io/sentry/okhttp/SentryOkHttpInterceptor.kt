@@ -77,6 +77,7 @@ public open class SentryOkHttpInterceptor(
   }
 
   @Suppress("LongMethod")
+  @Throws(IOException::class)
   override fun intercept(chain: Interceptor.Chain): Response {
     var request = chain.request()
 

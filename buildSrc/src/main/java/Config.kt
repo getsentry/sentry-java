@@ -1,6 +1,4 @@
 
-import java.math.BigDecimal
-
 object Config {
     val AGP = System.getenv("VERSION_AGP") ?: "8.13.1"
     val kotlinStdLib = "stdlib-jdk8"
@@ -37,11 +35,6 @@ object Config {
     }
 
     object QualityPlugins {
-        object Jacoco {
-            // TODO [POTEL] add tests and restore
-            val minimumCoverage = BigDecimal.valueOf(0.1)
-        }
-
         // this can be removed when we upgrade to Gradle 8, which allows us to use a getter for the plugin ID
         val detektPlugin = "io.gitlab.arturbosch.detekt"
     }

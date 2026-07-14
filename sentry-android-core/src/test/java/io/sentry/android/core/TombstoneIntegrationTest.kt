@@ -75,7 +75,8 @@ class TombstoneIntegrationTest : ApplicationExitIntegrationTestBase<TombstoneHin
     val crashedThreadId = 21891L
     assertEquals(crashedThreadId, event.exceptions!![0].threadId)
     val crashedThread = event.threads!!.find { thread -> thread.id == crashedThreadId }
-    assertEquals("samples.android", crashedThread!!.name)
+    assertEquals("main", crashedThread!!.name)
+    assertTrue(crashedThread.isMain!!)
     assertTrue(crashedThread.isCrashed!!)
 
     // Verify that frames from the app's native library are marked as in-app
@@ -94,6 +95,45 @@ class TombstoneIntegrationTest : ApplicationExitIntegrationTestBase<TombstoneHin
     assertEquals("/system/lib64/libcompiler_rt.so", image.codeFile)
     assertEquals("0x764c325000", image.imageAddr)
     assertEquals(57344, image.imageSize)
+  }
+
+  @Test
+  fun `when attachRawTombstone is enabled, raw tombstone is attached to hint`() {
+    val integration =
+      fixture.getSut(tmpDir, lastReportedTimestamp = oldTimestamp) { options ->
+        options.isAttachRawTombstone = true
+      }
+
+    fixture.addAppExitInfo(timestamp = newTimestamp)
+
+    integration.register(fixture.scopes, fixture.options)
+
+    verify(fixture.scopes)
+      .captureEvent(
+        any(),
+        argThat<Hint> {
+          val tombstone = this.tombstone
+          tombstone != null &&
+            tombstone.filename == "tombstone.pb" &&
+            tombstone.contentType == "application/x-protobuf" &&
+            tombstone.bytes != null &&
+            tombstone.bytes!!.isNotEmpty()
+        },
+      )
+  }
+
+  @Test
+  fun `when attachRawTombstone is disabled, no tombstone is attached to hint`() {
+    val integration =
+      fixture.getSut(tmpDir, lastReportedTimestamp = oldTimestamp) { options ->
+        options.isAttachRawTombstone = false
+      }
+
+    fixture.addAppExitInfo(timestamp = newTimestamp)
+
+    integration.register(fixture.scopes, fixture.options)
+
+    verify(fixture.scopes).captureEvent(any(), argThat<Hint> { this.tombstone == null })
   }
 
   @Test
