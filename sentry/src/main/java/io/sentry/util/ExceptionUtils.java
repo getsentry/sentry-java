@@ -1,5 +1,7 @@
 package io.sentry.util;
 
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.Set;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -16,8 +18,12 @@ public final class ExceptionUtils {
   public static @NotNull Throwable findRootCause(final @NotNull Throwable throwable) {
     Objects.requireNonNull(throwable, "throwable cannot be null");
     Throwable rootCause = throwable;
-    while (rootCause.getCause() != null && rootCause.getCause() != rootCause) {
-      rootCause = rootCause.getCause();
+    final Set<Throwable> visited = Collections.newSetFromMap(new IdentityHashMap<>());
+    visited.add(rootCause);
+    Throwable cause = rootCause.getCause();
+    while (cause != null && visited.add(cause)) {
+      rootCause = cause;
+      cause = rootCause.getCause();
     }
     return rootCause;
   }
