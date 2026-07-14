@@ -168,7 +168,6 @@
 
 ### Dependencies
 
-- Bump Spring Boot 4 and OpenTelemetry dependencies ([#5573](https://github.com/getsentry/sentry-java/pull/5573))
 - Bump Native SDK from v0.15.0 to v0.15.1 ([#5570](https://github.com/getsentry/sentry-java/pull/5570))
   - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0151)
   - [diff](https://github.com/getsentry/sentry-native/compare/0.15.0...0.15.1)
