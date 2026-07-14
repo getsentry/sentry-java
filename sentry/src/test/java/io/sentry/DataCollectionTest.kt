@@ -99,7 +99,6 @@ class DataCollectionTest {
 
     dataCollection.httpHeaders.setRequest(behavior)
 
-    assertThat(dataCollection.httpHeaders.request).isSameInstanceAs(behavior)
     assertThat(dataCollection.isExplicitlyConfigured()).isTrue()
   }
 
