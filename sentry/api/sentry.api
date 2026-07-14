@@ -417,6 +417,22 @@ public final class io/sentry/DataCollection$HttpHeaders {
 	public fun setResponse (Lio/sentry/KeyValueCollectionBehavior;)V
 }
 
+public final class io/sentry/DataCollectionResolver {
+	public fun getCookies ()Lio/sentry/KeyValueCollectionBehavior;
+	public fun getHttpRequestHeaders ()Lio/sentry/KeyValueCollectionBehavior;
+	public fun getHttpResponseHeaders ()Lio/sentry/KeyValueCollectionBehavior;
+	public fun getQueryParams ()Lio/sentry/KeyValueCollectionBehavior;
+	public fun isDataCollectionConfigured ()Z
+	public fun isDatabaseQueryData ()Z
+	public fun isGraphqlDocument ()Z
+	public fun isGraphqlVariables ()Z
+	public fun isIncomingRequestBody ()Z
+	public fun isIncomingResponseBody ()Z
+	public fun isOutgoingRequestBody ()Z
+	public fun isOutgoingResponseBody ()Z
+	public fun isUserInfo ()Z
+}
+
 public final class io/sentry/DateUtils {
 	public static fun dateToSeconds (Ljava/util/Date;)D
 	public static fun doubleToBigDecimal (D)Ljava/math/BigDecimal;
@@ -3698,6 +3714,7 @@ public class io/sentry/SentryOptions {
 	public fun getContinuousProfiler ()Lio/sentry/IContinuousProfiler;
 	public fun getCron ()Lio/sentry/SentryOptions$Cron;
 	public fun getDataCollection ()Lio/sentry/DataCollection;
+	public fun getDataCollectionResolver ()Lio/sentry/DataCollectionResolver;
 	public fun getDateProvider ()Lio/sentry/SentryDateProvider;
 	public fun getDeadlineTimeout ()J
 	public fun getDebugMetaLoader ()Lio/sentry/internal/debugmeta/IDebugMetaLoader;
