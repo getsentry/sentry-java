@@ -57,6 +57,14 @@ internal class ReplayExecutorService(
       }
     }
   }
+
+  fun gracefulShutdown() {
+    synchronized(this) {
+      if (!isShutdown) {
+        delegate.shutdown()
+      }
+    }
+  }
 }
 
 internal class ReplayRunnable(val taskName: String, delegate: Runnable) : Runnable by delegate

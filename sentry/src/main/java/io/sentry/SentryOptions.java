@@ -529,6 +529,9 @@ public class SentryOptions {
   private @NotNull FullyDisplayedReporter fullyDisplayedReporter =
       FullyDisplayedReporter.getInstance();
 
+  /** Bridges the app start extension API to the Android implementation. */
+  private @NotNull IAppStartExtender appStartExtender = NoOpAppStartExtender.getInstance();
+
   private @NotNull IConnectionStatusProvider connectionStatusProvider =
       new NoOpConnectionStatusProvider();
 
@@ -686,7 +689,6 @@ public class SentryOptions {
       // SentryExecutorService should be initialized before any
       // SendCachedEventFireAndForgetIntegration
       executorService = new SentryExecutorService(this);
-      executorService.prewarm();
     }
 
     // SpotlightIntegration is loaded via reflection to allow the sentry-spotlight module
@@ -2682,6 +2684,22 @@ public class SentryOptions {
   public void setFullyDisplayedReporter(
       final @NotNull FullyDisplayedReporter fullyDisplayedReporter) {
     this.fullyDisplayedReporter = fullyDisplayedReporter;
+  }
+
+  /**
+   * Gets the app start extender, which bridges the app start extension API to its implementation.
+   *
+   * @return the app start extender.
+   */
+  @ApiStatus.Internal
+  public @NotNull IAppStartExtender getAppStartExtender() {
+    return appStartExtender;
+  }
+
+  @ApiStatus.Internal
+  public void setAppStartExtender(final @Nullable IAppStartExtender appStartExtender) {
+    this.appStartExtender =
+        appStartExtender != null ? appStartExtender : NoOpAppStartExtender.getInstance();
   }
 
   /**

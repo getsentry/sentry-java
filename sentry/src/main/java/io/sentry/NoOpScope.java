@@ -322,6 +322,9 @@ public final class NoOpScope implements IScope {
   public void addFeatureFlag(final @Nullable String flag, final @Nullable Boolean result) {}
 
   @Override
+  public void clearFeatureFlags() {}
+
+  @Override
   public @Nullable FeatureFlags getFeatureFlags() {
     return null;
   }

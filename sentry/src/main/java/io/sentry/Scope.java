@@ -493,12 +493,11 @@ public final class Scope implements IScope {
     if (breadcrumb == null || breadcrumbs instanceof DisabledQueue) {
       return;
     }
-    if (hint == null) {
-      hint = new Hint();
-    }
-
     SentryOptions.BeforeBreadcrumbCallback callback = options.getBeforeBreadcrumb();
     if (callback != null) {
+      if (hint == null) {
+        hint = new Hint();
+      }
       breadcrumb = executeBeforeBreadcrumb(callback, breadcrumb, hint);
     }
     if (breadcrumb != null) {
@@ -574,6 +573,7 @@ public final class Scope implements IScope {
     eventProcessors.clear();
     clearTransaction();
     clearAttachments();
+    clearFeatureFlags();
   }
 
   /**
@@ -1146,7 +1146,9 @@ public final class Scope implements IScope {
   @ApiStatus.Internal
   @Override
   public void clearSession() {
-    session = null;
+    try (final @NotNull ISentryLifecycleToken ignored = sessionLock.acquire()) {
+      session = null;
+    }
   }
 
   @ApiStatus.Internal
@@ -1209,6 +1211,11 @@ public final class Scope implements IScope {
   @Override
   public void addFeatureFlag(final @Nullable String flag, final @Nullable Boolean result) {
     featureFlags.add(flag, result);
+  }
+
+  @Override
+  public void clearFeatureFlags() {
+    featureFlags.clear();
   }
 
   @Override

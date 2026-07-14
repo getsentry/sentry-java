@@ -13,7 +13,6 @@ _Bad software is everywhere, and we're tired of it. Sentry is on a mission to he
 Sentry SDK for Java and Android
 ===========
 [![GH Workflow](https://img.shields.io/github/actions/workflow/status/getsentry/sentry-java/build.yml?branch=main)](https://github.com/getsentry/sentry-java/actions)
-[![codecov](https://codecov.io/gh/getsentry/sentry-java/branch/main/graph/badge.svg)](https://codecov.io/gh/getsentry/sentry-java)
 [![X Follow](https://img.shields.io/twitter/follow/sentry?label=sentry&style=social)](https://x.com/intent/follow?screen_name=sentry)
 [![Discord Chat](https://img.shields.io/discord/621778831602221064?logo=discord&logoColor=ffffff&color=7389D8)](https://discord.gg/PXa5Apfe7K)
 
@@ -65,6 +64,7 @@ Sentry SDK for Java and Android
 | sentry-launchdarkly-android             | [![Maven Central Version](https://img.shields.io/maven-central/v/io.sentry/sentry-launchdarkly-android?style=for-the-badge&logo=sentry&color=green)](https://central.sonatype.com/artifact/io.sentry/sentry-launchdarkly-android)             |
 | sentry-launchdarkly-server              | [![Maven Central Version](https://img.shields.io/maven-central/v/io.sentry/sentry-launchdarkly-server?style=for-the-badge&logo=sentry&color=green)](https://central.sonatype.com/artifact/io.sentry/sentry-launchdarkly-server)              |
 | sentry-opentelemetry-agent              | [![Maven Central Version](https://img.shields.io/maven-central/v/io.sentry/sentry-opentelemetry-agent?style=for-the-badge&logo=sentry&color=green)](https://central.sonatype.com/artifact/io.sentry/sentry-opentelemetry-agent)              |
+| sentry-opentelemetry-bom                | [![Maven Central Version](https://img.shields.io/maven-central/v/io.sentry/sentry-opentelemetry-bom?style=for-the-badge&logo=sentry&color=green)](https://central.sonatype.com/artifact/io.sentry/sentry-opentelemetry-bom)                |
 | sentry-opentelemetry-agentcustomization | [![Maven Central Version](https://img.shields.io/maven-central/v/io.sentry/sentry-opentelemetry-agentcustomization?style=for-the-badge&logo=sentry&color=green)](https://central.sonatype.com/artifact/io.sentry/sentry-opentelemetry-agentcustomization) |
 | sentry-opentelemetry-core               | [![Maven Central Version](https://img.shields.io/maven-central/v/io.sentry/sentry-opentelemetry-core?style=for-the-badge&logo=sentry&color=green)](https://central.sonatype.com/artifact/io.sentry/sentry-opentelemetry-core)               |
 | sentry-opentelemetry-otlp               | [![Maven Central Version](https://img.shields.io/maven-central/v/io.sentry/sentry-opentelemetry-otlp?style=for-the-badge&logo=sentry&color=green)](https://central.sonatype.com/artifact/io.sentry/sentry-opentelemetry-otlp)               |

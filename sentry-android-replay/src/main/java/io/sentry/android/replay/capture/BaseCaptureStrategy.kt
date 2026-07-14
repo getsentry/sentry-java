@@ -13,6 +13,7 @@ import io.sentry.SentryReplayEvent.ReplayType.BUFFER
 import io.sentry.SentryReplayEvent.ReplayType.SESSION
 import io.sentry.android.replay.ReplayCache
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_BIT_RATE
+import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_FLUSHED
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_FRAME_RATE
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_HEIGHT
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_ID
@@ -25,7 +26,6 @@ import io.sentry.android.replay.ScreenshotRecorderConfig
 import io.sentry.android.replay.capture.CaptureStrategy.Companion.createSegment
 import io.sentry.android.replay.capture.CaptureStrategy.ReplaySegment
 import io.sentry.android.replay.gestures.ReplayGestureConverter
-import io.sentry.android.replay.util.ReplayExecutorService
 import io.sentry.android.replay.util.ReplayRunnable
 import io.sentry.protocol.SentryId
 import io.sentry.rrweb.RRWebEvent
@@ -34,9 +34,7 @@ import java.io.File
 import java.util.Date
 import java.util.Deque
 import java.util.concurrent.ConcurrentLinkedDeque
-import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
-import java.util.concurrent.ThreadFactory
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
@@ -50,17 +48,15 @@ internal abstract class BaseCaptureStrategy(
   private val scopes: IScopes?,
   private val dateProvider: ICurrentDateProvider,
   protected val replayExecutor: ScheduledExecutorService,
+  protected val persistingExecutor: ScheduledExecutorService,
   private val replayCacheProvider: ((replayId: SentryId) -> ReplayCache)? = null,
 ) : CaptureStrategy {
   internal companion object {
     private const val TAG = "CaptureStrategy"
+    // https://github.com/getsentry/sentry-javascript/blob/30eb68fff5077211c30c61ba74625e66ab514870/packages/replay-internal/src/coreHandlers/handleAfterSendEvent.ts#L41
+    private const val MAX_TRACE_IDS = 100
   }
 
-  private val persistingExecutor: ScheduledExecutorService by lazy {
-    val delegate =
-      Executors.newSingleThreadScheduledExecutor(ReplayPersistingExecutorServiceThreadFactory())
-    ReplayExecutorService(delegate, options)
-  }
   private val gestureConverter = ReplayGestureConverter(dateProvider)
 
   protected val isTerminating = AtomicBoolean(false)
@@ -94,8 +90,15 @@ internal abstract class BaseCaptureStrategy(
     get() = cache?.replayCacheDir
 
   override var replayType by persistableAtomic<ReplayType>(propertyName = SEGMENT_KEY_REPLAY_TYPE)
+  // Tracks whether the buffer was flushed (segments sent to server). Used by fromDisk()
+  // to decide whether to normalize the segment ID to 0 on crash recovery: if never flushed,
+  // no segments reached the server, so the recovered segment must be 0.
+  override var isFlushed: Boolean by
+    persistableAtomic(initialValue = false, propertyName = SEGMENT_KEY_FLUSHED)
 
   protected val currentEvents: Deque<RRWebEvent> = ConcurrentLinkedDeque()
+  private val traceIdsLock = Any()
+  private val currentTraceIds: MutableList<String> = mutableListOf()
 
   override fun start(segmentId: Int, replayId: SentryId, replayType: ReplayType?) {
     cache = replayCacheProvider?.invoke(replayId) ?: ReplayCache(options, replayId)
@@ -135,8 +138,14 @@ internal abstract class BaseCaptureStrategy(
     screenAtStart: String? = this.screenAtStart,
     breadcrumbs: List<Breadcrumb>? = null,
     events: Deque<RRWebEvent> = this.currentEvents,
-  ): ReplaySegment =
-    createSegment(
+  ): ReplaySegment {
+    val traceIds =
+      synchronized(traceIdsLock) {
+        val ids = currentTraceIds.toList()
+        currentTraceIds.clear()
+        ids
+      }
+    return createSegment(
       scopes,
       options,
       duration,
@@ -152,7 +161,9 @@ internal abstract class BaseCaptureStrategy(
       screenAtStart,
       breadcrumbs,
       events,
+      traceIds,
     )
+  }
 
   override fun onConfigurationChanged(recorderConfig: ScreenshotRecorderConfig) {
     this.recorderConfig = recorderConfig
@@ -167,13 +178,16 @@ internal abstract class BaseCaptureStrategy(
     }
   }
 
-  private class ReplayPersistingExecutorServiceThreadFactory : ThreadFactory {
-    private var cnt = 0
-
-    override fun newThread(r: Runnable): Thread {
-      val ret = Thread(r, "SentryReplayPersister-" + cnt++)
-      ret.setDaemon(true)
-      return ret
+  override fun registerTraceId(traceId: SentryId) {
+    if (traceId != SentryId.EMPTY_ID) {
+      synchronized(traceIdsLock) {
+        if (currentTraceIds.size < MAX_TRACE_IDS) {
+          val id = traceId.toString()
+          if (!currentTraceIds.contains(id)) {
+            currentTraceIds.add(id)
+          }
+        }
+      }
     }
   }
 

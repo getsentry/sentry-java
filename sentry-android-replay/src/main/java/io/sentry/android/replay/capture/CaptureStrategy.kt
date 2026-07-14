@@ -29,6 +29,7 @@ internal interface CaptureStrategy {
   val replayCacheDir: File?
   var replayType: ReplayType
   var segmentTimestamp: Date?
+  var isFlushed: Boolean
 
   fun start(segmentId: Int = 0, replayId: SentryId = SentryId(), replayType: ReplayType? = null)
 
@@ -52,6 +53,8 @@ internal interface CaptureStrategy {
   fun onScreenChanged(screen: String?) = Unit
 
   fun convert(): CaptureStrategy
+
+  fun registerTraceId(traceId: SentryId)
 
   companion object {
     private fun Breadcrumb?.isNetworkAvailable(): Boolean =
@@ -84,6 +87,7 @@ internal interface CaptureStrategy {
       screenAtStart: String?,
       breadcrumbs: List<Breadcrumb>?,
       events: Deque<RRWebEvent>,
+      traceIds: List<String> = emptyList(),
     ): ReplaySegment {
       val generatedVideo =
         cache?.createVideoOf(
@@ -122,6 +126,7 @@ internal interface CaptureStrategy {
         screenAtStart,
         replayBreadcrumbs,
         events,
+        traceIds,
       )
     }
 
@@ -141,6 +146,7 @@ internal interface CaptureStrategy {
       screenAtStart: String?,
       breadcrumbs: List<Breadcrumb>,
       events: Deque<RRWebEvent>,
+      traceIds: List<String>,
     ): ReplaySegment {
       val endTimestamp = DateUtils.getDateTime(segmentTimestamp.time + videoDuration)
       val replay =
@@ -152,6 +158,7 @@ internal interface CaptureStrategy {
           this.replayStartTimestamp = segmentTimestamp
           this.replayType = replayType
           this.videoFile = video
+          this.traceIds = traceIds
         }
 
       val recordingPayload = mutableListOf<RRWebEvent>()

@@ -93,6 +93,8 @@ Entry format:
 - <Short description> ([#<PR_NUMBER>](https://github.com/getsentry/sentry-java/pull/<PR_NUMBER>))
 ```
 
+**When rebasing:** A rebase onto `main` can land your branch after a release was cut, where the `## Unreleased` heading your entry lived under has since been renamed to that version number. If that happens, move your new entry into an `## Unreleased` section at the top of `CHANGELOG.md` (create the section if it no longer exists) so it is not left under an already-released version.
+
 Commit changelog separately:
 
 ```bash

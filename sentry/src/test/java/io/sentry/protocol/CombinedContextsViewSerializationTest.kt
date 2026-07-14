@@ -22,6 +22,7 @@ class CombinedContextsViewSerializationTest {
       val combined = CombinedContextsView(global, isolation, current, ScopeType.ISOLATION)
 
       current.setApp(AppSerializationTest.Fixture().getSut())
+      current.setArt(ArtContextSerializationTest.Fixture().getSut())
       current.setBrowser(BrowserSerializationTest.Fixture().getSut())
       current.setFeedback(FeedbackTest.Fixture().getSut())
       current.setTrace(SpanContextSerializationTest.Fixture().getSut())

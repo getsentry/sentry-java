@@ -32,4 +32,5 @@ artifacts:
     when: always
     match:
       - junit.xml
+      - "*.png"
     directory: ./artifacts/

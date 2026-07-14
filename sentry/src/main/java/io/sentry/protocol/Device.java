@@ -366,8 +366,7 @@ public final class Device implements JsonUnknown, JsonSerializable {
 
   @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
   public @Nullable Date getBootTime() {
-    final Date bootTimeRef = bootTime;
-    return bootTimeRef != null ? (Date) bootTimeRef.clone() : null;
+    return bootTime;
   }
 
   public void setBootTime(final @Nullable Date bootTime) {

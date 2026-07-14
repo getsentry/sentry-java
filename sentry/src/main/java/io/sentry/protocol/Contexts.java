@@ -10,14 +10,13 @@ import io.sentry.ObjectWriter;
 import io.sentry.ProfileContext;
 import io.sentry.SpanContext;
 import io.sentry.util.AutoClosableReentrantLock;
+import io.sentry.util.CollectionUtils;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
-import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -64,6 +63,8 @@ public class Contexts implements JsonSerializable {
           this.setResponse(new Response((Response) value));
         } else if (Spring.TYPE.equals(entry.getKey()) && value instanceof Spring) {
           this.setSpring(new Spring((Spring) value));
+        } else if (ArtContext.TYPE.equals(entry.getKey()) && value instanceof ArtContext) {
+          this.setArt(new ArtContext((ArtContext) value));
         } else {
           this.put(entry.getKey(), value);
         }
@@ -181,6 +182,14 @@ public class Contexts implements JsonSerializable {
     this.put(Spring.TYPE, spring);
   }
 
+  public @Nullable ArtContext getArt() {
+    return toContextType(ArtContext.TYPE, ArtContext.class);
+  }
+
+  public void setArt(final @NotNull ArtContext art) {
+    this.put(ArtContext.TYPE, art);
+  }
+
   public @Nullable FeatureFlags getFeatureFlags() {
     return toContextType(FeatureFlags.TYPE, FeatureFlags.class);
   }
@@ -272,7 +281,7 @@ public class Contexts implements JsonSerializable {
 
   @Override
   public boolean equals(final @Nullable Object obj) {
-    if (obj != null && obj instanceof Contexts) {
+    if (obj instanceof Contexts) {
       final @NotNull Contexts otherContexts = (Contexts) obj;
       return internalStorage.equals(otherContexts.internalStorage);
     }
@@ -292,8 +301,7 @@ public class Contexts implements JsonSerializable {
       throws IOException {
     writer.beginObject();
     // Serialize in alphabetical order to keep determinism.
-    final List<String> sortedKeys = Collections.list(keys());
-    Collections.sort(sortedKeys);
+    final String[] sortedKeys = CollectionUtils.toSortedStringArray(keys(), internalStorage.size());
     for (final String key : sortedKeys) {
       final Object value = get(key);
       if (value != null) {
@@ -346,6 +354,9 @@ public class Contexts implements JsonSerializable {
             break;
           case Spring.TYPE:
             contexts.setSpring(new Spring.Deserializer().deserialize(reader, logger));
+            break;
+          case ArtContext.TYPE:
+            contexts.setArt(new ArtContext.Deserializer().deserialize(reader, logger));
             break;
           case FeatureFlags.TYPE:
             contexts.setFeatureFlags(new FeatureFlags.Deserializer().deserialize(reader, logger));

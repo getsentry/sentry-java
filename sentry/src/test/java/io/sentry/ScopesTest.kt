@@ -187,8 +187,9 @@ class ScopesTest {
   fun `when beforeBreadcrumb returns null, crumb is dropped`() {
     val options = SentryOptions()
     options.cacheDirPath = file.absolutePath
-    options.beforeBreadcrumb =
-      SentryOptions.BeforeBreadcrumbCallback { _: Breadcrumb, _: Any? -> null }
+    options.beforeBreadcrumb = SentryOptions.BeforeBreadcrumbCallback { _: Breadcrumb, _: Any? ->
+      null
+    }
     options.dsn = "https://key@sentry.io/proj"
     options.setSerializer(mock())
     val sut = createScopes(options)
@@ -240,8 +241,9 @@ class ScopesTest {
 
     val options = SentryOptions()
     options.cacheDirPath = file.absolutePath
-    options.beforeBreadcrumb =
-      SentryOptions.BeforeBreadcrumbCallback { _: Breadcrumb, _: Any? -> throw exception }
+    options.beforeBreadcrumb = SentryOptions.BeforeBreadcrumbCallback { _: Breadcrumb, _: Any? ->
+      throw exception
+    }
     options.dsn = "https://key@sentry.io/proj"
     options.setSerializer(mock())
     val sut = createScopes(options)

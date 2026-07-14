@@ -5,11 +5,10 @@ plugins {
   `java-library`
   id("io.sentry.javadoc")
   alias(libs.plugins.kotlin.jvm)
-  jacoco
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.detekt)
-  alias(libs.plugins.animalsniffer)
+  id("io.sentry.animalsniffer.android")
 }
 
 tasks.withType<KotlinCompile>().configureEach {
@@ -33,31 +32,6 @@ dependencies {
   testImplementation(libs.kotlinx.coroutines)
   testImplementation(libs.kotlinx.coroutines.test)
   testImplementation(libs.mockito.kotlin)
-
-  val gummyBearsModule = libs.gummy.bears.api21.get().module
-  signature("${gummyBearsModule}:${libs.versions.gummyBears.get()}@signature")
-}
-
-configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
-
-jacoco { toolVersion = libs.versions.jacoco.get() }
-
-tasks.jacocoTestReport {
-  reports {
-    xml.required.set(true)
-    html.required.set(false)
-  }
-}
-
-tasks {
-  jacocoTestCoverageVerification {
-    violationRules { rule { limit { minimum = Config.QualityPlugins.Jacoco.minimumCoverage } } }
-  }
-  check {
-    dependsOn(jacocoTestCoverageVerification)
-    dependsOn(jacocoTestReport)
-    dependsOn(animalsnifferMain)
-  }
 }
 
 tasks.withType<Detekt>().configureEach {

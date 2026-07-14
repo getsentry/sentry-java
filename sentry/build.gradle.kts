@@ -5,11 +5,10 @@ plugins {
   `java-library`
   id("io.sentry.javadoc")
   alias(libs.plugins.kotlin.jvm)
-  jacoco
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.buildconfig)
-  alias(libs.plugins.animalsniffer)
+  id("io.sentry.animalsniffer.android")
 }
 
 tasks.withType<KotlinCompile>().configureEach {
@@ -25,6 +24,7 @@ dependencies {
   // tests
   testImplementation(kotlin(Config.kotlinStdLib))
   testImplementation(libs.awaitility.kotlin)
+  testImplementation(libs.google.truth)
   testImplementation(libs.javafaker)
   testImplementation(libs.kotlin.test.junit)
   testImplementation(libs.mockito.kotlin)
@@ -32,46 +32,25 @@ dependencies {
   testImplementation(libs.msgpack)
   testImplementation(libs.okio)
   testImplementation(projects.sentryTestSupport)
-
-  val gummyBearsModule = libs.gummy.bears.api21.get().module
-  signature("${gummyBearsModule}:${libs.versions.gummyBears.get()}@signature")
 }
 
-configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
-
-jacoco { toolVersion = libs.versions.jacoco.get() }
-
-tasks.jacocoTestReport {
-  reports {
-    xml.required.set(true)
-    html.required.set(false)
-  }
-}
-
-animalsniffer {
-  ignore =
-    listOf(
-      // We manually check on Android if it's available (API 26+).
-      "java.time.Instant"
-    )
-}
-
-tasks.animalsnifferMain {
+sentryAnimalSniffer {
+  // We manually check on Android if it's available (API 26+).
+  ignoreClasses("java.time.Instant")
   // Uses java.util.function.Supplier, but must be manually invoked.
-  exclude("**/io/sentry/SentryWrapper.class")
+  mainExcludes("**/io/sentry/SentryWrapper.class")
 }
 
 tasks {
-  jacocoTestCoverageVerification {
-    violationRules { rule { limit { minimum = Config.QualityPlugins.Jacoco.minimumCoverage } } }
-  }
-  check {
-    dependsOn(jacocoTestCoverageVerification)
-    dependsOn(jacocoTestReport)
-    dependsOn(animalsnifferMain)
-  }
   test {
-    jvmArgs("--add-opens", "java.base/java.util.concurrent=ALL-UNNAMED")
+    // java.lang open is needed by tests that reflectively rewrite Class names; it was previously
+    // provided implicitly by the jacoco test agent, which has been removed.
+    jvmArgs(
+      "--add-opens",
+      "java.base/java.util.concurrent=ALL-UNNAMED",
+      "--add-opens",
+      "java.base/java.lang=ALL-UNNAMED",
+    )
     environment["SENTRY_TEST_PROPERTY"] = "\"some-value\""
     environment["SENTRY_TEST_MAP_KEY1"] = "\"value1\""
     environment["SENTRY_TEST_MAP_KEY2"] = "value2"

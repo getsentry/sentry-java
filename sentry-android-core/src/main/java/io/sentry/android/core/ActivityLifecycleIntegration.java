@@ -9,6 +9,8 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import io.sentry.Baggage;
+import io.sentry.BaggageHeader;
 import io.sentry.FullyDisplayedReporter;
 import io.sentry.IScope;
 import io.sentry.IScopes;
@@ -18,6 +20,7 @@ import io.sentry.ITransaction;
 import io.sentry.Instrumenter;
 import io.sentry.Integration;
 import io.sentry.NoOpTransaction;
+import io.sentry.PropagationContext;
 import io.sentry.SentryDate;
 import io.sentry.SentryLevel;
 import io.sentry.SentryNanotimeDate;
@@ -33,6 +36,7 @@ import io.sentry.android.core.performance.ActivityLifecycleSpanHelper;
 import io.sentry.android.core.performance.AppStartMetrics;
 import io.sentry.android.core.performance.TimeSpan;
 import io.sentry.protocol.MeasurementValue;
+import io.sentry.protocol.SentryId;
 import io.sentry.protocol.TransactionNameSource;
 import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.Objects;
@@ -40,7 +44,7 @@ import io.sentry.util.TracingUtils;
 import java.io.Closeable;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
-import java.util.Date;
+import java.util.Collections;
 import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.concurrent.Future;
@@ -55,12 +59,22 @@ public final class ActivityLifecycleIntegration
     implements Integration, Closeable, Application.ActivityLifecycleCallbacks {
 
   static final String UI_LOAD_OP = "ui.load";
+  static final String STANDALONE_APP_START_OP = "app.start";
+  private static final String STANDALONE_APP_START_NAME = "App Start";
   static final String APP_START_WARM = "app.start.warm";
   static final String APP_START_COLD = "app.start.cold";
   static final String TTID_OP = "ui.load.initial_display";
   static final String TTFD_OP = "ui.load.full_display";
+  static final String APP_START_EXTENDED_OP = "app.start.extended";
+  static final String APP_START_EXTENDED_DESC = "Extended App Start";
   static final long TTFD_TIMEOUT_MILLIS = 25000;
+  // If a headless app start and the following activity's ui.load are more than this far apart, they
+  // are treated as unrelated and not connected into the same trace.
+  static final long APP_START_TO_UI_LOAD_CONTINUATION_MAX_GAP_NANOS = TimeUnit.MINUTES.toNanos(1);
   private static final String TRACE_ORIGIN = "auto.ui.activity";
+  static final String APP_START_SCREEN_DATA = "app.vitals.start.screen";
+  static final String APP_START_REASON_DATA = "app.vitals.start.reason";
+  static final String APP_START_TRACE_ORIGIN = "auto.app.start";
 
   private final @NotNull Application application;
   private final @NotNull BuildInfoProvider buildInfoProvider;
@@ -77,11 +91,12 @@ public final class ActivityLifecycleIntegration
 
   private @Nullable FullyDisplayedReporter fullyDisplayedReporter = null;
   private @Nullable ISpan appStartSpan;
+  private @Nullable ITransaction appStartTransaction;
   private final @NotNull WeakHashMap<Activity, ISpan> ttidSpanMap = new WeakHashMap<>();
   private final @NotNull WeakHashMap<Activity, ISpan> ttfdSpanMap = new WeakHashMap<>();
   private final @NotNull WeakHashMap<Activity, ActivityLifecycleSpanHelper> activitySpanHelpers =
       new WeakHashMap<>();
-  private @NotNull SentryDate lastPausedTime = new SentryNanotimeDate(new Date(0), 0);
+  private @NotNull SentryDate lastPausedTime = new SentryNanotimeDate(0, 0);
   private @Nullable Future<?> ttfdAutoCloseFuture = null;
 
   // WeakHashMap isn't thread safe but ActivityLifecycleCallbacks is only called from the
@@ -124,6 +139,14 @@ public final class ActivityLifecycleIntegration
     timeToFullDisplaySpanEnabled = this.options.isEnableTimeToFullDisplayTracing();
 
     application.registerActivityLifecycleCallbacks(this);
+
+    if (performanceEnabled && this.options.isEnableStandaloneAppStartTracing()) {
+      final @NotNull AppStartMetrics metrics = AppStartMetrics.getInstance();
+      metrics.setHeadlessAppStartListener(this::onHeadlessAppStart);
+      metrics.getAppStartExtension().setExtendAppStartListener(this::onExtendAppStartRequested);
+      addIntegrationToSdkVersion("StandaloneAppStart");
+    }
+
     this.options.getLogger().log(SentryLevel.DEBUG, "ActivityLifecycleIntegration installed.");
     addIntegrationToSdkVersion("ActivityLifecycle");
   }
@@ -135,6 +158,9 @@ public final class ActivityLifecycleIntegration
   @Override
   public void close() throws IOException {
     application.unregisterActivityLifecycleCallbacks(this);
+    final @NotNull AppStartMetrics metrics = AppStartMetrics.getInstance();
+    metrics.setHeadlessAppStartListener(null);
+    metrics.getAppStartExtension().setExtendAppStartListener(null);
 
     if (options != null) {
       options.getLogger().log(SentryLevel.DEBUG, "ActivityLifecycleIntegration removed.");
@@ -239,33 +265,111 @@ public final class ActivityLifecycleIntegration
         transactionOptions.setAppStartTransaction(appStartSamplingDecision != null);
         setSpanOrigin(transactionOptions);
 
-        // we can only bind to the scope if there's no running transaction
-        ITransaction transaction =
-            scopes.startTransaction(
-                new TransactionContext(
-                    activityName,
-                    TransactionNameSource.COMPONENT,
-                    UI_LOAD_OP,
-                    appStartSamplingDecision),
-                transactionOptions);
+        // Guards the headless-start check below with !isExtensionActive so the eager extension's
+        // stored trace id isn't mistaken for a finished headless start.
+        final boolean isExtensionActive =
+            AppStartMetrics.getInstance().getAppStartExtension().isActive();
+
+        final @Nullable SentryId storedAppStartTraceId =
+            AppStartMetrics.getInstance().getAppStartTraceId();
+        final boolean isFollowingHeadlessAppStart =
+            !isExtensionActive && (storedAppStartTraceId != null);
+
+        final boolean isAppStart =
+            !(firstActivityCreated || appStartTime == null || coldStart == null);
+        final boolean createStandaloneAppStart =
+            isAppStart
+                && options.isEnableStandaloneAppStartTracing()
+                && !isFollowingHeadlessAppStart
+                && !isExtensionActive;
+
+        if (createStandaloneAppStart) {
+          final TransactionOptions appStartTransactionOptions = new TransactionOptions();
+          appStartTransactionOptions.setBindToScope(false);
+          appStartTransactionOptions.setStartTimestamp(appStartTime);
+          appStartTransactionOptions.setAppStartTransaction(appStartSamplingDecision != null);
+          appStartTransactionOptions.setOrigin(APP_START_TRACE_ORIGIN);
+
+          appStartTransaction =
+              scopes.startTransaction(
+                  new TransactionContext(
+                      STANDALONE_APP_START_NAME,
+                      TransactionNameSource.COMPONENT,
+                      STANDALONE_APP_START_OP,
+                      appStartSamplingDecision),
+                  appStartTransactionOptions);
+          appStartTransaction.setData(APP_START_SCREEN_DATA, activityName);
+          final @Nullable String appStartReason = AppStartMetrics.getInstance().getAppStartReason();
+          if (appStartReason != null) {
+            appStartTransaction.setData(APP_START_REASON_DATA, appStartReason);
+          }
+        }
+
+        // Continue either the foreground app.start above or an earlier headless app.start.
+        final @Nullable String continueSentryTrace;
+        final @Nullable String continueBaggage;
+        if (createStandaloneAppStart) {
+          continueSentryTrace = appStartTransaction.toSentryTrace().getValue();
+          final @Nullable BaggageHeader baggageHeader = appStartTransaction.toBaggageHeader(null);
+          continueBaggage = baggageHeader == null ? null : baggageHeader.getValue();
+        } else if (isExtensionActive
+            || (isFollowingHeadlessAppStart && isWithinAppStartContinuationWindow(ttidStartTime))) {
+          continueSentryTrace = AppStartMetrics.getInstance().getAppStartSentryTraceHeader();
+          continueBaggage = AppStartMetrics.getInstance().getAppStartBaggageHeader();
+        } else {
+          continueSentryTrace = null;
+          continueBaggage = null;
+        }
+
+        if (isExtensionActive && isAppStart) {
+          // Only the launch activity sets the screen, so a later activity can't overwrite it. A
+          // screen also keeps the processor from classifying the eager app.start as headless.
+          AppStartMetrics.getInstance()
+              .getAppStartExtension()
+              .setData(APP_START_SCREEN_DATA, activityName);
+        }
+
+        final @Nullable TransactionContext continuedContext =
+            continueSentryTrace == null
+                ? null
+                : continueUiLoadTrace(continueSentryTrace, continueBaggage, activityName);
+
+        final ITransaction transaction;
+        if (continuedContext != null) {
+          transaction = scopes.startTransaction(continuedContext, transactionOptions);
+        } else {
+          transaction =
+              scopes.startTransaction(
+                  new TransactionContext(
+                      activityName,
+                      TransactionNameSource.COMPONENT,
+                      UI_LOAD_OP,
+                      appStartSamplingDecision),
+                  transactionOptions);
+        }
+
+        if (isFollowingHeadlessAppStart || isExtensionActive) {
+          // Consume the stored app-start trace so a later activity doesn't reuse it.
+          AppStartMetrics.getInstance().setAppStartTraceId(null);
+          AppStartMetrics.getInstance().setAppStartSentryTraceHeader(null);
+          AppStartMetrics.getInstance().setAppStartBaggageHeader(null);
+        }
 
         final SpanOptions spanOptions = new SpanOptions();
         setSpanOrigin(spanOptions);
 
-        // in case appStartTime isn't available, we don't create a span for it.
-        if (!(firstActivityCreated || appStartTime == null || coldStart == null)) {
-          // start specific span for app start
-          appStartSpan =
-              transaction.startChild(
-                  getAppStartOp(coldStart),
-                  getAppStartDesc(coldStart),
-                  appStartTime,
-                  Instrumenter.SENTRY,
-                  spanOptions);
+        if (isAppStart) {
+          if (!createStandaloneAppStart && !options.isEnableStandaloneAppStartTracing()) {
+            appStartSpan =
+                transaction.startChild(
+                    getAppStartOp(coldStart),
+                    getAppStartDesc(coldStart),
+                    appStartTime,
+                    Instrumenter.SENTRY,
+                    spanOptions);
 
-          // in case there's already an end time (e.g. due to deferred SDK init)
-          // we can finish the app-start span
-          finishAppStartSpan();
+            finishAppStartSpan();
+          }
         }
         final @NotNull ISpan ttidSpan =
             transaction.startChild(
@@ -314,6 +418,61 @@ public final class ActivityLifecycleIntegration
 
   private void setSpanOrigin(final @NotNull SpanOptions spanOptions) {
     spanOptions.setOrigin(TRACE_ORIGIN);
+  }
+
+  /**
+   * Whether the ui.load starting at {@code uiLoadStartTime} is close enough in time to the headless
+   * app start to belong to the same trace. If they are more than {@link
+   * #APP_START_TO_UI_LOAD_CONTINUATION_MAX_GAP_NANOS} apart, they are treated as unrelated. When
+   * the headless end time is unknown, we keep the previous behaviour and continue the trace.
+   */
+  private boolean isWithinAppStartContinuationWindow(final @NotNull SentryDate uiLoadStartTime) {
+    final @Nullable SentryDate appStartEndTime = AppStartMetrics.getInstance().getAppStartEndTime();
+    if (appStartEndTime == null) {
+      return true;
+    }
+    return uiLoadStartTime.diff(appStartEndTime) <= APP_START_TO_UI_LOAD_CONTINUATION_MAX_GAP_NANOS;
+  }
+
+  /**
+   * Builds a {@link TransactionContext} for the ui.load transaction that shares the standalone
+   * app.start trace (same traceId and sampleRand) while staying a sibling (no parentSpanId), rather
+   * than a child. The continued baggage keeps sampling decisions on the same sampleRand. Returns
+   * null if the trace cannot be continued, so callers can fall back.
+   */
+  private @Nullable TransactionContext continueUiLoadTrace(
+      final @NotNull String sentryTrace,
+      final @Nullable String baggage,
+      final @NotNull String activityName) {
+    if (options == null || !options.isTracingEnabled()) {
+      return null;
+    }
+    final @NotNull PropagationContext propagationContext =
+        PropagationContext.fromHeaders(
+            options.getLogger(),
+            sentryTrace,
+            baggage == null ? null : Collections.singletonList(baggage),
+            options);
+    final @Nullable Boolean parentSampled = propagationContext.isSampled();
+    final @NotNull Baggage continuedBaggage = propagationContext.getBaggage();
+    final @Nullable TracesSamplingDecision parentSamplingDecision =
+        parentSampled == null
+            ? null
+            : new TracesSamplingDecision(
+                parentSampled,
+                continuedBaggage.getSampleRate(),
+                propagationContext.getSampleRand());
+    final @NotNull TransactionContext context =
+        new TransactionContext(
+            propagationContext.getTraceId(),
+            propagationContext.getSpanId(),
+            null,
+            parentSamplingDecision,
+            continuedBaggage);
+    context.setName(activityName);
+    context.setTransactionNameSource(TransactionNameSource.COMPONENT);
+    context.setOperation(UI_LOAD_OP);
+    return context;
   }
 
   @VisibleForTesting
@@ -440,8 +599,7 @@ public final class ActivityLifecycleIntegration
       final @NotNull Activity activity, final @Nullable Bundle savedInstanceState) {
     final ActivityLifecycleSpanHelper helper = activitySpanHelpers.get(activity);
     if (helper != null) {
-      helper.createAndStopOnCreateSpan(
-          appStartSpan != null ? appStartSpan : activitiesWithOngoingTransactions.get(activity));
+      helper.createAndStopOnCreateSpan(getAppStartParent(activity));
     }
   }
 
@@ -479,11 +637,11 @@ public final class ActivityLifecycleIntegration
   public void onActivityPostStarted(final @NotNull Activity activity) {
     final ActivityLifecycleSpanHelper helper = activitySpanHelpers.get(activity);
     if (helper != null) {
-      helper.createAndStopOnStartSpan(
-          appStartSpan != null ? appStartSpan : activitiesWithOngoingTransactions.get(activity));
+      helper.createAndStopOnStartSpan(getAppStartParent(activity));
       // Needed to handle hybrid SDKs
       helper.saveSpanToAppStartMetrics();
     }
+    finishAppStartSpan();
   }
 
   @Override
@@ -559,6 +717,9 @@ public final class ActivityLifecycleIntegration
         // in case the appStartSpan isn't completed yet, we finish it as cancelled to avoid
         // memory leak
         finishSpan(appStartSpan, SpanStatus.CANCELLED);
+        if (appStartTransaction != null && !appStartTransaction.isFinished()) {
+          appStartTransaction.finish(SpanStatus.CANCELLED);
+        }
 
         // we finish the ttidSpan as cancelled in case it isn't completed yet
         final ISpan ttidSpan = ttidSpanMap.get(activity);
@@ -575,6 +736,7 @@ public final class ActivityLifecycleIntegration
 
         // set it to null in case its been just finished as cancelled
         appStartSpan = null;
+        appStartTransaction = null;
         ttidSpanMap.remove(activity);
         ttfdSpanMap.remove(activity);
       }
@@ -592,7 +754,7 @@ public final class ActivityLifecycleIntegration
 
   private void clear() {
     firstActivityCreated = false;
-    lastPausedTime = new SentryNanotimeDate(new Date(0), 0);
+    lastPausedTime = new SentryNanotimeDate(0, 0);
     activitySpanHelpers.clear();
   }
 
@@ -637,22 +799,23 @@ public final class ActivityLifecycleIntegration
     final @NotNull AppStartMetrics appStartMetrics = AppStartMetrics.getInstance();
     final @NotNull TimeSpan appStartTimeSpan = appStartMetrics.getAppStartTimeSpan();
     final @NotNull TimeSpan sdkInitTimeSpan = appStartMetrics.getSdkInitTimeSpan();
+    final @Nullable SentryDate firstFrameEndDate =
+        options != null ? options.getDateProvider().now() : null;
 
     // and we need to set the end time of the app start here, after the first frame is drawn.
     if (appStartTimeSpan.hasStarted() && appStartTimeSpan.hasNotStopped()) {
-      appStartTimeSpan.stop();
+      stopTimeSpanAtDate(appStartTimeSpan, firstFrameEndDate);
     }
     if (sdkInitTimeSpan.hasStarted() && sdkInitTimeSpan.hasNotStopped()) {
-      sdkInitTimeSpan.stop();
+      stopTimeSpanAtDate(sdkInitTimeSpan, firstFrameEndDate);
     }
-    finishAppStartSpan();
+    finishAppStartSpan(firstFrameEndDate);
 
     // Sentry.reportFullyDisplayed can be run in any thread, so we have to ensure synchronization
     // with first frame drawn
     try (final @NotNull ISentryLifecycleToken ignored = fullyDisplayedLock.acquire()) {
-      if (options != null && ttidSpan != null) {
-        final SentryDate endDate = options.getDateProvider().now();
-        final long durationNanos = endDate.diff(ttidSpan.getStartDate());
+      if (options != null && ttidSpan != null && firstFrameEndDate != null) {
+        final long durationNanos = firstFrameEndDate.diff(ttidSpan.getStartDate());
         final long durationMillis = TimeUnit.NANOSECONDS.toMillis(durationNanos);
         ttidSpan.setMeasurement(
             MeasurementValue.KEY_TIME_TO_INITIAL_DISPLAY, durationMillis, MILLISECOND);
@@ -664,16 +827,27 @@ public final class ActivityLifecycleIntegration
               MeasurementValue.KEY_TIME_TO_FULL_DISPLAY, durationMillis, MILLISECOND);
           ttfdSpan.setMeasurement(
               MeasurementValue.KEY_TIME_TO_FULL_DISPLAY, durationMillis, MILLISECOND);
-          finishSpan(ttfdSpan, endDate);
+          finishSpan(ttfdSpan, firstFrameEndDate);
         }
 
-        finishSpan(ttidSpan, endDate);
+        finishSpan(ttidSpan, firstFrameEndDate);
       } else {
         finishSpan(ttidSpan);
         if (fullyDisplayedCalled) {
           finishSpan(ttfdSpan);
         }
       }
+    }
+  }
+
+  private void stopTimeSpanAtDate(
+      final @NotNull TimeSpan timeSpan, final @Nullable SentryDate endDate) {
+    final @Nullable SentryDate startDate = timeSpan.getStartTimestamp();
+    if (endDate != null && startDate != null) {
+      final long durationMillis = TimeUnit.NANOSECONDS.toMillis(endDate.diff(startDate));
+      timeSpan.setStoppedAt(timeSpan.getStartUptimeMs() + durationMillis);
+    } else {
+      timeSpan.stop();
     }
   }
 
@@ -779,6 +953,16 @@ public final class ActivityLifecycleIntegration
     }
   }
 
+  private @Nullable ISpan getAppStartParent(final @NotNull Activity activity) {
+    if (appStartTransaction != null) {
+      return appStartTransaction;
+    }
+    if (appStartSpan != null) {
+      return appStartSpan;
+    }
+    return activitiesWithOngoingTransactions.get(activity);
+  }
+
   private @NotNull String getAppStartOp(final boolean coldStart) {
     if (coldStart) {
       return APP_START_COLD;
@@ -788,12 +972,166 @@ public final class ActivityLifecycleIntegration
   }
 
   private void finishAppStartSpan() {
+    finishAppStartSpan(null);
+  }
+
+  private void finishAppStartSpan(final @Nullable SentryDate endDate) {
     final @Nullable SentryDate appStartEndTime =
-        AppStartMetrics.getInstance()
-            .getAppStartTimeSpanWithFallback(options)
-            .getProjectedStopTimestamp();
+        endDate != null
+            ? endDate
+            : AppStartMetrics.getInstance()
+                .getAppStartTimeSpanWithFallback(options)
+                .getProjectedStopTimestamp();
     if (performanceEnabled && appStartEndTime != null) {
       finishSpan(appStartSpan, appStartEndTime);
+      if (appStartTransaction != null && !appStartTransaction.isFinished()) {
+        appStartTransaction.finish(SpanStatus.OK, appStartEndTime);
+      }
+      // Finish the eager extended transaction at the natural first-frame end. waitForChildren keeps
+      // it open until the extended span finishes; no-op if the app start was not extended.
+      AppStartMetrics.getInstance().getAppStartExtension().finishTransaction(appStartEndTime);
     }
+  }
+
+  private void onHeadlessAppStart() {
+    if (scopes == null || options == null || !performanceEnabled) {
+      return;
+    }
+
+    final @NotNull AppStartMetrics metrics = AppStartMetrics.getInstance();
+    // Profilers are stopped for headless starts; clear the decision so it doesn't
+    // leak to a later ui.load transaction if an activity eventually opens.
+    metrics.setAppStartSamplingDecision(null);
+
+    // For headless starts, appLaunchedInForeground is false, so we can't use
+    // getAppStartTimeSpanWithFallback (which gates on foreground).
+    final @NotNull TimeSpan appStartTimeSpan = metrics.getAppStartTimeSpanForHeadless();
+
+    if (!appStartTimeSpan.hasStarted() || !appStartTimeSpan.hasStopped()) {
+      return;
+    }
+
+    final @Nullable SentryDate startTime = appStartTimeSpan.getStartTimestamp();
+    final @Nullable SentryDate endTime = appStartTimeSpan.getProjectedStopTimestamp();
+    if (startTime == null || endTime == null) {
+      return;
+    }
+
+    // Persist the end time so a later ui.load can tell whether it is close enough to continue this
+    // trace; without it the continuation window is unbounded.
+    metrics.setAppStartEndTime(endTime);
+
+    final @NotNull AppStartExtension extension = metrics.getAppStartExtension();
+    if (extension.isActive()) {
+      extension.finishTransaction(endTime);
+      return;
+    }
+    if (!metrics.shouldSendStartMeasurements(true)) {
+      return;
+    }
+
+    final @NotNull ITransaction transaction =
+        createStandaloneAppStartTransaction(startTime, null, false);
+    transaction.finish(SpanStatus.OK, endTime);
+  }
+
+  /**
+   * Creates the standalone {@code app.start} transaction (not bound to the scope) and persists its
+   * trace headers so a later {@code ui.load} can share the same trace. Shared by the headless path
+   * and the eager extension path. When {@code holdOpenForExtension} is true, the transaction waits
+   * for its children and gets a deadline so it stays open until the extended span finishes.
+   */
+  private @NotNull ITransaction createStandaloneAppStartTransaction(
+      final @NotNull SentryDate startTime,
+      final @Nullable TracesSamplingDecision samplingDecision,
+      final boolean holdOpenForExtension) {
+    final @NotNull AppStartMetrics metrics = AppStartMetrics.getInstance();
+
+    final TransactionOptions txnOptions = new TransactionOptions();
+    txnOptions.setBindToScope(false);
+    txnOptions.setStartTimestamp(startTime);
+    txnOptions.setOrigin(APP_START_TRACE_ORIGIN);
+    txnOptions.setAppStartTransaction(samplingDecision != null);
+    if (holdOpenForExtension) {
+      txnOptions.setWaitForChildren(true);
+      final long deadlineTimeoutMillis = options.getDeadlineTimeout();
+      txnOptions.setDeadlineTimeout(deadlineTimeoutMillis <= 0 ? null : deadlineTimeoutMillis);
+      // Persist the end time (covering every finish path: user finish, first frame, deadline) so a
+      // later ui.load can tell whether it is close enough to continue this trace; without it the
+      // continuation window is unbounded.
+      txnOptions.setTransactionFinishedCallback(
+          finishedTransaction ->
+              AppStartMetrics.getInstance()
+                  .setAppStartEndTime(finishedTransaction.getFinishDate()));
+    }
+
+    final @NotNull TransactionContext txnContext =
+        new TransactionContext(
+            STANDALONE_APP_START_NAME,
+            TransactionNameSource.COMPONENT,
+            STANDALONE_APP_START_OP,
+            samplingDecision);
+
+    final @NotNull ITransaction transaction = scopes.startTransaction(txnContext, txnOptions);
+    final @Nullable String appStartReason = metrics.getAppStartReason();
+    if (appStartReason != null) {
+      transaction.setData(APP_START_REASON_DATA, appStartReason);
+    }
+    metrics.setAppStartTraceId(transaction.getSpanContext().getTraceId());
+    // Persist trace headers so a later ui.load can share traceId and sampleRand.
+    metrics.setAppStartSentryTraceHeader(transaction.toSentryTrace().getValue());
+    final @Nullable BaggageHeader baggageHeader = transaction.toBaggageHeader(null);
+    metrics.setAppStartBaggageHeader(baggageHeader == null ? null : baggageHeader.getValue());
+    return transaction;
+  }
+
+  /**
+   * Handles {@code Sentry.extendAppStart()}: eagerly creates the standalone app.start transaction
+   * and the extended child span (we have scopes here), then hands both to the {@link
+   * AppStartExtension}, which owns them. The transaction is held open ({@code waitForChildren})
+   * until the user calls {@code Sentry.finishExtendedAppStart()} or the deadline forces it.
+   * Standalone-only: this is only registered as a listener when standalone app start tracing is
+   * enabled.
+   */
+  private @Nullable AppStartExtension.ExtendedAppStart onExtendAppStartRequested() {
+    if (scopes == null
+        || options == null
+        || !performanceEnabled
+        || !options.isEnableStandaloneAppStartTracing()) {
+      return null;
+    }
+    final @NotNull AppStartMetrics metrics = AppStartMetrics.getInstance();
+
+    final @NotNull TimeSpan appStartTimeSpan =
+        metrics.getAppStartTimeSpan().hasStarted()
+            ? metrics.getAppStartTimeSpan()
+            : metrics.getSdkInitTimeSpan();
+    final @Nullable SentryDate startTime = appStartTimeSpan.getStartTimestamp();
+    if (startTime == null) {
+      return null;
+    }
+
+    // The app start sampling decision was pre-rolled on the previous run so the app start
+    // profiler could start before Sentry.init. It forces the trace sampling of the eager
+    // app.start transaction created below (no re-roll, staying consistent with whether the
+    // profiler actually started) and lets it bind the app start profiler. It's single-use:
+    // we clear it so the first ui.load can't also claim it.
+    final @Nullable TracesSamplingDecision samplingDecision = metrics.getAppStartSamplingDecision();
+    metrics.setAppStartSamplingDecision(null);
+
+    final @NotNull ITransaction transaction =
+        createStandaloneAppStartTransaction(startTime, samplingDecision, true);
+
+    final SpanOptions spanOptions = new SpanOptions();
+    setSpanOrigin(spanOptions);
+    final @NotNull ISpan extendedSpan =
+        transaction.startChild(
+            APP_START_EXTENDED_OP,
+            APP_START_EXTENDED_DESC,
+            AndroidDateUtils.getCurrentSentryDateTime(),
+            Instrumenter.SENTRY,
+            spanOptions);
+
+    return new AppStartExtension.ExtendedAppStart(transaction, extendedSpan);
   }
 }

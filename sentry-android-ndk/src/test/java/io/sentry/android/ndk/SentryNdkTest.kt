@@ -3,7 +3,9 @@ package io.sentry.android.ndk
 import io.sentry.android.core.SentryAndroidOptions
 import io.sentry.ndk.NdkOptions
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 import org.junit.Test
 import org.mockito.Mockito
 import org.mockito.kotlin.any
@@ -66,6 +68,32 @@ class SentryNdkTest {
     ) {
       assertNotNull(fixture.capturedOptions)
       assertEquals(0.75f, fixture.capturedOptions!!.tracesSampleRate, 0.0001f)
+    }
+  }
+
+  @Test
+  fun `SentryNdk does not enable app hang tracking by default`() {
+    fixture.getSut {
+      assertNotNull(fixture.capturedOptions)
+      assertFalse(fixture.capturedOptions!!.isEnableAppHangTracking)
+      assertEquals(5000L, fixture.capturedOptions!!.appHangTimeoutMillis)
+    }
+  }
+
+  @Test
+  fun `SentryNdk propagates app hang tracking options`() {
+    fixture.getSut(
+      options =
+        SentryAndroidOptions().apply {
+          dsn = "https://key@sentry.io/proj"
+          cacheDirPath = "/cache"
+          isEnableNdkAppHangTracking = true
+          ndkAppHangTimeoutIntervalMillis = 2000
+        }
+    ) {
+      assertNotNull(fixture.capturedOptions)
+      assertTrue(fixture.capturedOptions!!.isEnableAppHangTracking)
+      assertEquals(2000L, fixture.capturedOptions!!.appHangTimeoutMillis)
     }
   }
 }

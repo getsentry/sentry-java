@@ -369,7 +369,11 @@ abstract class ApplicationExitIntegrationTestBase<THint : Any> {
     val hintAccessors: HintAccessors<THint>,
     val addExitInfo:
       ApplicationExitTestFixture<THint>.(
-        reason: Int?, timestamp: Long?, importance: Int?, addTrace: Boolean, addBadTrace: Boolean,
+        reason: Int?,
+        timestamp: Long?,
+        importance: Int?,
+        addTrace: Boolean,
+        addBadTrace: Boolean,
       ) -> Unit,
     val flushLogPrefix: String,
   )

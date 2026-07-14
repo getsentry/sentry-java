@@ -111,6 +111,12 @@ class BufferCaptureStrategyTest {
             null
           }
         },
+        mock {
+          whenever(it.submit(any<Runnable>())).doAnswer { invocation ->
+            (invocation.arguments[0] as Runnable).run()
+            null
+          }
+        },
       ) { _ ->
         replayCache
       }

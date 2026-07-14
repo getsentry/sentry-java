@@ -1,3 +1,4 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -7,6 +8,7 @@ plugins {
   alias(libs.plugins.kotlin.spring)
   id("war")
   alias(libs.plugins.gretty)
+  id("io.sentry.systemtest")
 }
 
 application { mainClass.set("io.sentry.samples.spring.Main") }
@@ -23,8 +25,6 @@ java {
   targetCompatibility = JavaVersion.VERSION_1_8
 }
 
-repositories { mavenCentral() }
-
 // Apollo 4.x requires coroutines 1.9.0+, override Spring Boot's managed version
 extra["kotlin-coroutines.version"] = "1.9.0"
 
@@ -33,6 +33,7 @@ dependencyManagement {
     mavenBom(libs.springboot2.bom.get().toString())
     mavenBom(libs.kotlin.bom.get().toString())
     mavenBom(libs.jackson.bom.get().toString())
+    mavenBom(libs.okhttp.bom.get().toString())
   }
 }
 
@@ -64,11 +65,9 @@ dependencies {
 tasks.withType<KotlinCompile>().configureEach {
   kotlin {
     compilerOptions.freeCompilerArgs = listOf("-Xjsr305=strict")
-    compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8
+    compilerOptions.jvmTarget = JvmTarget.JVM_1_8
   }
 }
-
-configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
 
 tasks.register<Test>("systemTest").configure {
   group = "verification"
@@ -77,8 +76,6 @@ tasks.register<Test>("systemTest").configure {
   val test = project.extensions.getByType<SourceSetContainer>()["test"]
   testClassesDirs = test.output.classesDirs
   classpath = test.runtimeClasspath
-
-  outputs.upToDateWhen { false }
 
   maxParallelForks = 1
 

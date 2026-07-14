@@ -2,24 +2,35 @@ package io.sentry;
 
 import static io.sentry.util.StringUtils.PROPER_NIL_UUID;
 
-import io.sentry.util.LazyEvaluator;
 import java.io.IOException;
 import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public final class SpanId implements JsonSerializable {
   public static final SpanId EMPTY_ID =
       new SpanId(PROPER_NIL_UUID.replace("-", "").substring(0, 16));
 
-  private final @NotNull LazyEvaluator<String> lazyValue;
+  private volatile @Nullable String value;
 
   public SpanId(final @NotNull String value) {
-    Objects.requireNonNull(value, "value is required");
-    this.lazyValue = new LazyEvaluator<>(() -> value);
+    this.value = Objects.requireNonNull(value, "value is required");
   }
 
-  public SpanId() {
-    this.lazyValue = new LazyEvaluator<>(SentryUUID::generateSpanId);
+  public SpanId() {}
+
+  private @NotNull String getValue() {
+    String result = value;
+    if (result == null) {
+      synchronized (this) {
+        result = value;
+        if (result == null) {
+          result = SentryUUID.generateSpanId();
+          value = result;
+        }
+      }
+    }
+    return result;
   }
 
   @Override
@@ -27,17 +38,17 @@ public final class SpanId implements JsonSerializable {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     SpanId spanId = (SpanId) o;
-    return lazyValue.getValue().equals(spanId.lazyValue.getValue());
+    return getValue().equals(spanId.getValue());
   }
 
   @Override
   public int hashCode() {
-    return lazyValue.getValue().hashCode();
+    return getValue().hashCode();
   }
 
   @Override
   public String toString() {
-    return lazyValue.getValue();
+    return getValue();
   }
 
   // JsonElementSerializer
@@ -45,7 +56,7 @@ public final class SpanId implements JsonSerializable {
   @Override
   public void serialize(final @NotNull ObjectWriter writer, final @NotNull ILogger logger)
       throws IOException {
-    writer.value(lazyValue.getValue());
+    writer.value(getValue());
   }
 
   // JsonElementDeserializer

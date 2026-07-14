@@ -23,7 +23,7 @@ import org.mockito.kotlin.whenever
 class SentrySupportSQLiteDatabaseTest {
   private class Fixture {
     private val scopes = mock<IScopes>()
-    private val spanManager = SQLiteSpanManager(scopes)
+    private val spans = OpenHelperSpans(scopes)
     val mockDatabase = mock<SupportSQLiteDatabase>()
     lateinit var sentryTracer: SentryTracer
     lateinit var options: SentryOptions
@@ -41,7 +41,7 @@ class SentrySupportSQLiteDatabaseTest {
         whenever(scopes.span).thenReturn(sentryTracer)
       }
 
-      return SentrySupportSQLiteDatabase(mockDatabase, spanManager)
+      return SentrySupportSQLiteDatabase(mockDatabase, spans)
     }
   }
 

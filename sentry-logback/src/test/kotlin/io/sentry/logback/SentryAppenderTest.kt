@@ -121,7 +121,9 @@ class SentryAppenderTest {
       Fixture(
         startLater = true,
         options =
-          SentryOptions().also { it.setTag("only-present-if-logger-init-was-run", "another-value") },
+          SentryOptions().also {
+            it.setTag("only-present-if-logger-init-was-run", "another-value")
+          },
       )
     initForTest {
       it.dsn = "http://key@localhost/proj"
