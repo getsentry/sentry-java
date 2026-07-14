@@ -1,5 +1,6 @@
 package io.sentry
 
+import com.google.common.truth.Truth.assertThat
 import io.sentry.SentryOptions.RequestSize
 import io.sentry.logger.ILoggerBatchProcessorFactory
 import io.sentry.util.StringUtils
@@ -20,6 +21,52 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 
 class SentryOptionsTest {
+  @Test
+  fun `data collection is always present without being explicitly configured`() {
+    val options = SentryOptions()
+
+    assertThat(options.dataCollection).isNotNull()
+    assertThat(options.dataCollection.isExplicitlyConfigured()).isFalse()
+  }
+
+  @Test
+  fun `data collection getter returns the same instance`() {
+    val options = SentryOptions()
+
+    assertThat(options.dataCollection).isSameInstanceAs(options.dataCollection)
+    assertThat(options.dataCollection.isExplicitlyConfigured()).isFalse()
+  }
+
+  @Test
+  fun `setting a data collection override marks it explicitly configured`() {
+    val options = SentryOptions()
+
+    options.dataCollection.setUserInfo(false)
+
+    assertThat(options.dataCollection.userInfo).isFalse()
+    assertThat(options.dataCollection.isExplicitlyConfigured()).isTrue()
+  }
+
+  @Test
+  fun `setting an empty data collection marks it explicitly configured`() {
+    val options = SentryOptions()
+
+    options.dataCollection = DataCollection()
+
+    assertThat(options.dataCollection.isExplicitlyConfigured()).isTrue()
+  }
+
+  @Test
+  fun `setting data collection replaces the default instance`() {
+    val options = SentryOptions()
+    val dataCollection = DataCollection().apply { setQueues(false) }
+
+    options.dataCollection = dataCollection
+
+    assertThat(options.dataCollection).isSameInstanceAs(dataCollection)
+    assertThat(options.dataCollection.queues).isFalse()
+  }
+
   @Test
   fun `when options is initialized, logger is not null`() {
     assertNotNull(SentryOptions().logger)
