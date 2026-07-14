@@ -27,6 +27,7 @@
       <scope>import</scope>
     </dependency>
     ```
+    - Add log4j2 spring boot 4 autoconfiguration ([#5403](https://github.com/getsentry/sentry-java/pull/5403))
 
 ### Fixes
 
@@ -267,7 +268,6 @@
   - Enable via `options.isAttachRawTombstone = true` or manifest: `<meta-data android:name="io.sentry.tombstone.attach-raw" android:value="true" />`
 - Add API to clear feature flags from scopes ([#5426](https://github.com/getsentry/sentry-java/pull/5426))
 - Add support to configure reporting historical ANRs via `AndroidManifest.xml` using the  `io.sentry.anr.report-historical` attribute ([#5387](https://github.com/getsentry/sentry-java/pull/5387))
-- Add log4j2 spring boot 4 auto configuration ([#5403](https://github.com/getsentry/sentry-java/pull/5403))
 
 ### Dependencies
 
