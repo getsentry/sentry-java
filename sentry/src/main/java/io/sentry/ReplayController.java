@@ -36,4 +36,7 @@ public interface ReplayController extends IReplayApi {
    * @param traceId the trace ID to associate with the current replay
    */
   void registerTraceId(@NotNull SentryId traceId);
+
+  /** Registers a segment name to be associated with the current replay segment. */
+  void registerSegmentName(@NotNull String segmentName);
 }

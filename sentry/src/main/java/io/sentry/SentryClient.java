@@ -1079,6 +1079,10 @@ public final class SentryClient implements ISentryClient {
       if (trace != null) {
         options.getReplayController().registerTraceId(trace.getTraceId());
       }
+      final @Nullable String segmentName = transaction.getTransaction();
+      if (segmentName != null && !segmentName.isEmpty()) {
+        options.getReplayController().registerSegmentName(segmentName);
+      }
     }
 
     return sentryId;
