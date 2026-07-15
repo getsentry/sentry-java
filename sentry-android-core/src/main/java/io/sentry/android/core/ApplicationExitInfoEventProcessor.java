@@ -168,9 +168,7 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
       setRelease(event, canUseCurrentOptions);
       setEnvironment(event, canUseCurrentOptions);
       setDist(event, canUseCurrentOptions);
-      if (canUseCurrentOptions) {
-        setApp(event, true);
-      }
+      setAppVersionAndBuild(event, canUseCurrentOptions);
       options
           .getLogger()
           .log(
@@ -425,28 +423,6 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
       app.setAppIdentifier(packageInfo.packageName);
     }
 
-    // backfill versionName and versionCode from the release string
-    String release = event.getRelease();
-    if (release == null) {
-      release = PersistingOptionsObserver.read(options, RELEASE_FILENAME, String.class);
-    }
-    if (release == null && canUseCurrentOptions) {
-      release = options.getRelease();
-    }
-    if (release != null) {
-      try {
-        final String versionName =
-            release.substring(release.indexOf('@') + 1, release.indexOf('+'));
-        final String versionCode = release.substring(release.indexOf('+') + 1);
-        app.setAppVersion(versionName);
-        app.setAppBuild(versionCode);
-      } catch (Throwable e) {
-        options
-            .getLogger()
-            .log(SentryLevel.WARNING, "Failed to parse release from scope cache: %s", release);
-      }
-    }
-
     try {
       final ContextUtils.SplitApksInfo splitApksInfo =
           DeviceInfoUtil.getInstance(context, options).getSplitApksInfo();
@@ -461,6 +437,36 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
     }
 
     event.getContexts().setApp(app);
+    setAppVersionAndBuild(event, canUseCurrentOptions);
+  }
+
+  private void setAppVersionAndBuild(
+      final @NotNull SentryBaseEvent event, final boolean canUseCurrentOptions) {
+    String release = event.getRelease();
+    if (release == null) {
+      release = PersistingOptionsObserver.read(options, RELEASE_FILENAME, String.class);
+    }
+    if (release == null && canUseCurrentOptions) {
+      release = options.getRelease();
+    }
+    if (release != null) {
+      try {
+        App app = event.getContexts().getApp();
+        if (app == null) {
+          app = new App();
+        }
+        final String versionName =
+            release.substring(release.indexOf('@') + 1, release.indexOf('+'));
+        final String versionCode = release.substring(release.indexOf('+') + 1);
+        app.setAppVersion(versionName);
+        app.setAppBuild(versionCode);
+        event.getContexts().setApp(app);
+      } catch (Throwable e) {
+        options
+            .getLogger()
+            .log(SentryLevel.WARNING, "Failed to parse release from scope cache: %s", release);
+      }
+    }
   }
 
   private void setRelease(

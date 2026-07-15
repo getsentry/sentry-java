@@ -475,8 +475,11 @@ class ApplicationExitInfoEventProcessorTest {
     assertEquals("io.sentry.samples@1.2.0+232", processed.release)
     assertEquals("production", processed.environment)
     assertEquals("custom-dist", processed.dist)
-    assertEquals("1.2.0", processed.contexts.app!!.appVersion)
-    assertEquals("232", processed.contexts.app!!.appBuild)
+    val app = processed.contexts.app!!
+    assertEquals("1.2.0", app.appVersion)
+    assertEquals("232", app.appBuild)
+    assertNull(app.appName)
+    assertNull(app.appIdentifier)
   }
 
   @Test
@@ -490,6 +493,7 @@ class ApplicationExitInfoEventProcessorTest {
     val processed = processor.process(SentryEvent(), hint)!!
 
     assertNull(processed.release)
+    assertNull(processed.contexts.app)
   }
 
   @Test
