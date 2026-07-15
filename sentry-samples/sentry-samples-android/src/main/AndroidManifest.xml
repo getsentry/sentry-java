@@ -130,6 +130,11 @@
       android:name="io.sentry.debug"
       android:value="${sentryDebug}" />
 
+    <!--    how to enable Sentry Logs (Sentry.logger() calls are dropped unless this is on)-->
+    <meta-data
+      android:name="io.sentry.logs.enabled"
+      android:value="true" />
+
     <!--    how to disable verbose logging of the session replay feature-->
     <meta-data
       android:name="io.sentry.session-replay.debug"
