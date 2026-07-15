@@ -649,7 +649,7 @@ public class SentryOptions {
   private boolean startProfilerOnAppStart = false;
 
   /**
-   * When false, the legacy {@code Debug}-based profiler is disabled on API < 35 devices. On API 35+
+   * When false, the legacy {@code Debug}-based profiler is disabled on API &lt; 35 devices. On API 35+
    * devices, Android's {@code ProfilingManager} (Perfetto-based stack sampling) is always used
    * regardless of this setting. This option will be deprecated in the next major release and
    * removed in the one after.
@@ -2247,7 +2247,7 @@ public class SentryOptions {
   }
 
   /**
-   * Whether the legacy {@code Debug}-based profiler is enabled on API < 35 devices. On API 35+,
+   * Whether the legacy {@code Debug}-based profiler is enabled on API &lt; 35 devices. On API 35+,
    * Android's {@code ProfilingManager} (Perfetto) is always used regardless of this setting. This
    * option will be deprecated in the next major release and removed in the one after.
    *
@@ -2258,12 +2258,12 @@ public class SentryOptions {
   }
 
   /**
-   * Set whether the legacy {@code Debug}-based profiler is enabled on API < 35 devices. Set to
+   * Set whether the legacy {@code Debug}-based profiler is enabled on API &lt; 35 devices. Set to
    * {@code false} to disable profiling on devices below API 35. On API 35+ devices, Android's
    * {@code ProfilingManager} (Perfetto) is always used and this setting has no effect. This option
    * will be deprecated in the next major release and removed in the one after.
    *
-   * @param enableLegacyProfiling false to disable legacy profiling on API < 35.
+   * @param enableLegacyProfiling false to disable legacy profiling on API &lt; 35.
    */
   public void setEnableLegacyProfiling(final boolean enableLegacyProfiling) {
     this.enableLegacyProfiling = enableLegacyProfiling;
