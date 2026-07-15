@@ -266,7 +266,7 @@
       android:value="canvas" />
     <meta-data
       android:name="io.sentry.session-replay.session-sample-rate"
-      android:value="1" />
+      android:value="1.0" />
     <meta-data
       android:name="io.sentry.session-replay.mask-all-text"
       android:value="true" />
