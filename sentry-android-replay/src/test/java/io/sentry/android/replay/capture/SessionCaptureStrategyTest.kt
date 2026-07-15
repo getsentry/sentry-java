@@ -562,6 +562,7 @@ class SessionCaptureStrategyTest {
         any(),
       )
   }
+
   @Test
   fun `registerSegmentName includes unique segment names in next segment and clears them`() {
     val now =
@@ -615,5 +616,4 @@ class SessionCaptureStrategyTest {
         any(),
       )
   }
-
 }

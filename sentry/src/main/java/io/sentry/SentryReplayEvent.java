@@ -179,7 +179,8 @@ public final class SentryReplayEvent extends SentryBaseEvent
 
   @Override
   public int hashCode() {
-    return Objects.hash(type, replayType, replayId, segmentId, urls, errorIds, traceIds, segmentNames);
+    return Objects.hash(
+        type, replayType, replayId, segmentId, urls, errorIds, traceIds, segmentNames);
   }
 
   // region json
