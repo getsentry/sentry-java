@@ -305,6 +305,28 @@ final class AndroidOptionsInitializer {
       final @NotNull CompositePerformanceCollector performanceCollector) {
     if (options.isProfilingEnabled() || options.getProfilesSampleRate() != null) {
       options.setContinuousProfiler(NoOpContinuousProfiler.getInstance());
+      // Transaction-based profiling always relies on the legacy Debug-based profiler, so it is
+      // disabled together with legacy profiling. Perfetto profiling only supports continuous
+      // profiling.
+      if (!options.isEnableLegacyProfiling()) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.WARNING,
+                "Transaction-based profiling (profilesSampleRate/profilesSampler) is disabled "
+                    + "because enableLegacyProfiling is false. Transaction-based profiling always "
+                    + "uses the legacy profiler and is not supported by Perfetto. No profiling "
+                    + "data will be collected. Use profileSessionSampleRate for continuous "
+                    + "profiling instead.");
+        options.setTransactionProfiler(NoOpTransactionProfiler.getInstance());
+        if (appStartTransactionProfiler != null) {
+          appStartTransactionProfiler.close();
+        }
+        if (appStartContinuousProfiler != null) {
+          appStartContinuousProfiler.close(true);
+        }
+        return;
+      }
       // This is a safeguard, but it should never happen, as the app start profiler should be the
       // continuous one.
       if (appStartContinuousProfiler != null) {
