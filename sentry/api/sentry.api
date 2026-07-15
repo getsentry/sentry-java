@@ -1715,6 +1715,7 @@ public final class io/sentry/NoOpReplayController : io/sentry/ReplayController {
 	public fun isDebugMaskingOverlayEnabled ()Z
 	public fun isRecording ()Z
 	public fun pause ()V
+	public fun registerSegmentName (Ljava/lang/String;)V
 	public fun registerTraceId (Lio/sentry/protocol/SentryId;)V
 	public fun resume ()V
 	public fun setBreadcrumbConverter (Lio/sentry/ReplayBreadcrumbConverter;)V
@@ -2357,6 +2358,7 @@ public abstract interface class io/sentry/ReplayController : io/sentry/IReplayAp
 	public abstract fun isDebugMaskingOverlayEnabled ()Z
 	public abstract fun isRecording ()Z
 	public abstract fun pause ()V
+	public abstract fun registerSegmentName (Ljava/lang/String;)V
 	public abstract fun registerTraceId (Lio/sentry/protocol/SentryId;)V
 	public abstract fun resume ()V
 	public abstract fun setBreadcrumbConverter (Lio/sentry/ReplayBreadcrumbConverter;)V
@@ -4023,6 +4025,7 @@ public final class io/sentry/SentryReplayEvent : io/sentry/SentryBaseEvent, io/s
 	public fun getReplayStartTimestamp ()Ljava/util/Date;
 	public fun getReplayType ()Lio/sentry/SentryReplayEvent$ReplayType;
 	public fun getSegmentId ()I
+	public fun getSegmentNames ()Ljava/util/List;
 	public fun getTimestamp ()Ljava/util/Date;
 	public fun getTraceIds ()Ljava/util/List;
 	public fun getType ()Ljava/lang/String;
@@ -4036,6 +4039,7 @@ public final class io/sentry/SentryReplayEvent : io/sentry/SentryBaseEvent, io/s
 	public fun setReplayStartTimestamp (Ljava/util/Date;)V
 	public fun setReplayType (Lio/sentry/SentryReplayEvent$ReplayType;)V
 	public fun setSegmentId (I)V
+	public fun setSegmentNames (Ljava/util/List;)V
 	public fun setTimestamp (Ljava/util/Date;)V
 	public fun setTraceIds (Ljava/util/List;)V
 	public fun setType (Ljava/lang/String;)V
@@ -4056,6 +4060,7 @@ public final class io/sentry/SentryReplayEvent$JsonKeys {
 	public static final field REPLAY_START_TIMESTAMP Ljava/lang/String;
 	public static final field REPLAY_TYPE Ljava/lang/String;
 	public static final field SEGMENT_ID Ljava/lang/String;
+	public static final field SEGMENT_NAMES Ljava/lang/String;
 	public static final field TIMESTAMP Ljava/lang/String;
 	public static final field TRACE_IDS Ljava/lang/String;
 	public static final field TYPE Ljava/lang/String;
