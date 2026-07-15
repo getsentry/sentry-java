@@ -571,9 +571,9 @@ class SessionCaptureStrategyTest {
     strategy.start()
     strategy.onConfigurationChanged(fixture.recorderConfig)
 
-    strategy.registerSegmentName("GET /users/:id")
-    strategy.registerSegmentName("GET /users/:id")
-    strategy.registerSegmentName("POST /items")
+    strategy.registerSegmentName("CheckoutActivity")
+    strategy.registerSegmentName("CheckoutActivity")
+    strategy.registerSegmentName("ProductDetailsActivity")
 
     strategy.onScreenshotRecorded(mock<Bitmap>()) {}
 
@@ -581,7 +581,7 @@ class SessionCaptureStrategyTest {
       .captureReplay(
         argThat { event ->
           event is SentryReplayEvent &&
-            event.segmentNames == listOf("GET /users/:id", "POST /items")
+            event.segmentNames == listOf("CheckoutActivity", "ProductDetailsActivity")
         },
         any(),
       )
@@ -606,7 +606,7 @@ class SessionCaptureStrategyTest {
     strategy.onConfigurationChanged(fixture.recorderConfig)
 
     strategy.registerSegmentName("")
-    repeat(101) { strategy.registerSegmentName("segment-$it") }
+    repeat(101) { strategy.registerSegmentName("ProductActivity$it") }
 
     strategy.onScreenshotRecorded(mock<Bitmap>()) {}
 
