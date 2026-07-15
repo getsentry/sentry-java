@@ -19,7 +19,7 @@
     ],
     "segment_names":
     [
-      "GET /users/:id"
+      "CheckoutActivity"
     ],
     "event_id": "afcb46b1140ade5187c4bbb5daa804df",
     "contexts":
