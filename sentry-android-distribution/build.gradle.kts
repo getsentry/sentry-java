@@ -3,6 +3,7 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 plugins {
   id("com.android.library")
   alias(libs.plugins.kotlin.android)
+  id("io.sentry.android.lint")
 }
 
 android {

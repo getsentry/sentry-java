@@ -9,6 +9,7 @@ plugins {
   id("com.android.library")
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.detekt)
+  id("io.sentry.android.lint")
   alias(libs.plugins.dokka)
   alias(libs.plugins.dokka.javadoc)
   `maven-publish` // necessary for publishMavenLocal task to publish correct artifacts
@@ -100,14 +101,6 @@ android {
       isReturnDefaultValues = true
       isIncludeAndroidResources = true
     }
-  }
-
-  lint {
-    warningsAsErrors = true
-    checkDependencies = true
-
-    // We run a full lint analysis as build part in CI, so skip vital checks for assemble tasks.
-    checkReleaseBuilds = false
   }
 
   buildFeatures { buildConfig = true }

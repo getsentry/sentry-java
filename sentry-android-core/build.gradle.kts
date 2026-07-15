@@ -7,6 +7,7 @@ plugins {
   alias(libs.plugins.kotlin.compose)
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
+  id("io.sentry.android.lint")
 }
 
 android {
@@ -47,14 +48,6 @@ android {
         it.maxHeapSize = "2g"
       }
     }
-  }
-
-  lint {
-    warningsAsErrors = true
-    checkDependencies = true
-
-    // We run a full lint analysis as build part in CI, so skip vital checks for assemble tasks.
-    checkReleaseBuilds = false
   }
 
   buildFeatures { buildConfig = true }

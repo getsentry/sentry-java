@@ -36,6 +36,9 @@ otelSemanticConventionsAlpha = "1.42.0-alpha"
 retrofit = "2.9.0"
 room2 = "2.8.4"
 room3 = "3.0.0-rc01"
+# Keep in sync with Config.AGP in buildSrc (the version modules actually build with).
+# Used compile-only by build-logic to configure the Android lint DSL.
+agp = "8.13.1"
 sagp = "6.13.0"
 sqlite = "2.6.2"
 sqliteRc = "2.7.0-rc01" # Required by Room3 3.0.0-rc*
@@ -77,6 +80,7 @@ sentry = { id = "io.sentry.android.gradle", version.ref = "sagp"}
 shadow = { id = "com.gradleup.shadow", version = "9.4.1" }
 
 [libraries]
+android-gradle-plugin = { module = "com.android.tools.build:gradle", version.ref = "agp" }
 animalsniffer-gradle-plugin = { module = "ru.vyarus:gradle-animalsniffer-plugin", version.ref = "animalsniffer" }
 apache-httpclient = { module = "org.apache.httpcomponents.client5:httpclient5", version = "5.0.4" }
 apollo2-coroutines = { module = "com.apollographql.apollo:apollo-coroutines-support", version.ref = "apollo" }

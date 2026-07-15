@@ -1,8 +1,14 @@
-plugins { id("com.android.application") }
+plugins {
+  id("com.android.application")
+  id("io.sentry.android.lint")
+}
 
 android {
   compileSdk = libs.versions.compileSdk.get().toInt()
   namespace = "io.sentry.java.tests.perf.appsentry"
+
+  // Baseline the pre-existing lint issues in this test app; only new issues fail the build.
+  lint { baseline = file("lint-baseline.xml") }
 
   defaultConfig {
     applicationId = "io.sentry.java.tests.perf.appsentry"
