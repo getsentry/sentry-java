@@ -44,6 +44,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.net.ssl.SSLSocketFactory;
 import org.jetbrains.annotations.ApiStatus;
@@ -695,7 +696,9 @@ public class SentryOptions {
       // Not prewarmed: its single worker thread is spawned lazily on the first scheduled timeout
       // and then reused across all transactions. removeOnCancelPolicy keeps the work queue from
       // accumulating cancelled timeouts (idle timers are cancelled and rescheduled per child span).
-      timerExecutorService = new SentryExecutorService(this, true);
+      timerExecutorService =
+          new SentryExecutorService(
+              this, true, SentryExecutorService.TIMER_KEEP_ALIVE_SECONDS, TimeUnit.SECONDS);
     }
 
     // SpotlightIntegration is loaded via reflection to allow the sentry-spotlight module

@@ -1082,7 +1082,7 @@ class SentryTracerTest {
         trimEnd = true,
         samplingDecision = TracesSamplingDecision(true),
       )
-    assertNotNull(transaction.timerExecutorService)
+    assertTrue(transaction.areTimersEnabled())
   }
 
   @Test
@@ -1094,7 +1094,7 @@ class SentryTracerTest {
         trimEnd = true,
         samplingDecision = TracesSamplingDecision(true),
       )
-    assertNull(transaction.timerExecutorService)
+    assertFalse(transaction.areTimersEnabled())
   }
 
   @Test
@@ -1106,9 +1106,9 @@ class SentryTracerTest {
         trimEnd = true,
         samplingDecision = TracesSamplingDecision(true),
       )
-    assertNotNull(transaction.timerExecutorService)
+    assertTrue(transaction.areTimersEnabled())
     transaction.finish(SpanStatus.OK)
-    assertNull(transaction.timerExecutorService)
+    assertFalse(transaction.areTimersEnabled())
   }
 
   @Test

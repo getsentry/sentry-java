@@ -354,7 +354,9 @@ public final class Sentry {
         }
 
         if (options.getTimerExecutorService().isClosed()) {
-          options.setTimerExecutorService(new SentryExecutorService(options, true));
+          options.setTimerExecutorService(
+              new SentryExecutorService(
+                  options, true, SentryExecutorService.TIMER_KEEP_ALIVE_SECONDS, TimeUnit.SECONDS));
         }
 
         // load lazy fields of the options in a separate thread

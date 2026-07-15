@@ -39,10 +39,9 @@ public final class SentryTracer implements ITransaction {
   private volatile @Nullable Future<?> idleTimeoutFuture;
   private volatile @Nullable Future<?> deadlineTimeoutFuture;
 
-  // Shared executor used to schedule the timeout tasks. Null once the tracer is finished, at which
-  // point no more timeouts may be scheduled. It is never shut down here since it is shared
-  // SDK-wide.
-  private volatile @Nullable ISentryExecutorService timerExecutorService = null;
+  // Whether timeout tasks may still be scheduled. Set to false once the tracer is finished. The
+  // executor itself is owned by the options (shared SDK-wide) and obtained from there when needed.
+  private volatile boolean timersEnabled = false;
   private final @NotNull AutoClosableReentrantLock timerLock = new AutoClosableReentrantLock();
   private final @NotNull AutoClosableReentrantLock tracerLock = new AutoClosableReentrantLock();
 
@@ -101,7 +100,7 @@ public final class SentryTracer implements ITransaction {
 
     if (transactionOptions.getIdleTimeout() != null
         || transactionOptions.getDeadlineTimeout() != null) {
-      timerExecutorService = scopes.getOptions().getTimerExecutorService();
+      timersEnabled = true;
 
       scheduleDeadlineTimeout();
       scheduleFinish();
@@ -111,7 +110,7 @@ public final class SentryTracer implements ITransaction {
   @Override
   public void scheduleFinish() {
     try (final @NotNull ISentryLifecycleToken ignored = timerLock.acquire()) {
-      if (timerExecutorService != null) {
+      if (timersEnabled) {
         final @Nullable Long idleTimeout = transactionOptions.getIdleTimeout();
 
         if (idleTimeout != null) {
@@ -120,7 +119,10 @@ public final class SentryTracer implements ITransaction {
 
           try {
             idleTimeoutFuture =
-                timerExecutorService.schedule(this::onIdleTimeoutReached, idleTimeout);
+                scopes
+                    .getOptions()
+                    .getTimerExecutorService()
+                    .schedule(this::onIdleTimeoutReached, idleTimeout);
           } catch (Throwable e) {
             scopes
                 .getOptions()
@@ -261,12 +263,12 @@ public final class SentryTracer implements ITransaction {
           });
       final SentryTransaction transaction = new SentryTransaction(this);
 
-      if (timerExecutorService != null) {
+      if (timersEnabled) {
         try (final @NotNull ISentryLifecycleToken ignored = timerLock.acquire()) {
-          if (timerExecutorService != null) {
+          if (timersEnabled) {
             cancelIdleTimer();
             cancelDeadlineTimer();
-            timerExecutorService = null;
+            timersEnabled = false;
           }
         }
       }
@@ -302,12 +304,15 @@ public final class SentryTracer implements ITransaction {
     final @Nullable Long deadlineTimeOut = transactionOptions.getDeadlineTimeout();
     if (deadlineTimeOut != null) {
       try (final @NotNull ISentryLifecycleToken ignored = timerLock.acquire()) {
-        if (timerExecutorService != null) {
+        if (timersEnabled) {
           cancelDeadlineTimer();
           isDeadlineTimerRunning.set(true);
           try {
             deadlineTimeoutFuture =
-                timerExecutorService.schedule(this::onDeadlineTimeoutReached, deadlineTimeOut);
+                scopes
+                    .getOptions()
+                    .getTimerExecutorService()
+                    .schedule(this::onDeadlineTimeoutReached, deadlineTimeOut);
           } catch (Throwable e) {
             scopes
                 .getOptions()
@@ -973,9 +978,8 @@ public final class SentryTracer implements ITransaction {
   }
 
   @TestOnly
-  @Nullable
-  ISentryExecutorService getTimerExecutorService() {
-    return timerExecutorService;
+  boolean areTimersEnabled() {
+    return timersEnabled;
   }
 
   @TestOnly
