@@ -2152,7 +2152,8 @@ class SentryClientTest {
       }
     )
     val sut = fixture.getSut()
-    val sentryTracer = SentryTracer(TransactionContext("CheckoutActivity", "ui.load"), fixture.scopes)
+    val sentryTracer =
+      SentryTracer(TransactionContext("CheckoutActivity", "ui.load"), fixture.scopes)
     val transaction = SentryTransaction(sentryTracer)
     sut.captureTransaction(transaction, sentryTracer.traceContext())
     assertEquals("CheckoutActivity", registeredSegmentName)
