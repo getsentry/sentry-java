@@ -475,6 +475,8 @@ class ApplicationExitInfoEventProcessorTest {
     assertEquals("io.sentry.samples@1.2.0+232", processed.release)
     assertEquals("production", processed.environment)
     assertEquals("custom-dist", processed.dist)
+    assertEquals("1.2.0", processed.contexts.app!!.appVersion)
+    assertEquals("232", processed.contexts.app!!.appBuild)
   }
 
   @Test

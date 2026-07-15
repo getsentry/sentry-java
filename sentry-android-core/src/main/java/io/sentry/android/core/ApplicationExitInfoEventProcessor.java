@@ -168,6 +168,9 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
       setRelease(event, canUseCurrentOptions);
       setEnvironment(event, canUseCurrentOptions);
       setDist(event, canUseCurrentOptions);
+      if (canUseCurrentOptions) {
+        setApp(event, true);
+      }
       options
           .getLogger()
           .log(
