@@ -27,6 +27,7 @@ import io.sentry.cache.PersistingOptionsObserver.PROGUARD_UUID_FILENAME
 import io.sentry.cache.PersistingOptionsObserver.RELEASE_FILENAME
 import io.sentry.cache.PersistingOptionsObserver.REPLAY_ERROR_SAMPLE_RATE_FILENAME
 import io.sentry.cache.PersistingOptionsObserver.SDK_VERSION_FILENAME
+import io.sentry.cache.PersistingOptionsObserver.TAGS_FILENAME as OPTIONS_TAGS_FILENAME
 import io.sentry.cache.PersistingScopeObserver
 import io.sentry.cache.PersistingScopeObserver.BREADCRUMBS_FILENAME
 import io.sentry.cache.PersistingScopeObserver.CONTEXTS_FILENAME
@@ -152,7 +153,7 @@ class ApplicationExitInfoEventProcessorTest {
         persistOptions(SDK_VERSION_FILENAME, SdkVersion("sentry.java.android", "6.15.0"))
         persistOptions(DIST_FILENAME, "232")
         persistOptions(ENVIRONMENT_FILENAME, "debug")
-        persistOptions(TAGS_FILENAME, mapOf("option" to "tag"))
+        persistOptions(OPTIONS_TAGS_FILENAME, mapOf("option" to "tag"))
         replayErrorSampleRate?.let {
           persistOptions(REPLAY_ERROR_SAMPLE_RATE_FILENAME, it.toString())
         }
@@ -502,9 +503,11 @@ class ApplicationExitInfoEventProcessorTest {
     fixture.options.release = "io.sentry.samples@2.0.0+300"
     fixture.options.environment = "current-user"
     fixture.options.dist = "current-dist"
+    fixture.options.setTag("account", "current-tag")
     fixture.persistOptions(RELEASE_FILENAME, "io.sentry.samples@1.0.0+100")
     fixture.persistOptions(ENVIRONMENT_FILENAME, "previous-user")
     fixture.persistOptions(DIST_FILENAME, "previous-dist")
+    fixture.persistOptions(OPTIONS_TAGS_FILENAME, mapOf("account" to "previous-tag"))
     PersistingOptionsCacheGenerationObserver(fixture.options, 1_000L).setRelease(null)
     setLastUpdateTime(2_000)
 
@@ -513,6 +516,7 @@ class ApplicationExitInfoEventProcessorTest {
     assertEquals("io.sentry.samples@2.0.0+300", processed.release)
     assertEquals("current-user", processed.environment)
     assertEquals("current-dist", processed.dist)
+    assertEquals("current-tag", processed.tags!!["account"])
   }
 
   @Test
@@ -522,9 +526,11 @@ class ApplicationExitInfoEventProcessorTest {
     fixture.options.release = "io.sentry.samples@1.0.0+100"
     fixture.options.environment = "current-user"
     fixture.options.dist = "current-dist"
+    fixture.options.setTag("account", "current-tag")
     fixture.persistOptions(RELEASE_FILENAME, "io.sentry.samples@1.0.0+100")
     fixture.persistOptions(ENVIRONMENT_FILENAME, "crashed-user")
     fixture.persistOptions(DIST_FILENAME, "crashed-dist")
+    fixture.persistOptions(OPTIONS_TAGS_FILENAME, mapOf("account" to "crashed-tag"))
     PersistingOptionsCacheGenerationObserver(fixture.options, 1_000L).setRelease(null)
     setLastUpdateTime(1_000)
 
@@ -533,6 +539,7 @@ class ApplicationExitInfoEventProcessorTest {
     assertEquals("io.sentry.samples@1.0.0+100", processed.release)
     assertEquals("crashed-user", processed.environment)
     assertEquals("crashed-dist", processed.dist)
+    assertEquals("crashed-tag", processed.tags!!["account"])
   }
 
   @Test
@@ -1039,6 +1046,39 @@ class ApplicationExitInfoEventProcessorTest {
     val processed = processor.process(SentryEvent(), hint)!!
 
     assertNull(processed.contexts[Contexts.REPLAY_ID])
+  }
+
+  @Test
+  fun `if options cache is current, uses persisted replay error sample rate`() {
+    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(timestamp = 2_000))
+    val processor = fixture.getSut(tmpDir, populateScopeCache = true)
+    fixture.options.sessionReplay.onErrorSampleRate = 1.0
+    fixture.persistOptions(REPLAY_ERROR_SAMPLE_RATE_FILENAME, "0.0")
+    PersistingOptionsCacheGenerationObserver(fixture.options, 1_000L).setRelease(null)
+    setLastUpdateTime(1_000)
+
+    val processed = processor.process(SentryEvent(), hint)!!
+
+    assertNull(processed.contexts[Contexts.REPLAY_ID])
+  }
+
+  @Test
+  fun `if options cache is stale, uses current replay error sample rate`() {
+    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(timestamp = 3_000))
+    val processor = fixture.getSut(tmpDir, populateScopeCache = true)
+    fixture.options.sessionReplay.onErrorSampleRate = 1.0
+    fixture.persistOptions(REPLAY_ERROR_SAMPLE_RATE_FILENAME, "0.0")
+    PersistingOptionsCacheGenerationObserver(fixture.options, 1_000L).setRelease(null)
+    setLastUpdateTime(2_000)
+    val replayId = SentryId()
+    File(fixture.options.cacheDirPath, "replay_$replayId").also {
+      it.mkdirs()
+      it.setLastModified(1_000)
+    }
+
+    val processed = processor.process(SentryEvent(), hint)!!
+
+    assertEquals(replayId.toString(), processed.contexts[Contexts.REPLAY_ID].toString())
   }
 
   @Test

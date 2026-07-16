@@ -178,7 +178,7 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
       return event;
     }
 
-    backfillScope(event);
+    backfillScope(event, canUseCurrentOptions, optionsCacheForCurrentApp);
 
     backfillOptions(event, canUseCurrentOptions, optionsCacheForCurrentApp);
 
@@ -192,7 +192,10 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
   }
 
   // region scope persisted values
-  private void backfillScope(final @NotNull SentryEvent event) {
+  private void backfillScope(
+      final @NotNull SentryEvent event,
+      final boolean canUseCurrentOptions,
+      final boolean optionsCacheForCurrentApp) {
     setRequest(event);
     setUser(event);
     setScopeTags(event);
@@ -203,19 +206,28 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
     setFingerprints(event);
     setLevel(event);
     setTrace(event);
-    setReplayId(event);
+    setReplayId(event, canUseCurrentOptions, optionsCacheForCurrentApp);
   }
 
-  private boolean sampleReplay(final @NotNull SentryEvent event) {
+  private boolean sampleReplay(
+      final @NotNull SentryEvent event,
+      final boolean canUseCurrentOptions,
+      final boolean optionsCacheForCurrentApp) {
+    final @Nullable Double currentSampleRate = options.getSessionReplay().getOnErrorSampleRate();
     final @Nullable String replayErrorSampleRate =
-        PersistingOptionsObserver.read(options, REPLAY_ERROR_SAMPLE_RATE_FILENAME, String.class);
+        getOption(
+            REPLAY_ERROR_SAMPLE_RATE_FILENAME,
+            String.class,
+            currentSampleRate == null ? null : currentSampleRate.toString(),
+            canUseCurrentOptions,
+            optionsCacheForCurrentApp);
 
     if (replayErrorSampleRate == null) {
       return false;
     }
 
     try {
-      // we have to sample here with the old sample rate, because it may change between app launches
+      // Sample with the rate from the relevant launch because it may change between launches.
       final double replayErrorSampleRateDouble = Double.parseDouble(replayErrorSampleRate);
       if (replayErrorSampleRateDouble < SentryRandom.current().nextDouble()) {
         options
@@ -234,7 +246,10 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
     return true;
   }
 
-  private void setReplayId(final @NotNull SentryEvent event) {
+  private void setReplayId(
+      final @NotNull SentryEvent event,
+      final boolean canUseCurrentOptions,
+      final boolean optionsCacheForCurrentApp) {
     @Nullable String persistedReplayId = readFromDisk(options, REPLAY_FILENAME, String.class);
     @Nullable String cacheDirPath = options.getCacheDirPath();
     if (cacheDirPath == null) {
@@ -242,7 +257,7 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
     }
     final @NotNull File replayFolder = new File(cacheDirPath, "replay_" + persistedReplayId);
     if (!replayFolder.exists()) {
-      if (!sampleReplay(event)) {
+      if (!sampleReplay(event, canUseCurrentOptions, optionsCacheForCurrentApp)) {
         return;
       }
       // if the replay folder does not exist (e.g. running in buffer mode), we need to find the
@@ -411,7 +426,7 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
     setDebugMeta(event);
     setSdk(event);
     setApp(event);
-    setOptionsTags(event);
+    setOptionsTags(event, canUseCurrentOptions, optionsCacheForCurrentApp);
   }
 
   private void setApp(final @NotNull SentryBaseEvent event) {
@@ -473,6 +488,7 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
       event.setRelease(
           getOption(
               RELEASE_FILENAME,
+              String.class,
               options.getRelease(),
               canUseCurrentOptions,
               optionsCacheForCurrentApp));
@@ -487,6 +503,7 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
       event.setEnvironment(
           getOption(
               ENVIRONMENT_FILENAME,
+              String.class,
               options.getEnvironment(),
               canUseCurrentOptions,
               optionsCacheForCurrentApp));
@@ -524,7 +541,11 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
     if (event.getDist() == null) {
       event.setDist(
           getOption(
-              DIST_FILENAME, options.getDist(), canUseCurrentOptions, optionsCacheForCurrentApp));
+              DIST_FILENAME,
+              String.class,
+              options.getDist(),
+              canUseCurrentOptions,
+              optionsCacheForCurrentApp));
     }
     // if there's no user-set dist, fall back to versionCode from the release string
     if (event.getDist() == null) {
@@ -542,9 +563,10 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
     }
   }
 
-  private @Nullable String getOption(
+  private <T> @Nullable T getOption(
       final @NotNull String fileName,
-      final @Nullable String currentValue,
+      final @NotNull Class<T> clazz,
+      final @Nullable T currentValue,
       final boolean canUseCurrentOptions,
       final boolean optionsCacheForCurrentApp) {
     if (canUseCurrentOptions && !optionsCacheForCurrentApp) {
@@ -554,7 +576,7 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
       return null;
     }
 
-    final String persistedValue = PersistingOptionsObserver.read(options, fileName, String.class);
+    final T persistedValue = PersistingOptionsObserver.read(options, fileName, clazz);
     return persistedValue != null ? persistedValue : canUseCurrentOptions ? currentValue : null;
   }
 
@@ -595,11 +617,18 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
   }
 
   @SuppressWarnings("unchecked")
-  private void setOptionsTags(final @NotNull SentryBaseEvent event) {
+  private void setOptionsTags(
+      final @NotNull SentryBaseEvent event,
+      final boolean canUseCurrentOptions,
+      final boolean optionsCacheForCurrentApp) {
     final Map<String, String> tags =
         (Map<String, String>)
-            PersistingOptionsObserver.read(
-                options, PersistingOptionsObserver.TAGS_FILENAME, Map.class);
+            getOption(
+                PersistingOptionsObserver.TAGS_FILENAME,
+                Map.class,
+                options.getTags(),
+                canUseCurrentOptions,
+                optionsCacheForCurrentApp);
     if (tags == null) {
       return;
     }
