@@ -145,8 +145,27 @@ public class TombstoneParser implements Closeable {
       }
       final SentryStackFrame stackFrame = new SentryStackFrame();
       stackFrame.setPackage(frame.fileName);
-      stackFrame.setFunction(frame.functionName);
-      stackFrame.setInstructionAddr(formatHex(frame.pc));
+
+      // TODO check if there are more variants to this
+      // TODO ensure we don't accidentally tag any native frames here
+      if (frame.fileName.endsWith("/boot.oat")
+          || frame.fileName.endsWith("/boot-framework.oat")
+          || frame.fileName.endsWith("/base.vdex")) {
+
+        stackFrame.setPlatform("java");
+
+        final int methodNameIdx = frame.functionName.lastIndexOf(".");
+        if (methodNameIdx != -1 && methodNameIdx < frame.functionName.length() - 1) {
+          stackFrame.setFunction(frame.functionName.substring(methodNameIdx + 1));
+          stackFrame.setModule(frame.functionName.substring(0, methodNameIdx));
+        } else {
+          stackFrame.setFunction(frame.functionName);
+        }
+      } else {
+        // no need to set platform, as it's inferred from the event ("native")
+        stackFrame.setFunction(frame.functionName);
+        stackFrame.setInstructionAddr(formatHex(frame.pc));
+      }
 
       // inAppIncludes/inAppExcludes filter by Java/Kotlin package names, which don't overlap
       // with native C/C++ function names (e.g., "crash", "__libc_init"). For native frames,
