@@ -503,10 +503,14 @@ class ApplicationExitInfoEventProcessorTest {
     fixture.options.release = "io.sentry.samples@2.0.0+300"
     fixture.options.environment = "current-user"
     fixture.options.dist = "current-dist"
+    fixture.options.proguardUuid = "current-uuid"
+    fixture.options.sdkVersion = SdkVersion("current-sdk", "2.0.0")
     fixture.options.setTag("account", "current-tag")
     fixture.persistOptions(RELEASE_FILENAME, "io.sentry.samples@1.0.0+100")
     fixture.persistOptions(ENVIRONMENT_FILENAME, "previous-user")
     fixture.persistOptions(DIST_FILENAME, "previous-dist")
+    fixture.persistOptions(PROGUARD_UUID_FILENAME, "previous-uuid")
+    fixture.persistOptions(SDK_VERSION_FILENAME, SdkVersion("previous-sdk", "1.0.0"))
     fixture.persistOptions(OPTIONS_TAGS_FILENAME, mapOf("account" to "previous-tag"))
     PersistingOptionsCacheGenerationObserver(fixture.options, 1_000L).setRelease(null)
     setLastUpdateTime(2_000)
@@ -516,6 +520,8 @@ class ApplicationExitInfoEventProcessorTest {
     assertEquals("io.sentry.samples@2.0.0+300", processed.release)
     assertEquals("current-user", processed.environment)
     assertEquals("current-dist", processed.dist)
+    assertEquals("current-uuid", processed.debugMeta!!.images!![0].uuid)
+    assertEquals("current-sdk", processed.sdk!!.name)
     assertEquals("current-tag", processed.tags!!["account"])
   }
 
@@ -540,6 +546,29 @@ class ApplicationExitInfoEventProcessorTest {
     assertEquals("crashed-user", processed.environment)
     assertEquals("crashed-dist", processed.dist)
     assertEquals("crashed-tag", processed.tags!!["account"])
+  }
+
+  @Test
+  fun `if options cache was written after the exit, ignores persisted options`() {
+    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(timestamp = 2_000))
+    val processor = fixture.getSut(tmpDir)
+    fixture.persistOptions(RELEASE_FILENAME, "io.sentry.samples@2.0.0+200")
+    fixture.persistOptions(ENVIRONMENT_FILENAME, "newer-user")
+    fixture.persistOptions(DIST_FILENAME, "newer-dist")
+    fixture.persistOptions(PROGUARD_UUID_FILENAME, "newer-uuid")
+    fixture.persistOptions(SDK_VERSION_FILENAME, SdkVersion("newer-sdk", "2.0.0"))
+    fixture.persistOptions(OPTIONS_TAGS_FILENAME, mapOf("account" to "newer-tag"))
+    PersistingOptionsCacheGenerationObserver(fixture.options, 2_500L).setRelease(null)
+    setLastUpdateTime(3_000)
+
+    val processed = processor.process(SentryEvent(), hint)!!
+
+    assertNull(processed.release)
+    assertNull(processed.environment)
+    assertNull(processed.dist)
+    assertTrue(processed.debugMeta!!.images!!.isEmpty())
+    assertNull(processed.sdk)
+    assertNull(processed.tags?.get("account"))
   }
 
   @Test

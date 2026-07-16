@@ -162,13 +162,12 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
     mergeOS(event);
     setDevice(event);
 
-    final boolean canUseCurrentOptions = isAppNotUpdated(backfillable);
-    final boolean optionsCacheForCurrentApp = isOptionsCacheForCurrentApp();
+    final OptionsSource optionsSource = getOptionsSource(backfillable);
 
     if (!backfillable.shouldEnrich()) {
-      setRelease(event, canUseCurrentOptions, optionsCacheForCurrentApp);
-      setEnvironment(event, canUseCurrentOptions, optionsCacheForCurrentApp);
-      setDist(event, canUseCurrentOptions, optionsCacheForCurrentApp);
+      setRelease(event, optionsSource);
+      setEnvironment(event, optionsSource);
+      setDist(event, optionsSource);
       setAppVersionAndBuild(event);
       options
           .getLogger()
@@ -178,9 +177,9 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
       return event;
     }
 
-    backfillScope(event, canUseCurrentOptions, optionsCacheForCurrentApp);
+    backfillScope(event, optionsSource);
 
-    backfillOptions(event, canUseCurrentOptions, optionsCacheForCurrentApp);
+    backfillOptions(event, optionsSource);
 
     setStaticValues(event);
 
@@ -193,9 +192,7 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
 
   // region scope persisted values
   private void backfillScope(
-      final @NotNull SentryEvent event,
-      final boolean canUseCurrentOptions,
-      final boolean optionsCacheForCurrentApp) {
+      final @NotNull SentryEvent event, final @NotNull OptionsSource optionsSource) {
     setRequest(event);
     setUser(event);
     setScopeTags(event);
@@ -206,21 +203,18 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
     setFingerprints(event);
     setLevel(event);
     setTrace(event);
-    setReplayId(event, canUseCurrentOptions, optionsCacheForCurrentApp);
+    setReplayId(event, optionsSource);
   }
 
   private boolean sampleReplay(
-      final @NotNull SentryEvent event,
-      final boolean canUseCurrentOptions,
-      final boolean optionsCacheForCurrentApp) {
+      final @NotNull SentryEvent event, final @NotNull OptionsSource optionsSource) {
     final @Nullable Double currentSampleRate = options.getSessionReplay().getOnErrorSampleRate();
     final @Nullable String replayErrorSampleRate =
-        getOption(
+        getLaunchOption(
             REPLAY_ERROR_SAMPLE_RATE_FILENAME,
             String.class,
             currentSampleRate == null ? null : currentSampleRate.toString(),
-            canUseCurrentOptions,
-            optionsCacheForCurrentApp);
+            optionsSource);
 
     if (replayErrorSampleRate == null) {
       return false;
@@ -247,9 +241,7 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
   }
 
   private void setReplayId(
-      final @NotNull SentryEvent event,
-      final boolean canUseCurrentOptions,
-      final boolean optionsCacheForCurrentApp) {
+      final @NotNull SentryEvent event, final @NotNull OptionsSource optionsSource) {
     @Nullable String persistedReplayId = readFromDisk(options, REPLAY_FILENAME, String.class);
     @Nullable String cacheDirPath = options.getCacheDirPath();
     if (cacheDirPath == null) {
@@ -257,7 +249,7 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
     }
     final @NotNull File replayFolder = new File(cacheDirPath, "replay_" + persistedReplayId);
     if (!replayFolder.exists()) {
-      if (!sampleReplay(event, canUseCurrentOptions, optionsCacheForCurrentApp)) {
+      if (!sampleReplay(event, optionsSource)) {
         return;
       }
       // if the replay folder does not exist (e.g. running in buffer mode), we need to find the
@@ -417,16 +409,14 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
 
   // region options persisted values
   private void backfillOptions(
-      final @NotNull SentryEvent event,
-      final boolean canUseCurrentOptions,
-      final boolean optionsCacheForCurrentApp) {
-    setRelease(event, canUseCurrentOptions, optionsCacheForCurrentApp);
-    setEnvironment(event, canUseCurrentOptions, optionsCacheForCurrentApp);
-    setDist(event, canUseCurrentOptions, optionsCacheForCurrentApp);
-    setDebugMeta(event);
-    setSdk(event);
+      final @NotNull SentryEvent event, final @NotNull OptionsSource optionsSource) {
+    setRelease(event, optionsSource);
+    setEnvironment(event, optionsSource);
+    setDist(event, optionsSource);
+    setDebugMeta(event, optionsSource);
+    setSdk(event, optionsSource);
     setApp(event);
-    setOptionsTags(event, canUseCurrentOptions, optionsCacheForCurrentApp);
+    setOptionsTags(event, optionsSource);
   }
 
   private void setApp(final @NotNull SentryBaseEvent event) {
@@ -481,36 +471,24 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
   }
 
   private void setRelease(
-      final @NotNull SentryBaseEvent event,
-      final boolean canUseCurrentOptions,
-      final boolean optionsCacheForCurrentApp) {
+      final @NotNull SentryBaseEvent event, final @NotNull OptionsSource optionsSource) {
     if (event.getRelease() == null) {
       event.setRelease(
-          getOption(
-              RELEASE_FILENAME,
-              String.class,
-              options.getRelease(),
-              canUseCurrentOptions,
-              optionsCacheForCurrentApp));
+          getLaunchOption(RELEASE_FILENAME, String.class, options.getRelease(), optionsSource));
     }
   }
 
   private void setEnvironment(
-      final @NotNull SentryBaseEvent event,
-      final boolean canUseCurrentOptions,
-      final boolean optionsCacheForCurrentApp) {
+      final @NotNull SentryBaseEvent event, final @NotNull OptionsSource optionsSource) {
     if (event.getEnvironment() == null) {
       event.setEnvironment(
-          getOption(
-              ENVIRONMENT_FILENAME,
-              String.class,
-              options.getEnvironment(),
-              canUseCurrentOptions,
-              optionsCacheForCurrentApp));
+          getLaunchOption(
+              ENVIRONMENT_FILENAME, String.class, options.getEnvironment(), optionsSource));
     }
   }
 
-  private void setDebugMeta(final @NotNull SentryBaseEvent event) {
+  private void setDebugMeta(
+      final @NotNull SentryBaseEvent event, final @NotNull OptionsSource optionsSource) {
     DebugMeta debugMeta = event.getDebugMeta();
 
     if (debugMeta == null) {
@@ -522,7 +500,8 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
     List<DebugImage> images = debugMeta.getImages();
     if (images != null) {
       final String proguardUuid =
-          PersistingOptionsObserver.read(options, PROGUARD_UUID_FILENAME, String.class);
+          getBuildOption(
+              PROGUARD_UUID_FILENAME, String.class, options.getProguardUuid(), optionsSource);
 
       if (proguardUuid != null) {
         final DebugImage debugImage = new DebugImage();
@@ -535,17 +514,9 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
   }
 
   private void setDist(
-      final @NotNull SentryBaseEvent event,
-      final boolean canUseCurrentOptions,
-      final boolean optionsCacheForCurrentApp) {
+      final @NotNull SentryBaseEvent event, final @NotNull OptionsSource optionsSource) {
     if (event.getDist() == null) {
-      event.setDist(
-          getOption(
-              DIST_FILENAME,
-              String.class,
-              options.getDist(),
-              canUseCurrentOptions,
-              optionsCacheForCurrentApp));
+      event.setDist(getLaunchOption(DIST_FILENAME, String.class, options.getDist(), optionsSource));
     }
     // if there's no user-set dist, fall back to versionCode from the release string
     if (event.getDist() == null) {
@@ -563,24 +534,38 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
     }
   }
 
-  private <T> @Nullable T getOption(
+  private <T> @Nullable T getLaunchOption(
       final @NotNull String fileName,
       final @NotNull Class<T> clazz,
       final @Nullable T currentValue,
-      final boolean canUseCurrentOptions,
-      final boolean optionsCacheForCurrentApp) {
-    if (canUseCurrentOptions && !optionsCacheForCurrentApp) {
+      final @NotNull OptionsSource optionsSource) {
+    if (optionsSource == OptionsSource.CURRENT) {
       return currentValue;
-    }
-    if (!canUseCurrentOptions && optionsCacheForCurrentApp) {
+    } else if (optionsSource == OptionsSource.NONE) {
       return null;
     }
 
     final T persistedValue = PersistingOptionsObserver.read(options, fileName, clazz);
-    return persistedValue != null ? persistedValue : canUseCurrentOptions ? currentValue : null;
+    return persistedValue != null || optionsSource == OptionsSource.PERSISTED
+        ? persistedValue
+        : currentValue;
   }
 
-  private boolean isAppNotUpdated(final @NotNull Backfillable hint) {
+  private <T> @Nullable T getBuildOption(
+      final @NotNull String fileName,
+      final @NotNull Class<T> clazz,
+      final @Nullable T currentValue,
+      final @NotNull OptionsSource optionsSource) {
+    if (optionsSource == OptionsSource.CURRENT
+        || optionsSource == OptionsSource.PERSISTED_WITH_CURRENT_FALLBACK) {
+      return currentValue;
+    } else if (optionsSource == OptionsSource.NONE) {
+      return null;
+    }
+    return PersistingOptionsObserver.read(options, fileName, clazz);
+  }
+
+  private @NotNull OptionsSource getOptionsSource(final @NotNull Backfillable hint) {
     final @Nullable Long timestamp;
     if (hint instanceof AbnormalExit) {
       timestamp = ((AbnormalExit) hint).timestamp();
@@ -589,46 +574,45 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
     } else {
       timestamp = null;
     }
-    if (timestamp == null) {
-      return false;
-    }
-
-    final PackageInfo packageInfo = ContextUtils.getPackageInfo(context, buildInfoProvider);
-    return packageInfo != null
-        && packageInfo.lastUpdateTime > 0
-        && packageInfo.lastUpdateTime <= timestamp;
-  }
-
-  private boolean isOptionsCacheForCurrentApp() {
     final Long cachedLastUpdateTime = PersistingOptionsCacheGenerationObserver.read(options);
     final PackageInfo packageInfo = ContextUtils.getPackageInfo(context, buildInfoProvider);
-    return cachedLastUpdateTime != null
-        && packageInfo != null
-        && packageInfo.lastUpdateTime > 0
-        && cachedLastUpdateTime == packageInfo.lastUpdateTime;
+    final long currentLastUpdateTime = packageInfo == null ? 0 : packageInfo.lastUpdateTime;
+
+    if (timestamp != null && currentLastUpdateTime > 0 && currentLastUpdateTime <= timestamp) {
+      return cachedLastUpdateTime != null && cachedLastUpdateTime == currentLastUpdateTime
+          ? OptionsSource.PERSISTED_WITH_CURRENT_FALLBACK
+          : OptionsSource.CURRENT;
+    }
+    if (cachedLastUpdateTime == null) {
+      return OptionsSource.PERSISTED;
+    }
+    // A cache generation created after the exit cannot describe that exit.
+    if (timestamp != null && cachedLastUpdateTime > 0 && cachedLastUpdateTime <= timestamp) {
+      return OptionsSource.PERSISTED;
+    }
+    return OptionsSource.NONE;
   }
 
-  private void setSdk(final @NotNull SentryBaseEvent event) {
+  private void setSdk(
+      final @NotNull SentryBaseEvent event, final @NotNull OptionsSource optionsSource) {
     if (event.getSdk() == null) {
       final SdkVersion sdkVersion =
-          PersistingOptionsObserver.read(options, SDK_VERSION_FILENAME, SdkVersion.class);
+          getBuildOption(
+              SDK_VERSION_FILENAME, SdkVersion.class, options.getSdkVersion(), optionsSource);
       event.setSdk(sdkVersion);
     }
   }
 
   @SuppressWarnings("unchecked")
   private void setOptionsTags(
-      final @NotNull SentryBaseEvent event,
-      final boolean canUseCurrentOptions,
-      final boolean optionsCacheForCurrentApp) {
+      final @NotNull SentryBaseEvent event, final @NotNull OptionsSource optionsSource) {
     final Map<String, String> tags =
         (Map<String, String>)
-            getOption(
+            getLaunchOption(
                 PersistingOptionsObserver.TAGS_FILENAME,
                 Map.class,
                 options.getTags(),
-                canUseCurrentOptions,
-                optionsCacheForCurrentApp);
+                optionsSource);
     if (tags == null) {
       return;
     }
@@ -644,6 +628,13 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
   }
 
   // endregion
+
+  private enum OptionsSource {
+    CURRENT,
+    PERSISTED,
+    PERSISTED_WITH_CURRENT_FALLBACK,
+    NONE
+  }
 
   @Override
   public @Nullable Long getOrder() {
