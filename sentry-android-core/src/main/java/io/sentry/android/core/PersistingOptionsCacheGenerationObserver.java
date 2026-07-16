@@ -4,6 +4,7 @@ import static io.sentry.cache.PersistingOptionsObserver.OPTIONS_CACHE;
 
 import io.sentry.IOptionsObserver;
 import io.sentry.SentryOptions;
+import io.sentry.cache.PersistingOptionsObserver;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.util.FileUtils;
 import java.io.File;
@@ -14,6 +15,18 @@ import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * Persists the app generation that produced the options cache.
+ *
+ * <p>{@link ApplicationExitInfoEventProcessor} compares the cached {@link
+ * android.content.pm.PackageInfo#lastUpdateTime} with an exit timestamp before reusing
+ * launch-specific options. This prevents options written by a later app update from being attached
+ * to an older ANR or native crash.
+ *
+ * <p>This observer must be registered after {@link PersistingOptionsObserver}. Options observers
+ * are notified one at a time, so the first callback to this observer writes the generation marker
+ * only after the preceding observer has persisted the complete options snapshot.
+ */
 final class PersistingOptionsCacheGenerationObserver implements IOptionsObserver {
   static final String APP_LAST_UPDATE_TIME_FILENAME = "app-last-update-time.json";
 

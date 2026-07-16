@@ -32,7 +32,7 @@
 
 ### Fixes
 
-- Backfill release, environment, distribution, and app version/build for ANR and native crash events that occurred before SDK initialization, provided the app has not since been updated ([#5762](https://github.com/getsentry/sentry-java/pull/5762))
+- Backfill release, environment, distribution, tags, and app version/build—and use the matching replay-on-error sample rate—for `ApplicationExitInfo` ANR and native crash events captured before SDK initialization, without reusing options cached by a later app update ([#5762](https://github.com/getsentry/sentry-java/pull/5762))
 - Session Replay: Fix first recording segment missing for replays in `buffer` mode ([#5753](https://github.com/getsentry/sentry-java/pull/5753))
 - Session Replay: Fix error-to-replay linkage in `buffer` mode ([#5754](https://github.com/getsentry/sentry-java/pull/5754))
 - Prevent logs and metrics from remaining queued after a flush scheduling race ([#5756](https://github.com/getsentry/sentry-java/pull/5756))
