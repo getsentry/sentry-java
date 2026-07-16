@@ -30,6 +30,8 @@ final class PersistingOptionsCacheGenerationObserver implements IOptionsObserver
 
   @Override
   public void setRelease(final @Nullable String release) {
+    // This observer is registered after PersistingOptionsObserver, so its first callback runs only
+    // after all option cache files have been persisted.
     final File cacheDir = new File(options.getCacheDirPath(), OPTIONS_CACHE);
     cacheDir.mkdirs();
     try (final OutputStream stream =
