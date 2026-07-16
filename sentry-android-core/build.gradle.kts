@@ -38,15 +38,7 @@ android {
   // variant, so unit tests must target release to run at all.
   testBuildType = "release"
 
-  kotlin {
-    jvmToolchain(8)
-    compilerOptions.jvmTarget = JVM_1_8
-  }
-
-  java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
-  }
+  kotlin { compilerOptions.jvmTarget = JVM_1_8 }
 
   testOptions {
     animationsDisabled = true

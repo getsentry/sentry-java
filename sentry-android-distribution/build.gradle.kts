@@ -25,13 +25,7 @@ android {
   }
 }
 
-java {
-  sourceCompatibility = JavaVersion.VERSION_1_8
-  targetCompatibility = JavaVersion.VERSION_1_8
-}
-
 kotlin {
-  jvmToolchain(8)
   compilerOptions.jvmTarget = JVM_1_8
   compilerOptions.languageVersion = KotlinVersion.KOTLIN_1_9
   explicitApi()

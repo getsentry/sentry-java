@@ -15,7 +15,6 @@ plugins {
 }
 
 kotlin {
-  jvmToolchain(8)
   explicitApi()
 
   androidTarget {

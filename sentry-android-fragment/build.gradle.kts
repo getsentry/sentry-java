@@ -30,7 +30,6 @@ android {
   testBuildType = "release"
 
   kotlin {
-    jvmToolchain(8)
     compilerOptions.jvmTarget = JvmTarget.JVM_1_8
     compilerOptions.languageVersion = KotlinVersion.KOTLIN_1_9
     compilerOptions.apiVersion = KotlinVersion.KOTLIN_1_9
