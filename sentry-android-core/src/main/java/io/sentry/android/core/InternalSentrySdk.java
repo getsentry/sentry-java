@@ -40,7 +40,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -54,9 +54,6 @@ import org.jetbrains.annotations.Nullable;
 /** Sentry SDK internal API methods meant for being used by the Sentry Hybrid SDKs. */
 @ApiStatus.Internal
 public final class InternalSentrySdk {
-
-  @SuppressWarnings("CharsetObjectCanBeUsed")
-  private static final Charset UTF_8_CHARSET = Charset.forName("UTF-8");
 
   /**
    * @return a copy of the current scopes's topmost scope, or null in case the scopes is disabled
@@ -174,7 +171,58 @@ public final class InternalSentrySdk {
   @Nullable
   public static SentryId captureEnvelope(
       final @NotNull byte[] envelopeData, final boolean maybeStartNewSession) {
-    return captureEnvelope(envelopeData, maybeStartNewSession, true);
+    final @NotNull IScopes scopes = ScopesAdapter.getInstance();
+    final @NotNull SentryOptions options = scopes.getOptions();
+
+    try (final InputStream envelopeInputStream = new ByteArrayInputStream(envelopeData)) {
+      final @NotNull ISerializer serializer = options.getSerializer();
+      final @Nullable SentryEnvelope envelope =
+          options.getEnvelopeReader().read(envelopeInputStream);
+      if (envelope == null) {
+        return null;
+      }
+
+      final @NotNull List<SentryEnvelopeItem> envelopeItems = new ArrayList<>();
+
+      // determine session state based on events inside envelope
+      @Nullable Session.State status = null;
+      boolean crashedOrErrored = false;
+      for (SentryEnvelopeItem item : envelope.getItems()) {
+        envelopeItems.add(item);
+
+        final SentryEvent event = item.getEvent(serializer);
+        if (event != null) {
+          if (event.isCrashed()) {
+            status = Session.State.Crashed;
+          }
+          if (event.isCrashed() || event.isErrored()) {
+            crashedOrErrored = true;
+          }
+        }
+      }
+
+      // update session and add it to envelope if necessary
+      final @Nullable Session session =
+          updateSession(scopes, options, status, crashedOrErrored, false);
+      if (session != null) {
+        final SentryEnvelopeItem sessionItem = SentryEnvelopeItem.fromSession(serializer, session);
+        envelopeItems.add(sessionItem);
+        deleteCurrentSessionFile(
+            options,
+            // should be sync if going to crash or already not a main thread
+            !maybeStartNewSession || !scopes.getOptions().getThreadChecker().isMainThread());
+        if (maybeStartNewSession) {
+          scopes.startSession();
+        }
+      }
+
+      final SentryEnvelope repackagedEnvelope =
+          new SentryEnvelope(envelope.getHeader(), envelopeItems);
+      return scopes.captureEnvelope(repackagedEnvelope);
+    } catch (Throwable t) {
+      options.getLogger().log(SentryLevel.ERROR, "Failed to capture envelope", t);
+    }
+    return null;
   }
 
   /**
@@ -203,14 +251,6 @@ public final class InternalSentrySdk {
    */
   @Nullable
   public static SentryId captureEnvelopeNonTerminating(final @NotNull byte[] envelopeData) {
-    return captureEnvelope(envelopeData, false, false);
-  }
-
-  @Nullable
-  private static SentryId captureEnvelope(
-      final @NotNull byte[] envelopeData,
-      final boolean maybeStartNewSession,
-      final boolean isTerminating) {
     final @NotNull IScopes scopes = ScopesAdapter.getInstance();
     final @NotNull SentryOptions options = scopes.getOptions();
 
@@ -222,56 +262,48 @@ public final class InternalSentrySdk {
         return null;
       }
 
-      final @NotNull List<SentryEnvelopeItem> envelopeItems = new ArrayList<>();
-
-      // determine session state based on events inside envelope
-      @Nullable Session.State status = null;
-      boolean crashedOrErrored = false;
       boolean markPendingUnhandled = false;
+      boolean addErrorsCount = false;
       for (SentryEnvelopeItem item : envelope.getItems()) {
-        envelopeItems.add(item);
-
         final SentryEvent event = item.getEvent(serializer);
         if (event != null) {
+          // isCrashed() means mechanism.handled=false (unhandled exception), not that the
+          // process terminated. For e.g Flutter that distinction is why we only mark pending here.
           if (event.isCrashed()) {
-            if (isTerminating) {
-              status = Session.State.Crashed;
-            } else {
-              // non-terminating: don't crash the session, only remember the unhandled exception.
-              markPendingUnhandled = true;
-            }
-          }
-          if (event.isCrashed() || event.isErrored()) {
-            crashedOrErrored = true;
+            markPendingUnhandled = true;
+            addErrorsCount = true;
+          } else if (event.isErrored()) {
+            addErrorsCount = true;
           }
         }
       }
 
-      // update session and add it to envelope if necessary
-      final @Nullable Session session =
-          updateSession(scopes, options, status, crashedOrErrored, markPendingUnhandled);
-      if (session != null) {
-        if (isTerminating) {
-          final SentryEnvelopeItem sessionItem =
-              SentryEnvelopeItem.fromSession(serializer, session);
-          envelopeItems.add(sessionItem);
-          deleteCurrentSessionFile(
-              options,
-              // should be sync if going to crash or already not a main thread
-              !maybeStartNewSession || !scopes.getOptions().getThreadChecker().isMainThread());
-          if (maybeStartNewSession) {
-            scopes.startSession();
-          }
-        } else {
-          // non-terminating: keep the (still Ok) session on the scope, don't attach a session
-          // update, and persist it so the pending-unhandled flag survives process death.
+      if (markPendingUnhandled || addErrorsCount) {
+        final @NotNull AtomicReference<Session> sessionRef = new AtomicReference<>();
+        final boolean pending = markPendingUnhandled;
+        final boolean addErrors = addErrorsCount;
+        scopes.configureScope(
+            scope -> {
+              final @Nullable Session session = scope.getSession();
+              if (session != null) {
+                if (pending) {
+                  session.setPendingUnhandled(true);
+                }
+                if (session.update(null, null, addErrors, null) || pending) {
+                  sessionRef.set(session);
+                }
+              } else {
+                options.getLogger().log(INFO, "Session is null on captureEnvelopeNonTerminating");
+              }
+            });
+        final @Nullable Session session = sessionRef.get();
+        if (session != null) {
           persistCurrentSession(options, session);
         }
       }
 
-      final SentryEnvelope repackagedEnvelope =
-          new SentryEnvelope(envelope.getHeader(), envelopeItems);
-      return scopes.captureEnvelope(repackagedEnvelope);
+      // Capture the original envelope as-is (no session item attached).
+      return scopes.captureEnvelope(envelope);
     } catch (Throwable t) {
       options.getLogger().log(SentryLevel.ERROR, "Failed to capture envelope", t);
     }
@@ -372,7 +404,7 @@ public final class InternalSentrySdk {
     final File sessionFile = EnvelopeCache.getCurrentSessionFile(cacheDirPath);
     try (final OutputStream outputStream = new FileOutputStream(sessionFile);
         final Writer writer =
-            new BufferedWriter(new OutputStreamWriter(outputStream, UTF_8_CHARSET))) {
+            new BufferedWriter(new OutputStreamWriter(outputStream, StandardCharsets.UTF_8))) {
       options.getSerializer().serialize(session, writer);
     } catch (Throwable e) {
       options.getLogger().log(WARNING, "Failed to persist the current session.", e);
