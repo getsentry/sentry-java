@@ -1,4 +1,6 @@
 import io.gitlab.arturbosch.detekt.Detekt
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 
 plugins {
@@ -33,9 +35,10 @@ android {
   }
 
   kotlin {
-    compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8
-    compilerOptions.languageVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
-    compilerOptions.apiVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
+    jvmToolchain(8)
+    compilerOptions.jvmTarget = JvmTarget.JVM_1_8
+    compilerOptions.languageVersion = KotlinVersion.KOTLIN_1_9
+    compilerOptions.apiVersion = KotlinVersion.KOTLIN_1_9
   }
 
   testOptions {
