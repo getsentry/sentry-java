@@ -113,6 +113,20 @@ allprojects {
 subprojects {
     apply { plugin("io.sentry.spotless") }
 
+    // AGP 9.2 bundles lint 9.2.1, which flags compileSdk 36 as outdated because 37 is available.
+    // We intentionally stay on compileSdk 36 until the API 37 bump (#5768), so silence that check
+    // for every Android module (library and application).
+    pluginManager.withPlugin("com.android.library") {
+        extensions.configure<com.android.build.gradle.BaseExtension> {
+            lintOptions { disable("GradleDependency") }
+        }
+    }
+    pluginManager.withPlugin("com.android.application") {
+        extensions.configure<com.android.build.gradle.BaseExtension> {
+            lintOptions { disable("GradleDependency") }
+        }
+    }
+
     plugins.withId(Config.QualityPlugins.detektPlugin) {
         configure<DetektExtension> {
             buildUponDefaultConfig = true
@@ -165,6 +179,18 @@ subprojects {
 
                 sourceCompatibility = JavaVersion.VERSION_1_8
                 targetCompatibility = JavaVersion.VERSION_1_8
+            }
+        }
+
+        // AGP 9 defaults Android modules to Java 11. Pin the published library modules back
+        // to Java 8 so their bytecode stays consumable by Java 8 projects, mirroring the
+        // java-library pin above.
+        plugins.withId("com.android.library") {
+            configure<com.android.build.gradle.BaseExtension> {
+                compileOptions {
+                    sourceCompatibility = JavaVersion.VERSION_1_8
+                    targetCompatibility = JavaVersion.VERSION_1_8
+                }
             }
         }
 
