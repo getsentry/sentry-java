@@ -43,6 +43,11 @@ android {
     compilerOptions.jvmTarget = JVM_1_8
   }
 
+  java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+  }
+
   testOptions {
     animationsDisabled = true
     unitTests.apply {
