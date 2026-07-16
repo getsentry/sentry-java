@@ -14,10 +14,7 @@ jobs:
     name: Ui tests
     runs-on: ubuntu-latest
 
-    # we copy the secret to the env variable in order to access it in the workflow
     env:
-      SAUCE_USERNAME: ${{ secrets.SAUCE_USERNAME }}
-      SAUCE_ACCESS_KEY: ${{ secrets.SAUCE_ACCESS_KEY }}
       GRADLE_ENCRYPTION_KEY: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
     steps:
@@ -37,61 +34,45 @@ jobs:
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
-      # Clean, build and release a test apk, but only if we will run the benchmark
-      - name: Make assembleUiTests
-        if: env.SAUCE_USERNAME != null
-        run: make assembleUiTests
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
 
-      - name: Install SauceLabs CLI
-        uses: saucelabs/saucectl-run-action@bc81720eb01738d9c664b07fe42621bd0014283f # pin@v4.4.0
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
+      - name: AVD cache
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+        id: avd-cache
         with:
-          skip-run: true
-        if: env.SAUCE_USERNAME != null
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-api-35-x86_64-google_apis
 
-      - name: Run Tests
-        id: saucelabs
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        run: |
-          exec &> >(tee -a "test_logs.txt")
-          saucectl run -c .sauce/sentry-uitest-android-ui.yml
-        if: env.SAUCE_USERNAME != null
-        continue-on-error: true
+      - name: Create AVD and generate snapshot for caching
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@e89f39f1abbbd05b1113a29cf4db69e7540cae5a # pin@v2
+        with:
+          api-level: 35
+          target: google_apis
+          channel: canary
+          arch: x86_64
+          force-avd-creation: false
+          disable-animations: true
+          disable-spellchecker: true
+          emulator-options: -memory 4096 -no-window -gpu auto -noaudio -no-boot-anim -camera-back none
+          disk-size: 4096M
+          script: echo "Generated AVD snapshot for caching."
 
-      - name: Verify Test Results
-        run: |
-          processCrashed=$(cat test_logs.txt | grep "Instrumentation run failed due to 'Process crashed.'" | wc -l)
-          if [[ ${{ steps.saucelabs.outcome }} == 'success' ]]; then
-            exit 0
-          elif [[ "$processCrashed" -ne 0 ]]; then
-            exit 0
-          else
-            exit 1
-          fi
-        if: env.SAUCE_USERNAME != null
-
-
-      - name: Install Sentry CLI
-        if: ${{ !cancelled() && env.SAUCE_USERNAME != null }}
-        run: curl -sL https://sentry.io/get-cli/ | bash
-
-      - name: Upload Replay Snapshots to Sentry
-        # Skip on PRs from forks, which don't have access to the upload secret
-        if: ${{ !cancelled() && env.SAUCE_USERNAME != null && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
-        run: |
-          shopt -s globstar nullglob
-          pngs=(artifacts/**/*.png)
-          if [ ${#pngs[@]} -gt 0 ]; then
-            mkdir -p replay-snapshots
-            cp "${pngs[@]}" replay-snapshots/
-            sentry-cli build snapshots ./replay-snapshots \
-              --app-id sentry-android-replay
-          else
-            echo "No replay snapshot files found, skipping upload"
-          fi
-        env:
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-          SENTRY_ORG: sentry-sdks
-          SENTRY_PROJECT: sentry-android
+      - name: Run tests
+        uses: reactivecircus/android-emulator-runner@e89f39f1abbbd05b1113a29cf4db69e7540cae5a # pin@v2
+        with:
+          api-level: 35
+          target: google_apis
+          channel: canary
+          arch: x86_64
+          force-avd-creation: false
+          disable-animations: true
+          disable-spellchecker: true
+          emulator-options: -memory 4096 -no-window -gpu auto -noaudio -no-boot-anim -camera-back none -no-snapshot-save
+          script: ./gradlew :sentry-android-integration-tests:sentry-uitest-android:connectedReleaseAndroidTest -Denvironment=github
