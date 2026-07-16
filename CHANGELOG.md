@@ -34,8 +34,6 @@
 - Session Replay: Fix error-to-replay linkage in `buffer` mode ([#5754](https://github.com/getsentry/sentry-java/pull/5754))
 - Prevent logs and metrics from remaining queued after a flush scheduling race ([#5756](https://github.com/getsentry/sentry-java/pull/5756))
 - Fix main thread identification for tombstone (native crash) events ([#5742](https://github.com/getsentry/sentry-java/pull/5742))
-- Setting `enableLegacyProfiling` to `false` now also disables transaction-based profiling (`profilesSampleRate`/`profilesSampler`) ([#5765](https://github.com/getsentry/sentry-java/pull/5765))
-  - Transaction-based profiling always relies on the legacy profiler and is not supported by the ProfilingManager (Perfetto) backend. Use `profileSessionSampleRate` for continuous profiling instead.
 
 ### Dependencies
 
