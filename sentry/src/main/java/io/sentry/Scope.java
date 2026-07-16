@@ -53,6 +53,9 @@ public final class Scope implements IScope {
   /** Scope's screen */
   private @Nullable String screen;
 
+  /** Scope's environment */
+  private @Nullable String environment;
+
   /** Scope's request */
   private @Nullable Request request;
 
@@ -137,6 +140,7 @@ public final class Scope implements IScope {
     final User userRef = scope.user;
     this.user = userRef != null ? new User(userRef) : null;
     this.screen = scope.screen;
+    this.environment = scope.environment;
     this.replayId = scope.replayId;
 
     final Request requestRef = scope.request;
@@ -221,6 +225,32 @@ public final class Scope implements IScope {
 
     for (final IScopeObserver observer : options.getScopeObservers()) {
       observer.setLevel(level);
+    }
+  }
+
+  /**
+   * Returns the Scope's environment.
+   *
+   * @return the environment or {@code null} if not set on the scope
+   */
+  @Override
+  public @Nullable String getEnvironment() {
+    return environment;
+  }
+
+  /**
+   * Sets the Scope's environment. Mainly used by hybrid SDKs (e.g. .NET, Unity) to sync their
+   * environment into this SDK. Takes precedence over {@link SentryOptions#getEnvironment()} when
+   * applied to events.
+   *
+   * @param environment the environment
+   */
+  @Override
+  public void setEnvironment(final @Nullable String environment) {
+    this.environment = environment;
+
+    for (final IScopeObserver observer : options.getScopeObservers()) {
+      observer.setEnvironment(environment);
     }
   }
 

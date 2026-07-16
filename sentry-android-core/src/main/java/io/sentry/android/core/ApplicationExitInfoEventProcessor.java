@@ -460,6 +460,12 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
 
   private void setEnvironment(final @NotNull SentryBaseEvent event) {
     if (event.getEnvironment() == null) {
+      final String scopeEnvironment =
+          readFromDisk(options, PersistingScopeObserver.ENVIRONMENT_FILENAME, String.class);
+      if (scopeEnvironment != null) {
+        event.setEnvironment(scopeEnvironment);
+        return;
+      }
       final String environment =
           PersistingOptionsObserver.read(options, ENVIRONMENT_FILENAME, String.class);
       event.setEnvironment(environment != null ? environment : options.getEnvironment());

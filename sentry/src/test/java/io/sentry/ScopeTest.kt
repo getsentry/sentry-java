@@ -784,6 +784,36 @@ class ScopeTest {
   }
 
   @Test
+  fun `Scope set environment sync scopes`() {
+    val observer = mock<IScopeObserver>()
+    val options = SentryOptions().apply { addScopeObserver(observer) }
+    val scope = Scope(options)
+
+    scope.environment = "staging"
+    verify(observer).setEnvironment(eq("staging"))
+  }
+
+  @Test
+  fun `Scope set environment null sync scopes`() {
+    val observer = mock<IScopeObserver>()
+    val options = SentryOptions().apply { addScopeObserver(observer) }
+    val scope = Scope(options)
+
+    scope.environment = null
+    verify(observer).setEnvironment(null)
+  }
+
+  @Test
+  fun `Scope clone copies environment`() {
+    val scope = Scope(SentryOptions())
+    scope.environment = "staging"
+
+    val clone = scope.clone()
+
+    assertEquals("staging", clone.environment)
+  }
+
+  @Test
   fun `Scope set transaction name sync scopes`() {
     val observer = mock<IScopeObserver>()
     val options = SentryOptions().apply { addScopeObserver(observer) }

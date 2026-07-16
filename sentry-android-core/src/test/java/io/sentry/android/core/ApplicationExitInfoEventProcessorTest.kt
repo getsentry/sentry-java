@@ -399,6 +399,18 @@ class ApplicationExitInfoEventProcessorTest {
   }
 
   @Test
+  fun `if scope environment is persisted, it takes precedence over the options environment`() {
+    val hint = HintUtils.createWithTypeCheckHint(BackfillableHint())
+
+    val processor = fixture.getSut(tmpDir, populateOptionsCache = true)
+    fixture.persistScope(PersistingScopeObserver.ENVIRONMENT_FILENAME, "staging")
+
+    val processed = processor.process(SentryEvent(), hint)
+
+    assertEquals("staging", processed!!.environment)
+  }
+
+  @Test
   fun `if dist is not persisted, backfills it from release`() {
     val hint = HintUtils.createWithTypeCheckHint(BackfillableHint())
     val original = SentryEvent()

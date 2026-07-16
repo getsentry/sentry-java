@@ -1547,6 +1547,9 @@ public final class SentryClient implements ISentryClient {
       if (sentryBaseEvent.getUser() == null) {
         sentryBaseEvent.setUser(scope.getUser());
       }
+      if (sentryBaseEvent.getEnvironment() == null) {
+        sentryBaseEvent.setEnvironment(scope.getEnvironment());
+      }
       if (sentryBaseEvent.getTags() == null) {
         sentryBaseEvent.setTags(scope.getTags());
       } else {
