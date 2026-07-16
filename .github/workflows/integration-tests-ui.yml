@@ -86,7 +86,7 @@ jobs:
           if [ ${#pngs[@]} -gt 0 ]; then
             mkdir -p replay-snapshots
             cp "${pngs[@]}" replay-snapshots/
-            sentry-cli build snapshots ./replay-snapshots \
+            sentry-cli snapshots upload ./replay-snapshots \
               --app-id sentry-android-replay
           else
             echo "No replay snapshot files found, skipping upload"
