@@ -496,6 +496,46 @@ class ApplicationExitInfoEventProcessorTest {
   }
 
   @Test
+  fun `if options cache is from an older app update, uses current options`() {
+    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(timestamp = 3_000))
+    val processor = fixture.getSut(tmpDir)
+    fixture.options.release = "io.sentry.samples@2.0.0+300"
+    fixture.options.environment = "current-user"
+    fixture.options.dist = "current-dist"
+    fixture.persistOptions(RELEASE_FILENAME, "io.sentry.samples@1.0.0+100")
+    fixture.persistOptions(ENVIRONMENT_FILENAME, "previous-user")
+    fixture.persistOptions(DIST_FILENAME, "previous-dist")
+    PersistingOptionsCacheGenerationObserver(fixture.options, 1_000L).setRelease(null)
+    setLastUpdateTime(2_000)
+
+    val processed = processor.process(SentryEvent(), hint)!!
+
+    assertEquals("io.sentry.samples@2.0.0+300", processed.release)
+    assertEquals("current-user", processed.environment)
+    assertEquals("current-dist", processed.dist)
+  }
+
+  @Test
+  fun `if options cache is from current app update, uses persisted options`() {
+    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(timestamp = 2_000))
+    val processor = fixture.getSut(tmpDir)
+    fixture.options.release = "io.sentry.samples@1.0.0+100"
+    fixture.options.environment = "current-user"
+    fixture.options.dist = "current-dist"
+    fixture.persistOptions(RELEASE_FILENAME, "io.sentry.samples@1.0.0+100")
+    fixture.persistOptions(ENVIRONMENT_FILENAME, "crashed-user")
+    fixture.persistOptions(DIST_FILENAME, "crashed-dist")
+    PersistingOptionsCacheGenerationObserver(fixture.options, 1_000L).setRelease(null)
+    setLastUpdateTime(1_000)
+
+    val processed = processor.process(SentryEvent(), hint)!!
+
+    assertEquals("io.sentry.samples@1.0.0+100", processed.release)
+    assertEquals("crashed-user", processed.environment)
+    assertEquals("crashed-dist", processed.dist)
+  }
+
+  @Test
   fun `historical event leaves release empty when app was updated`() {
     val hint =
       HintUtils.createWithTypeCheckHint(AbnormalExitHint(shouldEnrich = false, timestamp = 1_000))

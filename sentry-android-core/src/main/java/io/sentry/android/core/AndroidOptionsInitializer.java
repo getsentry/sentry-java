@@ -182,6 +182,11 @@ final class AndroidOptionsInitializer {
     if (options.getCacheDirPath() != null) {
       options.addScopeObserver(new PersistingScopeObserver(options));
       options.addOptionsObserver(new PersistingOptionsObserver(options));
+      final PackageInfo packageInfo = ContextUtils.getPackageInfo(context, buildInfoProvider);
+      if (packageInfo != null && packageInfo.lastUpdateTime > 0) {
+        options.addOptionsObserver(
+            new PersistingOptionsCacheGenerationObserver(options, packageInfo.lastUpdateTime));
+      }
     }
 
     options.addEventProcessor(new DeduplicateMultithreadedEventProcessor(options));
