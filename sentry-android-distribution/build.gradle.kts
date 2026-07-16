@@ -12,6 +12,10 @@ android {
   defaultConfig { minSdk = libs.versions.minSdk.get().toInt() }
   buildFeatures { buildConfig = false }
 
+  // AGP 9 only generates unit tests for the testBuildType. CI disables the debug
+  // variant, so unit tests must target release to run at all.
+  testBuildType = "release"
+
   testOptions {
     unitTests.apply {
       isReturnDefaultValues = true

@@ -26,6 +26,10 @@ android {
     getByName("release") { consumerProguardFiles("proguard-rules.pro") }
   }
 
+  // AGP 9 only generates unit tests for the testBuildType. CI disables the debug
+  // variant, so unit tests must target release to run at all.
+  testBuildType = "release"
+
   kotlin { compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8 }
 
   testOptions {
