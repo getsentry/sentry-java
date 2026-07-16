@@ -15,10 +15,8 @@ These rules keep the docs consistent, easy to navigate, and easy to grep.
 
 ### Directory structure
 
-- Use a **flat directory structure**. All documents live directly in `develop-docs/`.
-  Do not create nested category folders.
-- Group and namespace documents with **filename prefixes** instead of folders. Common
-  prefixes:
+- Use a **flat directory structure** for all markdown files, they live live directly in `develop-docs/`.
+- All markdown files are prefixed with a group / or namespace. Common prefixes are:
   - `general-` — cross-cutting topics (e.g. `general-development.md`, `general-architecture.md`)
   - `feature-` — a specific SDK feature (e.g. `feature-errors.md`, `feature-profiling.md`)
   - `integration-` — a specific integration or module (e.g. `integration-opentelemetry.md`, `integration-spring.md`)
@@ -33,7 +31,7 @@ These rules keep the docs consistent, easy to navigate, and easy to grep.
 - File names are **lowercase**.
 - Use **dashes** (`-`) as separators, never underscores or spaces. For example, use
   `feature-profiling.md`, not `feature_profiling.md` or `Feature Profiling.md`.
-- Use the `.md` extension for all documents.
+- Use the `.md` extension for all text documents.
 - Choose short, descriptive names. The prefix conveys the category, so the rest of the
   name only needs to describe the topic (`feature-session-replay.md`, not
   `feature-session-replay-how-it-works.md`).
@@ -62,6 +60,7 @@ These rules keep the docs consistent, easy to navigate, and easy to grep.
 
 - Write in the **present tense** and the **active voice**. Describe how the system
   behaves now ("The transport retries failed envelopes"), not how it will or did behave.
+  This way there's no need to update the docs once a feature ships.
 - Keep one **top-level `# ` heading** per document (the title), and nest sections with
   `##`, `###`, etc. Do not skip heading levels.
 - Keep documents focused on a **single topic**. Split large topics into multiple
@@ -93,12 +92,10 @@ These rules keep the docs consistent, easy to navigate, and easy to grep.
 
 - For complex diagrams, include a link to the [Mermaid Live Editor](https://mermaid.live/)
   so reviewers can iterate quickly.
-- Fall back to a static image (stored per the asset rules above) only when a diagram
-  cannot reasonably be expressed in Mermaid.
+- Fall back to static images (stored per the asset rules above) if mermaid is not practicable.
 
 ## Adding a new document
 
 1. Pick the right prefix (or introduce a new one and document it above).
-2. Create `develop-docs/<prefix>-<topic>.md` with a single `# ` title.
+2. Create the document `develop-docs/<prefix>-<topic>.md`
 3. If it embeds assets, create the matching `develop-docs/<prefix>-<topic>/` folder.
-4. Link to it from related documents so it is discoverable.
