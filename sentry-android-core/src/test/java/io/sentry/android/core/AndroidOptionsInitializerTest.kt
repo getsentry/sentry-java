@@ -425,6 +425,51 @@ class AndroidOptionsInitializerTest {
   }
 
   @Test
+  fun `init with profilesSampleRate and enableLegacyProfiling false noops both profilers`() {
+    fixture.initSut(
+      configureOptions = {
+        profilesSampleRate = 1.0
+        isEnableLegacyProfiling = false
+      }
+    )
+
+    assertEquals(NoOpTransactionProfiler.getInstance(), fixture.sentryOptions.transactionProfiler)
+    assertEquals(NoOpContinuousProfiler.getInstance(), fixture.sentryOptions.continuousProfiler)
+  }
+
+  @Test
+  fun `init with profilesSampler and enableLegacyProfiling false noops both profilers`() {
+    fixture.initSut(
+      configureOptions = {
+        profilesSampler = mock()
+        isEnableLegacyProfiling = false
+      }
+    )
+
+    assertEquals(NoOpTransactionProfiler.getInstance(), fixture.sentryOptions.transactionProfiler)
+    assertEquals(NoOpContinuousProfiler.getInstance(), fixture.sentryOptions.continuousProfiler)
+  }
+
+  @Test
+  fun `init with profilesSampleRate and enableLegacyProfiling false closes app start profiler`() {
+    val appStartProfiler = mock<ITransactionProfiler>()
+    AppStartMetrics.getInstance().appStartProfiler = appStartProfiler
+    fixture.initSut(
+      configureOptions = {
+        profilesSampleRate = 1.0
+        isEnableLegacyProfiling = false
+      }
+    )
+
+    assertEquals(NoOpTransactionProfiler.getInstance(), fixture.sentryOptions.transactionProfiler)
+    verify(appStartProfiler).close()
+
+    // AppStartMetrics should be cleared
+    assertNull(AppStartMetrics.getInstance().appStartProfiler)
+    assertNull(AppStartMetrics.getInstance().appStartContinuousProfiler)
+  }
+
+  @Test
   fun `init reuses transaction profiler of appStartMetrics, if exists`() {
     val appStartProfiler = mock<ITransactionProfiler>()
     AppStartMetrics.getInstance().appStartProfiler = appStartProfiler
