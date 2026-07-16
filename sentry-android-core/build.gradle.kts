@@ -1,5 +1,6 @@
 import net.ltgt.gradle.errorprone.errorprone
 import org.jetbrains.kotlin.config.KotlinCompilerVersion
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8
 
 plugins {
   id("com.android.library")
@@ -37,7 +38,10 @@ android {
   // variant, so unit tests must target release to run at all.
   testBuildType = "release"
 
-  kotlin { compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8 }
+  kotlin {
+    jvmToolchain(8)
+    compilerOptions.jvmTarget = JVM_1_8
+  }
 
   testOptions {
     animationsDisabled = true
