@@ -452,7 +452,7 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
     final String release = event.getRelease();
     if (release != null) {
       try {
-        App app = event.getContexts().getApp();
+        @Nullable App app = event.getContexts().getApp();
         if (app == null) {
           app = new App();
         }
