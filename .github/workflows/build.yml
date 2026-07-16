@@ -52,12 +52,8 @@ jobs:
         # Skip on PRs from forks, which don't have access to the upload secret
         if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
         run: |
-          SNAPSHOT_DIR=./sentry-android-core/build/test-snapshots
-          if [ -d "$SNAPSHOT_DIR" ]; then
-            sentry-cli build snapshots "$SNAPSHOT_DIR" --app-id sentry-android-core
-          else
-            echo "::warning::Snapshot directory missing after check (likely Gradle cache hit); skipping upload"
-          fi
+          sentry-cli build snapshots ./sentry-android-core/build/test-snapshots \
+            --app-id sentry-android-core
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SENTRY_ORG: sentry-sdks

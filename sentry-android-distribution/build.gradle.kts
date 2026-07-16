@@ -12,11 +12,6 @@ android {
   defaultConfig { minSdk = libs.versions.minSdk.get().toInt() }
   buildFeatures { buildConfig = false }
 
-  compileOptions {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
-  }
-
   testOptions {
     unitTests.apply {
       isReturnDefaultValues = true
