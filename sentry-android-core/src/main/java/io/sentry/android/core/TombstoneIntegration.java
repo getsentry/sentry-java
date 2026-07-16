@@ -286,34 +286,54 @@ public class TombstoneIntegration implements Integration, Closeable {
 
     private void mergeNativeCrashes(
         final @NotNull SentryEvent nativeEvent, final @NotNull SentryEvent tombstoneEvent) {
-      // we take the event data verbatim from the Native SDK and only apply tombstone data where we
+      // We take the event data verbatim from the Native SDK and only apply tombstone data where we
       // are sure that it will improve the outcome:
       // * context from the Native SDK will be closer to what users want than any backfilling
-      // * the Native SDK only tracks the crashing thread  (vs. tombstone dumps all)
-      // * even for the crashing  we expect a much better stack-trace (+ symbolication)
-      // * tombstone adds additional exception meta-data to signal handler content
-      // * we add debug-meta for consistency since the Native SDK caches memory maps early
+      // * the Native SDK stack-trace + debug-meta are symbolicated against the uploaded debug
+      //   files; the tombstone's crashing-thread stack is the ART-unwound managed stack for
+      //   JNI-raised crashes, which cannot be symbolicated or ProGuard-deobfuscated
+      // * tombstone adds additional exception meta-data (signal info) to signal handler content
       @Nullable List<SentryException> tombstoneExceptions = tombstoneEvent.getExceptions();
       @Nullable DebugMeta tombstoneDebugMeta = tombstoneEvent.getDebugMeta();
       @Nullable List<SentryThread> tombstoneThreads = tombstoneEvent.getThreads();
-      if (tombstoneExceptions != null
-          && !tombstoneExceptions.isEmpty()
-          && tombstoneDebugMeta != null
-          && tombstoneThreads != null) {
-        // native crashes don't nest, we always expect one level.
-        SentryException exception = tombstoneExceptions.get(0);
-        @Nullable Mechanism mechanism = exception.getMechanism();
-        if (mechanism != null) {
-          mechanism.setType(NativeExceptionMechanism.TOMBSTONE_MERGED.getValue());
-        }
+      if (tombstoneExceptions == null
+          || tombstoneExceptions.isEmpty()
+          || tombstoneDebugMeta == null
+          || tombstoneThreads == null) {
+        return;
+      }
 
-        // Don't overwrite existing messages in the native event
-        if (nativeEvent.getMessage() == null
-            || nativeEvent.getMessage().getMessage() == null
-            || nativeEvent.getMessage().getMessage().isEmpty()) {
-          nativeEvent.setMessage(tombstoneEvent.getMessage());
-        }
+      // Don't overwrite existing messages in the native event
+      if (nativeEvent.getMessage() == null
+          || nativeEvent.getMessage().getMessage() == null
+          || nativeEvent.getMessage().getMessage().isEmpty()) {
+        nativeEvent.setMessage(tombstoneEvent.getMessage());
+      }
 
+      // native crashes don't nest, we always expect one level.
+      final SentryException tombstoneException = tombstoneExceptions.get(0);
+      @Nullable Mechanism tombstoneMechanism = tombstoneException.getMechanism();
+
+      final @Nullable List<SentryException> nativeExceptions = nativeEvent.getExceptions();
+      if (nativeExceptions != null && !nativeExceptions.isEmpty()) {
+        // Keep the Native SDK's crashing-thread stack-trace, threads and debug-meta, which are
+        // symbolicated against the uploaded debug files. Only enrich the Native SDK exception with
+        // the tombstone's signal meta-data and flag the merge via the mechanism type.
+        final SentryException nativeException = nativeExceptions.get(0);
+        @Nullable Mechanism nativeMechanism = nativeException.getMechanism();
+        if (nativeMechanism == null) {
+          nativeMechanism = new Mechanism();
+          nativeException.setMechanism(nativeMechanism);
+        }
+        nativeMechanism.setType(NativeExceptionMechanism.TOMBSTONE_MERGED.getValue());
+        if (tombstoneMechanism != null && tombstoneMechanism.getMeta() != null) {
+          nativeMechanism.setMeta(tombstoneMechanism.getMeta());
+        }
+      } else {
+        // Fallback: the Native SDK event carries no exception, so use the tombstone's data.
+        if (tombstoneMechanism != null) {
+          tombstoneMechanism.setType(NativeExceptionMechanism.TOMBSTONE_MERGED.getValue());
+        }
         nativeEvent.setExceptions(tombstoneExceptions);
         nativeEvent.setDebugMeta(tombstoneDebugMeta);
         nativeEvent.setThreads(tombstoneThreads);
