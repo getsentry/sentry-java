@@ -4821,6 +4821,11 @@ public final class io/sentry/backpressure/NoOpBackpressureMonitor : io/sentry/ba
 	public fun start ()V
 }
 
+public final class io/sentry/cache/CacheUtils {
+	public static fun read (Lio/sentry/SentryOptions;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Class;Lio/sentry/JsonDeserializer;)Ljava/lang/Object;
+	public static fun store (Lio/sentry/SentryOptions;Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;)V
+}
+
 public class io/sentry/cache/EnvelopeCache : io/sentry/cache/IEnvelopeCache {
 	public static final field CRASH_MARKER_FILE Ljava/lang/String;
 	public static final field NATIVE_CRASH_MARKER_FILE Ljava/lang/String;
