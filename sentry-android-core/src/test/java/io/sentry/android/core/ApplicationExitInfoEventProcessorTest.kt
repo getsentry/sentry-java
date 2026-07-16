@@ -391,8 +391,9 @@ class ApplicationExitInfoEventProcessorTest {
   }
 
   @Test
-  fun `if environment is not persisted, uses environment from options`() {
-    val hint = HintUtils.createWithTypeCheckHint(BackfillableHint())
+  fun `if environment is not persisted and app was not updated, uses environment from options`() {
+    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(timestamp = 2_000))
+    setLastUpdateTime(1_000)
 
     val processed = processEvent(hint)
 
@@ -417,6 +418,18 @@ class ApplicationExitInfoEventProcessorTest {
     val processor = fixture.getSut(tmpDir)
     fixture.options.release = "io.sentry.samples@1.2.0+232"
     setLastUpdateTime(2_000)
+
+    val processed = processor.process(SentryEvent(), hint)!!
+
+    assertNull(processed.release)
+  }
+
+  @Test
+  fun `if exit timestamp is unknown, leaves release empty`() {
+    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint())
+    val processor = fixture.getSut(tmpDir)
+    fixture.options.release = "io.sentry.samples@1.2.0+232"
+    setLastUpdateTime(1_000)
 
     val processed = processor.process(SentryEvent(), hint)!!
 

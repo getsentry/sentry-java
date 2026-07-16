@@ -550,7 +550,7 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
       timestamp = null;
     }
     if (timestamp == null) {
-      return true;
+      return false;
     }
 
     final PackageInfo packageInfo = ContextUtils.getPackageInfo(context, buildInfoProvider);
