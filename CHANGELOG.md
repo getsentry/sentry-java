@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Preserve the native SDK crashing-thread stack when merging `ApplicationExitInfo` tombstones, so native crashes stay symbolicated and deobfuscated ([#5771](https://github.com/getsentry/sentry-java/pull/5771))
+
 ## 8.49.0
 
 ### Features
