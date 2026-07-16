@@ -1,5 +1,6 @@
 import io.gitlab.arturbosch.detekt.Detekt
 import net.ltgt.gradle.errorprone.errorprone
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
   id("com.android.application")
@@ -63,7 +64,7 @@ android {
     }
   }
 
-  kotlin { compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8 }
+  kotlin { compilerOptions.jvmTarget = JvmTarget.JVM_11 }
 
   lint {
     warningsAsErrors = true
