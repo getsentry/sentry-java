@@ -201,6 +201,47 @@ class PreviousSessionFinalizerTest {
   }
 
   @Test
+  fun `if previous session has pending unhandled and no crash marker, finalizes as unhandled`() {
+    val finalizer =
+      fixture.getSut(
+        tmpDir,
+        session =
+          Session(null, null, null, "io.sentry.sample@1.0").apply { setPendingUnhandled(true) },
+      )
+    finalizer.run()
+
+    verify(fixture.scopes)
+      .captureEnvelope(
+        argThat {
+          val session = fixture.sessionFromEnvelope(this)
+          session.release == "io.sentry.sample@1.0" &&
+            session.status == Session.State.Unhandled &&
+            session.isPendingUnhandled
+        }
+      )
+  }
+
+  @Test
+  fun `if previous session has pending unhandled but a native crash marker exists, finalizes as crashed`() {
+    val finalizer =
+      fixture.getSut(
+        tmpDir,
+        session =
+          Session(null, null, null, "io.sentry.sample@1.0").apply { setPendingUnhandled(true) },
+        nativeCrashTimestamp = Date(2023, 10, 1),
+      )
+    finalizer.run()
+
+    verify(fixture.scopes)
+      .captureEnvelope(
+        argThat {
+          val session = fixture.sessionFromEnvelope(this)
+          session.release == "io.sentry.sample@1.0" && session.status == Crashed
+        }
+      )
+  }
+
+  @Test
   fun `if previous session file exists, deletes previous session file`() {
     val finalizer = fixture.getSut(tmpDir, sessionFileExists = true)
     finalizer.run()

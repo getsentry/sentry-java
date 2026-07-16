@@ -53,6 +53,19 @@ class SessionSerializationTest {
     assertEquals(expectedJson, actualJson)
   }
 
+  @Test
+  fun `serialize and deserialize round-trips Unhandled status and pending unhandled flag`() {
+    val session = Session(null, null, "environment", "release")
+    session.setPendingUnhandled(true)
+    session.end()
+    assertEquals(Session.State.Unhandled, session.status)
+
+    val deserialized = deserialize(serialize(session))
+
+    assertEquals(Session.State.Unhandled, deserialized.status)
+    assertEquals(true, deserialized.isPendingUnhandled)
+  }
+
   // Helper
 
   private fun sanitizedFile(path: String): String =
