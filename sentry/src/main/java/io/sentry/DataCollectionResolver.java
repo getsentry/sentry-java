@@ -104,6 +104,10 @@ public final class DataCollectionResolver {
     return isHttpBodyEnabled(HttpBodyType.OUTGOING_RESPONSE, options.isSendDefaultPii());
   }
 
+  public boolean isOutgoingResponseBodyWithLegacyBodyGate() {
+    return isHttpBodyEnabled(HttpBodyType.OUTGOING_RESPONSE, isLegacyGraphqlBodyEnabled());
+  }
+
   private boolean isLegacyGraphqlBodyEnabled() {
     return options.isSendDefaultPii()
         && !SentryOptions.RequestSize.NONE.equals(options.getMaxRequestBodySize());

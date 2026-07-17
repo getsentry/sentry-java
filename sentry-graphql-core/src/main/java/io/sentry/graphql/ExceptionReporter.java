@@ -62,9 +62,10 @@ public final class ExceptionReporter {
   }
 
   private boolean isAllowedToAttachResponseBody(final @NotNull IScopes scopes) {
-    final @NotNull SentryOptions options = scopes.getOptions();
-    return options.isSendDefaultPii()
-        && !SentryOptions.RequestSize.NONE.equals(options.getMaxRequestBodySize());
+    return scopes
+        .getOptions()
+        .getDataCollectionResolver()
+        .isOutgoingResponseBodyWithLegacyBodyGate();
   }
 
   private void setRequestDetailsOnEvent(
