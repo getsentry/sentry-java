@@ -393,7 +393,9 @@ constructor(
           response.body?.buffer?.size?.ifHasValidLength { contentLength ->
             bodySize = contentLength
           }
-          data = body
+          if (scopes.options.dataCollectionResolver.isIncomingResponseBody) {
+            data = body
+          }
         }
 
       fingerprints.add(response.statusCode.toString())
