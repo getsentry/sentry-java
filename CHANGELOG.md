@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Use Android's `ProfilingManager` (Perfetto) for continuous profiling on API 35+ devices ([#5251](https://github.com/getsentry/sentry-java/pull/5251))
+  - On API 35+ devices, continuous profiling now automatically uses Android's system `ProfilingManager` with Perfetto-based stack sampling, providing lower-overhead and more accurate profiles. No configuration change is required.
+  - Devices below API 35 keep using the legacy `Debug`-based profiler.
+  - Added an `enableLegacyProfiling` option (default `true`) to disable the legacy `Debug`-based profiler. Setting it to `false` disables continuous profiling on API < 35 devices as well as transaction-based profiling (`profilesSampleRate`/`profilesSampler`) on all devices, since transaction-based profiling is not supported by Perfetto. It can also be configured via the `io.sentry.profiling.enable-legacy-profiling` manifest flag.
+  - See the [Android profiling docs](https://docs.sentry.io/platforms/android/profiling/) for details.
+
 ## 8.49.0
 
 ### Features
