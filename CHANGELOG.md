@@ -4,6 +4,7 @@
 
 ### Fixes
 
+- Reduce main-thread work during `Sentry.init` by initializing the NDK integration off the main thread (~1.48ms on a Pixel 10) ([#5785](https://github.com/getsentry/sentry-java/pull/5785))
 - Backfill release, environment, distribution, tags, and app version/build—and use the matching replay-on-error sample rate—for `ApplicationExitInfo` ANR and native crash events captured before SDK initialization, without reusing options cached by a later app update ([#5762](https://github.com/getsentry/sentry-java/pull/5762))
 
 ## 8.49.0
