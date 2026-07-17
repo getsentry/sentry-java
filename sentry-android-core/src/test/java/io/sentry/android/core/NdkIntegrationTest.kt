@@ -3,6 +3,8 @@ package io.sentry.android.core
 import io.sentry.ILogger
 import io.sentry.IScopes
 import io.sentry.SentryLevel
+import io.sentry.test.DeferredExecutorService
+import io.sentry.test.ImmediateExecutorService
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -155,6 +157,23 @@ class NdkIntegrationTest {
     assertFalse(options.isEnableScopeSync)
   }
 
+  @Test
+  fun `NdkIntegration inits off the calling thread`() {
+    SentryNdkRecording.initialized = false
+    val deferredExecutor = DeferredExecutorService()
+    val integration = fixture.getSut(SentryNdkRecording::class.java)
+    val options = getOptions().apply { executorService = deferredExecutor }
+
+    integration.register(fixture.scopes, options)
+
+    // register() only submits the work; init has not run yet
+    assertFalse(SentryNdkRecording.initialized)
+
+    deferredExecutor.runAll()
+
+    assertTrue(SentryNdkRecording.initialized)
+  }
+
   private fun getOptions(
     enableNdk: Boolean = true,
     cacheDir: String? = "abc",
@@ -164,9 +183,21 @@ class NdkIntegrationTest {
       isDebug = true
       isEnableNdk = enableNdk
       cacheDirPath = cacheDir
+      executorService = ImmediateExecutorService()
     }
 
   private class SentryNdkNoInit
+
+  private class SentryNdkRecording {
+    companion object {
+      var initialized = false
+
+      @JvmStatic
+      fun init(options: SentryAndroidOptions) {
+        initialized = true
+      }
+    }
+  }
 
   private class SentryNdkThrows {
     companion object {

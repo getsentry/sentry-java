@@ -49,25 +49,42 @@ public final class NdkIntegration implements Integration, Closeable {
         return;
       }
 
+      final @NotNull SentryAndroidOptions androidOptions = this.options;
+      // SentryNdk.init blocks the calling thread while it waits for the native library to load and
+      // installs the crash handler, so keep it off the main thread during init. The executor is
+      // single-threaded and preserves submission order, so this still runs before the outbox file
+      // observer and sender registered after it, which must not act until sentry-native has moved
+      // its files.
       try {
-        final Method method = sentryNdkClass.getMethod("init", SentryAndroidOptions.class);
-        final Object[] args = new Object[1];
-        args[0] = this.options;
-        method.invoke(null, args);
-
-        this.options.getLogger().log(SentryLevel.DEBUG, "NdkIntegration installed.");
-        addIntegrationToSdkVersion("Ndk");
-      } catch (NoSuchMethodException e) {
-        disableNdkIntegration(this.options);
-        this.options
-            .getLogger()
-            .log(SentryLevel.ERROR, "Failed to invoke the SentryNdk.init method.", e);
-      } catch (Throwable e) {
-        disableNdkIntegration(this.options);
-        this.options.getLogger().log(SentryLevel.ERROR, "Failed to initialize SentryNdk.", e);
+        androidOptions.getExecutorService().submit(() -> initNdk(androidOptions));
+      } catch (Throwable t) {
+        disableNdkIntegration(androidOptions);
+        androidOptions.getLogger().log(SentryLevel.ERROR, "Failed to submit SentryNdk.init.", t);
       }
     } else {
       disableNdkIntegration(this.options);
+    }
+  }
+
+  private void initNdk(final @NotNull SentryAndroidOptions options) {
+    final @Nullable Class<?> ndkClass = sentryNdkClass;
+    if (ndkClass == null) {
+      return;
+    }
+    try {
+      final Method method = ndkClass.getMethod("init", SentryAndroidOptions.class);
+      final Object[] args = new Object[1];
+      args[0] = options;
+      method.invoke(null, args);
+
+      options.getLogger().log(SentryLevel.DEBUG, "NdkIntegration installed.");
+      addIntegrationToSdkVersion("Ndk");
+    } catch (NoSuchMethodException e) {
+      disableNdkIntegration(options);
+      options.getLogger().log(SentryLevel.ERROR, "Failed to invoke the SentryNdk.init method.", e);
+    } catch (Throwable e) {
+      disableNdkIntegration(options);
+      options.getLogger().log(SentryLevel.ERROR, "Failed to initialize SentryNdk.", e);
     }
   }
 
