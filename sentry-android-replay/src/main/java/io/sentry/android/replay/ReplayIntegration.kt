@@ -297,6 +297,13 @@ public class ReplayIntegration(
     captureStrategy?.registerTraceId(traceId)
   }
 
+  override fun registerSegmentName(segmentName: String) {
+    if (!isEnabled.get() || !isRecording()) {
+      return
+    }
+    captureStrategy?.registerSegmentName(segmentName)
+  }
+
   private fun pauseInternal() {
     lifecycleLock.acquire().use {
       if (!isEnabled.get() || !lifecycle.isAllowed(PAUSED)) {

@@ -562,4 +562,58 @@ class SessionCaptureStrategyTest {
         any(),
       )
   }
+
+  @Test
+  fun `registerSegmentName includes unique segment names in next segment and clears them`() {
+    val now =
+      System.currentTimeMillis() + (fixture.options.sessionReplay.sessionSegmentDuration * 5)
+    val strategy = fixture.getSut(dateProvider = { now })
+    strategy.start()
+    strategy.onConfigurationChanged(fixture.recorderConfig)
+
+    strategy.registerSegmentName("CheckoutActivity")
+    strategy.registerSegmentName("CheckoutActivity")
+    strategy.registerSegmentName("ProductDetailsActivity")
+
+    strategy.onScreenshotRecorded(mock<Bitmap>()) {}
+
+    verify(fixture.scopes)
+      .captureReplay(
+        argThat { event ->
+          event is SentryReplayEvent &&
+            event.segmentNames == listOf("CheckoutActivity", "ProductDetailsActivity")
+        },
+        any(),
+      )
+
+    strategy.onScreenshotRecorded(mock<Bitmap>()) {}
+
+    verify(fixture.scopes)
+      .captureReplay(
+        argThat { event ->
+          event is SentryReplayEvent && event.segmentId == 1 && event.segmentNames.isNullOrEmpty()
+        },
+        any(),
+      )
+  }
+
+  @Test
+  fun `registerSegmentName ignores empty names and limits names to 100`() {
+    val now =
+      System.currentTimeMillis() + (fixture.options.sessionReplay.sessionSegmentDuration * 5)
+    val strategy = fixture.getSut(dateProvider = { now })
+    strategy.start()
+    strategy.onConfigurationChanged(fixture.recorderConfig)
+
+    strategy.registerSegmentName("")
+    repeat(101) { strategy.registerSegmentName("ProductActivity$it") }
+
+    strategy.onScreenshotRecorded(mock<Bitmap>()) {}
+
+    verify(fixture.scopes)
+      .captureReplay(
+        argThat { event -> event is SentryReplayEvent && event.segmentNames?.size == 100 },
+        any(),
+      )
+  }
 }

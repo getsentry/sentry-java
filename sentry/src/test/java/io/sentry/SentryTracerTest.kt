@@ -13,6 +13,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertNotSame
 import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
@@ -913,7 +914,7 @@ class SentryTracerTest {
   @Test
   fun `when initialized without deadlineTimeout, does not schedule finish timer`() {
     val transaction = fixture.getSut()
-    assertNull(transaction.deadlineTimeoutTask)
+    assertNull(transaction.deadlineTimeoutFuture)
   }
 
   @Test
@@ -921,7 +922,7 @@ class SentryTracerTest {
     val transaction = fixture.getSut(deadlineTimeout = 50)
 
     assertTrue(transaction.isDeadlineTimerRunning.get())
-    assertNotNull(transaction.deadlineTimeoutTask)
+    assertNotNull(transaction.deadlineTimeoutFuture)
   }
 
   @Test
@@ -949,7 +950,7 @@ class SentryTracerTest {
     transaction.finish(SpanStatus.OK)
 
     assertEquals(transaction.isDeadlineTimerRunning.get(), false)
-    assertNull(transaction.deadlineTimeoutTask)
+    assertNull(transaction.deadlineTimeoutFuture)
     assertEquals(transaction.isFinished, true)
     assertEquals(SpanStatus.OK, transaction.status)
     assertEquals(SpanStatus.OK, span.status)
@@ -958,26 +959,26 @@ class SentryTracerTest {
   @Test
   fun `when initialized with idleTimeout it has no influence on deadline timeout`() {
     val transaction = fixture.getSut(idleTimeout = 3000, deadlineTimeout = 20)
-    val deadlineTimeoutTask = transaction.deadlineTimeoutTask
+    val deadlineTimeoutFuture = transaction.deadlineTimeoutFuture
 
     val span = transaction.startChild("op")
     // when the span finishes, it re-schedules the idle task
     span.finish()
 
     // but the deadline timeout task should not be re-scheduled
-    assertEquals(deadlineTimeoutTask, transaction.deadlineTimeoutTask)
+    assertSame(deadlineTimeoutFuture, transaction.deadlineTimeoutFuture)
   }
 
   @Test
   fun `when initialized without idleTimeout, does not schedule finish timer`() {
     val transaction = fixture.getSut()
-    assertNull(transaction.idleTimeoutTask)
+    assertNull(transaction.idleTimeoutFuture)
   }
 
   @Test
   fun `when initialized with idleTimeout, schedules finish timer`() {
     val transaction = fixture.getSut(idleTimeout = 50)
-    assertNotNull(transaction.idleTimeoutTask)
+    assertNotNull(transaction.idleTimeoutFuture)
   }
 
   @Test
@@ -1008,22 +1009,23 @@ class SentryTracerTest {
 
     transaction.startChild("op")
 
-    assertNull(transaction.idleTimeoutTask)
+    assertNull(transaction.idleTimeoutFuture)
   }
 
   @Test
   fun `when a child is finished and the transaction is idle, resets the timer`() {
     val transaction = fixture.getSut(waitForChildren = true, idleTimeout = 3000)
 
-    val initialTime = transaction.idleTimeoutTask!!.scheduledExecutionTime()
+    val initialFuture = transaction.idleTimeoutFuture
 
     val span = transaction.startChild("op")
-    Thread.sleep(1)
     span.finish()
 
-    val timerAfterFinishingChild = transaction.idleTimeoutTask!!.scheduledExecutionTime()
+    // finishing the child re-schedules the idle timeout, replacing the pending future
+    val futureAfterFinishingChild = transaction.idleTimeoutFuture
 
-    assertTrue { timerAfterFinishingChild > initialTime }
+    assertNotNull(futureAfterFinishingChild)
+    assertNotSame(initialFuture, futureAfterFinishingChild)
   }
 
   @Test
@@ -1035,7 +1037,7 @@ class SentryTracerTest {
     Thread.sleep(1)
     span.finish()
 
-    assertNull(transaction.idleTimeoutTask)
+    assertNull(transaction.idleTimeoutFuture)
   }
 
   @Test
@@ -1080,7 +1082,7 @@ class SentryTracerTest {
         trimEnd = true,
         samplingDecision = TracesSamplingDecision(true),
       )
-    assertNotNull(transaction.timer)
+    assertTrue(transaction.areTimersEnabled())
   }
 
   @Test
@@ -1092,7 +1094,7 @@ class SentryTracerTest {
         trimEnd = true,
         samplingDecision = TracesSamplingDecision(true),
       )
-    assertNull(transaction.timer)
+    assertFalse(transaction.areTimersEnabled())
   }
 
   @Test
@@ -1104,9 +1106,9 @@ class SentryTracerTest {
         trimEnd = true,
         samplingDecision = TracesSamplingDecision(true),
       )
-    assertNotNull(transaction.timer)
+    assertTrue(transaction.areTimersEnabled())
     transaction.finish(SpanStatus.OK)
-    assertNull(transaction.timer)
+    assertFalse(transaction.areTimersEnabled())
   }
 
   @Test
@@ -1539,18 +1541,18 @@ class SentryTracerTest {
   }
 
   @Test
-  fun `when timer is cancelled, schedule finish does not crash`() {
+  fun `when timer executor is shut down, schedule finish does not crash`() {
     val tracer = fixture.getSut(idleTimeout = 50, deadlineTimeout = 100)
-    tracer.timer!!.cancel()
+    fixture.options.timerExecutorService.close(0)
     tracer.scheduleFinish()
   }
 
   @Test
-  fun `when timer is cancelled, schedule finish finishes the transaction immediately`() {
+  fun `when timer executor is shut down, schedule finish finishes the transaction immediately`() {
     val tracer = fixture.getSut(idleTimeout = 50)
     tracer.startChild("load").finish()
 
-    tracer.timer!!.cancel()
+    fixture.options.timerExecutorService.close(0)
     tracer.scheduleFinish()
 
     assertTrue(tracer.isFinished)

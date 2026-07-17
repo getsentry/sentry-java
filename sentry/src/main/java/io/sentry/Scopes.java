@@ -467,6 +467,12 @@ public final class Scopes implements IScopes {
         getOptions().getContinuousProfiler().close(true);
         getOptions().getCompositePerformanceCollector().close();
         getOptions().getConnectionStatusProvider().close();
+        // On restart we intentionally leave the timer executor running so that pending idle/
+        // deadline timeouts of transactions started before the restart still fire and finish
+        // those transactions. It self-terminates once idle (allowCoreThreadTimeOut).
+        if (!isRestarting) {
+          getOptions().getTimerExecutorService().close(getOptions().getShutdownTimeoutMillis());
+        }
         final @NotNull ISentryExecutorService executorService = getOptions().getExecutorService();
         if (isRestarting) {
           try {

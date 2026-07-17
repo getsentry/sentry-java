@@ -22,6 +22,12 @@ public final class SentryExecutorService implements ISentryExecutorService {
    */
   private static final int MAX_QUEUE_SIZE = 271;
 
+  /**
+   * How long the timer executor's worker thread stays alive while idle before self-terminating, so
+   * an instance abandoned on SDK restart doesn't leak a live thread once its queue drains.
+   */
+  static final long TIMER_KEEP_ALIVE_SECONDS = 30;
+
   private final @NotNull ScheduledThreadPoolExecutor executorService;
   private final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
 
@@ -37,6 +43,19 @@ public final class SentryExecutorService implements ISentryExecutorService {
 
   public SentryExecutorService(final @Nullable SentryOptions options) {
     this(new ScheduledThreadPoolExecutor(1, new SentryExecutorServiceThreadFactory()), options);
+  }
+
+  SentryExecutorService(
+      final @Nullable SentryOptions options,
+      final boolean removeOnCancelPolicy,
+      final long keepAliveTime,
+      final @NotNull TimeUnit keepAliveTimeUnit) {
+    this(options);
+    // removes cancelled tasks from the work queue immediately instead of leaving them until their
+    // scheduled time; useful for executors that frequently reschedule (e.g. transaction timeouts)
+    executorService.setRemoveOnCancelPolicy(removeOnCancelPolicy);
+    executorService.setKeepAliveTime(keepAliveTime, keepAliveTimeUnit);
+    executorService.allowCoreThreadTimeOut(true);
   }
 
   public SentryExecutorService() {

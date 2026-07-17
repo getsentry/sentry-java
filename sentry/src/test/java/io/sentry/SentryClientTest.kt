@@ -2130,6 +2130,8 @@ class SentryClientTest {
         override fun registerTraceId(traceId: SentryId) {
           registeredTraceId = traceId
         }
+
+        override fun registerSegmentName(segmentName: String) {}
       }
     )
     val sut = fixture.getSut()
@@ -2137,6 +2139,24 @@ class SentryClientTest {
     val transaction = SentryTransaction(sentryTracer)
     sut.captureTransaction(transaction, sentryTracer.traceContext())
     assertEquals(sentryTracer.spanContext.traceId, registeredTraceId)
+  }
+
+  @Test
+  fun `captureTransaction registers segment name with replay controller`() {
+    var registeredSegmentName: String? = null
+    fixture.sentryOptions.setReplayController(
+      object : ReplayController by NoOpReplayController.getInstance() {
+        override fun registerSegmentName(segmentName: String) {
+          registeredSegmentName = segmentName
+        }
+      }
+    )
+    val sut = fixture.getSut()
+    val sentryTracer =
+      SentryTracer(TransactionContext("CheckoutActivity", "ui.load"), fixture.scopes)
+    val transaction = SentryTransaction(sentryTracer)
+    sut.captureTransaction(transaction, sentryTracer.traceContext())
+    assertEquals("CheckoutActivity", registeredSegmentName)
   }
 
   @Test

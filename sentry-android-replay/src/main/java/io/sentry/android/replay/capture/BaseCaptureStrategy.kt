@@ -54,7 +54,7 @@ internal abstract class BaseCaptureStrategy(
   internal companion object {
     private const val TAG = "CaptureStrategy"
     // https://github.com/getsentry/sentry-javascript/blob/30eb68fff5077211c30c61ba74625e66ab514870/packages/replay-internal/src/coreHandlers/handleAfterSendEvent.ts#L41
-    private const val MAX_TRACE_IDS = 100
+    private const val MAX_CONTEXT_VALUES = 100
   }
 
   private val gestureConverter = ReplayGestureConverter(dateProvider)
@@ -97,8 +97,9 @@ internal abstract class BaseCaptureStrategy(
     persistableAtomic(initialValue = false, propertyName = SEGMENT_KEY_FLUSHED)
 
   protected val currentEvents: Deque<RRWebEvent> = ConcurrentLinkedDeque()
-  private val traceIdsLock = Any()
-  private val currentTraceIds: MutableList<String> = mutableListOf()
+  private val replayContextLock = Any()
+  private val currentTraceIds: MutableSet<String> = linkedSetOf()
+  private val currentSegmentNames: MutableSet<String> = linkedSetOf()
 
   override fun start(segmentId: Int, replayId: SentryId, replayType: ReplayType?) {
     cache = replayCacheProvider?.invoke(replayId) ?: ReplayCache(options, replayId)
@@ -139,11 +140,12 @@ internal abstract class BaseCaptureStrategy(
     breadcrumbs: List<Breadcrumb>? = null,
     events: Deque<RRWebEvent> = this.currentEvents,
   ): ReplaySegment {
-    val traceIds =
-      synchronized(traceIdsLock) {
-        val ids = currentTraceIds.toList()
+    val (traceIds, segmentNames) =
+      synchronized(replayContextLock) {
+        val context = currentTraceIds.toList() to currentSegmentNames.toList()
         currentTraceIds.clear()
-        ids
+        currentSegmentNames.clear()
+        context
       }
     return createSegment(
       scopes,
@@ -162,6 +164,7 @@ internal abstract class BaseCaptureStrategy(
       breadcrumbs,
       events,
       traceIds,
+      segmentNames,
     )
   }
 
@@ -180,12 +183,19 @@ internal abstract class BaseCaptureStrategy(
 
   override fun registerTraceId(traceId: SentryId) {
     if (traceId != SentryId.EMPTY_ID) {
-      synchronized(traceIdsLock) {
-        if (currentTraceIds.size < MAX_TRACE_IDS) {
-          val id = traceId.toString()
-          if (!currentTraceIds.contains(id)) {
-            currentTraceIds.add(id)
-          }
+      synchronized(replayContextLock) {
+        if (currentTraceIds.size < MAX_CONTEXT_VALUES) {
+          currentTraceIds.add(traceId.toString())
+        }
+      }
+    }
+  }
+
+  override fun registerSegmentName(segmentName: String) {
+    if (segmentName.isNotEmpty()) {
+      synchronized(replayContextLock) {
+        if (currentSegmentNames.size < MAX_CONTEXT_VALUES) {
+          currentSegmentNames.add(segmentName)
         }
       }
     }
