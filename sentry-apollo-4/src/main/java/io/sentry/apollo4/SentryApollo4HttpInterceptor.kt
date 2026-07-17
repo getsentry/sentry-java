@@ -364,16 +364,18 @@ constructor(
           request.body?.let {
             bodySize = it.contentLength
 
-            val buffer = Buffer()
+            if (scopes.options.dataCollectionResolver.isOutgoingRequestBody) {
+              val buffer = Buffer()
 
-            try {
-              it.writeTo(buffer)
-              data = GraphqlUtils.filterRequestBody(buffer.readUtf8(), scopes.options)
-            } catch (e: Throwable) {
-              scopes.options.logger.log(SentryLevel.ERROR, "Error reading the request body.", e)
-              // continue because the response body alone can already give some insights
-            } finally {
-              buffer.close()
+              try {
+                it.writeTo(buffer)
+                data = GraphqlUtils.filterRequestBody(buffer.readUtf8(), scopes.options)
+              } catch (e: Throwable) {
+                scopes.options.logger.log(SentryLevel.ERROR, "Error reading the request body.", e)
+                // continue because the response body alone can already give some insights
+              } finally {
+                buffer.close()
+              }
             }
           }
         }
