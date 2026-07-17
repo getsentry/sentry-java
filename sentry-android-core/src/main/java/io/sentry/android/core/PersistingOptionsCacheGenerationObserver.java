@@ -56,8 +56,7 @@ final class PersistingOptionsCacheGenerationObserver implements IOptionsObserver
 
   static @Nullable Long read(final @NotNull SentryOptions options) {
     final String value =
-        CacheUtils.read(
-            options, OPTIONS_CACHE, APP_LAST_UPDATE_TIME_FILENAME, String.class, null);
+        CacheUtils.read(options, OPTIONS_CACHE, APP_LAST_UPDATE_TIME_FILENAME, String.class, null);
     if (value == null) {
       return null;
     }

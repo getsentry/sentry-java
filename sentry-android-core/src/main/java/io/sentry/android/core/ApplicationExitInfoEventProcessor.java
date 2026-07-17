@@ -534,6 +534,11 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
     }
   }
 
+  /**
+   * Resolves an option that may change between launches of the same build, such as environment or
+   * tags. A matching persisted value is preferred; the current value is used only when the source
+   * identifies the current app generation or permits a fallback for a missing persisted value.
+   */
   private <T> @Nullable T getLaunchOption(
       final @NotNull String fileName,
       final @NotNull Class<T> clazz,
@@ -551,6 +556,11 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
         : currentValue;
   }
 
+  /**
+   * Resolves metadata that cannot change between launches of the same build, such as the ProGuard
+   * UUID or SDK version. Current metadata is used for exits from the current app generation, while
+   * persisted metadata is reserved for historical exits.
+   */
   private <T> @Nullable T getBuildOption(
       final @NotNull String fileName,
       final @NotNull Class<T> clazz,
@@ -565,6 +575,12 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
     return PersistingOptionsObserver.read(options, fileName, clazz);
   }
 
+  /**
+   * Chooses the options snapshot that can safely describe an exit by comparing its timestamp with
+   * the current app update time and the persisted cache generation. A markerless legacy cache is
+   * accepted for compatibility; {@link OptionsSource#NONE} is returned when neither current nor
+   * persisted options can be matched to the exit.
+   */
   private @NotNull OptionsSource getOptionsSource(final @NotNull Backfillable hint) {
     final @Nullable Long timestamp;
     if (hint instanceof AbnormalExit) {
