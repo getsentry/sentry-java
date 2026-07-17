@@ -4,7 +4,7 @@
 
 ### Features
 
-- Added `Environment` to the `Scope` ([#5765](https://github.com/getsentry/sentry-java/pull/5765))
+- Added `Environment` to the `Scope` ([#5772](https://github.com/getsentry/sentry-java/pull/5772))
 
 ### Fixes
 
