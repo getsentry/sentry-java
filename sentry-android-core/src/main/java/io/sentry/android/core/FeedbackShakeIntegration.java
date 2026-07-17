@@ -44,11 +44,24 @@ public final class FeedbackShakeIntegration
                 : null,
             "SentryAndroidOptions is required");
 
-    if (!this.options.getFeedbackOptions().isUseShakeGesture()) {
+    final @NotNull SentryAndroidOptions options = this.options;
+
+    if (!options.getFeedbackOptions().isUseShakeGesture()) {
       return;
     }
 
-    shakeDetector.init(application, options.getLogger());
+    // Resolving the accelerometer is the most expensive part of init (the first SensorManager
+    // access), so warm it up off the main thread. start() re-runs init() on demand, so shake
+    // detection still works if an activity resumes before this completes.
+    try {
+      options
+          .getExecutorService()
+          .submit(() -> shakeDetector.init(application, options.getLogger()));
+    } catch (Throwable t) {
+      options
+          .getLogger()
+          .log(SentryLevel.WARNING, "Failed to submit shake detector initialization.", t);
+    }
 
     addIntegrationToSdkVersion("FeedbackShake");
     application.registerActivityLifecycleCallbacks(this);

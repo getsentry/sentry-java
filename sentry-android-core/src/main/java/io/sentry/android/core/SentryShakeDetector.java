@@ -55,12 +55,12 @@ public final class SentryShakeDetector implements SensorEventListener {
    * Initializes the sensor manager and accelerometer sensor. This is separated from start() so the
    * values can be resolved once and reused across activity transitions.
    */
-  void init(final @NotNull Context context, final @NotNull ILogger logger) {
+  synchronized void init(final @NotNull Context context, final @NotNull ILogger logger) {
     this.logger = logger;
     init(context);
   }
 
-  private void init(final @NotNull Context context) {
+  private synchronized void init(final @NotNull Context context) {
     if (sensorManager == null) {
       sensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
     }
@@ -74,7 +74,8 @@ public final class SentryShakeDetector implements SensorEventListener {
     }
   }
 
-  public void start(final @NotNull Context context, final @NotNull Listener shakeListener) {
+  public synchronized void start(
+      final @NotNull Context context, final @NotNull Listener shakeListener) {
     this.listener = shakeListener;
     init(context);
     if (sensorManager == null) {
@@ -89,7 +90,7 @@ public final class SentryShakeDetector implements SensorEventListener {
     sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL, handler);
   }
 
-  public void stop() {
+  public synchronized void stop() {
     listener = null;
     if (sensorManager != null) {
       sensorManager.unregisterListener(this);
@@ -105,7 +106,7 @@ public final class SentryShakeDetector implements SensorEventListener {
   }
 
   /** Stops detection and releases the background thread. */
-  public void close() {
+  public synchronized void close() {
     stop();
     if (handlerThread != null) {
       // quitSafely drains pending messages (including the clear posted by stop) before exiting
