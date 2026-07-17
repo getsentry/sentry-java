@@ -27,6 +27,7 @@
       <scope>import</scope>
     </dependency>
     ```
+- Added `Environment` to the `Scope` ([#5765](https://github.com/getsentry/sentry-java/pull/5765))
 
 ### Fixes
 
