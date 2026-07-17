@@ -250,6 +250,18 @@ public final class SentryClient implements ISentryClient {
       }
       if (shouldCaptureReplay) {
         options.getReplayController().captureReplay(event.isCrashed());
+        if (scope != null) {
+          final @Nullable SentryId replayId = scope.getReplayId();
+          if (replayId != null && !replayId.equals(SentryId.EMPTY_ID)) {
+            final @Nullable ITransaction transaction = scope.getTransaction();
+            if (transaction != null) {
+              final @Nullable Baggage baggage = transaction.getSpanContext().getBaggage();
+              if (baggage != null) {
+                baggage.forceSetReplayId(replayId);
+              }
+            }
+          }
+        }
       }
     }
 
@@ -1066,6 +1078,10 @@ public final class SentryClient implements ISentryClient {
       final @Nullable SpanContext trace = transaction.getContexts().getTrace();
       if (trace != null) {
         options.getReplayController().registerTraceId(trace.getTraceId());
+      }
+      final @Nullable String segmentName = transaction.getTransaction();
+      if (segmentName != null && !segmentName.isEmpty()) {
+        options.getReplayController().registerSegmentName(segmentName);
       }
     }
 

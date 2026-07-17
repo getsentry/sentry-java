@@ -44,6 +44,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.net.ssl.SSLSocketFactory;
 import org.jetbrains.annotations.ApiStatus;
@@ -316,6 +317,14 @@ public class SentryOptions {
 
   /** Sentry Executor Service that sends cached events and envelopes on App. start. */
   private @NotNull ISentryExecutorService executorService = NoOpSentryExecutorService.getInstance();
+
+  /**
+   * Dedicated executor for scheduling transaction idle/deadline timeouts. Kept separate from {@link
+   * #executorService} so timeout callbacks (which finish transactions) don't contend with cached
+   * event sending.
+   */
+  private @NotNull ISentryExecutorService timerExecutorService =
+      NoOpSentryExecutorService.getInstance();
 
   /**
    * Whether SpotlightIntegration has already been loaded via reflection. This prevents re-adding it
@@ -681,6 +690,15 @@ public class SentryOptions {
       // SentryExecutorService should be initialized before any
       // SendCachedEventFireAndForgetIntegration
       executorService = new SentryExecutorService(this);
+    }
+
+    if (timerExecutorService instanceof NoOpSentryExecutorService) {
+      // Not prewarmed: its single worker thread is spawned lazily on the first scheduled timeout
+      // and then reused across all transactions. removeOnCancelPolicy keeps the work queue from
+      // accumulating cancelled timeouts (idle timers are cancelled and rescheduled per child span).
+      timerExecutorService =
+          new SentryExecutorService(
+              this, true, SentryExecutorService.TIMER_KEEP_ALIVE_SECONDS, TimeUnit.SECONDS);
     }
 
     // SpotlightIntegration is loaded via reflection to allow the sentry-spotlight module
@@ -1567,6 +1585,30 @@ public class SentryOptions {
   public void setExecutorService(final @NotNull ISentryExecutorService executorService) {
     if (executorService != null) {
       this.executorService = executorService;
+    }
+  }
+
+  /**
+   * Returns the dedicated executor used to schedule transaction idle/deadline timeouts.
+   *
+   * @return the timer executor service
+   */
+  @ApiStatus.Internal
+  @NotNull
+  public ISentryExecutorService getTimerExecutorService() {
+    return timerExecutorService;
+  }
+
+  /**
+   * Sets the dedicated executor used to schedule transaction idle/deadline timeouts.
+   *
+   * @param timerExecutorService the timer executor service
+   */
+  @ApiStatus.Internal
+  @TestOnly
+  public void setTimerExecutorService(final @NotNull ISentryExecutorService timerExecutorService) {
+    if (timerExecutorService != null) {
+      this.timerExecutorService = timerExecutorService;
     }
   }
 

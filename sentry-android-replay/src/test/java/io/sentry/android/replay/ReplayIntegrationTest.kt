@@ -1043,7 +1043,9 @@ class ReplayIntegrationTest {
     replay.start()
 
     fixture.options.sessionReplay.frameObserver =
-      SentryReplayOptions.ReplayFrameObserver { _, _, _ -> throw RuntimeException("test") }
+      SentryReplayOptions.ReplayFrameObserver { _, _, _ ->
+        throw RuntimeException("test")
+      }
 
     val sourceBitmap =
       mock<Bitmap> {

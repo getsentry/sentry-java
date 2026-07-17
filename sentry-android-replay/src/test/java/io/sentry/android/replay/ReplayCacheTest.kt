@@ -9,6 +9,7 @@ import io.sentry.SentryOptions
 import io.sentry.SentryReplayEvent.ReplayType
 import io.sentry.android.replay.ReplayCache.Companion.ONGOING_SEGMENT
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_BIT_RATE
+import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_FLUSHED
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_FRAME_RATE
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_HEIGHT
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_ID
@@ -443,7 +444,7 @@ class ReplayCacheTest {
   }
 
   @Test
-  fun `sets segmentId to 0 for buffer mode`() {
+  fun `sets segmentId to 0 for buffer mode when not flushed`() {
     fixture.options.run { cacheDirPath = tmpDir.newFolder()?.absolutePath }
     val replayId = SentryId()
     val replayCacheFolder =
@@ -472,6 +473,39 @@ class ReplayCacheTest {
     val lastSegment = ReplayCache.fromDisk(fixture.options, replayId)!!
 
     assertEquals(0, lastSegment.id)
+  }
+
+  @Test
+  fun `preserves segmentId for buffer mode when already flushed`() {
+    fixture.options.run { cacheDirPath = tmpDir.newFolder()?.absolutePath }
+    val replayId = SentryId()
+    val replayCacheFolder =
+      File(fixture.options.cacheDirPath!!, "replay_$replayId").also { it.mkdirs() }
+    File(replayCacheFolder, ONGOING_SEGMENT).also {
+      it.writeText(
+        """
+                $SEGMENT_KEY_HEIGHT=912
+                $SEGMENT_KEY_WIDTH=416
+                $SEGMENT_KEY_FRAME_RATE=1
+                $SEGMENT_KEY_BIT_RATE=75000
+                $SEGMENT_KEY_ID=5
+                $SEGMENT_KEY_TIMESTAMP=2024-07-11T10:25:21.454Z
+                $SEGMENT_KEY_REPLAY_TYPE=BUFFER
+                $SEGMENT_KEY_FLUSHED=true
+                """
+          .trimIndent()
+      )
+    }
+
+    val screenshot = File(replayCacheFolder, "1720693523997.jpg").also { it.createNewFile() }
+    screenshot.outputStream().use {
+      Bitmap.createBitmap(1, 1, ARGB_8888).compress(JPEG, 80, it)
+      it.flush()
+    }
+
+    val lastSegment = ReplayCache.fromDisk(fixture.options, replayId)!!
+
+    assertEquals(5, lastSegment.id)
   }
 
   @Test

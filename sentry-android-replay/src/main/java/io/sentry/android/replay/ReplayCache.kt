@@ -317,6 +317,7 @@ public class ReplayCache(private val options: SentryOptions, private val replayI
     internal const val SEGMENT_KEY_REPLAY_SCREEN_AT_START = "replay.screen-at-start"
     internal const val SEGMENT_KEY_REPLAY_RECORDING = "replay.recording"
     internal const val SEGMENT_KEY_ID = "segment.id"
+    internal const val SEGMENT_KEY_FLUSHED = "replay.flushed"
 
     fun makeReplayCacheDir(options: SentryOptions, replayId: SentryId): File? =
       if (options.cacheDirPath.isNullOrEmpty()) {
@@ -415,8 +416,11 @@ public class ReplayCache(private val options: SentryOptions, private val replayI
       }
 
       cache.frames.sortBy { it.timestamp }
-      // TODO: this should be removed when we start sending buffered segments on next launch
-      val normalizedSegmentId = if (replayType == SESSION) segmentId else 0
+      val wasFlushed = lastSegment[SEGMENT_KEY_FLUSHED]?.toBooleanStrictOrNull() == true
+      // In buffer mode, if the buffer was never flushed (no error triggered captureReplay),
+      // no segments were ever sent, so we normalize to 0. After a flush + conversion to
+      // session mode, the persisted segmentId is the real sequence number.
+      val normalizedSegmentId = if (replayType == SESSION || wasFlushed) segmentId else 0
       val normalizedTimestamp =
         if (replayType == SESSION) {
           segmentTimestamp

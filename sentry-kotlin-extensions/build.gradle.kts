@@ -8,7 +8,7 @@ plugins {
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.detekt)
-  alias(libs.plugins.animalsniffer)
+  id("io.sentry.animalsniffer.android")
 }
 
 tasks.withType<KotlinCompile>().configureEach {
@@ -32,12 +32,7 @@ dependencies {
   testImplementation(libs.kotlinx.coroutines)
   testImplementation(libs.kotlinx.coroutines.test)
   testImplementation(libs.mockito.kotlin)
-
-  val gummyBearsModule = libs.gummy.bears.api21.get().module
-  signature("${gummyBearsModule}:${libs.versions.gummyBears.get()}@signature")
 }
-
-tasks { check { dependsOn(animalsnifferMain) } }
 
 tasks.withType<Detekt>().configureEach {
   // Target version of the generated JVM bytecode. It is used for type resolution.

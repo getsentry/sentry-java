@@ -1,5 +1,6 @@
 package io.sentry.metrics
 
+import com.google.common.truth.Truth.assertThat
 import io.sentry.DataCategory
 import io.sentry.ISentryClient
 import io.sentry.SentryMetricsEvent
@@ -20,9 +21,31 @@ import kotlin.test.assertTrue
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.atLeast
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 
 class MetricsBatchProcessorTest {
+  @Test
+  fun `schedules another flush after previous flush has run`() {
+    val mockClient = mock<ISentryClient>()
+    val mockExecutor = DeferredExecutorService()
+    val processor = MetricsBatchProcessor(SentryOptions(), mockClient)
+    processor.injectForField("executorService", mockExecutor)
+
+    processor.add(SentryMetricsEvent(SentryId(), SentryNanotimeDate(), "first", "gauge", 1.0))
+    mockExecutor.runAll()
+
+    processor.add(SentryMetricsEvent(SentryId(), SentryNanotimeDate(), "second", "gauge", 2.0))
+    assertThat(mockExecutor.hasScheduledRunnables()).isTrue()
+    mockExecutor.runAll()
+
+    val captor = argumentCaptor<SentryMetricsEvents>()
+    verify(mockClient, times(2)).captureBatchedMetricsEvents(captor.capture())
+    assertThat(captor.allValues.flatMap { it.items }.map { it.name })
+      .containsExactly("first", "second")
+      .inOrder()
+  }
+
   @Test
   fun `drops metrics events after reaching MAX_QUEUE_SIZE limit`() {
     // given

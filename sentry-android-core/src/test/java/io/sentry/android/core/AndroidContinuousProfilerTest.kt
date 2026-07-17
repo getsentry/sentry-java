@@ -539,13 +539,12 @@ class AndroidContinuousProfilerTest {
 
   @Test
   fun `profiler does not start when offline`() {
-    val profiler =
-      fixture.getSut {
-        it.connectionStatusProvider = mock { provider ->
-          whenever(provider.connectionStatus)
-            .thenReturn(IConnectionStatusProvider.ConnectionStatus.DISCONNECTED)
-        }
+    val profiler = fixture.getSut {
+      it.connectionStatusProvider = mock { provider ->
+        whenever(provider.connectionStatus)
+          .thenReturn(IConnectionStatusProvider.ConnectionStatus.DISCONNECTED)
       }
+    }
 
     // If the device is offline, the profiler should never start
     profiler.startProfiler(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)

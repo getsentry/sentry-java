@@ -131,7 +131,6 @@ public final class DatabaseUtils {
       String pathWithoutProperties = StringUtils.substringBefore(path, ";");
       return new DatabaseDetails(dbSystem, pathWithoutProperties);
     } catch (Throwable t) {
-      System.out.println(t.getMessage());
       // ignore
     }
     return new DatabaseDetails(dbSystem, null);

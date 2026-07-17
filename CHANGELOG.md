@@ -4,6 +4,18 @@
 
 ### Features
 
+- Added `Environment` to the `Scope` ([#5765](https://github.com/getsentry/sentry-java/pull/5765))
+
+### Fixes
+
+- Backfill release, environment, distribution, tags, and app version/build—and use the matching replay-on-error sample rate—for `ApplicationExitInfo` ANR and native crash events captured before SDK initialization, without reusing options cached by a later app update ([#5762](https://github.com/getsentry/sentry-java/pull/5762))
+
+## 8.49.0
+
+### Features
+
+- Session Replay: Record segment names (transaction names) ([#5763](https://github.com/getsentry/sentry-java/pull/5763))
+
 - Add `io.sentry:sentry-opentelemetry-bom` to align Sentry OpenTelemetry modules with tested OpenTelemetry dependencies ([#5629](https://github.com/getsentry/sentry-java/pull/5629))
   - Spring Boot Gradle plugin: add the Sentry BOM to `dependencyManagement`; explicit imports are applied after Spring Boot's implicit BOM
     ```kotlin
@@ -27,11 +39,21 @@
       <scope>import</scope>
     </dependency>
     ```
-- Added `Environment` to the `Scope` ([#5765](https://github.com/getsentry/sentry-java/pull/5765))
 
 ### Fixes
 
+- Session Replay: Fix first recording segment missing for replays in `buffer` mode ([#5753](https://github.com/getsentry/sentry-java/pull/5753))
+- Session Replay: Fix error-to-replay linkage in `buffer` mode ([#5754](https://github.com/getsentry/sentry-java/pull/5754))
+- Prevent logs and metrics from remaining queued after a flush scheduling race ([#5756](https://github.com/getsentry/sentry-java/pull/5756))
 - Fix main thread identification for tombstone (native crash) events ([#5742](https://github.com/getsentry/sentry-java/pull/5742))
+- Prevent malformed JDBC URLs, which may contain credentials, from being printed to stdout ([#5656](https://github.com/getsentry/sentry-java/pull/5656))
+- Restrict JVM-global proxy authentication credentials to challenges from the configured proxy host ([#5656](https://github.com/getsentry/sentry-java/pull/5656))
+- Sanitize Spring 7 and Spring Jakarta WebClient span descriptions to prevent embedded URL credentials from being sent to Sentry ([#5656](https://github.com/getsentry/sentry-java/pull/5656))
+- Respect `tracePropagationTargets` when injecting Sentry tracing headers through the OpenTelemetry OTLP propagator ([#5656](https://github.com/getsentry/sentry-java/pull/5656))
+
+### Performance
+
+- Schedule transaction idle/deadline timeouts on a shared, dedicated executor instead of spawning a `Timer` thread per transaction ([#5670](https://github.com/getsentry/sentry-java/pull/5670))
 
 ### Dependencies
 

@@ -509,11 +509,10 @@ class SentryTest {
       initForTest {
         it.dsn = dsn
         it.isDebug = true
-        it.beforeSend =
-          SentryOptions.BeforeSendCallback { event, hint ->
-            capturedEvents.add(event)
-            event
-          }
+        it.beforeSend = SentryOptions.BeforeSendCallback { event, hint ->
+          capturedEvents.add(event)
+          event
+        }
       }
     }
     thread.start()
@@ -533,8 +532,9 @@ class SentryTest {
 
     assertEquals(2, capturedEvents.size)
     val mainCloneEvent = capturedEvents.firstOrNull { it.message?.formatted == "messageMainClone" }
-    val currentScopesEvent =
-      capturedEvents.firstOrNull { it.message?.formatted == "messageCurrent" }
+    val currentScopesEvent = capturedEvents.firstOrNull {
+      it.message?.formatted == "messageCurrent"
+    }
 
     assertNotNull(mainCloneEvent)
     assertNotNull(mainCloneEvent.breadcrumbs?.firstOrNull { it.message == "breadcrumbMainClone" })
@@ -563,11 +563,10 @@ class SentryTest {
         {
           it.dsn = dsn
           it.isDebug = true
-          it.beforeSend =
-            SentryOptions.BeforeSendCallback { event, hint ->
-              capturedEvents.add(event)
-              event
-            }
+          it.beforeSend = SentryOptions.BeforeSendCallback { event, hint ->
+            capturedEvents.add(event)
+            event
+          }
         },
         true,
       )
@@ -589,8 +588,9 @@ class SentryTest {
 
     assertEquals(2, capturedEvents.size)
     val mainCloneEvent = capturedEvents.firstOrNull { it.message?.formatted == "messageMainClone" }
-    val currentScopesEvent =
-      capturedEvents.firstOrNull { it.message?.formatted == "messageCurrent" }
+    val currentScopesEvent = capturedEvents.firstOrNull {
+      it.message?.formatted == "messageCurrent"
+    }
 
     assertNotNull(mainCloneEvent)
     assertNotNull(mainCloneEvent.breadcrumbs?.firstOrNull { it.message == "breadcrumbMainClone" })

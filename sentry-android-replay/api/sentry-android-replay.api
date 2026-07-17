@@ -76,6 +76,7 @@ public final class io/sentry/android/replay/ReplayIntegration : io/sentry/IConne
 	public fun onWindowSizeChanged (II)V
 	public fun pause ()V
 	public fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
+	public fun registerSegmentName (Ljava/lang/String;)V
 	public fun registerTraceId (Lio/sentry/protocol/SentryId;)V
 	public fun resume ()V
 	public fun setBreadcrumbConverter (Lio/sentry/ReplayBreadcrumbConverter;)V

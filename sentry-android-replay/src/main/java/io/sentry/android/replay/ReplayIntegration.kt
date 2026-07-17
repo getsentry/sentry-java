@@ -261,6 +261,7 @@ public class ReplayIntegration(
       onSegmentSent = { newTimestamp ->
         captureStrategy?.currentSegment = captureStrategy?.currentSegment!! + 1
         captureStrategy?.segmentTimestamp = newTimestamp
+        captureStrategy?.isFlushed = true
       },
     )
     captureStrategy = captureStrategy?.convert()
@@ -294,6 +295,13 @@ public class ReplayIntegration(
       return
     }
     captureStrategy?.registerTraceId(traceId)
+  }
+
+  override fun registerSegmentName(segmentName: String) {
+    if (!isEnabled.get() || !isRecording()) {
+      return
+    }
+    captureStrategy?.registerSegmentName(segmentName)
   }
 
   private fun pauseInternal() {
