@@ -67,6 +67,28 @@ class OpenHelperSpansTest {
   }
 
   @Test
+  fun `performSql omits description when database query data is disabled`() {
+    val sut = fixture.getSut()
+    fixture.options.dataCollection.setDatabaseQueryData(false)
+
+    sut.performSql("SELECT secret FROM users") {}
+
+    val span = fixture.sentryTracer.children.first()
+    assertNull(span.description)
+    assertEquals("in-memory", span.data[SpanDataConvention.DB_SYSTEM_KEY])
+  }
+
+  @Test
+  fun `performSql keeps description in legacy mode`() {
+    val sut = fixture.getSut()
+    fixture.options.isSendDefaultPii = false
+
+    sut.performSql("SELECT secret FROM users") {}
+
+    assertEquals("SELECT secret FROM users", fixture.sentryTracer.children.first().description)
+  }
+
+  @Test
   fun `performSql does not create a span if no span is running`() {
     val sut = fixture.getSut(isSpanActive = false)
     sut.performSql("sql") {}

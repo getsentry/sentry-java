@@ -47,7 +47,11 @@ public class SentryJdbcEventListener extends SimpleJdbcEventListener {
 
   @Override
   public void onBeforeAnyExecute(final @NotNull StatementInformation statementInformation) {
-    startSpan(CURRENT_QUERY_SPAN, "db.query", statementInformation.getSql());
+    final @Nullable String description =
+        scopes.getOptions().getDataCollectionResolver().isDatabaseQueryDataWithLegacyAlways()
+            ? statementInformation.getSql()
+            : null;
+    startSpan(CURRENT_QUERY_SPAN, "db.query", description);
   }
 
   @Override
