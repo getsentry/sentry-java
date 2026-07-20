@@ -25,9 +25,9 @@ import org.jetbrains.annotations.Nullable;
  * active, so callbacks should never nest — but a capture path lacking an entry check must not
  * silently disarm the guard for the rest of the outer callback.
  *
- * <p>{@link #enter()} returns an {@link ISentryLifecycleToken} so callers can use try-with-resources
- * instead of a manual {@code finally exit()}. The token is a shared singleton (its {@code close()}
- * just decrements the counter), so no allocation happens per callback.
+ * <p>{@link #enter()} returns an {@link ISentryLifecycleToken} so callers can use
+ * try-with-resources instead of a manual {@code finally exit()}. The token is a shared singleton
+ * (its {@code close()} just decrements the counter), so no allocation happens per callback.
  */
 @ApiStatus.Internal
 public final class SentryCallbackReentrancyGuard {

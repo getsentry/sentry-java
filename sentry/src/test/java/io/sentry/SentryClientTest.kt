@@ -3295,11 +3295,10 @@ class SentryClientTest {
     var invocations = 0
     lateinit var sut: SentryClient
     val options = { options: SentryOptions ->
-      options.beforeEnvelopeCallback =
-        SentryOptions.BeforeEnvelopeCallback { _, _ ->
-          invocations++
-          sut.captureEvent(SentryEvent())
-        }
+      options.beforeEnvelopeCallback = SentryOptions.BeforeEnvelopeCallback { _, _ ->
+        invocations++
+        sut.captureEvent(SentryEvent())
+      }
     }
     sut = fixture.getSut(options)
 

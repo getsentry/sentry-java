@@ -131,12 +131,11 @@ class SentryTimberIntegrationTest {
     Sentry.init { options ->
       options.dsn = "https://key@sentry.io/123"
       options.setTransportFactory(transportFactory)
-      options.beforeSend =
-        SentryOptions.BeforeSendCallback { event, _ ->
-          beforeSendInvocations++
-          Timber.e("logging from beforeSend")
-          event
-        }
+      options.beforeSend = SentryOptions.BeforeSendCallback { event, _ ->
+        beforeSendInvocations++
+        Timber.e("logging from beforeSend")
+        event
+      }
     }
     Timber.plant(
       SentryTimberTree(

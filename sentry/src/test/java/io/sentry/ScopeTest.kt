@@ -377,12 +377,11 @@ class ScopeTest {
     lateinit var scope: Scope
     val options =
       SentryOptions().apply {
-        beforeBreadcrumb =
-          SentryOptions.BeforeBreadcrumbCallback { breadcrumb, _ ->
-            invocations++
-            scope.addBreadcrumb(Breadcrumb())
-            breadcrumb
-          }
+        beforeBreadcrumb = SentryOptions.BeforeBreadcrumbCallback { breadcrumb, _ ->
+          invocations++
+          scope.addBreadcrumb(Breadcrumb())
+          breadcrumb
+        }
       }
 
     scope = Scope(options)
