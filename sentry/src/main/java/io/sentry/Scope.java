@@ -494,7 +494,7 @@ public final class Scope implements IScope {
     if (breadcrumb == null || breadcrumbs instanceof DisabledQueue) {
       return;
     }
-    // Drop breadcrumbs added from within a user callback to prevent recursion.
+    // Drop silently to prevent recursion; a log here can re-enter through a logging integration.
     if (SentryCallbackReentrancyGuard.isActive()) {
       return;
     }

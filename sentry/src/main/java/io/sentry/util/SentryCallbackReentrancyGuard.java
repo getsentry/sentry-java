@@ -16,6 +16,14 @@ import org.jetbrains.annotations.Nullable;
  * StackOverflowError}. Capture entry points consult {@link #isActive()} and drop the nested capture
  * while a callback is running.
  *
+ * <p>The nested capture MUST be dropped silently — callers must not log while the guard is active.
+ * The same logging integration that routes logs back into Sentry also routes the SDK's own
+ * diagnostic logs, so a "dropped to prevent recursion" log line would be turned into another
+ * capture, whose drop would log again, and so on. The guard suppresses the capture but not the log,
+ * so logging on the drop path re-opens exactly the recursion the guard exists to break. (This only
+ * bites when SDK debug logging is enabled, since {@code options.getLogger()} is otherwise a no-op,
+ * but dropping silently removes the failure mode entirely.)
+ *
  * <p>The guard is set ONLY around each callback's {@code execute(...)} invocation, never around the
  * whole capture pipeline, so captures made by event processors (which run outside the callback) are
  * not affected.
@@ -38,7 +46,11 @@ public final class SentryCallbackReentrancyGuard {
 
   private SentryCallbackReentrancyGuard() {}
 
-  /** Whether a user callback is currently executing on this thread. */
+  /**
+   * Whether a user callback is currently executing on this thread. When {@code true}, capture entry
+   * points must drop the capture and return without logging — see the class Javadoc for why logging
+   * on the drop path re-opens the recursion.
+   */
   public static boolean isActive() {
     final @Nullable Integer current = depth.get();
     return current != null && current > 0;

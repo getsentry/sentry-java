@@ -107,12 +107,8 @@ public final class SentryClient implements ISentryClient {
       @NotNull SentryEvent event, final @Nullable IScope scope, @Nullable Hint hint) {
     Objects.requireNonNull(event, "SentryEvent is required.");
 
+    // Drop silently to prevent recursion; a log here can re-enter through a logging integration.
     if (SentryCallbackReentrancyGuard.isActive()) {
-      options
-          .getLogger()
-          .log(
-              SentryLevel.DEBUG,
-              "Event captured from within a callback (beforeSend/beforeBreadcrumb/beforeSendLog) was dropped to prevent recursion.");
       return SentryId.EMPTY_ID;
     }
 
@@ -321,12 +317,8 @@ public final class SentryClient implements ISentryClient {
       @NotNull SentryReplayEvent event, final @Nullable IScope scope, @Nullable Hint hint) {
     Objects.requireNonNull(event, "SessionReplay is required.");
 
+    // Drop silently to prevent recursion; a log here can re-enter through a logging integration.
     if (SentryCallbackReentrancyGuard.isActive()) {
-      options
-          .getLogger()
-          .log(
-              SentryLevel.DEBUG,
-              "Replay event captured from within a callback was dropped to prevent recursion.");
       return SentryId.EMPTY_ID;
     }
 
@@ -958,13 +950,9 @@ public final class SentryClient implements ISentryClient {
     // captureEnvelope and captureCheckIn have no entry-level guard, so a callback that captures
     // one of those would recurse back into beforeEnvelopeCallback. In normal flow the guard is
     // already inactive by the time we get here (the before* callback has exited), so an active
-    // guard means a callback triggered this send.
+    // guard means a callback triggered this send. Drop silently: a log here can re-enter through a
+    // logging integration.
     if (SentryCallbackReentrancyGuard.isActive()) {
-      options
-          .getLogger()
-          .log(
-              SentryLevel.DEBUG,
-              "Envelope captured from within a callback was dropped to prevent recursion.");
       return SentryId.EMPTY_ID;
     }
 
@@ -1000,12 +988,8 @@ public final class SentryClient implements ISentryClient {
       final @Nullable ProfilingTraceData profilingTraceData) {
     Objects.requireNonNull(transaction, "Transaction is required.");
 
+    // Drop silently to prevent recursion; a log here can re-enter through a logging integration.
     if (SentryCallbackReentrancyGuard.isActive()) {
-      options
-          .getLogger()
-          .log(
-              SentryLevel.DEBUG,
-              "Transaction captured from within a callback was dropped to prevent recursion.");
       return SentryId.EMPTY_ID;
     }
 
@@ -1227,12 +1211,8 @@ public final class SentryClient implements ISentryClient {
   @Override
   public @NotNull SentryId captureFeedback(
       final @NotNull Feedback feedback, @Nullable Hint hint, final @NotNull IScope scope) {
+    // Drop silently to prevent recursion; a log here can re-enter through a logging integration.
     if (SentryCallbackReentrancyGuard.isActive()) {
-      options
-          .getLogger()
-          .log(
-              SentryLevel.DEBUG,
-              "Feedback captured from within a callback was dropped to prevent recursion.");
       return SentryId.EMPTY_ID;
     }
 
@@ -1346,12 +1326,8 @@ public final class SentryClient implements ISentryClient {
   @ApiStatus.Experimental
   @Override
   public void captureLog(@Nullable SentryLogEvent logEvent, @Nullable IScope scope) {
+    // Drop silently to prevent recursion; a log here can re-enter through a logging integration.
     if (SentryCallbackReentrancyGuard.isActive()) {
-      options
-          .getLogger()
-          .log(
-              SentryLevel.DEBUG,
-              "Log captured from within a callback was dropped to prevent recursion.");
       return;
     }
 
@@ -1409,12 +1385,8 @@ public final class SentryClient implements ISentryClient {
       @Nullable SentryMetricsEvent metricsEvent,
       final @Nullable IScope scope,
       @Nullable Hint hint) {
+    // Drop silently to prevent recursion; a log here can re-enter through a logging integration.
     if (SentryCallbackReentrancyGuard.isActive()) {
-      options
-          .getLogger()
-          .log(
-              SentryLevel.DEBUG,
-              "Metric captured from within a callback was dropped to prevent recursion.");
       return;
     }
 
