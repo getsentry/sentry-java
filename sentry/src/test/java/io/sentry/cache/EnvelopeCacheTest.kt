@@ -80,6 +80,22 @@ class EnvelopeCacheTest {
   }
 
   @Test
+  fun `creates cache dir on store when it does not exist yet`() {
+    val cache = fixture.getSUT()
+
+    val file = File(fixture.options.cacheDirPath!!)
+    assertTrue(file.deleteRecursively())
+    assertFalse(file.exists())
+
+    cache.store(SentryEnvelope.from(fixture.options.serializer, createSession(), null))
+
+    assertTrue(file.exists())
+    assertEquals(1, file.list()?.size)
+
+    file.deleteRecursively()
+  }
+
+  @Test
   fun `tolerates discarding unknown envelope`() {
     val cache = fixture.getSUT()
 

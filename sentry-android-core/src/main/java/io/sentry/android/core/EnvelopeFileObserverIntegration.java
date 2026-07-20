@@ -12,6 +12,7 @@ import io.sentry.SentryOptions;
 import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.Objects;
 import java.io.Closeable;
+import java.io.File;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
@@ -67,6 +68,13 @@ public abstract class EnvelopeFileObserverIntegration implements Integration, Cl
       final @NotNull IScopes scopes,
       final @NotNull SentryOptions options,
       final @NotNull String path) {
+    // Create the outbox dir lazily here (on the executor) so the observer can watch it for
+    // envelopes written by hybrid SDKs, instead of blocking Sentry.init on the mkdirs.
+    final File outboxDir = new File(path);
+    if (!outboxDir.isDirectory()) {
+      outboxDir.mkdirs();
+    }
+
     final OutboxSender outboxSender =
         new OutboxSender(
             scopes,

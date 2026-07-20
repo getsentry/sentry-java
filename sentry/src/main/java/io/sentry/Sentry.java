@@ -616,19 +616,14 @@ public final class Sentry {
     // TODO: read values from conf file, Build conf or system envs
     // eg release, distinctId, sentryClientName
 
-    // this should be after setting serializers
-    final String outboxPath = options.getOutboxPath();
-    if (outboxPath != null) {
-      final File outboxDir = new File(outboxPath);
-      outboxDir.mkdirs();
-    } else {
+    // The outbox and cache dirs are created lazily by their consumers (envelope cache, outbox file
+    // observer, native SDK) off the init thread, so we don't stat/mkdir them here.
+    if (options.getOutboxPath() == null) {
       logger.log(SentryLevel.INFO, "No outbox dir path is defined in options.");
     }
 
     final String cacheDirPath = options.getCacheDirPath();
     if (cacheDirPath != null) {
-      final File cacheDir = new File(cacheDirPath);
-      cacheDir.mkdirs();
       final IEnvelopeCache envelopeCache = options.getEnvelopeDiskCache();
       // only overwrite the cache impl if it's not already set
       if (envelopeCache instanceof NoOpEnvelopeCache) {

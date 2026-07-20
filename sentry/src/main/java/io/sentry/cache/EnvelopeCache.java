@@ -109,6 +109,11 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
   private boolean storeInternal(final @NotNull SentryEnvelope envelope, final @NotNull Hint hint) {
     Objects.requireNonNull(envelope, "Envelope is required.");
 
+    // Create the cache dir lazily on the first write so Sentry.init doesn't block on the mkdirs.
+    if (!directory.isDirectory()) {
+      directory.mkdirs();
+    }
+
     rotateCacheIfNeeded(allEnvelopeFiles());
 
     final File currentSessionFile = getCurrentSessionFile(directory.getAbsolutePath());

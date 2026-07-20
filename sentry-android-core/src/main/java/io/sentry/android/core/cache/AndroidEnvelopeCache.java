@@ -108,6 +108,12 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
     }
     final File crashMarkerFile = new File(outboxPath, STARTUP_CRASH_MARKER_FILE);
     try {
+      // The outbox dir is no longer created during Sentry.init, so ensure it exists here in case
+      // the native SDK (which normally creates it) is disabled.
+      final File outboxDir = crashMarkerFile.getParentFile();
+      if (outboxDir != null && !outboxDir.isDirectory()) {
+        outboxDir.mkdirs();
+      }
       crashMarkerFile.createNewFile();
     } catch (Throwable e) {
       options.getLogger().log(ERROR, "Error writing the startup crash marker file to the disk", e);

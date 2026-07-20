@@ -183,7 +183,7 @@ class SentryTest {
   }
 
   @Test
-  fun `outboxPath should be created at initialization`() {
+  fun `outboxPath is not created during initialization`() {
     var sentryOptions: SentryOptions? = null
     initForTest {
       it.dsn = dsn
@@ -191,13 +191,13 @@ class SentryTest {
       sentryOptions = it
     }
 
+    // The outbox dir is created lazily by its consumers (file observer, native SDK), not at init.
     val file = File(sentryOptions!!.outboxPath!!)
-    assertTrue(file.exists())
-    file.deleteOnExit()
+    assertFalse(file.exists())
   }
 
   @Test
-  fun `cacheDirPath should be created at initialization`() {
+  fun `cacheDirPath is not created during initialization`() {
     var sentryOptions: SentryOptions? = null
     initForTest {
       it.dsn = dsn
@@ -205,13 +205,13 @@ class SentryTest {
       sentryOptions = it
     }
 
+    // The cache dir is created lazily on the first envelope store, not at init.
     val file = File(sentryOptions!!.cacheDirPath!!)
-    assertTrue(file.exists())
-    file.deleteOnExit()
+    assertFalse(file.exists())
   }
 
   @Test
-  fun `getCacheDirPathWithoutDsn should be created at initialization`() {
+  fun `cacheDirPathWithoutDsn is not created during initialization`() {
     var sentryOptions: SentryOptions? = null
     initForTest {
       it.dsn = dsn
@@ -221,8 +221,7 @@ class SentryTest {
 
     val cacheDirPathWithoutDsn = sentryOptions!!.cacheDirPathWithoutDsn!!
     val file = File(cacheDirPathWithoutDsn)
-    assertTrue(file.exists())
-    file.deleteOnExit()
+    assertFalse(file.exists())
   }
 
   @Test
