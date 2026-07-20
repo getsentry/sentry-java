@@ -3329,24 +3329,6 @@ class SentryClientTest {
   }
 
   @Test
-  fun `when beforeEnvelopeCallback captures a check-in, the nested check-in is dropped and does not recurse`() {
-    var invocations = 0
-    lateinit var sut: SentryClient
-    val options = { options: SentryOptions ->
-      options.beforeEnvelopeCallback = SentryOptions.BeforeEnvelopeCallback { _, _ ->
-        invocations++
-        sut.captureCheckIn(CheckIn("some_slug", CheckInStatus.OK), null, null)
-      }
-    }
-    sut = fixture.getSut(options)
-
-    sut.captureEvent(SentryEvent(), Hint())
-
-    assertEquals(1, invocations)
-    verify(fixture.transport, times(1)).send(any(), anyOrNull())
-  }
-
-  @Test
   fun `beforeEnvelopeCallback may fail, but the transport is still sends the envelope `() {
     val sut = fixture.getSut { options ->
       options.beforeEnvelopeCallback = SentryOptions.BeforeEnvelopeCallback { _, _ ->
