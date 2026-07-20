@@ -4,7 +4,7 @@
 
 ### Improvements
 
-- Skip building Android manifest metadata debug log messages when debug logging is disabled, reducing allocations during SDK init ([#5700](https://github.com/getsentry/sentry-java/pull/5700))
+- Skip building Android manifest metadata debug log messages when debug logging is disabled, reducing allocations during SDK init ([#5790](https://github.com/getsentry/sentry-java/pull/5790))
 
 ### Fixes
 
