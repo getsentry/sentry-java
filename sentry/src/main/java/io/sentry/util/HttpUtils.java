@@ -90,12 +90,16 @@ public final class HttpUtils {
           containsTerm(name, SENSITIVE_DATA_KEYS)
               || "Cookie".equalsIgnoreCase(name)
               || "Set-Cookie".equalsIgnoreCase(name);
-      final boolean matchesTerm = containsTerm(name, behavior.getTerms());
-      final boolean shouldFilter =
-          sensitive
-              || (behavior.getMode() == KeyValueCollectionBehavior.Mode.DENY_LIST && matchesTerm)
-              || (behavior.getMode() == KeyValueCollectionBehavior.Mode.ALLOW_LIST && !matchesTerm);
-      filteredHeaders.put(name, shouldFilter ? SENSITIVE_DATA_SUBSTITUTE : header.getValue());
+      if (sensitive) {
+        filteredHeaders.put(name, SENSITIVE_DATA_SUBSTITUTE);
+      } else {
+        final boolean matchesTerm = containsTerm(name, behavior.getTerms());
+        final boolean shouldFilter =
+            behavior.getMode() == KeyValueCollectionBehavior.Mode.DENY_LIST
+                ? matchesTerm
+                : !matchesTerm;
+        filteredHeaders.put(name, shouldFilter ? SENSITIVE_DATA_SUBSTITUTE : header.getValue());
+      }
     }
     return filteredHeaders;
   }
