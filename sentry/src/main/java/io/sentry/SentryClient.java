@@ -245,8 +245,7 @@ public final class SentryClient implements ISentryClient {
       final SentryReplayOptions.BeforeErrorSamplingCallback beforeErrorSampling =
           options.getSessionReplay().getBeforeErrorSampling();
       if (beforeErrorSampling != null) {
-        try {
-          SentryCallbackReentrancyGuard.enter();
+        try (final @NotNull ISentryLifecycleToken ignored = SentryCallbackReentrancyGuard.enter()) {
           shouldCaptureReplay = beforeErrorSampling.execute(event, hint);
         } catch (Throwable e) {
           options
@@ -256,8 +255,6 @@ public final class SentryClient implements ISentryClient {
                   "The beforeErrorSampling callback threw an exception. Proceeding with replay capture.",
                   e);
           shouldCaptureReplay = true;
-        } finally {
-          SentryCallbackReentrancyGuard.exit();
         }
       }
       if (shouldCaptureReplay) {
@@ -961,15 +958,12 @@ public final class SentryClient implements ISentryClient {
     final @Nullable SentryOptions.BeforeEnvelopeCallback beforeEnvelopeCallback =
         options.getBeforeEnvelopeCallback();
     if (beforeEnvelopeCallback != null) {
-      try {
-        SentryCallbackReentrancyGuard.enter();
+      try (final @NotNull ISentryLifecycleToken ignored = SentryCallbackReentrancyGuard.enter()) {
         beforeEnvelopeCallback.execute(envelope, hint);
       } catch (Throwable e) {
         options
             .getLogger()
             .log(SentryLevel.ERROR, "The BeforeEnvelope callback threw an exception.", e);
-      } finally {
-        SentryCallbackReentrancyGuard.exit();
       }
     }
 
@@ -1672,8 +1666,7 @@ public final class SentryClient implements ISentryClient {
       @NotNull SentryEvent event, final @NotNull Hint hint) {
     final SentryOptions.BeforeSendCallback beforeSend = options.getBeforeSend();
     if (beforeSend != null) {
-      try {
-        SentryCallbackReentrancyGuard.enter();
+      try (final @NotNull ISentryLifecycleToken ignored = SentryCallbackReentrancyGuard.enter()) {
         event = beforeSend.execute(event, hint);
       } catch (Throwable e) {
         options
@@ -1685,8 +1678,6 @@ public final class SentryClient implements ISentryClient {
 
         // drop event in case of an error in beforeSend due to PII concerns
         event = null;
-      } finally {
-        SentryCallbackReentrancyGuard.exit();
       }
     }
     return event;
@@ -1697,8 +1688,7 @@ public final class SentryClient implements ISentryClient {
     final SentryOptions.BeforeSendTransactionCallback beforeSendTransaction =
         options.getBeforeSendTransaction();
     if (beforeSendTransaction != null) {
-      try {
-        SentryCallbackReentrancyGuard.enter();
+      try (final @NotNull ISentryLifecycleToken ignored = SentryCallbackReentrancyGuard.enter()) {
         transaction = beforeSendTransaction.execute(transaction, hint);
       } catch (Throwable e) {
         options
@@ -1710,8 +1700,6 @@ public final class SentryClient implements ISentryClient {
 
         // drop transaction in case of an error in beforeSend due to PII concerns
         transaction = null;
-      } finally {
-        SentryCallbackReentrancyGuard.exit();
       }
     }
     return transaction;
@@ -1721,8 +1709,7 @@ public final class SentryClient implements ISentryClient {
       @NotNull SentryEvent event, final @NotNull Hint hint) {
     final SentryOptions.BeforeSendCallback beforeSendFeedback = options.getBeforeSendFeedback();
     if (beforeSendFeedback != null) {
-      try {
-        SentryCallbackReentrancyGuard.enter();
+      try (final @NotNull ISentryLifecycleToken ignored = SentryCallbackReentrancyGuard.enter()) {
         event = beforeSendFeedback.execute(event, hint);
       } catch (Throwable e) {
         options
@@ -1731,8 +1718,6 @@ public final class SentryClient implements ISentryClient {
 
         // drop feedback in case of an error in beforeSend due to PII concerns
         event = null;
-      } finally {
-        SentryCallbackReentrancyGuard.exit();
       }
     }
     return event;
@@ -1742,8 +1727,7 @@ public final class SentryClient implements ISentryClient {
       @NotNull SentryReplayEvent event, final @NotNull Hint hint) {
     final SentryOptions.BeforeSendReplayCallback beforeSendReplay = options.getBeforeSendReplay();
     if (beforeSendReplay != null) {
-      try {
-        SentryCallbackReentrancyGuard.enter();
+      try (final @NotNull ISentryLifecycleToken ignored = SentryCallbackReentrancyGuard.enter()) {
         event = beforeSendReplay.execute(event, hint);
       } catch (Throwable e) {
         options
@@ -1755,8 +1739,6 @@ public final class SentryClient implements ISentryClient {
 
         // drop event in case of an error in beforeSend due to PII concerns
         event = null;
-      } finally {
-        SentryCallbackReentrancyGuard.exit();
       }
     }
     return event;
@@ -1766,8 +1748,7 @@ public final class SentryClient implements ISentryClient {
     final SentryOptions.Logs.BeforeSendLogCallback beforeSendLog =
         options.getLogs().getBeforeSend();
     if (beforeSendLog != null) {
-      try {
-        SentryCallbackReentrancyGuard.enter();
+      try (final @NotNull ISentryLifecycleToken ignored = SentryCallbackReentrancyGuard.enter()) {
         event = beforeSendLog.execute(event);
       } catch (Throwable e) {
         options
@@ -1779,8 +1760,6 @@ public final class SentryClient implements ISentryClient {
 
         // drop event in case of an error in beforeSendLog due to PII concerns
         event = null;
-      } finally {
-        SentryCallbackReentrancyGuard.exit();
       }
     }
     return event;
@@ -1791,8 +1770,7 @@ public final class SentryClient implements ISentryClient {
     final SentryOptions.Metrics.BeforeSendMetricCallback beforeSendMetric =
         options.getMetrics().getBeforeSend();
     if (beforeSendMetric != null) {
-      try {
-        SentryCallbackReentrancyGuard.enter();
+      try (final @NotNull ISentryLifecycleToken ignored = SentryCallbackReentrancyGuard.enter()) {
         event = beforeSendMetric.execute(event, hint);
       } catch (Throwable e) {
         options
@@ -1804,8 +1782,6 @@ public final class SentryClient implements ISentryClient {
 
         // drop event in case of an error in beforeSendMetric due to PII concerns
         event = null;
-      } finally {
-        SentryCallbackReentrancyGuard.exit();
       }
     }
     return event;
