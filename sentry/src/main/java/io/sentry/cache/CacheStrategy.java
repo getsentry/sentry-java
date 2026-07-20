@@ -10,6 +10,7 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.Session;
 import io.sentry.clientreport.DiscardReason;
+import io.sentry.util.LazyDirectory;
 import io.sentry.util.LazyEvaluator;
 import io.sentry.util.Objects;
 import java.io.BufferedInputStream;
@@ -39,7 +40,7 @@ abstract class CacheStrategy {
   protected @NotNull SentryOptions options;
   protected final @NotNull LazyEvaluator<ISerializer> serializer =
       new LazyEvaluator<>(() -> options.getSerializer());
-  protected final @NotNull File directory;
+  protected final @NotNull LazyDirectory directory;
   private final int maxSize;
 
   CacheStrategy(
@@ -49,7 +50,7 @@ abstract class CacheStrategy {
     Objects.requireNonNull(directoryPath, "Directory is required.");
     this.options = Objects.requireNonNull(options, "SentryOptions is required.");
 
-    this.directory = new File(directoryPath);
+    this.directory = new LazyDirectory(directoryPath);
 
     this.maxSize = maxSize;
   }
@@ -60,13 +61,12 @@ abstract class CacheStrategy {
    * @return true if valid and has permissions or false otherwise
    */
   protected boolean isDirectoryValid() {
-    if (!directory.isDirectory() || !directory.canWrite() || !directory.canRead()) {
+    final File dir = directory.getFile();
+    if (!dir.isDirectory() || !dir.canWrite() || !dir.canRead()) {
       options
           .getLogger()
           .log(
-              ERROR,
-              "The directory for caching files is inaccessible.: %s",
-              directory.getAbsolutePath());
+              ERROR, "The directory for caching files is inaccessible.: %s", dir.getAbsolutePath());
       return false;
     }
     return true;

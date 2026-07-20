@@ -466,7 +466,7 @@ class EnvelopeCacheTest {
     cache.store(envelopeA, Hint())
     cache.store(envelopeB, Hint())
 
-    assertEquals(2, cache.directory.list()?.size)
+    assertEquals(2, cache.directory.file.list()?.size)
   }
 
   @Test

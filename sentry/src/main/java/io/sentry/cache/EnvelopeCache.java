@@ -110,14 +110,12 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
     Objects.requireNonNull(envelope, "Envelope is required.");
 
     // Create the cache dir lazily on the first write so Sentry.init doesn't block on the mkdirs.
-    if (!directory.isDirectory()) {
-      directory.mkdirs();
-    }
+    final String directoryPath = directory.getOrCreate().getAbsolutePath();
 
     rotateCacheIfNeeded(allEnvelopeFiles());
 
-    final File currentSessionFile = getCurrentSessionFile(directory.getAbsolutePath());
-    final File previousSessionFile = getPreviousSessionFile(directory.getAbsolutePath());
+    final File currentSessionFile = getCurrentSessionFile(directoryPath);
+    final File previousSessionFile = getPreviousSessionFile(directoryPath);
 
     if (HintUtils.hasType(hint, SessionEnd.class)) {
       if (!currentSessionFile.delete()) {
@@ -204,7 +202,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
   @SuppressWarnings("JavaUtilDate")
   private void tryEndPreviousSession(final @NotNull Hint hint) {
     final Object sdkHint = HintUtils.getSentrySdkHint(hint);
-    final File previousSessionFile = getPreviousSessionFile(directory.getAbsolutePath());
+    final File previousSessionFile = getPreviousSessionFile(directory.getFile().getAbsolutePath());
 
     if (previousSessionFile.exists()) {
       options.getLogger().log(WARNING, "Previous session is not ended, we'd need to end it.");
@@ -390,7 +388,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
         fileNameMap.put(envelope, fileName);
       }
 
-      return new File(directory.getAbsolutePath(), fileName);
+      return new File(directory.getFile().getAbsolutePath(), fileName);
     }
   }
 
@@ -436,7 +434,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
     if (isDirectoryValid()) {
       // lets filter the session.json here
       final File[] files =
-          directory.listFiles((__, fileName) -> fileName.endsWith(SUFFIX_ENVELOPE_FILE));
+          directory.getFile().listFiles((__, fileName) -> fileName.endsWith(SUFFIX_ENVELOPE_FILE));
       if (files != null) {
         return files;
       }

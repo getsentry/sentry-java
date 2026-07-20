@@ -7757,6 +7757,12 @@ public final class io/sentry/util/JsonSerializationUtils {
 	public static fun calendarToMap (Ljava/util/Calendar;)Ljava/util/Map;
 }
 
+public final class io/sentry/util/LazyDirectory {
+	public fun <init> (Ljava/lang/String;)V
+	public fun getFile ()Ljava/io/File;
+	public fun getOrCreate ()Ljava/io/File;
+}
+
 public final class io/sentry/util/LazyEvaluator {
 	public fun <init> (Lio/sentry/util/LazyEvaluator$Evaluator;)V
 	public fun getValue ()Ljava/lang/Object;

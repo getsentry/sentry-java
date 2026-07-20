@@ -10,9 +10,9 @@ import io.sentry.OutboxSender;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.util.AutoClosableReentrantLock;
+import io.sentry.util.LazyDirectory;
 import io.sentry.util.Objects;
 import java.io.Closeable;
-import java.io.File;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
@@ -68,12 +68,9 @@ public abstract class EnvelopeFileObserverIntegration implements Integration, Cl
       final @NotNull IScopes scopes,
       final @NotNull SentryOptions options,
       final @NotNull String path) {
-    // Create the outbox dir lazily here (on the executor) so the observer can watch it for
-    // envelopes written by hybrid SDKs, instead of blocking Sentry.init on the mkdirs.
-    final File outboxDir = new File(path);
-    if (!outboxDir.isDirectory()) {
-      outboxDir.mkdirs();
-    }
+    // Materialize the outbox dir here (on the executor) so the observer can watch it for envelopes
+    // written by hybrid SDKs, instead of blocking Sentry.init on the mkdirs.
+    new LazyDirectory(path).getOrCreate();
 
     final OutboxSender outboxSender =
         new OutboxSender(

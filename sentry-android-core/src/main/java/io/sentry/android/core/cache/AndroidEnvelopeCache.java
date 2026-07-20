@@ -18,6 +18,7 @@ import io.sentry.cache.EnvelopeCache;
 import io.sentry.transport.ICurrentDateProvider;
 import io.sentry.util.FileUtils;
 import io.sentry.util.HintUtils;
+import io.sentry.util.LazyDirectory;
 import io.sentry.util.Objects;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -93,7 +94,7 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
 
   @TestOnly
   public @NotNull File getDirectory() {
-    return directory;
+    return directory.getFile();
   }
 
   private void writeStartupCrashMarkerFile() {
@@ -106,14 +107,11 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
           .log(DEBUG, "Outbox path is null, the startup crash marker file will not be written");
       return;
     }
-    final File crashMarkerFile = new File(outboxPath, STARTUP_CRASH_MARKER_FILE);
+    // The outbox dir is no longer created during Sentry.init, so materialize it here in case the
+    // native SDK (which normally creates it) is disabled.
+    final File outboxDir = new LazyDirectory(outboxPath).getOrCreate();
+    final File crashMarkerFile = new File(outboxDir, STARTUP_CRASH_MARKER_FILE);
     try {
-      // The outbox dir is no longer created during Sentry.init, so ensure it exists here in case
-      // the native SDK (which normally creates it) is disabled.
-      final File outboxDir = crashMarkerFile.getParentFile();
-      if (outboxDir != null && !outboxDir.isDirectory()) {
-        outboxDir.mkdirs();
-      }
       crashMarkerFile.createNewFile();
     } catch (Throwable e) {
       options.getLogger().log(ERROR, "Error writing the startup crash marker file to the disk", e);
