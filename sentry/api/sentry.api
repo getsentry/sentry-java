@@ -7925,8 +7925,7 @@ public final class io/sentry/util/ScopesUtil {
 }
 
 public final class io/sentry/util/SentryCallbackReentrancyGuard {
-	public static fun enter ()V
-	public static fun exit ()V
+	public static fun enter ()Lio/sentry/ISentryLifecycleToken;
 	public static fun isActive ()Z
 }
 
