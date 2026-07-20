@@ -57,8 +57,8 @@ public object SentryModifier {
     // SemanticsModifierNode.isImportantForBounds() was added as an abstract method in
     // compose-ui 1.11. Classes compiled against earlier versions lack this method in
     // their bytecode, which causes AbstractMethodError when the accessibility tree is
-    // traversed on 1.11+ runtimes. 
-    // Returning true to match the default behavior 
+    // traversed on 1.11+ runtimes.
+    // Returning true to match the default behavior
     // https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:compose/ui/ui/src/commonMain/kotlin/androidx/compose/ui/node/SemanticsModifierNode.kt;l=69-83;drc=bd7809b4bc9205721c2f1bc681694dd348885849
     @Suppress("unused") fun isImportantForBounds(): Boolean = true
   }
