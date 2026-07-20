@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Improvements
+
+- Skip building Android manifest metadata debug log messages when debug logging is disabled, reducing allocations during SDK init ([#5700](https://github.com/getsentry/sentry-java/pull/5700))
+
 ### Fixes
 
 - Backfill release, environment, distribution, tags, and app version/build—and use the matching replay-on-error sample rate—for `ApplicationExitInfo` ANR and native crash events captured before SDK initialization, without reusing options cached by a later app update ([#5762](https://github.com/getsentry/sentry-java/pull/5762))
