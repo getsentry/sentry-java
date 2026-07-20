@@ -159,6 +159,40 @@ class SentryOkHttpUtilsTest {
   }
 
   @Test
+  fun `data collection filters response headers`() {
+    val sut = fixture.getSut {
+      dataCollection.httpHeaders.response = KeyValueCollectionBehavior.denyList("response")
+    }
+    val request = getRequest()
+    val response = sut.newCall(request).execute()
+
+    SentryOkHttpUtils.captureClientError(fixture.scopes, request, response)
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check {
+          assertEquals("[Filtered]", it.contexts.response!!.headers!!["myResponseHeader"])
+          assertEquals("[Filtered]", it.contexts.response!!.headers!!["Set-Cookie"])
+        },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `data collection can disable response headers`() {
+    val sut = fixture.getSut {
+      dataCollection.httpHeaders.response = KeyValueCollectionBehavior.off()
+    }
+    val request = getRequest()
+    val response = sut.newCall(request).execute()
+
+    SentryOkHttpUtils.captureClientError(fixture.scopes, request, response)
+
+    verify(fixture.scopes)
+      .captureEvent(check { assertTrue(it.contexts.response!!.headers!!.isEmpty()) }, any<Hint>())
+  }
+
+  @Test
   fun `captureClientError without sendDefaultPii does not send headers`() {
     val sut = fixture.getSut(sendDefaultPii = false)
     val request = getRequest()

@@ -48,7 +48,7 @@ internal object SentryKtorClientUtils {
       io.sentry.protocol.Response().apply {
         // Set-Cookie is only sent if isSendDefaultPii is enabled due to PII
         cookies = if (scopes.options.isSendDefaultPii) response.headers["Set-Cookie"] else null
-        headers = getHeaders(scopes, response.headers)
+        headers = getResponseHeaders(scopes, response.headers)
         statusCode = response.status.value
         try {
           bodySize = response.bodyAsBytes().size.toLong()
@@ -74,6 +74,19 @@ internal object SentryKtorClientUtils {
       return HttpUtils.filterHeaders(
           requestHeaders,
           scopes.options.dataCollectionResolver.httpRequestHeaders,
+        )
+        .toMutableMap()
+    }
+    return getHeaders(scopes, headers)
+  }
+
+  private fun getResponseHeaders(scopes: IScopes, headers: Headers): MutableMap<String, String>? {
+    if (scopes.options.dataCollectionResolver.isDataCollectionConfigured) {
+      val responseHeaders =
+        headers.toMap().mapValues { (_, values) -> values.joinToString(",") }.toMutableMap()
+      return HttpUtils.filterHeaders(
+          responseHeaders,
+          scopes.options.dataCollectionResolver.httpResponseHeaders,
         )
         .toMutableMap()
     }
