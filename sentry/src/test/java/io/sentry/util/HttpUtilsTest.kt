@@ -1,5 +1,7 @@
 package io.sentry.util
 
+import com.google.common.truth.Truth.assertThat
+import io.sentry.KeyValueCollectionBehavior
 import java.util.Enumeration
 import java.util.StringTokenizer
 import kotlin.test.Test
@@ -8,6 +10,66 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
 class HttpUtilsTest {
+  @Test
+  fun `header filter disables collection in off mode`() {
+    val filtered =
+      HttpUtils.filterHeaders(
+        mapOf("content-type" to "application/json"),
+        KeyValueCollectionBehavior.off(),
+      )
+
+    assertThat(filtered).isEmpty()
+  }
+
+  @Test
+  fun `header deny list filters built-in sensitive and configured terms`() {
+    val filtered =
+      HttpUtils.filterHeaders(
+        mapOf(
+          "content-type" to "application/json",
+          "authorization" to "Bearer token",
+          "x-customer" to "customer value",
+          "Cookie" to "name=value",
+        ),
+        KeyValueCollectionBehavior.denyList("customer"),
+      )
+
+    assertThat(filtered)
+      .containsExactly(
+        "content-type",
+        "application/json",
+        "authorization",
+        "[Filtered]",
+        "x-customer",
+        "[Filtered]",
+        "Cookie",
+        "[Filtered]",
+      )
+  }
+
+  @Test
+  fun `header allow list only retains allowed non-sensitive values`() {
+    val filtered =
+      HttpUtils.filterHeaders(
+        mapOf(
+          "content-type" to "application/json",
+          "authorization" to "Bearer token",
+          "x-customer" to "customer value",
+        ),
+        KeyValueCollectionBehavior.allowList("content", "authorization"),
+      )
+
+    assertThat(filtered)
+      .containsExactly(
+        "content-type",
+        "application/json",
+        "authorization",
+        "[Filtered]",
+        "x-customer",
+        "[Filtered]",
+      )
+  }
+
   @Test
   fun `null enumeration returns null when filtering security cookies from headers`() {
     val enumeration: Enumeration<String>? = null

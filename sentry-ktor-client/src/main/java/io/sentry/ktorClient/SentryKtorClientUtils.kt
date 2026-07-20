@@ -40,7 +40,7 @@ internal object SentryKtorClientUtils {
         urlDetails.applyToRequest(this)
         cookies = if (scopes.options.isSendDefaultPii) request.headers["Cookie"] else null
         method = request.method.value
-        headers = getHeaders(scopes, request.headers)
+        headers = getRequestHeaders(scopes, request.headers)
         bodySize = request.content.contentLength
       }
 
@@ -65,6 +65,19 @@ internal object SentryKtorClientUtils {
       }
 
     scopes.captureEvent(event, hint)
+  }
+
+  private fun getRequestHeaders(scopes: IScopes, headers: Headers): MutableMap<String, String>? {
+    if (scopes.options.dataCollectionResolver.isDataCollectionConfigured) {
+      val requestHeaders =
+        headers.toMap().mapValues { (_, values) -> values.joinToString(",") }.toMutableMap()
+      return HttpUtils.filterHeaders(
+          requestHeaders,
+          scopes.options.dataCollectionResolver.httpRequestHeaders,
+        )
+        .toMutableMap()
+    }
+    return getHeaders(scopes, headers)
   }
 
   private fun getHeaders(scopes: IScopes, headers: Headers): MutableMap<String, String>? {

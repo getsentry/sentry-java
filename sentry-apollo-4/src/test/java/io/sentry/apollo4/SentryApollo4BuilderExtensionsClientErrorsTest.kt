@@ -10,6 +10,7 @@ import com.apollographql.apollo.exception.ApolloException
 import io.sentry.Hint
 import io.sentry.HttpBodyType
 import io.sentry.IScopes
+import io.sentry.KeyValueCollectionBehavior
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryOptions
 import io.sentry.SentryOptions.DEFAULT_PROPAGATION_TARGETS
@@ -351,6 +352,21 @@ abstract class SentryApollo4BuilderExtensionsClientErrorsTest(
     verify(fixture.scopes)
       .captureEvent(
         check { assertNull(it.request!!.data) },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `data collection can disable request headers`() {
+    val sut =
+      fixture.getSut(responseBody = fixture.responseBodyNotOk) {
+        dataCollection.httpHeaders.request = KeyValueCollectionBehavior.off()
+      }
+    executeQuery(sut)
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check { assertTrue(it.request!!.headers!!.isEmpty()) },
         any<Hint>(),
       )
   }

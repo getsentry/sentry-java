@@ -3,12 +3,15 @@ package io.sentry.util;
 import static io.sentry.util.UrlUtils.SENSITIVE_DATA_SUBSTITUTE;
 
 import io.sentry.HttpStatusCodeRange;
+import io.sentry.KeyValueCollectionBehavior;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -33,6 +36,26 @@ public final class HttpUtils {
           "X-CSRFTOKEN",
           "X-XSRF-TOKEN");
 
+  private static final List<String> SENSITIVE_DATA_KEYS =
+      Arrays.asList(
+          "auth",
+          "token",
+          "secret",
+          "password",
+          "passwd",
+          "pwd",
+          "key",
+          "jwt",
+          "bearer",
+          "sso",
+          "saml",
+          "csrf",
+          "xsrf",
+          "credentials",
+          "session",
+          "sid",
+          "identity");
+
   private static final List<String> SECURITY_COOKIES =
       Arrays.asList(
           "JSESSIONID",
@@ -51,6 +74,43 @@ public final class HttpUtils {
 
   public static boolean containsSensitiveHeader(final @NotNull String header) {
     return SENSITIVE_HEADERS.contains(header.toUpperCase(Locale.ROOT));
+  }
+
+  public static @NotNull Map<String, String> filterHeaders(
+      final @NotNull Map<String, String> headers,
+      final @NotNull KeyValueCollectionBehavior behavior) {
+    final @NotNull Map<String, String> filteredHeaders = new LinkedHashMap<>();
+    if (behavior.getMode() == KeyValueCollectionBehavior.Mode.OFF) {
+      return filteredHeaders;
+    }
+
+    for (final Map.Entry<String, String> header : headers.entrySet()) {
+      final @NotNull String name = header.getKey();
+      final boolean sensitive =
+          containsTerm(name, SENSITIVE_DATA_KEYS)
+              || "Cookie".equalsIgnoreCase(name)
+              || "Set-Cookie".equalsIgnoreCase(name);
+      final boolean matchesTerm = containsTerm(name, behavior.getTerms());
+      final boolean shouldFilter =
+          sensitive
+              || (behavior.getMode() == KeyValueCollectionBehavior.Mode.DENY_LIST && matchesTerm)
+              || (behavior.getMode() == KeyValueCollectionBehavior.Mode.ALLOW_LIST && !matchesTerm);
+      filteredHeaders.put(name, shouldFilter ? SENSITIVE_DATA_SUBSTITUTE : header.getValue());
+    }
+    return filteredHeaders;
+  }
+
+  private static boolean containsTerm(
+      final @NotNull String key, final @NotNull List<String> terms) {
+    final @NotNull String normalizedKey = key.toLowerCase(Locale.ROOT);
+    for (final String term : terms) {
+      if (term != null
+          && !term.isEmpty()
+          && normalizedKey.contains(term.toLowerCase(Locale.ROOT))) {
+        return true;
+      }
+    }
+    return false;
   }
 
   public static @Nullable List<String> filterOutSecurityCookiesFromHeader(

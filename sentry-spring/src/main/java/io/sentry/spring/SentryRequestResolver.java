@@ -60,14 +60,18 @@ public class SentryRequestResolver {
       final @NotNull List<String> additionalSecurityCookieNames) {
     final Map<String, String> headersMap = new HashMap<>();
     for (String headerName : Collections.list(request.getHeaderNames())) {
-      // do not copy personal information identifiable headers
-      if (scopes.getOptions().isSendDefaultPii()
+      if (scopes.getOptions().getDataCollectionResolver().isDataCollectionConfigured()
+          || scopes.getOptions().isSendDefaultPii()
           || !HttpUtils.containsSensitiveHeader(headerName)) {
         final @Nullable List<String> filteredHeaders =
             HttpUtils.filterOutSecurityCookiesFromHeader(
                 request.getHeaders(headerName), headerName, additionalSecurityCookieNames);
         headersMap.put(headerName, toString(filteredHeaders));
       }
+    }
+    if (scopes.getOptions().getDataCollectionResolver().isDataCollectionConfigured()) {
+      return HttpUtils.filterHeaders(
+          headersMap, scopes.getOptions().getDataCollectionResolver().getHttpRequestHeaders());
     }
     return headersMap;
   }
