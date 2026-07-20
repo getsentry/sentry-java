@@ -955,6 +955,19 @@ public final class SentryClient implements ISentryClient {
 
   private @NotNull SentryId sendEnvelope(
       @NotNull final SentryEnvelope envelope, @Nullable final Hint hint) throws IOException {
+    // captureEnvelope and captureCheckIn have no entry-level guard, so a callback that captures
+    // one of those would recurse back into beforeEnvelopeCallback. In normal flow the guard is
+    // already inactive by the time we get here (the before* callback has exited), so an active
+    // guard means a callback triggered this send.
+    if (SentryCallbackReentrancyGuard.isActive()) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Envelope captured from within a callback was dropped to prevent recursion.");
+      return SentryId.EMPTY_ID;
+    }
+
     final @Nullable SentryOptions.BeforeEnvelopeCallback beforeEnvelopeCallback =
         options.getBeforeEnvelopeCallback();
     if (beforeEnvelopeCallback != null) {
