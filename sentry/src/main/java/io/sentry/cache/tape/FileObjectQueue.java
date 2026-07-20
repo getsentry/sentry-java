@@ -60,6 +60,11 @@ final class FileObjectQueue<T> extends ObjectQueue<T> {
   }
 
   @Override
+  public void sync() throws IOException {
+    queueFile.sync();
+  }
+
+  @Override
   public @Nullable T peek() throws IOException {
     byte[] bytes = queueFile.peek();
     if (bytes == null) return null;

@@ -130,13 +130,22 @@ public final class QueueFile implements Closeable, Iterable<byte[]> {
   /** A number of elements at which this queue will wrap around (ring buffer). */
   private final int maxElements;
 
+  /**
+   * When {@code false}, writes are buffered by the OS and callers must call {@link #sync()} to make
+   * them durable. This lets callers batch many adds behind a single fsync instead of paying one
+   * fsync per write.
+   */
+  private final boolean synchronousWrites;
+
   boolean closed;
 
-  static RandomAccessFile initializeFromFile(File file) throws IOException {
+  static RandomAccessFile initializeFromFile(File file, boolean synchronousWrites)
+      throws IOException {
     if (!file.exists()) {
       // Use a temp file so we don't leave a partially-initialized file.
       File tempFile = new File(file.getPath() + ".tmp");
-      RandomAccessFile raf = open(tempFile);
+      // The one-time initialization is always synchronous so the header is durable before rename.
+      RandomAccessFile raf = open(tempFile, true);
       try {
         raf.setLength(INITIAL_LENGTH);
         raf.seek(0);
@@ -152,21 +161,34 @@ public final class QueueFile implements Closeable, Iterable<byte[]> {
       }
     }
 
-    return open(file);
+    return open(file, synchronousWrites);
   }
 
-  /** Opens a random access file that writes synchronously. */
-  private static RandomAccessFile open(File file) throws FileNotFoundException {
-    return new RandomAccessFile(file, "rwd");
+  private static RandomAccessFile open(File file, boolean synchronousWrites)
+      throws FileNotFoundException {
+    return new RandomAccessFile(file, synchronousWrites ? "rwd" : "rw");
   }
 
-  QueueFile(File file, RandomAccessFile raf, boolean zero, int maxElements) throws IOException {
+  QueueFile(
+      File file, RandomAccessFile raf, boolean zero, int maxElements, boolean synchronousWrites)
+      throws IOException {
     this.file = file;
     this.raf = raf;
     this.zero = zero;
     this.maxElements = maxElements;
+    this.synchronousWrites = synchronousWrites;
 
     readInitialData();
+  }
+
+  /**
+   * Flushes buffered writes to storage. No-op when the queue was opened with synchronous writes,
+   * since those are already durable.
+   */
+  public void sync() throws IOException {
+    if (!synchronousWrites) {
+      raf.getChannel().force(false);
+    }
   }
 
   private void readInitialData() throws IOException {
@@ -196,7 +218,7 @@ public final class QueueFile implements Closeable, Iterable<byte[]> {
   private void resetFile() throws IOException {
     raf.close();
     file.delete();
-    raf = initializeFromFile(file);
+    raf = initializeFromFile(file, synchronousWrites);
     readInitialData();
   }
 
@@ -767,6 +789,7 @@ public final class QueueFile implements Closeable, Iterable<byte[]> {
     final File file;
     boolean zero = true;
     int size = -1;
+    boolean synchronousWrites = true;
 
     /** Start constructing a new queue backed by the given file. */
     public Builder(File file) {
@@ -789,14 +812,23 @@ public final class QueueFile implements Closeable, Iterable<byte[]> {
     }
 
     /**
+     * When {@code false}, writes are buffered and the caller must call {@link QueueFile#sync()} to
+     * make them durable. Defaults to {@code true} (every write is fsync'd).
+     */
+    public Builder synchronousWrites(boolean synchronousWrites) {
+      this.synchronousWrites = synchronousWrites;
+      return this;
+    }
+
+    /**
      * Constructs a new queue backed by the given builder. Only one instance should access a given
      * file at a time.
      */
     public QueueFile build() throws IOException {
-      RandomAccessFile raf = initializeFromFile(file);
+      RandomAccessFile raf = initializeFromFile(file, synchronousWrites);
       QueueFile qf = null;
       try {
-        qf = new QueueFile(file, raf, zero, size);
+        qf = new QueueFile(file, raf, zero, size, synchronousWrites);
         return qf;
       } finally {
         if (qf == null) {

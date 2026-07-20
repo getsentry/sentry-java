@@ -49,7 +49,8 @@ class QueueFileTest {
   @get:Rule val folder = TemporaryFolder()
   private lateinit var file: File
 
-  private fun newQueueFile(raf: RandomAccessFile): QueueFile = QueueFile(this.file, raf, true, -1)
+  private fun newQueueFile(raf: RandomAccessFile): QueueFile =
+    QueueFile(this.file, raf, true, -1, true)
 
   private fun newQueueFile(zero: Boolean = true, size: Int = -1): QueueFile =
     Builder(file).zero(zero).size(size).build()
@@ -70,6 +71,21 @@ class QueueFileTest {
     queue.close()
     queue = newQueueFile()
     assertArrayEquals(queue.peek(), expected)
+  }
+
+  @Test
+  fun bufferedWritesSurviveReopenAfterSync() {
+    var queue = Builder(file).synchronousWrites(false).build()
+    val first = values[253]
+    val second = values[25]
+    queue.add(first)
+    queue.add(second)
+    queue.sync()
+    queue.close()
+
+    queue = newQueueFile()
+    assertEquals(2, queue.size())
+    assertArrayEquals(queue.peek(), first)
   }
 
   @Test
