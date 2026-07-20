@@ -55,6 +55,12 @@ public abstract class ObjectQueue<T> implements Iterable<T>, Closeable {
   public abstract void add(T entry) throws IOException;
 
   /**
+   * Flushes any buffered writes to storage. No-op for queues that already write synchronously or
+   * are purely in-memory.
+   */
+  public void sync() throws IOException {}
+
+  /**
    * Returns the head of the queue, or {@code null} if the queue is empty. Does not modify the
    * queue.
    */

@@ -7,7 +7,6 @@ import static io.sentry.cache.CacheUtils.ensureCacheDir;
 import io.sentry.Breadcrumb;
 import io.sentry.IScope;
 import io.sentry.ScopeObserverAdapter;
-import io.sentry.SentryExecutorService;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.SpanContext;
@@ -29,14 +28,32 @@ import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.TestOnly;
 
 public final class PersistingScopeObserver extends ScopeObserverAdapter {
 
   private static final Charset UTF_8 = Charset.forName("UTF-8");
+
+  /**
+   * How long scope mutations are coalesced before being flushed to disk. Rather than writing on
+   * every mutation, we keep only the latest value per file (and buffer breadcrumbs) and flush them
+   * together after this delay. This trades a small data-loss window (mutations from the last
+   * ~{@value #FLUSH_AFTER_MS} ms before the process dies) for far fewer disk writes and fsyncs,
+   * which is significant during startup.
+   */
+  static final long FLUSH_AFTER_MS = 100;
+
+  /** Sentinel value marking a file that should be deleted rather than written on the next flush. */
+  private static final Object DELETE_MARKER = new Object();
 
   public static final String SCOPE_CACHE = ".scope-cache";
   public static final String USER_FILENAME = "user.json";
@@ -65,7 +82,11 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
             final File file = new File(cacheDir, BREADCRUMBS_FILENAME);
             try {
               try {
-                queueFile = new QueueFile.Builder(file).size(options.getMaxBreadcrumbs()).build();
+                queueFile =
+                    new QueueFile.Builder(file)
+                        .size(options.getMaxBreadcrumbs())
+                        .synchronousWrites(false)
+                        .build();
               } catch (IOException e) {
                 // if file is corrupted we simply delete it and try to create it again. We accept
                 // the trade
@@ -74,7 +95,11 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
                 // update where the new format was introduced
                 file.delete();
 
-                queueFile = new QueueFile.Builder(file).size(options.getMaxBreadcrumbs()).build();
+                queueFile =
+                    new QueueFile.Builder(file)
+                        .size(options.getMaxBreadcrumbs())
+                        .synchronousWrites(false)
+                        .build();
               }
             } catch (IOException e) {
               options.getLogger().log(ERROR, "Failed to create breadcrumbs queue", e);
@@ -106,32 +131,29 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
                 });
           });
 
+  // Latest pending value per file (or DELETE_MARKER), coalesced until the next flush.
+  private final @NotNull Map<String, Object> pendingWrites = new ConcurrentHashMap<>();
+  // Breadcrumbs buffered since the last flush, appended together behind a single fsync.
+  private final @NotNull Queue<Breadcrumb> pendingBreadcrumbs = new ConcurrentLinkedQueue<>();
+  private final @NotNull AtomicBoolean pendingBreadcrumbsClear = new AtomicBoolean(false);
+  private final @NotNull AtomicBoolean hasScheduledFlush = new AtomicBoolean(false);
+
   public PersistingScopeObserver(final @NotNull SentryOptions options) {
     this.options = options;
   }
 
   @Override
   public void setUser(final @Nullable User user) {
-    serializeToDisk(
-        () -> {
-          if (user == null) {
-            delete(USER_FILENAME);
-          } else {
-            store(user, USER_FILENAME);
-          }
-        });
+    enqueue(USER_FILENAME, user);
   }
 
   @Override
   public void addBreadcrumb(@NotNull Breadcrumb crumb) {
-    serializeToDisk(
-        () -> {
-          try {
-            breadcrumbsQueue.getValue().add(crumb);
-          } catch (IOException e) {
-            options.getLogger().log(ERROR, "Failed to add breadcrumb to file queue", e);
-          }
-        });
+    if (!options.isEnableScopePersistence()) {
+      return;
+    }
+    pendingBreadcrumbs.offer(crumb);
+    scheduleFlush();
   }
 
   @Override
@@ -139,108 +161,153 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
     if (breadcrumbs.isEmpty()) {
       // we only clear the queue if the new collection is empty (someone called clearBreadcrumbs)
       // If it's not empty, we'd add breadcrumbs one-by-one in the method above
-      serializeToDisk(
-          () -> {
-            try {
-              breadcrumbsQueue.getValue().clear();
-            } catch (IOException e) {
-              options.getLogger().log(ERROR, "Failed to clear breadcrumbs from file queue", e);
-            }
-          });
+      if (!options.isEnableScopePersistence()) {
+        return;
+      }
+      // drop breadcrumbs buffered before the clear; anything added after it is enqueued again
+      pendingBreadcrumbs.clear();
+      pendingBreadcrumbsClear.set(true);
+      scheduleFlush();
     }
   }
 
   @Override
   public void setTags(@NotNull Map<String, @NotNull String> tags) {
-    serializeToDisk(() -> store(tags, TAGS_FILENAME));
+    enqueue(TAGS_FILENAME, tags);
   }
 
   @Override
   public void setExtras(@NotNull Map<String, @NotNull Object> extras) {
-    serializeToDisk(() -> store(extras, EXTRAS_FILENAME));
+    enqueue(EXTRAS_FILENAME, extras);
   }
 
   @Override
   public void setRequest(@Nullable Request request) {
-    serializeToDisk(
-        () -> {
-          if (request == null) {
-            delete(REQUEST_FILENAME);
-          } else {
-            store(request, REQUEST_FILENAME);
-          }
-        });
+    enqueue(REQUEST_FILENAME, request);
   }
 
   @Override
   public void setFingerprint(@NotNull Collection<String> fingerprint) {
-    serializeToDisk(() -> store(fingerprint, FINGERPRINT_FILENAME));
+    enqueue(FINGERPRINT_FILENAME, fingerprint);
   }
 
   @Override
   public void setLevel(@Nullable SentryLevel level) {
-    serializeToDisk(
-        () -> {
-          if (level == null) {
-            delete(LEVEL_FILENAME);
-          } else {
-            store(level, LEVEL_FILENAME);
-          }
-        });
+    enqueue(LEVEL_FILENAME, level);
   }
 
   @Override
   public void setTransaction(@Nullable String transaction) {
-    serializeToDisk(
-        () -> {
-          if (transaction == null) {
-            delete(TRANSACTION_FILENAME);
-          } else {
-            store(transaction, TRANSACTION_FILENAME);
-          }
-        });
+    enqueue(TRANSACTION_FILENAME, transaction);
   }
 
   @Override
   public void setTrace(@Nullable SpanContext spanContext, @NotNull IScope scope) {
-    serializeToDisk(
-        () -> {
-          if (spanContext == null) {
-            // we always need a trace_id to properly link with traces/replays, so we fallback to
-            // propagation context values and create a fake SpanContext
-            store(scope.getPropagationContext().toSpanContext(), TRACE_FILENAME);
-          } else {
-            store(spanContext, TRACE_FILENAME);
-          }
-        });
+    // we always need a trace_id to properly link with traces/replays, so we fallback to
+    // propagation context values and create a fake SpanContext
+    enqueue(
+        TRACE_FILENAME,
+        spanContext == null ? scope.getPropagationContext().toSpanContext() : spanContext);
   }
 
   @Override
   public void setContexts(@NotNull Contexts contexts) {
-    serializeToDisk(() -> store(contexts, CONTEXTS_FILENAME));
+    enqueue(CONTEXTS_FILENAME, contexts);
   }
 
   @Override
   public void setReplayId(@NotNull SentryId replayId) {
-    serializeToDisk(() -> store(replayId, REPLAY_FILENAME));
+    enqueue(REPLAY_FILENAME, replayId);
   }
 
-  @SuppressWarnings("FutureReturnValueIgnored")
-  private void serializeToDisk(final @NotNull Runnable task) {
+  private void enqueue(final @NotNull String fileName, final @Nullable Object entity) {
     if (!options.isEnableScopePersistence()) {
       return;
     }
-    if (SentryExecutorService.isSentryExecutorThread()) {
-      // we're already on the sentry executor thread, so we can just execute it directly
-      runSafely(task);
+    // latest value wins; a null entity means the file should be deleted on the next flush
+    pendingWrites.put(fileName, entity == null ? DELETE_MARKER : entity);
+    scheduleFlush();
+  }
+
+  @SuppressWarnings("FutureReturnValueIgnored")
+  private void scheduleFlush() {
+    if (!hasScheduledFlush.compareAndSet(false, true)) {
+      // a flush is already scheduled; it will pick up the latest pending state
       return;
     }
-
     try {
-      options.getExecutorService().submit(() -> runSafely(task));
+      options.getExecutorService().schedule(this::flushOnExecutor, FLUSH_AFTER_MS);
     } catch (Throwable e) {
-      options.getLogger().log(ERROR, "Serialization task could not be scheduled", e);
+      hasScheduledFlush.set(false);
+      options.getLogger().log(ERROR, "Scope persistence flush could not be scheduled", e);
     }
+  }
+
+  private void flushOnExecutor() {
+    runSafely(this::flushPending);
+    hasScheduledFlush.set(false);
+    // reschedule if mutations arrived while we were flushing
+    if (!pendingWrites.isEmpty()
+        || !pendingBreadcrumbs.isEmpty()
+        || pendingBreadcrumbsClear.get()) {
+      scheduleFlush();
+    }
+  }
+
+  /** Writes all coalesced scope state to disk. Does I/O; must run off the caller/main thread. */
+  private void flushPending() {
+    for (final @NotNull String fileName : new ArrayList<>(pendingWrites.keySet())) {
+      final @Nullable Object entity = pendingWrites.remove(fileName);
+      if (entity == null) {
+        // removed by a concurrent flush
+        continue;
+      }
+      if (entity == DELETE_MARKER) {
+        delete(fileName);
+      } else {
+        store(entity, fileName);
+      }
+    }
+
+    boolean breadcrumbsChanged = false;
+    final @NotNull ObjectQueue<Breadcrumb> queue = breadcrumbsQueue.getValue();
+
+    if (pendingBreadcrumbsClear.compareAndSet(true, false)) {
+      try {
+        queue.clear();
+        breadcrumbsChanged = true;
+      } catch (IOException e) {
+        options.getLogger().log(ERROR, "Failed to clear breadcrumbs from file queue", e);
+      }
+    }
+
+    Breadcrumb crumb;
+    while ((crumb = pendingBreadcrumbs.poll()) != null) {
+      try {
+        queue.add(crumb);
+        breadcrumbsChanged = true;
+      } catch (IOException e) {
+        options.getLogger().log(ERROR, "Failed to add breadcrumb to file queue", e);
+      }
+    }
+
+    if (breadcrumbsChanged) {
+      try {
+        // single fsync for the whole batch instead of one per breadcrumb
+        queue.sync();
+      } catch (IOException e) {
+        options.getLogger().log(ERROR, "Failed to sync breadcrumbs file queue", e);
+      }
+    }
+  }
+
+  /**
+   * Synchronously writes any pending scope state to disk. Does I/O on the calling thread, so it's
+   * only meant for tests and shutdown, not the hot path.
+   */
+  @TestOnly
+  void flush() {
+    runSafely(this::flushPending);
   }
 
   private void runSafely(final @NotNull Runnable task) {
@@ -288,7 +355,10 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
   public void resetCache() {
     // since it keeps a reference to the file and we cannot delete it, breadcrumbs we just clear
     try {
-      breadcrumbsQueue.getValue().clear();
+      final @NotNull ObjectQueue<Breadcrumb> queue = breadcrumbsQueue.getValue();
+      queue.clear();
+      // breadcrumbs use buffered writes, so make the clear durable explicitly
+      queue.sync();
     } catch (IOException e) {
       options.getLogger().log(ERROR, "Failed to clear breadcrumbs from file queue", e);
     }
