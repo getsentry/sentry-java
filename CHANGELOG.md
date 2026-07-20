@@ -6,6 +6,8 @@
 
 - Backfill release, environment, distribution, tags, and app version/build—and use the matching replay-on-error sample rate—for `ApplicationExitInfo` ANR and native crash events captured before SDK initialization, without reusing options cached by a later app update ([#5762](https://github.com/getsentry/sentry-java/pull/5762))
 - `SentryTagModifierNode.isImportantForBounds` now matches the default behavior and returns `true` ([#5789](https://github.com/getsentry/sentry-java/pull/5789))
+- Prevent a `StackOverflowError` when a `beforeSend`, `beforeBreadcrumb`, or `beforeSendLog` callback triggers another capture (directly or through a logging integration such as Timber) ([#5737](https://github.com/getsentry/sentry-java/pull/5737))
+  - Captures made from within a user callback (event, transaction, breadcrumb, or log) are now dropped while that callback runs, instead of recursing. Captures made by event processors are unaffected.
 
 ## 8.49.0
 
@@ -94,8 +96,6 @@
 - Fix `NoSuchMethodError` from using `Math.floorDiv`/`Math.floorMod` overloads that are unavailable on Java 8 ([#5743](https://github.com/getsentry/sentry-java/pull/5743))
 - Fix main thread identification parsing for ApplicationExitInfo ANRs ([#5733](https://github.com/getsentry/sentry-java/pull/5733))
 - Do not send threads without stacktraces for ApplicationExitInfo ANRs ([#5733](https://github.com/getsentry/sentry-java/pull/5733))
-- Prevent a `StackOverflowError` when a `beforeSend`, `beforeBreadcrumb`, or `beforeSendLog` callback triggers another capture (directly or through a logging integration such as Timber) ([#5737](https://github.com/getsentry/sentry-java/pull/5737))
-  - Captures made from within a user callback (event, transaction, breadcrumb, or log) are now dropped while that callback runs, instead of recursing. Captures made by event processors are unaffected.
 - Record byte-level client reports when event processors discard logs or trace metrics ([#5718](https://github.com/getsentry/sentry-java/pull/5718))
 - Name the device-info caching thread `SentryDeviceInfoCache` so all threads spawned by the SDK are identifiable ([#5684](https://github.com/getsentry/sentry-java/pull/5684))
 - Apply byte-category rate limits to log and trace metric envelope items ([#5716](https://github.com/getsentry/sentry-java/pull/5716))
