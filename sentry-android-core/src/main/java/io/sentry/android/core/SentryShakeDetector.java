@@ -53,6 +53,14 @@ public final class SentryShakeDetector implements SensorEventListener {
   }
 
   /**
+   * Re-arms the detector after a previous {@link #close()} so it can be reused when the owning
+   * integration is registered again (e.g. a second {@code Sentry.init}).
+   */
+  synchronized void reopen() {
+    closed = false;
+  }
+
+  /**
    * Initializes the sensor manager and accelerometer sensor. This is separated from start() so the
    * values can be resolved once and reused across activity transitions.
    */

@@ -50,6 +50,11 @@ public final class FeedbackShakeIntegration
       return;
     }
 
+    // Re-arm the detector in case this integration is being re-registered after a previous close()
+    // (e.g. a second Sentry.init reusing the same options), otherwise the closed latch would keep
+    // shake detection off permanently.
+    shakeDetector.reopen();
+
     // Resolving the accelerometer is the most expensive part of init (the first SensorManager
     // access), so warm it up off the main thread. start() re-runs init() on demand, so shake
     // detection still works if an activity resumes before this completes.

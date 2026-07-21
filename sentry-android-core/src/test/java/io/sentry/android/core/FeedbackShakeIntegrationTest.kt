@@ -12,6 +12,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
+import org.mockito.kotlin.atLeastOnce
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
@@ -90,6 +91,24 @@ class FeedbackShakeIntegrationTest {
     deferredExecutor.runAll()
 
     verify(fixture.application, never()).getSystemService(eq(Context.SENSOR_SERVICE))
+  }
+
+  @Test
+  fun `re-registering after close re-arms shake detection`() {
+    // A second Sentry.init reusing the same integration must revive shake detection rather than
+    // stay off because of the closed latch.
+    val deferredExecutor = DeferredExecutorService()
+    fixture.options.executorService = deferredExecutor
+    whenever(fixture.application.getSystemService(any())).thenReturn(null)
+
+    val sut = fixture.getSut(useShakeGesture = true)
+    sut.register(fixture.scopes, fixture.options)
+    sut.close()
+    sut.register(fixture.scopes, fixture.options)
+
+    deferredExecutor.runAll()
+
+    verify(fixture.application, atLeastOnce()).getSystemService(eq(Context.SENSOR_SERVICE))
   }
 
   @Test
