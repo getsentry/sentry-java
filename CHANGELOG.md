@@ -27,7 +27,34 @@
       <scope>import</scope>
     </dependency>
     ```
-    - Add log4j2 spring boot 4 autoconfiguration ([#5403](https://github.com/getsentry/sentry-java/pull/5403))
+   - Sentry can now configure Log4j2 automatically for Spring Boot 4 when `sentry-log4j2` is on the classpath and Log4j2 Core is the active logging backend ([#5403](https://github.com/getsentry/sentry-java/pull/5403))
+     - Enable automatic appender registration with:
+       ```properties
+       sentry.logging.enabled=true
+       ```
+       Automatic registration is disabled by default for now and will be enabled by default in the next major release.
+     - The appender is attached to the root logger by default. Configure one or more logger names with:
+       ```properties
+       sentry.logging.loggers[0]=ROOT
+       sentry.logging.loggers[1]=com.example
+       ```
+     - Configure the minimum level for creating breadcrumbs. The default is `INFO`:
+       ```properties
+       sentry.logging.minimum-breadcrumb-level=INFO
+       ```
+     - Configure the minimum level for creating Sentry error events. The default is `ERROR`:
+       ```properties
+       sentry.logging.minimum-event-level=ERROR
+       ```
+     - Configure the minimum level for sending Sentry structured logs. The default is `INFO`:
+       ```properties
+       sentry.logging.minimum-level=INFO
+       ```
+       Structured logs must also be enabled:
+       ```properties
+       sentry.logs.enabled=true
+       ```
+     - Existing manually configured `SentryAppender` instances take precedence over automatic configuration.
 
 ### Fixes
 
