@@ -59,6 +59,8 @@ internal class PixelCopyStrategy(
   private val contentChanged = AtomicBoolean(false)
   private val unstableCaptures = AtomicInteger(0)
   private val isClosed = AtomicBoolean(false)
+  private val frameInFlight = AtomicBoolean(false)
+  private val cleanupScheduled = AtomicBoolean(false)
   private val dstOverPaint by
     lazy(NONE) { Paint().apply { xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_OVER) } }
   private val screenshotCanvas by lazy(NONE) { Canvas(screenshot) }
@@ -77,8 +79,14 @@ internal class PixelCopyStrategy(
       return
     }
 
+    if (!frameInFlight.compareAndSet(false, true)) {
+      options.logger.log(DEBUG, "PixelCopyStrategy capture is already in flight, skipping")
+      return
+    }
+
     if (isClosed.get()) {
       options.logger.log(DEBUG, "PixelCopyStrategy is closed, not capturing screenshot")
+      finishFrame()
       return
     }
 
@@ -90,6 +98,7 @@ internal class PixelCopyStrategy(
         { copyResult: Int ->
           if (isClosed.get()) {
             options.logger.log(DEBUG, "PixelCopyStrategy is closed, ignoring capture result")
+            finishFrame()
             return@request
           }
 
@@ -97,11 +106,13 @@ internal class PixelCopyStrategy(
             options.logger.log(INFO, "Failed to capture replay recording: %d", copyResult)
             unstableCaptures.set(0)
             lastCaptureSuccessful.set(false)
+            finishFrame()
             return@request
           }
 
           val changedDuringCapture = contentChanged.get()
           if (changedDuringCapture && shouldSkipUnstableCapture()) {
+            finishFrame()
             return@request
           }
 
@@ -116,15 +127,23 @@ internal class PixelCopyStrategy(
           root.traverse(viewHierarchy, options.sessionReplay, options.logger, surfaceViewNodes)
 
           if (surfaceViewNodes.isNullOrEmpty()) {
-            executor.submit(
-              ReplayRunnable("screenshot_recorder.mask") {
-                applyMaskingAndNotify(
-                  root,
-                  viewHierarchy,
-                  resetUnstableCaptures = !changedDuringCapture,
-                )
-              }
-            )
+            val submitted =
+              executor.submit(
+                ReplayRunnable("screenshot_recorder.mask") {
+                  try {
+                    applyMaskingAndNotify(
+                      root,
+                      viewHierarchy,
+                      resetUnstableCaptures = !changedDuringCapture,
+                    )
+                  } finally {
+                    finishFrame()
+                  }
+                }
+              )
+            if (submitted == null) {
+              finishFrame()
+            }
           } else {
             // Re-arm the recorder's contentChanged gate; SurfaceView redraws don't trigger
             // ViewTreeObserver.OnDrawListener, so we'd otherwise emit the same frame forever.
@@ -143,6 +162,7 @@ internal class PixelCopyStrategy(
       options.logger.log(WARNING, "Failed to capture replay recording", e)
       unstableCaptures.set(0)
       lastCaptureSuccessful.set(false)
+      finishFrame()
     }
   }
 
@@ -272,37 +292,46 @@ internal class PixelCopyStrategy(
     windowY: Int,
     resetUnstableCaptures: Boolean,
   ) {
-    executor.submit(
-      ReplayRunnable("screenshot_recorder.composite") {
-        if (isClosed.get() || screenshot.isRecycled) {
-          options.logger.log(DEBUG, "PixelCopyStrategy is closed, skipping compositing")
-          recycleCaptures(captures)
-          return@ReplayRunnable
+    val submitted =
+      executor.submit(
+        ReplayRunnable("screenshot_recorder.composite") {
+          try {
+            if (isClosed.get() || screenshot.isRecycled) {
+              options.logger.log(DEBUG, "PixelCopyStrategy is closed, skipping compositing")
+              recycleCaptures(captures)
+              return@ReplayRunnable
+            }
+
+            for (capture in captures) {
+              if (capture == null) continue
+              if (capture.bitmap.isRecycled) continue
+
+              compositeSurfaceViewInto(
+                screenshotCanvas,
+                dstOverPaint,
+                tmpSrcRect,
+                tmpDstRect,
+                capture.bitmap,
+                capture.x,
+                capture.y,
+                windowX,
+                windowY,
+                config.scaleFactorX,
+                config.scaleFactorY,
+              )
+              capture.bitmap.recycle()
+            }
+
+            applyMaskingAndNotify(root, viewHierarchy, resetUnstableCaptures)
+          } finally {
+            finishFrame()
+          }
         }
-
-        for (capture in captures) {
-          if (capture == null) continue
-          if (capture.bitmap.isRecycled) continue
-
-          compositeSurfaceViewInto(
-            screenshotCanvas,
-            dstOverPaint,
-            tmpSrcRect,
-            tmpDstRect,
-            capture.bitmap,
-            capture.x,
-            capture.y,
-            windowX,
-            windowY,
-            config.scaleFactorX,
-            config.scaleFactorY,
-          )
-          capture.bitmap.recycle()
-        }
-
-        applyMaskingAndNotify(root, viewHierarchy, resetUnstableCaptures)
-      }
-    )
+      )
+    if (submitted == null) {
+      recycleCaptures(captures)
+      finishFrame()
+    }
   }
 
   private fun recycleCaptures(captures: Array<SurfaceViewCapture?>) {
@@ -322,7 +351,7 @@ internal class PixelCopyStrategy(
   }
 
   override fun emitLastScreenshot() {
-    if (lastCaptureSuccessful() && !screenshot.isRecycled) {
+    if (!frameInFlight.get() && lastCaptureSuccessful() && !screenshot.isRecycled) {
       screenshotRecorderCallback?.onScreenshotRecorded(screenshot)
     }
   }
@@ -330,6 +359,22 @@ internal class PixelCopyStrategy(
   override fun close() {
     isClosed.set(true)
     unstableCaptures.set(0)
+    if (!frameInFlight.get()) {
+      scheduleCleanup()
+    }
+  }
+
+  private fun finishFrame() {
+    frameInFlight.set(false)
+    if (isClosed.get()) {
+      scheduleCleanup()
+    }
+  }
+
+  private fun scheduleCleanup() {
+    if (!cleanupScheduled.compareAndSet(false, true)) {
+      return
+    }
     executor.submit(
       ReplayRunnable(
         "PixelCopyStrategy.close",
