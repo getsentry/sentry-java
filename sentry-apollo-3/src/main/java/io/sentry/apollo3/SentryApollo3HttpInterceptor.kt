@@ -264,6 +264,21 @@ constructor(
   private fun getHeader(key: String, headers: List<HttpHeader>): String? =
     headers.firstOrNull { it.name.equals(key, true) }?.value
 
+  private fun getRequestHeaders(headers: List<HttpHeader>): MutableMap<String, String>? {
+    if (scopes.options.dataCollectionResolver.isDataCollectionConfigured) {
+      val requestHeaders = mutableMapOf<String, String>()
+      for (header in headers) {
+        requestHeaders[header.name] = header.value
+      }
+      return HttpUtils.filterHeaders(
+          requestHeaders,
+          scopes.options.dataCollectionResolver.httpRequestHeaders,
+        )
+        .toMutableMap()
+    }
+    return getHeaders(headers)
+  }
+
   private fun getHeaders(headers: List<HttpHeader>): MutableMap<String, String>? {
     // Headers are only sent if isSendDefaultPii is enabled due to PII
     if (!scopes.options.isSendDefaultPii) {
@@ -359,7 +374,7 @@ constructor(
           cookies =
             if (scopes.options.isSendDefaultPii) getHeader("Cookie", request.headers) else null
           method = request.method.name
-          headers = getHeaders(request.headers)
+          headers = getRequestHeaders(request.headers)
           apiTarget = "graphql"
 
           request.body?.let {

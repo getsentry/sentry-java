@@ -14,6 +14,7 @@ import io.sentry.Hint
 import io.sentry.HttpStatusCodeRange
 import io.sentry.IScope
 import io.sentry.IScopes
+import io.sentry.KeyValueCollectionBehavior
 import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.Sentry
@@ -253,6 +254,56 @@ class SentryKtorClientPluginTest {
     sut.get(fixture.server.url("/hello").toString())
 
     verify(fixture.scopes, never()).captureEvent(any(), any<Hint>())
+  }
+
+  @Test
+  fun `data collection filters request headers`(): Unit = runBlocking {
+    val sut =
+      fixture.getSut(
+        captureFailedRequests = true,
+        httpStatusCode = 500,
+        optionsConfiguration =
+          Sentry.OptionsConfiguration {
+            it.dataCollection.httpHeaders.request = KeyValueCollectionBehavior.denyList("customer")
+          },
+      )
+
+    sut.get(fixture.server.url("/hello").toString()) {
+      headers["content-type"] = "application/json"
+      headers["authorization"] = "Bearer token"
+      headers["x-customer"] = "customer value"
+    }
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check<SentryEvent> {
+          assertEquals("application/json", it.request!!.headers!!["content-type"])
+          assertEquals("[Filtered]", it.request!!.headers!!["authorization"])
+          assertEquals("[Filtered]", it.request!!.headers!!["x-customer"])
+        },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `data collection can disable request headers`(): Unit = runBlocking {
+    val sut =
+      fixture.getSut(
+        captureFailedRequests = true,
+        httpStatusCode = 500,
+        optionsConfiguration =
+          Sentry.OptionsConfiguration {
+            it.dataCollection.httpHeaders.request = KeyValueCollectionBehavior.off()
+          },
+      )
+
+    sut.get(fixture.server.url("/hello").toString()) { headers["myHeader"] = "myValue" }
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check<SentryEvent> { assertTrue(it.request!!.headers!!.isEmpty()) },
+        any<Hint>(),
+      )
   }
 
   @Test

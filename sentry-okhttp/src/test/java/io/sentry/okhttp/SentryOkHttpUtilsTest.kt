@@ -2,6 +2,7 @@ package io.sentry.okhttp
 
 import io.sentry.Hint
 import io.sentry.IScopes
+import io.sentry.KeyValueCollectionBehavior
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer
 import io.sentry.TransactionContext
@@ -36,12 +37,14 @@ class SentryOkHttpUtilsTest {
       responseBody: String = "success",
       socketPolicy: SocketPolicy = SocketPolicy.KEEP_OPEN,
       sendDefaultPii: Boolean = false,
+      configureOptions: SentryOptions.() -> Unit = {},
     ): OkHttpClient {
       val options =
         SentryOptions().apply {
           dsn = "https://key@sentry.io/proj"
           setTracePropagationTargets(listOf(server.hostName))
           isSendDefaultPii = sendDefaultPii
+          configureOptions()
         }
       whenever(scopes.options).thenReturn(options)
 
@@ -119,6 +122,40 @@ class SentryOkHttpUtilsTest {
         },
         any<Hint>(),
       )
+  }
+
+  @Test
+  fun `data collection filters request headers`() {
+    val sut = fixture.getSut {
+      dataCollection.httpHeaders.request = KeyValueCollectionBehavior.denyList("myheader")
+    }
+    val request = getRequest()
+    val response = sut.newCall(request).execute()
+
+    SentryOkHttpUtils.captureClientError(fixture.scopes, request, response)
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check {
+          assertEquals("[Filtered]", it.request!!.headers!!["myHeader"])
+          assertEquals("[Filtered]", it.request!!.headers!!["Cookie"])
+        },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `data collection can disable request headers`() {
+    val sut = fixture.getSut {
+      dataCollection.httpHeaders.request = KeyValueCollectionBehavior.off()
+    }
+    val request = getRequest()
+    val response = sut.newCall(request).execute()
+
+    SentryOkHttpUtils.captureClientError(fixture.scopes, request, response)
+
+    verify(fixture.scopes)
+      .captureEvent(check { assertTrue(it.request!!.headers!!.isEmpty()) }, any<Hint>())
   }
 
   @Test
