@@ -48,7 +48,8 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
       final @NotNull ICurrentDateProvider currentDateProvider) {
     super(
         options,
-        Objects.requireNonNull(options.getCacheDirPath(), "cacheDirPath must not be null"),
+        new LazyDirectory(
+            Objects.requireNonNull(options.getCacheDirPath(), "cacheDirPath must not be null")),
         options.getMaxCacheItems());
     this.currentDateProvider = currentDateProvider;
   }

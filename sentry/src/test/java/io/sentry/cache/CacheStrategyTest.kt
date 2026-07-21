@@ -9,6 +9,7 @@ import io.sentry.Session
 import io.sentry.clientreport.ClientReportTestHelper.Companion.assertClientReport
 import io.sentry.clientreport.DiscardReason
 import io.sentry.clientreport.DiscardedEvent
+import io.sentry.util.LazyDirectory
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.InputStreamReader
@@ -130,7 +131,7 @@ class CacheStrategyTest {
   }
 
   private class CustomCache(options: SentryOptions, path: String, maxSize: Int) :
-    CacheStrategy(options, path, maxSize)
+    CacheStrategy(options, LazyDirectory(path), maxSize)
 
   private fun createTempFilesSortByOldestToNewest(): Array<File> {
     val f1 = Files.createTempFile(fixture.dir.toPath(), "f1", ".json").toFile()
