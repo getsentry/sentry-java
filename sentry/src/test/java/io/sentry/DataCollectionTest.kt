@@ -14,7 +14,6 @@ class DataCollectionTest {
     assertThat(dataCollection.queryParams).isNull()
     assertThat(dataCollection.httpBodies).isNull()
     assertThat(dataCollection.databaseQueryData).isNull()
-    assertThat(dataCollection.queues).isNull()
     assertThat(dataCollection.httpHeaders.request).isNull()
     assertThat(dataCollection.httpHeaders.response).isNull()
     assertThat(dataCollection.graphql.document).isNull()
@@ -79,16 +78,6 @@ class DataCollectionTest {
     dataCollection.setDatabaseQueryData(false)
 
     assertThat(dataCollection.databaseQueryData).isFalse()
-    assertThat(dataCollection.isExplicitlyConfigured()).isTrue()
-  }
-
-  @Test
-  fun `queues false is distinct from unset`() {
-    val dataCollection = DataCollection(false)
-
-    dataCollection.setQueues(false)
-
-    assertThat(dataCollection.queues).isFalse()
     assertThat(dataCollection.isExplicitlyConfigured()).isTrue()
   }
 
