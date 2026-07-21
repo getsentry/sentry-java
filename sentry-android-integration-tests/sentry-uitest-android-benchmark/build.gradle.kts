@@ -7,6 +7,7 @@ plugins {
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.detekt)
+  id("io.sentry.android.lint")
 }
 
 android {
@@ -65,16 +66,6 @@ android {
   }
 
   kotlin { compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8 }
-
-  lint {
-    warningsAsErrors = true
-    checkDependencies = true
-    // Suppress OldTargetApi: lint 8.13.1 expects API 37 but we target 36
-    disable += "OldTargetApi"
-
-    // We run a full lint analysis as build part in CI, so skip vital checks for assemble tasks.
-    checkReleaseBuilds = false
-  }
 
   androidComponents.beforeVariants {
     if (it.buildType == "debug") {

@@ -6,6 +6,7 @@ plugins {
   alias(libs.plugins.kotlin.android)
   alias(libs.plugins.kotlin.compose)
   alias(libs.plugins.gradle.versions)
+  id("io.sentry.android.lint")
   // TODO: enable it later
   //    alias(libs.plugins.detekt)
 }
@@ -47,14 +48,6 @@ android {
       isReturnDefaultValues = true
       isIncludeAndroidResources = true
     }
-  }
-
-  lint {
-    warningsAsErrors = true
-    checkDependencies = true
-
-    // We run a full lint analysis as build part in CI, so skip vital checks for assemble tasks.
-    checkReleaseBuilds = false
   }
 
   buildFeatures { buildConfig = true }

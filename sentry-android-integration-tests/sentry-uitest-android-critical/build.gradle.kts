@@ -4,11 +4,15 @@ plugins {
   id("com.android.application")
   alias(libs.plugins.kotlin.android)
   alias(libs.plugins.kotlin.compose)
+  id("io.sentry.android.lint")
 }
 
 android {
   compileSdk = libs.versions.compileSdk.get().toInt()
   namespace = "io.sentry.uitest.android.critical"
+
+  // Baseline the pre-existing lint issues in this test app; only new issues fail the build.
+  lint { baseline = file("lint-baseline.xml") }
 
   signingConfigs {
     getByName("debug") {

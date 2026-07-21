@@ -3,12 +3,14 @@ plugins {
 }
 
 repositories {
+  google()
   gradlePluginPortal()
 }
 
 dependencies {
   implementation(libs.animalsniffer.gradle.plugin)
   implementation(libs.spotlessLib)
+  compileOnly(libs.android.gradle.plugin)
 }
 
 gradlePlugin {
