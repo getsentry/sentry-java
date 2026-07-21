@@ -113,20 +113,6 @@ allprojects {
 subprojects {
     apply { plugin("io.sentry.spotless") }
 
-    // AGP 9.2 bundles lint 9.2.1, which flags compileSdk 36 as outdated because 37 is available.
-    // We intentionally stay on compileSdk 36 until the API 37 bump (#5768), so silence that check
-    // for every Android module (library and application).
-    pluginManager.withPlugin("com.android.library") {
-        extensions.configure<com.android.build.gradle.BaseExtension> {
-            lintOptions { disable("GradleDependency") }
-        }
-    }
-    pluginManager.withPlugin("com.android.application") {
-        extensions.configure<com.android.build.gradle.BaseExtension> {
-            lintOptions { disable("GradleDependency") }
-        }
-    }
-
     plugins.withId(Config.QualityPlugins.detektPlugin) {
         configure<DetektExtension> {
             buildUponDefaultConfig = true
