@@ -260,9 +260,7 @@ public final class InternalSentrySdk {
       for (SentryEnvelopeItem item : envelope.getItems()) {
         final SentryEvent event = item.getEvent(serializer);
         if (event != null) {
-          // isCrashed() means mechanism.handled=false (unhandled exception), not that the
-          // process terminated. For e.g Flutter that distinction is why we only mark pending here.
-          if (event.isCrashed()) {
+          if (event.getUnhandledException() != null) {
             markPendingUnhandled = true;
             addErrorsCount = true;
           } else if (event.isErrored()) {
