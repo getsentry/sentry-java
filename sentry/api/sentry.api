@@ -3695,6 +3695,7 @@ public class io/sentry/SentryOptions {
 	public fun getContextTags ()Ljava/util/List;
 	public fun getContinuousProfiler ()Lio/sentry/IContinuousProfiler;
 	public fun getCron ()Lio/sentry/SentryOptions$Cron;
+	public fun getDataCollection ()Lio/sentry/DataCollection;
 	public fun getDateProvider ()Lio/sentry/SentryDateProvider;
 	public fun getDeadlineTimeout ()J
 	public fun getDebugMetaLoader ()Lio/sentry/internal/debugmeta/IDebugMetaLoader;
@@ -3843,6 +3844,7 @@ public class io/sentry/SentryOptions {
 	public fun setConnectionTimeoutMillis (I)V
 	public fun setContinuousProfiler (Lio/sentry/IContinuousProfiler;)V
 	public fun setCron (Lio/sentry/SentryOptions$Cron;)V
+	public fun setDataCollection (Lio/sentry/DataCollection;)V
 	public fun setDateProvider (Lio/sentry/SentryDateProvider;)V
 	public fun setDeadlineTimeout (J)V
 	public fun setDebug (Z)V

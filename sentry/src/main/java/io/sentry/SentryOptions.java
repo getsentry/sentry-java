@@ -338,6 +338,8 @@ public class SentryOptions {
   /** whether to send personal identifiable information along with events */
   private boolean sendDefaultPii = false;
 
+  private @NotNull DataCollection dataCollection = new DataCollection(false);
+
   /** SSLSocketFactory for self-signed certificate trust * */
   private @Nullable SSLSocketFactory sslSocketFactory;
 
@@ -1695,6 +1697,25 @@ public class SentryOptions {
 
   public void setSendDefaultPii(boolean sendDefaultPii) {
     this.sendDefaultPii = sendDefaultPii;
+  }
+
+  /**
+   * Returns the configuration for data that the SDK collects automatically.
+   *
+   * <p>The returned object is always present. Accessing it does not configure data collection, but
+   * setting one of its options does.
+   */
+  public @NotNull DataCollection getDataCollection() {
+    return dataCollection;
+  }
+
+  /**
+   * Replaces the configuration for data that the SDK collects automatically.
+   *
+   * <p>Passing an empty {@link DataCollection} opts into the documented data-collection defaults.
+   */
+  public void setDataCollection(final @NotNull DataCollection dataCollection) {
+    this.dataCollection = dataCollection;
   }
 
   /**
