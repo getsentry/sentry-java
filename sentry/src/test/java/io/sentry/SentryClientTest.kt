@@ -285,6 +285,108 @@ class SentryClientTest {
   }
 
   @Test
+  fun `when beforeSend captures another event, the nested capture is dropped and does not recurse`() {
+    var invocations = 0
+    lateinit var sut: SentryClient
+    fixture.sentryOptions.setBeforeSend { e, _ ->
+      invocations++
+      sut.captureEvent(SentryEvent())
+      e
+    }
+    sut = fixture.getSut()
+
+    sut.captureEvent(SentryEvent())
+
+    // Callback runs only for the outer event; the nested capture is dropped before its callback.
+    assertEquals(1, invocations)
+    verify(fixture.transport, times(1)).send(any(), anyOrNull())
+  }
+
+  @Test
+  fun `when beforeSend captures a log, the nested log is dropped`() {
+    val scope = createScope()
+    fixture.sentryOptions.logs.isEnabled = true
+    lateinit var sut: SentryClient
+    fixture.sentryOptions.setBeforeSend { e, _ ->
+      sut.captureLog(
+        SentryLogEvent(SentryId(), SentryNanotimeDate(), "nested", SentryLogLevel.WARN),
+        scope,
+      )
+      e
+    }
+    sut = fixture.getSut()
+
+    sut.captureEvent(SentryEvent())
+
+    // The shared guard spans capture types: a log emitted from beforeSend is dropped too.
+    verify(fixture.loggerBatchProcessor, never()).add(any())
+    verify(fixture.transport, times(1)).send(any(), anyOrNull())
+  }
+
+  @Test
+  fun `when beforeSendLog logs again, the nested log is dropped and does not recurse`() {
+    val scope = createScope()
+    fixture.sentryOptions.logs.isEnabled = true
+    var invocations = 0
+    lateinit var sut: SentryClient
+    fixture.sentryOptions.logs.setBeforeSend { l ->
+      invocations++
+      sut.captureLog(
+        SentryLogEvent(SentryId(), SentryNanotimeDate(), "nested", SentryLogLevel.WARN),
+        scope,
+      )
+      l
+    }
+    sut = fixture.getSut()
+
+    sut.captureLog(
+      SentryLogEvent(SentryId(), SentryNanotimeDate(), "outer", SentryLogLevel.WARN),
+      scope,
+    )
+
+    assertEquals(1, invocations)
+    verify(fixture.loggerBatchProcessor, times(1)).add(any())
+  }
+
+  @Test
+  fun `when beforeSend captures feedback before an event, the guard is not cleared prematurely`() {
+    val scope = createScope()
+    var invocations = 0
+    lateinit var sut: SentryClient
+    fixture.sentryOptions.setBeforeSend { e, _ ->
+      invocations++
+      // Capturing feedback must not clear the re-entrancy guard for captures that follow it in the
+      // same callback, otherwise the captureEvent below would recurse.
+      sut.captureFeedback(Feedback("feedback"), null, scope)
+      sut.captureEvent(SentryEvent())
+      e
+    }
+    sut = fixture.getSut()
+
+    sut.captureEvent(SentryEvent())
+
+    assertEquals(1, invocations)
+    verify(fixture.transport, times(1)).send(any(), anyOrNull())
+  }
+
+  @Test
+  fun `when beforeSendFeedback captures feedback again, the nested capture is dropped and does not recurse`() {
+    val scope = createScope()
+    var invocations = 0
+    lateinit var sut: SentryClient
+    fixture.sentryOptions.setBeforeSendFeedback { e, _ ->
+      invocations++
+      sut.captureFeedback(Feedback("nested"), null, scope)
+      e
+    }
+    sut = fixture.getSut()
+
+    sut.captureFeedback(Feedback("outer"), null, scope)
+
+    assertEquals(1, invocations)
+  }
+
+  @Test
   fun `when beforeSendLog is set, callback is invoked`() {
     val scope = createScope()
     var invoked = false
@@ -3189,6 +3291,44 @@ class SentryClientTest {
   }
 
   @Test
+  fun `when beforeEnvelopeCallback captures another event, the nested capture is dropped and does not recurse`() {
+    var invocations = 0
+    lateinit var sut: SentryClient
+    val options = { options: SentryOptions ->
+      options.beforeEnvelopeCallback = SentryOptions.BeforeEnvelopeCallback { _, _ ->
+        invocations++
+        sut.captureEvent(SentryEvent())
+      }
+    }
+    sut = fixture.getSut(options)
+
+    sut.captureEvent(SentryEvent(), Hint())
+
+    assertEquals(1, invocations)
+    verify(fixture.transport, times(1)).send(any(), anyOrNull())
+  }
+
+  @Test
+  fun `when beforeEnvelopeCallback captures an envelope, the nested envelope is dropped and does not recurse`() {
+    var invocations = 0
+    lateinit var sut: SentryClient
+    val options = { options: SentryOptions ->
+      options.beforeEnvelopeCallback = SentryOptions.BeforeEnvelopeCallback { _, _ ->
+        invocations++
+        sut.captureEnvelope(SentryEnvelope(SentryId(UUID.randomUUID()), null, setOf()))
+      }
+    }
+    sut = fixture.getSut(options)
+
+    sut.captureEvent(SentryEvent(), Hint())
+
+    // Callback runs only for the outer envelope; the nested captureEnvelope is dropped in
+    // sendEnvelope before its callback would run.
+    assertEquals(1, invocations)
+    verify(fixture.transport, times(1)).send(any(), anyOrNull())
+  }
+
+  @Test
   fun `beforeEnvelopeCallback may fail, but the transport is still sends the envelope `() {
     val sut = fixture.getSut { options ->
       options.beforeEnvelopeCallback = SentryOptions.BeforeEnvelopeCallback { _, _ ->
@@ -3448,6 +3588,24 @@ class SentryClientTest {
       HintUtils.createWithTypeCheckHint(CachedHint()),
     )
     assertFalse(called)
+  }
+
+  @Test
+  fun `when beforeErrorSampling captures another event, the nested capture is dropped and does not recurse`() {
+    var invocations = 0
+    lateinit var sut: SentryClient
+    fixture.sentryOptions.sessionReplay.beforeErrorSampling =
+      SentryReplayOptions.BeforeErrorSamplingCallback { _, _ ->
+        invocations++
+        sut.captureEvent(SentryEvent().apply { exceptions = listOf(SentryException()) })
+        true
+      }
+    sut = fixture.getSut()
+
+    sut.captureEvent(SentryEvent().apply { exceptions = listOf(SentryException()) })
+
+    assertEquals(1, invocations)
+    verify(fixture.transport, times(1)).send(any(), anyOrNull())
   }
 
   @Test

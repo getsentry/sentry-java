@@ -107,6 +107,11 @@ public final class SentryClient implements ISentryClient {
       @NotNull SentryEvent event, final @Nullable IScope scope, @Nullable Hint hint) {
     Objects.requireNonNull(event, "SentryEvent is required.");
 
+    // Drop silently to prevent recursion; a log here can re-enter through a logging integration.
+    if (SentryCallbackReentrancyGuard.isActive()) {
+      return SentryId.EMPTY_ID;
+    }
+
     if (hint == null) {
       hint = new Hint();
     }
@@ -236,7 +241,7 @@ public final class SentryClient implements ISentryClient {
       final SentryReplayOptions.BeforeErrorSamplingCallback beforeErrorSampling =
           options.getSessionReplay().getBeforeErrorSampling();
       if (beforeErrorSampling != null) {
-        try {
+        try (final @NotNull ISentryLifecycleToken ignored = SentryCallbackReentrancyGuard.enter()) {
           shouldCaptureReplay = beforeErrorSampling.execute(event, hint);
         } catch (Throwable e) {
           options
@@ -311,6 +316,11 @@ public final class SentryClient implements ISentryClient {
   public @NotNull SentryId captureReplayEvent(
       @NotNull SentryReplayEvent event, final @Nullable IScope scope, @Nullable Hint hint) {
     Objects.requireNonNull(event, "SessionReplay is required.");
+
+    // Drop silently to prevent recursion; a log here can re-enter through a logging integration.
+    if (SentryCallbackReentrancyGuard.isActive()) {
+      return SentryId.EMPTY_ID;
+    }
 
     if (hint == null) {
       hint = new Hint();
@@ -937,10 +947,19 @@ public final class SentryClient implements ISentryClient {
 
   private @NotNull SentryId sendEnvelope(
       @NotNull final SentryEnvelope envelope, @Nullable final Hint hint) throws IOException {
+    // captureEnvelope and captureCheckIn have no entry-level guard, so a callback that captures
+    // one of those would recurse back into beforeEnvelopeCallback. In normal flow the guard is
+    // already inactive by the time we get here (the before* callback has exited), so an active
+    // guard means a callback triggered this send. Drop silently: a log here can re-enter through a
+    // logging integration.
+    if (SentryCallbackReentrancyGuard.isActive()) {
+      return SentryId.EMPTY_ID;
+    }
+
     final @Nullable SentryOptions.BeforeEnvelopeCallback beforeEnvelopeCallback =
         options.getBeforeEnvelopeCallback();
     if (beforeEnvelopeCallback != null) {
-      try {
+      try (final @NotNull ISentryLifecycleToken ignored = SentryCallbackReentrancyGuard.enter()) {
         beforeEnvelopeCallback.execute(envelope, hint);
       } catch (Throwable e) {
         options
@@ -968,6 +987,11 @@ public final class SentryClient implements ISentryClient {
       @Nullable Hint hint,
       final @Nullable ProfilingTraceData profilingTraceData) {
     Objects.requireNonNull(transaction, "Transaction is required.");
+
+    // Drop silently to prevent recursion; a log here can re-enter through a logging integration.
+    if (SentryCallbackReentrancyGuard.isActive()) {
+      return SentryId.EMPTY_ID;
+    }
 
     if (hint == null) {
       hint = new Hint();
@@ -1187,6 +1211,11 @@ public final class SentryClient implements ISentryClient {
   @Override
   public @NotNull SentryId captureFeedback(
       final @NotNull Feedback feedback, @Nullable Hint hint, final @NotNull IScope scope) {
+    // Drop silently to prevent recursion; a log here can re-enter through a logging integration.
+    if (SentryCallbackReentrancyGuard.isActive()) {
+      return SentryId.EMPTY_ID;
+    }
+
     SentryEvent event = new SentryEvent();
     event.getContexts().setFeedback(feedback);
 
@@ -1297,6 +1326,11 @@ public final class SentryClient implements ISentryClient {
   @ApiStatus.Experimental
   @Override
   public void captureLog(@Nullable SentryLogEvent logEvent, @Nullable IScope scope) {
+    // Drop silently to prevent recursion; a log here can re-enter through a logging integration.
+    if (SentryCallbackReentrancyGuard.isActive()) {
+      return;
+    }
+
     if (logEvent != null && scope != null) {
       logEvent = processLogEvent(logEvent, scope.getEventProcessors());
       if (logEvent == null) {
@@ -1351,6 +1385,11 @@ public final class SentryClient implements ISentryClient {
       @Nullable SentryMetricsEvent metricsEvent,
       final @Nullable IScope scope,
       @Nullable Hint hint) {
+    // Drop silently to prevent recursion; a log here can re-enter through a logging integration.
+    if (SentryCallbackReentrancyGuard.isActive()) {
+      return;
+    }
+
     if (hint == null) {
       hint = new Hint();
     }
@@ -1612,7 +1651,7 @@ public final class SentryClient implements ISentryClient {
       @NotNull SentryEvent event, final @NotNull Hint hint) {
     final SentryOptions.BeforeSendCallback beforeSend = options.getBeforeSend();
     if (beforeSend != null) {
-      try {
+      try (final @NotNull ISentryLifecycleToken ignored = SentryCallbackReentrancyGuard.enter()) {
         event = beforeSend.execute(event, hint);
       } catch (Throwable e) {
         options
@@ -1634,7 +1673,7 @@ public final class SentryClient implements ISentryClient {
     final SentryOptions.BeforeSendTransactionCallback beforeSendTransaction =
         options.getBeforeSendTransaction();
     if (beforeSendTransaction != null) {
-      try {
+      try (final @NotNull ISentryLifecycleToken ignored = SentryCallbackReentrancyGuard.enter()) {
         transaction = beforeSendTransaction.execute(transaction, hint);
       } catch (Throwable e) {
         options
@@ -1655,7 +1694,7 @@ public final class SentryClient implements ISentryClient {
       @NotNull SentryEvent event, final @NotNull Hint hint) {
     final SentryOptions.BeforeSendCallback beforeSendFeedback = options.getBeforeSendFeedback();
     if (beforeSendFeedback != null) {
-      try {
+      try (final @NotNull ISentryLifecycleToken ignored = SentryCallbackReentrancyGuard.enter()) {
         event = beforeSendFeedback.execute(event, hint);
       } catch (Throwable e) {
         options
@@ -1673,7 +1712,7 @@ public final class SentryClient implements ISentryClient {
       @NotNull SentryReplayEvent event, final @NotNull Hint hint) {
     final SentryOptions.BeforeSendReplayCallback beforeSendReplay = options.getBeforeSendReplay();
     if (beforeSendReplay != null) {
-      try {
+      try (final @NotNull ISentryLifecycleToken ignored = SentryCallbackReentrancyGuard.enter()) {
         event = beforeSendReplay.execute(event, hint);
       } catch (Throwable e) {
         options
@@ -1694,7 +1733,7 @@ public final class SentryClient implements ISentryClient {
     final SentryOptions.Logs.BeforeSendLogCallback beforeSendLog =
         options.getLogs().getBeforeSend();
     if (beforeSendLog != null) {
-      try {
+      try (final @NotNull ISentryLifecycleToken ignored = SentryCallbackReentrancyGuard.enter()) {
         event = beforeSendLog.execute(event);
       } catch (Throwable e) {
         options
@@ -1716,7 +1755,7 @@ public final class SentryClient implements ISentryClient {
     final SentryOptions.Metrics.BeforeSendMetricCallback beforeSendMetric =
         options.getMetrics().getBeforeSend();
     if (beforeSendMetric != null) {
-      try {
+      try (final @NotNull ISentryLifecycleToken ignored = SentryCallbackReentrancyGuard.enter()) {
         event = beforeSendMetric.execute(event, hint);
       } catch (Throwable e) {
         options

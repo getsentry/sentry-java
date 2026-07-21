@@ -16,6 +16,7 @@ import io.sentry.util.EventProcessorUtils;
 import io.sentry.util.ExceptionUtils;
 import io.sentry.util.Objects;
 import io.sentry.util.Pair;
+import io.sentry.util.SentryCallbackReentrancyGuard;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -464,7 +465,7 @@ public final class Scope implements IScope {
       final @NotNull SentryOptions.BeforeBreadcrumbCallback callback,
       @NotNull Breadcrumb breadcrumb,
       final @NotNull Hint hint) {
-    try {
+    try (final @NotNull ISentryLifecycleToken ignored = SentryCallbackReentrancyGuard.enter()) {
       breadcrumb = callback.execute(breadcrumb, hint);
     } catch (Throwable e) {
       options
@@ -491,6 +492,10 @@ public final class Scope implements IScope {
   @Override
   public void addBreadcrumb(@NotNull Breadcrumb breadcrumb, @Nullable Hint hint) {
     if (breadcrumb == null || breadcrumbs instanceof DisabledQueue) {
+      return;
+    }
+    // Drop silently to prevent recursion; a log here can re-enter through a logging integration.
+    if (SentryCallbackReentrancyGuard.isActive()) {
       return;
     }
     SentryOptions.BeforeBreadcrumbCallback callback = options.getBeforeBreadcrumb();

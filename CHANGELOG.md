@@ -1,10 +1,21 @@
 # Changelog
 
-## Unreleased
+### Fixes
 
-### Features
+- Backfill release, environment, distribution, tags, and app version/build—and use the matching replay-on-error sample rate—for `ApplicationExitInfo` ANR and native crash events captured before SDK initialization, without reusing options cached by a later app update ([#5762](https://github.com/getsentry/sentry-java/pull/5762))
+- `SentryTagModifierNode.isImportantForBounds` now matches the default behavior and returns `true` ([#5789](https://github.com/getsentry/sentry-java/pull/5789))
+- Prevent a `StackOverflowError` when a `beforeSend`, `beforeBreadcrumb`, `beforeSendLog`, or `beforeEnvelope` callback triggers another capture (directly or through a logging integration such as Timber) ([#5737](https://github.com/getsentry/sentry-java/pull/5737))
+  - Captures made from within a user callback (event, transaction, breadcrumb, log, envelope, or check-in) are now dropped while that callback runs, instead of recursing. Captures made by event processors are unaffected.
 
-- Add `InternalSentrySdk.captureEnvelopeNonTerminating` for hybrid SDKs (e.g. Flutter) so unhandled exceptions that don't terminate the process no longer end the session as `crashed`. The session is kept alive, marked pending-unhandled, and finalized as `unhandled` on session end (or `crashed` if a native crash follows). The existing `captureEnvelope(byte[], boolean)` behavior is unchanged. ([#5795](https://github.com/getsentry/sentry-java/pull/5795))
+### Dependencies
+
+- Bump Native SDK from v0.15.3 to v0.15.4 ([#5793](https://github.com/getsentry/sentry-java/pull/5793))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0154)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.15.3...0.15.4)
+
+### Internal
+
+- Add `InternalSentrySdk.captureEnvelopeNonTerminating` for hybrid SDKs (e.g. Flutter) so unhandled exceptions that don't terminate the process no longer end the session as `crashed`. ([#5795](https://github.com/getsentry/sentry-java/pull/5795))
 
 ## 8.49.0
 

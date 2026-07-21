@@ -844,6 +844,21 @@ class AndroidOptionsInitializerTest {
   }
 
   @Test
+  fun `options cache generation observer is set when app update time is valid`() {
+    val buildInfo = mock<BuildInfoProvider>()
+    whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.LOLLIPOP)
+    ContextUtils.getPackageInfo(fixture.context, buildInfo)!!.lastUpdateTime = 1_000L
+
+    fixture.initSut(useRealContext = true)
+
+    assertTrue {
+      fixture.sentryOptions.optionsObservers.any {
+        it is PersistingOptionsCacheGenerationObserver
+      }
+    }
+  }
+
+  @Test
   fun `when cacheDir is not set, persisting observers are not set to options`() {
     fixture.initSut(configureOptions = { cacheDirPath = null })
 

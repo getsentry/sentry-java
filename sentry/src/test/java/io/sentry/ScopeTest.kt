@@ -372,6 +372,27 @@ class ScopeTest {
   }
 
   @Test
+  fun `when beforeBreadcrumb adds another breadcrumb, the nested breadcrumb is dropped and does not recurse`() {
+    var invocations = 0
+    lateinit var scope: Scope
+    val options =
+      SentryOptions().apply {
+        beforeBreadcrumb = SentryOptions.BeforeBreadcrumbCallback { breadcrumb, _ ->
+          invocations++
+          scope.addBreadcrumb(Breadcrumb())
+          breadcrumb
+        }
+      }
+
+    scope = Scope(options)
+    scope.addBreadcrumb(Breadcrumb())
+
+    // Callback runs only for the outer breadcrumb; the nested one is dropped before its callback.
+    assertEquals(1, invocations)
+    assertEquals(1, scope.breadcrumbs.count())
+  }
+
+  @Test
   fun `when adding breadcrumb and maxBreadcrumb is not 0, beforeBreadcrumb is executed`() {
     var called = false
     val options =
