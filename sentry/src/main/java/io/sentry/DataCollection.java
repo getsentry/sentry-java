@@ -16,7 +16,6 @@ public final class DataCollection {
   private @Nullable KeyValueCollectionBehavior queryParams;
   private @Nullable Set<HttpBodyType> httpBodies;
   private @Nullable Boolean databaseQueryData;
-  private @Nullable Boolean queues;
   private final @NotNull HttpHeaders httpHeaders = new HttpHeaders();
   private final @NotNull Graphql graphql = new Graphql();
 
@@ -73,14 +72,6 @@ public final class DataCollection {
     this.databaseQueryData = databaseQueryData;
   }
 
-  public @Nullable Boolean getQueues() {
-    return queues;
-  }
-
-  public void setQueues(final boolean queues) {
-    this.queues = queues;
-  }
-
   public @NotNull HttpHeaders getHttpHeaders() {
     return httpHeaders;
   }
@@ -97,7 +88,6 @@ public final class DataCollection {
         || queryParams != null
         || httpBodies != null
         || databaseQueryData != null
-        || queues != null
         || httpHeaders.hasOverrides()
         || graphql.hasOverrides();
   }
