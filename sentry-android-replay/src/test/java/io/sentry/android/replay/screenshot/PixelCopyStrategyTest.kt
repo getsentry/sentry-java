@@ -27,6 +27,7 @@ import io.sentry.android.replay.ScreenshotRecorderCallback
 import io.sentry.android.replay.ScreenshotRecorderConfig
 import io.sentry.android.replay.util.DebugOverlayDrawable
 import io.sentry.android.replay.util.MainLooperHandler
+import java.util.concurrent.Future
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
@@ -138,6 +139,98 @@ class PixelCopyStrategyTest {
     shadowOf(Looper.getMainLooper()).idle()
 
     if (failure.get() != null) throw failure.get()
+  }
+
+  @Test
+  @Config(shadows = [DeferredWindowPixelCopyShadow::class])
+  fun `capture drops frame while PixelCopy is in flight`() {
+    val activity = buildActivity(SimpleActivity::class.java).setup()
+    shadowOf(Looper.getMainLooper()).idle()
+    val root = activity.get().findViewById<View>(android.R.id.content)
+    val strategy = fixture.getSut(executor = fixture.inlineExecutor())
+
+    strategy.capture(root)
+    strategy.capture(root)
+    DeferredWindowPixelCopyShadow.flush()
+    shadowOf(Looper.getMainLooper()).idle()
+
+    verify(fixture.callback).onScreenshotRecorded(any<Bitmap>())
+
+    strategy.capture(root)
+    DeferredWindowPixelCopyShadow.flush()
+    shadowOf(Looper.getMainLooper()).idle()
+
+    verify(fixture.callback, times(2)).onScreenshotRecorded(any<Bitmap>())
+  }
+
+  @Test
+  @Config(shadows = [DeferredWindowPixelCopyShadow::class])
+  fun `capture drops frame while masking is in flight`() {
+    val activity = buildActivity(SimpleActivity::class.java).setup()
+    shadowOf(Looper.getMainLooper()).idle()
+    val root = activity.get().findViewById<View>(android.R.id.content)
+    val tasks = mutableListOf<Runnable>()
+    val executor = mock<ScheduledExecutorService>()
+    whenever(executor.submit(any<Runnable>())).doAnswer {
+      tasks += it.getArgument<Runnable>(0)
+      mock<Future<*>>()
+    }
+    val strategy = fixture.getSut(executor)
+
+    strategy.capture(root)
+    DeferredWindowPixelCopyShadow.flush()
+    shadowOf(Looper.getMainLooper()).idle()
+    strategy.capture(root)
+    DeferredWindowPixelCopyShadow.flush()
+    shadowOf(Looper.getMainLooper()).idle()
+
+    assertEquals(1, tasks.size)
+    tasks.removeAt(0).run()
+
+    strategy.capture(root)
+    DeferredWindowPixelCopyShadow.flush()
+    shadowOf(Looper.getMainLooper()).idle()
+
+    assertEquals(1, tasks.size)
+  }
+
+  @Test
+  @Config(shadows = [DeferredWindowPixelCopyShadow::class])
+  fun `emitLastScreenshot skips while frame is in flight`() {
+    val activity = buildActivity(SimpleActivity::class.java).setup()
+    shadowOf(Looper.getMainLooper()).idle()
+    val root = activity.get().findViewById<View>(android.R.id.content)
+    val strategy = fixture.getSut(executor = fixture.inlineExecutor())
+    captureStableFrame(strategy, root)
+
+    strategy.capture(root)
+    strategy.emitLastScreenshot()
+
+    verify(fixture.callback).onScreenshotRecorded(any<Bitmap>())
+
+    DeferredWindowPixelCopyShadow.flush()
+    shadowOf(Looper.getMainLooper()).idle()
+    verify(fixture.callback, times(2)).onScreenshotRecorded(any<Bitmap>())
+  }
+
+  @Test
+  @Config(shadows = [DeferredWindowPixelCopyShadow::class])
+  fun `close defers cleanup until PixelCopy completes`() {
+    val activity = buildActivity(SimpleActivity::class.java).setup()
+    shadowOf(Looper.getMainLooper()).idle()
+    val root = activity.get().findViewById<View>(android.R.id.content)
+    val executor = mock<ScheduledExecutorService>()
+    val strategy = fixture.getSut(executor)
+
+    strategy.capture(root)
+    strategy.close()
+
+    verify(executor, never()).submit(any<Runnable>())
+
+    DeferredWindowPixelCopyShadow.flush()
+    shadowOf(Looper.getMainLooper()).idle()
+
+    verify(executor).submit(any<Runnable>())
   }
 
   @Test
