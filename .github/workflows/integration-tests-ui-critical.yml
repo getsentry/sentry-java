@@ -15,7 +15,7 @@ env:
   BUILD_PATH: "build/outputs/apk/release"
   APK_NAME: "sentry-uitest-android-critical-release.apk"
   APK_ARTIFACT_NAME: "sentry-uitest-android-critical-release"
-  MAESTRO_VERSION: "2.1.0"
+  MAESTRO_VERSION: "2.7.0"
 
 jobs:
   build:
