@@ -9,7 +9,7 @@ plugins {
   id("io.sentry.systemtest")
 }
 
-group = "io.sentry.sample.spring-boot-4"
+group = "io.sentry.sample.spring-boot-4-log4j2"
 
 version = "0.0.1-SNAPSHOT"
 
@@ -51,10 +51,20 @@ dependencies {
   implementation(Config.Libs.kotlinReflect)
   implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
   implementation(projects.sentrySpringBoot4Starter)
-  implementation(projects.sentryLogback)
   implementation(projects.sentryGraphql22)
   implementation(projects.sentryQuartz)
   implementation(projects.sentryAsyncProfiler)
+
+  implementation(projects.sentryLog4j2)
+  implementation("org.springframework.boot:spring-boot-starter-log4j2")
+  modules {
+    module("org.springframework.boot:spring-boot-starter-logging") {
+      replacedBy(
+        "org.springframework.boot:spring-boot-starter-log4j2",
+        "Use Log4j2 instead of Logback",
+      )
+    }
+  }
 
   // cache tracing
   implementation(libs.springboot4.starter.cache)
@@ -77,8 +87,6 @@ dependencies {
   testImplementation(libs.springboot4.starter.test) {
     exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
   }
-  testImplementation("ch.qos.logback:logback-classic:1.5.16")
-  testImplementation("ch.qos.logback:logback-core:1.5.16")
 }
 
 tasks.register<Test>("systemTest").configure {

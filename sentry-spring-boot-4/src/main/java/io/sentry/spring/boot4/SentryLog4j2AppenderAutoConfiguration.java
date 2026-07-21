@@ -14,7 +14,10 @@ import org.springframework.context.annotation.Configuration;
 @Configuration(proxyBeanMethods = false)
 @Open
 @ConditionalOnClass({LoggerContext.class, SentryAppender.class})
-@ConditionalOnProperty(name = "sentry.logging.enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(
+    name = "sentry.logging.enabled",
+    havingValue = "true",
+    matchIfMissing = false)
 @ConditionalOnBean(SentryProperties.class)
 public class SentryLog4j2AppenderAutoConfiguration {
 

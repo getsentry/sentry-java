@@ -119,6 +119,7 @@ include(
     "sentry-samples:sentry-samples-spring-boot-webflux",
     "sentry-samples:sentry-samples-spring-boot-webflux-jakarta",
     "sentry-samples:sentry-samples-spring-boot-4",
+    "sentry-samples:sentry-samples-spring-boot-4-log4j2",
     "sentry-samples:sentry-samples-spring-boot-4-opentelemetry",
     "sentry-samples:sentry-samples-spring-boot-4-opentelemetry-noagent",
     "sentry-samples:sentry-samples-spring-boot-4-otlp",
