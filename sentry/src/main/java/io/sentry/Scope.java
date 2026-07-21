@@ -1008,7 +1008,8 @@ public final class Scope implements IScope {
   }
 
   /** The IWithSession callback */
-  interface IWithSession {
+  @ApiStatus.Internal
+  public interface IWithSession {
 
     /**
      * The accept method of the callback

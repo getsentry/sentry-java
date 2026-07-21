@@ -1,5 +1,6 @@
 package io.sentry.cache
 
+import com.google.common.truth.Truth.assertThat
 import io.sentry.DateUtils
 import io.sentry.Hint
 import io.sentry.ILogger
@@ -129,6 +130,157 @@ class EnvelopeCacheTest {
 
     file.deleteRecursively()
     assertTrue(didStore)
+  }
+
+  @Test
+  fun `delayed same SID SessionStart preserves newer pending snapshot`() {
+    val cache = fixture.getSUT()
+    val sid = SentryUUID.generateSentryId()
+    val currentSessionFile = EnvelopeCache.getCurrentSessionFile(fixture.options.cacheDirPath!!)
+    val previousSessionFile = EnvelopeCache.getPreviousSessionFile(fixture.options.cacheDirPath!!)
+    val newerSession = createSession(sessionId = sid)
+    newerSession.markPendingUnhandled()
+    cache.persistCurrentSession(newerSession)
+
+    val delayedStart = createSession(sessionId = sid)
+    val envelope = SentryEnvelope.from(fixture.options.serializer, delayedStart, null)
+    cache.storeEnvelope(envelope, HintUtils.createWithTypeCheckHint(SessionStartHint()))
+
+    val persistedSession =
+      fixture.options.serializer.deserialize(
+        currentSessionFile.bufferedReader(),
+        Session::class.java,
+      )!!
+    assertThat(persistedSession.sessionId).isEqualTo(sid)
+    assertThat(persistedSession.isPendingUnhandled).isTrue()
+    assertThat(persistedSession.errorCount()).isEqualTo(1)
+    assertThat(previousSessionFile.exists()).isFalse()
+  }
+
+  @Test
+  fun `delayed same SID SessionStart preserves newer error count snapshot`() {
+    val cache = fixture.getSUT()
+    val sid = SentryUUID.generateSentryId()
+    val currentSessionFile = EnvelopeCache.getCurrentSessionFile(fixture.options.cacheDirPath!!)
+    val previousSessionFile = EnvelopeCache.getPreviousSessionFile(fixture.options.cacheDirPath!!)
+    val newerSession = createSession(sessionId = sid)
+    newerSession.update(null, null, true)
+    cache.persistCurrentSession(newerSession)
+
+    val delayedStart = createSession(sessionId = sid)
+    val envelope = SentryEnvelope.from(fixture.options.serializer, delayedStart, null)
+    cache.storeEnvelope(envelope, HintUtils.createWithTypeCheckHint(SessionStartHint()))
+
+    val persistedSession =
+      fixture.options.serializer.deserialize(
+        currentSessionFile.bufferedReader(),
+        Session::class.java,
+      )!!
+    assertThat(persistedSession.sessionId).isEqualTo(sid)
+    assertThat(persistedSession.isPendingUnhandled).isFalse()
+    assertThat(persistedSession.errorCount()).isEqualTo(1)
+    assertThat(previousSessionFile.exists()).isFalse()
+  }
+
+  @Test
+  fun `null SIDs on SessionStart rotate instead of preserving as same session`() {
+    val cache = fixture.getSUT()
+    val currentSession = createSession(sessionId = null)
+    currentSession.update(null, null, true)
+    cache.persistCurrentSession(currentSession)
+    val startingSession = createSession(sessionId = null)
+
+    val envelope = SentryEnvelope.from(fixture.options.serializer, startingSession, null)
+    cache.storeEnvelope(envelope, HintUtils.createWithTypeCheckHint(SessionStartHint()))
+
+    val currentSessionFile = EnvelopeCache.getCurrentSessionFile(fixture.options.cacheDirPath!!)
+    val previousSessionFile = EnvelopeCache.getPreviousSessionFile(fixture.options.cacheDirPath!!)
+    val persistedCurrent =
+      fixture.options.serializer.deserialize(
+        currentSessionFile.bufferedReader(),
+        Session::class.java,
+      )!!
+    val persistedPrevious =
+      fixture.options.serializer.deserialize(
+        previousSessionFile.bufferedReader(),
+        Session::class.java,
+      )!!
+    assertThat(persistedCurrent.sessionId).isNull()
+    assertThat(persistedCurrent.errorCount()).isEqualTo(0)
+    assertThat(persistedPrevious.sessionId).isNull()
+    assertThat(persistedPrevious.errorCount()).isEqualTo(1)
+  }
+
+  @Test
+  fun `different SID SessionStart rotates current session`() {
+    val cache = fixture.getSUT()
+    val currentSession = createSession()
+    cache.persistCurrentSession(currentSession)
+    val nextSession = createSession()
+
+    val envelope = SentryEnvelope.from(fixture.options.serializer, nextSession, null)
+    cache.storeEnvelope(envelope, HintUtils.createWithTypeCheckHint(SessionStartHint()))
+
+    val currentSessionFile = EnvelopeCache.getCurrentSessionFile(fixture.options.cacheDirPath!!)
+    val previousSessionFile = EnvelopeCache.getPreviousSessionFile(fixture.options.cacheDirPath!!)
+    val persistedCurrent =
+      fixture.options.serializer.deserialize(
+        currentSessionFile.bufferedReader(),
+        Session::class.java,
+      )!!
+    val persistedPrevious =
+      fixture.options.serializer.deserialize(
+        previousSessionFile.bufferedReader(),
+        Session::class.java,
+      )!!
+    assertThat(persistedCurrent.sessionId).isEqualTo(nextSession.sessionId)
+    assertThat(persistedPrevious.sessionId).isEqualTo(currentSession.sessionId)
+  }
+
+  @Test
+  fun `matching SessionEnd deletes current session`() {
+    val cache = fixture.getSUT()
+    val session = createSession()
+    cache.persistCurrentSession(session)
+
+    val envelope = SentryEnvelope.from(fixture.options.serializer, session, null)
+    cache.storeEnvelope(envelope, HintUtils.createWithTypeCheckHint(SessionEndHint()))
+
+    assertThat(EnvelopeCache.getCurrentSessionFile(fixture.options.cacheDirPath!!).exists())
+      .isFalse()
+  }
+
+  @Test
+  fun `mismatching SessionEnd preserves newer current session`() {
+    val cache = fixture.getSUT()
+    val currentSession = createSession()
+    cache.persistCurrentSession(currentSession)
+    val endingSession = createSession()
+
+    val envelope = SentryEnvelope.from(fixture.options.serializer, endingSession, null)
+    cache.storeEnvelope(envelope, HintUtils.createWithTypeCheckHint(SessionEndHint()))
+
+    val currentSessionFile = EnvelopeCache.getCurrentSessionFile(fixture.options.cacheDirPath!!)
+    val persistedSession =
+      fixture.options.serializer.deserialize(
+        currentSessionFile.bufferedReader(),
+        Session::class.java,
+      )!!
+    assertThat(persistedSession.sessionId).isEqualTo(currentSession.sessionId)
+  }
+
+  @Test
+  fun `null SIDs on SessionEnd preserve current session`() {
+    val cache = fixture.getSUT()
+    val currentSession = createSession(sessionId = null)
+    cache.persistCurrentSession(currentSession)
+    val endingSession = createSession(sessionId = null)
+
+    val envelope = SentryEnvelope.from(fixture.options.serializer, endingSession, null)
+    cache.storeEnvelope(envelope, HintUtils.createWithTypeCheckHint(SessionEndHint()))
+
+    val currentSessionFile = EnvelopeCache.getCurrentSessionFile(fixture.options.cacheDirPath!!)
+    assertThat(currentSessionFile.exists()).isTrue()
   }
 
   @Test
@@ -318,6 +470,36 @@ class EnvelopeCacheTest {
   }
 
   @Test
+  fun `AbnormalExit hint keeps persisted pending session as abnormal`() {
+    val cache = fixture.getSUT()
+
+    val previousSessionFile = EnvelopeCache.getPreviousSessionFile(fixture.options.cacheDirPath!!)
+    val session = createSession().apply { setPendingUnhandled(true) }
+    fixture.options.serializer.serialize(session, previousSessionFile.bufferedWriter())
+
+    val envelope = SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null)
+    val abnormalHint =
+      object : AbnormalExit {
+        override fun mechanism(): String = "abnormal_mechanism"
+
+        override fun ignoreCurrentThread(): Boolean = false
+
+        override fun timestamp(): Long = session.started!!.time + TimeUnit.HOURS.toMillis(1)
+      }
+    val hints = HintUtils.createWithTypeCheckHint(abnormalHint)
+    cache.storeEnvelope(envelope, hints)
+
+    val updatedSession =
+      fixture.options.serializer.deserialize(
+        previousSessionFile.bufferedReader(),
+        Session::class.java,
+      )
+    assertEquals(State.Abnormal, updatedSession!!.status)
+    assertEquals("abnormal_mechanism", updatedSession.abnormalMechanism)
+    assertTrue(updatedSession.isPendingUnhandled)
+  }
+
+  @Test
   fun `when AbnormalExit happened before previous session start, does not mark as abnormal`() {
     val cache = fixture.getSUT()
 
@@ -372,6 +554,29 @@ class EnvelopeCacheTest {
   }
 
   @Test
+  fun `NativeCrashExit hint keeps persisted pending session as crashed`() {
+    val cache = fixture.getSUT()
+
+    val previousSessionFile = EnvelopeCache.getPreviousSessionFile(fixture.options.cacheDirPath!!)
+    val session = createSession().apply { setPendingUnhandled(true) }
+    fixture.options.serializer.serialize(session, previousSessionFile.bufferedWriter())
+
+    val nativeCrashTimestamp = session.started!!.time + TimeUnit.HOURS.toMillis(1)
+    val envelope = SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null)
+    val hints = HintUtils.createWithTypeCheckHint(NativeCrashExit { nativeCrashTimestamp })
+    cache.storeEnvelope(envelope, hints)
+
+    val updatedSession =
+      fixture.options.serializer.deserialize(
+        previousSessionFile.bufferedReader(),
+        Session::class.java,
+      )
+    assertEquals(State.Crashed, updatedSession!!.status)
+    assertEquals(nativeCrashTimestamp, updatedSession.timestamp!!.time)
+    assertFalse(updatedSession.isPendingUnhandled)
+  }
+
+  @Test
   fun `when NativeCrashExit happened before previous session start, does not mark as crashed`() {
     val cache = fixture.getSUT()
 
@@ -409,14 +614,17 @@ class EnvelopeCacheTest {
     assertFalse(didStore)
   }
 
-  private fun createSession(started: Date? = null): Session =
+  private fun createSession(
+    started: Date? = null,
+    sessionId: String? = SentryUUID.generateSentryId(),
+  ): Session =
     Session(
       Ok,
       started ?: DateUtils.getCurrentDateTime(),
       DateUtils.getCurrentDateTime(),
       0,
       "dis",
-      SentryUUID.generateSentryId(),
+      sessionId,
       true,
       null,
       null,

@@ -32,15 +32,9 @@ import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
 import io.sentry.util.MapObjectWriter;
 import io.sentry.util.TracingUtils;
-import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -202,8 +196,7 @@ public final class InternalSentrySdk {
       }
 
       // update session and add it to envelope if necessary
-      final @Nullable Session session =
-          updateSession(scopes, options, status, crashedOrErrored, false);
+      final @Nullable Session session = updateSession(scopes, options, status, crashedOrErrored);
       if (session != null) {
         final SentryEnvelopeItem sessionItem = SentryEnvelopeItem.fromSession(serializer, session);
         envelopeItems.add(sessionItem);
@@ -279,27 +272,28 @@ public final class InternalSentrySdk {
       }
 
       if (markPendingUnhandled || addErrorsCount) {
-        final @NotNull AtomicReference<Session> sessionRef = new AtomicReference<>();
         final boolean pending = markPendingUnhandled;
         final boolean addErrors = addErrorsCount;
         scopes.configureScope(
             scope -> {
-              final @Nullable Session session = scope.getSession();
-              if (session != null) {
-                if (pending) {
-                  session.setPendingUnhandled(true);
-                }
-                if (session.update(null, null, addErrors, null) || pending) {
-                  sessionRef.set(session);
-                }
-              } else {
-                options.getLogger().log(INFO, "Session is null on captureEnvelopeNonTerminating");
-              }
+              scope.withSession(
+                  session -> {
+                    if (session != null) {
+                      final boolean updated =
+                          pending
+                              ? session.markPendingUnhandled()
+                              : session.update(null, null, addErrors, null);
+                      if (updated && options.getEnvelopeDiskCache() instanceof EnvelopeCache) {
+                        ((EnvelopeCache) options.getEnvelopeDiskCache())
+                            .persistCurrentSession(session);
+                      }
+                    } else {
+                      options
+                          .getLogger()
+                          .log(INFO, "Session is null on captureEnvelopeNonTerminating");
+                    }
+                  });
             });
-        final @Nullable Session session = sessionRef.get();
-        if (session != null) {
-          persistCurrentSession(options, session);
-        }
       }
 
       // Capture the original envelope as-is (no session item attached).
@@ -393,40 +387,17 @@ public final class InternalSentrySdk {
     }
   }
 
-  private static void persistCurrentSession(
-      final @NotNull SentryOptions options, final @NotNull Session session) {
-    final String cacheDirPath = options.getCacheDirPath();
-    if (cacheDirPath == null) {
-      options.getLogger().log(INFO, "Cache dir is not set, not persisting the current session.");
-      return;
-    }
-
-    final File sessionFile = EnvelopeCache.getCurrentSessionFile(cacheDirPath);
-    try (final OutputStream outputStream = new FileOutputStream(sessionFile);
-        final Writer writer =
-            new BufferedWriter(new OutputStreamWriter(outputStream, StandardCharsets.UTF_8))) {
-      options.getSerializer().serialize(session, writer);
-    } catch (Throwable e) {
-      options.getLogger().log(WARNING, "Failed to persist the current session.", e);
-    }
-  }
-
   @Nullable
   private static Session updateSession(
       final @NotNull IScopes scopes,
       final @NotNull SentryOptions options,
       final @Nullable Session.State status,
-      final boolean crashedOrErrored,
-      final boolean markPendingUnhandled) {
+      final boolean crashedOrErrored) {
     final @NotNull AtomicReference<Session> sessionRef = new AtomicReference<>();
     scopes.configureScope(
         scope -> {
           final @Nullable Session session = scope.getSession();
           if (session != null) {
-            if (markPendingUnhandled) {
-              // remember the unhandled (but non-terminal) exception; finalized later as Unhandled.
-              session.setPendingUnhandled(true);
-            }
             final boolean updated = session.update(status, null, crashedOrErrored, null);
             // if we have an uncaughtExceptionHint we can end the session.
             if (updated) {

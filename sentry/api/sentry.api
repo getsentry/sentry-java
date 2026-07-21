@@ -2492,6 +2492,10 @@ public abstract interface class io/sentry/Scope$IWithPropagationContext {
 	public abstract fun accept (Lio/sentry/PropagationContext;)V
 }
 
+public abstract interface class io/sentry/Scope$IWithSession {
+	public abstract fun accept (Lio/sentry/Session;)V
+}
+
 public abstract interface class io/sentry/Scope$IWithTransaction {
 	public abstract fun accept (Lio/sentry/ITransaction;)V
 }
@@ -4275,6 +4279,7 @@ public final class io/sentry/Session : io/sentry/JsonSerializable, io/sentry/Jso
 	public fun getUserAgent ()Ljava/lang/String;
 	public fun isPendingUnhandled ()Z
 	public fun isTerminated ()Z
+	public fun markPendingUnhandled ()Z
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setInitAsTrue ()V
 	public fun setPendingUnhandled (Z)V
@@ -4843,6 +4848,7 @@ public class io/sentry/cache/EnvelopeCache : io/sentry/cache/IEnvelopeCache {
 	public static fun getPreviousSessionFile (Ljava/lang/String;)Ljava/io/File;
 	public fun iterator ()Ljava/util/Iterator;
 	public fun movePreviousSession (Ljava/io/File;Ljava/io/File;)V
+	public fun persistCurrentSession (Lio/sentry/Session;)V
 	public fun store (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)V
 	public fun storeEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Z
 	public fun waitPreviousSessionFlush ()Z

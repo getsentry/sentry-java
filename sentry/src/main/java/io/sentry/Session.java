@@ -201,6 +201,7 @@ public final class Session implements JsonUnknown, JsonSerializable {
    * Whether the session has a pending unhandled (non-terminal) exception that hasn't been finalized
    * yet.
    */
+  @ApiStatus.Internal
   public boolean isPendingUnhandled() {
     return pendingUnhandled;
   }
@@ -213,6 +214,22 @@ public final class Session implements JsonUnknown, JsonSerializable {
   @ApiStatus.Internal
   public void setPendingUnhandled(final boolean pendingUnhandled) {
     this.pendingUnhandled = pendingUnhandled;
+  }
+
+  /** Marks an active session as having experienced an unhandled non-terminal exception. */
+  @ApiStatus.Internal
+  public boolean markPendingUnhandled() {
+    try (final @NotNull ISentryLifecycleToken ignored = sessionLock.acquire()) {
+      if (status != State.Ok) {
+        return false;
+      }
+      pendingUnhandled = true;
+      errorCount.incrementAndGet();
+      init = null;
+      timestamp = DateUtils.getCurrentDateTime();
+      sequence = getSequenceTimestamp(timestamp);
+      return true;
+    }
   }
 
   @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
