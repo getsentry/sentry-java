@@ -86,6 +86,7 @@ abstract class SentryApollo4BuilderExtensionsClientErrorsTest(
       responseBody: String = responseBodyOk,
       sendDefaultPii: Boolean = false,
       socketPolicy: SocketPolicy = SocketPolicy.KEEP_OPEN,
+      configureOptions: SentryOptions.() -> Unit = {},
     ): ApolloClient {
       SentryIntegrationPackageStorage.getInstance().clearStorage()
 
@@ -97,6 +98,7 @@ abstract class SentryApollo4BuilderExtensionsClientErrorsTest(
                 dsn = "https://key@sentry.io/proj"
                 sdkVersion = SdkVersion("test", "1.2.3")
                 isSendDefaultPii = sendDefaultPii
+                configureOptions()
               }
             )
         }
@@ -276,6 +278,60 @@ abstract class SentryApollo4BuilderExtensionsClientErrorsTest(
           assertNull(request.cookies)
           assertNull(request.headers)
         },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `data collection can disable the GraphQL document independently`() {
+    val sut =
+      fixture.getSut(responseBody = fixture.responseBodyNotOk) {
+        dataCollection.graphql.setDocument(false)
+      }
+    executeQuery(sut)
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check {
+          val body = it.request!!.data as String
+          assertFalse(body.contains("\"query\""))
+          assertTrue(body.contains("\"variables\""))
+        },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `data collection can disable GraphQL variables independently`() {
+    val sut =
+      fixture.getSut(responseBody = fixture.responseBodyNotOk) {
+        dataCollection.graphql.setVariables(false)
+      }
+    executeQuery(sut)
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check {
+          val body = it.request!!.data as String
+          assertTrue(body.contains("\"query\""))
+          assertFalse(body.contains("\"variables\""))
+        },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `data collection can disable the GraphQL request body`() {
+    val sut =
+      fixture.getSut(responseBody = fixture.responseBodyNotOk) {
+        dataCollection.graphql.setDocument(false)
+        dataCollection.graphql.setVariables(false)
+      }
+    executeQuery(sut)
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check { assertNull(it.request!!.data) },
         any<Hint>(),
       )
   }

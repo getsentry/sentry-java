@@ -423,7 +423,11 @@ public final class io/sentry/DataCollectionResolver {
 	public fun isDataCollectionConfigured ()Z
 	public fun isDatabaseQueryData ()Z
 	public fun isGraphqlDocument ()Z
+	public fun isGraphqlDocumentWithLegacyAlways ()Z
+	public fun isGraphqlDocumentWithLegacyBodyGate ()Z
 	public fun isGraphqlVariables ()Z
+	public fun isGraphqlVariablesWithLegacyAlways ()Z
+	public fun isGraphqlVariablesWithLegacyBodyGate ()Z
 	public fun isIncomingRequestBody ()Z
 	public fun isIncomingResponseBody ()Z
 	public fun isOutgoingRequestBody ()Z
@@ -7761,6 +7765,10 @@ public final class io/sentry/util/FileUtils {
 	public static fun deleteRecursively (Ljava/io/File;)Z
 	public static fun readBytesFromFile (Ljava/lang/String;J)[B
 	public static fun readText (Ljava/io/File;)Ljava/lang/String;
+}
+
+public final class io/sentry/util/GraphqlUtils {
+	public static fun filterRequestBody (Ljava/lang/String;Lio/sentry/SentryOptions;)Ljava/lang/String;
 }
 
 public final class io/sentry/util/HintUtils {

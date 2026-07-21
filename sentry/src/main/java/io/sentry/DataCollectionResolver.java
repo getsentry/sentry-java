@@ -35,8 +35,28 @@ public final class DataCollectionResolver {
     return explicitOrSendDefaultPii(options.getDataCollection().getGraphql().getDocument(), true);
   }
 
+  public boolean isGraphqlDocumentWithLegacyBodyGate() {
+    return explicitOrDefault(
+        options.getDataCollection().getGraphql().getDocument(), true, isLegacyGraphqlBodyEnabled());
+  }
+
+  public boolean isGraphqlDocumentWithLegacyAlways() {
+    return explicitOrDefault(options.getDataCollection().getGraphql().getDocument(), true, true);
+  }
+
   public boolean isGraphqlVariables() {
     return explicitOrSendDefaultPii(options.getDataCollection().getGraphql().getVariables(), true);
+  }
+
+  public boolean isGraphqlVariablesWithLegacyBodyGate() {
+    return explicitOrDefault(
+        options.getDataCollection().getGraphql().getVariables(),
+        true,
+        isLegacyGraphqlBodyEnabled());
+  }
+
+  public boolean isGraphqlVariablesWithLegacyAlways() {
+    return explicitOrDefault(options.getDataCollection().getGraphql().getVariables(), true, true);
   }
 
   public @NotNull KeyValueCollectionBehavior getCookies() {
@@ -80,12 +100,22 @@ public final class DataCollectionResolver {
     return isHttpBodyEnabled(HttpBodyType.OUTGOING_RESPONSE, options.isSendDefaultPii());
   }
 
+  private boolean isLegacyGraphqlBodyEnabled() {
+    return options.isSendDefaultPii()
+        && !SentryOptions.RequestSize.NONE.equals(options.getMaxRequestBodySize());
+  }
+
   private boolean explicitOrSendDefaultPii(
       final @Nullable Boolean explicit, final boolean defaultValue) {
+    return explicitOrDefault(explicit, defaultValue, options.isSendDefaultPii());
+  }
+
+  private boolean explicitOrDefault(
+      final @Nullable Boolean explicit, final boolean defaultValue, final boolean legacyFallback) {
     if (explicit != null) {
       return explicit;
     }
-    return isDataCollectionConfigured() ? defaultValue : options.isSendDefaultPii();
+    return isDataCollectionConfigured() ? defaultValue : legacyFallback;
   }
 
   private @NotNull KeyValueCollectionBehavior explicitOrEmptyDenyList(
