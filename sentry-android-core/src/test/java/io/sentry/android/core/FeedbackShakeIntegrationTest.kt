@@ -76,6 +76,23 @@ class FeedbackShakeIntegrationTest {
   }
 
   @Test
+  fun `warm-up drained after close does not resolve the sensor`() {
+    // Integrations are closed before the executor drains, so a queued warm-up can run after
+    // close(). It must be a no-op rather than resolving the sensor and spinning up a HandlerThread.
+    val deferredExecutor = DeferredExecutorService()
+    fixture.options.executorService = deferredExecutor
+    whenever(fixture.application.getSystemService(any())).thenReturn(null)
+
+    val sut = fixture.getSut(useShakeGesture = true)
+    sut.register(fixture.scopes, fixture.options)
+    sut.close()
+
+    deferredExecutor.runAll()
+
+    verify(fixture.application, never()).getSystemService(eq(Context.SENSOR_SERVICE))
+  }
+
+  @Test
   fun `when useShakeGesture is disabled does not register activity lifecycle callbacks`() {
     val sut = fixture.getSut(useShakeGesture = false)
     sut.register(fixture.scopes, fixture.options)

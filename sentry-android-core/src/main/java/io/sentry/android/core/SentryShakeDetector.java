@@ -40,6 +40,7 @@ public final class SentryShakeDetector implements SensorEventListener {
   private @Nullable Handler handler;
   private volatile @Nullable Listener listener;
   private @NotNull ILogger logger;
+  private boolean closed;
 
   private final @NotNull SampleQueue queue = new SampleQueue();
 
@@ -61,6 +62,11 @@ public final class SentryShakeDetector implements SensorEventListener {
   }
 
   private synchronized void init(final @NotNull Context context) {
+    // A warm-up submitted to the executor can be drained after close() (integrations are closed
+    // before the executor shuts down), so bail out instead of spinning up a new HandlerThread.
+    if (closed) {
+      return;
+    }
     if (sensorManager == null) {
       sensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
     }
@@ -76,6 +82,9 @@ public final class SentryShakeDetector implements SensorEventListener {
 
   public synchronized void start(
       final @NotNull Context context, final @NotNull Listener shakeListener) {
+    if (closed) {
+      return;
+    }
     this.listener = shakeListener;
     init(context);
     if (sensorManager == null) {
@@ -107,6 +116,7 @@ public final class SentryShakeDetector implements SensorEventListener {
 
   /** Stops detection and releases the background thread. */
   public synchronized void close() {
+    closed = true;
     stop();
     if (handlerThread != null) {
       // quitSafely drains pending messages (including the clear posted by stop) before exiting
