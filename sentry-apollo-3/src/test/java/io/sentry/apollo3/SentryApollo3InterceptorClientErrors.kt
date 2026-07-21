@@ -436,6 +436,38 @@ class SentryApollo3InterceptorClientErrors {
   }
 
   @Test
+  fun `data collection filters response headers`() {
+    val sut =
+      fixture.getSut(responseBody = fixture.responseBodyNotOk) {
+        dataCollection.httpHeaders.response = KeyValueCollectionBehavior.denyList("content-length")
+      }
+    executeQuery(sut)
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check {
+          assertEquals("[Filtered]", it.contexts.response!!.headers?.get("Content-Length"))
+        },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `data collection can disable response headers`() {
+    val sut =
+      fixture.getSut(responseBody = fixture.responseBodyNotOk) {
+        dataCollection.httpHeaders.response = KeyValueCollectionBehavior.off()
+      }
+    executeQuery(sut)
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check { assertTrue(it.contexts.response!!.headers!!.isEmpty()) },
+        any<Hint>(),
+      )
+  }
+
+  @Test
   fun `capture errors with more response context if sendDefaultPii is enabled`() {
     val sut = fixture.getSut(responseBody = fixture.responseBodyNotOk, sendDefaultPii = true)
     executeQuery(sut)
