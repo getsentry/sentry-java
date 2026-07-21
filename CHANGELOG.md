@@ -18,6 +18,7 @@
 ### Dependencies
 
 - The SDK is now compiled with Android Gradle Plugin 9.2.1 ([#5779](https://github.com/getsentry/sentry-java/pull/5779))
+- The SDK is now compiled against Android API 37 ([#5796](https://github.com/getsentry/sentry-java/pull/5796))
 
 ## 8.49.0
 
