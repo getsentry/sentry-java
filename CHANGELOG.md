@@ -4,7 +4,7 @@
 
 ### Features
 
-- Add `InternalSentrySdk.captureEnvelopeNonTerminating` for hybrid SDKs (e.g. Flutter) so unhandled exceptions that don't terminate the process no longer end the session as `crashed`. The session is kept alive, marked pending-unhandled, and finalized as `unhandled` on session end (or `crashed` if a native crash follows). The existing `captureEnvelope(byte[], boolean)` behavior is unchanged. ([#XXXX](https://github.com/getsentry/sentry-java/pull/XXXX))
+- Add `InternalSentrySdk.captureEnvelopeNonTerminating` for hybrid SDKs (e.g. Flutter) so unhandled exceptions that don't terminate the process no longer end the session as `crashed`. The session is kept alive, marked pending-unhandled, and finalized as `unhandled` on session end (or `crashed` if a native crash follows). The existing `captureEnvelope(byte[], boolean)` behavior is unchanged. ([#5795](https://github.com/getsentry/sentry-java/pull/5795))
 
 ## 8.49.0
 
