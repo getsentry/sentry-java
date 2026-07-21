@@ -59,12 +59,12 @@ class SentryOptionsTest {
   @Test
   fun `setting data collection replaces the default instance`() {
     val options = SentryOptions()
-    val dataCollection = DataCollection().apply { setQueues(false) }
+    val dataCollection = DataCollection().apply { setUserInfo(false) }
 
     options.dataCollection = dataCollection
 
     assertThat(options.dataCollection).isSameInstanceAs(dataCollection)
-    assertThat(options.dataCollection.queues).isFalse()
+    assertThat(options.dataCollection.userInfo).isFalse()
   }
 
   @Test
