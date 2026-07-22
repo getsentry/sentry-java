@@ -159,7 +159,10 @@ internal class PixelCopyStrategy(
                 resetUnstableCaptures = !changedDuringCapture,
               )
             }
-          } catch (e: Throwable) {
+          } catch (e: RuntimeException) {
+            // OEM View subclasses have been observed throwing during hierarchy traversal
+            // (e.g. Redmi's TextView NPE). Release the frame gate so a single bad frame
+            // doesn't wedge the recorder. Errors (OOM, LinkageError) intentionally propagate.
             options.logger.log(WARNING, "Failed to process replay frame", e)
             finishFrame()
           }
@@ -397,8 +400,9 @@ internal class PixelCopyStrategy(
           maskRenderer.close()
         },
       )
-    // close() typically runs after ReplayIntegration has shut down the executor, so submit may
-    // return null. Fall back to running cleanup inline so the bitmap + mask renderer are freed.
+    // ReplayExecutorService.submit returns null only on genuine rejection (post-shutdown);
+    // inline execution on the worker thread returns a completed future. Fall back to running
+    // cleanup here so the bitmap + mask renderer are freed even when the executor is dead.
     if (executor.submit(cleanup) == null) {
       cleanup.run()
     }
