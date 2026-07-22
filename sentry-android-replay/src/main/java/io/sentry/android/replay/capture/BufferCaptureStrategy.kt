@@ -4,6 +4,8 @@ import android.annotation.SuppressLint
 import android.annotation.TargetApi
 import android.graphics.Bitmap
 import android.view.MotionEvent
+import io.sentry.DataCategory.All
+import io.sentry.DataCategory.Replay
 import io.sentry.DateUtils
 import io.sentry.IScopes
 import io.sentry.SentryLevel.DEBUG
@@ -76,6 +78,13 @@ internal class BufferCaptureStrategy(
   }
 
   override fun captureReplay(isTerminating: Boolean, onSegmentSent: (Date) -> Unit) {
+    if (isReplayRateLimited()) {
+      // the segment envelopes would be dropped by the transport anyway, so don't waste resources
+      // encoding videos that will only be discarded
+      options.logger.log(INFO, "Replay is rate-limited, not capturing for event")
+      return
+    }
+
     val sampled = random.sample(options.sessionReplay.onErrorSampleRate)
 
     if (!sampled) {
@@ -169,6 +178,11 @@ internal class BufferCaptureStrategy(
     val bufferLimit = dateProvider.currentTimeMillis - options.sessionReplay.errorReplayDuration
     rotateEvents(currentEvents, bufferLimit)
   }
+
+  private fun isReplayRateLimited(): Boolean =
+    scopes?.rateLimiter?.let {
+      it.isActiveForCategory(All) || it.isActiveForCategory(Replay)
+    } == true
 
   private fun deleteFile(file: File?) {
     if (file == null) {

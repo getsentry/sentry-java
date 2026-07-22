@@ -20,6 +20,7 @@ import io.sentry.android.replay.capture.BufferCaptureStrategyTest.Fixture.Compan
 import io.sentry.protocol.SentryId
 import io.sentry.transport.CurrentDateProvider
 import io.sentry.transport.ICurrentDateProvider
+import io.sentry.transport.RateLimiter
 import io.sentry.util.Random
 import java.io.File
 import kotlin.test.Test
@@ -333,6 +334,22 @@ class BufferCaptureStrategyTest {
 
     strategy.captureReplay(false) {}
 
+    assertEquals(SentryId.EMPTY_ID, fixture.scope.replayId)
+  }
+
+  @Test
+  fun `captureReplay does nothing when rate-limited`() {
+    val rateLimiter = mock<RateLimiter> { on { isActiveForCategory(any()) }.thenReturn(true) }
+    whenever(fixture.scopes.rateLimiter).thenReturn(rateLimiter)
+    val strategy = fixture.getSut()
+    strategy.start()
+    strategy.onConfigurationChanged(fixture.recorderConfig)
+    strategy.pause()
+
+    strategy.captureReplay(false) {}
+
+    // neither the current nor the buffered segment should be sent while rate-limited
+    verify(fixture.scopes, never()).captureReplay(any(), any())
     assertEquals(SentryId.EMPTY_ID, fixture.scope.replayId)
   }
 
