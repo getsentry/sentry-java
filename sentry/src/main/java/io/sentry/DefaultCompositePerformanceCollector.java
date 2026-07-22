@@ -5,9 +5,8 @@ import io.sentry.util.Objects;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.ApiStatus;
@@ -19,7 +18,14 @@ public final class DefaultCompositePerformanceCollector implements CompositePerf
   private static final long TRANSACTION_COLLECTION_INTERVAL_MILLIS = 100;
   private static final long TRANSACTION_COLLECTION_TIMEOUT_MILLIS = 30000;
   private final @NotNull AutoClosableReentrantLock timerLock = new AutoClosableReentrantLock();
-  private volatile @Nullable Timer timer = null;
+  private volatile @Nullable Future<?> collectFuture = null;
+
+  /**
+   * Incremented on close() so an in-flight collect run doesn't reschedule itself after its chain
+   * was cancelled. Guarded by timerLock.
+   */
+  private long generation = 0;
+
   private final @NotNull Map<String, CompositeData> compositeDataMap = new ConcurrentHashMap<>();
   private final @NotNull List<IPerformanceSnapshotCollector> snapshotCollectors;
   private final @NotNull List<IPerformanceContinuousCollector> continuousCollectors;
@@ -71,6 +77,7 @@ public final class DefaultCompositePerformanceCollector implements CompositePerf
   }
 
   @Override
+  @SuppressWarnings("FutureReturnValueIgnored")
   public void start(final @NotNull String id) {
     if (hasNoCollectors) {
       options
@@ -88,60 +95,78 @@ public final class DefaultCompositePerformanceCollector implements CompositePerf
     }
     if (!isStarted.getAndSet(true)) {
       try (final @NotNull ISentryLifecycleToken ignored = timerLock.acquire()) {
-        if (timer == null) {
-          timer = new Timer(true);
-        }
-        // We schedule the timer to call setup() on collectors immediately in the background.
-        timer.schedule(
-            new TimerTask() {
-              @Override
-              public void run() {
-                for (IPerformanceSnapshotCollector collector : snapshotCollectors) {
-                  collector.setup();
-                }
-              }
-            },
-            0L);
-        // We schedule the timer to start after a delay, so we let some time pass between setup()
-        // and collect() calls.
-        // This way ICollectors that collect average stats based on time intervals, like
-        // AndroidCpuCollector, can have an actual time interval to evaluate.
-        final @NotNull List<ITransaction> timedOutTransactions = new ArrayList<>();
-        TimerTask timerTask =
-            new TimerTask() {
-              @Override
-              public void run() {
-                timedOutTransactions.clear();
-
-                final @NotNull PerformanceCollectionData tempData =
-                    new PerformanceCollectionData(options.getDateProvider().now().nanoTimestamp());
-
-                // Enrich tempData using collectors
-                for (IPerformanceSnapshotCollector collector : snapshotCollectors) {
-                  collector.collect(tempData);
-                }
-
-                // Add the enriched tempData to all transactions/profiles/objects that collect data.
-                // Then Check if that object timed out.
-                for (CompositeData data : compositeDataMap.values()) {
-                  if (data.addDataAndCheckTimeout(tempData)) {
-                    // timed out
-                    if (data.transaction != null) {
-                      timedOutTransactions.add(data.transaction);
+        final long currentGeneration = generation;
+        try {
+          // We schedule the executor to call setup() on collectors immediately in the background.
+          options
+              .getTimerExecutorService()
+              .schedule(
+                  () -> {
+                    for (IPerformanceSnapshotCollector collector : snapshotCollectors) {
+                      collector.setup();
                     }
-                  }
-                }
-                // Stop timed out transactions outside compositeDataMap loop, as stop() modifies the
-                // map
-                for (final @NotNull ITransaction t : timedOutTransactions) {
-                  stop(t);
-                }
-              }
-            };
-        timer.schedule(
-            timerTask,
-            TRANSACTION_COLLECTION_INTERVAL_MILLIS,
-            TRANSACTION_COLLECTION_INTERVAL_MILLIS);
+                  },
+                  0L);
+          // We schedule the collection to start after a delay, so we let some time pass between
+          // setup() and collect() calls.
+          // This way ICollectors that collect average stats based on time intervals, like
+          // AndroidCpuCollector, can have an actual time interval to evaluate.
+          collectFuture =
+              options
+                  .getTimerExecutorService()
+                  .schedule(
+                      () -> collectAndReschedule(currentGeneration),
+                      TRANSACTION_COLLECTION_INTERVAL_MILLIS);
+        } catch (Throwable t) {
+          options
+              .getLogger()
+              .log(SentryLevel.WARNING, "Failed to schedule performance collection.", t);
+        }
+      }
+    }
+  }
+
+  private void collectAndReschedule(final long scheduledGeneration) {
+    final @NotNull PerformanceCollectionData tempData =
+        new PerformanceCollectionData(options.getDateProvider().now().nanoTimestamp());
+
+    // Enrich tempData using collectors
+    for (IPerformanceSnapshotCollector collector : snapshotCollectors) {
+      collector.collect(tempData);
+    }
+
+    // Add the enriched tempData to all transactions/profiles/objects that collect data.
+    // Then Check if that object timed out.
+    final @NotNull List<ITransaction> timedOutTransactions = new ArrayList<>();
+    for (CompositeData data : compositeDataMap.values()) {
+      if (data.addDataAndCheckTimeout(tempData)) {
+        // timed out
+        if (data.transaction != null) {
+          timedOutTransactions.add(data.transaction);
+        }
+      }
+    }
+    // Stop timed out transactions outside compositeDataMap loop, as stop() modifies the map
+    for (final @NotNull ITransaction t : timedOutTransactions) {
+      stop(t);
+    }
+
+    try (final @NotNull ISentryLifecycleToken ignored = timerLock.acquire()) {
+      // stopping a timed out transaction above may have closed this collector; only reschedule if
+      // this run still belongs to the current collection chain
+      if (scheduledGeneration == generation) {
+        try {
+          collectFuture =
+              options
+                  .getTimerExecutorService()
+                  .schedule(
+                      () -> collectAndReschedule(scheduledGeneration),
+                      TRANSACTION_COLLECTION_INTERVAL_MILLIS);
+        } catch (Throwable t) {
+          options
+              .getLogger()
+              .log(SentryLevel.WARNING, "Failed to reschedule performance collection.", t);
+        }
       }
     }
   }
@@ -201,9 +226,10 @@ public final class DefaultCompositePerformanceCollector implements CompositePerf
     }
     if (isStarted.getAndSet(false)) {
       try (final @NotNull ISentryLifecycleToken ignored = timerLock.acquire()) {
-        if (timer != null) {
-          timer.cancel();
-          timer = null;
+        generation++;
+        if (collectFuture != null) {
+          collectFuture.cancel(false);
+          collectFuture = null;
         }
       }
     }
