@@ -118,10 +118,14 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
       try (final @NotNull ISentryLifecycleToken ignored = sessionLock.acquire()) {
         final @Nullable Session endingSession = readSessionFromEnvelope(envelope);
         final @Nullable Session currentSession = readSessionFromDisk(currentSessionFile);
-        if (endingSession != null
-            && currentSession != null
-            && hasSameSessionId(endingSession, currentSession)
-            && !currentSessionFile.delete()) {
+        final boolean preservePendingSession =
+            endingSession != null
+                && currentSession != null
+                && currentSession.isPendingUnhandled()
+                && endingSession.getSessionId() != null
+                && currentSession.getSessionId() != null
+                && !Objects.equals(endingSession.getSessionId(), currentSession.getSessionId());
+        if (!preservePendingSession && !currentSessionFile.delete()) {
           options.getLogger().log(WARNING, "Current envelope doesn't exist.");
         }
       }

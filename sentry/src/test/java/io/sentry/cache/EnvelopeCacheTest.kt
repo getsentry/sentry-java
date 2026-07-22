@@ -251,9 +251,10 @@ class EnvelopeCacheTest {
   }
 
   @Test
-  fun `mismatching SessionEnd preserves newer current session`() {
+  fun `mismatching SessionEnd preserves newer pending current session`() {
     val cache = fixture.getSUT()
     val currentSession = createSession()
+    currentSession.markPendingUnhandled()
     cache.persistCurrentSession(currentSession)
     val endingSession = createSession()
 
@@ -270,7 +271,21 @@ class EnvelopeCacheTest {
   }
 
   @Test
-  fun `null SIDs on SessionEnd preserve current session`() {
+  fun `mismatching SessionEnd deletes non-pending current session`() {
+    val cache = fixture.getSUT()
+    val currentSession = createSession()
+    cache.persistCurrentSession(currentSession)
+    val endingSession = createSession()
+
+    val envelope = SentryEnvelope.from(fixture.options.serializer, endingSession, null)
+    cache.storeEnvelope(envelope, HintUtils.createWithTypeCheckHint(SessionEndHint()))
+
+    assertThat(EnvelopeCache.getCurrentSessionFile(fixture.options.cacheDirPath!!).exists())
+      .isFalse()
+  }
+
+  @Test
+  fun `null SIDs on SessionEnd delete current session`() {
     val cache = fixture.getSUT()
     val currentSession = createSession(sessionId = null)
     cache.persistCurrentSession(currentSession)
@@ -279,8 +294,34 @@ class EnvelopeCacheTest {
     val envelope = SentryEnvelope.from(fixture.options.serializer, endingSession, null)
     cache.storeEnvelope(envelope, HintUtils.createWithTypeCheckHint(SessionEndHint()))
 
+    assertThat(EnvelopeCache.getCurrentSessionFile(fixture.options.cacheDirPath!!).exists())
+      .isFalse()
+  }
+
+  @Test
+  fun `malformed SessionEnd deletes current session`() {
+    val cache = fixture.getSUT()
+    val currentSession = createSession()
+    cache.persistCurrentSession(currentSession)
+
+    val envelope = SentryEnvelope(null, null, emptyList())
+    cache.storeEnvelope(envelope, HintUtils.createWithTypeCheckHint(SessionEndHint()))
+
+    assertThat(EnvelopeCache.getCurrentSessionFile(fixture.options.cacheDirPath!!).exists())
+      .isFalse()
+  }
+
+  @Test
+  fun `unreadable current session on SessionEnd is deleted`() {
+    val cache = fixture.getSUT()
     val currentSessionFile = EnvelopeCache.getCurrentSessionFile(fixture.options.cacheDirPath!!)
-    assertThat(currentSessionFile.exists()).isTrue()
+    currentSessionFile.writeText("not-a-session")
+
+    val endingSession = createSession()
+    val envelope = SentryEnvelope.from(fixture.options.serializer, endingSession, null)
+    cache.storeEnvelope(envelope, HintUtils.createWithTypeCheckHint(SessionEndHint()))
+
+    assertThat(currentSessionFile.exists()).isFalse()
   }
 
   @Test
