@@ -19,8 +19,10 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.TestOnly;
 
 @Open
 public class MetricsBatchProcessor implements IMetricsBatchProcessor {
@@ -40,10 +42,19 @@ public class MetricsBatchProcessor implements IMetricsBatchProcessor {
 
   public MetricsBatchProcessor(
       final @NotNull SentryOptions options, final @NotNull ISentryClient client) {
+    this(options, client, new SentryExecutorService(options));
+  }
+
+  @ApiStatus.Internal
+  @TestOnly
+  public MetricsBatchProcessor(
+      final @NotNull SentryOptions options,
+      final @NotNull ISentryClient client,
+      final @NotNull ISentryExecutorService executorService) {
     this.options = options;
     this.client = client;
     this.queue = new ConcurrentLinkedQueue<>();
-    this.executorService = new SentryExecutorService(options);
+    this.executorService = executorService;
   }
 
   @Override
@@ -74,7 +85,13 @@ public class MetricsBatchProcessor implements IMetricsBatchProcessor {
     isShuttingDown = true;
     if (isRestarting) {
       maybeSchedule(true);
-      executorService.submit(() -> executorService.close(options.getShutdownTimeoutMillis()));
+      try {
+        executorService.submit(() -> executorService.close(options.getShutdownTimeoutMillis()));
+      } catch (RejectedExecutionException e) {
+        // the shared executor may already be shutting down (e.g. closed by the log batch
+        // processor); close it directly instead
+        executorService.close(options.getShutdownTimeoutMillis());
+      }
     } else {
       executorService.close(options.getShutdownTimeoutMillis());
       while (!queue.isEmpty()) {

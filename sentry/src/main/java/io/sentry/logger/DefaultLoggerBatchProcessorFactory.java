@@ -8,6 +8,6 @@ public final class DefaultLoggerBatchProcessorFactory implements ILoggerBatchPro
   @Override
   public @NotNull ILoggerBatchProcessor create(
       @NotNull SentryOptions options, @NotNull SentryClient client) {
-    return new LoggerBatchProcessor(options, client);
+    return new LoggerBatchProcessor(options, client, client.getBatchProcessorExecutorService());
   }
 }

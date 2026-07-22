@@ -45,6 +45,10 @@ public final class SentryClient implements ISentryClient {
   private final @NotNull ILoggerBatchProcessor loggerBatchProcessor;
   private final @NotNull IMetricsBatchProcessor metricsBatchProcessor;
 
+  // Single executor shared by the log and metrics batch processors, so they don't spawn a thread
+  // each. Created only when logs or metrics are enabled, and closed when those processors close.
+  private final @Nullable ISentryExecutorService batchProcessorExecutorService;
+
   @Override
   public boolean isEnabled() {
     return enabled;
@@ -62,6 +66,14 @@ public final class SentryClient implements ISentryClient {
 
     final RequestDetailsResolver requestDetailsResolver = new RequestDetailsResolver(options);
     transport = transportFactory.create(options, requestDetailsResolver.resolve());
+
+    // must be set before the batch processors are created, as they read it from this client
+    if (options.getLogs().isEnabled() || options.getMetrics().isEnabled()) {
+      batchProcessorExecutorService = new SentryExecutorService(options);
+    } else {
+      batchProcessorExecutorService = null;
+    }
+
     if (options.getLogs().isEnabled()) {
       loggerBatchProcessor =
           options.getLogs().getLoggerBatchProcessorFactory().create(options, this);
@@ -74,6 +86,16 @@ public final class SentryClient implements ISentryClient {
     } else {
       metricsBatchProcessor = NoOpMetricsBatchProcessor.getInstance();
     }
+  }
+
+  /**
+   * The executor shared by the log and metrics batch processors. Only present (non-null) when logs
+   * or metrics are enabled, which is the only time the batch processors request it.
+   */
+  @ApiStatus.Internal
+  public @NotNull ISentryExecutorService getBatchProcessorExecutorService() {
+    return Objects.requireNonNull(
+        batchProcessorExecutorService, "batch processor executor service is not available");
   }
 
   private boolean shouldApplyScopeData(

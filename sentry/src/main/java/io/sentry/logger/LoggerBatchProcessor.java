@@ -84,7 +84,13 @@ public class LoggerBatchProcessor implements ILoggerBatchProcessor {
     isShuttingDown = true;
     if (isRestarting) {
       maybeSchedule(true);
-      executorService.submit(() -> executorService.close(options.getShutdownTimeoutMillis()));
+      try {
+        executorService.submit(() -> executorService.close(options.getShutdownTimeoutMillis()));
+      } catch (RejectedExecutionException e) {
+        // the shared executor may already be shutting down (e.g. closed by the metrics batch
+        // processor); close it directly instead
+        executorService.close(options.getShutdownTimeoutMillis());
+      }
     } else {
       executorService.close(options.getShutdownTimeoutMillis());
       while (!queue.isEmpty()) {

@@ -8,6 +8,6 @@ public final class DefaultMetricsBatchProcessorFactory implements IMetricsBatchP
   @Override
   public @NotNull IMetricsBatchProcessor create(
       final @NotNull SentryOptions options, final @NotNull SentryClient client) {
-    return new MetricsBatchProcessor(options, client);
+    return new MetricsBatchProcessor(options, client, client.getBatchProcessorExecutorService());
   }
 }

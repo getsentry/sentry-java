@@ -29,6 +29,7 @@ import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
 import io.sentry.protocol.ViewHierarchy
 import io.sentry.test.callMethod
+import io.sentry.test.getProperty
 import io.sentry.test.injectForField
 import io.sentry.transport.ITransport
 import io.sentry.transport.ITransportGate
@@ -175,6 +176,33 @@ class SentryClientTest {
     fixture.sentryOptions.dsn = dsnStringLegacy
     val sut = fixture.getSut()
     assertTrue(sut.isEnabled)
+  }
+
+  @Test
+  fun `log and metrics batch processors share a single executor`() {
+    // real default factories (not the fixture mocks) so the shared executor is actually wired
+    val options =
+      SentryOptions().apply {
+        dsn = dsnString
+        logs.isEnabled = true
+        metrics.isEnabled = true
+      }
+    val client = SentryClient(options)
+    try {
+      val loggerExecutor =
+        client
+          .getProperty<ILoggerBatchProcessor>("loggerBatchProcessor")
+          .getProperty<ISentryExecutorService>("executorService")
+      val metricsExecutor =
+        client
+          .getProperty<IMetricsBatchProcessor>("metricsBatchProcessor")
+          .getProperty<ISentryExecutorService>("executorService")
+
+      assertSame(client.batchProcessorExecutorService, loggerExecutor)
+      assertSame(loggerExecutor, metricsExecutor)
+    } finally {
+      client.close()
+    }
   }
 
   @Test
