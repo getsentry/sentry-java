@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Performance
+
+- Reduce the number of SDK threads: `LifecycleWatcher` now schedules the session-end task on the shared timer executor instead of creating a dedicated `java.util.Timer` thread ([#5819](https://github.com/getsentry/sentry-java/pull/5819))
+
 ## 8.50.0
 
 ### Android 17 support
