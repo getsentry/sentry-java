@@ -117,9 +117,8 @@ internal class PixelCopyStrategy(
             return@request
           }
 
-          // Ensure the frame gate is always released if anything below throws before we hand
-          // work off to the executor — otherwise a single failure wedges captures forever.
-          var handedOff = false
+          // Release the frame gate if anything below throws before we hand work off to the
+          // executor — otherwise a single failure wedges captures forever.
           try {
             // TODO: disableAllMasking here and dont traverse?
             val viewHierarchy = ViewHierarchyNode.fromView(root, null, 0, options.sessionReplay)
@@ -146,8 +145,8 @@ internal class PixelCopyStrategy(
                     }
                   }
                 )
-              if (submitted != null) {
-                handedOff = true
+              if (submitted == null) {
+                finishFrame()
               }
             } else {
               // Re-arm the recorder's contentChanged gate; SurfaceView redraws don't trigger
@@ -159,14 +158,10 @@ internal class PixelCopyStrategy(
                 viewHierarchy,
                 resetUnstableCaptures = !changedDuringCapture,
               )
-              handedOff = true
             }
           } catch (e: Throwable) {
             options.logger.log(WARNING, "Failed to process replay frame", e)
-          } finally {
-            if (!handedOff) {
-              finishFrame()
-            }
+            finishFrame()
           }
         },
         mainLooperHandler.handler,
