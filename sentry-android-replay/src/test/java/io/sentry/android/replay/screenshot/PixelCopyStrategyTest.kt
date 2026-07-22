@@ -27,6 +27,7 @@ import io.sentry.android.replay.ScreenshotRecorderCallback
 import io.sentry.android.replay.ScreenshotRecorderConfig
 import io.sentry.android.replay.util.DebugOverlayDrawable
 import io.sentry.android.replay.util.MainLooperHandler
+import io.sentry.android.replay.util.ReplayRunnable
 import java.util.concurrent.Future
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.atomic.AtomicBoolean
@@ -113,18 +114,23 @@ class PixelCopyStrategyTest {
   }
 
   @Test
-  fun `when close is called while executor task is running, does not crash with recycled bitmap`() {
+  fun `when close races the mask task, masking is skipped and no screenshot is emitted`() {
     val activity = buildActivity(SimpleActivity::class.java).setup()
     shadowOf(Looper.getMainLooper()).idle()
 
     var strategy: PixelCopyStrategy? = null
 
     val failure = AtomicReference<Throwable>()
-    // Custom executor that closes the strategy before executing tasks
+    // Custom executor that closes the strategy right before running the mask task, to simulate
+    // close() racing an in-flight mask task. We key off the mask task specifically (not "the first
+    // submit") because close() itself submits the cleanup task — closing again when that runs would
+    // recurse via close() -> scheduleCleanup() -> submit(), a loop no real code path can produce.
     val executorThatClosesFirst = mock<ScheduledExecutorService>()
     whenever(executorThatClosesFirst.submit(any<Runnable>())).doAnswer {
       val task = it.getArgument<Runnable>(0)
-      strategy?.close()
+      if ((task as? ReplayRunnable)?.taskName == "screenshot_recorder.mask") {
+        strategy?.close()
+      }
       try {
         task.run()
       } catch (e: Throwable) {
@@ -139,6 +145,9 @@ class PixelCopyStrategyTest {
     shadowOf(Looper.getMainLooper()).idle()
 
     if (failure.get() != null) throw failure.get()
+    // close() landed before masking ran, so applyMaskingAndNotify must bail out early and never
+    // hand a screenshot to the callback after the strategy is closed.
+    verify(fixture.callback, never()).onScreenshotRecorded(any<Bitmap>())
   }
 
   @Test
