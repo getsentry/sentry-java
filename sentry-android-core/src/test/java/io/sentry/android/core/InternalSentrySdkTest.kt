@@ -38,6 +38,7 @@ import java.util.concurrent.atomic.AtomicReference
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -323,6 +324,28 @@ class InternalSentrySdkTest {
     scope.user = null
 
     val serializedScope = InternalSentrySdk.serializeScope(context, options, scope)
+    assertTrue((serializedScope["user"] as Map<*, *>).containsKey("id"))
+  }
+
+  @Test
+  fun `serializeScope does not provide fallback user id when user info is disabled`() {
+    val options = SentryAndroidOptions().apply { dataCollection.setUserInfo(false) }
+    val scope = Scope(options)
+    scope.user = null
+
+    val serializedScope = InternalSentrySdk.serializeScope(context, options, scope)
+
+    assertFalse((serializedScope["user"] as Map<*, *>).containsKey("id"))
+  }
+
+  @Test
+  fun `serializeScope provides fallback user id when user info is enabled`() {
+    val options = SentryAndroidOptions().apply { dataCollection.setUserInfo(true) }
+    val scope = Scope(options)
+    scope.user = null
+
+    val serializedScope = InternalSentrySdk.serializeScope(context, options, scope)
+
     assertTrue((serializedScope["user"] as Map<*, *>).containsKey("id"))
   }
 
