@@ -1,5 +1,6 @@
 import io.gitlab.arturbosch.detekt.Detekt
 import net.ltgt.gradle.errorprone.errorprone
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
   id("com.android.application")
@@ -64,12 +65,12 @@ android {
     }
   }
 
-  kotlin { compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8 }
+  kotlin { compilerOptions.jvmTarget = JvmTarget.JVM_11 }
 
   lint {
     warningsAsErrors = true
     checkDependencies = true
-    // Suppress OldTargetApi: lint 8.13.1 expects API 37 but we target 36
+    // Suppress OldTargetApi: lint 9.2.1 expects API 37 but we target 36
     disable += "OldTargetApi"
 
     // We run a full lint analysis as build part in CI, so skip vital checks for assemble tasks.

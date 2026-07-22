@@ -1,3 +1,4 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
 plugins {
@@ -12,6 +13,10 @@ android {
   defaultConfig { minSdk = libs.versions.minSdk.get().toInt() }
   buildFeatures { buildConfig = false }
 
+  // AGP 9 only generates unit tests for the testBuildType. CI disables the debug
+  // variant, so unit tests must target release to run at all.
+  testBuildType = "release"
+
   testOptions {
     unitTests.apply {
       isReturnDefaultValues = true
@@ -21,7 +26,7 @@ android {
 }
 
 kotlin {
-  jvmToolchain(17)
+  compilerOptions.jvmTarget = JVM_1_8
   compilerOptions.languageVersion = KotlinVersion.KOTLIN_1_9
   explicitApi()
 }
