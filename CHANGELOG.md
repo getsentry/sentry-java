@@ -54,7 +54,6 @@
        ```properties
        sentry.logs.enabled=true
        ```
-     - Existing manually configured `SentryAppender` instances take precedence over automatic configuration.
 
 ### Fixes
 

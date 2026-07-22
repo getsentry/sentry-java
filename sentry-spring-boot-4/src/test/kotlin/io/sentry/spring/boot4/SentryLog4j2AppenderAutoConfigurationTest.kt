@@ -52,19 +52,22 @@ class SentryLog4j2AppenderAutoConfigurationTest {
   private val contextRunner =
     baseContextRunner
       .withLog4j2CoreProvider()
+      .withPropertyValues("sentry.logging.enabled=true")
       .withUserConfiguration(NoOpTransportConfiguration::class.java)
 
-  private val dsnEnabledRunner =
+  private val dsnOnlyRunner =
     baseContextRunner
       .withLog4j2CoreProvider()
       .withPropertyValues("sentry.dsn=http://key@localhost/proj")
       .withUserConfiguration(NoOpTransportConfiguration::class.java)
 
+  private val dsnEnabledRunner = dsnOnlyRunner.withPropertyValues("sentry.logging.enabled=true")
+
   // Hide the Log4j2 Core provider so LogManager uses the Log4j-to-SLF4J bridge.
   private val log4j2BridgeDsnEnabledRunner =
     baseContextRunner
       .withClassLoader(FilteredClassLoader("org.apache.logging.log4j.core.impl.Log4jProvider"))
-      .withPropertyValues("sentry.dsn=http://key@localhost/proj")
+      .withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.logging.enabled=true")
       .withUserConfiguration(NoOpTransportConfiguration::class.java)
 
   private val originalLogManagerFactory = LogManager.getFactory()
@@ -94,6 +97,11 @@ class SentryLog4j2AppenderAutoConfigurationTest {
   @Test
   fun `does not configure SentryAppender when auto-configuration dsn is not set`() {
     contextRunner.run { assertThat(rootLogger.getAppenders(SentryAppender::class.java)).isEmpty() }
+  }
+
+  @Test
+  fun `does not configure SentryAppender when logging is not enabled`() {
+    dsnOnlyRunner.run { assertThat(rootLogger.getAppenders(SentryAppender::class.java)).isEmpty() }
   }
 
   @Test
@@ -175,7 +183,7 @@ class SentryLog4j2AppenderAutoConfigurationTest {
 
   @Test
   fun `does not configure SentryAppender when logging is disabled`() {
-    contextRunner.withPropertyValues("sentry.logging.enabled=false").run {
+    dsnEnabledRunner.withPropertyValues("sentry.logging.enabled=false").run {
       assertThat(rootLogger.getAppenders(SentryAppender::class.java)).isEmpty()
     }
   }
@@ -230,7 +238,7 @@ class SentryLog4j2AppenderAutoConfigurationTest {
   @Test
   fun `does not configure SentryAppender when log4j2 is not on the classpath`() {
     baseContextRunner
-      .withPropertyValues("sentry.dsn=http://key@localhost/proj")
+      .withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.logging.enabled=true")
       .withClassLoader(FilteredClassLoader(LoggerContext::class.java))
       .run { assertThat(rootLogger.getAppenders(SentryAppender::class.java)).isEmpty() }
   }
@@ -238,7 +246,7 @@ class SentryLog4j2AppenderAutoConfigurationTest {
   @Test
   fun `does not configure SentryAppender when sentry-log4j2 module is not on the classpath`() {
     baseContextRunner
-      .withPropertyValues("sentry.dsn=http://key@localhost/proj")
+      .withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.logging.enabled=true")
       .withClassLoader(FilteredClassLoader(SentryAppender::class.java))
       .run { assertThat(rootLogger.getAppenders(SentryAppender::class.java)).isEmpty() }
   }
