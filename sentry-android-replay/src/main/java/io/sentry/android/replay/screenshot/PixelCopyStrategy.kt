@@ -60,7 +60,6 @@ internal class PixelCopyStrategy(
   private val unstableCaptures = AtomicInteger(0)
   private val isClosed = AtomicBoolean(false)
   private val frameInFlight = AtomicBoolean(false)
-  private val cleanupScheduled = AtomicBoolean(false)
   private val dstOverPaint by
     lazy(NONE) { Paint().apply { xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_OVER) } }
   private val screenshotCanvas by lazy(NONE) { Canvas(screenshot) }
@@ -383,9 +382,6 @@ internal class PixelCopyStrategy(
   }
 
   private fun scheduleCleanup() {
-    if (!cleanupScheduled.compareAndSet(false, true)) {
-      return
-    }
     val cleanup =
       ReplayRunnable(
         "PixelCopyStrategy.close",
