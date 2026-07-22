@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Performance
+
+- Reduce the number of SDK threads: the log and metrics batch processors now share a single executor instead of each creating its own ([#5818](https://github.com/getsentry/sentry-java/pull/5818))
+
 ## 8.50.0
 
 ### Android 17 support
