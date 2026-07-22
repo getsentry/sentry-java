@@ -238,6 +238,42 @@ class PixelCopyStrategyTest {
 
   @Test
   @Config(shadows = [DeferredWindowPixelCopyShadow::class])
+  fun `frame gate is released when masking submit is rejected`() {
+    val activity = buildActivity(SimpleActivity::class.java).setup()
+    shadowOf(Looper.getMainLooper()).idle()
+    val root = activity.get().findViewById<View>(android.R.id.content)
+    // Simulate an already-shutdown executor: submit returns null.
+    val executor = mock<ScheduledExecutorService>()
+    whenever(executor.submit(any<Runnable>())).thenReturn(null)
+    val strategy = fixture.getSut(executor)
+
+    strategy.capture(root)
+    DeferredWindowPixelCopyShadow.flush()
+    shadowOf(Looper.getMainLooper()).idle()
+
+    // Gate must have been released; a follow-up capture should proceed rather than being dropped.
+    strategy.capture(root)
+    DeferredWindowPixelCopyShadow.flush()
+    shadowOf(Looper.getMainLooper()).idle()
+
+    verify(executor, times(2)).submit(any<Runnable>())
+  }
+
+  @Test
+  fun `close cleans up inline when executor is already shut down`() {
+    // submit returns null → previously the bitmap + maskRenderer would leak.
+    val executor = mock<ScheduledExecutorService>()
+    whenever(executor.submit(any<Runnable>())).thenReturn(null)
+    val strategy = fixture.getSut(executor)
+
+    strategy.close()
+
+    // No crash and the submit was attempted exactly once (cleanup ran inline as fallback).
+    verify(executor).submit(any<Runnable>())
+  }
+
+  @Test
+  @Config(shadows = [DeferredWindowPixelCopyShadow::class])
   fun `capture skips the first unstable PixelCopy result`() {
     val activity = buildActivity(SimpleActivity::class.java).setup()
     shadowOf(Looper.getMainLooper()).idle()

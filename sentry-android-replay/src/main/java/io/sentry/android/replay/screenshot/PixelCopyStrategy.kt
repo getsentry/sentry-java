@@ -117,44 +117,56 @@ internal class PixelCopyStrategy(
             return@request
           }
 
-          // TODO: disableAllMasking here and dont traverse?
-          val viewHierarchy = ViewHierarchyNode.fromView(root, null, 0, options.sessionReplay)
-          val surfaceViewNodes =
-            if (options.sessionReplay.isCaptureSurfaceViews) {
-              mutableListOf<ViewHierarchyNode.SurfaceViewHierarchyNode>()
-            } else {
-              null
-            }
-          root.traverse(viewHierarchy, options.sessionReplay, options.logger, surfaceViewNodes)
+          // Ensure the frame gate is always released if anything below throws before we hand
+          // work off to the executor — otherwise a single failure wedges captures forever.
+          var handedOff = false
+          try {
+            // TODO: disableAllMasking here and dont traverse?
+            val viewHierarchy = ViewHierarchyNode.fromView(root, null, 0, options.sessionReplay)
+            val surfaceViewNodes =
+              if (options.sessionReplay.isCaptureSurfaceViews) {
+                mutableListOf<ViewHierarchyNode.SurfaceViewHierarchyNode>()
+              } else {
+                null
+              }
+            root.traverse(viewHierarchy, options.sessionReplay, options.logger, surfaceViewNodes)
 
-          if (surfaceViewNodes.isNullOrEmpty()) {
-            val submitted =
-              executor.submit(
-                ReplayRunnable("screenshot_recorder.mask") {
-                  try {
-                    applyMaskingAndNotify(
-                      root,
-                      viewHierarchy,
-                      resetUnstableCaptures = !changedDuringCapture,
-                    )
-                  } finally {
-                    finishFrame()
+            if (surfaceViewNodes.isNullOrEmpty()) {
+              val submitted =
+                executor.submit(
+                  ReplayRunnable("screenshot_recorder.mask") {
+                    try {
+                      applyMaskingAndNotify(
+                        root,
+                        viewHierarchy,
+                        resetUnstableCaptures = !changedDuringCapture,
+                      )
+                    } finally {
+                      finishFrame()
+                    }
                   }
-                }
+                )
+              if (submitted != null) {
+                handedOff = true
+              }
+            } else {
+              // Re-arm the recorder's contentChanged gate; SurfaceView redraws don't trigger
+              // ViewTreeObserver.OnDrawListener, so we'd otherwise emit the same frame forever.
+              markContentChanged()
+              captureSurfaceViews(
+                root,
+                surfaceViewNodes,
+                viewHierarchy,
+                resetUnstableCaptures = !changedDuringCapture,
               )
-            if (submitted == null) {
+              handedOff = true
+            }
+          } catch (e: Throwable) {
+            options.logger.log(WARNING, "Failed to process replay frame", e)
+          } finally {
+            if (!handedOff) {
               finishFrame()
             }
-          } else {
-            // Re-arm the recorder's contentChanged gate; SurfaceView redraws don't trigger
-            // ViewTreeObserver.OnDrawListener, so we'd otherwise emit the same frame forever.
-            markContentChanged()
-            captureSurfaceViews(
-              root,
-              surfaceViewNodes,
-              viewHierarchy,
-              resetUnstableCaptures = !changedDuringCapture,
-            )
           }
         },
         mainLooperHandler.handler,
@@ -376,7 +388,7 @@ internal class PixelCopyStrategy(
     if (!cleanupScheduled.compareAndSet(false, true)) {
       return
     }
-    executor.submit(
+    val cleanup =
       ReplayRunnable(
         "PixelCopyStrategy.close",
         {
@@ -390,7 +402,11 @@ internal class PixelCopyStrategy(
           maskRenderer.close()
         },
       )
-    )
+    // close() typically runs after ReplayIntegration has shut down the executor, so submit may
+    // return null. Fall back to running cleanup inline so the bitmap + mask renderer are freed.
+    if (executor.submit(cleanup) == null) {
+      cleanup.run()
+    }
   }
 }
 
