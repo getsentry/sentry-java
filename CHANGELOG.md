@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Performance
+
+- Reduce the number of SDK threads: performance data collection now runs on the shared timer executor instead of creating a `java.util.Timer` thread per burst of transactions ([#5816](https://github.com/getsentry/sentry-java/pull/5816))
+
 ## 8.50.0
 
 ### Android 17 support
