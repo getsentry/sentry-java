@@ -39,6 +39,33 @@ class SentryRequestHttpServletRequestProcessorTest {
   }
 
   @Test
+  fun `data collection filters query parameters`() {
+    val request =
+      MockMvcRequestBuilders.get(URI.create("http://example.com?name=value&token=secret"))
+        .buildRequest(MockServletContext())
+    val options = SentryOptions().also { it.dataCollection.setUserInfo(false) }
+    val event = SentryEvent()
+
+    SentryRequestHttpServletRequestProcessor(request, options).process(event, Hint())
+
+    assertEquals("name=value&token=[Filtered]", event.request!!.queryString)
+  }
+
+  @Test
+  fun `data collection can disable query parameters`() {
+    val request =
+      MockMvcRequestBuilders.get(URI.create("http://example.com?name=value"))
+        .buildRequest(MockServletContext())
+    val options =
+      SentryOptions().also { it.dataCollection.queryParams = KeyValueCollectionBehavior.off() }
+    val event = SentryEvent()
+
+    SentryRequestHttpServletRequestProcessor(request, options).process(event, Hint())
+
+    assertNull(event.request!!.queryString)
+  }
+
+  @Test
   fun `attaches header with multiple values`() {
     val request =
       MockMvcRequestBuilders.get(URI.create("http://example.com?param1=xyz"))

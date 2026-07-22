@@ -54,6 +54,36 @@ class OpenTelemetryAttributesExtractorTest {
   }
 
   @Test
+  fun `data collection filters URL query attributes`() {
+    fixture.options.dataCollection.setUserInfo(false)
+    givenAttributes(
+      mapOf(
+        HttpAttributes.HTTP_REQUEST_METHOD to "GET",
+        UrlAttributes.URL_QUERY to "name=value&token=secret",
+      )
+    )
+
+    whenExtractingAttributes()
+
+    thenQueryIsSetTo("name=value&token=[Filtered]")
+  }
+
+  @Test
+  fun `data collection can disable URL query attributes`() {
+    fixture.options.dataCollection.queryParams = KeyValueCollectionBehavior.off()
+    givenAttributes(
+      mapOf(
+        HttpAttributes.HTTP_REQUEST_METHOD to "GET",
+        UrlAttributes.URL_QUERY to "name=value",
+      )
+    )
+
+    whenExtractingAttributes()
+
+    assertNull(fixture.scope.request!!.queryString)
+  }
+
+  @Test
   fun `when there is an existing request on scope it is filled with more details`() {
     fixture.scope.request = Request().also { it.bodySize = 123L }
     givenAttributes(

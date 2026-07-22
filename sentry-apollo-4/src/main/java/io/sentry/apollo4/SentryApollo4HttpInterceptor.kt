@@ -159,7 +159,7 @@ constructor(
     operationType: String?,
     operationId: String?,
   ): ISpan {
-    val urlDetails = UrlUtils.parse(request.url)
+    val urlDetails = UrlUtils.parse(request.url, scopes.options.dataCollectionResolver)
     val method = request.method.name
 
     val operation = if (operationType != null) "http.graphql.$operationType" else "http.graphql"
@@ -231,7 +231,13 @@ constructor(
       span.finish()
     }
 
-    val breadcrumb = Breadcrumb.http(request.url, request.method.name, statusCode)
+    val breadcrumb =
+      Breadcrumb.http(
+        request.url,
+        request.method.name,
+        statusCode,
+        scopes.options.dataCollectionResolver,
+      )
 
     request.body?.contentLength.ifHasValidLength { contentLength ->
       breadcrumb.setData("request_body_size", contentLength)
@@ -350,7 +356,7 @@ constructor(
       // url will be: https://api.github.com/users/getsentry/repos/
       // ideally we'd like a parameterized url: https://api.github.com/users/{user}/repos/
       // but that's not possible
-      val urlDetails = UrlUtils.parse(request.url)
+      val urlDetails = UrlUtils.parse(request.url, scopes.options.dataCollectionResolver)
 
       // return if it's not a target match
       if (!PropagationTargetsUtils.contain(failedRequestTargets, urlDetails.urlOrFallback)) {

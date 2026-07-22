@@ -25,7 +25,7 @@ internal object SentryKtorClientUtils {
     request: HttpRequest,
     response: HttpResponse,
   ) {
-    val urlDetails = UrlUtils.parse(request.url.toString())
+    val urlDetails = UrlUtils.parse(request.url.toString(), scopes.options.dataCollectionResolver)
 
     val mechanism = Mechanism().apply { type = "SentryKtorClientPlugin" }
     val exception =
@@ -116,7 +116,12 @@ internal object SentryKtorClientUtils {
     endTimestamp: SentryDate?,
   ) {
     val breadcrumb =
-      Breadcrumb.http(request.url.toString(), request.method.value, response.status.value)
+      Breadcrumb.http(
+        request.url.toString(),
+        request.method.value,
+        response.status.value,
+        scopes.options.dataCollectionResolver,
+      )
     breadcrumb.setData(
       SpanDataConvention.HTTP_RESPONSE_CONTENT_LENGTH_KEY,
       response.contentLength(),

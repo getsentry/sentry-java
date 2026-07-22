@@ -198,7 +198,12 @@ class SentryApolloInterceptor(
         val httpRequest = httpResponse.request()
 
         val breadcrumb =
-          Breadcrumb.http(httpRequest.url().toString(), httpRequest.method(), httpResponse.code())
+          Breadcrumb.http(
+            httpRequest.url().toString(),
+            httpRequest.method(),
+            httpResponse.code(),
+            scopes.options.dataCollectionResolver,
+          )
 
         httpRequest.body()?.contentLength().ifHasValidLength { contentLength ->
           breadcrumb.setData("request_body_size", contentLength)

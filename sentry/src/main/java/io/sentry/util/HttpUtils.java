@@ -4,6 +4,7 @@ import static io.sentry.util.UrlUtils.SENSITIVE_DATA_SUBSTITUTE;
 
 import io.sentry.HttpStatusCodeRange;
 import io.sentry.KeyValueCollectionBehavior;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -76,6 +77,40 @@ public final class HttpUtils {
     return SENSITIVE_HEADERS.contains(header.toUpperCase(Locale.ROOT));
   }
 
+  public static @Nullable String filterQueryParams(
+      final @Nullable String query, final @NotNull KeyValueCollectionBehavior behavior) {
+    if (query == null || behavior.getMode() == KeyValueCollectionBehavior.Mode.OFF) {
+      return null;
+    }
+
+    final @NotNull StringBuilder filteredQuery = new StringBuilder();
+    final @NotNull String[] params = query.split("&", -1);
+    for (int i = 0; i < params.length; i++) {
+      if (i > 0) {
+        filteredQuery.append('&');
+      }
+
+      final @NotNull String param = params[i];
+      final int separator = param.indexOf('=');
+      final @NotNull String name = separator < 0 ? param : param.substring(0, separator);
+      final @NotNull String decodedName = decodeQueryParamName(name);
+      final boolean sensitive = containsTerm(decodedName, SENSITIVE_DATA_KEYS);
+      final boolean matchesTerm = containsTerm(decodedName, behavior.getTerms());
+      final boolean shouldFilter =
+          sensitive
+              || (behavior.getMode() == KeyValueCollectionBehavior.Mode.DENY_LIST && matchesTerm)
+              || (behavior.getMode() == KeyValueCollectionBehavior.Mode.ALLOW_LIST && !matchesTerm);
+
+      filteredQuery.append(name);
+      if (shouldFilter) {
+        filteredQuery.append('=').append(SENSITIVE_DATA_SUBSTITUTE);
+      } else if (separator >= 0) {
+        filteredQuery.append(param.substring(separator));
+      }
+    }
+    return filteredQuery.toString();
+  }
+
   public static @NotNull Map<String, String> filterHeaders(
       final @NotNull Map<String, String> headers,
       final @NotNull KeyValueCollectionBehavior behavior) {
@@ -102,6 +137,14 @@ public final class HttpUtils {
       }
     }
     return filteredHeaders;
+  }
+
+  private static @NotNull String decodeQueryParamName(final @NotNull String name) {
+    try {
+      return URLDecoder.decode(name, "UTF-8");
+    } catch (Throwable ignored) {
+      return name;
+    }
   }
 
   private static boolean containsTerm(
