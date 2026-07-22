@@ -18,6 +18,7 @@ import io.sentry.SentryEnvelope
 import io.sentry.SentryEnvelopeHeader
 import io.sentry.SentryEnvelopeItem
 import io.sentry.SentryEvent
+import io.sentry.SentryExecutorService
 import io.sentry.SentryLogEvent
 import io.sentry.SentryLogEvents
 import io.sentry.SentryLogLevel
@@ -37,11 +38,10 @@ import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
 import io.sentry.test.getProperty
-import io.sentry.test.injectForField
 import io.sentry.util.HintUtils
 import java.io.File
-import java.util.Timer
 import java.util.UUID
+import java.util.concurrent.Future
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -66,6 +66,8 @@ class RateLimiterTest {
 
     fun getSUT(): RateLimiter {
       val options = SentryOptions().apply { setLogger(NoOpLogger.getInstance()) }
+      // a real executor so scheduled rate-limit-lifted notifications actually run
+      options.setTimerExecutorService(SentryExecutorService(options))
 
       SentryOptionsManipulator.setClientReportRecorder(options, clientReportRecorder)
 
@@ -654,7 +656,7 @@ class RateLimiterTest {
   }
 
   @Test
-  fun `apply rate limits schedules a timer to notify observers of lifted limits`() {
+  fun `apply rate limits schedules a task to notify observers of lifted limits`() {
     val rateLimiter = fixture.getSUT()
     whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0, 1, 2001)
 
@@ -667,18 +669,19 @@ class RateLimiterTest {
   }
 
   @Test
-  fun `close cancels the timer`() {
+  fun `close cancels pending notify tasks`() {
     val rateLimiter = fixture.getSUT()
-    val timer = mock<Timer>()
-    rateLimiter.injectForField("timer", timer)
+    rateLimiter.updateRetryAfterLimits("60:replay:key", null, 1)
+
+    val futures = rateLimiter.getProperty<List<Future<*>>>("notifyObserversFutures")
+    assertEquals(1, futures.size)
+    val future = futures.first()
 
     // When the rate limiter is closed
     rateLimiter.close()
 
-    // Then the timer is cancelled
-    verify(timer).cancel()
-
-    // And is removed by the rateLimiter
-    assertNull(rateLimiter.getProperty("timer"))
+    // Then the pending notify task is cancelled and dropped
+    assertTrue(future.isCancelled)
+    assertTrue(rateLimiter.getProperty<List<Future<*>>>("notifyObserversFutures").isEmpty())
   }
 }
