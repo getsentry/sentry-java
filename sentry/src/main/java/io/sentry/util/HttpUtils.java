@@ -111,6 +111,95 @@ public final class HttpUtils {
     return filteredQuery.toString();
   }
 
+  public static @Nullable List<String> filterCookiesFromHeader(
+      final @Nullable Enumeration<String> headers,
+      final @NotNull KeyValueCollectionBehavior behavior,
+      final @Nullable List<String> additionalSensitiveCookieNames) {
+    return headers == null
+        ? null
+        : filterCookiesFromHeader(
+            Collections.list(headers), behavior, additionalSensitiveCookieNames);
+  }
+
+  public static @Nullable List<String> filterCookiesFromHeader(
+      final @Nullable List<String> headers,
+      final @NotNull KeyValueCollectionBehavior behavior,
+      final @Nullable List<String> additionalSensitiveCookieNames) {
+    if (headers == null || behavior.getMode() == KeyValueCollectionBehavior.Mode.OFF) {
+      return null;
+    }
+
+    final @NotNull List<String> filteredHeaders = new ArrayList<>();
+    for (final String header : headers) {
+      filteredHeaders.add(filterCookies(header, behavior, additionalSensitiveCookieNames));
+    }
+    return filteredHeaders;
+  }
+
+  public static @Nullable String filterCookies(
+      final @Nullable String cookies,
+      final @NotNull KeyValueCollectionBehavior behavior,
+      final @Nullable List<String> additionalSensitiveCookieNames) {
+    if (cookies == null || behavior.getMode() == KeyValueCollectionBehavior.Mode.OFF) {
+      return null;
+    }
+
+    try {
+      final @NotNull String[] cookieValues = cookies.split(";", -1);
+      final @NotNull StringBuilder filteredCookies = new StringBuilder();
+      for (int i = 0; i < cookieValues.length; i++) {
+        if (i > 0) {
+          filteredCookies.append(';');
+        }
+        filteredCookies.append(
+            filterCookie(cookieValues[i], behavior, additionalSensitiveCookieNames));
+      }
+      return filteredCookies.toString();
+    } catch (Throwable ignored) {
+      return null;
+    }
+  }
+
+  public static @Nullable String filterSetCookie(
+      final @Nullable String cookie, final @NotNull KeyValueCollectionBehavior behavior) {
+    if (cookie == null || behavior.getMode() == KeyValueCollectionBehavior.Mode.OFF) {
+      return null;
+    }
+
+    try {
+      final int attributesSeparator = cookie.indexOf(';');
+      final @NotNull String cookieValue =
+          attributesSeparator < 0 ? cookie : cookie.substring(0, attributesSeparator);
+      final @NotNull String attributes =
+          attributesSeparator < 0 ? "" : cookie.substring(attributesSeparator);
+      return filterCookie(cookieValue, behavior, null) + attributes;
+    } catch (Throwable ignored) {
+      return null;
+    }
+  }
+
+  private static @NotNull String filterCookie(
+      final @NotNull String cookie,
+      final @NotNull KeyValueCollectionBehavior behavior,
+      final @Nullable List<String> additionalSensitiveCookieNames) {
+    final int separator = cookie.indexOf('=');
+    final @NotNull String name = separator < 0 ? cookie : cookie.substring(0, separator);
+    final @NotNull String normalizedName = name.trim();
+    final boolean sensitive =
+        containsTerm(normalizedName, SENSITIVE_DATA_KEYS)
+            || isSecurityCookie(normalizedName, additionalSensitiveCookieNames);
+    final boolean matchesTerm = containsTerm(normalizedName, behavior.getTerms());
+    final boolean shouldFilter =
+        sensitive
+            || (behavior.getMode() == KeyValueCollectionBehavior.Mode.DENY_LIST && matchesTerm)
+            || (behavior.getMode() == KeyValueCollectionBehavior.Mode.ALLOW_LIST && !matchesTerm);
+
+    if (shouldFilter) {
+      return name + "=" + SENSITIVE_DATA_SUBSTITUTE;
+    }
+    return cookie;
+  }
+
   public static @NotNull Map<String, String> filterHeaders(
       final @NotNull Map<String, String> headers,
       final @NotNull KeyValueCollectionBehavior behavior) {

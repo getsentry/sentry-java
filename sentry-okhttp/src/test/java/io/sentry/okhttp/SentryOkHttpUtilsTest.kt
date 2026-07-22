@@ -69,7 +69,7 @@ class SentryOkHttpUtilsTest {
   private fun getRequest(url: String = "/hello"): Request =
     Request.Builder()
       .addHeader("myHeader", "myValue")
-      .addHeader("Cookie", "cookie")
+      .addHeader("Cookie", "theme=dark; sessionId=secret")
       .get()
       .url(fixture.server.url(url))
       .build()
@@ -119,6 +119,62 @@ class SentryOkHttpUtilsTest {
           assertIs<io.sentry.protocol.Response>(resp)
           assertTrue(resp.headers!!.isNotEmpty())
           assertNotNull(resp.cookies)
+        },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `data collection filters request cookies`() {
+    val sut = fixture.getSut {
+      dataCollection.cookies = KeyValueCollectionBehavior.denyList("theme")
+    }
+    val request = getRequest()
+    val response = sut.newCall(request).execute()
+
+    SentryOkHttpUtils.captureClientError(fixture.scopes, request, response)
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check {
+          assertEquals("theme=[Filtered]; sessionId=[Filtered]", it.request!!.cookies)
+          assertEquals("setCookie", it.contexts.response!!.cookies)
+        },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `data collection can disable cookies`() {
+    val sut = fixture.getSut { dataCollection.cookies = KeyValueCollectionBehavior.off() }
+    val request = getRequest()
+    val response = sut.newCall(request).execute()
+
+    SentryOkHttpUtils.captureClientError(fixture.scopes, request, response)
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check {
+          assertNull(it.request!!.cookies)
+          assertNull(it.contexts.response!!.cookies)
+        },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `data collection cookie defaults ignore sendDefaultPii`() {
+    val sut = fixture.getSut(sendDefaultPii = false) { dataCollection.setUserInfo(false) }
+    val request = getRequest()
+    val response = sut.newCall(request).execute()
+
+    SentryOkHttpUtils.captureClientError(fixture.scopes, request, response)
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check {
+          assertEquals("theme=dark; sessionId=[Filtered]", it.request!!.cookies)
+          assertEquals("setCookie", it.contexts.response!!.cookies)
         },
         any<Hint>(),
       )

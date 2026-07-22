@@ -60,6 +60,102 @@ class HttpUtilsTest {
   }
 
   @Test
+  fun `cookie filter disables collection in off mode`() {
+    assertThat(
+        HttpUtils.filterCookies(
+          "name=value",
+          KeyValueCollectionBehavior.off(),
+          emptyList(),
+        )
+      )
+      .isNull()
+  }
+
+  @Test
+  fun `cookie deny list filters built-in configured and integration sensitive names`() {
+    assertThat(
+        HttpUtils.filterCookies(
+          "name=value; sessionId=secret; customerId=123; frameworkSession=456",
+          KeyValueCollectionBehavior.denyList("customer"),
+          listOf("frameworkSession"),
+        )
+      )
+      .isEqualTo(
+        "name=value; sessionId=[Filtered]; customerId=[Filtered]; frameworkSession=[Filtered]"
+      )
+  }
+
+  @Test
+  fun `cookie allow list only retains allowed non-sensitive values`() {
+    assertThat(
+        HttpUtils.filterCookies(
+          "theme=dark; sessionId=secret; language=en",
+          KeyValueCollectionBehavior.allowList("theme", "session"),
+          emptyList(),
+        )
+      )
+      .isEqualTo("theme=dark; sessionId=[Filtered]; language=[Filtered]")
+  }
+
+  @Test
+  fun `cookie filter uses only the first equals separator`() {
+    assertThat(
+        HttpUtils.filterCookies(
+          "theme=dark=contrast; token=abc=123",
+          KeyValueCollectionBehavior.denyList(),
+          emptyList(),
+        )
+      )
+      .isEqualTo("theme=dark=contrast; token=[Filtered]")
+  }
+
+  @Test
+  fun `set cookie filter preserves attributes`() {
+    assertThat(
+        HttpUtils.filterSetCookie(
+          "sessionId=secret; Path=/; HttpOnly; SameSite=Lax",
+          KeyValueCollectionBehavior.denyList(),
+        )
+      )
+      .isEqualTo("sessionId=[Filtered]; Path=/; HttpOnly; SameSite=Lax")
+  }
+
+  @Test
+  fun `set cookie allow list retains allowed non-sensitive value and attributes`() {
+    assertThat(
+        HttpUtils.filterSetCookie(
+          "theme=dark; Path=/; Secure",
+          KeyValueCollectionBehavior.allowList("theme"),
+        )
+      )
+      .isEqualTo("theme=dark; Path=/; Secure")
+  }
+
+  @Test
+  fun `set cookie filter disables collection in off mode`() {
+    assertThat(
+        HttpUtils.filterSetCookie(
+          "theme=dark; Path=/",
+          KeyValueCollectionBehavior.off(),
+        )
+      )
+      .isNull()
+  }
+
+  @Test
+  fun `cookie header filter processes every header value`() {
+    assertThat(
+        HttpUtils.filterCookiesFromHeader(
+          listOf("theme=dark; SID=secret", "language=en"),
+          KeyValueCollectionBehavior.denyList(),
+          emptyList(),
+        )
+      )
+      .containsExactly("theme=dark; SID=[Filtered]", "language=en")
+      .inOrder()
+  }
+
+  @Test
   fun `header filter disables collection in off mode`() {
     val filtered =
       HttpUtils.filterHeaders(

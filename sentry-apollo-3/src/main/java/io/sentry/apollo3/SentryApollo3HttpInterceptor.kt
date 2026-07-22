@@ -270,6 +270,28 @@ constructor(
   private fun getHeader(key: String, headers: List<HttpHeader>): String? =
     headers.firstOrNull { it.name.equals(key, true) }?.value
 
+  private fun getRequestCookies(headers: List<HttpHeader>): String? {
+    val cookies = getHeader("Cookie", headers)
+    return if (scopes.options.dataCollectionResolver.isDataCollectionConfigured) {
+      HttpUtils.filterCookies(cookies, scopes.options.dataCollectionResolver.cookies, null)
+    } else if (scopes.options.isSendDefaultPii) {
+      cookies
+    } else {
+      null
+    }
+  }
+
+  private fun getResponseCookies(headers: List<HttpHeader>): String? {
+    val cookies = getHeader("Set-Cookie", headers)
+    return if (scopes.options.dataCollectionResolver.isDataCollectionConfigured) {
+      HttpUtils.filterSetCookie(cookies, scopes.options.dataCollectionResolver.cookies)
+    } else if (scopes.options.isSendDefaultPii) {
+      cookies
+    } else {
+      null
+    }
+  }
+
   private fun getRequestHeaders(headers: List<HttpHeader>): MutableMap<String, String>? {
     if (scopes.options.dataCollectionResolver.isDataCollectionConfigured) {
       val requestHeaders = mutableMapOf<String, String>()
@@ -391,9 +413,7 @@ constructor(
       val sentryRequest =
         Request().apply {
           urlDetails.applyToRequest(this)
-          // Cookie is only sent if isSendDefaultPii is enabled
-          cookies =
-            if (scopes.options.isSendDefaultPii) getHeader("Cookie", request.headers) else null
+          cookies = getRequestCookies(request.headers)
           method = request.method.name
           headers = getRequestHeaders(request.headers)
           apiTarget = "graphql"
@@ -419,13 +439,7 @@ constructor(
 
       val sentryResponse =
         Response().apply {
-          // Set-Cookie is only sent if isSendDefaultPii is enabled due to PII
-          cookies =
-            if (scopes.options.isSendDefaultPii) {
-              getHeader("Set-Cookie", response.headers)
-            } else {
-              null
-            }
+          cookies = getResponseCookies(response.headers)
           headers = getResponseHeaders(response.headers)
           statusCode = response.statusCode
 

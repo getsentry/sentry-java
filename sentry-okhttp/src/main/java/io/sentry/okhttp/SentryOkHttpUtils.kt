@@ -37,8 +37,7 @@ internal object SentryOkHttpUtils {
     val sentryRequest =
       io.sentry.protocol.Request().apply {
         urlDetails.applyToRequest(this)
-        // Cookie is only sent if isSendDefaultPii is enabled
-        cookies = if (scopes.options.isSendDefaultPii) request.headers["Cookie"] else null
+        cookies = getRequestCookies(scopes, request.headers["Cookie"])
         method = request.method
         headers = getRequestHeaders(scopes, request.headers)
 
@@ -47,8 +46,7 @@ internal object SentryOkHttpUtils {
 
     val sentryResponse =
       io.sentry.protocol.Response().apply {
-        // Set-Cookie is only sent if isSendDefaultPii is enabled due to PII
-        cookies = if (scopes.options.isSendDefaultPii) response.headers["Set-Cookie"] else null
+        cookies = getResponseCookies(scopes, response.headers["Set-Cookie"])
         headers = getResponseHeaders(scopes, response.headers)
         statusCode = response.code
 
@@ -66,6 +64,28 @@ internal object SentryOkHttpUtils {
       fn.invoke(this)
     }
   }
+
+  private fun getRequestCookies(scopes: IScopes, cookies: String?): String? =
+    if (scopes.options.dataCollectionResolver.isDataCollectionConfigured) {
+      HttpUtils.filterCookies(
+        cookies,
+        scopes.options.dataCollectionResolver.cookies,
+        null,
+      )
+    } else if (scopes.options.isSendDefaultPii) {
+      cookies
+    } else {
+      null
+    }
+
+  private fun getResponseCookies(scopes: IScopes, cookies: String?): String? =
+    if (scopes.options.dataCollectionResolver.isDataCollectionConfigured) {
+      HttpUtils.filterSetCookie(cookies, scopes.options.dataCollectionResolver.cookies)
+    } else if (scopes.options.isSendDefaultPii) {
+      cookies
+    } else {
+      null
+    }
 
   private fun getRequestHeaders(
     scopes: IScopes,
