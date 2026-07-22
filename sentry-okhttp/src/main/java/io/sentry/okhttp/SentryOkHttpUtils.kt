@@ -21,7 +21,7 @@ internal object SentryOkHttpUtils {
     // url will be: https://api.github.com/users/getsentry/repos/
     // ideally we'd like a parameterized url: https://api.github.com/users/{user}/repos/
     // but that's not possible
-    val urlDetails = UrlUtils.parse(request.url.toString())
+    val urlDetails = UrlUtils.parse(request.url.toString(), scopes.options.dataCollectionResolver)
 
     val mechanism = Mechanism().apply { type = "SentryOkHttpInterceptor" }
     val exception =

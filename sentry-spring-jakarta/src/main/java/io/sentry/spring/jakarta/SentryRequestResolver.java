@@ -37,9 +37,13 @@ public class SentryRequestResolver {
     final Request sentryRequest = new Request();
     sentryRequest.setMethod(httpRequest.getMethod());
     final @NotNull UrlUtils.UrlDetails urlDetails =
-        UrlUtils.parse(httpRequest.getRequestURL().toString());
+        UrlUtils.parse(
+            httpRequest.getRequestURL().toString(),
+            scopes.getOptions().getDataCollectionResolver());
     urlDetails.applyToRequest(sentryRequest);
-    sentryRequest.setQueryString(httpRequest.getQueryString());
+    sentryRequest.setQueryString(
+        UrlUtils.filterQueryParams(
+            httpRequest.getQueryString(), scopes.getOptions().getDataCollectionResolver()));
     final @NotNull List<String> additionalSecurityCookieNames =
         extractSecurityCookieNamesOrUseCached(httpRequest);
     sentryRequest.setHeaders(resolveHeadersMap(httpRequest, additionalSecurityCookieNames));

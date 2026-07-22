@@ -1,5 +1,6 @@
 package io.sentry.util;
 
+import io.sentry.DataCollectionResolver;
 import io.sentry.ISpan;
 import io.sentry.SpanDataConvention;
 import io.sentry.protocol.Request;
@@ -18,6 +19,11 @@ public final class UrlUtils {
   }
 
   public static @NotNull UrlDetails parse(final @NotNull String url) {
+    return parse(url, null);
+  }
+
+  public static @NotNull UrlDetails parse(
+      final @NotNull String url, final @Nullable DataCollectionResolver resolver) {
     try {
       URI uri = new URI(url);
       if (uri.isAbsolute() && !isValidAbsoluteUrl(uri)) {
@@ -28,7 +34,9 @@ public final class UrlUtils {
           uri.getScheme() == null ? "" : (uri.getScheme() + "://");
       final @NotNull String authority = uri.getRawAuthority() == null ? "" : uri.getRawAuthority();
       final @NotNull String path = uri.getRawPath() == null ? "" : uri.getRawPath();
-      final @Nullable String query = uri.getRawQuery();
+      final @Nullable String rawQuery = uri.getRawQuery();
+      final @Nullable String query =
+          resolver == null ? rawQuery : filterQueryParams(rawQuery, resolver);
       final @Nullable String fragment = uri.getRawFragment();
 
       final @NotNull String filteredUrl = schemeAndSeparator + filterUserInfo(authority) + path;
@@ -37,6 +45,13 @@ public final class UrlUtils {
     } catch (Exception e) {
       return new UrlDetails(null, null, null);
     }
+  }
+
+  public static @Nullable String filterQueryParams(
+      final @Nullable String query, final @NotNull DataCollectionResolver resolver) {
+    return resolver.isDataCollectionConfigured()
+        ? HttpUtils.filterQueryParams(query, resolver.getQueryParams())
+        : query;
   }
 
   private static boolean isValidAbsoluteUrl(final @NotNull URI uri) {
