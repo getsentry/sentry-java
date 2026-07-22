@@ -253,10 +253,10 @@ class EnvelopeCacheTest {
   @Test
   fun `mismatching SessionEnd preserves newer pending current session`() {
     val cache = fixture.getSUT()
-    val currentSession = createSession()
+    val endingSession = createSession(started = Date(1_000))
+    val currentSession = createSession(started = Date(2_000))
     currentSession.markPendingUnhandled()
     cache.persistCurrentSession(currentSession)
-    val endingSession = createSession()
 
     val envelope = SentryEnvelope.from(fixture.options.serializer, endingSession, null)
     cache.storeEnvelope(envelope, HintUtils.createWithTypeCheckHint(SessionEndHint()))
@@ -268,6 +268,21 @@ class EnvelopeCacheTest {
         Session::class.java,
       )!!
     assertThat(persistedSession.sessionId).isEqualTo(currentSession.sessionId)
+  }
+
+  @Test
+  fun `mismatching newer SessionEnd deletes stale pending current session`() {
+    val cache = fixture.getSUT()
+    val currentSession = createSession(started = Date(1_000))
+    currentSession.markPendingUnhandled()
+    cache.persistCurrentSession(currentSession)
+    val endingSession = createSession(started = Date(2_000))
+
+    val envelope = SentryEnvelope.from(fixture.options.serializer, endingSession, null)
+    cache.storeEnvelope(envelope, HintUtils.createWithTypeCheckHint(SessionEndHint()))
+
+    assertThat(EnvelopeCache.getCurrentSessionFile(fixture.options.cacheDirPath!!).exists())
+      .isFalse()
   }
 
   @Test

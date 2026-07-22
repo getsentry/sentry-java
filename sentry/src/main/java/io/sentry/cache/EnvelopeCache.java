@@ -106,6 +106,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
     return storeInternal(envelope, hint);
   }
 
+  @SuppressWarnings("JavaUtilDate")
   private boolean storeInternal(final @NotNull SentryEnvelope envelope, final @NotNull Hint hint) {
     Objects.requireNonNull(envelope, "Envelope is required.");
 
@@ -124,7 +125,10 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
                 && currentSession.isPendingUnhandled()
                 && endingSession.getSessionId() != null
                 && currentSession.getSessionId() != null
-                && !Objects.equals(endingSession.getSessionId(), currentSession.getSessionId());
+                && !Objects.equals(endingSession.getSessionId(), currentSession.getSessionId())
+                && endingSession.getStarted() != null
+                && currentSession.getStarted() != null
+                && currentSession.getStarted().after(endingSession.getStarted());
         if (!preservePendingSession && !currentSessionFile.delete()) {
           options.getLogger().log(WARNING, "Current envelope doesn't exist.");
         }
