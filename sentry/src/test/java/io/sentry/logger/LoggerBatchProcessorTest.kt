@@ -1,5 +1,6 @@
 package io.sentry.logger
 
+import com.google.common.truth.Truth.assertThat
 import io.sentry.DataCategory
 import io.sentry.ISentryClient
 import io.sentry.SentryLogEvent
@@ -21,9 +22,30 @@ import kotlin.test.assertTrue
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.atLeast
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 
 class LoggerBatchProcessorTest {
+  @Test
+  fun `schedules another flush after previous flush has run`() {
+    val mockClient = mock<ISentryClient>()
+    val mockExecutor = DeferredExecutorService()
+    val processor = LoggerBatchProcessor(SentryOptions(), mockClient, mockExecutor)
+
+    processor.add(SentryLogEvent(SentryId(), SentryNanotimeDate(), "first", SentryLogLevel.INFO))
+    mockExecutor.runAll()
+
+    processor.add(SentryLogEvent(SentryId(), SentryNanotimeDate(), "second", SentryLogLevel.INFO))
+    assertThat(mockExecutor.hasScheduledRunnables()).isTrue()
+    mockExecutor.runAll()
+
+    val captor = argumentCaptor<SentryLogEvents>()
+    verify(mockClient, times(2)).captureBatchedLogEvents(captor.capture())
+    assertThat(captor.allValues.flatMap { it.items }.map { it.body })
+      .containsExactly("first", "second")
+      .inOrder()
+  }
+
   @Test
   fun `drops log events after reaching MAX_QUEUE_SIZE limit`() {
     // given

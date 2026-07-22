@@ -4,7 +4,6 @@ import com.jakewharton.nopen.annotation.Open;
 import io.sentry.DataCategory;
 import io.sentry.ISentryClient;
 import io.sentry.ISentryExecutorService;
-import io.sentry.ISentryLifecycleToken;
 import io.sentry.SentryExecutorService;
 import io.sentry.SentryLevel;
 import io.sentry.SentryMetricsEvent;
@@ -12,15 +11,14 @@ import io.sentry.SentryMetricsEvents;
 import io.sentry.SentryOptions;
 import io.sentry.clientreport.DiscardReason;
 import io.sentry.transport.ReusableCountLatch;
-import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.JsonSerializationUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -35,9 +33,7 @@ public class MetricsBatchProcessor implements IMetricsBatchProcessor {
   private final @NotNull ISentryClient client;
   private final @NotNull Queue<SentryMetricsEvent> queue;
   private final @NotNull ISentryExecutorService executorService;
-  private volatile @Nullable Future<?> scheduledFlush;
-  private final @NotNull AutoClosableReentrantLock scheduleLock = new AutoClosableReentrantLock();
-  private volatile boolean hasScheduled = false;
+  private final @NotNull AtomicBoolean hasScheduled = new AtomicBoolean(false);
   private volatile boolean isShuttingDown = false;
 
   private final @NotNull ReusableCountLatch pendingCount = new ReusableCountLatch();
@@ -69,7 +65,7 @@ public class MetricsBatchProcessor implements IMetricsBatchProcessor {
     }
     pendingCount.increment();
     queue.offer(metricsEvent);
-    maybeSchedule(false, false);
+    maybeSchedule(false);
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")
@@ -77,7 +73,7 @@ public class MetricsBatchProcessor implements IMetricsBatchProcessor {
   public void close(final boolean isRestarting) {
     isShuttingDown = true;
     if (isRestarting) {
-      maybeSchedule(true, true);
+      maybeSchedule(true);
       executorService.submit(() -> executorService.close(options.getShutdownTimeoutMillis()));
     } else {
       executorService.close(options.getShutdownTimeoutMillis());
@@ -87,33 +83,30 @@ public class MetricsBatchProcessor implements IMetricsBatchProcessor {
     }
   }
 
-  private void maybeSchedule(boolean forceSchedule, boolean immediately) {
-    if (hasScheduled && !forceSchedule) {
+  @SuppressWarnings("FutureReturnValueIgnored")
+  private void maybeSchedule(boolean immediately) {
+    if (immediately) {
+      // any already scheduled task may be far in the future, we want to schedule something that
+      // runs right away
+      hasScheduled.set(true);
+    } else if (!hasScheduled.compareAndSet(false, true)) {
+      // was already true, no need to schedule again
       return;
     }
-    try (final @NotNull ISentryLifecycleToken ignored = scheduleLock.acquire()) {
-      final @Nullable Future<?> latestScheduledFlush = scheduledFlush;
-      if (forceSchedule
-          || latestScheduledFlush == null
-          || latestScheduledFlush.isDone()
-          || latestScheduledFlush.isCancelled()) {
-        hasScheduled = true;
-        final int flushAfterMs = immediately ? 0 : FLUSH_AFTER_MS;
-        try {
-          scheduledFlush = executorService.schedule(new BatchRunnable(), flushAfterMs);
-        } catch (RejectedExecutionException e) {
-          hasScheduled = false;
-          options
-              .getLogger()
-              .log(SentryLevel.WARNING, "Metrics batch processor flush task rejected", e);
-        }
-      }
+    final int flushAfterMs = immediately ? 0 : FLUSH_AFTER_MS;
+    try {
+      executorService.schedule(new BatchRunnable(), flushAfterMs);
+    } catch (RejectedExecutionException e) {
+      hasScheduled.set(false);
+      options
+          .getLogger()
+          .log(SentryLevel.WARNING, "Metrics batch processor flush task rejected", e);
     }
   }
 
   @Override
   public void flush(long timeoutMillis) {
-    maybeSchedule(true, true);
+    maybeSchedule(true);
     try {
       pendingCount.waitTillZero(timeoutMillis, TimeUnit.MILLISECONDS);
     } catch (InterruptedException e) {
@@ -124,12 +117,9 @@ public class MetricsBatchProcessor implements IMetricsBatchProcessor {
 
   private void flush() {
     flushInternal();
-    try (final @NotNull ISentryLifecycleToken ignored = scheduleLock.acquire()) {
-      if (!queue.isEmpty()) {
-        maybeSchedule(true, false);
-      } else {
-        hasScheduled = false;
-      }
+    hasScheduled.set(false);
+    if (!queue.isEmpty()) {
+      maybeSchedule(false);
     }
   }
 

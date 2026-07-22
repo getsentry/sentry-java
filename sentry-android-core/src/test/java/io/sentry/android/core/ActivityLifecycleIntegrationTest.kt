@@ -23,6 +23,7 @@ import io.sentry.Scopes
 import io.sentry.Sentry
 import io.sentry.SentryDate
 import io.sentry.SentryDateProvider
+import io.sentry.SentryExecutorService
 import io.sentry.SentryNanotimeDate
 import io.sentry.SentryTraceHeader
 import io.sentry.SentryTracer
@@ -242,11 +243,10 @@ class ActivityLifecycleIntegrationTest {
 
   @Test
   fun `Standalone app start transaction op is app start`() {
-    val sut =
-      fixture.getSut {
-        it.tracesSampleRate = 1.0
-        it.isEnableStandaloneAppStartTracing = true
-      }
+    val sut = fixture.getSut {
+      it.tracesSampleRate = 1.0
+      it.isEnableStandaloneAppStartTracing = true
+    }
     sut.register(fixture.scopes, fixture.options)
 
     setAppStartTime()
@@ -257,8 +257,9 @@ class ActivityLifecycleIntegrationTest {
     verify(fixture.scopes, times(2)).startTransaction(any(), any<TransactionOptions>())
 
     val contexts = fixture.capturedContexts
-    val appStartContext =
-      contexts.single { it.operation == ActivityLifecycleIntegration.STANDALONE_APP_START_OP }
+    val appStartContext = contexts.single {
+      it.operation == ActivityLifecycleIntegration.STANDALONE_APP_START_OP
+    }
     assertEquals("App Start", appStartContext.name)
     assertEquals(TransactionNameSource.COMPONENT, appStartContext.transactionNameSource)
     val appStartTransaction =
@@ -278,11 +279,10 @@ class ActivityLifecycleIntegrationTest {
   @Test
   @Config(sdk = [Build.VERSION_CODES.VANILLA_ICE_CREAM])
   fun `Standalone app start transaction carries app start reason when available`() {
-    val sut =
-      fixture.getSut {
-        it.tracesSampleRate = 1.0
-        it.isEnableStandaloneAppStartTracing = true
-      }
+    val sut = fixture.getSut {
+      it.tracesSampleRate = 1.0
+      it.isEnableStandaloneAppStartTracing = true
+    }
     sut.register(fixture.scopes, fixture.options)
 
     setAppStartTime()
@@ -304,11 +304,10 @@ class ActivityLifecycleIntegrationTest {
 
   @Test
   fun `Standalone app start transaction has no app start reason when unavailable`() {
-    val sut =
-      fixture.getSut {
-        it.tracesSampleRate = 1.0
-        it.isEnableStandaloneAppStartTracing = true
-      }
+    val sut = fixture.getSut {
+      it.tracesSampleRate = 1.0
+      it.isEnableStandaloneAppStartTracing = true
+    }
     sut.register(fixture.scopes, fixture.options)
 
     setAppStartTime()
@@ -325,11 +324,10 @@ class ActivityLifecycleIntegrationTest {
 
   @Test
   fun `extendAppStart eagerly creates a standalone app start transaction with the extended span`() {
-    val sut =
-      fixture.getSut {
-        it.tracesSampleRate = 1.0
-        it.isEnableStandaloneAppStartTracing = true
-      }
+    val sut = fixture.getSut {
+      it.tracesSampleRate = 1.0
+      it.isEnableStandaloneAppStartTracing = true
+    }
     sut.register(fixture.scopes, fixture.options)
 
     setAppStartTime()
@@ -350,11 +348,10 @@ class ActivityLifecycleIntegrationTest {
 
   @Test
   fun `extended app start continues the trace into ui load without a second app start transaction`() {
-    val sut =
-      fixture.getSut {
-        it.tracesSampleRate = 1.0
-        it.isEnableStandaloneAppStartTracing = true
-      }
+    val sut = fixture.getSut {
+      it.tracesSampleRate = 1.0
+      it.isEnableStandaloneAppStartTracing = true
+    }
     sut.register(fixture.scopes, fixture.options)
 
     setAppStartTime()
@@ -381,11 +378,10 @@ class ActivityLifecycleIntegrationTest {
 
   @Test
   fun `extended app start trace is not reused by a later activity`() {
-    val sut =
-      fixture.getSut {
-        it.tracesSampleRate = 1.0
-        it.isEnableStandaloneAppStartTracing = true
-      }
+    val sut = fixture.getSut {
+      it.tracesSampleRate = 1.0
+      it.isEnableStandaloneAppStartTracing = true
+    }
     sut.register(fixture.scopes, fixture.options)
 
     setAppStartTime()
@@ -411,11 +407,10 @@ class ActivityLifecycleIntegrationTest {
 
   @Test
   fun `extended app start screen is not overwritten by a later activity`() {
-    val sut =
-      fixture.getSut {
-        it.tracesSampleRate = 1.0
-        it.isEnableStandaloneAppStartTracing = true
-      }
+    val sut = fixture.getSut {
+      it.tracesSampleRate = 1.0
+      it.isEnableStandaloneAppStartTracing = true
+    }
     sut.register(fixture.scopes, fixture.options)
 
     setAppStartTime()
@@ -436,11 +431,10 @@ class ActivityLifecycleIntegrationTest {
 
   @Test
   fun `extended standalone app start transaction stays open until finishExtendedAppStart`() {
-    val sut =
-      fixture.getSut {
-        it.tracesSampleRate = 1.0
-        it.isEnableStandaloneAppStartTracing = true
-      }
+    val sut = fixture.getSut {
+      it.tracesSampleRate = 1.0
+      it.isEnableStandaloneAppStartTracing = true
+    }
     sut.register(fixture.scopes, fixture.options)
 
     setAppStartTime()
@@ -463,11 +457,10 @@ class ActivityLifecycleIntegrationTest {
 
   @Test
   fun `extended headless app start transaction stays open until finishExtendedAppStart`() {
-    val sut =
-      fixture.getSut {
-        it.tracesSampleRate = 1.0
-        it.isEnableStandaloneAppStartTracing = true
-      }
+    val sut = fixture.getSut {
+      it.tracesSampleRate = 1.0
+      it.isEnableStandaloneAppStartTracing = true
+    }
     sut.register(fixture.scopes, fixture.options)
 
     prepareHeadlessAppStart(appStartType = AppStartType.COLD)
@@ -489,11 +482,10 @@ class ActivityLifecycleIntegrationTest {
 
   @Test
   fun `extended headless app start persists the app start end time`() {
-    val sut =
-      fixture.getSut {
-        it.tracesSampleRate = 1.0
-        it.isEnableStandaloneAppStartTracing = true
-      }
+    val sut = fixture.getSut {
+      it.tracesSampleRate = 1.0
+      it.isEnableStandaloneAppStartTracing = true
+    }
     sut.register(fixture.scopes, fixture.options)
 
     prepareHeadlessAppStart(appStartType = AppStartType.COLD)
@@ -506,11 +498,10 @@ class ActivityLifecycleIntegrationTest {
 
   @Test
   fun `finished eager extended app start persists the app start end time`() {
-    val sut =
-      fixture.getSut {
-        it.tracesSampleRate = 1.0
-        it.isEnableStandaloneAppStartTracing = true
-      }
+    val sut = fixture.getSut {
+      it.tracesSampleRate = 1.0
+      it.isEnableStandaloneAppStartTracing = true
+    }
     sut.register(fixture.scopes, fixture.options)
 
     setAppStartTime()
@@ -525,11 +516,10 @@ class ActivityLifecycleIntegrationTest {
 
   @Test
   fun `activity long after the eager extended app start finished starts a fresh trace`() {
-    val sut =
-      fixture.getSut {
-        it.tracesSampleRate = 1.0
-        it.isEnableStandaloneAppStartTracing = true
-      }
+    val sut = fixture.getSut {
+      it.tracesSampleRate = 1.0
+      it.isEnableStandaloneAppStartTracing = true
+    }
     sut.register(fixture.scopes, fixture.options)
 
     // the eager extension starts at launch and finishes before any activity exists
@@ -557,11 +547,10 @@ class ActivityLifecycleIntegrationTest {
 
   @Test
   fun `extended headless app start does not create a duplicate when the extension already finished`() {
-    val sut =
-      fixture.getSut {
-        it.tracesSampleRate = 1.0
-        it.isEnableStandaloneAppStartTracing = true
-      }
+    val sut = fixture.getSut {
+      it.tracesSampleRate = 1.0
+      it.isEnableStandaloneAppStartTracing = true
+    }
     sut.register(fixture.scopes, fixture.options)
 
     prepareHeadlessAppStart(appStartType = AppStartType.COLD)
@@ -590,11 +579,10 @@ class ActivityLifecycleIntegrationTest {
 
   @Test
   fun `extended app start transaction is owned by the extension and survives activity destroy`() {
-    val sut =
-      fixture.getSut {
-        it.tracesSampleRate = 1.0
-        it.isEnableStandaloneAppStartTracing = true
-      }
+    val sut = fixture.getSut {
+      it.tracesSampleRate = 1.0
+      it.isEnableStandaloneAppStartTracing = true
+    }
     sut.register(fixture.scopes, fixture.options)
 
     setAppStartTime()
@@ -611,11 +599,10 @@ class ActivityLifecycleIntegrationTest {
   @Test
   @Config(sdk = [Build.VERSION_CODES.VANILLA_ICE_CREAM])
   fun `Headless standalone app start transaction carries app start reason when available`() {
-    val sut =
-      fixture.getSut {
-        it.tracesSampleRate = 1.0
-        it.isEnableStandaloneAppStartTracing = true
-      }
+    val sut = fixture.getSut {
+      it.tracesSampleRate = 1.0
+      it.isEnableStandaloneAppStartTracing = true
+    }
     sut.register(fixture.scopes, fixture.options)
     prepareHeadlessAppStart(appStartType = AppStartType.COLD)
     val startInfo =
@@ -632,11 +619,10 @@ class ActivityLifecycleIntegrationTest {
 
   @Test
   fun `HeadlessAppStartListener is registered when standalone flag is on and performance enabled`() {
-    val sut =
-      fixture.getSut {
-        it.tracesSampleRate = 1.0
-        it.isEnableStandaloneAppStartTracing = true
-      }
+    val sut = fixture.getSut {
+      it.tracesSampleRate = 1.0
+      it.isEnableStandaloneAppStartTracing = true
+    }
     sut.register(fixture.scopes, fixture.options)
     prepareHeadlessAppStart(appStartType = AppStartType.UNKNOWN)
 
@@ -674,11 +660,10 @@ class ActivityLifecycleIntegrationTest {
 
   @Test
   fun `close clears HeadlessAppStartListener`() {
-    val sut =
-      fixture.getSut {
-        it.tracesSampleRate = 1.0
-        it.isEnableStandaloneAppStartTracing = true
-      }
+    val sut = fixture.getSut {
+      it.tracesSampleRate = 1.0
+      it.isEnableStandaloneAppStartTracing = true
+    }
     sut.register(fixture.scopes, fixture.options)
     sut.close()
     prepareHeadlessAppStart()
@@ -690,11 +675,10 @@ class ActivityLifecycleIntegrationTest {
 
   @Test
   fun `onHeadlessAppStart creates standalone App Start transaction and stashes trace id`() {
-    val sut =
-      fixture.getSut {
-        it.tracesSampleRate = 1.0
-        it.isEnableStandaloneAppStartTracing = true
-      }
+    val sut = fixture.getSut {
+      it.tracesSampleRate = 1.0
+      it.isEnableStandaloneAppStartTracing = true
+    }
     sut.register(fixture.scopes, fixture.options)
     prepareHeadlessAppStart(appStartType = AppStartType.COLD)
 
@@ -721,11 +705,10 @@ class ActivityLifecycleIntegrationTest {
   @Test
   @Config(sdk = [Build.VERSION_CODES.M])
   fun `onHeadlessAppStart creates standalone App Start transaction on API 23`() {
-    val sut =
-      fixture.getSut {
-        it.tracesSampleRate = 1.0
-        it.isEnableStandaloneAppStartTracing = true
-      }
+    val sut = fixture.getSut {
+      it.tracesSampleRate = 1.0
+      it.isEnableStandaloneAppStartTracing = true
+    }
     sut.register(fixture.scopes, fixture.options)
     prepareHeadlessSdkInitAppStart()
 
@@ -748,11 +731,10 @@ class ActivityLifecycleIntegrationTest {
 
   @Test
   fun `onHeadlessAppStart creates standalone App Start transaction when appStartType is WARM`() {
-    val sut =
-      fixture.getSut {
-        it.tracesSampleRate = 1.0
-        it.isEnableStandaloneAppStartTracing = true
-      }
+    val sut = fixture.getSut {
+      it.tracesSampleRate = 1.0
+      it.isEnableStandaloneAppStartTracing = true
+    }
     sut.register(fixture.scopes, fixture.options)
     prepareHeadlessAppStart(appStartType = AppStartType.WARM)
 
@@ -767,11 +749,10 @@ class ActivityLifecycleIntegrationTest {
 
   @Test
   fun `onHeadlessAppStart does nothing when appStartTimeSpan is incomplete`() {
-    val sut =
-      fixture.getSut {
-        it.tracesSampleRate = 1.0
-        it.isEnableStandaloneAppStartTracing = true
-      }
+    val sut = fixture.getSut {
+      it.tracesSampleRate = 1.0
+      it.isEnableStandaloneAppStartTracing = true
+    }
     sut.register(fixture.scopes, fixture.options)
     AppStartMetrics.getInstance().appStartTimeSpan.reset()
     AppStartMetrics.getInstance().sdkInitTimeSpan.reset()
@@ -939,6 +920,8 @@ class ActivityLifecycleIntegrationTest {
           it.idleTimeout = 100
         }
       )
+    // the transaction idle timeout is scheduled on the dedicated timer executor
+    fixture.options.timerExecutorService = SentryExecutorService()
     sut.register(fixture.scopes, fixture.options)
     sut.onActivityCreated(activity, fixture.bundle)
 
@@ -1086,11 +1069,10 @@ class ActivityLifecycleIntegrationTest {
 
   @Test
   fun `When Activity is destroyed, sets standalone appStartTransaction status to cancelled and finish it`() {
-    val sut =
-      fixture.getSut {
-        it.tracesSampleRate = 1.0
-        it.isEnableStandaloneAppStartTracing = true
-      }
+    val sut = fixture.getSut {
+      it.tracesSampleRate = 1.0
+      it.isEnableStandaloneAppStartTracing = true
+    }
     sut.register(fixture.scopes, fixture.options)
 
     setAppStartTime()
@@ -1462,11 +1444,10 @@ class ActivityLifecycleIntegrationTest {
 
   @Test
   fun `launcher activity emits ui load and standalone App Start sharing trace id`() {
-    val sut =
-      fixture.getSut {
-        it.tracesSampleRate = 1.0
-        it.isEnableStandaloneAppStartTracing = true
-      }
+    val sut = fixture.getSut {
+      it.tracesSampleRate = 1.0
+      it.isEnableStandaloneAppStartTracing = true
+    }
     sut.register(fixture.scopes, fixture.options)
     val firstFrameDate = SentryNanotimeDate(1499, 0)
     fixture.options.dateProvider = SentryDateProvider { firstFrameDate }
@@ -1517,11 +1498,10 @@ class ActivityLifecycleIntegrationTest {
 
   @Test
   fun `launcher activity attaches lifecycle spans before finishing stopped standalone App Start`() {
-    val sut =
-      fixture.getSut {
-        it.tracesSampleRate = 1.0
-        it.isEnableStandaloneAppStartTracing = true
-      }
+    val sut = fixture.getSut {
+      it.tracesSampleRate = 1.0
+      it.isEnableStandaloneAppStartTracing = true
+    }
     sut.register(fixture.scopes, fixture.options)
     val appStartEndDate = SentryNanotimeDate(499, 0)
     setAppStartTime(SentryNanotimeDate(1, 0), appStartEndDate)
@@ -1550,11 +1530,10 @@ class ActivityLifecycleIntegrationTest {
   @Test
   fun `activity following a headless start reuses trace id and does not emit second standalone`() {
     val storedTraceId = SentryId()
-    val sut =
-      fixture.getSut {
-        it.tracesSampleRate = 1.0
-        it.isEnableStandaloneAppStartTracing = true
-      }
+    val sut = fixture.getSut {
+      it.tracesSampleRate = 1.0
+      it.isEnableStandaloneAppStartTracing = true
+    }
     AppStartMetrics.getInstance().setAppStartTraceId(storedTraceId)
     // headless start always stores the trace header alongside the trace id; the ui.load txn
     // continues that trace via continueTrace, sharing the trace id.
@@ -1576,11 +1555,10 @@ class ActivityLifecycleIntegrationTest {
   @Test
   fun `activity within a minute of the headless start continues the same trace`() {
     val storedTraceId = SentryId()
-    val sut =
-      fixture.getSut {
-        it.tracesSampleRate = 1.0
-        it.isEnableStandaloneAppStartTracing = true
-      }
+    val sut = fixture.getSut {
+      it.tracesSampleRate = 1.0
+      it.isEnableStandaloneAppStartTracing = true
+    }
     AppStartMetrics.getInstance().setAppStartTraceId(storedTraceId)
     AppStartMetrics.getInstance().appStartSentryTraceHeader =
       SentryTraceHeader(storedTraceId, SpanId(), true).value
@@ -1600,11 +1578,10 @@ class ActivityLifecycleIntegrationTest {
   @Test
   fun `activity more than a minute after the headless start starts a fresh trace`() {
     val storedTraceId = SentryId()
-    val sut =
-      fixture.getSut {
-        it.tracesSampleRate = 1.0
-        it.isEnableStandaloneAppStartTracing = true
-      }
+    val sut = fixture.getSut {
+      it.tracesSampleRate = 1.0
+      it.isEnableStandaloneAppStartTracing = true
+    }
     AppStartMetrics.getInstance().setAppStartTraceId(storedTraceId)
     AppStartMetrics.getInstance().appStartSentryTraceHeader =
       SentryTraceHeader(storedTraceId, SpanId(), true).value
@@ -1626,11 +1603,10 @@ class ActivityLifecycleIntegrationTest {
 
   @Test
   fun `onHeadlessAppStart stores sentry-trace and baggage headers for continuation`() {
-    val sut =
-      fixture.getSut {
-        it.tracesSampleRate = 1.0
-        it.isEnableStandaloneAppStartTracing = true
-      }
+    val sut = fixture.getSut {
+      it.tracesSampleRate = 1.0
+      it.isEnableStandaloneAppStartTracing = true
+    }
     sut.register(fixture.scopes, fixture.options)
     prepareHeadlessAppStart(appStartType = AppStartType.COLD)
 
@@ -1648,11 +1624,10 @@ class ActivityLifecycleIntegrationTest {
 
   @Test
   fun `launcher activity shares standalone App Start trace and sampleRand as a sibling`() {
-    val sut =
-      fixture.getSut {
-        it.tracesSampleRate = 1.0
-        it.isEnableStandaloneAppStartTracing = true
-      }
+    val sut = fixture.getSut {
+      it.tracesSampleRate = 1.0
+      it.isEnableStandaloneAppStartTracing = true
+    }
     sut.register(fixture.scopes, fixture.options)
     setAppStartTime()
     // the app-start sampling decision carries the sampleRand the whole trace should share
@@ -1681,11 +1656,10 @@ class ActivityLifecycleIntegrationTest {
 
   @Test
   fun `activity following a headless start shares stored trace and sampleRand as a sibling and clears headers`() {
-    val sut =
-      fixture.getSut {
-        it.tracesSampleRate = 1.0
-        it.isEnableStandaloneAppStartTracing = true
-      }
+    val sut = fixture.getSut {
+      it.tracesSampleRate = 1.0
+      it.isEnableStandaloneAppStartTracing = true
+    }
     sut.register(fixture.scopes, fixture.options)
 
     // 1) a headless start emits the standalone app.start and stores its trace headers

@@ -51,6 +51,7 @@ import io.sentry.cache.PersistingScopeObserver;
 import io.sentry.exception.ExceptionMechanismException;
 import io.sentry.hints.AbnormalExit;
 import io.sentry.hints.Backfillable;
+import io.sentry.hints.NativeCrashExit;
 import io.sentry.protocol.App;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.DebugImage;
@@ -161,7 +162,13 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
     mergeOS(event);
     setDevice(event);
 
+    final OptionsSource optionsSource = getOptionsSource(backfillable);
+
     if (!backfillable.shouldEnrich()) {
+      setRelease(event, optionsSource);
+      setEnvironment(event, optionsSource);
+      setDist(event, optionsSource);
+      setAppVersionAndBuild(event);
       options
           .getLogger()
           .log(
@@ -170,9 +177,9 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
       return event;
     }
 
-    backfillScope(event);
+    backfillScope(event, optionsSource);
 
-    backfillOptions(event);
+    backfillOptions(event, optionsSource);
 
     setStaticValues(event);
 
@@ -184,7 +191,8 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
   }
 
   // region scope persisted values
-  private void backfillScope(final @NotNull SentryEvent event) {
+  private void backfillScope(
+      final @NotNull SentryEvent event, final @NotNull OptionsSource optionsSource) {
     setRequest(event);
     setUser(event);
     setScopeTags(event);
@@ -195,19 +203,25 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
     setFingerprints(event);
     setLevel(event);
     setTrace(event);
-    setReplayId(event);
+    setReplayId(event, optionsSource);
   }
 
-  private boolean sampleReplay(final @NotNull SentryEvent event) {
+  private boolean sampleReplay(
+      final @NotNull SentryEvent event, final @NotNull OptionsSource optionsSource) {
+    final @Nullable Double currentSampleRate = options.getSessionReplay().getOnErrorSampleRate();
     final @Nullable String replayErrorSampleRate =
-        PersistingOptionsObserver.read(options, REPLAY_ERROR_SAMPLE_RATE_FILENAME, String.class);
+        getLaunchOption(
+            REPLAY_ERROR_SAMPLE_RATE_FILENAME,
+            String.class,
+            currentSampleRate == null ? null : currentSampleRate.toString(),
+            optionsSource);
 
     if (replayErrorSampleRate == null) {
       return false;
     }
 
     try {
-      // we have to sample here with the old sample rate, because it may change between app launches
+      // Sample with the rate from the relevant launch because it may change between launches.
       final double replayErrorSampleRateDouble = Double.parseDouble(replayErrorSampleRate);
       if (replayErrorSampleRateDouble < SentryRandom.current().nextDouble()) {
         options
@@ -226,7 +240,8 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
     return true;
   }
 
-  private void setReplayId(final @NotNull SentryEvent event) {
+  private void setReplayId(
+      final @NotNull SentryEvent event, final @NotNull OptionsSource optionsSource) {
     @Nullable String persistedReplayId = readFromDisk(options, REPLAY_FILENAME, String.class);
     @Nullable String cacheDirPath = options.getCacheDirPath();
     if (cacheDirPath == null) {
@@ -234,7 +249,7 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
     }
     final @NotNull File replayFolder = new File(cacheDirPath, "replay_" + persistedReplayId);
     if (!replayFolder.exists()) {
-      if (!sampleReplay(event)) {
+      if (!sampleReplay(event, optionsSource)) {
         return;
       }
       // if the replay folder does not exist (e.g. running in buffer mode), we need to find the
@@ -393,14 +408,15 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
   // endregion
 
   // region options persisted values
-  private void backfillOptions(final @NotNull SentryEvent event) {
-    setRelease(event);
-    setEnvironment(event);
-    setDist(event);
-    setDebugMeta(event);
-    setSdk(event);
+  private void backfillOptions(
+      final @NotNull SentryEvent event, final @NotNull OptionsSource optionsSource) {
+    setRelease(event, optionsSource);
+    setEnvironment(event, optionsSource);
+    setDist(event, optionsSource);
+    setDebugMeta(event, optionsSource);
+    setSdk(event, optionsSource);
     setApp(event);
-    setOptionsTags(event);
+    setOptionsTags(event, optionsSource);
   }
 
   private void setApp(final @NotNull SentryBaseEvent event) {
@@ -413,25 +429,6 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
     final PackageInfo packageInfo = ContextUtils.getPackageInfo(context, buildInfoProvider);
     if (packageInfo != null) {
       app.setAppIdentifier(packageInfo.packageName);
-    }
-
-    // backfill versionName and versionCode from the persisted release string
-    final String release =
-        event.getRelease() != null
-            ? event.getRelease()
-            : PersistingOptionsObserver.read(options, RELEASE_FILENAME, String.class);
-    if (release != null) {
-      try {
-        final String versionName =
-            release.substring(release.indexOf('@') + 1, release.indexOf('+'));
-        final String versionCode = release.substring(release.indexOf('+') + 1);
-        app.setAppVersion(versionName);
-        app.setAppBuild(versionCode);
-      } catch (Throwable e) {
-        options
-            .getLogger()
-            .log(SentryLevel.WARNING, "Failed to parse release from scope cache: %s", release);
-      }
     }
 
     try {
@@ -448,25 +445,50 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
     }
 
     event.getContexts().setApp(app);
+    setAppVersionAndBuild(event);
   }
 
-  private void setRelease(final @NotNull SentryBaseEvent event) {
+  private void setAppVersionAndBuild(final @NotNull SentryBaseEvent event) {
+    final String release = event.getRelease();
+    if (release != null) {
+      try {
+        @Nullable App app = event.getContexts().getApp();
+        if (app == null) {
+          app = new App();
+        }
+        final String versionName =
+            release.substring(release.indexOf('@') + 1, release.indexOf('+'));
+        final String versionCode = release.substring(release.indexOf('+') + 1);
+        app.setAppVersion(versionName);
+        app.setAppBuild(versionCode);
+        event.getContexts().setApp(app);
+      } catch (Throwable e) {
+        options
+            .getLogger()
+            .log(SentryLevel.WARNING, "Failed to parse release from scope cache: %s", release);
+      }
+    }
+  }
+
+  private void setRelease(
+      final @NotNull SentryBaseEvent event, final @NotNull OptionsSource optionsSource) {
     if (event.getRelease() == null) {
-      final String release =
-          PersistingOptionsObserver.read(options, RELEASE_FILENAME, String.class);
-      event.setRelease(release);
+      event.setRelease(
+          getLaunchOption(RELEASE_FILENAME, String.class, options.getRelease(), optionsSource));
     }
   }
 
-  private void setEnvironment(final @NotNull SentryBaseEvent event) {
+  private void setEnvironment(
+      final @NotNull SentryBaseEvent event, final @NotNull OptionsSource optionsSource) {
     if (event.getEnvironment() == null) {
-      final String environment =
-          PersistingOptionsObserver.read(options, ENVIRONMENT_FILENAME, String.class);
-      event.setEnvironment(environment != null ? environment : options.getEnvironment());
+      event.setEnvironment(
+          getLaunchOption(
+              ENVIRONMENT_FILENAME, String.class, options.getEnvironment(), optionsSource));
     }
   }
 
-  private void setDebugMeta(final @NotNull SentryBaseEvent event) {
+  private void setDebugMeta(
+      final @NotNull SentryBaseEvent event, final @NotNull OptionsSource optionsSource) {
     DebugMeta debugMeta = event.getDebugMeta();
 
     if (debugMeta == null) {
@@ -478,7 +500,8 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
     List<DebugImage> images = debugMeta.getImages();
     if (images != null) {
       final String proguardUuid =
-          PersistingOptionsObserver.read(options, PROGUARD_UUID_FILENAME, String.class);
+          getBuildOption(
+              PROGUARD_UUID_FILENAME, String.class, options.getProguardUuid(), optionsSource);
 
       if (proguardUuid != null) {
         final DebugImage debugImage = new DebugImage();
@@ -490,15 +513,14 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
     }
   }
 
-  private void setDist(final @NotNull SentryBaseEvent event) {
+  private void setDist(
+      final @NotNull SentryBaseEvent event, final @NotNull OptionsSource optionsSource) {
     if (event.getDist() == null) {
-      final String dist = PersistingOptionsObserver.read(options, DIST_FILENAME, String.class);
-      event.setDist(dist);
+      event.setDist(getLaunchOption(DIST_FILENAME, String.class, options.getDist(), optionsSource));
     }
-    // if there's no user-set dist, fall back to versionCode from the persisted release string
+    // if there's no user-set dist, fall back to versionCode from the release string
     if (event.getDist() == null) {
-      final String release =
-          PersistingOptionsObserver.read(options, RELEASE_FILENAME, String.class);
+      final String release = event.getRelease();
       if (release != null) {
         try {
           final String versionCode = release.substring(release.indexOf('+') + 1);
@@ -512,20 +534,101 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
     }
   }
 
-  private void setSdk(final @NotNull SentryBaseEvent event) {
+  /**
+   * Resolves an option that may change between launches of the same build, such as environment or
+   * tags. A matching persisted value is preferred; the current value is used only when the source
+   * identifies the current app generation or permits a fallback for a missing persisted value.
+   */
+  private <T> @Nullable T getLaunchOption(
+      final @NotNull String fileName,
+      final @NotNull Class<T> clazz,
+      final @Nullable T currentValue,
+      final @NotNull OptionsSource optionsSource) {
+    if (optionsSource == OptionsSource.CURRENT) {
+      return currentValue;
+    } else if (optionsSource == OptionsSource.NONE) {
+      return null;
+    }
+
+    final T persistedValue = PersistingOptionsObserver.read(options, fileName, clazz);
+    return persistedValue != null || optionsSource == OptionsSource.PERSISTED
+        ? persistedValue
+        : currentValue;
+  }
+
+  /**
+   * Resolves metadata that cannot change between launches of the same build, such as the ProGuard
+   * UUID or SDK version. Current metadata is used for exits from the current app generation, while
+   * persisted metadata is reserved for historical exits.
+   */
+  private <T> @Nullable T getBuildOption(
+      final @NotNull String fileName,
+      final @NotNull Class<T> clazz,
+      final @Nullable T currentValue,
+      final @NotNull OptionsSource optionsSource) {
+    if (optionsSource == OptionsSource.CURRENT
+        || optionsSource == OptionsSource.PERSISTED_WITH_CURRENT_FALLBACK) {
+      return currentValue;
+    } else if (optionsSource == OptionsSource.NONE) {
+      return null;
+    }
+    return PersistingOptionsObserver.read(options, fileName, clazz);
+  }
+
+  /**
+   * Chooses the options snapshot that can safely describe an exit by comparing its timestamp with
+   * the current app update time and the persisted cache generation. A markerless legacy cache is
+   * accepted for compatibility; {@link OptionsSource#NONE} is returned when neither current nor
+   * persisted options can be matched to the exit.
+   */
+  private @NotNull OptionsSource getOptionsSource(final @NotNull Backfillable hint) {
+    final @Nullable Long timestamp;
+    if (hint instanceof AbnormalExit) {
+      timestamp = ((AbnormalExit) hint).timestamp();
+    } else if (hint instanceof NativeCrashExit) {
+      timestamp = ((NativeCrashExit) hint).timestamp();
+    } else {
+      timestamp = null;
+    }
+    final Long cachedLastUpdateTime = PersistingOptionsCacheGenerationObserver.read(options);
+    final PackageInfo packageInfo = ContextUtils.getPackageInfo(context, buildInfoProvider);
+    final long currentLastUpdateTime = packageInfo == null ? 0 : packageInfo.lastUpdateTime;
+
+    if (timestamp != null && currentLastUpdateTime > 0 && currentLastUpdateTime <= timestamp) {
+      return cachedLastUpdateTime != null && cachedLastUpdateTime == currentLastUpdateTime
+          ? OptionsSource.PERSISTED_WITH_CURRENT_FALLBACK
+          : OptionsSource.CURRENT;
+    }
+    if (cachedLastUpdateTime == null) {
+      return OptionsSource.PERSISTED;
+    }
+    // A cache generation created after the exit cannot describe that exit.
+    if (timestamp != null && cachedLastUpdateTime > 0 && cachedLastUpdateTime <= timestamp) {
+      return OptionsSource.PERSISTED;
+    }
+    return OptionsSource.NONE;
+  }
+
+  private void setSdk(
+      final @NotNull SentryBaseEvent event, final @NotNull OptionsSource optionsSource) {
     if (event.getSdk() == null) {
       final SdkVersion sdkVersion =
-          PersistingOptionsObserver.read(options, SDK_VERSION_FILENAME, SdkVersion.class);
+          getBuildOption(
+              SDK_VERSION_FILENAME, SdkVersion.class, options.getSdkVersion(), optionsSource);
       event.setSdk(sdkVersion);
     }
   }
 
   @SuppressWarnings("unchecked")
-  private void setOptionsTags(final @NotNull SentryBaseEvent event) {
+  private void setOptionsTags(
+      final @NotNull SentryBaseEvent event, final @NotNull OptionsSource optionsSource) {
     final Map<String, String> tags =
         (Map<String, String>)
-            PersistingOptionsObserver.read(
-                options, PersistingOptionsObserver.TAGS_FILENAME, Map.class);
+            getLaunchOption(
+                PersistingOptionsObserver.TAGS_FILENAME,
+                Map.class,
+                options.getTags(),
+                optionsSource);
     if (tags == null) {
       return;
     }
@@ -541,6 +644,13 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
   }
 
   // endregion
+
+  private enum OptionsSource {
+    CURRENT,
+    PERSISTED,
+    PERSISTED_WITH_CURRENT_FALLBACK,
+    NONE
+  }
 
   @Override
   public @Nullable Long getOrder() {

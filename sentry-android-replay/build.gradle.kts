@@ -1,4 +1,6 @@
 import io.gitlab.arturbosch.detekt.Detekt
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 
 plugins {
@@ -25,20 +27,21 @@ android {
 
   buildFeatures { compose = true }
 
-  composeOptions {
-    kotlinCompilerExtensionVersion = libs.versions.composeCompiler.get()
-    useLiveLiterals = false
-  }
+  composeOptions { kotlinCompilerExtensionVersion = libs.versions.composeCompiler.get() }
 
   buildTypes {
     getByName("debug") { consumerProguardFiles("proguard-rules.pro") }
     getByName("release") { consumerProguardFiles("proguard-rules.pro") }
   }
 
+  // AGP 9 only generates unit tests for the testBuildType. CI disables the debug
+  // variant, so unit tests must target release to run at all.
+  testBuildType = "release"
+
   kotlin {
-    compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8
-    compilerOptions.languageVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
-    compilerOptions.apiVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
+    compilerOptions.jvmTarget = JvmTarget.JVM_1_8
+    compilerOptions.languageVersion = KotlinVersion.KOTLIN_1_9
+    compilerOptions.apiVersion = KotlinVersion.KOTLIN_1_9
   }
 
   testOptions {

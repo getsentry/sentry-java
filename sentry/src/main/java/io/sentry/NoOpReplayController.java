@@ -60,4 +60,7 @@ public final class NoOpReplayController implements ReplayController {
 
   @Override
   public void registerTraceId(@NotNull SentryId traceId) {}
+
+  @Override
+  public void registerSegmentName(@NotNull String segmentName) {}
 }

@@ -289,6 +289,56 @@ class ManifestMetadataReaderTest {
   }
 
   @Test
+  fun `applyMetadata reads app hang tracking enabled to options`() {
+    // Arrange
+    val bundle = bundleOf(ManifestMetadataReader.NDK_APP_HANG_TRACKING_ENABLE to true)
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertEquals(true, fixture.options.isEnableNdkAppHangTracking)
+  }
+
+  @Test
+  fun `applyMetadata reads app hang tracking enabled to options and keeps default`() {
+    // Arrange
+    val context = fixture.getContext()
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertEquals(false, fixture.options.isEnableNdkAppHangTracking)
+  }
+
+  @Test
+  fun `applyMetadata reads app hang timeout interval to options`() {
+    // Arrange
+    val bundle = bundleOf(ManifestMetadataReader.NDK_APP_HANG_TIMEOUT_INTERVAL_MILLIS to 1000)
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertEquals(1000.toLong(), fixture.options.ndkAppHangTimeoutIntervalMillis)
+  }
+
+  @Test
+  fun `applyMetadata reads app hang timeout interval to options and keeps default`() {
+    // Arrange
+    val context = fixture.getContext()
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertEquals(5000.toLong(), fixture.options.ndkAppHangTimeoutIntervalMillis)
+  }
+
+  @Test
   fun `applyMetadata reads tombstone attach raw to options`() {
     // Arrange
     val bundle = bundleOf(ManifestMetadataReader.TOMBSTONE_ATTACH_RAW to true)

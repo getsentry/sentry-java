@@ -52,8 +52,9 @@ class ThreadDumpParserTest {
     assertEquals(SentryLockReason.SLEEPING, blockingThread.heldLocks!!["0x09228c2d"]!!.type)
     assertEquals(null, blockingThread.heldLocks!!["0x09228c2d"]!!.threadId)
 
-    val randomThread =
-      threads.find { it.name == "io.sentry.android.core.internal.util.SentryFrameMetricsCollector" }
+    val randomThread = threads.find {
+      it.name == "io.sentry.android.core.internal.util.SentryFrameMetricsCollector"
+    }
     assertEquals(19, randomThread!!.id)
     assertEquals("Native", randomThread.state)
     assertEquals(false, randomThread.isCrashed)
@@ -155,8 +156,9 @@ class ThreadDumpParserTest {
     assertNull(deletedFrame.addrMode)
 
     val debugImages = parser.debugImages
-    val image =
-      debugImages.first { image -> image.debugId == "499d48ba-c085-17cf-3209-da67405662f9" }
+    val image = debugImages.first { image ->
+      image.debugId == "499d48ba-c085-17cf-3209-da67405662f9"
+    }
     assertNotNull(image)
     assertEquals("499d48ba-c085-17cf-3209-da67405662f9", image.debugId)
     assertEquals("/apex/com.android.runtime/lib64/bionic/libc.so", image.codeFile)

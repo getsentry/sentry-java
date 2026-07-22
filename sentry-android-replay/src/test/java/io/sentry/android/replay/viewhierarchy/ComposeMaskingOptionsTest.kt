@@ -233,10 +233,9 @@ class ComposeMaskingOptionsTest {
     val textNodes = activity.get().collectNodesOfType<TextViewHierarchyNode>(options)
     assertEquals(4, textNodes.size) // [TextField, Text, Button, Activity Title]
 
-    val unmaskNode =
-      textNodes.first {
-        (it.layout as? ComposeTextLayout)?.layout?.layoutInput?.text?.text == "Make Request"
-      }
+    val unmaskNode = textNodes.first {
+      (it.layout as? ComposeTextLayout)?.layout?.layoutInput?.text?.text == "Make Request"
+    }
     assertTrue(unmaskNode.isVisible, "The unmasked node must be visible for the test to be valid")
     assertFalse(unmaskNode.shouldMask, "Node with sentryReplayUnmask() should not be masked")
 

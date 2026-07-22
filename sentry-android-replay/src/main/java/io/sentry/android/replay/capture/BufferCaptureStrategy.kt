@@ -105,7 +105,6 @@ internal class BufferCaptureStrategy(
 
       if (segment is ReplaySegment.Created) {
         segment.capture(scopes)
-
         // we only want to increment segment_id in the case of success, but currentSegment
         // might be irrelevant since we changed strategies, so in the callback we increment
         // it on the new strategy already

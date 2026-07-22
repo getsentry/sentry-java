@@ -2,7 +2,30 @@
 
 ## Unreleased
 
+### Fixes
+
+- Reduce main-thread work during `Sentry.init` by resolving the shake-detector accelerometer off the main thread (~1.75ms on a Pixel 10) ([#5784](https://github.com/getsentry/sentry-java/pull/5784))
+- Backfill release, environment, distribution, tags, and app version/build—and use the matching replay-on-error sample rate—for `ApplicationExitInfo` ANR and native crash events captured before SDK initialization, without reusing options cached by a later app update ([#5762](https://github.com/getsentry/sentry-java/pull/5762))
+- `SentryTagModifierNode.isImportantForBounds` now matches the default behavior and returns `true` ([#5789](https://github.com/getsentry/sentry-java/pull/5789))
+- Prevent a `StackOverflowError` when a `beforeSend`, `beforeBreadcrumb`, `beforeSendLog`, or `beforeEnvelope` callback triggers another capture (directly or through a logging integration such as Timber) ([#5737](https://github.com/getsentry/sentry-java/pull/5737))
+  - Captures made from within a user callback (event, transaction, breadcrumb, log, envelope, or check-in) are now dropped while that callback runs, instead of recursing. Captures made by event processors are unaffected.
+- Replace deprecated `ThrowableProxy` with `LogEvent#getThrown()` in `sentry-log4j2` ([#5751](https://github.com/getsentry/sentry-java/pull/5751))
+
+### Dependencies
+
+- Bump Native SDK from v0.15.3 to v0.15.4 ([#5793](https://github.com/getsentry/sentry-java/pull/5793))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0154)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.15.3...0.15.4)
+
+### Dependencies
+
+- The SDK is now compiled with Android Gradle Plugin 9.2.1 ([#5779](https://github.com/getsentry/sentry-java/pull/5779))
+
+## 8.49.0
+
 ### Features
+
+- Session Replay: Record segment names (transaction names) ([#5763](https://github.com/getsentry/sentry-java/pull/5763))
 
 - Add `io.sentry:sentry-opentelemetry-bom` to align Sentry OpenTelemetry modules with tested OpenTelemetry dependencies ([#5629](https://github.com/getsentry/sentry-java/pull/5629))
   - Spring Boot Gradle plugin: add the Sentry BOM to `dependencyManagement`; explicit imports are applied after Spring Boot's implicit BOM
@@ -30,9 +53,18 @@
 
 ### Fixes
 
+- Session Replay: Fix first recording segment missing for replays in `buffer` mode ([#5753](https://github.com/getsentry/sentry-java/pull/5753))
+- Session Replay: Fix error-to-replay linkage in `buffer` mode ([#5754](https://github.com/getsentry/sentry-java/pull/5754))
+- Prevent logs and metrics from remaining queued after a flush scheduling race ([#5756](https://github.com/getsentry/sentry-java/pull/5756))
 - Fix main thread identification for tombstone (native crash) events ([#5742](https://github.com/getsentry/sentry-java/pull/5742))
-- Replace deprecated `ThrowableProxy` with `LogEvent#getThrown()` in `sentry-log4j2` ([#5751](https://github.com/getsentry/sentry-java/pull/5751))
+- Prevent malformed JDBC URLs, which may contain credentials, from being printed to stdout ([#5656](https://github.com/getsentry/sentry-java/pull/5656))
+- Restrict JVM-global proxy authentication credentials to challenges from the configured proxy host ([#5656](https://github.com/getsentry/sentry-java/pull/5656))
+- Sanitize Spring 7 and Spring Jakarta WebClient span descriptions to prevent embedded URL credentials from being sent to Sentry ([#5656](https://github.com/getsentry/sentry-java/pull/5656))
+- Respect `tracePropagationTargets` when injecting Sentry tracing headers through the OpenTelemetry OTLP propagator ([#5656](https://github.com/getsentry/sentry-java/pull/5656))
 
+### Performance
+
+- Schedule transaction idle/deadline timeouts on a shared, dedicated executor instead of spawning a `Timer` thread per transaction ([#5670](https://github.com/getsentry/sentry-java/pull/5670))
 
 ### Dependencies
 
@@ -66,6 +98,9 @@
   Sentry.finishExtendedAppStart()
   ```
 - Add `trace_metric_byte` data category and record byte-level client reports when trace metrics are discarded ([#5626](https://github.com/getsentry/sentry-java/pull/5626))
+- Expose sentry-native's heartbeat-based app-hang detection through `SentryAndroidOptions` ([#5623](https://github.com/getsentry/sentry-java/pull/5623))
+  - Enable via `setEnableNdkAppHangTracking(true)` (disabled by default) and tune the timeout with `setNdkAppHangTimeoutIntervalMillis(...)` (default `5000` ms), or the `io.sentry.ndk.app-hang.enable` / `io.sentry.ndk.app-hang.timeout-interval-millis` manifest entries
+  - Intended for hybrid SDKs: emit the heartbeat by calling the native `sentry_app_hang_heartbeat()` from the thread you want monitored. Independent of the JVM-based ANR detection (`setAnrEnabled`)
 - Support the `io.sentry.tombstone.report-historical` manifest option to enable historical tombstone reporting via `AndroidManifest.xml` `<meta-data>` ([#5683](https://github.com/getsentry/sentry-java/pull/5683))
 
 ### Fixes
@@ -83,6 +118,12 @@
 - Speed up scope persistence by detecting the Sentry executor thread via a marker instead of a `Thread.getName()` name scan on every scope mutation ([#5691](https://github.com/getsentry/sentry-java/pull/5691))
 - Remove executor prewarm during SDK init ([#5681](https://github.com/getsentry/sentry-java/pull/5681))
   - The single-threaded `SentryExecutorService` queued the prewarm work ahead of the first useful task, so it could only delay init work, never speed it up; the thread and class loading it warmed are paid identically by the first real task submitted right after.
+
+### Dependencies
+
+- Bump Native SDK from v0.15.2 to v0.15.3 ([#5623](https://github.com/getsentry/sentry-java/pull/5623))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0153)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.15.2...0.15.3)
 
 ## 8.47.0
 

@@ -26,6 +26,7 @@ class SentryReplayEventSerializationTest {
         urls = listOf("ScreenOne")
         errorIds = listOf("ab3a347a4cc14fd4b4cf1dc56b670c5b")
         traceIds = listOf("340cfef948204549ac07c3b353c81c50")
+        segmentNames = listOf("CheckoutActivity")
         SentryBaseEventSerializationTest.Fixture().update(this)
         // irrelevant for replay
         serverName = null

@@ -1,5 +1,6 @@
 import net.ltgt.gradle.errorprone.errorprone
 import org.jetbrains.kotlin.config.KotlinCompilerVersion
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8
 
 plugins {
   id("com.android.library")
@@ -33,7 +34,11 @@ android {
     getByName("release") { consumerProguardFiles("proguard-rules.pro") }
   }
 
-  kotlin { compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8 }
+  // AGP 9 only generates unit tests for the testBuildType. CI disables the debug
+  // variant, so unit tests must target release to run at all.
+  testBuildType = "release"
+
+  kotlin { compilerOptions.jvmTarget = JVM_1_8 }
 
   testOptions {
     animationsDisabled = true

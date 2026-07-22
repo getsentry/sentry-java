@@ -257,8 +257,9 @@ class SentryPerformanceProviderTest {
 
   @Test
   fun `when provider is closed, profiler is stopped`() {
-    val provider =
-      fixture.getSut { config -> writeConfig(config, continuousProfilingEnabled = false) }
+    val provider = fixture.getSut { config ->
+      writeConfig(config, continuousProfilingEnabled = false)
+    }
     provider.shutdown()
     assertNotNull(AppStartMetrics.getInstance().appStartProfiler)
     assertFalse(AppStartMetrics.getInstance().appStartProfiler!!.isRunning)
