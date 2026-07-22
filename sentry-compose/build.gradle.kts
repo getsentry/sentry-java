@@ -87,12 +87,14 @@ android {
     buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
   }
 
-  sourceSets["main"].apply { manifest.srcFile("src/androidMain/AndroidManifest.xml") }
-
   buildTypes {
     getByName("debug") { consumerProguardFiles("proguard-rules.pro") }
     getByName("release") { consumerProguardFiles("proguard-rules.pro") }
   }
+
+  // AGP 9 only generates unit tests for the testBuildType. CI disables the debug
+  // variant, so unit tests must target release to run at all.
+  testBuildType = "release"
 
   testOptions {
     animationsDisabled = true
