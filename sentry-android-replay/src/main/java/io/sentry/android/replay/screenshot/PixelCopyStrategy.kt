@@ -81,6 +81,7 @@ internal class PixelCopyStrategy(
 
     if (!frameInFlight.compareAndSet(false, true)) {
       options.logger.log(DEBUG, "PixelCopyStrategy capture is already in flight, skipping")
+      markContentChanged()
       return
     }
 

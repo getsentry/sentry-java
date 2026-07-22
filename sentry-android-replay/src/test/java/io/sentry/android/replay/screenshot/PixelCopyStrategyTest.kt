@@ -151,6 +151,9 @@ class PixelCopyStrategyTest {
 
     strategy.capture(root)
     strategy.capture(root)
+
+    assertTrue(fixture.contentChangedMarked.get())
+
     DeferredWindowPixelCopyShadow.flush()
     shadowOf(Looper.getMainLooper()).idle()
 
