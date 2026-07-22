@@ -40,6 +40,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
@@ -565,7 +566,9 @@ class PixelCopyStrategyTest {
 
     assertFalse(fixture.contentChangedMarked.get())
     assertTrue(strategy.lastCaptureSuccessful())
-    verify(fixture.callback).onScreenshotRecorded(any<Bitmap>())
+    val screenshot = argumentCaptor<Bitmap>()
+    verify(fixture.callback).onScreenshotRecorded(screenshot.capture())
+    assertEquals(Bitmap.Config.RGB_565, screenshot.firstValue.config)
   }
 
   @Test
@@ -597,7 +600,9 @@ class PixelCopyStrategyTest {
     shadowOf(Looper.getMainLooper()).idle()
 
     assertTrue(strategy.lastCaptureSuccessful())
-    verify(fixture.callback).onScreenshotRecorded(any<Bitmap>())
+    val screenshot = argumentCaptor<Bitmap>()
+    verify(fixture.callback).onScreenshotRecorded(screenshot.capture())
+    assertEquals(Bitmap.Config.ARGB_8888, screenshot.firstValue.config)
   }
 
   @Test
