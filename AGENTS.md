@@ -44,13 +44,13 @@ The project uses **Gradle** with Kotlin DSL. Key build files:
 ### Testing
 ```bash
 # Run unit tests for a specific file
-./gradlew ':<module>:testDebugUnitTest' --tests="*<file name>*" --info
+./gradlew ':<module>:testReleaseUnitTest' --tests="*<file name>*" --info
 
 # Run system tests (requires Python virtual env)
 make systemTest
 
 # Run specific test suites
-./gradlew :sentry-android-core:testDebugUnitTest
+./gradlew :sentry-android-core:testReleaseUnitTest
 ./gradlew :sentry:test
 ```
 
