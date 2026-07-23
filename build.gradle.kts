@@ -177,6 +177,13 @@ subprojects {
                     sourceCompatibility = JavaVersion.VERSION_1_8
                     targetCompatibility = JavaVersion.VERSION_1_8
                 }
+
+                // AGP 9 defaults the AAR metadata minCompileSdk to the library's compileSdk,
+                // which would force every consumer onto that compile SDK. Pin it to our minSdk
+                // so consumers remain free to compile against any SDK we support, as before.
+                defaultConfig {
+                    aarMetadata { minCompileSdk = libs.versions.minSdk.get().toInt() }
+                }
             }
         }
 
