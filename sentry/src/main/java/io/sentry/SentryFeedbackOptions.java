@@ -648,6 +648,31 @@ public final class SentryFeedbackOptions {
     void disable();
 
     boolean isEnabled();
+
+    /**
+     * Sets the dialog a detected shake should (re-)show instead of creating a new one. Re-showing
+     * an already visible dialog is a no-op, so a shake can never stack a second dialog on top of
+     * it. The controller tracks at most one dialog: the one most recently set. The dialog is
+     * tracked until its host activity is destroyed or it is replaced by another dialog.
+     *
+     * <p>With {@code startShakeDetection} set to {@code true} (a per-dialog shake opt-in), shake
+     * detection is also started and kept alive independently of the global enable/disable toggle.
+     * With {@code false} (a dialog merely became visible), the detection state is left untouched.
+     *
+     * <p>Passing a {@code null} dialog clears the tracked dialog and stops shake detection unless
+     * it is enabled globally.
+     *
+     * @param dialog the dialog to show on shake, or {@code null} to clear
+     * @param startShakeDetection whether the dialog should also start and keep alive shake
+     *     detection
+     */
+    void setDialog(@Nullable IShakeDialog dialog, boolean startShakeDetection);
+  }
+
+  /** A dialog that can be shown when a shake gesture is detected. */
+  @ApiStatus.Internal
+  public interface IShakeDialog {
+    void show();
   }
 
   /** Configuration callback for feedback options. */

@@ -3272,6 +3272,11 @@ public abstract interface class io/sentry/SentryFeedbackOptions$IShakeController
 	public abstract fun disable ()V
 	public abstract fun enable ()V
 	public abstract fun isEnabled ()Z
+	public abstract fun setDialog (Lio/sentry/SentryFeedbackOptions$IShakeDialog;Z)V
+}
+
+public abstract interface class io/sentry/SentryFeedbackOptions$IShakeDialog {
+	public abstract fun show ()V
 }
 
 public abstract interface class io/sentry/SentryFeedbackOptions$OptionsConfigurator {

@@ -4,6 +4,9 @@ import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
 
 import android.app.Activity;
 import android.app.Application;
+import android.app.Dialog;
+import android.content.Context;
+import android.content.ContextWrapper;
 import android.os.Bundle;
 import io.sentry.IScopes;
 import io.sentry.Integration;
@@ -22,6 +25,11 @@ import org.jetbrains.annotations.Nullable;
  * io.sentry.SentryFeedbackOptions#isUseShakeGesture()} determines the initial state; it can be
  * toggled at runtime via {@code Sentry.feedback().enableFeedbackOnShake()} and {@code
  * Sentry.feedback().disableFeedbackOnShake()}.
+ *
+ * <p>A single detector serves both the global toggle and individual dialogs set via {@link
+ * #setDialog(SentryFeedbackOptions.IShakeDialog, boolean)}. While a dialog is tracked, a shake on
+ * its host activity re-shows that dialog instead of creating a new form — a no-op when it is
+ * already visible, so a shake can never stack a second form on top of one that is showing.
  */
 public final class FeedbackShakeIntegration
     implements Integration,
@@ -33,9 +41,10 @@ public final class FeedbackShakeIntegration
   private final @NotNull SentryShakeDetector shakeDetector;
   private @Nullable SentryAndroidOptions options;
   private volatile boolean enabled = false;
+  private boolean detecting = false;
+  private volatile @Nullable WeakReference<SentryFeedbackOptions.IShakeDialog> dialogRef;
+  private boolean dialogRequestedShakeDetection = false;
   private volatile @Nullable WeakReference<Activity> currentActivityRef;
-  private volatile boolean isDialogShowing = false;
-  private volatile @Nullable Runnable previousOnFormClose;
 
   public FeedbackShakeIntegration(final @NotNull Application application) {
     this.application = Objects.requireNonNull(application, "Application is required");
@@ -68,8 +77,57 @@ public final class FeedbackShakeIntegration
       return;
     }
     enabled = true;
+    startDetecting(options);
+  }
 
-    // Re-arm the detector in case it was closed before, either by disable() or by a previous
+  @Override
+  public synchronized void disable() {
+    if (!enabled) {
+      return;
+    }
+    enabled = false;
+    if (!dialogRequestedShakeDetection || getDialog() == null) {
+      stopDetecting();
+    }
+  }
+
+  @Override
+  public boolean isEnabled() {
+    return enabled;
+  }
+
+  @Override
+  public synchronized void setDialog(
+      final @Nullable SentryFeedbackOptions.IShakeDialog dialog,
+      final boolean startShakeDetection) {
+    final @Nullable SentryAndroidOptions options = this.options;
+    if (options == null) {
+      return;
+    }
+    if (dialog == null) {
+      dialogRef = null;
+      dialogRequestedShakeDetection = false;
+      if (!enabled) {
+        stopDetecting();
+      }
+      return;
+    }
+    dialogRef = new WeakReference<>(dialog);
+    if (startShakeDetection) {
+      dialogRequestedShakeDetection = true;
+      startDetecting(options);
+    } else {
+      dialogRequestedShakeDetection = false;
+    }
+  }
+
+  private synchronized void startDetecting(final @NotNull SentryAndroidOptions options) {
+    if (detecting) {
+      return;
+    }
+    detecting = true;
+
+    // Re-arm the detector in case it was closed before, either by stopDetecting() or by a previous
     // close() (e.g. a second Sentry.init reusing the same options), otherwise the closed latch
     // would keep shake detection off permanently.
     shakeDetector.reopen();
@@ -99,51 +157,27 @@ public final class FeedbackShakeIntegration
     }
   }
 
-  @Override
-  public synchronized void disable() {
-    if (!enabled) {
+  private synchronized void stopDetecting() {
+    if (!detecting) {
       return;
     }
-    enabled = false;
+    detecting = false;
 
     application.unregisterActivityLifecycleCallbacks(this);
     shakeDetector.close();
-    // Restore onFormClose if a dialog is still showing, since lifecycle callbacks
-    // are now unregistered and onActivityDestroyed cleanup won't fire. The dialog
-    // itself stays on screen; only future shake detection stops.
-    if (isDialogShowing) {
-      isDialogShowing = false;
-      if (options != null) {
-        options.getFeedbackOptions().setOnFormClose(previousOnFormClose);
-      }
-      previousOnFormClose = null;
-    }
     currentActivityRef = null;
   }
 
   @Override
-  public boolean isEnabled() {
-    return enabled;
-  }
-
-  @Override
-  public void close() throws IOException {
-    disable();
+  public synchronized void close() throws IOException {
+    enabled = false;
+    dialogRef = null;
+    dialogRequestedShakeDetection = false;
+    stopDetecting();
   }
 
   @Override
   public void onActivityResumed(final @NotNull Activity activity) {
-    // If a dialog is showing on a different activity (e.g. user navigated via notification),
-    // clean up since the dialog's host activity is going away and onActivityDestroyed
-    // won't match currentActivity anymore.
-    final @Nullable Activity current = currentActivityRef != null ? currentActivityRef.get() : null;
-    if (isDialogShowing && current != null && current != activity) {
-      isDialogShowing = false;
-      if (options != null) {
-        options.getFeedbackOptions().setOnFormClose(previousOnFormClose);
-      }
-      previousOnFormClose = null;
-    }
     currentActivityRef = new WeakReference<>(activity);
     startShakeDetection(activity);
   }
@@ -153,16 +187,11 @@ public final class FeedbackShakeIntegration
     // Only stop if this is the activity we're tracking. When transitioning between
     // activities, B.onResume may fire before A.onPause — stopping unconditionally
     // would kill shake detection for the new activity.
-    final @Nullable Activity current = currentActivityRef != null ? currentActivityRef.get() : null;
+    final @Nullable WeakReference<Activity> currentRef = currentActivityRef;
+    final @Nullable Activity current = currentRef != null ? currentRef.get() : null;
     if (activity == current) {
       stopShakeDetection();
-      // Keep currentActivityRef set when a dialog is showing so onActivityDestroyed
-      // can still match and clean up. Otherwise the cleanup condition
-      // (activity == current) would always be false since onPause fires
-      // before onDestroy.
-      if (!isDialogShowing) {
-        currentActivityRef = null;
-      }
+      currentActivityRef = null;
     }
   }
 
@@ -182,17 +211,31 @@ public final class FeedbackShakeIntegration
 
   @Override
   public void onActivityDestroyed(final @NotNull Activity activity) {
-    // Only reset if this is the activity that hosts the dialog — the dialog cannot
-    // outlive its host activity being destroyed.
-    final @Nullable Activity current = currentActivityRef != null ? currentActivityRef.get() : null;
-    if (isDialogShowing && activity == current) {
-      isDialogShowing = false;
-      currentActivityRef = null;
-      if (options != null) {
-        options.getFeedbackOptions().setOnFormClose(previousOnFormClose);
-      }
-      previousOnFormClose = null;
+    // A tracked dialog cannot outlive its host activity; drop it so detection doesn't keep
+    // running for it (and a shake can't try to show a dead dialog).
+    final @Nullable SentryFeedbackOptions.IShakeDialog dialog = getDialog();
+    if (dialog != null && findDialogActivity(dialog) == activity) {
+      setDialog(null, false);
     }
+  }
+
+  private @Nullable SentryFeedbackOptions.IShakeDialog getDialog() {
+    final @Nullable WeakReference<SentryFeedbackOptions.IShakeDialog> ref = dialogRef;
+    return ref != null ? ref.get() : null;
+  }
+
+  private static @Nullable Activity findDialogActivity(
+      final @NotNull SentryFeedbackOptions.IShakeDialog dialog) {
+    if (dialog instanceof Dialog) {
+      @Nullable Context context = ((Dialog) dialog).getContext();
+      while (context instanceof ContextWrapper) {
+        if (context instanceof Activity) {
+          return (Activity) context;
+        }
+        context = ((ContextWrapper) context).getBaseContext();
+      }
+    }
+    return null;
   }
 
   private void startShakeDetection(final @NotNull Activity activity) {
@@ -201,47 +244,47 @@ public final class FeedbackShakeIntegration
     }
     // Stop any existing detection (e.g. when transitioning between activities)
     stopShakeDetection();
+    // When detection runs only for a tracked dialog, don't listen on other activities —
+    // a shake there couldn't show the dialog anyway.
+    if (!enabled) {
+      final @Nullable SentryFeedbackOptions.IShakeDialog dialog = getDialog();
+      if (dialog == null || findDialogActivity(dialog) != activity) {
+        return;
+      }
+    }
     shakeDetector.start(
         activity,
         () -> {
           final @Nullable WeakReference<Activity> ref = currentActivityRef;
           final Activity active = ref != null ? ref.get() : null;
           final Boolean inBackground = AppState.getInstance().isInBackground();
-          if (active != null
-              && options != null
-              && !isDialogShowing
-              && !Boolean.TRUE.equals(inBackground)) {
-            active.runOnUiThread(
-                () -> {
-                  if (isDialogShowing || active.isFinishing() || active.isDestroyed()) {
-                    return;
-                  }
+          if (active == null || options == null || Boolean.TRUE.equals(inBackground)) {
+            return;
+          }
+          // Decide on the main thread: show() sets the tracked dialog synchronously, so a
+          // second queued shake sees the form shown by the first instead of creating another.
+          active.runOnUiThread(
+              () -> {
+                if (active.isFinishing() || active.isDestroyed()) {
+                  return;
+                }
+                // A dialog tracked for the active activity takes precedence over creating a
+                // new form — re-showing it is a no-op while it's already visible.
+                final @Nullable SentryFeedbackOptions.IShakeDialog dialog = getDialog();
+                if (dialog != null && findDialogActivity(dialog) == active) {
+                  dialog.show();
+                  return;
+                }
+                if (enabled) {
                   try {
-                    isDialogShowing = true;
-                    final Runnable captured = options.getFeedbackOptions().getOnFormClose();
-                    previousOnFormClose = captured;
-                    options
-                        .getFeedbackOptions()
-                        .setOnFormClose(
-                            () -> {
-                              isDialogShowing = false;
-                              options.getFeedbackOptions().setOnFormClose(captured);
-                              if (captured != null) {
-                                captured.run();
-                              }
-                              previousOnFormClose = null;
-                            });
                     new SentryUserFeedbackForm.Builder(active).create().show();
                   } catch (Throwable e) {
-                    isDialogShowing = false;
-                    options.getFeedbackOptions().setOnFormClose(previousOnFormClose);
-                    previousOnFormClose = null;
                     options
                         .getLogger()
                         .log(SentryLevel.ERROR, "Failed to show feedback dialog on shake.", e);
                   }
-                });
-          }
+                }
+              });
         });
   }
 

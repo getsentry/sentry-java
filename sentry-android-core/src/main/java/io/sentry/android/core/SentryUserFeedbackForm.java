@@ -1,10 +1,7 @@
 package io.sentry.android.core;
 
-import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.Application;
 import android.content.Context;
-import android.content.ContextWrapper;
 import android.os.Bundle;
 import android.view.View;
 import android.view.Window;
@@ -23,11 +20,11 @@ import io.sentry.SentryOptions;
 import io.sentry.protocol.Feedback;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
-import java.lang.ref.WeakReference;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class SentryUserFeedbackForm extends AlertDialog {
+public class SentryUserFeedbackForm extends AlertDialog
+    implements SentryFeedbackOptions.IShakeDialog {
 
   private boolean isCancelable = false;
   private @Nullable SentryId currentReplayId;
@@ -35,9 +32,6 @@ public class SentryUserFeedbackForm extends AlertDialog {
   private @Nullable OnDismissListener delegate;
 
   private final @NotNull SentryFeedbackOptions resolvedFeedbackOptions;
-
-  private @Nullable SentryShakeDetector shakeDetector;
-  private @Nullable Application.ActivityLifecycleCallbacks shakeLifecycleCallbacks;
 
   SentryUserFeedbackForm(
       final @NotNull Context context,
@@ -56,111 +50,22 @@ public class SentryUserFeedbackForm extends AlertDialog {
       configurator.configure(resolvedFeedbackOptions);
     }
     SentryIntegrationPackageStorage.getInstance().addIntegration("UserFeedbackWidget");
-    maybeStartShakeDetection(context);
+    maybeEnableShakeToShow();
   }
 
-  private void maybeStartShakeDetection(final @NotNull Context context) {
+  private void maybeEnableShakeToShow() {
     final @NotNull SentryFeedbackOptions globalFeedbackOptions =
         Sentry.getCurrentScopes().getOptions().getFeedbackOptions();
 
+    // Only an explicit per-form opt-in registers this dialog for shake detection. When shake
+    // is configured globally (via the option or the runtime toggle), the integration already
+    // shows a form on shake and this dialog defers to it.
     if (!resolvedFeedbackOptions.isUseShakeGesture()
+        || globalFeedbackOptions.isUseShakeGesture()
         || globalFeedbackOptions.getShakeController().isEnabled()) {
       return;
     }
-    final @Nullable Activity activity = getActivity(context);
-    if (activity == null) {
-      return;
-    }
-    final @NotNull SentryOptions options = Sentry.getCurrentScopes().getOptions();
-    shakeDetector = new SentryShakeDetector(options.getLogger());
-    final @NotNull WeakReference<Activity> activityRef = new WeakReference<>(activity);
-    shakeDetector.start(activity, shakeListener(activityRef));
-    final @NotNull Application app = activity.getApplication();
-    shakeLifecycleCallbacks = new ShakeLifecycleCallbacks(activityRef);
-    app.registerActivityLifecycleCallbacks(shakeLifecycleCallbacks);
-  }
-
-  private void stopShakeDetection() {
-    if (shakeDetector != null) {
-      shakeDetector.close();
-      shakeDetector = null;
-    }
-    if (shakeLifecycleCallbacks != null) {
-      final @Nullable Activity activity = getActivity(getContext());
-      if (activity != null) {
-        activity.getApplication().unregisterActivityLifecycleCallbacks(shakeLifecycleCallbacks);
-      }
-      shakeLifecycleCallbacks = null;
-    }
-  }
-
-  private @NotNull SentryShakeDetector.Listener shakeListener(
-      final @NotNull WeakReference<Activity> activityRef) {
-    return () -> {
-      final @Nullable Activity active = activityRef.get();
-      if (active != null && !active.isFinishing() && !active.isDestroyed()) {
-        active.runOnUiThread(
-            () -> {
-              if (!active.isFinishing() && !active.isDestroyed()) {
-                show();
-              }
-            });
-      }
-    };
-  }
-
-  private static @Nullable Activity getActivity(final @NotNull Context context) {
-    Context current = context;
-    while (current instanceof ContextWrapper) {
-      if (current instanceof Activity) {
-        return (Activity) current;
-      }
-      current = ((ContextWrapper) current).getBaseContext();
-    }
-    return null;
-  }
-
-  private class ShakeLifecycleCallbacks implements Application.ActivityLifecycleCallbacks {
-    private final @NotNull WeakReference<Activity> activityRef;
-
-    ShakeLifecycleCallbacks(final @NotNull WeakReference<Activity> activityRef) {
-      this.activityRef = activityRef;
-    }
-
-    @Override
-    public void onActivityResumed(final @NotNull Activity activity) {
-      if (activity == activityRef.get() && shakeDetector != null) {
-        shakeDetector.start(activity, shakeListener(activityRef));
-      }
-    }
-
-    @Override
-    public void onActivityPaused(final @NotNull Activity activity) {
-      if (activity == activityRef.get() && shakeDetector != null) {
-        shakeDetector.stop();
-      }
-    }
-
-    @Override
-    public void onActivityDestroyed(final @NotNull Activity activity) {
-      if (activity == activityRef.get()) {
-        stopShakeDetection();
-      }
-    }
-
-    @Override
-    public void onActivityCreated(
-        final @NotNull Activity activity, final @Nullable Bundle savedInstanceState) {}
-
-    @Override
-    public void onActivityStarted(final @NotNull Activity activity) {}
-
-    @Override
-    public void onActivityStopped(final @NotNull Activity activity) {}
-
-    @Override
-    public void onActivitySaveInstanceState(
-        final @NotNull Activity activity, final @NotNull Bundle outState) {}
+    globalFeedbackOptions.getShakeController().setDialog(this, true);
   }
 
   @Override
@@ -334,6 +239,8 @@ public class SentryUserFeedbackForm extends AlertDialog {
 
     final @NotNull SentryOptions options = Sentry.getCurrentScopes().getOptions();
     final @NotNull SentryFeedbackOptions feedbackOptions = options.getFeedbackOptions();
+    // Track this form so a shake re-shows it instead of stacking a second one on top
+    feedbackOptions.getShakeController().setDialog(this, false);
     final @Nullable Runnable onFormOpen = feedbackOptions.getOnFormOpen();
     if (onFormOpen != null) {
       onFormOpen.run();

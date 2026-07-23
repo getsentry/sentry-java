@@ -2,6 +2,7 @@ package io.sentry.android.core
 
 import android.app.Activity
 import android.app.Application
+import android.app.Dialog
 import android.content.Context
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
@@ -20,6 +21,7 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.robolectric.Robolectric
 
 @RunWith(AndroidJUnit4::class)
 class FeedbackShakeIntegrationTest {
@@ -272,5 +274,119 @@ class FeedbackShakeIntegrationTest {
     sut.close()
 
     assertThat(sut.isEnabled).isFalse()
+  }
+
+  private fun createShakeDialog(): TestShakeDialog {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    return TestShakeDialog(activity)
+  }
+
+  private class TestShakeDialog(val activity: Activity) :
+    Dialog(activity), SentryFeedbackOptions.IShakeDialog
+
+  @Test
+  fun `setDialog with startShakeDetection starts detection without enabling the global toggle`() {
+    val sut = fixture.getSut(useShakeGesture = false)
+    sut.register(fixture.scopes, fixture.options)
+
+    sut.setDialog(createShakeDialog(), true)
+
+    verify(fixture.application).registerActivityLifecycleCallbacks(any())
+    assertThat(sut.isEnabled).isFalse()
+  }
+
+  @Test
+  fun `setDialog without startShakeDetection only tracks the dialog`() {
+    val sut = fixture.getSut(useShakeGesture = false)
+    sut.register(fixture.scopes, fixture.options)
+
+    sut.setDialog(createShakeDialog(), false)
+
+    verify(fixture.application, never()).registerActivityLifecycleCallbacks(any())
+  }
+
+  @Test
+  fun `setDialog with null stops shake detection when globally disabled`() {
+    val sut = fixture.getSut(useShakeGesture = false)
+    sut.register(fixture.scopes, fixture.options)
+    sut.setDialog(createShakeDialog(), true)
+
+    sut.setDialog(null, false)
+
+    verify(fixture.application).unregisterActivityLifecycleCallbacks(any())
+  }
+
+  @Test
+  fun `setDialog with null keeps shake detection when globally enabled`() {
+    val sut = fixture.getSut(useShakeGesture = true)
+    sut.register(fixture.scopes, fixture.options)
+    sut.setDialog(createShakeDialog(), true)
+
+    sut.setDialog(null, false)
+
+    verify(fixture.application, never()).unregisterActivityLifecycleCallbacks(any())
+  }
+
+  @Test
+  fun `disable keeps shake detection while an opted-in dialog is tracked`() {
+    val sut = fixture.getSut(useShakeGesture = true)
+    sut.register(fixture.scopes, fixture.options)
+    val dialog = createShakeDialog()
+    sut.setDialog(dialog, true)
+
+    sut.disable()
+
+    assertThat(sut.isEnabled).isFalse()
+    verify(fixture.application, never()).unregisterActivityLifecycleCallbacks(any())
+
+    // Once the dialog is cleared, nothing keeps detection alive anymore
+    sut.setDialog(null, false)
+    verify(fixture.application).unregisterActivityLifecycleCallbacks(any())
+  }
+
+  @Test
+  fun `disable stops shake detection when the tracked dialog did not opt in`() {
+    val sut = fixture.getSut(useShakeGesture = true)
+    sut.register(fixture.scopes, fixture.options)
+    sut.setDialog(createShakeDialog(), false)
+
+    sut.disable()
+
+    verify(fixture.application).unregisterActivityLifecycleCallbacks(any())
+  }
+
+  @Test
+  fun `re-setting the same opted-in dialog keeps detection alive`() {
+    val sut = fixture.getSut(useShakeGesture = false)
+    sut.register(fixture.scopes, fixture.options)
+    val dialog = createShakeDialog()
+    sut.setDialog(dialog, true)
+
+    // The dialog reports itself again when shown
+    sut.setDialog(dialog, false)
+    sut.disable()
+
+    verify(fixture.application, never()).unregisterActivityLifecycleCallbacks(any())
+  }
+
+  @Test
+  fun `destroying the dialog host activity clears the dialog and stops detection`() {
+    val sut = fixture.getSut(useShakeGesture = false)
+    sut.register(fixture.scopes, fixture.options)
+    val dialog = createShakeDialog()
+    sut.setDialog(dialog, true)
+
+    sut.onActivityDestroyed(dialog.activity)
+
+    verify(fixture.application).unregisterActivityLifecycleCallbacks(any())
+  }
+
+  @Test
+  fun `setDialog before register is a no-op`() {
+    val sut = fixture.getSut(useShakeGesture = false)
+
+    sut.setDialog(createShakeDialog(), true)
+
+    verify(fixture.application, never()).registerActivityLifecycleCallbacks(any())
   }
 }
