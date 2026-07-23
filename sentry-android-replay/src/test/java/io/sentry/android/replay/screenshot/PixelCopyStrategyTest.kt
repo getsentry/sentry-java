@@ -281,6 +281,30 @@ class PixelCopyStrategyTest {
 
   @Test
   @Config(shadows = [DeferredWindowPixelCopyShadow::class])
+  fun `idle close claims the gate so a racing capture cannot schedule a second cleanup`() {
+    // Mirror of the finishFrame guard, but for close()'s idle path (no frame in flight). close()
+    // must atomically claim the gate before scheduling cleanup; otherwise a capture racing in right
+    // after the check can take the gate, see isClosed, run finishFrame and schedule cleanup a
+    // second
+    // time. Both cleanups are idempotent, but a single submit is the invariant we keep uniform.
+    val activity = buildActivity(SimpleActivity::class.java).setup()
+    shadowOf(Looper.getMainLooper()).idle()
+    val root = activity.get().findViewById<View>(android.R.id.content)
+    val executor = mock<ScheduledExecutorService>()
+    whenever(executor.submit(any<Runnable>())).thenReturn(mock<Future<*>>())
+    val strategy = fixture.getSut(executor)
+
+    strategy.close() // idle -> claims gate, schedules the one cleanup
+    // A capture landing after close must be dropped (gate held), not schedule cleanup again.
+    strategy.capture(root)
+    DeferredWindowPixelCopyShadow.flush()
+    shadowOf(Looper.getMainLooper()).idle()
+
+    verify(executor, times(1)).submit(any<Runnable>())
+  }
+
+  @Test
+  @Config(shadows = [DeferredWindowPixelCopyShadow::class])
   fun `frame gate is released when masking submit is rejected`() {
     val activity = buildActivity(SimpleActivity::class.java).setup()
     shadowOf(Looper.getMainLooper()).idle()

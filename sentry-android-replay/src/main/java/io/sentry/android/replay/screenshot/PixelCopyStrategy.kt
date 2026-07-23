@@ -369,18 +369,24 @@ internal class PixelCopyStrategy(
   override fun close() {
     isClosed.set(true)
     unstableCaptures.set(0)
-    if (!frameInFlight.get()) {
-      scheduleCleanup()
-    }
+    cleanUpIfIdle()
   }
 
   private fun finishFrame() {
     frameInFlight.set(false)
-    // Only clean up if we're closed AND can re-take the gate. If a new capture slipped in after we
-    // released it (its CAS won), that frame now owns the shared screenshot; its own finishFrame
-    // will
-    // clean up. Backing off here avoids recycling the bitmap while that capture is still using it.
-    if (isClosed.get() && frameInFlight.compareAndSet(false, true)) {
+    if (isClosed.get()) {
+      cleanUpIfIdle()
+    }
+  }
+
+  /**
+   * Schedules cleanup only for the caller that owns the gate. Whoever wins [frameInFlight]'s CAS
+   * (close when no frame is running, or the finishFrame of the last in-flight frame after close)
+   * runs cleanup exactly once; a racing capture that took the gate loses the CAS and backs off, so
+   * we never recycle the shared screenshot while that capture is still using it.
+   */
+  private fun cleanUpIfIdle() {
+    if (frameInFlight.compareAndSet(false, true)) {
       scheduleCleanup()
     }
   }
