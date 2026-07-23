@@ -34,8 +34,8 @@ android {
     getByName("release") { consumerProguardFiles("proguard-rules.pro") }
   }
 
-  // AGP 9 only generates unit tests for the testBuildType. CI disables the debug
-  // variant, so unit tests must target release to run at all.
+  // AGP 9 only generates unit tests for the testBuildType. The debug variant is
+  // disabled, so unit tests must target release to run at all.
   testBuildType = "release"
 
   kotlin { compilerOptions.jvmTarget = JVM_1_8 }
@@ -83,7 +83,7 @@ tasks.withType<JavaCompile>().configureEach {
 // outputs so Gradle's build cache restores them on cache hits (otherwise the CLI upload step
 // finds an empty directory).
 tasks
-  .matching { it.name == "testDebugUnitTest" || it.name == "testReleaseUnitTest" }
+  .matching { it.name == "testReleaseUnitTest" }
   .configureEach { outputs.dir(layout.buildDirectory.dir("test-snapshots")) }
 
 dependencies {

@@ -8,9 +8,14 @@
   - Users can now attach an image from the device gallery when submitting feedback. Enabled by default; can be disabled via `SentryFeedbackOptions.setEnableScreenshot(false)` or the `io.sentry.feedback.enable-screenshot` manifest flag.
   - Requires the `androidx.activity` `>=1.8.2` dependency
 
+### Improvements
+
+- Skip building Android manifest metadata debug log messages when debug logging is disabled, reducing allocations during SDK init ([#5790](https://github.com/getsentry/sentry-java/pull/5790))
+
 ### Fixes
 
 - Pin the published Sentry Android SDK's AAR metadata `minCompileSdk` to our `minSdk` (`21`) instead of AGP 9's new default of the SDK's own `compileSdk` (`37`), so apps that depend on the SDK aren't forced to raise their `compileSdk` ([#5823](https://github.com/getsentry/sentry-java/pull/5823))
+- Release `MediaMuxer` when the replay video encoder fails to start to avoid a resource leak ([#5607](https://github.com/getsentry/sentry-java/pull/5607))
 
 ### Performance
 
