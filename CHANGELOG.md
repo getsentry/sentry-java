@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Features
+
+- Add `Sentry.feedback().enableFeedbackOnShake()` and `Sentry.feedback().disableFeedbackOnShake()` to toggle shake-to-report at runtime, e.g. based on an asynchronously fetched feature flag ([#5486](https://github.com/getsentry/sentry-java/issues/5486))
+
 ### Fixes
 
 - Pin the published Sentry Android SDK's AAR metadata `minCompileSdk` to our `minSdk` (`21`) instead of AGP 9's new default of the SDK's own `compileSdk` (`37`), so apps that depend on the SDK aren't forced to raise their `compileSdk` ([#5823](https://github.com/getsentry/sentry-java/pull/5823))

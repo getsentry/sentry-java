@@ -293,9 +293,12 @@ public abstract class io/sentry/android/core/EnvelopeFileObserverIntegration : i
 	public final fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
 }
 
-public final class io/sentry/android/core/FeedbackShakeIntegration : android/app/Application$ActivityLifecycleCallbacks, io/sentry/Integration, java/io/Closeable {
+public final class io/sentry/android/core/FeedbackShakeIntegration : android/app/Application$ActivityLifecycleCallbacks, io/sentry/Integration, io/sentry/SentryFeedbackOptions$IShakeController, java/io/Closeable {
 	public fun <init> (Landroid/app/Application;)V
 	public fun close ()V
+	public fun disable ()V
+	public fun enable ()V
+	public fun isEnabled ()Z
 	public fun onActivityCreated (Landroid/app/Activity;Landroid/os/Bundle;)V
 	public fun onActivityDestroyed (Landroid/app/Activity;)V
 	public fun onActivityPaused (Landroid/app/Activity;)V

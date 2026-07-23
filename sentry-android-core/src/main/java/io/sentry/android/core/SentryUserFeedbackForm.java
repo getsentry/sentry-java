@@ -62,7 +62,9 @@ public class SentryUserFeedbackForm extends AlertDialog {
   private void maybeStartShakeDetection(final @NotNull Context context) {
     final @NotNull SentryFeedbackOptions globalFeedbackOptions =
         Sentry.getCurrentScopes().getOptions().getFeedbackOptions();
-    if (!resolvedFeedbackOptions.isUseShakeGesture() || globalFeedbackOptions.isUseShakeGesture()) {
+
+    if (!resolvedFeedbackOptions.isUseShakeGesture()
+        || globalFeedbackOptions.getShakeController().isEnabled()) {
       return;
     }
     final @Nullable Activity activity = getActivity(context);

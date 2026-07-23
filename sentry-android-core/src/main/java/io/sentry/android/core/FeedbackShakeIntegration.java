@@ -7,6 +7,7 @@ import android.app.Application;
 import android.os.Bundle;
 import io.sentry.IScopes;
 import io.sentry.Integration;
+import io.sentry.SentryFeedbackOptions;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.util.Objects;
@@ -17,15 +18,21 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Detects shake gestures and shows the user feedback dialog when a shake is detected. Only active
- * when {@link io.sentry.SentryFeedbackOptions#isUseShakeGesture()} returns {@code true}.
+ * Detects shake gestures and shows the user feedback dialog when a shake is detected. {@link
+ * io.sentry.SentryFeedbackOptions#isUseShakeGesture()} determines the initial state; it can be
+ * toggled at runtime via {@code Sentry.feedback().enableFeedbackOnShake()} and {@code
+ * Sentry.feedback().disableFeedbackOnShake()}.
  */
 public final class FeedbackShakeIntegration
-    implements Integration, Closeable, Application.ActivityLifecycleCallbacks {
+    implements Integration,
+        Closeable,
+        Application.ActivityLifecycleCallbacks,
+        SentryFeedbackOptions.IShakeController {
 
   private final @NotNull Application application;
   private final @NotNull SentryShakeDetector shakeDetector;
   private @Nullable SentryAndroidOptions options;
+  private volatile boolean enabled = false;
   private volatile @Nullable WeakReference<Activity> currentActivityRef;
   private volatile boolean isDialogShowing = false;
   private volatile @Nullable Runnable previousOnFormClose;
@@ -46,13 +53,25 @@ public final class FeedbackShakeIntegration
 
     final @NotNull SentryAndroidOptions options = this.options;
 
-    if (!options.getFeedbackOptions().isUseShakeGesture()) {
+    // Always expose the runtime toggle, even when the option starts out disabled.
+    options.getFeedbackOptions().setShakeController(this);
+
+    if (options.getFeedbackOptions().isUseShakeGesture()) {
+      enable();
+    }
+  }
+
+  @Override
+  public synchronized void enable() {
+    final @Nullable SentryAndroidOptions options = this.options;
+    if (enabled || options == null) {
       return;
     }
+    enabled = true;
 
-    // Re-arm the detector in case this integration is being re-registered after a previous close()
-    // (e.g. a second Sentry.init reusing the same options), otherwise the closed latch would keep
-    // shake detection off permanently.
+    // Re-arm the detector in case it was closed before, either by disable() or by a previous
+    // close() (e.g. a second Sentry.init reusing the same options), otherwise the closed latch
+    // would keep shake detection off permanently.
     shakeDetector.reopen();
 
     // Resolving the accelerometer is the most expensive part of init (the first SensorManager
@@ -72,7 +91,7 @@ public final class FeedbackShakeIntegration
     application.registerActivityLifecycleCallbacks(this);
     options.getLogger().log(SentryLevel.DEBUG, "FeedbackShakeIntegration installed.");
 
-    // In case of a deferred init, hook into any already-resumed activity
+    // In case of a deferred init or runtime enable, hook into any already-resumed activity
     final @Nullable Activity activity = CurrentActivityHolder.getInstance().getActivity();
     if (activity != null) {
       currentActivityRef = new WeakReference<>(activity);
@@ -81,11 +100,17 @@ public final class FeedbackShakeIntegration
   }
 
   @Override
-  public void close() throws IOException {
+  public synchronized void disable() {
+    if (!enabled) {
+      return;
+    }
+    enabled = false;
+
     application.unregisterActivityLifecycleCallbacks(this);
     shakeDetector.close();
     // Restore onFormClose if a dialog is still showing, since lifecycle callbacks
-    // are now unregistered and onActivityDestroyed cleanup won't fire.
+    // are now unregistered and onActivityDestroyed cleanup won't fire. The dialog
+    // itself stays on screen; only future shake detection stops.
     if (isDialogShowing) {
       isDialogShowing = false;
       if (options != null) {
@@ -94,6 +119,16 @@ public final class FeedbackShakeIntegration
       previousOnFormClose = null;
     }
     currentActivityRef = null;
+  }
+
+  @Override
+  public boolean isEnabled() {
+    return enabled;
+  }
+
+  @Override
+  public void close() throws IOException {
+    disable();
   }
 
   @Override
