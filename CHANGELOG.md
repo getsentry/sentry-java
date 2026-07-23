@@ -4,7 +4,7 @@
 
 ### Features
 
-- Add `Sentry.feedback().enableFeedbackOnShake()` and `Sentry.feedback().disableFeedbackOnShake()` to toggle shake-to-report at runtime, e.g. based on an asynchronously fetched feature flag ([#5486](https://github.com/getsentry/sentry-java/issues/5486))
+- Add `Sentry.feedback().enableFeedbackOnShake()` and `Sentry.feedback().disableFeedbackOnShake()` to toggle shake-to-report at runtime, e.g. based on an asynchronously fetched feature flag ([#5827](https://github.com/getsentry/sentry-java/pull/5827))
 
 ### Fixes
 
