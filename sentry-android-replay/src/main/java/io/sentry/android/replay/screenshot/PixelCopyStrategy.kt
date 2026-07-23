@@ -10,6 +10,8 @@ import android.graphics.PorterDuffXfermode
 import android.graphics.Rect
 import android.graphics.RectF
 import android.view.PixelCopy
+import android.view.Surface
+import android.view.SurfaceView
 import android.view.View
 import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryLevel.INFO
@@ -38,6 +40,7 @@ internal class PixelCopyStrategy(
   // Lets the strategy re-arm the recorder's contentChanged gate so frames keep being captured
   // when SurfaceViews are present (their redraws don't trigger ViewTreeObserver.OnDrawListener).
   private val markContentChanged: () -> Unit = {},
+  private val captureGeneration: () -> Int = { 0 },
 ) : ScreenshotStrategy {
 
   private companion object {
@@ -72,6 +75,12 @@ internal class PixelCopyStrategy(
 
   @SuppressLint("NewApi")
   override fun capture(root: View) {
+    val generation = captureGeneration()
+    if (!isCaptureValid(root, generation)) {
+      options.logger.log(DEBUG, "Root view is invalid, not capturing screenshot")
+      return
+    }
+
     val window = root.phoneWindow
     if (window == null) {
       options.logger.log(DEBUG, "Window is invalid, not capturing screenshot")
@@ -96,8 +105,8 @@ internal class PixelCopyStrategy(
         window,
         screenshot,
         { copyResult: Int ->
-          if (isClosed.get()) {
-            options.logger.log(DEBUG, "PixelCopyStrategy is closed, ignoring capture result")
+          if (!isCaptureValid(root, generation)) {
+            options.logger.log(DEBUG, "PixelCopy capture is no longer valid, ignoring result")
             finishFrame()
             return@request
           }
@@ -138,6 +147,7 @@ internal class PixelCopyStrategy(
                         root,
                         viewHierarchy,
                         resetUnstableCaptures = !changedDuringCapture,
+                        generation = generation,
                       )
                     } finally {
                       finishFrame()
@@ -156,6 +166,7 @@ internal class PixelCopyStrategy(
                 surfaceViewNodes,
                 viewHierarchy,
                 resetUnstableCaptures = !changedDuringCapture,
+                generation = generation,
               )
             }
           } catch (e: RuntimeException) {
@@ -189,9 +200,10 @@ internal class PixelCopyStrategy(
     root: View,
     viewHierarchy: ViewHierarchyNode,
     resetUnstableCaptures: Boolean,
+    generation: Int,
   ) {
-    if (isClosed.get() || screenshot.isRecycled) {
-      options.logger.log(DEBUG, "PixelCopyStrategy is closed, skipping masking")
+    if (!isCaptureValid(root, generation) || screenshot.isRecycled) {
+      options.logger.log(DEBUG, "PixelCopy capture is no longer valid, skipping masking")
       return
     }
 
@@ -199,6 +211,9 @@ internal class PixelCopyStrategy(
 
     if (options.replayController.isDebugMaskingOverlayEnabled()) {
       mainLooperHandler.post {
+        if (!isCaptureValid(root, generation)) {
+          return@post
+        }
         if (debugOverlayDrawable.callback == null) {
           root.overlay.add(debugOverlayDrawable)
         }
@@ -220,7 +235,13 @@ internal class PixelCopyStrategy(
     surfaceViewNodes: List<ViewHierarchyNode.SurfaceViewHierarchyNode>,
     viewHierarchy: ViewHierarchyNode,
     resetUnstableCaptures: Boolean,
+    generation: Int,
   ) {
+    if (!isCaptureValid(root, generation)) {
+      finishFrame()
+      return
+    }
+
     // Snapshot the window location into locals so the executor-side compositor reads stable
     // values even if a new capture cycle starts and overwrites the field.
     root.getLocationOnScreen(windowLocation)
@@ -239,15 +260,19 @@ internal class PixelCopyStrategy(
           windowX,
           windowY,
           resetUnstableCaptures,
+          generation,
         )
       }
     }
 
     for ((index, node) in surfaceViewNodes.withIndex()) {
+      if (!isCaptureValid(root, generation)) {
+        onCaptureComplete()
+        continue
+      }
       val surfaceView = node.surfaceViewRef.get()
-      // holder.surface can be null before the surface is created — guard against NPE.
       val surface = surfaceView?.holder?.surface
-      if (surfaceView == null || surface == null || !surface.isValid) {
+      if (surfaceView == null || surface == null || !isSurfaceViewValid(surfaceView, surface)) {
         onCaptureComplete()
         continue
       }
@@ -266,7 +291,7 @@ internal class PixelCopyStrategy(
           surfaceView,
           bitmapToCapture,
           { copyResult: Int ->
-            if (isClosed.get()) {
+            if (!isCaptureValid(root, generation) || !isSurfaceViewValid(surfaceView, surface)) {
               bitmapToCapture.recycle()
               // still drive the completion latch so any prior captures get recycled by the
               // composite step's early-return path.
@@ -301,13 +326,17 @@ internal class PixelCopyStrategy(
     windowX: Int,
     windowY: Int,
     resetUnstableCaptures: Boolean,
+    generation: Int,
   ) {
     val submitted =
       executor.submit(
         ReplayRunnable("screenshot_recorder.composite") {
           try {
-            if (isClosed.get() || screenshot.isRecycled) {
-              options.logger.log(DEBUG, "PixelCopyStrategy is closed, skipping compositing")
+            if (!isCaptureValid(root, generation) || screenshot.isRecycled) {
+              options.logger.log(
+                DEBUG,
+                "PixelCopy capture is no longer valid, skipping compositing",
+              )
               recycleCaptures(captures)
               return@ReplayRunnable
             }
@@ -332,7 +361,7 @@ internal class PixelCopyStrategy(
               capture.bitmap.recycle()
             }
 
-            applyMaskingAndNotify(root, viewHierarchy, resetUnstableCaptures)
+            applyMaskingAndNotify(root, viewHierarchy, resetUnstableCaptures, generation)
           } finally {
             finishFrame()
           }
@@ -351,6 +380,25 @@ internal class PixelCopyStrategy(
       }
     }
   }
+
+  private fun isCaptureValid(root: View, generation: Int): Boolean =
+    !isClosed.get() &&
+      generation == captureGeneration() &&
+      root.isAttachedToWindow &&
+      root.windowToken != null &&
+      root.windowVisibility == View.VISIBLE &&
+      root.isShown &&
+      root.width > 0 &&
+      root.height > 0
+
+  private fun isSurfaceViewValid(surfaceView: SurfaceView, surface: Surface): Boolean =
+    surfaceView.isAttachedToWindow &&
+      surfaceView.windowToken != null &&
+      surfaceView.windowVisibility == View.VISIBLE &&
+      surfaceView.isShown &&
+      surfaceView.width > 0 &&
+      surfaceView.height > 0 &&
+      surface.isValid
 
   override fun onContentChanged() {
     contentChanged.set(true)

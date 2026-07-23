@@ -228,8 +228,10 @@ internal class WindowRecorder(
       }
     }
 
+    val previousRecorder = capturer?.recorder
     capturer?.config = config
     capturer?.recorder = ScreenshotRecorder(config, options, this, screenshotRecorderCallback)
+    previousRecorder?.close()
 
     val newRoot = rootViews.lastOrNull()?.get()
     if (newRoot != null) {

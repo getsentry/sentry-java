@@ -31,6 +31,7 @@ import io.sentry.android.replay.util.ReplayRunnable
 import java.util.concurrent.Future
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -64,6 +65,7 @@ class PixelCopyStrategyTest {
     val debugOverlayDrawable = mock<DebugOverlayDrawable>()
     val config = ScreenshotRecorderConfig(100, 100, 1f, 1f, 1, 1000)
     val contentChangedMarked = AtomicBoolean(false)
+    val captureGeneration = AtomicInteger(0)
 
     fun getSut(executor: ScheduledExecutorService = mock()): PixelCopyStrategy {
       return PixelCopyStrategy(
@@ -79,6 +81,7 @@ class PixelCopyStrategyTest {
         config,
         debugOverlayDrawable,
         markContentChanged = { contentChangedMarked.set(true) },
+        captureGeneration = { captureGeneration.get() },
       )
     }
 
@@ -243,6 +246,60 @@ class PixelCopyStrategyTest {
     shadowOf(Looper.getMainLooper()).idle()
 
     verify(executor).submit(any<Runnable>())
+  }
+
+  @Test
+  @Config(shadows = [DeferredWindowPixelCopyShadow::class])
+  fun `stale window result does not start SurfaceView capture`() {
+    val activity = buildActivity(ActivityWithSurfaceView::class.java).setup()
+    shadowOf(Looper.getMainLooper()).idle()
+    fixture.options.sessionReplay.isCaptureSurfaceViews = true
+    val strategy = fixture.getSut(executor = fixture.inlineExecutor())
+
+    strategy.capture(activity.get().findViewById(android.R.id.content))
+    fixture.captureGeneration.incrementAndGet()
+    DeferredWindowPixelCopyShadow.flush()
+    shadowOf(Looper.getMainLooper()).idle()
+
+    assertFalse(fixture.contentChangedMarked.get())
+    verify(fixture.callback, never()).onScreenshotRecorded(any<Bitmap>())
+  }
+
+  @Test
+  @Config(shadows = [DeferredWindowPixelCopyShadow::class])
+  fun `queued masking ignores a stale capture generation`() {
+    val activity = buildActivity(SimpleActivity::class.java).setup()
+    shadowOf(Looper.getMainLooper()).idle()
+    val tasks = mutableListOf<Runnable>()
+    val executor = mock<ScheduledExecutorService>()
+    whenever(executor.submit(any<Runnable>())).doAnswer {
+      tasks += it.getArgument<Runnable>(0)
+      mock<Future<*>>()
+    }
+    val strategy = fixture.getSut(executor)
+
+    strategy.capture(activity.get().findViewById(android.R.id.content))
+    DeferredWindowPixelCopyShadow.flush()
+    shadowOf(Looper.getMainLooper()).idle()
+    fixture.captureGeneration.incrementAndGet()
+    tasks.single().run()
+
+    verify(fixture.callback, never()).onScreenshotRecorded(any<Bitmap>())
+  }
+
+  @Test
+  @Config(shadows = [DeferredWindowPixelCopyShadow::class])
+  fun `capture skips a detached root`() {
+    val activity = buildActivity(SimpleActivity::class.java).setup()
+    shadowOf(Looper.getMainLooper()).idle()
+    val root = activity.get().findViewById<View>(android.R.id.content)
+    val strategy = fixture.getSut(executor = fixture.inlineExecutor())
+    activity.pause().stop().destroy()
+    shadowOf(Looper.getMainLooper()).idle()
+
+    strategy.capture(root)
+
+    assertEquals(0, DeferredWindowPixelCopyShadow.pendingCount())
   }
 
   @Test
@@ -490,6 +547,8 @@ class DeferredWindowPixelCopyShadow {
       pendingCallbacks.clear()
       callbacks.forEach { it.invoke() }
     }
+
+    fun pendingCount(): Int = pendingCallbacks.size
 
     @JvmStatic
     @Implementation

@@ -20,6 +20,7 @@ import io.sentry.android.replay.util.removeOnDrawListenerSafe
 import java.io.File
 import java.lang.ref.WeakReference
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.roundToInt
 
 @SuppressLint("UseKtx", "UseRequiresApi")
@@ -35,6 +36,7 @@ internal class ScreenshotRecorder(
 
   private val debugOverlayDrawable = DebugOverlayDrawable()
   private val contentChanged = AtomicBoolean(false)
+  private val captureGeneration = AtomicInteger(0)
 
   private val screenshotStrategy: ScreenshotStrategy =
     when (options.sessionReplay.screenshotStrategy) {
@@ -48,6 +50,7 @@ internal class ScreenshotRecorder(
           config,
           debugOverlayDrawable,
           markContentChanged = { contentChanged.set(true) },
+          captureGeneration = { captureGeneration.get() },
         )
     }
 
@@ -111,8 +114,8 @@ internal class ScreenshotRecorder(
   }
 
   fun bind(root: View) {
-    // first unbind the current root
-    unbind(rootView?.get())
+    captureGeneration.incrementAndGet()
+    detach(rootView?.get())
     rootView?.clear()
 
     // next bind the new root
@@ -125,6 +128,15 @@ internal class ScreenshotRecorder(
   }
 
   fun unbind(root: View?) {
+    detach(root)
+    if (root != null && root === rootView?.get()) {
+      captureGeneration.incrementAndGet()
+      rootView?.clear()
+      rootView = null
+    }
+  }
+
+  private fun detach(root: View?) {
     if (options.replayController.isDebugMaskingOverlayEnabled()) {
       root?.overlay?.remove(debugOverlayDrawable)
     }
@@ -133,19 +145,25 @@ internal class ScreenshotRecorder(
 
   fun pause() {
     isCapturing.set(false)
-    unbind(rootView?.get())
+    captureGeneration.incrementAndGet()
+    detach(rootView?.get())
   }
 
   fun resume() {
     // can't use bind() as it will invalidate the weakref
+    captureGeneration.incrementAndGet()
     rootView?.get()?.addOnDrawListenerSafe(this)
+    contentChanged.set(true)
+    screenshotStrategy.onContentChanged()
     isCapturing.set(true)
   }
 
   fun close() {
     isCapturing.set(false)
-    unbind(rootView?.get())
+    captureGeneration.incrementAndGet()
+    detach(rootView?.get())
     rootView?.clear()
+    rootView = null
     screenshotStrategy.close()
   }
 }
