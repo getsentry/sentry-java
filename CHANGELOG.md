@@ -6,7 +6,7 @@
 
 - Add screenshot attachment button to the Android user feedback widget ([#5828](https://github.com/getsentry/sentry-java/pull/5828))
   - Users can now attach an image from the device gallery when submitting feedback. Enabled by default; can be disabled via `SentryFeedbackOptions.setEnableScreenshot(false)` or the `io.sentry.feedback.enable-screenshot` manifest flag.
-  - Requires the `androidx.activity` dependency and the feedback form being shown from a `ComponentActivity` host, the button is hidden otherwise.
+  - Requires the `androidx.activity` `>=1.8.2` dependency
 
 ### Fixes
 
