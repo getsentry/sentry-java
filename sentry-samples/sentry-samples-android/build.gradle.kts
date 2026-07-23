@@ -133,10 +133,6 @@ android {
 
   kotlin { compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11 }
 
-  androidComponents.beforeVariants {
-    it.enable = !Config.Android.shouldSkipDebugVariant(it.buildType)
-  }
-
   androidComponents.onVariants { variant ->
     variant.buildConfigFields?.put(
       "USE_SAGP",

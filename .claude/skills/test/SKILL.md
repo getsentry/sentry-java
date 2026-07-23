@@ -40,9 +40,9 @@ Determine the Gradle test task:
 
 | Module Pattern | Test Task |
 |---------------|-----------|
-| `sentry-android-*` | `testDebugUnitTest` |
-| `sentry-compose*` | `testDebugUnitTest` |
-| `*-android` | `testDebugUnitTest` |
+| `sentry-android-*` | `testReleaseUnitTest` |
+| `sentry-compose*` | `testReleaseUnitTest` |
+| `*-android` | `testReleaseUnitTest` |
 | Everything else | `test` |
 
 **Interactive mode:** Before running, read the test class file and use AskUserQuestion to ask:
