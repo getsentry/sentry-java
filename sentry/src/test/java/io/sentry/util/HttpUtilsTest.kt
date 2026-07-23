@@ -98,6 +98,18 @@ class HttpUtilsTest {
   }
 
   @Test
+  fun `cookie filter preserves empty and padded base64 values`() {
+    assertThat(
+        HttpUtils.filterCookies(
+          "empty=; data=YWJjZA==",
+          KeyValueCollectionBehavior.denyList(),
+          emptyList(),
+        )
+      )
+      .isEqualTo("empty=; data=YWJjZA==")
+  }
+
+  @Test
   fun `cookie filter uses only the first equals separator`() {
     assertThat(
         HttpUtils.filterCookies(
@@ -107,6 +119,30 @@ class HttpUtilsTest {
         )
       )
       .isEqualTo("theme=dark=contrast; token=[Filtered]")
+  }
+
+  @Test
+  fun `cookie filter replaces malformed pairs without discarding valid pairs`() {
+    assertThat(
+        HttpUtils.filterCookies(
+          "theme=dark; opaque; =secret; empty=; sessionId=secret",
+          KeyValueCollectionBehavior.denyList(),
+          emptyList(),
+        )
+      )
+      .isEqualTo("theme=dark;[Filtered];[Filtered]; empty=; sessionId=[Filtered]")
+  }
+
+  @Test
+  fun `cookie allow list never exposes malformed pairs`() {
+    assertThat(
+        HttpUtils.filterCookies(
+          "theme=dark; opaque; =secret",
+          KeyValueCollectionBehavior.allowList("theme", "opaque"),
+          emptyList(),
+        )
+      )
+      .isEqualTo("theme=dark;[Filtered];[Filtered]")
   }
 
   @Test
@@ -121,6 +157,26 @@ class HttpUtilsTest {
   }
 
   @Test
+  fun `set cookie filter preserves empty and padded base64 values`() {
+    assertThat(
+        HttpUtils.filterSetCookie(
+          "data=YWJjZA==; Expires=Wed, 09 Jun 2021 10:18:14 GMT; Max-Age=3600; Domain=example.com; Path=/; Secure; HttpOnly; SameSite=Lax",
+          KeyValueCollectionBehavior.denyList(),
+        )
+      )
+      .isEqualTo(
+        "data=YWJjZA==; Expires=Wed, 09 Jun 2021 10:18:14 GMT; Max-Age=3600; Domain=example.com; Path=/; Secure; HttpOnly; SameSite=Lax"
+      )
+    assertThat(
+        HttpUtils.filterSetCookie(
+          "empty=; Path=/",
+          KeyValueCollectionBehavior.denyList(),
+        )
+      )
+      .isEqualTo("empty=; Path=/")
+  }
+
+  @Test
   fun `set cookie allow list retains allowed non-sensitive value and attributes`() {
     assertThat(
         HttpUtils.filterSetCookie(
@@ -129,6 +185,35 @@ class HttpUtilsTest {
         )
       )
       .isEqualTo("theme=dark; Path=/; Secure")
+  }
+
+  @Test
+  fun `set cookie filter replaces malformed cookie pair and discards attributes`() {
+    assertThat(
+        HttpUtils.filterSetCookie(
+          "opaque; Path=/; HttpOnly",
+          KeyValueCollectionBehavior.denyList(),
+        )
+      )
+      .isEqualTo("[Filtered]")
+    assertThat(
+        HttpUtils.filterSetCookie(
+          "=secret; Path=/; HttpOnly",
+          KeyValueCollectionBehavior.denyList(),
+        )
+      )
+      .isEqualTo("[Filtered]")
+  }
+
+  @Test
+  fun `set cookie allow list never exposes malformed cookie pair`() {
+    assertThat(
+        HttpUtils.filterSetCookie(
+          "opaque; Path=/; HttpOnly",
+          KeyValueCollectionBehavior.allowList("opaque"),
+        )
+      )
+      .isEqualTo("[Filtered]")
   }
 
   @Test
