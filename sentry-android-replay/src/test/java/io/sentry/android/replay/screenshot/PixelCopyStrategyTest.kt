@@ -25,6 +25,7 @@ import io.sentry.SentryOptions
 import io.sentry.android.replay.ExecutorProvider
 import io.sentry.android.replay.ScreenshotRecorderCallback
 import io.sentry.android.replay.ScreenshotRecorderConfig
+import io.sentry.android.replay.util.CompletedFuture
 import io.sentry.android.replay.util.DebugOverlayDrawable
 import io.sentry.android.replay.util.MainLooperHandler
 import io.sentry.android.replay.util.ReplayRunnable
@@ -87,7 +88,10 @@ class PixelCopyStrategyTest {
       return mock {
         doAnswer {
             (it.arguments[0] as Runnable).run()
-            null // submit(Runnable) returns Future<?>; returning Unit breaks the cast
+            // Mirror ReplayExecutorService's inline contract: a completed future, not null. Null
+            // means "rejected" and would make capture() run its null-fallback finishFrame on top of
+            // the task's own, a double-release production never does on the inline path.
+            CompletedFuture
           }
           .whenever(mock)
           .submit(any<Runnable>())
