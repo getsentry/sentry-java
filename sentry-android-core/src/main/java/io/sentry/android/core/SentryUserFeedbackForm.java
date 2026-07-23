@@ -30,8 +30,8 @@ import io.sentry.SentryOptions;
 import io.sentry.protocol.Feedback;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
+import io.sentry.util.FileUtils;
 import io.sentry.util.LoadClass;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.WeakReference;
@@ -464,7 +464,11 @@ public class SentryUserFeedbackForm extends AlertDialog {
       final @NotNull String ext = resolvedExt != null ? resolvedExt : "png";
       hint.addAttachment(
           new Attachment(
-              () -> readUriBytes(resolver, imageUri),
+              () ->
+                  readUriBytes(
+                      resolver,
+                      imageUri,
+                      Sentry.getCurrentScopes().getOptions().getMaxAttachmentSize()),
               "screenshot." + ext,
               mime,
               "event.attachment",
@@ -481,7 +485,7 @@ public class SentryUserFeedbackForm extends AlertDialog {
     try (final @Nullable Cursor cursor = resolver.query(uri, null, null, null, null)) {
       if (cursor != null && cursor.moveToFirst()) {
         final int sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE);
-        if (sizeIndex >= 0 && !cursor.isNull(sizeIndex)) {
+        if (sizeIndex != -1 && !cursor.isNull(sizeIndex)) {
           return cursor.getLong(sizeIndex);
         }
       }
@@ -492,18 +496,13 @@ public class SentryUserFeedbackForm extends AlertDialog {
   }
 
   private static byte[] readUriBytes(
-      final @NotNull ContentResolver resolver, final @NotNull Uri uri) throws IOException {
+      final @NotNull ContentResolver resolver, final @NotNull Uri uri, final long maxSize)
+      throws IOException {
     try (final @Nullable InputStream inputStream = resolver.openInputStream(uri)) {
       if (inputStream == null) {
         throw new IOException("Unable to open image attachment: " + uri);
       }
-      final @NotNull ByteArrayOutputStream output = new ByteArrayOutputStream();
-      final byte[] buffer = new byte[8192];
-      int read;
-      while ((read = inputStream.read(buffer)) != -1) {
-        output.write(buffer, 0, read);
-      }
-      return output.toByteArray();
+      return FileUtils.inputStreamToByteArray(inputStream, maxSize);
     }
   }
 
