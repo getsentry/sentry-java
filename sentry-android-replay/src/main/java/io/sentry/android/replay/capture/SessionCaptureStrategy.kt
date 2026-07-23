@@ -10,6 +10,7 @@ import io.sentry.android.replay.ReplayCache
 import io.sentry.android.replay.ScreenshotRecorderConfig
 import io.sentry.android.replay.capture.CaptureStrategy.ReplaySegment
 import io.sentry.android.replay.util.ReplayRunnable
+import io.sentry.android.replay.util.submitSafely
 import io.sentry.protocol.SentryId
 import io.sentry.transport.ICurrentDateProvider
 import io.sentry.util.FileUtils
@@ -134,8 +135,13 @@ internal class SessionCaptureStrategy(
         }
 
         if ((now - replayStartTimestamp.get() >= options.sessionReplay.sessionDuration)) {
-          options.replayController.stop()
           options.logger.log(INFO, "Session replay deadline exceeded (1h), stopping recording")
+          // dispatch off the replay worker thread, otherwise stop() would run the final segment
+          // encoding synchronously while holding the replay lifecycle lock, blocking a foreground
+          // start() on the main thread (ANR)
+          options.executorService.submitSafely(options, "$TAG.stop") {
+            options.replayController.stop()
+          }
         }
       }
     )

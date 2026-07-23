@@ -29,6 +29,8 @@ import io.sentry.protocol.SentryId
 import io.sentry.rrweb.RRWebBreadcrumbEvent
 import io.sentry.rrweb.RRWebMetaEvent
 import io.sentry.rrweb.RRWebOptionsEvent
+import io.sentry.test.DeferredExecutorService
+import io.sentry.test.ImmediateExecutorService
 import io.sentry.transport.CurrentDateProvider
 import io.sentry.transport.ICurrentDateProvider
 import java.io.File
@@ -66,6 +68,7 @@ class SessionCaptureStrategyTest {
         setReplayController(
           mock { on { breadcrumbConverter }.thenReturn(DefaultReplayBreadcrumbConverter()) }
         )
+        executorService = ImmediateExecutorService()
       }
     val scope = Scope(options)
     val scopes =
@@ -287,6 +290,35 @@ class SessionCaptureStrategyTest {
     strategy.onConfigurationChanged(mock<ScreenshotRecorderConfig>())
 
     strategy.onScreenshotRecorded(mock<Bitmap>()) {}
+
+    verify(fixture.options.replayController).stop()
+  }
+
+  @Test
+  fun `onScreenshotRecorded dispatches deadline stop off the calling thread`() {
+    val deferredExecutor = DeferredExecutorService()
+    fixture.options.executorService = deferredExecutor
+    var count = 0
+    val strategy =
+      fixture.getSut(
+        dateProvider = {
+          if (count++ == 2) {
+            System.currentTimeMillis() + (fixture.options.sessionReplay.sessionDuration * 2)
+          } else {
+            System.currentTimeMillis()
+          }
+        }
+      )
+    strategy.start()
+    strategy.onConfigurationChanged(mock<ScreenshotRecorderConfig>())
+
+    strategy.onScreenshotRecorded(mock<Bitmap>()) {}
+
+    // stop must not run inline on the caller (replay worker) thread, otherwise it would encode the
+    // final segment while holding the lifecycle lock and block a foreground start() (ANR)
+    verify(fixture.options.replayController, never()).stop()
+
+    deferredExecutor.runAll()
 
     verify(fixture.options.replayController).stop()
   }
