@@ -156,7 +156,7 @@ public final class HttpUtils {
       }
       return filteredCookies.toString();
     } catch (Throwable ignored) {
-      return null;
+      return SENSITIVE_DATA_SUBSTITUTE;
     }
   }
 
@@ -170,11 +170,14 @@ public final class HttpUtils {
       final int attributesSeparator = cookie.indexOf(';');
       final @NotNull String cookieValue =
           attributesSeparator < 0 ? cookie : cookie.substring(0, attributesSeparator);
+      if (!isValidCookiePair(cookieValue)) {
+        return SENSITIVE_DATA_SUBSTITUTE;
+      }
       final @NotNull String attributes =
           attributesSeparator < 0 ? "" : cookie.substring(attributesSeparator);
       return filterCookie(cookieValue, behavior, null) + attributes;
     } catch (Throwable ignored) {
-      return null;
+      return SENSITIVE_DATA_SUBSTITUTE;
     }
   }
 
@@ -182,8 +185,12 @@ public final class HttpUtils {
       final @NotNull String cookie,
       final @NotNull KeyValueCollectionBehavior behavior,
       final @Nullable List<String> additionalSensitiveCookieNames) {
+    if (!isValidCookiePair(cookie)) {
+      return SENSITIVE_DATA_SUBSTITUTE;
+    }
+
     final int separator = cookie.indexOf('=');
-    final @NotNull String name = separator < 0 ? cookie : cookie.substring(0, separator);
+    final @NotNull String name = cookie.substring(0, separator);
     final @NotNull String normalizedName = name.trim();
     final boolean sensitive =
         containsTerm(normalizedName, SENSITIVE_DATA_KEYS)
@@ -198,6 +205,11 @@ public final class HttpUtils {
       return name + "=" + SENSITIVE_DATA_SUBSTITUTE;
     }
     return cookie;
+  }
+
+  private static boolean isValidCookiePair(final @NotNull String cookie) {
+    final int separator = cookie.indexOf('=');
+    return separator >= 0 && !cookie.substring(0, separator).trim().isEmpty();
   }
 
   public static @NotNull Map<String, String> filterHeaders(
