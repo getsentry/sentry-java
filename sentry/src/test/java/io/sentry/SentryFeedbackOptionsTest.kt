@@ -29,6 +29,7 @@ class SentryFeedbackOptionsTest {
     assertEquals("Thank you for your report!", options.successMessageText)
     assertEquals("Add a screenshot", options.addScreenshotButtonLabel)
     assertEquals("Remove screenshot", options.removeScreenshotButtonLabel)
+    assertEquals("Image is too large", options.screenshotTooLargeMessageText)
     assertEquals(null, options.onFormOpen)
     assertEquals(null, options.onFormClose)
     assertEquals(null, options.onSubmitSuccess)
@@ -59,6 +60,7 @@ class SentryFeedbackOptionsTest {
         successMessageText = "Success Message"
         addScreenshotButtonLabel = "Add Screenshot Label"
         removeScreenshotButtonLabel = "Remove Screenshot Label"
+        screenshotTooLargeMessageText = "Too Large Message"
         onFormOpen = mock()
         onFormClose = mock()
         onSubmitSuccess = mock()
@@ -85,6 +87,7 @@ class SentryFeedbackOptionsTest {
     assertEquals("Success Message", optionsCopy.successMessageText)
     assertEquals("Add Screenshot Label", optionsCopy.addScreenshotButtonLabel)
     assertEquals("Remove Screenshot Label", optionsCopy.removeScreenshotButtonLabel)
+    assertEquals("Too Large Message", optionsCopy.screenshotTooLargeMessageText)
     assertEquals(options.onFormOpen, optionsCopy.onFormOpen)
     assertEquals(options.onFormClose, optionsCopy.onFormClose)
     assertEquals(options.onSubmitSuccess, optionsCopy.onSubmitSuccess)

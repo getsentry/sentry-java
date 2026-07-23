@@ -220,7 +220,14 @@ public class SentryUserFeedbackForm extends AlertDialog {
         v -> {
           if (selectedImageUri == null) {
             if (photoPicker != null) {
-              photoPicker.launch();
+              try {
+                photoPicker.launch();
+              } catch (Throwable t) {
+                Sentry.getCurrentScopes()
+                    .getOptions()
+                    .getLogger()
+                    .log(SentryLevel.ERROR, "Failed to launch the photo picker.", t);
+              }
             }
           } else {
             selectedImageUri = null;
@@ -313,22 +320,7 @@ public class SentryUserFeedbackForm extends AlertDialog {
 
           // Capture the feedback. If the ID is empty, it means that the feedback was not sent
           final @NotNull Hint hint = new Hint();
-          final @Nullable Uri imageUri = selectedImageUri;
-          if (imageUri != null) {
-            final @NotNull ContentResolver resolver = getContext().getContentResolver();
-            final @Nullable String resolvedMime = resolver.getType(imageUri);
-            final @NotNull String mime = resolvedMime != null ? resolvedMime : "image/png";
-            final @Nullable String resolvedExt =
-                MimeTypeMap.getSingleton().getExtensionFromMimeType(mime);
-            final @NotNull String ext = resolvedExt != null ? resolvedExt : "png";
-            hint.addAttachment(
-                new Attachment(
-                    () -> readUriBytes(resolver, imageUri),
-                    "screenshot." + ext,
-                    mime,
-                    "event.attachment",
-                    false));
-          }
+          maybeAddImageAttachment(hint);
           final @NotNull SentryId id = Sentry.feedback().capture(feedback, hint);
           if (!id.equals(SentryId.EMPTY_ID)) {
             Toast.makeText(
@@ -447,11 +439,42 @@ public class SentryUserFeedbackForm extends AlertDialog {
               SentryLevel.WARNING,
               "Selected image is larger than the maxAttachmentSize of %d bytes, dropping it.",
               options.getMaxAttachmentSize());
-      Toast.makeText(getContext(), "Image is too large", Toast.LENGTH_SHORT).show();
+      Toast.makeText(
+              getContext(),
+              resolvedFeedbackOptions.getScreenshotTooLargeMessageText(),
+              Toast.LENGTH_SHORT)
+          .show();
       return;
     }
     selectedImageUri = uri;
     btnAddScreenshot.setText(resolvedFeedbackOptions.getRemoveScreenshotButtonLabel());
+  }
+
+  private void maybeAddImageAttachment(final @NotNull Hint hint) {
+    final @Nullable Uri imageUri = selectedImageUri;
+    if (imageUri == null) {
+      return;
+    }
+    try {
+      final @NotNull ContentResolver resolver = getContext().getContentResolver();
+      final @Nullable String resolvedMime = resolver.getType(imageUri);
+      final @NotNull String mime = resolvedMime != null ? resolvedMime : "image/png";
+      final @Nullable String resolvedExt =
+          MimeTypeMap.getSingleton().getExtensionFromMimeType(mime);
+      final @NotNull String ext = resolvedExt != null ? resolvedExt : "png";
+      hint.addAttachment(
+          new Attachment(
+              () -> readUriBytes(resolver, imageUri),
+              "screenshot." + ext,
+              mime,
+              "event.attachment",
+              false));
+    } catch (Throwable t) {
+      Sentry.getCurrentScopes()
+          .getOptions()
+          .getLogger()
+          .log(SentryLevel.ERROR, "Failed to attach image to feedback.", t);
+    }
   }
 
   private static long getUriSize(final @NotNull ContentResolver resolver, final @NotNull Uri uri) {

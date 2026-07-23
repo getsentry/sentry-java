@@ -29,10 +29,6 @@ final class SentryFeedbackPhotoPicker {
     this.launcher = launcher;
   }
 
-  /**
-   * Checks whether androidx.activity is on the classpath. Safe to call unconditionally, as it
-   * references no androidx types in its signature or body.
-   */
   static boolean isAvailable(
       final @NotNull LoadClass loadClass, final @NotNull SentryOptions options) {
     return loadClass.isClassAvailable("androidx.activity.ComponentActivity", options)
@@ -40,10 +36,6 @@ final class SentryFeedbackPhotoPicker {
             "androidx.activity.result.contract.ActivityResultContracts$PickVisualMedia", options);
   }
 
-  /**
-   * Registers a photo picker on the activity's result registry, or returns null if the activity is
-   * not a {@link ComponentActivity}. Callers must {@link #unregister()} when done.
-   */
   static @Nullable SentryFeedbackPhotoPicker register(
       final @NotNull Activity activity, final @NotNull OnImagePicked callback) {
     if (!(activity instanceof ComponentActivity)) {

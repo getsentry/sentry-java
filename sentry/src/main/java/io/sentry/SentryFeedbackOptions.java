@@ -91,6 +91,12 @@ public final class SentryFeedbackOptions {
   /** The label of the button to remove an attached screenshot. Defaults to "Remove screenshot". */
   private @NotNull CharSequence removeScreenshotButtonLabel = "Remove screenshot";
 
+  /**
+   * The message displayed when the selected screenshot exceeds the maximum attachment size.
+   * Defaults to "Image is too large".
+   */
+  private @NotNull CharSequence screenshotTooLargeMessageText = "Image is too large";
+
   // Callbacks
   /** Callback called when the feedback form is opened. */
   private @Nullable Runnable onFormOpen;
@@ -133,6 +139,7 @@ public final class SentryFeedbackOptions {
     this.successMessageText = other.successMessageText;
     this.addScreenshotButtonLabel = other.addScreenshotButtonLabel;
     this.removeScreenshotButtonLabel = other.removeScreenshotButtonLabel;
+    this.screenshotTooLargeMessageText = other.screenshotTooLargeMessageText;
     this.onFormOpen = other.onFormOpen;
     this.onFormClose = other.onFormClose;
     this.onSubmitSuccess = other.onSubmitSuccess;
@@ -531,6 +538,27 @@ public final class SentryFeedbackOptions {
     this.removeScreenshotButtonLabel = removeScreenshotButtonLabel;
   }
 
+  /**
+   * The message displayed when the selected screenshot exceeds the maximum attachment size.
+   * Defaults to "Image is too large".
+   *
+   * @return the message displayed when the selected screenshot is too large
+   */
+  public @NotNull CharSequence getScreenshotTooLargeMessageText() {
+    return screenshotTooLargeMessageText;
+  }
+
+  /**
+   * Sets the message displayed when the selected screenshot exceeds the maximum attachment size.
+   *
+   * @param screenshotTooLargeMessageText the message displayed when the selected screenshot is too
+   *     large
+   */
+  public void setScreenshotTooLargeMessageText(
+      final @NotNull CharSequence screenshotTooLargeMessageText) {
+    this.screenshotTooLargeMessageText = screenshotTooLargeMessageText;
+  }
+
   // Callbacks
   /**
    * Callback called when the feedback form is opened.
@@ -683,6 +711,9 @@ public final class SentryFeedbackOptions {
         + '\''
         + ", removeScreenshotButtonLabel='"
         + removeScreenshotButtonLabel
+        + '\''
+        + ", screenshotTooLargeMessageText='"
+        + screenshotTooLargeMessageText
         + '\''
         + '}';
   }

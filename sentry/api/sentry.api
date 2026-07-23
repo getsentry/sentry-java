@@ -3223,6 +3223,7 @@ public final class io/sentry/SentryFeedbackOptions {
 	public fun getOnSubmitError ()Lio/sentry/SentryFeedbackOptions$SentryFeedbackCallback;
 	public fun getOnSubmitSuccess ()Lio/sentry/SentryFeedbackOptions$SentryFeedbackCallback;
 	public fun getRemoveScreenshotButtonLabel ()Ljava/lang/CharSequence;
+	public fun getScreenshotTooLargeMessageText ()Ljava/lang/CharSequence;
 	public fun getSubmitButtonLabel ()Ljava/lang/CharSequence;
 	public fun getSuccessMessageText ()Ljava/lang/CharSequence;
 	public fun isEmailRequired ()Z
@@ -3252,6 +3253,7 @@ public final class io/sentry/SentryFeedbackOptions {
 	public fun setOnSubmitError (Lio/sentry/SentryFeedbackOptions$SentryFeedbackCallback;)V
 	public fun setOnSubmitSuccess (Lio/sentry/SentryFeedbackOptions$SentryFeedbackCallback;)V
 	public fun setRemoveScreenshotButtonLabel (Ljava/lang/CharSequence;)V
+	public fun setScreenshotTooLargeMessageText (Ljava/lang/CharSequence;)V
 	public fun setShowBranding (Z)V
 	public fun setShowEmail (Z)V
 	public fun setShowName (Z)V
