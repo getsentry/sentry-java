@@ -95,13 +95,14 @@ dependencies {
   compileOnly(projects.sentryAndroidReplay)
   compileOnly(projects.sentryCompose)
   compileOnly(projects.sentryAndroidDistribution)
-  // photo picker for user feedback screenshot attachments
-  compileOnly(libs.androidx.activity)
 
   // lifecycle processor, session tracking
   implementation(libs.androidx.lifecycle.common.java8)
   implementation(libs.androidx.lifecycle.process)
   implementation(libs.androidx.core)
+  // photo picker for user feedback screenshot attachments
+  compileOnly(libs.androidx.activity)
+
   implementation(libs.epitaph)
 
   errorprone(libs.errorprone.core)
@@ -128,7 +129,6 @@ dependencies {
   testImplementation(projects.sentryCompose)
   testImplementation(projects.sentryAndroidNdk)
 
-  testImplementation(libs.androidx.activity)
   testImplementation(libs.androidx.activity.compose)
   testImplementation(libs.androidx.compose.ui)
   testImplementation(libs.androidx.compose.foundation)
