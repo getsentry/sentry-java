@@ -14,6 +14,7 @@
 ### Performance
 
 - Reduce the number of SDK threads: `LifecycleWatcher` now schedules the session-end task on the shared timer executor instead of creating a dedicated `java.util.Timer` thread ([#5819](https://github.com/getsentry/sentry-java/pull/5819))
+- Reduce the number of SDK threads: `RateLimiter` now schedules its rate-limit-lifted notifications on the shared timer executor instead of creating a dedicated `java.util.Timer` thread ([#5814](https://github.com/getsentry/sentry-java/pull/5814))
 - Speed up deserialization of arbitrary JSON objects by typing numbers without throwing exceptions ([#5783](https://github.com/getsentry/sentry-java/pull/5783))
 
 ### Dependencies

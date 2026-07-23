@@ -43,6 +43,7 @@ import java.io.File
 import java.util.UUID
 import java.util.concurrent.Future
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -63,11 +64,14 @@ class RateLimiterTest {
     val currentDateProvider = mock<ICurrentDateProvider>()
     val clientReportRecorder = mock<IClientReportRecorder>()
     val serializer = mock<ISerializer>()
+    var executorService: SentryExecutorService? = null
 
     fun getSUT(): RateLimiter {
       val options = SentryOptions().apply { setLogger(NoOpLogger.getInstance()) }
       // a real executor so scheduled rate-limit-lifted notifications actually run
-      options.setTimerExecutorService(SentryExecutorService(options))
+      val timerExecutorService = SentryExecutorService(options)
+      executorService = timerExecutorService
+      options.setTimerExecutorService(timerExecutorService)
 
       SentryOptionsManipulator.setClientReportRecorder(options, clientReportRecorder)
 
@@ -76,6 +80,12 @@ class RateLimiterTest {
   }
 
   private val fixture = Fixture()
+
+  @AfterTest
+  fun `tear down`() {
+    // the executor's core thread never times out, so it would stay parked for the whole test JVM
+    fixture.executorService?.close(0)
+  }
 
   @Test
   fun `uses X-Sentry-Rate-Limit and allows sending if time has passed`() {

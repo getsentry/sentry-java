@@ -328,7 +328,7 @@ public final class RateLimiter implements Closeable {
           notifyObserversFutures.add(
               options
                   .getTimerExecutorService()
-                  .schedule(() -> notifyRateLimitObservers(), delayMillis));
+                  .schedule(this::notifyRateLimitObservers, delayMillis));
         } catch (RejectedExecutionException e) {
           options
               .getLogger()
