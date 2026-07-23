@@ -247,6 +247,40 @@ class PixelCopyStrategyTest {
 
   @Test
   @Config(shadows = [DeferredWindowPixelCopyShadow::class])
+  fun `close-triggered cleanup keeps the frame gate so a racing capture cannot double-clean up`() {
+    // Guards the CAS handoff in finishFrame(). The real race is a 3-thread interleave (a new
+    // capture takes the gate the instant finishFrame releases it, then the old finishFrame recycles
+    // the bitmap the new capture is writing) and isn't deterministically reproducible single-
+    // threaded. This exercises its observable invariant instead: when finishFrame cleans up on
+    // close, it must re-take the gate (frameInFlight stays held), so any later capture is dropped
+    // rather than sneaking through to schedule a *second* cleanup on the shared screenshot.
+    // Without the CAS (plain frameInFlight.set(false)) the gate is left free and the follow-up
+    // capture reaches the isClosed guard and schedules cleanup again -> 2 submits.
+    val activity = buildActivity(SimpleActivity::class.java).setup()
+    shadowOf(Looper.getMainLooper()).idle()
+    val root = activity.get().findViewById<View>(android.R.id.content)
+    val executor = mock<ScheduledExecutorService>()
+    whenever(executor.submit(any<Runnable>())).thenReturn(mock<Future<*>>())
+    val strategy = fixture.getSut(executor)
+
+    strategy.capture(root)
+    strategy.close() // in-flight -> cleanup deferred, no submit yet
+
+    // PixelCopy completes; the callback sees isClosed and runs finishFrame -> the one cleanup.
+    DeferredWindowPixelCopyShadow.flush()
+    shadowOf(Looper.getMainLooper()).idle()
+
+    // A capture racing in after close must be dropped (gate still held), not schedule cleanup
+    // again.
+    strategy.capture(root)
+    DeferredWindowPixelCopyShadow.flush()
+    shadowOf(Looper.getMainLooper()).idle()
+
+    verify(executor, times(1)).submit(any<Runnable>())
+  }
+
+  @Test
+  @Config(shadows = [DeferredWindowPixelCopyShadow::class])
   fun `frame gate is released when masking submit is rejected`() {
     val activity = buildActivity(SimpleActivity::class.java).setup()
     shadowOf(Looper.getMainLooper()).idle()

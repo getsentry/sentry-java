@@ -376,7 +376,11 @@ internal class PixelCopyStrategy(
 
   private fun finishFrame() {
     frameInFlight.set(false)
-    if (isClosed.get()) {
+    // Only clean up if we're closed AND can re-take the gate. If a new capture slipped in after we
+    // released it (its CAS won), that frame now owns the shared screenshot; its own finishFrame
+    // will
+    // clean up. Backing off here avoids recycling the bitmap while that capture is still using it.
+    if (isClosed.get() && frameInFlight.compareAndSet(false, true)) {
       scheduleCleanup()
     }
   }
