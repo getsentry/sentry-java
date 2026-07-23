@@ -114,6 +114,9 @@ android {
       // Suffix the id so debug and release builds can be installed side by side.
       applicationIdSuffix = ".debug"
       addManifestPlaceholders(mapOf("sentryDebug" to true, "sentryEnvironment" to "debug"))
+      // The SDK modules only publish a release variant, so fall back to it for the
+      // debug build of the sample.
+      matchingFallbacks += "release"
     }
     getByName("release") {
       isMinifyEnabled = true
@@ -132,10 +135,6 @@ android {
   }
 
   kotlin { compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11 }
-
-  androidComponents.beforeVariants {
-    it.enable = !Config.Android.shouldSkipDebugVariant(it.buildType)
-  }
 
   androidComponents.onVariants { variant ->
     variant.buildConfigFields?.put(
