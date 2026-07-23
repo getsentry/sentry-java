@@ -85,6 +85,7 @@ apollo3-kotlin = { module = "com.apollographql.apollo3:apollo-runtime", version 
 apollo4-kotlin = { module = "com.apollographql.apollo:apollo-runtime", version = "4.1.1" }
 androidx-appcompat = { module = "androidx.appcompat:appcompat", version = "1.3.0" }
 androidx-annotation = { module = "androidx.annotation:annotation", version = "1.9.1" }
+androidx-activity = { module = "androidx.activity:activity", version = "1.8.2" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version = "1.8.2" }
 androidx-compose-foundation = { module = "androidx.compose.foundation:foundation", version.ref = "androidxCompose" }
 androidx-compose-foundation-layout = { module = "androidx.compose.foundation:foundation-layout", version.ref = "androidxCompose" }

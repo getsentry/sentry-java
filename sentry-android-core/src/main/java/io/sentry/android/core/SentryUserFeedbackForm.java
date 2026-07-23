@@ -3,17 +3,24 @@ package io.sentry.android.core;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Application;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.ContextWrapper;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.OpenableColumns;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.webkit.MimeTypeMap;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+import io.sentry.Attachment;
+import io.sentry.Hint;
 import io.sentry.IScopes;
 import io.sentry.Sentry;
 import io.sentry.SentryFeedbackOptions;
@@ -23,6 +30,10 @@ import io.sentry.SentryOptions;
 import io.sentry.protocol.Feedback;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
+import io.sentry.util.LoadClass;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.ref.WeakReference;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -38,6 +49,15 @@ public class SentryUserFeedbackForm extends AlertDialog {
 
   private @Nullable SentryShakeDetector shakeDetector;
   private @Nullable Application.ActivityLifecycleCallbacks shakeLifecycleCallbacks;
+
+  private @NotNull LoadClass loadClass = new LoadClass();
+  private @Nullable SentryFeedbackPhotoPicker photoPicker;
+  private @Nullable Uri selectedImageUri;
+
+  // for testing
+  void setLoadClass(final @NotNull LoadClass loadClass) {
+    this.loadClass = loadClass;
+  }
 
   SentryUserFeedbackForm(
       final @NotNull Context context,
@@ -191,6 +211,22 @@ public class SentryUserFeedbackForm extends AlertDialog {
         findViewById(R.id.sentry_dialog_user_feedback_edt_description);
     final @NotNull Button btnSend = findViewById(R.id.sentry_dialog_user_feedback_btn_send);
     final @NotNull Button btnCancel = findViewById(R.id.sentry_dialog_user_feedback_btn_cancel);
+    final @NotNull Button btnAddScreenshot =
+        findViewById(R.id.sentry_dialog_user_feedback_btn_add_screenshot);
+
+    // The button is made visible in onStart, once the photo picker is registered successfully
+    btnAddScreenshot.setVisibility(View.GONE);
+    btnAddScreenshot.setOnClickListener(
+        v -> {
+          if (selectedImageUri == null) {
+            if (photoPicker != null) {
+              photoPicker.launch();
+            }
+          } else {
+            selectedImageUri = null;
+            btnAddScreenshot.setText(feedbackOptions.getAddScreenshotButtonLabel());
+          }
+        });
 
     if (feedbackOptions.isShowBranding()) {
       imgLogo.setVisibility(View.VISIBLE);
@@ -276,7 +312,24 @@ public class SentryUserFeedbackForm extends AlertDialog {
           }
 
           // Capture the feedback. If the ID is empty, it means that the feedback was not sent
-          final @NotNull SentryId id = Sentry.feedback().capture(feedback);
+          final @NotNull Hint hint = new Hint();
+          final @Nullable Uri imageUri = selectedImageUri;
+          if (imageUri != null) {
+            final @NotNull ContentResolver resolver = getContext().getContentResolver();
+            final @Nullable String resolvedMime = resolver.getType(imageUri);
+            final @NotNull String mime = resolvedMime != null ? resolvedMime : "image/png";
+            final @Nullable String resolvedExt =
+                MimeTypeMap.getSingleton().getExtensionFromMimeType(mime);
+            final @NotNull String ext = resolvedExt != null ? resolvedExt : "png";
+            hint.addAttachment(
+                new Attachment(
+                    () -> readUriBytes(resolver, imageUri),
+                    "screenshot." + ext,
+                    mime,
+                    "event.attachment",
+                    false));
+          }
+          final @NotNull SentryId id = Sentry.feedback().capture(feedback, hint);
           if (!id.equals(SentryId.EMPTY_ID)) {
             Toast.makeText(
                     getContext(), feedbackOptions.getSuccessMessageText(), Toast.LENGTH_SHORT)
@@ -331,6 +384,7 @@ public class SentryUserFeedbackForm extends AlertDialog {
     edtMessage.setError(null);
 
     final @NotNull SentryOptions options = Sentry.getCurrentScopes().getOptions();
+    maybeRegisterPhotoPicker(options);
     final @NotNull SentryFeedbackOptions feedbackOptions = options.getFeedbackOptions();
     final @Nullable Runnable onFormOpen = feedbackOptions.getOnFormOpen();
     if (onFormOpen != null) {
@@ -338,6 +392,96 @@ public class SentryUserFeedbackForm extends AlertDialog {
     }
     options.getReplayController().captureReplay(false);
     currentReplayId = options.getReplayController().getReplayId();
+  }
+
+  @Override
+  protected void onStop() {
+    super.onStop();
+    if (photoPicker != null) {
+      photoPicker.unregister();
+      photoPicker = null;
+    }
+  }
+
+  private void maybeRegisterPhotoPicker(final @NotNull SentryOptions options) {
+    // Clear any previously selected image so subsequent show() calls start with a fresh form
+    final @NotNull Button btnAddScreenshot =
+        findViewById(R.id.sentry_dialog_user_feedback_btn_add_screenshot);
+    selectedImageUri = null;
+    btnAddScreenshot.setText(resolvedFeedbackOptions.getAddScreenshotButtonLabel());
+
+    if (!resolvedFeedbackOptions.isEnableScreenshot()) {
+      return;
+    }
+    final @Nullable Activity activity = getActivity(getContext());
+    if (activity != null && SentryFeedbackPhotoPicker.isAvailable(loadClass, options)) {
+      photoPicker =
+          SentryFeedbackPhotoPicker.register(
+              activity, uri -> onImagePicked(options, btnAddScreenshot, uri));
+    }
+    if (photoPicker != null) {
+      btnAddScreenshot.setVisibility(View.VISIBLE);
+    } else {
+      btnAddScreenshot.setVisibility(View.GONE);
+      options
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "Feedback screenshot button won't be shown. It requires the androidx.activity "
+                  + "dependency and the feedback form being shown from a ComponentActivity.");
+    }
+  }
+
+  private void onImagePicked(
+      final @NotNull SentryOptions options,
+      final @NotNull Button btnAddScreenshot,
+      final @Nullable Uri uri) {
+    if (uri == null) {
+      return;
+    }
+    final long size = getUriSize(getContext().getContentResolver(), uri);
+    if (size > options.getMaxAttachmentSize()) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "Selected image is larger than the maxAttachmentSize of %d bytes, dropping it.",
+              options.getMaxAttachmentSize());
+      Toast.makeText(getContext(), "Image is too large", Toast.LENGTH_SHORT).show();
+      return;
+    }
+    selectedImageUri = uri;
+    btnAddScreenshot.setText(resolvedFeedbackOptions.getRemoveScreenshotButtonLabel());
+  }
+
+  private static long getUriSize(final @NotNull ContentResolver resolver, final @NotNull Uri uri) {
+    try (final @Nullable Cursor cursor = resolver.query(uri, null, null, null, null)) {
+      if (cursor != null && cursor.moveToFirst()) {
+        final int sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE);
+        if (sizeIndex >= 0 && !cursor.isNull(sizeIndex)) {
+          return cursor.getLong(sizeIndex);
+        }
+      }
+    } catch (Throwable ignored) {
+      // if the size cannot be determined, let the attachment size limit handle it at capture time
+    }
+    return -1;
+  }
+
+  private static byte[] readUriBytes(
+      final @NotNull ContentResolver resolver, final @NotNull Uri uri) throws IOException {
+    try (final @Nullable InputStream inputStream = resolver.openInputStream(uri)) {
+      if (inputStream == null) {
+        throw new IOException("Unable to open image attachment: " + uri);
+      }
+      final @NotNull ByteArrayOutputStream output = new ByteArrayOutputStream();
+      final byte[] buffer = new byte[8192];
+      int read;
+      while ((read = inputStream.read(buffer)) != -1) {
+        output.write(buffer, 0, read);
+      }
+      return output.toByteArray();
+    }
   }
 
   @Override

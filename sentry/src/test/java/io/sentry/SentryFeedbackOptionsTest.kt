@@ -15,6 +15,7 @@ class SentryFeedbackOptionsTest {
     assertEquals(true, options.isShowEmail)
     assertEquals(true, options.isUseSentryUser)
     assertEquals(true, options.isShowBranding)
+    assertEquals(true, options.isEnableScreenshot)
     assertEquals("Report a Bug", options.formTitle)
     assertEquals("Send Bug Report", options.submitButtonLabel)
     assertEquals("Cancel", options.cancelButtonLabel)
@@ -26,6 +27,8 @@ class SentryFeedbackOptionsTest {
     assertEquals("Description", options.messageLabel)
     assertEquals("What's the bug? What did you expect?", options.messagePlaceholder)
     assertEquals("Thank you for your report!", options.successMessageText)
+    assertEquals("Add a screenshot", options.addScreenshotButtonLabel)
+    assertEquals("Remove screenshot", options.removeScreenshotButtonLabel)
     assertEquals(null, options.onFormOpen)
     assertEquals(null, options.onFormClose)
     assertEquals(null, options.onSubmitSuccess)
@@ -42,6 +45,7 @@ class SentryFeedbackOptionsTest {
         isShowEmail = false
         isUseSentryUser = false
         isShowBranding = false
+        isEnableScreenshot = false
         formTitle = "Title"
         submitButtonLabel = "Submit"
         cancelButtonLabel = "Cancel Label"
@@ -53,6 +57,8 @@ class SentryFeedbackOptionsTest {
         messageLabel = "Message Label"
         messagePlaceholder = "Message Placeholder"
         successMessageText = "Success Message"
+        addScreenshotButtonLabel = "Add Screenshot Label"
+        removeScreenshotButtonLabel = "Remove Screenshot Label"
         onFormOpen = mock()
         onFormClose = mock()
         onSubmitSuccess = mock()
@@ -65,6 +71,7 @@ class SentryFeedbackOptionsTest {
     assertEquals(false, optionsCopy.isShowEmail)
     assertEquals(false, optionsCopy.isUseSentryUser)
     assertEquals(false, optionsCopy.isShowBranding)
+    assertEquals(false, optionsCopy.isEnableScreenshot)
     assertEquals("Title", optionsCopy.formTitle)
     assertEquals("Submit", optionsCopy.submitButtonLabel)
     assertEquals("Cancel Label", optionsCopy.cancelButtonLabel)
@@ -76,6 +83,8 @@ class SentryFeedbackOptionsTest {
     assertEquals("Message Label", optionsCopy.messageLabel)
     assertEquals("Message Placeholder", optionsCopy.messagePlaceholder)
     assertEquals("Success Message", optionsCopy.successMessageText)
+    assertEquals("Add Screenshot Label", optionsCopy.addScreenshotButtonLabel)
+    assertEquals("Remove Screenshot Label", optionsCopy.removeScreenshotButtonLabel)
     assertEquals(options.onFormOpen, optionsCopy.onFormOpen)
     assertEquals(options.onFormClose, optionsCopy.onFormClose)
     assertEquals(options.onSubmitSuccess, optionsCopy.onSubmitSuccess)
