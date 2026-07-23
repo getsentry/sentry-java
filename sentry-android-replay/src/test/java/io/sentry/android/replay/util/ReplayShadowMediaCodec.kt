@@ -15,12 +15,16 @@ class ReplayShadowMediaCodec : ShadowMediaCodec() {
   companion object {
     var frameRate = 1
     var framesToEncode = 5
+    var throwOnStart = false
   }
 
   private val encoded = AtomicBoolean(false)
 
   @Implementation
   fun start() {
+    if (throwOnStart) {
+      throw IllegalStateException("Simulated codec start failure")
+    }
     super.native_start()
   }
 

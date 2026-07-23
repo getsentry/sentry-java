@@ -162,7 +162,16 @@ public class ReplayCache(private val options: SentryOptions, private val replayI
               bitRate = bitRate,
             ),
           )
-          .also { it.start() }
+          .apply {
+            // the constructor already opened the MediaMuxer, so release it if start() fails,
+            // otherwise the encoder is never assigned and its resources leak (CloseGuard warning)
+            try {
+              start()
+            } catch (t: Throwable) {
+              release()
+              throw t
+            }
+          }
       }
 
     val step = 1000 / frameRate.toLong()

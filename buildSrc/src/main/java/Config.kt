@@ -12,8 +12,10 @@ object Config {
     object Android {
         val abiFilters = listOf("x86", "armeabi-v7a", "x86_64", "arm64-v8a")
 
+        // Debug variants are disabled everywhere. Unit tests run against the release
+        // variant, so building the debug variant would only add overhead.
         fun shouldSkipDebugVariant(name: String?): Boolean {
-            return System.getenv("CI")?.toBoolean() ?: false && name == "debug"
+            return name == "debug"
         }
     }
 
