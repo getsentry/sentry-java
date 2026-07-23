@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Features
+
+- Add screenshot attachment button to the Android user feedback widget ([#5828](https://github.com/getsentry/sentry-java/pull/5828))
+  - Users can now attach an image from the device gallery when submitting feedback. Enabled by default; can be disabled via `SentryFeedbackOptions.setEnableScreenshot(false)` or the `io.sentry.feedback.enable-screenshot` manifest flag.
+  - Requires the `androidx.activity` dependency and the feedback form being shown from a `ComponentActivity` host, the button is hidden otherwise.
+
 ### Fixes
 
 - Pin the published Sentry Android SDK's AAR metadata `minCompileSdk` to our `minSdk` (`21`) instead of AGP 9's new default of the SDK's own `compileSdk` (`37`), so apps that depend on the SDK aren't forced to raise their `compileSdk` ([#5823](https://github.com/getsentry/sentry-java/pull/5823))
