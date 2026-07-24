@@ -4,6 +4,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class SentryReplayOptionsTest {
@@ -68,71 +69,168 @@ class SentryReplayOptionsTest {
   // https://docs.sentry.io/platforms/javascript/session-replay/configuration/#network-details
 
   @Test
-  fun `getNetworkRequestHeaders returns default headers by default`() {
+  fun `network detail collection overrides default to null`() {
     val options = SentryReplayOptions(false, null)
-    assertEquals(
-      SentryReplayOptions.getNetworkDetailsDefaultHeaders().size,
-      options.networkRequestHeaders.size,
-    )
 
-    val headers = options.networkRequestHeaders
-    SentryReplayOptions.getNetworkDetailsDefaultHeaders().forEach { defaultHeader ->
-      assertEquals(true, headers.contains(defaultHeader))
-    }
+    assertNull(options.networkCaptureBodies)
+    assertNull(options.networkRequestHeaderBehavior)
+    assertNull(options.networkResponseHeaderBehavior)
   }
 
   @Test
-  fun `getNetworkResponseHeaders returns default headers by default`() {
+  fun `network detail collection overrides accept explicit values`() {
     val options = SentryReplayOptions(false, null)
-    assertEquals(
-      SentryReplayOptions.getNetworkDetailsDefaultHeaders().size,
-      options.networkResponseHeaders.size,
-    )
+    val requestBehavior = KeyValueCollectionBehavior.denyList("x-debug")
+    val responseBehavior = KeyValueCollectionBehavior.off()
 
-    val headers = options.networkResponseHeaders
-    SentryReplayOptions.getNetworkDetailsDefaultHeaders().forEach { defaultHeader ->
-      assertEquals(true, headers.contains(defaultHeader))
-    }
+    options.networkCaptureBodies = false
+    options.networkRequestHeaderBehavior = requestBehavior
+    options.networkResponseHeaderBehavior = responseBehavior
+
+    assertEquals(false, options.networkCaptureBodies)
+    assertEquals(requestBehavior, options.networkRequestHeaderBehavior)
+    assertEquals(responseBehavior, options.networkResponseHeaderBehavior)
+
+    options.networkCaptureBodies = null
+    options.networkRequestHeaderBehavior = null
+    options.networkResponseHeaderBehavior = null
+
+    assertNull(options.networkCaptureBodies)
+    assertNull(options.networkRequestHeaderBehavior)
+    assertNull(options.networkResponseHeaderBehavior)
+  }
+
+  @Suppress("DEPRECATION")
+  @Test
+  fun `legacy network getters preserve defaults when overrides are null`() {
+    val options = SentryReplayOptions(false, null)
+
+    assertTrue(options.isNetworkCaptureBodies)
+    assertEquals(
+      SentryReplayOptions.getNetworkDetailsDefaultHeaders(),
+      options.networkRequestHeaders,
+    )
+    assertEquals(
+      SentryReplayOptions.getNetworkDetailsDefaultHeaders(),
+      options.networkResponseHeaders,
+    )
+  }
+
+  @Suppress("DEPRECATION")
+  @Test
+  fun `legacy header setters create allow list overrides including default headers`() {
+    val options = SentryReplayOptions(false, null)
+
+    options.setNetworkRequestHeaders(listOf("X-Custom-Header"))
+    options.setNetworkResponseHeaders(listOf("X-Response-Header"))
+
+    assertEquals(
+      KeyValueCollectionBehavior.Mode.ALLOW_LIST,
+      options.networkRequestHeaderBehavior?.mode,
+    )
+    assertTrue(options.networkRequestHeaderBehavior!!.terms.contains("Content-Type"))
+    assertTrue(options.networkRequestHeaderBehavior!!.terms.contains("X-Custom-Header"))
+    assertEquals(
+      KeyValueCollectionBehavior.Mode.ALLOW_LIST,
+      options.networkResponseHeaderBehavior?.mode,
+    )
+    assertTrue(options.networkResponseHeaderBehavior!!.terms.contains("Content-Type"))
+    assertTrue(options.networkResponseHeaderBehavior!!.terms.contains("X-Response-Header"))
+  }
+
+  @Suppress("DEPRECATION")
+  @Test
+  fun `legacy header setters accept null to restore inheritance`() {
+    val options = SentryReplayOptions(false, null)
+    options.setNetworkRequestHeaders(listOf("X-Custom-Header"))
+    options.setNetworkResponseHeaders(listOf("X-Response-Header"))
+
+    options.setNetworkRequestHeaders(null)
+    options.setNetworkResponseHeaders(null)
+
+    assertNull(options.networkRequestHeaderBehavior)
+    assertNull(options.networkResponseHeaderBehavior)
+  }
+
+  @Suppress("DEPRECATION")
+  @Test
+  fun `legacy header getters return empty lists for non allow list behavior`() {
+    val options = SentryReplayOptions(false, null)
+
+    options.networkRequestHeaderBehavior = KeyValueCollectionBehavior.denyList("x-debug")
+    options.networkResponseHeaderBehavior = KeyValueCollectionBehavior.off()
+
+    assertTrue(options.networkRequestHeaders.isEmpty())
+    assertTrue(options.networkResponseHeaders.isEmpty())
   }
 
   @Test
-  fun `setNetworkRequestHeaders adds to default headers`() {
-    val options = SentryReplayOptions(false, null)
-    val additionalHeaders = listOf("X-Custom-Header", "X-Another-Header")
+  fun `resolved network options use legacy defaults when data collection is absent`() {
+    val options = SentryOptions()
+    val replay = options.sessionReplay
+    val defaultHeaders =
+      KeyValueCollectionBehavior.allowList(
+        *SentryReplayOptions.getNetworkDetailsDefaultHeaders().toTypedArray()
+      )
 
-    options.setNetworkRequestHeaders(additionalHeaders)
-
+    assertTrue(replay.isNetworkRequestBodyCaptureEnabled(options.dataCollectionResolver))
+    assertTrue(replay.isNetworkResponseBodyCaptureEnabled(options.dataCollectionResolver))
     assertEquals(
-      SentryReplayOptions.getNetworkDetailsDefaultHeaders().size + additionalHeaders.size,
-      options.networkRequestHeaders.size,
+      defaultHeaders,
+      replay.resolveNetworkRequestHeaders(options.dataCollectionResolver),
     )
-
-    val headers = options.networkRequestHeaders
-    SentryReplayOptions.getNetworkDetailsDefaultHeaders().forEach { defaultHeader ->
-      assertTrue(headers.contains(defaultHeader))
-    }
-    assertTrue(headers.contains("X-Custom-Header"))
-    assertTrue(headers.contains("X-Another-Header"))
+    assertEquals(
+      defaultHeaders,
+      replay.resolveNetworkResponseHeaders(options.dataCollectionResolver),
+    )
   }
 
   @Test
-  fun `setNetworkResponseHeaders adds to default headers`() {
-    val options = SentryReplayOptions(false, null)
-    val additionalHeaders = listOf("X-Response-Header", "X-Debug-Header")
+  fun `resolved network options fall back to data collection when configured`() {
+    val options =
+      SentryOptions().apply {
+        dataCollection.httpBodies = setOf(HttpBodyType.INCOMING_RESPONSE)
+        dataCollection.httpHeaders.request = KeyValueCollectionBehavior.denyList("x-debug")
+        dataCollection.httpHeaders.response = KeyValueCollectionBehavior.off()
+      }
+    val replay = options.sessionReplay
 
-    options.setNetworkResponseHeaders(additionalHeaders)
-
+    assertFalse(replay.isNetworkRequestBodyCaptureEnabled(options.dataCollectionResolver))
+    assertTrue(replay.isNetworkResponseBodyCaptureEnabled(options.dataCollectionResolver))
     assertEquals(
-      SentryReplayOptions.getNetworkDetailsDefaultHeaders().size + additionalHeaders.size,
-      options.networkResponseHeaders.size,
+      KeyValueCollectionBehavior.denyList("x-debug"),
+      replay.resolveNetworkRequestHeaders(options.dataCollectionResolver),
     )
+    assertEquals(
+      KeyValueCollectionBehavior.off(),
+      replay.resolveNetworkResponseHeaders(options.dataCollectionResolver),
+    )
+  }
 
-    val headers = options.networkResponseHeaders
-    SentryReplayOptions.getNetworkDetailsDefaultHeaders().forEach { defaultHeader ->
-      assertTrue(headers.contains(defaultHeader))
-    }
-    assertTrue(headers.contains("X-Response-Header"))
-    assertTrue(headers.contains("X-Debug-Header"))
+  @Test
+  fun `explicit Replay network options take precedence over data collection`() {
+    val options =
+      SentryOptions().apply {
+        dataCollection.httpBodies = emptySet()
+        dataCollection.httpHeaders.request = KeyValueCollectionBehavior.off()
+        dataCollection.httpHeaders.response = KeyValueCollectionBehavior.off()
+        sessionReplay.networkCaptureBodies = true
+        sessionReplay.networkRequestHeaderBehavior =
+          KeyValueCollectionBehavior.allowList("x-request-id")
+        sessionReplay.networkResponseHeaderBehavior = KeyValueCollectionBehavior.denyList("x-debug")
+      }
+    val replay = options.sessionReplay
+
+    assertTrue(replay.isNetworkRequestBodyCaptureEnabled(options.dataCollectionResolver))
+    assertTrue(replay.isNetworkResponseBodyCaptureEnabled(options.dataCollectionResolver))
+    assertEquals(
+      KeyValueCollectionBehavior.allowList("x-request-id"),
+      replay.resolveNetworkRequestHeaders(options.dataCollectionResolver),
+    )
+    assertEquals(
+      KeyValueCollectionBehavior.denyList("x-debug"),
+      replay.resolveNetworkResponseHeaders(options.dataCollectionResolver),
+    )
   }
 
   // Custom Masking Integration Tests

@@ -6,6 +6,7 @@ import androidx.core.os.bundleOf
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.FilterString
 import io.sentry.ILogger
+import io.sentry.KeyValueCollectionBehavior
 import io.sentry.ProfileLifecycle
 import io.sentry.SentryLevel
 import io.sentry.SentryReplayOptions
@@ -2347,11 +2348,11 @@ class ManifestMetadataReaderTest {
     ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
     // Assert
-    assertFalse(fixture.options.sessionReplay.isNetworkCaptureBodies)
+    assertEquals(false, fixture.options.sessionReplay.networkCaptureBodies)
   }
 
   @Test
-  fun `applyMetadata keeps default networkCaptureBodies as true when not present`() {
+  fun `applyMetadata keeps networkCaptureBodies unset when not present`() {
     // Arrange
     val context = fixture.getContext()
 
@@ -2359,11 +2360,11 @@ class ManifestMetadataReaderTest {
     ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
     // Assert
-    assertTrue(fixture.options.sessionReplay.isNetworkCaptureBodies)
+    assertNull(fixture.options.sessionReplay.networkCaptureBodies)
   }
 
   @Test
-  fun `applyMetadata keeps the default networkRequestHeaders`() {
+  fun `applyMetadata keeps networkRequestHeaderBehavior unset when not present`() {
     // Arrange
     val context = fixture.getContext()
 
@@ -2371,12 +2372,7 @@ class ManifestMetadataReaderTest {
     ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
     // Assert
-    val headers = fixture.options.sessionReplay.networkRequestHeaders
-    val defaultHeaders = SentryReplayOptions.getNetworkDetailsDefaultHeaders()
-
-    // Should have exactly the default headers
-    assertEquals(defaultHeaders.size, headers.size)
-    defaultHeaders.forEach { defaultHeader -> assertTrue(headers.contains(defaultHeader)) }
+    assertNull(fixture.options.sessionReplay.networkRequestHeaderBehavior)
   }
 
   @Test
@@ -2390,20 +2386,16 @@ class ManifestMetadataReaderTest {
     ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
     // Assert
-    val allHeaders = fixture.options.sessionReplay.networkRequestHeaders
-    val defaultHeaders = SentryReplayOptions.getNetworkDetailsDefaultHeaders()
-
-    // Should include default headers + additional headers
-    defaultHeaders.forEach { defaultHeader ->
-      assertTrue(allHeaders.contains(defaultHeader)) // default
-    }
-    assertTrue(allHeaders.contains("Authorization")) // additional
-    assertTrue(allHeaders.contains("X-Custom-Header")) // additional
-    assertTrue(allHeaders.contains("X-Request-Id")) // additional
+    val behavior = fixture.options.sessionReplay.networkRequestHeaderBehavior
+    assertEquals(KeyValueCollectionBehavior.Mode.ALLOW_LIST, behavior?.mode)
+    assertTrue(behavior!!.terms.contains("Content-Type"))
+    assertTrue(behavior.terms.contains("Authorization"))
+    assertTrue(behavior.terms.contains("X-Custom-Header"))
+    assertTrue(behavior.terms.contains("X-Request-Id"))
   }
 
   @Test
-  fun `applyMetadata keeps the default networkResponseHeaders`() {
+  fun `applyMetadata keeps networkResponseHeaderBehavior unset when not present`() {
     // Arrange
     val context = fixture.getContext()
 
@@ -2411,12 +2403,7 @@ class ManifestMetadataReaderTest {
     ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
     // Assert
-    val headers = fixture.options.sessionReplay.networkResponseHeaders
-    val defaultHeaders = SentryReplayOptions.getNetworkDetailsDefaultHeaders()
-
-    // Should have exactly the default headers
-    assertEquals(defaultHeaders.size, headers.size)
-    defaultHeaders.forEach { defaultHeader -> assertTrue(headers.contains(defaultHeader)) }
+    assertNull(fixture.options.sessionReplay.networkResponseHeaderBehavior)
   }
 
   @Test
@@ -2431,13 +2418,12 @@ class ManifestMetadataReaderTest {
     ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
     // Assert
-    val allHeaders = fixture.options.sessionReplay.networkResponseHeaders
-    // Should include default headers + additional headers
-    val defaultHeaders = SentryReplayOptions.getNetworkDetailsDefaultHeaders()
-    defaultHeaders.forEach { defaultHeader -> assertTrue(allHeaders.contains(defaultHeader)) }
-    assertTrue(allHeaders.contains("X-Response-Time")) // additional
-    assertTrue(allHeaders.contains("X-Cache-Status")) // additional
-    assertTrue(allHeaders.contains("X-Server-Id")) // additional
+    val behavior = fixture.options.sessionReplay.networkResponseHeaderBehavior
+    assertEquals(KeyValueCollectionBehavior.Mode.ALLOW_LIST, behavior?.mode)
+    assertTrue(behavior!!.terms.contains("Content-Type"))
+    assertTrue(behavior.terms.contains("X-Response-Time"))
+    assertTrue(behavior.terms.contains("X-Cache-Status"))
+    assertTrue(behavior.terms.contains("X-Server-Id"))
   }
 
   @Test
@@ -2472,16 +2458,8 @@ class ManifestMetadataReaderTest {
     ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
     // Assert
-    // Should still have default headers even with empty string
-    val defaultHeaders = SentryReplayOptions.getNetworkDetailsDefaultHeaders()
-
-    val requestHeaders = fixture.options.sessionReplay.networkRequestHeaders
-    assertEquals(defaultHeaders.size, requestHeaders.size)
-    defaultHeaders.forEach { defaultHeader -> assertTrue(requestHeaders.contains(defaultHeader)) }
-
-    val responseHeaders = fixture.options.sessionReplay.networkResponseHeaders
-    assertEquals(defaultHeaders.size, responseHeaders.size)
-    defaultHeaders.forEach { defaultHeader -> assertTrue(responseHeaders.contains(defaultHeader)) }
+    assertNull(fixture.options.sessionReplay.networkRequestHeaderBehavior)
+    assertNull(fixture.options.sessionReplay.networkResponseHeaderBehavior)
   }
 
   @Test
@@ -2518,9 +2496,9 @@ class ManifestMetadataReaderTest {
     ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
     // Assert
-    val headers = fixture.options.sessionReplay.networkRequestHeaders
-    assertTrue(headers.contains("Authorization"))
-    assertTrue(headers.contains("X-Custom-Header"))
+    val behavior = fixture.options.sessionReplay.networkRequestHeaderBehavior
+    assertTrue(behavior!!.terms.contains("Authorization"))
+    assertTrue(behavior.terms.contains("X-Custom-Header"))
   }
 
   // Spotlight Configuration Tests

@@ -4,6 +4,7 @@ import io.sentry.ILogger;
 import io.sentry.JsonDeserializer;
 import io.sentry.JsonSerializable;
 import io.sentry.JsonUnknown;
+import io.sentry.KeyValueCollectionBehavior;
 import io.sentry.ObjectReader;
 import io.sentry.ObjectWriter;
 import io.sentry.ScreenshotStrategyType;
@@ -12,6 +13,7 @@ import io.sentry.SentryReplayOptions;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -66,9 +68,29 @@ public final class RRWebOptionsEvent extends RRWebEvent implements JsonSerializa
     if (!replayOptions.getNetworkDetailAllowUrls().isEmpty()) {
       optionsPayload.put("networkDetailAllowUrls", replayOptions.getNetworkDetailAllowUrls());
 
-      optionsPayload.put("networkRequestHeaders", replayOptions.getNetworkRequestHeaders());
-      optionsPayload.put("networkResponseHeaders", replayOptions.getNetworkResponseHeaders());
-      optionsPayload.put("networkCaptureBodies", replayOptions.isNetworkCaptureBodies());
+      final @NotNull KeyValueCollectionBehavior requestHeaders =
+          replayOptions.resolveNetworkRequestHeaders(options.getDataCollectionResolver());
+      final @NotNull KeyValueCollectionBehavior responseHeaders =
+          replayOptions.resolveNetworkResponseHeaders(options.getDataCollectionResolver());
+      optionsPayload.put(
+          "networkRequestHeaders",
+          requestHeaders.getMode() == KeyValueCollectionBehavior.Mode.ALLOW_LIST
+              ? requestHeaders.getTerms()
+              : Collections.emptyList());
+      optionsPayload.put(
+          "networkResponseHeaders",
+          responseHeaders.getMode() == KeyValueCollectionBehavior.Mode.ALLOW_LIST
+              ? responseHeaders.getTerms()
+              : Collections.emptyList());
+      final @Nullable Boolean replayCaptureBodies = replayOptions.getNetworkCaptureBodies();
+      optionsPayload.put(
+          "networkCaptureBodies",
+          replayCaptureBodies != null
+              ? replayCaptureBodies
+              : replayOptions.isNetworkRequestBodyCaptureEnabled(
+                      options.getDataCollectionResolver())
+                  && replayOptions.isNetworkResponseBodyCaptureEnabled(
+                      options.getDataCollectionResolver()));
 
       if (!replayOptions.getNetworkDetailDenyUrls().isEmpty()) {
         optionsPayload.put("networkDetailDenyUrls", replayOptions.getNetworkDetailDenyUrls());
