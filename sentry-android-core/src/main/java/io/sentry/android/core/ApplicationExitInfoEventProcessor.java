@@ -1021,7 +1021,7 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
               null,
               new HashMap<>(0),
               anrTimestampMs / 1000.0d,
-              ProfileChunk.PLATFORM_JAVA,
+              ProfileChunk.PLATFORM_ANDROID,
               options);
       chunk.setSentryProfile(profile);
 
