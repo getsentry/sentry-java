@@ -33,6 +33,9 @@ public class SentryUserFeedbackForm extends AlertDialog
 
   private final @NotNull SentryFeedbackOptions resolvedFeedbackOptions;
 
+  /** Whether this form instance opted into shake-to-show independently of the global toggle. */
+  private final boolean useShakeGesture;
+
   SentryUserFeedbackForm(
       final @NotNull Context context,
       final int themeResId,
@@ -50,22 +53,19 @@ public class SentryUserFeedbackForm extends AlertDialog
       configurator.configure(resolvedFeedbackOptions);
     }
     SentryIntegrationPackageStorage.getInstance().addIntegration("UserFeedbackWidget");
-    maybeEnableShakeToShow();
-  }
-
-  private void maybeEnableShakeToShow() {
-    final @NotNull SentryFeedbackOptions globalFeedbackOptions =
-        Sentry.getCurrentScopes().getOptions().getFeedbackOptions();
 
     // Only an explicit per-form opt-in registers this dialog for shake detection. When shake
     // is configured globally (via the option or the runtime toggle), the integration already
     // shows a form on shake and this dialog defers to it.
-    if (!resolvedFeedbackOptions.isUseShakeGesture()
-        || globalFeedbackOptions.isUseShakeGesture()
-        || globalFeedbackOptions.getShakeController().isEnabled()) {
-      return;
+    final @NotNull SentryFeedbackOptions globalFeedbackOptions =
+        Sentry.getCurrentScopes().getOptions().getFeedbackOptions();
+    this.useShakeGesture =
+        resolvedFeedbackOptions.isUseShakeGesture()
+            && !globalFeedbackOptions.isUseShakeGesture()
+            && !globalFeedbackOptions.getShakeController().isEnabled();
+    if (useShakeGesture) {
+      globalFeedbackOptions.getShakeController().setDialog(this, true);
     }
-    globalFeedbackOptions.getShakeController().setDialog(this, true);
   }
 
   @Override
@@ -240,7 +240,7 @@ public class SentryUserFeedbackForm extends AlertDialog
     final @NotNull SentryOptions options = Sentry.getCurrentScopes().getOptions();
     final @NotNull SentryFeedbackOptions feedbackOptions = options.getFeedbackOptions();
     // Track this form so a shake re-shows it instead of stacking a second one on top
-    feedbackOptions.getShakeController().setDialog(this, false);
+    feedbackOptions.getShakeController().setDialog(this, useShakeGesture);
     final @Nullable Runnable onFormOpen = feedbackOptions.getOnFormOpen();
     if (onFormOpen != null) {
       onFormOpen.run();

@@ -656,11 +656,13 @@ public final class SentryFeedbackOptions {
      * tracked until its host activity is destroyed or it is replaced by another dialog.
      *
      * <p>With {@code startShakeDetection} set to {@code true} (a per-dialog shake opt-in), shake
-     * detection is also started and kept alive independently of the global enable/disable toggle.
-     * With {@code false} (a dialog merely became visible), the detection state is left untouched.
+     * detection is also started and kept alive independently of the global enable/disable toggle. A
+     * dialog that opted in must pass {@code true} again whenever it re-registers (e.g. on every
+     * show); the flag always reflects the latest call.
      *
      * <p>Passing a {@code null} dialog clears the tracked dialog and stops shake detection unless
-     * it is enabled globally.
+     * it is enabled globally. The controller holds a strong reference to the dialog until then, so
+     * an opted-in form stays reachable even if the creating code does not retain it.
      *
      * @param dialog the dialog to show on shake, or {@code null} to clear
      * @param startShakeDetection whether the dialog should also start and keep alive shake

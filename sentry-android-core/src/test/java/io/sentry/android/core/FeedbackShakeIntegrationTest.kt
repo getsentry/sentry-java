@@ -356,14 +356,41 @@ class FeedbackShakeIntegrationTest {
   }
 
   @Test
-  fun `re-setting the same opted-in dialog keeps detection alive`() {
+  fun `re-setting an opted-in dialog keeps detection alive`() {
     val sut = fixture.getSut(useShakeGesture = false)
     sut.register(fixture.scopes, fixture.options)
     val dialog = createShakeDialog()
     sut.setDialog(dialog, true)
 
-    // The dialog reports itself again when shown
-    sut.setDialog(dialog, false)
+    // An opted-in dialog reports itself again with startShakeDetection on every show
+    sut.setDialog(dialog, true)
+
+    verify(fixture.application, never()).unregisterActivityLifecycleCallbacks(any())
+    verify(fixture.application, times(1)).registerActivityLifecycleCallbacks(any())
+  }
+
+  @Test
+  fun `replacing an opted-in dialog with a tracking-only one stops detection when globally disabled`() {
+    val sut = fixture.getSut(useShakeGesture = false)
+    sut.register(fixture.scopes, fixture.options)
+    sut.setDialog(createShakeDialog(), true)
+
+    // A different dialog only reporting visibility no longer justifies detection
+    sut.setDialog(createShakeDialog(), false)
+
+    verify(fixture.application).unregisterActivityLifecycleCallbacks(any())
+  }
+
+  @Test
+  fun `disable keeps detection alive after an opted-in dialog re-registers on show`() {
+    // Regression: global toggle on, opted-in dialog shown (re-registers), runtime disable —
+    // the opt-in must keep detection running.
+    val sut = fixture.getSut(useShakeGesture = true)
+    sut.register(fixture.scopes, fixture.options)
+    val dialog = createShakeDialog()
+    sut.setDialog(dialog, true)
+    sut.setDialog(dialog, true)
+
     sut.disable()
 
     verify(fixture.application, never()).unregisterActivityLifecycleCallbacks(any())
