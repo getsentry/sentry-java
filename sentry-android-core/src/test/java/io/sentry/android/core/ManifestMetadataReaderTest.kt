@@ -2164,20 +2164,20 @@ class ManifestMetadataReaderTest {
     ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
     // Assert
-    assertTrue(fixture.options.feedbackOptions.isEnableScreenshot)
+    assertTrue(fixture.options.feedbackOptions.isEnableAttachScreenshot)
   }
 
   @Test
   fun `applyMetadata reads feedback enable screenshot to options`() {
     // Arrange
-    val bundle = bundleOf(ManifestMetadataReader.FEEDBACK_ENABLE_SCREENSHOT to false)
+    val bundle = bundleOf(ManifestMetadataReader.FEEDBACK_ENABLE_ATTACH_SCREENSHOT to false)
     val context = fixture.getContext(metaData = bundle)
 
     // Act
     ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
     // Assert
-    assertFalse(fixture.options.feedbackOptions.isEnableScreenshot)
+    assertFalse(fixture.options.feedbackOptions.isEnableAttachScreenshot)
   }
 
   @Test

@@ -78,13 +78,8 @@ class SentryUserFeedbackFormTest {
       configuration: SentryUserFeedbackForm.OptionsConfiguration? = null,
       configurator: SentryFeedbackOptions.OptionsConfigurator? = null,
       context: Context = application,
-      loadClass: LoadClass? = null,
     ): SentryUserFeedbackForm =
-      SentryUserFeedbackForm(context, 0, associatedEventId, configuration, configurator).also {
-        if (loadClass != null) {
-          it.setLoadClass(loadClass)
-        }
-      }
+      SentryUserFeedbackForm(context, 0, associatedEventId, configuration, configurator)
   }
 
   private val fixture = Fixture()
@@ -175,7 +170,7 @@ class SentryUserFeedbackFormTest {
     val sut =
       fixture.getSut(
         context = componentActivity(),
-        configurator = { options -> options.isEnableScreenshot = false },
+        configurator = { options -> options.isEnableAttachScreenshot = false },
       )
     sut.show()
     assertThat(addScreenshotButton(sut).visibility).isEqualTo(View.GONE)
@@ -204,7 +199,8 @@ class SentryUserFeedbackFormTest {
     val loadClass = mock<LoadClass>()
     whenever(loadClass.isClassAvailable(any(), anyOrNull<io.sentry.SentryOptions>()))
       .thenReturn(false)
-    val sut = fixture.getSut(context = componentActivity(), loadClass = loadClass)
+    fixture.options.feedbackOptions.loadClass = loadClass
+    val sut = fixture.getSut(context = componentActivity())
     sut.show()
     assertThat(addScreenshotButton(sut).visibility).isEqualTo(View.GONE)
   }
@@ -281,7 +277,7 @@ class SentryUserFeedbackFormTest {
   }
 
   @Test
-  fun `photo picker can be registered again when the dialog is shown again`() {
+  fun `screenshot picker can be registered again when the dialog is shown again`() {
     fixture.options.isEnabled = true
     val sut = fixture.getSut(context = componentActivity())
     sut.show()

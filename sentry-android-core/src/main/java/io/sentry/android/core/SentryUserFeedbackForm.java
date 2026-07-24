@@ -31,7 +31,6 @@ import io.sentry.protocol.Feedback;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
 import io.sentry.util.FileUtils;
-import io.sentry.util.LoadClass;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.WeakReference;
@@ -50,14 +49,8 @@ public class SentryUserFeedbackForm extends AlertDialog {
   private @Nullable SentryShakeDetector shakeDetector;
   private @Nullable Application.ActivityLifecycleCallbacks shakeLifecycleCallbacks;
 
-  private @NotNull LoadClass loadClass = new LoadClass();
-  private @Nullable SentryFeedbackPhotoPicker photoPicker;
+  private @Nullable SentryFeedbackScreenshotPicker screenshotPicker;
   private @Nullable Uri selectedImageUri;
-
-  // for testing
-  void setLoadClass(final @NotNull LoadClass loadClass) {
-    this.loadClass = loadClass;
-  }
 
   SentryUserFeedbackForm(
       final @NotNull Context context,
@@ -214,19 +207,19 @@ public class SentryUserFeedbackForm extends AlertDialog {
     final @NotNull Button btnAddScreenshot =
         findViewById(R.id.sentry_dialog_user_feedback_btn_add_screenshot);
 
-    // The button is made visible in onStart, once the photo picker is registered successfully
+    // The button is made visible in onStart, once the screenshot picker is registered successfully
     btnAddScreenshot.setVisibility(View.GONE);
     btnAddScreenshot.setOnClickListener(
         v -> {
           if (selectedImageUri == null) {
-            if (photoPicker != null) {
+            if (screenshotPicker != null) {
               try {
-                photoPicker.launch();
+                screenshotPicker.launch();
               } catch (Throwable t) {
                 Sentry.getCurrentScopes()
                     .getOptions()
                     .getLogger()
-                    .log(SentryLevel.ERROR, "Failed to launch the photo picker.", t);
+                    .log(SentryLevel.ERROR, "Failed to launch the screenshot picker.", t);
               }
             }
           } else {
@@ -376,7 +369,7 @@ public class SentryUserFeedbackForm extends AlertDialog {
     edtMessage.setError(null);
 
     final @NotNull SentryOptions options = Sentry.getCurrentScopes().getOptions();
-    maybeRegisterPhotoPicker(options);
+    maybeRegisterScreenshotPicker(options);
     final @NotNull SentryFeedbackOptions feedbackOptions = options.getFeedbackOptions();
     final @Nullable Runnable onFormOpen = feedbackOptions.getOnFormOpen();
     if (onFormOpen != null) {
@@ -389,29 +382,31 @@ public class SentryUserFeedbackForm extends AlertDialog {
   @Override
   protected void onStop() {
     super.onStop();
-    if (photoPicker != null) {
-      photoPicker.unregister();
-      photoPicker = null;
+    if (screenshotPicker != null) {
+      screenshotPicker.unregister();
+      screenshotPicker = null;
     }
   }
 
-  private void maybeRegisterPhotoPicker(final @NotNull SentryOptions options) {
+  private void maybeRegisterScreenshotPicker(final @NotNull SentryOptions options) {
     // Clear any previously selected image so subsequent show() calls start with a fresh form
     final @NotNull Button btnAddScreenshot =
         findViewById(R.id.sentry_dialog_user_feedback_btn_add_screenshot);
     selectedImageUri = null;
     btnAddScreenshot.setText(resolvedFeedbackOptions.getAddScreenshotButtonLabel());
 
-    if (!resolvedFeedbackOptions.isEnableScreenshot()) {
+    if (!resolvedFeedbackOptions.isEnableAttachScreenshot()) {
       return;
     }
     final @Nullable Activity activity = getActivity(getContext());
-    if (activity != null && SentryFeedbackPhotoPicker.isAvailable(loadClass, options)) {
-      photoPicker =
-          SentryFeedbackPhotoPicker.register(
-              activity, uri -> onImagePicked(options, btnAddScreenshot, uri));
+    if (activity != null
+        && SentryFeedbackScreenshotPicker.isAvailable(
+            resolvedFeedbackOptions.getLoadClass(), options)) {
+      screenshotPicker =
+          SentryFeedbackScreenshotPicker.register(
+              activity, uri -> onScreenshotPicked(options, btnAddScreenshot, uri));
     }
-    if (photoPicker != null) {
+    if (screenshotPicker != null) {
       btnAddScreenshot.setVisibility(View.VISIBLE);
     } else {
       btnAddScreenshot.setVisibility(View.GONE);
@@ -424,20 +419,17 @@ public class SentryUserFeedbackForm extends AlertDialog {
     }
   }
 
-  private void onImagePicked(
+  private void onScreenshotPicked(
       final @NotNull SentryOptions options,
       final @NotNull Button btnAddScreenshot,
-      final @Nullable Uri uri) {
-    if (uri == null) {
-      return;
-    }
+      final @NotNull Uri uri) {
     final long size = getUriSize(getContext().getContentResolver(), uri);
     if (size > options.getMaxAttachmentSize()) {
       options
           .getLogger()
           .log(
               SentryLevel.WARNING,
-              "Selected image is larger than the maxAttachmentSize of %d bytes, dropping it.",
+              "Selected screenshot is larger than the maxAttachmentSize of %d bytes, dropping it.",
               options.getMaxAttachmentSize());
       Toast.makeText(
               getContext(),

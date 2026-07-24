@@ -3214,6 +3214,7 @@ public final class io/sentry/SentryFeedbackOptions {
 	public fun getFormHandler ()Lio/sentry/SentryFeedbackOptions$IFormHandler;
 	public fun getFormTitle ()Ljava/lang/CharSequence;
 	public fun getIsRequiredLabel ()Ljava/lang/CharSequence;
+	public fun getLoadClass ()Lio/sentry/util/LoadClass;
 	public fun getMessageLabel ()Ljava/lang/CharSequence;
 	public fun getMessagePlaceholder ()Ljava/lang/CharSequence;
 	public fun getNameLabel ()Ljava/lang/CharSequence;
@@ -3227,7 +3228,7 @@ public final class io/sentry/SentryFeedbackOptions {
 	public fun getSubmitButtonLabel ()Ljava/lang/CharSequence;
 	public fun getSuccessMessageText ()Ljava/lang/CharSequence;
 	public fun isEmailRequired ()Z
-	public fun isEnableScreenshot ()Z
+	public fun isEnableAttachScreenshot ()Z
 	public fun isNameRequired ()Z
 	public fun isShowBranding ()Z
 	public fun isShowEmail ()Z
@@ -3239,10 +3240,11 @@ public final class io/sentry/SentryFeedbackOptions {
 	public fun setEmailLabel (Ljava/lang/CharSequence;)V
 	public fun setEmailPlaceholder (Ljava/lang/CharSequence;)V
 	public fun setEmailRequired (Z)V
-	public fun setEnableScreenshot (Z)V
+	public fun setEnableAttachScreenshot (Z)V
 	public fun setFormHandler (Lio/sentry/SentryFeedbackOptions$IFormHandler;)V
 	public fun setFormTitle (Ljava/lang/CharSequence;)V
 	public fun setIsRequiredLabel (Ljava/lang/CharSequence;)V
+	public fun setLoadClass (Lio/sentry/util/LoadClass;)V
 	public fun setMessageLabel (Ljava/lang/CharSequence;)V
 	public fun setMessagePlaceholder (Ljava/lang/CharSequence;)V
 	public fun setNameLabel (Ljava/lang/CharSequence;)V

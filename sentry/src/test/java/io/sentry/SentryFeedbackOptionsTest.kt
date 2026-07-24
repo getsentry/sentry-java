@@ -1,6 +1,7 @@
 package io.sentry
 
 import io.sentry.SentryFeedbackOptions.IFormHandler
+import io.sentry.util.LoadClass
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import org.mockito.kotlin.mock
@@ -8,14 +9,14 @@ import org.mockito.kotlin.mock
 class SentryFeedbackOptionsTest {
   @Test
   fun `feedback options is initialized with default values`() {
-    val options = SentryFeedbackOptions(mock<IFormHandler>())
+    val options = SentryFeedbackOptions(mock<IFormHandler>(), LoadClass())
     assertEquals(false, options.isNameRequired)
     assertEquals(true, options.isShowName)
     assertEquals(false, options.isEmailRequired)
     assertEquals(true, options.isShowEmail)
     assertEquals(true, options.isUseSentryUser)
     assertEquals(true, options.isShowBranding)
-    assertEquals(true, options.isEnableScreenshot)
+    assertEquals(true, options.isEnableAttachScreenshot)
     assertEquals("Report a Bug", options.formTitle)
     assertEquals("Send Bug Report", options.submitButtonLabel)
     assertEquals("Cancel", options.cancelButtonLabel)
@@ -29,7 +30,7 @@ class SentryFeedbackOptionsTest {
     assertEquals("Thank you for your report!", options.successMessageText)
     assertEquals("Add a screenshot", options.addScreenshotButtonLabel)
     assertEquals("Remove screenshot", options.removeScreenshotButtonLabel)
-    assertEquals("Image is too large", options.screenshotTooLargeMessageText)
+    assertEquals("Screenshot is too large", options.screenshotTooLargeMessageText)
     assertEquals(null, options.onFormOpen)
     assertEquals(null, options.onFormClose)
     assertEquals(null, options.onSubmitSuccess)
@@ -39,14 +40,14 @@ class SentryFeedbackOptionsTest {
   @Test
   fun `feedback options copy constructor`() {
     val options =
-      SentryFeedbackOptions(mock<IFormHandler>()).apply {
+      SentryFeedbackOptions(mock<IFormHandler>(), LoadClass()).apply {
         isNameRequired = true
         isShowName = false
         isEmailRequired = true
         isShowEmail = false
         isUseSentryUser = false
         isShowBranding = false
-        isEnableScreenshot = false
+        isEnableAttachScreenshot = false
         formTitle = "Title"
         submitButtonLabel = "Submit"
         cancelButtonLabel = "Cancel Label"
@@ -73,7 +74,7 @@ class SentryFeedbackOptionsTest {
     assertEquals(false, optionsCopy.isShowEmail)
     assertEquals(false, optionsCopy.isUseSentryUser)
     assertEquals(false, optionsCopy.isShowBranding)
-    assertEquals(false, optionsCopy.isEnableScreenshot)
+    assertEquals(false, optionsCopy.isEnableAttachScreenshot)
     assertEquals("Title", optionsCopy.formTitle)
     assertEquals("Submit", optionsCopy.submitButtonLabel)
     assertEquals("Cancel Label", optionsCopy.cancelButtonLabel)

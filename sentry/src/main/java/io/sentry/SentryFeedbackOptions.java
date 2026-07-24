@@ -2,6 +2,7 @@ package io.sentry;
 
 import io.sentry.protocol.Feedback;
 import io.sentry.protocol.SentryId;
+import io.sentry.util.LoadClass;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -43,7 +44,7 @@ public final class SentryFeedbackOptions {
    * device gallery. Only supported on Android, and requires the androidx.activity dependency and a
    * ComponentActivity host; the button is hidden otherwise. Defaults to true.
    */
-  private boolean enableScreenshot = true;
+  private boolean enableAttachScreenshot = true;
 
   // Text Customization
   /** The title of the feedback form. Defaults to "Report a Bug". */
@@ -95,7 +96,7 @@ public final class SentryFeedbackOptions {
    * The message displayed when the selected screenshot exceeds the maximum attachment size.
    * Defaults to "Image is too large".
    */
-  private @NotNull CharSequence screenshotTooLargeMessageText = "Image is too large";
+  private @NotNull CharSequence screenshotTooLargeMessageText = "Screenshot is too large";
 
   // Callbacks
   /** Callback called when the feedback form is opened. */
@@ -112,8 +113,11 @@ public final class SentryFeedbackOptions {
 
   private @NotNull IFormHandler iFormHandler;
 
-  SentryFeedbackOptions(@NotNull IFormHandler iFormHandler) {
+  private @NotNull LoadClass loadClass;
+
+  SentryFeedbackOptions(@NotNull IFormHandler iFormHandler, @NotNull LoadClass loadClass) {
     this.iFormHandler = iFormHandler;
+    this.loadClass = loadClass;
   }
 
   /** Creates a copy of the passed {@link SentryFeedbackOptions}. */
@@ -125,7 +129,7 @@ public final class SentryFeedbackOptions {
     this.useSentryUser = other.useSentryUser;
     this.showBranding = other.showBranding;
     this.useShakeGesture = other.useShakeGesture;
-    this.enableScreenshot = other.enableScreenshot;
+    this.enableAttachScreenshot = other.enableAttachScreenshot;
     this.formTitle = other.formTitle;
     this.submitButtonLabel = other.submitButtonLabel;
     this.cancelButtonLabel = other.cancelButtonLabel;
@@ -145,6 +149,7 @@ public final class SentryFeedbackOptions {
     this.onSubmitSuccess = other.onSubmitSuccess;
     this.onSubmitError = other.onSubmitError;
     this.iFormHandler = other.iFormHandler;
+    this.loadClass = other.loadClass;
   }
 
   /**
@@ -286,8 +291,8 @@ public final class SentryFeedbackOptions {
    *
    * @return true if the attach screenshot button is shown
    */
-  public boolean isEnableScreenshot() {
-    return enableScreenshot;
+  public boolean isEnableAttachScreenshot() {
+    return enableAttachScreenshot;
   }
 
   /**
@@ -295,10 +300,10 @@ public final class SentryFeedbackOptions {
    * Android, and requires the androidx.activity dependency and a ComponentActivity host; the button
    * is hidden otherwise. Defaults to true.
    *
-   * @param enableScreenshot true if the attach screenshot button is shown
+   * @param enableAttachScreenshot true if the attach screenshot button should be shown
    */
-  public void setEnableScreenshot(final boolean enableScreenshot) {
-    this.enableScreenshot = enableScreenshot;
+  public void setEnableAttachScreenshot(final boolean enableAttachScreenshot) {
+    this.enableAttachScreenshot = enableAttachScreenshot;
   }
 
   /**
@@ -675,7 +680,7 @@ public final class SentryFeedbackOptions {
         + ", useShakeGesture="
         + useShakeGesture
         + ", enableScreenshot="
-        + enableScreenshot
+        + enableAttachScreenshot
         + ", formTitle='"
         + formTitle
         + '\''
@@ -716,6 +721,16 @@ public final class SentryFeedbackOptions {
         + screenshotTooLargeMessageText
         + '\''
         + '}';
+  }
+
+  @ApiStatus.Internal
+  public @NotNull LoadClass getLoadClass() {
+    return loadClass;
+  }
+
+  @ApiStatus.Internal
+  public @NotNull void setLoadClass(final @NotNull LoadClass loadClass) {
+    this.loadClass = loadClass;
   }
 
   public interface SentryFeedbackCallback {

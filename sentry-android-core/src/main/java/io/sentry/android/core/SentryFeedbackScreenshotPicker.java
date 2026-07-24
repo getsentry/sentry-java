@@ -12,19 +12,19 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Launches the androidx photo picker to attach an image to user feedback. All androidx.activity
- * references are isolated in this class, so it must only be loaded after {@link #isAvailable} has
- * returned true.
+ * Launches the androidx photo picker to attach an screenshot to user feedback. All
+ * androidx.activity references are isolated in this class, so it must only be loaded after {@link
+ * #isAvailable} has returned true.
  */
-final class SentryFeedbackPhotoPicker {
+final class SentryFeedbackScreenshotPicker {
 
-  interface OnImagePicked {
-    void onImagePicked(@Nullable Uri uri);
+  interface OnScreenshotPicked {
+    void onScreenshotPicked(@NotNull Uri uri);
   }
 
   private final @NotNull ActivityResultLauncher<PickVisualMediaRequest> launcher;
 
-  private SentryFeedbackPhotoPicker(
+  private SentryFeedbackScreenshotPicker(
       final @NotNull ActivityResultLauncher<PickVisualMediaRequest> launcher) {
     this.launcher = launcher;
   }
@@ -36,8 +36,9 @@ final class SentryFeedbackPhotoPicker {
             "androidx.activity.result.contract.ActivityResultContracts$PickVisualMedia", options);
   }
 
-  static @Nullable SentryFeedbackPhotoPicker register(
-      final @NotNull Activity activity, final @NotNull OnImagePicked callback) {
+  static @Nullable SentryFeedbackScreenshotPicker register(
+      final @NotNull Activity activity,
+      final @NotNull SentryFeedbackScreenshotPicker.OnScreenshotPicked callback) {
     if (!(activity instanceof ComponentActivity)) {
       return null;
     }
@@ -45,10 +46,14 @@ final class SentryFeedbackPhotoPicker {
         ((ComponentActivity) activity)
             .getActivityResultRegistry()
             .register(
-                "sentry_user_feedback_photo_picker",
+                "sentry_user_feedback_screenshot_picker",
                 new ActivityResultContracts.PickVisualMedia(),
-                callback::onImagePicked);
-    return new SentryFeedbackPhotoPicker(launcher);
+                (@Nullable Uri uri) -> {
+                  if (uri != null) {
+                    callback.onScreenshotPicked(uri);
+                  }
+                });
+    return new SentryFeedbackScreenshotPicker(launcher);
   }
 
   void launch() {

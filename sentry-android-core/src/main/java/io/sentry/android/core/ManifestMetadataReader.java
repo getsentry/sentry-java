@@ -185,7 +185,8 @@ final class ManifestMetadataReader {
 
   static final String FEEDBACK_USE_SHAKE_GESTURE = "io.sentry.feedback.use-shake-gesture";
 
-  static final String FEEDBACK_ENABLE_SCREENSHOT = "io.sentry.feedback.enable-screenshot";
+  static final String FEEDBACK_ENABLE_ATTACH_SCREENSHOT =
+      "io.sentry.feedback.enable-attach-screenshot";
 
   static final String SPOTLIGHT_ENABLE = "io.sentry.spotlight.enable";
 
@@ -725,12 +726,12 @@ final class ManifestMetadataReader {
         feedbackOptions.setUseShakeGesture(
             readBool(
                 metadata, logger, FEEDBACK_USE_SHAKE_GESTURE, feedbackOptions.isUseShakeGesture()));
-        feedbackOptions.setEnableScreenshot(
+        feedbackOptions.setEnableAttachScreenshot(
             readBool(
                 metadata,
                 logger,
-                FEEDBACK_ENABLE_SCREENSHOT,
-                feedbackOptions.isEnableScreenshot()));
+                FEEDBACK_ENABLE_ATTACH_SCREENSHOT,
+                feedbackOptions.isEnableAttachScreenshot()));
 
         options.setStrictTraceContinuation(
             readBool(

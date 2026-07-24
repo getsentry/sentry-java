@@ -25,7 +25,7 @@
 -dontwarn io.sentry.compose.gestures.ComposeGestureTargetLocator
 -dontwarn io.sentry.compose.viewhierarchy.ComposeViewHierarchyExporter
 
-# androidx.activity is a compileOnly dependency, used by the user feedback photo picker
+# androidx.activity is a compileOnly dependency, used by the user feedback screenshot picker
 # its presence is checked at runtime before use
 -dontwarn androidx.activity.ComponentActivity
 -dontwarn androidx.activity.result.**

@@ -128,7 +128,7 @@ public final class FileUtils {
       long totalLength = 0;
       while ((length = inputStream.read(bytes)) != -1) {
         totalLength += length;
-        if (totalLength >= maxLength) {
+        if (totalLength > maxLength) {
           throw new IOException(
               String.format(
                   "Reading input failed, because %d read bytes is bigger "
