@@ -37,8 +37,15 @@ public class SentryRequestResolver {
     urlDetails.applyToRequest(sentryRequest);
     sentryRequest.setHeaders(resolveHeadersMap(httpRequest.getHeaders()));
 
-    if (scopes.getOptions().isSendDefaultPii()) {
-      String headerName = HttpUtils.COOKIE_HEADER_NAME;
+    final @NotNull String headerName = HttpUtils.COOKIE_HEADER_NAME;
+    if (scopes.getOptions().getDataCollectionResolver().isDataCollectionConfigured()) {
+      sentryRequest.setCookies(
+          toString(
+              HttpUtils.filterCookiesFromHeader(
+                  httpRequest.getHeaders().get(headerName),
+                  scopes.getOptions().getDataCollectionResolver().getCookies(),
+                  Collections.emptyList())));
+    } else if (scopes.getOptions().isSendDefaultPii()) {
       sentryRequest.setCookies(
           toString(
               HttpUtils.filterOutSecurityCookiesFromHeader(
