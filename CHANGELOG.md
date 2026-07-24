@@ -4,6 +4,7 @@
 
 ### Features
 
+- Add OkHttp autoconfiguration for Spring Boot 4 ([#5797](https://github.com/getsentry/sentry-java/pull/5797))
 - Add `io.sentry:sentry-opentelemetry-bom` to align Sentry OpenTelemetry modules with tested OpenTelemetry dependencies ([#5629](https://github.com/getsentry/sentry-java/pull/5629))
   - Spring Boot Gradle plugin: add the Sentry BOM to `dependencyManagement`; explicit imports are applied after Spring Boot's implicit BOM
     ```kotlin
