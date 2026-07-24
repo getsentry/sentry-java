@@ -111,6 +111,12 @@ class AndroidOptionsInitializerTest {
       )
 
       sentryOptions.configureOptions()
+      if (
+        sentryOptions.distinctId == null &&
+          sentryOptions.dataCollectionResolver.isUserInfoWithLegacyAlways
+      ) {
+        sentryOptions.distinctId = Installation.id(if (useRealContext) context else mockContext)
+      }
       AndroidOptionsInitializer.initializeIntegrationsAndProcessors(
         sentryOptions,
         if (useRealContext) context else mockContext,
@@ -347,6 +353,44 @@ class AndroidOptionsInitializerTest {
 
     val installation = File(fixture.context.filesDir, Installation.INSTALLATION)
     installation.deleteOnExit()
+  }
+
+  @Test
+  fun `init should not set generated distinct id when user info is disabled`() {
+    fixture.initSut(configureOptions = { dataCollection.setUserInfo(false) })
+
+    assertNull(fixture.sentryOptions.distinctId)
+  }
+
+  @Test
+  fun `init should set generated distinct id when user info is enabled`() {
+    fixture.initSut(configureOptions = { dataCollection.setUserInfo(true) })
+
+    assertNotNull(fixture.sentryOptions.distinctId)
+  }
+
+  @Test
+  fun `init should preserve explicit distinct id when user info is disabled`() {
+    fixture.initSut(
+      configureOptions = {
+        dataCollection.setUserInfo(false)
+        distinctId = "custom-id"
+      }
+    )
+
+    assertEquals("custom-id", fixture.sentryOptions.distinctId)
+  }
+
+  @Test
+  fun `init should set generated distinct id when explicit value is null`() {
+    fixture.initSut(
+      configureOptions = {
+        dataCollection.setUserInfo(true)
+        distinctId = null
+      }
+    )
+
+    assertNotNull(fixture.sentryOptions.distinctId)
   }
 
   @Test
