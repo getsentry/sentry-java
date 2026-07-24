@@ -13,6 +13,7 @@ import io.sentry.IProfileConverter
 import io.sentry.IScopes
 import io.sentry.ITransportFactory
 import io.sentry.Integration
+import io.sentry.KeyValueCollectionBehavior
 import io.sentry.NoOpContinuousProfiler
 import io.sentry.NoOpProfileConverter
 import io.sentry.NoOpTransportFactory
@@ -309,6 +310,35 @@ class SentryAutoConfigurationTest {
         assertThat(options.profileLifecycle).isEqualTo(ProfileLifecycle.TRACE)
         assertThat(options.isStrictTraceContinuation).isEqualTo(true)
         assertThat(options.orgId).isEqualTo("12345")
+      }
+  }
+
+  @Test
+  fun `data collection key value properties are applied to SentryOptions`() {
+    contextRunner
+      .withPropertyValues(
+        "sentry.dsn=http://key@localhost/proj",
+        "sentry.data-collection.cookies.mode=off",
+        "sentry.data-collection.query-params.mode=allow-list",
+        "sentry.data-collection.query-params.terms=page,sort",
+        "sentry.data-collection.http-headers.request.mode=deny-list",
+        "sentry.data-collection.http-headers.request.terms=forwarded,-ip",
+        "sentry.data-collection.http-headers.response.mode=allow-list",
+        "sentry.data-collection.http-headers.response.terms=content-type,x-request-id",
+      )
+      .run {
+        val dataCollection = it.getBean(SentryProperties::class.java).dataCollection
+        assertThat(dataCollection.cookies!!.mode).isEqualTo(KeyValueCollectionBehavior.Mode.OFF)
+        assertThat(dataCollection.queryParams!!.mode)
+          .isEqualTo(KeyValueCollectionBehavior.Mode.ALLOW_LIST)
+        assertThat(dataCollection.queryParams!!.terms).containsExactly("page", "sort")
+        assertThat(dataCollection.httpHeaders.request!!.mode)
+          .isEqualTo(KeyValueCollectionBehavior.Mode.DENY_LIST)
+        assertThat(dataCollection.httpHeaders.request!!.terms).containsExactly("forwarded", "-ip")
+        assertThat(dataCollection.httpHeaders.response!!.mode)
+          .isEqualTo(KeyValueCollectionBehavior.Mode.ALLOW_LIST)
+        assertThat(dataCollection.httpHeaders.response!!.terms)
+          .containsExactly("content-type", "x-request-id")
       }
   }
 
