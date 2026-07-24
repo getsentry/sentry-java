@@ -1,6 +1,7 @@
 package io.sentry.android.core
 
 import android.content.Context
+import android.os.Looper
 import android.view.WindowManager
 import android.widget.TextView
 import androidx.test.core.app.ApplicationProvider
@@ -19,13 +20,16 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 import org.junit.runner.RunWith
 import org.mockito.Mockito.mockStatic
+import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
+import org.robolectric.Shadows.shadowOf
 
 @RunWith(AndroidJUnit4::class)
 class SentryUserFeedbackFormTest {
@@ -142,5 +146,49 @@ class SentryUserFeedbackFormTest {
     assertNotNull(window)
     val flags = window.attributes.flags
     assertEquals(0, flags and WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM)
+  }
+
+  @Test
+  fun `a crashing onFormClose callback does not crash the app when the dialog is closed`() {
+    fixture.options.isEnabled = true
+    fixture.options.feedbackOptions.onFormClose = Runnable { throw RuntimeException("user bug") }
+    val sut = fixture.getSut()
+    sut.show()
+
+    sut.dismiss()
+    // The dismiss listener is dispatched via a Handler message
+    shadowOf(Looper.getMainLooper()).idle()
+
+    verify(fixture.mockLogger)
+      .log(eq(SentryLevel.ERROR), eq("onFormClose callback threw an exception."), any())
+  }
+
+  @Test
+  fun `a crashing onFormClose callback still runs the user's dismiss listener`() {
+    fixture.options.isEnabled = true
+    fixture.options.feedbackOptions.onFormClose = Runnable { throw RuntimeException("user bug") }
+    val sut = fixture.getSut()
+    var dismissed = false
+    sut.setOnDismissListener { dismissed = true }
+    sut.show()
+
+    sut.dismiss()
+    shadowOf(Looper.getMainLooper()).idle()
+
+    assertTrue(dismissed)
+  }
+
+  @Test
+  fun `a crashing onFormOpen callback does not crash the app when the dialog is shown`() {
+    fixture.options.isEnabled = true
+    fixture.options.feedbackOptions.onFormOpen = Runnable { throw RuntimeException("user bug") }
+    val sut = fixture.getSut()
+
+    sut.show()
+
+    verify(fixture.mockLogger)
+      .log(eq(SentryLevel.ERROR), eq("onFormOpen callback threw an exception."), any())
+    // The form open must still complete its own work after the callback crash
+    verify(fixture.mockReplayController).captureReplay(eq(false))
   }
 }

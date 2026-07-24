@@ -298,13 +298,27 @@ public class SentryUserFeedbackForm extends AlertDialog {
             final @Nullable SentryFeedbackOptions.SentryFeedbackCallback onSubmitSuccess =
                 feedbackOptions.getOnSubmitSuccess();
             if (onSubmitSuccess != null) {
-              onSubmitSuccess.call(feedback);
+              try {
+                onSubmitSuccess.call(feedback);
+              } catch (Throwable e) {
+                Sentry.getCurrentScopes()
+                    .getOptions()
+                    .getLogger()
+                    .log(SentryLevel.ERROR, "onSubmitSuccess callback threw an exception.", e);
+              }
             }
           } else {
             final @Nullable SentryFeedbackOptions.SentryFeedbackCallback onSubmitError =
                 feedbackOptions.getOnSubmitError();
             if (onSubmitError != null) {
-              onSubmitError.call(feedback);
+              try {
+                onSubmitError.call(feedback);
+              } catch (Throwable e) {
+                Sentry.getCurrentScopes()
+                    .getOptions()
+                    .getLogger()
+                    .log(SentryLevel.ERROR, "onSubmitError callback threw an exception.", e);
+              }
             }
           }
           cancel();
@@ -324,7 +338,15 @@ public class SentryUserFeedbackForm extends AlertDialog {
     if (onFormClose != null) {
       super.setOnDismissListener(
           dialog -> {
-            onFormClose.run();
+            // User-provided callback: a crash in it must not take down the app or skip the
+            // cleanup and the user's own dismiss listener below
+            try {
+              onFormClose.run();
+            } catch (Throwable e) {
+              options
+                  .getLogger()
+                  .log(SentryLevel.ERROR, "onFormClose callback threw an exception.", e);
+            }
             currentReplayId = null;
             if (delegate != null) {
               delegate.onDismiss(dialog);
@@ -351,7 +373,11 @@ public class SentryUserFeedbackForm extends AlertDialog {
     feedbackOptions.getShakeController().pauseDetection(true);
     final @Nullable Runnable onFormOpen = feedbackOptions.getOnFormOpen();
     if (onFormOpen != null) {
-      onFormOpen.run();
+      try {
+        onFormOpen.run();
+      } catch (Throwable e) {
+        options.getLogger().log(SentryLevel.ERROR, "onFormOpen callback threw an exception.", e);
+      }
     }
     options.getReplayController().captureReplay(false);
     currentReplayId = options.getReplayController().getReplayId();
