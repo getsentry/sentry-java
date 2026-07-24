@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Build
+import android.os.Looper
 import android.view.MotionEvent
 import io.sentry.Breadcrumb
 import io.sentry.DataCategory.All
@@ -352,7 +353,7 @@ public class ReplayIntegration(
       }
       addFrame(bitmap, frameTimeStamp, screen)
     }
-    checkCanRecord()
+    postOnMainThread { checkCanRecord() }
   }
 
   override fun onScreenshotRecorded(screenshot: File, frameTimestamp: Long) {
@@ -375,7 +376,7 @@ public class ReplayIntegration(
       }
       addFrame(screenshot, frameTimestamp, screen)
     }
-    checkCanRecord()
+    postOnMainThread { checkCanRecord() }
   }
 
   override fun close() {
@@ -442,6 +443,17 @@ public class ReplayIntegration(
       return
     }
     captureStrategy?.onTouchEvent(event)
+  }
+
+  // Runs [block] on the main thread. If already there, executes inline; otherwise posts via
+  // the main looper handler. Prevents deadlocks when lifecycle-lock-acquiring code (e.g.
+  // checkCanRecord -> pauseInternal) is called from the replay executor thread.
+  private inline fun postOnMainThread(crossinline block: () -> Unit) {
+    if (Looper.myLooper() == Looper.getMainLooper()) {
+      block()
+    } else {
+      mainLooperHandler.post { block() }
+    }
   }
 
   /**
