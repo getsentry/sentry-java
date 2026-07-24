@@ -3514,13 +3514,7 @@ public class SentryOptions {
               }
 
               @Override
-              public void setDialog(
-                  final @Nullable SentryFeedbackOptions.IShakeDialog dialog,
-                  final boolean startShakeDetection) {
-                if (startShakeDetection) {
-                  logger.log(SentryLevel.WARNING, "Shake to report is only supported on Android.");
-                }
-              }
+              public void pauseDetection(final boolean paused) {}
             });
 
     if (!empty) {

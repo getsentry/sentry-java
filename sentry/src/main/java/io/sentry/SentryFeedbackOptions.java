@@ -650,31 +650,13 @@ public final class SentryFeedbackOptions {
     boolean isEnabled();
 
     /**
-     * Sets the dialog a detected shake should (re-)show instead of creating a new one. Re-showing
-     * an already visible dialog is a no-op, so a shake can never stack a second dialog on top of
-     * it. The controller tracks at most one dialog: the one most recently set. The dialog is
-     * tracked until its host activity is destroyed or it is replaced by another dialog.
+     * Pauses or resumes reacting to detected shakes without tearing down shake detection. Feedback
+     * dialogs pause detection while they are visible, so a shake can never stack a second dialog on
+     * top of one that is already showing — no matter how the visible dialog was opened.
      *
-     * <p>With {@code startShakeDetection} set to {@code true} (a per-dialog shake opt-in), shake
-     * detection is also started and kept alive independently of the global enable/disable toggle. A
-     * dialog that opted in must pass {@code true} again whenever it re-registers (e.g. on every
-     * show); the flag always reflects the latest call.
-     *
-     * <p>Passing a {@code null} dialog clears the tracked dialog and stops shake detection unless
-     * it is enabled globally. The controller holds a strong reference to the dialog until then, so
-     * an opted-in form stays reachable even if the creating code does not retain it.
-     *
-     * @param dialog the dialog to show on shake, or {@code null} to clear
-     * @param startShakeDetection whether the dialog should also start and keep alive shake
-     *     detection
+     * @param paused true to ignore detected shakes, false to react to them again
      */
-    void setDialog(@Nullable IShakeDialog dialog, boolean startShakeDetection);
-  }
-
-  /** A dialog that can be shown when a shake gesture is detected. */
-  @ApiStatus.Internal
-  public interface IShakeDialog {
-    void show();
+    void pauseDetection(boolean paused);
   }
 
   /** Configuration callback for feedback options. */
