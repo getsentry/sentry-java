@@ -361,8 +361,27 @@ internal class PixelCopyStrategy(
   }
 
   override fun emitLastScreenshot() {
-    if (!frameInFlight.get() && lastCaptureSuccessful() && !screenshot.isRecycled) {
-      screenshotRecorderCallback?.onScreenshotRecorded(screenshot)
+    if (!frameInFlight.compareAndSet(false, true)) {
+      return
+    }
+    if (!lastCaptureSuccessful() || screenshot.isRecycled) {
+      finishFrame()
+      return
+    }
+    // Submit to the executor so the downstream consumer's bitmap read (JPEG compress) runs inline
+    // on the worker thread while the gate is held, same as the masked capture path.
+    val submitted =
+      executor.submit(
+        ReplayRunnable("PixelCopyStrategy.emit") {
+          try {
+            screenshotRecorderCallback?.onScreenshotRecorded(screenshot)
+          } finally {
+            finishFrame()
+          }
+        }
+      )
+    if (submitted == null) {
+      finishFrame()
     }
   }
 

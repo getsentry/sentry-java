@@ -141,7 +141,7 @@ class PixelCopyStrategyTest {
         // PixelCopyStrategy swallows the exception, so we have to capture it here and rethrow later
         failure.set(e)
       }
-      null
+      CompletedFuture
     }
 
     strategy = fixture.getSut(executor = executorThatClosesFirst)
@@ -227,6 +227,59 @@ class PixelCopyStrategyTest {
     DeferredWindowPixelCopyShadow.flush()
     shadowOf(Looper.getMainLooper()).idle()
     verify(fixture.callback, times(2)).onScreenshotRecorded(any<Bitmap>())
+  }
+
+  @Test
+  @Config(shadows = [DeferredWindowPixelCopyShadow::class])
+  fun `emitLastScreenshot holds the frame gate until the emit task drains`() {
+    // emit submits the consumer call to the executor so the bitmap read (JPEG compress) runs
+    // inline on the worker thread while the gate is held — same pattern as the masked capture path.
+    // Invariant: while the emit task is still queued (gate held), a racing capture is dropped.
+    // Without the gate (old `if (!frameInFlight.get())`) that capture proceeds -> extra frame.
+    val activity = buildActivity(SimpleActivity::class.java).setup()
+    shadowOf(Looper.getMainLooper()).idle()
+    val root = activity.get().findViewById<View>(android.R.id.content)
+    val tasks = mutableListOf<Runnable>()
+    val executor = mock<ScheduledExecutorService>()
+    whenever(executor.submit(any<Runnable>())).doAnswer {
+      tasks.add(it.arguments[0] as Runnable)
+      mock<Future<*>>()
+    }
+    val strategy = fixture.getSut(executor)
+
+    // Set up a successful last capture: capture -> queued mask task -> drain releases the gate.
+    strategy.capture(root)
+    DeferredWindowPixelCopyShadow.flush()
+    shadowOf(Looper.getMainLooper()).idle()
+    tasks.removeAll {
+      it.run()
+      true
+    }
+    verify(fixture.callback, times(1)).onScreenshotRecorded(any<Bitmap>())
+
+    // Emit takes the gate and queues the consumer task (still pending).
+    strategy.emitLastScreenshot()
+    // Callback hasn't fired yet — the task is queued, not drained.
+    verify(fixture.callback, times(1)).onScreenshotRecorded(any<Bitmap>())
+
+    // A capture racing in before the emit task drains must be dropped (gate held).
+    strategy.capture(root)
+    DeferredWindowPixelCopyShadow.flush()
+    shadowOf(Looper.getMainLooper()).idle()
+    verify(fixture.callback, times(1)).onScreenshotRecorded(any<Bitmap>())
+
+    // Drain the emit task -> callback fires, gate released -> captures resume.
+    tasks.removeAll {
+      it.run()
+      true
+    }
+    verify(fixture.callback, times(2)).onScreenshotRecorded(any<Bitmap>())
+    captureStableFrame(strategy, root)
+    tasks.removeAll {
+      it.run()
+      true
+    }
+    verify(fixture.callback, times(3)).onScreenshotRecorded(any<Bitmap>())
   }
 
   @Test
