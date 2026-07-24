@@ -4171,10 +4171,13 @@ public final class io/sentry/SentryReplayOptions : io/sentry/SentryMaskingOption
 	public fun getErrorReplayDuration ()J
 	public fun getFrameObserver ()Lio/sentry/SentryReplayOptions$ReplayFrameObserver;
 	public fun getFrameRate ()I
+	public fun getNetworkCaptureBodies ()Ljava/lang/Boolean;
 	public fun getNetworkDetailAllowUrls ()Ljava/util/List;
 	public fun getNetworkDetailDenyUrls ()Ljava/util/List;
 	public static fun getNetworkDetailsDefaultHeaders ()Ljava/util/List;
+	public fun getNetworkRequestHeaderBehavior ()Lio/sentry/KeyValueCollectionBehavior;
 	public fun getNetworkRequestHeaders ()Ljava/util/List;
+	public fun getNetworkResponseHeaderBehavior ()Lio/sentry/KeyValueCollectionBehavior;
 	public fun getNetworkResponseHeaders ()Ljava/util/List;
 	public fun getOnErrorSampleRate ()Ljava/lang/Double;
 	public fun getQuality ()Lio/sentry/SentryReplayOptions$SentryReplayQuality;
@@ -4186,19 +4189,26 @@ public final class io/sentry/SentryReplayOptions : io/sentry/SentryMaskingOption
 	public fun isCaptureSurfaceViews ()Z
 	public fun isDebug ()Z
 	public fun isNetworkCaptureBodies ()Z
+	public fun isNetworkRequestBodyCaptureEnabled (Lio/sentry/DataCollectionResolver;)Z
+	public fun isNetworkResponseBodyCaptureEnabled (Lio/sentry/DataCollectionResolver;)Z
 	public fun isSessionReplayEnabled ()Z
 	public fun isSessionReplayForErrorsEnabled ()Z
 	public fun isTrackConfiguration ()Z
+	public fun resolveNetworkRequestHeaders (Lio/sentry/DataCollectionResolver;)Lio/sentry/KeyValueCollectionBehavior;
+	public fun resolveNetworkResponseHeaders (Lio/sentry/DataCollectionResolver;)Lio/sentry/KeyValueCollectionBehavior;
 	public fun setBeforeErrorSampling (Lio/sentry/SentryReplayOptions$BeforeErrorSamplingCallback;)V
 	public fun setCaptureSurfaceViews (Z)V
 	public fun setDebug (Z)V
 	public fun setFrameObserver (Lio/sentry/SentryReplayOptions$ReplayFrameObserver;)V
 	public fun setMaskAllImages (Z)V
 	public fun setMaskAllText (Z)V
+	public fun setNetworkCaptureBodies (Ljava/lang/Boolean;)V
 	public fun setNetworkCaptureBodies (Z)V
 	public fun setNetworkDetailAllowUrls (Ljava/util/List;)V
 	public fun setNetworkDetailDenyUrls (Ljava/util/List;)V
+	public fun setNetworkRequestHeaderBehavior (Lio/sentry/KeyValueCollectionBehavior;)V
 	public fun setNetworkRequestHeaders (Ljava/util/List;)V
+	public fun setNetworkResponseHeaderBehavior (Lio/sentry/KeyValueCollectionBehavior;)V
 	public fun setNetworkResponseHeaders (Ljava/util/List;)V
 	public fun setOnErrorSampleRate (Ljava/lang/Double;)V
 	public fun setQuality (Lio/sentry/SentryReplayOptions$SentryReplayQuality;)V
@@ -8113,7 +8123,9 @@ public final class io/sentry/util/network/NetworkBodyParser {
 }
 
 public final class io/sentry/util/network/NetworkDetailCaptureUtils {
+	public static fun createRequest (Ljava/lang/Object;Ljava/lang/Long;ZLio/sentry/util/network/NetworkDetailCaptureUtils$NetworkBodyExtractor;Lio/sentry/KeyValueCollectionBehavior;Lio/sentry/util/network/NetworkDetailCaptureUtils$NetworkHeaderExtractor;)Lio/sentry/util/network/ReplayNetworkRequestOrResponse;
 	public static fun createRequest (Ljava/lang/Object;Ljava/lang/Long;ZLio/sentry/util/network/NetworkDetailCaptureUtils$NetworkBodyExtractor;Ljava/util/List;Lio/sentry/util/network/NetworkDetailCaptureUtils$NetworkHeaderExtractor;)Lio/sentry/util/network/ReplayNetworkRequestOrResponse;
+	public static fun createResponse (Ljava/lang/Object;Ljava/lang/Long;ZLio/sentry/util/network/NetworkDetailCaptureUtils$NetworkBodyExtractor;Lio/sentry/KeyValueCollectionBehavior;Lio/sentry/util/network/NetworkDetailCaptureUtils$NetworkHeaderExtractor;)Lio/sentry/util/network/ReplayNetworkRequestOrResponse;
 	public static fun createResponse (Ljava/lang/Object;Ljava/lang/Long;ZLio/sentry/util/network/NetworkDetailCaptureUtils$NetworkBodyExtractor;Ljava/util/List;Lio/sentry/util/network/NetworkDetailCaptureUtils$NetworkHeaderExtractor;)Lio/sentry/util/network/ReplayNetworkRequestOrResponse;
 	public static fun initializeForUrl (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/util/List;)Lio/sentry/util/network/NetworkRequestData;
 }

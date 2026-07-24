@@ -146,7 +146,9 @@ public open class SentryOkHttpInterceptor(
         NetworkDetailCaptureUtils.createRequest(
           request,
           requestContentLength,
-          scopes.options.sessionReplay.isNetworkCaptureBodies,
+          scopes.options.sessionReplay.isNetworkRequestBodyCaptureEnabled(
+            scopes.options.dataCollectionResolver
+          ),
           { req ->
             req.body?.let { originalBody ->
               val buffer = okio.Buffer()
@@ -161,7 +163,9 @@ public open class SentryOkHttpInterceptor(
               safeExtractRequestBody(bodyBytes, originalBody.contentType(), scopes.options.logger)
             }
           },
-          scopes.options.sessionReplay.networkRequestHeaders,
+          scopes.options.sessionReplay.resolveNetworkRequestHeaders(
+            scopes.options.dataCollectionResolver
+          ),
           { req: Request -> req.headers.toMap() },
         )
       )
@@ -205,9 +209,13 @@ public open class SentryOkHttpInterceptor(
           NetworkDetailCaptureUtils.createResponse(
             it,
             it.body?.contentLength(),
-            scopes.options.sessionReplay.isNetworkCaptureBodies,
+            scopes.options.sessionReplay.isNetworkResponseBodyCaptureEnabled(
+              scopes.options.dataCollectionResolver
+            ),
             { resp: Response -> resp.extractResponseBody(scopes.options.logger) },
-            scopes.options.sessionReplay.networkResponseHeaders,
+            scopes.options.sessionReplay.resolveNetworkResponseHeaders(
+              scopes.options.dataCollectionResolver
+            ),
             { resp: Response -> resp.headers.toMap() },
           ),
         )
