@@ -54,6 +54,24 @@ class DeviceInfoUtilTest {
   }
 
   @Test
+  fun `does not set device id when user info is disabled`() {
+    val options = SentryAndroidOptions().apply { dataCollection.setUserInfo(false) }
+    val deviceInfo =
+      DeviceInfoUtil.getInstance(context, options).collectDeviceInformation(false, false)
+
+    assertNull(deviceInfo.id)
+  }
+
+  @Test
+  fun `sets device id when user info is enabled`() {
+    val options = SentryAndroidOptions().apply { dataCollection.setUserInfo(true) }
+    val deviceInfo =
+      DeviceInfoUtil.getInstance(context, options).collectDeviceInformation(false, false)
+
+    assertNotNull(deviceInfo.id)
+  }
+
+  @Test
   fun `sets default timezone`() {
     val deviceInfoUtil = DeviceInfoUtil.getInstance(context, SentryAndroidOptions())
     val deviceInfo = deviceInfoUtil.collectDeviceInformation(false, false)

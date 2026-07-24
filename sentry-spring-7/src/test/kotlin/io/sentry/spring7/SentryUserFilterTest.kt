@@ -23,9 +23,14 @@ class SentryUserFilterTest {
 
     fun getSut(
       isSendDefaultPii: Boolean = false,
+      userInfo: Boolean? = null,
       userProviders: List<SentryUserProvider>,
     ): SentryUserFilter {
-      val options = SentryOptions().apply { this.isSendDefaultPii = isSendDefaultPii }
+      val options =
+        SentryOptions().apply {
+          this.isSendDefaultPii = isSendDefaultPii
+          userInfo?.let { dataCollection.setUserInfo(it) }
+        }
       whenever(scopes.options).thenReturn(options)
       return SentryUserFilter(scopes, userProviders)
     }
@@ -76,7 +81,7 @@ class SentryUserFilterTest {
   }
 
   @Test
-  fun `merges user#others with existing user#others set on SentryEvent`() {
+  fun `merges user#data with existing user#data set on SentryEvent`() {
     val filter =
       fixture.getSut(
         userProviders =
@@ -110,6 +115,34 @@ class SentryUserFilterTest {
     val filter =
       fixture.getSut(
         isSendDefaultPii = true,
+        userProviders = listOf(SentryUserProvider { User().apply { ipAddress = "{{auto}}" } }),
+      )
+
+    filter.doFilter(fixture.request, fixture.response, fixture.chain)
+
+    verify(fixture.scopes).setUser(check { assertNull(it.ipAddress) })
+  }
+
+  @Test
+  fun `when user info is disabled, preserves auto ip from a custom provider`() {
+    val filter =
+      fixture.getSut(
+        isSendDefaultPii = true,
+        userInfo = false,
+        userProviders = listOf(SentryUserProvider { User().apply { ipAddress = "{{auto}}" } }),
+      )
+
+    filter.doFilter(fixture.request, fixture.response, fixture.chain)
+
+    verify(fixture.scopes).setUser(check { assertEquals("{{auto}}", it.ipAddress) })
+  }
+
+  @Test
+  fun `when user info is enabled, removes auto ip from a custom provider`() {
+    val filter =
+      fixture.getSut(
+        isSendDefaultPii = false,
+        userInfo = true,
         userProviders = listOf(SentryUserProvider { User().apply { ipAddress = "{{auto}}" } }),
       )
 

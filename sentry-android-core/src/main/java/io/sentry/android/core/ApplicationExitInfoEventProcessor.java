@@ -568,10 +568,10 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
     }
 
     // userId should be set even if event is Cached as the userId is static and won't change anyway.
-    if (user.getId() == null) {
+    if (user.getId() == null && options.getDataCollectionResolver().isUserInfoWithLegacyAlways()) {
       user.setId(getDeviceId());
     }
-    if (user.getIpAddress() == null && options.isSendDefaultPii()) {
+    if (user.getIpAddress() == null && options.getDataCollectionResolver().isUserInfo()) {
       user.setIpAddress(IpAddressUtils.DEFAULT_IP_ADDRESS);
     }
   }
@@ -635,7 +635,8 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
       device.setScreenDpi(displayMetrics.densityDpi);
     }
 
-    if (device.getId() == null) {
+    if (device.getId() == null
+        && options.getDataCollectionResolver().isUserInfoWithLegacyAlways()) {
       device.setId(getDeviceId());
     }
 

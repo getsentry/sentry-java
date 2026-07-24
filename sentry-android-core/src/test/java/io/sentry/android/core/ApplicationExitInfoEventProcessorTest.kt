@@ -229,6 +229,26 @@ class ApplicationExitInfoEventProcessorTest {
   }
 
   @Test
+  fun `when user info is disabled, does not set device id`() {
+    fixture.options.dataCollection.setUserInfo(false)
+    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint())
+
+    val processed = processEvent(hint)
+
+    assertNull(processed.contexts.device!!.id)
+  }
+
+  @Test
+  fun `when user info is enabled, sets device id`() {
+    fixture.options.dataCollection.setUserInfo(true)
+    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint())
+
+    val processed = processEvent(hint, isSendDefaultPii = false)
+
+    assertNotNull(processed.contexts.device!!.id)
+  }
+
+  @Test
   fun `when backfillable event is not enrichable, sets OS`() {
     val hint = HintUtils.createWithTypeCheckHint(BackfillableHint(shouldEnrich = false))
 
@@ -337,6 +357,28 @@ class ApplicationExitInfoEventProcessorTest {
   }
 
   @Test
+  fun `when user info is disabled, does not backfill automatic user data`() {
+    fixture.options.dataCollection.setUserInfo(false)
+    val hint = HintUtils.createWithTypeCheckHint(BackfillableHint())
+    val processed = processEvent(hint, isSendDefaultPii = true, populateScopeCache = true)
+
+    assertEquals("bot", processed.user!!.username)
+    assertEquals("bot@me.com", processed.user!!.id)
+    assertNull(processed.user!!.ipAddress)
+  }
+
+  @Test
+  fun `when user info is enabled, backfills automatic user data`() {
+    fixture.options.dataCollection.setUserInfo(true)
+    val hint = HintUtils.createWithTypeCheckHint(BackfillableHint())
+    val processed = processEvent(hint, isSendDefaultPii = false, populateScopeCache = true)
+
+    assertEquals("bot", processed.user!!.username)
+    assertEquals("bot@me.com", processed.user!!.id)
+    assertEquals("{{auto}}", processed.user!!.ipAddress)
+  }
+
+  @Test
   fun `when backfillable event is enrichable, backfills serialized options data`() {
     val hint = HintUtils.createWithTypeCheckHint(BackfillableHint())
 
@@ -433,6 +475,19 @@ class ApplicationExitInfoEventProcessorTest {
     val processed = processor.process(original, hint)
 
     assertEquals(Installation.deviceId, processed!!.user!!.id)
+  }
+
+  @Test
+  fun `when user info is disabled, does not set installation id for missing user id`() {
+    fixture.options.dataCollection.setUserInfo(false)
+    val hint = HintUtils.createWithTypeCheckHint(BackfillableHint())
+    val original = SentryEvent()
+    val processor = fixture.getSut(tmpDir)
+    fixture.persistOptions(USER_FILENAME, User())
+
+    val processed = processor.process(original, hint)
+
+    assertNull(processed!!.user!!.id)
   }
 
   @Test
