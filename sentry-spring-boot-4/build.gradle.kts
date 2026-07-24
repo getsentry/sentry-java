@@ -30,6 +30,8 @@ dependencies {
   api(projects.sentry)
   api(projects.sentrySpring7)
   compileOnly(projects.sentryLogback)
+  compileOnly(projects.sentryOkhttp)
+  compileOnly(libs.okhttp)
   compileOnly(projects.sentryApacheHttpClient5)
   compileOnly(platform(SpringBootPlugin.BOM_COORDINATES))
   compileOnly(projects.sentryGraphql)
@@ -65,6 +67,7 @@ dependencies {
 
   // tests
   testImplementation(projects.sentryLogback)
+  testImplementation(projects.sentryOkhttp)
   testImplementation(projects.sentryApacheHttpClient5)
   testImplementation(projects.sentryGraphql)
   testImplementation(projects.sentryGraphql22)
@@ -81,6 +84,7 @@ dependencies {
   testImplementation(platform(SpringBootPlugin.BOM_COORDINATES))
   testImplementation(libs.context.propagation)
   testImplementation(libs.kotlin.test.junit)
+  testImplementation(libs.google.truth)
   testImplementation(libs.mockito.kotlin)
   testImplementation(libs.okhttp)
   testImplementation(libs.okhttp.mockwebserver)
