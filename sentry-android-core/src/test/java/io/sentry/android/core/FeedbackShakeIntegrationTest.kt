@@ -296,13 +296,66 @@ class FeedbackShakeIntegrationTest {
   }
 
   @Test
-  fun `setDialog without startShakeDetection only tracks the dialog`() {
+  fun `setDialog without startShakeDetection tracks the dialog but does not start detection`() {
+    whenever(fixture.application.getSystemService(any())).thenReturn(null)
     val sut = fixture.getSut(useShakeGesture = false)
     sut.register(fixture.scopes, fixture.options)
 
     sut.setDialog(createShakeDialog(), false)
 
-    verify(fixture.application, never()).registerActivityLifecycleCallbacks(any())
+    // Callbacks are registered to release the dialog on activity destroy, but the shake
+    // detector itself is not started.
+    verify(fixture.application).registerActivityLifecycleCallbacks(any())
+    verify(fixture.application, never()).getSystemService(eq(Context.SENSOR_SERVICE))
+  }
+
+  @Test
+  fun `clearing a tracking-only dialog unregisters the callbacks`() {
+    val sut = fixture.getSut(useShakeGesture = false)
+    sut.register(fixture.scopes, fixture.options)
+    sut.setDialog(createShakeDialog(), false)
+
+    sut.setDialog(null, false)
+
+    verify(fixture.application).unregisterActivityLifecycleCallbacks(any())
+  }
+
+  @Test
+  fun `destroying the host activity of a tracking-only dialog releases it`() {
+    // Guards against leaking the dialog (and its activity) through the strong reference when
+    // detection is not running.
+    val sut = fixture.getSut(useShakeGesture = false)
+    sut.register(fixture.scopes, fixture.options)
+    val dialog = createShakeDialog()
+    sut.setDialog(dialog, false)
+
+    sut.onActivityDestroyed(dialog.activity)
+
+    verify(fixture.application).unregisterActivityLifecycleCallbacks(any())
+  }
+
+  @Test
+  fun `creating a different activity releases the tracked dialog`() {
+    val sut = fixture.getSut(useShakeGesture = false)
+    sut.register(fixture.scopes, fixture.options)
+    sut.setDialog(createShakeDialog(), false)
+
+    val otherActivity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    sut.onActivityCreated(otherActivity, null)
+
+    verify(fixture.application).unregisterActivityLifecycleCallbacks(any())
+  }
+
+  @Test
+  fun `creating the dialog's own host activity keeps the tracked dialog`() {
+    val sut = fixture.getSut(useShakeGesture = false)
+    sut.register(fixture.scopes, fixture.options)
+    val dialog = createShakeDialog()
+    sut.setDialog(dialog, false)
+
+    sut.onActivityCreated(dialog.activity, null)
+
+    verify(fixture.application, never()).unregisterActivityLifecycleCallbacks(any())
   }
 
   @Test
@@ -345,13 +398,18 @@ class FeedbackShakeIntegrationTest {
   }
 
   @Test
-  fun `disable stops shake detection when the tracked dialog did not opt in`() {
+  fun `disable keeps callbacks registered while a tracking-only dialog is set`() {
     val sut = fixture.getSut(useShakeGesture = true)
     sut.register(fixture.scopes, fixture.options)
-    sut.setDialog(createShakeDialog(), false)
+    val dialog = createShakeDialog()
+    sut.setDialog(dialog, false)
 
     sut.disable()
 
+    // Detection stops, but the callbacks stay registered to release the tracked dialog once
+    // its host activity goes away.
+    verify(fixture.application, never()).unregisterActivityLifecycleCallbacks(any())
+    sut.onActivityDestroyed(dialog.activity)
     verify(fixture.application).unregisterActivityLifecycleCallbacks(any())
   }
 
@@ -370,14 +428,18 @@ class FeedbackShakeIntegrationTest {
   }
 
   @Test
-  fun `replacing an opted-in dialog with a tracking-only one stops detection when globally disabled`() {
+  fun `replacing an opted-in dialog with a tracking-only one drops the opt-in`() {
     val sut = fixture.getSut(useShakeGesture = false)
     sut.register(fixture.scopes, fixture.options)
     sut.setDialog(createShakeDialog(), true)
 
-    // A different dialog only reporting visibility no longer justifies detection
-    sut.setDialog(createShakeDialog(), false)
+    // A different dialog only reporting visibility no longer justifies detection; the
+    // callbacks stay registered only to track the new dialog's host activity.
+    val dialog = createShakeDialog()
+    sut.setDialog(dialog, false)
+    verify(fixture.application, never()).unregisterActivityLifecycleCallbacks(any())
 
+    sut.setDialog(null, false)
     verify(fixture.application).unregisterActivityLifecycleCallbacks(any())
   }
 

@@ -43,10 +43,12 @@ public final class FeedbackShakeIntegration
   private volatile boolean enabled = false;
   private boolean detecting = false;
   // Strong reference on purpose: for a per-form opt-in the caller may not retain the created
-  // form, so the controller must keep it alive to be able to show it on shake. Cleared when the
-  // host activity is destroyed, when replaced by another dialog, and on close().
+  // form, so the controller must keep it alive to be able to show it on shake. Lifecycle
+  // callbacks stay registered as long as a dialog is tracked, so the reference is guaranteed
+  // to be cleared once the host activity goes away (or another activity is created on top).
   private volatile @Nullable SentryFeedbackOptions.IShakeDialog trackedDialog;
   private boolean dialogRequestedShakeDetection = false;
+  private boolean callbacksRegistered = false;
   private volatile @Nullable WeakReference<Activity> currentActivityRef;
 
   public FeedbackShakeIntegration(final @NotNull Application application) {
@@ -113,6 +115,7 @@ public final class FeedbackShakeIntegration
       if (!enabled) {
         stopDetecting();
       }
+      updateCallbackRegistration();
       return;
     }
     trackedDialog = dialog;
@@ -122,6 +125,24 @@ public final class FeedbackShakeIntegration
     } else if (!enabled) {
       // The previous dialog may have been the only reason detection was running.
       stopDetecting();
+    }
+    // Even without detection, keep listening for the tracked dialog's host activity being
+    // destroyed, so the strong dialog reference can never outlive it (no activity leak).
+    updateCallbackRegistration();
+  }
+
+  /**
+   * Lifecycle callbacks are needed while shake detection runs (to follow the current activity) or
+   * while a dialog is tracked (to release it when its host activity goes away).
+   */
+  private synchronized void updateCallbackRegistration() {
+    final boolean needed = detecting || trackedDialog != null;
+    if (needed && !callbacksRegistered) {
+      callbacksRegistered = true;
+      application.registerActivityLifecycleCallbacks(this);
+    } else if (!needed && callbacksRegistered) {
+      callbacksRegistered = false;
+      application.unregisterActivityLifecycleCallbacks(this);
     }
   }
 
@@ -150,7 +171,7 @@ public final class FeedbackShakeIntegration
     }
 
     addIntegrationToSdkVersion("FeedbackShake");
-    application.registerActivityLifecycleCallbacks(this);
+    updateCallbackRegistration();
     options.getLogger().log(SentryLevel.DEBUG, "FeedbackShakeIntegration installed.");
 
     // In case of a deferred init or runtime enable, hook into any already-resumed activity
@@ -167,7 +188,7 @@ public final class FeedbackShakeIntegration
     }
     detecting = false;
 
-    application.unregisterActivityLifecycleCallbacks(this);
+    updateCallbackRegistration();
     shakeDetector.close();
     currentActivityRef = null;
   }
@@ -178,6 +199,9 @@ public final class FeedbackShakeIntegration
     trackedDialog = null;
     dialogRequestedShakeDetection = false;
     stopDetecting();
+    // stopDetecting is a no-op when detection wasn't running, but a tracking-only dialog may
+    // still have kept the callbacks registered.
+    updateCallbackRegistration();
   }
 
   @Override
@@ -201,7 +225,15 @@ public final class FeedbackShakeIntegration
 
   @Override
   public void onActivityCreated(
-      final @NotNull Activity activity, final @Nullable Bundle savedInstanceState) {}
+      final @NotNull Activity activity, final @Nullable Bundle savedInstanceState) {
+    // The user is navigating to a new activity: a dialog hosted by a different activity can't
+    // be shown there, so stop tracking it (also releasing the strong reference early instead
+    // of waiting for the host activity to be destroyed).
+    final @Nullable SentryFeedbackOptions.IShakeDialog dialog = trackedDialog;
+    if (dialog != null && findDialogActivity(dialog) != activity) {
+      setDialog(null, false);
+    }
+  }
 
   @Override
   public void onActivityStarted(final @NotNull Activity activity) {}
