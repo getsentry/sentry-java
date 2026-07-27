@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -42,15 +43,6 @@ import org.jetbrains.annotations.TestOnly;
 public final class PersistingScopeObserver extends ScopeObserverAdapter {
 
   private static final Charset UTF_8 = Charset.forName("UTF-8");
-
-  /**
-   * How long scope mutations are coalesced before being flushed to disk. Rather than writing on
-   * every mutation, we keep only the latest value per file (and buffer breadcrumbs) and flush them
-   * together after this delay. This trades a small data-loss window (mutations from the last
-   * ~{@value #FLUSH_AFTER_MS} ms before the process dies) for far fewer disk writes and fsyncs,
-   * which is significant during startup.
-   */
-  static final long FLUSH_AFTER_MS = 100;
 
   /** Sentinel value marking a file that should be deleted rather than written on the next flush. */
   private static final Object DELETE_MARKER = new Object();
@@ -136,7 +128,7 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
   // Breadcrumbs buffered since the last flush, appended together behind a single fsync.
   private final @NotNull Queue<Breadcrumb> pendingBreadcrumbs = new ConcurrentLinkedQueue<>();
   private final @NotNull AtomicBoolean pendingBreadcrumbsClear = new AtomicBoolean(false);
-  private final @NotNull AtomicBoolean hasScheduledFlush = new AtomicBoolean(false);
+  private final @NotNull AtomicBoolean hasPendingFlush = new AtomicBoolean(false);
 
   public PersistingScopeObserver(final @NotNull SentryOptions options) {
     this.options = options;
@@ -153,7 +145,7 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
       return;
     }
     pendingBreadcrumbs.offer(crumb);
-    scheduleFlush();
+    requestFlush();
   }
 
   @Override
@@ -167,7 +159,7 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
       // drop breadcrumbs buffered before the clear; anything added after it is enqueued again
       pendingBreadcrumbs.clear();
       pendingBreadcrumbsClear.set(true);
-      scheduleFlush();
+      requestFlush();
     }
   }
 
@@ -226,31 +218,42 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
     }
     // latest value wins; a null entity means the file should be deleted on the next flush
     pendingWrites.put(fileName, entity == null ? DELETE_MARKER : entity);
-    scheduleFlush();
+    requestFlush();
   }
 
-  @SuppressWarnings("FutureReturnValueIgnored")
-  private void scheduleFlush() {
-    if (!hasScheduledFlush.compareAndSet(false, true)) {
-      // a flush is already scheduled; it will pick up the latest pending state
+  /**
+   * Queues a flush unless one is already queued. Coalescing comes from the flush task sitting in
+   * the executor queue: every mutation that arrives before it runs is folded into the same write.
+   * The executor is single-threaded, so during startup — when mutations are frequent and the queue
+   * is deep — that window covers many mutations.
+   */
+  private void requestFlush() {
+    if (!hasPendingFlush.compareAndSet(false, true)) {
+      // a flush is already queued; it will pick up the latest pending state
       return;
     }
     try {
-      options.getExecutorService().schedule(this::flushOnExecutor, FLUSH_AFTER_MS);
+      final @NotNull Future<?> future = options.getExecutorService().submit(this::flushOnExecutor);
+      if (future.isCancelled()) {
+        // the executor rejects tasks without throwing once its queue is full, so clear the flag or
+        // no later mutation would ever be able to queue a flush again
+        hasPendingFlush.set(false);
+      }
     } catch (Throwable e) {
-      hasScheduledFlush.set(false);
-      options.getLogger().log(ERROR, "Scope persistence flush could not be scheduled", e);
+      hasPendingFlush.set(false);
+      options.getLogger().log(ERROR, "Scope persistence flush could not be submitted", e);
     }
   }
 
   private void flushOnExecutor() {
     runSafely(this::flushPending);
-    hasScheduledFlush.set(false);
-    // reschedule if mutations arrived while we were flushing
+    // clear the flag before re-checking, otherwise a mutation landing between the drain and the
+    // clear would see a flush still queued and be left with nobody to write it
+    hasPendingFlush.set(false);
     if (!pendingWrites.isEmpty()
         || !pendingBreadcrumbs.isEmpty()
         || pendingBreadcrumbsClear.get()) {
-      scheduleFlush();
+      requestFlush();
     }
   }
 
@@ -353,6 +356,9 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
    * I/O and should be called from a background thread.
    */
   public void resetCache() {
+    // NOTE: pending mutations are deliberately left alone. They only ever hold values from the
+    // current process, which is exactly what this reset is clearing the way for; dropping them
+    // would lose scope state set during init.
     // since it keeps a reference to the file and we cannot delete it, breadcrumbs we just clear
     try {
       final @NotNull ObjectQueue<Breadcrumb> queue = breadcrumbsQueue.getValue();
