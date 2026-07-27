@@ -30,7 +30,7 @@ class PersistingScopeObserverBatchingTest {
     read(options, BREADCRUMBS_FILENAME, List::class.java) as List<Breadcrumb>
 
   @Test
-  fun `defers writes until the scheduled flush runs`() {
+  fun `defers writes until the flush runs`() {
     val executor = DeferredExecutorService()
     val sut = getSut(executor)
 
@@ -78,6 +78,18 @@ class PersistingScopeObserverBatchingTest {
     executor.runAll()
 
     assertThat(sut.readBreadcrumbs().map { it.message }).containsExactly("kept")
+  }
+
+  @Test
+  fun `resetCache keeps pending mutations from the current process`() {
+    val executor = DeferredExecutorService()
+    val sut = getSut(executor)
+
+    sut.setTransaction("SetDuringInit")
+    sut.resetCache()
+    executor.runAll()
+
+    assertThat(sut.readTransaction()).isEqualTo("SetDuringInit")
   }
 
   @Test
