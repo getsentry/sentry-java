@@ -10,26 +10,15 @@ import io.sentry.ScopeObserverAdapter;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.SpanContext;
-import io.sentry.cache.tape.ObjectQueue;
-import io.sentry.cache.tape.QueueFile;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.Request;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
 import io.sentry.util.LazyEvaluator;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.Reader;
-import java.io.Writer;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -41,8 +30,6 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
 public final class PersistingScopeObserver extends ScopeObserverAdapter {
-
-  private static final Charset UTF_8 = Charset.forName("UTF-8");
 
   /** Sentinel value marking a file that should be deleted rather than written on the next flush. */
   private static final Object DELETE_MARKER = new Object();
@@ -61,66 +48,15 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
   public static final String REPLAY_FILENAME = "replay.json";
 
   private @NotNull SentryOptions options;
-  private final @NotNull LazyEvaluator<ObjectQueue<Breadcrumb>> breadcrumbsQueue =
+  private final @NotNull LazyEvaluator<BreadcrumbAppendLog> breadcrumbsLog =
       new LazyEvaluator<>(
           () -> {
             final File cacheDir = ensureCacheDir(options, SCOPE_CACHE);
             if (cacheDir == null) {
               options.getLogger().log(INFO, "Cache dir is not set, cannot store in scope cache");
-              return ObjectQueue.createEmpty();
+              return new BreadcrumbAppendLog(options, null);
             }
-
-            QueueFile queueFile = null;
-            final File file = new File(cacheDir, BREADCRUMBS_FILENAME);
-            try {
-              try {
-                queueFile =
-                    new QueueFile.Builder(file)
-                        .size(options.getMaxBreadcrumbs())
-                        .synchronousWrites(false)
-                        .build();
-              } catch (IOException e) {
-                // if file is corrupted we simply delete it and try to create it again. We accept
-                // the trade
-                // off of losing breadcrumbs for ANRs that happened right before the app has
-                // received an
-                // update where the new format was introduced
-                file.delete();
-
-                queueFile =
-                    new QueueFile.Builder(file)
-                        .size(options.getMaxBreadcrumbs())
-                        .synchronousWrites(false)
-                        .build();
-              }
-            } catch (IOException e) {
-              options.getLogger().log(ERROR, "Failed to create breadcrumbs queue", e);
-              return ObjectQueue.createEmpty();
-            }
-            return ObjectQueue.create(
-                queueFile,
-                new ObjectQueue.Converter<Breadcrumb>() {
-                  @Override
-                  @Nullable
-                  public Breadcrumb from(byte[] source) {
-                    try (final Reader reader =
-                        new BufferedReader(
-                            new InputStreamReader(new ByteArrayInputStream(source), UTF_8))) {
-                      return options.getSerializer().deserialize(reader, Breadcrumb.class);
-                    } catch (Throwable e) {
-                      options.getLogger().log(ERROR, e, "Error reading entity from scope cache");
-                    }
-                    return null;
-                  }
-
-                  @Override
-                  public void toStream(Breadcrumb value, OutputStream sink) throws IOException {
-                    try (final Writer writer =
-                        new BufferedWriter(new OutputStreamWriter(sink, UTF_8))) {
-                      options.getSerializer().serialize(value, writer);
-                    }
-                  }
-                });
+            return new BreadcrumbAppendLog(options, new File(cacheDir, BREADCRUMBS_FILENAME));
           });
 
   // Latest pending value per file (or DELETE_MARKER), coalesced until the next flush.
@@ -272,36 +208,19 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
       }
     }
 
-    boolean breadcrumbsChanged = false;
-    final @NotNull ObjectQueue<Breadcrumb> queue = breadcrumbsQueue.getValue();
+    final @NotNull BreadcrumbAppendLog log = breadcrumbsLog.getValue();
 
     if (pendingBreadcrumbsClear.compareAndSet(true, false)) {
-      try {
-        queue.clear();
-        breadcrumbsChanged = true;
-      } catch (IOException e) {
-        options.getLogger().log(ERROR, "Failed to clear breadcrumbs from file queue", e);
-      }
+      log.clear();
     }
 
+    // drain into a list first so the whole batch goes out in a single append
+    final @NotNull List<Breadcrumb> drained = new ArrayList<>();
     Breadcrumb crumb;
     while ((crumb = pendingBreadcrumbs.poll()) != null) {
-      try {
-        queue.add(crumb);
-        breadcrumbsChanged = true;
-      } catch (IOException e) {
-        options.getLogger().log(ERROR, "Failed to add breadcrumb to file queue", e);
-      }
+      drained.add(crumb);
     }
-
-    if (breadcrumbsChanged) {
-      try {
-        // single fsync for the whole batch instead of one per breadcrumb
-        queue.sync();
-      } catch (IOException e) {
-        options.getLogger().log(ERROR, "Failed to sync breadcrumbs file queue", e);
-      }
-    }
+    log.append(drained);
   }
 
   /**
@@ -341,33 +260,20 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
       final @NotNull String fileName,
       final @NotNull Class<T> clazz) {
     if (fileName.equals(BREADCRUMBS_FILENAME)) {
-      try {
-        return clazz.cast(breadcrumbsQueue.getValue().asList());
-      } catch (IOException e) {
-        options.getLogger().log(ERROR, "Unable to read serialized breadcrumbs from QueueFile");
-        return null;
-      }
+      return clazz.cast(breadcrumbsLog.getValue().read());
     }
     return CacheUtils.read(options, SCOPE_CACHE, fileName, clazz, null);
   }
 
   /**
-   * Resets the scope cache by deleting the files and/or clearing the QueueFiles. Note: this does
-   * I/O and should be called from a background thread.
+   * Resets the scope cache by deleting the persisted files. Note: this does I/O and should be
+   * called from a background thread.
    */
   public void resetCache() {
     // NOTE: pending mutations are deliberately left alone. They only ever hold values from the
     // current process, which is exactly what this reset is clearing the way for; dropping them
     // would lose scope state set during init.
-    // since it keeps a reference to the file and we cannot delete it, breadcrumbs we just clear
-    try {
-      final @NotNull ObjectQueue<Breadcrumb> queue = breadcrumbsQueue.getValue();
-      queue.clear();
-      // breadcrumbs use buffered writes, so make the clear durable explicitly
-      queue.sync();
-    } catch (IOException e) {
-      options.getLogger().log(ERROR, "Failed to clear breadcrumbs from file queue", e);
-    }
+    breadcrumbsLog.getValue().clear();
 
     // the rest we can safely delete
     delete(USER_FILENAME);

@@ -41,7 +41,6 @@ import io.sentry.cache.PersistingScopeObserver.TAGS_FILENAME
 import io.sentry.cache.PersistingScopeObserver.TRACE_FILENAME
 import io.sentry.cache.PersistingScopeObserver.TRANSACTION_FILENAME
 import io.sentry.cache.PersistingScopeObserver.USER_FILENAME
-import io.sentry.cache.tape.QueueFile
 import io.sentry.hints.AbnormalExit
 import io.sentry.hints.Backfillable
 import io.sentry.protocol.Browser
@@ -60,8 +59,8 @@ import io.sentry.protocol.SentryStackTrace
 import io.sentry.protocol.SentryThread
 import io.sentry.protocol.User
 import io.sentry.util.HintUtils
-import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.StringWriter
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -166,12 +165,12 @@ class ApplicationExitInfoEventProcessorTest {
       val dir = File(options.cacheDirPath, SCOPE_CACHE).also { it.mkdirs() }
       val file = File(dir, filename)
       if (filename == BREADCRUMBS_FILENAME) {
-        val queueFile = QueueFile.Builder(file).build()
-        (entity as List<Breadcrumb>).forEach { crumb ->
-          val baos = ByteArrayOutputStream()
-          options.serializer.serialize(crumb, baos.writer())
-          queueFile.add(baos.toByteArray())
-        }
+        // breadcrumbs are stored as newline-delimited JSON, one breadcrumb per line
+        file.writeText(
+          (entity as List<Breadcrumb>).joinToString(separator = "") { crumb ->
+            StringWriter().also { options.serializer.serialize(crumb, it) }.toString() + "\n"
+          }
+        )
       } else {
         options.serializer.serialize(entity, file.writer())
       }

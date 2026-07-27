@@ -44,15 +44,14 @@ import io.sentry.cache.PersistingScopeObserver.BREADCRUMBS_FILENAME
 import io.sentry.cache.PersistingScopeObserver.REPLAY_FILENAME
 import io.sentry.cache.PersistingScopeObserver.SCOPE_CACHE
 import io.sentry.cache.PersistingScopeObserver.TRANSACTION_FILENAME
-import io.sentry.cache.tape.QueueFile
 import io.sentry.protocol.Contexts
 import io.sentry.protocol.SentryId
 import io.sentry.spotlight.SpotlightIntegration
 import io.sentry.test.applyTestOptions
 import io.sentry.transport.NoOpEnvelopeCache
 import io.sentry.util.StringUtils
-import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.StringWriter
 import java.nio.file.Files
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
@@ -564,17 +563,14 @@ class SentryAndroidTest {
 
   private fun prefillScopeCache(options: SentryOptions, cacheDir: String) {
     val scopeDir = File(cacheDir, SCOPE_CACHE).also { it.mkdirs() }
-    val queueFile = QueueFile.Builder(File(scopeDir, BREADCRUMBS_FILENAME)).build()
-    val baos = ByteArrayOutputStream()
-    options.serializer.serialize(
+    val breadcrumb =
       Breadcrumb(DateUtils.getDateTime("2009-11-16T01:08:47.000Z")).apply {
         message = "Debug!"
         type = "debug"
         level = DEBUG
-      },
-      baos.writer(),
-    )
-    queueFile.add(baos.toByteArray())
+      }
+    val serialized = StringWriter().also { options.serializer.serialize(breadcrumb, it) }.toString()
+    File(scopeDir, BREADCRUMBS_FILENAME).writeText("$serialized\n")
     File(scopeDir, TRANSACTION_FILENAME).writeText("\"MainActivity\"")
     File(scopeDir, REPLAY_FILENAME).writeText("\"afcb46b1140ade5187c4bbb5daa804df\"")
     File(options.getCacheDirPath(), "replay_afcb46b1140ade5187c4bbb5daa804df").mkdirs()

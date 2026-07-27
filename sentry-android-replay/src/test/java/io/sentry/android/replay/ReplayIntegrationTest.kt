@@ -36,7 +36,6 @@ import io.sentry.android.replay.capture.SessionCaptureStrategyTest.Fixture.Compa
 import io.sentry.android.replay.gestures.GestureRecorder
 import io.sentry.android.replay.util.ReplayShadowMediaCodec
 import io.sentry.cache.PersistingScopeObserver
-import io.sentry.cache.tape.QueueFile
 import io.sentry.protocol.SentryException
 import io.sentry.protocol.SentryId
 import io.sentry.rrweb.RRWebBreadcrumbEvent
@@ -48,8 +47,8 @@ import io.sentry.transport.CurrentDateProvider
 import io.sentry.transport.ICurrentDateProvider
 import io.sentry.transport.RateLimiter
 import io.sentry.util.Random
-import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.StringWriter
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -501,18 +500,16 @@ class ReplayIntegrationTest {
       it.writeText("\"$oldReplayId\"")
     }
     val breadcrumbsFile = File(scopeCache, PersistingScopeObserver.BREADCRUMBS_FILENAME)
-    val queueFile = QueueFile.Builder(breadcrumbsFile).build()
-    val baos = ByteArrayOutputStream()
-    fixture.options.serializer.serialize(
+    val breadcrumb =
       Breadcrumb(DateUtils.getDateTime("2024-07-11T10:25:23.454Z")).apply {
         category = "navigation"
         type = "navigation"
         setData("from", "from")
         setData("to", "to")
-      },
-      baos.writer(),
-    )
-    queueFile.add(baos.toByteArray())
+      }
+    val serialized =
+      StringWriter().also { fixture.options.serializer.serialize(breadcrumb, it) }.toString()
+    breadcrumbsFile.writeText("$serialized\n")
     File(oldReplay, ONGOING_SEGMENT).also {
       it.writeText(
         """

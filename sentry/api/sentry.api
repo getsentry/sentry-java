@@ -4821,6 +4821,13 @@ public final class io/sentry/backpressure/NoOpBackpressureMonitor : io/sentry/ba
 	public fun start ()V
 }
 
+public final class io/sentry/cache/BreadcrumbAppendLog {
+	public fun <init> (Lio/sentry/SentryOptions;Ljava/io/File;)V
+	public fun append (Ljava/util/List;)V
+	public fun clear ()V
+	public fun read ()Ljava/util/List;
+}
+
 public final class io/sentry/cache/CacheUtils {
 	public static fun read (Lio/sentry/SentryOptions;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Class;Lio/sentry/JsonDeserializer;)Ljava/lang/Object;
 	public static fun store (Lio/sentry/SentryOptions;Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;)V
