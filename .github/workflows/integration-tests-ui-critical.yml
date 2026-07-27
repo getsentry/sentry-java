@@ -117,9 +117,9 @@ jobs:
           path: |
             ~/.android/avd/*
             ~/.android/adb*
-          # Keyed on the cmdline-tools version so AVDs created by the old, broken
-          # avdmanager are invalidated automatically.
-          key: avd-api-${{ matrix.api-level }}-${{ matrix.arch }}-${{ matrix.target }}-tools${{ steps.cmdline-tools.outputs.version }}
+          # Keyed on memory and the cmdline-tools version so incompatible snapshots
+          # and AVDs created by the old, broken avdmanager are invalidated automatically.
+          key: avd-api-${{ matrix.api-level }}-${{ matrix.arch }}-${{ matrix.target }}-memory${{ matrix.memory }}-tools${{ steps.cmdline-tools.outputs.version }}
 
       - name: Create AVD and generate snapshot for caching
         if: steps.avd-cache.outputs.cache-hit != 'true'
