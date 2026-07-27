@@ -1523,6 +1523,9 @@ public final class SentryClient implements ISentryClient {
       if (replayEvent.getUser() == null) {
         replayEvent.setUser(scope.getUser());
       }
+      if (replayEvent.getEnvironment() == null) {
+        replayEvent.setEnvironment(scope.getEnvironment());
+      }
       if (replayEvent.getTags() == null) {
         replayEvent.setTags(scope.getTags());
       } else {

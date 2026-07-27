@@ -3597,6 +3597,21 @@ class SentryClientTest {
   }
 
   @Test
+  fun `when captureReplayEvent, scope environment overrides options`() {
+    var capturedEnvironment: String? = null
+    fixture.sentryOptions.environment = "from-options"
+    fixture.sentryOptions.setBeforeSendReplay { replay: SentryReplayEvent, _: Hint ->
+      capturedEnvironment = replay.environment
+      replay
+    }
+    val scope = Scope(fixture.sentryOptions).apply { environment = "from-scope" }
+
+    fixture.getSut().captureReplayEvent(SentryReplayEvent(), scope, Hint())
+
+    assertEquals("from-scope", capturedEnvironment)
+  }
+
+  @Test
   fun `when beforeSendReplay returns null, event is dropped`() {
     fixture.sentryOptions.setBeforeSendReplay { replay: SentryReplayEvent, _: Hint -> null }
 
