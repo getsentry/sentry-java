@@ -209,10 +209,9 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   }
 
   /**
-   * Whether the given {@link ApplicationStartInfo#getReason()} indicates the OS started the process
-   * for background work (e.g. a push message, job or service) rather than a user-initiated launch.
-   *
-   * <p>Unknown/future reasons are treated as user-initiated to avoid discarding valid app starts.
+   * Whether {@link ApplicationStartInfo#getReason()} indicates the OS spawned the process for
+   * background work (push, job, service, ...) rather than a user launch. Unknown/future reasons are
+   * treated as user-initiated to avoid discarding valid app starts.
    */
   private static boolean isBackgroundStartReason(final int reason) {
     switch (reason) {
@@ -225,9 +224,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
       case ApplicationStartInfo.START_REASON_PUSH:
       case ApplicationStartInfo.START_REASON_SERVICE:
         return true;
-      // START_REASON_LAUNCHER, START_REASON_LAUNCHER_RECENTS, START_REASON_START_ACTIVITY,
-      // START_REASON_OTHER and any future reason are considered user-initiated.
-      default:
+      default: // launcher/recents/start_activity/other and future reasons: user-initiated
         return false;
     }
   }
@@ -524,13 +521,9 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
                 appStartType = AppStartType.WARM;
               }
             }
-            // If the OS spawned the process for background work (push/job/service/broadcast/...)
-            // rather than a user launch, the app start stays anchored at background process
-            // creation. Without this, the first activity created once the user finally opens the
-            // app would report the whole idle gap as an inflated cold start. Marking the launch as
-            // not-in-foreground makes onActivityCreated re-classify it as a warm start anchored at
-            // activity creation instead. On API 35+ this replaces the main-looper idle check, which
-            // is skipped here once the start type is known.
+            // Background-spawned processes (push/job/service/...) keep the app start anchored at
+            // process creation. Marking them not-in-foreground makes onActivityCreated re-classify
+            // them as a warm start anchored at activity creation, avoiding an inflated cold start.
             if (isBackgroundStartReason(info.getReason())) {
               appLaunchedInForeground.setValue(false);
             }

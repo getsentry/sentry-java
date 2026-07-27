@@ -345,17 +345,15 @@ class AppStartMetricsTestApi35 {
     val app = ApplicationProvider.getApplicationContext<Application>()
     metrics.registerLifecycleCallbacks(app)
 
-    // Background spawn detected: not launched in foreground, cold type from ApplicationStartInfo.
     assertFalse(metrics.isAppLaunchedInForeground)
     assertEquals(AppStartMetrics.AppStartType.COLD, metrics.appStartType)
 
-    // User opens the app 20s later (well under the 1-minute warm threshold that previously was the
-    // only way to catch this).
+    // User opens the app 20s later (under the 1-minute warm threshold).
     val activityCreatedUptimeMs = 20_000L
     SystemClock.setCurrentTimeMillis(activityCreatedUptimeMs)
     metrics.onActivityCreated(mock<Activity>(), null)
 
-    // The inflated cold start is re-classified as a warm start re-anchored at activity creation.
+    // Re-classified as a warm start re-anchored at activity creation.
     assertEquals(AppStartMetrics.AppStartType.WARM, metrics.appStartType)
     assertTrue(metrics.isAppLaunchedInForeground)
     assertEquals(activityCreatedUptimeMs, metrics.appStartTimeSpan.startUptimeMs)
