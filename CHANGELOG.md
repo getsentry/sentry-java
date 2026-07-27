@@ -11,6 +11,8 @@
 - Clear contexts when calling `Scope.clear()` ([#5902](https://github.com/getsentry/sentry-java/pull/5902))
 - Preserve custom `Throwable` identities when R8 optimizes Android apps ([#5881](https://github.com/getsentry/sentry-java/pull/5881))
 - Report the correct cpu usage for the first performance sample of a transaction, which was measured against the time since device boot ([#5926](https://github.com/getsentry/sentry-java/pull/5926))
+- Prevent an ANR when the Session Replay video encoder gets stuck ([#5842](https://github.com/getsentry/sentry-java/pull/5842))
+  - Some hardware encoders never signal end-of-stream, which made the replay worker spin forever while holding the encoder lock. The app's lifecycle callbacks then blocked on that lock and the app froze until the system killed it. The encoder now gives up instead of spinning, and closing the replay cache no longer waits indefinitely for a wedged encoder.
 
 ### Performance
 

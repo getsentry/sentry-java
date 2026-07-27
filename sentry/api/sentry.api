@@ -7641,6 +7641,7 @@ public final class io/sentry/util/AutoClosableReentrantLock : io/sentry/ISentryL
 	public fun <init> ()V
 	public fun acquire ()Lio/sentry/ISentryLifecycleToken;
 	public fun close ()V
+	public fun tryAcquire (JLjava/util/concurrent/TimeUnit;)Lio/sentry/ISentryLifecycleToken;
 }
 
 public final class io/sentry/util/CheckInUtils {
