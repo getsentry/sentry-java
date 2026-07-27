@@ -63,22 +63,27 @@ jobs:
             target: google_apis
             channel: canary # Necessary for ATDs
             arch: x86_64
+            memory: 4096
           - api-level: 33 # Android 13
             target: google_apis
             channel: canary # Necessary for ATDs
             arch: x86_64
+            memory: 4096
           - api-level: 35 # Android 15
             target: google_apis
             channel: canary # Necessary for ATDs
             arch: x86_64
+            memory: 4096
           - api-level: 36 # Android 16
             target: google_apis
             channel: canary # Necessary for ATDs
             arch: x86_64
+            memory: 4096
           - api-level: "37.0" # Android 17; API 37 ships only as a minor-versioned image
             target: google_apis_ps16k # API 37 has no plain google_apis image
             channel: canary # Necessary for ATDs
             arch: x86_64
+            memory: 8192
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -127,7 +132,7 @@ jobs:
           force-avd-creation: false
           disable-animations: true
           disable-spellchecker: true
-          emulator-options: -memory 4096 -no-window -gpu auto -noaudio -no-boot-anim -camera-back none
+          emulator-options: -memory ${{ matrix.memory }} -no-window -gpu auto -noaudio -no-boot-anim -camera-back none
           disk-size: 4096M
           script: echo "Generated AVD snapshot for caching."
 
@@ -151,7 +156,7 @@ jobs:
           force-avd-creation: false
           disable-animations: true
           disable-spellchecker: true
-          emulator-options: -memory 4096 -no-window -gpu auto -noaudio -no-boot-anim -camera-back none -no-snapshot-save
+          emulator-options: -memory ${{ matrix.memory }} -no-window -gpu auto -noaudio -no-boot-anim -camera-back none -no-snapshot-save
           script: |
             adb uninstall io.sentry.uitest.android.critical || echo "Already uninstalled (or not found)"
             adb install -r -d "${{env.APK_NAME}}"
