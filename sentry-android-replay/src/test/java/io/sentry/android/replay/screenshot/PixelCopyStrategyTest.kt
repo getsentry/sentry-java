@@ -25,8 +25,11 @@ import io.sentry.SentryOptions
 import io.sentry.android.replay.ExecutorProvider
 import io.sentry.android.replay.ScreenshotRecorderCallback
 import io.sentry.android.replay.ScreenshotRecorderConfig
+import io.sentry.android.replay.util.CompletedFuture
 import io.sentry.android.replay.util.DebugOverlayDrawable
 import io.sentry.android.replay.util.MainLooperHandler
+import io.sentry.android.replay.util.ReplayRunnable
+import java.util.concurrent.Future
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
@@ -85,7 +88,10 @@ class PixelCopyStrategyTest {
       return mock {
         doAnswer {
             (it.arguments[0] as Runnable).run()
-            null // submit(Runnable) returns Future<?>; returning Unit breaks the cast
+            // Mirror ReplayExecutorService's inline contract: a completed future, not null. Null
+            // means "rejected" and would make capture() run its null-fallback finishFrame on top of
+            // the task's own, a double-release production never does on the inline path.
+            CompletedFuture
           }
           .whenever(mock)
           .submit(any<Runnable>())
@@ -112,25 +118,30 @@ class PixelCopyStrategyTest {
   }
 
   @Test
-  fun `when close is called while executor task is running, does not crash with recycled bitmap`() {
+  fun `when close races the mask task, masking is skipped and no screenshot is emitted`() {
     val activity = buildActivity(SimpleActivity::class.java).setup()
     shadowOf(Looper.getMainLooper()).idle()
 
     var strategy: PixelCopyStrategy? = null
 
     val failure = AtomicReference<Throwable>()
-    // Custom executor that closes the strategy before executing tasks
+    // Custom executor that closes the strategy right before running the mask task, to simulate
+    // close() racing an in-flight mask task. We key off the mask task specifically (not "the first
+    // submit") because close() itself submits the cleanup task — closing again when that runs would
+    // recurse via close() -> scheduleCleanup() -> submit(), a loop no real code path can produce.
     val executorThatClosesFirst = mock<ScheduledExecutorService>()
     whenever(executorThatClosesFirst.submit(any<Runnable>())).doAnswer {
       val task = it.getArgument<Runnable>(0)
-      strategy?.close()
+      if ((task as? ReplayRunnable)?.taskName == "screenshot_recorder.mask") {
+        strategy?.close()
+      }
       try {
         task.run()
       } catch (e: Throwable) {
         // PixelCopyStrategy swallows the exception, so we have to capture it here and rethrow later
         failure.set(e)
       }
-      null
+      CompletedFuture
     }
 
     strategy = fixture.getSut(executor = executorThatClosesFirst)
@@ -138,6 +149,251 @@ class PixelCopyStrategyTest {
     shadowOf(Looper.getMainLooper()).idle()
 
     if (failure.get() != null) throw failure.get()
+    // close() landed before masking ran, so applyMaskingAndNotify must bail out early and never
+    // hand a screenshot to the callback after the strategy is closed.
+    verify(fixture.callback, never()).onScreenshotRecorded(any<Bitmap>())
+  }
+
+  @Test
+  @Config(shadows = [DeferredWindowPixelCopyShadow::class])
+  fun `capture drops frame while PixelCopy is in flight`() {
+    val activity = buildActivity(SimpleActivity::class.java).setup()
+    shadowOf(Looper.getMainLooper()).idle()
+    val root = activity.get().findViewById<View>(android.R.id.content)
+    val strategy = fixture.getSut(executor = fixture.inlineExecutor())
+
+    strategy.capture(root)
+    strategy.capture(root)
+
+    assertTrue(fixture.contentChangedMarked.get())
+
+    DeferredWindowPixelCopyShadow.flush()
+    shadowOf(Looper.getMainLooper()).idle()
+
+    verify(fixture.callback).onScreenshotRecorded(any<Bitmap>())
+
+    strategy.capture(root)
+    DeferredWindowPixelCopyShadow.flush()
+    shadowOf(Looper.getMainLooper()).idle()
+
+    verify(fixture.callback, times(2)).onScreenshotRecorded(any<Bitmap>())
+  }
+
+  @Test
+  @Config(shadows = [DeferredWindowPixelCopyShadow::class])
+  fun `capture drops frame while masking is in flight`() {
+    val activity = buildActivity(SimpleActivity::class.java).setup()
+    shadowOf(Looper.getMainLooper()).idle()
+    val root = activity.get().findViewById<View>(android.R.id.content)
+    val tasks = mutableListOf<Runnable>()
+    val executor = mock<ScheduledExecutorService>()
+    whenever(executor.submit(any<Runnable>())).doAnswer {
+      tasks += it.getArgument<Runnable>(0)
+      mock<Future<*>>()
+    }
+    val strategy = fixture.getSut(executor)
+
+    strategy.capture(root)
+    DeferredWindowPixelCopyShadow.flush()
+    shadowOf(Looper.getMainLooper()).idle()
+    strategy.capture(root)
+    DeferredWindowPixelCopyShadow.flush()
+    shadowOf(Looper.getMainLooper()).idle()
+
+    assertEquals(1, tasks.size)
+    tasks.removeAt(0).run()
+
+    strategy.capture(root)
+    DeferredWindowPixelCopyShadow.flush()
+    shadowOf(Looper.getMainLooper()).idle()
+
+    assertEquals(1, tasks.size)
+  }
+
+  @Test
+  @Config(shadows = [DeferredWindowPixelCopyShadow::class])
+  fun `emitLastScreenshot skips while frame is in flight`() {
+    val activity = buildActivity(SimpleActivity::class.java).setup()
+    shadowOf(Looper.getMainLooper()).idle()
+    val root = activity.get().findViewById<View>(android.R.id.content)
+    val strategy = fixture.getSut(executor = fixture.inlineExecutor())
+    captureStableFrame(strategy, root)
+
+    strategy.capture(root)
+    strategy.emitLastScreenshot()
+
+    verify(fixture.callback).onScreenshotRecorded(any<Bitmap>())
+
+    DeferredWindowPixelCopyShadow.flush()
+    shadowOf(Looper.getMainLooper()).idle()
+    verify(fixture.callback, times(2)).onScreenshotRecorded(any<Bitmap>())
+  }
+
+  @Test
+  @Config(shadows = [DeferredWindowPixelCopyShadow::class])
+  fun `emitLastScreenshot holds the frame gate until the emit task drains`() {
+    // emit submits the consumer call to the executor so the bitmap read (JPEG compress) runs
+    // inline on the worker thread while the gate is held — same pattern as the masked capture path.
+    // Invariant: while the emit task is still queued (gate held), a racing capture is dropped.
+    // Without the gate (old `if (!frameInFlight.get())`) that capture proceeds -> extra frame.
+    val activity = buildActivity(SimpleActivity::class.java).setup()
+    shadowOf(Looper.getMainLooper()).idle()
+    val root = activity.get().findViewById<View>(android.R.id.content)
+    val tasks = mutableListOf<Runnable>()
+    val executor = mock<ScheduledExecutorService>()
+    whenever(executor.submit(any<Runnable>())).doAnswer {
+      tasks.add(it.arguments[0] as Runnable)
+      mock<Future<*>>()
+    }
+    val strategy = fixture.getSut(executor)
+
+    // Set up a successful last capture: capture -> queued mask task -> drain releases the gate.
+    strategy.capture(root)
+    DeferredWindowPixelCopyShadow.flush()
+    shadowOf(Looper.getMainLooper()).idle()
+    tasks.removeAll {
+      it.run()
+      true
+    }
+    verify(fixture.callback, times(1)).onScreenshotRecorded(any<Bitmap>())
+
+    // Emit takes the gate and queues the consumer task (still pending).
+    strategy.emitLastScreenshot()
+    // Callback hasn't fired yet — the task is queued, not drained.
+    verify(fixture.callback, times(1)).onScreenshotRecorded(any<Bitmap>())
+
+    // A capture racing in before the emit task drains must be dropped (gate held).
+    strategy.capture(root)
+    DeferredWindowPixelCopyShadow.flush()
+    shadowOf(Looper.getMainLooper()).idle()
+    verify(fixture.callback, times(1)).onScreenshotRecorded(any<Bitmap>())
+
+    // Drain the emit task -> callback fires, gate released -> captures resume.
+    tasks.removeAll {
+      it.run()
+      true
+    }
+    verify(fixture.callback, times(2)).onScreenshotRecorded(any<Bitmap>())
+    captureStableFrame(strategy, root)
+    tasks.removeAll {
+      it.run()
+      true
+    }
+    verify(fixture.callback, times(3)).onScreenshotRecorded(any<Bitmap>())
+  }
+
+  @Test
+  @Config(shadows = [DeferredWindowPixelCopyShadow::class])
+  fun `close defers cleanup until PixelCopy completes`() {
+    val activity = buildActivity(SimpleActivity::class.java).setup()
+    shadowOf(Looper.getMainLooper()).idle()
+    val root = activity.get().findViewById<View>(android.R.id.content)
+    val executor = mock<ScheduledExecutorService>()
+    val strategy = fixture.getSut(executor)
+
+    strategy.capture(root)
+    strategy.close()
+
+    verify(executor, never()).submit(any<Runnable>())
+
+    DeferredWindowPixelCopyShadow.flush()
+    shadowOf(Looper.getMainLooper()).idle()
+
+    verify(executor).submit(any<Runnable>())
+  }
+
+  @Test
+  @Config(shadows = [DeferredWindowPixelCopyShadow::class])
+  fun `close-triggered cleanup keeps the frame gate so a racing capture cannot double-clean up`() {
+    // Guards the CAS handoff in finishFrame(). The real race is a 3-thread interleave (a new
+    // capture takes the gate the instant finishFrame releases it, then the old finishFrame recycles
+    // the bitmap the new capture is writing) and isn't deterministically reproducible single-
+    // threaded. This exercises its observable invariant instead: when finishFrame cleans up on
+    // close, it must re-take the gate (frameInFlight stays held), so any later capture is dropped
+    // rather than sneaking through to schedule a *second* cleanup on the shared screenshot.
+    // Without the CAS (plain frameInFlight.set(false)) the gate is left free and the follow-up
+    // capture reaches the isClosed guard and schedules cleanup again -> 2 submits.
+    val activity = buildActivity(SimpleActivity::class.java).setup()
+    shadowOf(Looper.getMainLooper()).idle()
+    val root = activity.get().findViewById<View>(android.R.id.content)
+    val executor = mock<ScheduledExecutorService>()
+    whenever(executor.submit(any<Runnable>())).thenReturn(mock<Future<*>>())
+    val strategy = fixture.getSut(executor)
+
+    strategy.capture(root)
+    strategy.close() // in-flight -> cleanup deferred, no submit yet
+
+    // PixelCopy completes; the callback sees isClosed and runs finishFrame -> the one cleanup.
+    DeferredWindowPixelCopyShadow.flush()
+    shadowOf(Looper.getMainLooper()).idle()
+
+    // A capture racing in after close must be dropped (gate still held), not schedule cleanup
+    // again.
+    strategy.capture(root)
+    DeferredWindowPixelCopyShadow.flush()
+    shadowOf(Looper.getMainLooper()).idle()
+
+    verify(executor, times(1)).submit(any<Runnable>())
+  }
+
+  @Test
+  @Config(shadows = [DeferredWindowPixelCopyShadow::class])
+  fun `idle close claims the gate so a racing capture cannot schedule a second cleanup`() {
+    // Mirror of the finishFrame guard, but for close()'s idle path (no frame in flight). close()
+    // must atomically claim the gate before scheduling cleanup; otherwise a capture racing in right
+    // after the check can take the gate, see isClosed, run finishFrame and schedule cleanup a
+    // second
+    // time. Both cleanups are idempotent, but a single submit is the invariant we keep uniform.
+    val activity = buildActivity(SimpleActivity::class.java).setup()
+    shadowOf(Looper.getMainLooper()).idle()
+    val root = activity.get().findViewById<View>(android.R.id.content)
+    val executor = mock<ScheduledExecutorService>()
+    whenever(executor.submit(any<Runnable>())).thenReturn(mock<Future<*>>())
+    val strategy = fixture.getSut(executor)
+
+    strategy.close() // idle -> claims gate, schedules the one cleanup
+    // A capture landing after close must be dropped (gate held), not schedule cleanup again.
+    strategy.capture(root)
+    DeferredWindowPixelCopyShadow.flush()
+    shadowOf(Looper.getMainLooper()).idle()
+
+    verify(executor, times(1)).submit(any<Runnable>())
+  }
+
+  @Test
+  @Config(shadows = [DeferredWindowPixelCopyShadow::class])
+  fun `frame gate is released when masking submit is rejected`() {
+    val activity = buildActivity(SimpleActivity::class.java).setup()
+    shadowOf(Looper.getMainLooper()).idle()
+    val root = activity.get().findViewById<View>(android.R.id.content)
+    // Simulate an already-shutdown executor: submit returns null.
+    val executor = mock<ScheduledExecutorService>()
+    whenever(executor.submit(any<Runnable>())).thenReturn(null)
+    val strategy = fixture.getSut(executor)
+
+    strategy.capture(root)
+    DeferredWindowPixelCopyShadow.flush()
+    shadowOf(Looper.getMainLooper()).idle()
+
+    // Gate must have been released; a follow-up capture should proceed rather than being dropped.
+    strategy.capture(root)
+    DeferredWindowPixelCopyShadow.flush()
+    shadowOf(Looper.getMainLooper()).idle()
+
+    verify(executor, times(2)).submit(any<Runnable>())
+  }
+
+  @Test
+  fun `close cleans up inline when executor is already shut down`() {
+    // submit returns null → previously the bitmap + maskRenderer would leak.
+    val executor = mock<ScheduledExecutorService>()
+    whenever(executor.submit(any<Runnable>())).thenReturn(null)
+    val strategy = fixture.getSut(executor)
+
+    strategy.close()
+
+    // No crash and the submit was attempted exactly once (cleanup ran inline as fallback).
+    verify(executor).submit(any<Runnable>())
   }
 
   @Test
