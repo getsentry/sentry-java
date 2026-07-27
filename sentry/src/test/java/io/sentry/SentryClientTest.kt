@@ -18,6 +18,8 @@ import io.sentry.logger.ILoggerBatchProcessorFactory
 import io.sentry.metrics.IMetricsBatchProcessor
 import io.sentry.metrics.IMetricsBatchProcessorFactory
 import io.sentry.protocol.Contexts
+import io.sentry.protocol.DebugImage
+import io.sentry.protocol.DebugMeta
 import io.sentry.protocol.Feedback
 import io.sentry.protocol.Mechanism
 import io.sentry.protocol.Message
@@ -1991,6 +1993,56 @@ class SentryClientTest {
     val client = fixture.getSut()
     client.captureProfileChunk(fixture.profileChunk, mock())
     verifyProfileChunkInEnvelope(fixture.profileChunk.chunkId)
+  }
+
+  @Test
+  fun `captureProfileChunk adds options proguard debug meta`() {
+    fixture.sentryOptions.proguardUuid = "current-uuid"
+
+    val client = fixture.getSut()
+    client.captureProfileChunk(fixture.profileChunk, mock())
+
+    verify(fixture.transport)
+      .send(
+        check { actual ->
+          val profileChunk = getProfileChunkFromEnvelope(actual)
+          val images = profileChunk.debugMeta!!.images!!
+
+          assertEquals(1, images.size)
+          assertEquals(DebugImage.PROGUARD, images[0].type)
+          assertEquals("current-uuid", images[0].uuid)
+        }
+      )
+  }
+
+  @Test
+  fun `captureProfileChunk preserves existing proguard debug meta`() {
+    fixture.sentryOptions.proguardUuid = "current-uuid"
+    fixture.profileChunk.debugMeta =
+      DebugMeta().apply {
+        images =
+          listOf(
+            DebugImage().apply {
+              type = DebugImage.PROGUARD
+              uuid = "previous-uuid"
+            }
+          )
+      }
+
+    val client = fixture.getSut()
+    client.captureProfileChunk(fixture.profileChunk, mock())
+
+    verify(fixture.transport)
+      .send(
+        check { actual ->
+          val profileChunk = getProfileChunkFromEnvelope(actual)
+          val images = profileChunk.debugMeta!!.images!!
+
+          assertEquals(1, images.size)
+          assertEquals(DebugImage.PROGUARD, images[0].type)
+          assertEquals("previous-uuid", images[0].uuid)
+        }
+      )
   }
 
   @Test
@@ -4167,6 +4219,17 @@ class SentryClientTest {
       inputStream,
       SentryTransaction::class.java,
     )!!
+  }
+
+  private fun getProfileChunkFromData(data: ByteArray): ProfileChunk {
+    val inputStream = InputStreamReader(ByteArrayInputStream(data))
+    return fixture.sentryOptions.serializer.deserialize(inputStream, ProfileChunk::class.java)!!
+  }
+
+  private fun getProfileChunkFromEnvelope(envelope: SentryEnvelope): ProfileChunk {
+    val profileChunkItem =
+      envelope.items.first { item -> item.header.type == SentryItemType.ProfileChunk }
+    return getProfileChunkFromData(profileChunkItem.data)
   }
 
   private fun getReplayFromData(data: ByteArray): SentryReplayEvent? {

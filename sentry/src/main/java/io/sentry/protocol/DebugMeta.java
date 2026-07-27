@@ -57,6 +57,19 @@ public final class DebugMeta implements JsonUnknown, JsonSerializable {
   @ApiStatus.Internal
   public static @Nullable DebugMeta buildDebugMeta(
       final @Nullable DebugMeta eventDebugMeta, final @NotNull SentryOptions options) {
+    final @NotNull List<DebugImage> optionDebugImages = createDebugImagesFromOptions(options);
+
+    if (eventDebugMeta == null && optionDebugImages.isEmpty()) {
+      return null;
+    }
+
+    DebugMeta debugMeta = eventDebugMeta != null ? eventDebugMeta : new DebugMeta();
+    addMissingDebugImages(debugMeta, optionDebugImages);
+    return debugMeta;
+  }
+
+  private static @NotNull List<DebugImage> createDebugImagesFromOptions(
+      final @NotNull SentryOptions options) {
     final @NotNull List<DebugImage> debugImages = new ArrayList<>();
 
     if (options.getProguardUuid() != null) {
@@ -73,21 +86,56 @@ public final class DebugMeta implements JsonUnknown, JsonSerializable {
       debugImages.add(sourceBundleImage);
     }
 
-    if (!debugImages.isEmpty()) {
-      DebugMeta debugMeta = eventDebugMeta;
+    return debugImages;
+  }
 
-      if (debugMeta == null) {
-        debugMeta = new DebugMeta();
-      }
-      if (debugMeta.getImages() == null) {
-        debugMeta.setImages(debugImages);
-      } else {
-        debugMeta.getImages().addAll(debugImages);
-      }
-
-      return debugMeta;
+  private static void addMissingDebugImages(
+      final @NotNull DebugMeta debugMeta, final @NotNull List<DebugImage> candidates) {
+    if (candidates.isEmpty()) {
+      return;
     }
-    return null;
+
+    if (debugMeta.getImages() == null) {
+      debugMeta.setImages(new ArrayList<>());
+    }
+
+    final @Nullable List<DebugImage> images = debugMeta.getImages();
+    if (images == null) {
+      return;
+    }
+
+    for (final @NotNull DebugImage candidate : candidates) {
+      if (isMissingDebugImage(images, candidate)) {
+        images.add(candidate);
+      }
+    }
+  }
+
+  private static boolean isMissingDebugImage(
+      final @NotNull List<DebugImage> images, final @NotNull DebugImage candidate) {
+    for (final @NotNull DebugImage image : images) {
+      if (isMatchingDebugImage(image, candidate)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private static boolean isMatchingDebugImage(
+      final @NotNull DebugImage image, final @NotNull DebugImage candidate) {
+    // There can only be one ProGuard mapping per payload, so an existing ProGuard image takes
+    // precedence over the option-derived default.
+    if (DebugImage.PROGUARD.equals(candidate.getType())) {
+      return DebugImage.PROGUARD.equals(image.getType());
+    }
+
+    if (DebugImage.JVM.equals(candidate.getType())) {
+      return DebugImage.JVM.equals(image.getType())
+          && candidate.getDebugId() != null
+          && candidate.getDebugId().equals(image.getDebugId());
+    }
+
+    return false;
   }
 
   // JsonKeys
