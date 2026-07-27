@@ -3,6 +3,7 @@ package io.sentry.android.replay.util
 import android.media.MediaCodec
 import android.media.MediaCodec.BufferInfo
 import java.nio.ByteBuffer
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit.MICROSECONDS
 import java.util.concurrent.TimeUnit.MILLISECONDS
 import java.util.concurrent.atomic.AtomicBoolean
@@ -16,6 +17,18 @@ class ReplayShadowMediaCodec : ShadowMediaCodec() {
     var frameRate = 1
     var framesToEncode = 5
     var throwOnStart = false
+
+    /** Simulates an encoder that never emits [MediaCodec.BUFFER_FLAG_END_OF_STREAM]. */
+    var neverSignalEos = false
+
+    /**
+     * When set, [dequeueOutputBuffer] awaits this latch, simulating a native call that never
+     * returns. [blockedOnDequeue] is counted down right before, so tests can wait until the codec
+     * is actually stuck.
+     */
+    var blockOnDequeue: CountDownLatch? = null
+
+    var blockedOnDequeue = CountDownLatch(1)
   }
 
   private val encoded = AtomicBoolean(false)
@@ -30,6 +43,9 @@ class ReplayShadowMediaCodec : ShadowMediaCodec() {
 
   @Implementation
   fun signalEndOfInputStream() {
+    if (neverSignalEos) {
+      return
+    }
     encodeFrame(framesToEncode, frameRate, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM)
   }
 
@@ -37,6 +53,10 @@ class ReplayShadowMediaCodec : ShadowMediaCodec() {
 
   @Implementation
   fun dequeueOutputBuffer(info: BufferInfo, timeoutUs: Long): Int {
+    blockOnDequeue?.let {
+      blockedOnDequeue.countDown()
+      it.await()
+    }
     val encoderStatus = super.native_dequeueOutputBuffer(info, timeoutUs)
     super.validateOutputByteBuffer(getOutputBuffers(), encoderStatus, info)
     if (encoderStatus == MediaCodec.INFO_TRY_AGAIN_LATER && !encoded.getAndSet(true)) {
