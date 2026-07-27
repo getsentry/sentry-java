@@ -2,13 +2,18 @@ package io.sentry.android.core
 
 import android.app.Activity
 import android.app.Application
+import android.content.Context
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.Scopes
 import io.sentry.SentryFeedbackOptions
+import io.sentry.test.DeferredExecutorService
+import io.sentry.test.ImmediateExecutorService
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
+import org.mockito.kotlin.atLeastOnce
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
@@ -20,7 +25,11 @@ class FeedbackShakeIntegrationTest {
   private class Fixture {
     val application = mock<Application>()
     val scopes = mock<Scopes>()
-    val options = SentryAndroidOptions().apply { dsn = "https://key@sentry.io/proj" }
+    val options =
+      SentryAndroidOptions().apply {
+        dsn = "https://key@sentry.io/proj"
+        executorService = ImmediateExecutorService()
+      }
     val activity = mock<Activity>()
     val formHandler = mock<SentryFeedbackOptions.IFormHandler>()
 
@@ -47,6 +56,59 @@ class FeedbackShakeIntegrationTest {
     sut.register(fixture.scopes, fixture.options)
 
     verify(fixture.application).registerActivityLifecycleCallbacks(any())
+  }
+
+  @Test
+  fun `resolves the accelerometer sensor off the main thread`() {
+    val deferredExecutor = DeferredExecutorService()
+    fixture.options.executorService = deferredExecutor
+    whenever(fixture.application.getSystemService(any())).thenReturn(null)
+
+    val sut = fixture.getSut(useShakeGesture = true)
+    sut.register(fixture.scopes, fixture.options)
+
+    // Callback registration stays synchronous, but the expensive SensorManager lookup is deferred.
+    verify(fixture.application).registerActivityLifecycleCallbacks(any())
+    verify(fixture.application, never()).getSystemService(eq(Context.SENSOR_SERVICE))
+
+    deferredExecutor.runAll()
+
+    verify(fixture.application).getSystemService(eq(Context.SENSOR_SERVICE))
+  }
+
+  @Test
+  fun `warm-up drained after close does not resolve the sensor`() {
+    // Integrations are closed before the executor drains, so a queued warm-up can run after
+    // close(). It must be a no-op rather than resolving the sensor and spinning up a HandlerThread.
+    val deferredExecutor = DeferredExecutorService()
+    fixture.options.executorService = deferredExecutor
+    whenever(fixture.application.getSystemService(any())).thenReturn(null)
+
+    val sut = fixture.getSut(useShakeGesture = true)
+    sut.register(fixture.scopes, fixture.options)
+    sut.close()
+
+    deferredExecutor.runAll()
+
+    verify(fixture.application, never()).getSystemService(eq(Context.SENSOR_SERVICE))
+  }
+
+  @Test
+  fun `re-registering after close re-arms shake detection`() {
+    // A second Sentry.init reusing the same integration must revive shake detection rather than
+    // stay off because of the closed latch.
+    val deferredExecutor = DeferredExecutorService()
+    fixture.options.executorService = deferredExecutor
+    whenever(fixture.application.getSystemService(any())).thenReturn(null)
+
+    val sut = fixture.getSut(useShakeGesture = true)
+    sut.register(fixture.scopes, fixture.options)
+    sut.close()
+    sut.register(fixture.scopes, fixture.options)
+
+    deferredExecutor.runAll()
+
+    verify(fixture.application, atLeastOnce()).getSystemService(eq(Context.SENSOR_SERVICE))
   }
 
   @Test

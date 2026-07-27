@@ -15,7 +15,7 @@ env:
   BUILD_PATH: "build/outputs/apk/release"
   APK_NAME: "sentry-uitest-android-critical-release.apk"
   APK_ARTIFACT_NAME: "sentry-uitest-android-critical-release"
-  MAESTRO_VERSION: "2.1.0"
+  MAESTRO_VERSION: "2.7.0"
 
 jobs:
   build:
@@ -27,7 +27,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Java 17
         uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5
@@ -63,27 +63,52 @@ jobs:
             target: google_apis
             channel: canary # Necessary for ATDs
             arch: x86_64
+            memory: 4096
           - api-level: 33 # Android 13
             target: google_apis
             channel: canary # Necessary for ATDs
             arch: x86_64
+            memory: 4096
           - api-level: 35 # Android 15
             target: google_apis
             channel: canary # Necessary for ATDs
             arch: x86_64
+            memory: 4096
           - api-level: 36 # Android 16
             target: google_apis
             channel: canary # Necessary for ATDs
             arch: x86_64
+            memory: 4096
+          - api-level: "37.0" # Android 17; API 37 ships only as a minor-versioned image
+            target: google_apis_ps16k # API 37 has no plain google_apis image
+            channel: canary # Necessary for ATDs
+            arch: x86_64
+            memory: 8192
     steps:
       - name: Checkout code
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Enable KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
+
+      # The runner ships an outdated avdmanager that writes target=android-0 into the
+      # AVD config for minor-versioned packages (android-37.x), so the emulator clamps
+      # to API 3 and boots misconfigured. Update cmdline-tools so avdmanager parses it.
+      # See https://github.com/ReactiveCircus/android-emulator-runner/issues/482
+      - name: Update SDK cmdline-tools
+        id: cmdline-tools
+        run: |
+          SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          yes | "$SDK/cmdline-tools/latest/bin/sdkmanager" --install "cmdline-tools;latest" > /dev/null
+          # sdkmanager won't overwrite the preinstalled dir, so it installs to latest-2.
+          if [ -d "$SDK/cmdline-tools/latest-2" ]; then
+            rm -rf "$SDK/cmdline-tools/latest"
+            mv "$SDK/cmdline-tools/latest-2" "$SDK/cmdline-tools/latest"
+          fi
+          echo "version=$("$SDK/cmdline-tools/latest/bin/sdkmanager" --version 2>/dev/null | grep -Eo '^[0-9][0-9.]*' | head -1)" >> "$GITHUB_OUTPUT"
 
       - name: AVD cache
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -92,7 +117,9 @@ jobs:
           path: |
             ~/.android/avd/*
             ~/.android/adb*
-          key: avd-api-${{ matrix.api-level }}-${{ matrix.arch }}-${{ matrix.target }}
+          # Keyed on memory and the cmdline-tools version so incompatible snapshots
+          # and AVDs created by the old, broken avdmanager are invalidated automatically.
+          key: avd-api-${{ matrix.api-level }}-${{ matrix.arch }}-${{ matrix.target }}-memory${{ matrix.memory }}-tools${{ steps.cmdline-tools.outputs.version }}
 
       - name: Create AVD and generate snapshot for caching
         if: steps.avd-cache.outputs.cache-hit != 'true'
@@ -105,7 +132,7 @@ jobs:
           force-avd-creation: false
           disable-animations: true
           disable-spellchecker: true
-          emulator-options: -memory 4096 -no-window -gpu auto -noaudio -no-boot-anim -camera-back none
+          emulator-options: -memory ${{ matrix.memory }} -no-window -gpu auto -noaudio -no-boot-anim -camera-back none
           disk-size: 4096M
           script: echo "Generated AVD snapshot for caching."
 
@@ -129,7 +156,7 @@ jobs:
           force-avd-creation: false
           disable-animations: true
           disable-spellchecker: true
-          emulator-options: -memory 4096 -no-window -gpu auto -noaudio -no-boot-anim -camera-back none -no-snapshot-save
+          emulator-options: -memory ${{ matrix.memory }} -no-window -gpu auto -noaudio -no-boot-anim -camera-back none -no-snapshot-save
           script: |
             adb uninstall io.sentry.uitest.android.critical || echo "Already uninstalled (or not found)"
             adb install -r -d "${{env.APK_NAME}}"

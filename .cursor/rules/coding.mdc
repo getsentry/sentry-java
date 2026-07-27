@@ -24,7 +24,7 @@ sentry-java is the Java and Android SDK for Sentry. This repository contains the
 ./gradlew check
 
 # Run unit tests for a specific file
-./gradlew ':<module>:testDebugUnitTest' --tests="*<file name>*" --info
+./gradlew ':<module>:testReleaseUnitTest' --tests="*<file name>*" --info
 ```
 
 ## Contributing Guidelines

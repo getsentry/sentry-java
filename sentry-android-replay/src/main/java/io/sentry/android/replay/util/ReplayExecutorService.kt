@@ -4,6 +4,7 @@ import io.sentry.SentryLevel.ERROR
 import io.sentry.SentryOptions
 import java.util.concurrent.Future
 import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeUnit.MILLISECONDS
 
 /**
@@ -14,11 +15,20 @@ internal class ReplayExecutorService(
   private val delegate: ScheduledExecutorService,
   private val options: SentryOptions,
 ) : ScheduledExecutorService by delegate {
+  /**
+   * Submits [task] for execution and returns a [Future] describing what happened. The return value
+   * has three distinct outcomes callers can rely on:
+   * - [CompletedFuture] — the caller is already on the replay worker thread, so the task was run
+   *   inline before this method returned. Skips the queue.
+   * - A regular [Future] from the underlying [ScheduledExecutorService] — the task was queued and
+   *   will run asynchronously.
+   * - `null` — the underlying executor rejected the submission (typically because it has been shut
+   *   down). The task did NOT run; callers that need cleanup must handle it themselves.
+   */
   override fun submit(task: Runnable): Future<*>? {
     if (Thread.currentThread().name.startsWith("SentryReplayIntegration")) {
-      // we're already on the worker thread, no need to submit
       task.run()
-      return null
+      return CompletedFuture
     }
     return try {
       delegate.submit {
@@ -68,3 +78,16 @@ internal class ReplayExecutorService(
 }
 
 internal class ReplayRunnable(val taskName: String, delegate: Runnable) : Runnable by delegate
+
+/** A Future that represents an already-completed inline execution — never used as null. */
+internal object CompletedFuture : Future<Unit> {
+  override fun cancel(mayInterruptIfRunning: Boolean): Boolean = false
+
+  override fun isCancelled(): Boolean = false
+
+  override fun isDone(): Boolean = true
+
+  override fun get() {}
+
+  override fun get(timeout: Long, unit: TimeUnit) {}
+}

@@ -59,6 +59,7 @@ internal class PixelCopyStrategy(
   private val contentChanged = AtomicBoolean(false)
   private val unstableCaptures = AtomicInteger(0)
   private val isClosed = AtomicBoolean(false)
+  private val frameInFlight = AtomicBoolean(false)
   private val dstOverPaint by
     lazy(NONE) { Paint().apply { xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_OVER) } }
   private val screenshotCanvas by lazy(NONE) { Canvas(screenshot) }
@@ -77,8 +78,15 @@ internal class PixelCopyStrategy(
       return
     }
 
+    if (!frameInFlight.compareAndSet(false, true)) {
+      options.logger.log(DEBUG, "PixelCopyStrategy capture is already in flight, skipping")
+      markContentChanged()
+      return
+    }
+
     if (isClosed.get()) {
       options.logger.log(DEBUG, "PixelCopyStrategy is closed, not capturing screenshot")
+      finishFrame()
       return
     }
 
@@ -90,6 +98,7 @@ internal class PixelCopyStrategy(
         { copyResult: Int ->
           if (isClosed.get()) {
             options.logger.log(DEBUG, "PixelCopyStrategy is closed, ignoring capture result")
+            finishFrame()
             return@request
           }
 
@@ -97,44 +106,64 @@ internal class PixelCopyStrategy(
             options.logger.log(INFO, "Failed to capture replay recording: %d", copyResult)
             unstableCaptures.set(0)
             lastCaptureSuccessful.set(false)
+            finishFrame()
             return@request
           }
 
           val changedDuringCapture = contentChanged.get()
           if (changedDuringCapture && shouldSkipUnstableCapture()) {
+            finishFrame()
             return@request
           }
 
-          // TODO: disableAllMasking here and dont traverse?
-          val viewHierarchy = ViewHierarchyNode.fromView(root, null, 0, options.sessionReplay)
-          val surfaceViewNodes =
-            if (options.sessionReplay.isCaptureSurfaceViews) {
-              mutableListOf<ViewHierarchyNode.SurfaceViewHierarchyNode>()
-            } else {
-              null
-            }
-          root.traverse(viewHierarchy, options.sessionReplay, options.logger, surfaceViewNodes)
-
-          if (surfaceViewNodes.isNullOrEmpty()) {
-            executor.submit(
-              ReplayRunnable("screenshot_recorder.mask") {
-                applyMaskingAndNotify(
-                  root,
-                  viewHierarchy,
-                  resetUnstableCaptures = !changedDuringCapture,
-                )
+          // Release the frame gate if anything below throws before we hand work off to the
+          // executor — otherwise a single failure wedges captures forever.
+          try {
+            // TODO: disableAllMasking here and dont traverse?
+            val viewHierarchy = ViewHierarchyNode.fromView(root, null, 0, options.sessionReplay)
+            val surfaceViewNodes =
+              if (options.sessionReplay.isCaptureSurfaceViews) {
+                mutableListOf<ViewHierarchyNode.SurfaceViewHierarchyNode>()
+              } else {
+                null
               }
-            )
-          } else {
-            // Re-arm the recorder's contentChanged gate; SurfaceView redraws don't trigger
-            // ViewTreeObserver.OnDrawListener, so we'd otherwise emit the same frame forever.
-            markContentChanged()
-            captureSurfaceViews(
-              root,
-              surfaceViewNodes,
-              viewHierarchy,
-              resetUnstableCaptures = !changedDuringCapture,
-            )
+            root.traverse(viewHierarchy, options.sessionReplay, options.logger, surfaceViewNodes)
+
+            if (surfaceViewNodes.isNullOrEmpty()) {
+              val submitted =
+                executor.submit(
+                  ReplayRunnable("screenshot_recorder.mask") {
+                    try {
+                      applyMaskingAndNotify(
+                        root,
+                        viewHierarchy,
+                        resetUnstableCaptures = !changedDuringCapture,
+                      )
+                    } finally {
+                      finishFrame()
+                    }
+                  }
+                )
+              if (submitted == null) {
+                finishFrame()
+              }
+            } else {
+              // Re-arm the recorder's contentChanged gate; SurfaceView redraws don't trigger
+              // ViewTreeObserver.OnDrawListener, so we'd otherwise emit the same frame forever.
+              markContentChanged()
+              captureSurfaceViews(
+                root,
+                surfaceViewNodes,
+                viewHierarchy,
+                resetUnstableCaptures = !changedDuringCapture,
+              )
+            }
+          } catch (e: RuntimeException) {
+            // OEM View subclasses have been observed throwing during hierarchy traversal
+            // (e.g. Redmi's TextView NPE). Release the frame gate so a single bad frame
+            // doesn't wedge the recorder. Errors (OOM, LinkageError) intentionally propagate.
+            options.logger.log(WARNING, "Failed to process replay frame", e)
+            finishFrame()
           }
         },
         mainLooperHandler.handler,
@@ -143,6 +172,7 @@ internal class PixelCopyStrategy(
       options.logger.log(WARNING, "Failed to capture replay recording", e)
       unstableCaptures.set(0)
       lastCaptureSuccessful.set(false)
+      finishFrame()
     }
   }
 
@@ -272,37 +302,46 @@ internal class PixelCopyStrategy(
     windowY: Int,
     resetUnstableCaptures: Boolean,
   ) {
-    executor.submit(
-      ReplayRunnable("screenshot_recorder.composite") {
-        if (isClosed.get() || screenshot.isRecycled) {
-          options.logger.log(DEBUG, "PixelCopyStrategy is closed, skipping compositing")
-          recycleCaptures(captures)
-          return@ReplayRunnable
+    val submitted =
+      executor.submit(
+        ReplayRunnable("screenshot_recorder.composite") {
+          try {
+            if (isClosed.get() || screenshot.isRecycled) {
+              options.logger.log(DEBUG, "PixelCopyStrategy is closed, skipping compositing")
+              recycleCaptures(captures)
+              return@ReplayRunnable
+            }
+
+            for (capture in captures) {
+              if (capture == null) continue
+              if (capture.bitmap.isRecycled) continue
+
+              compositeSurfaceViewInto(
+                screenshotCanvas,
+                dstOverPaint,
+                tmpSrcRect,
+                tmpDstRect,
+                capture.bitmap,
+                capture.x,
+                capture.y,
+                windowX,
+                windowY,
+                config.scaleFactorX,
+                config.scaleFactorY,
+              )
+              capture.bitmap.recycle()
+            }
+
+            applyMaskingAndNotify(root, viewHierarchy, resetUnstableCaptures)
+          } finally {
+            finishFrame()
+          }
         }
-
-        for (capture in captures) {
-          if (capture == null) continue
-          if (capture.bitmap.isRecycled) continue
-
-          compositeSurfaceViewInto(
-            screenshotCanvas,
-            dstOverPaint,
-            tmpSrcRect,
-            tmpDstRect,
-            capture.bitmap,
-            capture.x,
-            capture.y,
-            windowX,
-            windowY,
-            config.scaleFactorX,
-            config.scaleFactorY,
-          )
-          capture.bitmap.recycle()
-        }
-
-        applyMaskingAndNotify(root, viewHierarchy, resetUnstableCaptures)
-      }
-    )
+      )
+    if (submitted == null) {
+      recycleCaptures(captures)
+      finishFrame()
+    }
   }
 
   private fun recycleCaptures(captures: Array<SurfaceViewCapture?>) {
@@ -322,15 +361,57 @@ internal class PixelCopyStrategy(
   }
 
   override fun emitLastScreenshot() {
-    if (lastCaptureSuccessful() && !screenshot.isRecycled) {
-      screenshotRecorderCallback?.onScreenshotRecorded(screenshot)
+    if (!frameInFlight.compareAndSet(false, true)) {
+      return
+    }
+    if (!lastCaptureSuccessful() || screenshot.isRecycled) {
+      finishFrame()
+      return
+    }
+    // Submit to the executor so the downstream consumer's bitmap read (JPEG compress) runs inline
+    // on the worker thread while the gate is held, same as the masked capture path.
+    val submitted =
+      executor.submit(
+        ReplayRunnable("PixelCopyStrategy.emit") {
+          try {
+            screenshotRecorderCallback?.onScreenshotRecorded(screenshot)
+          } finally {
+            finishFrame()
+          }
+        }
+      )
+    if (submitted == null) {
+      finishFrame()
     }
   }
 
   override fun close() {
     isClosed.set(true)
     unstableCaptures.set(0)
-    executor.submit(
+    cleanUpIfIdle()
+  }
+
+  private fun finishFrame() {
+    frameInFlight.set(false)
+    if (isClosed.get()) {
+      cleanUpIfIdle()
+    }
+  }
+
+  /**
+   * Schedules cleanup only for the caller that owns the gate. Whoever wins [frameInFlight]'s CAS
+   * (close when no frame is running, or the finishFrame of the last in-flight frame after close)
+   * runs cleanup exactly once; a racing capture that took the gate loses the CAS and backs off, so
+   * we never recycle the shared screenshot while that capture is still using it.
+   */
+  private fun cleanUpIfIdle() {
+    if (frameInFlight.compareAndSet(false, true)) {
+      scheduleCleanup()
+    }
+  }
+
+  private fun scheduleCleanup() {
+    val cleanup =
       ReplayRunnable(
         "PixelCopyStrategy.close",
         {
@@ -344,7 +425,12 @@ internal class PixelCopyStrategy(
           maskRenderer.close()
         },
       )
-    )
+    // ReplayExecutorService.submit returns null only on genuine rejection (post-shutdown);
+    // inline execution on the worker thread returns a completed future. Fall back to running
+    // cleanup here so the bitmap + mask renderer are freed even when the executor is dead.
+    if (executor.submit(cleanup) == null) {
+      cleanup.run()
+    }
   }
 }
 
