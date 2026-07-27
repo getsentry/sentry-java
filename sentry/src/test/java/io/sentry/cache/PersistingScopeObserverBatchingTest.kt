@@ -3,10 +3,13 @@ package io.sentry.cache
 import com.google.common.truth.Truth.assertThat
 import io.sentry.Breadcrumb
 import io.sentry.ISentryExecutorService
+import io.sentry.ISerializer
 import io.sentry.SentryOptions
 import io.sentry.cache.PersistingScopeObserver.BREADCRUMBS_FILENAME
 import io.sentry.cache.PersistingScopeObserver.TRANSACTION_FILENAME
 import io.sentry.test.DeferredExecutorService
+import java.io.Writer
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.test.Test
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
@@ -78,6 +81,41 @@ class PersistingScopeObserverBatchingTest {
     executor.runAll()
 
     assertThat(sut.readBreadcrumbs().map { it.message }).containsExactly("kept")
+  }
+
+  @Test
+  fun `a clear landing mid-flush does not wipe breadcrumbs added after it`() {
+    val executor = DeferredExecutorService()
+    lateinit var sut: PersistingScopeObserver
+    // fires while the flush is draining, i.e. after the first breadcrumb has been written
+    options.setSerializer(
+      SerializerHook(options.serializer) {
+        sut.setBreadcrumbs(emptyList())
+        sut.addBreadcrumb(Breadcrumb().apply { message = "kept" })
+      }
+    )
+    sut = getSut(executor)
+
+    sut.addBreadcrumb(Breadcrumb().apply { message = "dropped" })
+    executor.runAll()
+    executor.runAll()
+
+    assertThat(sut.readBreadcrumbs().map { it.message }).containsExactly("kept")
+  }
+
+  /** Delegates to [delegate], running [onFirstBreadcrumb] once, mid-serialization. */
+  private class SerializerHook(
+    private val delegate: ISerializer,
+    private val onFirstBreadcrumb: () -> Unit,
+  ) : ISerializer by delegate {
+    private val fired = AtomicBoolean(false)
+
+    override fun <T : Any> serialize(entity: T, writer: Writer) {
+      if (entity is Breadcrumb && fired.compareAndSet(false, true)) {
+        onFirstBreadcrumb()
+      }
+      delegate.serialize(entity, writer)
+    }
   }
 
   @Test

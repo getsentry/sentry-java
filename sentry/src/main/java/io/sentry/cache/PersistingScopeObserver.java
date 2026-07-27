@@ -47,6 +47,9 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
   /** Sentinel value marking a file that should be deleted rather than written on the next flush. */
   private static final Object DELETE_MARKER = new Object();
 
+  /** Sentinel value marking a breadcrumb clear in the pending breadcrumb operations. */
+  private static final Object CLEAR_MARKER = new Object();
+
   public static final String SCOPE_CACHE = ".scope-cache";
   public static final String USER_FILENAME = "user.json";
   public static final String BREADCRUMBS_FILENAME = "breadcrumbs.json";
@@ -125,9 +128,10 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
 
   // Latest pending value per file (or DELETE_MARKER), coalesced until the next flush.
   private final @NotNull Map<String, Object> pendingWrites = new ConcurrentHashMap<>();
-  // Breadcrumbs buffered since the last flush, appended together behind a single fsync.
-  private final @NotNull Queue<Breadcrumb> pendingBreadcrumbs = new ConcurrentLinkedQueue<>();
-  private final @NotNull AtomicBoolean pendingBreadcrumbsClear = new AtomicBoolean(false);
+  // Breadcrumb adds and clears buffered since the last flush, applied together behind a single
+  // fsync. Adds and clears share one queue so their relative order survives batching: a clear
+  // must not wipe a breadcrumb added after it.
+  private final @NotNull Queue<Object> pendingBreadcrumbs = new ConcurrentLinkedQueue<>();
   private final @NotNull AtomicBoolean hasPendingFlush = new AtomicBoolean(false);
 
   public PersistingScopeObserver(final @NotNull SentryOptions options) {
@@ -156,9 +160,7 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
       if (!options.isEnableScopePersistence()) {
         return;
       }
-      // drop breadcrumbs buffered before the clear; anything added after it is enqueued again
-      pendingBreadcrumbs.clear();
-      pendingBreadcrumbsClear.set(true);
+      pendingBreadcrumbs.offer(CLEAR_MARKER);
       requestFlush();
     }
   }
@@ -250,9 +252,7 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
     // clear the flag before re-checking, otherwise a mutation landing between the drain and the
     // clear would see a flush still queued and be left with nobody to write it
     hasPendingFlush.set(false);
-    if (!pendingWrites.isEmpty()
-        || !pendingBreadcrumbs.isEmpty()
-        || pendingBreadcrumbsClear.get()) {
+    if (!pendingWrites.isEmpty() || !pendingBreadcrumbs.isEmpty()) {
       requestFlush();
     }
   }
@@ -275,22 +275,17 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
     boolean breadcrumbsChanged = false;
     final @NotNull ObjectQueue<Breadcrumb> queue = breadcrumbsQueue.getValue();
 
-    if (pendingBreadcrumbsClear.compareAndSet(true, false)) {
+    Object operation;
+    while ((operation = pendingBreadcrumbs.poll()) != null) {
       try {
-        queue.clear();
+        if (operation == CLEAR_MARKER) {
+          queue.clear();
+        } else {
+          queue.add((Breadcrumb) operation);
+        }
         breadcrumbsChanged = true;
       } catch (IOException e) {
-        options.getLogger().log(ERROR, "Failed to clear breadcrumbs from file queue", e);
-      }
-    }
-
-    Breadcrumb crumb;
-    while ((crumb = pendingBreadcrumbs.poll()) != null) {
-      try {
-        queue.add(crumb);
-        breadcrumbsChanged = true;
-      } catch (IOException e) {
-        options.getLogger().log(ERROR, "Failed to add breadcrumb to file queue", e);
+        options.getLogger().log(ERROR, "Failed to apply breadcrumb change to file queue", e);
       }
     }
 
