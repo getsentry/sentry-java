@@ -290,6 +290,7 @@ class ScopeTest {
     scope.addBreadcrumb(Breadcrumb())
     scope.setTag("some", "tag")
     scope.screen = "MainActivity"
+    scope.environment = "staging"
     scope.setExtra("some", "extra")
     scope.setAttribute("some", "attribute")
     scope.addEventProcessor(eventProcessor())
@@ -303,6 +304,7 @@ class ScopeTest {
     assertNull(scope.user)
     assertNull(scope.request)
     assertNull(scope.screen)
+    assertNull(scope.environment)
     assertEquals(0, scope.fingerprint.size)
     assertEquals(0, scope.breadcrumbs.size)
     assertEquals(0, scope.tags.size)

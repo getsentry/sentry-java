@@ -592,6 +592,7 @@ public final class Scope implements IScope {
   @Override
   public void clear() {
     level = null;
+    setEnvironment(null);
     user = null;
     request = null;
     screen = null;
