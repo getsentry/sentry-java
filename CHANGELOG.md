@@ -8,7 +8,7 @@
 
 ### Fixes
 
-- Prevent inflated app start when the process is spawned in the background (API 35+) ([#5843](https://github.com/getsentry/sentry-java/pull/5843))
+- Prevent inflated app start when the process is spawned in the background (API 35+) ([#5841](https://github.com/getsentry/sentry-java/pull/5841))
   - When the OS starts the process for background work (e.g. an FCM push, job or service) and the user opens the app later, the app start stayed anchored at background process creation, so the first activity reported the whole idle gap as an inflated cold start. Background process starts (`ApplicationStartInfo.getReason()` of `push`, `job`, `service`, `broadcast`, `alarm`, `backup`, `boot_complete`, `content_provider`) are now marked as not launched in foreground, so the first activity re-classifies them as a warm start anchored at activity creation instead.
 - Prevent concurrent PixelCopy access during Session Replay masking and bitmap cleanup ([#5808](https://github.com/getsentry/sentry-java/pull/5808))
 - Release `MediaMuxer` when the replay video encoder fails to start to avoid a resource leak ([#5607](https://github.com/getsentry/sentry-java/pull/5607))
