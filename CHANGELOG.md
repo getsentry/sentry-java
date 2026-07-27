@@ -5,7 +5,23 @@
 ### Improvements
 
 - Skip building Android manifest metadata debug log messages when debug logging is disabled, reducing allocations during SDK init ([#5790](https://github.com/getsentry/sentry-java/pull/5790))
+## Unreleased
+
+### Features
+
 - Add `LocalSentryScopes` to `sentry-compose`, allowing `SentryTraced` to trace against a custom `IScopes` instance instead of always defaulting to `Sentry.getCurrentScopes()` ([#5838](https://github.com/getsentry/sentry-java/pull/5838))
+  - Example usage:
+  ```kotlin
+  val scopes = Scopes(options)
+  CompositionLocalProvider(LocalSentryScopes provides scopes) {
+    // this uses customs scopes now
+    SentryTraced(tag = "custom") { Box {} }
+  }
+  ```
+
+### Improvements
+
+- Skip building Android manifest metadata debug log messages when debug logging is disabled, reducing allocations during SDK init ([#5790](https://github.com/getsentry/sentry-java/pull/5790))
 
 ### Fixes
 
