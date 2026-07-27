@@ -591,7 +591,7 @@ public final class Scope implements IScope {
   /** Resets the Scope to its default state */
   @Override
   public void clear() {
-    level = null;
+    setLevel(null);
     setEnvironment(null);
     user = null;
     request = null;

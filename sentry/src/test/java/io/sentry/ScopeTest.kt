@@ -784,6 +784,17 @@ class ScopeTest {
   }
 
   @Test
+  fun `Scope clear level sync scopes`() {
+    val observer = mock<IScopeObserver>()
+    val options = SentryOptions().apply { addScopeObserver(observer) }
+    val scope = Scope(options)
+
+    scope.clear()
+
+    verify(observer).setLevel(null)
+  }
+
+  @Test
   fun `Scope set environment sync scopes`() {
     val observer = mock<IScopeObserver>()
     val options = SentryOptions().apply { addScopeObserver(observer) }

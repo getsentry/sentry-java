@@ -494,6 +494,7 @@ class ApplicationExitInfoEventProcessorTest {
     fixture.options.release = "io.sentry.samples@1.2.0+232"
     fixture.options.environment = "production"
     fixture.options.dist = "custom-dist"
+    fixture.persistScope(PersistingScopeObserver.ENVIRONMENT_FILENAME, "staging")
     setLastUpdateTime(1_000)
 
     val processed = processor.process(SentryEvent(), hint)!!

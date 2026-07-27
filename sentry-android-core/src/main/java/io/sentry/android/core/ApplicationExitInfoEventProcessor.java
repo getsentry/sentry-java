@@ -166,7 +166,7 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
 
     if (!backfillable.shouldEnrich()) {
       setRelease(event, optionsSource);
-      setEnvironment(event, optionsSource);
+      setEnvironment(event, optionsSource, false);
       setDist(event, optionsSource);
       setAppVersionAndBuild(event);
       options
@@ -411,7 +411,7 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
   private void backfillOptions(
       final @NotNull SentryEvent event, final @NotNull OptionsSource optionsSource) {
     setRelease(event, optionsSource);
-    setEnvironment(event, optionsSource);
+    setEnvironment(event, optionsSource, true);
     setDist(event, optionsSource);
     setDebugMeta(event, optionsSource);
     setSdk(event, optionsSource);
@@ -479,13 +479,17 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
   }
 
   private void setEnvironment(
-      final @NotNull SentryBaseEvent event, final @NotNull OptionsSource optionsSource) {
+      final @NotNull SentryBaseEvent event,
+      final @NotNull OptionsSource optionsSource,
+      final boolean readScopeEnvironment) {
     if (event.getEnvironment() == null) {
-      final String scopeEnvironment =
-          readFromDisk(options, PersistingScopeObserver.ENVIRONMENT_FILENAME, String.class);
-      if (scopeEnvironment != null) {
-        event.setEnvironment(scopeEnvironment);
-        return;
+      if (readScopeEnvironment) {
+        final String scopeEnvironment =
+            readFromDisk(options, PersistingScopeObserver.ENVIRONMENT_FILENAME, String.class);
+        if (scopeEnvironment != null) {
+          event.setEnvironment(scopeEnvironment);
+          return;
+        }
       }
       event.setEnvironment(
           getLaunchOption(
