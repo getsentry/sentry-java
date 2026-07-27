@@ -15,6 +15,7 @@ import io.sentry.ISpan
 import io.sentry.Sentry
 import io.sentry.SpanOptions
 import io.sentry.compose.SentryModifier.sentryTag
+import java.util.WeakHashMap
 
 private const val OP_PARENT_COMPOSITION = "ui.compose.composition"
 private const val OP_COMPOSE = "ui.compose"
@@ -67,9 +68,21 @@ private fun createRenderingParentSpan(scopes: IScopes): ImmutableHolder<ISpan?> 
   )
 
 private class RootSpans {
-  val compositionSpans = HashMap<IScopes, ImmutableHolder<ISpan?>>()
-  val renderingSpans = HashMap<IScopes, ImmutableHolder<ISpan?>>()
+  // Weakly keyed so scopes instances that are no longer referenced elsewhere (e.g. a short-lived
+  // custom scopes provided via LocalSentryScopes for a finished screen/session) can be garbage
+  // collected instead of being pinned here for the lifetime of the root Composition.
+  val compositionSpans = WeakHashMap<IScopes, ImmutableHolder<ISpan?>>()
+  val renderingSpans = WeakHashMap<IScopes, ImmutableHolder<ISpan?>>()
 }
+
+private fun getOrCreateParentSpan(
+  map: MutableMap<IScopes, ImmutableHolder<ISpan?>>,
+  scopes: IScopes,
+  create: (IScopes) -> ImmutableHolder<ISpan?>,
+): ImmutableHolder<ISpan?> =
+  // Only cache the holder once it actually contains a span; a null result (no transaction bound
+  // to the scopes yet) is recomputed on the next call so a later transaction is still picked up.
+  map[scopes] ?: create(scopes).also { if (it.item != null) map[scopes] = it }
 
 // Cached once per Composition and shared by every SentryTraced call within it, mirroring the
 // old eagerly-computed `compositionLocalOf { ... }` default (which Compose resolves once and
@@ -88,9 +101,9 @@ public fun SentryTraced(
   val scopes = LocalSentryScopes.current
   val rootSpans = LocalRootSpans.current
   val parentCompositionSpan =
-    rootSpans.compositionSpans.getOrPut(scopes) { createCompositionParentSpan(scopes) }
+    getOrCreateParentSpan(rootSpans.compositionSpans, scopes, ::createCompositionParentSpan)
   val parentRenderingSpan =
-    rootSpans.renderingSpans.getOrPut(scopes) { createRenderingParentSpan(scopes) }
+    getOrCreateParentSpan(rootSpans.renderingSpans, scopes, ::createRenderingParentSpan)
 
   val compositionSpan =
     parentCompositionSpan.item?.startChild(OP_COMPOSE, tag)?.apply {
