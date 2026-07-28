@@ -19,6 +19,7 @@ import io.sentry.android.replay.capture.CaptureStrategy.Companion.rotateEvents
 import io.sentry.android.replay.capture.CaptureStrategy.ReplaySegment
 import io.sentry.android.replay.util.ReplayRunnable
 import io.sentry.android.replay.util.sample
+import io.sentry.clientreport.DiscardReason.RATELIMIT_BACKOFF
 import io.sentry.protocol.SentryId
 import io.sentry.transport.ICurrentDateProvider
 import io.sentry.util.FileUtils
@@ -78,13 +79,6 @@ internal class BufferCaptureStrategy(
   }
 
   override fun captureReplay(isTerminating: Boolean, onSegmentSent: (Date) -> Unit) {
-    if (isReplayRateLimited()) {
-      // the segment envelopes would be dropped by the transport anyway, so don't waste resources
-      // encoding videos that will only be discarded
-      options.logger.log(INFO, "Replay is rate-limited, not capturing for event")
-      return
-    }
-
     val sampled = random.sample(options.sessionReplay.onErrorSampleRate)
 
     if (!sampled) {
@@ -106,6 +100,18 @@ internal class BufferCaptureStrategy(
         DEBUG,
         "Not capturing replay for crashed event, will be captured on next launch",
       )
+      return
+    }
+
+    if (isReplayRateLimited()) {
+      // the segment envelopes would be dropped by the transport anyway, so don't waste resources
+      // encoding videos that will only be discarded
+      options.logger.log(INFO, "Replay is rate-limited, not capturing for event")
+      // one lost event per flush, not per segment: the transport would have counted the current
+      // segment plus every buffered one, but a flush only ever loses a single replay from the
+      // user's perspective. Under-reporting here is preferable to making replay look like it
+      // dropped data it never held.
+      options.clientReportRecorder.recordLostEvent(RATELIMIT_BACKOFF, Replay)
       return
     }
 
