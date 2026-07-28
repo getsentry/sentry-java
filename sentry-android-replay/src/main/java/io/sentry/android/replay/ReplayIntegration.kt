@@ -393,7 +393,7 @@ public class ReplayIntegration(
       rootViewsSpy.close()
       lifecycle.currentState = CLOSED
     }
-    // ponytail: shutdown outside lock — awaiting termination while holding lifecycleLock deadlocks
+    // shutdown outside lock — awaiting termination while holding lifecycleLock deadlocks
     // if any executor task tries to acquire the same lock
     if (lazyReplayExecutor.isInitialized()) {
       if (options.threadChecker.isMainThread) {
