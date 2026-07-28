@@ -131,7 +131,7 @@ public class ReplayIntegration(
   private var replayCaptureStrategyProvider: ((isFullSession: Boolean) -> CaptureStrategy)? = null
   private var mainLooperHandler: MainLooperHandler = MainLooperHandler()
   private var gestureRecorderProvider: (() -> GestureRecorder)? = null
-  private val lifecycleLock = AutoClosableReentrantLock()
+  internal val lifecycleLock = AutoClosableReentrantLock()
   private val lifecycle = ReplayLifecycle()
 
   override fun register(scopes: IScopes, options: SentryOptions) {
