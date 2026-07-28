@@ -105,6 +105,19 @@ class EnvelopeCacheTest {
   }
 
   @Test
+  fun `does not create cache dir on discard`() {
+    val cache = fixture.getSUT()
+
+    val file = File(fixture.options.cacheDirPath!!)
+    assertTrue(file.deleteRecursively())
+    assertFalse(file.exists())
+
+    cache.discard(SentryEnvelope.from(fixture.options.serializer, createSession(), null))
+
+    assertFalse(file.exists())
+  }
+
+  @Test
   fun `creates current file on session start`() {
     val cache = fixture.getSUT()
 

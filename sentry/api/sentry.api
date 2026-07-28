@@ -7762,7 +7762,6 @@ public final class io/sentry/util/LazyDirectory {
 	public fun <init> (Ljava/lang/String;)V
 	public fun getFile ()Ljava/io/File;
 	public fun getOrCreate ()Ljava/io/File;
-	public fun resolve (Ljava/lang/String;)Ljava/io/File;
 }
 
 public final class io/sentry/util/LazyEvaluator {

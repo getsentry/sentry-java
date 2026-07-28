@@ -375,6 +375,10 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
    * Returns the envelope's file path. If the envelope wasn't added to the cache beforehand, a
    * random file name is assigned.
    *
+   * <p>This only computes a path and never creates the directory, so that {@link
+   * #discard(SentryEnvelope)} doesn't resurrect a cache dir it is only deleting from. Writers go
+   * through {@link #storeInternal}, which creates the directory up front.
+   *
    * @param envelope the SentryEnvelope object
    * @return the file
    */
@@ -388,7 +392,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
         fileNameMap.put(envelope, fileName);
       }
 
-      return directory.resolve(fileName);
+      return new File(directory.getFile(), fileName);
     }
   }
 

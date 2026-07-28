@@ -34,17 +34,6 @@ class LazyDirectoryTest {
   }
 
   @Test
-  fun `resolve creates the directory so the child can be written to`() {
-    val path = Files.createTempDirectory("lazy-dir-test").resolve("outbox")
-    val lazyDirectory = LazyDirectory(path.toString())
-
-    val child = lazyDirectory.resolve("envelope.envelope")
-
-    assertThat(child.parentFile.isDirectory).isTrue()
-    assertThat(child.createNewFile()).isTrue()
-  }
-
-  @Test
   fun `getOrCreate recreates the directory after it is deleted`() {
     val path = Files.createTempDirectory("lazy-dir-test").resolve("outbox")
     val lazyDirectory = LazyDirectory(path.toString())
