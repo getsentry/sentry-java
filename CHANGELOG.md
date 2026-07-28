@@ -6,6 +6,7 @@
 
 - Skip encoding and capturing buffered session replay segments while rate-limited, so we don't waste resources on envelopes the transport will drop ([#5813](https://github.com/getsentry/sentry-java/pull/5813))
   - These skipped replays are now reported as `ratelimit_backoff` discarded events in client reports, so they no longer disappear from drop statistics. One event is recorded per buffer flush rather than per segment.
+  - Buffer mode is also kept while rate-limited instead of switching to session mode, so the rolling buffer stays warm and the next error after the rate limit expires can send a complete replay.
 - Reduce main-thread work during `Sentry.init` by resolving the shake-detector accelerometer off the main thread (~1.75ms on a Pixel 10) ([#5784](https://github.com/getsentry/sentry-java/pull/5784))
 - Backfill release, environment, distribution, tags, and app version/build—and use the matching replay-on-error sample rate—for `ApplicationExitInfo` ANR and native crash events captured before SDK initialization, without reusing options cached by a later app update ([#5762](https://github.com/getsentry/sentry-java/pull/5762))
 - `SentryTagModifierNode.isImportantForBounds` now matches the default behavior and returns `true` ([#5789](https://github.com/getsentry/sentry-java/pull/5789))

@@ -166,6 +166,13 @@ internal class BufferCaptureStrategy(
       )
       return this
     }
+    if (isReplayRateLimited()) {
+      // captureReplay skipped the flush, so there is nothing to continue in session mode. Staying
+      // in buffer mode keeps the rolling buffer warm, so the next error after the rate limit
+      // expires can send a complete replay starting at segment 0.
+      options.logger.log(DEBUG, "Not converting to session mode, because replay is rate-limited")
+      return this
+    }
     // we hand over replayExecutor and persistingExecutor to the new strategy to preserve order of
     // execution
     val captureStrategy =

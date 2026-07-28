@@ -256,6 +256,19 @@ class BufferCaptureStrategyTest {
   }
 
   @Test
+  fun `convert stays in buffer mode when rate-limited`() {
+    val rateLimiter = mock<RateLimiter> { on { isActiveForCategory(any()) }.thenReturn(true) }
+    whenever(fixture.scopes.rateLimiter).thenReturn(rateLimiter)
+    val strategy = fixture.getSut()
+    strategy.start()
+
+    strategy.captureReplay(false) {}
+
+    val converted = strategy.convert()
+    assertTrue(converted is BufferCaptureStrategy)
+  }
+
+  @Test
   fun `convert converts to session strategy and sets replayId to scope`() {
     val strategy = fixture.getSut()
     strategy.start()
