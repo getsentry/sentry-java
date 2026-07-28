@@ -240,8 +240,7 @@ public final class Scope implements IScope {
   }
 
   /**
-   * Sets the Scope's environment. Takes precedence over {@link SentryOptions#getEnvironment()} when
-   * applied to events.
+   * Sets the Scope's environment. Takes precedence over {@link SentryOptions#getEnvironment()}.
    *
    * @param environment the environment
    */
@@ -1062,6 +1061,11 @@ public final class Scope implements IScope {
   @Nullable
   @Override
   public SessionPair startSession() {
+    return startSession(environment);
+  }
+
+  @Nullable
+  SessionPair startSession(final @Nullable String sessionEnvironment) {
     Session previousSession;
     SessionPair pair = null;
     try (final @NotNull ISentryLifecycleToken ignored = sessionLock.acquire()) {
@@ -1076,7 +1080,10 @@ public final class Scope implements IScope {
       if (options.getRelease() != null) {
         session =
             new Session(
-                options.getDistinctId(), user, options.getEnvironment(), options.getRelease());
+                options.getDistinctId(),
+                user,
+                sessionEnvironment != null ? sessionEnvironment : options.getEnvironment(),
+                options.getRelease());
 
         final Session previousClone = previousSession != null ? previousSession.clone() : null;
         pair = new SessionPair(session.clone(), previousClone);

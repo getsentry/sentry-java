@@ -35,8 +35,7 @@ public interface IScope {
   String getEnvironment();
 
   /**
-   * Sets the Scope's environment. Takes precedence over {@link SentryOptions#getEnvironment()} when
-   * applied to events. Mainly used by hybrid SDKs to sync their environment into this SDK.
+   * Sets the Scope's environment. Takes precedence over {@link SentryOptions#getEnvironment()}.
    *
    * @param environment the environment
    */

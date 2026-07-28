@@ -558,7 +558,11 @@ public final class CombinedScopeView implements IScope {
 
   @Override
   public @Nullable Scope.SessionPair startSession() {
-    return getDefaultWriteScope().startSession();
+    final IScope defaultScope = getDefaultWriteScope();
+    if (defaultScope instanceof Scope) {
+      return ((Scope) defaultScope).startSession(getEnvironment());
+    }
+    return defaultScope.startSession();
   }
 
   @Override

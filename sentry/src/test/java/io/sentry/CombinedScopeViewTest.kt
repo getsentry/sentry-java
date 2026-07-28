@@ -1116,6 +1116,17 @@ class CombinedScopeViewTest {
   }
 
   @Test
+  fun `starts session with the combined environment`() {
+    val combined = fixture.getSut()
+    fixture.options.environment = "options-environment"
+    fixture.scope.environment = "current-environment"
+
+    combined.startSession()
+
+    assertEquals("current-environment", fixture.isolationScope.session!!.environment)
+  }
+
+  @Test
   fun `ends session on default scope`() {
     val combined = fixture.getSut()
     fixture.scope.startSession()

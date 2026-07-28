@@ -1017,6 +1017,16 @@ class SentryClientTest {
   }
 
   @Test
+  fun `when captureCheckIn, scope environment takes precedence over options`() {
+    val scope = Scope(fixture.sentryOptions).apply { environment = "scope-environment" }
+    val sut = fixture.getSut { it.environment = "options-environment" }
+
+    sut.captureCheckIn(checkIn, scope, null)
+
+    assertEquals("scope-environment", checkIn.environment)
+  }
+
+  @Test
   fun `when captureCheckIn, envelope is sent if ignored slug does not match`() {
     val sut = fixture.getSut { options -> options.setIgnoredCheckIns(listOf("non_matching_slug")) }
 
@@ -3868,6 +3878,7 @@ class SentryClientTest {
     val scope = createScope()
     val scopeReplayId = SentryId()
     scope.contexts.setTrace(SpanContext("test"))
+    scope.environment = "scope-environment"
     scope.setContexts("context-key", "context-value")
     scope.screen = "screen"
     scope.replayId = scopeReplayId
@@ -3877,6 +3888,7 @@ class SentryClientTest {
     assertNotNull(sentFeedback)
     // User, tags and contexts are applied to the feedback
     assertEquals(scope.user, sentEvent!!.user)
+    assertEquals("scope-environment", sentEvent!!.environment)
     assertEquals("tags", sentEvent!!.tags!!["tags"])
     assertEquals(
       scope.contexts.trace!!.traceId.toString(),

@@ -465,6 +465,21 @@ class ScopeTest {
   }
 
   @Test
+  fun `Scope starts a new session with scope environment`() {
+    val options =
+      SentryOptions().apply {
+        release = "rel"
+        environment = "options-env"
+      }
+    val scope = Scope(options)
+    scope.environment = "scope-env"
+
+    val sessionPair = scope.startSession()
+
+    assertNotNull(sessionPair) { assertEquals("scope-env", it.current.environment) }
+  }
+
+  @Test
   fun `Scope ends a session and returns it if theres one`() {
     val options = SentryOptions().apply { release = "0.0.1" }
 
