@@ -240,8 +240,7 @@ public final class Scope implements IScope {
   }
 
   /**
-   * Sets the Scope's environment. Mainly used by hybrid SDKs (e.g. .NET, Unity) to sync their
-   * environment into this SDK. Takes precedence over {@link SentryOptions#getEnvironment()} when
+   * Sets the Scope's environment. Takes precedence over {@link SentryOptions#getEnvironment()} when
    * applied to events.
    *
    * @param environment the environment
