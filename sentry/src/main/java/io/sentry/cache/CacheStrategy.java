@@ -45,10 +45,11 @@ abstract class CacheStrategy {
 
   CacheStrategy(
       final @NotNull SentryOptions options,
-      final @NotNull LazyDirectory directory,
+      final @NotNull String directoryPath,
       final int maxSize) {
+    Objects.requireNonNull(directoryPath, "Directory is required.");
     this.options = Objects.requireNonNull(options, "SentryOptions is required.");
-    this.directory = Objects.requireNonNull(directory, "Directory is required.");
+    this.directory = new LazyDirectory(directoryPath);
     this.maxSize = maxSize;
   }
 

@@ -18,7 +18,6 @@ import io.sentry.cache.EnvelopeCache;
 import io.sentry.transport.ICurrentDateProvider;
 import io.sentry.util.FileUtils;
 import io.sentry.util.HintUtils;
-import io.sentry.util.LazyDirectory;
 import io.sentry.util.Objects;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -48,8 +47,7 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
       final @NotNull ICurrentDateProvider currentDateProvider) {
     super(
         options,
-        new LazyDirectory(
-            Objects.requireNonNull(options.getCacheDirPath(), "cacheDirPath must not be null")),
+        Objects.requireNonNull(options.getCacheDirPath(), "cacheDirPath must not be null"),
         options.getMaxCacheItems());
     this.currentDateProvider = currentDateProvider;
   }
@@ -108,9 +106,13 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
           .log(DEBUG, "Outbox path is null, the startup crash marker file will not be written");
       return;
     }
-    // The outbox dir is no longer created during Sentry.init, so materialize it here in case the
-    // native SDK (which normally creates it) is disabled.
-    final File outboxDir = new LazyDirectory(outboxPath).getOrCreate();
+    // The outbox dir is no longer created during Sentry.init, so create it here in case the native
+    // SDK (which normally creates it) is disabled.
+    final File outboxDir = new File(outboxPath);
+    if (!FileUtils.createDirectory(outboxDir)) {
+      options.getLogger().log(ERROR, "Failed to create outbox dir %s", outboxPath);
+      return;
+    }
     final File crashMarkerFile = new File(outboxDir, STARTUP_CRASH_MARKER_FILE);
     try {
       crashMarkerFile.createNewFile();

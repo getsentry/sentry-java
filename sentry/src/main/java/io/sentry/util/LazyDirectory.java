@@ -8,6 +8,11 @@ import org.jetbrains.annotations.NotNull;
  * A filesystem directory that is created on demand rather than up front, so the (potentially
  * blocking) {@code mkdirs()} runs on the thread that first writes into it instead of on the SDK
  * init thread.
+ *
+ * <p>Read paths should use {@link #getFile()}, which never touches the filesystem. Write paths
+ * should use {@link #resolve(String)} so the directory is guaranteed to exist before the file is
+ * written to. Creation is not cached: on Android the cache dir lives under {@code
+ * Context.getCacheDir()}, which the system may wipe at any time, so each write re-checks.
  */
 @ApiStatus.Internal
 public final class LazyDirectory {
@@ -25,9 +30,15 @@ public final class LazyDirectory {
 
   /** Returns the directory, creating it and any missing parents if it does not exist yet. */
   public @NotNull File getOrCreate() {
-    if (!file.isDirectory()) {
-      file.mkdirs();
-    }
+    FileUtils.createDirectory(file);
     return file;
+  }
+
+  /**
+   * Returns a file inside this directory, creating the directory first so the returned file can be
+   * written to.
+   */
+  public @NotNull File resolve(final @NotNull String child) {
+    return new File(getOrCreate(), child);
   }
 }

@@ -26,7 +26,6 @@ import io.sentry.hints.SessionStart;
 import io.sentry.transport.NoOpEnvelopeCache;
 import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.HintUtils;
-import io.sentry.util.LazyDirectory;
 import io.sentry.util.Objects;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -84,7 +83,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
       options.getLogger().log(WARNING, "cacheDirPath is null, returning NoOpEnvelopeCache");
       return NoOpEnvelopeCache.getInstance();
     } else {
-      return new EnvelopeCache(options, new LazyDirectory(cacheDirPath), maxCacheItems);
+      return new EnvelopeCache(options, cacheDirPath, maxCacheItems);
     }
   }
 
@@ -92,14 +91,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
       final @NotNull SentryOptions options,
       final @NotNull String cacheDirPath,
       final int maxCacheItems) {
-    this(options, new LazyDirectory(cacheDirPath), maxCacheItems);
-  }
-
-  public EnvelopeCache(
-      final @NotNull SentryOptions options,
-      final @NotNull LazyDirectory directory,
-      final int maxCacheItems) {
-    super(options, directory, maxCacheItems);
+    super(options, cacheDirPath, maxCacheItems);
     previousSessionLatch = new CountDownLatch(1);
   }
 
@@ -396,7 +388,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
         fileNameMap.put(envelope, fileName);
       }
 
-      return new File(directory.getFile().getAbsolutePath(), fileName);
+      return directory.resolve(fileName);
     }
   }
 

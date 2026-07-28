@@ -24,7 +24,6 @@ import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.DebugMetaPropertiesApplier;
 import io.sentry.util.FileUtils;
 import io.sentry.util.InitUtil;
-import io.sentry.util.LazyDirectory;
 import io.sentry.util.LoadClass;
 import io.sentry.util.Platform;
 import io.sentry.util.SentryRandom;
@@ -464,9 +463,9 @@ public final class Sentry {
           () -> {
             final String cacheDirPath = options.getCacheDirPathWithoutDsn();
             if (cacheDirPath != null) {
-              final @NotNull LazyDirectory cacheDir = new LazyDirectory(cacheDirPath);
+              final @NotNull File cacheDir = new File(cacheDirPath);
               final @NotNull File appStartProfilingConfigFile =
-                  new File(cacheDir.getFile(), APP_START_PROFILING_CONFIG_FILE_NAME);
+                  new File(cacheDir, APP_START_PROFILING_CONFIG_FILE_NAME);
               try {
                 // We always delete the config file for app start profiling
                 FileUtils.deleteRecursively(appStartProfilingConfigFile);
@@ -483,9 +482,14 @@ public final class Sentry {
                           "Tracing is disabled and app start profiling will not start.");
                   return;
                 }
-                // The cache dir is no longer created during init, so materialize it here before
-                // writing: createNewFile() fails if the parent is missing.
-                cacheDir.getOrCreate();
+                // The cache dir is no longer created during init, so create it here before writing:
+                // createNewFile() fails if the parent is missing.
+                if (!FileUtils.createDirectory(cacheDir)) {
+                  options
+                      .getLogger()
+                      .log(SentryLevel.ERROR, "Failed to create cache dir %s", cacheDirPath);
+                  return;
+                }
                 if (appStartProfilingConfigFile.createNewFile()) {
                   // If old app start profiling is false, it means the transaction will not be
                   // sampled, but we create the file anyway to allow continuous profiling on app

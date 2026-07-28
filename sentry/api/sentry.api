@@ -4836,7 +4836,6 @@ public class io/sentry/cache/EnvelopeCache : io/sentry/cache/IEnvelopeCache {
 	protected static final field UTF_8 Ljava/nio/charset/Charset;
 	protected final field cacheLock Lio/sentry/util/AutoClosableReentrantLock;
 	protected final field sessionLock Lio/sentry/util/AutoClosableReentrantLock;
-	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/util/LazyDirectory;I)V
 	public fun <init> (Lio/sentry/SentryOptions;Ljava/lang/String;I)V
 	public static fun create (Lio/sentry/SentryOptions;)Lio/sentry/cache/IEnvelopeCache;
 	public fun discard (Lio/sentry/SentryEnvelope;)V
@@ -7693,6 +7692,7 @@ public final class io/sentry/util/ExceptionUtils {
 
 public final class io/sentry/util/FileUtils {
 	public fun <init> ()V
+	public static fun createDirectory (Ljava/io/File;)Z
 	public static fun deleteRecursively (Ljava/io/File;)Z
 	public static fun readBytesFromFile (Ljava/lang/String;J)[B
 	public static fun readText (Ljava/io/File;)Ljava/lang/String;
@@ -7762,6 +7762,7 @@ public final class io/sentry/util/LazyDirectory {
 	public fun <init> (Ljava/lang/String;)V
 	public fun getFile ()Ljava/io/File;
 	public fun getOrCreate ()Ljava/io/File;
+	public fun resolve (Ljava/lang/String;)Ljava/io/File;
 }
 
 public final class io/sentry/util/LazyEvaluator {
