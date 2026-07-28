@@ -47,7 +47,9 @@ public final class FileUtils {
    * @return true if the directory exists once this returns, false if it could not be created
    */
   public static boolean createDirectory(final @NotNull File directory) {
-    return directory.isDirectory() || directory.mkdirs();
+    // mkdirs() also returns false when another thread created the directory first, so re-check
+    // instead of reporting a failure the caller would act on by skipping its write.
+    return directory.isDirectory() || directory.mkdirs() || directory.isDirectory();
   }
 
   /**
