@@ -3,6 +3,7 @@ package io.sentry.compose
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.remember
@@ -15,8 +16,6 @@ import io.sentry.ISpan
 import io.sentry.Sentry
 import io.sentry.SpanOptions
 import io.sentry.compose.SentryModifier.sentryTag
-import java.lang.ref.WeakReference
-import java.util.WeakHashMap
 
 private const val OP_PARENT_COMPOSITION = "ui.compose.composition"
 private const val OP_COMPOSE = "ui.compose"
@@ -74,26 +73,40 @@ private fun createRenderingParentSpan(scopes: IScopes): ImmutableHolder<ISpan?> 
   )
 
 private class RootSpans {
-  // Weakly keyed so scopes instances that are no longer referenced elsewhere (e.g. a short-lived
-  // custom scopes provided via LocalSentryScopes for a finished screen/session) can be garbage
-  // collected instead of being pinned here for the lifetime of the root Composition. The cached
-  // holder is itself wrapped in a WeakReference: its ISpan strongly references the scopes that
-  // created it (Span keeps its Scopes alive), so storing the holder directly as the map value
-  // would let that strong value -> key path keep every scopes instance permanently reachable,
-  // defeating the WeakHashMap keying entirely.
-  val compositionSpans = WeakHashMap<IScopes, WeakReference<ImmutableHolder<ISpan?>>>()
-  val renderingSpans = WeakHashMap<IScopes, WeakReference<ImmutableHolder<ISpan?>>>()
+  // Entries are cleaned up deterministically via reference counting (see retain/release) rather
+  // than relying on GC to reclaim a weakly-keyed map: a value here (ImmutableHolder -> Span)
+  // strongly references the IScopes that created it (Span keeps its Scopes alive), so a
+  // WeakHashMap keyed on IScopes would never actually evict its own key, and a value wrapped in a
+  // WeakReference could be collected between recompositions even while a SentryTraced call under
+  // that scopes is still in composition, silently breaking root span sharing.
+  val compositionSpans = HashMap<IScopes, ImmutableHolder<ISpan?>>()
+  val renderingSpans = HashMap<IScopes, ImmutableHolder<ISpan?>>()
+  private val refCounts = HashMap<IScopes, Int>()
+
+  fun retain(scopes: IScopes) {
+    refCounts[scopes] = (refCounts[scopes] ?: 0) + 1
+  }
+
+  fun release(scopes: IScopes) {
+    val remaining = (refCounts[scopes] ?: 1) - 1
+    if (remaining <= 0) {
+      refCounts.remove(scopes)
+      compositionSpans.remove(scopes)
+      renderingSpans.remove(scopes)
+    } else {
+      refCounts[scopes] = remaining
+    }
+  }
 }
 
 private fun getOrCreateParentSpan(
-  map: MutableMap<IScopes, WeakReference<ImmutableHolder<ISpan?>>>,
+  map: MutableMap<IScopes, ImmutableHolder<ISpan?>>,
   scopes: IScopes,
   create: (IScopes) -> ImmutableHolder<ISpan?>,
 ): ImmutableHolder<ISpan?> =
   // Only cache the holder once it actually contains a span; a null result (no transaction bound
   // to the scopes yet) is recomputed on the next call so a later transaction is still picked up.
-  // A cleared reference (holder was collected) is also recomputed rather than reused.
-  map[scopes]?.get() ?: create(scopes).also { if (it.item != null) map[scopes] = WeakReference(it) }
+  map[scopes] ?: create(scopes).also { if (it.item != null) map[scopes] = it }
 
 // Cached once per Composition and shared by every SentryTraced call within it, mirroring the
 // old eagerly-computed `compositionLocalOf { ... }` default (which Compose resolves once and
@@ -111,6 +124,10 @@ public fun SentryTraced(
 ) {
   val scopes = LocalSentryScopes.current ?: Sentry.getCurrentScopes()
   val rootSpans = LocalRootSpans.current
+  DisposableEffect(rootSpans, scopes) {
+    rootSpans.retain(scopes)
+    onDispose { rootSpans.release(scopes) }
+  }
   val parentCompositionSpan =
     getOrCreateParentSpan(rootSpans.compositionSpans, scopes, ::createCompositionParentSpan)
   val parentRenderingSpan =
