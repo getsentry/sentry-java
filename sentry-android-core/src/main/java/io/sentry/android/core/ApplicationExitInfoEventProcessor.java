@@ -166,7 +166,7 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
 
     if (!backfillable.shouldEnrich()) {
       setRelease(event, optionsSource);
-      setEnvironment(event, optionsSource, false);
+      setEnvironment(event, optionsSource);
       setDist(event, optionsSource);
       setAppVersionAndBuild(event);
       options
@@ -196,6 +196,7 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
     setRequest(event);
     setUser(event);
     setScopeTags(event);
+    setScopeEnvironment(event);
     setBreadcrumbs(event);
     setExtras(event);
     setContexts(event);
@@ -411,7 +412,7 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
   private void backfillOptions(
       final @NotNull SentryEvent event, final @NotNull OptionsSource optionsSource) {
     setRelease(event, optionsSource);
-    setEnvironment(event, optionsSource, true);
+    setEnvironment(event, optionsSource);
     setDist(event, optionsSource);
     setDebugMeta(event, optionsSource);
     setSdk(event, optionsSource);
@@ -479,21 +480,21 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
   }
 
   private void setEnvironment(
-      final @NotNull SentryBaseEvent event,
-      final @NotNull OptionsSource optionsSource,
-      final boolean readScopeEnvironment) {
+      final @NotNull SentryBaseEvent event, final @NotNull OptionsSource optionsSource) {
     if (event.getEnvironment() == null) {
-      if (readScopeEnvironment) {
-        final String scopeEnvironment =
-            readFromDisk(options, PersistingScopeObserver.ENVIRONMENT_FILENAME, String.class);
-        if (scopeEnvironment != null) {
-          event.setEnvironment(scopeEnvironment);
-          return;
-        }
-      }
       event.setEnvironment(
           getLaunchOption(
               ENVIRONMENT_FILENAME, String.class, options.getEnvironment(), optionsSource));
+    }
+  }
+
+  private void setScopeEnvironment(final @NotNull SentryBaseEvent event) {
+    if (event.getEnvironment() == null) {
+      final @Nullable String scopeEnvironment =
+          readFromDisk(options, PersistingScopeObserver.ENVIRONMENT_FILENAME, String.class);
+      if (scopeEnvironment != null) {
+        event.setEnvironment(scopeEnvironment);
+      }
     }
   }
 
