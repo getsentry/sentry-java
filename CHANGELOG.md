@@ -9,7 +9,7 @@
   ```kotlin
   val scopes = Scopes(options)
   CompositionLocalProvider(LocalSentryScopes provides scopes) {
-    // this uses customs scopes now
+    // this uses custom scopes now
     SentryTraced(tag = "custom") { Box {} }
   }
   ```

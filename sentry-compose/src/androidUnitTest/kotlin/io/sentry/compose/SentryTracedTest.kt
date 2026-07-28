@@ -11,10 +11,12 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.IScopes
 import io.sentry.ITransaction
+import io.sentry.Sentry
 import io.sentry.SentryOptions
 import io.sentry.TransactionOptions
 import io.sentry.test.createTestScopes
 import kotlin.test.assertEquals
+import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestWatcher
@@ -43,6 +45,11 @@ class SentryTracedTest {
     }
 
   @get:Rule(order = 2) val rule = createAndroidComposeRule<ComponentActivity>()
+
+  @After
+  fun tearDown() {
+    Sentry.close()
+  }
 
   private fun newTracingScopes(): IScopes =
     createTestScopes(

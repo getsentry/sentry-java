@@ -15,6 +15,7 @@ import io.sentry.ISpan
 import io.sentry.Sentry
 import io.sentry.SpanOptions
 import io.sentry.compose.SentryModifier.sentryTag
+import java.lang.ref.WeakReference
 import java.util.WeakHashMap
 
 private const val OP_PARENT_COMPOSITION = "ui.compose.composition"
@@ -27,8 +28,13 @@ private const val OP_TRACE_ORIGIN = "auto.ui.jetpack_compose"
 
 @Immutable private class ImmutableHolder<T>(var item: T)
 
-public val LocalSentryScopes: ProvidableCompositionLocal<IScopes> = staticCompositionLocalOf {
-  Sentry.getCurrentScopes()
+// Defaults to null rather than eagerly resolving Sentry.getCurrentScopes(): a CompositionLocal's
+// default value is computed at most once for the process lifetime, so a non-null default would
+// permanently cache whatever scopes were current on first read (e.g. a NoOp scopes if read before
+// Sentry.init()). SentryTraced instead falls back to Sentry.getCurrentScopes() on every call when
+// no value has been explicitly provided, so it always reflects the current scopes.
+public val LocalSentryScopes: ProvidableCompositionLocal<IScopes?> = staticCompositionLocalOf {
+  null
 }
 
 private fun getRootSpan(scopes: IScopes): ISpan? {
@@ -70,19 +76,24 @@ private fun createRenderingParentSpan(scopes: IScopes): ImmutableHolder<ISpan?> 
 private class RootSpans {
   // Weakly keyed so scopes instances that are no longer referenced elsewhere (e.g. a short-lived
   // custom scopes provided via LocalSentryScopes for a finished screen/session) can be garbage
-  // collected instead of being pinned here for the lifetime of the root Composition.
-  val compositionSpans = WeakHashMap<IScopes, ImmutableHolder<ISpan?>>()
-  val renderingSpans = WeakHashMap<IScopes, ImmutableHolder<ISpan?>>()
+  // collected instead of being pinned here for the lifetime of the root Composition. The cached
+  // holder is itself wrapped in a WeakReference: its ISpan strongly references the scopes that
+  // created it (Span keeps its Scopes alive), so storing the holder directly as the map value
+  // would let that strong value -> key path keep every scopes instance permanently reachable,
+  // defeating the WeakHashMap keying entirely.
+  val compositionSpans = WeakHashMap<IScopes, WeakReference<ImmutableHolder<ISpan?>>>()
+  val renderingSpans = WeakHashMap<IScopes, WeakReference<ImmutableHolder<ISpan?>>>()
 }
 
 private fun getOrCreateParentSpan(
-  map: MutableMap<IScopes, ImmutableHolder<ISpan?>>,
+  map: MutableMap<IScopes, WeakReference<ImmutableHolder<ISpan?>>>,
   scopes: IScopes,
   create: (IScopes) -> ImmutableHolder<ISpan?>,
 ): ImmutableHolder<ISpan?> =
   // Only cache the holder once it actually contains a span; a null result (no transaction bound
   // to the scopes yet) is recomputed on the next call so a later transaction is still picked up.
-  map[scopes] ?: create(scopes).also { if (it.item != null) map[scopes] = it }
+  // A cleared reference (holder was collected) is also recomputed rather than reused.
+  map[scopes]?.get() ?: create(scopes).also { if (it.item != null) map[scopes] = WeakReference(it) }
 
 // Cached once per Composition and shared by every SentryTraced call within it, mirroring the
 // old eagerly-computed `compositionLocalOf { ... }` default (which Compose resolves once and
@@ -98,7 +109,7 @@ public fun SentryTraced(
   enableUserInteractionTracing: Boolean = true,
   content: @Composable BoxScope.() -> Unit,
 ) {
-  val scopes = LocalSentryScopes.current
+  val scopes = LocalSentryScopes.current ?: Sentry.getCurrentScopes()
   val rootSpans = LocalRootSpans.current
   val parentCompositionSpan =
     getOrCreateParentSpan(rootSpans.compositionSpans, scopes, ::createCompositionParentSpan)
