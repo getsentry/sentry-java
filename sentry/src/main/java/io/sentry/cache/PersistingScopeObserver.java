@@ -128,9 +128,9 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
 
   // Latest pending value per file (or DELETE_MARKER), coalesced until the next flush.
   private final @NotNull Map<String, Object> pendingWrites = new ConcurrentHashMap<>();
-  // Breadcrumb adds and clears buffered since the last flush, applied together behind a single
-  // fsync. Adds and clears share one queue so their relative order survives batching: a clear
-  // must not wipe a breadcrumb added after it.
+  // Tracks requests to add and clear breadcrumb since the last flush, applied together behind a
+  // single fsync. Adds and clears share one queue so their relative order survives batching:
+  // a clear must not wipe a breadcrumb added after it.
   private final @NotNull Queue<Object> pendingBreadcrumbs = new ConcurrentLinkedQueue<>();
   private final @NotNull AtomicBoolean hasPendingFlush = new AtomicBoolean(false);
 

@@ -131,8 +131,8 @@ public final class QueueFile implements Closeable, Iterable<byte[]> {
   private final int maxElements;
 
   /**
-   * When {@code false}, writes are buffered by the OS and callers must call {@link #sync()} to make
-   * them durable. This lets callers batch many adds behind a single fsync instead of paying one
+   * When {@code false}, writes are buffered by the OS and callers must call {@link #sync()} to
+   * write to disk. This lets callers batch many adds behind a single fsync instead of paying one
    * fsync per write.
    */
   private final boolean synchronousWrites;
@@ -144,7 +144,7 @@ public final class QueueFile implements Closeable, Iterable<byte[]> {
     if (!file.exists()) {
       // Use a temp file so we don't leave a partially-initialized file.
       File tempFile = new File(file.getPath() + ".tmp");
-      // The one-time initialization is always synchronous so the header is durable before rename.
+      // The one-time initialization is always synchronous so the header is written before rename.
       RandomAccessFile raf = open(tempFile, true);
       try {
         raf.setLength(INITIAL_LENGTH);
@@ -813,7 +813,7 @@ public final class QueueFile implements Closeable, Iterable<byte[]> {
 
     /**
      * When {@code false}, writes are buffered and the caller must call {@link QueueFile#sync()} to
-     * make them durable. Defaults to {@code true} (every write is fsync'd).
+     * write to disk. Defaults to {@code true} (every write is fsync'd).
      */
     public Builder synchronousWrites(boolean synchronousWrites) {
       this.synchronousWrites = synchronousWrites;
