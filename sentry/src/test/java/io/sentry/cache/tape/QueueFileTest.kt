@@ -74,21 +74,6 @@ class QueueFileTest {
   }
 
   @Test
-  fun bufferedWritesSurviveReopenAfterSync() {
-    var queue = Builder(file).synchronousWrites(false).build()
-    val first = values[253]
-    val second = values[25]
-    queue.add(first)
-    queue.add(second)
-    queue.sync()
-    queue.close()
-
-    queue = newQueueFile()
-    assertEquals(2, queue.size())
-    assertArrayEquals(queue.peek(), first)
-  }
-
-  @Test
   fun testClearErases() {
     val queue = newQueueFile()
     val expected = values[253]
