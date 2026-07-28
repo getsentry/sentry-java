@@ -2156,6 +2156,31 @@ class ManifestMetadataReaderTest {
   }
 
   @Test
+  fun `applyMetadata reads feedback enable screenshot and keep default value if not found`() {
+    // Arrange
+    val context = fixture.getContext()
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertTrue(fixture.options.feedbackOptions.isEnableAttachScreenshot)
+  }
+
+  @Test
+  fun `applyMetadata reads feedback enable screenshot to options`() {
+    // Arrange
+    val bundle = bundleOf(ManifestMetadataReader.FEEDBACK_ENABLE_ATTACH_SCREENSHOT to false)
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertFalse(fixture.options.feedbackOptions.isEnableAttachScreenshot)
+  }
+
+  @Test
   fun `applyMetadata reads screenshot strategy canvas to options`() {
     // Arrange
     val bundle = bundleOf(ManifestMetadataReader.REPLAYS_SCREENSHOT_STRATEGY to "canvas")

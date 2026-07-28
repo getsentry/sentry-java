@@ -100,6 +100,9 @@ dependencies {
   implementation(libs.androidx.lifecycle.common.java8)
   implementation(libs.androidx.lifecycle.process)
   implementation(libs.androidx.core)
+  // photo picker for user feedback screenshot attachments
+  compileOnly(libs.androidx.activity)
+
   implementation(libs.epitaph)
 
   errorprone(libs.errorprone.core)
@@ -115,6 +118,7 @@ dependencies {
   testImplementation(libs.androidx.test.ext.junit)
   testImplementation(libs.androidx.test.runner)
   testImplementation(libs.awaitility.kotlin)
+  testImplementation(libs.google.truth)
   testImplementation(libs.mockito.kotlin)
   testImplementation(libs.mockito.inline)
   testImplementation(projects.sentryTestSupport)

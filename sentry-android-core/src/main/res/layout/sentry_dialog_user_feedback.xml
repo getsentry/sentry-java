@@ -95,6 +95,16 @@
         android:layout_below="@id/sentry_dialog_user_feedback_txt_description" />
 
     <Button
+        android:id="@+id/sentry_dialog_user_feedback_btn_add_screenshot"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:backgroundTint="?android:attr/colorBackground"
+        android:text="Add a screenshot"
+        android:visibility="gone"
+        android:layout_below="@id/sentry_dialog_user_feedback_edt_description" />
+
+    <Button
         android:id="@+id/sentry_dialog_user_feedback_btn_send"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -102,7 +112,7 @@
         android:textColor="?android:attr/textColorPrimaryInverse"
         android:layout_marginTop="32dp"
         android:text="Send Bug Report"
-        android:layout_below="@id/sentry_dialog_user_feedback_edt_description" />
+        android:layout_below="@id/sentry_dialog_user_feedback_btn_add_screenshot" />
 
     <Button
         android:id="@+id/sentry_dialog_user_feedback_btn_cancel"

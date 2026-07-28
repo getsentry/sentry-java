@@ -556,6 +556,7 @@ public abstract interface class io/sentry/android/core/SentryUserFeedbackDialog$
 public class io/sentry/android/core/SentryUserFeedbackForm : android/app/AlertDialog {
 	protected fun onCreate (Landroid/os/Bundle;)V
 	protected fun onStart ()V
+	protected fun onStop ()V
 	public fun setCancelable (Z)V
 	public fun setOnDismissListener (Landroid/content/DialogInterface$OnDismissListener;)V
 	public fun show ()V
