@@ -3,9 +3,9 @@ package io.sentry.compose
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.ProvidableCompositionLocal
+import androidx.compose.runtime.RememberObserver
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -99,6 +99,31 @@ private class RootSpans {
   }
 }
 
+// Retains scopes in the constructor so it always runs synchronously during composition, before
+// any effect-phase work for this frame (including another SentryTraced call's dispose): Compose
+// runs the dispose of an outgoing node before the effects of an incoming one in the same
+// recomposition, so retaining from an effect could let a shared entry's refcount hit zero (and
+// get evicted) between an old and a new SentryTraced call sharing the same scopes. Releasing from
+// both onForgotten and onAbandoned (rather than a DisposableEffect) also covers a composition
+// that never commits (e.g. an exception elsewhere during composition), which would otherwise
+// leave the retain in place with no matching release.
+private class ScopesRetention(private val rootSpans: RootSpans, private val scopes: IScopes) :
+  RememberObserver {
+  init {
+    rootSpans.retain(scopes)
+  }
+
+  override fun onRemembered() {}
+
+  override fun onForgotten() {
+    rootSpans.release(scopes)
+  }
+
+  override fun onAbandoned() {
+    rootSpans.release(scopes)
+  }
+}
+
 private fun getOrCreateParentSpan(
   map: MutableMap<IScopes, ImmutableHolder<ISpan?>>,
   scopes: IScopes,
@@ -124,13 +149,7 @@ public fun SentryTraced(
 ) {
   val scopes = LocalSentryScopes.current ?: Sentry.getCurrentScopes()
   val rootSpans = LocalRootSpans.current
-  // Retain synchronously during composition (not inside a DisposableEffect) so it always runs
-  // before any effect-phase work for this frame, including another SentryTraced call's dispose:
-  // Compose runs the dispose of an outgoing node before the effects of an incoming one in the
-  // same recomposition, so retaining from an effect could let the shared entry's refcount hit
-  // zero (and get evicted) between an old and a new SentryTraced call sharing the same scopes.
-  remember(rootSpans, scopes) { rootSpans.retain(scopes) }
-  DisposableEffect(rootSpans, scopes) { onDispose { rootSpans.release(scopes) } }
+  remember(rootSpans, scopes) { ScopesRetention(rootSpans, scopes) }
   val parentCompositionSpan =
     getOrCreateParentSpan(rootSpans.compositionSpans, scopes, ::createCompositionParentSpan)
   val parentRenderingSpan =
