@@ -5,6 +5,10 @@ import android.content.ComponentName
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.core.app.ApplicationProvider
@@ -116,5 +120,31 @@ class SentryTracedTest {
     assertEquals(1, txA.spans.count { it.operation == "ui.compose" })
     assertEquals(1, txB.spans.count { it.operation == "ui.compose.composition" })
     assertEquals(1, txB.spans.count { it.operation == "ui.compose" })
+  }
+
+  @Test
+  fun `repeatedly replacing a traced composable under the same scopes keeps sharing the root span`() {
+    // Each swap disposes the outgoing keyed composable and mounts a new one under the same
+    // scopes within a single recomposition. Compose dispatches the outgoing composable's
+    // onDispose before the incoming one's DisposableEffect runs, so a second swap is needed to
+    // surface a root span cache that was cleared out from under a still-live retain.
+    val scopes = newTracingScopes()
+    val tx = scopes.startBoundTransaction("custom-scopes-tx")
+    var step by mutableStateOf(0)
+
+    rule.setContent {
+      CompositionLocalProvider(LocalSentryScopes provides scopes) {
+        key(step) { SentryTraced(tag = "step-$step") { Box {} } }
+      }
+    }
+    rule.waitForIdle()
+
+    step = 1
+    rule.waitForIdle()
+
+    step = 2
+    rule.waitForIdle()
+
+    assertEquals(1, tx.spans.count { it.operation == "ui.compose.composition" })
   }
 }
