@@ -91,8 +91,12 @@ private class RootSpans {
     val remaining = (refCounts[scopes] ?: 1) - 1
     if (remaining <= 0) {
       refCounts.remove(scopes)
-      compositionSpans.remove(scopes)
-      renderingSpans.remove(scopes)
+      // These are idle spans: they only auto-finish when the whole transaction finishes, so
+      // evicting them from the cache without finishing them here would leave them open on the
+      // transaction. If the same scopes is used again later, a fresh pair would be created
+      // alongside the still-open, now-untracked originals, showing up as duplicate root spans.
+      compositionSpans.remove(scopes)?.item?.finish()
+      renderingSpans.remove(scopes)?.item?.finish()
     } else {
       refCounts[scopes] = remaining
     }

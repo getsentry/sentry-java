@@ -20,6 +20,7 @@ import io.sentry.SentryOptions
 import io.sentry.TransactionOptions
 import io.sentry.test.createTestScopes
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import org.junit.After
 import org.junit.Rule
 import org.junit.Test
@@ -146,5 +147,27 @@ class SentryTracedTest {
     rule.waitForIdle()
 
     assertEquals(1, tx.spans.count { it.operation == "ui.compose.composition" })
+  }
+
+  @Test
+  fun `evicting a root span cache entry finishes the underlying span`() {
+    val scopes = newTracingScopes()
+    val tx = scopes.startBoundTransaction("custom-scopes-tx")
+    var mounted by mutableStateOf(true)
+
+    rule.setContent {
+      if (mounted) {
+        CompositionLocalProvider(LocalSentryScopes provides scopes) {
+          SentryTraced(tag = "first") { Box {} }
+        }
+      }
+    }
+    rule.waitForIdle()
+
+    mounted = false
+    rule.waitForIdle()
+
+    val compositionRootSpan = tx.spans.first { it.operation == "ui.compose.composition" }
+    assertTrue(compositionRootSpan.isFinished)
   }
 }
