@@ -91,12 +91,15 @@ private class RootSpans {
     val remaining = (refCounts[scopes] ?: 1) - 1
     if (remaining <= 0) {
       refCounts.remove(scopes)
-      // These are idle spans: they only auto-finish when the whole transaction finishes, so
-      // evicting them from the cache without finishing them here would leave them open on the
-      // transaction. If the same scopes is used again later, a fresh pair would be created
-      // alongside the still-open, now-untracked originals, showing up as duplicate root spans.
-      compositionSpans.remove(scopes)?.item?.finish()
-      renderingSpans.remove(scopes)?.item?.finish()
+      // Deliberately not finishing these spans here: Compose can deactivate and later reactivate
+      // the same retained instance (e.g. LazyColumn item reuse) without necessarily re-mounting a
+      // new SentryTraced in between, so a refcount reaching zero doesn't reliably mean the scopes
+      // is done for good. Finishing eagerly would risk silently dropping compose/render spans
+      // started while briefly deactivated. These are idle spans, so they still get finished
+      // automatically once the whole transaction finishes, same as before this cache existed; the
+      // trade-off is a possible extra root span if the same scopes is genuinely reused much later.
+      compositionSpans.remove(scopes)
+      renderingSpans.remove(scopes)
     } else {
       refCounts[scopes] = remaining
     }
@@ -111,20 +114,43 @@ private class RootSpans {
 // both onForgotten and onAbandoned (rather than a DisposableEffect) also covers a composition
 // that never commits (e.g. an exception elsewhere during composition), which would otherwise
 // leave the retain in place with no matching release.
+//
+// A single instance can also go through onForgotten/onRemembered more than once without the
+// constructor ever running again: reusable content (e.g. LazyColumn item reuse) deactivates by
+// forgetting all remembered objects and later reactivates existing ones by calling onRemembered
+// directly. isRetained tracks whether this instance currently holds a retain so onRemembered can
+// re-retain on reactivation, while still not double-retaining right after construction
+// (onRemembered
+// always fires once for a freshly remembered object too).
 private class ScopesRetention(private val rootSpans: RootSpans, private val scopes: IScopes) :
   RememberObserver {
+  private var isRetained = false
+
   init {
-    rootSpans.retain(scopes)
+    retain()
   }
 
-  override fun onRemembered() {}
+  private fun retain() {
+    rootSpans.retain(scopes)
+    isRetained = true
+  }
+
+  override fun onRemembered() {
+    if (!isRetained) retain()
+  }
 
   override fun onForgotten() {
-    rootSpans.release(scopes)
+    if (isRetained) {
+      rootSpans.release(scopes)
+      isRetained = false
+    }
   }
 
   override fun onAbandoned() {
-    rootSpans.release(scopes)
+    if (isRetained) {
+      rootSpans.release(scopes)
+      isRetained = false
+    }
   }
 }
 

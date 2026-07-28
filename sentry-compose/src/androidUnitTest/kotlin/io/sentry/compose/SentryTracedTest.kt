@@ -20,7 +20,6 @@ import io.sentry.SentryOptions
 import io.sentry.TransactionOptions
 import io.sentry.test.createTestScopes
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 import org.junit.After
 import org.junit.Rule
 import org.junit.Test
@@ -150,7 +149,9 @@ class SentryTracedTest {
   }
 
   @Test
-  fun `evicting a root span cache entry finishes the underlying span`() {
+  fun `fully unmounting and remounting under the same scopes creates a fresh root span`() {
+    // Confirms the cache entry is actually dropped once the last consumer of a scopes leaves
+    // composition (the fix for the original RootSpans leak), rather than being reused forever.
     val scopes = newTracingScopes()
     val tx = scopes.startBoundTransaction("custom-scopes-tx")
     var mounted by mutableStateOf(true)
@@ -167,7 +168,9 @@ class SentryTracedTest {
     mounted = false
     rule.waitForIdle()
 
-    val compositionRootSpan = tx.spans.first { it.operation == "ui.compose.composition" }
-    assertTrue(compositionRootSpan.isFinished)
+    mounted = true
+    rule.waitForIdle()
+
+    assertEquals(2, tx.spans.count { it.operation == "ui.compose.composition" })
   }
 }
