@@ -1317,6 +1317,23 @@ class SentryTest {
   }
 
   @Test
+  fun `init creates app start profiling config when the cache dir does not exist yet`() {
+    val path = getTempPath()
+    // Profiling is left disabled on purpose: it is the only other init-time consumer that creates
+    // the cache dir, so with it off nothing materializes the dir before the config is written.
+    initForTest {
+      it.dsn = dsn
+      it.cacheDirPath = path
+      it.isEnableAppStartProfiling = false
+      it.isStartProfilerOnAppStart = true
+      it.tracesSampleRate = 0.0
+      it.profilesSampleRate = null
+      it.executorService = ImmediateExecutorService()
+    }
+    assertTrue(File(path, "app_start_profiling_config").exists())
+  }
+
+  @Test
   fun `init saves SentryAppStartProfilingOptions to disk`() {
     var options = SentryOptions()
     val path = getTempPath()
