@@ -391,21 +391,23 @@ public class ReplayIntegration(
       recorder?.close()
       recorder = null
       rootViewsSpy.close()
-      if (lazyReplayExecutor.isInitialized()) {
-        if (options.threadChecker.isMainThread) {
-          replayExecutor.gracefulShutdown()
-        } else {
-          replayExecutor.shutdown()
-        }
-      }
-      if (lazyPersistingExecutor.isInitialized()) {
-        if (options.threadChecker.isMainThread) {
-          persistingExecutor.gracefulShutdown()
-        } else {
-          persistingExecutor.shutdown()
-        }
-      }
       lifecycle.currentState = CLOSED
+    }
+    // ponytail: shutdown outside lock — awaiting termination while holding lifecycleLock deadlocks
+    // if any executor task tries to acquire the same lock
+    if (lazyReplayExecutor.isInitialized()) {
+      if (options.threadChecker.isMainThread) {
+        replayExecutor.gracefulShutdown()
+      } else {
+        replayExecutor.shutdown()
+      }
+    }
+    if (lazyPersistingExecutor.isInitialized()) {
+      if (options.threadChecker.isMainThread) {
+        persistingExecutor.gracefulShutdown()
+      } else {
+        persistingExecutor.shutdown()
+      }
     }
   }
 
