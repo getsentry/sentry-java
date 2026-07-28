@@ -38,7 +38,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.TestOnly;
 
 public final class PersistingScopeObserver extends ScopeObserverAdapter {
 
@@ -235,7 +234,7 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
       return;
     }
     try {
-      final @NotNull Future<?> future = options.getExecutorService().submit(this::flushOnExecutor);
+      final @NotNull Future<?> future = options.getExecutorService().submit(this::flush);
       if (future.isCancelled()) {
         // the executor rejects tasks without throwing once its queue is full, so clear the flag or
         // no later mutation would ever be able to queue a flush again
@@ -247,18 +246,26 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
     }
   }
 
-  private void flushOnExecutor() {
-    runSafely(this::flushPending);
-    // clear the flag before re-checking, otherwise a mutation landing between the drain and the
-    // clear would see a flush still queued and be left with nobody to write it
-    hasPendingFlush.set(false);
-    if (!pendingWrites.isEmpty() || !pendingBreadcrumbs.isEmpty()) {
-      requestFlush();
+  /**
+   * Writes all coalesced scope state to disk. Runs as the queued flush task on the Sentry executor,
+   * which is also the only place it may run: it does I/O, and it owns clearing {@link
+   * #hasPendingFlush} once the write is done.
+   */
+  private void flush() {
+    try {
+      runSafely(this::writePending);
+    } finally {
+      // clear the flag before re-checking, otherwise a mutation landing between the drain and the
+      // clear would see a flush still queued and be left with nobody to write it. In a finally so
+      // an unexpected throw can't leave the flag set and stop persistence for the whole process.
+      hasPendingFlush.set(false);
+      if (!pendingWrites.isEmpty() || !pendingBreadcrumbs.isEmpty()) {
+        requestFlush();
+      }
     }
   }
 
-  /** Writes all coalesced scope state to disk. Does I/O; must run off the caller/main thread. */
-  private void flushPending() {
+  private void writePending() {
     for (final @NotNull String fileName : new ArrayList<>(pendingWrites.keySet())) {
       final @Nullable Object entity = pendingWrites.remove(fileName);
       if (entity == null) {
@@ -297,15 +304,6 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
         options.getLogger().log(ERROR, "Failed to sync breadcrumbs file queue", e);
       }
     }
-  }
-
-  /**
-   * Synchronously writes any pending scope state to disk. Does I/O on the calling thread, so it's
-   * only meant for tests and shutdown, not the hot path.
-   */
-  @TestOnly
-  void flush() {
-    runSafely(this::flushPending);
   }
 
   private void runSafely(final @NotNull Runnable task) {

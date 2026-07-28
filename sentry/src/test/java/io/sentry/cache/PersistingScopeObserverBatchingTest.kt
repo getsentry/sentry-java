@@ -129,15 +129,4 @@ class PersistingScopeObserverBatchingTest {
 
     assertThat(sut.readTransaction()).isEqualTo("SetDuringInit")
   }
-
-  @Test
-  fun `flush writes pending state synchronously`() {
-    val executor = DeferredExecutorService()
-    val sut = getSut(executor)
-
-    sut.setTransaction("Sync")
-    sut.flush()
-
-    assertThat(sut.readTransaction()).isEqualTo("Sync")
-  }
 }
