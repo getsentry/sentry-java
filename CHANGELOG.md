@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Behavioral Changes
+
+- The outbox and cache directories are no longer created by `Sentry.init` ([#5792](https://github.com/getsentry/sentry-java/pull/5792))
+  - They are now created lazily by whichever component first writes into them, off the init thread. As a result, the directories at `SentryOptions.getOutboxPath()` and `SentryOptions.getCacheDirPath()` are not guaranteed to exist once `Sentry.init` returns.
+  - If you write envelopes into the outbox path yourself instead of going through the SDK — as hybrid SDKs do for `captureEnvelope` — create the directory first, e.g. `new File(outboxPath).mkdirs()`.
+
 ### Improvements
 
 - Skip building Android manifest metadata debug log messages when debug logging is disabled, reducing allocations during SDK init ([#5790](https://github.com/getsentry/sentry-java/pull/5790))
