@@ -30,6 +30,8 @@ public final class LazyDirectory {
 
   /** Returns the directory, creating it and any missing parents if it does not exist yet. */
   public @NotNull File getOrCreate() {
+    // A failed mkdirs is not reported here: callers are write paths, so the failure surfaces as the
+    // write error they already log and report.
     FileUtils.createDirectory(file);
     return file;
   }
