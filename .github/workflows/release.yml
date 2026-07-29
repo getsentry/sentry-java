@@ -34,7 +34,7 @@ jobs:
           fetch-depth: 0
           submodules: 'recursive'
       - name: Prepare release
-        uses: getsentry/craft@cdb657d4bbc70cd497876ad158984b4d345a48ae # v2
+        uses: getsentry/craft@667b5f5669552a35990a11ff6ac1131febb07446 # v2
         env:
           GITHUB_TOKEN: ${{ steps.token.outputs.token }}
         with:
