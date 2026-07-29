@@ -59,6 +59,7 @@
 
 ### Performance
 
+- Defer the API 35+ `getHistoricalProcessStartReasons` binder call to a background thread so it no longer blocks the main thread during app start ([#5866](https://github.com/getsentry/sentry-java/pull/5866))
 - Create the outbox and cache directories lazily in their consumers instead of during SDK init, moving the `mkdirs()` calls off the init (main) thread ([#5792](https://github.com/getsentry/sentry-java/pull/5792))
 - Reduce the number of SDK threads: `LifecycleWatcher` now schedules the session-end task on the shared timer executor instead of creating a dedicated `java.util.Timer` thread ([#5819](https://github.com/getsentry/sentry-java/pull/5819))
 - Reduce the number of SDK threads: `RateLimiter` now schedules its rate-limit-lifted notifications on the shared timer executor instead of creating a dedicated `java.util.Timer` thread ([#5814](https://github.com/getsentry/sentry-java/pull/5814))
