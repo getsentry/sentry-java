@@ -134,7 +134,8 @@ public class PerfettoProfiler {
               if (resultListener != null) {
                 logger.log(SentryLevel.WARNING, "Timed out waiting for Perfetto profiling result.");
                 resultListener.accept(null);
-                resultListener = null;
+                // Nobody consumes a late result anymore, so delete the trace file instead
+                resultListener = this::deleteTraceFile;
               }
             }
           },
@@ -157,6 +158,20 @@ public class PerfettoProfiler {
         resultListener.accept(processResult(result));
         resultListener = null;
       }
+    }
+  }
+
+  /**
+   * Deletes a trace file that nobody is going to consume. Called from {@link #onProfilingResult},
+   * which the OS delivers on a binder thread, so deleting inline is fine.
+   */
+  private void deleteTraceFile(final @Nullable File traceFile) {
+    if (traceFile == null) {
+      return;
+    }
+    if (!traceFile.delete()) {
+      logger.log(
+          SentryLevel.WARNING, "Failed to delete late Perfetto trace file %s", traceFile.getPath());
     }
   }
 

@@ -223,6 +223,24 @@ class PerfettoProfilerTest {
   }
 
   @Test
+  fun `trace file is deleted when result arrives after the timeout`() {
+    val traceFile = createTraceFile()
+    val profiler = getSut()
+    profiler.start(60000)
+
+    val callCount = AtomicInteger(0)
+    profiler.endAndCollect { callCount.incrementAndGet() }
+
+    executor.runAll()
+    assertEquals(1, callCount.get())
+
+    capturedCallback.accept(mockResult(filePath = traceFile.absolutePath))
+
+    assertEquals(1, callCount.get())
+    assertFalse(traceFile.exists())
+  }
+
+  @Test
   fun `endAndCollect calls listener with null when result file path is null`() {
     val profiler = getSut()
     profiler.start(60000)

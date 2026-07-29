@@ -369,7 +369,7 @@ final class AndroidOptionsInitializer {
             Objects.requireNonNull(
                 options.getFrameMetricsCollector(), "options.getFrameMetricsCollector is required");
         if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
-          final @NotNull Context appContext = context.getApplicationContext();
+          final @NotNull Context appContext = ContextUtils.getApplicationContext(context);
           options.setContinuousProfiler(
               new PerfettoContinuousProfiler(
                   options.getLogger(),
