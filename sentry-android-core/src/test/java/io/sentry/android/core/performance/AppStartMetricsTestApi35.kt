@@ -40,6 +40,9 @@ class AppStartMetricsTestApi35 {
     SentryShadowActivityManager.reset()
     AppStartMetrics.getInstance().setClassLoadedUptimeMs(42)
     AppStartMetrics.getInstance().isAppLaunchedInForeground = true
+    // Resolve the deferred getHistoricalProcessStartReasons lookup synchronously so tests can
+    // observe cachedStartInfo right after registerLifecycleCallbacks.
+    AppStartMetrics.getInstance().setStartInfoExecutor { it.run() }
   }
 
   @Test
@@ -47,28 +50,34 @@ class AppStartMetricsTestApi35 {
     val mockStartInfo = mock<ApplicationStartInfo>()
     whenever(mockStartInfo.startupState).thenReturn(ApplicationStartInfo.STARTUP_STATE_STARTED)
     whenever(mockStartInfo.startType).thenReturn(ApplicationStartInfo.START_TYPE_COLD)
+    whenever(mockStartInfo.reason).thenReturn(ApplicationStartInfo.START_REASON_LAUNCHER)
     SentryShadowActivityManager.setHistoricalProcessStartReasons(listOf(mockStartInfo))
 
     val app = ApplicationProvider.getApplicationContext<Application>()
-    AppStartMetrics.getInstance().registerLifecycleCallbacks(app)
+    val metrics = AppStartMetrics.getInstance()
+    metrics.registerLifecycleCallbacks(app)
+    metrics.onActivityCreated(mock(), null)
 
-    assertEquals(AppStartMetrics.AppStartType.COLD, AppStartMetrics.getInstance().appStartType)
+    assertEquals(AppStartMetrics.AppStartType.COLD, metrics.appStartType)
   }
 
   @Test
-  fun `known ApplicationStartInfo type without listener does not schedule headless check`() {
+  fun `foreground launch with known start type is not treated as headless`() {
     val mockStartInfo = mock<ApplicationStartInfo>()
     whenever(mockStartInfo.startupState).thenReturn(ApplicationStartInfo.STARTUP_STATE_STARTED)
     whenever(mockStartInfo.startType).thenReturn(ApplicationStartInfo.START_TYPE_COLD)
+    whenever(mockStartInfo.reason).thenReturn(ApplicationStartInfo.START_REASON_LAUNCHER)
     SentryShadowActivityManager.setHistoricalProcessStartReasons(listOf(mockStartInfo))
     val metrics = AppStartMetrics.getInstance()
 
     val app = ApplicationProvider.getApplicationContext<Application>()
     metrics.registerLifecycleCallbacks(app)
+    metrics.onActivityCreated(mock(), null)
+    // The headless idle check is always scheduled now; a created activity must keep it a no-op.
     waitForMainLooperIdle()
 
     assertEquals(AppStartMetrics.AppStartType.COLD, metrics.appStartType)
-    assertEquals(-1, metrics.firstIdle)
+    assertTrue(metrics.isAppLaunchedInForeground)
   }
 
   @Test
@@ -76,39 +85,48 @@ class AppStartMetricsTestApi35 {
     val mockStartInfo = mock<ApplicationStartInfo>()
     whenever(mockStartInfo.startupState).thenReturn(ApplicationStartInfo.STARTUP_STATE_STARTED)
     whenever(mockStartInfo.startType).thenReturn(ApplicationStartInfo.START_TYPE_WARM)
+    whenever(mockStartInfo.reason).thenReturn(ApplicationStartInfo.START_REASON_LAUNCHER)
     SentryShadowActivityManager.setHistoricalProcessStartReasons(listOf(mockStartInfo))
 
     val app = ApplicationProvider.getApplicationContext<Application>()
-    AppStartMetrics.getInstance().registerLifecycleCallbacks(app)
+    val metrics = AppStartMetrics.getInstance()
+    metrics.registerLifecycleCallbacks(app)
+    metrics.onActivityCreated(mock(), null)
 
-    assertEquals(AppStartMetrics.AppStartType.WARM, AppStartMetrics.getInstance().appStartType)
+    assertEquals(AppStartMetrics.AppStartType.WARM, metrics.appStartType)
   }
 
   @Test
-  fun `does not set app start type when ApplicationStartInfo list is invalid`() {
+  fun `ignores ApplicationStartInfo when startup state is not started`() {
     val mockStartInfo = mock<ApplicationStartInfo>()
     whenever(mockStartInfo.startupState)
       .thenReturn(ApplicationStartInfo.STARTUP_STATE_FIRST_FRAME_DRAWN)
     whenever(mockStartInfo.startType).thenReturn(ApplicationStartInfo.START_TYPE_WARM)
+    whenever(mockStartInfo.reason).thenReturn(ApplicationStartInfo.START_REASON_LAUNCHER)
     SentryShadowActivityManager.setHistoricalProcessStartReasons(listOf(mockStartInfo))
 
     val metrics = AppStartMetrics.getInstance()
 
     val app = ApplicationProvider.getApplicationContext<Application>()
     metrics.registerLifecycleCallbacks(app)
-
     assertEquals(AppStartMetrics.AppStartType.UNKNOWN, metrics.appStartType)
+
+    // Not STARTED, so the start type is ignored and the heuristic classifies the foreground launch.
+    metrics.onActivityCreated(mock(), null)
+    assertEquals(AppStartMetrics.AppStartType.COLD, metrics.appStartType)
   }
 
   @Test
-  fun `does not set app start type when ApplicationStartInfo list is empty`() {
+  fun `falls back to heuristic when ApplicationStartInfo list is empty`() {
     SentryShadowActivityManager.setHistoricalProcessStartReasons(emptyList())
     val metrics = AppStartMetrics.getInstance()
 
     val app = ApplicationProvider.getApplicationContext<Application>()
     metrics.registerLifecycleCallbacks(app)
-
     assertEquals(AppStartMetrics.AppStartType.UNKNOWN, metrics.appStartType)
+
+    metrics.onActivityCreated(mock(), null)
+    assertEquals(AppStartMetrics.AppStartType.COLD, metrics.appStartType)
   }
 
   @Test
@@ -362,7 +380,8 @@ class AppStartMetricsTestApi35 {
     metrics.registerLifecycleCallbacks(app)
 
     assertFalse(metrics.isAppLaunchedInForeground)
-    assertEquals(AppStartMetrics.AppStartType.COLD, metrics.appStartType)
+    // The start type stays UNKNOWN until a consumer resolves it from the deferred start info.
+    assertEquals(AppStartMetrics.AppStartType.UNKNOWN, metrics.appStartType)
 
     // User opens the app 20s later (under the 1-minute warm threshold).
     val activityCreatedUptimeMs = 20_000L

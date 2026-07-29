@@ -1,5 +1,6 @@
 package io.sentry.android.core.performance;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.Application;
@@ -35,6 +36,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -70,6 +72,13 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
 
   private @NotNull AppStartType appStartType = AppStartType.UNKNOWN;
   private @Nullable volatile Boolean appLaunchedInForeground;
+  // True/false once the deferred ApplicationStartInfo start reason says whether the OS spawned this
+  // process for a user interaction; null while unresolved or when the reason is inconclusive.
+  // Written from the lookup thread, read from the main thread.
+  private @Nullable volatile Boolean startReasonForeground;
+  // Set once an Activity or the headless check has observed the actual launch. Those signals beat
+  // the start reason, so it stops being consulted from then on.
+  private volatile boolean appLaunchedInForegroundObserved;
   private volatile long firstIdle = -1;
 
   private final @NotNull TimeSpan appStartSpan;
@@ -92,7 +101,17 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   private @Nullable String appStartSentryTraceHeader;
   private @Nullable String appStartBaggageHeader;
   private @Nullable SentryDate appStartEndTime;
-  private @Nullable ApplicationStartInfo cachedStartInfo;
+  // Volatile: written from the background lookup thread, read from the main thread. Null until the
+  // deferred getHistoricalProcessStartReasons lookup resolves.
+  private volatile @Nullable ApplicationStartInfo cachedStartInfo;
+  // Runs the getHistoricalProcessStartReasons binder call off the main thread. The Sentry executor
+  // does not exist this early (ContentProvider time), so a plain daemon thread is used by default.
+  private @NotNull Executor startInfoExecutor =
+      command -> {
+        final Thread thread = new Thread(command, "SentryAppStartInfo");
+        thread.setDaemon(true);
+        thread.start();
+      };
   private final @NotNull AppStartExtension appStartExtension = new AppStartExtension(this);
 
   public static @NotNull AppStartMetrics getInstance() {
@@ -231,12 +250,23 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   }
 
   public boolean isAppLaunchedInForeground() {
+    // The start reason is a more reliable signal than the process-importance fallback below, so it
+    // wins whenever the deferred lookup has resolved it and no Activity/headless signal has
+    // observed the launch first. Resolved at read time because the lookup completes asynchronously
+    // and may land either side of the fallback.
+    if (!appLaunchedInForegroundObserved) {
+      final @Nullable Boolean startReason = startReasonForeground;
+      if (startReason != null) {
+        return startReason;
+      }
+    }
     return Boolean.TRUE.equals(appLaunchedInForeground);
   }
 
   @VisibleForTesting
   public void setAppLaunchedInForeground(final boolean appLaunchedInForeground) {
     this.appLaunchedInForeground = appLaunchedInForeground;
+    this.appLaunchedInForegroundObserved = true;
   }
 
   public void setHeadlessAppStartListener(final @Nullable HeadlessAppStartListener listener) {
@@ -404,6 +434,8 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     appStartContinuousProfiler = null;
     appStartSamplingDecision = null;
     appLaunchedInForeground = null;
+    startReasonForeground = null;
+    appLaunchedInForegroundObserved = false;
     isCallbackRegistered = false;
     shouldSendStartMeasurements = true;
     firstDrawDone.set(false);
@@ -502,46 +534,72 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     }
     isCallbackRegistered = true;
     appLaunchedInForeground = null;
+    startReasonForeground = null;
+    appLaunchedInForegroundObserved = false;
     application.registerActivityLifecycleCallbacks(instance);
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
       final @Nullable ActivityManager activityManager =
           (ActivityManager) application.getSystemService(Context.ACTIVITY_SERVICE);
       if (activityManager != null) {
-        try {
-          final List<ApplicationStartInfo> historicalProcessStartReasons =
-              activityManager.getHistoricalProcessStartReasons(1);
-          if (!historicalProcessStartReasons.isEmpty()) {
-            final @NotNull ApplicationStartInfo info = historicalProcessStartReasons.get(0);
-            cachedStartInfo = info;
-            if (info.getStartupState() == ApplicationStartInfo.STARTUP_STATE_STARTED) {
-              if (info.getStartType() == ApplicationStartInfo.START_TYPE_COLD) {
-                appStartType = AppStartType.COLD;
-              } else {
-                appStartType = AppStartType.WARM;
-              }
-              appLaunchedInForeground = isForegroundStartReason(info.getReason());
-            }
-          }
-        } catch (RuntimeException ignored) {
-          // getHistoricalProcessStartReasons may throw different kinds of exceptions, namely:
-          // - SecurityException when called from an isolated process
-          // - IllegalArgumentException when called with a wrong userId
-          // - others
-          // See impl:
-          // https://cs.android.com/android/platform/superproject/+/android-latest-release:frameworks/base/services/core/java/com/android/server/am/ActivityManagerService.java;l=10866-10893
-          Log.w("AppStartMetrics", ignored); // no logger instance here, so we just Log
-        }
+        // getHistoricalProcessStartReasons blocks on a system_server binder round-trip. Run it off
+        // the main thread so it doesn't stall the coldest part of app start. The result is consumed
+        // best-effort: appStartType (see onActivityCreated) falls back to the pre-API-35 heuristic
+        // and getAppStartReason returns null if the lookup hasn't resolved yet.
+        startInfoExecutor.execute(() -> loadStartInfo(activityManager));
       }
     }
-    // Fallback, if no matching ApplicationStartInfo is available
+    // Fallback, if no start reason is available. isAppLaunchedInForeground prefers the deferred
+    // start reason over this once its lookup resolves.
     if (appLaunchedInForeground == null) {
       appLaunchedInForeground = ContextUtils.isForegroundImportance();
     }
 
-    if (appStartType == AppStartType.UNKNOWN || headlessAppStartListener != null) {
-      scheduleHeadlessAppStartCheckOnMain();
+    scheduleHeadlessAppStartCheckOnMain();
+  }
+
+  @SuppressLint("NewApi") // reached only from the API 35+ guarded branch above
+  private void loadStartInfo(final @NotNull ActivityManager activityManager) {
+    try {
+      final List<ApplicationStartInfo> historicalProcessStartReasons =
+          activityManager.getHistoricalProcessStartReasons(1);
+      if (!historicalProcessStartReasons.isEmpty()) {
+        final @NotNull ApplicationStartInfo info = historicalProcessStartReasons.get(0);
+        cachedStartInfo = info;
+        startReasonForeground = isForegroundStartReason(info.getReason());
+      }
+    } catch (RuntimeException ignored) {
+      // getHistoricalProcessStartReasons may throw different kinds of exceptions, namely:
+      // - SecurityException when called from an isolated process
+      // - IllegalArgumentException when called with a wrong userId
+      // - others
+      // See impl:
+      // https://cs.android.com/android/platform/superproject/+/android-latest-release:frameworks/base/services/core/java/com/android/server/am/ActivityManagerService.java;l=10866-10893
+      Log.w("AppStartMetrics", ignored); // no logger instance here, so we just Log
     }
+  }
+
+  /**
+   * Maps the deferred {@link ApplicationStartInfo} to an app start type. Returns {@link
+   * AppStartType#UNKNOWN} when the lookup hasn't resolved yet or the OS hadn't finished the start,
+   * so callers fall back to the pre-API-35 heuristic.
+   */
+  private @NotNull AppStartType getStartInfoAppStartType() {
+    final @Nullable ApplicationStartInfo info = cachedStartInfo;
+    if (info == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+      return AppStartType.UNKNOWN;
+    }
+    if (info.getStartupState() != ApplicationStartInfo.STARTUP_STATE_STARTED) {
+      return AppStartType.UNKNOWN;
+    }
+    return info.getStartType() == ApplicationStartInfo.START_TYPE_COLD
+        ? AppStartType.COLD
+        : AppStartType.WARM;
+  }
+
+  @TestOnly
+  void setStartInfoExecutor(final @NotNull Executor startInfoExecutor) {
+    this.startInfoExecutor = startInfoExecutor;
   }
 
   private void scheduleHeadlessAppStartCheckOnMain() {
@@ -587,11 +645,14 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
       }
 
       appLaunchedInForeground = false;
+      appLaunchedInForegroundObserved = true;
 
-      // Headless starts have no Activity signal for the pre-API 35 warm/cold heuristic.
-      // If ApplicationStartInfo did not resolve the type, classify the process start as cold.
+      // Headless starts have no Activity signal for the pre-API 35 warm/cold heuristic. Prefer the
+      // deferred ApplicationStartInfo type if its lookup has resolved, otherwise classify the
+      // process start as cold.
       if (appStartType == AppStartType.UNKNOWN) {
-        appStartType = AppStartType.COLD;
+        final @NotNull AppStartType startInfoType = getStartInfoAppStartType();
+        appStartType = startInfoType != AppStartType.UNKNOWN ? startInfoType : AppStartType.COLD;
       }
 
       // we stop the app start profilers, as they are useless and likely to timeout
@@ -683,8 +744,12 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
         contentProviderOnCreates.clear();
         applicationOnCreate.reset();
       } else if (appStartType == AppStartType.UNKNOWN) {
-        // pre API 35 handling
-        if (savedInstanceState != null) {
+        // Prefer the authoritative API 35+ ApplicationStartInfo if its deferred lookup has
+        // resolved, otherwise fall back to the pre-API-35 heuristic.
+        final @NotNull AppStartType startInfoType = getStartInfoAppStartType();
+        if (startInfoType != AppStartType.UNKNOWN) {
+          appStartType = startInfoType;
+        } else if (savedInstanceState != null) {
           appStartType = AppStartType.WARM;
         } else if (firstIdle != -1 && activityCreatedUptimeMillis > firstIdle) {
           appStartType = AppStartType.WARM;
@@ -694,6 +759,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
       }
     }
     appLaunchedInForeground = true;
+    appLaunchedInForegroundObserved = true;
   }
 
   @Override
@@ -740,6 +806,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     if (remainingActivities == 0 && !activity.isChangingConfigurations()) {
       appStartType = AppStartType.WARM;
       appLaunchedInForeground = true;
+      appLaunchedInForegroundObserved = true;
       shouldSendStartMeasurements = true;
       firstDrawDone.set(false);
     }
