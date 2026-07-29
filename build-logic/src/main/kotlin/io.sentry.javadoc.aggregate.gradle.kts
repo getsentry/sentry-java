@@ -1,11 +1,9 @@
 import io.sentry.gradle.AggregateJavadoc
 import org.gradle.api.attributes.Category
 import org.gradle.api.attributes.LibraryElements
-import org.gradle.kotlin.dsl.creating
-import org.gradle.kotlin.dsl.getValue
 import org.gradle.kotlin.dsl.named
 
-val javadocPublisher by configurations.creating {
+val javadocPublisher = configurations.create("javadocPublisher") {
     isCanBeConsumed = false
     isCanBeResolved = true
     attributes {
@@ -15,7 +13,7 @@ val javadocPublisher by configurations.creating {
 }
 
 subprojects {
-    javadocPublisher.dependencies.add(dependencies.create(this))
+    javadocPublisher.dependencies.add(rootProject.dependencies.project(path))
 }
 
 val javadocCollection = javadocPublisher.incoming.artifactView { lenient(true) }.files
