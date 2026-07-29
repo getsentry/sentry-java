@@ -320,7 +320,24 @@ class ClientReportTest {
   }
 
   @Test
-  fun `restoring counts from an attached client report does not fire onDiscard again`() {
+  fun `restoring counts via recordLostEnvelope does not fire onDiscard again`() {
+    assertRestoringCountsDoesNotFireOnDiscard { recorder, envelope ->
+      recorder.recordLostEnvelope(DiscardReason.EVENT_PROCESSOR, envelope)
+    }
+  }
+
+  @Test
+  fun `restoring counts via recordLostEnvelopeItem does not fire onDiscard again`() {
+    assertRestoringCountsDoesNotFireOnDiscard { recorder, envelope ->
+      recorder.recordLostEnvelopeItem(DiscardReason.NETWORK_ERROR, envelope.items.first())
+    }
+  }
+
+  // Counts restored from an attached client report were already reported once, so replaying them
+  // must not fire onDiscard a second time. Both public entry points have to hold the property.
+  private fun assertRestoringCountsDoesNotFireOnDiscard(
+    recordLost: (ClientReportRecorder, SentryEnvelope) -> Unit
+  ) {
     val onDiscardMock = mock<SentryOptions.OnDiscardCallback>()
     givenClientReportRecorder { options -> options.onDiscard = onDiscardMock }
 
@@ -331,7 +348,7 @@ class ClientReportTest {
     clientReportRecorder.recordLostEvent(DiscardReason.BEFORE_SEND, DataCategory.Profile)
 
     val envelope = clientReportRecorder.attachReportToEnvelope(testHelper.newEnvelope())
-    clientReportRecorder.recordLostEnvelope(DiscardReason.EVENT_PROCESSOR, envelope)
+    recordLost(clientReportRecorder, envelope)
 
     verify(onDiscardMock, times(2))
       .execute(DiscardReason.CACHE_OVERFLOW, DataCategory.Attachment, 1)
