@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixes
+
+- Preserve single-sample ANR profile chunks so profiles remain available on ANR events ([#5872](https://github.com/getsentry/sentry-java/pull/5872))
+
 ### Performance
 
 - Remove an unused lock from `SentryPerformanceProvider`, which was allocated on every cold start in `ContentProvider.onCreate` without ever being acquired ([#5871](https://github.com/getsentry/sentry-java/pull/5871))
