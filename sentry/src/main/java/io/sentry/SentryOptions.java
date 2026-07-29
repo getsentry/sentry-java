@@ -1104,7 +1104,11 @@ public class SentryOptions {
   }
 
   /**
-   * Returns the outbox path if cacheDirPath is set
+   * Returns the outbox path if cacheDirPath is set.
+   *
+   * <p>The directory is created lazily by the SDK on a background thread, so it is not guaranteed
+   * to exist when {@code Sentry.init} returns. Callers writing envelopes here directly (for example
+   * hybrid SDKs) must create it themselves, e.g. {@code new File(outboxPath).mkdirs()}.
    *
    * @return the outbox path or null if not set
    */

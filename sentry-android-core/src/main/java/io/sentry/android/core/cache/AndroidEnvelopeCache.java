@@ -93,7 +93,7 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
 
   @TestOnly
   public @NotNull File getDirectory() {
-    return directory;
+    return directory.getFile();
   }
 
   private void writeStartupCrashMarkerFile() {
@@ -106,7 +106,14 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
           .log(DEBUG, "Outbox path is null, the startup crash marker file will not be written");
       return;
     }
-    final File crashMarkerFile = new File(outboxPath, STARTUP_CRASH_MARKER_FILE);
+    // The outbox dir is no longer created during Sentry.init, so create it here in case the native
+    // SDK (which normally creates it) is disabled.
+    final File outboxDir = new File(outboxPath);
+    if (!FileUtils.createDirectory(outboxDir)) {
+      options.getLogger().log(ERROR, "Failed to create outbox dir %s", outboxPath);
+      return;
+    }
+    final File crashMarkerFile = new File(outboxDir, STARTUP_CRASH_MARKER_FILE);
     try {
       crashMarkerFile.createNewFile();
     } catch (Throwable e) {
