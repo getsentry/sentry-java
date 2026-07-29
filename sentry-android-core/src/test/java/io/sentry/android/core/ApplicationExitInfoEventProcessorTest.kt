@@ -27,6 +27,7 @@ import io.sentry.cache.PersistingOptionsObserver.PROGUARD_UUID_FILENAME
 import io.sentry.cache.PersistingOptionsObserver.RELEASE_FILENAME
 import io.sentry.cache.PersistingOptionsObserver.REPLAY_ERROR_SAMPLE_RATE_FILENAME
 import io.sentry.cache.PersistingOptionsObserver.SDK_VERSION_FILENAME
+import io.sentry.cache.PersistingOptionsObserver.TAGS_FILENAME as OPTIONS_TAGS_FILENAME
 import io.sentry.cache.PersistingScopeObserver
 import io.sentry.cache.PersistingScopeObserver.BREADCRUMBS_FILENAME
 import io.sentry.cache.PersistingScopeObserver.CONTEXTS_FILENAME
@@ -152,7 +153,7 @@ class ApplicationExitInfoEventProcessorTest {
         persistOptions(SDK_VERSION_FILENAME, SdkVersion("sentry.java.android", "6.15.0"))
         persistOptions(DIST_FILENAME, "232")
         persistOptions(ENVIRONMENT_FILENAME, "debug")
-        persistOptions(TAGS_FILENAME, mapOf("option" to "tag"))
+        persistOptions(OPTIONS_TAGS_FILENAME, mapOf("option" to "tag"))
         replayErrorSampleRate?.let {
           persistOptions(REPLAY_ERROR_SAMPLE_RATE_FILENAME, it.toString())
         }
@@ -198,6 +199,7 @@ class ApplicationExitInfoEventProcessorTest {
   @BeforeTest
   fun `set up`() {
     DeviceInfoUtil.resetInstance()
+    ContextUtils.resetInstance()
     fixture.context = ApplicationProvider.getApplicationContext()
   }
 
@@ -390,12 +392,197 @@ class ApplicationExitInfoEventProcessorTest {
   }
 
   @Test
-  fun `if environment is not persisted, uses environment from options`() {
-    val hint = HintUtils.createWithTypeCheckHint(BackfillableHint())
+  fun `if environment is not persisted and app was not updated, uses environment from options`() {
+    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(timestamp = 2_000))
+    setLastUpdateTime(1_000)
 
     val processed = processEvent(hint)
 
     assertEquals("release", processed.environment)
+  }
+
+  @Test
+  fun `if release is not persisted and app was not updated, uses release from options`() {
+    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(timestamp = 2_000))
+    val processor = fixture.getSut(tmpDir)
+    fixture.options.release = "io.sentry.samples@1.2.0+232"
+    setLastUpdateTime(1_000)
+
+    val processed = processor.process(SentryEvent(), hint)!!
+
+    assertEquals("io.sentry.samples@1.2.0+232", processed.release)
+  }
+
+  @Test
+  fun `if release is not persisted and app was updated, leaves release empty`() {
+    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(timestamp = 1_000))
+    val processor = fixture.getSut(tmpDir)
+    fixture.options.release = "io.sentry.samples@1.2.0+232"
+    setLastUpdateTime(2_000)
+
+    val processed = processor.process(SentryEvent(), hint)!!
+
+    assertNull(processed.release)
+  }
+
+  @Test
+  fun `if exit timestamp is unknown, leaves release empty`() {
+    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint())
+    val processor = fixture.getSut(tmpDir)
+    fixture.options.release = "io.sentry.samples@1.2.0+232"
+    setLastUpdateTime(1_000)
+
+    val processed = processor.process(SentryEvent(), hint)!!
+
+    assertNull(processed.release)
+  }
+
+  @Test
+  fun `if last update time is invalid, leaves release empty`() {
+    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(timestamp = 1_000))
+    val processor = fixture.getSut(tmpDir)
+    fixture.options.release = "io.sentry.samples@1.2.0+232"
+    setLastUpdateTime(-1)
+
+    val processed = processor.process(SentryEvent(), hint)!!
+
+    assertNull(processed.release)
+  }
+
+  @Test
+  fun `if dist is not persisted and app was not updated, uses version code from options release`() {
+    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(timestamp = 2_000))
+    val processor = fixture.getSut(tmpDir)
+    fixture.options.release = "io.sentry.samples@1.2.0+232"
+    setLastUpdateTime(1_000)
+
+    val processed = processor.process(SentryEvent(), hint)!!
+
+    assertEquals("232", processed.dist)
+  }
+
+  @Test
+  fun `if app version is not persisted and app was not updated, uses options release`() {
+    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(timestamp = 2_000))
+    val processor = fixture.getSut(tmpDir)
+    fixture.options.release = "io.sentry.samples@1.2.0+232"
+    setLastUpdateTime(1_000)
+
+    val processed = processor.process(SentryEvent(), hint)!!
+
+    assertEquals("1.2.0", processed.contexts.app!!.appVersion)
+    assertEquals("232", processed.contexts.app!!.appBuild)
+  }
+
+  @Test
+  fun `historical event uses current options when app was not updated`() {
+    val hint =
+      HintUtils.createWithTypeCheckHint(AbnormalExitHint(shouldEnrich = false, timestamp = 2_000))
+    val processor = fixture.getSut(tmpDir)
+    fixture.options.release = "io.sentry.samples@1.2.0+232"
+    fixture.options.environment = "production"
+    fixture.options.dist = "custom-dist"
+    setLastUpdateTime(1_000)
+
+    val processed = processor.process(SentryEvent(), hint)!!
+
+    assertEquals("io.sentry.samples@1.2.0+232", processed.release)
+    assertEquals("production", processed.environment)
+    assertEquals("custom-dist", processed.dist)
+    val app = processed.contexts.app!!
+    assertEquals("1.2.0", app.appVersion)
+    assertEquals("232", app.appBuild)
+    assertNull(app.appName)
+    assertNull(app.appIdentifier)
+  }
+
+  @Test
+  fun `if options cache is from an older app update, uses current options`() {
+    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(timestamp = 3_000))
+    val processor = fixture.getSut(tmpDir)
+    fixture.options.release = "io.sentry.samples@2.0.0+300"
+    fixture.options.environment = "current-user"
+    fixture.options.dist = "current-dist"
+    fixture.options.proguardUuid = "current-uuid"
+    fixture.options.sdkVersion = SdkVersion("current-sdk", "2.0.0")
+    fixture.options.setTag("account", "current-tag")
+    fixture.persistOptions(RELEASE_FILENAME, "io.sentry.samples@1.0.0+100")
+    fixture.persistOptions(ENVIRONMENT_FILENAME, "previous-user")
+    fixture.persistOptions(DIST_FILENAME, "previous-dist")
+    fixture.persistOptions(PROGUARD_UUID_FILENAME, "previous-uuid")
+    fixture.persistOptions(SDK_VERSION_FILENAME, SdkVersion("previous-sdk", "1.0.0"))
+    fixture.persistOptions(OPTIONS_TAGS_FILENAME, mapOf("account" to "previous-tag"))
+    PersistingOptionsCacheGenerationObserver(fixture.options, 1_000L).setRelease(null)
+    setLastUpdateTime(2_000)
+
+    val processed = processor.process(SentryEvent(), hint)!!
+
+    assertEquals("io.sentry.samples@2.0.0+300", processed.release)
+    assertEquals("current-user", processed.environment)
+    assertEquals("current-dist", processed.dist)
+    assertEquals("current-uuid", processed.debugMeta!!.images!![0].uuid)
+    assertEquals("current-sdk", processed.sdk!!.name)
+    assertEquals("current-tag", processed.tags!!["account"])
+  }
+
+  @Test
+  fun `if options cache is from current app update, uses persisted options`() {
+    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(timestamp = 2_000))
+    val processor = fixture.getSut(tmpDir)
+    fixture.options.release = "io.sentry.samples@1.0.0+100"
+    fixture.options.environment = "current-user"
+    fixture.options.dist = "current-dist"
+    fixture.options.setTag("account", "current-tag")
+    fixture.persistOptions(RELEASE_FILENAME, "io.sentry.samples@1.0.0+100")
+    fixture.persistOptions(ENVIRONMENT_FILENAME, "crashed-user")
+    fixture.persistOptions(DIST_FILENAME, "crashed-dist")
+    fixture.persistOptions(OPTIONS_TAGS_FILENAME, mapOf("account" to "crashed-tag"))
+    PersistingOptionsCacheGenerationObserver(fixture.options, 1_000L).setRelease(null)
+    setLastUpdateTime(1_000)
+
+    val processed = processor.process(SentryEvent(), hint)!!
+
+    assertEquals("io.sentry.samples@1.0.0+100", processed.release)
+    assertEquals("crashed-user", processed.environment)
+    assertEquals("crashed-dist", processed.dist)
+    assertEquals("crashed-tag", processed.tags!!["account"])
+  }
+
+  @Test
+  fun `if options cache was written after the exit, ignores persisted options`() {
+    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(timestamp = 2_000))
+    val processor = fixture.getSut(tmpDir)
+    fixture.persistOptions(RELEASE_FILENAME, "io.sentry.samples@2.0.0+200")
+    fixture.persistOptions(ENVIRONMENT_FILENAME, "newer-user")
+    fixture.persistOptions(DIST_FILENAME, "newer-dist")
+    fixture.persistOptions(PROGUARD_UUID_FILENAME, "newer-uuid")
+    fixture.persistOptions(SDK_VERSION_FILENAME, SdkVersion("newer-sdk", "2.0.0"))
+    fixture.persistOptions(OPTIONS_TAGS_FILENAME, mapOf("account" to "newer-tag"))
+    PersistingOptionsCacheGenerationObserver(fixture.options, 2_500L).setRelease(null)
+    setLastUpdateTime(3_000)
+
+    val processed = processor.process(SentryEvent(), hint)!!
+
+    assertNull(processed.release)
+    assertNull(processed.environment)
+    assertNull(processed.dist)
+    assertTrue(processed.debugMeta!!.images!!.isEmpty())
+    assertNull(processed.sdk)
+    assertNull(processed.tags?.get("account"))
+  }
+
+  @Test
+  fun `historical event leaves release empty when app was updated`() {
+    val hint =
+      HintUtils.createWithTypeCheckHint(AbnormalExitHint(shouldEnrich = false, timestamp = 1_000))
+    val processor = fixture.getSut(tmpDir)
+    fixture.options.release = "io.sentry.samples@1.2.0+232"
+    setLastUpdateTime(2_000)
+
+    val processed = processor.process(SentryEvent(), hint)!!
+
+    assertNull(processed.release)
+    assertNull(processed.contexts.app)
   }
 
   @Test
@@ -891,6 +1078,39 @@ class ApplicationExitInfoEventProcessorTest {
   }
 
   @Test
+  fun `if options cache is current, uses persisted replay error sample rate`() {
+    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(timestamp = 2_000))
+    val processor = fixture.getSut(tmpDir, populateScopeCache = true)
+    fixture.options.sessionReplay.onErrorSampleRate = 1.0
+    fixture.persistOptions(REPLAY_ERROR_SAMPLE_RATE_FILENAME, "0.0")
+    PersistingOptionsCacheGenerationObserver(fixture.options, 1_000L).setRelease(null)
+    setLastUpdateTime(1_000)
+
+    val processed = processor.process(SentryEvent(), hint)!!
+
+    assertNull(processed.contexts[Contexts.REPLAY_ID])
+  }
+
+  @Test
+  fun `if options cache is stale, uses current replay error sample rate`() {
+    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(timestamp = 3_000))
+    val processor = fixture.getSut(tmpDir, populateScopeCache = true)
+    fixture.options.sessionReplay.onErrorSampleRate = 1.0
+    fixture.persistOptions(REPLAY_ERROR_SAMPLE_RATE_FILENAME, "0.0")
+    PersistingOptionsCacheGenerationObserver(fixture.options, 1_000L).setRelease(null)
+    setLastUpdateTime(2_000)
+    val replayId = SentryId()
+    File(fixture.options.cacheDirPath, "replay_$replayId").also {
+      it.mkdirs()
+      it.setLastModified(1_000)
+    }
+
+    val processed = processor.process(SentryEvent(), hint)!!
+
+    assertEquals(replayId.toString(), processed.contexts[Contexts.REPLAY_ID].toString())
+  }
+
+  @Test
   fun `set replayId of the last modified folder`() {
     val hint = HintUtils.createWithTypeCheckHint(BackfillableHint())
     val processor =
@@ -938,15 +1158,21 @@ class ApplicationExitInfoEventProcessorTest {
     return processor.process(original, hint)!!
   }
 
+  private fun setLastUpdateTime(lastUpdateTime: Long) {
+    ContextUtils.getPackageInfo(fixture.context, fixture.buildInfo)!!.lastUpdateTime =
+      lastUpdateTime
+  }
+
   internal class AbnormalExitHint(
     val mechanism: String? = null,
     private val shouldEnrich: Boolean = true,
+    private val timestamp: Long? = null,
   ) : AbnormalExit, Backfillable {
     override fun mechanism(): String? = mechanism
 
     override fun ignoreCurrentThread(): Boolean = false
 
-    override fun timestamp(): Long? = null
+    override fun timestamp(): Long? = timestamp
 
     override fun shouldEnrich(): Boolean = shouldEnrich
   }

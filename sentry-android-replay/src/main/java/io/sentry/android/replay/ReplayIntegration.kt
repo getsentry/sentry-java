@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Build
+import android.os.Looper
 import android.view.MotionEvent
 import io.sentry.Breadcrumb
 import io.sentry.DataCategory.All
@@ -130,7 +131,7 @@ public class ReplayIntegration(
   private var replayCaptureStrategyProvider: ((isFullSession: Boolean) -> CaptureStrategy)? = null
   private var mainLooperHandler: MainLooperHandler = MainLooperHandler()
   private var gestureRecorderProvider: (() -> GestureRecorder)? = null
-  private val lifecycleLock = AutoClosableReentrantLock()
+  internal val lifecycleLock = AutoClosableReentrantLock()
   private val lifecycle = ReplayLifecycle()
 
   override fun register(scopes: IScopes, options: SentryOptions) {
@@ -352,7 +353,7 @@ public class ReplayIntegration(
       }
       addFrame(bitmap, frameTimeStamp, screen)
     }
-    checkCanRecord()
+    postOnMainThread { checkCanRecord() }
   }
 
   override fun onScreenshotRecorded(screenshot: File, frameTimestamp: Long) {
@@ -375,7 +376,7 @@ public class ReplayIntegration(
       }
       addFrame(screenshot, frameTimestamp, screen)
     }
-    checkCanRecord()
+    postOnMainThread { checkCanRecord() }
   }
 
   override fun close() {
@@ -390,21 +391,23 @@ public class ReplayIntegration(
       recorder?.close()
       recorder = null
       rootViewsSpy.close()
-      if (lazyReplayExecutor.isInitialized()) {
-        if (options.threadChecker.isMainThread) {
-          replayExecutor.gracefulShutdown()
-        } else {
-          replayExecutor.shutdown()
-        }
-      }
-      if (lazyPersistingExecutor.isInitialized()) {
-        if (options.threadChecker.isMainThread) {
-          persistingExecutor.gracefulShutdown()
-        } else {
-          persistingExecutor.shutdown()
-        }
-      }
       lifecycle.currentState = CLOSED
+    }
+    // shutdown outside lock — awaiting termination while holding lifecycleLock deadlocks
+    // if any executor task tries to acquire the same lock
+    if (lazyReplayExecutor.isInitialized()) {
+      if (options.threadChecker.isMainThread) {
+        replayExecutor.gracefulShutdown()
+      } else {
+        replayExecutor.shutdown()
+      }
+    }
+    if (lazyPersistingExecutor.isInitialized()) {
+      if (options.threadChecker.isMainThread) {
+        persistingExecutor.gracefulShutdown()
+      } else {
+        persistingExecutor.shutdown()
+      }
     }
   }
 
@@ -442,6 +445,17 @@ public class ReplayIntegration(
       return
     }
     captureStrategy?.onTouchEvent(event)
+  }
+
+  // Runs [block] on the main thread. If already there, executes inline; otherwise posts via
+  // the main looper handler. Prevents deadlocks when lifecycle-lock-acquiring code (e.g.
+  // checkCanRecord -> pauseInternal) is called from the replay executor thread.
+  private inline fun postOnMainThread(crossinline block: () -> Unit) {
+    if (Looper.myLooper() == Looper.getMainLooper()) {
+      block()
+    } else {
+      mainLooperHandler.post { block() }
+    }
   }
 
   /**

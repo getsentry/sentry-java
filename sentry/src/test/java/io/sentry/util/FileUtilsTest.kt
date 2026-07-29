@@ -1,7 +1,10 @@
 package io.sentry.util
 
+import com.google.common.truth.Truth.assertThat
 import java.io.File
 import java.nio.file.Files
+import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.CyclicBarrier
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -72,5 +75,52 @@ class FileUtilsTest {
     val text = "Lorem ipsum dolor sit amet\nLorem ipsum dolor sit amet"
     f.writeText(text)
     assertEquals(text, FileUtils.readText(f))
+  }
+
+  @Test
+  fun `createDirectory creates the directory and any missing parents`() {
+    val dir = File(Files.createTempDirectory("create-dir-test").toFile(), "nested/outbox")
+
+    assertThat(FileUtils.createDirectory(dir)).isTrue()
+    assertThat(dir.isDirectory).isTrue()
+  }
+
+  @Test
+  fun `createDirectory returns true when the directory already exists`() {
+    val dir = Files.createTempDirectory("create-dir-test").toFile()
+
+    assertThat(FileUtils.createDirectory(dir)).isTrue()
+  }
+
+  @Test
+  fun `createDirectory returns false when the directory cannot be created`() {
+    val file = Files.createTempFile("create-dir-test", "test").toFile()
+
+    // a regular file already occupies the path, so it can never become a directory
+    assertThat(FileUtils.createDirectory(file)).isFalse()
+  }
+
+  @Test
+  fun `createDirectory returns true for every caller when threads race to create it`() {
+    val threadCount = 8
+    // mkdirs() returns false for the losers of the race, so every caller must still see success
+    repeat(50) { iteration ->
+      val dir = File(Files.createTempDirectory("create-dir-race").toFile(), "run$iteration/outbox")
+      val barrier = CyclicBarrier(threadCount)
+      val results = ConcurrentLinkedQueue<Boolean>()
+
+      val threads =
+        (1..threadCount).map {
+          Thread {
+            barrier.await()
+            results.add(FileUtils.createDirectory(dir))
+          }
+        }
+      threads.forEach { it.start() }
+      threads.forEach { it.join() }
+
+      assertThat(results).hasSize(threadCount)
+      assertThat(results).doesNotContain(false)
+    }
   }
 }

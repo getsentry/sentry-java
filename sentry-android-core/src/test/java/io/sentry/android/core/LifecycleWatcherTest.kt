@@ -7,6 +7,7 @@ import io.sentry.IScope
 import io.sentry.IScopes
 import io.sentry.ReplayController
 import io.sentry.ScopeCallback
+import io.sentry.SentryExecutorService
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.Session
@@ -32,7 +33,8 @@ class LifecycleWatcherTest {
   private class Fixture {
     val scopes = mock<IScopes>()
     val dateProvider = mock<ICurrentDateProvider>()
-    val options = SentryOptions()
+    // a real executor so scheduled end-session tasks actually run
+    val options = SentryOptions().apply { setTimerExecutorService(SentryExecutorService(this)) }
     val replayController = mock<ReplayController>()
     val continuousProfiler = mock<IContinuousProfiler>()
 
@@ -115,10 +117,10 @@ class LifecycleWatcherTest {
     watcher.onForeground()
 
     watcher.onBackground()
-    assertNotNull(watcher.timerTask)
+    assertNotNull(watcher.endSessionFuture)
 
     watcher.onForeground()
-    assertNull(watcher.timerTask)
+    assertNull(watcher.endSessionFuture)
 
     verify(fixture.scopes, never()).endSession()
     verify(fixture.replayController, never()).stop()
@@ -184,13 +186,6 @@ class LifecycleWatcherTest {
       fixture.getSUT(enableAutoSessionTracking = false, enableAppLifecycleBreadcrumbs = false)
     watcher.onBackground()
     verify(fixture.scopes, never()).addBreadcrumb(any<Breadcrumb>())
-  }
-
-  @Test
-  fun `timer is created if session tracking is enabled`() {
-    val watcher =
-      fixture.getSUT(enableAutoSessionTracking = true, enableAppLifecycleBreadcrumbs = false)
-    assertNotNull(watcher.timer)
   }
 
   @Test

@@ -1112,7 +1112,11 @@ public class SentryOptions {
   }
 
   /**
-   * Returns the outbox path if cacheDirPath is set
+   * Returns the outbox path if cacheDirPath is set.
+   *
+   * <p>The directory is created lazily by the SDK on a background thread, so it is not guaranteed
+   * to exist when {@code Sentry.init} returns. Callers writing envelopes here directly (for example
+   * hybrid SDKs) must create it themselves, e.g. {@code new File(outboxPath).mkdirs()}.
    *
    * @return the outbox path or null if not set
    */
@@ -3365,6 +3369,10 @@ public class SentryOptions {
     /**
      * Mutates or drop an event before being sent
      *
+     * <p>Do not capture from within this callback — directly, or indirectly through a logging
+     * integration that routes logs back into Sentry. Such nested captures are silently dropped to
+     * prevent infinite recursion.
+     *
      * @param event the event
      * @param hint the hints
      * @return the original event or the mutated event or null if event was dropped
@@ -3378,6 +3386,10 @@ public class SentryOptions {
 
     /**
      * Mutates or drop a transaction before being sent
+     *
+     * <p>Do not capture from within this callback — directly, or indirectly through a logging
+     * integration that routes logs back into Sentry. Such nested captures are silently dropped to
+     * prevent infinite recursion.
      *
      * @param transaction the transaction
      * @param hint the hints
@@ -3396,6 +3408,10 @@ public class SentryOptions {
      * for a single replay (i.e. segments), you can check {@link SentryReplayEvent#getReplayId()} to
      * identify that the segments belong to the same replay.
      *
+     * <p>Do not capture from within this callback — directly, or indirectly through a logging
+     * integration that routes logs back into Sentry. Such nested captures are silently dropped to
+     * prevent infinite recursion.
+     *
      * @param event the event
      * @param hint the hint, contains {@link ReplayRecording}, can be accessed via {@link
      *     Hint#getReplayRecording()}
@@ -3410,6 +3426,10 @@ public class SentryOptions {
 
     /**
      * Mutates or drop a callback before being added
+     *
+     * <p>Do not capture from within this callback — directly, or indirectly through a logging
+     * integration that routes logs back into Sentry. Such nested captures are silently dropped to
+     * prevent infinite recursion.
      *
      * @param breadcrumb the breadcrumb
      * @param hint the hints, usually the source of the breadcrumb
@@ -3999,6 +4019,10 @@ public class SentryOptions {
       /**
        * Mutates or drop a log event before being sent
        *
+       * <p>Do not capture from within this callback — directly, or indirectly through a logging
+       * integration that routes logs back into Sentry. Such nested captures are silently dropped to
+       * prevent infinite recursion.
+       *
        * @param event the event
        * @return the original log event or the mutated event or null if event was dropped
        */
@@ -4072,6 +4096,10 @@ public class SentryOptions {
 
       /**
        * A callback which gets called right before a metric is about to be sent.
+       *
+       * <p>Do not capture from within this callback — directly, or indirectly through a logging
+       * integration that routes logs back into Sentry. Such nested captures are silently dropped to
+       * prevent infinite recursion.
        *
        * @param metric the metric
        * @return the original metric, mutated metric or null if metric was dropped

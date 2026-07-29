@@ -463,8 +463,9 @@ public final class Sentry {
           () -> {
             final String cacheDirPath = options.getCacheDirPathWithoutDsn();
             if (cacheDirPath != null) {
+              final @NotNull File cacheDir = new File(cacheDirPath);
               final @NotNull File appStartProfilingConfigFile =
-                  new File(cacheDirPath, APP_START_PROFILING_CONFIG_FILE_NAME);
+                  new File(cacheDir, APP_START_PROFILING_CONFIG_FILE_NAME);
               try {
                 // We always delete the config file for app start profiling
                 FileUtils.deleteRecursively(appStartProfilingConfigFile);
@@ -479,6 +480,14 @@ public final class Sentry {
                       .log(
                           SentryLevel.INFO,
                           "Tracing is disabled and app start profiling will not start.");
+                  return;
+                }
+                // The cache dir is no longer created during init, so create it here before writing:
+                // createNewFile() fails if the parent is missing.
+                if (!FileUtils.createDirectory(cacheDir)) {
+                  options
+                      .getLogger()
+                      .log(SentryLevel.ERROR, "Failed to create cache dir %s", cacheDirPath);
                   return;
                 }
                 if (appStartProfilingConfigFile.createNewFile()) {
@@ -616,19 +625,14 @@ public final class Sentry {
     // TODO: read values from conf file, Build conf or system envs
     // eg release, distinctId, sentryClientName
 
-    // this should be after setting serializers
-    final String outboxPath = options.getOutboxPath();
-    if (outboxPath != null) {
-      final File outboxDir = new File(outboxPath);
-      outboxDir.mkdirs();
-    } else {
+    // The outbox and cache dirs are created lazily by their consumers (envelope cache, outbox file
+    // observer, native SDK) off the init thread, so we don't stat/mkdir them here.
+    if (options.getOutboxPath() == null) {
       logger.log(SentryLevel.INFO, "No outbox dir path is defined in options.");
     }
 
     final String cacheDirPath = options.getCacheDirPath();
     if (cacheDirPath != null) {
-      final File cacheDir = new File(cacheDirPath);
-      cacheDir.mkdirs();
       final IEnvelopeCache envelopeCache = options.getEnvelopeDiskCache();
       // only overwrite the cache impl if it's not already set
       if (envelopeCache instanceof NoOpEnvelopeCache) {

@@ -91,7 +91,7 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
   }
 
   @SuppressWarnings("deprecation")
-  @SuppressLint({"NewApi", "PrivateApi"})
+  @SuppressLint({"NewApi", "PrivateApi", "DiscouragedPrivateApi"})
   public SentryFrameMetricsCollector(
       final @NotNull Context context,
       final @NotNull ILogger logger,
