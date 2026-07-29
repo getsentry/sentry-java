@@ -497,6 +497,12 @@ public class PerfettoContinuousProfiler
                       frameEndNanos - System.nanoTime() + SystemClock.elapsedRealtimeNanos();
                   final long frameTimestampRelativeNanos =
                       frameEndElapsedRealtimeNanos - profileStartElapsedRealtimeNanos;
+
+                  // We don't allow negative relative timestamps, e.g. for a frame that started
+                  // before the chunk did. This should never happen, but we check anyway.
+                  if (frameTimestampRelativeNanos < 0) {
+                    return;
+                  }
                   if (isFrozen) {
                     frozenFrameRenderMeasurements.addLast(
                         new ProfileMeasurementValue(
@@ -591,29 +597,34 @@ public class PerfettoContinuousProfiler
       final @NotNull ArrayDeque<ProfileMeasurementValue> nativeMemoryUsageMeasurements =
           new ArrayDeque<>(performanceData.size());
 
-      for (final @NotNull PerformanceCollectionData data : performanceData) {
-        // Convert sample timestamps (reported by CompositePerformanceCollector using
-        // System.currentTimeMillis), into the SystemClock.elapsedRealtime to report
-        // elapsed realtime nanos since chunk start
-        final long nanoTimestamp = data.getNanoTimestamp();
-        final long nanosSinceSample = wallClockNowNanos - nanoTimestamp;
-        final long sampleElapsedRealtimeNanos = elapsedRealtimeNowNanos - nanosSinceSample;
-        final long relativeStartNs = sampleElapsedRealtimeNanos - profileStartElapsedRealtimeNanos;
-        final @Nullable Double cpuUsagePercentage = data.getCpuUsagePercentage();
-        final @Nullable Long usedHeapMemory = data.getUsedHeapMemory();
-        final @Nullable Long usedNativeMemory = data.getUsedNativeMemory();
+      // CompositePerformanceCollector.stop() hands back its live list, which its timer thread may
+      // still write to, so we synchronize on it while iterating, as AndroidProfiler does.
+      synchronized (performanceData) {
+        for (final @NotNull PerformanceCollectionData data : performanceData) {
+          // Convert sample timestamps (reported by CompositePerformanceCollector using
+          // System.currentTimeMillis), into the SystemClock.elapsedRealtime to report
+          // elapsed realtime nanos since chunk start
+          final long nanoTimestamp = data.getNanoTimestamp();
+          final long nanosSinceSample = wallClockNowNanos - nanoTimestamp;
+          final long sampleElapsedRealtimeNanos = elapsedRealtimeNowNanos - nanosSinceSample;
+          final long relativeStartNs =
+              sampleElapsedRealtimeNanos - profileStartElapsedRealtimeNanos;
+          final @Nullable Double cpuUsagePercentage = data.getCpuUsagePercentage();
+          final @Nullable Long usedHeapMemory = data.getUsedHeapMemory();
+          final @Nullable Long usedNativeMemory = data.getUsedNativeMemory();
 
-        if (cpuUsagePercentage != null) {
-          cpuUsageMeasurements.addLast(
-              new ProfileMeasurementValue(relativeStartNs, cpuUsagePercentage, nanoTimestamp));
-        }
-        if (usedHeapMemory != null) {
-          memoryUsageMeasurements.addLast(
-              new ProfileMeasurementValue(relativeStartNs, usedHeapMemory, nanoTimestamp));
-        }
-        if (usedNativeMemory != null) {
-          nativeMemoryUsageMeasurements.addLast(
-              new ProfileMeasurementValue(relativeStartNs, usedNativeMemory, nanoTimestamp));
+          if (cpuUsagePercentage != null) {
+            cpuUsageMeasurements.addLast(
+                new ProfileMeasurementValue(relativeStartNs, cpuUsagePercentage, nanoTimestamp));
+          }
+          if (usedHeapMemory != null) {
+            memoryUsageMeasurements.addLast(
+                new ProfileMeasurementValue(relativeStartNs, usedHeapMemory, nanoTimestamp));
+          }
+          if (usedNativeMemory != null) {
+            nativeMemoryUsageMeasurements.addLast(
+                new ProfileMeasurementValue(relativeStartNs, usedNativeMemory, nanoTimestamp));
+          }
         }
       }
 

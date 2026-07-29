@@ -4,6 +4,7 @@ import io.sentry.CompositePerformanceCollector
 import io.sentry.PerformanceCollectionData
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector
 import io.sentry.profilemeasurements.ProfileMeasurement
+import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import org.mockito.kotlin.any
@@ -45,21 +46,25 @@ class ChunkMeasurementCollectorTest {
     // --- Cycle 1 ---
     collector.start(performanceCollector, "chunk-1")
     verify(frameMetricsCollector).startCollection(listenerCaptor.capture())
+    // frameEndNanos comes from System.nanoTime(), so it must be based on the current reading for
+    // the resulting chunk-relative timestamp to be non-negative.
+    var frameEnd = futureFrameEndNanos()
     // onFrameMetricCollected(frameStart, frameEnd, duration, delay, isSlow, isFrozen, refreshRate)
     listenerCaptor.lastValue.apply {
-      onFrameMetricCollected(0L, 1_000L, 100L, 0L, true, false, 60.0f) // slow
-      onFrameMetricCollected(0L, 2_000L, 800L, 0L, false, true, 60.0f) // frozen
-      onFrameMetricCollected(0L, 3_000L, 50L, 0L, false, false, 90.0f) // refresh change
+      onFrameMetricCollected(0L, frameEnd, 100L, 0L, true, false, 60.0f) // slow
+      onFrameMetricCollected(0L, frameEnd, 800L, 0L, false, true, 60.0f) // frozen
+      onFrameMetricCollected(0L, frameEnd, 50L, 0L, false, false, 90.0f) // refresh change
     }
     val chunk1 = collector.stop()
 
     // --- Cycle 2 ---
     collector.start(performanceCollector, "chunk-2")
     verify(frameMetricsCollector, times(2)).startCollection(listenerCaptor.capture())
+    frameEnd = futureFrameEndNanos()
     listenerCaptor.lastValue.apply {
-      onFrameMetricCollected(0L, 10_000L, 150L, 0L, true, false, 60.0f) // slow
-      onFrameMetricCollected(0L, 11_000L, 200L, 0L, true, false, 60.0f) // slow
-      onFrameMetricCollected(0L, 12_000L, 900L, 0L, false, true, 60.0f) // frozen
+      onFrameMetricCollected(0L, frameEnd, 150L, 0L, true, false, 60.0f) // slow
+      onFrameMetricCollected(0L, frameEnd, 200L, 0L, true, false, 60.0f) // slow
+      onFrameMetricCollected(0L, frameEnd, 900L, 0L, false, true, 60.0f) // frozen
     }
     val chunk2 = collector.stop()
 
@@ -70,6 +75,41 @@ class ChunkMeasurementCollectorTest {
     // 2 cpu samples (one was null), 3 heap samples, 2 native samples.
     assertChunkCounts(chunk2, slow = 2, frozen = 1, refreshRate = 1, cpu = 2, heap = 3, native = 2)
   }
+
+  @Test
+  fun `frames ending before the chunk started are dropped`() {
+    val frameMetricsCollector: SentryFrameMetricsCollector = mock()
+    val collector = PerfettoContinuousProfiler.ChunkMeasurementCollector(frameMetricsCollector)
+    val listenerCaptor = argumentCaptor<SentryFrameMetricsCollector.FrameMetricsCollectorListener>()
+
+    collector.start(null, "chunk-1")
+    verify(frameMetricsCollector).startCollection(listenerCaptor.capture())
+
+    val staleFrameEnd = System.nanoTime() - TimeUnit.HOURS.toNanos(1)
+    listenerCaptor.lastValue.apply {
+      onFrameMetricCollected(0L, staleFrameEnd, 100L, 0L, true, false, 60.0f)
+      onFrameMetricCollected(0L, staleFrameEnd, 800L, 0L, false, true, 60.0f)
+      onFrameMetricCollected(0L, futureFrameEndNanos(), 150L, 0L, true, false, 60.0f)
+    }
+
+    val measurements = collector.stop()
+
+    assertChunkCounts(
+      measurements,
+      slow = 1,
+      frozen = 0,
+      refreshRate = 1,
+      cpu = 0,
+      heap = 0,
+      native = 0,
+    )
+  }
+
+  /**
+   * A frameEndNanos far enough ahead of the collector's own `System.nanoTime()` reading that the
+   * chunk-relative timestamp stays positive regardless of test execution timing.
+   */
+  private fun futureFrameEndNanos() = System.nanoTime() + TimeUnit.MINUTES.toNanos(1)
 
   private fun perfData(nanos: Long, cpu: Double?, heap: Long?, native: Long?) =
     PerformanceCollectionData(nanos).apply {
