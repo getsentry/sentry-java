@@ -13,7 +13,7 @@ import io.sentry.IContinuousProfiler;
 import io.sentry.ILogger;
 import io.sentry.ISentryLifecycleToken;
 import io.sentry.ITransactionProfiler;
-import io.sentry.JsonSerializer;
+import io.sentry.JsonObjectReader;
 import io.sentry.SentryAppStartProfilingOptions;
 import io.sentry.SentryExecutorService;
 import io.sentry.SentryLevel;
@@ -117,8 +117,7 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
     try (final @NotNull Reader reader =
             new BufferedReader(new InputStreamReader(new FileInputStream(configFile)))) {
       final @Nullable SentryAppStartProfilingOptions profilingOptions =
-          new JsonSerializer(SentryOptions.empty())
-              .deserialize(reader, SentryAppStartProfilingOptions.class);
+          deserializeProfilingConfig(reader);
 
       if (profilingOptions == null) {
         logger.log(
@@ -163,6 +162,25 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
       logger.log(SentryLevel.ERROR, "App start profiling config file not found. ", e);
     } catch (Throwable e) {
       logger.log(SentryLevel.ERROR, "Error reading app start profiling config file. ", e);
+    }
+  }
+
+  /**
+   * Parses the app start profiling config with only the deserializer it needs. Going through {@link
+   * io.sentry.JsonSerializer} would allocate a full {@link SentryOptions} plus every registered
+   * deserializer on the main thread before {@code Application.onCreate}, to use exactly one of
+   * them.
+   *
+   * <p>Returns null on malformed input, matching what {@code JsonSerializer.deserialize} did, so
+   * callers keep reporting it as a deserialization failure rather than a read error.
+   */
+  private @Nullable SentryAppStartProfilingOptions deserializeProfilingConfig(
+      final @NotNull Reader reader) {
+    try (final @NotNull JsonObjectReader jsonReader = new JsonObjectReader(reader)) {
+      return new SentryAppStartProfilingOptions.Deserializer().deserialize(jsonReader, logger);
+    } catch (Throwable e) {
+      logger.log(SentryLevel.ERROR, "Error when deserializing", e);
+      return null;
     }
   }
 
