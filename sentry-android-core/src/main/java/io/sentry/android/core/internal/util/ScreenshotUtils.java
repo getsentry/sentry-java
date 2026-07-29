@@ -97,9 +97,8 @@ public class ScreenshotUtils {
     }
 
     try {
-      // ARGB_8888 -> This configuration is very flexible and offers the best quality
       final Bitmap bitmap =
-          Bitmap.createBitmap(view.getWidth(), view.getHeight(), Bitmap.Config.ARGB_8888);
+          Bitmap.createBitmap(view.getWidth(), view.getHeight(), Bitmap.Config.RGB_565);
 
       final @NotNull CountDownLatch latch = new CountDownLatch(1);
 
