@@ -8,9 +8,10 @@
 
 ### Fixes
 
-- Set the correct platform (`android` instead of `java`) on ANR profile chunks so they are billed as UI Profile Hours rather than Continuous Profile Hours ([#5836](https://github.com/getsentry/sentry-java/pull/5836))
+- Fix potential ANR/deadlock in Session Replay when `checkCanRecord` runs on the replay executor thread ([#5837](https://github.com/getsentry/sentry-java/pull/5837))
 - Prevent concurrent PixelCopy access during Session Replay masking and bitmap cleanup ([#5808](https://github.com/getsentry/sentry-java/pull/5808))
 - Release `MediaMuxer` when the replay video encoder fails to start to avoid a resource leak ([#5607](https://github.com/getsentry/sentry-java/pull/5607))
+- Set the correct platform (`android` instead of `java`) on ANR profile chunks so they are billed as UI Profile Hours rather than Continuous Profile Hours ([#5836](https://github.com/getsentry/sentry-java/pull/5836))
 
 ### Performance
 
