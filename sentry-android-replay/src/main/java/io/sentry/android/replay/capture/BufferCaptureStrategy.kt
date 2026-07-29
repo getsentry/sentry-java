@@ -4,6 +4,8 @@ import android.annotation.SuppressLint
 import android.annotation.TargetApi
 import android.graphics.Bitmap
 import android.view.MotionEvent
+import io.sentry.DataCategory.All
+import io.sentry.DataCategory.Replay
 import io.sentry.DateUtils
 import io.sentry.IScopes
 import io.sentry.SentryLevel.DEBUG
@@ -17,6 +19,7 @@ import io.sentry.android.replay.capture.CaptureStrategy.Companion.rotateEvents
 import io.sentry.android.replay.capture.CaptureStrategy.ReplaySegment
 import io.sentry.android.replay.util.ReplayRunnable
 import io.sentry.android.replay.util.sample
+import io.sentry.clientreport.DiscardReason.RATELIMIT_BACKOFF
 import io.sentry.protocol.SentryId
 import io.sentry.transport.ICurrentDateProvider
 import io.sentry.util.FileUtils
@@ -100,6 +103,18 @@ internal class BufferCaptureStrategy(
       return
     }
 
+    if (isReplayRateLimited()) {
+      // the segment envelopes would be dropped by the transport anyway, so don't waste resources
+      // encoding videos that will only be discarded
+      options.logger.log(INFO, "Replay is rate-limited, not capturing for event")
+      // one lost event per flush, not per segment: the transport would have counted the current
+      // segment plus every buffered one, but a flush only ever loses a single replay from the
+      // user's perspective. Under-reporting here is preferable to making replay look like it
+      // dropped data it never held.
+      options.clientReportRecorder.recordLostEvent(RATELIMIT_BACKOFF, Replay)
+      return
+    }
+
     createCurrentSegment("capture_replay") { segment ->
       bufferedSegments.capture()
 
@@ -151,6 +166,13 @@ internal class BufferCaptureStrategy(
       )
       return this
     }
+    if (isReplayRateLimited()) {
+      // captureReplay skipped the flush, so there is nothing to continue in session mode. Staying
+      // in buffer mode keeps the rolling buffer warm, so the next error after the rate limit
+      // expires can send a complete replay starting at segment 0.
+      options.logger.log(DEBUG, "Not converting to session mode, because replay is rate-limited")
+      return this
+    }
     // we hand over replayExecutor and persistingExecutor to the new strategy to preserve order of
     // execution
     val captureStrategy =
@@ -169,6 +191,11 @@ internal class BufferCaptureStrategy(
     val bufferLimit = dateProvider.currentTimeMillis - options.sessionReplay.errorReplayDuration
     rotateEvents(currentEvents, bufferLimit)
   }
+
+  private fun isReplayRateLimited(): Boolean =
+    scopes?.rateLimiter?.let {
+      it.isActiveForCategory(All) || it.isActiveForCategory(Replay)
+    } == true
 
   private fun deleteFile(file: File?) {
     if (file == null) {
