@@ -28,6 +28,18 @@ import java.io.File
 import java.util.Date
 import java.util.concurrent.ScheduledExecutorService
 
+/**
+ * Records a rolling `errorReplayDuration` window: segments are encoded but held in memory, and
+ * frames and segments older than the window are dropped on every screenshot. Used when the session
+ * is not sampled by `sessionSampleRate` but `onErrorSampleRate` is set.
+ *
+ * Nothing is sent until [captureReplay] flushes the buffer for an error — sampled per error against
+ * `onErrorSampleRate`, unlike session mode which samples once at start. After a successful flush
+ * [convert] hands over to a [SessionCaptureStrategy] so the rest of the session is recorded live.
+ *
+ * Since nothing is in flight, `ReplayIntegration` deliberately keeps this strategy recording while
+ * rate-limited, so the buffer stays warm for when the limit expires.
+ */
 @SuppressLint("UseRequiresApi")
 @TargetApi(26)
 internal class BufferCaptureStrategy(
