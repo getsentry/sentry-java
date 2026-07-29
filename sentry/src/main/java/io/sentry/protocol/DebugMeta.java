@@ -63,7 +63,7 @@ public final class DebugMeta implements JsonUnknown, JsonSerializable {
       return null;
     }
 
-    DebugMeta debugMeta = eventDebugMeta != null ? eventDebugMeta : new DebugMeta();
+    final @NotNull DebugMeta debugMeta = eventDebugMeta != null ? eventDebugMeta : new DebugMeta();
     addMissingDebugImages(debugMeta, optionDebugImages);
     return debugMeta;
   }
