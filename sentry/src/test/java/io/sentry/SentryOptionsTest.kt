@@ -783,6 +783,17 @@ class SentryOptionsTest {
   }
 
   @Test
+  fun `when options are initialized, enableLegacyProfiling is set to true by default`() {
+    assertTrue(SentryOptions().isEnableLegacyProfiling)
+  }
+
+  @Test
+  fun `when setEnableLegacyProfiling is called, value is set`() {
+    val options = SentryOptions().apply { isEnableLegacyProfiling = false }
+    assertFalse(options.isEnableLegacyProfiling)
+  }
+
+  @Test
   fun `when options are initialized, profilingTracesHz is set to 101 by default`() {
     assertEquals(101, SentryOptions().profilingTracesHz)
   }

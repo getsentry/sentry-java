@@ -227,7 +227,11 @@ public final class DefaultCompositePerformanceCollector implements CompositePerf
      * @return true if data collection timed out (for transactions only).
      */
     boolean addDataAndCheckTimeout(final @NotNull PerformanceCollectionData data) {
-      dataList.add(data);
+      // stop() hands dataList out while this timer thread may still be writing to it, so consumers
+      // synchronize on the list while iterating. We must hold the same monitor here.
+      synchronized (dataList) {
+        dataList.add(data);
+      }
       return transaction != null
           && options.getDateProvider().now().nanoTimestamp()
               > startTimestamp

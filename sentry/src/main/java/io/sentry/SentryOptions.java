@@ -658,6 +658,14 @@ public class SentryOptions {
   private boolean startProfilerOnAppStart = false;
 
   /**
+   * When false, the legacy {@code Debug}-based profiler is disabled on API &lt; 35 devices. On API
+   * 35+ devices, Android's {@code ProfilingManager} (Perfetto-based stack sampling) is always used
+   * regardless of this setting. This option will be deprecated in the next major release and
+   * removed in the one after.
+   */
+  private boolean enableLegacyProfiling = true;
+
+  /**
    * Controls the deadline timeout in milliseconds for automatic transactions. When set to a
    * positive value, that value is used as the deadline timeout. When set to a value less than or
    * equal to 0, no deadline is applied and transactions will only finish when explicitly finished
@@ -2282,6 +2290,36 @@ public class SentryOptions {
    */
   public void setStartProfilerOnAppStart(final boolean startProfilerOnAppStart) {
     this.startProfilerOnAppStart = startProfilerOnAppStart;
+  }
+
+  /**
+   * Whether the legacy {@code Debug}-based profiler is enabled. This controls continuous profiling
+   * on API &lt; 35 devices (on API 35+, Android's {@code ProfilingManager} / Perfetto is always
+   * used for continuous profiling regardless of this setting) as well as transaction-based
+   * profiling ({@code profilesSampleRate}/{@code profilesSampler}) on all devices, since
+   * transaction-based profiling always relies on the legacy profiler and is not supported by
+   * Perfetto. This option will be deprecated in the next major release and removed in the one
+   * after.
+   *
+   * @return true if legacy profiling is enabled (default).
+   */
+  public boolean isEnableLegacyProfiling() {
+    return enableLegacyProfiling;
+  }
+
+  /**
+   * Set whether the legacy {@code Debug}-based profiler is enabled. Set to {@code false} to disable
+   * continuous profiling on devices below API 35 (on API 35+ devices, Android's {@code
+   * ProfilingManager} / Perfetto is always used for continuous profiling and this setting has no
+   * effect) as well as transaction-based profiling ({@code profilesSampleRate}/{@code
+   * profilesSampler}) on all devices, since transaction-based profiling always relies on the legacy
+   * profiler and is not supported by Perfetto. This option will be deprecated in the next major
+   * release and removed in the one after.
+   *
+   * @param enableLegacyProfiling false to disable legacy profiling.
+   */
+  public void setEnableLegacyProfiling(final boolean enableLegacyProfiling) {
+    this.enableLegacyProfiling = enableLegacyProfiling;
   }
 
   public long getDeadlineTimeout() {
