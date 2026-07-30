@@ -51,7 +51,15 @@ internal class PixelCopyStrategy(
   private val executor = executorProvider.getExecutor()
   private val mainLooperHandler = executorProvider.getMainLooperHandler()
   private val screenshot =
-    Bitmap.createBitmap(config.recordingWidth, config.recordingHeight, Bitmap.Config.ARGB_8888)
+    Bitmap.createBitmap(
+      config.recordingWidth,
+      config.recordingHeight,
+      if (options.sessionReplay.isCaptureSurfaceViews) {
+        Bitmap.Config.ARGB_8888
+      } else {
+        Bitmap.Config.RGB_565
+      },
+    )
   private val prescaledMatrix by
     lazy(NONE) { Matrix().apply { preScale(config.scaleFactorX, config.scaleFactorY) } }
   private val lastCaptureSuccessful = AtomicBoolean(false)
