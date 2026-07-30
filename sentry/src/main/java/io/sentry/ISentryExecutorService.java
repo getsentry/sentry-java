@@ -11,8 +11,8 @@ import org.jetbrains.annotations.NotNull;
  *
  * <p>Implementations that drop a task instead of running it — a no-op service, a full work queue —
  * must report that through the returned {@link Future}: either throw {@link
- * RejectedExecutionException} or return a {@link CancelledFuture}. Callers rely on this to
- * tell a queued task from a dropped one, so a Future that will never complete and never reports
+ * RejectedExecutionException} or return a {@link CancelledFuture}. Callers rely on this to tell a
+ * queued task from a dropped one, so a Future that will never complete and never reports
  * cancellation leaves them waiting on a task that is never coming.
  */
 @ApiStatus.Internal
