@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Fixes
+
+- Avoid a CPU busy-loop when recording discarded log or metric envelopes under rate limiting ([#5835](https://github.com/getsentry/sentry-java/pull/5835))
+  - `ClientReportRecorder` now reads the item count from the envelope item header instead of deserializing the payload, which under sustained rate limiting could pin CPU cores while repeatedly throwing exceptions
+
 ### Performance
 
 - Remove an unused lock from `SentryPerformanceProvider`, which was allocated on every cold start in `ContentProvider.onCreate` without ever being acquired ([#5871](https://github.com/getsentry/sentry-java/pull/5871))
