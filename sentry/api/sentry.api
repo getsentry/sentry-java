@@ -3120,6 +3120,7 @@ public final class io/sentry/SentryEnvelopeItemHeader : io/sentry/JsonSerializab
 	public fun getAttachmentType ()Ljava/lang/String;
 	public fun getContentType ()Ljava/lang/String;
 	public fun getFileName ()Ljava/lang/String;
+	public fun getItemCount ()Ljava/lang/Integer;
 	public fun getLength ()I
 	public fun getPlatform ()Ljava/lang/String;
 	public fun getType ()Lio/sentry/SentryItemType;

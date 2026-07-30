@@ -53,6 +53,10 @@ public final class SentryEnvelopeItemHeader implements JsonSerializable, JsonUnk
     return platform;
   }
 
+  public @Nullable Integer getItemCount() {
+    return itemCount;
+  }
+
   @Nullable
   Integer getMetaLength() {
     if (calculateMetaLength != null) {
