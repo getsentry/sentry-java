@@ -28,8 +28,8 @@ import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -266,7 +266,13 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
   }
 
   private void writePending() {
-    for (final @NotNull String fileName : new ArrayList<>(pendingWrites.keySet())) {
+    // ConcurrentHashMap's iterator is weakly consistent, so removing while iterating is safe. Keys
+    // added after iteration starts may be missed, but flush() re-checks and queues another write.
+    // We remove through the map rather than the iterator: that is an atomic get-and-remove, so we
+    // never drop a value written by a mutation racing with this loop.
+    final @NotNull Iterator<String> fileNames = pendingWrites.keySet().iterator();
+    while (fileNames.hasNext()) {
+      final @NotNull String fileName = fileNames.next();
       final @Nullable Object entity = pendingWrites.remove(fileName);
       if (entity == null) {
         // removed by a concurrent flush
