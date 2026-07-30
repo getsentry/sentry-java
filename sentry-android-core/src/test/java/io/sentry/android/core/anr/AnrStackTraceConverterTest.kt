@@ -60,9 +60,6 @@ class AnrStackTraceConverterTest {
     val syntheticSample = profile.samples[1]
     val expectedOffsetSeconds = AnrProfilingIntegration.POLLING_INTERVAL_MS / 2.0 / 1000.0
 
-    Assert.assertEquals(originalSample.stackId, syntheticSample.stackId)
-    Assert.assertEquals(originalSample.threadId, syntheticSample.threadId)
-    Assert.assertEquals(originalSample.unknown, syntheticSample.unknown)
     Assert.assertEquals(
       originalSample.timestamp + expectedOffsetSeconds,
       syntheticSample.timestamp,

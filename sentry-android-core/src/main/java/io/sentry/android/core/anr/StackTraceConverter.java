@@ -174,11 +174,8 @@ public final class StackTraceConverter {
    */
   @NotNull
   private static SentrySample createSyntheticSample(@NotNull SentrySample originalSample) {
-    final @NotNull SentrySample syntheticSample = new SentrySample();
+    final @NotNull SentrySample syntheticSample = new SentrySample(originalSample);
     syntheticSample.setTimestamp(originalSample.getTimestamp() + SYNTHETIC_SAMPLE_OFFSET_SECONDS);
-    syntheticSample.setStackId(originalSample.getStackId());
-    syntheticSample.setThreadId(originalSample.getThreadId());
-    syntheticSample.setUnknown(originalSample.getUnknown());
     return syntheticSample;
   }
 }

@@ -8,6 +8,7 @@ import io.sentry.JsonSerializable;
 import io.sentry.JsonUnknown;
 import io.sentry.ObjectReader;
 import io.sentry.ObjectWriter;
+import io.sentry.util.CollectionUtils;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.HashMap;
@@ -26,6 +27,15 @@ public final class SentrySample implements JsonUnknown, JsonSerializable {
   private @Nullable String threadId;
 
   private @Nullable Map<String, Object> unknown;
+
+  public SentrySample() {}
+
+  public SentrySample(final @NotNull SentrySample sample) {
+    this.timestamp = sample.timestamp;
+    this.stackId = sample.stackId;
+    this.threadId = sample.threadId;
+    this.unknown = CollectionUtils.newConcurrentHashMap(sample.unknown);
+  }
 
   public double getTimestamp() {
     return timestamp;
