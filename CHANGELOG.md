@@ -5,6 +5,7 @@
 ### Performance
 
 - Remove an unused lock from `SentryPerformanceProvider`, which was allocated on every cold start in `ContentProvider.onCreate` without ever being acquired ([#5871](https://github.com/getsentry/sentry-java/pull/5871))
+- Parse the app start profiling config with only the deserializer it needs instead of building a full `JsonSerializer` and `SentryOptions`, cutting 188 of 221 allocations on the main thread before `Application.onCreate` ([#5867](https://github.com/getsentry/sentry-java/pull/5867))
 
 ## 8.51.0
 

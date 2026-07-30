@@ -154,6 +154,21 @@ class SentryPerformanceProviderTest {
   }
 
   @Test
+  fun `when config file is malformed, profiler is not started`() {
+    fixture.getSut { config -> config.writeText("{\"profile_sampled\": tru") }
+    assertNull(AppStartMetrics.getInstance().appStartProfiler)
+    assertNull(AppStartMetrics.getInstance().appStartContinuousProfiler)
+    verify(fixture.logger).log(eq(SentryLevel.ERROR), eq("Error when deserializing"), any())
+    verify(fixture.logger)
+      .log(
+        eq(SentryLevel.WARNING),
+        eq(
+          "Unable to deserialize the SentryAppStartProfilingOptions. App start profiling will not start."
+        ),
+      )
+  }
+
+  @Test
   fun `when profiling is disabled, profiler is not started`() {
     fixture.getSut { config ->
       writeConfig(config, profilingEnabled = false, continuousProfilingEnabled = false)
