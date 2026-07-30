@@ -14,6 +14,7 @@ import android.os.SystemClock;
 import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
 import io.sentry.IContinuousProfiler;
 import io.sentry.ISentryLifecycleToken;
@@ -209,12 +210,19 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   }
 
   /**
-   * Whether {@link ApplicationStartInfo#getReason()} indicates the OS spawned the process for
-   * background work (push, job, service, ...) rather than a user launch. Unknown/future reasons are
-   * treated as user-initiated to avoid discarding valid app starts.
+   * Whether {@link ApplicationStartInfo#getReason()} indicates the OS spawned the app process
+   * because of an intentional user interaction.
+   *
+   * @return true if the user actively launched the app, false if the app was launched in
+   *     background, and null if unknown.
    */
-  private static boolean isBackgroundStartReason(final int reason) {
+  @RequiresApi(api = Build.VERSION_CODES.VANILLA_ICE_CREAM)
+  private static @Nullable Boolean isForegroundStartReason(final int reason) {
     switch (reason) {
+      case ApplicationStartInfo.START_REASON_LAUNCHER:
+      case ApplicationStartInfo.START_REASON_LAUNCHER_RECENTS:
+      case ApplicationStartInfo.START_REASON_START_ACTIVITY:
+        return true;
       case ApplicationStartInfo.START_REASON_ALARM:
       case ApplicationStartInfo.START_REASON_BACKUP:
       case ApplicationStartInfo.START_REASON_BOOT_COMPLETE:
@@ -223,9 +231,10 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
       case ApplicationStartInfo.START_REASON_JOB:
       case ApplicationStartInfo.START_REASON_PUSH:
       case ApplicationStartInfo.START_REASON_SERVICE:
-        return true;
-      default: // launcher/recents/start_activity/other and future reasons: user-initiated
         return false;
+      case ApplicationStartInfo.START_REASON_OTHER:
+      default:
+        return null;
     }
   }
 
@@ -520,12 +529,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
               } else {
                 appStartType = AppStartType.WARM;
               }
-            }
-            // Background-spawned processes (push/job/service/...) keep the app start anchored at
-            // process creation. Marking them not-in-foreground makes onActivityCreated re-classify
-            // them as a warm start anchored at activity creation, avoiding an inflated cold start.
-            if (isBackgroundStartReason(info.getReason())) {
-              appLaunchedInForeground.setValue(false);
+              appLaunchedInForeground.setValue(isForegroundStartReason(info.getReason()));
             }
           }
         } catch (RuntimeException ignored) {
