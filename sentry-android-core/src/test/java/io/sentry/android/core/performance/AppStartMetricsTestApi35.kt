@@ -332,6 +332,22 @@ class AppStartMetricsTestApi35 {
   }
 
   @Test
+  fun `unknown start reason falls back to foreground importance check`() {
+    val mockStartInfo = mock<ApplicationStartInfo>()
+    whenever(mockStartInfo.startupState).thenReturn(ApplicationStartInfo.STARTUP_STATE_STARTED)
+    whenever(mockStartInfo.startType).thenReturn(ApplicationStartInfo.START_TYPE_COLD)
+    whenever(mockStartInfo.reason).thenReturn(ApplicationStartInfo.START_REASON_OTHER)
+    SentryShadowActivityManager.setHistoricalProcessStartReasons(listOf(mockStartInfo))
+    SentryShadowActivityManager.setImportance(RunningAppProcessInfo.IMPORTANCE_FOREGROUND)
+    val metrics = AppStartMetrics.getInstance()
+
+    val app = ApplicationProvider.getApplicationContext<Application>()
+    metrics.registerLifecycleCallbacks(app)
+
+    assertTrue(metrics.isAppLaunchedInForeground)
+  }
+
+  @Test
   fun `background-spawned start is re-classified as warm on the first activity`() {
     val mockStartInfo = mock<ApplicationStartInfo>()
     whenever(mockStartInfo.startupState).thenReturn(ApplicationStartInfo.STARTUP_STATE_STARTED)
