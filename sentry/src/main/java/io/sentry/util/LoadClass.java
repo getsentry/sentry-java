@@ -13,7 +13,7 @@ import org.jetbrains.annotations.Nullable;
 public class LoadClass {
 
   // Populated by the Sentry Android Gradle plugin for class names it can resolve at build time.
-  private static @Nullable Map<String, Boolean> classAvailability;
+  static @Nullable Map<String, Boolean> classAvailability;
 
   /**
    * Loads and initializes a class via reflection. Use this when you intend to actually use the

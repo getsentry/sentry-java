@@ -10,12 +10,11 @@ import kotlin.test.assertTrue
 class LoadClassTest {
   @Test
   fun `isClassAvailable uses known build-time results and reflects unknown classes`() {
-    setClassAvailability(
+    LoadClass.classAvailability =
       mapOf(
         "io.sentry.SentryEvent" to false,
         "io.sentry.ThisClassDoesNotExist" to true,
       )
-    )
 
     try {
       val loadClass = LoadClass()
@@ -31,7 +30,7 @@ class LoadClassTest {
       assertThat(loadClass.isClassAvailable("io.sentry.Sentry", null as io.sentry.ILogger?))
         .isTrue()
     } finally {
-      setClassAvailability(null)
+      LoadClass.classAvailability = null
     }
   }
 
@@ -74,12 +73,6 @@ class LoadClassTest {
     LoadClass().loadClass(LoadClassInitProbe::class.java.name, null)
 
     assertTrue(LoadClassInitFlag.initialized)
-  }
-
-  private fun setClassAvailability(availability: Any?) {
-    val field = LoadClass::class.java.getDeclaredField("classAvailability")
-    field.isAccessible = true
-    field.set(null, availability)
   }
 }
 
