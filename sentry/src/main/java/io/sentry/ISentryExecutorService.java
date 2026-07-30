@@ -7,7 +7,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Sentry Executor Service that sends cached events and envelopes on App. start.
+ * Sentry Executor Service that sends cached events and envelopes on App start.
  *
  * <p>Implementations that drop a task instead of running it — a no-op service, a full work queue —
  * must report that through the returned {@link Future}: either throw {@link
