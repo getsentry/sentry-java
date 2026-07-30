@@ -7066,6 +7066,7 @@ public final class io/sentry/protocol/profiling/SentryProfile$JsonKeys {
 
 public final class io/sentry/protocol/profiling/SentrySample : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> ()V
+	public fun <init> (Lio/sentry/protocol/profiling/SentrySample;)V
 	public fun getStackId ()I
 	public fun getThreadId ()Ljava/lang/String;
 	public fun getTimestamp ()D

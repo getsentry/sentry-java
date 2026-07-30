@@ -1012,9 +1012,15 @@ class ApplicationExitInfoEventProcessorTest {
       mockedSentry.`when`<Any> { Sentry.getCurrentScopes() }.thenReturn(scopes)
 
       val processed = processor.process(SentryEvent(), hint)
+      val chunkCaptor = argumentCaptor<ProfileChunk>()
+      verify(scopes).captureProfileChunk(chunkCaptor.capture())
+      val sentryProfile = chunkCaptor.firstValue.sentryProfile
 
       assertNotNull(processed?.contexts?.profile)
       assertNotNull(processed.contexts.profile?.profilerId)
+      assertNotNull(sentryProfile)
+      // Two samples are present b/c the converter adds a synthetic one to keep Relay happy.
+      assertEquals(2, sentryProfile.samples.size)
     }
   }
 
