@@ -29,11 +29,14 @@ public final class Hint {
   private final @NotNull Map<String, Object> internalStorage = new HashMap<String, Object>();
   private final @NotNull List<Attachment> attachments = new ArrayList<>();
   private final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
-  private @Nullable Attachment screenshot = null;
-  private @Nullable Attachment viewHierarchy = null;
-  private @Nullable Attachment threadDump = null;
-  private @Nullable Attachment tombstone = null;
-  private @Nullable ReplayRecording replayRecording = null;
+
+  // A Hint can be handed to another thread while the caller still holds a reference, e.g. when
+  // async event processing is enabled. These are volatile so that thread sees the latest write.
+  private volatile @Nullable Attachment screenshot = null;
+  private volatile @Nullable Attachment viewHierarchy = null;
+  private volatile @Nullable Attachment threadDump = null;
+  private volatile @Nullable Attachment tombstone = null;
+  private volatile @Nullable ReplayRecording replayRecording = null;
 
   public static @NotNull Hint withAttachment(@Nullable Attachment attachment) {
     @NotNull final Hint hint = new Hint();
@@ -82,27 +85,37 @@ public final class Hint {
 
   public void addAttachment(@Nullable Attachment attachment) {
     if (attachment != null) {
-      attachments.add(attachment);
+      try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+        attachments.add(attachment);
+      }
     }
   }
 
   public void addAttachments(@Nullable List<Attachment> attachments) {
     if (attachments != null) {
-      this.attachments.addAll(attachments);
+      try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+        this.attachments.addAll(attachments);
+      }
     }
   }
 
   public @NotNull List<Attachment> getAttachments() {
-    return new ArrayList<>(attachments);
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      return new ArrayList<>(attachments);
+    }
   }
 
   public void replaceAttachments(@Nullable List<Attachment> attachments) {
-    clearAttachments();
-    addAttachments(attachments);
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      clearAttachments();
+      addAttachments(attachments);
+    }
   }
 
   public void clearAttachments() {
-    attachments.clear();
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      attachments.clear();
+    }
   }
 
   /**

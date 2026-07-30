@@ -82,6 +82,18 @@ Supported paths:
 
 Sessions, check-ins, and profile chunks are unchanged.
 
+## Captures That Always Stay Synchronous
+
+Some captures coordinate across threads and must not be deferred, even when `enableAsyncProcessing=true`. These run the late processing stage inline on the caller thread:
+
+- Hints implementing `DiskFlushNotification` (uncaught exceptions, ANRv2, tombstones). The caller blocks until the transport reports the event flushed to disk before letting the process die. Queueing would put the fatal event behind everything already enqueued, so the caller's flush timeout can expire before it is ever sent.
+- Hints implementing `Backfillable` or `Cached` (events replayed from the outbox or cache). The hint carries retry/delete state that the caller reads the moment capture returns, and the envelope file is deleted based on it.
+- Hints implementing `TransactionEnd` (ANR). The capture force-finishes the running transaction so it is persisted before the process dies; deferring that races the process going away.
+
+## Scope Snapshotting
+
+The scope handed to `capture*` is a live `CombinedScopeView` over the caller's thread-local scope. When work is deferred, the scope is cloned at submit time so the async stage sees the state as of the capture call. Without this, a caller that pushes or pops scopes, changes tags, or starts a new transaction before the async stage runs would have that unrelated state attributed to the event.
+
 ## Capture Return Behavior
 
 When `enableAsyncProcessing=true`, ID-returning capture methods enqueue the late processing task and return immediately if enqueue succeeds. They return the event, transaction, replay, or feedback ID even though the item may later be dropped by async processors, `beforeSend*`, sampling, rate limiting, transport failures, or downstream queue overflow.
@@ -110,7 +122,7 @@ Transaction accounting must remain consistent:
 
 `SentryClient.flush(timeoutMillis)` waits for the async processing queue to become idle and then waits for downstream log, metrics, and transport queues.
 
-`SentryClient.close()` drains async processing during shutdown and then closes downstream processors and transport. Closing remains bounded by existing shutdown and flush timeout behavior.
+`SentryClient.close()` quiesces the async processing queue *before* draining downstream, so no task can hand an envelope to a transport that is already closing. Work still queued when the shutdown timeout expires is discarded and recorded as `queue_overflow` for its data category rather than being lost silently. Closing remains bounded by existing shutdown and flush timeout behavior, with the async drain and the downstream flush sharing one deadline.
 
 ## Testing Plan
 
@@ -124,3 +136,7 @@ Transaction accounting must remain consistent:
 - Verify processor exceptions are logged and do not drop the item.
 - Verify `processAsync(...)` returning `null` records `event_processor` drops for events, feedback, transactions and spans, replay, logs, and metrics.
 - Verify `beforeSendTransaction` and async transaction processors preserve existing span-loss accounting.
+- Verify crash, cached, and backfillable hints bypass the queue and are sent on the caller thread.
+- Verify `close` stops accepting new async work before draining downstream, and records `queue_overflow` for work it could not drain.
+- Verify the async stage sees the scope as of the capture call, not later caller mutations.
+- Verify submitting does not block behind a draining `close`.

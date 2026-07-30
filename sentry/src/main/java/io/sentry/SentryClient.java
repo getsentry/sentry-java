@@ -91,6 +91,45 @@ public final class SentryClient implements ISentryClient {
     }
   }
 
+  /**
+   * Whether the late processing stage may run off the caller thread for this capture.
+   *
+   * <p>Async processing is skipped for hints that coordinate across threads even when the option is
+   * on:
+   *
+   * <ul>
+   *   <li>{@link DiskFlushNotification} — the caller blocks until the transport marks the event
+   *       flushed (crash, ANR, tombstone). Queueing puts the fatal event behind everything already
+   *       enqueued, so the caller's flush timeout can expire before it is ever sent.
+   *   <li>{@link Backfillable} and {@link Cached} — events replayed from disk. The hint carries
+   *       retry/delete state that the caller inspects the moment capture returns, and the envelope
+   *       file is deleted based on it.
+   *   <li>{@link TransactionEnd} — the capture force-finishes the running transaction so it is
+   *       persisted before the process dies (ANR). Deferring that races the process going away.
+   * </ul>
+   */
+  private boolean shouldProcessAsync(final @NotNull Hint hint) {
+    if (!options.isEnableAsyncProcessing()) {
+      return false;
+    }
+    return !HintUtils.hasType(hint, DiskFlushNotification.class)
+        && !HintUtils.hasType(hint, Backfillable.class)
+        && !HintUtils.hasType(hint, Cached.class)
+        && !HintUtils.hasType(hint, TransactionEnd.class);
+  }
+
+  /**
+   * Snapshots the scope so async processing sees the state as of the capture call.
+   *
+   * <p>The scope handed to {@code capture*} is a live {@link CombinedScopeView} over the caller's
+   * thread-local scope. By the time the async stage runs, the caller may have pushed or popped
+   * scopes, changed tags, or started a different transaction; reading it there would attribute
+   * unrelated state to this event.
+   */
+  private @Nullable IScope snapshotScope(final @Nullable IScope scope) {
+    return scope == null ? null : scope.clone();
+  }
+
   private boolean shouldApplyScopeData(final @NotNull CheckIn event, final @NotNull Hint hint) {
     if (HintUtils.shouldApplyScopeData(hint)) {
       return true;
@@ -177,11 +216,17 @@ public final class SentryClient implements ISentryClient {
 
     final SentryId sentryId = event.getEventId() != null ? event.getEventId() : SentryId.EMPTY_ID;
     final @NotNull SentryEvent finalEvent = event;
-    final @NotNull Hint finalHint = hint;
-    if (options.isEnableAsyncProcessing()) {
-      final boolean applyScopedProcessors = HintUtils.shouldApplyScopeData(finalHint);
+    final boolean applyScopedProcessors = HintUtils.shouldApplyScopeData(hint);
+    if (shouldProcessAsync(hint)) {
+      final @NotNull Hint asyncHint = hint;
+      final @Nullable IScope asyncScope = snapshotScope(scope);
       if (!asyncEventProcessingExecutor.submit(
-          () -> captureEventAfterProcessing(finalEvent, finalHint, scope, applyScopedProcessors))) {
+          () ->
+              captureEventAfterProcessing(finalEvent, asyncHint, asyncScope, applyScopedProcessors),
+          () ->
+              options
+                  .getClientReportRecorder()
+                  .recordLostEvent(DiscardReason.QUEUE_OVERFLOW, DataCategory.Error))) {
         options
             .getClientReportRecorder()
             .recordLostEvent(DiscardReason.QUEUE_OVERFLOW, DataCategory.Error);
@@ -190,7 +235,7 @@ public final class SentryClient implements ISentryClient {
       return sentryId;
     }
 
-    return captureEventAfterProcessing(event, hint, scope, HintUtils.shouldApplyScopeData(hint));
+    return captureEventAfterProcessing(event, hint, scope, applyScopedProcessors);
   }
 
   private @NotNull SentryId captureEventAfterProcessing(
@@ -378,10 +423,15 @@ public final class SentryClient implements ISentryClient {
     }
 
     final @NotNull SentryReplayEvent finalEvent = event;
-    final @NotNull Hint finalHint = hint;
-    if (options.isEnableAsyncProcessing()) {
+    if (shouldProcessAsync(hint)) {
+      final @NotNull Hint asyncHint = hint;
+      final @Nullable IScope asyncScope = snapshotScope(scope);
       if (!asyncEventProcessingExecutor.submit(
-          () -> captureReplayEventAfterProcessing(finalEvent, scope, finalHint))) {
+          () -> captureReplayEventAfterProcessing(finalEvent, asyncScope, asyncHint),
+          () ->
+              options
+                  .getClientReportRecorder()
+                  .recordLostEvent(DiscardReason.QUEUE_OVERFLOW, DataCategory.Replay))) {
         options
             .getClientReportRecorder()
             .recordLostEvent(DiscardReason.QUEUE_OVERFLOW, DataCategory.Replay);
@@ -1326,18 +1376,21 @@ public final class SentryClient implements ISentryClient {
     }
 
     final @NotNull SentryTransaction finalTransaction = transaction;
-    final @NotNull Hint finalHint = hint;
     final @Nullable TraceContext finalTraceContext = traceContext;
-    if (options.isEnableAsyncProcessing()) {
+    final boolean applyScopedProcessors = HintUtils.shouldApplyScopeData(hint);
+    if (shouldProcessAsync(hint)) {
+      final @NotNull Hint asyncHint = hint;
+      final @Nullable IScope asyncScope = snapshotScope(scope);
       if (!asyncEventProcessingExecutor.submit(
           () ->
               captureTransactionAfterProcessing(
                   finalTransaction,
                   finalTraceContext,
-                  scope,
-                  finalHint,
+                  asyncScope,
+                  asyncHint,
                   profilingTraceData,
-                  HintUtils.shouldApplyScopeData(finalHint)))) {
+                  applyScopedProcessors),
+          () -> recordLostTransaction(DiscardReason.QUEUE_OVERFLOW, finalTransaction))) {
         recordLostTransaction(DiscardReason.QUEUE_OVERFLOW, transaction);
         return SentryId.EMPTY_ID;
       }
@@ -1345,12 +1398,7 @@ public final class SentryClient implements ISentryClient {
     }
 
     return captureTransactionAfterProcessing(
-        transaction,
-        traceContext,
-        scope,
-        hint,
-        profilingTraceData,
-        HintUtils.shouldApplyScopeData(hint));
+        transaction, traceContext, scope, hint, profilingTraceData, applyScopedProcessors);
   }
 
   private @NotNull SentryId captureTransactionAfterProcessing(
@@ -1583,13 +1631,18 @@ public final class SentryClient implements ISentryClient {
 
     final SentryId sentryId = event.getEventId() != null ? event.getEventId() : SentryId.EMPTY_ID;
     final @NotNull SentryEvent finalEvent = event;
-    final @NotNull Hint finalHint = hint;
-    if (options.isEnableAsyncProcessing()) {
-      final boolean applyScopedProcessors = HintUtils.shouldApplyScopeData(finalHint);
+    final boolean applyScopedProcessors = HintUtils.shouldApplyScopeData(hint);
+    if (shouldProcessAsync(hint)) {
+      final @NotNull Hint asyncHint = hint;
+      final @NotNull IScope asyncScope = scope.clone();
       if (!asyncEventProcessingExecutor.submit(
           () ->
               captureFeedbackAfterProcessing(
-                  finalEvent, feedback, finalHint, scope, applyScopedProcessors))) {
+                  finalEvent, feedback, asyncHint, asyncScope, applyScopedProcessors),
+          () ->
+              options
+                  .getClientReportRecorder()
+                  .recordLostEvent(DiscardReason.QUEUE_OVERFLOW, DataCategory.Feedback))) {
         options
             .getClientReportRecorder()
             .recordLostEvent(DiscardReason.QUEUE_OVERFLOW, DataCategory.Feedback);
@@ -1598,8 +1651,7 @@ public final class SentryClient implements ISentryClient {
       return sentryId;
     }
 
-    return captureFeedbackAfterProcessing(
-        event, feedback, hint, scope, HintUtils.shouldApplyScopeData(hint));
+    return captureFeedbackAfterProcessing(event, feedback, hint, scope, applyScopedProcessors);
   }
 
   private @NotNull SentryId captureFeedbackAfterProcessing(
@@ -1718,8 +1770,10 @@ public final class SentryClient implements ISentryClient {
     if (logEvent != null) {
       final @NotNull SentryLogEvent finalLogEvent = logEvent;
       if (options.isEnableAsyncProcessing()) {
+        final @Nullable IScope asyncScope = snapshotScope(scope);
         if (!asyncEventProcessingExecutor.submit(
-            () -> captureLogAfterProcessing(finalLogEvent, scope))) {
+            () -> captureLogAfterProcessing(finalLogEvent, asyncScope),
+            () -> recordLostLog(DiscardReason.QUEUE_OVERFLOW, finalLogEvent))) {
           recordLostLog(DiscardReason.QUEUE_OVERFLOW, finalLogEvent);
         }
         return;
@@ -1795,10 +1849,15 @@ public final class SentryClient implements ISentryClient {
 
     if (metricsEvent != null) {
       final @NotNull SentryMetricsEvent finalMetricsEvent = metricsEvent;
-      final @NotNull Hint finalHint = hint;
-      if (options.isEnableAsyncProcessing()) {
+      if (shouldProcessAsync(hint)) {
+        final @NotNull Hint asyncHint = hint;
+        final @Nullable IScope asyncScope = snapshotScope(scope);
         if (!asyncEventProcessingExecutor.submit(
-            () -> captureMetricAfterProcessing(finalMetricsEvent, scope, finalHint))) {
+            () -> captureMetricAfterProcessing(finalMetricsEvent, asyncScope, asyncHint),
+            () ->
+                options
+                    .getClientReportRecorder()
+                    .recordLostEvent(DiscardReason.QUEUE_OVERFLOW, DataCategory.TraceMetric))) {
           options
               .getClientReportRecorder()
               .recordLostEvent(DiscardReason.QUEUE_OVERFLOW, DataCategory.TraceMetric);
@@ -2197,8 +2256,10 @@ public final class SentryClient implements ISentryClient {
     try {
       final long timeoutMillis = isRestarting ? 0 : options.getShutdownTimeoutMillis();
       final long deadline = System.currentTimeMillis() + timeoutMillis;
-      flush(timeoutMillis);
-      asyncEventProcessingExecutor.close(remainingTimeout(deadline));
+      // Quiesce the async stage before draining downstream: a task finishing after the transport
+      // flush would hand its envelope to a transport that is already closing.
+      asyncEventProcessingExecutor.close(timeoutMillis);
+      flush(remainingTimeout(deadline));
       loggerBatchProcessor.close(isRestarting);
       metricsBatchProcessor.close(isRestarting);
       transport.close(isRestarting);

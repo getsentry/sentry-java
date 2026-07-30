@@ -48,6 +48,7 @@ import java.util.LinkedList
 import java.util.UUID
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFails
@@ -346,6 +347,138 @@ class SentryClientTest {
 
     continueAsync.countDown()
     sut.flush(5000)
+  }
+
+  @Test
+  fun `close stops accepting async work before draining downstream`() {
+    fixture.sentryOptions.isEnableAsyncProcessing = true
+    fixture.sentryOptions.shutdownTimeoutMillis = 10000
+    // A capture that lands while the transport is being flushed. With the async stage quiesced
+    // first, it is rejected outright; otherwise its envelope reaches an already-drained transport.
+    val lateCapture = AtomicReference<SentryId>()
+    val client = AtomicReference<SentryClient>()
+    whenever(fixture.transport.flush(any())).doAnswer {
+      lateCapture.compareAndSet(null, client.get().captureEvent(SentryEvent()))
+      null
+    }
+    val sut = fixture.getSut()
+    client.set(sut)
+
+    sut.close(false)
+
+    assertEquals(SentryId.EMPTY_ID, lateCapture.get())
+    val inOrder = inOrder(fixture.transport)
+    inOrder.verify(fixture.transport).flush(any())
+    inOrder.verify(fixture.transport).close(eq(false))
+  }
+
+  @Test
+  fun `close records lost events for async work that could not be drained`() {
+    val continueAsync = CountDownLatch(1)
+    val asyncStarted = CountDownLatch(1)
+    fixture.sentryOptions.isEnableAsyncProcessing = true
+    fixture.sentryOptions.shutdownTimeoutMillis = 100
+    fixture.sentryOptions.addEventProcessor(
+      object : EventProcessor {
+        override fun processAsync(event: SentryEvent, hint: Hint): SentryEvent? {
+          asyncStarted.countDown()
+          assertTrue(continueAsync.await(10, TimeUnit.SECONDS))
+          return event
+        }
+      }
+    )
+    val sut = fixture.getSut()
+    // The first event occupies the single worker thread, the second one is stuck in the queue and
+    // is the one that gets dropped by shutdownNow.
+    sut.captureEvent(SentryEvent())
+    assertTrue(asyncStarted.await(5, TimeUnit.SECONDS))
+    sut.captureEvent(SentryEvent())
+
+    sut.close(false)
+
+    assertClientReport(
+      fixture.sentryOptions.clientReportRecorder,
+      listOf(DiscardedEvent(DiscardReason.QUEUE_OVERFLOW.reason, DataCategory.Error.category, 1)),
+    )
+    continueAsync.countDown()
+  }
+
+  @Test
+  fun `crash hints bypass the async queue and send on the caller thread`() {
+    fixture.sentryOptions.isEnableAsyncProcessing = true
+    val processingThread = AtomicReference<String>()
+    fixture.sentryOptions.addEventProcessor(
+      object : EventProcessor {
+        override fun processAsync(event: SentryEvent, hint: Hint): SentryEvent? {
+          processingThread.set(Thread.currentThread().name)
+          return event
+        }
+      }
+    )
+    val sut = fixture.getSut()
+    val hint = HintUtils.createWithTypeCheckHint(DiskFlushNotificationHint())
+
+    sut.captureEvent(SentryEvent(), hint)
+
+    // Returning means the event is already sent - no flush needed.
+    verify(fixture.transport).send(any(), anyOrNull())
+    assertEquals(Thread.currentThread().name, processingThread.get())
+  }
+
+  @Test
+  fun `cached and backfillable hints bypass the async queue`() {
+    fixture.sentryOptions.isEnableAsyncProcessing = true
+    val sut = fixture.getSut()
+
+    sut.captureEvent(SentryEvent(), HintUtils.createWithTypeCheckHint(CachedHint()))
+    sut.captureEvent(SentryEvent(), HintUtils.createWithTypeCheckHint(BackfillableHint()))
+
+    verify(fixture.transport, times(2)).send(any(), anyOrNull())
+  }
+
+  @Test
+  fun `async processing sees the scope as of the capture call`() {
+    fixture.sentryOptions.isEnableAsyncProcessing = true
+    val continueAsync = CountDownLatch(1)
+    val submitted = CountDownLatch(1)
+    val observedTag = AtomicReference<String>()
+    fixture.sentryOptions.addEventProcessor(
+      object : EventProcessor {
+        override fun processAsync(event: SentryEvent, hint: Hint): SentryEvent? {
+          submitted.countDown()
+          assertTrue(continueAsync.await(5, TimeUnit.SECONDS))
+          return event
+        }
+      }
+    )
+    val sut = fixture.getSut()
+    val scope = Scope(fixture.sentryOptions)
+    scope.setTag("state", "at-capture")
+    scope.addEventProcessor(
+      object : EventProcessor {
+        override fun processAsync(event: SentryEvent, hint: Hint): SentryEvent? {
+          observedTag.set(event.tags?.get("state"))
+          return event
+        }
+      }
+    )
+
+    sut.captureEvent(SentryEvent(), scope, null)
+    assertTrue(submitted.await(5, TimeUnit.SECONDS))
+    // Caller moves on while the async stage is still queued.
+    scope.setTag("state", "after-capture")
+    continueAsync.countDown()
+    sut.flush(5000)
+
+    assertEquals("at-capture", observedTag.get())
+  }
+
+  private class DiskFlushNotificationHint : DiskFlushNotification {
+    override fun markFlushed() = Unit
+
+    override fun isFlushable(eventId: SentryId?): Boolean = true
+
+    override fun setFlushable(eventId: SentryId) = Unit
   }
 
   @Test
