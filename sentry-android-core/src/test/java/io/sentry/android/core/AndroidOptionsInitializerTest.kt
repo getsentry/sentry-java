@@ -376,6 +376,27 @@ class AndroidOptionsInitializerTest {
     assertTrue(fixture.sentryOptions.continuousProfiler is AndroidContinuousProfiler)
   }
 
+  @Config(sdk = [35])
+  @Test
+  fun `init on API 35+ always sets PerfettoContinuousProfiler`() {
+    fixture.initSut()
+    assertTrue(fixture.sentryOptions.continuousProfiler is PerfettoContinuousProfiler)
+  }
+
+  @Config(sdk = [34])
+  @Test
+  fun `init below API 35 with enableLegacyProfiling true sets AndroidContinuousProfiler`() {
+    fixture.initSut(configureOptions = { isEnableLegacyProfiling = true })
+    assertTrue(fixture.sentryOptions.continuousProfiler is AndroidContinuousProfiler)
+  }
+
+  @Config(sdk = [34])
+  @Test
+  fun `init below API 35 with enableLegacyProfiling false noops profiler`() {
+    fixture.initSut(configureOptions = { isEnableLegacyProfiling = false })
+    assertTrue(fixture.sentryOptions.continuousProfiler is NoOpContinuousProfiler)
+  }
+
   @Test
   fun `init with profilesSampleRate should set Android transaction profiler`() {
     fixture.initSut(configureOptions = { profilesSampleRate = 1.0 })
@@ -401,6 +422,51 @@ class AndroidOptionsInitializerTest {
     assertNotNull(fixture.sentryOptions.transactionProfiler)
     assertTrue(fixture.sentryOptions.transactionProfiler is AndroidTransactionProfiler)
     assertEquals(fixture.sentryOptions.continuousProfiler, NoOpContinuousProfiler.getInstance())
+  }
+
+  @Test
+  fun `init with profilesSampleRate and enableLegacyProfiling false noops both profilers`() {
+    fixture.initSut(
+      configureOptions = {
+        profilesSampleRate = 1.0
+        isEnableLegacyProfiling = false
+      }
+    )
+
+    assertEquals(NoOpTransactionProfiler.getInstance(), fixture.sentryOptions.transactionProfiler)
+    assertEquals(NoOpContinuousProfiler.getInstance(), fixture.sentryOptions.continuousProfiler)
+  }
+
+  @Test
+  fun `init with profilesSampler and enableLegacyProfiling false noops both profilers`() {
+    fixture.initSut(
+      configureOptions = {
+        profilesSampler = mock()
+        isEnableLegacyProfiling = false
+      }
+    )
+
+    assertEquals(NoOpTransactionProfiler.getInstance(), fixture.sentryOptions.transactionProfiler)
+    assertEquals(NoOpContinuousProfiler.getInstance(), fixture.sentryOptions.continuousProfiler)
+  }
+
+  @Test
+  fun `init with profilesSampleRate and enableLegacyProfiling false closes app start profiler`() {
+    val appStartProfiler = mock<ITransactionProfiler>()
+    AppStartMetrics.getInstance().appStartProfiler = appStartProfiler
+    fixture.initSut(
+      configureOptions = {
+        profilesSampleRate = 1.0
+        isEnableLegacyProfiling = false
+      }
+    )
+
+    assertEquals(NoOpTransactionProfiler.getInstance(), fixture.sentryOptions.transactionProfiler)
+    verify(appStartProfiler).close()
+
+    // AppStartMetrics should be cleared
+    assertNull(AppStartMetrics.getInstance().appStartProfiler)
+    assertNull(AppStartMetrics.getInstance().appStartContinuousProfiler)
   }
 
   @Test

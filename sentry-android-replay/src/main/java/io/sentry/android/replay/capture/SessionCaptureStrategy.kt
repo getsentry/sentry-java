@@ -16,6 +16,17 @@ import io.sentry.util.FileUtils
 import java.util.Date
 import java.util.concurrent.ScheduledExecutorService
 
+/**
+ * Records a full session: segments are encoded and sent continuously, one per
+ * `sessionSegmentDuration`, until the 1h `sessionDuration` deadline. Used when the session is
+ * sampled by `sessionSampleRate`.
+ *
+ * [captureReplay] is a no-op here — there is no buffer to flush, the segment covering the error is
+ * sent like any other. Because envelopes are in flight the whole time, `ReplayIntegration` pauses
+ * this strategy while offline or rate-limited so the envelope cache doesn't overflow.
+ *
+ * See [BufferCaptureStrategy] for the on-error counterpart.
+ */
 internal class SessionCaptureStrategy(
   private val options: SentryOptions,
   private val scopes: IScopes?,

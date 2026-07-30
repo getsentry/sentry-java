@@ -80,12 +80,41 @@ class EnvelopeCacheTest {
   }
 
   @Test
+  fun `creates cache dir on store when it does not exist yet`() {
+    val cache = fixture.getSUT()
+
+    val file = File(fixture.options.cacheDirPath!!)
+    assertTrue(file.deleteRecursively())
+    assertFalse(file.exists())
+
+    cache.store(SentryEnvelope.from(fixture.options.serializer, createSession(), null))
+
+    assertTrue(file.exists())
+    assertEquals(1, file.list()?.size)
+
+    file.deleteRecursively()
+  }
+
+  @Test
   fun `tolerates discarding unknown envelope`() {
     val cache = fixture.getSUT()
 
     cache.discard(SentryEnvelope.from(fixture.options.serializer, createSession(), null))
 
     // no exception thrown
+  }
+
+  @Test
+  fun `does not create cache dir on discard`() {
+    val cache = fixture.getSUT()
+
+    val file = File(fixture.options.cacheDirPath!!)
+    assertTrue(file.deleteRecursively())
+    assertFalse(file.exists())
+
+    cache.discard(SentryEnvelope.from(fixture.options.serializer, createSession(), null))
+
+    assertFalse(file.exists())
   }
 
   @Test
@@ -450,7 +479,7 @@ class EnvelopeCacheTest {
     cache.store(envelopeA, Hint())
     cache.store(envelopeB, Hint())
 
-    assertEquals(2, cache.directory.list()?.size)
+    assertEquals(2, cache.directory.file.list()?.size)
   }
 
   @Test

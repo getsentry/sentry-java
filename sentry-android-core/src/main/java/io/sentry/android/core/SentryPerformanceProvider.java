@@ -23,7 +23,6 @@ import io.sentry.TracesSamplingDecision;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.android.core.performance.AppStartMetrics;
 import io.sentry.android.core.performance.TimeSpan;
-import io.sentry.util.AutoClosableReentrantLock;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -46,7 +45,6 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
 
   private final @NotNull ILogger logger;
   private final @NotNull BuildInfoProvider buildInfoProvider;
-  private final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
 
   @TestOnly
   SentryPerformanceProvider(
@@ -126,6 +124,23 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
         logger.log(
             SentryLevel.WARNING,
             "Unable to deserialize the SentryAppStartProfilingOptions. App start profiling will not start.");
+        return;
+      }
+
+      if (buildInfoProvider.getSdkInfoVersion()
+          >= android.os.Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+        logger.log(
+            SentryLevel.DEBUG,
+            "Device is API 35+. Skipping legacy app-start profiling — "
+                + "Perfetto ProfilingManager will be initialized after Sentry.init().");
+        return;
+      }
+
+      if (!profilingOptions.isEnableLegacyProfiling()) {
+        logger.log(
+            SentryLevel.WARNING,
+            "enableLegacyProfiling is disabled and device is below API 35. "
+                + "App start profiling will not start.");
         return;
       }
 
