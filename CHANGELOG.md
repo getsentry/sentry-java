@@ -6,6 +6,8 @@
 
 - Remove an unused lock from `SentryPerformanceProvider`, which was allocated on every cold start in `ContentProvider.onCreate` without ever being acquired ([#5871](https://github.com/getsentry/sentry-java/pull/5871))
 - Parse the app start profiling config with only the deserializer it needs instead of building a full `JsonSerializer` and `SentryOptions`, cutting 188 of 221 allocations on the main thread before `Application.onCreate` ([#5867](https://github.com/getsentry/sentry-java/pull/5867))
+- Batch and coalesce scope-persistence disk writes to reduce startup cost ([#5791](https://github.com/getsentry/sentry-java/pull/5791))
+  - Scope mutations are now coalesced (latest value per field) and breadcrumbs are appended in batches behind a single fsync, instead of one synchronous disk write per mutation.
 
 ## 8.51.0
 
@@ -42,8 +44,6 @@
 ### Performance
 
 - Create the outbox and cache directories lazily in their consumers instead of during SDK init, moving the `mkdirs()` calls off the init (main) thread ([#5792](https://github.com/getsentry/sentry-java/pull/5792))
-- Batch and coalesce scope-persistence disk writes to reduce startup cost ([#5791](https://github.com/getsentry/sentry-java/pull/5791))
-  - Scope mutations are now coalesced (latest value per field) and breadcrumbs are appended in batches behind a single fsync, instead of one synchronous disk write per mutation.
 - Reduce the number of SDK threads: `LifecycleWatcher` now schedules the session-end task on the shared timer executor instead of creating a dedicated `java.util.Timer` thread ([#5819](https://github.com/getsentry/sentry-java/pull/5819))
 - Reduce the number of SDK threads: `RateLimiter` now schedules its rate-limit-lifted notifications on the shared timer executor instead of creating a dedicated `java.util.Timer` thread ([#5814](https://github.com/getsentry/sentry-java/pull/5814))
 - Speed up deserialization of arbitrary JSON objects by typing numbers without throwing exceptions ([#5783](https://github.com/getsentry/sentry-java/pull/5783))
