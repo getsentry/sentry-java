@@ -14,6 +14,7 @@ import android.os.SystemClock;
 import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
 import io.sentry.IContinuousProfiler;
 import io.sentry.ISentryLifecycleToken;
@@ -203,6 +204,35 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
         return "start_activity";
       case ApplicationStartInfo.START_REASON_OTHER:
         return "other";
+      default:
+        return null;
+    }
+  }
+
+  /**
+   * Whether {@link ApplicationStartInfo#getReason()} indicates the OS spawned the app process
+   * because of an intentional user interaction.
+   *
+   * @return true if the user actively launched the app, false if the app was launched in
+   *     background, and null if unknown.
+   */
+  @RequiresApi(api = Build.VERSION_CODES.VANILLA_ICE_CREAM)
+  private static @Nullable Boolean isForegroundStartReason(final int reason) {
+    switch (reason) {
+      case ApplicationStartInfo.START_REASON_LAUNCHER:
+      case ApplicationStartInfo.START_REASON_LAUNCHER_RECENTS:
+      case ApplicationStartInfo.START_REASON_START_ACTIVITY:
+        return true;
+      case ApplicationStartInfo.START_REASON_ALARM:
+      case ApplicationStartInfo.START_REASON_BACKUP:
+      case ApplicationStartInfo.START_REASON_BOOT_COMPLETE:
+      case ApplicationStartInfo.START_REASON_BROADCAST:
+      case ApplicationStartInfo.START_REASON_CONTENT_PROVIDER:
+      case ApplicationStartInfo.START_REASON_JOB:
+      case ApplicationStartInfo.START_REASON_PUSH:
+      case ApplicationStartInfo.START_REASON_SERVICE:
+        return false;
+      case ApplicationStartInfo.START_REASON_OTHER:
       default:
         return null;
     }
@@ -499,6 +529,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
               } else {
                 appStartType = AppStartType.WARM;
               }
+              appLaunchedInForeground.setValue(isForegroundStartReason(info.getReason()));
             }
           }
         } catch (RuntimeException ignored) {
