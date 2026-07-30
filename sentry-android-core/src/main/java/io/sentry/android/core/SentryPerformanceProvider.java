@@ -172,11 +172,7 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
    * them.
    *
    * <p>Returns null on malformed input, matching what {@code JsonSerializer.deserialize} did, so
-   * callers keep reporting it as a deserialization failure rather than a read error. The vendored
-   * JSON reader signals bad input with {@link java.io.IOException} (including {@code
-   * MalformedJsonException} and {@code EOFException}), {@link IllegalStateException} on a token
-   * type mismatch, and {@link NumberFormatException} on an unparseable number — all {@link
-   * Exception} subclasses, so {@code Error} propagates instead of being swallowed here.
+   * callers keep reporting it as a deserialization failure rather than a read error.
    */
   private @Nullable SentryAppStartProfilingOptions deserializeProfilingConfig(
       final @NotNull Reader reader) {
