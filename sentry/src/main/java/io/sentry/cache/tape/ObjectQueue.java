@@ -1,5 +1,6 @@
 /*
  * Adapted from: https://github.com/square/tape/tree/445cd3fd0a7b3ec48c9ea3e0e86663fe6d3735d8/tape/src/main/java/com/squareup/tape2
+ * Upstream was archived on 2024-10-25 and receives no further fixes; this copy has local changes.
  *
  *  Copyright (C) 2010 Square, Inc.
  *
@@ -30,7 +31,11 @@ import org.jetbrains.annotations.Nullable;
 /** A queue of objects. */
 @ApiStatus.Internal
 public abstract class ObjectQueue<T> implements Iterable<T>, Closeable {
-  /** A queue for objects that are atomically and durably serialized to {@code file}. */
+  /**
+   * A queue for objects that are atomically and durably serialized to {@code file}. Durability
+   * depends on {@code qf}: a {@link QueueFile} built with buffered writes only becomes durable on
+   * {@link #sync()}.
+   */
   public static <T> ObjectQueue<T> create(QueueFile qf, Converter<T> converter) {
     return new FileObjectQueue<>(qf, converter);
   }

@@ -1,5 +1,6 @@
 /*
  * Adapted from: https://github.com/square/tape/tree/445cd3fd0a7b3ec48c9ea3e0e86663fe6d3735d8/tape/src/main/java/com/squareup/tape2
+ * Upstream was archived on 2024-10-25 and receives no further fixes; this copy has local changes.
  *
  *  Copyright (C) 2010 Square, Inc.
  *
@@ -33,11 +34,18 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * A reliable, efficient, file-based, FIFO queue. Additions and removals are O(1). All operations
- * are atomic. Writes are synchronous; data will be written to disk before an operation returns. The
- * underlying file is structured to survive process and even system crashes. If an I/O exception is
- * thrown during a mutating change, the change is aborted. It is safe to continue to use a {@code
+ * A reliable, efficient, file-based, FIFO queue. Additions and removals are O(1). The underlying
+ * file is structured to survive process and even system crashes. If an I/O exception is thrown
+ * during a mutating change, the change is aborted. It is safe to continue to use a {@code
  * QueueFile} instance after an exception.
+ *
+ * <p>By default all operations are atomic and writes are synchronous: data is on disk before an
+ * operation returns. Queues built with {@link Builder#synchronousWrites(boolean)
+ * synchronousWrites(false)} leave writes in the OS page cache until {@link #sync()} is called,
+ * which lets callers batch many mutations behind a single fsync. Such writes still survive process
+ * death and are immediately visible to readers, but a system crash before the next {@code sync()}
+ * can lose recent mutations — and because the OS may flush the data and header pages in either
+ * order, it can leave a committed header pointing at data that never reached disk.
  *
  * <p><strong>Note that this implementation is not synchronized.</strong>
  *
@@ -50,9 +58,16 @@ import org.jetbrains.annotations.Nullable;
  * <p><strong>NOTE:</strong> The current implementation is built for file systems that support
  * atomic segment writes (like YAFFS). Most conventional file systems don't support this; if the
  * power goes out while writing a segment, the segment will contain garbage and the file will be
- * corrupt. We'll add journaling support so this class can be used with more file systems later.
+ * corrupt. Upstream intended to add journaling support for those file systems but never did; this
+ * fork instead accepts the risk and recovers by deleting and recreating the file, losing its
+ * contents (see {@code ringRead}).
  *
  * <p>Construct instances with {@link Builder}.
+ *
+ * <p><strong>This is a vendored fork.</strong> Square archived Tape on 2024-10-25, so the upstream
+ * link in the header is a historical reference, not a source of fixes. This copy has diverged:
+ * corruption recovery, a bounded ring size, and optional buffered writes. Report problems against
+ * sentry-java rather than upstream.
  *
  * @author Bob Lee (bob@squareup.com)
  */
