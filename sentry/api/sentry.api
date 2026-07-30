@@ -4934,6 +4934,7 @@ public abstract class io/sentry/cache/tape/ObjectQueue : java/io/Closeable, java
 	public fun remove ()V
 	public abstract fun remove (I)V
 	public abstract fun size ()I
+	public fun sync ()V
 }
 
 public abstract interface class io/sentry/cache/tape/ObjectQueue$Converter {
@@ -4954,6 +4955,7 @@ public final class io/sentry/cache/tape/QueueFile : java/io/Closeable, java/lang
 	public fun remove ()V
 	public fun remove (I)V
 	public fun size ()I
+	public fun sync ()V
 	public fun toString ()Ljava/lang/String;
 }
 
@@ -4961,6 +4963,7 @@ public final class io/sentry/cache/tape/QueueFile$Builder {
 	public fun <init> (Ljava/io/File;)V
 	public fun build ()Lio/sentry/cache/tape/QueueFile;
 	public fun size (I)Lio/sentry/cache/tape/QueueFile$Builder;
+	public fun synchronousWrites (Z)Lio/sentry/cache/tape/QueueFile$Builder;
 	public fun zero (Z)Lio/sentry/cache/tape/QueueFile$Builder;
 }
 
