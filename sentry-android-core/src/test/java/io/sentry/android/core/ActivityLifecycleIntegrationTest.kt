@@ -1975,6 +1975,8 @@ class ActivityLifecycleIntegrationTest {
     val sut = fixture.getSut()
     fixture.options.tracesSampleRate = 1.0
     fixture.options.isEnableTimeToFullDisplayTracing = true
+    // the timeout has to be really scheduled for cancelling it to be observable
+    fixture.options.executorService = DeferredExecutorService()
     sut.register(fixture.scopes, fixture.options)
     val activity = mock<Activity>()
     val activity2 = mock<Activity>()
