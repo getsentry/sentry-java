@@ -565,6 +565,20 @@ fun TracingScreen() {
         }
       }
     }
+    item {
+      SentryTraced("open_navigation_activity") {
+        OutlinedButton(
+          onClick = {
+            activity.startActivity(
+              Intent(activity, io.sentry.samples.android.navigation.NavigationActivity::class.java)
+            )
+          },
+          modifier = Modifier,
+        ) {
+          Text("Open Navigation Activity", maxLines = 2, overflow = TextOverflow.Ellipsis)
+        }
+      }
+    }
   }
 }
 

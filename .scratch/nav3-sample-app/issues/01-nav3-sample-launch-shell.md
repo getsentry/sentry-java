@@ -1,6 +1,6 @@
 # Add Nav3 sample launch shell
 
-Status: ready-for-agent
+Status: done
 Type: AFK
 Blocked by: None
 

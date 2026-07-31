@@ -185,6 +185,7 @@ dependencies {
 
   implementation(projects.sentryAndroid)
   implementation(projects.sentryAndroidFragment)
+  implementation(projects.sentryAndroidNavigation3)
   implementation(projects.sentryAndroidSqlite)
   implementation(projects.sentryAndroidTimber)
   implementation(projects.sentryCompose)
@@ -209,6 +210,7 @@ dependencies {
   implementation(libs.androidx.compose.material.icons.core)
   implementation(libs.androidx.compose.material.icons.extended)
   implementation(libs.androidx.navigation.compose)
+  implementation(libs.androidx.navigation3.runtime)
   implementation(libs.androidx.recyclerview)
   implementation(libs.androidx.browser)
   implementation(libs.androidx.room3.runtime)
