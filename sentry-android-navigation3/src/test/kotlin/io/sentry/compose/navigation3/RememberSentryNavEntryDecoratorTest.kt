@@ -1,4 +1,4 @@
-package io.sentry.android.navigation3
+package io.sentry.compose.navigation3
 
 import android.app.Application
 import android.content.ComponentName

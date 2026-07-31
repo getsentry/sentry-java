@@ -4679,7 +4679,6 @@ public final class io/sentry/TypeCheckHint {
 	public static final field ANDROID_FRAGMENT Ljava/lang/String;
 	public static final field ANDROID_INTENT Ljava/lang/String;
 	public static final field ANDROID_MOTION_EVENT Ljava/lang/String;
-	public static final field ANDROID_NAV3_DESTINATION Ljava/lang/String;
 	public static final field ANDROID_NAV_DESTINATION Ljava/lang/String;
 	public static final field ANDROID_NETWORK_CAPABILITIES Ljava/lang/String;
 	public static final field ANDROID_SENSOR_EVENT Ljava/lang/String;
@@ -4693,6 +4692,7 @@ public final class io/sentry/TypeCheckHint {
 	public static final field KTOR_CLIENT_RESPONSE Ljava/lang/String;
 	public static final field LOG4J_LOG_EVENT Ljava/lang/String;
 	public static final field LOGBACK_LOGGING_EVENT Ljava/lang/String;
+	public static final field NAV3_DESTINATION Ljava/lang/String;
 	public static final field OKHTTP_REQUEST Ljava/lang/String;
 	public static final field OKHTTP_RESPONSE Ljava/lang/String;
 	public static final field OPEN_FEIGN_REQUEST Ljava/lang/String;

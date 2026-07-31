@@ -1,18 +1,18 @@
 import io.gitlab.arturbosch.detekt.Detekt
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
 plugins {
   id("com.android.library")
   alias(libs.plugins.kotlin.android)
   alias(libs.plugins.kotlin.compose)
-  jacoco
-  alias(libs.plugins.jacoco.android)
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.detekt)
 }
 
 android {
   compileSdk = libs.versions.compileSdk.get().toInt()
-  namespace = "io.sentry.android.navigation3"
+  namespace = "io.sentry.compose.navigation3"
 
   defaultConfig {
     minSdk = 23 // Nav3 requires minSdk 23
@@ -26,10 +26,14 @@ android {
     getByName("release") { consumerProguardFiles("proguard-rules.pro") }
   }
 
+  // AGP 9 only generates unit tests for the testBuildType. The debug variant is
+  // disabled, so unit tests must target release to run at all.
+  testBuildType = "release"
+
   kotlin {
-    compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8
-    compilerOptions.languageVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
-    compilerOptions.apiVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
+    compilerOptions.jvmTarget = JVM_1_8
+    compilerOptions.languageVersion = KotlinVersion.KOTLIN_1_9
+    compilerOptions.apiVersion = KotlinVersion.KOTLIN_1_9
   }
 
   testOptions {
@@ -64,22 +68,20 @@ dependencies {
   api(projects.sentry)
 
   compileOnly(libs.androidx.navigation3.runtime)
+  compileOnly(libs.androidx.compose.runtime)
 
-  implementation(platform(libs.kotlin.bom))
-  implementation(libs.androidx.compose.foundation)
-
-  // tests
-  testImplementation(libs.androidx.navigation3.runtime)
-  testImplementation(libs.kotlin.test.junit)
-  testImplementation(libs.mockito.kotlin)
-  testImplementation(libs.mockito.inline)
-  testImplementation(libs.roboelectric)
   testImplementation(libs.androidx.core)
   testImplementation(libs.androidx.core.ktx)
+  testImplementation(libs.androidx.compose.runtime)
+  testImplementation(libs.androidx.compose.ui.test.junit4)
+  testImplementation(libs.androidx.navigation3.runtime)
   testImplementation(libs.androidx.test.ext.junit)
   testImplementation(libs.androidx.test.runner)
   testImplementation(libs.kotlinx.coroutines.test)
-  testImplementation(libs.androidx.compose.ui.test.junit4)
+  testImplementation(libs.kotlin.test.junit)
+  testImplementation(libs.mockito.inline)
+  testImplementation(libs.mockito.kotlin)
+  testImplementation(libs.roboelectric)
 }
 
 tasks.withType<Detekt>().configureEach {

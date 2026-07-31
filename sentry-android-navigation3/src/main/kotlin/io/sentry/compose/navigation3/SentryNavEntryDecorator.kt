@@ -1,6 +1,5 @@
-package io.sentry.android.navigation3
+package io.sentry.compose.navigation3
 
-import androidx.annotation.MainThread
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -31,14 +30,10 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import org.jetbrains.annotations.ApiStatus
 
-private const val TRACE_ORIGIN = "auto.navigation.nav3"
+@ApiStatus.Experimental
+public const val NAVIGATION_OP: String = "navigation"
 
-/** Key under which the navigation backstack/visible state is attached to the Sentry scope. */
-private const val NAVIGATION_CONTEXT_KEY = "navigation"
-
-@ApiStatus.Experimental public const val NAVIGATION_OP: String = "navigation"
-
-/** Metadata key used by Navigation 3 list-detail scene entries for the detail pane. */
+/** Metadata key used by Nav3 list-detail scene entries for the detail pane. */
 internal const val NAV3_METADATA_LIST_DETAIL_PANE: String = "listDetailPane"
 
 /** Metadata value for a list pane in list-detail layouts. */
@@ -46,6 +41,11 @@ internal const val NAV3_PANE_LIST: String = "list"
 
 /** Metadata value for a detail pane in list-detail layouts. */
 internal const val NAV3_PANE_DETAIL: String = "detail"
+
+/** Key under which the navigation backstack/visible state is attached to the Sentry scope. */
+private const val NAVIGATION_CONTEXT_KEY = "navigation"
+
+private const val TRACE_ORIGIN = "auto.navigation.nav3"
 
 /**
  * Effect-only composable that captures navigation breadcrumbs, starts idle transactions, tracks
@@ -382,7 +382,12 @@ internal data class VisiblePane<T : Any>(
 
 @Suppress("LongParameterList", "TooManyFunctions")
 @ApiStatus.Experimental
-@MainThread
+/**
+ * Holds Sentry navigation state for a Nav3 back stack.
+ *
+ * This type is not thread-safe. Call its methods from the same UI thread/composition context that
+ * owns the Nav3 back stack.
+ */
 public class SentryNavStateHolder<T : Any>
 @ApiStatus.Internal
 constructor(
@@ -565,7 +570,7 @@ constructor(
       }
 
     val hint = Hint()
-    hint.set(TypeCheckHint.ANDROID_NAV3_DESTINATION, toKey)
+    hint.set(TypeCheckHint.NAV3_DESTINATION, toKey)
     scopes.addBreadcrumb(breadcrumb, hint)
   }
 

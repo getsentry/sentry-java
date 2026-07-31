@@ -1,6 +1,10 @@
 # sentry-android-navigation3
 
 This module provides an integration for [AndroidX Navigation 3](https://developer.android.com/guide/navigation/navigation-3).
+It currently supports Android targets. The Maven artifact remains
+`io.sentry:sentry-android-navigation3`, while public APIs live under the
+`io.sentry.compose.navigation3` Kotlin package so imports can stay stable if the integration moves
+to a multiplatform artifact later.
 
 Please consult the documentation on how to install and use this integration in the Sentry Docs for [Android](https://docs.sentry.io/platforms/android/integrations/navigation3/).
 
