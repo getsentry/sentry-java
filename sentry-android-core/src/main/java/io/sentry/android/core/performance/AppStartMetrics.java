@@ -534,7 +534,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
         }
       }
     }
-    // Fallback, if not matching ApplicationStartInfo is available
+    // Fallback, if no matching ApplicationStartInfo is available
     if (appLaunchedInForeground == null) {
       appLaunchedInForeground = ContextUtils.isForegroundImportance();
     }
