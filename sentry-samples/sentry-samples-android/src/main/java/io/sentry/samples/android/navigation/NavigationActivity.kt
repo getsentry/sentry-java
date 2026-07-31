@@ -19,8 +19,12 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -47,6 +51,7 @@ class NavigationActivity : ComponentActivity() {
 private fun NavigationSampleShell() {
   val singleStack = rememberSingleBackStack()
   val multipaneStack = rememberMultipaneBackStack()
+  val tabStacks = rememberTabBackStacks()
 
   Column(
     modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
@@ -59,16 +64,28 @@ private fun NavigationSampleShell() {
     )
     SingleStackSample(backStack = singleStack)
     MultipaneSample(backStack = multipaneStack)
+    RetainedTabsSample(tabStacks = tabStacks)
   }
 }
 
 @Composable
-private fun rememberSingleBackStack(): SnapshotStateList<SampleRoute> =
-  remember { mutableStateListOf(SampleRoute.Home) }
+private fun rememberSingleBackStack(): SnapshotStateList<SampleRoute> = remember {
+  mutableStateListOf(SampleRoute.Home)
+}
 
 @Composable
-private fun rememberMultipaneBackStack(): SnapshotStateList<SampleRoute> =
-  remember { mutableStateListOf(SampleRoute.PaneList, SampleRoute.PaneDetail("demo-a")) }
+private fun rememberMultipaneBackStack(): SnapshotStateList<SampleRoute> = remember {
+  mutableStateListOf(SampleRoute.PaneList, SampleRoute.PaneDetail("demo-a"))
+}
+
+@Composable
+private fun rememberTabBackStacks() = remember {
+  mutableStateMapOf(
+    SampleTab.Home to mutableStateListOf<SampleRoute>(SampleRoute.TabRoot(SampleTab.Home)),
+    SampleTab.Search to mutableStateListOf<SampleRoute>(SampleRoute.TabRoot(SampleTab.Search)),
+    SampleTab.Profile to mutableStateListOf<SampleRoute>(SampleRoute.TabRoot(SampleTab.Profile)),
+  )
+}
 
 @Composable
 private fun SingleStackSample(backStack: SnapshotStateList<SampleRoute>) {
@@ -106,23 +123,24 @@ private fun SingleStackSample(backStack: SnapshotStateList<SampleRoute>) {
       NavDisplay(
         backStack = backStack,
         onBack = { if (backStack.size > 1) backStack.removeAt(backStack.lastIndex) },
-        entryProvider = entryProvider {
-          entry<SampleRoute.Home> {
-            RouteContent(title = "Home", description = "Root route for the single-stack flow.")
-          }
-          entry<SampleRoute.Detail> { route ->
-            RouteContent(
-              title = "Detail ${route.itemId}",
-              description = "Sends safe sample argument item_id=${route.itemId}.",
-            )
-          }
-          entry<SampleRoute.DialogNotice> {
-            RouteContent(
-              title = "Dialog-like route",
-              description = "Transient Nav3 route. Use Pop to dismiss it from the backstack.",
-            )
-          }
-        },
+        entryProvider =
+          entryProvider {
+            entry<SampleRoute.Home> {
+              RouteContent(title = "Home", description = "Root route for the single-stack flow.")
+            }
+            entry<SampleRoute.Detail> { route ->
+              RouteContent(
+                title = "Detail ${route.itemId}",
+                description = "Sends safe sample argument item_id=${route.itemId}.",
+              )
+            }
+            entry<SampleRoute.DialogNotice> {
+              RouteContent(
+                title = "Dialog-like route",
+                description = "Transient Nav3 route. Use Pop to dismiss it from the backstack.",
+              )
+            }
+          },
       )
     }
   }
@@ -135,7 +153,8 @@ private fun MultipaneSample(backStack: SnapshotStateList<SampleRoute>) {
       nameExtractor = ::routeName,
       argumentsExtractor = ::routeArguments,
       primaryRouteSelector = { visibleEntries ->
-        visibleEntries.firstOrNull { it.key is SampleRoute.PaneDetail } ?: visibleEntries.lastOrNull()
+        visibleEntries.firstOrNull { it.key is SampleRoute.PaneDetail }
+          ?: visibleEntries.lastOrNull()
       },
     )
   SentryNav3NavigationEffect(backStack = backStack, holder = holder)
@@ -183,12 +202,109 @@ private fun MultipaneSample(backStack: SnapshotStateList<SampleRoute>) {
 }
 
 @Composable
+private fun RetainedTabsSample(tabStacks: Map<SampleTab, SnapshotStateList<SampleRoute>>) {
+  var selectedTab by remember { mutableStateOf(SampleTab.Home) }
+  val selectedBackStack = tabStacks[selectedTab] ?: return
+  val backStackSnapshots = tabStacks.mapValues { it.value.toList() }
+
+  SentryNav3NavigationEffect(
+    selectedStack = selectedTab,
+    backStacks = backStackSnapshots,
+    stacksInUse = setOf(selectedTab),
+    stackNameExtractor = { it.routeName },
+    nameExtractor = ::routeName,
+    argumentsExtractor = ::routeArguments,
+  )
+
+  Surface(
+    modifier = Modifier.fillMaxWidth(),
+    shape = MaterialTheme.shapes.medium,
+    tonalElevation = 2.dp,
+  ) {
+    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+      Text("Retained tab stacks", style = MaterialTheme.typography.titleMedium)
+      Text(
+        "Switch tabs without clearing inactive stacks. Each tab owns independent Nav3 state.",
+        style = MaterialTheme.typography.bodyMedium,
+      )
+      Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        SampleTab.values().forEach { tab ->
+          if (tab == selectedTab) {
+            Button(onClick = { selectedTab = tab }) { Text(tab.label) }
+          } else {
+            OutlinedButton(onClick = { selectedTab = tab }) { Text(tab.label) }
+          }
+        }
+      }
+      Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Button(
+          onClick = {
+            selectedBackStack.add(
+              SampleRoute.TabDetail(
+                selectedTab,
+                "${selectedTab.routeName}-${selectedBackStack.size}",
+              )
+            )
+          }
+        ) {
+          Text("Push ${selectedTab.label} detail")
+        }
+        OutlinedButton(
+          enabled = selectedBackStack.size > 1,
+          onClick = { selectedBackStack.removeAt(selectedBackStack.lastIndex) },
+        ) {
+          Text("Pop selected")
+        }
+      }
+      TabStacksSummary(tabStacks = tabStacks, selectedTab = selectedTab)
+      NavDisplay(
+        backStack = selectedBackStack,
+        onBack = {
+          if (selectedBackStack.size > 1) selectedBackStack.removeAt(selectedBackStack.lastIndex)
+        },
+        entryProvider =
+          entryProvider {
+            entry<SampleRoute.TabRoot> { route ->
+              RouteContent(
+                title = "${route.tab.label} tab root",
+                description = "Selected stack: ${selectedTab.routeName}",
+              )
+            }
+            entry<SampleRoute.TabDetail> { route ->
+              RouteContent(
+                title = "${route.tab.label} detail ${route.itemId}",
+                description = "Retained tab detail with item_id=${route.itemId}.",
+              )
+            }
+          },
+      )
+    }
+  }
+}
+
+@Composable
 private fun BackStackSummary(backStack: List<SampleRoute>) {
   Text("Current route: ${routeName(backStack.last())}", style = MaterialTheme.typography.bodyMedium)
   Text(
     "Backstack: ${backStack.joinToString(" > ") { routeName(it) }}",
     style = MaterialTheme.typography.bodySmall,
   )
+}
+
+@Composable
+private fun TabStacksSummary(
+  tabStacks: Map<SampleTab, List<SampleRoute>>,
+  selectedTab: SampleTab,
+) {
+  Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    Text("Selected stack: ${selectedTab.routeName}", style = MaterialTheme.typography.bodyMedium)
+    tabStacks.forEach { (tab, stack) ->
+      Text(
+        "${tab.label}: ${stack.joinToString(" > ") { routeName(it) }}",
+        style = MaterialTheme.typography.bodySmall,
+      )
+    }
+  }
 }
 
 @Composable
@@ -215,6 +331,16 @@ private sealed interface SampleRoute {
   data object PaneList : SampleRoute
 
   data class PaneDetail(val itemId: String) : SampleRoute
+
+  data class TabRoot(val tab: SampleTab) : SampleRoute
+
+  data class TabDetail(val tab: SampleTab, val itemId: String) : SampleRoute
+}
+
+private enum class SampleTab(val label: String, val routeName: String) {
+  Home("Home", "home"),
+  Search("Search", "search"),
+  Profile("Profile", "profile"),
 }
 
 private fun routeName(route: SampleRoute): String =
@@ -224,6 +350,8 @@ private fun routeName(route: SampleRoute): String =
     SampleRoute.DialogNotice -> "/nav3/dialog"
     SampleRoute.PaneList -> "/nav3/multipane/list"
     is SampleRoute.PaneDetail -> "/nav3/multipane/detail"
+    is SampleRoute.TabRoot -> "/nav3/tabs/${route.tab.routeName}"
+    is SampleRoute.TabDetail -> "/nav3/tabs/${route.tab.routeName}/detail"
   }
 
 private fun routeArguments(route: SampleRoute): Map<String, Any?> =
@@ -233,6 +361,8 @@ private fun routeArguments(route: SampleRoute): Map<String, Any?> =
     SampleRoute.DialogNotice -> mapOf("presentation" to "dialog")
     SampleRoute.PaneList -> emptyMap()
     is SampleRoute.PaneDetail -> mapOf("item_id" to route.itemId)
+    is SampleRoute.TabRoot -> mapOf("tab" to route.tab.routeName)
+    is SampleRoute.TabDetail -> mapOf("tab" to route.tab.routeName, "item_id" to route.itemId)
   }
 
 @Composable
