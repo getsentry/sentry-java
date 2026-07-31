@@ -547,7 +547,7 @@ constructor(
   private var currentRetainedStacks: List<RetainedStack<T>> = emptyList()
   private var currentSelectedStackName: String? = null
   private var currentStacksInUseNames: List<String> = emptyList()
-  private val visiblePanes = LinkedHashMap<Any, VisiblePane<T>>()
+  private val visiblePanes = mutableListOf<VisiblePane<T>>()
   private var previousPrimaryKeyRef: WeakReference<T>? = null
   private var previousPrimaryStackName: String? = null
   private var activeTransaction: ITransaction? = null
@@ -652,7 +652,7 @@ constructor(
       if (visiblePanes.isEmpty()) {
         applyPrimaryChange(currentBackStack.lastOrNull(), selectedStackName)
       } else {
-        applyPrimaryPane(selectPrimaryPane(visiblePanes.values))
+        applyPrimaryPane(selectPrimaryPane(visiblePanes))
       }
     }
 
@@ -660,36 +660,37 @@ constructor(
   public fun onEntryVisible(contentKey: Any, metadata: Map<String, Any>): Unit =
     guard("onEntryVisible") {
       val visibleKey = resolveVisibleKey(contentKey) ?: return@guard
-      visiblePanes[contentKey] =
+      upsertVisiblePane(
         VisiblePane(
           key = visibleKey.key,
           contentKey = contentKey,
           metadata = metadata,
           stackName = visibleKey.stackName,
         )
+      )
       updateNavigationContext()
-      applyPrimaryPane(selectPrimaryPane(visiblePanes.values))
+      applyPrimaryPane(selectPrimaryPane(visiblePanes))
     }
 
   @ApiStatus.Internal
   public fun onEntryHidden(contentKey: Any): Unit =
     guard("onEntryHidden") {
-      visiblePanes.remove(contentKey)
+      removeVisiblePane(contentKey)
       updateNavigationContext()
       if (visiblePanes.isEmpty()) {
         applyPrimaryChange(currentBackStack.lastOrNull())
       } else {
-        applyPrimaryPane(selectPrimaryPane(visiblePanes.values))
+        applyPrimaryPane(selectPrimaryPane(visiblePanes))
       }
     }
 
   @ApiStatus.Internal
   public fun onEntryPopped(contentKey: Any): Unit =
     guard("onEntryPopped") {
-      visiblePanes.remove(contentKey)
+      removeVisiblePane(contentKey)
       updateNavigationContext()
       if (visiblePanes.isNotEmpty()) {
-        applyPrimaryPane(selectPrimaryPane(visiblePanes.values))
+        applyPrimaryPane(selectPrimaryPane(visiblePanes))
       }
     }
 
@@ -738,7 +739,7 @@ constructor(
       if (visiblePanes.isEmpty()) {
         listOf(primaryRoute)
       } else {
-        visiblePanes.values.map { resolveRouteName(it.key) }
+        visiblePanes.map { resolveRouteName(it.key) }
       }
 
     scopes.configureScope { scope ->
@@ -776,7 +777,7 @@ constructor(
         }
 
         if (visiblePanes.size > 1) {
-          data["visible"] = visiblePanes.values.map { resolveRouteName(it.key) }
+          data["visible"] = visiblePanes.map { resolveRouteName(it.key) }
         }
 
         level = INFO
@@ -885,7 +886,7 @@ constructor(
     }
 
     if (visiblePanes.isNotEmpty()) {
-      context["visible_entries"] = buildVisibleRouteEntries(visiblePanes.values.toList())
+      context["visible_entries"] = buildVisibleRouteEntries(visiblePanes.toList())
     }
 
     if (context.isEmpty()) {
@@ -924,25 +925,48 @@ constructor(
     return resolveVisibleKey(contentKey)?.key
   }
 
-  private fun resolveVisibleKey(contentKey: Any): ResolvedVisibleKey<T>? {
-    if (currentRetainedStacks.isEmpty()) {
-      return currentBackStack
-        .find { key -> contentKeyMatches(key, contentKey) }
-        ?.let { key ->
-          ResolvedVisibleKey(key, currentSelectedStackName)
-        }
+  private fun upsertVisiblePane(pane: VisiblePane<T>) {
+    val index = visiblePanes.indexOfFirst { it.contentKey === pane.contentKey }
+    if (index == -1) {
+      visiblePanes += pane
+    } else {
+      visiblePanes[index] = pane
+    }
+  }
+
+  private fun removeVisiblePane(contentKey: Any) {
+    val identityIndex = visiblePanes.indexOfFirst { it.contentKey === contentKey }
+    if (identityIndex != -1) {
+      visiblePanes.removeAt(identityIndex)
+      return
     }
 
-    val matches = mutableListOf<ResolvedVisibleKey<T>>()
+    val equalityIndex = visiblePanes.indexOfFirst { pane ->
+      pane.contentKey == contentKey || pane.contentKey.toString() == contentKey.toString()
+    }
+    if (equalityIndex != -1) {
+      visiblePanes.removeAt(equalityIndex)
+    }
+  }
+
+  private fun resolveVisibleKey(contentKey: Any): ResolvedVisibleKey<T>? {
+    if (currentRetainedStacks.isEmpty()) {
+      return (currentBackStack.find { key -> key === contentKey }
+          ?: currentBackStack.find { key -> contentKeyMatches(key, contentKey) })
+        ?.let { key -> ResolvedVisibleKey(key, currentSelectedStackName) }
+    }
+
     val candidateStacks =
       currentRetainedStacks.filter { it.inUse }.ifEmpty { currentRetainedStacks }
-    for (stack in candidateStacks) {
-      for (key in stack.backStack) {
-        if (contentKeyMatches(key, contentKey)) {
-          matches += ResolvedVisibleKey(key, stack.name)
-        }
-      }
+    val identityMatches = findVisibleKeyMatches(candidateStacks) { key -> key === contentKey }
+    if (identityMatches.isNotEmpty()) {
+      return identityMatches.first()
     }
+
+    val matches =
+      findVisibleKeyMatches(candidateStacks) { key ->
+        contentKeyMatches(key, contentKey)
+      }
 
     if (matches.isEmpty()) {
       return null
@@ -962,18 +986,31 @@ constructor(
     }
   }
 
+  private fun findVisibleKeyMatches(
+    stacks: List<RetainedStack<T>>,
+    matches: (T) -> Boolean,
+  ): List<ResolvedVisibleKey<T>> {
+    val resolved = mutableListOf<ResolvedVisibleKey<T>>()
+    for (stack in stacks) {
+      for (key in stack.backStack) {
+        if (matches(key)) {
+          resolved += ResolvedVisibleKey(key, stack.name)
+        }
+      }
+    }
+    return resolved
+  }
+
   private fun refreshVisiblePaneOwnership() {
     if (visiblePanes.isEmpty()) {
       return
     }
-    val refreshed = LinkedHashMap<Any, VisiblePane<T>>()
-    for ((contentKey, pane) in visiblePanes) {
-      val visibleKey = resolveVisibleKey(contentKey)
-      refreshed[contentKey] =
-        pane.copy(key = visibleKey?.key ?: pane.key, stackName = visibleKey?.stackName)
+    val refreshed = visiblePanes.map { pane ->
+      val visibleKey = resolveVisibleKey(pane.contentKey)
+      pane.copy(key = visibleKey?.key ?: pane.key, stackName = visibleKey?.stackName)
     }
     visiblePanes.clear()
-    visiblePanes.putAll(refreshed)
+    visiblePanes.addAll(refreshed)
   }
 
   @Suppress("TooGenericExceptionCaught") // SDK instrumentation must never crash the host app
@@ -1022,7 +1059,7 @@ constructor(
     }
     return candidates.maxWithOrNull(
       compareBy<VisiblePane<T>> { panePriority(it.metadata) }
-        .thenBy { visiblePanes.keys.indexOf(it.contentKey) }
+        .thenBy { pane -> visiblePanes.indexOfFirst { it.contentKey === pane.contentKey } }
     )
   }
 

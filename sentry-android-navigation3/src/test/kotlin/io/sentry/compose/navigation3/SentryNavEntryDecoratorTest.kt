@@ -37,6 +37,8 @@ data class ProfileScreen(val userId: String)
 
 data class SettingsScreen(val section: String)
 
+data class EqualRouteScreen(val route: String)
+
 @Suppress("LargeClass") // Region-grouped behavioral coverage for a single state holder.
 class SentryNavEntryDecoratorTest {
 
@@ -647,6 +649,205 @@ class SentryNavEntryDecoratorTest {
     verify(fixture.scopes, times(1))
       .startTransaction(any<TransactionContext>(), any<TransactionOptions>())
     verify(fixture.scope, never()).setScreen(eq("/SettingsScreen"))
+  }
+
+  @Test
+  fun `onBackstacksChanged caps each retained stack at maxBackstackSize`() {
+    val sut = fixture.getSut(maxBackstackSize = 1)
+
+    sut.onBackstacksChanged(
+      selectedStack = "home",
+      backStacks =
+        linkedMapOf(
+          "home" to listOf(HomeScreen(), ProfileScreen("1")),
+          "mail" to listOf(SettingsScreen("inbox"), SettingsScreen("detail")),
+        ),
+      stacksInUse = linkedSetOf("home", "mail"),
+      stackNameExtractor = null,
+    )
+
+    val ctx = captureNavigationContext()
+    @Suppress("UNCHECKED_CAST") val backstacks = ctx["backstacks"] as List<Map<String, Any?>>
+    @Suppress("UNCHECKED_CAST")
+    val homeStack = backstacks[0]["backstack"] as List<Map<String, Any?>>
+    @Suppress("UNCHECKED_CAST")
+    val mailStack = backstacks[1]["backstack"] as List<Map<String, Any?>>
+    assertEquals(1, homeStack.size)
+    assertEquals("/ProfileScreen", homeStack[0]["route"])
+    assertEquals(1, mailStack.size)
+    assertEquals("/SettingsScreen", mailStack[0]["route"])
+  }
+
+  @Test
+  fun `multi stack arguments are absent when argumentsExtractor is not provided`() {
+    val sut = fixture.getSut()
+    val profile = ProfileScreen("123")
+
+    sut.onBackstacksChanged(
+      selectedStack = "mail",
+      backStacks = linkedMapOf("mail" to listOf(profile)),
+      stacksInUse = setOf("mail"),
+      stackNameExtractor = null,
+    )
+    sut.onEntryVisible(profile, emptyMap())
+
+    val breadcrumbCaptor = argumentCaptor<Breadcrumb>()
+    verify(fixture.scopes).addBreadcrumb(breadcrumbCaptor.capture(), any())
+    assertNull(breadcrumbCaptor.firstValue.data["to_arguments"])
+    assertNull(fixture.transaction.data?.get("arguments"))
+
+    @Suppress("UNCHECKED_CAST") val contextCaptor = argumentCaptor<Map<String, Any>>()
+    verify(fixture.scope, times(2)).setContexts(eq("navigation"), contextCaptor.capture())
+    val navigation = contextCaptor.lastValue
+    @Suppress("UNCHECKED_CAST") val backstacks = navigation["backstacks"] as List<Map<String, Any?>>
+    @Suppress("UNCHECKED_CAST") val stack = backstacks[0]["backstack"] as List<Map<String, Any?>>
+    @Suppress("UNCHECKED_CAST")
+    val visible = navigation["visible_entries"] as List<Map<String, Any?>>
+    assertTrue(!stack[0].containsKey("args"))
+    assertTrue(!visible[0].containsKey("args"))
+  }
+
+  @Test
+  fun `multi stack arguments are attached to breadcrumb transaction backstack and visible entries`() {
+    val sut =
+      fixture.getSut(
+        argumentsExtractor = { key ->
+          when (key) {
+            is ProfileScreen -> mapOf("userId" to key.userId)
+            else -> emptyMap()
+          }
+        }
+      )
+    val profile = ProfileScreen("123")
+
+    sut.onBackstacksChanged(
+      selectedStack = "mail",
+      backStacks = linkedMapOf("mail" to listOf(profile)),
+      stacksInUse = setOf("mail"),
+      stackNameExtractor = null,
+    )
+    sut.onEntryVisible(profile, emptyMap())
+
+    verify(fixture.scopes)
+      .addBreadcrumb(
+        check<Breadcrumb> { assertEquals(mapOf("userId" to "123"), it.data["to_arguments"]) },
+        any(),
+      )
+    assertEquals(mapOf("userId" to "123"), fixture.transaction.data?.get("arguments"))
+
+    @Suppress("UNCHECKED_CAST") val contextCaptor = argumentCaptor<Map<String, Any>>()
+    verify(fixture.scope, times(2)).setContexts(eq("navigation"), contextCaptor.capture())
+    val navigation = contextCaptor.lastValue
+    @Suppress("UNCHECKED_CAST") val backstacks = navigation["backstacks"] as List<Map<String, Any?>>
+    @Suppress("UNCHECKED_CAST") val stack = backstacks[0]["backstack"] as List<Map<String, Any?>>
+    @Suppress("UNCHECKED_CAST")
+    val visible = navigation["visible_entries"] as List<Map<String, Any?>>
+    assertEquals(mapOf("userId" to "123"), stack[0]["args"])
+    assertEquals(mapOf("userId" to "123"), visible[0]["args"])
+  }
+
+  @Test
+  fun `throwing stackNameExtractor does not crash multi stack update`() {
+    val sut = fixture.getSut()
+
+    sut.onBackstacksChanged(
+      selectedStack = "mail",
+      backStacks = linkedMapOf("mail" to listOf(ProfileScreen("123"))),
+      stacksInUse = setOf("mail"),
+      stackNameExtractor = { error("boom") },
+    )
+
+    val ctx = captureNavigationContext()
+    assertEquals("mail", ctx["selected_stack"])
+  }
+
+  @Test
+  fun `throwing primaryRouteSelector does not crash and falls back to selected stack`() {
+    val sut = fixture.getSut(primaryRouteSelector = { error("boom") })
+    val home = HomeScreen()
+    val mail = ProfileScreen("123")
+    sut.onBackstacksChanged(
+      selectedStack = "mail",
+      backStacks = linkedMapOf("home" to listOf(home), "mail" to listOf(mail)),
+      stacksInUse = linkedSetOf("home", "mail"),
+      stackNameExtractor = null,
+    )
+
+    sut.onEntryVisible(home, emptyMap())
+    sut.onEntryVisible(mail, emptyMap())
+
+    verify(fixture.scope, atLeastOnce()).setScreen(eq("/ProfileScreen"))
+  }
+
+  @Test
+  fun `equal route keys in different stacks keep visible stack ownership by identity`() {
+    val sut = fixture.getSut(nameExtractor = { (it as EqualRouteScreen).route })
+    val home = EqualRouteScreen("shared")
+    val mail = EqualRouteScreen("shared")
+    sut.onBackstacksChanged(
+      selectedStack = "mail",
+      backStacks = linkedMapOf("home" to listOf(home), "mail" to listOf(mail)),
+      stacksInUse = linkedSetOf("home", "mail"),
+      stackNameExtractor = null,
+    )
+
+    sut.onEntryVisible(home, emptyMap())
+    sut.onEntryVisible(mail, emptyMap())
+
+    @Suppress("UNCHECKED_CAST") val contextCaptor = argumentCaptor<Map<String, Any>>()
+    verify(fixture.scope, times(3)).setContexts(eq("navigation"), contextCaptor.capture())
+    val navigation = contextCaptor.lastValue
+    @Suppress("UNCHECKED_CAST")
+    val visible = navigation["visible_entries"] as List<Map<String, Any?>>
+    assertEquals(2, visible.size)
+    assertEquals("home", visible[0]["stack"])
+    assertEquals("mail", visible[1]["stack"])
+    verify(fixture.scope, atLeastOnce()).setScreen(eq("/shared"))
+  }
+
+  @Test
+  fun `multi stack update respects disabled instrumentation options`() {
+    val sut =
+      fixture.getSut(
+        enableBreadcrumbs = false,
+        enableNavigationTracing = false,
+        enableScreenTracking = false,
+        enableBackstackContext = false,
+      )
+
+    sut.onBackstacksChanged(
+      selectedStack = "mail",
+      backStacks = linkedMapOf("mail" to listOf(ProfileScreen("123"))),
+      stacksInUse = setOf("mail"),
+      stackNameExtractor = null,
+    )
+
+    verify(fixture.scopes, never()).addBreadcrumb(any<Breadcrumb>(), any())
+    verify(fixture.scopes, never()).startTransaction(any<TransactionContext>(), any())
+    verify(fixture.scope, never()).setScreen(any())
+    verify(fixture.scope, never()).setContexts(any<String>(), any<Any>())
+  }
+
+  @Test
+  fun `onBackstacksChanged does not crash when route key equality throws`() {
+    val sut = fixture.getSut()
+    val first = ExplodingKey()
+    val second = ExplodingKey()
+
+    sut.onBackstacksChanged(
+      selectedStack = "home",
+      backStacks = linkedMapOf("home" to listOf(first)),
+      stacksInUse = setOf("home"),
+      stackNameExtractor = null,
+    )
+    sut.onBackstacksChanged(
+      selectedStack = "home",
+      backStacks = linkedMapOf("home" to listOf(first, second)),
+      stacksInUse = setOf("home"),
+      stackNameExtractor = null,
+    )
+
+    // No exception escaped; the test would otherwise fail.
   }
 
   // endregion

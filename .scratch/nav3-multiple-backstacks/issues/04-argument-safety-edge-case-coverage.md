@@ -1,6 +1,6 @@
 # Argument, safety, and edge-case coverage
 
-Status: ready-for-agent
+Status: done
 Type: AFK
 Blocked by: 02, 03
 
@@ -14,13 +14,13 @@ Extend the integration's defensive behavior and edge-case coverage to the new mu
 
 ## Acceptance criteria
 
-- [ ] Throwing `stackNameExtractor` and `primaryRouteSelector` callbacks do not crash the host app.
-- [ ] Throwing key equality, hashing, or string conversion remains guarded in multi-stack paths.
-- [ ] Route arguments remain absent unless an argument extractor is provided.
-- [ ] Extracted arguments are attached consistently to breadcrumbs, transactions, backstack entries, and visible entries when enabled.
-- [ ] Max backstack size is applied per retained stack.
-- [ ] Equal route keys in different stacks do not break stack ownership or visible-entry reporting.
-- [ ] Disabled breadcrumb, tracing, screen tracking, and backstack context options still behave correctly.
+- [x] Throwing `stackNameExtractor` and `primaryRouteSelector` callbacks do not crash the host app.
+- [x] Throwing key equality, hashing, or string conversion remains guarded in multi-stack paths.
+- [x] Route arguments remain absent unless an argument extractor is provided.
+- [x] Extracted arguments are attached consistently to breadcrumbs, transactions, backstack entries, and visible entries when enabled.
+- [x] Max backstack size is applied per retained stack.
+- [x] Equal route keys in different stacks do not break stack ownership or visible-entry reporting.
+- [x] Disabled breadcrumb, tracing, screen tracking, and backstack context options still behave correctly.
 
 ## Blocked by
 
