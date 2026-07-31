@@ -2,104 +2,54 @@
 
 ## Problem
 
-Sentry's draft Navigation 3 integration currently covers single-stack navigation and multipane visibility, but it does not model apps that retain multiple independent Nav3 back stacks, such as bottom-navigation apps where each top-level destination owns its own history. In Navigation 3, this state is app-owned rather than managed by a shared controller API, so Sentry cannot infer multiple-stack behavior from a single `NavDisplay` back stack alone.
+The current branch introduces `sentry-android-navigation3`, but the Android sample app does not provide a focused way to exercise the new Navigation 3 instrumentation in a real app. Developers and SDK maintainers need a manual sample surface that drives the new API through realistic navigation patterns and makes span generation easy to inspect in Sentry.
 
-Without explicit multiple-backstack support, Sentry events from these apps either lose retained inactive stack context or force users to flatten app-specific state into a single stack shape that does not match Navigation 3 recipes.
+Navigation 2 span generation is already represented in the existing Android sample through `ComposeActivity`, which uses `rememberNavController().withSentryObservableEffect()` and a `NavHost`. Nav3 should follow that precedent by living in the same Android sample app rather than becoming a separate sample module.
 
 ## Target Users
 
-Android developers using the new `sentry-android-navigation3` integration with Jetpack Navigation 3 apps that maintain multiple retained back stacks, especially apps following nav3-recipes patterns for top-level routes, bottom navigation, responsive navigation scene decorators, and multipane layouts.
+Sentry Android SDK maintainers validating the Nav3 integration before release, and Android developers looking for an executable example of how to wire `SentryNav3NavigationEffect` and `rememberSentryNavEntryDecorator` into a Navigation 3 app.
 
 ## Solution Overview
 
-Add explicit multiple-backstack support to the Navigation 3 integration. The public API should accept an app-selected stack key plus a map of stack keys to stack snapshots, mirroring the Navigation 3 recipe model where apps own `topLevelRoute` and `backStacks`.
+Add a new `NavigationActivity` to `sentry-samples-android` and expose it from the existing `TracingScreen` as an “Open Navigation Activity” entry.
 
-Use one clean navigation context model from the first Navigation 3 release, including single-stack, multipane, and multi-stack modes:
+The Activity should be a Compose-based manual verification surface for the Navigation 3 integration. It should include several navigation scenarios in one screen flow:
 
-```json
-{
-  "navigation": {
-    "selected_stack": "mail",
-    "stacks_in_use": ["home", "mail"],
-    "backstacks": [
-      {
-        "name": "home",
-        "selected": false,
-        "in_use": true,
-        "backstack": [{ "route": "/Home" }]
-      },
-      {
-        "name": "mail",
-        "selected": true,
-        "in_use": true,
-        "backstack": [{ "route": "/Inbox" }, { "route": "/Message" }]
-      }
-    ],
-    "visible_entries": [
-      { "stack": "home", "route": "/Home" },
-      { "stack": "mail", "route": "/Inbox" }
-    ]
-  }
-}
-```
+- Simple single-stack screens to verify ordinary route changes create navigation spans and update Sentry navigation context.
+- Dialog-style destinations to verify transient destinations can be represented without breaking span generation.
+- Multipane/list-detail screens wired through `rememberSentryNavStateHolder` and `rememberSentryNavEntryDecorator` to verify visible-entry and primary-route behavior.
+- Tabbed navigation backed by multiple retained back stacks to verify selected-stack changes and retained-stack context.
+- Safe demo route arguments through `argumentsExtractor`, using clearly non-PII values such as demo item IDs.
 
-For single-stack apps, use a default stack name so the same plural model applies:
-
-```json
-{
-  "navigation": {
-    "selected_stack": "default",
-    "stacks_in_use": ["default"],
-    "backstacks": [
-      {
-        "name": "default",
-        "selected": true,
-        "in_use": true,
-        "backstack": [{ "route": "/Home" }]
-      }
-    ]
-  }
-}
-```
-
-Switching the selected top-level stack should be treated as a navigation event: emit a breadcrumb from the previous selected stack's top route to the new selected stack's top route, update screen tracking, and start a navigation transaction if tracing is enabled.
-
-Expose a `stackNameExtractor` callback so apps can turn arbitrary stack keys, including `NavKey` top-level routes from nav3-recipes, into stable readable names. Default to a route-like name derived from the stack key.
-
-Expose a `primaryRouteSelector` escape hatch for multipane and custom scene strategies. Defaults should handle simple cases, but custom and Material Nav3 scenes use arbitrary metadata, so users need a way to pick the primary visible route for `scope.screen`, breadcrumbs, and transaction names.
+The sample is for manual verification only. Automated behavior coverage should remain in `sentry-android-navigation3` unit tests; this change only needs build/compile validation for the Android sample.
 
 ## Key Constraints
 
-- Navigation 3 does not provide one canonical controller for all navigation state; apps own back stacks and top-level route selection.
-- The integration must not crash host apps if key equality, hashing, string conversion, or user extractors throw.
-- The module is unreleased, so the draft Phase 1/2 context shape can still change to the cleaner plural model before first release.
-- Public API additions affect `.api` files and must be regenerated with `apiDump`.
-- Argument extraction remains opt-in and must preserve the privacy warning: returned arguments are sent as-is and are not gated by `sendDefaultPii`.
-- Multiple-stack support must compose with multipane support. Retained backstack state and currently visible entries are separate concepts.
-- Keep the integration generic. It should support nav3-recipes patterns without depending on their concrete `NavigationState` classes.
+- Keep the change inside `sentry-samples:sentry-samples-android`; do not add a new Gradle sample module unless the existing sample cannot compile cleanly with Nav3 dependencies.
+- Match existing sample app patterns: Activity registered in `AndroidManifest.xml`, launched from `MainActivity`’s Tracing section, and implemented with Compose like other sample surfaces.
+- The sample must depend on `projects.sentryAndroidNavigation3` and `libs.androidx.navigation3.runtime` without changing public SDK APIs.
+- Any route arguments sent to Sentry must be obviously safe sample data and should not imply that real user IDs, emails, auth tokens, or deep-link query params are safe to send.
+- The UI should be practical for manual testing on a local emulator/device; avoid complex visual polish beyond clear scenario labels and controls.
+- Avoid flaky instrumentation or envelope assertions for this sample.
 
 ## Out of Scope
 
-- Deep-link parsing or synthetic backstack construction.
-- Owning or mutating app navigation state.
-- Full Nav3 scene identity reporting, unless Nav3 exposes a stable scene signal that the integration can observe reliably.
-- Automatic PII scrubbing of route arguments.
-- Support for remote issue creation, PR creation, or publishing artifacts as part of make-it.
+- Adding a separate `sentry-samples-android-navigation3` module.
+- Adding Android UI tests or system tests for the sample app.
+- Changing the Nav3 integration public API or behavior.
+- Reworking the existing Navigation 2 Compose sample.
+- Building a production-quality app shell or exhaustive Nav3 recipes demo.
 
 ## Open Questions
 
-- Exact Kotlin API shape for the multiple-stack overload: whether it lives as a new `SentryNav3MultiStackNavigationEffect`, an overload of `SentryNav3NavigationEffect`, a holder method, or a combination.
-- Exact type signature for `primaryRouteSelector`, including whether it receives public data classes for visible entries and stack entries.
-- Whether `stacks_in_use` should be user-supplied, inferred from visible entries, or default to all non-empty stacks when not provided.
-- How much default metadata heuristic support to include for Material adaptive scenes versus documenting `primaryRouteSelector`.
+- Whether `androidx.navigation3.runtime` alone is sufficient for the desired sample UI, or whether additional Nav3 UI/scene dependencies are required for dialog or multipane examples.
+- Exact route model names and visual layout can be decided during implementation, as long as the scenarios above remain covered.
 
 ## Success Criteria
 
-- Single-stack and multipane draft behavior is migrated to the unified plural context model before release.
-- Multiple retained back stacks appear in `contexts.navigation.backstacks` with stable stack names, selected/in-use flags, and capped route entries.
-- Visible entries can include stack names when stack ownership is known.
-- Switching selected stacks emits a breadcrumb, updates screen tracking, and starts a navigation transaction.
-- Active-stack pushes/pops continue to behave like existing single-stack navigation events.
-- Inactive retained stack changes update crash context without incorrectly becoming the primary screen unless selected or visible according to the model.
-- Custom scene layouts can override primary route selection through `primaryRouteSelector`.
-- Unit tests cover single-stack context migration, multi-stack context, selected stack switching, visible entries across stacks, stack name extraction, and primary route selection.
+- `sentry-samples-android` has a new “Open Navigation Activity” control in the Tracing section.
+- Launching the Activity presents manual controls for simple navigation, dialog navigation, multipane visible entries, and tabbed multi-backstack navigation.
+- The Activity wires the new Nav3 Sentry APIs in the same place a real app would own its Nav3 state.
+- Manual navigation generates Nav3 navigation spans/breadcrumbs and updates navigation context when run with the sample app’s existing Sentry configuration.
+- The Android sample compiles successfully with the new dependencies and Activity.
