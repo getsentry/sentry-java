@@ -37,6 +37,7 @@ import android.media.MediaFormat
 import android.os.Build
 import android.view.Surface
 import io.sentry.SentryLevel.DEBUG
+import io.sentry.SentryLevel.WARNING
 import io.sentry.SentryOptions
 import io.sentry.android.replay.util.SystemProperties
 import java.io.File
@@ -301,7 +302,7 @@ internal class SimpleVideoEncoder(
 
       if (stalledIterations >= MAX_EOS_STALL_ITERATIONS) {
         options.logger.log(
-          DEBUG,
+          WARNING,
           "[Encoder]: encoder made no progress for $stalledIterations iterations, dropping the remaining frames",
         )
         break // out of while
