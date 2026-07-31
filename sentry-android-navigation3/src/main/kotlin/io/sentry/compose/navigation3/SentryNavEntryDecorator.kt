@@ -48,6 +48,12 @@ private const val DEFAULT_STACK_NAME = "default"
 
 private const val TRACE_ORIGIN = "auto.navigation.nav3"
 
+private data class MultiStackNavigationSnapshot<S : Any, T : Any>(
+  val selectedStack: S,
+  val backStacks: Map<S, List<T>>,
+  val stacksInUse: Set<S>,
+)
+
 /**
  * Effect-only composable that captures navigation breadcrumbs, starts idle transactions, tracks
  * screen names, and attaches backstack context for Sentry.
@@ -137,6 +143,95 @@ public fun <T : Any> SentryNav3NavigationEffect(
     snapshotFlow { backStack.toList() }
       .distinctUntilChanged()
       .collectLatest { snapshot -> stateHolder.onBackstackChanged(snapshot) }
+  }
+}
+
+/**
+ * Effect-only composable that observes app-owned multiple retained Navigation 3 back stacks.
+ *
+ * Use this for Navigation 3 patterns such as bottom navigation where the app owns a selected stack
+ * and keeps inactive stacks retained in memory. Sentry writes every retained stack to
+ * `contexts.navigation.backstacks`, records [selectedStack] as `selected_stack`, and records
+ * [stacksInUse] separately so rendered stacks can be distinguished from retained background stacks.
+ *
+ * Switching [selectedStack] is treated as user-visible navigation: Sentry can emit a breadcrumb,
+ * update `scope.screen`, and start a navigation transaction for the selected stack's top route.
+ * Mutating an inactive retained stack only refreshes crash context.
+ *
+ * @param selectedStack The currently selected stack key.
+ * @param backStacks Retained back stack snapshots keyed by stack.
+ * @param stacksInUse Stack keys currently rendered by the UI. Defaults to only [selectedStack].
+ * @param scopes The Sentry scopes instance.
+ * @param enableNavigationBreadcrumbs Whether to capture breadcrumbs for navigation events.
+ * @param enableNavigationTracing Whether to start idle transactions for navigation events.
+ * @param enableBackstackContext Whether to attach the backstacks to the Sentry scope as context.
+ * @param maxBackstackSize Maximum number of entries to include for each retained stack.
+ * @param stackNameExtractor Optional lambda to extract a stable readable stack name. String stack
+ *   keys use their own value by default; other keys default to their class simple name.
+ * @param nameExtractor Optional lambda to extract a human-readable route name from a backstack key.
+ * @param argumentsExtractor Optional lambda to extract route arguments. Extracted values are sent
+ *   to Sentry as-is and are not gated by `SentryOptions.isSendDefaultPii()`.
+ */
+@Suppress("LongParameterList", "FunctionNaming")
+@ApiStatus.Experimental
+@Composable
+@NonRestartableComposable
+public fun <S : Any, T : Any> SentryNav3NavigationEffect(
+  selectedStack: S,
+  backStacks: Map<S, List<T>>,
+  stacksInUse: Set<S> = setOf(selectedStack),
+  scopes: IScopes = ScopesAdapter.getInstance(),
+  enableNavigationBreadcrumbs: Boolean = true,
+  enableNavigationTracing: Boolean = true,
+  enableBackstackContext: Boolean = true,
+  maxBackstackSize: Int = 30,
+  stackNameExtractor: ((S) -> String)? = null,
+  nameExtractor: ((T) -> String)? = null,
+  argumentsExtractor: ((T) -> Map<String, Any?>)? = null,
+) {
+  require(maxBackstackSize > 0) { "maxBackstackSize must be positive, was $maxBackstackSize" }
+
+  val stateHolder =
+    remember(
+      scopes,
+      enableNavigationBreadcrumbs,
+      enableNavigationTracing,
+      enableBackstackContext,
+      maxBackstackSize,
+    ) {
+      SentryNavStateHolder(
+        scopes = scopes,
+        enableNavigationBreadcrumbs = enableNavigationBreadcrumbs,
+        enableNavigationTracing = enableNavigationTracing,
+        enableBackstackContext = enableBackstackContext,
+        maxBackstackSize = maxBackstackSize,
+        nameExtractor = nameExtractor,
+        argumentsExtractor = argumentsExtractor,
+      )
+    }
+
+  stateHolder.nameExtractor = nameExtractor
+  stateHolder.argumentsExtractor = argumentsExtractor
+
+  DisposableEffect(stateHolder) { onDispose { stateHolder.cleanup() } }
+
+  LaunchedEffect(stateHolder, selectedStack, backStacks, stacksInUse, stackNameExtractor) {
+    snapshotFlow {
+        MultiStackNavigationSnapshot(
+          selectedStack = selectedStack,
+          backStacks = backStacks.entries.associate { it.key to it.value.toList() },
+          stacksInUse = stacksInUse.toSet(),
+        )
+      }
+      .distinctUntilChanged()
+      .collectLatest { snapshot ->
+        stateHolder.onBackstacksChanged(
+          selectedStack = snapshot.selectedStack,
+          backStacks = snapshot.backStacks,
+          stacksInUse = snapshot.stacksInUse,
+          stackNameExtractor = stackNameExtractor,
+        )
+      }
   }
 }
 
@@ -381,6 +476,13 @@ internal data class VisiblePane<T : Any>(
   val metadata: Map<String, Any>,
 )
 
+private data class RetainedStack<T : Any>(
+  val name: String,
+  val selected: Boolean,
+  val inUse: Boolean,
+  val backStack: List<T>,
+)
+
 @Suppress("LongParameterList", "TooManyFunctions")
 @ApiStatus.Experimental
 /**
@@ -404,8 +506,12 @@ constructor(
   internal var argumentsExtractor: ((T) -> Map<String, Any?>)? = argumentsExtractor
 
   private var currentBackStack: List<T> = emptyList()
+  private var currentRetainedStacks: List<RetainedStack<T>> = emptyList()
+  private var currentSelectedStackName: String? = null
+  private var currentStacksInUseNames: List<String> = emptyList()
   private val visiblePanes = LinkedHashMap<Any, VisiblePane<T>>()
   private var previousPrimaryKeyRef: WeakReference<T>? = null
+  private var previousPrimaryStackName: String? = null
   private var activeTransaction: ITransaction? = null
 
   private val isPerformanceEnabled
@@ -446,6 +552,21 @@ constructor(
   public fun onBackstackChanged(backStack: List<T>): Unit =
     guard("onBackstackChanged") {
       currentBackStack = backStack
+      currentSelectedStackName = if (backStack.isEmpty()) null else DEFAULT_STACK_NAME
+      currentStacksInUseNames = if (backStack.isEmpty()) emptyList() else listOf(DEFAULT_STACK_NAME)
+      currentRetainedStacks =
+        if (backStack.isEmpty()) {
+          emptyList()
+        } else {
+          listOf(
+            RetainedStack(
+              name = DEFAULT_STACK_NAME,
+              selected = true,
+              inUse = true,
+              backStack = backStack,
+            )
+          )
+        }
 
       if (backStack.isEmpty()) {
         if (enableBackstackContext) {
@@ -460,7 +581,37 @@ constructor(
       updateNavigationContext()
 
       if (visiblePanes.isEmpty()) {
-        applyPrimaryChange(backStack.lastOrNull())
+        applyPrimaryChange(backStack.lastOrNull(), DEFAULT_STACK_NAME)
+      }
+    }
+
+  /** Updates crash backstack context from app-owned retained back stacks. */
+  internal fun <S : Any> onBackstacksChanged(
+    selectedStack: S,
+    backStacks: Map<S, List<T>>,
+    stacksInUse: Set<S>,
+    stackNameExtractor: ((S) -> String)?,
+  ): Unit =
+    guard("onBackstacksChanged") {
+      val selectedStackName = resolveStackName(selectedStack, stackNameExtractor)
+      val inUseNames = stacksInUse.map { resolveStackName(it, stackNameExtractor) }
+
+      currentSelectedStackName = selectedStackName
+      currentStacksInUseNames = inUseNames
+      currentBackStack = backStacks[selectedStack].orEmpty()
+      currentRetainedStacks = backStacks.map { (stackKey, stackBackStack) ->
+        RetainedStack(
+          name = resolveStackName(stackKey, stackNameExtractor),
+          selected = stackKey == selectedStack,
+          inUse = stacksInUse.any { it == stackKey },
+          backStack = stackBackStack,
+        )
+      }
+
+      updateNavigationContext()
+
+      if (visiblePanes.isEmpty()) {
+        applyPrimaryChange(currentBackStack.lastOrNull(), selectedStackName)
       }
     }
 
@@ -496,13 +647,20 @@ constructor(
       }
     }
 
-  private fun applyPrimaryChange(primaryKey: T?) {
+  private fun applyPrimaryChange(
+    primaryKey: T?,
+    primaryStackName: String = currentSelectedStackName ?: DEFAULT_STACK_NAME,
+  ) {
     if (primaryKey == null) {
       return
     }
 
     val previousPrimaryKey = previousPrimaryKeyRef?.get()
-    if (previousPrimaryKey != null && previousPrimaryKey == primaryKey) {
+    if (
+      previousPrimaryKey != null &&
+        previousPrimaryKey == primaryKey &&
+        previousPrimaryStackName == primaryStackName
+    ) {
       updateScreenTracking(primaryKey)
       return
     }
@@ -514,6 +672,7 @@ constructor(
     updateScreenTracking(primaryKey)
     startTracing(routeName, arguments)
     previousPrimaryKeyRef = WeakReference(primaryKey)
+    previousPrimaryStackName = primaryStackName
   }
 
   private fun updateScreenTracking(primaryKey: T) {
@@ -629,7 +788,11 @@ constructor(
     }
     visiblePanes.clear()
     currentBackStack = emptyList()
+    currentRetainedStacks = emptyList()
+    currentSelectedStackName = null
+    currentStacksInUseNames = emptyList()
     previousPrimaryKeyRef = null
+    previousPrimaryStackName = null
     if (enableBackstackContext) {
       scopes.configureScope { scope -> scope.removeContexts(NAVIGATION_CONTEXT_KEY) }
     }
@@ -655,18 +818,17 @@ constructor(
 
     val context = LinkedHashMap<String, Any?>()
 
-    if (currentBackStack.isNotEmpty()) {
-      context["selected_stack"] = DEFAULT_STACK_NAME
-      context["stacks_in_use"] = listOf(DEFAULT_STACK_NAME)
-      context["backstacks"] =
-        listOf(
-          mapOf(
-            "name" to DEFAULT_STACK_NAME,
-            "selected" to true,
-            "in_use" to true,
-            "backstack" to buildRouteEntries(currentBackStack),
-          )
+    if (currentRetainedStacks.isNotEmpty()) {
+      context["selected_stack"] = currentSelectedStackName
+      context["stacks_in_use"] = currentStacksInUseNames
+      context["backstacks"] = currentRetainedStacks.map { stack ->
+        mapOf(
+          "name" to stack.name,
+          "selected" to stack.selected,
+          "in_use" to stack.inUse,
+          "backstack" to buildRouteEntries(stack.backStack),
         )
+      }
     }
 
     if (visiblePanes.isNotEmpty()) {
@@ -694,6 +856,29 @@ constructor(
 
   internal fun resolveKey(contentKey: Any): T? {
     return currentBackStack.find { key -> contentKeyMatches(key, contentKey) }
+  }
+
+  @Suppress("TooGenericExceptionCaught") // SDK instrumentation must never crash the host app
+  internal fun <S : Any> resolveStackName(
+    stackKey: S,
+    stackNameExtractor: ((S) -> String)?,
+  ): String {
+    val name =
+      try {
+        stackNameExtractor?.invoke(stackKey)
+      } catch (t: Throwable) {
+        scopes.options.logger.log(
+          WARNING,
+          "Nav3 stackNameExtractor threw while resolving a stack name. Falling back to default name.",
+          t,
+        )
+        null
+      }
+        ?: when (stackKey) {
+          is String -> stackKey
+          else -> stackKey::class.simpleName ?: stackKey.toString()
+        }
+    return name.removePrefix("/")
   }
 
   private fun contentKeyMatches(key: T, contentKey: Any): Boolean =

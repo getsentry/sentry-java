@@ -236,4 +236,29 @@ class SentryNav3NavigationEffectTest {
 
     verify(fixture.scopes, never()).addBreadcrumb(any<Breadcrumb>(), any())
   }
+
+  @Test
+  fun `multiple stack effect observes selected stack changes`() {
+    val fixture = createScopes()
+    val selectedStack = mutableStateOf("home")
+    val homeBackStack = mutableStateListOf<Any>(HomeScreen())
+    val mailBackStack = mutableStateListOf<Any>(ProfileScreen("123"))
+
+    composeRule.setContent {
+      SentryNav3NavigationEffect(
+        selectedStack = selectedStack.value,
+        backStacks = linkedMapOf("home" to homeBackStack, "mail" to mailBackStack),
+        stacksInUse = setOf(selectedStack.value),
+        scopes = fixture.scopes,
+      )
+    }
+    composeRule.waitForIdle()
+
+    selectedStack.value = "mail"
+    composeRule.waitForIdle()
+
+    verify(fixture.scopes, times(2)).addBreadcrumb(any<Breadcrumb>(), any())
+    verify(fixture.scopes, times(2))
+      .startTransaction(any<TransactionContext>(), any<TransactionOptions>())
+  }
 }

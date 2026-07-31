@@ -1,6 +1,6 @@
 # Explicit multi-stack observation API
 
-Status: ready-for-agent
+Status: done
 Type: AFK
 Blocked by: 01
 
@@ -14,12 +14,12 @@ Add a public Navigation 3 API for app-owned multiple back stacks. The API should
 
 ## Acceptance criteria
 
-- [ ] Public API supports a selected stack key and a map of stack keys to stack snapshots.
-- [ ] Public API supports `stacks_in_use` so retained background stacks are distinguishable from displayed stacks.
-- [ ] `stackNameExtractor` customizes stack names, with a readable default when omitted.
-- [ ] Selected-stack changes emit breadcrumbs, update `scope.screen`, and start navigation transactions when enabled.
-- [ ] Inactive retained stack changes refresh crash context without becoming the primary route unless selected or visible.
-- [ ] Unit and Compose tests cover API wiring, selected-stack switches, and inactive stack updates.
+- [x] Public API supports a selected stack key and a map of stack keys to stack snapshots.
+- [x] Public API supports `stacks_in_use` so retained background stacks are distinguishable from displayed stacks.
+- [x] `stackNameExtractor` customizes stack names, with a readable default when omitted.
+- [x] Selected-stack changes emit breadcrumbs, update `scope.screen`, and start navigation transactions when enabled.
+- [x] Inactive retained stack changes refresh crash context without becoming the primary route unless selected or visible.
+- [x] Unit and Compose tests cover API wiring, selected-stack switches, and inactive stack updates.
 
 ## Blocked by
 

@@ -10,6 +10,7 @@ public final class io/sentry/compose/navigation3/SentryNavEntryDecoratorKt {
 	public static final field NAVIGATION_OP Ljava/lang/String;
 	public static final fun SentryNav3NavigationEffect (Landroidx/compose/runtime/snapshots/SnapshotStateList;Lio/sentry/IScopes;ZZZILkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;II)V
 	public static final fun SentryNav3NavigationEffect (Landroidx/compose/runtime/snapshots/SnapshotStateList;Lio/sentry/compose/navigation3/SentryNavStateHolder;Landroidx/compose/runtime/Composer;I)V
+	public static final fun SentryNav3NavigationEffect (Ljava/lang/Object;Ljava/util/Map;Ljava/util/Set;Lio/sentry/IScopes;ZZZILkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;III)V
 	public static final fun rememberSentryNavEntryDecorator (Landroidx/compose/runtime/snapshots/SnapshotStateList;Lio/sentry/IScopes;ZZZILkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;II)Landroidx/navigation3/runtime/NavEntryDecorator;
 	public static final fun rememberSentryNavEntryDecorator (Lio/sentry/compose/navigation3/SentryNavStateHolder;Landroidx/compose/runtime/Composer;I)Landroidx/navigation3/runtime/NavEntryDecorator;
 	public static final fun rememberSentryNavStateHolder (Lio/sentry/IScopes;ZZZILkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;II)Lio/sentry/compose/navigation3/SentryNavStateHolder;

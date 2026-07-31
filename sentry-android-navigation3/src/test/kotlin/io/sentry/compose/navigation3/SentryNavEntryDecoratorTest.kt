@@ -536,6 +536,116 @@ class SentryNavEntryDecoratorTest {
     verify(fixture.scopes, times(1)).addBreadcrumb(any<Breadcrumb>(), any())
   }
 
+  @Test
+  fun `onBackstacksChanged attaches retained stacks to navigation context`() {
+    val sut =
+      fixture.getSut(
+        argumentsExtractor = { key ->
+          when (key) {
+            is ProfileScreen -> mapOf("userId" to key.userId)
+            else -> emptyMap()
+          }
+        }
+      )
+
+    sut.onBackstacksChanged(
+      selectedStack = "mail",
+      backStacks =
+        linkedMapOf(
+          "home" to listOf(HomeScreen()),
+          "mail" to listOf(ProfileScreen("123")),
+        ),
+      stacksInUse = linkedSetOf("home", "mail"),
+      stackNameExtractor = { stack -> "tab-$stack" },
+    )
+
+    val ctx = captureNavigationContext()
+    assertEquals("tab-mail", ctx["selected_stack"])
+    assertEquals(listOf("tab-home", "tab-mail"), ctx["stacks_in_use"])
+    @Suppress("UNCHECKED_CAST") val backstacks = ctx["backstacks"] as List<Map<String, Any?>>
+    assertEquals(2, backstacks.size)
+    assertEquals("tab-home", backstacks[0]["name"])
+    assertEquals(false, backstacks[0]["selected"])
+    assertEquals(true, backstacks[0]["in_use"])
+    assertEquals("tab-mail", backstacks[1]["name"])
+    assertEquals(true, backstacks[1]["selected"])
+    assertEquals(true, backstacks[1]["in_use"])
+    @Suppress("UNCHECKED_CAST")
+    val mailStack = backstacks[1]["backstack"] as List<Map<String, Any?>>
+    assertEquals("/ProfileScreen", mailStack[0]["route"])
+    assertEquals(mapOf("userId" to "123"), mailStack[0]["args"])
+  }
+
+  @Test
+  fun `onBackstacksChanged treats selected stack switch as navigation`() {
+    val sut = fixture.getSut()
+    val homeBackStack = listOf(HomeScreen())
+    val mailBackStack = listOf(ProfileScreen("123"))
+    val backStacks = linkedMapOf("home" to homeBackStack, "mail" to mailBackStack)
+
+    sut.onBackstacksChanged(
+      selectedStack = "home",
+      backStacks = backStacks,
+      stacksInUse = setOf("home"),
+      stackNameExtractor = null,
+    )
+    sut.onBackstacksChanged(
+      selectedStack = "mail",
+      backStacks = backStacks,
+      stacksInUse = setOf("mail"),
+      stackNameExtractor = null,
+    )
+
+    val captor = argumentCaptor<Breadcrumb>()
+    verify(fixture.scopes, times(2)).addBreadcrumb(captor.capture(), any())
+    captor.secondValue.let {
+      assertEquals("/HomeScreen", it.data["from"])
+      assertEquals("/ProfileScreen", it.data["to"])
+    }
+    verify(fixture.scope, atLeastOnce()).setScreen(eq("/ProfileScreen"))
+    verify(fixture.scopes, times(2))
+      .startTransaction(any<TransactionContext>(), any<TransactionOptions>())
+  }
+
+  @Test
+  fun `onBackstacksChanged refreshes inactive stacks without changing primary route`() {
+    val sut = fixture.getSut()
+
+    sut.onBackstacksChanged(
+      selectedStack = "home",
+      backStacks =
+        linkedMapOf(
+          "home" to listOf(HomeScreen()),
+          "mail" to listOf(ProfileScreen("123")),
+        ),
+      stacksInUse = setOf("home"),
+      stackNameExtractor = null,
+    )
+    sut.onBackstacksChanged(
+      selectedStack = "home",
+      backStacks =
+        linkedMapOf(
+          "home" to listOf(HomeScreen()),
+          "mail" to listOf(ProfileScreen("123"), SettingsScreen("privacy")),
+        ),
+      stacksInUse = setOf("home"),
+      stackNameExtractor = null,
+    )
+
+    @Suppress("UNCHECKED_CAST") val contextCaptor = argumentCaptor<Map<String, Any>>()
+    verify(fixture.scope, times(2)).setContexts(eq("navigation"), contextCaptor.capture())
+    val latest = contextCaptor.lastValue
+    @Suppress("UNCHECKED_CAST") val backstacks = latest["backstacks"] as List<Map<String, Any?>>
+    @Suppress("UNCHECKED_CAST")
+    val inactiveStack = backstacks[1]["backstack"] as List<Map<String, Any?>>
+    assertEquals(2, inactiveStack.size)
+    assertEquals("/SettingsScreen", inactiveStack[1]["route"])
+    verify(fixture.scopes, times(1)).addBreadcrumb(any<Breadcrumb>(), any())
+    verify(fixture.scopes, times(1))
+      .startTransaction(any<TransactionContext>(), any<TransactionOptions>())
+    verify(fixture.scope, never()).setScreen(eq("/SettingsScreen"))
+  }
+
   // endregion
 
   // region Cleanup
