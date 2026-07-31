@@ -14,6 +14,8 @@
  * you navigate away — otherwise the active Sentry transaction is finished too early.
  */
 
+import io.sentry.compose.navigation3.rememberSentryNavEntryDecorator
+
 // -- Route definitions (typical Nav3 pattern) --
 
 @Serializable

@@ -1,6 +1,5 @@
-package io.sentry.android.navigation3
+package io.sentry.compose.navigation3
 
-import androidx.annotation.MainThread
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -382,7 +381,12 @@ internal data class VisiblePane<T : Any>(
 
 @Suppress("LongParameterList", "TooManyFunctions")
 @ApiStatus.Experimental
-@MainThread
+/**
+ * Holds Sentry navigation state for a Nav3 back stack.
+ *
+ * This type is not thread-safe. Call its methods from the same UI thread/composition context that
+ * owns the Nav3 back stack.
+ */
 public class SentryNavStateHolder<T : Any>
 @ApiStatus.Internal
 constructor(
@@ -565,7 +569,7 @@ constructor(
       }
 
     val hint = Hint()
-    hint.set(TypeCheckHint.ANDROID_NAV3_DESTINATION, toKey)
+    hint.set(TypeCheckHint.NAV3_DESTINATION, toKey)
     scopes.addBreadcrumb(breadcrumb, hint)
   }
 
