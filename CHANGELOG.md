@@ -4,7 +4,7 @@
 
 ### Fixes
 
-- Prevent inflated cold app start when the OS spawns the process in the background (e.g. FCM push) on API 35+ ([#5841](https://github.com/getsentry/sentry-java/pull/5841))
+- Prevent inflated cold app start when the OS spawns the process in the background (e.g. FCM push) on API 35+ ([#5841](https://github.com/getsentry/sentry-java/pull/5841), [#5880](https://github.com/getsentry/sentry-java/pull/5880))
 - Avoid a CPU busy-loop when recording discarded log or metric envelopes under rate limiting ([#5835](https://github.com/getsentry/sentry-java/pull/5835))
   - `ClientReportRecorder` now reads the item count from the envelope item header instead of deserializing the payload, which under sustained rate limiting could pin CPU cores while repeatedly throwing exceptions
 
