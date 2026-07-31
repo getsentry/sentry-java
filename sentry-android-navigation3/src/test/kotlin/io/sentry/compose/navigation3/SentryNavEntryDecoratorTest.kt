@@ -57,6 +57,8 @@ class SentryNavEntryDecoratorTest {
       tracesSampleRate: Double? = 1.0,
       nameExtractor: ((Any) -> String)? = null,
       argumentsExtractor: ((Any) -> Map<String, Any?>)? = null,
+      primaryRouteSelector: ((List<SentryNavVisibleEntry<Any>>) -> SentryNavVisibleEntry<Any>?)? =
+        null,
       transaction: SentryTracer? = null,
     ): SentryNavStateHolder<Any> {
       options =
@@ -88,6 +90,7 @@ class SentryNavEntryDecoratorTest {
         maxBackstackSize = maxBackstackSize,
         nameExtractor = nameExtractor,
         argumentsExtractor = argumentsExtractor,
+        primaryRouteSelector = primaryRouteSelector,
       )
     }
   }
@@ -1032,12 +1035,41 @@ class SentryNavEntryDecoratorTest {
     val primary =
       sut.selectPrimaryPane(
         listOf(
-          VisiblePane(list, "list", mapOf(NAV3_METADATA_LIST_DETAIL_PANE to NAV3_PANE_LIST)),
-          VisiblePane(detail, "detail", mapOf(NAV3_METADATA_LIST_DETAIL_PANE to NAV3_PANE_DETAIL)),
+          VisiblePane(list, "list", mapOf(NAV3_METADATA_LIST_DETAIL_PANE to NAV3_PANE_LIST), null),
+          VisiblePane(
+            detail,
+            "detail",
+            mapOf(NAV3_METADATA_LIST_DETAIL_PANE to NAV3_PANE_DETAIL),
+            null,
+          ),
         )
       )
 
     assertEquals(detail, primary?.key)
+  }
+
+  @Test
+  fun `selectPrimaryPane prefers selected stack when metadata is inconclusive`() {
+    val sut = fixture.getSut()
+    val home = HomeScreen()
+    val mail = ProfileScreen("1")
+
+    sut.onBackstacksChanged(
+      selectedStack = "mail",
+      backStacks = linkedMapOf("home" to listOf(home), "mail" to listOf(mail)),
+      stacksInUse = linkedSetOf("home", "mail"),
+      stackNameExtractor = null,
+    )
+
+    val primary =
+      sut.selectPrimaryPane(
+        listOf(
+          VisiblePane(home, "home", emptyMap(), "home"),
+          VisiblePane(mail, "mail", emptyMap(), "mail"),
+        )
+      )
+
+    assertEquals(mail, primary?.key)
   }
 
   @Test
@@ -1073,6 +1105,57 @@ class SentryNavEntryDecoratorTest {
     assertEquals(2, visible.size)
     assertEquals("/HomeScreen", visible[0]["route"])
     assertEquals("/ProfileScreen", visible[1]["route"])
+  }
+
+  @Test
+  fun `onEntryVisible attaches stack names to visible entries when known`() {
+    val sut = fixture.getSut()
+    val home = HomeScreen()
+    val mail = ProfileScreen("1")
+    sut.onBackstacksChanged(
+      selectedStack = "mail",
+      backStacks = linkedMapOf("home" to listOf(home), "mail" to listOf(mail)),
+      stacksInUse = linkedSetOf("home", "mail"),
+      stackNameExtractor = null,
+    )
+
+    sut.onEntryVisible(home.toString(), emptyMap())
+    sut.onEntryVisible(mail.toString(), emptyMap())
+
+    @Suppress("UNCHECKED_CAST") val contextCaptor = argumentCaptor<Map<String, Any>>()
+    verify(fixture.scope, times(3)).setContexts(eq("navigation"), contextCaptor.capture())
+    val navigation = contextCaptor.lastValue
+    @Suppress("UNCHECKED_CAST")
+    val visible = navigation["visible_entries"] as List<Map<String, Any?>>
+    assertEquals("home", visible[0]["stack"])
+    assertEquals("/HomeScreen", visible[0]["route"])
+    assertEquals("mail", visible[1]["stack"])
+    assertEquals("/ProfileScreen", visible[1]["route"])
+  }
+
+  @Test
+  fun `primaryRouteSelector overrides default visible route selection`() {
+    val sut =
+      fixture.getSut(
+        primaryRouteSelector = { visibleEntries ->
+          visibleEntries.firstOrNull { it.stack == "home" }
+        }
+      )
+    val home = HomeScreen()
+    val mail = ProfileScreen("1")
+    sut.onBackstacksChanged(
+      selectedStack = "mail",
+      backStacks = linkedMapOf("home" to listOf(home), "mail" to listOf(mail)),
+      stacksInUse = linkedSetOf("home", "mail"),
+      stackNameExtractor = null,
+    )
+
+    sut.onEntryVisible(home.toString(), emptyMap())
+    sut.onEntryVisible(mail.toString(), emptyMap())
+
+    val screenCaptor = argumentCaptor<String>()
+    verify(fixture.scope, atLeastOnce()).setScreen(screenCaptor.capture())
+    assertEquals("/HomeScreen", screenCaptor.lastValue)
   }
 
   @Test

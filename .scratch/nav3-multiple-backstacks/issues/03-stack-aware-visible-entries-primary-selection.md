@@ -1,6 +1,6 @@
 # Stack-aware visible entries and primary selection
 
-Status: ready-for-agent
+Status: done
 Type: AFK
 Blocked by: 02
 
@@ -14,12 +14,12 @@ Make visible-entry tracking stack-aware for multiple-backstack apps and add an o
 
 ## Acceptance criteria
 
-- [ ] `visible_entries` includes `stack` when stack ownership is known.
-- [ ] Visible entries remain current rendered UI state, separate from retained `backstacks`.
-- [ ] A `primaryRouteSelector` callback can choose the primary visible route.
-- [ ] Default primary route selection prefers a visible entry from the selected stack and falls back conservatively when metadata is inconclusive.
-- [ ] `scope.screen`, transaction names, breadcrumbs, and `contexts.app.view_names` use the selected primary route and visible entries correctly.
-- [ ] Tests cover visible entries from multiple stacks and primary route override behavior.
+- [x] `visible_entries` includes `stack` when stack ownership is known.
+- [x] Visible entries remain current rendered UI state, separate from retained `backstacks`.
+- [x] A `primaryRouteSelector` callback can choose the primary visible route.
+- [x] Default primary route selection prefers a visible entry from the selected stack and falls back conservatively when metadata is inconclusive.
+- [x] `scope.screen`, transaction names, breadcrumbs, and `contexts.app.view_names` use the selected primary route and visible entries correctly.
+- [x] Tests cover visible entries from multiple stacks and primary route override behavior.
 
 ## Blocked by
 

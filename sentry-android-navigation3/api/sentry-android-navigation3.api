@@ -10,16 +10,16 @@ public final class io/sentry/compose/navigation3/SentryNavEntryDecoratorKt {
 	public static final field NAVIGATION_OP Ljava/lang/String;
 	public static final fun SentryNav3NavigationEffect (Landroidx/compose/runtime/snapshots/SnapshotStateList;Lio/sentry/IScopes;ZZZILkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;II)V
 	public static final fun SentryNav3NavigationEffect (Landroidx/compose/runtime/snapshots/SnapshotStateList;Lio/sentry/compose/navigation3/SentryNavStateHolder;Landroidx/compose/runtime/Composer;I)V
-	public static final fun SentryNav3NavigationEffect (Ljava/lang/Object;Ljava/util/Map;Ljava/util/Set;Lio/sentry/IScopes;ZZZILkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;III)V
-	public static final fun rememberSentryNavEntryDecorator (Landroidx/compose/runtime/snapshots/SnapshotStateList;Lio/sentry/IScopes;ZZZILkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;II)Landroidx/navigation3/runtime/NavEntryDecorator;
+	public static final fun SentryNav3NavigationEffect (Ljava/lang/Object;Ljava/util/Map;Ljava/util/Set;Lio/sentry/IScopes;ZZZILkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;III)V
+	public static final fun rememberSentryNavEntryDecorator (Landroidx/compose/runtime/snapshots/SnapshotStateList;Lio/sentry/IScopes;ZZZILkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;II)Landroidx/navigation3/runtime/NavEntryDecorator;
 	public static final fun rememberSentryNavEntryDecorator (Lio/sentry/compose/navigation3/SentryNavStateHolder;Landroidx/compose/runtime/Composer;I)Landroidx/navigation3/runtime/NavEntryDecorator;
-	public static final fun rememberSentryNavStateHolder (Lio/sentry/IScopes;ZZZILkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;II)Lio/sentry/compose/navigation3/SentryNavStateHolder;
+	public static final fun rememberSentryNavStateHolder (Lio/sentry/IScopes;ZZZILkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;II)Lio/sentry/compose/navigation3/SentryNavStateHolder;
 }
 
 public final class io/sentry/compose/navigation3/SentryNavStateHolder {
 	public static final field $stable I
 	public static final field Companion Lio/sentry/compose/navigation3/SentryNavStateHolder$Companion;
-	public fun <init> (Lio/sentry/IScopes;ZZZILkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)V
+	public fun <init> (Lio/sentry/IScopes;ZZZILkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)V
 	public final fun cleanup ()V
 	public final fun onBackstackChanged (Ljava/util/List;)V
 	public final fun onEntryHidden (Ljava/lang/Object;)V
@@ -28,5 +28,23 @@ public final class io/sentry/compose/navigation3/SentryNavStateHolder {
 }
 
 public final class io/sentry/compose/navigation3/SentryNavStateHolder$Companion {
+}
+
+public final class io/sentry/compose/navigation3/SentryNavVisibleEntry {
+	public static final field $stable I
+	public fun <init> (Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;)V
+	public final fun component1 ()Ljava/lang/Object;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/util/Map;
+	public final fun copy (Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;)Lio/sentry/compose/navigation3/SentryNavVisibleEntry;
+	public static synthetic fun copy$default (Lio/sentry/compose/navigation3/SentryNavVisibleEntry;Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;ILjava/lang/Object;)Lio/sentry/compose/navigation3/SentryNavVisibleEntry;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getKey ()Ljava/lang/Object;
+	public final fun getMetadata ()Ljava/util/Map;
+	public final fun getRoute ()Ljava/lang/String;
+	public final fun getStack ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
 }
 

@@ -48,6 +48,15 @@ private const val DEFAULT_STACK_NAME = "default"
 
 private const val TRACE_ORIGIN = "auto.navigation.nav3"
 
+/** A Nav3 entry currently visible to the user and available for primary-route selection. */
+@ApiStatus.Experimental
+public data class SentryNavVisibleEntry<T : Any>(
+  public val key: T,
+  public val route: String,
+  public val stack: String?,
+  public val metadata: Map<String, Any>,
+)
+
 private data class MultiStackNavigationSnapshot<S : Any, T : Any>(
   val selectedStack: S,
   val backStacks: Map<S, List<T>>,
@@ -131,6 +140,7 @@ public fun <T : Any> SentryNav3NavigationEffect(
         maxBackstackSize = maxBackstackSize,
         nameExtractor = nameExtractor,
         argumentsExtractor = argumentsExtractor,
+        primaryRouteSelector = null,
       )
     }
 
@@ -171,6 +181,10 @@ public fun <T : Any> SentryNav3NavigationEffect(
  * @param nameExtractor Optional lambda to extract a human-readable route name from a backstack key.
  * @param argumentsExtractor Optional lambda to extract route arguments. Extracted values are sent
  *   to Sentry as-is and are not gated by `SentryOptions.isSendDefaultPii()`.
+ * @param primaryRouteSelector Optional callback that can choose which visible entry should drive
+ *   `scope.screen`, breadcrumbs, and navigation transaction names. Return one of the provided
+ *   entries. When unset or inconclusive, Sentry prefers a visible entry from [selectedStack] and
+ *   then falls back to built-in multipane metadata heuristics.
  */
 @Suppress("LongParameterList", "FunctionNaming")
 @ApiStatus.Experimental
@@ -188,6 +202,7 @@ public fun <S : Any, T : Any> SentryNav3NavigationEffect(
   stackNameExtractor: ((S) -> String)? = null,
   nameExtractor: ((T) -> String)? = null,
   argumentsExtractor: ((T) -> Map<String, Any?>)? = null,
+  primaryRouteSelector: ((List<SentryNavVisibleEntry<T>>) -> SentryNavVisibleEntry<T>?)? = null,
 ) {
   require(maxBackstackSize > 0) { "maxBackstackSize must be positive, was $maxBackstackSize" }
 
@@ -207,11 +222,13 @@ public fun <S : Any, T : Any> SentryNav3NavigationEffect(
         maxBackstackSize = maxBackstackSize,
         nameExtractor = nameExtractor,
         argumentsExtractor = argumentsExtractor,
+        primaryRouteSelector = primaryRouteSelector,
       )
     }
 
   stateHolder.nameExtractor = nameExtractor
   stateHolder.argumentsExtractor = argumentsExtractor
+  stateHolder.primaryRouteSelector = primaryRouteSelector
 
   DisposableEffect(stateHolder) { onDispose { stateHolder.cleanup() } }
 
@@ -279,6 +296,10 @@ public fun <T : Any> SentryNav3NavigationEffect(
  * @param maxBackstackSize Maximum number of backstack entries to include in crash context.
  * @param nameExtractor Optional lambda to extract a human-readable route name from a backstack key.
  * @param argumentsExtractor Optional lambda to extract arguments from a backstack key.
+ * @param primaryRouteSelector Optional callback that can choose which visible entry should drive
+ *   `scope.screen`, breadcrumbs, and navigation transaction names. Return one of the provided
+ *   entries. When unset or inconclusive, Sentry prefers a visible entry from the selected stack and
+ *   then falls back to built-in multipane metadata heuristics.
  *
  *   **Privacy:** extracted argument values are sent to Sentry as-is via breadcrumbs,
  *   `contexts.navigation`, and the navigation transaction. They are **not** gated by
@@ -298,6 +319,7 @@ public fun <T : Any> rememberSentryNavStateHolder(
   maxBackstackSize: Int = 30,
   nameExtractor: ((T) -> String)? = null,
   argumentsExtractor: ((T) -> Map<String, Any?>)? = null,
+  primaryRouteSelector: ((List<SentryNavVisibleEntry<T>>) -> SentryNavVisibleEntry<T>?)? = null,
 ): SentryNavStateHolder<T> {
   require(maxBackstackSize > 0) { "maxBackstackSize must be positive, was $maxBackstackSize" }
 
@@ -317,11 +339,13 @@ public fun <T : Any> rememberSentryNavStateHolder(
         maxBackstackSize = maxBackstackSize,
         nameExtractor = nameExtractor,
         argumentsExtractor = argumentsExtractor,
+        primaryRouteSelector = primaryRouteSelector,
       )
     }
 
   holder.nameExtractor = nameExtractor
   holder.argumentsExtractor = argumentsExtractor
+  holder.primaryRouteSelector = primaryRouteSelector
 
   DisposableEffect(holder) { onDispose { holder.cleanup() } }
 
@@ -392,6 +416,10 @@ public fun <T : Any> rememberSentryNavEntryDecorator(
  *   provided, no arguments are attached. Values should be primitives (`String`, `Number`,
  *   `Boolean`), `null`, or nested `Map`/`Collection` thereof. Non-primitive values are coerced to
  *   their `toString()` representation with a warning logged.
+ * @param primaryRouteSelector Optional callback that can choose which visible entry should drive
+ *   `scope.screen`, breadcrumbs, and navigation transaction names. Return one of the provided
+ *   entries. When unset or inconclusive, Sentry prefers a visible entry from the selected stack and
+ *   then falls back to built-in multipane metadata heuristics.
  *
  *   **Privacy:** the values you return here are attached verbatim to breadcrumbs,
  *   `contexts.navigation`, and the navigation transaction, and are sent to Sentry as-is. They are
@@ -414,6 +442,7 @@ public fun <T : Any> rememberSentryNavEntryDecorator(
   maxBackstackSize: Int = 30,
   nameExtractor: ((T) -> String)? = null,
   argumentsExtractor: ((T) -> Map<String, Any?>)? = null,
+  primaryRouteSelector: ((List<SentryNavVisibleEntry<T>>) -> SentryNavVisibleEntry<T>?)? = null,
 ): NavEntryDecorator<T> {
   require(maxBackstackSize > 0) { "maxBackstackSize must be positive, was $maxBackstackSize" }
 
@@ -434,11 +463,13 @@ public fun <T : Any> rememberSentryNavEntryDecorator(
         maxBackstackSize = maxBackstackSize,
         nameExtractor = nameExtractor,
         argumentsExtractor = argumentsExtractor,
+        primaryRouteSelector = primaryRouteSelector,
       )
     }
 
   stateHolder.nameExtractor = nameExtractor
   stateHolder.argumentsExtractor = argumentsExtractor
+  stateHolder.primaryRouteSelector = primaryRouteSelector
 
   DisposableEffect(stateHolder) { onDispose { stateHolder.cleanup() } }
 
@@ -474,7 +505,10 @@ internal data class VisiblePane<T : Any>(
   val key: T,
   val contentKey: Any,
   val metadata: Map<String, Any>,
+  val stackName: String?,
 )
+
+private data class ResolvedVisibleKey<T : Any>(val key: T, val stackName: String?)
 
 private data class RetainedStack<T : Any>(
   val name: String,
@@ -501,9 +535,13 @@ constructor(
   private val maxBackstackSize: Int,
   nameExtractor: ((T) -> String)?,
   argumentsExtractor: ((T) -> Map<String, Any?>)?,
+  primaryRouteSelector: ((List<SentryNavVisibleEntry<T>>) -> SentryNavVisibleEntry<T>?)?,
 ) {
   internal var nameExtractor: ((T) -> String)? = nameExtractor
   internal var argumentsExtractor: ((T) -> Map<String, Any?>)? = argumentsExtractor
+  internal var primaryRouteSelector:
+    ((List<SentryNavVisibleEntry<T>>) -> SentryNavVisibleEntry<T>?)? =
+    primaryRouteSelector
 
   private var currentBackStack: List<T> = emptyList()
   private var currentRetainedStacks: List<RetainedStack<T>> = emptyList()
@@ -607,22 +645,30 @@ constructor(
           backStack = stackBackStack,
         )
       }
+      refreshVisiblePaneOwnership()
 
       updateNavigationContext()
 
       if (visiblePanes.isEmpty()) {
         applyPrimaryChange(currentBackStack.lastOrNull(), selectedStackName)
+      } else {
+        applyPrimaryPane(selectPrimaryPane(visiblePanes.values))
       }
     }
 
   @ApiStatus.Internal
   public fun onEntryVisible(contentKey: Any, metadata: Map<String, Any>): Unit =
     guard("onEntryVisible") {
-      val key = resolveKey(contentKey) ?: return@guard
+      val visibleKey = resolveVisibleKey(contentKey) ?: return@guard
       visiblePanes[contentKey] =
-        VisiblePane(key = key, contentKey = contentKey, metadata = metadata)
+        VisiblePane(
+          key = visibleKey.key,
+          contentKey = contentKey,
+          metadata = metadata,
+          stackName = visibleKey.stackName,
+        )
       updateNavigationContext()
-      applyPrimaryChange(selectPrimaryPane(visiblePanes.values)?.key)
+      applyPrimaryPane(selectPrimaryPane(visiblePanes.values))
     }
 
   @ApiStatus.Internal
@@ -633,7 +679,7 @@ constructor(
       if (visiblePanes.isEmpty()) {
         applyPrimaryChange(currentBackStack.lastOrNull())
       } else {
-        applyPrimaryChange(selectPrimaryPane(visiblePanes.values)?.key)
+        applyPrimaryPane(selectPrimaryPane(visiblePanes.values))
       }
     }
 
@@ -643,9 +689,16 @@ constructor(
       visiblePanes.remove(contentKey)
       updateNavigationContext()
       if (visiblePanes.isNotEmpty()) {
-        applyPrimaryChange(selectPrimaryPane(visiblePanes.values)?.key)
+        applyPrimaryPane(selectPrimaryPane(visiblePanes.values))
       }
     }
+
+  private fun applyPrimaryPane(pane: VisiblePane<T>?) {
+    applyPrimaryChange(
+      primaryKey = pane?.key,
+      primaryStackName = pane?.stackName ?: currentSelectedStackName ?: DEFAULT_STACK_NAME,
+    )
+  }
 
   private fun applyPrimaryChange(
     primaryKey: T?,
@@ -832,7 +885,7 @@ constructor(
     }
 
     if (visiblePanes.isNotEmpty()) {
-      context["visible_entries"] = buildRouteEntries(visiblePanes.values.map { it.key })
+      context["visible_entries"] = buildVisibleRouteEntries(visiblePanes.values.toList())
     }
 
     if (context.isEmpty()) {
@@ -854,8 +907,73 @@ constructor(
     }
   }
 
+  private fun buildVisibleRouteEntries(panes: List<VisiblePane<T>>): List<Map<String, Any?>> {
+    return panes.takeLast(maxBackstackSize).map { pane ->
+      buildMap {
+        pane.stackName?.let { put("stack", it) }
+        put("route", resolveRouteName(pane.key))
+        val args = resolveArguments(pane.key)
+        if (args.isNotEmpty()) {
+          put("args", args)
+        }
+      }
+    }
+  }
+
   internal fun resolveKey(contentKey: Any): T? {
-    return currentBackStack.find { key -> contentKeyMatches(key, contentKey) }
+    return resolveVisibleKey(contentKey)?.key
+  }
+
+  private fun resolveVisibleKey(contentKey: Any): ResolvedVisibleKey<T>? {
+    if (currentRetainedStacks.isEmpty()) {
+      return currentBackStack
+        .find { key -> contentKeyMatches(key, contentKey) }
+        ?.let { key ->
+          ResolvedVisibleKey(key, currentSelectedStackName)
+        }
+    }
+
+    val matches = mutableListOf<ResolvedVisibleKey<T>>()
+    val candidateStacks =
+      currentRetainedStacks.filter { it.inUse }.ifEmpty { currentRetainedStacks }
+    for (stack in candidateStacks) {
+      for (key in stack.backStack) {
+        if (contentKeyMatches(key, contentKey)) {
+          matches += ResolvedVisibleKey(key, stack.name)
+        }
+      }
+    }
+
+    if (matches.isEmpty()) {
+      return null
+    }
+
+    val selectedMatch = matches.firstOrNull { it.stackName == currentSelectedStackName }
+    if (selectedMatch != null) {
+      return selectedMatch
+    }
+
+    return if (matches.size == 1) {
+      matches.first()
+    } else {
+      // Route keys can be equal across retained stacks; keep the route but omit ambiguous
+      // ownership.
+      matches.first().copy(stackName = null)
+    }
+  }
+
+  private fun refreshVisiblePaneOwnership() {
+    if (visiblePanes.isEmpty()) {
+      return
+    }
+    val refreshed = LinkedHashMap<Any, VisiblePane<T>>()
+    for ((contentKey, pane) in visiblePanes) {
+      val visibleKey = resolveVisibleKey(contentKey)
+      refreshed[contentKey] =
+        pane.copy(key = visibleKey?.key ?: pane.key, stackName = visibleKey?.stackName)
+    }
+    visiblePanes.clear()
+    visiblePanes.putAll(refreshed)
   }
 
   @Suppress("TooGenericExceptionCaught") // SDK instrumentation must never crash the host app
@@ -888,14 +1006,54 @@ constructor(
     if (panes.isEmpty()) {
       return null
     }
-    if (panes.size == 1) {
-      return panes.first()
+    val paneList = panes.toList()
+    val selectedByCallback = selectPrimaryPaneWithCallback(paneList)
+    if (selectedByCallback != null) {
+      return selectedByCallback
     }
-    return panes.maxWithOrNull(
+
+    val candidates =
+      currentSelectedStackName
+        ?.let { selectedStack -> paneList.filter { it.stackName == selectedStack } }
+        ?.ifEmpty { paneList } ?: paneList
+
+    if (candidates.size == 1) {
+      return candidates.first()
+    }
+    return candidates.maxWithOrNull(
       compareBy<VisiblePane<T>> { panePriority(it.metadata) }
         .thenBy { visiblePanes.keys.indexOf(it.contentKey) }
     )
   }
+
+  @Suppress("TooGenericExceptionCaught") // SDK instrumentation must never crash the host app
+  private fun selectPrimaryPaneWithCallback(panes: List<VisiblePane<T>>): VisiblePane<T>? {
+    val selector = primaryRouteSelector ?: return null
+    val entries = panes.map { it.toVisibleEntry() }
+    val selectedEntry =
+      try {
+        selector(entries)
+      } catch (t: Throwable) {
+        scopes.options.logger.log(
+          WARNING,
+          "Nav3 primaryRouteSelector threw while selecting a visible route. Falling back to default selection.",
+          t,
+        )
+        null
+      } ?: return null
+
+    return panes.firstOrNull { pane ->
+      pane.key == selectedEntry.key && pane.stackName == selectedEntry.stack
+    } ?: panes.firstOrNull { pane -> pane.key == selectedEntry.key }
+  }
+
+  private fun VisiblePane<T>.toVisibleEntry(): SentryNavVisibleEntry<T> =
+    SentryNavVisibleEntry(
+      key = key,
+      route = resolveRouteName(key),
+      stack = stackName,
+      metadata = metadata,
+    )
 
   @Suppress("ReturnCount")
   internal fun panePriority(metadata: Map<String, Any>): Int {
