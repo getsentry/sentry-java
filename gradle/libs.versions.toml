@@ -105,6 +105,7 @@ androidx-lifecycle-process = { module = "androidx.lifecycle:lifecycle-process", 
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "androidxNavigation" }
 androidx-navigation-runtime = { module = "androidx.navigation:navigation-runtime", version.ref = "androidxNavigation" }
 androidx-navigation3-runtime = { module = "androidx.navigation3:navigation3-runtime", version.ref = "androidxNavigation3" }
+androidx-navigation3-ui = { module = "androidx.navigation3:navigation3-ui", version.ref = "androidxNavigation3" }
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "room2" }
 androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "room2" }
 androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "room2" }

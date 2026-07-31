@@ -1,6 +1,6 @@
 # Add single-stack and safe-argument demo
 
-Status: ready-for-agent
+Status: done
 Type: AFK
 Blocked by: 01
 
