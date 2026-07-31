@@ -417,22 +417,35 @@ class SentryNavEntryDecoratorTest {
   // region Backstack context
 
   @Suppress("UNCHECKED_CAST")
-  private fun captureBackstack(): List<Map<String, Any?>> {
+  private fun captureNavigationContext(): Map<String, Any?> {
     val keyCaptor = argumentCaptor<String>()
     val valueCaptor = argumentCaptor<Any>()
     verify(fixture.scope).setContexts(keyCaptor.capture(), valueCaptor.capture())
     assertEquals("navigation", keyCaptor.firstValue)
-    val ctx = valueCaptor.firstValue as Map<String, Any?>
-    return ctx["backstack"] as List<Map<String, Any?>>
+    return valueCaptor.firstValue as Map<String, Any?>
+  }
+
+  @Suppress("UNCHECKED_CAST")
+  private fun captureDefaultStackEntries(): List<Map<String, Any?>> {
+    val ctx = captureNavigationContext()
+    assertEquals("default", ctx["selected_stack"])
+    assertEquals(listOf("default"), ctx["stacks_in_use"])
+    val backstacks = ctx["backstacks"] as List<Map<String, Any?>>
+    assertEquals(1, backstacks.size)
+    val defaultStack = backstacks[0]
+    assertEquals("default", defaultStack["name"])
+    assertEquals(true, defaultStack["selected"])
+    assertEquals(true, defaultStack["in_use"])
+    return defaultStack["backstack"] as List<Map<String, Any?>>
   }
 
   @Test
-  fun `onBackstackChanged attaches backstack to scope as context`() {
+  fun `onBackstackChanged attaches default backstack to scope as context`() {
     val sut = fixture.getSut()
 
     sut.onBackstackChanged(listOf(HomeScreen(), ProfileScreen("123")))
 
-    val stack = captureBackstack()
+    val stack = captureDefaultStackEntries()
     assertEquals(2, stack.size)
     assertEquals("/HomeScreen", stack[0]["route"])
     assertEquals("/ProfileScreen", stack[1]["route"])
@@ -444,7 +457,7 @@ class SentryNavEntryDecoratorTest {
 
     sut.onBackstackChanged(listOf(HomeScreen(), ProfileScreen("1"), SettingsScreen("a")))
 
-    val stack = captureBackstack()
+    val stack = captureDefaultStackEntries()
     assertEquals(2, stack.size)
     assertEquals("/ProfileScreen", stack[0]["route"])
     assertEquals("/SettingsScreen", stack[1]["route"])
@@ -464,7 +477,7 @@ class SentryNavEntryDecoratorTest {
 
     sut.onBackstackChanged(listOf(ProfileScreen("123")))
 
-    val stack = captureBackstack()
+    val stack = captureDefaultStackEntries()
     assertEquals(mapOf("userId" to "123"), stack[0]["args"])
   }
 
@@ -474,7 +487,7 @@ class SentryNavEntryDecoratorTest {
 
     sut.onBackstackChanged(listOf(HomeScreen()))
 
-    val stack = captureBackstack()
+    val stack = captureDefaultStackEntries()
     assertTrue(!stack[0].containsKey("args"))
   }
 
@@ -499,7 +512,14 @@ class SentryNavEntryDecoratorTest {
     verify(fixture.scope, times(2)).setContexts(keyCaptor.capture(), valueCaptor.capture())
 
     @Suppress("UNCHECKED_CAST") val secondCtx = valueCaptor.secondValue as Map<String, Any?>
-    @Suppress("UNCHECKED_CAST") val stack = secondCtx["backstack"] as List<Map<String, Any?>>
+    assertEquals("default", secondCtx["selected_stack"])
+    assertEquals(listOf("default"), secondCtx["stacks_in_use"])
+    @Suppress("UNCHECKED_CAST") val backstacks = secondCtx["backstacks"] as List<Map<String, Any?>>
+    assertEquals(1, backstacks.size)
+    assertEquals("default", backstacks[0]["name"])
+    assertEquals(true, backstacks[0]["selected"])
+    assertEquals(true, backstacks[0]["in_use"])
+    @Suppress("UNCHECKED_CAST") val stack = backstacks[0]["backstack"] as List<Map<String, Any?>>
     assertEquals(3, stack.size)
     assertEquals("/HomeScreen", stack[0]["route"])
     assertEquals("/SettingsScreen", stack[1]["route"])
@@ -926,7 +946,7 @@ class SentryNavEntryDecoratorTest {
   }
 
   @Test
-  fun `onEntryVisible attaches visible routes to navigation context`() {
+  fun `onEntryVisible attaches visible entries to navigation context`() {
     val sut = fixture.getSut()
     val list = HomeScreen()
     val detail = ProfileScreen("1")
@@ -938,7 +958,8 @@ class SentryNavEntryDecoratorTest {
     @Suppress("UNCHECKED_CAST") val contextCaptor = argumentCaptor<Map<String, Any>>()
     verify(fixture.scope, times(3)).setContexts(eq("navigation"), contextCaptor.capture())
     val navigation = contextCaptor.lastValue
-    @Suppress("UNCHECKED_CAST") val visible = navigation["visible"] as List<Map<String, Any?>>
+    @Suppress("UNCHECKED_CAST")
+    val visible = navigation["visible_entries"] as List<Map<String, Any?>>
     assertEquals(2, visible.size)
     assertEquals("/HomeScreen", visible[0]["route"])
     assertEquals("/ProfileScreen", visible[1]["route"])

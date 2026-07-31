@@ -1,6 +1,6 @@
 # Unified Nav3 context model
 
-Status: ready-for-agent
+Status: done
 Type: AFK
 
 ## Parent
@@ -13,11 +13,11 @@ Migrate the existing single-stack and multipane Navigation 3 integration behavio
 
 ## Acceptance criteria
 
-- [ ] Single-stack navigation context uses `selected_stack: default`, `stacks_in_use: [default]`, and one `backstacks` entry.
-- [ ] Existing route entries still include route names and opt-in arguments.
-- [ ] Existing multipane visible-route context is renamed to `visible_entries` and remains separate from retained backstack state.
-- [ ] `contexts.app.view_names`, `scope.screen`, breadcrumbs, and transactions still behave as before for single-stack and multipane cases.
-- [ ] Existing context tests are updated to assert the new plural shape.
+- [x] Single-stack navigation context uses `selected_stack: default`, `stacks_in_use: [default]`, and one `backstacks` entry.
+- [x] Existing route entries still include route names and opt-in arguments.
+- [x] Existing multipane visible-route context is renamed to `visible_entries` and remains separate from retained backstack state.
+- [x] `contexts.app.view_names`, `scope.screen`, breadcrumbs, and transactions still behave as before for single-stack and multipane cases.
+- [x] Existing context tests are updated to assert the new plural shape.
 
 ## Blocked by
 

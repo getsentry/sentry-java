@@ -30,8 +30,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import org.jetbrains.annotations.ApiStatus
 
-@ApiStatus.Experimental
-public const val NAVIGATION_OP: String = "navigation"
+@ApiStatus.Experimental public const val NAVIGATION_OP: String = "navigation"
 
 /** Metadata key used by Nav3 list-detail scene entries for the detail pane. */
 internal const val NAV3_METADATA_LIST_DETAIL_PANE: String = "listDetailPane"
@@ -44,6 +43,8 @@ internal const val NAV3_PANE_DETAIL: String = "detail"
 
 /** Key under which the navigation backstack/visible state is attached to the Sentry scope. */
 private const val NAVIGATION_CONTEXT_KEY = "navigation"
+
+private const val DEFAULT_STACK_NAME = "default"
 
 private const val TRACE_ORIGIN = "auto.navigation.nav3"
 
@@ -276,8 +277,8 @@ public fun <T : Any> rememberSentryNavEntryDecorator(
  *
  * **Multipane (e.g. list-detail):** when multiple entries are composed at once, Sentry sets
  * `contexts.app.view_names` to every visible route, uses the detail pane (when metadata marks it)
- * as the primary route for `scope.screen` and performance transactions, and adds a `visible` array
- * to `contexts.navigation`.
+ * as the primary route for `scope.screen` and performance transactions, and adds a
+ * `visible_entries` array to `contexts.navigation`.
  *
  * **Rapid navigation:** if several backstack changes occur within the same composition frame, only
  * the final state produces a breadcrumb and transaction. Intermediate destinations may be skipped.
@@ -655,11 +656,21 @@ constructor(
     val context = LinkedHashMap<String, Any?>()
 
     if (currentBackStack.isNotEmpty()) {
-      context["backstack"] = buildRouteEntries(currentBackStack)
+      context["selected_stack"] = DEFAULT_STACK_NAME
+      context["stacks_in_use"] = listOf(DEFAULT_STACK_NAME)
+      context["backstacks"] =
+        listOf(
+          mapOf(
+            "name" to DEFAULT_STACK_NAME,
+            "selected" to true,
+            "in_use" to true,
+            "backstack" to buildRouteEntries(currentBackStack),
+          )
+        )
     }
 
     if (visiblePanes.isNotEmpty()) {
-      context["visible"] = buildRouteEntries(visiblePanes.values.map { it.key })
+      context["visible_entries"] = buildRouteEntries(visiblePanes.values.map { it.key })
     }
 
     if (context.isEmpty()) {
