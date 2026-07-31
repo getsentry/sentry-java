@@ -1,6 +1,6 @@
 # Add dialog-like and multipane demo
 
-Status: ready-for-agent
+Status: done
 Type: AFK
 Blocked by: 02
 

@@ -28,6 +28,8 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
 import io.sentry.compose.navigation3.SentryNav3NavigationEffect
+import io.sentry.compose.navigation3.rememberSentryNavEntryDecorator
+import io.sentry.compose.navigation3.rememberSentryNavStateHolder
 
 class NavigationActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -44,6 +46,7 @@ class NavigationActivity : ComponentActivity() {
 @Composable
 private fun NavigationSampleShell() {
   val singleStack = rememberSingleBackStack()
+  val multipaneStack = rememberMultipaneBackStack()
 
   Column(
     modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
@@ -55,12 +58,17 @@ private fun NavigationSampleShell() {
       style = MaterialTheme.typography.bodyMedium,
     )
     SingleStackSample(backStack = singleStack)
+    MultipaneSample(backStack = multipaneStack)
   }
 }
 
 @Composable
 private fun rememberSingleBackStack(): SnapshotStateList<SampleRoute> =
   remember { mutableStateListOf(SampleRoute.Home) }
+
+@Composable
+private fun rememberMultipaneBackStack(): SnapshotStateList<SampleRoute> =
+  remember { mutableStateListOf(SampleRoute.PaneList, SampleRoute.PaneDetail("demo-a")) }
 
 @Composable
 private fun SingleStackSample(backStack: SnapshotStateList<SampleRoute>) {
@@ -86,6 +94,7 @@ private fun SingleStackSample(backStack: SnapshotStateList<SampleRoute>) {
         Button(onClick = { backStack.add(SampleRoute.Detail("demo-${backStack.size}")) }) {
           Text("Push detail")
         }
+        Button(onClick = { backStack.add(SampleRoute.DialogNotice) }) { Text("Open dialog route") }
         OutlinedButton(
           enabled = backStack.size > 1,
           onClick = { backStack.removeAt(backStack.lastIndex) },
@@ -107,8 +116,68 @@ private fun SingleStackSample(backStack: SnapshotStateList<SampleRoute>) {
               description = "Sends safe sample argument item_id=${route.itemId}.",
             )
           }
+          entry<SampleRoute.DialogNotice> {
+            RouteContent(
+              title = "Dialog-like route",
+              description = "Transient Nav3 route. Use Pop to dismiss it from the backstack.",
+            )
+          }
         },
       )
+    }
+  }
+}
+
+@Composable
+private fun MultipaneSample(backStack: SnapshotStateList<SampleRoute>) {
+  val holder =
+    rememberSentryNavStateHolder(
+      nameExtractor = ::routeName,
+      argumentsExtractor = ::routeArguments,
+      primaryRouteSelector = { visibleEntries ->
+        visibleEntries.firstOrNull { it.key is SampleRoute.PaneDetail } ?: visibleEntries.lastOrNull()
+      },
+    )
+  SentryNav3NavigationEffect(backStack = backStack, holder = holder)
+  val sentryDecorator = rememberSentryNavEntryDecorator(holder)
+  val detail = backStack.filterIsInstance<SampleRoute.PaneDetail>().last()
+
+  Surface(
+    modifier = Modifier.fillMaxWidth(),
+    shape = MaterialTheme.shapes.medium,
+    tonalElevation = 2.dp,
+  ) {
+    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+      Text("Multipane flow", style = MaterialTheme.typography.titleMedium)
+      Text(
+        "Both panes stay visible. The shared Sentry decorator reports list and detail entries.",
+        style = MaterialTheme.typography.bodyMedium,
+      )
+      BackStackSummary(backStack)
+      Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Button(onClick = { backStack[1] = SampleRoute.PaneDetail("demo-b") }) {
+          Text("Show demo-b")
+        }
+        OutlinedButton(onClick = { backStack[1] = SampleRoute.PaneDetail("demo-a") }) {
+          Text("Show demo-a")
+        }
+      }
+      Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+        NavDisplay(
+          backStack = listOf(SampleRoute.PaneList),
+          onBack = {},
+          entryDecorators = listOf(sentryDecorator),
+          modifier = Modifier.weight(1f),
+          entryProvider = multipaneEntryProvider(),
+        )
+        NavDisplay(
+          backStack = listOf(detail),
+          onBack = {},
+          entryDecorators = listOf(sentryDecorator),
+          modifier = Modifier.weight(1f),
+          entryProvider = multipaneEntryProvider(),
+        )
+      }
     }
   }
 }
@@ -140,16 +209,45 @@ private sealed interface SampleRoute {
   data object Home : SampleRoute
 
   data class Detail(val itemId: String) : SampleRoute
+
+  data object DialogNotice : SampleRoute
+
+  data object PaneList : SampleRoute
+
+  data class PaneDetail(val itemId: String) : SampleRoute
 }
 
 private fun routeName(route: SampleRoute): String =
   when (route) {
     SampleRoute.Home -> "/nav3/home"
     is SampleRoute.Detail -> "/nav3/detail"
+    SampleRoute.DialogNotice -> "/nav3/dialog"
+    SampleRoute.PaneList -> "/nav3/multipane/list"
+    is SampleRoute.PaneDetail -> "/nav3/multipane/detail"
   }
 
 private fun routeArguments(route: SampleRoute): Map<String, Any?> =
   when (route) {
     SampleRoute.Home -> emptyMap()
     is SampleRoute.Detail -> mapOf("item_id" to route.itemId)
+    SampleRoute.DialogNotice -> mapOf("presentation" to "dialog")
+    SampleRoute.PaneList -> emptyMap()
+    is SampleRoute.PaneDetail -> mapOf("item_id" to route.itemId)
+  }
+
+@Composable
+private fun multipaneEntryProvider() =
+  entryProvider<SampleRoute> {
+    entry<SampleRoute.PaneList>(metadata = mapOf("listDetailPane" to "list")) {
+      RouteContent(
+        title = "List pane",
+        description = "Visible list entry. The detail pane should be selected as primary.",
+      )
+    }
+    entry<SampleRoute.PaneDetail>(metadata = { mapOf("listDetailPane" to "detail") }) { route ->
+      RouteContent(
+        title = "Detail pane ${route.itemId}",
+        description = "Visible detail entry with safe sample argument item_id=${route.itemId}.",
+      )
+    }
   }
