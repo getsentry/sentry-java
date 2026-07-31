@@ -1,6 +1,6 @@
 # Docs, examples, and API finalization
 
-Status: ready-for-agent
+Status: done
 Type: AFK
 Blocked by: 01, 02, 03, 04
 
@@ -14,12 +14,12 @@ Finalize the Navigation 3 multiple-backstack feature for review by updating docs
 
 ## Acceptance criteria
 
-- [ ] README and examples describe the unified context model and the explicit multiple-stack wiring.
-- [ ] Examples cover selected stack, retained stack snapshots, stacks-in-use, stack name extraction, and primary route selection.
-- [ ] Privacy notes still explain that extracted arguments are sent as-is and are not gated by `sendDefaultPii`.
-- [ ] Formatting is applied.
-- [ ] API dump is regenerated.
-- [ ] Relevant Navigation 3 module tests pass.
+- [x] README and examples describe the unified context model and the explicit multiple-stack wiring.
+- [x] Examples cover selected stack, retained stack snapshots, stacks-in-use, stack name extraction, and primary route selection.
+- [x] Privacy notes still explain that extracted arguments are sent as-is and are not gated by `sendDefaultPii`.
+- [x] Formatting is applied.
+- [x] API dump is regenerated.
+- [x] Relevant Navigation 3 module tests pass.
 
 ## Blocked by
 

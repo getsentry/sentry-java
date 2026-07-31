@@ -744,7 +744,7 @@ constructor(
 
     scopes.configureScope { scope ->
       scope.screen = primaryRoute
-      val contexts = scope.contexts ?: return@configureScope
+      val contexts = scope.contexts
       val app = contexts.app ?: App().also { contexts.setApp(it) }
       app.viewNames = viewNames
     }
@@ -950,39 +950,31 @@ constructor(
   }
 
   private fun resolveVisibleKey(contentKey: Any): ResolvedVisibleKey<T>? {
-    if (currentRetainedStacks.isEmpty()) {
-      return (currentBackStack.find { key -> key === contentKey }
+    return if (currentRetainedStacks.isEmpty()) {
+      (currentBackStack.find { key -> key === contentKey }
           ?: currentBackStack.find { key -> contentKeyMatches(key, contentKey) })
         ?.let { key -> ResolvedVisibleKey(key, currentSelectedStackName) }
-    }
-
-    val candidateStacks =
-      currentRetainedStacks.filter { it.inUse }.ifEmpty { currentRetainedStacks }
-    val identityMatches = findVisibleKeyMatches(candidateStacks) { key -> key === contentKey }
-    if (identityMatches.isNotEmpty()) {
-      return identityMatches.first()
-    }
-
-    val matches =
-      findVisibleKeyMatches(candidateStacks) { key ->
-        contentKeyMatches(key, contentKey)
-      }
-
-    if (matches.isEmpty()) {
-      return null
-    }
-
-    val selectedMatch = matches.firstOrNull { it.stackName == currentSelectedStackName }
-    if (selectedMatch != null) {
-      return selectedMatch
-    }
-
-    return if (matches.size == 1) {
-      matches.first()
     } else {
-      // Route keys can be equal across retained stacks; keep the route but omit ambiguous
-      // ownership.
-      matches.first().copy(stackName = null)
+      val candidateStacks =
+        currentRetainedStacks.filter { it.inUse }.ifEmpty { currentRetainedStacks }
+      val identityMatches = findVisibleKeyMatches(candidateStacks) { key -> key === contentKey }
+      if (identityMatches.isNotEmpty()) {
+        identityMatches.first()
+      } else {
+        val matches =
+          findVisibleKeyMatches(candidateStacks) { key -> contentKeyMatches(key, contentKey) }
+        val selectedMatch = matches.firstOrNull { it.stackName == currentSelectedStackName }
+        when {
+          matches.isEmpty() -> null
+          selectedMatch != null -> selectedMatch
+          matches.size == 1 -> matches.first()
+          else -> {
+            // Route keys can be equal across retained stacks; keep the route but omit ambiguous
+            // ownership.
+            matches.first().copy(stackName = null)
+          }
+        }
+      }
     }
   }
 
@@ -1040,27 +1032,25 @@ constructor(
     key == contentKey || key.toString() == contentKey.toString()
 
   internal fun selectPrimaryPane(panes: Collection<VisiblePane<T>>): VisiblePane<T>? {
-    if (panes.isEmpty()) {
-      return null
-    }
-    val paneList = panes.toList()
-    val selectedByCallback = selectPrimaryPaneWithCallback(paneList)
-    if (selectedByCallback != null) {
-      return selectedByCallback
-    }
+    return panes
+      .takeIf { it.isNotEmpty() }
+      ?.toList()
+      ?.let { paneList ->
+        selectPrimaryPaneWithCallback(paneList) ?: selectPrimaryPaneByDefault(paneList)
+      }
+  }
 
+  private fun selectPrimaryPaneByDefault(panes: List<VisiblePane<T>>): VisiblePane<T>? {
     val candidates =
       currentSelectedStackName
-        ?.let { selectedStack -> paneList.filter { it.stackName == selectedStack } }
-        ?.ifEmpty { paneList } ?: paneList
+        ?.let { selectedStack -> panes.filter { it.stackName == selectedStack } }
+        ?.ifEmpty { panes } ?: panes
 
-    if (candidates.size == 1) {
-      return candidates.first()
-    }
-    return candidates.maxWithOrNull(
-      compareBy<VisiblePane<T>> { panePriority(it.metadata) }
-        .thenBy { pane -> visiblePanes.indexOfFirst { it.contentKey === pane.contentKey } }
-    )
+    return candidates.singleOrNull()
+      ?: candidates.maxWithOrNull(
+        compareBy<VisiblePane<T>> { panePriority(it.metadata) }
+          .thenBy { pane -> visiblePanes.indexOfFirst { it.contentKey === pane.contentKey } }
+      )
   }
 
   @Suppress("TooGenericExceptionCaught") // SDK instrumentation must never crash the host app
