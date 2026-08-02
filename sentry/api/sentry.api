@@ -37,6 +37,7 @@ public final class io/sentry/Baggage {
 	public fun <init> (Lio/sentry/Baggage;)V
 	public fun <init> (Lio/sentry/ILogger;)V
 	public fun <init> (Ljava/util/concurrent/ConcurrentHashMap;Ljava/lang/Double;Ljava/lang/Double;Ljava/lang/String;ZZLio/sentry/ILogger;)V
+	public fun forceSetReplayId (Lio/sentry/protocol/SentryId;)V
 	public fun forceSetSampleRate (Ljava/lang/Double;)V
 	public fun freeze ()V
 	public static fun fromEvent (Lio/sentry/SentryBaseEvent;Ljava/lang/String;Lio/sentry/SentryOptions;)Lio/sentry/Baggage;
@@ -1714,6 +1715,7 @@ public final class io/sentry/NoOpReplayController : io/sentry/ReplayController {
 	public fun isDebugMaskingOverlayEnabled ()Z
 	public fun isRecording ()Z
 	public fun pause ()V
+	public fun registerSegmentName (Ljava/lang/String;)V
 	public fun registerTraceId (Lio/sentry/protocol/SentryId;)V
 	public fun resume ()V
 	public fun setBreadcrumbConverter (Lio/sentry/ReplayBreadcrumbConverter;)V
@@ -2102,6 +2104,7 @@ public final class io/sentry/PerformanceCollectionData {
 }
 
 public final class io/sentry/ProfileChunk : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+	public static final field CONTENT_TYPE_PERFETTO Ljava/lang/String;
 	public static final field PLATFORM_ANDROID Ljava/lang/String;
 	public static final field PLATFORM_JAVA Ljava/lang/String;
 	public fun <init> ()V
@@ -2109,6 +2112,7 @@ public final class io/sentry/ProfileChunk : io/sentry/JsonSerializable, io/sentr
 	public fun equals (Ljava/lang/Object;)Z
 	public fun getChunkId ()Lio/sentry/protocol/SentryId;
 	public fun getClientSdk ()Lio/sentry/protocol/SdkVersion;
+	public fun getContentType ()Ljava/lang/String;
 	public fun getDebugMeta ()Lio/sentry/protocol/DebugMeta;
 	public fun getEnvironment ()Ljava/lang/String;
 	public fun getMeasurements ()Ljava/util/Map;
@@ -2132,6 +2136,7 @@ public final class io/sentry/ProfileChunk : io/sentry/JsonSerializable, io/sentr
 public final class io/sentry/ProfileChunk$Builder {
 	public fun <init> (Lio/sentry/protocol/SentryId;Lio/sentry/protocol/SentryId;Ljava/util/Map;Ljava/io/File;Lio/sentry/SentryDate;Ljava/lang/String;)V
 	public fun build (Lio/sentry/SentryOptions;)Lio/sentry/ProfileChunk;
+	public fun setContentType (Ljava/lang/String;)Lio/sentry/ProfileChunk$Builder;
 }
 
 public final class io/sentry/ProfileChunk$Deserializer : io/sentry/JsonDeserializer {
@@ -2143,6 +2148,7 @@ public final class io/sentry/ProfileChunk$Deserializer : io/sentry/JsonDeseriali
 public final class io/sentry/ProfileChunk$JsonKeys {
 	public static final field CHUNK_ID Ljava/lang/String;
 	public static final field CLIENT_SDK Ljava/lang/String;
+	public static final field CONTENT_TYPE Ljava/lang/String;
 	public static final field DEBUG_META Ljava/lang/String;
 	public static final field ENVIRONMENT Ljava/lang/String;
 	public static final field MEASUREMENTS Ljava/lang/String;
@@ -2356,6 +2362,7 @@ public abstract interface class io/sentry/ReplayController : io/sentry/IReplayAp
 	public abstract fun isDebugMaskingOverlayEnabled ()Z
 	public abstract fun isRecording ()Z
 	public abstract fun pause ()V
+	public abstract fun registerSegmentName (Ljava/lang/String;)V
 	public abstract fun registerTraceId (Lio/sentry/protocol/SentryId;)V
 	public abstract fun resume ()V
 	public abstract fun setBreadcrumbConverter (Lio/sentry/ReplayBreadcrumbConverter;)V
@@ -2845,6 +2852,7 @@ public final class io/sentry/SentryAppStartProfilingOptions : io/sentry/JsonSeri
 	public fun isContinuousProfileSampled ()Z
 	public fun isContinuousProfilingEnabled ()Z
 	public fun isEnableAppStartProfiling ()Z
+	public fun isEnableLegacyProfiling ()Z
 	public fun isProfileSampled ()Z
 	public fun isProfilingEnabled ()Z
 	public fun isStartProfilerOnAppStart ()Z
@@ -2853,6 +2861,7 @@ public final class io/sentry/SentryAppStartProfilingOptions : io/sentry/JsonSeri
 	public fun setContinuousProfileSampled (Z)V
 	public fun setContinuousProfilingEnabled (Z)V
 	public fun setEnableAppStartProfiling (Z)V
+	public fun setEnableLegacyProfiling (Z)V
 	public fun setProfileLifecycle (Lio/sentry/ProfileLifecycle;)V
 	public fun setProfileSampleRate (Ljava/lang/Double;)V
 	public fun setProfileSampled (Z)V
@@ -2873,6 +2882,7 @@ public final class io/sentry/SentryAppStartProfilingOptions$Deserializer : io/se
 
 public final class io/sentry/SentryAppStartProfilingOptions$JsonKeys {
 	public static final field CONTINUOUS_PROFILE_SAMPLED Ljava/lang/String;
+	public static final field ENABLE_LEGACY_PROFILING Ljava/lang/String;
 	public static final field IS_CONTINUOUS_PROFILING_ENABLED Ljava/lang/String;
 	public static final field IS_ENABLE_APP_START_PROFILING Ljava/lang/String;
 	public static final field IS_PROFILING_ENABLED Ljava/lang/String;
@@ -3089,6 +3099,7 @@ public final class io/sentry/SentryEnvelopeItem {
 	public static fun fromEvent (Lio/sentry/ISerializer;Lio/sentry/SentryBaseEvent;)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromLogs (Lio/sentry/ISerializer;Lio/sentry/SentryLogEvents;)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromMetrics (Lio/sentry/ISerializer;Lio/sentry/SentryMetricsEvents;)Lio/sentry/SentryEnvelopeItem;
+	public static fun fromPerfettoProfileChunk (Lio/sentry/ProfileChunk;Lio/sentry/ISerializer;)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromProfileChunk (Lio/sentry/ProfileChunk;Lio/sentry/ISerializer;)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromProfileChunk (Lio/sentry/ProfileChunk;Lio/sentry/ISerializer;Lio/sentry/IProfileConverter;)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromProfilingTrace (Lio/sentry/ProfilingTraceData;JLio/sentry/ISerializer;)Lio/sentry/SentryEnvelopeItem;
@@ -3109,6 +3120,7 @@ public final class io/sentry/SentryEnvelopeItemHeader : io/sentry/JsonSerializab
 	public fun getAttachmentType ()Ljava/lang/String;
 	public fun getContentType ()Ljava/lang/String;
 	public fun getFileName ()Ljava/lang/String;
+	public fun getItemCount ()Ljava/lang/Integer;
 	public fun getLength ()I
 	public fun getPlatform ()Ljava/lang/String;
 	public fun getType ()Lio/sentry/SentryItemType;
@@ -3129,6 +3141,7 @@ public final class io/sentry/SentryEnvelopeItemHeader$JsonKeys {
 	public static final field FILENAME Ljava/lang/String;
 	public static final field ITEM_COUNT Ljava/lang/String;
 	public static final field LENGTH Ljava/lang/String;
+	public static final field META_LENGTH Ljava/lang/String;
 	public static final field PLATFORM Ljava/lang/String;
 	public static final field TYPE Ljava/lang/String;
 	public fun <init> ()V
@@ -3718,6 +3731,7 @@ public class io/sentry/SentryOptions {
 	public fun getSslSocketFactory ()Ljavax/net/ssl/SSLSocketFactory;
 	public fun getTags ()Ljava/util/Map;
 	public fun getThreadChecker ()Lio/sentry/util/thread/IThreadChecker;
+	public fun getTimerExecutorService ()Lio/sentry/ISentryExecutorService;
 	public fun getTracePropagationTargets ()Ljava/util/List;
 	public fun getTracesSampleRate ()Ljava/lang/Double;
 	public fun getTracesSampler ()Lio/sentry/SentryOptions$TracesSamplerCallback;
@@ -3740,6 +3754,7 @@ public class io/sentry/SentryOptions {
 	public fun isEnableDeduplication ()Z
 	public fun isEnableEventSizeLimiting ()Z
 	public fun isEnableExternalConfiguration ()Z
+	public fun isEnableLegacyProfiling ()Z
 	public fun isEnablePrettySerializationOutput ()Z
 	public fun isEnableQueueTracing ()Z
 	public fun isEnableScopePersistence ()Z
@@ -3802,6 +3817,7 @@ public class io/sentry/SentryOptions {
 	public fun setEnableDeduplication (Z)V
 	public fun setEnableEventSizeLimiting (Z)V
 	public fun setEnableExternalConfiguration (Z)V
+	public fun setEnableLegacyProfiling (Z)V
 	public fun setEnablePrettySerializationOutput (Z)V
 	public fun setEnableQueueTracing (Z)V
 	public fun setEnableScopePersistence (Z)V
@@ -3883,6 +3899,7 @@ public class io/sentry/SentryOptions {
 	public fun setStrictTraceContinuation (Z)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setThreadChecker (Lio/sentry/util/thread/IThreadChecker;)V
+	public fun setTimerExecutorService (Lio/sentry/ISentryExecutorService;)V
 	public fun setTraceOptionsRequests (Z)V
 	public fun setTracePropagationTargets (Ljava/util/List;)V
 	public fun setTraceSampling (Z)V
@@ -4020,6 +4037,7 @@ public final class io/sentry/SentryReplayEvent : io/sentry/SentryBaseEvent, io/s
 	public fun getReplayStartTimestamp ()Ljava/util/Date;
 	public fun getReplayType ()Lio/sentry/SentryReplayEvent$ReplayType;
 	public fun getSegmentId ()I
+	public fun getSegmentNames ()Ljava/util/List;
 	public fun getTimestamp ()Ljava/util/Date;
 	public fun getTraceIds ()Ljava/util/List;
 	public fun getType ()Ljava/lang/String;
@@ -4033,6 +4051,7 @@ public final class io/sentry/SentryReplayEvent : io/sentry/SentryBaseEvent, io/s
 	public fun setReplayStartTimestamp (Ljava/util/Date;)V
 	public fun setReplayType (Lio/sentry/SentryReplayEvent$ReplayType;)V
 	public fun setSegmentId (I)V
+	public fun setSegmentNames (Ljava/util/List;)V
 	public fun setTimestamp (Ljava/util/Date;)V
 	public fun setTraceIds (Ljava/util/List;)V
 	public fun setType (Ljava/lang/String;)V
@@ -4053,6 +4072,7 @@ public final class io/sentry/SentryReplayEvent$JsonKeys {
 	public static final field REPLAY_START_TIMESTAMP Ljava/lang/String;
 	public static final field REPLAY_TYPE Ljava/lang/String;
 	public static final field SEGMENT_ID Ljava/lang/String;
+	public static final field SEGMENT_NAMES Ljava/lang/String;
 	public static final field TIMESTAMP Ljava/lang/String;
 	public static final field TRACE_IDS Ljava/lang/String;
 	public static final field TYPE Ljava/lang/String;
@@ -4813,6 +4833,11 @@ public final class io/sentry/backpressure/NoOpBackpressureMonitor : io/sentry/ba
 	public fun start ()V
 }
 
+public final class io/sentry/cache/CacheUtils {
+	public static fun read (Lio/sentry/SentryOptions;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Class;Lio/sentry/JsonDeserializer;)Ljava/lang/Object;
+	public static fun store (Lio/sentry/SentryOptions;Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;)V
+}
+
 public class io/sentry/cache/EnvelopeCache : io/sentry/cache/IEnvelopeCache {
 	public static final field CRASH_MARKER_FILE Ljava/lang/String;
 	public static final field NATIVE_CRASH_MARKER_FILE Ljava/lang/String;
@@ -4909,6 +4934,7 @@ public abstract class io/sentry/cache/tape/ObjectQueue : java/io/Closeable, java
 	public fun remove ()V
 	public abstract fun remove (I)V
 	public abstract fun size ()I
+	public fun sync ()V
 }
 
 public abstract interface class io/sentry/cache/tape/ObjectQueue$Converter {
@@ -4929,6 +4955,7 @@ public final class io/sentry/cache/tape/QueueFile : java/io/Closeable, java/lang
 	public fun remove ()V
 	public fun remove (I)V
 	public fun size ()I
+	public fun sync ()V
 	public fun toString ()Ljava/lang/String;
 }
 
@@ -4936,6 +4963,7 @@ public final class io/sentry/cache/tape/QueueFile$Builder {
 	public fun <init> (Ljava/io/File;)V
 	public fun build ()Lio/sentry/cache/tape/QueueFile;
 	public fun size (I)Lio/sentry/cache/tape/QueueFile$Builder;
+	public fun synchronousWrites (Z)Lio/sentry/cache/tape/QueueFile$Builder;
 	public fun zero (Z)Lio/sentry/cache/tape/QueueFile$Builder;
 }
 
@@ -7038,6 +7066,7 @@ public final class io/sentry/protocol/profiling/SentryProfile$JsonKeys {
 
 public final class io/sentry/protocol/profiling/SentrySample : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> ()V
+	public fun <init> (Lio/sentry/protocol/profiling/SentrySample;)V
 	public fun getStackId ()I
 	public fun getThreadId ()Ljava/lang/String;
 	public fun getTimestamp ()D
@@ -7679,6 +7708,7 @@ public final class io/sentry/util/ExceptionUtils {
 
 public final class io/sentry/util/FileUtils {
 	public fun <init> ()V
+	public static fun createDirectory (Ljava/io/File;)Z
 	public static fun deleteRecursively (Ljava/io/File;)Z
 	public static fun readBytesFromFile (Ljava/lang/String;J)[B
 	public static fun readText (Ljava/io/File;)Ljava/lang/String;
@@ -7742,6 +7772,12 @@ public final class io/sentry/util/JsonSerializationUtils {
 	public static fun byteSizeOf (Lio/sentry/ISerializer;Lio/sentry/ILogger;Lio/sentry/JsonSerializable;)J
 	public static fun bytesFrom (Lio/sentry/ISerializer;Lio/sentry/ILogger;Lio/sentry/JsonSerializable;)[B
 	public static fun calendarToMap (Ljava/util/Calendar;)Ljava/util/Map;
+}
+
+public final class io/sentry/util/LazyDirectory {
+	public fun <init> (Ljava/lang/String;)V
+	public fun getFile ()Ljava/io/File;
+	public fun getOrCreate ()Ljava/io/File;
 }
 
 public final class io/sentry/util/LazyEvaluator {
@@ -7909,6 +7945,11 @@ public final class io/sentry/util/SampleRateUtils {
 public final class io/sentry/util/ScopesUtil {
 	public fun <init> ()V
 	public static fun printScopesChain (Lio/sentry/IScopes;)V
+}
+
+public final class io/sentry/util/SentryCallbackReentrancyGuard {
+	public static fun enter ()Lio/sentry/ISentryLifecycleToken;
+	public static fun isActive ()Z
 }
 
 public final class io/sentry/util/SentryRandom {

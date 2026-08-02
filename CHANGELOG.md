@@ -2,7 +2,101 @@
 
 ## Unreleased
 
+### Fixes
+
+- Prevent inflated cold app start when the OS spawns the process in the background (e.g. FCM push) on API 35+ ([#5841](https://github.com/getsentry/sentry-java/pull/5841), [#5880](https://github.com/getsentry/sentry-java/pull/5880))
+- Preserve single-sample ANR profile chunks so profiles remain available on ANR events ([#5872](https://github.com/getsentry/sentry-java/pull/5872))
+- Avoid a CPU busy-loop when recording discarded log or metric envelopes under rate limiting ([#5835](https://github.com/getsentry/sentry-java/pull/5835))
+  - `ClientReportRecorder` now reads the item count from the envelope item header instead of deserializing the payload, which under sustained rate limiting could pin CPU cores while repeatedly throwing exceptions
+- Report tasks handed to a no-op `ISentryExecutorService` as cancelled ([#5874](https://github.com/getsentry/sentry-java/pull/5874))
+  - `NoOpSentryExecutorService` previously returned a `Future` that was never run and never cancelled, so callers could not tell a dropped task from a queued one and `get()` would block until its timeout
+
+### Performance
+
+- Use `RGB_565` instead of `ARGB_8888` for screenshot and replay capture bitmaps, halving per-frame memory usage ([#5821](https://github.com/getsentry/sentry-java/pull/5821))
+- Remove an unused lock from `SentryPerformanceProvider`, which was allocated on every cold start in `ContentProvider.onCreate` without ever being acquired ([#5871](https://github.com/getsentry/sentry-java/pull/5871))
+- Parse the app start profiling config with only the deserializer it needs instead of building a full `JsonSerializer` and `SentryOptions`, cutting 188 of 221 allocations on the main thread before `Application.onCreate` ([#5867](https://github.com/getsentry/sentry-java/pull/5867))
+- Batch and coalesce scope-persistence disk writes to reduce startup cost ([#5791](https://github.com/getsentry/sentry-java/pull/5791))
+  - Scope mutations are now coalesced (latest value per field) and breadcrumbs are appended in batches behind a single fsync, instead of one synchronous disk write per mutation.
+
+## 8.51.0
+
 ### Features
+
+- Use Android's `ProfilingManager` (Perfetto) for continuous profiling on API 35+ devices ([#5251](https://github.com/getsentry/sentry-java/pull/5251))
+  - On API 35+ devices, continuous profiling now automatically uses Android's system `ProfilingManager` with Perfetto-based stack sampling, providing lower-overhead and more accurate profiles. No configuration change is required.
+  - Devices below API 35 keep using the legacy `Debug`-based profiler.
+  - Added an `enableLegacyProfiling` option (default `true`) to disable the legacy `Debug`-based profiler. Setting it to `false` disables continuous profiling on API < 35 devices as well as transaction-based profiling (`profilesSampleRate`/`profilesSampler`) on all devices, since transaction-based profiling is not supported by Perfetto. 
+  - It can also be configured via the `io.sentry.profiling.enable-legacy-profiling` manifest flag.
+  - See the [Android profiling docs](https://docs.sentry.io/platforms/android/profiling/) for details.
+
+### Behavioral Changes
+
+- The outbox and cache directories are no longer created by `Sentry.init` ([#5792](https://github.com/getsentry/sentry-java/pull/5792))
+  - They are now created lazily by whichever component first writes into them, off the init thread. As a result, the directories at `SentryOptions.getOutboxPath()` and `SentryOptions.getCacheDirPath()` are not guaranteed to exist once `Sentry.init` returns.
+  - If you write envelopes into the outbox path yourself instead of going through the SDK — as hybrid SDKs do for `captureEnvelope` — create the directory first, e.g. `new File(outboxPath).mkdirs()`.
+
+### Improvements
+
+- Skip building Android manifest metadata debug log messages when debug logging is disabled, reducing allocations during SDK init ([#5790](https://github.com/getsentry/sentry-java/pull/5790))
+
+### Fixes
+
+- Use the original app build's ProGuard UUID for ANR profile chunks ([#5852](https://github.com/getsentry/sentry-java/pull/5852))
+- Fix potential ANR/deadlock in Session Replay when `checkCanRecord` runs on the replay executor thread ([#5837](https://github.com/getsentry/sentry-java/pull/5837))
+- Prevent concurrent PixelCopy access during Session Replay masking and bitmap cleanup ([#5808](https://github.com/getsentry/sentry-java/pull/5808))
+- Release `MediaMuxer` when the replay video encoder fails to start to avoid a resource leak ([#5607](https://github.com/getsentry/sentry-java/pull/5607))
+- Set the correct platform (`android` instead of `java`) on ANR profile chunks so they are billed as UI Profile Hours rather than Continuous Profile Hours ([#5836](https://github.com/getsentry/sentry-java/pull/5836))
+- Skip encoding and capturing buffered session replay segments while rate-limited, so we don't waste resources on envelopes the transport will drop ([#5813](https://github.com/getsentry/sentry-java/pull/5813))
+  - These skipped replays are now reported as `ratelimit_backoff` discarded events in client reports, so they no longer disappear from drop statistics. One event is recorded per buffer flush rather than per segment.
+  - Buffer mode is also kept while rate-limited instead of switching to session mode, so the rolling buffer stays warm and the next error after the rate limit expires can send a complete replay.
+
+### Performance
+
+- Create the outbox and cache directories lazily in their consumers instead of during SDK init, moving the `mkdirs()` calls off the init (main) thread ([#5792](https://github.com/getsentry/sentry-java/pull/5792))
+- Reduce the number of SDK threads: `LifecycleWatcher` now schedules the session-end task on the shared timer executor instead of creating a dedicated `java.util.Timer` thread ([#5819](https://github.com/getsentry/sentry-java/pull/5819))
+- Reduce the number of SDK threads: `RateLimiter` now schedules its rate-limit-lifted notifications on the shared timer executor instead of creating a dedicated `java.util.Timer` thread ([#5814](https://github.com/getsentry/sentry-java/pull/5814))
+- Speed up deserialization of arbitrary JSON objects by typing numbers without throwing exceptions ([#5783](https://github.com/getsentry/sentry-java/pull/5783))
+
+### Dependencies
+
+- Bump Native SDK from v0.15.4 to v0.16.0 ([#5845](https://github.com/getsentry/sentry-java/pull/5845))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0160)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.15.4...0.16.0)
+
+## 8.50.1
+
+### Fixes
+
+- Pin the published Sentry Android SDK's AAR metadata `minCompileSdk` to our `minSdk` (`21`) instead of AGP 9's new default of the SDK's own `compileSdk` (`37`), so apps that depend on the SDK aren't forced to raise their `compileSdk` ([#5823](https://github.com/getsentry/sentry-java/pull/5823))
+
+## 8.50.0
+
+### Android 17 support
+
+- We've put Android 17 through a set of rigorous tests. We're now officially giving it the Sentry stamp of compatibility .([#5796](https://github.com/getsentry/sentry-java/pull/5796))
+
+### Fixes
+
+- Reduce main-thread work during `Sentry.init` by resolving the shake-detector accelerometer off the main thread (~1.75ms on a Pixel 10) ([#5784](https://github.com/getsentry/sentry-java/pull/5784))
+- Backfill release, environment, distribution, tags, and app version/build—and use the matching replay-on-error sample rate—for `ApplicationExitInfo` ANR and native crash events captured before SDK initialization, without reusing options cached by a later app update ([#5762](https://github.com/getsentry/sentry-java/pull/5762))
+- `SentryTagModifierNode.isImportantForBounds` now matches the default behavior and returns `true` ([#5789](https://github.com/getsentry/sentry-java/pull/5789))
+- Prevent a `StackOverflowError` when a `beforeSend`, `beforeBreadcrumb`, `beforeSendLog`, or `beforeEnvelope` callback triggers another capture (directly or through a logging integration such as Timber) ([#5737](https://github.com/getsentry/sentry-java/pull/5737))
+  - Captures made from within a user callback (event, transaction, breadcrumb, log, envelope, or check-in) are now dropped while that callback runs, instead of recursing. Captures made by event processors are unaffected.
+- Replace deprecated `ThrowableProxy` with `LogEvent#getThrown()` in `sentry-log4j2` ([#5751](https://github.com/getsentry/sentry-java/pull/5751))
+
+### Dependencies
+
+- Bump Native SDK from v0.15.3 to v0.15.4 ([#5793](https://github.com/getsentry/sentry-java/pull/5793))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0154)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.15.3...0.15.4)
+- The SDK is now compiled with Android Gradle Plugin 9.2.1 ([#5779](https://github.com/getsentry/sentry-java/pull/5779))
+
+## 8.49.0
+
+### Features
+
+- Session Replay: Record segment names (transaction names) ([#5763](https://github.com/getsentry/sentry-java/pull/5763))
 
 - Add `io.sentry:sentry-opentelemetry-bom` to align Sentry OpenTelemetry modules with tested OpenTelemetry dependencies ([#5629](https://github.com/getsentry/sentry-java/pull/5629))
   - Spring Boot Gradle plugin: add the Sentry BOM to `dependencyManagement`; explicit imports are applied after Spring Boot's implicit BOM
@@ -31,7 +125,18 @@
 ### Fixes
 
 - Drop transactions whose deadline timer is delayed by device sleep ([#5755](https://github.com/getsentry/sentry-java/pull/5755))
+- Session Replay: Fix first recording segment missing for replays in `buffer` mode ([#5753](https://github.com/getsentry/sentry-java/pull/5753))
+- Session Replay: Fix error-to-replay linkage in `buffer` mode ([#5754](https://github.com/getsentry/sentry-java/pull/5754))
+- Prevent logs and metrics from remaining queued after a flush scheduling race ([#5756](https://github.com/getsentry/sentry-java/pull/5756))
 - Fix main thread identification for tombstone (native crash) events ([#5742](https://github.com/getsentry/sentry-java/pull/5742))
+- Prevent malformed JDBC URLs, which may contain credentials, from being printed to stdout ([#5656](https://github.com/getsentry/sentry-java/pull/5656))
+- Restrict JVM-global proxy authentication credentials to challenges from the configured proxy host ([#5656](https://github.com/getsentry/sentry-java/pull/5656))
+- Sanitize Spring 7 and Spring Jakarta WebClient span descriptions to prevent embedded URL credentials from being sent to Sentry ([#5656](https://github.com/getsentry/sentry-java/pull/5656))
+- Respect `tracePropagationTargets` when injecting Sentry tracing headers through the OpenTelemetry OTLP propagator ([#5656](https://github.com/getsentry/sentry-java/pull/5656))
+
+### Performance
+
+- Schedule transaction idle/deadline timeouts on a shared, dedicated executor instead of spawning a `Timer` thread per transaction ([#5670](https://github.com/getsentry/sentry-java/pull/5670))
 
 ### Dependencies
 

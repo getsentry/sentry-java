@@ -187,8 +187,9 @@ class ScopesTest {
   fun `when beforeBreadcrumb returns null, crumb is dropped`() {
     val options = SentryOptions()
     options.cacheDirPath = file.absolutePath
-    options.beforeBreadcrumb =
-      SentryOptions.BeforeBreadcrumbCallback { _: Breadcrumb, _: Any? -> null }
+    options.beforeBreadcrumb = SentryOptions.BeforeBreadcrumbCallback { _: Breadcrumb, _: Any? ->
+      null
+    }
     options.dsn = "https://key@sentry.io/proj"
     options.setSerializer(mock())
     val sut = createScopes(options)
@@ -240,8 +241,9 @@ class ScopesTest {
 
     val options = SentryOptions()
     options.cacheDirPath = file.absolutePath
-    options.beforeBreadcrumb =
-      SentryOptions.BeforeBreadcrumbCallback { _: Breadcrumb, _: Any? -> throw exception }
+    options.beforeBreadcrumb = SentryOptions.BeforeBreadcrumbCallback { _: Breadcrumb, _: Any? ->
+      throw exception
+    }
     options.dsn = "https://key@sentry.io/proj"
     options.setSerializer(mock())
     val sut = createScopes(options)
@@ -1942,6 +1944,32 @@ class ScopesTest {
     val sut = createScopes(options)
     sut.close(false)
     verify(executor).close(any())
+  }
+
+  @Test
+  fun `Scopes with isRestarting true should not close the timer executor`() {
+    val timerExecutor = mock<ISentryExecutorService>()
+    val options =
+      SentryOptions().apply {
+        dsn = "https://key@sentry.io/proj"
+        setTimerExecutorService(timerExecutor)
+      }
+    val sut = createScopes(options)
+    sut.close(true)
+    verify(timerExecutor, never()).close(any())
+  }
+
+  @Test
+  fun `Scopes with isRestarting false should close the timer executor`() {
+    val timerExecutor = mock<ISentryExecutorService>()
+    val options =
+      SentryOptions().apply {
+        dsn = "https://key@sentry.io/proj"
+        setTimerExecutorService(timerExecutor)
+      }
+    val sut = createScopes(options)
+    sut.close(false)
+    verify(timerExecutor).close(any())
   }
 
   @Test

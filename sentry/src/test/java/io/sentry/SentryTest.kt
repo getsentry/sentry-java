@@ -183,7 +183,7 @@ class SentryTest {
   }
 
   @Test
-  fun `outboxPath should be created at initialization`() {
+  fun `outboxPath is not created during initialization`() {
     var sentryOptions: SentryOptions? = null
     initForTest {
       it.dsn = dsn
@@ -191,13 +191,13 @@ class SentryTest {
       sentryOptions = it
     }
 
+    // The outbox dir is created lazily by its consumers (file observer, native SDK), not at init.
     val file = File(sentryOptions!!.outboxPath!!)
-    assertTrue(file.exists())
-    file.deleteOnExit()
+    assertFalse(file.exists())
   }
 
   @Test
-  fun `cacheDirPath should be created at initialization`() {
+  fun `cacheDirPath is not created during initialization`() {
     var sentryOptions: SentryOptions? = null
     initForTest {
       it.dsn = dsn
@@ -205,13 +205,13 @@ class SentryTest {
       sentryOptions = it
     }
 
+    // The cache dir is created lazily on the first envelope store, not at init.
     val file = File(sentryOptions!!.cacheDirPath!!)
-    assertTrue(file.exists())
-    file.deleteOnExit()
+    assertFalse(file.exists())
   }
 
   @Test
-  fun `getCacheDirPathWithoutDsn should be created at initialization`() {
+  fun `cacheDirPathWithoutDsn is not created during initialization`() {
     var sentryOptions: SentryOptions? = null
     initForTest {
       it.dsn = dsn
@@ -221,8 +221,7 @@ class SentryTest {
 
     val cacheDirPathWithoutDsn = sentryOptions!!.cacheDirPathWithoutDsn!!
     val file = File(cacheDirPathWithoutDsn)
-    assertTrue(file.exists())
-    file.deleteOnExit()
+    assertFalse(file.exists())
   }
 
   @Test
@@ -509,11 +508,10 @@ class SentryTest {
       initForTest {
         it.dsn = dsn
         it.isDebug = true
-        it.beforeSend =
-          SentryOptions.BeforeSendCallback { event, hint ->
-            capturedEvents.add(event)
-            event
-          }
+        it.beforeSend = SentryOptions.BeforeSendCallback { event, hint ->
+          capturedEvents.add(event)
+          event
+        }
       }
     }
     thread.start()
@@ -533,8 +531,9 @@ class SentryTest {
 
     assertEquals(2, capturedEvents.size)
     val mainCloneEvent = capturedEvents.firstOrNull { it.message?.formatted == "messageMainClone" }
-    val currentScopesEvent =
-      capturedEvents.firstOrNull { it.message?.formatted == "messageCurrent" }
+    val currentScopesEvent = capturedEvents.firstOrNull {
+      it.message?.formatted == "messageCurrent"
+    }
 
     assertNotNull(mainCloneEvent)
     assertNotNull(mainCloneEvent.breadcrumbs?.firstOrNull { it.message == "breadcrumbMainClone" })
@@ -563,11 +562,10 @@ class SentryTest {
         {
           it.dsn = dsn
           it.isDebug = true
-          it.beforeSend =
-            SentryOptions.BeforeSendCallback { event, hint ->
-              capturedEvents.add(event)
-              event
-            }
+          it.beforeSend = SentryOptions.BeforeSendCallback { event, hint ->
+            capturedEvents.add(event)
+            event
+          }
         },
         true,
       )
@@ -589,8 +587,9 @@ class SentryTest {
 
     assertEquals(2, capturedEvents.size)
     val mainCloneEvent = capturedEvents.firstOrNull { it.message?.formatted == "messageMainClone" }
-    val currentScopesEvent =
-      capturedEvents.firstOrNull { it.message?.formatted == "messageCurrent" }
+    val currentScopesEvent = capturedEvents.firstOrNull {
+      it.message?.formatted == "messageCurrent"
+    }
 
     assertNotNull(mainCloneEvent)
     assertNotNull(mainCloneEvent.breadcrumbs?.firstOrNull { it.message == "breadcrumbMainClone" })
@@ -1315,6 +1314,23 @@ class SentryTest {
       it.executorService = ImmediateExecutorService()
     }
     assertTrue(appStartProfilingConfigFile.exists())
+  }
+
+  @Test
+  fun `init creates app start profiling config when the cache dir does not exist yet`() {
+    val path = getTempPath()
+    // Profiling is left disabled on purpose: it is the only other init-time consumer that creates
+    // the cache dir, so with it off nothing materializes the dir before the config is written.
+    initForTest {
+      it.dsn = dsn
+      it.cacheDirPath = path
+      it.isEnableAppStartProfiling = false
+      it.isStartProfilerOnAppStart = true
+      it.tracesSampleRate = 0.0
+      it.profilesSampleRate = null
+      it.executorService = ImmediateExecutorService()
+    }
+    assertTrue(File(path, "app_start_profiling_config").exists())
   }
 
   @Test

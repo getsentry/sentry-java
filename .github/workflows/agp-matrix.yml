@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        agp: [ '8.7.0','8.8.0','8.9.0' ]
+        agp: [ '9.0.0', '9.1.1', '9.2.1' ]
         integrations: [ true, false ]
 
     name: AGP Matrix Release - AGP ${{ matrix.agp }} - Integrations ${{ matrix.integrations }}
@@ -28,12 +28,12 @@ jobs:
 
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: 'recursive'
 
       - name: Setup Java Version
-        uses: actions/setup-java@0f481fcb613427c0f801b606911222b5b6f3083a # v5
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5
         with:
           distribution: 'temurin'
           java-version: '17'

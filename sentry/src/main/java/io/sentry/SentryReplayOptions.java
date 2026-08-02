@@ -28,6 +28,10 @@ public final class SentryReplayOptions extends SentryMaskingOptions {
     /**
      * Determines whether replay capture should proceed for the given error event.
      *
+     * <p>Do not capture from within this callback — directly, or indirectly through a logging
+     * integration that routes logs back into Sentry. Such nested captures are silently dropped to
+     * prevent infinite recursion.
+     *
      * @param event the error event that triggered the replay capture
      * @param hint the hint associated with the event
      * @return {@code true} if the error sample rate should be checked, {@code false} to skip replay

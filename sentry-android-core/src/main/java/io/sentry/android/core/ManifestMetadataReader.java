@@ -119,6 +119,8 @@ final class ManifestMetadataReader {
 
   static final String ENABLE_APP_START_PROFILING = "io.sentry.profiling.enable-app-start";
 
+  static final String ENABLE_LEGACY_PROFILING = "io.sentry.profiling.enable-legacy-profiling";
+
   static final String ENABLE_SCOPE_PERSISTENCE = "io.sentry.enable-scope-persistence";
 
   static final String REPLAYS_SESSION_SAMPLE_RATE = "io.sentry.session-replay.session-sample-rate";
@@ -542,6 +544,9 @@ final class ManifestMetadataReader {
             readBool(
                 metadata, logger, ENABLE_APP_START_PROFILING, options.isEnableAppStartProfiling()));
 
+        options.setEnableLegacyProfiling(
+            readBool(metadata, logger, ENABLE_LEGACY_PROFILING, options.isEnableLegacyProfiling()));
+
         options.setEnableScopePersistence(
             readBool(
                 metadata, logger, ENABLE_SCOPE_PERSISTENCE, options.isEnableScopePersistence()));
@@ -779,7 +784,9 @@ final class ManifestMetadataReader {
       final @NotNull String key,
       final boolean defaultValue) {
     final boolean value = metadata.getBoolean(key, defaultValue);
-    logger.log(SentryLevel.DEBUG, key + " read: " + value);
+    if (logger.isEnabled(SentryLevel.DEBUG)) {
+      logger.log(SentryLevel.DEBUG, key + " read: " + value);
+    }
     return value;
   }
 
@@ -789,7 +796,9 @@ final class ManifestMetadataReader {
       final @NotNull String key,
       final @Nullable String defaultValue) {
     final String value = metadata.getString(key, defaultValue);
-    logger.log(SentryLevel.DEBUG, key + " read: " + value);
+    if (logger.isEnabled(SentryLevel.DEBUG)) {
+      logger.log(SentryLevel.DEBUG, key + " read: " + value);
+    }
     return value;
   }
 
@@ -799,14 +808,18 @@ final class ManifestMetadataReader {
       final @NotNull String key,
       final @NotNull String defaultValue) {
     final String value = metadata.getString(key, defaultValue);
-    logger.log(SentryLevel.DEBUG, key + " read: " + value);
+    if (logger.isEnabled(SentryLevel.DEBUG)) {
+      logger.log(SentryLevel.DEBUG, key + " read: " + value);
+    }
     return value;
   }
 
   private static @Nullable List<String> readList(
       final @NotNull Bundle metadata, final @NotNull ILogger logger, final @NotNull String key) {
     final String value = metadata.getString(key);
-    logger.log(SentryLevel.DEBUG, key + " read: " + value);
+    if (logger.isEnabled(SentryLevel.DEBUG)) {
+      logger.log(SentryLevel.DEBUG, key + " read: " + value);
+    }
     if (value != null) {
       return Arrays.asList(value.split(",", -1));
     } else {
@@ -821,7 +834,9 @@ final class ManifestMetadataReader {
     if (value == -1) {
       value = ((Integer) metadata.getInt(key, -1)).doubleValue();
     }
-    logger.log(SentryLevel.DEBUG, key + " read: " + value);
+    if (logger.isEnabled(SentryLevel.DEBUG)) {
+      logger.log(SentryLevel.DEBUG, key + " read: " + value);
+    }
     return value;
   }
 
@@ -832,7 +847,9 @@ final class ManifestMetadataReader {
       final long defaultValue) {
     // manifest meta-data only reads int if the value is not big enough
     final long value = metadata.getInt(key, (int) defaultValue);
-    logger.log(SentryLevel.DEBUG, key + " read: " + value);
+    if (logger.isEnabled(SentryLevel.DEBUG)) {
+      logger.log(SentryLevel.DEBUG, key + " read: " + value);
+    }
     return value;
   }
 

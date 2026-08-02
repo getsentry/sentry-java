@@ -66,6 +66,9 @@ class MainActivity : ComponentActivity() {
             Button(onClick = { Sentry.close() }) { Text("Close SDK") }
             Button(
               onClick = {
+                // The SDK creates the outbox dir lazily on its executor, so an external
+                // writer has to create it itself.
+                File(outboxPath).mkdirs()
                 val file = File(outboxPath, "corrupted.envelope")
                 val corruptedEnvelopeContent =
                   """

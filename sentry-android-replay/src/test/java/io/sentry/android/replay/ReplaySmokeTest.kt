@@ -23,13 +23,16 @@ import io.sentry.rrweb.RRWebMetaEvent
 import io.sentry.rrweb.RRWebVideoEvent
 import io.sentry.transport.CurrentDateProvider
 import io.sentry.transport.ICurrentDateProvider
+import io.sentry.transport.RateLimiter
 import java.time.Duration
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.test.BeforeTest
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
+import kotlin.test.assertTrue
 import org.awaitility.core.ConditionTimeoutException
 import org.awaitility.kotlin.await
 import org.junit.Rule
@@ -41,6 +44,7 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.check
 import org.mockito.kotlin.doAnswer
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -61,11 +65,17 @@ class ReplaySmokeTest {
   internal class Fixture {
     val options = SentryOptions()
     val scope = Scope(options)
+    val rateLimiter =
+      mock<RateLimiter> {
+        on { isActiveForCategory(any()) }.thenReturn(false)
+      }
     val scopes =
       mock<IScopes> {
         doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }
           .whenever(it)
           .configureScope(any())
+
+        on { rateLimiter }.doReturn(rateLimiter)
       }
 
     private class ImmediateHandler :
@@ -91,7 +101,10 @@ class ReplaySmokeTest {
         mainLooperHandler =
           mock {
             whenever(mock.handler).thenReturn(ImmediateHandler())
-            whenever(mock.post(any())).then { (it.arguments[0] as Runnable).run() }
+            whenever(mock.post(any())).then {
+              (it.arguments[0] as Runnable).run()
+              true
+            }
             whenever(mock.postDelayed(any(), anyLong())).then {
               // have to use another thread here otherwise it will block the test thread
               recordingThread.schedule(
@@ -242,6 +255,45 @@ class ReplaySmokeTest {
 
     assertNotEquals(falseReplay.rootViewsSpy, replay.rootViewsSpy)
     assertEquals(0, falseReplay.rootViewsSpy.listeners.size)
+  }
+
+  @Test
+  fun `close does not deadlock when executor task is waiting on lifecycleLock`() {
+    fixture.options.sessionReplay.sessionSampleRate = 1.0
+    fixture.options.cacheDirPath = tmpDir.newFolder().absolutePath
+
+    val replay = fixture.getSut(context)
+    replay.register(fixture.scopes, fixture.options)
+    replay.start()
+
+    val taskBlocked = CountDownLatch(1)
+    val lockReleased = CountDownLatch(1)
+
+    // hold lifecycleLock on this thread
+    val token = replay.lifecycleLock.acquire()
+
+    // submit a task on the executor that tries to acquire the same lock — it will block
+    replay.replayExecutor.submit {
+      taskBlocked.countDown()
+      replay.lifecycleLock.acquire().use {}
+    }
+
+    // wait for the executor task to actually be running and blocked
+    assertTrue(taskBlocked.await(2, TimeUnit.SECONDS))
+
+    // release the lock, then close — if shutdown were inside the lock this would deadlock
+    token.close()
+
+    // close() must complete within a reasonable time
+    val closedInTime = AtomicBoolean(false)
+    val closeThread = Thread {
+      replay.close()
+      closedInTime.set(true)
+    }
+    closeThread.start()
+    closeThread.join(5000)
+
+    assertTrue(closedInTime.get(), "close() deadlocked")
   }
 }
 
