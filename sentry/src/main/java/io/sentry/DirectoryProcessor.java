@@ -94,6 +94,9 @@ abstract class DirectoryProcessor {
         Thread.sleep(ENVELOPE_PROCESSING_DELAY);
       }
     } catch (Throwable e) {
+      if (e instanceof InterruptedException) {
+        Thread.currentThread().interrupt();
+      }
       logger.log(SentryLevel.ERROR, e, "Failed processing '%s'", directory.getAbsolutePath());
     }
   }
