@@ -6,6 +6,10 @@
 
 - Make `ISpan.startChild` overloads with `SpanOptions` public ([#5927](https://github.com/getsentry/sentry-java/pull/5927))
 
+### Improvements
+
+- Remove `ApiStatus.Experimental` annotation from `SentrySQLiteDriver` ([#5938](https://github.com/getsentry/sentry-java/pull/5938))
+
 ### Fixes
 
 - Clear contexts when calling `Scope.clear()` ([#5902](https://github.com/getsentry/sentry-java/pull/5902))
