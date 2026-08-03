@@ -5,7 +5,6 @@ import androidx.sqlite.SQLiteDriver
 import io.sentry.ScopesAdapter
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel
-import org.jetbrains.annotations.ApiStatus
 
 /**
  * Wraps a [SQLiteDriver] and automatically adds spans for each SQL statement it executes.
@@ -27,7 +26,6 @@ import org.jetbrains.annotations.ApiStatus
  *
  * @param delegate The [SQLiteDriver] instance to delegate calls to.
  */
-@ApiStatus.Experimental
 public class SentrySQLiteDriver private constructor(private val delegate: SQLiteDriver) :
   SQLiteDriver {
 
