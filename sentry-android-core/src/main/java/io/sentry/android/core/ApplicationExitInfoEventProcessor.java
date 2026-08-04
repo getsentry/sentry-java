@@ -356,9 +356,9 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
     }
     if (event.getBreadcrumbs() == null) {
       event.setBreadcrumbs(breadcrumbs);
-    } else {
-      event.getBreadcrumbs().addAll(breadcrumbs);
     }
+    // else: the event already carries its own breadcrumbs (e.g. a tombstone-merged native
+    // crash event), so appending the persisted ones here would duplicate entries.
   }
 
   @SuppressWarnings("unchecked")
