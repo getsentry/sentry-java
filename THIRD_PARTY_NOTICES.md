@@ -390,6 +390,34 @@ limitations under the License.
 
 ---
 
+## Android Open Source Project — Nav3 Bottom Sheet Scene Strategy (Apache 2.0)
+
+**Source:** https://github.com/android/nav3-recipes/blob/main/app/src/main/java/com/example/nav3recipes/bottomsheet/BottomSheetSceneStrategy.kt<br>
+**License:** Apache License 2.0<br>
+**Copyright:** Copyright (C) 2025 The Android Open Source Project
+
+### Scope
+
+The Sentry Android sample app includes an adapted version of the Navigation 3 recipes bottom-sheet scene strategy so the Nav3 sample can exercise a real scene-strategy-based bottom sheet destination. The code resides in `io.sentry.samples.android.navigation.Nav3BottomSheetSceneStrategy`.
+
+```
+Copyright (C) 2025 The Android Open Source Project
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+```
+
+---
+
 ## OpenTelemetry (Apache 2.0)
 
 **Source:** https://github.com/open-telemetry/opentelemetry-java (Commit: 0aacc55d1e3f5cc6dbb4f8fa26bcb657b01a7bc9)<br>

@@ -27,4 +27,15 @@ object GithubAPI {
       .build()
 
   val service: GitHubService = retrofit.create(GitHubService::class.java)
+
+  fun enqueueRouteWorkRequest(callback: retrofit2.Callback<okhttp3.ResponseBody>) {
+    service.routeWorkRequest(HTTPBIN_ROUTE_WORK_URL).enqueue(callback)
+  }
+
+  suspend fun runRouteWorkRequest() {
+    service.routeWorkRequestAsync(HTTPBIN_ROUTE_WORK_URL)
+  }
 }
+
+private const val HTTPBIN_ROUTE_WORK_URL =
+  "https://httpbin.org/get?sentry_sample=navigation_route_work"

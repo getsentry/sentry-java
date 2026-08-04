@@ -51,6 +51,9 @@ public final class TypeCheckHint {
   /** Used for Navigation breadrcrumbs. */
   public static final String ANDROID_NAV_DESTINATION = "android:navigationDestination";
 
+  /** Used for Navigation 3 breadcrumbs. */
+  @ApiStatus.Internal public static final String NAV3_DESTINATION = "navigation3:destination";
+
   /** Used for Network breadrcrumbs. */
   public static final String ANDROID_NETWORK_CAPABILITIES = "android:networkCapabilities";
 

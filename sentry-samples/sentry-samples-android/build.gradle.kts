@@ -186,6 +186,7 @@ dependencies {
   implementation(projects.sentryAndroid)
   implementation(projects.sentryAndroidFragment)
   implementation(projects.sentryAndroidNavigation)
+  implementation(projects.sentryAndroidNavigation3)
   implementation(projects.sentryAndroidSqlite)
   implementation(projects.sentryAndroidTimber)
   implementation(projects.sentryCompose)
@@ -211,6 +212,8 @@ dependencies {
   implementation(libs.androidx.compose.material.icons.extended)
   implementation(libs.androidx.navigation.compose)
   implementation(libs.androidx.navigation.fragment)
+  implementation(libs.androidx.navigation3.runtime)
+  implementation(libs.androidx.navigation3.ui)
   implementation(libs.androidx.recyclerview)
   implementation(libs.androidx.browser)
   implementation(libs.androidx.room3.runtime)
@@ -234,6 +237,9 @@ dependencies {
 
   debugImplementation(projects.sentryAndroidDistribution)
   debugImplementation(libs.leakcanary)
+
+  testImplementation(libs.google.truth)
+  testImplementation(libs.kotlin.test.junit)
 }
 
 abstract class ToggleNativeLoggingTask : Exec() {

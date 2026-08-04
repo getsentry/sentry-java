@@ -1,0 +1,289 @@
+AI talk notes
+
+Main status-quo thesis
+
+- AI is already normal in software engineering, including among experienced engineers.
+- The important shift is not that AI can write code at all. The important shift is that it has made candidate implementations cheap.
+- The typing got cheaper. The judgment did not.
+- More precisely: the accountable core of judgment did not get cheap at the same rate as the surrounding scaffolding.
+- What must be proved has changed less than people think.
+- What counts as sufficient proof has changed more than people admit.
+
+High-level framing for the talk
+
+- AI moved the bottleneck from writing code to exercising judgment.
+- Cheap code has made confidence expensive.
+- The real question is not “AI yes or AI no.” The real question is: what are you willing to stop proving?
+- Post-AI, correctness is still correctness; what changed is the price of generating code, the price of gathering evidence, and the amount of uncertainty companies are willing to ship.
+
+Evidence gathered
+
+- Stack Overflow 2025: AI use is mainstream among professional engineers and still high among experienced engineers.
+- Experienced engineers use AI heavily but trust it less than less-experienced engineers.
+- The biggest recurring complaint is “almost right” output and the cleanup/debug burden it creates.
+- METR 2025: experienced OSS maintainers working in their own familiar repos were slower with early-2025 AI tools in that specific setting.
+- Microsoft 2026 rollout study: org-scale telemetry suggests AI coding agents can increase merged PR throughput, though merged PRs are not the same as value or quality.
+- Research on review and test quality suggests AI can raise review load and produce tests that look stronger than they really are.
+
+How senior engineers are using AI well
+
+- As a force multiplier for exploration, planning, scaffolding, rote refactors, docs, and test drafting.
+- By front-loading planning and keeping tasks small.
+- By aggressively managing context.
+- By demanding verification loops: tests, builds, screenshots, browser checks, traces, staging checks.
+- By using AI more as an editor, scout, and explainer than as an unquestioned author.
+- By parallelizing only where the tasks are independently reviewable.
+
+How they struggle
+
+- Mature, familiar codebases contain a lot of tacit constraints and cross-cutting intent.
+- Review is still a different task shape from generation.
+- Long sessions accumulate noise and drift.
+- Hands-off loops tend to amplify defensive, local, and over-complicated code.
+- Generated tests and explanations can overstate real confidence.
+- Production and architectural risk are not compressed at the same rate as typing effort.
+
+Judgment debate
+
+Original claim
+
+- “The judgment did not” because judgment depends on things that are only partly visible in text.
+
+Refinement after skepticism
+
+- Hidden context is only part of the reason.
+- Better formulation: senior engineering judgment is only partly reducible to explicit textual context because it also involves conflict resolution, uncertainty reduction, consequence modeling, and accountable commitment.
+- Writing more down helps, sometimes a lot, but it does not collapse judgment into README-following.
+
+Stronger decomposition of judgment
+
+- Context retrieval.
+- Rule application.
+- Trade-off selection.
+- Uncertainty management.
+- Accountability.
+
+- AI helps a lot with the first two.
+- The hard residue is mostly in the last three.
+
+Steelman of the opposite side
+
+- A large fraction of what seniors call judgment was really expensive context retrieval, pattern recall, option generation, critique, and uncertainty reduction.
+- AI is making those parts cheaper.
+- Better candidate sets can make decision-making cheaper even if the final commitment remains human.
+- So judgment may be getting cheaper in a decomposed sense, even if final accountable commitment is not.
+- Strongest one-liner: AI may not be replacing senior judgment, but it is rapidly stripping away the expensive scaffolding that used to make senior judgment scarce.
+
+Useful synthesis on judgment
+
+- Pre-judgment work is getting cheaper.
+- Final accountable commitment is not getting cheap at the same rate.
+- As generation gets cheaper, selection, verification, and shared understanding become more visibly scarce.
+
+Armin Ronacher thread
+
+- Armin is not anti-AI. He is technically impressed and strategically uneasy.
+- He believes AI coding is real and materially expands what individual programmers can do.
+- He thinks loops and harnesses are the deeper story, not just prompting.
+- He is skeptical of hands-off AI-generated code for durable systems because current models tend to produce code that is too defensive, too local, and too willing to add machinery instead of enforcing strong invariants.
+- He worries that AI removes the friction that once synchronized engineers into a shared human understanding of the system.
+- His “Tower of Babel” concern: construction can continue after shared understanding has already started to collapse.
+- He also thinks AI may broaden the set of people willing to write in harder languages and work closer to performance-sensitive and lower-level domains.
+
+Case analysis: sentry-java style SDK repo
+
+Why sentry-java is special
+
+- Large multi-module SDK.
+- Public API and binary compatibility pressure.
+- Many sibling integrations that should preserve the same conceptual semantics.
+- Long-lived architectural invariants matter more than local plausibility.
+- Release safety and semantic continuity are central obligations.
+
+Case 1: AI-exclusive codegen, minimal oversight
+
+- Short-term: throughput spike, backlog burn, lots of mechanical work gets done fast.
+- Long-term: semantic drift, locally reasonable divergence, duplicated policy, defensive complexity, more tests that lock in accidents.
+- End state: the repo becomes easier to change than to understand.
+
+Case 2: AI-exclusive codegen, human diff review
+
+- Better than minimal oversight.
+- Catches obvious slop, bad naming, duplication, awkward local abstractions.
+- Still too local for many long-range SDK risks.
+- End state: strong editing culture, weaker design culture.
+
+Case 3: AI-exclusive codegen, human architectural and invariant review
+
+- Best AI-heavy mode for a repo like sentry-java.
+- Humans maintain the semantic constitution; AI performs most implementation.
+- Viable if invariants, docs, API rules, and conformance checks are explicit and maintained.
+- Main risk: stale doctrine or overly formalized but outdated rules.
+
+Case 4: Traditional engineering with selective AI assistance
+
+- Likely best equilibrium for sentry-java.
+- Humans stay primary on architectural seams and semantic decisions.
+- AI is used for exploration, broad migrations, repetitive refactors, sample updates, docs, and test drafting.
+- Preserves shared architectural language while still gaining leverage.
+
+Case 5: Traditional engineering with little AI use
+
+- Strongest direct human understanding.
+- Lower AI-induced semantic drift.
+- Wastes expensive human effort on more mechanical work than necessary.
+
+Main proof obligation for sentry-java
+
+- Prove semantic continuity.
+
+Best proof techniques for sentry-java
+
+- API and binary compatibility checks.
+- Differential tests against previous behavior.
+- Golden/snapshot tests for semantic outputs.
+- Integration matrix tests.
+- Property-based tests for tricky invariants like scope or lifecycle behavior.
+- Samples as executable specs.
+- Performance and startup-budget checks.
+- Review rubrics tied to semantic invariants.
+
+Case analysis: product microservice / bank app style codebase
+
+Why it differs from an SDK
+
+- Internal APIs are cheaper to change.
+- Product metrics, support, and incidents surface feedback faster.
+- More business logic and operational truth, less library-grade abstraction pressure.
+- More tolerance for internal mess if product outcomes improve.
+
+Case 1: AI-exclusive codegen, minimal oversight
+
+- Short-term: very high product velocity.
+- Long-term: business-rule sediment, fragmented policy, duplicated workflow truth.
+- Bank-like systems are especially exposed: auth, compliance, audit, and money semantics can drift dangerously.
+- End state: fast-moving but policy-fragile.
+
+Case 2: AI-exclusive codegen, human diff review
+
+- Viable longer than in SDKs.
+- Still too local for pricing, eligibility, fraud, compliance, or multi-step state truth.
+- End state: readable-enough code with semantically scattered business rules.
+
+Case 3: AI-exclusive codegen, human architectural and policy review
+
+- Best AI-heavy mode for many product teams.
+- Humans own the business constitution: domain boundaries, rules, state transitions, rollout policy, security posture.
+- AI implements most changes.
+- Main risk: written policy diverges from living business reality.
+
+Case 4: Traditional engineering with selective AI assistance
+
+- Best default for most serious product teams.
+- Humans stay primary on money movement, identity, permissions, compliance, state transitions, and rollback design.
+- AI handles boilerplate, tests, repo exploration, logs/traces, migrations, docs, support tools, and repetitive endpoint/UI work.
+
+Case 5: Traditional engineering with little AI use
+
+- High coherence.
+- Slower than necessary for many product teams.
+- Leaves meaningful leverage on the table compared to selective AI use.
+
+Main proof obligations for product systems
+
+- Normal microservice: prove business continuity under real traffic.
+- Bank app or money-moving system: prove legality of state transitions and conservation/losslessness.
+
+Best proof techniques for product systems
+
+- Contract tests.
+- End-to-end business journey tests.
+- State-machine tests.
+- Property-based invariant tests.
+- Runtime assertions on domain invariants.
+- Canary rollout.
+- Shadow traffic / replay for risky changes.
+- Telemetry tied to business truth.
+- Reconciliation and audit checks for bank-like systems.
+
+Software as proof
+
+- Useful lens: software engineering is constructing a kind of proof about the program and its behavior in the world.
+- AI-heavy workflows force proof to move out of people’s heads and into executable artifacts.
+- High human oversight can tolerate more informal proof.
+- Lower oversight needs stronger, more machine-checkable proof.
+
+General proof taxonomy discussed
+
+- Invariant specs.
+- Design docs and ADRs.
+- Type-level restrictions.
+- Static analysis and schema checks.
+- Unit tests.
+- Property-based tests.
+- Golden/snapshot tests.
+- Differential tests.
+- Contract tests.
+- Integration and matrix tests.
+- Runtime assertions.
+- Canary and feature-flag rollout.
+- Shadow traffic / replay.
+- Telemetry, SLOs, and alerts tied to semantic truth.
+- Human review rubrics.
+- Post-release customer feedback.
+
+Cross-cutting recommendation to senior engineers
+
+1. Determine what your system actually has to prove.
+2. Determine which proof techniques genuinely establish that under your new workflow, including AI-assisted workflow.
+3. Be explicit about risk appetite. Distinguish improved proof from weakened standards.
+
+Important distinction
+
+- The correctness target changes the least.
+- The proof technique changes materially.
+- Risk appetite is changing the fastest.
+
+Industry risk appetite point
+
+- Many companies are not adopting AI because they have solved the epistemology of software correctness.
+- Many are broadening risk appetite because moving slower feels more dangerous than shipping with weaker proof.
+- Sometimes AI really does improve proof technique.
+- Sometimes firms are simply accepting less evidence before shipping and calling that innovation.
+- Mature teams redesign proof.
+- Immature teams lower standards and hope speed plus telemetry will cover the gap.
+
+Recursive specification theory of engineering
+
+- Good engineering can be understood as recursively reducing ambiguity by improving the specification of the problem.
+- The process continues until one of three things happens:
+  - the answer becomes obvious,
+  - the remaining tradeoff is genuinely irreducible,
+  - or the problem is discovered to have been misframed.
+- This is an anti-entropy view of engineering.
+- Information, structure, and coherence are the key resources.
+- Good design localizes the right information at the right boundary so the correct local move becomes obvious.
+- AI does not repeal this. It changes where some coherence work can happen and how cheaply it can be produced or retrieved.
+
+Key nuance on information location
+
+- Some relevant information may now be partly stored in docs, tests, code structure, prompts, retrieval layers, or model weights.
+- But the important distinction is between stored coherence and shared coherence.
+- Information merely existing somewhere is not enough. Good engineering needs the relevant actors, human or machine, to be able to reason over the same object coherently enough that the next decision gets easier.
+
+Contrarian angle for senior engineers
+
+- The “AI yes vs AI no” framing is intellectually lazy.
+- The serious question is not “are you pro-AI?” but “what are you willing to stop proving?”
+- Cheap code is not the breakthrough. Cheap evidence is the breakthrough, if you actually use it.
+- If AI speeds up coding more than it speeds up proof, you are not accelerating engineering. You are accelerating uncertainty.
+- The new senior-engineer role is closer to epistemic governance: defining what must be true, choosing proof techniques, and detecting when the organization is lying to itself about confidence.
+
+Strongest talk-ready one-liners
+
+- AI moved the bottleneck from writing code to exercising judgment.
+- Cheap code has made confidence expensive.
+- The real question is not AI yes or AI no. The real question is: what are you willing to stop proving?
+- Some teams are redesigning proof. Others are just relaxing it.
+- Mature teams use AI to lower the cost of evidence. Immature teams use AI to lower the amount of evidence they require.
+- Good engineering is the recursive construction of enough structure around a problem that the right local moves become obvious and the remaining hard choices are truly fundamental rather than artifacts of confusion.
