@@ -56,8 +56,8 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
   private final WindowFrameMetricsManager windowFrameMetricsManager;
 
   private @Nullable Window.OnFrameMetricsAvailableListener frameMetricsAvailableListener;
-  private @Nullable Choreographer choreographer;
-  private @Nullable Field choreographerLastFrameTimeField;
+  private volatile @Nullable Choreographer choreographer;
+  private volatile @Nullable Field choreographerLastFrameTimeField;
   private long lastFrameStartNanos = 0;
   private long lastFrameEndNanos = 0;
 
@@ -126,7 +126,9 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
     // Most considerations regarding timestamps of frames are inspired from JankStats library:
     // https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:metrics/metrics-performance/src/main/java/androidx/metrics/performance/JankStatsApi24Impl.kt
 
-    // The Choreographer instance must be accessed on the main thread
+    // The Choreographer instance and private field reflection must be accessed asynchronously on
+    // the main thread to avoid blocking SDK init. getLastKnownFrameStartTimeNanos() uses this for
+    // pending frame interpolation on all supported API levels.
     new Handler(Looper.getMainLooper())
         .post(
             () -> {
@@ -138,15 +140,19 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
                     "Error retrieving Choreographer instance. Slow and frozen frames will not be reported.",
                     e);
               }
+
+              // Let's get the last frame timestamp from the choreographer private field
+              try {
+                choreographerLastFrameTimeField =
+                    Choreographer.class.getDeclaredField("mLastFrameTimeNanos");
+                choreographerLastFrameTimeField.setAccessible(true);
+              } catch (NoSuchFieldException e) {
+                logger.log(
+                    SentryLevel.ERROR,
+                    "Unable to get the frame timestamp from the choreographer: ",
+                    e);
+              }
             });
-    // Let's get the last frame timestamp from the choreographer private field
-    try {
-      choreographerLastFrameTimeField = Choreographer.class.getDeclaredField("mLastFrameTimeNanos");
-      choreographerLastFrameTimeField.setAccessible(true);
-    } catch (NoSuchFieldException e) {
-      logger.log(
-          SentryLevel.ERROR, "Unable to get the frame timestamp from the choreographer: ", e);
-    }
 
     frameMetricsAvailableListener =
         (window, frameMetrics, dropCountSinceLastInvocation) -> {
@@ -165,7 +171,8 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
           final long delayNanos = Math.max(0, cpuDuration - expectedFrameDuration);
 
           long startTime = getFrameStartTimestamp(frameMetrics);
-          // If we couldn't get the timestamp through reflection, we use current time
+          // If we couldn't get the timestamp through FrameMetrics or reflection, we use the current
+          // time.
           if (startTime < 0) {
             startTime = now - cpuDuration;
           }
@@ -217,8 +224,8 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
   }
 
   /**
-   * Return the internal timestamp in the choreographer of the last frame start timestamp through
-   * reflection. On Android O the value is read from the frameMetrics itself.
+   * Return the frame start timestamp. On API 26+, this value is read directly from {@link
+   * FrameMetrics}; older APIs use the reflected Choreographer timestamp.
    */
   @SuppressLint("NewApi")
   private long getFrameStartTimestamp(final @NotNull FrameMetrics frameMetrics) {
