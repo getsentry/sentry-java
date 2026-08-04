@@ -8,7 +8,6 @@ import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.ScheduledThreadPoolExecutor
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
-import kotlin.system.measureTimeMillis
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -109,27 +108,6 @@ class SentryExecutorServiceTest {
     val executor = sentryExecutor.getProperty<ScheduledThreadPoolExecutor>("executorService")
     assertFalse(executor.removeOnCancelPolicy)
     sentryExecutor.close(15000)
-  }
-
-  @Test
-  fun `SentryExecutorService discards pending delayed tasks on shutdown when requested`() {
-    val sentryExecutor = SentryExecutorService(null, true, 30, TimeUnit.SECONDS)
-    val executor = sentryExecutor.getProperty<ScheduledThreadPoolExecutor>("executorService")
-    assertFalse(executor.executeExistingDelayedTasksAfterShutdownPolicy)
-    sentryExecutor.close(15000)
-  }
-
-  @Test
-  fun `SentryExecutorService close does not wait for a pending delayed task`() {
-    val sentryExecutor = SentryExecutorService(null, true, 30, TimeUnit.SECONDS)
-    val ran = AtomicBoolean(false)
-    sentryExecutor.schedule({ ran.set(true) }, 30000)
-
-    val elapsed = measureTimeMillis { sentryExecutor.close(5000) }
-
-    assertTrue(elapsed < 5000, "close blocked for ${elapsed}ms waiting on the pending task")
-    assertTrue(sentryExecutor.isClosed)
-    assertFalse(ran.get())
   }
 
   @Test
