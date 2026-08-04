@@ -1,7 +1,7 @@
 # sentry-uitest-android-macrobenchmark
 
-Jetpack Macrobenchmark for cold-start of `sentry-samples-android`, used to evaluate SDK-init
-performance changes on a real device in a **stable, reproducible** way. Not run in CI.
+Jetpack Macrobenchmarks for `sentry-samples-android`, used to evaluate SDK initialization and Nav3
+integration performance on a real device in a **stable, reproducible** way. Not run in CI.
 
 ## What it measures
 
@@ -23,6 +23,75 @@ does the correct force-stop sequencing (it does **not** `pm clear`, so app data/
 kept). Iterations are capped at 12 because back-to-back cold starts thermally throttle an
 unlocked-clock device after ~14 iterations, inflating the tail of longer runs.
 
+### Nav3 Performance
+
+`Nav3PerformanceBenchmark` drives fixed runs from the Nav3 sample's Performance tab. Each outer
+iteration prepares a preset, runs five warm-up operations outside measurement, and measures 20
+operations. The four workload levels increase captured depth and argument complexity:
+
+| Workload | Captured entries | Arguments | Extractor |
+|---|---:|---|---|
+| Light | 1 | Empty | Normal |
+| Normal | 20 | Flat | Normal |
+| Heavy | 50 | Nested | Normal |
+| Super heavy | 100 | Large | Heavy |
+
+The suite also includes these controls:
+
+- `fullStackWithoutArgumentsTopReplacement` uses the Super-heavy stack and name extractor without
+  an argument extractor. Compare it with `superHeavyTopReplacement` to isolate argument extraction
+  and sanitization.
+- `topOnlyTopReplacement` tracks the current entry without capturing the back stack.
+- `disabledTopReplacement` measures the same navigation shape without `SentryNavEffect`.
+- `captureOneOfHundredTopReplacement`, `captureTwentyOfHundredTopReplacement`, and
+  `captureHundredOfHundredTopReplacement` keep Normal extractors and Flat arguments fixed while
+  varying effective captured depth across the same 100-entry stack.
+- `superHeavyUnrelatedRecomposition` verifies that unchanged navigation inputs skip extractor work.
+  It does not collect frame timing because the recompositions do not reliably produce a frame.
+
+#### Cost Attribution
+
+`Nav3CostAttributionMetric` joins each `Nav3Stress.SentryNavEffect` trace section to its name and
+argument extractor children. It reports these sampled per-operation distributions:
+
+- `nav3IntegrationDurationMs`: complete synchronous `SentryNavEffect` duration.
+- `nav3ExtractorDurationPerOperationMs`: time in sample-provided extractors.
+- `nav3NonExtractorDurationMs`: integration duration minus extractor duration. This estimates
+  SDK-owned context construction, argument sanitization, comparison, and scope updates.
+
+It also reports totals and counts for each outer iteration:
+
+- `nav3IntegrationTotalMs`, `nav3ExtractorTotalMs`, and `nav3NonExtractorTotalMs`.
+- `nav3IntegrationOperationCount` and `nav3CapturedEntryResolutionCount`.
+- `nav3IntegrationPerOperationMs` and `nav3IntegrationPerCapturedEntryUs`.
+
+Use the duration distributions for latency and the count metrics to validate the workload. For
+example, a 20-operation Normal run should report 20 integration operations and 400 captured-entry
+resolutions. An unrelated recomposition run should report 20 lightweight wrapper calls and zero
+captured-entry resolutions.
+
+The benchmark now fails if the expected trace sections are missing or incomplete. A renamed or
+missing `Nav3Stress.SentryNavEffect`, `Nav3Stress.navigationToComposition`, or
+`Nav3Stress.navigationToFirstDraw` section is treated as a benchmark failure rather than silently
+skipping the regression checks.
+
+#### Interleaved A/B Comparison
+
+`interleavedAbComparison` runs two A/B sequences in each outer iteration. The first measures
+Disabled then Enabled, and the second measures Enabled then Disabled. Both modes receive their own
+warm-up before measurement. Alternating the order reduces systematic JIT, thermal, and scheduling
+bias.
+
+The A/B metric reports Disabled and Enabled distributions for mutation-to-composition and
+mutation-to-first-draw latency, plus the mean Enabled-minus-Disabled delta:
+
+- `nav3AbDisabledCompositionMs` and `nav3AbEnabledCompositionMs`.
+- `nav3AbDisabledFirstDrawMs` and `nav3AbEnabledFirstDrawMs`.
+- `nav3AbCompositionDeltaMs` and `nav3AbFirstDrawDeltaMs`.
+
+Positive deltas mean the Enabled phase was slower. End-to-end latency is dominated by vsync phase,
+so use the direct integration metrics when investigating sub-millisecond changes.
+
 ## Running
 
 Connect a device, then:
@@ -33,6 +102,20 @@ Connect a device, then:
 
 Results print to the console and are written to
 `build/outputs/connected_android_test_additional_output/.../*-benchmarkData.json`.
+
+Run only the Nav3 suite with:
+
+```bash
+./gradlew :sentry-android-integration-tests:sentry-uitest-android-macrobenchmark:connectedBenchmarkAndroidTest \
+  -Pandroid.testInstrumentationRunnerArguments.class=io.sentry.uitest.android.macrobenchmark.Nav3PerformanceBenchmark
+```
+
+Run one scenario by appending the method name, for example:
+
+```bash
+./gradlew :sentry-android-integration-tests:sentry-uitest-android-macrobenchmark:connectedBenchmarkAndroidTest \
+  -Pandroid.testInstrumentationRunnerArguments.class=io.sentry.uitest.android.macrobenchmark.Nav3PerformanceBenchmark#normalTopReplacement
+```
 
 ## Running on Sauce Labs
 

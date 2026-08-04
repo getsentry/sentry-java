@@ -24,43 +24,48 @@ private const val OP_TRACE_ORIGIN = "auto.ui.jetpack_compose"
 
 @Immutable private class ImmutableHolder<T>(var item: T)
 
+@Immutable
+private class ParentSpanHolder {
+  private var rootSpan: ISpan? = null
+  var span: ISpan? = null
+    private set
+
+  fun getOrCreate(rootSpan: ISpan?, operation: String, description: String): ISpan? {
+    if (rootSpan == null) {
+      this.rootSpan = null
+      span = null
+      return null
+    }
+
+    if (this.rootSpan !== rootSpan || span?.isFinished != false) {
+      this.rootSpan = rootSpan
+      span =
+        rootSpan
+          .startChild(
+            operation,
+            description,
+            SpanOptions().apply {
+              isTrimStart = true
+              isTrimEnd = true
+              isIdle = true
+            },
+          )
+          .apply { spanContext.origin = OP_TRACE_ORIGIN }
+    }
+
+    return span
+  }
+}
+
 private fun getRootSpan(): ISpan? {
   var rootSpan: ISpan? = null
   Sentry.configureScope { rootSpan = it.transaction }
   return rootSpan
 }
 
-private val localSentryCompositionParentSpan = compositionLocalOf {
-  ImmutableHolder(
-    getRootSpan()
-      ?.startChild(
-        OP_PARENT_COMPOSITION,
-        "Jetpack Compose Initial Composition",
-        SpanOptions().apply {
-          isTrimStart = true
-          isTrimEnd = true
-          isIdle = true
-        },
-      )
-      ?.apply { spanContext.origin = OP_TRACE_ORIGIN }
-  )
-}
+private val localSentryCompositionParentSpan = compositionLocalOf { ParentSpanHolder() }
 
-private val localSentryRenderingParentSpan = compositionLocalOf {
-  ImmutableHolder(
-    getRootSpan()
-      ?.startChild(
-        OP_PARENT_RENDER,
-        "Jetpack Compose Initial Render",
-        SpanOptions().apply {
-          isTrimStart = true
-          isTrimEnd = true
-          isIdle = true
-        },
-      )
-      ?.apply { spanContext.origin = OP_TRACE_ORIGIN }
-  )
-}
+private val localSentryRenderingParentSpan = compositionLocalOf { ParentSpanHolder() }
 
 @ExperimentalComposeUiApi
 @Composable
@@ -70,12 +75,16 @@ public fun SentryTraced(
   enableUserInteractionTracing: Boolean = true,
   content: @Composable BoxScope.() -> Unit,
 ) {
+  val rootSpan = getRootSpan()
   val parentCompositionSpan = localSentryCompositionParentSpan.current
   val parentRenderingSpan = localSentryRenderingParentSpan.current
   val compositionSpan =
-    parentCompositionSpan.item?.startChild(OP_COMPOSE, tag)?.apply {
-      spanContext.origin = OP_TRACE_ORIGIN
-    }
+    parentCompositionSpan
+      .getOrCreate(rootSpan, OP_PARENT_COMPOSITION, "Jetpack Compose Initial Composition")
+      ?.startChild(OP_COMPOSE, tag)
+      ?.apply {
+        spanContext.origin = OP_TRACE_ORIGIN
+      }
   val firstRendered = remember { ImmutableHolder(false) }
 
   val baseModifier = if (enableUserInteractionTracing) modifier.sentryTag(tag) else modifier
@@ -85,7 +94,9 @@ public fun SentryTraced(
       baseModifier.drawWithContent {
         val renderSpan =
           if (!firstRendered.item) {
-            parentRenderingSpan.item?.startChild(OP_RENDER, tag)
+            parentRenderingSpan
+              .getOrCreate(rootSpan, OP_PARENT_RENDER, "Jetpack Compose Initial Render")
+              ?.startChild(OP_RENDER, tag)
           } else {
             null
           }

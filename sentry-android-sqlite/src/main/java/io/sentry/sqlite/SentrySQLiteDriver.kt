@@ -26,6 +26,8 @@ import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
  *
  * @param delegate The [SQLiteDriver] instance to delegate calls to.
  */
+// TODO ADAM: sentry-android-sqlite: add addPackage("maven:io.sentry:sentry-android-sqlite",
+// BuildConfig.VERSION_NAME) in one stable module entry point, not in every helper
 public class SentrySQLiteDriver private constructor(private val delegate: SQLiteDriver) :
   SQLiteDriver {
 

@@ -102,6 +102,22 @@
       android:exported="false" />
 
     <activity
+      android:name=".navigation.Nav2Activity"
+      android:exported="false"
+      android:theme="@style/AppTheme.Main" />
+
+    <activity
+      android:name=".navigation.Nav3Activity"
+      android:exported="false"
+      android:launchMode="singleTop" />
+
+    <!-- Hidden entry point used by the external Macrobenchmark test APK. -->
+    <activity-alias
+      android:name=".navigation.Nav3PerformanceBenchmarkActivity"
+      android:exported="true"
+      android:targetActivity=".navigation.Nav3Activity" />
+
+    <activity
       android:name=".FrameDataForSpansActivity"
       android:exported="false" />
 
