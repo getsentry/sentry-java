@@ -4692,6 +4692,7 @@ public final class io/sentry/TypeCheckHint {
 	public static final field KTOR_CLIENT_RESPONSE Ljava/lang/String;
 	public static final field LOG4J_LOG_EVENT Ljava/lang/String;
 	public static final field LOGBACK_LOGGING_EVENT Ljava/lang/String;
+	public static final field NAV3_DESTINATION Ljava/lang/String;
 	public static final field OKHTTP_REQUEST Ljava/lang/String;
 	public static final field OKHTTP_RESPONSE Ljava/lang/String;
 	public static final field OPEN_FEIGN_REQUEST Ljava/lang/String;
