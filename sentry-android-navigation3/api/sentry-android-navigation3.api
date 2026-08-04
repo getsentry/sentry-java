@@ -1,0 +1,37 @@
+public final class io/sentry/compose/navigation3/BuildConfig {
+	public static final field BUILD_TYPE Ljava/lang/String;
+	public static final field DEBUG Z
+	public static final field LIBRARY_PACKAGE_NAME Ljava/lang/String;
+	public static final field VERSION_NAME Ljava/lang/String;
+	public fun <init> ()V
+}
+
+public final class io/sentry/compose/navigation3/SentryNavBackStack {
+	public static final field $stable I
+	public fun <init> (Ljava/util/List;)V
+	public final fun getArgumentsExtractor ()Lkotlin/jvm/functions/Function1;
+	public final fun getContentKeyExtractor ()Lkotlin/jvm/functions/Function1;
+	public final fun getEntries ()Ljava/util/List;
+	public final fun getNameExtractor ()Lkotlin/jvm/functions/Function1;
+	public final fun setArgumentsExtractor (Lkotlin/jvm/functions/Function1;)V
+	public final fun setContentKeyExtractor (Lkotlin/jvm/functions/Function1;)V
+	public final fun setNameExtractor (Lkotlin/jvm/functions/Function1;)V
+}
+
+public final class io/sentry/compose/navigation3/SentryNavDisplayKt {
+	public static final fun rememberSentryNavEntryDecorator (Lio/sentry/compose/navigation3/SentryNavBackStack;Lio/sentry/compose/navigation3/SentryNavOptions;Lio/sentry/IScopes;Landroidx/compose/runtime/Composer;II)Landroidx/navigation3/runtime/NavEntryDecorator;
+}
+
+public final class io/sentry/compose/navigation3/SentryNavOptions {
+	public static final field $stable I
+	public fun <init> ()V
+	public final fun getCaptureBackStack ()Z
+	public final fun getEnableNavigationBreadcrumbs ()Z
+	public final fun getEnableNavigationTransactions ()Z
+	public final fun getMaxCapturedBackStackEntries ()I
+	public final fun setCaptureBackStack (Z)V
+	public final fun setEnableNavigationBreadcrumbs (Z)V
+	public final fun setEnableNavigationTransactions (Z)V
+	public final fun setMaxCapturedBackStackEntries (I)V
+}
+

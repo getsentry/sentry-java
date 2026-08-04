@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:app="http://schemas.android.com/apk/res-auto"
+  android:id="@+id/nav2_graph"
+  app:startDestination="@id/nav2_single_stack">
+
+  <fragment
+    android:id="@+id/nav2_single_stack"
+    android:name="io.sentry.samples.android.navigation.Nav2RouteFragment"
+    android:label="Single Stack"
+    app:route="SingleStack">
+    <argument
+      android:name="route_name"
+      android:defaultValue="SingleStack"
+      app:argType="string" />
+  </fragment>
+
+  <fragment
+    android:id="@+id/nav2_dialogs_and_sheets"
+    android:name="io.sentry.samples.android.navigation.Nav2RouteFragment"
+    android:label="Dialogs &amp; Sheets"
+    app:route="DialogsAndSheets">
+    <argument
+      android:name="route_name"
+      android:defaultValue="DialogsAndSheets"
+      app:argType="string" />
+  </fragment>
+
+  <fragment
+    android:id="@+id/nav2_deep_link"
+    android:name="io.sentry.samples.android.navigation.Nav2RouteFragment"
+    android:label="Deep Link"
+    app:route="DeepLink">
+    <argument
+      android:name="route_name"
+      android:defaultValue="DeepLink"
+      app:argType="string" />
+  </fragment>
+
+  <fragment
+    android:id="@+id/nav2_product_list"
+    android:name="io.sentry.samples.android.navigation.Nav2RouteFragment"
+    android:label="Product List"
+    app:route="ProductList">
+    <argument
+      android:name="route_name"
+      android:defaultValue="ProductList"
+      app:argType="string" />
+  </fragment>
+
+  <fragment
+    android:id="@+id/nav2_product_detail"
+    android:name="io.sentry.samples.android.navigation.Nav2RouteFragment"
+    android:label="Product Detail"
+    app:route="ProductDetail">
+    <argument
+      android:name="route_name"
+      android:defaultValue="ProductDetail"
+      app:argType="string" />
+    <argument
+      android:name="product_id"
+      app:argType="string" />
+    <argument
+      android:name="source"
+      app:argType="string" />
+    <argument
+      android:name="campaign"
+      android:defaultValue=""
+      app:argType="string" />
+  </fragment>
+
+  <fragment
+    android:id="@+id/nav2_checkout"
+    android:name="io.sentry.samples.android.navigation.Nav2RouteFragment"
+    android:label="Checkout"
+    app:route="Checkout">
+    <argument
+      android:name="route_name"
+      android:defaultValue="Checkout"
+      app:argType="string" />
+    <argument
+      android:name="product_id"
+      app:argType="string" />
+  </fragment>
+
+  <fragment
+    android:id="@+id/nav2_confirmation"
+    android:name="io.sentry.samples.android.navigation.Nav2RouteFragment"
+    android:label="Confirmation"
+    app:route="Confirmation">
+    <argument
+      android:name="route_name"
+      android:defaultValue="Confirmation"
+      app:argType="string" />
+    <argument
+      android:name="order_id"
+      app:argType="string" />
+  </fragment>
+
+  <fragment
+    android:id="@+id/nav2_promo_dialog"
+    android:name="io.sentry.samples.android.navigation.Nav2RouteFragment"
+    android:label="Promo Dialog"
+    app:route="PromoDialog">
+    <argument
+      android:name="route_name"
+      android:defaultValue="PromoDialog"
+      app:argType="string" />
+    <argument
+      android:name="promo_id"
+      app:argType="string" />
+  </fragment>
+
+  <fragment
+    android:id="@+id/nav2_share_sheet"
+    android:name="io.sentry.samples.android.navigation.Nav2RouteFragment"
+    android:label="Share Sheet"
+    app:route="ShareSheet">
+    <argument
+      android:name="route_name"
+      android:defaultValue="ShareSheet"
+      app:argType="string" />
+    <argument
+      android:name="product_id"
+      app:argType="string" />
+  </fragment>
+</navigation>

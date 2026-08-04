@@ -102,6 +102,15 @@
       android:exported="false" />
 
     <activity
+      android:name=".navigation.Nav2Activity"
+      android:exported="false"
+      android:theme="@style/AppTheme.Main" />
+
+    <activity
+      android:name=".navigation.Nav3Activity"
+      android:exported="false" />
+
+    <activity
       android:name=".FrameDataForSpansActivity"
       android:exported="false" />
 
