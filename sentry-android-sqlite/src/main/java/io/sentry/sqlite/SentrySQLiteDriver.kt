@@ -22,16 +22,19 @@ import org.jetbrains.annotations.ApiStatus
  *     .build()
  * ```
  *
- * If you're using the Sentry Android Gradle Plugin (SAGP) 6.13.0+, wrapping will be performed
- * automatically.
+ * // TODO ADAM: Separate PR narrowing comment to Room. If you're using the Sentry Android Gradle
+ * Plugin (SAGP) 6.13.0+, wrapping will be performed automatically.
  *
  * @param delegate The [SQLiteDriver] instance to delegate calls to.
  */
-@ApiStatus.Experimental
+// TODO ADAM: sentry-android-sqlite: add addPackage("maven:io.sentry:sentry-android-sqlite",
+// BuildConfig.VERSION_NAME) in one stable module entry point, not in every helper
+@ApiStatus.Experimental // TODO ADAM: Remove experimental status.
 public class SentrySQLiteDriver private constructor(private val delegate: SQLiteDriver) :
   SQLiteDriver {
 
   init {
+    // TODO ADAM: Use addIntegrationToSdkVersion() here + in the open helper.
     SentryIntegrationPackageStorage.getInstance().addIntegration("SQLiteDriver")
   }
 

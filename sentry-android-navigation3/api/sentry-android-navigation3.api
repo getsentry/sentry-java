@@ -1,0 +1,25 @@
+public final class io/sentry/compose/navigation3/BuildConfig {
+	public static final field BUILD_TYPE Ljava/lang/String;
+	public static final field DEBUG Z
+	public static final field LIBRARY_PACKAGE_NAME Ljava/lang/String;
+	public static final field VERSION_NAME Ljava/lang/String;
+	public fun <init> ()V
+}
+
+public final class io/sentry/compose/navigation3/SentryNav3EffectKt {
+	public static final fun SentryNav3Effect (Landroidx/compose/runtime/snapshots/SnapshotStateList;Lio/sentry/IScopes;Lio/sentry/compose/navigation3/SentryNav3Options;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;II)V
+}
+
+public final class io/sentry/compose/navigation3/SentryNav3Options {
+	public static final field $stable I
+	public fun <init> ()V
+	public final fun getCaptureBackStack ()Z
+	public final fun getEnableNavigationBreadcrumbs ()Z
+	public final fun getEnableNavigationTransactions ()Z
+	public final fun getMaxCapturedBackStackEntries ()I
+	public final fun setCaptureBackStack (Z)V
+	public final fun setEnableNavigationBreadcrumbs (Z)V
+	public final fun setEnableNavigationTransactions (Z)V
+	public final fun setMaxCapturedBackStackEntries (I)V
+}
+
