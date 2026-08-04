@@ -19,6 +19,12 @@
 - Batch and coalesce scope-persistence disk writes to reduce startup cost ([#5791](https://github.com/getsentry/sentry-java/pull/5791))
   - Scope mutations are now coalesced (latest value per field) and breadcrumbs are appended in batches behind a single fsync, instead of one synchronous disk write per mutation.
 
+### Dependencies
+
+- Bump Native SDK from v0.16.0 to v0.16.1 ([#5879](https://github.com/getsentry/sentry-java/pull/5879))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0161)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.16.0...0.16.1)
+
 ## 8.51.0
 
 ### Features
