@@ -93,10 +93,14 @@ abstract class DirectoryProcessor {
         // InterruptedException will be handled by the outer try-catch
         Thread.sleep(ENVELOPE_PROCESSING_DELAY);
       }
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      logger.log(
+          SentryLevel.INFO,
+          e,
+          "Thread interrupted during processing '%s'",
+          directory.getAbsolutePath());
     } catch (Throwable e) {
-      if (e instanceof InterruptedException) {
-        Thread.currentThread().interrupt();
-      }
       logger.log(SentryLevel.ERROR, e, "Failed processing '%s'", directory.getAbsolutePath());
     }
   }
