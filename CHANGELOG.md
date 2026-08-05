@@ -13,6 +13,7 @@
 
 ### Performance
 
+- Defer `Choreographer` reflection for frame metrics collection to avoid blocking the main thread during `Sentry.init` ([#5886](https://github.com/getsentry/sentry-java/pull/5886))
 - Avoid waiting up to `shutdownTimeoutMillis` when closing the SDK with a pending transaction timeout or session-end task ([#5851](https://github.com/getsentry/sentry-java/pull/5851))
 - Use `RGB_565` instead of `ARGB_8888` for screenshot and replay capture bitmaps, halving per-frame memory usage ([#5821](https://github.com/getsentry/sentry-java/pull/5821))
 - Remove an unused lock from `SentryPerformanceProvider`, which was allocated on every cold start in `ContentProvider.onCreate` without ever being acquired ([#5871](https://github.com/getsentry/sentry-java/pull/5871))
