@@ -1,5 +1,6 @@
 package io.sentry
 
+import com.google.common.truth.Truth.assertThat
 import io.sentry.SentryLevel.WARNING
 import io.sentry.protocol.Request
 import io.sentry.protocol.SentryId
@@ -292,6 +293,7 @@ class ScopeTest {
     scope.screen = "MainActivity"
     scope.setExtra("some", "extra")
     scope.setAttribute("some", "attribute")
+    scope.setContexts("some", "context")
     scope.addEventProcessor(eventProcessor())
     scope.addAttachment(Attachment("path"))
     scope.addFeatureFlag("flag", true)
@@ -308,6 +310,7 @@ class ScopeTest {
     assertEquals(0, scope.tags.size)
     assertEquals(0, scope.attributes.size)
     assertEquals(0, scope.extras.size)
+    assertEquals(0, scope.contexts.size)
     assertEquals(0, scope.eventProcessors.size)
     assertEquals(0, scope.attachments.size)
     assertEquals(0, scope.featureFlags!!.values.size)
@@ -1288,6 +1291,17 @@ class ScopeTest {
 
     scope.clear()
     assertEquals(0, scope.attributes.size)
+  }
+
+  @Test
+  fun `clear removes contexts`() {
+    val scope = Scope(SentryOptions())
+    scope.setContexts("key1", "value1")
+    assertThat(scope.contexts.size).isEqualTo(1)
+
+    scope.clear()
+
+    assertThat(scope.contexts.isEmpty).isTrue()
   }
 
   private fun eventProcessor(): EventProcessor =

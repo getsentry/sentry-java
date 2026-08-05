@@ -1,5 +1,6 @@
 package io.sentry
 
+import com.google.common.truth.Truth.assertThat
 import io.sentry.protocol.Device
 import io.sentry.protocol.Request
 import io.sentry.protocol.SentryId
@@ -573,6 +574,36 @@ class CombinedScopeViewTest {
     assertNotNull(fixture.scope.level)
     assertNull(fixture.isolationScope.level)
     assertNotNull(fixture.globalScope.level)
+  }
+
+  @Test
+  fun `clear removes contexts from default scope`() {
+    val combined = fixture.getSut()
+
+    fixture.scope.setContexts("scopeContext", "scopeValue")
+    fixture.isolationScope.setContexts("isolationContext", "isolationValue")
+    fixture.globalScope.setContexts("globalContext", "globalValue")
+
+    combined.clear()
+
+    assertThat(fixture.scope.contexts.containsKey("scopeContext")).isTrue()
+    assertThat(fixture.isolationScope.contexts.isEmpty).isTrue()
+    assertThat(fixture.globalScope.contexts.containsKey("globalContext")).isTrue()
+  }
+
+  @Test
+  fun `contexts view clear removes from default scope`() {
+    val combined = fixture.getSut()
+
+    fixture.scope.setContexts("scopeContext", "scopeValue")
+    fixture.isolationScope.setContexts("isolationContext", "isolationValue")
+    fixture.globalScope.setContexts("globalContext", "globalValue")
+
+    combined.contexts.clear()
+
+    assertThat(fixture.scope.contexts.containsKey("scopeContext")).isTrue()
+    assertThat(fixture.isolationScope.contexts.isEmpty).isTrue()
+    assertThat(fixture.globalScope.contexts.containsKey("globalContext")).isTrue()
   }
 
   @Test

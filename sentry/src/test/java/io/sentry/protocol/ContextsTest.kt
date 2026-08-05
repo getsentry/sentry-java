@@ -1,5 +1,6 @@
 package io.sentry.protocol
 
+import com.google.common.truth.Truth.assertThat
 import io.sentry.ProfileContext
 import io.sentry.SpanContext
 import kotlin.test.Test
@@ -136,5 +137,20 @@ class ContextsTest {
     contexts.putAll(map)
 
     assertEquals(listOf("a"), contexts.keys().toList())
+  }
+
+  @Test
+  fun `clear removes all entries`() {
+    val contexts = Contexts()
+    contexts["some-property"] = "some-value"
+    contexts.setApp(App())
+    contexts.setTrace(SpanContext("op"))
+
+    contexts.clear()
+
+    assertThat(contexts.isEmpty).isTrue()
+    assertThat(contexts["some-property"]).isNull()
+    assertThat(contexts.app).isNull()
+    assertThat(contexts.trace).isNull()
   }
 }
