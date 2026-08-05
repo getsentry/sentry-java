@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 8.52.0
 
 ### Fixes
 
