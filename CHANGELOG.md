@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Reset contexts when a scope is cleared ([#5895](https://github.com/getsentry/sentry-java/pull/5895))
+
 ## 8.52.0
 
 ### Fixes
