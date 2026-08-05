@@ -126,9 +126,8 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
     // Most considerations regarding timestamps of frames are inspired from JankStats library:
     // https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:metrics/metrics-performance/src/main/java/androidx/metrics/performance/JankStatsApi24Impl.kt
 
-    // The Choreographer instance and private field reflection must be accessed asynchronously on
-    // the main thread to avoid blocking SDK init. getLastKnownFrameStartTimeNanos() uses this for
-    // pending frame interpolation on all supported API levels.
+    // The Choreographer instance should be initialized asynchronously on the main thread to avoid
+    // reflection during SDK init.
     new Handler(Looper.getMainLooper())
         .post(
             () -> {
