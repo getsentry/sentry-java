@@ -18,7 +18,7 @@
 - Avoid waiting up to `shutdownTimeoutMillis` when closing the SDK with a pending transaction timeout or session-end task ([#5851](https://github.com/getsentry/sentry-java/pull/5851))
 - Use `RGB_565` instead of `ARGB_8888` for screenshot and replay capture bitmaps, halving per-frame memory usage ([#5821](https://github.com/getsentry/sentry-java/pull/5821))
 - Remove an unused lock from `SentryPerformanceProvider`, which was allocated on every cold start in `ContentProvider.onCreate` without ever being acquired ([#5871](https://github.com/getsentry/sentry-java/pull/5871))
-- Parse the app start profiling config with only the deserializer it needs instead of building a full `JsonSerializer` and `SentryOptions`, cutting 188 of 221 allocations on the main thread before `Application.onCreate` ([#5867](https://github.com/getsentry/sentry-java/pull/5867))
+- Reduce main-thread allocations when parsing the app start profiling config ([#5867](https://github.com/getsentry/sentry-java/pull/5867))
 - Batch and coalesce scope-persistence disk writes to reduce startup cost ([#5791](https://github.com/getsentry/sentry-java/pull/5791))
   - Scope mutations are now coalesced (latest value per field) and breadcrumbs are appended in batches behind a single fsync, instead of one synchronous disk write per mutation.
 - Reduce the number of SDK threads: the `HostnameCache` worker thread now times out while idle instead of staying alive for the whole process lifetime ([#5817](https://github.com/getsentry/sentry-java/pull/5817))
