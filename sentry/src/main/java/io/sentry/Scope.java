@@ -575,6 +575,7 @@ public final class Scope implements IScope {
     tags.clear();
     attributes.clear();
     extra.clear();
+    contexts.clear();
     eventProcessors.clear();
     clearTransaction();
     clearAttachments();
