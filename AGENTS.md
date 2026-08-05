@@ -34,9 +34,6 @@ The project uses **Gradle** with Kotlin DSL. Key build files:
 # Run all tests and linter
 ./gradlew check
 
-# Build entire project
-./gradlew build
-
 # Generate documentation
 ./gradlew aggregateJavadocs
 ```
