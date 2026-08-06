@@ -19,11 +19,11 @@ Usage:
   # Just check whether this account has Real Device Access API entitlement
   python3 scripts/macrobenchmark-sauce.py --probe-only
 
-  # Fast smoke test: 1 iteration, no AOT compilation
+  # Faster smoke test: same iterations, but no AOT compilation
   python3 scripts/macrobenchmark-sauce.py \
       --app sentry-samples/sentry-samples-android/build/outputs/apk/release/sentry-samples-android-release.apk \
       --test-app sentry-android-integration-tests/sentry-uitest-android-macrobenchmark/build/outputs/apk/benchmark/sentry-uitest-android-macrobenchmark-benchmark.apk \
-      --iterations 1 --skip-compilation
+      --skip-compilation
 
   # Full run, as the benchmark declares it
   python3 scripts/macrobenchmark-sauce.py --app <apk> --test-app <apk>
@@ -107,10 +107,13 @@ class RealDeviceSession:
             response = self._request(
                 "POST",
                 f"{self.api}/v1/storage/upload",
+                expect=(200, 201),
                 files={"payload": (apk.name, payload)},
                 data={"name": apk.name},
             )
-        return "storage:" + response.json()["item"]["id"]
+        reference = "storage:" + response.json()["item"]["id"]
+        print(f"Uploaded {apk.name} as {reference}")
+        return reference
 
     # --- session lifecycle -------------------------------------------------
 
@@ -163,14 +166,17 @@ class RealDeviceSession:
         # enableInstrumentation=false keeps the APKs byte-identical: Sauce's
         # instrumentation re-signs and hooks the app, which would mean benchmarking
         # something other than what we built. We need none of the features it unlocks.
-        self._device(
+        started = self._device(
             "installApp", json={"app": app_reference, "enableInstrumentation": False}
-        )
+        ).json()
+        # Track by installationId rather than the app reference, which Sauce may echo back
+        # in a normalised form.
+        installation_id = started["installationId"]
         deadline = time.monotonic() + timeout
         while time.monotonic() < deadline:
             installations = self._device("listAppInstallations").json()["appInstallations"]
             status = next(
-                (i for i in installations if i.get("app") == app_reference), None
+                (i for i in installations if i.get("installationId") == installation_id), None
             )
             if status and status["status"] == "FINISHED":
                 print(f"Installed {app_reference}")
@@ -190,23 +196,25 @@ class RealDeviceSession:
         return self._device("pullFile", json={"path": path}).content
 
 
-def instrumentation_args(iterations, skip_compilation):
+def instrumentation_args(skip_compilation):
     """Builds the `-e key value` arguments for `am instrument`.
 
-    Note we never pass androidx.benchmark.dryRunMode.enable: dry-run mode forces
-    outputEnable to false (Arguments.kt), so it writes no benchmarkData.json at all
-    and cannot verify that retrieval works. For a fast check use one iteration with
-    compilation disabled instead -- that still produces real output.
+    Deliberately not offered here:
+
+    - androidx.benchmark.dryRunMode.enable would cut the run to one iteration, but it
+      also forces outputEnable to false (Arguments.kt), so no benchmarkData.json is
+      written at all -- a dry run cannot verify that retrieval works.
+    - androidx.benchmark.iterations only feeds the *micro*benchmark path
+      (BenchmarkStateLegacy, MicrobenchmarkPhase). Macrobenchmark takes its iteration
+      count from the test source and ignores the argument, so skipping AOT compilation
+      is the only way to shorten a run while still producing results.
     """
-    args = []
-    if iterations is not None:
-        args += ["androidx.benchmark.iterations", str(iterations)]
-    if skip_compilation:
-        args += ["androidx.benchmark.compilation.enabled", "false"]
-    return " ".join(f"-e {key} {value}" for key, value in zip(args[::2], args[1::2]))
+    if not skip_compilation:
+        return ""
+    return "-e androidx.benchmark.compilation.enabled false"
 
 
-def run_benchmark(device, iterations, skip_compilation, timeout):
+def run_benchmark(device, skip_compilation, timeout):
     """Starts the instrumentation detached and waits for it to finish."""
     # Leading rm is belt and braces -- Outputs also clears its dir on startup. Separated by
     # `;` so a missing dir on a fresh device does not stop the mkdir.
@@ -215,7 +223,7 @@ def run_benchmark(device, iterations, skip_compilation, timeout):
     stdout_file = f"{SHELL_SCRATCH_DIR}/instrumentation.txt"
     exit_code_file = f"{SHELL_SCRATCH_DIR}/exitcode"
     instrumentation = (
-        f"am instrument -w -r {instrumentation_args(iterations, skip_compilation)} "
+        f"am instrument -w -r {instrumentation_args(skip_compilation)} "
         f"{TEST_PACKAGE}/{TEST_RUNNER}"
     )
     # Detached, because executeShellCommand is documented to time out on long-running
@@ -293,7 +301,6 @@ def main():
     parser.add_argument("--test-app", type=Path, help="macrobenchmark instrumentation APK")
     parser.add_argument("--device-name", default=DEFAULT_DEVICE, help="device id or regex")
     parser.add_argument("--region", default="us-west-1")
-    parser.add_argument("--iterations", type=int, help="override the benchmark's iteration count")
     parser.add_argument(
         "--skip-compilation",
         action="store_true",
@@ -338,7 +345,7 @@ def main():
         device.install(test_app_reference)
         device.disable_animations()
 
-        exit_code, _ = run_benchmark(device, args.iterations, args.skip_compilation, args.timeout)
+        exit_code, _ = run_benchmark(device, args.skip_compilation, args.timeout)
         results = pull_results(device, args.out_dir)
     finally:
         device.close()

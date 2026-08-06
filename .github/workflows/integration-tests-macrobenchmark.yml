@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: 'smoke = 1 iteration without AOT compilation (fast, validates the plumbing); full = the benchmark as declared'
+        description: 'smoke = skip AOT compilation (faster, validates the plumbing); full = the benchmark as declared'
         type: choice
         options:
           - smoke
@@ -85,7 +85,7 @@ jobs:
         if: env.SAUCE_USERNAME != null
         run: |
           if [ "$MODE" = "smoke" ]; then
-            mode_args=(--iterations 1 --skip-compilation)
+            mode_args=(--skip-compilation)
           else
             mode_args=()
           fi
