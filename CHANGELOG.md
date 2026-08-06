@@ -1,11 +1,5 @@
 # Changelog
 
-## Unreleased
-
-### Features
-
-- Add a systrace section to `SentryAndroid.init` for startup profiling ([#5901](https://github.com/getsentry/sentry-java/pull/5901))
-
 ## 8.52.0
 
 ### Fixes
