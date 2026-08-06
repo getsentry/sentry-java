@@ -75,7 +75,7 @@ jobs:
 
       - name: Install Sentry CLI
         if: ${{ !cancelled() && env.SAUCE_USERNAME != null }}
-        run: curl -sL https://sentry.io/get-cli/ | bash
+        uses: getsentry/action-setup-cli@70d7e587b84c2e78cf4d37cd33d7b74fb3729c1b # v1
 
       - name: Upload Replay Snapshots to Sentry
         # Skip on PRs from forks, which don't have access to the upload secret
