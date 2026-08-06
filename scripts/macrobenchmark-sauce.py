@@ -34,6 +34,7 @@ Requires SAUCE_USERNAME and SAUCE_ACCESS_KEY in the environment.
 import argparse
 import json
 import os
+import re
 import sys
 import time
 from pathlib import Path
@@ -53,7 +54,10 @@ DEVICE_OUTPUT_DIR = f"/sdcard/Android/media/{TEST_PACKAGE}"
 # Shell-owned scratch space for the instrumentation's own stdout and exit code.
 SHELL_SCRATCH_DIR = "/data/local/tmp/macrobenchmark"
 
-DEFAULT_DEVICE = "Google_Pixel_9_Pro_XL_15_real.*"
+# Matched as a regex against descriptor ids and names. Kept loose on purpose: Real Device
+# Access descriptors are not the ids used in .sauce/*.yml, which carry an OS version and a
+# region suffix (Google_Pixel_9_Pro_XL_15_real_sjc1).
+DEFAULT_DEVICE = "Google_Pixel_9_Pro_XL"
 
 
 class SauceError(Exception):
@@ -79,14 +83,14 @@ class RealDeviceSession:
 
     # --- entitlement probe -------------------------------------------------
 
-    def probe(self, device_name):
-        """Confirms the account can reach the API, and that the device exists."""
-        response = requests.get(
-            f"{self.rda}/devices",
-            params={"deviceId": device_name},
-            auth=self.auth,
-            timeout=60,
-        )
+    def device_catalog(self):
+        """Returns the full device catalog, confirming the account can reach the API.
+
+        Deliberately unfiltered: the endpoint's own deviceId filter gives no way to tell
+        "this account has no devices" apart from "your pattern matched nothing", and the
+        descriptors here are not the ids saucectl uses (no region suffix).
+        """
+        response = requests.get(f"{self.rda}/devices", auth=self.auth, timeout=60)
         if response.status_code in (401, 403):
             raise SauceError(
                 "Real Device Access API rejected these credentials "
@@ -97,7 +101,7 @@ class RealDeviceSession:
             raise SauceError(
                 f"GET /devices returned {response.status_code}: {response.text[:500]}"
             )
-        return [d for d in response.json() if d.get("os") == "ANDROID"]
+        return response.json()
 
     # --- app storage -------------------------------------------------------
 
@@ -118,6 +122,8 @@ class RealDeviceSession:
     # --- session lifecycle -------------------------------------------------
 
     def open(self, device_name, duration="PT1H"):
+        # device_name is a concrete descriptor id resolved from the catalog, not a pattern,
+        # so we do not depend on the server's regex semantics.
         body = {
             "device": {"deviceName": device_name, "os": "android"},
             "configuration": {"sessionDuration": duration},
@@ -276,6 +282,39 @@ def pull_results(device, out_dir):
     return pulled
 
 
+def android_devices(catalog):
+    return [d for d in catalog if str(d.get("os", "")).upper() == "ANDROID"]
+
+
+def matching_devices(catalog, pattern):
+    """Android descriptors whose id or human-readable name matches `pattern`."""
+    regex = re.compile(pattern, re.IGNORECASE)
+    return [
+        d
+        for d in android_devices(catalog)
+        if regex.search(d.get("id", "")) or regex.search(d.get("name", ""))
+    ]
+
+
+def describe_catalog(catalog, pattern):
+    android = android_devices(catalog)
+    lines = [
+        f"Real Device Access API reachable: {len(catalog)} device(s) in the catalog, "
+        f"{len(android)} Android."
+    ]
+    matches = matching_devices(catalog, pattern)
+    lines.append(f"{len(matches)} match {pattern!r}: {[d['id'] for d in matches[:10]]}")
+    if not matches:
+        # Print the catalog so a naming mismatch is diagnosable from one run: RDA
+        # descriptors have no region suffix, unlike the ids in .sauce/*.yml.
+        lines.append("Available Android devices:")
+        lines += [
+            f"  {d.get('id')}  ({d.get('name')}, {d.get('os')} {d.get('osVersion')})"
+            for d in sorted(android, key=lambda d: d.get("id", ""))
+        ]
+    return "\n".join(lines)
+
+
 def print_summary(benchmark_data):
     data = json.loads(benchmark_data.read_text())
     context = data["context"]
@@ -323,16 +362,20 @@ def main():
     device = RealDeviceSession(args.region, username, access_key)
 
     try:
-        matches = device.probe(args.device_name)
+        catalog = device.device_catalog()
     except SauceError as error:
         sys.exit(f"Real Device Access API probe failed: {error}")
 
-    print(f"Real Device Access API reachable; {len(matches)} Android device(s) match "
-          f"{args.device_name!r}: {[d['id'] for d in matches[:5]]}")
-    if args.probe_only:
-        return
+    print(describe_catalog(catalog, args.device_name))
+    matches = matching_devices(catalog, args.device_name)
+    # Checked before --probe-only returns, so the probe fails loudly on a device name that
+    # matches nothing rather than passing and letting the real run discover it.
     if not matches:
         sys.exit(f"No Android device matches {args.device_name!r}")
+    device_id = matches[0]["id"]
+    print(f"Using device {device_id}")
+    if args.probe_only:
+        return
     if not args.app or not args.test_app:
         sys.exit("--app and --test-app are required unless --probe-only is given")
 
@@ -340,7 +383,7 @@ def main():
     test_app_reference = device.upload_app(args.test_app)
 
     try:
-        device.open(args.device_name)
+        device.open(device_id)
         device.install(app_reference)
         device.install(test_app_reference)
         device.disable_animations()
