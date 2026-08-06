@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Performance
+
+- Defer starting Session Replay off the `Sentry.init` critical path to reduce app start time ([#5904](https://github.com/getsentry/sentry-java/pull/5904))
+
 ### Fixes
 
 - Clear contexts when calling `Scope.clear()` ([#5902](https://github.com/getsentry/sentry-java/pull/5902))
