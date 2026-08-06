@@ -5,6 +5,7 @@ import android.app.Application;
 import android.content.Context;
 import android.os.Process;
 import android.os.SystemClock;
+import android.os.Trace;
 import io.sentry.ILogger;
 import io.sentry.IScopes;
 import io.sentry.ISentryLifecycleToken;
@@ -96,6 +97,7 @@ public final class SentryAndroid {
       @NotNull ILogger logger,
       @NotNull Sentry.OptionsConfiguration<SentryAndroidOptions> configuration) {
     try (final @NotNull ISentryLifecycleToken ignored = staticLock.acquire()) {
+      Trace.beginSection("SentryAndroid.init");
       Sentry.init(
           new SentryAndroidOptionsContainer(),
           options -> {
@@ -138,6 +140,7 @@ public final class SentryAndroid {
                 isReplayAvailable,
                 isDistributionAvailable);
 
+            Trace.beginSection("SentryAndroid.init.configure");
             try {
               configuration.configure(options);
             } catch (Throwable t) {
@@ -148,6 +151,8 @@ public final class SentryAndroid {
                       SentryLevel.ERROR,
                       "Error in the 'OptionsConfiguration.configure' callback.",
                       t);
+            } finally {
+              Trace.endSection();
             }
 
             // if SentryPerformanceProvider was disabled or removed,
@@ -219,6 +224,8 @@ public final class SentryAndroid {
       logger.log(SentryLevel.FATAL, "Fatal error during SentryAndroid.init(...)", e);
 
       throw new RuntimeException("Failed to initialize Sentry's SDK", e);
+    } finally {
+      Trace.endSection();
     }
   }
 
