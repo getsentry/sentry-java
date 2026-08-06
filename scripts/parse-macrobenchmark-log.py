@@ -19,14 +19,33 @@ from pathlib import Path
 CHUNK_RE = re.compile(r"SentryBenchmarkData\s*:\s*\[(\d+)/(\d+)\](.*)$")
 
 
+def log_messages(log_file):
+    """Yields the message text of every log entry.
+
+    Sauce hands back device.log as JSON lines -- {"tag", "message", "level", ...} -- which
+    means the payload arrives with its quotes escaped, so it has to be decoded rather than
+    regexed out of the raw line. Plain-text lines are passed through unchanged so the same
+    parser works on `adb logcat` output from a local run.
+    """
+    # Sauce device logs occasionally carry undecodable bytes; don't die on them.
+    for line in log_file.read_text(errors="replace").splitlines():
+        line = line.strip()
+        if line.startswith("{"):
+            try:
+                yield json.loads(line).get("message", "")
+                continue
+            except json.JSONDecodeError:
+                pass
+        yield line
+
+
 def collect_chunks(log_files):
     """Returns the chunk texts keyed by index, plus the expected total."""
     chunks = {}
     total = None
     for log_file in log_files:
-        # Sauce device logs occasionally carry undecodable bytes; don't die on them.
-        for line in log_file.read_text(errors="replace").splitlines():
-            match = CHUNK_RE.search(line)
+        for message in log_messages(log_file):
+            match = CHUNK_RE.search(message)
             if not match:
                 continue
             index, chunk_total, text = int(match.group(1)), int(match.group(2)), match.group(3)

@@ -70,6 +70,9 @@ jobs:
       - name: Recover benchmark results from the device log
         if: always() && env.SAUCE_USERNAME != null
         run: |
+          # Without pipefail the step passes on `tee`'s exit code, so a failed recovery
+          # would report success while silently producing no results.
+          set -o pipefail
           python3 scripts/parse-macrobenchmark-log.py ./artifacts \
             --json-out ./artifacts/benchmarkData.json | tee -a "$GITHUB_STEP_SUMMARY"
 
