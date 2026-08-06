@@ -30,7 +30,6 @@ import io.sentry.android.core.SentryAndroidOptions;
 import io.sentry.android.core.internal.util.FirstDrawDoneListener;
 import io.sentry.protocol.SentryId;
 import io.sentry.util.AutoClosableReentrantLock;
-import io.sentry.util.LazyEvaluator;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -70,14 +69,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
       new AutoClosableReentrantLock();
 
   private @NotNull AppStartType appStartType = AppStartType.UNKNOWN;
-  private final LazyEvaluator<Boolean> appLaunchedInForeground =
-      new LazyEvaluator<>(
-          new LazyEvaluator.Evaluator<Boolean>() {
-            @Override
-            public @NotNull Boolean evaluate() {
-              return ContextUtils.isForegroundImportance();
-            }
-          });
+  private @Nullable volatile Boolean appLaunchedInForeground;
   private volatile long firstIdle = -1;
 
   private final @NotNull TimeSpan appStartSpan;
@@ -239,12 +231,12 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   }
 
   public boolean isAppLaunchedInForeground() {
-    return appLaunchedInForeground.getValue();
+    return Boolean.TRUE.equals(appLaunchedInForeground);
   }
 
   @VisibleForTesting
   public void setAppLaunchedInForeground(final boolean appLaunchedInForeground) {
-    this.appLaunchedInForeground.setValue(appLaunchedInForeground);
+    this.appLaunchedInForeground = appLaunchedInForeground;
   }
 
   public void setHeadlessAppStartListener(final @Nullable HeadlessAppStartListener listener) {
@@ -318,8 +310,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   }
 
   public boolean shouldSendStartMeasurements(final boolean ignoreForegroundCheck) {
-    return shouldSendStartMeasurements
-        && (ignoreForegroundCheck || appLaunchedInForeground.getValue());
+    return shouldSendStartMeasurements && (ignoreForegroundCheck || isAppLaunchedInForeground());
   }
 
   public boolean shouldSendStartMeasurements() {
@@ -349,7 +340,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
       final @NotNull SentryAndroidOptions options) {
     // If the app start type was never determined or app wasn't launched in foreground,
     // the app start is considered invalid
-    if (appStartType != AppStartType.UNKNOWN && appLaunchedInForeground.getValue()) {
+    if (appStartType != AppStartType.UNKNOWN && isAppLaunchedInForeground()) {
       if (options.isEnablePerformanceV2()) {
         // Only started when sdk version is >= N
         final @NotNull TimeSpan appStartSpan = getAppStartTimeSpan();
@@ -412,7 +403,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     }
     appStartContinuousProfiler = null;
     appStartSamplingDecision = null;
-    appLaunchedInForeground.resetValue();
+    appLaunchedInForeground = null;
     isCallbackRegistered = false;
     shouldSendStartMeasurements = true;
     firstDrawDone.set(false);
@@ -510,7 +501,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
       return;
     }
     isCallbackRegistered = true;
-    appLaunchedInForeground.resetValue();
+    appLaunchedInForeground = null;
     application.registerActivityLifecycleCallbacks(instance);
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
@@ -529,7 +520,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
               } else {
                 appStartType = AppStartType.WARM;
               }
-              appLaunchedInForeground.setValue(isForegroundStartReason(info.getReason()));
+              appLaunchedInForeground = isForegroundStartReason(info.getReason());
             }
           }
         } catch (RuntimeException ignored) {
@@ -542,6 +533,10 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
           Log.w("AppStartMetrics", ignored); // no logger instance here, so we just Log
         }
       }
+    }
+    // Fallback, if no matching ApplicationStartInfo is available
+    if (appLaunchedInForeground == null) {
+      appLaunchedInForeground = ContextUtils.isForegroundImportance();
     }
 
     if (appStartType == AppStartType.UNKNOWN || headlessAppStartListener != null) {
@@ -591,7 +586,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
         return;
       }
 
-      appLaunchedInForeground.setValue(false);
+      appLaunchedInForeground = false;
 
       // Headless starts have no Activity signal for the pre-API 35 warm/cold heuristic.
       // If ApplicationStartInfo did not resolve the type, classify the process start as cold.
@@ -677,7 +672,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
       // An active extension explicitly keeps the launch alive: resetting the span here would make
       // the extended vital measure from the activity while the eager app.start transaction stays
       // anchored at process start.
-      if ((!appLaunchedInForeground.getValue()
+      if ((!isAppLaunchedInForeground()
               || durationSinceAppStartMillis > TimeUnit.MINUTES.toMillis(1))
           && !appStartExtension.isActive()) {
         appStartType = AppStartType.WARM;
@@ -698,7 +693,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
         }
       }
     }
-    appLaunchedInForeground.setValue(true);
+    appLaunchedInForeground = true;
   }
 
   @Override
@@ -744,7 +739,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     // as the next onActivityCreated will treat it as a new warm app start
     if (remainingActivities == 0 && !activity.isChangingConfigurations()) {
       appStartType = AppStartType.WARM;
-      appLaunchedInForeground.setValue(true);
+      appLaunchedInForeground = true;
       shouldSendStartMeasurements = true;
       firstDrawDone.set(false);
     }

@@ -5,8 +5,15 @@
 ### Fixes
 
 - Preserve custom `Throwable` identities when R8 optimizes Android apps ([#5881](https://github.com/getsentry/sentry-java/pull/5881))
+
+## 8.52.0
+
+### Fixes
+
+- Restore the interrupt flag when cached envelope processing is interrupted between files ([#5884](https://github.com/getsentry/sentry-java/pull/5884))
+- Reduce false-positive SDK crash attribution for host app SQLite cursor crashes ([#5883](https://github.com/getsentry/sentry-java/pull/5883))
+- Prevent inflated cold app start when the OS spawns the process in the background (e.g. FCM push) on API 35+ ([#5841](https://github.com/getsentry/sentry-java/pull/5841), [#5880](https://github.com/getsentry/sentry-java/pull/5880))
 - Preserve single-sample ANR profile chunks so profiles remain available on ANR events ([#5872](https://github.com/getsentry/sentry-java/pull/5872))
-- Prevent inflated cold app start when the OS spawns the process in the background (e.g. FCM push) on API 35+ ([#5841](https://github.com/getsentry/sentry-java/pull/5841))
 - Avoid a CPU busy-loop when recording discarded log or metric envelopes under rate limiting ([#5835](https://github.com/getsentry/sentry-java/pull/5835))
   - `ClientReportRecorder` now reads the item count from the envelope item header instead of deserializing the payload, which under sustained rate limiting could pin CPU cores while repeatedly throwing exceptions
 - Report tasks handed to a no-op `ISentryExecutorService` as cancelled ([#5874](https://github.com/getsentry/sentry-java/pull/5874))
@@ -14,11 +21,20 @@
 
 ### Performance
 
+- Defer use of reflection by `SentryFrameMetricsCollector` during `Sentry.init` ([#5886](https://github.com/getsentry/sentry-java/pull/5886))
+- Avoid waiting up to `shutdownTimeoutMillis` when closing the SDK with a pending transaction timeout or session-end task ([#5851](https://github.com/getsentry/sentry-java/pull/5851))
 - Use `RGB_565` instead of `ARGB_8888` for screenshot and replay capture bitmaps, halving per-frame memory usage ([#5821](https://github.com/getsentry/sentry-java/pull/5821))
 - Remove an unused lock from `SentryPerformanceProvider`, which was allocated on every cold start in `ContentProvider.onCreate` without ever being acquired ([#5871](https://github.com/getsentry/sentry-java/pull/5871))
-- Parse the app start profiling config with only the deserializer it needs instead of building a full `JsonSerializer` and `SentryOptions`, cutting 188 of 221 allocations on the main thread before `Application.onCreate` ([#5867](https://github.com/getsentry/sentry-java/pull/5867))
+- Reduce main-thread allocations when parsing the app start profiling config ([#5867](https://github.com/getsentry/sentry-java/pull/5867))
 - Batch and coalesce scope-persistence disk writes to reduce startup cost ([#5791](https://github.com/getsentry/sentry-java/pull/5791))
   - Scope mutations are now coalesced (latest value per field) and breadcrumbs are appended in batches behind a single fsync, instead of one synchronous disk write per mutation.
+- Reduce the number of SDK threads: the `HostnameCache` worker thread now times out while idle instead of staying alive for the whole process lifetime ([#5817](https://github.com/getsentry/sentry-java/pull/5817))
+
+### Dependencies
+
+- Bump Native SDK from v0.16.0 to v0.16.1 ([#5879](https://github.com/getsentry/sentry-java/pull/5879))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0161)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.16.0...0.16.1)
 
 ## 8.51.0
 
