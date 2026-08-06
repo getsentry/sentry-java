@@ -948,6 +948,18 @@ class SentryOptionsTest {
   }
 
   @Test
+  fun `default shake controller logs a warning`() {
+    val logger = mock<ILogger>()
+    val options =
+      SentryOptions.empty().apply {
+        setLogger(logger)
+        isDebug = true
+      }
+    options.feedbackOptions.shakeController.enable()
+    verify(logger).log(eq(SentryLevel.WARNING), eq("Shake to report is only supported on Android."))
+  }
+
+  @Test
   fun `autoTransactionDeadlineTimeoutMillis option defaults to 30000`() {
     val options = SentryOptions.empty()
     assertEquals(30000L, options.deadlineTimeout)

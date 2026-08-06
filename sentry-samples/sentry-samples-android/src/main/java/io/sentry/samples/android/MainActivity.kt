@@ -805,21 +805,23 @@ fun UserFeedbackScreen() {
       }
     }
 
-    // Enable shake-to-show for a specific form instance
+    // Toggle shake-to-show at runtime using the global Sentry.feedback() API
     item(span = { GridItemSpan(maxLineSpan) }) {
+      var shakeEnabled by remember { mutableStateOf(Sentry.feedback().isFeedbackOnShakeEnabled) }
       Button(
         modifier = Modifier,
         onClick = {
-          SentryUserFeedbackForm.Builder(activity)
-            .configurator { options ->
-              options.isUseShakeGesture = true
-              options.formTitle = "Shake Feedback"
-            }
-            .create()
-          Toast.makeText(activity, "Shake your device to open the form!", Toast.LENGTH_SHORT).show()
+          if (shakeEnabled) {
+            Sentry.feedback().disableFeedbackOnShake()
+          } else {
+            Sentry.feedback().enableFeedbackOnShake()
+            Toast.makeText(activity, "Shake your device to open the form!", Toast.LENGTH_SHORT)
+              .show()
+          }
+          shakeEnabled = Sentry.feedback().isFeedbackOnShakeEnabled
         },
       ) {
-        Text(text = "Enable Shake-to-Show")
+        Text(text = if (shakeEnabled) "Disable Shake-to-Show" else "Enable Shake-to-Show")
       }
     }
   }

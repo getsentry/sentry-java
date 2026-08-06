@@ -293,9 +293,12 @@ public abstract class io/sentry/android/core/EnvelopeFileObserverIntegration : i
 	public final fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
 }
 
-public final class io/sentry/android/core/FeedbackShakeIntegration : android/app/Application$ActivityLifecycleCallbacks, io/sentry/Integration, java/io/Closeable {
+public final class io/sentry/android/core/FeedbackShakeIntegration : android/app/Application$ActivityLifecycleCallbacks, io/sentry/Integration, io/sentry/SentryFeedbackOptions$IShakeController, java/io/Closeable {
 	public fun <init> (Landroid/app/Application;)V
 	public fun close ()V
+	public fun disable ()V
+	public fun enable ()V
+	public fun isEnabled ()Z
 	public fun onActivityCreated (Landroid/app/Activity;Landroid/os/Bundle;)V
 	public fun onActivityDestroyed (Landroid/app/Activity;)V
 	public fun onActivityPaused (Landroid/app/Activity;)V
@@ -303,6 +306,7 @@ public final class io/sentry/android/core/FeedbackShakeIntegration : android/app
 	public fun onActivitySaveInstanceState (Landroid/app/Activity;Landroid/os/Bundle;)V
 	public fun onActivityStarted (Landroid/app/Activity;)V
 	public fun onActivityStopped (Landroid/app/Activity;)V
+	public fun pauseDetection (Z)V
 	public fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
 }
 
@@ -574,6 +578,7 @@ public abstract interface class io/sentry/android/core/SentryUserFeedbackDialog$
 public class io/sentry/android/core/SentryUserFeedbackForm : android/app/AlertDialog {
 	protected fun onCreate (Landroid/os/Bundle;)V
 	protected fun onStart ()V
+	protected fun onStop ()V
 	public fun setCancelable (Z)V
 	public fun setOnDismissListener (Landroid/content/DialogInterface$OnDismissListener;)V
 	public fun show ()V

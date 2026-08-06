@@ -4,6 +4,7 @@ import android.app.Activity
 import android.app.Application
 import android.content.Context
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.common.truth.Truth.assertThat
 import io.sentry.Scopes
 import io.sentry.SentryFeedbackOptions
 import io.sentry.test.DeferredExecutorService
@@ -16,6 +17,7 @@ import org.mockito.kotlin.atLeastOnce
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
@@ -164,5 +166,123 @@ class FeedbackShakeIntegrationTest {
   fun `close without register does not crash`() {
     val sut = fixture.getSut()
     sut.close()
+  }
+
+  @Test
+  fun `register sets itself as shake controller even when useShakeGesture is disabled`() {
+    val sut = fixture.getSut(useShakeGesture = false)
+    sut.register(fixture.scopes, fixture.options)
+
+    assertThat(fixture.options.feedbackOptions.shakeController).isSameInstanceAs(sut)
+    assertThat(sut.isEnabled).isFalse()
+  }
+
+  @Test
+  fun `enable after register starts shake detection at runtime`() {
+    CurrentActivityHolder.getInstance().setActivity(fixture.activity)
+    whenever(fixture.activity.getSystemService(any())).thenReturn(null)
+
+    val sut = fixture.getSut(useShakeGesture = false)
+    sut.register(fixture.scopes, fixture.options)
+    verify(fixture.application, never()).registerActivityLifecycleCallbacks(any())
+
+    sut.enable()
+
+    assertThat(sut.isEnabled).isTrue()
+    verify(fixture.application).registerActivityLifecycleCallbacks(any())
+    // Hooks into the already-resumed activity
+    verify(fixture.activity).getSystemService(eq(Context.SENSOR_SERVICE))
+  }
+
+  @Test
+  fun `enable is idempotent`() {
+    val sut = fixture.getSut(useShakeGesture = false)
+    sut.register(fixture.scopes, fixture.options)
+
+    sut.enable()
+    sut.enable()
+
+    verify(fixture.application, times(1)).registerActivityLifecycleCallbacks(any())
+  }
+
+  @Test
+  fun `disable stops shake detection at runtime`() {
+    val sut = fixture.getSut(useShakeGesture = true)
+    sut.register(fixture.scopes, fixture.options)
+
+    sut.disable()
+
+    assertThat(sut.isEnabled).isFalse()
+    verify(fixture.application).unregisterActivityLifecycleCallbacks(any())
+  }
+
+  @Test
+  fun `disable is idempotent`() {
+    val sut = fixture.getSut(useShakeGesture = true)
+    sut.register(fixture.scopes, fixture.options)
+
+    sut.disable()
+    sut.disable()
+
+    verify(fixture.application, times(1)).unregisterActivityLifecycleCallbacks(any())
+  }
+
+  @Test
+  fun `disable when never enabled does not unregister callbacks`() {
+    val sut = fixture.getSut(useShakeGesture = false)
+    sut.register(fixture.scopes, fixture.options)
+
+    sut.disable()
+
+    verify(fixture.application, never()).unregisterActivityLifecycleCallbacks(any())
+  }
+
+  @Test
+  fun `enable before register is a no-op`() {
+    val sut = fixture.getSut(useShakeGesture = false)
+
+    sut.enable()
+
+    assertThat(sut.isEnabled).isFalse()
+    verify(fixture.application, never()).registerActivityLifecycleCallbacks(any())
+  }
+
+  @Test
+  fun `re-enable after disable re-arms shake detection`() {
+    val deferredExecutor = DeferredExecutorService()
+    fixture.options.executorService = deferredExecutor
+    whenever(fixture.application.getSystemService(any())).thenReturn(null)
+
+    val sut = fixture.getSut(useShakeGesture = true)
+    sut.register(fixture.scopes, fixture.options)
+    sut.disable()
+    sut.enable()
+
+    deferredExecutor.runAll()
+
+    assertThat(sut.isEnabled).isTrue()
+    verify(fixture.application, atLeastOnce()).getSystemService(eq(Context.SENSOR_SERVICE))
+  }
+
+  @Test
+  fun `close disables shake detection`() {
+    val sut = fixture.getSut(useShakeGesture = true)
+    sut.register(fixture.scopes, fixture.options)
+
+    sut.close()
+
+    assertThat(sut.isEnabled).isFalse()
+  }
+
+  @Test
+  fun `pauseDetection toggles the paused state`() {
+    val sut = fixture.getSut(useShakeGesture = true)
+    sut.register(fixture.scopes, fixture.options)
+
+    sut.pauseDetection(true)
+    sut.pauseDetection(false)
+    // Pausing only gates shake handling; detection machinery stays untouched
+    verify(fixture.application, never()).unregisterActivityLifecycleCallbacks(any())
+    assertThat(sut.isEnabled).isTrue()
   }
 }

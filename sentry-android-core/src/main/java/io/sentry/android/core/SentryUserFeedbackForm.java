@@ -60,9 +60,14 @@ public class SentryUserFeedbackForm extends AlertDialog {
   }
 
   private void maybeStartShakeDetection(final @NotNull Context context) {
+    // Only an explicit per-form opt-in starts a detector for this form. When shake is
+    // configured globally (via the option or the runtime toggle), FeedbackShakeIntegration
+    // already shows a form on shake and this form defers to it.
     final @NotNull SentryFeedbackOptions globalFeedbackOptions =
         Sentry.getCurrentScopes().getOptions().getFeedbackOptions();
-    if (!resolvedFeedbackOptions.isUseShakeGesture() || globalFeedbackOptions.isUseShakeGesture()) {
+    if (!resolvedFeedbackOptions.isUseShakeGesture()
+        || globalFeedbackOptions.isUseShakeGesture()
+        || globalFeedbackOptions.getShakeController().isEnabled()) {
       return;
     }
     final @Nullable Activity activity = getActivity(context);
@@ -95,6 +100,15 @@ public class SentryUserFeedbackForm extends AlertDialog {
   private @NotNull SentryShakeDetector.Listener shakeListener(
       final @NotNull WeakReference<Activity> activityRef) {
     return () -> {
+      // If shake-to-report got enabled globally in the meantime, FeedbackShakeIntegration
+      // reacts to the same shake — don't show a second dialog for it.
+      if (Sentry.getCurrentScopes()
+          .getOptions()
+          .getFeedbackOptions()
+          .getShakeController()
+          .isEnabled()) {
+        return;
+      }
       final @Nullable Activity active = activityRef.get();
       if (active != null && !active.isFinishing() && !active.isDestroyed()) {
         active.runOnUiThread(
@@ -284,13 +298,27 @@ public class SentryUserFeedbackForm extends AlertDialog {
             final @Nullable SentryFeedbackOptions.SentryFeedbackCallback onSubmitSuccess =
                 feedbackOptions.getOnSubmitSuccess();
             if (onSubmitSuccess != null) {
-              onSubmitSuccess.call(feedback);
+              try {
+                onSubmitSuccess.call(feedback);
+              } catch (Throwable e) {
+                Sentry.getCurrentScopes()
+                    .getOptions()
+                    .getLogger()
+                    .log(SentryLevel.ERROR, "onSubmitSuccess callback threw an exception.", e);
+              }
             }
           } else {
             final @Nullable SentryFeedbackOptions.SentryFeedbackCallback onSubmitError =
                 feedbackOptions.getOnSubmitError();
             if (onSubmitError != null) {
-              onSubmitError.call(feedback);
+              try {
+                onSubmitError.call(feedback);
+              } catch (Throwable e) {
+                Sentry.getCurrentScopes()
+                    .getOptions()
+                    .getLogger()
+                    .log(SentryLevel.ERROR, "onSubmitError callback threw an exception.", e);
+              }
             }
           }
           cancel();
@@ -310,7 +338,15 @@ public class SentryUserFeedbackForm extends AlertDialog {
     if (onFormClose != null) {
       super.setOnDismissListener(
           dialog -> {
-            onFormClose.run();
+            // User-provided callback: a crash in it must not take down the app or skip the
+            // cleanup and the user's own dismiss listener below
+            try {
+              onFormClose.run();
+            } catch (Throwable e) {
+              options
+                  .getLogger()
+                  .log(SentryLevel.ERROR, "onFormClose callback threw an exception.", e);
+            }
             currentReplayId = null;
             if (delegate != null) {
               delegate.onDismiss(dialog);
@@ -332,12 +368,42 @@ public class SentryUserFeedbackForm extends AlertDialog {
 
     final @NotNull SentryOptions options = Sentry.getCurrentScopes().getOptions();
     final @NotNull SentryFeedbackOptions feedbackOptions = options.getFeedbackOptions();
+    // Pause shake-to-report while this form is visible, so a shake can't stack a second
+    // form on top of it
+    feedbackOptions.getShakeController().pauseDetection(true);
     final @Nullable Runnable onFormOpen = feedbackOptions.getOnFormOpen();
     if (onFormOpen != null) {
-      onFormOpen.run();
+      try {
+        onFormOpen.run();
+      } catch (Throwable e) {
+        options.getLogger().log(SentryLevel.ERROR, "onFormOpen callback threw an exception.", e);
+      }
     }
     options.getReplayController().captureReplay(false);
     currentReplayId = options.getReplayController().getReplayId();
+  }
+
+  @Override
+  protected void onStop() {
+    super.onStop();
+    Sentry.getCurrentScopes()
+        .getOptions()
+        .getFeedbackOptions()
+        .getShakeController()
+        .pauseDetection(false);
+  }
+
+  @Override
+  public void onDetachedFromWindow() {
+    super.onDetachedFromWindow();
+    // Safety net for teardown without a dismiss (e.g. the host activity is destroyed while the
+    // form is still showing): onStop never fires then, but the window is still detached —
+    // without this, shake-to-report would stay paused forever.
+    Sentry.getCurrentScopes()
+        .getOptions()
+        .getFeedbackOptions()
+        .getShakeController()
+        .pauseDetection(false);
   }
 
   @Override
