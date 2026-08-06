@@ -606,6 +606,20 @@ class CombinedContextsViewTest {
   }
 
   @Test
+  fun `clear clears default context only`() {
+    val combined = fixture.getSut()
+    fixture.current.put("test", "current")
+    fixture.isolation.put("test", "isolation")
+    fixture.global.put("test", "global")
+
+    combined.clear()
+
+    assertEquals("current", fixture.current.get("test"))
+    assertNull(fixture.isolation.get("test"))
+    assertEquals("global", fixture.global.get("test"))
+  }
+
+  @Test
   fun `set null value on context does not cause exception`() {
     val combined = fixture.getSut()
     combined.set("k", null)
