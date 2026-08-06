@@ -29,15 +29,14 @@ suites:
     devices:
       - id: Google_Pixel_9_Pro_XL_15_real_sjc1 # Google Pixel 9 Pro XL - api 35 (15) - high end
 
-# Grab both the benchmark JSON (if Sauce collects additional test output) and the device log, so
-# we can see which path actually yields timeToInitialDisplay. Macrobenchmark also logs guard
-# failures (UNLOCKED, DEBUGGABLE, ...) here, which is the expected first-run signal on cloud
-# hardware — see the module README.
+# The device log carries the actual results: Sauce only returns assets it produces itself, so it
+# cannot pull Macrobenchmark's `<pkg>-benchmarkData.json` off the device. SentryStartupBenchmark
+# echoes that JSON into logcat instead, and scripts/parse-macrobenchmark-log.py reassembles it.
+# The log also holds Macrobenchmark's device guard warnings (unlocked clocks, low battery, ...).
 artifacts:
   download:
     when: always
     match:
       - junit.xml
       - "*.log"
-      - "*-benchmarkData.json"
     directory: ./artifacts/

@@ -1,10 +1,31 @@
-name: 'Integration Tests - Macrobenchmark (POC)'
-# Proof-of-concept: run the sentry-uitest-android-macrobenchmark cold-start benchmark on Sauce
-# Labs real devices. Manual trigger only — this is not yet a per-PR gate. The goal is to learn
-# (a) whether Macrobenchmark runs on non-rooted cloud devices and which device guards fire, and
-# (b) whether timeToInitialDisplay can be retrieved from Sauce artifacts. See the module README.
+name: 'Integration Tests - Macrobenchmark'
+# Runs the sentry-uitest-android-macrobenchmark cold-start benchmark on a Sauce Labs real
+# device via the Real Device Access API, and pulls benchmarkData.json plus the per-iteration
+# perfetto traces off the device. saucectl cannot do the pulling: it only downloads assets
+# Sauce hosts for a job, never files from the device. See scripts/macrobenchmark-sauce.py.
+#
+# Manual trigger only -- this reports numbers, it does not gate PRs. Cloud devices have
+# unlocked CPU clocks, so run-to-run spread is far wider than most SDK-init changes.
 on:
   workflow_dispatch:
+    inputs:
+      mode:
+        description: 'smoke = 1 iteration without AOT compilation (fast, validates the plumbing); full = the benchmark as declared'
+        type: choice
+        options:
+          - smoke
+          - full
+        default: smoke
+      device-name:
+        description: 'Sauce device id or regex'
+        required: false
+        default: 'Google_Pixel_9_Pro_XL_15_real.*'
+  # Temporary scaffolding: workflow_dispatch cannot target a workflow that does not exist on
+  # the default branch yet, so trigger on pushes to this branch while we validate the flow.
+  # Remove before merge.
+  push:
+    branches:
+      - no/macrobenchmark-sauce-results
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -18,43 +39,67 @@ jobs:
     # we copy the secret to the env variable in order to access it in the workflow
     env:
       SAUCE_USERNAME: ${{ secrets.SAUCE_USERNAME }}
+      SAUCE_ACCESS_KEY: ${{ secrets.SAUCE_ACCESS_KEY }}
       GRADLE_ENCRYPTION_KEY: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
+      # Defaults apply to the push trigger too, where `inputs` is empty.
+      MODE: ${{ inputs.mode || 'smoke' }}
+      DEVICE_NAME: ${{ inputs.device-name || 'Google_Pixel_9_Pro_XL_15_real.*' }}
 
     steps:
       - name: Git checkout
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: 'recursive'
 
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.10.5'
+
+      - name: Install Python dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install -r requirements.txt
+
       - name: 'Set up Java: 17'
-        uses: actions/setup-java@1bcf9fb12cf4aa7d266a90ae39939e61372fe520 # v5
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
         with:
           distribution: 'temurin'
           java-version: '17'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6.2.0
+        uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
+
+      # Probe first: the Real Device Access API is an open-beta add-on, so a missing
+      # entitlement should fail in seconds rather than after a full Gradle build.
+      - name: Check Real Device Access API entitlement
+        if: env.SAUCE_USERNAME != null
+        run: python3 scripts/macrobenchmark-sauce.py --probe-only --device-name "$DEVICE_NAME"
 
       - name: Assemble target app and Macrobenchmark apk
         if: env.SAUCE_USERNAME != null
         run: ./gradlew :sentry-samples:sentry-samples-android:assembleRelease :sentry-android-integration-tests:sentry-uitest-android-macrobenchmark:assembleBenchmark
 
-      - name: Run Macrobenchmark in SauceLab
-        uses: saucelabs/saucectl-run-action@bc81720eb01738d9c664b07fe42621bd0014283f # pin@v3
+      - name: Run Macrobenchmark on Sauce Labs
         if: env.SAUCE_USERNAME != null
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        with:
-          sauce-username: ${{ secrets.SAUCE_USERNAME }}
-          sauce-access-key: ${{ secrets.SAUCE_ACCESS_KEY }}
-          config-file: .sauce/sentry-uitest-android-macrobenchmark.yml
+        run: |
+          if [ "$MODE" = "smoke" ]; then
+            mode_args=(--iterations 1 --skip-compilation)
+          else
+            mode_args=()
+          fi
+          python3 scripts/macrobenchmark-sauce.py \
+            --app sentry-samples/sentry-samples-android/build/outputs/apk/release/sentry-samples-android-release.apk \
+            --test-app sentry-android-integration-tests/sentry-uitest-android-macrobenchmark/build/outputs/apk/benchmark/sentry-uitest-android-macrobenchmark-benchmark.apk \
+            --device-name "$DEVICE_NAME" \
+            --out-dir ./artifacts/macrobenchmark \
+            "${mode_args[@]}"
 
-      - name: Upload Sauce artifacts
+      - name: Upload benchmark results
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: always()
         with:
-          name: macrobenchmark-artifacts
+          name: macrobenchmark-results
           path: ./artifacts/
           if-no-files-found: warn
