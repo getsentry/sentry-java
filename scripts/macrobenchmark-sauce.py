@@ -54,12 +54,9 @@ DEVICE_OUTPUT_DIR = f"/sdcard/Android/media/{TEST_PACKAGE}"
 # Shell-owned scratch space for the instrumentation's own stdout and exit code.
 SHELL_SCRATCH_DIR = "/data/local/tmp/macrobenchmark"
 
-# Matched as a regex against descriptor ids and names. Kept loose on purpose: Real Device
-# Access descriptors are not the ids used in .sauce/*.yml, which carry an OS version and a
-# region suffix (Google_Pixel_9_Pro_XL_15_real_sjc1).
-DEFAULT_DEVICE = "Google_Pixel_9_Pro_XL"
-
-ALL_REGIONS = ("us-west-1", "eu-central-1", "us-east-4")
+# Matched as a regex against /devices/status descriptors, which are the same ids used in
+# .sauce/*.yml. Same high-end device the existing benchmark suite uses.
+DEFAULT_DEVICE = "Google_Pixel_9_Pro_XL_15_real_sjc1"
 
 
 class SauceError(Exception):
@@ -85,14 +82,14 @@ class RealDeviceSession:
 
     # --- entitlement probe -------------------------------------------------
 
-    def device_catalog(self):
-        """Returns the full device catalog, confirming the account can reach the API.
+    def devices(self):
+        """Returns the device fleet with per-device availability.
 
-        Deliberately unfiltered: the endpoint's own deviceId filter gives no way to tell
-        "this account has no devices" apart from "your pattern matched nothing", and the
-        descriptors here are not the ids saucectl uses (no region suffix).
+        Uses /devices/status rather than /devices: on a public-cloud account the catalog
+        endpoint answers 200 with an empty list, while this one returns the whole fleet,
+        and its descriptors are the same ids used in .sauce/*.yml.
         """
-        response = requests.get(f"{self.rda}/devices", auth=self.auth, timeout=60)
+        response = requests.get(f"{self.rda}/devices/status", auth=self.auth, timeout=60)
         if response.status_code in (401, 403):
             raise SauceError(
                 "Real Device Access API rejected these credentials "
@@ -101,16 +98,9 @@ class RealDeviceSession:
             )
         if response.status_code != 200:
             raise SauceError(
-                f"GET /devices returned {response.status_code}: {response.text[:500]}"
+                f"GET /devices/status returned {response.status_code}: {response.text[:500]}"
             )
-        return response.json()
-
-    def device_statuses(self):
-        """Device availability, which is a separate endpoint from the catalog."""
-        response = requests.get(f"{self.rda}/devices/status", auth=self.auth, timeout=60)
-        if response.status_code != 200:
-            return f"HTTP {response.status_code}: {response.text[:200]}"
-        return response.json()
+        return response.json()["devices"]
 
     # --- app storage -------------------------------------------------------
 
@@ -291,36 +281,30 @@ def pull_results(device, out_dir):
     return pulled
 
 
-def android_devices(catalog):
-    return [d for d in catalog if str(d.get("os", "")).upper() == "ANDROID"]
+def matching_devices(devices, pattern):
+    """Devices whose descriptor matches `pattern`, free ones first.
 
-
-def matching_devices(catalog, pattern):
-    """Android descriptors whose id or human-readable name matches `pattern`."""
+    /devices/status carries no OS field, so the pattern is the only OS filter -- which is
+    fine, since the caller names a concrete device.
+    """
     regex = re.compile(pattern, re.IGNORECASE)
-    return [
-        d
-        for d in android_devices(catalog)
-        if regex.search(d.get("id", "")) or regex.search(d.get("name", ""))
-    ]
+    matches = [d for d in devices if regex.search(d.get("descriptor", ""))]
+    return sorted(matches, key=lambda d: d.get("state") != "AVAILABLE")
 
 
-def describe_catalog(catalog, pattern):
-    android = android_devices(catalog)
+def describe_devices(devices, pattern):
+    available = [d for d in devices if d.get("state") == "AVAILABLE"]
+    matches = matching_devices(devices, pattern)
     lines = [
-        f"Real Device Access API reachable: {len(catalog)} device(s) in the catalog, "
-        f"{len(android)} Android."
+        f"Real Device Access API reachable: {len(devices)} device(s), "
+        f"{len(available)} available.",
+        f"{len(matches)} match {pattern!r}: "
+        + ", ".join(f"{d['descriptor']} ({d.get('state')})" for d in matches[:10]),
     ]
-    matches = matching_devices(catalog, pattern)
-    lines.append(f"{len(matches)} match {pattern!r}: {[d['id'] for d in matches[:10]]}")
     if not matches:
-        # Print the catalog so a naming mismatch is diagnosable from one run: RDA
-        # descriptors have no region suffix, unlike the ids in .sauce/*.yml.
-        lines.append("Available Android devices:")
-        lines += [
-            f"  {d.get('id')}  ({d.get('name')}, {d.get('os')} {d.get('osVersion')})"
-            for d in sorted(android, key=lambda d: d.get("id", ""))
-        ]
+        # Print the fleet so a naming mismatch is diagnosable from one run.
+        lines.append("Available devices:")
+        lines += [f"  {d['descriptor']}" for d in sorted(available, key=lambda d: d["descriptor"])]
     return "\n".join(lines)
 
 
@@ -371,33 +355,18 @@ def main():
     device = RealDeviceSession(args.region, username, access_key)
 
     try:
-        catalog = device.device_catalog()
+        fleet = device.devices()
     except SauceError as error:
         sys.exit(f"Real Device Access API probe failed: {error}")
 
-    print(describe_catalog(catalog, args.device_name))
-
-    # An empty catalog answers 200 just like a populated one, so distinguish "no devices
-    # entitled to this API" from "wrong region" before concluding the API is unusable.
-    if not catalog:
-        statuses = device.device_statuses()
-        count = len(statuses) if isinstance(statuses, list) else statuses
-        print(f"{args.region}: /devices/status -> {count}")
-        for region in ALL_REGIONS:
-            if region == args.region:
-                continue
-            other = RealDeviceSession(region, username, access_key)
-            try:
-                print(f"{region}: {len(other.device_catalog())} device(s) in the catalog")
-            except SauceError as error:
-                print(f"{region}: {error}")
-    matches = matching_devices(catalog, args.device_name)
+    print(describe_devices(fleet, args.device_name))
+    matches = matching_devices(fleet, args.device_name)
     # Checked before --probe-only returns, so the probe fails loudly on a device name that
     # matches nothing rather than passing and letting the real run discover it.
     if not matches:
-        sys.exit(f"No Android device matches {args.device_name!r}")
-    device_id = matches[0]["id"]
-    print(f"Using device {device_id}")
+        sys.exit(f"No device matches {args.device_name!r}")
+    device_id = matches[0]["descriptor"]
+    print(f"Using device {device_id} ({matches[0].get('state')})")
     if args.probe_only:
         return
     if not args.app or not args.test_app:

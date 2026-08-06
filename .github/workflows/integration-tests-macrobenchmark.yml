@@ -19,7 +19,7 @@ on:
       device-name:
         description: 'Sauce device id or regex'
         required: false
-        default: 'Google_Pixel_9_Pro_XL'
+        default: 'Google_Pixel_9_Pro_XL_15_real_sjc1'
   # Temporary scaffolding: workflow_dispatch cannot target a workflow that does not exist on
   # the default branch yet, so trigger on pushes to this branch while we validate the flow.
   # Remove before merge.
@@ -43,7 +43,7 @@ jobs:
       GRADLE_ENCRYPTION_KEY: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
       # Defaults apply to the push trigger too, where `inputs` is empty.
       MODE: ${{ inputs.mode || 'smoke' }}
-      DEVICE_NAME: ${{ inputs.device-name || 'Google_Pixel_9_Pro_XL' }}
+      DEVICE_NAME: ${{ inputs.device-name || 'Google_Pixel_9_Pro_XL_15_real_sjc1' }}
 
     steps:
       - name: Git checkout
