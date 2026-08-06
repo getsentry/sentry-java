@@ -59,6 +59,8 @@ SHELL_SCRATCH_DIR = "/data/local/tmp/macrobenchmark"
 # region suffix (Google_Pixel_9_Pro_XL_15_real_sjc1).
 DEFAULT_DEVICE = "Google_Pixel_9_Pro_XL"
 
+ALL_REGIONS = ("us-west-1", "eu-central-1", "us-east-4")
+
 
 class SauceError(Exception):
     pass
@@ -101,6 +103,13 @@ class RealDeviceSession:
             raise SauceError(
                 f"GET /devices returned {response.status_code}: {response.text[:500]}"
             )
+        return response.json()
+
+    def device_statuses(self):
+        """Device availability, which is a separate endpoint from the catalog."""
+        response = requests.get(f"{self.rda}/devices/status", auth=self.auth, timeout=60)
+        if response.status_code != 200:
+            return f"HTTP {response.status_code}: {response.text[:200]}"
         return response.json()
 
     # --- app storage -------------------------------------------------------
@@ -367,6 +376,21 @@ def main():
         sys.exit(f"Real Device Access API probe failed: {error}")
 
     print(describe_catalog(catalog, args.device_name))
+
+    # An empty catalog answers 200 just like a populated one, so distinguish "no devices
+    # entitled to this API" from "wrong region" before concluding the API is unusable.
+    if not catalog:
+        statuses = device.device_statuses()
+        count = len(statuses) if isinstance(statuses, list) else statuses
+        print(f"{args.region}: /devices/status -> {count}")
+        for region in ALL_REGIONS:
+            if region == args.region:
+                continue
+            other = RealDeviceSession(region, username, access_key)
+            try:
+                print(f"{region}: {len(other.device_catalog())} device(s) in the catalog")
+            except SauceError as error:
+                print(f"{region}: {error}")
     matches = matching_devices(catalog, args.device_name)
     # Checked before --probe-only returns, so the probe fails loudly on a device name that
     # matches nothing rather than passing and letting the real run discover it.
