@@ -3,6 +3,8 @@ package io.sentry.android.core;
 import android.annotation.SuppressLint;
 import android.app.Application;
 import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.Process;
 import android.os.SystemClock;
 import android.os.Trace;
@@ -203,7 +205,11 @@ public final class SentryAndroid {
             scopes.startSession();
           }
         }
-        scopes.getOptions().getReplayController().start();
+        // Defer starting replay off the SDK init critical path so it doesn't add to app start
+        // time. start() is idempotent, so the later start() from the app lifecycle integration
+        // (once the first activity is in foreground) is a no-op if this one ran first.
+        new Handler(Looper.getMainLooper())
+            .post(() -> scopes.getOptions().getReplayController().start());
       }
     } catch (IllegalAccessException e) {
       logger.log(SentryLevel.FATAL, "Fatal error during SentryAndroid.init(...)", e);
