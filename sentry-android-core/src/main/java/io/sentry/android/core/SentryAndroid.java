@@ -140,7 +140,6 @@ public final class SentryAndroid {
                 isReplayAvailable,
                 isDistributionAvailable);
 
-            Trace.beginSection("SentryAndroid.init.configure");
             try {
               configuration.configure(options);
             } catch (Throwable t) {
@@ -151,8 +150,6 @@ public final class SentryAndroid {
                       SentryLevel.ERROR,
                       "Error in the 'OptionsConfiguration.configure' callback.",
                       t);
-            } finally {
-              Trace.endSection();
             }
 
             // if SentryPerformanceProvider was disabled or removed,
