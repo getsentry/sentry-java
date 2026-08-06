@@ -96,8 +96,10 @@ public final class SentryAndroid {
       @NotNull final Context context,
       @NotNull ILogger logger,
       @NotNull Sentry.OptionsConfiguration<SentryAndroidOptions> configuration) {
+    // Started before acquiring the lock so it stays balanced with the endSection() in the finally
+    // even if acquire() throws.
+    Trace.beginSection("SentryAndroid.init");
     try (final @NotNull ISentryLifecycleToken ignored = staticLock.acquire()) {
-      Trace.beginSection("SentryAndroid.init");
       Sentry.init(
           new SentryAndroidOptionsContainer(),
           options -> {
