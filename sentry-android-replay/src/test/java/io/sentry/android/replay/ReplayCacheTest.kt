@@ -4,6 +4,8 @@ import android.graphics.Bitmap
 import android.graphics.Bitmap.CompressFormat.JPEG
 import android.graphics.Bitmap.Config.ARGB_8888
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
 import io.sentry.DateUtils
 import io.sentry.SentryOptions
 import io.sentry.SentryReplayEvent.ReplayType
@@ -24,7 +26,9 @@ import io.sentry.rrweb.RRWebInteractionEvent.InteractionType.TouchEnd
 import io.sentry.rrweb.RRWebInteractionEvent.InteractionType.TouchStart
 import java.io.File
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit.SECONDS
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.concurrent.thread
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -59,6 +63,10 @@ class ReplayCacheTest {
   fun `set up`() {
     ReplayShadowMediaCodec.framesToEncode = 5
     ReplayShadowMediaCodec.throwOnStart = false
+    ReplayShadowMediaCodec.neverSignalEos = false
+    ReplayShadowMediaCodec.blockOnDequeue = null
+    ReplayShadowMediaCodec.blockedOnDequeue = CountDownLatch(1)
+    ReplayShadowMediaCodec.released = false
     ShadowBitmapFactory.setAllowInvalidImageData(true)
   }
 
@@ -653,5 +661,89 @@ class ReplayCacheTest {
 
     // No crash is success
     assertNull(error.get())
+  }
+
+  @Test
+  fun `createVideoOf returns when the encoder never signals end of stream`() {
+    ReplayShadowMediaCodec.neverSignalEos = true
+    val replayCache = fixture.getSut(tmpDir)
+
+    val bitmap = Bitmap.createBitmap(1, 1, ARGB_8888)
+    replayCache.addFrame(bitmap, 1)
+
+    val done = CountDownLatch(1)
+    val error = AtomicReference<Throwable?>()
+    val encoder =
+      thread(isDaemon = true) {
+        try {
+          replayCache.createVideoOf(1000L, 0L, 0, 100, 200, 1, 20_000)
+        } catch (t: Throwable) {
+          error.set(t)
+        } finally {
+          done.countDown()
+        }
+      }
+
+    assertWithMessage("createVideoOf did not return, the drain loop is spinning")
+      .that(done.await(30, SECONDS))
+      .isTrue()
+    encoder.join(SECONDS.toMillis(10))
+    assertThat(error.get()).isNull()
+  }
+
+  @Test
+  fun `close does not block when the encoder is wedged, and still marks the cache closed`() {
+    val wedge = CountDownLatch(1)
+    ReplayShadowMediaCodec.blockOnDequeue = wedge
+    val replayCache = fixture.getSut(tmpDir)
+
+    val bitmap = Bitmap.createBitmap(1, 1, ARGB_8888)
+    replayCache.addFrame(bitmap, 1)
+
+    // parks inside MediaCodec while holding the encoder lock
+    val encoder =
+      thread(isDaemon = true) { replayCache.createVideoOf(1000L, 0L, 0, 100, 200, 1, 20_000) }
+    try {
+      assertWithMessage("the encoder never reached dequeueOutputBuffer")
+        .that(ReplayShadowMediaCodec.blockedOnDequeue.await(30, SECONDS))
+        .isTrue()
+
+      // on a separate thread so a regression fails the test instead of hanging the run
+      val closed = CountDownLatch(1)
+      thread(isDaemon = true) {
+        replayCache.close()
+        closed.countDown()
+      }
+      assertWithMessage("close() blocked on the wedged encoder")
+        .that(closed.await(30, SECONDS))
+        .isTrue()
+
+      // giving up on the lock still counts as closed, otherwise we'd keep persisting segments
+      replayCache.persistSegmentValues(SEGMENT_KEY_ID, "0")
+      assertThat(File(replayCache.replayCacheDir, ONGOING_SEGMENT).exists()).isFalse()
+
+      assertWithMessage("encoder should not be released when the lock times out")
+        .that(ReplayShadowMediaCodec.released)
+        .isFalse()
+    } finally {
+      wedge.countDown()
+      encoder.join(SECONDS.toMillis(10))
+    }
+  }
+
+  @Test
+  fun `close releases the encoder when the lock is available`() {
+    ReplayShadowMediaCodec.neverSignalEos = true
+    val replayCache = fixture.getSut(tmpDir)
+
+    val bitmap = Bitmap.createBitmap(1, 1, ARGB_8888)
+    replayCache.addFrame(bitmap, 1)
+
+    // createVideoOf bails out via the stall bound, but still releases the encoder
+    replayCache.createVideoOf(1000L, 0L, 0, 100, 200, 1, 20_000)
+
+    assertWithMessage("encoder should be released even when EOS was never signalled")
+      .that(ReplayShadowMediaCodec.released)
+      .isTrue()
   }
 }
