@@ -588,6 +588,10 @@ public final class Sentry {
                     options.findPersistingScopeObserver();
                 if (scopeCache != null) {
                   scopeCache.resetCache();
+                  final @Nullable String environment = globalScope.getEnvironment();
+                  if (environment != null) {
+                    scopeCache.setEnvironment(environment);
+                  }
                 }
               });
     } catch (Throwable e) {

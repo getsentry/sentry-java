@@ -682,24 +682,35 @@ class SentryClientTest {
   }
 
   @Test
-  fun `when event has environment, value from options not applied`() {
+  fun `when scope has environment, it takes precedence over options`() {
     val event = SentryEvent()
-    val expected = "original"
-    fixture.sentryOptions.environment = "not to be applied"
-    event.environment = expected
+    val scope = createScope()
+    scope.environment = "from-scope"
+    fixture.sentryOptions.environment = "from-options"
     val sut = fixture.getSut()
-    sut.captureEvent(event)
-    assertEquals(expected, event.environment)
+    sut.captureEvent(event, scope)
+    assertEquals("from-scope", event.environment)
   }
 
   @Test
-  fun `when event doesn't have environment, value from options applied`() {
+  fun `when event has environment, scope environment not applied`() {
     val event = SentryEvent()
-    val expected = "original"
-    fixture.sentryOptions.environment = expected
+    event.environment = "from-event"
+    val scope = createScope()
+    scope.environment = "from-scope"
     val sut = fixture.getSut()
-    sut.captureEvent(event)
-    assertEquals(expected, event.environment)
+    sut.captureEvent(event, scope)
+    assertEquals("from-event", event.environment)
+  }
+
+  @Test
+  fun `when scope has no environment, value from options applied`() {
+    val event = SentryEvent()
+    val scope = createScope()
+    fixture.sentryOptions.environment = "from-options"
+    val sut = fixture.getSut()
+    sut.captureEvent(event, scope)
+    assertEquals("from-options", event.environment)
   }
 
   @Test
@@ -1005,6 +1016,16 @@ class SentryClientTest {
         },
         any<Hint>(),
       )
+  }
+
+  @Test
+  fun `when captureCheckIn, scope environment takes precedence over options`() {
+    val scope = Scope(fixture.sentryOptions).apply { environment = "scope-environment" }
+    val sut = fixture.getSut { it.environment = "options-environment" }
+
+    sut.captureCheckIn(checkIn, scope, null)
+
+    assertEquals("scope-environment", checkIn.environment)
   }
 
   @Test
@@ -3796,6 +3817,21 @@ class SentryClientTest {
   }
 
   @Test
+  fun `when captureReplayEvent, scope environment overrides options`() {
+    var capturedEnvironment: String? = null
+    fixture.sentryOptions.environment = "from-options"
+    fixture.sentryOptions.setBeforeSendReplay { replay: SentryReplayEvent, _: Hint ->
+      capturedEnvironment = replay.environment
+      replay
+    }
+    val scope = Scope(fixture.sentryOptions).apply { environment = "from-scope" }
+
+    fixture.getSut().captureReplayEvent(SentryReplayEvent(), scope, Hint())
+
+    assertEquals("from-scope", capturedEnvironment)
+  }
+
+  @Test
   fun `when beforeSendReplay returns null, event is dropped`() {
     fixture.sentryOptions.setBeforeSendReplay { replay: SentryReplayEvent, _: Hint -> null }
 
@@ -3894,6 +3930,7 @@ class SentryClientTest {
     val scope = createScope()
     val scopeReplayId = SentryId()
     scope.contexts.setTrace(SpanContext("test"))
+    scope.environment = "scope-environment"
     scope.setContexts("context-key", "context-value")
     scope.screen = "screen"
     scope.replayId = scopeReplayId
@@ -3903,6 +3940,7 @@ class SentryClientTest {
     assertNotNull(sentFeedback)
     // User, tags and contexts are applied to the feedback
     assertEquals(scope.user, sentEvent!!.user)
+    assertEquals("scope-environment", sentEvent!!.environment)
     assertEquals("tags", sentEvent!!.tags!!["tags"])
     assertEquals(
       scope.contexts.trace!!.traceId.toString(),
