@@ -106,6 +106,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
     return storeInternal(envelope, hint);
   }
 
+  @SuppressWarnings("JavaUtilDate")
   private boolean storeInternal(final @NotNull SentryEnvelope envelope, final @NotNull Hint hint) {
     Objects.requireNonNull(envelope, "Envelope is required.");
 
@@ -118,8 +119,22 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
     final File previousSessionFile = getPreviousSessionFile(directoryPath);
 
     if (HintUtils.hasType(hint, SessionEnd.class)) {
-      if (!currentSessionFile.delete()) {
-        options.getLogger().log(WARNING, "Current envelope doesn't exist.");
+      try (final @NotNull ISentryLifecycleToken ignored = sessionLock.acquire()) {
+        final @Nullable Session endingSession = readSessionFromEnvelope(envelope);
+        final @Nullable Session currentSession = readSessionFromDisk(currentSessionFile);
+        final boolean preservePendingSession =
+            endingSession != null
+                && currentSession != null
+                && currentSession.isPendingUnhandled()
+                && endingSession.getSessionId() != null
+                && currentSession.getSessionId() != null
+                && !Objects.equals(endingSession.getSessionId(), currentSession.getSessionId())
+                && endingSession.getStarted() != null
+                && currentSession.getStarted() != null
+                && currentSession.getStarted().after(endingSession.getStarted());
+        if (!preservePendingSession && !currentSessionFile.delete()) {
+          options.getLogger().log(WARNING, "Current envelope doesn't exist.");
+        }
       }
     }
 
@@ -129,8 +144,22 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
     }
 
     if (HintUtils.hasType(hint, SessionStart.class)) {
-      movePreviousSession(currentSessionFile, previousSessionFile);
-      updateCurrentSession(currentSessionFile, envelope);
+      try (final @NotNull ISentryLifecycleToken ignored = sessionLock.acquire()) {
+        final @Nullable Session startingSession = readSessionFromEnvelope(envelope);
+        if (startingSession != null) {
+          final @Nullable Session currentSession = readSessionFromDisk(currentSessionFile);
+          if (currentSession != null && hasSameSessionId(currentSession, startingSession)) {
+            if (!isNewerPendingOrErrorSnapshot(currentSession, startingSession)) {
+              writeSessionToDisk(currentSessionFile, startingSession);
+            }
+          } else {
+            movePreviousSession(currentSessionFile, previousSessionFile);
+            writeSessionToDisk(currentSessionFile, startingSession);
+          }
+        } else {
+          movePreviousSession(currentSessionFile, previousSessionFile);
+        }
+      }
 
       boolean crashedLastRun = false;
       final File crashMarkerFile = new File(options.getCacheDirPath(), NATIVE_CRASH_MARKER_FILE);
@@ -274,8 +303,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
     }
   }
 
-  private void updateCurrentSession(
-      final @NotNull File currentSessionFile, final @NotNull SentryEnvelope envelope) {
+  private @Nullable Session readSessionFromEnvelope(final @NotNull SentryEnvelope envelope) {
     final Iterable<SentryEnvelopeItem> items = envelope.getItems();
 
     // we know that an envelope with a SessionStart hint has a single item inside
@@ -295,7 +323,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
                     "Item of type %s returned null by the parser.",
                     item.getHeader().getType());
           } else {
-            writeSessionToDisk(currentSessionFile, session);
+            return session;
           }
         } catch (Throwable e) {
           options.getLogger().log(ERROR, "Item failed to process.", e);
@@ -309,10 +337,35 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
                 item.getHeader().getType());
       }
     } else {
-      options
-          .getLogger()
-          .log(INFO, "Current envelope %s is empty", currentSessionFile.getAbsolutePath());
+      options.getLogger().log(INFO, "Current envelope is empty.");
     }
+    return null;
+  }
+
+  private @Nullable Session readSessionFromDisk(final @NotNull File sessionFile) {
+    if (!sessionFile.exists()) {
+      return null;
+    }
+    try (final Reader reader =
+        new BufferedReader(new InputStreamReader(new FileInputStream(sessionFile), UTF_8))) {
+      return serializer.getValue().deserialize(reader, Session.class);
+    } catch (Throwable e) {
+      options.getLogger().log(ERROR, "Failed to read session from disk.", e);
+      return null;
+    }
+  }
+
+  private boolean isNewerPendingOrErrorSnapshot(
+      final @NotNull Session currentSession, final @NotNull Session startingSession) {
+    return (currentSession.isPendingUnhandled() && !startingSession.isPendingUnhandled())
+        || currentSession.errorCount() > startingSession.errorCount();
+  }
+
+  private boolean hasSameSessionId(
+      final @NotNull Session firstSession, final @NotNull Session secondSession) {
+    return firstSession.getSessionId() != null
+        && secondSession.getSessionId() != null
+        && Objects.equals(firstSession.getSessionId(), secondSession.getSessionId());
   }
 
   private boolean writeEnvelopeToDisk(
@@ -349,6 +402,13 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
       options
           .getLogger()
           .log(ERROR, e, "Error writing Session to offline storage: %s", session.getSessionId());
+    }
+  }
+
+  @ApiStatus.Internal
+  public void persistCurrentSession(final @NotNull Session session) {
+    try (final @NotNull ISentryLifecycleToken ignored = sessionLock.acquire()) {
+      writeSessionToDisk(getCurrentSessionFile(directory.getAbsolutePath()), session);
     }
   }
 

@@ -2497,6 +2497,10 @@ public abstract interface class io/sentry/Scope$IWithPropagationContext {
 	public abstract fun accept (Lio/sentry/PropagationContext;)V
 }
 
+public abstract interface class io/sentry/Scope$IWithSession {
+	public abstract fun accept (Lio/sentry/Session;)V
+}
+
 public abstract interface class io/sentry/Scope$IWithTransaction {
 	public abstract fun accept (Lio/sentry/ITransaction;)V
 }
@@ -4286,9 +4290,12 @@ public final class io/sentry/Session : io/sentry/JsonSerializable, io/sentry/Jso
 	public fun getTimestamp ()Ljava/util/Date;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun getUserAgent ()Ljava/lang/String;
+	public fun isPendingUnhandled ()Z
 	public fun isTerminated ()Z
+	public fun markPendingUnhandled ()Z
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setInitAsTrue ()V
+	public fun setPendingUnhandled (Z)V
 	public fun setUnknown (Ljava/util/Map;)V
 	public fun update (Lio/sentry/Session$State;Ljava/lang/String;Z)Z
 	public fun update (Lio/sentry/Session$State;Ljava/lang/String;ZLjava/lang/String;)Z
@@ -4309,6 +4316,7 @@ public final class io/sentry/Session$JsonKeys {
 	public static final field ERRORS Ljava/lang/String;
 	public static final field INIT Ljava/lang/String;
 	public static final field IP_ADDRESS Ljava/lang/String;
+	public static final field PENDING_UNHANDLED Ljava/lang/String;
 	public static final field RELEASE Ljava/lang/String;
 	public static final field SEQ Ljava/lang/String;
 	public static final field SID Ljava/lang/String;
@@ -4324,6 +4332,7 @@ public final class io/sentry/Session$State : java/lang/Enum {
 	public static final field Crashed Lio/sentry/Session$State;
 	public static final field Exited Lio/sentry/Session$State;
 	public static final field Ok Lio/sentry/Session$State;
+	public static final field Unhandled Lio/sentry/Session$State;
 	public static fun valueOf (Ljava/lang/String;)Lio/sentry/Session$State;
 	public static fun values ()[Lio/sentry/Session$State;
 }
@@ -4857,6 +4866,7 @@ public class io/sentry/cache/EnvelopeCache : io/sentry/cache/IEnvelopeCache {
 	public static fun getPreviousSessionFile (Ljava/lang/String;)Ljava/io/File;
 	public fun iterator ()Ljava/util/Iterator;
 	public fun movePreviousSession (Ljava/io/File;Ljava/io/File;)V
+	public fun persistCurrentSession (Lio/sentry/Session;)V
 	public fun store (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)V
 	public fun storeEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Z
 	public fun waitPreviousSessionFlush ()Z
