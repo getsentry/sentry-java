@@ -102,9 +102,12 @@ class SentryStartupBenchmark {
 
     private fun findBenchmarkData(): File? {
       val context = InstrumentationRegistry.getInstrumentation().targetContext
-      @Suppress("DEPRECATION")
-      val candidateDirs = context.externalMediaDirs.toList() + context.externalCacheDir
-      return candidateDirs.filterNotNull().firstNotNullOfOrNull { dir ->
+      // Deprecated since API 30 in favour of MediaStore, which hands back content URIs rather
+      // than the filesystem path androidx.benchmark writes its File to -- so there is nothing to
+      // migrate to. Suppressed on this call alone; externalCacheDir below is not deprecated.
+      @Suppress("DEPRECATION") val mediaDirs = context.externalMediaDirs.toList()
+      // Outputs uses the media dir from API 29 on, and externalCacheDir on API 24-28.
+      return (mediaDirs + context.externalCacheDir).filterNotNull().firstNotNullOfOrNull { dir ->
         dir.listFiles()?.firstOrNull { it.name.endsWith(BENCHMARK_DATA_SUFFIX) }
       }
     }
