@@ -1,5 +1,6 @@
 package io.sentry
 
+import com.google.common.truth.Truth.assertThat
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.TransactionNameSource
 import io.sentry.protocol.User
@@ -29,6 +30,11 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
 class SentryTracerTest {
+  private class MutableDateProvider(var currentTimeMillis: Long = 0) : SentryDateProvider {
+    override fun now(): SentryDate =
+      SentryNanotimeDate(currentTimeMillis, DateUtils.millisToNanos(currentTimeMillis))
+  }
+
   private class Fixture {
     val options = SentryOptions()
     val scopes: Scopes
@@ -926,19 +932,85 @@ class SentryTracerTest {
   }
 
   @Test
-  fun `when deadline is reached transaction is finished`() {
-    // when a transaction with a deadline timeout is created
-    // and the tx and child keep on running
-    val transaction = fixture.getSut(deadlineTimeout = 20)
+  fun `when deadline is reached on time transaction and children are captured as deadline exceeded`() {
+    val dateProvider = MutableDateProvider()
+    val transaction =
+      fixture.getSut(
+        optionsConfiguration = { it.setDateProvider(dateProvider) },
+        deadlineTimeout = 10_000,
+      )
     val span = transaction.startChild("op")
 
-    // and the deadline is exceed
-    await.untilFalse(transaction.isDeadlineTimerRunning)
+    dateProvider.currentTimeMillis = 10_000
+    transaction.deadlineTimeoutTask!!.run()
 
-    // then both tx + span should be force finished
-    assertEquals(transaction.isFinished, true)
-    assertEquals(SpanStatus.DEADLINE_EXCEEDED, transaction.status)
-    assertEquals(SpanStatus.DEADLINE_EXCEEDED, span.status)
+    assertThat(transaction.isFinished).isTrue()
+    assertThat(transaction.status).isEqualTo(SpanStatus.DEADLINE_EXCEEDED)
+    assertThat(span.isFinished).isTrue()
+    assertThat(span.status).isEqualTo(SpanStatus.DEADLINE_EXCEEDED)
+    verify(fixture.scopes)
+      .captureTransaction(
+        check { assertThat(it.status).isEqualTo(SpanStatus.DEADLINE_EXCEEDED) },
+        anyOrNull(),
+        anyOrNull(),
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `when deadline timer fires after device sleep transaction is dropped and timers are cancelled`() {
+    val dateProvider = MutableDateProvider()
+    val logger = mock<ILogger>()
+    val transaction =
+      fixture.getSut(
+        optionsConfiguration = {
+          it.setDateProvider(dateProvider)
+          it.setLogger(logger)
+          it.isDebug = true
+        },
+        idleTimeout = 60_000,
+        deadlineTimeout = 10_000,
+      )
+    transaction.startChild("op")
+    transaction.scheduleFinish()
+    fixture.scopes.configureScope { it.transaction = transaction }
+
+    dateProvider.currentTimeMillis = 30_000
+    transaction.deadlineTimeoutTask!!.run()
+    assertThat(transaction.isFinished).isTrue()
+    transaction.finish()
+
+    verify(fixture.scopes, never())
+      .captureTransaction(anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull())
+    verify(logger)
+      .log(
+        SentryLevel.DEBUG,
+        "Dropping transaction %s because the deadline timer fired too late",
+        "name",
+      )
+    assertThat(fixture.scopes.span).isNull()
+    assertThat(transaction.idleTimeoutTask).isNull()
+    assertThat(transaction.deadlineTimeoutTask).isNull()
+    assertThat(transaction.isFinishTimerRunning.get()).isFalse()
+    assertThat(transaction.isDeadlineTimerRunning.get()).isFalse()
+    assertThat(transaction.timer).isNull()
+  }
+
+  @Test
+  fun `when deadline timer fires at twice the deadline transaction is still captured`() {
+    val dateProvider = MutableDateProvider()
+    val transaction =
+      fixture.getSut(
+        optionsConfiguration = { it.setDateProvider(dateProvider) },
+        deadlineTimeout = 10_000,
+      )
+
+    dateProvider.currentTimeMillis = 20_000
+    transaction.deadlineTimeoutTask!!.run()
+
+    assertThat(transaction.isFinished).isTrue()
+    assertThat(transaction.status).isEqualTo(SpanStatus.DEADLINE_EXCEEDED)
+    verify(fixture.scopes).captureTransaction(any(), anyOrNull(), anyOrNull(), anyOrNull())
   }
 
   @Test
@@ -954,6 +1026,38 @@ class SentryTracerTest {
     assertEquals(transaction.isFinished, true)
     assertEquals(SpanStatus.OK, transaction.status)
     assertEquals(SpanStatus.OK, span.status)
+    verify(fixture.scopes).captureTransaction(any(), anyOrNull(), anyOrNull(), anyOrNull())
+  }
+
+  @Test
+  fun `when idle transaction without children reaches late deadline it is dropped once`() {
+    val dateProvider = MutableDateProvider()
+    val logger = mock<ILogger>()
+    val transaction =
+      fixture.getSut(
+        optionsConfiguration = {
+          it.setDateProvider(dateProvider)
+          it.setLogger(logger)
+          it.isDebug = true
+        },
+        idleTimeout = 60_000,
+        deadlineTimeout = 10_000,
+      )
+
+    dateProvider.currentTimeMillis = 30_000
+    transaction.deadlineTimeoutTask!!.run()
+
+    verify(fixture.scopes, never())
+      .captureTransaction(anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull())
+    verify(logger, times(1))
+      .log(
+        SentryLevel.DEBUG,
+        "Dropping transaction %s because the deadline timer fired too late",
+        "name",
+      )
+    assertThat(transaction.idleTimeoutTask).isNull()
+    assertThat(transaction.deadlineTimeoutTask).isNull()
+    assertThat(transaction.timer).isNull()
   }
 
   @Test

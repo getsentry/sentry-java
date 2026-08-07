@@ -142,6 +142,7 @@
 
 ### Fixes
 
+- Drop transactions whose deadline timer is delayed by device sleep ([#5755](https://github.com/getsentry/sentry-java/pull/5755))
 - Session Replay: Fix first recording segment missing for replays in `buffer` mode ([#5753](https://github.com/getsentry/sentry-java/pull/5753))
 - Session Replay: Fix error-to-replay linkage in `buffer` mode ([#5754](https://github.com/getsentry/sentry-java/pull/5754))
 - Prevent logs and metrics from remaining queued after a flush scheduling race ([#5756](https://github.com/getsentry/sentry-java/pull/5756))
