@@ -13,6 +13,17 @@ public class io/sentry/spring/boot4/SentryAutoConfiguration {
 	public fun <init> ()V
 }
 
+public class io/sentry/spring/boot4/SentryLog4j2AppenderAutoConfiguration {
+	public fun <init> ()V
+	public fun sentryLog4j2Initializer (Lio/sentry/spring/boot4/SentryProperties;)Lio/sentry/spring/boot4/SentryLog4j2Initializer;
+}
+
+public class io/sentry/spring/boot4/SentryLog4j2Initializer : org/springframework/context/event/GenericApplicationListener {
+	public fun <init> (Lio/sentry/spring/boot4/SentryProperties;)V
+	public fun onApplicationEvent (Lorg/springframework/context/ApplicationEvent;)V
+	public fun supportsEventType (Lorg/springframework/core/ResolvableType;)Z
+}
+
 public class io/sentry/spring/boot4/SentryLogbackAppenderAutoConfiguration {
 	public fun <init> ()V
 	public fun sentryLogbackInitializer (Lio/sentry/spring/boot4/SentryProperties;)Lio/sentry/spring/boot4/SentryLogbackInitializer;
