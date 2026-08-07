@@ -39,23 +39,14 @@ def log_messages(log_file):
         yield line
 
 
-def collect_chunks(log_files):
-    """Returns the chunk texts keyed by index, plus the expected total."""
-    chunks = {}
-    total = None
-    for log_file in log_files:
-        for message in log_messages(log_file):
-            match = CHUNK_RE.search(message)
-            if not match:
-                continue
-            index, chunk_total, text = int(match.group(1)), int(match.group(2)), match.group(3)
-            if total is not None and chunk_total != total:
-                sys.exit(
-                    f"Found chunks from more than one benchmark run "
-                    f"(totals {total} and {chunk_total}) in {log_file}"
-                )
-            total = chunk_total
-            chunks[index] = text
+def collect_chunks(log_file):
+    """Returns one log's chunk texts keyed by index, plus the expected total."""
+    chunks, total = {}, None
+    for message in log_messages(log_file):
+        match = CHUNK_RE.search(message)
+        if match:
+            index, total = int(match.group(1)), int(match.group(2))
+            chunks[index] = match.group(3)
     return chunks, total
 
 
@@ -86,25 +77,30 @@ def format_summary(data):
             "",
         ]
 
-    lines += ["| Benchmark | Metric | min | median | max | CoV | iterations |", "|---|---|--:|--:|--:|--:|--:|"]
+    table = [
+        "| Benchmark | Metric | min | median | max | CoV | iterations |",
+        "|---|---|--:|--:|--:|--:|--:|",
+    ]
+    details = []
     for benchmark in data["benchmarks"]:
+        name = f"{benchmark['className'].rsplit('.', 1)[-1]}.{benchmark['name']}"
         for metric, result in sorted(benchmark["metrics"].items()):
-            lines.append(
-                f"| `{benchmark['className'].rsplit('.', 1)[-1]}.{benchmark['name']}` "
-                f"| {metric} "
-                f"| {result['minimum']:.1f} "
-                f"| {result['median']:.1f} "
-                f"| {result['maximum']:.1f} "
-                f"| {result['coefficientOfVariation'] * 100:.1f}% "
-                f"| {len(result['runs'])} |"
+            table.append(
+                f"| `{name}` | {metric} "
+                f"| {result['minimum']:.1f} | {result['median']:.1f} | {result['maximum']:.1f} "
+                f"| {result['coefficientOfVariation'] * 100:.1f}% | {len(result['runs'])} |"
             )
-
-    for benchmark in data["benchmarks"]:
-        for metric, result in sorted(benchmark["metrics"].items()):
             runs = ", ".join(f"{run:.1f}" for run in result["runs"])
-            lines += ["", f"<details><summary>{metric} per iteration</summary>", "", runs, "", "</details>"]
+            details += [
+                "",
+                f"<details><summary>{metric} per iteration</summary>",
+                "",
+                runs,
+                "",
+                "</details>",
+            ]
 
-    return "\n".join(lines)
+    return "\n".join(lines + table + details)
 
 
 def main():
@@ -117,12 +113,22 @@ def main():
     if not log_files:
         sys.exit(f"No *.log files under {args.artifacts_dir}")
 
-    chunks, total = collect_chunks(log_files)
-    if total is None:
+    # Keyed by file so chunks from two devices can never be merged into one bogus document.
+    per_log = {log: collect_chunks(log) for log in log_files}
+    with_chunks = {log: result for log, (result, total) in per_log.items() if total}
+    if not with_chunks:
         sys.exit(
             "No SentryBenchmarkData chunks in the device log. The benchmark most likely "
             "failed before reporting — check junit.xml and the log for Macrobenchmark errors."
         )
+    if len(with_chunks) > 1:
+        sys.exit(
+            "Chunks from more than one run: "
+            + ", ".join(str(log) for log in with_chunks)
+            + ". This parser reports a single device."
+        )
+    log_file = next(iter(with_chunks))
+    chunks, total = per_log[log_file]
 
     data = json.loads(reassemble(chunks, total))
 
