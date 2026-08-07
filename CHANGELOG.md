@@ -33,10 +33,10 @@
        sentry.logging.enabled=true
        ```
        Automatic registration is disabled by default for now and will be enabled by default in the next major release.
-     - The appender is attached to the root logger by default. Configure one or more logger names with:
+     - The appender is attached to the root logger by default. To attach it to specific loggers instead, configure one or more non-overlapping logger names:
        ```properties
-       sentry.logging.loggers[0]=ROOT
-       sentry.logging.loggers[1]=com.example
+       sentry.logging.loggers[0]=com.example
+       sentry.logging.loggers[1]=org.example
        ```
      - Configure the minimum level for creating breadcrumbs. The default is `INFO`:
        ```properties
