@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+### Features
+
+- Add `LocalSentryScopes` to `sentry-compose`, allowing `SentryTraced` to trace against a custom `IScopes` instance instead of always defaulting to `Sentry.getCurrentScopes()` ([#5838](https://github.com/getsentry/sentry-java/pull/5838))
+  - Example usage:
+  ```kotlin
+  val scopes = Scopes(options)
+  CompositionLocalProvider(LocalSentryScopes provides scopes) {
+    // this uses custom scopes now
+    SentryTraced(tag = "custom") { Box {} }
+  }
+  ```
+
 ### Fixes
 
 - Clear contexts when calling `Scope.clear()` ([#5902](https://github.com/getsentry/sentry-java/pull/5902))

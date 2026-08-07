@@ -68,9 +68,11 @@ kotlin {
         implementation(libs.androidx.test.rules)
         implementation(libs.androidx.test.runner)
         implementation(libs.kotlin.test.junit)
+        implementation(libs.androidx.compose.foundation)
         implementation(libs.mockito.inline)
         implementation(libs.mockito.kotlin)
         implementation(libs.roboelectric)
+        implementation(projects.sentryTestSupport)
       }
     }
   }
