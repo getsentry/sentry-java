@@ -25,6 +25,12 @@ class DetachAttachTabsActivity : AppCompatActivity(R.layout.activity_detach_atta
         detach(tabB)
       }
     }
+    supportActionBar?.setDisplayHomeAsUpEnabled(true)
+  }
+
+  override fun onSupportNavigateUp(): Boolean {
+    onBackPressedDispatcher.onBackPressed()
+    return true
   }
 
   private fun showTab(index: Int) {

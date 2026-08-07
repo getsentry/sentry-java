@@ -6,9 +6,21 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.lifecycle.lifecycleScope
 import io.sentry.Sentry
 import kotlinx.coroutines.Dispatchers
@@ -28,6 +40,7 @@ class UiLoadActivity : ComponentActivity() {
 
   private var status by mutableStateOf("Running under the screen's auto ui.load transaction…")
 
+  @OptIn(ExperimentalMaterial3Api::class)
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
 
@@ -39,7 +52,26 @@ class UiLoadActivity : ComponentActivity() {
         }
     val heavy = intent.getBooleanExtra(EXTRA_HEAVY, false)
 
-    setContent { UiLoadScreen(status = status, onClose = ::finish) }
+    setContent {
+      MaterialTheme {
+        Scaffold(
+          topBar = {
+            TopAppBar(
+              title = { Text("UI Load") },
+              navigationIcon = {
+                IconButton(onClick = { onBackPressedDispatcher.onBackPressed() }) {
+                  Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                }
+              },
+            )
+          }
+        ) { innerPadding ->
+          Box(modifier = Modifier.padding(innerPadding)) {
+            UiLoadScreen(status = status, onClose = ::finish)
+          }
+        }
+      }
+    }
 
     // No Sentry.startTransaction(): the work runs under the auto ui.load:UiLoadActivity span.
     lifecycleScope.launch {
