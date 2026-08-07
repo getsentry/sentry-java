@@ -2,15 +2,6 @@ name: 'Integration Tests - Macrobenchmark'
 # Runs the sentry-uitest-android-macrobenchmark cold-start benchmark on a Sauce Labs real
 # device and recovers timeToInitialDisplay from the device log.
 #
-# Getting the numbers back is the awkward part. saucectl only downloads assets Sauce hosts
-# for a job (device.log, junit.xml, video.mp4, ...) and never reads the device filesystem,
-# so Macrobenchmark's benchmarkData.json cannot be fetched directly. The Real Device Access
-# API can pull device files, but POST /sessions accepts only private devices
-# (deviceClasses=[PRIVATE_DEVICE]) and we run on the public cloud. So the benchmark echoes
-# its own results into logcat, and scripts/parse-macrobenchmark-log.py reassembles them.
-#
-# Manual trigger only -- this reports numbers, it does not gate PRs. Cloud devices have
-# unlocked CPU clocks, so run-to-run spread is far wider than most SDK-init changes.
 on:
   workflow_dispatch:
   # Temporary scaffolding: workflow_dispatch cannot target a workflow that does not exist on
@@ -45,8 +36,6 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
-        with:
-          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
       - name: Assemble target app and Macrobenchmark apk
         if: env.SAUCE_USERNAME != null

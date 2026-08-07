@@ -27,10 +27,6 @@ import org.junit.runner.RunWith
  *   [android.os.Trace] section the SDK emits, isolating SDK-init cost from the rest of the start.
  *
  * [CompilationMode.Full] pins ART AOT compilation so dexopt state does not drift between runs.
- * Iterations are capped at 12: on an unthrottled Pixel 3, back-to-back cold starts hit thermal
- * throttling after ~14 iterations, which inflates the tail of longer runs. This is NOT a CI test;
- * it requires a connected device. To A/B an SDK change, see README.md (build the app twice, once
- * per SDK variant, in interleaved rounds).
  */
 @OptIn(ExperimentalMetricApi::class)
 @RunWith(AndroidJUnit4::class)
@@ -63,10 +59,7 @@ class SentryStartupBenchmark {
     /** Kept in sync with `scripts/parse-macrobenchmark-log.py`. */
     private const val LOG_TAG = "SentryBenchmarkData"
 
-    /**
-     * Well under logcat's ~4 KB per-message cap, so a chunk is never silently truncated, while
-     * still keeping the whole document to a handful of messages.
-     */
+    /** Well under logcat's ~4 KB per-message cap, so a chunk is never silently truncated. */
     private const val CHUNK_LENGTH = 2000
 
     /**
@@ -102,11 +95,8 @@ class SentryStartupBenchmark {
 
     private fun findBenchmarkData(): File? {
       val context = InstrumentationRegistry.getInstrumentation().targetContext
-      // Deprecated since API 30 in favour of MediaStore, which hands back content URIs rather
-      // than the filesystem path androidx.benchmark writes its File to -- so there is nothing to
-      // migrate to. Suppressed on this call alone; externalCacheDir below is not deprecated.
+      // This is where Macrobenchmark writes to for some reason.
       @Suppress("DEPRECATION") val mediaDirs = context.externalMediaDirs.toList()
-      // Outputs uses the media dir from API 29 on, and externalCacheDir on API 24-28.
       return (mediaDirs + context.externalCacheDir).filterNotNull().firstNotNullOfOrNull { dir ->
         dir.listFiles()?.firstOrNull { it.name.endsWith(BENCHMARK_DATA_SUFFIX) }
       }
