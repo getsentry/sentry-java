@@ -29,9 +29,17 @@ class ReplayShadowMediaCodec : ShadowMediaCodec() {
     var blockOnDequeue: CountDownLatch? = null
 
     var blockedOnDequeue = CountDownLatch(1)
+
+    /** Set to `true` when [release] is called. */
+    var released = false
   }
 
   private val encoded = AtomicBoolean(false)
+
+  @Implementation
+  fun release() {
+    released = true
+  }
 
   @Implementation
   fun start() {

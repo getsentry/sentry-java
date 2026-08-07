@@ -66,6 +66,7 @@ class ReplayCacheTest {
     ReplayShadowMediaCodec.neverSignalEos = false
     ReplayShadowMediaCodec.blockOnDequeue = null
     ReplayShadowMediaCodec.blockedOnDequeue = CountDownLatch(1)
+    ReplayShadowMediaCodec.released = false
     ShadowBitmapFactory.setAllowInvalidImageData(true)
   }
 
@@ -720,9 +721,29 @@ class ReplayCacheTest {
       // giving up on the lock still counts as closed, otherwise we'd keep persisting segments
       replayCache.persistSegmentValues(SEGMENT_KEY_ID, "0")
       assertThat(File(replayCache.replayCacheDir, ONGOING_SEGMENT).exists()).isFalse()
+
+      assertWithMessage("encoder should not be released when the lock times out")
+        .that(ReplayShadowMediaCodec.released)
+        .isFalse()
     } finally {
       wedge.countDown()
       encoder.join(SECONDS.toMillis(10))
     }
+  }
+
+  @Test
+  fun `close releases the encoder when the lock is available`() {
+    ReplayShadowMediaCodec.neverSignalEos = true
+    val replayCache = fixture.getSut(tmpDir)
+
+    val bitmap = Bitmap.createBitmap(1, 1, ARGB_8888)
+    replayCache.addFrame(bitmap, 1)
+
+    // createVideoOf bails out via the stall bound, but still releases the encoder
+    replayCache.createVideoOf(1000L, 0L, 0, 100, 200, 1, 20_000)
+
+    assertWithMessage("encoder should be released even when EOS was never signalled")
+      .that(ReplayShadowMediaCodec.released)
+      .isTrue()
   }
 }

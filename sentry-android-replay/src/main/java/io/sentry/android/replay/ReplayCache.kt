@@ -300,9 +300,10 @@ public class ReplayCache(private val options: SentryOptions, private val replayI
       }
     } catch (e: InterruptedException) {
       Thread.currentThread().interrupt()
+    } finally {
+      // has to happen on all paths, callers rely on it to stop persisting segment values
+      isClosed.set(true)
     }
-    // has to happen on all paths, callers rely on it to stop persisting segment values
-    isClosed.set(true)
   }
 
   // TODO: it's awful, choose a better serialization format
