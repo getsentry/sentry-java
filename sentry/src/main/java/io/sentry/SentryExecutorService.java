@@ -2,7 +2,6 @@ package io.sentry;
 
 import io.sentry.util.AutoClosableReentrantLock;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -56,6 +55,10 @@ public final class SentryExecutorService implements ISentryExecutorService {
     executorService.setRemoveOnCancelPolicy(removeOnCancelPolicy);
     executorService.setKeepAliveTime(keepAliveTime, keepAliveTimeUnit);
     executorService.allowCoreThreadTimeOut(true);
+    // by default shutdown() keeps queued delayed tasks, so awaitTermination blocks for the full
+    // shutdown timeout whenever a long timeout is still pending. Those tasks are discarded by the
+    // subsequent shutdownNow() anyway, so dropping them upfront only saves the wait.
+    executorService.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);
   }
 
   public SentryExecutorService() {
@@ -153,33 +156,6 @@ public final class SentryExecutorService implements ISentryExecutorService {
   private static final class SentryExecutorServiceThread extends Thread {
     SentryExecutorServiceThread(final @NotNull Runnable r, final @NotNull String name) {
       super(r, name);
-    }
-  }
-
-  private static final class CancelledFuture<T> implements Future<T> {
-    @Override
-    public boolean cancel(final boolean mayInterruptIfRunning) {
-      return true;
-    }
-
-    @Override
-    public boolean isCancelled() {
-      return true;
-    }
-
-    @Override
-    public boolean isDone() {
-      return true;
-    }
-
-    @Override
-    public T get() {
-      throw new CancellationException();
-    }
-
-    @Override
-    public T get(final long timeout, final @NotNull TimeUnit unit) {
-      throw new CancellationException();
     }
   }
 }

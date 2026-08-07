@@ -172,17 +172,16 @@ public final class JsonObjectDeserializer {
   }
 
   private Object nextNumber(JsonObjectReader reader) throws IOException {
-    try {
-      return reader.nextInt();
-    } catch (Exception exception) {
-      // Need to try/fail as there are no int/double/long tokens.
+    // JSON has no int/double token distinction. Probing with reader.nextInt() and catching the
+    // NumberFormatException it throws for every non-integer (e.g. timestamps) dominated the cost of
+    // deserializing arbitrary objects. Read once as a double and narrow to an int only when the
+    // value is integral and fits, which reproduces the previous return types without any throws.
+    final double value = reader.nextDouble();
+    final int intValue = (int) value;
+    if (intValue == value) {
+      return intValue;
     }
-    try {
-      return reader.nextDouble();
-    } catch (Exception exception) {
-      // Need to try/fail as there are no int/double/long tokens.
-    }
-    return reader.nextLong();
+    return value;
   }
 
   private @Nullable Token getCurrentToken() {

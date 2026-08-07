@@ -11,6 +11,7 @@ import io.sentry.Hint
 import io.sentry.IScopes
 import io.sentry.IpAddressUtils
 import io.sentry.NoOpLogger
+import io.sentry.ProfileChunk
 import io.sentry.Sentry
 import io.sentry.SentryBaseEvent
 import io.sentry.SentryEvent
@@ -75,7 +76,9 @@ import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.mockito.Mockito.mockStatic
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.robolectric.annotation.Config
 import org.robolectric.shadow.api.Shadow
@@ -1009,9 +1012,69 @@ class ApplicationExitInfoEventProcessorTest {
       mockedSentry.`when`<Any> { Sentry.getCurrentScopes() }.thenReturn(scopes)
 
       val processed = processor.process(SentryEvent(), hint)
+      val chunkCaptor = argumentCaptor<ProfileChunk>()
+      verify(scopes).captureProfileChunk(chunkCaptor.capture())
+      val sentryProfile = chunkCaptor.firstValue.sentryProfile
 
       assertNotNull(processed?.contexts?.profile)
       assertNotNull(processed.contexts.profile?.profilerId)
+      assertNotNull(sentryProfile)
+      // Two samples are present b/c the converter adds a synthetic one to keep Relay happy.
+      assertEquals(2, sentryProfile.samples.size)
+    }
+  }
+
+  @Test
+  fun `uses persisted proguard uuid for ANR profile chunk after app update`() {
+    fixture.options.anrProfilingSampleRate = 1.0
+    fixture.options.proguardUuid = "current-uuid"
+    val processor =
+      fixture.getSut(
+        tmpDir,
+        populateScopeCache = false,
+        populateOptionsCache = false,
+        isSendDefaultPii = false,
+      )
+    fixture.persistOptions(PROGUARD_UUID_FILENAME, "previous-uuid")
+    setLastUpdateTime(2_000)
+
+    val hint =
+      HintUtils.createWithTypeCheckHint(
+        AbnormalExitHint(mechanism = "anr_foreground", timestamp = 1_000)
+      )
+
+    AnrProfileManager(
+        fixture.options,
+        AnrProfileRotationHelper.getFileForRecording(File(fixture.options.cacheDirPath!!)),
+      )
+      .apply {
+        add(
+          AnrStackTrace(
+            1_000,
+            arrayOf(
+              StackTraceElement("com.example.MyApp", "blocked", "MyApp.java", 42),
+              StackTraceElement("android.os.Handler", "dispatchMessage", "Handler.java", 5678),
+            ),
+          )
+        )
+        close()
+      }
+    AnrProfileRotationHelper.rotate()
+
+    val scopes = mock<IScopes>()
+    whenever(scopes.captureProfileChunk(any())).thenReturn(SentryId())
+
+    mockStatic(Sentry::class.java).use { mockedSentry ->
+      mockedSentry.`when`<Any> { Sentry.getCurrentScopes() }.thenReturn(scopes)
+
+      processor.process(SentryEvent(), hint)
+
+      val chunkCaptor = argumentCaptor<ProfileChunk>()
+      verify(scopes).captureProfileChunk(chunkCaptor.capture())
+      val images = chunkCaptor.firstValue.debugMeta!!.images!!
+      assertEquals(1, images.size)
+      assertEquals(DebugImage.PROGUARD, images[0].type)
+      assertEquals("previous-uuid", images[0].uuid)
     }
   }
 

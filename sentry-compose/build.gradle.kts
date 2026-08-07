@@ -44,13 +44,13 @@ kotlin {
   }
 
   sourceSets {
-    val commonMain by getting {
+    getByName("commonMain") {
       compilerOptions {
         apiVersion.set(KotlinVersion.KOTLIN_1_9)
         languageVersion.set(KotlinVersion.KOTLIN_1_9)
       }
     }
-    val androidMain by getting {
+    getByName("androidMain") {
       dependencies {
         api(projects.sentry)
         api(projects.sentryAndroidNavigation)
@@ -60,7 +60,7 @@ kotlin {
         implementation(libs.androidx.lifecycle.common.java8)
       }
     }
-    val androidUnitTest by getting {
+    getByName("androidUnitTest") {
       dependencies {
         implementation(libs.androidx.compose.ui.test.junit4)
         implementation(libs.androidx.navigation.compose)

@@ -8,6 +8,7 @@ import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
@@ -34,6 +35,21 @@ public final class FileUtils {
       if (!deleteRecursively(f)) return false;
     }
     return file.delete();
+  }
+
+  /**
+   * Creates the directory and any missing parents, if it does not exist yet.
+   *
+   * <p>Callers are expected to log a failure: a missing directory otherwise surfaces later as an
+   * unrelated-looking write error.
+   *
+   * @param directory the directory to create
+   * @return true if the directory exists once this returns, false if it could not be created
+   */
+  public static boolean createDirectory(final @NotNull File directory) {
+    // mkdirs() also returns false when another thread created the directory first, so re-check
+    // instead of reporting a failure the caller would act on by skipping its write.
+    return directory.isDirectory() || directory.mkdirs() || directory.isDirectory();
   }
 
   /**

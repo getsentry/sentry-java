@@ -126,6 +126,20 @@ class AndroidEnvelopeCacheTest {
   }
 
   @Test
+  fun `creates outbox dir when writing startup crash file and dir does not exist yet`() {
+    val cache = fixture.getSut(dir = tmpDir, appStartMillis = 1000L, currentTimeMillis = 2000L)
+
+    val outboxDir = File(fixture.options.outboxPath!!)
+    assertTrue(outboxDir.deleteRecursively())
+    assertFalse(outboxDir.exists())
+
+    val hints = HintUtils.createWithTypeCheckHint(UncaughtHint())
+    cache.storeEnvelope(fixture.envelope, hints)
+
+    assertTrue(fixture.startupCrashMarkerFile.exists())
+  }
+
+  @Test
   fun `when no AnrV2 hint exists, does not write last anr report file`() {
     val cache = fixture.getSut(tmpDir)
 
