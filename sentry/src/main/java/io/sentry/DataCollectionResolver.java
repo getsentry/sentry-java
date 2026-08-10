@@ -80,8 +80,8 @@ public final class DataCollectionResolver {
     return options.isSendDefaultPii() ? EMPTY_DENY_LIST : OFF;
   }
 
-  public @NotNull KeyValueCollectionBehavior getQueryParams() {
-    return explicitOrEmptyDenyList(options.getDataCollection().getQueryParams());
+  public @NotNull KeyValueCollectionBehavior getUrlQueryParams() {
+    return explicitOrEmptyDenyList(options.getDataCollection().getUrlQueryParams());
   }
 
   public @NotNull KeyValueCollectionBehavior getHttpRequestHeaders() {
