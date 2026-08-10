@@ -70,7 +70,7 @@ class OpenTelemetryAttributesExtractorTest {
 
   @Test
   fun `data collection can disable URL query attributes`() {
-    fixture.options.dataCollection.queryParams = KeyValueCollectionBehavior.off()
+    fixture.options.dataCollection.urlQueryParams = KeyValueCollectionBehavior.off()
     givenAttributes(
       mapOf(
         HttpAttributes.HTTP_REQUEST_METHOD to "GET",
