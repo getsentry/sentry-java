@@ -3,6 +3,7 @@ package io.sentry.compose.navigation3
 import android.app.Application
 import android.content.ComponentName
 import androidx.activity.ComponentActivity
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -11,6 +12,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.Breadcrumb
 import io.sentry.IScope
 import io.sentry.IScopes
+import io.sentry.ISpan
+import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer
@@ -78,7 +81,34 @@ class SentryNav3EffectTest {
     }
   }
 
+  class RealScopeTestScopes {
+    val scopes = mock<IScopes>()
+    val options =
+      SentryOptions().apply {
+        dsn = "http://key@localhost/proj"
+        setTracesSampleRate(1.0)
+        isEnableScreenTracking = true
+      }
+    val scope = Scope(options)
+    val transactions = mutableListOf<SentryTracer>()
+
+    init {
+      whenever(scopes.options).thenReturn(options)
+      whenever(scopes.startTransaction(any<TransactionContext>(), any<TransactionOptions>()))
+        .thenAnswer {
+          val ctx = it.arguments[0] as TransactionContext
+          SentryTracer(ctx, scopes).also { t -> transactions.add(t) }
+        }
+      whenever(scopes.configureScope(any())).thenAnswer {
+        (it.arguments[0] as ScopeCallback).run(scope)
+      }
+      whenever(scopes.getSpan()).thenAnswer { scope.span }
+    }
+  }
+
   private fun createScopes(): TestScopes = TestScopes()
+
+  private fun createRealScopeTestScopes(): RealScopeTestScopes = RealScopeTestScopes()
 
   @Test
   fun `initial backstack fires breadcrumb and transaction`() {
@@ -93,6 +123,30 @@ class SentryNav3EffectTest {
 
     verify(fixture.scopes).addBreadcrumb(any<Breadcrumb>(), any())
     verify(fixture.scopes).startTransaction(any<TransactionContext>(), any<TransactionOptions>())
+  }
+
+  @Test
+  fun `destination launched effect after SentryNav3Effect sees navigation transaction`() {
+    val fixture = createRealScopeTestScopes()
+    val backStack = mutableStateListOf<Any>(HomeScreen())
+    val observedSpans = mutableListOf<ISpan?>()
+
+    composeRule.setContent {
+      SentryNav3Effect(backStack = backStack, scopes = fixture.scopes)
+
+      val currentTop = backStack.last()
+      LaunchedEffect(currentTop) { observedSpans.add(fixture.scopes.getSpan()) }
+    }
+    composeRule.waitForIdle()
+
+    assertEquals(1, observedSpans.size)
+    assertEquals("/HomeScreen", (observedSpans[0] as SentryTracer).name)
+
+    backStack.add(ProfileScreen("123"))
+    composeRule.waitForIdle()
+
+    assertEquals(2, observedSpans.size)
+    assertEquals("/ProfileScreen", (observedSpans[1] as SentryTracer).name)
   }
 
   @Test

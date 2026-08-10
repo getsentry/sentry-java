@@ -2,15 +2,11 @@ package io.sentry.compose.navigation3
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.NonRestartableComposable
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import io.sentry.IScopes
 import io.sentry.ScopesAdapter
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.distinctUntilChanged
 import org.jetbrains.annotations.ApiStatus
 
 /**
@@ -22,7 +18,7 @@ import org.jetbrains.annotations.ApiStatus
  *  fun AppNavigation() {
  *    val navBackStack = remember { mutableStateListOf<Route>(Home) }
  *
- *    // Let Sentry observe your backstack and generate navigation events.
+ *    // Call before NavDisplay so destination effects can attach work to the route transaction.
  *    SentryNav3Effect(
  *      backStack = navBackStack,
  *      options =
@@ -33,7 +29,7 @@ import org.jetbrains.annotations.ApiStatus
  *      argumentsExtractor = { route -> route.extractArgument() },
  *    )
  *
- *    // Configure your NavDisplay like usual.
+ *    // Configure your NavDisplay like usual after SentryNav3Effect.
  *    NavDisplay(
  *      backStack = navBackStack,
  *      ...
@@ -51,10 +47,13 @@ import org.jetbrains.annotations.ApiStatus
  * Sentry SDK. Only return route names and arguments that are known to be safe or have been
  * pre-scrubbed.
  *
- * *Composition lifecycle*: Call `SentryNav3Effect` from a composable that stays in the composition
- * tree for the full navigation session, e.g., at the same level as `NavDisplay` rather than inside
- * a single destination. When the effect leaves the tree, navigation observation stops and the
- * active navigation transaction is finished.
+ * *Composition lifecycle and ordering*: Call `SentryNav3Effect` from a composable that stays in the
+ * composition tree for the full navigation session, at the same level as `NavDisplay` rather than
+ * inside a single destination. It should be called before `NavDisplay`; `NavDisplay` composes the
+ * destination content and destination effects, and Sentry needs to observe the backstack first so
+ * immediate destination work, such as `LaunchedEffect(route) { loadData() }`, can attach to the
+ * route navigation transaction. When the effect leaves the tree, navigation observation stops and
+ * the active navigation transaction is finished.
  *
  * // TODO ADAM: Re dialogs: Nav2 generates breadcrumbs, transactions, etc. for dialogs if they're
  * // routed through the NavController. But that only tends to happen when using Compose. //
@@ -106,6 +105,7 @@ public fun <T : Any> SentryNav3Effect(
   require(options.maxCapturedBackStackEntries > 0) {
     "maxCapturedBackStackEntries must be positive, was ${options.maxCapturedBackStackEntries}"
   }
+  val backStackSnapshot = backStack.toList()
 
   val observer =
     remember(
@@ -132,9 +132,8 @@ public fun <T : Any> SentryNav3Effect(
 
   DisposableEffect(observer) { onDispose { observer.cleanup() } }
 
-  LaunchedEffect(observer) {
-    snapshotFlow { backStack.toList() }
-      .distinctUntilChanged()
-      .collectLatest { snapshot -> observer.onBackStackChanged(backStack = snapshot) }
+  DisposableEffect(observer, backStackSnapshot) {
+    observer.onBackStackChanged(backStack = backStackSnapshot)
+    onDispose {}
   }
 }
