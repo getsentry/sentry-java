@@ -104,6 +104,7 @@ class SentryKtorClientPluginTest {
         MockResponse()
           .setBody(responseBody)
           .addHeader("myResponseHeader", "myValue")
+          .addHeader("Set-Cookie", "theme=dark; Path=/")
           .setSocketPolicy(socketPolicy)
           .setResponseCode(httpStatusCode)
       )
@@ -254,6 +255,60 @@ class SentryKtorClientPluginTest {
     sut.get(fixture.server.url("/hello").toString())
 
     verify(fixture.scopes, never()).captureEvent(any(), any<Hint>())
+  }
+
+  @Test
+  fun `data collection filters cookies`(): Unit = runBlocking {
+    val sut =
+      fixture.getSut(
+        captureFailedRequests = true,
+        httpStatusCode = 500,
+        optionsConfiguration =
+          Sentry.OptionsConfiguration {
+            it.dataCollection.cookies = KeyValueCollectionBehavior.denyList("theme")
+          },
+      )
+
+    sut.get(fixture.server.url("/hello").toString()) {
+      headers["Cookie"] = "language=en; theme=dark; sessionId=secret"
+    }
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check<SentryEvent> {
+          assertEquals(
+            "language=en; theme=[Filtered]; sessionId=[Filtered]",
+            it.request!!.cookies,
+          )
+          assertEquals("theme=[Filtered]; Path=/", it.contexts.response!!.cookies)
+        },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `data collection can disable cookies`(): Unit = runBlocking {
+    val sut =
+      fixture.getSut(
+        captureFailedRequests = true,
+        httpStatusCode = 500,
+        sendDefaultPii = true,
+        optionsConfiguration =
+          Sentry.OptionsConfiguration {
+            it.dataCollection.cookies = KeyValueCollectionBehavior.off()
+          },
+      )
+
+    sut.get(fixture.server.url("/hello").toString()) { headers["Cookie"] = "theme=dark" }
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check<SentryEvent> {
+          assertNull(it.request!!.cookies)
+          assertNull(it.contexts.response!!.cookies)
+        },
+        any<Hint>(),
+      )
   }
 
   @Test

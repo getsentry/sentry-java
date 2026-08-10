@@ -206,6 +206,55 @@ class SentrySpringFilterTest {
   }
 
   @Test
+  fun `data collection filters cookies and ignores sendDefaultPii`() {
+    val sentryOptions =
+      SentryOptions().apply {
+        isSendDefaultPii = false
+        dataCollection.cookies = KeyValueCollectionBehavior.denyList("customer")
+      }
+
+    val listener =
+      fixture.getSut(
+        request =
+          MockMvcRequestBuilders.get(URI.create("http://example.com"))
+            .header(
+              "Cookie",
+              "theme=dark; sessionId=secret; customerId=123; customSession=456",
+            )
+            .buildRequest(servletContextWithCustomCookieName("customSession")),
+        options = sentryOptions,
+      )
+
+    listener.doFilter(fixture.request, fixture.response, fixture.chain)
+
+    assertEquals(
+      "theme=dark; sessionId=[Filtered]; customerId=[Filtered]; customSession=[Filtered]",
+      fixture.scope.request!!.cookies,
+    )
+  }
+
+  @Test
+  fun `data collection can disable cookies`() {
+    val sentryOptions =
+      SentryOptions().apply {
+        isSendDefaultPii = true
+        dataCollection.cookies = KeyValueCollectionBehavior.off()
+      }
+    val listener =
+      fixture.getSut(
+        request =
+          MockMvcRequestBuilders.get(URI.create("http://example.com"))
+            .header("Cookie", "theme=dark")
+            .buildRequest(MockServletContext()),
+        options = sentryOptions,
+      )
+
+    listener.doFilter(fixture.request, fixture.response, fixture.chain)
+
+    assertNull(fixture.scope.request!!.cookies)
+  }
+
+  @Test
   fun `data collection filters request headers`() {
     val sentryOptions =
       SentryOptions().apply {
