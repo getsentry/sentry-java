@@ -210,18 +210,6 @@ public final class Session implements JsonUnknown, JsonSerializable {
   }
 
   /**
-   * Restores the flag when rebuilding a session, i.e. from {@link #clone()} or the deserializer.
-   *
-   * <p>Not for use on a live session: unlike {@link #recordNonTerminatingUnhandledError()} this
-   * neither counts the error nor advances the session's sequence, so a session mutated through this
-   * setter would be sent as an out-of-date update.
-   */
-  @ApiStatus.Internal
-  public void setNonTerminatingUnhandledError(final boolean nonTerminatingUnhandledError) {
-    this.nonTerminatingUnhandledError = nonTerminatingUnhandledError;
-  }
-
-  /**
    * Records that an active session experienced an unhandled error which did not terminate the
    * process, counting the error and advancing the session's sequence without ending it. On {@link
    * #end()} the session is finalized as {@link State#Unhandled} unless a crash escalated it to
@@ -396,7 +384,7 @@ public final class Session implements JsonUnknown, JsonSerializable {
             environment,
             release,
             abnormalMechanism);
-    session.setNonTerminatingUnhandledError(nonTerminatingUnhandledError);
+    session.nonTerminatingUnhandledError = nonTerminatingUnhandledError;
     return session;
   }
 
@@ -617,7 +605,7 @@ public final class Session implements JsonUnknown, JsonSerializable {
               environment,
               release,
               abnormalMechanism);
-      session.setNonTerminatingUnhandledError(nonTerminatingUnhandledError);
+      session.nonTerminatingUnhandledError = nonTerminatingUnhandledError;
       session.setUnknown(unknown);
       reader.endObject();
       return session;

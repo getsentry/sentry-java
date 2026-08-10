@@ -207,7 +207,7 @@ class PreviousSessionFinalizerTest {
         tmpDir,
         session =
           Session(null, null, null, "io.sentry.sample@1.0").apply {
-            setNonTerminatingUnhandledError(true)
+            recordNonTerminatingUnhandledError()
           },
       )
     finalizer.run()
@@ -230,7 +230,7 @@ class PreviousSessionFinalizerTest {
         tmpDir,
         session =
           Session(null, null, null, "io.sentry.sample@1.0").apply {
-            setNonTerminatingUnhandledError(true)
+            recordNonTerminatingUnhandledError()
           },
         nativeCrashTimestamp = DateUtils.getDateTime("2023-10-01T00:00:00.000Z"),
       )

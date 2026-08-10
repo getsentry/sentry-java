@@ -4291,7 +4291,6 @@ public final class io/sentry/Session : io/sentry/JsonSerializable, io/sentry/Jso
 	public fun recordNonTerminatingUnhandledError ()Z
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setInitAsTrue ()V
-	public fun setNonTerminatingUnhandledError (Z)V
 	public fun setUnknown (Ljava/util/Map;)V
 	public fun update (Lio/sentry/Session$State;Ljava/lang/String;Z)Z
 	public fun update (Lio/sentry/Session$State;Ljava/lang/String;ZLjava/lang/String;)Z

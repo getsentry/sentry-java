@@ -61,7 +61,7 @@ class SessionTest {
     val session = okSession()
     assertThat(session.hasNonTerminatingUnhandledError()).isFalse()
 
-    session.setNonTerminatingUnhandledError(true)
+    session.recordNonTerminatingUnhandledError()
     session.end()
 
     assertThat(session.status).isEqualTo(Session.State.Unhandled)
@@ -71,7 +71,7 @@ class SessionTest {
   @Test
   fun `end with a non-terminating unhandled error keeps Abnormal as Abnormal`() {
     val session = okSession()
-    session.setNonTerminatingUnhandledError(true)
+    session.recordNonTerminatingUnhandledError()
     session.update(Session.State.Abnormal, null, false, "anr")
 
     session.end()
@@ -83,7 +83,7 @@ class SessionTest {
   @Test
   fun `end with a non-terminating unhandled error keeps Crashed as Crashed`() {
     val session = okSession()
-    session.setNonTerminatingUnhandledError(true)
+    session.recordNonTerminatingUnhandledError()
     session.update(Session.State.Crashed, null, false)
 
     session.end()
@@ -95,7 +95,7 @@ class SessionTest {
   @Test
   fun `updating to Crashed clears a non-terminating unhandled error and end stays Crashed`() {
     val session = okSession()
-    session.setNonTerminatingUnhandledError(true)
+    session.recordNonTerminatingUnhandledError()
 
     session.update(Session.State.Crashed, null, true)
     session.end()
@@ -107,7 +107,7 @@ class SessionTest {
   @Test
   fun `clone preserves a non-terminating unhandled error`() {
     val session = okSession()
-    session.setNonTerminatingUnhandledError(true)
+    session.recordNonTerminatingUnhandledError()
 
     val clone = session.clone()
 
@@ -118,7 +118,7 @@ class SessionTest {
   fun `serialization round-trips a non-terminating unhandled error and Unhandled status`() {
     val logger = mock<ILogger>()
     val session = okSession()
-    session.setNonTerminatingUnhandledError(true)
+    session.recordNonTerminatingUnhandledError()
     session.end()
     assertThat(session.status).isEqualTo(Session.State.Unhandled)
 
