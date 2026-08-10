@@ -4290,12 +4290,12 @@ public final class io/sentry/Session : io/sentry/JsonSerializable, io/sentry/Jso
 	public fun getTimestamp ()Ljava/util/Date;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun getUserAgent ()Ljava/lang/String;
-	public fun isPendingUnhandled ()Z
+	public fun hasNonTerminatingUnhandledError ()Z
 	public fun isTerminated ()Z
-	public fun markPendingUnhandled ()Z
+	public fun recordNonTerminatingUnhandledError ()Z
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setInitAsTrue ()V
-	public fun setPendingUnhandled (Z)V
+	public fun setNonTerminatingUnhandledError (Z)V
 	public fun setUnknown (Ljava/util/Map;)V
 	public fun update (Lio/sentry/Session$State;Ljava/lang/String;Z)Z
 	public fun update (Lio/sentry/Session$State;Ljava/lang/String;ZLjava/lang/String;)Z
@@ -4316,7 +4316,7 @@ public final class io/sentry/Session$JsonKeys {
 	public static final field ERRORS Ljava/lang/String;
 	public static final field INIT Ljava/lang/String;
 	public static final field IP_ADDRESS Ljava/lang/String;
-	public static final field PENDING_UNHANDLED Ljava/lang/String;
+	public static final field NON_TERMINATING_UNHANDLED_ERROR Ljava/lang/String;
 	public static final field RELEASE Ljava/lang/String;
 	public static final field SEQ Ljava/lang/String;
 	public static final field SID Ljava/lang/String;

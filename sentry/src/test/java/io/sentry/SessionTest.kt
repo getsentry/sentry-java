@@ -11,15 +11,15 @@ class SessionTest {
   private fun okSession(): Session = Session(null, null, "environment", "release")
 
   @Test
-  fun `markPendingUnhandled atomically updates an Ok session`() {
+  fun `recordNonTerminatingUnhandledError atomically updates an Ok session`() {
     val session = okSession()
     val initialTimestamp = session.timestamp
 
-    val updated = session.markPendingUnhandled()
+    val updated = session.recordNonTerminatingUnhandledError()
 
     assertThat(updated).isTrue()
     assertThat(session.status).isEqualTo(Session.State.Ok)
-    assertThat(session.isPendingUnhandled).isTrue()
+    assertThat(session.hasNonTerminatingUnhandledError()).isTrue()
     assertThat(session.errorCount()).isEqualTo(1)
     assertThat(session.init).isNull()
     assertThat(session.timestamp).isNotNull()
@@ -28,17 +28,18 @@ class SessionTest {
   }
 
   @Test
-  fun `markPendingUnhandled does not change terminal sessions`() {
+  fun `recordNonTerminatingUnhandledError does not change terminal sessions`() {
     for (state in Session.State.entries.filter { it != Session.State.Ok }) {
       val session = okSession()
       session.update(state, null, false)
       val before = session.clone()
 
-      val updated = session.markPendingUnhandled()
+      val updated = session.recordNonTerminatingUnhandledError()
 
       assertThat(updated).isFalse()
       assertThat(session.status).isEqualTo(before.status)
-      assertThat(session.isPendingUnhandled).isEqualTo(before.isPendingUnhandled)
+      assertThat(session.hasNonTerminatingUnhandledError())
+        .isEqualTo(before.hasNonTerminatingUnhandledError())
       assertThat(session.errorCount()).isEqualTo(before.errorCount())
       assertThat(session.init).isEqualTo(before.init)
       assertThat(session.timestamp).isEqualTo(before.timestamp)
@@ -47,7 +48,7 @@ class SessionTest {
   }
 
   @Test
-  fun `end without pending unhandled finalizes as Exited`() {
+  fun `end without a non-terminating unhandled error finalizes as Exited`() {
     val session = okSession()
 
     session.end()
@@ -56,68 +57,68 @@ class SessionTest {
   }
 
   @Test
-  fun `end with pending unhandled finalizes as Unhandled`() {
+  fun `end with a non-terminating unhandled error finalizes as Unhandled`() {
     val session = okSession()
-    assertThat(session.isPendingUnhandled).isFalse()
+    assertThat(session.hasNonTerminatingUnhandledError()).isFalse()
 
-    session.setPendingUnhandled(true)
+    session.setNonTerminatingUnhandledError(true)
     session.end()
 
     assertThat(session.status).isEqualTo(Session.State.Unhandled)
-    assertThat(session.isPendingUnhandled).isTrue()
+    assertThat(session.hasNonTerminatingUnhandledError()).isTrue()
   }
 
   @Test
-  fun `end with pending unhandled keeps Abnormal as Abnormal`() {
+  fun `end with a non-terminating unhandled error keeps Abnormal as Abnormal`() {
     val session = okSession()
-    session.setPendingUnhandled(true)
+    session.setNonTerminatingUnhandledError(true)
     session.update(Session.State.Abnormal, null, false, "anr")
 
     session.end()
 
     assertThat(session.status).isEqualTo(Session.State.Abnormal)
-    assertThat(session.isPendingUnhandled).isTrue()
+    assertThat(session.hasNonTerminatingUnhandledError()).isTrue()
   }
 
   @Test
-  fun `end with pending unhandled keeps Crashed as Crashed`() {
+  fun `end with a non-terminating unhandled error keeps Crashed as Crashed`() {
     val session = okSession()
-    session.setPendingUnhandled(true)
+    session.setNonTerminatingUnhandledError(true)
     session.update(Session.State.Crashed, null, false)
 
     session.end()
 
     assertThat(session.status).isEqualTo(Session.State.Crashed)
-    assertThat(session.isPendingUnhandled).isFalse()
+    assertThat(session.hasNonTerminatingUnhandledError()).isFalse()
   }
 
   @Test
-  fun `updating to Crashed clears pending unhandled and end stays Crashed`() {
+  fun `updating to Crashed clears a non-terminating unhandled error and end stays Crashed`() {
     val session = okSession()
-    session.setPendingUnhandled(true)
+    session.setNonTerminatingUnhandledError(true)
 
     session.update(Session.State.Crashed, null, true)
     session.end()
 
     assertThat(session.status).isEqualTo(Session.State.Crashed)
-    assertThat(session.isPendingUnhandled).isFalse()
+    assertThat(session.hasNonTerminatingUnhandledError()).isFalse()
   }
 
   @Test
-  fun `clone preserves pending unhandled`() {
+  fun `clone preserves a non-terminating unhandled error`() {
     val session = okSession()
-    session.setPendingUnhandled(true)
+    session.setNonTerminatingUnhandledError(true)
 
     val clone = session.clone()
 
-    assertThat(clone.isPendingUnhandled).isTrue()
+    assertThat(clone.hasNonTerminatingUnhandledError()).isTrue()
   }
 
   @Test
-  fun `serialization round-trips pending unhandled and Unhandled status`() {
+  fun `serialization round-trips a non-terminating unhandled error and Unhandled status`() {
     val logger = mock<ILogger>()
     val session = okSession()
-    session.setPendingUnhandled(true)
+    session.setNonTerminatingUnhandledError(true)
     session.end()
     assertThat(session.status).isEqualTo(Session.State.Unhandled)
 
@@ -128,17 +129,17 @@ class SessionTest {
       Session.Deserializer().deserialize(JsonObjectReader(StringReader(writer.toString())), logger)
 
     assertThat(deserialized.status).isEqualTo(Session.State.Unhandled)
-    assertThat(deserialized.isPendingUnhandled).isTrue()
+    assertThat(deserialized.hasNonTerminatingUnhandledError()).isTrue()
   }
 
   @Test
-  fun `pending unhandled defaults to false and is not serialized when unset`() {
+  fun `a non-terminating unhandled error defaults to false and is not serialized when unset`() {
     val logger = mock<ILogger>()
     val session = okSession()
 
     val writer = StringWriter()
     session.serialize(JsonObjectWriter(writer, 100), logger)
 
-    assertThat(writer.toString()).doesNotContain("pending_unhandled")
+    assertThat(writer.toString()).doesNotContain("non_terminating_unhandled_error")
   }
 }
