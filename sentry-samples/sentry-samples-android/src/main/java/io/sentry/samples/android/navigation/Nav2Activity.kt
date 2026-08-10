@@ -1,15 +1,17 @@
 package io.sentry.samples.android.navigation
 
-import android.content.res.ColorStateList
 import android.graphics.Typeface
 import android.os.Bundle
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.HorizontalScrollView
 import android.widget.LinearLayout
+import android.widget.Spinner
 import android.widget.TextView
 import androidx.activity.compose.BackHandler
 import androidx.appcompat.app.AppCompatActivity
@@ -55,7 +57,6 @@ import androidx.navigation.NavOptions
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.dialog
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.navArgument
@@ -94,7 +95,7 @@ class Nav2Activity : AppCompatActivity() {
   private var composeBackStackText = Nav2ComposeDestination.SingleStack.backStackRoute()
   private val sentryNavigationListener = SentryNavigationListener()
   private val routeActivationAction = mutableStateOf(RouteActivationAction.NONE)
-  private val routeActivationActionButtons = mutableMapOf<RouteActivationAction, Button>()
+  private var routeActivationActionSpinner: Spinner? = null
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
@@ -185,7 +186,6 @@ class Nav2Activity : AppCompatActivity() {
           Nav2ComposeSingleStackApp(
             navListener = sentryNavigationListener,
             routeActivationAction = routeActivationAction.value,
-            onCrashActionConsumed = { setRouteActivationAction(RouteActivationAction.NONE) },
             onRouteChanged = { routeName, currentRoute, backStack ->
               updateComposeChrome(routeName, currentRoute, backStack)
             },
@@ -257,30 +257,23 @@ class Nav2Activity : AppCompatActivity() {
 
   private fun createSentryControls(): View {
     return LinearLayout(this).apply {
-      orientation = LinearLayout.VERTICAL
+      orientation = LinearLayout.HORIZONTAL
+      gravity = Gravity.CENTER_VERTICAL
       setPadding(12.dp)
-      addView(
-        TextView(context).apply {
-          text = "Run during route activation"
-          textSize = 12f
-          setTextColor(color(android.R.color.black))
-          setPadding(6.dp, 0, 6.dp, 4.dp)
-        }
-      )
       addView(
         HorizontalScrollView(context).apply {
           isHorizontalScrollBarEnabled = false
           addView(
             LinearLayout(context).apply {
               orientation = LinearLayout.HORIZONTAL
-              RouteActivationAction.entries.forEach { action ->
-                addView(nav2RouteActivationActionButton(action))
-              }
+              gravity = Gravity.CENTER_VERTICAL
+              addView(sentryEventButton("Exception") { captureSampleException("Nav2") })
+              addView(sentryEventButton("Crash App") { crashSampleApp("Nav2") })
+              addView(nav2RouteActivationActionSelector())
             }
           )
         }
       )
-      updateRouteActivationActionButtons()
     }
   }
 
@@ -309,16 +302,6 @@ class Nav2Activity : AppCompatActivity() {
             }
           )
       RouteActivationAction.MANUAL_CHILD_SPAN -> runManualNav2RouteActivationSpan(routeName)
-      RouteActivationAction.CAPTURE_EXCEPTION -> {
-        Sentry.captureException(
-          RuntimeException("Nav2 route activation exception from /$routeName")
-        )
-        Thread { Sentry.flush(SENTRY_FLUSH_TIMEOUT_MILLIS) }.start()
-      }
-      RouteActivationAction.CRASH_APP -> {
-        setRouteActivationAction(RouteActivationAction.NONE)
-        throw RuntimeException("Fatal Nav2 route activation crash from /$routeName")
-      }
     }
   }
 
@@ -479,33 +462,73 @@ class Nav2Activity : AppCompatActivity() {
       addView(textView)
     }
 
-  private fun nav2RouteActivationActionButton(action: RouteActivationAction): Button =
+  private fun sentryEventButton(label: String, onClick: () -> Unit): Button =
     Button(this).apply {
-      text = action.label
+      text = label
       isAllCaps = false
       minWidth = 112.dp
-      setOnClickListener { setRouteActivationAction(action) }
+      setOnClickListener { onClick() }
       layoutParams =
         LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply {
           setMargins(6.dp, 0, 6.dp, 0)
         }
-      routeActivationActionButtons[action] = this
+    }
+
+  private fun nav2RouteActivationActionSelector(): View =
+    LinearLayout(this).apply {
+      orientation = LinearLayout.VERTICAL
+      setPadding(6.dp, 0, 6.dp, 0)
+      addView(
+        TextView(context).apply {
+          text = "Route work"
+          textSize = 12f
+          setTextColor(color(android.R.color.black))
+        }
+      )
+      addView(
+        Spinner(context).apply {
+          adapter =
+            ArrayAdapter(
+                context,
+                android.R.layout.simple_spinner_item,
+                RouteActivationAction.entries.map { it.label },
+              )
+              .also { it.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item) }
+          setSelection(routeActivationAction.value.ordinal)
+          onItemSelectedListener =
+            object : AdapterView.OnItemSelectedListener {
+              override fun onItemSelected(
+                parent: AdapterView<*>?,
+                view: View?,
+                position: Int,
+                id: Long,
+              ) {
+                setRouteActivationAction(RouteActivationAction.entries[position])
+              }
+
+              override fun onNothingSelected(parent: AdapterView<*>?) = Unit
+            }
+          routeActivationActionSpinner = this
+        }
+      )
     }
 
   private fun setRouteActivationAction(action: RouteActivationAction) {
     routeActivationAction.value = action
-    updateRouteActivationActionButtons()
+    routeActivationActionSpinner?.let { spinner ->
+      if (spinner.selectedItemPosition != action.ordinal) {
+        spinner.setSelection(action.ordinal)
+      }
+    }
   }
 
-  private fun updateRouteActivationActionButtons() {
-    routeActivationActionButtons.forEach { (action, button) ->
-      val selected = action == routeActivationAction.value
-      button.setTextColor(color(if (selected) android.R.color.white else R.color.colorAccent))
-      button.backgroundTintList =
-        ColorStateList.valueOf(
-          color(if (selected) R.color.colorAccent else android.R.color.transparent)
-        )
-    }
+  private fun captureSampleException(navName: String) {
+    Sentry.captureException(RuntimeException("$navName sample exception button"))
+    Thread { Sentry.flush(SENTRY_FLUSH_TIMEOUT_MILLIS) }.start()
+  }
+
+  private fun crashSampleApp(navName: String): Nothing {
+    throw RuntimeException("Fatal $navName sample crash button")
   }
 
   private val Int.dp: Int
@@ -521,7 +544,6 @@ class Nav2Activity : AppCompatActivity() {
 private fun Nav2ComposeSingleStackApp(
   navListener: SentryNavigationListener,
   routeActivationAction: RouteActivationAction,
-  onCrashActionConsumed: () -> Unit,
   onRouteChanged: (routeName: String, currentRoute: String, backStack: String) -> Unit,
 ) {
   val navController = rememberNavController().withSentryObservableEffect(navListener)
@@ -561,7 +583,6 @@ private fun Nav2ComposeSingleStackApp(
   Nav2ComposeRouteActivationEffect(
     destination = currentDestination,
     routeActivationAction = routeActivationAction,
-    onCrashActionConsumed = onCrashActionConsumed,
   )
 
   Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
@@ -642,7 +663,7 @@ private fun Nav2ComposeSingleStackApp(
           onResetBackStack = { resetToSingleStack() },
         )
       }
-      dialog(
+      composable(
         route = Nav2ComposeDestination.PROMO_DIALOG_ROUTE,
         arguments = listOf(navArgument(ARG_PROMO_ID) { type = NavType.StringType }),
       ) { entry ->
@@ -668,16 +689,13 @@ private fun Nav2ComposeSingleStackApp(
 private fun Nav2ComposeRouteActivationEffect(
   destination: Nav2ComposeDestination,
   routeActivationAction: RouteActivationAction,
-  onCrashActionConsumed: () -> Unit,
 ) {
   val currentAction = rememberUpdatedState(routeActivationAction)
-  val currentOnCrashActionConsumed = rememberUpdatedState(onCrashActionConsumed)
 
   LaunchedEffect(destination) {
     runNav2ComposeRouteActivationAction(
       routeName = destination.routeName,
       action = currentAction.value,
-      onCrashActionConsumed = currentOnCrashActionConsumed.value,
     )
   }
 }
@@ -685,7 +703,6 @@ private fun Nav2ComposeRouteActivationEffect(
 private suspend fun runNav2ComposeRouteActivationAction(
   routeName: String,
   action: RouteActivationAction,
-  onCrashActionConsumed: () -> Unit,
 ) {
   if (action == RouteActivationAction.NONE) {
     return
@@ -704,14 +721,6 @@ private suspend fun runNav2ComposeRouteActivationAction(
       }
     }
     RouteActivationAction.MANUAL_CHILD_SPAN -> runManualNav2RouteActivationSpan(routeName)
-    RouteActivationAction.CAPTURE_EXCEPTION -> {
-      Sentry.captureException(RuntimeException("Nav2 route activation exception from /$routeName"))
-      withContext(Dispatchers.IO) { Sentry.flush(SENTRY_FLUSH_TIMEOUT_MILLIS) }
-    }
-    RouteActivationAction.CRASH_APP -> {
-      onCrashActionConsumed()
-      throw RuntimeException("Fatal Nav2 route activation crash from /$routeName")
-    }
   }
 }
 

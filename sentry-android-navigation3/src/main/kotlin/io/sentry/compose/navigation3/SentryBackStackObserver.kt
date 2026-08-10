@@ -175,10 +175,14 @@ internal constructor(
 
     if (this.getSpan() != null) {
       // Implicit child spans use the current active span as their parent. getSpan() can return an
-      // active child span as well as a transaction, so checking only the transaction slot would miss
-      // work that is already scoped under another operation. For example, the first Nav3 destination
-      // may load while the Activity ui.load transaction is still active, or a route change may happen
-      // while a user-created span is active. In both cases, destination loading spans would attach to
+      // active child span as well as a transaction, so checking only the transaction slot would
+      // miss
+      // work that is already scoped under another operation. For example, the first Nav3
+      // destination
+      // may load while the Activity ui.load transaction is still active, or a route change may
+      // happen
+      // while a user-created span is active. In both cases, destination loading spans would attach
+      // to
       // the existing operation, and a new Nav3 transaction would compete for the same navigation
       // without owning the destination work.
       this.options.logger.log(
