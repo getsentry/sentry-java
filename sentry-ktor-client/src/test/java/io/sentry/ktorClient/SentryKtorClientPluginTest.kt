@@ -307,6 +307,59 @@ class SentryKtorClientPluginTest {
   }
 
   @Test
+  fun `data collection filters response headers`(): Unit = runBlocking {
+    val sut =
+      fixture.getSut(
+        captureFailedRequests = true,
+        httpStatusCode = 500,
+        optionsConfiguration =
+          Sentry.OptionsConfiguration {
+            it.dataCollection.httpHeaders.response = KeyValueCollectionBehavior.denyList("response")
+          },
+      )
+
+    sut.get(fixture.server.url("/hello").toString())
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check<SentryEvent> {
+          assertEquals(
+            "[Filtered]",
+            it.contexts.response!!
+              .headers!!
+              .entries
+              .firstOrNull { header ->
+                header.key.equals("myResponseHeader", ignoreCase = true)
+              }
+              ?.value,
+          )
+        },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `data collection can disable response headers`(): Unit = runBlocking {
+    val sut =
+      fixture.getSut(
+        captureFailedRequests = true,
+        httpStatusCode = 500,
+        optionsConfiguration =
+          Sentry.OptionsConfiguration {
+            it.dataCollection.httpHeaders.response = KeyValueCollectionBehavior.off()
+          },
+      )
+
+    sut.get(fixture.server.url("/hello").toString())
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check<SentryEvent> { assertTrue(it.contexts.response!!.headers!!.isEmpty()) },
+        any<Hint>(),
+      )
+  }
+
+  @Test
   fun `does not capture headers when sendDefaultPii is disabled`(): Unit = runBlocking {
     val sut =
       fixture.getSut(captureFailedRequests = true, httpStatusCode = 500, sendDefaultPii = false)
