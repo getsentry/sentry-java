@@ -116,6 +116,7 @@ class Nav2Activity : AppCompatActivity() {
     }
 
     updateChrome(navController.currentDestination, navController.currentBackStackEntry?.arguments)
+    Sentry.reportFullyDisplayed()
   }
 
   internal fun navigateTo(destination: Nav2Destination) {
