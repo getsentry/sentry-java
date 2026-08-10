@@ -21,7 +21,8 @@ public final class Session implements JsonUnknown, JsonSerializable {
     Ok,
     Exited,
     Crashed,
-    Abnormal
+    Abnormal,
+    Unhandled
   }
 
   /** started timestamp */
@@ -65,6 +66,14 @@ public final class Session implements JsonUnknown, JsonSerializable {
 
   /** the Abnormal mechanism, e.g. what was the reason for session to become abnormal (ANR) */
   private @Nullable String abnormalMechanism;
+
+  /**
+   * Whether the session experienced an unhandled (but non-terminal) exception. Kept locally and
+   * persisted with the session, but never sent as a status while the session is alive. On end() the
+   * session is finalized as {@link State#Unhandled} instead of {@link State#Exited} unless a crash
+   * escalated it to {@link State#Crashed}.
+   */
+  private boolean pendingUnhandled;
 
   /** The session lock, ops should be atomic */
   private final @NotNull AutoClosableReentrantLock sessionLock = new AutoClosableReentrantLock();
@@ -188,6 +197,41 @@ public final class Session implements JsonUnknown, JsonSerializable {
     return abnormalMechanism;
   }
 
+  /**
+   * Whether the session has a pending unhandled (non-terminal) exception that hasn't been finalized
+   * yet.
+   */
+  @ApiStatus.Internal
+  public boolean isPendingUnhandled() {
+    return pendingUnhandled;
+  }
+
+  /**
+   * Marks the session as having experienced an unhandled (non-terminal) exception without ending
+   * it. On {@link #end()} the session will be finalized as {@link State#Unhandled} unless a crash
+   * escalated it to {@link State#Crashed} first.
+   */
+  @ApiStatus.Internal
+  public void setPendingUnhandled(final boolean pendingUnhandled) {
+    this.pendingUnhandled = pendingUnhandled;
+  }
+
+  /** Marks an active session as having experienced an unhandled non-terminal exception. */
+  @ApiStatus.Internal
+  public boolean markPendingUnhandled() {
+    try (final @NotNull ISentryLifecycleToken ignored = sessionLock.acquire()) {
+      if (status != State.Ok) {
+        return false;
+      }
+      pendingUnhandled = true;
+      errorCount.incrementAndGet();
+      init = null;
+      timestamp = DateUtils.getCurrentDateTime();
+      sequence = getSequenceTimestamp(timestamp);
+      return true;
+    }
+  }
+
   @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
   public @Nullable Date getTimestamp() {
     return timestamp;
@@ -209,7 +253,9 @@ public final class Session implements JsonUnknown, JsonSerializable {
 
       // at this state it might be Crashed already, so we don't check for it.
       if (status == State.Ok) {
-        status = State.Exited;
+        // a session that experienced an unhandled (but non-terminal) exception is finalized as
+        // Unhandled rather than Exited.
+        status = pendingUnhandled ? State.Unhandled : State.Exited;
       }
 
       if (timestamp != null) {
@@ -262,6 +308,10 @@ public final class Session implements JsonUnknown, JsonSerializable {
       boolean sessionHasBeenUpdated = false;
       if (status != null) {
         this.status = status;
+        // a real crash takes precedence over a pending unhandled (non-terminal) exception.
+        if (status == State.Crashed) {
+          pendingUnhandled = false;
+        }
         sessionHasBeenUpdated = true;
       }
 
@@ -318,21 +368,24 @@ public final class Session implements JsonUnknown, JsonSerializable {
    */
   @SuppressWarnings("MissingOverride")
   public @NotNull Session clone() {
-    return new Session(
-        status,
-        started,
-        timestamp,
-        errorCount.get(),
-        distinctId,
-        sessionId,
-        init,
-        sequence,
-        duration,
-        ipAddress,
-        userAgent,
-        environment,
-        release,
-        abnormalMechanism);
+    final Session session =
+        new Session(
+            status,
+            started,
+            timestamp,
+            errorCount.get(),
+            distinctId,
+            sessionId,
+            init,
+            sequence,
+            duration,
+            ipAddress,
+            userAgent,
+            environment,
+            release,
+            abnormalMechanism);
+    session.setPendingUnhandled(pendingUnhandled);
+    return session;
   }
 
   // JsonSerializable
@@ -354,6 +407,7 @@ public final class Session implements JsonUnknown, JsonSerializable {
     public static final String IP_ADDRESS = "ip_address";
     public static final String USER_AGENT = "user_agent";
     public static final String ABNORMAL_MECHANISM = "abnormal_mechanism";
+    public static final String PENDING_UNHANDLED = "pending_unhandled";
   }
 
   @Override
@@ -383,6 +437,9 @@ public final class Session implements JsonUnknown, JsonSerializable {
     }
     if (abnormalMechanism != null) {
       writer.name(JsonKeys.ABNORMAL_MECHANISM).value(logger, abnormalMechanism);
+    }
+    if (pendingUnhandled) {
+      writer.name(JsonKeys.PENDING_UNHANDLED).value(pendingUnhandled);
     }
     writer.name(JsonKeys.ATTRS);
     writer.beginObject();
@@ -440,6 +497,7 @@ public final class Session implements JsonUnknown, JsonSerializable {
       String environment = null;
       String release = null; // @NotNull
       String abnormalMechanism = null;
+      boolean pendingUnhandled = false;
 
       Map<String, Object> unknown = null;
       while (reader.peek() == JsonToken.NAME) {
@@ -482,6 +540,10 @@ public final class Session implements JsonUnknown, JsonSerializable {
             break;
           case JsonKeys.ABNORMAL_MECHANISM:
             abnormalMechanism = reader.nextStringOrNull();
+            break;
+          case JsonKeys.PENDING_UNHANDLED:
+            final Boolean pendingUnhandledValue = reader.nextBooleanOrNull();
+            pendingUnhandled = pendingUnhandledValue != null && pendingUnhandledValue;
             break;
           case JsonKeys.ATTRS:
             reader.beginObject();
@@ -542,6 +604,7 @@ public final class Session implements JsonUnknown, JsonSerializable {
               environment,
               release,
               abnormalMechanism);
+      session.setPendingUnhandled(pendingUnhandled);
       session.setUnknown(unknown);
       reader.endObject();
       return session;
