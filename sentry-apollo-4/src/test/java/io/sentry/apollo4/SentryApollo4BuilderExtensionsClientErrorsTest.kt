@@ -374,6 +374,26 @@ abstract class SentryApollo4BuilderExtensionsClientErrorsTest(
   }
 
   @Test
+  fun `data collection can disable incoming response body`() {
+    val sut =
+      fixture.getSut(responseBody = fixture.responseBodyNotOk) {
+        dataCollection.httpBodies = emptySet()
+      }
+    executeQuery(sut)
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check {
+          val response = it.contexts.response!!
+          assertEquals(200, response.statusCode)
+          assertEquals(200, response.bodySize)
+          assertNull(response.data)
+        },
+        any<Hint>(),
+      )
+  }
+
+  @Test
   fun `capture errors with more response context if sendDefaultPii is enabled`() {
     val sut = fixture.getSut(responseBody = fixture.responseBodyNotOk, sendDefaultPii = true)
     executeQuery(sut)
