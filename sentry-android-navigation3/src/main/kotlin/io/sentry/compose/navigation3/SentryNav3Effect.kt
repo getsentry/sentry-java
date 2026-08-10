@@ -16,6 +16,7 @@ import org.jetbrains.annotations.ApiStatus
  * ```kotlin
  *  @Composable
  *  fun AppNavigation() {
+ *  // TODO ADAM: rememberSaveable?
  *    val navBackStack = remember { mutableStateListOf<Route>(Home) }
  *
  *    // Call before NavDisplay so destination effects can attach work to the route transaction.
@@ -93,6 +94,7 @@ import org.jetbrains.annotations.ApiStatus
 @ApiStatus.Experimental
 @Composable
 @NonRestartableComposable
+// TODO ADAM: Any recomposition issues / performance issues we need to worry about?
 public fun <T : Any> SentryNav3Effect(
   backStack: SnapshotStateList<T>,
   scopes: IScopes = ScopesAdapter.getInstance(),
@@ -132,6 +134,7 @@ public fun <T : Any> SentryNav3Effect(
 
   DisposableEffect(observer) { onDispose { observer.cleanup() } }
 
+  // TODO ADAM: Comment on why we're not using a LaunchedEffect.
   DisposableEffect(observer, backStackSnapshot) {
     observer.onBackStackChanged(backStack = backStackSnapshot)
     onDispose {}

@@ -2,8 +2,10 @@ package io.sentry.compose.navigation3
 
 import io.sentry.Breadcrumb
 import io.sentry.Hint
+import io.sentry.IScope
 import io.sentry.IScopes
 import io.sentry.ITransaction
+import io.sentry.PropagationContext
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryLevel.INFO
@@ -12,12 +14,60 @@ import io.sentry.SpanStatus
 import io.sentry.TransactionContext
 import io.sentry.TransactionOptions
 import io.sentry.TypeCheckHint
-import io.sentry.compose.navigation3.SentryBackStackObserver.Companion.NAVIGATION_CONTEXT_KEY
 import io.sentry.protocol.App
 import io.sentry.protocol.TransactionNameSource
 import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
-import io.sentry.util.TracingUtils
 import java.lang.ref.WeakReference
+
+/*
+ * TODO ADAM: NEXT STEPS
+ *
+ * - Apply Compose performance rendering tracing to Nav2Activity and Nav3Activity. (We want to ensure those traces show up in the nav transactions.)
+ *
+ * - Make sure our composition ordering updates work correctly when creating a nav transaction. (Eg, if we navigate to a screen that uses a LaunchedEffect to do initial work, we want to make sure that work is tracked under the nav transaction.)
+ *
+ * --- Sanity check the current solution: Does Compose guarantee it recomposes / re-executes observers of changed state (here, the backstack) in lexical order?
+ *
+ * --- Explore i) ordering SentryNav3Effect vs NavDisplay, ii) SentryNavDisplay, or iii) rememberSentryNav3BackStack() (see "SentryNav3Effect Ordering Relative to NavDisplay" section in ~/Desktop/nav2-vs-nav3-transaction-policies.txt).
+ *
+ * --- Add simulated work in the destination that involves LaunchedEffect, DisposableEffect, etc.
+ *
+ * --- Have LLM check via Sample App.
+ *
+ * --- Decide whether we want to introduce SentryNavDecorator in phase 1 to ensure ordering updates work correctly.
+ *
+ * - Make sure sample app contains all required nav3 recipes.
+ *
+ * - Have LLM re-check for Nav2 vs Nav3 parity.
+ *
+ * - Fix sample app UX wonkiness (eg, tab selection, etc.)
+ *
+ * - Use kotlinx serialization to produce routes in sample app.
+ *
+ * - Determine whether we want to emit any additional Sentry state when the backstack is updated (eg, SceneStrategy, DialogStrategy, etc.).
+ *
+ * - Harmonize Nav2 and Nav3 sample apps.
+ *
+ * - Initial PRs for Nav2 sample app without Compose tab, and then Compose tab.
+ *
+ * - Then PR for Nav3 phase 1 implementation.
+ *
+ * - Does SAGP auto-instrument for Nav2??
+ */
+/*
+ * TODO ADAM: MAJOR DISCUSSION POINTS
+ *
+ * - Transaction generation: Updating our Activity-centry ui.load approach to a single-Activity, Compose-first world.
+ *
+ * --- Transaction deference policies. Right now nav transactions defer to any existing transaction, which will often be ui.load and (if enabled) ui.action.
+ * --- See note from convo with Geno.
+ * --- See ~/Desktop/nav2-vs-nav3-transaction-policies.txt and ~/Desktop/automatic-transactions.txt
+ *
+ * - Transaction UX in Sentry UI:
+ *
+ * --- Confusing to have, say, a navigation transaction whose only child span is a transient one occurring, say, at 2.99 seconds. That means the nav transaction looks like it takes ~3 seconds, even though there may only be 0.01 ms of work performed.
+ * ------ Transactions are containers, not proper spans. Our UX should indicate as much.
+ */
 
 // TODO ADAM: KDoc
 internal class SentryBackStackObserver<T : Any>
@@ -36,7 +86,8 @@ internal constructor(
 
   private var previousBackStackEntry: WeakReference<T>? =
     null // TODO ADAM: Memory leak due diligence
-  private var activeTransaction: ITransaction? = null
+
+  private var activeNav3Transaction: ITransaction? = null
 
   private val areNavigationTransactionsEnabled: Boolean
     get() = scopes.options.isTracingEnabled && enableNavigationTransactions
@@ -57,66 +108,116 @@ internal constructor(
     }
   }
 
-  // TODO ADAM: Update KDoc.
-  /** Updates Sentry state from the live single backstack. */
+  /**
+   * Updates recorded Sentry data based on the provided [backStack].
+   *
+   * // TODO ADAM: Note that we don't appear to be doing this atm given the observer key in our
+   * DisposableEffect. Note: This method is **not** idempotent. Callers should protect against
+   * repeat invocations with the same back stack.
+   */
   internal fun onBackStackChanged(backStack: List<T>) {
     guard("onBackStackChanged") {
-      scopes.apply {
-        updateNavigationContext(backStack)
-        handleTopEntry(backStack)
+      scopes.configureScope { scope ->
+        // Always update the recorded backstack.
+        scope.updateNavigationContext(backStack)
+
+        // Return early if the top of the backstack is the same...
+        val previousTop: T? = previousBackStackEntry?.get()
+        val currentTop: T = backStack.lastOrNull() ?: return@configureScope
+        if (previousTop == currentTop) {
+          return@configureScope
+        }
+
+        // ...otherwise record data relevant to a new nav destination.
+        val routeName = resolveRouteName(currentTop)
+        val arguments = resolveArguments(currentTop)
+
+        if (scopes.options.isEnableScreenTracking) {
+          scope.trackEntryAsScreen(backStackEntry = currentTop)
+        }
+
+        if (enableNavigationBreadcrumbs) {
+          scopes.addNav3Breadcrumb(
+            fromEntry = previousTop,
+            toEntry = currentTop,
+            routeName,
+            arguments,
+          )
+        }
+
+        // Refresh nav tracing (i.e., finish any previous nav3 transaction and start a new one if
+        // enabled + no other transaction is active).
+        scope.stopNav3Transaction()
+
+        if (areNavigationTransactionsEnabled) {
+          scopes.startNav3Transaction(routeName, arguments)
+        } else {
+          // Keep error grouping identical whether or not nav transactions are enabled.
+          scope.rotatePropagationContext()
+        }
+
+        previousBackStackEntry = WeakReference(currentTop)
       }
     }
   }
 
   internal fun cleanup() {
-    scopes.stopTracing()
-
     previousBackStackEntry = null
 
-    if (captureBackStack) {
-      scopes.configureScope { scope -> scope.removeContexts(NAVIGATION_CONTEXT_KEY) }
+    scopes.configureScope { scope ->
+      scope.stopNav3Transaction()
+
+      if (captureBackStack) {
+        // This observer owns the Nav3 navigation context while it's in the composition, and cleanup
+        // removes it to avoid leaking stale backstack data after observation stops. If the host app
+        // replaces one observer with another, there may be a brief gap where events lack navigation
+        // context. Apps should keep the observer at the nav root so cleanup only runs when the
+        // navigation session is ending, not during normal destination changes.
+        scope.removeContexts(NAVIGATION_CONTEXT_KEY)
+      }
     }
   }
 
-  // TODO ADAM: Rename.
-  // TODO ADAM: KDoc.
-  /**
-   * TODO ADAM: Update. If the incoming backstack entry changed:
-   * - starts a new transaction, and
-   * - adds a breadcrumb
-   * - refreshes screen tracking
-   *
-   * If the incoming backstack entry is the same:
-   * - refreshes screen tracking
-   */
-  private fun IScopes.handleTopEntry(backStack: List<T>) {
-    val currentTop: T = backStack.lastOrNull() ?: return
-
-    val previousTop = previousBackStackEntry?.get()
-    if (previousTop != null && previousTop == currentTop) {
-      updateScreenTracking(currentTop)
+  private fun IScope.updateNavigationContext(backStack: List<T>) {
+    // Atm navigation context consists solely of backstack tracking. If it's disabled, clear any
+    // previously captured context.
+    if (!captureBackStack) {
+      this.removeContexts(NAVIGATION_CONTEXT_KEY)
       return
     }
 
-    val routeName = resolveRouteName(currentTop)
-    val arguments = resolveArguments(currentTop)
-
-    this.addBreadcrumb(fromEntry = previousTop, toEntry = currentTop, routeName, arguments)
-    this.updateScreenTracking(currentTop)
-    this.startTracing(routeName, arguments)
-    previousBackStackEntry = WeakReference(currentTop)
+    val entries = backStack.toRouteEntries()
+    if (entries.isEmpty()) {
+      this.removeContexts(NAVIGATION_CONTEXT_KEY)
+    } else {
+      this.setContexts(NAVIGATION_CONTEXT_KEY, mapOf("backstack" to entries))
+    }
   }
 
-  private fun IScopes.addBreadcrumb(
+  private fun IScope.rotatePropagationContext() {
+    withPropagationContext { setPropagationContext(PropagationContext()) }
+  }
+
+  /**
+   * Tracks the provided [backStackEntry] as the current "screen" (i.e., visible UI).
+   *
+   * Update as needed once multipane and multiple back stack support are introduced.
+   */
+  private fun IScope.trackEntryAsScreen(backStackEntry: T) {
+    val primaryRoute = resolveRouteName(backStackEntry)
+
+    this.screen = primaryRoute
+    val scopeContexts = this.contexts
+    val app = scopeContexts.app ?: App().also { scopeContexts.setApp(it) }
+    app.viewNames = listOf(primaryRoute)
+  }
+
+  private fun IScopes.addNav3Breadcrumb(
     fromEntry: T?,
     toEntry: T,
     routeName: String,
     arguments: Map<String, Any?>,
   ) {
-    if (!enableNavigationBreadcrumbs) {
-      return
-    }
-
     val breadcrumb =
       Breadcrumb().apply {
         type = NAVIGATION_OP
@@ -143,64 +244,38 @@ internal constructor(
     this.addBreadcrumb(breadcrumb, hint)
   }
 
-  private fun IScopes.updateScreenTracking(backStackEntry: T) {
-    if (!this.options.isEnableScreenTracking) {
-      return
-    }
-
-    val primaryRoute = resolveRouteName(backStackEntry)
-
-    this.configureScope { scope ->
-      scope.screen = primaryRoute
-      val contexts = scope.contexts
-      val app = contexts.app ?: App().also { contexts.setApp(it) }
-      app.viewNames = listOf(primaryRoute)
-    }
-  }
-
   /**
-   * Starts a route-scoped navigation transaction, or rotates trace context if transactions are
-   * disabled.
+   * Starts an idle navigation transaction with the receiver and sets it as [activeNav3Transaction],
+   * or no-ops if a transaction isn't needed (e.g., because an ambient transaction already exists).
+   *
+   * Note: By convention, sentry-java integrations capable of producing transactions bound to the
+   * ambient scope do so only if there's no already-bound transaction or other current span context
+   * (e.g., OTel spans installed via `IScope.setActiveSpan()`). That's especially important in the
+   * case of navigation, which would tend to clobber `ui.load` transactions and distort TTID and
+   * TTFD metrics in users' Mobile Vitals dashboards.
    */
-  private fun IScopes.startTracing(routeName: String, arguments: Map<String, Any?>) {
-    if (!areNavigationTransactionsEnabled) {
-      // Even without a route-scoped navigation transaction, advance the trace so work after this
-      // navigation doesn't stay attached to the previous route's trace context.
-      TracingUtils.startNewTrace(this)
-      return
-    }
-
-    // Create a clean slate before starting a new transaction.
-    this.stopTracing()
-
-    if (this.getSpan() != null) {
-      // Implicit child spans use the current active span as their parent. getSpan() can return an
-      // active child span as well as a transaction, so checking only the transaction slot would
-      // miss
-      // work that is already scoped under another operation. For example, the first Nav3
-      // destination
-      // may load while the Activity ui.load transaction is still active, or a route change may
-      // happen
-      // while a user-created span is active. In both cases, destination loading spans would attach
-      // to
-      // the existing operation, and a new Nav3 transaction would compete for the same navigation
-      // without owning the destination work.
+  private fun IScopes.startNav3Transaction(routeName: String, arguments: Map<String, Any?>) {
+    if (this.span != null) {
       this.options.logger.log(
         DEBUG,
-        "Nav3 navigation transaction for route %s won't be created because another span is active.",
+        "Nav3 transaction for route %s won't be created because another transaction or span is active.",
         routeName,
       )
+
+      // Note that we don't create a fallback navigation span in situations where a parent
+      // transaction isn't needed. Doing so would let us consistently provide users with spans
+      // marking nav updates, but we don't bother b/c i) we want to maintain parity with our Nav2
+      // integration and ii) the "marker" spans would consume quota without providing much value.
+      // (Users can rely on breadcrumbs instead.)
       return
     }
 
     val transactionOptions =
       TransactionOptions().also {
         it.isWaitForChildren = true
-        it.idleTimeout = scopes.options.idleTimeout
-
-        val deadlineTimeoutMillis = scopes.options.deadlineTimeout
+        it.idleTimeout = this.options.idleTimeout
+        val deadlineTimeoutMillis = this.options.deadlineTimeout
         it.deadlineTimeout = if (deadlineTimeoutMillis <= 0) null else deadlineTimeoutMillis
-
         it.isTrimEnd = true
       }
 
@@ -211,7 +286,7 @@ internal constructor(
       )
 
     // Track the transaction immediately so a later failure can never orphan it.
-    activeTransaction = transaction
+    activeNav3Transaction = transaction
 
     transaction.apply {
       spanContext.origin = TRANSACTION_ORIGIN
@@ -230,44 +305,22 @@ internal constructor(
   }
 
   /**
-   * Finishes the active navigation transaction and clears it from the scope if it is still bound.
+   * Finishes and unsets [activeNav3Transaction], clearing it from the receiver if still bound.
+   *
+   * No-ops if [activeNav3Transaction] was never set.
    */
-  private fun IScopes.stopTracing() {
-    val transaction = activeTransaction ?: return
+  private fun IScope.stopNav3Transaction() {
+    val transaction = activeNav3Transaction ?: return
     val status = transaction.status ?: SpanStatus.OK
     transaction.finish(status)
 
-    this.configureScope { scope ->
-      scope.withTransaction { tx ->
-        if (tx == transaction) {
-          scope.clearTransaction()
-        }
+    this.withTransaction { tx ->
+      if (tx == transaction) {
+        this.clearTransaction()
       }
     }
 
-    activeTransaction = null
-  }
-
-  /**
-   * Updates the receiver's [navigation context][NAVIGATION_CONTEXT_KEY] based on the incoming
-   * [backStack].
-   */
-  private fun IScopes.updateNavigationContext(backStack: List<T>) {
-    // Atm navigation context consists solely of backstack tracking. If it's disabled, clear any
-    // previously captured context.
-    if (!captureBackStack) {
-      this.configureScope { scope -> scope.removeContexts(NAVIGATION_CONTEXT_KEY) }
-      return
-    }
-
-    val entries = backStack.toRouteEntries()
-    if (entries.isEmpty()) {
-      this.configureScope { scope -> scope.removeContexts(NAVIGATION_CONTEXT_KEY) }
-    } else {
-      this.configureScope { scope ->
-        scope.setContexts(NAVIGATION_CONTEXT_KEY, mapOf("backstack" to entries))
-      }
-    }
+    activeNav3Transaction = null
   }
 
   // TODO ADAM: Provide examples

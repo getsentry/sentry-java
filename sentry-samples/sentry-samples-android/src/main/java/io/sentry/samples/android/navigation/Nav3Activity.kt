@@ -7,6 +7,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
@@ -23,6 +24,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -39,6 +41,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -92,13 +95,18 @@ class Nav3Activity : ComponentActivity() {
 @Composable
 private fun Nav3SampleApp() {
   val activity = LocalContext.current as? ComponentActivity
+  // Covers the saveable-backstack recipe without a separate scenario.
   val backStack = rememberSaveableNav3BackStack()
+  val dialogSceneStrategy = remember { Nav3DialogSceneStrategy<Nav3Route>() }
+  val bottomSheetSceneStrategy = remember { Nav3BottomSheetSceneStrategy<Nav3Route>() }
 
   var enableNavigationBreadcrumbs by remember { mutableStateOf(true) }
   var enableNavigationTransactions by remember { mutableStateOf(true) }
   var captureBackStack by remember { mutableStateOf(true) }
   var maxCapturedBackStackEntries by remember { mutableIntStateOf(10) }
   var routeActivationAction by remember { mutableStateOf(RouteActivationAction.NONE) }
+  var selectedScenario by rememberSaveable { mutableStateOf(Nav3Scenario.SINGLE_STACK) }
+  var showCrashConfirmation by remember { mutableStateOf(false) }
 
   SentryNav3Effect(
     backStack = backStack,
@@ -132,70 +140,102 @@ private fun Nav3SampleApp() {
         selectedAction = routeActivationAction,
         onActionSelected = { action -> routeActivationAction = action },
         onCaptureException = { captureSampleException("Nav3") },
-        onCrashApp = { crashSampleApp("Nav3") },
+        onCrashApp = { showCrashConfirmation = true },
       )
     },
   ) { innerPadding ->
     Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
-      ScenarioBar(backStack)
-      NavDisplay(
-        backStack = backStack,
-        onBack = {
-          if (backStack.size > 1) {
-            backStack.removeLastOrNull()
-          } else {
-            activity?.finish()
-          }
+      ScenarioBar(
+        selectedScenario = selectedScenario,
+        onScenarioSelected = { scenario ->
+          selectedScenario = scenario
+          backStack.openScenario(scenario)
         },
-        entryProvider =
-          entryProvider {
-            entry<Nav3Route.SingleStack> { route ->
-              Nav3RouteActivationEffect(route, routeActivationAction)
-              SingleStackRoute(backStack)
-            }
-            entry<Nav3Route.DialogsAndSheets> { route ->
-              Nav3RouteActivationEffect(route, routeActivationAction)
-              DialogsAndSheetsRoute(backStack)
-            }
-            entry<Nav3Route.DeepLink> { route ->
-              Nav3RouteActivationEffect(route, routeActivationAction)
-              DeepLinkRoute(backStack)
-            }
-            entry<Nav3Route.ProductList> { route ->
-              Nav3RouteActivationEffect(route, routeActivationAction)
-              ProductListRoute(backStack)
-            }
-            entry<Nav3Route.ProductDetail> { route ->
-              Nav3RouteActivationEffect(route, routeActivationAction)
-              ProductDetailRoute(route, backStack)
-            }
-            entry<Nav3Route.Checkout> { route ->
-              Nav3RouteActivationEffect(route, routeActivationAction)
-              CheckoutRoute(route, backStack)
-            }
-            entry<Nav3Route.Confirmation> { route ->
-              Nav3RouteActivationEffect(route, routeActivationAction)
-              ConfirmationRoute(route, backStack)
-            }
-            entry<Nav3Route.PromoDialog> { route ->
-              Nav3RouteActivationEffect(route, routeActivationAction)
-              PromoDialogRoute(route, backStack)
-            }
-            entry<Nav3Route.ShareSheet> { route ->
-              Nav3RouteActivationEffect(route, routeActivationAction)
-              ShareSheetRoute(route, backStack)
-            }
-            entry<Nav3Route.Multipane> { route ->
-              Nav3RouteActivationEffect(route, routeActivationAction)
-              FutureRoute(routeName = "Multipane", scenario = "multipane")
-            }
-            entry<Nav3Route.Multistack> { route ->
-              Nav3RouteActivationEffect(route, routeActivationAction)
-              FutureRoute(routeName = "Multiple Stacks", scenario = "multistack")
+      )
+      Box(modifier = Modifier.weight(1f)) {
+        NavDisplay(
+          backStack = backStack,
+          modifier = Modifier.fillMaxSize(),
+          onBack = {
+            if (backStack.size > 1) {
+              backStack.removeLastOrNull()
+            } else {
+              activity?.finish()
             }
           },
-      )
+          sceneStrategies = listOf(dialogSceneStrategy, bottomSheetSceneStrategy),
+          entryProvider =
+            entryProvider {
+              entry<Nav3Route.SingleStack> { route ->
+                Nav3RouteActivationEffect(route, routeActivationAction)
+                SingleStackRoute(backStack)
+              }
+              entry<Nav3Route.DialogsAndSheets> { route ->
+                Nav3RouteActivationEffect(route, routeActivationAction)
+                DialogsAndSheetsRoute(backStack)
+              }
+              entry<Nav3Route.DeepLink> { route ->
+                Nav3RouteActivationEffect(route, routeActivationAction)
+                DeepLinkRoute(backStack)
+              }
+              entry<Nav3Route.ProductList> { route ->
+                Nav3RouteActivationEffect(route, routeActivationAction)
+                ProductListRoute(backStack)
+              }
+              entry<Nav3Route.ProductDetail> { route ->
+                Nav3RouteActivationEffect(route, routeActivationAction)
+                ProductDetailRoute(route, backStack)
+              }
+              entry<Nav3Route.Checkout> { route ->
+                Nav3RouteActivationEffect(route, routeActivationAction)
+                CheckoutRoute(route, backStack)
+              }
+              entry<Nav3Route.Confirmation> { route ->
+                Nav3RouteActivationEffect(route, routeActivationAction)
+                ConfirmationRoute(route, backStack)
+              }
+              entry<Nav3Route.PromoDialog>(metadata = Nav3DialogSceneStrategy.dialog()) { route ->
+                Nav3RouteActivationEffect(route, routeActivationAction)
+                PromoDialogRoute(route, backStack)
+              }
+              entry<Nav3Route.ShareSheet>(metadata = Nav3BottomSheetSceneStrategy.bottomSheet()) {
+                route ->
+                Nav3RouteActivationEffect(route, routeActivationAction)
+                ShareSheetRoute(route, backStack)
+              }
+              entry<Nav3Route.Multipane> { route ->
+                Nav3RouteActivationEffect(route, routeActivationAction)
+                FutureRoute(routeName = "Multipane", scenario = "multipane")
+              }
+              entry<Nav3Route.Multistack> { route ->
+                Nav3RouteActivationEffect(route, routeActivationAction)
+                FutureRoute(routeName = "Multiple Stacks", scenario = "multistack")
+              }
+            },
+        )
+      }
     }
+  }
+
+  if (showCrashConfirmation) {
+    AlertDialog(
+      onDismissRequest = { showCrashConfirmation = false },
+      title = { Text("Crash app?") },
+      text = { Text("This will throw an uncaught exception and close the sample app.") },
+      dismissButton = {
+        TextButton(onClick = { showCrashConfirmation = false }) { Text("Cancel") }
+      },
+      confirmButton = {
+        TextButton(
+          onClick = {
+            showCrashConfirmation = false
+            crashSampleApp("Nav3")
+          }
+        ) {
+          Text("Crash")
+        }
+      },
+    )
   }
 }
 
@@ -362,8 +402,10 @@ private fun SentryNav3OptionsMenuItem(
 }
 
 @Composable
-private fun ScenarioBar(backStack: SnapshotStateList<Nav3Route>) {
-  val selectedScenario = backStack.currentScenario()
+private fun ScenarioBar(
+  selectedScenario: Nav3Scenario,
+  onScenarioSelected: (Nav3Scenario) -> Unit,
+) {
   val scenarios = Nav3Scenario.entries
 
   PrimaryScrollableTabRow(
@@ -373,28 +415,10 @@ private fun ScenarioBar(backStack: SnapshotStateList<Nav3Route>) {
     scenarios.forEach { scenario ->
       Tab(
         selected = selectedScenario == scenario,
-        onClick = { backStack.openScenario(scenario) },
+        onClick = { onScenarioSelected(scenario) },
         text = { Text(scenario.label) },
       )
     }
-  }
-}
-
-private fun List<Nav3Route>.currentScenario(): Nav3Scenario {
-  return when (lastOrNull()) {
-    Nav3Route.Multipane -> Nav3Scenario.MULTIPANE
-    Nav3Route.Multistack -> Nav3Scenario.MULTIPLE_STACKS
-    Nav3Route.DialogsAndSheets,
-    is Nav3Route.PromoDialog,
-    is Nav3Route.ShareSheet -> Nav3Scenario.DIALOGS_SHEETS
-    Nav3Route.DeepLink -> Nav3Scenario.DEEP_LINK
-    is Nav3Route.ProductDetail ->
-      if ((last() as Nav3Route.ProductDetail).source == "deep-link") {
-        Nav3Scenario.DEEP_LINK
-      } else {
-        Nav3Scenario.SINGLE_STACK
-      }
-    else -> Nav3Scenario.SINGLE_STACK
   }
 }
 
@@ -421,20 +445,20 @@ private fun SentryControls(
     Row(
       modifier = Modifier.fillMaxWidth().padding(12.dp),
       horizontalArrangement = Arrangement.spacedBy(8.dp),
-      verticalAlignment = Alignment.CenterVertically,
+      verticalAlignment = Alignment.Bottom,
     ) {
       Row(
         modifier = Modifier.weight(1f).horizontalScroll(rememberScrollState()),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically,
+        verticalAlignment = Alignment.Bottom,
       ) {
-        Button(onClick = onCaptureException) { Text("Exception") }
-        Button(onClick = onCrashApp) { Text("Crash App") }
         RouteActivationActionDropdown(
           selectedAction = selectedAction,
           sentryPink = sentryPink,
           onActionSelected = onActionSelected,
         )
+        Button(onClick = onCaptureException) { Text("Exception") }
+        Button(onClick = onCrashApp) { Text("Crash App") }
       }
     }
   }
@@ -449,7 +473,11 @@ private fun RouteActivationActionDropdown(
   var expanded by remember { mutableStateOf(false) }
 
   Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-    Text("Route work", style = MaterialTheme.typography.bodySmall)
+    Text(
+      "Route work",
+      modifier = Modifier.padding(start = 16.dp),
+      style = MaterialTheme.typography.bodySmall,
+    )
     OutlinedButton(onClick = { expanded = true }) { Text(selectedAction.label) }
     DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
       RouteActivationAction.entries.forEach { action ->
@@ -553,8 +581,8 @@ private fun DialogsAndSheetsRoute(backStack: SnapshotStateList<Nav3Route>) {
   RouteScaffold(
     title = "Dialogs & Sheets",
     description =
-      "These routes simulate dialog and bottom-sheet destinations inside the content area so the " +
-        "Sentry controls remain visible and usable.",
+      "These destinations use Nav3 scene metadata and overlay scene strategies while the Sentry " +
+        "controls remain visible in the Activity bottom bar.",
   ) {
     RouteButton("Show Dialog Destination") {
       backStack.add(Nav3Route.PromoDialog(promoId = "summer-sale"))
@@ -599,7 +627,9 @@ private fun ProductDetailRoute(
     RouteButton("Show Promo Dialog") {
       backStack.add(Nav3Route.PromoDialog("detail-${route.productId}"))
     }
-    RouteButton("Open Share Sheet") { backStack.add(Nav3Route.ShareSheet(route.productId)) }
+    RouteButton("Open Share Sheet") {
+      backStack.add(Nav3Route.ShareSheet(route.productId))
+    }
     RouteButton("Go to Checkout") { backStack.add(Nav3Route.Checkout(route.productId)) }
   }
 }

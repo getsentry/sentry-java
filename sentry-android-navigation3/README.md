@@ -1,3 +1,6 @@
+// TODO ADAM: Add a section about navigation transaction / span policy. (See my own project notes.)
+// TODO ADAM: Discuss all flags relevant to Nav3 Sentry data generation (eg, enableScreenTracking – which comes via Sentry Options; SentryNav3Options).
+
 # sentry-android-navigation3
 
 This module provides Sentry instrumentation for single-stack Jetpack Navigation 3 apps on Android.

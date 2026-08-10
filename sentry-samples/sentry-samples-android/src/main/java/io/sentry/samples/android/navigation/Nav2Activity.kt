@@ -14,6 +14,7 @@ import android.widget.LinearLayout
 import android.widget.Spinner
 import android.widget.TextView
 import androidx.activity.compose.BackHandler
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
@@ -266,10 +267,10 @@ class Nav2Activity : AppCompatActivity() {
           addView(
             LinearLayout(context).apply {
               orientation = LinearLayout.HORIZONTAL
-              gravity = Gravity.CENTER_VERTICAL
-              addView(sentryEventButton("Exception") { captureSampleException("Nav2") })
-              addView(sentryEventButton("Crash App") { crashSampleApp("Nav2") })
+              gravity = Gravity.BOTTOM
               addView(nav2RouteActivationActionSelector())
+              addView(sentryEventButton("Exception") { captureSampleException("Nav2") })
+              addView(sentryEventButton("Crash App") { showCrashConfirmation("Nav2") })
             }
           )
         }
@@ -306,6 +307,7 @@ class Nav2Activity : AppCompatActivity() {
   }
 
   private fun openScenario(scenario: Nav2Scenario) {
+    activeScenario = scenario
     when (scenario) {
       Nav2Scenario.SINGLE_STACK -> {
         showFragmentNavHost()
@@ -335,7 +337,6 @@ class Nav2Activity : AppCompatActivity() {
   }
 
   private fun showComposeSingleStack() {
-    activeScenario = Nav2Scenario.SINGLE_STACK_COMPOSE
     if (composeNavHostView == null) {
       composeNavHostView =
         createComposeNavHostView().also { view ->
@@ -363,8 +364,9 @@ class Nav2Activity : AppCompatActivity() {
   private fun updateChrome(destination: NavDestination?, arguments: Bundle?) {
     syncTrackedBackStack(destination, arguments)
 
-    val routeName = destination?.routeName() ?: "SingleStack"
-    val displayArguments = arguments.displayArguments()
+    val trackedDestination = nav2BackStack.lastOrNull()
+    val routeName = trackedDestination?.routeName ?: destination?.routeName() ?: "SingleStack"
+    val displayArguments = (trackedDestination?.arguments ?: arguments).displayArguments()
     val currentRoute =
       if (displayArguments.isEmpty()) {
         "/$routeName"
@@ -375,8 +377,6 @@ class Nav2Activity : AppCompatActivity() {
     currentRouteText.text = "Current route: $currentRoute"
     currentRouteScroll.post { currentRouteScroll.scrollTo(0, 0) }
     updateNavControllerBackStackText()
-
-    activeScenario = currentScenario(destination, arguments)
     updateTabSelection(activeScenario)
   }
 
@@ -403,23 +403,6 @@ class Nav2Activity : AppCompatActivity() {
       tabView.indicator.setBackgroundColor(
         color(if (selected) R.color.colorPrimary else android.R.color.transparent)
       )
-    }
-  }
-
-  private fun currentScenario(destination: NavDestination?, arguments: Bundle?): Nav2Scenario {
-    return when (destination?.id) {
-      R.id.nav2_dialogs_and_sheets -> Nav2Scenario.DIALOGS_SHEETS
-      R.id.nav2_promo_dialog,
-      R.id.nav2_share_sheet ->
-        arguments?.getString(ARG_SCENARIO)?.toNav2Scenario() ?: Nav2Scenario.DIALOGS_SHEETS
-      R.id.nav2_deep_link -> Nav2Scenario.DEEP_LINK
-      R.id.nav2_product_detail ->
-        if (arguments?.getString(ARG_SOURCE) == "deep-link") {
-          Nav2Scenario.DEEP_LINK
-        } else {
-          Nav2Scenario.SINGLE_STACK
-        }
-      else -> Nav2Scenario.SINGLE_STACK
     }
   }
 
@@ -483,6 +466,7 @@ class Nav2Activity : AppCompatActivity() {
           text = "Route work"
           textSize = 12f
           setTextColor(color(android.R.color.black))
+          setPadding(16.dp, 0, 0, 0)
         }
       )
       addView(
@@ -525,6 +509,15 @@ class Nav2Activity : AppCompatActivity() {
   private fun captureSampleException(navName: String) {
     Sentry.captureException(RuntimeException("$navName sample exception button"))
     Thread { Sentry.flush(SENTRY_FLUSH_TIMEOUT_MILLIS) }.start()
+  }
+
+  private fun showCrashConfirmation(navName: String) {
+    AlertDialog.Builder(this)
+      .setTitle("Crash app?")
+      .setMessage("This will throw an uncaught exception and close the sample app.")
+      .setNegativeButton("Cancel", null)
+      .setPositiveButton("Crash") { _, _ -> crashSampleApp(navName) }
+      .show()
   }
 
   private fun crashSampleApp(navName: String): Nothing {

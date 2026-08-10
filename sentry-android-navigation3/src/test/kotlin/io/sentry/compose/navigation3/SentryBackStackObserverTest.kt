@@ -248,7 +248,7 @@ class SentryBackStackObserverTest {
   @Test
   fun `onBackStackChanged does not start transaction when another span is active`() {
     val sut = fixture.getSut()
-    whenever(fixture.scopes.getSpan()).thenReturn(mock<ISpan>())
+    whenever(fixture.scope.span).thenReturn(mock<ISpan>())
 
     sut.onBackStackChanged(listOf(HomeScreen()))
 
