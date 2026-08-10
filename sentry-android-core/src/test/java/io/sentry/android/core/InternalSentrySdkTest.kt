@@ -470,7 +470,7 @@ class InternalSentrySdkTest {
   }
 
   @Test
-  fun `captureEnvelopeNonTerminating keeps the session Ok and marks it pending unhandled`() {
+  fun `captureEnvelopeNonTerminating keeps the session Ok and flags the unhandled error`() {
     val fixture = Fixture()
     fixture.init(context)
 
@@ -488,11 +488,11 @@ class InternalSentrySdkTest {
     assertThat(capturedEnvelopeItems).hasSize(1)
     assertThat(capturedEnvelopeItems[0].header.type).isEqualTo(SentryItemType.Event)
 
-    // and the session stays alive on the scope, same id, marked pending unhandled
+    // and the session stays alive on the scope, same id, flagged with the unhandled error
     val scopeSession = AtomicReference<Session>()
     Sentry.configureScope { scope -> scopeSession.set(scope.session) }
     assertThat(scopeSession.get().status).isEqualTo(Session.State.Ok)
-    assertThat(scopeSession.get().isPendingUnhandled).isTrue()
+    assertThat(scopeSession.get().hasNonTerminatingUnhandledError()).isTrue()
     assertThat(scopeSession.get().sessionId).isEqualTo(originalSid.get())
 
     // and it is persisted so pending survives process death
@@ -500,7 +500,7 @@ class InternalSentrySdkTest {
     val persistedSession =
       fixture.options.serializer.deserialize(sessionFile.reader(), Session::class.java)!!
     assertThat(persistedSession.status).isEqualTo(Session.State.Ok)
-    assertThat(persistedSession.isPendingUnhandled).isTrue()
+    assertThat(persistedSession.hasNonTerminatingUnhandledError()).isTrue()
     assertThat(persistedSession.sessionId).isEqualTo(originalSid.get())
   }
 
@@ -544,7 +544,7 @@ class InternalSentrySdkTest {
     val pendingSession = AtomicReference<Session>()
     Sentry.configureScope { scope -> pendingSession.set(scope.session) }
     val oldSid = pendingSession.get().sessionId
-    assertThat(pendingSession.get().isPendingUnhandled).isTrue()
+    assertThat(pendingSession.get().hasNonTerminatingUnhandledError()).isTrue()
     fixture.capturedEnvelopes.clear()
 
     // when a subsequent hard crash is captured through the existing terminating API
@@ -562,14 +562,14 @@ class InternalSentrySdkTest {
         Session::class.java,
       )!!
     assertThat(crashedSession.status).isEqualTo(Session.State.Crashed)
-    assertThat(crashedSession.isPendingUnhandled).isFalse()
+    assertThat(crashedSession.hasNonTerminatingUnhandledError()).isFalse()
     assertThat(crashedSession.sessionId).isEqualTo(oldSid)
 
     // and a new Ok session with a different id is active
     val activeSession = AtomicReference<Session>()
     Sentry.configureScope { scope -> activeSession.set(scope.session) }
     assertThat(activeSession.get().status).isEqualTo(Session.State.Ok)
-    assertThat(activeSession.get().isPendingUnhandled).isFalse()
+    assertThat(activeSession.get().hasNonTerminatingUnhandledError()).isFalse()
     assertThat(activeSession.get().sessionId).isNotEqualTo(oldSid)
   }
 
