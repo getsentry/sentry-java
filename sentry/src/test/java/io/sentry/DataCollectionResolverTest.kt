@@ -25,7 +25,7 @@ class DataCollectionResolverTest {
 
     assertThat(options.dataCollectionResolver.isDataCollectionConfigured).isFalse()
 
-    options.dataCollection.queryParams = KeyValueCollectionBehavior.denyList()
+    options.dataCollection.urlQueryParams = KeyValueCollectionBehavior.denyList()
 
     assertThat(options.dataCollectionResolver.isDataCollectionConfigured).isTrue()
   }
@@ -200,21 +200,21 @@ class DataCollectionResolverTest {
   }
 
   @Test
-  fun `query params use default deny list when unset`() {
+  fun `URL query params use default deny list when unset`() {
     val options = SentryOptions()
 
-    assertThat(options.dataCollectionResolver.queryParams)
+    assertThat(options.dataCollectionResolver.urlQueryParams)
       .isEqualTo(KeyValueCollectionBehavior.denyList())
   }
 
   @Test
-  fun `query params override takes precedence`() {
+  fun `URL query params override takes precedence`() {
     val options = SentryOptions()
     val behavior = KeyValueCollectionBehavior.allowList("language", "theme")
 
-    options.dataCollection.queryParams = behavior
+    options.dataCollection.urlQueryParams = behavior
 
-    assertThat(options.dataCollectionResolver.queryParams).isEqualTo(behavior)
+    assertThat(options.dataCollectionResolver.urlQueryParams).isEqualTo(behavior)
   }
 
   @Test
