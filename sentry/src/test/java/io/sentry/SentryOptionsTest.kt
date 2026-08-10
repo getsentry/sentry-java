@@ -68,6 +68,21 @@ class SentryOptionsTest {
   }
 
   @Test
+  fun `setting null data collection preserves the current instance`() {
+    val options = SentryOptions()
+    val dataCollection = DataCollection().apply { setUserInfo(false) }
+    options.dataCollection = dataCollection
+
+    SentryOptions::class
+      .java
+      .getMethod("setDataCollection", DataCollection::class.java)
+      .invoke(options, null)
+
+    assertThat(options.dataCollection).isSameInstanceAs(dataCollection)
+    assertThat(options.dataCollection.userInfo).isFalse()
+  }
+
+  @Test
   fun `when options is initialized, logger is not null`() {
     assertNotNull(SentryOptions().logger)
   }
