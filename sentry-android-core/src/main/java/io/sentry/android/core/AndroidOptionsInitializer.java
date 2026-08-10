@@ -471,14 +471,6 @@ final class AndroidOptionsInitializer {
         options.addInAppInclude(packageName);
       }
     }
-
-    if (options.getDistinctId() == null) {
-      try {
-        options.setDistinctId(Installation.id(context));
-      } catch (RuntimeException e) {
-        options.getLogger().log(SentryLevel.ERROR, "Could not generate distinct Id.", e);
-      }
-    }
   }
 
   /**

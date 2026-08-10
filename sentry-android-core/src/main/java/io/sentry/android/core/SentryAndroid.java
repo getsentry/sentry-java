@@ -149,6 +149,14 @@ public final class SentryAndroid {
                       "Error in the 'OptionsConfiguration.configure' callback.",
                       t);
             }
+            if (options.getDistinctId() == null
+                && options.getDataCollectionResolver().isUserInfoWithLegacyAlways()) {
+              try {
+                options.setDistinctId(Installation.id(context));
+              } catch (RuntimeException e) {
+                options.getLogger().log(SentryLevel.ERROR, "Could not generate distinct Id.", e);
+              }
+            }
 
             // if SentryPerformanceProvider was disabled or removed,
             // we set the app start / sdk init time here instead
