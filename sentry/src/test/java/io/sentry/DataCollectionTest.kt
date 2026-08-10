@@ -11,7 +11,7 @@ class DataCollectionTest {
 
     assertThat(dataCollection.userInfo).isNull()
     assertThat(dataCollection.cookies).isNull()
-    assertThat(dataCollection.queryParams).isNull()
+    assertThat(dataCollection.urlQueryParams).isNull()
     assertThat(dataCollection.httpBodies).isNull()
     assertThat(dataCollection.databaseQueryData).isNull()
     assertThat(dataCollection.httpHeaders.request).isNull()
