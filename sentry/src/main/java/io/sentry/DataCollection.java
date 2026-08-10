@@ -13,7 +13,7 @@ public final class DataCollection {
   private boolean overridden;
   private @Nullable Boolean userInfo;
   private @Nullable KeyValueCollectionBehavior cookies;
-  private @Nullable KeyValueCollectionBehavior queryParams;
+  private @Nullable KeyValueCollectionBehavior urlQueryParams;
   private @Nullable Set<HttpBodyType> httpBodies;
   private @Nullable Boolean databaseQueryData;
   private final @NotNull HttpHeaders httpHeaders = new HttpHeaders();
@@ -43,12 +43,12 @@ public final class DataCollection {
     this.cookies = cookies;
   }
 
-  public @Nullable KeyValueCollectionBehavior getQueryParams() {
-    return queryParams;
+  public @Nullable KeyValueCollectionBehavior getUrlQueryParams() {
+    return urlQueryParams;
   }
 
-  public void setQueryParams(final @Nullable KeyValueCollectionBehavior queryParams) {
-    this.queryParams = queryParams;
+  public void setUrlQueryParams(final @Nullable KeyValueCollectionBehavior urlQueryParams) {
+    this.urlQueryParams = urlQueryParams;
   }
 
   public @Nullable Set<HttpBodyType> getHttpBodies() {
@@ -85,7 +85,7 @@ public final class DataCollection {
     return overridden
         || userInfo != null
         || cookies != null
-        || queryParams != null
+        || urlQueryParams != null
         || httpBodies != null
         || databaseQueryData != null
         || httpHeaders.hasOverrides()
