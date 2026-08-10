@@ -34,6 +34,7 @@ import io.sentry.util.MapObjectWriter;
 import io.sentry.util.TracingUtils;
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -153,7 +154,12 @@ public final class InternalSentrySdk {
    * - will not perform any sampling: it's up to the caller to take care of this<br>
    * - will enrich the envelope with a Session update if applicable<br>
    *
+   * <p>Unhandled events ({@code handled=false}) end the session as {@code crashed}. Prefer {@link
+   * #captureEnvelopeNonTerminating(byte[])} for hybrid runtimes where the process is expected to
+   * continue (e.g. Flutter).
+   *
    * @param envelopeData the serialized envelope data
+   * @param maybeStartNewSession if true, starts a new session after a crashed session is cleared
    * @return The Id (SentryId object) of the event, or null in case the envelope could not be
    *     captured
    */
@@ -163,14 +169,13 @@ public final class InternalSentrySdk {
     final @NotNull IScopes scopes = ScopesAdapter.getInstance();
     final @NotNull SentryOptions options = scopes.getOptions();
 
-    try (final InputStream envelopeInputStream = new ByteArrayInputStream(envelopeData)) {
-      final @NotNull ISerializer serializer = options.getSerializer();
-      final @Nullable SentryEnvelope envelope =
-          options.getEnvelopeReader().read(envelopeInputStream);
-      if (envelope == null) {
-        return null;
-      }
+    final @Nullable SentryEnvelope envelope = readEnvelope(options, envelopeData);
+    if (envelope == null) {
+      return null;
+    }
 
+    try {
+      final @NotNull ISerializer serializer = options.getSerializer();
       final @NotNull List<SentryEnvelopeItem> envelopeItems = new ArrayList<>();
 
       // determine session state based on events inside envelope
@@ -207,10 +212,108 @@ public final class InternalSentrySdk {
       final SentryEnvelope repackagedEnvelope =
           new SentryEnvelope(envelope.getHeader(), envelopeItems);
       return scopes.captureEnvelope(repackagedEnvelope);
-    } catch (Throwable t) {
-      options.getLogger().log(SentryLevel.ERROR, "Failed to capture envelope", t);
+    } catch (Exception e) {
+      options.getLogger().log(SentryLevel.ERROR, "Failed to capture envelope", e);
     }
     return null;
+  }
+
+  /**
+   * Captures the provided envelope for a non-terminating hybrid exception (e.g. Flutter).
+   *
+   * <p>Compared to {@link #captureEnvelope(byte[], boolean)} this method does <strong>not</strong>
+   * treat {@code handled=false} as a crash that ends the session. Instead it:
+   *
+   * <ul>
+   *   <li>marks the current session as pending-unhandled and increments the error count
+   *   <li>keeps session status {@code Ok} and the same session id on the scope
+   *   <li>does not attach a session update item to this envelope
+   *   <li>does not start a new session
+   *   <li>persists the current session so pending-unhandled survives process death
+   * </ul>
+   *
+   * <p>The session is finalized later by normal lifecycle ({@code endSession} / background /
+   * previous-session recovery) as {@code unhandled}, unless a native crash escalates it to {@code
+   * crashed}.
+   *
+   * <p>Same as {@link #captureEnvelope(byte[], boolean)}, this method will not enrich events, run
+   * {@code beforeSend}, or sample — the caller is responsible for that.
+   *
+   * @param envelopeData the serialized envelope data
+   * @return the id of the captured envelope, or null if capture failed
+   */
+  @Nullable
+  public static SentryId captureEnvelopeNonTerminating(final @NotNull byte[] envelopeData) {
+    final @NotNull IScopes scopes = ScopesAdapter.getInstance();
+    final @NotNull SentryOptions options = scopes.getOptions();
+
+    final @Nullable SentryEnvelope envelope = readEnvelope(options, envelopeData);
+    if (envelope == null) {
+      return null;
+    }
+
+    try {
+      final @NotNull ISerializer serializer = options.getSerializer();
+      boolean markPendingUnhandled = false;
+      boolean addErrorsCount = false;
+      for (SentryEnvelopeItem item : envelope.getItems()) {
+        final SentryEvent event = item.getEvent(serializer);
+        if (event != null) {
+          if (event.getUnhandledException() != null) {
+            markPendingUnhandled = true;
+            addErrorsCount = true;
+          } else if (event.isErrored()) {
+            addErrorsCount = true;
+          }
+        }
+      }
+
+      if (markPendingUnhandled || addErrorsCount) {
+        final boolean pending = markPendingUnhandled;
+        final boolean addErrors = addErrorsCount;
+        scopes.configureScope(
+            scope -> {
+              scope.withSession(
+                  session -> {
+                    if (session != null) {
+                      final boolean updated =
+                          pending
+                              ? session.markPendingUnhandled()
+                              : session.update(null, null, addErrors, null);
+                      if (updated && options.getEnvelopeDiskCache() instanceof EnvelopeCache) {
+                        ((EnvelopeCache) options.getEnvelopeDiskCache())
+                            .persistCurrentSession(session);
+                      }
+                    } else {
+                      options
+                          .getLogger()
+                          .log(INFO, "Session is null on captureEnvelopeNonTerminating");
+                    }
+                  });
+            });
+      }
+
+      // Capture the original envelope as-is (no session item attached).
+      return scopes.captureEnvelope(envelope);
+    } catch (Exception e) {
+      options.getLogger().log(SentryLevel.ERROR, "Failed to capture envelope", e);
+    }
+    return null;
+  }
+
+  /**
+   * Reads an envelope from the given bytes. Besides the declared {@link IOException}, {@link
+   * io.sentry.IEnvelopeReader#read(InputStream)} also rejects malformed payloads with an unchecked
+   * {@link IllegalArgumentException}, hence the broader catch.
+   */
+  private static @Nullable SentryEnvelope readEnvelope(
+      final @NotNull SentryOptions options, final @NotNull byte[] envelopeData) {
+    try (final InputStream envelopeInputStream = new ByteArrayInputStream(envelopeData)) {
+      return options.getEnvelopeReader().read(envelopeInputStream);
+    } catch (Exception e) {
+      options.getLogger().log(SentryLevel.ERROR, "Failed to read envelope", e);
+      return null;
+    }
   }
 
   public static Map<String, Object> getAppStartMeasurement() {
