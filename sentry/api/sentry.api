@@ -2497,6 +2497,10 @@ public abstract interface class io/sentry/Scope$IWithPropagationContext {
 	public abstract fun accept (Lio/sentry/PropagationContext;)V
 }
 
+public abstract interface class io/sentry/Scope$IWithSession {
+	public abstract fun accept (Lio/sentry/Session;)V
+}
+
 public abstract interface class io/sentry/Scope$IWithTransaction {
 	public abstract fun accept (Lio/sentry/ITransaction;)V
 }
