@@ -2,7 +2,6 @@ package io.sentry.samples.android.navigation
 
 import android.annotation.SuppressLint
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -24,7 +23,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -43,15 +41,15 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -74,7 +72,7 @@ import io.sentry.compose.navigation3.SentryNav3Options
 import io.sentry.samples.android.GithubAPI
 import io.sentry.samples.android.R
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * Sample app Activity for testing Sentry's
@@ -105,6 +103,7 @@ private fun Nav3SampleApp() {
   var enableNavigationTransactions by remember { mutableStateOf(true) }
   var captureBackStack by remember { mutableStateOf(true) }
   var maxCapturedBackStackEntries by remember { mutableIntStateOf(10) }
+  var routeActivationAction by remember { mutableStateOf(RouteActivationAction.NONE) }
 
   SentryNav3Effect(
     backStack = backStack,
@@ -133,7 +132,12 @@ private fun Nav3SampleApp() {
         onMaxCapturedBackStackEntriesChange = { maxCapturedBackStackEntries = it },
       )
     },
-    bottomBar = { SentryControls(backStack.lastOrNull() ?: Nav3Route.SingleStack) },
+    bottomBar = {
+      RouteActivationActionSelector(
+        selectedAction = routeActivationAction,
+        onActionSelected = { action -> routeActivationAction = action },
+      )
+    },
   ) { innerPadding ->
     Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
       ScenarioBar(backStack)
@@ -149,14 +153,52 @@ private fun Nav3SampleApp() {
         sceneStrategies = listOf(dialogSceneStrategy, bottomSheetSceneStrategy),
         entryProvider =
           entryProvider {
-            entry<Nav3Route.SingleStack> { SingleStackRoute(backStack) }
-            entry<Nav3Route.DialogsAndSheets> { DialogsAndSheetsRoute(backStack) }
-            entry<Nav3Route.DeepLink> { DeepLinkRoute(backStack) }
-            entry<Nav3Route.ProductList> { ProductListRoute(backStack) }
-            entry<Nav3Route.ProductDetail> { route -> ProductDetailRoute(route, backStack) }
-            entry<Nav3Route.Checkout> { route -> CheckoutRoute(route, backStack) }
-            entry<Nav3Route.Confirmation> { route -> ConfirmationRoute(route, backStack) }
+            entry<Nav3Route.SingleStack> { route ->
+              Nav3RouteActivationEffect(route, routeActivationAction) {
+                routeActivationAction = RouteActivationAction.NONE
+              }
+              SingleStackRoute(backStack)
+            }
+            entry<Nav3Route.DialogsAndSheets> { route ->
+              Nav3RouteActivationEffect(route, routeActivationAction) {
+                routeActivationAction = RouteActivationAction.NONE
+              }
+              DialogsAndSheetsRoute(backStack)
+            }
+            entry<Nav3Route.DeepLink> { route ->
+              Nav3RouteActivationEffect(route, routeActivationAction) {
+                routeActivationAction = RouteActivationAction.NONE
+              }
+              DeepLinkRoute(backStack)
+            }
+            entry<Nav3Route.ProductList> { route ->
+              Nav3RouteActivationEffect(route, routeActivationAction) {
+                routeActivationAction = RouteActivationAction.NONE
+              }
+              ProductListRoute(backStack)
+            }
+            entry<Nav3Route.ProductDetail> { route ->
+              Nav3RouteActivationEffect(route, routeActivationAction) {
+                routeActivationAction = RouteActivationAction.NONE
+              }
+              ProductDetailRoute(route, backStack)
+            }
+            entry<Nav3Route.Checkout> { route ->
+              Nav3RouteActivationEffect(route, routeActivationAction) {
+                routeActivationAction = RouteActivationAction.NONE
+              }
+              CheckoutRoute(route, backStack)
+            }
+            entry<Nav3Route.Confirmation> { route ->
+              Nav3RouteActivationEffect(route, routeActivationAction) {
+                routeActivationAction = RouteActivationAction.NONE
+              }
+              ConfirmationRoute(route, backStack)
+            }
             entry<Nav3Route.PromoDialog>(metadata = DialogSceneStrategy.dialog()) { route ->
+              Nav3RouteActivationEffect(route, routeActivationAction) {
+                routeActivationAction = RouteActivationAction.NONE
+              }
               PromoDialogRoute(route, backStack)
             }
             entry<Nav3Route.ShareSheet>(
@@ -165,12 +207,21 @@ private fun Nav3SampleApp() {
                   ModalBottomSheetProperties(shouldDismissOnBackPress = true)
                 )
             ) { route ->
+              Nav3RouteActivationEffect(route, routeActivationAction) {
+                routeActivationAction = RouteActivationAction.NONE
+              }
               ShareSheetRoute(route, backStack)
             }
-            entry<Nav3Route.Multipane> {
+            entry<Nav3Route.Multipane> { route ->
+              Nav3RouteActivationEffect(route, routeActivationAction) {
+                routeActivationAction = RouteActivationAction.NONE
+              }
               FutureRoute(routeName = "Multipane", scenario = "multipane")
             }
-            entry<Nav3Route.Multistack> {
+            entry<Nav3Route.Multistack> { route ->
+              Nav3RouteActivationEffect(route, routeActivationAction) {
+                routeActivationAction = RouteActivationAction.NONE
+              }
               FutureRoute(routeName = "Multiple Stacks", scenario = "multistack")
             }
           },
@@ -389,86 +440,114 @@ private fun SnapshotStateList<Nav3Route>.openScenario(scenario: Nav3Scenario) {
 }
 
 @Composable
-private fun SentryControls(route: Nav3Route) {
-  val context = LocalContext.current
-  val scope = rememberCoroutineScope()
+private fun RouteActivationActionSelector(
+  selectedAction: RouteActivationAction,
+  onActionSelected: (RouteActivationAction) -> Unit,
+) {
   val sentryPink = colorResource(R.color.colorAccent)
-  val sentryButtonColors = ButtonDefaults.buttonColors(containerColor = sentryPink)
-  val sentryOutlinedButtonColors =
-    ButtonDefaults.outlinedButtonColors(containerColor = sentryPink, contentColor = Color.White)
-  var showCrashConfirmation by remember { mutableStateOf(false) }
 
   Surface(shadowElevation = 8.dp) {
-    Row(
+    Column(
       modifier = Modifier.fillMaxWidth().padding(12.dp),
-      horizontalArrangement = Arrangement.spacedBy(8.dp),
-      verticalAlignment = Alignment.CenterVertically,
+      verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-      Button(
-        modifier = Modifier.weight(1f),
-        colors = sentryButtonColors,
-        onClick = {
-          tagNav3SampleAction("capture_exception", route)
-          Sentry.captureException(
-            RuntimeException("Nav3 sample exception from /${route.routeName}")
+      Text("Run during route activation", style = MaterialTheme.typography.bodySmall)
+      Row(
+        modifier = Modifier.horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+      ) {
+        RouteActivationAction.entries.forEach { action ->
+          RouteActivationActionButton(
+            action = action,
+            selected = action == selectedAction,
+            sentryPink = sentryPink,
+            onClick = { onActionSelected(action) },
           )
-          scope.launch(Dispatchers.IO) { Sentry.flush(SENTRY_FLUSH_TIMEOUT_MILLIS) }
-          Toast.makeText(context, "Captured exception from /${route.routeName}", Toast.LENGTH_SHORT)
-            .show()
-        },
-      ) {
-        Text("Exception")
-      }
-      OutlinedButton(
-        modifier = Modifier.weight(1f),
-        colors = sentryOutlinedButtonColors,
-        onClick = {
-          tagNav3SampleAction("load_data", route)
-          scope.launch {
-            val message =
-              try {
-                val repos = GithubAPI.service.listReposAsync("getsentry", 5)
-                "Loaded ${repos.size} repos"
-              } catch (e: Throwable) {
-                Sentry.captureException(e)
-                "Request failed"
-              }
-            launch(Dispatchers.IO) { Sentry.flush(SENTRY_FLUSH_TIMEOUT_MILLIS) }
-            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-          }
-        },
-      ) {
-        Text("Load Data")
-      }
-      OutlinedButton(
-        colors = sentryOutlinedButtonColors,
-        onClick = { showCrashConfirmation = true },
-      ) {
-        Text("Crash App")
+        }
       }
     }
   }
+}
 
-  if (showCrashConfirmation) {
-    AlertDialog(
-      onDismissRequest = { showCrashConfirmation = false },
-      title = { Text("Crash app?") },
-      text = { Text("This sends a fatal crash from /${route.routeName} and closes the app.") },
-      confirmButton = {
-        TextButton(
-          onClick = {
-            tagNav3SampleAction("crash", route)
-            throw RuntimeException("Fatal Nav3 sample crash from /${route.routeName}")
-          }
-        ) {
-          Text("Crash")
-        }
-      },
-      dismissButton = {
-        TextButton(onClick = { showCrashConfirmation = false }) { Text("Cancel") }
-      },
+@Composable
+private fun RouteActivationActionButton(
+  action: RouteActivationAction,
+  selected: Boolean,
+  sentryPink: Color,
+  onClick: () -> Unit,
+) {
+  if (selected) {
+    Button(colors = ButtonDefaults.buttonColors(containerColor = sentryPink), onClick = onClick) {
+      Text(action.label)
+    }
+  } else {
+    OutlinedButton(
+      colors = ButtonDefaults.outlinedButtonColors(contentColor = sentryPink),
+      onClick = onClick,
+    ) {
+      Text(action.label)
+    }
+  }
+}
+
+@Composable
+private fun Nav3RouteActivationEffect(
+  route: Nav3Route,
+  routeActivationAction: RouteActivationAction,
+  onCrashActionConsumed: () -> Unit,
+) {
+  val currentAction = rememberUpdatedState(routeActivationAction)
+  val currentOnCrashActionConsumed = rememberUpdatedState(onCrashActionConsumed)
+
+  LaunchedEffect(route) {
+    runNav3RouteActivationAction(
+      route = route,
+      action = currentAction.value,
+      onCrashActionConsumed = currentOnCrashActionConsumed.value,
     )
   }
+}
+
+private suspend fun runNav3RouteActivationAction(
+  route: Nav3Route,
+  action: RouteActivationAction,
+  onCrashActionConsumed: () -> Unit,
+) {
+  if (action == RouteActivationAction.NONE) {
+    return
+  }
+
+  tagNav3SampleAction(action.tagName, route)
+  when (action) {
+    RouteActivationAction.NONE -> Unit
+    RouteActivationAction.HTTP_REQUEST -> {
+      try {
+        GithubAPI.service.listReposAsync("getsentry", 5)
+      } catch (e: Throwable) {
+        Sentry.captureException(e)
+      } finally {
+        withContext(Dispatchers.IO) { Sentry.flush(SENTRY_FLUSH_TIMEOUT_MILLIS) }
+      }
+    }
+    RouteActivationAction.MANUAL_CHILD_SPAN -> runManualNav3RouteActivationSpan(route)
+    RouteActivationAction.CAPTURE_EXCEPTION -> {
+      Sentry.captureException(
+        RuntimeException("Nav3 route activation exception from /${route.routeName}")
+      )
+      withContext(Dispatchers.IO) { Sentry.flush(SENTRY_FLUSH_TIMEOUT_MILLIS) }
+    }
+    RouteActivationAction.CRASH_APP -> {
+      onCrashActionConsumed()
+      throw RuntimeException("Fatal Nav3 route activation crash from /${route.routeName}")
+    }
+  }
+}
+
+private fun runManualNav3RouteActivationSpan(route: Nav3Route) {
+  val span = Sentry.getSpan()?.startChild("ui.load", "Nav3 /${route.routeName} route activation")
+  span?.setData("sample.route_activation", true)
+  span?.finish()
 }
 
 @Composable
