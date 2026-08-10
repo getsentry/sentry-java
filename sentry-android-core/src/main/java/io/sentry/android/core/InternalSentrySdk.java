@@ -225,11 +225,12 @@ public final class InternalSentrySdk {
    * treat {@code handled=false} as a crash that ends the session. Instead it:
    *
    * <ul>
-   *   <li>marks the current session as pending-unhandled and increments the error count
+   *   <li>flags the current session with a non-terminating unhandled error and increments the error
+   *       count
    *   <li>keeps session status {@code Ok} and the same session id on the scope
    *   <li>does not attach a session update item to this envelope
    *   <li>does not start a new session
-   *   <li>persists the current session so pending-unhandled survives process death
+   *   <li>persists the current session so the flag survives process death
    * </ul>
    *
    * <p>The session is finalized later by normal lifecycle ({@code endSession} / background /
@@ -254,13 +255,13 @@ public final class InternalSentrySdk {
 
     try {
       final @NotNull ISerializer serializer = options.getSerializer();
-      boolean markPendingUnhandled = false;
+      boolean hasUnhandled = false;
       boolean addErrorsCount = false;
       for (SentryEnvelopeItem item : envelope.getItems()) {
         final SentryEvent event = item.getEvent(serializer);
         if (event != null) {
           if (event.getUnhandledException() != null) {
-            markPendingUnhandled = true;
+            hasUnhandled = true;
             addErrorsCount = true;
           } else if (event.isErrored()) {
             addErrorsCount = true;
@@ -268,8 +269,8 @@ public final class InternalSentrySdk {
         }
       }
 
-      if (markPendingUnhandled || addErrorsCount) {
-        final boolean pending = markPendingUnhandled;
+      if (hasUnhandled || addErrorsCount) {
+        final boolean unhandled = hasUnhandled;
         final boolean addErrors = addErrorsCount;
         scopes.configureScope(
             scope -> {
@@ -277,8 +278,8 @@ public final class InternalSentrySdk {
                   session -> {
                     if (session != null) {
                       final boolean updated =
-                          pending
-                              ? session.markPendingUnhandled()
+                          unhandled
+                              ? session.recordNonTerminatingUnhandledError()
                               : session.update(null, null, addErrors, null);
                       if (updated && options.getEnvelopeDiskCache() instanceof EnvelopeCache) {
                         ((EnvelopeCache) options.getEnvelopeDiskCache())
