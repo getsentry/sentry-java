@@ -346,7 +346,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
     try (final Reader reader =
         new BufferedReader(new InputStreamReader(new FileInputStream(sessionFile), UTF_8))) {
       return serializer.getValue().deserialize(reader, Session.class);
-    } catch (Throwable e) {
+    } catch (Exception e) {
       options.getLogger().log(ERROR, "Failed to read session from disk.", e);
       return null;
     }

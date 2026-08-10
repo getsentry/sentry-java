@@ -34,6 +34,7 @@ import io.sentry.util.MapObjectWriter;
 import io.sentry.util.TracingUtils;
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -168,14 +169,13 @@ public final class InternalSentrySdk {
     final @NotNull IScopes scopes = ScopesAdapter.getInstance();
     final @NotNull SentryOptions options = scopes.getOptions();
 
-    try (final InputStream envelopeInputStream = new ByteArrayInputStream(envelopeData)) {
-      final @NotNull ISerializer serializer = options.getSerializer();
-      final @Nullable SentryEnvelope envelope =
-          options.getEnvelopeReader().read(envelopeInputStream);
-      if (envelope == null) {
-        return null;
-      }
+    final @Nullable SentryEnvelope envelope = readEnvelope(options, envelopeData);
+    if (envelope == null) {
+      return null;
+    }
 
+    try {
+      final @NotNull ISerializer serializer = options.getSerializer();
       final @NotNull List<SentryEnvelopeItem> envelopeItems = new ArrayList<>();
 
       // determine session state based on events inside envelope
@@ -212,8 +212,8 @@ public final class InternalSentrySdk {
       final SentryEnvelope repackagedEnvelope =
           new SentryEnvelope(envelope.getHeader(), envelopeItems);
       return scopes.captureEnvelope(repackagedEnvelope);
-    } catch (Throwable t) {
-      options.getLogger().log(SentryLevel.ERROR, "Failed to capture envelope", t);
+    } catch (Exception e) {
+      options.getLogger().log(SentryLevel.ERROR, "Failed to capture envelope", e);
     }
     return null;
   }
@@ -247,14 +247,13 @@ public final class InternalSentrySdk {
     final @NotNull IScopes scopes = ScopesAdapter.getInstance();
     final @NotNull SentryOptions options = scopes.getOptions();
 
-    try (final InputStream envelopeInputStream = new ByteArrayInputStream(envelopeData)) {
-      final @NotNull ISerializer serializer = options.getSerializer();
-      final @Nullable SentryEnvelope envelope =
-          options.getEnvelopeReader().read(envelopeInputStream);
-      if (envelope == null) {
-        return null;
-      }
+    final @Nullable SentryEnvelope envelope = readEnvelope(options, envelopeData);
+    if (envelope == null) {
+      return null;
+    }
 
+    try {
+      final @NotNull ISerializer serializer = options.getSerializer();
       boolean markPendingUnhandled = false;
       boolean addErrorsCount = false;
       for (SentryEnvelopeItem item : envelope.getItems()) {
@@ -296,10 +295,25 @@ public final class InternalSentrySdk {
 
       // Capture the original envelope as-is (no session item attached).
       return scopes.captureEnvelope(envelope);
-    } catch (Throwable t) {
-      options.getLogger().log(SentryLevel.ERROR, "Failed to capture envelope", t);
+    } catch (Exception e) {
+      options.getLogger().log(SentryLevel.ERROR, "Failed to capture envelope", e);
     }
     return null;
+  }
+
+  /**
+   * Reads an envelope from the given bytes. Besides the declared {@link IOException}, {@link
+   * io.sentry.IEnvelopeReader#read(InputStream)} also rejects malformed payloads with an unchecked
+   * {@link IllegalArgumentException}, hence the broader catch.
+   */
+  private static @Nullable SentryEnvelope readEnvelope(
+      final @NotNull SentryOptions options, final @NotNull byte[] envelopeData) {
+    try (final InputStream envelopeInputStream = new ByteArrayInputStream(envelopeData)) {
+      return options.getEnvelopeReader().read(envelopeInputStream);
+    } catch (Exception e) {
+      options.getLogger().log(SentryLevel.ERROR, "Failed to read envelope", e);
+      return null;
+    }
   }
 
   public static Map<String, Object> getAppStartMeasurement() {

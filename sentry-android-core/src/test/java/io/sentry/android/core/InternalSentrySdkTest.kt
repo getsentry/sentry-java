@@ -5,6 +5,7 @@ import android.content.ContentProvider
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.common.truth.Truth.assertThat
 import io.sentry.Breadcrumb
 import io.sentry.Hint
 import io.sentry.IScope
@@ -39,7 +40,6 @@ import java.util.concurrent.atomic.AtomicReference
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -483,25 +483,25 @@ class InternalSentrySdkTest {
     )
 
     // then only the original event envelope is captured, without a session item
-    assertEquals(1, fixture.capturedEnvelopes.size)
+    assertThat(fixture.capturedEnvelopes).hasSize(1)
     val capturedEnvelopeItems = fixture.capturedEnvelopes.first().items.toList()
-    assertEquals(1, capturedEnvelopeItems.size)
-    assertEquals(SentryItemType.Event, capturedEnvelopeItems[0].header.type)
+    assertThat(capturedEnvelopeItems).hasSize(1)
+    assertThat(capturedEnvelopeItems[0].header.type).isEqualTo(SentryItemType.Event)
 
     // and the session stays alive on the scope, same id, marked pending unhandled
     val scopeSession = AtomicReference<Session>()
     Sentry.configureScope { scope -> scopeSession.set(scope.session) }
-    assertEquals(Session.State.Ok, scopeSession.get().status)
-    assertTrue(scopeSession.get().isPendingUnhandled)
-    assertEquals(originalSid.get(), scopeSession.get().sessionId)
+    assertThat(scopeSession.get().status).isEqualTo(Session.State.Ok)
+    assertThat(scopeSession.get().isPendingUnhandled).isTrue()
+    assertThat(scopeSession.get().sessionId).isEqualTo(originalSid.get())
 
     // and it is persisted so pending survives process death
     val sessionFile = EnvelopeCache.getCurrentSessionFile(fixture.options.cacheDirPath!!)
     val persistedSession =
       fixture.options.serializer.deserialize(sessionFile.reader(), Session::class.java)!!
-    assertEquals(Session.State.Ok, persistedSession.status)
-    assertTrue(persistedSession.isPendingUnhandled)
-    assertEquals(originalSid.get(), persistedSession.sessionId)
+    assertThat(persistedSession.status).isEqualTo(Session.State.Ok)
+    assertThat(persistedSession.isPendingUnhandled).isTrue()
+    assertThat(persistedSession.sessionId).isEqualTo(originalSid.get())
   }
 
   @Test
@@ -524,13 +524,13 @@ class InternalSentrySdkTest {
         .filter {
           it.header.type == SentryItemType.Session
         }
-    assertEquals(1, sessionItems.size)
+    assertThat(sessionItems).hasSize(1)
     val endedSession =
       fixture.options.serializer.deserialize(
         InputStreamReader(ByteArrayInputStream(sessionItems[0].data)),
         Session::class.java,
       )!!
-    assertEquals(Session.State.Unhandled, endedSession.status)
+    assertThat(endedSession.status).isEqualTo(Session.State.Unhandled)
   }
 
   @Test
@@ -544,33 +544,33 @@ class InternalSentrySdkTest {
     val pendingSession = AtomicReference<Session>()
     Sentry.configureScope { scope -> pendingSession.set(scope.session) }
     val oldSid = pendingSession.get().sessionId
-    assertTrue(pendingSession.get().isPendingUnhandled)
+    assertThat(pendingSession.get().isPendingUnhandled).isTrue()
     fixture.capturedEnvelopes.clear()
 
     // when a subsequent hard crash is captured through the existing terminating API
     fixture.captureEnvelopeWithEvent(fixture.createSentryEventWithUnhandledException(), true)
 
     // then the crash envelope contains the finalized old session
-    assertEquals(2, fixture.capturedEnvelopes.size)
+    assertThat(fixture.capturedEnvelopes).hasSize(2)
     val crashEnvelopeItems = fixture.capturedEnvelopes.last().items.toList()
-    assertEquals(2, crashEnvelopeItems.size)
-    assertEquals(SentryItemType.Event, crashEnvelopeItems[0].header.type)
-    assertEquals(SentryItemType.Session, crashEnvelopeItems[1].header.type)
+    assertThat(crashEnvelopeItems).hasSize(2)
+    assertThat(crashEnvelopeItems[0].header.type).isEqualTo(SentryItemType.Event)
+    assertThat(crashEnvelopeItems[1].header.type).isEqualTo(SentryItemType.Session)
     val crashedSession =
       fixture.options.serializer.deserialize(
         InputStreamReader(ByteArrayInputStream(crashEnvelopeItems[1].data)),
         Session::class.java,
       )!!
-    assertEquals(Session.State.Crashed, crashedSession.status)
-    assertFalse(crashedSession.isPendingUnhandled)
-    assertEquals(oldSid, crashedSession.sessionId)
+    assertThat(crashedSession.status).isEqualTo(Session.State.Crashed)
+    assertThat(crashedSession.isPendingUnhandled).isFalse()
+    assertThat(crashedSession.sessionId).isEqualTo(oldSid)
 
     // and a new Ok session with a different id is active
     val activeSession = AtomicReference<Session>()
     Sentry.configureScope { scope -> activeSession.set(scope.session) }
-    assertEquals(Session.State.Ok, activeSession.get().status)
-    assertFalse(activeSession.get().isPendingUnhandled)
-    assertNotEquals(oldSid, activeSession.get().sessionId)
+    assertThat(activeSession.get().status).isEqualTo(Session.State.Ok)
+    assertThat(activeSession.get().isPendingUnhandled).isFalse()
+    assertThat(activeSession.get().sessionId).isNotEqualTo(oldSid)
   }
 
   @Test
