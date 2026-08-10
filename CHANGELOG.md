@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Features
+
+- Make `ISpan.startChild` overloads with `SpanOptions` public ([#5927](https://github.com/getsentry/sentry-java/pull/5927))
+
 ### Fixes
 
 - Clear contexts when calling `Scope.clear()` ([#5902](https://github.com/getsentry/sentry-java/pull/5902))
