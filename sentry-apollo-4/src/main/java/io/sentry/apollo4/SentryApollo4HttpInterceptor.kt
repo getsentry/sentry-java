@@ -25,6 +25,7 @@ import io.sentry.exception.ExceptionMechanismException
 import io.sentry.protocol.Mechanism
 import io.sentry.protocol.Request
 import io.sentry.protocol.Response
+import io.sentry.util.GraphqlUtils
 import io.sentry.util.HttpUtils
 import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
 import io.sentry.util.Platform
@@ -173,7 +174,9 @@ constructor(
 
       operationId?.let { setData("operationId", it) }
 
-      variables?.let { setData("variables", it) }
+      if (scopes.options.dataCollectionResolver.isGraphqlVariablesWithLegacyAlways) {
+        variables?.let { setData("variables", it) }
+      }
       setData(HTTP_METHOD_KEY, method.uppercase(Locale.ROOT))
     }
   }
@@ -365,7 +368,7 @@ constructor(
 
             try {
               it.writeTo(buffer)
-              data = buffer.readUtf8()
+              data = GraphqlUtils.filterRequestBody(buffer.readUtf8(), scopes.options)
             } catch (e: Throwable) {
               scopes.options.logger.log(SentryLevel.ERROR, "Error reading the request body.", e)
               // continue because the response body alone can already give some insights
