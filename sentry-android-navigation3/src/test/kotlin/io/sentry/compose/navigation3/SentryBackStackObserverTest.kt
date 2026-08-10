@@ -4,6 +4,7 @@ import io.sentry.Breadcrumb
 import io.sentry.ILogger
 import io.sentry.IScope
 import io.sentry.IScopes
+import io.sentry.ISpan
 import io.sentry.Scope
 import io.sentry.Scope.IWithTransaction
 import io.sentry.ScopeCallback
@@ -242,6 +243,20 @@ class SentryBackStackObserverTest {
 
     verify(fixture.scopes, never())
       .startTransaction(any<TransactionContext>(), any<TransactionOptions>())
+  }
+
+  @Test
+  fun `onBackStackChanged does not start transaction when another span is active`() {
+    val sut = fixture.getSut()
+    whenever(fixture.scopes.getSpan()).thenReturn(mock<ISpan>())
+
+    sut.onBackStackChanged(listOf(HomeScreen()))
+
+    verify(fixture.scopes, never())
+      .startTransaction(any<TransactionContext>(), any<TransactionOptions>())
+    verify(fixture.scopes).addBreadcrumb(any<Breadcrumb>(), any())
+    verify(fixture.scope).screen = "/HomeScreen"
+    verify(fixture.scope).setContexts(any<String>(), any<Any>())
   }
 
   @Test
