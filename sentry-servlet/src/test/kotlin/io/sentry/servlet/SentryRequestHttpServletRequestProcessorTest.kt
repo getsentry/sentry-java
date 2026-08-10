@@ -57,7 +57,7 @@ class SentryRequestHttpServletRequestProcessorTest {
       MockMvcRequestBuilders.get(URI.create("http://example.com?name=value"))
         .buildRequest(MockServletContext())
     val options =
-      SentryOptions().also { it.dataCollection.queryParams = KeyValueCollectionBehavior.off() }
+      SentryOptions().also { it.dataCollection.urlQueryParams = KeyValueCollectionBehavior.off() }
     val event = SentryEvent()
 
     SentryRequestHttpServletRequestProcessor(request, options).process(event, Hint())
