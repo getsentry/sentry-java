@@ -50,7 +50,10 @@ internal class DriverSpans(private val scopes: IScopes, private val dbMetadata: 
     val startTimestamp = SentryLongDate(startTimestampNanos)
     val endTimestamp = SentryLongDate(startTimestampNanos + durationNanos)
 
-    parent.startChild("db.sql.query", sql, startTimestamp, Instrumenter.SENTRY).apply {
+    val description = sql.takeIf {
+      scopes.options.dataCollectionResolver.isDatabaseQueryDataWithLegacyAlways
+    }
+    parent.startChild("db.sql.query", description, startTimestamp, Instrumenter.SENTRY).apply {
       spanContext.origin = SQLITE_TRACE_ORIGIN
       throwable?.let { this.throwable = it }
 

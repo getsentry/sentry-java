@@ -130,6 +130,28 @@ class DriverSpansTest {
   }
 
   @Test
+  fun `record method omits description when database query data is disabled`() {
+    val sut = fixture.getSut()
+    fixture.options.dataCollection.setDatabaseQueryData(false)
+
+    sut.record("SELECT secret FROM users", sut.startTimestamp(), 1_000_000, SpanStatus.OK)
+
+    val span = fixture.sentryTracer.children.first()
+    assertNull(span.description)
+    assertEquals("in-memory", span.data[SpanDataConvention.DB_SYSTEM_KEY])
+  }
+
+  @Test
+  fun `record method keeps description in legacy mode`() {
+    val sut = fixture.getSut()
+    fixture.options.isSendDefaultPii = false
+
+    sut.record("SELECT secret FROM users", sut.startTimestamp(), 1_000_000, SpanStatus.OK)
+
+    assertEquals("SELECT secret FROM users", fixture.sentryTracer.children.first().description)
+  }
+
+  @Test
   fun `record method sets finishDate equal to startDate + durationNanos`() {
     val sut = fixture.getSut()
     val start = sut.startTimestamp()
