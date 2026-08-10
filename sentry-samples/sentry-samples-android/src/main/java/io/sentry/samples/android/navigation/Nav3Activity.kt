@@ -66,14 +66,12 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.scene.DialogSceneStrategy
 import androidx.navigation3.ui.NavDisplay
-import io.sentry.ITransaction
 import io.sentry.Sentry
 import io.sentry.compose.navigation3.SentryNav3Effect
 import io.sentry.compose.navigation3.SentryNav3Options
 import io.sentry.samples.android.GithubAPI
 import io.sentry.samples.android.R
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 
 /**
@@ -89,7 +87,6 @@ class Nav3Activity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     setContent { MaterialTheme { Nav3SampleApp() } }
-    Sentry.reportFullyDisplayed()
   }
 }
 
@@ -504,54 +501,15 @@ private fun Nav3RouteActivationEffect(
   val currentOnCrashActionConsumed = rememberUpdatedState(onCrashActionConsumed)
 
   LaunchedEffect(route) {
-    val action = currentAction.value
-    if (action == RouteActivationAction.NONE) {
-      return@LaunchedEffect
-    }
-
-    val transaction = awaitNav3NavigationTransaction() ?: return@LaunchedEffect
-
-    if (transaction.isFinished) {
-      return@LaunchedEffect
-    }
-
     runNav3RouteActivationAction(
-      transaction = transaction,
       route = route,
-      action = action,
+      action = currentAction.value,
       onCrashActionConsumed = currentOnCrashActionConsumed.value,
     )
   }
 }
 
-private suspend fun awaitNav3NavigationTransaction(): ITransaction? {
-  repeat(30) {
-    val transaction = currentNav3NavigationTransaction()
-    if (transaction != null) {
-      return transaction
-    }
-    delay(16)
-  }
-  return null
-}
-
-private fun currentNav3NavigationTransaction(): ITransaction? {
-  var currentTransaction: ITransaction? = null
-  Sentry.configureScope { scope ->
-    scope.withTransaction { transaction ->
-      if (
-        transaction?.operation == NAVIGATION_OP &&
-          transaction.spanContext.origin == NAV3_NAVIGATION_ORIGIN
-      ) {
-        currentTransaction = transaction
-      }
-    }
-  }
-  return currentTransaction
-}
-
 private suspend fun runNav3RouteActivationAction(
-  transaction: ITransaction,
   route: Nav3Route,
   action: RouteActivationAction,
   onCrashActionConsumed: () -> Unit,
@@ -572,7 +530,7 @@ private suspend fun runNav3RouteActivationAction(
         withContext(Dispatchers.IO) { Sentry.flush(SENTRY_FLUSH_TIMEOUT_MILLIS) }
       }
     }
-    RouteActivationAction.MANUAL_CHILD_SPAN -> runManualNav3RouteActivationSpan(transaction, route)
+    RouteActivationAction.MANUAL_CHILD_SPAN -> runManualNav3RouteActivationSpan(route)
     RouteActivationAction.CAPTURE_EXCEPTION -> {
       Sentry.captureException(
         RuntimeException("Nav3 route activation exception from /${route.routeName}")
@@ -586,10 +544,10 @@ private suspend fun runNav3RouteActivationAction(
   }
 }
 
-private fun runManualNav3RouteActivationSpan(transaction: ITransaction, route: Nav3Route) {
-  val span = transaction.startChild("ui.load", "Nav3 /${route.routeName} route activation")
-  span.setData("sample.route_activation", true)
-  span.finish()
+private fun runManualNav3RouteActivationSpan(route: Nav3Route) {
+  val span = Sentry.getSpan()?.startChild("ui.load", "Nav3 /${route.routeName} route activation")
+  span?.setData("sample.route_activation", true)
+  span?.finish()
 }
 
 @Composable
@@ -884,8 +842,6 @@ private fun tagNav3SampleAction(action: String, route: Nav3Route) {
 }
 
 private const val SENTRY_FLUSH_TIMEOUT_MILLIS = 5000L
-private const val NAVIGATION_OP = "navigation"
-private const val NAV3_NAVIGATION_ORIGIN = "auto.navigation.nav3"
 
 private sealed interface Nav3Route {
   val routeName: String
