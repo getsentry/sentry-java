@@ -313,8 +313,8 @@ class SentryAutoConfigurationTest {
       .withPropertyValues(
         "sentry.dsn=http://key@localhost/proj",
         "sentry.data-collection.cookies.mode=off",
-        "sentry.data-collection.query-params.mode=allow-list",
-        "sentry.data-collection.query-params.terms=page,sort",
+        "sentry.data-collection.url-query-params.mode=allow-list",
+        "sentry.data-collection.url-query-params.terms=page,sort",
         "sentry.data-collection.http-headers.request.mode=deny-list",
         "sentry.data-collection.http-headers.request.terms=forwarded,-ip",
         "sentry.data-collection.http-headers.response.mode=allow-list",
@@ -323,9 +323,9 @@ class SentryAutoConfigurationTest {
       .run {
         val dataCollection = it.getBean(SentryProperties::class.java).dataCollection
         assertThat(dataCollection.cookies!!.mode).isEqualTo(KeyValueCollectionBehavior.Mode.OFF)
-        assertThat(dataCollection.queryParams!!.mode)
+        assertThat(dataCollection.urlQueryParams!!.mode)
           .isEqualTo(KeyValueCollectionBehavior.Mode.ALLOW_LIST)
-        assertThat(dataCollection.queryParams!!.terms).containsExactly("page", "sort")
+        assertThat(dataCollection.urlQueryParams!!.terms).containsExactly("page", "sort")
         assertThat(dataCollection.httpHeaders.request!!.mode)
           .isEqualTo(KeyValueCollectionBehavior.Mode.DENY_LIST)
         assertThat(dataCollection.httpHeaders.request!!.terms).containsExactly("forwarded", "-ip")
