@@ -4862,6 +4862,7 @@ public class io/sentry/cache/EnvelopeCache : io/sentry/cache/IEnvelopeCache {
 	public static fun getPreviousSessionFile (Ljava/lang/String;)Ljava/io/File;
 	public fun iterator ()Ljava/util/Iterator;
 	public fun movePreviousSession (Ljava/io/File;Ljava/io/File;)V
+	public fun persistCurrentSession (Lio/sentry/Session;)V
 	public fun store (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)V
 	public fun storeEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Z
 	public fun waitPreviousSessionFlush ()Z
