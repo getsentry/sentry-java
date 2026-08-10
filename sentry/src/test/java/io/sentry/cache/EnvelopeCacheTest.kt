@@ -162,13 +162,13 @@ class EnvelopeCacheTest {
   }
 
   @Test
-  fun `delayed same SID SessionStart preserves newer pending snapshot`() {
+  fun `delayed same SID SessionStart preserves newer unhandled snapshot`() {
     val cache = fixture.getSUT()
     val sid = SentryUUID.generateSentryId()
     val currentSessionFile = EnvelopeCache.getCurrentSessionFile(fixture.options.cacheDirPath!!)
     val previousSessionFile = EnvelopeCache.getPreviousSessionFile(fixture.options.cacheDirPath!!)
     val newerSession = createSession(sessionId = sid)
-    newerSession.markPendingUnhandled()
+    newerSession.recordNonTerminatingUnhandledError()
     cache.persistCurrentSession(newerSession)
 
     val delayedStart = createSession(sessionId = sid)
@@ -181,7 +181,7 @@ class EnvelopeCacheTest {
         Session::class.java,
       )!!
     assertThat(persistedSession.sessionId).isEqualTo(sid)
-    assertThat(persistedSession.isPendingUnhandled).isTrue()
+    assertThat(persistedSession.hasNonTerminatingUnhandledError()).isTrue()
     assertThat(persistedSession.errorCount()).isEqualTo(1)
     assertThat(previousSessionFile.exists()).isFalse()
   }
@@ -206,7 +206,7 @@ class EnvelopeCacheTest {
         Session::class.java,
       )!!
     assertThat(persistedSession.sessionId).isEqualTo(sid)
-    assertThat(persistedSession.isPendingUnhandled).isFalse()
+    assertThat(persistedSession.hasNonTerminatingUnhandledError()).isFalse()
     assertThat(persistedSession.errorCount()).isEqualTo(1)
     assertThat(previousSessionFile.exists()).isFalse()
   }
@@ -280,11 +280,11 @@ class EnvelopeCacheTest {
   }
 
   @Test
-  fun `mismatching SessionEnd preserves newer pending current session`() {
+  fun `mismatching SessionEnd preserves newer unhandled current session`() {
     val cache = fixture.getSUT()
     val endingSession = createSession(started = Date(1_000))
     val currentSession = createSession(started = Date(2_000))
-    currentSession.markPendingUnhandled()
+    currentSession.recordNonTerminatingUnhandledError()
     cache.persistCurrentSession(currentSession)
 
     val envelope = SentryEnvelope.from(fixture.options.serializer, endingSession, null)
@@ -300,10 +300,10 @@ class EnvelopeCacheTest {
   }
 
   @Test
-  fun `mismatching newer SessionEnd deletes stale pending current session`() {
+  fun `mismatching newer SessionEnd deletes stale unhandled current session`() {
     val cache = fixture.getSUT()
     val currentSession = createSession(started = Date(1_000))
-    currentSession.markPendingUnhandled()
+    currentSession.recordNonTerminatingUnhandledError()
     cache.persistCurrentSession(currentSession)
     val endingSession = createSession(started = Date(2_000))
 
@@ -315,7 +315,7 @@ class EnvelopeCacheTest {
   }
 
   @Test
-  fun `mismatching SessionEnd deletes non-pending current session`() {
+  fun `mismatching SessionEnd deletes current session without unhandled error`() {
     val cache = fixture.getSUT()
     val currentSession = createSession()
     cache.persistCurrentSession(currentSession)
