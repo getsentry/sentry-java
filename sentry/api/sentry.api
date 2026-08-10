@@ -419,7 +419,7 @@ public final class io/sentry/DataCollectionResolver {
 	public fun getCookies ()Lio/sentry/KeyValueCollectionBehavior;
 	public fun getHttpRequestHeaders ()Lio/sentry/KeyValueCollectionBehavior;
 	public fun getHttpResponseHeaders ()Lio/sentry/KeyValueCollectionBehavior;
-	public fun getQueryParams ()Lio/sentry/KeyValueCollectionBehavior;
+	public fun getUrlQueryParams ()Lio/sentry/KeyValueCollectionBehavior;
 	public fun isDataCollectionConfigured ()Z
 	public fun isDatabaseQueryData ()Z
 	public fun isGraphqlDocument ()Z
