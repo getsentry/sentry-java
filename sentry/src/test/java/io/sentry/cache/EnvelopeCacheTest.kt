@@ -559,7 +559,7 @@ class EnvelopeCacheTest {
     val cache = fixture.getSUT()
 
     val previousSessionFile = EnvelopeCache.getPreviousSessionFile(fixture.options.cacheDirPath!!)
-    val session = createSession().apply { setNonTerminatingUnhandledError(true) }
+    val session = createSession().apply { recordNonTerminatingUnhandledError() }
     fixture.options.serializer.serialize(session, previousSessionFile.bufferedWriter())
 
     val envelope = SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null)
@@ -643,7 +643,7 @@ class EnvelopeCacheTest {
     val cache = fixture.getSUT()
 
     val previousSessionFile = EnvelopeCache.getPreviousSessionFile(fixture.options.cacheDirPath!!)
-    val session = createSession().apply { setNonTerminatingUnhandledError(true) }
+    val session = createSession().apply { recordNonTerminatingUnhandledError() }
     fixture.options.serializer.serialize(session, previousSessionFile.bufferedWriter())
 
     val nativeCrashTimestamp = session.started!!.time + TimeUnit.HOURS.toMillis(1)
