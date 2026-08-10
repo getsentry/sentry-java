@@ -54,7 +54,7 @@ class UrlUtilsTest {
   @Test
   fun `resolver aware helpers remove query values in off mode`() {
     val options =
-      SentryOptions().also { it.dataCollection.queryParams = KeyValueCollectionBehavior.off() }
+      SentryOptions().also { it.dataCollection.urlQueryParams = KeyValueCollectionBehavior.off() }
     val details = UrlUtils.parse("https://example.com?name=value", options.dataCollectionResolver)
     val request = Request()
     val breadcrumb =

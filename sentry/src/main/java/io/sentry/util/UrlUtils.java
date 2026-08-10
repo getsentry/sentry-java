@@ -50,7 +50,7 @@ public final class UrlUtils {
   public static @Nullable String filterQueryParams(
       final @Nullable String query, final @NotNull DataCollectionResolver resolver) {
     return resolver.isDataCollectionConfigured()
-        ? HttpUtils.filterQueryParams(query, resolver.getQueryParams())
+        ? HttpUtils.filterQueryParams(query, resolver.getUrlQueryParams())
         : query;
   }
 
