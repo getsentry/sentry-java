@@ -54,16 +54,16 @@ class SessionSerializationTest {
   }
 
   @Test
-  fun `serialize and deserialize round-trips Unhandled status and pending unhandled flag`() {
+  fun `serialize and deserialize round-trips Unhandled status and non-terminating flag`() {
     val session = Session(null, null, "environment", "release")
-    session.setPendingUnhandled(true)
+    session.setNonTerminatingUnhandledError(true)
     session.end()
     assertEquals(Session.State.Unhandled, session.status)
 
     val deserialized = deserialize(serialize(session))
 
     assertEquals(Session.State.Unhandled, deserialized.status)
-    assertEquals(true, deserialized.isPendingUnhandled)
+    assertEquals(true, deserialized.hasNonTerminatingUnhandledError())
   }
 
   // Helper
