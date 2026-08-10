@@ -1715,7 +1715,9 @@ public class SentryOptions {
    * <p>Passing an empty {@link DataCollection} opts into the documented data-collection defaults.
    */
   public void setDataCollection(final @NotNull DataCollection dataCollection) {
-    this.dataCollection = dataCollection;
+    if (dataCollection != null) {
+      this.dataCollection = dataCollection;
+    }
   }
 
   /**
