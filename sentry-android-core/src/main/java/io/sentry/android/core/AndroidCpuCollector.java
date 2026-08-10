@@ -11,11 +11,12 @@ import io.sentry.util.Objects;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-// Process.getElapsedCpuTime() is a @CriticalNative wrapper around
-// clock_gettime(CLOCK_PROCESS_CPUTIME_ID), i.e. the cpu time of all threads of this process. It
-// replaces reading utime/stime out of /proc/self/stat, which allocated ~25 kB per sample (file
-// reader buffers plus a regex split of all 52 fields) while collect() runs 10 times per second for
-// the whole duration of a transaction. It does not include the cpu time of reaped child processes,
+// The approach to get the cpu usage info was taken from
+// https://eng.lyft.com/monitoring-cpu-performance-of-lyfts-android-applications-4e36fafffe12
+// The process cpu time itself comes from Process.getElapsedCpuTime(), a @CriticalNative wrapper
+// around clock_gettime(CLOCK_PROCESS_CPUTIME_ID), rather than from parsing /proc/self/stat: reading
+// and parsing that file allocated on every sample, and collect() runs 10 times per second for the
+// whole duration of a transaction. It does not include the cpu time of reaped child processes,
 // which an app process doesn't have.
 @ApiStatus.Internal
 public final class AndroidCpuCollector implements IPerformanceSnapshotCollector {
