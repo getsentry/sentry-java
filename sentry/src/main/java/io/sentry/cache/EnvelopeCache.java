@@ -122,17 +122,17 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
       try (final @NotNull ISentryLifecycleToken ignored = sessionLock.acquire()) {
         final @Nullable Session endingSession = readSessionFromEnvelope(envelope);
         final @Nullable Session currentSession = readSessionFromDisk(currentSessionFile);
-        final boolean preservePendingSession =
+        final boolean preserveCurrentSession =
             endingSession != null
                 && currentSession != null
-                && currentSession.isPendingUnhandled()
+                && currentSession.hasNonTerminatingUnhandledError()
                 && endingSession.getSessionId() != null
                 && currentSession.getSessionId() != null
                 && !Objects.equals(endingSession.getSessionId(), currentSession.getSessionId())
                 && endingSession.getStarted() != null
                 && currentSession.getStarted() != null
                 && currentSession.getStarted().after(endingSession.getStarted());
-        if (!preservePendingSession && !currentSessionFile.delete()) {
+        if (!preserveCurrentSession && !currentSessionFile.delete()) {
           options.getLogger().log(WARNING, "Current envelope doesn't exist.");
         }
       }
@@ -149,7 +149,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
         if (startingSession != null) {
           final @Nullable Session currentSession = readSessionFromDisk(currentSessionFile);
           if (currentSession != null && hasSameSessionId(currentSession, startingSession)) {
-            if (!isNewerPendingOrErrorSnapshot(currentSession, startingSession)) {
+            if (!isNewerUnhandledOrErrorSnapshot(currentSession, startingSession)) {
               writeSessionToDisk(currentSessionFile, startingSession);
             }
           } else {
@@ -355,9 +355,10 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
     }
   }
 
-  private boolean isNewerPendingOrErrorSnapshot(
+  private boolean isNewerUnhandledOrErrorSnapshot(
       final @NotNull Session currentSession, final @NotNull Session startingSession) {
-    return (currentSession.isPendingUnhandled() && !startingSession.isPendingUnhandled())
+    return (currentSession.hasNonTerminatingUnhandledError()
+            && !startingSession.hasNonTerminatingUnhandledError())
         || currentSession.errorCount() > startingSession.errorCount();
   }
 
