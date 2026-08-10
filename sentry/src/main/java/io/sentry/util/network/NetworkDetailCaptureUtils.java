@@ -1,11 +1,10 @@
 package io.sentry.util.network;
 
-import java.util.HashSet;
+import io.sentry.KeyValueCollectionBehavior;
+import io.sentry.util.HttpUtils;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
@@ -46,13 +45,37 @@ public final class NetworkDetailCaptureUtils {
   /**
    * Creates a ReplayNetworkRequestOrResponse for a request, extracting body and headers based on
    * configuration.
+   *
+   * @deprecated Use the overload accepting a {@link KeyValueCollectionBehavior}.
    */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public static <T> @NotNull ReplayNetworkRequestOrResponse createRequest(
       @NotNull final T httpObject,
       @Nullable final Long bodySize,
       final boolean networkCaptureBodies,
       @NotNull final NetworkBodyExtractor<T> bodyExtractor,
       @NotNull final List<String> networkRequestHeaders,
+      @NotNull final NetworkHeaderExtractor<T> headerExtractor) {
+    return createRequest(
+        httpObject,
+        bodySize,
+        networkCaptureBodies,
+        bodyExtractor,
+        KeyValueCollectionBehavior.allowList(networkRequestHeaders.toArray(new String[0])),
+        headerExtractor);
+  }
+
+  /**
+   * Creates a ReplayNetworkRequestOrResponse for a request, extracting body and headers based on
+   * configuration.
+   */
+  public static <T> @NotNull ReplayNetworkRequestOrResponse createRequest(
+      @NotNull final T httpObject,
+      @Nullable final Long bodySize,
+      final boolean networkCaptureBodies,
+      @NotNull final NetworkBodyExtractor<T> bodyExtractor,
+      @NotNull final KeyValueCollectionBehavior networkRequestHeaders,
       @NotNull final NetworkHeaderExtractor<T> headerExtractor) {
 
     return createRequestOrResponseInternal(
@@ -64,12 +87,36 @@ public final class NetworkDetailCaptureUtils {
         headerExtractor);
   }
 
+  /**
+   * Creates a ReplayNetworkRequestOrResponse for a response, extracting body and headers based on
+   * configuration.
+   *
+   * @deprecated Use the overload accepting a {@link KeyValueCollectionBehavior}.
+   */
+  @Deprecated
+  @SuppressWarnings("InlineMeSuggester")
   public static <T> @NotNull ReplayNetworkRequestOrResponse createResponse(
       @NotNull final T httpObject,
       @Nullable final Long bodySize,
       final boolean networkCaptureBodies,
       @NotNull final NetworkBodyExtractor<T> bodyExtractor,
       @NotNull final List<String> networkResponseHeaders,
+      @NotNull final NetworkHeaderExtractor<T> headerExtractor) {
+    return createResponse(
+        httpObject,
+        bodySize,
+        networkCaptureBodies,
+        bodyExtractor,
+        KeyValueCollectionBehavior.allowList(networkResponseHeaders.toArray(new String[0])),
+        headerExtractor);
+  }
+
+  public static <T> @NotNull ReplayNetworkRequestOrResponse createResponse(
+      @NotNull final T httpObject,
+      @Nullable final Long bodySize,
+      final boolean networkCaptureBodies,
+      @NotNull final NetworkBodyExtractor<T> bodyExtractor,
+      @NotNull final KeyValueCollectionBehavior networkResponseHeaders,
       @NotNull final NetworkHeaderExtractor<T> headerExtractor) {
 
     return createRequestOrResponseInternal(
@@ -122,28 +169,11 @@ public final class NetworkDetailCaptureUtils {
 
   @VisibleForTesting
   static @NotNull Map<String, String> getCaptureHeaders(
-      @Nullable final Map<String, String> allHeaders, @NotNull final List<String> allowedHeaders) {
-
-    final Map<String, String> capturedHeaders = new LinkedHashMap<>();
-    if (allHeaders == null) {
-      return capturedHeaders;
-    }
-
-    // Convert to lowercase for case-insensitive matching
-    Set<String> normalizedAllowed = new HashSet<>();
-    for (String header : allowedHeaders) {
-      if (header != null) {
-        normalizedAllowed.add(header.toLowerCase(Locale.ROOT));
-      }
-    }
-
-    for (Map.Entry<String, String> entry : allHeaders.entrySet()) {
-      if (normalizedAllowed.contains(entry.getKey().toLowerCase(Locale.ROOT))) {
-        capturedHeaders.put(entry.getKey(), entry.getValue());
-      }
-    }
-
-    return capturedHeaders;
+      @Nullable final Map<String, String> allHeaders,
+      @NotNull final KeyValueCollectionBehavior behavior) {
+    return allHeaders == null
+        ? new LinkedHashMap<String, String>()
+        : HttpUtils.filterHeaders(allHeaders, behavior);
   }
 
   private static <T> @NotNull ReplayNetworkRequestOrResponse createRequestOrResponseInternal(
@@ -151,7 +181,7 @@ public final class NetworkDetailCaptureUtils {
       @Nullable final Long bodySize,
       final boolean networkCaptureBodies,
       @NotNull final NetworkBodyExtractor<T> bodyExtractor,
-      @NotNull final List<String> allowedHeaders,
+      @NotNull final KeyValueCollectionBehavior headerBehavior,
       @NotNull final NetworkHeaderExtractor<T> headerExtractor) {
 
     NetworkBody body = null;
@@ -167,7 +197,7 @@ public final class NetworkDetailCaptureUtils {
     }
 
     Map<String, String> headers =
-        getCaptureHeaders(headerExtractor.extract(httpObject), allowedHeaders);
+        getCaptureHeaders(headerExtractor.extract(httpObject), headerBehavior);
 
     return new ReplayNetworkRequestOrResponse(effectiveBodySize, body, headers);
   }

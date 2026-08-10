@@ -1,6 +1,8 @@
 package io.sentry.rrweb
 
+import io.sentry.HttpBodyType
 import io.sentry.ILogger
+import io.sentry.KeyValueCollectionBehavior
 import io.sentry.SentryOptions
 import io.sentry.SentryReplayOptions
 import io.sentry.SentryReplayOptions.SentryReplayQuality.LOW
@@ -102,6 +104,22 @@ class RRWebOptionsEventSerializationTest {
       (SentryReplayOptions.getNetworkDetailsDefaultHeaders() + listOf("X-RateLimit")).toSet(),
       (payload["networkResponseHeaders"] as List<String>).toSet(),
     )
+  }
+
+  @Test
+  fun `data collection network details are included when Replay options inherit`() {
+    val options =
+      SentryOptions().apply {
+        sessionReplay.setNetworkDetailAllowUrls(listOf("https://api.example.com/*"))
+        dataCollection.httpBodies = emptySet<HttpBodyType>()
+        dataCollection.httpHeaders.request = KeyValueCollectionBehavior.denyList("x-debug")
+        dataCollection.httpHeaders.response = KeyValueCollectionBehavior.off()
+      }
+    val payload = RRWebOptionsEvent(options).optionsPayload
+
+    assertEquals(emptyList<String>(), payload["networkRequestHeaders"])
+    assertEquals(emptyList<String>(), payload["networkResponseHeaders"])
+    assertEquals(false, payload["networkCaptureBodies"])
   }
 
   @Test
