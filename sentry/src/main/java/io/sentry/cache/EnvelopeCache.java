@@ -119,6 +119,10 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
     final File previousSessionFile = getPreviousSessionFile(directoryPath);
 
     if (HintUtils.hasType(hint, SessionEnd.class)) {
+      // A SessionEnd normally clears session.json. Its envelope may have been queued while a
+      // newer session replaced it on disk though, and deleting would then drop that session's
+      // unhandled error before it can be finalized. Only keep the file when the stored session
+      // is provably a different, later one carrying the flag.
       try (final @NotNull ISentryLifecycleToken ignored = sessionLock.acquire()) {
         final @Nullable Session endingSession = readSessionFromEnvelope(envelope);
         final @Nullable Session currentSession = readSessionFromDisk(currentSessionFile);
@@ -149,6 +153,8 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
         if (startingSession != null) {
           final @Nullable Session currentSession = readSessionFromDisk(currentSessionFile);
           if (currentSession != null && hasSameSessionId(currentSession, startingSession)) {
+            // A start for the id already on disk is a late duplicate, and that stored snapshot
+            // may have advanced since it was written, so overwrite only if it has not.
             if (!isNewerUnhandledOrErrorSnapshot(currentSession, startingSession)) {
               writeSessionToDisk(currentSessionFile, startingSession);
             }
