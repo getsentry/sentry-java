@@ -732,14 +732,14 @@ class ReplayCacheTest {
   }
 
   @Test
-  fun `close releases the encoder when the lock is available`() {
+  fun `createVideoOf releases the encoder even when EOS is never signalled`() {
     ReplayShadowMediaCodec.neverSignalEos = true
     val replayCache = fixture.getSut(tmpDir)
 
     val bitmap = Bitmap.createBitmap(1, 1, ARGB_8888)
     replayCache.addFrame(bitmap, 1)
 
-    // createVideoOf bails out via the stall bound, but still releases the encoder
+    // the stall bound breaks the drain loop, but release() must still be called
     replayCache.createVideoOf(1000L, 0L, 0, 100, 200, 1, 20_000)
 
     assertWithMessage("encoder should be released even when EOS was never signalled")
