@@ -643,11 +643,11 @@ public final class SentryFeedbackOptions {
   /** Controls shake-to-report at runtime, overriding {@link #isUseShakeGesture()}. */
   @ApiStatus.Internal
   public interface IShakeController {
-    void enable();
+    void enableOnShake();
 
-    void disable();
+    void disableOnShake();
 
-    boolean isEnabled();
+    boolean isOnShakeEnabled();
 
     /**
      * Pauses or resumes reacting to detected shakes without tearing down shake detection. Feedback
@@ -656,7 +656,7 @@ public final class SentryFeedbackOptions {
      *
      * @param paused true to ignore detected shakes, false to react to them again
      */
-    void pauseDetection(boolean paused);
+    void setOnShakePaused(boolean paused);
   }
 
   /** Configuration callback for feedback options. */

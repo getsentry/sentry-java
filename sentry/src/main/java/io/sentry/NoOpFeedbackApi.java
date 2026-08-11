@@ -27,13 +27,13 @@ public final class NoOpFeedbackApi implements IFeedbackApi {
       final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator) {}
 
   @Override
-  public void enableFeedbackOnShake() {}
+  public void enableOnShake() {}
 
   @Override
-  public void disableFeedbackOnShake() {}
+  public void disableOnShake() {}
 
   @Override
-  public boolean isFeedbackOnShakeEnabled() {
+  public boolean isOnShakeEnabled() {
     return false;
   }
 

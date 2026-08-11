@@ -174,7 +174,7 @@ class FeedbackShakeIntegrationTest {
     sut.register(fixture.scopes, fixture.options)
 
     assertThat(fixture.options.feedbackOptions.shakeController).isSameInstanceAs(sut)
-    assertThat(sut.isEnabled).isFalse()
+    assertThat(sut.isOnShakeEnabled).isFalse()
   }
 
   @Test
@@ -186,9 +186,9 @@ class FeedbackShakeIntegrationTest {
     sut.register(fixture.scopes, fixture.options)
     verify(fixture.application, never()).registerActivityLifecycleCallbacks(any())
 
-    sut.enable()
+    sut.enableOnShake()
 
-    assertThat(sut.isEnabled).isTrue()
+    assertThat(sut.isOnShakeEnabled).isTrue()
     verify(fixture.application).registerActivityLifecycleCallbacks(any())
     // Hooks into the already-resumed activity
     verify(fixture.activity).getSystemService(eq(Context.SENSOR_SERVICE))
@@ -199,8 +199,8 @@ class FeedbackShakeIntegrationTest {
     val sut = fixture.getSut(useShakeGesture = false)
     sut.register(fixture.scopes, fixture.options)
 
-    sut.enable()
-    sut.enable()
+    sut.enableOnShake()
+    sut.enableOnShake()
 
     verify(fixture.application, times(1)).registerActivityLifecycleCallbacks(any())
   }
@@ -210,9 +210,9 @@ class FeedbackShakeIntegrationTest {
     val sut = fixture.getSut(useShakeGesture = true)
     sut.register(fixture.scopes, fixture.options)
 
-    sut.disable()
+    sut.disableOnShake()
 
-    assertThat(sut.isEnabled).isFalse()
+    assertThat(sut.isOnShakeEnabled).isFalse()
     verify(fixture.application).unregisterActivityLifecycleCallbacks(any())
   }
 
@@ -221,8 +221,8 @@ class FeedbackShakeIntegrationTest {
     val sut = fixture.getSut(useShakeGesture = true)
     sut.register(fixture.scopes, fixture.options)
 
-    sut.disable()
-    sut.disable()
+    sut.disableOnShake()
+    sut.disableOnShake()
 
     verify(fixture.application, times(1)).unregisterActivityLifecycleCallbacks(any())
   }
@@ -232,7 +232,7 @@ class FeedbackShakeIntegrationTest {
     val sut = fixture.getSut(useShakeGesture = false)
     sut.register(fixture.scopes, fixture.options)
 
-    sut.disable()
+    sut.disableOnShake()
 
     verify(fixture.application, never()).unregisterActivityLifecycleCallbacks(any())
   }
@@ -241,9 +241,9 @@ class FeedbackShakeIntegrationTest {
   fun `enable before register is a no-op`() {
     val sut = fixture.getSut(useShakeGesture = false)
 
-    sut.enable()
+    sut.enableOnShake()
 
-    assertThat(sut.isEnabled).isFalse()
+    assertThat(sut.isOnShakeEnabled).isFalse()
     verify(fixture.application, never()).registerActivityLifecycleCallbacks(any())
   }
 
@@ -255,12 +255,12 @@ class FeedbackShakeIntegrationTest {
 
     val sut = fixture.getSut(useShakeGesture = true)
     sut.register(fixture.scopes, fixture.options)
-    sut.disable()
-    sut.enable()
+    sut.disableOnShake()
+    sut.enableOnShake()
 
     deferredExecutor.runAll()
 
-    assertThat(sut.isEnabled).isTrue()
+    assertThat(sut.isOnShakeEnabled).isTrue()
     verify(fixture.application, atLeastOnce()).getSystemService(eq(Context.SENSOR_SERVICE))
   }
 
@@ -271,18 +271,74 @@ class FeedbackShakeIntegrationTest {
 
     sut.close()
 
-    assertThat(sut.isEnabled).isFalse()
+    assertThat(sut.isOnShakeEnabled).isFalse()
   }
 
   @Test
-  fun `pauseDetection toggles the paused state`() {
+  fun `a visible form does not tear down the detection machinery`() {
     val sut = fixture.getSut(useShakeGesture = true)
     sut.register(fixture.scopes, fixture.options)
 
-    sut.pauseDetection(true)
-    sut.pauseDetection(false)
-    // Pausing only gates shake handling; detection machinery stays untouched
+    sut.setOnShakePaused(true)
+    sut.setOnShakePaused(false)
+
     verify(fixture.application, never()).unregisterActivityLifecycleCallbacks(any())
-    assertThat(sut.isEnabled).isTrue()
+    assertThat(sut.isOnShakeEnabled).isTrue()
+  }
+
+  @Test
+  fun `a form suppresses detection on the activity it belongs to`() {
+    whenever(fixture.activity.getSystemService(any())).thenReturn(null)
+
+    val sut = fixture.getSut(useShakeGesture = true)
+    sut.register(fixture.scopes, fixture.options)
+
+    CurrentActivityHolder.getInstance().setActivity(fixture.activity)
+    sut.setOnShakePaused(true)
+    assertThat(sut.formActivity).isSameInstanceAs(fixture.activity)
+
+    // Coming back to the activity the form is on (e.g. screen off/on) must not re-arm detection,
+    // otherwise a shake would stack a second form on top of the visible one.
+    sut.onActivityResumed(fixture.activity)
+
+    verify(fixture.activity, never()).getSystemService(eq(Context.SENSOR_SERVICE))
+  }
+
+  @Test
+  fun `a form on a backgrounded activity does not suppress detection on the next one`() {
+    // A dialog lives in the window of the activity that created it, so once that activity is no
+    // longer resumed the dialog cannot be seen - it must not keep detection off on the activity
+    // now in front. Android's order is A.onPause() -> B.onResume(), so exercise exactly that.
+    val otherActivity = mock<Activity>()
+    whenever(fixture.activity.getSystemService(any())).thenReturn(null)
+    whenever(otherActivity.getSystemService(any())).thenReturn(null)
+
+    val sut = fixture.getSut(useShakeGesture = true)
+    sut.register(fixture.scopes, fixture.options)
+
+    CurrentActivityHolder.getInstance().setActivity(fixture.activity)
+    sut.onActivityResumed(fixture.activity)
+    sut.setOnShakePaused(true)
+
+    sut.onActivityPaused(fixture.activity)
+    sut.onActivityResumed(otherActivity)
+
+    verify(otherActivity).getSystemService(eq(Context.SENSOR_SERVICE))
+  }
+
+  @Test
+  fun `dismissing a form re-arms detection on the current activity`() {
+    whenever(fixture.activity.getSystemService(any())).thenReturn(null)
+
+    val sut = fixture.getSut(useShakeGesture = true)
+    sut.register(fixture.scopes, fixture.options)
+
+    CurrentActivityHolder.getInstance().setActivity(fixture.activity)
+    sut.onActivityResumed(fixture.activity)
+    sut.setOnShakePaused(true)
+    sut.setOnShakePaused(false)
+
+    assertThat(sut.formActivity).isNull()
+    verify(fixture.activity, atLeastOnce()).getSystemService(eq(Context.SENSOR_SERVICE))
   }
 }

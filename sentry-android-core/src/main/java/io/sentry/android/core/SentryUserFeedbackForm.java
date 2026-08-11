@@ -60,14 +60,16 @@ public class SentryUserFeedbackForm extends AlertDialog {
   }
 
   private void maybeStartShakeDetection(final @NotNull Context context) {
-    // Only an explicit per-form opt-in starts a detector for this form. When shake is
-    // configured globally (via the option or the runtime toggle), FeedbackShakeIntegration
-    // already shows a form on shake and this form defers to it.
+    // Only a per-form opt-in on top of a globally disabled shake gesture starts a detector for
+    // this form. Both other cases defer to FeedbackShakeIntegration: while shake-to-report is
+    // enabled it already shows a form on shake, and once it has been disabled at runtime that
+    // must stay disabled. Note resolvedFeedbackOptions is a copy of the global options, so its
+    // isUseShakeGesture() is indistinguishable from the global one unless a configurator set it.
     final @NotNull SentryFeedbackOptions globalFeedbackOptions =
         Sentry.getCurrentScopes().getOptions().getFeedbackOptions();
     if (!resolvedFeedbackOptions.isUseShakeGesture()
         || globalFeedbackOptions.isUseShakeGesture()
-        || globalFeedbackOptions.getShakeController().isEnabled()) {
+        || globalFeedbackOptions.getShakeController().isOnShakeEnabled()) {
       return;
     }
     final @Nullable Activity activity = getActivity(context);
@@ -106,7 +108,7 @@ public class SentryUserFeedbackForm extends AlertDialog {
           .getOptions()
           .getFeedbackOptions()
           .getShakeController()
-          .isEnabled()) {
+          .isOnShakeEnabled()) {
         return;
       }
       final @Nullable Activity active = activityRef.get();
@@ -300,7 +302,7 @@ public class SentryUserFeedbackForm extends AlertDialog {
             if (onSubmitSuccess != null) {
               try {
                 onSubmitSuccess.call(feedback);
-              } catch (Throwable e) {
+              } catch (Exception e) {
                 Sentry.getCurrentScopes()
                     .getOptions()
                     .getLogger()
@@ -313,7 +315,7 @@ public class SentryUserFeedbackForm extends AlertDialog {
             if (onSubmitError != null) {
               try {
                 onSubmitError.call(feedback);
-              } catch (Throwable e) {
+              } catch (Exception e) {
                 Sentry.getCurrentScopes()
                     .getOptions()
                     .getLogger()
@@ -342,7 +344,7 @@ public class SentryUserFeedbackForm extends AlertDialog {
             // cleanup and the user's own dismiss listener below
             try {
               onFormClose.run();
-            } catch (Throwable e) {
+            } catch (Exception e) {
               options
                   .getLogger()
                   .log(SentryLevel.ERROR, "onFormClose callback threw an exception.", e);
@@ -370,12 +372,12 @@ public class SentryUserFeedbackForm extends AlertDialog {
     final @NotNull SentryFeedbackOptions feedbackOptions = options.getFeedbackOptions();
     // Pause shake-to-report while this form is visible, so a shake can't stack a second
     // form on top of it
-    feedbackOptions.getShakeController().pauseDetection(true);
+    feedbackOptions.getShakeController().setOnShakePaused(true);
     final @Nullable Runnable onFormOpen = feedbackOptions.getOnFormOpen();
     if (onFormOpen != null) {
       try {
         onFormOpen.run();
-      } catch (Throwable e) {
+      } catch (Exception e) {
         options.getLogger().log(SentryLevel.ERROR, "onFormOpen callback threw an exception.", e);
       }
     }
@@ -390,7 +392,7 @@ public class SentryUserFeedbackForm extends AlertDialog {
         .getOptions()
         .getFeedbackOptions()
         .getShakeController()
-        .pauseDetection(false);
+        .setOnShakePaused(false);
   }
 
   @Override
@@ -403,7 +405,7 @@ public class SentryUserFeedbackForm extends AlertDialog {
         .getOptions()
         .getFeedbackOptions()
         .getShakeController()
-        .pauseDetection(false);
+        .setOnShakePaused(false);
   }
 
   @Override

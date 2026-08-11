@@ -16,16 +16,19 @@ import java.io.IOException;
 import java.lang.ref.WeakReference;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.TestOnly;
 
 /**
  * Detects shake gestures and shows the user feedback dialog when a shake is detected. {@link
  * io.sentry.SentryFeedbackOptions#isUseShakeGesture()} determines the initial state; it can be
- * toggled at runtime via {@code Sentry.feedback().enableFeedbackOnShake()} and {@code
- * Sentry.feedback().disableFeedbackOnShake()}.
+ * toggled at runtime via {@code Sentry.feedback().enableOnShake()} and {@code
+ * Sentry.feedback().disableOnShake()}.
  *
- * <p>While any feedback dialog is visible it pauses shake handling via {@link
- * #pauseDetection(boolean)}, so a shake can never stack a second dialog on top of one that is
- * already showing — no matter how the visible dialog was opened.
+ * <p>Shake detection is scoped to the resumed activity: a dialog belongs to the window of the
+ * activity that created it, so it can only ever be visible while that activity is resumed. Forms
+ * report themselves via {@link #setOnShakePaused(boolean)} and detection is then suppressed for
+ * that one activity, which keeps a shake from stacking a second dialog on top of a visible one
+ * without letting a dialog on a backgrounded activity suppress detection elsewhere.
  */
 public final class FeedbackShakeIntegration
     implements Integration,
@@ -37,8 +40,10 @@ public final class FeedbackShakeIntegration
   private final @NotNull SentryShakeDetector shakeDetector;
   private @Nullable SentryAndroidOptions options;
   private volatile boolean enabled = false;
-  private volatile boolean paused = false;
   private volatile @Nullable WeakReference<Activity> currentActivityRef;
+
+  /** The activity a feedback form is currently showing on, if any. */
+  private volatile @Nullable WeakReference<Activity> formActivityRef;
 
   public FeedbackShakeIntegration(final @NotNull Application application) {
     this.application = Objects.requireNonNull(application, "Application is required");
@@ -60,12 +65,12 @@ public final class FeedbackShakeIntegration
     options.getFeedbackOptions().setShakeController(this);
 
     if (options.getFeedbackOptions().isUseShakeGesture()) {
-      enable();
+      enableOnShake();
     }
   }
 
   @Override
-  public synchronized void enable() {
+  public synchronized void enableOnShake() {
     final @Nullable SentryAndroidOptions options = this.options;
     if (enabled || options == null) {
       return;
@@ -103,7 +108,7 @@ public final class FeedbackShakeIntegration
   }
 
   @Override
-  public synchronized void disable() {
+  public synchronized void disableOnShake() {
     if (!enabled) {
       return;
     }
@@ -115,18 +120,42 @@ public final class FeedbackShakeIntegration
   }
 
   @Override
-  public boolean isEnabled() {
+  public boolean isOnShakeEnabled() {
     return enabled;
   }
 
   @Override
-  public void pauseDetection(final boolean paused) {
-    this.paused = paused;
+  public void setOnShakePaused(final boolean paused) {
+    if (paused) {
+      final @Nullable Activity activity = CurrentActivityHolder.getInstance().getActivity();
+      formActivityRef = activity == null ? null : new WeakReference<>(activity);
+      stopShakeDetection();
+    } else {
+      formActivityRef = null;
+      // The form is gone, so detection can resume for whichever activity is currently resumed.
+      final @Nullable WeakReference<Activity> currentRef = currentActivityRef;
+      final @Nullable Activity current = currentRef == null ? null : currentRef.get();
+      if (enabled && current != null) {
+        startShakeDetection(current);
+      }
+    }
+  }
+
+  private boolean hasFormOn(final @NotNull Activity activity) {
+    final @Nullable WeakReference<Activity> ref = formActivityRef;
+    return ref != null && ref.get() == activity;
+  }
+
+  @TestOnly
+  @Nullable
+  Activity getFormActivity() {
+    final @Nullable WeakReference<Activity> ref = formActivityRef;
+    return ref == null ? null : ref.get();
   }
 
   @Override
   public void close() throws IOException {
-    disable();
+    disableOnShake();
   }
 
   @Override
@@ -171,20 +200,32 @@ public final class FeedbackShakeIntegration
     }
     // Stop any existing detection (e.g. when transitioning between activities)
     stopShakeDetection();
+    // A form is already visible here, so a shake could only stack a second one on top of it.
+    // The form has no detector of its own in this case: SentryUserFeedbackForm only starts one
+    // while shake-to-report is globally disabled, which is exactly when this integration is not
+    // detecting either.
+    if (hasFormOn(activity)) {
+      return;
+    }
     shakeDetector.start(
         activity,
         () -> {
           final @Nullable WeakReference<Activity> ref = currentActivityRef;
           final Activity active = ref != null ? ref.get() : null;
           final Boolean inBackground = AppState.getInstance().isInBackground();
-          if (active == null || options == null || paused || Boolean.TRUE.equals(inBackground)) {
+          if (active == null
+              || options == null
+              || !enabled
+              || hasFormOn(active)
+              || Boolean.TRUE.equals(inBackground)) {
             return;
           }
           active.runOnUiThread(
               () -> {
-                // Re-check on the main thread: an earlier queued shake may have shown a form
-                // in the meantime (the form pauses detection synchronously in onStart).
-                if (paused || active.isFinishing() || active.isDestroyed()) {
+                // Re-check on the main thread: shake-to-report may have been disabled, or an
+                // earlier queued shake may have shown a form in the meantime (the form reports
+                // itself synchronously in onStart).
+                if (!enabled || hasFormOn(active) || active.isFinishing() || active.isDestroyed()) {
                   return;
                 }
                 try {

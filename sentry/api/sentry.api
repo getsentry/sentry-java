@@ -853,9 +853,9 @@ public abstract interface class io/sentry/IFeedbackApi {
 	public abstract fun capture (Lio/sentry/protocol/Feedback;)Lio/sentry/protocol/SentryId;
 	public abstract fun capture (Lio/sentry/protocol/Feedback;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public abstract fun capture (Lio/sentry/protocol/Feedback;Lio/sentry/Hint;Lio/sentry/ScopeCallback;)Lio/sentry/protocol/SentryId;
-	public abstract fun disableFeedbackOnShake ()V
-	public abstract fun enableFeedbackOnShake ()V
-	public abstract fun isFeedbackOnShakeEnabled ()Z
+	public abstract fun disableOnShake ()V
+	public abstract fun enableOnShake ()V
+	public abstract fun isOnShakeEnabled ()Z
 	public abstract fun show ()V
 	public abstract fun show (Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)V
 	public abstract fun show (Lio/sentry/protocol/SentryId;Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)V
@@ -1607,10 +1607,10 @@ public final class io/sentry/NoOpFeedbackApi : io/sentry/IFeedbackApi {
 	public fun capture (Lio/sentry/protocol/Feedback;)Lio/sentry/protocol/SentryId;
 	public fun capture (Lio/sentry/protocol/Feedback;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun capture (Lio/sentry/protocol/Feedback;Lio/sentry/Hint;Lio/sentry/ScopeCallback;)Lio/sentry/protocol/SentryId;
-	public fun disableFeedbackOnShake ()V
-	public fun enableFeedbackOnShake ()V
+	public fun disableOnShake ()V
+	public fun enableOnShake ()V
 	public static fun getInstance ()Lio/sentry/NoOpFeedbackApi;
-	public fun isFeedbackOnShakeEnabled ()Z
+	public fun isOnShakeEnabled ()Z
 	public fun show ()V
 	public fun show (Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)V
 	public fun show (Lio/sentry/protocol/SentryId;Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)V
@@ -3269,10 +3269,10 @@ public abstract interface class io/sentry/SentryFeedbackOptions$IFormHandler {
 }
 
 public abstract interface class io/sentry/SentryFeedbackOptions$IShakeController {
-	public abstract fun disable ()V
-	public abstract fun enable ()V
-	public abstract fun isEnabled ()Z
-	public abstract fun pauseDetection (Z)V
+	public abstract fun disableOnShake ()V
+	public abstract fun enableOnShake ()V
+	public abstract fun isOnShakeEnabled ()Z
+	public abstract fun setOnShakePaused (Z)V
 }
 
 public abstract interface class io/sentry/SentryFeedbackOptions$OptionsConfigurator {

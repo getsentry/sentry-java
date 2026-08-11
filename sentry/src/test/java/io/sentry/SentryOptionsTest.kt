@@ -944,7 +944,7 @@ class SentryOptionsTest {
         setLogger(logger)
         isDebug = true
       }
-    options.feedbackOptions.shakeController.enable()
+    options.feedbackOptions.shakeController.enableOnShake()
     verify(logger).log(eq(SentryLevel.WARNING), eq("Shake to report is only supported on Android."))
   }
 

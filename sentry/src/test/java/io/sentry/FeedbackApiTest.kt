@@ -19,29 +19,29 @@ class FeedbackApiTest {
   private val fixture = Fixture()
 
   @Test
-  fun `enableFeedbackOnShake delegates to the shake controller`() {
-    fixture.getSut().enableFeedbackOnShake()
+  fun `enableOnShake delegates to the shake controller`() {
+    fixture.getSut().enableOnShake()
 
-    verify(fixture.shakeController).enable()
+    verify(fixture.shakeController).enableOnShake()
   }
 
   @Test
-  fun `disableFeedbackOnShake delegates to the shake controller`() {
-    fixture.getSut().disableFeedbackOnShake()
+  fun `disableOnShake delegates to the shake controller`() {
+    fixture.getSut().disableOnShake()
 
-    verify(fixture.shakeController).disable()
+    verify(fixture.shakeController).disableOnShake()
   }
 
   @Test
-  fun `isFeedbackOnShakeEnabled delegates to the shake controller`() {
-    whenever(fixture.shakeController.isEnabled).thenReturn(true)
+  fun `isOnShakeEnabled delegates to the shake controller`() {
+    whenever(fixture.shakeController.isOnShakeEnabled).thenReturn(true)
 
-    assertThat(fixture.getSut().isFeedbackOnShakeEnabled).isTrue()
-    verify(fixture.shakeController).isEnabled
+    assertThat(fixture.getSut().isOnShakeEnabled).isTrue()
+    verify(fixture.shakeController).isOnShakeEnabled
   }
 
   @Test
   fun `default shake controller is disabled`() {
-    assertThat(SentryOptions().feedbackOptions.shakeController.isEnabled).isFalse()
+    assertThat(SentryOptions().feedbackOptions.shakeController.isOnShakeEnabled).isFalse()
   }
 }
