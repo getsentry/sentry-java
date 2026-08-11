@@ -8,6 +8,8 @@
 
 ### Fixes
 
+- Remove per-sample allocations from performance data collection ([#5933](https://github.com/getsentry/sentry-java/pull/5933))
+  - `PerformanceCollectionData` now stores its measurements as primitives instead of boxed types, and the 30s transaction timeout check reads the clock once per collection round instead of once per in-flight transaction
 - Clear contexts when calling `Scope.clear()` ([#5902](https://github.com/getsentry/sentry-java/pull/5902))
 - Preserve custom `Throwable` identities when R8 optimizes Android apps ([#5881](https://github.com/getsentry/sentry-java/pull/5881))
 
