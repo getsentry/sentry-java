@@ -54,6 +54,20 @@ public interface ISpan {
   ISpan startChild(@NotNull String operation, @Nullable String description);
 
   /**
+   * Starts a child Span.
+   *
+   * @param operation - new span operation name
+   * @param description - the span description
+   * @param timestamp - the start timestamp of the span
+   * @return a new transaction span
+   */
+  @NotNull
+  default ISpan startChild(
+      @NotNull String operation, @Nullable String description, @Nullable SentryDate timestamp) {
+    return startChild(operation, description, timestamp, Instrumenter.SENTRY);
+  }
+
+  /**
    * Returns the trace information that could be sent as a sentry-trace header.
    *
    * @return SentryTraceHeader.
