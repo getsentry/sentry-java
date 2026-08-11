@@ -23,24 +23,24 @@ class ExceptionUtilsTest {
   }
 
   @Test
-  fun `handleFatal rethrows OutOfMemoryError`() {
-    assertFails { ExceptionUtils.handleFatal(OutOfMemoryError()) }
+  fun `rethrowIfFatal rethrows OutOfMemoryError`() {
+    assertFails { ExceptionUtils.rethrowIfFatal(OutOfMemoryError()) }
   }
 
   @Test
-  fun `handleFatal rethrows StackOverflowError`() {
-    assertFails { ExceptionUtils.handleFatal(StackOverflowError()) }
+  fun `rethrowIfFatal rethrows StackOverflowError`() {
+    assertFails { ExceptionUtils.rethrowIfFatal(StackOverflowError()) }
   }
 
   @Test
-  fun `handleFatal rethrows ThreadDeath`() {
-    assertFails { ExceptionUtils.handleFatal(ThreadDeath()) }
+  fun `rethrowIfFatal rethrows ThreadDeath`() {
+    assertFails { ExceptionUtils.rethrowIfFatal(ThreadDeath()) }
   }
 
   @Test
-  fun `handleFatal restores interrupt flag for InterruptedException without rethrowing`() {
+  fun `rethrowIfFatal restores interrupt flag for InterruptedException without rethrowing`() {
     try {
-      ExceptionUtils.handleFatal(InterruptedException())
+      ExceptionUtils.rethrowIfFatal(InterruptedException())
       assertTrue(Thread.currentThread().isInterrupted)
     } finally {
       // clear the interrupt flag so it doesn't leak into other tests
@@ -49,8 +49,8 @@ class ExceptionUtilsTest {
   }
 
   @Test
-  fun `handleFatal does nothing for regular exceptions`() {
-    ExceptionUtils.handleFatal(RuntimeException())
+  fun `rethrowIfFatal does nothing for regular exceptions`() {
+    ExceptionUtils.rethrowIfFatal(RuntimeException())
     assertFalse(Thread.currentThread().isInterrupted)
   }
 }

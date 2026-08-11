@@ -31,15 +31,15 @@ public final class ExceptionUtils {
   }
 
   /**
-   * Handles non-recoverable {@link Throwable}s that should never be swallowed. Rethrows {@link
-   * VirtualMachineError} (e.g. OutOfMemoryError/StackOverflowError) and {@link ThreadDeath} as-is.
-   * For {@link InterruptedException}, restores the thread's interrupted status instead of
-   * rethrowing, since it is a checked exception. All other throwables are left untouched for the
-   * caller to handle/log/ignore as before.
+   * Rethrows non-recoverable {@link Throwable}s that should never be swallowed: {@link
+   * VirtualMachineError} (e.g. OutOfMemoryError/StackOverflowError) and {@link ThreadDeath} are
+   * rethrown as-is. For {@link InterruptedException}, the thread's interrupted status is restored
+   * instead of rethrowing, since it is a checked exception. All other throwables are left untouched
+   * for the caller to handle/log/ignore as before.
    *
    * @param throwable - the throwable to check
    */
-  public static void handleFatal(final @NotNull Throwable throwable) {
+  public static void rethrowIfFatal(final @NotNull Throwable throwable) {
     // VirtualMachineError covers OutOfMemoryError, StackOverflowError, InternalError, and
     // UnknownError
     if (throwable instanceof VirtualMachineError || throwable instanceof ThreadDeath) {
