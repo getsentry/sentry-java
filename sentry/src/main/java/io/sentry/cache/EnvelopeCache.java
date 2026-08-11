@@ -106,7 +106,6 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
     return storeInternal(envelope, hint);
   }
 
-  @SuppressWarnings("JavaUtilDate")
   private boolean storeInternal(final @NotNull SentryEnvelope envelope, final @NotNull Hint hint) {
     Objects.requireNonNull(envelope, "Envelope is required.");
 
@@ -119,24 +118,10 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
     final File previousSessionFile = getPreviousSessionFile(directoryPath);
 
     if (HintUtils.hasType(hint, SessionEnd.class)) {
-      // A SessionEnd normally clears session.json. Its envelope may have been queued while a
-      // newer session replaced it on disk though, and deleting would then drop that session's
-      // unhandled error before it can be finalized. Only keep the file when the stored session
-      // is provably a different, later one carrying the flag.
       try (final @NotNull ISentryLifecycleToken ignored = sessionLock.acquire()) {
         final @Nullable Session endingSession = readSessionFromEnvelope(envelope);
         final @Nullable Session currentSession = readSessionFromDisk(currentSessionFile);
-        final boolean preserveCurrentSession =
-            endingSession != null
-                && currentSession != null
-                && currentSession.hasNonTerminatingUnhandledError()
-                && endingSession.getSessionId() != null
-                && currentSession.getSessionId() != null
-                && !Objects.equals(endingSession.getSessionId(), currentSession.getSessionId())
-                && endingSession.getStarted() != null
-                && currentSession.getStarted() != null
-                && currentSession.getStarted().after(endingSession.getStarted());
-        if (!preserveCurrentSession && !currentSessionFile.delete()) {
+        if (!isStaleSessionEnd(endingSession, currentSession) && !currentSessionFile.delete()) {
           options.getLogger().log(WARNING, "Current envelope doesn't exist.");
         }
       }
@@ -153,9 +138,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
         if (startingSession != null) {
           final @Nullable Session currentSession = readSessionFromDisk(currentSessionFile);
           if (currentSession != null && hasSameSessionId(currentSession, startingSession)) {
-            // A start for the id already on disk is a late duplicate, and that stored snapshot
-            // may have advanced since it was written, so overwrite only if it has not.
-            if (!isNewerUnhandledOrErrorSnapshot(currentSession, startingSession)) {
+            if (!isStaleSessionStart(startingSession, currentSession)) {
               writeSessionToDisk(currentSessionFile, startingSession);
             }
           } else {
@@ -312,7 +295,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
   private @Nullable Session readSessionFromEnvelope(final @NotNull SentryEnvelope envelope) {
     final Iterable<SentryEnvelopeItem> items = envelope.getItems();
 
-    // we know that an envelope with a SessionStart hint has a single item inside
+    // we know that a session envelope has a single item inside
     if (items.iterator().hasNext()) {
       final SentryEnvelopeItem item = items.iterator().next();
 
@@ -331,7 +314,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
           } else {
             return session;
           }
-        } catch (Throwable e) {
+        } catch (Exception e) {
           options.getLogger().log(ERROR, "Item failed to process.", e);
         }
       } else {
@@ -361,8 +344,27 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
     }
   }
 
-  private boolean isNewerUnhandledOrErrorSnapshot(
-      final @NotNull Session currentSession, final @NotNull Session startingSession) {
+  /**
+   * Whether a {@link SessionEnd} envelope was queued while a newer session replaced it on disk.
+   * Deleting the file would then drop the newer session's unhandled error before it can be
+   * finalized, so it is kept instead.
+   */
+  private boolean isStaleSessionEnd(
+      final @Nullable Session endingSession, final @Nullable Session currentSession) {
+    return endingSession != null
+        && currentSession != null
+        && currentSession.hasNonTerminatingUnhandledError()
+        && hasDifferentSessionId(endingSession, currentSession)
+        && startedLaterThan(currentSession, endingSession);
+  }
+
+  /**
+   * Whether a {@link SessionStart} envelope is a late duplicate of the session already on disk,
+   * whose snapshot has since advanced. Writing it would roll back the recorded unhandled error or
+   * error count. Only meaningful for two snapshots of the same session.
+   */
+  private boolean isStaleSessionStart(
+      final @NotNull Session startingSession, final @NotNull Session currentSession) {
     return (currentSession.hasNonTerminatingUnhandledError()
             && !startingSession.hasNonTerminatingUnhandledError())
         || currentSession.errorCount() > startingSession.errorCount();
@@ -373,6 +375,20 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
     return firstSession.getSessionId() != null
         && secondSession.getSessionId() != null
         && Objects.equals(firstSession.getSessionId(), secondSession.getSessionId());
+  }
+
+  private boolean hasDifferentSessionId(
+      final @NotNull Session firstSession, final @NotNull Session secondSession) {
+    return firstSession.getSessionId() != null
+        && secondSession.getSessionId() != null
+        && !Objects.equals(firstSession.getSessionId(), secondSession.getSessionId());
+  }
+
+  @SuppressWarnings("JavaUtilDate")
+  private boolean startedLaterThan(final @NotNull Session session, final @NotNull Session other) {
+    return session.getStarted() != null
+        && other.getStarted() != null
+        && session.getStarted().after(other.getStarted());
   }
 
   private boolean writeEnvelopeToDisk(
