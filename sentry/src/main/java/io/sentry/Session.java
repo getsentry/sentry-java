@@ -67,7 +67,7 @@ public final class Session implements JsonUnknown, JsonSerializable {
   /** the Abnormal mechanism, e.g. what was the reason for session to become abnormal (ANR) */
   private @Nullable String abnormalMechanism;
 
-  /** whether an unhandled error occurred that did not terminate the process */
+  /** Whether an unhandled error occurred that did not terminate the process */
   private boolean hasNonTerminatingUnhandledError;
 
   /** The session lock, ops should be atomic */
