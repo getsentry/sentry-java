@@ -176,7 +176,7 @@ public final class InternalSentrySdk {
 
     try {
       final @NotNull ISerializer serializer = options.getSerializer();
-      final @NotNull EnvelopeEvents events = scanEvents(envelope, serializer);
+      final @NotNull EnvelopeEventState eventState = eventStateOf(envelope, serializer);
 
       final @NotNull List<SentryEnvelopeItem> envelopeItems = new ArrayList<>();
       for (SentryEnvelopeItem item : envelope.getItems()) {
@@ -185,9 +185,9 @@ public final class InternalSentrySdk {
 
       // update session and add it to envelope if necessary
       final @Nullable Session.State status =
-          events == EnvelopeEvents.UNHANDLED ? Session.State.Crashed : null;
+          eventState == EnvelopeEventState.UNHANDLED ? Session.State.Crashed : null;
       final @Nullable Session session =
-          updateSession(scopes, options, status, events != EnvelopeEvents.NONE);
+          updateSession(scopes, options, status, eventState != EnvelopeEventState.NONE);
       if (session != null) {
         final SentryEnvelopeItem sessionItem = SentryEnvelopeItem.fromSession(serializer, session);
         envelopeItems.add(sessionItem);
@@ -246,16 +246,16 @@ public final class InternalSentrySdk {
 
     try {
       final @NotNull ISerializer serializer = options.getSerializer();
-      final @NotNull EnvelopeEvents events = scanEvents(envelope, serializer);
+      final @NotNull EnvelopeEventState eventState = eventStateOf(envelope, serializer);
 
-      if (events != EnvelopeEvents.NONE) {
+      if (eventState != EnvelopeEventState.NONE) {
         scopes.configureScope(
             scope -> {
               scope.withSession(
                   session -> {
                     if (session != null) {
                       final boolean updated =
-                          events == EnvelopeEvents.UNHANDLED
+                          eventState == EnvelopeEventState.UNHANDLED
                               ? session.recordNonTerminatingUnhandledError()
                               : session.update(null, null, true, null);
                       if (updated && options.getEnvelopeDiskCache() instanceof EnvelopeCache) {
@@ -279,7 +279,7 @@ public final class InternalSentrySdk {
   }
 
   /** What the events inside an envelope amount to, from the session's point of view. */
-  private enum EnvelopeEvents {
+  private enum EnvelopeEventState {
     /** No event carried an exception. */
     NONE,
     /** At least one event carried an exception, none of them unhandled. */
@@ -288,7 +288,7 @@ public final class InternalSentrySdk {
     UNHANDLED
   }
 
-  private static @NotNull EnvelopeEvents scanEvents(
+  private static @NotNull EnvelopeEventState eventStateOf(
       final @NotNull SentryEnvelope envelope, final @NotNull ISerializer serializer)
       throws Exception {
     boolean unhandled = false;
@@ -305,9 +305,9 @@ public final class InternalSentrySdk {
       }
     }
     if (unhandled) {
-      return EnvelopeEvents.UNHANDLED;
+      return EnvelopeEventState.UNHANDLED;
     }
-    return errored ? EnvelopeEvents.ERRORED : EnvelopeEvents.NONE;
+    return errored ? EnvelopeEventState.ERRORED : EnvelopeEventState.NONE;
   }
 
   /**
