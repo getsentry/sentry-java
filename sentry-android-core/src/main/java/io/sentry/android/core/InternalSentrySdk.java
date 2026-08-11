@@ -176,27 +176,18 @@ public final class InternalSentrySdk {
 
     try {
       final @NotNull ISerializer serializer = options.getSerializer();
-      final @NotNull List<SentryEnvelopeItem> envelopeItems = new ArrayList<>();
+      final @NotNull EnvelopeEvents events = scanEvents(envelope, serializer);
 
-      // determine session state based on events inside envelope
-      @Nullable Session.State status = null;
-      boolean crashedOrErrored = false;
+      final @NotNull List<SentryEnvelopeItem> envelopeItems = new ArrayList<>();
       for (SentryEnvelopeItem item : envelope.getItems()) {
         envelopeItems.add(item);
-
-        final SentryEvent event = item.getEvent(serializer);
-        if (event != null) {
-          if (event.isCrashed()) {
-            status = Session.State.Crashed;
-          }
-          if (event.isCrashed() || event.isErrored()) {
-            crashedOrErrored = true;
-          }
-        }
       }
 
       // update session and add it to envelope if necessary
-      final @Nullable Session session = updateSession(scopes, options, status, crashedOrErrored);
+      final @Nullable Session.State status =
+          events == EnvelopeEvents.UNHANDLED ? Session.State.Crashed : null;
+      final @Nullable Session session =
+          updateSession(scopes, options, status, events != EnvelopeEvents.NONE);
       if (session != null) {
         final SentryEnvelopeItem sessionItem = SentryEnvelopeItem.fromSession(serializer, session);
         envelopeItems.add(sessionItem);
@@ -255,32 +246,18 @@ public final class InternalSentrySdk {
 
     try {
       final @NotNull ISerializer serializer = options.getSerializer();
-      boolean hasUnhandled = false;
-      boolean addErrorsCount = false;
-      for (SentryEnvelopeItem item : envelope.getItems()) {
-        final SentryEvent event = item.getEvent(serializer);
-        if (event != null) {
-          if (event.getUnhandledException() != null) {
-            hasUnhandled = true;
-            addErrorsCount = true;
-          } else if (event.isErrored()) {
-            addErrorsCount = true;
-          }
-        }
-      }
+      final @NotNull EnvelopeEvents events = scanEvents(envelope, serializer);
 
-      if (hasUnhandled || addErrorsCount) {
-        final boolean unhandled = hasUnhandled;
-        final boolean addErrors = addErrorsCount;
+      if (events != EnvelopeEvents.NONE) {
         scopes.configureScope(
             scope -> {
               scope.withSession(
                   session -> {
                     if (session != null) {
                       final boolean updated =
-                          unhandled
+                          events == EnvelopeEvents.UNHANDLED
                               ? session.recordNonTerminatingUnhandledError()
-                              : session.update(null, null, addErrors, null);
+                              : session.update(null, null, true, null);
                       if (updated && options.getEnvelopeDiskCache() instanceof EnvelopeCache) {
                         ((EnvelopeCache) options.getEnvelopeDiskCache())
                             .persistCurrentSession(session);
@@ -299,6 +276,38 @@ public final class InternalSentrySdk {
       options.getLogger().log(SentryLevel.ERROR, "Failed to capture envelope", e);
     }
     return null;
+  }
+
+  /** What the events inside an envelope amount to, from the session's point of view. */
+  private enum EnvelopeEvents {
+    /** No event carried an exception. */
+    NONE,
+    /** At least one event carried an exception, none of them unhandled. */
+    ERRORED,
+    /** At least one event carried an unhandled exception. */
+    UNHANDLED
+  }
+
+  private static @NotNull EnvelopeEvents scanEvents(
+      final @NotNull SentryEnvelope envelope, final @NotNull ISerializer serializer)
+      throws Exception {
+    boolean unhandled = false;
+    boolean errored = false;
+    for (SentryEnvelopeItem item : envelope.getItems()) {
+      final SentryEvent event = item.getEvent(serializer);
+      if (event != null) {
+        if (event.isCrashed()) {
+          unhandled = true;
+        }
+        if (event.isCrashed() || event.isErrored()) {
+          errored = true;
+        }
+      }
+    }
+    if (unhandled) {
+      return EnvelopeEvents.UNHANDLED;
+    }
+    return errored ? EnvelopeEvents.ERRORED : EnvelopeEvents.NONE;
   }
 
   /**
