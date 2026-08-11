@@ -5,6 +5,7 @@
 ### Features
 
 - Allow child spans to use explicit start timestamps through `ISpan` ([#5929](https://github.com/getsentry/sentry-java/pull/5929))
+- Make `ISpan.startChild` overloads with `SpanOptions` public ([#5927](https://github.com/getsentry/sentry-java/pull/5927))
 
 ### Fixes
 
