@@ -1,8 +1,7 @@
 package io.sentry
 
+import com.google.common.truth.Truth.assertThat
 import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertNull
 
 class JavaMemoryCollectorTest {
   private val fixture = Fixture()
@@ -17,8 +16,9 @@ class JavaMemoryCollectorTest {
     val data = PerformanceCollectionData(10)
     val usedMemory = fixture.runtime.totalMemory() - fixture.runtime.freeMemory()
     fixture.collector.collect(data)
-    assertNull(data.usedNativeMemory)
-    assertEquals(usedMemory, data.usedHeapMemory)
-    assertEquals(10, data.nanoTimestamp)
+    assertThat(data.hasUsedNativeMemory()).isFalse()
+    assertThat(data.hasUsedHeapMemory()).isTrue()
+    assertThat(data.usedHeapMemory).isEqualTo(usedMemory)
+    assertThat(data.nanoTimestamp).isEqualTo(10)
   }
 }
