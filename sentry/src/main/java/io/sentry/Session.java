@@ -91,46 +91,6 @@ public final class Session implements JsonUnknown, JsonSerializable {
       final @Nullable String environment,
       final @NotNull String release,
       final @Nullable String abnormalMechanism) {
-    this(
-        status,
-        started,
-        timestamp,
-        errorCount,
-        distinctId,
-        sessionId,
-        init,
-        sequence,
-        duration,
-        ipAddress,
-        userAgent,
-        environment,
-        release,
-        abnormalMechanism,
-        false);
-  }
-
-  /**
-   * Canonical constructor. Kept private so {@code hasNonTerminatingUnhandledError} stays off the
-   * public API: it is internal bookkeeping that only {@link #clone()} and {@link Deserializer} need
-   * to restore, and a public overload carrying it would let callers fabricate a session claiming an
-   * unhandled error that was never counted.
-   */
-  private Session(
-      final @NotNull State status,
-      final @NotNull Date started,
-      final @Nullable Date timestamp,
-      final int errorCount,
-      final @Nullable String distinctId,
-      final @Nullable String sessionId,
-      final @Nullable Boolean init,
-      final @Nullable Long sequence,
-      final @Nullable Double duration,
-      final @Nullable String ipAddress,
-      final @Nullable String userAgent,
-      final @Nullable String environment,
-      final @NotNull String release,
-      final @Nullable String abnormalMechanism,
-      final boolean hasNonTerminatingUnhandledError) {
     this.status = status;
     this.started = started;
     this.timestamp = timestamp;
@@ -145,7 +105,6 @@ public final class Session implements JsonUnknown, JsonSerializable {
     this.environment = environment;
     this.release = release;
     this.abnormalMechanism = abnormalMechanism;
-    this.hasNonTerminatingUnhandledError = hasNonTerminatingUnhandledError;
   }
 
   public Session(
@@ -403,22 +362,24 @@ public final class Session implements JsonUnknown, JsonSerializable {
    */
   @SuppressWarnings("MissingOverride")
   public @NotNull Session clone() {
-    return new Session(
-        status,
-        started,
-        timestamp,
-        errorCount.get(),
-        distinctId,
-        sessionId,
-        init,
-        sequence,
-        duration,
-        ipAddress,
-        userAgent,
-        environment,
-        release,
-        abnormalMechanism,
-        hasNonTerminatingUnhandledError);
+    final @NotNull Session session =
+        new Session(
+            status,
+            started,
+            timestamp,
+            errorCount.get(),
+            distinctId,
+            sessionId,
+            init,
+            sequence,
+            duration,
+            ipAddress,
+            userAgent,
+            environment,
+            release,
+            abnormalMechanism);
+    session.hasNonTerminatingUnhandledError = hasNonTerminatingUnhandledError;
+    return session;
   }
 
   // JsonSerializable
@@ -638,8 +599,8 @@ public final class Session implements JsonUnknown, JsonSerializable {
               userAgent,
               environment,
               release,
-              abnormalMechanism,
-              hasNonTerminatingUnhandledError);
+              abnormalMechanism);
+      session.hasNonTerminatingUnhandledError = hasNonTerminatingUnhandledError;
       session.setUnknown(unknown);
       reader.endObject();
       return session;
