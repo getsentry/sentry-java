@@ -1,5 +1,6 @@
 package io.sentry.protocol
 
+import com.google.common.truth.Truth.assertThat
 import io.sentry.DateUtils
 import io.sentry.FileFromResources
 import io.sentry.ILogger
@@ -10,7 +11,6 @@ import io.sentry.Session
 import java.io.StringReader
 import java.io.StringWriter
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import org.junit.Test
 import org.mockito.kotlin.mock
 
@@ -59,19 +59,19 @@ class SessionSerializationTest {
     val session = Session(null, null, "environment", "release")
     session.recordNonTerminatingUnhandledError()
     session.end()
-    assertEquals(Session.State.Unhandled, session.status)
+    assertThat(session.status).isEqualTo(Session.State.Unhandled)
 
     val deserialized = deserialize(serialize(session))
 
-    assertEquals(Session.State.Unhandled, deserialized.status)
-    assertEquals(true, deserialized.hasNonTerminatingUnhandledError())
+    assertThat(deserialized.status).isEqualTo(Session.State.Unhandled)
+    assertThat(deserialized.hasNonTerminatingUnhandledError()).isTrue()
   }
 
   @Test
   fun `non-terminating flag is omitted when unset`() {
     val session = Session(null, null, "environment", "release")
 
-    assertFalse(serialize(session).contains("non_terminating_unhandled_error"))
+    assertThat(serialize(session)).doesNotContain("non_terminating_unhandled_error")
   }
 
   // Helper
